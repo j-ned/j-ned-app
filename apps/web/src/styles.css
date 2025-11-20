@@ -1,3 +1,38 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import "tailwindcss";
+
+@theme {
+  --font-display: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
+  /* Définir les couleurs qui utilisent les custom properties */
+  --color-primary: var(--theme-primary);
+  --color-accent: var(--theme-accent);
+  --color-muted: var(--theme-muted);
+  --color-background: var(--theme-background);
+  --color-foreground: var(--theme-foreground);
+}
+
+/* Mode sombre (par défaut) */
+:root {
+  --theme-primary: #3b82f6;
+  --theme-accent: #8b5cf6;
+  --theme-muted: #94a3b8;
+  --theme-background: #0f172a;
+  --theme-foreground: #f1f5f9;
+}
+
+/* Mode clair */
+:root:not(.dark) {
+  --theme-primary: #2563eb;
+  --theme-accent: #7c3aed;
+  --theme-muted: #64748b;
+  --theme-background: #ffffff;
+  --theme-foreground: #0f172a;
+}
+
+body {
+  background-color: var(--theme-background);
+  color: var(--theme-foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
