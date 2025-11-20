@@ -1,1 +1,6 @@
-npm test
+# Check if test files exist before running tests
+if find src -name "*.spec.ts" -o -name "*.test.ts" | grep -q .; then
+  npm test
+else
+  echo "No test files found, skipping tests"
+fi
