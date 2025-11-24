@@ -38,17 +38,17 @@ export const SPECIALITIES: readonly Speciality[] = [
   {
     title: 'Frontend Moderne',
     description:
-      'Angular avec les dernières features (Signals, Control Flow...), TypeScript et architecture componentisée',
+      'Applications Angular réactives avec architecture signals, standalone components et contrôle de flux optimisé. TypeScript strict pour une maintenance facilitée et moins de bugs en production.',
   },
   {
     title: 'Backend & Data',
     description:
-      'NestJS pour les APIs REST, PostgreSQL pour la persistance, architecture modulaire et maintenable',
+      'APIs REST avec NestJS : architecture modulaire, validation stricte des données, gestion d\'erreurs professionnelle. PostgreSQL optimisé pour la performance et l\'intégrité des données.',
   },
   {
     title: 'Déploiement & Infrastructure',
     description:
-      'Docker, VPS self-hosted (Traefik, Dokploy), CI/CD automatisé, WebStorm pour un workflow optimisé',
+      'Déploiements Docker automatisés, infrastructure self-hosted haute disponibilité (Traefik reverse proxy, Dokploy orchestration). CI/CD pour des mises en production sans friction.',
   },
 ] as const;
 

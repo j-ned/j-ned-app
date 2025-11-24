@@ -1,17 +1,18 @@
 import { Component, signal, effect, afterNextRender, ElementRef, inject } from '@angular/core';
 import { NgClass } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 
 @Component({
   selector: 'app-header',
-  imports: [NgClass],
+  imports: [NgClass, RouterLink],
   host: {
     class:
       'fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/5',
   },
   template: `
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-3 text-2xl font-display font-bold text-primary">
+      <a routerLink="/" class="flex items-center gap-3 text-2xl font-display font-bold text-primary">
         <div
           class="p-2 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg border border-primary/30 hover:border-primary/50 transition-all"
         >
@@ -24,15 +25,27 @@ import { NAV_LINKS } from './nav-items';
 
       <nav class="hidden md:flex items-center gap-8">
         @for (item of navItems(); track item) {
-          <a
-            [href]="item.href"
-            class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
-          >
-            <svg class="w-5 h-5">
-              <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
-            </svg>
-            {{ item.label }}
-          </a>
+          @if (item.href.startsWith('#')) {
+            <a
+              [href]="item.href"
+              class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+            >
+              <svg class="w-5 h-5">
+                <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
+              </svg>
+              {{ item.label }}
+            </a>
+          } @else {
+            <a
+              [routerLink]="item.href"
+              class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+            >
+              <svg class="w-5 h-5">
+                <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
+              </svg>
+              {{ item.label }}
+            </a>
+          }
         }
       </nav>
 
@@ -84,15 +97,27 @@ import { NAV_LINKS } from './nav-items';
     <div [ngClass]="{ hidden: !isMobileMenuOpen() }" class="md:hidden border-t border-white/5">
       <nav class="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
         @for (item of navItems(); track item) {
-          <a
-            [href]="item.href"
-            class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
-          >
-            <svg class="w-5 h-5">
-              <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
-            </svg>
-            {{ item.label }}
-          </a>
+          @if (item.href.startsWith('#')) {
+            <a
+              [href]="item.href"
+              class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
+            >
+              <svg class="w-5 h-5">
+                <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
+              </svg>
+              {{ item.label }}
+            </a>
+          } @else {
+            <a
+              [routerLink]="item.href"
+              class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
+            >
+              <svg class="w-5 h-5">
+                <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
+              </svg>
+              {{ item.label }}
+            </a>
+          }
         }
         <a
           href="/docs/CV_JULIEN_NEDELLEC.pdf"
