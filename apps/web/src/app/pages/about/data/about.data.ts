@@ -1,41 +1,16 @@
-export interface SocialButton {
-  readonly icon: string;
-  readonly label: string;
-  readonly href: string;
-}
-
-export interface Highlight {
-  readonly title: string;
-  readonly description: string;
-  readonly icon: string;
-}
-
-export interface Diploma {
-  readonly id: string;
-  readonly title: string;
-  readonly provider: string;
-  readonly shortDescription: string;
-  readonly skills: readonly string[];
-}
-
-export interface Experience {
-  readonly role: string;
-  readonly company: string;
-  readonly date: string;
-}
-
-export interface QuickStat {
-  readonly label: string;
-  readonly value: string;
-}
-
-export interface ProfileInfo {
-  readonly displayName: string;
-  readonly location: string;
-  readonly avatarUrl: string;
-  readonly isAvailable: boolean;
-  readonly availabilityMessage: string;
-}
+import type {
+  Biography,
+  Diploma,
+  Experience,
+  Highlight,
+  PageMetadata,
+  ProfileInfo,
+  QuickStat,
+  SocialButton,
+  Technology,
+  WhatIDo,
+  WhatISeek,
+} from '../models/about.model';
 
 export const PROFILE_INFO: ProfileInfo = {
   displayName: 'Julien NÉDELLEC',
@@ -43,9 +18,9 @@ export const PROFILE_INFO: ProfileInfo = {
   avatarUrl: '/photoProfil.webp',
   isAvailable: true,
   availabilityMessage: 'Disponible pour de nouveaux projets',
-} as const;
+};
 
-export const SOCIAL_BUTTONS: readonly SocialButton[] = [
+export const SOCIAL_BUTTONS: SocialButton[] = [
   {
     icon: 'lucide-linkedin',
     label: 'LinkedIn',
@@ -71,41 +46,37 @@ export const SOCIAL_BUTTONS: readonly SocialButton[] = [
     label: 'X',
     href: 'https://x.com/djoudjDev',
   },
-] as const;
+];
 
-export const HIGHLIGHTS: readonly Highlight[] = [
+export const HIGHLIGHTS: Highlight[] = [
   {
-    title: 'Éternel étudiant',
+    title: 'Exigence de production',
     description:
-      'Toujours en quête de nouvelles connaissances pour rester à la pointe du développement web.',
-    icon: 'lucide-graduation-cap',
+      'Formé dans un environnement où l\'erreur coûte cher, j\'écris du code pensé pour durer. Type-safe, testé, documenté.',
+    icon: 'lucide-shield-check',
   },
   {
-    title: "Esprit d'équipe",
+    title: 'Autonomie réelle',
     description:
-      'Collaboration et partage sont au cœur de ma façon de travailler pour livrer des projets ambitieux.',
-    icon: 'lucide-users',
+      'Autodidacte par nécessité, je trouve des solutions quand il n\'y a pas de tutoriel. Je lis la doc, je comprends les sources, je creuse jusqu\'à résoudre.',
+    icon: 'lucide-target',
   },
   {
-    title: 'Curieux de nature',
+    title: 'Vision d\'ensemble',
     description:
-      'Exploration permanente de nouvelles approches et solutions créatives pour les défis techniques.',
-    icon: 'lucide-lightbulb',
-  },
-  {
-    title: 'Pensée analytique',
-    description:
-      'Analyse fine des problèmes complexes pour imaginer des réponses élégantes et performantes.',
+      'Je ne code pas dans le vide. Je comprends le métier, l\'architecture, les contraintes. Vingt ans à optimiser des systèmes complexes, ça laisse des traces.',
     icon: 'lucide-brain',
   },
-] as const;
+];
 
-export const DIPLOMAS: readonly Diploma[] = [
+export const DIPLOMAS: Diploma[] = [
   {
     id: 'dwwm',
-    title: 'Développeur Web et Web Mobile',
+    title: 'Développeur Web et Web Mobile - Bac+2',
     provider: 'Studi',
-    shortDescription: 'Titre professionnel Bac +2 — spécialisation applications web et mobiles.',
+    shortDescription:
+      "Titre professionnel de niveau 5 axé sur la conception, le développement et la maintenance d'applications web et mobiles, avec une pédagogie orientée bonnes pratiques et travail en équipe.\n" +
+      '\n',
     skills: [
       'HTML5, CSS3, JavaScript',
       'Angular & TypeScript',
@@ -117,9 +88,10 @@ export const DIPLOMAS: readonly Diploma[] = [
   },
   {
     id: 'pgi-erp',
-    title: "Développeur d'applications PGI/ERP",
+    title: "Développeur d'applications PGI/ERP - Bac+2",
     provider: 'ALT-RH',
-    shortDescription: 'Titre professionnel Bac +2 — cycle complet de développement applicatif PGI.',
+    shortDescription:
+      "Titre professionnel de niveau 5 dédié à la conception et à la maintenance d'applications de gestion intégrées, avec un focus sur l'architecture logicielle et la collaboration agile.",
     skills: [
       'HTML5, CSS3, JavaScript, jQuery',
       'Java & J2EE',
@@ -129,44 +101,51 @@ export const DIPLOMAS: readonly Diploma[] = [
       'Méthodes agiles (Scrum, RUP)',
     ],
   },
-] as const;
+];
 
-export const PAGE_METADATA = {
+export const PAGE_METADATA: PageMetadata = {
   title: 'À propos | Julien Nédellec',
   description: 'Découvrez mon parcours, mes compétences et ma passion pour le développement web.',
-} as const;
+};
 
-export const QUICK_STATS: readonly QuickStat[] = [
-  { label: 'Expérience', value: '5+ Ans' },
-  { label: 'Projets', value: '50+ Complétés' },
-  { label: 'Localisation', value: 'Voisins-Le-Bretonneux, France' },
-] as const;
+export const QUICK_STATS: QuickStat[] = [];
 
-export const EXPERIENCE: readonly Experience[] = [
-  { role: 'Senior Frontend Dev', company: 'Tech Corp', date: '2023 - Présent' },
-  { role: 'Développeur Web', company: 'Agency Inc', date: '2021 - 2023' },
-  { role: 'Développeur Junior', company: 'Startup Ltd', date: '2020 - 2021' },
-] as const;
+export const EXPERIENCE: Experience[] = [
+  { role: 'Développeur Angular', company: 'Projets personnels & freelance', date: '2023 - Présent' },
+  { role: 'Professionnel de l\'industrie', company: 'Secteur métallurgie', date: '2003 - 2023' },
+];
 
-export const BIOGRAPHY = {
-  title: 'Qui je suis',
+export const BIOGRAPHY: Biography = {
+  title: 'Mon parcours',
   paragraphs: [
-    'Je suis un développeur passionné avec une forte motivation pour créer des produits numériques qui aident les gens. Mon parcours a commencé lorsque j\'ai écrit ma première ligne de code...',
-    'Je crois en un code propre, une conception centrée sur l\'utilisateur et un apprentissage continu.',
+    '20 ans dans l\'industrie m\'ont appris ce qu\'est vraiment la rigueur. Aujourd\'hui, je l\'applique au code.',
+    'Je ne suis pas venu au développement web par hasard. En métallurgie, j\'ai vu les outils numériques transformer un secteur entier. J\'ai compris que je pouvais avoir plus d\'impact en créant ces outils plutôt qu\'en les utilisant.',
+    'Formé dans un environnement où l\'erreur coûte cher, j\'ai développé une exigence qui me sert aujourd\'hui : chaque ligne de code doit être pensée pour durer. Autodidacte par nécessité, je ne me contente pas de faire fonctionner — je comprends pourquoi ça fonctionne, de la requête SQL au déploiement en production.',
+    'Cette expérience m\'a donné une vision systémique rare : je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.',
   ],
-} as const;
+};
 
-export interface Technology {
-  readonly name: string;
-  readonly category: string;
-  readonly icon: string;
-}
+export const WHAT_I_DO: WhatIDo[] = [
+  {
+    title: 'Applications complètes',
+    description: 'Je construis des applications de A à Z : de la base de données au déploiement. Angular moderne (standalone, signals, SSR), NestJS, PostgreSQL. Pas des démos — des applications en production qui tournent.',
+  },
+  {
+    title: 'Infrastructure',
+    description: 'Je gère ma propre infrastructure. VPS auto-hébergés, CI/CD avec Dokploy, services en production. Parce que comprendre comment ça fonctionne vraiment fait de moi un meilleur développeur.',
+  },
+];
 
-export const TECHNOLOGIES: readonly Technology[] = [
+export const WHAT_I_SEEK: WhatISeek = {
+  title: 'Ce que je cherche',
+  description: 'Un environnement où la tech sert un impact positif. GreenTech, industrie durable, projets à sens. Une équipe qui valorise la qualité technique et l\'apprentissage continu.',
+};
+
+export const TECHNOLOGIES: Technology[] = [
   { name: 'Angular', category: 'Framework', icon: 'angular' },
   { name: 'TypeScript', category: 'Langage', icon: 'typescript' },
   { name: 'Tailwind CSS', category: 'Styling', icon: 'tailwindcss' },
   { name: 'NestJS', category: 'Backend', icon: 'nestjs' },
   { name: 'PostgreSQL', category: 'Base de données', icon: 'postgresql' },
   { name: 'Docker', category: 'Devops', icon: 'docker' },
-] as const;
+];
