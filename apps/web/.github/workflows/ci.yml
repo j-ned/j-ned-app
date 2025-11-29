@@ -1,0 +1,64 @@
+name: Angular CI Build
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⚙️ Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurer Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.22.0
+
+      - name: 🗂️ Cache pnpm
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: 📥 Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: 🎨 Vérifier le formatage (Prettier)
+        run: pnpm run format:check
+
+      - name: 🔍 Linter le code (ESLint)
+        run: pnpm run lint
+
+      - name: 🧪 Exécuter les tests
+        run: pnpm run test
+
+      - name: 🏗️ Compiler le projet Angular
+        run: pnpm run build -- --configuration production
+
+      - name: ✅ Vérifier les artefacts du build
+        run: |
+          if [ ! -d "dist/angular-portfolio-app/browser" ]; then
+            echo "❌ Le dossier de build n'existe pas"
+            exit 1
+          fi
+          if [ ! -f "dist/angular-portfolio-app/browser/index.html" ]; then
+            echo "❌ Le fichier index.html est manquant"
+            exit 1
+          fi
+          echo "✅ Build réussi avec tous les fichiers nécessaires"
+          ls -lh dist/angular-portfolio-app/browser
