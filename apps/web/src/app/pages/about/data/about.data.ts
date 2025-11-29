@@ -53,19 +53,19 @@ export const HIGHLIGHTS: Highlight[] = [
     title: 'Exigence de production',
     description:
       'Formé dans un environnement où l\'erreur coûte cher, j\'écris du code pensé pour durer. Type-safe, testé, documenté.',
-    icon: 'lucide-shield-check',
+    icon: 'valid',
   },
   {
     title: 'Autonomie réelle',
     description:
       'Autodidacte par nécessité, je trouve des solutions quand il n\'y a pas de tutoriel. Je lis la doc, je comprends les sources, je creuse jusqu\'à résoudre.',
-    icon: 'lucide-target',
+    icon: 'book',
   },
   {
     title: 'Vision d\'ensemble',
     description:
       'Je ne code pas dans le vide. Je comprends le métier, l\'architecture, les contraintes. Vingt ans à optimiser des systèmes complexes, ça laisse des traces.',
-    icon: 'lucide-brain',
+    icon: 'spider-web',
   },
 ];
 
@@ -120,7 +120,7 @@ export const BIOGRAPHY: Biography = {
   paragraphs: [
     '20 ans dans l\'industrie m\'ont appris ce qu\'est vraiment la rigueur. Aujourd\'hui, je l\'applique au code.',
     'Je ne suis pas venu au développement web par hasard. En métallurgie, j\'ai vu les outils numériques transformer un secteur entier. J\'ai compris que je pouvais avoir plus d\'impact en créant ces outils plutôt qu\'en les utilisant.',
-    'Formé dans un environnement où l\'erreur coûte cher, j\'ai développé une exigence qui me sert aujourd\'hui : chaque ligne de code doit être pensée pour durer. Autodidacte par nécessité, je ne me contente pas de faire fonctionner — je comprends pourquoi ça fonctionne, de la requête SQL au déploiement en production.',
+    'Formé dans un environnement où l\'erreur coûte cher, j\'ai développé une exigence qui me sert aujourd\'hui : chaque ligne de code doit être pensée pour durer. Autodidacte par nécessité, je ne me contente pas de faire fonctionner, je comprends pourquoi ça fonctionne, de la requête SQL au déploiement en production.',
     'Cette expérience m\'a donné une vision systémique rare : je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.',
   ],
 };
@@ -128,11 +128,13 @@ export const BIOGRAPHY: Biography = {
 export const WHAT_I_DO: WhatIDo[] = [
   {
     title: 'Applications complètes',
-    description: 'Je construis des applications de A à Z : de la base de données au déploiement. Angular moderne (standalone, signals, SSR), NestJS, PostgreSQL. Pas des démos — des applications en production qui tournent.',
+    description:
+      'Je construis des applications de production de bout en bout : conception, Full Stack (Angular moderne, NestJS, PostgreSQL) et déploiement conteneurisé (Docker). Pas des démos, mais des systèmes qui tournent.',
   },
   {
     title: 'Infrastructure',
-    description: 'Je gère ma propre infrastructure. VPS auto-hébergés, CI/CD avec Dokploy, services en production. Parce que comprendre comment ça fonctionne vraiment fait de moi un meilleur développeur.',
+    description:
+      "JJe gère l'intégralité de mon infrastructure : auto-hébergement (VPS) et déploiement continu (CI/CD) via Dokploy, jusqu'aux services en production. Ce contrôle opérationnel total garantit la fiabilité et fait de moi un développeur plus complet.",
   },
 ];
 

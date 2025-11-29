@@ -43,7 +43,7 @@ export const SPECIALITIES: readonly Speciality[] = [
   {
     title: 'Backend & Data',
     description:
-      'APIs REST avec NestJS : architecture modulaire, validation stricte des données, gestion d\'erreurs professionnelle. PostgreSQL optimisé pour la performance et l\'intégrité des données.',
+      "APIs REST avec NestJS : architecture modulaire, validation stricte des données, gestion d'erreurs professionnelle. PostgreSQL optimisé pour la performance et l'intégrité des données.",
   },
   {
     title: 'Déploiement & Infrastructure',

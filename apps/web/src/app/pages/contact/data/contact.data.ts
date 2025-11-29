@@ -1,0 +1,53 @@
+export interface ContactInfo {
+  readonly email: string;
+  readonly phone: string;
+  readonly location: string;
+}
+
+export interface SocialLink {
+  readonly url: string;
+  readonly label: string;
+  readonly icon: string;
+}
+
+export interface SocialLinks {
+  readonly linkedin: SocialLink;
+  readonly github: SocialLink;
+  readonly email: SocialLink;
+  readonly phone: SocialLink;
+  readonly twitter: SocialLink;
+}
+
+export const CONTACT_INFO: ContactInfo = {
+  email: 'contact@nedellec-julien.fr',
+  phone: '+33 6 22 86 92 79',
+  location: 'Voisins-Le-Bretonneux, France',
+} as const;
+
+export const SOCIAL_LINKS: SocialLinks = {
+  linkedin: {
+    url: 'https://www.linkedin.com/in/julien-nedellec',
+    label: 'LinkedIn',
+    icon: 'lucide-linkedin',
+  },
+  github: {
+    url: 'https://github.com/djoudj-dev',
+    label: 'GitHub',
+    icon: 'lucide-github',
+  },
+  email: {
+    url: 'mailto:contact@nedellec-julien.fr',
+    label: 'Email',
+    icon: 'lucide-mail',
+  },
+  phone: {
+    url: 'tel:+33622869279',
+    label: 'Téléphone',
+    icon: 'lucide-phone',
+  },
+  twitter: {
+    url: 'https://twitter.com/djoudj_dev',
+    label: 'Twitter',
+    icon: 'lucide-twitter',
+  },
+} as const;

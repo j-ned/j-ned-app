@@ -12,7 +12,10 @@ import { NAV_LINKS } from './nav-items';
   },
   template: `
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-      <a routerLink="/" class="flex items-center gap-3 text-2xl font-display font-bold text-primary">
+      <a
+        routerLink="/"
+        class="flex items-center gap-3 text-2xl font-display font-bold text-primary"
+      >
         <div
           class="p-2 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg border border-primary/30 hover:border-primary/50 transition-all"
         >
@@ -100,6 +103,7 @@ import { NAV_LINKS } from './nav-items';
           @if (item.href.startsWith('#')) {
             <a
               [href]="item.href"
+              (click)="closeMobileMenu()"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
               <svg class="w-5 h-5">
@@ -110,6 +114,7 @@ import { NAV_LINKS } from './nav-items';
           } @else {
             <a
               [routerLink]="item.href"
+              (click)="closeMobileMenu()"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
               <svg class="w-5 h-5">
@@ -122,6 +127,7 @@ import { NAV_LINKS } from './nav-items';
         <a
           href="/docs/CV_JULIEN_NEDELLEC.pdf"
           download
+          (click)="closeMobileMenu()"
           class="flex items-center gap-3 text-lg font-medium text-primary hover:text-primary/80 transition-colors py-2 border-t border-white/5 pt-4 mt-2"
         >
           <svg class="w-5 h-5">
@@ -167,6 +173,10 @@ export class Header {
 
   protected toggleMobileMenu(): void {
     this.isMobileMenuOpen.update((value) => !value);
+  }
+
+  protected closeMobileMenu(): void {
+    this.isMobileMenuOpen.set(false);
   }
 
   protected toggleTheme(): void {

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   /* Mappe les couleurs Tailwind aux variables de thème */
@@ -11,17 +11,17 @@
 
 /* Mode sombre par défaut */
 :root {
-  --theme-primary: #3b82f6; /* blue-500 */
-  --theme-accent: #06b6d4; /* cyan-500 */
-  --theme-muted: #94a3b8; /* slate-400 */
+  --theme-primary: #60a5fa; /* blue-400 - Meilleur contraste sur fond sombre (#1e1e1e) */
+  --theme-accent: #a78bfa; /* violet-400 - Meilleur contraste sur fond sombre */
+  --theme-muted: #cbd5e1; /* slate-300 - Meilleur contraste sur fond sombre */
   --theme-background: #1e1e1e; /* slate-900 */
-  --theme-foreground: #f1f5f9; /* slate-100 */
+  --theme-foreground: #f8fafc; /* slate-50 - Blanc plus pur pour meilleur contraste */
 }
 
 /* Mode clair */
 :root:not(.dark) {
-  --theme-primary: #2563eb; /* blue-600 */
-  --theme-accent: #0891b2; /* cyan-600 */
+  --theme-primary: #1d4ed8; /* blue-700 - Plus foncé pour meilleur contraste */
+  --theme-accent: #6d28d9; /* violet-700 - Plus foncé pour meilleur contraste */
   --theme-muted: #64748b; /* slate-500 */
   --theme-background: #ffffff;
   --theme-foreground: #0f172a; /* slate-900 */
@@ -31,5 +31,7 @@
 body {
   background-color: var(--theme-background);
   color: var(--theme-foreground);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }

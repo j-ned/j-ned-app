@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DIPLOMAS } from './data/about.data';
 
 @Component({
   selector: 'app-about-diploma',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div
@@ -37,15 +38,15 @@ import { DIPLOMAS } from './data/about.data';
                 <span
                   class="px-2.5 py-1 text-xs rounded-lg bg-primary/10 text-foreground border border-primary/20 hover:border-primary/40 transition-colors"
                 >
-                          {{ skill }}
-                        </span>
+                  {{ skill }}
+                </span>
               }
             </div>
           </div>
         </div>
       }
     </div>
-  `
+  `,
 })
 export class AboutDiploma {
   protected readonly diplomas = signal(DIPLOMAS);
