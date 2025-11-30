@@ -1,10 +1,10 @@
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
-import { SeoService } from '../../shared/services/seo.service';
 import { PROJECTS } from './data/projects.data';
+import { SeoManager } from '../../shared/services/seo.manager';
 
 export const projectsSeoResolver: ResolveFn<void> = () => {
-  const seoService = inject(SeoService);
+  const seoService = inject(SeoManager);
 
   seoService.addStructuredData({
     '@context': 'https://schema.org',

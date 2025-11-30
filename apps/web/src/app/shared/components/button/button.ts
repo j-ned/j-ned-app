@@ -72,7 +72,7 @@ export class ButtonComponent {
       accent:
         'bg-gradient-to-br from-blue-600 to-violet-600 text-white hover:from-blue-700 hover:to-violet-700 hover:-translate-y-0.5 shadow-lg shadow-violet-500/25',
       ghost: 'bg-transparent text-foreground hover:bg-white/5',
-      link: 'bg-transparent text-primary p-0 hover:underline',
+      link: 'bg-transparent text-primary p-0 hover:underline dark:text-blue-400 dark:opacity-90',
       danger: 'bg-red-500 text-white hover:bg-red-600 hover:-translate-y-0.5',
     }[this.variant()];
 

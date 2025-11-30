@@ -13,7 +13,7 @@ export interface SeoData {
 @Injectable({
   providedIn: 'root',
 })
-export class SeoService {
+export class SeoManager {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
 

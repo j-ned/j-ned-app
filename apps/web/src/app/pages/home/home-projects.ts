@@ -1,11 +1,13 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { PROJECTS_SECTION } from './data/home.data';
 import { FEATURED_PROJECTS } from '../projects/data/projects.data';
 import { ProjectCard } from '../projects/components/project-card';
+import { ButtonComponent } from '../../shared/components/button/button';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home-projects',
-  imports: [ProjectCard],
+  imports: [ProjectCard, ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -20,12 +22,6 @@ import { ProjectCard } from '../projects/components/project-card';
               {{ projectsSection().description }}
             </p>
           </div>
-          <a
-            href="/projects"
-            class="hidden md:inline-flex items-center gap-2 text-muted hover:text-primary transition-colors"
-          >
-            Tous mes projets →
-          </a>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -34,13 +30,13 @@ import { ProjectCard } from '../projects/components/project-card';
           }
         </div>
 
-        <div class="mt-8 text-center md:hidden">
-          <a
-            href="/projects"
-            class="inline-flex items-center gap-2 text-muted hover:text-primary transition-colors"
-          >
-            Tous mes projets →
-          </a>
+        <div class="mt-8 text-center">
+          <app-button variant="primary" size="md" radius="md" (clicked)="goToProjects()">
+            Voir tous les projets
+            <svg class="w-5 h-5">
+              <use href="/icons/sprite.svg#lucide-laptop"></use>
+            </svg>
+          </app-button>
         </div>
       </div>
     </section>
@@ -49,4 +45,10 @@ import { ProjectCard } from '../projects/components/project-card';
 export class HomeProjects {
   protected readonly projectsSection = signal(PROJECTS_SECTION);
   protected readonly featuredProjects = signal(FEATURED_PROJECTS);
+
+  private readonly router = inject(Router);
+
+  goToProjects() {
+    this.router.navigate(['/projects']);
+  }
 }

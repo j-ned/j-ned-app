@@ -5,16 +5,7 @@ export const PROJECTS: Project[] = [
     id: 'arcadia',
     title: 'Zoo Arcadia',
     category: 'Application Web',
-    tags: [
-      'Angular',
-      'Typescript',
-      'TailwindCSS',
-      'NestJS',
-      'PostgreSQL',
-      'MongoDB',
-      'JWT',
-      'Chart.js',
-    ],
+    tags: ['Angular', 'Typescript', 'TailwindCSS', 'NestJS', 'PostgreSQL', 'MongoDB', 'JWT'],
     description:
       "Application frontend moderne pour le Zoo Arcadia. Interface interactive pour la gestion complète d'un parc zoologique avec tableaux de bord dédiés pour administrateurs, vétérinaires et employés.",
     image: '/images/arcadia.png',

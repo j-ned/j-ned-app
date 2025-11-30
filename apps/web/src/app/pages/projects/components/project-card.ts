@@ -38,7 +38,7 @@ import type { Project } from '../models/project.model';
           {{ project().title }}
         </h3>
 
-        <p class="text-muted line-clamp-2 mb-4 grow text-sm leading-relaxed">
+        <p class="text-muted mb-4 grow text-sm leading-relaxed">
           {{ project().description }}
         </p>
 

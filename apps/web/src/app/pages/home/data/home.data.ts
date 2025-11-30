@@ -53,7 +53,7 @@ export const SPECIALITIES: readonly Speciality[] = [
 ] as const;
 
 export const PROJECTS_SECTION: ProjectsSection = {
-  title: 'Projets sélectionnés',
+  title: 'Aperçu des projets',
   description:
     "Une sélection de mes réalisations récentes. Chaque projet met l'accent sur la qualité du code, la performance et l'expérience utilisateur.",
 } as const;
