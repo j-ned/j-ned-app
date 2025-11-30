@@ -17,7 +17,7 @@ import { NAV_LINKS } from './nav-items';
         class="flex items-center gap-3 text-2xl font-display font-bold text-primary"
       >
         <div
-          class="p-2 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg border border-primary/30 hover:border-primary/50 transition-all"
+          class="p-2 bg-linear-to-br from-primary/20 to-accent/20 rounded-lg border border-primary/30 hover:border-primary/50 transition-all"
         >
           <svg class="w-6 h-6">
             <use href="/icons/sprite.svg#lucide-code-xml"></use>
@@ -96,7 +96,6 @@ import { NAV_LINKS } from './nav-items';
       </div>
     </div>
 
-    <!-- Mobile Menu -->
     <div [ngClass]="{ hidden: !isMobileMenuOpen() }" class="md:hidden border-t border-white/5">
       <nav class="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
         @for (item of navItems(); track item) {

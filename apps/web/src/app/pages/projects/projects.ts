@@ -26,7 +26,6 @@ import { PROJECTS } from './data/projects.data';
           </p>
         </div>
 
-        <!-- Filter Bar -->
         <div class="flex flex-wrap gap-4 mb-12">
           @for (filter of filters(); track filter; let i = $index) {
             <button
@@ -42,7 +41,6 @@ import { PROJECTS } from './data/projects.data';
           }
         </div>
 
-        <!-- Projects Grid - 3 colonnes -->
         @defer (on viewport) {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             @for (project of paginatedProjects(); track project.id) {
@@ -65,10 +63,8 @@ import { PROJECTS } from './data/projects.data';
           </div>
         }
 
-        <!-- Pagination -->
         @if (totalPages() > 1) {
           <div class="flex items-center justify-center gap-2 mt-12">
-            <!-- Bouton Précédent -->
             <button
               (click)="previousPage()"
               [disabled]="currentPage() === 1"
@@ -81,7 +77,6 @@ import { PROJECTS } from './data/projects.data';
               ← Précédent
             </button>
 
-            <!-- Numéros de page -->
             @for (page of pageNumbers(); track page) {
               <button
                 (click)="goToPage(page)"
@@ -95,7 +90,6 @@ import { PROJECTS } from './data/projects.data';
               </button>
             }
 
-            <!-- Bouton Suivant -->
             <button
               (click)="nextPage()"
               [disabled]="currentPage() === totalPages()"
@@ -109,7 +103,6 @@ import { PROJECTS } from './data/projects.data';
             </button>
           </div>
 
-          <!-- Info pagination -->
           <div class="text-center mt-6">
             <p class="text-sm text-muted">
               Page {{ currentPage() }} sur {{ totalPages() }} ({{

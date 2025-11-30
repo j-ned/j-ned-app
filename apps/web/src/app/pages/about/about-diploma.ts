@@ -7,7 +7,7 @@ import { DIPLOMAS } from './data/about.data';
   host: { class: 'block' },
   template: `
     <div
-      class="bg-gradient-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
+      class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
     >
       <div class="flex items-center gap-2 mb-6">
         <svg class="w-6 h-6 text-primary">

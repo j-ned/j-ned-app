@@ -19,7 +19,7 @@ import { HIGHLIGHTS } from './data/about.data';
             class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-accent/50 hover:bg-accent/5 transition-all group"
           >
             <div
-              class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
+              class="w-10 h-10 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
             >
               <svg class="w-6 h-6 text-accent">
                 <use [attr.href]="'/icons/sprite.svg#' + highlight.icon"></use>

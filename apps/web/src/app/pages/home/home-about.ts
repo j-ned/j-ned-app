@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button';
 import { ABOUT_SECTION } from './data/home.data';
@@ -28,13 +28,9 @@ import { ABOUT_SECTION } from './data/home.data';
     </div>
   `,
 })
-export class HomeAbout implements OnInit {
+export class HomeAbout {
   protected readonly aboutSection = signal(ABOUT_SECTION);
   private readonly router = inject(Router);
-
-  ngOnInit(): void {
-    // Initialization logic if needed
-  }
 
   goToAbout() {
     this.router.navigate(['/about']);

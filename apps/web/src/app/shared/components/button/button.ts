@@ -45,7 +45,6 @@ export type ButtonRadius = 'none' | 'sm' | 'md' | 'lg' | 'full';
   `,
 })
 export class ButtonComponent {
-  // Inputs (signals)
   readonly variant = input<ButtonVariant>('primary');
   readonly size = input<ButtonSize>('md');
   readonly radius = input<ButtonRadius>('md');
@@ -60,15 +59,12 @@ export class ButtonComponent {
   readonly target = input<string | null>(null);
   readonly rel = input<string | null>(null);
 
-  // Output
   readonly clicked = output<MouseEvent>();
 
-  // Computed classes using Tailwind CSS
   readonly classes = computed(() => {
     const baseClasses =
       'inline-flex items-center justify-center gap-2 font-semibold text-center whitespace-nowrap transition-all duration-200 cursor-pointer border-0 outline-none no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2';
 
-    // Variant styles
     const variantClasses = {
       primary: 'bg-blue-600 text-white hover:bg-blue-700 hover:-translate-y-0.5',
       secondary:
@@ -80,14 +76,12 @@ export class ButtonComponent {
       danger: 'bg-red-500 text-white hover:bg-red-600 hover:-translate-y-0.5',
     }[this.variant()];
 
-    // Size styles
     const sizeClasses = {
       sm: 'px-4 py-2 text-sm',
       md: 'px-6 py-3 text-base',
       lg: 'px-8 py-4 text-lg',
     }[this.size()];
 
-    // Radius styles
     const radiusClasses = {
       none: 'rounded-none',
       sm: 'rounded',
@@ -96,7 +90,6 @@ export class ButtonComponent {
       full: 'rounded-full',
     }[this.radius()];
 
-    // Elevation styles
     const elevationClasses = {
       0: '',
       1: 'shadow-sm',
@@ -105,7 +98,6 @@ export class ButtonComponent {
       4: 'shadow-lg',
     }[this.elevation()];
 
-    // State classes
     const stateClasses = [
       this.fullWidth() ? 'w-full' : '',
       this.disabled() ? 'opacity-50 cursor-not-allowed' : '',

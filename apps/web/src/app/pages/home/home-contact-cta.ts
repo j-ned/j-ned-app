@@ -1,11 +1,4 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  OnInit,
-  inject,
-  signal,
-  PLATFORM_ID,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button';
@@ -42,14 +35,10 @@ import { CTA_SECTION } from './data/home.data';
     </section>
   `,
 })
-export class HomeContactCta implements OnInit {
+export class HomeContactCta {
   protected readonly ctaSection = signal(CTA_SECTION);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
-
-  ngOnInit(): void {
-    // Initialization logic if needed
-  }
 
   goToContact() {
     this.router.navigate(['/contact']);

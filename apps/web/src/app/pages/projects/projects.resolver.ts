@@ -6,7 +6,6 @@ import { PROJECTS } from './data/projects.data';
 export const projectsSeoResolver: ResolveFn<void> = () => {
   const seoService = inject(SeoService);
 
-  // Add dynamic structured data for projects
   seoService.addStructuredData({
     '@context': 'https://schema.org',
     '@type': 'ItemList',

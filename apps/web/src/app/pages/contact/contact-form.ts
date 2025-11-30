@@ -8,7 +8,6 @@ import { CONTACT_INFO, SOCIAL_LINKS } from './data/contact.data';
   template: `
     <section id="contact" class="py-20 px-6 bg-linear-to-b from-transparent to-white/5">
       <div class="max-w-3xl mx-auto">
-        <!-- En-tête -->
         <div class="text-center mb-16">
           <h2 class="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Contactez-moi</h2>
           <p class="text-lg text-muted/80">
@@ -16,7 +15,6 @@ import { CONTACT_INFO, SOCIAL_LINKS } from './data/contact.data';
           </p>
         </div>
 
-        <!-- Barre de réseaux sociaux -->
         <div class="mb-16">
           <div
             class="flex items-center justify-center gap-6 p-6 rounded-3xl bg-linear-to-br from-white/10 to-white/5 border border-white/20 backdrop-blur-md shadow-xl"
@@ -79,12 +77,10 @@ import { CONTACT_INFO, SOCIAL_LINKS } from './data/contact.data';
           </div>
         </div>
 
-        <!-- Coordonnées et bouton email -->
         <div
           class="bg-linear-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 md:p-10 backdrop-blur-sm shadow-2xl"
         >
           <div class="text-center space-y-8">
-            <!-- Email -->
             <div>
               <h3 class="text-lg font-semibold mb-3 text-muted/80">Email</h3>
               <a
@@ -95,7 +91,6 @@ import { CONTACT_INFO, SOCIAL_LINKS } from './data/contact.data';
               </a>
             </div>
 
-            <!-- Téléphone -->
             <div>
               <h3 class="text-lg font-semibold mb-3 text-muted/80">Téléphone</h3>
               <a
@@ -106,13 +101,11 @@ import { CONTACT_INFO, SOCIAL_LINKS } from './data/contact.data';
               </a>
             </div>
 
-            <!-- Localisation -->
             <div>
               <h3 class="text-lg font-semibold mb-3 text-muted/80">Localisation</h3>
               <p class="text-xl text-foreground/90">{{ contactInfo().location }}</p>
             </div>
 
-            <!-- Bouton principal -->
             <div class="pt-6">
               <a
                 [href]="'mailto:' + contactInfo().email + '?subject=Contact depuis votre portfolio'"

@@ -18,10 +18,8 @@ export class SeoService {
   private readonly meta = inject(Meta);
 
   updateMetaTags(data: SeoData): void {
-    // Update title
     this.title.setTitle(data.title);
 
-    // Update or add meta tags
     const tags = [
       { name: 'description', content: data.description },
       { name: 'keywords', content: data.keywords || '' },
@@ -52,7 +50,6 @@ export class SeoService {
       }
     });
 
-    // Update canonical URL
     if (data.url) {
       this.updateCanonicalUrl(data.url);
     }

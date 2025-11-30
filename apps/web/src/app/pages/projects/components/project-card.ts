@@ -24,13 +24,11 @@ import type { Project } from '../models/project.model';
           </div>
         }
 
-        <!-- Overlay -->
         <div
           class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-300"
         ></div>
       </div>
 
-      <!-- Content -->
       <div class="p-6 flex flex-col grow">
         <span class="text-accent text-sm font-medium uppercase tracking-wider mb-2">
           {{ project().category }}
@@ -44,7 +42,6 @@ import type { Project } from '../models/project.model';
           {{ project().description }}
         </p>
 
-        <!-- Tags -->
         <div class="flex flex-wrap gap-2 mb-4">
           @for (tag of project().tags; track tag) {
             <span
@@ -55,7 +52,6 @@ import type { Project } from '../models/project.model';
           }
         </div>
 
-        <!-- Links -->
         @if (
           project().liveUrl || project().repoUrl || project().repoUrlFront || project().repoUrlBack
         ) {

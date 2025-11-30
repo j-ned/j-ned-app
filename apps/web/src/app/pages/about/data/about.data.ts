@@ -24,7 +24,7 @@ export const SOCIAL_BUTTONS: SocialButton[] = [
   {
     icon: 'lucide-linkedin',
     label: 'LinkedIn',
-    href: 'https://www.linkedin.com/in/julien-nedellec/',
+    href: 'https://www.linkedin.com/in/nedellec-julien/',
   },
   {
     icon: 'lucide-github',
@@ -37,14 +37,14 @@ export const SOCIAL_BUTTONS: SocialButton[] = [
     href: 'mailto:contact@julien-nedellec.fr',
   },
   {
-    icon: 'lucide-message-circle',
+    icon: 'bi-discord',
     label: 'Discord',
     href: 'https://discord.gg/nedellec_julien',
   },
   {
-    icon: 'lucide-twitter',
+    icon: 'bi-twitter-x',
     label: 'X',
-    href: 'https://x.com/djoudjDev',
+    href: 'https://x.com/djoudj_78',
   },
 ];
 
@@ -52,19 +52,19 @@ export const HIGHLIGHTS: Highlight[] = [
   {
     title: 'Exigence de production',
     description:
-      'Formé dans un environnement où l\'erreur coûte cher, j\'écris du code pensé pour durer. Type-safe, testé, documenté.',
+      "Formé dans un environnement où l'erreur coûte cher, j'écris du code pensé pour durer. Type-safe, testé, documenté.",
     icon: 'valid',
   },
   {
     title: 'Autonomie réelle',
     description:
-      'Autodidacte par nécessité, je trouve des solutions quand il n\'y a pas de tutoriel. Je lis la doc, je comprends les sources, je creuse jusqu\'à résoudre.',
+      "Autodidacte par nécessité, je trouve des solutions quand il n'y a pas de tutoriel. Je lis la doc, je comprends les sources, je creuse jusqu'à résoudre.",
     icon: 'book',
   },
   {
-    title: 'Vision d\'ensemble',
+    title: "Vision d'ensemble",
     description:
-      'Je ne code pas dans le vide. Je comprends le métier, l\'architecture, les contraintes. Vingt ans à optimiser des systèmes complexes, ça laisse des traces.',
+      "Je ne code pas dans le vide. Je comprends le métier, l'architecture, les contraintes. Vingt ans à optimiser des systèmes complexes, ça laisse des traces.",
     icon: 'spider-web',
   },
 ];
@@ -111,17 +111,21 @@ export const PAGE_METADATA: PageMetadata = {
 export const QUICK_STATS: QuickStat[] = [];
 
 export const EXPERIENCE: Experience[] = [
-  { role: 'Développeur Angular', company: 'Projets personnels & freelance', date: '2023 - Présent' },
-  { role: 'Professionnel de l\'industrie', company: 'Secteur métallurgie', date: '2003 - 2023' },
+  {
+    role: 'Développeur Angular',
+    company: 'Projets personnels & freelance',
+    date: '2023 - Présent',
+  },
+  { role: "Professionnel de l'industrie", company: 'Secteur métallurgie', date: '2003 - 2023' },
 ];
 
 export const BIOGRAPHY: Biography = {
   title: 'Mon parcours',
   paragraphs: [
-    '20 ans dans l\'industrie m\'ont appris ce qu\'est vraiment la rigueur. Aujourd\'hui, je l\'applique au code.',
-    'Je ne suis pas venu au développement web par hasard. En métallurgie, j\'ai vu les outils numériques transformer un secteur entier. J\'ai compris que je pouvais avoir plus d\'impact en créant ces outils plutôt qu\'en les utilisant.',
-    'Formé dans un environnement où l\'erreur coûte cher, j\'ai développé une exigence qui me sert aujourd\'hui : chaque ligne de code doit être pensée pour durer. Autodidacte par nécessité, je ne me contente pas de faire fonctionner, je comprends pourquoi ça fonctionne, de la requête SQL au déploiement en production.',
-    'Cette expérience m\'a donné une vision systémique rare : je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.',
+    "20 ans dans l'industrie m'ont appris ce qu'est vraiment la rigueur. Aujourd'hui, je l'applique au code.",
+    "Je ne suis pas venu au développement web par hasard. En métallurgie, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
+    "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence qui me sert aujourd'hui : chaque ligne de code doit être pensée pour durer. Autodidacte par nécessité, je ne me contente pas de faire fonctionner, je comprends pourquoi ça fonctionne, de la requête SQL au déploiement en production.",
+    "Cette expérience m'a donné une vision systémique rare : je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.",
   ],
 };
 
@@ -140,7 +144,8 @@ export const WHAT_I_DO: WhatIDo[] = [
 
 export const WHAT_I_SEEK: WhatISeek = {
   title: 'Ce que je cherche',
-  description: 'Un environnement où la tech sert un impact positif. GreenTech, industrie durable, projets à sens. Une équipe qui valorise la qualité technique et l\'apprentissage continu.',
+  description:
+    "Un environnement où la tech sert un impact positif. GreenTech, industrie durable, projets à sens. Une équipe qui valorise la qualité technique et l'apprentissage continu.",
 };
 
 export const TECHNOLOGIES: Technology[] = [

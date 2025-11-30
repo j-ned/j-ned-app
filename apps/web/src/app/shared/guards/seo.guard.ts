@@ -13,10 +13,8 @@ export const seoGuard = (route: ActivatedRouteSnapshot) => {
   if (seoData) {
     const { structuredData, ...metaData } = seoData;
 
-    // Update meta tags
     seoService.updateMetaTags(metaData);
 
-    // Add structured data if provided
     if (structuredData) {
       seoService.addStructuredData(structuredData);
     }

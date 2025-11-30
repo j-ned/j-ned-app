@@ -24,9 +24,7 @@ import { PROFILE_INFO, SOCIAL_BUTTONS } from './data/about.data';
           />
         </div>
 
-        <!-- Informations -->
         <div class="flex-1 text-center md:text-left space-y-3">
-          <!-- Nom -->
           <div>
             <h1 class="text-2xl md:text-3xl font-bold text-foreground mb-1">
               {{ profileInfo().displayName }}
@@ -34,7 +32,6 @@ import { PROFILE_INFO, SOCIAL_BUTTONS } from './data/about.data';
             <p class="text-lg text-muted">Développeur Angular | NestJS & Typescript</p>
           </div>
 
-          <!-- Localisation et disponibilité -->
           <div
             class="flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3 text-sm"
           >
@@ -58,7 +55,6 @@ import { PROFILE_INFO, SOCIAL_BUTTONS } from './data/about.data';
             </div>
           </div>
 
-          <!-- Réseaux sociaux -->
           <div class="flex items-center justify-center md:justify-start gap-3 pt-2">
             @for (social of socialButtons(); track social.label) {
               <a

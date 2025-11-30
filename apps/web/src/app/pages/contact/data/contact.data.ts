@@ -26,7 +26,7 @@ export const CONTACT_INFO: ContactInfo = {
 
 export const SOCIAL_LINKS: SocialLinks = {
   linkedin: {
-    url: 'https://www.linkedin.com/in/julien-nedellec',
+    url: 'https://www.linkedin.com/in/nedellec-julien/',
     label: 'LinkedIn',
     icon: 'lucide-linkedin',
   },
@@ -46,8 +46,8 @@ export const SOCIAL_LINKS: SocialLinks = {
     icon: 'lucide-phone',
   },
   twitter: {
-    url: 'https://twitter.com/djoudj_dev',
-    label: 'Twitter',
-    icon: 'lucide-twitter',
+    url: 'https://x.com/djoudj_78',
+    label: 'X (Twitter)',
+    icon: 'bi-twitter-x',
   },
 } as const;
