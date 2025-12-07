@@ -26,7 +26,7 @@ export interface CTASection {
 }
 
 export const HERO_DATA = {
-  name: 'Julien Nedellec',
+  name: 'Julien NÉDELLEC',
   tagline: "Développeur d'applications web modernes avec",
   technologies: ['Angular', 'NestJS'],
   description:
