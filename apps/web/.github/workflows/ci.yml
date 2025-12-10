@@ -52,13 +52,13 @@ jobs:
 
       - name: ✅ Vérifier les artefacts du build
         run: |
-          if [ ! -d "dist/angular-portfolio-app/browser" ]; then
+          if [ ! -d "browser" ]; then
             echo "❌ Le dossier de build n'existe pas"
             exit 1
           fi
-          if [ ! -f "dist/angular-portfolio-app/browser/index.html" ]; then
+          if [ ! -f "browser/index.html" ]; then
             echo "❌ Le fichier index.html est manquant"
             exit 1
           fi
           echo "✅ Build réussi avec tous les fichiers nécessaires"
-          ls -lh dist/angular-portfolio-app/browser
+          ls -lh browser
