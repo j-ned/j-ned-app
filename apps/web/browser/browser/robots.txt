@@ -1,9 +1,0 @@
-# https://www.robotstxt.org/robotstxt.html
-User-agent: *
-Allow: /
-
-# Sitemap
-Sitemap: https://www.julien-nedellec.fr/sitemap.xml
-
-# Disallow specific files/folders if needed
-Disallow: /api/
