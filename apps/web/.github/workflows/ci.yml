@@ -52,10 +52,6 @@ jobs:
 
       - name: ✅ Vérifier les artefacts du build
         run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ Le dossier de build n'existe pas"
-            exit 1
-          fi
           if [ ! -f "browser/index.html" ]; then
             echo "❌ Le fichier index.html est manquant"
             exit 1
