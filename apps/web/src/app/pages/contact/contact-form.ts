@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { CONTACT_INFO, SOCIAL_LINKS } from './data/contact.data';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { CONTACT_GATEWAY } from '../../core/contact/gateways';
 
 @Component({
   selector: 'app-contact-form',
@@ -124,6 +125,13 @@ import { CONTACT_INFO, SOCIAL_LINKS } from './data/contact.data';
   `,
 })
 export class ContactForm {
-  protected readonly contactInfo = signal(CONTACT_INFO);
-  protected readonly socialLinks = signal(SOCIAL_LINKS);
+  private contactGateway = inject(CONTACT_GATEWAY);
+
+  private contactInfoResource = this.contactGateway.getContactInfo();
+  protected readonly contactInfo = computed(() => this.contactInfoResource.value());
+
+  private socialLinksObservable = this.contactGateway.getSocialLinks();
+  protected readonly socialLinks = toSignal(this.socialLinksObservable, {
+    initialValue: { linkedin: { url: '', label: '', icon: '' }, github: { url: '', label: '', icon: '' }, email: { url: '', label: '', icon: '' }, phone: { url: '', label: '', icon: '' }, twitter: { url: '', label: '', icon: '' } }
+  });
 }

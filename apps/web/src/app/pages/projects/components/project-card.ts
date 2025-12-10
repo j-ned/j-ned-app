@@ -1,5 +1,5 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
-import type { Project } from '../models/project.model';
+import type { Project } from '../../../core/projects/models';
 
 @Component({
   selector: 'app-project-card',

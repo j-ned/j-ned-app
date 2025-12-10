@@ -1,5 +1,6 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
-import { DIPLOMAS } from './data/about.data';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { PROFILE_GATEWAY } from '../../core/profile/gateways';
 
 @Component({
   selector: 'app-about-diploma',
@@ -49,5 +50,7 @@ import { DIPLOMAS } from './data/about.data';
   `,
 })
 export class AboutDiploma {
-  protected readonly diplomas = signal(DIPLOMAS);
+  private profileGateway = inject(PROFILE_GATEWAY);
+  private diplomasObservable = this.profileGateway.getDiplomas();
+  protected readonly diplomas = toSignal(this.diplomasObservable, { initialValue: [] });
 }

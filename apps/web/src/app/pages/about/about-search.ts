@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { WHAT_I_SEEK } from './data/about.data';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { PROFILE_GATEWAY } from '../../core/profile/gateways';
 
 @Component({
   selector: 'app-about-search',
@@ -13,14 +14,16 @@ import { WHAT_I_SEEK } from './data/about.data';
         <svg class="w-5 h-5 text-accent">
           <use href="/icons/sprite.svg#lucide-compass"></use>
         </svg>
-        <h3 class="font-bold text-2xl text-foreground">{{ whatISeek().title }}</h3>
+        <h3 class="font-bold text-2xl text-foreground">{{ whatISeek()?.title }}</h3>
       </div>
       <p class="text-muted text-sm leading-relaxed">
-        {{ whatISeek().description }}
+        {{ whatISeek()?.description }}
       </p>
     </section>
   `,
 })
 export class AboutSearch {
-  protected readonly whatISeek = signal(WHAT_I_SEEK);
+  private profileGateway = inject(PROFILE_GATEWAY);
+  private whatISeekObservable = this.profileGateway.getWhatISeek();
+  protected readonly whatISeek = toSignal(this.whatISeekObservable);
 }

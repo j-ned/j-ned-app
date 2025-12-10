@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { BIOGRAPHY } from './data/about.data';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { PROFILE_GATEWAY } from '../../core/profile/gateways';
 
 @Component({
   selector: 'app-about-journey',
@@ -22,5 +22,7 @@ import { BIOGRAPHY } from './data/about.data';
   `,
 })
 export class AboutJourney {
-  protected readonly biography = signal(BIOGRAPHY);
+  private profileGateway = inject(PROFILE_GATEWAY);
+  private biographyResource = this.profileGateway.getBiography();
+  protected readonly biography = computed(() => this.biographyResource.value());
 }

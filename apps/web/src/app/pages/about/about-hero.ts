@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NgOptimizedImage } from '@angular/common';
-import { PROFILE_INFO, SOCIAL_BUTTONS } from './data/about.data';
+import { PROFILE_GATEWAY } from '../../core/profile/gateways';
 
 @Component({
   selector: 'app-about-hero',
@@ -76,6 +77,13 @@ import { PROFILE_INFO, SOCIAL_BUTTONS } from './data/about.data';
   `,
 })
 export class AboutHero {
-  protected readonly profileInfo = signal(PROFILE_INFO);
-  protected readonly socialButtons = signal(SOCIAL_BUTTONS);
+  private profileGateway = inject(PROFILE_GATEWAY);
+
+  // Load profile info via gateway
+  private profileResource = this.profileGateway.getProfileInfo();
+  protected readonly profileInfo = computed(() => this.profileResource.value());
+
+  // Load social buttons
+  private socialButtonsObservable = this.profileGateway.getSocialButtons();
+  protected readonly socialButtons = toSignal(this.socialButtonsObservable, { initialValue: [] });
 }

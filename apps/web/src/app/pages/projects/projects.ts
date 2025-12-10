@@ -7,13 +7,17 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ProjectCard } from './components/project-card';
-import { PROJECTS } from './data/projects.data';
+import { PROJECTS_GATEWAY } from '../../core/projects/gateways';
+import { FilterProjectsUseCase } from '../../core/projects/use-cases/filter-projects.use-case';
+import { PaginateProjectsUseCase } from '../../core/projects/use-cases/paginate-projects.use-case';
 
 @Component({
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ProjectCard],
+  providers: [FilterProjectsUseCase, PaginateProjectsUseCase],
   template: `
     <main
       class="min-h-screen pt-20 pb-16 bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
@@ -27,7 +31,7 @@ import { PROJECTS } from './data/projects.data';
         </div>
 
         <div class="flex flex-wrap gap-4 mb-12">
-          @for (filter of filters(); track filter; let i = $index) {
+          @for (filter of filters(); track filter) {
             <button
               (click)="setFilter(filter)"
               [class]="
@@ -119,30 +123,32 @@ import { PROJECTS } from './data/projects.data';
 export class Projects {
   private readonly document = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly projectsGateway = inject(PROJECTS_GATEWAY);
+  private readonly filterUseCase = inject(FilterProjectsUseCase);
+  private readonly paginateUseCase = inject(PaginateProjectsUseCase);
 
-  protected readonly projects = signal(PROJECTS.sort((a, b) => a.order - b.order));
-  protected readonly filters = signal(['Tous', 'Application Web', 'Mobile', 'Script']);
+  private projectsResource = this.projectsGateway.getAllProjects();
+  protected readonly projects = computed(() => this.projectsResource.value() || []);
+
+  private categoriesObservable = this.projectsGateway.getCategories();
+  protected readonly filters = toSignal(this.categoriesObservable, { initialValue: ['Tous'] });
+
   protected readonly activeFilter = signal('Tous');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 3;
 
-  protected filteredProjects = computed(() => {
-    const filter = this.activeFilter();
-    if (filter === 'Tous') {
-      return this.projects();
-    }
-    return this.projects().filter((p) => p.category === filter);
-  });
+  protected filteredProjects = this.filterUseCase.execute(this.projects, this.activeFilter);
 
-  protected totalPages = computed(() => {
-    return Math.ceil(this.filteredProjects().length / this.itemsPerPage);
-  });
+  protected totalPages = this.paginateUseCase.calculateTotalPages(
+    computed(() => this.filteredProjects().length),
+    this.itemsPerPage
+  );
 
-  protected paginatedProjects = computed(() => {
-    const startIndex = (this.currentPage() - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    return this.filteredProjects().slice(startIndex, endIndex);
-  });
+  protected paginatedProjects = this.paginateUseCase.execute(
+    this.filteredProjects,
+    this.currentPage,
+    this.itemsPerPage
+  );
 
   protected pageNumbers = computed(() => {
     return Array.from({ length: this.totalPages() }, (_, i) => i + 1);

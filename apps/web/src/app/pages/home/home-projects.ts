@@ -1,9 +1,9 @@
-import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
-import { PROJECTS_SECTION } from './data/home.data';
-import { FEATURED_PROJECTS } from '../projects/data/projects.data';
-import { ProjectCard } from '../projects/components/project-card';
-import { ButtonComponent } from '../../shared/components/button/button';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { ProjectCard } from '../projects/components/project-card';
+import { ButtonComponent } from '../../layout/components/button/button';
+import { PROJECTS_GATEWAY } from '../../core/projects/gateways';
 
 @Component({
   selector: 'app-home-projects',
@@ -43,10 +43,19 @@ import { Router } from '@angular/router';
   `,
 })
 export class HomeProjects {
-  protected readonly projectsSection = signal(PROJECTS_SECTION);
-  protected readonly featuredProjects = signal(FEATURED_PROJECTS);
+  private router = inject(Router);
+  private projectsGateway = inject(PROJECTS_GATEWAY);
 
-  private readonly router = inject(Router);
+  // Load featured projects from gateway
+  private featuredProjectsObservable = this.projectsGateway.getFeaturedProjects();
+  protected readonly featuredProjects = toSignal(this.featuredProjectsObservable, { initialValue: [] });
+
+  // Section metadata (hardcoded for now)
+  protected readonly projectsSection = () => ({
+    title: 'Aperçu des projets',
+    description:
+      "Une sélection de mes réalisations récentes. Chaque projet met l'accent sur la qualité du code, la performance et l'expérience utilisateur.",
+  });
 
   goToProjects() {
     this.router.navigate(['/projects']);

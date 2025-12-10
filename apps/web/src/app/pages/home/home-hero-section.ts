@@ -2,11 +2,11 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { HomeHero } from './home-hero';
 import { HomeSpeciality } from './home-speciality';
 import { HomeCta } from './home-cta';
-import { HomeAvability } from './home-avability';
+import { HomeAvailability } from './home-availability';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [HomeHero, HomeSpeciality, HomeCta, HomeAvability],
+  imports: [HomeHero, HomeSpeciality, HomeCta, HomeAvailability],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'relative block py-28 md:py-48 px-6 min-h-screen flex items-center' },
   template: `
@@ -21,7 +21,7 @@ import { HomeAvability } from './home-avability';
         class="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-between gap-6"
       >
         <app-home-cta />
-        <app-home-avability />
+        <app-home-availability />
       </div>
     </div>
   `,

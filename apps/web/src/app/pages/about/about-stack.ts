@@ -1,5 +1,6 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
-import { TECHNOLOGIES } from './data/about.data';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { PROFILE_GATEWAY } from '../../core/profile/gateways';
 
 @Component({
   selector: 'app-about-stack',
@@ -34,5 +35,7 @@ import { TECHNOLOGIES } from './data/about.data';
   `,
 })
 export class AboutStack {
-  protected readonly technologies = signal(TECHNOLOGIES);
+  private profileGateway = inject(PROFILE_GATEWAY);
+  private technologiesObservable = this.profileGateway.getTechnologies();
+  protected readonly technologies = toSignal(this.technologiesObservable, { initialValue: [] });
 }

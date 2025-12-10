@@ -1,8 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject, signal, PLATFORM_ID } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { ButtonComponent } from '../../shared/components/button/button';
-import { CTA_SECTION } from './data/home.data';
+import { ButtonComponent } from '../../layout/components/button/button';
 
 @Component({
   selector: 'app-home-contact-cta',
@@ -36,9 +35,13 @@ import { CTA_SECTION } from './data/home.data';
   `,
 })
 export class HomeContactCta {
-  protected readonly ctaSection = signal(CTA_SECTION);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+
+  protected readonly ctaSection = signal({
+    title: 'Prêt à donner vie à votre projet ?',
+    description: 'Que ce soit pour une nouvelle application, une refonte ou un accompagnement technique, discutons ensemble de vos besoins et objectifs.',
+  });
 
   goToContact() {
     this.router.navigate(['/contact']);

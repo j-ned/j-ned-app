@@ -1,5 +1,6 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
-import { TECH_STACK, ABOUT_SECTION } from './data/home.data';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { HOME_GATEWAY } from '../../core/home/gateways';
 
 @Component({
   selector: 'app-home-tech-stack',
@@ -42,6 +43,21 @@ import { TECH_STACK, ABOUT_SECTION } from './data/home.data';
   `,
 })
 export class HomeTechStack {
-  protected readonly techStack = signal(TECH_STACK);
-  protected readonly aboutSection = ABOUT_SECTION;
+  private homeGateway = inject(HOME_GATEWAY);
+  private techStackObservable = this.homeGateway.getTechStack();
+  protected readonly techStack = toSignal(this.techStackObservable, { initialValue: [] });
+  protected readonly aboutSection = {
+    title: 'À propos',
+    paragraphs: [
+      "Développeur full-stack passionné par la création d'applications web modernes et performantes. Je me spécialise dans l'écosystème Angular et NestJS, avec un focus particulier sur l'architecture logicielle et les bonnes pratiques.",
+      'Mon approche combine rigueur technique et pragmatisme : du code maintenable, des patterns éprouvés, et une infrastructure maîtrisée de bout en bout. De la conception à la mise en production.',
+      "Actuellement disponible pour toutes vos missions de développement ou de refonte d'applications Angular/NestJS.",
+    ],
+    specializations: [
+      'Architecture Angular moderne',
+      'APIs REST avec NestJS et PostgreSQL',
+      'Infrastructure Docker et déploiement CI/CD',
+      'Optimisation performance et SEO',
+    ],
+  };
 }

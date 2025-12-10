@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { HERO_DATA } from './data/home.data';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { HOME_GATEWAY } from '../../core/home/gateways';
 
 @Component({
   selector: 'app-home-hero',
@@ -24,5 +24,7 @@ import { HERO_DATA } from './data/home.data';
   `,
 })
 export class HomeHero {
-  protected readonly hero = signal(HERO_DATA);
+  private homeGateway = inject(HOME_GATEWAY);
+  private heroResource = this.homeGateway.getHeroData();
+  protected readonly hero = computed(() => this.heroResource.value());
 }

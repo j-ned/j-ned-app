@@ -1,5 +1,6 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
-import { SPECIALITIES } from './data/home.data';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { HOME_GATEWAY } from '../../core/home/gateways';
 
 @Component({
   selector: 'app-home-speciality',
@@ -19,5 +20,7 @@ import { SPECIALITIES } from './data/home.data';
   `,
 })
 export class HomeSpeciality {
-  protected readonly specialities = signal(SPECIALITIES);
+  private homeGateway = inject(HOME_GATEWAY);
+  private specialitiesObservable = this.homeGateway.getSpecialities();
+  protected readonly specialities = toSignal(this.specialitiesObservable, { initialValue: [] });
 }

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { seoGuard } from './shared/guards/seo.guard';
+import { seoGuard } from './core/seo/guards/seo.guard';
 import { projectsSeoResolver } from './pages/projects/projects.resolver';
 
 export const routes: Routes = [

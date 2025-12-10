@@ -1,5 +1,6 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
-import { WHAT_I_DO } from './data/about.data';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { PROFILE_GATEWAY } from '../../core/profile/gateways';
 
 @Component({
   selector: 'app-about-what-i-do',
@@ -33,5 +34,7 @@ import { WHAT_I_DO } from './data/about.data';
   `,
 })
 export class AboutWhatIDo {
-  protected readonly whatIDo = signal(WHAT_I_DO);
+  private profileGateway = inject(PROFILE_GATEWAY);
+  private whatIDoObservable = this.profileGateway.getWhatIDo();
+  protected readonly whatIDo = toSignal(this.whatIDoObservable, { initialValue: [] });
 }

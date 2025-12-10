@@ -1,7 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ButtonComponent } from '../../shared/components/button/button';
-import { ABOUT_SECTION } from './data/home.data';
+import { ButtonComponent } from '../../layout/components/button/button';
 
 @Component({
   selector: 'app-home-about',
@@ -29,8 +28,15 @@ import { ABOUT_SECTION } from './data/home.data';
   `,
 })
 export class HomeAbout {
-  protected readonly aboutSection = signal(ABOUT_SECTION);
   private readonly router = inject(Router);
+
+  protected readonly aboutSection = signal({
+    title: 'À propos',
+    paragraphs: [
+      "Développeur full-stack passionné par la création d'applications web modernes et performantes. Je me spécialise dans l'écosystème Angular et NestJS, avec un focus particulier sur l'architecture logicielle et les bonnes pratiques.",
+      'Mon approche combine rigueur technique et pragmatisme : du code maintenable, des patterns éprouvés, et une infrastructure maîtrisée de bout en bout. De la conception à la mise en production.',
+    ],
+  });
 
   goToAbout() {
     this.router.navigate(['/about']);

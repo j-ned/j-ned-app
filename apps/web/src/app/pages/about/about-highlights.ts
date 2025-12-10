@@ -1,5 +1,6 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
-import { HIGHLIGHTS } from './data/about.data';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { PROFILE_GATEWAY } from '../../core/profile/gateways';
 
 @Component({
   selector: 'app-about-highlights',
@@ -40,5 +41,7 @@ import { HIGHLIGHTS } from './data/about.data';
   `,
 })
 export class AboutHighlights {
-  protected readonly highlights = signal(HIGHLIGHTS);
+  private profileGateway = inject(PROFILE_GATEWAY);
+  private highlightsObservable = this.profileGateway.getHighlights();
+  protected readonly highlights = toSignal(this.highlightsObservable, { initialValue: [] });
 }

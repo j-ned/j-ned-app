@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { ButtonComponent } from '../../shared/components/button/button';
+import { ButtonComponent } from '../../layout/components/button/button';
 
 @Component({
   selector: 'app-home-cta',
