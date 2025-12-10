@@ -50,13 +50,27 @@ jobs:
 
       - name: ✅ Vérifier les artefacts du build
         run: |
-          if [ ! -d "dist" ]; then
+          if [ ! -d "dist/angular-portfolio-app/browser" ]; then
             echo "❌ Le dossier de build n'existe pas"
             exit 1
           fi
-          if [ ! -f "dist/browser/index.html" ]; then
+          if [ ! -f "dist/angular-portfolio-app/browser/index.html" ]; then
             echo "❌ Le fichier index.html est manquant"
             exit 1
           fi
           echo "✅ Build réussi avec tous les fichiers nécessaires"
+
+      - name: 🚀 Organiser les fichiers de build pour le déploiement
+        run: |
+          # Crée un répertoire temporaire pour les fichiers du navigateur
+          mkdir -p dist/tmp_browser
+          # Déplace le contenu du dossier browser dans le répertoire temporaire
+          mv dist/angular-portfolio-app/browser/* dist/tmp_browser/
+          # Supprime le dossier original angular-portfolio-app
+          rm -rf dist/angular-portfolio-app
+          # Déplace le contenu du répertoire temporaire vers le dossier dist
+          mv dist/tmp_browser/* dist/
+          # Supprime le répertoire temporaire
+          rm -rf dist/tmp_browser
+          echo "✅ Les fichiers de build ont été organisés pour le déploiement"
           ls -lh dist
