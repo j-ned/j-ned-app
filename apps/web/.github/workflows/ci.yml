@@ -52,20 +52,13 @@ jobs:
 
       - name: ✅ Vérifier les artefacts du build
         run: |
-          if [ ! -d "dist/browser" ]; then
+          if [ ! -d "dist/angular-portfolio-app/browser" ]; then
             echo "❌ Le dossier de build n'existe pas"
             exit 1
           fi
-          if [ ! -f "dist/browser/index.html" ]; then
+          if [ ! -f "dist/angular-portfolio-app/browser/index.html" ]; then
             echo "❌ Le fichier index.html est manquant"
             exit 1
           fi
           echo "✅ Build réussi avec tous les fichiers nécessaires"
-          ls -lh dist/browser
-
-      - name: 📦 Uploader les artefacts de build
-        uses: actions/upload-artifact@v4
-        with:
-          name: angular-build
-          path: dist/browser
-          retention-days: 7
+          ls -lh dist/angular-portfolio-app/browser
