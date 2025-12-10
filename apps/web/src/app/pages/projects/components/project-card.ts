@@ -62,8 +62,9 @@ import type { Project } from '../../../core/projects/models';
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors font-medium"
+                [attr.aria-label]="'Voir le projet ' + project().title"
               >
-                <svg class="w-5 h-5">
+                <svg class="w-5 h-5" aria-hidden="true">
                   <use href="/icons/sprite.svg#lucide-external-link"></use>
                 </svg>
                 Voir le projet
@@ -75,8 +76,9 @@ import type { Project } from '../../../core/projects/models';
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors"
+                [attr.aria-label]="'Code source du projet ' + project().title"
               >
-                <svg class="w-5 h-5">
+                <svg class="w-5 h-5" aria-hidden="true">
                   <use href="/icons/sprite.svg#lucide-github"></use>
                 </svg>
                 Code
@@ -88,8 +90,9 @@ import type { Project } from '../../../core/projects/models';
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors"
+                [attr.aria-label]="'Code source frontend du projet ' + project().title"
               >
-                <svg class="w-5 h-5">
+                <svg class="w-5 h-5" aria-hidden="true">
                   <use href="/icons/sprite.svg#lucide-github"></use>
                 </svg>
                 Frontend
@@ -101,8 +104,9 @@ import type { Project } from '../../../core/projects/models';
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors"
+                [attr.aria-label]="'Code source backend du projet ' + project().title"
               >
-                <svg class="w-5 h-5">
+                <svg class="w-5 h-5" aria-hidden="true">
                   <use href="/icons/sprite.svg#lucide-github"></use>
                 </svg>
                 Backend

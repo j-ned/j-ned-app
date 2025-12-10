@@ -2,6 +2,7 @@
 
 # Compiled output
 /dist
+/browser
 /tmp
 /out-tsc
 /bazel-out
