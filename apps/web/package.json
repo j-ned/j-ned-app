@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build && echo '--- DEBUT LISTAGE FICHIERS ---' && ls -lR dist && echo '--- FIN LISTAGE FICHIERS ---'",
+    "build": "ng build && echo '--- DEBUT LISTAGE FICHIERS ---' && ls -lR dist && echo '--- FIN LISTAGE FICHIERSS ---'",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
