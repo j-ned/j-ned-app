@@ -17,10 +17,10 @@ jobs:
       - name: ⚙️ Checkout du code
         uses: actions/checkout@v4
 
-      - name: 🟢 Configurer Node.js 20.x
+      - name: 🟢 Configurer Node.js 22.x
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: 📦 Installer pnpm
         uses: pnpm/action-setup@v4

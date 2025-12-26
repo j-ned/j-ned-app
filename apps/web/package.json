@@ -40,6 +40,9 @@
     ]
   },
   "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "packageManager": "pnpm@10.22.0",
   "dependencies": {
     "@angular/common": "^21.0.0",
