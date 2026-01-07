@@ -1,12 +1,11 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NgOptimizedImage } from '@angular/common';
 import { PROFILE_GATEWAY } from '../../core/profile/gateways';
 
 @Component({
   selector: 'app-about-hero',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgOptimizedImage],
+  imports: [],
   template: `
     <div
       class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg h-full"
@@ -17,13 +16,12 @@ import { PROFILE_GATEWAY } from '../../core/profile/gateways';
             class="relative w-32 h-32 md:w-58 md:h-58 rounded-2xl overflow-hidden border-4 border-foreground/10 shadow-xl shrink-0"
           >
             <img
-              [ngSrc]="profileInfo()!.avatarUrl"
+              [src]="profileInfo()!.avatarUrl"
               [alt]="profileInfo()!.displayName"
               class="w-full h-full object-cover"
               width="160"
               height="160"
-              sizes="(max-width: 768px) 128px, 160px"
-              priority
+              loading="eager"
             />
           </div>
 
