@@ -78,48 +78,50 @@ import { CONTACT_GATEWAY } from '../../core/contact/gateways';
           </div>
         </div>
 
-        <div
-          class="bg-linear-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 md:p-10 backdrop-blur-sm shadow-2xl"
-        >
-          <div class="text-center space-y-8">
-            <div>
-              <h3 class="text-lg font-semibold mb-3 text-muted/80">Email</h3>
-              <a
-                [href]="'mailto:' + contactInfo().email"
-                class="text-2xl font-bold text-primary hover:text-primary/80 transition-colors"
-              >
-                {{ contactInfo().email }}
-              </a>
-            </div>
+        @if (contactInfo()) {
+          <div
+            class="bg-linear-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 md:p-10 backdrop-blur-sm shadow-2xl"
+          >
+            <div class="text-center space-y-8">
+              <div>
+                <h3 class="text-lg font-semibold mb-3 text-muted/80">Email</h3>
+                <a
+                  [href]="'mailto:' + contactInfo()!.email"
+                  class="text-2xl font-bold text-primary hover:text-primary/80 transition-colors"
+                >
+                  {{ contactInfo()!.email }}
+                </a>
+              </div>
 
-            <div>
-              <h3 class="text-lg font-semibold mb-3 text-muted/80">Téléphone</h3>
-              <a
-                [href]="'tel:' + contactInfo().phone"
-                class="text-2xl font-bold text-primary hover:text-primary/80 transition-colors"
-              >
-                {{ contactInfo().phone }}
-              </a>
-            </div>
+              <div>
+                <h3 class="text-lg font-semibold mb-3 text-muted/80">Téléphone</h3>
+                <a
+                  [href]="'tel:' + contactInfo()!.phone"
+                  class="text-2xl font-bold text-primary hover:text-primary/80 transition-colors"
+                >
+                  {{ contactInfo()!.phone }}
+                </a>
+              </div>
 
-            <div>
-              <h3 class="text-lg font-semibold mb-3 text-muted/80">Localisation</h3>
-              <p class="text-xl text-foreground/90">{{ contactInfo().location }}</p>
-            </div>
+              <div>
+                <h3 class="text-lg font-semibold mb-3 text-muted/80">Localisation</h3>
+                <p class="text-xl text-foreground/90">{{ contactInfo()!.location }}</p>
+              </div>
 
-            <div class="pt-6">
-              <a
-                [href]="'mailto:' + contactInfo().email + '?subject=Contact depuis votre portfolio'"
-                class="inline-flex items-center justify-center gap-3 px-8 py-4 text-lg font-semibold text-white bg-linear-to-br from-primary to-accent rounded-xl hover:from-blue-600 hover:to-violet-600 hover:-translate-y-0.5 transition-all duration-200 shadow-lg shadow-accent/25"
-              >
-                <svg class="w-6 h-6">
-                  <use href="/icons/sprite.svg#lucide-mail"></use>
-                </svg>
-                M'envoyer un email
-              </a>
+              <div class="pt-6">
+                <a
+                  [href]="'mailto:' + contactInfo()!.email + '?subject=Contact depuis votre portfolio'"
+                  class="inline-flex items-center justify-center gap-3 px-8 py-4 text-lg font-semibold text-white bg-linear-to-br from-primary to-accent rounded-xl hover:from-blue-600 hover:to-violet-600 hover:-translate-y-0.5 transition-all duration-200 shadow-lg shadow-accent/25"
+                >
+                  <svg class="w-6 h-6">
+                    <use href="/icons/sprite.svg#lucide-mail"></use>
+                  </svg>
+                  M'envoyer un email
+                </a>
+              </div>
             </div>
           </div>
-        </div>
+        }
       </div>
     </section>
   `,
