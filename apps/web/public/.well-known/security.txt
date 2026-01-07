@@ -1,0 +1,10 @@
+Contact: mailto:contact@julien-nedellec.fr
+Contact: https://www.julien-nedellec.fr/contact
+Preferred-Languages: fr, en
+Canonical: https://www.julien-nedellec.fr/.well-known/security.txt
+Expires: 2027-01-07T23:59:59Z
+Acknowledgments: https://www.julien-nedellec.fr/
+
+# Si vous découvrez une vulnérabilité de sécurité, merci de nous en informer
+# de manière responsable en utilisant les coordonnées ci-dessus.
+# Nous nous engageons à répondre rapidement aux rapports de sécurité.
