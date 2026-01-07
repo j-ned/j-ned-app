@@ -21,6 +21,7 @@ import { PROFILE_GATEWAY } from '../../core/profile/gateways';
             class="w-full h-full object-cover"
             width="160"
             height="160"
+            sizes="(max-width: 768px) 128px, 160px"
             priority
           />
         </div>
