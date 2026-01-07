@@ -5,7 +5,7 @@ import { HOME_GATEWAY } from '../../core/home/gateways';
   selector: 'app-home-hero',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="mb-16 md:mb-20 text-center md:text-left min-h-70 md:min-h-80">
+    <div class="mb-8 md:mb-14 text-center md:text-left min-h-70 md:min-h-80">
       @if (hero()) {
         <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight">
           {{ hero()!.name }}

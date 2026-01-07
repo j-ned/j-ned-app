@@ -13,7 +13,7 @@ import { PROJECTS_GATEWAY } from '../../core/projects/gateways';
   template: `
     <section id="projects" class="py-8 px-6">
       <div class="max-w-7xl mx-auto">
-        <div class="flex items-end justify-between mb-12">
+        <div class="flex items-end justify-between mb-8">
           <div>
             <h2 class="text-3xl md:text-4xl font-bold mb-4">
               {{ projectsSection().title }}
