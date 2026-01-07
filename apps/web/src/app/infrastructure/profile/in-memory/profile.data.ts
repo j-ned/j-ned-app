@@ -14,7 +14,7 @@ import type {
 export const PROFILE_INFO: ProfileInfo = {
   displayName: 'Julien NÉDELLEC',
   location: 'Voisins-Le-Bretonneux, France',
-  avatarUrl: '/photoProfil.webp',
+  avatarUrl: '/photoProfil.avif',
   isAvailable: true,
   availabilityMessage: 'Disponible pour de nouveaux projets',
 };

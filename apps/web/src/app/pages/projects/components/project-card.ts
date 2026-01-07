@@ -1,10 +1,11 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import type { Project } from '../../../core/projects/models';
+import { NgOptimizedImage } from '@angular/common';
 
 @Component({
   selector: 'app-project-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [],
+  imports: [NgOptimizedImage],
   template: `
     <article
       class="group relative bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full shadow-lg"
@@ -12,8 +13,11 @@ import type { Project } from '../../../core/projects/models';
       <div class="block aspect-video w-full overflow-hidden relative">
         @if (project().image) {
           <img
-            [src]="project().image"
+            [ngSrc]="project().image"
             [alt]="project().title"
+            width="1920"
+            height="1080"
+            loading="lazy"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         } @else {
