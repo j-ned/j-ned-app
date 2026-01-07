@@ -6,8 +6,10 @@ import {
   withViewTransitions,
 } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
+import { IMAGE_LOADER } from '@angular/common';
 
 import { routes } from './app.routes';
+import { customImageLoader } from './core/image/image-loader';
 
 // Gateway tokens
 import { PROJECTS_GATEWAY } from './core/projects/gateways';
@@ -43,6 +45,7 @@ export const appConfig: ApplicationConfig = {
       withViewTransitions(),
     ),
     provideHttpClient(withFetch()),
+    { provide: IMAGE_LOADER, useValue: customImageLoader },
 
     // ========================================
     // GATEWAY PROVIDERS - ONE LINE TO CHANGE!

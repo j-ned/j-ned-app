@@ -5,8 +5,8 @@ import { HOME_GATEWAY } from '../../core/home/gateways';
   selector: 'app-home-hero',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (hero()) {
-      <div class="mb-16 md:mb-20 text-center md:text-left">
+    <div class="mb-16 md:mb-20 text-center md:text-left min-h-[280px] md:min-h-[320px]">
+      @if (hero()) {
         <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight">
           {{ hero()!.name }}
         </h1>
@@ -21,8 +21,8 @@ import { HOME_GATEWAY } from '../../core/home/gateways';
         <p class="text-lg md:text-xl text-muted max-w-3xl leading-relaxed mx-auto md:mx-0">
           {{ hero()!.description }}
         </p>
-      </div>
-    }
+      }
+    </div>
   `,
 })
 export class HomeHero {

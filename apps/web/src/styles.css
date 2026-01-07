@@ -31,7 +31,4 @@
 body {
   background-color: var(--theme-background);
   color: var(--theme-foreground);
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
 }
