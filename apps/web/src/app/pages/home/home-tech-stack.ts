@@ -21,7 +21,7 @@ import { HOME_GATEWAY } from '../../core/home/gateways';
                 class="w-8 h-8 group-hover:scale-110 transition-transform"
               />
             </div>
-            <span class="text-xs text-muted">{{ tech.category }}</span>
+            <span class="text-xs text-muted">{{ tech.name }}</span>
           </div>
         }
       </div>
