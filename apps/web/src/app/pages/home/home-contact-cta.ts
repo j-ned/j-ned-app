@@ -40,7 +40,8 @@ export class HomeContactCta {
 
   protected readonly ctaSection = signal({
     title: 'Prêt à donner vie à votre projet ?',
-    description: 'Que ce soit pour une nouvelle application, une refonte ou un accompagnement technique, discutons ensemble de vos besoins et objectifs.',
+    description:
+      'Que ce soit pour une nouvelle application, une refonte ou un accompagnement technique, discutons ensemble de vos besoins et objectifs.',
   });
 
   goToContact() {

@@ -110,7 +110,9 @@ import { CONTACT_GATEWAY } from '../../core/contact/gateways';
 
               <div class="pt-6">
                 <a
-                  [href]="'mailto:' + contactInfo()!.email + '?subject=Contact depuis votre portfolio'"
+                  [href]="
+                    'mailto:' + contactInfo()!.email + '?subject=Contact depuis votre portfolio'
+                  "
                   class="inline-flex items-center justify-center gap-3 px-8 py-4 text-lg font-semibold text-white bg-linear-to-br from-primary to-accent rounded-xl hover:from-blue-600 hover:to-violet-600 hover:-translate-y-0.5 transition-all duration-200 shadow-lg shadow-accent/25"
                 >
                   <svg class="w-6 h-6">
@@ -134,6 +136,12 @@ export class ContactForm {
 
   private socialLinksObservable = this.contactGateway.getSocialLinks();
   protected readonly socialLinks = toSignal(this.socialLinksObservable, {
-    initialValue: { linkedin: { url: '', label: '', icon: '' }, github: { url: '', label: '', icon: '' }, email: { url: '', label: '', icon: '' }, phone: { url: '', label: '', icon: '' }, twitter: { url: '', label: '', icon: '' } }
+    initialValue: {
+      linkedin: { url: '', label: '', icon: '' },
+      github: { url: '', label: '', icon: '' },
+      email: { url: '', label: '', icon: '' },
+      phone: { url: '', label: '', icon: '' },
+      twitter: { url: '', label: '', icon: '' },
+    },
   });
 }

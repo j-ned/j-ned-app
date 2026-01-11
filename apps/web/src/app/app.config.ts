@@ -47,8 +47,8 @@ export const appConfig: ApplicationConfig = {
     {
       provide: IMAGE_CONFIG,
       useValue: {
-        breakpoints: [640, 768, 1024, 1280, 1920]
-      }
+        breakpoints: [640, 768, 1024, 1280, 1920],
+      },
     },
 
     // ========================================

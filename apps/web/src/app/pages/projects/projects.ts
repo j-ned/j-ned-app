@@ -141,13 +141,13 @@ export class Projects {
 
   protected totalPages = this.paginateUseCase.calculateTotalPages(
     computed(() => this.filteredProjects().length),
-    this.itemsPerPage
+    this.itemsPerPage,
   );
 
   protected paginatedProjects = this.paginateUseCase.execute(
     this.filteredProjects,
     this.currentPage,
-    this.itemsPerPage
+    this.itemsPerPage,
   );
 
   protected pageNumbers = computed(() => {

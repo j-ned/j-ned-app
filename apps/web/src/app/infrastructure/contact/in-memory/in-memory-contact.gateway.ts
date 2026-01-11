@@ -1,7 +1,12 @@
 import { Injectable, resource, type ResourceRef } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
 import type { ContactGateway } from '../../../core/contact/gateways';
-import type { ContactInfo, SocialLinks, ContactFormData, ContactFormSubmission } from '../../../core/contact/models';
+import type {
+  ContactInfo,
+  SocialLinks,
+  ContactFormData,
+  ContactFormSubmission,
+} from '../../../core/contact/models';
 import { CONTACT_INFO, SOCIAL_LINKS } from './contact.data';
 
 @Injectable()

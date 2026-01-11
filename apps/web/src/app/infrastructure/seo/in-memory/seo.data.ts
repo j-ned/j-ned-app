@@ -5,8 +5,9 @@ export const SEO_METADATA_MAP: Record<string, SeoMetadata> = {
   '/': {
     title: 'Julien Nédellec - Développeur Full-Stack Angular & NestJS',
     description:
-      'Développeur web spécialisé en Angular et NestJS. Création d\'applications modernes, performantes et scalables.',
-    keywords: 'développeur angular, développeur nestjs, développeur typescript, développeur full-stack',
+      "Développeur web spécialisé en Angular et NestJS. Création d'applications modernes, performantes et scalables.",
+    keywords:
+      'développeur angular, développeur nestjs, développeur typescript, développeur full-stack',
     url: 'https://www.julien-nedellec.fr',
     image: 'https://www.julien-nedellec.fr/photoProfil.webp',
     type: 'website',
@@ -18,12 +19,13 @@ export const SEO_METADATA_MAP: Record<string, SeoMetadata> = {
   },
   '/projects': {
     title: 'Mes Projets | Julien Nédellec',
-    description: 'Portfolio de mes projets Angular, NestJS et TypeScript. Applications web modernes et performantes.',
+    description:
+      'Portfolio de mes projets Angular, NestJS et TypeScript. Applications web modernes et performantes.',
     url: 'https://www.julien-nedellec.fr/projects',
   },
   '/contact': {
     title: 'Contact | Julien Nédellec',
-    description: 'Contactez-moi pour discuter de votre projet web ou d\'une collaboration.',
+    description: "Contactez-moi pour discuter de votre projet web ou d'une collaboration.",
     url: 'https://www.julien-nedellec.fr/contact',
   },
 };

@@ -48,7 +48,9 @@ export class HomeProjects {
 
   // Load featured projects from gateway
   private featuredProjectsObservable = this.projectsGateway.getFeaturedProjects();
-  protected readonly featuredProjects = toSignal(this.featuredProjectsObservable, { initialValue: [] });
+  protected readonly featuredProjects = toSignal(this.featuredProjectsObservable, {
+    initialValue: [],
+  });
 
   // Section metadata (hardcoded for now)
   protected readonly projectsSection = () => ({

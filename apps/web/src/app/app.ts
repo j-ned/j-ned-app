@@ -12,5 +12,4 @@ import { Header } from './layout/components/header/header';
     </main>
   `,
 })
-export class App {
-}
+export class App {}

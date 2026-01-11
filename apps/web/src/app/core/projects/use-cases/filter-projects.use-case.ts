@@ -3,7 +3,10 @@ import type { Project } from '../models';
 
 @Injectable()
 export class FilterProjectsUseCase {
-  execute(projects: Signal<readonly Project[]>, category: Signal<string>): Signal<readonly Project[]> {
+  execute(
+    projects: Signal<readonly Project[]>,
+    category: Signal<string>,
+  ): Signal<readonly Project[]> {
     return computed(() => {
       const activeCategory = category();
       if (activeCategory === 'Tous') {

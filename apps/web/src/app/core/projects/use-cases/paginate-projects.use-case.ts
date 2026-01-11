@@ -6,7 +6,7 @@ export class PaginateProjectsUseCase {
   execute(
     projects: Signal<readonly Project[]>,
     currentPage: Signal<number>,
-    itemsPerPage: number
+    itemsPerPage: number,
   ): Signal<readonly Project[]> {
     return computed(() => {
       const startIndex = (currentPage() - 1) * itemsPerPage;
