@@ -65,7 +65,7 @@ export class SeoService {
 
   private addStructuredData(data: Record<string, unknown>): void {
     let script: HTMLScriptElement | null = document.querySelector(
-      'script[type="application/ld+json"]'
+      'script[type="application/ld+json"]',
     );
     if (!script) {
       script = document.createElement('script');
