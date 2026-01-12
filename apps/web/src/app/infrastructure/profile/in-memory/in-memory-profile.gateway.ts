@@ -4,7 +4,6 @@ import type { ProfileGateway } from '../../../core/profile/gateways';
 import type {
   ProfileInfo,
   Biography,
-  Experience,
   Diploma,
   Technology,
   Highlight,
@@ -16,7 +15,6 @@ import {
   PROFILE_INFO,
   BIOGRAPHY,
   SOCIAL_BUTTONS,
-  EXPERIENCE,
   DIPLOMAS,
   TECHNOLOGIES,
   HIGHLIGHTS,
@@ -50,10 +48,6 @@ export class InMemoryProfileGateway implements ProfileGateway {
     return of(SOCIAL_BUTTONS).pipe(delay(100));
   }
 
-  getExperiences(): Observable<readonly Experience[]> {
-    return of(EXPERIENCE).pipe(delay(100));
-  }
-
   getDiplomas(): Observable<readonly Diploma[]> {
     return of(DIPLOMAS).pipe(delay(100));
   }
@@ -72,14 +66,5 @@ export class InMemoryProfileGateway implements ProfileGateway {
 
   getWhatISeek(): Observable<WhatISeek> {
     return of(WHAT_I_SEEK).pipe(delay(100));
-  }
-
-  updateProfileInfo(profile: Partial<ProfileInfo>): Observable<ProfileInfo> {
-    // In-memory simulation - would mutate PROFILE_INFO in real scenario
-    return of({ ...PROFILE_INFO, ...profile }).pipe(delay(200));
-  }
-
-  updateBiography(bio: Biography): Observable<Biography> {
-    return of(bio).pipe(delay(200));
   }
 }

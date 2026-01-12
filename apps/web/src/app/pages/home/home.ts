@@ -19,7 +19,7 @@ import { HomeContactCta } from './home-contact-cta';
 export class Home {
   private readonly document = inject(DOCUMENT);
 
-  scrollTo(anchor: string) {
+  scrollTo(anchor: string): void {
     const el = this.document.getElementById(anchor);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });

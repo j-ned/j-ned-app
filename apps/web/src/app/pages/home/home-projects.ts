@@ -53,13 +53,13 @@ export class HomeProjects {
   });
 
   // Section metadata (hardcoded for now)
-  protected readonly projectsSection = () => ({
+  protected readonly projectsSection = (): { title: string; description: string } => ({
     title: 'Aperçu des projets',
     description:
       "Une sélection de mes réalisations récentes. Chaque projet met l'accent sur la qualité du code, la performance et l'expérience utilisateur.",
   });
 
-  goToProjects() {
+  goToProjects(): void {
     this.router.navigate(['/projects']);
   }
 }

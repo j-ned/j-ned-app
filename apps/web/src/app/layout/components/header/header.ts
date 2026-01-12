@@ -160,7 +160,7 @@ export class Header {
   private readonly _closeMenuOnOutsideClick = effect((onCleanup) => {
     if (!this.isMobileMenuOpen()) return;
 
-    const handleClick = (event: MouseEvent) => {
+    const handleClick = (event: MouseEvent): void => {
       if (!this.elementRef.nativeElement.contains(event.target)) {
         this.isMobileMenuOpen.set(false);
       }

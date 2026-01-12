@@ -44,11 +44,11 @@ export class HomeContactCta {
       'Que ce soit pour une nouvelle application, une refonte ou un accompagnement technique, discutons ensemble de vos besoins et objectifs.',
   });
 
-  goToContact() {
+  goToContact(): void {
     this.router.navigate(['/contact']);
   }
 
-  openCalendly() {
+  openCalendly(): void {
     if (isPlatformBrowser(this.platformId)) {
       window.open('https://calendly.com/nedellec-julien/contact-telephonique', '_blank');
     }

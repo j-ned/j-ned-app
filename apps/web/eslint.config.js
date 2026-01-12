@@ -7,12 +7,22 @@ const prettierConfig = require("eslint-config-prettier");
 module.exports = [
   {
     files: ["**/*.ts"],
-    extends: [
-      eslint.configs.recommended,
-      ...tseslint.configs.recommended,
-      ...tseslint.configs.stylistic,
-      ...angular.configs.tsRecommended,
-    ],
+    ...eslint.configs.recommended,
+  },
+  ...tseslint.configs.recommended.map(config => ({
+    files: ["**/*.ts"],
+    ...config,
+  })),
+  ...tseslint.configs.stylistic.map(config => ({
+    files: ["**/*.ts"],
+    ...config,
+  })),
+  ...angular.configs.tsRecommended.map(config => ({
+    files: ["**/*.ts"],
+    ...config,
+  })),
+  {
+    files: ["**/*.ts"],
     processor: angular.processInlineTemplates,
     rules: {
       // Angular selectors
@@ -45,12 +55,16 @@ module.exports = [
       ],
     },
   },
+  ...angular.configs.templateRecommended.map(config => ({
+    files: ["**/*.html"],
+    ...config,
+  })),
+  ...angular.configs.templateAccessibility.map(config => ({
+    files: ["**/*.html"],
+    ...config,
+  })),
   {
     files: ["**/*.html"],
-    extends: [
-      ...angular.configs.templateRecommended,
-      ...angular.configs.templateAccessibility,
-    ],
     rules: {},
   },
   // Prettier DOIT être en dernier

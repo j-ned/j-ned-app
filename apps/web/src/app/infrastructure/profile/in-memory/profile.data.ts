@@ -1,14 +1,12 @@
 import type {
   Biography,
   Diploma,
-  Experience,
   Highlight,
   ProfileInfo,
   SocialButton,
   Technology,
   WhatIDo,
   WhatISeek,
-  QuickStat,
 } from '../../../core/profile/models';
 
 export const PROFILE_INFO: ProfileInfo = {
@@ -99,17 +97,6 @@ export const DIPLOMAS: Diploma[] = [
       'Méthodes agiles (Scrum, RUP)',
     ],
   },
-];
-
-export const QUICK_STATS: QuickStat[] = [];
-
-export const EXPERIENCE: Experience[] = [
-  {
-    role: 'Développeur Angular',
-    company: 'Projets personnels & freelance',
-    date: '2023 - Présent',
-  },
-  { role: "Professionnel de l'industrie", company: 'Secteur métallurgie', date: '2003 - 2023' },
 ];
 
 export const BIOGRAPHY: Biography = {

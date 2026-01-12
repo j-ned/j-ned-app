@@ -1,5 +1,5 @@
 import { Injectable, resource, type ResourceRef } from '@angular/core';
-import { Observable, of, delay, throwError } from 'rxjs';
+import { Observable, of, delay } from 'rxjs';
 import type { ProjectsGateway } from '../../../core/projects/gateways';
 import type { Project, ProjectFilter } from '../../../core/projects/models';
 import { PROJECTS } from './projects.data';
@@ -23,11 +23,6 @@ export class InMemoryProjectsGateway implements ProjectsGateway {
     return of(featured).pipe(delay(100));
   }
 
-  getProjectById(id: string): Observable<Project | null> {
-    const project = this.projects.find((p) => p.id === id) || null;
-    return of(project).pipe(delay(100));
-  }
-
   getCategories(): Observable<readonly string[]> {
     const categories = ['Tous', ...new Set(this.projects.map((p) => p.category))];
     return of(categories).pipe(delay(50));
@@ -49,34 +44,5 @@ export class InMemoryProjectsGateway implements ProjectsGateway {
     }
 
     return of(filtered).pipe(delay(100));
-  }
-
-  createProject(project: Omit<Project, 'id'>): Observable<Project> {
-    const newProject: Project = {
-      ...project,
-      id: `project-${Date.now()}`,
-    };
-    this.projects.push(newProject);
-    return of(newProject).pipe(delay(200));
-  }
-
-  updateProject(id: string, updates: Partial<Project>): Observable<Project> {
-    const index = this.projects.findIndex((p) => p.id === id);
-    if (index === -1) {
-      return throwError(() => new Error(`Project with id ${id} not found`));
-    }
-
-    this.projects[index] = { ...this.projects[index], ...updates };
-    return of(this.projects[index]).pipe(delay(200));
-  }
-
-  deleteProject(id: string): Observable<void> {
-    const index = this.projects.findIndex((p) => p.id === id);
-    if (index === -1) {
-      return throwError(() => new Error(`Project with id ${id} not found`));
-    }
-
-    this.projects.splice(index, 1);
-    return of(void 0).pipe(delay(200));
   }
 }

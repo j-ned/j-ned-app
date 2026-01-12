@@ -154,19 +154,19 @@ export class Projects {
     return Array.from({ length: this.totalPages() }, (_, i) => i + 1);
   });
 
-  protected setFilter(filter: string) {
+  protected setFilter(filter: string): void {
     this.activeFilter.set(filter);
     this.currentPage.set(1);
   }
 
-  protected goToPage(page: number) {
+  protected goToPage(page: number): void {
     this.currentPage.set(page);
     if (isPlatformBrowser(this.platformId)) {
       this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
-  protected nextPage() {
+  protected nextPage(): void {
     if (this.currentPage() < this.totalPages()) {
       this.currentPage.update((p) => p + 1);
       if (isPlatformBrowser(this.platformId)) {
@@ -175,7 +175,7 @@ export class Projects {
     }
   }
 
-  protected previousPage() {
+  protected previousPage(): void {
     if (this.currentPage() > 1) {
       this.currentPage.update((p) => p - 1);
       if (isPlatformBrowser(this.platformId)) {

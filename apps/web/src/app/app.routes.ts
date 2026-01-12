@@ -1,13 +1,10 @@
 import { Routes } from '@angular/router';
-import { seoGuard } from './core/seo/guards/seo.guard';
-import { projectsSeoResolver } from './pages/projects/projects.resolver';
 
 export const routes: Routes = [
   {
     path: '',
     title: 'Accueil | Julien Nédellec',
     loadComponent: () => import('./pages/home/home').then((m) => m.Home),
-    canActivate: [seoGuard],
     data: {
       seo: {
         title: 'Julien Nédellec | Développeur Full-Stack Angular & NestJS',
@@ -43,7 +40,6 @@ export const routes: Routes = [
     path: 'about',
     title: 'À propos | Julien Nédellec',
     loadComponent: () => import('./pages/about/about').then((m) => m.About),
-    canActivate: [seoGuard],
     data: {
       seo: {
         title: 'À propos | Julien Nédellec - Développeur Full-Stack',
@@ -60,10 +56,6 @@ export const routes: Routes = [
     path: 'projects',
     title: 'Projets | Julien Nédellec',
     loadComponent: () => import('./pages/projects/projects').then((m) => m.Projects),
-    canActivate: [seoGuard],
-    resolve: {
-      seoData: projectsSeoResolver,
-    },
     data: {
       seo: {
         title: 'Projets | Julien Nédellec - Portfolio Développeur Full-Stack',
@@ -80,7 +72,6 @@ export const routes: Routes = [
     path: 'contact',
     title: 'Contact | Julien Nédellec',
     loadComponent: () => import('./pages/contact/contact').then((m) => m.Contact),
-    canActivate: [seoGuard],
     data: {
       seo: {
         title: 'Contact | Julien Nédellec - Développeur Full-Stack',

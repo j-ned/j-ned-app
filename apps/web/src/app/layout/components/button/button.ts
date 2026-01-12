@@ -55,7 +55,7 @@ export class ButtonComponent {
   readonly ariaLabel = input<string | null>(null);
   readonly type = input<'button' | 'submit' | 'reset'>('button');
   readonly href = input<string | null>(null);
-  readonly routerLink = input<string | any[] | null>(null);
+  readonly routerLink = input<string | (string | number)[] | null>(null);
   readonly target = input<string | null>(null);
   readonly rel = input<string | null>(null);
 
@@ -111,7 +111,7 @@ export class ButtonComponent {
       .join(' ');
   });
 
-  onClick(e: MouseEvent) {
+  onClick(e: MouseEvent): void {
     if (this.disabled() || this.loading()) {
       e.preventDefault();
       e.stopImmediatePropagation();

@@ -38,7 +38,7 @@ export class HomeAbout {
     ],
   });
 
-  goToAbout() {
+  goToAbout(): void {
     this.router.navigate(['/about']);
   }
 }

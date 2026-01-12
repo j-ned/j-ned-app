@@ -3,7 +3,7 @@ import type { ContactGateway } from './contact.gateway';
 
 export const CONTACT_GATEWAY = new InjectionToken<ContactGateway>('ContactGateway', {
   providedIn: 'root',
-  factory: () => {
+  factory: (): never => {
     throw new Error('ContactGateway must be provided in app.config.ts');
   },
 });

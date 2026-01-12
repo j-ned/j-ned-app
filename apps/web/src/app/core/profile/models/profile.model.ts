@@ -11,9 +11,3 @@ export interface SocialButton {
   readonly label: string;
   readonly href: string;
 }
-
-export interface QuickStat {
-  readonly label: string;
-  readonly value: string;
-  readonly icon: string;
-}
