@@ -38,9 +38,9 @@ import { NgOptimizedImage } from '@angular/common';
           {{ project().category }}
         </span>
 
-        <h3 class="text-2xl font-bold mb-3 text-foreground">
+        <h2 class="text-2xl font-bold mb-3 text-foreground">
           {{ project().title }}
-        </h3>
+        </h2>
 
         <p class="text-muted mb-4 grow text-sm leading-relaxed">
           {{ project().description }}

@@ -13,7 +13,7 @@ import { PROFILE_GATEWAY } from '../../core/profile/gateways';
         <svg class="w-6 h-6 text-primary">
           <use href="/icons/sprite.svg#lucide-code-xml"></use>
         </svg>
-        <h3 class="font-bold text-xl text-foreground">Stack Technique</h3>
+        <h2 class="font-bold text-xl text-foreground">Stack Technique</h2>
       </div>
       <div class="grid grid-cols-3 gap-3">
         @for (tech of technologies(); track tech.name) {

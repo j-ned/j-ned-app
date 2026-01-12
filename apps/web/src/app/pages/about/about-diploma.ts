@@ -14,7 +14,7 @@ import { PROFILE_GATEWAY } from '../../core/profile/gateways';
         <svg class="w-6 h-6 text-primary">
           <use href="/icons/sprite.svg#lucide-graduation-cap"></use>
         </svg>
-        <h3 class="font-bold text-2xl text-foreground">Formations</h3>
+        <h2 class="font-bold text-2xl text-foreground">Formations</h2>
       </div>
 
       @for (diploma of diplomas(); track diploma.id; let isFirst = $first) {
@@ -22,9 +22,9 @@ import { PROFILE_GATEWAY } from '../../core/profile/gateways';
           <div class="border-t border-foreground/10 my-8"></div>
         }
         <div>
-          <h4 class="text-lg font-bold text-foreground mb-2">
+          <h3 class="text-lg font-bold text-foreground mb-2">
             {{ diploma.title }}
-          </h4>
+          </h3>
           <p class="text-accent font-medium mb-2 text-md">
             {{ diploma.provider }}
           </p>
@@ -33,7 +33,7 @@ import { PROFILE_GATEWAY } from '../../core/profile/gateways';
           </p>
 
           <div class="border-t border-foreground/10 pt-4">
-            <h5 class="text-xs font-semibold text-muted mb-3">Compétences acquises</h5>
+            <h4 class="text-xs font-semibold text-muted mb-3">Compétences acquises</h4>
             <div class="flex flex-wrap gap-2">
               @for (skill of diploma.skills; track skill) {
                 <span
