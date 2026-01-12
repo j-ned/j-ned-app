@@ -36,7 +36,7 @@ import { PaginateProjectsUseCase } from '../../core/projects/use-cases/paginate-
               (click)="setFilter(filter)"
               [class]="
                 filter === activeFilter()
-                  ? 'px-4 py-2 rounded-full text-sm font-medium transition-colors bg-primary text-white'
+                  ? 'px-4 py-2 rounded-full text-sm font-medium transition-colors bg-primary-bg text-white'
                   : 'px-4 py-2 rounded-full text-sm font-medium transition-colors bg-background/50 border border-foreground/10 text-muted hover:text-foreground hover:border-primary/50'
               "
             >
@@ -86,7 +86,7 @@ import { PaginateProjectsUseCase } from '../../core/projects/use-cases/paginate-
                 (click)="goToPage(page)"
                 [class]="
                   page === currentPage()
-                    ? 'w-10 h-10 rounded-lg text-sm font-medium bg-primary text-white'
+                    ? 'w-10 h-10 rounded-lg text-sm font-medium bg-primary-bg text-white'
                     : 'w-10 h-10 rounded-lg text-sm font-medium bg-background/50 border border-foreground/10 text-foreground hover:border-primary/50 hover:text-primary transition-colors'
                 "
               >

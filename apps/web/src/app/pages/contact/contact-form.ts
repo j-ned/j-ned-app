@@ -24,7 +24,7 @@ import { CONTACT_GATEWAY } from '../../core/contact/gateways';
               [href]="socialLinks().linkedin.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
+              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary-bg transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
               [attr.aria-label]="socialLinks().linkedin.label"
             >
               <svg class="w-6 h-6 text-foreground/80 group-hover:text-white transition-colors">
@@ -36,7 +36,7 @@ import { CONTACT_GATEWAY } from '../../core/contact/gateways';
               [href]="socialLinks().github.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
+              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary-bg transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
               [attr.aria-label]="socialLinks().github.label"
             >
               <svg class="w-6 h-6 text-foreground/80 group-hover:text-white transition-colors">
@@ -46,7 +46,7 @@ import { CONTACT_GATEWAY } from '../../core/contact/gateways';
 
             <a
               [href]="socialLinks().email.url"
-              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
+              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary-bg transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
               [attr.aria-label]="socialLinks().email.label"
             >
               <svg class="w-6 h-6 text-foreground/80 group-hover:text-white transition-colors">
@@ -56,7 +56,7 @@ import { CONTACT_GATEWAY } from '../../core/contact/gateways';
 
             <a
               [href]="socialLinks().phone.url"
-              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
+              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary-bg transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
               [attr.aria-label]="socialLinks().phone.label"
             >
               <svg class="w-6 h-6 text-foreground/80 group-hover:text-white transition-colors">
@@ -68,7 +68,7 @@ import { CONTACT_GATEWAY } from '../../core/contact/gateways';
               [href]="socialLinks().twitter.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
+              class="group flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 hover:bg-primary-bg transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/25"
               [attr.aria-label]="socialLinks().twitter.label"
             >
               <svg class="w-6 h-6 text-foreground/80 group-hover:text-white transition-colors">

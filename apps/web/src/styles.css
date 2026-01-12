@@ -2,7 +2,8 @@
 
 @theme {
   /* Mappe les couleurs Tailwind aux variables de thème */
-  --color-primary: var(--theme-primary);
+  --color-primary: var(--theme-primary-text);
+  --color-primary-bg: var(--theme-primary-bg);
   --color-accent: var(--theme-accent);
   --color-muted: var(--theme-muted);
   --color-background: var(--theme-background);
@@ -11,7 +12,8 @@
 
 /* Mode sombre par défaut */
 :root {
-  --theme-primary: #2563eb;
+  --theme-primary-text: #60a5fa;
+  --theme-primary-bg: #2563eb;
   --theme-accent: #a78bfa;
   --theme-muted: #cbd5e1;
   --theme-background: #1e1e1e;
@@ -20,7 +22,8 @@
 
 /* Mode clair */
 :root:not(.dark) {
-  --theme-primary: #1d4ed8;
+  --theme-primary-text: #1d4ed8;
+  --theme-primary-bg: #1d4ed8;
   --theme-accent: #6d28d9;
   --theme-muted: #64748b;
   --theme-background: #eceff4;
