@@ -17,15 +17,19 @@ import { IMAGE_CONFIG } from '@angular/common';
 import { filter } from 'rxjs';
 
 import { routes } from './app.routes';
-import { SeoService } from './core/seo/seo';
-import { PROJECTS_GATEWAY } from './core/projects/gateways';
-import { PROFILE_GATEWAY } from './core/profile/gateways';
-import { CONTACT_GATEWAY } from './core/contact/gateways';
-import { HOME_GATEWAY } from './core/home/gateways';
-import { InMemoryProjectsGateway } from './infrastructure/projects/in-memory/in-memory-projects.gateway';
-import { InMemoryProfileGateway } from './infrastructure/profile/in-memory/in-memory-profile.gateway';
-import { InMemoryContactGateway } from './infrastructure/contact/in-memory/in-memory-contact.gateway';
-import { InMemoryHomeGateway } from './infrastructure/home/in-memory/in-memory-home.gateway';
+import { SeoService } from './shared/seo/seo';
+import { PROJECTS_GATEWAY } from './features/projects/domain';
+import { PROFILE_GATEWAY } from './features/profile/domain';
+import { CONTACT_GATEWAY } from './features/contact/domain';
+import { HOME_GATEWAY } from './features/home/domain';
+import { HttpProjectsGateway } from './features/projects/infrastructure';
+import { HttpProfileGateway } from './features/profile/infrastructure';
+import { HttpContactGateway } from './features/contact/infrastructure';
+import { HttpHomeGateway } from './features/home/infrastructure';
+import { BLOG_GATEWAY } from './features/blog/domain';
+import { HttpBlogGateway } from './features/blog/infrastructure';
+import { BOOKING_GATEWAY } from './features/booking/domain';
+import { HttpBookingGateway } from './features/booking/infrastructure';
 
 function initializeSeo(): () => void {
   return (): void => {
@@ -68,9 +72,11 @@ export const appConfig: ApplicationConfig = {
         breakpoints: [640, 768, 1024, 1280, 1920],
       },
     },
-    { provide: PROJECTS_GATEWAY, useClass: InMemoryProjectsGateway },
-    { provide: PROFILE_GATEWAY, useClass: InMemoryProfileGateway },
-    { provide: CONTACT_GATEWAY, useClass: InMemoryContactGateway },
-    { provide: HOME_GATEWAY, useClass: InMemoryHomeGateway },
+    { provide: PROJECTS_GATEWAY, useClass: HttpProjectsGateway },
+    { provide: PROFILE_GATEWAY, useClass: HttpProfileGateway },
+    { provide: CONTACT_GATEWAY, useClass: HttpContactGateway },
+    { provide: HOME_GATEWAY, useClass: HttpHomeGateway },
+    { provide: BLOG_GATEWAY, useClass: HttpBlogGateway },
+    { provide: BOOKING_GATEWAY, useClass: HttpBookingGateway },
   ],
 };

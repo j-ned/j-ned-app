@@ -1,0 +1,495 @@
+{
+  "heroData": [
+    {
+      "id": "1",
+      "name": "Julien NÉDELLEC",
+      "tagline": "Développeur d'applications web modernes avec",
+      "technologies": [
+        "Angular",
+        "NestJS"
+      ],
+      "description": "Je conçois des applications web modernes avec un focus sur la qualité du code, la performance et les bonnes pratiques. Du développement au déploiement.",
+      "availability": "Disponible pour nouvelles missions"
+    }
+  ],
+  "specialities": [
+    {
+      "id": "1",
+      "title": "Frontend Moderne",
+      "description": "Applications Angular réactives avec architecture signals, standalone components et contrôle de flux optimisé. TypeScript strict pour une maintenance facilitée et moins de bugs en production."
+    },
+    {
+      "id": "2",
+      "title": "Backend & Data",
+      "description": "APIs REST avec NestJS : architecture modulaire, validation stricte des données, gestion d'erreurs professionnelle. PostgreSQL optimisé pour la performance et l'intégrité des données."
+    },
+    {
+      "id": "3",
+      "title": "Déploiement & Infrastructure",
+      "description": "Déploiements Docker automatisés, infrastructure self-hosted haute disponibilité (Traefik reverse proxy, Dokploy orchestration). CI/CD pour des mises en production sans friction."
+    }
+  ],
+  "techStack": [
+    {
+      "id": "1",
+      "name": "Angular",
+      "category": "Framework",
+      "icon": "angular"
+    },
+    {
+      "id": "2",
+      "name": "NestJS",
+      "category": "Backend",
+      "icon": "nestjs"
+    },
+    {
+      "id": "3",
+      "name": "TypeScript",
+      "category": "Language",
+      "icon": "typescript"
+    },
+    {
+      "id": "4",
+      "name": "Tailwind CSS",
+      "category": "Styling",
+      "icon": "tailwindcss"
+    },
+    {
+      "id": "5",
+      "name": "PostgreSQL",
+      "category": "Database",
+      "icon": "postgresql"
+    },
+    {
+      "id": "6",
+      "name": "Docker",
+      "category": "DevOps",
+      "icon": "docker"
+    }
+  ],
+  "projects": [
+    {
+      "id": "candidash",
+      "title": "CandiDash",
+      "category": "Application Web",
+      "tags": [
+        "Angular",
+        "Typescript",
+        "TailwindCSS",
+        "NestJS",
+        "PostgreSQL",
+        "Docker",
+        "Vitest"
+      ],
+      "description": "Application Angular moderne pour suivre ses candidatures d'emploi avec tableau de bord personnel. Suivi des candidatures, gestion des statuts, authentification multi-rôles et thème clair/sombre.",
+      "image": "/images/candidash.avif",
+      "liveUrl": "https://candidash.djoudj.dev",
+      "repoUrlFront": "https://github.com/djoudj-dev/ng-candidash-app",
+      "repoUrlBack": "https://github.com/djoudj-dev/nest-candidash-app",
+      "featured": true,
+      "order": 1
+    },
+    {
+      "id": "labelsync-pro",
+      "title": "LabelSync Pro",
+      "category": "Script",
+      "tags": [
+        "Bash",
+        "GitHub",
+        "Automation",
+        "API",
+        "DevOps"
+      ],
+      "description": "Script Bash pour synchroniser les labels GitHub entre plusieurs dépôts. Automatise la gestion des labels avec import/export et réplication entre repositories. Gain de temps pour la standardisation des projets.",
+      "image": "/images/label-sync.avif",
+      "repoUrl": "https://github.com/djoudj-dev/labelsync-pro",
+      "featured": false,
+      "order": 2
+    },
+    {
+      "id": "gitpush-auto",
+      "title": "GitPush Auto",
+      "category": "Script",
+      "tags": [
+        "Bash",
+        "Git",
+        "Automation",
+        "CLI"
+      ],
+      "description": "Script Bash pour automatiser les opérations Git. Simplifie l'ajout, le commit et le push de modifications avec une seule commande. Idéal pour accélérer le workflow de développement.",
+      "image": "/images/gitpush.avif",
+      "repoUrl": "https://github.com/djoudj-dev/gitpush-auto",
+      "featured": false,
+      "order": 3
+    },
+    {
+      "id": "arcadia",
+      "title": "Zoo Arcadia",
+      "category": "Application Web",
+      "tags": [
+        "Angular",
+        "Typescript",
+        "TailwindCSS",
+        "NestJS",
+        "PostgreSQL",
+        "MongoDB",
+        "JWT"
+      ],
+      "description": "Application frontend moderne pour le Zoo Arcadia. Interface interactive pour la gestion complète d'un parc zoologique avec tableaux de bord dédiés pour administrateurs, vétérinaires et employés.",
+      "image": "/images/arcadia.avif",
+      "liveUrl": "https://arcadia.nedellec-julien.fr/",
+      "repoUrlFront": "https://github.com/djoudj-dev/arcadia-zoo-app-front",
+      "repoUrlBack": "https://github.com/djoudj-dev/arcadia-zoo-app-back",
+      "featured": true,
+      "order": 4
+    }
+  ],
+  "profile": [
+    {
+      "id": "1",
+      "displayName": "Julien NÉDELLEC",
+      "location": "Voisins-Le-Bretonneux, France",
+      "avatarUrl": "/photoProfil.avif",
+      "isAvailable": true,
+      "availabilityMessage": "Disponible pour de nouveaux projets"
+    }
+  ],
+  "biography": [
+    {
+      "id": "1",
+      "title": "Mon parcours",
+      "paragraphs": [
+        "20 ans dans l'industrie m'ont appris ce qu'est vraiment la rigueur. Aujourd'hui, je l'applique au code.",
+        "Je ne suis pas venu au développement web par hasard. En métallurgie, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
+        "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence qui me sert aujourd'hui : chaque ligne de code doit être pensée pour durer. Autodidacte par nécessité, je ne me contente pas de faire fonctionner, je comprends pourquoi ça fonctionne, de la requête SQL au déploiement en production.",
+        "Cette expérience m'a donné une vision systémique rare : je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier."
+      ]
+    }
+  ],
+  "socialButtons": [
+    {
+      "id": "1",
+      "icon": "lucide-linkedin",
+      "label": "LinkedIn",
+      "href": "https://www.linkedin.com/in/nedellec-julien/"
+    },
+    {
+      "id": "2",
+      "icon": "lucide-github",
+      "label": "GitHub",
+      "href": "https://github.com/djoudj-dev"
+    },
+    {
+      "id": "3",
+      "icon": "lucide-mail",
+      "label": "Mail",
+      "href": "mailto:contact@julien-nedellec.fr"
+    },
+    {
+      "id": "4",
+      "icon": "bi-discord",
+      "label": "Discord",
+      "href": "https://discord.gg/nedellec_julien"
+    },
+    {
+      "id": "5",
+      "icon": "bi-twitter-x",
+      "label": "X",
+      "href": "https://x.com/djoudj_78"
+    }
+  ],
+  "technologies": [
+    {
+      "id": "1",
+      "name": "Angular",
+      "category": "Framework",
+      "icon": "angular"
+    },
+    {
+      "id": "2",
+      "name": "TypeScript",
+      "category": "Langage",
+      "icon": "typescript"
+    },
+    {
+      "id": "3",
+      "name": "Tailwind CSS",
+      "category": "Styling",
+      "icon": "tailwindcss"
+    },
+    {
+      "id": "4",
+      "name": "NestJS",
+      "category": "Backend",
+      "icon": "nestjs"
+    },
+    {
+      "id": "5",
+      "name": "PostgreSQL",
+      "category": "Base de données",
+      "icon": "postgresql"
+    },
+    {
+      "id": "6",
+      "name": "Docker",
+      "category": "Devops",
+      "icon": "docker"
+    }
+  ],
+  "diplomas": [
+    {
+      "id": "dwwm",
+      "title": "Développeur Web et Web Mobile - Bac+2",
+      "provider": "Studi",
+      "shortDescription": "Titre professionnel de niveau 5 axé sur la conception, le développement et la maintenance d'applications web et mobiles, avec une pédagogie orientée bonnes pratiques et travail en équipe.",
+      "skills": [
+        "HTML5, CSS3, JavaScript",
+        "Angular & TypeScript",
+        "SQL & NoSQL",
+        "Git & GitHub",
+        "Responsive Design",
+        "API REST"
+      ]
+    },
+    {
+      "id": "pgi-erp",
+      "title": "Développeur d'applications PGI/ERP - Bac+2",
+      "provider": "ALT-RH",
+      "shortDescription": "Titre professionnel de niveau 5 dédié à la conception et à la maintenance d'applications de gestion intégrées, avec un focus sur l'architecture logicielle et la collaboration agile.",
+      "skills": [
+        "HTML5, CSS3, JavaScript, jQuery",
+        "Java & J2EE",
+        "MySQL, UML & modélisation",
+        "Git & gestion de version",
+        "Algorithmique & design patterns",
+        "Méthodes agiles (Scrum, RUP)"
+      ]
+    }
+  ],
+  "highlights": [
+    {
+      "id": "1",
+      "title": "Exigence de production",
+      "description": "Formé dans un environnement où l'erreur coûte cher, j'écris du code pensé pour durer. Type-safe, testé, documenté.",
+      "icon": "valid"
+    },
+    {
+      "id": "2",
+      "title": "Autonomie réelle",
+      "description": "Autodidacte par nécessité, je trouve des solutions quand il n'y a pas de tutoriel. Je lis la doc, je comprends les sources, je creuse jusqu'à résoudre.",
+      "icon": "book"
+    },
+    {
+      "id": "3",
+      "title": "Vision d'ensemble",
+      "description": "Je ne code pas dans le vide. Je comprends le métier, l'architecture, les contraintes. Vingt ans à optimiser des systèmes complexes, ça laisse des traces.",
+      "icon": "spider-web"
+    }
+  ],
+  "whatIDo": [
+    {
+      "id": "1",
+      "title": "Applications complètes",
+      "description": "Je construis des applications de production de bout en bout : conception, Full Stack (Angular moderne, NestJS, PostgreSQL) et déploiement conteneurisé (Docker). Pas des démos, mais des systèmes qui tournent."
+    },
+    {
+      "id": "2",
+      "title": "Infrastructure",
+      "description": "Je gère l'intégralité de mon infrastructure : auto-hébergement (VPS) et déploiement continu (CI/CD) via Dokploy, jusqu'aux services en production. Ce contrôle opérationnel total garantit la fiabilité et fait de moi un développeur plus complet."
+    }
+  ],
+  "whatISeek": [
+    {
+      "id": "1",
+      "title": "Ce que je cherche",
+      "description": "Un environnement où la tech sert un impact positif. GreenTech, industrie durable, projets à sens. Une équipe qui valorise la qualité technique et l'apprentissage continu."
+    }
+  ],
+  "contactInfo": [
+    {
+      "id": "1",
+      "email": "contact@nedellec-julien.fr",
+      "phone": "+33 6 22 86 92 79",
+      "location": "Voisins-Le-Bretonneux, France"
+    }
+  ],
+  "socialLinks": [
+    {
+      "id": "1",
+      "linkedin": {
+        "url": "https://www.linkedin.com/in/nedellec-julien/",
+        "label": "LinkedIn",
+        "icon": "lucide-linkedin"
+      },
+      "github": {
+        "url": "https://github.com/djoudj-dev",
+        "label": "GitHub",
+        "icon": "lucide-github"
+      },
+      "email": {
+        "url": "mailto:contact@nedellec-julien.fr",
+        "label": "Email",
+        "icon": "lucide-mail"
+      },
+      "phone": {
+        "url": "tel:+33622869279",
+        "label": "Téléphone",
+        "icon": "lucide-phone"
+      },
+      "twitter": {
+        "url": "https://x.com/djoudj_78",
+        "label": "X (Twitter)",
+        "icon": "bi-twitter-x"
+      }
+    }
+  ],
+  "articles": [
+    {
+      "id": "1",
+      "title": "Pourquoi j'ai choisi Angular pour mes projets",
+      "author": "Julien Nédellec",
+      "date": "2026-01-15",
+      "excerpt": "Retour d'expérience sur le choix d'Angular comme framework principal pour le développement d'applications web professionnelles.",
+      "content": "Angular est souvent perçu comme un framework complexe. Pourtant, c'est précisément cette structure qui en fait un outil puissant pour les applications d'entreprise.\n\nAprès avoir travaillé avec plusieurs frameworks, j'ai choisi Angular pour sa rigueur, son système de typage fort avec TypeScript, et son architecture modulaire qui favorise la maintenabilité à long terme.\n\nLes signals, introduits récemment, ont encore simplifié la gestion d'état. Combinés avec les standalone components et le nouveau contrôle de flux (@if, @for), Angular offre une expérience de développement moderne et productive.\n\nDans cet article, je partage mon parcours et les raisons qui m'ont poussé à adopter Angular comme stack principale.",
+      "tags": [
+        "Angular",
+        "TypeScript",
+        "Architecture"
+      ],
+      "image": "/images/blog/angular-choice.avif"
+    },
+    {
+      "id": "2",
+      "title": "Clean Architecture en Angular : retour d'expérience",
+      "author": "Julien Nédellec",
+      "date": "2026-01-28",
+      "excerpt": "Comment j'ai structuré mon portfolio Angular avec une architecture clean inspirée du pattern EAK.",
+      "content": "La clean architecture n'est pas réservée au backend. En Angular, elle permet de séparer clairement les responsabilités et de rendre le code testable et maintenable.\n\nDans ce projet portfolio, j'ai adopté le pattern feature-first avec trois couches par feature : domain (models, gateways, use-cases), infrastructure (implémentations des gateways), et application (composants UI).\n\nChaque gateway est défini comme un type avec un InjectionToken, ce qui permet de switcher facilement entre une implémentation in-memory et une implémentation HTTP. C'est exactement ce pattern qui nous permet de migrer vers json-server sans toucher à la couche application.\n\nLa clé : les composants ne dépendent que du domain, jamais de l'infrastructure.",
+      "tags": [
+        "Angular",
+        "Clean Architecture",
+        "Design Patterns"
+      ],
+      "image": "/images/blog/clean-archi.avif"
+    },
+    {
+      "id": "3",
+      "title": "Docker et déploiement self-hosted : mon setup",
+      "author": "Julien Nédellec",
+      "date": "2026-02-05",
+      "excerpt": "Guide pratique pour déployer ses applications Angular/NestJS sur un VPS avec Docker, Traefik et Dokploy.",
+      "content": "Déployer ses propres applications sur un VPS offre un contrôle total sur l'infrastructure. Voici comment j'ai mis en place mon setup de production.\n\nMon stack de déploiement repose sur Docker pour la conteneurisation, Traefik comme reverse proxy avec gestion automatique des certificats SSL, et Dokploy pour l'orchestration et le déploiement continu.\n\nChaque application est conteneurisée avec un Dockerfile multi-stage : build Angular en production, puis serving via Nginx. Le tout est orchestré par docker-compose avec des variables d'environnement pour la configuration.\n\nCe setup me permet de déployer en un push git, avec rollback automatique en cas d'erreur.",
+      "tags": [
+        "Docker",
+        "DevOps",
+        "Déploiement"
+      ],
+      "image": "/images/blog/docker-setup.avif"
+    }
+  ],
+  "comments": [
+    {
+      "id": "1",
+      "idArticle": 1,
+      "author": "Marie D.",
+      "content": "Super article ! J'hésitais entre Angular et React, ton retour d'expérience m'aide beaucoup.",
+      "date": "2026-01-17"
+    },
+    {
+      "id": "2",
+      "idArticle": 2,
+      "author": "Thomas R.",
+      "content": "La clean architecture en frontend, c'est exactement ce qu'il manquait. Merci pour le partage !",
+      "date": "2026-01-30"
+    }
+  ],
+  "users": [
+    {
+      "id": "1",
+      "login": "admin",
+      "password": "admin123",
+      "displayName": "Julien Nédellec",
+      "role": "admin"
+    }
+  ],
+  "bookings": [],
+  "disabledDates": [
+    {
+      "id": 0,
+      "date": "2026-02-08"
+    },
+    {
+      "id": 0,
+      "date": "2026-02-13"
+    }
+  ],
+  "contactMessages": [
+    {
+      "id": "1",
+      "name": "Jean Dupont",
+      "email": "jean@example.com",
+      "subject": "Collaboration",
+      "message": "Bonjour, je souhaite discuter d'une collaboration...",
+      "createdAt": "2026-02-01T10:00:00Z",
+      "read": false
+    }
+  ],
+  "stats": [
+    {
+      "id": "1",
+      "totalVisits": 1250,
+      "totalArticleClicks": 340,
+      "totalProjectClicks": 520,
+      "totalCvDownloads": 89,
+      "articleStats": [
+        {
+          "articleId": 1,
+          "title": "Pourquoi j'ai choisi Angular",
+          "clicks": 156
+        },
+        {
+          "articleId": 2,
+          "title": "Clean Architecture en Angular",
+          "clicks": 112
+        },
+        {
+          "articleId": 3,
+          "title": "Docker et déploiement self-hosted",
+          "clicks": 72
+        }
+      ],
+      "projectStats": [
+        {
+          "projectId": "candidash",
+          "title": "CandiDash",
+          "clicks": 245
+        },
+        {
+          "projectId": "arcadia",
+          "title": "Zoo Arcadia",
+          "clicks": 178
+        },
+        {
+          "projectId": "labelsync-pro",
+          "title": "LabelSync Pro",
+          "clicks": 57
+        },
+        {
+          "projectId": "gitpush-auto",
+          "title": "GitPush Auto",
+          "clicks": 40
+        }
+      ]
+    }
+  ],
+  "cv": [
+    {
+      "id": "1",
+      "fileName": "CV_JULIEN_NEDELLEC.pdf",
+      "fileUrl": "/docs/CV_JULIEN_NEDELLEC.pdf",
+      "uploadedAt": "2026-01-15T09:00:00Z",
+      "fileSize": 245000,
+      "downloads": 89
+    }
+  ]
+}

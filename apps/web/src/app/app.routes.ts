@@ -1,10 +1,11 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './features/auth/domain';
 
 export const routes: Routes = [
   {
     path: '',
     title: 'Accueil | Julien Nédellec',
-    loadComponent: () => import('./pages/home/home').then((m) => m.Home),
+    loadComponent: () => import('./features/home/application/home').then((m) => m.Home),
     data: {
       seo: {
         title: 'Julien Nédellec | Développeur Full-Stack Angular & NestJS',
@@ -39,7 +40,7 @@ export const routes: Routes = [
   {
     path: 'about',
     title: 'À propos | Julien Nédellec',
-    loadComponent: () => import('./pages/about/about').then((m) => m.About),
+    loadComponent: () => import('./features/profile/application/about').then((m) => m.About),
     data: {
       seo: {
         title: 'À propos | Julien Nédellec - Développeur Full-Stack',
@@ -55,7 +56,7 @@ export const routes: Routes = [
   {
     path: 'projects',
     title: 'Projets | Julien Nédellec',
-    loadComponent: () => import('./pages/projects/projects').then((m) => m.Projects),
+    loadComponent: () => import('./features/projects/application/projects').then((m) => m.Projects),
     data: {
       seo: {
         title: 'Projets | Julien Nédellec - Portfolio Développeur Full-Stack',
@@ -71,7 +72,7 @@ export const routes: Routes = [
   {
     path: 'contact',
     title: 'Contact | Julien Nédellec',
-    loadComponent: () => import('./pages/contact/contact').then((m) => m.Contact),
+    loadComponent: () => import('./features/contact/application/contact').then((m) => m.Contact),
     data: {
       seo: {
         title: 'Contact | Julien Nédellec - Développeur Full-Stack',
@@ -83,6 +84,51 @@ export const routes: Routes = [
         type: 'website',
       },
     },
+  },
+  {
+    path: 'booking',
+    title: 'Réservation | Julien Nédellec',
+    loadComponent: () => import('./features/booking/application/booking').then((m) => m.Booking),
+    data: {
+      seo: {
+        title: 'Réservation de consultation - Julien Nédellec',
+        description: 'Réservez un créneau pour un appel de découverte ou une consultation projet.',
+        keywords: 'réservation, consultation, rendez-vous, développeur Angular',
+        url: 'https://www.julien-nedellec.fr/booking',
+        type: 'website',
+      },
+    },
+  },
+  {
+    path: 'blog',
+    title: 'Blog | Julien Nédellec',
+    loadComponent: () => import('./features/blog/application/blog-list').then((m) => m.BlogList),
+    data: {
+      seo: {
+        title: 'Blog | Julien Nédellec - Développeur Full-Stack',
+        description:
+          "Articles sur le développement web, Angular, NestJS et les bonnes pratiques. Retours d'expérience et tutoriels.",
+        keywords: 'Blog Développeur, Angular, NestJS, TypeScript, Tutoriels, Bonnes pratiques',
+        url: 'https://www.julien-nedellec.fr/blog',
+        type: 'website',
+      },
+    },
+  },
+  {
+    path: 'blog/:id',
+    title: 'Article | Julien Nédellec',
+    loadComponent: () =>
+      import('./features/blog/application/blog-detail').then((m) => m.BlogDetail),
+  },
+  {
+    path: 'login',
+    title: 'Connexion | Julien Nédellec',
+    loadComponent: () => import('./features/auth/application/login').then((m) => m.Login),
+  },
+  {
+    path: 'admin',
+    canMatch: [authGuard],
+    loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
   },
   {
     path: '**',

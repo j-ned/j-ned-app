@@ -35,3 +35,12 @@ body {
   background-color: var(--theme-background);
   color: var(--theme-foreground);
 }
+
+/* Override autofill du navigateur pour garder le thème */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--theme-background) inset;
+  -webkit-text-fill-color: var(--theme-foreground);
+  transition: background-color 5000s ease-in-out 0s;
+}

@@ -1,0 +1,419 @@
+import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
+import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
+import { CONTACT_GATEWAY } from '../domain/gateways';
+
+type ContactFormGroup = {
+  name: FormControl<string>;
+  email: FormControl<string>;
+  subject: FormControl<string>;
+  message: FormControl<string>;
+};
+
+@Component({
+  selector: 'app-contact-form',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule, RouterLink],
+  template: `
+    <section id="contact" class="py-20 px-6">
+      <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+          <h2 class="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Contactez-moi</h2>
+          <p class="text-lg text-muted/80 max-w-xl mx-auto">
+            Vous avez un projet ou une question ? N'hésitez pas à me contacter
+          </p>
+        </div>
+
+        <!-- Two columns: info panel + form -->
+        <div class="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-stretch">
+          <!-- Left column: unified info panel -->
+          <div
+            class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-lg flex flex-col justify-between gap-6"
+          >
+            <!-- Coordonnées -->
+            @if (contactInfo()) {
+              <div class="space-y-4">
+                <h3 class="text-xs font-semibold text-muted uppercase tracking-wider">
+                  Coordonnées
+                </h3>
+
+                <a
+                  [href]="'mailto:' + contactInfo()!.email"
+                  class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
+                >
+                  <div
+                    class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                  >
+                    <svg class="w-4 h-4 text-primary" aria-hidden="true">
+                      <use href="/icons/sprite.svg#lucide-mail" />
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs text-muted">Email</p>
+                    <p
+                      class="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate"
+                    >
+                      {{ contactInfo()!.email }}
+                    </p>
+                  </div>
+                </a>
+
+                <a
+                  [href]="'tel:' + contactInfo()!.phone"
+                  class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
+                >
+                  <div
+                    class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-accent/20 to-accent/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                  >
+                    <svg class="w-4 h-4 text-accent" aria-hidden="true">
+                      <use href="/icons/sprite.svg#lucide-phone" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-xs text-muted">Téléphone</p>
+                    <p
+                      class="text-sm font-medium text-foreground group-hover:text-accent transition-colors"
+                    >
+                      {{ contactInfo()!.phone }}
+                    </p>
+                  </div>
+                </a>
+
+                <div class="flex items-center gap-3 p-3 rounded-xl">
+                  <div
+                    class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-green-500/20 to-green-500/5 flex items-center justify-center"
+                  >
+                    <svg class="w-4 h-4 text-green-500" aria-hidden="true">
+                      <use href="/icons/sprite.svg#lucide-map-pin" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-xs text-muted">Localisation</p>
+                    <p class="text-sm font-medium text-foreground">
+                      {{ contactInfo()!.location }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Separator -->
+            <div class="border-t border-foreground/10"></div>
+
+            <!-- Retrouvez-moi -->
+            <div class="space-y-3">
+              <h3 class="text-xs font-semibold text-muted uppercase tracking-wider">
+                Retrouvez-moi
+              </h3>
+              <div class="flex items-center gap-2">
+                <a
+                  [href]="socialLinks().linkedin.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
+                  [attr.aria-label]="socialLinks().linkedin.label"
+                >
+                  <svg class="w-4 h-4 text-muted group-hover:text-primary transition-colors">
+                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().linkedin.icon" />
+                  </svg>
+                </a>
+                <a
+                  [href]="socialLinks().github.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
+                  [attr.aria-label]="socialLinks().github.label"
+                >
+                  <svg class="w-4 h-4 text-muted group-hover:text-foreground transition-colors">
+                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().github.icon" />
+                  </svg>
+                </a>
+                <a
+                  [href]="socialLinks().twitter.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
+                  [attr.aria-label]="socialLinks().twitter.label"
+                >
+                  <svg class="w-4 h-4 text-muted group-hover:text-foreground transition-colors">
+                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().twitter.icon" />
+                  </svg>
+                </a>
+                <a
+                  [href]="socialLinks().email.url"
+                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
+                  [attr.aria-label]="socialLinks().email.label"
+                >
+                  <svg class="w-4 h-4 text-muted group-hover:text-primary transition-colors">
+                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().email.icon" />
+                  </svg>
+                </a>
+                <a
+                  [href]="socialLinks().phone.url"
+                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300 hover:scale-110"
+                  [attr.aria-label]="socialLinks().phone.label"
+                >
+                  <svg class="w-4 h-4 text-muted group-hover:text-accent transition-colors">
+                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().phone.icon" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Separator -->
+            <div class="border-t border-foreground/10"></div>
+
+            <!-- Booking CTA -->
+            <a
+              routerLink="/booking"
+              class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
+            >
+              <div
+                class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+              >
+                <svg class="w-4 h-4 text-violet-400" aria-hidden="true">
+                  <use href="/icons/sprite.svg#lucide-calendar" />
+                </svg>
+              </div>
+              <div>
+                <p
+                  class="text-sm font-medium text-foreground group-hover:text-violet-400 transition-colors"
+                >
+                  Réserver un créneau
+                </p>
+                <p class="text-xs text-muted">Planifiez un appel découverte</p>
+              </div>
+            </a>
+          </div>
+
+          <!-- Right column: form -->
+          <div
+            class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 md:p-8 shadow-lg"
+          >
+            <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-6">
+              Envoyer un message
+            </h3>
+
+            @if (successMessage()) {
+              <div
+                class="p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm text-center mb-6"
+              >
+                {{ successMessage() }}
+              </div>
+            }
+
+            @if (serverError()) {
+              <div
+                class="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center mb-6"
+              >
+                {{ serverError() }}
+              </div>
+            }
+
+            <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+              <!-- Name + Email row -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label for="name" class="block text-sm font-medium text-foreground mb-1.5">
+                    Nom complet *
+                  </label>
+                  <div class="relative">
+                    <svg
+                      class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                      aria-hidden="true"
+                    >
+                      <use href="/icons/sprite.svg#lucide-user" />
+                    </svg>
+                    <input
+                      id="name"
+                      type="text"
+                      formControlName="name"
+                      class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                      placeholder="Votre nom"
+                    />
+                  </div>
+                  @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+                    <span class="text-red-400 text-xs mt-1 block">Le nom est obligatoire</span>
+                  }
+                  @if (form.controls.name.touched && form.controls.name.hasError('minlength')) {
+                    <span class="text-red-400 text-xs mt-1 block">
+                      Le nom doit contenir au moins 2 caractères
+                    </span>
+                  }
+                </div>
+
+                <div>
+                  <label for="email" class="block text-sm font-medium text-foreground mb-1.5">
+                    Email *
+                  </label>
+                  <div class="relative">
+                    <svg
+                      class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                      aria-hidden="true"
+                    >
+                      <use href="/icons/sprite.svg#lucide-mail" />
+                    </svg>
+                    <input
+                      id="email"
+                      type="email"
+                      formControlName="email"
+                      class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                      placeholder="votre@email.com"
+                    />
+                  </div>
+                  @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+                    <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
+                  }
+                  @if (form.controls.email.touched && form.controls.email.hasError('pattern')) {
+                    <span class="text-red-400 text-xs mt-1 block">
+                      Le format de l'email est invalide
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <!-- Subject -->
+              <div>
+                <label for="subject" class="block text-sm font-medium text-foreground mb-1.5">
+                  Sujet *
+                </label>
+                <div class="relative">
+                  <svg
+                    class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                    aria-hidden="true"
+                  >
+                    <use href="/icons/sprite.svg#lucide-pen-line" />
+                  </svg>
+                  <input
+                    id="subject"
+                    type="text"
+                    formControlName="subject"
+                    class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                    placeholder="Objet de votre message"
+                  />
+                </div>
+                @if (form.controls.subject.touched && form.controls.subject.hasError('required')) {
+                  <span class="text-red-400 text-xs mt-1 block">Le sujet est obligatoire</span>
+                }
+                @if (form.controls.subject.touched && form.controls.subject.hasError('minlength')) {
+                  <span class="text-red-400 text-xs mt-1 block">
+                    Le sujet doit contenir au moins 3 caractères
+                  </span>
+                }
+              </div>
+
+              <!-- Message -->
+              <div>
+                <label for="message" class="block text-sm font-medium text-foreground mb-1.5">
+                  Message *
+                </label>
+                <textarea
+                  id="message"
+                  formControlName="message"
+                  rows="6"
+                  class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-none"
+                  placeholder="Décrivez votre projet ou votre question..."
+                ></textarea>
+                @if (form.controls.message.touched && form.controls.message.hasError('required')) {
+                  <span class="text-red-400 text-xs mt-1 block">Le message est obligatoire</span>
+                }
+                @if (form.controls.message.touched && form.controls.message.hasError('minlength')) {
+                  <span class="text-red-400 text-xs mt-1 block">
+                    Le message doit contenir au moins 10 caractères
+                  </span>
+                }
+              </div>
+
+              <!-- Submit -->
+              <button
+                type="submit"
+                [disabled]="form.invalid || isSubmitting()"
+                class="w-full py-3 px-6 rounded-lg bg-linear-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-700 hover:to-violet-700 hover:-translate-y-0.5 shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                @if (isSubmitting()) {
+                  <svg class="w-5 h-5 animate-spin" aria-hidden="true">
+                    <use href="/icons/sprite.svg#lucide-loader-2" />
+                  </svg>
+                  Envoi en cours...
+                } @else {
+                  <svg class="w-5 h-5" aria-hidden="true">
+                    <use href="/icons/sprite.svg#lucide-send" />
+                  </svg>
+                  Envoyer le message
+                }
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  `,
+})
+export class ContactForm {
+  private readonly contactGateway = inject(CONTACT_GATEWAY);
+
+  private readonly contactInfoResource = this.contactGateway.getContactInfo();
+  protected readonly contactInfo = computed(() => this.contactInfoResource.value());
+
+  protected readonly socialLinks = toSignal(this.contactGateway.getSocialLinks(), {
+    initialValue: {
+      linkedin: { url: '', label: '', icon: '' },
+      github: { url: '', label: '', icon: '' },
+      email: { url: '', label: '', icon: '' },
+      phone: { url: '', label: '', icon: '' },
+      twitter: { url: '', label: '', icon: '' },
+    },
+  });
+
+  readonly isSubmitting = signal(false);
+  readonly successMessage = signal('');
+  readonly serverError = signal('');
+
+  readonly form = new FormGroup<ContactFormGroup>({
+    name: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(2)],
+    }),
+    email: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)],
+    }),
+    subject: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(3)],
+    }),
+    message: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(10)],
+    }),
+  });
+
+  onSubmit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    this.isSubmitting.set(true);
+    this.successMessage.set('');
+    this.serverError.set('');
+
+    this.contactGateway.submitContactForm(this.form.getRawValue()).subscribe({
+      next: (result) => {
+        this.isSubmitting.set(false);
+        if (result.success) {
+          this.successMessage.set(result.message);
+          this.form.reset();
+        } else {
+          this.serverError.set(result.message);
+        }
+      },
+      error: () => {
+        this.isSubmitting.set(false);
+        this.serverError.set('Une erreur est survenue. Veuillez réessayer.');
+      },
+    });
+  }
+}
