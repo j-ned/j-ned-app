@@ -23,12 +23,36 @@ import { HomeTestimonials } from './home-testimonials';
   host: { class: 'block' },
   template: `
     <app-home-hero-section />
-    <app-home-key-numbers />
-    <app-home-projects />
-    <app-home-tech-stack />
-    <app-home-blog />
-    <app-home-testimonials />
-    <app-home-contact-cta />
+    @defer (on viewport) {
+      <app-home-key-numbers />
+    } @placeholder {
+      <div class="block py-24 px-6 bg-white/5"></div>
+    }
+    @defer (on viewport) {
+      <app-home-projects />
+    } @placeholder {
+      <div class="block py-24 px-6"></div>
+    }
+    @defer (on viewport) {
+      <app-home-tech-stack />
+    } @placeholder {
+      <div class="block py-24 px-6"></div>
+    }
+    @defer (on viewport) {
+      <app-home-blog />
+    } @placeholder {
+      <div class="block py-24 px-6"></div>
+    }
+    @defer (on viewport) {
+      <app-home-testimonials />
+    } @placeholder {
+      <div class="block py-24 px-6"></div>
+    }
+    @defer (on viewport) {
+      <app-home-contact-cta />
+    } @placeholder {
+      <div class="block py-24 px-6"></div>
+    }
   `,
 })
 export class Home {

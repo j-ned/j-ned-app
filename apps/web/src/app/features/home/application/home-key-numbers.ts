@@ -104,27 +104,25 @@ export class HomeKeyNumbers {
   }
 
   private animateCounters(): void {
-    KEY_NUMBERS.forEach((item, i) => {
-      const delay = i * STAGGER;
+    const start = performance.now();
 
-      setTimeout(() => {
-        const start = performance.now();
+    const step = (now: number): void => {
+      let done = true;
+      const values = KEY_NUMBERS.map((item, i) => {
+        const elapsed = now - start - i * STAGGER;
+        if (elapsed <= 0) {
+          done = false;
+          return 0;
+        }
+        const progress = Math.min(elapsed / DURATION, 1);
+        if (progress < 1) done = false;
+        const eased = 1 - Math.pow(1 - progress, 4);
+        return Math.round(eased * item.value);
+      });
+      this.displayValues.set(values);
+      if (!done) requestAnimationFrame(step);
+    };
 
-        const step = (now: number): void => {
-          const progress = Math.min((now - start) / DURATION, 1);
-          const eased = 1 - Math.pow(1 - progress, 4);
-
-          this.displayValues.update((prev) => {
-            const next = [...prev];
-            next[i] = Math.round(eased * item.value);
-            return next;
-          });
-
-          if (progress < 1) requestAnimationFrame(step);
-        };
-
-        requestAnimationFrame(step);
-      }, delay);
-    });
+    requestAnimationFrame(step);
   }
 }

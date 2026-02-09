@@ -22,6 +22,12 @@ import { HOME_GATEWAY } from '../domain';
         <p class="text-lg md:text-xl text-muted max-w-3xl leading-relaxed mx-auto md:mx-0">
           {{ hero()!.description }}
         </p>
+      } @else {
+        <div class="space-y-6 animate-pulse">
+          <div class="h-14 md:h-20 bg-foreground/5 rounded-lg w-3/4"></div>
+          <div class="h-8 md:h-10 bg-foreground/5 rounded-lg w-full max-w-xl"></div>
+          <div class="h-6 bg-foreground/5 rounded-lg w-full max-w-3xl"></div>
+        </div>
       }
     </hgroup>
   `,
