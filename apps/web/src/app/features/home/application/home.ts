@@ -6,7 +6,6 @@ import { HomeProjects } from './home-projects';
 import { HomeTechStack } from './home-tech-stack';
 import { HomeContactCta } from './home-contact-cta';
 import { HomeBlog } from './home-blog';
-import { HomeTestimonials } from './home-testimonials';
 
 @Component({
   selector: 'app-home',
@@ -16,7 +15,6 @@ import { HomeTestimonials } from './home-testimonials';
     HomeProjects,
     HomeTechStack,
     HomeBlog,
-    HomeTestimonials,
     HomeContactCta,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,11 +38,6 @@ import { HomeTestimonials } from './home-testimonials';
     }
     @defer (on viewport) {
       <app-home-blog />
-    } @placeholder {
-      <div class="block py-24 px-6"></div>
-    }
-    @defer (on viewport) {
-      <app-home-testimonials />
     } @placeholder {
       <div class="block py-24 px-6"></div>
     }

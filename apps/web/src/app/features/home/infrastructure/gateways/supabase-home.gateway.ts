@@ -2,7 +2,6 @@ import { inject, Injectable, resource, type ResourceRef } from '@angular/core';
 import { catchError, from, map, Observable, of } from 'rxjs';
 import type { HomeGateway } from '../../domain';
 import type { HeroData, Speciality, Tech } from '../../domain';
-import type { Comment } from '../../../blog/domain';
 import { SupabaseClientService } from '../../../../shared/supabase/supabase-client';
 import { toCamelCase } from '../../../../shared/supabase/column-mapper';
 
@@ -39,22 +38,6 @@ export class SupabaseHomeGateway implements HomeGateway {
       map(({ data, error }) => {
         if (error) throw error;
         return (data ?? []).map((row) => toCamelCase<Tech>(row));
-      }),
-      catchError(() => of([])),
-    );
-  }
-
-  getFeaturedComments(): Observable<readonly Comment[]> {
-    return from(
-      this.supabase.client
-        .from('comments')
-        .select('*')
-        .eq('status', 'approved')
-        .eq('featured', true),
-    ).pipe(
-      map(({ data, error }) => {
-        if (error) throw error;
-        return (data ?? []).map((row) => toCamelCase<Comment>(row));
       }),
       catchError(() => of([])),
     );
