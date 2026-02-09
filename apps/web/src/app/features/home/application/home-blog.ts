@@ -35,6 +35,7 @@ import { BLOG_GATEWAY } from '../../blog/domain';
                       [ngSrc]="featured.image"
                       [alt]="featured.title"
                       fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
                       class="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
@@ -75,12 +76,13 @@ import { BLOG_GATEWAY } from '../../blog/domain';
               >
                 @if (article.image) {
                   <div
-                    class="relative aspect-video sm:aspect-auto sm:w-1/3 flex-shrink-0 overflow-hidden"
+                    class="relative aspect-video sm:aspect-video sm:w-1/3 flex-shrink-0 overflow-hidden"
                   >
                     <img
                       [ngSrc]="article.image"
                       [alt]="article.title"
                       fill
+                      sizes="(max-width: 1024px) 100vw, 33vw"
                       class="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>

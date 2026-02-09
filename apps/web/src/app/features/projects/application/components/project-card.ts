@@ -18,6 +18,7 @@ import { TrackingService } from '../../../../shared/tracking/tracking.service';
             [ngSrc]="project().image"
             [alt]="project().title"
             fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             class="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         } @else {

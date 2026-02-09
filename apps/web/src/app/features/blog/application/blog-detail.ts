@@ -35,6 +35,7 @@ import { TrackingService } from '../../../shared/tracking/tracking.service';
                   [ngSrc]="article.image"
                   [alt]="article.title"
                   fill
+                  sizes="(max-width: 768px) 100vw, 80vw"
                   priority
                   class="object-cover"
                 />
