@@ -15,7 +15,7 @@ import { Footer } from './layout/components/footer/footer';
     @if (!isAdminRoute()) {
       <app-header />
     }
-    <main>
+    <main class="min-h-screen">
       <router-outlet />
     </main>
     @if (!isAdminRoute()) {

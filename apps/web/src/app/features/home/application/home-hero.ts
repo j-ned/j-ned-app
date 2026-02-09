@@ -24,9 +24,9 @@ import { HOME_GATEWAY } from '../domain';
         </p>
       } @else {
         <div class="space-y-6 animate-pulse">
-          <div class="h-14 md:h-20 bg-foreground/5 rounded-lg w-3/4"></div>
-          <div class="h-8 md:h-10 bg-foreground/5 rounded-lg w-full max-w-xl"></div>
-          <div class="h-6 bg-foreground/5 rounded-lg w-full max-w-3xl"></div>
+          <div class="h-12 md:h-18 lg:h-24 bg-foreground/5 rounded-lg w-3/4"></div>
+          <div class="h-14 md:h-20 bg-foreground/5 rounded-lg w-full max-w-xl"></div>
+          <div class="h-7 md:h-8 bg-foreground/5 rounded-lg w-full max-w-3xl"></div>
         </div>
       }
     </hgroup>

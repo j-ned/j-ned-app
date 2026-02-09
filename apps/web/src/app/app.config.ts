@@ -6,10 +6,12 @@ import {
 } from '@angular/core';
 import {
   NavigationEnd,
+  PreloadAllModules,
   Router,
   provideRouter,
   withComponentInputBinding,
   withInMemoryScrolling,
+  withPreloading,
   withViewTransitions,
 } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
@@ -62,6 +64,7 @@ export const appConfig: ApplicationConfig = {
         scrollPositionRestoration: 'enabled',
         anchorScrolling: 'enabled',
       }),
+      withPreloading(PreloadAllModules),
       withViewTransitions(),
     ),
     provideHttpClient(withFetch()),
