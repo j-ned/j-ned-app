@@ -7,16 +7,21 @@ import { HOME_GATEWAY } from '../domain';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
   template: `
-    @for (speciality of specialities(); track speciality.title) {
-      <li class="space-y-3 text-center md:text-left">
-        <h3 class="text-sm font-bold uppercase tracking-widest text-primary">
-          {{ speciality.title }}
-        </h3>
-        <p class="text-base text-muted leading-relaxed">
-          {{ speciality.description }}
-        </p>
-      </li>
-    }
+    <ul
+      class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-14 mb-16 md:mb-14 pb-12 md:pb-14 border-b border-white/10 min-h-50 md:min-h-37.5"
+      role="list"
+    >
+      @for (speciality of specialities(); track speciality.title) {
+        <li class="space-y-3 text-center md:text-left">
+          <h2 class="text-sm font-bold uppercase tracking-widest text-primary">
+            {{ speciality.title }}
+          </h2>
+          <p class="text-base text-muted leading-relaxed">
+            {{ speciality.description }}
+          </p>
+        </li>
+      }
+    </ul>
   `,
 })
 export class HomeSpeciality {

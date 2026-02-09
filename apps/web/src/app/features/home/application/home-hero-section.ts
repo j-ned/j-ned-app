@@ -14,12 +14,7 @@ import { HomeAvailability } from './home-availability';
   template: `
     <div class="max-w-7xl mx-auto w-full">
       <app-home-hero />
-      <ul
-        class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-14 mb-16 md:mb-14 pb-12 md:pb-14 border-b border-white/10 min-h-50 md:min-h-37.5"
-        role="list"
-      >
-        <app-home-speciality />
-      </ul>
+      <app-home-speciality />
       <div
         class="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-between gap-6"
       >

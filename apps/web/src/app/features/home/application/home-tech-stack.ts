@@ -40,12 +40,12 @@ import { HOME_GATEWAY } from '../domain';
       <aside
         class="max-w-3xl mx-auto p-6 rounded-lg bg-primary/5 border border-primary/10 hover:border-primary/50"
       >
-        <h4 class="font-semibold mb-3 flex items-center gap-2">
+        <h3 class="font-semibold mb-3 flex items-center gap-2">
           <svg class="w-5 h-5 text-primary">
             <use href="/icons/sprite.svg#lucide-zap"></use>
           </svg>
           Spécialisations
-        </h4>
+        </h3>
         <ul class="space-y-2 text-sm text-muted">
           @for (spec of specializations; track $index) {
             <li>• {{ spec }}</li>
