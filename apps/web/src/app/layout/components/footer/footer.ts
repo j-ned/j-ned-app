@@ -141,7 +141,7 @@ const SOCIALS: readonly SocialItem[] = [
           <svg class="w-6 h-6 text-primary" aria-hidden="true">
             <use href="/icons/sprite.svg#lucide-code-xml" />
           </svg>
-           et de
+          et de
           <svg class="w-6 h-6 text-red-600" aria-hidden="true">
             <use href="/icons/sprite.svg#material-symbols-heart-smile" />
           </svg>

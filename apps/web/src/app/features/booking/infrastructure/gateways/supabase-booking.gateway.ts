@@ -1,12 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { catchError, from, map, Observable, of, switchMap, throwError } from 'rxjs';
 import type { BookingGateway } from '../../domain';
-import type {
-  Booking,
-  BookingFormData,
-  BookingSubmission,
-  DisabledDate,
-} from '../../domain';
+import type { Booking, BookingFormData, BookingSubmission, DisabledDate } from '../../domain';
 import { SupabaseClientService } from '../../../../shared/supabase/supabase-client';
 import { toCamelCase, toSnakeCase } from '../../../../shared/supabase/column-mapper';
 

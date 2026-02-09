@@ -2,12 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import type { BookingGateway } from '../../domain';
-import type {
-  Booking,
-  BookingFormData,
-  BookingSubmission,
-  DisabledDate,
-} from '../../domain';
+import type { Booking, BookingFormData, BookingSubmission, DisabledDate } from '../../domain';
 import { API_BASE_URL } from '../../../../shared/api/api-config';
 
 @Injectable()
