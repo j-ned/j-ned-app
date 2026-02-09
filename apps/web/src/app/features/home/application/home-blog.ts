@@ -27,7 +27,7 @@ import { BLOG_GATEWAY } from '../../blog/domain';
             @if (latestArticles()[0]; as featured) {
               <a
                 [routerLink]="['/blog', featured.id]"
-                class="group lg:row-span-2 bg-background border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 shadow-lg flex flex-col"
+                class="group lg:row-span-2 bg-background border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition duration-300 shadow-lg flex flex-col"
               >
                 @if (featured.image) {
                   <div class="relative aspect-video w-full overflow-hidden">
@@ -72,7 +72,7 @@ import { BLOG_GATEWAY } from '../../blog/domain';
             @for (article of latestArticles().slice(1); track article.id) {
               <a
                 [routerLink]="['/blog', article.id]"
-                class="group bg-background border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 shadow-lg flex flex-col sm:flex-row"
+                class="group bg-background border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition duration-300 shadow-lg flex flex-col sm:flex-row"
               >
                 @if (article.image) {
                   <div

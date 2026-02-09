@@ -33,7 +33,7 @@ const STAGGER = 200;
       <ul class="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8" role="list">
         @for (item of items; track item.label; let i = $index) {
           <li
-            class="group relative flex flex-col items-center text-center gap-4 p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-primary/30 transition-all duration-500"
+            class="group relative flex flex-col items-center text-center gap-4 p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-primary/30 transition duration-500"
             [class.translate-y-0]="visible()[i]"
             [class.opacity-100]="visible()[i]"
             [class.translate-y-6]="!visible()[i]"

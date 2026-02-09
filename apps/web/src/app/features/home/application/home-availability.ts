@@ -10,7 +10,7 @@ import { HOME_GATEWAY } from '../domain';
       <p class="flex items-center gap-3 text-base justify-center lg:justify-start">
         <span class="relative flex h-3 w-3" aria-hidden="true">
           <span
-            class="animate-ping will-change-transform absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+            class="animate-ping will-change-[transform,opacity] absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
           ></span>
           <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
         </span>

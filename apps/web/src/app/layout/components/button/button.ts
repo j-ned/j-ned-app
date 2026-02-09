@@ -63,7 +63,7 @@ export class ButtonComponent {
 
   readonly classes = computed(() => {
     const baseClasses =
-      'inline-flex items-center justify-center gap-2 font-semibold text-center whitespace-nowrap transition-all duration-200 cursor-pointer border-0 outline-none no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2';
+      'inline-flex items-center justify-center gap-2 font-semibold text-center whitespace-nowrap transition duration-200 cursor-pointer border-0 outline-none no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2';
 
     const variantClasses = {
       primary: 'bg-blue-600 text-white hover:bg-blue-700 hover:-translate-y-0.5',

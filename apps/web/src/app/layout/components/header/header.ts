@@ -17,7 +17,7 @@ import { NAV_LINKS } from './nav-items';
         class="flex items-center gap-3 text-2xl font-display font-bold text-primary"
       >
         <div
-          class="p-2 bg-linear-to-br from-primary/20 to-accent/20 rounded-lg border border-primary/30 hover:border-primary/50 transition-all"
+          class="p-2 bg-linear-to-br from-primary/20 to-accent/20 rounded-lg border border-primary/30 hover:border-primary/50 transition"
         >
           <svg class="w-6 h-6">
             <use href="/icons/sprite.svg#lucide-code-xml"></use>
@@ -55,7 +55,7 @@ import { NAV_LINKS } from './nav-items';
       <div class="flex items-center gap-4">
         <button
           (click)="toggleTheme()"
-          class="relative p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group"
+          class="relative p-2 rounded-lg bg-white/5 hover:bg-white/10 transition duration-300 group"
           aria-label="Toggle theme"
         >
           <svg
@@ -83,7 +83,7 @@ import { NAV_LINKS } from './nav-items';
         </a>
         <button
           (click)="toggleMobileMenu()"
-          class="relative md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+          class="relative md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
           aria-label="Toggle menu"
         >
           <svg [ngClass]="{ hidden: isMobileMenuOpen() }" class="w-6 h-6 text-primary">

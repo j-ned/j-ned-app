@@ -75,7 +75,7 @@ const SOCIALS: readonly SocialItem[] = [
                 [attr.aria-label]="social.label"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="p-2.5 rounded-lg bg-white/5 border border-white/5 hover:border-primary/50 hover:bg-primary/10 text-muted hover:text-primary transition-all duration-300"
+                class="p-2.5 rounded-lg bg-white/5 border border-white/5 hover:border-primary/50 hover:bg-primary/10 text-muted hover:text-primary transition duration-300"
               >
                 <svg class="w-5 h-5" aria-hidden="true">
                   <use [attr.href]="'/icons/sprite.svg#' + social.icon" />
