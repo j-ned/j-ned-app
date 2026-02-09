@@ -74,7 +74,6 @@
     "postcss": "^8.5.3",
     "prettier": "^3.6.2",
     "sharp": "^0.34.5",
-    "supabase": "^2.76.3",
     "tailwindcss": "^4.1.12",
     "typescript": "~5.9.2",
     "typescript-eslint": "8.46.3",
