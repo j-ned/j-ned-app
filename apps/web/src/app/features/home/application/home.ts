@@ -9,14 +9,7 @@ import { HomeBlog } from './home-blog';
 
 @Component({
   selector: 'app-home',
-  imports: [
-    HomeHeroSection,
-    HomeKeyNumbers,
-    HomeProjects,
-    HomeTechStack,
-    HomeBlog,
-    HomeContactCta,
-  ],
+  imports: [HomeHeroSection, HomeKeyNumbers, HomeProjects, HomeTechStack, HomeBlog, HomeContactCta],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
