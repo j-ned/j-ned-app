@@ -19,6 +19,10 @@ export class TrackingService {
     this.supabase.client.rpc('track_article_click', { p_article_id: articleId, p_title: title });
   }
 
+  trackVisit(): void {
+    this.supabase.client.rpc('track_visit');
+  }
+
   trackCvDownload(): void {
     this.umamiTrack('cv_download');
     this.supabase.client.rpc('track_cv_download');

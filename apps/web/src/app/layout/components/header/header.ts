@@ -2,6 +2,7 @@ import { Component, signal, effect, afterNextRender, ElementRef, inject } from '
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
+import { TrackingService } from '../../../shared/tracking/tracking.service';
 
 @Component({
   selector: 'app-header',
@@ -74,6 +75,7 @@ import { NAV_LINKS } from './nav-items';
         <a
           href="/docs/CV_JULIEN_NEDELLEC.pdf"
           download
+          (click)="trackCvDownload()"
           class="hidden md:flex items-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 rounded-full text-md font-medium transition-colors"
         >
           <svg class="w-6 h-6 text-primary">
@@ -126,7 +128,7 @@ import { NAV_LINKS } from './nav-items';
         <a
           href="/docs/CV_JULIEN_NEDELLEC.pdf"
           download
-          (click)="closeMobileMenu()"
+          (click)="trackCvDownload(); closeMobileMenu()"
           class="flex items-center gap-3 text-lg font-medium text-primary hover:text-primary/80 transition-colors py-2 border-t border-white/5 pt-4 mt-2"
         >
           <svg class="w-5 h-5">
@@ -140,6 +142,7 @@ import { NAV_LINKS } from './nav-items';
 })
 export class Header {
   private readonly elementRef = inject(ElementRef);
+  private readonly tracking = inject(TrackingService);
 
   protected readonly navItems = signal(NAV_LINKS);
   protected readonly isMobileMenuOpen = signal(false);
@@ -176,6 +179,10 @@ export class Header {
 
   protected closeMobileMenu(): void {
     this.isMobileMenuOpen.set(false);
+  }
+
+  protected trackCvDownload(): void {
+    this.tracking.trackCvDownload();
   }
 
   protected toggleTheme(): void {

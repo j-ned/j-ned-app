@@ -16,10 +16,11 @@ import {
 } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { IMAGE_CONFIG } from '@angular/common';
-import { filter } from 'rxjs';
+import { filter, take } from 'rxjs';
 
 import { routes } from './app.routes';
 import { SeoService } from './shared/seo/seo';
+import { TrackingService } from './shared/tracking/tracking.service';
 import { PROJECTS_GATEWAY } from './features/projects/domain';
 import { PROFILE_GATEWAY } from './features/profile/domain';
 import { CONTACT_GATEWAY } from './features/contact/domain';
@@ -54,6 +55,22 @@ function initializeSeo(): () => void {
   };
 }
 
+function initializeTracking(): () => void {
+  return (): void => {
+    const router = inject(Router);
+    const tracking = inject(TrackingService);
+
+    router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        take(1),
+      )
+      .subscribe(() => {
+        tracking.trackVisit();
+      });
+  };
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -69,6 +86,7 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(withFetch()),
     provideAppInitializer(initializeSeo()),
+    provideAppInitializer(initializeTracking()),
     {
       provide: IMAGE_CONFIG,
       useValue: {
