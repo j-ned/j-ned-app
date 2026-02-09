@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed, input, output, signal } from '@angular/core';
-import type { Booking } from '../domain/models';
+import type { Booking } from '../domain';
 
 type CalendarDay = {
   readonly date: string;
@@ -13,12 +13,12 @@ type CalendarDay = {
 @Component({
   selector: 'app-booking-calendar',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   template: `
     <div
       class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-lg"
     >
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
+      <header class="flex items-center justify-between mb-6">
         <button
           (click)="previousMonth()"
           class="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center hover:border-primary/50 hover:text-primary transition-colors"
@@ -38,16 +38,14 @@ type CalendarDay = {
             <use href="/icons/sprite.svg#lucide-chevron-right" />
           </svg>
         </button>
-      </div>
+      </header>
 
-      <!-- Weekday headers -->
       <div class="grid grid-cols-7 gap-1 mb-2">
         @for (day of weekDays; track day) {
           <div class="text-center text-xs font-medium text-muted py-2">{{ day }}</div>
         }
       </div>
 
-      <!-- Days grid -->
       <div class="grid grid-cols-7 gap-1">
         @for (day of daysGrid(); track day.date) {
           @if (day.isCurrentMonth) {
@@ -103,13 +101,11 @@ export class BookingCalendar {
 
     const bookedDates = new Set(this.bookedSlots().map((b) => b.date));
 
-    // Monday = 0, Sunday = 6
     let startDayOfWeek = firstDay.getDay() - 1;
     if (startDayOfWeek < 0) startDayOfWeek = 6;
 
     const days: CalendarDay[] = [];
 
-    // Empty placeholders before first day
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push({
         date: `placeholder-${i}`,
@@ -121,7 +117,6 @@ export class BookingCalendar {
       });
     }
 
-    // Actual days
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const dayDate = new Date(year, month, d);
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;

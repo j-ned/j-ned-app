@@ -2,10 +2,11 @@ import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/cor
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { Header } from './layout/components/header/header';
+import { Footer } from './layout/components/footer/footer';
 
 @Component({
   selector: 'app-root',
-  imports: [Header, RouterOutlet],
+  imports: [Header, Footer, RouterOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown.control.l)': 'onCtrlL($event)',
@@ -17,6 +18,9 @@ import { Header } from './layout/components/header/header';
     <main>
       <router-outlet />
     </main>
+    @if (!isAdminRoute()) {
+      <app-footer />
+    }
   `,
 })
 export class App {

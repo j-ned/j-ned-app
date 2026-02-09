@@ -1,16 +1,35 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  inject,
+  input,
+  signal,
+  computed,
+  OnInit,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { PROJECTS_GATEWAY } from '../../projects/domain/gateways';
-import type { Project } from '../../projects/domain/models';
+import { PROJECTS_GATEWAY } from '../../projects/domain';
+import type { Project } from '../../projects/domain';
+
+const SLUG_TO_CATEGORY: Record<string, string> = {
+  web: 'Application Web',
+  mobile: 'Application Mobile',
+  api: 'API / Backend',
+  script: 'Script',
+  package: 'Package / Librairie',
+  extension: 'Extension',
+  design: 'Design / Maquette',
+};
 
 @Component({
   selector: 'app-admin-projects',
-  imports: [RouterLink],
+  imports: [RouterLink, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
       <div class="flex items-center justify-between mb-8">
-        <h1 class="text-2xl font-bold text-foreground">Projets</h1>
+        <h1 class="text-2xl font-bold text-foreground">{{ pageTitle() }}</h1>
         <a
           routerLink="/admin/projects/new"
           class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -36,8 +55,10 @@ import type { Project } from '../../projects/domain/models';
                 <tr class="border-b border-foreground/5 hover:bg-foreground/5 transition-colors">
                   <td class="px-6 py-4">
                     <img
-                      [src]="project.image"
+                      [ngSrc]="project.image"
                       [alt]="project.title"
+                      width="48"
+                      height="48"
                       class="w-12 h-12 rounded-lg object-cover"
                     />
                   </td>
@@ -85,12 +106,20 @@ import type { Project } from '../../projects/domain/models';
     </div>
   `,
 })
-export class AdminProjects {
+export class AdminProjects implements OnInit {
   private readonly projectsGateway = inject(PROJECTS_GATEWAY);
+
+  readonly category = input<string>();
 
   readonly projects = signal<readonly Project[]>([]);
 
-  constructor() {
+  readonly pageTitle = computed(() => {
+    const slug = this.category();
+    if (!slug || slug === 'all') return 'Tous les projets';
+    return SLUG_TO_CATEGORY[slug] ?? 'Projets';
+  });
+
+  ngOnInit(): void {
     this.loadProjects();
   }
 
@@ -99,6 +128,11 @@ export class AdminProjects {
   }
 
   private loadProjects(): void {
-    this.projectsGateway.filterProjects({}).subscribe((projects) => this.projects.set(projects));
+    const slug = this.category();
+    const categoryName = slug && slug !== 'all' ? SLUG_TO_CATEGORY[slug] : undefined;
+    const filter = categoryName ? { category: categoryName } : {};
+    this.projectsGateway
+      .filterProjects(filter)
+      .subscribe((projects) => this.projects.set(projects));
   }
 }

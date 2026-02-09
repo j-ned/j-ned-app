@@ -11,6 +11,7 @@ export type ProjectsGateway = {
   createProject(project: Omit<Project, 'id'>): Observable<Project>;
   updateProject(id: string, project: Partial<Project>): Observable<Project>;
   deleteProject(id: string): Observable<void>;
+  uploadImage(file: File, projectSlug: string): Observable<string>;
 };
 
 export { PROJECTS_GATEWAY } from './projects.gateway.token';

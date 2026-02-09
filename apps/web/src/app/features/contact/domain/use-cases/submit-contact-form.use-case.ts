@@ -8,7 +8,6 @@ export class SubmitContactFormUseCase {
   private gateway = inject(CONTACT_GATEWAY);
 
   execute(data: ContactFormData): Observable<ContactFormSubmission> {
-    // Add validation logic here if needed
     if (!this.isValidEmail(data.email)) {
       throw new Error('Invalid email format');
     }

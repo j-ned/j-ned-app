@@ -20,14 +20,14 @@ export type BookingFormPayload = {
 @Component({
   selector: 'app-booking-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   imports: [ReactiveFormsModule],
   template: `
     <div
       class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 md:p-8 shadow-lg h-full"
     >
-      <!-- Slot summary -->
-      <div
-        class="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20 flex items-center gap-3"
+      <output
+        class="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20 flex items-center gap-3 block"
       >
         <svg class="w-5 h-5 text-primary shrink-0" aria-hidden="true">
           <use href="/icons/sprite.svg#lucide-calendar" />
@@ -39,7 +39,7 @@ export type BookingFormPayload = {
           <span class="text-muted mx-1">·</span>
           <span class="text-muted">{{ selectedDuration() }} min</span>
         </div>
-      </div>
+      </output>
 
       <h3 class="text-lg font-bold text-foreground mb-6">Vos coordonnées</h3>
 
@@ -63,7 +63,6 @@ export type BookingFormPayload = {
       }
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
-        <!-- Name -->
         <div>
           <label for="booking-name" class="block text-sm font-medium text-foreground mb-1.5">
             Nom complet *
@@ -92,8 +91,6 @@ export type BookingFormPayload = {
             </span>
           }
         </div>
-
-        <!-- Email -->
         <div>
           <label for="booking-email" class="block text-sm font-medium text-foreground mb-1.5">
             Email *
@@ -121,7 +118,6 @@ export type BookingFormPayload = {
           }
         </div>
 
-        <!-- Phone -->
         <div>
           <label for="booking-phone" class="block text-sm font-medium text-foreground mb-1.5">
             Téléphone *
@@ -151,7 +147,6 @@ export type BookingFormPayload = {
           }
         </div>
 
-        <!-- Subject -->
         <div>
           <label for="booking-subject" class="block text-sm font-medium text-foreground mb-1.5">
             Sujet *
@@ -181,7 +176,6 @@ export type BookingFormPayload = {
           }
         </div>
 
-        <!-- Message -->
         <div>
           <label for="booking-message" class="block text-sm font-medium text-foreground mb-1.5">
             Message *
@@ -203,7 +197,6 @@ export type BookingFormPayload = {
           }
         </div>
 
-        <!-- Submit -->
         <button
           type="submit"
           [disabled]="form.invalid || isSubmitting()"

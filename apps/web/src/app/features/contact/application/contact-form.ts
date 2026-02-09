@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
-import { CONTACT_GATEWAY } from '../domain/gateways';
+import { CONTACT_GATEWAY } from '../domain';
 
 type ContactFormGroup = {
   name: FormControl<string>;
@@ -14,27 +14,24 @@ type ContactFormGroup = {
 @Component({
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   imports: [ReactiveFormsModule, RouterLink],
   template: `
     <section id="contact" class="py-20 px-6">
       <div class="max-w-5xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-12">
+        <header class="text-center mb-12">
           <h2 class="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Contactez-moi</h2>
           <p class="text-lg text-muted/80 max-w-xl mx-auto">
             Vous avez un projet ou une question ? N'hésitez pas à me contacter
           </p>
-        </div>
+        </header>
 
-        <!-- Two columns: info panel + form -->
         <div class="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-stretch">
-          <!-- Left column: unified info panel -->
-          <div
+          <aside
             class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-lg flex flex-col justify-between gap-6"
           >
-            <!-- Coordonnées -->
             @if (contactInfo()) {
-              <div class="space-y-4">
+              <address class="space-y-4 not-italic">
                 <h3 class="text-xs font-semibold text-muted uppercase tracking-wider">
                   Coordonnées
                 </h3>
@@ -96,18 +93,14 @@ type ContactFormGroup = {
                     </p>
                   </div>
                 </div>
-              </div>
+              </address>
             }
-
-            <!-- Separator -->
-            <div class="border-t border-foreground/10"></div>
-
-            <!-- Retrouvez-moi -->
+            <hr class="border-t border-foreground/10" />
             <div class="space-y-3">
               <h3 class="text-xs font-semibold text-muted uppercase tracking-wider">
                 Retrouvez-moi
               </h3>
-              <div class="flex items-center gap-2">
+              <nav class="flex items-center gap-2" aria-label="Réseaux sociaux">
                 <a
                   [href]="socialLinks().linkedin.url"
                   target="_blank"
@@ -159,13 +152,9 @@ type ContactFormGroup = {
                     <use [attr.href]="'/icons/sprite.svg#' + socialLinks().phone.icon" />
                   </svg>
                 </a>
-              </div>
+              </nav>
             </div>
-
-            <!-- Separator -->
-            <div class="border-t border-foreground/10"></div>
-
-            <!-- Booking CTA -->
+            <hr class="border-t border-foreground/10" />
             <a
               routerLink="/booking"
               class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
@@ -186,9 +175,7 @@ type ContactFormGroup = {
                 <p class="text-xs text-muted">Planifiez un appel découverte</p>
               </div>
             </a>
-          </div>
-
-          <!-- Right column: form -->
+          </aside>
           <div
             class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 md:p-8 shadow-lg"
           >
@@ -213,8 +200,8 @@ type ContactFormGroup = {
             }
 
             <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
-              <!-- Name + Email row -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-0 p-0 m-0">
+                <legend class="sr-only">Informations personnelles</legend>
                 <div>
                   <label for="name" class="block text-sm font-medium text-foreground mb-1.5">
                     Nom complet *
@@ -272,9 +259,7 @@ type ContactFormGroup = {
                     </span>
                   }
                 </div>
-              </div>
-
-              <!-- Subject -->
+              </fieldset>
               <div>
                 <label for="subject" class="block text-sm font-medium text-foreground mb-1.5">
                   Sujet *
@@ -303,8 +288,6 @@ type ContactFormGroup = {
                   </span>
                 }
               </div>
-
-              <!-- Message -->
               <div>
                 <label for="message" class="block text-sm font-medium text-foreground mb-1.5">
                   Message *
@@ -325,8 +308,6 @@ type ContactFormGroup = {
                   </span>
                 }
               </div>
-
-              <!-- Submit -->
               <button
                 type="submit"
                 [disabled]="form.invalid || isSubmitting()"

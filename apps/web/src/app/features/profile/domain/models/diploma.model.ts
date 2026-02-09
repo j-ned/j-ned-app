@@ -1,5 +1,5 @@
 export type Diploma = {
-  readonly id: string;
+  readonly id: number;
   readonly title: string;
   readonly provider: string;
   readonly shortDescription: string;

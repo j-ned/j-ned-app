@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-page-not-found',
   host: { class: 'block' },
   template: `
-    <section
+    <main
       class="min-h-screen flex flex-col items-center justify-center bg-background text-foreground px-4"
     >
       <h1 class="text-7xl font-extrabold text-primary mb-4">404</h1>
@@ -19,7 +19,7 @@ import { Component } from '@angular/core';
       >
         Retour à l'accueil
       </a>
-    </section>
+    </main>
   `,
   styles: [],
 })

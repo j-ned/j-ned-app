@@ -1,22 +1,22 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from '../domain/gateways';
+import { PROFILE_GATEWAY } from '../domain';
 
 @Component({
   selector: 'app-about-what-i-do',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div>
-      <div class="flex items-center gap-2 mb-4">
+    <section>
+      <header class="flex items-center gap-2 mb-4">
         <svg class="w-6 h-6 text-primary">
           <use href="/icons/sprite.svg#lucide-code-xml"></use>
         </svg>
         <h2 class="text-2xl font-bold text-foreground">Ce que je fais</h2>
-      </div>
+      </header>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @for (item of whatIDo(); track item.title) {
-          <div
+          <article
             class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-primary/50 hover:bg-primary/5 transition-all group"
           >
             <h3
@@ -27,10 +27,10 @@ import { PROFILE_GATEWAY } from '../domain/gateways';
             <p class="text-muted text-sm leading-relaxed">
               {{ item.description }}
             </p>
-          </div>
+          </article>
         }
       </div>
-    </div>
+    </section>
   `,
 })
 export class AboutWhatIDo {

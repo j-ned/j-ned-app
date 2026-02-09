@@ -1,22 +1,22 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from '../domain/gateways';
+import { PROFILE_GATEWAY } from '../domain';
 
 @Component({
   selector: 'app-about-highlights',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div>
-      <div class="flex items-center gap-2 mb-5">
+    <section>
+      <header class="flex items-center gap-2 mb-5">
         <svg class="w-6 h-6 text-primary">
           <use href="/icons/sprite.svg#lucide-sparkles"></use>
         </svg>
         <h2 class="text-2xl font-bold text-foreground">Ce qui me caractérise</h2>
-      </div>
+      </header>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         @for (highlight of highlights(); track highlight.title) {
-          <div
+          <article
             class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-accent/50 hover:bg-accent/5 transition-all group"
           >
             <div
@@ -34,10 +34,10 @@ import { PROFILE_GATEWAY } from '../domain/gateways';
             <p class="text-muted text-xs leading-relaxed">
               {{ highlight.description }}
             </p>
-          </div>
+          </article>
         }
       </div>
-    </div>
+    </section>
   `,
 })
 export class AboutHighlights {

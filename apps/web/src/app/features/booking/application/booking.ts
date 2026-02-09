@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, viewChild } from '@angular/core';
-import { BOOKING_GATEWAY } from '../domain/gateways';
+import { BOOKING_GATEWAY } from '../domain';
 import type { Booking as BookingModel, BookingFormData } from '../domain/models';
 import { BookingCalendar } from './booking-calendar';
 import { BookingTimePicker } from './booking-time-picker';
@@ -8,21 +8,21 @@ import { BookingForm, type BookingFormPayload } from './booking-form';
 @Component({
   selector: 'app-booking',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   imports: [BookingCalendar, BookingTimePicker, BookingForm],
   template: `
-    <div class="min-h-screen pt-20 pb-16">
+    <main class="min-h-screen pt-20 pb-16">
       <section class="container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <!-- Header -->
-        <div class="mb-12 text-center">
+        <header class="mb-12 text-center">
           <h1 class="text-4xl md:text-6xl font-bold mb-6 text-foreground">Réservation</h1>
           <p class="text-xl text-muted max-w-2xl mx-auto leading-relaxed">
-            Choisissez un créneau qui vous convient pour un entretien téléphonique ou une discussion pour un projet.
+            Choisissez un créneau qui vous convient pour un entretien téléphonique ou une discussion
+            pour un projet.
           </p>
-        </div>
+        </header>
 
         @defer (on viewport) {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto items-stretch">
-            <!-- Left column: Calendar + Time picker -->
             <div class="flex flex-col gap-6">
               <app-booking-calendar
                 [bookedSlots]="bookedSlots()"
@@ -39,7 +39,6 @@ import { BookingForm, type BookingFormPayload } from './booking-form';
               }
             </div>
 
-            <!-- Right column: Form -->
             <div class="flex flex-col">
               @if (selectedDate() && selectedSlot()) {
                 <app-booking-form
@@ -76,7 +75,7 @@ import { BookingForm, type BookingFormPayload } from './booking-form';
           </div>
         }
       </section>
-    </div>
+    </main>
   `,
 })
 export class Booking {

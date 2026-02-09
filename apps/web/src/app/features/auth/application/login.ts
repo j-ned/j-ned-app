@@ -1,10 +1,10 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../domain/services/auth.service';
+import { AuthService } from '../domain';
 
 type LoginForm = {
-  login: FormControl<string>;
+  email: FormControl<string>;
   password: FormControl<string>;
 };
 
@@ -12,8 +12,9 @@ type LoginForm = {
   selector: 'app-login',
   imports: [ReactiveFormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-background px-4">
+    <main class="min-h-screen flex items-center justify-center bg-background px-4">
       <div
         class="w-full max-w-md bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-8 shadow-2xl"
       >
@@ -23,7 +24,7 @@ type LoginForm = {
             class="w-16 h-16 rounded-xl bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center"
           >
             <svg class="w-8 h-8 text-primary" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-shield" />
+              <use href="/icons/sprite.svg#lucide-shield-user" />
             </svg>
           </div>
         </div>
@@ -40,33 +41,31 @@ type LoginForm = {
         }
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
-          <!-- Login -->
+          <!-- Email -->
           <div>
-            <label for="login" class="block text-sm font-medium text-foreground mb-1.5"
-              >Identifiant</label
+            <label for="email" class="block text-sm font-medium text-foreground mb-1.5"
+              >Email</label
             >
             <div class="relative">
               <svg
                 class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
                 aria-hidden="true"
               >
-                <use href="/icons/sprite.svg#lucide-user" />
+                <use href="/icons/sprite.svg#lucide-mail" />
               </svg>
               <input
-                id="login"
-                type="text"
-                formControlName="login"
+                id="email"
+                type="email"
+                formControlName="email"
                 class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-                placeholder="Votre identifiant"
+                placeholder="Votre email"
               />
             </div>
-            @if (form.controls.login.touched && form.controls.login.hasError('required')) {
-              <span class="text-red-400 text-xs mt-1 block">L'identifiant est obligatoire</span>
+            @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+              <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
             }
-            @if (form.controls.login.touched && form.controls.login.hasError('minlength')) {
-              <span class="text-red-400 text-xs mt-1 block">
-                L'identifiant doit contenir au moins 3 caractères
-              </span>
+            @if (form.controls.email.touched && form.controls.email.hasError('email')) {
+              <span class="text-red-400 text-xs mt-1 block">L'email n'est pas valide</span>
             }
           </div>
 
@@ -95,7 +94,7 @@ type LoginForm = {
             }
             @if (form.controls.password.touched && form.controls.password.hasError('minlength')) {
               <span class="text-red-400 text-xs mt-1 block">
-                Le mot de passe doit contenir au moins 4 caractères
+                Le mot de passe doit contenir au moins 6 caractères
               </span>
             }
           </div>
@@ -113,13 +112,13 @@ type LoginForm = {
           </button>
         </form>
 
-        <div class="mt-6 text-center">
+        <nav class="mt-6 text-center">
           <a routerLink="/" class="text-sm text-muted hover:text-primary transition-colors">
             Retour au site
           </a>
-        </div>
+        </nav>
       </div>
-    </div>
+    </main>
   `,
 })
 export class Login {
@@ -130,13 +129,13 @@ export class Login {
   readonly isSubmitting = signal(false);
 
   readonly form = new FormGroup<LoginForm>({
-    login: new FormControl('', {
+    email: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(3)],
+      validators: [Validators.required, Validators.email],
     }),
     password: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(4)],
+      validators: [Validators.required, Validators.minLength(6)],
     }),
   });
 
@@ -149,15 +148,15 @@ export class Login {
     this.isSubmitting.set(true);
     this.errorMessage.set('');
 
-    const { login, password } = this.form.getRawValue();
+    const { email, password } = this.form.getRawValue();
 
-    this.authService.login(login, password).subscribe({
+    this.authService.login(email, password).subscribe({
       next: (success) => {
         this.isSubmitting.set(false);
         if (success) {
           this.router.navigate(['/admin']);
         } else {
-          this.errorMessage.set('Identifiant ou mot de passe incorrect');
+          this.errorMessage.set('Email ou mot de passe incorrect');
         }
       },
       error: () => {

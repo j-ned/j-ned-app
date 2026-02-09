@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
-import type { BlogGateway } from '../../domain/gateways';
-import type { Article, Comment } from '../../domain/models';
+import type { BlogGateway } from '../../domain';
+import type { Article, Comment } from '../../domain';
 import { API_BASE_URL } from '../../../../shared/api/api-config';
 
 @Injectable()
@@ -59,6 +59,14 @@ export class HttpBlogGateway implements BlogGateway {
     );
   }
 
+  createComment(comment: Omit<Comment, 'id'>): Observable<Comment> {
+    return this.http.post<Comment>(`${API_BASE_URL}/comments`, comment);
+  }
+
+  updateComment(id: number, data: Partial<Comment>): Observable<Comment> {
+    return this.http.patch<Comment>(`${API_BASE_URL}/comments/${id}`, data);
+  }
+
   deleteComment(id: number): Observable<void> {
     return this.http.get<Comment[]>(`${API_BASE_URL}/comments?id=${id}`).pipe(
       switchMap((data) => {
@@ -80,5 +88,26 @@ export class HttpBlogGateway implements BlogGateway {
       map((c) => c.length),
       catchError(() => of(0)),
     );
+  }
+
+  getPendingCommentCount(): Observable<number> {
+    return this.http.get<readonly Comment[]>(`${API_BASE_URL}/comments?status=pending`).pipe(
+      map((c) => c.length),
+      catchError(() => of(0)),
+    );
+  }
+
+  getFeaturedComments(): Observable<readonly Comment[]> {
+    return this.http
+      .get<readonly Comment[]>(`${API_BASE_URL}/comments?status=approved&featured=true`)
+      .pipe(catchError(() => of([])));
+  }
+
+  uploadImage(file: File, articleSlug: string): Observable<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http
+      .post<{ url: string }>(`${API_BASE_URL}/articles/${articleSlug}/image`, formData)
+      .pipe(map((res) => res.url));
   }
 }

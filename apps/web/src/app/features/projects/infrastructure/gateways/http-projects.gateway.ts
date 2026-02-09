@@ -1,8 +1,8 @@
 import { inject, Injectable, resource, type ResourceRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
-import type { ProjectsGateway } from '../../domain/gateways';
-import type { Project, ProjectFilter } from '../../domain/models';
+import type { ProjectsGateway } from '../../domain';
+import type { Project, ProjectFilter } from '../../domain';
 import { API_BASE_URL } from '../../../../shared/api/api-config';
 
 @Injectable()
@@ -72,5 +72,13 @@ export class HttpProjectsGateway implements ProjectsGateway {
         return this.http.delete<void>(`${API_BASE_URL}/projects/${data[0].id}`);
       }),
     );
+  }
+
+  uploadImage(file: File, projectSlug: string): Observable<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http
+      .post<{ url: string }>(`${API_BASE_URL}/projects/${projectSlug}/image`, formData)
+      .pipe(map((res) => res.url));
   }
 }

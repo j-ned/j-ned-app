@@ -9,13 +9,14 @@ import {
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ProjectCard } from './components/project-card';
-import { PROJECTS_GATEWAY } from '../domain/gateways';
-import { FilterProjectsUseCase } from '../domain/use-cases/filter-projects.use-case';
-import { PaginateProjectsUseCase } from '../domain/use-cases/paginate-projects.use-case';
+import { PROJECTS_GATEWAY } from '../domain';
+import { FilterProjectsUseCase } from '../domain';
+import { PaginateProjectsUseCase } from '../domain';
 
 @Component({
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   imports: [ProjectCard],
   providers: [FilterProjectsUseCase, PaginateProjectsUseCase],
   template: `
@@ -30,7 +31,7 @@ import { PaginateProjectsUseCase } from '../domain/use-cases/paginate-projects.u
           </p>
         </div>
 
-        <div class="flex flex-wrap gap-4 mb-12">
+        <nav class="flex flex-wrap gap-4 mb-12" aria-label="Filtres" role="menu">
           @for (filter of filters(); track filter) {
             <button
               (click)="setFilter(filter)"
@@ -43,14 +44,16 @@ import { PaginateProjectsUseCase } from '../domain/use-cases/paginate-projects.u
               {{ filter }}
             </button>
           }
-        </div>
+        </nav>
 
         @defer (on viewport) {
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12" role="list">
             @for (project of paginatedProjects(); track project.id) {
-              <app-project-card [project]="project" />
+              <li>
+                <app-project-card [project]="project" />
+              </li>
             }
-          </div>
+          </ul>
 
           @if (filteredProjects().length === 0) {
             <div class="text-center py-16">
@@ -68,7 +71,7 @@ import { PaginateProjectsUseCase } from '../domain/use-cases/paginate-projects.u
         }
 
         @if (totalPages() > 1) {
-          <div class="flex items-center justify-center gap-2 mt-12">
+          <nav class="flex items-center justify-center gap-2 mt-12" aria-label="Pagination">
             <button
               (click)="previousPage()"
               [disabled]="currentPage() === 1"
@@ -105,7 +108,7 @@ import { PaginateProjectsUseCase } from '../domain/use-cases/paginate-projects.u
             >
               Suivant →
             </button>
-          </div>
+          </nav>
 
           <div class="text-center mt-6">
             <p class="text-sm text-muted">

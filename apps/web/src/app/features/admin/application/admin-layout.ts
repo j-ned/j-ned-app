@@ -1,6 +1,6 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../auth/domain/services/auth.service';
+import { AuthService } from '../../auth/domain';
 
 @Component({
   selector: 'app-admin-layout',
@@ -8,7 +8,6 @@ import { AuthService } from '../../auth/domain/services/auth.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex min-h-screen bg-background">
-      <!-- Sidebar -->
       <aside
         class="flex flex-col border-r border-foreground/10 bg-background transition-all duration-300"
         [class.w-64]="!collapsed()"
@@ -35,7 +34,6 @@ import { AuthService } from '../../auth/domain/services/auth.service';
           </div>
         </div>
 
-        <!-- Toggle button -->
         <div class="px-3 py-2">
           <button
             (click)="collapsed.set(!collapsed())"
@@ -52,7 +50,6 @@ import { AuthService } from '../../auth/domain/services/auth.service';
           </button>
         </div>
 
-        <!-- Navigation -->
         <nav class="flex-1 px-3 py-2 space-y-1">
           <a
             routerLink="/admin"
@@ -82,55 +79,42 @@ import { AuthService } from '../../auth/domain/services/auth.service';
             }
           </a>
           <a
-            routerLink="/admin/articles"
+            routerLink="/admin/about"
             routerLinkActive="bg-primary/10 text-primary border-primary/30"
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Articles' : null"
+            [attr.title]="collapsed() ? 'À propos' : null"
+          >
+            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
+              <use href="/icons/sprite.svg#lucide-user" />
+            </svg>
+            @if (!collapsed()) {
+              <span>À propos</span>
+            }
+          </a>
+          <a
+            routerLink="/admin/blog"
+            routerLinkActive="bg-primary/10 text-primary border-primary/30"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
+            [attr.title]="collapsed() ? 'Blog' : null"
           >
             <svg class="w-5 h-5 shrink-0" aria-hidden="true">
               <use href="/icons/sprite.svg#lucide-notebook-pen" />
             </svg>
             @if (!collapsed()) {
-              <span>Articles</span>
+              <span>Blog</span>
             }
           </a>
           <a
-            routerLink="/admin/comments"
+            routerLink="/admin/calendar"
             routerLinkActive="bg-primary/10 text-primary border-primary/30"
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Commentaires' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-message-square" />
-            </svg>
-            @if (!collapsed()) {
-              <span>Commentaires</span>
-            }
-          </a>
-          <a
-            routerLink="/admin/bookings"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Réservations' : null"
+            [attr.title]="collapsed() ? 'Calendrier' : null"
           >
             <svg class="w-5 h-5 shrink-0" aria-hidden="true">
               <use href="/icons/sprite.svg#lucide-calendar" />
             </svg>
             @if (!collapsed()) {
-              <span>Réservations</span>
-            }
-          </a>
-          <a
-            routerLink="/admin/availability"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Disponibilités' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-calendar-check" />
-            </svg>
-            @if (!collapsed()) {
-              <span>Disponibilités</span>
+              <span>Calendrier</span>
             }
           </a>
           <a
@@ -159,22 +143,8 @@ import { AuthService } from '../../auth/domain/services/auth.service';
               <span>Statistiques</span>
             }
           </a>
-          <a
-            routerLink="/admin/cv"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'CV' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-file-text" />
-            </svg>
-            @if (!collapsed()) {
-              <span>CV</span>
-            }
-          </a>
         </nav>
 
-        <!-- Footer -->
         <div class="px-3 py-4 border-t border-foreground/10 space-y-1">
           <a
             routerLink="/"
@@ -203,7 +173,6 @@ import { AuthService } from '../../auth/domain/services/auth.service';
         </div>
       </aside>
 
-      <!-- Main content -->
       <main class="flex-1 p-8">
         <router-outlet />
       </main>

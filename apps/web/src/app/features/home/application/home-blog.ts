@@ -1,41 +1,41 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { ButtonComponent } from '../../../layout/components/button/button';
-import { BLOG_GATEWAY } from '../../blog/domain/gateways';
+import { BLOG_GATEWAY } from '../../blog/domain';
 
 @Component({
   selector: 'app-home-blog',
-  imports: [RouterLink, ButtonComponent],
+  imports: [RouterLink, ButtonComponent, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: { class: 'block py-24 px-6' },
   template: `
-    <section id="blog" class="py-20 px-6">
+    <section id="blog">
       <div class="max-w-7xl mx-auto">
-        <div class="mb-12">
+        <header class="mb-12">
           <h2 class="text-3xl md:text-4xl font-bold mb-4">Derniers articles</h2>
           <p class="text-muted max-w-2xl">
             Réflexions et retours d'expérience sur le développement web, Angular et les bonnes
             pratiques.
           </p>
-        </div>
+        </header>
 
         @if (latestArticles().length > 0) {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Featured article (first) -->
             @if (latestArticles()[0]; as featured) {
               <a
                 [routerLink]="['/blog', featured.id]"
                 class="group lg:row-span-2 bg-background border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 shadow-lg flex flex-col"
               >
                 @if (featured.image) {
-                  <div class="aspect-video w-full overflow-hidden">
+                  <div class="relative aspect-video w-full overflow-hidden">
                     <img
-                      [src]="featured.image"
+                      [ngSrc]="featured.image"
                       [alt]="featured.title"
-                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
+                      fill
+                      class="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 }
@@ -53,32 +53,35 @@ import { BLOG_GATEWAY } from '../../blog/domain/gateways';
                   <p class="text-muted text-sm leading-relaxed mb-4 flex-1">
                     {{ featured.excerpt }}
                   </p>
-                  <div class="flex flex-wrap gap-2">
+                  <ul class="flex flex-wrap gap-2" role="list">
                     @for (tag of featured.tags; track tag) {
-                      <span
-                        class="px-2.5 py-1 text-xs rounded-lg bg-primary/10 text-foreground border border-primary/20"
-                      >
-                        {{ tag }}
-                      </span>
+                      <li>
+                        <span
+                          class="px-2.5 py-1 text-xs rounded-lg bg-primary/10 text-foreground border border-primary/20"
+                        >
+                          {{ tag }}
+                        </span>
+                      </li>
                     }
-                  </div>
+                  </ul>
                 </div>
               </a>
             }
 
-            <!-- Secondary articles (compact horizontal) -->
             @for (article of latestArticles().slice(1); track article.id) {
               <a
                 [routerLink]="['/blog', article.id]"
                 class="group bg-background border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 shadow-lg flex flex-col sm:flex-row"
               >
                 @if (article.image) {
-                  <div class="aspect-video sm:aspect-auto sm:w-1/3 flex-shrink-0 overflow-hidden">
+                  <div
+                    class="relative aspect-video sm:aspect-auto sm:w-1/3 flex-shrink-0 overflow-hidden"
+                  >
                     <img
-                      [src]="article.image"
+                      [ngSrc]="article.image"
                       [alt]="article.title"
-                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
+                      fill
+                      class="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 }
@@ -96,15 +99,17 @@ import { BLOG_GATEWAY } from '../../blog/domain/gateways';
                   <p class="text-muted text-sm leading-relaxed mb-3 line-clamp-2">
                     {{ article.excerpt }}
                   </p>
-                  <div class="flex flex-wrap gap-1.5">
+                  <ul class="flex flex-wrap gap-1.5" role="list">
                     @for (tag of article.tags; track tag) {
-                      <span
-                        class="px-2 py-0.5 text-xs rounded-md bg-primary/10 text-foreground border border-primary/20"
-                      >
-                        {{ tag }}
-                      </span>
+                      <li>
+                        <span
+                          class="px-2 py-0.5 text-xs rounded-md bg-primary/10 text-foreground border border-primary/20"
+                        >
+                          {{ tag }}
+                        </span>
+                      </li>
                     }
-                  </div>
+                  </ul>
                 </div>
               </a>
             }
@@ -113,14 +118,14 @@ import { BLOG_GATEWAY } from '../../blog/domain/gateways';
           <p class="text-center text-muted py-12">Aucun article pour le moment.</p>
         }
 
-        <div class="mt-8 text-center">
+        <nav class="mt-8 text-center" aria-label="Voir tous les articles">
           <app-button variant="primary" size="md" radius="md" (clicked)="goToBlog()">
             Voir tous les articles
             <svg class="w-5 h-5">
               <use href="/icons/sprite.svg#lucide-notebook-pen"></use>
             </svg>
           </app-button>
-        </div>
+        </nav>
       </div>
     </section>
   `,

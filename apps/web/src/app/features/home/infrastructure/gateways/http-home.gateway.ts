@@ -1,8 +1,9 @@
 import { inject, Injectable, resource, type ResourceRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, Observable, of } from 'rxjs';
-import type { HomeGateway } from '../../domain/gateways';
-import type { HeroData, Speciality, Tech } from '../../domain/models';
+import type { HomeGateway } from '../../domain';
+import type { HeroData, Speciality, Tech } from '../../domain';
+import type { Comment } from '../../../blog/domain';
 import { API_BASE_URL } from '../../../../shared/api/api-config';
 
 @Injectable()
@@ -26,5 +27,11 @@ export class HttpHomeGateway implements HomeGateway {
 
   getTechStack(): Observable<readonly Tech[]> {
     return this.http.get<Tech[]>(`${API_BASE_URL}/techStack`).pipe(catchError(() => of([])));
+  }
+
+  getFeaturedComments(): Observable<readonly Comment[]> {
+    return this.http
+      .get<readonly Comment[]>(`${API_BASE_URL}/comments?status=approved&featured=true`)
+      .pipe(catchError(() => of([])));
   }
 }

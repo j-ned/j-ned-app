@@ -1,6 +1,6 @@
 export type User = {
-  readonly id: number;
-  readonly login: string;
+  readonly id: string;
+  readonly email: string;
   readonly displayName: string;
   readonly role: string;
 };

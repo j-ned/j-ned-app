@@ -1,2 +1,2 @@
-export { InMemoryProjectsGateway } from './gateways/in-memory-projects.gateway';
 export { HttpProjectsGateway } from './gateways/http-projects.gateway';
+export { SupabaseProjectsGateway } from './gateways/supabase-projects.gateway';

@@ -10,6 +10,7 @@ import { AboutHighlights } from './about-highlights';
 @Component({
   selector: 'app-about',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   imports: [
     AboutHero,
     AboutStack,

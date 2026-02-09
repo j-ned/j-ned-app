@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed, input, output, signal } from '@angular/core';
-import type { Booking } from '../domain/models';
+import type { Booking } from '../domain';
 
 type SlotSelection = {
   readonly time: string;
@@ -9,6 +9,7 @@ type SlotSelection = {
 @Component({
   selector: 'app-booking-time-picker',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   template: `
     <div
       class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-lg h-full"
@@ -20,8 +21,8 @@ type SlotSelection = {
         Choisissez un créneau
       </h3>
 
-      <!-- Duration toggle -->
-      <div class="flex gap-2 mb-6">
+      <fieldset class="flex gap-2 mb-6 border-0 p-0 m-0">
+        <legend class="sr-only">Durée</legend>
         <button
           (click)="setDuration(30)"
           [class]="
@@ -42,9 +43,8 @@ type SlotSelection = {
         >
           1h
         </button>
-      </div>
+      </fieldset>
 
-      <!-- Time slots grid -->
       <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
         @for (slot of availableSlots(); track slot.time) {
           <button
@@ -85,7 +85,6 @@ export class BookingTimePicker {
         const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         const slotEndMinutes = h * 60 + m + duration;
 
-        // Don't show slots that would go past end of day
         if (slotEndMinutes > endHour * 60) continue;
 
         const isBooked = booked.some((b) => {

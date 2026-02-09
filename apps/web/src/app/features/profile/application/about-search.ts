@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from '../domain/gateways';
+import { PROFILE_GATEWAY } from '../domain';
 
 @Component({
   selector: 'app-about-search',

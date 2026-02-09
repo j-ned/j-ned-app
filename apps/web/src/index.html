@@ -50,15 +50,21 @@
     <meta name="theme-color" content="#000000" />
     <meta name="format-detection" content="telephone=no" />
 
-    <!-- Security Headers (Note: CSP via meta tag has limitations. Configure via server headers for best security) -->
+    <!-- Security Headers (CSP via meta tag — configure also via HTTP headers on Traefik/Dokploy for frame-ancestors + HSTS) -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.github.com http://localhost:3000; base-uri 'self'; form-action 'self';"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://umami.nedellec-julien.fr; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://www.julien-nedellec.fr https://tnsinlwzvcacdhupxyfi.supabase.co; connect-src 'self' https://tnsinlwzvcacdhupxyfi.supabase.co https://umami.nedellec-julien.fr; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self';"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <!-- Note: frame-ancestors directive must be set via HTTP headers (not meta tag). Configure in your web server or hosting platform. -->
 
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    <!-- Umami Analytics -->
+    <script
+      defer
+      src="https://umami.nedellec-julien.fr/script.js"
+      data-website-id="350c6c10-e7f6-45e3-b6a5-1be413435f3a"
+    ></script>
   </head>
   <body>
     <app-root></app-root>

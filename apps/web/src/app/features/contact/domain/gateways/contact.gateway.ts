@@ -12,10 +12,8 @@ export type ContactGateway = {
   getContactInfo(): ResourceRef<ContactInfo>;
   getSocialLinks(): Observable<SocialLinks>;
 
-  // Form submission (future backend)
   submitContactForm(data: ContactFormData): Observable<ContactFormSubmission>;
 
-  // Admin messages
   getAllMessages(): Observable<readonly ContactMessage[]>;
   markMessageAsRead(id: number): Observable<ContactMessage>;
   deleteMessage(id: number): Observable<void>;

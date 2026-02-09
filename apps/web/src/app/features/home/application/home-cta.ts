@@ -5,21 +5,24 @@ import { ButtonComponent } from '../../../layout/components/button/button';
 @Component({
   selector: 'app-home-cta',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    role: 'navigation',
+    'aria-label': 'Actions principales',
+    class: 'flex flex-col sm:flex-row gap-4 w-full sm:w-auto items-stretch sm:items-stretch',
+  },
   template: `
-    <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto items-stretch sm:items-stretch">
-      <app-button variant="primary" size="lg" radius="md" (clicked)="scrollTo('projects')">
-        Voir mes réalisations
-        <svg class="w-5 h-5">
-          <use href="/icons/sprite.svg#lucide-arrow-right"></use>
-        </svg>
-      </app-button>
-      <app-button variant="accent" size="lg" radius="md" (clicked)="scrollTo('contact')">
-        Me contacter
-        <svg class="w-5 h-5">
-          <use href="/icons/sprite.svg#lucide-mail"></use>
-        </svg>
-      </app-button>
-    </div>
+    <app-button variant="primary" size="lg" radius="md" (clicked)="scrollTo('projects')">
+      Voir mes réalisations
+      <svg class="w-5 h-5">
+        <use href="/icons/sprite.svg#lucide-arrow-right"></use>
+      </svg>
+    </app-button>
+    <app-button variant="accent" size="lg" radius="md" (clicked)="scrollTo('contact')">
+      Me contacter
+      <svg class="w-5 h-5">
+        <use href="/icons/sprite.svg#lucide-mail"></use>
+      </svg>
+    </app-button>
   `,
   imports: [ButtonComponent],
 })

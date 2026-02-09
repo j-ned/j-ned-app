@@ -1,14 +1,14 @@
 import { inject, Injectable, resource, type ResourceRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
-import type { ContactGateway } from '../../domain/gateways';
+import type { ContactGateway } from '../../domain';
 import type {
   ContactInfo,
   SocialLinks,
   ContactFormData,
   ContactFormSubmission,
   ContactMessage,
-} from '../../domain/models';
+} from '../../domain';
 import { API_BASE_URL } from '../../../../shared/api/api-config';
 
 @Injectable()

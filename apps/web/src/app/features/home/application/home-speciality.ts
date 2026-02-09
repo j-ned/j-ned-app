@@ -1,6 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { HOME_GATEWAY } from '../domain/gateways';
+import { HOME_GATEWAY } from '../domain';
 
 @Component({
   selector: 'app-home-speciality',
@@ -8,14 +8,14 @@ import { HOME_GATEWAY } from '../domain/gateways';
   host: { class: 'contents' },
   template: `
     @for (speciality of specialities(); track speciality.title) {
-      <div class="space-y-3 text-center md:text-left">
-        <h2 class="text-sm font-bold uppercase tracking-widest text-primary">
+      <li class="space-y-3 text-center md:text-left">
+        <h3 class="text-sm font-bold uppercase tracking-widest text-primary">
           {{ speciality.title }}
-        </h2>
+        </h3>
         <p class="text-base text-muted leading-relaxed">
           {{ speciality.description }}
         </p>
-      </div>
+      </li>
     }
   `,
 })

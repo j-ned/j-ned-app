@@ -1,43 +1,43 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { ProjectCard } from '../../projects/application/components/project-card';
+import { ProjectCard } from '../../projects/application';
 import { ButtonComponent } from '../../../layout/components/button/button';
-import { PROJECTS_GATEWAY } from '../../projects/domain/gateways';
+import { PROJECTS_GATEWAY } from '../../projects/domain';
 
 @Component({
   selector: 'app-home-projects',
   imports: [ProjectCard, ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: { class: 'block py-24 px-6' },
   template: `
-    <section id="projects" class="pt-4 pb-8 px-6">
+    <section id="projects">
       <div class="max-w-7xl mx-auto">
-        <div class="flex items-end justify-between mb-8">
-          <div>
+        <header class="flex items-end justify-between mb-8">
+          <hgroup>
             <h2 class="text-3xl md:text-4xl font-bold mb-4">
               {{ projectsSection().title }}
             </h2>
             <p class="text-muted max-w-2xl">
               {{ projectsSection().description }}
             </p>
-          </div>
-        </div>
+          </hgroup>
+        </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <ul class="grid grid-cols-1 md:grid-cols-2 gap-10" role="list">
           @for (project of featuredProjects(); track project.id) {
-            <app-project-card [project]="project" />
+            <li><app-project-card [project]="project" /></li>
           }
-        </div>
+        </ul>
 
-        <div class="mt-8 text-center">
+        <nav class="mt-8 text-center" aria-label="Voir tous les projets">
           <app-button variant="primary" size="md" radius="md" (clicked)="goToProjects()">
             Voir tous les projets
             <svg class="w-5 h-5">
               <use href="/icons/sprite.svg#lucide-laptop"></use>
             </svg>
           </app-button>
-        </div>
+        </nav>
       </div>
     </section>
   `,
@@ -46,13 +46,11 @@ export class HomeProjects {
   private router = inject(Router);
   private projectsGateway = inject(PROJECTS_GATEWAY);
 
-  // Load featured projects from gateway
   private featuredProjectsObservable = this.projectsGateway.getFeaturedProjects();
   protected readonly featuredProjects = toSignal(this.featuredProjectsObservable, {
     initialValue: [],
   });
 
-  // Section metadata (hardcoded for now)
   protected readonly projectsSection = (): { title: string; description: string } => ({
     title: 'Aperçu des projets',
     description:
