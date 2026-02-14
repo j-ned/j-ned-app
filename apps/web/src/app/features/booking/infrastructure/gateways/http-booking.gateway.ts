@@ -61,7 +61,7 @@ export class HttpBookingGateway implements BookingGateway {
       .pipe(catchError(() => of([])));
   }
 
-  addDisabledDate(date: DisabledDate): Observable<DisabledDate> {
+  addDisabledDate(date: Omit<DisabledDate, 'id'>): Observable<DisabledDate> {
     return this.http.post<DisabledDate>(`${API_BASE_URL}/disabledDates`, date);
   }
 

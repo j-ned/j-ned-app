@@ -275,8 +275,7 @@ export class AdminAvailability {
     const date = this.selectedDate();
     if (!date) return;
 
-    const payload: DisabledDate = {
-      id: 0,
+    const payload: Omit<DisabledDate, 'id'> = {
       date,
       reason: this.reasonInput || undefined,
     };

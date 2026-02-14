@@ -8,7 +8,7 @@ export type BookingGateway = {
   updateBookingStatus(id: number, status: string): Observable<Booking>;
   deleteBooking(id: number): Observable<void>;
   getDisabledDates(): Observable<readonly DisabledDate[]>;
-  addDisabledDate(date: DisabledDate): Observable<DisabledDate>;
+  addDisabledDate(date: Omit<DisabledDate, 'id'>): Observable<DisabledDate>;
   removeDisabledDate(id: number): Observable<void>;
 };
 

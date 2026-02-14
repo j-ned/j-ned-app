@@ -86,7 +86,7 @@ export class SupabaseBookingGateway implements BookingGateway {
     );
   }
 
-  addDisabledDate(date: DisabledDate): Observable<DisabledDate> {
+  addDisabledDate(date: Omit<DisabledDate, 'id'>): Observable<DisabledDate> {
     return from(
       this.supabase.client
         .from('disabled_dates')
