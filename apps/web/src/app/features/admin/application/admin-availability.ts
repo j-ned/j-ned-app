@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { FormsModule } from '@angular/forms';
 import { BOOKING_GATEWAY } from '../../booking/domain';
 import type { DisabledDate } from '../../booking/domain';
+import { getFrenchHolidays, getUnavailableReason } from '../../../shared/calendar/french-holidays';
 
 type CalendarDay = {
   readonly date: string;
@@ -10,6 +11,8 @@ type CalendarDay = {
   readonly isToday: boolean;
   readonly isDisabled: boolean;
   readonly reason?: string;
+  readonly isAutoBlocked: boolean;
+  readonly autoBlockedReason?: string;
 };
 
 @Component({
@@ -58,11 +61,19 @@ type CalendarDay = {
               <button
                 (click)="toggleDate(day)"
                 [class]="getDayClasses(day)"
-                [title]="day.isDisabled ? 'Désactivé' + (day.reason ? ' : ' + day.reason : '') : ''"
+                [title]="
+                  day.isDisabled
+                    ? 'Désactivé' + (day.reason ? ' : ' + day.reason : '')
+                    : day.isAutoBlocked
+                      ? 'Auto : ' + day.autoBlockedReason
+                      : ''
+                "
               >
                 <span>{{ day.dayNumber }}</span>
                 @if (day.isDisabled) {
                   <span class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-400"></span>
+                } @else if (day.isAutoBlocked) {
+                  <span class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-amber-400"></span>
                 }
               </button>
             } @else {
@@ -79,6 +90,10 @@ type CalendarDay = {
           <div class="flex items-center gap-2 text-xs text-muted">
             <span class="w-3 h-3 rounded bg-red-500/20 border border-red-500/30"></span>
             Désactivé
+          </div>
+          <div class="flex items-center gap-2 text-xs text-muted">
+            <span class="w-3 h-3 rounded bg-amber-500/20 border border-amber-500/30"></span>
+            Weekend / Férié
           </div>
           <div class="flex items-center gap-2 text-xs text-muted">
             <span class="w-3 h-3 rounded bg-primary/10 border border-primary/30"></span>
@@ -213,6 +228,7 @@ export class AdminAvailability {
     today.setHours(0, 0, 0, 0);
 
     const disabled = this.disabledDateSet();
+    const holidays = getFrenchHolidays(year);
 
     let startDayOfWeek = firstDay.getDay() - 1;
     if (startDayOfWeek < 0) startDayOfWeek = 6;
@@ -226,6 +242,7 @@ export class AdminAvailability {
         isCurrentMonth: false,
         isToday: false,
         isDisabled: false,
+        isAutoBlocked: false,
       });
     }
 
@@ -233,6 +250,7 @@ export class AdminAvailability {
       const dayDate = new Date(year, month, d);
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const dd = disabled.get(dateString);
+      const autoReason = getUnavailableReason(dayDate, holidays);
       days.push({
         date: dateString,
         dayNumber: d,
@@ -240,6 +258,8 @@ export class AdminAvailability {
         isToday: dayDate.getTime() === today.getTime(),
         isDisabled: !!dd,
         reason: dd?.reason,
+        isAutoBlocked: !!autoReason,
+        autoBlockedReason: autoReason ?? undefined,
       });
     }
 
@@ -330,6 +350,10 @@ export class AdminAvailability {
 
     if (day.isDisabled) {
       return `${base} bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25`;
+    }
+
+    if (day.isAutoBlocked) {
+      return `${base} bg-amber-500/10 text-amber-400/70 border border-amber-500/15 hover:bg-amber-500/20`;
     }
 
     if (day.isToday) {

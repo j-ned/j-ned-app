@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, input, output, signal } from '@angular/core';
-import type { Booking } from '../domain';
+import type { Booking, DisabledDate } from '../domain';
+import { getFrenchHolidays, getUnavailableReason } from '../../../shared/calendar/french-holidays';
 
 type CalendarDay = {
   readonly date: string;
@@ -8,6 +9,8 @@ type CalendarDay = {
   readonly isPast: boolean;
   readonly isToday: boolean;
   readonly hasBooking: boolean;
+  readonly isDisabled: boolean;
+  readonly disabledReason?: string;
 };
 
 @Component({
@@ -50,9 +53,10 @@ type CalendarDay = {
         @for (day of daysGrid(); track day.date) {
           @if (day.isCurrentMonth) {
             <button
-              [disabled]="day.isPast"
-              (click)="selectDate(day.date)"
+              [disabled]="day.isPast || day.isDisabled"
+              (click)="selectDate(day)"
               [class]="getDayClasses(day)"
+              [title]="day.disabledReason ?? ''"
             >
               <span>{{ day.dayNumber }}</span>
               @if (day.hasBooking) {
@@ -71,6 +75,7 @@ type CalendarDay = {
 })
 export class BookingCalendar {
   readonly bookedSlots = input<readonly Booking[]>([]);
+  readonly disabledDates = input<readonly DisabledDate[]>([]);
   readonly selectedDateChange = output<string>();
 
   readonly currentMonth = signal(new Date());
@@ -100,6 +105,8 @@ export class BookingCalendar {
     today.setHours(0, 0, 0, 0);
 
     const bookedDates = new Set(this.bookedSlots().map((b) => b.date));
+    const adminDisabled = new Map(this.disabledDates().map((d) => [d.date, d.reason]));
+    const holidays = getFrenchHolidays(year);
 
     let startDayOfWeek = firstDay.getDay() - 1;
     if (startDayOfWeek < 0) startDayOfWeek = 6;
@@ -114,12 +121,18 @@ export class BookingCalendar {
         isPast: false,
         isToday: false,
         hasBooking: false,
+        isDisabled: false,
       });
     }
 
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const dayDate = new Date(year, month, d);
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+      const adminReason = adminDisabled.get(dateString);
+      const unavailableReason = getUnavailableReason(dayDate, holidays);
+      const disabledReason = adminReason ?? unavailableReason ?? undefined;
+
       days.push({
         date: dateString,
         dayNumber: d,
@@ -127,6 +140,8 @@ export class BookingCalendar {
         isPast: dayDate < today,
         isToday: dayDate.getTime() === today.getTime(),
         hasBooking: bookedDates.has(dateString),
+        isDisabled: !!disabledReason,
+        disabledReason,
       });
     }
 
@@ -149,9 +164,10 @@ export class BookingCalendar {
     });
   }
 
-  selectDate(date: string): void {
-    this.selectedDate.set(date);
-    this.selectedDateChange.emit(date);
+  selectDate(day: CalendarDay): void {
+    if (day.isDisabled || day.isPast) return;
+    this.selectedDate.set(day.date);
+    this.selectedDateChange.emit(day.date);
   }
 
   getDayClasses(day: CalendarDay): string {
@@ -160,6 +176,10 @@ export class BookingCalendar {
 
     if (day.isPast) {
       return `${base} text-muted/40 cursor-not-allowed`;
+    }
+
+    if (day.isDisabled) {
+      return `${base} bg-red-500/10 text-muted/50 cursor-not-allowed border border-red-500/15`;
     }
 
     if (this.selectedDate() === day.date) {

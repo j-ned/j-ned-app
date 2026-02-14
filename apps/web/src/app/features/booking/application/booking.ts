@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, viewChild } from '@angular/core';
 import { BOOKING_GATEWAY } from '../domain';
-import type { Booking as BookingModel, BookingFormData } from '../domain/models';
+import type { Booking as BookingModel, BookingFormData, DisabledDate } from '../domain/models';
 import { BookingCalendar } from './booking-calendar';
 import { BookingTimePicker } from './booking-time-picker';
 import { BookingForm, type BookingFormPayload } from './booking-form';
@@ -26,6 +26,7 @@ import { BookingForm, type BookingFormPayload } from './booking-form';
             <div class="flex flex-col gap-6">
               <app-booking-calendar
                 [bookedSlots]="bookedSlots()"
+                [disabledDates]="disabledDates()"
                 (selectedDateChange)="onDateSelected($event)"
               />
 
@@ -86,11 +87,13 @@ export class Booking {
   readonly selectedDate = signal<string | null>(null);
   readonly selectedSlot = signal<{ time: string; duration: number } | null>(null);
   readonly bookedSlots = signal<readonly BookingModel[]>([]);
+  readonly disabledDates = signal<readonly DisabledDate[]>([]);
 
   constructor() {
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     this.loadBookedSlots(currentMonth);
+    this.loadDisabledDates();
   }
 
   onDateSelected(date: string): void {
@@ -147,6 +150,12 @@ export class Booking {
   private loadBookedSlots(month: string): void {
     this.bookingGateway.getBookedSlots(month).subscribe((slots) => {
       this.bookedSlots.set(slots);
+    });
+  }
+
+  private loadDisabledDates(): void {
+    this.bookingGateway.getDisabledDates().subscribe((dates) => {
+      this.disabledDates.set(dates);
     });
   }
 }
