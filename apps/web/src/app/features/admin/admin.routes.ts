@@ -77,29 +77,6 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./application/admin-stats-hub').then((m) => m.AdminStatsHub),
       },
       {
-        path: 'stats/overview',
-        title: "Vue d'ensemble | Admin",
-        loadComponent: () => import('./application/admin-stats').then((m) => m.AdminStatsOverview),
-      },
-      {
-        path: 'stats/articles',
-        title: 'Stats articles | Admin',
-        loadComponent: () =>
-          import('./application/admin-stats-articles').then((m) => m.AdminStatsArticles),
-      },
-      {
-        path: 'stats/projects',
-        title: 'Stats projets | Admin',
-        loadComponent: () =>
-          import('./application/admin-stats-projects').then((m) => m.AdminStatsProjects),
-      },
-      {
-        path: 'stats/visits',
-        title: 'Visites | Admin',
-        loadComponent: () =>
-          import('./application/admin-stats-visits').then((m) => m.AdminStatsVisits),
-      },
-      {
         path: 'about',
         title: 'À propos | Admin',
         loadComponent: () => import('./application/admin-about').then((m) => m.AdminAbout),
