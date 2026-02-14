@@ -42,11 +42,7 @@ export class UmamiService {
     );
   }
 
-  async getMetrics(
-    startAt: number,
-    endAt: number,
-    type: string,
-  ): Promise<readonly UmamiMetric[]> {
+  async getMetrics(startAt: number, endAt: number, type: string): Promise<readonly UmamiMetric[]> {
     const token = await this.getShareToken();
     return firstValueFrom(
       this.http.get<UmamiMetric[]>(`${this.apiUrl}/api/websites/${this.websiteId}/metrics`, {
