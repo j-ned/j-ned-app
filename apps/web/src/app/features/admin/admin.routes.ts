@@ -67,17 +67,6 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./application/admin-calendar').then((m) => m.AdminCalendar),
       },
       {
-        path: 'calendar/bookings',
-        title: 'Réservations | Admin',
-        loadComponent: () => import('./application/admin-bookings').then((m) => m.AdminBookings),
-      },
-      {
-        path: 'calendar/availability',
-        title: 'Disponibilités | Admin',
-        loadComponent: () =>
-          import('./application/admin-availability').then((m) => m.AdminAvailability),
-      },
-      {
         path: 'messages',
         title: 'Messages | Admin',
         loadComponent: () => import('./application/admin-messages').then((m) => m.AdminMessages),
