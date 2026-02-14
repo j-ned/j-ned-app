@@ -94,6 +94,12 @@ export const ADMIN_ROUTES: Routes = [
           import('./application/admin-stats-projects').then((m) => m.AdminStatsProjects),
       },
       {
+        path: 'stats/visits',
+        title: 'Visites | Admin',
+        loadComponent: () =>
+          import('./application/admin-stats-visits').then((m) => m.AdminStatsVisits),
+      },
+      {
         path: 'about',
         title: 'À propos | Admin',
         loadComponent: () => import('./application/admin-about').then((m) => m.AdminAbout),

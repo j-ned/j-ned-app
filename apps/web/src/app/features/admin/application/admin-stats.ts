@@ -2,6 +2,7 @@ import { Component, inject, resource, computed, ChangeDetectionStrategy } from '
 import type { SiteStats } from '../domain/models/stats.model';
 import { SupabaseClientService } from '../../../shared/supabase/supabase-client';
 import { toCamelCase } from '../../../shared/supabase/column-mapper';
+import { UmamiService } from '../../../shared/umami/umami.service';
 
 @Component({
   selector: 'app-admin-stats-overview',
@@ -10,7 +11,7 @@ import { toCamelCase } from '../../../shared/supabase/column-mapper';
   template: `
     <h1 class="text-2xl font-bold text-foreground mb-8">Statistiques</h1>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       <div
         class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
       >
@@ -19,16 +20,18 @@ import { toCamelCase } from '../../../shared/supabase/column-mapper';
             class="w-14 h-14 rounded-xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center"
           >
             <svg class="w-7 h-7 text-primary" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-eye" />
+              <use href="/icons/sprite.svg#lucide-users" />
             </svg>
           </div>
           <div>
-            @if (statsRes.isLoading()) {
+            @if (umamiRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
-              <p class="text-2xl font-bold text-foreground">{{ stats()?.totalVisits ?? 0 }}</p>
+              <p class="text-2xl font-bold text-foreground">
+                {{ umamiStats()?.visitors?.value ?? 0 }}
+              </p>
             }
-            <p class="text-sm text-muted">Visites totales</p>
+            <p class="text-sm text-muted">Visiteurs</p>
           </div>
         </div>
       </div>
@@ -41,18 +44,18 @@ import { toCamelCase } from '../../../shared/supabase/column-mapper';
             class="w-14 h-14 rounded-xl bg-linear-to-br from-accent/20 to-accent/5 flex items-center justify-center"
           >
             <svg class="w-7 h-7 text-accent" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-notebook-pen" />
+              <use href="/icons/sprite.svg#lucide-eye" />
             </svg>
           </div>
           <div>
-            @if (statsRes.isLoading()) {
+            @if (umamiRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
               <p class="text-2xl font-bold text-foreground">
-                {{ stats()?.totalArticleClicks ?? 0 }}
+                {{ umamiStats()?.pageviews?.value ?? 0 }}
               </p>
             }
-            <p class="text-sm text-muted">Clics articles</p>
+            <p class="text-sm text-muted">Pages vues</p>
           </div>
         </div>
       </div>
@@ -69,11 +72,11 @@ import { toCamelCase } from '../../../shared/supabase/column-mapper';
             </svg>
           </div>
           <div>
-            @if (statsRes.isLoading()) {
+            @if (supabaseRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
               <p class="text-2xl font-bold text-foreground">
-                {{ stats()?.totalProjectClicks ?? 0 }}
+                {{ supabaseStats()?.totalProjectClicks ?? 0 }}
               </p>
             }
             <p class="text-sm text-muted">Clics projets</p>
@@ -93,14 +96,60 @@ import { toCamelCase } from '../../../shared/supabase/column-mapper';
             </svg>
           </div>
           <div>
-            @if (statsRes.isLoading()) {
+            @if (supabaseRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
               <p class="text-2xl font-bold text-foreground">
-                {{ stats()?.totalCvDownloads ?? 0 }}
+                {{ supabaseStats()?.totalCvDownloads ?? 0 }}
               </p>
             }
             <p class="text-sm text-muted">Téléchargements CV</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+      <div
+        class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class="w-14 h-14 rounded-xl bg-linear-to-br from-orange-500/20 to-orange-500/5 flex items-center justify-center"
+          >
+            <svg class="w-7 h-7 text-orange-500" aria-hidden="true">
+              <use href="/icons/sprite.svg#lucide-log-out" />
+            </svg>
+          </div>
+          <div>
+            @if (umamiRes.isLoading()) {
+              <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
+            } @else {
+              <p class="text-2xl font-bold text-foreground">{{ bounceRate() }}%</p>
+            }
+            <p class="text-sm text-muted">Taux de rebond</p>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class="w-14 h-14 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-500/5 flex items-center justify-center"
+          >
+            <svg class="w-7 h-7 text-blue-500" aria-hidden="true">
+              <use href="/icons/sprite.svg#lucide-clock" />
+            </svg>
+          </div>
+          <div>
+            @if (umamiRes.isLoading()) {
+              <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
+            } @else {
+              <p class="text-2xl font-bold text-foreground">{{ avgTime() }}</p>
+            }
+            <p class="text-sm text-muted">Temps moyen</p>
           </div>
         </div>
       </div>
@@ -163,8 +212,16 @@ import { toCamelCase } from '../../../shared/supabase/column-mapper';
 })
 export class AdminStatsOverview {
   private readonly supabase = inject(SupabaseClientService);
+  private readonly umami = inject(UmamiService);
 
-  readonly statsRes = resource({
+  private readonly thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  private readonly now = Date.now();
+
+  readonly umamiRes = resource({
+    loader: () => this.umami.getStats(this.thirtyDaysAgo, this.now),
+  });
+
+  readonly supabaseRes = resource({
     loader: async () => {
       const { data, error } = await this.supabase.client
         .from('site_stats')
@@ -176,7 +233,28 @@ export class AdminStatsOverview {
     },
   });
 
-  readonly stats = computed(() => this.statsRes.value() ?? null);
-  readonly articleStats = computed(() => this.stats()?.articleStats ?? []);
-  readonly projectStats = computed(() => this.stats()?.projectStats ?? []);
+  readonly umamiStats = computed(() => this.umamiRes.value() ?? null);
+  readonly supabaseStats = computed(() => this.supabaseRes.value() ?? null);
+  readonly articleStats = computed(() => this.supabaseStats()?.articleStats ?? []);
+  readonly projectStats = computed(() => this.supabaseStats()?.projectStats ?? []);
+
+  readonly bounceRate = computed(() => {
+    const stats = this.umamiStats();
+    if (!stats) return '0.0';
+    const visits = stats.visits.value;
+    if (visits === 0) return '0.0';
+    return ((stats.bounces.value / visits) * 100).toFixed(1);
+  });
+
+  readonly avgTime = computed(() => {
+    const stats = this.umamiStats();
+    if (!stats) return '0s';
+    const engaged = stats.visits.value - stats.bounces.value;
+    if (engaged <= 0) return '0s';
+    const seconds = Math.round(stats.totaltime.value / engaged);
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  });
 }

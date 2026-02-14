@@ -9,7 +9,7 @@ import { RouterLink } from '@angular/router';
   template: `
     <h1 class="text-2xl font-bold text-foreground mb-8">Statistiques</h1>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       @for (card of cards; track card.route) {
         <a
           [routerLink]="card.route"
@@ -33,6 +33,7 @@ import { RouterLink } from '@angular/router';
 export class AdminStatsHub {
   readonly cards = [
     { icon: 'lucide-eye', label: "Vue d'ensemble", route: '/admin/stats/overview' },
+    { icon: 'lucide-globe', label: 'Visites', route: '/admin/stats/visits' },
     { icon: 'lucide-notebook-pen', label: 'Articles', route: '/admin/stats/articles' },
     { icon: 'lucide-laptop', label: 'Projets', route: '/admin/stats/projects' },
   ];
