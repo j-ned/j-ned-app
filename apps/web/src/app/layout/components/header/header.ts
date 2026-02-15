@@ -3,6 +3,7 @@ import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 import { TrackingService } from '../../../shared/tracking/tracking.service';
+import { SupabaseClientService } from '../../../shared/supabase/supabase-client';
 
 @Component({
   selector: 'app-header',
@@ -72,17 +73,20 @@ import { TrackingService } from '../../../shared/tracking/tracking.service';
             <use href="/icons/sprite.svg#lucide-moon"></use>
           </svg>
         </button>
-        <a
-          href="/docs/CV_JULIEN_NEDELLEC.pdf"
-          download
-          (click)="trackCvDownload()"
-          class="hidden md:flex items-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 rounded-full text-md font-medium transition-colors"
-        >
-          <svg class="w-6 h-6 text-primary">
-            <use href="/icons/sprite.svg#lucide-download"></use>
-          </svg>
-          Télécharger mon CV
-        </a>
+        @if (cvUrl()) {
+          <a
+            [href]="cvUrl()"
+            target="_blank"
+            rel="noopener noreferrer"
+            (click)="trackCvDownload()"
+            class="hidden md:flex items-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 rounded-full text-md font-medium transition-colors"
+          >
+            <svg class="w-6 h-6 text-primary">
+              <use href="/icons/sprite.svg#lucide-download"></use>
+            </svg>
+            Télécharger mon CV
+          </a>
+        }
         <button
           (click)="toggleMobileMenu()"
           class="relative md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
@@ -125,17 +129,20 @@ import { TrackingService } from '../../../shared/tracking/tracking.service';
             </a>
           }
         }
-        <a
-          href="/docs/CV_JULIEN_NEDELLEC.pdf"
-          download
-          (click)="trackCvDownload(); closeMobileMenu()"
-          class="flex items-center gap-3 text-lg font-medium text-primary hover:text-primary/80 transition-colors py-2 border-t border-white/5 pt-4 mt-2"
-        >
-          <svg class="w-5 h-5">
-            <use href="/icons/sprite.svg#lucide-download"></use>
-          </svg>
-          Télécharger mon CV
-        </a>
+        @if (cvUrl()) {
+          <a
+            [href]="cvUrl()"
+            target="_blank"
+            rel="noopener noreferrer"
+            (click)="trackCvDownload(); closeMobileMenu()"
+            class="flex items-center gap-3 text-lg font-medium text-primary hover:text-primary/80 transition-colors py-2 border-t border-white/5 pt-4 mt-2"
+          >
+            <svg class="w-5 h-5">
+              <use href="/icons/sprite.svg#lucide-download"></use>
+            </svg>
+            Télécharger mon CV
+          </a>
+        }
       </nav>
     </div>
   `,
@@ -143,10 +150,16 @@ import { TrackingService } from '../../../shared/tracking/tracking.service';
 export class Header {
   private readonly elementRef = inject(ElementRef);
   private readonly tracking = inject(TrackingService);
+  private readonly supabase = inject(SupabaseClientService);
 
   protected readonly navItems = signal(NAV_LINKS);
   protected readonly isMobileMenuOpen = signal(false);
   protected readonly isDarkTheme = signal(true);
+  protected readonly cvUrl = signal<string | null>(null);
+
+  constructor() {
+    this.loadCvUrl();
+  }
 
   private readonly _initTheme = afterNextRender(() => {
     document.documentElement.classList.add('dark');
@@ -187,5 +200,18 @@ export class Header {
 
   protected toggleTheme(): void {
     this.isDarkTheme.update((value) => !value);
+  }
+
+  private loadCvUrl(): void {
+    this.supabase.client
+      .from('cv_info')
+      .select('file_url')
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data?.file_url) {
+          this.cvUrl.set(data.file_url);
+        }
+      });
   }
 }
