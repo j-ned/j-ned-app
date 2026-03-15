@@ -65,6 +65,21 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_min_length 256;
+    gzip_types
+        text/plain
+        text/css
+        text/javascript
+        application/javascript
+        application/json
+        application/xml
+        image/svg+xml;
+
     # Proxy API vers le serveur Hono (^~ empêche les regex de prendre le dessus)
     location ^~ /api/ {
         proxy_pass http://127.0.0.1:3000;

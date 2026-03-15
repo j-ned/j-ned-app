@@ -59,8 +59,8 @@ cv.post('/upload', authMiddleware, async (c) => {
   }, 201);
 });
 
-// GET /cv
-cv.get('/', authMiddleware, async (c) => {
+// GET /cv (public — only returns metadata, no sensitive data)
+cv.get('/', async (c) => {
   const [latest] = await db.select().from(cvFile).orderBy(desc(cvFile.uploadedAt)).limit(1);
 
   if (!latest) {

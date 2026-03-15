@@ -2,12 +2,16 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
+import { compress } from 'hono/compress';
 import { env } from './lib/env.js';
 import { errorHandler } from './lib/errors.js';
 import { registerRoutes } from './routes';
 import { startCronJobs } from './lib/cron.js';
 
 const app = new Hono();
+
+// Gzip compression for API responses
+app.use('*', compress());
 
 // Security headers
 app.use('*', secureHeaders({

@@ -50,7 +50,12 @@ export class AuthService {
   });
 
   constructor() {
-    this.restoreSession();
+    // Only attempt session restore if a previous session was recorded
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('has_session')) {
+      this.restoreSession();
+    } else {
+      this._resolveReady();
+    }
   }
 
   login(
@@ -187,6 +192,7 @@ export class AuthService {
       )
       .subscribe(() => {
         this._currentUser.set(null);
+        localStorage.removeItem('has_session');
         this.router.navigate(['/']);
       });
   }
@@ -198,6 +204,7 @@ export class AuthService {
       displayName: apiUser.email,
       isTwoFactorEnabled: apiUser.isTwoFactorEnabled,
     });
+    localStorage.setItem('has_session', '1');
   }
 
   private restoreSession(): void {
@@ -206,6 +213,7 @@ export class AuthService {
         tap((success) => {
           if (!success) {
             this._currentUser.set(null);
+            localStorage.removeItem('has_session');
           }
         }),
         takeUntilDestroyed(this.destroyRef),

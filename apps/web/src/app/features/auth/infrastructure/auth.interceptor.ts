@@ -13,7 +13,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !isAuthEndpoint) {
+      // Only attempt refresh if user was logged in and it's not an auth endpoint
+      if (error.status === 401 && !isAuthEndpoint && authService.isLoggedIn()) {
         return authService.refresh().pipe(
           switchMap((success) => {
             if (success) {
