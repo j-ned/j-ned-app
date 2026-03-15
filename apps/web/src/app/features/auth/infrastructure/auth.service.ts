@@ -9,7 +9,6 @@ import type { User } from '../domain';
 type UserResponse = {
   id: string;
   email: string;
-  role: string;
   isTwoFactorEnabled: boolean;
 };
 
@@ -26,7 +25,6 @@ type RefreshResponse = {
 type RegisterResponse = {
   id: string;
   email: string;
-  role: string;
 };
 
 type TwoFactorSecretResponse = {
@@ -198,7 +196,6 @@ export class AuthService {
       id: apiUser.id,
       email: apiUser.email,
       displayName: apiUser.email,
-      role: apiUser.role,
       isTwoFactorEnabled: apiUser.isTwoFactorEnabled,
     });
   }

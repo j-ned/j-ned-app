@@ -56,7 +56,7 @@ auth.post('/register',
     const [created] = await db.insert(appUser).values({
       email,
       password: hashed,
-    }).returning({ id: appUser.id, email: appUser.email, role: appUser.role });
+    }).returning({ id: appUser.id, email: appUser.email });
 
     return c.json(created, 201);
   },
@@ -88,7 +88,7 @@ auth.post('/login',
       }
     }
 
-    const payload: JwtPayload = { sub: found.id, email: found.email, role: found.role };
+    const payload: JwtPayload = { sub: found.id, email: found.email };
     const [accessToken, refreshToken] = await generateTokens(payload);
 
     await db.update(appUser).set({ refreshToken }).where(eq(appUser.id, found.id));
@@ -96,7 +96,7 @@ auth.post('/login',
     setAuthCookies(c, accessToken, refreshToken);
 
     return c.json({
-      user: { id: found.id, email: found.email, role: found.role },
+      user: { id: found.id, email: found.email },
       accessToken,
       refreshToken,
     });
@@ -112,7 +112,7 @@ auth.post('/refresh', refreshMiddleware, async (c) => {
     return c.json({ error: 'User not found' }, 404);
   }
 
-  const payload: JwtPayload = { sub: found.id, email: found.email, role: found.role };
+  const payload: JwtPayload = { sub: found.id, email: found.email };
   const [accessToken, refreshToken] = await generateTokens(payload);
 
   await db.update(appUser).set({ refreshToken }).where(eq(appUser.id, found.id));
@@ -120,7 +120,7 @@ auth.post('/refresh', refreshMiddleware, async (c) => {
   setAuthCookies(c, accessToken, refreshToken);
 
   return c.json({
-    user: { id: found.id, email: found.email, role: found.role },
+    user: { id: found.id, email: found.email },
     accessToken,
     refreshToken,
   });
@@ -241,7 +241,7 @@ auth.post('/2fa/verify',
       return c.json({ error: 'Invalid 2FA code' }, 401);
     }
 
-    const payload: JwtPayload = { sub: found.id, email: found.email, role: found.role };
+    const payload: JwtPayload = { sub: found.id, email: found.email };
     const [accessToken, refreshToken] = await generateTokens(payload);
 
     await db.update(appUser).set({ refreshToken }).where(eq(appUser.id, found.id));
@@ -249,7 +249,7 @@ auth.post('/2fa/verify',
     setAuthCookies(c, accessToken, refreshToken);
 
     return c.json({
-      user: { id: found.id, email: found.email, role: found.role },
+      user: { id: found.id, email: found.email },
       accessToken,
       refreshToken,
     });

@@ -1,3 +1,1 @@
-import { pgEnum } from 'drizzle-orm/pg-core';
-
-export const roleEnum = pgEnum('Role', ['USER', 'ADMIN']);
+// Enums are defined here when needed by the database schema.

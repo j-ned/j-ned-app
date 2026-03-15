@@ -19,7 +19,6 @@ export const authMiddleware = createMiddleware(async (c, next) => {
     c.set('user', {
       sub: payload.sub as string,
       email: payload.email as string,
-      role: payload.role as 'USER' | 'ADMIN',
     });
     await next();
   } catch {
@@ -39,7 +38,6 @@ export const refreshMiddleware = createMiddleware(async (c, next) => {
     c.set('user', {
       sub: payload.sub as string,
       email: payload.email as string,
-      role: payload.role as 'USER' | 'ADMIN',
     });
     await next();
   } catch {

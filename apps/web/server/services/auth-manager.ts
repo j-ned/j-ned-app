@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 import { OTP } from 'otplib';
 import QRCode from 'qrcode';
 import { env } from '../lib/env.js';
@@ -11,11 +11,11 @@ const refreshSecret = new TextEncoder().encode(env.JWT_REFRESH_SECRET);
 const otp = new OTP({ strategy: 'totp' });
 
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10);
+  return argon2.hash(password);
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+  return argon2.verify(hash, password);
 }
 
 export async function generateAccessToken(payload: JwtPayload): Promise<string> {
@@ -41,7 +41,6 @@ export async function verifyAccessToken(token: string): Promise<JwtPayload> {
   return {
     sub: payload.sub as string,
     email: payload.email as string,
-    role: payload.role as 'USER' | 'ADMIN',
   };
 }
 
@@ -50,7 +49,6 @@ export async function verifyRefreshToken(token: string): Promise<JwtPayload> {
   return {
     sub: payload.sub as string,
     email: payload.email as string,
-    role: payload.role as 'USER' | 'ADMIN',
   };
 }
 

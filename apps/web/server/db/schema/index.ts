@@ -1,4 +1,3 @@
-export { roleEnum } from './enums.js';
 export { appUser } from './user.js';
 export { pageView, analyticsEvent, dailyStat } from './analytics.js';
 export { project } from './project.js';

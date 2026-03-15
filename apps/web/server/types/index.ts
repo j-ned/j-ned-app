@@ -1,7 +1,6 @@
 export type JwtPayload = {
   sub: string;
   email: string;
-  role: 'USER' | 'ADMIN';
 };
 
 export type AuthUser = JwtPayload;
