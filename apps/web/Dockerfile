@@ -65,6 +65,9 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Allow file uploads up to 10MB
+    client_max_body_size 10m;
+
     # Gzip compression
     gzip on;
     gzip_vary on;

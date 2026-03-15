@@ -232,6 +232,7 @@ export class AdminProjectInlineForm {
     'DevOps',
     'Vitest',
     'SSR',
+    'Astro',
   ];
 
   readonly form = this.fb.nonNullable.group({
