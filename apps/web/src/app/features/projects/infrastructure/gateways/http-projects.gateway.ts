@@ -5,14 +5,10 @@ import type { ProjectsGateway } from '../../domain';
 import type { Project, ProjectFilter } from '../../domain';
 import { API_BASE_URL } from '@shared/api';
 
-function resolveImageUrl(apiUrl: string, image: string): string {
-  if (!image) return '';
-  if (image.startsWith('http')) return image;
-  return `${apiUrl}/images/projects/${image}`;
-}
-
 function resolveProject(apiUrl: string, p: Project): Project {
-  return { ...p, image: resolveImageUrl(apiUrl, p.image) };
+  if (!p.image) return p;
+  const image = p.image.startsWith('http') ? p.image : `${apiUrl}${p.image}`;
+  return { ...p, image };
 }
 
 @Injectable()

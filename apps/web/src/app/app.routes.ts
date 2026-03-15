@@ -95,7 +95,6 @@ export const routes: Routes = [
     title: 'Réservation | Julien Nédellec',
     loadComponent: () => import('./features/booking/application/booking').then((m) => m.Booking),
     data: {
-      preload: true,
       seo: {
         title: 'Réservation de consultation - Julien Nédellec',
         description: 'Réservez un créneau pour un appel de découverte ou une consultation projet.',
@@ -110,7 +109,6 @@ export const routes: Routes = [
     title: 'Blog | Julien Nédellec',
     loadComponent: () => import('./features/blog/application/blog-list').then((m) => m.BlogList),
     data: {
-      preload: true,
       seo: {
         title: 'Blog | Julien Nédellec - Développeur Full-Stack',
         description:

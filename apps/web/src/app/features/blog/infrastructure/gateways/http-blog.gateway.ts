@@ -5,14 +5,10 @@ import type { BlogGateway } from '../../domain';
 import type { Article, Comment } from '../../domain';
 import { API_BASE_URL } from '@shared/api';
 
-function resolveImageUrl(apiUrl: string, image: string): string {
-  if (!image) return '';
-  if (image.startsWith('http')) return image;
-  return `${apiUrl}/images/blog/${image}`;
-}
-
 function resolveArticle(apiUrl: string, a: Article): Article {
-  return { ...a, image: resolveImageUrl(apiUrl, a.image) };
+  if (!a.image) return a;
+  const image = a.image.startsWith('http') ? a.image : `${apiUrl}${a.image}`;
+  return { ...a, image };
 }
 
 @Injectable()

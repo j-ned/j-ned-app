@@ -63,7 +63,7 @@ profile.get('/avatar-image', async (c) => {
       return c.json({ error: 'File not found' }, 404);
     }
 
-    return new Response(body, {
+    return new Response(Buffer.from(body), {
       headers: {
         'Content-Type': response.ContentType ?? 'image/webp',
         'Cache-Control': 'public, max-age=86400',

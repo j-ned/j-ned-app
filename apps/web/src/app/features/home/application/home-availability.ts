@@ -1,6 +1,6 @@
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { HOME_GATEWAY } from './tokens';
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+
+type HeroData = { availability: string };
 
 @Component({
   selector: 'app-home-availability',
@@ -18,16 +18,12 @@ import { HOME_GATEWAY } from './tokens';
           <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
         </span>
         <span class="text-muted font-medium">
-          {{ hero()!.availability }}
+          {{ hero()?.availability }}
         </span>
       </p>
     }
   `,
 })
 export class HomeAvailability {
-  private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly heroResource = rxResource({
-    stream: () => this.homeGateway.getHeroData(),
-  });
-  protected readonly hero = computed(() => this.heroResource.value());
+  readonly hero = input<HeroData | null | undefined>(null);
 }

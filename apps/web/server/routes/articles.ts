@@ -28,6 +28,17 @@ function normalizeImageKey(value: string | undefined): string {
   return value;
 }
 
+/** Convert a raw S3 key into a proxy path (like img-about does for avatars) */
+function resolveImageProxy(image: string | null): string {
+  if (!image) return '';
+  if (image.startsWith('/images/blog/')) return image;
+  if (image.startsWith('http')) {
+    const parts = image.split('/');
+    return `/images/blog/${parts[parts.length - 1]}`;
+  }
+  return `/images/blog/${image}`;
+}
+
 // GET /articles
 articles.get('/', async (c) => {
   const query = c.req.query();
@@ -44,7 +55,7 @@ articles.get('/', async (c) => {
   const orderBy = query['_sort'] === 'date' ? desc(article.date) : desc(article.createdAt);
 
   const data = await db.select().from(article).where(where).orderBy(orderBy);
-  return c.json(data);
+  return c.json(data.map((a) => ({ ...a, image: resolveImageProxy(a.image) })));
 });
 
 // GET /articles/:id
@@ -56,7 +67,7 @@ articles.get('/:id', async (c) => {
     return c.json({ error: 'Article not found' }, 404);
   }
 
-  return c.json(found);
+  return c.json({ ...found, image: resolveImageProxy(found.image) });
 });
 
 // POST /articles

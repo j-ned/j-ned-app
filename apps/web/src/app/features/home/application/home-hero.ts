@@ -40,13 +40,13 @@ import { HOME_GATEWAY } from './tokens';
     }
   `,
   template: `
-    <hgroup class="text-center">
+    <hgroup class="text-center min-h-[180px] md:min-h-[220px] lg:min-h-[260px]">
       @if (hero()) {
         <div class="animate-fade-up flex flex-wrap items-center justify-center gap-3 mb-4 md:mb-6">
           <span class="text-sm md:text-base font-medium text-primary/80 tracking-widest uppercase">
             Freelance Full-Stack
           </span>
-          <app-home-availability />
+          <app-home-availability [hero]="hero()" />
         </div>
 
         <h1

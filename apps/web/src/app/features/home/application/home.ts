@@ -21,9 +21,9 @@ import { SiteSettingsService } from '@core/services';
       <app-home-hero-section />
 
       <!-- Expertise Section -->
-      @if (expertises().length > 0) {
-        <section class="w-full py-6 md:py-10">
-          <div class="max-w-7xl mx-auto px-6">
+      <section class="w-full py-6 md:py-10 min-h-[200px] md:min-h-[160px]">
+        <div class="max-w-7xl mx-auto px-6">
+          @if (expertises().length > 0) {
             <ul class="grid grid-cols-1 md:grid-cols-3 gap-8" role="list">
               @for (item of expertises(); track item.id) {
                 <li
@@ -47,9 +47,9 @@ import { SiteSettingsService } from '@core/services';
                 </li>
               }
             </ul>
-          </div>
-        </section>
-      }
+          }
+        </div>
+      </section>
 
       <!-- Services Section -->
       @defer (on viewport) {

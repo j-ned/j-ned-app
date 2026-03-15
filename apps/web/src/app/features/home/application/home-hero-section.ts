@@ -24,6 +24,7 @@ import { ButtonComponent } from '@layout';
 
     .animate-fade-up-actions {
       animation: fade-up 0.6s ease-out 0.4s both;
+      will-change: transform, opacity;
     }
   `,
   template: `

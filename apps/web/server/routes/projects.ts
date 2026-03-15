@@ -32,6 +32,19 @@ function normalizeImageKey(value: string | undefined): string {
   return value;
 }
 
+/** Convert a raw S3 key into a proxy path (like img-about does for avatars) */
+function resolveImageProxy(image: string | null): string {
+  if (!image) return '';
+  // Already a proxy path
+  if (image.startsWith('/images/projects/')) return image;
+  // Full URL — extract the filename
+  if (image.startsWith('http')) {
+    const parts = image.split('/');
+    return `/images/projects/${parts[parts.length - 1]}`;
+  }
+  return `/images/projects/${image}`;
+}
+
 // GET /projects
 projects.get('/', async (c) => {
   const query = c.req.query();
@@ -58,7 +71,7 @@ projects.get('/', async (c) => {
   ]);
 
   return c.json({
-    data,
+    data: data.map((p) => ({ ...p, image: resolveImageProxy(p.image) })),
     total: countResult[0]?.count ?? 0,
     page,
     limit,
@@ -87,7 +100,7 @@ projects.get('/:id', async (c) => {
     return c.json({ error: 'Project not found' }, 404);
   }
 
-  return c.json(found);
+  return c.json({ ...found, image: resolveImageProxy(found.image) });
 });
 
 // POST /projects
