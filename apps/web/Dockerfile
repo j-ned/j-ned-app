@@ -25,7 +25,7 @@ RUN pnpm run lint
 RUN pnpm run test
 
 # Build production Angular
-RUN pnpm run build -- --configuration production
+RUN pnpm run build --configuration production
 
 # Vérifier les artefacts (même check que le CI)
 RUN test -f browser/index.html || (echo "Le fichier index.html est manquant" && exit 1)
