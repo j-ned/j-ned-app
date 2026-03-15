@@ -1,5 +1,5 @@
 import { pgTable, text, integer, boolean, timestamp, index } from 'drizzle-orm/pg-core';
-import { article } from './article.js';
+import { article } from './article';
 
 export const comment = pgTable('comment', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),

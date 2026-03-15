@@ -83,7 +83,7 @@ set -e
 
 if [ -n "$DATABASE_URL" ]; then
   echo "Applying database schema..."
-  cd /app && NODE_OPTIONS="--import tsx/esm" npx drizzle-kit push --config=server/drizzle.config.ts
+  cd /app && npx drizzle-kit push --config=server/drizzle.config.ts
   echo "Database schema applied successfully."
 else
   echo "WARNING: DATABASE_URL not set, skipping database migration."
