@@ -1,0 +1,9 @@
+node_modules
+.angular
+browser
+dist
+.git
+.github
+.husky
+.vscode
+*.md
