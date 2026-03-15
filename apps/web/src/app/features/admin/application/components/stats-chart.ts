@@ -11,7 +11,7 @@ import {
   Legend,
   Tooltip,
 } from 'chart.js';
-import type { ChartConfiguration } from 'chart.js';
+import type { ChartConfiguration, ChartDataset } from 'chart.js';
 import type { DailyChartPoint } from '@shared/analytics';
 
 Chart.register(
@@ -72,7 +72,7 @@ export class StatsChart {
 
   readonly labels = (): string[] => this.data().map((d) => d.date);
 
-  readonly datasets = (): Record<string, unknown>[] => [
+  readonly datasets = (): ChartDataset<'line'>[] => [
     {
       label: 'Visiteurs',
       data: this.data().map((d) => d.visitors),
