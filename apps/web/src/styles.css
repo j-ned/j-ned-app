@@ -30,11 +30,10 @@
   --theme-foreground: #0f172a;
 }
 
-/* View Transitions — fast cross-fade */
+/* View Transitions — instant swap */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 150ms;
-  animation-timing-function: ease-out;
+  animation: none !important;
 }
 
 /* Arrière-plan et texte globaux basés sur le thème actif */
