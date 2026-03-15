@@ -28,8 +28,10 @@ app.onError(errorHandler);
 // Health check
 app.get('/', (c) => c.text('Hono.js Portfolio API'));
 
-// Register all routes
-registerRoutes(app);
+// Register all routes under /api prefix
+const api = new Hono();
+registerRoutes(api);
+app.route('/api', api);
 
 // Start cron jobs
 startCronJobs();

@@ -117,7 +117,7 @@ export const appConfig: ApplicationConfig = {
         breakpoints: [640, 768, 1024, 1280, 1920],
       },
     },
-    { provide: API_BASE_URL, useValue: 'http://localhost:3000' },
+    { provide: API_BASE_URL, useValue: '/api' },
     { provide: PROJECTS_GATEWAY, useClass: HttpProjectsGateway },
     { provide: PROFILE_GATEWAY, useClass: HttpProfileGateway },
     { provide: CONTACT_GATEWAY, useClass: HttpContactGateway },

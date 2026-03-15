@@ -43,21 +43,21 @@ COPY --from=build /app/server ./server
 
 ENTRYPOINT ["pnpm", "exec", "tsx"]
 
-# ---- Stage 3 : Serveur statique + migration DB au démarrage ----
+# ---- Stage 3 : Nginx + Hono API ----
 FROM nginx:alpine AS production
 
-# Installer Node.js pour exécuter la migration Drizzle au démarrage
+# Installer Node.js pour l'API Hono et les migrations Drizzle
 RUN apk add --no-cache nodejs npm
 
 # Copier les artefacts du build Angular
 COPY --from=build /app/dist/angular-portfolio-app /usr/share/nginx/html
 
-# Copier le nécessaire pour db:push (Drizzle + schema + dépendances)
+# Copier le serveur Hono + dépendances
 COPY --from=build /app/package.json /app/pnpm-lock.yaml /app/
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/server /app/server
 
-# Configuration nginx pour le routing SPA (fallback vers index.html)
+# Configuration nginx : SPA + proxy /api vers Hono
 COPY <<'EOF' /etc/nginx/conf.d/default.conf
 server {
     listen 80;
@@ -65,22 +65,35 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    location / {
-        try_files $uri $uri/ /index.html;
+    # Proxy API vers le serveur Hono
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # Fichiers statiques avec cache long
     location ~* \.(?:css|js|woff2?|svg|png|jpg|jpeg|gif|ico|webp|avif)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
+
+    # SPA fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
 }
 EOF
 
-# Script d'entrypoint : migration DB puis Nginx
-COPY <<'SCRIPT' /docker-entrypoint-db.sh
+# Script d'entrypoint : migration DB, démarrage Hono, puis Nginx
+COPY <<'SCRIPT' /docker-entrypoint.sh
 #!/bin/sh
 set -e
 
+# 1. Appliquer le schéma de la base de données
 if [ -n "$DATABASE_URL" ]; then
   echo "Applying database schema..."
   cd /app && npx drizzle-kit push --config=server/drizzle.config.ts
@@ -89,11 +102,17 @@ else
   echo "WARNING: DATABASE_URL not set, skipping database migration."
 fi
 
+# 2. Démarrer le serveur Hono en arrière-plan
+echo "Starting Hono API server..."
+cd /app && node --import tsx/esm server/index.ts &
+
+# 3. Démarrer Nginx au premier plan
+echo "Starting Nginx..."
 exec nginx -g "daemon off;"
 SCRIPT
 
-RUN chmod +x /docker-entrypoint-db.sh
+RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 80
 
-ENTRYPOINT ["/docker-entrypoint-db.sh"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
