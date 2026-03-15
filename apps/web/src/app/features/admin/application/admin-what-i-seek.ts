@@ -1,4 +1,11 @@
-import { Component, DestroyRef, inject, effect, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  effect,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,9 +25,7 @@ import { ToastService } from '@shared/toast';
         <legend class="sr-only">Ce que je recherche</legend>
 
         <div>
-          <label for="title" class="block text-sm font-medium text-foreground mb-1.5"
-            >Titre</label
-          >
+          <label for="title" class="block text-sm font-medium text-foreground mb-1.5">Titre</label>
           <input
             id="title"
             type="text"
@@ -42,7 +47,9 @@ import { ToastService } from '@shared/toast';
             rows="4"
             class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
           ></textarea>
-          @if (form.controls.description.touched && form.controls.description.errors?.['required']) {
+          @if (
+            form.controls.description.touched && form.controls.description.errors?.['required']
+          ) {
             <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
           }
         </div>

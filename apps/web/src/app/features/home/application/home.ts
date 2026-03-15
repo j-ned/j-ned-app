@@ -37,9 +37,7 @@ import { SiteSettingsService } from '@core/services';
                         <use [attr.href]="'/icons/sprite.svg#' + item.icon"></use>
                       </svg>
                     </div>
-                    <h3
-                      class="text-sm font-bold text-primary uppercase tracking-widest"
-                    >
+                    <h3 class="text-sm font-bold text-primary uppercase tracking-widest">
                       {{ item.title }}
                     </h3>
                   </div>

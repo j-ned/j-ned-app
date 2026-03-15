@@ -109,11 +109,7 @@ export class AnalyticsService {
     );
   }
 
-  async getMetrics(
-    type: string,
-    startDate?: string,
-    endDate?: string,
-  ): Promise<MetricEntry[]> {
+  async getMetrics(type: string, startDate?: string, endDate?: string): Promise<MetricEntry[]> {
     return firstValueFrom(
       this.http.get<MetricEntry[]>(`${this.baseUrl}/stats/metrics`, {
         params: { type, ...this.buildDateParams(startDate, endDate) },
@@ -159,13 +155,13 @@ export class AnalyticsService {
   }
 
   private fireAndForget(payload: TrackPayload): void {
-    this.http.post(`${this.baseUrl}/track`, payload).pipe(catchError(() => EMPTY)).subscribe();
+    this.http
+      .post(`${this.baseUrl}/track`, payload)
+      .pipe(catchError(() => EMPTY))
+      .subscribe();
   }
 
-  private buildDateParams(
-    startDate?: string,
-    endDate?: string,
-  ): Record<string, string> {
+  private buildDateParams(startDate?: string, endDate?: string): Record<string, string> {
     const params: Record<string, string> = {};
     if (startDate) params['startDate'] = startDate;
     if (endDate) params['endDate'] = endDate;

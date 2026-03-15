@@ -14,7 +14,16 @@ import {
 import type { ChartConfiguration } from 'chart.js';
 import type { DailyChartPoint } from '@shared/analytics';
 
-Chart.register(CategoryScale, LinearScale, LineController, PointElement, LineElement, Filler, Legend, Tooltip);
+Chart.register(
+  CategoryScale,
+  LinearScale,
+  LineController,
+  PointElement,
+  LineElement,
+  Filler,
+  Legend,
+  Tooltip,
+);
 
 @Component({
   selector: 'app-stats-chart',
@@ -27,7 +36,13 @@ Chart.register(CategoryScale, LinearScale, LineController, PointElement, LineEle
     >
       <h3 class="text-sm font-semibold text-foreground mb-4">Visiteurs & Pages vues</h3>
       <div class="h-64">
-        <canvas baseChart [datasets]="datasets()" [labels]="labels()" [options]="chartOptions" type="line"></canvas>
+        <canvas
+          baseChart
+          [datasets]="datasets()"
+          [labels]="labels()"
+          [options]="chartOptions"
+          type="line"
+        ></canvas>
       </div>
     </div>
   `,

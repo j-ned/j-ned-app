@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, computed } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  DestroyRef,
+  inject,
+  signal,
+  computed,
+} from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
@@ -21,7 +28,9 @@ type ContactFormGroup = {
     <section id="contact" class="py-20 px-6">
       <div class="max-w-5xl mx-auto">
         <header class="text-center mb-14">
-          <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5">
+          <span
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
+          >
             <svg aria-hidden="true" class="w-4 h-4">
               <use href="/icons/sprite.svg#lucide-mail"></use>
             </svg>
@@ -121,7 +130,10 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().linkedin.label"
                   >
-                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-primary transition-colors">
+                    <svg
+                      aria-hidden="true"
+                      class="w-4 h-4 text-muted group-hover:text-primary transition-colors"
+                    >
                       <use [attr.href]="'/icons/sprite.svg#' + socialLinks().linkedin.icon" />
                     </svg>
                   </a>
@@ -134,7 +146,10 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().github.label"
                   >
-                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-foreground transition-colors">
+                    <svg
+                      aria-hidden="true"
+                      class="w-4 h-4 text-muted group-hover:text-foreground transition-colors"
+                    >
                       <use [attr.href]="'/icons/sprite.svg#' + socialLinks().github.icon" />
                     </svg>
                   </a>
@@ -147,7 +162,10 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().twitter.label"
                   >
-                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-foreground transition-colors">
+                    <svg
+                      aria-hidden="true"
+                      class="w-4 h-4 text-muted group-hover:text-foreground transition-colors"
+                    >
                       <use [attr.href]="'/icons/sprite.svg#' + socialLinks().twitter.icon" />
                     </svg>
                   </a>
@@ -158,7 +176,10 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().email.label"
                   >
-                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-primary transition-colors">
+                    <svg
+                      aria-hidden="true"
+                      class="w-4 h-4 text-muted group-hover:text-primary transition-colors"
+                    >
                       <use [attr.href]="'/icons/sprite.svg#' + socialLinks().email.icon" />
                     </svg>
                   </a>
@@ -169,7 +190,10 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().phone.label"
                   >
-                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-accent transition-colors">
+                    <svg
+                      aria-hidden="true"
+                      class="w-4 h-4 text-muted group-hover:text-accent transition-colors"
+                    >
                       <use [attr.href]="'/icons/sprite.svg#' + socialLinks().phone.icon" />
                     </svg>
                   </a>
@@ -229,7 +253,9 @@ type ContactFormGroup = {
                   </div>
                   @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
                     <span class="text-red-400 text-xs mt-1 block">Le nom est obligatoire</span>
-                  } @else if (form.controls.name.touched && form.controls.name.errors?.['minlength']) {
+                  } @else if (
+                    form.controls.name.touched && form.controls.name.errors?.['minlength']
+                  ) {
                     <span class="text-red-400 text-xs mt-1 block">
                       Le nom doit contenir au moins 2 caractères
                     </span>
@@ -257,7 +283,9 @@ type ContactFormGroup = {
                   </div>
                   @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
                     <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
-                  } @else if (form.controls.email.touched && form.controls.email.errors?.['pattern']) {
+                  } @else if (
+                    form.controls.email.touched && form.controls.email.errors?.['pattern']
+                  ) {
                     <span class="text-red-400 text-xs mt-1 block">
                       Le format de l'email est invalide
                     </span>
@@ -285,7 +313,9 @@ type ContactFormGroup = {
                 </div>
                 @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
                   <span class="text-red-400 text-xs mt-1 block">Le sujet est obligatoire</span>
-                } @else if (form.controls.subject.touched && form.controls.subject.errors?.['minlength']) {
+                } @else if (
+                  form.controls.subject.touched && form.controls.subject.errors?.['minlength']
+                ) {
                   <span class="text-red-400 text-xs mt-1 block">
                     Le sujet doit contenir au moins 3 caractères
                   </span>
@@ -304,7 +334,9 @@ type ContactFormGroup = {
                 ></textarea>
                 @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
                   <span class="text-red-400 text-xs mt-1 block">Le message est obligatoire</span>
-                } @else if (form.controls.message.touched && form.controls.message.errors?.['minlength']) {
+                } @else if (
+                  form.controls.message.touched && form.controls.message.errors?.['minlength']
+                ) {
                   <span class="text-red-400 text-xs mt-1 block">
                     Le message doit contenir au moins 10 caractères
                   </span>
@@ -383,19 +415,22 @@ export class ContactForm {
 
     this.isSubmitting.set(true);
 
-    this.contactGateway.submitContactForm(this.form.getRawValue()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (result) => {
-        this.isSubmitting.set(false);
-        if (result.success) {
-          this.toast.success(result.message);
-          this.form.reset();
-        } else {
-          this.toast.error(result.message);
-        }
-      },
-      error: () => {
-        this.isSubmitting.set(false);
-      },
-    });
+    this.contactGateway
+      .submitContactForm(this.form.getRawValue())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.isSubmitting.set(false);
+          if (result.success) {
+            this.toast.success(result.message);
+            this.form.reset();
+          } else {
+            this.toast.error(result.message);
+          }
+        },
+        error: () => {
+          this.isSubmitting.set(false);
+        },
+      });
   }
 }

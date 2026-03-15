@@ -1,4 +1,11 @@
-import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { BLOG_GATEWAY } from '@features/blog/application';
 import type { Comment, CommentStatus } from '@features/blog/domain';
@@ -43,11 +50,15 @@ type FilterStatus = 'all' | CommentStatus;
           <thead>
             <tr class="border-b border-foreground/10">
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Auteur</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Contenu</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">
+                Contenu
+              </th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Note</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Statut</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Date</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -208,44 +219,56 @@ export class AdminComments {
   });
 
   approve(comment: Comment): void {
-    this.blogGateway.updateComment(comment.id, { status: 'approved' }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.commentsRes.reload();
-        this.toast.success('Commentaire approuvé');
-      },
-      error: () => this.toast.error("Erreur lors de l'approbation"),
-    });
+    this.blogGateway
+      .updateComment(comment.id, { status: 'approved' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.commentsRes.reload();
+          this.toast.success('Commentaire approuvé');
+        },
+        error: () => this.toast.error("Erreur lors de l'approbation"),
+      });
   }
 
   reject(comment: Comment): void {
-    this.blogGateway.updateComment(comment.id, { status: 'rejected' }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.commentsRes.reload();
-        this.toast.success('Commentaire rejeté');
-      },
-      error: () => this.toast.error('Erreur lors du rejet'),
-    });
+    this.blogGateway
+      .updateComment(comment.id, { status: 'rejected' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.commentsRes.reload();
+          this.toast.success('Commentaire rejeté');
+        },
+        error: () => this.toast.error('Erreur lors du rejet'),
+      });
   }
 
   toggleFeatured(comment: Comment): void {
-    this.blogGateway.updateComment(comment.id, { featured: !comment.featured }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.commentsRes.reload();
-        this.toast.success(
-          comment.featured ? 'Commentaire retiré de la une' : 'Commentaire mis en avant',
-        );
-      },
-      error: () => this.toast.error('Erreur lors de la mise à jour'),
-    });
+    this.blogGateway
+      .updateComment(comment.id, { featured: !comment.featured })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.commentsRes.reload();
+          this.toast.success(
+            comment.featured ? 'Commentaire retiré de la une' : 'Commentaire mis en avant',
+          );
+        },
+        error: () => this.toast.error('Erreur lors de la mise à jour'),
+      });
   }
 
   deleteComment(comment: Comment): void {
-    this.blogGateway.deleteComment(comment.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.commentsRes.reload();
-        this.toast.success('Commentaire supprimé');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.blogGateway
+      .deleteComment(comment.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.commentsRes.reload();
+          this.toast.success('Commentaire supprimé');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

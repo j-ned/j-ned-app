@@ -97,7 +97,9 @@ export type BookingFormPayload = {
             @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
               <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
             } @else if (form.controls.email.touched && form.controls.email.errors?.['pattern']) {
-              <span class="text-red-400 text-xs mt-1 block"> Le format de l'email est invalide </span>
+              <span class="text-red-400 text-xs mt-1 block">
+                Le format de l'email est invalide
+              </span>
             }
           </div>
 
@@ -150,7 +152,9 @@ export type BookingFormPayload = {
             </div>
             @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
               <span class="text-red-400 text-xs mt-1 block">Le sujet est obligatoire</span>
-            } @else if (form.controls.subject.touched && form.controls.subject.errors?.['minlength']) {
+            } @else if (
+              form.controls.subject.touched && form.controls.subject.errors?.['minlength']
+            ) {
               <span class="text-red-400 text-xs mt-1 block">
                 Le sujet doit contenir au moins 3 caractères
               </span>
@@ -170,7 +174,9 @@ export type BookingFormPayload = {
             ></textarea>
             @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
               <span class="text-red-400 text-xs mt-1 block">Le message est obligatoire</span>
-            } @else if (form.controls.message.touched && form.controls.message.errors?.['minlength']) {
+            } @else if (
+              form.controls.message.touched && form.controls.message.errors?.['minlength']
+            ) {
               <span class="text-red-400 text-xs mt-1 block">
                 Le message doit contenir au moins 10 caractères
               </span>

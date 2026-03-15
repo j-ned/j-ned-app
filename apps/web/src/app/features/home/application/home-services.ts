@@ -12,7 +12,9 @@ import { HOME_GATEWAY } from './tokens';
   template: `
     <section id="services">
       <header class="text-center mb-14">
-        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5">
+        <span
+          class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
+        >
           <svg aria-hidden="true" class="w-4 h-4">
             <use href="/icons/sprite.svg#lucide-briefcase"></use>
           </svg>
@@ -52,9 +54,12 @@ import { HOME_GATEWAY } from './tokens';
                   </svg>
                 </div>
                 <h3 class="text-lg font-bold text-foreground mb-2">{{ service.title }}</h3>
-                <p class="text-sm text-amber-500 font-semibold mb-2">Offre en cours de finalisation</p>
+                <p class="text-sm text-amber-500 font-semibold mb-2">
+                  Offre en cours de finalisation
+                </p>
                 <p class="text-xs text-muted max-w-[220px] leading-relaxed">
-                  Cette prestation sera prochainement disponible. N'hésitez pas à me contacter pour en savoir plus.
+                  Cette prestation sera prochainement disponible. N'hésitez pas à me contacter pour
+                  en savoir plus.
                 </p>
               </div>
             } @else {

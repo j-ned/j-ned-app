@@ -32,8 +32,12 @@ import { HOME_GATEWAY } from './tokens';
       animation: fade-up 0.6s ease-out both;
     }
 
-    .delay-1 { animation-delay: 0.1s; }
-    .delay-2 { animation-delay: 0.25s; }
+    .delay-1 {
+      animation-delay: 0.1s;
+    }
+    .delay-2 {
+      animation-delay: 0.25s;
+    }
   `,
   template: `
     <hgroup class="text-center">

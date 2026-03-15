@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  DestroyRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BOOKING_GATEWAY } from './tokens';
 import type { Booking as BookingModel, BookingFormData, DisabledDate } from '../domain/models';
@@ -16,7 +23,9 @@ import { ToastService } from '@shared/toast';
     <main class="min-h-screen pt-20 pb-16">
       <section class="container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <header class="text-center mb-14">
-          <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5">
+          <span
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
+          >
             <svg aria-hidden="true" class="w-4 h-4">
               <use href="/icons/sprite.svg#lucide-calendar"></use>
             </svg>
@@ -135,36 +144,45 @@ export class Booking {
       ...payload,
     };
 
-    this.bookingGateway.submitBooking(data).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (result) => {
-        formRef.setSubmitting(false);
-        if (result.success) {
-          this.toast.success(result.message);
-          this.selectedDate.set(null);
-          this.selectedSlot.set(null);
-          formRef.resetForm();
-          const calendarMonth =
-            this.calendarRef()?.currentMonthString() ?? new Date().toISOString().substring(0, 7);
-          this.loadBookedSlots(calendarMonth);
-        } else {
-          this.toast.error(result.message);
-        }
-      },
-      error: () => {
-        formRef.setSubmitting(false);
-      },
-    });
+    this.bookingGateway
+      .submitBooking(data)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          formRef.setSubmitting(false);
+          if (result.success) {
+            this.toast.success(result.message);
+            this.selectedDate.set(null);
+            this.selectedSlot.set(null);
+            formRef.resetForm();
+            const calendarMonth =
+              this.calendarRef()?.currentMonthString() ?? new Date().toISOString().substring(0, 7);
+            this.loadBookedSlots(calendarMonth);
+          } else {
+            this.toast.error(result.message);
+          }
+        },
+        error: () => {
+          formRef.setSubmitting(false);
+        },
+      });
   }
 
   private loadBookedSlots(month: string): void {
-    this.bookingGateway.getBookedSlots(month).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((slots) => {
-      this.bookedSlots.set(slots);
-    });
+    this.bookingGateway
+      .getBookedSlots(month)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((slots) => {
+        this.bookedSlots.set(slots);
+      });
   }
 
   private loadDisabledDates(): void {
-    this.bookingGateway.getDisabledDates().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((dates) => {
-      this.disabledDates.set(dates);
-    });
+    this.bookingGateway
+      .getDisabledDates()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((dates) => {
+        this.disabledDates.set(dates);
+      });
   }
 }

@@ -93,10 +93,7 @@ import { FileDropZone } from '@shared/file-drop-zone';
 
       <div>
         <label class="block text-sm font-medium text-foreground mb-1.5">Image</label>
-        <app-file-drop-zone
-          [preview]="imagePreview()"
-          (fileSelected)="onFileSelected($event)"
-        />
+        <app-file-drop-zone [preview]="imagePreview()" (fileSelected)="onFileSelected($event)" />
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">

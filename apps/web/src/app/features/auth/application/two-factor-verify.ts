@@ -77,10 +77,7 @@ type TwoFactorVerifyFormShape = {
         </form>
 
         <nav class="mt-6 text-center">
-          <a
-            routerLink="/login"
-            class="text-sm text-muted hover:text-primary transition-colors"
-          >
+          <a routerLink="/login" class="text-sm text-muted hover:text-primary transition-colors">
             Retour à la connexion
           </a>
         </nav>
@@ -118,19 +115,22 @@ export class TwoFactorVerify {
     this.isSubmitting.set(true);
     this.errorMessage.set('');
 
-    this.authService.verifyTwoFactor(email, this.form.getRawValue().code).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (success) => {
-        this.isSubmitting.set(false);
-        if (success) {
-          this.router.navigate(['/admin']);
-        } else {
-          this.errorMessage.set('Code invalide');
-        }
-      },
-      error: () => {
-        this.isSubmitting.set(false);
-        this.errorMessage.set('Erreur de vérification');
-      },
-    });
+    this.authService
+      .verifyTwoFactor(email, this.form.getRawValue().code)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (success) => {
+          this.isSubmitting.set(false);
+          if (success) {
+            this.router.navigate(['/admin']);
+          } else {
+            this.errorMessage.set('Code invalide');
+          }
+        },
+        error: () => {
+          this.isSubmitting.set(false);
+          this.errorMessage.set('Erreur de vérification');
+        },
+      });
   }
 }

@@ -27,9 +27,13 @@ import { ToastService } from '@shared/toast';
           <thead>
             <tr class="border-b border-foreground/10">
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Nom</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Catégorie</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">
+                Catégorie
+              </th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -80,12 +84,15 @@ export class AdminTechnologies {
   readonly technologies = (): readonly Technology[] => this.technologiesRes.value() ?? [];
 
   deleteTechnology(tech: Technology): void {
-    this.profileGateway.deleteTechnology(tech.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.technologiesRes.reload();
-        this.toast.success('Technologie supprimée');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.profileGateway
+      .deleteTechnology(tech.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.technologiesRes.reload();
+          this.toast.success('Technologie supprimée');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

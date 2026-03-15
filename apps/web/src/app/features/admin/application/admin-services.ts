@@ -29,9 +29,13 @@ import { ToastService } from '@shared/toast';
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Ordre</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Prix</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Mis en avant</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">
+                Mis en avant
+              </th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Active</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -119,12 +123,15 @@ export class AdminServices {
   }
 
   deleteService(service: ServicePricing): void {
-    this.homeGateway.deleteServicePricing(service.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.servicesRes.reload();
-        this.toast.success('Prestation supprimée');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.homeGateway
+      .deleteServicePricing(service.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.servicesRes.reload();
+          this.toast.success('Prestation supprimée');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

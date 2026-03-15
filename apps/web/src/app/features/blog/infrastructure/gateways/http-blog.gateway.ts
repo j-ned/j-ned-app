@@ -21,12 +21,10 @@ export class HttpBlogGateway implements BlogGateway {
   private readonly apiUrl = inject(API_BASE_URL);
 
   getAllArticles(): Observable<readonly Article[]> {
-    return this.http
-      .get<readonly Article[]>(`${this.apiUrl}/articles?_sort=-date`)
-      .pipe(
-        map((articles) => articles.map((a) => resolveArticle(this.apiUrl, a as Article))),
-        catchError(() => of([])),
-      );
+    return this.http.get<readonly Article[]>(`${this.apiUrl}/articles?_sort=-date`).pipe(
+      map((articles) => articles.map((a) => resolveArticle(this.apiUrl, a as Article))),
+      catchError(() => of([])),
+    );
   }
 
   getArticleById(id: string): Observable<Article> {
@@ -99,12 +97,10 @@ export class HttpBlogGateway implements BlogGateway {
   }
 
   getFeaturedArticles(): Observable<readonly Article[]> {
-    return this.http
-      .get<readonly Article[]>(`${this.apiUrl}/articles?featured=true`)
-      .pipe(
-        map((articles) => articles.map((a) => resolveArticle(this.apiUrl, a as Article))),
-        catchError(() => of([])),
-      );
+    return this.http.get<readonly Article[]>(`${this.apiUrl}/articles?featured=true`).pipe(
+      map((articles) => articles.map((a) => resolveArticle(this.apiUrl, a as Article))),
+      catchError(() => of([])),
+    );
   }
 
   getFeaturedComments(): Observable<readonly Comment[]> {

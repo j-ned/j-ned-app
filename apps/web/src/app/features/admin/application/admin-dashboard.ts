@@ -185,8 +185,7 @@ import { SiteSettingsService } from '@core/services';
               >
                 <svg
                   [class]="
-                    'w-7 h-7 ' +
-                    (siteSettings.blogEnabled() ? 'text-primary' : 'text-yellow-500')
+                    'w-7 h-7 ' + (siteSettings.blogEnabled() ? 'text-primary' : 'text-yellow-500')
                   "
                   aria-hidden="true"
                 >

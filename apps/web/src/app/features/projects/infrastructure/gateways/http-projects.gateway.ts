@@ -21,12 +21,10 @@ export class HttpProjectsGateway implements ProjectsGateway {
   private readonly apiUrl = inject(API_BASE_URL);
 
   getAllProjects(): Observable<readonly Project[]> {
-    return this.http
-      .get<{ data: Project[] }>(`${this.apiUrl}/projects?_sort=order&limit=100`)
-      .pipe(
-        map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
-        catchError(() => of([])),
-      );
+    return this.http.get<{ data: Project[] }>(`${this.apiUrl}/projects?_sort=order&limit=100`).pipe(
+      map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
+      catchError(() => of([])),
+    );
   }
 
   getFeaturedProjects(): Observable<readonly Project[]> {
@@ -56,18 +54,16 @@ export class HttpProjectsGateway implements ProjectsGateway {
     if (filter.featured !== undefined) {
       params.set('featured', String(filter.featured));
     }
-    return this.http
-      .get<{ data: Project[] }>(`${this.apiUrl}/projects?${params.toString()}`)
-      .pipe(
-        map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
-        catchError(() => of([])),
-      );
+    return this.http.get<{ data: Project[] }>(`${this.apiUrl}/projects?${params.toString()}`).pipe(
+      map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
+      catchError(() => of([])),
+    );
   }
 
   getProjectById(id: string): Observable<Project> {
-    return this.http.get<Project>(`${this.apiUrl}/projects/${id}`).pipe(
-      map((p) => resolveProject(this.apiUrl, p)),
-    );
+    return this.http
+      .get<Project>(`${this.apiUrl}/projects/${id}`)
+      .pipe(map((p) => resolveProject(this.apiUrl, p)));
   }
 
   createProject(project: Omit<Project, 'id'>): Observable<Project> {

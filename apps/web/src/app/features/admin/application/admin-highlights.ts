@@ -28,7 +28,9 @@ import { ToastService } from '@shared/toast';
             <tr class="border-b border-foreground/10">
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -80,12 +82,15 @@ export class AdminHighlights {
   readonly highlights = (): readonly Highlight[] => this.highlightsRes.value() ?? [];
 
   deleteHighlight(highlight: Highlight): void {
-    this.profileGateway.deleteHighlight(highlight.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.highlightsRes.reload();
-        this.toast.success('Point fort supprimé');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.profileGateway
+      .deleteHighlight(highlight.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.highlightsRes.reload();
+          this.toast.success('Point fort supprimé');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

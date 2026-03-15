@@ -27,8 +27,12 @@ import { ToastService } from '@shared/toast';
           <thead>
             <tr class="border-b border-foreground/10">
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Organisme</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">
+                Organisme
+              </th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -78,12 +82,15 @@ export class AdminDiplomas {
   readonly diplomas = (): readonly Diploma[] => this.diplomasRes.value() ?? [];
 
   deleteDiploma(diploma: Diploma): void {
-    this.profileGateway.deleteDiploma(diploma.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.diplomasRes.reload();
-        this.toast.success('Diplôme supprimé');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.profileGateway
+      .deleteDiploma(diploma.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.diplomasRes.reload();
+          this.toast.success('Diplôme supprimé');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

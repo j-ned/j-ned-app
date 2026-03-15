@@ -86,8 +86,7 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'projects',
         title: 'Projets | Admin',
-        loadComponent: () =>
-          import('./application/admin-projects').then((m) => m.AdminProjects),
+        loadComponent: () => import('./application/admin-projects').then((m) => m.AdminProjects),
       },
       {
         path: 'calendar',

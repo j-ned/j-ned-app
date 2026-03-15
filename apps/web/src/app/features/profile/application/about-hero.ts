@@ -71,7 +71,10 @@ import { API_BASE_URL } from '@shared/api';
                 class="p-2.5 bg-foreground/5 rounded-lg border border-foreground/10 hover:border-primary/50 hover:bg-primary/10 transition-all hover:scale-110 group"
                 [attr.aria-label]="social.label"
               >
-                <svg aria-hidden="true" class="w-5 h-5 text-muted group-hover:text-primary transition-colors">
+                <svg
+                  aria-hidden="true"
+                  class="w-5 h-5 text-muted group-hover:text-primary transition-colors"
+                >
                   <use [attr.href]="'/icons/sprite.svg#' + social.icon"></use>
                 </svg>
               </a>

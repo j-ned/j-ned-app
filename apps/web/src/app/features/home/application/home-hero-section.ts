@@ -25,16 +25,16 @@ import { ButtonComponent } from '@layout';
     .animate-fade-up-actions {
       animation: fade-up 0.6s ease-out 0.4s both;
     }
-
   `,
   template: `
-
     <div class="max-w-5xl mx-auto w-full relative z-10">
       <div class="flex flex-col items-center">
         <app-home-hero />
 
         <!-- CTAs -->
-        <div class="animate-fade-up-actions flex flex-col sm:flex-row items-center gap-4 mt-10 md:mt-12">
+        <div
+          class="animate-fade-up-actions flex flex-col sm:flex-row items-center gap-4 mt-10 md:mt-12"
+        >
           <app-button variant="primary" size="lg" radius="md" (clicked)="goToProjects()">
             Voir mes réalisations
             <svg aria-hidden="true" class="w-5 h-5 ml-2">
@@ -48,7 +48,6 @@ import { ButtonComponent } from '@layout';
             </svg>
           </app-button>
         </div>
-
       </div>
     </div>
   `,

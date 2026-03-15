@@ -18,9 +18,7 @@ import { ToastService } from '@shared/toast';
         <legend class="sr-only">Contenu de la biographie</legend>
 
         <div>
-          <label for="title" class="block text-sm font-medium text-foreground mb-1.5"
-            >Titre</label
-          >
+          <label for="title" class="block text-sm font-medium text-foreground mb-1.5">Titre</label>
           <input
             id="title"
             type="text"

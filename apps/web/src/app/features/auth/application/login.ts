@@ -32,7 +32,9 @@ type LoginForm = {
         </div>
 
         <!-- Card -->
-        <div class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-2xl">
+        <div
+          class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-2xl"
+        >
           @if (errorMessage()) {
             <div
               class="mb-4 p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center"
@@ -90,7 +92,9 @@ type LoginForm = {
                     placeholder="Votre mot de passe"
                   />
                 </div>
-                @if (form.controls.password.touched && form.controls.password.errors?.['required']) {
+                @if (
+                  form.controls.password.touched && form.controls.password.errors?.['required']
+                ) {
                   <span class="text-red-400 text-xs mt-1 block"
                     >Le mot de passe est obligatoire</span
                   >
@@ -165,23 +169,26 @@ export class Login {
 
     const { email, password } = this.form.getRawValue();
 
-    this.authService.login(email, password).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (result) => {
-        this.isSubmitting.set(false);
-        if (result === 'success') {
-          this.router.navigate(['/admin']);
-        } else if (result === 'two-factor') {
-          this.router.navigate(['/two-factor']);
-        } else {
-          this.errorMessage.set('Email ou mot de passe incorrect');
-          this.toast.error('Email ou mot de passe incorrect');
-        }
-      },
-      error: () => {
-        this.isSubmitting.set(false);
-        this.errorMessage.set('Erreur de connexion au serveur');
-        this.toast.error('Erreur de connexion au serveur');
-      },
-    });
+    this.authService
+      .login(email, password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.isSubmitting.set(false);
+          if (result === 'success') {
+            this.router.navigate(['/admin']);
+          } else if (result === 'two-factor') {
+            this.router.navigate(['/two-factor']);
+          } else {
+            this.errorMessage.set('Email ou mot de passe incorrect');
+            this.toast.error('Email ou mot de passe incorrect');
+          }
+        },
+        error: () => {
+          this.isSubmitting.set(false);
+          this.errorMessage.set('Erreur de connexion au serveur');
+          this.toast.error('Erreur de connexion au serveur');
+        },
+      });
   }
 }

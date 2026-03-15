@@ -1,6 +1,19 @@
-import { Component, computed, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule, FormControl, FormGroup, Validators, type ValidationErrors } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormControl,
+  FormGroup,
+  Validators,
+  type ValidationErrors,
+} from '@angular/forms';
 import { AuthService } from '../infrastructure';
 
 type PasswordFormShape = {
@@ -95,7 +108,11 @@ type DisableFormShape = {
               pwdForm.controls.newPassword.touched &&
               pwdForm.controls.newPassword.errors?.['minlength']
             ) {
-              <span class="text-red-400 text-xs mt-1 block">Minimum {{ pwdForm.controls.newPassword.errors?.['minlength'].requiredLength }} caractères requis</span>
+              <span class="text-red-400 text-xs mt-1 block"
+                >Minimum
+                {{ pwdForm.controls.newPassword.errors?.['minlength'].requiredLength }} caractères
+                requis</span
+              >
             } @else if (
               pwdForm.controls.newPassword.touched &&
               pwdForm.controls.newPassword.errors?.['pattern']
@@ -210,11 +227,7 @@ type DisableFormShape = {
                   </button>
                 </div>
               } @else {
-                <form
-                  [formGroup]="disableForm"
-                  (ngSubmit)="disableTwoFactor()"
-                  class="space-y-4"
-                >
+                <form [formGroup]="disableForm" (ngSubmit)="disableTwoFactor()" class="space-y-4">
                   <div>
                     <label
                       for="disable-pw"
@@ -230,7 +243,10 @@ type DisableFormShape = {
                       class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
                       placeholder="Votre mot de passe"
                     />
-                    @if (disableForm.controls.password.touched && disableForm.controls.password.errors?.['required']) {
+                    @if (
+                      disableForm.controls.password.touched &&
+                      disableForm.controls.password.errors?.['required']
+                    ) {
                       <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
                     }
                   </div>
@@ -303,8 +319,12 @@ type DisableFormShape = {
                 />
                 @if (tfaForm.controls.code.touched && tfaForm.controls.code.errors?.['required']) {
                   <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
-                } @else if (tfaForm.controls.code.touched && tfaForm.controls.code.errors?.['pattern']) {
-                  <span class="text-red-400 text-xs mt-1 block">Le code doit contenir 6 chiffres</span>
+                } @else if (
+                  tfaForm.controls.code.touched && tfaForm.controls.code.errors?.['pattern']
+                ) {
+                  <span class="text-red-400 text-xs mt-1 block"
+                    >Le code doit contenir 6 chiffres</span
+                  >
                 }
               </div>
 
@@ -411,21 +431,24 @@ export class TwoFactorSetup {
 
     const { currentPassword, newPassword } = this.pwdForm.getRawValue();
 
-    this.authService.changePassword(currentPassword, newPassword).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (success) => {
-        this.isPwdLoading.set(false);
-        if (success) {
-          this.pwdSuccess.set('Mot de passe modifié avec succès !');
-          this.pwdForm.reset();
-        } else {
-          this.pwdError.set('Mot de passe actuel incorrect');
-        }
-      },
-      error: () => {
-        this.isPwdLoading.set(false);
-        this.pwdError.set('Erreur lors de la modification');
-      },
-    });
+    this.authService
+      .changePassword(currentPassword, newPassword)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (success) => {
+          this.isPwdLoading.set(false);
+          if (success) {
+            this.pwdSuccess.set('Mot de passe modifié avec succès !');
+            this.pwdForm.reset();
+          } else {
+            this.pwdError.set('Mot de passe actuel incorrect');
+          }
+        },
+        error: () => {
+          this.isPwdLoading.set(false);
+          this.pwdError.set('Erreur lors de la modification');
+        },
+      });
   }
 
   // 2FA setup
@@ -454,17 +477,20 @@ export class TwoFactorSetup {
     this.isTfaLoading.set(true);
     this.tfaError.set('');
 
-    this.authService.generateTwoFactorSecret().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res) => {
-        this.qrCodeUrl.set(res.qrCodeDataUrl);
-        this.secret.set(res.secret);
-        this.isTfaLoading.set(false);
-      },
-      error: () => {
-        this.tfaError.set('Erreur lors de la génération du QR code');
-        this.isTfaLoading.set(false);
-      },
-    });
+    this.authService
+      .generateTwoFactorSecret()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.qrCodeUrl.set(res.qrCodeDataUrl);
+          this.secret.set(res.secret);
+          this.isTfaLoading.set(false);
+        },
+        error: () => {
+          this.tfaError.set('Erreur lors de la génération du QR code');
+          this.isTfaLoading.set(false);
+        },
+      });
   }
 
   enable(): void {
@@ -477,23 +503,26 @@ export class TwoFactorSetup {
     this.tfaError.set('');
     this.tfaSuccess.set('');
 
-    this.authService.enableTwoFactor(this.tfaForm.getRawValue().code).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (success) => {
-        this.isTfaLoading.set(false);
-        if (success) {
-          this.tfaSuccess.set('Authentification à deux facteurs activée avec succès !');
-          this.qrCodeUrl.set('');
-          this.secret.set('');
-          this.tfaForm.reset();
-        } else {
-          this.tfaError.set('Code invalide. Réessayez.');
-        }
-      },
-      error: () => {
-        this.isTfaLoading.set(false);
-        this.tfaError.set("Erreur lors de l'activation");
-      },
-    });
+    this.authService
+      .enableTwoFactor(this.tfaForm.getRawValue().code)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (success) => {
+          this.isTfaLoading.set(false);
+          if (success) {
+            this.tfaSuccess.set('Authentification à deux facteurs activée avec succès !');
+            this.qrCodeUrl.set('');
+            this.secret.set('');
+            this.tfaForm.reset();
+          } else {
+            this.tfaError.set('Code invalide. Réessayez.');
+          }
+        },
+        error: () => {
+          this.isTfaLoading.set(false);
+          this.tfaError.set("Erreur lors de l'activation");
+        },
+      });
   }
 
   disableTwoFactor(): void {
@@ -506,22 +535,25 @@ export class TwoFactorSetup {
     this.tfaError.set('');
     this.tfaSuccess.set('');
 
-    this.authService.disableTwoFactor(this.disableForm.getRawValue().password).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (success) => {
-        this.isTfaLoading.set(false);
-        if (success) {
-          this.tfaSuccess.set('Authentification à deux facteurs désactivée.');
-          this.showDisableForm.set(false);
-          this.disableForm.reset();
-        } else {
-          this.tfaError.set('Mot de passe incorrect.');
-        }
-      },
-      error: () => {
-        this.isTfaLoading.set(false);
-        this.tfaError.set('Erreur lors de la désactivation.');
-      },
-    });
+    this.authService
+      .disableTwoFactor(this.disableForm.getRawValue().password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (success) => {
+          this.isTfaLoading.set(false);
+          if (success) {
+            this.tfaSuccess.set('Authentification à deux facteurs désactivée.');
+            this.showDisableForm.set(false);
+            this.disableForm.reset();
+          } else {
+            this.tfaError.set('Mot de passe incorrect.');
+          }
+        },
+        error: () => {
+          this.isTfaLoading.set(false);
+          this.tfaError.set('Erreur lors de la désactivation.');
+        },
+      });
   }
 
   reconfigure(): void {

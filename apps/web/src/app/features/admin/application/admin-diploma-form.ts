@@ -1,4 +1,12 @@
-import { Component, DestroyRef, inject, input, computed, effect, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  computed,
+  effect,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, FormArray, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,9 +28,7 @@ import { ToastService } from '@shared/toast';
         <legend class="sr-only">Informations du diplôme</legend>
 
         <div>
-          <label for="title" class="block text-sm font-medium text-foreground mb-1.5"
-            >Titre</label
-          >
+          <label for="title" class="block text-sm font-medium text-foreground mb-1.5">Titre</label>
           <input
             id="title"
             type="text"

@@ -27,7 +27,9 @@ import { AnalyticsService } from '@shared/analytics';
           <tr class="border-b border-foreground/10">
             <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Titre</th>
             <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Clics</th>
-            <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">% du total</th>
+            <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">
+              % du total
+            </th>
           </tr>
         </thead>
         <tbody>

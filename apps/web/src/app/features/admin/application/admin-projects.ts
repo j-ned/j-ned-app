@@ -205,9 +205,7 @@ export class AdminProjects {
       this.projectsGateway
         .uploadImage(event.file, slug)
         .pipe(
-          switchMap((key) =>
-            this.projectsGateway.createProject({ ...event.data, image: key }),
-          ),
+          switchMap((key) => this.projectsGateway.createProject({ ...event.data, image: key })),
           takeUntilDestroyed(this.destroyRef),
         )
         .subscribe({
@@ -219,14 +217,17 @@ export class AdminProjects {
           error: () => this.toast.error('Erreur lors de la création du projet'),
         });
     } else {
-      this.projectsGateway.createProject(event.data).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => {
-          this.showNewForm.set(false);
-          this.reload();
-          this.toast.success('Projet créé');
-        },
-        error: () => this.toast.error('Erreur lors de la création du projet'),
-      });
+      this.projectsGateway
+        .createProject(event.data)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.showNewForm.set(false);
+            this.reload();
+            this.toast.success('Projet créé');
+          },
+          error: () => this.toast.error('Erreur lors de la création du projet'),
+        });
     }
   }
 
@@ -237,9 +238,7 @@ export class AdminProjects {
       this.projectsGateway
         .uploadImage(event.file, slug)
         .pipe(
-          switchMap((key) =>
-            this.projectsGateway.updateProject(id, { ...event.data, image: key }),
-          ),
+          switchMap((key) => this.projectsGateway.updateProject(id, { ...event.data, image: key })),
           takeUntilDestroyed(this.destroyRef),
         )
         .subscribe({
@@ -251,25 +250,31 @@ export class AdminProjects {
           error: () => this.toast.error('Erreur lors de la mise à jour du projet'),
         });
     } else {
-      this.projectsGateway.updateProject(id, event.data).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => {
-          this.editingId.set(null);
-          this.reload();
-          this.toast.success('Projet mis à jour');
-        },
-        error: () => this.toast.error('Erreur lors de la mise à jour du projet'),
-      });
+      this.projectsGateway
+        .updateProject(id, event.data)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.editingId.set(null);
+            this.reload();
+            this.toast.success('Projet mis à jour');
+          },
+          error: () => this.toast.error('Erreur lors de la mise à jour du projet'),
+        });
     }
   }
 
   deleteProject(project: Project): void {
-    this.projectsGateway.deleteProject(project.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.reload();
-        this.toast.success('Projet supprimé');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression du projet'),
-    });
+    this.projectsGateway
+      .deleteProject(project.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.reload();
+          this.toast.success('Projet supprimé');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression du projet'),
+      });
   }
 
   private reload(): void {

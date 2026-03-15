@@ -13,7 +13,9 @@ import { PROJECTS_GATEWAY } from '@features/projects/application';
   template: `
     <section id="projects">
       <header class="text-center mb-14">
-        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5">
+        <span
+          class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
+        >
           <svg aria-hidden="true" class="w-4 h-4">
             <use href="/icons/sprite.svg#lucide-laptop"></use>
           </svg>

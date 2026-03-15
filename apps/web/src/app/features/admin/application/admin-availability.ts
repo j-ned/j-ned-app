@@ -1,4 +1,11 @@
-import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { BOOKING_GATEWAY } from '@features/booking/application';
@@ -304,14 +311,17 @@ export class AdminAvailability {
       reason: this.reasonInput || undefined,
     };
 
-    this.bookingGateway.addDisabledDate(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.reasonInput = '';
-        this.loadDates();
-        this.toast.success('Date désactivée');
-      },
-      error: () => this.toast.error('Erreur lors de la désactivation'),
-    });
+    this.bookingGateway
+      .addDisabledDate(payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.reasonInput = '';
+          this.loadDates();
+          this.toast.success('Date désactivée');
+        },
+        error: () => this.toast.error('Erreur lors de la désactivation'),
+      });
   }
 
   enableDate(): void {
@@ -321,27 +331,36 @@ export class AdminAvailability {
     const dd = this.disabledDateSet().get(date);
     if (!dd) return;
 
-    this.bookingGateway.removeDisabledDate(dd.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.loadDates();
-        this.toast.success('Date réactivée');
-      },
-      error: () => this.toast.error('Erreur lors de la réactivation'),
-    });
+    this.bookingGateway
+      .removeDisabledDate(dd.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loadDates();
+          this.toast.success('Date réactivée');
+        },
+        error: () => this.toast.error('Erreur lors de la réactivation'),
+      });
   }
 
   removeDate(dd: DisabledDate): void {
-    this.bookingGateway.removeDisabledDate(dd.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.loadDates();
-        this.toast.success('Date supprimée');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.bookingGateway
+      .removeDisabledDate(dd.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loadDates();
+          this.toast.success('Date supprimée');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 
   private loadDates(): void {
-    this.bookingGateway.getDisabledDates().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((dates) => this.disabledDates.set(dates));
+    this.bookingGateway
+      .getDisabledDates()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((dates) => this.disabledDates.set(dates));
   }
 
   formatDate(dateStr: string): string {

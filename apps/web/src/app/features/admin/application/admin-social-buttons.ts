@@ -29,7 +29,9 @@ import { ToastService } from '@shared/toast';
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Label</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Lien</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -80,12 +82,15 @@ export class AdminSocialButtons {
   readonly buttons = (): readonly SocialButton[] => this.buttonsRes.value() ?? [];
 
   deleteButton(btn: SocialButton): void {
-    this.profileGateway.deleteSocialButton(btn.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.buttonsRes.reload();
-        this.toast.success('Réseau social supprimé');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.profileGateway
+      .deleteSocialButton(btn.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.buttonsRes.reload();
+          this.toast.success('Réseau social supprimé');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

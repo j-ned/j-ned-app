@@ -160,7 +160,9 @@ import { AnalyticsService } from '@shared/analytics';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Article</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">
+                Article
+              </th>
               <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Clics</th>
             </tr>
           </thead>

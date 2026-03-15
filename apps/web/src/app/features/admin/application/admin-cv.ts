@@ -88,7 +88,6 @@ import { FileDropZone } from '@shared/file-drop-zone';
           </button>
         </div>
       }
-
     </div>
   `,
 })
@@ -161,7 +160,7 @@ export class AdminCv {
       const message =
         err instanceof Error
           ? err.message
-          : (err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue';
+          : ((err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue');
       this.toast.error(`Erreur d'upload : ${message}`);
     } finally {
       this.isUploading.set(false);
@@ -177,7 +176,7 @@ export class AdminCv {
       const message =
         err instanceof Error
           ? err.message
-          : (err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue';
+          : ((err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue');
       this.toast.error(`Erreur de suppression : ${message}`);
     }
   }

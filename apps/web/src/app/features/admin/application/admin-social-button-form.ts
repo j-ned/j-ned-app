@@ -1,4 +1,12 @@
-import { Component, DestroyRef, inject, input, computed, effect, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  computed,
+  effect,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,9 +28,7 @@ import { ToastService } from '@shared/toast';
         <legend class="sr-only">Informations du réseau social</legend>
 
         <div>
-          <label for="icon" class="block text-sm font-medium text-foreground mb-1.5"
-            >Icône</label
-          >
+          <label for="icon" class="block text-sm font-medium text-foreground mb-1.5">Icône</label>
           <input
             id="icon"
             type="text"
@@ -35,9 +41,7 @@ import { ToastService } from '@shared/toast';
         </div>
 
         <div>
-          <label for="label" class="block text-sm font-medium text-foreground mb-1.5"
-            >Label</label
-          >
+          <label for="label" class="block text-sm font-medium text-foreground mb-1.5">Label</label>
           <input
             id="label"
             type="text"

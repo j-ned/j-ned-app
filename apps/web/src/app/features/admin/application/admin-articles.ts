@@ -29,8 +29,12 @@ import { ToastService } from '@shared/toast';
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Date</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Tags</th>
-              <th scope="col" class="text-center px-6 py-4 text-sm font-medium text-muted">Featured</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-center px-6 py-4 text-sm font-medium text-muted">
+                Featured
+              </th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -100,22 +104,30 @@ export class AdminArticles {
   readonly articles = (): readonly Article[] => this.articlesRes.value() ?? [];
 
   toggleFeatured(article: Article): void {
-    this.blogGateway.updateArticle(article.id, { featured: !article.featured }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.articlesRes.reload();
-        this.toast.success(article.featured ? 'Article retiré de la une' : 'Article mis en avant');
-      },
-      error: () => this.toast.error("Erreur lors de la mise à jour de l'article"),
-    });
+    this.blogGateway
+      .updateArticle(article.id, { featured: !article.featured })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.articlesRes.reload();
+          this.toast.success(
+            article.featured ? 'Article retiré de la une' : 'Article mis en avant',
+          );
+        },
+        error: () => this.toast.error("Erreur lors de la mise à jour de l'article"),
+      });
   }
 
   deleteArticle(article: Article): void {
-    this.blogGateway.deleteArticle(article.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.articlesRes.reload();
-        this.toast.success('Article supprimé');
-      },
-      error: () => this.toast.error("Erreur lors de la suppression de l'article"),
-    });
+    this.blogGateway
+      .deleteArticle(article.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.articlesRes.reload();
+          this.toast.success('Article supprimé');
+        },
+        error: () => this.toast.error("Erreur lors de la suppression de l'article"),
+      });
   }
 }

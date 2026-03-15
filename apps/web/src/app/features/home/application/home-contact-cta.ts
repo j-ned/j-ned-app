@@ -9,7 +9,9 @@ import { ButtonComponent } from '@layout';
   host: { id: 'contact', class: 'block' },
   template: `
     <div class="max-w-3xl mx-auto text-center">
-      <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5">
+      <span
+        class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
+      >
         <svg aria-hidden="true" class="w-4 h-4">
           <use href="/icons/sprite.svg#lucide-rocket"></use>
         </svg>

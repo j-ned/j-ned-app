@@ -29,7 +29,9 @@ import { ToastService } from '@shared/toast';
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Ordre</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -82,12 +84,15 @@ export class AdminHomeHighlights {
   readonly highlights = (): readonly HomeHighlight[] => this.highlightsRes.value() ?? [];
 
   deleteHighlight(highlight: HomeHighlight): void {
-    this.homeGateway.deleteHomeHighlight(highlight.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.highlightsRes.reload();
-        this.toast.success('Mise en avant supprimée');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.homeGateway
+      .deleteHomeHighlight(highlight.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.highlightsRes.reload();
+          this.toast.success('Mise en avant supprimée');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

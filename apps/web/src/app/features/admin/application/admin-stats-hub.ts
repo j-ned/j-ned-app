@@ -236,7 +236,9 @@ import { StatsChart } from './components/stats-chart';
           <thead>
             <tr class="border-b border-foreground/10">
               <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Source</th>
-              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">
+                Visites
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -278,8 +280,12 @@ import { StatsChart } from './components/stats-chart';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Navigateur</th>
-              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">
+                Navigateur
+              </th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">
+                Visites
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -320,7 +326,9 @@ import { StatsChart } from './components/stats-chart';
           <thead>
             <tr class="border-b border-foreground/10">
               <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Pays</th>
-              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">
+                Visites
+              </th>
             </tr>
           </thead>
           <tbody>

@@ -58,12 +58,15 @@ export class AdminBookings {
   readonly bookings = (): readonly Booking[] => this.bookingsRes.value() ?? [];
 
   deleteBooking(booking: Booking): void {
-    this.bookingGateway.deleteBooking(booking.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.bookingsRes.reload();
-        this.toast.success('Réservation supprimée');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.bookingGateway
+      .deleteBooking(booking.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.bookingsRes.reload();
+          this.toast.success('Réservation supprimée');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

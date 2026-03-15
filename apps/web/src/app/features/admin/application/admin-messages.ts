@@ -85,23 +85,29 @@ export class AdminMessages {
 
   markAsRead(msg: ContactMessage, event: Event): void {
     event.stopPropagation();
-    this.contactGateway.markMessageAsRead(msg.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.messagesRes.reload();
-        this.toast.success('Message marqué comme lu');
-      },
-      error: () => this.toast.error('Erreur lors de la mise à jour'),
-    });
+    this.contactGateway
+      .markMessageAsRead(msg.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.messagesRes.reload();
+          this.toast.success('Message marqué comme lu');
+        },
+        error: () => this.toast.error('Erreur lors de la mise à jour'),
+      });
   }
 
   deleteMessage(msg: ContactMessage, event: Event): void {
     event.stopPropagation();
-    this.contactGateway.deleteMessage(msg.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.messagesRes.reload();
-        this.toast.success('Message supprimé');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.contactGateway
+      .deleteMessage(msg.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.messagesRes.reload();
+          this.toast.success('Message supprimé');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

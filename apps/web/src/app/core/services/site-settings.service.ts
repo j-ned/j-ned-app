@@ -15,9 +15,9 @@ export class SiteSettingsService {
 
   private readonly settingsResource = rxResource({
     stream: () =>
-      this.http.get<SiteSettings>(`${this.apiUrl}/settings`).pipe(
-        catchError(() => of({ blogEnabled: true })),
-      ),
+      this.http
+        .get<SiteSettings>(`${this.apiUrl}/settings`)
+        .pipe(catchError(() => of({ blogEnabled: true }))),
   });
 
   readonly blogEnabled = (): boolean => this.settingsResource.value()?.blogEnabled ?? true;

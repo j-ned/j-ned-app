@@ -1,4 +1,11 @@
-import { Component, DestroyRef, inject, signal, effect, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  signal,
+  effect,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -30,7 +37,9 @@ import { API_BASE_URL } from '@shared/api';
             formControlName="displayName"
             class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
           />
-          @if (form.controls.displayName.touched && form.controls.displayName.errors?.['required']) {
+          @if (
+            form.controls.displayName.touched && form.controls.displayName.errors?.['required']
+          ) {
             <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
           }
         </div>

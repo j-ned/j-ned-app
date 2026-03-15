@@ -19,18 +19,14 @@ export class CvService {
 
   async getCurrent(): Promise<CvInfo | null> {
     try {
-      return await firstValueFrom(
-        this.http.get<CvInfo>(this.baseUrl, { withCredentials: true }),
-      );
+      return await firstValueFrom(this.http.get<CvInfo>(this.baseUrl, { withCredentials: true }));
     } catch {
       return null;
     }
   }
 
   async delete(): Promise<void> {
-    return firstValueFrom(
-      this.http.delete<void>(this.baseUrl, { withCredentials: true }),
-    );
+    return firstValueFrom(this.http.delete<void>(this.baseUrl, { withCredentials: true }));
   }
 
   getDownloadUrl(): string {

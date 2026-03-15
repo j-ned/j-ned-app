@@ -43,37 +43,33 @@ export class HttpContactGateway implements ContactGateway {
   getContactInfo(): Observable<ContactInfo> {
     return this.http
       .get<{ email: string; phone: string; address: string }>(`${this.apiUrl}/contact/info`)
-      .pipe(
-        map((data) => ({ email: data.email, phone: data.phone, location: data.address })),
-      );
+      .pipe(map((data) => ({ email: data.email, phone: data.phone, location: data.address })));
   }
 
   getSocialLinks(): Observable<SocialLinks> {
-    return this.http
-      .get<readonly RawSocialLink[]>(`${this.apiUrl}/social-links`)
-      .pipe(
-        map((items) => toSocialLinks(items)),
-        catchError(() => of({
+    return this.http.get<readonly RawSocialLink[]>(`${this.apiUrl}/social-links`).pipe(
+      map((items) => toSocialLinks(items)),
+      catchError(() =>
+        of({
           linkedin: EMPTY_LINK,
           github: EMPTY_LINK,
           twitter: EMPTY_LINK,
           email: EMPTY_LINK,
           phone: EMPTY_LINK,
-        })),
-      );
+        }),
+      ),
+    );
   }
 
   submitContactForm(data: ContactFormData): Observable<ContactFormSubmission> {
-    return this.http
-      .post<ContactFormSubmission>(`${this.apiUrl}/contact/messages`, data)
-      .pipe(
-        catchError(() =>
-          of({
-            success: false,
-            message: "Une erreur est survenue lors de l'envoi. Veuillez réessayer.",
-          }),
-        ),
-      );
+    return this.http.post<ContactFormSubmission>(`${this.apiUrl}/contact/messages`, data).pipe(
+      catchError(() =>
+        of({
+          success: false,
+          message: "Une erreur est survenue lors de l'envoi. Veuillez réessayer.",
+        }),
+      ),
+    );
   }
 
   getAllMessages(): Observable<readonly ContactMessage[]> {
@@ -91,11 +87,9 @@ export class HttpContactGateway implements ContactGateway {
   }
 
   getUnreadCount(): Observable<number> {
-    return this.http
-      .get<{ count: number }>(`${this.apiUrl}/contact/messages/unread-count`)
-      .pipe(
-        map((res) => res.count),
-        catchError(() => of(0)),
-      );
+    return this.http.get<{ count: number }>(`${this.apiUrl}/contact/messages/unread-count`).pipe(
+      map((res) => res.count),
+      catchError(() => of(0)),
+    );
   }
 }

@@ -52,12 +52,10 @@ export class HttpProfileGateway implements ProfileGateway {
   }
 
   getWhatISeek(): Observable<WhatISeek> {
-    return this.http
-      .get<WhatISeek[]>(`${this.apiUrl}/aspiration`)
-      .pipe(
-        map((items) => items[0] ?? { id: '', title: '', description: '' }),
-        catchError(() => of({ id: '', title: '', description: '' } as WhatISeek)),
-      );
+    return this.http.get<WhatISeek[]>(`${this.apiUrl}/aspiration`).pipe(
+      map((items) => items[0] ?? { id: '', title: '', description: '' }),
+      catchError(() => of({ id: '', title: '', description: '' } as WhatISeek)),
+    );
   }
 
   getProfileInfoForEdit(): Observable<ProfileInfo> {
@@ -85,9 +83,9 @@ export class HttpProfileGateway implements ProfileGateway {
   }
 
   getWhatISeekForEdit(): Observable<WhatISeek> {
-    return this.http.get<WhatISeek[]>(`${this.apiUrl}/aspiration`).pipe(
-      map((items) => items[0] ?? { id: '', title: '', description: '' }),
-    );
+    return this.http
+      .get<WhatISeek[]>(`${this.apiUrl}/aspiration`)
+      .pipe(map((items) => items[0] ?? { id: '', title: '', description: '' }));
   }
 
   updateWhatISeek(data: Partial<WhatISeek>): Observable<WhatISeek> {

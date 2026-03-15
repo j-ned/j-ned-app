@@ -1,4 +1,13 @@
-import { Component, DestroyRef, inject, input, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  signal,
+  computed,
+  effect,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -33,9 +42,7 @@ type ArticleFormShape = {
         <legend class="sr-only">Informations de l'article</legend>
 
         <div>
-          <label for="title" class="block text-sm font-medium text-foreground mb-1.5"
-            >Titre</label
-          >
+          <label for="title" class="block text-sm font-medium text-foreground mb-1.5">Titre</label>
           <input
             id="title"
             type="text"
@@ -139,10 +146,7 @@ type ArticleFormShape = {
 
         <div>
           <label class="block text-sm font-medium text-foreground mb-1.5">Image</label>
-          <app-file-drop-zone
-            [preview]="imagePreview()"
-            (fileSelected)="onFileSelected($event)"
-          />
+          <app-file-drop-zone [preview]="imagePreview()" (fileSelected)="onFileSelected($event)" />
         </div>
       </fieldset>
 
@@ -218,7 +222,7 @@ export class AdminArticleForm {
   });
 
   private readonly editData = rxResource({
-    params: () => this.id() ? { id: this.id()! } : undefined,
+    params: () => (this.id() ? { id: this.id()! } : undefined),
     stream: ({ params }) => this.blogGateway.getArticleById(params.id),
   });
 

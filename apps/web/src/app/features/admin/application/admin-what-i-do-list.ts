@@ -27,8 +27,12 @@ import { ToastService } from '@shared/toast';
           <thead>
             <tr class="border-b border-foreground/10">
               <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Description</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">
+                Description
+              </th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -80,12 +84,15 @@ export class AdminWhatIDoList {
   readonly items = (): readonly WhatIDo[] => this.itemsRes.value() ?? [];
 
   deleteItem(item: WhatIDo): void {
-    this.profileGateway.deleteWhatIDo(item.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.itemsRes.reload();
-        this.toast.success('Compétence supprimée');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression'),
-    });
+    this.profileGateway
+      .deleteWhatIDo(item.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.itemsRes.reload();
+          this.toast.success('Compétence supprimée');
+        },
+        error: () => this.toast.error('Erreur lors de la suppression'),
+      });
   }
 }

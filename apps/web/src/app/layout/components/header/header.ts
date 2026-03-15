@@ -15,10 +15,7 @@ import { SiteSettingsService } from '@core/services';
   },
   template: `
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-      <a
-        routerLink="/"
-        class="group flex items-center gap-4 hover:opacity-90 transition-opacity"
-      >
+      <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
         <div
           class="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-all"
         >
@@ -36,7 +33,9 @@ import { SiteSettingsService } from '@core/services';
             <span
               class="relative flex items-center gap-2 px-4 py-2 rounded-full cursor-not-allowed select-none bg-[repeating-linear-gradient(-45deg,#eab308_0px,#eab308_8px,#111_8px,#111_16px)] overflow-hidden"
             >
-              <span class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider">
+              <span
+                class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider"
+              >
                 <svg aria-hidden="true" class="w-4 h-4">
                   <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
                 </svg>
@@ -132,7 +131,9 @@ import { SiteSettingsService } from '@core/services';
             <span
               class="relative flex items-center gap-2 px-4 py-2 rounded-full cursor-not-allowed select-none bg-[repeating-linear-gradient(-45deg,#eab308_0px,#eab308_8px,#111_8px,#111_16px)] overflow-hidden"
             >
-              <span class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider">
+              <span
+                class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider"
+              >
                 <svg aria-hidden="true" class="w-4 h-4">
                   <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
                 </svg>

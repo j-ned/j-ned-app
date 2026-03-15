@@ -55,9 +55,17 @@ export class AuthService {
     this.restoreSession();
   }
 
-  login(email: string, password: string, twoFactorCode?: string): Observable<'success' | 'two-factor' | 'error'> {
+  login(
+    email: string,
+    password: string,
+    twoFactorCode?: string,
+  ): Observable<'success' | 'two-factor' | 'error'> {
     return this.http
-      .post<LoginResponse>(`${this.apiUrl}/auth/login`, { email, password, twoFactorCode }, { withCredentials: true })
+      .post<LoginResponse>(
+        `${this.apiUrl}/auth/login`,
+        { email, password, twoFactorCode },
+        { withCredentials: true },
+      )
       .pipe(
         map((res) => {
           if (res.requiresTwoFactor) {
@@ -76,7 +84,11 @@ export class AuthService {
 
   register(email: string, password: string): Observable<boolean> {
     return this.http
-      .post<RegisterResponse>(`${this.apiUrl}/auth/register`, { email, password }, { withCredentials: true })
+      .post<RegisterResponse>(
+        `${this.apiUrl}/auth/register`,
+        { email, password },
+        { withCredentials: true },
+      )
       .pipe(
         map(() => true),
         catchError(() => of(false)),
@@ -85,7 +97,11 @@ export class AuthService {
 
   verifyTwoFactor(email: string, code: string): Observable<boolean> {
     return this.http
-      .post<LoginResponse>(`${this.apiUrl}/auth/2fa/verify`, { email, twoFactorCode: code }, { withCredentials: true })
+      .post<LoginResponse>(
+        `${this.apiUrl}/auth/2fa/verify`,
+        { email, twoFactorCode: code },
+        { withCredentials: true },
+      )
       .pipe(
         map((res) => {
           if (res.user) {
@@ -139,7 +155,11 @@ export class AuthService {
 
   changePassword(currentPassword: string, newPassword: string): Observable<boolean> {
     return this.http
-      .post(`${this.apiUrl}/auth/change-password`, { currentPassword, newPassword }, { withCredentials: true })
+      .post(
+        `${this.apiUrl}/auth/change-password`,
+        { currentPassword, newPassword },
+        { withCredentials: true },
+      )
       .pipe(
         map(() => true),
         catchError(() => of(false)),
@@ -163,7 +183,10 @@ export class AuthService {
   logout(): void {
     this.http
       .post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true })
-      .pipe(catchError(() => of(null)), takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe(() => {
         this._currentUser.set(null);
         this.router.navigate(['/']);
