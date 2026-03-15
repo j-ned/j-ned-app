@@ -65,8 +65,8 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Proxy API vers le serveur Hono
-    location /api/ {
+    # Proxy API vers le serveur Hono (^~ empêche les regex de prendre le dessus)
+    location ^~ /api/ {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
