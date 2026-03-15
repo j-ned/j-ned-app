@@ -30,7 +30,7 @@ RUN pnpm run build --configuration production
 # Vérifier les artefacts (même check que le CI)
 RUN test -f dist/angular-portfolio-app/index.html || (echo "Le fichier index.html est manquant" && exit 1)
 
-# ---- Stage 2 : CLI (scripts serveur) ----
+# ---- Stage 2 : CLI (scripts serveur + migration DB) ----
 FROM node:22-alpine AS cli
 
 RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
@@ -40,6 +40,12 @@ WORKDIR /app
 COPY --from=build /app/package.json /app/pnpm-lock.yaml ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/server ./server
+
+# Appliquer le schéma Drizzle à la base de données
+ARG DATABASE_URL
+RUN if [ -n "$DATABASE_URL" ]; then \
+      DATABASE_URL="$DATABASE_URL" pnpm run db:push; \
+    fi
 
 ENTRYPOINT ["pnpm", "exec", "tsx"]
 
