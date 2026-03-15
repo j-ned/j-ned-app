@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import type { BookingGateway } from '../../domain';
 import type { Booking, BookingFormData, BookingSubmission, DisabledDate } from '../../domain';
 import { API_BASE_URL } from '@shared/api';
@@ -29,8 +29,11 @@ export class HttpBookingGateway implements BookingGateway {
 
   getAllBookings(): Observable<readonly Booking[]> {
     return this.http
-      .get<readonly Booking[]>(`${this.apiUrl}/bookings`)
-      .pipe(catchError(() => of([])));
+      .get<{ data: Booking[] }>(`${this.apiUrl}/bookings`)
+      .pipe(
+        map((res) => res.data),
+        catchError(() => of([])),
+      );
   }
 
   updateBookingStatus(id: number, status: string): Observable<Booking> {
