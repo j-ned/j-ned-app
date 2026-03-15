@@ -3,7 +3,6 @@ import {
   input,
   output,
   signal,
-  effect,
   ChangeDetectionStrategy,
   inject,
 } from '@angular/core';
@@ -92,7 +91,7 @@ import { FileDropZone } from '@shared/file-drop-zone';
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-foreground mb-1.5">Image</label>
+        <span class="block text-sm font-medium text-foreground mb-1.5">Image</span>
         <app-file-drop-zone [preview]="imagePreview()" (fileSelected)="onFileSelected($event)" />
       </div>
 
@@ -253,26 +252,6 @@ export class AdminProjectInlineForm {
     featured: [false],
     order: [0],
   });
-
-  private readonly patchForm = effect(() => {
-    const p = this.project();
-    if (p) {
-      this.imagePreview.set(p.image);
-      this.selectedTags.set(new Set(p.tags));
-      this.form.patchValue({
-        title: p.title,
-        category: p.category,
-        description: p.description,
-        liveUrl: p.liveUrl ?? '',
-        repoUrl: p.repoUrl ?? '',
-        repoUrlFront: p.repoUrlFront ?? '',
-        repoUrlBack: p.repoUrlBack ?? '',
-        featured: p.featured,
-        order: p.order,
-      });
-    }
-  });
-
   onFileSelected(file: File): void {
     if (file.type.startsWith('image/')) this.selectFile(file);
   }

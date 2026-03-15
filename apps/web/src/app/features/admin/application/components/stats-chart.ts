@@ -70,9 +70,9 @@ export class StatsChart {
     },
   };
 
-  readonly labels = () => this.data().map((d) => d.date);
+  readonly labels = (): string[] => this.data().map((d) => d.date);
 
-  readonly datasets = () => [
+  readonly datasets = (): Record<string, unknown>[] => [
     {
       label: 'Visiteurs',
       data: this.data().map((d) => d.visitors),

@@ -5,27 +5,16 @@ import {
   input,
   signal,
   computed,
-  effect,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { BLOG_GATEWAY } from '@features/blog/application';
-import type { FormControl } from '@angular/forms';
 import type { Article } from '@features/blog/domain';
 import { ToastService } from '@shared/toast';
 import { FileDropZone } from '@shared/file-drop-zone';
-
-type ArticleFormShape = {
-  title: FormControl<string>;
-  author: FormControl<string>;
-  date: FormControl<string>;
-  excerpt: FormControl<string>;
-  content: FormControl<string>;
-  featured: FormControl<boolean>;
-};
 
 @Component({
   selector: 'app-admin-article-form',
@@ -145,7 +134,7 @@ type ArticleFormShape = {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-foreground mb-1.5">Image</label>
+          <span class="block text-sm font-medium text-foreground mb-1.5">Image</span>
           <app-file-drop-zone [preview]="imagePreview()" (fileSelected)="onFileSelected($event)" />
         </div>
       </fieldset>
@@ -220,29 +209,6 @@ export class AdminArticleForm {
     content: ['', Validators.required],
     featured: [false],
   });
-
-  private readonly editData = rxResource({
-    params: () => (this.id() ? { id: this.id()! } : undefined),
-    stream: ({ params }) => this.blogGateway.getArticleById(params.id),
-  });
-
-  private readonly patchForm = effect(() => {
-    const article = this.editData.value();
-    if (article) {
-      this.existingImageUrl = article.image;
-      this.imagePreview.set(article.image);
-      this.selectedTags.set(new Set(article.tags));
-      this.form.patchValue({
-        title: article.title,
-        author: article.author,
-        date: article.date,
-        excerpt: article.excerpt,
-        content: article.content,
-        featured: article.featured,
-      });
-    }
-  });
-
   toggleTag(tag: string): void {
     const tags = new Set(this.selectedTags());
     if (tags.has(tag)) {
