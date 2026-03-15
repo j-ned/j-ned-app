@@ -41,166 +41,147 @@ export type BookingFormPayload = {
         </div>
       </output>
 
-      <h3 class="text-lg font-bold text-foreground mb-6">Vos coordonnées</h3>
-
-      @if (successMessage()) {
-        <div
-          class="p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm text-center mb-6 flex items-center justify-center gap-2"
-        >
-          <svg class="w-5 h-5" aria-hidden="true">
-            <use href="/icons/sprite.svg#lucide-check" />
-          </svg>
-          {{ successMessage() }}
-        </div>
-      }
-
-      @if (serverError()) {
-        <div
-          class="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center mb-6"
-        >
-          {{ serverError() }}
-        </div>
-      }
+      <h2 class="text-lg font-bold text-foreground mb-6">Vos coordonnées</h2>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
-        <div>
-          <label for="booking-name" class="block text-sm font-medium text-foreground mb-1.5">
-            Nom complet *
-          </label>
-          <div class="relative">
-            <svg
-              class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-              aria-hidden="true"
-            >
-              <use href="/icons/sprite.svg#lucide-user" />
-            </svg>
-            <input
-              id="booking-name"
-              type="text"
-              formControlName="name"
-              class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-              placeholder="Votre nom"
-            />
-          </div>
-          @if (form.controls.name.touched && form.controls.name.hasError('required')) {
-            <span class="text-red-400 text-xs mt-1 block">Le nom est obligatoire</span>
-          }
-          @if (form.controls.name.touched && form.controls.name.hasError('minlength')) {
-            <span class="text-red-400 text-xs mt-1 block">
-              Le nom doit contenir au moins 2 caractères
-            </span>
-          }
-        </div>
-        <div>
-          <label for="booking-email" class="block text-sm font-medium text-foreground mb-1.5">
-            Email *
-          </label>
-          <div class="relative">
-            <svg
-              class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-              aria-hidden="true"
-            >
-              <use href="/icons/sprite.svg#lucide-mail" />
-            </svg>
-            <input
-              id="booking-email"
-              type="email"
-              formControlName="email"
-              class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-              placeholder="votre@email.com"
-            />
-          </div>
-          @if (form.controls.email.touched && form.controls.email.hasError('required')) {
-            <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
-          }
-          @if (form.controls.email.touched && form.controls.email.hasError('pattern')) {
-            <span class="text-red-400 text-xs mt-1 block"> Le format de l'email est invalide </span>
-          }
-        </div>
+        <fieldset class="space-y-6 border-0 p-0 m-0">
+          <legend class="sr-only">Vos coordonnées</legend>
 
-        <div>
-          <label for="booking-phone" class="block text-sm font-medium text-foreground mb-1.5">
-            Téléphone *
-          </label>
-          <div class="relative">
-            <svg
-              class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-              aria-hidden="true"
-            >
-              <use href="/icons/sprite.svg#lucide-phone" />
-            </svg>
-            <input
-              id="booking-phone"
-              type="tel"
-              formControlName="phone"
-              class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-              placeholder="06 12 34 56 78"
-            />
+          <div>
+            <label for="booking-name" class="block text-sm font-medium text-foreground mb-1.5">
+              Nom complet *
+            </label>
+            <div class="relative">
+              <svg
+                class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                aria-hidden="true"
+              >
+                <use href="/icons/sprite.svg#lucide-user" />
+              </svg>
+              <input
+                id="booking-name"
+                type="text"
+                formControlName="name"
+                class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                placeholder="Votre nom"
+              />
+            </div>
+            @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
+              <span class="text-red-400 text-xs mt-1 block">Le nom est obligatoire</span>
+            } @else if (form.controls.name.touched && form.controls.name.errors?.['minlength']) {
+              <span class="text-red-400 text-xs mt-1 block">
+                Le nom doit contenir au moins 2 caractères
+              </span>
+            }
           </div>
-          @if (form.controls.phone.touched && form.controls.phone.hasError('required')) {
-            <span class="text-red-400 text-xs mt-1 block">Le téléphone est obligatoire</span>
-          }
-          @if (form.controls.phone.touched && form.controls.phone.hasError('pattern')) {
-            <span class="text-red-400 text-xs mt-1 block">
-              Le numéro doit contenir 10 chiffres
-            </span>
-          }
-        </div>
 
-        <div>
-          <label for="booking-subject" class="block text-sm font-medium text-foreground mb-1.5">
-            Sujet *
-          </label>
-          <div class="relative">
-            <svg
-              class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-              aria-hidden="true"
-            >
-              <use href="/icons/sprite.svg#lucide-pen-line" />
-            </svg>
-            <input
-              id="booking-subject"
-              type="text"
-              formControlName="subject"
-              class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-              placeholder="Objet de la consultation"
-            />
+          <div>
+            <label for="booking-email" class="block text-sm font-medium text-foreground mb-1.5">
+              Email *
+            </label>
+            <div class="relative">
+              <svg
+                class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                aria-hidden="true"
+              >
+                <use href="/icons/sprite.svg#lucide-mail" />
+              </svg>
+              <input
+                id="booking-email"
+                type="email"
+                formControlName="email"
+                class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                placeholder="votre@email.com"
+              />
+            </div>
+            @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
+              <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
+            } @else if (form.controls.email.touched && form.controls.email.errors?.['pattern']) {
+              <span class="text-red-400 text-xs mt-1 block"> Le format de l'email est invalide </span>
+            }
           </div>
-          @if (form.controls.subject.touched && form.controls.subject.hasError('required')) {
-            <span class="text-red-400 text-xs mt-1 block">Le sujet est obligatoire</span>
-          }
-          @if (form.controls.subject.touched && form.controls.subject.hasError('minlength')) {
-            <span class="text-red-400 text-xs mt-1 block">
-              Le sujet doit contenir au moins 3 caractères
-            </span>
-          }
-        </div>
 
-        <div>
-          <label for="booking-message" class="block text-sm font-medium text-foreground mb-1.5">
-            Message *
-          </label>
-          <textarea
-            id="booking-message"
-            formControlName="message"
-            rows="4"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-none"
-            placeholder="Décrivez votre projet ou votre question..."
-          ></textarea>
-          @if (form.controls.message.touched && form.controls.message.hasError('required')) {
-            <span class="text-red-400 text-xs mt-1 block">Le message est obligatoire</span>
-          }
-          @if (form.controls.message.touched && form.controls.message.hasError('minlength')) {
-            <span class="text-red-400 text-xs mt-1 block">
-              Le message doit contenir au moins 10 caractères
-            </span>
-          }
-        </div>
+          <div>
+            <label for="booking-phone" class="block text-sm font-medium text-foreground mb-1.5">
+              Téléphone *
+            </label>
+            <div class="relative">
+              <svg
+                class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                aria-hidden="true"
+              >
+                <use href="/icons/sprite.svg#lucide-phone" />
+              </svg>
+              <input
+                id="booking-phone"
+                type="tel"
+                formControlName="phone"
+                class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                placeholder="06 12 34 56 78"
+              />
+            </div>
+            @if (form.controls.phone.touched && form.controls.phone.errors?.['required']) {
+              <span class="text-red-400 text-xs mt-1 block">Le téléphone est obligatoire</span>
+            } @else if (form.controls.phone.touched && form.controls.phone.errors?.['pattern']) {
+              <span class="text-red-400 text-xs mt-1 block">
+                Le numéro doit contenir 10 chiffres
+              </span>
+            }
+          </div>
+
+          <div>
+            <label for="booking-subject" class="block text-sm font-medium text-foreground mb-1.5">
+              Sujet *
+            </label>
+            <div class="relative">
+              <svg
+                class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                aria-hidden="true"
+              >
+                <use href="/icons/sprite.svg#lucide-pen-line" />
+              </svg>
+              <input
+                id="booking-subject"
+                type="text"
+                formControlName="subject"
+                class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                placeholder="Objet de la consultation"
+              />
+            </div>
+            @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
+              <span class="text-red-400 text-xs mt-1 block">Le sujet est obligatoire</span>
+            } @else if (form.controls.subject.touched && form.controls.subject.errors?.['minlength']) {
+              <span class="text-red-400 text-xs mt-1 block">
+                Le sujet doit contenir au moins 3 caractères
+              </span>
+            }
+          </div>
+
+          <div>
+            <label for="booking-message" class="block text-sm font-medium text-foreground mb-1.5">
+              Message *
+            </label>
+            <textarea
+              id="booking-message"
+              formControlName="message"
+              rows="4"
+              class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-none"
+              placeholder="Décrivez votre projet ou votre question..."
+            ></textarea>
+            @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
+              <span class="text-red-400 text-xs mt-1 block">Le message est obligatoire</span>
+            } @else if (form.controls.message.touched && form.controls.message.errors?.['minlength']) {
+              <span class="text-red-400 text-xs mt-1 block">
+                Le message doit contenir au moins 10 caractères
+              </span>
+            }
+          </div>
+        </fieldset>
 
         <button
           type="submit"
           [disabled]="form.invalid || isSubmitting()"
-          class="w-full py-3 px-6 rounded-lg bg-linear-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-700 hover:to-violet-700 hover:-translate-y-0.5 shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2"
+          class="w-full mt-2 py-3 px-6 rounded-lg bg-linear-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-700 hover:to-violet-700 hover:-translate-y-0.5 shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2"
         >
           @if (isSubmitting()) {
             <svg class="w-5 h-5 animate-spin" aria-hidden="true">
@@ -225,8 +206,6 @@ export class BookingForm {
   readonly formSubmitted = output<BookingFormPayload>();
 
   readonly isSubmitting = signal(false);
-  readonly successMessage = signal('');
-  readonly serverError = signal('');
 
   readonly form = new FormGroup<BookingFormGroup>({
     name: new FormControl('', {
@@ -274,17 +253,7 @@ export class BookingForm {
     this.isSubmitting.set(value);
   }
 
-  setSuccess(message: string): void {
-    this.successMessage.set(message);
+  resetForm(): void {
     this.form.reset();
-  }
-
-  setError(message: string): void {
-    this.serverError.set(message);
-  }
-
-  clearMessages(): void {
-    this.successMessage.set('');
-    this.serverError.set('');
   }
 }

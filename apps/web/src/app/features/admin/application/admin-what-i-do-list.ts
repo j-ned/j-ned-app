@@ -1,7 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { PROFILE_GATEWAY } from '../../profile/domain';
-import type { WhatIDo } from '../../profile/domain';
+import { PROFILE_GATEWAY } from '@features/profile/application';
+import type { WhatIDo } from '@features/profile/domain';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-admin-what-i-do-list',
@@ -24,9 +26,9 @@ import type { WhatIDo } from '../../profile/domain';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Description</th>
-              <th class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Description</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -68,17 +70,22 @@ import type { WhatIDo } from '../../profile/domain';
 })
 export class AdminWhatIDoList {
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  readonly items = signal<readonly WhatIDo[]>([]);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  constructor() {
-    this.loadItems();
-  }
+  private readonly itemsRes = rxResource({
+    stream: () => this.profileGateway.getWhatIDo(),
+  });
+
+  readonly items = (): readonly WhatIDo[] => this.itemsRes.value() ?? [];
 
   deleteItem(item: WhatIDo): void {
-    this.profileGateway.deleteWhatIDo(item.id).subscribe(() => this.loadItems());
-  }
-
-  private loadItems(): void {
-    this.profileGateway.getWhatIDo().subscribe((data) => this.items.set(data));
+    this.profileGateway.deleteWhatIDo(item.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.itemsRes.reload();
+        this.toast.success('Compétence supprimée');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 }

@@ -1,7 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { BLOG_GATEWAY } from '../../blog/domain';
-import type { Article } from '../../blog/domain';
+import { BLOG_GATEWAY } from '@features/blog/application';
+import type { Article } from '@features/blog/domain';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-admin-articles',
@@ -24,10 +26,11 @@ import type { Article } from '../../blog/domain';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Date</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Tags</th>
-              <th class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Date</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Tags</th>
+              <th scope="col" class="text-center px-6 py-4 text-sm font-medium text-muted">Featured</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -43,6 +46,19 @@ import type { Article } from '../../blog/domain';
                       }}</span>
                     }
                   </div>
+                </td>
+                <td class="px-6 py-4 text-center">
+                  <button
+                    (click)="toggleFeatured(article)"
+                    [class]="
+                      'px-2 py-0.5 text-xs rounded transition-colors ' +
+                      (article.featured
+                        ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                        : 'bg-foreground/5 text-muted hover:bg-foreground/10')
+                    "
+                  >
+                    {{ article.featured ? 'Oui' : 'Non' }}
+                  </button>
                 </td>
                 <td class="px-6 py-4 text-right">
                   <div class="flex items-center justify-end gap-2">
@@ -63,7 +79,7 @@ import type { Article } from '../../blog/domain';
               </tr>
             } @empty {
               <tr>
-                <td colspan="4" class="px-6 py-8 text-center text-muted text-sm">Aucun article</td>
+                <td colspan="5" class="px-6 py-8 text-center text-muted text-sm">Aucun article</td>
               </tr>
             }
           </tbody>
@@ -74,18 +90,32 @@ import type { Article } from '../../blog/domain';
 })
 export class AdminArticles {
   private readonly blogGateway = inject(BLOG_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly articles = signal<readonly Article[]>([]);
+  private readonly articlesRes = rxResource({
+    stream: () => this.blogGateway.getAllArticles(),
+  });
 
-  constructor() {
-    this.loadArticles();
+  readonly articles = (): readonly Article[] => this.articlesRes.value() ?? [];
+
+  toggleFeatured(article: Article): void {
+    this.blogGateway.updateArticle(article.id, { featured: !article.featured }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.articlesRes.reload();
+        this.toast.success(article.featured ? 'Article retiré de la une' : 'Article mis en avant');
+      },
+      error: () => this.toast.error("Erreur lors de la mise à jour de l'article"),
+    });
   }
 
   deleteArticle(article: Article): void {
-    this.blogGateway.deleteArticle(article.id).subscribe(() => this.loadArticles());
-  }
-
-  private loadArticles(): void {
-    this.blogGateway.getAllArticles().subscribe((articles) => this.articles.set(articles));
+    this.blogGateway.deleteArticle(article.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.articlesRes.reload();
+        this.toast.success('Article supprimé');
+      },
+      error: () => this.toast.error("Erreur lors de la suppression de l'article"),
+    });
   }
 }

@@ -1,6 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from '../domain';
+import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
   selector: 'app-about-what-i-do',
@@ -9,7 +9,7 @@ import { PROFILE_GATEWAY } from '../domain';
   template: `
     <section>
       <header class="flex items-center gap-2 mb-4">
-        <svg class="w-6 h-6 text-primary">
+        <svg aria-hidden="true" class="w-6 h-6 text-primary">
           <use href="/icons/sprite.svg#lucide-code-xml"></use>
         </svg>
         <h2 class="text-2xl font-bold text-foreground">Ce que je fais</h2>

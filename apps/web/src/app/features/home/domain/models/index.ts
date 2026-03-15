@@ -1,3 +1,3 @@
 export * from './hero.model';
-export * from './speciality.model';
-export * from './tech-stack.model';
+export * from './home-highlight.model';
+export * from './service-pricing.model';

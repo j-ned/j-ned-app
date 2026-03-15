@@ -6,12 +6,15 @@ import {
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { firstValueFrom, map, catchError, of } from 'rxjs';
-import { BLOG_GATEWAY } from '../../blog/domain';
-import { CONTACT_GATEWAY } from '../../contact/domain';
-import { BOOKING_GATEWAY } from '../../booking/domain';
-import { SupabaseClientService } from '../../../shared/supabase/supabase-client';
-import { AuthService } from '../../auth/domain';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { map, catchError, of } from 'rxjs';
+import { BLOG_GATEWAY } from '@features/blog/application';
+import { CONTACT_GATEWAY } from '@features/contact/application';
+import { BOOKING_GATEWAY } from '@features/booking/application';
+import { PROJECTS_GATEWAY } from '@features/projects/application';
+import { AuthService } from '@features/auth/infrastructure';
+import { AnalyticsService } from '@shared/analytics';
+import { SiteSettingsService } from '@core/services';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -162,14 +165,72 @@ import { AuthService } from '../../auth/domain';
         </div>
       </div>
     </div>
+
+    <!-- Feature Toggles -->
+    <div class="mt-8">
+      <h2 class="text-lg font-bold text-foreground mb-4">Sections du site</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div
+                [class]="
+                  'w-14 h-14 rounded-xl flex items-center justify-center transition-colors ' +
+                  (siteSettings.blogEnabled()
+                    ? 'bg-linear-to-br from-primary/20 to-primary/5'
+                    : 'bg-linear-to-br from-yellow-500/20 to-yellow-500/5')
+                "
+              >
+                <svg
+                  [class]="
+                    'w-7 h-7 ' +
+                    (siteSettings.blogEnabled() ? 'text-primary' : 'text-yellow-500')
+                  "
+                  aria-hidden="true"
+                >
+                  <use href="/icons/sprite.svg#lucide-notebook-pen" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-foreground">Blog</p>
+                <p class="text-xs text-muted">
+                  {{ siteSettings.blogEnabled() ? 'Visible sur le site' : 'Désactivé' }}
+                </p>
+              </div>
+            </div>
+            <button
+              (click)="siteSettings.toggleBlog()"
+              [class]="
+                'relative w-12 h-7 rounded-full transition-colors duration-200 ' +
+                (siteSettings.blogEnabled() ? 'bg-primary' : 'bg-foreground/20')
+              "
+              [attr.aria-label]="
+                siteSettings.blogEnabled() ? 'Désactiver le blog' : 'Activer le blog'
+              "
+            >
+              <span
+                [class]="
+                  'absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform duration-200 ' +
+                  (siteSettings.blogEnabled() ? 'translate-x-5' : 'translate-x-0')
+                "
+              ></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   `,
 })
 export class AdminDashboard {
   private readonly blogGateway = inject(BLOG_GATEWAY);
   private readonly contactGateway = inject(CONTACT_GATEWAY);
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
-  private readonly supabase = inject(SupabaseClientService);
+  private readonly projectsGateway = inject(PROJECTS_GATEWAY);
+  private readonly analytics = inject(AnalyticsService);
   readonly authService = inject(AuthService);
+  readonly siteSettings = inject(SiteSettingsService);
 
   readonly formattedDate = signal(
     new Date().toLocaleDateString('fr-FR', {
@@ -180,53 +241,41 @@ export class AdminDashboard {
     }),
   );
 
-  readonly articleRes = resource({
-    loader: () => firstValueFrom(this.blogGateway.getArticleCount()),
+  readonly articleRes = rxResource({
+    stream: () => this.blogGateway.getArticleCount(),
   });
   readonly articleCount = computed(() => this.articleRes.value() ?? 0);
 
-  readonly commentRes = resource({
-    loader: () => firstValueFrom(this.blogGateway.getPendingCommentCount()),
+  readonly commentRes = rxResource({
+    stream: () => this.blogGateway.getPendingCommentCount(),
   });
   readonly commentCount = computed(() => this.commentRes.value() ?? 0);
 
-  readonly projectRes = resource({
-    loader: async () => {
-      const { count, error } = await this.supabase.client
-        .from('projects')
-        .select('*', { count: 'exact', head: true });
-      if (error) throw error;
-      return count ?? 0;
-    },
+  readonly projectRes = rxResource({
+    stream: () =>
+      this.projectsGateway.filterProjects({}).pipe(
+        map((p) => p.length),
+        catchError(() => of(0)),
+      ),
   });
   readonly projectCount = computed(() => this.projectRes.value() ?? 0);
 
-  readonly unreadRes = resource({
-    loader: () => firstValueFrom(this.contactGateway.getUnreadCount()),
+  readonly unreadRes = rxResource({
+    stream: () => this.contactGateway.getUnreadCount(),
   });
   readonly unreadCount = computed(() => this.unreadRes.value() ?? 0);
 
-  readonly bookingRes = resource({
-    loader: () =>
-      firstValueFrom(
-        this.bookingGateway.getAllBookings().pipe(
-          map((b) => b.length),
-          catchError(() => of(0)),
-        ),
+  readonly bookingRes = rxResource({
+    stream: () =>
+      this.bookingGateway.getAllBookings().pipe(
+        map((b) => b.length),
+        catchError(() => of(0)),
       ),
   });
   readonly bookingCount = computed(() => this.bookingRes.value() ?? 0);
 
   readonly cvDownloadRes = resource({
-    loader: async () => {
-      const { data, error } = await this.supabase.client
-        .from('cv_info')
-        .select('downloads')
-        .limit(1)
-        .single();
-      if (error) return 0;
-      return (data?.['downloads'] as number) ?? 0;
-    },
+    loader: () => this.analytics.getCvDownloadCount(),
   });
   readonly cvDownloadCount = computed(() => this.cvDownloadRes.value() ?? 0);
 }

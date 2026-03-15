@@ -1,12 +1,13 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
-import { Header } from './layout/components/header/header';
-import { Footer } from './layout/components/footer/footer';
+import { Header, Footer } from '@layout';
+import { ToastContainer } from '@shared/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [Header, Footer, RouterOutlet],
+  imports: [Header, Footer, RouterOutlet, ToastContainer],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown.control.l)': 'onCtrlL($event)',
@@ -21,20 +22,21 @@ import { Footer } from './layout/components/footer/footer';
     @if (!isAdminRoute()) {
       <app-footer />
     }
+    <app-toast-container />
   `,
 })
 export class App {
   private readonly router = inject(Router);
 
-  readonly isAdminRoute = signal(false);
+  private readonly navigationEnd = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+    ),
+  );
 
-  constructor() {
-    this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => {
-        this.isAdminRoute.set(event.urlAfterRedirects.startsWith('/admin'));
-      });
-  }
+  readonly isAdminRoute = computed(
+    () => this.navigationEnd()?.urlAfterRedirects.startsWith('/admin') ?? false,
+  );
 
   onCtrlL(event: Event): void {
     event.preventDefault();

@@ -1,8 +1,6 @@
 import { Component, inject, resource, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { SiteStats } from '../domain/models/stats.model';
-import { SupabaseClientService } from '../../../shared/supabase/supabase-client';
-import { toCamelCase } from '../../../shared/supabase/column-mapper';
+import { AnalyticsService } from '@shared/analytics';
 
 @Component({
   selector: 'app-admin-stats-articles',
@@ -27,9 +25,9 @@ import { toCamelCase } from '../../../shared/supabase/column-mapper';
       <table class="w-full">
         <thead>
           <tr class="border-b border-foreground/10">
-            <th class="text-left px-6 py-3 text-sm font-medium text-muted">Titre</th>
-            <th class="text-right px-6 py-3 text-sm font-medium text-muted">Clics</th>
-            <th class="text-right px-6 py-3 text-sm font-medium text-muted">% du total</th>
+            <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Titre</th>
+            <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Clics</th>
+            <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">% du total</th>
           </tr>
         </thead>
         <tbody>
@@ -48,12 +46,12 @@ import { toCamelCase } from '../../../shared/supabase/column-mapper';
               </tr>
             }
           } @else {
-            @for (article of sortedArticles(); track article.articleId) {
+            @for (article of sortedArticles(); track article.entityId) {
               <tr class="border-b border-foreground/5">
-                <td class="px-6 py-3 text-sm text-foreground">{{ article.title }}</td>
-                <td class="px-6 py-3 text-sm text-muted text-right">{{ article.clicks }}</td>
+                <td class="px-6 py-3 text-sm text-foreground">{{ article.entityTitle }}</td>
+                <td class="px-6 py-3 text-sm text-muted text-right">{{ article.count }}</td>
                 <td class="px-6 py-3 text-sm text-muted text-right">
-                  {{ percentage(article.clicks) }}%
+                  {{ percentages().get(article.entityId) ?? '0.0' }}%
                 </td>
               </tr>
             } @empty {
@@ -68,31 +66,28 @@ import { toCamelCase } from '../../../shared/supabase/column-mapper';
   `,
 })
 export class AdminStatsArticles {
-  private readonly supabase = inject(SupabaseClientService);
+  private readonly analytics = inject(AnalyticsService);
 
   readonly statsRes = resource({
-    loader: async () => {
-      const { data, error } = await this.supabase.client
-        .from('site_stats')
-        .select('*')
-        .limit(1)
-        .single();
-      if (error) return null;
-      return toCamelCase<SiteStats>(data);
-    },
+    loader: () => this.analytics.getArticleStats(),
   });
 
-  private readonly stats = computed(() => this.statsRes.value() ?? null);
-  private readonly totalClicks = computed(() => this.stats()?.totalArticleClicks ?? 0);
+  private readonly totalClicks = computed(() =>
+    (this.statsRes.value() ?? []).reduce((sum, a) => sum + a.count, 0),
+  );
 
   readonly sortedArticles = computed(() => {
-    const articles = this.stats()?.articleStats ?? [];
-    return [...articles].sort((a, b) => b.clicks - a.clicks);
+    const articles = this.statsRes.value() ?? [];
+    return [...articles].sort((a, b) => b.count - a.count);
   });
 
-  percentage(clicks: number): string {
+  protected readonly percentages = computed(() => {
+    const articles = this.statsRes.value() ?? [];
     const total = this.totalClicks();
-    if (total === 0) return '0.0';
-    return ((clicks / total) * 100).toFixed(1);
-  }
+    const map = new Map<string, string>();
+    for (const a of articles) {
+      map.set(a.entityId, total === 0 ? '0.0' : ((a.count / total) * 100).toFixed(1));
+    }
+    return map;
+  });
 }

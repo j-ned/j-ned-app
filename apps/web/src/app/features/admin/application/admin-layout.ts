@@ -1,6 +1,6 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../auth/domain';
+import { AuthService } from '../../auth/infrastructure';
 
 @Component({
   selector: 'app-admin-layout',
@@ -63,6 +63,19 @@ import { AuthService } from '../../auth/domain';
             </svg>
             @if (!collapsed()) {
               <span>Dashboard</span>
+            }
+          </a>
+          <a
+            routerLink="/admin/home"
+            routerLinkActive="bg-primary/10 text-primary border-primary/30"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
+            [attr.title]="collapsed() ? 'Accueil' : null"
+          >
+            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
+              <use href="/icons/sprite.svg#lucide-home" />
+            </svg>
+            @if (!collapsed()) {
+              <span>Accueil</span>
             }
           </a>
           <a
@@ -146,6 +159,19 @@ import { AuthService } from '../../auth/domain';
         </nav>
 
         <div class="px-3 py-4 border-t border-foreground/10 space-y-1">
+          <a
+            routerLink="/admin/security"
+            routerLinkActive="bg-primary/10 text-primary border-primary/30"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
+            [attr.title]="collapsed() ? 'Sécurité' : null"
+          >
+            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
+              <use href="/icons/sprite.svg#lucide-shield-check" />
+            </svg>
+            @if (!collapsed()) {
+              <span>Sécurité</span>
+            }
+          </a>
           <a
             routerLink="/"
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 transition-colors"

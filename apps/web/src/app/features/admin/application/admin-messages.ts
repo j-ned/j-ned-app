@@ -1,7 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
-import { CONTACT_GATEWAY } from '../../contact/domain';
-import type { ContactMessage } from '../../contact/domain';
+import { CONTACT_GATEWAY } from '@features/contact/application';
+import type { ContactMessage } from '@features/contact/domain';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-admin-messages',
@@ -67,13 +69,15 @@ import type { ContactMessage } from '../../contact/domain';
 })
 export class AdminMessages {
   private readonly contactGateway = inject(CONTACT_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly messages = signal<readonly ContactMessage[]>([]);
+  private readonly messagesRes = rxResource({
+    stream: () => this.contactGateway.getAllMessages(),
+  });
+
+  readonly messages = (): readonly ContactMessage[] => this.messagesRes.value() ?? [];
   readonly expandedId = signal<number | null>(null);
-
-  constructor() {
-    this.loadMessages();
-  }
 
   toggleExpand(id: number): void {
     this.expandedId.set(this.expandedId() === id ? null : id);
@@ -81,15 +85,23 @@ export class AdminMessages {
 
   markAsRead(msg: ContactMessage, event: Event): void {
     event.stopPropagation();
-    this.contactGateway.markMessageAsRead(msg.id).subscribe(() => this.loadMessages());
+    this.contactGateway.markMessageAsRead(msg.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.messagesRes.reload();
+        this.toast.success('Message marqué comme lu');
+      },
+      error: () => this.toast.error('Erreur lors de la mise à jour'),
+    });
   }
 
   deleteMessage(msg: ContactMessage, event: Event): void {
     event.stopPropagation();
-    this.contactGateway.deleteMessage(msg.id).subscribe(() => this.loadMessages());
-  }
-
-  private loadMessages(): void {
-    this.contactGateway.getAllMessages().subscribe((messages) => this.messages.set(messages));
+    this.contactGateway.deleteMessage(msg.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.messagesRes.reload();
+        this.toast.success('Message supprimé');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 }

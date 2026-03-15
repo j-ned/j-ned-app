@@ -1,6 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from '../domain';
+import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
   selector: 'app-about-diploma',
@@ -11,7 +11,7 @@ import { PROFILE_GATEWAY } from '../domain';
       class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
     >
       <header class="flex items-center gap-2 mb-6">
-        <svg class="w-6 h-6 text-primary">
+        <svg aria-hidden="true" class="w-6 h-6 text-primary">
           <use href="/icons/sprite.svg#lucide-graduation-cap"></use>
         </svg>
         <h2 class="font-bold text-2xl text-foreground">Formations</h2>

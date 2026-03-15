@@ -1,8 +1,7 @@
 export type CvInfo = {
-  readonly id: number;
+  readonly id: string;
   readonly fileName: string;
-  readonly fileUrl: string;
-  readonly uploadedAt: string;
   readonly fileSize: number;
-  readonly downloads: number;
+  readonly mimeType: string;
+  readonly uploadedAt: string;
 };

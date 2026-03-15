@@ -1,118 +1,87 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, signal, effect, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs';
-import { PROFILE_GATEWAY } from '../../profile/domain';
+import { PROFILE_GATEWAY } from '@features/profile/application';
+import { ToastService } from '@shared/toast';
+import { FileDropZone } from '@shared/file-drop-zone';
+import { API_BASE_URL } from '@shared/api';
 
 @Component({
   selector: 'app-admin-profile',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FileDropZone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <h1 class="text-2xl font-bold text-foreground mb-8">Profil</h1>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="max-w-2xl space-y-6">
-      <div>
-        <label for="displayName" class="block text-sm font-medium text-foreground mb-1.5"
-          >Nom affiché</label
-        >
-        <input
-          id="displayName"
-          type="text"
-          formControlName="displayName"
-          class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-        />
-      </div>
+      <fieldset class="space-y-6 border-0 p-0 m-0">
+        <legend class="sr-only">Informations du profil</legend>
 
-      <div>
-        <label for="location" class="block text-sm font-medium text-foreground mb-1.5"
-          >Localisation</label
-        >
-        <input
-          id="location"
-          type="text"
-          formControlName="location"
-          class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-        />
-      </div>
-
-      <div class="flex items-center gap-2">
-        <input
-          id="isAvailable"
-          type="checkbox"
-          formControlName="isAvailable"
-          class="w-4 h-4 rounded border-foreground/20 text-primary focus:ring-primary"
-        />
-        <label for="isAvailable" class="text-sm font-medium text-foreground">Disponible</label>
-      </div>
-
-      <div>
-        <label for="availabilityMessage" class="block text-sm font-medium text-foreground mb-1.5"
-          >Message de disponibilité</label
-        >
-        <input
-          id="availabilityMessage"
-          type="text"
-          formControlName="availabilityMessage"
-          class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-        />
-      </div>
-
-      <div>
-        <span class="block text-sm font-medium text-foreground mb-1.5">Avatar</span>
-        <div
-          role="button"
-          tabindex="0"
-          (drop)="onDrop($event)"
-          (dragover)="onDragOver($event)"
-          (dragleave)="onDragLeave($event)"
-          (click)="fileInput.click()"
-          (keydown.enter)="fileInput.click()"
-          (keydown.space)="fileInput.click()"
-          [class]="
-            'relative flex flex-col items-center justify-center w-full rounded-lg border-2 border-dashed cursor-pointer transition-colors ' +
-            (isDragging()
-              ? 'border-primary bg-primary/10'
-              : 'border-foreground/20 bg-foreground/5 hover:border-primary/50 hover:bg-foreground/10')
-          "
-        >
-          @if (imagePreview()) {
-            <div class="relative w-full">
-              <img
-                [src]="imagePreview()"
-                alt="Aperçu avatar"
-                class="w-full max-h-56 object-contain rounded-lg"
-              />
-              <div
-                class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 rounded-lg transition-opacity"
-              >
-                <span class="text-white text-sm font-medium">Changer l'avatar</span>
-              </div>
-            </div>
-          } @else {
-            <div class="flex flex-col items-center py-8 text-muted">
-              <svg class="w-10 h-10 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.5"
-                  d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16"
-                />
-              </svg>
-              <p class="text-sm font-medium">Glissez une image ici</p>
-              <p class="text-xs mt-1">ou cliquez pour parcourir</p>
-            </div>
+        <div>
+          <label for="displayName" class="block text-sm font-medium text-foreground mb-1.5"
+            >Nom affiché</label
+          >
+          <input
+            id="displayName"
+            type="text"
+            formControlName="displayName"
+            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+          />
+          @if (form.controls.displayName.touched && form.controls.displayName.errors?.['required']) {
+            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
           }
         </div>
-        <input
-          #fileInput
-          type="file"
-          accept="image/*"
-          (change)="onFileSelected($event)"
-          class="hidden"
-        />
-      </div>
+
+        <div>
+          <label for="location" class="block text-sm font-medium text-foreground mb-1.5"
+            >Localisation</label
+          >
+          <input
+            id="location"
+            type="text"
+            formControlName="location"
+            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+          />
+          @if (form.controls.location.touched && form.controls.location.errors?.['required']) {
+            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+          }
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input
+            id="isAvailable"
+            type="checkbox"
+            formControlName="isAvailable"
+            class="w-4 h-4 rounded border-foreground/20 text-primary focus:ring-primary"
+          />
+          <label for="isAvailable" class="text-sm font-medium text-foreground">Disponible</label>
+        </div>
+
+        <div>
+          <label for="availabilityMessage" class="block text-sm font-medium text-foreground mb-1.5"
+            >Message de disponibilité</label
+          >
+          <input
+            id="availabilityMessage"
+            type="text"
+            formControlName="availabilityMessage"
+            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+          />
+        </div>
+
+        <div>
+          <span class="block text-sm font-medium text-foreground mb-1.5">Avatar</span>
+          <app-file-drop-zone
+            [preview]="imagePreview()"
+            previewAlt="Aperçu avatar"
+            changeLabel="Changer l'avatar"
+            (fileSelected)="onFileSelected($event)"
+          />
+        </div>
+      </fieldset>
 
       <div class="flex gap-4 pt-4">
         <button
@@ -133,15 +102,17 @@ import { PROFILE_GATEWAY } from '../../profile/domain';
     </form>
   `,
 })
-export class AdminProfile implements OnInit {
+export class AdminProfile {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly apiUrl = inject(API_BASE_URL);
   private readonly profileGateway = inject(PROFILE_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly selectedFile = signal<File | null>(null);
   readonly imagePreview = signal('');
-  readonly isDragging = signal(false);
-  private profileId = 1;
+  private profileId = '';
 
   readonly form = this.fb.nonNullable.group({
     displayName: ['', Validators.required],
@@ -150,39 +121,27 @@ export class AdminProfile implements OnInit {
     availabilityMessage: [''],
   });
 
-  ngOnInit(): void {
-    this.profileGateway.getProfileInfoForEdit().subscribe((profile) => {
+  private readonly editData = rxResource({
+    stream: () => this.profileGateway.getProfileInfoForEdit(),
+  });
+
+  private readonly patchForm = effect(() => {
+    const profile = this.editData.value();
+    if (profile) {
       this.profileId = profile.id;
-      this.imagePreview.set(profile.avatarUrl);
+      const url = profile.avatarUrl;
+      this.imagePreview.set(url.startsWith('http') ? url : `${this.apiUrl}${url}`);
       this.form.patchValue({
         displayName: profile.displayName,
         location: profile.location,
         isAvailable: profile.isAvailable,
         availabilityMessage: profile.availabilityMessage,
       });
-    });
-  }
+    }
+  });
 
-  onFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.selectFile(file);
-  }
-
-  onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.isDragging.set(false);
-    const file = event.dataTransfer?.files[0];
-    if (file?.type.startsWith('image/')) this.selectFile(file);
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.isDragging.set(true);
-  }
-
-  onDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    this.isDragging.set(false);
+  onFileSelected(file: File): void {
+    if (file.type.startsWith('image/')) this.selectFile(file);
   }
 
   onSubmit(): void {
@@ -202,12 +161,26 @@ export class AdminProfile implements OnInit {
               avatarUrl,
             }),
           ),
+          takeUntilDestroyed(this.destroyRef),
         )
-        .subscribe(() => this.router.navigate(['/admin/about']));
+        .subscribe({
+          next: () => {
+            this.toast.success('Profil mis à jour');
+            this.router.navigate(['/admin/about']);
+          },
+          error: () => this.toast.error("Erreur lors de l'enregistrement"),
+        });
     } else {
       this.profileGateway
         .updateProfileInfo({ id: this.profileId, ...values })
-        .subscribe(() => this.router.navigate(['/admin/about']));
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.toast.success('Profil mis à jour');
+            this.router.navigate(['/admin/about']);
+          },
+          error: () => this.toast.error("Erreur lors de l'enregistrement"),
+        });
     }
   }
 

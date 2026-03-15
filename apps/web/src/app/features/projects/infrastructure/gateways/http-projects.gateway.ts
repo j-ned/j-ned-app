@@ -1,84 +1,92 @@
-import { inject, Injectable, resource, type ResourceRef } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import type { ProjectsGateway } from '../../domain';
 import type { Project, ProjectFilter } from '../../domain';
-import { API_BASE_URL } from '../../../../shared/api/api-config';
+import { API_BASE_URL } from '@shared/api';
+
+function resolveImageUrl(apiUrl: string, image: string): string {
+  if (!image) return '';
+  if (image.startsWith('http')) return image;
+  return `${apiUrl}/images/projects/${image}`;
+}
+
+function resolveProject(apiUrl: string, p: Project): Project {
+  return { ...p, image: resolveImageUrl(apiUrl, p.image) };
+}
 
 @Injectable()
 export class HttpProjectsGateway implements ProjectsGateway {
   private readonly http = inject(HttpClient);
+  private readonly apiUrl = inject(API_BASE_URL);
 
-  getAllProjects(): ResourceRef<readonly Project[]> {
-    return resource({
-      loader: () =>
-        fetch(`${API_BASE_URL}/projects?_sort=order`).then(
-          (res) => res.json() as Promise<readonly Project[]>,
-        ),
-    }) as ResourceRef<readonly Project[]>;
+  getAllProjects(): Observable<readonly Project[]> {
+    return this.http
+      .get<{ data: Project[] }>(`${this.apiUrl}/projects?_sort=order&limit=100`)
+      .pipe(
+        map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
+        catchError(() => of([])),
+      );
   }
 
   getFeaturedProjects(): Observable<readonly Project[]> {
     return this.http
-      .get<Project[]>(`${API_BASE_URL}/projects?featured=true&_sort=order`)
-      .pipe(catchError(() => of([])));
-  }
-
-  getCategories(): Observable<readonly string[]> {
-    return this.http.get<Project[]>(`${API_BASE_URL}/projects`).pipe(
-      map((projects) => ['Tous', ...new Set(projects.map((p) => p.category))]),
-      catchError(() => of(['Tous'])),
-    );
-  }
-
-  filterProjects(filter: ProjectFilter): Observable<readonly Project[]> {
-    let url = `${API_BASE_URL}/projects?_sort=order`;
-    if (filter.category && filter.category !== 'Tous') {
-      url += `&category=${filter.category}`;
-    }
-    if (filter.featured !== undefined) {
-      url += `&featured=${filter.featured}`;
-    }
-    return this.http.get<Project[]>(url).pipe(catchError(() => of([])));
-  }
-
-  getProjectById(id: string): Observable<Project> {
-    return this.http
-      .get<Project[]>(`${API_BASE_URL}/projects?id=${id}`)
+      .get<{ data: Project[] }>(`${this.apiUrl}/projects?featured=true&_sort=order`)
       .pipe(
-        switchMap((data) =>
-          data.length > 0 ? of(data[0]) : throwError(() => new Error('Project not found')),
-        ),
+        map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
+        catchError(() => of([])),
       );
   }
 
+  getCategories(): Observable<readonly string[]> {
+    return this.http
+      .get<{ name: string; count: number }[]>(`${this.apiUrl}/projects/categories`)
+      .pipe(
+        map((categories) => ['Tous', ...categories.map((c) => c.name)]),
+        catchError(() => of(['Tous'])),
+      );
+  }
+
+  filterProjects(filter: ProjectFilter): Observable<readonly Project[]> {
+    const params = new URLSearchParams();
+    params.set('_sort', 'order');
+    if (filter.category && filter.category !== 'Tous') {
+      params.set('category', filter.category);
+    }
+    if (filter.featured !== undefined) {
+      params.set('featured', String(filter.featured));
+    }
+    return this.http
+      .get<{ data: Project[] }>(`${this.apiUrl}/projects?${params.toString()}`)
+      .pipe(
+        map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
+        catchError(() => of([])),
+      );
+  }
+
+  getProjectById(id: string): Observable<Project> {
+    return this.http.get<Project>(`${this.apiUrl}/projects/${id}`).pipe(
+      map((p) => resolveProject(this.apiUrl, p)),
+    );
+  }
+
   createProject(project: Omit<Project, 'id'>): Observable<Project> {
-    return this.http.post<Project>(`${API_BASE_URL}/projects`, project);
+    return this.http.post<Project>(`${this.apiUrl}/projects`, project);
   }
 
   updateProject(id: string, project: Partial<Project>): Observable<Project> {
-    return this.http.get<Project[]>(`${API_BASE_URL}/projects?id=${id}`).pipe(
-      switchMap((data) => {
-        if (data.length === 0) return throwError(() => new Error('Project not found'));
-        return this.http.patch<Project>(`${API_BASE_URL}/projects/${data[0].id}`, project);
-      }),
-    );
+    return this.http.patch<Project>(`${this.apiUrl}/projects/${id}`, project);
   }
 
   deleteProject(id: string): Observable<void> {
-    return this.http.get<Project[]>(`${API_BASE_URL}/projects?id=${id}`).pipe(
-      switchMap((data) => {
-        if (data.length === 0) return throwError(() => new Error('Project not found'));
-        return this.http.delete<void>(`${API_BASE_URL}/projects/${data[0].id}`);
-      }),
-    );
+    return this.http.delete<void>(`${this.apiUrl}/projects/${id}`);
   }
 
   uploadImage(file: File, projectSlug: string): Observable<string> {
     const formData = new FormData();
     formData.append('file', file);
     return this.http
-      .post<{ url: string }>(`${API_BASE_URL}/projects/${projectSlug}/image`, formData)
-      .pipe(map((res) => res.url));
+      .post<{ key: string }>(`${this.apiUrl}/projects/${projectSlug}/image`, formData)
+      .pipe(map((res) => res.key));
   }
 }

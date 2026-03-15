@@ -1,7 +1,9 @@
-import { Component, inject, input, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, input, computed, effect, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, FormArray, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { PROFILE_GATEWAY } from '../../profile/domain';
+import { PROFILE_GATEWAY } from '@features/profile/application';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-admin-diploma-form',
@@ -14,70 +16,82 @@ import { PROFILE_GATEWAY } from '../../profile/domain';
     </h1>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="max-w-2xl space-y-6">
-      <div>
-        <label for="title" class="block text-sm font-medium text-foreground mb-1.5">Titre</label>
-        <input
-          id="title"
-          type="text"
-          formControlName="title"
-          class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-        />
-      </div>
+      <fieldset class="space-y-6 border-0 p-0 m-0">
+        <legend class="sr-only">Informations du diplôme</legend>
 
-      <div>
-        <label for="provider" class="block text-sm font-medium text-foreground mb-1.5"
-          >Organisme</label
-        >
-        <input
-          id="provider"
-          type="text"
-          formControlName="provider"
-          class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-        />
-      </div>
-
-      <div>
-        <label for="shortDescription" class="block text-sm font-medium text-foreground mb-1.5"
-          >Description courte</label
-        >
-        <textarea
-          id="shortDescription"
-          formControlName="shortDescription"
-          rows="3"
-          class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
-        ></textarea>
-      </div>
-
-      <div>
-        <div class="flex items-center justify-between mb-1.5">
-          <span class="block text-sm font-medium text-foreground">Compétences</span>
-          <button
-            type="button"
-            (click)="addSkill()"
-            class="px-3 py-1 text-xs rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+        <div>
+          <label for="title" class="block text-sm font-medium text-foreground mb-1.5"
+            >Titre</label
           >
-            Ajouter une compétence
-          </button>
-        </div>
-        <div formArrayName="skills" class="space-y-2">
-          @for (ctrl of skills.controls; track $index) {
-            <div class="flex gap-2">
-              <input
-                [formControlName]="$index"
-                type="text"
-                class="flex-1 px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-              />
-              <button
-                type="button"
-                (click)="removeSkill($index)"
-                class="px-3 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-              >
-                Supprimer
-              </button>
-            </div>
+          <input
+            id="title"
+            type="text"
+            formControlName="title"
+            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+          />
+          @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
+            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
           }
         </div>
-      </div>
+
+        <div>
+          <label for="provider" class="block text-sm font-medium text-foreground mb-1.5"
+            >Organisme</label
+          >
+          <input
+            id="provider"
+            type="text"
+            formControlName="provider"
+            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+          />
+          @if (form.controls.provider.touched && form.controls.provider.errors?.['required']) {
+            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+          }
+        </div>
+
+        <div>
+          <label for="shortDescription" class="block text-sm font-medium text-foreground mb-1.5"
+            >Description courte</label
+          >
+          <textarea
+            id="shortDescription"
+            formControlName="shortDescription"
+            rows="3"
+            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
+          ></textarea>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="block text-sm font-medium text-foreground">Compétences</span>
+            <button
+              type="button"
+              (click)="addSkill()"
+              class="px-3 py-1 text-xs rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            >
+              Ajouter une compétence
+            </button>
+          </div>
+          <div formArrayName="skills" class="space-y-2">
+            @for (ctrl of skills.controls; track $index) {
+              <div class="flex gap-2">
+                <input
+                  [formControlName]="$index"
+                  type="text"
+                  class="flex-1 px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  (click)="removeSkill($index)"
+                  class="px-3 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                >
+                  Supprimer
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </fieldset>
 
       <div class="flex gap-4 pt-4">
         <button
@@ -98,13 +112,15 @@ import { PROFILE_GATEWAY } from '../../profile/domain';
     </form>
   `,
 })
-export class AdminDiplomaForm implements OnInit {
+export class AdminDiplomaForm {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly profileGateway = inject(PROFILE_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly id = input<string>();
-  readonly isEditMode = signal(false);
+  readonly isEditMode = computed(() => !!this.id());
 
   readonly form = this.fb.nonNullable.group({
     title: ['', Validators.required],
@@ -117,21 +133,23 @@ export class AdminDiplomaForm implements OnInit {
     return this.form.controls.skills;
   }
 
-  ngOnInit(): void {
-    const id = this.id();
-    if (id) {
-      this.isEditMode.set(true);
-      this.profileGateway.getDiplomaById(Number(id)).subscribe((diploma) => {
-        this.form.patchValue({
-          title: diploma.title,
-          provider: diploma.provider,
-          shortDescription: diploma.shortDescription,
-        });
-        this.skills.clear();
-        diploma.skills.forEach((s) => this.skills.push(this.fb.nonNullable.control(s)));
+  private readonly editData = rxResource({
+    params: () => (this.id() ? { id: this.id()! } : undefined),
+    stream: ({ params }) => this.profileGateway.getDiplomaById(params.id),
+  });
+
+  private readonly patchForm = effect(() => {
+    const diploma = this.editData.value();
+    if (diploma) {
+      this.form.patchValue({
+        title: diploma.title,
+        provider: diploma.provider,
+        shortDescription: diploma.shortDescription,
       });
+      this.skills.clear();
+      diploma.skills.forEach((s) => this.skills.push(this.fb.nonNullable.control(s)));
     }
-  }
+  });
 
   addSkill(): void {
     this.skills.push(this.fb.nonNullable.control(''));
@@ -153,10 +171,16 @@ export class AdminDiplomaForm implements OnInit {
     const id = this.id();
 
     const request$ = id
-      ? this.profileGateway.updateDiploma(Number(id), data)
+      ? this.profileGateway.updateDiploma(id, data)
       : this.profileGateway.createDiploma(data);
 
-    request$.subscribe(() => this.router.navigate(['/admin/about/diplomas']));
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.toast.success(id ? 'Diplôme mis à jour' : 'Diplôme créé');
+        this.router.navigate(['/admin/about/diplomas']);
+      },
+      error: () => this.toast.error("Erreur lors de l'enregistrement"),
+    });
   }
 
   cancel(): void {

@@ -1,27 +1,66 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { HomeHero } from './home-hero';
-import { HomeSpeciality } from './home-speciality';
-import { HomeCta } from './home-cta';
-import { HomeAvailability } from './home-availability';
+import { ButtonComponent } from '@layout';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [HomeHero, HomeSpeciality, HomeCta, HomeAvailability],
+  imports: [HomeHero, ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'relative block pt-28 pb-12 md:pt-48 md:pb-20 px-6 min-h-screen flex items-center',
+    class: 'relative block pt-28 pb-12 md:pt-36 md:pb-16 px-6 overflow-hidden',
   },
+  styles: `
+    @keyframes fade-up {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-up-actions {
+      animation: fade-up 0.6s ease-out 0.4s both;
+    }
+
+  `,
   template: `
-    <div class="max-w-7xl mx-auto w-full">
-      <app-home-hero />
-      <app-home-speciality />
-      <div
-        class="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-between gap-6"
-      >
-        <app-home-cta />
-        <app-home-availability />
+
+    <div class="max-w-5xl mx-auto w-full relative z-10">
+      <div class="flex flex-col items-center">
+        <app-home-hero />
+
+        <!-- CTAs -->
+        <div class="animate-fade-up-actions flex flex-col sm:flex-row items-center gap-4 mt-10 md:mt-12">
+          <app-button variant="primary" size="lg" radius="md" (clicked)="goToProjects()">
+            Voir mes réalisations
+            <svg aria-hidden="true" class="w-5 h-5 ml-2">
+              <use href="/icons/sprite.svg#lucide-arrow-right"></use>
+            </svg>
+          </app-button>
+          <app-button variant="accent" size="lg" radius="md" (clicked)="goToContact()">
+            Me contacter
+            <svg aria-hidden="true" class="w-5 h-5 ml-2">
+              <use href="/icons/sprite.svg#lucide-mail"></use>
+            </svg>
+          </app-button>
+        </div>
+
       </div>
     </div>
   `,
 })
-export class HomeHeroSection {}
+export class HomeHeroSection {
+  private readonly router = inject(Router);
+
+  goToProjects(): void {
+    this.router.navigate(['/projects']);
+  }
+
+  goToContact(): void {
+    this.router.navigate(['/contact']);
+  }
+}

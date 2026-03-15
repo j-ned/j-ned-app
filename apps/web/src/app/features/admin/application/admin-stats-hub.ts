@@ -1,11 +1,10 @@
 import { Component, inject, resource, computed, ChangeDetectionStrategy } from '@angular/core';
-import type { SiteStats } from '../domain/models/stats.model';
-import { SupabaseClientService } from '../../../shared/supabase/supabase-client';
-import { toCamelCase } from '../../../shared/supabase/column-mapper';
-import { UmamiService } from '../../../shared/umami/umami.service';
+import { AnalyticsService } from '@shared/analytics';
+import { StatsChart } from './components/stats-chart';
 
 @Component({
   selector: 'app-admin-stats-hub',
+  imports: [StatsChart],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -25,11 +24,11 @@ import { UmamiService } from '../../../shared/umami/umami.service';
             </svg>
           </div>
           <div>
-            @if (umamiRes.isLoading()) {
+            @if (overviewRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
               <p class="text-2xl font-bold text-foreground">
-                {{ umamiStats()?.visitors?.value ?? 0 }}
+                {{ overview()?.visitors ?? 0 }}
               </p>
             }
             <p class="text-sm text-muted">Visiteurs</p>
@@ -49,11 +48,11 @@ import { UmamiService } from '../../../shared/umami/umami.service';
             </svg>
           </div>
           <div>
-            @if (umamiRes.isLoading()) {
+            @if (overviewRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
               <p class="text-2xl font-bold text-foreground">
-                {{ umamiStats()?.pageviews?.value ?? 0 }}
+                {{ overview()?.pageviews ?? 0 }}
               </p>
             }
             <p class="text-sm text-muted">Pages vues</p>
@@ -73,11 +72,11 @@ import { UmamiService } from '../../../shared/umami/umami.service';
             </svg>
           </div>
           <div>
-            @if (supabaseRes.isLoading()) {
+            @if (overviewRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
               <p class="text-2xl font-bold text-foreground">
-                {{ supabaseStats()?.totalProjectClicks ?? 0 }}
+                {{ overview()?.projectClicks ?? 0 }}
               </p>
             }
             <p class="text-sm text-muted">Clics projets</p>
@@ -97,11 +96,11 @@ import { UmamiService } from '../../../shared/umami/umami.service';
             </svg>
           </div>
           <div>
-            @if (supabaseRes.isLoading()) {
+            @if (overviewRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
               <p class="text-2xl font-bold text-foreground">
-                {{ supabaseStats()?.totalCvDownloads ?? 0 }}
+                {{ overview()?.cvDownloads ?? 0 }}
               </p>
             }
             <p class="text-sm text-muted">Téléchargements CV</p>
@@ -123,7 +122,7 @@ import { UmamiService } from '../../../shared/umami/umami.service';
             </svg>
           </div>
           <div>
-            @if (umamiRes.isLoading()) {
+            @if (overviewRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
               <p class="text-2xl font-bold text-foreground">{{ bounceRate() }}%</p>
@@ -145,7 +144,7 @@ import { UmamiService } from '../../../shared/umami/umami.service';
             </svg>
           </div>
           <div>
-            @if (umamiRes.isLoading()) {
+            @if (overviewRes.isLoading()) {
               <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
             } @else {
               <p class="text-2xl font-bold text-foreground">{{ avgTime() }}</p>
@@ -178,6 +177,13 @@ import { UmamiService } from '../../../shared/umami/umami.service';
       </div>
     </div>
 
+    <!-- Chart -->
+    @if (chartRes.value(); as chartData) {
+      <div class="mb-8">
+        <app-stats-chart [data]="chartData" />
+      </div>
+    }
+
     <!-- Visites détaillées -->
     <h2 class="text-lg font-semibold text-foreground mb-4">Visites</h2>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -188,8 +194,8 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Page</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Vues</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Page</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Vues</th>
             </tr>
           </thead>
           <tbody>
@@ -229,8 +235,8 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Source</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Source</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
             </tr>
           </thead>
           <tbody>
@@ -272,8 +278,8 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Navigateur</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Navigateur</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
             </tr>
           </thead>
           <tbody>
@@ -313,8 +319,8 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Pays</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Pays</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
             </tr>
           </thead>
           <tbody>
@@ -358,13 +364,13 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Titre</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Clics</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">%</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Titre</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Clics</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">%</th>
             </tr>
           </thead>
           <tbody>
-            @if (supabaseRes.isLoading()) {
+            @if (articleStatsRes.isLoading()) {
               @for (i of skeletonRows; track i) {
                 <tr class="border-b border-foreground/5">
                   <td class="px-6 py-3">
@@ -379,12 +385,12 @@ import { UmamiService } from '../../../shared/umami/umami.service';
                 </tr>
               }
             } @else {
-              @for (article of sortedArticles(); track article.articleId) {
+              @for (article of sortedArticles(); track article.entityId) {
                 <tr class="border-b border-foreground/5">
-                  <td class="px-6 py-3 text-sm text-foreground">{{ article.title }}</td>
-                  <td class="px-6 py-3 text-sm text-muted text-right">{{ article.clicks }}</td>
+                  <td class="px-6 py-3 text-sm text-foreground">{{ article.entityTitle }}</td>
+                  <td class="px-6 py-3 text-sm text-muted text-right">{{ article.count }}</td>
                   <td class="px-6 py-3 text-sm text-muted text-right">
-                    {{ articlePercentage(article.clicks) }}%
+                    {{ articlePercentages().get(article.entityId) ?? '0.0' }}%
                   </td>
                 </tr>
               } @empty {
@@ -406,13 +412,13 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Titre</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Clics</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">%</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Titre</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Clics</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">%</th>
             </tr>
           </thead>
           <tbody>
-            @if (supabaseRes.isLoading()) {
+            @if (projectStatsRes.isLoading()) {
               @for (i of skeletonRows; track i) {
                 <tr class="border-b border-foreground/5">
                   <td class="px-6 py-3">
@@ -427,12 +433,12 @@ import { UmamiService } from '../../../shared/umami/umami.service';
                 </tr>
               }
             } @else {
-              @for (project of sortedProjects(); track project.projectId) {
+              @for (project of sortedProjects(); track project.entityId) {
                 <tr class="border-b border-foreground/5">
-                  <td class="px-6 py-3 text-sm text-foreground">{{ project.title }}</td>
-                  <td class="px-6 py-3 text-sm text-muted text-right">{{ project.clicks }}</td>
+                  <td class="px-6 py-3 text-sm text-foreground">{{ project.entityTitle }}</td>
+                  <td class="px-6 py-3 text-sm text-muted text-right">{{ project.count }}</td>
                   <td class="px-6 py-3 text-sm text-muted text-right">
-                    {{ projectPercentage(project.clicks) }}%
+                    {{ projectPercentages().get(project.entityId) ?? '0.0' }}%
                   </td>
                 </tr>
               } @empty {
@@ -450,107 +456,115 @@ import { UmamiService } from '../../../shared/umami/umami.service';
   `,
 })
 export class AdminStatsHub {
-  private readonly supabase = inject(SupabaseClientService);
-  private readonly umami = inject(UmamiService);
-
-  private readonly thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  private readonly now = Date.now();
+  private readonly analytics = inject(AnalyticsService);
 
   readonly skeletonRows = [1, 2, 3];
 
-  // Umami resources
-  readonly umamiRes = resource({
-    loader: () => this.umami.getStats(this.thirtyDaysAgo, this.now),
+  // Overview resource (visitors, pageviews, bounces, duration, project/article/cv counts)
+  readonly overviewRes = resource({
+    loader: () => this.analytics.getOverview(),
   });
 
   readonly activeRes = resource({
-    loader: () => this.umami.getActive(),
+    loader: () => this.analytics.getActiveVisitors(),
+  });
+
+  readonly chartRes = resource({
+    loader: () => this.analytics.getChart(),
   });
 
   readonly pagesRes = resource({
-    loader: () => this.umami.getMetrics(this.thirtyDaysAgo, this.now, 'url'),
+    loader: () => this.analytics.getMetrics('url'),
   });
 
   readonly referrersRes = resource({
-    loader: () => this.umami.getMetrics(this.thirtyDaysAgo, this.now, 'referrer'),
+    loader: () => this.analytics.getMetrics('referrer'),
   });
 
   readonly browsersRes = resource({
-    loader: () => this.umami.getMetrics(this.thirtyDaysAgo, this.now, 'browser'),
+    loader: () => this.analytics.getMetrics('browser'),
   });
 
   readonly countriesRes = resource({
-    loader: () => this.umami.getMetrics(this.thirtyDaysAgo, this.now, 'country'),
+    loader: () => this.analytics.getMetrics('country'),
   });
 
-  // Supabase resource
-  readonly supabaseRes = resource({
-    loader: async () => {
-      const { data, error } = await this.supabase.client
-        .from('site_stats')
-        .select('*')
-        .limit(1)
-        .single();
-      if (error) return null;
-      return toCamelCase<SiteStats>(data);
-    },
+  readonly articleStatsRes = resource({
+    loader: () => this.analytics.getArticleStats(),
+  });
+
+  readonly projectStatsRes = resource({
+    loader: () => this.analytics.getProjectStats(),
   });
 
   // Computed values
-  readonly umamiStats = computed(() => this.umamiRes.value() ?? null);
-  readonly supabaseStats = computed(() => this.supabaseRes.value() ?? null);
-  readonly activeVisitors = computed(() => this.activeRes.value()?.visitors ?? 0);
-  readonly pages = computed(() => this.pagesRes.value() ?? []);
-  readonly referrers = computed(() => this.referrersRes.value() ?? []);
-  readonly browsers = computed(() => this.browsersRes.value() ?? []);
-  readonly countries = computed(() => this.countriesRes.value() ?? []);
+  readonly overview = computed(() => this.overviewRes.value() ?? null);
+  readonly activeVisitors = computed(() => this.activeRes.value()?.count ?? 0);
 
-  private readonly totalArticleClicks = computed(
-    () => this.supabaseStats()?.totalArticleClicks ?? 0,
+  readonly pages = computed(() =>
+    (this.pagesRes.value() ?? []).map((m) => ({ x: m.name, y: m.count })),
   );
-  private readonly totalProjectClicks = computed(
-    () => this.supabaseStats()?.totalProjectClicks ?? 0,
+  readonly referrers = computed(() =>
+    (this.referrersRes.value() ?? []).map((m) => ({ x: m.name, y: m.count })),
+  );
+  readonly browsers = computed(() =>
+    (this.browsersRes.value() ?? []).map((m) => ({ x: m.name, y: m.count })),
+  );
+  readonly countries = computed(() =>
+    (this.countriesRes.value() ?? []).map((m) => ({ x: m.name, y: m.count })),
   );
 
   readonly sortedArticles = computed(() => {
-    const articles = this.supabaseStats()?.articleStats ?? [];
-    return [...articles].sort((a, b) => b.clicks - a.clicks);
+    const articles = this.articleStatsRes.value() ?? [];
+    return [...articles].sort((a, b) => b.count - a.count);
   });
 
   readonly sortedProjects = computed(() => {
-    const projects = this.supabaseStats()?.projectStats ?? [];
-    return [...projects].sort((a, b) => b.clicks - a.clicks);
+    const projects = this.projectStatsRes.value() ?? [];
+    return [...projects].sort((a, b) => b.count - a.count);
   });
 
+  private readonly totalArticleClicks = computed(() =>
+    (this.articleStatsRes.value() ?? []).reduce((sum, a) => sum + a.count, 0),
+  );
+
+  private readonly totalProjectClicks = computed(() =>
+    (this.projectStatsRes.value() ?? []).reduce((sum, p) => sum + p.count, 0),
+  );
+
   readonly bounceRate = computed(() => {
-    const stats = this.umamiStats();
-    if (!stats) return '0.0';
-    const visits = stats.visits.value;
-    if (visits === 0) return '0.0';
-    return ((stats.bounces.value / visits) * 100).toFixed(1);
+    const o = this.overview();
+    if (!o) return '0.0';
+    return (o.bounceRate ?? 0).toFixed(1);
   });
 
   readonly avgTime = computed(() => {
-    const stats = this.umamiStats();
-    if (!stats) return '0s';
-    const engaged = stats.visits.value - stats.bounces.value;
-    if (engaged <= 0) return '0s';
-    const seconds = Math.round(stats.totaltime.value / engaged);
+    const o = this.overview();
+    if (!o) return '0s';
+    const seconds = o.avgDuration;
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}m ${remainingSeconds}s`;
   });
 
-  articlePercentage(clicks: number): string {
+  protected readonly articlePercentages = computed(() => {
+    const articles = this.articleStatsRes.value() ?? [];
     const total = this.totalArticleClicks();
-    if (total === 0) return '0.0';
-    return ((clicks / total) * 100).toFixed(1);
-  }
+    const map = new Map<string, string>();
+    for (const a of articles) {
+      map.set(a.entityId, total === 0 ? '0.0' : ((a.count / total) * 100).toFixed(1));
+    }
+    return map;
+  });
 
-  projectPercentage(clicks: number): string {
+  protected readonly projectPercentages = computed(() => {
+    const projects = this.projectStatsRes.value() ?? [];
     const total = this.totalProjectClicks();
-    if (total === 0) return '0.0';
-    return ((clicks / total) * 100).toFixed(1);
-  }
+    const map = new Map<string, string>();
+    for (const p of projects) {
+      map.set(p.entityId, total === 0 ? '0.0' : ((p.count / total) * 100).toFixed(1));
+    }
+    return map;
+  });
 }

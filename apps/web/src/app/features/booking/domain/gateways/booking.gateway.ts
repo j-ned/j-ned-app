@@ -11,5 +11,3 @@ export type BookingGateway = {
   addDisabledDate(date: Omit<DisabledDate, 'id'>): Observable<DisabledDate>;
   removeDisabledDate(id: number): Observable<void>;
 };
-
-export { BOOKING_GATEWAY } from './booking.gateway.token';

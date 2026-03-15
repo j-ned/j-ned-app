@@ -12,6 +12,51 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./application/admin-dashboard').then((m) => m.AdminDashboard),
       },
       {
+        path: 'home',
+        title: "Page d'accueil | Admin",
+        loadComponent: () => import('./application/admin-home').then((m) => m.AdminHome),
+      },
+      {
+        path: 'home/hero',
+        title: 'Hero | Admin',
+        loadComponent: () => import('./application/admin-hero').then((m) => m.AdminHero),
+      },
+      {
+        path: 'home/services',
+        title: 'Prestations | Admin',
+        loadComponent: () => import('./application/admin-services').then((m) => m.AdminServices),
+      },
+      {
+        path: 'home/services/new',
+        title: 'Nouvelle prestation | Admin',
+        loadComponent: () =>
+          import('./application/admin-service-form').then((m) => m.AdminServiceForm),
+      },
+      {
+        path: 'home/services/:id/edit',
+        title: 'Modifier prestation | Admin',
+        loadComponent: () =>
+          import('./application/admin-service-form').then((m) => m.AdminServiceForm),
+      },
+      {
+        path: 'home/highlights',
+        title: 'Points forts (Accueil) | Admin',
+        loadComponent: () =>
+          import('./application/admin-home-highlights').then((m) => m.AdminHomeHighlights),
+      },
+      {
+        path: 'home/highlights/new',
+        title: 'Nouveau point fort (Accueil) | Admin',
+        loadComponent: () =>
+          import('./application/admin-home-highlight-form').then((m) => m.AdminHomeHighlightForm),
+      },
+      {
+        path: 'home/highlights/:id/edit',
+        title: 'Modifier point fort (Accueil) | Admin',
+        loadComponent: () =>
+          import('./application/admin-home-highlight-form').then((m) => m.AdminHomeHighlightForm),
+      },
+      {
         path: 'blog',
         title: 'Blog | Admin',
         loadComponent: () => import('./application/admin-blog').then((m) => m.AdminBlog),
@@ -42,24 +87,7 @@ export const ADMIN_ROUTES: Routes = [
         path: 'projects',
         title: 'Projets | Admin',
         loadComponent: () =>
-          import('./application/admin-projects-hub').then((m) => m.AdminProjectsHub),
-      },
-      {
-        path: 'projects/new',
-        title: 'Nouveau projet | Admin',
-        loadComponent: () =>
-          import('./application/admin-project-form').then((m) => m.AdminProjectForm),
-      },
-      {
-        path: 'projects/:id/edit',
-        title: 'Modifier projet | Admin',
-        loadComponent: () =>
-          import('./application/admin-project-form').then((m) => m.AdminProjectForm),
-      },
-      {
-        path: 'projects/:category',
-        title: 'Projets | Admin',
-        loadComponent: () => import('./application/admin-projects').then((m) => m.AdminProjects),
+          import('./application/admin-projects').then((m) => m.AdminProjects),
       },
       {
         path: 'calendar',
@@ -190,6 +218,16 @@ export const ADMIN_ROUTES: Routes = [
         title: 'Modifier technologie | Admin',
         loadComponent: () =>
           import('./application/admin-technology-form').then((m) => m.AdminTechnologyForm),
+      },
+      {
+        path: 'security',
+        title: 'Sécurité | Admin',
+        loadComponent: () =>
+          import('../auth/application/two-factor-setup').then((m) => m.TwoFactorSetup),
+      },
+      {
+        path: '**',
+        redirectTo: '',
       },
     ],
   },

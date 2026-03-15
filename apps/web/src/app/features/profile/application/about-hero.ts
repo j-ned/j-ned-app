@@ -1,7 +1,8 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from '../domain';
+import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { PROFILE_GATEWAY } from './tokens';
+import { API_BASE_URL } from '@shared/api';
 
 @Component({
   selector: 'app-about-hero',
@@ -18,7 +19,7 @@ import { PROFILE_GATEWAY } from '../domain';
           class="relative w-32 h-32 md:w-58 md:h-58 rounded-2xl overflow-hidden border-4 border-foreground/10 shadow-xl shrink-0"
         >
           <img
-            [ngSrc]="profileInfo()!.avatarUrl"
+            [ngSrc]="avatarUrl()"
             [alt]="profileInfo()!.displayName"
             class="w-full h-full object-cover"
             width="160"
@@ -39,7 +40,7 @@ import { PROFILE_GATEWAY } from '../domain';
             class="flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3 text-sm"
           >
             <div class="flex items-center gap-2 text-muted">
-              <svg class="w-4 h-4">
+              <svg aria-hidden="true" class="w-4 h-4">
                 <use href="/icons/sprite.svg#lucide-map-pin"></use>
               </svg>
               <span>{{ profileInfo()!.location }}</span>
@@ -70,7 +71,7 @@ import { PROFILE_GATEWAY } from '../domain';
                 class="p-2.5 bg-foreground/5 rounded-lg border border-foreground/10 hover:border-primary/50 hover:bg-primary/10 transition-all hover:scale-110 group"
                 [attr.aria-label]="social.label"
               >
-                <svg class="w-5 h-5 text-muted group-hover:text-primary transition-colors">
+                <svg aria-hidden="true" class="w-5 h-5 text-muted group-hover:text-primary transition-colors">
                   <use [attr.href]="'/icons/sprite.svg#' + social.icon"></use>
                 </svg>
               </a>
@@ -82,10 +83,18 @@ import { PROFILE_GATEWAY } from '../domain';
   `,
 })
 export class AboutHero {
-  private profileGateway = inject(PROFILE_GATEWAY);
+  private readonly apiUrl = inject(API_BASE_URL);
+  private readonly profileGateway = inject(PROFILE_GATEWAY);
 
-  private profileResource = this.profileGateway.getProfileInfo();
+  private readonly profileResource = rxResource({
+    stream: () => this.profileGateway.getProfileInfo(),
+  });
   protected readonly profileInfo = computed(() => this.profileResource.value());
+  protected readonly avatarUrl = computed(() => {
+    const info = this.profileInfo();
+    if (!info?.avatarUrl) return '';
+    return info.avatarUrl.startsWith('http') ? info.avatarUrl : `${this.apiUrl}${info.avatarUrl}`;
+  });
 
   private socialButtonsObservable = this.profileGateway.getSocialButtons();
   protected readonly socialButtons = toSignal(this.socialButtonsObservable, { initialValue: [] });

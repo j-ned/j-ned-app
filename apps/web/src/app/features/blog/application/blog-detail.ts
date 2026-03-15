@@ -1,11 +1,10 @@
-import { Component, inject, input, signal, effect, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, input, effect, ChangeDetectionStrategy } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { NgOptimizedImage } from '@angular/common';
-import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { switchMap } from 'rxjs';
-import { BLOG_GATEWAY } from '../domain';
+import { BLOG_GATEWAY } from './tokens';
 import { CommentForm } from './comment-form';
-import { TrackingService } from '../../../shared/tracking/tracking.service';
+import { AnalyticsService } from '@shared/analytics';
 
 @Component({
   selector: 'app-blog-detail',
@@ -27,7 +26,7 @@ import { TrackingService } from '../../../shared/tracking/tracking.service';
           Retour au blog
         </a>
 
-        @if (article(); as article) {
+        @if (articleRes.value(); as article) {
           <article>
             @if (article.image) {
               <figure class="relative aspect-video w-full overflow-hidden rounded-2xl mb-8">
@@ -75,7 +74,7 @@ import { TrackingService } from '../../../shared/tracking/tracking.service';
           <section class="mt-12 pt-8 border-t border-foreground/10" aria-label="Commentaires">
             <h2 class="text-2xl font-bold text-foreground mb-6">Commentaires</h2>
 
-            @for (comment of comments(); track comment.id) {
+            @for (comment of commentsRes.value() ?? []; track comment.id) {
               <article
                 class="mb-6 p-6 rounded-2xl bg-background border border-foreground/10 shadow-lg"
               >
@@ -119,34 +118,30 @@ import { TrackingService } from '../../../shared/tracking/tracking.service';
 })
 export class BlogDetail {
   private readonly blogGateway = inject(BLOG_GATEWAY);
-  private readonly tracking = inject(TrackingService);
+  private readonly analytics = inject(AnalyticsService);
   private tracked = false;
 
   readonly id = input.required<string>();
-  private readonly refreshTrigger = signal(0);
+
+  readonly articleRes = rxResource({
+    params: () => ({ id: this.id() }),
+    stream: ({ params }) => this.blogGateway.getArticleById(params.id),
+  });
+
+  readonly commentsRes = rxResource({
+    params: () => ({ id: this.id() }),
+    stream: ({ params }) => this.blogGateway.getCommentsByArticle(params.id),
+  });
 
   private readonly trackEffect = effect(() => {
-    const article = this.article();
+    const article = this.articleRes.value();
     if (article && !this.tracked) {
       this.tracked = true;
-      this.tracking.trackArticleView(article.id, article.title);
+      this.analytics.trackArticleView(article.id, article.title);
     }
   });
 
-  readonly article = toSignal(
-    toObservable(this.id).pipe(switchMap((id) => this.blogGateway.getArticleById(Number(id)))),
-  );
-
-  readonly comments = toSignal(
-    toObservable(this.id).pipe(
-      switchMap((id) => this.blogGateway.getCommentsByArticle(Number(id))),
-    ),
-    { initialValue: [] },
-  );
-
   refreshComments(): void {
-    this.blogGateway.getCommentsByArticle(Number(this.id())).subscribe(() => {
-      this.refreshTrigger.update((v) => v + 1);
-    });
+    this.commentsRes.reload();
   }
 }

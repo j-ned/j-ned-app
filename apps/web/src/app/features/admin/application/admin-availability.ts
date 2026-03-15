@@ -1,8 +1,10 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { BOOKING_GATEWAY } from '../../booking/domain';
-import type { DisabledDate } from '../../booking/domain';
-import { getFrenchHolidays, getUnavailableReason } from '../../../shared/calendar/french-holidays';
+import { BOOKING_GATEWAY } from '@features/booking/application';
+import type { DisabledDate } from '@features/booking/domain';
+import { getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
+import { ToastService } from '@shared/toast';
 
 type CalendarDay = {
   readonly date: string;
@@ -169,7 +171,7 @@ type CalendarDay = {
                 <button
                   (click)="removeDate(dd)"
                   class="shrink-0 text-red-400 hover:text-red-300 transition-colors"
-                  title="Supprimer"
+                  aria-label="Supprimer"
                 >
                   <svg class="w-4 h-4" aria-hidden="true">
                     <use href="/icons/sprite.svg#lucide-x" />
@@ -187,6 +189,8 @@ type CalendarDay = {
 })
 export class AdminAvailability {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly disabledDates = signal<readonly DisabledDate[]>([]);
   readonly currentMonth = signal(new Date());
@@ -300,9 +304,13 @@ export class AdminAvailability {
       reason: this.reasonInput || undefined,
     };
 
-    this.bookingGateway.addDisabledDate(payload).subscribe(() => {
-      this.reasonInput = '';
-      this.loadDates();
+    this.bookingGateway.addDisabledDate(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.reasonInput = '';
+        this.loadDates();
+        this.toast.success('Date désactivée');
+      },
+      error: () => this.toast.error('Erreur lors de la désactivation'),
     });
   }
 
@@ -313,15 +321,27 @@ export class AdminAvailability {
     const dd = this.disabledDateSet().get(date);
     if (!dd) return;
 
-    this.bookingGateway.removeDisabledDate(dd.id).subscribe(() => this.loadDates());
+    this.bookingGateway.removeDisabledDate(dd.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.loadDates();
+        this.toast.success('Date réactivée');
+      },
+      error: () => this.toast.error('Erreur lors de la réactivation'),
+    });
   }
 
   removeDate(dd: DisabledDate): void {
-    this.bookingGateway.removeDisabledDate(dd.id).subscribe(() => this.loadDates());
+    this.bookingGateway.removeDisabledDate(dd.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.loadDates();
+        this.toast.success('Date supprimée');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 
   private loadDates(): void {
-    this.bookingGateway.getDisabledDates().subscribe((dates) => this.disabledDates.set(dates));
+    this.bookingGateway.getDisabledDates().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((dates) => this.disabledDates.set(dates));
   }
 
   formatDate(dateStr: string): string {

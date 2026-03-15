@@ -1,6 +1,6 @@
 import { Component, inject, resource, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { UmamiService } from '../../../shared/umami/umami.service';
+import { AnalyticsService } from '@shared/analytics';
 
 @Component({
   selector: 'app-admin-stats-visits',
@@ -53,8 +53,8 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Page</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Vues</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Page</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Vues</th>
             </tr>
           </thead>
           <tbody>
@@ -94,8 +94,8 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Source</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Source</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
             </tr>
           </thead>
           <tbody>
@@ -137,8 +137,8 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Navigateur</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Navigateur</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
             </tr>
           </thead>
           <tbody>
@@ -178,8 +178,8 @@ import { UmamiService } from '../../../shared/umami/umami.service';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-3 text-sm font-medium text-muted">Pays</th>
-              <th class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
+              <th scope="col" class="text-left px-6 py-3 text-sm font-medium text-muted">Pays</th>
+              <th scope="col" class="text-right px-6 py-3 text-sm font-medium text-muted">Visites</th>
             </tr>
           </thead>
           <tbody>
@@ -215,36 +215,41 @@ import { UmamiService } from '../../../shared/umami/umami.service';
   `,
 })
 export class AdminStatsVisits {
-  private readonly umami = inject(UmamiService);
-
-  private readonly thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  private readonly now = Date.now();
+  private readonly analytics = inject(AnalyticsService);
 
   readonly skeletonRows = [1, 2, 3];
 
   readonly activeRes = resource({
-    loader: () => this.umami.getActive(),
+    loader: () => this.analytics.getActiveVisitors(),
   });
 
   readonly pagesRes = resource({
-    loader: () => this.umami.getMetrics(this.thirtyDaysAgo, this.now, 'url'),
+    loader: () => this.analytics.getMetrics('url'),
   });
 
   readonly referrersRes = resource({
-    loader: () => this.umami.getMetrics(this.thirtyDaysAgo, this.now, 'referrer'),
+    loader: () => this.analytics.getMetrics('referrer'),
   });
 
   readonly browsersRes = resource({
-    loader: () => this.umami.getMetrics(this.thirtyDaysAgo, this.now, 'browser'),
+    loader: () => this.analytics.getMetrics('browser'),
   });
 
   readonly countriesRes = resource({
-    loader: () => this.umami.getMetrics(this.thirtyDaysAgo, this.now, 'country'),
+    loader: () => this.analytics.getMetrics('country'),
   });
 
-  readonly activeVisitors = computed(() => this.activeRes.value()?.visitors ?? 0);
-  readonly pages = computed(() => this.pagesRes.value() ?? []);
-  readonly referrers = computed(() => this.referrersRes.value() ?? []);
-  readonly browsers = computed(() => this.browsersRes.value() ?? []);
-  readonly countries = computed(() => this.countriesRes.value() ?? []);
+  readonly activeVisitors = computed(() => this.activeRes.value()?.count ?? 0);
+  readonly pages = computed(() =>
+    (this.pagesRes.value() ?? []).map((m) => ({ x: m.name, y: m.count })),
+  );
+  readonly referrers = computed(() =>
+    (this.referrersRes.value() ?? []).map((m) => ({ x: m.name, y: m.count })),
+  );
+  readonly browsers = computed(() =>
+    (this.browsersRes.value() ?? []).map((m) => ({ x: m.name, y: m.count })),
+  );
+  readonly countries = computed(() =>
+    (this.countriesRes.value() ?? []).map((m) => ({ x: m.name, y: m.count })),
+  );
 }

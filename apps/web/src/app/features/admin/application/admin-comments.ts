@@ -1,6 +1,8 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { BLOG_GATEWAY } from '../../blog/domain';
-import type { Comment, CommentStatus } from '../../blog/domain';
+import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
+import { BLOG_GATEWAY } from '@features/blog/application';
+import type { Comment, CommentStatus } from '@features/blog/domain';
+import { ToastService } from '@shared/toast';
 
 type FilterStatus = 'all' | CommentStatus;
 
@@ -29,7 +31,7 @@ type FilterStatus = 'all' | CommentStatus;
               (activeFilter() === filter.value ? 'bg-white/20' : 'bg-foreground/10')
             "
           >
-            {{ countByStatus(filter.value) }}
+            {{ statusCounts().get(filter.value) ?? 0 }}
           </span>
         </button>
       }
@@ -40,12 +42,12 @@ type FilterStatus = 'all' | CommentStatus;
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Auteur</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Contenu</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Note</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Statut</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Date</th>
-              <th class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Auteur</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Contenu</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Note</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Statut</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Date</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -76,10 +78,10 @@ type FilterStatus = 'all' | CommentStatus;
                 <td class="px-6 py-4">
                   <span
                     [class]="
-                      'px-2.5 py-1 rounded-lg text-xs font-medium ' + statusClass(comment.status)
+                      'px-2.5 py-1 rounded-lg text-xs font-medium ' + STATUS_CLASSES[comment.status]
                     "
                   >
-                    {{ statusLabel(comment.status) }}
+                    {{ STATUS_LABELS[comment.status] }}
                   </span>
                 </td>
                 <td class="px-6 py-4 text-sm text-muted">{{ comment.date }}</td>
@@ -88,7 +90,7 @@ type FilterStatus = 'all' | CommentStatus;
                     @if (comment.status !== 'approved') {
                       <button
                         (click)="approve(comment)"
-                        title="Approuver"
+                        aria-label="Approuver"
                         class="p-1.5 rounded-lg text-green-400 hover:bg-green-500/10 transition-colors"
                       >
                         <svg class="w-4 h-4" aria-hidden="true">
@@ -99,7 +101,7 @@ type FilterStatus = 'all' | CommentStatus;
                     @if (comment.status !== 'rejected') {
                       <button
                         (click)="reject(comment)"
-                        title="Rejeter"
+                        aria-label="Rejeter"
                         class="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
                       >
                         <svg class="w-4 h-4" aria-hidden="true">
@@ -109,7 +111,7 @@ type FilterStatus = 'all' | CommentStatus;
                     }
                     <button
                       (click)="toggleFeatured(comment)"
-                      [title]="comment.featured ? 'Retirer de la une' : 'Mettre en avant'"
+                      [attr.aria-label]="comment.featured ? 'Retirer de la une' : 'Mettre en avant'"
                       [class]="
                         'p-1.5 rounded-lg transition-colors ' +
                         (comment.featured
@@ -134,7 +136,7 @@ type FilterStatus = 'all' | CommentStatus;
                     }
                     <button
                       (click)="deleteComment(comment)"
-                      title="Supprimer"
+                      aria-label="Supprimer"
                       class="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
                     >
                       <svg class="w-4 h-4" aria-hidden="true">
@@ -159,8 +161,14 @@ type FilterStatus = 'all' | CommentStatus;
 })
 export class AdminComments {
   private readonly blogGateway = inject(BLOG_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly comments = signal<readonly Comment[]>([]);
+  private readonly commentsRes = rxResource({
+    stream: () => this.blogGateway.getAllComments(),
+  });
+
+  readonly comments = (): readonly Comment[] => this.commentsRes.value() ?? [];
   readonly activeFilter = signal<FilterStatus>('all');
 
   readonly filters: readonly { value: FilterStatus; label: string }[] = [
@@ -170,6 +178,18 @@ export class AdminComments {
     { value: 'rejected', label: 'Rejetés' },
   ];
 
+  protected readonly STATUS_CLASSES: Record<string, string> = {
+    pending: 'bg-yellow-500/10 text-yellow-400',
+    approved: 'bg-green-500/10 text-green-400',
+    rejected: 'bg-red-500/10 text-red-400',
+  };
+
+  protected readonly STATUS_LABELS: Record<string, string> = {
+    pending: 'En attente',
+    approved: 'Approuvé',
+    rejected: 'Rejeté',
+  };
+
   readonly filteredComments = computed(() => {
     const filter = this.activeFilter();
     const all = this.comments();
@@ -177,61 +197,55 @@ export class AdminComments {
     return all.filter((c) => c.status === filter);
   });
 
-  constructor() {
-    this.loadComments();
-  }
-
-  countByStatus(status: FilterStatus): number {
-    const all = this.comments();
-    if (status === 'all') return all.length;
-    return all.filter((c) => c.status === status).length;
-  }
-
-  statusClass(status: CommentStatus): string {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-500/10 text-yellow-400';
-      case 'approved':
-        return 'bg-green-500/10 text-green-400';
-      case 'rejected':
-        return 'bg-red-500/10 text-red-400';
+  protected readonly statusCounts = computed(() => {
+    const comments = this.comments();
+    const counts = new Map<string, number>();
+    counts.set('all', comments.length);
+    for (const c of comments) {
+      counts.set(c.status, (counts.get(c.status) ?? 0) + 1);
     }
-  }
-
-  statusLabel(status: CommentStatus): string {
-    switch (status) {
-      case 'pending':
-        return 'En attente';
-      case 'approved':
-        return 'Approuvé';
-      case 'rejected':
-        return 'Rejeté';
-    }
-  }
+    return counts;
+  });
 
   approve(comment: Comment): void {
-    this.blogGateway
-      .updateComment(comment.id, { status: 'approved' })
-      .subscribe(() => this.loadComments());
+    this.blogGateway.updateComment(comment.id, { status: 'approved' }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.commentsRes.reload();
+        this.toast.success('Commentaire approuvé');
+      },
+      error: () => this.toast.error("Erreur lors de l'approbation"),
+    });
   }
 
   reject(comment: Comment): void {
-    this.blogGateway
-      .updateComment(comment.id, { status: 'rejected' })
-      .subscribe(() => this.loadComments());
+    this.blogGateway.updateComment(comment.id, { status: 'rejected' }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.commentsRes.reload();
+        this.toast.success('Commentaire rejeté');
+      },
+      error: () => this.toast.error('Erreur lors du rejet'),
+    });
   }
 
   toggleFeatured(comment: Comment): void {
-    this.blogGateway
-      .updateComment(comment.id, { featured: !comment.featured })
-      .subscribe(() => this.loadComments());
+    this.blogGateway.updateComment(comment.id, { featured: !comment.featured }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.commentsRes.reload();
+        this.toast.success(
+          comment.featured ? 'Commentaire retiré de la une' : 'Commentaire mis en avant',
+        );
+      },
+      error: () => this.toast.error('Erreur lors de la mise à jour'),
+    });
   }
 
   deleteComment(comment: Comment): void {
-    this.blogGateway.deleteComment(comment.id).subscribe(() => this.loadComments());
-  }
-
-  private loadComments(): void {
-    this.blogGateway.getAllComments().subscribe((comments) => this.comments.set(comments));
+    this.blogGateway.deleteComment(comment.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.commentsRes.reload();
+        this.toast.success('Commentaire supprimé');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 }

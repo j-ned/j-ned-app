@@ -1,5 +1,5 @@
 export type Biography = {
-  readonly id: number;
+  readonly id: string;
   readonly title: string;
   readonly paragraphs: readonly string[];
 };

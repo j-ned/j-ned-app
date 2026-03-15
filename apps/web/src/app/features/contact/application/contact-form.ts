@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, computed } from '@angular/core';
+import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
-import { CONTACT_GATEWAY } from '../domain';
+import { CONTACT_GATEWAY } from './tokens';
+import { ToastService } from '@shared/toast';
 
 type ContactFormGroup = {
   name: FormControl<string>;
@@ -19,10 +20,21 @@ type ContactFormGroup = {
   template: `
     <section id="contact" class="py-20 px-6">
       <div class="max-w-5xl mx-auto">
-        <header class="text-center mb-12">
-          <h2 class="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Contactez-moi</h2>
-          <p class="text-lg text-muted/80 max-w-xl mx-auto">
-            Vous avez un projet ou une question ? N'hésitez pas à me contacter
+        <header class="text-center mb-14">
+          <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5">
+            <svg aria-hidden="true" class="w-4 h-4">
+              <use href="/icons/sprite.svg#lucide-mail"></use>
+            </svg>
+            Contact
+          </span>
+          <h2
+            class="text-4xl md:text-5xl font-extrabold tracking-tight mb-5"
+            style="background: linear-gradient(135deg, var(--color-foreground) 40%, var(--color-primary) 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"
+          >
+            Contactez-moi
+          </h2>
+          <p class="text-muted max-w-xl mx-auto text-base md:text-lg leading-relaxed">
+            Vous avez un projet ou une question ? N'hésitez pas à me contacter.
           </p>
         </header>
 
@@ -101,57 +113,67 @@ type ContactFormGroup = {
                 Retrouvez-moi
               </h3>
               <nav class="flex items-center gap-2" aria-label="Réseaux sociaux">
-                <a
-                  [href]="socialLinks().linkedin.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
-                  [attr.aria-label]="socialLinks().linkedin.label"
-                >
-                  <svg class="w-4 h-4 text-muted group-hover:text-primary transition-colors">
-                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().linkedin.icon" />
-                  </svg>
-                </a>
-                <a
-                  [href]="socialLinks().github.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
-                  [attr.aria-label]="socialLinks().github.label"
-                >
-                  <svg class="w-4 h-4 text-muted group-hover:text-foreground transition-colors">
-                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().github.icon" />
-                  </svg>
-                </a>
-                <a
-                  [href]="socialLinks().twitter.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
-                  [attr.aria-label]="socialLinks().twitter.label"
-                >
-                  <svg class="w-4 h-4 text-muted group-hover:text-foreground transition-colors">
-                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().twitter.icon" />
-                  </svg>
-                </a>
-                <a
-                  [href]="socialLinks().email.url"
-                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
-                  [attr.aria-label]="socialLinks().email.label"
-                >
-                  <svg class="w-4 h-4 text-muted group-hover:text-primary transition-colors">
-                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().email.icon" />
-                  </svg>
-                </a>
-                <a
-                  [href]="socialLinks().phone.url"
-                  class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300 hover:scale-110"
-                  [attr.aria-label]="socialLinks().phone.label"
-                >
-                  <svg class="w-4 h-4 text-muted group-hover:text-accent transition-colors">
-                    <use [attr.href]="'/icons/sprite.svg#' + socialLinks().phone.icon" />
-                  </svg>
-                </a>
+                @if (socialLinks().linkedin.url) {
+                  <a
+                    [href]="socialLinks().linkedin.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
+                    [attr.aria-label]="socialLinks().linkedin.label"
+                  >
+                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-primary transition-colors">
+                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().linkedin.icon" />
+                    </svg>
+                  </a>
+                }
+                @if (socialLinks().github.url) {
+                  <a
+                    [href]="socialLinks().github.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
+                    [attr.aria-label]="socialLinks().github.label"
+                  >
+                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-foreground transition-colors">
+                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().github.icon" />
+                    </svg>
+                  </a>
+                }
+                @if (socialLinks().twitter.url) {
+                  <a
+                    [href]="socialLinks().twitter.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
+                    [attr.aria-label]="socialLinks().twitter.label"
+                  >
+                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-foreground transition-colors">
+                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().twitter.icon" />
+                    </svg>
+                  </a>
+                }
+                @if (socialLinks().email.url) {
+                  <a
+                    [href]="socialLinks().email.url"
+                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
+                    [attr.aria-label]="socialLinks().email.label"
+                  >
+                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-primary transition-colors">
+                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().email.icon" />
+                    </svg>
+                  </a>
+                }
+                @if (socialLinks().phone.url) {
+                  <a
+                    [href]="socialLinks().phone.url"
+                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300 hover:scale-110"
+                    [attr.aria-label]="socialLinks().phone.label"
+                  >
+                    <svg aria-hidden="true" class="w-4 h-4 text-muted group-hover:text-accent transition-colors">
+                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().phone.icon" />
+                    </svg>
+                  </a>
+                }
               </nav>
             </div>
             <hr class="border-t border-foreground/10" />
@@ -183,22 +205,6 @@ type ContactFormGroup = {
               Envoyer un message
             </h3>
 
-            @if (successMessage()) {
-              <div
-                class="p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm text-center mb-6"
-              >
-                {{ successMessage() }}
-              </div>
-            }
-
-            @if (serverError()) {
-              <div
-                class="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center mb-6"
-              >
-                {{ serverError() }}
-              </div>
-            }
-
             <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
@@ -221,10 +227,9 @@ type ContactFormGroup = {
                       placeholder="Votre nom"
                     />
                   </div>
-                  @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+                  @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
                     <span class="text-red-400 text-xs mt-1 block">Le nom est obligatoire</span>
-                  }
-                  @if (form.controls.name.touched && form.controls.name.hasError('minlength')) {
+                  } @else if (form.controls.name.touched && form.controls.name.errors?.['minlength']) {
                     <span class="text-red-400 text-xs mt-1 block">
                       Le nom doit contenir au moins 2 caractères
                     </span>
@@ -250,10 +255,9 @@ type ContactFormGroup = {
                       placeholder="votre@email.com"
                     />
                   </div>
-                  @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+                  @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
                     <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
-                  }
-                  @if (form.controls.email.touched && form.controls.email.hasError('pattern')) {
+                  } @else if (form.controls.email.touched && form.controls.email.errors?.['pattern']) {
                     <span class="text-red-400 text-xs mt-1 block">
                       Le format de l'email est invalide
                     </span>
@@ -279,10 +283,9 @@ type ContactFormGroup = {
                     placeholder="Objet de votre message"
                   />
                 </div>
-                @if (form.controls.subject.touched && form.controls.subject.hasError('required')) {
+                @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
                   <span class="text-red-400 text-xs mt-1 block">Le sujet est obligatoire</span>
-                }
-                @if (form.controls.subject.touched && form.controls.subject.hasError('minlength')) {
+                } @else if (form.controls.subject.touched && form.controls.subject.errors?.['minlength']) {
                   <span class="text-red-400 text-xs mt-1 block">
                     Le sujet doit contenir au moins 3 caractères
                   </span>
@@ -299,10 +302,9 @@ type ContactFormGroup = {
                   class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-none"
                   placeholder="Décrivez votre projet ou votre question..."
                 ></textarea>
-                @if (form.controls.message.touched && form.controls.message.hasError('required')) {
+                @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
                   <span class="text-red-400 text-xs mt-1 block">Le message est obligatoire</span>
-                }
-                @if (form.controls.message.touched && form.controls.message.hasError('minlength')) {
+                } @else if (form.controls.message.touched && form.controls.message.errors?.['minlength']) {
                   <span class="text-red-400 text-xs mt-1 block">
                     Le message doit contenir au moins 10 caractères
                   </span>
@@ -334,8 +336,12 @@ type ContactFormGroup = {
 })
 export class ContactForm {
   private readonly contactGateway = inject(CONTACT_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private readonly contactInfoResource = this.contactGateway.getContactInfo();
+  private readonly contactInfoResource = rxResource({
+    stream: () => this.contactGateway.getContactInfo(),
+  });
   protected readonly contactInfo = computed(() => this.contactInfoResource.value());
 
   protected readonly socialLinks = toSignal(this.contactGateway.getSocialLinks(), {
@@ -349,8 +355,6 @@ export class ContactForm {
   });
 
   readonly isSubmitting = signal(false);
-  readonly successMessage = signal('');
-  readonly serverError = signal('');
 
   readonly form = new FormGroup<ContactFormGroup>({
     name: new FormControl('', {
@@ -378,22 +382,19 @@ export class ContactForm {
     }
 
     this.isSubmitting.set(true);
-    this.successMessage.set('');
-    this.serverError.set('');
 
-    this.contactGateway.submitContactForm(this.form.getRawValue()).subscribe({
+    this.contactGateway.submitContactForm(this.form.getRawValue()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (result) => {
         this.isSubmitting.set(false);
         if (result.success) {
-          this.successMessage.set(result.message);
+          this.toast.success(result.message);
           this.form.reset();
         } else {
-          this.serverError.set(result.message);
+          this.toast.error(result.message);
         }
       },
       error: () => {
         this.isSubmitting.set(false);
-        this.serverError.set('Une erreur est survenue. Veuillez réessayer.');
       },
     });
   }

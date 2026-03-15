@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, input, output, signal } from '@angular/core';
 import type { Booking, DisabledDate } from '../domain';
-import { getFrenchHolidays, getUnavailableReason } from '../../../shared/calendar/french-holidays';
+import { getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
 
 type CalendarDay = {
   readonly date: string;
@@ -31,7 +31,7 @@ type CalendarDay = {
             <use href="/icons/sprite.svg#lucide-chevron-left" />
           </svg>
         </button>
-        <h3 class="text-lg font-bold text-foreground">{{ monthLabel() }}</h3>
+        <h2 class="text-lg font-bold text-foreground">{{ monthLabel() }}</h2>
         <button
           (click)="nextMonth()"
           class="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center hover:border-primary/50 hover:text-primary transition-colors"

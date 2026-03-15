@@ -1,7 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { PROFILE_GATEWAY } from '../../profile/domain';
-import type { Highlight } from '../../profile/domain';
+import { PROFILE_GATEWAY } from '@features/profile/application';
+import type { Highlight } from '@features/profile/domain';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-admin-highlights',
@@ -24,9 +26,9 @@ import type { Highlight } from '../../profile/domain';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
-              <th class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -68,17 +70,22 @@ import type { Highlight } from '../../profile/domain';
 })
 export class AdminHighlights {
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  readonly highlights = signal<readonly Highlight[]>([]);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  constructor() {
-    this.loadHighlights();
-  }
+  private readonly highlightsRes = rxResource({
+    stream: () => this.profileGateway.getHighlights(),
+  });
+
+  readonly highlights = (): readonly Highlight[] => this.highlightsRes.value() ?? [];
 
   deleteHighlight(highlight: Highlight): void {
-    this.profileGateway.deleteHighlight(highlight.id).subscribe(() => this.loadHighlights());
-  }
-
-  private loadHighlights(): void {
-    this.profileGateway.getHighlights().subscribe((data) => this.highlights.set(data));
+    this.profileGateway.deleteHighlight(highlight.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.highlightsRes.reload();
+        this.toast.success('Point fort supprimé');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 }

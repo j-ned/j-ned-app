@@ -1,7 +1,7 @@
 import { Component, input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import type { Project } from '../../domain';
-import { TrackingService } from '../../../../shared/tracking/tracking.service';
+import { AnalyticsService } from '@shared/analytics';
 
 @Component({
   selector: 'app-project-card',
@@ -10,7 +10,7 @@ import { TrackingService } from '../../../../shared/tracking/tracking.service';
   host: { class: 'block' },
   template: `
     <article
-      class="group relative bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full shadow-lg"
+      class="group relative bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition-all duration-300 flex flex-col h-full shadow-sm"
     >
       <figure class="block aspect-video w-full overflow-hidden relative">
         @if (project().image) {
@@ -19,7 +19,7 @@ import { TrackingService } from '../../../../shared/tracking/tracking.service';
             [alt]="project().title"
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            class="object-cover group-hover:scale-105 transition-transform duration-500"
+            class="object-cover group-hover:scale-[1.02] transition-transform duration-500"
           />
         } @else {
           <div
@@ -30,7 +30,7 @@ import { TrackingService } from '../../../../shared/tracking/tracking.service';
         }
 
         <div
-          class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-300"
+          class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"
         ></div>
       </figure>
 
@@ -133,11 +133,11 @@ import { TrackingService } from '../../../../shared/tracking/tracking.service';
   `,
 })
 export class ProjectCard {
-  private readonly tracking = inject(TrackingService);
+  private readonly analytics = inject(AnalyticsService);
 
   project = input.required<Project>();
 
   trackClick(): void {
-    this.tracking.trackProjectClick(this.project().id, this.project().title);
+    this.analytics.trackProjectClick(this.project().id, this.project().title);
   }
 }

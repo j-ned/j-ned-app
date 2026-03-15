@@ -1,7 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from '../domain';
+import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
   selector: 'app-about-stack',
@@ -13,7 +13,7 @@ import { PROFILE_GATEWAY } from '../domain';
   },
   template: `
     <header class="flex items-center gap-2 mb-6">
-      <svg class="w-6 h-6 text-primary">
+      <svg aria-hidden="true" class="w-6 h-6 text-primary">
         <use href="/icons/sprite.svg#lucide-code-xml"></use>
       </svg>
       <h2 class="font-bold text-xl text-foreground">Stack Technique</h2>

@@ -1,4 +1,3 @@
-import type { ResourceRef } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type {
   ProfileInfo,
@@ -12,8 +11,8 @@ import type {
 } from '../models';
 
 export type ProfileGateway = {
-  getProfileInfo(): ResourceRef<ProfileInfo>;
-  getBiography(): ResourceRef<Biography>;
+  getProfileInfo(): Observable<ProfileInfo>;
+  getBiography(): Observable<Biography>;
   getSocialButtons(): Observable<readonly SocialButton[]>;
   getDiplomas(): Observable<readonly Diploma[]>;
   getTechnologies(): Observable<readonly Technology[]>;
@@ -31,30 +30,28 @@ export type ProfileGateway = {
   getWhatISeekForEdit(): Observable<WhatISeek>;
   updateWhatISeek(data: Partial<WhatISeek>): Observable<WhatISeek>;
 
-  getSocialButtonById(id: number): Observable<SocialButton>;
+  getSocialButtonById(id: string): Observable<SocialButton>;
   createSocialButton(data: Omit<SocialButton, 'id'>): Observable<SocialButton>;
-  updateSocialButton(id: number, data: Partial<SocialButton>): Observable<SocialButton>;
-  deleteSocialButton(id: number): Observable<void>;
+  updateSocialButton(id: string, data: Partial<SocialButton>): Observable<SocialButton>;
+  deleteSocialButton(id: string): Observable<void>;
 
-  getDiplomaById(id: number): Observable<Diploma>;
+  getDiplomaById(id: string): Observable<Diploma>;
   createDiploma(data: Omit<Diploma, 'id'>): Observable<Diploma>;
-  updateDiploma(id: number, data: Partial<Diploma>): Observable<Diploma>;
-  deleteDiploma(id: number): Observable<void>;
+  updateDiploma(id: string, data: Partial<Diploma>): Observable<Diploma>;
+  deleteDiploma(id: string): Observable<void>;
 
-  getTechnologyById(id: number): Observable<Technology>;
+  getTechnologyById(id: string): Observable<Technology>;
   createTechnology(data: Omit<Technology, 'id'>): Observable<Technology>;
-  updateTechnology(id: number, data: Partial<Technology>): Observable<Technology>;
-  deleteTechnology(id: number): Observable<void>;
+  updateTechnology(id: string, data: Partial<Technology>): Observable<Technology>;
+  deleteTechnology(id: string): Observable<void>;
 
-  getHighlightById(id: number): Observable<Highlight>;
+  getHighlightById(id: string): Observable<Highlight>;
   createHighlight(data: Omit<Highlight, 'id'>): Observable<Highlight>;
-  updateHighlight(id: number, data: Partial<Highlight>): Observable<Highlight>;
-  deleteHighlight(id: number): Observable<void>;
+  updateHighlight(id: string, data: Partial<Highlight>): Observable<Highlight>;
+  deleteHighlight(id: string): Observable<void>;
 
-  getWhatIDoById(id: number): Observable<WhatIDo>;
+  getWhatIDoById(id: string): Observable<WhatIDo>;
   createWhatIDo(data: Omit<WhatIDo, 'id'>): Observable<WhatIDo>;
-  updateWhatIDo(id: number, data: Partial<WhatIDo>): Observable<WhatIDo>;
-  deleteWhatIDo(id: number): Observable<void>;
+  updateWhatIDo(id: string, data: Partial<WhatIDo>): Observable<WhatIDo>;
+  deleteWhatIDo(id: string): Observable<void>;
 };
-
-export { PROFILE_GATEWAY } from './profile.gateway.token';

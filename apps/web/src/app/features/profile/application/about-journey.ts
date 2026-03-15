@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
-import { PROFILE_GATEWAY } from '../domain';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
   selector: 'app-about-journey',
@@ -9,7 +10,7 @@ import { PROFILE_GATEWAY } from '../domain';
     @if (biography()) {
       <section>
         <header class="flex items-center gap-2 mb-4">
-          <svg class="w-6 h-6 text-primary">
+          <svg aria-hidden="true" class="w-6 h-6 text-primary">
             <use href="/icons/sprite.svg#lucide-user"></use>
           </svg>
           <h2 class="text-2xl font-bold text-foreground">{{ biography()!.title }}</h2>
@@ -24,7 +25,9 @@ import { PROFILE_GATEWAY } from '../domain';
   `,
 })
 export class AboutJourney {
-  private profileGateway = inject(PROFILE_GATEWAY);
-  private biographyResource = this.profileGateway.getBiography();
+  private readonly profileGateway = inject(PROFILE_GATEWAY);
+  private readonly biographyResource = rxResource({
+    stream: () => this.profileGateway.getBiography(),
+  });
   protected readonly biography = computed(() => this.biographyResource.value());
 }

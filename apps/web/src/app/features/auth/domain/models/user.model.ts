@@ -3,4 +3,5 @@ export type User = {
   readonly email: string;
   readonly displayName: string;
   readonly role: string;
+  readonly isTwoFactorEnabled: boolean;
 };

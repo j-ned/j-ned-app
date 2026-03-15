@@ -1,9 +1,11 @@
-import { Component, ChangeDetectionStrategy, inject, signal, viewChild } from '@angular/core';
-import { BOOKING_GATEWAY } from '../domain';
+import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BOOKING_GATEWAY } from './tokens';
 import type { Booking as BookingModel, BookingFormData, DisabledDate } from '../domain/models';
 import { BookingCalendar } from './booking-calendar';
 import { BookingTimePicker } from './booking-time-picker';
 import { BookingForm, type BookingFormPayload } from './booking-form';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-booking',
@@ -13,17 +15,28 @@ import { BookingForm, type BookingFormPayload } from './booking-form';
   template: `
     <main class="min-h-screen pt-20 pb-16">
       <section class="container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <header class="mb-12 text-center">
-          <h1 class="text-4xl md:text-6xl font-bold mb-6 text-foreground">Réservation</h1>
-          <p class="text-xl text-muted max-w-2xl mx-auto leading-relaxed">
+        <header class="text-center mb-14">
+          <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5">
+            <svg aria-hidden="true" class="w-4 h-4">
+              <use href="/icons/sprite.svg#lucide-calendar"></use>
+            </svg>
+            Rendez-vous
+          </span>
+          <h1
+            class="text-4xl md:text-6xl font-extrabold tracking-tight mb-5"
+            style="background: linear-gradient(135deg, var(--color-foreground) 40%, var(--color-primary) 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"
+          >
+            Réservation
+          </h1>
+          <p class="text-muted max-w-xl mx-auto text-base md:text-lg leading-relaxed">
             Choisissez un créneau qui vous convient pour un entretien téléphonique ou une discussion
             pour un projet.
           </p>
         </header>
 
         @defer (on viewport) {
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto items-stretch">
-            <div class="flex flex-col gap-6">
+          <div class="max-w-5xl mx-auto space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
               <app-booking-calendar
                 [bookedSlots]="bookedSlots()"
                 [disabledDates]="disabledDates()"
@@ -32,41 +45,36 @@ import { BookingForm, type BookingFormPayload } from './booking-form';
 
               @if (selectedDate()) {
                 <app-booking-time-picker
-                  class="flex-1"
                   [date]="selectedDate()!"
                   [bookedSlots]="bookedSlots()"
                   (slotSelected)="onSlotSelected($event)"
                 />
-              }
-            </div>
-
-            <div class="flex flex-col">
-              @if (selectedDate() && selectedSlot()) {
-                <app-booking-form
-                  class="flex-1"
-                  [selectedDate]="selectedDate()!"
-                  [selectedTime]="selectedSlot()!.time"
-                  [selectedDuration]="selectedSlot()!.duration"
-                  (formSubmitted)="onFormSubmitted($event)"
-                />
               } @else {
                 <div
-                  class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-8 shadow-lg flex flex-col items-center justify-center flex-1 text-center"
+                  class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-8 shadow-lg flex flex-col items-center justify-center h-full text-center"
                 >
                   <svg class="w-16 h-16 text-muted/30 mb-4" aria-hidden="true">
                     <use href="/icons/sprite.svg#lucide-calendar" />
                   </svg>
-                  <p class="text-muted text-lg font-medium mb-2">Sélectionnez un créneau</p>
+                  <p class="text-muted text-lg font-medium mb-2">Sélectionnez une date</p>
                   <p class="text-muted/60 text-sm max-w-xs">
-                    Choisissez une date dans le calendrier puis un horaire pour accéder au
-                    formulaire de réservation.
+                    Choisissez une date dans le calendrier pour voir les créneaux disponibles.
                   </p>
                 </div>
               }
             </div>
+
+            @if (selectedDate() && selectedSlot()) {
+              <app-booking-form
+                [selectedDate]="selectedDate()!"
+                [selectedTime]="selectedSlot()!.time"
+                [selectedDuration]="selectedSlot()!.duration"
+                (formSubmitted)="onFormSubmitted($event)"
+              />
+            }
           </div>
         } @placeholder {
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto items-stretch">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
             <div
               class="h-96 bg-background/50 border border-foreground/10 rounded-2xl animate-pulse"
             ></div>
@@ -81,6 +89,8 @@ import { BookingForm, type BookingFormPayload } from './booking-form';
 })
 export class Booking {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly bookingFormRef = viewChild(BookingForm);
   private readonly calendarRef = viewChild(BookingCalendar);
 
@@ -116,7 +126,6 @@ export class Booking {
     const slot = this.selectedSlot();
     if (!date || !slot) return;
 
-    formRef.clearMessages();
     formRef.setSubmitting(true);
 
     const data: BookingFormData = {
@@ -126,35 +135,35 @@ export class Booking {
       ...payload,
     };
 
-    this.bookingGateway.submitBooking(data).subscribe({
+    this.bookingGateway.submitBooking(data).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (result) => {
         formRef.setSubmitting(false);
         if (result.success) {
-          formRef.setSuccess(result.message);
+          this.toast.success(result.message);
           this.selectedDate.set(null);
           this.selectedSlot.set(null);
+          formRef.resetForm();
           const calendarMonth =
             this.calendarRef()?.currentMonthString() ?? new Date().toISOString().substring(0, 7);
           this.loadBookedSlots(calendarMonth);
         } else {
-          formRef.setError(result.message);
+          this.toast.error(result.message);
         }
       },
       error: () => {
         formRef.setSubmitting(false);
-        formRef.setError('Une erreur est survenue. Veuillez réessayer.');
       },
     });
   }
 
   private loadBookedSlots(month: string): void {
-    this.bookingGateway.getBookedSlots(month).subscribe((slots) => {
+    this.bookingGateway.getBookedSlots(month).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((slots) => {
       this.bookedSlots.set(slots);
     });
   }
 
   private loadDisabledDates(): void {
-    this.bookingGateway.getDisabledDates().subscribe((dates) => {
+    this.bookingGateway.getDisabledDates().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((dates) => {
       this.disabledDates.set(dates);
     });
   }

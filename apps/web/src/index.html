@@ -53,24 +53,16 @@
     <!-- Security Headers (CSP via meta tag — configure also via HTTP headers on Traefik/Dokploy for frame-ancestors + HSTS) -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://umami.nedellec-julien.fr; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://www.julien-nedellec.fr https://tnsinlwzvcacdhupxyfi.supabase.co; connect-src 'self' https://tnsinlwzvcacdhupxyfi.supabase.co https://umami.nedellec-julien.fr; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self';"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: http://localhost:3000 https://www.julien-nedellec.fr https://tnsinlwzvcacdhupxyfi.supabase.co https://garage-s3.j-ned.dev; connect-src 'self' http://localhost:3000 https://tnsinlwzvcacdhupxyfi.supabase.co; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self';"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <!-- Preconnect hints -->
-    <link rel="preconnect" href="https://tnsinlwzvcacdhupxyfi.supabase.co" crossorigin />
-    <link rel="dns-prefetch" href="https://tnsinlwzvcacdhupxyfi.supabase.co" />
-    <link rel="preconnect" href="https://umami.nedellec-julien.fr" crossorigin />
+    <link rel="preconnect" href="https://garage-s3.j-ned.dev" crossorigin />
+    <link rel="dns-prefetch" href="https://garage-s3.j-ned.dev" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x48" />
-
-    <!-- Umami Analytics -->
-    <script
-      defer
-      src="https://umami.nedellec-julien.fr/script.js"
-      data-website-id="350c6c10-e7f6-45e3-b6a5-1be413435f3a"
-    ></script>
   </head>
   <body>
     <app-root></app-root>

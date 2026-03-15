@@ -1,7 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { PROFILE_GATEWAY } from '../../profile/domain';
-import type { Diploma } from '../../profile/domain';
+import { PROFILE_GATEWAY } from '@features/profile/application';
+import type { Diploma } from '@features/profile/domain';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-admin-diplomas',
@@ -24,9 +26,9 @@ import type { Diploma } from '../../profile/domain';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Organisme</th>
-              <th class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Titre</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Organisme</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -66,17 +68,22 @@ import type { Diploma } from '../../profile/domain';
 })
 export class AdminDiplomas {
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  readonly diplomas = signal<readonly Diploma[]>([]);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  constructor() {
-    this.loadDiplomas();
-  }
+  private readonly diplomasRes = rxResource({
+    stream: () => this.profileGateway.getDiplomas(),
+  });
+
+  readonly diplomas = (): readonly Diploma[] => this.diplomasRes.value() ?? [];
 
   deleteDiploma(diploma: Diploma): void {
-    this.profileGateway.deleteDiploma(diploma.id).subscribe(() => this.loadDiplomas());
-  }
-
-  private loadDiplomas(): void {
-    this.profileGateway.getDiplomas().subscribe((data) => this.diplomas.set(data));
+    this.profileGateway.deleteDiploma(diploma.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.diplomasRes.reload();
+        this.toast.success('Diplôme supprimé');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 }

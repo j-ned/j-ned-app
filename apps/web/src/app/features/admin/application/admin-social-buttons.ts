@@ -1,7 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { PROFILE_GATEWAY } from '../../profile/domain';
-import type { SocialButton } from '../../profile/domain';
+import { PROFILE_GATEWAY } from '@features/profile/application';
+import type { SocialButton } from '@features/profile/domain';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-admin-social-buttons',
@@ -24,10 +26,10 @@ import type { SocialButton } from '../../profile/domain';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Label</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Lien</th>
-              <th class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Label</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Lien</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -68,17 +70,22 @@ import type { SocialButton } from '../../profile/domain';
 })
 export class AdminSocialButtons {
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  readonly buttons = signal<readonly SocialButton[]>([]);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  constructor() {
-    this.loadButtons();
-  }
+  private readonly buttonsRes = rxResource({
+    stream: () => this.profileGateway.getSocialButtons(),
+  });
+
+  readonly buttons = (): readonly SocialButton[] => this.buttonsRes.value() ?? [];
 
   deleteButton(btn: SocialButton): void {
-    this.profileGateway.deleteSocialButton(btn.id).subscribe(() => this.loadButtons());
-  }
-
-  private loadButtons(): void {
-    this.profileGateway.getSocialButtons().subscribe((data) => this.buttons.set(data));
+    this.profileGateway.deleteSocialButton(btn.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.buttonsRes.reload();
+        this.toast.success('Réseau social supprimé');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 }

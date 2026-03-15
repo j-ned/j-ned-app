@@ -1,7 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-page-not-found',
+  imports: [RouterLink],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <main
@@ -14,13 +17,12 @@ import { Component } from '@angular/core';
         Retournez à l'accueil ou explorez d'autres sections du site.
       </p>
       <a
-        href="/"
+        routerLink="/"
         class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-bg text-white font-semibold shadow hover:bg-primary-bg/90 transition-colors"
       >
         Retour à l'accueil
       </a>
     </main>
   `,
-  styles: [],
 })
 export class PageNotFound {}

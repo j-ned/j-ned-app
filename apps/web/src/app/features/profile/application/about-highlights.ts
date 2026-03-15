@@ -1,6 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from '../domain';
+import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
   selector: 'app-about-highlights',
@@ -9,7 +9,7 @@ import { PROFILE_GATEWAY } from '../domain';
   template: `
     <section>
       <header class="flex items-center gap-2 mb-5">
-        <svg class="w-6 h-6 text-primary">
+        <svg aria-hidden="true" class="w-6 h-6 text-primary">
           <use href="/icons/sprite.svg#lucide-sparkles"></use>
         </svg>
         <h2 class="text-2xl font-bold text-foreground">Ce qui me caractérise</h2>
@@ -22,7 +22,7 @@ import { PROFILE_GATEWAY } from '../domain';
             <div
               class="w-10 h-10 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
             >
-              <svg class="w-6 h-6 text-accent">
+              <svg aria-hidden="true" class="w-6 h-6 text-accent">
                 <use [attr.href]="'/icons/sprite.svg#' + highlight.icon"></use>
               </svg>
             </div>

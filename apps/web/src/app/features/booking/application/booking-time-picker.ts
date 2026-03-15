@@ -14,12 +14,12 @@ type SlotSelection = {
     <div
       class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-lg h-full"
     >
-      <h3 class="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+      <h2 class="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
         <svg class="w-5 h-5 text-primary" aria-hidden="true">
           <use href="/icons/sprite.svg#lucide-clock" />
         </svg>
         Choisissez un créneau
-      </h3>
+      </h2>
 
       <fieldset class="flex gap-2 mb-6 border-0 p-0 m-0">
         <legend class="sr-only">Durée</legend>

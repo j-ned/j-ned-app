@@ -1,13 +1,7 @@
-import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
-import { PROJECTS_GATEWAY } from '../gateways';
 import type { Project } from '../models';
+import type { ProjectsGateway } from '../gateways';
 
-@Injectable({ providedIn: 'root' })
-export class GetFeaturedProjectsUseCase {
-  private gateway = inject(PROJECTS_GATEWAY);
-
-  execute(): Observable<readonly Project[]> {
-    return this.gateway.getFeaturedProjects();
-  }
+export function getFeaturedProjects(gateway: ProjectsGateway): Observable<readonly Project[]> {
+  return gateway.getFeaturedProjects();
 }

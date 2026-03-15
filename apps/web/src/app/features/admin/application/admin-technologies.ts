@@ -1,7 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { PROFILE_GATEWAY } from '../../profile/domain';
-import type { Technology } from '../../profile/domain';
+import { PROFILE_GATEWAY } from '@features/profile/application';
+import type { Technology } from '@features/profile/domain';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-admin-technologies',
@@ -24,10 +26,10 @@ import type { Technology } from '../../profile/domain';
         <table class="w-full">
           <thead>
             <tr class="border-b border-foreground/10">
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Nom</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Catégorie</th>
-              <th class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
-              <th class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Nom</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Catégorie</th>
+              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
+              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -68,17 +70,22 @@ import type { Technology } from '../../profile/domain';
 })
 export class AdminTechnologies {
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  readonly technologies = signal<readonly Technology[]>([]);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  constructor() {
-    this.loadTechnologies();
-  }
+  private readonly technologiesRes = rxResource({
+    stream: () => this.profileGateway.getTechnologies(),
+  });
+
+  readonly technologies = (): readonly Technology[] => this.technologiesRes.value() ?? [];
 
   deleteTechnology(tech: Technology): void {
-    this.profileGateway.deleteTechnology(tech.id).subscribe(() => this.loadTechnologies());
-  }
-
-  private loadTechnologies(): void {
-    this.profileGateway.getTechnologies().subscribe((data) => this.technologies.set(data));
+    this.profileGateway.deleteTechnology(tech.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.technologiesRes.reload();
+        this.toast.success('Technologie supprimée');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 }

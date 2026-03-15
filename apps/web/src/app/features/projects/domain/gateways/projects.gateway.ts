@@ -1,9 +1,8 @@
-import type { ResourceRef } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type { Project, ProjectFilter } from '../models';
 
 export type ProjectsGateway = {
-  getAllProjects(): ResourceRef<readonly Project[]>;
+  getAllProjects(): Observable<readonly Project[]>;
   getFeaturedProjects(): Observable<readonly Project[]>;
   getCategories(): Observable<readonly string[]>;
   filterProjects(filter: ProjectFilter): Observable<readonly Project[]>;
@@ -13,5 +12,3 @@ export type ProjectsGateway = {
   deleteProject(id: string): Observable<void>;
   uploadImage(file: File, projectSlug: string): Observable<string>;
 };
-
-export { PROJECTS_GATEWAY } from './projects.gateway.token';

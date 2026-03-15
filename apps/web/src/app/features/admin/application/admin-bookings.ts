@@ -1,6 +1,8 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { BOOKING_GATEWAY } from '../../booking/domain';
-import type { Booking } from '../../booking/domain';
+import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
+import { BOOKING_GATEWAY } from '@features/booking/application';
+import type { Booking } from '@features/booking/domain';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-admin-bookings',
@@ -46,18 +48,22 @@ import type { Booking } from '../../booking/domain';
 })
 export class AdminBookings {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly bookings = signal<readonly Booking[]>([]);
+  private readonly bookingsRes = rxResource({
+    stream: () => this.bookingGateway.getAllBookings(),
+  });
 
-  constructor() {
-    this.loadBookings();
-  }
+  readonly bookings = (): readonly Booking[] => this.bookingsRes.value() ?? [];
 
   deleteBooking(booking: Booking): void {
-    this.bookingGateway.deleteBooking(booking.id).subscribe(() => this.loadBookings());
-  }
-
-  private loadBookings(): void {
-    this.bookingGateway.getAllBookings().subscribe((bookings) => this.bookings.set(bookings));
+    this.bookingGateway.deleteBooking(booking.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.bookingsRes.reload();
+        this.toast.success('Réservation supprimée');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 }

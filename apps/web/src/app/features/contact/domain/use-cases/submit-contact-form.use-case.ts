@@ -1,22 +1,18 @@
-import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
-import { CONTACT_GATEWAY } from '../gateways';
+import type { ContactGateway } from '../gateways';
 import type { ContactFormData, ContactFormSubmission } from '../models';
 
-@Injectable()
-export class SubmitContactFormUseCase {
-  private gateway = inject(CONTACT_GATEWAY);
+export function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
 
-  execute(data: ContactFormData): Observable<ContactFormSubmission> {
-    if (!this.isValidEmail(data.email)) {
-      throw new Error('Invalid email format');
-    }
-
-    return this.gateway.submitContactForm(data);
+export function submitContactForm(
+  gateway: ContactGateway,
+  data: ContactFormData,
+): Observable<ContactFormSubmission> {
+  if (!isValidEmail(data.email)) {
+    throw new Error('Invalid email format');
   }
-
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
+  return gateway.submitContactForm(data);
 }

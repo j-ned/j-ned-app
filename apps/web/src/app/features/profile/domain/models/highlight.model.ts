@@ -1,5 +1,5 @@
 export type Highlight = {
-  readonly id: number;
+  readonly id: string;
   readonly title: string;
   readonly description: string;
   readonly icon: string;

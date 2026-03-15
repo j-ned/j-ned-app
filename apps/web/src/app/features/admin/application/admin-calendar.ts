@@ -1,8 +1,10 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { BOOKING_GATEWAY } from '../../booking/domain';
-import type { Booking, DisabledDate } from '../../booking/domain';
-import { getFrenchHolidays, getUnavailableReason } from '../../../shared/calendar/french-holidays';
+import { BOOKING_GATEWAY } from '@features/booking/application';
+import type { Booking, DisabledDate } from '@features/booking/domain';
+import { getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
+import { ToastService } from '@shared/toast';
 
 type CalendarDay = {
   readonly date: string;
@@ -34,18 +36,18 @@ type CalendarDay = {
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-foreground/10">
-                <th class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">Date</th>
-                <th class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">
+                <th scope="col" class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">Date</th>
+                <th scope="col" class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">
                   Horaire
                 </th>
-                <th class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">Nom</th>
-                <th class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">
+                <th scope="col" class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">Nom</th>
+                <th scope="col" class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">
                   Email
                 </th>
-                <th class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">
+                <th scope="col" class="text-left py-3 px-3 text-xs font-semibold text-muted uppercase">
                   Sujet
                 </th>
-                <th class="text-right py-3 px-3 text-xs font-semibold text-muted uppercase"></th>
+                <th scope="col" class="text-right py-3 px-3 text-xs font-semibold text-muted uppercase"></th>
               </tr>
             </thead>
             <tbody>
@@ -239,7 +241,7 @@ type CalendarDay = {
                 <button
                   (click)="removeDate(dd)"
                   class="shrink-0 text-red-400 hover:text-red-300 transition-colors"
-                  title="Supprimer"
+                  aria-label="Supprimer"
                 >
                   <svg class="w-4 h-4" aria-hidden="true">
                     <use href="/icons/sprite.svg#lucide-x" />
@@ -257,6 +259,8 @@ type CalendarDay = {
 })
 export class AdminCalendar {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly bookings = signal<readonly Booking[]>([]);
   readonly disabledDates = signal<readonly DisabledDate[]>([]);
@@ -372,9 +376,13 @@ export class AdminCalendar {
       reason: this.reasonInput || undefined,
     };
 
-    this.bookingGateway.addDisabledDate(payload).subscribe(() => {
-      this.reasonInput = '';
-      this.loadDates();
+    this.bookingGateway.addDisabledDate(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.reasonInput = '';
+        this.loadDates();
+        this.toast.success('Date désactivée');
+      },
+      error: () => this.toast.error('Erreur lors de la désactivation'),
     });
   }
 
@@ -385,15 +393,33 @@ export class AdminCalendar {
     const dd = this.disabledDateSet().get(date);
     if (!dd) return;
 
-    this.bookingGateway.removeDisabledDate(dd.id).subscribe(() => this.loadDates());
+    this.bookingGateway.removeDisabledDate(dd.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.loadDates();
+        this.toast.success('Date réactivée');
+      },
+      error: () => this.toast.error('Erreur lors de la réactivation'),
+    });
   }
 
   removeDate(dd: DisabledDate): void {
-    this.bookingGateway.removeDisabledDate(dd.id).subscribe(() => this.loadDates());
+    this.bookingGateway.removeDisabledDate(dd.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.loadDates();
+        this.toast.success('Date supprimée');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 
   deleteBooking(booking: Booking): void {
-    this.bookingGateway.deleteBooking(booking.id).subscribe(() => this.loadBookings());
+    this.bookingGateway.deleteBooking(booking.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.loadBookings();
+        this.toast.success('Réservation supprimée');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression'),
+    });
   }
 
   formatDate(dateStr: string): string {
@@ -436,10 +462,10 @@ export class AdminCalendar {
   }
 
   private loadBookings(): void {
-    this.bookingGateway.getAllBookings().subscribe((bookings) => this.bookings.set(bookings));
+    this.bookingGateway.getAllBookings().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((bookings) => this.bookings.set(bookings));
   }
 
   private loadDates(): void {
-    this.bookingGateway.getDisabledDates().subscribe((dates) => this.disabledDates.set(dates));
+    this.bookingGateway.getDisabledDates().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((dates) => this.disabledDates.set(dates));
   }
 }

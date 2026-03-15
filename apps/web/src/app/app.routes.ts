@@ -1,11 +1,13 @@
-import { Routes } from '@angular/router';
-import { authGuard } from './features/auth/domain';
+import type { Routes } from '@angular/router';
+import { authGuard } from '@features/auth/infrastructure';
+import { Home } from '@features/home/application/home';
 
 export const routes: Routes = [
   {
     path: '',
+    pathMatch: 'full',
     title: 'Accueil | Julien Nédellec',
-    loadComponent: () => import('./features/home/application/home').then((m) => m.Home),
+    component: Home,
     data: {
       seo: {
         title: 'Julien Nédellec | Développeur Full-Stack Angular & NestJS',
@@ -42,6 +44,7 @@ export const routes: Routes = [
     title: 'À propos | Julien Nédellec',
     loadComponent: () => import('./features/profile/application/about').then((m) => m.About),
     data: {
+      preload: true,
       seo: {
         title: 'À propos | Julien Nédellec - Développeur Full-Stack',
         description:
@@ -58,6 +61,7 @@ export const routes: Routes = [
     title: 'Projets | Julien Nédellec',
     loadComponent: () => import('./features/projects/application/projects').then((m) => m.Projects),
     data: {
+      preload: true,
       seo: {
         title: 'Projets | Julien Nédellec - Portfolio Développeur Full-Stack',
         description:
@@ -74,6 +78,7 @@ export const routes: Routes = [
     title: 'Contact | Julien Nédellec',
     loadComponent: () => import('./features/contact/application/contact').then((m) => m.Contact),
     data: {
+      preload: true,
       seo: {
         title: 'Contact | Julien Nédellec - Développeur Full-Stack',
         description:
@@ -90,6 +95,7 @@ export const routes: Routes = [
     title: 'Réservation | Julien Nédellec',
     loadComponent: () => import('./features/booking/application/booking').then((m) => m.Booking),
     data: {
+      preload: true,
       seo: {
         title: 'Réservation de consultation - Julien Nédellec',
         description: 'Réservez un créneau pour un appel de découverte ou une consultation projet.',
@@ -104,6 +110,7 @@ export const routes: Routes = [
     title: 'Blog | Julien Nédellec',
     loadComponent: () => import('./features/blog/application/blog-list').then((m) => m.BlogList),
     data: {
+      preload: true,
       seo: {
         title: 'Blog | Julien Nédellec - Développeur Full-Stack',
         description:
@@ -124,6 +131,12 @@ export const routes: Routes = [
     path: 'login',
     title: 'Connexion | Julien Nédellec',
     loadComponent: () => import('./features/auth/application/login').then((m) => m.Login),
+  },
+  {
+    path: 'two-factor',
+    title: 'Vérification 2FA | Julien Nédellec',
+    loadComponent: () =>
+      import('./features/auth/application/two-factor-verify').then((m) => m.TwoFactorVerify),
   },
   {
     path: 'admin',

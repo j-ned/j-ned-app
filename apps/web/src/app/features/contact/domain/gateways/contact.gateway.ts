@@ -1,4 +1,3 @@
-import type { ResourceRef } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type {
   ContactInfo,
@@ -9,7 +8,7 @@ import type {
 } from '../models';
 
 export type ContactGateway = {
-  getContactInfo(): ResourceRef<ContactInfo>;
+  getContactInfo(): Observable<ContactInfo>;
   getSocialLinks(): Observable<SocialLinks>;
 
   submitContactForm(data: ContactFormData): Observable<ContactFormSubmission>;
@@ -19,5 +18,3 @@ export type ContactGateway = {
   deleteMessage(id: number): Observable<void>;
   getUnreadCount(): Observable<number>;
 };
-
-export { CONTACT_GATEWAY } from './contact.gateway.token';

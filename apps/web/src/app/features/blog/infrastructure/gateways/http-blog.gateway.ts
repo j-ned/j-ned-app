@@ -3,103 +3,113 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import type { BlogGateway } from '../../domain';
 import type { Article, Comment } from '../../domain';
-import { API_BASE_URL } from '../../../../shared/api/api-config';
+import { API_BASE_URL } from '@shared/api';
+
+function resolveImageUrl(apiUrl: string, image: string): string {
+  if (!image) return '';
+  if (image.startsWith('http')) return image;
+  return `${apiUrl}/images/blog/${image}`;
+}
+
+function resolveArticle(apiUrl: string, a: Article): Article {
+  return { ...a, image: resolveImageUrl(apiUrl, a.image) };
+}
 
 @Injectable()
 export class HttpBlogGateway implements BlogGateway {
   private readonly http = inject(HttpClient);
+  private readonly apiUrl = inject(API_BASE_URL);
 
   getAllArticles(): Observable<readonly Article[]> {
     return this.http
-      .get<readonly Article[]>(`${API_BASE_URL}/articles?_sort=-date`)
-      .pipe(catchError(() => of([])));
+      .get<readonly Article[]>(`${this.apiUrl}/articles?_sort=-date`)
+      .pipe(
+        map((articles) => articles.map((a) => resolveArticle(this.apiUrl, a as Article))),
+        catchError(() => of([])),
+      );
   }
 
-  getArticleById(id: number): Observable<Article> {
+  getArticleById(id: string): Observable<Article> {
     return this.http
-      .get<Article[]>(`${API_BASE_URL}/articles?id=${id}`)
+      .get<Article[]>(`${this.apiUrl}/articles?id=${id}`)
       .pipe(
         switchMap((data) =>
-          data.length > 0 ? of(data[0]) : throwError(() => new Error('Article not found')),
+          data.length > 0
+            ? of(resolveArticle(this.apiUrl, data[0]))
+            : throwError(() => new Error('Article not found')),
         ),
       );
   }
 
   getAllComments(): Observable<readonly Comment[]> {
     return this.http
-      .get<readonly Comment[]>(`${API_BASE_URL}/comments`)
+      .get<readonly Comment[]>(`${this.apiUrl}/comments`)
       .pipe(catchError(() => of([])));
   }
 
-  getCommentsByArticle(articleId: number): Observable<readonly Comment[]> {
+  getCommentsByArticle(articleId: string): Observable<readonly Comment[]> {
     return this.http
-      .get<readonly Comment[]>(`${API_BASE_URL}/comments?idArticle=${articleId}`)
+      .get<readonly Comment[]>(`${this.apiUrl}/comments?idArticle=${articleId}`)
       .pipe(catchError(() => of([])));
   }
 
   createArticle(article: Omit<Article, 'id'>): Observable<Article> {
-    return this.http.post<Article>(`${API_BASE_URL}/articles`, article);
+    return this.http.post<Article>(`${this.apiUrl}/articles`, article);
   }
 
-  updateArticle(id: number, article: Partial<Article>): Observable<Article> {
-    return this.http.get<Article[]>(`${API_BASE_URL}/articles?id=${id}`).pipe(
-      switchMap((data) => {
-        if (data.length === 0) return throwError(() => new Error('Article not found'));
-        return this.http.patch<Article>(`${API_BASE_URL}/articles/${data[0].id}`, article);
-      }),
-    );
+  updateArticle(id: string, article: Partial<Article>): Observable<Article> {
+    return this.http.patch<Article>(`${this.apiUrl}/articles/${id}`, article);
   }
 
-  deleteArticle(id: number): Observable<void> {
-    return this.http.get<Article[]>(`${API_BASE_URL}/articles?id=${id}`).pipe(
-      switchMap((data) => {
-        if (data.length === 0) return throwError(() => new Error('Article not found'));
-        return this.http.delete<void>(`${API_BASE_URL}/articles/${data[0].id}`);
-      }),
-    );
+  deleteArticle(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/articles/${id}`);
   }
 
   createComment(comment: Omit<Comment, 'id'>): Observable<Comment> {
-    return this.http.post<Comment>(`${API_BASE_URL}/comments`, comment);
+    return this.http.post<Comment>(`${this.apiUrl}/comments`, comment);
   }
 
-  updateComment(id: number, data: Partial<Comment>): Observable<Comment> {
-    return this.http.patch<Comment>(`${API_BASE_URL}/comments/${id}`, data);
+  updateComment(id: string, data: Partial<Comment>): Observable<Comment> {
+    return this.http.patch<Comment>(`${this.apiUrl}/comments/${id}`, data);
   }
 
-  deleteComment(id: number): Observable<void> {
-    return this.http.get<Comment[]>(`${API_BASE_URL}/comments?id=${id}`).pipe(
-      switchMap((data) => {
-        if (data.length === 0) return throwError(() => new Error('Comment not found'));
-        return this.http.delete<void>(`${API_BASE_URL}/comments/${data[0].id}`);
-      }),
-    );
+  deleteComment(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/comments/${id}`);
   }
 
   getArticleCount(): Observable<number> {
-    return this.http.get<readonly Article[]>(`${API_BASE_URL}/articles`).pipe(
+    return this.http.get<readonly Article[]>(`${this.apiUrl}/articles`).pipe(
       map((a) => a.length),
       catchError(() => of(0)),
     );
   }
 
   getCommentCount(): Observable<number> {
-    return this.http.get<readonly Comment[]>(`${API_BASE_URL}/comments`).pipe(
+    return this.http.get<readonly Comment[]>(`${this.apiUrl}/comments`).pipe(
       map((c) => c.length),
       catchError(() => of(0)),
     );
   }
 
   getPendingCommentCount(): Observable<number> {
-    return this.http.get<readonly Comment[]>(`${API_BASE_URL}/comments?status=pending`).pipe(
+    return this.http.get<readonly Comment[]>(`${this.apiUrl}/comments?status=pending`).pipe(
       map((c) => c.length),
       catchError(() => of(0)),
     );
   }
 
+  getFeaturedArticles(): Observable<readonly Article[]> {
+    return this.http
+      .get<readonly Article[]>(`${this.apiUrl}/articles?featured=true`)
+      .pipe(
+        map((articles) => articles.map((a) => resolveArticle(this.apiUrl, a as Article))),
+        catchError(() => of([])),
+      );
+  }
+
   getFeaturedComments(): Observable<readonly Comment[]> {
     return this.http
-      .get<readonly Comment[]>(`${API_BASE_URL}/comments?status=approved&featured=true`)
+      .get<readonly Comment[]>(`${this.apiUrl}/comments?status=approved&featured=true`)
       .pipe(catchError(() => of([])));
   }
 
@@ -107,7 +117,7 @@ export class HttpBlogGateway implements BlogGateway {
     const formData = new FormData();
     formData.append('file', file);
     return this.http
-      .post<{ url: string }>(`${API_BASE_URL}/articles/${articleSlug}/image`, formData)
-      .pipe(map((res) => res.url));
+      .post<{ key: string }>(`${this.apiUrl}/articles/${articleSlug}/image`, formData)
+      .pipe(map((res) => res.key));
   }
 }

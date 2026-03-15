@@ -2,8 +2,9 @@ import { Component, signal, effect, afterNextRender, ElementRef, inject } from '
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
-import { TrackingService } from '../../../shared/tracking/tracking.service';
-import { SupabaseClientService } from '../../../shared/supabase/supabase-client';
+import { AnalyticsService } from '@shared/analytics';
+import { CvService } from '@shared/cv';
+import { SiteSettingsService } from '@core/services';
 
 @Component({
   selector: 'app-header',
@@ -16,26 +17,38 @@ import { SupabaseClientService } from '../../../shared/supabase/supabase-client'
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       <a
         routerLink="/"
-        class="flex items-center gap-3 text-2xl font-display font-bold text-primary"
+        class="group flex items-center gap-4 hover:opacity-90 transition-opacity"
       >
         <div
-          class="p-2 bg-linear-to-br from-primary/20 to-accent/20 rounded-lg border border-primary/30 hover:border-primary/50 transition"
+          class="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-all"
         >
-          <svg class="w-6 h-6">
-            <use href="/icons/sprite.svg#lucide-code-xml"></use>
-          </svg>
+          JN
         </div>
-        Julien<span class="text-primary">.N</span>
+        <div class="flex items-baseline gap-0.5">
+          <span class="text-2xl font-bold text-foreground tracking-tight">j-ned</span>
+          <span class="text-2xl font-bold text-primary">.dev</span>
+        </div>
       </a>
 
       <nav class="hidden md:flex items-center gap-8">
         @for (item of navItems(); track item) {
-          @if (item.href.startsWith('#')) {
+          @if (item.href === '/blog' && !siteSettings.blogEnabled()) {
+            <span
+              class="relative flex items-center gap-2 px-4 py-2 rounded-full cursor-not-allowed select-none bg-[repeating-linear-gradient(-45deg,#eab308_0px,#eab308_8px,#111_8px,#111_16px)] overflow-hidden"
+            >
+              <span class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider">
+                <svg aria-hidden="true" class="w-4 h-4">
+                  <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
+                </svg>
+                Blog en construction
+              </span>
+            </span>
+          } @else if (item.href.startsWith('#')) {
             <a
               [href]="item.href"
               class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <svg class="w-5 h-5">
+              <svg aria-hidden="true" class="w-5 h-5">
                 <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
               </svg>
               {{ item.label }}
@@ -45,7 +58,7 @@ import { SupabaseClientService } from '../../../shared/supabase/supabase-client'
               [routerLink]="item.href"
               class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <svg class="w-5 h-5">
+              <svg aria-hidden="true" class="w-5 h-5">
                 <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
               </svg>
               {{ item.label }}
@@ -57,18 +70,20 @@ import { SupabaseClientService } from '../../../shared/supabase/supabase-client'
       <div class="flex items-center gap-4">
         <button
           (click)="toggleTheme()"
-          class="relative p-2 rounded-lg bg-white/5 hover:bg-white/10 transition duration-300 group"
-          aria-label="Toggle theme"
+          class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 hover:bg-primary/20 hover:border-primary/40 transition-all group"
+          aria-label="Changer le thème"
         >
           <svg
+            aria-hidden="true"
             [ngClass]="{ hidden: isDarkTheme() }"
-            class="w-6 h-6 text-primary group-hover:text-primary/80 transition-colors"
+            class="w-5 h-5 text-primary"
           >
             <use href="/icons/sprite.svg#lucide-sun"></use>
           </svg>
           <svg
+            aria-hidden="true"
             [ngClass]="{ hidden: !isDarkTheme() }"
-            class="w-6 h-6 text-primary group-hover:text-primary/80 transition-colors"
+            class="w-5 h-5 text-primary"
           >
             <use href="/icons/sprite.svg#lucide-moon"></use>
           </svg>
@@ -81,7 +96,7 @@ import { SupabaseClientService } from '../../../shared/supabase/supabase-client'
             (click)="trackCvDownload()"
             class="hidden md:flex items-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 rounded-full text-md font-medium transition-colors"
           >
-            <svg class="w-6 h-6 text-primary">
+            <svg aria-hidden="true" class="w-6 h-6 text-primary">
               <use href="/icons/sprite.svg#lucide-download"></use>
             </svg>
             Télécharger mon CV
@@ -90,12 +105,20 @@ import { SupabaseClientService } from '../../../shared/supabase/supabase-client'
         <button
           (click)="toggleMobileMenu()"
           class="relative md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
-          aria-label="Toggle menu"
+          [attr.aria-label]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
         >
-          <svg [ngClass]="{ hidden: isMobileMenuOpen() }" class="w-6 h-6 text-primary">
+          <svg
+            aria-hidden="true"
+            [ngClass]="{ hidden: isMobileMenuOpen() }"
+            class="w-6 h-6 text-primary"
+          >
             <use href="/icons/sprite.svg#lucide-menu"></use>
           </svg>
-          <svg [ngClass]="{ hidden: !isMobileMenuOpen() }" class="w-6 h-6 text-primary">
+          <svg
+            aria-hidden="true"
+            [ngClass]="{ hidden: !isMobileMenuOpen() }"
+            class="w-6 h-6 text-primary"
+          >
             <use href="/icons/sprite.svg#lucide-x"></use>
           </svg>
         </button>
@@ -105,13 +128,24 @@ import { SupabaseClientService } from '../../../shared/supabase/supabase-client'
     <div [ngClass]="{ hidden: !isMobileMenuOpen() }" class="md:hidden border-t border-white/5">
       <nav class="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
         @for (item of navItems(); track item) {
-          @if (item.href.startsWith('#')) {
+          @if (item.href === '/blog' && !siteSettings.blogEnabled()) {
+            <span
+              class="relative flex items-center gap-2 px-4 py-2 rounded-full cursor-not-allowed select-none bg-[repeating-linear-gradient(-45deg,#eab308_0px,#eab308_8px,#111_8px,#111_16px)] overflow-hidden"
+            >
+              <span class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider">
+                <svg aria-hidden="true" class="w-4 h-4">
+                  <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
+                </svg>
+                Blog en construction
+              </span>
+            </span>
+          } @else if (item.href.startsWith('#')) {
             <a
               [href]="item.href"
               (click)="closeMobileMenu()"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <svg class="w-5 h-5">
+              <svg aria-hidden="true" class="w-5 h-5">
                 <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
               </svg>
               {{ item.label }}
@@ -122,7 +156,7 @@ import { SupabaseClientService } from '../../../shared/supabase/supabase-client'
               (click)="closeMobileMenu()"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <svg class="w-5 h-5">
+              <svg aria-hidden="true" class="w-5 h-5">
                 <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
               </svg>
               {{ item.label }}
@@ -137,7 +171,7 @@ import { SupabaseClientService } from '../../../shared/supabase/supabase-client'
             (click)="trackCvDownload(); closeMobileMenu()"
             class="flex items-center gap-3 text-lg font-medium text-primary hover:text-primary/80 transition-colors py-2 border-t border-white/5 pt-4 mt-2"
           >
-            <svg class="w-5 h-5">
+            <svg aria-hidden="true" class="w-5 h-5">
               <use href="/icons/sprite.svg#lucide-download"></use>
             </svg>
             Télécharger mon CV
@@ -149,8 +183,9 @@ import { SupabaseClientService } from '../../../shared/supabase/supabase-client'
 })
 export class Header {
   private readonly elementRef = inject(ElementRef);
-  private readonly tracking = inject(TrackingService);
-  private readonly supabase = inject(SupabaseClientService);
+  private readonly analytics = inject(AnalyticsService);
+  private readonly cvService = inject(CvService);
+  protected readonly siteSettings = inject(SiteSettingsService);
 
   protected readonly navItems = signal(NAV_LINKS);
   protected readonly isMobileMenuOpen = signal(false);
@@ -195,7 +230,7 @@ export class Header {
   }
 
   protected trackCvDownload(): void {
-    this.tracking.trackCvDownload();
+    this.analytics.trackCvDownload();
   }
 
   protected toggleTheme(): void {
@@ -203,15 +238,10 @@ export class Header {
   }
 
   private loadCvUrl(): void {
-    this.supabase.client
-      .from('cv_info')
-      .select('file_url')
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        if (data?.file_url) {
-          this.cvUrl.set(data.file_url);
-        }
-      });
+    this.cvService.getCurrent().then((data) => {
+      if (data) {
+        this.cvUrl.set(this.cvService.getDownloadUrl());
+      }
+    });
   }
 }

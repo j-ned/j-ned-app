@@ -66,11 +66,12 @@ export class ButtonComponent {
       'inline-flex items-center justify-center gap-2 font-semibold text-center whitespace-nowrap transition duration-200 cursor-pointer border-0 outline-none no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2';
 
     const variantClasses = {
-      primary: 'bg-blue-600 text-white hover:bg-blue-700 hover:-translate-y-0.5',
+      primary:
+        'bg-primary-bg text-white hover:bg-primary-bg/90 hover:-translate-y-0.5 shadow-md shadow-primary-bg/30 hover:shadow-lg hover:shadow-primary-bg/40',
       secondary:
         'bg-transparent text-foreground border border-white/20 hover:bg-white/5 hover:border-primary',
       accent:
-        'bg-gradient-to-br from-blue-600 to-violet-600 text-white hover:from-blue-700 hover:to-violet-700 hover:-translate-y-0.5 shadow-lg shadow-violet-500/25',
+        'bg-foreground/10 text-foreground border border-foreground/20 hover:bg-foreground/15 hover:border-foreground/30 hover:-translate-y-0.5 shadow-md shadow-black/20 hover:shadow-lg',
       ghost: 'bg-transparent text-foreground hover:bg-white/5',
       link: 'bg-transparent text-primary p-0 hover:underline dark:text-blue-400 dark:opacity-90',
       danger: 'bg-red-500 text-white hover:bg-red-600 hover:-translate-y-0.5',

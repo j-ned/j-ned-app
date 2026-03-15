@@ -7,26 +7,35 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ProjectCard } from './components/project-card';
-import { PROJECTS_GATEWAY } from '../domain';
-import { FilterProjectsUseCase } from '../domain';
-import { PaginateProjectsUseCase } from '../domain';
+import { PROJECTS_GATEWAY } from './tokens';
+import { filterProjects, paginateProjects, calculateTotalPages } from '../domain';
 
 @Component({
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   imports: [ProjectCard],
-  providers: [FilterProjectsUseCase, PaginateProjectsUseCase],
   template: `
     <main
       class="min-h-screen pt-20 pb-16 bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
     >
       <section class="container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <div class="mb-12">
-          <h1 class="text-4xl md:text-6xl font-bold mb-6 text-foreground">Mes Projets</h1>
-          <p class="text-xl text-muted max-w-2xl leading-relaxed">
+        <div class="text-center mb-14">
+          <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5">
+            <svg aria-hidden="true" class="w-4 h-4">
+              <use href="/icons/sprite.svg#lucide-laptop"></use>
+            </svg>
+            Portfolio
+          </span>
+          <h1
+            class="text-4xl md:text-6xl font-extrabold tracking-tight mb-5"
+            style="background: linear-gradient(135deg, var(--color-foreground) 40%, var(--color-primary) 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"
+          >
+            Mes Projets
+          </h1>
+          <p class="text-muted max-w-xl mx-auto text-base md:text-lg leading-relaxed">
             Une sélection de mes derniers projets, expérimentations et contributions open source.
           </p>
         </div>
@@ -127,10 +136,10 @@ export class Projects {
   private readonly document = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly projectsGateway = inject(PROJECTS_GATEWAY);
-  private readonly filterUseCase = inject(FilterProjectsUseCase);
-  private readonly paginateUseCase = inject(PaginateProjectsUseCase);
 
-  private projectsResource = this.projectsGateway.getAllProjects();
+  private readonly projectsResource = rxResource({
+    stream: () => this.projectsGateway.getAllProjects(),
+  });
   protected readonly projects = computed(() => this.projectsResource.value() || []);
 
   private categoriesObservable = this.projectsGateway.getCategories();
@@ -140,17 +149,16 @@ export class Projects {
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 3;
 
-  protected filteredProjects = this.filterUseCase.execute(this.projects, this.activeFilter);
-
-  protected totalPages = this.paginateUseCase.calculateTotalPages(
-    computed(() => this.filteredProjects().length),
-    this.itemsPerPage,
+  protected readonly filteredProjects = computed(() =>
+    filterProjects(this.projects(), this.activeFilter()),
   );
 
-  protected paginatedProjects = this.paginateUseCase.execute(
-    this.filteredProjects,
-    this.currentPage,
-    this.itemsPerPage,
+  protected readonly totalPages = computed(() =>
+    calculateTotalPages(this.filteredProjects().length, this.itemsPerPage),
+  );
+
+  protected readonly paginatedProjects = computed(() =>
+    paginateProjects(this.filteredProjects(), this.currentPage(), this.itemsPerPage),
   );
 
   protected pageNumbers = computed(() => {

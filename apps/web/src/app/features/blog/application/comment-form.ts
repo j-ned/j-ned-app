@@ -1,6 +1,8 @@
-import { Component, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { BLOG_GATEWAY } from '../domain';
+import { BLOG_GATEWAY } from './tokens';
+import { ToastService } from '@shared/toast';
 
 @Component({
   selector: 'app-comment-form',
@@ -29,6 +31,9 @@ import { BLOG_GATEWAY } from '../domain';
               class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
               placeholder="Votre nom"
             />
+            @if (form.controls.author.touched && form.controls.author.errors?.['required']) {
+              <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            }
           </div>
           <div>
             <label for="comment-email" class="block text-sm font-medium text-foreground mb-1"
@@ -86,6 +91,9 @@ import { BLOG_GATEWAY } from '../domain';
             class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
             placeholder="Votre commentaire..."
           ></textarea>
+          @if (form.controls.content.touched && form.controls.content.errors?.['required']) {
+            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+          }
         </div>
 
         <button
@@ -102,8 +110,10 @@ import { BLOG_GATEWAY } from '../domain';
 export class CommentForm {
   private readonly fb = inject(FormBuilder);
   private readonly blogGateway = inject(BLOG_GATEWAY);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly articleId = input.required<number>();
+  readonly articleId = input.required<string>();
   readonly commentAdded = output<void>();
 
   readonly rating = signal(0);
@@ -138,12 +148,17 @@ export class CommentForm {
         status: 'pending',
         featured: false,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.submitted.set(true);
           this.commentAdded.emit();
+          this.toast.success('Commentaire envoyé ! Il sera visible après modération.');
         },
-        error: () => this.submitting.set(false),
+        error: () => {
+          this.submitting.set(false);
+          this.toast.error("Erreur lors de l'envoi du commentaire.");
+        },
       });
   }
 }
