@@ -104,7 +104,7 @@ fi
 
 # 2. Démarrer le serveur Hono en arrière-plan
 echo "Starting Hono API server..."
-cd /app && node --import tsx/esm server/index.ts &
+cd /app && npx tsx server/index.ts &
 
 # 3. Démarrer Nginx au premier plan
 echo "Starting Nginx..."
