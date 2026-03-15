@@ -28,12 +28,10 @@ export class HttpBookingGateway implements BookingGateway {
   }
 
   getAllBookings(): Observable<readonly Booking[]> {
-    return this.http
-      .get<{ data: Booking[] }>(`${this.apiUrl}/bookings`)
-      .pipe(
-        map((res) => res.data),
-        catchError(() => of([])),
-      );
+    return this.http.get<{ data: Booking[] }>(`${this.apiUrl}/bookings`).pipe(
+      map((res) => res.data),
+      catchError(() => of([])),
+    );
   }
 
   updateBookingStatus(id: number, status: string): Observable<Booking> {
