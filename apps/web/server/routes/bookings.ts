@@ -18,7 +18,7 @@ bookings.post('/',
   async (c) => {
     const data = c.req.valid('json');
 
-    const [created] = await db.insert(booking).values(data).returning();
+    await db.insert(booking).values(data);
 
     // Send emails (non-blocking)
     const emailData = {
@@ -30,7 +30,7 @@ bookings.post('/',
       sendBookingConfirmation(emailData),
     ]).catch(console.error);
 
-    return c.json(created, 201);
+    return c.json({ success: true, message: 'Réservation confirmée avec succès.' }, 201);
   },
 );
 

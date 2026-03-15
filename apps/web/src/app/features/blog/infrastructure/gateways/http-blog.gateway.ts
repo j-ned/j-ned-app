@@ -40,15 +40,19 @@ export class HttpBlogGateway implements BlogGateway {
   }
 
   getAllComments(): Observable<readonly Comment[]> {
-    return this.http
-      .get<readonly Comment[]>(`${this.apiUrl}/comments`)
-      .pipe(catchError(() => of([])));
+    return this.http.get<{ data: Comment[] }>(`${this.apiUrl}/comments`).pipe(
+      map((res) => res.data),
+      catchError(() => of([])),
+    );
   }
 
   getCommentsByArticle(articleId: string): Observable<readonly Comment[]> {
     return this.http
-      .get<readonly Comment[]>(`${this.apiUrl}/comments?idArticle=${articleId}`)
-      .pipe(catchError(() => of([])));
+      .get<{ data: Comment[] }>(`${this.apiUrl}/comments?idArticle=${articleId}`)
+      .pipe(
+        map((res) => res.data),
+        catchError(() => of([])),
+      );
   }
 
   createArticle(article: Omit<Article, 'id'>): Observable<Article> {
@@ -83,15 +87,15 @@ export class HttpBlogGateway implements BlogGateway {
   }
 
   getCommentCount(): Observable<number> {
-    return this.http.get<readonly Comment[]>(`${this.apiUrl}/comments`).pipe(
-      map((c) => c.length),
+    return this.http.get<{ total: number }>(`${this.apiUrl}/comments`).pipe(
+      map((res) => res.total),
       catchError(() => of(0)),
     );
   }
 
   getPendingCommentCount(): Observable<number> {
-    return this.http.get<readonly Comment[]>(`${this.apiUrl}/comments?status=pending`).pipe(
-      map((c) => c.length),
+    return this.http.get<{ total: number }>(`${this.apiUrl}/comments?status=pending`).pipe(
+      map((res) => res.total),
       catchError(() => of(0)),
     );
   }
@@ -105,8 +109,11 @@ export class HttpBlogGateway implements BlogGateway {
 
   getFeaturedComments(): Observable<readonly Comment[]> {
     return this.http
-      .get<readonly Comment[]>(`${this.apiUrl}/comments?status=approved&featured=true`)
-      .pipe(catchError(() => of([])));
+      .get<{ data: Comment[] }>(`${this.apiUrl}/comments?status=approved&featured=true`)
+      .pipe(
+        map((res) => res.data),
+        catchError(() => of([])),
+      );
   }
 
   uploadImage(file: File, articleSlug: string): Observable<string> {

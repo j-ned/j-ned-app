@@ -73,9 +73,10 @@ export class HttpContactGateway implements ContactGateway {
   }
 
   getAllMessages(): Observable<readonly ContactMessage[]> {
-    return this.http
-      .get<readonly ContactMessage[]>(`${this.apiUrl}/contact/messages`)
-      .pipe(catchError(() => of([])));
+    return this.http.get<{ data: ContactMessage[] }>(`${this.apiUrl}/contact/messages`).pipe(
+      map((res) => res.data),
+      catchError(() => of([])),
+    );
   }
 
   markMessageAsRead(id: number): Observable<ContactMessage> {

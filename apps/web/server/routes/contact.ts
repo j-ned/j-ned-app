@@ -28,7 +28,7 @@ contact.post('/messages',
   async (c) => {
     const data = c.req.valid('json');
 
-    const [created] = await db.insert(contactMessage).values(data).returning();
+    await db.insert(contactMessage).values(data);
 
     // Send emails (non-blocking)
     Promise.all([
@@ -36,7 +36,7 @@ contact.post('/messages',
       sendContactConfirmation(data),
     ]).catch(console.error);
 
-    return c.json(created, 201);
+    return c.json({ success: true, message: 'Message envoyé avec succès.' }, 201);
   },
 );
 
@@ -82,7 +82,7 @@ contact.patch('/messages/:id/read', authMiddleware, async (c) => {
     return c.json({ error: 'Message not found' }, 404);
   }
 
-  return c.json({ message: 'Message marked as read' });
+  return c.json(updated);
 });
 
 // DELETE /contact/messages/:id
