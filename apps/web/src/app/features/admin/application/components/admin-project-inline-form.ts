@@ -1,4 +1,4 @@
-import { Component, input, output, signal, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, input, output, signal, effect, ChangeDetectionStrategy, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import type { Project } from '@features/projects/domain';
 import { FileDropZone } from '@shared/file-drop-zone';
@@ -246,6 +246,30 @@ export class AdminProjectInlineForm {
     featured: [false],
     order: [0],
   });
+
+  private readonly _populateForm = effect(() => {
+    const p = this.project();
+    if (!p) return;
+
+    this.form.patchValue({
+      title: p.title,
+      category: p.category,
+      description: p.description,
+      liveUrl: p.liveUrl ?? '',
+      repoUrl: p.repoUrl ?? '',
+      repoUrlFront: p.repoUrlFront ?? '',
+      repoUrlBack: p.repoUrlBack ?? '',
+      featured: p.featured,
+      order: p.order,
+    });
+
+    this.selectedTags.set(new Set(p.tags ?? []));
+
+    if (p.image) {
+      this.imagePreview.set(p.image);
+    }
+  });
+
   onFileSelected(file: File): void {
     if (file.type.startsWith('image/')) this.selectFile(file);
   }
