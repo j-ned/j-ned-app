@@ -28,13 +28,13 @@ RUN pnpm run test
 RUN pnpm run build --configuration production
 
 # Vérifier les artefacts (même check que le CI)
-RUN test -f browser/index.html || (echo "Le fichier index.html est manquant" && exit 1)
+RUN test -f dist/angular-portfolio-app/index.html || (echo "Le fichier index.html est manquant" && exit 1)
 
 # ---- Stage 2 : Serveur statique ----
 FROM nginx:alpine AS production
 
 # Copier les artefacts du build Angular
-COPY --from=build /app/browser /usr/share/nginx/html
+COPY --from=build /app/dist/angular-portfolio-app /usr/share/nginx/html
 
 # Configuration nginx pour le routing SPA (fallback vers index.html)
 COPY <<'EOF' /etc/nginx/conf.d/default.conf

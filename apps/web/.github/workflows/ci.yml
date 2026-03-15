@@ -48,13 +48,13 @@ jobs:
         run: pnpm run test
 
       - name: 🏗️ Compiler le projet Angular
-        run: pnpm run build -- --configuration production
+        run: pnpm run build --configuration production
 
       - name: ✅ Vérifier les artefacts du build
         run: |
-          if [ ! -f "browser/index.html" ]; then
+          if [ ! -f "dist/angular-portfolio-app/index.html" ]; then
             echo "❌ Le fichier index.html est manquant"
             exit 1
           fi
           echo "✅ Build réussi avec tous les fichiers nécessaires"
-          ls -lh browser
+          ls -lh dist/angular-portfolio-app
