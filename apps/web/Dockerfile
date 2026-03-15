@@ -30,7 +30,7 @@ RUN pnpm run build --configuration production
 # Vérifier les artefacts (même check que le CI)
 RUN test -f dist/angular-portfolio-app/index.html || (echo "Le fichier index.html est manquant" && exit 1)
 
-# ---- Stage 2 : CLI (scripts serveur + migration DB) ----
+# ---- Stage 2 : CLI (scripts serveur) ----
 FROM node:22-alpine AS cli
 
 RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
@@ -41,19 +41,21 @@ COPY --from=build /app/package.json /app/pnpm-lock.yaml ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/server ./server
 
-# Appliquer le schéma Drizzle à la base de données
-ARG DATABASE_URL
-RUN if [ -n "$DATABASE_URL" ]; then \
-      DATABASE_URL="$DATABASE_URL" pnpm run db:push; \
-    fi
-
 ENTRYPOINT ["pnpm", "exec", "tsx"]
 
-# ---- Stage 3 : Serveur statique ----
+# ---- Stage 3 : Serveur statique + migration DB au démarrage ----
 FROM nginx:alpine AS production
+
+# Installer Node.js pour exécuter la migration Drizzle au démarrage
+RUN apk add --no-cache nodejs npm
 
 # Copier les artefacts du build Angular
 COPY --from=build /app/dist/angular-portfolio-app /usr/share/nginx/html
+
+# Copier le nécessaire pour db:push (Drizzle + schema + dépendances)
+COPY --from=build /app/package.json /app/pnpm-lock.yaml /app/
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/server /app/server
 
 # Configuration nginx pour le routing SPA (fallback vers index.html)
 COPY <<'EOF' /etc/nginx/conf.d/default.conf
@@ -74,6 +76,24 @@ server {
 }
 EOF
 
+# Script d'entrypoint : migration DB puis Nginx
+COPY <<'SCRIPT' /docker-entrypoint-db.sh
+#!/bin/sh
+set -e
+
+if [ -n "$DATABASE_URL" ]; then
+  echo "Applying database schema..."
+  cd /app && npx drizzle-kit push --config=server/drizzle.config.ts
+  echo "Database schema applied successfully."
+else
+  echo "WARNING: DATABASE_URL not set, skipping database migration."
+fi
+
+exec nginx -g "daemon off;"
+SCRIPT
+
+RUN chmod +x /docker-entrypoint-db.sh
+
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint-db.sh"]
