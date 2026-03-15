@@ -1,11 +1,4 @@
-import {
-  Component,
-  input,
-  output,
-  signal,
-  ChangeDetectionStrategy,
-  inject,
-} from '@angular/core';
+import { Component, input, output, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import type { Project } from '@features/projects/domain';
 import { FileDropZone } from '@shared/file-drop-zone';
