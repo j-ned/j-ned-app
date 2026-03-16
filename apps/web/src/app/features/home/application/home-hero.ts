@@ -13,13 +13,13 @@ import type { HeroData } from '../domain';
       background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 1px var(--color-primary)) drop-shadow(0 0 1px var(--color-primary));
+      text-shadow: 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent);
     }
 
     @keyframes fade-up {
       from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(16px);
       }
       to {
         opacity: 1;
@@ -28,7 +28,8 @@ import type { HeroData } from '../domain';
     }
 
     .animate-fade-up {
-      animation: fade-up 0.6s ease-out both;
+      animation: fade-up 0.4s ease-out both;
+      will-change: transform, opacity;
     }
 
     .delay-1 {

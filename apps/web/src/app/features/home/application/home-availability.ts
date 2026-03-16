@@ -6,6 +6,21 @@ type HeroData = { availability: string };
   selector: 'app-home-availability',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
+  styles: `
+    @keyframes ping-once {
+      0% {
+        transform: scale(1);
+        opacity: 0.75;
+      }
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+    .ping-once {
+      animation: ping-once 1s ease-out 0.3s 3 both;
+    }
+  `,
   template: `
     @if (hero()) {
       <p
@@ -13,7 +28,7 @@ type HeroData = { availability: string };
       >
         <span class="relative flex h-2 w-2" aria-hidden="true">
           <span
-            class="animate-ping will-change-[transform,opacity] absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+            class="ping-once absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
           ></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
         </span>

@@ -10,7 +10,7 @@ import { AnalyticsService } from '@shared/analytics';
   host: { class: 'block' },
   template: `
     <article
-      class="group relative bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition-all duration-300 flex flex-col h-full shadow-sm"
+      class="group relative bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition-[border-color] duration-300 flex flex-col h-full shadow-sm"
     >
       <figure class="block aspect-video w-full overflow-hidden relative">
         @if (project().image) {

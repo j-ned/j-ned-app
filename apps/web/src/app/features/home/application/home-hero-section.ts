@@ -24,7 +24,7 @@ import type { HeroData } from '../domain';
     }
 
     .animate-fade-up-actions {
-      animation: fade-up 0.6s ease-out 0.15s both;
+      animation: fade-up 0.4s ease-out 0.12s both;
       will-change: transform, opacity;
     }
   `,

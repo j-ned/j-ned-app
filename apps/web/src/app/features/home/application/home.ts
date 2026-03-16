@@ -27,7 +27,7 @@ import { SiteSettingsService } from '@core/services';
             <ul class="grid grid-cols-1 md:grid-cols-3 gap-8" role="list">
               @for (item of expertises(); track item.id) {
                 <li
-                  class="group relative p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] hover:border-primary/25 hover:bg-foreground/[0.04] transition-all duration-300"
+                  class="group relative p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] hover:border-primary/25 hover:bg-foreground/[0.04] transition-colors duration-300"
                 >
                   <div class="flex items-center gap-3 mb-4">
                     <div

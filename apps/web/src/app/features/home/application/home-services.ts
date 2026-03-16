@@ -33,7 +33,7 @@ import type { ServicePricing } from '../domain';
       <ul class="grid grid-cols-1 md:grid-cols-3 gap-8" role="list">
         @for (service of services(); track service.id) {
           <li
-            class="relative flex flex-col p-8 rounded-xl border transition-all duration-300"
+            class="relative flex flex-col p-8 rounded-xl border transition-colors duration-300"
             [class]="
               !service.enabled
                 ? 'border-foreground/10 bg-foreground/[0.02] opacity-80'
