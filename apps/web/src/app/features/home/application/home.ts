@@ -21,8 +21,12 @@ import { SiteSettingsService } from '@core/services';
       <app-home-hero-section [hero]="bundle()?.hero ?? null" />
 
       <!-- Expertise Section -->
-      <section class="w-full py-6 md:py-10 min-h-[200px] md:min-h-[160px]">
+      <section
+        class="w-full py-6 md:py-10 min-h-[200px] md:min-h-[160px]"
+        aria-labelledby="expertise-heading"
+      >
         <div class="max-w-7xl mx-auto px-6">
+          <h2 id="expertise-heading" class="sr-only">Expertises</h2>
           @if (expertises().length > 0) {
             <ul class="grid grid-cols-1 md:grid-cols-3 gap-8" role="list">
               @for (item of expertises(); track item.id) {

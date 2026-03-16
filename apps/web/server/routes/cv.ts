@@ -66,12 +66,8 @@ cv.get('/', async (c) => {
     uploadedAt: cvFile.uploadedAt,
   }).from(cvFile).orderBy(desc(cvFile.uploadedAt)).limit(1);
 
-  if (!latest) {
-    return c.json({ error: 'No CV uploaded' }, 404);
-  }
-
   c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
-  return c.json(latest);
+  return c.json(latest ?? null);
 });
 
 // GET /cv/download

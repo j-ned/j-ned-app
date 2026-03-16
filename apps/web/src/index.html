@@ -57,8 +57,14 @@
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
+    <!-- Preconnect to API origin (same-origin, helps HTTP/2 prioritization) -->
+    <link rel="preconnect" href="https://j-ned.dev" />
     <!-- DNS prefetch for S3 (used on project/blog detail pages) -->
     <link rel="dns-prefetch" href="https://garage-s3.j-ned.dev" />
+    <link rel="preconnect" href="https://garage-s3.j-ned.dev" crossorigin />
+
+    <!-- Preload critical assets -->
+    <link rel="preload" href="/icons/sprite.svg" as="image" type="image/svg+xml" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x48" />

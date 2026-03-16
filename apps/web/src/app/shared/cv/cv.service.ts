@@ -18,11 +18,7 @@ export class CvService {
   }
 
   async getCurrent(): Promise<CvInfo | null> {
-    try {
-      return await firstValueFrom(this.http.get<CvInfo>(this.baseUrl, { withCredentials: true }));
-    } catch {
-      return null;
-    }
+    return firstValueFrom(this.http.get<CvInfo | null>(this.baseUrl, { withCredentials: true }));
   }
 
   async delete(): Promise<void> {

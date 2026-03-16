@@ -40,7 +40,7 @@ import type { HeroData } from '../domain';
     }
   `,
   template: `
-    <hgroup class="text-center min-h-[180px] md:min-h-[220px] lg:min-h-[260px]">
+    <hgroup class="text-center min-h-[200px] md:min-h-[260px] lg:min-h-[300px]">
       @if (hero()) {
         <div class="animate-fade-up flex flex-wrap items-center justify-center gap-3 mb-4 md:mb-6">
           <span class="text-sm md:text-base font-medium text-primary/80 tracking-widest uppercase">
@@ -62,8 +62,8 @@ import type { HeroData } from '../domain';
       } @else {
         <div class="space-y-5 animate-pulse flex flex-col items-center">
           <div class="h-5 bg-foreground/5 rounded-full w-40"></div>
-          <div class="h-12 md:h-16 lg:h-20 bg-foreground/5 rounded-lg w-3/4"></div>
-          <div class="h-7 md:h-9 bg-foreground/5 rounded-lg w-full max-w-2xl"></div>
+          <div class="h-16 md:h-20 lg:h-28 bg-foreground/5 rounded-lg w-3/4"></div>
+          <div class="h-8 md:h-10 lg:h-12 bg-foreground/5 rounded-lg w-full max-w-2xl"></div>
         </div>
       }
     </hgroup>

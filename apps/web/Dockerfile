@@ -93,14 +93,21 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Fichiers statiques avec cache long
-    location ~* \.(?:css|js|woff2?|svg|png|jpg|jpeg|gif|ico|webp|avif)$ {
+    # Fichiers hashés (CSS, JS) avec cache immutable
+    location ~* \.[0-9a-f]{8,}\.(css|js)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
 
-    # SPA fallback
+    # Autres assets statiques (images, fonts, icons)
+    location ~* \.(?:woff2?|svg|png|jpg|jpeg|gif|ico|webp|avif)$ {
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000";
+    }
+
+    # SPA fallback — index.html ne doit jamais être caché
     location / {
+        add_header Cache-Control "no-cache";
         try_files $uri $uri/ /index.html;
     }
 }

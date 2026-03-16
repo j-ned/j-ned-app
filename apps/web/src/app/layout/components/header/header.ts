@@ -17,7 +17,7 @@ import { SiteSettingsService } from '@core/services';
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
         <div
-          class="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-all"
+          class="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
         >
           JN
         </div>
@@ -69,7 +69,7 @@ import { SiteSettingsService } from '@core/services';
       <div class="flex items-center gap-4">
         <button
           (click)="toggleTheme()"
-          class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 hover:bg-primary/20 hover:border-primary/40 transition-all group"
+          class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 hover:bg-primary/20 hover:border-primary/40 transition-colors group"
           aria-label="Changer le thème"
         >
           <svg
