@@ -7,7 +7,7 @@ import { AnalyticsService } from '@shared/analytics';
   selector: 'app-project-card',
   imports: [NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: { class: 'block h-full' },
   template: `
     <article
       class="group relative bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition-[border-color] duration-300 flex flex-col h-full shadow-sm"
@@ -43,7 +43,7 @@ import { AnalyticsService } from '@shared/analytics';
           {{ project().title }}
         </h2>
 
-        <p class="text-muted mb-4 grow text-sm leading-relaxed">
+        <p class="text-muted mb-4 grow text-sm leading-relaxed line-clamp-3">
           {{ project().description }}
         </p>
 
