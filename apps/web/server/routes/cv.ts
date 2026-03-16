@@ -34,15 +34,13 @@ cv.post('/upload', authMiddleware, async (c) => {
     contentType: file.type,
   });
 
-  // Delete previous CV entries
-  const existing = await db.select().from(cvFile);
-  for (const entry of existing) {
-    try {
-      await deleteFile(buckets.cv.bucket, entry.fileKey);
-    } catch { /* ignore */ }
-  }
+  // Delete previous CV entries — select only fileKey, delete S3 files in parallel
+  const existing = await db.select({ fileKey: cvFile.fileKey }).from(cvFile);
   if (existing.length > 0) {
-    await db.delete(cvFile);
+    await Promise.all([
+      ...existing.map((entry) => deleteFile(buckets.cv.bucket, entry.fileKey).catch((err: unknown) => void err)),
+      db.delete(cvFile),
+    ]);
   }
 
   const [created] = await db.insert(cvFile).values({
@@ -61,23 +59,28 @@ cv.post('/upload', authMiddleware, async (c) => {
 
 // GET /cv (public — only returns metadata, no sensitive data)
 cv.get('/', async (c) => {
-  const [latest] = await db.select().from(cvFile).orderBy(desc(cvFile.uploadedAt)).limit(1);
+  const [latest] = await db.select({
+    id: cvFile.id,
+    fileName: cvFile.fileName,
+    mimeType: cvFile.mimeType,
+    uploadedAt: cvFile.uploadedAt,
+  }).from(cvFile).orderBy(desc(cvFile.uploadedAt)).limit(1);
 
   if (!latest) {
     return c.json({ error: 'No CV uploaded' }, 404);
   }
 
-  return c.json({
-    id: latest.id,
-    fileName: latest.fileName,
-    mimeType: latest.mimeType,
-    uploadedAt: latest.uploadedAt,
-  });
+  c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+  return c.json(latest);
 });
 
 // GET /cv/download
 cv.get('/download', async (c) => {
-  const [latest] = await db.select().from(cvFile).orderBy(desc(cvFile.uploadedAt)).limit(1);
+  const [latest] = await db.select({
+    fileKey: cvFile.fileKey,
+    fileName: cvFile.fileName,
+    mimeType: cvFile.mimeType,
+  }).from(cvFile).orderBy(desc(cvFile.uploadedAt)).limit(1);
 
   if (!latest) {
     return c.json({ error: 'No CV uploaded' }, 404);
@@ -103,17 +106,16 @@ cv.get('/download', async (c) => {
 
 // DELETE /cv
 cv.delete('/', authMiddleware, async (c) => {
-  const [latest] = await db.select().from(cvFile).orderBy(desc(cvFile.uploadedAt)).limit(1);
+  const [latest] = await db.select({ fileKey: cvFile.fileKey }).from(cvFile).orderBy(desc(cvFile.uploadedAt)).limit(1);
 
   if (!latest) {
     return c.json({ error: 'No CV uploaded' }, 404);
   }
 
-  try {
-    await deleteFile(buckets.cv.bucket, latest.fileKey);
-  } catch { /* ignore */ }
-
-  await db.delete(cvFile);
+  await Promise.all([
+    deleteFile(buckets.cv.bucket, latest.fileKey).catch((err: unknown) => void err),
+    db.delete(cvFile),
+  ]);
 
   return c.json({ message: 'CV deleted' });
 });

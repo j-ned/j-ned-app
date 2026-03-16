@@ -11,10 +11,18 @@ const profile = new Hono();
 
 // GET /profile
 profile.get('/', async (c) => {
-  const [info] = await db.select().from(profileInfo).limit(1);
+  const [info] = await db.select({
+    id: profileInfo.id,
+    displayName: profileInfo.displayName,
+    location: profileInfo.location,
+    avatarUrl: profileInfo.avatarUrl,
+    isAvailable: profileInfo.isAvailable,
+    availabilityMessage: profileInfo.availabilityMessage,
+  }).from(profileInfo).limit(1);
   if (!info) {
     return c.json({ error: 'Profile not found' }, 404);
   }
+  c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   return c.json({
     ...info,
     avatarUrl: info.avatarUrl ? '/profile/avatar-image' : '',
@@ -27,7 +35,7 @@ profile.patch('/',
   zValidator('json', updateProfileInfoSchema),
   async (c) => {
     const data = c.req.valid('json');
-    const [existing] = await db.select().from(profileInfo).limit(1);
+    const [existing] = await db.select({ id: profileInfo.id }).from(profileInfo).limit(1);
 
     if (!existing) {
       const [created] = await db.insert(profileInfo).values({
@@ -66,7 +74,7 @@ profile.get('/avatar-image', async (c) => {
     return new Response(Buffer.from(body), {
       headers: {
         'Content-Type': response.ContentType ?? 'image/webp',
-        'Cache-Control': 'public, max-age=86400',
+        'Cache-Control': 'public, max-age=31536000, immutable',
         'Cross-Origin-Resource-Policy': 'cross-origin',
       },
     });
@@ -104,7 +112,7 @@ profile.post('/avatar', authMiddleware, async (c) => {
     contentType: file.type,
   });
 
-  const [existing] = await db.select().from(profileInfo).limit(1);
+  const [existing] = await db.select({ id: profileInfo.id }).from(profileInfo).limit(1);
   if (existing) {
     await db.update(profileInfo)
       .set({ avatarUrl: key, updatedAt: new Date() })
@@ -139,7 +147,7 @@ biographyRoutes.patch('/',
   zValidator('json', updateBiographySchema),
   async (c) => {
     const data = c.req.valid('json');
-    const [existing] = await db.select().from(profileInfo).limit(1);
+    const [existing] = await db.select({ id: profileInfo.id }).from(profileInfo).limit(1);
 
     if (!existing) {
       return c.json({ error: 'Profile not found, create profile first' }, 404);

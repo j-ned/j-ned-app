@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, timestamp, index } from 'drizzle-orm/pg-core';
 
 export const cvFile = pgTable('cv_file', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -8,4 +8,6 @@ export const cvFile = pgTable('cv_file', {
   mimeType: text('mime_type').notNull().default('application/pdf'),
   uploadedAt: timestamp('uploaded_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => [
+  index('idx_cv_file_uploaded_at').on(table.uploadedAt),
+]);

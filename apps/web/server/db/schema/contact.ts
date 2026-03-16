@@ -11,4 +11,5 @@ export const contactMessage = pgTable('contact_message', {
 }, (table) => [
   index('idx_contact_message_read').on(table.read),
   index('idx_contact_message_created').on(table.createdAt),
+  index('idx_contact_message_read_created').on(table.read, table.createdAt),
 ]);

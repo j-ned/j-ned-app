@@ -17,15 +17,13 @@ export class HttpHomeGateway implements HomeGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
-  private readonly bundle$ = this.http
-    .get<HomeBundle>(`${this.apiUrl}/home-bundle`)
-    .pipe(
-      map((bundle) => ({
-        ...bundle,
-        featuredProjects: bundle.featuredProjects.map((p) => resolveProject(this.apiUrl, p)),
-      })),
-      shareReplay({ bufferSize: 1, refCount: true }),
-    );
+  private readonly bundle$ = this.http.get<HomeBundle>(`${this.apiUrl}/home-bundle`).pipe(
+    map((bundle) => ({
+      ...bundle,
+      featuredProjects: bundle.featuredProjects.map((p) => resolveProject(this.apiUrl, p)),
+    })),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   getHomeBundle(): Observable<HomeBundle> {
     return this.bundle$;
