@@ -1,6 +1,6 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
@@ -39,7 +39,10 @@ import { PROFILE_GATEWAY } from './tokens';
   `,
 })
 export class AboutStack {
-  private profileGateway = inject(PROFILE_GATEWAY);
-  private technologiesObservable = this.profileGateway.getTechnologies();
-  protected readonly technologies = toSignal(this.technologiesObservable, { initialValue: [] });
+  private readonly profileGateway = inject(PROFILE_GATEWAY);
+
+  private readonly technologiesResource = rxResource({
+    stream: () => this.profileGateway.getTechnologies(),
+  });
+  protected readonly technologies = computed(() => this.technologiesResource.value() ?? []);
 }

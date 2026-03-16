@@ -1,5 +1,5 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
@@ -52,7 +52,10 @@ import { PROFILE_GATEWAY } from './tokens';
   `,
 })
 export class AboutDiploma {
-  private profileGateway = inject(PROFILE_GATEWAY);
-  private diplomasObservable = this.profileGateway.getDiplomas();
-  protected readonly diplomas = toSignal(this.diplomasObservable, { initialValue: [] });
+  private readonly profileGateway = inject(PROFILE_GATEWAY);
+
+  private readonly diplomasResource = rxResource({
+    stream: () => this.profileGateway.getDiplomas(),
+  });
+  protected readonly diplomas = computed(() => this.diplomasResource.value() ?? []);
 }

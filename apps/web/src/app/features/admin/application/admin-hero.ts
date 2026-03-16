@@ -1,11 +1,4 @@
-import {
-  Component,
-  DestroyRef,
-  inject,
-  signal,
-  effect,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, DestroyRef, inject, effect, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -104,13 +97,11 @@ export class AdminHero {
     availability: ['', Validators.required],
   });
 
-  readonly loading = signal(true);
-
   private readonly editData = rxResource({
     stream: () => this.homeGateway.getHeroDataForEdit(),
   });
 
-  private readonly patchForm = effect(() => {
+  private readonly _patchForm = effect(() => {
     const hero = this.editData.value();
     if (hero) {
       this.heroId = hero.id;
@@ -119,10 +110,6 @@ export class AdminHero {
         tagline: hero.tagline,
         availability: hero.availability,
       });
-      this.loading.set(false);
-    }
-    if (this.editData.error()) {
-      this.loading.set(false);
     }
   });
 
@@ -134,6 +121,7 @@ export class AdminHero {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.homeGateway.invalidateBundle();
           this.toast.success('Hero mis à jour');
           this.router.navigate(['/admin/home']);
         },

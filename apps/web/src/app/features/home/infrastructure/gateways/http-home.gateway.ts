@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, of, shareReplay } from 'rxjs';
+import { catchError, map, Observable, of, shareReplay, Subject, switchMap, startWith } from 'rxjs';
 import type { HomeGateway } from '../../domain';
 import type { HeroData, HomeBundle, HomeHighlight, ServicePricing } from '../../domain';
 import type { Project } from '@features/projects/domain';
@@ -17,16 +17,27 @@ export class HttpHomeGateway implements HomeGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
-  private readonly bundle$ = this.http.get<HomeBundle>(`${this.apiUrl}/home-bundle`).pipe(
-    map((bundle) => ({
-      ...bundle,
-      featuredProjects: bundle.featuredProjects.map((p) => resolveProject(this.apiUrl, p)),
-    })),
+  private readonly _refresh$ = new Subject<void>();
+
+  private readonly bundle$ = this._refresh$.pipe(
+    startWith(undefined),
+    switchMap(() =>
+      this.http.get<HomeBundle>(`${this.apiUrl}/home-bundle`).pipe(
+        map((bundle) => ({
+          ...bundle,
+          featuredProjects: bundle.featuredProjects.map((p) => resolveProject(this.apiUrl, p)),
+        })),
+      ),
+    ),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
   getHomeBundle(): Observable<HomeBundle> {
     return this.bundle$;
+  }
+
+  invalidateBundle(): void {
+    this._refresh$.next();
   }
 
   getHeroData(): Observable<HeroData> {

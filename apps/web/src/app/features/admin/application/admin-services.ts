@@ -116,6 +116,7 @@ export class AdminServices {
       .subscribe({
         next: () => {
           this.servicesRes.reload();
+          this.homeGateway.invalidateBundle();
           this.toast.success(service.enabled ? 'Prestation désactivée' : 'Prestation activée');
         },
         error: () => this.toast.error('Erreur lors de la mise à jour'),
@@ -129,6 +130,7 @@ export class AdminServices {
       .subscribe({
         next: () => {
           this.servicesRes.reload();
+          this.homeGateway.invalidateBundle();
           this.toast.success('Prestation supprimée');
         },
         error: () => this.toast.error('Erreur lors de la suppression'),

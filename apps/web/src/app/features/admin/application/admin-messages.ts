@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { CONTACT_GATEWAY } from '@features/contact/application';
@@ -76,7 +76,7 @@ export class AdminMessages {
     stream: () => this.contactGateway.getAllMessages(),
   });
 
-  readonly messages = (): readonly ContactMessage[] => this.messagesRes.value() ?? [];
+  readonly messages = computed(() => this.messagesRes.value() ?? []);
   readonly expandedId = signal<number | null>(null);
 
   toggleExpand(id: number): void {

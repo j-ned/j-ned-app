@@ -1,12 +1,5 @@
-import {
-  Component,
-  DestroyRef,
-  inject,
-  signal,
-  computed,
-  ChangeDetectionStrategy,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import type { DisabledDate } from '@features/booking/domain';
@@ -199,7 +192,11 @@ export class AdminAvailability {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly disabledDates = signal<readonly DisabledDate[]>([]);
+  private readonly datesRes = rxResource({
+    stream: () => this.bookingGateway.getDisabledDates(),
+  });
+
+  readonly disabledDates = computed(() => this.datesRes.value() ?? []);
   readonly currentMonth = signal(new Date());
   readonly selectedDate = signal<string | null>(null);
   reasonInput = '';
@@ -277,10 +274,6 @@ export class AdminAvailability {
     return days;
   });
 
-  constructor() {
-    this.loadDates();
-  }
-
   previousMonth(): void {
     this.currentMonth.update((d) => {
       const n = new Date(d);
@@ -317,7 +310,7 @@ export class AdminAvailability {
       .subscribe({
         next: () => {
           this.reasonInput = '';
-          this.loadDates();
+          this.datesRes.reload();
           this.toast.success('Date désactivée');
         },
         error: () => this.toast.error('Erreur lors de la désactivation'),
@@ -336,7 +329,7 @@ export class AdminAvailability {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.loadDates();
+          this.datesRes.reload();
           this.toast.success('Date réactivée');
         },
         error: () => this.toast.error('Erreur lors de la réactivation'),
@@ -349,18 +342,11 @@ export class AdminAvailability {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.loadDates();
+          this.datesRes.reload();
           this.toast.success('Date supprimée');
         },
         error: () => this.toast.error('Erreur lors de la suppression'),
       });
-  }
-
-  private loadDates(): void {
-    this.bookingGateway
-      .getDisabledDates()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((dates) => this.disabledDates.set(dates));
   }
 
   formatDate(dateStr: string): string {

@@ -1,6 +1,6 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { map, switchMap } from 'rxjs';
 import { ButtonComponent } from '@layout';
@@ -154,18 +154,17 @@ export class HomeBlog {
   private readonly router = inject(Router);
   private readonly blogGateway = inject(BLOG_GATEWAY);
 
-  protected readonly latestArticles = toSignal(
-    this.blogGateway
-      .getFeaturedArticles()
-      .pipe(
+  private readonly latestArticlesResource = rxResource({
+    stream: () =>
+      this.blogGateway.getFeaturedArticles().pipe(
         switchMap((featured) =>
           featured.length > 0
             ? [featured.slice(0, 3)]
             : this.blogGateway.getAllArticles().pipe(map((all) => all.slice(0, 3))),
         ),
       ),
-    { initialValue: [] },
-  );
+  });
+  protected readonly latestArticles = computed(() => this.latestArticlesResource.value() ?? []);
 
   goToBlog(): void {
     this.router.navigate(['/blog']);

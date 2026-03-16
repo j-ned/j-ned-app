@@ -1,7 +1,7 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { BLOG_GATEWAY } from './tokens';
 
 @Component({
@@ -97,5 +97,8 @@ import { BLOG_GATEWAY } from './tokens';
 export class BlogList {
   private readonly blogGateway = inject(BLOG_GATEWAY);
 
-  readonly articles = toSignal(this.blogGateway.getAllArticles(), { initialValue: [] });
+  private readonly articlesResource = rxResource({
+    stream: () => this.blogGateway.getAllArticles(),
+  });
+  readonly articles = computed(() => this.articlesResource.value() ?? []);
 }

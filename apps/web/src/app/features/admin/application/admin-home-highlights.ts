@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { HOME_GATEWAY } from '@features/home/application';
@@ -81,7 +81,7 @@ export class AdminHomeHighlights {
     stream: () => this.homeGateway.getHomeHighlights(),
   });
 
-  readonly highlights = (): readonly HomeHighlight[] => this.highlightsRes.value() ?? [];
+  readonly highlights = computed(() => this.highlightsRes.value() ?? []);
 
   deleteHighlight(highlight: HomeHighlight): void {
     this.homeGateway
@@ -90,6 +90,7 @@ export class AdminHomeHighlights {
       .subscribe({
         next: () => {
           this.highlightsRes.reload();
+          this.homeGateway.invalidateBundle();
           this.toast.success('Mise en avant supprimée');
         },
         error: () => this.toast.error('Erreur lors de la suppression'),

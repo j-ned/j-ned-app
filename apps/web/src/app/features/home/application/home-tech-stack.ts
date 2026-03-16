@@ -1,6 +1,6 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 
 @Component({
@@ -70,9 +70,11 @@ import { PROFILE_GATEWAY } from '@features/profile/application';
 })
 export class HomeTechStack {
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  protected readonly techStack = toSignal(this.profileGateway.getTechnologies(), {
-    initialValue: [],
+
+  private readonly techStackResource = rxResource({
+    stream: () => this.profileGateway.getTechnologies(),
   });
+  protected readonly techStack = computed(() => this.techStackResource.value() ?? []);
   protected readonly specializations = [
     'Architecture Angular moderne',
     'APIs REST avec NestJS et PostgreSQL',

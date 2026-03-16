@@ -179,7 +179,7 @@ export class AdminComments {
     stream: () => this.blogGateway.getAllComments(),
   });
 
-  readonly comments = (): readonly Comment[] => this.commentsRes.value() ?? [];
+  readonly comments = computed(() => this.commentsRes.value() ?? []);
   readonly activeFilter = signal<FilterStatus>('all');
 
   readonly filters: readonly { value: FilterStatus; label: string }[] = [

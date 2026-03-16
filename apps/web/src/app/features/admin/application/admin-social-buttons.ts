@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
@@ -79,7 +79,7 @@ export class AdminSocialButtons {
     stream: () => this.profileGateway.getSocialButtons(),
   });
 
-  readonly buttons = (): readonly SocialButton[] => this.buttonsRes.value() ?? [];
+  readonly buttons = computed(() => this.buttonsRes.value() ?? []);
 
   deleteButton(btn: SocialButton): void {
     this.profileGateway

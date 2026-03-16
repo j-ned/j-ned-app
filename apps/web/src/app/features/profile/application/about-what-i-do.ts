@@ -1,5 +1,5 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
@@ -34,7 +34,10 @@ import { PROFILE_GATEWAY } from './tokens';
   `,
 })
 export class AboutWhatIDo {
-  private profileGateway = inject(PROFILE_GATEWAY);
-  private whatIDoObservable = this.profileGateway.getWhatIDo();
-  protected readonly whatIDo = toSignal(this.whatIDoObservable, { initialValue: [] });
+  private readonly profileGateway = inject(PROFILE_GATEWAY);
+
+  private readonly whatIDoResource = rxResource({
+    stream: () => this.profileGateway.getWhatIDo(),
+  });
+  protected readonly whatIDo = computed(() => this.whatIDoResource.value() ?? []);
 }

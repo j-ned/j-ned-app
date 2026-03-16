@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
 import { API_BASE_URL } from '@shared/api';
 
@@ -99,6 +99,8 @@ export class AboutHero {
     return info.avatarUrl.startsWith('http') ? info.avatarUrl : `${this.apiUrl}${info.avatarUrl}`;
   });
 
-  private socialButtonsObservable = this.profileGateway.getSocialButtons();
-  protected readonly socialButtons = toSignal(this.socialButtonsObservable, { initialValue: [] });
+  private readonly socialButtonsResource = rxResource({
+    stream: () => this.profileGateway.getSocialButtons(),
+  });
+  protected readonly socialButtons = computed(() => this.socialButtonsResource.value() ?? []);
 }

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
@@ -79,7 +79,7 @@ export class AdminDiplomas {
     stream: () => this.profileGateway.getDiplomas(),
   });
 
-  readonly diplomas = (): readonly Diploma[] => this.diplomasRes.value() ?? [];
+  readonly diplomas = computed(() => this.diplomasRes.value() ?? []);
 
   deleteDiploma(diploma: Diploma): void {
     this.profileGateway

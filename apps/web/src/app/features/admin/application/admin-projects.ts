@@ -1,15 +1,9 @@
-import {
-  Component,
-  DestroyRef,
-  inject,
-  signal,
-  computed,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
 import type { Project } from '@features/projects/domain';
+import { HOME_GATEWAY } from '@features/home/application';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
 import { ToastService } from '@shared/toast';
 
@@ -158,21 +152,19 @@ import { ToastService } from '@shared/toast';
 })
 export class AdminProjects {
   private readonly projectsGateway = inject(PROJECTS_GATEWAY);
+  private readonly homeGateway = inject(HOME_GATEWAY);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly reloadTrigger = signal(0);
   readonly selectedCategory = signal('Tous');
   readonly editingId = signal<string | null>(null);
   readonly showNewForm = signal(false);
 
   private readonly projectsResource = rxResource({
-    params: () => ({ reload: this.reloadTrigger() }),
     stream: () => this.projectsGateway.filterProjects({}),
   });
 
   private readonly categoriesResource = rxResource({
-    params: () => ({ reload: this.reloadTrigger() }),
     stream: () => this.projectsGateway.getCategories(),
   });
 
@@ -278,7 +270,9 @@ export class AdminProjects {
   }
 
   private reload(): void {
-    this.reloadTrigger.update((v) => v + 1);
+    this.projectsResource.reload();
+    this.categoriesResource.reload();
+    this.homeGateway.invalidateBundle();
   }
 
   private slugify(text: string): string {

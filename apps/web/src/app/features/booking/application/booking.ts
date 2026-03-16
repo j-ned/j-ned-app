@@ -4,11 +4,12 @@ import {
   DestroyRef,
   inject,
   signal,
+  computed,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { BOOKING_GATEWAY } from './tokens';
-import type { Booking as BookingModel, BookingFormData, DisabledDate } from '../domain/models';
+import type { BookingFormData } from '../domain/models';
 import { BookingCalendar } from './booking-calendar';
 import { BookingTimePicker } from './booking-time-picker';
 import { BookingForm, type BookingFormPayload } from './booking-form';
@@ -105,22 +106,26 @@ export class Booking {
 
   readonly selectedDate = signal<string | null>(null);
   readonly selectedSlot = signal<{ time: string; duration: number } | null>(null);
-  readonly bookedSlots = signal<readonly BookingModel[]>([]);
-  readonly disabledDates = signal<readonly DisabledDate[]>([]);
 
-  constructor() {
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    this.loadBookedSlots(currentMonth);
-    this.loadDisabledDates();
-  }
+  private readonly _bookedMonth = signal(
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+  );
+
+  private readonly bookedSlotsResource = rxResource({
+    params: () => ({ month: this._bookedMonth() }),
+    stream: ({ params }) => this.bookingGateway.getBookedSlots(params.month),
+  });
+  readonly bookedSlots = computed(() => this.bookedSlotsResource.value() ?? []);
+
+  private readonly disabledDatesResource = rxResource({
+    stream: () => this.bookingGateway.getDisabledDates(),
+  });
+  readonly disabledDates = computed(() => this.disabledDatesResource.value() ?? []);
 
   onDateSelected(date: string): void {
     this.selectedDate.set(date);
     this.selectedSlot.set(null);
-
-    const month = date.substring(0, 7);
-    this.loadBookedSlots(month);
+    this._bookedMonth.set(date.substring(0, 7));
   }
 
   onSlotSelected(slot: { time: string; duration: number }): void {
@@ -157,7 +162,8 @@ export class Booking {
             formRef.resetForm();
             const calendarMonth =
               this.calendarRef()?.currentMonthString() ?? new Date().toISOString().substring(0, 7);
-            this.loadBookedSlots(calendarMonth);
+            this._bookedMonth.set(calendarMonth);
+            this.bookedSlotsResource.reload();
           } else {
             this.toast.error(result.message);
           }
@@ -165,24 +171,6 @@ export class Booking {
         error: () => {
           formRef.setSubmitting(false);
         },
-      });
-  }
-
-  private loadBookedSlots(month: string): void {
-    this.bookingGateway
-      .getBookedSlots(month)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((slots) => {
-        this.bookedSlots.set(slots);
-      });
-  }
-
-  private loadDisabledDates(): void {
-    this.bookingGateway
-      .getDisabledDates()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((dates) => {
-        this.disabledDates.set(dates);
       });
   }
 }

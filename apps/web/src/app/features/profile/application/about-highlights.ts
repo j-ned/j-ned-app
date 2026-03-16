@@ -1,5 +1,5 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
@@ -41,7 +41,10 @@ import { PROFILE_GATEWAY } from './tokens';
   `,
 })
 export class AboutHighlights {
-  private profileGateway = inject(PROFILE_GATEWAY);
-  private highlightsObservable = this.profileGateway.getHighlights();
-  protected readonly highlights = toSignal(this.highlightsObservable, { initialValue: [] });
+  private readonly profileGateway = inject(PROFILE_GATEWAY);
+
+  private readonly highlightsResource = rxResource({
+    stream: () => this.profileGateway.getHighlights(),
+  });
+  protected readonly highlights = computed(() => this.highlightsResource.value() ?? []);
 }

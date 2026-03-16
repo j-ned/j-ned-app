@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
@@ -79,7 +79,7 @@ export class AdminHighlights {
     stream: () => this.profileGateway.getHighlights(),
   });
 
-  readonly highlights = (): readonly Highlight[] => this.highlightsRes.value() ?? [];
+  readonly highlights = computed(() => this.highlightsRes.value() ?? []);
 
   deleteHighlight(highlight: Highlight): void {
     this.profileGateway

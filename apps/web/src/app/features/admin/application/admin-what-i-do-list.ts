@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
@@ -81,7 +81,7 @@ export class AdminWhatIDoList {
     stream: () => this.profileGateway.getWhatIDo(),
   });
 
-  readonly items = (): readonly WhatIDo[] => this.itemsRes.value() ?? [];
+  readonly items = computed(() => this.itemsRes.value() ?? []);
 
   deleteItem(item: WhatIDo): void {
     this.profileGateway

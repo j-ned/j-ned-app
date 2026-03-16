@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { BLOG_GATEWAY } from '@features/blog/application';
@@ -101,7 +101,7 @@ export class AdminArticles {
     stream: () => this.blogGateway.getAllArticles(),
   });
 
-  readonly articles = (): readonly Article[] => this.articlesRes.value() ?? [];
+  readonly articles = computed(() => this.articlesRes.value() ?? []);
 
   toggleFeatured(article: Article): void {
     this.blogGateway

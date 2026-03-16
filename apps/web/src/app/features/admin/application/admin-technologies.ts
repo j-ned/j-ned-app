@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
@@ -81,7 +81,7 @@ export class AdminTechnologies {
     stream: () => this.profileGateway.getTechnologies(),
   });
 
-  readonly technologies = (): readonly Technology[] => this.technologiesRes.value() ?? [];
+  readonly technologies = computed(() => this.technologiesRes.value() ?? []);
 
   deleteTechnology(tech: Technology): void {
     this.profileGateway

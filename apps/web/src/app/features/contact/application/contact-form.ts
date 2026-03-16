@@ -6,7 +6,7 @@ import {
   signal,
   computed,
 } from '@angular/core';
-import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { CONTACT_GATEWAY } from './tokens';
@@ -376,15 +376,19 @@ export class ContactForm {
   });
   protected readonly contactInfo = computed(() => this.contactInfoResource.value());
 
-  protected readonly socialLinks = toSignal(this.contactGateway.getSocialLinks(), {
-    initialValue: {
-      linkedin: { url: '', label: '', icon: '' },
-      github: { url: '', label: '', icon: '' },
-      email: { url: '', label: '', icon: '' },
-      phone: { url: '', label: '', icon: '' },
-      twitter: { url: '', label: '', icon: '' },
-    },
+  private readonly socialLinksResource = rxResource({
+    stream: () => this.contactGateway.getSocialLinks(),
   });
+  protected readonly socialLinks = computed(
+    () =>
+      this.socialLinksResource.value() ?? {
+        linkedin: { url: '', label: '', icon: '' },
+        github: { url: '', label: '', icon: '' },
+        email: { url: '', label: '', icon: '' },
+        phone: { url: '', label: '', icon: '' },
+        twitter: { url: '', label: '', icon: '' },
+      },
+  );
 
   readonly isSubmitting = signal(false);
 

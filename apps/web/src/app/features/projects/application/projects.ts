@@ -7,7 +7,7 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { ProjectCard } from './components/project-card';
 import { PROJECTS_GATEWAY } from './tokens';
 import { filterProjects, paginateProjects, calculateTotalPages } from '../domain';
@@ -144,8 +144,10 @@ export class Projects {
   });
   protected readonly projects = computed(() => this.projectsResource.value() || []);
 
-  private categoriesObservable = this.projectsGateway.getCategories();
-  protected readonly filters = toSignal(this.categoriesObservable, { initialValue: ['Tous'] });
+  private readonly categoriesResource = rxResource({
+    stream: () => this.projectsGateway.getCategories(),
+  });
+  protected readonly filters = computed(() => this.categoriesResource.value() ?? ['Tous']);
 
   protected readonly activeFilter = signal('Tous');
   protected readonly currentPage = signal(1);

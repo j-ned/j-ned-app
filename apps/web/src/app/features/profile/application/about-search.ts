@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
 
 @Component({
@@ -23,7 +23,10 @@ import { PROFILE_GATEWAY } from './tokens';
   `,
 })
 export class AboutSearch {
-  private profileGateway = inject(PROFILE_GATEWAY);
-  private whatISeekObservable = this.profileGateway.getWhatISeek();
-  protected readonly whatISeek = toSignal(this.whatISeekObservable);
+  private readonly profileGateway = inject(PROFILE_GATEWAY);
+
+  private readonly whatISeekResource = rxResource({
+    stream: () => this.profileGateway.getWhatISeek(),
+  });
+  protected readonly whatISeek = computed(() => this.whatISeekResource.value());
 }

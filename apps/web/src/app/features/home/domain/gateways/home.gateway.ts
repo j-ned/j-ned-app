@@ -3,6 +3,7 @@ import type { HeroData, HomeBundle, HomeHighlight, ServicePricing } from '../mod
 
 export type HomeGateway = {
   getHomeBundle(): Observable<HomeBundle>;
+  invalidateBundle(): void;
   getHeroData(): Observable<HeroData>;
   getServicePricing(): Observable<readonly ServicePricing[]>;
   getHomeHighlights(): Observable<readonly HomeHighlight[]>;
