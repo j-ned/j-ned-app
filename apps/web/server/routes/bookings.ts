@@ -67,18 +67,11 @@ bookings.get('/slots', async (c) => {
   const booked = await db.select({
     date: booking.date,
     startTime: booking.startTime,
+    duration: booking.duration,
   }).from(booking)
     .where(and(gte(booking.date, startDate), lt(booking.date, nextMonth)));
 
-  const slotsMap = new Map<string, string[]>();
-  for (const b of booked) {
-    const times = slotsMap.get(b.date) ?? [];
-    times.push(b.startTime);
-    slotsMap.set(b.date, times);
-  }
-
-  const result = Array.from(slotsMap.entries()).map(([date, times]) => ({ date, times }));
-  return c.json(result);
+  return c.json(booked);
 });
 
 // DELETE /bookings/:id
