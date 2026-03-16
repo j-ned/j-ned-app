@@ -193,12 +193,9 @@ export class Header {
   protected readonly isDarkTheme = signal(true);
   protected readonly cvUrl = signal<string | null>(null);
 
-  constructor() {
-    this.loadCvUrl();
-  }
-
   private readonly _initTheme = afterNextRender(() => {
     document.documentElement.classList.add('dark');
+    this.loadCvUrl();
   });
 
   private readonly _syncTheme = effect(() => {
