@@ -21,10 +21,7 @@ import { SiteSettingsService } from '@core/services';
       <app-home-hero-section [hero]="bundle()?.hero ?? null" />
 
       <!-- Expertise Section -->
-      <section
-        class="w-full py-6 md:py-10"
-        aria-labelledby="expertise-heading"
-      >
+      <section class="w-full py-6 md:py-10" aria-labelledby="expertise-heading">
         <div class="max-w-7xl mx-auto px-6">
           <h2 id="expertise-heading" class="sr-only">Expertises</h2>
           @if (expertises().length > 0) {
@@ -55,7 +52,9 @@ import { SiteSettingsService } from '@core/services';
             <!-- Skeleton placeholder to prevent CLS -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8" aria-hidden="true">
               @for (_ of [1, 2, 3]; track $index) {
-                <div class="p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] animate-pulse">
+                <div
+                  class="p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] animate-pulse"
+                >
                   <div class="flex items-center gap-3 mb-4">
                     <div class="w-11 h-11 shrink-0 rounded-xl bg-foreground/5"></div>
                     <div class="h-4 bg-foreground/5 rounded w-32"></div>
