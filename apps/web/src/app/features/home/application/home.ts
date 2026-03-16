@@ -49,7 +49,7 @@ import { SiteSettingsService } from '@core/services';
               }
             </ul>
           } @else {
-            <!-- Skeleton placeholder to prevent CLS -->
+            <!-- Skeleton placeholder to prevent CLS — matches real card dimensions -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8" aria-hidden="true">
               @for (_ of [1, 2, 3]; track $index) {
                 <div
@@ -57,11 +57,12 @@ import { SiteSettingsService } from '@core/services';
                 >
                   <div class="flex items-center gap-3 mb-4">
                     <div class="w-11 h-11 shrink-0 rounded-xl bg-foreground/5"></div>
-                    <div class="h-4 bg-foreground/5 rounded w-32"></div>
+                    <div class="h-3.5 bg-foreground/5 rounded w-32"></div>
                   </div>
-                  <div class="space-y-2">
-                    <div class="h-3 bg-foreground/5 rounded w-full"></div>
-                    <div class="h-3 bg-foreground/5 rounded w-4/5"></div>
+                  <div class="space-y-1.5">
+                    <div class="h-[18px] bg-foreground/5 rounded w-full"></div>
+                    <div class="h-[18px] bg-foreground/5 rounded w-full"></div>
+                    <div class="h-[18px] bg-foreground/5 rounded w-3/5"></div>
                   </div>
                 </div>
               }
