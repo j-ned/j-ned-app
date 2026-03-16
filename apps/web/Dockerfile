@@ -52,6 +52,10 @@ RUN apk add --no-cache nodejs npm
 # Copier les artefacts du build Angular
 COPY --from=build /app/dist/angular-portfolio-app /usr/share/nginx/html
 
+# Pré-compresser les assets statiques en gzip (servis via gzip_static)
+RUN find /usr/share/nginx/html -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' \) \
+    -exec gzip -9 -k {} \;
+
 # Copier le serveur Hono + dépendances
 COPY --from=build /app/package.json /app/pnpm-lock.yaml /app/
 COPY --from=build /app/node_modules /app/node_modules
@@ -68,7 +72,8 @@ server {
     # Allow file uploads up to 10MB
     client_max_body_size 10m;
 
-    # Gzip compression
+    # Compression : fichiers pré-compressés (gzip -9 au build) + fallback dynamique
+    gzip_static on;
     gzip on;
     gzip_vary on;
     gzip_proxied any;
@@ -83,6 +88,12 @@ server {
         application/xml
         image/svg+xml;
 
+    # Security headers
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
     # Proxy API vers le serveur Hono (^~ empêche les regex de prendre le dessus)
     location ^~ /api/ {
         proxy_pass http://127.0.0.1:3000;
@@ -93,10 +104,16 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Fichiers statiques avec cache long (CSS, JS, images, fonts)
-    location ~* \.(?:css|js|woff2?|svg|png|jpg|jpeg|gif|ico|webp|avif)$ {
+    # Fichiers statiques hashés (CSS, JS) — cache immutable 1 an
+    location ~* \.(?:css|js)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+    }
+
+    # Images et fonts — cache 30 jours (peuvent changer via S3)
+    location ~* \.(?:woff2?|svg|png|jpg|jpeg|gif|ico|webp|avif)$ {
+        expires 30d;
+        add_header Cache-Control "public";
     }
 
     # SPA fallback — index.html ne doit jamais être caché
