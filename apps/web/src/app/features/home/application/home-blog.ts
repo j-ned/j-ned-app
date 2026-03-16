@@ -156,13 +156,15 @@ export class HomeBlog {
 
   private readonly latestArticlesResource = rxResource({
     stream: () =>
-      this.blogGateway.getFeaturedArticles().pipe(
-        switchMap((featured) =>
-          featured.length > 0
-            ? [featured.slice(0, 3)]
-            : this.blogGateway.getAllArticles().pipe(map((all) => all.slice(0, 3))),
+      this.blogGateway
+        .getFeaturedArticles()
+        .pipe(
+          switchMap((featured) =>
+            featured.length > 0
+              ? [featured.slice(0, 3)]
+              : this.blogGateway.getAllArticles().pipe(map((all) => all.slice(0, 3))),
+          ),
         ),
-      ),
   });
   protected readonly latestArticles = computed(() => this.latestArticlesResource.value() ?? []);
 

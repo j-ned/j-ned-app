@@ -1,4 +1,11 @@
-import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { BOOKING_GATEWAY } from '@features/booking/application';

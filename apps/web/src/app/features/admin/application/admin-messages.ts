@@ -1,4 +1,11 @@
-import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { CONTACT_GATEWAY } from '@features/contact/application';

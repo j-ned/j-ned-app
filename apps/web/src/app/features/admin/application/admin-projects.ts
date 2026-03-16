@@ -1,4 +1,11 @@
-import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
