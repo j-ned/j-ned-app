@@ -59,7 +59,7 @@ import { SiteSettingsService } from '@core/services';
                     <div class="w-11 h-11 shrink-0 rounded-xl bg-foreground/5"></div>
                     <div class="h-3.5 bg-foreground/5 rounded w-32"></div>
                   </div>
-                  <div class="h-[91px] rounded bg-foreground/5"></div>
+                  <div class="h-[114px] rounded bg-foreground/5"></div>
                 </div>
               }
             </div>
