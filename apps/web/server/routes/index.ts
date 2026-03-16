@@ -15,6 +15,7 @@ import highlights from './highlights.js';
 import expertises from './expertises.js';
 import aspirationRoutes from './aspiration.js';
 import { heroRoutes, servicePricingRoutes, homeHighlightRoutes } from './home.js';
+import homeBundle from './home-bundle.js';
 import images from './images.js';
 import settings from './settings.js';
 
@@ -38,6 +39,7 @@ export function registerRoutes(app: Hono) {
   app.route('/hero', heroRoutes);
   app.route('/service-pricing', servicePricingRoutes);
   app.route('/home-highlights', homeHighlightRoutes);
+  app.route('/home-bundle', homeBundle);
   app.route('/images', images);
   app.route('/settings', settings);
 }

@@ -1,9 +1,8 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProjectCard } from '@features/projects/application';
 import { ButtonComponent } from '@layout';
-import { PROJECTS_GATEWAY } from '@features/projects/application';
+import type { Project } from '@features/projects/domain';
 
 @Component({
   selector: 'app-home-projects',
@@ -51,12 +50,8 @@ import { PROJECTS_GATEWAY } from '@features/projects/application';
 })
 export class HomeProjects {
   private router = inject(Router);
-  private projectsGateway = inject(PROJECTS_GATEWAY);
-
-  private featuredProjectsObservable = this.projectsGateway.getFeaturedProjects();
-  protected readonly featuredProjects = toSignal(this.featuredProjectsObservable, {
-    initialValue: [],
-  });
+  readonly projects = input<readonly Project[]>([]);
+  protected readonly featuredProjects = this.projects;
 
   protected readonly projectsSection = (): { title: string; description: string } => ({
     title: 'Aperçu des projets',

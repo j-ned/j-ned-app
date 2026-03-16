@@ -16,6 +16,7 @@ export const heroRoutes = new Hono();
 heroRoutes.get('/', async (c) => {
   const [data] = await db.select().from(hero).limit(1);
   if (!data) return c.json({ error: 'Hero data not found' }, 404);
+  c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   return c.json(data);
 });
 
@@ -45,6 +46,7 @@ export const servicePricingRoutes = new Hono();
 
 servicePricingRoutes.get('/', async (c) => {
   const data = await db.select().from(servicePricing).orderBy(asc(servicePricing.order));
+  c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   return c.json(data);
 });
 
@@ -81,6 +83,7 @@ const homeFilter = eq(highlight.section, 'home');
 
 homeHighlightRoutes.get('/', async (c) => {
   const data = await db.select().from(highlight).where(homeFilter).orderBy(asc(highlight.order));
+  c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   return c.json(data);
 });
 

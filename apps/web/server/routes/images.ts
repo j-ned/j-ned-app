@@ -17,7 +17,7 @@ images.get('/projects/:key', async (c) => {
     return new Response(Buffer.from(body), {
       headers: {
         'Content-Type': response.ContentType ?? 'image/webp',
-        'Cache-Control': 'public, max-age=86400',
+        'Cache-Control': 'public, max-age=31536000, immutable',
         'Cross-Origin-Resource-Policy': 'cross-origin',
       },
     });
@@ -40,7 +40,7 @@ images.get('/blog/:key', async (c) => {
     return new Response(Buffer.from(body), {
       headers: {
         'Content-Type': response.ContentType ?? 'image/webp',
-        'Cache-Control': 'public, max-age=86400',
+        'Cache-Control': 'public, max-age=31536000, immutable',
         'Cross-Origin-Resource-Policy': 'cross-origin',
       },
     });

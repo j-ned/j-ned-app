@@ -1,14 +1,35 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of, shareReplay } from 'rxjs';
 import type { HomeGateway } from '../../domain';
-import type { HeroData, HomeHighlight, ServicePricing } from '../../domain';
+import type { HeroData, HomeBundle, HomeHighlight, ServicePricing } from '../../domain';
+import type { Project } from '@features/projects/domain';
 import { API_BASE_URL } from '@shared/api';
+
+function resolveProject(apiUrl: string, p: Project): Project {
+  if (!p.image) return p;
+  const image = p.image.startsWith('http') ? p.image : `${apiUrl}${p.image}`;
+  return { ...p, image };
+}
 
 @Injectable()
 export class HttpHomeGateway implements HomeGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
+
+  private readonly bundle$ = this.http
+    .get<HomeBundle>(`${this.apiUrl}/home-bundle`)
+    .pipe(
+      map((bundle) => ({
+        ...bundle,
+        featuredProjects: bundle.featuredProjects.map((p) => resolveProject(this.apiUrl, p)),
+      })),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+
+  getHomeBundle(): Observable<HomeBundle> {
+    return this.bundle$;
+  }
 
   getHeroData(): Observable<HeroData> {
     return this.http.get<HeroData>(`${this.apiUrl}/hero`);

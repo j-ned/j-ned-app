@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { HomeHero } from './home-hero';
 import { ButtonComponent } from '@layout';
+import type { HeroData } from '../domain';
 
 @Component({
   selector: 'app-home-hero-section',
@@ -23,14 +24,14 @@ import { ButtonComponent } from '@layout';
     }
 
     .animate-fade-up-actions {
-      animation: fade-up 0.6s ease-out 0.4s both;
+      animation: fade-up 0.6s ease-out 0.15s both;
       will-change: transform, opacity;
     }
   `,
   template: `
     <div class="max-w-5xl mx-auto w-full relative z-10">
       <div class="flex flex-col items-center">
-        <app-home-hero />
+        <app-home-hero [hero]="hero()" />
 
         <!-- CTAs -->
         <div
@@ -54,6 +55,7 @@ import { ButtonComponent } from '@layout';
   `,
 })
 export class HomeHeroSection {
+  readonly hero = input<HeroData | null>(null);
   private readonly router = inject(Router);
 
   goToProjects(): void {

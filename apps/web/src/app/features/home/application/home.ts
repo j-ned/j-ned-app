@@ -1,6 +1,6 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
 import { HomeServices } from './home-services';
 import { HomeProjects } from './home-projects';
@@ -18,7 +18,7 @@ import { SiteSettingsService } from '@core/services';
   template: `
     <main class="flex flex-col w-full">
       <!-- Hero Section -->
-      <app-home-hero-section />
+      <app-home-hero-section [hero]="bundle()?.hero ?? null" />
 
       <!-- Expertise Section -->
       <section class="w-full py-6 md:py-10 min-h-[200px] md:min-h-[160px]">
@@ -52,10 +52,10 @@ import { SiteSettingsService } from '@core/services';
       </section>
 
       <!-- Services Section -->
-      @defer (on viewport) {
+      @defer (on viewport; prefetch on immediate) {
         <section class="w-full py-12 md:py-16">
           <div class="max-w-7xl mx-auto px-6">
-            <app-home-services />
+            <app-home-services [services]="bundle()?.services ?? []" />
           </div>
         </section>
       } @placeholder {
@@ -63,10 +63,10 @@ import { SiteSettingsService } from '@core/services';
       }
 
       <!-- Projects Section -->
-      @defer (on viewport) {
+      @defer (on viewport; prefetch on immediate) {
         <section class="w-full py-12 md:py-16">
           <div class="max-w-7xl mx-auto px-6">
-            <app-home-projects />
+            <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
           </div>
         </section>
       } @placeholder {
@@ -115,9 +115,11 @@ export class Home {
   private readonly homeGateway = inject(HOME_GATEWAY);
   protected readonly siteSettings = inject(SiteSettingsService);
 
-  protected readonly expertises = toSignal(this.homeGateway.getHomeHighlights(), {
-    initialValue: [],
+  private readonly bundleResource = rxResource({
+    stream: () => this.homeGateway.getHomeBundle(),
   });
+  protected readonly bundle = computed(() => this.bundleResource.value());
+  protected readonly expertises = computed(() => this.bundle()?.highlights ?? []);
 
   scrollTo(anchor: string): void {
     const el = this.document.getElementById(anchor);

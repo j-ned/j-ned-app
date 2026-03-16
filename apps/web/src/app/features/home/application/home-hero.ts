@@ -1,7 +1,6 @@
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { Component, ChangeDetectionStrategy, computed, input } from '@angular/core';
 import { HomeAvailability } from './home-availability';
-import { HOME_GATEWAY } from './tokens';
+import type { HeroData } from '../domain';
 
 @Component({
   selector: 'app-home-hero',
@@ -33,10 +32,10 @@ import { HOME_GATEWAY } from './tokens';
     }
 
     .delay-1 {
-      animation-delay: 0.1s;
+      animation-delay: 0.05s;
     }
     .delay-2 {
-      animation-delay: 0.25s;
+      animation-delay: 0.1s;
     }
   `,
   template: `
@@ -70,11 +69,7 @@ import { HOME_GATEWAY } from './tokens';
   `,
 })
 export class HomeHero {
-  private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly heroResource = rxResource({
-    stream: () => this.homeGateway.getHeroData(),
-  });
-  protected readonly hero = computed(() => this.heroResource.value());
+  readonly hero = input<HeroData | null>(null);
 
   protected readonly highlightedTagline = computed(() => {
     const tagline = this.hero()?.tagline;

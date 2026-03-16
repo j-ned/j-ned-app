@@ -1,8 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '@layout';
-import { HOME_GATEWAY } from './tokens';
+import type { ServicePricing } from '../domain';
 
 @Component({
   selector: 'app-home-services',
@@ -107,11 +106,7 @@ import { HOME_GATEWAY } from './tokens';
 })
 export class HomeServices {
   private readonly router = inject(Router);
-  private readonly homeGateway = inject(HOME_GATEWAY);
-
-  protected readonly services = toSignal(this.homeGateway.getServicePricing(), {
-    initialValue: [],
-  });
+  readonly services = input<readonly ServicePricing[]>([]);
 
   goToBooking(): void {
     this.router.navigate(['/booking']);

@@ -70,6 +70,7 @@ projects.get('/', async (c) => {
     db.select({ count: sql<number>`count(*)::int` }).from(project).where(where),
   ]);
 
+  c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   return c.json({
     data: data.map((p) => ({ ...p, image: resolveImageProxy(p.image) })),
     total: countResult[0]?.count ?? 0,
@@ -88,6 +89,7 @@ projects.get('/categories', async (c) => {
     .from(project)
     .groupBy(project.category);
 
+  c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   return c.json(result);
 });
 

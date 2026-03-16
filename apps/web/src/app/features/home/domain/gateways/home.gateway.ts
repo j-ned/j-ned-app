@@ -1,7 +1,8 @@
 import type { Observable } from 'rxjs';
-import type { HeroData, HomeHighlight, ServicePricing } from '../models';
+import type { HeroData, HomeBundle, HomeHighlight, ServicePricing } from '../models';
 
 export type HomeGateway = {
+  getHomeBundle(): Observable<HomeBundle>;
   getHeroData(): Observable<HeroData>;
   getServicePricing(): Observable<readonly ServicePricing[]>;
   getHomeHighlights(): Observable<readonly HomeHighlight[]>;
