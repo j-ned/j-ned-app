@@ -22,7 +22,7 @@ import { SiteSettingsService } from '@core/services';
 
       <!-- Expertise Section -->
       <section
-        class="w-full py-6 md:py-10 min-h-[200px] md:min-h-[160px]"
+        class="w-full py-6 md:py-10"
         aria-labelledby="expertise-heading"
       >
         <div class="max-w-7xl mx-auto px-6">
@@ -51,6 +51,22 @@ import { SiteSettingsService } from '@core/services';
                 </li>
               }
             </ul>
+          } @else {
+            <!-- Skeleton placeholder to prevent CLS -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8" aria-hidden="true">
+              @for (_ of [1, 2, 3]; track $index) {
+                <div class="p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] animate-pulse">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-11 h-11 shrink-0 rounded-xl bg-foreground/5"></div>
+                    <div class="h-4 bg-foreground/5 rounded w-32"></div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="h-3 bg-foreground/5 rounded w-full"></div>
+                    <div class="h-3 bg-foreground/5 rounded w-4/5"></div>
+                  </div>
+                </div>
+              }
+            </div>
           }
         </div>
       </section>
