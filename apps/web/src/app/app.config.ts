@@ -37,6 +37,13 @@ import { HttpBlogGateway } from '@features/blog/infrastructure';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import { HttpBookingGateway } from '@features/booking/infrastructure';
 
+function prefetchHomeBundle(): () => void {
+  return (): void => {
+    const gateway = inject(HOME_GATEWAY);
+    gateway.getHomeBundle().subscribe();
+  };
+}
+
 function initializeSeo(): () => void {
   return (): void => {
     const router = inject(Router);
@@ -109,6 +116,7 @@ export const appConfig: ApplicationConfig = {
       withViewTransitions(),
     ),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
+    provideAppInitializer(prefetchHomeBundle()),
     provideAppInitializer(initializeSeo()),
     provideAppInitializer(initializeTracking()),
     {
