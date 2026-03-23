@@ -160,7 +160,7 @@ export class HttpProfileGateway implements ProfileGateway {
   }
 
   getWhatIDoById(id: string): Observable<WhatIDo> {
-    return this.http.get<WhatIDo>(`${this.apiUrl}/what-i-do/${id}`);
+    return this.http.get<WhatIDo>(`${this.apiUrl}/expertises/${id}`);
   }
 
   createWhatIDo(data: Omit<WhatIDo, 'id'>): Observable<WhatIDo> {
@@ -168,10 +168,10 @@ export class HttpProfileGateway implements ProfileGateway {
   }
 
   updateWhatIDo(id: string, data: Partial<WhatIDo>): Observable<WhatIDo> {
-    return this.http.patch<WhatIDo>(`${this.apiUrl}/what-i-do/${id}`, data);
+    return this.http.patch<WhatIDo>(`${this.apiUrl}/expertises/${id}`, data);
   }
 
   deleteWhatIDo(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/what-i-do/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/expertises/${id}`);
   }
 }
