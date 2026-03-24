@@ -6,7 +6,9 @@ import { AuthService } from './auth.service';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
 
-  const authReq = req.clone({ withCredentials: true });
+  // Skip credentials for public tracking endpoint
+  const isTrackingEndpoint = req.url.includes('/analytics/track');
+  const authReq = isTrackingEndpoint ? req : req.clone({ withCredentials: true });
 
   // Never retry auth endpoints — they handle their own errors
   const isAuthEndpoint = req.url.includes('/auth/');

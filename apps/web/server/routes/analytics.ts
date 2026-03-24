@@ -81,14 +81,44 @@ analytics.get('/stats/overview', authMiddleware, async (c) => {
   const query = c.req.query();
   const where = dateFilters(query);
 
-  const [pageViews] = await db.select({ count: count() }).from(pageView).where(where);
-  const [uniqueVisitors] = await db.select({ count: countDistinct(pageView.sessionHash) }).from(pageView).where(where);
-  const [avgDuration] = await db.select({ avg: sql<number>`coalesce(avg(${pageView.duration}), 0)::int` }).from(pageView).where(where);
+  const eventConditions = [];
+  if (query['startDate']) eventConditions.push(gte(analyticsEvent.createdAt, new Date(query['startDate'])));
+  if (query['endDate']) eventConditions.push(lte(analyticsEvent.createdAt, new Date(query['endDate'])));
+  const eventWhere = eventConditions.length > 0 ? and(...eventConditions) : undefined;
+
+  const [pvCount, visitors, avgDur, bounceResult, eventCounts] = await Promise.all([
+    db.select({ count: count() }).from(pageView).where(where).then(r => r[0]),
+    db.select({ count: countDistinct(pageView.sessionHash) }).from(pageView).where(where).then(r => r[0]),
+    db.select({ avg: sql<number>`coalesce(avg(${pageView.duration}), 0)::int` }).from(pageView).where(where).then(r => r[0]),
+    db.execute(
+      where
+        ? sql`SELECT count(*)::int as bounces FROM (SELECT "session_hash" FROM "page_view" WHERE ${where} GROUP BY "session_hash" HAVING count(*) = 1) as bounce_sessions`
+        : sql`SELECT count(*)::int as bounces FROM (SELECT "session_hash" FROM "page_view" GROUP BY "session_hash" HAVING count(*) = 1) as bounce_sessions`
+    ),
+    db.select({
+      eventType: analyticsEvent.eventType,
+      count: sql<number>`count(*)::int`,
+    }).from(analyticsEvent).where(eventWhere).groupBy(analyticsEvent.eventType),
+  ]);
+
+  const totalPageviews = pvCount?.count ?? 0;
+  const totalVisitors = visitors?.count ?? 0;
+  const bounces = Number((bounceResult as Record<string, unknown>[])[0]?.['bounces'] ?? 0);
+  const bounceRate = totalVisitors > 0 ? (bounces / totalVisitors) * 100 : 0;
+  const projectClicks = eventCounts.find(e => e.eventType === 'project_click')?.count ?? 0;
+  const articleViews = eventCounts.find(e => e.eventType === 'article_view')?.count ?? 0;
+  const cvDownloads = eventCounts.find(e => e.eventType === 'cv_download')?.count ?? 0;
 
   return c.json({
-    pageViews: pageViews?.count ?? 0,
-    uniqueVisitors: uniqueVisitors?.count ?? 0,
-    avgDuration: avgDuration?.avg ?? 0,
+    visitors: totalVisitors,
+    pageviews: totalPageviews,
+    sessions: totalVisitors,
+    bounces,
+    bounceRate,
+    avgDuration: avgDur?.avg ?? 0,
+    projectClicks,
+    articleViews,
+    cvDownloads,
   });
 });
 
@@ -99,7 +129,8 @@ analytics.get('/stats/chart', authMiddleware, async (c) => {
 
   const data = await db.select({
     date: dailyStat.date,
-    count: dailyStat.pageviews,
+    visitors: dailyStat.visitors,
+    pageviews: dailyStat.pageviews,
   }).from(dailyStat).where(where).orderBy(dailyStat.date);
 
   return c.json(data);
@@ -126,7 +157,7 @@ analytics.get('/stats/metrics', authMiddleware, async (c) => {
     .orderBy(desc(sql`count(*)`))
     .limit(20);
 
-  return c.json({ [type]: data });
+  return c.json(data);
 });
 
 // GET /analytics/stats/active
@@ -149,9 +180,9 @@ analytics.get('/stats/projects', authMiddleware, async (c) => {
   if (query['endDate']) conditions.push(lte(analyticsEvent.createdAt, new Date(query['endDate'])));
 
   const data = await db.select({
-    id: analyticsEvent.entityId,
-    title: analyticsEvent.entityTitle,
-    clicks: sql<number>`count(*)::int`,
+    entityId: analyticsEvent.entityId,
+    entityTitle: analyticsEvent.entityTitle,
+    count: sql<number>`count(*)::int`,
   }).from(analyticsEvent)
     .where(and(...conditions))
     .groupBy(analyticsEvent.entityId, analyticsEvent.entityTitle)
@@ -168,9 +199,9 @@ analytics.get('/stats/articles', authMiddleware, async (c) => {
   if (query['endDate']) conditions.push(lte(analyticsEvent.createdAt, new Date(query['endDate'])));
 
   const data = await db.select({
-    id: analyticsEvent.entityId,
-    title: analyticsEvent.entityTitle,
-    views: sql<number>`count(*)::int`,
+    entityId: analyticsEvent.entityId,
+    entityTitle: analyticsEvent.entityTitle,
+    count: sql<number>`count(*)::int`,
   }).from(analyticsEvent)
     .where(and(...conditions))
     .groupBy(analyticsEvent.entityId, analyticsEvent.entityTitle)
