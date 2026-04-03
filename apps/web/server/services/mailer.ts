@@ -15,6 +15,10 @@ const transporter: Transporter = nodemailer.createTransport({
     user: env.SMTP_USER,
     pass: env.SMTP_PASS,
   },
+  tls: {
+    rejectUnauthorized: false,
+    checkServerIdentity: () => undefined,
+  },
 });
 
 function loadTemplate(name: string): string {
