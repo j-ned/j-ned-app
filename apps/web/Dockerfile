@@ -48,11 +48,15 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 FROM nginx:alpine AS nginx-brotli-modules
 
 RUN apk add --no-cache --virtual .build \
-      git build-base linux-headers pcre2-dev zlib-dev openssl-dev wget \
+      git build-base cmake linux-headers pcre2-dev zlib-dev openssl-dev wget \
  && NGX_VER="$(nginx -v 2>&1 | sed 's|.*/||')" \
  && wget -qO- "https://nginx.org/download/nginx-${NGX_VER}.tar.gz" | tar xz -C /tmp \
  && git clone --depth=1 https://github.com/google/ngx_brotli.git /tmp/ngx_brotli \
  && (cd /tmp/ngx_brotli && git submodule update --init --recursive --depth=1) \
+ && (cd /tmp/ngx_brotli/deps/brotli && mkdir -p out && cd out \
+     && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
+              -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_CXX_FLAGS="-fPIC" .. > /dev/null \
+     && cmake --build . --target brotlienc brotlicommon -j"$(nproc)" > /dev/null) \
  && cd "/tmp/nginx-${NGX_VER}" \
  && ./configure --with-compat --add-dynamic-module=/tmp/ngx_brotli > /dev/null \
  && make -j"$(nproc)" modules \
