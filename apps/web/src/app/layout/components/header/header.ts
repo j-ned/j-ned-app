@@ -1,14 +1,19 @@
-import { Component, signal, effect, afterNextRender, ElementRef, inject } from '@angular/core';
-import { NgClass } from '@angular/common';
+import { Component, signal, effect, afterNextRender, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Button } from 'primeng/button';
+import { Drawer } from 'primeng/drawer';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsService } from '@shared/analytics';
 import { CvService } from '@shared/cv';
 import { SiteSettingsService } from '@core/services';
+import { PiIconPipe } from '@shared/icons';
+
+const THEME_STORAGE_KEY = 'j-ned:theme';
+type ThemePreference = 'dark' | 'light';
 
 @Component({
   selector: 'app-header',
-  imports: [NgClass, RouterLink],
+  imports: [RouterLink, Button, Drawer, PiIconPipe],
   host: {
     class:
       'fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/5',
@@ -36,9 +41,7 @@ import { SiteSettingsService } from '@core/services';
               <span
                 class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider"
               >
-                <svg aria-hidden="true" class="w-4 h-4">
-                  <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
-                </svg>
+                <i class="text-base" [class]="item.icons | piIcon" aria-hidden="true"></i>
                 Blog en construction
               </span>
             </span>
@@ -47,9 +50,7 @@ import { SiteSettingsService } from '@core/services';
               [href]="item.href"
               class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <svg aria-hidden="true" class="w-5 h-5">
-                <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
-              </svg>
+              <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
               {{ item.label }}
             </a>
           } @else {
@@ -57,9 +58,7 @@ import { SiteSettingsService } from '@core/services';
               [routerLink]="item.href"
               class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <svg aria-hidden="true" class="w-5 h-5">
-                <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
-              </svg>
+              <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
               {{ item.label }}
             </a>
           }
@@ -67,65 +66,53 @@ import { SiteSettingsService } from '@core/services';
       </nav>
 
       <div class="flex items-center gap-4">
-        <button
-          (click)="toggleTheme()"
-          class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 hover:bg-primary/20 hover:border-primary/40 transition-colors group"
-          aria-label="Changer le thème"
-        >
-          <svg
-            aria-hidden="true"
-            [ngClass]="{ hidden: isDarkTheme() }"
-            class="w-5 h-5 text-primary"
-          >
-            <use href="/icons/sprite.svg#lucide-sun"></use>
-          </svg>
-          <svg
-            aria-hidden="true"
-            [ngClass]="{ hidden: !isDarkTheme() }"
-            class="w-5 h-5 text-primary"
-          >
-            <use href="/icons/sprite.svg#lucide-moon"></use>
-          </svg>
-        </button>
+        <p-button
+          [rounded]="true"
+          severity="secondary"
+          [outlined]="true"
+          [icon]="isDarkTheme() ? 'pi pi-moon' : 'pi pi-sun'"
+          [ariaLabel]="isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre'"
+          (onClick)="toggleTheme()"
+        />
         @if (cvUrl()) {
           <a
             [href]="cvUrl()"
             target="_blank"
             rel="noopener noreferrer"
             (click)="trackCvDownload()"
-            class="hidden md:flex items-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 rounded-full text-md font-medium transition-colors"
+            class="hidden md:inline-flex"
           >
-            <svg aria-hidden="true" class="w-6 h-6 text-primary">
-              <use href="/icons/sprite.svg#lucide-download"></use>
-            </svg>
-            Télécharger mon CV
+            <p-button
+              label="Télécharger mon CV"
+              icon="pi pi-download"
+              severity="secondary"
+              [outlined]="true"
+              [rounded]="true"
+            />
           </a>
         }
-        <button
-          (click)="toggleMobileMenu()"
-          class="relative md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
-          [attr.aria-label]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
-        >
-          <svg
-            aria-hidden="true"
-            [ngClass]="{ hidden: isMobileMenuOpen() }"
-            class="w-6 h-6 text-primary"
-          >
-            <use href="/icons/sprite.svg#lucide-menu"></use>
-          </svg>
-          <svg
-            aria-hidden="true"
-            [ngClass]="{ hidden: !isMobileMenuOpen() }"
-            class="w-6 h-6 text-primary"
-          >
-            <use href="/icons/sprite.svg#lucide-x"></use>
-          </svg>
-        </button>
+        <p-button
+          styleClass="md:!hidden"
+          [rounded]="true"
+          severity="secondary"
+          [text]="true"
+          [icon]="isMobileMenuOpen() ? 'pi pi-times' : 'pi pi-bars'"
+          [ariaLabel]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
+          (onClick)="toggleMobileMenu()"
+        />
       </div>
     </div>
 
-    <div [ngClass]="{ hidden: !isMobileMenuOpen() }" class="md:hidden border-t border-white/5">
-      <nav class="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
+    <p-drawer
+      [visible]="isMobileMenuOpen()"
+      (visibleChange)="isMobileMenuOpen.set($event)"
+      position="right"
+      styleClass="md:!hidden"
+    >
+      <ng-template #header>
+        <span class="text-lg font-bold text-foreground">Menu</span>
+      </ng-template>
+      <nav class="flex flex-col gap-4">
         @for (item of navItems(); track item) {
           @if (item.href === '/blog' && !siteSettings.blogEnabled()) {
             <span
@@ -134,9 +121,7 @@ import { SiteSettingsService } from '@core/services';
               <span
                 class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider"
               >
-                <svg aria-hidden="true" class="w-4 h-4">
-                  <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
-                </svg>
+                <i class="text-base" [class]="item.icons | piIcon" aria-hidden="true"></i>
                 Blog en construction
               </span>
             </span>
@@ -146,9 +131,7 @@ import { SiteSettingsService } from '@core/services';
               (click)="closeMobileMenu()"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <svg aria-hidden="true" class="w-5 h-5">
-                <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
-              </svg>
+              <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
               {{ item.label }}
             </a>
           } @else {
@@ -157,9 +140,7 @@ import { SiteSettingsService } from '@core/services';
               (click)="closeMobileMenu()"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <svg aria-hidden="true" class="w-5 h-5">
-                <use [attr.href]="'/icons/sprite.svg#' + item.icons"></use>
-              </svg>
+              <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
               {{ item.label }}
             </a>
           }
@@ -172,52 +153,56 @@ import { SiteSettingsService } from '@core/services';
             (click)="trackCvDownload(); closeMobileMenu()"
             class="flex items-center gap-3 text-lg font-medium text-primary hover:text-primary/80 transition-colors py-2 border-t border-white/5 pt-4 mt-2"
           >
-            <svg aria-hidden="true" class="w-5 h-5">
-              <use href="/icons/sprite.svg#lucide-download"></use>
-            </svg>
+            <i class="pi pi-download text-xl" aria-hidden="true"></i>
             Télécharger mon CV
           </a>
         }
       </nav>
-    </div>
+    </p-drawer>
   `,
 })
 export class Header {
-  private readonly elementRef = inject(ElementRef);
   private readonly analytics = inject(AnalyticsService);
   private readonly cvService = inject(CvService);
   protected readonly siteSettings = inject(SiteSettingsService);
 
   protected readonly navItems = signal(NAV_LINKS);
   protected readonly isMobileMenuOpen = signal(false);
-  protected readonly isDarkTheme = signal(true);
+  protected readonly isDarkTheme = signal(Header.readStoredTheme() === 'dark');
   protected readonly cvUrl = signal<string | null>(null);
 
   private readonly _initTheme = afterNextRender(() => {
-    document.documentElement.classList.add('dark');
+    this.applyTheme();
     this.loadCvUrl();
   });
 
   private readonly _syncTheme = effect(() => {
-    if (this.isDarkTheme()) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    const isDark = this.isDarkTheme();
+    this.applyTheme();
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
     }
   });
 
-  private readonly _closeMenuOnOutsideClick = effect((onCleanup) => {
-    if (!this.isMobileMenuOpen()) return;
+  private static readStoredTheme(): ThemePreference {
+    if (typeof localStorage === 'undefined') return 'dark';
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === 'dark' || stored === 'light') return stored;
+    // Fallback : préférence système si aucun choix explicite
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    return 'dark';
+  }
 
-    const handleClick = (event: MouseEvent): void => {
-      if (!this.elementRef.nativeElement.contains(event.target)) {
-        this.isMobileMenuOpen.set(false);
-      }
-    };
-
-    setTimeout(() => document.addEventListener('click', handleClick), 0);
-    onCleanup(() => document.removeEventListener('click', handleClick));
-  });
+  private applyTheme(): void {
+    if (typeof document === 'undefined') return;
+    if (this.isDarkTheme()) {
+      document.documentElement.classList.add('app-dark');
+    } else {
+      document.documentElement.classList.remove('app-dark');
+    }
+  }
 
   protected toggleMobileMenu(): void {
     this.isMobileMenuOpen.update((value) => !value);

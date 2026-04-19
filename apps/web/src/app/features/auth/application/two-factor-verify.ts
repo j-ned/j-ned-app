@@ -22,9 +22,7 @@ type TwoFactorVerifyFormShape = {
           <div
             class="w-16 h-16 rounded-xl bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center"
           >
-            <svg class="w-8 h-8 text-primary" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-shield-check" />
-            </svg>
+            <i class="pi pi-shield text-[2rem] text-primary" aria-hidden="true"></i>
           </div>
         </div>
 

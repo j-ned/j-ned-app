@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
 
 export type SeoData = {
@@ -15,6 +16,7 @@ export type SeoData = {
 export class SeoService {
   private title = inject(Title);
   private meta = inject(Meta);
+  private document = inject(DOCUMENT);
 
   applySeoData(data: SeoData): void {
     this.title.setTitle(data.title);
@@ -54,23 +56,23 @@ export class SeoService {
   }
 
   private updateCanonicalUrl(url: string): void {
-    let link: HTMLLinkElement | null = document.querySelector('link[rel="canonical"]');
+    let link: HTMLLinkElement | null = this.document.querySelector('link[rel="canonical"]');
     if (!link) {
-      link = document.createElement('link');
+      link = this.document.createElement('link');
       link.setAttribute('rel', 'canonical');
-      document.head.appendChild(link);
+      this.document.head.appendChild(link);
     }
     link.setAttribute('href', url);
   }
 
   private addStructuredData(data: Record<string, unknown>): void {
-    let script: HTMLScriptElement | null = document.querySelector(
+    let script: HTMLScriptElement | null = this.document.querySelector(
       'script[type="application/ld+json"]',
     );
     if (!script) {
-      script = document.createElement('script');
+      script = this.document.createElement('script');
       script.type = 'application/ld+json';
-      document.head.appendChild(script);
+      this.document.head.appendChild(script);
     }
     script.textContent = JSON.stringify(data);
   }

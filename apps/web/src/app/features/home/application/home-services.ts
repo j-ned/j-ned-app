@@ -1,11 +1,11 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
-import { ButtonComponent } from '@layout';
+import { Button } from 'primeng/button';
 import type { ServicePricing } from '../domain';
 
 @Component({
   selector: 'app-home-services',
-  imports: [ButtonComponent],
+  imports: [Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -14,9 +14,7 @@ import type { ServicePricing } from '../domain';
         <span
           class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
         >
-          <svg aria-hidden="true" class="w-4 h-4">
-            <use href="/icons/sprite.svg#lucide-briefcase"></use>
-          </svg>
+          <i class="pi pi-briefcase text-base" aria-hidden="true"></i>
           Services
         </span>
         <h2
@@ -48,9 +46,7 @@ import type { ServicePricing } from '../domain';
                 <div
                   class="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-5"
                 >
-                  <svg class="w-8 h-8 text-amber-500" aria-hidden="true">
-                    <use href="/icons/sprite.svg#lucide-wrench"></use>
-                  </svg>
+                  <i class="pi pi-wrench text-[2rem] text-amber-500" aria-hidden="true"></i>
                 </div>
                 <h3 class="text-lg font-bold text-foreground mb-2">{{ service.title }}</h3>
                 <p class="text-sm text-amber-500 font-semibold mb-2">
@@ -78,25 +74,23 @@ import type { ServicePricing } from '../domain';
               <ul class="space-y-2 mb-8 flex-1" role="list">
                 @for (feature of service.features; track feature) {
                   <li class="flex items-start gap-2 text-sm text-muted">
-                    <svg aria-hidden="true" class="w-4 h-4 text-primary mt-0.5 shrink-0">
-                      <use href="/icons/sprite.svg#lucide-check"></use>
-                    </svg>
+                    <i
+                      class="pi pi-check text-base text-primary mt-0.5 shrink-0"
+                      aria-hidden="true"
+                    ></i>
                     {{ feature }}
                   </li>
                 }
               </ul>
 
-              <app-button
-                [variant]="service.highlighted ? 'primary' : 'secondary'"
-                size="md"
-                radius="md"
-                (clicked)="goToBooking()"
-              >
-                Réserver un appel
-                <svg aria-hidden="true" class="w-5 h-5">
-                  <use href="/icons/sprite.svg#lucide-calendar"></use>
-                </svg>
-              </app-button>
+              <p-button
+                label="Réserver un appel"
+                icon="pi pi-calendar"
+                iconPos="right"
+                [severity]="service.highlighted ? 'primary' : 'secondary'"
+                [outlined]="!service.highlighted"
+                (onClick)="goToBooking()"
+              />
             }
           </li>
         }

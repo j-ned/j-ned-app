@@ -3,12 +3,12 @@ import { NgOptimizedImage } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { map, switchMap } from 'rxjs';
-import { ButtonComponent } from '@layout';
+import { Button } from 'primeng/button';
 import { BLOG_GATEWAY } from '@features/blog/application';
 
 @Component({
   selector: 'app-home-blog',
-  imports: [RouterLink, ButtonComponent, NgOptimizedImage],
+  imports: [RouterLink, Button, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -18,9 +18,7 @@ import { BLOG_GATEWAY } from '@features/blog/application';
           <span
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
           >
-            <svg aria-hidden="true" class="w-4 h-4">
-              <use href="/icons/sprite.svg#lucide-notebook-pen"></use>
-            </svg>
+            <i class="pi pi-pencil text-base" aria-hidden="true"></i>
             Blog
           </span>
           <h2
@@ -40,7 +38,7 @@ import { BLOG_GATEWAY } from '@features/blog/application';
             @if (latestArticles()[0]; as featured) {
               <a
                 [routerLink]="['/blog', featured.id]"
-                class="group lg:row-span-2 bg-background border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition duration-300 shadow-sm flex flex-col"
+                class="group lg:row-span-2 bg-surface border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition duration-300 shadow-sm flex flex-col"
               >
                 <article>
                   @if (featured.image) {
@@ -88,7 +86,7 @@ import { BLOG_GATEWAY } from '@features/blog/application';
             @for (article of latestArticles().slice(1); track article.id) {
               <a
                 [routerLink]="['/blog', article.id]"
-                class="group bg-background border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition duration-300 shadow-sm flex flex-col sm:flex-row"
+                class="group bg-surface border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition duration-300 shadow-sm flex flex-col sm:flex-row"
               >
                 <article>
                   @if (article.image) {
@@ -139,12 +137,12 @@ import { BLOG_GATEWAY } from '@features/blog/application';
         }
 
         <nav class="mt-8 text-center" aria-label="Voir tous les articles">
-          <app-button variant="primary" size="md" radius="md" (clicked)="goToBlog()">
-            Voir tous les articles
-            <svg aria-hidden="true" class="w-5 h-5">
-              <use href="/icons/sprite.svg#lucide-notebook-pen"></use>
-            </svg>
-          </app-button>
+          <p-button
+            label="Voir tous les articles"
+            icon="pi pi-pencil"
+            iconPos="right"
+            (onClick)="goToBlog()"
+          />
         </nav>
       </div>
     </section>

@@ -9,9 +9,7 @@ import { PROFILE_GATEWAY } from './tokens';
   template: `
     <section>
       <header class="flex items-center gap-2 mb-4">
-        <svg aria-hidden="true" class="w-6 h-6 text-primary">
-          <use href="/icons/sprite.svg#lucide-code-xml"></use>
-        </svg>
+        <i class="pi pi-code text-2xl text-primary" aria-hidden="true"></i>
         <h2 class="text-2xl font-bold text-foreground">Ce que je fais</h2>
       </header>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

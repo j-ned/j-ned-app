@@ -1,100 +1,118 @@
-# ---- Stage 1 : Build ----
+# syntax=docker/dockerfile:1.7
+
+# ==============================================================================
+# Stage 1 — Build : Angular SSR prerender + bundle API + migrations SQL
+# ==============================================================================
 FROM node:22-alpine AS build
 
-# Installer pnpm (même version que le CI)
+RUN apk add --no-cache python3 make g++
 RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances en premier (cache Docker)
+# Couche cachée : installation des dépendances (--ignore-scripts évite husky)
 COPY package.json pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --ignore-scripts \
+ && pnpm rebuild argon2 esbuild
 
-# Installer les dépendances (identique au CI : --frozen-lockfile)
-RUN pnpm install --frozen-lockfile
-
-# Copier le reste du code source
+# Sources + build (Angular SSR prerender + esbuild bundle + SQL migrations)
 COPY . .
+RUN pnpm run build --configuration production \
+ && pnpm run build:api \
+ && pnpm run db:generate \
+ && test -f dist/angular-portfolio-app/browser/index.html \
+ && test -f dist/server/index.mjs
 
-# Vérifier le formatage (Prettier)
-RUN pnpm run format:check
+# ==============================================================================
+# Stage 2 — Production dependencies (argon2 native + drizzle-orm pour migrations)
+# ==============================================================================
+FROM node:22-alpine AS prod-deps
 
-# Linter (ESLint)
-RUN pnpm run lint
-
-# Tests (Vitest)
-RUN pnpm run test
-
-# Build production Angular
-RUN pnpm run build --configuration production
-
-# Vérifier les artefacts (même check que le CI)
-RUN test -f dist/angular-portfolio-app/index.html || (echo "Le fichier index.html est manquant" && exit 1)
-
-# ---- Stage 2 : CLI (scripts serveur) ----
-FROM node:22-alpine AS cli
-
+RUN apk add --no-cache python3 make g++
 RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
 
 WORKDIR /app
 
-COPY --from=build /app/package.json /app/pnpm-lock.yaml ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/server ./server
+COPY package.json pnpm-lock.yaml ./
+# --ignore-scripts : évite le prepare script (husky devDep absent en prod)
+# Puis on rebuild les natifs (argon2 + sharp)
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod --ignore-scripts \
+ && pnpm rebuild argon2 sharp
 
-ENTRYPOINT ["pnpm", "exec", "tsx"]
-
-# ---- Stage 3 : Nginx + Hono API ----
+# ==============================================================================
+# Stage 3 — Production : nginx statiques + Hono API bundle + migrations runtime
+# ==============================================================================
 FROM nginx:alpine AS production
 
-# Installer Node.js pour l'API Hono et les migrations Drizzle
-RUN apk add --no-cache nodejs npm
+# Node minimal pour le bundle API et les migrations (pas de npm/pnpm)
+RUN apk add --no-cache --update nodejs \
+ && rm -rf /var/cache/apk/* /tmp/*
 
-# Copier les artefacts du build Angular
-COPY --from=build /app/dist/angular-portfolio-app /usr/share/nginx/html
-
-# Pré-compresser les assets statiques en gzip (servis via gzip_static)
-RUN find /usr/share/nginx/html -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' \) \
+# Artefacts Angular prerenderés
+COPY --from=build /app/dist/angular-portfolio-app/browser /usr/share/nginx/html
+RUN find /usr/share/nginx/html -type f \
+    \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' \) \
     -exec gzip -9 -k {} \;
 
-# Copier le serveur Hono + dépendances
-COPY --from=build /app/package.json /app/pnpm-lock.yaml /app/
-COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/server /app/server
+# Bundle API + migrations SQL + prod deps
+COPY --from=build /app/dist/server/index.mjs /app/api.mjs
+COPY --from=build /app/server/db/migrations /app/migrations
+COPY --from=prod-deps /app/node_modules /app/node_modules
 
-# Configuration nginx : SPA + proxy /api vers Hono
-COPY <<'EOF' /etc/nginx/conf.d/default.conf
+# Runner de migrations minimal (utilise drizzle-orm déjà en prod deps)
+COPY <<'MIGRATE' /app/migrate.mjs
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import postgres from 'postgres';
+
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL is required');
+  process.exit(1);
+}
+
+const client = postgres(process.env.DATABASE_URL, { max: 1 });
+const db = drizzle(client);
+
+try {
+  console.log('Applying migrations…');
+  await migrate(db, { migrationsFolder: '/app/migrations' });
+  console.log('Migrations applied.');
+} catch (err) {
+  console.error('Migration failed:', err);
+  process.exit(1);
+} finally {
+  await client.end();
+}
+MIGRATE
+
+# Nginx config : SPA prerender + proxy /api + sitemap dynamique
+COPY <<'NGINXCONF' /etc/nginx/conf.d/default.conf
 server {
     listen 80;
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
 
-    # Allow file uploads up to 10MB
     client_max_body_size 10m;
 
-    # Compression : fichiers pré-compressés (gzip -9 au build) + fallback dynamique
+    # Compression
     gzip_static on;
     gzip on;
     gzip_vary on;
     gzip_proxied any;
     gzip_comp_level 6;
     gzip_min_length 256;
-    gzip_types
-        text/plain
-        text/css
-        text/javascript
-        application/javascript
-        application/json
-        application/xml
-        image/svg+xml;
+    gzip_types text/plain text/css text/javascript application/javascript application/json application/xml image/svg+xml;
 
-    # Security headers
+    # Security headers (HTTPS/HSTS géré par Traefik/Dokploy en amont)
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
 
-    # Proxy API vers le serveur Hono (^~ empêche les regex de prendre le dessus)
+    # Proxy API → Hono sur :3000
     location ^~ /api/ {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
@@ -104,51 +122,61 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Fichiers statiques hashés (CSS, JS) — cache immutable 1 an
+    # Sitemap dynamique
+    location = /sitemap.xml {
+        proxy_pass http://127.0.0.1:3000/api/sitemap.xml;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Assets hashés : cache immutable 1 an
     location ~* \.(?:css|js)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
 
-    # Images et fonts — cache 30 jours (peuvent changer via S3)
+    # Médias : cache 30 jours
     location ~* \.(?:woff2?|svg|png|jpg|jpeg|gif|ico|webp|avif)$ {
         expires 30d;
         add_header Cache-Control "public";
     }
 
-    # SPA fallback — index.html ne doit jamais être caché
+    # Routes prerender + fallback CSR
     location / {
         add_header Cache-Control "no-cache, no-store, must-revalidate";
-        try_files $uri $uri/ /index.html;
+        try_files $uri $uri/ $uri.html $uri/index.html /index.csr.html;
     }
 }
-EOF
+NGINXCONF
 
-# Script d'entrypoint : migration DB, démarrage Hono, puis Nginx
-COPY <<'SCRIPT' /docker-entrypoint.sh
+# Entrypoint : migrations → API (background) → Nginx (foreground)
+COPY <<'ENTRY' /docker-entrypoint.sh
 #!/bin/sh
 set -e
 
-# 1. Appliquer le schéma de la base de données
 if [ -n "$DATABASE_URL" ]; then
-  echo "Applying database schema..."
-  cd /app && npx drizzle-kit push --config=server/drizzle.config.ts
-  echo "Database schema applied successfully."
+  node /app/migrate.mjs
 else
-  echo "WARNING: DATABASE_URL not set, skipping database migration."
+  echo "WARN: DATABASE_URL missing — skipping migrations."
 fi
 
-# 2. Démarrer le serveur Hono en arrière-plan
-echo "Starting Hono API server..."
-cd /app && npx tsx server/index.ts &
+echo "Starting Hono API on :3000…"
+node /app/api.mjs &
+API_PID=$!
 
-# 3. Démarrer Nginx au premier plan
-echo "Starting Nginx..."
+# Propager les signaux proprement
+trap "kill -TERM $API_PID; exit 0" TERM INT
+
+echo "Starting Nginx on :80…"
 exec nginx -g "daemon off;"
-SCRIPT
+ENTRY
 
 RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

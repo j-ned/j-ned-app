@@ -11,9 +11,7 @@ import { PROFILE_GATEWAY } from './tokens';
       class="bg-linear-to-br from-accent/10 to-primary/10 border border-accent/20 rounded-2xl p-6 shadow-lg"
     >
       <div class="flex items-center gap-2 mb-4">
-        <svg aria-hidden="true" class="w-5 h-5 text-accent">
-          <use href="/icons/sprite.svg#lucide-compass"></use>
-        </svg>
+        <i class="pi pi-compass text-xl text-accent" aria-hidden="true"></i>
         <h2 class="font-bold text-2xl text-foreground">{{ whatISeek()?.title }}</h2>
       </div>
       <p class="text-muted text-sm leading-relaxed">

@@ -1,5 +1,11 @@
 import { Component, ChangeDetectionStrategy, computed, input, output, signal } from '@angular/core';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
+import { Message } from 'primeng/message';
 
 type BookingFormGroup = {
   name: FormControl<string>;
@@ -21,7 +27,7 @@ export type BookingFormPayload = {
   selector: 'app-booking-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Button, InputText, Textarea, IconField, InputIcon, Message],
   template: `
     <div
       class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 md:p-8 shadow-lg h-full"
@@ -29,9 +35,7 @@ export type BookingFormPayload = {
       <output
         class="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20 flex items-center gap-3 block"
       >
-        <svg class="w-5 h-5 text-primary shrink-0" aria-hidden="true">
-          <use href="/icons/sprite.svg#lucide-calendar" />
-        </svg>
+        <i class="pi pi-calendar text-xl text-primary shrink-0" aria-hidden="true"></i>
         <div class="text-sm">
           <span class="font-medium text-foreground">{{ formattedDate() }}</span>
           <span class="text-muted mx-1">·</span>
@@ -47,160 +51,173 @@ export type BookingFormPayload = {
         <fieldset class="space-y-6 border-0 p-0 m-0">
           <legend class="sr-only">Vos coordonnées</legend>
 
-          <div>
-            <label for="booking-name" class="block text-sm font-medium text-foreground mb-1.5">
+          <div class="flex flex-col gap-1.5">
+            <label for="booking-name" class="text-sm font-medium text-foreground">
               Nom complet *
             </label>
-            <div class="relative">
-              <svg
-                class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-                aria-hidden="true"
-              >
-                <use href="/icons/sprite.svg#lucide-user" />
-              </svg>
+            <p-iconfield>
+              <p-inputicon styleClass="pi pi-user" />
               <input
                 id="booking-name"
+                pInputText
                 type="text"
                 formControlName="name"
-                class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
                 placeholder="Votre nom"
+                fluid
               />
-            </div>
+            </p-iconfield>
             @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-              <span class="text-red-400 text-xs mt-1 block">Le nom est obligatoire</span>
+              <p-message
+                severity="error"
+                text="Le nom est obligatoire"
+                size="small"
+                variant="simple"
+              />
             } @else if (form.controls.name.touched && form.controls.name.errors?.['minlength']) {
-              <span class="text-red-400 text-xs mt-1 block">
-                Le nom doit contenir au moins 2 caractères
-              </span>
+              <p-message
+                severity="error"
+                text="Le nom doit contenir au moins 2 caractères"
+                size="small"
+                variant="simple"
+              />
             }
           </div>
 
-          <div>
-            <label for="booking-email" class="block text-sm font-medium text-foreground mb-1.5">
-              Email *
-            </label>
-            <div class="relative">
-              <svg
-                class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-                aria-hidden="true"
-              >
-                <use href="/icons/sprite.svg#lucide-mail" />
-              </svg>
+          <div class="flex flex-col gap-1.5">
+            <label for="booking-email" class="text-sm font-medium text-foreground">Email *</label>
+            <p-iconfield>
+              <p-inputicon styleClass="pi pi-envelope" />
               <input
                 id="booking-email"
+                pInputText
                 type="email"
                 formControlName="email"
-                class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
                 placeholder="votre@email.com"
+                fluid
               />
-            </div>
+            </p-iconfield>
             @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-              <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
+              <p-message
+                severity="error"
+                text="L'email est obligatoire"
+                size="small"
+                variant="simple"
+              />
             } @else if (form.controls.email.touched && form.controls.email.errors?.['pattern']) {
-              <span class="text-red-400 text-xs mt-1 block">
-                Le format de l'email est invalide
-              </span>
+              <p-message
+                severity="error"
+                text="Le format de l'email est invalide"
+                size="small"
+                variant="simple"
+              />
             }
           </div>
 
-          <div>
-            <label for="booking-phone" class="block text-sm font-medium text-foreground mb-1.5">
+          <div class="flex flex-col gap-1.5">
+            <label for="booking-phone" class="text-sm font-medium text-foreground">
               Téléphone *
             </label>
-            <div class="relative">
-              <svg
-                class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-                aria-hidden="true"
-              >
-                <use href="/icons/sprite.svg#lucide-phone" />
-              </svg>
+            <p-iconfield>
+              <p-inputicon styleClass="pi pi-phone" />
               <input
                 id="booking-phone"
+                pInputText
                 type="tel"
                 formControlName="phone"
-                class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
                 placeholder="06 12 34 56 78"
+                fluid
               />
-            </div>
+            </p-iconfield>
             @if (form.controls.phone.touched && form.controls.phone.errors?.['required']) {
-              <span class="text-red-400 text-xs mt-1 block">Le téléphone est obligatoire</span>
+              <p-message
+                severity="error"
+                text="Le téléphone est obligatoire"
+                size="small"
+                variant="simple"
+              />
             } @else if (form.controls.phone.touched && form.controls.phone.errors?.['pattern']) {
-              <span class="text-red-400 text-xs mt-1 block">
-                Le numéro doit contenir 10 chiffres
-              </span>
+              <p-message
+                severity="error"
+                text="Le numéro doit contenir 10 chiffres"
+                size="small"
+                variant="simple"
+              />
             }
           </div>
 
-          <div>
-            <label for="booking-subject" class="block text-sm font-medium text-foreground mb-1.5">
-              Sujet *
-            </label>
-            <div class="relative">
-              <svg
-                class="w-5 h-5 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-                aria-hidden="true"
-              >
-                <use href="/icons/sprite.svg#lucide-pen-line" />
-              </svg>
+          <div class="flex flex-col gap-1.5">
+            <label for="booking-subject" class="text-sm font-medium text-foreground">Sujet *</label>
+            <p-iconfield>
+              <p-inputicon styleClass="pi pi-pencil" />
               <input
                 id="booking-subject"
+                pInputText
                 type="text"
                 formControlName="subject"
-                class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
                 placeholder="Objet de la consultation"
+                fluid
               />
-            </div>
+            </p-iconfield>
             @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
-              <span class="text-red-400 text-xs mt-1 block">Le sujet est obligatoire</span>
+              <p-message
+                severity="error"
+                text="Le sujet est obligatoire"
+                size="small"
+                variant="simple"
+              />
             } @else if (
               form.controls.subject.touched && form.controls.subject.errors?.['minlength']
             ) {
-              <span class="text-red-400 text-xs mt-1 block">
-                Le sujet doit contenir au moins 3 caractères
-              </span>
+              <p-message
+                severity="error"
+                text="Le sujet doit contenir au moins 3 caractères"
+                size="small"
+                variant="simple"
+              />
             }
           </div>
 
-          <div>
-            <label for="booking-message" class="block text-sm font-medium text-foreground mb-1.5">
+          <div class="flex flex-col gap-1.5">
+            <label for="booking-message" class="text-sm font-medium text-foreground">
               Message *
             </label>
             <textarea
               id="booking-message"
+              pTextarea
               formControlName="message"
               rows="4"
-              class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-none"
               placeholder="Décrivez votre projet ou votre question..."
             ></textarea>
             @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
-              <span class="text-red-400 text-xs mt-1 block">Le message est obligatoire</span>
+              <p-message
+                severity="error"
+                text="Le message est obligatoire"
+                size="small"
+                variant="simple"
+              />
             } @else if (
               form.controls.message.touched && form.controls.message.errors?.['minlength']
             ) {
-              <span class="text-red-400 text-xs mt-1 block">
-                Le message doit contenir au moins 10 caractères
-              </span>
+              <p-message
+                severity="error"
+                text="Le message doit contenir au moins 10 caractères"
+                size="small"
+                variant="simple"
+              />
             }
           </div>
         </fieldset>
 
-        <button
+        <p-button
           type="submit"
-          [disabled]="form.invalid || isSubmitting()"
-          class="w-full mt-2 py-3 px-6 rounded-lg bg-linear-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-700 hover:to-violet-700 hover:-translate-y-0.5 shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2"
-        >
-          @if (isSubmitting()) {
-            <svg class="w-5 h-5 animate-spin" aria-hidden="true">
-              <use href="/icons/sprite.svg#spinners" />
-            </svg>
-            Réservation en cours...
-          } @else {
-            <svg class="w-5 h-5" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-check" />
-            </svg>
-            Confirmer la réservation
-          }
-        </button>
+          [label]="isSubmitting() ? 'Réservation en cours...' : 'Confirmer la réservation'"
+          [icon]="isSubmitting() ? 'pi pi-spinner pi-spin' : 'pi pi-check'"
+          iconPos="right"
+          [disabled]="form.invalid"
+          [loading]="isSubmitting()"
+          size="large"
+          styleClass="w-full mt-2"
+        />
       </form>
     </div>
   `,

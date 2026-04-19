@@ -6,6 +6,7 @@ import { compress } from 'hono/compress';
 import { env } from './lib/env.js';
 import { errorHandler } from './lib/errors.js';
 import { registerRoutes } from './routes';
+import sitemap from './routes/sitemap.js';
 import { startCronJobs } from './lib/cron.js';
 
 const app = new Hono();
@@ -16,6 +17,16 @@ app.use('*', compress());
 // Security headers
 app.use('*', secureHeaders({
   crossOriginResourcePolicy: 'cross-origin',
+  strictTransportSecurity: 'max-age=63072000; includeSubDomains; preload',
+  referrerPolicy: 'strict-origin-when-cross-origin',
+  permissionsPolicy: {
+    camera: [],
+    microphone: [],
+    geolocation: [],
+    payment: [],
+    usb: [],
+    interestCohort: [],
+  },
 }));
 
 // CORS
@@ -35,6 +46,7 @@ app.get('/', (c) => c.text('Hono.js Portfolio API'));
 // Register all routes under /api prefix
 const api = new Hono();
 registerRoutes(api);
+api.route('/sitemap.xml', sitemap);
 app.route('/api', api);
 
 // Start cron jobs

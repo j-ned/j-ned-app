@@ -20,9 +20,7 @@ import { AnalyticsService } from '@shared/analytics';
           routerLink="/blog"
           class="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-8"
         >
-          <svg class="w-4 h-4" aria-hidden="true">
-            <use href="/icons/sprite.svg#lucide-arrow-left"></use>
-          </svg>
+          <i class="pi pi-arrow-left text-base" aria-hidden="true"></i>
           Retour au blog
         </a>
 
@@ -76,7 +74,7 @@ import { AnalyticsService } from '@shared/analytics';
 
             @for (comment of commentsRes.value() ?? []; track comment.id) {
               <article
-                class="mb-6 p-6 rounded-2xl bg-background border border-foreground/10 shadow-lg"
+                class="mb-6 p-6 rounded-2xl bg-surface border border-foreground/10 shadow-lg"
               >
                 <header class="flex items-center gap-2 text-sm text-muted mb-2">
                   <span class="font-medium text-foreground">{{ comment.author }}</span>
@@ -84,12 +82,11 @@ import { AnalyticsService } from '@shared/analytics';
                     <span>&middot;</span>
                     <span class="flex gap-0.5">
                       @for (star of [1, 2, 3, 4, 5]; track star) {
-                        <svg class="w-4 h-4" aria-hidden="true">
-                          <use
-                            href="/icons/sprite.svg#lucide-star"
-                            [class]="star <= comment.rating ? 'text-yellow-400' : 'text-muted'"
-                          />
-                        </svg>
+                        <i
+                          class="pi pi-star text-base"
+                          [class]="star <= comment.rating ? 'text-yellow-400' : 'text-muted'"
+                          aria-hidden="true"
+                        ></i>
                       }
                     </span>
                   }

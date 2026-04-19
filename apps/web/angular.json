@@ -18,11 +18,13 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": {
-              "base": "dist/angular-portfolio-app",
-              "browser": ""
-            },
+            "outputPath": "dist/angular-portfolio-app",
             "browser": "src/main.ts",
+            "server": "src/main.server.ts",
+            "outputMode": "server",
+            "ssr": {
+              "entry": "src/server.ts"
+            },
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
@@ -37,8 +39,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "620kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "1.2MB",
+                  "maximumError": "1.8MB"
                 },
                 {
                   "type": "anyComponentStyle",

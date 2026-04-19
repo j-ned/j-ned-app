@@ -10,11 +10,15 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { BLOG_GATEWAY } from './tokens';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { Message } from 'primeng/message';
 
 @Component({
   selector: 'app-comment-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Button, InputText, Textarea, Message],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -28,31 +32,34 @@ import { ToastService } from '@shared/toast';
 
         <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-0 p-0 m-0">
           <legend class="sr-only">Informations personnelles</legend>
-          <div>
-            <label for="comment-author" class="block text-sm font-medium text-foreground mb-1"
-              >Nom *</label
-            >
+          <div class="flex flex-col gap-1.5">
+            <label for="comment-author" class="text-sm font-medium text-foreground">Nom *</label>
             <input
               id="comment-author"
+              pInputText
               type="text"
               formControlName="author"
-              class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
               placeholder="Votre nom"
+              fluid
             />
             @if (form.controls.author.touched && form.controls.author.errors?.['required']) {
-              <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+              <p-message
+                severity="error"
+                text="Ce champ est obligatoire"
+                size="small"
+                variant="simple"
+              />
             }
           </div>
-          <div>
-            <label for="comment-email" class="block text-sm font-medium text-foreground mb-1"
-              >Email</label
-            >
+          <div class="flex flex-col gap-1.5">
+            <label for="comment-email" class="text-sm font-medium text-foreground">Email</label>
             <input
               id="comment-email"
+              pInputText
               type="email"
               formControlName="email"
-              class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
               placeholder="Optionnel"
+              fluid
             />
           </div>
         </fieldset>
@@ -67,13 +74,11 @@ import { ToastService } from '@shared/toast';
                 class="p-0.5 transition-colors"
                 [attr.aria-label]="star + ' étoile' + (star > 1 ? 's' : '')"
               >
-                <svg class="w-6 h-6" aria-hidden="true">
-                  @if (star <= rating()) {
-                    <use href="/icons/sprite.svg#lucide-star" class="text-yellow-400" />
-                  } @else {
-                    <use href="/icons/sprite.svg#lucide-star" class="text-muted" />
-                  }
-                </svg>
+                <i
+                  class="pi pi-star text-2xl"
+                  [class]="star <= rating() ? 'text-yellow-400' : 'text-muted'"
+                  aria-hidden="true"
+                ></i>
               </button>
             }
             @if (rating() > 0) {
@@ -88,29 +93,35 @@ import { ToastService } from '@shared/toast';
           </div>
         </fieldset>
 
-        <div>
-          <label for="comment-content" class="block text-sm font-medium text-foreground mb-1"
-            >Commentaire *</label
-          >
+        <div class="flex flex-col gap-1.5">
+          <label for="comment-content" class="text-sm font-medium text-foreground">
+            Commentaire *
+          </label>
           <textarea
             id="comment-content"
+            pTextarea
             formControlName="content"
             rows="4"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
             placeholder="Votre commentaire..."
           ></textarea>
           @if (form.controls.content.touched && form.controls.content.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
-        <button
+        <p-button
           type="submit"
-          [disabled]="form.invalid || submitting()"
-          class="px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {{ submitting() ? 'Envoi...' : 'Envoyer' }}
-        </button>
+          [label]="submitting() ? 'Envoi...' : 'Envoyer'"
+          [disabled]="form.invalid"
+          [loading]="submitting()"
+          icon="pi pi-send"
+          iconPos="right"
+        />
       </form>
     }
   `,
@@ -118,7 +129,7 @@ import { ToastService } from '@shared/toast';
 export class CommentForm {
   private readonly fb = inject(FormBuilder);
   private readonly blogGateway = inject(BLOG_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly articleId = input.required<string>();
@@ -161,11 +172,19 @@ export class CommentForm {
         next: () => {
           this.submitted.set(true);
           this.commentAdded.emit();
-          this.toast.success('Commentaire envoyé ! Il sera visible après modération.');
+          this.toast.add({
+            severity: 'success',
+            summary: 'Succès',
+            detail: 'Commentaire envoyé ! Il sera visible après modération.',
+          });
         },
         error: () => {
           this.submitting.set(false);
-          this.toast.error("Erreur lors de l'envoi du commentaire.");
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: "Erreur lors de l'envoi du commentaire.",
+          });
         },
       });
   }

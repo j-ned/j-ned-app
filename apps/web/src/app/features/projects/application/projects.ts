@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { Paginator, type PaginatorState } from 'primeng/paginator';
 import { ProjectCard } from './components/project-card';
 import { PROJECTS_GATEWAY } from './tokens';
 import { filterProjects, paginateProjects, calculateTotalPages } from '../domain';
@@ -16,7 +17,7 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ProjectCard],
+  imports: [ProjectCard, Paginator],
   template: `
     <main
       class="min-h-screen pt-20 pb-16 bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
@@ -26,9 +27,7 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
           <span
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
           >
-            <svg aria-hidden="true" class="w-4 h-4">
-              <use href="/icons/sprite.svg#lucide-laptop"></use>
-            </svg>
+            <i class="pi pi-desktop text-base" aria-hidden="true"></i>
             Portfolio
           </span>
           <h1
@@ -82,53 +81,13 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
         }
 
         @if (totalPages() > 1) {
-          <nav class="flex items-center justify-center gap-2 mt-12" aria-label="Pagination">
-            <button
-              (click)="previousPage()"
-              [disabled]="currentPage() === 1"
-              [class]="
-                currentPage() === 1
-                  ? 'px-4 py-2 rounded-lg text-sm font-medium bg-background/50 border border-foreground/10 text-muted cursor-not-allowed opacity-50'
-                  : 'px-4 py-2 rounded-lg text-sm font-medium bg-background/50 border border-foreground/10 text-foreground hover:border-primary/50 hover:text-primary transition-colors'
-              "
-            >
-              ← Précédent
-            </button>
-
-            @for (page of pageNumbers(); track page) {
-              <button
-                (click)="goToPage(page)"
-                [class]="
-                  page === currentPage()
-                    ? 'w-10 h-10 rounded-lg text-sm font-medium bg-primary-bg text-white'
-                    : 'w-10 h-10 rounded-lg text-sm font-medium bg-background/50 border border-foreground/10 text-foreground hover:border-primary/50 hover:text-primary transition-colors'
-                "
-              >
-                {{ page }}
-              </button>
-            }
-
-            <button
-              (click)="nextPage()"
-              [disabled]="currentPage() === totalPages()"
-              [class]="
-                currentPage() === totalPages()
-                  ? 'px-4 py-2 rounded-lg text-sm font-medium bg-background/50 border border-foreground/10 text-muted cursor-not-allowed opacity-50'
-                  : 'px-4 py-2 rounded-lg text-sm font-medium bg-background/50 border border-foreground/10 text-foreground hover:border-primary/50 hover:text-primary transition-colors'
-              "
-            >
-              Suivant →
-            </button>
-          </nav>
-
-          <div class="text-center mt-6">
-            <p class="text-sm text-muted">
-              Page {{ currentPage() }} sur {{ totalPages() }} ({{
-                filteredProjects().length
-              }}
-              projet{{ filteredProjects().length > 1 ? 's' : '' }})
-            </p>
-          </div>
+          <p-paginator
+            [rows]="itemsPerPage"
+            [totalRecords]="filteredProjects().length"
+            [first]="paginatorFirst()"
+            (onPageChange)="onPageChange($event)"
+            styleClass="justify-center bg-transparent mt-12"
+          />
         }
       </section>
     </main>
@@ -165,37 +124,17 @@ export class Projects {
     paginateProjects(this.filteredProjects(), this.currentPage(), this.itemsPerPage),
   );
 
-  protected pageNumbers = computed(() => {
-    return Array.from({ length: this.totalPages() }, (_, i) => i + 1);
-  });
+  protected readonly paginatorFirst = computed(() => (this.currentPage() - 1) * this.itemsPerPage);
 
   protected setFilter(filter: string): void {
     this.activeFilter.set(filter);
     this.currentPage.set(1);
   }
 
-  protected goToPage(page: number): void {
-    this.currentPage.set(page);
+  protected onPageChange(event: PaginatorState): void {
+    this.currentPage.set((event.page ?? 0) + 1);
     if (isPlatformBrowser(this.platformId)) {
       this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }
-
-  protected nextPage(): void {
-    if (this.currentPage() < this.totalPages()) {
-      this.currentPage.update((p) => p + 1);
-      if (isPlatformBrowser(this.platformId)) {
-        this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }
-  }
-
-  protected previousPage(): void {
-    if (this.currentPage() > 1) {
-      this.currentPage.update((p) => p - 1);
-      if (isPlatformBrowser(this.platformId)) {
-        this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
-      }
     }
   }
 }

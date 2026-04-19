@@ -23,6 +23,8 @@ const auth = new Hono();
 
 const isProduction = env.NODE_ENV === 'production';
 
+const REFRESH_COOKIE_PATH = '/api/auth/refresh';
+
 function setAuthCookies(c: Context, accessToken: string, refreshToken: string): void {
   setCookie(c, 'access_token', accessToken, {
     httpOnly: true,
@@ -36,7 +38,7 @@ function setAuthCookies(c: Context, accessToken: string, refreshToken: string): 
     secure: isProduction,
     sameSite: isProduction ? 'Strict' : 'Lax',
     maxAge: 7 * 24 * 60 * 60,
-    path: '/auth/refresh',
+    path: REFRESH_COOKIE_PATH,
   });
 }
 
@@ -96,9 +98,11 @@ auth.post('/login',
     setAuthCookies(c, accessToken, refreshToken);
 
     return c.json({
-      user: { id: found.id, email: found.email },
-      accessToken,
-      refreshToken,
+      user: {
+        id: found.id,
+        email: found.email,
+        isTwoFactorEnabled: found.isTwoFactorEnabled,
+      },
     });
   },
 );
@@ -120,9 +124,11 @@ auth.post('/refresh', refreshMiddleware, async (c) => {
   setAuthCookies(c, accessToken, refreshToken);
 
   return c.json({
-    user: { id: found.id, email: found.email },
-    accessToken,
-    refreshToken,
+    user: {
+      id: found.id,
+      email: found.email,
+      isTwoFactorEnabled: found.isTwoFactorEnabled,
+    },
   });
 });
 
@@ -133,7 +139,7 @@ auth.post('/logout', authMiddleware, async (c) => {
   await db.update(appUser).set({ refreshToken: null }).where(eq(appUser.id, currentUser.sub));
 
   deleteCookie(c, 'access_token', { path: '/' });
-  deleteCookie(c, 'refresh_token', { path: '/auth/refresh' });
+  deleteCookie(c, 'refresh_token', { path: REFRESH_COOKIE_PATH });
 
   return c.json({ message: 'Logged out' });
 });
@@ -249,9 +255,11 @@ auth.post('/2fa/verify',
     setAuthCookies(c, accessToken, refreshToken);
 
     return c.json({
-      user: { id: found.id, email: found.email },
-      accessToken,
-      refreshToken,
+      user: {
+        id: found.id,
+        email: found.email,
+        isTwoFactorEnabled: found.isTwoFactorEnabled,
+      },
     });
   },
 );

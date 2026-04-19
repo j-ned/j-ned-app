@@ -3,11 +3,12 @@ import { NgOptimizedImage } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
 import { API_BASE_URL } from '@shared/api';
+import { PiIconPipe } from '@shared/icons';
 
 @Component({
   selector: 'app-about-hero',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgOptimizedImage],
+  imports: [NgOptimizedImage, PiIconPipe],
   host: {
     class:
       'block bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg h-full',
@@ -40,9 +41,7 @@ import { API_BASE_URL } from '@shared/api';
             class="flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3 text-sm"
           >
             <div class="flex items-center gap-2 text-muted">
-              <svg aria-hidden="true" class="w-4 h-4">
-                <use href="/icons/sprite.svg#lucide-map-pin"></use>
-              </svg>
+              <i class="pi pi-map-marker text-base" aria-hidden="true"></i>
               <span>{{ profileInfo()!.location }}</span>
             </div>
             <span class="hidden sm:inline text-foreground/20">•</span>
@@ -71,12 +70,11 @@ import { API_BASE_URL } from '@shared/api';
                 class="p-2.5 bg-foreground/5 rounded-lg border border-foreground/10 hover:border-primary/50 hover:bg-primary/10 transition-all hover:scale-110 group"
                 [attr.aria-label]="social.label"
               >
-                <svg
+                <i
+                  class="text-xl text-muted group-hover:text-primary transition-colors"
+                  [class]="social.icon | piIcon"
                   aria-hidden="true"
-                  class="w-5 h-5 text-muted group-hover:text-primary transition-colors"
-                >
-                  <use [attr.href]="'/icons/sprite.svg#' + social.icon"></use>
-                </svg>
+                ></i>
               </a>
             }
           </nav>

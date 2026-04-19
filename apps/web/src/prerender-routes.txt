@@ -1,0 +1,6 @@
+/
+/about
+/projects
+/contact
+/booking
+/blog

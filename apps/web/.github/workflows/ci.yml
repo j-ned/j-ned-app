@@ -1,60 +1,131 @@
-name: Angular CI Build
+name: CI
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  # ─────────────────────────────────────────────────────────────
+  # Job 1 — Qualité (feedback rapide sous 2 min)
+  # ─────────────────────────────────────────────────────────────
+  quality:
+    name: Lint + Format + Unit Tests
     runs-on: ubuntu-latest
-
     steps:
-      - name: ⚙️ Checkout du code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v5
 
-      - name: 🟢 Configurer Node.js 22.x
-        uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-
-      - name: 📦 Installer pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 10.22.0
 
-      - name: 🗂️ Cache pnpm
-        uses: actions/cache@v5
+      - uses: actions/setup-node@v5
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          node-version: '22'
+          cache: 'pnpm'
 
-      - name: 📥 Installer les dépendances
-        run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
 
-      - name: 🎨 Vérifier le formatage (Prettier)
+      - name: Format check
         run: pnpm run format:check
 
-      - name: 🔍 Linter le code (ESLint)
+      - name: Lint
         run: pnpm run lint
 
-      - name: 🧪 Exécuter les tests
+      - name: Unit tests
         run: pnpm run test
 
-      - name: 🏗️ Compiler le projet Angular
-        run: pnpm run build --configuration production
+  # ─────────────────────────────────────────────────────────────
+  # Job 2 — Docker build + E2E contre stack Docker complète
+  # ─────────────────────────────────────────────────────────────
+  e2e:
+    name: Docker + E2E Playwright
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
 
-      - name: ✅ Vérifier les artefacts du build
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.22.0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image (GHA cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: production
+          tags: portfolio-app:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start stack (postgres + app)
+        run: docker compose -f docker-compose.ci.yml up -d --no-build
+
+      - name: Wait for app
         run: |
-          if [ ! -f "dist/angular-portfolio-app/index.html" ]; then
-            echo "❌ Le fichier index.html est manquant"
-            exit 1
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:4200/ > /dev/null; then
+              echo "App ready"
+              exit 0
+            fi
+            sleep 3
+          done
+          docker compose -f docker-compose.ci.yml logs
+          exit 1
+
+      - name: Playwright
+        env:
+          CI: 'true'
+        run: pnpm exec playwright test
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.ci.yml down --volumes
+
+  # ─────────────────────────────────────────────────────────────
+  # Job 3 — Déclenchement déploiement Dokploy (main seulement)
+  # ─────────────────────────────────────────────────────────────
+  deploy:
+    name: Trigger Dokploy
+    runs-on: ubuntu-latest
+    needs: e2e
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Notify Dokploy webhook
+        env:
+          WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "DOKPLOY_WEBHOOK_URL secret not set."
+            echo "Dokploy redeploy manually or configure the webhook."
+            exit 0
           fi
-          echo "✅ Build réussi avec tous les fichiers nécessaires"
-          ls -lh dist/angular-portfolio-app
+          HTTP_CODE=$(curl -fsSL -o /dev/null -w "%{http_code}" -X POST "$WEBHOOK_URL")
+          echo "Dokploy responded: $HTTP_CODE"
+          [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ] || exit 1

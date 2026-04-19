@@ -10,7 +10,14 @@ import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { CONTACT_GATEWAY } from './tokens';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
+import { Message } from 'primeng/message';
+import { PiIconPipe } from '@shared/icons';
 
 type ContactFormGroup = {
   name: FormControl<string>;
@@ -23,7 +30,17 @@ type ContactFormGroup = {
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    Button,
+    InputText,
+    Textarea,
+    IconField,
+    InputIcon,
+    Message,
+    PiIconPipe,
+  ],
   template: `
     <section id="contact" class="py-20 px-6">
       <div class="max-w-5xl mx-auto">
@@ -31,9 +48,7 @@ type ContactFormGroup = {
           <span
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
           >
-            <svg aria-hidden="true" class="w-4 h-4">
-              <use href="/icons/sprite.svg#lucide-mail"></use>
-            </svg>
+            <i class="pi pi-envelope text-base" aria-hidden="true"></i>
             Contact
           </span>
           <h2
@@ -64,9 +79,7 @@ type ContactFormGroup = {
                   <div
                     class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
                   >
-                    <svg class="w-4 h-4 text-primary" aria-hidden="true">
-                      <use href="/icons/sprite.svg#lucide-mail" />
-                    </svg>
+                    <i class="pi pi-envelope text-base text-primary" aria-hidden="true"></i>
                   </div>
                   <div class="min-w-0">
                     <p class="text-xs text-muted">Email</p>
@@ -85,9 +98,7 @@ type ContactFormGroup = {
                   <div
                     class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-accent/20 to-accent/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
                   >
-                    <svg class="w-4 h-4 text-accent" aria-hidden="true">
-                      <use href="/icons/sprite.svg#lucide-phone" />
-                    </svg>
+                    <i class="pi pi-phone text-base text-accent" aria-hidden="true"></i>
                   </div>
                   <div>
                     <p class="text-xs text-muted">Téléphone</p>
@@ -103,9 +114,7 @@ type ContactFormGroup = {
                   <div
                     class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-green-500/20 to-green-500/5 flex items-center justify-center"
                   >
-                    <svg class="w-4 h-4 text-green-500" aria-hidden="true">
-                      <use href="/icons/sprite.svg#lucide-map-pin" />
-                    </svg>
+                    <i class="pi pi-map-marker text-base text-green-500" aria-hidden="true"></i>
                   </div>
                   <div>
                     <p class="text-xs text-muted">Localisation</p>
@@ -130,12 +139,11 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().linkedin.label"
                   >
-                    <svg
+                    <i
+                      class="text-base text-muted group-hover:text-primary transition-colors"
+                      [class]="socialLinks().linkedin.icon | piIcon"
                       aria-hidden="true"
-                      class="w-4 h-4 text-muted group-hover:text-primary transition-colors"
-                    >
-                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().linkedin.icon" />
-                    </svg>
+                    ></i>
                   </a>
                 }
                 @if (socialLinks().github.url) {
@@ -146,12 +154,11 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().github.label"
                   >
-                    <svg
+                    <i
+                      class="text-base text-muted group-hover:text-foreground transition-colors"
+                      [class]="socialLinks().github.icon | piIcon"
                       aria-hidden="true"
-                      class="w-4 h-4 text-muted group-hover:text-foreground transition-colors"
-                    >
-                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().github.icon" />
-                    </svg>
+                    ></i>
                   </a>
                 }
                 @if (socialLinks().twitter.url) {
@@ -162,12 +169,11 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().twitter.label"
                   >
-                    <svg
+                    <i
+                      class="text-base text-muted group-hover:text-foreground transition-colors"
+                      [class]="socialLinks().twitter.icon | piIcon"
                       aria-hidden="true"
-                      class="w-4 h-4 text-muted group-hover:text-foreground transition-colors"
-                    >
-                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().twitter.icon" />
-                    </svg>
+                    ></i>
                   </a>
                 }
                 @if (socialLinks().email.url) {
@@ -176,12 +182,11 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().email.label"
                   >
-                    <svg
+                    <i
+                      class="text-base text-muted group-hover:text-primary transition-colors"
+                      [class]="socialLinks().email.icon | piIcon"
                       aria-hidden="true"
-                      class="w-4 h-4 text-muted group-hover:text-primary transition-colors"
-                    >
-                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().email.icon" />
-                    </svg>
+                    ></i>
                   </a>
                 }
                 @if (socialLinks().phone.url) {
@@ -190,12 +195,11 @@ type ContactFormGroup = {
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks().phone.label"
                   >
-                    <svg
+                    <i
+                      class="text-base text-muted group-hover:text-accent transition-colors"
+                      [class]="socialLinks().phone.icon | piIcon"
                       aria-hidden="true"
-                      class="w-4 h-4 text-muted group-hover:text-accent transition-colors"
-                    >
-                      <use [attr.href]="'/icons/sprite.svg#' + socialLinks().phone.icon" />
-                    </svg>
+                    ></i>
                   </a>
                 }
               </nav>
@@ -208,9 +212,7 @@ type ContactFormGroup = {
               <div
                 class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
               >
-                <svg class="w-4 h-4 text-violet-400" aria-hidden="true">
-                  <use href="/icons/sprite.svg#lucide-calendar" />
-                </svg>
+                <i class="pi pi-calendar text-base text-violet-400" aria-hidden="true"></i>
               </div>
               <div>
                 <p
@@ -232,133 +234,140 @@ type ContactFormGroup = {
             <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
-                <div>
-                  <label for="name" class="block text-sm font-medium text-foreground mb-1.5">
+                <div class="flex flex-col gap-1.5">
+                  <label for="name" class="text-sm font-medium text-foreground">
                     Nom complet *
                   </label>
-                  <div class="relative">
-                    <svg
-                      class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-                      aria-hidden="true"
-                    >
-                      <use href="/icons/sprite.svg#lucide-user" />
-                    </svg>
+                  <p-iconfield>
+                    <p-inputicon styleClass="pi pi-user" />
                     <input
                       id="name"
+                      pInputText
                       type="text"
                       formControlName="name"
-                      class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
                       placeholder="Votre nom"
+                      fluid
                     />
-                  </div>
+                  </p-iconfield>
                   @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-                    <span class="text-red-400 text-xs mt-1 block">Le nom est obligatoire</span>
+                    <p-message
+                      severity="error"
+                      text="Le nom est obligatoire"
+                      size="small"
+                      variant="simple"
+                    />
                   } @else if (
                     form.controls.name.touched && form.controls.name.errors?.['minlength']
                   ) {
-                    <span class="text-red-400 text-xs mt-1 block">
-                      Le nom doit contenir au moins 2 caractères
-                    </span>
+                    <p-message
+                      severity="error"
+                      text="Le nom doit contenir au moins 2 caractères"
+                      size="small"
+                      variant="simple"
+                    />
                   }
                 </div>
 
-                <div>
-                  <label for="email" class="block text-sm font-medium text-foreground mb-1.5">
-                    Email *
-                  </label>
-                  <div class="relative">
-                    <svg
-                      class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-                      aria-hidden="true"
-                    >
-                      <use href="/icons/sprite.svg#lucide-mail" />
-                    </svg>
+                <div class="flex flex-col gap-1.5">
+                  <label for="email" class="text-sm font-medium text-foreground">Email *</label>
+                  <p-iconfield>
+                    <p-inputicon styleClass="pi pi-envelope" />
                     <input
                       id="email"
+                      pInputText
                       type="email"
                       formControlName="email"
-                      class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
                       placeholder="votre@email.com"
+                      fluid
                     />
-                  </div>
+                  </p-iconfield>
                   @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-                    <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
+                    <p-message
+                      severity="error"
+                      text="L'email est obligatoire"
+                      size="small"
+                      variant="simple"
+                    />
                   } @else if (
                     form.controls.email.touched && form.controls.email.errors?.['pattern']
                   ) {
-                    <span class="text-red-400 text-xs mt-1 block">
-                      Le format de l'email est invalide
-                    </span>
+                    <p-message
+                      severity="error"
+                      text="Le format de l'email est invalide"
+                      size="small"
+                      variant="simple"
+                    />
                   }
                 </div>
               </fieldset>
-              <div>
-                <label for="subject" class="block text-sm font-medium text-foreground mb-1.5">
-                  Sujet *
-                </label>
-                <div class="relative">
-                  <svg
-                    class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2"
-                    aria-hidden="true"
-                  >
-                    <use href="/icons/sprite.svg#lucide-pen-line" />
-                  </svg>
+              <div class="flex flex-col gap-1.5">
+                <label for="subject" class="text-sm font-medium text-foreground">Sujet *</label>
+                <p-iconfield>
+                  <p-inputicon styleClass="pi pi-pencil" />
                   <input
                     id="subject"
+                    pInputText
                     type="text"
                     formControlName="subject"
-                    class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
                     placeholder="Objet de votre message"
+                    fluid
                   />
-                </div>
+                </p-iconfield>
                 @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
-                  <span class="text-red-400 text-xs mt-1 block">Le sujet est obligatoire</span>
+                  <p-message
+                    severity="error"
+                    text="Le sujet est obligatoire"
+                    size="small"
+                    variant="simple"
+                  />
                 } @else if (
                   form.controls.subject.touched && form.controls.subject.errors?.['minlength']
                 ) {
-                  <span class="text-red-400 text-xs mt-1 block">
-                    Le sujet doit contenir au moins 3 caractères
-                  </span>
+                  <p-message
+                    severity="error"
+                    text="Le sujet doit contenir au moins 3 caractères"
+                    size="small"
+                    variant="simple"
+                  />
                 }
               </div>
-              <div>
-                <label for="message" class="block text-sm font-medium text-foreground mb-1.5">
-                  Message *
-                </label>
+              <div class="flex flex-col gap-1.5">
+                <label for="message" class="text-sm font-medium text-foreground">Message *</label>
                 <textarea
                   id="message"
+                  pTextarea
                   formControlName="message"
                   rows="6"
-                  class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-none"
                   placeholder="Décrivez votre projet ou votre question..."
                 ></textarea>
                 @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
-                  <span class="text-red-400 text-xs mt-1 block">Le message est obligatoire</span>
+                  <p-message
+                    severity="error"
+                    text="Le message est obligatoire"
+                    size="small"
+                    variant="simple"
+                  />
                 } @else if (
                   form.controls.message.touched && form.controls.message.errors?.['minlength']
                 ) {
-                  <span class="text-red-400 text-xs mt-1 block">
-                    Le message doit contenir au moins 10 caractères
-                  </span>
+                  <p-message
+                    severity="error"
+                    text="Le message doit contenir au moins 10 caractères"
+                    size="small"
+                    variant="simple"
+                  />
                 }
               </div>
-              <button
+              <p-button
                 type="submit"
-                [disabled]="form.invalid || isSubmitting()"
-                class="w-full py-3 px-6 rounded-lg bg-linear-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-700 hover:to-violet-700 hover:-translate-y-0.5 shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                @if (isSubmitting()) {
-                  <svg class="w-5 h-5 animate-spin" aria-hidden="true">
-                    <use href="/icons/sprite.svg#lucide-loader-2" />
-                  </svg>
-                  Envoi en cours...
-                } @else {
-                  <svg class="w-5 h-5" aria-hidden="true">
-                    <use href="/icons/sprite.svg#lucide-send" />
-                  </svg>
-                  Envoyer le message
-                }
-              </button>
+                [label]="isSubmitting() ? 'Envoi en cours...' : 'Envoyer le message'"
+                [icon]="isSubmitting() ? 'pi pi-spinner pi-spin' : 'pi pi-send'"
+                iconPos="right"
+                [disabled]="form.invalid"
+                [loading]="isSubmitting()"
+                size="large"
+                styleClass="w-full"
+              />
             </form>
           </div>
         </div>
@@ -368,7 +377,7 @@ type ContactFormGroup = {
 })
 export class ContactForm {
   private readonly contactGateway = inject(CONTACT_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly contactInfoResource = rxResource({
@@ -426,10 +435,10 @@ export class ContactForm {
         next: (result) => {
           this.isSubmitting.set(false);
           if (result.success) {
-            this.toast.success(result.message);
+            this.toast.add({ severity: 'success', summary: 'Succès', detail: result.message });
             this.form.reset();
           } else {
-            this.toast.error(result.message);
+            this.toast.add({ severity: 'error', summary: 'Erreur', detail: result.message });
           }
         },
         error: () => {

@@ -15,9 +15,7 @@ type SlotSelection = {
       class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-lg h-full"
     >
       <h2 class="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-        <svg class="w-5 h-5 text-primary" aria-hidden="true">
-          <use href="/icons/sprite.svg#lucide-clock" />
-        </svg>
+        <i class="pi pi-clock text-xl text-primary" aria-hidden="true"></i>
         Choisissez un créneau
       </h2>
 

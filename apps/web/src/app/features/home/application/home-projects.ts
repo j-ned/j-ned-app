@@ -1,12 +1,12 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProjectCard } from '@features/projects/application';
-import { ButtonComponent } from '@layout';
+import { Button } from 'primeng/button';
 import type { Project } from '@features/projects/domain';
 
 @Component({
   selector: 'app-home-projects',
-  imports: [ProjectCard, ButtonComponent],
+  imports: [ProjectCard, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -15,9 +15,7 @@ import type { Project } from '@features/projects/domain';
         <span
           class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
         >
-          <svg aria-hidden="true" class="w-4 h-4">
-            <use href="/icons/sprite.svg#lucide-laptop"></use>
-          </svg>
+          <i class="pi pi-desktop text-base" aria-hidden="true"></i>
           Portfolio
         </span>
         <h2
@@ -38,12 +36,12 @@ import type { Project } from '@features/projects/domain';
       </ul>
 
       <nav class="mt-8 text-center" aria-label="Voir tous les projets">
-        <app-button variant="primary" size="md" radius="md" (clicked)="goToProjects()">
-          Voir tous les projets
-          <svg aria-hidden="true" class="w-5 h-5">
-            <use href="/icons/sprite.svg#lucide-laptop"></use>
-          </svg>
-        </app-button>
+        <p-button
+          label="Voir tous les projets"
+          icon="pi pi-desktop"
+          iconPos="right"
+          (onClick)="goToProjects()"
+        />
       </nav>
     </section>
   `,

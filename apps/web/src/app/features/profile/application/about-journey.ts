@@ -10,9 +10,7 @@ import { PROFILE_GATEWAY } from './tokens';
     @if (biography()) {
       <section>
         <header class="flex items-center gap-2 mb-4">
-          <svg aria-hidden="true" class="w-6 h-6 text-primary">
-            <use href="/icons/sprite.svg#lucide-user"></use>
-          </svg>
+          <i class="pi pi-user text-2xl text-primary" aria-hidden="true"></i>
           <h2 class="text-2xl font-bold text-foreground">{{ biography()!.title }}</h2>
         </header>
         <div class="space-y-3">

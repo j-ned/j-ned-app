@@ -1,9 +1,11 @@
 import {
   ApplicationConfig,
+  PLATFORM_ID,
   inject,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   NavigationEnd,
   Router,
@@ -16,10 +18,14 @@ import {
 import { SelectivePreload } from '@core/strategies/selective-preload';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from '@features/auth/infrastructure/auth.interceptor';
-import { errorToastInterceptor } from '@shared/toast';
+import { errorToastInterceptor } from '@core/interceptors';
 import { IMAGE_CONFIG } from '@angular/common';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { providePrimeNG } from 'primeng/config';
+import { MessageService } from 'primeng/api';
 import { filter } from 'rxjs';
 
+import { portfolioPreset } from '@core/theme/prime-preset';
 import { routes } from './app.routes';
 import { SeoService } from '@shared/seo/seo';
 import { AnalyticsService } from '@shared/analytics';
@@ -39,6 +45,7 @@ import { HttpBookingGateway } from '@features/booking/infrastructure';
 
 function prefetchHomeBundle(): () => void {
   return (): void => {
+    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
     const gateway = inject(HOME_GATEWAY);
     gateway.getHomeBundle().subscribe();
   };
@@ -67,6 +74,8 @@ function initializeSeo(): () => void {
 
 function initializeTracking(): () => void {
   return (): void => {
+    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+
     const router = inject(Router);
     const analytics = inject(AnalyticsService);
 
@@ -115,7 +124,16 @@ export const appConfig: ApplicationConfig = {
       withPreloading(SelectivePreload),
       withViewTransitions(),
     ),
+    provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
+    providePrimeNG({
+      theme: {
+        preset: portfolioPreset,
+        options: {
+          darkModeSelector: '.app-dark',
+        },
+      },
+    }),
     provideAppInitializer(prefetchHomeBundle()),
     provideAppInitializer(initializeSeo()),
     provideAppInitializer(initializeTracking()),
@@ -132,5 +150,6 @@ export const appConfig: ApplicationConfig = {
     { provide: HOME_GATEWAY, useClass: HttpHomeGateway },
     { provide: BLOG_GATEWAY, useClass: HttpBlogGateway },
     { provide: BOOKING_GATEWAY, useClass: HttpBookingGateway },
+    MessageService,
   ],
 };

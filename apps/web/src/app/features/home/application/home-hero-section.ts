@@ -1,12 +1,12 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { HomeHero } from './home-hero';
-import { ButtonComponent } from '@layout';
+import { Button } from 'primeng/button';
 import type { HeroData } from '../domain';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [HomeHero, ButtonComponent],
+  imports: [HomeHero, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'relative block pt-28 pb-12 md:pt-36 md:pb-16 px-6 overflow-hidden',
@@ -37,18 +37,21 @@ import type { HeroData } from '../domain';
         <div
           class="animate-fade-up-actions flex flex-col sm:flex-row items-center gap-4 mt-10 md:mt-12"
         >
-          <app-button variant="primary" size="lg" radius="md" (clicked)="goToProjects()">
-            Voir mes réalisations
-            <svg aria-hidden="true" class="w-5 h-5 ml-2">
-              <use href="/icons/sprite.svg#lucide-arrow-right"></use>
-            </svg>
-          </app-button>
-          <app-button variant="accent" size="lg" radius="md" (clicked)="goToContact()">
-            Me contacter
-            <svg aria-hidden="true" class="w-5 h-5 ml-2">
-              <use href="/icons/sprite.svg#lucide-mail"></use>
-            </svg>
-          </app-button>
+          <p-button
+            label="Voir mes réalisations"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            size="large"
+            (onClick)="goToProjects()"
+          />
+          <p-button
+            label="Me contacter"
+            icon="pi pi-envelope"
+            iconPos="right"
+            size="large"
+            severity="secondary"
+            (onClick)="goToContact()"
+          />
         </div>
       </div>
     </div>

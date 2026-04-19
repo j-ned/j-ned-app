@@ -27,7 +27,7 @@ import { BLOG_GATEWAY } from './tokens';
               <li>
                 <a
                   [routerLink]="['/blog', article.id]"
-                  class="group block bg-background border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 shadow-lg"
+                  class="group block bg-surface border border-foreground/10 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 shadow-lg"
                 >
                   <article>
                     @if (article.image) {

@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { catchError, EMPTY, firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../api';
@@ -49,10 +50,12 @@ type TrackPayload = {
 export class AnalyticsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${inject(API_BASE_URL)}/analytics`;
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // --- Tracking methods (fire-and-forget, no credentials) ---
 
   trackPageView(url: string): void {
+    if (!this.isBrowser) return;
     this.fireAndForget({
       type: 'page_view',
       url,
@@ -61,10 +64,12 @@ export class AnalyticsService {
   }
 
   trackPageDuration(url: string, duration: number): void {
+    if (!this.isBrowser) return;
     this.fireAndForget({ type: 'page_duration', url, duration });
   }
 
   trackProjectClick(projectId: string, title: string): void {
+    if (!this.isBrowser) return;
     this.fireAndForget({
       type: 'project_click',
       entityId: projectId,
@@ -73,6 +78,7 @@ export class AnalyticsService {
   }
 
   trackArticleView(articleId: string, title: string): void {
+    if (!this.isBrowser) return;
     this.fireAndForget({
       type: 'article_view',
       entityId: articleId,
@@ -81,10 +87,12 @@ export class AnalyticsService {
   }
 
   trackCvDownload(): void {
+    if (!this.isBrowser) return;
     this.fireAndForget({ type: 'cv_download' });
   }
 
   sendBeacon(payload: TrackPayload): void {
+    if (!this.isBrowser || typeof navigator === 'undefined' || !navigator.sendBeacon) return;
     const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
     navigator.sendBeacon(`${this.baseUrl}/track`, blob);
   }

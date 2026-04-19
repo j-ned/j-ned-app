@@ -13,7 +13,7 @@ import type { BookingFormData } from '../domain/models';
 import { BookingCalendar } from './booking-calendar';
 import { BookingTimePicker } from './booking-time-picker';
 import { BookingForm, type BookingFormPayload } from './booking-form';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-booking',
@@ -27,9 +27,7 @@ import { ToastService } from '@shared/toast';
           <span
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
           >
-            <svg aria-hidden="true" class="w-4 h-4">
-              <use href="/icons/sprite.svg#lucide-calendar"></use>
-            </svg>
+            <i class="pi pi-calendar text-base" aria-hidden="true"></i>
             Rendez-vous
           </span>
           <h1
@@ -63,9 +61,7 @@ import { ToastService } from '@shared/toast';
                 <div
                   class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-8 shadow-lg flex flex-col items-center justify-center h-full text-center"
                 >
-                  <svg class="w-16 h-16 text-muted/30 mb-4" aria-hidden="true">
-                    <use href="/icons/sprite.svg#lucide-calendar" />
-                  </svg>
+                  <i class="pi pi-calendar text-[4rem] text-muted/30 mb-4" aria-hidden="true"></i>
                   <p class="text-muted text-lg font-medium mb-2">Sélectionnez une date</p>
                   <p class="text-muted/60 text-sm max-w-xs">
                     Choisissez une date dans le calendrier pour voir les créneaux disponibles.
@@ -99,7 +95,7 @@ import { ToastService } from '@shared/toast';
 })
 export class Booking {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly bookingFormRef = viewChild(BookingForm);
   private readonly calendarRef = viewChild(BookingCalendar);
@@ -156,7 +152,7 @@ export class Booking {
         next: (result) => {
           formRef.setSubmitting(false);
           if (result.success) {
-            this.toast.success(result.message);
+            this.toast.add({ severity: 'success', summary: 'Succès', detail: result.message });
             this.selectedDate.set(null);
             this.selectedSlot.set(null);
             formRef.resetForm();
@@ -165,7 +161,7 @@ export class Booking {
             this._bookedMonth.set(calendarMonth);
             this.bookedSlotsResource.reload();
           } else {
-            this.toast.error(result.message);
+            this.toast.add({ severity: 'error', summary: 'Erreur', detail: result.message });
           }
         },
         error: () => {

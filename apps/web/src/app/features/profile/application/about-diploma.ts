@@ -11,9 +11,7 @@ import { PROFILE_GATEWAY } from './tokens';
       class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
     >
       <header class="flex items-center gap-2 mb-6">
-        <svg aria-hidden="true" class="w-6 h-6 text-primary">
-          <use href="/icons/sprite.svg#lucide-graduation-cap"></use>
-        </svg>
+        <i class="pi pi-graduation-cap text-2xl text-primary" aria-hidden="true"></i>
         <h2 class="font-bold text-2xl text-foreground">Formations</h2>
       </header>
 

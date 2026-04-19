@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: portfolio_test
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U test -d portfolio_test']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  app:
+    image: portfolio-app:ci
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - '4200:80'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://test:test@postgres:5432/portfolio_test
+      FRONTEND_URL: http://localhost:4200
+      JWT_ACCESS_SECRET: ci-access-secret-please-change-in-prod-123456
+      JWT_REFRESH_SECRET: ci-refresh-secret-please-change-in-prod-123456
+      JWT_ACCESS_EXPIRATION: 15m
+      JWT_REFRESH_EXPIRATION: 7d
+      TOTP_APP_NAME: PortfolioCI
+      S3_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: stub
+      S3_SECRET_KEY: stub
+      S3_CV_BUCKET: cv
+      S3_PROJECTS_BUCKET: projects
+      S3_BLOG_BUCKET: blog
+      S3_ABOUT_BUCKET: about
+      SMTP_HOST: localhost
+      SMTP_PORT: 587
+      SMTP_SECURE: 'false'
+      SMTP_USER: stub
+      SMTP_PASS: stub
+      SMTP_FROM: noreply@localhost
+      CONTACT_EMAIL: ci@localhost
+      CONTACT_PHONE: '+33600000000'
+      CONTACT_LOCATION: Paris, France
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1']
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 30s

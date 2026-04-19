@@ -1,10 +1,10 @@
 import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { MessageService } from 'primeng/api';
 import { catchError, throwError } from 'rxjs';
-import { ToastService } from './toast.service';
 
 export const errorToastInterceptor: HttpInterceptorFn = (req, next) => {
-  const toast = inject(ToastService);
+  const messageService = inject(MessageService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -12,13 +12,15 @@ export const errorToastInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      // Don't show toast for GET 404s (resource may not exist yet)
       if (error.status === 404 && req.method === 'GET') {
         return throwError(() => error);
       }
 
-      const message = getErrorMessage(error);
-      toast.error(message);
+      messageService.add({
+        severity: 'error',
+        summary: 'Erreur',
+        detail: getErrorMessage(error),
+      });
 
       return throwError(() => error);
     }),

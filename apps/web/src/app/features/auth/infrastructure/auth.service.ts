@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, PLATFORM_ID, inject, Injectable, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, map, Observable, of, tap } from 'rxjs';
@@ -38,6 +39,7 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly apiUrl = inject(API_BASE_URL);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly _currentUser = signal<User | null>(null);
   private readonly _pendingTwoFactorEmail = signal<string | null>(null);
   private _resolveReady!: () => void;
@@ -50,8 +52,8 @@ export class AuthService {
   });
 
   constructor() {
-    // Only attempt session restore if a previous session was recorded
-    if (typeof localStorage !== 'undefined' && localStorage.getItem('has_session')) {
+    // Only attempt session restore if a previous session was recorded (browser only)
+    if (this.isBrowser && localStorage.getItem('has_session')) {
       this.restoreSession();
     } else {
       this._resolveReady();
@@ -192,7 +194,7 @@ export class AuthService {
       )
       .subscribe(() => {
         this._currentUser.set(null);
-        localStorage.removeItem('has_session');
+        if (this.isBrowser) localStorage.removeItem('has_session');
         this.router.navigate(['/']);
       });
   }
@@ -204,7 +206,7 @@ export class AuthService {
       displayName: apiUser.email,
       isTwoFactorEnabled: apiUser.isTwoFactorEnabled,
     });
-    localStorage.setItem('has_session', '1');
+    if (this.isBrowser) localStorage.setItem('has_session', '1');
   }
 
   private restoreSession(): void {
@@ -213,7 +215,7 @@ export class AuthService {
         tap((success) => {
           if (!success) {
             this._currentUser.set(null);
-            localStorage.removeItem('has_session');
+            if (this.isBrowser) localStorage.removeItem('has_session');
           }
         }),
         takeUntilDestroyed(this.destroyRef),

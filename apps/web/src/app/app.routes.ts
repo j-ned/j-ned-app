@@ -44,6 +44,7 @@ export const routes: Routes = [
     title: 'À propos | Julien Nédellec',
     loadComponent: () => import('./features/profile/application/about').then((m) => m.About),
     data: {
+      preload: true,
       seo: {
         title: 'À propos | Julien Nédellec - Développeur Full-Stack',
         description:
@@ -60,6 +61,7 @@ export const routes: Routes = [
     title: 'Projets | Julien Nédellec',
     loadComponent: () => import('./features/projects/application/projects').then((m) => m.Projects),
     data: {
+      preload: true,
       seo: {
         title: 'Projets | Julien Nédellec - Portfolio Développeur Full-Stack',
         description:
@@ -76,6 +78,7 @@ export const routes: Routes = [
     title: 'Contact | Julien Nédellec',
     loadComponent: () => import('./features/contact/application/contact').then((m) => m.Contact),
     data: {
+      preload: true,
       seo: {
         title: 'Contact | Julien Nédellec - Développeur Full-Stack',
         description:

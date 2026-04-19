@@ -13,9 +13,7 @@ import { PROFILE_GATEWAY } from './tokens';
   },
   template: `
     <header class="flex items-center gap-2 mb-6">
-      <svg aria-hidden="true" class="w-6 h-6 text-primary">
-        <use href="/icons/sprite.svg#lucide-code-xml"></use>
-      </svg>
+      <i class="pi pi-code text-2xl text-primary" aria-hidden="true"></i>
       <h2 class="font-bold text-xl text-foreground">Stack Technique</h2>
     </header>
     <ul class="grid grid-cols-3 gap-3" role="list">

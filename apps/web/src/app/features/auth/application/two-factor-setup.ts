@@ -40,9 +40,7 @@ type DisableFormShape = {
       <!-- Change Password -->
       <div class="bg-background/80 border border-foreground/10 rounded-2xl p-8">
         <div class="flex items-center gap-3 mb-2">
-          <svg class="w-5 h-5 text-primary" aria-hidden="true">
-            <use href="/icons/sprite.svg#lucide-lock" />
-          </svg>
+          <i class="pi pi-lock text-xl text-primary" aria-hidden="true"></i>
           <h2 class="text-xl font-bold text-foreground">Modifier le mot de passe</h2>
         </div>
         <p class="text-muted text-sm mb-6">
@@ -165,9 +163,7 @@ type DisableFormShape = {
       <!-- 2FA Setup -->
       <div class="bg-background/80 border border-foreground/10 rounded-2xl p-8">
         <div class="flex items-center gap-3 mb-2">
-          <svg class="w-5 h-5 text-primary" aria-hidden="true">
-            <use href="/icons/sprite.svg#lucide-shield-check" />
-          </svg>
+          <i class="pi pi-shield text-xl text-primary" aria-hidden="true"></i>
           <h2 class="text-xl font-bold text-foreground">Authentification à deux facteurs</h2>
         </div>
 
@@ -193,9 +189,7 @@ type DisableFormShape = {
             <div
               class="flex items-center gap-3 p-4 rounded-lg bg-green-500/10 border border-green-500/30"
             >
-              <svg class="w-5 h-5 text-green-400 shrink-0" aria-hidden="true">
-                <use href="/icons/sprite.svg#lucide-shield-check" />
-              </svg>
+              <i class="pi pi-shield text-xl text-green-400 shrink-0" aria-hidden="true"></i>
               <div>
                 <p class="text-green-400 font-medium text-sm">2FA activé</p>
                 <p class="text-muted text-xs">
@@ -351,9 +345,7 @@ type DisableFormShape = {
           <div
             class="flex items-center gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-6"
           >
-            <svg class="w-5 h-5 text-amber-400 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-shield-check" />
-            </svg>
+            <i class="pi pi-shield text-xl text-amber-400 shrink-0" aria-hidden="true"></i>
             <div>
               <p class="text-amber-400 font-medium text-sm">2FA non activé</p>
               <p class="text-muted text-xs">

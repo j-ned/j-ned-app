@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../infrastructure';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
 
 type LoginForm = {
   email: FormControl<string>;
@@ -23,9 +23,7 @@ type LoginForm = {
           <div
             class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-br from-blue-600 to-violet-600 shadow-lg shadow-violet-500/20 mb-4"
           >
-            <svg class="w-7 h-7 text-white" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-shield-user" />
-            </svg>
+            <i class="pi pi-shield text-[1.75rem] text-white" aria-hidden="true"></i>
           </div>
           <h1 class="text-xl font-bold text-foreground">Connexion Admin</h1>
           <p class="text-muted text-sm mt-1">Accédez au tableau de bord</p>
@@ -51,12 +49,10 @@ type LoginForm = {
               <div>
                 <label for="email" class="block text-xs font-medium text-muted mb-1">Email</label>
                 <div class="relative">
-                  <svg
-                    class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                  <i
+                    class="pi pi-envelope text-base text-muted absolute left-3 top-1/2 -translate-y-1/2"
                     aria-hidden="true"
-                  >
-                    <use href="/icons/sprite.svg#lucide-mail" />
-                  </svg>
+                  ></i>
                   <input
                     id="email"
                     type="email"
@@ -78,12 +74,10 @@ type LoginForm = {
                   >Mot de passe</label
                 >
                 <div class="relative">
-                  <svg
-                    class="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                  <i
+                    class="pi pi-lock text-base text-muted absolute left-3 top-1/2 -translate-y-1/2"
                     aria-hidden="true"
-                  >
-                    <use href="/icons/sprite.svg#lucide-lock" />
-                  </svg>
+                  ></i>
                   <input
                     id="password"
                     type="password"
@@ -128,9 +122,7 @@ type LoginForm = {
             routerLink="/"
             class="text-xs text-muted hover:text-primary transition-colors inline-flex items-center gap-1.5"
           >
-            <svg class="w-3.5 h-3.5" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-arrow-left" />
-            </svg>
+            <i class="pi pi-arrow-left w-3.5 h-3.5" aria-hidden="true"></i>
             Retour au site
           </a>
         </div>
@@ -141,7 +133,7 @@ type LoginForm = {
 export class Login {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly errorMessage = signal('');
@@ -181,13 +173,21 @@ export class Login {
             this.router.navigate(['/two-factor']);
           } else {
             this.errorMessage.set('Email ou mot de passe incorrect');
-            this.toast.error('Email ou mot de passe incorrect');
+            this.toast.add({
+              severity: 'error',
+              summary: 'Erreur',
+              detail: 'Email ou mot de passe incorrect',
+            });
           }
         },
         error: () => {
           this.isSubmitting.set(false);
           this.errorMessage.set('Erreur de connexion au serveur');
-          this.toast.error('Erreur de connexion au serveur');
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur de connexion au serveur',
+          });
         },
       });
   }

@@ -4,15 +4,15 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
 import { HomeServices } from './home-services';
 import { HomeProjects } from './home-projects';
-import { HomeTechStack } from './home-tech-stack';
 import { HomeBlog } from './home-blog';
 import { HomeContactCta } from './home-contact-cta';
 import { HOME_GATEWAY } from './tokens';
 import { SiteSettingsService } from '@core/services';
+import { PiIconPipe } from '@shared/icons';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeServices, HomeProjects, HomeTechStack, HomeBlog, HomeContactCta],
+  imports: [HomeHeroSection, HomeServices, HomeProjects, HomeBlog, HomeContactCta, PiIconPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -34,9 +34,11 @@ import { SiteSettingsService } from '@core/services';
                     <div
                       class="w-11 h-11 shrink-0 rounded-xl bg-linear-to-br from-primary-bg/15 to-accent/15 flex items-center justify-center group-hover:from-primary-bg/25 group-hover:to-accent/25 transition-colors duration-300"
                     >
-                      <svg aria-hidden="true" class="w-5 h-5 text-primary">
-                        <use [attr.href]="'/icons/sprite.svg#' + item.icon"></use>
-                      </svg>
+                      <i
+                        class="text-xl text-primary"
+                        [class]="item.icon | piIcon"
+                        aria-hidden="true"
+                      ></i>
                     </div>
                     <h3 class="text-sm font-bold text-primary uppercase tracking-widest">
                       {{ item.title }}
@@ -83,17 +85,6 @@ import { SiteSettingsService } from '@core/services';
         <section class="w-full py-12 md:py-16">
           <div class="max-w-7xl mx-auto px-6">
             <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
-          </div>
-        </section>
-      } @placeholder {
-        <div class="block py-12 px-6 h-64"></div>
-      }
-
-      <!-- Tech Stack Section -->
-      @defer (on viewport) {
-        <section class="w-full py-12 md:py-16">
-          <div class="max-w-7xl mx-auto px-6">
-            <app-home-tech-stack />
           </div>
         </section>
       } @placeholder {

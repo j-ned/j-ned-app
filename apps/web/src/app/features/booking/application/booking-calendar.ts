@@ -27,9 +27,7 @@ type CalendarDay = {
           class="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center hover:border-primary/50 hover:text-primary transition-colors"
           aria-label="Mois précédent"
         >
-          <svg class="w-5 h-5" aria-hidden="true">
-            <use href="/icons/sprite.svg#lucide-chevron-left" />
-          </svg>
+          <i class="pi pi-chevron-left text-xl" aria-hidden="true"></i>
         </button>
         <h2 class="text-lg font-bold text-foreground">{{ monthLabel() }}</h2>
         <button
@@ -37,9 +35,7 @@ type CalendarDay = {
           class="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center hover:border-primary/50 hover:text-primary transition-colors"
           aria-label="Mois suivant"
         >
-          <svg class="w-5 h-5" aria-hidden="true">
-            <use href="/icons/sprite.svg#lucide-chevron-right" />
-          </svg>
+          <i class="pi pi-chevron-right text-xl" aria-hidden="true"></i>
         </button>
       </header>
 

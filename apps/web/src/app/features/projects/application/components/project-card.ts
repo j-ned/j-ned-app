@@ -75,9 +75,7 @@ import { AnalyticsService } from '@shared/analytics';
                 [attr.aria-label]="'Voir le projet ' + project().title"
                 (click)="trackClick()"
               >
-                <svg class="w-5 h-5" aria-hidden="true">
-                  <use href="/icons/sprite.svg#lucide-external-link"></use>
-                </svg>
+                <i class="pi pi-external-link text-xl" aria-hidden="true"></i>
                 Voir le projet
               </a>
             }
@@ -90,9 +88,7 @@ import { AnalyticsService } from '@shared/analytics';
                 [attr.aria-label]="'Code source du projet ' + project().title"
                 (click)="trackClick()"
               >
-                <svg class="w-5 h-5" aria-hidden="true">
-                  <use href="/icons/sprite.svg#lucide-github"></use>
-                </svg>
+                <i class="pi pi-github text-xl" aria-hidden="true"></i>
                 Code
               </a>
             }
@@ -105,9 +101,7 @@ import { AnalyticsService } from '@shared/analytics';
                 [attr.aria-label]="'Code source frontend du projet ' + project().title"
                 (click)="trackClick()"
               >
-                <svg class="w-5 h-5" aria-hidden="true">
-                  <use href="/icons/sprite.svg#lucide-github"></use>
-                </svg>
+                <i class="pi pi-github text-xl" aria-hidden="true"></i>
                 Frontend
               </a>
             }
@@ -120,9 +114,7 @@ import { AnalyticsService } from '@shared/analytics';
                 [attr.aria-label]="'Code source backend du projet ' + project().title"
                 (click)="trackClick()"
               >
-                <svg class="w-5 h-5" aria-hidden="true">
-                  <use href="/icons/sprite.svg#lucide-github"></use>
-                </svg>
+                <i class="pi pi-github text-xl" aria-hidden="true"></i>
                 Backend
               </a>
             }

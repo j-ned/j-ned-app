@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@import 'primeicons/primeicons.css';
+
+@custom-variant dark (&:where(.app-dark, .app-dark *));
 
 @theme {
   /* Mappe les couleurs Tailwind aux variables de thème */
@@ -8,26 +11,32 @@
   --color-muted: var(--theme-muted);
   --color-background: var(--theme-background);
   --color-foreground: var(--theme-foreground);
+  --color-surface: var(--theme-surface);
+  --color-surface-elevated: var(--theme-surface-elevated);
 }
 
-/* Mode sombre par défaut */
+/* Mode sombre par défaut (noir neutre + accents indigo) */
 :root {
-  --theme-primary-text: #60a5fa;
-  --theme-primary-bg: #2563eb;
-  --theme-accent: #a78bfa;
-  --theme-muted: #cbd5e1;
-  --theme-background: #1e1e1e;
-  --theme-foreground: #f8fafc;
+  --theme-primary-text: #818cf8; /* indigo-400 */
+  --theme-primary-bg: #4f46e5; /* indigo-600 */
+  --theme-accent: #a78bfa; /* violet-400 */
+  --theme-muted: #a1a1aa; /* zinc-400 (neutre) */
+  --theme-background: #0a0a0a; /* neutral-950 — noir profond */
+  --theme-foreground: #fafafa; /* neutral-50 */
+  --theme-surface: rgba(255, 255, 255, 0.03); /* cards translucides */
+  --theme-surface-elevated: rgba(255, 255, 255, 0.06); /* hover/elevated */
 }
 
 /* Mode clair */
-:root:not(.dark) {
-  --theme-primary-text: #1d4ed8;
-  --theme-primary-bg: #1d4ed8;
-  --theme-accent: #6d28d9;
-  --theme-muted: #64748b;
-  --theme-background: #eceff4;
-  --theme-foreground: #0f172a;
+:root:not(.app-dark) {
+  --theme-primary-text: #3730a3; /* indigo-800 (lisible sur body) */
+  --theme-primary-bg: #4f46e5; /* indigo-600 (vibrant pour boutons) */
+  --theme-accent: #7c3aed; /* violet-600 */
+  --theme-muted: #475569; /* slate-600 (contraste propre) */
+  --theme-background: #f1f5f9; /* slate-100 (moins glacé) */
+  --theme-foreground: #0f172a; /* slate-900 */
+  --theme-surface: #ffffff; /* cards solides blanches */
+  --theme-surface-elevated: #ffffff;
 }
 
 /* View Transitions — instant swap */
@@ -40,6 +49,13 @@
 body {
   background-color: var(--theme-background);
   color: var(--theme-foreground);
+}
+
+/* Focus ring global cohérent pour navigation clavier (pas au clic souris) */
+:where(a, button, [role='button'], summary):focus-visible {
+  outline: 2px solid var(--theme-primary-text);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Override autofill du navigateur pour garder le thème */
