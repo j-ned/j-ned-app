@@ -40,81 +40,12 @@ jobs:
         run: pnpm run test
 
   # ─────────────────────────────────────────────────────────────
-  # Job 2 — Docker build + E2E contre stack Docker complète
-  # ─────────────────────────────────────────────────────────────
-  e2e:
-    name: Docker + E2E Playwright
-    runs-on: ubuntu-latest
-    needs: quality
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.22.0
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
-      - uses: docker/setup-buildx-action@v3
-
-      - name: Build image (GHA cache)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          target: production
-          tags: portfolio-app:ci
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Start stack (postgres + app)
-        run: docker compose -f docker-compose.ci.yml up -d --no-build
-
-      - name: Wait for app
-        run: |
-          for i in $(seq 1 40); do
-            if curl -fsS http://localhost:4200/ > /dev/null; then
-              echo "App ready"
-              exit 0
-            fi
-            sleep 3
-          done
-          docker compose -f docker-compose.ci.yml logs
-          exit 1
-
-      - name: Playwright
-        env:
-          CI: 'true'
-        run: pnpm exec playwright test
-
-      - name: Upload Playwright report on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
-
-      - name: Tear down
-        if: always()
-        run: docker compose -f docker-compose.ci.yml down --volumes
-
-  # ─────────────────────────────────────────────────────────────
-  # Job 3 — Déclenchement déploiement Dokploy (main seulement)
+  # Job 2 — Déclenchement déploiement Dokploy (main seulement)
+  # Tourne en parallèle de quality pour réduire le temps total.
   # ─────────────────────────────────────────────────────────────
   deploy:
     name: Trigger Dokploy
     runs-on: ubuntu-latest
-    needs: e2e
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
       - name: Notify Dokploy webhook
