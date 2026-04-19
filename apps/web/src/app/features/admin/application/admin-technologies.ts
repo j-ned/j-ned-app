@@ -3,96 +3,104 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import type { Technology } from '@features/profile/domain';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { TableModule } from 'primeng/table';
+import { Button } from 'primeng/button';
 
 @Component({
   selector: 'app-admin-technologies',
-  imports: [RouterLink],
+  imports: [RouterLink, TableModule, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div class="flex items-center justify-between mb-8">
       <h1 class="text-2xl font-bold text-foreground">Technologies</h1>
-      <a
-        routerLink="/admin/about/technologies/new"
-        class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
-      >
-        Nouvelle technologie
-      </a>
+      <p-button
+        label="Nouvelle technologie"
+        icon="pi pi-plus"
+        routerLink="/admin/content/technologies/new"
+      />
     </div>
 
-    <div class="bg-background border border-foreground/10 rounded-2xl overflow-hidden shadow-lg">
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="border-b border-foreground/10">
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Nom</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">
-                Catégorie
-              </th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (tech of technologies(); track tech.id) {
-              <tr class="border-b border-foreground/5 hover:bg-foreground/5 transition-colors">
-                <td class="px-6 py-4 text-sm text-foreground font-medium">{{ tech.name }}</td>
-                <td class="px-6 py-4 text-sm text-muted">{{ tech.category }}</td>
-                <td class="px-6 py-4 text-sm text-muted">{{ tech.icon }}</td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <a
-                      [routerLink]="['/admin/about/technologies', tech.id, 'edit']"
-                      class="px-3 py-1.5 text-xs rounded-lg bg-foreground/5 text-foreground hover:bg-foreground/10 transition-colors"
-                    >
-                      Modifier
-                    </a>
-                    <button
-                      (click)="deleteTechnology(tech)"
-                      class="px-3 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="4" class="px-6 py-8 text-center text-muted text-sm">
-                  Aucune technologie
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <p-table
+      [value]="technologies()"
+      [paginator]="technologies().length > 10"
+      [rows]="10"
+      [rowHover]="true"
+      dataKey="id"
+      emptyMessage="Aucune technologie"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="name">Nom <p-sortIcon field="name" /></th>
+          <th pSortableColumn="category">Catégorie <p-sortIcon field="category" /></th>
+          <th>Icône</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-tech>
+        <tr>
+          <td class="font-medium text-foreground">{{ tech.name }}</td>
+          <td class="text-muted">{{ tech.category }}</td>
+          <td class="text-muted">{{ tech.icon }}</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-2">
+              <p-button
+                icon="pi pi-pencil"
+                severity="secondary"
+                size="small"
+                [text]="true"
+                [routerLink]="['/admin/content/technologies', tech.id, 'edit']"
+                ariaLabel="Modifier"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                size="small"
+                [text]="true"
+                (onClick)="deleteTechnology(tech)"
+                ariaLabel="Supprimer"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
   `,
 })
 export class AdminTechnologies {
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly technologiesRes = rxResource({
     stream: () => this.profileGateway.getTechnologies(),
   });
 
-  readonly technologies = computed(() => this.technologiesRes.value() ?? []);
+  readonly technologies = computed(() => [...(this.technologiesRes.value() ?? [])]);
 
   deleteTechnology(tech: Technology): void {
+    const snapshot = this.technologiesRes.value() ?? [];
+    this.technologiesRes.update((list) => (list ?? []).filter((t) => t.id !== tech.id));
+
     this.profileGateway
       .deleteTechnology(tech.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.technologiesRes.reload();
-          this.toast.success('Technologie supprimée');
+        next: () =>
+          this.toast.add({
+            severity: 'success',
+            summary: 'Succès',
+            detail: 'Technologie supprimée',
+          }),
+        error: () => {
+          this.technologiesRes.set(snapshot);
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la suppression',
+          });
         },
-        error: () => this.toast.error('Erreur lors de la suppression'),
       });
   }
 }

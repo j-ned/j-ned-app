@@ -3,94 +3,100 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import type { SocialButton } from '@features/profile/domain';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { TableModule } from 'primeng/table';
+import { Button } from 'primeng/button';
 
 @Component({
   selector: 'app-admin-social-buttons',
-  imports: [RouterLink],
+  imports: [RouterLink, TableModule, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div class="flex items-center justify-between mb-8">
       <h1 class="text-2xl font-bold text-foreground">Boutons sociaux</h1>
-      <a
-        routerLink="/admin/about/social-buttons/new"
-        class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
-      >
-        Nouveau bouton
-      </a>
+      <p-button label="Nouveau bouton" icon="pi pi-plus" routerLink="/admin/content/social/new" />
     </div>
 
-    <div class="bg-background border border-foreground/10 rounded-2xl overflow-hidden shadow-lg">
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="border-b border-foreground/10">
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Label</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Icône</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Lien</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (btn of buttons(); track btn.id) {
-              <tr class="border-b border-foreground/5 hover:bg-foreground/5 transition-colors">
-                <td class="px-6 py-4 text-sm text-foreground font-medium">{{ btn.label }}</td>
-                <td class="px-6 py-4 text-sm text-muted">{{ btn.icon }}</td>
-                <td class="px-6 py-4 text-sm text-muted max-w-xs truncate">{{ btn.href }}</td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <a
-                      [routerLink]="['/admin/about/social-buttons', btn.id, 'edit']"
-                      class="px-3 py-1.5 text-xs rounded-lg bg-foreground/5 text-foreground hover:bg-foreground/10 transition-colors"
-                    >
-                      Modifier
-                    </a>
-                    <button
-                      (click)="deleteButton(btn)"
-                      class="px-3 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="4" class="px-6 py-8 text-center text-muted text-sm">
-                  Aucun bouton social
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <p-table
+      [value]="buttons()"
+      [paginator]="buttons().length > 10"
+      [rows]="10"
+      [rowHover]="true"
+      dataKey="id"
+      emptyMessage="Aucun bouton social"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="label">Label <p-sortIcon field="label" /></th>
+          <th>Icône</th>
+          <th>Lien</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-btn>
+        <tr>
+          <td class="font-medium text-foreground">{{ btn.label }}</td>
+          <td class="text-muted">{{ btn.icon }}</td>
+          <td class="text-muted max-w-xs truncate">{{ btn.href }}</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-2">
+              <p-button
+                icon="pi pi-pencil"
+                severity="secondary"
+                size="small"
+                [text]="true"
+                [routerLink]="['/admin/content/social', btn.id, 'edit']"
+                ariaLabel="Modifier"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                size="small"
+                [text]="true"
+                (onClick)="deleteButton(btn)"
+                ariaLabel="Supprimer"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
   `,
 })
 export class AdminSocialButtons {
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly buttonsRes = rxResource({
     stream: () => this.profileGateway.getSocialButtons(),
   });
 
-  readonly buttons = computed(() => this.buttonsRes.value() ?? []);
+  readonly buttons = computed(() => [...(this.buttonsRes.value() ?? [])]);
 
   deleteButton(btn: SocialButton): void {
+    const snapshot = this.buttonsRes.value() ?? [];
+    this.buttonsRes.update((list) => (list ?? []).filter((b) => b.id !== btn.id));
+
     this.profileGateway
       .deleteSocialButton(btn.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.buttonsRes.reload();
-          this.toast.success('Réseau social supprimé');
+        next: () =>
+          this.toast.add({
+            severity: 'success',
+            summary: 'Succès',
+            detail: 'Réseau social supprimé',
+          }),
+        error: () => {
+          this.buttonsRes.set(snapshot);
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la suppression',
+          });
         },
-        error: () => this.toast.error('Erreur lors de la suppression'),
       });
   }
 }

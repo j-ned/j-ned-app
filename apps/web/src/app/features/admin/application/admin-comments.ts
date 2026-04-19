@@ -9,12 +9,16 @@ import {
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { BLOG_GATEWAY } from '@features/blog/application';
 import type { Comment, CommentStatus } from '@features/blog/domain';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { TableModule } from 'primeng/table';
+import { Button } from 'primeng/button';
+import { Tag } from 'primeng/tag';
 
 type FilterStatus = 'all' | CommentStatus;
 
 @Component({
   selector: 'app-admin-comments',
+  imports: [TableModule, Button, Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -22,164 +26,125 @@ type FilterStatus = 'all' | CommentStatus;
 
     <div class="flex flex-wrap gap-2 mb-6">
       @for (filter of filters; track filter.value) {
-        <button
-          (click)="activeFilter.set(filter.value)"
-          [class]="
-            'px-4 py-2 rounded-lg text-sm font-medium border transition-colors ' +
-            (activeFilter() === filter.value
-              ? 'bg-primary text-white border-primary'
-              : 'bg-foreground/5 text-foreground border-foreground/20 hover:border-primary/50')
-          "
-        >
-          {{ filter.label }}
-          <span
-            [class]="
-              'ml-1.5 px-1.5 py-0.5 rounded text-xs ' +
-              (activeFilter() === filter.value ? 'bg-white/20' : 'bg-foreground/10')
-            "
-          >
-            {{ statusCounts().get(filter.value) ?? 0 }}
-          </span>
-        </button>
+        <p-button
+          [label]="filter.label + ' (' + (statusCounts().get(filter.value) ?? 0) + ')'"
+          size="small"
+          [severity]="activeFilter() === filter.value ? 'primary' : 'secondary'"
+          [outlined]="activeFilter() !== filter.value"
+          (onClick)="activeFilter.set(filter.value)"
+        />
       }
     </div>
 
-    <div class="bg-background border border-foreground/10 rounded-2xl overflow-hidden shadow-lg">
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="border-b border-foreground/10">
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Auteur</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">
-                Contenu
-              </th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Note</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Statut</th>
-              <th scope="col" class="text-left px-6 py-4 text-sm font-medium text-muted">Date</th>
-              <th scope="col" class="text-right px-6 py-4 text-sm font-medium text-muted">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (comment of filteredComments(); track comment.id) {
-              <tr class="border-b border-foreground/5 hover:bg-foreground/5 transition-colors">
-                <td class="px-6 py-4 text-sm text-foreground font-medium">
-                  {{ comment.author }}
-                </td>
-                <td class="px-6 py-4 text-sm text-muted max-w-xs truncate">
-                  {{ comment.content }}
-                </td>
-                <td class="px-6 py-4">
-                  @if (comment.rating > 0) {
-                    <div class="flex gap-0.5">
-                      @for (star of [1, 2, 3, 4, 5]; track star) {
-                        <svg class="w-4 h-4" aria-hidden="true">
-                          <use
-                            href="/icons/sprite.svg#lucide-star"
-                            [class]="star <= comment.rating ? 'text-yellow-400' : 'text-muted'"
-                          />
-                        </svg>
-                      }
-                    </div>
-                  } @else {
-                    <span class="text-xs text-muted">&mdash;</span>
-                  }
-                </td>
-                <td class="px-6 py-4">
-                  <span
-                    [class]="
-                      'px-2.5 py-1 rounded-lg text-xs font-medium ' + STATUS_CLASSES[comment.status]
-                    "
-                  >
-                    {{ STATUS_LABELS[comment.status] }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 text-sm text-muted">{{ comment.date }}</td>
-                <td class="px-6 py-4">
-                  <div class="flex items-center justify-end gap-1">
-                    @if (comment.status !== 'approved') {
-                      <button
-                        (click)="approve(comment)"
-                        aria-label="Approuver"
-                        class="p-1.5 rounded-lg text-green-400 hover:bg-green-500/10 transition-colors"
-                      >
-                        <svg class="w-4 h-4" aria-hidden="true">
-                          <use href="/icons/sprite.svg#lucide-check" />
-                        </svg>
-                      </button>
-                    }
-                    @if (comment.status !== 'rejected') {
-                      <button
-                        (click)="reject(comment)"
-                        aria-label="Rejeter"
-                        class="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-                      >
-                        <svg class="w-4 h-4" aria-hidden="true">
-                          <use href="/icons/sprite.svg#lucide-x" />
-                        </svg>
-                      </button>
-                    }
-                    <button
-                      (click)="toggleFeatured(comment)"
-                      [attr.aria-label]="comment.featured ? 'Retirer de la une' : 'Mettre en avant'"
-                      [class]="
-                        'p-1.5 rounded-lg transition-colors ' +
-                        (comment.featured
-                          ? 'text-yellow-400 hover:bg-yellow-500/10'
-                          : 'text-muted hover:bg-foreground/10')
-                      "
-                    >
-                      <svg class="w-4 h-4" aria-hidden="true">
-                        <use href="/icons/sprite.svg#lucide-star" />
-                      </svg>
-                    </button>
-                    @if (comment.email) {
-                      <a
-                        [href]="'mailto:' + comment.email"
-                        title="Alerter par email"
-                        class="p-1.5 rounded-lg text-orange-400 hover:bg-orange-500/10 transition-colors"
-                      >
-                        <svg class="w-4 h-4" aria-hidden="true">
-                          <use href="/icons/sprite.svg#lucide-mail" />
-                        </svg>
-                      </a>
-                    }
-                    <button
-                      (click)="deleteComment(comment)"
-                      aria-label="Supprimer"
-                      class="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-                    >
-                      <svg class="w-4 h-4" aria-hidden="true">
-                        <use href="/icons/sprite.svg#lucide-trash-2" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="6" class="px-6 py-8 text-center text-muted text-sm">
-                  Aucun commentaire
-                </td>
-              </tr>
+    <p-table
+      [value]="filteredComments()"
+      [paginator]="filteredComments().length > 10"
+      [rows]="10"
+      [rowHover]="true"
+      dataKey="id"
+      emptyMessage="Aucun commentaire"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="author">Auteur <p-sortIcon field="author" /></th>
+          <th>Contenu</th>
+          <th>Note</th>
+          <th pSortableColumn="status">Statut <p-sortIcon field="status" /></th>
+          <th pSortableColumn="date">Date <p-sortIcon field="date" /></th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-comment>
+        <tr>
+          <td class="font-medium text-foreground">{{ comment.author }}</td>
+          <td class="text-muted max-w-xs truncate">{{ comment.content }}</td>
+          <td>
+            @if (comment.rating > 0) {
+              <div class="flex gap-0.5">
+                @for (star of [1, 2, 3, 4, 5]; track star) {
+                  <i
+                    class="pi pi-star text-base"
+                    [class]="star <= comment.rating ? 'text-yellow-400' : 'text-muted'"
+                    aria-hidden="true"
+                  ></i>
+                }
+              </div>
+            } @else {
+              <span class="text-xs text-muted">&mdash;</span>
             }
-          </tbody>
-        </table>
-      </div>
-    </div>
+          </td>
+          <td>
+            <p-tag
+              [value]="STATUS_LABELS[comment.status]"
+              [severity]="STATUS_SEVERITY[comment.status]"
+            />
+          </td>
+          <td class="text-muted text-sm">{{ comment.date }}</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-1">
+              @if (comment.status !== 'approved') {
+                <p-button
+                  icon="pi pi-check"
+                  severity="success"
+                  size="small"
+                  [text]="true"
+                  (onClick)="approve(comment)"
+                  ariaLabel="Approuver"
+                />
+              }
+              @if (comment.status !== 'rejected') {
+                <p-button
+                  icon="pi pi-times"
+                  severity="danger"
+                  size="small"
+                  [text]="true"
+                  (onClick)="reject(comment)"
+                  ariaLabel="Rejeter"
+                />
+              }
+              <p-button
+                icon="pi pi-star"
+                [severity]="comment.featured ? 'warn' : 'secondary'"
+                size="small"
+                [text]="true"
+                (onClick)="toggleFeatured(comment)"
+                [ariaLabel]="comment.featured ? 'Retirer de la une' : 'Mettre en avant'"
+              />
+              @if (comment.email) {
+                <p-button
+                  icon="pi pi-envelope"
+                  severity="warn"
+                  size="small"
+                  [text]="true"
+                  [attr.href]="'mailto:' + comment.email"
+                  ariaLabel="Alerter par email"
+                />
+              }
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                size="small"
+                [text]="true"
+                (onClick)="deleteComment(comment)"
+                ariaLabel="Supprimer"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
   `,
 })
 export class AdminComments {
   private readonly blogGateway = inject(BLOG_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly commentsRes = rxResource({
     stream: () => this.blogGateway.getAllComments(),
   });
 
-  readonly comments = computed(() => this.commentsRes.value() ?? []);
+  readonly comments = computed(() => [...(this.commentsRes.value() ?? [])]);
   readonly activeFilter = signal<FilterStatus>('all');
 
   readonly filters: readonly { value: FilterStatus; label: string }[] = [
@@ -189,16 +154,16 @@ export class AdminComments {
     { value: 'rejected', label: 'Rejetés' },
   ];
 
-  protected readonly STATUS_CLASSES: Record<string, string> = {
-    pending: 'bg-yellow-500/10 text-yellow-400',
-    approved: 'bg-green-500/10 text-green-400',
-    rejected: 'bg-red-500/10 text-red-400',
-  };
-
   protected readonly STATUS_LABELS: Record<string, string> = {
     pending: 'En attente',
     approved: 'Approuvé',
     rejected: 'Rejeté',
+  };
+
+  protected readonly STATUS_SEVERITY: Record<string, 'warn' | 'success' | 'danger'> = {
+    pending: 'warn',
+    approved: 'success',
+    rejected: 'danger',
   };
 
   readonly filteredComments = computed(() => {
@@ -219,56 +184,72 @@ export class AdminComments {
   });
 
   approve(comment: Comment): void {
-    this.blogGateway
-      .updateComment(comment.id, { status: 'approved' })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.commentsRes.reload();
-          this.toast.success('Commentaire approuvé');
-        },
-        error: () => this.toast.error("Erreur lors de l'approbation"),
-      });
+    this.patchComment(
+      comment.id,
+      { status: 'approved' },
+      'Commentaire approuvé',
+      "Erreur lors de l'approbation",
+    );
   }
 
   reject(comment: Comment): void {
-    this.blogGateway
-      .updateComment(comment.id, { status: 'rejected' })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.commentsRes.reload();
-          this.toast.success('Commentaire rejeté');
-        },
-        error: () => this.toast.error('Erreur lors du rejet'),
-      });
+    this.patchComment(
+      comment.id,
+      { status: 'rejected' },
+      'Commentaire rejeté',
+      'Erreur lors du rejet',
+    );
   }
 
   toggleFeatured(comment: Comment): void {
+    this.patchComment(
+      comment.id,
+      { featured: !comment.featured },
+      comment.featured ? 'Commentaire retiré de la une' : 'Commentaire mis en avant',
+      'Erreur lors de la mise à jour',
+    );
+  }
+
+  private patchComment(
+    id: string,
+    patch: Partial<Comment>,
+    successMessage: string,
+    errorMessage: string,
+  ): void {
     this.blogGateway
-      .updateComment(comment.id, { featured: !comment.featured })
+      .updateComment(id, patch)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.commentsRes.reload();
-          this.toast.success(
-            comment.featured ? 'Commentaire retiré de la une' : 'Commentaire mis en avant',
-          );
+        next: (updated) => {
+          this.commentsRes.update((list) => (list ?? []).map((c) => (c.id === id ? updated : c)));
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: successMessage });
         },
-        error: () => this.toast.error('Erreur lors de la mise à jour'),
+        error: () => this.toast.add({ severity: 'error', summary: 'Erreur', detail: errorMessage }),
       });
   }
 
   deleteComment(comment: Comment): void {
+    const snapshot = this.commentsRes.value() ?? [];
+    this.commentsRes.update((list) => (list ?? []).filter((c) => c.id !== comment.id));
+
     this.blogGateway
       .deleteComment(comment.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.commentsRes.reload();
-          this.toast.success('Commentaire supprimé');
+        next: () =>
+          this.toast.add({
+            severity: 'success',
+            summary: 'Succès',
+            detail: 'Commentaire supprimé',
+          }),
+        error: () => {
+          this.commentsRes.set(snapshot);
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la suppression',
+          });
         },
-        error: () => this.toast.error('Erreur lors de la suppression'),
       });
   }
 }

@@ -11,11 +11,14 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
 
 @Component({
   selector: 'app-admin-social-button-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Button, InputText, Message],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -28,60 +31,58 @@ import { ToastService } from '@shared/toast';
         <legend class="sr-only">Informations du réseau social</legend>
 
         <div>
-          <label for="icon" class="block text-sm font-medium text-foreground mb-1.5">Icône</label>
-          <input
-            id="icon"
-            type="text"
-            formControlName="icon"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="icon" class="text-sm font-medium text-foreground">Icône</label>
+          <input id="icon" type="text" formControlName="icon" pInputText fluid />
           @if (form.controls.icon.touched && form.controls.icon.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
         <div>
-          <label for="label" class="block text-sm font-medium text-foreground mb-1.5">Label</label>
-          <input
-            id="label"
-            type="text"
-            formControlName="label"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="label" class="text-sm font-medium text-foreground">Label</label>
+          <input id="label" type="text" formControlName="label" pInputText fluid />
           @if (form.controls.label.touched && form.controls.label.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
         <div>
-          <label for="href" class="block text-sm font-medium text-foreground mb-1.5">Lien</label>
-          <input
-            id="href"
-            type="text"
-            formControlName="href"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="href" class="text-sm font-medium text-foreground">Lien</label>
+          <input id="href" type="text" formControlName="href" pInputText fluid />
           @if (form.controls.href.touched && form.controls.href.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
       </fieldset>
 
       <div class="flex gap-4 pt-4">
-        <button
+        <p-button
           type="submit"
+          [label]="isEditMode() ? 'Enregistrer' : 'Créer'"
           [disabled]="form.invalid"
-          class="px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {{ isEditMode() ? 'Enregistrer' : 'Créer' }}
-        </button>
-        <button
+        />
+        <p-button
           type="button"
-          (click)="cancel()"
-          class="px-6 py-2.5 rounded-lg bg-foreground/5 text-foreground font-medium hover:bg-foreground/10 transition-colors"
-        >
-          Annuler
-        </button>
+          label="Annuler"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancel()"
+        />
       </div>
     </form>
   `,
@@ -90,7 +91,7 @@ export class AdminSocialButtonForm {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly id = input<string>();
@@ -125,14 +126,23 @@ export class AdminSocialButtonForm {
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.toast.success(id ? 'Réseau social mis à jour' : 'Réseau social créé');
-        this.router.navigate(['/admin/about/social-buttons']);
+        this.toast.add({
+          severity: 'success',
+          summary: 'Succès',
+          detail: id ? 'Réseau social mis à jour' : 'Réseau social créé',
+        });
+        this.router.navigate(['/admin/content/social']);
       },
-      error: () => this.toast.error("Erreur lors de l'enregistrement"),
+      error: () =>
+        this.toast.add({
+          severity: 'error',
+          summary: 'Erreur',
+          detail: "Erreur lors de l'enregistrement",
+        }),
     });
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/about/social-buttons']);
+    this.router.navigate(['/admin/content/social']);
   }
 }

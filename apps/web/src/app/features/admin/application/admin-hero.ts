@@ -3,11 +3,14 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HOME_GATEWAY } from '@features/home/application';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
 
 @Component({
   selector: 'app-admin-hero',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Button, InputText, Message],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -18,66 +21,58 @@ import { ToastService } from '@shared/toast';
         <legend class="sr-only">Informations du hero</legend>
 
         <div>
-          <label for="name" class="block text-sm font-medium text-foreground mb-1.5">Nom</label>
-          <input
-            id="name"
-            type="text"
-            formControlName="name"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="name" class="text-sm font-medium text-foreground">Nom</label>
+          <input id="name" type="text" formControlName="name" pInputText fluid />
           @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
         <div>
-          <label for="tagline" class="block text-sm font-medium text-foreground mb-1.5"
-            >Tagline</label
-          >
-          <input
-            id="tagline"
-            type="text"
-            formControlName="tagline"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="tagline" class="text-sm font-medium text-foreground">Tagline</label>
+          <input id="tagline" type="text" formControlName="tagline" pInputText fluid />
           @if (form.controls.tagline.touched && form.controls.tagline.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
         <div>
-          <label for="availability" class="block text-sm font-medium text-foreground mb-1.5"
+          <label for="availability" class="text-sm font-medium text-foreground"
             >Disponibilité</label
           >
-          <input
-            id="availability"
-            type="text"
-            formControlName="availability"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <input id="availability" type="text" formControlName="availability" pInputText fluid />
           @if (
             form.controls.availability.touched && form.controls.availability.errors?.['required']
           ) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
       </fieldset>
 
       <div class="flex gap-4 pt-4">
-        <button
-          type="submit"
-          [disabled]="form.invalid"
-          class="px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Enregistrer
-        </button>
-        <button
+        <p-button type="submit" label="Enregistrer" [disabled]="form.invalid" />
+        <p-button
           type="button"
-          (click)="cancel()"
-          class="px-6 py-2.5 rounded-lg bg-foreground/5 text-foreground font-medium hover:bg-foreground/10 transition-colors"
-        >
-          Annuler
-        </button>
+          label="Annuler"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancel()"
+        />
       </div>
     </form>
   `,
@@ -86,7 +81,7 @@ export class AdminHero {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   private heroId = '';
@@ -122,14 +117,19 @@ export class AdminHero {
       .subscribe({
         next: () => {
           this.homeGateway.invalidateBundle();
-          this.toast.success('Hero mis à jour');
-          this.router.navigate(['/admin/home']);
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Hero mis à jour' });
+          this.router.navigate(['/admin/content']);
         },
-        error: () => this.toast.error("Erreur lors de l'enregistrement"),
+        error: () =>
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: "Erreur lors de l'enregistrement",
+          }),
       });
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/home']);
+    this.router.navigate(['/admin/content']);
   }
 }

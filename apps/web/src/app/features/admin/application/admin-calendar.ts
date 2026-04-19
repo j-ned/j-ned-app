@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import type { Booking, DisabledDate } from '@features/booking/domain';
 import { getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
 
 type CalendarDay = {
   readonly date: string;
@@ -33,7 +33,7 @@ type CalendarDay = {
     <h1 class="text-2xl font-bold text-foreground mb-8">Calendrier</h1>
 
     <!-- Réservations -->
-    <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg mb-8">
+    <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg mb-8">
       <h2 class="text-lg font-semibold text-foreground mb-4">
         Réservations ({{ bookings().length }})
       </h2>
@@ -125,18 +125,14 @@ type CalendarDay = {
     <h2 class="text-lg font-semibold text-foreground mb-4">Disponibilités</h2>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div
-        class="lg:col-span-2 bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg"
-      >
+      <div class="lg:col-span-2 bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
         <div class="flex items-center justify-between mb-6">
           <button
             (click)="previousMonth()"
             class="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center hover:border-primary/50 hover:text-primary transition-colors"
             aria-label="Mois précédent"
           >
-            <svg class="w-5 h-5" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-chevron-left" />
-            </svg>
+            <i class="pi pi-chevron-left text-xl" aria-hidden="true"></i>
           </button>
           <h3 class="text-lg font-bold text-foreground capitalize">{{ monthLabel() }}</h3>
           <button
@@ -144,9 +140,7 @@ type CalendarDay = {
             class="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center hover:border-primary/50 hover:text-primary transition-colors"
             aria-label="Mois suivant"
           >
-            <svg class="w-5 h-5" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-chevron-right" />
-            </svg>
+            <i class="pi pi-chevron-right text-xl" aria-hidden="true"></i>
           </button>
         </div>
 
@@ -205,7 +199,7 @@ type CalendarDay = {
 
       <div class="space-y-6">
         @if (selectedDate()) {
-          <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg">
+          <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
             <h3 class="text-sm font-semibold text-foreground mb-3">
               {{ formatDate(selectedDate()!) }}
             </h3>
@@ -245,14 +239,14 @@ type CalendarDay = {
             }
           </div>
         } @else {
-          <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg">
+          <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
             <p class="text-sm text-muted text-center">
               Cliquez sur une date pour la désactiver ou la réactiver
             </p>
           </div>
         }
 
-        <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg">
+        <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
           <h3 class="text-sm font-semibold text-foreground mb-3">
             Dates désactivées ({{ disabledDates().length }})
           </h3>
@@ -272,9 +266,7 @@ type CalendarDay = {
                   class="shrink-0 text-red-400 hover:text-red-300 transition-colors"
                   aria-label="Supprimer"
                 >
-                  <svg class="w-4 h-4" aria-hidden="true">
-                    <use href="/icons/sprite.svg#lucide-x" />
-                  </svg>
+                  <i class="pi pi-times text-base" aria-hidden="true"></i>
                 </button>
               </div>
             } @empty {
@@ -288,7 +280,7 @@ type CalendarDay = {
 })
 export class AdminCalendar {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly bookings = signal<readonly Booking[]>([]);
@@ -412,9 +404,14 @@ export class AdminCalendar {
         next: () => {
           this.reasonInput = '';
           this.loadDates();
-          this.toast.success('Date désactivée');
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Date désactivée' });
         },
-        error: () => this.toast.error('Erreur lors de la désactivation'),
+        error: () =>
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la désactivation',
+          }),
       });
   }
 
@@ -431,9 +428,14 @@ export class AdminCalendar {
       .subscribe({
         next: () => {
           this.loadDates();
-          this.toast.success('Date réactivée');
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Date réactivée' });
         },
-        error: () => this.toast.error('Erreur lors de la réactivation'),
+        error: () =>
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la réactivation',
+          }),
       });
   }
 
@@ -444,9 +446,14 @@ export class AdminCalendar {
       .subscribe({
         next: () => {
           this.loadDates();
-          this.toast.success('Date supprimée');
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Date supprimée' });
         },
-        error: () => this.toast.error('Erreur lors de la suppression'),
+        error: () =>
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la suppression',
+          }),
       });
   }
 
@@ -457,9 +464,18 @@ export class AdminCalendar {
       .subscribe({
         next: () => {
           this.loadBookings();
-          this.toast.success('Réservation supprimée');
+          this.toast.add({
+            severity: 'success',
+            summary: 'Succès',
+            detail: 'Réservation supprimée',
+          });
         },
-        error: () => this.toast.error('Erreur lors de la suppression'),
+        error: () =>
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la suppression',
+          }),
       });
   }
 

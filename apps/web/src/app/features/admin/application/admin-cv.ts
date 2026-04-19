@@ -1,19 +1,26 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  viewChild,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import type { CvInfo } from '../domain/models/cv.model';
 import { CvService } from '@shared/cv';
-import { ToastService } from '@shared/toast';
-import { FileDropZone } from '@shared/file-drop-zone';
+import { MessageService } from 'primeng/api';
+import { FileUpload } from 'primeng/fileupload';
 
 @Component({
   selector: 'app-admin-cv',
-  imports: [FileDropZone],
+  imports: [FileUpload],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <h1 class="text-2xl font-bold text-foreground mb-8">Gestion du CV</h1>
 
     @if (cv()) {
-      <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg mb-8">
+      <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg mb-8">
         <h2 class="text-lg font-semibold text-foreground mb-4">CV actuel</h2>
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
@@ -46,24 +53,27 @@ import { FileDropZone } from '@shared/file-drop-zone';
         </div>
       </div>
     } @else {
-      <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg mb-8">
+      <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg mb-8">
         <p class="text-muted text-sm">Aucun CV uploadé</p>
       </div>
     }
 
-    <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg">
+    <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
       <h2 class="text-lg font-semibold text-foreground mb-4">
         {{ cv() ? 'Mettre à jour le CV' : 'Upload nouveau CV' }}
       </h2>
 
-      <app-file-drop-zone
-        accept=".pdf"
-        dropLabel="Glissez un fichier PDF ici"
-        changeLabel="Changer le fichier"
-        [preview]="selectedFile() ? selectedFile()!.name : ''"
-        [previewType]="selectedFile() ? 'file' : 'image'"
-        [previewDetail]="formattedSelectedSize()"
-        (fileSelected)="onFileSelected($event)"
+      <p-fileupload
+        #fileUpload
+        mode="advanced"
+        [auto]="false"
+        [showUploadButton]="false"
+        [showCancelButton]="false"
+        [multiple]="false"
+        accept="application/pdf"
+        chooseLabel="Choisir un fichier PDF"
+        (onSelect)="onFileSelected($event.files[0])"
+        (onClear)="clearSelection()"
       />
 
       @if (selectedFile()) {
@@ -93,7 +103,8 @@ import { FileDropZone } from '@shared/file-drop-zone';
 })
 export class AdminCv {
   private readonly cvService = inject(CvService);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
+  private readonly fileUpload = viewChild<FileUpload>('fileUpload');
 
   readonly cv = signal<CvInfo | null>(null);
   readonly selectedFile = signal<File | null>(null);
@@ -137,12 +148,17 @@ export class AdminCv {
     if (file.type === 'application/pdf') {
       this.selectFile(file);
     } else {
-      this.toast.error('Seuls les fichiers PDF sont acceptés.');
+      this.toast.add({
+        severity: 'error',
+        summary: 'Erreur',
+        detail: 'Seuls les fichiers PDF sont acceptés.',
+      });
     }
   }
 
   clearSelection(): void {
     this.selectedFile.set(null);
+    this.fileUpload()?.clear();
   }
 
   async uploadCv(): Promise<void> {
@@ -153,15 +169,23 @@ export class AdminCv {
 
     try {
       await this.cvService.upload(file);
-      this.toast.success('CV uploadé avec succès !');
-      this.selectedFile.set(null);
+      this.toast.add({
+        severity: 'success',
+        summary: 'Succès',
+        detail: 'CV uploadé avec succès !',
+      });
+      this.clearSelection();
       this.loadCv();
     } catch (err: unknown) {
       const message =
         err instanceof Error
           ? err.message
           : ((err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue');
-      this.toast.error(`Erreur d'upload : ${message}`);
+      this.toast.add({
+        severity: 'error',
+        summary: 'Erreur',
+        detail: `Erreur d'upload : ${message}`,
+      });
     } finally {
       this.isUploading.set(false);
     }
@@ -170,14 +194,18 @@ export class AdminCv {
   async deleteCv(): Promise<void> {
     try {
       await this.cvService.delete();
-      this.toast.success('CV supprimé');
+      this.toast.add({ severity: 'success', summary: 'Succès', detail: 'CV supprimé' });
       this.loadCv();
     } catch (err: unknown) {
       const message =
         err instanceof Error
           ? err.message
           : ((err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue');
-      this.toast.error(`Erreur de suppression : ${message}`);
+      this.toast.add({
+        severity: 'error',
+        summary: 'Erreur',
+        detail: `Erreur de suppression : ${message}`,
+      });
     }
   }
 

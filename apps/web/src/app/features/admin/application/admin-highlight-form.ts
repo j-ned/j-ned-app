@@ -11,11 +11,15 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { Message } from 'primeng/message';
 
 @Component({
   selector: 'app-admin-highlight-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Button, InputText, Textarea, Message],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -27,65 +31,61 @@ import { ToastService } from '@shared/toast';
       <fieldset class="space-y-6 border-0 p-0 m-0">
         <legend class="sr-only">Informations du point fort</legend>
 
-        <div>
-          <label for="title" class="block text-sm font-medium text-foreground mb-1.5">Titre</label>
-          <input
-            id="title"
-            type="text"
-            formControlName="title"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+        <div class="flex flex-col gap-1.5">
+          <label for="title" class="text-sm font-medium text-foreground">Titre</label>
+          <input id="title" pInputText type="text" formControlName="title" fluid />
           @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
-        <div>
-          <label for="description" class="block text-sm font-medium text-foreground mb-1.5"
-            >Description</label
-          >
-          <textarea
-            id="description"
-            formControlName="description"
-            rows="4"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
-          ></textarea>
+        <div class="flex flex-col gap-1.5">
+          <label for="description" class="text-sm font-medium text-foreground">Description</label>
+          <textarea id="description" pTextarea formControlName="description" rows="4"></textarea>
           @if (
             form.controls.description.touched && form.controls.description.errors?.['required']
           ) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
-        <div>
-          <label for="icon" class="block text-sm font-medium text-foreground mb-1.5">Icône</label>
-          <input
-            id="icon"
-            type="text"
-            formControlName="icon"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+        <div class="flex flex-col gap-1.5">
+          <label for="icon" class="text-sm font-medium text-foreground">Icône</label>
+          <input id="icon" pInputText type="text" formControlName="icon" fluid />
           @if (form.controls.icon.touched && form.controls.icon.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
       </fieldset>
 
       <div class="flex gap-4 pt-4">
-        <button
+        <p-button
           type="submit"
+          [label]="isEditMode() ? 'Enregistrer' : 'Créer'"
           [disabled]="form.invalid"
-          class="px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {{ isEditMode() ? 'Enregistrer' : 'Créer' }}
-        </button>
-        <button
+        />
+        <p-button
           type="button"
-          (click)="cancel()"
-          class="px-6 py-2.5 rounded-lg bg-foreground/5 text-foreground font-medium hover:bg-foreground/10 transition-colors"
-        >
-          Annuler
-        </button>
+          label="Annuler"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancel()"
+        />
       </div>
     </form>
   `,
@@ -94,7 +94,7 @@ export class AdminHighlightForm {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly id = input<string>();
@@ -129,14 +129,23 @@ export class AdminHighlightForm {
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.toast.success(id ? 'Point fort mis à jour' : 'Point fort créé');
-        this.router.navigate(['/admin/about/highlights']);
+        this.toast.add({
+          severity: 'success',
+          summary: 'Succès',
+          detail: id ? 'Point fort mis à jour' : 'Point fort créé',
+        });
+        this.router.navigate(['/admin/content/highlights']);
       },
-      error: () => this.toast.error("Erreur lors de l'enregistrement"),
+      error: () =>
+        this.toast.add({
+          severity: 'error',
+          summary: 'Erreur',
+          detail: "Erreur lors de l'enregistrement",
+        }),
     });
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/about/highlights']);
+    this.router.navigate(['/admin/content/highlights']);
   }
 }

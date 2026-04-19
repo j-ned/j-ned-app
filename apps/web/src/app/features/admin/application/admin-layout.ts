@@ -1,6 +1,19 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { map, catchError, of } from 'rxjs';
 import { AuthService } from '../../auth/infrastructure';
+import { CONTACT_GATEWAY } from '@features/contact/application';
+import { BLOG_GATEWAY } from '@features/blog/application';
+import { BOOKING_GATEWAY } from '@features/booking/application';
+
+type NavItem = {
+  readonly route: string;
+  readonly icon: string;
+  readonly label: string;
+  readonly exact?: boolean;
+  readonly badge?: () => number;
+};
 
 @Component({
   selector: 'app-admin-layout',
@@ -13,15 +26,13 @@ import { AuthService } from '../../auth/infrastructure';
         [class.w-64]="!collapsed()"
         [class.w-20]="collapsed()"
       >
-        <!-- Header -->
+        <!-- Brand -->
         <div class="p-4 border-b border-foreground/10">
           <div class="flex items-center gap-3">
             <div
               class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 border border-primary/30 flex items-center justify-center"
             >
-              <svg class="w-5 h-5 text-primary" aria-hidden="true">
-                <use href="/icons/sprite.svg#lucide-layout-dashboard" />
-              </svg>
+              <i class="pi pi-th-large text-xl text-primary" aria-hidden="true"></i>
             </div>
             @if (!collapsed()) {
               <div class="overflow-hidden">
@@ -34,142 +45,65 @@ import { AuthService } from '../../auth/infrastructure';
           </div>
         </div>
 
+        <!-- Collapse button -->
         <div class="px-3 py-2">
           <button
+            type="button"
             (click)="collapsed.set(!collapsed())"
             class="flex items-center justify-center w-full p-2 rounded-lg text-muted hover:text-foreground hover:bg-foreground/5 transition-colors"
             [attr.title]="collapsed() ? 'Ouvrir le menu' : 'Réduire le menu'"
+            [attr.aria-label]="collapsed() ? 'Ouvrir le menu' : 'Réduire le menu'"
+            [attr.aria-expanded]="!collapsed()"
           >
-            <svg class="w-5 h-5" aria-hidden="true">
-              @if (collapsed()) {
-                <use href="/icons/sprite.svg#lucide-panel-left-open" />
-              } @else {
-                <use href="/icons/sprite.svg#lucide-panel-left-close" />
-              }
-            </svg>
+            @if (collapsed()) {
+              <i class="pi pi-angle-double-right text-xl" aria-hidden="true"></i>
+            } @else {
+              <i class="pi pi-angle-double-left text-xl" aria-hidden="true"></i>
+            }
           </button>
         </div>
 
-        <nav class="flex-1 px-3 py-2 space-y-1">
-          <a
-            routerLink="/admin"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            [routerLinkActiveOptions]="{ exact: true }"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Dashboard' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-layout-dashboard" />
-            </svg>
-            @if (!collapsed()) {
-              <span>Dashboard</span>
-            }
-          </a>
-          <a
-            routerLink="/admin/home"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Accueil' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-home" />
-            </svg>
-            @if (!collapsed()) {
-              <span>Accueil</span>
-            }
-          </a>
-          <a
-            routerLink="/admin/projects"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Projets' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-laptop" />
-            </svg>
-            @if (!collapsed()) {
-              <span>Projets</span>
-            }
-          </a>
-          <a
-            routerLink="/admin/about"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'À propos' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-user" />
-            </svg>
-            @if (!collapsed()) {
-              <span>À propos</span>
-            }
-          </a>
-          <a
-            routerLink="/admin/blog"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Blog' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-notebook-pen" />
-            </svg>
-            @if (!collapsed()) {
-              <span>Blog</span>
-            }
-          </a>
-          <a
-            routerLink="/admin/calendar"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Calendrier' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-calendar" />
-            </svg>
-            @if (!collapsed()) {
-              <span>Calendrier</span>
-            }
-          </a>
-          <a
-            routerLink="/admin/messages"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Messages' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-mail" />
-            </svg>
-            @if (!collapsed()) {
-              <span>Messages</span>
-            }
-          </a>
-          <a
-            routerLink="/admin/stats"
-            routerLinkActive="bg-primary/10 text-primary border-primary/30"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Statistiques' : null"
-          >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-bar-chart-3" />
-            </svg>
-            @if (!collapsed()) {
-              <span>Statistiques</span>
-            }
-          </a>
+        <!-- Main nav -->
+        <nav class="flex-1 px-3 py-2 space-y-1" aria-label="Navigation principale">
+          @for (item of navItems; track item.route) {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="bg-primary/10 text-primary border-primary/30"
+              [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+              class="relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
+              [attr.title]="collapsed() ? item.label : null"
+            >
+              <i class="text-xl shrink-0" [class]="item.icon" aria-hidden="true"></i>
+              @if (!collapsed()) {
+                <span class="flex-1">{{ item.label }}</span>
+                @if (item.badge && item.badge()! > 0) {
+                  <span
+                    class="px-1.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-semibold min-w-[1.25rem] text-center"
+                  >
+                    {{ item.badge() }}
+                  </span>
+                }
+              } @else if (item.badge && item.badge()! > 0) {
+                <span
+                  class="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary"
+                  aria-hidden="true"
+                ></span>
+              }
+            </a>
+          }
         </nav>
 
+        <!-- Footer: settings, back, logout -->
         <div class="px-3 py-4 border-t border-foreground/10 space-y-1">
           <a
-            routerLink="/admin/security"
+            routerLink="/admin/settings"
             routerLinkActive="bg-primary/10 text-primary border-primary/30"
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
-            [attr.title]="collapsed() ? 'Sécurité' : null"
+            [attr.title]="collapsed() ? 'Paramètres' : null"
           >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-shield-check" />
-            </svg>
+            <i class="pi pi-cog text-xl shrink-0" aria-hidden="true"></i>
             @if (!collapsed()) {
-              <span>Sécurité</span>
+              <span>Paramètres</span>
             }
           </a>
           <a
@@ -177,21 +111,19 @@ import { AuthService } from '../../auth/infrastructure';
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 transition-colors"
             [attr.title]="collapsed() ? 'Retour au site' : null"
           >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-home" />
-            </svg>
+            <i class="pi pi-external-link text-xl shrink-0" aria-hidden="true"></i>
             @if (!collapsed()) {
               <span>Retour au site</span>
             }
           </a>
           <button
+            type="button"
             (click)="authService.logout()"
+            aria-label="Déconnexion"
             class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
             [attr.title]="collapsed() ? 'Déconnexion' : null"
           >
-            <svg class="w-5 h-5 shrink-0" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-log-out" />
-            </svg>
+            <i class="pi pi-sign-out text-xl shrink-0" aria-hidden="true"></i>
             @if (!collapsed()) {
               <span>Déconnexion</span>
             }
@@ -199,7 +131,7 @@ import { AuthService } from '../../auth/infrastructure';
         </div>
       </aside>
 
-      <main class="flex-1 p-8">
+      <main class="flex-1 p-8 overflow-y-auto">
         <router-outlet />
       </main>
     </div>
@@ -207,5 +139,43 @@ import { AuthService } from '../../auth/infrastructure';
 })
 export class AdminLayout {
   readonly authService = inject(AuthService);
+  private readonly contactGateway = inject(CONTACT_GATEWAY);
+  private readonly blogGateway = inject(BLOG_GATEWAY);
+  private readonly bookingGateway = inject(BOOKING_GATEWAY);
+
   readonly collapsed = signal(false);
+
+  private readonly unreadRes = rxResource({
+    stream: () => this.contactGateway.getUnreadCount(),
+  });
+  private readonly pendingCommentRes = rxResource({
+    stream: () => this.blogGateway.getPendingCommentCount(),
+  });
+  private readonly bookingRes = rxResource({
+    stream: () =>
+      this.bookingGateway.getAllBookings().pipe(
+        map((b) => b.length),
+        catchError(() => of(0)),
+      ),
+  });
+
+  private readonly inboxCount = computed(
+    () =>
+      (this.unreadRes.value() ?? 0) +
+      (this.pendingCommentRes.value() ?? 0) +
+      (this.bookingRes.value() ?? 0),
+  );
+
+  readonly navItems: readonly NavItem[] = [
+    { route: '/admin', icon: 'pi pi-th-large', label: 'Dashboard', exact: true },
+    { route: '/admin/content', icon: 'pi pi-pencil', label: 'Contenu' },
+    {
+      route: '/admin/inbox',
+      icon: 'pi pi-inbox',
+      label: 'Boîte de réception',
+      badge: () => this.inboxCount(),
+    },
+    { route: '/admin/schedule', icon: 'pi pi-calendar', label: 'Agenda' },
+    { route: '/admin/analytics', icon: 'pi pi-chart-bar', label: 'Analytics' },
+  ];
 }

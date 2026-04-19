@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import type { DisabledDate } from '@features/booking/domain';
 import { getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
 
 type CalendarDay = {
   readonly date: string;
@@ -33,18 +33,14 @@ type CalendarDay = {
     <h1 class="text-2xl font-bold text-foreground mb-8">Disponibilités</h1>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div
-        class="lg:col-span-2 bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg"
-      >
+      <div class="lg:col-span-2 bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
         <div class="flex items-center justify-between mb-6">
           <button
             (click)="previousMonth()"
             class="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center hover:border-primary/50 hover:text-primary transition-colors"
             aria-label="Mois précédent"
           >
-            <svg class="w-5 h-5" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-chevron-left" />
-            </svg>
+            <i class="pi pi-chevron-left text-xl" aria-hidden="true"></i>
           </button>
           <h3 class="text-lg font-bold text-foreground capitalize">{{ monthLabel() }}</h3>
           <button
@@ -52,9 +48,7 @@ type CalendarDay = {
             class="w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center hover:border-primary/50 hover:text-primary transition-colors"
             aria-label="Mois suivant"
           >
-            <svg class="w-5 h-5" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-chevron-right" />
-            </svg>
+            <i class="pi pi-chevron-right text-xl" aria-hidden="true"></i>
           </button>
         </div>
 
@@ -113,7 +107,7 @@ type CalendarDay = {
 
       <div class="space-y-6">
         @if (selectedDate()) {
-          <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg">
+          <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
             <h3 class="text-sm font-semibold text-foreground mb-3">
               {{ formatDate(selectedDate()!) }}
             </h3>
@@ -153,14 +147,14 @@ type CalendarDay = {
             }
           </div>
         } @else {
-          <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg">
+          <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
             <p class="text-sm text-muted text-center">
               Cliquez sur une date pour la désactiver ou la réactiver
             </p>
           </div>
         }
 
-        <div class="bg-background border border-foreground/10 rounded-2xl p-6 shadow-lg">
+        <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
           <h3 class="text-sm font-semibold text-foreground mb-3">
             Dates désactivées ({{ disabledDates().length }})
           </h3>
@@ -180,9 +174,7 @@ type CalendarDay = {
                   class="shrink-0 text-red-400 hover:text-red-300 transition-colors"
                   aria-label="Supprimer"
                 >
-                  <svg class="w-4 h-4" aria-hidden="true">
-                    <use href="/icons/sprite.svg#lucide-x" />
-                  </svg>
+                  <i class="pi pi-times text-base" aria-hidden="true"></i>
                 </button>
               </div>
             } @empty {
@@ -196,7 +188,7 @@ type CalendarDay = {
 })
 export class AdminAvailability {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly datesRes = rxResource({
@@ -315,12 +307,17 @@ export class AdminAvailability {
       .addDisabledDate(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
+        next: (created) => {
           this.reasonInput = '';
-          this.datesRes.reload();
-          this.toast.success('Date désactivée');
+          this.datesRes.update((list) => [...(list ?? []), created]);
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Date désactivée' });
         },
-        error: () => this.toast.error('Erreur lors de la désactivation'),
+        error: () =>
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la désactivation',
+          }),
       });
   }
 
@@ -331,28 +328,31 @@ export class AdminAvailability {
     const dd = this.disabledDateSet().get(date);
     if (!dd) return;
 
-    this.bookingGateway
-      .removeDisabledDate(dd.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.datesRes.reload();
-          this.toast.success('Date réactivée');
-        },
-        error: () => this.toast.error('Erreur lors de la réactivation'),
-      });
+    this.removeDisabledDateOptimistic(dd, 'Date réactivée', 'Erreur lors de la réactivation');
   }
 
   removeDate(dd: DisabledDate): void {
+    this.removeDisabledDateOptimistic(dd, 'Date supprimée', 'Erreur lors de la suppression');
+  }
+
+  private removeDisabledDateOptimistic(
+    dd: DisabledDate,
+    successMessage: string,
+    errorMessage: string,
+  ): void {
+    const snapshot = this.datesRes.value() ?? [];
+    this.datesRes.update((list) => (list ?? []).filter((x) => x.id !== dd.id));
+
     this.bookingGateway
       .removeDisabledDate(dd.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.datesRes.reload();
-          this.toast.success('Date supprimée');
+        next: () =>
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: successMessage }),
+        error: () => {
+          this.datesRes.set(snapshot);
+          this.toast.add({ severity: 'error', summary: 'Erreur', detail: errorMessage });
         },
-        error: () => this.toast.error('Erreur lors de la suppression'),
       });
   }
 

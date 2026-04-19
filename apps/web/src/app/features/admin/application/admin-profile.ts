@@ -11,13 +11,16 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { PROFILE_GATEWAY } from '@features/profile/application';
-import { ToastService } from '@shared/toast';
-import { FileDropZone } from '@shared/file-drop-zone';
+import { MessageService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
+import { FileUpload } from 'primeng/fileupload';
 import { API_BASE_URL } from '@shared/api';
 
 @Component({
   selector: 'app-admin-profile',
-  imports: [ReactiveFormsModule, FileDropZone],
+  imports: [ReactiveFormsModule, FileUpload, Button, InputText, Message],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -28,34 +31,30 @@ import { API_BASE_URL } from '@shared/api';
         <legend class="sr-only">Informations du profil</legend>
 
         <div>
-          <label for="displayName" class="block text-sm font-medium text-foreground mb-1.5"
-            >Nom affiché</label
-          >
-          <input
-            id="displayName"
-            type="text"
-            formControlName="displayName"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="displayName" class="text-sm font-medium text-foreground">Nom affiché</label>
+          <input id="displayName" type="text" formControlName="displayName" pInputText fluid />
           @if (
             form.controls.displayName.touched && form.controls.displayName.errors?.['required']
           ) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
         <div>
-          <label for="location" class="block text-sm font-medium text-foreground mb-1.5"
-            >Localisation</label
-          >
-          <input
-            id="location"
-            type="text"
-            formControlName="location"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="location" class="text-sm font-medium text-foreground">Localisation</label>
+          <input id="location" type="text" formControlName="location" pInputText fluid />
           @if (form.controls.location.touched && form.controls.location.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
@@ -70,43 +69,49 @@ import { API_BASE_URL } from '@shared/api';
         </div>
 
         <div>
-          <label for="availabilityMessage" class="block text-sm font-medium text-foreground mb-1.5"
+          <label for="availabilityMessage" class="text-sm font-medium text-foreground"
             >Message de disponibilité</label
           >
           <input
             id="availabilityMessage"
             type="text"
             formControlName="availabilityMessage"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+            pInputText
+            fluid
           />
         </div>
 
         <div>
           <span class="block text-sm font-medium text-foreground mb-1.5">Avatar</span>
-          <app-file-drop-zone
-            [preview]="imagePreview()"
-            previewAlt="Aperçu avatar"
-            changeLabel="Changer l'avatar"
-            (fileSelected)="onFileSelected($event)"
+          @if (imagePreview()) {
+            <img
+              [src]="imagePreview()"
+              alt="Aperçu avatar"
+              class="w-32 h-32 rounded-xl object-cover mb-3 border border-foreground/10"
+            />
+          }
+          <p-fileupload
+            mode="advanced"
+            [auto]="false"
+            [showUploadButton]="false"
+            [showCancelButton]="false"
+            [multiple]="false"
+            accept="image/*"
+            chooseLabel="Choisir un avatar"
+            (onSelect)="onFileSelected($event.files[0])"
           />
         </div>
       </fieldset>
 
       <div class="flex gap-4 pt-4">
-        <button
-          type="submit"
-          [disabled]="form.invalid"
-          class="px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Enregistrer
-        </button>
-        <button
+        <p-button type="submit" label="Enregistrer" [disabled]="form.invalid" />
+        <p-button
           type="button"
-          (click)="cancel()"
-          class="px-6 py-2.5 rounded-lg bg-foreground/5 text-foreground font-medium hover:bg-foreground/10 transition-colors"
-        >
-          Annuler
-        </button>
+          label="Annuler"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancel()"
+        />
       </div>
     </form>
   `,
@@ -116,7 +121,7 @@ export class AdminProfile {
   private readonly router = inject(Router);
   private readonly apiUrl = inject(API_BASE_URL);
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly selectedFile = signal<File | null>(null);
@@ -174,10 +179,15 @@ export class AdminProfile {
         )
         .subscribe({
           next: () => {
-            this.toast.success('Profil mis à jour');
-            this.router.navigate(['/admin/about']);
+            this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Profil mis à jour' });
+            this.router.navigate(['/admin/content']);
           },
-          error: () => this.toast.error("Erreur lors de l'enregistrement"),
+          error: () =>
+            this.toast.add({
+              severity: 'error',
+              summary: 'Erreur',
+              detail: "Erreur lors de l'enregistrement",
+            }),
         });
     } else {
       this.profileGateway
@@ -185,16 +195,21 @@ export class AdminProfile {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
-            this.toast.success('Profil mis à jour');
-            this.router.navigate(['/admin/about']);
+            this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Profil mis à jour' });
+            this.router.navigate(['/admin/content']);
           },
-          error: () => this.toast.error("Erreur lors de l'enregistrement"),
+          error: () =>
+            this.toast.add({
+              severity: 'error',
+              summary: 'Erreur',
+              detail: "Erreur lors de l'enregistrement",
+            }),
         });
     }
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/about']);
+    this.router.navigate(['/admin/content']);
   }
 
   private selectFile(file: File): void {

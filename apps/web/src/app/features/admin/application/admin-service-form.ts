@@ -17,11 +17,15 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HOME_GATEWAY } from '@features/home/application';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { Message } from 'primeng/message';
 
 @Component({
   selector: 'app-admin-service-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Button, InputText, Textarea, Message],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -34,57 +38,56 @@ import { ToastService } from '@shared/toast';
         <legend class="sr-only">Informations de la prestation</legend>
 
         <div>
-          <label for="title" class="block text-sm font-medium text-foreground mb-1.5">Titre</label>
-          <input
-            id="title"
-            type="text"
-            formControlName="title"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="title" class="text-sm font-medium text-foreground">Titre</label>
+          <input id="title" type="text" formControlName="title" pInputText fluid />
           @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
         <div>
-          <label for="description" class="block text-sm font-medium text-foreground mb-1.5"
-            >Description</label
-          >
-          <textarea
-            id="description"
-            formControlName="description"
-            rows="3"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
-          ></textarea>
+          <label for="description" class="text-sm font-medium text-foreground">Description</label>
+          <textarea id="description" formControlName="description" rows="3" pTextarea></textarea>
           @if (
             form.controls.description.touched && form.controls.description.errors?.['required']
           ) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
         <div>
-          <label for="price" class="block text-sm font-medium text-foreground mb-1.5">Prix</label>
+          <label for="price" class="text-sm font-medium text-foreground">Prix</label>
           <input
             id="price"
             type="text"
             formControlName="price"
             placeholder="ex: 500€/jour"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+            pInputText
+            fluid
           />
           @if (form.controls.price.touched && form.controls.price.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <p-message
+              severity="error"
+              text="Ce champ est obligatoire"
+              size="small"
+              variant="simple"
+            />
           }
         </div>
 
         <div>
-          <label for="order" class="block text-sm font-medium text-foreground mb-1.5">Ordre</label>
-          <input
-            id="order"
-            type="number"
-            formControlName="order"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="order" class="text-sm font-medium text-foreground">Ordre</label>
+          <input id="order" type="number" formControlName="order" pInputText fluid />
         </div>
 
         <div class="flex items-center gap-2">
@@ -118,15 +121,16 @@ import { ToastService } from '@shared/toast';
                   type="text"
                   placeholder="Ex: Développement sur mesure"
                   class="flex-1 px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                  pInputText
+                  fluid
                 />
                 <button
                   type="button"
                   (click)="removeFeature(i)"
+                  aria-label="Retirer cette ligne"
                   class="px-3 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
                 >
-                  <svg class="w-4 h-4">
-                    <use href="/icons/sprite.svg#lucide-x"></use>
-                  </svg>
+                  <i class="pi pi-times text-base" aria-hidden="true"></i>
                 </button>
               </div>
             }
@@ -135,20 +139,18 @@ import { ToastService } from '@shared/toast';
       </fieldset>
 
       <div class="flex gap-4 pt-4">
-        <button
+        <p-button
           type="submit"
+          [label]="isEditMode() ? 'Enregistrer' : 'Créer'"
           [disabled]="form.invalid"
-          class="px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {{ isEditMode() ? 'Enregistrer' : 'Créer' }}
-        </button>
-        <button
+        />
+        <p-button
           type="button"
-          (click)="cancel()"
-          class="px-6 py-2.5 rounded-lg bg-foreground/5 text-foreground font-medium hover:bg-foreground/10 transition-colors"
-        >
-          Annuler
-        </button>
+          label="Annuler"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancel()"
+        />
       </div>
     </form>
   `,
@@ -157,7 +159,7 @@ export class AdminServiceForm {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly id = input<string>();
@@ -219,14 +221,23 @@ export class AdminServiceForm {
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.toast.success(id ? 'Prestation mise à jour' : 'Prestation créée');
-        this.router.navigate(['/admin/home/services']);
+        this.toast.add({
+          severity: 'success',
+          summary: 'Succès',
+          detail: id ? 'Prestation mise à jour' : 'Prestation créée',
+        });
+        this.router.navigate(['/admin/content/services']);
       },
-      error: () => this.toast.error("Erreur lors de l'enregistrement"),
+      error: () =>
+        this.toast.add({
+          severity: 'error',
+          summary: 'Erreur',
+          detail: "Erreur lors de l'enregistrement",
+        }),
     });
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/home/services']);
+    this.router.navigate(['/admin/content/services']);
   }
 }

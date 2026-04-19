@@ -8,15 +8,19 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
+import { FormsModule } from '@angular/forms';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
 import type { Project } from '@features/projects/domain';
 import { HOME_GATEWAY } from '@features/home/application';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
-import { ToastService } from '@shared/toast';
+import { MessageService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
+import { Tag } from 'primeng/tag';
 
 @Component({
   selector: 'app-admin-projects',
-  imports: [AdminProjectInlineForm],
+  imports: [AdminProjectInlineForm, FormsModule, Button, Select, Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
@@ -24,21 +28,19 @@ import { ToastService } from '@shared/toast';
       <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-bold text-foreground">Projets</h1>
         <div class="flex items-center gap-4">
-          <select
-            [value]="selectedCategory()"
-            (change)="selectedCategory.set($any($event.target).value)"
-            class="px-4 py-2 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground text-sm focus:border-primary focus:outline-none transition-colors"
-          >
-            @for (cat of categories(); track cat) {
-              <option [value]="cat">{{ cat }}</option>
-            }
-          </select>
-          <button
-            (click)="toggleNewForm()"
-            class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            {{ showNewForm() ? 'Annuler' : 'Nouveau projet' }}
-          </button>
+          <p-select
+            [options]="categories()"
+            [ngModel]="selectedCategory()"
+            (ngModelChange)="selectedCategory.set($event)"
+            placeholder="Catégorie"
+          />
+          <p-button
+            [label]="showNewForm() ? 'Annuler' : 'Nouveau projet'"
+            [icon]="showNewForm() ? 'pi pi-times' : 'pi pi-plus'"
+            [severity]="showNewForm() ? 'secondary' : 'primary'"
+            [outlined]="showNewForm()"
+            (onClick)="toggleNewForm()"
+          />
         </div>
       </div>
 
@@ -55,9 +57,7 @@ import { ToastService } from '@shared/toast';
       <!-- Projects list -->
       <div class="space-y-3">
         @for (project of filteredProjects(); track project.id) {
-          <div
-            class="bg-background border border-foreground/10 rounded-xl shadow-sm overflow-hidden"
-          >
+          <div class="bg-surface border border-foreground/10 rounded-xl shadow-sm overflow-hidden">
             <!-- Card row -->
             <div class="flex items-center gap-4 px-5 py-4">
               <!-- Thumbnail -->
@@ -94,16 +94,10 @@ import { ToastService } from '@shared/toast';
                 <p class="text-sm font-medium text-foreground truncate">{{ project.title }}</p>
                 <div class="flex flex-wrap gap-1 mt-1">
                   @for (tag of project.tags.slice(0, 4); track tag) {
-                    <span
-                      class="px-1.5 py-0.5 text-[10px] rounded bg-primary/10 text-primary font-medium"
-                    >
-                      {{ tag }}
-                    </span>
+                    <p-tag [value]="tag" severity="info" />
                   }
                   @if (project.tags.length > 4) {
-                    <span class="px-1.5 py-0.5 text-[10px] rounded bg-foreground/10 text-muted">
-                      +{{ project.tags.length - 4 }}
-                    </span>
+                    <p-tag [value]="'+' + (project.tags.length - 4)" severity="secondary" />
                   }
                 </div>
               </div>
@@ -112,26 +106,28 @@ import { ToastService } from '@shared/toast';
               <div class="hidden sm:flex flex-col items-end gap-1 shrink-0">
                 <span class="text-xs text-muted">{{ project.category }}</span>
                 @if (project.featured) {
-                  <span class="px-2 py-0.5 text-[10px] rounded bg-yellow-500/10 text-yellow-400">
-                    Featured
-                  </span>
+                  <p-tag value="Featured" severity="warn" />
                 }
               </div>
 
               <!-- Actions -->
               <div class="flex items-center gap-2 shrink-0">
-                <button
-                  (click)="toggleEdit(project.id)"
-                  class="px-3 py-1.5 text-xs rounded-lg bg-foreground/5 text-foreground hover:bg-foreground/10 transition-colors"
-                >
-                  {{ editingId() === project.id ? 'Fermer' : 'Modifier' }}
-                </button>
-                <button
-                  (click)="deleteProject(project)"
-                  class="px-3 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                >
-                  Supprimer
-                </button>
+                <p-button
+                  [icon]="editingId() === project.id ? 'pi pi-times' : 'pi pi-pencil'"
+                  severity="secondary"
+                  size="small"
+                  [text]="true"
+                  (onClick)="toggleEdit(project.id)"
+                  [ariaLabel]="editingId() === project.id ? 'Fermer' : 'Modifier'"
+                />
+                <p-button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  size="small"
+                  [text]="true"
+                  (onClick)="deleteProject(project)"
+                  ariaLabel="Supprimer"
+                />
               </div>
             </div>
 
@@ -148,7 +144,7 @@ import { ToastService } from '@shared/toast';
           </div>
         } @empty {
           <div
-            class="text-center py-12 text-muted text-sm bg-background border border-foreground/10 rounded-xl"
+            class="text-center py-12 text-muted text-sm bg-surface border border-foreground/10 rounded-xl"
           >
             Aucun projet
           </div>
@@ -160,7 +156,7 @@ import { ToastService } from '@shared/toast';
 export class AdminProjects {
   private readonly projectsGateway = inject(PROJECTS_GATEWAY);
   private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly selectedCategory = signal('Tous');
@@ -175,8 +171,8 @@ export class AdminProjects {
     stream: () => this.projectsGateway.getCategories(),
   });
 
-  readonly projects = computed(() => this.projectsResource.value() ?? []);
-  readonly categories = computed(() => this.categoriesResource.value() ?? ['Tous']);
+  readonly projects = computed(() => [...(this.projectsResource.value() ?? [])]);
+  readonly categories = computed(() => [...(this.categoriesResource.value() ?? ['Tous'])]);
 
   readonly filteredProjects = computed(() => {
     const cat = this.selectedCategory();
@@ -200,86 +196,87 @@ export class AdminProjects {
   onCreate(event: { data: Omit<Project, 'id'>; file: File | null }): void {
     const slug = this.slugify(event.data.title);
 
-    if (event.file) {
-      this.projectsGateway
-        .uploadImage(event.file, slug)
-        .pipe(
-          switchMap((key) => this.projectsGateway.createProject({ ...event.data, image: key })),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: () => {
-            this.showNewForm.set(false);
-            this.reload();
-            this.toast.success('Projet créé');
-          },
-          error: () => this.toast.error('Erreur lors de la création du projet'),
-        });
-    } else {
-      this.projectsGateway
-        .createProject(event.data)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: () => {
-            this.showNewForm.set(false);
-            this.reload();
-            this.toast.success('Projet créé');
-          },
-          error: () => this.toast.error('Erreur lors de la création du projet'),
-        });
-    }
+    const create$ = event.file
+      ? this.projectsGateway
+          .uploadImage(event.file, slug)
+          .pipe(
+            switchMap((key) => this.projectsGateway.createProject({ ...event.data, image: key })),
+          )
+      : this.projectsGateway.createProject(event.data);
+
+    create$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (created) => {
+        this.projectsResource.update((list) => [...(list ?? []), created]);
+        this.categoriesResource.reload();
+        this.homeGateway.invalidateBundle();
+        this.showNewForm.set(false);
+        this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet créé' });
+      },
+      error: () =>
+        this.toast.add({
+          severity: 'error',
+          summary: 'Erreur',
+          detail: 'Erreur lors de la création du projet',
+        }),
+    });
   }
 
   onUpdate(id: string, event: { data: Omit<Project, 'id'>; file: File | null }): void {
     const slug = this.slugify(event.data.title);
 
-    if (event.file) {
-      this.projectsGateway
-        .uploadImage(event.file, slug)
-        .pipe(
-          switchMap((key) => this.projectsGateway.updateProject(id, { ...event.data, image: key })),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: () => {
-            this.editingId.set(null);
-            this.reload();
-            this.toast.success('Projet mis à jour');
-          },
-          error: () => this.toast.error('Erreur lors de la mise à jour du projet'),
-        });
-    } else {
-      this.projectsGateway
-        .updateProject(id, event.data)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: () => {
-            this.editingId.set(null);
-            this.reload();
-            this.toast.success('Projet mis à jour');
-          },
-          error: () => this.toast.error('Erreur lors de la mise à jour du projet'),
-        });
-    }
+    const update$ = event.file
+      ? this.projectsGateway
+          .uploadImage(event.file, slug)
+          .pipe(
+            switchMap((key) =>
+              this.projectsGateway.updateProject(id, { ...event.data, image: key }),
+            ),
+          )
+      : this.projectsGateway.updateProject(id, event.data);
+
+    update$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => {
+        this.projectsResource.update((list) =>
+          (list ?? []).map((p) => (p.id === id ? updated : p)),
+        );
+        this.categoriesResource.reload();
+        this.homeGateway.invalidateBundle();
+        this.editingId.set(null);
+        this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet mis à jour' });
+      },
+      error: () =>
+        this.toast.add({
+          severity: 'error',
+          summary: 'Erreur',
+          detail: 'Erreur lors de la mise à jour du projet',
+        }),
+    });
   }
 
   deleteProject(project: Project): void {
+    // Optimistic update: retire le projet de la liste avant la réponse serveur
+    const snapshot = this.projectsResource.value() ?? [];
+    this.projectsResource.update((list) => (list ?? []).filter((p) => p.id !== project.id));
+
     this.projectsGateway
       .deleteProject(project.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.reload();
-          this.toast.success('Projet supprimé');
+          this.categoriesResource.reload();
+          this.homeGateway.invalidateBundle();
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet supprimé' });
         },
-        error: () => this.toast.error('Erreur lors de la suppression du projet'),
+        error: () => {
+          // Réconciliation : restaure la liste en cas d'échec
+          this.projectsResource.set(snapshot);
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la suppression du projet',
+          });
+        },
       });
-  }
-
-  private reload(): void {
-    this.projectsResource.reload();
-    this.categoriesResource.reload();
-    this.homeGateway.invalidateBundle();
   }
 
   private slugify(text: string): string {

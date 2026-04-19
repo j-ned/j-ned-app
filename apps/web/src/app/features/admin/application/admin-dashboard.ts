@@ -7,6 +7,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { map, catchError, of } from 'rxjs';
 import { BLOG_GATEWAY } from '@features/blog/application';
 import { CONTACT_GATEWAY } from '@features/contact/application';
@@ -14,212 +15,166 @@ import { BOOKING_GATEWAY } from '@features/booking/application';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
 import { AuthService } from '@features/auth/infrastructure';
 import { AnalyticsService } from '@shared/analytics';
-import { SiteSettingsService } from '@core/services';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [],
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div class="mb-8">
-      <h1 class="text-2xl font-bold text-foreground">
-        Bienvenue, {{ authService.currentUser()?.displayName }}
+    <header class="mb-10">
+      <h1 class="text-3xl font-bold text-foreground">
+        Bonjour, {{ authService.currentUser()?.displayName }}
       </h1>
-      <p class="text-sm text-muted mt-1">{{ formattedDate() }}</p>
-    </div>
+      <p class="text-sm text-muted mt-2">{{ formattedDate() }}</p>
+    </header>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-      <!-- Articles -->
-      <div
-        class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-300"
+    <!-- Actions requises -->
+    <section class="mb-10">
+      <h2
+        class="text-xs font-semibold uppercase tracking-widest text-muted mb-4 pb-2 border-b border-foreground/5"
       >
-        <div class="flex items-center gap-4">
-          <div
-            class="w-14 h-14 rounded-xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center"
+        Actions requises
+      </h2>
+      <ul class="grid grid-cols-1 md:grid-cols-3 gap-4" role="list">
+        <li>
+          <a
+            routerLink="/admin/inbox/messages"
+            class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-primary/40 hover:bg-primary/[0.02] transition-all"
           >
-            <svg class="w-7 h-7 text-primary" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-notebook-pen" />
-            </svg>
-          </div>
-          <div>
-            @if (articleRes.isLoading()) {
-              <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
-            } @else {
-              <p class="text-2xl font-bold text-foreground">{{ articleCount() }}</p>
-            }
-            <p class="text-sm text-muted">Articles</p>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg hover:border-yellow-500/30 hover:-translate-y-0.5 transition-all duration-300"
-      >
-        <div class="flex items-center gap-4">
-          <div
-            class="w-14 h-14 rounded-xl bg-linear-to-br from-yellow-500/20 to-yellow-500/5 flex items-center justify-center"
-          >
-            <svg class="w-7 h-7 text-yellow-500" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-message-square" />
-            </svg>
-          </div>
-          <div>
-            @if (commentRes.isLoading()) {
-              <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
-            } @else {
-              <p class="text-2xl font-bold text-foreground">{{ commentCount() }}</p>
-            }
-            <p class="text-sm text-muted">En attente</p>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg hover:border-green-500/30 hover:-translate-y-0.5 transition-all duration-300"
-      >
-        <div class="flex items-center gap-4">
-          <div
-            class="w-14 h-14 rounded-xl bg-linear-to-br from-green-500/20 to-green-500/5 flex items-center justify-center"
-          >
-            <svg class="w-7 h-7 text-green-500" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-laptop" />
-            </svg>
-          </div>
-          <div>
-            @if (projectRes.isLoading()) {
-              <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
-            } @else {
-              <p class="text-2xl font-bold text-foreground">{{ projectCount() }}</p>
-            }
-            <p class="text-sm text-muted">Projets</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div
-        class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg hover:border-orange-500/30 hover:-translate-y-0.5 transition-all duration-300"
-      >
-        <div class="flex items-center gap-4">
-          <div
-            class="w-14 h-14 rounded-xl bg-linear-to-br from-orange-500/20 to-orange-500/5 flex items-center justify-center"
-          >
-            <svg class="w-7 h-7 text-orange-500" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-mail" />
-            </svg>
-          </div>
-          <div>
-            @if (unreadRes.isLoading()) {
-              <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
-            } @else {
-              <p class="text-2xl font-bold text-foreground">{{ unreadCount() }}</p>
-            }
-            <p class="text-sm text-muted">Messages non lus</p>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg hover:border-cyan-500/30 hover:-translate-y-0.5 transition-all duration-300"
-      >
-        <div class="flex items-center gap-4">
-          <div
-            class="w-14 h-14 rounded-xl bg-linear-to-br from-cyan-500/20 to-cyan-500/5 flex items-center justify-center"
-          >
-            <svg class="w-7 h-7 text-cyan-500" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-calendar" />
-            </svg>
-          </div>
-          <div>
-            @if (bookingRes.isLoading()) {
-              <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
-            } @else {
-              <p class="text-2xl font-bold text-foreground">{{ bookingCount() }}</p>
-            }
-            <p class="text-sm text-muted">Réservations</p>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg hover:border-purple-500/30 hover:-translate-y-0.5 transition-all duration-300"
-      >
-        <div class="flex items-center gap-4">
-          <div
-            class="w-14 h-14 rounded-xl bg-linear-to-br from-purple-500/20 to-purple-500/5 flex items-center justify-center"
-          >
-            <svg class="w-7 h-7 text-purple-500" aria-hidden="true">
-              <use href="/icons/sprite.svg#lucide-file-text" />
-            </svg>
-          </div>
-          <div>
-            @if (cvDownloadRes.isLoading()) {
-              <div class="h-8 w-12 rounded-lg bg-foreground/10 animate-pulse"></div>
-            } @else {
-              <p class="text-2xl font-bold text-foreground">{{ cvDownloadCount() }}</p>
-            }
-            <p class="text-sm text-muted">Téléchargements CV</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Feature Toggles -->
-    <div class="mt-8">
-      <h2 class="text-lg font-bold text-foreground mb-4">Sections du site</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
-          class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
-        >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <div
-                [class]="
-                  'w-14 h-14 rounded-xl flex items-center justify-center transition-colors ' +
-                  (siteSettings.blogEnabled()
-                    ? 'bg-linear-to-br from-primary/20 to-primary/5'
-                    : 'bg-linear-to-br from-yellow-500/20 to-yellow-500/5')
-                "
-              >
-                <svg
-                  [class]="
-                    'w-7 h-7 ' + (siteSettings.blogEnabled() ? 'text-primary' : 'text-yellow-500')
-                  "
-                  aria-hidden="true"
-                >
-                  <use href="/icons/sprite.svg#lucide-notebook-pen" />
-                </svg>
-              </div>
-              <div>
-                <p class="text-sm font-semibold text-foreground">Blog</p>
-                <p class="text-xs text-muted">
-                  {{ siteSettings.blogEnabled() ? 'Visible sur le site' : 'Désactivé' }}
-                </p>
-              </div>
-            </div>
-            <button
-              (click)="siteSettings.toggleBlog()"
-              [class]="
-                'relative w-12 h-7 rounded-full transition-colors duration-200 ' +
-                (siteSettings.blogEnabled() ? 'bg-primary' : 'bg-foreground/20')
-              "
-              [attr.aria-label]="
-                siteSettings.blogEnabled() ? 'Désactiver le blog' : 'Activer le blog'
-              "
+            <div
+              class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-primary/15 to-primary/5 flex items-center justify-center"
             >
-              <span
-                [class]="
-                  'absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform duration-200 ' +
-                  (siteSettings.blogEnabled() ? 'translate-x-5' : 'translate-x-0')
-                "
-              ></span>
-            </button>
+              <i class="pi pi-envelope text-xl text-primary" aria-hidden="true"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              @if (unreadRes.isLoading()) {
+                <div class="h-7 w-10 rounded bg-foreground/10 animate-pulse"></div>
+              } @else {
+                <p class="text-2xl font-bold text-foreground leading-none">{{ unreadCount() }}</p>
+              }
+              <p class="text-xs text-muted mt-1">Messages non lus</p>
+            </div>
+            <i
+              class="pi pi-arrow-right text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all"
+              aria-hidden="true"
+            ></i>
+          </a>
+        </li>
+
+        <li>
+          <a
+            routerLink="/admin/inbox/comments"
+            class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-yellow-500/40 hover:bg-yellow-500/[0.02] transition-all"
+          >
+            <div
+              class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-yellow-500/15 to-yellow-500/5 flex items-center justify-center"
+            >
+              <i class="pi pi-comment text-xl text-yellow-500" aria-hidden="true"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              @if (pendingCommentRes.isLoading()) {
+                <div class="h-7 w-10 rounded bg-foreground/10 animate-pulse"></div>
+              } @else {
+                <p class="text-2xl font-bold text-foreground leading-none">
+                  {{ pendingCommentCount() }}
+                </p>
+              }
+              <p class="text-xs text-muted mt-1">Commentaires à modérer</p>
+            </div>
+            <i
+              class="pi pi-arrow-right text-muted group-hover:text-yellow-500 group-hover:translate-x-0.5 transition-all"
+              aria-hidden="true"
+            ></i>
+          </a>
+        </li>
+
+        <li>
+          <a
+            routerLink="/admin/schedule/calendar"
+            class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-cyan-500/40 hover:bg-cyan-500/[0.02] transition-all"
+          >
+            <div
+              class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-cyan-500/15 to-cyan-500/5 flex items-center justify-center"
+            >
+              <i class="pi pi-calendar text-xl text-cyan-500" aria-hidden="true"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              @if (bookingRes.isLoading()) {
+                <div class="h-7 w-10 rounded bg-foreground/10 animate-pulse"></div>
+              } @else {
+                <p class="text-2xl font-bold text-foreground leading-none">
+                  {{ upcomingBookingCount() }}
+                </p>
+              }
+              <p class="text-xs text-muted mt-1">Réservations à venir (7 j)</p>
+            </div>
+            <i
+              class="pi pi-arrow-right text-muted group-hover:text-cyan-500 group-hover:translate-x-0.5 transition-all"
+              aria-hidden="true"
+            ></i>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Aperçu contenu -->
+    <section>
+      <h2
+        class="text-xs font-semibold uppercase tracking-widest text-muted mb-4 pb-2 border-b border-foreground/5"
+      >
+        Aperçu
+      </h2>
+      <ul class="grid grid-cols-2 md:grid-cols-4 gap-4" role="list">
+        <li class="flex flex-col gap-2 bg-surface border border-foreground/10 rounded-xl p-5">
+          <div class="flex items-center gap-3">
+            <i class="pi pi-pencil text-primary" aria-hidden="true"></i>
+            <span class="text-xs text-muted">Articles</span>
           </div>
-        </div>
-      </div>
-    </div>
+          @if (articleRes.isLoading()) {
+            <div class="h-8 w-12 rounded bg-foreground/10 animate-pulse"></div>
+          } @else {
+            <p class="text-3xl font-bold text-foreground leading-none">{{ articleCount() }}</p>
+          }
+        </li>
+
+        <li class="flex flex-col gap-2 bg-surface border border-foreground/10 rounded-xl p-5">
+          <div class="flex items-center gap-3">
+            <i class="pi pi-desktop text-green-500" aria-hidden="true"></i>
+            <span class="text-xs text-muted">Projets</span>
+          </div>
+          @if (projectRes.isLoading()) {
+            <div class="h-8 w-12 rounded bg-foreground/10 animate-pulse"></div>
+          } @else {
+            <p class="text-3xl font-bold text-foreground leading-none">{{ projectCount() }}</p>
+          }
+        </li>
+
+        <li class="flex flex-col gap-2 bg-surface border border-foreground/10 rounded-xl p-5">
+          <div class="flex items-center gap-3">
+            <i class="pi pi-download text-purple-500" aria-hidden="true"></i>
+            <span class="text-xs text-muted">CV téléchargés</span>
+          </div>
+          @if (cvDownloadRes.isLoading()) {
+            <div class="h-8 w-12 rounded bg-foreground/10 animate-pulse"></div>
+          } @else {
+            <p class="text-3xl font-bold text-foreground leading-none">{{ cvDownloadCount() }}</p>
+          }
+        </li>
+
+        <li class="flex flex-col gap-2 bg-surface border border-foreground/10 rounded-xl p-5">
+          <div class="flex items-center gap-3">
+            <i class="pi pi-calendar text-cyan-500" aria-hidden="true"></i>
+            <span class="text-xs text-muted">Total réservations</span>
+          </div>
+          @if (bookingRes.isLoading()) {
+            <div class="h-8 w-12 rounded bg-foreground/10 animate-pulse"></div>
+          } @else {
+            <p class="text-3xl font-bold text-foreground leading-none">{{ bookingCount() }}</p>
+          }
+        </li>
+      </ul>
+    </section>
   `,
 })
 export class AdminDashboard {
@@ -229,7 +184,6 @@ export class AdminDashboard {
   private readonly projectsGateway = inject(PROJECTS_GATEWAY);
   private readonly analytics = inject(AnalyticsService);
   readonly authService = inject(AuthService);
-  readonly siteSettings = inject(SiteSettingsService);
 
   readonly formattedDate = signal(
     new Date().toLocaleDateString('fr-FR', {
@@ -245,10 +199,10 @@ export class AdminDashboard {
   });
   readonly articleCount = computed(() => this.articleRes.value() ?? 0);
 
-  readonly commentRes = rxResource({
+  readonly pendingCommentRes = rxResource({
     stream: () => this.blogGateway.getPendingCommentCount(),
   });
-  readonly commentCount = computed(() => this.commentRes.value() ?? 0);
+  readonly pendingCommentCount = computed(() => this.pendingCommentRes.value() ?? 0);
 
   readonly projectRes = rxResource({
     stream: () =>
@@ -265,13 +219,19 @@ export class AdminDashboard {
   readonly unreadCount = computed(() => this.unreadRes.value() ?? 0);
 
   readonly bookingRes = rxResource({
-    stream: () =>
-      this.bookingGateway.getAllBookings().pipe(
-        map((b) => b.length),
-        catchError(() => of(0)),
-      ),
+    stream: () => this.bookingGateway.getAllBookings().pipe(catchError(() => of([]))),
   });
-  readonly bookingCount = computed(() => this.bookingRes.value() ?? 0);
+  readonly bookingCount = computed(() => this.bookingRes.value()?.length ?? 0);
+
+  readonly upcomingBookingCount = computed(() => {
+    const bookings = this.bookingRes.value() ?? [];
+    const now = new Date();
+    const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return bookings.filter((b) => {
+      const bookingDate = new Date(b.date);
+      return bookingDate >= now && bookingDate <= in7Days;
+    }).length;
+  });
 
   readonly cvDownloadRes = resource({
     loader: () => this.analytics.getCvDownloadCount(),
