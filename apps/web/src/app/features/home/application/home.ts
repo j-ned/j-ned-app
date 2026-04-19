@@ -51,7 +51,9 @@ import { PiIconPipe } from '@shared/icons';
               }
             </ul>
           } @else {
-            <!-- Skeleton placeholder to prevent CLS — matches real card dimensions (text-sm leading-relaxed ≈ 23px/line × 4 lines) -->
+            <!-- Skeleton aligné sur les cards réelles : header row identique + 3 lignes
+                 text-sm leading-relaxed (22.75px/ligne) ≈ 68px de description, pour éviter
+                 la shift verticale au swap skeleton→content. -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8" aria-hidden="true">
               @for (_ of [1, 2, 3]; track $index) {
                 <div
@@ -61,7 +63,11 @@ import { PiIconPipe } from '@shared/icons';
                     <div class="w-11 h-11 shrink-0 rounded-xl bg-foreground/5"></div>
                     <div class="h-3.5 bg-foreground/5 rounded w-32"></div>
                   </div>
-                  <div class="h-[114px] rounded bg-foreground/5"></div>
+                  <div class="space-y-2">
+                    <div class="h-3 bg-foreground/5 rounded w-full"></div>
+                    <div class="h-3 bg-foreground/5 rounded w-11/12"></div>
+                    <div class="h-3 bg-foreground/5 rounded w-4/5"></div>
+                  </div>
                 </div>
               }
             </div>
