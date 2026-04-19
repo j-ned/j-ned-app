@@ -12,8 +12,7 @@ type SeverityStyle = {
 
 const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
   success: {
-    container:
-      'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-400/60',
+    container: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-400/60',
     icon: 'pi pi-check-circle',
     iconClass: 'text-emerald-600 dark:text-emerald-400',
     summary: 'text-emerald-900 dark:text-emerald-100',

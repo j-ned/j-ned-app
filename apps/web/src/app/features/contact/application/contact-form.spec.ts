@@ -31,11 +31,7 @@ function makeGatewayStub(overrides: Partial<ContactGateway> = {}): ContactGatewa
 describe('ContactForm', () => {
   function setup(gateway: ContactGateway = makeGatewayStub()): ContactForm {
     TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        ToastService,
-        { provide: CONTACT_GATEWAY, useValue: gateway },
-      ],
+      providers: [provideRouter([]), ToastService, { provide: CONTACT_GATEWAY, useValue: gateway }],
       schemas: [NO_ERRORS_SCHEMA],
     });
     return TestBed.runInInjectionContext(() => {
