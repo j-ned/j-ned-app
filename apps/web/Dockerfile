@@ -1,8 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
-# ==============================================================================
-# Stage 1 — Build : Angular SSR prerender + bundle API + migrations SQL
-# ==============================================================================
 FROM node:22-alpine AS build
 
 RUN apk add --no-cache python3 make g++
