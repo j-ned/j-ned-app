@@ -28,7 +28,7 @@ import { PiIconPipe } from '@shared/icons';
             <ul class="grid grid-cols-1 md:grid-cols-3 gap-8" role="list">
               @for (item of expertises(); track item.id) {
                 <li
-                  class="group relative p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] hover:border-primary/25 hover:bg-foreground/[0.04] transition-colors duration-300"
+                  class="group relative p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] hover:border-primary/25 hover:bg-foreground/[0.04] transition-colors duration-300 min-h-[222px]"
                 >
                   <div class="flex items-center gap-3 mb-4">
                     <div
@@ -44,30 +44,24 @@ import { PiIconPipe } from '@shared/icons';
                       {{ item.title }}
                     </h3>
                   </div>
-                  <p class="text-sm text-muted leading-relaxed">
+                  <p class="text-sm text-muted leading-relaxed line-clamp-5">
                     {{ item.description }}
                   </p>
                 </li>
               }
             </ul>
           } @else {
-            <!-- Skeleton aligné sur les cards réelles : header row identique + 3 lignes
-                 text-sm leading-relaxed (22.75px/ligne) ≈ 68px de description, pour éviter
-                 la shift verticale au swap skeleton→content. -->
+            <!-- Skeleton placeholder: hauteur fixe 222px (doit matcher min-h de la vraie card) -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8" aria-hidden="true">
               @for (_ of [1, 2, 3]; track $index) {
                 <div
-                  class="p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] animate-pulse"
+                  class="p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] animate-pulse min-h-[222px]"
                 >
                   <div class="flex items-center gap-3 mb-4">
                     <div class="w-11 h-11 shrink-0 rounded-xl bg-foreground/5"></div>
                     <div class="h-3.5 bg-foreground/5 rounded w-32"></div>
                   </div>
-                  <div class="space-y-2">
-                    <div class="h-3 bg-foreground/5 rounded w-full"></div>
-                    <div class="h-3 bg-foreground/5 rounded w-11/12"></div>
-                    <div class="h-3 bg-foreground/5 rounded w-4/5"></div>
-                  </div>
+                  <div class="h-[114px] rounded bg-foreground/5"></div>
                 </div>
               }
             </div>
