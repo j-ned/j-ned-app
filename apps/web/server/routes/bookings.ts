@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { eq, desc, sql, and, gte, lt } from 'drizzle-orm';
+import { eq, desc, count, and, gte, lt } from 'drizzle-orm';
+import { z } from 'zod';
 import { db } from '../db/client.js';
 import { booking, disabledDate } from '../db/schema';
 import { authMiddleware } from '../middleware/auth.js';
@@ -8,6 +9,8 @@ import { rateLimiter } from '../middleware/rate-limit.js';
 import { createBookingSchema, createDisabledDateSchema } from '../schemas/booking.js';
 import { parsePagination } from '../lib/pagination.js';
 import { sendBookingNotification, sendBookingConfirmation } from '../services/mailer.js';
+
+const idParamSchema = z.object({ id: z.string().uuid() });
 
 const bookings = new Hono();
 
@@ -42,7 +45,7 @@ bookings.get('/', authMiddleware, async (c) => {
 
   const [data, countResult] = await Promise.all([
     db.select().from(booking).orderBy(desc(booking.createdAt)).limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)::int` }).from(booking),
+    db.select({ count: count() }).from(booking),
   ]);
 
   return c.json({
@@ -75,8 +78,8 @@ bookings.get('/slots', async (c) => {
 });
 
 // DELETE /bookings/:id
-bookings.delete('/:id', authMiddleware, async (c) => {
-  const id = c.req.param('id');
+bookings.delete('/:id', authMiddleware, zValidator('param', idParamSchema), async (c) => {
+  const { id } = c.req.valid('param');
   const [deleted] = await db.delete(booking).where(eq(booking.id, id)).returning();
 
   if (!deleted) {
@@ -104,8 +107,8 @@ bookings.post('/disabled-dates',
 );
 
 // DELETE /bookings/disabled-dates/:id
-bookings.delete('/disabled-dates/:id', authMiddleware, async (c) => {
-  const id = c.req.param('id');
+bookings.delete('/disabled-dates/:id', authMiddleware, zValidator('param', idParamSchema), async (c) => {
+  const { id } = c.req.valid('param');
   const [deleted] = await db.delete(disabledDate).where(eq(disabledDate.id, id)).returning();
 
   if (!deleted) {

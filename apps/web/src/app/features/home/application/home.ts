@@ -70,7 +70,7 @@ import { PiIconPipe } from '@shared/icons';
       </section>
 
       <!-- Services Section -->
-      @defer (on viewport; prefetch on immediate) {
+      @defer (on viewport; prefetch on idle) {
         <section class="w-full py-12 md:py-16">
           <div class="max-w-7xl mx-auto px-6">
             <app-home-services [services]="bundle()?.services ?? []" />
@@ -81,7 +81,7 @@ import { PiIconPipe } from '@shared/icons';
       }
 
       <!-- Projects Section -->
-      @defer (on viewport; prefetch on immediate) {
+      @defer (on viewport; prefetch on idle) {
         <section class="w-full py-12 md:py-16">
           <div class="max-w-7xl mx-auto px-6">
             <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />

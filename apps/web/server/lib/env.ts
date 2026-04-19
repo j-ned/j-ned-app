@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import dotenv from 'dotenv';
 
-dotenv.config();
-
+// Variables d'environnement : chargées via `node --env-file-if-exists=.env`
+// (dev) ou injectées par Docker Swarm/Dokploy (prod). Pas de dotenv au runtime.
 const envSchema = z.object({
   // Server
   PORT: z.coerce.number().default(3000),
@@ -55,4 +54,4 @@ if (!parsed.success) {
 export const env = parsed.data;
 
 // Derived S3 public URLs
-export const s3PublicUrl = (bucket: string) => `${env.S3_ENDPOINT}/${bucket}`;
+export const s3PublicUrl = (bucket: string): string => `${env.S3_ENDPOINT}/${bucket}`;

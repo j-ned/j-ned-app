@@ -473,12 +473,11 @@ export class AdminAnalytics {
   };
 
   // ── Top pages ─────────────────────────────────────────────────────
-  private readonly pagesResourceInternal = resource({
+  readonly pagesResource = resource({
     params: () => this.range(),
     loader: ({ params }) => this.analytics.getMetrics('url', params.startDate, params.endDate),
   });
-  readonly pagesResource = this.pagesResourceInternal;
-  readonly topPages = computed(() => this.pagesResourceInternal.value()?.slice(0, 8) ?? []);
+  readonly topPages = computed(() => this.pagesResource.value()?.slice(0, 8) ?? []);
   readonly pagesMax = computed(() => Math.max(1, ...this.topPages().map((r) => r.count)));
 
   // ── Top referrers ─────────────────────────────────────────────────

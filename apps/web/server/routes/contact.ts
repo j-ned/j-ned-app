@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, count } from 'drizzle-orm';
+import { z } from 'zod';
 import { db } from '../db/client.js';
 import { contactMessage } from '../db/schema';
 import { authMiddleware } from '../middleware/auth.js';
@@ -9,6 +10,8 @@ import { createContactSchema } from '../schemas/contact.js';
 import { parsePagination } from '../lib/pagination.js';
 import { env } from '../lib/env.js';
 import { sendContactNotification, sendContactConfirmation } from '../services/mailer.js';
+
+const idParamSchema = z.object({ id: z.string().uuid() });
 
 const contact = new Hono();
 
@@ -48,7 +51,7 @@ contact.get('/messages', authMiddleware, async (c) => {
 
   const [data, countResult] = await Promise.all([
     db.select().from(contactMessage).orderBy(desc(contactMessage.createdAt)).limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)::int` }).from(contactMessage),
+    db.select({ count: count() }).from(contactMessage),
   ]);
 
   return c.json({
@@ -62,7 +65,7 @@ contact.get('/messages', authMiddleware, async (c) => {
 // GET /contact/messages/unread-count
 contact.get('/messages/unread-count', authMiddleware, async (c) => {
   const [result] = await db
-    .select({ count: sql<number>`count(*)::int` })
+    .select({ count: count() })
     .from(contactMessage)
     .where(eq(contactMessage.read, false));
 
@@ -70,8 +73,8 @@ contact.get('/messages/unread-count', authMiddleware, async (c) => {
 });
 
 // PATCH /contact/messages/:id/read
-contact.patch('/messages/:id/read', authMiddleware, async (c) => {
-  const id = c.req.param('id');
+contact.patch('/messages/:id/read', authMiddleware, zValidator('param', idParamSchema), async (c) => {
+  const { id } = c.req.valid('param');
 
   const [updated] = await db.update(contactMessage)
     .set({ read: true })
@@ -86,8 +89,8 @@ contact.patch('/messages/:id/read', authMiddleware, async (c) => {
 });
 
 // DELETE /contact/messages/:id
-contact.delete('/messages/:id', authMiddleware, async (c) => {
-  const id = c.req.param('id');
+contact.delete('/messages/:id', authMiddleware, zValidator('param', idParamSchema), async (c) => {
+  const { id } = c.req.valid('param');
   const [deleted] = await db.delete(contactMessage).where(eq(contactMessage.id, id)).returning();
 
   if (!deleted) {

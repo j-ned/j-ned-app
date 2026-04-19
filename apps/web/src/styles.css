@@ -1,6 +1,17 @@
 @import 'tailwindcss';
 @import 'primeicons/primeicons.css';
 
+@font-face {
+  font-family: 'primeicons';
+  font-display: swap;
+  src:
+    url('primeicons/fonts/primeicons.woff2') format('woff2'),
+    url('primeicons/fonts/primeicons.woff') format('woff'),
+    url('primeicons/fonts/primeicons.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 @custom-variant dark (&:where(.app-dark, .app-dark *));
 
 @theme {
