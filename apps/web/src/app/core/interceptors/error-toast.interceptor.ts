@@ -1,10 +1,10 @@
 import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { catchError, throwError } from 'rxjs';
 
 export const errorToastInterceptor: HttpInterceptorFn = (req, next) => {
-  const messageService = inject(MessageService);
+  const toast = inject(ToastService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -16,7 +16,7 @@ export const errorToastInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      messageService.add({
+      toast.add({
         severity: 'error',
         summary: 'Erreur',
         detail: getErrorMessage(error),

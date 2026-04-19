@@ -2,12 +2,12 @@ import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/c
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
-import { Toast } from 'primeng/toast';
+import { UiToast } from '@shared/ui';
 import { Header, Footer } from '@layout';
 
 @Component({
   selector: 'app-root',
-  imports: [Header, Footer, RouterOutlet, Toast],
+  imports: [Header, Footer, RouterOutlet, UiToast],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown.control.l)': 'onCtrlL($event)',
@@ -22,7 +22,7 @@ import { Header, Footer } from '@layout';
     @if (!isAdminRoute()) {
       <app-footer />
     }
-    <p-toast position="top-right" />
+    <app-ui-toast />
   `,
 })
 export class App {

@@ -3,7 +3,7 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import type { WhatIDo } from '@features/profile/domain';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 
@@ -64,7 +64,7 @@ import { Button } from 'primeng/button';
 })
 export class AdminWhatIDoList {
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly itemsRes = rxResource({

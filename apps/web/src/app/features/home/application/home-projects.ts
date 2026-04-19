@@ -1,12 +1,12 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProjectCard } from '@features/projects/application';
-import { Button } from 'primeng/button';
+import { UiButton } from '@shared/ui';
 import type { Project } from '@features/projects/domain';
 
 @Component({
   selector: 'app-home-projects',
-  imports: [ProjectCard, Button],
+  imports: [ProjectCard, UiButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -36,12 +36,10 @@ import type { Project } from '@features/projects/domain';
       </ul>
 
       <nav class="mt-8 text-center" aria-label="Voir tous les projets">
-        <p-button
-          label="Voir tous les projets"
-          icon="pi pi-desktop"
-          iconPos="right"
-          (onClick)="goToProjects()"
-        />
+        <app-ui-button severity="primary" (click)="goToProjects()">
+          Voir tous les projets
+          <i class="pi pi-desktop" aria-hidden="true"></i>
+        </app-ui-button>
       </nav>
     </section>
   `,

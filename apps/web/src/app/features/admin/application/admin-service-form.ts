@@ -17,7 +17,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HOME_GATEWAY } from '@features/home/application';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
@@ -159,7 +159,7 @@ export class AdminServiceForm {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly id = input<string>();

@@ -13,7 +13,7 @@ import { Router } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { BLOG_GATEWAY } from '@features/blog/application';
 import type { Article } from '@features/blog/domain';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
@@ -174,7 +174,7 @@ export class AdminArticleForm {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly blogGateway = inject(BLOG_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly id = input<string>();

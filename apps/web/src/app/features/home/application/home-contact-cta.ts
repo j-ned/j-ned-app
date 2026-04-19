@@ -1,10 +1,10 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Button } from 'primeng/button';
+import { UiButton } from '@shared/ui';
 
 @Component({
   selector: 'app-home-contact-cta',
-  imports: [Button],
+  imports: [UiButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { id: 'contact', class: 'block' },
   template: `
@@ -29,14 +29,10 @@ import { Button } from 'primeng/button';
       </p>
 
       <div class="flex flex-col items-center gap-4">
-        <p-button
-          label="Réserver un appel découverte gratuit"
-          icon="pi pi-calendar"
-          iconPos="right"
-          size="large"
-          styleClass="!text-base md:!text-lg"
-          (onClick)="goToBooking()"
-        />
+        <app-ui-button severity="primary" size="large" (click)="goToBooking()">
+          Réserver un appel découverte gratuit
+          <i class="pi pi-calendar" aria-hidden="true"></i>
+        </app-ui-button>
 
         <button
           type="button"

@@ -13,7 +13,7 @@ import { PROJECTS_GATEWAY } from '@features/projects/application';
 import type { Project } from '@features/projects/domain';
 import { HOME_GATEWAY } from '@features/home/application';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
@@ -156,7 +156,7 @@ import { Tag } from 'primeng/tag';
 export class AdminProjects {
   private readonly projectsGateway = inject(PROJECTS_GATEWAY);
   private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly selectedCategory = signal('Tous');

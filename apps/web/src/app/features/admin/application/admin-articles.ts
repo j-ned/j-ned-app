@@ -3,7 +3,7 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { BLOG_GATEWAY } from '@features/blog/application';
 import type { Article } from '@features/blog/domain';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
@@ -102,7 +102,7 @@ import { InputIcon } from 'primeng/inputicon';
 })
 export class AdminArticles {
   private readonly blogGateway = inject(BLOG_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly articlesRes = rxResource({

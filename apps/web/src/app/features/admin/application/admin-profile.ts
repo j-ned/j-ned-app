@@ -11,7 +11,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { PROFILE_GATEWAY } from '@features/profile/application';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
@@ -121,7 +121,7 @@ export class AdminProfile {
   private readonly router = inject(Router);
   private readonly apiUrl = inject(API_BASE_URL);
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly selectedFile = signal<File | null>(null);

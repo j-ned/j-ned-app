@@ -10,7 +10,7 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
@@ -74,7 +74,7 @@ export class AdminWhatISeek {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly profileGateway = inject(PROFILE_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly whatISeekId = signal('');
 

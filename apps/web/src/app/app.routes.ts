@@ -59,7 +59,8 @@ export const routes: Routes = [
   {
     path: 'projects',
     title: 'Projets | Julien Nédellec',
-    loadComponent: () => import('./features/projects/application/projects').then((m) => m.Projects),
+    loadChildren: () =>
+      import('./features/projects/projects.routes').then((m) => m.PROJECTS_ROUTES),
     data: {
       preload: true,
       seo: {
@@ -76,7 +77,7 @@ export const routes: Routes = [
   {
     path: 'contact',
     title: 'Contact | Julien Nédellec',
-    loadComponent: () => import('./features/contact/application/contact').then((m) => m.Contact),
+    loadChildren: () => import('./features/contact/contact.routes').then((m) => m.CONTACT_ROUTES),
     data: {
       preload: true,
       seo: {
@@ -93,7 +94,7 @@ export const routes: Routes = [
   {
     path: 'booking',
     title: 'Réservation | Julien Nédellec',
-    loadComponent: () => import('./features/booking/application/booking').then((m) => m.Booking),
+    loadChildren: () => import('./features/booking/booking.routes').then((m) => m.BOOKING_ROUTES),
     data: {
       seo: {
         title: 'Réservation de consultation - Julien Nédellec',
@@ -107,7 +108,7 @@ export const routes: Routes = [
   {
     path: 'blog',
     title: 'Blog | Julien Nédellec',
-    loadComponent: () => import('./features/blog/application/blog-list').then((m) => m.BlogList),
+    loadChildren: () => import('./features/blog/blog.routes').then((m) => m.BLOG_ROUTES),
     data: {
       seo: {
         title: 'Blog | Julien Nédellec - Développeur Full-Stack',
@@ -120,21 +121,14 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'blog/:id',
-    title: 'Article | Julien Nédellec',
-    loadComponent: () =>
-      import('./features/blog/application/blog-detail').then((m) => m.BlogDetail),
-  },
-  {
     path: 'login',
     title: 'Connexion | Julien Nédellec',
-    loadComponent: () => import('./features/auth/application/login').then((m) => m.Login),
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.LOGIN_ROUTES),
   },
   {
     path: 'two-factor',
     title: 'Vérification 2FA | Julien Nédellec',
-    loadComponent: () =>
-      import('./features/auth/application/two-factor-verify').then((m) => m.TwoFactorVerify),
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.TWO_FACTOR_ROUTES),
   },
   {
     path: 'admin',

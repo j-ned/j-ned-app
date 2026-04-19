@@ -3,12 +3,12 @@ import { NgOptimizedImage } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { map, switchMap } from 'rxjs';
-import { Button } from 'primeng/button';
+import { UiButton } from '@shared/ui';
 import { BLOG_GATEWAY } from '@features/blog/application';
 
 @Component({
   selector: 'app-home-blog',
-  imports: [RouterLink, Button, NgOptimizedImage],
+  imports: [RouterLink, UiButton, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -137,12 +137,10 @@ import { BLOG_GATEWAY } from '@features/blog/application';
         }
 
         <nav class="mt-8 text-center" aria-label="Voir tous les articles">
-          <p-button
-            label="Voir tous les articles"
-            icon="pi pi-pencil"
-            iconPos="right"
-            (onClick)="goToBlog()"
-          />
+          <app-ui-button severity="primary" (click)="goToBlog()">
+            Voir tous les articles
+            <i class="pi pi-pencil" aria-hidden="true"></i>
+          </app-ui-button>
         </nav>
       </div>
     </section>

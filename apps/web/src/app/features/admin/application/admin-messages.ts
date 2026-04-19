@@ -10,7 +10,7 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { CONTACT_GATEWAY } from '@features/contact/application';
 import type { ContactMessage } from '@features/contact/domain';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
@@ -105,7 +105,7 @@ import { Tag } from 'primeng/tag';
 })
 export class AdminMessages {
   private readonly contactGateway = inject(CONTACT_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly messagesRes = rxResource({

@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import type { Booking, DisabledDate } from '@features/booking/domain';
 import { getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 
 type CalendarDay = {
   readonly date: string;
@@ -280,7 +280,7 @@ type CalendarDay = {
 })
 export class AdminCalendar {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly bookings = signal<readonly Booking[]>([]);

@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HOME_GATEWAY } from '@features/home/application';
 import type { ServicePricing } from '@features/home/domain';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
@@ -89,7 +89,7 @@ import { ToggleSwitch } from 'primeng/toggleswitch';
 })
 export class AdminServices {
   private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly servicesRes = rxResource({

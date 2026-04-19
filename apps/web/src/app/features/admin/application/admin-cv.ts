@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import type { CvInfo } from '../domain/models/cv.model';
 import { CvService } from '@shared/cv';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { FileUpload } from 'primeng/fileupload';
 
 @Component({
@@ -103,7 +103,7 @@ import { FileUpload } from 'primeng/fileupload';
 })
 export class AdminCv {
   private readonly cvService = inject(CvService);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly fileUpload = viewChild<FileUpload>('fileUpload');
 
   readonly cv = signal<CvInfo | null>(null);

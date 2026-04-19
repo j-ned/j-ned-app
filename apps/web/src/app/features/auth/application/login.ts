@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../infrastructure';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 
 type LoginForm = {
   email: FormControl<string>;
@@ -133,7 +133,7 @@ type LoginForm = {
 export class Login {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly errorMessage = signal('');

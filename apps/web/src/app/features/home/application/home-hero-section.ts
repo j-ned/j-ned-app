@@ -1,12 +1,12 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { HomeHero } from './home-hero';
-import { Button } from 'primeng/button';
+import { UiButton } from '@shared/ui';
 import type { HeroData } from '../domain';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [HomeHero, Button],
+  imports: [HomeHero, UiButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'relative block pt-28 pb-12 md:pt-36 md:pb-16 px-6 overflow-hidden',
@@ -37,21 +37,19 @@ import type { HeroData } from '../domain';
         <div
           class="animate-fade-up-actions flex flex-col sm:flex-row items-center gap-4 mt-10 md:mt-12"
         >
-          <p-button
-            label="Voir mes réalisations"
-            icon="pi pi-arrow-right"
-            iconPos="right"
-            size="large"
-            (onClick)="goToProjects()"
-          />
-          <p-button
-            label="Me contacter"
-            icon="pi pi-envelope"
-            iconPos="right"
-            size="large"
+          <app-ui-button severity="primary" size="large" (click)="goToProjects()">
+            Voir mes réalisations
+            <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          </app-ui-button>
+          <app-ui-button
+            variant="outlined"
             severity="secondary"
-            (onClick)="goToContact()"
-          />
+            size="large"
+            (click)="goToContact()"
+          >
+            Me contacter
+            <i class="pi pi-envelope" aria-hidden="true"></i>
+          </app-ui-button>
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { BLOG_GATEWAY } from '@features/blog/application';
 import type { Comment, CommentStatus } from '@features/blog/domain';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
@@ -137,7 +137,7 @@ type FilterStatus = 'all' | CommentStatus;
 })
 export class AdminComments {
   private readonly blogGateway = inject(BLOG_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly commentsRes = rxResource({

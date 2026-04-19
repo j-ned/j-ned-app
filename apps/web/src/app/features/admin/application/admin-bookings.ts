@@ -2,7 +2,7 @@ import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import type { Booking } from '@features/booking/domain';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
@@ -68,7 +68,7 @@ import { Tag } from 'primeng/tag';
 })
 export class AdminBookings {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly bookingsRes = rxResource({

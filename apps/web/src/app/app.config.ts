@@ -21,11 +21,8 @@ import { authInterceptor } from '@features/auth/infrastructure/auth.interceptor'
 import { errorToastInterceptor } from '@core/interceptors';
 import { IMAGE_CONFIG } from '@angular/common';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { providePrimeNG } from 'primeng/config';
-import { MessageService } from 'primeng/api';
 import { filter } from 'rxjs';
 
-import { portfolioPreset } from '@core/theme/prime-preset';
 import { routes } from './app.routes';
 import { SeoService } from '@shared/seo/seo';
 import { AnalyticsService } from '@shared/analytics';
@@ -126,14 +123,6 @@ export const appConfig: ApplicationConfig = {
     ),
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
-    providePrimeNG({
-      theme: {
-        preset: portfolioPreset,
-        options: {
-          darkModeSelector: '.app-dark',
-        },
-      },
-    }),
     provideAppInitializer(prefetchHomeBundle()),
     provideAppInitializer(initializeSeo()),
     provideAppInitializer(initializeTracking()),
@@ -150,6 +139,5 @@ export const appConfig: ApplicationConfig = {
     { provide: HOME_GATEWAY, useClass: HttpHomeGateway },
     { provide: BLOG_GATEWAY, useClass: HttpBlogGateway },
     { provide: BOOKING_GATEWAY, useClass: HttpBookingGateway },
-    MessageService,
   ],
 };

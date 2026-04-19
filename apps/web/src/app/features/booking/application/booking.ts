@@ -13,7 +13,7 @@ import type { BookingFormData } from '../domain/models';
 import { BookingCalendar } from './booking-calendar';
 import { BookingTimePicker } from './booking-time-picker';
 import { BookingForm, type BookingFormPayload } from './booking-form';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 
 @Component({
   selector: 'app-booking',
@@ -95,7 +95,7 @@ import { MessageService } from 'primeng/api';
 })
 export class Booking {
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly bookingFormRef = viewChild(BookingForm);
   private readonly calendarRef = viewChild(BookingCalendar);

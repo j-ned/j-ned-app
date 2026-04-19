@@ -3,7 +3,7 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { HOME_GATEWAY } from '@features/home/application';
 import type { HomeHighlight } from '@features/home/domain';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 
@@ -70,7 +70,7 @@ import { Button } from 'primeng/button';
 })
 export class AdminHomeHighlights {
   private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly toast = inject(MessageService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly highlightsRes = rxResource({

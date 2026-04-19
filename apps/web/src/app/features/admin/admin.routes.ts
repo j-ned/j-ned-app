@@ -1,10 +1,12 @@
 import type { Routes } from '@angular/router';
+import { providePrimeNGTheme } from '@core/providers/primeng-theme';
 import { AdminLayout } from './application';
 
 export const ADMIN_ROUTES: Routes = [
   {
     path: '',
     component: AdminLayout,
+    providers: [providePrimeNGTheme()],
     children: [
       // ─── Dashboard ──────────────────────────────────────────────
       {

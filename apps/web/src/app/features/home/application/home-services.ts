@@ -1,11 +1,11 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
-import { Button } from 'primeng/button';
+import { UiButton } from '@shared/ui';
 import type { ServicePricing } from '../domain';
 
 @Component({
   selector: 'app-home-services',
-  imports: [Button],
+  imports: [UiButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -83,14 +83,14 @@ import type { ServicePricing } from '../domain';
                 }
               </ul>
 
-              <p-button
-                label="Réserver un appel"
-                icon="pi pi-calendar"
-                iconPos="right"
+              <app-ui-button
                 [severity]="service.highlighted ? 'primary' : 'secondary'"
-                [outlined]="!service.highlighted"
-                (onClick)="goToBooking()"
-              />
+                [variant]="service.highlighted ? 'solid' : 'outlined'"
+                (click)="goToBooking()"
+              >
+                Réserver un appel
+                <i class="pi pi-calendar" aria-hidden="true"></i>
+              </app-ui-button>
             }
           </li>
         }

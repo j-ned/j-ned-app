@@ -1,19 +1,18 @@
 import { Component, signal, effect, afterNextRender, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Button } from 'primeng/button';
-import { Drawer } from 'primeng/drawer';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsService } from '@shared/analytics';
 import { CvService } from '@shared/cv';
 import { SiteSettingsService } from '@core/services';
 import { PiIconPipe } from '@shared/icons';
+import { UiButton, UiDrawer } from '@shared/ui';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
 type ThemePreference = 'dark' | 'light';
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink, Button, Drawer, PiIconPipe],
+  imports: [RouterLink, PiIconPipe, UiButton, UiDrawer],
   host: {
     class:
       'fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/5',
@@ -66,52 +65,57 @@ type ThemePreference = 'dark' | 'light';
       </nav>
 
       <div class="flex items-center gap-4">
-        <p-button
-          [rounded]="true"
+        <app-ui-button
+          variant="outlined"
           severity="secondary"
-          [outlined]="true"
-          [icon]="isDarkTheme() ? 'pi pi-moon' : 'pi pi-sun'"
+          [rounded]="true"
           [ariaLabel]="isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre'"
-          (onClick)="toggleTheme()"
-        />
+          (click)="toggleTheme()"
+        >
+          <i
+            [class]="isDarkTheme() ? 'pi pi-moon' : 'pi pi-sun'"
+            class="text-base"
+            aria-hidden="true"
+          ></i>
+        </app-ui-button>
+
         @if (cvUrl()) {
           <a
             [href]="cvUrl()"
             target="_blank"
             rel="noopener noreferrer"
             (click)="trackCvDownload()"
-            class="hidden md:inline-flex"
+            class="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-foreground text-sm font-medium hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
           >
-            <p-button
-              label="Télécharger mon CV"
-              icon="pi pi-download"
-              severity="secondary"
-              [outlined]="true"
-              [rounded]="true"
-            />
+            <i class="pi pi-download" aria-hidden="true"></i>
+            Télécharger mon CV
           </a>
         }
-        <p-button
-          styleClass="md:!hidden"
-          [rounded]="true"
+
+        <app-ui-button
+          class="md:hidden"
+          variant="text"
           severity="secondary"
-          [text]="true"
-          [icon]="isMobileMenuOpen() ? 'pi pi-times' : 'pi pi-bars'"
+          [rounded]="true"
           [ariaLabel]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
-          (onClick)="toggleMobileMenu()"
-        />
+          (click)="toggleMobileMenu()"
+        >
+          <i
+            [class]="isMobileMenuOpen() ? 'pi pi-times' : 'pi pi-bars'"
+            class="text-xl"
+            aria-hidden="true"
+          ></i>
+        </app-ui-button>
       </div>
     </div>
 
-    <p-drawer
-      [visible]="isMobileMenuOpen()"
-      (visibleChange)="isMobileMenuOpen.set($event)"
+    <app-ui-drawer
+      class="md:hidden"
+      [(visible)]="isMobileMenuOpen"
       position="right"
-      styleClass="md:!hidden"
+      heading="Menu"
+      ariaLabel="Menu de navigation"
     >
-      <ng-template #header>
-        <span class="text-lg font-bold text-foreground">Menu</span>
-      </ng-template>
       <nav class="flex flex-col gap-4">
         @for (item of navItems(); track item) {
           @if (item.href === '/blog' && !siteSettings.blogEnabled()) {
@@ -158,7 +162,7 @@ type ThemePreference = 'dark' | 'light';
           </a>
         }
       </nav>
-    </p-drawer>
+    </app-ui-drawer>
   `,
 })
 export class Header {
@@ -171,24 +175,25 @@ export class Header {
   protected readonly isDarkTheme = signal(Header.readStoredTheme() === 'dark');
   protected readonly cvUrl = signal<string | null>(null);
 
-  private readonly _initTheme = afterNextRender(() => {
-    this.applyTheme();
-    this.loadCvUrl();
-  });
+  constructor() {
+    afterNextRender(() => {
+      this.applyTheme();
+      this.loadCvUrl();
+    });
 
-  private readonly _syncTheme = effect(() => {
-    const isDark = this.isDarkTheme();
-    this.applyTheme();
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
-    }
-  });
+    effect(() => {
+      const isDark = this.isDarkTheme();
+      this.applyTheme();
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
+      }
+    });
+  }
 
   private static readStoredTheme(): ThemePreference {
     if (typeof localStorage === 'undefined') return 'dark';
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
     if (stored === 'dark' || stored === 'light') return stored;
-    // Fallback : préférence système si aucun choix explicite
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     }
