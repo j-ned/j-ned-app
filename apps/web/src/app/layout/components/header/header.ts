@@ -13,99 +13,99 @@ type ThemePreference = 'dark' | 'light';
 @Component({
   selector: 'app-header',
   imports: [RouterLink, PiIconPipe, UiButton, UiDrawer],
-  host: {
-    class:
-      'fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/5',
-  },
   template: `
-    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-      <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
-        <div
-          class="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
-        >
-          JN
-        </div>
-        <div class="flex items-baseline gap-0.5">
-          <span class="text-2xl font-bold text-foreground tracking-tight">j-ned</span>
-          <span class="text-2xl font-bold text-primary">.dev</span>
-        </div>
-      </a>
+    <div
+      class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/5"
+    >
+      <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
+          <div
+            class="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
+          >
+            JN
+          </div>
+          <div class="flex items-baseline gap-0.5">
+            <span class="text-2xl font-bold text-foreground tracking-tight">j-ned</span>
+            <span class="text-2xl font-bold text-primary">.dev</span>
+          </div>
+        </a>
 
-      <nav class="hidden md:flex items-center gap-8">
-        @for (item of navItems(); track item) {
-          @if (item.href === '/blog' && !siteSettings.blogEnabled()) {
-            <span
-              class="relative flex items-center gap-2 px-4 py-2 rounded-full cursor-not-allowed select-none bg-[repeating-linear-gradient(-45deg,#eab308_0px,#eab308_8px,#111_8px,#111_16px)] overflow-hidden"
-            >
+        <nav class="hidden md:flex items-center gap-8">
+          @for (item of navItems(); track item) {
+            @if (item.href === '/blog' && !siteSettings.blogEnabled()) {
               <span
-                class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider"
+                class="relative flex items-center gap-2 px-4 py-2 rounded-full cursor-not-allowed select-none bg-[repeating-linear-gradient(-45deg,#eab308_0px,#eab308_8px,#111_8px,#111_16px)] overflow-hidden"
               >
-                <i class="text-base" [class]="item.icons | piIcon" aria-hidden="true"></i>
-                Blog en construction
+                <span
+                  class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider"
+                >
+                  <i class="text-base" [class]="item.icons | piIcon" aria-hidden="true"></i>
+                  Blog en construction
+                </span>
               </span>
-            </span>
-          } @else if (item.href.startsWith('#')) {
+            } @else if (item.href.startsWith('#')) {
+              <a
+                [href]="item.href"
+                class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+              >
+                <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
+                {{ item.label }}
+              </a>
+            } @else {
+              <a
+                [routerLink]="item.href"
+                class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+              >
+                <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
+                {{ item.label }}
+              </a>
+            }
+          }
+        </nav>
+
+        <div class="flex items-center gap-4">
+          <app-ui-button
+            variant="outlined"
+            severity="secondary"
+            [rounded]="true"
+            [ariaLabel]="isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre'"
+            (click)="toggleTheme()"
+          >
+            <i
+              [class]="isDarkTheme() ? 'pi pi-moon' : 'pi pi-sun'"
+              class="text-base"
+              aria-hidden="true"
+            ></i>
+          </app-ui-button>
+
+          @if (cvUrl()) {
             <a
-              [href]="item.href"
-              class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+              [href]="cvUrl()"
+              target="_blank"
+              rel="noopener noreferrer"
+              (click)="trackCvDownload()"
+              class="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-foreground text-sm font-medium hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
             >
-              <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
-              {{ item.label }}
-            </a>
-          } @else {
-            <a
-              [routerLink]="item.href"
-              class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
-            >
-              <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
-              {{ item.label }}
+              <i class="pi pi-download" aria-hidden="true"></i>
+              Télécharger mon CV
             </a>
           }
-        }
-      </nav>
 
-      <div class="flex items-center gap-4">
-        <app-ui-button
-          variant="outlined"
-          severity="secondary"
-          [rounded]="true"
-          [ariaLabel]="isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre'"
-          (click)="toggleTheme()"
-        >
-          <i
-            [class]="isDarkTheme() ? 'pi pi-moon' : 'pi pi-sun'"
-            class="text-base"
-            aria-hidden="true"
-          ></i>
-        </app-ui-button>
-
-        @if (cvUrl()) {
-          <a
-            [href]="cvUrl()"
-            target="_blank"
-            rel="noopener noreferrer"
-            (click)="trackCvDownload()"
-            class="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-foreground text-sm font-medium hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
+          <app-ui-button
+            class="md:hidden"
+            variant="text"
+            severity="secondary"
+            [rounded]="true"
+            [ariaLabel]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
+            (click)="toggleMobileMenu()"
           >
-            <i class="pi pi-download" aria-hidden="true"></i>
-            Télécharger mon CV
-          </a>
-        }
-
-        <app-ui-button
-          class="md:hidden"
-          variant="text"
-          severity="secondary"
-          [rounded]="true"
-          [ariaLabel]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
-          (click)="toggleMobileMenu()"
-        >
-          <i
-            [class]="isMobileMenuOpen() ? 'pi pi-times' : 'pi pi-bars'"
-            class="text-xl"
-            aria-hidden="true"
-          ></i>
-        </app-ui-button>
+            <i
+              [class]="isMobileMenuOpen() ? 'pi pi-times' : 'pi pi-bars'"
+              class="text-xl"
+              aria-hidden="true"
+            ></i>
+          </app-ui-button>
+        </div>
       </div>
     </div>
 
