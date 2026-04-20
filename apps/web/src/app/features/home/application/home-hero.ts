@@ -40,9 +40,9 @@ import type { HeroData } from '../domain';
     }
   `,
   template: `
-    <hgroup class="text-center min-h-[260px] md:min-h-[320px] lg:min-h-[360px]">
+    <hgroup class="text-center min-h-[220px] md:min-h-[280px] lg:min-h-[320px]">
       @if (hero()) {
-        <div class="animate-fade-up flex flex-wrap items-center justify-center gap-3 mb-4 md:mb-6">
+        <div class="animate-fade-up flex flex-wrap items-center justify-center gap-3 mb-3 md:mb-4">
           <span class="text-sm md:text-base font-medium text-primary/80 tracking-widest uppercase">
             Freelance Full-Stack
           </span>
@@ -50,20 +50,20 @@ import type { HeroData } from '../domain';
         </div>
 
         <h1
-          class="animate-fade-up delay-1 name-gradient text-5xl md:text-7xl lg:text-8xl font-extrabold mb-5 md:mb-7 tracking-tight leading-[1.2] py-2"
+          class="animate-fade-up delay-1 name-gradient text-5xl md:text-7xl lg:text-8xl font-extrabold mb-3 md:mb-4 tracking-tight leading-[1.15]"
         >
           {{ hero()!.name }}
         </h1>
 
         <p
-          class="animate-fade-up delay-2 text-lg md:text-2xl lg:text-3xl font-medium text-foreground/70 leading-relaxed max-w-3xl mx-auto [&>.kw]:text-primary [&>.kw]:font-semibold"
+          class="animate-fade-up delay-2 text-lg md:text-2xl lg:text-3xl font-medium text-foreground/70 leading-snug max-w-3xl mx-auto [&>.kw]:text-primary [&>.kw]:font-semibold"
           [innerHTML]="highlightedTagline()"
         ></p>
       } @else {
-        <div class="space-y-5 animate-pulse flex flex-col items-center">
+        <div class="space-y-4 animate-pulse flex flex-col items-center">
           <div class="h-6 bg-foreground/5 rounded-full w-48"></div>
-          <div class="h-14 md:h-20 lg:h-32 bg-foreground/5 rounded-lg w-3/4"></div>
-          <div class="h-20 md:h-28 lg:h-36 bg-foreground/5 rounded-lg w-full max-w-2xl"></div>
+          <div class="h-14 md:h-20 lg:h-28 bg-foreground/5 rounded-lg w-3/4"></div>
+          <div class="h-20 md:h-28 lg:h-32 bg-foreground/5 rounded-lg w-full max-w-2xl"></div>
         </div>
       }
     </hgroup>

@@ -9,7 +9,7 @@ import type { HeroData } from '../domain';
   imports: [HomeHero, UiButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'relative block pt-28 pb-12 md:pt-36 md:pb-16 px-6 overflow-hidden',
+    class: 'relative block pt-24 pb-8 md:pt-28 md:pb-10 px-6 overflow-hidden',
   },
   styles: `
     @keyframes fade-up {
@@ -35,7 +35,7 @@ import type { HeroData } from '../domain';
 
         <!-- CTAs -->
         <div
-          class="animate-fade-up-actions flex flex-col sm:flex-row items-center gap-4 mt-10 md:mt-12"
+          class="animate-fade-up-actions flex flex-col sm:flex-row items-center gap-4 mt-6 md:mt-8"
         >
           <app-ui-button severity="primary" size="large" (click)="goToProjects()">
             Voir mes réalisations
