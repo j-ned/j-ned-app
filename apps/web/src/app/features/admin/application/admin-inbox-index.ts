@@ -72,7 +72,6 @@ import { BOOKING_GATEWAY } from '@features/booking/application';
           </div>
         </a>
       </li>
-
     </ul>
   `,
 })
