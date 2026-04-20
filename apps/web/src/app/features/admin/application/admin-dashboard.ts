@@ -9,7 +9,6 @@ import {
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { map, catchError, of } from 'rxjs';
-import { BLOG_GATEWAY } from '@features/blog/application';
 import { CONTACT_GATEWAY } from '@features/contact/application';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
@@ -64,33 +63,6 @@ import { AnalyticsService } from '@shared/analytics';
 
         <li>
           <a
-            routerLink="/admin/inbox/comments"
-            class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-yellow-500/40 hover:bg-yellow-500/[0.02] transition-all"
-          >
-            <div
-              class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-yellow-500/15 to-yellow-500/5 flex items-center justify-center"
-            >
-              <i class="pi pi-comment text-xl text-yellow-500" aria-hidden="true"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              @if (pendingCommentRes.isLoading()) {
-                <div class="h-7 w-10 rounded bg-foreground/10 animate-pulse"></div>
-              } @else {
-                <p class="text-2xl font-bold text-foreground leading-none">
-                  {{ pendingCommentCount() }}
-                </p>
-              }
-              <p class="text-xs text-muted mt-1">Commentaires à modérer</p>
-            </div>
-            <i
-              class="pi pi-arrow-right text-muted group-hover:text-yellow-500 group-hover:translate-x-0.5 transition-all"
-              aria-hidden="true"
-            ></i>
-          </a>
-        </li>
-
-        <li>
-          <a
             routerLink="/admin/schedule/calendar"
             class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-cyan-500/40 hover:bg-cyan-500/[0.02] transition-all"
           >
@@ -125,19 +97,7 @@ import { AnalyticsService } from '@shared/analytics';
       >
         Aperçu
       </h2>
-      <ul class="grid grid-cols-2 md:grid-cols-4 gap-4" role="list">
-        <li class="flex flex-col gap-2 bg-surface border border-foreground/10 rounded-xl p-5">
-          <div class="flex items-center gap-3">
-            <i class="pi pi-pencil text-primary" aria-hidden="true"></i>
-            <span class="text-xs text-muted">Articles</span>
-          </div>
-          @if (articleRes.isLoading()) {
-            <div class="h-8 w-12 rounded bg-foreground/10 animate-pulse"></div>
-          } @else {
-            <p class="text-3xl font-bold text-foreground leading-none">{{ articleCount() }}</p>
-          }
-        </li>
-
+      <ul class="grid grid-cols-1 md:grid-cols-3 gap-4" role="list">
         <li class="flex flex-col gap-2 bg-surface border border-foreground/10 rounded-xl p-5">
           <div class="flex items-center gap-3">
             <i class="pi pi-desktop text-green-500" aria-hidden="true"></i>
@@ -178,7 +138,6 @@ import { AnalyticsService } from '@shared/analytics';
   `,
 })
 export class AdminDashboard {
-  private readonly blogGateway = inject(BLOG_GATEWAY);
   private readonly contactGateway = inject(CONTACT_GATEWAY);
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
   private readonly projectsGateway = inject(PROJECTS_GATEWAY);
@@ -193,16 +152,6 @@ export class AdminDashboard {
       year: 'numeric',
     }),
   );
-
-  readonly articleRes = rxResource({
-    stream: () => this.blogGateway.getArticleCount(),
-  });
-  readonly articleCount = computed(() => this.articleRes.value() ?? 0);
-
-  readonly pendingCommentRes = rxResource({
-    stream: () => this.blogGateway.getPendingCommentCount(),
-  });
-  readonly pendingCommentCount = computed(() => this.pendingCommentRes.value() ?? 0);
 
   readonly projectRes = rxResource({
     stream: () =>

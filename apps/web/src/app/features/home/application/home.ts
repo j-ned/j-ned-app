@@ -4,15 +4,13 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
 import { HomeServices } from './home-services';
 import { HomeProjects } from './home-projects';
-import { HomeBlog } from './home-blog';
 import { HomeContactCta } from './home-contact-cta';
 import { HOME_GATEWAY } from './tokens';
-import { SiteSettingsService } from '@core/services';
 import { PiIconPipe } from '@shared/icons';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeServices, HomeProjects, HomeBlog, HomeContactCta, PiIconPipe],
+  imports: [HomeHeroSection, HomeServices, HomeProjects, HomeContactCta, PiIconPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -91,19 +89,6 @@ import { PiIconPipe } from '@shared/icons';
         <div class="block py-12 px-6 h-64"></div>
       }
 
-      <!-- Blog Section -->
-      @if (siteSettings.blogEnabled()) {
-        @defer (on viewport) {
-          <section class="w-full py-12 md:py-16">
-            <div class="max-w-7xl mx-auto px-6">
-              <app-home-blog />
-            </div>
-          </section>
-        } @placeholder {
-          <div class="block py-12 px-6 h-64"></div>
-        }
-      }
-
       <!-- Contact CTA Section -->
       @defer (on viewport) {
         <section class="w-full py-12 md:py-16">
@@ -120,7 +105,6 @@ import { PiIconPipe } from '@shared/icons';
 export class Home {
   private readonly document = inject(DOCUMENT);
   private readonly homeGateway = inject(HOME_GATEWAY);
-  protected readonly siteSettings = inject(SiteSettingsService);
 
   private readonly bundleResource = rxResource({
     stream: () => this.homeGateway.getHomeBundle(),

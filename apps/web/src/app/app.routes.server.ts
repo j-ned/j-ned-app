@@ -7,10 +7,6 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'projects', renderMode: RenderMode.Prerender },
   { path: 'contact', renderMode: RenderMode.Prerender },
   { path: 'booking', renderMode: RenderMode.Prerender },
-  { path: 'blog', renderMode: RenderMode.Prerender },
-
-  // Dynamique : articles blog rendus côté client (CSR)
-  { path: 'blog/:id', renderMode: RenderMode.Client },
 
   // Auth + admin : jamais côté serveur (authentifié, pas d'intérêt SEO)
   { path: 'login', renderMode: RenderMode.Client },

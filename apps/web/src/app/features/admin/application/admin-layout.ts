@@ -4,7 +4,6 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { map, catchError, of } from 'rxjs';
 import { AuthService } from '../../auth/infrastructure';
 import { CONTACT_GATEWAY } from '@features/contact/application';
-import { BLOG_GATEWAY } from '@features/blog/application';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 
 type NavItem = {
@@ -140,16 +139,12 @@ type NavItem = {
 export class AdminLayout {
   readonly authService = inject(AuthService);
   private readonly contactGateway = inject(CONTACT_GATEWAY);
-  private readonly blogGateway = inject(BLOG_GATEWAY);
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
 
   readonly collapsed = signal(false);
 
   private readonly unreadRes = rxResource({
     stream: () => this.contactGateway.getUnreadCount(),
-  });
-  private readonly pendingCommentRes = rxResource({
-    stream: () => this.blogGateway.getPendingCommentCount(),
   });
   private readonly bookingRes = rxResource({
     stream: () =>
@@ -160,10 +155,7 @@ export class AdminLayout {
   });
 
   private readonly inboxCount = computed(
-    () =>
-      (this.unreadRes.value() ?? 0) +
-      (this.pendingCommentRes.value() ?? 0) +
-      (this.bookingRes.value() ?? 0),
+    () => (this.unreadRes.value() ?? 0) + (this.bookingRes.value() ?? 0),
   );
 
   readonly navItems: readonly NavItem[] = [

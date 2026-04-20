@@ -1,8 +1,6 @@
 import { Hono } from 'hono';
 import auth from './auth.js';
 import projects from './projects.js';
-import articles from './articles.js';
-import comments from './comments.js';
 import bookings from './bookings.js';
 import contact from './contact.js';
 import cv from './cv.js';
@@ -17,13 +15,10 @@ import aspirationRoutes from './aspiration.js';
 import { heroRoutes, servicePricingRoutes, homeHighlightRoutes } from './home.js';
 import homeBundle from './home-bundle.js';
 import images from './images.js';
-import settings from './settings.js';
 
 export function registerRoutes(app: Hono) {
   app.route('/auth', auth);
   app.route('/projects', projects);
-  app.route('/articles', articles);
-  app.route('/comments', comments);
   app.route('/bookings', bookings);
   app.route('/contact', contact);
   app.route('/cv', cv);
@@ -41,5 +36,4 @@ export function registerRoutes(app: Hono) {
   app.route('/home-highlights', homeHighlightRoutes);
   app.route('/home-bundle', homeBundle);
   app.route('/images', images);
-  app.route('/settings', settings);
 }

@@ -1,8 +1,6 @@
 export { appUser } from './user';
 export { pageView, analyticsEvent, dailyStat } from './analytics';
 export { project } from './project';
-export { article } from './article';
-export { comment } from './comment';
 export { contactMessage } from './contact';
 export { booking, disabledDate } from './booking';
 export { cvFile } from './cv';
@@ -11,4 +9,3 @@ export { socialLink } from './social-link';
 export { expertise } from './expertise';
 export { hero } from './hero';
 export { servicePricing } from './home';
-export { siteSettings } from './site-settings';

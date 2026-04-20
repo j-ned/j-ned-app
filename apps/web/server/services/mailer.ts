@@ -134,16 +134,3 @@ export async function sendBookingConfirmation(data: {
   });
 }
 
-export async function sendCommentNotification(data: {
-  author: string;
-  content: string;
-  articleTitle: string;
-  email: string;
-}): Promise<void> {
-  await sendMail({
-    to: env.CONTACT_EMAIL,
-    subject: `Nouveau commentaire sur: ${data.articleTitle}`,
-    template: 'comment-notification',
-    variables: data,
-  });
-}

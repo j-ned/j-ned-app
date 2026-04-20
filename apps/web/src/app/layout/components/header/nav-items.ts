@@ -9,5 +9,4 @@ export const NAV_LINKS: NavItem[] = [
   { label: 'À propos', href: '/about', icons: 'lucide-user' },
   { label: 'Contact', href: '/contact', icons: 'lucide-mail' },
   { label: 'Réservation', href: '/booking', icons: 'lucide-calendar' },
-  { label: 'Blog', href: '/blog', icons: 'lucide-notebook-pen' },
 ];

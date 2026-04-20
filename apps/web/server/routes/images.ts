@@ -58,31 +58,4 @@ images.get('/projects/:key', async (c) => {
   }
 });
 
-// GET /images/blog/:key — proxy + optimize article image from S3
-images.get('/blog/:key', async (c) => {
-  const key = c.req.param('key');
-  const queryWidth = c.req.query('w') ? parseInt(c.req.query('w')!, 10) : undefined;
-
-  try {
-    const response = await getFile(buckets.blog.bucket, key);
-    const body = await response.Body?.transformToByteArray();
-    if (!body) {
-      return c.json({ error: 'File not found' }, 404);
-    }
-
-    const { buffer, contentType } = await optimizeImage(body, response.ContentType, queryWidth);
-
-    return new Response(buffer as unknown as BodyInit, {
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-        'Cross-Origin-Resource-Policy': 'cross-origin',
-        'Vary': 'Accept',
-      },
-    });
-  } catch {
-    return c.json({ error: 'File not found' }, 404);
-  }
-});
-
 export default images;

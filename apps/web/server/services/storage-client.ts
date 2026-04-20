@@ -57,6 +57,5 @@ export function getPublicUrl(publicBaseUrl: string, key: string): string {
 export const buckets = {
   cv: { bucket: env.S3_CV_BUCKET, publicUrl: s3PublicUrl(env.S3_CV_BUCKET) },
   projects: { bucket: env.S3_PROJECTS_BUCKET, publicUrl: s3PublicUrl(env.S3_PROJECTS_BUCKET) },
-  blog: { bucket: env.S3_BLOG_BUCKET, publicUrl: s3PublicUrl(env.S3_BLOG_BUCKET) },
   about: { bucket: env.S3_ABOUT_BUCKET, publicUrl: s3PublicUrl(env.S3_ABOUT_BUCKET) },
 };

@@ -3,4 +3,3 @@
 /projects
 /contact
 /booking
-/blog

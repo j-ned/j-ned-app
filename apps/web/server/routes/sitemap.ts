@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { desc } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { article, project } from '../db/schema';
+import { project } from '../db/schema';
 import { env } from '../lib/env.js';
 
 const sitemap = new Hono();
@@ -39,28 +39,13 @@ sitemap.get('/', async (c) => {
     { loc: `${base}/projects`, lastmod: today, changefreq: 'weekly', priority: '0.9' },
     { loc: `${base}/contact`, lastmod: today, changefreq: 'monthly', priority: '0.7' },
     { loc: `${base}/booking`, lastmod: today, changefreq: 'monthly', priority: '0.6' },
-    { loc: `${base}/blog`, lastmod: today, changefreq: 'weekly', priority: '0.8' },
   ];
 
-  const [articles, projects] = await Promise.all([
-    db
-      .select({ slug: article.slug, updatedAt: article.updatedAt })
-      .from(article)
-      .orderBy(desc(article.updatedAt))
-      .catch(() => []),
-    db
-      .select({ slug: project.slug, updatedAt: project.updatedAt })
-      .from(project)
-      .orderBy(desc(project.updatedAt))
-      .catch(() => []),
-  ]);
-
-  const articleRoutes: UrlEntry[] = articles.map((a) => ({
-    loc: `${base}/blog/${a.slug}`,
-    lastmod: toIsoDate(a.updatedAt),
-    changefreq: 'monthly',
-    priority: '0.6',
-  }));
+  const projects = await db
+    .select({ slug: project.slug, updatedAt: project.updatedAt })
+    .from(project)
+    .orderBy(desc(project.updatedAt))
+    .catch(() => []);
 
   const projectRoutes: UrlEntry[] = projects.map((p) => ({
     loc: `${base}/projects/${p.slug}`,
@@ -69,7 +54,7 @@ sitemap.get('/', async (c) => {
     priority: '0.7',
   }));
 
-  const allUrls = [...staticRoutes, ...articleRoutes, ...projectRoutes];
+  const allUrls = [...staticRoutes, ...projectRoutes];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

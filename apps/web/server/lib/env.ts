@@ -27,7 +27,6 @@ const envSchema = z.object({
   S3_SECRET_KEY: z.string(),
   S3_CV_BUCKET: z.string(),
   S3_PROJECTS_BUCKET: z.string(),
-  S3_BLOG_BUCKET: z.string(),
   S3_ABOUT_BUCKET: z.string(),
 
   // SMTP

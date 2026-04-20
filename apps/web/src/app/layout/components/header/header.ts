@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsService } from '@shared/analytics';
 import { CvService } from '@shared/cv';
-import { SiteSettingsService } from '@core/services';
 import { PiIconPipe } from '@shared/icons';
 import { UiButton, UiDrawer } from '@shared/ui';
 
@@ -32,18 +31,7 @@ type ThemePreference = 'dark' | 'light';
 
         <nav class="hidden md:flex items-center gap-8">
           @for (item of navItems(); track item) {
-            @if (item.href === '/blog' && !siteSettings.blogEnabled()) {
-              <span
-                class="relative flex items-center gap-2 px-4 py-2 rounded-full cursor-not-allowed select-none bg-[repeating-linear-gradient(-45deg,#eab308_0px,#eab308_8px,#111_8px,#111_16px)] overflow-hidden"
-              >
-                <span
-                  class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider"
-                >
-                  <i class="text-base" [class]="item.icons | piIcon" aria-hidden="true"></i>
-                  Blog en construction
-                </span>
-              </span>
-            } @else if (item.href.startsWith('#')) {
+            @if (item.href.startsWith('#')) {
               <a
                 [href]="item.href"
                 class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
@@ -118,18 +106,7 @@ type ThemePreference = 'dark' | 'light';
     >
       <nav class="flex flex-col gap-4">
         @for (item of navItems(); track item) {
-          @if (item.href === '/blog' && !siteSettings.blogEnabled()) {
-            <span
-              class="relative flex items-center gap-2 px-4 py-2 rounded-full cursor-not-allowed select-none bg-[repeating-linear-gradient(-45deg,#eab308_0px,#eab308_8px,#111_8px,#111_16px)] overflow-hidden"
-            >
-              <span
-                class="relative flex items-center gap-2 px-2 py-0.5 rounded bg-black/80 text-yellow-400 text-xs font-bold uppercase tracking-wider"
-              >
-                <i class="text-base" [class]="item.icons | piIcon" aria-hidden="true"></i>
-                Blog en construction
-              </span>
-            </span>
-          } @else if (item.href.startsWith('#')) {
+          @if (item.href.startsWith('#')) {
             <a
               [href]="item.href"
               (click)="closeMobileMenu()"
@@ -168,7 +145,6 @@ type ThemePreference = 'dark' | 'light';
 export class Header {
   private readonly analytics = inject(AnalyticsService);
   private readonly cvService = inject(CvService);
-  protected readonly siteSettings = inject(SiteSettingsService);
 
   protected readonly navItems = signal(NAV_LINKS);
   protected readonly isMobileMenuOpen = signal(false);

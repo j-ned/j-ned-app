@@ -22,7 +22,7 @@ type ContentSection = {
     <header class="mb-10">
       <h1 class="text-3xl font-bold text-foreground mb-2">Contenu du site</h1>
       <p class="text-sm text-muted">
-        Toutes les sections éditables : profil, projets, articles, technologies…
+        Toutes les sections éditables : profil, projets, technologies…
       </p>
     </header>
 
@@ -147,17 +147,6 @@ export class AdminContentIndex {
           label: 'Prestations',
           description: 'Tarifs et services commerciaux',
           route: '/admin/content/services',
-        },
-      ],
-    },
-    {
-      title: 'Publications',
-      cards: [
-        {
-          icon: 'pi pi-pencil',
-          label: 'Articles',
-          description: 'Articles du blog publiés ou en brouillon',
-          route: '/admin/content/articles',
         },
       ],
     },

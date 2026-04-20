@@ -106,21 +106,6 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'blog',
-    title: 'Blog | Julien Nédellec',
-    loadChildren: () => import('./features/blog/blog.routes').then((m) => m.BLOG_ROUTES),
-    data: {
-      seo: {
-        title: 'Blog | Julien Nédellec - Développeur Full-Stack',
-        description:
-          "Articles sur le développement web, Angular, NestJS et les bonnes pratiques. Retours d'expérience et tutoriels.",
-        keywords: 'Blog Développeur, Angular, NestJS, TypeScript, Tutoriels, Bonnes pratiques',
-        url: 'https://www.julien-nedellec.fr/blog',
-        type: 'website',
-      },
-    },
-  },
-  {
     path: 'login',
     title: 'Connexion | Julien Nédellec',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.LOGIN_ROUTES),

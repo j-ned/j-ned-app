@@ -160,23 +160,6 @@ export const ADMIN_ROUTES: Routes = [
           import('./application/admin-home-highlight-form').then((m) => m.AdminHomeHighlightForm),
       },
       {
-        path: 'content/articles',
-        title: 'Articles | Admin',
-        loadComponent: () => import('./application/admin-articles').then((m) => m.AdminArticles),
-      },
-      {
-        path: 'content/articles/new',
-        title: 'Nouvel article | Admin',
-        loadComponent: () =>
-          import('./application/admin-article-form').then((m) => m.AdminArticleForm),
-      },
-      {
-        path: 'content/articles/:id/edit',
-        title: 'Modifier article | Admin',
-        loadComponent: () =>
-          import('./application/admin-article-form').then((m) => m.AdminArticleForm),
-      },
-      {
         path: 'content/social',
         title: 'Liens sociaux | Admin',
         loadComponent: () =>
@@ -212,11 +195,6 @@ export const ADMIN_ROUTES: Routes = [
         title: 'Réservations | Admin',
         loadComponent: () => import('./application/admin-bookings').then((m) => m.AdminBookings),
       },
-      {
-        path: 'inbox/comments',
-        title: 'Commentaires | Admin',
-        loadComponent: () => import('./application/admin-comments').then((m) => m.AdminComments),
-      },
 
       // ─── Agenda ──────────────────────────────────────────────────
       {
@@ -245,7 +223,6 @@ export const ADMIN_ROUTES: Routes = [
       },
       // Backwards-compat : les drill-downs redirigent vers le dashboard unifié
       { path: 'analytics/visits', redirectTo: 'analytics', pathMatch: 'full' },
-      { path: 'analytics/articles', redirectTo: 'analytics', pathMatch: 'full' },
       { path: 'analytics/projects', redirectTo: 'analytics', pathMatch: 'full' },
 
       // ─── Paramètres ──────────────────────────────────────────────
@@ -276,9 +253,6 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'about/diplomas', redirectTo: 'content/diplomas', pathMatch: 'full' },
       { path: 'about/technologies', redirectTo: 'content/technologies', pathMatch: 'full' },
       { path: 'about/social-buttons', redirectTo: 'content/social', pathMatch: 'full' },
-      { path: 'blog', redirectTo: 'content', pathMatch: 'full' },
-      { path: 'blog/articles', redirectTo: 'content/articles', pathMatch: 'full' },
-      { path: 'blog/comments', redirectTo: 'inbox/comments', pathMatch: 'full' },
       { path: 'projects', redirectTo: 'content/projects', pathMatch: 'full' },
       { path: 'messages', redirectTo: 'inbox/messages', pathMatch: 'full' },
       { path: 'calendar', redirectTo: 'schedule/calendar', pathMatch: 'full' },
