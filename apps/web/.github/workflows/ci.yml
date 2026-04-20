@@ -41,10 +41,11 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────
   # Job 2 — Déclenchement déploiement Dokploy (main seulement)
-  # Tourne en parallèle de quality pour réduire le temps total.
+  # Attend que `quality` passe : un workflow vert = code déployé.
   # ─────────────────────────────────────────────────────────────
   deploy:
     name: Trigger Dokploy
+    needs: quality
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
@@ -53,9 +54,8 @@ jobs:
           WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
         run: |
           if [ -z "$WEBHOOK_URL" ]; then
-            echo "DOKPLOY_WEBHOOK_URL secret not set."
-            echo "Dokploy redeploy manually or configure the webhook."
-            exit 0
+            echo "::error::DOKPLOY_WEBHOOK_URL secret not set. Deployment skipped."
+            exit 1
           fi
           HTTP_CODE=$(curl -fsSL -o /dev/null -w "%{http_code}" -X POST "$WEBHOOK_URL")
           echo "Dokploy responded: $HTTP_CODE"
