@@ -15,18 +15,20 @@ import { PiIconPipe } from '@shared/icons';
   host: { class: 'block' },
   template: `
     <main class="flex flex-col w-full">
-      <!-- Hero Section -->
-      <app-home-hero-section [hero]="bundle()?.hero ?? null" />
+      <!-- First fold: hero + expertise vertically centered under header -->
+      <div class="flex flex-col justify-center min-h-[calc(100svh-5rem)] mt-20">
+        <!-- Hero Section -->
+        <app-home-hero-section [hero]="bundle()?.hero ?? null" />
 
-      <!-- Expertise Section -->
-      <section class="w-full py-6 md:py-10" aria-labelledby="expertise-heading">
-        <div class="max-w-7xl mx-auto px-6">
-          <h2 id="expertise-heading" class="sr-only">Expertises</h2>
+        <!-- Expertise Section -->
+        <section class="w-full pt-2 pb-10 md:pt-4 md:pb-12" aria-labelledby="expertise-heading">
+          <div class="max-w-7xl mx-auto px-6">
+            <h2 id="expertise-heading" class="sr-only">Expertises</h2>
           @if (expertises().length > 0) {
-            <ul class="grid grid-cols-1 md:grid-cols-3 gap-8" role="list">
+            <ul class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8" role="list">
               @for (item of expertises(); track item.id) {
                 <li
-                  class="group relative p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] hover:border-primary/25 hover:bg-foreground/[0.04] transition-colors duration-300 min-h-[222px]"
+                  class="group relative p-6 rounded-xl border border-foreground/8 bg-foreground/2 hover:border-primary/30 hover:bg-foreground/4 transition-colors duration-300 min-h-55.5"
                 >
                   <div class="flex items-center gap-3 mb-4">
                     <div
@@ -53,19 +55,20 @@ import { PiIconPipe } from '@shared/icons';
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8" aria-hidden="true">
               @for (_ of [1, 2, 3]; track $index) {
                 <div
-                  class="p-6 rounded-xl border border-foreground/8 bg-foreground/[0.02] animate-pulse min-h-[222px]"
+                  class="p-6 rounded-xl border border-foreground/8 bg-foreground/2 animate-pulse min-h-55.5"
                 >
                   <div class="flex items-center gap-3 mb-4">
                     <div class="w-11 h-11 shrink-0 rounded-xl bg-foreground/5"></div>
                     <div class="h-3.5 bg-foreground/5 rounded w-32"></div>
                   </div>
-                  <div class="h-[114px] rounded bg-foreground/5"></div>
+                  <div class="h-28.5 rounded bg-foreground/5"></div>
                 </div>
               }
             </div>
           }
-        </div>
-      </section>
+          </div>
+        </section>
+      </div>
 
       <!-- Services Section -->
       @defer (on viewport; prefetch on idle) {
@@ -80,13 +83,13 @@ import { PiIconPipe } from '@shared/icons';
 
       <!-- Projects Section -->
       @defer (on viewport; prefetch on idle) {
-        <section class="w-full py-12 md:py-16">
+        <section class="w-full py-8 md:py-12">
           <div class="max-w-7xl mx-auto px-6">
             <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
           </div>
         </section>
       } @placeholder {
-        <div class="block py-12 px-6 h-64"></div>
+        <div class="block py-8 px-6 h-64"></div>
       }
 
       <!-- Contact CTA Section -->

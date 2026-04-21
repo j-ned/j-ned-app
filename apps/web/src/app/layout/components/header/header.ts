@@ -12,9 +12,15 @@ type ThemePreference = 'dark' | 'light';
 @Component({
   selector: 'app-header',
   imports: [RouterLink, PiIconPipe, UiButton, UiDrawer],
+  styles: `
+    .nav-surface {
+      border-bottom: 1px solid var(--theme-nav-border);
+      box-shadow: var(--theme-nav-shadow);
+    }
+  `,
   template: `
     <div
-      class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/5"
+      class="nav-surface fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md"
     >
       <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">

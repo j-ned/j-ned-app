@@ -11,31 +11,31 @@ import type { Project } from '@features/projects/domain';
   host: { class: 'block' },
   template: `
     <section id="projects">
-      <header class="text-center mb-14">
+      <header class="text-center mb-6 md:mb-8">
         <span
-          class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
+          class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-3"
         >
-          <i class="pi pi-desktop text-base" aria-hidden="true"></i>
+          <i class="pi pi-desktop text-sm" aria-hidden="true"></i>
           Portfolio
         </span>
         <h2
-          class="text-3xl md:text-5xl font-extrabold tracking-tight mb-5"
+          class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2 leading-[1.2] pb-1"
           style="background: linear-gradient(135deg, var(--color-foreground) 40%, var(--color-primary) 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"
         >
           {{ projectsSection().title }}
         </h2>
-        <p class="text-muted max-w-xl mx-auto text-base md:text-lg leading-relaxed">
+        <p class="text-muted max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
           {{ projectsSection().description }}
         </p>
       </header>
 
-      <ul class="grid grid-cols-1 md:grid-cols-2 gap-8" role="list">
+      <ul class="grid grid-cols-1 md:grid-cols-2 gap-6" role="list">
         @for (project of featuredProjects(); track project.id) {
           <li><app-project-card [project]="project" /></li>
         }
       </ul>
 
-      <nav class="mt-8 text-center" aria-label="Voir tous les projets">
+      <nav class="mt-6 text-center" aria-label="Voir tous les projets">
         <app-ui-button severity="primary" (click)="goToProjects()">
           Voir tous les projets
           <i class="pi pi-desktop" aria-hidden="true"></i>

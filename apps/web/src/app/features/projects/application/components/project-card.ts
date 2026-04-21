@@ -12,7 +12,7 @@ import { AnalyticsService } from '@shared/analytics';
     <article
       class="group relative bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition-[border-color] duration-300 flex flex-col h-full shadow-sm"
     >
-      <figure class="block aspect-video w-full overflow-hidden relative">
+      <figure class="block aspect-[16/9] md:aspect-[2/1] w-full overflow-hidden relative">
         @if (project().image) {
           <img
             [ngSrc]="project().image"
@@ -34,20 +34,20 @@ import { AnalyticsService } from '@shared/analytics';
         ></div>
       </figure>
 
-      <div class="p-6 flex flex-col grow">
-        <p class="text-accent text-sm font-medium uppercase tracking-wider mb-2">
+      <div class="p-5 flex flex-col grow">
+        <p class="text-accent text-xs font-medium uppercase tracking-wider mb-1.5">
           {{ project().category }}
         </p>
 
-        <h2 class="text-2xl font-bold mb-3 text-foreground">
+        <h2 class="text-xl md:text-2xl font-bold mb-2 text-foreground">
           {{ project().title }}
         </h2>
 
-        <p class="text-muted mb-4 grow text-sm leading-relaxed line-clamp-3">
+        <p class="text-muted mb-3 grow text-sm leading-relaxed line-clamp-2">
           {{ project().description }}
         </p>
 
-        <ul class="flex flex-wrap gap-2 mb-4" role="list">
+        <ul class="flex flex-wrap gap-1.5 mb-3" role="list">
           @for (tag of project().tags; track tag) {
             <li>
               <span
@@ -63,7 +63,7 @@ import { AnalyticsService } from '@shared/analytics';
           project().liveUrl || project().repoUrl || project().repoUrlFront || project().repoUrlBack
         ) {
           <nav
-            class="flex flex-wrap gap-3 mt-auto pt-4 border-t border-foreground/10"
+            class="flex flex-wrap gap-3 mt-auto pt-3 border-t border-foreground/10"
             aria-label="Liens du projet"
           >
             @if (project().liveUrl) {

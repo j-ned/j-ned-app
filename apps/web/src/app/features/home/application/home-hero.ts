@@ -40,7 +40,7 @@ import type { HeroData } from '../domain';
     }
   `,
   template: `
-    <hgroup class="text-center min-h-[220px] md:min-h-[280px] lg:min-h-[320px]">
+    <hgroup class="text-center min-h-55 md:min-h-70 lg:min-h-80">
       @if (hero()) {
         <div class="animate-fade-up flex flex-wrap items-center justify-center gap-3 mb-3 md:mb-4">
           <span class="text-sm md:text-base font-medium text-primary/80 tracking-widest uppercase">
@@ -50,7 +50,7 @@ import type { HeroData } from '../domain';
         </div>
 
         <h1
-          class="animate-fade-up delay-1 name-gradient text-5xl md:text-7xl lg:text-8xl font-extrabold mb-3 md:mb-4 tracking-tight leading-[1.15]"
+          class="animate-fade-up delay-1 name-gradient text-5xl md:text-7xl lg:text-8xl font-extrabold mb-3 md:mb-4 tracking-tight leading-[1.2] pb-1"
         >
           {{ hero()!.name }}
         </h1>

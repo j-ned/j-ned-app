@@ -36,18 +36,22 @@
   --theme-foreground: #fafafa; /* neutral-50 */
   --theme-surface: rgba(255, 255, 255, 0.03); /* cards translucides */
   --theme-surface-elevated: rgba(255, 255, 255, 0.06); /* hover/elevated */
+  --theme-nav-border: rgba(255, 255, 255, 0.06);
+  --theme-nav-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-/* Mode clair */
+/* Mode clair crémeux — sous-tons chauds (stone) + indigo désaturé */
 :root:not(.app-dark) {
-  --theme-primary-text: #3730a3; /* indigo-800 (lisible sur body) */
-  --theme-primary-bg: #4f46e5; /* indigo-600 (vibrant pour boutons) */
-  --theme-accent: #7c3aed; /* violet-600 */
-  --theme-muted: #475569; /* slate-600 (contraste propre) */
-  --theme-background: #f1f5f9; /* slate-100 (moins glacé) */
-  --theme-foreground: #0f172a; /* slate-900 */
-  --theme-surface: #ffffff; /* cards solides blanches */
-  --theme-surface-elevated: #ffffff;
+  --theme-primary-text: #4338ca; /* indigo-700 (moins flash que 800) */
+  --theme-primary-bg: #4f46e5; /* indigo-600 — boutons */
+  --theme-accent: #6d28d9; /* violet-700 (plus feutré) */
+  --theme-muted: #57534e; /* stone-600 (gris chaud, pas slate) */
+  --theme-background: #faf7f2; /* ivoire chaud — évite le bleu-gris */
+  --theme-foreground: #292524; /* stone-800 — chaud, pas slate-900 */
+  --theme-surface: #ffffff; /* cards blanches */
+  --theme-surface-elevated: #fefdfb; /* hover warm-white */
+  --theme-nav-border: rgba(41, 37, 36, 0.08); /* stone-800 à 8% */
+  --theme-nav-shadow: 0 1px 2px rgba(41, 37, 36, 0.04), 0 4px 12px rgba(41, 37, 36, 0.04);
 }
 
 /* View Transitions — instant swap */
