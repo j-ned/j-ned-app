@@ -220,7 +220,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
               Envoyer un message
             </h3>
 
-            <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+            <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
                 <div class="flex flex-col gap-1.5">
