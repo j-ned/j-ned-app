@@ -11,12 +11,6 @@ import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { CONTACT_GATEWAY } from './tokens';
 import { ToastService } from '@shared/ui';
-import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
-import { Textarea } from 'primeng/textarea';
-import { IconField } from 'primeng/iconfield';
-import { InputIcon } from 'primeng/inputicon';
-import { Message } from 'primeng/message';
 import { PiIconPipe } from '@shared/icons';
 
 type ContactFormGroup = {
@@ -26,21 +20,16 @@ type ContactFormGroup = {
   message: FormControl<string>;
 };
 
+const INPUT_BASE =
+  'w-full py-2.5 bg-foreground/5 border rounded-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors';
+const INPUT_PADDED = `${INPUT_BASE} pl-10 pr-4`;
+const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
+
 @Component({
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [
-    ReactiveFormsModule,
-    RouterLink,
-    Button,
-    InputText,
-    Textarea,
-    IconField,
-    InputIcon,
-    Message,
-    PiIconPipe,
-  ],
+  imports: [ReactiveFormsModule, RouterLink, PiIconPipe],
   template: `
     <section id="contact" class="py-20 px-6">
       <div class="max-w-5xl mx-auto">
@@ -238,136 +227,107 @@ type ContactFormGroup = {
                   <label for="name" class="text-sm font-medium text-foreground">
                     Nom complet *
                   </label>
-                  <p-iconfield>
-                    <p-inputicon styleClass="pi pi-user" />
+                  <div class="relative">
+                    <i
+                      class="pi pi-user absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm pointer-events-none"
+                      aria-hidden="true"
+                    ></i>
                     <input
                       id="name"
-                      pInputText
                       type="text"
                       formControlName="name"
                       placeholder="Votre nom"
-                      fluid
+                      autocomplete="name"
+                      [class]="inputClass('name')"
                     />
-                  </p-iconfield>
+                  </div>
                   @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-                    <p-message
-                      severity="error"
-                      text="Le nom est obligatoire"
-                      size="small"
-                      variant="simple"
-                    />
+                    <p class="text-xs text-red-400">Le nom est obligatoire</p>
                   } @else if (
                     form.controls.name.touched && form.controls.name.errors?.['minlength']
                   ) {
-                    <p-message
-                      severity="error"
-                      text="Le nom doit contenir au moins 2 caractères"
-                      size="small"
-                      variant="simple"
-                    />
+                    <p class="text-xs text-red-400">Le nom doit contenir au moins 2 caractères</p>
                   }
                 </div>
 
                 <div class="flex flex-col gap-1.5">
                   <label for="email" class="text-sm font-medium text-foreground">Email *</label>
-                  <p-iconfield>
-                    <p-inputicon styleClass="pi pi-envelope" />
+                  <div class="relative">
+                    <i
+                      class="pi pi-envelope absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm pointer-events-none"
+                      aria-hidden="true"
+                    ></i>
                     <input
                       id="email"
-                      pInputText
                       type="email"
                       formControlName="email"
                       placeholder="votre@email.com"
-                      fluid
+                      autocomplete="email"
+                      [class]="inputClass('email')"
                     />
-                  </p-iconfield>
+                  </div>
                   @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-                    <p-message
-                      severity="error"
-                      text="L'email est obligatoire"
-                      size="small"
-                      variant="simple"
-                    />
+                    <p class="text-xs text-red-400">L'email est obligatoire</p>
                   } @else if (
                     form.controls.email.touched && form.controls.email.errors?.['pattern']
                   ) {
-                    <p-message
-                      severity="error"
-                      text="Le format de l'email est invalide"
-                      size="small"
-                      variant="simple"
-                    />
+                    <p class="text-xs text-red-400">Le format de l'email est invalide</p>
                   }
                 </div>
               </fieldset>
               <div class="flex flex-col gap-1.5">
                 <label for="subject" class="text-sm font-medium text-foreground">Sujet *</label>
-                <p-iconfield>
-                  <p-inputicon styleClass="pi pi-pencil" />
+                <div class="relative">
+                  <i
+                    class="pi pi-pencil absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm pointer-events-none"
+                    aria-hidden="true"
+                  ></i>
                   <input
                     id="subject"
-                    pInputText
                     type="text"
                     formControlName="subject"
                     placeholder="Objet de votre message"
-                    fluid
+                    [class]="inputClass('subject')"
                   />
-                </p-iconfield>
+                </div>
                 @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
-                  <p-message
-                    severity="error"
-                    text="Le sujet est obligatoire"
-                    size="small"
-                    variant="simple"
-                  />
+                  <p class="text-xs text-red-400">Le sujet est obligatoire</p>
                 } @else if (
                   form.controls.subject.touched && form.controls.subject.errors?.['minlength']
                 ) {
-                  <p-message
-                    severity="error"
-                    text="Le sujet doit contenir au moins 3 caractères"
-                    size="small"
-                    variant="simple"
-                  />
+                  <p class="text-xs text-red-400">Le sujet doit contenir au moins 3 caractères</p>
                 }
               </div>
               <div class="flex flex-col gap-1.5">
                 <label for="message" class="text-sm font-medium text-foreground">Message *</label>
                 <textarea
                   id="message"
-                  pTextarea
                   formControlName="message"
                   rows="6"
                   placeholder="Décrivez votre projet ou votre question..."
+                  [class]="inputClass('message', 'textarea')"
                 ></textarea>
                 @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
-                  <p-message
-                    severity="error"
-                    text="Le message est obligatoire"
-                    size="small"
-                    variant="simple"
-                  />
+                  <p class="text-xs text-red-400">Le message est obligatoire</p>
                 } @else if (
                   form.controls.message.touched && form.controls.message.errors?.['minlength']
                 ) {
-                  <p-message
-                    severity="error"
-                    text="Le message doit contenir au moins 10 caractères"
-                    size="small"
-                    variant="simple"
-                  />
+                  <p class="text-xs text-red-400">Le message doit contenir au moins 10 caractères</p>
                 }
               </div>
-              <p-button
+              <button
                 type="submit"
-                [label]="isSubmitting() ? 'Envoi en cours...' : 'Envoyer le message'"
-                [icon]="isSubmitting() ? 'pi pi-spinner pi-spin' : 'pi pi-send'"
-                iconPos="right"
-                [disabled]="form.invalid"
-                [loading]="isSubmitting()"
-                size="large"
-                styleClass="w-full"
-              />
+                [disabled]="form.invalid || isSubmitting()"
+                class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary-bg text-white font-semibold shadow-md hover:bg-primary-bg/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                @if (isSubmitting()) {
+                  <i class="pi pi-spinner pi-spin" aria-hidden="true"></i>
+                  <span>Envoi en cours...</span>
+                } @else {
+                  <span>Envoyer le message</span>
+                  <i class="pi pi-send" aria-hidden="true"></i>
+                }
+              </button>
             </form>
           </div>
         </div>
@@ -419,6 +379,16 @@ export class ContactForm {
       validators: [Validators.required, Validators.minLength(10)],
     }),
   });
+
+  protected inputClass(controlName: keyof ContactFormGroup, variant: 'input' | 'textarea' = 'input'): string {
+    const control = this.form.controls[controlName];
+    const hasError = control.touched && control.invalid;
+    const borderClass = hasError
+      ? 'border-red-400/60 focus:ring-red-400/40'
+      : 'border-foreground/10 focus:border-primary/50';
+    const base = variant === 'textarea' ? TEXTAREA_PADDED : INPUT_PADDED;
+    return `${base} ${borderClass}`;
+  }
 
   onSubmit(): void {
     if (this.form.invalid) {
