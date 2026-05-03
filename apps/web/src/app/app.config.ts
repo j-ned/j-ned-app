@@ -134,11 +134,19 @@ export const appConfig: ApplicationConfig = {
         breakpoints: [640, 768, 1024, 1280, 1920],
       },
     },
-    { provide: API_BASE_URL, useValue: '/api' },
+    {
+      provide: API_BASE_URL,
+      useFactory: (): string =>
+        isPlatformBrowser(inject(PLATFORM_ID)) ? '/api' : 'https://j-ned.dev/api',
+    },
     {
       provide: AUTH_BASE_URL,
-      useFactory: (): string =>
-        isDevMode() ? '/api' : 'https://api.j-ned.dev/api',
+      useFactory: (): string => {
+        if (!isPlatformBrowser(inject(PLATFORM_ID))) {
+          return 'https://api.j-ned.dev/api';
+        }
+        return isDevMode() ? '/api' : 'https://api.j-ned.dev/api';
+      },
     },
     { provide: PROJECTS_GATEWAY, useClass: HttpProjectsGateway },
     { provide: PROFILE_GATEWAY, useClass: HttpProfileGateway },
