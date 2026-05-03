@@ -28,7 +28,7 @@ import { routes } from './app.routes';
 import { SeoService } from '@shared/seo/seo';
 import { ANALYTICS_GATEWAY, HttpAnalyticsGateway } from '@shared/analytics';
 import { CV_GATEWAY, HttpCvGateway } from '@shared/cv';
-import { API_BASE_URL, AUTH_BASE_URL } from '@shared/api';
+import { API_BASE_URL } from '@shared/api';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import { CONTACT_GATEWAY } from '@features/contact/application';
@@ -136,11 +136,6 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: API_BASE_URL,
-      useFactory: (): string =>
-        isPlatformBrowser(inject(PLATFORM_ID)) ? '/api' : 'https://j-ned.dev/api',
-    },
-    {
-      provide: AUTH_BASE_URL,
       useFactory: (): string => {
         if (!isPlatformBrowser(inject(PLATFORM_ID))) {
           return 'https://api.j-ned.dev/api';

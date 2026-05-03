@@ -4,7 +4,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { firstValueFrom } from 'rxjs';
 import { describe, it, expect, afterEach } from 'vitest';
 
-import { AUTH_BASE_URL } from '@shared/api';
+import { API_BASE_URL } from '@shared/api';
 import { HttpAuthGateway } from './http-auth.gateway';
 import type {
   LoginResponse,
@@ -20,7 +20,7 @@ function configure(): { gateway: HttpAuthGateway; httpController: HttpTestingCon
       HttpAuthGateway,
       provideHttpClient(),
       provideHttpClientTesting(),
-      { provide: AUTH_BASE_URL, useValue: BASE },
+      { provide: API_BASE_URL, useValue: BASE },
     ],
   });
   return {
