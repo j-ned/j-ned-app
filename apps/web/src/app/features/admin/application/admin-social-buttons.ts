@@ -5,17 +5,19 @@ import { PROFILE_GATEWAY } from '@features/profile/application';
 import type { SocialButton } from '@features/profile/domain';
 import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
-import { Button } from 'primeng/button';
 
 @Component({
   selector: 'app-admin-social-buttons',
-  imports: [RouterLink, TableModule, Button],
+  imports: [RouterLink, TableModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div class="flex items-center justify-between mb-8">
       <h1 class="text-2xl font-bold text-foreground">Boutons sociaux</h1>
-      <p-button label="Nouveau bouton" icon="pi pi-plus" routerLink="/admin/content/social/new" />
+      <a routerLink="/admin/content/social/new" class="btn-primary">
+        <i class="pi pi-plus mr-2" aria-hidden="true"></i>
+        Nouveau bouton
+      </a>
     </div>
 
     <p-table
@@ -41,22 +43,21 @@ import { Button } from 'primeng/button';
           <td class="text-muted max-w-xs truncate">{{ btn.href }}</td>
           <td class="text-right">
             <div class="flex items-center justify-end gap-2">
-              <p-button
-                icon="pi pi-pencil"
-                severity="secondary"
-                size="small"
-                [text]="true"
+              <a
                 [routerLink]="['/admin/content/social', btn.id, 'edit']"
-                ariaLabel="Modifier"
-              />
-              <p-button
-                icon="pi pi-trash"
-                severity="danger"
-                size="small"
-                [text]="true"
-                (onClick)="deleteButton(btn)"
-                ariaLabel="Supprimer"
-              />
+                aria-label="Modifier"
+                class="btn-outline"
+              >
+                <i class="pi pi-pencil" aria-hidden="true"></i>
+              </a>
+              <button
+                type="button"
+                (click)="deleteButton(btn)"
+                aria-label="Supprimer"
+                class="btn-danger"
+              >
+                <i class="pi pi-trash" aria-hidden="true"></i>
+              </button>
             </div>
           </td>
         </tr>

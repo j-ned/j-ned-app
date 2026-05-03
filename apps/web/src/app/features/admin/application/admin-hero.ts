@@ -4,75 +4,79 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HOME_GATEWAY } from '@features/home/application';
 import { ToastService } from '@shared/ui';
-import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
-import { Message } from 'primeng/message';
 
 @Component({
   selector: 'app-admin-hero',
-  imports: [ReactiveFormsModule, Button, InputText, Message],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <h1 class="text-2xl font-bold text-foreground mb-8">Hero</h1>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="max-w-2xl space-y-6">
-      <fieldset class="space-y-6 border-0 p-0 m-0">
+      <fieldset class="space-y-5 border-0 p-0 m-0">
         <legend class="sr-only">Informations du hero</legend>
 
         <div>
-          <label for="name" class="text-sm font-medium text-foreground">Nom</label>
-          <input id="name" type="text" formControlName="name" pInputText fluid />
+          <label for="name" class="form-label">
+            Nom <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="name"
+            type="text"
+            formControlName="name"
+            autocomplete="name"
+            aria-required="true"
+            class="form-input"
+            [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+          />
           @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-            <p-message
-              severity="error"
-              text="Ce champ est obligatoire"
-              size="small"
-              variant="simple"
-            />
+            <small role="alert" class="form-error">Ce champ est obligatoire.</small>
           }
         </div>
 
         <div>
-          <label for="tagline" class="text-sm font-medium text-foreground">Tagline</label>
-          <input id="tagline" type="text" formControlName="tagline" pInputText fluid />
+          <label for="tagline" class="form-label">
+            Tagline <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="tagline"
+            type="text"
+            formControlName="tagline"
+            aria-required="true"
+            class="form-input"
+            [attr.aria-invalid]="form.controls.tagline.touched && form.controls.tagline.invalid"
+          />
           @if (form.controls.tagline.touched && form.controls.tagline.errors?.['required']) {
-            <p-message
-              severity="error"
-              text="Ce champ est obligatoire"
-              size="small"
-              variant="simple"
-            />
+            <small role="alert" class="form-error">Ce champ est obligatoire.</small>
           }
         </div>
 
         <div>
-          <label for="availability" class="text-sm font-medium text-foreground"
-            >Disponibilité</label
-          >
-          <input id="availability" type="text" formControlName="availability" pInputText fluid />
+          <label for="availability" class="form-label">
+            Disponibilité <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="availability"
+            type="text"
+            formControlName="availability"
+            aria-required="true"
+            class="form-input"
+            [attr.aria-invalid]="
+              form.controls.availability.touched && form.controls.availability.invalid
+            "
+          />
           @if (
             form.controls.availability.touched && form.controls.availability.errors?.['required']
           ) {
-            <p-message
-              severity="error"
-              text="Ce champ est obligatoire"
-              size="small"
-              variant="simple"
-            />
+            <small role="alert" class="form-error">Ce champ est obligatoire.</small>
           }
         </div>
       </fieldset>
 
-      <div class="flex gap-4 pt-4">
-        <p-button type="submit" label="Enregistrer" [disabled]="form.invalid" />
-        <p-button
-          type="button"
-          label="Annuler"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="cancel()"
-        />
+      <div class="flex items-center gap-3 pt-2">
+        <button type="submit" [disabled]="form.invalid" class="btn-primary">Enregistrer</button>
+        <button type="button" (click)="cancel()" class="btn-outline">Annuler</button>
       </div>
     </form>
   `,
@@ -112,7 +116,7 @@ export class AdminHero {
     if (this.form.invalid) return;
     const values = this.form.getRawValue();
     this.homeGateway
-      .updateHeroData({ id: this.heroId, ...values })
+      .updateHeroData(values)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

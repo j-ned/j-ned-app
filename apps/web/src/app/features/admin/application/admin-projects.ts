@@ -14,13 +14,12 @@ import type { Project } from '@features/projects/domain';
 import { HOME_GATEWAY } from '@features/home/application';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
 import { ToastService } from '@shared/ui';
-import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
 
 @Component({
   selector: 'app-admin-projects',
-  imports: [AdminProjectInlineForm, FormsModule, Button, Select, Tag],
+  imports: [AdminProjectInlineForm, FormsModule, Select, Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
@@ -34,13 +33,17 @@ import { Tag } from 'primeng/tag';
             (ngModelChange)="selectedCategory.set($event)"
             placeholder="Catégorie"
           />
-          <p-button
-            [label]="showNewForm() ? 'Annuler' : 'Nouveau projet'"
-            [icon]="showNewForm() ? 'pi pi-times' : 'pi pi-plus'"
-            [severity]="showNewForm() ? 'secondary' : 'primary'"
-            [outlined]="showNewForm()"
-            (onClick)="toggleNewForm()"
-          />
+          <button
+            type="button"
+            (click)="toggleNewForm()"
+            [class]="showNewForm() ? 'btn-outline' : 'btn-primary'"
+          >
+            <i
+              [class]="showNewForm() ? 'pi pi-times mr-2' : 'pi pi-plus mr-2'"
+              aria-hidden="true"
+            ></i>
+            {{ showNewForm() ? 'Annuler' : 'Nouveau projet' }}
+          </button>
         </div>
       </div>
 
@@ -112,22 +115,25 @@ import { Tag } from 'primeng/tag';
 
               <!-- Actions -->
               <div class="flex items-center gap-2 shrink-0">
-                <p-button
-                  [icon]="editingId() === project.id ? 'pi pi-times' : 'pi pi-pencil'"
-                  severity="secondary"
-                  size="small"
-                  [text]="true"
-                  (onClick)="toggleEdit(project.id)"
-                  [ariaLabel]="editingId() === project.id ? 'Fermer' : 'Modifier'"
-                />
-                <p-button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  size="small"
-                  [text]="true"
-                  (onClick)="deleteProject(project)"
-                  ariaLabel="Supprimer"
-                />
+                <button
+                  type="button"
+                  (click)="toggleEdit(project.id)"
+                  [attr.aria-label]="editingId() === project.id ? 'Fermer' : 'Modifier'"
+                  class="btn-outline"
+                >
+                  <i
+                    [class]="editingId() === project.id ? 'pi pi-times' : 'pi pi-pencil'"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+                <button
+                  type="button"
+                  (click)="deleteProject(project)"
+                  aria-label="Supprimer"
+                  class="btn-danger"
+                >
+                  <i class="pi pi-trash" aria-hidden="true"></i>
+                </button>
               </div>
             </div>
 

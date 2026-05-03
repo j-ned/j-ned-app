@@ -9,11 +9,11 @@ import {
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import type { Project } from '@features/projects/domain';
-import { FileUpload } from 'primeng/fileupload';
+import { FileDropzone } from '@shared/ui';
 
 @Component({
   selector: 'app-admin-project-inline-form',
-  imports: [ReactiveFormsModule, FileUpload],
+  imports: [ReactiveFormsModule, FileDropzone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -92,23 +92,13 @@ import { FileUpload } from 'primeng/fileupload';
       </div>
 
       <div>
-        <span class="block text-sm font-medium text-foreground mb-1.5">Image</span>
-        @if (imagePreview()) {
-          <img
-            [src]="imagePreview()"
-            alt="Aperçu image"
-            class="w-full max-h-56 object-contain rounded-xl mb-3 border border-foreground/10"
-          />
-        }
-        <p-fileupload
-          mode="advanced"
-          [auto]="false"
-          [showUploadButton]="false"
-          [showCancelButton]="false"
-          [multiple]="false"
+        <span class="form-label">Image</span>
+        <app-file-dropzone
           accept="image/*"
-          chooseLabel="Choisir une image"
-          (onSelect)="onFileSelected($event.files[0])"
+          label="Image du projet"
+          helperText="JPG, PNG, WebP — affichée dans la grille publique"
+          [previewUrl]="imagePreview()"
+          (fileSelected)="onFileSelected($event)"
         />
       </div>
 

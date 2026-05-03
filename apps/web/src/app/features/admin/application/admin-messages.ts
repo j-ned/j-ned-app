@@ -12,12 +12,11 @@ import { CONTACT_GATEWAY } from '@features/contact/application';
 import type { ContactMessage } from '@features/contact/domain';
 import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
-import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 
 @Component({
   selector: 'app-admin-messages',
-  imports: [DatePipe, TableModule, Button, Tag],
+  imports: [DatePipe, TableModule, Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -45,15 +44,17 @@ import { Tag } from 'primeng/tag';
       <ng-template #body let-msg let-expanded="expanded">
         <tr>
           <td>
-            <p-button
-              [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-              severity="secondary"
-              size="small"
-              [text]="true"
-              [rounded]="true"
-              (onClick)="toggleExpand(msg.id, $event)"
-              ariaLabel="Voir le message"
-            />
+            <button
+              type="button"
+              (click)="toggleExpand(msg.id, $event)"
+              aria-label="Voir le message"
+              class="btn-outline"
+            >
+              <i
+                [class]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                aria-hidden="true"
+              ></i>
+            </button>
           </td>
           <td>
             @if (msg.read) {
@@ -73,22 +74,23 @@ import { Tag } from 'primeng/tag';
           <td class="text-right">
             <div class="flex items-center justify-end gap-2">
               @if (!msg.read) {
-                <p-button
-                  icon="pi pi-check"
-                  label="Marquer lu"
-                  size="small"
-                  [outlined]="true"
-                  (onClick)="markAsRead(msg, $event)"
-                />
+                <button
+                  type="button"
+                  (click)="markAsRead(msg, $event)"
+                  class="btn-outline"
+                >
+                  <i class="pi pi-check mr-2" aria-hidden="true"></i>
+                  Marquer lu
+                </button>
               }
-              <p-button
-                icon="pi pi-trash"
-                severity="danger"
-                size="small"
-                [text]="true"
-                (onClick)="deleteMessage(msg, $event)"
-                ariaLabel="Supprimer"
-              />
+              <button
+                type="button"
+                (click)="deleteMessage(msg, $event)"
+                aria-label="Supprimer"
+                class="btn-danger"
+              >
+                <i class="pi pi-trash" aria-hidden="true"></i>
+              </button>
             </div>
           </td>
         </tr>

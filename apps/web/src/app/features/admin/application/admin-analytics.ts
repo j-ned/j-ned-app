@@ -11,7 +11,6 @@ import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
 import { UIChart } from 'primeng/chart';
 import { Tag } from 'primeng/tag';
-import { Button } from 'primeng/button';
 import { firstValueFrom } from 'rxjs';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
 
@@ -24,7 +23,7 @@ type DateRangeOption = {
 
 @Component({
   selector: 'app-admin-analytics',
-  imports: [FormsModule, Select, UIChart, Tag, Button],
+  imports: [FormsModule, Select, UIChart, Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -57,13 +56,10 @@ type DateRangeOption = {
           [(ngModel)]="dateRange"
           styleClass="min-w-44"
         />
-        <p-button
-          icon="pi pi-download"
-          label="Export CSV"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="exportCsv()"
-        />
+        <button type="button" (click)="exportCsv()" class="btn-outline">
+          <i class="pi pi-download mr-2" aria-hidden="true"></i>
+          Export CSV
+        </button>
       </div>
     </header>
 

@@ -6,23 +6,21 @@ import { HOME_GATEWAY } from '@features/home/application';
 import type { ServicePricing } from '@features/home/domain';
 import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
-import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 
 @Component({
   selector: 'app-admin-services',
-  imports: [RouterLink, FormsModule, TableModule, Button, Tag, ToggleSwitch],
+  imports: [RouterLink, FormsModule, TableModule, Tag, ToggleSwitch],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div class="flex items-center justify-between mb-8">
       <h1 class="text-2xl font-bold text-foreground">Prestations</h1>
-      <p-button
-        label="Nouvelle prestation"
-        icon="pi pi-plus"
-        routerLink="/admin/content/services/new"
-      />
+      <a routerLink="/admin/content/services/new" class="btn-primary">
+        <i class="pi pi-plus mr-2" aria-hidden="true"></i>
+        Nouvelle prestation
+      </a>
     </div>
 
     <p-table
@@ -64,22 +62,21 @@ import { ToggleSwitch } from 'primeng/toggleswitch';
           </td>
           <td class="text-right">
             <div class="flex items-center justify-end gap-2">
-              <p-button
-                icon="pi pi-pencil"
-                severity="secondary"
-                size="small"
-                [text]="true"
+              <a
                 [routerLink]="['/admin/content/services', service.id, 'edit']"
-                ariaLabel="Modifier"
-              />
-              <p-button
-                icon="pi pi-trash"
-                severity="danger"
-                size="small"
-                [text]="true"
-                (onClick)="deleteService(service)"
-                ariaLabel="Supprimer"
-              />
+                aria-label="Modifier"
+                class="btn-outline"
+              >
+                <i class="pi pi-pencil" aria-hidden="true"></i>
+              </a>
+              <button
+                type="button"
+                (click)="deleteService(service)"
+                aria-label="Supprimer"
+                class="btn-danger"
+              >
+                <i class="pi pi-trash" aria-hidden="true"></i>
+              </button>
             </div>
           </td>
         </tr>

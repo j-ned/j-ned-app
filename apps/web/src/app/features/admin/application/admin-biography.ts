@@ -4,14 +4,10 @@ import { ReactiveFormsModule, FormBuilder, FormArray, Validators } from '@angula
 import { Router } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import { ToastService } from '@shared/ui';
-import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
-import { Textarea } from 'primeng/textarea';
-import { Message } from 'primeng/message';
 
 @Component({
   selector: 'app-admin-biography',
-  imports: [ReactiveFormsModule, Button, InputText, Textarea, Message],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -22,21 +18,25 @@ import { Message } from 'primeng/message';
         <legend class="sr-only">Contenu de la biographie</legend>
 
         <div>
-          <label for="title" class="text-sm font-medium text-foreground">Titre</label>
-          <input id="title" type="text" formControlName="title" pInputText fluid />
+          <label for="title" class="form-label">
+            Titre <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="title"
+            type="text"
+            formControlName="title"
+            aria-required="true"
+            class="form-input"
+            [attr.aria-invalid]="form.controls.title.touched && form.controls.title.invalid"
+          />
           @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
-            <p-message
-              severity="error"
-              text="Ce champ est obligatoire"
-              size="small"
-              variant="simple"
-            />
+            <small role="alert" class="form-error">Ce champ est obligatoire.</small>
           }
         </div>
 
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <span class="block text-sm font-medium text-foreground">Paragraphes</span>
+            <span class="form-label mb-0">Paragraphes</span>
             <button
               type="button"
               (click)="addParagraph()"
@@ -51,8 +51,7 @@ import { Message } from 'primeng/message';
                 <textarea
                   [formControlName]="$index"
                   rows="3"
-                  class="flex-1 px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
-                  pTextarea
+                  class="form-textarea flex-1"
                 ></textarea>
                 <button
                   type="button"
@@ -68,14 +67,8 @@ import { Message } from 'primeng/message';
       </fieldset>
 
       <div class="flex gap-4 pt-4">
-        <p-button type="submit" label="Enregistrer" [disabled]="form.invalid" />
-        <p-button
-          type="button"
-          label="Annuler"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="cancel()"
-        />
+        <button type="submit" [disabled]="form.invalid" class="btn-primary">Enregistrer</button>
+        <button type="button" (click)="cancel()" class="btn-outline">Annuler</button>
       </div>
     </form>
   `,
@@ -124,7 +117,6 @@ export class AdminBiography {
     const { title, paragraphs } = this.form.getRawValue();
     this.profileGateway
       .updateBiography({
-        id: this.biographyId,
         title,
         paragraphs: paragraphs.filter((p): p is string => p !== null),
       })

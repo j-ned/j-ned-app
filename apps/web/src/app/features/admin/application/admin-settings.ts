@@ -1,10 +1,9 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Button } from 'primeng/button';
 
 @Component({
   selector: 'app-admin-settings',
-  imports: [RouterLink, Button],
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -36,13 +35,10 @@ import { Button } from 'primeng/button';
               </p>
             </div>
           </div>
-          <p-button
-            label="Configurer"
-            icon="pi pi-cog"
-            severity="secondary"
-            [outlined]="true"
-            routerLink="/admin/settings/security"
-          />
+          <a routerLink="/admin/settings/security" class="btn-outline">
+            <i class="pi pi-cog mr-2" aria-hidden="true"></i>
+            Configurer
+          </a>
         </div>
       </div>
     </section>

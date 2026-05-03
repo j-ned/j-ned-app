@@ -5,21 +5,19 @@ import { HOME_GATEWAY } from '@features/home/application';
 import type { HomeHighlight } from '@features/home/domain';
 import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
-import { Button } from 'primeng/button';
 
 @Component({
   selector: 'app-admin-home-highlights',
-  imports: [RouterLink, TableModule, Button],
+  imports: [RouterLink, TableModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div class="flex items-center justify-between mb-8">
       <h1 class="text-2xl font-bold text-foreground">Points forts (Accueil)</h1>
-      <p-button
-        label="Nouveau point fort"
-        icon="pi pi-plus"
-        routerLink="/admin/content/home-highlights/new"
-      />
+      <a routerLink="/admin/content/home-highlights/new" class="btn-primary">
+        <i class="pi pi-plus mr-2" aria-hidden="true"></i>
+        Nouveau point fort
+      </a>
     </div>
 
     <p-table
@@ -45,22 +43,21 @@ import { Button } from 'primeng/button';
           <td class="text-muted">{{ highlight.icon }}</td>
           <td class="text-right">
             <div class="flex items-center justify-end gap-2">
-              <p-button
-                icon="pi pi-pencil"
-                severity="secondary"
-                size="small"
-                [text]="true"
+              <a
                 [routerLink]="['/admin/content/home-highlights', highlight.id, 'edit']"
-                ariaLabel="Modifier"
-              />
-              <p-button
-                icon="pi pi-trash"
-                severity="danger"
-                size="small"
-                [text]="true"
-                (onClick)="deleteHighlight(highlight)"
-                ariaLabel="Supprimer"
-              />
+                aria-label="Modifier"
+                class="btn-outline"
+              >
+                <i class="pi pi-pencil" aria-hidden="true"></i>
+              </a>
+              <button
+                type="button"
+                (click)="deleteHighlight(highlight)"
+                aria-label="Supprimer"
+                class="btn-danger"
+              >
+                <i class="pi pi-trash" aria-hidden="true"></i>
+              </button>
             </div>
           </td>
         </tr>

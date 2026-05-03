@@ -1,11 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed, input, output, signal } from '@angular/core';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
-import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
-import { Textarea } from 'primeng/textarea';
-import { IconField } from 'primeng/iconfield';
-import { InputIcon } from 'primeng/inputicon';
-import { Message } from 'primeng/message';
 
 type BookingFormGroup = {
   name: FormControl<string>;
@@ -27,7 +21,7 @@ export type BookingFormPayload = {
   selector: 'app-booking-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ReactiveFormsModule, Button, InputText, Textarea, IconField, InputIcon, Message],
+  imports: [ReactiveFormsModule],
   template: `
     <div
       class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 md:p-8 shadow-lg h-full"
@@ -51,173 +45,133 @@ export type BookingFormPayload = {
         <fieldset class="space-y-6 border-0 p-0 m-0">
           <legend class="sr-only">Vos coordonnées</legend>
 
-          <div class="flex flex-col gap-1.5">
-            <label for="booking-name" class="text-sm font-medium text-foreground">
-              Nom complet *
+          <div>
+            <label for="booking-name" class="form-label">
+              Nom complet <span class="text-red-500" aria-hidden="true">*</span>
             </label>
-            <p-iconfield>
-              <p-inputicon styleClass="pi pi-user" />
-              <input
-                id="booking-name"
-                pInputText
-                type="text"
-                formControlName="name"
-                placeholder="Votre nom"
-                fluid
-              />
-            </p-iconfield>
+            <input
+              id="booking-name"
+              type="text"
+              formControlName="name"
+              placeholder="Votre nom"
+              autocomplete="name"
+              aria-required="true"
+              class="form-input"
+              [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+            />
             @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-              <p-message
-                severity="error"
-                text="Le nom est obligatoire"
-                size="small"
-                variant="simple"
-              />
+              <small role="alert" class="form-error">Le nom est obligatoire.</small>
             } @else if (form.controls.name.touched && form.controls.name.errors?.['minlength']) {
-              <p-message
-                severity="error"
-                text="Le nom doit contenir au moins 2 caractères"
-                size="small"
-                variant="simple"
-              />
+              <small role="alert" class="form-error">
+                Le nom doit contenir au moins 2 caractères.
+              </small>
             }
           </div>
 
-          <div class="flex flex-col gap-1.5">
-            <label for="booking-email" class="text-sm font-medium text-foreground">Email *</label>
-            <p-iconfield>
-              <p-inputicon styleClass="pi pi-envelope" />
-              <input
-                id="booking-email"
-                pInputText
-                type="email"
-                formControlName="email"
-                placeholder="votre@email.com"
-                fluid
-              />
-            </p-iconfield>
-            @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-              <p-message
-                severity="error"
-                text="L'email est obligatoire"
-                size="small"
-                variant="simple"
-              />
-            } @else if (form.controls.email.touched && form.controls.email.errors?.['pattern']) {
-              <p-message
-                severity="error"
-                text="Le format de l'email est invalide"
-                size="small"
-                variant="simple"
-              />
-            }
-          </div>
-
-          <div class="flex flex-col gap-1.5">
-            <label for="booking-phone" class="text-sm font-medium text-foreground">
-              Téléphone *
+          <div>
+            <label for="booking-email" class="form-label">
+              Email <span class="text-red-500" aria-hidden="true">*</span>
             </label>
-            <p-iconfield>
-              <p-inputicon styleClass="pi pi-phone" />
-              <input
-                id="booking-phone"
-                pInputText
-                type="tel"
-                formControlName="phone"
-                placeholder="06 12 34 56 78"
-                fluid
-              />
-            </p-iconfield>
-            @if (form.controls.phone.touched && form.controls.phone.errors?.['required']) {
-              <p-message
-                severity="error"
-                text="Le téléphone est obligatoire"
-                size="small"
-                variant="simple"
-              />
-            } @else if (form.controls.phone.touched && form.controls.phone.errors?.['pattern']) {
-              <p-message
-                severity="error"
-                text="Le numéro doit contenir 10 chiffres"
-                size="small"
-                variant="simple"
-              />
+            <input
+              id="booking-email"
+              type="email"
+              formControlName="email"
+              placeholder="votre@email.com"
+              autocomplete="email"
+              aria-required="true"
+              class="form-input"
+              [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+            />
+            @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
+              <small role="alert" class="form-error">L'email est obligatoire.</small>
+            } @else if (form.controls.email.touched && form.controls.email.errors?.['pattern']) {
+              <small role="alert" class="form-error">Le format de l'email est invalide.</small>
             }
           </div>
 
-          <div class="flex flex-col gap-1.5">
-            <label for="booking-subject" class="text-sm font-medium text-foreground">Sujet *</label>
-            <p-iconfield>
-              <p-inputicon styleClass="pi pi-pencil" />
-              <input
-                id="booking-subject"
-                pInputText
-                type="text"
-                formControlName="subject"
-                placeholder="Objet de la consultation"
-                fluid
-              />
-            </p-iconfield>
+          <div>
+            <label for="booking-phone" class="form-label">
+              Téléphone <span class="text-red-500" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="booking-phone"
+              type="tel"
+              formControlName="phone"
+              placeholder="06 12 34 56 78"
+              autocomplete="tel"
+              aria-required="true"
+              class="form-input"
+              [attr.aria-invalid]="form.controls.phone.touched && form.controls.phone.invalid"
+            />
+            @if (form.controls.phone.touched && form.controls.phone.errors?.['required']) {
+              <small role="alert" class="form-error">Le téléphone est obligatoire.</small>
+            } @else if (form.controls.phone.touched && form.controls.phone.errors?.['pattern']) {
+              <small role="alert" class="form-error">Le numéro doit contenir 10 chiffres.</small>
+            }
+          </div>
+
+          <div>
+            <label for="booking-subject" class="form-label">
+              Sujet <span class="text-red-500" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="booking-subject"
+              type="text"
+              formControlName="subject"
+              placeholder="Objet de la consultation"
+              aria-required="true"
+              class="form-input"
+              [attr.aria-invalid]="form.controls.subject.touched && form.controls.subject.invalid"
+            />
             @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
-              <p-message
-                severity="error"
-                text="Le sujet est obligatoire"
-                size="small"
-                variant="simple"
-              />
+              <small role="alert" class="form-error">Le sujet est obligatoire.</small>
             } @else if (
               form.controls.subject.touched && form.controls.subject.errors?.['minlength']
             ) {
-              <p-message
-                severity="error"
-                text="Le sujet doit contenir au moins 3 caractères"
-                size="small"
-                variant="simple"
-              />
+              <small role="alert" class="form-error">
+                Le sujet doit contenir au moins 3 caractères.
+              </small>
             }
           </div>
 
-          <div class="flex flex-col gap-1.5">
-            <label for="booking-message" class="text-sm font-medium text-foreground">
-              Message *
+          <div>
+            <label for="booking-message" class="form-label">
+              Message <span class="text-red-500" aria-hidden="true">*</span>
             </label>
             <textarea
               id="booking-message"
-              pTextarea
               formControlName="message"
               rows="4"
               placeholder="Décrivez votre projet ou votre question..."
+              aria-required="true"
+              class="form-textarea"
+              [attr.aria-invalid]="form.controls.message.touched && form.controls.message.invalid"
             ></textarea>
             @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
-              <p-message
-                severity="error"
-                text="Le message est obligatoire"
-                size="small"
-                variant="simple"
-              />
+              <small role="alert" class="form-error">Le message est obligatoire.</small>
             } @else if (
               form.controls.message.touched && form.controls.message.errors?.['minlength']
             ) {
-              <p-message
-                severity="error"
-                text="Le message doit contenir au moins 10 caractères"
-                size="small"
-                variant="simple"
-              />
+              <small role="alert" class="form-error">
+                Le message doit contenir au moins 10 caractères.
+              </small>
             }
           </div>
         </fieldset>
 
-        <p-button
+        <button
           type="submit"
-          [label]="isSubmitting() ? 'Réservation en cours...' : 'Confirmer la réservation'"
-          [icon]="isSubmitting() ? 'pi pi-spinner pi-spin' : 'pi pi-check'"
-          iconPos="right"
-          [disabled]="form.invalid"
-          [loading]="isSubmitting()"
-          size="large"
-          styleClass="w-full mt-2"
-        />
+          [disabled]="form.invalid || isSubmitting()"
+          class="btn-primary w-full mt-2"
+        >
+          @if (isSubmitting()) {
+            <i class="pi pi-spinner pi-spin mr-2" aria-hidden="true"></i>
+            Réservation en cours...
+          } @else {
+            Confirmer la réservation
+            <i class="pi pi-check ml-2" aria-hidden="true"></i>
+          }
+        </button>
       </form>
     </div>
   `,

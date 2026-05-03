@@ -4,12 +4,11 @@ import { BOOKING_GATEWAY } from '@features/booking/application';
 import type { Booking } from '@features/booking/domain';
 import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
-import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 
 @Component({
   selector: 'app-admin-bookings',
-  imports: [TableModule, Button, Tag],
+  imports: [TableModule, Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -52,14 +51,14 @@ import { Tag } from 'primeng/tag';
             <div class="text-xs text-muted max-w-md truncate">{{ booking.message }}</div>
           </td>
           <td class="text-right">
-            <p-button
-              icon="pi pi-trash"
-              severity="danger"
-              size="small"
-              [text]="true"
-              (onClick)="deleteBooking(booking)"
-              ariaLabel="Supprimer"
-            />
+            <button
+              type="button"
+              (click)="deleteBooking(booking)"
+              aria-label="Supprimer"
+              class="btn-danger"
+            >
+              <i class="pi pi-trash" aria-hidden="true"></i>
+            </button>
           </td>
         </tr>
       </ng-template>

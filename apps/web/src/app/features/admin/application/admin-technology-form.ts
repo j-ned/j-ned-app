@@ -12,13 +12,10 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import { ToastService } from '@shared/ui';
-import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
-import { Message } from 'primeng/message';
 
 @Component({
   selector: 'app-admin-technology-form',
-  imports: [ReactiveFormsModule, Button, InputText, Message],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -31,24 +28,32 @@ import { Message } from 'primeng/message';
         <legend class="sr-only">Informations de la technologie</legend>
 
         <div>
-          <label for="name" class="text-sm font-medium text-foreground">Nom</label>
-          <input id="name" type="text" formControlName="name" pInputText fluid />
+          <label for="name" class="form-label">
+            Nom <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="name"
+            type="text"
+            formControlName="name"
+            aria-required="true"
+            class="form-input"
+            [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+          />
           @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-            <p-message
-              severity="error"
-              text="Ce champ est obligatoire"
-              size="small"
-              variant="simple"
-            />
+            <small role="alert" class="form-error">Ce champ est obligatoire.</small>
           }
         </div>
 
         <div>
-          <label for="category" class="text-sm font-medium text-foreground">Catégorie</label>
+          <label for="category" class="form-label">
+            Catégorie <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
           <select
             id="category"
             formControlName="category"
-            class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground focus:border-primary focus:outline-none transition-colors"
+            aria-required="true"
+            class="form-input"
+            [attr.aria-invalid]="form.controls.category.touched && form.controls.category.invalid"
           >
             <option value="" disabled>Choisir une catégorie</option>
             @for (cat of categories; track cat) {
@@ -56,42 +61,33 @@ import { Message } from 'primeng/message';
             }
           </select>
           @if (form.controls.category.touched && form.controls.category.errors?.['required']) {
-            <p-message
-              severity="error"
-              text="Ce champ est obligatoire"
-              size="small"
-              variant="simple"
-            />
+            <small role="alert" class="form-error">Ce champ est obligatoire.</small>
           }
         </div>
 
         <div>
-          <label for="icon" class="text-sm font-medium text-foreground">Icône</label>
-          <input id="icon" type="text" formControlName="icon" pInputText fluid />
+          <label for="icon" class="form-label">
+            Icône <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="icon"
+            type="text"
+            formControlName="icon"
+            aria-required="true"
+            class="form-input"
+            [attr.aria-invalid]="form.controls.icon.touched && form.controls.icon.invalid"
+          />
           @if (form.controls.icon.touched && form.controls.icon.errors?.['required']) {
-            <p-message
-              severity="error"
-              text="Ce champ est obligatoire"
-              size="small"
-              variant="simple"
-            />
+            <small role="alert" class="form-error">Ce champ est obligatoire.</small>
           }
         </div>
       </fieldset>
 
       <div class="flex gap-4 pt-4">
-        <p-button
-          type="submit"
-          [label]="isEditMode() ? 'Enregistrer' : 'Créer'"
-          [disabled]="form.invalid"
-        />
-        <p-button
-          type="button"
-          label="Annuler"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="cancel()"
-        />
+        <button type="submit" [disabled]="form.invalid" class="btn-primary">
+          {{ isEditMode() ? 'Enregistrer' : 'Créer' }}
+        </button>
+        <button type="button" (click)="cancel()" class="btn-outline">Annuler</button>
       </div>
     </form>
   `,

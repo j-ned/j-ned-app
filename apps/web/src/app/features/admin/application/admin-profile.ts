@@ -11,16 +11,12 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { PROFILE_GATEWAY } from '@features/profile/application';
-import { ToastService } from '@shared/ui';
-import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
-import { Message } from 'primeng/message';
-import { FileUpload } from 'primeng/fileupload';
+import { ToastService, FileDropzone } from '@shared/ui';
 import { API_BASE_URL } from '@shared/api';
 
 @Component({
   selector: 'app-admin-profile',
-  imports: [ReactiveFormsModule, FileUpload, Button, InputText, Message],
+  imports: [ReactiveFormsModule, FileDropzone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -31,30 +27,40 @@ import { API_BASE_URL } from '@shared/api';
         <legend class="sr-only">Informations du profil</legend>
 
         <div>
-          <label for="displayName" class="text-sm font-medium text-foreground">Nom affiché</label>
-          <input id="displayName" type="text" formControlName="displayName" pInputText fluid />
+          <label for="displayName" class="form-label">
+            Nom affiché <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="displayName"
+            type="text"
+            formControlName="displayName"
+            aria-required="true"
+            class="form-input"
+            [attr.aria-invalid]="
+              form.controls.displayName.touched && form.controls.displayName.invalid
+            "
+          />
           @if (
             form.controls.displayName.touched && form.controls.displayName.errors?.['required']
           ) {
-            <p-message
-              severity="error"
-              text="Ce champ est obligatoire"
-              size="small"
-              variant="simple"
-            />
+            <small role="alert" class="form-error">Ce champ est obligatoire.</small>
           }
         </div>
 
         <div>
-          <label for="location" class="text-sm font-medium text-foreground">Localisation</label>
-          <input id="location" type="text" formControlName="location" pInputText fluid />
+          <label for="location" class="form-label">
+            Localisation <span class="text-red-500" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="location"
+            type="text"
+            formControlName="location"
+            aria-required="true"
+            class="form-input"
+            [attr.aria-invalid]="form.controls.location.touched && form.controls.location.invalid"
+          />
           @if (form.controls.location.touched && form.controls.location.errors?.['required']) {
-            <p-message
-              severity="error"
-              text="Ce champ est obligatoire"
-              size="small"
-              variant="simple"
-            />
+            <small role="alert" class="form-error">Ce champ est obligatoire.</small>
           }
         </div>
 
@@ -69,49 +75,30 @@ import { API_BASE_URL } from '@shared/api';
         </div>
 
         <div>
-          <label for="availabilityMessage" class="text-sm font-medium text-foreground"
-            >Message de disponibilité</label
-          >
+          <label for="availabilityMessage" class="form-label">Message de disponibilité</label>
           <input
             id="availabilityMessage"
             type="text"
             formControlName="availabilityMessage"
-            pInputText
-            fluid
+            class="form-input"
           />
         </div>
 
         <div>
-          <span class="block text-sm font-medium text-foreground mb-1.5">Avatar</span>
-          @if (imagePreview()) {
-            <img
-              [src]="imagePreview()"
-              alt="Aperçu avatar"
-              class="w-32 h-32 rounded-xl object-cover mb-3 border border-foreground/10"
-            />
-          }
-          <p-fileupload
-            mode="advanced"
-            [auto]="false"
-            [showUploadButton]="false"
-            [showCancelButton]="false"
-            [multiple]="false"
+          <span class="form-label">Avatar</span>
+          <app-file-dropzone
             accept="image/*"
-            chooseLabel="Choisir un avatar"
-            (onSelect)="onFileSelected($event.files[0])"
+            label="Avatar"
+            helperText="JPG, PNG, WebP — max 5 Mo"
+            [previewUrl]="imagePreview()"
+            (fileSelected)="onFileSelected($event)"
           />
         </div>
       </fieldset>
 
       <div class="flex gap-4 pt-4">
-        <p-button type="submit" label="Enregistrer" [disabled]="form.invalid" />
-        <p-button
-          type="button"
-          label="Annuler"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="cancel()"
-        />
+        <button type="submit" [disabled]="form.invalid" class="btn-primary">Enregistrer</button>
+        <button type="button" (click)="cancel()" class="btn-outline">Annuler</button>
       </div>
     </form>
   `,
@@ -170,7 +157,6 @@ export class AdminProfile {
         .pipe(
           switchMap((avatarUrl) =>
             this.profileGateway.updateProfileInfo({
-              id: this.profileId,
               ...values,
               avatarUrl,
             }),
@@ -191,7 +177,7 @@ export class AdminProfile {
         });
     } else {
       this.profileGateway
-        .updateProfileInfo({ id: this.profileId, ...values })
+        .updateProfileInfo(values)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {

@@ -5,17 +5,19 @@ import { PROFILE_GATEWAY } from '@features/profile/application';
 import type { WhatIDo } from '@features/profile/domain';
 import { ToastService } from '@shared/ui';
 import { TableModule } from 'primeng/table';
-import { Button } from 'primeng/button';
 
 @Component({
   selector: 'app-admin-what-i-do-list',
-  imports: [RouterLink, TableModule, Button],
+  imports: [RouterLink, TableModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div class="flex items-center justify-between mb-8">
       <h1 class="text-2xl font-bold text-foreground">Ce que je fais</h1>
-      <p-button label="Nouveau" icon="pi pi-plus" routerLink="/admin/content/what-i-do/new" />
+      <a routerLink="/admin/content/what-i-do/new" class="btn-primary">
+        <i class="pi pi-plus mr-2" aria-hidden="true"></i>
+        Nouveau
+      </a>
     </div>
 
     <p-table
@@ -39,22 +41,21 @@ import { Button } from 'primeng/button';
           <td class="text-muted max-w-xs truncate">{{ item.description }}</td>
           <td class="text-right">
             <div class="flex items-center justify-end gap-2">
-              <p-button
-                icon="pi pi-pencil"
-                severity="secondary"
-                size="small"
-                [text]="true"
+              <a
                 [routerLink]="['/admin/content/what-i-do', item.id, 'edit']"
-                ariaLabel="Modifier"
-              />
-              <p-button
-                icon="pi pi-trash"
-                severity="danger"
-                size="small"
-                [text]="true"
-                (onClick)="deleteItem(item)"
-                ariaLabel="Supprimer"
-              />
+                aria-label="Modifier"
+                class="btn-outline"
+              >
+                <i class="pi pi-pencil" aria-hidden="true"></i>
+              </a>
+              <button
+                type="button"
+                (click)="deleteItem(item)"
+                aria-label="Supprimer"
+                class="btn-danger"
+              >
+                <i class="pi pi-trash" aria-hidden="true"></i>
+              </button>
             </div>
           </td>
         </tr>
