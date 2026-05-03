@@ -3,18 +3,16 @@ import {
   inject,
   signal,
   computed,
-  viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import type { CvInfo } from '../domain/models/cv.model';
 import { firstValueFrom } from 'rxjs';
 import { CV_GATEWAY } from '@shared/cv';
-import { ToastService } from '@shared/ui';
-import { FileUpload } from 'primeng/fileupload';
+import { ToastService, FileDropzone } from '@shared/ui';
 
 @Component({
   selector: 'app-admin-cv',
-  imports: [FileUpload],
+  imports: [FileDropzone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -64,17 +62,12 @@ import { FileUpload } from 'primeng/fileupload';
         {{ cv() ? 'Mettre à jour le CV' : 'Upload nouveau CV' }}
       </h2>
 
-      <p-fileupload
-        #fileUpload
-        mode="advanced"
-        [auto]="false"
-        [showUploadButton]="false"
-        [showCancelButton]="false"
-        [multiple]="false"
+      <app-file-dropzone
         accept="application/pdf"
-        chooseLabel="Choisir un fichier PDF"
-        (onSelect)="onFileSelected($event.files[0])"
-        (onClear)="clearSelection()"
+        label="Fichier PDF"
+        helperText="PDF uniquement — sera versionné dans S3"
+        (fileSelected)="onFileSelected($event)"
+        (cleared)="clearSelection()"
       />
 
       @if (selectedFile()) {
@@ -105,7 +98,6 @@ import { FileUpload } from 'primeng/fileupload';
 export class AdminCv {
   private readonly cvService = inject(CV_GATEWAY);
   private readonly toast = inject(ToastService);
-  private readonly fileUpload = viewChild<FileUpload>('fileUpload');
 
   readonly cv = signal<CvInfo | null>(null);
   readonly selectedFile = signal<File | null>(null);
@@ -159,7 +151,6 @@ export class AdminCv {
 
   clearSelection(): void {
     this.selectedFile.set(null);
-    this.fileUpload()?.clear();
   }
 
   async uploadCv(): Promise<void> {
