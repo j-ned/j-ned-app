@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { API_BASE_URL } from '@shared/api';
+import { AUTH_BASE_URL } from '@shared/api';
 import { AuthService } from './auth.service';
 import { AUTH_GATEWAY } from '../domain';
 import { HttpAuthGateway } from './gateways/http-auth.gateway';
@@ -23,7 +23,7 @@ describe('AuthService', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        { provide: API_BASE_URL, useValue: apiBase },
+        { provide: AUTH_BASE_URL, useValue: apiBase },
         { provide: AUTH_GATEWAY, useClass: HttpAuthGateway },
         AuthService,
       ],

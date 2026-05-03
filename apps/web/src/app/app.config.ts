@@ -2,6 +2,7 @@ import {
   ApplicationConfig,
   PLATFORM_ID,
   inject,
+  isDevMode,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
@@ -27,7 +28,7 @@ import { routes } from './app.routes';
 import { SeoService } from '@shared/seo/seo';
 import { ANALYTICS_GATEWAY, HttpAnalyticsGateway } from '@shared/analytics';
 import { CV_GATEWAY, HttpCvGateway } from '@shared/cv';
-import { API_BASE_URL } from '@shared/api';
+import { API_BASE_URL, AUTH_BASE_URL } from '@shared/api';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import { CONTACT_GATEWAY } from '@features/contact/application';
@@ -134,6 +135,11 @@ export const appConfig: ApplicationConfig = {
       },
     },
     { provide: API_BASE_URL, useValue: '/api' },
+    {
+      provide: AUTH_BASE_URL,
+      useFactory: (): string =>
+        isDevMode() ? '/api' : 'https://api.j-ned.dev/api',
+    },
     { provide: PROJECTS_GATEWAY, useClass: HttpProjectsGateway },
     { provide: PROFILE_GATEWAY, useClass: HttpProfileGateway },
     { provide: CONTACT_GATEWAY, useClass: HttpContactGateway },

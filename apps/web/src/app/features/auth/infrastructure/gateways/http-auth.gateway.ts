@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { API_BASE_URL } from '@shared/api';
+import { AUTH_BASE_URL } from '@shared/api';
 import { AuthGateway } from '@features/auth/domain';
 import type {
   LoginResponse,
@@ -13,7 +13,7 @@ import type {
 @Injectable()
 export class HttpAuthGateway extends AuthGateway {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = inject(API_BASE_URL);
+  private readonly apiUrl = inject(AUTH_BASE_URL);
 
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(

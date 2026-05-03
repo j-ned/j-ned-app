@@ -6,3 +6,10 @@ export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL', {
     throw new Error('API_BASE_URL must be provided in app.config.ts');
   },
 });
+
+export const AUTH_BASE_URL = new InjectionToken<string>('AUTH_BASE_URL', {
+  providedIn: 'root',
+  factory: (): never => {
+    throw new Error('AUTH_BASE_URL must be provided in app.config.ts');
+  },
+});
