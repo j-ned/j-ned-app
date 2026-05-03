@@ -34,11 +34,11 @@ export class HttpBookingGateway implements BookingGateway {
     );
   }
 
-  updateBookingStatus(id: number, status: string): Observable<Booking> {
+  updateBookingStatus(id: string, status: string): Observable<Booking> {
     return this.http.patch<Booking>(`${this.apiUrl}/bookings/${id}`, { status });
   }
 
-  deleteBooking(id: number): Observable<void> {
+  deleteBooking(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/bookings/${id}`);
   }
 
@@ -52,7 +52,7 @@ export class HttpBookingGateway implements BookingGateway {
     return this.http.post<DisabledDate>(`${this.apiUrl}/bookings/disabled-dates`, date);
   }
 
-  removeDisabledDate(id: number): Observable<void> {
+  removeDisabledDate(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/bookings/disabled-dates/${id}`);
   }
 }

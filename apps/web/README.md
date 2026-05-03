@@ -4,13 +4,12 @@
 
 ### Portfolio **full-stack SSR** — vitrine, back-office admin, booking & analytics self-hosted
 
-**Angular 21 zoneless · Hono API · PostgreSQL · Self-hosted · Zéro tracker tiers**
+**Angular 21 zoneless · NestJS API · PostgreSQL · Self-hosted · Zéro tracker tiers**
 
 [![Angular](https://img.shields.io/badge/Angular-21-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Hono](https://img.shields.io/badge/Hono-4.12-E36002?style=for-the-badge&logo=hono&logoColor=white)](https://hono.dev)
+[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![Drizzle](https://img.shields.io/badge/Drizzle-0.45-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team)
 [![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License](https://img.shields.io/badge/License-Private-333?style=for-the-badge)]()
 
@@ -70,7 +69,7 @@ Une application **full-stack self-hosted** construite comme un vrai produit :
 | **Home** | Hero dynamique, highlights, what-I-do, aspirations, carrousel techno, tous éditables en admin |
 | **À propos** | Biographie, parcours, diplômes, expertises — contenu 100% CMS |
 | **Projets** | Portfolio filtrable, featured, liens live + repos front/back, tags |
-| **Contact** | Formulaire validé Zod, envoi SMTP, rate limiting |
+| **Contact** | Formulaire validé côté serveur, envoi SMTP, rate limiting |
 | **Booking** | Réservation de créneau de consultation avec calendrier français |
 | **404 custom** | Page dédiée avec SEO désactivé |
 
@@ -158,23 +157,20 @@ providers: [
 ]
 ```
 
-### Backend Hono + Drizzle
+### Backend NestJS (repo séparé)
+
+> Le backend est dans `~/WebstormProjects/J-Ned/nest-portfolio-app/` — repo indépendant.
+> L'Angular frontend consomme 100% NestJS via `/api` (proxy dev → `:3000`, prod → reverse proxy Traefik).
 
 ```
-server/
-├── routes/            # Endpoints Hono (auth, projects, booking, analytics, contact, ...)
-├── middleware/        # auth JWT, rate-limit
-├── db/
-│   ├── schema/        # Schéma Drizzle par domaine (user, project, booking, analytics...)
-│   ├── migrations/    # Migrations SQL versionnées
-│   └── client.ts      # Pool Postgres
-├── services/          # auth-manager (JWT+Argon2+TOTP), mailer, storage S3, analytics-tracker
-├── schemas/           # Validations Zod partagées
-├── lib/               # env (Zod), cron, migrate, errors
-└── scripts/           # create-user, seeders
+nest-portfolio-app/
+├── src/
+│   ├── modules/       # Features NestJS (auth, projects, booking, analytics, contact, ...)
+│   ├── common/        # Guards, interceptors, pipes, decorators
+│   └── main.ts        # Bootstrap + port 3000
+├── drizzle/           # Migrations SQL versionnées (Drizzle ORM)
+└── .env               # PORT=3000, DATABASE_URL, JWT_*, S3_*, SMTP_*, ...
 ```
-
-**Un seul process runtime** : Hono sert l'API (`/api/*`), les assets Angular pré-rendus et le fallback SPA.
 
 ### Schéma base de données (13 tables)
 
@@ -218,8 +214,8 @@ erDiagram
 
 ### Envois SMTP
 
-- Validation Zod stricte sur tous les inputs avant envoi
-- Templates HTML dédiés (`server/mail-templates/`)
+- Validation `class-validator` stricte sur tous les inputs avant envoi (DTO NestJS)
+- Templates HTML dédiés côté backend (`nest-portfolio-app`)
 - Rate limiting sur formulaires publics
 
 ---
@@ -228,7 +224,7 @@ erDiagram
 
 ### Rendering strategy
 
-- **SSR + prerender** — les pages publiques sont générées au build, servies en statique par Hono
+- **SSR + prerender** — les pages publiques sont générées au build, servies en statique par Angular SSR (`@angular/ssr`)
 - **Client Hydration** avec `withEventReplay()` — capture des clics pendant l'hydratation
 - **Selective preloading** — routes `about`, `projects`, `contact` préchargées après idle
 - **View Transitions API** — transitions natives entre routes
@@ -248,15 +244,14 @@ IMAGE_CONFIG: {
 
 - **Meta tags dynamiques** par route (title, description, keywords, OG, Twitter)
 - **JSON-LD Person schema** sur la home — nom, job, adresse, `sameAs` réseaux sociaux, `knowsAbout`
-- **sitemap.xml** généré dynamiquement par Hono
+- **sitemap.xml** généré dynamiquement par NestJS
 - **robots.txt** + **security.txt** (RFC 9116)
 - **Hreflang / canonical** gérés côté app via `SeoService`
 
 ### Backend perf
 
-- **Gzip compression** sur toutes les réponses (Hono middleware)
-- **ESBuild bundle** — `server/index.ts` → `dist/server/index.mjs` un fichier
-- **Connection pooling** Postgres avec `postgres.js`
+- **Gzip compression** sur toutes les réponses (NestJS middleware)
+- **Connection pooling** Postgres (Drizzle + `postgres.js`)
 - **Healthcheck** natif Node (pas de curl/wget dans l'image)
 
 ---
@@ -269,21 +264,21 @@ IMAGE_CONFIG: {
 - **Routing** : lazy loading, `withComponentInputBinding`, `withViewTransitions`, `withInMemoryScrolling`
 - **UI** : TailwindCSS v4 + PrimeNG 21 (admin uniquement) + PrimeIcons
 - **Charts** : Chart.js (dashboard admin)
-- **Forms** : Reactive Forms typés, Zod en backend
-- **Tests** : Vitest (unit/component) + Playwright (e2e)
+- **Forms** : Reactive Forms typés (validation backend via `class-validator`)
+- **Tests** : Vitest (unit/component, conventions EAK)
 - **Lint** : ESLint + angular-eslint + Prettier + lint-staged + Husky
 
-### Backend
+### Backend (nest-portfolio-app)
 
-- **Runtime** : Node.js 22 + Hono 4
-- **ORM** : Drizzle ORM + drizzle-kit (migrations SQL versionnées)
-- **Database** : PostgreSQL 17 (`postgres.js`)
-- **Auth** : `jose` (JWT), `argon2` (hashing), `otplib` (TOTP), `qrcode`
-- **Validation** : Zod partout (env, inputs, DB schemas via `drizzle-zod`)
+- **Runtime** : Node.js 22 + NestJS 11
+- **ORM** : Drizzle ORM (migrations SQL versionnées)
+- **Database** : PostgreSQL 17
+- **Auth** : JWT (access 15min + refresh 7j), Argon2id, TOTP 2FA
+- **Validation** : class-validator + class-transformer (DTOs)
 - **Storage** : S3 (Garage compatible) — buckets séparés CV / projets / about
 - **Email** : Nodemailer + templates HTML
-- **Cron** : `node-cron` — purge sessions, agrégation stats journalières
-- **Analytics** : `ua-parser-js` + `geoip-lite` (local, zéro appel externe)
+- **Cron** : NestJS `@Cron` — purge sessions, agrégation stats journalières
+- **Analytics** : ua-parser-js + geoip-lite (local, zéro appel externe)
 
 ### DevOps
 
@@ -337,87 +332,45 @@ IMAGE_CONFIG: {
 ### Dev local
 
 ```bash
-# 1. Cloner
+# 1. Cloner le repo Angular (ce repo)
 git clone https://github.com/djoudj-dev/angular-portfolio-app.git
 cd angular-portfolio-app
-
-# 2. Install
 pnpm install
 
-# 3. Config env
-cp .env.example .env
-# → remplir DATABASE_URL, JWT_*, S3_*, SMTP_*
+# 2. Démarrer le backend NestJS (repo séparé, PORT=3000)
+cd ../nest-portfolio-app
+pnpm install && pnpm start:dev
+# → API : http://localhost:3000/api
 
-# 4. Migrations
-pnpm db:migrate
-
-# 5. Créer un user admin
-pnpm db:create-user
-
-# 6. Lancer front + back en parallèle
-pnpm dev:all
-# → Front : http://localhost:4200
-# → API   : http://localhost:3000/api
+# 3. Démarrer le frontend Angular
+cd ../angular-portfolio-app
+pnpm start
+# → Front : http://localhost:4200  (proxie /api → :3000 via proxy.conf.cjs)
 ```
 
-### Variables d'environnement critiques
-
-```env
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/portfolio
-
-# JWT (générer avec `openssl rand -hex 64`)
-JWT_ACCESS_SECRET=...
-JWT_REFRESH_SECRET=...
-JWT_ACCESS_EXPIRATION=15m
-JWT_REFRESH_EXPIRATION=7d
-
-# S3 (Garage / MinIO / AWS)
-S3_ENDPOINT=https://s3.example.com
-S3_ACCESS_KEY=...
-S3_SECRET_KEY=...
-S3_CV_BUCKET=portfolio-cv
-S3_PROJECTS_BUCKET=portfolio-projects
-S3_ABOUT_BUCKET=portfolio-about
-
-# SMTP
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=...
-SMTP_PASS=...
-SMTP_FROM="Portfolio <noreply@example.com>"
-
-# Contact
-CONTACT_EMAIL=contact@example.com
-CONTACT_PHONE=+33...
-CONTACT_LOCATION=France
-```
+> Le frontend n'a **aucune variable d'environnement** à configurer — tout passe via le proxy Angular CLI.
+> Les variables d'environnement (DB, JWT, S3, SMTP) sont dans `nest-portfolio-app/.env`.
 
 ### Scripts disponibles
 
 | Commande | Action |
 |----------|--------|
-| `pnpm start` | Front Angular (proxy vers API) |
-| `pnpm dev:api` | API Hono en watch mode (tsx) |
-| `pnpm dev:all` | Front + API en parallèle |
+| `pnpm start` | Front Angular (proxy `/api` → NestJS `:3000`) |
 | `pnpm build` | Build Angular SSR prerender |
-| `pnpm build:api` | Bundle ESBuild du serveur |
-| `pnpm db:generate` | Génère une nouvelle migration Drizzle |
-| `pnpm db:migrate` | Applique les migrations |
-| `pnpm db:studio` | Drizzle Studio (UI DB) |
-| `pnpm db:create-user` | Créer un user admin |
+| `pnpm watch` | Build Angular en watch mode |
 | `pnpm test` | Tests unitaires (Vitest) |
-| `pnpm test:e2e` | Tests E2E (Playwright) |
+| `pnpm lint` | ESLint |
 | `pnpm check` | Format + lint (pré-commit) |
 
 ### Docker
 
 ```bash
-# Build multi-stage
-docker build -t portfolio .
+# Build Angular SSR uniquement (le backend NestJS a son propre Dockerfile)
+docker build -t portfolio-front .
 
-# Run (Traefik en amont gère HTTPS)
-docker run -p 3000:3000 --env-file .env portfolio
+# Run Angular SSR (port 4000 interne)
+docker run -p 4000:4000 portfolio-front
+# Traefik en amont route /api → nest-portfolio-app container
 ```
 
 ---
@@ -431,7 +384,6 @@ docker run -p 3000:3000 --env-file .env portfolio
 - [x] Analytics privacy-first (page views, durées, événements, agrégats)
 - [x] Auth JWT + 2FA TOTP
 - [x] SEO dynamique + JSON-LD + sitemap.xml
-- [x] Tests E2E Playwright (contact, navigation, theme, mobile drawer)
 - [ ] Blog technique (markdown + syntax highlighting)
 - [ ] i18n FR/EN
 - [ ] Newsletter (opt-in RGPD)

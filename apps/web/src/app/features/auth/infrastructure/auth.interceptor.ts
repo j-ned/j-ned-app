@@ -1,6 +1,6 @@
 import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -15,21 +15,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      // Only attempt refresh if user was logged in and it's not an auth endpoint
+      // If user was logged in but gets 401 (session expired), log out
       if (error.status === 401 && !isAuthEndpoint && authService.isLoggedIn()) {
-        return authService.refresh().pipe(
-          switchMap((success) => {
-            if (success) {
-              return next(authReq);
-            }
-            authService.logout();
-            return throwError(() => error);
-          }),
-          catchError(() => {
-            authService.logout();
-            return throwError(() => error);
-          }),
-        );
+        authService.logout();
       }
       return throwError(() => error);
     }),

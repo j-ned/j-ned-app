@@ -48,11 +48,11 @@ export class HttpProfileGateway implements ProfileGateway {
   }
 
   getWhatIDo(): Observable<readonly WhatIDo[]> {
-    return this.http.get<WhatIDo[]>(`${this.apiUrl}/expertises`).pipe(catchError(() => of([])));
+    return this.http.get<WhatIDo[]>(`${this.apiUrl}/expertises/offers`).pipe(catchError(() => of([])));
   }
 
   getWhatISeek(): Observable<WhatISeek> {
-    return this.http.get<WhatISeek[]>(`${this.apiUrl}/aspiration`).pipe(
+    return this.http.get<WhatISeek[]>(`${this.apiUrl}/expertises/seeks`).pipe(
       map((items) => items[0] ?? { id: '', title: '', description: '' }),
       catchError(() => of({ id: '', title: '', description: '' } as WhatISeek)),
     );

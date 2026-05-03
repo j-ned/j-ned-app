@@ -5,9 +5,9 @@ export type BookingGateway = {
   getBookedSlots(month: string): Observable<readonly Booking[]>;
   submitBooking(data: BookingFormData): Observable<BookingSubmission>;
   getAllBookings(): Observable<readonly Booking[]>;
-  updateBookingStatus(id: number, status: string): Observable<Booking>;
-  deleteBooking(id: number): Observable<void>;
+  updateBookingStatus(id: string, status: string): Observable<Booking>;
+  deleteBooking(id: string): Observable<void>;
   getDisabledDates(): Observable<readonly DisabledDate[]>;
   addDisabledDate(date: Omit<DisabledDate, 'id'>): Observable<DisabledDate>;
-  removeDisabledDate(id: number): Observable<void>;
+  removeDisabledDate(id: string): Observable<void>;
 };

@@ -6,6 +6,7 @@
 /tmp
 /out-tsc
 /bazel-out
+/docs
 
 # Node
 /node_modules
@@ -51,12 +52,6 @@ supabase/.temp/
 # System files
 .DS_Store
 Thumbs.db
-
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
 
 # Claude
 .claude/*

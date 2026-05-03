@@ -1,5 +1,5 @@
 export type Booking = {
-  readonly id: number;
+  readonly id: string;
   readonly date: string;
   readonly startTime: string;
   readonly duration: number;
@@ -28,7 +28,7 @@ export type BookingSubmission = {
 };
 
 export type DisabledDate = {
-  readonly id: number;
+  readonly id: string;
   readonly date: string;
   readonly reason?: string;
 };

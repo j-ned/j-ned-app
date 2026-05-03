@@ -8,12 +8,12 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { map, catchError, of } from 'rxjs';
+import { firstValueFrom, map, catchError, of } from 'rxjs';
 import { CONTACT_GATEWAY } from '@features/contact/application';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
 import { AuthService } from '@features/auth/infrastructure';
-import { AnalyticsService } from '@shared/analytics';
+import { ANALYTICS_GATEWAY } from '@shared/analytics';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -141,7 +141,7 @@ export class AdminDashboard {
   private readonly contactGateway = inject(CONTACT_GATEWAY);
   private readonly bookingGateway = inject(BOOKING_GATEWAY);
   private readonly projectsGateway = inject(PROJECTS_GATEWAY);
-  private readonly analytics = inject(AnalyticsService);
+  private readonly analytics = inject(ANALYTICS_GATEWAY);
   readonly authService = inject(AuthService);
 
   readonly formattedDate = signal(
@@ -183,7 +183,7 @@ export class AdminDashboard {
   });
 
   readonly cvDownloadRes = resource({
-    loader: () => this.analytics.getCvDownloadCount(),
+    loader: () => firstValueFrom(this.analytics.getCvDownloadCount()),
   });
   readonly cvDownloadCount = computed(() => this.cvDownloadRes.value() ?? 0);
 }

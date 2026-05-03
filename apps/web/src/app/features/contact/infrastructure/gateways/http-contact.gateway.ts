@@ -42,8 +42,8 @@ export class HttpContactGateway implements ContactGateway {
 
   getContactInfo(): Observable<ContactInfo> {
     return this.http
-      .get<{ email: string; phone: string; address: string }>(`${this.apiUrl}/contact/info`)
-      .pipe(map((data) => ({ email: data.email, phone: data.phone, location: data.address })));
+      .get<{ email: string; phone: string; location: string }>(`${this.apiUrl}/contact/info`)
+      .pipe(map((data) => ({ email: data.email, phone: data.phone, location: data.location })));
   }
 
   getSocialLinks(): Observable<SocialLinks> {

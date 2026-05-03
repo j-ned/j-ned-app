@@ -1,1 +1,2 @@
-export { CvService } from './cv.service';
+export { CvGateway, CV_GATEWAY } from './cv.gateway';
+export { HttpCvGateway } from './http-cv.gateway';

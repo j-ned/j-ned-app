@@ -104,8 +104,8 @@ export class TwoFactorVerify {
       return;
     }
 
-    const email = this.authService.pendingTwoFactorEmail();
-    if (!email) {
+    const challengeToken = this.authService.pendingChallengeToken();
+    if (!challengeToken) {
       this.router.navigate(['/login']);
       return;
     }
@@ -114,7 +114,7 @@ export class TwoFactorVerify {
     this.errorMessage.set('');
 
     this.authService
-      .verifyTwoFactor(email, this.form.getRawValue().code)
+      .verifyTwoFactor(challengeToken, this.form.getRawValue().code)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (success) => {

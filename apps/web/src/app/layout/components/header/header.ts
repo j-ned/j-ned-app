@@ -1,8 +1,9 @@
 import { Component, signal, effect, afterNextRender, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
-import { AnalyticsService } from '@shared/analytics';
-import { CvService } from '@shared/cv';
+import { ANALYTICS_GATEWAY } from '@shared/analytics';
+import { firstValueFrom } from 'rxjs';
+import { CV_GATEWAY } from '@shared/cv';
 import { PiIconPipe } from '@shared/icons';
 import { UiButton, UiDrawer } from '@shared/ui';
 
@@ -149,8 +150,8 @@ type ThemePreference = 'dark' | 'light';
   `,
 })
 export class Header {
-  private readonly analytics = inject(AnalyticsService);
-  private readonly cvService = inject(CvService);
+  private readonly analytics = inject(ANALYTICS_GATEWAY);
+  private readonly cvService = inject(CV_GATEWAY);
 
   protected readonly navItems = signal(NAV_LINKS);
   protected readonly isMobileMenuOpen = signal(false);
@@ -208,7 +209,7 @@ export class Header {
   }
 
   private loadCvUrl(): void {
-    this.cvService.getCurrent().then((data) => {
+    firstValueFrom(this.cvService.getCurrent()).then((data) => {
       if (data) {
         this.cvUrl.set(this.cvService.getDownloadUrl());
       }

@@ -17,28 +17,28 @@ export class HttpProjectsGateway implements ProjectsGateway {
   private readonly apiUrl = inject(API_BASE_URL);
 
   getAllProjects(): Observable<readonly Project[]> {
-    return this.http.get<{ data: Project[] }>(`${this.apiUrl}/projects?_sort=order&limit=100`).pipe(
-      map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
+    return this.http.get<Project[]>(`${this.apiUrl}/projects?_sort=order&limit=100`).pipe(
+      map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
       catchError(() => of([])),
     );
   }
 
   getFeaturedProjects(): Observable<readonly Project[]> {
     return this.http
-      .get<{ data: Project[] }>(`${this.apiUrl}/projects?featured=true&_sort=order`)
+      .get<Project[]>(`${this.apiUrl}/projects?featured=true&_sort=order`)
       .pipe(
-        map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
+        map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
         catchError(() => of([])),
       );
   }
 
   getCategories(): Observable<readonly string[]> {
-    return this.http
-      .get<{ name: string; count: number }[]>(`${this.apiUrl}/projects/categories`)
-      .pipe(
-        map((categories) => ['Tous', ...categories.map((c) => c.name)]),
-        catchError(() => of(['Tous'])),
-      );
+    return this.getAllProjects().pipe(
+      map((projects) => {
+        const unique = [...new Set(projects.map((p) => p.category))].sort();
+        return ['Tous', ...unique];
+      }),
+    );
   }
 
   filterProjects(filter: ProjectFilter): Observable<readonly Project[]> {
@@ -50,8 +50,8 @@ export class HttpProjectsGateway implements ProjectsGateway {
     if (filter.featured !== undefined) {
       params.set('featured', String(filter.featured));
     }
-    return this.http.get<{ data: Project[] }>(`${this.apiUrl}/projects?${params.toString()}`).pipe(
-      map((res) => res.data.map((p) => resolveProject(this.apiUrl, p))),
+    return this.http.get<Project[]>(`${this.apiUrl}/projects?${params.toString()}`).pipe(
+      map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
       catchError(() => of([])),
     );
   }
@@ -74,11 +74,11 @@ export class HttpProjectsGateway implements ProjectsGateway {
     return this.http.delete<void>(`${this.apiUrl}/projects/${id}`);
   }
 
-  uploadImage(file: File, projectSlug: string): Observable<string> {
+  uploadImage(file: File, id: string): Observable<string> {
     const formData = new FormData();
     formData.append('file', file);
     return this.http
-      .post<{ key: string }>(`${this.apiUrl}/projects/${projectSlug}/image`, formData)
+      .post<{ key: string }>(`${this.apiUrl}/projects/${id}/image`, formData)
       .pipe(map((res) => res.key));
   }
 }

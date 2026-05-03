@@ -4,6 +4,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '@shared/api';
 import { AuthService } from './auth.service';
+import { AUTH_GATEWAY } from '../domain';
+import { HttpAuthGateway } from './gateways/http-auth.gateway';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -22,6 +24,7 @@ describe('AuthService', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: API_BASE_URL, useValue: apiBase },
+        { provide: AUTH_GATEWAY, useClass: HttpAuthGateway },
         AuthService,
       ],
     });
@@ -41,34 +44,34 @@ describe('AuthService', () => {
       expect(service.isLoggedIn()).toBe(false);
     });
 
-    it('does not call /auth/refresh at startup', async () => {
+    it('does not call /auth/me at startup', async () => {
       await service.ready;
-      http.expectNone(`${apiBase}/auth/refresh`);
+      http.expectNone(`${apiBase}/auth/me`);
     });
   });
 
   describe('Given a persisted session flag', () => {
     beforeEach(() => setupService(true));
 
-    it('calls /auth/refresh at startup', () => {
-      const req = http.expectOne(`${apiBase}/auth/refresh`);
-      expect(req.request.method).toBe('POST');
+    it('calls GET /auth/me at startup', () => {
+      const req = http.expectOne(`${apiBase}/auth/me`);
+      expect(req.request.method).toBe('GET');
       expect(req.request.withCredentials).toBe(true);
-      req.flush({ user: { id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false } });
+      req.flush({ id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false });
     });
 
-    it('restores currentUser after successful refresh', async () => {
+    it('restores currentUser after successful getCurrentUser', async () => {
       http
-        .expectOne(`${apiBase}/auth/refresh`)
-        .flush({ user: { id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false } });
+        .expectOne(`${apiBase}/auth/me`)
+        .flush({ id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false });
       await service.ready;
       expect(service.isLoggedIn()).toBe(true);
       expect(service.currentUser()?.email).toBe('a@b.fr');
     });
 
-    it('clears session flag if refresh fails', async () => {
+    it('clears session flag if getCurrentUser fails', async () => {
       http
-        .expectOne(`${apiBase}/auth/refresh`)
+        .expectOne(`${apiBase}/auth/me`)
         .flush({}, { status: 401, statusText: 'Unauthorized' });
       await service.ready;
       expect(service.isLoggedIn()).toBe(false);
@@ -90,12 +93,14 @@ describe('AuthService', () => {
       expect(localStorage.getItem('has_session')).toBe('1');
     });
 
-    it('returns "two-factor" when requiresTwoFactor true', () => {
+    it('returns "two-factor" when requiresTwoFactor true and stores challengeToken', () => {
       let outcome: string | undefined;
       service.login('a@b.fr', 'pwd').subscribe((r) => (outcome = r));
-      http.expectOne(`${apiBase}/auth/login`).flush({ requiresTwoFactor: true, email: 'a@b.fr' });
+      http
+        .expectOne(`${apiBase}/auth/login`)
+        .flush({ requiresTwoFactor: true, challengeToken: 'tok-xyz' });
       expect(outcome).toBe('two-factor');
-      expect(service.pendingTwoFactorEmail()).toBe('a@b.fr');
+      expect(service.pendingChallengeToken()).toBe('tok-xyz');
       expect(service.isLoggedIn()).toBe(false);
     });
 

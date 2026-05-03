@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { firstValueFrom, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
 import type { Project } from '@features/projects/domain';
@@ -193,40 +193,44 @@ export class AdminProjects {
     this.showNewForm.set(false);
   }
 
-  onCreate(event: { data: Omit<Project, 'id'>; file: File | null }): void {
-    const slug = this.slugify(event.data.title);
+  async onCreate(event: { data: Omit<Project, 'id'>; file: File | null }): Promise<void> {
+    let created: Project;
+    try {
+      created = await firstValueFrom(this.projectsGateway.createProject(event.data));
+    } catch {
+      this.toast.add({
+        severity: 'error',
+        summary: 'Erreur',
+        detail: 'Erreur lors de la création du projet',
+      });
+      return;
+    }
 
-    const create$ = event.file
-      ? this.projectsGateway
-          .uploadImage(event.file, slug)
-          .pipe(
-            switchMap((key) => this.projectsGateway.createProject({ ...event.data, image: key })),
-          )
-      : this.projectsGateway.createProject(event.data);
-
-    create$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (created) => {
-        this.projectsResource.update((list) => [...(list ?? []), created]);
-        this.categoriesResource.reload();
-        this.homeGateway.invalidateBundle();
-        this.showNewForm.set(false);
-        this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet créé' });
-      },
-      error: () =>
+    if (event.file) {
+      try {
+        const key = await firstValueFrom(this.projectsGateway.uploadImage(event.file, created.id));
+        created = { ...created, image: key };
+      } catch (err) {
+        console.warn('Project created, but image upload failed:', err);
         this.toast.add({
-          severity: 'error',
-          summary: 'Erreur',
-          detail: 'Erreur lors de la création du projet',
-        }),
-    });
+          severity: 'warn',
+          summary: 'Attention',
+          detail: 'Projet créé, mais upload image échoué. Réessayez via Modifier.',
+        });
+      }
+    }
+
+    this.projectsResource.update((list) => [...(list ?? []), created]);
+    this.categoriesResource.reload();
+    this.homeGateway.invalidateBundle();
+    this.showNewForm.set(false);
+    this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet créé' });
   }
 
   onUpdate(id: string, event: { data: Omit<Project, 'id'>; file: File | null }): void {
-    const slug = this.slugify(event.data.title);
-
     const update$ = event.file
       ? this.projectsGateway
-          .uploadImage(event.file, slug)
+          .uploadImage(event.file, id)
           .pipe(
             switchMap((key) =>
               this.projectsGateway.updateProject(id, { ...event.data, image: key }),
@@ -279,12 +283,4 @@ export class AdminProjects {
       });
   }
 
-  private slugify(text: string): string {
-    return text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
 }

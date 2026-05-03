@@ -1,7 +1,7 @@
 import { Component, input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import type { Project } from '../../domain';
-import { AnalyticsService } from '@shared/analytics';
+import { ANALYTICS_GATEWAY } from '@shared/analytics';
 
 @Component({
   selector: 'app-project-card',
@@ -125,7 +125,7 @@ import { AnalyticsService } from '@shared/analytics';
   `,
 })
 export class ProjectCard {
-  private readonly analytics = inject(AnalyticsService);
+  private readonly analytics = inject(ANALYTICS_GATEWAY);
 
   project = input.required<Project>();
 

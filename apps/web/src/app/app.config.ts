@@ -25,7 +25,8 @@ import { filter } from 'rxjs';
 
 import { routes } from './app.routes';
 import { SeoService } from '@shared/seo/seo';
-import { AnalyticsService } from '@shared/analytics';
+import { ANALYTICS_GATEWAY, HttpAnalyticsGateway } from '@shared/analytics';
+import { CV_GATEWAY, HttpCvGateway } from '@shared/cv';
 import { API_BASE_URL } from '@shared/api';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
 import { PROFILE_GATEWAY } from '@features/profile/application';
@@ -37,6 +38,8 @@ import { HttpContactGateway } from '@features/contact/infrastructure';
 import { HttpHomeGateway } from '@features/home/infrastructure';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import { HttpBookingGateway } from '@features/booking/infrastructure';
+import { AUTH_GATEWAY } from '@features/auth/domain';
+import { HttpAuthGateway } from '@features/auth/infrastructure';
 
 function prefetchHomeBundle(): () => void {
   return (): void => {
@@ -72,7 +75,7 @@ function initializeTracking(): () => void {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
 
     const router = inject(Router);
-    const analytics = inject(AnalyticsService);
+    const analytics = inject(ANALYTICS_GATEWAY);
 
     let currentUrl: string | null = null;
     let pageEnteredAt = Date.now();
@@ -136,5 +139,8 @@ export const appConfig: ApplicationConfig = {
     { provide: CONTACT_GATEWAY, useClass: HttpContactGateway },
     { provide: HOME_GATEWAY, useClass: HttpHomeGateway },
     { provide: BOOKING_GATEWAY, useClass: HttpBookingGateway },
+    { provide: ANALYTICS_GATEWAY, useClass: HttpAnalyticsGateway },
+    { provide: CV_GATEWAY, useClass: HttpCvGateway },
+    { provide: AUTH_GATEWAY, useClass: HttpAuthGateway },
   ],
 };

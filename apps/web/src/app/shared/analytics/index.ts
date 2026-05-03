@@ -1,8 +1,10 @@
-export { AnalyticsService } from './analytics.service';
+export { AnalyticsGateway, ANALYTICS_GATEWAY } from './analytics.gateway';
+export { HttpAnalyticsGateway } from './http-analytics.gateway';
 export type {
-  DailyChartPoint,
-  StatsOverview,
-  MetricEntry,
-  EntityStat,
   ActiveVisitors,
-} from './analytics.service';
+  DailyChartPoint,
+  EntityStat,
+  MetricEntry,
+  StatsOverview,
+  TrackPayload,
+} from './analytics.types';

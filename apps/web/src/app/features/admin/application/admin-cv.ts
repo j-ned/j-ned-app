@@ -7,7 +7,8 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import type { CvInfo } from '../domain/models/cv.model';
-import { CvService } from '@shared/cv';
+import { firstValueFrom } from 'rxjs';
+import { CV_GATEWAY } from '@shared/cv';
 import { ToastService } from '@shared/ui';
 import { FileUpload } from 'primeng/fileupload';
 
@@ -102,7 +103,7 @@ import { FileUpload } from 'primeng/fileupload';
   `,
 })
 export class AdminCv {
-  private readonly cvService = inject(CvService);
+  private readonly cvService = inject(CV_GATEWAY);
   private readonly toast = inject(ToastService);
   private readonly fileUpload = viewChild<FileUpload>('fileUpload');
 
@@ -168,7 +169,7 @@ export class AdminCv {
     this.isUploading.set(true);
 
     try {
-      await this.cvService.upload(file);
+      await firstValueFrom(this.cvService.upload(file));
       this.toast.add({
         severity: 'success',
         summary: 'Succès',
@@ -193,7 +194,7 @@ export class AdminCv {
 
   async deleteCv(): Promise<void> {
     try {
-      await this.cvService.delete();
+      await firstValueFrom(this.cvService.delete());
       this.toast.add({ severity: 'success', summary: 'Succès', detail: 'CV supprimé' });
       this.loadCv();
     } catch (err: unknown) {
@@ -214,7 +215,7 @@ export class AdminCv {
   }
 
   private loadCv(): void {
-    this.cvService.getCurrent().then((data) => {
+    firstValueFrom(this.cvService.getCurrent()).then((data) => {
       this.cv.set(data);
     });
   }
