@@ -53,12 +53,12 @@
     <!-- Security Headers (CSP via meta tag — configure also via HTTP headers on Traefik/Dokploy for frame-ancestors + HSTS) -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://www.julien-nedellec.fr https://garage-s3.j-ned.dev; connect-src 'self' https://api.j-ned.dev; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self';"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://www.julien-nedellec.fr https://api.j-ned.dev; connect-src 'self' https://api.j-ned.dev; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self';"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
-    <!-- DNS prefetch for S3 (used if direct S3 URLs are referenced) -->
-    <link rel="dns-prefetch" href="https://garage-s3.j-ned.dev" />
+    <!-- DNS prefetch pour l'API NestJS (proxy S3 + données) -->
+    <link rel="dns-prefetch" href="https://api.j-ned.dev" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x48" />
