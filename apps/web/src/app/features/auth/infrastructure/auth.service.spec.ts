@@ -12,12 +12,7 @@ describe('AuthService', () => {
   let http: HttpTestingController;
   const apiBase = '/api';
 
-  function setupService(withSession = false): void {
-    if (withSession) {
-      localStorage.setItem('has_session', '1');
-    } else {
-      localStorage.removeItem('has_session');
-    }
+  function setupService(): void {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -34,33 +29,19 @@ describe('AuthService', () => {
 
   afterEach(() => {
     if (http) http.verify();
-    localStorage.removeItem('has_session');
   });
 
-  describe('Given no previous session flag in localStorage', () => {
-    beforeEach(() => setupService(false));
+  describe('Au boot (browser)', () => {
+    beforeEach(() => setupService());
 
-    it('isLoggedIn is false at startup', () => {
-      expect(service.isLoggedIn()).toBe(false);
-    });
-
-    it('does not call /auth/me at startup', async () => {
-      await service.ready;
-      http.expectNone(`${apiBase}/auth/me`);
-    });
-  });
-
-  describe('Given a persisted session flag', () => {
-    beforeEach(() => setupService(true));
-
-    it('calls GET /auth/me at startup', () => {
+    it('appelle toujours GET /auth/me au démarrage (cookie httpOnly = source de vérité)', () => {
       const req = http.expectOne(`${apiBase}/auth/me`);
       expect(req.request.method).toBe('GET');
       expect(req.request.withCredentials).toBe(true);
       req.flush({ id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false });
     });
 
-    it('restores currentUser after successful getCurrentUser', async () => {
+    it('restore currentUser quand /auth/me retourne 200', async () => {
       http
         .expectOne(`${apiBase}/auth/me`)
         .flush({ id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false });
@@ -69,20 +50,26 @@ describe('AuthService', () => {
       expect(service.currentUser()?.email).toBe('a@b.fr');
     });
 
-    it('clears session flag if getCurrentUser fails', async () => {
+    it('reste déconnecté silencieusement quand /auth/me retourne 401', async () => {
       http
         .expectOne(`${apiBase}/auth/me`)
         .flush({}, { status: 401, statusText: 'Unauthorized' });
       await service.ready;
       expect(service.isLoggedIn()).toBe(false);
-      expect(localStorage.getItem('has_session')).toBeNull();
     });
   });
 
   describe('login', () => {
-    beforeEach(() => setupService(false));
+    beforeEach(() => {
+      setupService();
+      // Le restoreSession initial fire un GET /auth/me — on l'absorbe pour que
+      // les tests login se concentrent sur leur propre requête.
+      http
+        .expectOne(`${apiBase}/auth/me`)
+        .flush({}, { status: 401, statusText: 'Unauthorized' });
+    });
 
-    it('sets currentUser and localStorage on success', () => {
+    it('set currentUser sur success', () => {
       let outcome: string | undefined;
       service.login('a@b.fr', 'pwd').subscribe((r) => (outcome = r));
       http
@@ -90,10 +77,9 @@ describe('AuthService', () => {
         .flush({ user: { id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false } });
       expect(outcome).toBe('success');
       expect(service.isLoggedIn()).toBe(true);
-      expect(localStorage.getItem('has_session')).toBe('1');
     });
 
-    it('returns "two-factor" when requiresTwoFactor true and stores challengeToken', () => {
+    it('retourne "two-factor" quand requiresTwoFactor true et stocke le challengeToken', () => {
       let outcome: string | undefined;
       service.login('a@b.fr', 'pwd').subscribe((r) => (outcome = r));
       http
@@ -104,7 +90,7 @@ describe('AuthService', () => {
       expect(service.isLoggedIn()).toBe(false);
     });
 
-    it('returns "error" on network failure', () => {
+    it('retourne "error" sur échec réseau', () => {
       let outcome: string | undefined;
       service.login('a@b.fr', 'pwd').subscribe((r) => (outcome = r));
       http

@@ -25,8 +25,13 @@ export class AuthService {
   });
 
   constructor() {
-    // Only attempt session restore if a previous session was recorded (browser only)
-    if (this.isBrowser && localStorage.getItem('has_session')) {
+    // Côté browser, on tente toujours le restore : le cookie httpOnly est la
+    // seule source de vérité, on ne peut pas le lire en JS pour décider.
+    // /auth/me coûte ~50ms et retourne 401 si pas auth (silencieux).
+    // Pas de localStorage guard : il était fragile (mode privé, partition
+    // browser, perte entre sessions) et causait des déconnexions au refresh
+    // alors que le cookie restait valide.
+    if (this.isBrowser) {
       this.restoreSession();
     } else {
       this._resolveReady();
@@ -110,7 +115,6 @@ export class AuthService {
       )
       .subscribe(() => {
         this._currentUser.set(null);
-        if (this.isBrowser) localStorage.removeItem('has_session');
         this.router.navigate(['/']);
       });
   }
@@ -122,19 +126,15 @@ export class AuthService {
       displayName: apiUser.email,
       isTwoFactorEnabled: apiUser.isTwoFactorEnabled,
     });
-    if (this.isBrowser) localStorage.setItem('has_session', '1');
   }
 
   private restoreSession(): void {
     this.gateway
       .getCurrentUser()
       .pipe(
-        tap((res) => {
-          this.setUserFromApi(res);
-        }),
+        tap((res) => this.setUserFromApi(res)),
         catchError(() => {
           this._currentUser.set(null);
-          if (this.isBrowser) localStorage.removeItem('has_session');
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef),
