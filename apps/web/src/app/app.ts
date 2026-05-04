@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { UiToast } from '@shared/ui';
 import { Header, Footer } from '@layout';
+import { AuthService } from '@features/auth/infrastructure';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +28,13 @@ import { Header, Footer } from '@layout';
 })
 export class App {
   private readonly router = inject(Router);
+  // Force l'instanciation d'AuthService au boot client. Sans cette injection
+  // explicite ici, le constructor (qui déclenche restoreSession()) n'est jamais
+  // appelé tant que l'utilisateur ne visite pas une route protégée — résultat :
+  // perte de session au refresh navigateur même si le cookie est valide.
+  // Le AppComponent est garanti d'être créé au boot, contrairement aux
+  // appInitializers qui peuvent être skip après hydration SSG.
+  private readonly _auth = inject(AuthService);
 
   private readonly navigationEnd = toSignal(
     this.router.events.pipe(
