@@ -40,13 +40,31 @@ import { HttpHomeGateway } from '@features/home/infrastructure';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import { HttpBookingGateway } from '@features/booking/infrastructure';
 import { AUTH_GATEWAY } from '@features/auth/domain';
-import { HttpAuthGateway } from '@features/auth/infrastructure';
+import { HttpAuthGateway, AuthService } from '@features/auth/infrastructure';
 
 function prefetchHomeBundle(): () => void {
   return (): void => {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
     const gateway = inject(HOME_GATEWAY);
     gateway.getHomeBundle().subscribe();
+  };
+}
+
+/**
+ * Force l'instanciation d'AuthService au boot pour que `restoreSession()` parte
+ * tout de suite. Sans ça, AuthService n'est instancié qu'à la première requête
+ * HTTP via l'interceptor — ce qui peut être trop tard, ou pas du tout sur les
+ * pages publiques. Résultat : au refresh navigateur, l'utilisateur restait
+ * déconnecté tant qu'il n'avait pas visité une route protégée.
+ *
+ * Retourne `service.ready` pour que l'app attende le check d'auth avant le
+ * premier rendu, évitant un flash UI « déconnecté → connecté ».
+ */
+function initializeAuth(): () => Promise<void> | void {
+  return (): Promise<void> | void => {
+    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+    const auth = inject(AuthService);
+    return auth.ready;
   };
 }
 
@@ -125,6 +143,7 @@ export const appConfig: ApplicationConfig = {
     ),
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
+    provideAppInitializer(initializeAuth()),
     provideAppInitializer(prefetchHomeBundle()),
     provideAppInitializer(initializeSeo()),
     provideAppInitializer(initializeTracking()),
