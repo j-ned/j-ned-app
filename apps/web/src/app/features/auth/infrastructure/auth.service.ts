@@ -128,7 +128,15 @@ export class AuthService {
     });
   }
 
-  private restoreSession(): void {
+  /**
+   * Tente de restaurer la session depuis le cookie httpOnly via GET /auth/me.
+   * Public car peut être appelé explicitement par App au boot client si
+   * l'instance d'AuthService a été créée côté SSG (constructor pas re-exécuté
+   * lors de l'hydration → restoreSession initial skip).
+   * Idempotent : si déjà restauré, le subscribe re-set les mêmes valeurs.
+   */
+  restoreSession(): void {
+    if (!this.isBrowser) return;
     this.gateway
       .getCurrentUser()
       .pipe(

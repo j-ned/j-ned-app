@@ -28,13 +28,18 @@ import { AuthService } from '@features/auth/infrastructure';
 })
 export class App {
   private readonly router = inject(Router);
-  // Force l'instanciation d'AuthService au boot client. Sans cette injection
-  // explicite ici, le constructor (qui déclenche restoreSession()) n'est jamais
-  // appelé tant que l'utilisateur ne visite pas une route protégée — résultat :
-  // perte de session au refresh navigateur même si le cookie est valide.
-  // Le AppComponent est garanti d'être créé au boot, contrairement aux
-  // appInitializers qui peuvent être skip après hydration SSG.
-  private readonly _auth = inject(AuthService);
+  private readonly auth = inject(AuthService);
+
+  constructor() {
+    // Restaure la session au boot client. Appelé explicitement (et pas
+    // uniquement via le constructor d'AuthService) car avec
+    // provideClientHydration, l'instance d'AuthService peut être réutilisée
+    // depuis le SSG : son constructor n'est alors PAS re-exécuté côté browser,
+    // et le restoreSession() initial skip côté serveur n'est jamais rejoué.
+    // Cette ligne garantit que /auth/me part au boot client, peu importe le
+    // cycle de vie du Service. Idempotent.
+    this.auth.restoreSession();
+  }
 
   private readonly navigationEnd = toSignal(
     this.router.events.pipe(
