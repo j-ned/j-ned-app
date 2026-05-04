@@ -15,26 +15,25 @@ export class AuthService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly _currentUser = signal<User | null>(null);
   private readonly _pendingChallengeToken = signal<string | null>(null);
-  private _resolveReady!: () => void;
 
   readonly currentUser = this._currentUser.asReadonly();
   readonly isLoggedIn = computed(() => this._currentUser() !== null);
   readonly pendingChallengeToken = this._pendingChallengeToken.asReadonly();
-  readonly ready = new Promise<void>((resolve) => {
-    this._resolveReady = resolve;
-  });
+
+  /**
+   * Promise résolue quand le check d'auth initial (restoreSession) est terminé.
+   * Récréée à chaque appel de `restoreSession()` pour que les nouveaux awaiters
+   * (router guards, etc.) attendent la restoration en cours plutôt qu'une
+   * promise déjà résolue côté SSG (où le constructor finit instantanément).
+   */
+  private _ready: Promise<void> = Promise.resolve();
+  get ready(): Promise<void> {
+    return this._ready;
+  }
 
   constructor() {
-    // Côté browser, on tente toujours le restore : le cookie httpOnly est la
-    // seule source de vérité, on ne peut pas le lire en JS pour décider.
-    // /auth/me coûte ~50ms et retourne 401 si pas auth (silencieux).
-    // Pas de localStorage guard : il était fragile (mode privé, partition
-    // browser, perte entre sessions) et causait des déconnexions au refresh
-    // alors que le cookie restait valide.
     if (this.isBrowser) {
       this.restoreSession();
-    } else {
-      this._resolveReady();
     }
   }
 
@@ -130,23 +129,26 @@ export class AuthService {
 
   /**
    * Tente de restaurer la session depuis le cookie httpOnly via GET /auth/me.
-   * Public car peut être appelé explicitement par App au boot client si
-   * l'instance d'AuthService a été créée côté SSG (constructor pas re-exécuté
-   * lors de l'hydration → restoreSession initial skip).
-   * Idempotent : si déjà restauré, le subscribe re-set les mêmes valeurs.
+   * Public car appelé explicitement par App au boot client (le constructor
+   * d'AuthService peut ne pas être re-exécuté lors de l'hydration SSG).
+   * Idempotent : reset puis reset le state selon la réponse backend.
+   * Recrée `ready` pour que les awaiters subséquents attendent le nouveau
+   * check (cas où ready avait déjà été résolue côté SSG sans fetch).
    */
   restoreSession(): void {
     if (!this.isBrowser) return;
-    this.gateway
-      .getCurrentUser()
-      .pipe(
-        tap((res) => this.setUserFromApi(res)),
-        catchError(() => {
-          this._currentUser.set(null);
-          return of(null);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(() => this._resolveReady());
+    this._ready = new Promise<void>((resolve) => {
+      this.gateway
+        .getCurrentUser()
+        .pipe(
+          tap((res) => this.setUserFromApi(res)),
+          catchError(() => {
+            this._currentUser.set(null);
+            return of(null);
+          }),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe(() => resolve());
+    });
   }
 }
