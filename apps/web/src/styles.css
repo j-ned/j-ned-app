@@ -129,3 +129,66 @@ input:-webkit-autofill:focus {
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   @apply transition-colors;
 }
+
+/* ---------------------------------------------------------------- *
+ * Admin table utilities — listes du dashboard
+ * ---------------------------------------------------------------- */
+
+@utility admin-table-shell {
+  @apply overflow-hidden rounded-xl border border-foreground/8 bg-foreground/2;
+}
+
+@utility admin-table {
+  @apply w-full border-collapse text-sm;
+}
+
+@utility admin-th {
+  @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted;
+  @apply border-b border-foreground/8;
+}
+
+@utility admin-th-sortable {
+  @apply admin-th;
+  @apply cursor-pointer select-none;
+  @apply hover:text-foreground transition-colors;
+}
+
+@utility admin-td {
+  @apply px-4 py-3.5 text-foreground/90;
+  @apply border-b border-foreground/5;
+}
+
+@utility admin-row {
+  @apply transition-colors hover:bg-foreground/3;
+  @apply last:[&>td]:border-b-0;
+}
+
+@utility admin-empty {
+  @apply admin-table-shell;
+  @apply px-6 py-16 text-center text-muted text-sm;
+}
+
+@utility admin-icon-btn {
+  @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted;
+  @apply hover:bg-surface-elevated hover:text-foreground;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  @apply transition-colors;
+}
+
+@utility admin-icon-btn-danger {
+  @apply admin-icon-btn;
+  @apply hover:bg-red-500/10 hover:text-red-400;
+  @apply focus-visible:ring-red-500;
+}
+
+@utility admin-pager-btn {
+  @apply inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-3 text-sm text-muted;
+  @apply hover:bg-surface-elevated hover:text-foreground;
+  @apply disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted;
+  @apply transition-colors;
+}
+
+@utility admin-pager-btn-active {
+  @apply admin-pager-btn;
+  @apply bg-primary-bg/15 text-primary hover:bg-primary-bg/20 hover:text-primary;
+}

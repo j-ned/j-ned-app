@@ -1,66 +1,29 @@
 import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import type { Diploma } from '@features/profile/domain';
 import { ToastService } from '@shared/ui';
-import { TableModule } from 'primeng/table';
+import { AdminTable } from './components/admin-table';
+import { AdminColText, AdminColMuted, AdminColActions } from './components/admin-column';
 
 @Component({
   selector: 'app-admin-diplomas',
-  imports: [RouterLink, TableModule],
+  imports: [AdminTable, AdminColText, AdminColMuted, AdminColActions],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div class="flex items-center justify-between mb-8">
-      <h1 class="text-2xl font-bold text-foreground">Diplômes</h1>
-      <a routerLink="/admin/content/diplomas/new" class="btn-primary">
-        <i class="pi pi-plus mr-2" aria-hidden="true"></i>
-        Nouveau diplôme
-      </a>
-    </div>
-
-    <p-table
-      [value]="diplomas()"
-      [paginator]="diplomas().length > 10"
-      [rows]="10"
-      [rowHover]="true"
-      dataKey="id"
+    <app-admin-table
+      title="Diplômes"
+      newRoute="/admin/content/diplomas/new"
+      newLabel="Nouveau diplôme"
+      [items]="diplomas()"
+      [defaultSort]="{ key: 'title' }"
       emptyMessage="Aucun diplôme"
     >
-      <ng-template #header>
-        <tr>
-          <th pSortableColumn="title">Titre <p-sortIcon field="title" /></th>
-          <th pSortableColumn="provider">Organisme <p-sortIcon field="provider" /></th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-diploma>
-        <tr>
-          <td class="font-medium text-foreground">{{ diploma.title }}</td>
-          <td class="text-muted">{{ diploma.provider }}</td>
-          <td class="text-right">
-            <div class="flex items-center justify-end gap-2">
-              <a
-                [routerLink]="['/admin/content/diplomas', diploma.id, 'edit']"
-                aria-label="Modifier"
-                class="btn-outline"
-              >
-                <i class="pi pi-pencil" aria-hidden="true"></i>
-              </a>
-              <button
-                type="button"
-                (click)="deleteDiploma(diploma)"
-                aria-label="Supprimer"
-                class="btn-danger"
-              >
-                <i class="pi pi-trash" aria-hidden="true"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+      <app-admin-col-text key="title" label="Titre" sortable bold [accessor]="title" />
+      <app-admin-col-muted key="provider" label="Organisme" sortable [accessor]="provider" />
+      <app-admin-col-actions [editRoute]="editRoute" (delete)="deleteDiploma($event)" />
+    </app-admin-table>
   `,
 })
 export class AdminDiplomas {
@@ -68,13 +31,21 @@ export class AdminDiplomas {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly title = (d: Diploma): string => d.title;
+  protected readonly provider = (d: Diploma): string => d.provider;
+  protected readonly editRoute = (d: Diploma): readonly string[] => [
+    '/admin/content/diplomas',
+    d.id,
+    'edit',
+  ];
+
   private readonly diplomasRes = rxResource({
     stream: () => this.profileGateway.getDiplomas(),
   });
 
-  readonly diplomas = computed(() => [...(this.diplomasRes.value() ?? [])]);
+  protected readonly diplomas = computed(() => [...(this.diplomasRes.value() ?? [])]);
 
-  deleteDiploma(diploma: Diploma): void {
+  protected deleteDiploma(diploma: Diploma): void {
     const snapshot = this.diplomasRes.value() ?? [];
     this.diplomasRes.update((list) => (list ?? []).filter((d) => d.id !== diploma.id));
 

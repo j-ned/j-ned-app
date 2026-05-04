@@ -1,66 +1,29 @@
 import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import type { Highlight } from '@features/profile/domain';
 import { ToastService } from '@shared/ui';
-import { TableModule } from 'primeng/table';
+import { AdminTable } from './components/admin-table';
+import { AdminColText, AdminColMono, AdminColActions } from './components/admin-column';
 
 @Component({
   selector: 'app-admin-highlights',
-  imports: [RouterLink, TableModule],
+  imports: [AdminTable, AdminColText, AdminColMono, AdminColActions],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div class="flex items-center justify-between mb-8">
-      <h1 class="text-2xl font-bold text-foreground">Points forts</h1>
-      <a routerLink="/admin/content/highlights/new" class="btn-primary">
-        <i class="pi pi-plus mr-2" aria-hidden="true"></i>
-        Nouveau point fort
-      </a>
-    </div>
-
-    <p-table
-      [value]="highlights()"
-      [paginator]="highlights().length > 10"
-      [rows]="10"
-      [rowHover]="true"
-      dataKey="id"
+    <app-admin-table
+      title="Points forts"
+      newRoute="/admin/content/highlights/new"
+      newLabel="Nouveau point fort"
+      [items]="highlights()"
+      [defaultSort]="{ key: 'title' }"
       emptyMessage="Aucun point fort"
     >
-      <ng-template #header>
-        <tr>
-          <th pSortableColumn="title">Titre <p-sortIcon field="title" /></th>
-          <th>Icône</th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-highlight>
-        <tr>
-          <td class="font-medium text-foreground">{{ highlight.title }}</td>
-          <td class="text-muted">{{ highlight.icon }}</td>
-          <td class="text-right">
-            <div class="flex items-center justify-end gap-2">
-              <a
-                [routerLink]="['/admin/content/highlights', highlight.id, 'edit']"
-                aria-label="Modifier"
-                class="btn-outline"
-              >
-                <i class="pi pi-pencil" aria-hidden="true"></i>
-              </a>
-              <button
-                type="button"
-                (click)="deleteHighlight(highlight)"
-                aria-label="Supprimer"
-                class="btn-danger"
-              >
-                <i class="pi pi-trash" aria-hidden="true"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+      <app-admin-col-text key="title" label="Titre" sortable bold [accessor]="title" />
+      <app-admin-col-mono key="icon" label="Icône" [accessor]="icon" />
+      <app-admin-col-actions [editRoute]="editRoute" (delete)="deleteHighlight($event)" />
+    </app-admin-table>
   `,
 })
 export class AdminHighlights {
@@ -68,13 +31,21 @@ export class AdminHighlights {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly title = (h: Highlight): string => h.title;
+  protected readonly icon = (h: Highlight): string => h.icon;
+  protected readonly editRoute = (h: Highlight): readonly string[] => [
+    '/admin/content/highlights',
+    h.id,
+    'edit',
+  ];
+
   private readonly highlightsRes = rxResource({
     stream: () => this.profileGateway.getHighlights(),
   });
 
-  readonly highlights = computed(() => [...(this.highlightsRes.value() ?? [])]);
+  protected readonly highlights = computed(() => [...(this.highlightsRes.value() ?? [])]);
 
-  deleteHighlight(highlight: Highlight): void {
+  protected deleteHighlight(highlight: Highlight): void {
     const snapshot = this.highlightsRes.value() ?? [];
     this.highlightsRes.update((list) => (list ?? []).filter((h) => h.id !== highlight.id));
 

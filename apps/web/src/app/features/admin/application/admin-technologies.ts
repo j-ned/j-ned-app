@@ -1,68 +1,35 @@
 import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { PROFILE_GATEWAY } from '@features/profile/application';
 import type { Technology } from '@features/profile/domain';
 import { ToastService } from '@shared/ui';
-import { TableModule } from 'primeng/table';
+import { AdminTable } from './components/admin-table';
+import {
+  AdminColText,
+  AdminColMuted,
+  AdminColMono,
+  AdminColActions,
+} from './components/admin-column';
 
 @Component({
   selector: 'app-admin-technologies',
-  imports: [RouterLink, TableModule],
+  imports: [AdminTable, AdminColText, AdminColMuted, AdminColMono, AdminColActions],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div class="flex items-center justify-between mb-8">
-      <h1 class="text-2xl font-bold text-foreground">Technologies</h1>
-      <a routerLink="/admin/content/technologies/new" class="btn-primary">
-        <i class="pi pi-plus mr-2" aria-hidden="true"></i>
-        Nouvelle technologie
-      </a>
-    </div>
-
-    <p-table
-      [value]="technologies()"
-      [paginator]="technologies().length > 10"
-      [rows]="10"
-      [rowHover]="true"
-      dataKey="id"
+    <app-admin-table
+      title="Technologies"
+      newRoute="/admin/content/technologies/new"
+      newLabel="Nouvelle technologie"
+      [items]="technologies()"
+      [defaultSort]="{ key: 'name' }"
       emptyMessage="Aucune technologie"
     >
-      <ng-template #header>
-        <tr>
-          <th pSortableColumn="name">Nom <p-sortIcon field="name" /></th>
-          <th pSortableColumn="category">Catégorie <p-sortIcon field="category" /></th>
-          <th>Icône</th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-tech>
-        <tr>
-          <td class="font-medium text-foreground">{{ tech.name }}</td>
-          <td class="text-muted">{{ tech.category }}</td>
-          <td class="text-muted">{{ tech.icon }}</td>
-          <td class="text-right">
-            <div class="flex items-center justify-end gap-2">
-              <a
-                [routerLink]="['/admin/content/technologies', tech.id, 'edit']"
-                aria-label="Modifier"
-                class="btn-outline"
-              >
-                <i class="pi pi-pencil" aria-hidden="true"></i>
-              </a>
-              <button
-                type="button"
-                (click)="deleteTechnology(tech)"
-                aria-label="Supprimer"
-                class="btn-danger"
-              >
-                <i class="pi pi-trash" aria-hidden="true"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+      <app-admin-col-text key="name" label="Nom" sortable bold [accessor]="name" />
+      <app-admin-col-muted key="category" label="Catégorie" sortable [accessor]="category" />
+      <app-admin-col-mono key="icon" label="Icône" [accessor]="icon" />
+      <app-admin-col-actions [editRoute]="editRoute" (delete)="deleteTechnology($event)" />
+    </app-admin-table>
   `,
 })
 export class AdminTechnologies {
@@ -70,13 +37,22 @@ export class AdminTechnologies {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly name = (t: Technology): string => t.name;
+  protected readonly category = (t: Technology): string => t.category;
+  protected readonly icon = (t: Technology): string => t.icon;
+  protected readonly editRoute = (t: Technology): readonly string[] => [
+    '/admin/content/technologies',
+    t.id,
+    'edit',
+  ];
+
   private readonly technologiesRes = rxResource({
     stream: () => this.profileGateway.getTechnologies(),
   });
 
-  readonly technologies = computed(() => [...(this.technologiesRes.value() ?? [])]);
+  protected readonly technologies = computed(() => [...(this.technologiesRes.value() ?? [])]);
 
-  deleteTechnology(tech: Technology): void {
+  protected deleteTechnology(tech: Technology): void {
     const snapshot = this.technologiesRes.value() ?? [];
     this.technologiesRes.update((list) => (list ?? []).filter((t) => t.id !== tech.id));
 

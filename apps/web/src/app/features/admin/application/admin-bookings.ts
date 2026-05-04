@@ -1,68 +1,49 @@
-import { Component, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import type { Booking } from '@features/booking/domain';
 import { ToastService } from '@shared/ui';
-import { TableModule } from 'primeng/table';
-import { Tag } from 'primeng/tag';
+import { AdminTable } from './components/admin-table';
+import {
+  AdminColContact,
+  AdminColBadge,
+  AdminColText,
+  AdminColMuted,
+  AdminColActions,
+} from './components/admin-column';
 
 @Component({
   selector: 'app-admin-bookings',
-  imports: [TableModule, Tag],
+  imports: [
+    AdminTable,
+    AdminColContact,
+    AdminColBadge,
+    AdminColText,
+    AdminColMuted,
+    AdminColActions,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <h1 class="text-2xl font-bold text-foreground mb-8">Réservations</h1>
-
-    <p-table
-      [value]="bookings()"
-      [paginator]="bookings().length > 10"
-      [rows]="10"
-      [rowHover]="true"
-      dataKey="id"
+    <app-admin-table
+      title="Réservations"
+      [items]="bookings()"
+      [defaultSort]="{ key: 'date', dir: 'desc' }"
       emptyMessage="Aucune réservation"
     >
-      <ng-template #header>
-        <tr>
-          <th pSortableColumn="name">Contact <p-sortIcon field="name" /></th>
-          <th pSortableColumn="date">Date <p-sortIcon field="date" /></th>
-          <th>Créneau</th>
-          <th>Objet / Message</th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-booking>
-        <tr>
-          <td>
-            <div class="font-medium text-foreground">{{ booking.name }}</div>
-            <div class="text-xs text-muted">{{ booking.email }}</div>
-          </td>
-          <td>
-            <p-tag [value]="booking.date" severity="info" />
-          </td>
-          <td>
-            <p-tag
-              [value]="booking.startTime + ' (' + booking.duration + ' min)'"
-              severity="secondary"
-            />
-          </td>
-          <td>
-            <div class="font-medium text-foreground">{{ booking.subject }}</div>
-            <div class="text-xs text-muted max-w-md truncate">{{ booking.message }}</div>
-          </td>
-          <td class="text-right">
-            <button
-              type="button"
-              (click)="deleteBooking(booking)"
-              aria-label="Supprimer"
-              class="btn-danger"
-            >
-              <i class="pi pi-trash" aria-hidden="true"></i>
-            </button>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+      <app-admin-col-contact
+        key="name"
+        label="Contact"
+        sortable
+        [nameAccessor]="contactName"
+        [subAccessor]="contactEmail"
+      />
+      <app-admin-col-badge key="date" label="Date" sortable tone="primary" [accessor]="date" />
+      <app-admin-col-badge key="slot" label="Créneau" tone="neutral" [accessor]="slot" />
+      <app-admin-col-text key="subject" label="Objet" bold [accessor]="subject" />
+      <app-admin-col-muted key="message" label="Message" truncate [accessor]="message" />
+      <app-admin-col-actions (delete)="deleteBooking($event)" />
+    </app-admin-table>
   `,
 })
 export class AdminBookings {
@@ -70,13 +51,20 @@ export class AdminBookings {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly contactName = (b: Booking): string => b.name;
+  protected readonly contactEmail = (b: Booking): string => b.email;
+  protected readonly date = (b: Booking): string => b.date;
+  protected readonly slot = (b: Booking): string => `${b.startTime} (${b.duration} min)`;
+  protected readonly subject = (b: Booking): string => b.subject;
+  protected readonly message = (b: Booking): string => b.message;
+
   private readonly bookingsRes = rxResource({
     stream: () => this.bookingGateway.getAllBookings(),
   });
 
-  readonly bookings = (): Booking[] => [...(this.bookingsRes.value() ?? [])];
+  protected readonly bookings = computed(() => [...(this.bookingsRes.value() ?? [])]);
 
-  deleteBooking(booking: Booking): void {
+  protected deleteBooking(booking: Booking): void {
     const snapshot = this.bookingsRes.value() ?? [];
     this.bookingsRes.update((list) => (list ?? []).filter((b) => b.id !== booking.id));
 

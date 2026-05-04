@@ -1,87 +1,55 @@
 import { Component, DestroyRef, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { HOME_GATEWAY } from '@features/home/application';
 import type { ServicePricing } from '@features/home/domain';
 import { ToastService } from '@shared/ui';
-import { TableModule } from 'primeng/table';
-import { Tag } from 'primeng/tag';
-import { ToggleSwitch } from 'primeng/toggleswitch';
+import { AdminTable } from './components/admin-table';
+import {
+  AdminColText,
+  AdminColNumber,
+  AdminColBadge,
+  AdminColToggle,
+  AdminColActions,
+} from './components/admin-column';
 
 @Component({
   selector: 'app-admin-services',
-  imports: [RouterLink, FormsModule, TableModule, Tag, ToggleSwitch],
+  imports: [
+    AdminTable,
+    AdminColText,
+    AdminColNumber,
+    AdminColBadge,
+    AdminColToggle,
+    AdminColActions,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div class="flex items-center justify-between mb-8">
-      <h1 class="text-2xl font-bold text-foreground">Prestations</h1>
-      <a routerLink="/admin/content/services/new" class="btn-primary">
-        <i class="pi pi-plus mr-2" aria-hidden="true"></i>
-        Nouvelle prestation
-      </a>
-    </div>
-
-    <p-table
-      [value]="services()"
-      [paginator]="services().length > 10"
-      [rows]="10"
-      [rowHover]="true"
-      dataKey="id"
+    <app-admin-table
+      title="Prestations"
+      newRoute="/admin/content/services/new"
+      newLabel="Nouvelle prestation"
+      [items]="services()"
+      [defaultSort]="{ key: 'order' }"
       emptyMessage="Aucune prestation"
     >
-      <ng-template #header>
-        <tr>
-          <th pSortableColumn="order">Ordre <p-sortIcon field="order" /></th>
-          <th pSortableColumn="title">Titre <p-sortIcon field="title" /></th>
-          <th pSortableColumn="price">Prix <p-sortIcon field="price" /></th>
-          <th>Mis en avant</th>
-          <th>Active</th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-service>
-        <tr>
-          <td class="text-muted">{{ service.order }}</td>
-          <td class="font-medium text-foreground">{{ service.title }}</td>
-          <td class="text-primary font-medium">{{ service.price }}</td>
-          <td>
-            @if (service.highlighted) {
-              <p-tag value="Oui" severity="info" />
-            } @else {
-              <span class="text-muted">Non</span>
-            }
-          </td>
-          <td>
-            <p-toggleswitch
-              [ngModel]="service.enabled"
-              (ngModelChange)="toggleEnabled(service)"
-              [ariaLabel]="service.enabled ? 'Désactiver' : 'Activer'"
-            />
-          </td>
-          <td class="text-right">
-            <div class="flex items-center justify-end gap-2">
-              <a
-                [routerLink]="['/admin/content/services', service.id, 'edit']"
-                aria-label="Modifier"
-                class="btn-outline"
-              >
-                <i class="pi pi-pencil" aria-hidden="true"></i>
-              </a>
-              <button
-                type="button"
-                (click)="deleteService(service)"
-                aria-label="Supprimer"
-                class="btn-danger"
-              >
-                <i class="pi pi-trash" aria-hidden="true"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+      <app-admin-col-number key="order" label="Ordre" sortable [accessor]="order" />
+      <app-admin-col-text key="title" label="Titre" sortable bold [accessor]="title" />
+      <app-admin-col-text key="price" label="Prix" sortable [accessor]="price" />
+      <app-admin-col-badge
+        key="highlighted"
+        label="Mis en avant"
+        tone="accent"
+        [accessor]="highlightedLabel"
+      />
+      <app-admin-col-toggle
+        key="enabled"
+        label="Active"
+        [accessor]="enabled"
+        (toggleChange)="toggleEnabled($event)"
+      />
+      <app-admin-col-actions [editRoute]="editRoute" (delete)="deleteService($event)" />
+    </app-admin-table>
   `,
 })
 export class AdminServices {
@@ -89,13 +57,25 @@ export class AdminServices {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly order = (s: ServicePricing): number => s.order;
+  protected readonly title = (s: ServicePricing): string => s.title;
+  protected readonly price = (s: ServicePricing): string => s.price;
+  protected readonly highlightedLabel = (s: ServicePricing): string | null =>
+    s.highlighted ? 'Mis en avant' : null;
+  protected readonly enabled = (s: ServicePricing): boolean => s.enabled;
+  protected readonly editRoute = (s: ServicePricing): readonly string[] => [
+    '/admin/content/services',
+    s.id,
+    'edit',
+  ];
+
   private readonly servicesRes = rxResource({
     stream: () => this.homeGateway.getServicePricing(),
   });
 
-  readonly services = computed(() => [...(this.servicesRes.value() ?? [])]);
+  protected readonly services = computed(() => [...(this.servicesRes.value() ?? [])]);
 
-  toggleEnabled(service: ServicePricing): void {
+  protected toggleEnabled(service: ServicePricing): void {
     this.homeGateway
       .updateServicePricing(service.id, { enabled: !service.enabled })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -120,7 +100,7 @@ export class AdminServices {
       });
   }
 
-  deleteService(service: ServicePricing): void {
+  protected deleteService(service: ServicePricing): void {
     const snapshot = this.servicesRes.value() ?? [];
     this.servicesRes.update((list) => (list ?? []).filter((s) => s.id !== service.id));
 
