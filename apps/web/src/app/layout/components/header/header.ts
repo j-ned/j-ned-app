@@ -1,4 +1,4 @@
-import { Component, signal, effect, afterNextRender, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, effect, afterNextRender, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
@@ -12,6 +12,7 @@ type ThemePreference = 'dark' | 'light';
 
 @Component({
   selector: 'app-header',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, PiIconPipe, UiButton, UiDrawer],
   styles: `
     .nav-surface {
