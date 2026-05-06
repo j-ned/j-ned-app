@@ -122,7 +122,7 @@ export class AdminHero {
         next: () => {
           this.homeGateway.invalidateBundle();
           this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Hero mis à jour' });
-          this.router.navigate(['/admin/content']);
+          void this.router.navigate(['/admin/content']);
         },
         error: () =>
           this.toast.add({
@@ -134,6 +134,6 @@ export class AdminHero {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content']);
+    void this.router.navigate(['/admin/content']);
   }
 }

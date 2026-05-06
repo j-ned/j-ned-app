@@ -130,7 +130,7 @@ describe('HttpProjectsGateway', () => {
     it('createProject(data) émet POST /<base>/projects', async () => {
       const { gateway, httpController } = configure();
       const data = makeProject();
-      const { id, ...payload } = data;
+      const { id: _id, ...payload } = data;
       const created = makeProject({ id: 'new-uuid' });
 
       const promise = firstValueFrom(gateway.createProject(payload));

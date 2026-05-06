@@ -142,7 +142,7 @@ export class AdminHomeHighlightForm {
           summary: 'Succès',
           detail: id ? 'Mise en avant mise à jour' : 'Mise en avant créée',
         });
-        this.router.navigate(['/admin/content/home-highlights']);
+        void this.router.navigate(['/admin/content/home-highlights']);
       },
       error: () =>
         this.toast.add({
@@ -154,6 +154,6 @@ export class AdminHomeHighlightForm {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content/home-highlights']);
+    void this.router.navigate(['/admin/content/home-highlights']);
   }
 }

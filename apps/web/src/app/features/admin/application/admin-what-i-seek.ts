@@ -109,7 +109,7 @@ export class AdminWhatISeek {
             summary: 'Succès',
             detail: id ? 'Contenu mis à jour' : 'Contenu créé',
           });
-          this.router.navigate(['/admin/content']);
+          void this.router.navigate(['/admin/content']);
         },
         error: () =>
           this.toast.add({
@@ -121,6 +121,6 @@ export class AdminWhatISeek {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content']);
+    void this.router.navigate(['/admin/content']);
   }
 }

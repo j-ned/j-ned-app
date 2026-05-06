@@ -132,7 +132,7 @@ export class AdminSocialButtonForm {
           summary: 'Succès',
           detail: id ? 'Réseau social mis à jour' : 'Réseau social créé',
         });
-        this.router.navigate(['/admin/content/social']);
+        void this.router.navigate(['/admin/content/social']);
       },
       error: () =>
         this.toast.add({
@@ -144,6 +144,6 @@ export class AdminSocialButtonForm {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content/social']);
+    void this.router.navigate(['/admin/content/social']);
   }
 }

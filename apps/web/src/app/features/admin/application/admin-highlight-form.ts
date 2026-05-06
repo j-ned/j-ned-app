@@ -136,7 +136,7 @@ export class AdminHighlightForm {
           summary: 'Succès',
           detail: id ? 'Point fort mis à jour' : 'Point fort créé',
         });
-        this.router.navigate(['/admin/content/highlights']);
+        void this.router.navigate(['/admin/content/highlights']);
       },
       error: () =>
         this.toast.add({
@@ -148,6 +148,6 @@ export class AdminHighlightForm {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content/highlights']);
+    void this.router.navigate(['/admin/content/highlights']);
   }
 }

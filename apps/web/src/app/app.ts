@@ -53,6 +53,6 @@ export class App {
 
   onCtrlL(event: Event): void {
     event.preventDefault();
-    this.router.navigate(['/admin']);
+    void this.router.navigate(['/admin']);
   }
 }

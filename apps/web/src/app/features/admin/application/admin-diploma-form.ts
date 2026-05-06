@@ -181,7 +181,7 @@ export class AdminDiplomaForm {
           summary: 'Succès',
           detail: id ? 'Diplôme mis à jour' : 'Diplôme créé',
         });
-        this.router.navigate(['/admin/content/diplomas']);
+        void this.router.navigate(['/admin/content/diplomas']);
       },
       error: () =>
         this.toast.add({
@@ -193,6 +193,6 @@ export class AdminDiplomaForm {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content/diplomas']);
+    void this.router.navigate(['/admin/content/diplomas']);
   }
 }

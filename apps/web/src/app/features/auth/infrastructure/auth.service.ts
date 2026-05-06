@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 import type { User } from '../domain';
-import type { UserResponse } from '../domain';
+import type { TwoFactorSecretResponse, UserResponse } from '../domain';
 import { AUTH_GATEWAY } from '../domain';
 
 @Injectable({ providedIn: 'root' })
@@ -68,7 +68,7 @@ export class AuthService {
     );
   }
 
-  generateTwoFactorSecret() {
+  generateTwoFactorSecret(): Observable<TwoFactorSecretResponse> {
     return this.gateway.generateTwoFactorSecret();
   }
 
@@ -114,7 +114,7 @@ export class AuthService {
       )
       .subscribe(() => {
         this._currentUser.set(null);
-        this.router.navigate(['/']);
+        void this.router.navigate(['/']);
       });
   }
 

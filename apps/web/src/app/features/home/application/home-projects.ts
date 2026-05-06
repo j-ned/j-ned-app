@@ -56,6 +56,6 @@ export class HomeProjects {
   });
 
   goToProjects(): void {
-    this.router.navigate(['/projects']);
+    void this.router.navigate(['/projects']);
   }
 }

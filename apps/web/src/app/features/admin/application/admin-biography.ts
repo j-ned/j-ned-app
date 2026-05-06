@@ -128,7 +128,7 @@ export class AdminBiography {
             summary: 'Succès',
             detail: 'Biographie mise à jour',
           });
-          this.router.navigate(['/admin/content']);
+          void this.router.navigate(['/admin/content']);
         },
         error: () =>
           this.toast.add({
@@ -140,6 +140,6 @@ export class AdminBiography {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content']);
+    void this.router.navigate(['/admin/content']);
   }
 }

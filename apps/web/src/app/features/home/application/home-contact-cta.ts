@@ -68,10 +68,10 @@ export class HomeContactCta {
   private readonly router = inject(Router);
 
   goToContact(): void {
-    this.router.navigate(['/contact']);
+    void this.router.navigate(['/contact']);
   }
 
   goToBooking(): void {
-    this.router.navigate(['/booking']);
+    void this.router.navigate(['/booking']);
   }
 }

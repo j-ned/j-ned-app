@@ -99,10 +99,10 @@ export class HomeHeroSection {
   private readonly router = inject(Router);
 
   goToProjects(): void {
-    this.router.navigate(['/projects']);
+    void this.router.navigate(['/projects']);
   }
 
   goToContact(): void {
-    this.router.navigate(['/contact']);
+    void this.router.navigate(['/contact']);
   }
 }

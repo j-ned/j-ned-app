@@ -106,7 +106,7 @@ export class TwoFactorVerify {
 
     const challengeToken = this.authService.pendingChallengeToken();
     if (!challengeToken) {
-      this.router.navigate(['/login']);
+      void this.router.navigate(['/login']);
       return;
     }
 
@@ -120,7 +120,7 @@ export class TwoFactorVerify {
         next: (success) => {
           this.isSubmitting.set(false);
           if (success) {
-            this.router.navigate(['/admin']);
+            void this.router.navigate(['/admin']);
           } else {
             this.errorMessage.set('Code invalide');
           }

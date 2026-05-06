@@ -168,9 +168,9 @@ export class Login {
         next: (result) => {
           this.isSubmitting.set(false);
           if (result === 'success') {
-            this.router.navigate(['/admin']);
+            void this.router.navigate(['/admin']);
           } else if (result === 'two-factor') {
-            this.router.navigate(['/two-factor']);
+            void this.router.navigate(['/two-factor']);
           } else {
             this.errorMessage.set('Email ou mot de passe incorrect');
             this.toast.add({

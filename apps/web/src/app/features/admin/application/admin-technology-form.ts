@@ -138,7 +138,7 @@ export class AdminTechnologyForm {
           summary: 'Succès',
           detail: id ? 'Technologie mise à jour' : 'Technologie créée',
         });
-        this.router.navigate(['/admin/content/technologies']);
+        void this.router.navigate(['/admin/content/technologies']);
       },
       error: () =>
         this.toast.add({
@@ -150,6 +150,6 @@ export class AdminTechnologyForm {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content/technologies']);
+    void this.router.navigate(['/admin/content/technologies']);
   }
 }

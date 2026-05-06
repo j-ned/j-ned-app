@@ -220,7 +220,7 @@ export class AdminServiceForm {
           summary: 'Succès',
           detail: id ? 'Prestation mise à jour' : 'Prestation créée',
         });
-        this.router.navigate(['/admin/content/services']);
+        void this.router.navigate(['/admin/content/services']);
       },
       error: () =>
         this.toast.add({
@@ -232,6 +232,6 @@ export class AdminServiceForm {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content/services']);
+    void this.router.navigate(['/admin/content/services']);
   }
 }

@@ -103,6 +103,6 @@ export class HomeServices {
   readonly services = input<readonly ServicePricing[]>([]);
 
   goToBooking(): void {
-    this.router.navigate(['/booking']);
+    void this.router.navigate(['/booking']);
   }
 }

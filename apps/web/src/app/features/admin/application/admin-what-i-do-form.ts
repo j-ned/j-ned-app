@@ -118,7 +118,7 @@ export class AdminWhatIDoForm {
           summary: 'Succès',
           detail: id ? 'Compétence mise à jour' : 'Compétence créée',
         });
-        this.router.navigate(['/admin/content/what-i-do']);
+        void this.router.navigate(['/admin/content/what-i-do']);
       },
       error: () =>
         this.toast.add({
@@ -130,6 +130,6 @@ export class AdminWhatIDoForm {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content/what-i-do']);
+    void this.router.navigate(['/admin/content/what-i-do']);
   }
 }

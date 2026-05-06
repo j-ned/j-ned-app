@@ -166,7 +166,7 @@ export class AdminProfile {
         .subscribe({
           next: () => {
             this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Profil mis à jour' });
-            this.router.navigate(['/admin/content']);
+            void this.router.navigate(['/admin/content']);
           },
           error: () =>
             this.toast.add({
@@ -182,7 +182,7 @@ export class AdminProfile {
         .subscribe({
           next: () => {
             this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Profil mis à jour' });
-            this.router.navigate(['/admin/content']);
+            void this.router.navigate(['/admin/content']);
           },
           error: () =>
             this.toast.add({
@@ -195,7 +195,7 @@ export class AdminProfile {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/content']);
+    void this.router.navigate(['/admin/content']);
   }
 
   private selectFile(file: File): void {
