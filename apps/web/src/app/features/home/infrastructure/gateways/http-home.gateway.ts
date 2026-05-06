@@ -76,23 +76,23 @@ export class HttpHomeGateway implements HomeGateway {
 
   getHomeHighlights(): Observable<readonly HomeHighlight[]> {
     return this.http
-      .get<HomeHighlight[]>(`${this.apiUrl}/home-highlights`)
+      .get<HomeHighlight[]>(`${this.apiUrl}/highlights/home`)
       .pipe(catchError(() => of([])));
   }
 
   getHomeHighlightById(id: string): Observable<HomeHighlight> {
-    return this.http.get<HomeHighlight>(`${this.apiUrl}/home-highlights/${id}`);
+    return this.http.get<HomeHighlight>(`${this.apiUrl}/highlights/home/${id}`);
   }
 
   createHomeHighlight(data: Omit<HomeHighlight, 'id'>): Observable<HomeHighlight> {
-    return this.http.post<HomeHighlight>(`${this.apiUrl}/home-highlights`, data);
+    return this.http.post<HomeHighlight>(`${this.apiUrl}/highlights/home`, data);
   }
 
   updateHomeHighlight(id: string, data: Partial<HomeHighlight>): Observable<HomeHighlight> {
-    return this.http.patch<HomeHighlight>(`${this.apiUrl}/home-highlights/${id}`, data);
+    return this.http.patch<HomeHighlight>(`${this.apiUrl}/highlights/home/${id}`, data);
   }
 
   deleteHomeHighlight(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/home-highlights/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/highlights/home/${id}`);
   }
 }

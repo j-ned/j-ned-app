@@ -44,7 +44,7 @@ export class HttpProfileGateway implements ProfileGateway {
   }
 
   getHighlights(): Observable<readonly Highlight[]> {
-    return this.http.get<Highlight[]>(`${this.apiUrl}/highlights`).pipe(catchError(() => of([])));
+    return this.http.get<Highlight[]>(`${this.apiUrl}/highlights/profile`).pipe(catchError(() => of([])));
   }
 
   getWhatIDo(): Observable<readonly WhatIDo[]> {
@@ -144,19 +144,19 @@ export class HttpProfileGateway implements ProfileGateway {
   }
 
   getHighlightById(id: string): Observable<Highlight> {
-    return this.http.get<Highlight>(`${this.apiUrl}/highlights/${id}`);
+    return this.http.get<Highlight>(`${this.apiUrl}/highlights/profile/${id}`);
   }
 
   createHighlight(data: Omit<Highlight, 'id'>): Observable<Highlight> {
-    return this.http.post<Highlight>(`${this.apiUrl}/highlights`, data);
+    return this.http.post<Highlight>(`${this.apiUrl}/highlights/profile`, data);
   }
 
   updateHighlight(id: string, data: Partial<Highlight>): Observable<Highlight> {
-    return this.http.patch<Highlight>(`${this.apiUrl}/highlights/${id}`, data);
+    return this.http.patch<Highlight>(`${this.apiUrl}/highlights/profile/${id}`, data);
   }
 
   deleteHighlight(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/highlights/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/highlights/profile/${id}`);
   }
 
   getWhatIDoById(id: string): Observable<WhatIDo> {

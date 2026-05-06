@@ -33,7 +33,7 @@ const SOCIALS: readonly SocialItem[] = [
         class="inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
       >
         <i class="pi pi-code text-base text-primary" aria-hidden="true"></i>
-        J<span class="text-primary">- Ned</span>
+        Julien<span class="text-primary"> N.</span>
         <span class="text-muted font-normal">&copy; {{ currentYear }}</span>
       </a>
 

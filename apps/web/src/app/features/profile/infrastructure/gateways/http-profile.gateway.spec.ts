@@ -132,13 +132,13 @@ describe('HttpProfileGateway', () => {
       httpController.verify();
     });
 
-    it('getHighlights() émet GET /<base>/highlights, retourne Highlight[]', async () => {
+    it('getHighlights() émet GET /<base>/highlights/profile, retourne Highlight[]', async () => {
       const { gateway, httpController } = configure();
       const expected = [{ id: 'h1', title: 'Award', description: 'desc', icon: 'star' }] as Highlight[];
 
       const promise = firstValueFrom(gateway.getHighlights());
 
-      const req = httpController.expectOne(`${BASE}/highlights`);
+      const req = httpController.expectOne(`${BASE}/highlights/profile`);
       expect(req.request.method).toBe('GET');
       req.flush(expected);
 

@@ -94,7 +94,7 @@ describe('HttpHomeGateway', () => {
       httpController.verify();
     });
 
-    it('getHomeHighlights() émet GET /<base>/home-highlights, retourne HomeHighlight[]', async () => {
+    it('getHomeHighlights() émet GET /<base>/highlights/home, retourne HomeHighlight[]', async () => {
       const { gateway, httpController } = configure();
       const expected = [
         { id: 'hh1', title: 'Highlight 1', description: 'desc', icon: 'star', order: 1 },
@@ -102,7 +102,7 @@ describe('HttpHomeGateway', () => {
 
       const promise = firstValueFrom(gateway.getHomeHighlights());
 
-      const req = httpController.expectOne(`${BASE}/home-highlights`);
+      const req = httpController.expectOne(`${BASE}/highlights/home`);
       expect(req.request.method).toBe('GET');
       req.flush(expected);
 

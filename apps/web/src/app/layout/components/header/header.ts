@@ -31,8 +31,8 @@ type ThemePreference = 'dark' | 'light';
             JN
           </div>
           <div class="flex items-baseline gap-0.5">
-            <span class="text-2xl font-bold text-foreground tracking-tight">j-ned</span>
-            <span class="text-2xl font-bold text-primary">.dev</span>
+            <span class="text-2xl font-bold text-foreground tracking-tight">Julien - </span>
+            <span class="text-2xl font-bold text-primary">N.</span>
           </div>
         </a>
 
