@@ -405,14 +405,28 @@ export class ContactForm {
         next: (result) => {
           this.isSubmitting.set(false);
           if (result.success) {
-            this.toast.add({ severity: 'success', summary: 'Succès', detail: result.message });
+            this.toast.add({
+              severity: 'success',
+              summary: 'Message envoyé',
+              detail: result.message,
+            });
             this.form.reset();
           } else {
-            this.toast.add({ severity: 'error', summary: 'Erreur', detail: result.message });
+            this.toast.add({
+              severity: 'error',
+              summary: 'Envoi impossible',
+              detail: result.message,
+            });
           }
         },
         error: () => {
           this.isSubmitting.set(false);
+          this.toast.add({
+            severity: 'error',
+            summary: 'Envoi impossible',
+            detail:
+              "Une erreur inattendue est survenue. Réessayez ou contactez-moi par email.",
+          });
         },
       });
   }

@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, Observable, of } from 'rxjs';
 import type { ContactGateway } from '../../domain';
 import type {
@@ -15,6 +15,44 @@ import { API_BASE_URL } from '@shared/api';
 type RawSocialLink = { id: string; icon: string; label: string; href: string };
 
 const EMPTY_LINK: SocialLink = { url: '', label: '', icon: '' };
+
+function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
+  switch (err.status) {
+    case 0:
+      return {
+        success: false,
+        message:
+          'Connexion impossible — vérifiez votre réseau, puis réessayez dans un instant.',
+      };
+    case 400:
+      return {
+        success: false,
+        message:
+          'Certains champs sont invalides. Vérifiez votre saisie et réessayez.',
+      };
+    case 429:
+      return {
+        success: false,
+        message:
+          'Trop de tentatives en peu de temps. Patientez une minute avant de réessayer.',
+      };
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return {
+        success: false,
+        message:
+          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+      };
+    default:
+      return {
+        success: false,
+        message:
+          "Une erreur inattendue est survenue lors de l'envoi. Réessayez ou contactez-moi par email.",
+      };
+  }
+}
 
 function toSocialLinks(items: readonly RawSocialLink[]): SocialLinks {
   const find = (keyword: string): SocialLink => {
@@ -62,13 +100,12 @@ export class HttpContactGateway implements ContactGateway {
   }
 
   submitContactForm(data: ContactFormData): Observable<ContactFormSubmission> {
-    return this.http.post<ContactFormSubmission>(`${this.apiUrl}/contact/messages`, data).pipe(
-      catchError(() =>
-        of({
-          success: false,
-          message: "Une erreur est survenue lors de l'envoi. Veuillez réessayer.",
-        }),
-      ),
+    return this.http.post(`${this.apiUrl}/contact/messages`, data).pipe(
+      map<unknown, ContactFormSubmission>(() => ({
+        success: true,
+        message: 'Votre message a bien été envoyé — je reviens vers vous rapidement.',
+      })),
+      catchError((err: HttpErrorResponse) => of(toSubmissionError(err))),
     );
   }
 

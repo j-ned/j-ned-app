@@ -66,7 +66,7 @@ describe('HttpContactGateway', () => {
       httpController.verify();
     });
 
-    it('submitContactForm({name,email,subject,message}) émet POST /<base>/contact/messages', async () => {
+    it('submitContactForm() retourne success:true sur 201 quel que soit le body backend', async () => {
       const { gateway, httpController } = configure();
       const data: ContactFormData = {
         name: 'Test',
@@ -80,10 +80,107 @@ describe('HttpContactGateway', () => {
       const req = httpController.expectOne(`${BASE}/contact/messages`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(data);
-      req.flush({ success: true, message: 'Message envoyé' });
+      // Backend renvoie l'entité ContactMessage complète : la gateway l'ignore
+      // et produit un ContactFormSubmission stable côté domain.
+      req.flush(
+        {
+          id: 'uuid-1',
+          name: 'Test',
+          email: 'test@example.com',
+          subject: 'Hello',
+          message: 'Hi there',
+          read: false,
+          createdAt: '2026-05-07',
+        },
+        { status: 201, statusText: 'Created' },
+      );
 
       const result = await promise;
-      expect(result).toEqual({ success: true, message: 'Message envoyé' });
+      expect(result).toEqual({
+        success: true,
+        message: 'Votre message a bien été envoyé — je reviens vers vous rapidement.',
+      });
+      httpController.verify();
+    });
+
+    it.each([
+      {
+        status: 400,
+        expected:
+          'Certains champs sont invalides. Vérifiez votre saisie et réessayez.',
+      },
+      {
+        status: 429,
+        expected:
+          'Trop de tentatives en peu de temps. Patientez une minute avant de réessayer.',
+      },
+      {
+        status: 500,
+        expected:
+          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+      },
+      {
+        status: 502,
+        expected:
+          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+      },
+      {
+        status: 503,
+        expected:
+          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+      },
+      {
+        status: 504,
+        expected:
+          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+      },
+      {
+        status: 418,
+        expected:
+          "Une erreur inattendue est survenue lors de l'envoi. Réessayez ou contactez-moi par email.",
+      },
+    ])(
+      'submitContactForm() retourne erreur explicite pour HTTP $status',
+      async ({ status, expected }) => {
+        const { gateway, httpController } = configure();
+        const data: ContactFormData = {
+          name: 'Test',
+          email: 'test@example.com',
+          subject: 'Hello',
+          message: 'Hi there',
+        };
+
+        const promise = firstValueFrom(gateway.submitContactForm(data));
+
+        const req = httpController.expectOne(`${BASE}/contact/messages`);
+        req.flush({ message: 'error' }, { status, statusText: 'Error' });
+
+        const result = await promise;
+        expect(result).toEqual({ success: false, message: expected });
+        httpController.verify();
+      },
+    );
+
+    it('submitContactForm() retourne erreur réseau pour HTTP status 0', async () => {
+      const { gateway, httpController } = configure();
+      const data: ContactFormData = {
+        name: 'Test',
+        email: 'test@example.com',
+        subject: 'Hello',
+        message: 'Hi there',
+      };
+
+      const promise = firstValueFrom(gateway.submitContactForm(data));
+
+      const req = httpController.expectOne(`${BASE}/contact/messages`);
+      req.error(new ProgressEvent('error'), { status: 0, statusText: '' });
+
+      const result = await promise;
+      expect(result).toEqual({
+        success: false,
+        message:
+          'Connexion impossible — vérifiez votre réseau, puis réessayez dans un instant.',
+      });
       httpController.verify();
     });
   });
