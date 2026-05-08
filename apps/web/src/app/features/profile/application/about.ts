@@ -39,41 +39,22 @@ import { AboutHighlights } from './about-highlights';
 
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          @defer (on viewport) {
-            <aside class="lg:col-span-1 space-y-8">
-              <app-about-search />
-              <app-about-diploma />
-            </aside>
-          } @placeholder {
-            <div class="lg:col-span-1 space-y-8">
-              <div
-                class="h-32 bg-background/50 border border-foreground/10 rounded-2xl animate-pulse"
-              ></div>
-              <div
-                class="h-64 bg-background/50 border border-foreground/10 rounded-2xl animate-pulse"
-              ></div>
-            </div>
-          }
+          <aside class="lg:col-span-1 space-y-8">
+            <app-about-search />
+            <app-about-diploma />
+          </aside>
 
-          @defer (on viewport) {
-            <div class="lg:col-span-2 space-y-8">
-              <div
-                class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg space-y-8"
-              >
-                <app-about-journey />
-                <div class="border-t border-foreground/10"></div>
-                <app-about-what-i-do />
-                <div class="border-t border-foreground/10"></div>
-                <app-about-highlights />
-              </div>
+          <div class="lg:col-span-2 space-y-8">
+            <div
+              class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg space-y-8"
+            >
+              <app-about-journey />
+              <div class="border-t border-foreground/10"></div>
+              <app-about-what-i-do />
+              <div class="border-t border-foreground/10"></div>
+              <app-about-highlights />
             </div>
-          } @placeholder {
-            <div class="lg:col-span-2">
-              <div
-                class="h-96 bg-background/50 border border-foreground/10 rounded-2xl animate-pulse"
-              ></div>
-            </div>
-          }
+          </div>
         </div>
       </div>
     </main>

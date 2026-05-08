@@ -79,6 +79,10 @@ import { PiIconPipe } from '@shared/icons';
         </section>
       } @placeholder {
         <div class="block py-12 px-6 h-64"></div>
+      } @error {
+        <div class="block py-12 px-6 text-center text-muted text-sm">
+          Impossible de charger cette section.
+        </div>
       }
 
       <!-- Projects Section -->
@@ -90,6 +94,10 @@ import { PiIconPipe } from '@shared/icons';
         </section>
       } @placeholder {
         <div class="block py-8 px-6 h-64"></div>
+      } @error {
+        <div class="block py-8 px-6 text-center text-muted text-sm">
+          Impossible de charger cette section.
+        </div>
       }
 
       <!-- Contact CTA Section -->
@@ -101,6 +109,10 @@ import { PiIconPipe } from '@shared/icons';
         </section>
       } @placeholder {
         <div class="block py-12 px-6 h-64"></div>
+      } @error {
+        <div class="block py-12 px-6 text-center text-muted text-sm">
+          Impossible de charger cette section.
+        </div>
       }
     </main>
   `,

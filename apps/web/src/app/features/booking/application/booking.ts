@@ -42,53 +42,42 @@ import { ToastService } from '@shared/ui';
           </p>
         </header>
 
-        @defer (on viewport) {
-          <div class="max-w-5xl mx-auto space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-              <app-booking-calendar
+        <div class="max-w-5xl mx-auto space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+            <app-booking-calendar
+              [bookedSlots]="bookedSlots()"
+              [disabledDates]="disabledDates()"
+              (selectedDateChange)="onDateSelected($event)"
+            />
+
+            @if (selectedDate()) {
+              <app-booking-time-picker
+                [date]="selectedDate()!"
                 [bookedSlots]="bookedSlots()"
-                [disabledDates]="disabledDates()"
-                (selectedDateChange)="onDateSelected($event)"
+                (slotSelected)="onSlotSelected($event)"
               />
-
-              @if (selectedDate()) {
-                <app-booking-time-picker
-                  [date]="selectedDate()!"
-                  [bookedSlots]="bookedSlots()"
-                  (slotSelected)="onSlotSelected($event)"
-                />
-              } @else {
-                <div
-                  class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-8 shadow-lg flex flex-col items-center justify-center h-full text-center"
-                >
-                  <i class="pi pi-calendar text-[4rem] text-muted/30 mb-4" aria-hidden="true"></i>
-                  <p class="text-muted text-lg font-medium mb-2">Sélectionnez une date</p>
-                  <p class="text-muted/60 text-sm max-w-xs">
-                    Choisissez une date dans le calendrier pour voir les créneaux disponibles.
-                  </p>
-                </div>
-              }
-            </div>
-
-            @if (selectedDate() && selectedSlot()) {
-              <app-booking-form
-                [selectedDate]="selectedDate()!"
-                [selectedTime]="selectedSlot()!.time"
-                [selectedDuration]="selectedSlot()!.duration"
-                (formSubmitted)="onFormSubmitted($event)"
-              />
+            } @else {
+              <div
+                class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-8 shadow-lg flex flex-col items-center justify-center h-full text-center"
+              >
+                <i class="pi pi-calendar text-[4rem] text-muted/30 mb-4" aria-hidden="true"></i>
+                <p class="text-muted text-lg font-medium mb-2">Sélectionnez une date</p>
+                <p class="text-muted/60 text-sm max-w-xs">
+                  Choisissez une date dans le calendrier pour voir les créneaux disponibles.
+                </p>
+              </div>
             }
           </div>
-        } @placeholder {
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            <div
-              class="h-96 bg-background/50 border border-foreground/10 rounded-2xl animate-pulse"
-            ></div>
-            <div
-              class="h-96 bg-background/50 border border-foreground/10 rounded-2xl animate-pulse"
-            ></div>
-          </div>
-        }
+
+          @if (selectedDate() && selectedSlot()) {
+            <app-booking-form
+              [selectedDate]="selectedDate()!"
+              [selectedTime]="selectedSlot()!.time"
+              [selectedDuration]="selectedSlot()!.duration"
+              (formSubmitted)="onFormSubmitted($event)"
+            />
+          }
+        </div>
       </section>
     </main>
   `,

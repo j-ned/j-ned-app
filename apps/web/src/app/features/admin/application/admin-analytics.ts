@@ -1,17 +1,18 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  DestroyRef,
   computed,
-  effect,
   inject,
   resource,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
 import { UIChart } from 'primeng/chart';
 import { Tag } from 'primeng/tag';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
 
 type DateRangeKey = '7d' | '30d' | '90d' | 'all';
@@ -365,6 +366,17 @@ type DateRangeOption = {
 })
 export class AdminAnalytics {
   private readonly analytics = inject(ANALYTICS_GATEWAY);
+  private readonly _destroyRef = inject(DestroyRef);
+
+  constructor() {
+    interval(30_000)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.analytics.getActiveVisitors()),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe((r) => this.activeVisitors.set(r.count));
+  }
 
   readonly dateRangeOptions: DateRangeOption[] = [
     { value: '7d', label: '7 derniers jours' },
@@ -540,16 +552,6 @@ export class AdminAnalytics {
     loader: ({ params }) => firstValueFrom(this.analytics.getArticleStats(params.startDate, params.endDate)),
   });
   readonly topArticles = computed(() => this.articlesResource.value() ?? []);
-
-  // ── Live visitors (poll toutes les 30s) ──────────────────────────
-  private readonly _pollActive = effect((onCleanup) => {
-    const loadActive = (): void => {
-      firstValueFrom(this.analytics.getActiveVisitors()).then((r) => this.activeVisitors.set(r.count));
-    };
-    loadActive();
-    const id = setInterval(loadActive, 30_000);
-    onCleanup(() => clearInterval(id));
-  });
 
   readonly donutOptions = {
     responsive: true,

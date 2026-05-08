@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  afterNextRender,
+  afterRenderEffect,
   computed,
   effect,
   inject,
@@ -115,10 +115,8 @@ export class UiDrawer {
       body.style.overflow = this.visible() ? 'hidden' : '';
     });
 
-    afterNextRender(() => {
-      if (this.visible()) {
-        this.panel()?.nativeElement.focus();
-      }
+    afterRenderEffect(() => {
+      this.panel()?.nativeElement.focus();
     });
   }
 

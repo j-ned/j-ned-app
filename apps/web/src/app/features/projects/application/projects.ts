@@ -56,27 +56,17 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
           }
         </nav>
 
-        @defer (on viewport) {
-          <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12" role="list">
-            @for (project of paginatedProjects(); track project.id) {
-              <li>
-                <app-project-card [project]="project" />
-              </li>
-            }
-          </ul>
-
-          @if (filteredProjects().length === 0) {
-            <div class="text-center py-16">
-              <p class="text-muted text-lg">Aucun projet trouvé pour ce filtre.</p>
-            </div>
+        <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12" role="list">
+          @for (project of paginatedProjects(); track project.id) {
+            <li>
+              <app-project-card [project]="project" />
+            </li>
           }
-        } @placeholder {
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            @for (i of [1, 2, 3]; track i) {
-              <div
-                class="h-80 bg-background/50 border border-foreground/10 rounded-2xl animate-pulse"
-              ></div>
-            }
+        </ul>
+
+        @if (filteredProjects().length === 0) {
+          <div class="text-center py-16">
+            <p class="text-muted text-lg">Aucun projet trouvé pour ce filtre.</p>
           </div>
         }
 
