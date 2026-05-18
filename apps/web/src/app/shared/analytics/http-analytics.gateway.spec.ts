@@ -313,6 +313,68 @@ describe('HttpAnalyticsGateway', () => {
     });
   });
 
+  describe('URL filter (login + admin)', () => {
+    it.each([['/login'], ['/admin'], ['/admin/'], ['/admin/users'], ['/admin/foo/bar']])(
+      'trackPageView est no-op pour url=%s',
+      (url) => {
+        const { gateway, httpController } = configureBrowser();
+        gateway.trackPageView(url);
+        httpController.expectNone(`${BASE}/analytics/track`);
+        httpController.verify();
+      },
+    );
+
+    it.each([['/login'], ['/admin'], ['/admin/dashboard']])(
+      'trackPageDuration est no-op pour url=%s',
+      (url) => {
+        const { gateway, httpController } = configureBrowser();
+        gateway.trackPageDuration(url, 30);
+        httpController.expectNone(`${BASE}/analytics/track`);
+        httpController.verify();
+      },
+    );
+
+    it('sendBeacon est no-op pour page_duration sur /admin/*', () => {
+      const { gateway } = configureBrowser();
+      const sendBeaconSpy = vi.fn().mockReturnValue(true);
+      Object.defineProperty(globalThis.navigator, 'sendBeacon', {
+        value: sendBeaconSpy,
+        writable: true,
+        configurable: true,
+      });
+
+      gateway.sendBeacon({ type: 'page_duration', url: '/admin/inbox', duration: 5 });
+
+      expect(sendBeaconSpy).not.toHaveBeenCalled();
+    });
+
+    it('sendBeacon laisse passer un payload sans url (custom event)', () => {
+      const { gateway } = configureBrowser();
+      const sendBeaconSpy = vi.fn().mockReturnValue(true);
+      Object.defineProperty(globalThis.navigator, 'sendBeacon', {
+        value: sendBeaconSpy,
+        writable: true,
+        configurable: true,
+      });
+
+      gateway.sendBeacon({ type: 'cv_download' });
+
+      expect(sendBeaconSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([['/logins'], ['/admin-public'], ['/login/something'], ['/home']])(
+      'trackPageView est OK pour url=%s (pas filtré)',
+      (url) => {
+        const { gateway, httpController } = configureBrowser();
+        gateway.trackPageView(url);
+        const req = httpController.expectOne(`${BASE}/analytics/track`);
+        expect(req.request.body).toEqual(expect.objectContaining({ url }));
+        req.flush(null, { status: 204, statusText: 'No Content' });
+        httpController.verify();
+      },
+    );
+  });
+
   describe('SSR safety (3 tests)', () => {
     it('trackPageView est no-op si platform !== browser', () => {
       const { gateway, httpController } = configureServer();

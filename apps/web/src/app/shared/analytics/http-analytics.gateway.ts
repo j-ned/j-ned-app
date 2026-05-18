@@ -14,6 +14,11 @@ import type {
   TrackPayload,
 } from './analytics.types';
 
+// Mirrors backend filter: don't burn HTTP calls on routes the server drops.
+function isExcludedUrl(url: string): boolean {
+  return url === '/login' || url === '/admin' || url.startsWith('/admin/');
+}
+
 @Injectable()
 export class HttpAnalyticsGateway extends AnalyticsGateway {
   private readonly http = inject(HttpClient);
@@ -23,7 +28,7 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
   // --- Tracking write-side ---
 
   trackPageView(url: string): void {
-    if (!this.isBrowser) return;
+    if (!this.isBrowser || isExcludedUrl(url)) return;
     this.fireAndForget({
       type: 'page_view',
       url,
@@ -32,7 +37,7 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
   }
 
   trackPageDuration(url: string, duration: number): void {
-    if (!this.isBrowser) return;
+    if (!this.isBrowser || isExcludedUrl(url)) return;
     this.fireAndForget({ type: 'page_duration', url, duration });
   }
 
@@ -63,6 +68,7 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
 
   sendBeacon(payload: TrackPayload): void {
     if (!this.isBrowser || typeof navigator === 'undefined' || !navigator.sendBeacon) return;
+    if (payload.url && isExcludedUrl(payload.url)) return;
     const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
     navigator.sendBeacon(`${this.baseUrl}/track`, blob);
   }
