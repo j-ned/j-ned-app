@@ -24,6 +24,7 @@ import { IMAGE_CONFIG } from '@angular/common';
 import {
   provideClientHydration,
   withEventReplay,
+  withHttpTransferCacheOptions,
   withIncrementalHydration,
 } from '@angular/platform-browser';
 import { filter } from 'rxjs';
@@ -54,16 +55,6 @@ function prefetchHomeBundle(): () => void {
   };
 }
 
-/**
- * Force l'instanciation d'AuthService au boot pour que `restoreSession()` parte
- * tout de suite. Sans ça, AuthService n'est instancié qu'à la première requête
- * HTTP via l'interceptor — ce qui peut être trop tard, ou pas du tout sur les
- * pages publiques. Résultat : au refresh navigateur, l'utilisateur restait
- * déconnecté tant qu'il n'avait pas visité une route protégée.
- *
- * Retourne `service.ready` pour que l'app attende le check d'auth avant le
- * premier rendu, évitant un flash UI « déconnecté → connecté ».
- */
 function initializeAuth(): () => Promise<void> | void {
   return (): Promise<void> | void => {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
@@ -106,7 +97,6 @@ function initializeTracking(): () => void {
     router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
-        // Send duration for the previous page
         if (currentUrl) {
           const duration = Math.round((Date.now() - pageEnteredAt) / 1000);
           if (duration > 0) {
@@ -114,13 +104,11 @@ function initializeTracking(): () => void {
           }
         }
 
-        // Track new page view
         currentUrl = event.urlAfterRedirects;
         pageEnteredAt = Date.now();
         analytics.trackPageView(currentUrl);
       });
 
-    // Send duration on page unload via sendBeacon
     window.addEventListener('beforeunload', () => {
       if (currentUrl) {
         const duration = Math.round((Date.now() - pageEnteredAt) / 1000);
@@ -145,7 +133,13 @@ export const appConfig: ApplicationConfig = {
       withPreloading(SelectivePreload),
       withViewTransitions(),
     ),
-    provideClientHydration(withEventReplay(), withIncrementalHydration()),
+    provideClientHydration(
+      withEventReplay(),
+      withIncrementalHydration(),
+      withHttpTransferCacheOptions({
+        filter: (req) => !req.url.includes('/home-bundle'),
+      }),
+    ),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
     provideAppInitializer(initializeAuth()),
     provideAppInitializer(prefetchHomeBundle()),
