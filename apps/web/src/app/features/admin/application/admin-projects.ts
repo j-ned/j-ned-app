@@ -9,6 +9,7 @@ import {
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { NgOptimizedImage } from '@angular/common';
 import { PROJECTS_GATEWAY } from '@features/projects/application';
 import type { Project } from '@features/projects/domain';
 import { HOME_GATEWAY } from '@features/home/application';
@@ -19,7 +20,7 @@ import { Tag } from 'primeng/tag';
 
 @Component({
   selector: 'app-admin-projects',
-  imports: [AdminProjectInlineForm, FormsModule, Select, Tag],
+  imports: [AdminProjectInlineForm, FormsModule, NgOptimizedImage, Select, Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
@@ -67,8 +68,10 @@ import { Tag } from 'primeng/tag';
               <div class="shrink-0">
                 @if (project.image) {
                   <img
-                    [src]="project.image"
+                    [ngSrc]="project.image"
                     [alt]="project.title"
+                    width="48"
+                    height="48"
                     class="w-12 h-12 rounded-lg object-cover"
                   />
                 } @else {

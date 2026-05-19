@@ -10,7 +10,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import type { Booking, DisabledDate } from '@features/booking/domain';
-import { getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
+import { FrenchDatePipe, getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
 import { ToastService } from '@shared/ui';
 
 type CalendarDay = {
@@ -26,7 +26,7 @@ type CalendarDay = {
 
 @Component({
   selector: 'app-admin-calendar',
-  imports: [FormsModule],
+  imports: [FormsModule, FrenchDatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -88,7 +88,7 @@ type CalendarDay = {
                     <span
                       class="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium"
                     >
-                      {{ formatDate(booking.date) }}
+                      {{ booking.date | frenchDate: 'short' }}
                     </span>
                   </td>
                   <td class="py-3 px-3">
@@ -201,7 +201,7 @@ type CalendarDay = {
         @if (selectedDate()) {
           <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
             <h3 class="text-sm font-semibold text-foreground mb-3">
-              {{ formatDate(selectedDate()!) }}
+              {{ selectedDate() | frenchDate: 'short' }}
             </h3>
 
             @if (isSelectedDisabled()) {
@@ -477,16 +477,6 @@ export class AdminCalendar {
             detail: 'Erreur lors de la suppression',
           }),
       });
-  }
-
-  formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString('fr-FR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
   }
 
   getDayClasses(day: CalendarDay): string {

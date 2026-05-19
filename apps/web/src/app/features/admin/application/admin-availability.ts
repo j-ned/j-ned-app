@@ -10,7 +10,7 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { BOOKING_GATEWAY } from '@features/booking/application';
 import type { DisabledDate } from '@features/booking/domain';
-import { getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
+import { FrenchDatePipe, getFrenchHolidays, getUnavailableReason } from '@shared/calendar';
 import { ToastService } from '@shared/ui';
 
 type CalendarDay = {
@@ -26,7 +26,7 @@ type CalendarDay = {
 
 @Component({
   selector: 'app-admin-availability',
-  imports: [FormsModule],
+  imports: [FormsModule, FrenchDatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -109,7 +109,7 @@ type CalendarDay = {
         @if (selectedDate()) {
           <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
             <h3 class="text-sm font-semibold text-foreground mb-3">
-              {{ formatDate(selectedDate()!) }}
+              {{ selectedDate() | frenchDate }}
             </h3>
 
             @if (isSelectedDisabled()) {
@@ -354,16 +354,6 @@ export class AdminAvailability {
           this.toast.add({ severity: 'error', summary: 'Erreur', detail: errorMessage });
         },
       });
-  }
-
-  formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
   }
 
   getDayClasses(day: CalendarDay): string {

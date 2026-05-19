@@ -29,10 +29,11 @@ import { FileDropzone } from '@shared/ui';
             id="title"
             type="text"
             formControlName="title"
+            aria-required="true"
             class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
           />
           @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <span role="alert" class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
           }
         </div>
 
@@ -43,6 +44,7 @@ import { FileDropzone } from '@shared/ui';
           <select
             id="category"
             formControlName="category"
+            aria-required="true"
             class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground focus:border-primary focus:outline-none transition-colors"
           >
             <option value="" disabled>Choisir une catégorie</option>
@@ -51,7 +53,7 @@ import { FileDropzone } from '@shared/ui';
             }
           </select>
           @if (form.controls.category.touched && form.controls.category.errors?.['required']) {
-            <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+            <span role="alert" class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
           }
         </div>
       </div>
@@ -84,10 +86,11 @@ import { FileDropzone } from '@shared/ui';
           id="description"
           formControlName="description"
           rows="3"
+          aria-required="true"
           class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
         ></textarea>
         @if (form.controls.description.touched && form.controls.description.errors?.['required']) {
-          <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+          <span role="alert" class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
         }
       </div>
 

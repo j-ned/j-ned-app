@@ -238,15 +238,16 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                       formControlName="name"
                       placeholder="Votre nom"
                       autocomplete="name"
+                      aria-required="true"
                       [class]="inputClass('name')"
                     />
                   </div>
                   @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-                    <p class="text-xs text-red-400">Le nom est obligatoire</p>
+                    <p role="alert" class="text-xs text-red-400">Le nom est obligatoire</p>
                   } @else if (
                     form.controls.name.touched && form.controls.name.errors?.['minlength']
                   ) {
-                    <p class="text-xs text-red-400">Le nom doit contenir au moins 2 caractères</p>
+                    <p role="alert" class="text-xs text-red-400">Le nom doit contenir au moins 2 caractères</p>
                   }
                 </div>
 
@@ -263,15 +264,16 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                       formControlName="email"
                       placeholder="votre@email.com"
                       autocomplete="email"
+                      aria-required="true"
                       [class]="inputClass('email')"
                     />
                   </div>
                   @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-                    <p class="text-xs text-red-400">L'email est obligatoire</p>
+                    <p role="alert" class="text-xs text-red-400">L'email est obligatoire</p>
                   } @else if (
                     form.controls.email.touched && form.controls.email.errors?.['pattern']
                   ) {
-                    <p class="text-xs text-red-400">Le format de l'email est invalide</p>
+                    <p role="alert" class="text-xs text-red-400">Le format de l'email est invalide</p>
                   }
                 </div>
               </fieldset>
@@ -287,15 +289,16 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     type="text"
                     formControlName="subject"
                     placeholder="Objet de votre message"
+                    aria-required="true"
                     [class]="inputClass('subject')"
                   />
                 </div>
                 @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
-                  <p class="text-xs text-red-400">Le sujet est obligatoire</p>
+                  <p role="alert" class="text-xs text-red-400">Le sujet est obligatoire</p>
                 } @else if (
                   form.controls.subject.touched && form.controls.subject.errors?.['minlength']
                 ) {
-                  <p class="text-xs text-red-400">Le sujet doit contenir au moins 3 caractères</p>
+                  <p role="alert" class="text-xs text-red-400">Le sujet doit contenir au moins 3 caractères</p>
                 }
               </div>
               <div class="flex flex-col gap-1.5">
@@ -305,14 +308,15 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                   formControlName="message"
                   rows="6"
                   placeholder="Décrivez votre projet ou votre question..."
+                  aria-required="true"
                   [class]="inputClass('message', 'textarea')"
                 ></textarea>
                 @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
-                  <p class="text-xs text-red-400">Le message est obligatoire</p>
+                  <p role="alert" class="text-xs text-red-400">Le message est obligatoire</p>
                 } @else if (
                   form.controls.message.touched && form.controls.message.errors?.['minlength']
                 ) {
-                  <p class="text-xs text-red-400">Le message doit contenir au moins 10 caractères</p>
+                  <p role="alert" class="text-xs text-red-400">Le message doit contenir au moins 10 caractères</p>
                 }
               </div>
               <button

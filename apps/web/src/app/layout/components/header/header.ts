@@ -37,7 +37,7 @@ type ThemePreference = 'dark' | 'light';
           </div>
         </a>
 
-        <nav class="hidden md:flex items-center gap-8">
+        <nav class="hidden md:flex items-center gap-8" aria-label="Navigation principale">
           @for (item of navItems(); track item) {
             @if (item.href.startsWith('#')) {
               <a
@@ -112,7 +112,7 @@ type ThemePreference = 'dark' | 'light';
       heading="Menu"
       ariaLabel="Menu de navigation"
     >
-      <nav class="flex flex-col gap-4">
+      <nav class="flex flex-col gap-4" aria-label="Navigation mobile">
         @for (item of navItems(); track item) {
           @if (item.href.startsWith('#')) {
             <a

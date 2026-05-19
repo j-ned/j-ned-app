@@ -40,19 +40,29 @@ import { AboutHighlights } from './about-highlights';
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           <aside class="lg:col-span-1 space-y-8">
-            <app-about-search />
-            <app-about-diploma />
+            @defer (hydrate on viewport) {
+              <app-about-search />
+            }
+            @defer (hydrate on viewport) {
+              <app-about-diploma />
+            }
           </aside>
 
           <div class="lg:col-span-2 space-y-8">
             <div
               class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg space-y-8"
             >
-              <app-about-journey />
+              @defer (hydrate on viewport) {
+                <app-about-journey />
+              }
               <div class="border-t border-foreground/10"></div>
-              <app-about-what-i-do />
+              @defer (hydrate on viewport) {
+                <app-about-what-i-do />
+              }
               <div class="border-t border-foreground/10"></div>
-              <app-about-highlights />
+              @defer (hydrate on viewport) {
+                <app-about-highlights />
+              }
             </div>
           </div>
         </div>

@@ -281,7 +281,13 @@ type DisableFormShape = {
                 Scannez ce QR code avec votre application d'authentification :
               </p>
               <div class="inline-block p-4 bg-white rounded-xl">
-                <img [src]="qrCodeUrl()" alt="QR Code 2FA" class="w-48 h-48" />
+                <img
+                  [src]="qrCodeUrl()"
+                  alt="QR code à scanner avec votre application d'authentification"
+                  width="192"
+                  height="192"
+                  class="w-48 h-48"
+                />
               </div>
             </div>
 

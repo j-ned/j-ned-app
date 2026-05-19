@@ -21,7 +21,11 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { authInterceptor } from '@features/auth/infrastructure/auth.interceptor';
 import { errorToastInterceptor } from '@core/interceptors';
 import { IMAGE_CONFIG } from '@angular/common';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import {
+  provideClientHydration,
+  withEventReplay,
+  withIncrementalHydration,
+} from '@angular/platform-browser';
 import { filter } from 'rxjs';
 
 import { routes } from './app.routes';
@@ -141,7 +145,7 @@ export const appConfig: ApplicationConfig = {
       withPreloading(SelectivePreload),
       withViewTransitions(),
     ),
-    provideClientHydration(withEventReplay()),
+    provideClientHydration(withEventReplay(), withIncrementalHydration()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
     provideAppInitializer(initializeAuth()),
     provideAppInitializer(prefetchHomeBundle()),

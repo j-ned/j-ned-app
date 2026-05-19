@@ -12,12 +12,18 @@ import type {
   WhatIDo,
   WhatISeek,
 } from '../../domain';
-import { API_BASE_URL } from '@shared/api';
+import { API_BASE_URL, createCrudHttpMethods } from '@shared/api';
 
 @Injectable()
 export class HttpProfileGateway implements ProfileGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
+
+  private readonly socialCrud = createCrudHttpMethods<SocialButton>(this.http, this.apiUrl, '/social-links');
+  private readonly diplomaCrud = createCrudHttpMethods<Diploma>(this.http, this.apiUrl, '/diplomas');
+  private readonly technologyCrud = createCrudHttpMethods<Technology>(this.http, this.apiUrl, '/technologies');
+  private readonly highlightCrud = createCrudHttpMethods<Highlight>(this.http, this.apiUrl, '/highlights/profile');
+  private readonly whatIDoCrud = createCrudHttpMethods<WhatIDo>(this.http, this.apiUrl, '/expertises');
 
   getProfileInfo(): Observable<ProfileInfo> {
     return this.http.get<ProfileInfo>(`${this.apiUrl}/profile`);
@@ -96,82 +102,82 @@ export class HttpProfileGateway implements ProfileGateway {
   }
 
   getSocialButtonById(id: string): Observable<SocialButton> {
-    return this.http.get<SocialButton>(`${this.apiUrl}/social-links/${id}`);
+    return this.socialCrud.getById(id);
   }
 
   createSocialButton(data: Omit<SocialButton, 'id'>): Observable<SocialButton> {
-    return this.http.post<SocialButton>(`${this.apiUrl}/social-links`, data);
+    return this.socialCrud.create(data);
   }
 
   updateSocialButton(id: string, data: Partial<SocialButton>): Observable<SocialButton> {
-    return this.http.patch<SocialButton>(`${this.apiUrl}/social-links/${id}`, data);
+    return this.socialCrud.update(id, data);
   }
 
   deleteSocialButton(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/social-links/${id}`);
+    return this.socialCrud.delete(id);
   }
 
   getDiplomaById(id: string): Observable<Diploma> {
-    return this.http.get<Diploma>(`${this.apiUrl}/diplomas/${id}`);
+    return this.diplomaCrud.getById(id);
   }
 
   createDiploma(data: Omit<Diploma, 'id'>): Observable<Diploma> {
-    return this.http.post<Diploma>(`${this.apiUrl}/diplomas`, data);
+    return this.diplomaCrud.create(data);
   }
 
   updateDiploma(id: string, data: Partial<Diploma>): Observable<Diploma> {
-    return this.http.patch<Diploma>(`${this.apiUrl}/diplomas/${id}`, data);
+    return this.diplomaCrud.update(id, data);
   }
 
   deleteDiploma(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/diplomas/${id}`);
+    return this.diplomaCrud.delete(id);
   }
 
   getTechnologyById(id: string): Observable<Technology> {
-    return this.http.get<Technology>(`${this.apiUrl}/technologies/${id}`);
+    return this.technologyCrud.getById(id);
   }
 
   createTechnology(data: Omit<Technology, 'id'>): Observable<Technology> {
-    return this.http.post<Technology>(`${this.apiUrl}/technologies`, data);
+    return this.technologyCrud.create(data);
   }
 
   updateTechnology(id: string, data: Partial<Technology>): Observable<Technology> {
-    return this.http.patch<Technology>(`${this.apiUrl}/technologies/${id}`, data);
+    return this.technologyCrud.update(id, data);
   }
 
   deleteTechnology(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/technologies/${id}`);
+    return this.technologyCrud.delete(id);
   }
 
   getHighlightById(id: string): Observable<Highlight> {
-    return this.http.get<Highlight>(`${this.apiUrl}/highlights/profile/${id}`);
+    return this.highlightCrud.getById(id);
   }
 
   createHighlight(data: Omit<Highlight, 'id'>): Observable<Highlight> {
-    return this.http.post<Highlight>(`${this.apiUrl}/highlights/profile`, data);
+    return this.highlightCrud.create(data);
   }
 
   updateHighlight(id: string, data: Partial<Highlight>): Observable<Highlight> {
-    return this.http.patch<Highlight>(`${this.apiUrl}/highlights/profile/${id}`, data);
+    return this.highlightCrud.update(id, data);
   }
 
   deleteHighlight(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/highlights/profile/${id}`);
+    return this.highlightCrud.delete(id);
   }
 
   getWhatIDoById(id: string): Observable<WhatIDo> {
-    return this.http.get<WhatIDo>(`${this.apiUrl}/expertises/${id}`);
+    return this.whatIDoCrud.getById(id);
   }
 
   createWhatIDo(data: Omit<WhatIDo, 'id'>): Observable<WhatIDo> {
-    return this.http.post<WhatIDo>(`${this.apiUrl}/expertises`, data);
+    return this.whatIDoCrud.create(data);
   }
 
   updateWhatIDo(id: string, data: Partial<WhatIDo>): Observable<WhatIDo> {
-    return this.http.patch<WhatIDo>(`${this.apiUrl}/expertises/${id}`, data);
+    return this.whatIDoCrud.update(id, data);
   }
 
   deleteWhatIDo(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/expertises/${id}`);
+    return this.whatIDoCrud.delete(id);
   }
 }

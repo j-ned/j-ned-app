@@ -105,7 +105,7 @@ type DateRangeOption = {
           <div class="h-9 w-20 rounded bg-foreground/10 animate-pulse"></div>
         } @else {
           <p class="text-3xl font-bold text-foreground leading-none">
-            {{ (overview()?.bounceRate ?? 0).toFixed(1) }}%
+            {{ bounceRateFormatted() }}%
           </p>
           <p class="text-xs text-muted mt-2">{{ overview()?.bounces ?? 0 }} sessions en rebond</p>
         }
@@ -307,7 +307,7 @@ type DateRangeOption = {
           <p class="text-sm text-muted text-center py-6">Aucun clic enregistré</p>
         } @else {
           <ul class="space-y-2" role="list">
-            @for (row of topProjects().slice(0, 5); track row.entityId) {
+            @for (row of topProjectsTop5(); track row.entityId) {
               <li class="flex items-center justify-between text-sm py-1">
                 <span class="text-foreground truncate mr-3">{{ row.entityTitle }}</span>
                 <span class="text-xs text-muted font-medium">{{ row.count }}</span>
@@ -335,7 +335,7 @@ type DateRangeOption = {
           <p class="text-sm text-muted text-center py-6">Aucune vue enregistrée</p>
         } @else {
           <ul class="space-y-2" role="list">
-            @for (row of topArticles().slice(0, 5); track row.entityId) {
+            @for (row of topArticlesTop5(); track row.entityId) {
               <li class="flex items-center justify-between text-sm py-1">
                 <span class="text-foreground truncate mr-3">{{ row.entityTitle }}</span>
                 <span class="text-xs text-muted font-medium">{{ row.count }}</span>
@@ -547,6 +547,7 @@ export class AdminAnalytics {
     loader: ({ params }) => firstValueFrom(this.analytics.getProjectStats(params.startDate, params.endDate)),
   });
   readonly topProjects = computed(() => this.projectsResource.value() ?? []);
+  readonly topProjectsTop5 = computed(() => this.topProjects().slice(0, 5));
 
   // ── Top articles ──────────────────────────────────────────────────
   readonly articlesResource = resource({
@@ -554,6 +555,9 @@ export class AdminAnalytics {
     loader: ({ params }) => firstValueFrom(this.analytics.getArticleStats(params.startDate, params.endDate)),
   });
   readonly topArticles = computed(() => this.articlesResource.value() ?? []);
+  readonly topArticlesTop5 = computed(() => this.topArticles().slice(0, 5));
+
+  readonly bounceRateFormatted = computed(() => (this.overview()?.bounceRate ?? 0).toFixed(1));
 
   readonly donutOptions = {
     responsive: true,
