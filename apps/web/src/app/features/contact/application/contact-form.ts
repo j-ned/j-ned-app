@@ -247,7 +247,9 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                   } @else if (
                     form.controls.name.touched && form.controls.name.errors?.['minlength']
                   ) {
-                    <p role="alert" class="text-xs text-red-400">Le nom doit contenir au moins 2 caractères</p>
+                    <p role="alert" class="text-xs text-red-400">
+                      Le nom doit contenir au moins 2 caractères
+                    </p>
                   }
                 </div>
 
@@ -273,7 +275,9 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                   } @else if (
                     form.controls.email.touched && form.controls.email.errors?.['pattern']
                   ) {
-                    <p role="alert" class="text-xs text-red-400">Le format de l'email est invalide</p>
+                    <p role="alert" class="text-xs text-red-400">
+                      Le format de l'email est invalide
+                    </p>
                   }
                 </div>
               </fieldset>
@@ -298,7 +302,9 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                 } @else if (
                   form.controls.subject.touched && form.controls.subject.errors?.['minlength']
                 ) {
-                  <p role="alert" class="text-xs text-red-400">Le sujet doit contenir au moins 3 caractères</p>
+                  <p role="alert" class="text-xs text-red-400">
+                    Le sujet doit contenir au moins 3 caractères
+                  </p>
                 }
               </div>
               <div class="flex flex-col gap-1.5">
@@ -316,7 +322,9 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                 } @else if (
                   form.controls.message.touched && form.controls.message.errors?.['minlength']
                 ) {
-                  <p role="alert" class="text-xs text-red-400">Le message doit contenir au moins 10 caractères</p>
+                  <p role="alert" class="text-xs text-red-400">
+                    Le message doit contenir au moins 10 caractères
+                  </p>
                 }
               </div>
               <button
@@ -384,7 +392,10 @@ export class ContactForm {
     }),
   });
 
-  protected inputClass(controlName: keyof ContactFormGroup, variant: 'input' | 'textarea' = 'input'): string {
+  protected inputClass(
+    controlName: keyof ContactFormGroup,
+    variant: 'input' | 'textarea' = 'input',
+  ): string {
     const control = this.form.controls[controlName];
     const hasError = control.touched && control.invalid;
     const borderClass = hasError
@@ -428,8 +439,7 @@ export class ContactForm {
           this.toast.add({
             severity: 'error',
             summary: 'Envoi impossible',
-            detail:
-              "Une erreur inattendue est survenue. Réessayez ou contactez-moi par email.",
+            detail: 'Une erreur inattendue est survenue. Réessayez ou contactez-moi par email.',
           });
         },
       });

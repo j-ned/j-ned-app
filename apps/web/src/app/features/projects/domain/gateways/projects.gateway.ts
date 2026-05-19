@@ -3,6 +3,7 @@ import type { Project, ProjectFilter } from '../models';
 
 export type ProjectsGateway = {
   getAllProjects(): Observable<readonly Project[]>;
+  invalidateAllProjects(): void;
   getFeaturedProjects(): Observable<readonly Project[]>;
   getCategories(): Observable<readonly string[]>;
   filterProjects(filter: ProjectFilter): Observable<readonly Project[]>;

@@ -42,7 +42,14 @@ describe('HttpProfileGateway', () => {
   describe('Public — 5 tests', () => {
     it('getProfileInfo() émet GET /<base>/profile', async () => {
       const { gateway, httpController } = configure();
-      const expected = { id: 'p1', displayName: 'John', location: 'Paris', avatarUrl: '', isAvailable: true, availabilityMessage: '' } as ProfileInfo;
+      const expected = {
+        id: 'p1',
+        displayName: 'John',
+        location: 'Paris',
+        avatarUrl: '',
+        isAvailable: true,
+        availabilityMessage: '',
+      } as ProfileInfo;
 
       const promise = firstValueFrom(gateway.getProfileInfo());
 
@@ -57,7 +64,9 @@ describe('HttpProfileGateway', () => {
 
     it('getSocialButtons() émet GET /<base>/social-links, retourne SocialButton[]', async () => {
       const { gateway, httpController } = configure();
-      const expected = [{ id: '1', icon: 'github', label: 'GitHub', href: 'https://gh.com' }] as SocialButton[];
+      const expected = [
+        { id: '1', icon: 'github', label: 'GitHub', href: 'https://gh.com' },
+      ] as SocialButton[];
 
       const promise = firstValueFrom(gateway.getSocialButtons());
 
@@ -72,7 +81,9 @@ describe('HttpProfileGateway', () => {
 
     it('getDiplomas() émet GET /<base>/diplomas, retourne Diploma[]', async () => {
       const { gateway, httpController } = configure();
-      const expected = [{ id: 'd1', title: 'BAC', provider: 'X', shortDescription: 'desc', skills: [] }] as Diploma[];
+      const expected = [
+        { id: 'd1', title: 'BAC', provider: 'X', shortDescription: 'desc', skills: [] },
+      ] as Diploma[];
 
       const promise = firstValueFrom(gateway.getDiplomas());
 
@@ -87,7 +98,9 @@ describe('HttpProfileGateway', () => {
 
     it('getTechnologies() émet GET /<base>/technologies, retourne Technology[]', async () => {
       const { gateway, httpController } = configure();
-      const expected = [{ id: 't1', name: 'Angular', category: 'frontend', icon: 'angular' }] as Technology[];
+      const expected = [
+        { id: 't1', name: 'Angular', category: 'frontend', icon: 'angular' },
+      ] as Technology[];
 
       const promise = firstValueFrom(gateway.getTechnologies());
 
@@ -134,7 +147,9 @@ describe('HttpProfileGateway', () => {
 
     it('getHighlights() émet GET /<base>/highlights/profile, retourne Highlight[]', async () => {
       const { gateway, httpController } = configure();
-      const expected = [{ id: 'h1', title: 'Award', description: 'desc', icon: 'star' }] as Highlight[];
+      const expected = [
+        { id: 'h1', title: 'Award', description: 'desc', icon: 'star' },
+      ] as Highlight[];
 
       const promise = firstValueFrom(gateway.getHighlights());
 

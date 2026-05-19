@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of, shareReplay, startWith, Subject, switchMap } from 'rxjs';
 import type { ContactGateway } from '../../domain';
 import type {
   ContactInfo,
@@ -21,20 +21,17 @@ function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
     case 0:
       return {
         success: false,
-        message:
-          'Connexion impossible — vérifiez votre réseau, puis réessayez dans un instant.',
+        message: 'Connexion impossible — vérifiez votre réseau, puis réessayez dans un instant.',
       };
     case 400:
       return {
         success: false,
-        message:
-          'Certains champs sont invalides. Vérifiez votre saisie et réessayez.',
+        message: 'Certains champs sont invalides. Vérifiez votre saisie et réessayez.',
       };
     case 429:
       return {
         success: false,
-        message:
-          'Trop de tentatives en peu de temps. Patientez une minute avant de réessayer.',
+        message: 'Trop de tentatives en peu de temps. Patientez une minute avant de réessayer.',
       };
     case 500:
     case 502:
@@ -42,8 +39,7 @@ function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
     case 504:
       return {
         success: false,
-        message:
-          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        message: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
       };
     default:
       return {
@@ -77,6 +73,18 @@ function toSocialLinks(items: readonly RawSocialLink[]): SocialLinks {
 export class HttpContactGateway implements ContactGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
+
+  private readonly _unreadRefresh$ = new Subject<void>();
+  private readonly unreadCount$ = this._unreadRefresh$.pipe(
+    startWith(undefined),
+    switchMap(() =>
+      this.http.get<{ count: number }>(`${this.apiUrl}/contact/messages/unread-count`).pipe(
+        map((res) => res.count),
+        catchError(() => of(0)),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   getContactInfo(): Observable<ContactInfo> {
     return this.http
@@ -125,9 +133,10 @@ export class HttpContactGateway implements ContactGateway {
   }
 
   getUnreadCount(): Observable<number> {
-    return this.http.get<{ count: number }>(`${this.apiUrl}/contact/messages/unread-count`).pipe(
-      map((res) => res.count),
-      catchError(() => of(0)),
-    );
+    return this.unreadCount$;
+  }
+
+  invalidateUnreadCount(): void {
+    this._unreadRefresh$.next();
   }
 }

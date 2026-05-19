@@ -47,7 +47,10 @@ describe('HttpProjectsGateway', () => {
   describe('Public (NestJS) — 5 tests', () => {
     it('getAllProjects() émet GET /<base>/projects?_sort=order&limit=100, retourne Project[] (NestJS array direct)', async () => {
       const { gateway, httpController } = configure();
-      const expected = [makeProject({ id: 'uuid-1' }), makeProject({ id: 'uuid-2', category: 'Mobile' })];
+      const expected = [
+        makeProject({ id: 'uuid-1' }),
+        makeProject({ id: 'uuid-2', category: 'Mobile' }),
+      ];
 
       const promise = firstValueFrom(gateway.getAllProjects());
 

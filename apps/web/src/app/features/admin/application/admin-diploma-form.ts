@@ -83,13 +83,9 @@ import { ToastService } from '@shared/ui';
             </button>
           </div>
           <div formArrayName="skills" class="space-y-2">
-            @for (ctrl of skills.controls; track $index) {
+            @for (_ctrl of skills.controls; track $index) {
               <div class="flex gap-2">
-                <input
-                  [formControlName]="$index"
-                  type="text"
-                  class="form-input flex-1"
-                />
+                <input [formControlName]="$index" type="text" class="form-input flex-1" />
                 <button
                   type="button"
                   (click)="removeSkill($index)"

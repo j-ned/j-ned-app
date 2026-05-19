@@ -89,11 +89,7 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
     });
   }
 
-  getMetrics(
-    type: string,
-    startDate?: string,
-    endDate?: string,
-  ): Observable<MetricEntry[]> {
+  getMetrics(type: string, startDate?: string, endDate?: string): Observable<MetricEntry[]> {
     return this.http.get<MetricEntry[]>(`${this.baseUrl}/stats/metrics`, {
       params: { type, ...this.buildDateParams(startDate, endDate) },
       withCredentials: true,

@@ -72,12 +72,14 @@ export class AdminBookings {
       .deleteBooking(booking.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () =>
+        next: () => {
+          this.bookingGateway.invalidateAllBookings();
           this.toast.add({
             severity: 'success',
             summary: 'Succès',
             detail: 'Réservation supprimée',
-          }),
+          });
+        },
         error: () => {
           this.bookingsRes.set(snapshot);
           this.toast.add({

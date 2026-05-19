@@ -17,4 +17,5 @@ export type ContactGateway = {
   markMessageAsRead(id: number): Observable<ContactMessage>;
   deleteMessage(id: number): Observable<void>;
   getUnreadCount(): Observable<number>;
+  invalidateUnreadCount(): void;
 };

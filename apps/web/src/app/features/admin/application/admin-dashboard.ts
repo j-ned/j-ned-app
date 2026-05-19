@@ -155,7 +155,7 @@ export class AdminDashboard {
 
   readonly projectRes = rxResource({
     stream: () =>
-      this.projectsGateway.filterProjects({}).pipe(
+      this.projectsGateway.getAllProjects().pipe(
         map((p) => p.length),
         catchError(() => of(0)),
       ),

@@ -131,7 +131,7 @@ describe('HttpBookingGateway', () => {
       httpController.verify();
     });
 
-    it("updateBookingStatus(id, status) émet PATCH /<base>/bookings/:id avec body { status }", async () => {
+    it('updateBookingStatus(id, status) émet PATCH /<base>/bookings/:id avec body { status }', async () => {
       const { gateway, httpController } = configure();
 
       const promise = firstValueFrom(gateway.updateBookingStatus('uuid-42', 'confirmed'));

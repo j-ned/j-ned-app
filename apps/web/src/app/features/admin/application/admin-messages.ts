@@ -127,6 +127,7 @@ export class AdminMessages {
           this.messagesRes.update((list) =>
             (list ?? []).map((m) => (m.id === msg.id ? updated : m)),
           );
+          this.contactGateway.invalidateUnreadCount();
           this.toast.add({
             severity: 'success',
             summary: 'Succès',
@@ -150,8 +151,10 @@ export class AdminMessages {
       .deleteMessage(msg.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () =>
-          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Message supprimé' }),
+        next: () => {
+          this.contactGateway.invalidateUnreadCount();
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Message supprimé' });
+        },
         error: () => {
           this.messagesRes.set(snapshot);
           this.toast.add({

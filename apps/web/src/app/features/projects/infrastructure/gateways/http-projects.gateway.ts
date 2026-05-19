@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of, shareReplay, startWith, Subject, switchMap } from 'rxjs';
 import type { ProjectsGateway } from '../../domain';
 import type { Project, ProjectFilter } from '../../domain';
 import { API_BASE_URL } from '@shared/api';
@@ -16,20 +16,31 @@ export class HttpProjectsGateway implements ProjectsGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
+  private readonly _refreshAll$ = new Subject<void>();
+  private readonly allProjects$ = this._refreshAll$.pipe(
+    startWith(undefined),
+    switchMap(() =>
+      this.http.get<Project[]>(`${this.apiUrl}/projects?_sort=order&limit=100`).pipe(
+        map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
+        catchError(() => of([] as readonly Project[])),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
   getAllProjects(): Observable<readonly Project[]> {
-    return this.http.get<Project[]>(`${this.apiUrl}/projects?_sort=order&limit=100`).pipe(
-      map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
-      catchError(() => of([])),
-    );
+    return this.allProjects$;
+  }
+
+  invalidateAllProjects(): void {
+    this._refreshAll$.next();
   }
 
   getFeaturedProjects(): Observable<readonly Project[]> {
-    return this.http
-      .get<Project[]>(`${this.apiUrl}/projects?featured=true&_sort=order`)
-      .pipe(
-        map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
-        catchError(() => of([])),
-      );
+    return this.http.get<Project[]>(`${this.apiUrl}/projects?featured=true&_sort=order`).pipe(
+      map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
+      catchError(() => of([])),
+    );
   }
 
   getCategories(): Observable<readonly string[]> {

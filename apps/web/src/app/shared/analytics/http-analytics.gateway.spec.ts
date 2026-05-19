@@ -17,7 +17,10 @@ import type {
 
 const BASE = '/api';
 
-function configureBrowser(): { gateway: HttpAnalyticsGateway; httpController: HttpTestingController } {
+function configureBrowser(): {
+  gateway: HttpAnalyticsGateway;
+  httpController: HttpTestingController;
+} {
   TestBed.configureTestingModule({
     providers: [
       HttpAnalyticsGateway,
@@ -33,7 +36,10 @@ function configureBrowser(): { gateway: HttpAnalyticsGateway; httpController: Ht
   };
 }
 
-function configureServer(): { gateway: HttpAnalyticsGateway; httpController: HttpTestingController } {
+function configureServer(): {
+  gateway: HttpAnalyticsGateway;
+  httpController: HttpTestingController;
+} {
   TestBed.configureTestingModule({
     providers: [
       HttpAnalyticsGateway,
@@ -58,7 +64,10 @@ describe('HttpAnalyticsGateway', () => {
     it('trackPageView émet POST /<base>/analytics/track avec { type:page_view, url, referrer }', () => {
       const { gateway, httpController } = configureBrowser();
 
-      Object.defineProperty(document, 'referrer', { value: 'https://example.com', configurable: true });
+      Object.defineProperty(document, 'referrer', {
+        value: 'https://example.com',
+        configurable: true,
+      });
 
       gateway.trackPageView('/home');
 
@@ -147,7 +156,7 @@ describe('HttpAnalyticsGateway', () => {
       expect(blob.type).toBe('application/json');
     });
 
-    it('sendBeacon est no-op si navigator.sendBeacon n\'existe pas', () => {
+    it("sendBeacon est no-op si navigator.sendBeacon n'existe pas", () => {
       const { gateway } = configureBrowser();
       Object.defineProperty(globalThis.navigator, 'sendBeacon', {
         value: undefined,

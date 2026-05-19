@@ -5,6 +5,7 @@ export type BookingGateway = {
   getBookedSlots(month: string): Observable<readonly Booking[]>;
   submitBooking(data: BookingFormData): Observable<BookingSubmission>;
   getAllBookings(): Observable<readonly Booking[]>;
+  invalidateAllBookings(): void;
   updateBookingStatus(id: string, status: string): Observable<Booking>;
   deleteBooking(id: string): Observable<void>;
   getDisabledDates(): Observable<readonly DisabledDate[]>;

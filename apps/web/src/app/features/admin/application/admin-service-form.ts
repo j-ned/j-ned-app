@@ -118,7 +118,7 @@ import { ToastService } from '@shared/ui';
             </button>
           </div>
           <div formArrayName="features" class="space-y-2">
-            @for (control of featuresArray.controls; track $index; let i = $index) {
+            @for (_control of featuresArray.controls; track $index; let i = $index) {
               <div class="flex gap-2">
                 <input
                   [formControlName]="i"
@@ -215,6 +215,7 @@ export class AdminServiceForm {
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        this.homeGateway.invalidateBundle();
         this.toast.add({
           severity: 'success',
           summary: 'Succès',

@@ -1,10 +1,4 @@
-import {
-  Component,
-  inject,
-  signal,
-  computed,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import type { CvInfo } from '../domain/models/cv.model';
 import { firstValueFrom } from 'rxjs';
 import { CV_GATEWAY } from '@shared/cv';

@@ -6,10 +6,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api';
 import { HttpContactGateway } from './http-contact.gateway';
-import type {
-  ContactFormData,
-  ContactMessage,
-} from '../../domain';
+import type { ContactFormData, ContactMessage } from '../../domain';
 
 const BASE = '/api';
 
@@ -106,33 +103,27 @@ describe('HttpContactGateway', () => {
     it.each([
       {
         status: 400,
-        expected:
-          'Certains champs sont invalides. Vérifiez votre saisie et réessayez.',
+        expected: 'Certains champs sont invalides. Vérifiez votre saisie et réessayez.',
       },
       {
         status: 429,
-        expected:
-          'Trop de tentatives en peu de temps. Patientez une minute avant de réessayer.',
+        expected: 'Trop de tentatives en peu de temps. Patientez une minute avant de réessayer.',
       },
       {
         status: 500,
-        expected:
-          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        expected: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
       },
       {
         status: 502,
-        expected:
-          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        expected: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
       },
       {
         status: 503,
-        expected:
-          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        expected: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
       },
       {
         status: 504,
-        expected:
-          'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        expected: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
       },
       {
         status: 418,
@@ -178,8 +169,7 @@ describe('HttpContactGateway', () => {
       const result = await promise;
       expect(result).toEqual({
         success: false,
-        message:
-          'Connexion impossible — vérifiez votre réseau, puis réessayez dans un instant.',
+        message: 'Connexion impossible — vérifiez votre réseau, puis réessayez dans un instant.',
       });
       httpController.verify();
     });
@@ -189,7 +179,15 @@ describe('HttpContactGateway', () => {
     it('getAllMessages() émet GET /<base>/contact/messages, extrait res.data', async () => {
       const { gateway, httpController } = configure();
       const messages: ContactMessage[] = [
-        { id: 1, name: 'X', email: 'x@y.z', subject: 's', message: 'm', read: false, createdAt: '2026-05-03' } as ContactMessage,
+        {
+          id: 1,
+          name: 'X',
+          email: 'x@y.z',
+          subject: 's',
+          message: 'm',
+          read: false,
+          createdAt: '2026-05-03',
+        } as ContactMessage,
       ];
 
       const promise = firstValueFrom(gateway.getAllMessages());

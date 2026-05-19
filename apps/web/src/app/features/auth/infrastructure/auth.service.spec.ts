@@ -51,9 +51,7 @@ describe('AuthService', () => {
     });
 
     it('reste déconnecté silencieusement quand /auth/me retourne 401', async () => {
-      http
-        .expectOne(`${apiBase}/auth/me`)
-        .flush({}, { status: 401, statusText: 'Unauthorized' });
+      http.expectOne(`${apiBase}/auth/me`).flush({}, { status: 401, statusText: 'Unauthorized' });
       await service.ready;
       expect(service.isLoggedIn()).toBe(false);
     });
@@ -64,9 +62,7 @@ describe('AuthService', () => {
       setupService();
       // Le restoreSession initial fire un GET /auth/me — on l'absorbe pour que
       // les tests login se concentrent sur leur propre requête.
-      http
-        .expectOne(`${apiBase}/auth/me`)
-        .flush({}, { status: 401, statusText: 'Unauthorized' });
+      http.expectOne(`${apiBase}/auth/me`).flush({}, { status: 401, statusText: 'Unauthorized' });
     });
 
     it('set currentUser sur success', () => {

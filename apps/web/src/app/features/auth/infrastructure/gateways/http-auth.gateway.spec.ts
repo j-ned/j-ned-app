@@ -6,11 +6,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api';
 import { HttpAuthGateway } from './http-auth.gateway';
-import type {
-  LoginResponse,
-  TwoFactorSecretResponse,
-  UserResponse,
-} from '@features/auth/domain';
+import type { LoginResponse, TwoFactorSecretResponse, UserResponse } from '@features/auth/domain';
 
 const BASE = '/api';
 

@@ -232,6 +232,7 @@ export class AdminProjects {
     this.projectsResource.update((list) => [...(list ?? []), created]);
     this.categoriesResource.reload();
     this.homeGateway.invalidateBundle();
+    this.projectsGateway.invalidateAllProjects();
     this.showNewForm.set(false);
     this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet créé' });
   }
@@ -254,6 +255,7 @@ export class AdminProjects {
         );
         this.categoriesResource.reload();
         this.homeGateway.invalidateBundle();
+        this.projectsGateway.invalidateAllProjects();
         this.editingId.set(null);
         this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet mis à jour' });
       },
@@ -278,6 +280,7 @@ export class AdminProjects {
         next: () => {
           this.categoriesResource.reload();
           this.homeGateway.invalidateBundle();
+          this.projectsGateway.invalidateAllProjects();
           this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet supprimé' });
         },
         error: () => {
@@ -291,5 +294,4 @@ export class AdminProjects {
         },
       });
   }
-
 }

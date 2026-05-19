@@ -463,6 +463,7 @@ export class AdminCalendar {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.bookingGateway.invalidateAllBookings();
           this.loadBookings();
           this.toast.add({
             severity: 'success',

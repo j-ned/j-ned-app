@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of, shareReplay, startWith, Subject, switchMap } from 'rxjs';
 import type { BookingGateway } from '../../domain';
 import type { Booking, BookingFormData, BookingSubmission, DisabledDate } from '../../domain';
 import { API_BASE_URL } from '@shared/api';
@@ -9,6 +9,18 @@ import { API_BASE_URL } from '@shared/api';
 export class HttpBookingGateway implements BookingGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
+
+  private readonly _refreshAll$ = new Subject<void>();
+  private readonly allBookings$ = this._refreshAll$.pipe(
+    startWith(undefined),
+    switchMap(() =>
+      this.http.get<{ data: Booking[] }>(`${this.apiUrl}/bookings`).pipe(
+        map((res) => res.data),
+        catchError(() => of([] as readonly Booking[])),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   getBookedSlots(month: string): Observable<readonly Booking[]> {
     return this.http
@@ -28,10 +40,11 @@ export class HttpBookingGateway implements BookingGateway {
   }
 
   getAllBookings(): Observable<readonly Booking[]> {
-    return this.http.get<{ data: Booking[] }>(`${this.apiUrl}/bookings`).pipe(
-      map((res) => res.data),
-      catchError(() => of([])),
-    );
+    return this.allBookings$;
+  }
+
+  invalidateAllBookings(): void {
+    this._refreshAll$.next();
   }
 
   updateBookingStatus(id: string, status: string): Observable<Booking> {

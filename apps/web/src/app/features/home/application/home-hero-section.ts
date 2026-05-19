@@ -43,14 +43,22 @@ import type { HeroData } from '../domain';
       left: 15%;
       width: 28rem;
       height: 28rem;
-      background: radial-gradient(closest-side, color-mix(in srgb, var(--color-primary) 28%, transparent), transparent);
+      background: radial-gradient(
+        closest-side,
+        color-mix(in srgb, var(--color-primary) 28%, transparent),
+        transparent
+      );
     }
     .hero-ambient::after {
       bottom: 0;
       right: 10%;
       width: 22rem;
       height: 22rem;
-      background: radial-gradient(closest-side, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent);
+      background: radial-gradient(
+        closest-side,
+        color-mix(in srgb, var(--color-accent) 22%, transparent),
+        transparent
+      );
     }
 
     /* En light, les blobs deviennent trop saturés sur fond crème → adoucir */

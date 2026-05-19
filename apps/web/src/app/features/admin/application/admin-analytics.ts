@@ -372,9 +372,7 @@ export class AdminAnalytics {
     interval(30_000)
       .pipe(
         startWith(0),
-        switchMap(() =>
-          this.analytics.getActiveVisitors().pipe(catchError(() => EMPTY)),
-        ),
+        switchMap(() => this.analytics.getActiveVisitors().pipe(catchError(() => EMPTY))),
         takeUntilDestroyed(this._destroyRef),
       )
       .subscribe((r) => this.activeVisitors.set(r.count));
@@ -406,7 +404,8 @@ export class AdminAnalytics {
   // ── Overview KPIs ────────────────────────────────────────────────
   readonly overviewResource = resource({
     params: () => this.range(),
-    loader: ({ params }) => firstValueFrom(this.analytics.getOverview(params.startDate, params.endDate)),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getOverview(params.startDate, params.endDate)),
   });
   readonly overview = computed(() => this.overviewResource.value());
 
@@ -426,7 +425,8 @@ export class AdminAnalytics {
   // ── Main chart ────────────────────────────────────────────────────
   readonly chartResource = resource({
     params: () => this.range(),
-    loader: ({ params }) => firstValueFrom(this.analytics.getChart(params.startDate, params.endDate)),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getChart(params.startDate, params.endDate)),
   });
 
   readonly chartData = computed(() => {
@@ -486,7 +486,8 @@ export class AdminAnalytics {
   // ── Top pages ─────────────────────────────────────────────────────
   readonly pagesResource = resource({
     params: () => this.range(),
-    loader: ({ params }) => firstValueFrom(this.analytics.getMetrics('url', params.startDate, params.endDate)),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getMetrics('url', params.startDate, params.endDate)),
   });
   readonly topPages = computed(() => this.pagesResource.value()?.slice(0, 8) ?? []);
   readonly pagesMax = computed(() => Math.max(1, ...this.topPages().map((r) => r.count)));
@@ -494,7 +495,8 @@ export class AdminAnalytics {
   // ── Top referrers ─────────────────────────────────────────────────
   readonly referrersResource = resource({
     params: () => this.range(),
-    loader: ({ params }) => firstValueFrom(this.analytics.getMetrics('referrer', params.startDate, params.endDate)),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getMetrics('referrer', params.startDate, params.endDate)),
   });
   readonly topReferrers = computed(() => this.referrersResource.value()?.slice(0, 8) ?? []);
   readonly referrersMax = computed(() => Math.max(1, ...this.topReferrers().map((r) => r.count)));
@@ -502,7 +504,8 @@ export class AdminAnalytics {
   // ── Browsers ──────────────────────────────────────────────────────
   readonly browsersResource = resource({
     params: () => this.range(),
-    loader: ({ params }) => firstValueFrom(this.analytics.getMetrics('browser', params.startDate, params.endDate)),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getMetrics('browser', params.startDate, params.endDate)),
   });
   readonly browsers = computed(() => this.browsersResource.value()?.slice(0, 6) ?? []);
   readonly browsersChart = computed(() => ({
@@ -519,7 +522,8 @@ export class AdminAnalytics {
   // ── OS ────────────────────────────────────────────────────────────
   readonly osResource = resource({
     params: () => this.range(),
-    loader: ({ params }) => firstValueFrom(this.analytics.getMetrics('os', params.startDate, params.endDate)),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getMetrics('os', params.startDate, params.endDate)),
   });
   readonly osList = computed(() => this.osResource.value()?.slice(0, 6) ?? []);
   readonly osChart = computed(() => ({
@@ -536,7 +540,8 @@ export class AdminAnalytics {
   // ── Countries ─────────────────────────────────────────────────────
   readonly countriesResource = resource({
     params: () => this.range(),
-    loader: ({ params }) => firstValueFrom(this.analytics.getMetrics('country', params.startDate, params.endDate)),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getMetrics('country', params.startDate, params.endDate)),
   });
   readonly countries = computed(() => this.countriesResource.value()?.slice(0, 8) ?? []);
   readonly countriesMax = computed(() => Math.max(1, ...this.countries().map((r) => r.count)));
@@ -544,7 +549,8 @@ export class AdminAnalytics {
   // ── Top projects ──────────────────────────────────────────────────
   readonly projectsResource = resource({
     params: () => this.range(),
-    loader: ({ params }) => firstValueFrom(this.analytics.getProjectStats(params.startDate, params.endDate)),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getProjectStats(params.startDate, params.endDate)),
   });
   readonly topProjects = computed(() => this.projectsResource.value() ?? []);
   readonly topProjectsTop5 = computed(() => this.topProjects().slice(0, 5));
@@ -552,7 +558,8 @@ export class AdminAnalytics {
   // ── Top articles ──────────────────────────────────────────────────
   readonly articlesResource = resource({
     params: () => this.range(),
-    loader: ({ params }) => firstValueFrom(this.analytics.getArticleStats(params.startDate, params.endDate)),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getArticleStats(params.startDate, params.endDate)),
   });
   readonly topArticles = computed(() => this.articlesResource.value() ?? []);
   readonly topArticlesTop5 = computed(() => this.topArticles().slice(0, 5));

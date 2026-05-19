@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, signal, effect, afterNextRender, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  signal,
+  effect,
+  afterNextRender,
+  inject,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
@@ -21,9 +28,7 @@ type ThemePreference = 'dark' | 'light';
     }
   `,
   template: `
-    <div
-      class="nav-surface fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md"
-    >
+    <div class="nav-surface fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md">
       <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
           <div

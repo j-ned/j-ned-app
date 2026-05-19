@@ -4,11 +4,7 @@ import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '@shared/api';
 import { AuthGateway } from '@features/auth/domain';
-import type {
-  LoginResponse,
-  TwoFactorSecretResponse,
-  UserResponse,
-} from '@features/auth/domain';
+import type { LoginResponse, TwoFactorSecretResponse, UserResponse } from '@features/auth/domain';
 
 @Injectable()
 export class HttpAuthGateway extends AuthGateway {
@@ -39,10 +35,7 @@ export class HttpAuthGateway extends AuthGateway {
     return this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true });
   }
 
-  changePassword(
-    currentPassword: string,
-    newPassword: string,
-  ): Observable<unknown> {
+  changePassword(currentPassword: string, newPassword: string): Observable<unknown> {
     return this.http.post(
       `${this.apiUrl}/auth/change-password`,
       { currentPassword, newPassword },
@@ -59,11 +52,7 @@ export class HttpAuthGateway extends AuthGateway {
   }
 
   enableTwoFactor(code: string): Observable<unknown> {
-    return this.http.post(
-      `${this.apiUrl}/auth/2fa/enable`,
-      { code },
-      { withCredentials: true },
-    );
+    return this.http.post(`${this.apiUrl}/auth/2fa/enable`, { code }, { withCredentials: true });
   }
 
   disableTwoFactor(password: string): Observable<unknown> {

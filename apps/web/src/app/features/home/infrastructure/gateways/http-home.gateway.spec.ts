@@ -33,7 +33,12 @@ describe('HttpHomeGateway', () => {
   describe('Public — 2 tests', () => {
     it('getHeroData() émet GET /<base>/hero, retourne HeroData', async () => {
       const { gateway, httpController } = configure();
-      const expected = { id: 'h1', name: 'Julien', tagline: 'Dev', availability: 'open' } as HeroData;
+      const expected = {
+        id: 'h1',
+        name: 'Julien',
+        tagline: 'Dev',
+        availability: 'open',
+      } as HeroData;
 
       const promise = firstValueFrom(gateway.getHeroData());
 

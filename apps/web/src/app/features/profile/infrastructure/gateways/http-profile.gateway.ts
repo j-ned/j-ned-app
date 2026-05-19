@@ -19,11 +19,31 @@ export class HttpProfileGateway implements ProfileGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
-  private readonly socialCrud = createCrudHttpMethods<SocialButton>(this.http, this.apiUrl, '/social-links');
-  private readonly diplomaCrud = createCrudHttpMethods<Diploma>(this.http, this.apiUrl, '/diplomas');
-  private readonly technologyCrud = createCrudHttpMethods<Technology>(this.http, this.apiUrl, '/technologies');
-  private readonly highlightCrud = createCrudHttpMethods<Highlight>(this.http, this.apiUrl, '/highlights/profile');
-  private readonly whatIDoCrud = createCrudHttpMethods<WhatIDo>(this.http, this.apiUrl, '/expertises');
+  private readonly socialCrud = createCrudHttpMethods<SocialButton>(
+    this.http,
+    this.apiUrl,
+    '/social-links',
+  );
+  private readonly diplomaCrud = createCrudHttpMethods<Diploma>(
+    this.http,
+    this.apiUrl,
+    '/diplomas',
+  );
+  private readonly technologyCrud = createCrudHttpMethods<Technology>(
+    this.http,
+    this.apiUrl,
+    '/technologies',
+  );
+  private readonly highlightCrud = createCrudHttpMethods<Highlight>(
+    this.http,
+    this.apiUrl,
+    '/highlights/profile',
+  );
+  private readonly whatIDoCrud = createCrudHttpMethods<WhatIDo>(
+    this.http,
+    this.apiUrl,
+    '/expertises',
+  );
 
   getProfileInfo(): Observable<ProfileInfo> {
     return this.http.get<ProfileInfo>(`${this.apiUrl}/profile`);
@@ -50,11 +70,15 @@ export class HttpProfileGateway implements ProfileGateway {
   }
 
   getHighlights(): Observable<readonly Highlight[]> {
-    return this.http.get<Highlight[]>(`${this.apiUrl}/highlights/profile`).pipe(catchError(() => of([])));
+    return this.http
+      .get<Highlight[]>(`${this.apiUrl}/highlights/profile`)
+      .pipe(catchError(() => of([])));
   }
 
   getWhatIDo(): Observable<readonly WhatIDo[]> {
-    return this.http.get<WhatIDo[]>(`${this.apiUrl}/expertises/offers`).pipe(catchError(() => of([])));
+    return this.http
+      .get<WhatIDo[]>(`${this.apiUrl}/expertises/offers`)
+      .pipe(catchError(() => of([])));
   }
 
   getWhatISeek(): Observable<WhatISeek> {
