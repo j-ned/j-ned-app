@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
 import { UIChart } from 'primeng/chart';
 import { Tag } from 'primeng/tag';
-import { firstValueFrom, interval, startWith, switchMap } from 'rxjs';
+import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
 
 type DateRangeKey = '7d' | '30d' | '90d' | 'all';
@@ -372,7 +372,9 @@ export class AdminAnalytics {
     interval(30_000)
       .pipe(
         startWith(0),
-        switchMap(() => this.analytics.getActiveVisitors()),
+        switchMap(() =>
+          this.analytics.getActiveVisitors().pipe(catchError(() => EMPTY)),
+        ),
         takeUntilDestroyed(this._destroyRef),
       )
       .subscribe((r) => this.activeVisitors.set(r.count));
