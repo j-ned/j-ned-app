@@ -5,8 +5,6 @@ export const serverRoutes: ServerRoute[] = [
   { path: '', renderMode: RenderMode.Prerender },
   { path: 'about', renderMode: RenderMode.Prerender },
   { path: 'projects', renderMode: RenderMode.Prerender },
-  { path: 'contact', renderMode: RenderMode.Prerender },
-  { path: 'booking', renderMode: RenderMode.Prerender },
 
   // Auth + admin : jamais côté serveur (authentifié, pas d'intérêt SEO)
   { path: 'login', renderMode: RenderMode.Client },

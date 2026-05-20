@@ -75,37 +75,6 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'contact',
-    title: 'Contact | Julien Nédellec',
-    loadChildren: () => import('./features/contact/contact.routes').then((m) => m.CONTACT_ROUTES),
-    data: {
-      preload: true,
-      seo: {
-        title: 'Contact | Julien Nédellec - Développeur Full-Stack',
-        description:
-          "Contactez-moi pour vos projets Angular, NestJS ou TypeScript. Disponible pour missions de développement, refonte d'applications ou conseil technique.",
-        keywords:
-          'Contact Développeur, Mission Angular, Freelance NestJS, Développeur disponible, Conseil technique',
-        url: 'https://www.julien-nedellec.fr/contact',
-        type: 'website',
-      },
-    },
-  },
-  {
-    path: 'booking',
-    title: 'Réservation | Julien Nédellec',
-    loadChildren: () => import('./features/booking/booking.routes').then((m) => m.BOOKING_ROUTES),
-    data: {
-      seo: {
-        title: 'Réservation de consultation - Julien Nédellec',
-        description: 'Réservez un créneau pour un appel de découverte ou une consultation projet.',
-        keywords: 'réservation, consultation, rendez-vous, développeur Angular',
-        url: 'https://www.julien-nedellec.fr/booking',
-        type: 'website',
-      },
-    },
-  },
-  {
     path: 'login',
     title: 'Connexion | Julien Nédellec',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.LOGIN_ROUTES),

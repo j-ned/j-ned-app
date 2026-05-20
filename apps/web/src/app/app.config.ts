@@ -42,8 +42,6 @@ import { HttpProjectsGateway } from '@features/projects/infrastructure';
 import { HttpProfileGateway } from '@features/profile/infrastructure';
 import { HttpContactGateway } from '@features/contact/infrastructure';
 import { HttpHomeGateway } from '@features/home/infrastructure';
-import { BOOKING_GATEWAY } from '@features/booking/application';
-import { HttpBookingGateway } from '@features/booking/infrastructure';
 import { AUTH_GATEWAY } from '@features/auth/domain';
 import { HttpAuthGateway, AuthService } from '@features/auth/infrastructure';
 
@@ -164,7 +162,6 @@ export const appConfig: ApplicationConfig = {
     { provide: PROFILE_GATEWAY, useClass: HttpProfileGateway },
     { provide: CONTACT_GATEWAY, useClass: HttpContactGateway },
     { provide: HOME_GATEWAY, useClass: HttpHomeGateway },
-    { provide: BOOKING_GATEWAY, useClass: HttpBookingGateway },
     { provide: ANALYTICS_GATEWAY, useClass: HttpAnalyticsGateway },
     { provide: CV_GATEWAY, useClass: HttpCvGateway },
     { provide: AUTH_GATEWAY, useClass: HttpAuthGateway },

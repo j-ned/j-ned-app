@@ -2,15 +2,14 @@ import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/c
 import { DOCUMENT } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
-import { HomeServices } from './home-services';
 import { HomeProjects } from './home-projects';
-import { HomeContactCta } from './home-contact-cta';
+import { ContactForm } from '@features/contact/application';
 import { HOME_GATEWAY } from './tokens';
 import { PiIconPipe } from '@shared/icons';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeServices, HomeProjects, HomeContactCta, PiIconPipe],
+  imports: [HomeHeroSection, HomeProjects, ContactForm, PiIconPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -70,21 +69,6 @@ import { PiIconPipe } from '@shared/icons';
         </section>
       </div>
 
-      <!-- Services Section -->
-      @defer (on viewport; prefetch on idle) {
-        <section class="w-full py-12 md:py-16">
-          <div class="max-w-7xl mx-auto px-6">
-            <app-home-services [services]="bundle()?.services ?? []" />
-          </div>
-        </section>
-      } @placeholder {
-        <div class="block py-12 px-6 h-64"></div>
-      } @error {
-        <div class="block py-12 px-6 text-center text-muted text-sm">
-          Impossible de charger cette section.
-        </div>
-      }
-
       <!-- Projects Section -->
       @defer (on viewport; prefetch on idle) {
         <section class="w-full py-8 md:py-12">
@@ -100,15 +84,11 @@ import { PiIconPipe } from '@shared/icons';
         </div>
       }
 
-      <!-- Contact CTA Section -->
+      <!-- Contact Section -->
       @defer (on viewport) {
-        <section class="w-full py-12 md:py-16">
-          <div class="max-w-7xl mx-auto px-6">
-            <app-home-contact-cta />
-          </div>
-        </section>
+        <app-contact-form />
       } @placeholder {
-        <div class="block py-12 px-6 h-64"></div>
+        <div class="block py-20 px-6 h-96"></div>
       } @error {
         <div class="block py-12 px-6 text-center text-muted text-sm">
           Impossible de charger cette section.

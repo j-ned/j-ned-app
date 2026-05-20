@@ -1,2 +1,2 @@
-export { Contact } from './contact';
+export { ContactForm } from './contact-form';
 export * from './tokens';

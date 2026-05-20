@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { Router } from '@angular/router';
 import { HomeHero } from './home-hero';
 import { UiButton } from '@shared/ui';
@@ -38,6 +39,7 @@ import type { HeroData } from '../domain';
       opacity: 0.45;
       z-index: 0;
     }
+
     .hero-ambient::before {
       top: 10%;
       left: 15%;
@@ -49,6 +51,7 @@ import type { HeroData } from '../domain';
         transparent
       );
     }
+
     .hero-ambient::after {
       bottom: 0;
       right: 10%;
@@ -59,12 +62,6 @@ import type { HeroData } from '../domain';
         color-mix(in srgb, var(--color-accent) 22%, transparent),
         transparent
       );
-    }
-
-    /* En light, les blobs deviennent trop saturés sur fond crème → adoucir */
-    :root:not(.app-dark) .hero-ambient::before,
-    :root:not(.app-dark) .hero-ambient::after {
-      opacity: 0.22;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -82,7 +79,7 @@ import type { HeroData } from '../domain';
 
         <!-- CTAs -->
         <div
-          class="animate-fade-up-actions flex flex-col sm:flex-row items-center gap-4 mt-6 md:mt-8"
+          class="animate-fade-up-actions flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 mt-6 md:mt-8"
         >
           <app-ui-button severity="primary" size="large" (click)="goToProjects()">
             Voir mes réalisations
@@ -92,10 +89,19 @@ import type { HeroData } from '../domain';
             variant="outlined"
             severity="secondary"
             size="large"
-            (click)="goToContact()"
+            (click)="scrollToContact()"
           >
             Me contacter
             <i class="pi pi-envelope" aria-hidden="true"></i>
+          </app-ui-button>
+          <app-ui-button
+            variant="outlined"
+            severity="secondary"
+            size="large"
+            (click)="goToAbout()"
+          >
+            En savoir plus
+            <i class="pi pi-user" aria-hidden="true"></i>
           </app-ui-button>
         </div>
       </div>
@@ -105,12 +111,20 @@ import type { HeroData } from '../domain';
 export class HomeHeroSection {
   readonly hero = input<HeroData | null>(null);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
 
   goToProjects(): void {
     void this.router.navigate(['/projects']);
   }
 
-  goToContact(): void {
-    void this.router.navigate(['/contact']);
+  scrollToContact(): void {
+    const el = this.document.getElementById('contact');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  goToAbout(): void {
+    void this.router.navigate(['/about']);
   }
 }
