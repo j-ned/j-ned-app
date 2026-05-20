@@ -1,10 +1,8 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { map, catchError, of } from 'rxjs';
 import { AuthService } from '../../auth/infrastructure';
 import { CONTACT_GATEWAY } from '@features/contact/application';
-import { BOOKING_GATEWAY } from '@features/booking/application';
 
 type NavItem = {
   readonly route: string;
@@ -139,24 +137,14 @@ type NavItem = {
 export class AdminLayout {
   readonly authService = inject(AuthService);
   private readonly contactGateway = inject(CONTACT_GATEWAY);
-  private readonly bookingGateway = inject(BOOKING_GATEWAY);
 
   readonly collapsed = signal(false);
 
   private readonly unreadRes = rxResource({
     stream: () => this.contactGateway.getUnreadCount(),
   });
-  private readonly bookingRes = rxResource({
-    stream: () =>
-      this.bookingGateway.getAllBookings().pipe(
-        map((b) => b.length),
-        catchError(() => of(0)),
-      ),
-  });
 
-  private readonly inboxCount = computed(
-    () => (this.unreadRes.value() ?? 0) + (this.bookingRes.value() ?? 0),
-  );
+  private readonly inboxCount = computed(() => this.unreadRes.value() ?? 0);
 
   readonly navItems: readonly NavItem[] = [
     { route: '/admin', icon: 'pi pi-th-large', label: 'Dashboard', exact: true },
@@ -167,7 +155,6 @@ export class AdminLayout {
       label: 'Boîte de réception',
       badge: () => this.inboxCount(),
     },
-    { route: '/admin/schedule', icon: 'pi pi-calendar', label: 'Agenda' },
     { route: '/admin/analytics', icon: 'pi pi-chart-bar', label: 'Analytics' },
   ];
 }

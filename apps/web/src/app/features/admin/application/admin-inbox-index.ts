@@ -1,9 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { map, catchError, of } from 'rxjs';
 import { CONTACT_GATEWAY } from '@features/contact/application';
-import { BOOKING_GATEWAY } from '@features/booking/application';
 
 @Component({
   selector: 'app-admin-inbox-index',
@@ -13,7 +11,7 @@ import { BOOKING_GATEWAY } from '@features/booking/application';
   template: `
     <header class="mb-10">
       <h1 class="text-3xl font-bold text-foreground mb-2">Boîte de réception</h1>
-      <p class="text-sm text-muted">Messages et réservations en attente</p>
+      <p class="text-sm text-muted">Messages reçus depuis le formulaire de contact</p>
     </header>
 
     <ul class="grid grid-cols-1 md:grid-cols-2 gap-4" role="list">
@@ -44,52 +42,14 @@ import { BOOKING_GATEWAY } from '@features/booking/application';
           </div>
         </a>
       </li>
-
-      <li>
-        <a
-          routerLink="/admin/inbox/bookings"
-          class="group flex flex-col gap-3 bg-surface border border-foreground/10 rounded-xl p-6 hover:border-primary/40 hover:bg-primary/[0.02] transition-all"
-        >
-          <div class="flex items-start justify-between">
-            <div
-              class="w-11 h-11 shrink-0 rounded-lg bg-linear-to-br from-cyan-500/15 to-cyan-500/5 flex items-center justify-center"
-            >
-              <i class="pi pi-calendar text-xl text-cyan-500" aria-hidden="true"></i>
-            </div>
-            @if (bookingCount() > 0) {
-              <span class="px-2 py-0.5 rounded-full bg-cyan-500 text-white text-xs font-semibold">
-                {{ bookingCount() }}
-              </span>
-            }
-          </div>
-          <div>
-            <h3
-              class="text-base font-semibold text-foreground group-hover:text-primary transition-colors"
-            >
-              Réservations
-            </h3>
-            <p class="text-xs text-muted leading-relaxed mt-1">Appels découverte réservés</p>
-          </div>
-        </a>
-      </li>
     </ul>
   `,
 })
 export class AdminInboxIndex {
   private readonly contactGateway = inject(CONTACT_GATEWAY);
-  private readonly bookingGateway = inject(BOOKING_GATEWAY);
 
   private readonly unreadRes = rxResource({
     stream: () => this.contactGateway.getUnreadCount(),
   });
   readonly unreadCount = computed(() => this.unreadRes.value() ?? 0);
-
-  private readonly bookingRes = rxResource({
-    stream: () =>
-      this.bookingGateway.getAllBookings().pipe(
-        map((b) => b.length),
-        catchError(() => of(0)),
-      ),
-  });
-  readonly bookingCount = computed(() => this.bookingRes.value() ?? 0);
 }

@@ -190,30 +190,6 @@ export const ADMIN_ROUTES: Routes = [
         title: 'Messages | Admin',
         loadComponent: () => import('./application/admin-messages').then((m) => m.AdminMessages),
       },
-      {
-        path: 'inbox/bookings',
-        title: 'Réservations | Admin',
-        loadComponent: () => import('./application/admin-bookings').then((m) => m.AdminBookings),
-      },
-
-      // ─── Agenda ──────────────────────────────────────────────────
-      {
-        path: 'schedule',
-        title: 'Agenda | Admin',
-        loadComponent: () =>
-          import('./application/admin-schedule-index').then((m) => m.AdminScheduleIndex),
-      },
-      {
-        path: 'schedule/calendar',
-        title: 'Calendrier | Admin',
-        loadComponent: () => import('./application/admin-calendar').then((m) => m.AdminCalendar),
-      },
-      {
-        path: 'schedule/availability',
-        title: 'Disponibilités | Admin',
-        loadComponent: () =>
-          import('./application/admin-availability').then((m) => m.AdminAvailability),
-      },
 
       // ─── Analytics ───────────────────────────────────────────────
       {
@@ -255,7 +231,6 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'about/social-buttons', redirectTo: 'content/social', pathMatch: 'full' },
       { path: 'projects', redirectTo: 'content/projects', pathMatch: 'full' },
       { path: 'messages', redirectTo: 'inbox/messages', pathMatch: 'full' },
-      { path: 'calendar', redirectTo: 'schedule/calendar', pathMatch: 'full' },
       { path: 'stats', redirectTo: 'analytics', pathMatch: 'full' },
       { path: 'security', redirectTo: 'settings/security', pathMatch: 'full' },
 
