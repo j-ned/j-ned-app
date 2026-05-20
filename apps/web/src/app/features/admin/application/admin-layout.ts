@@ -10,6 +10,7 @@ type NavItem = {
   readonly label: string;
   readonly exact?: boolean;
   readonly badge?: () => number;
+  readonly groupLabel?: string;
 };
 
 @Component({
@@ -63,6 +64,13 @@ type NavItem = {
         <!-- Main nav -->
         <nav class="flex-1 px-3 py-2 space-y-1" aria-label="Navigation principale">
           @for (item of navItems; track item.route) {
+            @if (!collapsed() && item.groupLabel) {
+              <div
+                class="px-3 pt-4 pb-2 text-[10px] uppercase tracking-widest font-semibold text-muted/70"
+              >
+                {{ item.groupLabel }}
+              </div>
+            }
             <a
               [routerLink]="item.route"
               routerLinkActive="bg-primary/10 text-primary border-primary/30"
@@ -148,11 +156,18 @@ export class AdminLayout {
 
   readonly navItems: readonly NavItem[] = [
     { route: '/admin', icon: 'pi pi-th-large', label: 'Dashboard', exact: true },
-    { route: '/admin/content', icon: 'pi pi-pencil', label: 'Contenu' },
     {
-      route: '/admin/inbox',
-      icon: 'pi pi-inbox',
-      label: 'Boîte de réception',
+      route: '/admin/projects',
+      icon: 'pi pi-desktop',
+      label: 'Projets',
+      groupLabel: 'Contenu',
+    },
+    { route: '/admin/cv', icon: 'pi pi-file-pdf', label: 'CV' },
+    { route: '/admin/photo', icon: 'pi pi-user', label: 'Photo' },
+    {
+      route: '/admin/messages',
+      icon: 'pi pi-envelope',
+      label: 'Messages',
       badge: () => this.inboxCount(),
     },
     { route: '/admin/analytics', icon: 'pi pi-chart-bar', label: 'Analytics' },

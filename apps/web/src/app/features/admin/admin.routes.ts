@@ -17,41 +17,29 @@ export const ADMIN_ROUTES: Routes = [
 
       // ─── Contenu ────────────────────────────────────────────────
       {
-        path: 'content',
-        title: 'Contenu | Admin',
-        loadComponent: () =>
-          import('./application/admin-content-index').then((m) => m.AdminContentIndex),
+        path: 'projects',
+        title: 'Projets | Admin',
+        loadComponent: () => import('./application/admin-projects').then((m) => m.AdminProjects),
       },
       {
-        path: 'content/profile',
-        title: 'Photo de profil | Admin',
-        loadComponent: () => import('./application/admin-profile').then((m) => m.AdminProfile),
-      },
-      {
-        path: 'content/cv',
+        path: 'cv',
         title: 'CV | Admin',
         loadComponent: () => import('./application/admin-cv').then((m) => m.AdminCv),
       },
       {
-        path: 'content/projects',
-        title: 'Projets | Admin',
-        loadComponent: () => import('./application/admin-projects').then((m) => m.AdminProjects),
+        path: 'photo',
+        title: 'Photo de profil | Admin',
+        loadComponent: () => import('./application/admin-profile').then((m) => m.AdminProfile),
       },
 
-      // ─── Boîte de réception ──────────────────────────────────────
+      // ─── Communication ──────────────────────────────────────────
       {
-        path: 'inbox',
-        title: 'Boîte de réception | Admin',
-        loadComponent: () =>
-          import('./application/admin-inbox-index').then((m) => m.AdminInboxIndex),
-      },
-      {
-        path: 'inbox/messages',
+        path: 'messages',
         title: 'Messages | Admin',
         loadComponent: () => import('./application/admin-messages').then((m) => m.AdminMessages),
       },
 
-      // ─── Analytics ───────────────────────────────────────────────
+      // ─── Pilotage ───────────────────────────────────────────────
       {
         path: 'analytics',
         title: 'Analytics | Admin',
@@ -60,7 +48,7 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'analytics/visits', redirectTo: 'analytics', pathMatch: 'full' },
       { path: 'analytics/projects', redirectTo: 'analytics', pathMatch: 'full' },
 
-      // ─── Paramètres ──────────────────────────────────────────────
+      // ─── Paramètres ─────────────────────────────────────────────
       {
         path: 'settings',
         title: 'Paramètres | Admin',
@@ -73,13 +61,17 @@ export const ADMIN_ROUTES: Routes = [
           import('../auth/application/two-factor-setup').then((m) => m.TwoFactorSetup),
       },
 
-      // ─── Backwards-compat redirects ──────────────────────────────
-      { path: 'home', redirectTo: 'content', pathMatch: 'full' },
-      { path: 'about', redirectTo: 'content', pathMatch: 'full' },
-      { path: 'about/profile', redirectTo: 'content/profile', pathMatch: 'full' },
-      { path: 'about/cv', redirectTo: 'content/cv', pathMatch: 'full' },
-      { path: 'projects', redirectTo: 'content/projects', pathMatch: 'full' },
-      { path: 'messages', redirectTo: 'inbox/messages', pathMatch: 'full' },
+      // ─── Backwards-compat redirects ─────────────────────────────
+      { path: 'content', redirectTo: '', pathMatch: 'full' },
+      { path: 'content/projects', redirectTo: 'projects', pathMatch: 'full' },
+      { path: 'content/cv', redirectTo: 'cv', pathMatch: 'full' },
+      { path: 'content/profile', redirectTo: 'photo', pathMatch: 'full' },
+      { path: 'inbox', redirectTo: 'messages', pathMatch: 'full' },
+      { path: 'inbox/messages', redirectTo: 'messages', pathMatch: 'full' },
+      { path: 'home', redirectTo: '', pathMatch: 'full' },
+      { path: 'about', redirectTo: '', pathMatch: 'full' },
+      { path: 'about/profile', redirectTo: 'photo', pathMatch: 'full' },
+      { path: 'about/cv', redirectTo: 'cv', pathMatch: 'full' },
       { path: 'stats', redirectTo: 'analytics', pathMatch: 'full' },
       { path: 'security', redirectTo: 'settings/security', pathMatch: 'full' },
 
