@@ -55,6 +55,7 @@ type ThemePreference = 'dark' | 'light';
             } @else {
               <a
                 [routerLink]="item.href"
+                [fragment]="item.fragment"
                 class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
               >
                 <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
@@ -131,6 +132,7 @@ type ThemePreference = 'dark' | 'light';
           } @else {
             <a
               [routerLink]="item.href"
+              [fragment]="item.fragment"
               (click)="closeMobileMenu()"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
