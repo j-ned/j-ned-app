@@ -7,7 +7,6 @@ import {
   computed,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { CONTACT_GATEWAY } from './tokens';
 import { ToastService } from '@shared/ui';
@@ -29,7 +28,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ReactiveFormsModule, RouterLink, PiIconPipe],
+  imports: [ReactiveFormsModule, PiIconPipe],
   template: `
     <section id="contact" class="py-20 px-6">
       <div class="max-w-5xl mx-auto">
@@ -193,25 +192,6 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                 }
               </nav>
             </div>
-            <hr class="border-t border-foreground/10" />
-            <a
-              routerLink="/booking"
-              class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
-            >
-              <div
-                class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-              >
-                <i class="pi pi-calendar text-base text-violet-400" aria-hidden="true"></i>
-              </div>
-              <div>
-                <p
-                  class="text-sm font-medium text-foreground group-hover:text-violet-400 transition-colors"
-                >
-                  Réserver un créneau
-                </p>
-                <p class="text-xs text-muted">Planifiez un appel découverte</p>
-              </div>
-            </a>
           </aside>
           <div
             class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 md:p-8 shadow-lg"
