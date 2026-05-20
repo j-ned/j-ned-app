@@ -30,39 +30,7 @@ describe('HttpContactGateway', () => {
     TestBed.resetTestingModule();
   });
 
-  describe('Public — 3 tests', () => {
-    it('getContactInfo() émet GET /<base>/contact/info, retourne {email, phone, location}', async () => {
-      const { gateway, httpController } = configure();
-
-      const promise = firstValueFrom(gateway.getContactInfo());
-
-      const req = httpController.expectOne(`${BASE}/contact/info`);
-      expect(req.request.method).toBe('GET');
-      req.flush({ email: 'a@b.c', phone: '+33 6 00 00 00 00', location: 'Paris' });
-
-      const result = await promise;
-      expect(result).toEqual({ email: 'a@b.c', phone: '+33 6 00 00 00 00', location: 'Paris' });
-      httpController.verify();
-    });
-
-    it('getSocialLinks() émet GET /<base>/social-links, retourne SocialLinks via toSocialLinks mapping', async () => {
-      const { gateway, httpController } = configure();
-
-      const promise = firstValueFrom(gateway.getSocialLinks());
-
-      const req = httpController.expectOne(`${BASE}/social-links`);
-      expect(req.request.method).toBe('GET');
-      req.flush([
-        { id: '1', icon: 'github', label: 'GitHub', href: 'https://github.com/foo' },
-        { id: '2', icon: 'linkedin', label: 'LinkedIn', href: 'https://linkedin.com/in/foo' },
-      ]);
-
-      const result = await promise;
-      expect(result.github.url).toBe('https://github.com/foo');
-      expect(result.linkedin.url).toBe('https://linkedin.com/in/foo');
-      httpController.verify();
-    });
-
+  describe('Public — 1 test', () => {
     it('submitContactForm() retourne success:true sur 201 quel que soit le body backend', async () => {
       const { gateway, httpController } = configure();
       const data: ContactFormData = {

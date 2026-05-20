@@ -9,16 +9,6 @@ import type { ContactGateway, ContactMessage } from '../domain';
 
 function makeGatewayStub(overrides: Partial<ContactGateway> = {}): ContactGateway {
   return {
-    getContactInfo: () =>
-      of({ email: 'test@example.com', phone: '0600000000', location: 'Paris, France' }),
-    getSocialLinks: () =>
-      of({
-        linkedin: { url: '', label: '', icon: '' },
-        github: { url: '', label: '', icon: '' },
-        twitter: { url: '', label: '', icon: '' },
-        email: { url: '', label: '', icon: '' },
-        phone: { url: '', label: '', icon: '' },
-      }),
     submitContactForm: () => of({ success: true, message: 'OK' }),
     getAllMessages: () => of([]),
     markMessageAsRead: () => of({} as ContactMessage),

@@ -39,9 +39,9 @@ import { PROFILE_GATEWAY } from '@features/profile/application';
 import { CONTACT_GATEWAY } from '@features/contact/application';
 import { HOME_GATEWAY } from '@features/home/application';
 import { HttpProjectsGateway } from '@features/projects/infrastructure';
-import { HttpProfileGateway } from '@features/profile/infrastructure';
+import { InMemoryProfileGateway } from '@features/profile/infrastructure';
 import { HttpContactGateway } from '@features/contact/infrastructure';
-import { HttpHomeGateway } from '@features/home/infrastructure';
+import { InMemoryHomeGateway } from '@features/home/infrastructure';
 import { AUTH_GATEWAY } from '@features/auth/domain';
 import { HttpAuthGateway, AuthService } from '@features/auth/infrastructure';
 
@@ -159,9 +159,9 @@ export const appConfig: ApplicationConfig = {
       },
     },
     { provide: PROJECTS_GATEWAY, useClass: HttpProjectsGateway },
-    { provide: PROFILE_GATEWAY, useClass: HttpProfileGateway },
+    { provide: PROFILE_GATEWAY, useClass: InMemoryProfileGateway },
     { provide: CONTACT_GATEWAY, useClass: HttpContactGateway },
-    { provide: HOME_GATEWAY, useClass: HttpHomeGateway },
+    { provide: HOME_GATEWAY, useClass: InMemoryHomeGateway },
     { provide: ANALYTICS_GATEWAY, useClass: HttpAnalyticsGateway },
     { provide: CV_GATEWAY, useClass: HttpCvGateway },
     { provide: AUTH_GATEWAY, useClass: HttpAuthGateway },

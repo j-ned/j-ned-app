@@ -1,1 +1,1 @@
-export { HttpHomeGateway } from './gateways/http-home.gateway';
+export * from './gateways/in-memory-home.gateway';

@@ -4,9 +4,9 @@ import {
   DestroyRef,
   inject,
   signal,
-  computed,
 } from '@angular/core';
-import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { STATIC_CONTACT_INFO, STATIC_SOCIAL_LINKS } from '@features/contact/infrastructure';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { CONTACT_GATEWAY } from './tokens';
 import { ToastService } from '@shared/ui';
@@ -54,14 +54,13 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
           <aside
             class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-lg flex flex-col justify-between gap-6"
           >
-            @if (contactInfo()) {
-              <address class="space-y-4 not-italic">
+            <address class="space-y-4 not-italic">
                 <h3 class="text-xs font-semibold text-muted uppercase tracking-wider">
                   Coordonnées
                 </h3>
 
                 <a
-                  [href]="'mailto:' + contactInfo()!.email"
+                  [href]="'mailto:' + contactInfo.email"
                   class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
                 >
                   <div
@@ -74,13 +73,13 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     <p
                       class="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate"
                     >
-                      {{ contactInfo()!.email }}
+                      {{ contactInfo.email }}
                     </p>
                   </div>
                 </a>
 
                 <a
-                  [href]="'tel:' + contactInfo()!.phone"
+                  [href]="'tel:' + contactInfo.phone"
                   class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
                 >
                   <div
@@ -93,7 +92,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     <p
                       class="text-sm font-medium text-foreground group-hover:text-accent transition-colors"
                     >
-                      {{ contactInfo()!.phone }}
+                      {{ contactInfo.phone }}
                     </p>
                   </div>
                 </a>
@@ -107,85 +106,84 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                   <div>
                     <p class="text-xs text-muted">Localisation</p>
                     <p class="text-sm font-medium text-foreground">
-                      {{ contactInfo()!.location }}
+                      {{ contactInfo.location }}
                     </p>
                   </div>
                 </div>
               </address>
-            }
             <hr class="border-t border-foreground/10" />
             <div class="space-y-3">
               <h3 class="text-xs font-semibold text-muted uppercase tracking-wider">
                 Retrouvez-moi
               </h3>
               <nav class="flex items-center gap-2" aria-label="Réseaux sociaux">
-                @if (socialLinks().linkedin.url) {
+                @if (socialLinks.linkedin.url) {
                   <a
-                    [href]="socialLinks().linkedin.url"
+                    [href]="socialLinks.linkedin.url"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
-                    [attr.aria-label]="socialLinks().linkedin.label"
+                    [attr.aria-label]="socialLinks.linkedin.label"
                   >
                     <i
                       class="text-base text-muted group-hover:text-primary transition-colors"
-                      [class]="socialLinks().linkedin.icon | piIcon"
+                      [class]="socialLinks.linkedin.icon | piIcon"
                       aria-hidden="true"
                     ></i>
                   </a>
                 }
-                @if (socialLinks().github.url) {
+                @if (socialLinks.github.url) {
                   <a
-                    [href]="socialLinks().github.url"
+                    [href]="socialLinks.github.url"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
-                    [attr.aria-label]="socialLinks().github.label"
+                    [attr.aria-label]="socialLinks.github.label"
                   >
                     <i
                       class="text-base text-muted group-hover:text-foreground transition-colors"
-                      [class]="socialLinks().github.icon | piIcon"
+                      [class]="socialLinks.github.icon | piIcon"
                       aria-hidden="true"
                     ></i>
                   </a>
                 }
-                @if (socialLinks().twitter.url) {
+                @if (socialLinks.twitter.url) {
                   <a
-                    [href]="socialLinks().twitter.url"
+                    [href]="socialLinks.twitter.url"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
-                    [attr.aria-label]="socialLinks().twitter.label"
+                    [attr.aria-label]="socialLinks.twitter.label"
                   >
                     <i
                       class="text-base text-muted group-hover:text-foreground transition-colors"
-                      [class]="socialLinks().twitter.icon | piIcon"
+                      [class]="socialLinks.twitter.icon | piIcon"
                       aria-hidden="true"
                     ></i>
                   </a>
                 }
-                @if (socialLinks().email.url) {
+                @if (socialLinks.email.url) {
                   <a
-                    [href]="socialLinks().email.url"
+                    [href]="socialLinks.email.url"
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
-                    [attr.aria-label]="socialLinks().email.label"
+                    [attr.aria-label]="socialLinks.email.label"
                   >
                     <i
                       class="text-base text-muted group-hover:text-primary transition-colors"
-                      [class]="socialLinks().email.icon | piIcon"
+                      [class]="socialLinks.email.icon | piIcon"
                       aria-hidden="true"
                     ></i>
                   </a>
                 }
-                @if (socialLinks().phone.url) {
+                @if (socialLinks.phone.url) {
                   <a
-                    [href]="socialLinks().phone.url"
+                    [href]="socialLinks.phone.url"
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300 hover:scale-110"
-                    [attr.aria-label]="socialLinks().phone.label"
+                    [attr.aria-label]="socialLinks.phone.label"
                   >
                     <i
                       class="text-base text-muted group-hover:text-accent transition-colors"
-                      [class]="socialLinks().phone.icon | piIcon"
+                      [class]="socialLinks.phone.icon | piIcon"
                       aria-hidden="true"
                     ></i>
                   </a>
@@ -332,24 +330,8 @@ export class ContactForm {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly contactInfoResource = rxResource({
-    stream: () => this.contactGateway.getContactInfo(),
-  });
-  protected readonly contactInfo = computed(() => this.contactInfoResource.value());
-
-  private readonly socialLinksResource = rxResource({
-    stream: () => this.contactGateway.getSocialLinks(),
-  });
-  protected readonly socialLinks = computed(
-    () =>
-      this.socialLinksResource.value() ?? {
-        linkedin: { url: '', label: '', icon: '' },
-        github: { url: '', label: '', icon: '' },
-        email: { url: '', label: '', icon: '' },
-        phone: { url: '', label: '', icon: '' },
-        twitter: { url: '', label: '', icon: '' },
-      },
-  );
+  protected readonly contactInfo = STATIC_CONTACT_INFO;
+  protected readonly socialLinks = STATIC_SOCIAL_LINKS;
 
   readonly isSubmitting = signal(false);
 

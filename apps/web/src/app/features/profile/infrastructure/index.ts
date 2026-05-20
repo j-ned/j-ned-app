@@ -1,1 +1,1 @@
-export { HttpProfileGateway } from './gateways/http-profile.gateway';
+export * from './gateways/in-memory-profile.gateway';
