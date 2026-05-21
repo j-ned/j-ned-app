@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PiIconPipe } from '@shared/icons';
+import { AppIcon } from '@shared/icons';
 
 type SocialItem = {
   readonly label: string;
@@ -21,7 +21,7 @@ const SOCIALS: readonly SocialItem[] = [
 
 @Component({
   selector: 'app-footer',
-  imports: [RouterLink, PiIconPipe],
+  imports: [RouterLink, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block border-t border-white/5 bg-background/80 backdrop-blur-md' },
   template: `
@@ -32,7 +32,7 @@ const SOCIALS: readonly SocialItem[] = [
         routerLink="/"
         class="inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
       >
-        <i class="pi pi-code text-base text-primary" aria-hidden="true"></i>
+        <app-icon name="code" [size]="16" class="text-primary" />
         Julien<span class="text-primary"> N.</span>
         <span class="text-muted font-normal">&copy; {{ currentYear }}</span>
       </a>
@@ -46,7 +46,7 @@ const SOCIALS: readonly SocialItem[] = [
             rel="noopener noreferrer"
             class="p-2 rounded-lg text-muted hover:text-primary hover:bg-white/5 transition-colors"
           >
-            <i class="text-base" [class]="social.icon | piIcon" aria-hidden="true"></i>
+            <app-icon [name]="social.icon" [size]="16" />
           </a>
         }
       </nav>

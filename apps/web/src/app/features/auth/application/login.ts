@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../infrastructure';
 import { ToastService } from '@shared/ui';
+import { AppIcon } from '@shared/icons';
 
 type LoginForm = {
   email: FormControl<string>;
@@ -12,7 +13,7 @@ type LoginForm = {
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -23,7 +24,7 @@ type LoginForm = {
           <div
             class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-br from-blue-600 to-violet-600 shadow-lg shadow-violet-500/20 mb-4"
           >
-            <i class="pi pi-shield text-[1.75rem] text-white" aria-hidden="true"></i>
+            <app-icon name="shield" [size]="28" class="text-white" />
           </div>
           <h1 class="text-xl font-bold text-foreground">Connexion Admin</h1>
           <p class="text-muted text-sm mt-1">Accédez au tableau de bord</p>
@@ -49,10 +50,7 @@ type LoginForm = {
               <div>
                 <label for="email" class="block text-xs font-medium text-muted mb-1">Email</label>
                 <div class="relative">
-                  <i
-                    class="pi pi-envelope text-base text-muted absolute left-3 top-1/2 -translate-y-1/2"
-                    aria-hidden="true"
-                  ></i>
+                  <app-icon name="envelope" [size]="16" class="text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     id="email"
                     type="email"
@@ -74,10 +72,7 @@ type LoginForm = {
                   >Mot de passe</label
                 >
                 <div class="relative">
-                  <i
-                    class="pi pi-lock text-base text-muted absolute left-3 top-1/2 -translate-y-1/2"
-                    aria-hidden="true"
-                  ></i>
+                  <app-icon name="lock" [size]="16" class="text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     id="password"
                     type="password"
@@ -122,7 +117,7 @@ type LoginForm = {
             routerLink="/"
             class="text-xs text-muted hover:text-primary transition-colors inline-flex items-center gap-1.5"
           >
-            <i class="pi pi-arrow-left w-3.5 h-3.5" aria-hidden="true"></i>
+            <app-icon name="arrow-left" [size]="14" />
             Retour au site
           </a>
         </div>

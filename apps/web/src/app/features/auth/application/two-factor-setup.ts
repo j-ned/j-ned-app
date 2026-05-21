@@ -15,6 +15,7 @@ import {
   type ValidationErrors,
 } from '@angular/forms';
 import { AuthService } from '../infrastructure';
+import { AppIcon } from '@shared/icons';
 
 type PasswordFormShape = {
   currentPassword: FormControl<string>;
@@ -32,7 +33,7 @@ type DisableFormShape = {
 
 @Component({
   selector: 'app-two-factor-setup',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -40,7 +41,7 @@ type DisableFormShape = {
       <!-- Change Password -->
       <div class="bg-background/80 border border-foreground/10 rounded-2xl p-8">
         <div class="flex items-center gap-3 mb-2">
-          <i class="pi pi-lock text-xl text-primary" aria-hidden="true"></i>
+          <app-icon name="lock" [size]="20" class="text-primary" />
           <h2 class="text-xl font-bold text-foreground">Modifier le mot de passe</h2>
         </div>
         <p class="text-muted text-sm mb-6">
@@ -163,7 +164,7 @@ type DisableFormShape = {
       <!-- 2FA Setup -->
       <div class="bg-background/80 border border-foreground/10 rounded-2xl p-8">
         <div class="flex items-center gap-3 mb-2">
-          <i class="pi pi-shield text-xl text-primary" aria-hidden="true"></i>
+          <app-icon name="shield" [size]="20" class="text-primary" />
           <h2 class="text-xl font-bold text-foreground">Authentification à deux facteurs</h2>
         </div>
 
@@ -189,7 +190,7 @@ type DisableFormShape = {
             <div
               class="flex items-center gap-3 p-4 rounded-lg bg-green-500/10 border border-green-500/30"
             >
-              <i class="pi pi-shield text-xl text-green-400 shrink-0" aria-hidden="true"></i>
+              <app-icon name="shield" [size]="20" class="text-green-400 shrink-0" />
               <div>
                 <p class="text-green-400 font-medium text-sm">2FA activé</p>
                 <p class="text-muted text-xs">
@@ -351,7 +352,7 @@ type DisableFormShape = {
           <div
             class="flex items-center gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-6"
           >
-            <i class="pi pi-shield text-xl text-amber-400 shrink-0" aria-hidden="true"></i>
+            <app-icon name="shield" [size]="20" class="text-amber-400 shrink-0" />
             <div>
               <p class="text-amber-400 font-medium text-sm">2FA non activé</p>
               <p class="text-muted text-xs">

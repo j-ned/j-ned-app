@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../infrastructure';
+import { AppIcon } from '@shared/icons';
 
 type TwoFactorVerifyFormShape = {
   code: FormControl<string>;
@@ -10,7 +11,7 @@ type TwoFactorVerifyFormShape = {
 
 @Component({
   selector: 'app-two-factor-verify',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -22,7 +23,7 @@ type TwoFactorVerifyFormShape = {
           <div
             class="w-16 h-16 rounded-xl bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center"
           >
-            <i class="pi pi-shield text-[2rem] text-primary" aria-hidden="true"></i>
+            <app-icon name="shield" [size]="32" class="text-primary" />
           </div>
         </div>
 

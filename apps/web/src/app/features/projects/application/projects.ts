@@ -11,13 +11,14 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { Paginator, type PaginatorState } from 'primeng/paginator';
 import { ProjectCard } from './components/project-card';
 import { PROJECTS_GATEWAY } from './tokens';
+import { AppIcon } from '@shared/icons';
 import { filterProjects, paginateProjects, calculateTotalPages } from '../domain';
 
 @Component({
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ProjectCard, Paginator],
+  imports: [ProjectCard, Paginator, AppIcon],
   template: `
     <main
       class="min-h-screen pt-20 pb-16 bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
@@ -27,7 +28,7 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
           <span
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
           >
-            <i class="pi pi-desktop text-base" aria-hidden="true"></i>
+            <app-icon name="desktop" [size]="16" />
             Portfolio
           </span>
           <h1

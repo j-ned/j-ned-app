@@ -2,10 +2,11 @@ import { Component, input, inject, ChangeDetectionStrategy } from '@angular/core
 import { NgOptimizedImage } from '@angular/common';
 import type { Project } from '../../domain';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
+import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-project-card',
-  imports: [NgOptimizedImage],
+  imports: [NgOptimizedImage, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block h-full' },
   template: `
@@ -75,7 +76,7 @@ import { ANALYTICS_GATEWAY } from '@shared/analytics';
                 [attr.aria-label]="'Voir le projet ' + project().title"
                 (click)="trackClick()"
               >
-                <i class="pi pi-external-link text-xl" aria-hidden="true"></i>
+                <app-icon name="external-link" [size]="20" />
                 Voir le projet
               </a>
             }
@@ -88,7 +89,7 @@ import { ANALYTICS_GATEWAY } from '@shared/analytics';
                 [attr.aria-label]="'Code source du projet ' + project().title"
                 (click)="trackClick()"
               >
-                <i class="pi pi-github text-xl" aria-hidden="true"></i>
+                <app-icon name="github" [size]="20" />
                 Code
               </a>
             }
@@ -101,7 +102,7 @@ import { ANALYTICS_GATEWAY } from '@shared/analytics';
                 [attr.aria-label]="'Code source frontend du projet ' + project().title"
                 (click)="trackClick()"
               >
-                <i class="pi pi-github text-xl" aria-hidden="true"></i>
+                <app-icon name="github" [size]="20" />
                 Frontend
               </a>
             }
@@ -114,7 +115,7 @@ import { ANALYTICS_GATEWAY } from '@shared/analytics';
                 [attr.aria-label]="'Code source backend du projet ' + project().title"
                 (click)="trackClick()"
               >
-                <i class="pi pi-github text-xl" aria-hidden="true"></i>
+                <app-icon name="github" [size]="20" />
                 Backend
               </a>
             }

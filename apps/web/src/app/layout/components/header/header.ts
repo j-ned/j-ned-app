@@ -11,7 +11,7 @@ import { NAV_LINKS } from './nav-items';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
 import { firstValueFrom } from 'rxjs';
 import { CV_GATEWAY } from '@shared/cv';
-import { PiIconPipe } from '@shared/icons';
+import { AppIcon } from '@shared/icons';
 import { UiButton, UiDrawer } from '@shared/ui';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
@@ -20,7 +20,7 @@ type ThemePreference = 'dark' | 'light';
 @Component({
   selector: 'app-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, PiIconPipe, UiButton, UiDrawer],
+  imports: [RouterLink, AppIcon, UiButton, UiDrawer],
   styles: `
     .nav-surface {
       border-bottom: 1px solid var(--theme-nav-border);
@@ -49,7 +49,7 @@ type ThemePreference = 'dark' | 'light';
                 [href]="item.href"
                 class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
               >
-                <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
+                <app-icon [name]="item.icons" [size]="20" />
                 {{ item.label }}
               </a>
             } @else {
@@ -58,7 +58,7 @@ type ThemePreference = 'dark' | 'light';
                 [fragment]="item.fragment"
                 class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
               >
-                <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
+                <app-icon [name]="item.icons" [size]="20" />
                 {{ item.label }}
               </a>
             }
@@ -73,11 +73,7 @@ type ThemePreference = 'dark' | 'light';
             [ariaLabel]="isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre'"
             (click)="toggleTheme()"
           >
-            <i
-              [class]="isDarkTheme() ? 'pi pi-moon' : 'pi pi-sun'"
-              class="text-base"
-              aria-hidden="true"
-            ></i>
+            <app-icon [name]="isDarkTheme() ? 'moon' : 'sun'" [size]="16" />
           </app-ui-button>
 
           @if (cvUrl()) {
@@ -88,7 +84,7 @@ type ThemePreference = 'dark' | 'light';
               (click)="trackCvDownload()"
               class="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-foreground text-sm font-medium hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
             >
-              <i class="pi pi-download" aria-hidden="true"></i>
+              <app-icon name="download" />
               Télécharger mon CV
             </a>
           }
@@ -101,11 +97,7 @@ type ThemePreference = 'dark' | 'light';
             [ariaLabel]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
             (click)="toggleMobileMenu()"
           >
-            <i
-              [class]="isMobileMenuOpen() ? 'pi pi-times' : 'pi pi-bars'"
-              class="text-xl"
-              aria-hidden="true"
-            ></i>
+            <app-icon [name]="isMobileMenuOpen() ? 'times' : 'bars'" [size]="20" />
           </app-ui-button>
         </div>
       </div>
@@ -126,7 +118,7 @@ type ThemePreference = 'dark' | 'light';
               (click)="closeMobileMenu()"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
+              <app-icon [name]="item.icons" [size]="20" />
               {{ item.label }}
             </a>
           } @else {
@@ -136,7 +128,7 @@ type ThemePreference = 'dark' | 'light';
               (click)="closeMobileMenu()"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
-              <i class="text-xl" [class]="item.icons | piIcon" aria-hidden="true"></i>
+              <app-icon [name]="item.icons" [size]="20" />
               {{ item.label }}
             </a>
           }
@@ -149,7 +141,7 @@ type ThemePreference = 'dark' | 'light';
             (click)="trackCvDownload(); closeMobileMenu()"
             class="flex items-center gap-3 text-lg font-medium text-primary hover:text-primary/80 transition-colors py-2 border-t border-white/5 pt-4 mt-2"
           >
-            <i class="pi pi-download text-xl" aria-hidden="true"></i>
+            <app-icon name="download" [size]="20" />
             Télécharger mon CV
           </a>
         }
