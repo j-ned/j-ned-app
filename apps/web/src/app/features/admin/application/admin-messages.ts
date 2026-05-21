@@ -94,7 +94,7 @@ export class AdminMessages {
 
   protected readonly extraActions: readonly ExtraAction<ContactMessage>[] = [
     {
-      icon: 'pi pi-check',
+      icon: 'check',
       label: 'Marquer comme lu',
       visible: (m) => !m.read,
       handler: (m) => this.markAsRead(m),

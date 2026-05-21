@@ -17,10 +17,11 @@ import { AdminProjectInlineForm } from './components/admin-project-inline-form';
 import { ToastService } from '@shared/ui';
 import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
+import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-admin-projects',
-  imports: [AdminProjectInlineForm, FormsModule, NgOptimizedImage, Select, Tag],
+  imports: [AdminProjectInlineForm, FormsModule, NgOptimizedImage, Select, Tag, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
@@ -39,10 +40,11 @@ import { Tag } from 'primeng/tag';
             (click)="toggleNewForm()"
             [class]="showNewForm() ? 'btn-outline' : 'btn-primary'"
           >
-            <i
-              [class]="showNewForm() ? 'pi pi-times mr-2' : 'pi pi-plus mr-2'"
-              aria-hidden="true"
-            ></i>
+            @if (showNewForm()) {
+              <app-icon name="times" [size]="20" class="mr-2" />
+            } @else {
+              <app-icon name="plus" [size]="20" class="mr-2" />
+            }
             {{ showNewForm() ? 'Annuler' : 'Nouveau projet' }}
           </button>
         </div>
@@ -124,10 +126,11 @@ import { Tag } from 'primeng/tag';
                   [attr.aria-label]="editingId() === project.id ? 'Fermer' : 'Modifier'"
                   class="btn-outline"
                 >
-                  <i
-                    [class]="editingId() === project.id ? 'pi pi-times' : 'pi pi-pencil'"
-                    aria-hidden="true"
-                  ></i>
+                  @if (editingId() === project.id) {
+                    <app-icon name="times" [size]="20" />
+                  } @else {
+                    <app-icon name="pencil" [size]="20" />
+                  }
                 </button>
                 <button
                   type="button"
@@ -135,7 +138,7 @@ import { Tag } from 'primeng/tag';
                   aria-label="Supprimer"
                   class="btn-danger"
                 >
-                  <i class="pi pi-trash" aria-hidden="true"></i>
+                  <app-icon name="trash" [size]="20" />
                 </button>
               </div>
             </div>

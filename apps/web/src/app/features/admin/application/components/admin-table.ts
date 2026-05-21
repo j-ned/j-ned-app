@@ -12,12 +12,13 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminColumnBase } from './admin-column';
+import { AppIcon } from '@shared/icons';
 
 type SortDir = 'asc' | 'desc';
 
 @Component({
   selector: 'app-admin-table',
-  imports: [RouterLink, NgTemplateOutlet],
+  imports: [RouterLink, NgTemplateOutlet, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -28,7 +29,7 @@ type SortDir = 'asc' | 'desc';
           <ng-content select="[adminTableHeaderActions]" />
           @if (newRoute()) {
             <a [routerLink]="newRoute()" class="btn-primary">
-              <i class="pi pi-plus mr-2" aria-hidden="true"></i>
+              <app-icon name="plus" [size]="20" class="mr-2" />
               {{ newLabel() }}
             </a>
           }
@@ -57,15 +58,13 @@ type SortDir = 'asc' | 'desc';
                     <span class="inline-flex items-center gap-1.5">
                       {{ col.getLabel() }}
                       @if (sortKey() === col.getKey()) {
-                        <i
-                          [class]="
-                            sortDir() === 'asc' ? 'pi pi-sort-up-fill' : 'pi pi-sort-down-fill'
-                          "
-                          class="text-[10px] text-primary"
-                          aria-hidden="true"
-                        ></i>
+                        @if (sortDir() === 'asc') {
+                          <app-icon name="sort-up-fill" [size]="12" class="text-primary" />
+                        } @else {
+                          <app-icon name="sort-down-fill" [size]="12" class="text-primary" />
+                        }
                       } @else {
-                        <i class="pi pi-sort text-[10px] opacity-40" aria-hidden="true"></i>
+                        <app-icon name="sort" [size]="12" class="opacity-40" />
                       }
                     </span>
                   </th>
@@ -105,7 +104,7 @@ type SortDir = 'asc' | 'desc';
               (click)="goToPage(currentPage() - 1)"
               aria-label="Page précédente"
             >
-              <i class="pi pi-chevron-left" aria-hidden="true"></i>
+              <app-icon name="chevron-left" [size]="20" />
             </button>
             @for (p of pages(); track p) {
               <button
@@ -124,7 +123,7 @@ type SortDir = 'asc' | 'desc';
               (click)="goToPage(currentPage() + 1)"
               aria-label="Page suivante"
             >
-              <i class="pi pi-chevron-right" aria-hidden="true"></i>
+              <app-icon name="chevron-right" [size]="20" />
             </button>
           </div>
         </nav>

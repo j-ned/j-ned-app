@@ -14,6 +14,7 @@ import { UIChart } from 'primeng/chart';
 import { Tag } from 'primeng/tag';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
+import { AppIcon } from '@shared/icons';
 
 type DateRangeKey = '7d' | '30d' | '90d' | 'all';
 
@@ -24,7 +25,7 @@ type DateRangeOption = {
 
 @Component({
   selector: 'app-admin-analytics',
-  imports: [FormsModule, Select, UIChart, Tag],
+  imports: [FormsModule, Select, UIChart, Tag, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -58,7 +59,7 @@ type DateRangeOption = {
           styleClass="min-w-44"
         />
         <button type="button" (click)="exportCsv()" class="btn-outline">
-          <i class="pi pi-download mr-2" aria-hidden="true"></i>
+          <app-icon name="download" [size]="20" class="mr-2" />
           Export CSV
         </button>
       </div>
@@ -68,7 +69,7 @@ type DateRangeOption = {
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" aria-label="Indicateurs clés">
       <article class="bg-surface border border-foreground/10 rounded-xl p-5">
         <div class="flex items-center gap-2 mb-2">
-          <i class="pi pi-users text-primary" aria-hidden="true"></i>
+          <app-icon name="users" [size]="20" class="text-primary" />
           <span class="text-xs text-muted uppercase tracking-wider">Visiteurs</span>
         </div>
         @if (overviewResource.isLoading()) {
@@ -83,7 +84,7 @@ type DateRangeOption = {
 
       <article class="bg-surface border border-foreground/10 rounded-xl p-5">
         <div class="flex items-center gap-2 mb-2">
-          <i class="pi pi-eye text-indigo-500" aria-hidden="true"></i>
+          <app-icon name="eye" [size]="20" class="text-indigo-500" />
           <span class="text-xs text-muted uppercase tracking-wider">Pages vues</span>
         </div>
         @if (overviewResource.isLoading()) {
@@ -98,7 +99,7 @@ type DateRangeOption = {
 
       <article class="bg-surface border border-foreground/10 rounded-xl p-5">
         <div class="flex items-center gap-2 mb-2">
-          <i class="pi pi-arrow-right-arrow-left text-orange-500" aria-hidden="true"></i>
+          <app-icon name="arrow-right-arrow-left" [size]="20" class="text-orange-500" />
           <span class="text-xs text-muted uppercase tracking-wider">Taux de rebond</span>
         </div>
         @if (overviewResource.isLoading()) {
@@ -113,7 +114,7 @@ type DateRangeOption = {
 
       <article class="bg-surface border border-foreground/10 rounded-xl p-5">
         <div class="flex items-center gap-2 mb-2">
-          <i class="pi pi-clock text-green-500" aria-hidden="true"></i>
+          <app-icon name="clock" [size]="20" class="text-green-500" />
           <span class="text-xs text-muted uppercase tracking-wider">Durée moyenne</span>
         </div>
         @if (overviewResource.isLoading()) {
@@ -151,7 +152,7 @@ type DateRangeOption = {
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center gap-2 mb-4">
-          <i class="pi pi-file text-primary" aria-hidden="true"></i>
+          <app-icon name="file" [size]="20" class="text-primary" />
           <h2 class="text-base font-semibold text-foreground">Pages les plus visitées</h2>
         </header>
         @if (pagesResource.isLoading()) {
@@ -184,7 +185,7 @@ type DateRangeOption = {
 
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center gap-2 mb-4">
-          <i class="pi pi-external-link text-indigo-500" aria-hidden="true"></i>
+          <app-icon name="external-link" [size]="20" class="text-indigo-500" />
           <h2 class="text-base font-semibold text-foreground">Provenance du trafic</h2>
         </header>
         @if (referrersResource.isLoading()) {
@@ -222,7 +223,7 @@ type DateRangeOption = {
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center gap-2 mb-4">
-          <i class="pi pi-globe text-cyan-500" aria-hidden="true"></i>
+          <app-icon name="globe" [size]="20" class="text-cyan-500" />
           <h2 class="text-base font-semibold text-foreground">Navigateurs</h2>
         </header>
         @if (browsersResource.isLoading()) {
@@ -241,7 +242,7 @@ type DateRangeOption = {
 
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center gap-2 mb-4">
-          <i class="pi pi-desktop text-purple-500" aria-hidden="true"></i>
+          <app-icon name="desktop" [size]="20" class="text-purple-500" />
           <h2 class="text-base font-semibold text-foreground">Systèmes d'exploitation</h2>
         </header>
         @if (osResource.isLoading()) {
@@ -255,7 +256,7 @@ type DateRangeOption = {
 
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center gap-2 mb-4">
-          <i class="pi pi-map-marker text-green-500" aria-hidden="true"></i>
+          <app-icon name="map-marker" [size]="20" class="text-green-500" />
           <h2 class="text-base font-semibold text-foreground">Pays</h2>
         </header>
         @if (countriesResource.isLoading()) {
@@ -292,7 +293,7 @@ type DateRangeOption = {
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
-            <i class="pi pi-desktop text-green-500" aria-hidden="true"></i>
+            <app-icon name="desktop" [size]="20" class="text-green-500" />
             <h2 class="text-base font-semibold text-foreground">Projets cliqués</h2>
           </div>
           <p-tag [value]="(overview()?.projectClicks ?? 0) + ' clics'" severity="success" />
@@ -320,7 +321,7 @@ type DateRangeOption = {
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
-            <i class="pi pi-pencil text-primary" aria-hidden="true"></i>
+            <app-icon name="pencil" [size]="20" class="text-primary" />
             <h2 class="text-base font-semibold text-foreground">Articles lus</h2>
           </div>
           <p-tag [value]="(overview()?.articleViews ?? 0) + ' vues'" severity="info" />
@@ -351,7 +352,7 @@ type DateRangeOption = {
         <div
           class="w-14 h-14 rounded-xl bg-linear-to-br from-purple-500/20 to-purple-500/5 flex items-center justify-center mb-4"
         >
-          <i class="pi pi-download text-2xl text-purple-500" aria-hidden="true"></i>
+          <app-icon name="download" [size]="24" class="text-purple-500" />
         </div>
         <h2 class="text-base font-semibold text-foreground mb-1">CV téléchargés</h2>
         @if (overviewResource.isLoading()) {

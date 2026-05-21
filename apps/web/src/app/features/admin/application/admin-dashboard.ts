@@ -12,6 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import { CONTACT_GATEWAY } from '@features/contact/application';
 import { AuthService } from '@features/auth/infrastructure';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
+import { AppIcon } from '@shared/icons';
 
 function relativeTime(date: Date | string): string {
   const target = typeof date === 'string' ? new Date(date) : date;
@@ -31,7 +32,7 @@ function relativeTime(date: Date | string): string {
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [RouterLink],
+  imports: [RouterLink, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -53,7 +54,7 @@ function relativeTime(date: Date | string): string {
             <div
               class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-primary/15 to-primary/5 flex items-center justify-center"
             >
-              <i class="pi pi-envelope text-xl text-primary" aria-hidden="true"></i>
+              <app-icon name="envelope" [size]="20" class="text-primary" />
             </div>
             <div class="flex-1 min-w-0">
               @if (unreadRes.isLoading()) {
@@ -63,10 +64,7 @@ function relativeTime(date: Date | string): string {
               }
               <p class="text-xs text-muted mt-1">Messages non lus</p>
             </div>
-            <i
-              class="pi pi-arrow-right text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all"
-              aria-hidden="true"
-            ></i>
+            <app-icon name="arrow-right" [size]="20" class="text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
           </a>
         </li>
 
@@ -78,7 +76,7 @@ function relativeTime(date: Date | string): string {
             <div
               class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-purple-500/15 to-purple-500/5 flex items-center justify-center"
             >
-              <i class="pi pi-download text-xl text-purple-500" aria-hidden="true"></i>
+              <app-icon name="download" [size]="20" class="text-purple-500" />
             </div>
             <div class="flex-1 min-w-0">
               @if (cvDownloadRes.isLoading()) {
@@ -90,10 +88,7 @@ function relativeTime(date: Date | string): string {
               }
               <p class="text-xs text-muted mt-1">CV téléchargés</p>
             </div>
-            <i
-              class="pi pi-arrow-right text-muted group-hover:text-purple-500 group-hover:translate-x-0.5 transition-all"
-              aria-hidden="true"
-            ></i>
+            <app-icon name="arrow-right" [size]="20" class="text-muted group-hover:text-purple-500 group-hover:translate-x-0.5 transition-all" />
           </a>
         </li>
       </ul>
@@ -110,7 +105,7 @@ function relativeTime(date: Date | string): string {
           class="text-xs text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1"
         >
           Tout voir
-          <i class="pi pi-arrow-right text-[10px]" aria-hidden="true"></i>
+          <app-icon name="arrow-right" [size]="12" />
         </a>
       </div>
 
@@ -156,14 +151,14 @@ function relativeTime(date: Date | string): string {
           routerLink="/admin/projects"
           class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-sm font-medium text-foreground hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
         >
-          <i class="pi pi-plus" aria-hidden="true"></i>
+          <app-icon name="plus" [size]="20" />
           Nouveau projet
         </a>
         <a
           routerLink="/admin/cv"
           class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-sm font-medium text-foreground hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
         >
-          <i class="pi pi-upload" aria-hidden="true"></i>
+          <app-icon name="upload" [size]="20" />
           Téléverser CV
         </a>
       </div>

@@ -1,9 +1,10 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-admin-settings',
-  imports: [RouterLink],
+  imports: [RouterLink, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -24,7 +25,7 @@ import { RouterLink } from '@angular/router';
             <div
               class="w-11 h-11 shrink-0 rounded-lg bg-linear-to-br from-primary/15 to-primary/5 flex items-center justify-center"
             >
-              <i class="pi pi-shield text-xl text-primary" aria-hidden="true"></i>
+              <app-icon name="shield" [size]="20" class="text-primary" />
             </div>
             <div>
               <h3 class="text-base font-semibold text-foreground">
@@ -36,7 +37,7 @@ import { RouterLink } from '@angular/router';
             </div>
           </div>
           <a routerLink="/admin/settings/security" class="btn-outline">
-            <i class="pi pi-cog mr-2" aria-hidden="true"></i>
+            <app-icon name="cog" [size]="20" class="mr-2" />
             Configurer
           </a>
         </div>

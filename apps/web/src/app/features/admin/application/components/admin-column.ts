@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import { AppIcon } from '@shared/icons';
 
 /**
  * Base abstraite pour toutes les colonnes admin.
@@ -362,7 +363,7 @@ export class AdminColContact<T> extends AdminColumnBase<T> {
 /* ───────────────────── Column: actions (edit + delete + extras) ───────────────────── */
 
 export type ExtraAction<T> = {
-  /** Icône PrimeIcons (ex: 'pi pi-check') */
+  /** Nom de l'icône AppIcon (ex: 'check', 'pencil', 'trash') */
   readonly icon: string;
   /** Label aria + tooltip */
   readonly label: string;
@@ -375,7 +376,7 @@ export type ExtraAction<T> = {
 @Component({
   selector: 'app-admin-col-actions',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, AppIcon],
   providers: [{ provide: AdminColumnBase, useExisting: AdminColActions }],
   template: `
     <ng-template #tpl let-row>
@@ -389,7 +390,7 @@ export type ExtraAction<T> = {
               [title]="extra.label"
               class="admin-icon-btn"
             >
-              <i [class]="extra.icon" aria-hidden="true"></i>
+              <app-icon [name]="extra.icon" [size]="20" />
             </button>
           }
           @if (editRoute(); as editFn) {
@@ -399,7 +400,7 @@ export type ExtraAction<T> = {
               class="admin-icon-btn"
               (click)="$event.stopPropagation()"
             >
-              <i class="pi pi-pencil" aria-hidden="true"></i>
+              <app-icon name="pencil" [size]="20" />
             </a>
           }
           @if (!hideDelete()) {
@@ -409,7 +410,7 @@ export type ExtraAction<T> = {
               aria-label="Supprimer"
               class="admin-icon-btn-danger"
             >
-              <i class="pi pi-trash" aria-hidden="true"></i>
+              <app-icon name="trash" [size]="20" />
             </button>
           }
         </div>
@@ -526,15 +527,16 @@ export class AdminColToggle<T> extends AdminColumnBase<T> {
 @Component({
   selector: 'app-admin-col-expand',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [AppIcon],
   providers: [{ provide: AdminColumnBase, useExisting: AdminColExpand }],
   template: `
     <ng-template #tpl let-row>
       <td class="admin-td w-12">
-        <i
-          [class]="isExpanded()(row) ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-          class="text-xs text-muted"
-          aria-hidden="true"
-        ></i>
+        @if (isExpanded()(row)) {
+          <app-icon name="chevron-down" [size]="12" class="text-muted" />
+        } @else {
+          <app-icon name="chevron-right" [size]="12" class="text-muted" />
+        }
       </td>
     </ng-template>
   `,
