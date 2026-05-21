@@ -1,7 +1,5 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { catchError, defer, map, of, type Observable } from 'rxjs';
-import { API_BASE_URL } from '@shared/api';
+import { Injectable } from '@angular/core';
+import { defer, of, type Observable } from 'rxjs';
 import type {
   ProfileInfo,
   Biography,
@@ -15,6 +13,7 @@ import type {
 } from '../../domain';
 import {
   STATIC_PROFILE_BASE,
+  STATIC_AVATAR_URL,
   STATIC_BIOGRAPHY,
   STATIC_DIPLOMAS,
   STATIC_TECHNOLOGIES,
@@ -26,22 +25,8 @@ import {
 
 @Injectable()
 export class InMemoryProfileGateway implements ProfileGateway {
-  private readonly http = inject(HttpClient);
-  private readonly apiBase = inject(API_BASE_URL);
-
   getProfileInfo(): Observable<ProfileInfo> {
-    return this.http.get<ProfileInfo>(`${this.apiBase}/profile`).pipe(
-      map((dto) => ({ ...STATIC_PROFILE_BASE, avatarUrl: dto.avatarUrl ?? '' })),
-      catchError(() => of({ ...STATIC_PROFILE_BASE, avatarUrl: '' })),
-    );
-  }
-
-  uploadAvatar(file: File): Observable<string> {
-    const form = new FormData();
-    form.append('avatar', file);
-    return this.http
-      .post<{ url: string }>(`${this.apiBase}/profile/avatar`, form)
-      .pipe(map((response) => response.url));
+    return defer(() => of({ ...STATIC_PROFILE_BASE, avatarUrl: STATIC_AVATAR_URL }));
   }
 
   getBiography(): Observable<Biography> {

@@ -163,7 +163,6 @@ export class AdminLayout {
       groupLabel: 'Contenu',
     },
     { route: '/admin/cv', icon: 'pi pi-file-pdf', label: 'CV' },
-    { route: '/admin/photo', icon: 'pi pi-user', label: 'Photo' },
     {
       route: '/admin/messages',
       icon: 'pi pi-envelope',

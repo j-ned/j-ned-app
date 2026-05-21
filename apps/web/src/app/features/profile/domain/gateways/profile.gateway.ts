@@ -19,6 +19,4 @@ export type ProfileGateway = {
   getHighlights(): Observable<readonly Highlight[]>;
   getWhatIDo(): Observable<readonly WhatIDo[]>;
   getWhatISeek(): Observable<WhatISeek>;
-
-  uploadAvatar(file: File): Observable<string>;
 };

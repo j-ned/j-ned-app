@@ -9,7 +9,10 @@ import type {
   SocialButton,
 } from '../../domain';
 
-// Profile base — everything except avatarUrl (resolved dynamically via API in getProfileInfo)
+// Avatar served statically from `public/avatar.png` — no backend dependency.
+export const STATIC_AVATAR_URL = '/avatar.png';
+
+// Profile base — everything except avatarUrl (composed at the gateway level).
 export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
   id: '9acfdedb-c00d-4370-858e-7215e30f5a41',
   displayName: 'Nédellec Julien',

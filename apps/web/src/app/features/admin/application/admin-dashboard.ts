@@ -166,13 +166,6 @@ function relativeTime(date: Date | string): string {
           <i class="pi pi-upload" aria-hidden="true"></i>
           Téléverser CV
         </a>
-        <a
-          routerLink="/admin/photo"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-sm font-medium text-foreground hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
-        >
-          <i class="pi pi-user" aria-hidden="true"></i>
-          Changer photo
-        </a>
       </div>
     </section>
   `,
