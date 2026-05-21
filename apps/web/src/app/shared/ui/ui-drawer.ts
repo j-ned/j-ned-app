@@ -11,12 +11,14 @@ import {
   input,
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { AppIcon } from '@shared/icons';
 
 type Position = 'left' | 'right';
 
 @Component({
   selector: 'app-ui-drawer',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [AppIcon],
   host: {
     '(document:keydown.escape)': 'close()',
   },
@@ -46,7 +48,7 @@ type Position = 'left' | 'right';
               aria-label="Fermer"
               (click)="close()"
             >
-              <i class="pi pi-times text-lg" aria-hidden="true"></i>
+              <app-icon name="xmark" [size]="18" />
             </button>
           </header>
         }
