@@ -5,11 +5,11 @@ import { HomeHeroSection } from './home-hero-section';
 import { HomeProjects } from './home-projects';
 import { ContactForm } from '@features/contact/application';
 import { HOME_GATEWAY } from './tokens';
-import { PiIconPipe } from '@shared/icons';
+import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeProjects, ContactForm, PiIconPipe],
+  imports: [HomeHeroSection, HomeProjects, ContactForm, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -33,11 +33,7 @@ import { PiIconPipe } from '@shared/icons';
                       <div
                         class="w-11 h-11 shrink-0 rounded-xl bg-linear-to-br from-primary-bg/15 to-accent/15 flex items-center justify-center group-hover:from-primary-bg/25 group-hover:to-accent/25 transition-colors duration-300"
                       >
-                        <i
-                          class="text-xl text-primary"
-                          [class]="item.icon | piIcon"
-                          aria-hidden="true"
-                        ></i>
+                        <app-icon [name]="item.icon" [size]="20" class="text-primary" />
                       </div>
                       <h3 class="text-sm font-bold text-primary uppercase tracking-widest">
                         {{ item.title }}

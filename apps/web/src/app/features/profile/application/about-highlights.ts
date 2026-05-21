@@ -1,17 +1,17 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
-import { PiIconPipe } from '@shared/icons';
+import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-about-highlights',
-  imports: [PiIconPipe],
+  imports: [AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <section>
       <header class="flex items-center gap-2 mb-5">
-        <i class="pi pi-sparkles text-2xl text-primary" aria-hidden="true"></i>
+        <app-icon name="sparkles" [size]="24" class="text-primary" />
         <h2 class="text-2xl font-bold text-foreground">Ce qui me caractérise</h2>
       </header>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -22,11 +22,7 @@ import { PiIconPipe } from '@shared/icons';
             <div
               class="w-10 h-10 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
             >
-              <i
-                class="text-2xl text-accent"
-                [class]="highlight.icon | piIcon"
-                aria-hidden="true"
-              ></i>
+              <app-icon [name]="highlight.icon" [size]="24" class="text-accent" />
             </div>
             <h3
               class="text-base font-bold text-foreground mb-2 group-hover:text-primary transition-colors"

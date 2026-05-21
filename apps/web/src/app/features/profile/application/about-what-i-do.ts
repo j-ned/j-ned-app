@@ -1,15 +1,17 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
+import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-about-what-i-do',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [AppIcon],
   host: { class: 'block' },
   template: `
     <section>
       <header class="flex items-center gap-2 mb-4">
-        <i class="pi pi-code text-2xl text-primary" aria-hidden="true"></i>
+        <app-icon name="code" [size]="24" class="text-primary" />
         <h2 class="text-2xl font-bold text-foreground">Ce que je fais</h2>
       </header>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

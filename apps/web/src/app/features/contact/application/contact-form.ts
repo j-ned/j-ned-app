@@ -10,7 +10,7 @@ import { STATIC_CONTACT_INFO, STATIC_SOCIAL_LINKS } from '@features/contact/infr
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { CONTACT_GATEWAY } from './tokens';
 import { ToastService } from '@shared/ui';
-import { PiIconPipe } from '@shared/icons';
+import { AppIcon } from '@shared/icons';
 
 type ContactFormGroup = {
   name: FormControl<string>;
@@ -28,7 +28,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ReactiveFormsModule, PiIconPipe],
+  imports: [ReactiveFormsModule, AppIcon],
   template: `
     <section id="contact" class="py-20 px-6">
       <div class="max-w-5xl mx-auto">
@@ -36,7 +36,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
           <span
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
           >
-            <i class="pi pi-envelope text-base" aria-hidden="true"></i>
+            <app-icon name="envelope" [size]="16" />
             Contact
           </span>
           <h2
@@ -66,7 +66,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                   <div
                     class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
                   >
-                    <i class="pi pi-envelope text-base text-primary" aria-hidden="true"></i>
+                    <app-icon name="envelope" [size]="16" class="text-primary" />
                   </div>
                   <div class="min-w-0">
                     <p class="text-xs text-muted">Email</p>
@@ -85,7 +85,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                   <div
                     class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-accent/20 to-accent/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
                   >
-                    <i class="pi pi-phone text-base text-accent" aria-hidden="true"></i>
+                    <app-icon name="phone" [size]="16" class="text-accent" />
                   </div>
                   <div>
                     <p class="text-xs text-muted">Téléphone</p>
@@ -101,7 +101,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                   <div
                     class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-green-500/20 to-green-500/5 flex items-center justify-center"
                   >
-                    <i class="pi pi-map-marker text-base text-green-500" aria-hidden="true"></i>
+                    <app-icon name="map-marker" [size]="16" class="text-green-500" />
                   </div>
                   <div>
                     <p class="text-xs text-muted">Localisation</p>
@@ -125,11 +125,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks.linkedin.label"
                   >
-                    <i
-                      class="text-base text-muted group-hover:text-primary transition-colors"
-                      [class]="socialLinks.linkedin.icon | piIcon"
-                      aria-hidden="true"
-                    ></i>
+                    <app-icon [name]="socialLinks.linkedin.icon" [size]="16" class="text-muted group-hover:text-primary transition-colors" />
                   </a>
                 }
                 @if (socialLinks.github.url) {
@@ -140,11 +136,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks.github.label"
                   >
-                    <i
-                      class="text-base text-muted group-hover:text-foreground transition-colors"
-                      [class]="socialLinks.github.icon | piIcon"
-                      aria-hidden="true"
-                    ></i>
+                    <app-icon [name]="socialLinks.github.icon" [size]="16" class="text-muted group-hover:text-foreground transition-colors" />
                   </a>
                 }
                 @if (socialLinks.twitter.url) {
@@ -155,11 +147,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks.twitter.label"
                   >
-                    <i
-                      class="text-base text-muted group-hover:text-foreground transition-colors"
-                      [class]="socialLinks.twitter.icon | piIcon"
-                      aria-hidden="true"
-                    ></i>
+                    <app-icon [name]="socialLinks.twitter.icon" [size]="16" class="text-muted group-hover:text-foreground transition-colors" />
                   </a>
                 }
                 @if (socialLinks.email.url) {
@@ -168,11 +156,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks.email.label"
                   >
-                    <i
-                      class="text-base text-muted group-hover:text-primary transition-colors"
-                      [class]="socialLinks.email.icon | piIcon"
-                      aria-hidden="true"
-                    ></i>
+                    <app-icon [name]="socialLinks.email.icon" [size]="16" class="text-muted group-hover:text-primary transition-colors" />
                   </a>
                 }
                 @if (socialLinks.phone.url) {
@@ -181,11 +165,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300 hover:scale-110"
                     [attr.aria-label]="socialLinks.phone.label"
                   >
-                    <i
-                      class="text-base text-muted group-hover:text-accent transition-colors"
-                      [class]="socialLinks.phone.icon | piIcon"
-                      aria-hidden="true"
-                    ></i>
+                    <app-icon [name]="socialLinks.phone.icon" [size]="16" class="text-muted group-hover:text-accent transition-colors" />
                   </a>
                 }
               </nav>
@@ -206,10 +186,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     Nom complet *
                   </label>
                   <div class="relative">
-                    <i
-                      class="pi pi-user absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm pointer-events-none"
-                      aria-hidden="true"
-                    ></i>
+                    <app-icon name="user" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                     <input
                       id="name"
                       type="text"
@@ -234,10 +211,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                 <div class="flex flex-col gap-1.5">
                   <label for="email" class="text-sm font-medium text-foreground">Email *</label>
                   <div class="relative">
-                    <i
-                      class="pi pi-envelope absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm pointer-events-none"
-                      aria-hidden="true"
-                    ></i>
+                    <app-icon name="envelope" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                     <input
                       id="email"
                       type="email"
@@ -262,10 +236,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
               <div class="flex flex-col gap-1.5">
                 <label for="subject" class="text-sm font-medium text-foreground">Sujet *</label>
                 <div class="relative">
-                  <i
-                    class="pi pi-pencil absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm pointer-events-none"
-                    aria-hidden="true"
-                  ></i>
+                  <app-icon name="pencil" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                   <input
                     id="subject"
                     type="text"
@@ -311,11 +282,11 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                 class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary-bg text-white font-semibold shadow-md hover:bg-primary-bg/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 @if (isSubmitting()) {
-                  <i class="pi pi-spinner pi-spin" aria-hidden="true"></i>
+                  <app-icon name="spinner" [size]="20" class="animate-spin" />
                   <span>Envoi en cours...</span>
                 } @else {
                   <span>Envoyer le message</span>
-                  <i class="pi pi-send" aria-hidden="true"></i>
+                  <app-icon name="send" [size]="20" />
                 }
               </button>
             </form>

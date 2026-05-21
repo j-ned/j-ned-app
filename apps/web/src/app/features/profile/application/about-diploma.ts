@@ -1,17 +1,19 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
+import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-about-diploma',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [AppIcon],
   host: { class: 'block' },
   template: `
     <section
       class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
     >
       <header class="flex items-center gap-2 mb-6">
-        <i class="pi pi-graduation-cap text-2xl text-primary" aria-hidden="true"></i>
+        <app-icon name="graduation-cap" [size]="24" class="text-primary" />
         <h2 class="font-bold text-2xl text-foreground">Formations</h2>
       </header>
 

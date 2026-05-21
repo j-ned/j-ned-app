@@ -2,10 +2,11 @@ import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/c
 import { NgOptimizedImage } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { PROFILE_GATEWAY } from './tokens';
+import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-about-stack',
-  imports: [NgOptimizedImage],
+  imports: [NgOptimizedImage, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class:
@@ -13,7 +14,7 @@ import { PROFILE_GATEWAY } from './tokens';
   },
   template: `
     <header class="flex items-center gap-2 mb-6">
-      <i class="pi pi-code text-2xl text-primary" aria-hidden="true"></i>
+      <app-icon name="code" [size]="24" class="text-primary" />
       <h2 class="font-bold text-xl text-foreground">Stack Technique</h2>
     </header>
     <ul class="grid grid-cols-3 gap-3" role="list">

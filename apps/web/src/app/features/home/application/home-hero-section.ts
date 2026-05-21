@@ -3,11 +3,12 @@ import { DOCUMENT } from '@angular/common';
 import { Router } from '@angular/router';
 import { HomeHero } from './home-hero';
 import { UiButton } from '@shared/ui';
+import { AppIcon } from '@shared/icons';
 import type { HeroData } from '../domain';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [HomeHero, UiButton],
+  imports: [HomeHero, UiButton, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'relative block pt-6 pb-8 md:pt-8 md:pb-10 px-6 overflow-hidden',
@@ -83,7 +84,7 @@ import type { HeroData } from '../domain';
         >
           <app-ui-button severity="primary" size="large" (click)="goToProjects()">
             Voir mes réalisations
-            <i class="pi pi-arrow-right" aria-hidden="true"></i>
+            <app-icon name="arrow-right" [size]="20" />
           </app-ui-button>
           <app-ui-button
             variant="outlined"
@@ -92,7 +93,7 @@ import type { HeroData } from '../domain';
             (click)="scrollToContact()"
           >
             Me contacter
-            <i class="pi pi-envelope" aria-hidden="true"></i>
+            <app-icon name="envelope" [size]="20" />
           </app-ui-button>
           <app-ui-button
             variant="outlined"
@@ -101,7 +102,7 @@ import type { HeroData } from '../domain';
             (click)="goToAbout()"
           >
             En savoir plus
-            <i class="pi pi-user" aria-hidden="true"></i>
+            <app-icon name="user" [size]="20" />
           </app-ui-button>
         </div>
       </div>
