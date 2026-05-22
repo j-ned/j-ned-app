@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AppChart, AppTag } from '@shared/ui';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
-import { ANALYTICS_GATEWAY } from '@shared/analytics';
+import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
 
 type DateRangeKey = '7d' | '30d' | '90d' | 'all';
@@ -367,7 +367,7 @@ type DateRangeOption = {
   `,
 })
 export class AdminAnalytics {
-  private readonly analytics = inject(ANALYTICS_GATEWAY);
+  private readonly analytics = inject(AnalyticsGateway);
   private readonly _destroyRef = inject(DestroyRef);
 
   constructor() {

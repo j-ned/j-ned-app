@@ -1,8 +1,15 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+  type Signal,
+} from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../auth/infrastructure';
-import { CONTACT_GATEWAY } from '@features/contact/application';
+import { AuthStore } from '../../auth/infra';
+import { ContactGateway } from '@features/contact/domain';
 import { AppIcon } from '@shared/icons';
 
 type NavItem = {
@@ -10,7 +17,7 @@ type NavItem = {
   readonly icon: string;
   readonly label: string;
   readonly exact?: boolean;
-  readonly badge?: () => number;
+  readonly badge?: Signal<number>;
   readonly groupLabel?: string;
 };
 
@@ -144,18 +151,18 @@ type NavItem = {
   `,
 })
 export class AdminLayout {
-  readonly authService = inject(AuthService);
-  private readonly contactGateway = inject(CONTACT_GATEWAY);
+  protected readonly authService = inject(AuthStore);
+  private readonly _contactGateway = inject(ContactGateway);
 
-  readonly collapsed = signal(false);
+  protected readonly collapsed = signal(false);
 
-  private readonly unreadRes = rxResource({
-    stream: () => this.contactGateway.getUnreadCount(),
+  private readonly _unreadRes = rxResource({
+    stream: () => this._contactGateway.getUnreadCount(),
   });
 
-  private readonly inboxCount = computed(() => this.unreadRes.value() ?? 0);
+  private readonly _inboxCount = computed(() => this._unreadRes.value() ?? 0);
 
-  readonly navItems: readonly NavItem[] = [
+  protected readonly navItems: readonly NavItem[] = [
     { route: '/admin', icon: 'th-large', label: 'Dashboard', exact: true },
     {
       route: '/admin/projects',
@@ -168,7 +175,7 @@ export class AdminLayout {
       route: '/admin/messages',
       icon: 'envelope',
       label: 'Messages',
-      badge: () => this.inboxCount(),
+      badge: this._inboxCount,
     },
     { route: '/admin/analytics', icon: 'chart-bar', label: 'Analytics' },
   ];

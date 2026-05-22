@@ -1,8 +1,7 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import type { CvInfo } from '../domain/models/cv.model';
 import { firstValueFrom } from 'rxjs';
-import { CV_GATEWAY } from '@shared/cv';
-import { ToastService, FileDropzone } from '@shared/ui';
+import { CvGateway, type CvInfo } from '@features/cv/domain';
+import { ToastStore, FileDropzone } from '@shared/ui';
 
 @Component({
   selector: 'app-admin-cv',
@@ -60,7 +59,7 @@ import { ToastService, FileDropzone } from '@shared/ui';
         accept="application/pdf"
         label="Fichier PDF"
         helperText="PDF uniquement — sera versionné dans S3"
-        (fileSelected)="onFileSelected($event)"
+        (fileSelected)="selectCvFile($event)"
         (cleared)="clearSelection()"
       />
 
@@ -90,13 +89,13 @@ import { ToastService, FileDropzone } from '@shared/ui';
   `,
 })
 export class AdminCv {
-  private readonly cvService = inject(CV_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly _cvService = inject(CvGateway);
+  private readonly _toast = inject(ToastStore);
 
-  readonly cv = signal<CvInfo | null>(null);
-  readonly selectedFile = signal<File | null>(null);
-  readonly isUploading = signal(false);
-  readonly downloadUrl = this.cvService.getDownloadUrl();
+  protected readonly cv = signal<CvInfo | null>(null);
+  protected readonly selectedFile = signal<File | null>(null);
+  protected readonly isUploading = signal(false);
+  protected readonly downloadUrl = this._cvService.getDownloadUrl();
 
   protected readonly formattedDate = computed(() => {
     const cv = this.cv();
@@ -131,11 +130,11 @@ export class AdminCv {
     return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
   }
 
-  onFileSelected(file: File): void {
+  protected selectCvFile(file: File): void {
     if (file.type === 'application/pdf') {
       this.selectFile(file);
     } else {
-      this.toast.add({
+      this._toast.add({
         severity: 'error',
         summary: 'Erreur',
         detail: 'Seuls les fichiers PDF sont acceptés.',
@@ -154,8 +153,8 @@ export class AdminCv {
     this.isUploading.set(true);
 
     try {
-      await firstValueFrom(this.cvService.upload(file));
-      this.toast.add({
+      await firstValueFrom(this._cvService.upload(file));
+      this._toast.add({
         severity: 'success',
         summary: 'Succès',
         detail: 'CV uploadé avec succès !',
@@ -167,7 +166,7 @@ export class AdminCv {
         err instanceof Error
           ? err.message
           : ((err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue');
-      this.toast.add({
+      this._toast.add({
         severity: 'error',
         summary: 'Erreur',
         detail: `Erreur d'upload : ${message}`,
@@ -179,15 +178,15 @@ export class AdminCv {
 
   async deleteCv(): Promise<void> {
     try {
-      await firstValueFrom(this.cvService.delete());
-      this.toast.add({ severity: 'success', summary: 'Succès', detail: 'CV supprimé' });
+      await firstValueFrom(this._cvService.delete());
+      this._toast.add({ severity: 'success', summary: 'Succès', detail: 'CV supprimé' });
       this.loadCv();
     } catch (err: unknown) {
       const message =
         err instanceof Error
           ? err.message
           : ((err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue');
-      this.toast.add({
+      this._toast.add({
         severity: 'error',
         summary: 'Erreur',
         detail: `Erreur de suppression : ${message}`,
@@ -200,7 +199,7 @@ export class AdminCv {
   }
 
   private loadCv(): void {
-    firstValueFrom(this.cvService.getCurrent()).then((data) => {
+    firstValueFrom(this._cvService.getCurrent()).then((data) => {
       this.cv.set(data);
     });
   }

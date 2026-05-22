@@ -3,36 +3,27 @@ import {
   inject,
   resource,
   computed,
-  signal,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { CONTACT_GATEWAY } from '@features/contact/application';
-import { AuthService } from '@features/auth/infrastructure';
-import { ANALYTICS_GATEWAY } from '@shared/analytics';
+import { ContactGateway } from '@features/contact/domain';
+import { AuthStore } from '@features/auth/infra';
+import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
+import { RelativeTimePipe } from '@shared/calendar';
 
-function relativeTime(date: Date | string): string {
-  const target = typeof date === 'string' ? new Date(date) : date;
-  const diffMs = Date.now() - target.getTime();
-  const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 1) return "à l'instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `il y a ${hours} h`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return 'hier';
-  if (days < 30) return `${days} j`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months} mois`;
-  return target.toLocaleDateString('fr-FR');
-}
+const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [RouterLink, AppIcon],
+  imports: [RouterLink, AppIcon, RelativeTimePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -40,7 +31,7 @@ function relativeTime(date: Date | string): string {
       <h1 class="text-3xl font-bold text-foreground">
         Bonjour, {{ authService.currentUser()?.displayName }}
       </h1>
-      <p class="text-sm text-muted mt-2">{{ formattedDate() }}</p>
+      <p class="text-sm text-muted mt-2">{{ formattedDate }}</p>
     </header>
 
     <!-- Stats -->
@@ -131,7 +122,7 @@ function relativeTime(date: Date | string): string {
                     <span class="text-muted font-normal">{{ msg.subject }}</span>
                   </p>
                 </div>
-                <span class="text-xs text-muted shrink-0">{{ formatTime(msg.createdAt) }}</span>
+                <span class="text-xs text-muted shrink-0">{{ msg.createdAt | relativeTime }}</span>
               </a>
             </li>
           }
@@ -166,40 +157,29 @@ function relativeTime(date: Date | string): string {
   `,
 })
 export class AdminDashboard {
-  private readonly contactGateway = inject(CONTACT_GATEWAY);
-  private readonly analytics = inject(ANALYTICS_GATEWAY);
-  readonly authService = inject(AuthService);
+  private readonly _contactGateway = inject(ContactGateway);
+  private readonly _analytics = inject(AnalyticsGateway);
+  protected readonly authService = inject(AuthStore);
 
-  readonly formattedDate = signal(
-    new Date().toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }),
-  );
+  protected readonly formattedDate = FORMATTED_DATE;
 
-  readonly unreadRes = rxResource({
-    stream: () => this.contactGateway.getUnreadCount(),
+  protected readonly unreadRes = rxResource({
+    stream: () => this._contactGateway.getUnreadCount(),
   });
-  readonly unreadCount = computed(() => this.unreadRes.value() ?? 0);
+  protected readonly unreadCount = computed(() => this.unreadRes.value() ?? 0);
 
-  readonly messagesRes = rxResource({
-    stream: () => this.contactGateway.getAllMessages(),
+  protected readonly messagesRes = rxResource({
+    stream: () => this._contactGateway.getAllMessages(),
   });
-  readonly latestMessages = computed(() => {
+  protected readonly latestMessages = computed(() => {
     const messages = this.messagesRes.value() ?? [];
     return [...messages]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 3);
   });
 
-  readonly cvDownloadRes = resource({
-    loader: () => firstValueFrom(this.analytics.getCvDownloadCount()),
+  protected readonly cvDownloadRes = resource({
+    loader: () => firstValueFrom(this._analytics.getCvDownloadCount()),
   });
-  readonly cvDownloadCount = computed(() => this.cvDownloadRes.value() ?? 0);
-
-  protected formatTime(date: string | Date): string {
-    return relativeTime(date);
-  }
+  protected readonly cvDownloadCount = computed(() => this.cvDownloadRes.value() ?? 0);
 }

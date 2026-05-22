@@ -7,9 +7,9 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
-import { CONTACT_GATEWAY } from '@features/contact/application';
+import { ContactGateway } from '@features/contact/domain';
 import type { ContactMessage } from '@features/contact/domain';
-import { ToastService } from '@shared/ui';
+import { ToastStore } from '@shared/ui';
 import { AdminTable } from './components/admin-table';
 import {
   AdminColExpand,
@@ -74,8 +74,8 @@ import {
   `,
 })
 export class AdminMessages {
-  private readonly contactGateway = inject(CONTACT_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly contactGateway = inject(ContactGateway);
+  private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly statusLabel = (m: ContactMessage): string => (m.read ? 'Lu' : 'Nouveau');

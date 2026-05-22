@@ -10,11 +10,11 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
-import { PROJECTS_GATEWAY } from '@features/projects/application';
+import { ProjectsGateway } from '@features/projects/domain';
 import type { Project } from '@features/projects/domain';
-import { HOME_GATEWAY } from '@features/home/application';
+import { HomeGateway } from '@features/home/domain';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
-import { AppTag, ToastService } from '@shared/ui';
+import { AppTag, ToastStore } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -57,7 +57,7 @@ import { AppIcon } from '@shared/icons';
       @if (showNewForm()) {
         <div class="mb-6">
           <app-admin-project-inline-form
-            (saved)="onCreate($event)"
+            (saved)="createProject($event)"
             (cancelled)="showNewForm.set(false)"
           />
         </div>
@@ -151,7 +151,7 @@ import { AppIcon } from '@shared/icons';
               <div class="px-5 pb-5">
                 <app-admin-project-inline-form
                   [project]="project"
-                  (saved)="onUpdate(project.id, $event)"
+                  (saved)="updateProject(project.id, $event)"
                   (cancelled)="editingId.set(null)"
                 />
               </div>
@@ -169,9 +169,9 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AdminProjects {
-  private readonly projectsGateway = inject(PROJECTS_GATEWAY);
-  private readonly homeGateway = inject(HOME_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly projectsGateway = inject(ProjectsGateway);
+  private readonly homeGateway = inject(HomeGateway);
+  private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly selectedCategory = signal('Tous');
@@ -208,7 +208,7 @@ export class AdminProjects {
     this.showNewForm.set(false);
   }
 
-  async onCreate(event: { data: Omit<Project, 'id'>; file: File | null }): Promise<void> {
+  async createProject(event: { data: Omit<Project, 'id'>; file: File | null }): Promise<void> {
     let created: Project;
     try {
       created = await firstValueFrom(this.projectsGateway.createProject(event.data));
@@ -243,7 +243,7 @@ export class AdminProjects {
     this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet créé' });
   }
 
-  onUpdate(id: string, event: { data: Omit<Project, 'id'>; file: File | null }): void {
+  updateProject(id: string, event: { data: Omit<Project, 'id'>; file: File | null }): void {
     const update$ = event.file
       ? this.projectsGateway
           .uploadImage(event.file, id)
