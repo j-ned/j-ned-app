@@ -79,8 +79,10 @@ import { AppIcon } from '@shared/icons';
         </div>
       }
 
-      <!-- Contact Section -->
-      @defer (on viewport) {
+      <!-- Contact Section : hydrate on viewport pour que #contact soit
+           dans le DOM des le prerender (les liens d'ancre fonctionnent
+           immediatement, avant l'hydration JS). -->
+      @defer (hydrate on viewport) {
         <app-contact-form />
       } @placeholder {
         <div class="block py-20 px-6 h-96"></div>
