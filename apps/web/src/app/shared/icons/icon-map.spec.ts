@@ -1,4 +1,4 @@
-import { ICON_MAP, toFontAwesome, toPrimeIcon, uniqueIcons, type IconRef } from './icon-map';
+import { ICON_MAP, toFontAwesome, uniqueIcons, type IconRef } from './icon-map';
 
 describe('toFontAwesome', () => {
   describe('Given an explicit mapping', () => {
@@ -73,15 +73,5 @@ describe('uniqueIcons', () => {
   it('includes the fallback question icon', () => {
     const result = uniqueIcons();
     expect(result.some((ref: IconRef) => ref.id === 'question' && ref.style === 'solid')).toBe(true);
-  });
-});
-
-describe('toPrimeIcon (deprecated compat shim)', () => {
-  it('returns a pi-* string for a known token', () => {
-    expect(toPrimeIcon('lucide-mail')).toMatch(/^pi-/);
-  });
-
-  it('returns the fallback pi-question for unknown tokens', () => {
-    expect(toPrimeIcon('totally-unknown-xyz')).toBe('pi-question');
   });
 });

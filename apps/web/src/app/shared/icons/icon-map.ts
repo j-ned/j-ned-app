@@ -279,18 +279,6 @@ export function toFontAwesome(token: string | null | undefined): IconRef {
   return FALLBACK;
 }
 
-/**
- * @deprecated Phase 1 compat shim — used by PiIconPipe until it is migrated in Phase 2.
- * Maps a token to a PrimeIcon class string via the new FA mapping as best-effort.
- * Remove once PiIconPipe is deleted.
- */
-export function toPrimeIcon(token: string): string {
-  const ref = toFontAwesome(token);
-  // Return a stable pi- class so existing templates don't break during the transition.
-  // The actual rendering switches to FA SVG sprite via AppIcon; this is only a fallback.
-  return `pi-${ref.id}`;
-}
-
 /** Liste dé-dupliquée pour le script de génération du sprite. */
 export function uniqueIcons(): readonly IconRef[] {
   const seen = new Set<string>();

@@ -14,14 +14,12 @@ import { PROJECTS_GATEWAY } from '@features/projects/application';
 import type { Project } from '@features/projects/domain';
 import { HOME_GATEWAY } from '@features/home/application';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
-import { ToastService } from '@shared/ui';
-import { Select } from 'primeng/select';
-import { Tag } from 'primeng/tag';
+import { AppTag, ToastService } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-admin-projects',
-  imports: [AdminProjectInlineForm, FormsModule, NgOptimizedImage, Select, Tag, AppIcon],
+  imports: [AdminProjectInlineForm, FormsModule, NgOptimizedImage, AppTag, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
@@ -29,12 +27,17 @@ import { AppIcon } from '@shared/icons';
       <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-bold text-foreground">Projets</h1>
         <div class="flex items-center gap-4">
-          <p-select
-            [options]="categories()"
+          <select
+            class="app-select"
             [ngModel]="selectedCategory()"
             (ngModelChange)="selectedCategory.set($event)"
-            placeholder="Catégorie"
-          />
+            aria-label="Filtrer par catégorie"
+          >
+            <option value="Tous">Catégorie</option>
+            @for (category of categories(); track category) {
+              <option [value]="category">{{ category }}</option>
+            }
+          </select>
           <button
             type="button"
             (click)="toggleNewForm()"
@@ -102,10 +105,10 @@ import { AppIcon } from '@shared/icons';
                 <p class="text-sm font-medium text-foreground truncate">{{ project.title }}</p>
                 <div class="flex flex-wrap gap-1 mt-1">
                   @for (tag of project.tags.slice(0, 4); track tag) {
-                    <p-tag [value]="tag" severity="info" />
+                    <app-tag [value]="tag" severity="info" />
                   }
                   @if (project.tags.length > 4) {
-                    <p-tag [value]="'+' + (project.tags.length - 4)" severity="secondary" />
+                    <app-tag [value]="'+' + (project.tags.length - 4)" severity="secondary" />
                   }
                 </div>
               </div>
@@ -114,7 +117,7 @@ import { AppIcon } from '@shared/icons';
               <div class="hidden sm:flex flex-col items-end gap-1 shrink-0">
                 <span class="text-xs text-muted">{{ project.category }}</span>
                 @if (project.featured) {
-                  <p-tag value="Featured" severity="warn" />
+                  <app-tag value="Featured" severity="warn" />
                 }
               </div>
 

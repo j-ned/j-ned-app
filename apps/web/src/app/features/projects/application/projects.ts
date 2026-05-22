@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Paginator, type PaginatorState } from 'primeng/paginator';
+import { AppPaginator, type AppPaginatorEvent } from '@shared/ui';
 import { ProjectCard } from './components/project-card';
 import { PROJECTS_GATEWAY } from './tokens';
 import { AppIcon } from '@shared/icons';
@@ -18,7 +18,7 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ProjectCard, Paginator, AppIcon],
+  imports: [ProjectCard, AppPaginator, AppIcon],
   template: `
     <main
       class="min-h-screen pt-20 pb-16 bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
@@ -72,12 +72,12 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
         }
 
         @if (totalPages() > 1) {
-          <p-paginator
+          <app-paginator
+            class="block mt-12"
             [rows]="itemsPerPage"
             [totalRecords]="filteredProjects().length"
             [first]="paginatorFirst()"
-            (onPageChange)="onPageChange($event)"
-            styleClass="justify-center bg-transparent mt-12"
+            (pageChange)="onPageChange($event)"
           />
         }
       </section>
@@ -122,8 +122,8 @@ export class Projects {
     this.currentPage.set(1);
   }
 
-  protected onPageChange(event: PaginatorState): void {
-    this.currentPage.set((event.page ?? 0) + 1);
+  protected onPageChange(event: AppPaginatorEvent): void {
+    this.currentPage.set(event.page + 1);
     if (isPlatformBrowser(this.platformId)) {
       this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
     }

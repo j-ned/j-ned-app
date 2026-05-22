@@ -9,9 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Select } from 'primeng/select';
-import { UIChart } from 'primeng/chart';
-import { Tag } from 'primeng/tag';
+import { AppChart, AppTag } from '@shared/ui';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { ANALYTICS_GATEWAY } from '@shared/analytics';
 import { AppIcon } from '@shared/icons';
@@ -25,7 +23,7 @@ type DateRangeOption = {
 
 @Component({
   selector: 'app-admin-analytics',
-  imports: [FormsModule, Select, UIChart, Tag, AppIcon],
+  imports: [FormsModule, AppChart, AppTag, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -51,13 +49,16 @@ type DateRangeOption = {
             {{ activeVisitors() > 1 ? 'visiteurs actifs' : 'visiteur actif' }}
           </span>
         </div>
-        <p-select
-          [options]="dateRangeOptions"
-          optionLabel="label"
-          optionValue="value"
-          [(ngModel)]="dateRange"
-          styleClass="min-w-44"
-        />
+        <select
+          class="app-select"
+          [ngModel]="dateRange()"
+          (ngModelChange)="dateRange.set($event)"
+          aria-label="Période d'analyse"
+        >
+          @for (opt of dateRangeOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
         <button type="button" (click)="exportCsv()" class="btn-outline">
           <app-icon name="download" [size]="20" class="mr-2" />
           Export CSV
@@ -144,7 +145,7 @@ type DateRangeOption = {
       @if (chartResource.isLoading()) {
         <div class="h-72 rounded bg-foreground/5 animate-pulse"></div>
       } @else {
-        <p-chart type="line" [data]="chartData()" [options]="chartOptions" height="18rem" />
+        <app-chart type="line" [data]="chartData()" [options]="chartOptions" height="18rem" />
       }
     </section>
 
@@ -231,7 +232,7 @@ type DateRangeOption = {
         } @else if (browsers().length === 0) {
           <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
         } @else {
-          <p-chart
+          <app-chart
             type="doughnut"
             [data]="browsersChart()"
             [options]="donutOptions"
@@ -250,7 +251,7 @@ type DateRangeOption = {
         } @else if (osList().length === 0) {
           <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
         } @else {
-          <p-chart type="doughnut" [data]="osChart()" [options]="donutOptions" height="12rem" />
+          <app-chart type="doughnut" [data]="osChart()" [options]="donutOptions" height="12rem" />
         }
       </div>
 
@@ -296,7 +297,7 @@ type DateRangeOption = {
             <app-icon name="desktop" [size]="20" class="text-green-500" />
             <h2 class="text-base font-semibold text-foreground">Projets cliqués</h2>
           </div>
-          <p-tag [value]="(overview()?.projectClicks ?? 0) + ' clics'" severity="success" />
+          <app-tag [value]="(overview()?.projectClicks ?? 0) + ' clics'" severity="success" />
         </header>
         @if (projectsResource.isLoading()) {
           <div class="space-y-3">
@@ -324,7 +325,7 @@ type DateRangeOption = {
             <app-icon name="pencil" [size]="20" class="text-primary" />
             <h2 class="text-base font-semibold text-foreground">Articles lus</h2>
           </div>
-          <p-tag [value]="(overview()?.articleViews ?? 0) + ' vues'" severity="info" />
+          <app-tag [value]="(overview()?.articleViews ?? 0) + ' vues'" severity="info" />
         </header>
         @if (articlesResource.isLoading()) {
           <div class="space-y-3">
