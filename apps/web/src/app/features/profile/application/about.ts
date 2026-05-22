@@ -42,9 +42,17 @@ import { AboutHighlights } from './about-highlights';
           <aside class="lg:col-span-1 space-y-8">
             @defer (hydrate on viewport) {
               <app-about-search />
+            } @placeholder {
+              <div class="h-48" aria-hidden="true"></div>
+            } @error {
+              <p class="text-sm text-muted">Section indisponible.</p>
             }
             @defer (hydrate on viewport) {
               <app-about-diploma />
+            } @placeholder {
+              <div class="h-96" aria-hidden="true"></div>
+            } @error {
+              <p class="text-sm text-muted">Section indisponible.</p>
             }
           </aside>
 
@@ -54,14 +62,26 @@ import { AboutHighlights } from './about-highlights';
             >
               @defer (hydrate on viewport) {
                 <app-about-journey />
+              } @placeholder {
+                <div class="h-64" aria-hidden="true"></div>
+              } @error {
+                <p class="text-sm text-muted">Section indisponible.</p>
               }
               <div class="border-t border-foreground/10"></div>
               @defer (hydrate on viewport) {
                 <app-about-what-i-do />
+              } @placeholder {
+                <div class="h-64" aria-hidden="true"></div>
+              } @error {
+                <p class="text-sm text-muted">Section indisponible.</p>
               }
               <div class="border-t border-foreground/10"></div>
               @defer (hydrate on viewport) {
                 <app-about-highlights />
+              } @placeholder {
+                <div class="h-64" aria-hidden="true"></div>
+              } @error {
+                <p class="text-sm text-muted">Section indisponible.</p>
               }
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from './tokens';
+import { GetWhatIDoUseCase } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -15,7 +15,7 @@ import { AppIcon } from '@shared/icons';
         <h2 class="text-2xl font-bold text-foreground">Ce que je fais</h2>
       </header>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        @for (item of whatIDo(); track item.title) {
+        @for (item of whatIDo(); track item.id) {
           <article
             class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-primary/50 hover:bg-primary/5 transition-all group"
           >
@@ -34,10 +34,10 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutWhatIDo {
-  private readonly profileGateway = inject(PROFILE_GATEWAY);
+  private readonly _getWhatIDo = inject(GetWhatIDoUseCase);
 
   private readonly whatIDoResource = rxResource({
-    stream: () => this.profileGateway.getWhatIDo(),
+    stream: () => this._getWhatIDo.execute(),
   });
   protected readonly whatIDo = computed(() => this.whatIDoResource.value() ?? []);
 }

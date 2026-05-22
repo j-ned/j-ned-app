@@ -1,6 +1,6 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from './tokens';
+import { GetDiplomasUseCase } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -52,10 +52,10 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutDiploma {
-  private readonly profileGateway = inject(PROFILE_GATEWAY);
+  private readonly _getDiplomas = inject(GetDiplomasUseCase);
 
   private readonly diplomasResource = rxResource({
-    stream: () => this.profileGateway.getDiplomas(),
+    stream: () => this._getDiplomas.execute(),
   });
   protected readonly diplomas = computed(() => this.diplomasResource.value() ?? []);
 }

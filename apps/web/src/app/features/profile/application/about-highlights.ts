@@ -1,6 +1,6 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from './tokens';
+import { GetHighlightsUseCase } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -15,7 +15,7 @@ import { AppIcon } from '@shared/icons';
         <h2 class="text-2xl font-bold text-foreground">Ce qui me caractérise</h2>
       </header>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        @for (highlight of highlights(); track highlight.title) {
+        @for (highlight of highlights(); track highlight.id) {
           <article
             class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-accent/50 hover:bg-accent/5 transition-all group"
           >
@@ -39,10 +39,10 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutHighlights {
-  private readonly profileGateway = inject(PROFILE_GATEWAY);
+  private readonly _getHighlights = inject(GetHighlightsUseCase);
 
   private readonly highlightsResource = rxResource({
-    stream: () => this.profileGateway.getHighlights(),
+    stream: () => this._getHighlights.execute(),
   });
   protected readonly highlights = computed(() => this.highlightsResource.value() ?? []);
 }

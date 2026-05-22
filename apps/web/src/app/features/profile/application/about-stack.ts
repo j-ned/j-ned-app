@@ -1,7 +1,7 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from './tokens';
+import { GetTechnologiesUseCase } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -18,7 +18,7 @@ import { AppIcon } from '@shared/icons';
       <h2 class="font-bold text-xl text-foreground">Stack Technique</h2>
     </header>
     <ul class="grid grid-cols-3 gap-3" role="list">
-      @for (tech of technologies(); track tech.name) {
+      @for (tech of technologies(); track tech.id) {
         <li
           class="bg-background/50 border border-foreground/10 rounded-xl p-3 flex flex-col items-center gap-2 hover:border-accent/50 hover:bg-accent/5 transition-all group cursor-pointer"
         >
@@ -38,10 +38,10 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutStack {
-  private readonly profileGateway = inject(PROFILE_GATEWAY);
+  private readonly _getTechnologies = inject(GetTechnologiesUseCase);
 
   private readonly technologiesResource = rxResource({
-    stream: () => this.profileGateway.getTechnologies(),
+    stream: () => this._getTechnologies.execute(),
   });
   protected readonly technologies = computed(() => this.technologiesResource.value() ?? []);
 }

@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { PROFILE_GATEWAY } from './tokens';
+import { GetWhatISeekUseCase } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -23,10 +23,10 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutSearch {
-  private readonly profileGateway = inject(PROFILE_GATEWAY);
+  private readonly _getWhatISeek = inject(GetWhatISeekUseCase);
 
   private readonly whatISeekResource = rxResource({
-    stream: () => this.profileGateway.getWhatISeek(),
+    stream: () => this._getWhatISeek.execute(),
   });
   protected readonly whatISeek = computed(() => this.whatISeekResource.value());
 }
