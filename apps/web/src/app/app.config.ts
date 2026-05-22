@@ -18,7 +18,7 @@ import {
 } from '@angular/router';
 import { SelectivePreload } from '@core/strategies/selective-preload';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { authInterceptor } from '@features/auth/infrastructure/auth.interceptor';
+import { authInterceptor } from '@features/auth/infra/auth-interceptor';
 import { errorToastInterceptor } from '@core/interceptors';
 import { IMAGE_CONFIG } from '@angular/common';
 import {
@@ -30,25 +30,27 @@ import {
 import { filter } from 'rxjs';
 
 import { routes } from './app.routes';
-import { SeoService } from '@shared/seo/seo';
-import { ANALYTICS_GATEWAY, HttpAnalyticsGateway } from '@shared/analytics';
-import { CV_GATEWAY, HttpCvGateway } from '@shared/cv';
+import { Seo } from '@shared/seo/seo';
+import { AnalyticsGateway } from '@features/analytics/domain';
+import { HttpAnalyticsGateway } from '@features/analytics/infra';
+import { CvGateway } from '@features/cv/domain';
+import { HttpCvGateway } from '@features/cv/infra';
 import { API_BASE_URL } from '@shared/api';
-import { PROJECTS_GATEWAY } from '@features/projects/application';
-import { PROFILE_GATEWAY } from '@features/profile/application';
-import { CONTACT_GATEWAY } from '@features/contact/application';
-import { HOME_GATEWAY } from '@features/home/application';
-import { HttpProjectsGateway } from '@features/projects/infrastructure';
-import { InMemoryProfileGateway } from '@features/profile/infrastructure';
-import { HttpContactGateway } from '@features/contact/infrastructure';
-import { InMemoryHomeGateway } from '@features/home/infrastructure';
-import { AUTH_GATEWAY } from '@features/auth/domain';
-import { HttpAuthGateway, AuthService } from '@features/auth/infrastructure';
+import { ProjectsGateway } from '@features/projects/domain';
+import { ProfileGateway } from '@features/profile/domain';
+import { ContactGateway } from '@features/contact/domain';
+import { HomeGateway } from '@features/home/domain';
+import { HttpProjectsGateway } from '@features/projects/infra';
+import { InMemoryProfileGateway } from '@features/profile/infra';
+import { HttpContactGateway } from '@features/contact/infra';
+import { InMemoryHomeGateway } from '@features/home/infra';
+import { AuthGateway } from '@features/auth/domain';
+import { HttpAuthGateway, AuthStore } from '@features/auth/infra';
 
 function prefetchHomeBundle(): () => void {
   return (): void => {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
-    const gateway = inject(HOME_GATEWAY);
+    const gateway = inject(HomeGateway);
     gateway.getHomeBundle().subscribe();
   };
 }
@@ -56,7 +58,7 @@ function prefetchHomeBundle(): () => void {
 function initializeAuth(): () => Promise<void> | void {
   return (): Promise<void> | void => {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
-    const auth = inject(AuthService);
+    const auth = inject(AuthStore);
     return auth.ready;
   };
 }
@@ -64,7 +66,7 @@ function initializeAuth(): () => Promise<void> | void {
 function initializeSeo(): () => void {
   return (): void => {
     const router = inject(Router);
-    const seoService = inject(SeoService);
+    const seoService = inject(Seo);
 
     router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
@@ -87,7 +89,7 @@ function initializeTracking(): () => void {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
 
     const router = inject(Router);
-    const analytics = inject(ANALYTICS_GATEWAY);
+    const analytics = inject(AnalyticsGateway);
 
     let currentUrl: string | null = null;
     let pageEnteredAt = Date.now();
@@ -158,12 +160,12 @@ export const appConfig: ApplicationConfig = {
         return isDevMode() ? '/api' : 'https://api.j-ned.dev/api';
       },
     },
-    { provide: PROJECTS_GATEWAY, useClass: HttpProjectsGateway },
-    { provide: PROFILE_GATEWAY, useClass: InMemoryProfileGateway },
-    { provide: CONTACT_GATEWAY, useClass: HttpContactGateway },
-    { provide: HOME_GATEWAY, useClass: InMemoryHomeGateway },
-    { provide: ANALYTICS_GATEWAY, useClass: HttpAnalyticsGateway },
-    { provide: CV_GATEWAY, useClass: HttpCvGateway },
-    { provide: AUTH_GATEWAY, useClass: HttpAuthGateway },
+    { provide: ProjectsGateway, useClass: HttpProjectsGateway },
+    { provide: ProfileGateway, useClass: InMemoryProfileGateway },
+    { provide: ContactGateway, useClass: HttpContactGateway },
+    { provide: HomeGateway, useClass: InMemoryHomeGateway },
+    { provide: AnalyticsGateway, useClass: HttpAnalyticsGateway },
+    { provide: CvGateway, useClass: HttpCvGateway },
+    { provide: AuthGateway, useClass: HttpAuthGateway },
   ],
 };

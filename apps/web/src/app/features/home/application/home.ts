@@ -1,10 +1,9 @@
 import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
 import { HomeProjects } from './home-projects';
 import { ContactForm } from '@features/contact/application';
-import { HOME_GATEWAY } from './tokens';
+import { GetHomeBundleUseCase } from '@features/home/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -94,19 +93,11 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class Home {
-  private readonly document = inject(DOCUMENT);
-  private readonly homeGateway = inject(HOME_GATEWAY);
+  private readonly _getHomeBundle = inject(GetHomeBundleUseCase);
 
   private readonly bundleResource = rxResource({
-    stream: () => this.homeGateway.getHomeBundle(),
+    stream: () => this._getHomeBundle.execute(),
   });
   protected readonly bundle = computed(() => this.bundleResource.value());
   protected readonly expertises = computed(() => this.bundle()?.highlights ?? []);
-
-  scrollTo(anchor: string): void {
-    const el = this.document.getElementById(anchor);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
 }

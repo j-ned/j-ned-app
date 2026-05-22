@@ -10,13 +10,13 @@ import type {
   WhatISeek,
 } from '../models';
 
-export type ProfileGateway = {
-  getProfileInfo(): Observable<ProfileInfo>;
-  getBiography(): Observable<Biography>;
-  getSocialButtons(): Observable<readonly SocialButton[]>;
-  getDiplomas(): Observable<readonly Diploma[]>;
-  getTechnologies(): Observable<readonly Technology[]>;
-  getHighlights(): Observable<readonly Highlight[]>;
-  getWhatIDo(): Observable<readonly WhatIDo[]>;
-  getWhatISeek(): Observable<WhatISeek>;
-};
+export abstract class ProfileGateway {
+  abstract getProfileInfo(): Observable<ProfileInfo>;
+  abstract getBiography(): Observable<Biography>;
+  abstract getSocialButtons(): Observable<readonly SocialButton[]>;
+  abstract getDiplomas(): Observable<readonly Diploma[]>;
+  abstract getTechnologies(): Observable<readonly Technology[]>;
+  abstract getHighlights(): Observable<readonly Highlight[]>;
+  abstract getWhatIDo(): Observable<readonly WhatIDo[]>;
+  abstract getWhatISeek(): Observable<WhatISeek>;
+}

@@ -1,5 +1,5 @@
 import type { Routes } from '@angular/router';
-import { authGuard } from '@features/auth/infrastructure';
+import { authGuard } from '@features/auth/infra';
 import { Home } from '@features/home/application/home';
 
 export const routes: Routes = [

@@ -5,12 +5,12 @@ import type {
   ContactMessage,
 } from '../models';
 
-export type ContactGateway = {
-  submitContactForm(data: ContactFormData): Observable<ContactFormSubmission>;
+export abstract class ContactGateway {
+  abstract submitContactForm(data: ContactFormData): Observable<ContactFormSubmission>;
 
-  getAllMessages(): Observable<readonly ContactMessage[]>;
-  markMessageAsRead(id: number): Observable<ContactMessage>;
-  deleteMessage(id: number): Observable<void>;
-  getUnreadCount(): Observable<number>;
-  invalidateUnreadCount(): void;
-};
+  abstract getAllMessages(): Observable<readonly ContactMessage[]>;
+  abstract markMessageAsRead(id: number): Observable<ContactMessage>;
+  abstract deleteMessage(id: number): Observable<void>;
+  abstract getUnreadCount(): Observable<number>;
+  abstract invalidateUnreadCount(): void;
+}

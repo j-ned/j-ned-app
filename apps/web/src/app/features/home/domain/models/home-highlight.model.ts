@@ -3,5 +3,4 @@ export type HomeHighlight = {
   readonly title: string;
   readonly description: string;
   readonly icon: string;
-  readonly order: number;
 };

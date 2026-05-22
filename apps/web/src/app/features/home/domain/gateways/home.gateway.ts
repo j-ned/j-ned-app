@@ -1,9 +1,9 @@
 import type { Observable } from 'rxjs';
 import type { HeroData, HomeBundle, HomeHighlight } from '../models';
 
-export type HomeGateway = {
-  getHomeBundle(): Observable<HomeBundle>;
-  invalidateBundle(): void;
-  getHeroData(): Observable<HeroData>;
-  getHomeHighlights(): Observable<readonly HomeHighlight[]>;
-};
+export abstract class HomeGateway {
+  abstract getHomeBundle(): Observable<HomeBundle>;
+  abstract invalidateBundle(): void;
+  abstract getHeroData(): Observable<HeroData>;
+  abstract getHomeHighlights(): Observable<readonly HomeHighlight[]>;
+}

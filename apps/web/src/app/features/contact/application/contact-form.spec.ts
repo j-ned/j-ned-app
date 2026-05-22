@@ -1,11 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ToastService } from '@shared/ui';
+import { ToastStore } from '@shared/ui';
 import { of, throwError } from 'rxjs';
 import { ContactForm } from './contact-form';
-import { CONTACT_GATEWAY } from './tokens';
-import type { ContactGateway, ContactMessage } from '../domain';
+import { ContactGateway, type ContactMessage } from '@features/contact/domain';
 
 function makeGatewayStub(overrides: Partial<ContactGateway> = {}): ContactGateway {
   return {
@@ -22,7 +21,7 @@ function makeGatewayStub(overrides: Partial<ContactGateway> = {}): ContactGatewa
 describe('ContactForm', () => {
   function setup(gateway: ContactGateway = makeGatewayStub()): ContactForm {
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), ToastService, { provide: CONTACT_GATEWAY, useValue: gateway }],
+      providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
       schemas: [NO_ERRORS_SCHEMA],
     });
     return TestBed.runInInjectionContext(() => {
@@ -37,10 +36,10 @@ describe('ContactForm', () => {
       expect(component.form.invalid).toBe(true);
     });
 
-    it('onSubmit does not call gateway', () => {
+    it('submitContact does not call gateway', () => {
       const submit = vi.fn().mockReturnValue(of({ success: true, message: '' }));
       const component = setup(makeGatewayStub({ submitContactForm: submit }));
-      component.onSubmit();
+      component.submitContact();
       expect(submit).not.toHaveBeenCalled();
     });
   });
@@ -57,7 +56,7 @@ describe('ContactForm', () => {
       expect(component.form.valid).toBe(true);
     });
 
-    it('onSubmit calls the gateway with form values', () => {
+    it('submitContact calls the gateway with form values', () => {
       const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
       const component = setup(makeGatewayStub({ submitContactForm: submit }));
 
@@ -67,7 +66,7 @@ describe('ContactForm', () => {
         subject: 'Projet Angular',
         message: 'Bonjour, message test de plus de 10 caractères.',
       });
-      component.onSubmit();
+      component.submitContact();
 
       expect(submit).toHaveBeenCalledWith({
         name: 'Alice',
@@ -77,7 +76,7 @@ describe('ContactForm', () => {
       });
     });
 
-    it('onSubmit handles gateway error gracefully', () => {
+    it('submitContact handles gateway error gracefully', () => {
       const component = setup(
         makeGatewayStub({
           submitContactForm: () => throwError(() => new Error('network')),
@@ -91,7 +90,7 @@ describe('ContactForm', () => {
         message: 'Message assez long pour passer la validation.',
       });
 
-      expect(() => component.onSubmit()).not.toThrow();
+      expect(() => component.submitContact()).not.toThrow();
     });
   });
 

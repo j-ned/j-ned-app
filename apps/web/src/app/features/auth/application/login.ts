@@ -2,8 +2,8 @@ import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../infrastructure';
-import { ToastService } from '@shared/ui';
+import { AuthStore } from '../infra';
+import { ToastStore } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 
 type LoginForm = {
@@ -42,7 +42,7 @@ type LoginForm = {
             </div>
           }
 
-          <form [formGroup]="form" (ngSubmit)="onSubmit()">
+          <form [formGroup]="form" (ngSubmit)="submitLogin()">
             <fieldset class="border-0 p-0 m-0">
               <legend class="sr-only">Identifiants de connexion</legend>
 
@@ -126,9 +126,9 @@ type LoginForm = {
   `,
 })
 export class Login {
-  private readonly authService = inject(AuthService);
+  private readonly authService = inject(AuthStore);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
+  private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly errorMessage = signal('');
@@ -145,7 +145,7 @@ export class Login {
     }),
   });
 
-  onSubmit(): void {
+  protected submitLogin(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

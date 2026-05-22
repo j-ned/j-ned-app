@@ -2,16 +2,16 @@ import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/c
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
-import { UiToast } from '@shared/ui';
+import { Toast, ToastStore } from '@shared/ui';
 import { Header, Footer } from '@layout';
-import { AuthService } from '@features/auth/infrastructure';
+import { AuthStore } from '@features/auth/infra';
 
 @Component({
   selector: 'app-root',
-  imports: [Header, Footer, RouterOutlet, UiToast],
+  imports: [Header, Footer, RouterOutlet, Toast],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '(document:keydown.control.l)': 'onCtrlL($event)',
+    '(document:keydown.control.l)': 'openAdminShortcut($event)',
   },
   template: `
     @if (!isAdminRoute()) {
@@ -23,17 +23,18 @@ import { AuthService } from '@features/auth/infrastructure';
     @if (!isAdminRoute()) {
       <app-footer />
     }
-    <app-ui-toast />
+    <app-toast [messages]="toastStore.messages()" (dismiss)="toastStore.dismiss($event)" />
   `,
 })
 export class App {
   private readonly router = inject(Router);
-  private readonly auth = inject(AuthService);
+  private readonly auth = inject(AuthStore);
+  protected readonly toastStore = inject(ToastStore);
 
   constructor() {
     // Restaure la session au boot client. Appelé explicitement (et pas
-    // uniquement via le constructor d'AuthService) car avec
-    // provideClientHydration, l'instance d'AuthService peut être réutilisée
+    // uniquement via le constructor d'AuthStore) car avec
+    // provideClientHydration, l'instance d'AuthStore peut être réutilisée
     // depuis le SSG : son constructor n'est alors PAS re-exécuté côté browser,
     // et le restoreSession() initial skip côté serveur n'est jamais rejoué.
     // Cette ligne garantit que /auth/me part au boot client, peu importe le
@@ -51,7 +52,7 @@ export class App {
     () => this.navigationEnd()?.urlAfterRedirects.startsWith('/admin') ?? false,
   );
 
-  onCtrlL(event: Event): void {
+  protected openAdminShortcut(event: Event): void {
     event.preventDefault();
     void this.router.navigate(['/admin']);
   }

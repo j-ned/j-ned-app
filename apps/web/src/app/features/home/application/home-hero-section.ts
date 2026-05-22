@@ -2,13 +2,13 @@ import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core
 import { DOCUMENT } from '@angular/common';
 import { Router } from '@angular/router';
 import { HomeHero } from './home-hero';
-import { UiButton } from '@shared/ui';
+import { Button } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 import type { HeroData } from '../domain';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [HomeHero, UiButton, AppIcon],
+  imports: [HomeHero, Button, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'relative block pt-6 pb-8 md:pt-8 md:pb-10 px-6 overflow-hidden',
@@ -82,11 +82,11 @@ import type { HeroData } from '../domain';
         <div
           class="animate-fade-up-actions flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 mt-6 md:mt-8"
         >
-          <app-ui-button severity="primary" size="large" (click)="goToProjects()">
+          <app-button severity="primary" size="large" (click)="goToProjects()">
             Voir mes réalisations
             <app-icon name="arrow-right" [size]="20" />
-          </app-ui-button>
-          <app-ui-button
+          </app-button>
+          <app-button
             variant="outlined"
             severity="secondary"
             size="large"
@@ -94,8 +94,8 @@ import type { HeroData } from '../domain';
           >
             Me contacter
             <app-icon name="envelope" [size]="20" />
-          </app-ui-button>
-          <app-ui-button
+          </app-button>
+          <app-button
             variant="outlined"
             severity="secondary"
             size="large"
@@ -103,7 +103,7 @@ import type { HeroData } from '../domain';
           >
             En savoir plus
             <app-icon name="user" [size]="20" />
-          </app-ui-button>
+          </app-button>
         </div>
       </div>
     </div>

@@ -8,11 +8,11 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
-import { ANALYTICS_GATEWAY } from '@shared/analytics';
+import { AnalyticsGateway } from '@features/analytics/domain';
 import { firstValueFrom } from 'rxjs';
-import { CV_GATEWAY } from '@shared/cv';
+import { CvGateway } from '@features/cv/domain';
 import { AppIcon } from '@shared/icons';
-import { UiButton, UiDrawer } from '@shared/ui';
+import { Button, Drawer } from '@shared/ui';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
 type ThemePreference = 'dark' | 'light';
@@ -20,7 +20,7 @@ type ThemePreference = 'dark' | 'light';
 @Component({
   selector: 'app-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AppIcon, UiButton, UiDrawer],
+  imports: [RouterLink, AppIcon, Button, Drawer],
   styles: `
     .nav-surface {
       border-bottom: 1px solid var(--theme-nav-border);
@@ -66,7 +66,7 @@ type ThemePreference = 'dark' | 'light';
         </nav>
 
         <div class="flex items-center gap-4">
-          <app-ui-button
+          <app-button
             variant="outlined"
             severity="secondary"
             [rounded]="true"
@@ -74,7 +74,7 @@ type ThemePreference = 'dark' | 'light';
             (click)="toggleTheme()"
           >
             <app-icon [name]="isDarkTheme() ? 'moon' : 'sun'" [size]="16" />
-          </app-ui-button>
+          </app-button>
 
           @if (cvUrl()) {
             <a
@@ -89,7 +89,7 @@ type ThemePreference = 'dark' | 'light';
             </a>
           }
 
-          <app-ui-button
+          <app-button
             class="md:hidden"
             variant="text"
             severity="secondary"
@@ -98,12 +98,12 @@ type ThemePreference = 'dark' | 'light';
             (click)="toggleMobileMenu()"
           >
             <app-icon [name]="isMobileMenuOpen() ? 'times' : 'bars'" [size]="20" />
-          </app-ui-button>
+          </app-button>
         </div>
       </div>
     </div>
 
-    <app-ui-drawer
+    <app-drawer
       class="md:hidden"
       [(visible)]="isMobileMenuOpen"
       position="right"
@@ -146,12 +146,12 @@ type ThemePreference = 'dark' | 'light';
           </a>
         }
       </nav>
-    </app-ui-drawer>
+    </app-drawer>
   `,
 })
 export class Header {
-  private readonly analytics = inject(ANALYTICS_GATEWAY);
-  private readonly cvService = inject(CV_GATEWAY);
+  private readonly analytics = inject(AnalyticsGateway);
+  private readonly cvService = inject(CvGateway);
 
   protected readonly navItems = signal(NAV_LINKS);
   protected readonly isMobileMenuOpen = signal(false);

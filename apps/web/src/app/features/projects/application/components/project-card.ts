@@ -1,7 +1,7 @@
 import { Component, input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import type { Project } from '../../domain';
-import { ANALYTICS_GATEWAY } from '@shared/analytics';
+import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -126,11 +126,11 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class ProjectCard {
-  private readonly analytics = inject(ANALYTICS_GATEWAY);
+  private readonly _analytics = inject(AnalyticsGateway);
 
-  project = input.required<Project>();
+  readonly project = input.required<Project>();
 
-  trackClick(): void {
-    this.analytics.trackProjectClick(this.project().id, this.project().title);
+  protected trackClick(): void {
+    this._analytics.trackProjectClick(this.project().id, this.project().title);
   }
 }

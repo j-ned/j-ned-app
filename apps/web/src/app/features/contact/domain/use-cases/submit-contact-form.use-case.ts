@@ -1,4 +1,4 @@
-import type { Observable } from 'rxjs';
+import { throwError, type Observable } from 'rxjs';
 import type { ContactGateway } from '../gateways';
 import type { ContactFormData, ContactFormSubmission } from '../models';
 
@@ -7,12 +7,19 @@ export function isValidEmail(email: string): boolean {
   return emailRegex.test(email);
 }
 
+export class InvalidEmailError extends Error {
+  constructor() {
+    super('Invalid email format');
+    this.name = 'InvalidEmailError';
+  }
+}
+
 export function submitContactForm(
   gateway: ContactGateway,
   data: ContactFormData,
 ): Observable<ContactFormSubmission> {
   if (!isValidEmail(data.email)) {
-    throw new Error('Invalid email format');
+    return throwError(() => new InvalidEmailError());
   }
   return gateway.submitContactForm(data);
 }

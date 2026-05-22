@@ -1,5 +1,5 @@
 import type { Project } from '../models';
-import { filterProjects } from '@features/projects/domain';
+import { filterProjects, FILTER_ALL } from '@features/projects/domain';
 
 function makeProject(category: string, id = '1'): Project {
   return {
@@ -22,9 +22,9 @@ describe('filterProjects', () => {
     makeProject('Fullstack', '4'),
   ];
 
-  describe('Given the category is "Tous"', () => {
+  describe('Given the category is FILTER_ALL', () => {
     it('When filtering, Then all projects are returned unchanged', () => {
-      const result = filterProjects(projects, 'Tous');
+      const result = filterProjects(projects, FILTER_ALL);
       expect(result).toBe(projects);
       expect(result).toHaveLength(4);
     });
@@ -49,7 +49,7 @@ describe('filterProjects', () => {
   describe('Given an empty project list', () => {
     it('When filtering by any category, Then an empty list is returned', () => {
       expect(filterProjects([], 'Frontend')).toEqual([]);
-      expect(filterProjects([], 'Tous')).toEqual([]);
+      expect(filterProjects([], FILTER_ALL)).toEqual([]);
     });
   });
 });

@@ -2,7 +2,7 @@ import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../infrastructure';
+import { AuthStore } from '../infra';
 import { AppIcon } from '@shared/icons';
 
 type TwoFactorVerifyFormShape = {
@@ -40,7 +40,7 @@ type TwoFactorVerifyFormShape = {
           </div>
         }
 
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+        <form [formGroup]="form" (ngSubmit)="verifyCode()" class="space-y-5">
           <div>
             <label for="code" class="block text-sm font-medium text-foreground mb-1.5"
               >Code TOTP</label
@@ -85,7 +85,7 @@ type TwoFactorVerifyFormShape = {
   `,
 })
 export class TwoFactorVerify {
-  private readonly authService = inject(AuthService);
+  private readonly authService = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -99,7 +99,7 @@ export class TwoFactorVerify {
     }),
   });
 
-  onSubmit(): void {
+  protected verifyCode(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

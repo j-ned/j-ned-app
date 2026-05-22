@@ -14,7 +14,7 @@ import {
   Validators,
   type ValidationErrors,
 } from '@angular/forms';
-import { AuthService } from '../infrastructure';
+import { AuthStore } from '../infra';
 import { AppIcon } from '@shared/icons';
 
 type PasswordFormShape = {
@@ -378,7 +378,7 @@ type DisableFormShape = {
   `,
 })
 export class TwoFactorSetup {
-  private readonly authService = inject(AuthService);
+  private readonly authService = inject(AuthStore);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly isTwoFactorEnabled = computed(

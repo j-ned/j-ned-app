@@ -1,4 +1,3 @@
-import { InjectionToken } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type { LoginResponse, TwoFactorSecretResponse, UserResponse } from '../models/auth.types';
 
@@ -12,10 +11,3 @@ export abstract class AuthGateway {
   abstract enableTwoFactor(code: string): Observable<unknown>;
   abstract disableTwoFactor(password: string): Observable<unknown>;
 }
-
-export const AUTH_GATEWAY = new InjectionToken<AuthGateway>('AUTH_GATEWAY', {
-  providedIn: 'root',
-  factory: (): never => {
-    throw new Error('AUTH_GATEWAY must be provided in app.config.ts');
-  },
-});

@@ -3,16 +3,20 @@ import {
   computed,
   signal,
   inject,
+  afterRenderEffect,
   ChangeDetectionStrategy,
-  PLATFORM_ID,
 } from '@angular/core';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { AppPaginator, type AppPaginatorEvent } from '@shared/ui';
 import { ProjectCard } from './components/project-card';
-import { PROJECTS_GATEWAY } from './tokens';
+import { ProjectsGateway } from '@features/projects/domain';
 import { AppIcon } from '@shared/icons';
-import { filterProjects, paginateProjects, calculateTotalPages } from '../domain';
+import { filterProjects, paginateProjects, calculateTotalPages, FILTER_ALL } from '../domain';
+
+const ALL_LABEL = 'Tous';
+
+const ITEMS_PER_PAGE = 3;
+
 
 @Component({
   selector: 'app-projects',
@@ -42,10 +46,12 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
           </p>
         </div>
 
-        <nav class="flex flex-wrap gap-4 mb-12" aria-label="Filtres" role="menu">
+        <nav class="flex flex-wrap gap-4 mb-12" aria-label="Filtres par categorie">
           @for (filter of filters(); track filter) {
             <button
-              (click)="setFilter(filter)"
+              type="button"
+              (click)="selectFilter(filter)"
+              [attr.aria-pressed]="filter === activeFilter()"
               [class]="
                 filter === activeFilter()
                   ? 'px-4 py-2 rounded-full text-sm font-medium transition-colors bg-primary-bg text-white'
@@ -74,10 +80,10 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
         @if (totalPages() > 1) {
           <app-paginator
             class="block mt-12"
-            [rows]="itemsPerPage"
+            [rows]="ITEMS_PER_PAGE"
             [totalRecords]="filteredProjects().length"
             [first]="paginatorFirst()"
-            (pageChange)="onPageChange($event)"
+            (pageChange)="goToPage($event)"
           />
         }
       </section>
@@ -85,47 +91,60 @@ import { filterProjects, paginateProjects, calculateTotalPages } from '../domain
   `,
 })
 export class Projects {
-  private readonly document = inject(DOCUMENT);
-  private readonly platformId = inject(PLATFORM_ID);
-  private readonly projectsGateway = inject(PROJECTS_GATEWAY);
+  private readonly _projectsGateway = inject(ProjectsGateway);
 
   private readonly projectsResource = rxResource({
-    stream: () => this.projectsGateway.getAllProjects(),
+    stream: () => this._projectsGateway.getAllProjects(),
   });
-  protected readonly projects = computed(() => this.projectsResource.value() || []);
+  protected readonly projects = computed(() => this.projectsResource.value() ?? []);
 
   private readonly categoriesResource = rxResource({
-    stream: () => this.projectsGateway.getCategories(),
+    stream: () => this._projectsGateway.getCategories(),
   });
-  protected readonly filters = computed(() => this.categoriesResource.value() ?? ['Tous']);
+  protected readonly filters = computed(() => this.categoriesResource.value() ?? [ALL_LABEL]);
 
-  protected readonly activeFilter = signal('Tous');
+  protected readonly activeFilter = signal(ALL_LABEL);
   protected readonly currentPage = signal(1);
-  protected readonly itemsPerPage = 3;
 
-  protected readonly filteredProjects = computed(() =>
-    filterProjects(this.projects(), this.activeFilter()),
-  );
+  protected readonly filteredProjects = computed(() => {
+    const f = this.activeFilter();
+    return filterProjects(this.projects(), f === ALL_LABEL ? FILTER_ALL : f);
+  });
 
   protected readonly totalPages = computed(() =>
-    calculateTotalPages(this.filteredProjects().length, this.itemsPerPage),
+    calculateTotalPages(this.filteredProjects().length, ITEMS_PER_PAGE),
   );
 
   protected readonly paginatedProjects = computed(() =>
-    paginateProjects(this.filteredProjects(), this.currentPage(), this.itemsPerPage),
+    paginateProjects(this.filteredProjects(), this.currentPage(), ITEMS_PER_PAGE),
   );
 
-  protected readonly paginatorFirst = computed(() => (this.currentPage() - 1) * this.itemsPerPage);
+  protected readonly paginatorFirst = computed(() => (this.currentPage() - 1) * ITEMS_PER_PAGE);
 
-  protected setFilter(filter: string): void {
+  protected readonly ITEMS_PER_PAGE = ITEMS_PER_PAGE;
+
+  constructor() {
+    // Scroll-to-top a chaque changement de page (skip render initial).
+    // afterRenderEffect = no-op SSR, pas besoin de isPlatformBrowser.
+    let isInitial = true;
+    afterRenderEffect({
+      write: () => {
+        this.currentPage();
+        if (isInitial) {
+          isInitial = false;
+          return;
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+    });
+  }
+
+  protected selectFilter(filter: string): void {
     this.activeFilter.set(filter);
     this.currentPage.set(1);
   }
 
-  protected onPageChange(event: AppPaginatorEvent): void {
+  protected goToPage(event: AppPaginatorEvent): void {
     this.currentPage.set(event.page + 1);
-    if (isPlatformBrowser(this.platformId)) {
-      this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
-    }
   }
 }

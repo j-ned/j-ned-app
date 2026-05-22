@@ -40,16 +40,17 @@ import type { HeroData } from '../domain';
     }
   `,
   template: `
-    <hgroup class="text-center min-h-55 md:min-h-70 lg:min-h-80">
-      @if (hero()) {
+    <div class="text-center min-h-55 md:min-h-70 lg:min-h-80">
+      @let h = hero();
+      @if (h) {
         <div class="animate-fade-up flex flex-wrap items-center justify-center gap-3 mb-3 md:mb-4">
-          <app-home-availability [hero]="hero()" />
+          <app-home-availability [hero]="h" />
         </div>
 
         <h1
           class="animate-fade-up delay-1 name-gradient text-5xl md:text-7xl lg:text-8xl font-extrabold mb-3 md:mb-4 tracking-tight leading-[1.2] pb-1"
         >
-          {{ hero()!.name }}
+          {{ h.name }}
         </h1>
 
         <p
@@ -63,7 +64,7 @@ import type { HeroData } from '../domain';
           <div class="h-20 md:h-28 lg:h-32 bg-foreground/5 rounded-lg w-full max-w-2xl"></div>
         </div>
       }
-    </hgroup>
+    </div>
   `,
 })
 export class HomeHero {

@@ -1,1 +1,1 @@
-export { errorToastInterceptor } from './error-toast.interceptor';
+export { errorToastInterceptor } from './error-toast';

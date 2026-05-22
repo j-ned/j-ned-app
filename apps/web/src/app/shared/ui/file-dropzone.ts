@@ -2,10 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   ElementRef,
+  effect,
+  inject,
   input,
   output,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 
@@ -153,6 +157,9 @@ export class FileDropzone {
   protected readonly currentFile = signal<File | null>(null);
   protected readonly isDragging = signal(false);
 
+  private readonly _blobUrl = signal<string>('');
+  private readonly _destroyRef = inject(DestroyRef);
+
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('input');
 
   protected readonly isImage = computed(() => {
@@ -161,11 +168,27 @@ export class FileDropzone {
     return !!this.previewUrl();
   });
 
-  protected readonly previewSrc = computed(() => {
-    const f = this.currentFile();
-    if (f && f.type.startsWith('image/')) return URL.createObjectURL(f);
-    return this.previewUrl();
-  });
+  protected readonly previewSrc = computed(() => this._blobUrl() || this.previewUrl());
+
+  constructor() {
+    // Genere/revoque le blob URL quand currentFile change. Pur effect = side-effect
+    // sur ressource externe (URL.createObjectURL alloue, URL.revokeObjectURL libere).
+    effect(() => {
+      const f = this.currentFile();
+      const previous = untracked(() => this._blobUrl());
+      if (previous) URL.revokeObjectURL(previous);
+      if (f && f.type.startsWith('image/')) {
+        this._blobUrl.set(URL.createObjectURL(f));
+      } else {
+        this._blobUrl.set('');
+      }
+    });
+
+    this._destroyRef.onDestroy(() => {
+      const url = this._blobUrl();
+      if (url) URL.revokeObjectURL(url);
+    });
+  }
 
   protected onInputChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];

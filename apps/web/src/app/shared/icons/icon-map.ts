@@ -172,8 +172,6 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   // ─── Time & calendar ──────────────────────────────────
   'clock':                      { id: 'clock', style: 'solid' },
   'lucide-clock':               { id: 'clock', style: 'solid' },
-  'calendar':                   { id: 'calendar', style: 'solid' },
-  'lucide-calendar':            { id: 'calendar', style: 'solid' },
 
   // ─── Tech & dev ───────────────────────────────────────
   'code':                       { id: 'code', style: 'solid' },

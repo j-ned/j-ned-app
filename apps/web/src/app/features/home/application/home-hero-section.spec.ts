@@ -21,7 +21,7 @@ describe('HomeHeroSection', () => {
   });
 
   it('renders three CTA buttons', () => {
-    const buttons = fixture.nativeElement.querySelectorAll('app-ui-button');
+    const buttons = fixture.nativeElement.querySelectorAll('app-button');
     expect(buttons.length).toBe(3);
   });
 

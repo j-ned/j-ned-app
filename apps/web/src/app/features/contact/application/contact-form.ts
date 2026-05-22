@@ -6,10 +6,10 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { STATIC_CONTACT_INFO, STATIC_SOCIAL_LINKS } from '@features/contact/infrastructure';
+import { STATIC_CONTACT_INFO, STATIC_SOCIAL_LINKS } from '@features/contact/infra';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
-import { CONTACT_GATEWAY } from './tokens';
-import { ToastService } from '@shared/ui';
+import { ContactGateway } from '@features/contact/domain';
+import { ToastStore } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 
 type ContactFormGroup = {
@@ -178,7 +178,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
               Envoyer un message
             </h3>
 
-            <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+            <form [formGroup]="form" (ngSubmit)="submitContact()" class="space-y-6">
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
                 <div class="flex flex-col gap-1.5">
@@ -297,14 +297,14 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
   `,
 })
 export class ContactForm {
-  private readonly contactGateway = inject(CONTACT_GATEWAY);
-  private readonly toast = inject(ToastService);
+  private readonly contactGateway = inject(ContactGateway);
+  private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly contactInfo = STATIC_CONTACT_INFO;
   protected readonly socialLinks = STATIC_SOCIAL_LINKS;
 
-  readonly isSubmitting = signal(false);
+  protected readonly isSubmitting = signal(false);
 
   readonly form = new FormGroup<ContactFormGroup>({
     name: new FormControl('', {
@@ -338,7 +338,7 @@ export class ContactForm {
     return `${base} ${borderClass}`;
   }
 
-  onSubmit(): void {
+  submitContact(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

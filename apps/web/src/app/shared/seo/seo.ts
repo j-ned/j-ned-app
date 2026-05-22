@@ -13,7 +13,7 @@ export type SeoData = {
 };
 
 @Injectable({ providedIn: 'root' })
-export class SeoService {
+export class Seo {
   private title = inject(Title);
   private meta = inject(Meta);
   private document = inject(DOCUMENT);

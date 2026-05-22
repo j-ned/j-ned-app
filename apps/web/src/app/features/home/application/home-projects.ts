@@ -1,13 +1,19 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProjectCard } from '@features/projects/application';
-import { UiButton } from '@shared/ui';
+import { Button } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 import type { Project } from '@features/projects/domain';
 
+const PROJECTS_SECTION = {
+  title: 'Aperçu des projets',
+  description:
+    "Une sélection de mes réalisations récentes. Chaque projet met l'accent sur la qualité du code, la performance et l'expérience utilisateur.",
+} as const;
+
 @Component({
   selector: 'app-home-projects',
-  imports: [ProjectCard, UiButton, AppIcon],
+  imports: [ProjectCard, Button, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -23,10 +29,10 @@ import type { Project } from '@features/projects/domain';
           class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2 leading-[1.2] pb-1"
           style="background: linear-gradient(135deg, var(--color-foreground) 40%, var(--color-primary) 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"
         >
-          {{ projectsSection().title }}
+          {{ projectsSection.title }}
         </h2>
         <p class="text-muted max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-          {{ projectsSection().description }}
+          {{ projectsSection.description }}
         </p>
       </header>
 
@@ -37,26 +43,21 @@ import type { Project } from '@features/projects/domain';
       </ul>
 
       <nav class="mt-6 text-center" aria-label="Voir tous les projets">
-        <app-ui-button severity="primary" (click)="goToProjects()">
+        <app-button severity="primary" (click)="goToProjects()">
           Voir tous les projets
           <app-icon name="desktop" [size]="20" />
-        </app-ui-button>
+        </app-button>
       </nav>
     </section>
   `,
 })
 export class HomeProjects {
-  private router = inject(Router);
+  private readonly _router = inject(Router);
   readonly projects = input<readonly Project[]>([]);
   protected readonly featuredProjects = this.projects;
+  protected readonly projectsSection = PROJECTS_SECTION;
 
-  protected readonly projectsSection = (): { title: string; description: string } => ({
-    title: 'Aperçu des projets',
-    description:
-      "Une sélection de mes réalisations récentes. Chaque projet met l'accent sur la qualité du code, la performance et l'expérience utilisateur.",
-  });
-
-  goToProjects(): void {
-    void this.router.navigate(['/projects']);
+  protected goToProjects(): void {
+    void this._router.navigate(['/projects']);
   }
 }
