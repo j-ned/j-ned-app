@@ -6,7 +6,10 @@ describe('AppTag', () => {
     TestBed.configureTestingModule({ imports: [AppTag] });
   });
 
-  function renderTag(props: { value: string | number; severity?: 'info' | 'success' | 'warn' | 'error' | 'secondary' }) {
+  function renderTag(props: {
+    value: string | number;
+    severity?: 'info' | 'success' | 'warn' | 'error' | 'secondary';
+  }): HTMLSpanElement {
     const fixture = TestBed.createComponent(AppTag);
     fixture.componentRef.setInput('value', props.value);
     if (props.severity) fixture.componentRef.setInput('severity', props.severity);
@@ -30,7 +33,7 @@ describe('AppTag', () => {
     expect(span.className).toContain('text-blue-700');
   });
 
-  const cases: Array<['info' | 'success' | 'warn' | 'error' | 'secondary', string]> = [
+  const cases: ['info' | 'success' | 'warn' | 'error' | 'secondary', string][] = [
     ['info', 'bg-blue-100'],
     ['success', 'bg-green-100'],
     ['warn', 'bg-amber-100'],

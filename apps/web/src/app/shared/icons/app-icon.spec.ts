@@ -6,7 +6,7 @@ describe('AppIcon', () => {
     TestBed.configureTestingModule({ imports: [AppIcon] });
   });
 
-  function renderIcon(props: { name: string; size?: number; label?: string | null }) {
+  function renderIcon(props: { name: string; size?: number; label?: string | null }): SVGElement {
     const fixture = TestBed.createComponent(AppIcon);
     fixture.componentRef.setInput('name', props.name);
     if (props.size !== undefined) fixture.componentRef.setInput('size', props.size);

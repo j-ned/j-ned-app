@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AppPaginator, type AppPaginatorEvent } from './paginator';
 
 describe('AppPaginator', () => {
@@ -6,7 +6,11 @@ describe('AppPaginator', () => {
     TestBed.configureTestingModule({ imports: [AppPaginator] });
   });
 
-  function renderPaginator(props: { rows: number; totalRecords: number; first: number }) {
+  function renderPaginator(props: {
+    rows: number;
+    totalRecords: number;
+    first: number;
+  }): ComponentFixture<AppPaginator> {
     const fixture = TestBed.createComponent(AppPaginator);
     fixture.componentRef.setInput('rows', props.rows);
     fixture.componentRef.setInput('totalRecords', props.totalRecords);

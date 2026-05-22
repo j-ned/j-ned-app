@@ -1,48 +1,56 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Chart, type ChartData } from 'chart.js/auto';
 import { AppChart } from './chart';
 
 type Ctx2D = CanvasRenderingContext2D;
 
+const noop = vi.fn();
+
 function makeCtx(canvas: HTMLCanvasElement): Ctx2D {
   return new Proxy({} as Ctx2D, {
-    get: (_, prop) => {
+    get: (_, prop): unknown => {
       if (prop === 'canvas') return canvas;
       if (prop === 'measureText') {
-        return () => ({
-          width: 0,
-          actualBoundingBoxAscent: 0,
-          actualBoundingBoxDescent: 0,
-          actualBoundingBoxLeft: 0,
-          actualBoundingBoxRight: 0,
-        });
+        return (): TextMetrics =>
+          ({
+            width: 0,
+            actualBoundingBoxAscent: 0,
+            actualBoundingBoxDescent: 0,
+            actualBoundingBoxLeft: 0,
+            actualBoundingBoxRight: 0,
+          }) as TextMetrics;
       }
-      if (prop === 'getLineDash') return () => [];
+      if (prop === 'getLineDash') return (): number[] => [];
       if (prop === 'createLinearGradient' || prop === 'createRadialGradient') {
-        return () => ({ addColorStop: () => {} });
+        return (): { addColorStop: typeof noop } => ({ addColorStop: noop });
       }
-      if (prop === 'createPattern') return () => null;
+      if (prop === 'createPattern') return (): null => null;
       if (prop === 'getImageData') {
-        return () => ({ data: new Uint8ClampedArray(), width: 0, height: 0 });
+        return (): ImageData =>
+          ({
+            data: new Uint8ClampedArray(),
+            width: 0,
+            height: 0,
+          }) as ImageData;
       }
-      if (prop === 'isPointInPath' || prop === 'isPointInStroke') return () => false;
-      return () => {};
+      if (prop === 'isPointInPath' || prop === 'isPointInStroke') return (): boolean => false;
+      return noop;
     },
-    set: () => true,
+    set: (): boolean => true,
   });
 }
 
 beforeAll(() => {
   // Stub ResizeObserver — not implemented in jsdom
   (globalThis as unknown as Record<string, unknown>)['ResizeObserver'] = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe = noop;
+    unobserve = noop;
+    disconnect = noop;
   };
 
-  HTMLCanvasElement.prototype.getContext = (function (this: HTMLCanvasElement) {
+  HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement): Ctx2D {
     return makeCtx(this);
-  } as unknown) as HTMLCanvasElement['getContext'];
+  } as unknown as HTMLCanvasElement['getContext'];
 });
 
 describe('AppChart', () => {
@@ -55,7 +63,11 @@ describe('AppChart', () => {
     TestBed.configureTestingModule({ imports: [AppChart] });
   });
 
-  async function renderChart(props: { type: 'line' | 'doughnut'; data: ChartData; height?: string }) {
+  async function renderChart(props: {
+    type: 'line' | 'doughnut';
+    data: ChartData;
+    height?: string;
+  }): Promise<ComponentFixture<AppChart>> {
     const fixture = TestBed.createComponent(AppChart);
     fixture.componentRef.setInput('type', props.type);
     fixture.componentRef.setInput('data', props.data);
