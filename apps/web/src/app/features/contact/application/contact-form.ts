@@ -52,7 +52,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
 
         <div class="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-stretch">
           <aside
-            class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-lg flex flex-col justify-between gap-6"
+            class="bg-surface border border-foreground/10 rounded-2xl p-6 flex flex-col justify-between gap-6"
           >
             <address class="space-y-4 not-italic">
                 <h3 class="text-xs font-semibold text-muted uppercase tracking-wider">
@@ -172,7 +172,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
             </div>
           </aside>
           <div
-            class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 md:p-8 shadow-lg"
+            class="bg-surface border border-foreground/10 rounded-2xl p-6 md:p-8"
           >
             <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-6">
               Envoyer un message

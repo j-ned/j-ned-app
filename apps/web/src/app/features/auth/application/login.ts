@@ -32,7 +32,7 @@ type LoginForm = {
 
         <!-- Card -->
         <div
-          class="bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-6 shadow-2xl"
+          class="bg-surface border border-foreground/10 rounded-2xl p-6"
         >
           @if (errorMessage()) {
             <div
