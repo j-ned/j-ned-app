@@ -7,7 +7,10 @@ import { AppIcon } from '@shared/icons';
   selector: 'app-about-highlights',
   imports: [AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: {
+    class:
+      'block bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6',
+  },
   template: `
     <section>
       <header class="flex items-center gap-2 mb-5">

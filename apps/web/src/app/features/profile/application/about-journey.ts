@@ -7,7 +7,10 @@ import { AppIcon } from '@shared/icons';
   selector: 'app-about-journey',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AppIcon],
-  host: { class: 'block' },
+  host: {
+    class:
+      'block bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6',
+  },
   template: `
     @if (biography()) {
       <section>
