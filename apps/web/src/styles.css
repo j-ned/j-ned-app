@@ -14,34 +14,45 @@
   --color-surface-elevated: var(--theme-surface-elevated);
   --color-nav-border: var(--theme-nav-border);
   --shadow-nav: var(--theme-nav-shadow);
+  --color-status-success: var(--theme-status-success);
+  --color-status-warn: var(--theme-status-warn);
+  --color-status-error: var(--theme-status-error);
 }
 
 /* Mode sombre par défaut (noir neutre + accents indigo) */
 :root {
-  --theme-primary-text: #818cf8; /* indigo-400 */
-  --theme-primary-bg: #4f46e5; /* indigo-600 */
-  --theme-accent: #a78bfa; /* violet-400 */
-  --theme-muted: #a1a1aa; /* zinc-400 (neutre) */
-  --theme-background: #0a0a0a; /* neutral-950 — noir profond */
-  --theme-foreground: #fafafa; /* neutral-50 */
-  --theme-surface: rgba(255, 255, 255, 0.03); /* cards translucides */
-  --theme-surface-elevated: rgba(255, 255, 255, 0.06); /* hover/elevated */
-  --theme-nav-border: rgba(255, 255, 255, 0.06);
-  --theme-nav-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  --theme-primary-text: oklch(74.5% 0.16 277); /* indigo-400 (#818cf8) */
+  --theme-primary-bg: oklch(54% 0.225 277); /* indigo-600 (#4f46e5) */
+  --theme-accent: oklch(72% 0.157 296); /* violet-400 (#a78bfa) */
+  --theme-muted: oklch(70.4% 0.011 286); /* zinc-400 (#a1a1aa) */
+  --theme-background: oklch(14.5% 0.003 286); /* neutral-950 (#0a0a0a) — noir profond */
+  --theme-foreground: oklch(98.5% 0.003 286); /* neutral-50 (#fafafa) */
+  --theme-surface: color-mix(in srgb, #fff 3%, transparent); /* cards translucides */
+  --theme-surface-elevated: color-mix(in srgb, #fff 6%, transparent); /* hover/elevated */
+  --theme-nav-border: color-mix(in srgb, #fff 6%, transparent);
+  --theme-nav-shadow: 0 1px 0 color-mix(in srgb, #fff 4%, transparent);
+  --theme-status-success: oklch(72.3% 0.19 145); /* green-500 (#22c55e) — lisible sur Console Black */
+  --theme-status-warn: oklch(76.6% 0.16 70); /* amber-500 (#f59e0b) */
+  --theme-status-error: oklch(71.5% 0.18 22); /* red-400 (#f87171) — moins agressif que red-500 sur fond sombre */
 }
 
 /* Mode clair crémeux — sous-tons chauds (stone) + indigo désaturé */
 :root:not(.app-dark) {
-  --theme-primary-text: #4338ca; /* indigo-700 (moins flash que 800) */
-  --theme-primary-bg: #4f46e5; /* indigo-600 — boutons */
-  --theme-accent: #6d28d9; /* violet-700 (plus feutré) */
-  --theme-muted: #57534e; /* stone-600 (gris chaud, pas slate) */
-  --theme-background: #faf7f2; /* ivoire chaud — évite le bleu-gris */
-  --theme-foreground: #292524; /* stone-800 — chaud, pas slate-900 */
-  --theme-surface: #ffffff; /* cards blanches */
-  --theme-surface-elevated: #fefdfb; /* hover warm-white */
-  --theme-nav-border: rgba(41, 37, 36, 0.08); /* stone-800 à 8% */
-  --theme-nav-shadow: 0 1px 2px rgba(41, 37, 36, 0.04), 0 4px 12px rgba(41, 37, 36, 0.04);
+  --theme-primary-text: oklch(43.3% 0.21 278); /* indigo-700 (#4338ca, moins flash que 800) */
+  --theme-primary-bg: oklch(54% 0.225 277); /* indigo-600 (#4f46e5) — boutons */
+  --theme-accent: oklch(45.7% 0.244 297); /* violet-700 (#6d28d9, plus feutré) */
+  --theme-muted: oklch(43.8% 0.013 56); /* stone-600 (#57534e) — gris chaud, pas slate */
+  --theme-background: oklch(97% 0.008 87); /* ivoire chaud (#faf7f2) — évite le bleu-gris */
+  --theme-foreground: oklch(26.6% 0.011 56); /* stone-800 (#292524) — chaud, pas slate-900 */
+  --theme-surface: oklch(100% 0 0); /* cards blanches (#ffffff) */
+  --theme-surface-elevated: oklch(99.5% 0.005 87); /* hover warm-white (#fefdfb) */
+  --theme-nav-border: color-mix(in srgb, oklch(26.6% 0.011 56) 8%, transparent); /* stone-800 à 8% */
+  --theme-nav-shadow:
+    0 1px 2px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent),
+    0 4px 12px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent);
+  --theme-status-success: oklch(60.4% 0.18 145); /* green-600 (#16a34a) — lisible sur Ivoire Paper */
+  --theme-status-warn: oklch(63.5% 0.165 50); /* amber-600 (#d97706) */
+  --theme-status-error: oklch(57.7% 0.224 27); /* red-600 (#dc2626) — contraste fort sur paper */
 }
 
 /* View Transitions — instant swap */
