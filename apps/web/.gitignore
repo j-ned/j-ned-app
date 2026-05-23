@@ -8,9 +8,6 @@
 /bazel-out
 /docs
 
-# Generated at build time from ../nest-portfolio-app/.env (see scripts/generate-env.mjs)
-/src/environments/environment.ts
-
 # Node
 /node_modules
 npm-debug.log
@@ -42,15 +39,6 @@ yarn-error.log
 testem.log
 /typings
 __screenshots__/
-
-# Environment files
-.env
-.env.local
-.env.*.local
-.env.prod
-
-# Supabase local files
-supabase/.temp/
 
 # System files
 .DS_Store
