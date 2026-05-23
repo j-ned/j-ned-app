@@ -22,9 +22,7 @@ import { AppIcon } from '@shared/icons';
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <div class="flex items-center justify-between gap-4">
           <div class="flex items-start gap-4">
-            <div
-              class="w-11 h-11 shrink-0 rounded-lg bg-linear-to-br from-primary/15 to-primary/5 flex items-center justify-center"
-            >
+            <div class="icon-tile bg-primary/10">
               <app-icon name="shield" [size]="20" class="text-primary" />
             </div>
             <div>

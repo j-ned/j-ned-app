@@ -20,10 +20,8 @@ type TwoFactorVerifyFormShape = {
         class="w-full max-w-md bg-surface border border-foreground/10 rounded-2xl p-8"
       >
         <div class="flex justify-center mb-6">
-          <div
-            class="w-16 h-16 rounded-xl bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center"
-          >
-            <app-icon name="shield" [size]="32" class="text-primary" />
+          <div class="icon-tile-lg bg-primary/10 border border-primary/20">
+            <app-icon name="shield" [size]="28" class="text-primary" />
           </div>
         </div>
 

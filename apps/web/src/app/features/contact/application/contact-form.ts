@@ -58,10 +58,8 @@ type ContactFormGroup = {
                   [href]="'mailto:' + contactInfo.email"
                   class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
                 >
-                  <div
-                    class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                  >
-                    <app-icon name="envelope" [size]="16" class="text-primary" />
+                  <div class="icon-tile bg-primary/10">
+                    <app-icon name="envelope" [size]="18" class="text-primary" />
                   </div>
                   <div class="min-w-0">
                     <p class="text-xs text-muted">Email</p>
@@ -77,10 +75,8 @@ type ContactFormGroup = {
                   [href]="'tel:' + contactInfo.phone"
                   class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
                 >
-                  <div
-                    class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-accent/20 to-accent/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                  >
-                    <app-icon name="phone" [size]="16" class="text-accent" />
+                  <div class="icon-tile bg-accent/10">
+                    <app-icon name="phone" [size]="18" class="text-accent" />
                   </div>
                   <div>
                     <p class="text-xs text-muted">Téléphone</p>
@@ -93,10 +89,8 @@ type ContactFormGroup = {
                 </a>
 
                 <div class="flex items-center gap-3 p-3 rounded-xl">
-                  <div
-                    class="w-10 h-10 shrink-0 rounded-lg bg-status-success/15 flex items-center justify-center"
-                  >
-                    <app-icon name="map-marker" [size]="16" class="text-status-success" />
+                  <div class="icon-tile bg-status-success/15">
+                    <app-icon name="map-marker" [size]="18" class="text-status-success" />
                   </div>
                   <div>
                     <p class="text-xs text-muted">Localisation</p>
@@ -117,7 +111,7 @@ type ContactFormGroup = {
                     [href]="socialLinks.linkedin.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
+                    class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-colors"
                     [attr.aria-label]="socialLinks.linkedin.label"
                   >
                     <app-icon [name]="socialLinks.linkedin.icon" [size]="16" class="text-muted group-hover:text-primary transition-colors" />
@@ -128,7 +122,7 @@ type ContactFormGroup = {
                     [href]="socialLinks.github.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
+                    class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-colors"
                     [attr.aria-label]="socialLinks.github.label"
                   >
                     <app-icon [name]="socialLinks.github.icon" [size]="16" class="text-muted group-hover:text-foreground transition-colors" />
@@ -139,7 +133,7 @@ type ContactFormGroup = {
                     [href]="socialLinks.twitter.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-all duration-300 hover:scale-110"
+                    class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-colors"
                     [attr.aria-label]="socialLinks.twitter.label"
                   >
                     <app-icon [name]="socialLinks.twitter.icon" [size]="16" class="text-muted group-hover:text-foreground transition-colors" />
@@ -148,7 +142,7 @@ type ContactFormGroup = {
                 @if (socialLinks.email.url) {
                   <a
                     [href]="socialLinks.email.url"
-                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-all duration-300 hover:scale-110"
+                    class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-colors"
                     [attr.aria-label]="socialLinks.email.label"
                   >
                     <app-icon [name]="socialLinks.email.icon" [size]="16" class="text-muted group-hover:text-primary transition-colors" />
@@ -157,7 +151,7 @@ type ContactFormGroup = {
                 @if (socialLinks.phone.url) {
                   <a
                     [href]="socialLinks.phone.url"
-                    class="group flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300 hover:scale-110"
+                    class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-colors"
                     [attr.aria-label]="socialLinks.phone.label"
                   >
                     <app-icon [name]="socialLinks.phone.icon" [size]="16" class="text-muted group-hover:text-accent transition-colors" />

@@ -34,9 +34,7 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
         class="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-foreground/10 bg-background"
       >
         <div class="flex items-center gap-2">
-          <div
-            class="w-8 h-8 shrink-0 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center"
-          >
+          <div class="icon-tile-sm bg-primary/10 border border-primary/30">
             <app-icon name="th-large" [size]="16" class="text-primary" />
           </div>
           <span class="text-base font-bold text-foreground">Admin</span>

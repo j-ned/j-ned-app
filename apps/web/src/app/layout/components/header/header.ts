@@ -26,7 +26,7 @@ type ThemePreference = 'dark' | 'light';
       <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
           <div
-            class="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
+            class="icon-tile bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
           >
             JN
           </div>

@@ -29,9 +29,7 @@ import { AppIcon } from '@shared/icons';
                     class="group relative p-6 rounded-xl border border-foreground/8 bg-foreground/2 hover:border-primary/30 hover:bg-foreground/4 transition-colors duration-300 min-h-55.5"
                   >
                     <div class="flex items-center gap-3 mb-4">
-                      <div
-                        class="w-11 h-11 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors duration-300"
-                      >
+                      <div class="icon-tile bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300">
                         <app-icon [name]="item.icon" [size]="20" class="text-primary" />
                       </div>
                       <h3 class="text-sm font-bold text-primary uppercase tracking-widest">
@@ -52,7 +50,7 @@ import { AppIcon } from '@shared/icons';
                     class="p-6 rounded-xl border border-foreground/8 bg-foreground/2 animate-pulse min-h-55.5"
                   >
                     <div class="flex items-center gap-3 mb-4">
-                      <div class="w-11 h-11 shrink-0 rounded-xl bg-foreground/5"></div>
+                      <div class="icon-tile bg-foreground/5"></div>
                       <div class="h-3.5 bg-foreground/5 rounded w-32"></div>
                     </div>
                     <div class="h-28.5 rounded bg-foreground/5"></div>

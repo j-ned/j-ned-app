@@ -22,10 +22,8 @@ import { AppIcon } from '@shared/icons';
           <article
             class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-accent/50 hover:bg-accent/5 transition-all group"
           >
-            <div
-              class="w-10 h-10 rounded-lg bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
-            >
-              <app-icon [name]="highlight.icon" [size]="24" class="text-accent" />
+            <div class="icon-tile bg-accent/10 mb-3">
+              <app-icon [name]="highlight.icon" [size]="22" class="text-accent" />
             </div>
             <h3
               class="text-base font-bold text-foreground mb-2 group-hover:text-primary transition-colors"

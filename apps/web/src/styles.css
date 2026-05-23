@@ -84,6 +84,24 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
+ * Icon tile utilities — conteneurs carrés pour icônes décoratives
+ * Radius constant (rounded-xl), 3 tailles (sm 36, md 44, lg 56).
+ * Combiner avec bg-primary/10, bg-accent/10 etc. selon le contexte.
+ * ---------------------------------------------------------------- */
+
+@utility icon-tile-sm {
+  @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl;
+}
+
+@utility icon-tile {
+  @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl;
+}
+
+@utility icon-tile-lg {
+  @apply inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl;
+}
+
+/* ---------------------------------------------------------------- *
  * Form utilities (admin) — pour ne pas dupliquer 10+ classes par input
  * ---------------------------------------------------------------- */
 

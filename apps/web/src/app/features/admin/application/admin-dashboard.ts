@@ -42,9 +42,7 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
             routerLink="/admin/messages"
             class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-primary/40 hover:bg-primary/[0.02] transition-all"
           >
-            <div
-              class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-primary/15 to-primary/5 flex items-center justify-center"
-            >
+            <div class="icon-tile bg-primary/10">
               <app-icon name="envelope" [size]="20" class="text-primary" />
             </div>
             <div class="flex-1 min-w-0">
@@ -64,9 +62,7 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
             routerLink="/admin/analytics"
             class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-accent/40 hover:bg-accent/[0.02] transition-all"
           >
-            <div
-              class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-accent/15 to-accent/5 flex items-center justify-center"
-            >
+            <div class="icon-tile bg-accent/10">
               <app-icon name="download" [size]="20" class="text-accent" />
             </div>
             <div class="flex-1 min-w-0">

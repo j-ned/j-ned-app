@@ -19,9 +19,7 @@ export type AdminNavItem = {
   template: `
     <div class="p-4 border-b border-foreground/10">
       <div class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 shrink-0 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center"
-        >
+        <div class="icon-tile bg-primary/10 border border-primary/30">
           <app-icon name="th-large" [size]="20" class="text-primary" />
         </div>
         @if (!collapsed()) {

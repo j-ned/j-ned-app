@@ -22,7 +22,7 @@ type LoginForm = {
         <!-- Header -->
         <div class="text-center mb-8">
           <div
-            class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4"
+            class="icon-tile-lg bg-primary/10 border border-primary/20 mb-4"
           >
             <app-icon name="shield" [size]="28" class="text-primary" />
           </div>

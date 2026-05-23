@@ -366,7 +366,7 @@ type DateRangeOption = {
         class="bg-surface border border-foreground/10 rounded-xl p-6 flex flex-col justify-center items-center text-center"
       >
         <div
-          class="w-14 h-14 rounded-xl bg-linear-to-br from-accent/20 to-accent/5 flex items-center justify-center mb-4"
+          class="icon-tile-lg bg-accent/10 mb-4"
         >
           <app-icon name="download" [size]="24" class="text-accent" />
         </div>
