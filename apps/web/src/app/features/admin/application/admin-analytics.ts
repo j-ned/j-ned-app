@@ -2,17 +2,31 @@ import {
   Component,
   ChangeDetectionStrategy,
   DestroyRef,
+  PLATFORM_ID,
   computed,
   inject,
   resource,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppChart, AppTag } from '@shared/ui';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
+
+const THEME_FALLBACK: Record<string, string> = {
+  '--theme-primary-text': 'oklch(74.5% 0.16 277)',
+  '--theme-primary-bg': 'oklch(54% 0.225 277)',
+  '--theme-accent': 'oklch(72% 0.157 296)',
+  '--theme-foreground': 'oklch(98.5% 0.003 286)',
+  '--theme-muted': 'oklch(70.4% 0.011 286)',
+  '--theme-background': 'oklch(14.5% 0.003 286)',
+  '--theme-status-success': 'oklch(72.3% 0.19 145)',
+  '--theme-status-warn': 'oklch(76.6% 0.16 70)',
+  '--theme-status-error': 'oklch(71.5% 0.18 22)',
+};
 
 type DateRangeKey = '7d' | '30d' | '90d' | 'all';
 
@@ -145,7 +159,7 @@ type DateRangeOption = {
       @if (chartResource.isLoading()) {
         <div class="h-72 rounded bg-foreground/5 animate-pulse"></div>
       } @else {
-        <app-chart type="line" [data]="chartData()" [options]="chartOptions" height="18rem" />
+        <app-chart type="line" [data]="chartData()" [options]="chartOptions()" height="18rem" />
       }
     </section>
 
@@ -235,7 +249,7 @@ type DateRangeOption = {
           <app-chart
             type="doughnut"
             [data]="browsersChart()"
-            [options]="donutOptions"
+            [options]="donutOptions()"
             height="12rem"
           />
         }
@@ -251,7 +265,7 @@ type DateRangeOption = {
         } @else if (osList().length === 0) {
           <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
         } @else {
-          <app-chart type="doughnut" [data]="osChart()" [options]="donutOptions" height="12rem" />
+          <app-chart type="doughnut" [data]="osChart()" [options]="donutOptions()" height="12rem" />
         }
       </div>
 
@@ -369,6 +383,21 @@ type DateRangeOption = {
 export class AdminAnalytics {
   private readonly analytics = inject(AnalyticsGateway);
   private readonly _destroyRef = inject(DestroyRef);
+  private readonly _document = inject(DOCUMENT);
+  private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  private themeColor(token: keyof typeof THEME_FALLBACK | string): string {
+    const fallback = THEME_FALLBACK[token] ?? 'oklch(50% 0 0)';
+    if (!this._isBrowser) return fallback;
+    const v = getComputedStyle(this._document.documentElement)
+      .getPropertyValue(token)
+      .trim();
+    return v || fallback;
+  }
+
+  private alpha(color: string, pct: number): string {
+    return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+  }
 
   constructor() {
     interval(30_000)
@@ -433,14 +462,16 @@ export class AdminAnalytics {
 
   readonly chartData = computed(() => {
     const rows = this.chartResource.value() ?? [];
+    const primary = this.themeColor('--theme-primary-text');
+    const accent = this.themeColor('--theme-accent');
     return {
       labels: rows.map((r) => r.date),
       datasets: [
         {
           label: 'Visiteurs',
           data: rows.map((r) => r.visitors),
-          borderColor: 'rgb(99, 102, 241)',
-          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          borderColor: primary,
+          backgroundColor: this.alpha(primary, 10),
           tension: 0.35,
           fill: true,
           pointRadius: 0,
@@ -449,8 +480,8 @@ export class AdminAnalytics {
         {
           label: 'Pages vues',
           data: rows.map((r) => r.pageviews),
-          borderColor: 'rgb(244, 114, 182)',
-          backgroundColor: 'rgba(244, 114, 182, 0.05)',
+          borderColor: accent,
+          backgroundColor: this.alpha(accent, 5),
           tension: 0.35,
           fill: true,
           pointRadius: 0,
@@ -460,30 +491,36 @@ export class AdminAnalytics {
     };
   });
 
-  readonly chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { intersect: false, mode: 'index' as const },
-    scales: {
-      x: {
-        ticks: { color: 'rgba(255,255,255,0.4)', maxTicksLimit: 8 },
-        grid: { color: 'rgba(255,255,255,0.03)' },
+  readonly chartOptions = computed(() => {
+    const foreground = this.themeColor('--theme-foreground');
+    const background = this.themeColor('--theme-background');
+    const muted40 = this.alpha(foreground, 40);
+    const grid = this.alpha(foreground, 6);
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' as const },
+      scales: {
+        x: {
+          ticks: { color: muted40, maxTicksLimit: 8 },
+          grid: { color: grid },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: muted40, precision: 0 },
+          grid: { color: grid },
+        },
       },
-      y: {
-        beginAtZero: true,
-        ticks: { color: 'rgba(255,255,255,0.4)', precision: 0 },
-        grid: { color: 'rgba(255,255,255,0.03)' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: this.alpha(background, 95),
+          borderColor: this.alpha(foreground, 10),
+          borderWidth: 1,
+        },
       },
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(15,23,42,0.95)',
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1,
-      },
-    },
-  };
+    };
+  });
 
   // ── Top pages ─────────────────────────────────────────────────────
   readonly pagesResource = resource({
@@ -515,7 +552,7 @@ export class AdminAnalytics {
     datasets: [
       {
         data: this.browsers().map((r) => r.count),
-        backgroundColor: this.palette,
+        backgroundColor: this.palette(),
         borderWidth: 0,
       },
     ],
@@ -533,7 +570,7 @@ export class AdminAnalytics {
     datasets: [
       {
         data: this.osList().map((r) => r.count),
-        backgroundColor: this.palette,
+        backgroundColor: this.palette(),
         borderWidth: 0,
       },
     ],
@@ -568,37 +605,50 @@ export class AdminAnalytics {
 
   readonly bounceRateFormatted = computed(() => (this.overview()?.bounceRate ?? 0).toFixed(1));
 
-  readonly donutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '60%',
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: 'rgba(255,255,255,0.7)',
-          boxWidth: 12,
-          padding: 12,
-          font: { size: 11 },
+  readonly donutOptions = computed(() => {
+    const foreground = this.themeColor('--theme-foreground');
+    const background = this.themeColor('--theme-background');
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: {
+          position: 'bottom' as const,
+          labels: {
+            color: this.alpha(foreground, 70),
+            boxWidth: 12,
+            padding: 12,
+            font: { size: 11 },
+          },
+        },
+        tooltip: {
+          backgroundColor: this.alpha(background, 95),
+          borderColor: this.alpha(foreground, 10),
+          borderWidth: 1,
         },
       },
-      tooltip: {
-        backgroundColor: 'rgba(15,23,42,0.95)',
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1,
-      },
-    },
-  };
+    };
+  });
 
-  private readonly palette = [
-    '#6366f1',
-    '#ec4899',
-    '#06b6d4',
-    '#10b981',
-    '#f59e0b',
-    '#a855f7',
-    '#64748b',
-  ];
+  // Palette dérivée des tokens du design system. Les séries au-delà
+  // de primary/accent sont des variations d'opacité pour rester dans
+  // la famille Signal Indigo (One Indigo Rule).
+  private readonly palette = computed(() => {
+    const primary = this.themeColor('--theme-primary-text');
+    const accent = this.themeColor('--theme-accent');
+    const success = this.themeColor('--theme-status-success');
+    const warn = this.themeColor('--theme-status-warn');
+    return [
+      primary,
+      accent,
+      this.alpha(primary, 70),
+      this.alpha(accent, 70),
+      success,
+      warn,
+      this.alpha(primary, 40),
+    ];
+  });
 
   barWidth(value: number, max: number): number {
     return max > 0 ? (value / max) * 100 : 0;
