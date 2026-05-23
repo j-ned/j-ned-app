@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { GetProfileInfoUseCase, GetSocialButtonsUseCase } from '@features/profile/domain';
+import { ProfileGateway } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -76,17 +76,16 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutHero {
-  private readonly _getProfileInfo = inject(GetProfileInfoUseCase);
-  private readonly _getSocialButtons = inject(GetSocialButtonsUseCase);
+  private readonly _gateway = inject(ProfileGateway);
 
   private readonly profileResource = rxResource({
-    stream: () => this._getProfileInfo.execute(),
+    stream: () => this._gateway.getProfileInfo(),
   });
   protected readonly profileInfo = computed(() => this.profileResource.value());
   protected readonly avatarUrl = computed(() => this.profileInfo()?.avatarUrl ?? '');
 
   private readonly socialButtonsResource = rxResource({
-    stream: () => this._getSocialButtons.execute(),
+    stream: () => this._gateway.getSocialButtons(),
   });
   protected readonly socialButtons = computed(() => this.socialButtonsResource.value() ?? []);
 }

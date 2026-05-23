@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { GetBiographyUseCase } from '@features/profile/domain';
+import { ProfileGateway } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -25,9 +25,9 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutJourney {
-  private readonly _getBiography = inject(GetBiographyUseCase);
+  private readonly _gateway = inject(ProfileGateway);
   private readonly biographyResource = rxResource({
-    stream: () => this._getBiography.execute(),
+    stream: () => this._gateway.getBiography(),
   });
   protected readonly biography = computed(() => this.biographyResource.value());
 }

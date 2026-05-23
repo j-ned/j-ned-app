@@ -1,7 +1,7 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { GetTechnologiesUseCase } from '@features/profile/domain';
+import { ProfileGateway } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -38,10 +38,10 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutStack {
-  private readonly _getTechnologies = inject(GetTechnologiesUseCase);
+  private readonly _gateway = inject(ProfileGateway);
 
   private readonly technologiesResource = rxResource({
-    stream: () => this._getTechnologies.execute(),
+    stream: () => this._gateway.getTechnologies(),
   });
   protected readonly technologies = computed(() => this.technologiesResource.value() ?? []);
 }

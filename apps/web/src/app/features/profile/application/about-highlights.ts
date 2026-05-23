@@ -1,6 +1,6 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { GetHighlightsUseCase } from '@features/profile/domain';
+import { ProfileGateway } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -39,10 +39,10 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutHighlights {
-  private readonly _getHighlights = inject(GetHighlightsUseCase);
+  private readonly _gateway = inject(ProfileGateway);
 
   private readonly highlightsResource = rxResource({
-    stream: () => this._getHighlights.execute(),
+    stream: () => this._gateway.getHighlights(),
   });
   protected readonly highlights = computed(() => this.highlightsResource.value() ?? []);
 }

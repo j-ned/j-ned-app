@@ -21,14 +21,8 @@ type ThemePreference = 'dark' | 'light';
   selector: 'app-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, AppIcon, Button, Drawer],
-  styles: `
-    .nav-surface {
-      border-bottom: 1px solid var(--theme-nav-border);
-      box-shadow: var(--theme-nav-shadow);
-    }
-  `,
   template: `
-    <div class="nav-surface fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md">
+    <div class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-nav-border shadow-nav">
       <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
           <div

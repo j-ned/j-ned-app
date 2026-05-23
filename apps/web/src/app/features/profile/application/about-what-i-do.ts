@@ -1,6 +1,6 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { GetWhatIDoUseCase } from '@features/profile/domain';
+import { ProfileGateway } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
@@ -34,10 +34,10 @@ import { AppIcon } from '@shared/icons';
   `,
 })
 export class AboutWhatIDo {
-  private readonly _getWhatIDo = inject(GetWhatIDoUseCase);
+  private readonly _gateway = inject(ProfileGateway);
 
   private readonly whatIDoResource = rxResource({
-    stream: () => this._getWhatIDo.execute(),
+    stream: () => this._gateway.getWhatIDo(),
   });
   protected readonly whatIDo = computed(() => this.whatIDoResource.value() ?? []);
 }

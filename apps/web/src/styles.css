@@ -12,6 +12,8 @@
   --color-foreground: var(--theme-foreground);
   --color-surface: var(--theme-surface);
   --color-surface-elevated: var(--theme-surface-elevated);
+  --color-nav-border: var(--theme-nav-border);
+  --shadow-nav: var(--theme-nav-shadow);
 }
 
 /* Mode sombre par défaut (noir neutre + accents indigo) */
