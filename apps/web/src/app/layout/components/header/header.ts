@@ -76,7 +76,7 @@ type ThemePreference = 'dark' | 'light';
               target="_blank"
               rel="noopener noreferrer"
               (click)="trackCvDownload()"
-              class="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-foreground text-sm font-medium hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
+              class="hidden md:inline-flex items-center gap-2 min-h-11 px-4 py-2 rounded-full border border-foreground/15 text-foreground text-sm font-medium hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
             >
               <app-icon name="download" />
               Télécharger mon CV

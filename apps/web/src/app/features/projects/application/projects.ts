@@ -42,8 +42,8 @@ const ITEMS_PER_PAGE = 3;
               [attr.aria-pressed]="filter === activeFilter()"
               [class]="
                 filter === activeFilter()
-                  ? 'px-4 py-2 rounded-full text-sm font-medium transition-colors bg-primary-bg text-white'
-                  : 'px-4 py-2 rounded-full text-sm font-medium transition-colors bg-background/50 border border-foreground/10 text-muted hover:text-foreground hover:border-primary/50'
+                  ? 'inline-flex items-center min-h-11 px-4 py-2 rounded-full text-sm font-medium transition-colors bg-primary-bg text-white'
+                  : 'inline-flex items-center min-h-11 px-4 py-2 rounded-full text-sm font-medium transition-colors bg-background/50 border border-foreground/10 text-muted hover:text-foreground hover:border-primary/50'
               "
             >
               {{ filter }}

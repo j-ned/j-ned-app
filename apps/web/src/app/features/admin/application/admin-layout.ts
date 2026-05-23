@@ -46,7 +46,7 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
           (click)="mobileMenuOpen.set(true)"
           aria-label="Ouvrir le menu de navigation"
           [attr.aria-expanded]="mobileMenuOpen()"
-          class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted hover:text-foreground hover:bg-foreground/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          class="inline-flex items-center justify-center w-11 h-11 rounded-lg text-muted hover:text-foreground hover:bg-foreground/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <app-icon name="bars" [size]="20" />
         </button>

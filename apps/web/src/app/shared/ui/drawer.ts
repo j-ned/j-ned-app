@@ -49,7 +49,7 @@ const FOCUSABLE_SELECTOR =
             <span class="text-lg font-bold text-foreground">{{ heading() }}</span>
             <button
               type="button"
-              class="inline-flex items-center justify-center w-9 h-9 rounded-full text-muted hover:text-foreground hover:bg-foreground/5 transition"
+              class="inline-flex items-center justify-center w-11 h-11 rounded-full text-muted hover:text-foreground hover:bg-foreground/5 transition"
               aria-label="Fermer"
               (click)="close()"
             >

@@ -17,7 +17,7 @@ const ELLIPSIS = -1;
       <button
         type="button"
         data-testid="paginator-prev"
-        class="px-3 py-1 rounded-md text-sm border border-foreground/10 hover:bg-foreground/5 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        class="inline-flex items-center justify-center min-w-11 min-h-11 px-3 rounded-md text-sm border border-foreground/10 hover:bg-foreground/5 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         [disabled]="currentPage() === 0"
         (click)="goTo(currentPage() - 1)"
         aria-label="Page précédente"
@@ -29,7 +29,7 @@ const ELLIPSIS = -1;
           <button
             type="button"
             data-testid="paginator-page"
-            class="px-3 py-1 rounded-md text-sm border border-foreground/10 hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            class="inline-flex items-center justify-center min-w-11 min-h-11 px-3 rounded-md text-sm border border-foreground/10 hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             [class.bg-primary]="page === currentPage()"
             [class.text-white]="page === currentPage()"
             [class.border-primary]="page === currentPage()"
@@ -41,7 +41,7 @@ const ELLIPSIS = -1;
       <button
         type="button"
         data-testid="paginator-next"
-        class="px-3 py-1 rounded-md text-sm border border-foreground/10 hover:bg-foreground/5 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        class="inline-flex items-center justify-center min-w-11 min-h-11 px-3 rounded-md text-sm border border-foreground/10 hover:bg-foreground/5 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         [disabled]="currentPage() >= totalPages() - 1"
         (click)="goTo(currentPage() + 1)"
         aria-label="Page suivante"

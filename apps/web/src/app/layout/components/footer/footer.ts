@@ -44,9 +44,9 @@ const SOCIALS: readonly SocialItem[] = [
             [attr.aria-label]="social.label"
             target="_blank"
             rel="noopener noreferrer"
-            class="p-2 rounded-lg text-muted hover:text-primary hover:bg-white/5 transition-colors"
+            class="inline-flex items-center justify-center w-11 h-11 rounded-lg text-muted hover:text-primary hover:bg-foreground/5 transition-colors"
           >
-            <app-icon [name]="social.icon" [size]="16" />
+            <app-icon [name]="social.icon" [size]="18" />
           </a>
         }
       </nav>

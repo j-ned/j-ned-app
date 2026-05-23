@@ -56,8 +56,11 @@ export class Button {
   readonly type = input<'button' | 'submit'>('button');
 
   protected readonly classes = computed(() => {
+    // min-h-11 garantit 44x44 px (WCAG 2.5.5 Target Size).
     const sizeClass =
-      this.size() === 'large' ? 'text-base md:text-lg px-6 py-3' : 'text-sm px-4 py-2';
+      this.size() === 'large'
+        ? 'text-base md:text-lg px-6 py-3 min-h-11'
+        : 'text-sm px-4 py-2 min-h-11';
     const radiusClass = this.rounded() ? 'rounded-full' : 'rounded-lg';
     return [sizeClass, radiusClass, this.variantClass()].join(' ');
   });

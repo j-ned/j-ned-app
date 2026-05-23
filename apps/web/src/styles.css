@@ -177,7 +177,7 @@ input:-webkit-autofill:focus {
 }
 
 @utility admin-icon-btn {
-  @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted;
+  @apply inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted;
   @apply hover:bg-surface-elevated hover:text-foreground;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   @apply transition-colors;
@@ -190,7 +190,7 @@ input:-webkit-autofill:focus {
 }
 
 @utility admin-pager-btn {
-  @apply inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-3 text-sm text-muted;
+  @apply inline-flex h-11 min-w-11 items-center justify-center rounded-lg px-3 text-sm text-muted;
   @apply hover:bg-surface-elevated hover:text-foreground;
   @apply disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted;
   @apply transition-colors;

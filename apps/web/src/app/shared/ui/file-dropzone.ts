@@ -82,7 +82,7 @@ import {
             type="button"
             (click)="clear()"
             aria-label="Retirer le fichier"
-            class="w-7 h-7 rounded-full bg-foreground/5 hover:bg-status-error/15 hover:text-status-error text-muted flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            class="w-11 h-11 rounded-full bg-foreground/5 hover:bg-status-error/15 hover:text-status-error text-muted flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

@@ -79,7 +79,7 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
           </div>
           <button
             type="button"
-            class="shrink-0 w-6 h-6 inline-flex items-center justify-center rounded-md transition-colors"
+            class="shrink-0 w-11 h-11 -m-2 inline-flex items-center justify-center rounded-md transition-colors"
             [class]="style.close"
             aria-label="Fermer"
             (click)="dismiss.emit(msg.id)"
