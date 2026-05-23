@@ -15,6 +15,7 @@ import { AppChart, AppTag } from '@shared/ui';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
+import { ThemeWatcher } from '@shared/theme/theme-watcher';
 
 const THEME_FALLBACK: Record<string, string> = {
   '--theme-primary-text': 'oklch(74.5% 0.16 277)',
@@ -385,8 +386,13 @@ export class AdminAnalytics {
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _document = inject(DOCUMENT);
   private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly _theme = inject(ThemeWatcher);
 
   private themeColor(token: keyof typeof THEME_FALLBACK | string): string {
+    // Cree une dependency reactive sur le theme : les computed() qui
+    // appellent themeColor() se re-evaluent quand dark/light bascule.
+    this._theme.isDark();
+
     const fallback = THEME_FALLBACK[token] ?? 'oklch(50% 0 0)';
     if (!this._isBrowser) return fallback;
     const v = getComputedStyle(this._document.documentElement)
