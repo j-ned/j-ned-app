@@ -1,11 +1,13 @@
 import {
   ApplicationConfig,
+  ErrorHandler,
   PLATFORM_ID,
   inject,
   isDevMode,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
+import * as Sentry from '@sentry/angular';
 import { isPlatformBrowser } from '@angular/common';
 import {
   NavigationEnd,
@@ -167,5 +169,16 @@ export const appConfig: ApplicationConfig = {
     { provide: AnalyticsGateway, useClass: HttpAnalyticsGateway },
     { provide: CvGateway, useClass: HttpCvGateway },
     { provide: AuthGateway, useClass: HttpAuthGateway },
+    {
+      provide: ErrorHandler,
+      useValue: Sentry.createErrorHandler({ showDialog: false }),
+    },
+    {
+      provide: Sentry.TraceService,
+      deps: [Router],
+    },
+    provideAppInitializer(() => {
+      inject(Sentry.TraceService);
+    }),
   ],
 };

@@ -32,13 +32,6 @@ export class App {
   protected readonly toastStore = inject(ToastStore);
 
   constructor() {
-    // Restaure la session au boot client. Appelé explicitement (et pas
-    // uniquement via le constructor d'AuthStore) car avec
-    // provideClientHydration, l'instance d'AuthStore peut être réutilisée
-    // depuis le SSG : son constructor n'est alors PAS re-exécuté côté browser,
-    // et le restoreSession() initial skip côté serveur n'est jamais rejoué.
-    // Cette ligne garantit que /auth/me part au boot client, peu importe le
-    // cycle de vie du Service. Idempotent.
     this.auth.restoreSession();
   }
 
