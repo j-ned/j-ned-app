@@ -8,7 +8,7 @@ import { AppIcon } from '@shared/icons';
   selector: 'app-project-card',
   imports: [NgOptimizedImage, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block h-full' },
+  host: { class: 'block h-full animate-fade-up' },
   template: `
     <article
       class="group relative bg-surface border border-foreground/8 rounded-xl overflow-hidden hover:border-primary/30 hover:bg-surface-elevated transition-colors duration-200 flex flex-col h-full"

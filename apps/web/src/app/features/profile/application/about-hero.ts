@@ -10,7 +10,7 @@ import { AppIcon } from '@shared/icons';
   imports: [NgOptimizedImage, AppIcon],
   host: {
     class:
-      'block bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 h-full',
+      'block animate-fade-up bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 h-full',
   },
   template: `
     @let profile = profileInfo();

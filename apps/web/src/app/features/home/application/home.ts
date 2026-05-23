@@ -26,7 +26,7 @@ import { AppIcon } from '@shared/icons';
               <ul class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8" role="list">
                 @for (item of expertises(); track item.id) {
                   <li
-                    class="group relative p-6 rounded-xl border border-foreground/8 bg-foreground/2 hover:border-primary/30 hover:bg-foreground/4 transition-colors duration-300 min-h-55.5"
+                    class="group animate-fade-up relative p-6 rounded-xl border border-foreground/8 bg-foreground/2 hover:border-primary/30 hover:bg-foreground/4 transition-colors duration-300 min-h-55.5"
                   >
                     <div class="flex items-center gap-3 mb-4">
                       <div class="icon-tile bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300">

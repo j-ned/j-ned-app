@@ -93,6 +93,34 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
+ * Reveal animation — fade-up sobre pour cards/sections au mount.
+ * Couplée avec @defer (on viewport), elle déclenche un reveal au scroll.
+ * Respecte prefers-reduced-motion (no-op si l'utilisateur le demande).
+ * ---------------------------------------------------------------- */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------- *
  * Icon tile utilities — conteneurs carrés pour icônes décoratives
  * Radius constant (rounded-xl), 3 tailles (sm 36, md 44, lg 56).
  * Combiner avec bg-primary/10, bg-accent/10 etc. selon le contexte.

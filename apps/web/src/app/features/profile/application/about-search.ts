@@ -10,7 +10,7 @@ import { AppIcon } from '@shared/icons';
   host: { class: 'block' },
   template: `
     <section
-      class="bg-linear-to-br from-accent/10 to-primary/10 border border-accent/20 rounded-2xl p-6"
+      class="animate-fade-up bg-linear-to-br from-accent/10 to-primary/10 border border-accent/20 rounded-2xl p-6"
     >
       <div class="flex items-center gap-2 mb-4">
         <app-icon name="compass" [size]="20" class="text-accent" />

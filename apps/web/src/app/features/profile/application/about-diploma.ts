@@ -10,7 +10,7 @@ import { AppIcon } from '@shared/icons';
   host: { class: 'block' },
   template: `
     <section
-      class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6"
+      class="animate-fade-up bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6"
     >
       <header class="flex items-center gap-2 mb-6">
         <app-icon name="graduation-cap" [size]="24" class="text-primary" />

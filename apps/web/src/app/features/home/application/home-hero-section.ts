@@ -14,20 +14,9 @@ import type { HeroData } from '../domain';
     class: 'relative block pt-8 pb-12 md:pt-12 md:pb-16 px-6 overflow-hidden',
   },
   styles: `
-    @keyframes fade-up {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .animate-fade-up-actions {
-      animation: fade-up 0.4s ease-out 0.12s both;
-      will-change: transform, opacity;
+    /* Stagger : CTAs apparaissent juste après le hero text (delay-3 = 0.24s) */
+    .delay-3 {
+      animation-delay: 0.24s;
     }
 
     .hero-ambient::before,
@@ -64,12 +53,6 @@ import type { HeroData } from '../domain';
         transparent
       );
     }
-
-    @media (prefers-reduced-motion: reduce) {
-      .animate-fade-up-actions {
-        animation: none;
-      }
-    }
   `,
   template: `
     <div class="hero-ambient absolute inset-0" aria-hidden="true"></div>
@@ -80,7 +63,7 @@ import type { HeroData } from '../domain';
 
         <!-- CTAs : 1 primary (action principale) + 1 outlined + 1 text (hiérarchie claire) -->
         <div
-          class="animate-fade-up-actions flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 mt-6 md:mt-8"
+          class="animate-fade-up delay-3 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 mt-6 md:mt-8"
         >
           <app-button severity="primary" size="large" (click)="goToProjects()">
             Voir les projets

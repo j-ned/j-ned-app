@@ -15,7 +15,7 @@ const PROJECTS_SECTION = {
   selector: 'app-home-projects',
   imports: [ProjectCard, Button, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: { class: 'block animate-fade-up' },
   template: `
     <section id="projects">
       <header class="text-center mb-6 md:mb-8">

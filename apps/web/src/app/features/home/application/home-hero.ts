@@ -16,27 +16,12 @@ import type { HeroData } from '../domain';
       text-shadow: 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent);
     }
 
-    @keyframes fade-up {
-      from {
-        opacity: 0;
-        transform: translateY(16px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .animate-fade-up {
-      animation: fade-up 0.4s ease-out both;
-      will-change: transform, opacity;
-    }
-
+    /* Stagger delays for the hero entrance sequence (animation defined globally in styles.css) */
     .delay-1 {
-      animation-delay: 0.05s;
+      animation-delay: 0.08s;
     }
     .delay-2 {
-      animation-delay: 0.1s;
+      animation-delay: 0.16s;
     }
   `,
   template: `
