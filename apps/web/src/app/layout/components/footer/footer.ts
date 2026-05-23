@@ -26,7 +26,7 @@ const SOCIALS: readonly SocialItem[] = [
   host: { class: 'block border-t border-nav-border bg-surface' },
   template: `
     <footer
-      class="max-w-7xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4"
+      class="page-container py-6 flex flex-col sm:flex-row items-center justify-between gap-4"
     >
       <a
         routerLink="/"

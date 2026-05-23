@@ -23,7 +23,7 @@ type ThemePreference = 'dark' | 'light';
   imports: [RouterLink, AppIcon, Button, Drawer],
   template: `
     <div class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-nav-border shadow-nav">
-      <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="page-container h-20 flex items-center justify-between">
         <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
           <div
             class="icon-tile bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"

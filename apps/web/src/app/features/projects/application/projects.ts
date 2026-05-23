@@ -24,7 +24,7 @@ const ITEMS_PER_PAGE = 3;
   imports: [ProjectCard, AppPaginator],
   template: `
     <main class="min-h-svh pt-20 pb-16">
-      <section class="container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <section class="page-container pt-8">
         <header class="mb-14 max-w-3xl">
           <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 text-foreground">
             Projets

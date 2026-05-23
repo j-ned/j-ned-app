@@ -22,7 +22,7 @@ import { AboutHighlights } from './about-highlights';
   ],
   template: `
     <main class="min-h-svh pt-20 pb-16">
-      <section class="container mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+      <section class="page-container mb-10">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8">
           <div class="lg:col-span-2">
             <app-about-hero />
@@ -33,7 +33,7 @@ import { AboutHighlights } from './about-highlights';
         </div>
       </section>
 
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="page-container">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           <aside class="lg:col-span-1 space-y-8">
             @defer (hydrate on viewport) {

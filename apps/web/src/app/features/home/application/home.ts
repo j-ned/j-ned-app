@@ -20,7 +20,7 @@ import { AppIcon } from '@shared/icons';
 
         <!-- Expertise Section -->
         <section class="w-full pt-2 pb-10 md:pt-4 md:pb-12" aria-labelledby="expertise-heading">
-          <div class="max-w-7xl mx-auto px-6">
+          <div class="page-container">
             <h2 id="expertise-heading" class="sr-only">Expertises</h2>
             @if (expertises().length > 0) {
               <ul class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8" role="list">
@@ -65,7 +65,7 @@ import { AppIcon } from '@shared/icons';
       <!-- Projects Section -->
       @defer (on viewport; prefetch on idle) {
         <section class="w-full py-8 md:py-12">
-          <div class="max-w-7xl mx-auto px-6">
+          <div class="page-container">
             <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
           </div>
         </section>

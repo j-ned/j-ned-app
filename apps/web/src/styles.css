@@ -84,6 +84,15 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
+ * Page container — unifie max-width et padding horizontal des sections.
+ * Utiliser sur tout block large qui doit s'aligner avec le header/footer.
+ * ---------------------------------------------------------------- */
+
+@utility page-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* ---------------------------------------------------------------- *
  * Icon tile utilities — conteneurs carrés pour icônes décoratives
  * Radius constant (rounded-xl), 3 tailles (sm 36, md 44, lg 56).
  * Combiner avec bg-primary/10, bg-accent/10 etc. selon le contexte.
