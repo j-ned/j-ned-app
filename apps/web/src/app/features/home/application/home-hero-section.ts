@@ -11,7 +11,7 @@ import type { HeroData } from '../domain';
   imports: [HomeHero, Button, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'relative block pt-6 pb-8 md:pt-8 md:pb-10 px-6 overflow-hidden',
+    class: 'relative block pt-8 pb-12 md:pt-12 md:pb-16 px-6 overflow-hidden',
   },
   styles: `
     @keyframes fade-up {

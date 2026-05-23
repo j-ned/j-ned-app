@@ -19,7 +19,7 @@ import { AppIcon } from '@shared/icons';
         <app-home-hero-section [hero]="bundle()?.hero ?? null" />
 
         <!-- Expertise Section -->
-        <section class="w-full pt-2 pb-10 md:pt-4 md:pb-12" aria-labelledby="expertise-heading">
+        <section class="w-full py-12 md:py-16" aria-labelledby="expertise-heading">
           <div class="page-container">
             <h2 id="expertise-heading" class="sr-only">Expertises</h2>
             @if (expertises().length > 0) {
@@ -64,15 +64,15 @@ import { AppIcon } from '@shared/icons';
 
       <!-- Projects Section -->
       @defer (on viewport; prefetch on idle) {
-        <section class="w-full py-8 md:py-12">
+        <section class="w-full py-16 md:py-20">
           <div class="page-container">
             <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
           </div>
         </section>
       } @placeholder {
-        <div class="block py-8 px-6 h-64"></div>
+        <div class="block py-16 md:py-20 px-6 h-64"></div>
       } @error {
-        <div class="block py-8 px-6 text-center text-muted text-sm">
+        <div class="block py-16 md:py-20 px-6 text-center text-muted text-sm">
           Impossible de charger cette section.
         </div>
       }
@@ -83,9 +83,9 @@ import { AppIcon } from '@shared/icons';
       @defer (hydrate on viewport) {
         <app-contact-form />
       } @placeholder {
-        <div class="block py-20 px-6 h-96"></div>
+        <div class="block py-16 md:py-20 px-6 h-96"></div>
       } @error {
-        <div class="block py-12 px-6 text-center text-muted text-sm">
+        <div class="block py-16 md:py-20 px-6 text-center text-muted text-sm">
           Impossible de charger cette section.
         </div>
       }
