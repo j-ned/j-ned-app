@@ -66,7 +66,7 @@ import { AppIcon } from '@shared/icons';
       <!-- Projects list -->
       <div class="space-y-3">
         @for (project of filteredProjects(); track project.id) {
-          <div class="bg-surface border border-foreground/10 rounded-xl shadow-sm overflow-hidden">
+          <div class="bg-surface border border-foreground/10 rounded-xl overflow-hidden">
             <!-- Card row -->
             <div class="flex items-center gap-4 px-5 py-4">
               <!-- Thumbnail -->

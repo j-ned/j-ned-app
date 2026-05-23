@@ -10,14 +10,14 @@ import { AppIcon } from '@shared/icons';
   imports: [NgOptimizedImage, AppIcon],
   host: {
     class:
-      'block bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg h-full',
+      'block bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 h-full',
   },
   template: `
     @let profile = profileInfo();
     @if (profile) {
       <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
         <figure
-          class="relative w-32 h-32 md:w-58 md:h-58 rounded-2xl overflow-hidden border-4 border-foreground/10 shadow-xl shrink-0"
+          class="relative w-32 h-32 md:w-58 md:h-58 rounded-2xl overflow-hidden border-4 border-foreground/10 shrink-0"
         >
           <img
             [ngSrc]="avatarUrl()"

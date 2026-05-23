@@ -75,7 +75,7 @@ type TwoFactorVerifyFormShape = {
           <button
             type="submit"
             [disabled]="form.invalid || isSubmitting()"
-            class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-primary-bg to-accent text-white font-medium hover:from-primary-bg/90 hover:to-accent/90 hover:-translate-y-0.5 shadow-lg shadow-accent/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300"
+            class="btn-primary w-full"
           >
             @if (isSubmitting()) {
               Vérification...

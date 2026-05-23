@@ -12,7 +12,7 @@ import { ToastStore, FileDropzone } from '@shared/ui';
     <h1 class="text-2xl font-bold text-foreground mb-8">Gestion du CV</h1>
 
     @if (cv()) {
-      <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg mb-8">
+      <div class="bg-surface border border-foreground/10 rounded-2xl p-6 mb-8">
         <h2 class="text-lg font-semibold text-foreground mb-4">CV actuel</h2>
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
@@ -45,12 +45,12 @@ import { ToastStore, FileDropzone } from '@shared/ui';
         </div>
       </div>
     } @else {
-      <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg mb-8">
+      <div class="bg-surface border border-foreground/10 rounded-2xl p-6 mb-8">
         <p class="text-muted text-sm">Aucun CV uploadé</p>
       </div>
     }
 
-    <div class="bg-surface border border-foreground/10 rounded-2xl p-6 shadow-lg">
+    <div class="bg-surface border border-foreground/10 rounded-2xl p-6">
       <h2 class="text-lg font-semibold text-foreground mb-4">
         {{ cv() ? 'Mettre à jour le CV' : 'Upload nouveau CV' }}
       </h2>

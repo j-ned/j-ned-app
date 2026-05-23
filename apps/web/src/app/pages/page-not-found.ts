@@ -18,7 +18,7 @@ import { RouterLink } from '@angular/router';
       </p>
       <a
         routerLink="/"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-bg text-white font-semibold shadow hover:bg-primary-bg/90 transition-colors"
+        class="btn-primary gap-2"
       >
         Retour à l'accueil
       </a>

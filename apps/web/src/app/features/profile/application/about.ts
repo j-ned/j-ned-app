@@ -22,7 +22,7 @@ import { AboutHighlights } from './about-highlights';
   ],
   template: `
     <main
-      class="min-h-svh pt-20 pb-16 bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg h-full"
+      class="min-h-svh pt-20 pb-16 bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 h-full"
     >
       <section class="relative mb-10">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -58,7 +58,7 @@ import { AboutHighlights } from './about-highlights';
 
           <div class="lg:col-span-2 space-y-8">
             <div
-              class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg space-y-8"
+              class="bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 space-y-8"
             >
               @defer (hydrate on viewport) {
                 <app-about-journey />

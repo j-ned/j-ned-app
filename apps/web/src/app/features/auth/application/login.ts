@@ -22,9 +22,9 @@ type LoginForm = {
         <!-- Header -->
         <div class="text-center mb-8">
           <div
-            class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-br from-primary-bg to-accent shadow-lg shadow-accent/20 mb-4"
+            class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4"
           >
-            <app-icon name="shield" [size]="28" class="text-white" />
+            <app-icon name="shield" [size]="28" class="text-primary" />
           </div>
           <h1 class="text-xl font-bold text-foreground">Connexion Admin</h1>
           <p class="text-muted text-sm mt-1">Accédez au tableau de bord</p>
@@ -108,7 +108,7 @@ type LoginForm = {
             <button
               type="submit"
               [disabled]="form.invalid || isSubmitting()"
-              class="w-full py-2.5 px-4 mt-5 rounded-lg bg-linear-to-r from-primary-bg to-accent text-white text-sm font-medium hover:from-primary-bg/90 hover:to-accent/90 hover:-translate-y-0.5 shadow-lg shadow-accent/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-200"
+              class="btn-primary w-full mt-5"
             >
               @if (isSubmitting()) {
                 Connexion...

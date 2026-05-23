@@ -287,7 +287,7 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
               <button
                 type="submit"
                 [disabled]="form.invalid || isSubmitting()"
-                class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary-bg text-white font-semibold shadow-md hover:bg-primary-bg/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                class="btn-primary w-full gap-2"
               >
                 @if (isSubmitting()) {
                   <app-icon name="spinner" [size]="20" class="animate-spin" />

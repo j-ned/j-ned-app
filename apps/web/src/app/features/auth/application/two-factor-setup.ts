@@ -197,7 +197,7 @@ type DisableFormShape = {
           <button
             type="submit"
             [disabled]="pwdForm.invalid || isPwdLoading()"
-            class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-primary-bg to-accent text-white font-medium hover:from-primary-bg/90 hover:to-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            class="btn-primary w-full"
           >
             @if (isPwdLoading()) {
               Modification...
@@ -263,7 +263,7 @@ type DisableFormShape = {
                   <button
                     (click)="reconfigure()"
                     [disabled]="isTfaLoading()"
-                    class="flex-1 py-2.5 px-4 rounded-lg bg-linear-to-r from-primary-bg to-accent text-white font-medium hover:from-primary-bg/90 hover:to-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                    class="btn-primary flex-1"
                   >
                     Reconfigurer
                   </button>
@@ -440,7 +440,7 @@ type DisableFormShape = {
           <button
             (click)="generate()"
             [disabled]="isTfaLoading()"
-            class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-primary-bg to-accent text-white font-medium hover:from-primary-bg/90 hover:to-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            class="btn-primary w-full"
           >
             @if (isTfaLoading()) {
               Génération...
