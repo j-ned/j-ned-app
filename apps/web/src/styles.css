@@ -143,11 +143,11 @@ input:-webkit-autofill:focus {
  * ---------------------------------------------------------------- */
 
 @utility admin-table-shell {
-  @apply overflow-hidden rounded-xl border border-foreground/8 bg-foreground/2;
+  @apply overflow-x-auto rounded-xl border border-foreground/8 bg-foreground/2;
 }
 
 @utility admin-table {
-  @apply w-full border-collapse text-sm;
+  @apply w-full min-w-max border-collapse text-sm;
 }
 
 @utility admin-th {
