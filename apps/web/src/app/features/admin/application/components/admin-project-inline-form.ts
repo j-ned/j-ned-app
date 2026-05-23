@@ -24,30 +24,26 @@ import { FileDropzone } from '@shared/ui';
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <label for="title" class="block text-sm font-medium text-foreground mb-1.5">Titre</label>
+          <label for="title" class="form-label">Titre</label>
           <input
             id="title"
             type="text"
             formControlName="title"
             aria-required="true"
-            class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+            class="form-input"
           />
           @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
-            <span role="alert" class="text-status-error text-xs mt-1 block"
-              >Ce champ est obligatoire</span
-            >
+            <span role="alert" class="form-error">Ce champ est obligatoire</span>
           }
         </div>
 
         <div>
-          <label for="category" class="block text-sm font-medium text-foreground mb-1.5"
-            >Catégorie</label
-          >
+          <label for="category" class="form-label">Catégorie</label>
           <select
             id="category"
             formControlName="category"
             aria-required="true"
-            class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground focus:border-primary focus:outline-none transition-colors"
+            class="app-select w-full"
           >
             <option value="" disabled>Choisir une catégorie</option>
             @for (cat of categories; track cat) {
@@ -55,15 +51,13 @@ import { FileDropzone } from '@shared/ui';
             }
           </select>
           @if (form.controls.category.touched && form.controls.category.errors?.['required']) {
-            <span role="alert" class="text-status-error text-xs mt-1 block"
-              >Ce champ est obligatoire</span
-            >
+            <span role="alert" class="form-error">Ce champ est obligatoire</span>
           }
         </div>
       </div>
 
       <div>
-        <span class="block text-sm font-medium text-foreground mb-1.5">Tags</span>
+        <span class="form-label">Tags</span>
         <div class="flex flex-wrap gap-2">
           @for (tag of availableTags; track tag) {
             <button
@@ -83,18 +77,16 @@ import { FileDropzone } from '@shared/ui';
       </div>
 
       <div>
-        <label for="description" class="block text-sm font-medium text-foreground mb-1.5"
-          >Description</label
-        >
+        <label for="description" class="form-label">Description</label>
         <textarea
           id="description"
           formControlName="description"
           rows="3"
           aria-required="true"
-          class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
+          class="form-textarea"
         ></textarea>
         @if (form.controls.description.touched && form.controls.description.errors?.['required']) {
-          <span role="alert" class="text-status-error text-xs mt-1 block">Ce champ est obligatoire</span>
+          <span role="alert" class="form-error">Ce champ est obligatoire</span>
         }
       </div>
 
@@ -111,51 +103,23 @@ import { FileDropzone } from '@shared/ui';
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <label for="liveUrl" class="block text-sm font-medium text-foreground mb-1.5"
-            >URL du site</label
-          >
-          <input
-            id="liveUrl"
-            type="text"
-            formControlName="liveUrl"
-            class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="liveUrl" class="form-label">URL du site</label>
+          <input id="liveUrl" type="text" formControlName="liveUrl" class="form-input" />
         </div>
 
         <div>
-          <label for="repoUrl" class="block text-sm font-medium text-foreground mb-1.5"
-            >URL du dépôt</label
-          >
-          <input
-            id="repoUrl"
-            type="text"
-            formControlName="repoUrl"
-            class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="repoUrl" class="form-label">URL du dépôt</label>
+          <input id="repoUrl" type="text" formControlName="repoUrl" class="form-input" />
         </div>
 
         <div>
-          <label for="repoUrlFront" class="block text-sm font-medium text-foreground mb-1.5"
-            >URL dépôt frontend</label
-          >
-          <input
-            id="repoUrlFront"
-            type="text"
-            formControlName="repoUrlFront"
-            class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="repoUrlFront" class="form-label">URL dépôt frontend</label>
+          <input id="repoUrlFront" type="text" formControlName="repoUrlFront" class="form-input" />
         </div>
 
         <div>
-          <label for="repoUrlBack" class="block text-sm font-medium text-foreground mb-1.5"
-            >URL dépôt backend</label
-          >
-          <input
-            id="repoUrlBack"
-            type="text"
-            formControlName="repoUrlBack"
-            class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
-          />
+          <label for="repoUrlBack" class="form-label">URL dépôt backend</label>
+          <input id="repoUrlBack" type="text" formControlName="repoUrlBack" class="form-input" />
         </div>
       </div>
 

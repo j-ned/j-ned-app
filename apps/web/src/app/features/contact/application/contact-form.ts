@@ -19,11 +19,6 @@ type ContactFormGroup = {
   message: FormControl<string>;
 };
 
-const INPUT_BASE =
-  'w-full py-2.5 bg-foreground/5 border rounded-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors';
-const INPUT_PADDED = `${INPUT_BASE} pl-10 pr-4`;
-const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
-
 @Component({
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -181,10 +176,8 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
             <form [formGroup]="form" (ngSubmit)="submitContact()" class="space-y-6">
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
-                <div class="flex flex-col gap-1.5">
-                  <label for="name" class="text-sm font-medium text-foreground">
-                    Nom complet *
-                  </label>
+                <div>
+                  <label for="name" class="form-label">Nom complet *</label>
                   <div class="relative">
                     <app-icon name="user" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                     <input
@@ -196,22 +189,22 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                       aria-required="true"
                       [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
                       [attr.aria-describedby]="form.controls.name.touched && form.controls.name.invalid ? 'contact-name-error' : null"
-                      [class]="inputClass('name')"
+                      class="form-input pl-9"
                     />
                   </div>
                   @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-                    <p id="contact-name-error" role="alert" class="text-xs text-status-error">Le nom est obligatoire</p>
+                    <p id="contact-name-error" role="alert" class="form-error">Le nom est obligatoire</p>
                   } @else if (
                     form.controls.name.touched && form.controls.name.errors?.['minlength']
                   ) {
-                    <p id="contact-name-error" role="alert" class="text-xs text-status-error">
+                    <p id="contact-name-error" role="alert" class="form-error">
                       Le nom doit contenir au moins 2 caractères
                     </p>
                   }
                 </div>
 
-                <div class="flex flex-col gap-1.5">
-                  <label for="email" class="text-sm font-medium text-foreground">Email *</label>
+                <div>
+                  <label for="email" class="form-label">Email *</label>
                   <div class="relative">
                     <app-icon name="envelope" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                     <input
@@ -223,22 +216,22 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                       aria-required="true"
                       [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
                       [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'contact-email-error' : null"
-                      [class]="inputClass('email')"
+                      class="form-input pl-9"
                     />
                   </div>
                   @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-                    <p id="contact-email-error" role="alert" class="text-xs text-status-error">L'email est obligatoire</p>
+                    <p id="contact-email-error" role="alert" class="form-error">L'email est obligatoire</p>
                   } @else if (
                     form.controls.email.touched && form.controls.email.errors?.['pattern']
                   ) {
-                    <p id="contact-email-error" role="alert" class="text-xs text-status-error">
+                    <p id="contact-email-error" role="alert" class="form-error">
                       Le format de l'email est invalide
                     </p>
                   }
                 </div>
               </fieldset>
-              <div class="flex flex-col gap-1.5">
-                <label for="subject" class="text-sm font-medium text-foreground">Sujet *</label>
+              <div>
+                <label for="subject" class="form-label">Sujet *</label>
                 <div class="relative">
                   <app-icon name="pencil" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                   <input
@@ -249,21 +242,21 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     aria-required="true"
                     [attr.aria-invalid]="form.controls.subject.touched && form.controls.subject.invalid"
                     [attr.aria-describedby]="form.controls.subject.touched && form.controls.subject.invalid ? 'contact-subject-error' : null"
-                    [class]="inputClass('subject')"
+                    class="form-input pl-9"
                   />
                 </div>
                 @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
-                  <p id="contact-subject-error" role="alert" class="text-xs text-status-error">Le sujet est obligatoire</p>
+                  <p id="contact-subject-error" role="alert" class="form-error">Le sujet est obligatoire</p>
                 } @else if (
                   form.controls.subject.touched && form.controls.subject.errors?.['minlength']
                 ) {
-                  <p id="contact-subject-error" role="alert" class="text-xs text-status-error">
+                  <p id="contact-subject-error" role="alert" class="form-error">
                     Le sujet doit contenir au moins 3 caractères
                   </p>
                 }
               </div>
-              <div class="flex flex-col gap-1.5">
-                <label for="message" class="text-sm font-medium text-foreground">Message *</label>
+              <div>
+                <label for="message" class="form-label">Message *</label>
                 <textarea
                   id="message"
                   formControlName="message"
@@ -272,14 +265,14 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                   aria-required="true"
                   [attr.aria-invalid]="form.controls.message.touched && form.controls.message.invalid"
                   [attr.aria-describedby]="form.controls.message.touched && form.controls.message.invalid ? 'contact-message-error' : null"
-                  [class]="inputClass('message', 'textarea')"
+                  class="form-textarea"
                 ></textarea>
                 @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
-                  <p id="contact-message-error" role="alert" class="text-xs text-status-error">Le message est obligatoire</p>
+                  <p id="contact-message-error" role="alert" class="form-error">Le message est obligatoire</p>
                 } @else if (
                   form.controls.message.touched && form.controls.message.errors?.['minlength']
                 ) {
-                  <p id="contact-message-error" role="alert" class="text-xs text-status-error">
+                  <p id="contact-message-error" role="alert" class="form-error">
                     Le message doit contenir au moins 10 caractères
                   </p>
                 }
@@ -332,19 +325,6 @@ export class ContactForm {
       validators: [Validators.required, Validators.minLength(10)],
     }),
   });
-
-  protected inputClass(
-    controlName: keyof ContactFormGroup,
-    variant: 'input' | 'textarea' = 'input',
-  ): string {
-    const control = this.form.controls[controlName];
-    const hasError = control.touched && control.invalid;
-    const borderClass = hasError
-      ? 'border-status-error/60 focus:ring-status-error/40'
-      : 'border-foreground/10 focus:border-primary/50';
-    const base = variant === 'textarea' ? TEXTAREA_PADDED : INPUT_PADDED;
-    return `${base} ${borderClass}`;
-  }
 
   submitContact(): void {
     if (this.form.invalid) {

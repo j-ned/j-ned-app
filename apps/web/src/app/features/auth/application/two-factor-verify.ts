@@ -42,9 +42,7 @@ type TwoFactorVerifyFormShape = {
 
         <form [formGroup]="form" (ngSubmit)="verifyCode()" class="space-y-5">
           <div>
-            <label for="code" class="block text-sm font-medium text-foreground mb-1.5"
-              >Code TOTP</label
-            >
+            <label for="code" class="form-label">Code TOTP</label>
             <input
               id="code"
               type="text"
@@ -58,15 +56,15 @@ type TwoFactorVerifyFormShape = {
               [attr.aria-describedby]="
                 form.controls.code.touched && form.controls.code.invalid ? 'twofa-code-error' : null
               "
-              class="w-full px-4 py-3 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground text-center text-2xl tracking-[0.5em] font-mono placeholder-muted focus:border-primary focus:outline-none transition-colors"
+              class="form-input text-center text-2xl tracking-[0.5em] font-mono"
               placeholder="000000"
             />
             @if (form.controls.code.touched && form.controls.code.errors?.['required']) {
-              <p id="twofa-code-error" role="alert" class="text-status-error text-xs mt-1 block">
+              <p id="twofa-code-error" role="alert" class="form-error">
                 Le code est obligatoire
               </p>
             } @else if (form.controls.code.touched && form.controls.code.errors?.['pattern']) {
-              <p id="twofa-code-error" role="alert" class="text-status-error text-xs mt-1 block">
+              <p id="twofa-code-error" role="alert" class="form-error">
                 Le code doit contenir 6 chiffres
               </p>
             }

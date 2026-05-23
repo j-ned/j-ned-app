@@ -67,9 +67,7 @@ type DisableFormShape = {
 
         <form [formGroup]="pwdForm" (ngSubmit)="changePassword()" class="space-y-4">
           <div>
-            <label for="current-pw" class="block text-sm font-medium text-foreground mb-1.5">
-              Mot de passe actuel
-            </label>
+            <label for="current-pw" class="form-label">Mot de passe actuel</label>
             <input
               id="current-pw"
               type="password"
@@ -84,27 +82,21 @@ type DisableFormShape = {
                   ? 'twofa-setup-current-pw-error'
                   : null
               "
-              class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+              class="form-input"
               placeholder="Mot de passe actuel"
             />
             @if (
               pwdForm.controls.currentPassword.touched &&
               pwdForm.controls.currentPassword.errors?.['required']
             ) {
-              <p
-                id="twofa-setup-current-pw-error"
-                role="alert"
-                class="text-status-error text-xs mt-1 block"
-              >
+              <p id="twofa-setup-current-pw-error" role="alert" class="form-error">
                 Champ obligatoire
               </p>
             }
           </div>
 
           <div>
-            <label for="new-pw" class="block text-sm font-medium text-foreground mb-1.5">
-              Nouveau mot de passe
-            </label>
+            <label for="new-pw" class="form-label">Nouveau mot de passe</label>
             <input
               id="new-pw"
               type="password"
@@ -119,21 +111,21 @@ type DisableFormShape = {
                   ? 'twofa-setup-new-pw-error'
                   : null
               "
-              class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+              class="form-input"
               placeholder="Nouveau mot de passe"
             />
             @if (
               pwdForm.controls.newPassword.touched &&
               pwdForm.controls.newPassword.errors?.['required']
             ) {
-              <p id="twofa-setup-new-pw-error" role="alert" class="text-status-error text-xs mt-1 block">
+              <p id="twofa-setup-new-pw-error" role="alert" class="form-error">
                 Champ obligatoire
               </p>
             } @else if (
               pwdForm.controls.newPassword.touched &&
               pwdForm.controls.newPassword.errors?.['minlength']
             ) {
-              <p id="twofa-setup-new-pw-error" role="alert" class="text-status-error text-xs mt-1 block">
+              <p id="twofa-setup-new-pw-error" role="alert" class="form-error">
                 Minimum
                 {{ pwdForm.controls.newPassword.errors?.['minlength'].requiredLength }} caractères
                 requis
@@ -142,16 +134,14 @@ type DisableFormShape = {
               pwdForm.controls.newPassword.touched &&
               pwdForm.controls.newPassword.errors?.['pattern']
             ) {
-              <p id="twofa-setup-new-pw-error" role="alert" class="text-status-error text-xs mt-1 block">
+              <p id="twofa-setup-new-pw-error" role="alert" class="form-error">
                 Majuscule, minuscule, chiffre et caractère spécial requis
               </p>
             }
           </div>
 
           <div>
-            <label for="confirm-pw" class="block text-sm font-medium text-foreground mb-1.5">
-              Confirmer le mot de passe
-            </label>
+            <label for="confirm-pw" class="form-label">Confirmer le mot de passe</label>
             <input
               id="confirm-pw"
               type="password"
@@ -168,27 +158,19 @@ type DisableFormShape = {
                   ? 'twofa-setup-confirm-pw-error'
                   : null
               "
-              class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+              class="form-input"
               placeholder="Confirmer le mot de passe"
             />
             @if (
               pwdForm.controls.confirmPassword.touched &&
               pwdForm.controls.confirmPassword.errors?.['required']
             ) {
-              <p
-                id="twofa-setup-confirm-pw-error"
-                role="alert"
-                class="text-status-error text-xs mt-1 block"
-              >
+              <p id="twofa-setup-confirm-pw-error" role="alert" class="form-error">
                 Champ obligatoire
               </p>
             }
             @if (pwdForm.controls.confirmPassword.touched && pwdForm.hasError('mismatch')) {
-              <p
-                id="twofa-setup-confirm-pw-error"
-                role="alert"
-                class="text-status-error text-xs mt-1 block"
-              >
+              <p id="twofa-setup-confirm-pw-error" role="alert" class="form-error">
                 Les mots de passe ne correspondent pas
               </p>
             }
@@ -271,12 +253,7 @@ type DisableFormShape = {
               } @else {
                 <form [formGroup]="disableForm" (ngSubmit)="disableTwoFactor()" class="space-y-4">
                   <div>
-                    <label
-                      for="disable-pw"
-                      class="block text-sm font-medium text-foreground mb-1.5"
-                    >
-                      Mot de passe
-                    </label>
+                    <label for="disable-pw" class="form-label">Mot de passe</label>
                     <input
                       id="disable-pw"
                       type="password"
@@ -293,18 +270,14 @@ type DisableFormShape = {
                           ? 'twofa-setup-disable-pw-error'
                           : null
                       "
-                      class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                      class="form-input"
                       placeholder="Votre mot de passe"
                     />
                     @if (
                       disableForm.controls.password.touched &&
                       disableForm.controls.password.errors?.['required']
                     ) {
-                      <p
-                        id="twofa-setup-disable-pw-error"
-                        role="alert"
-                        class="text-status-error text-xs mt-1 block"
-                      >
+                      <p id="twofa-setup-disable-pw-error" role="alert" class="form-error">
                         Ce champ est obligatoire
                       </p>
                     }
@@ -369,9 +342,7 @@ type DisableFormShape = {
 
             <form [formGroup]="tfaForm" (ngSubmit)="enable()" class="space-y-4">
               <div>
-                <label for="totp-code" class="block text-sm font-medium text-foreground mb-1.5">
-                  Code de vérification
-                </label>
+                <label for="totp-code" class="form-label">Code de vérification</label>
                 <input
                   id="totp-code"
                   type="text"
@@ -389,17 +360,17 @@ type DisableFormShape = {
                       ? 'twofa-setup-code-error'
                       : null
                   "
-                  class="w-full px-4 py-3 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground text-center text-2xl tracking-[0.5em] font-mono placeholder-muted focus:border-primary focus:outline-none transition-colors"
+                  class="form-input text-center text-2xl tracking-[0.5em] font-mono"
                   placeholder="000000"
                 />
                 @if (tfaForm.controls.code.touched && tfaForm.controls.code.errors?.['required']) {
-                  <p id="twofa-setup-code-error" role="alert" class="text-status-error text-xs mt-1 block">
+                  <p id="twofa-setup-code-error" role="alert" class="form-error">
                     Ce champ est obligatoire
                   </p>
                 } @else if (
                   tfaForm.controls.code.touched && tfaForm.controls.code.errors?.['pattern']
                 ) {
-                  <p id="twofa-setup-code-error" role="alert" class="text-status-error text-xs mt-1 block">
+                  <p id="twofa-setup-code-error" role="alert" class="form-error">
                     Le code doit contenir 6 chiffres
                   </p>
                 }

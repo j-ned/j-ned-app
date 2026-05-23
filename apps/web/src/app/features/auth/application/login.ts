@@ -48,7 +48,7 @@ type LoginForm = {
 
               <!-- Email -->
               <div>
-                <label for="email" class="block text-xs font-medium text-muted mb-1">Email</label>
+                <label for="email" class="form-label">Email</label>
                 <div class="relative">
                   <app-icon name="envelope" [size]="16" class="text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -59,22 +59,20 @@ type LoginForm = {
                     aria-required="true"
                     [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
                     [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'login-email-error' : null"
-                    class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/15 text-foreground text-sm placeholder-muted/60 focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all"
+                    class="form-input pl-10"
                     placeholder="Votre email"
                   />
                 </div>
                 @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-                  <p id="login-email-error" role="alert" class="text-status-error text-xs mt-1 block">L'email est obligatoire</p>
+                  <p id="login-email-error" role="alert" class="form-error">L'email est obligatoire</p>
                 } @else if (form.controls.email.touched && form.controls.email.errors?.['email']) {
-                  <p id="login-email-error" role="alert" class="text-status-error text-xs mt-1 block">L'email n'est pas valide</p>
+                  <p id="login-email-error" role="alert" class="form-error">L'email n'est pas valide</p>
                 }
               </div>
 
               <!-- Password -->
               <div class="mt-3">
-                <label for="password" class="block text-xs font-medium text-muted mb-1"
-                  >Mot de passe</label
-                >
+                <label for="password" class="form-label">Mot de passe</label>
                 <div class="relative">
                   <app-icon name="lock" [size]="16" class="text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -85,20 +83,18 @@ type LoginForm = {
                     aria-required="true"
                     [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
                     [attr.aria-describedby]="form.controls.password.touched && form.controls.password.invalid ? 'login-password-error' : null"
-                    class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/15 text-foreground text-sm placeholder-muted/60 focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all"
+                    class="form-input pl-10"
                     placeholder="Votre mot de passe"
                   />
                 </div>
                 @if (
                   form.controls.password.touched && form.controls.password.errors?.['required']
                 ) {
-                  <p id="login-password-error" role="alert" class="text-status-error text-xs mt-1 block"
-                    >Le mot de passe est obligatoire</p
-                  >
+                  <p id="login-password-error" role="alert" class="form-error">Le mot de passe est obligatoire</p>
                 } @else if (
                   form.controls.password.touched && form.controls.password.errors?.['minlength']
                 ) {
-                  <p id="login-password-error" role="alert" class="text-status-error text-xs mt-1 block">
+                  <p id="login-password-error" role="alert" class="form-error">
                     Le mot de passe doit contenir au moins 6 caractères
                   </p>
                 }
