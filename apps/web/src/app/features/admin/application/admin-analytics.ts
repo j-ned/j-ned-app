@@ -39,10 +39,10 @@ type DateRangeOption = {
         >
           <span class="relative flex items-center justify-center">
             <span
-              class="absolute w-2 h-2 rounded-full bg-green-500 animate-ping"
+              class="absolute w-2 h-2 rounded-full bg-status-success animate-ping"
               aria-hidden="true"
             ></span>
-            <span class="relative w-2 h-2 rounded-full bg-green-500" aria-hidden="true"></span>
+            <span class="relative w-2 h-2 rounded-full bg-status-success" aria-hidden="true"></span>
           </span>
           <span class="text-xs font-medium text-foreground">
             {{ activeVisitors() }}
@@ -85,7 +85,7 @@ type DateRangeOption = {
 
       <article class="bg-surface border border-foreground/10 rounded-xl p-5">
         <div class="flex items-center gap-2 mb-2">
-          <app-icon name="eye" [size]="20" class="text-indigo-500" />
+          <app-icon name="eye" [size]="20" class="text-primary" />
           <span class="text-xs text-muted uppercase tracking-wider">Pages vues</span>
         </div>
         @if (overviewResource.isLoading()) {
@@ -100,7 +100,7 @@ type DateRangeOption = {
 
       <article class="bg-surface border border-foreground/10 rounded-xl p-5">
         <div class="flex items-center gap-2 mb-2">
-          <app-icon name="arrow-right-arrow-left" [size]="20" class="text-orange-500" />
+          <app-icon name="arrow-right-arrow-left" [size]="20" class="text-status-warn" />
           <span class="text-xs text-muted uppercase tracking-wider">Taux de rebond</span>
         </div>
         @if (overviewResource.isLoading()) {
@@ -115,7 +115,7 @@ type DateRangeOption = {
 
       <article class="bg-surface border border-foreground/10 rounded-xl p-5">
         <div class="flex items-center gap-2 mb-2">
-          <app-icon name="clock" [size]="20" class="text-green-500" />
+          <app-icon name="clock" [size]="20" class="text-status-success" />
           <span class="text-xs text-muted uppercase tracking-wider">Durée moyenne</span>
         </div>
         @if (overviewResource.isLoading()) {
@@ -133,11 +133,11 @@ type DateRangeOption = {
         <h2 class="text-base font-semibold text-foreground">Évolution des visites</h2>
         <div class="flex items-center gap-4 text-xs">
           <span class="flex items-center gap-2 text-muted">
-            <span class="w-3 h-0.5 rounded bg-indigo-500" aria-hidden="true"></span>
+            <span class="w-3 h-0.5 rounded bg-primary" aria-hidden="true"></span>
             Visiteurs
           </span>
           <span class="flex items-center gap-2 text-muted">
-            <span class="w-3 h-0.5 rounded bg-pink-400" aria-hidden="true"></span>
+            <span class="w-3 h-0.5 rounded bg-accent" aria-hidden="true"></span>
             Pages vues
           </span>
         </div>
@@ -186,7 +186,7 @@ type DateRangeOption = {
 
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center gap-2 mb-4">
-          <app-icon name="external-link" [size]="20" class="text-indigo-500" />
+          <app-icon name="external-link" [size]="20" class="text-primary" />
           <h2 class="text-base font-semibold text-foreground">Provenance du trafic</h2>
         </header>
         @if (referrersResource.isLoading()) {
@@ -209,7 +209,7 @@ type DateRangeOption = {
                 </div>
                 <div class="h-1 rounded-full bg-foreground/5 overflow-hidden">
                   <div
-                    class="h-full bg-indigo-500 rounded-full"
+                    class="h-full bg-primary rounded-full"
                     [style.width.%]="barWidth(row.count, referrersMax())"
                   ></div>
                 </div>
@@ -224,7 +224,7 @@ type DateRangeOption = {
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center gap-2 mb-4">
-          <app-icon name="globe" [size]="20" class="text-cyan-500" />
+          <app-icon name="globe" [size]="20" class="text-primary" />
           <h2 class="text-base font-semibold text-foreground">Navigateurs</h2>
         </header>
         @if (browsersResource.isLoading()) {
@@ -243,7 +243,7 @@ type DateRangeOption = {
 
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center gap-2 mb-4">
-          <app-icon name="desktop" [size]="20" class="text-purple-500" />
+          <app-icon name="desktop" [size]="20" class="text-accent" />
           <h2 class="text-base font-semibold text-foreground">Systèmes d'exploitation</h2>
         </header>
         @if (osResource.isLoading()) {
@@ -257,7 +257,7 @@ type DateRangeOption = {
 
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center gap-2 mb-4">
-          <app-icon name="map-marker" [size]="20" class="text-green-500" />
+          <app-icon name="map-marker" [size]="20" class="text-status-success" />
           <h2 class="text-base font-semibold text-foreground">Pays</h2>
         </header>
         @if (countriesResource.isLoading()) {
@@ -278,7 +278,7 @@ type DateRangeOption = {
                 </div>
                 <div class="h-1 rounded-full bg-foreground/5 overflow-hidden">
                   <div
-                    class="h-full bg-green-500 rounded-full"
+                    class="h-full bg-status-success rounded-full"
                     [style.width.%]="barWidth(row.count, countriesMax())"
                   ></div>
                 </div>
@@ -294,7 +294,7 @@ type DateRangeOption = {
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <header class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
-            <app-icon name="desktop" [size]="20" class="text-green-500" />
+            <app-icon name="desktop" [size]="20" class="text-status-success" />
             <h2 class="text-base font-semibold text-foreground">Projets cliqués</h2>
           </div>
           <app-tag [value]="(overview()?.projectClicks ?? 0) + ' clics'" severity="success" />
@@ -351,9 +351,9 @@ type DateRangeOption = {
         class="bg-surface border border-foreground/10 rounded-xl p-6 flex flex-col justify-center items-center text-center"
       >
         <div
-          class="w-14 h-14 rounded-xl bg-linear-to-br from-purple-500/20 to-purple-500/5 flex items-center justify-center mb-4"
+          class="w-14 h-14 rounded-xl bg-linear-to-br from-accent/20 to-accent/5 flex items-center justify-center mb-4"
         >
-          <app-icon name="download" [size]="24" class="text-purple-500" />
+          <app-icon name="download" [size]="24" class="text-accent" />
         </div>
         <h2 class="text-base font-semibold text-foreground mb-1">CV téléchargés</h2>
         @if (overviewResource.isLoading()) {

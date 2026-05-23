@@ -46,11 +46,11 @@ import { AppIcon } from '@shared/icons';
             <div class="flex items-center gap-2">
               <div class="relative flex h-2.5 w-2.5">
                 <span
-                  class="animate-ping motion-reduce:animate-none will-change-[transform,opacity] absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+                  class="animate-ping motion-reduce:animate-none will-change-[transform,opacity] absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"
                 ></span>
-                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-status-success"></span>
               </div>
-              <span class="text-green-500 font-medium">{{ profile.availabilityMessage }}</span>
+              <span class="text-status-success font-medium">{{ profile.availabilityMessage }}</span>
             </div>
           </div>
 

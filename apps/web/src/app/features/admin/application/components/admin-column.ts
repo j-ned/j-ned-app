@@ -264,7 +264,7 @@ export class AdminColBadge<T> extends AdminColumnBase<T> {
       case 'accent':
         return `${base} bg-accent/15 text-accent`;
       case 'success':
-        return `${base} bg-emerald-500/15 text-emerald-400`;
+        return `${base} bg-status-success/15 text-status-success`;
       case 'neutral':
       default:
         return `${base} bg-foreground/8 text-foreground/80`;

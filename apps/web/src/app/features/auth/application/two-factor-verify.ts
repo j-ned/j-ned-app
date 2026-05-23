@@ -34,7 +34,7 @@ type TwoFactorVerifyFormShape = {
 
         @if (errorMessage()) {
           <div
-            class="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center"
+            class="mb-6 p-3 rounded-lg bg-status-error/10 border border-status-error/30 text-status-error text-sm text-center"
           >
             {{ errorMessage() }}
           </div>

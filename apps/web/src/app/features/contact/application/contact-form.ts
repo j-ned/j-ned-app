@@ -99,9 +99,9 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
 
                 <div class="flex items-center gap-3 p-3 rounded-xl">
                   <div
-                    class="w-10 h-10 shrink-0 rounded-lg bg-linear-to-br from-green-500/20 to-green-500/5 flex items-center justify-center"
+                    class="w-10 h-10 shrink-0 rounded-lg bg-status-success/15 flex items-center justify-center"
                   >
-                    <app-icon name="map-marker" [size]="16" class="text-green-500" />
+                    <app-icon name="map-marker" [size]="16" class="text-status-success" />
                   </div>
                   <div>
                     <p class="text-xs text-muted">Localisation</p>
@@ -340,7 +340,7 @@ export class ContactForm {
     const control = this.form.controls[controlName];
     const hasError = control.touched && control.invalid;
     const borderClass = hasError
-      ? 'border-red-400/60 focus:ring-red-400/40'
+      ? 'border-status-error/60 focus:ring-status-error/40'
       : 'border-foreground/10 focus:border-primary/50';
     const base = variant === 'textarea' ? TEXTAREA_PADDED : INPUT_PADDED;
     return `${base} ${borderClass}`;

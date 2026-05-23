@@ -33,7 +33,7 @@ import { FileDropzone } from '@shared/ui';
             class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
           />
           @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
-            <span role="alert" class="text-red-400 text-xs mt-1 block"
+            <span role="alert" class="text-status-error text-xs mt-1 block"
               >Ce champ est obligatoire</span
             >
           }
@@ -55,7 +55,7 @@ import { FileDropzone } from '@shared/ui';
             }
           </select>
           @if (form.controls.category.touched && form.controls.category.errors?.['required']) {
-            <span role="alert" class="text-red-400 text-xs mt-1 block"
+            <span role="alert" class="text-status-error text-xs mt-1 block"
               >Ce champ est obligatoire</span
             >
           }
@@ -94,7 +94,7 @@ import { FileDropzone } from '@shared/ui';
           class="w-full px-4 py-2.5 rounded-lg bg-background border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors resize-y"
         ></textarea>
         @if (form.controls.description.touched && form.controls.description.errors?.['required']) {
-          <span role="alert" class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+          <span role="alert" class="text-status-error text-xs mt-1 block">Ce champ est obligatoire</span>
         }
       </div>
 

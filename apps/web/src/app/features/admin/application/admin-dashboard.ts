@@ -62,12 +62,12 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
         <li>
           <a
             routerLink="/admin/analytics"
-            class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-purple-500/40 hover:bg-purple-500/[0.02] transition-all"
+            class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-accent/40 hover:bg-accent/[0.02] transition-all"
           >
             <div
-              class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-purple-500/15 to-purple-500/5 flex items-center justify-center"
+              class="w-12 h-12 shrink-0 rounded-lg bg-linear-to-br from-accent/15 to-accent/5 flex items-center justify-center"
             >
-              <app-icon name="download" [size]="20" class="text-purple-500" />
+              <app-icon name="download" [size]="20" class="text-accent" />
             </div>
             <div class="flex-1 min-w-0">
               @if (cvDownloadRes.isLoading()) {
@@ -79,7 +79,7 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
               }
               <p class="text-xs text-muted mt-1">CV téléchargés</p>
             </div>
-            <app-icon name="arrow-right" [size]="20" class="text-muted group-hover:text-purple-500 group-hover:translate-x-0.5 transition-all" />
+            <app-icon name="arrow-right" [size]="20" class="text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
           </a>
         </li>
       </ul>

@@ -38,7 +38,7 @@ import { ToastStore, FileDropzone } from '@shared/ui';
           </a>
           <button
             (click)="deleteCv()"
-            class="px-4 py-2 text-xs rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+            class="px-4 py-2 text-xs rounded-lg bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
           >
             Supprimer le CV
           </button>

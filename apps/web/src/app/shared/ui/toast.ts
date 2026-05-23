@@ -12,32 +12,32 @@ type SeverityStyle = {
 
 const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
   success: {
-    container: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-400/60',
+    container: 'bg-status-success/10 border-status-success/40',
     icon: 'check-circle',
-    iconClass: 'text-emerald-600 dark:text-emerald-400',
-    summary: 'text-emerald-900 dark:text-emerald-100',
-    close: 'text-emerald-700/70 dark:text-emerald-300/70 hover:bg-emerald-500/10',
+    iconClass: 'text-status-success',
+    summary: 'text-status-success',
+    close: 'text-status-success/70 hover:bg-status-success/10',
   },
   info: {
-    container: 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 dark:border-blue-400/60',
+    container: 'bg-primary/10 border-primary/40',
     icon: 'info-circle',
-    iconClass: 'text-blue-600 dark:text-blue-400',
-    summary: 'text-blue-900 dark:text-blue-100',
-    close: 'text-blue-700/70 dark:text-blue-300/70 hover:bg-blue-500/10',
+    iconClass: 'text-primary',
+    summary: 'text-primary',
+    close: 'text-primary/70 hover:bg-primary/10',
   },
   warn: {
-    container: 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 dark:border-amber-400/60',
+    container: 'bg-status-warn/10 border-status-warn/40',
     icon: 'exclamation-triangle',
-    iconClass: 'text-amber-600 dark:text-amber-400',
-    summary: 'text-amber-900 dark:text-amber-100',
-    close: 'text-amber-700/70 dark:text-amber-300/70 hover:bg-amber-500/10',
+    iconClass: 'text-status-warn',
+    summary: 'text-status-warn',
+    close: 'text-status-warn/70 hover:bg-status-warn/10',
   },
   error: {
-    container: 'bg-red-50 dark:bg-red-950/40 border-red-500 dark:border-red-400/60',
+    container: 'bg-status-error/10 border-status-error/40',
     icon: 'times-circle',
-    iconClass: 'text-red-600 dark:text-red-400',
-    summary: 'text-red-900 dark:text-red-100',
-    close: 'text-red-700/70 dark:text-red-300/70 hover:bg-red-500/10',
+    iconClass: 'text-status-error',
+    summary: 'text-status-error',
+    close: 'text-status-error/70 hover:bg-status-error/10',
   },
 };
 

@@ -29,16 +29,16 @@ describe('AppTag', () => {
 
   it('defaults to info severity classes when severity is omitted', () => {
     const span = renderTag({ value: 'X' });
-    expect(span.className).toContain('bg-blue-100');
-    expect(span.className).toContain('text-blue-700');
+    expect(span.className).toContain('bg-primary/10');
+    expect(span.className).toContain('text-primary');
   });
 
   const cases: ['info' | 'success' | 'warn' | 'error' | 'secondary', string][] = [
-    ['info', 'bg-blue-100'],
-    ['success', 'bg-green-100'],
-    ['warn', 'bg-amber-100'],
-    ['error', 'bg-red-100'],
-    ['secondary', 'bg-slate-100'],
+    ['info', 'bg-primary/10'],
+    ['success', 'bg-status-success/15'],
+    ['warn', 'bg-status-warn/15'],
+    ['error', 'bg-status-error/15'],
+    ['secondary', 'bg-foreground/8'],
   ];
 
   for (const [severity, expectedClass] of cases) {
