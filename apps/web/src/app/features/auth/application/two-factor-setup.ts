@@ -51,7 +51,7 @@ type DisableFormShape = {
 
         @if (pwdSuccess()) {
           <div
-            class="mb-6 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm text-center"
+            class="mb-6 p-3 rounded-lg bg-status-success/10 border border-status-success/30 text-status-success text-sm text-center"
           >
             {{ pwdSuccess() }}
           </div>
@@ -59,7 +59,7 @@ type DisableFormShape = {
 
         @if (pwdError()) {
           <div
-            class="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center"
+            class="mb-6 p-3 rounded-lg bg-status-error/10 border border-status-error/30 text-status-error text-sm text-center"
           >
             {{ pwdError() }}
           </div>
@@ -75,6 +75,15 @@ type DisableFormShape = {
               type="password"
               formControlName="currentPassword"
               autocomplete="current-password"
+              aria-required="true"
+              [attr.aria-invalid]="
+                pwdForm.controls.currentPassword.touched && pwdForm.controls.currentPassword.invalid
+              "
+              [attr.aria-describedby]="
+                pwdForm.controls.currentPassword.touched && pwdForm.controls.currentPassword.invalid
+                  ? 'twofa-setup-current-pw-error'
+                  : null
+              "
               class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
               placeholder="Mot de passe actuel"
             />
@@ -82,7 +91,13 @@ type DisableFormShape = {
               pwdForm.controls.currentPassword.touched &&
               pwdForm.controls.currentPassword.errors?.['required']
             ) {
-              <span class="text-red-400 text-xs mt-1 block">Champ obligatoire</span>
+              <p
+                id="twofa-setup-current-pw-error"
+                role="alert"
+                class="text-status-error text-xs mt-1 block"
+              >
+                Champ obligatoire
+              </p>
             }
           </div>
 
@@ -95,6 +110,15 @@ type DisableFormShape = {
               type="password"
               formControlName="newPassword"
               autocomplete="new-password"
+              aria-required="true"
+              [attr.aria-invalid]="
+                pwdForm.controls.newPassword.touched && pwdForm.controls.newPassword.invalid
+              "
+              [attr.aria-describedby]="
+                pwdForm.controls.newPassword.touched && pwdForm.controls.newPassword.invalid
+                  ? 'twofa-setup-new-pw-error'
+                  : null
+              "
               class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
               placeholder="Nouveau mot de passe"
             />
@@ -102,23 +126,25 @@ type DisableFormShape = {
               pwdForm.controls.newPassword.touched &&
               pwdForm.controls.newPassword.errors?.['required']
             ) {
-              <span class="text-red-400 text-xs mt-1 block">Champ obligatoire</span>
+              <p id="twofa-setup-new-pw-error" role="alert" class="text-status-error text-xs mt-1 block">
+                Champ obligatoire
+              </p>
             } @else if (
               pwdForm.controls.newPassword.touched &&
               pwdForm.controls.newPassword.errors?.['minlength']
             ) {
-              <span class="text-red-400 text-xs mt-1 block"
-                >Minimum
+              <p id="twofa-setup-new-pw-error" role="alert" class="text-status-error text-xs mt-1 block">
+                Minimum
                 {{ pwdForm.controls.newPassword.errors?.['minlength'].requiredLength }} caractères
-                requis</span
-              >
+                requis
+              </p>
             } @else if (
               pwdForm.controls.newPassword.touched &&
               pwdForm.controls.newPassword.errors?.['pattern']
             ) {
-              <span class="text-red-400 text-xs mt-1 block">
+              <p id="twofa-setup-new-pw-error" role="alert" class="text-status-error text-xs mt-1 block">
                 Majuscule, minuscule, chiffre et caractère spécial requis
-              </span>
+              </p>
             }
           </div>
 
@@ -131,6 +157,17 @@ type DisableFormShape = {
               type="password"
               formControlName="confirmPassword"
               autocomplete="new-password"
+              aria-required="true"
+              [attr.aria-invalid]="
+                pwdForm.controls.confirmPassword.touched &&
+                (pwdForm.controls.confirmPassword.invalid || pwdForm.hasError('mismatch'))
+              "
+              [attr.aria-describedby]="
+                pwdForm.controls.confirmPassword.touched &&
+                (pwdForm.controls.confirmPassword.invalid || pwdForm.hasError('mismatch'))
+                  ? 'twofa-setup-confirm-pw-error'
+                  : null
+              "
               class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
               placeholder="Confirmer le mot de passe"
             />
@@ -138,19 +175,29 @@ type DisableFormShape = {
               pwdForm.controls.confirmPassword.touched &&
               pwdForm.controls.confirmPassword.errors?.['required']
             ) {
-              <span class="text-red-400 text-xs mt-1 block">Champ obligatoire</span>
+              <p
+                id="twofa-setup-confirm-pw-error"
+                role="alert"
+                class="text-status-error text-xs mt-1 block"
+              >
+                Champ obligatoire
+              </p>
             }
-            @if (pwdForm.hasError('mismatch')) {
-              <span class="text-red-400 text-xs mt-1 block">
+            @if (pwdForm.controls.confirmPassword.touched && pwdForm.hasError('mismatch')) {
+              <p
+                id="twofa-setup-confirm-pw-error"
+                role="alert"
+                class="text-status-error text-xs mt-1 block"
+              >
                 Les mots de passe ne correspondent pas
-              </span>
+              </p>
             }
           </div>
 
           <button
             type="submit"
             [disabled]="pwdForm.invalid || isPwdLoading()"
-            class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-700 hover:to-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-primary-bg to-accent text-white font-medium hover:from-primary-bg/90 hover:to-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
             @if (isPwdLoading()) {
               Modification...
@@ -170,7 +217,7 @@ type DisableFormShape = {
 
         @if (tfaSuccess()) {
           <div
-            class="mb-6 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm text-center"
+            class="mb-6 p-3 rounded-lg bg-status-success/10 border border-status-success/30 text-status-success text-sm text-center"
           >
             {{ tfaSuccess() }}
           </div>
@@ -178,7 +225,7 @@ type DisableFormShape = {
 
         @if (tfaError()) {
           <div
-            class="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center"
+            class="mb-6 p-3 rounded-lg bg-status-error/10 border border-status-error/30 text-status-error text-sm text-center"
           >
             {{ tfaError() }}
           </div>
@@ -188,11 +235,11 @@ type DisableFormShape = {
           <!-- 2FA is enabled — show status and disable option -->
           <div class="space-y-6">
             <div
-              class="flex items-center gap-3 p-4 rounded-lg bg-green-500/10 border border-green-500/30"
+              class="flex items-center gap-3 p-4 rounded-lg bg-status-success/10 border border-status-success/30"
             >
-              <app-icon name="shield" [size]="20" class="text-green-400 shrink-0" />
+              <app-icon name="shield" [size]="20" class="text-status-success shrink-0" />
               <div>
-                <p class="text-green-400 font-medium text-sm">2FA activé</p>
+                <p class="text-status-success font-medium text-sm">2FA activé</p>
                 <p class="text-muted text-xs">
                   Votre compte est protégé par l'authentification à deux facteurs.
                 </p>
@@ -209,14 +256,14 @@ type DisableFormShape = {
                 <div class="flex gap-3">
                   <button
                     (click)="showDisableForm.set(true)"
-                    class="flex-1 py-2.5 px-4 rounded-lg border border-red-500/30 text-red-400 font-medium hover:bg-red-500/10 transition-colors"
+                    class="flex-1 py-2.5 px-4 rounded-lg border border-status-error/30 text-status-error font-medium hover:bg-status-error/10 transition-colors"
                   >
                     Désactiver le 2FA
                   </button>
                   <button
                     (click)="reconfigure()"
                     [disabled]="isTfaLoading()"
-                    class="flex-1 py-2.5 px-4 rounded-lg bg-linear-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-700 hover:to-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                    class="flex-1 py-2.5 px-4 rounded-lg bg-linear-to-r from-primary-bg to-accent text-white font-medium hover:from-primary-bg/90 hover:to-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                   >
                     Reconfigurer
                   </button>
@@ -235,6 +282,17 @@ type DisableFormShape = {
                       type="password"
                       formControlName="password"
                       autocomplete="current-password"
+                      aria-required="true"
+                      [attr.aria-invalid]="
+                        disableForm.controls.password.touched &&
+                        disableForm.controls.password.invalid
+                      "
+                      [attr.aria-describedby]="
+                        disableForm.controls.password.touched &&
+                        disableForm.controls.password.invalid
+                          ? 'twofa-setup-disable-pw-error'
+                          : null
+                      "
                       class="w-full px-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground placeholder-muted focus:border-primary focus:outline-none transition-colors"
                       placeholder="Votre mot de passe"
                     />
@@ -242,7 +300,13 @@ type DisableFormShape = {
                       disableForm.controls.password.touched &&
                       disableForm.controls.password.errors?.['required']
                     ) {
-                      <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+                      <p
+                        id="twofa-setup-disable-pw-error"
+                        role="alert"
+                        class="text-status-error text-xs mt-1 block"
+                      >
+                        Ce champ est obligatoire
+                      </p>
                     }
                   </div>
                   <div class="flex gap-3">
@@ -256,7 +320,7 @@ type DisableFormShape = {
                     <button
                       type="submit"
                       [disabled]="disableForm.invalid || isTfaLoading()"
-                      class="flex-1 py-2.5 px-4 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      class="flex-1 py-2.5 px-4 rounded-lg bg-status-error text-white font-medium hover:bg-status-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       @if (isTfaLoading()) {
                         Désactivation...
@@ -313,26 +377,38 @@ type DisableFormShape = {
                   type="text"
                   formControlName="code"
                   maxlength="6"
+                  pattern="[0-9]*"
                   autocomplete="one-time-code"
                   inputmode="numeric"
+                  aria-required="true"
+                  [attr.aria-invalid]="
+                    tfaForm.controls.code.touched && tfaForm.controls.code.invalid
+                  "
+                  [attr.aria-describedby]="
+                    tfaForm.controls.code.touched && tfaForm.controls.code.invalid
+                      ? 'twofa-setup-code-error'
+                      : null
+                  "
                   class="w-full px-4 py-3 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground text-center text-2xl tracking-[0.5em] font-mono placeholder-muted focus:border-primary focus:outline-none transition-colors"
                   placeholder="000000"
                 />
                 @if (tfaForm.controls.code.touched && tfaForm.controls.code.errors?.['required']) {
-                  <span class="text-red-400 text-xs mt-1 block">Ce champ est obligatoire</span>
+                  <p id="twofa-setup-code-error" role="alert" class="text-status-error text-xs mt-1 block">
+                    Ce champ est obligatoire
+                  </p>
                 } @else if (
                   tfaForm.controls.code.touched && tfaForm.controls.code.errors?.['pattern']
                 ) {
-                  <span class="text-red-400 text-xs mt-1 block"
-                    >Le code doit contenir 6 chiffres</span
-                  >
+                  <p id="twofa-setup-code-error" role="alert" class="text-status-error text-xs mt-1 block">
+                    Le code doit contenir 6 chiffres
+                  </p>
                 }
               </div>
 
               <button
                 type="submit"
                 [disabled]="tfaForm.invalid || isTfaLoading()"
-                class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-green-600 to-emerald-600 text-white font-medium hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                class="w-full py-2.5 px-4 rounded-lg bg-status-success hover:bg-status-success/90 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
               >
                 @if (isTfaLoading()) {
                   Activation...
@@ -350,11 +426,11 @@ type DisableFormShape = {
           </p>
 
           <div
-            class="flex items-center gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-6"
+            class="flex items-center gap-3 p-4 rounded-lg bg-status-warn/10 border border-status-warn/30 mb-6"
           >
-            <app-icon name="shield" [size]="20" class="text-amber-400 shrink-0" />
+            <app-icon name="shield" [size]="20" class="text-status-warn shrink-0" />
             <div>
-              <p class="text-amber-400 font-medium text-sm">2FA non activé</p>
+              <p class="text-status-warn font-medium text-sm">2FA non activé</p>
               <p class="text-muted text-xs">
                 Votre compte n'est pas protégé par l'authentification à deux facteurs.
               </p>
@@ -364,7 +440,7 @@ type DisableFormShape = {
           <button
             (click)="generate()"
             [disabled]="isTfaLoading()"
-            class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-700 hover:to-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-primary-bg to-accent text-white font-medium hover:from-primary-bg/90 hover:to-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
             @if (isTfaLoading()) {
               Génération...

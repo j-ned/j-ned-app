@@ -55,14 +55,18 @@ type LoginForm = {
                     id="email"
                     type="email"
                     formControlName="email"
+                    autocomplete="email"
+                    aria-required="true"
+                    [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+                    [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'login-email-error' : null"
                     class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/15 text-foreground text-sm placeholder-muted/60 focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all"
                     placeholder="Votre email"
                   />
                 </div>
                 @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-                  <span class="text-red-400 text-xs mt-1 block">L'email est obligatoire</span>
+                  <p id="login-email-error" role="alert" class="text-status-error text-xs mt-1 block">L'email est obligatoire</p>
                 } @else if (form.controls.email.touched && form.controls.email.errors?.['email']) {
-                  <span class="text-red-400 text-xs mt-1 block">L'email n'est pas valide</span>
+                  <p id="login-email-error" role="alert" class="text-status-error text-xs mt-1 block">L'email n'est pas valide</p>
                 }
               </div>
 
@@ -77,6 +81,10 @@ type LoginForm = {
                     id="password"
                     type="password"
                     formControlName="password"
+                    autocomplete="current-password"
+                    aria-required="true"
+                    [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+                    [attr.aria-describedby]="form.controls.password.touched && form.controls.password.invalid ? 'login-password-error' : null"
                     class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-foreground/5 border border-foreground/15 text-foreground text-sm placeholder-muted/60 focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all"
                     placeholder="Votre mot de passe"
                   />
@@ -84,15 +92,15 @@ type LoginForm = {
                 @if (
                   form.controls.password.touched && form.controls.password.errors?.['required']
                 ) {
-                  <span class="text-red-400 text-xs mt-1 block"
-                    >Le mot de passe est obligatoire</span
+                  <p id="login-password-error" role="alert" class="text-status-error text-xs mt-1 block"
+                    >Le mot de passe est obligatoire</p
                   >
                 } @else if (
                   form.controls.password.touched && form.controls.password.errors?.['minlength']
                 ) {
-                  <span class="text-red-400 text-xs mt-1 block">
+                  <p id="login-password-error" role="alert" class="text-status-error text-xs mt-1 block">
                     Le mot de passe doit contenir au moins 6 caractères
-                  </span>
+                  </p>
                 }
               </div>
             </fieldset>

@@ -100,17 +100,14 @@ import {
         </div>
       </div>
     } @else {
-      <div
-        role="button"
-        tabindex="0"
+      <button
+        type="button"
         [attr.aria-label]="label()"
         (click)="openPicker()"
-        (keydown.enter)="openPicker()"
-        (keydown.space)="onKeySpace($event)"
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave($event)"
         (drop)="onDrop($event)"
-        class="border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
+        class="block w-full border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
                flex flex-col items-center justify-center gap-2"
         [class]="
@@ -140,7 +137,7 @@ import {
         @if (helperText()) {
           <p class="text-xs text-muted/80">{{ helperText() }}</p>
         }
-      </div>
+      </button>
     }
   `,
   imports: [],
@@ -197,11 +194,6 @@ export class FileDropzone {
 
   protected openPicker(): void {
     this.fileInput().nativeElement.click();
-  }
-
-  protected onKeySpace(event: Event): void {
-    event.preventDefault();
-    this.openPicker();
   }
 
   protected onDragOver(event: DragEvent): void {

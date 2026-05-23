@@ -194,15 +194,17 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                       placeholder="Votre nom"
                       autocomplete="name"
                       aria-required="true"
+                      [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+                      [attr.aria-describedby]="form.controls.name.touched && form.controls.name.invalid ? 'contact-name-error' : null"
                       [class]="inputClass('name')"
                     />
                   </div>
                   @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-                    <p role="alert" class="text-xs text-red-400">Le nom est obligatoire</p>
+                    <p id="contact-name-error" role="alert" class="text-xs text-status-error">Le nom est obligatoire</p>
                   } @else if (
                     form.controls.name.touched && form.controls.name.errors?.['minlength']
                   ) {
-                    <p role="alert" class="text-xs text-red-400">
+                    <p id="contact-name-error" role="alert" class="text-xs text-status-error">
                       Le nom doit contenir au moins 2 caractères
                     </p>
                   }
@@ -219,15 +221,17 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                       placeholder="votre@email.com"
                       autocomplete="email"
                       aria-required="true"
+                      [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+                      [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'contact-email-error' : null"
                       [class]="inputClass('email')"
                     />
                   </div>
                   @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-                    <p role="alert" class="text-xs text-red-400">L'email est obligatoire</p>
+                    <p id="contact-email-error" role="alert" class="text-xs text-status-error">L'email est obligatoire</p>
                   } @else if (
                     form.controls.email.touched && form.controls.email.errors?.['pattern']
                   ) {
-                    <p role="alert" class="text-xs text-red-400">
+                    <p id="contact-email-error" role="alert" class="text-xs text-status-error">
                       Le format de l'email est invalide
                     </p>
                   }
@@ -243,15 +247,17 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                     formControlName="subject"
                     placeholder="Objet de votre message"
                     aria-required="true"
+                    [attr.aria-invalid]="form.controls.subject.touched && form.controls.subject.invalid"
+                    [attr.aria-describedby]="form.controls.subject.touched && form.controls.subject.invalid ? 'contact-subject-error' : null"
                     [class]="inputClass('subject')"
                   />
                 </div>
                 @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
-                  <p role="alert" class="text-xs text-red-400">Le sujet est obligatoire</p>
+                  <p id="contact-subject-error" role="alert" class="text-xs text-status-error">Le sujet est obligatoire</p>
                 } @else if (
                   form.controls.subject.touched && form.controls.subject.errors?.['minlength']
                 ) {
-                  <p role="alert" class="text-xs text-red-400">
+                  <p id="contact-subject-error" role="alert" class="text-xs text-status-error">
                     Le sujet doit contenir au moins 3 caractères
                   </p>
                 }
@@ -264,14 +270,16 @@ const TEXTAREA_PADDED = `${INPUT_BASE} px-4 resize-y`;
                   rows="6"
                   placeholder="Décrivez votre projet ou votre question..."
                   aria-required="true"
+                  [attr.aria-invalid]="form.controls.message.touched && form.controls.message.invalid"
+                  [attr.aria-describedby]="form.controls.message.touched && form.controls.message.invalid ? 'contact-message-error' : null"
                   [class]="inputClass('message', 'textarea')"
                 ></textarea>
                 @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
-                  <p role="alert" class="text-xs text-red-400">Le message est obligatoire</p>
+                  <p id="contact-message-error" role="alert" class="text-xs text-status-error">Le message est obligatoire</p>
                 } @else if (
                   form.controls.message.touched && form.controls.message.errors?.['minlength']
                 ) {
-                  <p role="alert" class="text-xs text-red-400">
+                  <p id="contact-message-error" role="alert" class="text-xs text-status-error">
                     Le message doit contenir au moins 10 caractères
                   </p>
                 }

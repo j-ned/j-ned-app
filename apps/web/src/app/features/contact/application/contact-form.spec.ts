@@ -116,4 +116,61 @@ describe('ContactForm', () => {
       expect(component.form.controls.message.errors?.['minlength']).toBeTruthy();
     });
   });
+
+  describe('Accessibility — aria attributes', () => {
+    function setupFixture(gateway: ContactGateway = makeGatewayStub()) {
+      TestBed.configureTestingModule({
+        providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
+      });
+      const fixture = TestBed.createComponent(ContactForm);
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('exposes aria-invalid=true and aria-describedby on email when touched and invalid', () => {
+      const fixture = setupFixture();
+      fixture.componentInstance.form.controls.email.markAsTouched();
+      fixture.componentInstance.form.controls.email.setValue('');
+      fixture.detectChanges();
+
+      const emailInput = fixture.nativeElement.querySelector('input#email') as HTMLInputElement;
+      expect(emailInput.getAttribute('aria-invalid')).toBe('true');
+      expect(emailInput.getAttribute('aria-describedby')).toBe('contact-email-error');
+
+      const errorMsg = fixture.nativeElement.querySelector('#contact-email-error');
+      expect(errorMsg).not.toBeNull();
+      expect(errorMsg!.getAttribute('role')).toBe('alert');
+    });
+
+    it('removes aria-describedby when field becomes valid', () => {
+      const fixture = setupFixture();
+      fixture.componentInstance.form.controls.email.markAsTouched();
+      fixture.componentInstance.form.controls.email.setValue('valid@example.com');
+      fixture.detectChanges();
+
+      const emailInput = fixture.nativeElement.querySelector('input#email') as HTMLInputElement;
+      expect(emailInput.getAttribute('aria-invalid')).toBe('false');
+      expect(emailInput.getAttribute('aria-describedby')).toBeNull();
+    });
+
+    it('applies aria attributes to all 4 fields: name, email, subject, message', () => {
+      const fixture = setupFixture();
+      const fieldNames = ['name', 'email', 'subject', 'message'] as const;
+      for (const fieldName of fieldNames) {
+        fixture.componentInstance.form.controls[fieldName].markAsTouched();
+        fixture.componentInstance.form.controls[fieldName].setValue('');
+      }
+      fixture.detectChanges();
+
+      for (const fieldName of fieldNames) {
+        const input = fixture.nativeElement.querySelector(`#${fieldName}`) as HTMLElement;
+        expect(input).not.toBeNull();
+        expect(input.getAttribute('aria-invalid')).toBe('true');
+        expect(input.getAttribute('aria-describedby')).toBe(`contact-${fieldName}-error`);
+
+        const errorMsg = fixture.nativeElement.querySelector(`#contact-${fieldName}-error`);
+        expect(errorMsg).not.toBeNull();
+      }
+    });
+  });
 });

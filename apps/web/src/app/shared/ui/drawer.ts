@@ -15,6 +15,9 @@ import { AppIcon } from '@shared/icons';
 
 type Position = 'left' | 'right';
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 @Component({
   selector: 'app-drawer',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,6 +41,8 @@ type Position = 'left' | 'right';
         [class]="panelClasses()"
         [class.animate-slide-right]="position() === 'right'"
         [class.animate-slide-left]="position() === 'left'"
+        (keydown.tab)="trapForward($event)"
+        (keydown.shift.tab)="trapBackward($event)"
       >
         @if (heading()) {
           <header class="flex items-center justify-between p-5 border-b border-foreground/10">
@@ -95,8 +100,9 @@ type Position = 'left' | 'right';
   `,
 })
 export class Drawer {
-  private readonly document = inject(DOCUMENT);
-  private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private readonly _document = inject(DOCUMENT);
+  private readonly _panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private _previousActiveElement: HTMLElement | null = null;
 
   readonly visible = model(false);
   readonly position = input<Position>('right');
@@ -112,13 +118,21 @@ export class Drawer {
 
   constructor() {
     effect(() => {
-      const body = this.document.body;
+      const body = this._document.body;
       if (!body) return;
-      body.style.overflow = this.visible() ? 'hidden' : '';
+      const isVisible = this.visible();
+      body.style.overflow = isVisible ? 'hidden' : '';
+
+      if (isVisible) {
+        this._previousActiveElement = this._document.activeElement as HTMLElement | null;
+      } else if (this._previousActiveElement) {
+        this._previousActiveElement.focus();
+        this._previousActiveElement = null;
+      }
     });
 
     afterRenderEffect(() => {
-      this.panel()?.nativeElement.focus();
+      this._panel()?.nativeElement.focus();
     });
   }
 
@@ -126,5 +140,39 @@ export class Drawer {
     if (this.visible()) {
       this.visible.set(false);
     }
+  }
+
+  protected trapForward(event: Event): void {
+    const focusables = this._focusableElements();
+    if (focusables.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (this._document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  protected trapBackward(event: Event): void {
+    const focusables = this._focusableElements();
+    if (focusables.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (this._document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    }
+  }
+
+  private _focusableElements(): HTMLElement[] {
+    const panel = this._panel()?.nativeElement;
+    if (!panel) return [];
+    return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
   }
 }

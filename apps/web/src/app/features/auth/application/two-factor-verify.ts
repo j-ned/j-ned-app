@@ -50,22 +50,32 @@ type TwoFactorVerifyFormShape = {
               type="text"
               formControlName="code"
               maxlength="6"
+              pattern="[0-9]*"
               autocomplete="one-time-code"
               inputmode="numeric"
+              aria-required="true"
+              [attr.aria-invalid]="form.controls.code.touched && form.controls.code.invalid"
+              [attr.aria-describedby]="
+                form.controls.code.touched && form.controls.code.invalid ? 'twofa-code-error' : null
+              "
               class="w-full px-4 py-3 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground text-center text-2xl tracking-[0.5em] font-mono placeholder-muted focus:border-primary focus:outline-none transition-colors"
               placeholder="000000"
             />
             @if (form.controls.code.touched && form.controls.code.errors?.['required']) {
-              <span class="text-red-400 text-xs mt-1 block">Le code est obligatoire</span>
+              <p id="twofa-code-error" role="alert" class="text-status-error text-xs mt-1 block">
+                Le code est obligatoire
+              </p>
             } @else if (form.controls.code.touched && form.controls.code.errors?.['pattern']) {
-              <span class="text-red-400 text-xs mt-1 block">Le code doit contenir 6 chiffres</span>
+              <p id="twofa-code-error" role="alert" class="text-status-error text-xs mt-1 block">
+                Le code doit contenir 6 chiffres
+              </p>
             }
           </div>
 
           <button
             type="submit"
             [disabled]="form.invalid || isSubmitting()"
-            class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-700 hover:to-violet-700 hover:-translate-y-0.5 shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300"
+            class="w-full py-2.5 px-4 rounded-lg bg-linear-to-r from-primary-bg to-accent text-white font-medium hover:from-primary-bg/90 hover:to-accent/90 hover:-translate-y-0.5 shadow-lg shadow-accent/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300"
           >
             @if (isSubmitting()) {
               Vérification...
