@@ -11,7 +11,7 @@ import { AppIcon } from '@shared/icons';
   host: { class: 'block h-full' },
   template: `
     <article
-      class="group relative bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-xl overflow-hidden hover:border-foreground/20 transition-[border-color] duration-300 flex flex-col h-full shadow-sm"
+      class="group relative bg-surface border border-foreground/8 rounded-xl overflow-hidden hover:border-primary/30 hover:bg-surface-elevated transition-colors duration-200 flex flex-col h-full"
     >
       <figure class="block aspect-[16/9] md:aspect-[2/1] w-full overflow-hidden relative">
         @if (project().image) {
@@ -20,19 +20,15 @@ import { AppIcon } from '@shared/icons';
             [alt]="project().title"
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            class="object-cover group-hover:scale-[1.02] transition-transform duration-500"
+            class="object-cover"
           />
         } @else {
           <div
-            class="w-full h-full flex items-center justify-center text-muted bg-linear-to-br from-primary/10 to-accent/10"
+            class="w-full h-full flex items-center justify-center text-muted bg-primary/10"
           >
             <span class="text-lg font-medium">Project Preview</span>
           </div>
         }
-
-        <div
-          class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"
-        ></div>
       </figure>
 
       <div class="p-5 flex flex-col grow">

@@ -78,31 +78,26 @@ import type { HeroData } from '../domain';
       <div class="flex flex-col items-center">
         <app-home-hero [hero]="hero()" />
 
-        <!-- CTAs -->
+        <!-- CTAs : 1 primary (action principale) + 1 outlined + 1 text (hiérarchie claire) -->
         <div
-          class="animate-fade-up-actions flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 mt-6 md:mt-8"
+          class="animate-fade-up-actions flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 mt-6 md:mt-8"
         >
           <app-button severity="primary" size="large" (click)="goToProjects()">
-            Voir mes réalisations
+            Voir les projets
             <app-icon name="arrow-right" [size]="20" />
           </app-button>
           <app-button
             variant="outlined"
-            severity="secondary"
+            severity="primary"
             size="large"
             (click)="scrollToContact()"
           >
             Me contacter
             <app-icon name="envelope" [size]="20" />
           </app-button>
-          <app-button
-            variant="outlined"
-            severity="secondary"
-            size="large"
-            (click)="goToAbout()"
-          >
+          <app-button variant="text" severity="primary" (click)="goToAbout()">
             En savoir plus
-            <app-icon name="user" [size]="20" />
+            <app-icon name="arrow-right" [size]="16" />
           </app-button>
         </div>
       </div>

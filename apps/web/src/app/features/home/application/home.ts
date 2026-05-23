@@ -30,7 +30,7 @@ import { AppIcon } from '@shared/icons';
                   >
                     <div class="flex items-center gap-3 mb-4">
                       <div
-                        class="w-11 h-11 shrink-0 rounded-xl bg-linear-to-br from-primary-bg/15 to-accent/15 flex items-center justify-center group-hover:from-primary-bg/25 group-hover:to-accent/25 transition-colors duration-300"
+                        class="w-11 h-11 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors duration-300"
                       >
                         <app-icon [name]="item.icon" [size]="20" class="text-primary" />
                       </div>

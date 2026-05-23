@@ -10,7 +10,6 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { AppPaginator, type AppPaginatorEvent } from '@shared/ui';
 import { ProjectCard } from './components/project-card';
 import { ProjectsGateway } from '@features/projects/domain';
-import { AppIcon } from '@shared/icons';
 import { filterProjects, paginateProjects, calculateTotalPages, FILTER_ALL } from '../domain';
 
 const ALL_LABEL = 'Tous';
@@ -22,29 +21,18 @@ const ITEMS_PER_PAGE = 3;
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ProjectCard, AppPaginator, AppIcon],
+  imports: [ProjectCard, AppPaginator],
   template: `
-    <main
-      class="min-h-screen pt-20 pb-16 bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 shadow-lg"
-    >
+    <main class="min-h-svh pt-20 pb-16">
       <section class="container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <div class="text-center mb-14">
-          <span
-            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
-          >
-            <app-icon name="desktop" [size]="16" />
-            Portfolio
-          </span>
-          <h1
-            class="text-4xl md:text-6xl font-extrabold tracking-tight mb-5"
-            style="background: linear-gradient(135deg, var(--color-foreground) 40%, var(--color-primary) 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"
-          >
-            Mes Projets
+        <header class="mb-14 max-w-3xl">
+          <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 text-foreground">
+            Projets
           </h1>
-          <p class="text-muted max-w-xl mx-auto text-base md:text-lg leading-relaxed">
+          <p class="text-muted text-base md:text-lg leading-relaxed max-w-prose">
             Une sélection de mes derniers projets, expérimentations et contributions open source.
           </p>
-        </div>
+        </header>
 
         <nav class="flex flex-wrap gap-4 mb-12" aria-label="Filtres par categorie">
           @for (filter of filters(); track filter) {
