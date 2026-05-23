@@ -238,7 +238,7 @@ type DisableFormShape = {
                 <div class="flex gap-3">
                   <button
                     (click)="showDisableForm.set(true)"
-                    class="flex-1 py-2.5 px-4 rounded-lg border border-status-error/30 text-status-error font-medium hover:bg-status-error/10 transition-colors"
+                    class="btn-outline flex-1 border-status-error/30 text-status-error hover:bg-status-error/10"
                   >
                     Désactiver le 2FA
                   </button>
@@ -286,14 +286,14 @@ type DisableFormShape = {
                     <button
                       type="button"
                       (click)="showDisableForm.set(false)"
-                      class="flex-1 py-2.5 px-4 rounded-lg border border-foreground/20 text-foreground font-medium hover:bg-foreground/5 transition-colors"
+                      class="btn-outline flex-1"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
                       [disabled]="disableForm.invalid || isTfaLoading()"
-                      class="flex-1 py-2.5 px-4 rounded-lg bg-status-error text-white font-medium hover:bg-status-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      class="btn-danger flex-1"
                     >
                       @if (isTfaLoading()) {
                         Désactivation...

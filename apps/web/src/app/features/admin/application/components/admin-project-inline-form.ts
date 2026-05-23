@@ -149,14 +149,14 @@ import { FileDropzone } from '@shared/ui';
         <button
           type="submit"
           [disabled]="form.invalid"
-          class="px-5 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="btn-primary"
         >
           {{ project() ? 'Enregistrer' : 'Créer' }}
         </button>
         <button
           type="button"
           (click)="cancelled.emit()"
-          class="px-5 py-2 rounded-lg bg-foreground/5 text-foreground text-sm font-medium hover:bg-foreground/10 transition-colors"
+          class="btn-outline"
         >
           Annuler
         </button>
