@@ -17,7 +17,7 @@ import { AuthStore } from '@features/auth/infra';
     @if (!isAdminRoute()) {
       <app-header />
     }
-    <main class="min-h-screen">
+    <main class="min-h-svh">
       <router-outlet />
     </main>
     @if (!isAdminRoute()) {

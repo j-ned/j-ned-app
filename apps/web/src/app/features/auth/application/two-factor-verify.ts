@@ -15,7 +15,7 @@ type TwoFactorVerifyFormShape = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <main class="min-h-screen flex items-center justify-center bg-background px-4">
+    <main class="min-h-svh flex items-center justify-center bg-background px-4">
       <div
         class="w-full max-w-md bg-background/80 backdrop-blur-md border border-foreground/10 rounded-2xl p-8 shadow-2xl"
       >

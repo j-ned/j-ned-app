@@ -17,7 +17,7 @@ type LoginForm = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <main class="min-h-screen flex items-center justify-center bg-background px-4">
+    <main class="min-h-svh flex items-center justify-center bg-background px-4">
       <div class="w-full max-w-sm">
         <!-- Header -->
         <div class="text-center mb-8">

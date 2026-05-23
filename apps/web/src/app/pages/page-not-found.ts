@@ -8,7 +8,7 @@ import { RouterLink } from '@angular/router';
   host: { class: 'block' },
   template: `
     <main
-      class="min-h-screen flex flex-col items-center justify-center bg-background text-foreground px-4"
+      class="min-h-svh flex flex-col items-center justify-center bg-background text-foreground px-4"
     >
       <h1 class="text-7xl font-extrabold text-primary mb-4">404</h1>
       <h2 class="text-2xl md:text-3xl font-bold mb-2">Page non trouvée</h2>
