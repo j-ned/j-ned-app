@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "generate-env": "node scripts/generate-env.mjs",
+    "prestart": "pnpm generate-env",
     "start": "ng serve",
+    "prebuild": "NODE_ENV=production pnpm generate-env",
     "build": "ng build",
     "icons:build": "tsx scripts/build-icons.mjs",
     "icons:check": "tsx scripts/build-icons.mjs --check",

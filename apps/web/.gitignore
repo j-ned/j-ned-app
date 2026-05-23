@@ -8,6 +8,9 @@
 /bazel-out
 /docs
 
+# Generated at build time from ../nest-portfolio-app/.env (see scripts/generate-env.mjs)
+/src/environments/environment.ts
+
 # Node
 /node_modules
 npm-debug.log
