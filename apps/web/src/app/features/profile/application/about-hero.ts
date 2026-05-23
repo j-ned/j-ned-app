@@ -55,7 +55,7 @@ import { AppIcon } from '@shared/icons';
           </div>
 
           <nav
-            class="flex items-center justify-center md:justify-start gap-3 pt-2"
+            class="flex items-center justify-center md:justify-start gap-3 pt-4"
             aria-label="Réseaux sociaux"
           >
             @for (social of socialButtons(); track social.id) {
@@ -63,10 +63,10 @@ import { AppIcon } from '@shared/icons';
                 [href]="social.href"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="p-2.5 bg-foreground/5 rounded-lg border border-foreground/10 hover:border-primary/50 hover:bg-primary/10 transition-all hover:scale-110 group"
+                class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-primary/50 hover:bg-primary/10 transition-colors"
                 [attr.aria-label]="social.label"
               >
-                <app-icon [name]="social.icon" [size]="20" class="text-muted group-hover:text-primary transition-colors" />
+                <app-icon [name]="social.icon" [size]="18" class="text-muted group-hover:text-primary transition-colors" />
               </a>
             }
           </nav>

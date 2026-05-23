@@ -167,8 +167,8 @@ type ContactFormGroup = {
               Envoyer un message
             </h3>
 
-            <form [formGroup]="form" (ngSubmit)="submitContact()" class="space-y-6">
-              <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-0 p-0 m-0">
+            <form [formGroup]="form" (ngSubmit)="submitContact()" class="space-y-8">
+              <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-6 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
                 <div>
                   <label for="name" class="form-label">Nom complet *</label>
