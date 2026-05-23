@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-23T00:00:00.000Z",
+  "title": "Design System: J-Ned Portfolio",
+  "extensions": {
+    "colorMeta": {
+      "signal-indigo": {
+        "role": "primary",
+        "displayName": "Signal Indigo",
+        "canonical": "oklch(54% 0.22 277)",
+        "tonalRamp": [
+          "oklch(20% 0.10 277)",
+          "oklch(30% 0.15 277)",
+          "oklch(40% 0.19 277)",
+          "oklch(50% 0.22 277)",
+          "oklch(60% 0.20 277)",
+          "oklch(70% 0.16 277)",
+          "oklch(82% 0.10 277)",
+          "oklch(95% 0.04 277)"
+        ]
+      },
+      "signal-indigo-lifted": {
+        "role": "primary",
+        "displayName": "Signal Indigo Lifted",
+        "canonical": "oklch(72% 0.16 277)",
+        "tonalRamp": [
+          "oklch(20% 0.10 277)",
+          "oklch(30% 0.15 277)",
+          "oklch(45% 0.19 277)",
+          "oklch(58% 0.18 277)",
+          "oklch(72% 0.16 277)",
+          "oklch(82% 0.12 277)",
+          "oklch(90% 0.07 277)",
+          "oklch(97% 0.02 277)"
+        ]
+      },
+      "signal-indigo-deep": {
+        "role": "primary",
+        "displayName": "Signal Indigo Deep",
+        "canonical": "oklch(45% 0.21 278)",
+        "tonalRamp": [
+          "oklch(18% 0.10 278)",
+          "oklch(28% 0.15 278)",
+          "oklch(38% 0.20 278)",
+          "oklch(45% 0.21 278)",
+          "oklch(55% 0.19 278)",
+          "oklch(68% 0.14 278)",
+          "oklch(82% 0.08 278)",
+          "oklch(95% 0.03 278)"
+        ]
+      },
+      "signal-violet-accent": {
+        "role": "secondary",
+        "displayName": "Signal Violet Accent",
+        "canonical": "oklch(72% 0.16 295)",
+        "tonalRamp": [
+          "oklch(20% 0.10 295)",
+          "oklch(35% 0.18 295)",
+          "oklch(50% 0.22 295)",
+          "oklch(62% 0.20 295)",
+          "oklch(72% 0.16 295)",
+          "oklch(82% 0.12 295)",
+          "oklch(91% 0.07 295)",
+          "oklch(97% 0.02 295)"
+        ]
+      },
+      "console-black": {
+        "role": "neutral",
+        "displayName": "Console Black",
+        "canonical": "oklch(15% 0.003 286)",
+        "tonalRamp": [
+          "oklch(10% 0.003 286)",
+          "oklch(15% 0.003 286)",
+          "oklch(22% 0.004 286)",
+          "oklch(35% 0.005 286)",
+          "oklch(50% 0.005 286)",
+          "oklch(65% 0.005 286)",
+          "oklch(80% 0.004 286)",
+          "oklch(98% 0.003 286)"
+        ]
+      },
+      "ivoire-paper": {
+        "role": "neutral",
+        "displayName": "Ivoire Paper",
+        "canonical": "oklch(97% 0.008 75)",
+        "tonalRamp": [
+          "oklch(15% 0.008 50)",
+          "oklch(25% 0.008 50)",
+          "oklch(40% 0.010 60)",
+          "oklch(55% 0.012 70)",
+          "oklch(70% 0.012 75)",
+          "oklch(85% 0.010 75)",
+          "oklch(93% 0.009 75)",
+          "oklch(97% 0.008 75)"
+        ]
+      },
+      "console-muted": {
+        "role": "neutral",
+        "displayName": "Console Muted",
+        "canonical": "oklch(70% 0.005 286)",
+        "tonalRamp": []
+      },
+      "ivoire-ink": {
+        "role": "neutral",
+        "displayName": "Ivoire Ink",
+        "canonical": "oklch(25% 0.008 50)",
+        "tonalRamp": []
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display (Hero name)",
+        "purpose": "Réservé au <h1> du hero (nom J-Ned). Un par page, jamais réutilisé."
+      },
+      "headline": {
+        "displayName": "Headline (Section titles)",
+        "purpose": "Titres <h2> de section (About, Projects, Contact)."
+      },
+      "title": {
+        "displayName": "Title (Card titles)",
+        "purpose": "Titres de cards, titres de projet dans la grille."
+      },
+      "body-large": {
+        "displayName": "Body Large (Intros)",
+        "purpose": "Tagline du hero et intros de section. Max 65-75ch."
+      },
+      "body": {
+        "displayName": "Body (Default paragraph)",
+        "purpose": "Paragraphes courants. Max 65-75ch."
+      },
+      "label": {
+        "displayName": "Label (UPPERCASE)",
+        "purpose": "Admin table headers, metadata, badges status. Tracking 0.06em."
+      },
+      "mono": {
+        "displayName": "Mono (Technical content)",
+        "purpose": "Code inline, chiffres techniques KPI, labels observability."
+      }
+    },
+    "shadows": [
+      {
+        "name": "nav-shadow-ivoire",
+        "value": "0 1px 2px rgba(41,37,36,0.04), 0 4px 12px rgba(41,37,36,0.04)",
+        "purpose": "Nav fixe en light, sépare du contenu scrollable."
+      },
+      {
+        "name": "nav-shadow-console",
+        "value": "0 1px 0 rgba(255,255,255,0.04)",
+        "purpose": "Hairline lumineux en dark, équivalent fonctionnel sans alourdir."
+      },
+      {
+        "name": "button-primary",
+        "value": "0 1px 2px rgba(0,0,0,0.05)",
+        "purpose": "Subtle CTA elevation. Primary buttons only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Ease-out quart pour state transitions (default impeccable)."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Color, opacity, border state changes (hover, focus)."
+      },
+      {
+        "name": "duration-medium",
+        "value": "300ms",
+        "purpose": "Entrées/sorties de composants (fade-up, drawer, toast)."
+      },
+      {
+        "name": "fade-up-keyframe",
+        "value": "@keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }",
+        "purpose": "Entrée des éléments du hero (h1, tagline, availability)."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1536px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (solid)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default CTA: indigo solid, white text, hover darkens 10%.",
+      "html": "<button class=\"ds-btn-primary\">Me contacter</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border-radius: 8px; background: #4f46e5; color: #ffffff; border: 1px solid #4f46e5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; transition: background-color 200ms, border-color 200ms, transform 100ms; white-space: nowrap; } .ds-btn-primary:hover { background: rgba(79, 70, 229, 0.9); border-color: rgba(79, 70, 229, 0.9); } .ds-btn-primary:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action: transparent with indigo border, hover fills with indigo tint.",
+      "html": "<button class=\"ds-btn-outline\">Voir le projet</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border-radius: 8px; background: transparent; color: #818cf8; border: 1px solid rgba(129, 140, 248, 0.4); cursor: pointer; transition: background-color 200ms, border-color 200ms; } .ds-btn-outline:hover { background: rgba(129, 140, 248, 0.1); border-color: rgba(129, 140, 248, 0.6); } .ds-btn-outline:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }"
+    },
+    {
+      "name": "Form Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Text input: surface translucent (dark) or white (light), indigo focus ring.",
+      "html": "<label class=\"ds-form-label\" for=\"email\">Email</label><input id=\"email\" type=\"email\" class=\"ds-form-input\" placeholder=\"you@example.com\" />",
+      "css": ".ds-form-label { display: block; font-family: system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; color: #fafafa; margin-bottom: 6px; } .ds-form-input { display: block; width: 100%; font-family: system-ui, sans-serif; font-size: 0.875rem; color: #fafafa; background: rgba(255,255,255,0.03); border: 1px solid rgba(161, 161, 170, 0.3); border-radius: 8px; padding: 10px 14px; transition: border-color 200ms, box-shadow 200ms; } .ds-form-input::placeholder { color: rgba(161, 161, 170, 0.6); } .ds-form-input:focus-visible { outline: none; border-color: #818cf8; box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3); } .ds-form-input[aria-invalid='true'] { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3); }"
+    },
+    {
+      "name": "Tag (info)",
+      "kind": "chip",
+      "refersTo": "tag-info",
+      "description": "Inline status badge — small, no border, color-coded background.",
+      "html": "<span class=\"ds-tag-info\">Disponible</span>",
+      "css": ".ds-tag-info { display: inline-flex; align-items: center; font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; padding: 4px 8px; border-radius: 6px; background: rgba(79, 70, 229, 0.2); color: #a5b4fc; }"
+    },
+    {
+      "name": "Card Surface",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Container surface, flat by default, hover lifts to elevated surface.",
+      "html": "<article class=\"ds-card-surface\"><h3 class=\"ds-card-title\">Project title</h3><p class=\"ds-card-body\">Short description of the project, max 65 to 75 characters wide.</p></article>",
+      "css": ".ds-card-surface { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px; color: #fafafa; transition: background-color 200ms; } .ds-card-surface:hover { background: rgba(255,255,255,0.06); } .ds-card-title { font-family: system-ui, sans-serif; font-size: 1.25rem; font-weight: 600; line-height: 1.3; margin: 0 0 8px 0; color: #fafafa; } .ds-card-body { font-family: system-ui, sans-serif; font-size: 1rem; line-height: 1.6; margin: 0; color: rgba(250, 250, 250, 0.7); }"
+    },
+    {
+      "name": "Admin Table",
+      "kind": "custom",
+      "refersTo": "admin-table",
+      "description": "Densité dashboard, uppercase labels, hover rows, no shadows.",
+      "html": "<div class=\"ds-admin-shell\"><table class=\"ds-admin-table\"><thead><tr><th class=\"ds-admin-th\">Date</th><th class=\"ds-admin-th\">Email</th><th class=\"ds-admin-th\">Status</th></tr></thead><tbody><tr class=\"ds-admin-row\"><td class=\"ds-admin-td\">2026-05-22</td><td class=\"ds-admin-td\">hello@example.com</td><td class=\"ds-admin-td\"><span class=\"ds-tag-info\">Lu</span></td></tr></tbody></table></div>",
+      "css": ".ds-admin-shell { overflow: hidden; border-radius: 12px; border: 1px solid rgba(250, 250, 250, 0.08); background: rgba(250, 250, 250, 0.02); } .ds-admin-table { width: 100%; border-collapse: collapse; font-family: system-ui, sans-serif; font-size: 0.875rem; } .ds-admin-th { padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #a1a1aa; border-bottom: 1px solid rgba(250, 250, 250, 0.08); } .ds-admin-td { padding: 14px 16px; color: rgba(250, 250, 250, 0.9); border-bottom: 1px solid rgba(250, 250, 250, 0.05); } .ds-admin-row { transition: background-color 200ms; } .ds-admin-row:hover { background: rgba(250, 250, 250, 0.03); } .ds-admin-row:last-child .ds-admin-td { border-bottom: none; }"
+    },
+    {
+      "name": "Navigation Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Inline nav link, indigo hover, focus ring.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Principal\"><a class=\"ds-nav-link\" href=\"#projects\">Projets</a><a class=\"ds-nav-link ds-nav-link-active\" href=\"#about\">À propos</a><a class=\"ds-nav-link\" href=\"#contact\">Contact</a></nav>",
+      "css": ".ds-nav { display: inline-flex; gap: 24px; align-items: center; } .ds-nav-link { font-family: system-ui, sans-serif; font-size: 0.9375rem; font-weight: 500; color: rgba(250, 250, 250, 0.7); text-decoration: none; padding: 6px 4px; border-radius: 4px; transition: color 150ms; } .ds-nav-link:hover { color: #818cf8; } .ds-nav-link-active { color: #818cf8; } .ds-nav-link:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Production Console",
+    "overview": "Ce système visuel se comporte comme un panneau d'instrumentation de production : dark par défaut comme un terminal d'observabilité à 2h du matin, indigo comme accent de status, hiérarchie typographique nette comme un dashboard SRE. Le mode clair ivoire n'est pas un mode \"alternatif accessibilité\" — c'est l'équivalent du briefing du matin sur papier mat : même information, même hiérarchie, même indigo de signature, juste sur un support différent. Ce système refuse explicitement le gradient violet/bleu de SaaS marketing, les glassmorphisms décoratifs partout, le portfolio designer où la typo éditoriale étouffe le code, et le template Bootstrap junior à hero centré + cards icône-titre-paragraphe répétées.",
+    "keyCharacteristics": [
+      "Dark par défaut, ivoire chaud en alternative — jamais un thème et son inverse, deux registres équivalents.",
+      "Signal Indigo unique : un seul indigo signature traverse les deux modes, décliné en lifted/deep selon le contexte.",
+      "Densité d'instrumentation : la hiérarchie typographique est nette comme un dashboard, jamais aérée comme un poster.",
+      "Focus visible non négociable : :focus-visible à 2px outline indigo sur tout interactif.",
+      "Zéro motion gratuite : prefers-reduced-motion respecté, animations utilitaires plutôt que choréographies."
+    ],
+    "rules": [
+      { "name": "The One Indigo Rule", "body": "Il n'y a qu'un Signal Indigo. Pas de teal qui s'invite, pas de blue-500 Tailwind par accident, pas de second accent. Pour différencier, change l'intensité (lifted / deep) ou le style (outline vs solid), jamais la teinte.", "section": "colors" },
+      { "name": "The Two Registers Rule", "body": "Console (dark) et Ivoire (light) sont égaux. Ils ne sont pas thème par défaut et alternative. Toute décision de design doit fonctionner aussi bien dans les deux registres.", "section": "colors" },
+      { "name": "The Glassmorphism Containment Rule", "body": "Les rgba sur Console Surfaces sont des dividers de profondeur subtils, pas un effet glassmorphic. Aucun backdrop-filter: blur n'est légitime en dehors du nav fixe.", "section": "colors" },
+      { "name": "The System-Stack Rule", "body": "Aucune font externe ne sera chargée. Pas de Google Fonts, pas de @font-face local. Le portfolio démontre la maîtrise des contraintes perf en assumant le rendu OS.", "section": "typography" },
+      { "name": "The Single-Display Rule", "body": "Un seul <h1> par page, en Display, jamais réutilisé. Hiérarchie <h1> → <h2> → <h3> sans saut.", "section": "typography" },
+      { "name": "The Indigo Keyword Rule", "body": "Dans la tagline du hero, les keywords techniques (Angular, NestJS) sont en Signal Indigo Lifted (dark) ou Signal Indigo Deep (light) avec font-weight: 600.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Toute card, tout container commence sans shadow. Une shadow ne peut être ajoutée qu'avec une justification fonctionnelle (sticky nav, modal/drawer, dropdown).", "section": "elevation" },
+      { "name": "The No-Glass Rule", "body": "Aucun backdrop-filter: blur() n'est légitime dans ce système. La translucidité des Console Surfaces est purement compositionnelle (rgba alpha).", "section": "elevation" }
+    ],
+    "dos": [
+      "Do utiliser var(--color-primary) ou bg-primary partout où on a besoin de Signal Indigo. Jamais #4f46e5 ou indigo-600 en dur (sauf frontmatter et styles.css).",
+      "Do tester chaque composant en .app-dark ET sans .app-dark avant de merger.",
+      "Do utiliser :focus-visible sur tout interactif avec un ring 2px Signal Indigo.",
+      "Do respecter prefers-reduced-motion: reduce — désactiver fade-up, view-transitions, scroll animations.",
+      "Do réserver le mono à du contenu vraiment technique (code, chiffres, status).",
+      "Do garder body line-length à 65–75ch maximum.",
+      "Do utiliser les utilities form-*, admin-*, btn-* plutôt que de redéclarer les classes Tailwind.",
+      "Do documenter toute exception aux Named Rules dans un commentaire au point d'usage."
+    ],
+    "donts": [
+      "Don't introduire un second accent color. Pas de teal, pas de coral, pas de blue-500 par accident.",
+      "Don't utiliser background-clip: text + gradient comme style décoratif. Le hero actuel (name-gradient) viole cette règle et est à reprendre.",
+      "Don't ajouter backdrop-filter: blur() à une card pour faire glass.",
+      "Don't ajouter de shadow à une card pour qu'elle ressorte. Travaille la hiérarchie typographique avant.",
+      "Don't charger une Google Font.",
+      "Don't utiliser border-left ou border-right > 1px comme accent coloré.",
+      "Don't utiliser *ngIf / *ngFor — control flow @if / @for uniquement.",
+      "Don't styliser un input avec outline: none sans :focus-visible de remplacement.",
+      "Don't mettre une animation décorative au-dessus de 400ms ou avec un easing bouncy/elastic.",
+      "Don't utiliser le slate Tailwind dans le portfolio. Le système est tinté zinc/neutral (Console) ou stone (Ivoire) — jamais slate.",
+      "Don't réutiliser le Display pour un autre élément que le <h1> du hero.",
+      "Don't introduire une 2e police custom pour donner du caractère."
+    ]
+  }
+}
