@@ -9,7 +9,7 @@ import type {
   SocialButton,
 } from '../../domain';
 
-export const STATIC_AVATAR_URL = '/avatar.png';
+export const STATIC_AVATAR_URL = '/avatar.avif';
 
 export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
   id: '9acfdedb-c00d-4370-858e-7215e30f5a41',

@@ -13,7 +13,7 @@
 [![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License](https://img.shields.io/badge/License-Private-333?style=for-the-badge)]()
 
-[**🔗 Site live**](https://j-ned.dev) · [**📸 Captures**](#-captures-décran) · [**🏗️ Architecture**](#️-architecture) · [**🛡️ Sécurité**](#️-sécurité--privacy-first) · [**🚀 Installation**](#-installation)
+[**🔗 Site live**](https://nedellec-julien.fr) · [**📸 Captures**](#-captures-décran) · [**🏗️ Architecture**](#️-architecture) · [**🛡️ Sécurité**](#️-sécurité--privacy-first) · [**🚀 Installation**](#-installation)
 
 <img src="public/screen/home.webp" alt="Portfolio — Home" width="100%" />
 
@@ -70,7 +70,6 @@ Une application **full-stack self-hosted** construite comme un vrai produit :
 | **À propos** | Biographie, parcours, diplômes, expertises — contenu 100% CMS |
 | **Projets** | Portfolio filtrable, featured, liens live + repos front/back, tags |
 | **Contact** | Formulaire validé côté serveur, envoi SMTP, rate limiting |
-| **Booking** | Réservation de créneau de consultation avec calendrier français |
 | **404 custom** | Page dédiée avec SEO désactivé |
 
 ### 🔧 Back-office admin (`/admin`)
@@ -78,12 +77,8 @@ Une application **full-stack self-hosted** construite comme un vrai produit :
 | Module | Fonction |
 |--------|----------|
 | **Dashboard** | KPIs — visiteurs, sessions, téléchargements CV, clics projets |
-| **Content** | Hero, biography, what-I-do, what-I-seek, highlights, diplomas, technologies |
 | **Projets** | CRUD complet, ordre, featured flag, upload image S3 |
 | **CV** | Upload / remplacement du PDF versionné S3 |
-| **Services** | Liste des prestations proposées, ordre configurable |
-| **Social buttons** | Liens GitHub, LinkedIn, X, etc. configurables |
-| **Réservations** | Liste des bookings, gestion des disponibilités, jours indisponibles |
 | **Messages** | Inbox des messages de contact |
 | **Analytics** | Graphiques Chart.js — vues, durées, événements, bounces |
 | **Settings** | Profil admin, changement de mot de passe, 2FA TOTP |
@@ -95,7 +90,6 @@ Une application **full-stack self-hosted** construite comme un vrai produit :
 - ⚡ **View Transitions API** — animations natives entre routes
 - 🎨 **Dark mode** — thème centralisé, TailwindCSS v4
 - 🌍 **SEO dynamique** — meta tags et JSON-LD par route, sitemap.xml généré
-- 📦 **PrimeNG 21** — composants complexes (tables, datepicker admin)
 - ♿ **Accessibilité WCAG AA** — focus management, ARIA, navigation clavier
 
 ---
@@ -394,7 +388,7 @@ docker run -p 4000:4000 portfolio-front
 
 <div align="center">
 
-**Développé par [Julien Nédellec](https://j-ned.dev)**
+**Développé par [Julien Nédellec](https://nedellec-julien.fr)**
 
 [![Portfolio](https://img.shields.io/badge/Portfolio-j--ned.dev-4f46e5?style=for-the-badge)](https://j-ned.dev)
 [![GitHub](https://img.shields.io/badge/GitHub-djoudj--dev-181717?style=for-the-badge&logo=github)](https://github.com/djoudj-dev)
