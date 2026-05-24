@@ -16,7 +16,7 @@ export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
   displayName: 'Nédellec Julien',
   location: 'Voisins-Le-Bretonneux',
   isAvailable: true,
-  availabilityMessage: 'Disponible',
+  availabilityMessage: 'Ouvert aux opportunités',
 };
 
 export const STATIC_BIOGRAPHY: Biography = {

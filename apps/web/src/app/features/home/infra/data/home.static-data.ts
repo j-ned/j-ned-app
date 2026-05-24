@@ -5,7 +5,7 @@ export const STATIC_HERO: HeroData = {
   name: 'Développeur Angular',
   tagline:
     "Reconversion réussie depuis l'industrie. Je recherche un CDI en Île-de-France pour rejoindre une équipe produit en fintech, greentech ou industrial tech.",
-  availability: 'Disponible',
+  availability: 'Ouvert aux opportunités',
 };
 
 export const STATIC_HOME_HIGHLIGHTS: readonly HomeHighlight[] = [
