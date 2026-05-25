@@ -1,6 +1,7 @@
 import type { Routes } from '@angular/router';
 import { authGuard } from '@features/auth/infra';
 import { Home } from '@features/home/application/home';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 export const routes: Routes = [
   {
@@ -15,26 +16,26 @@ export const routes: Routes = [
           "Développeur Full-Stack spécialisé en Angular et NestJS. Création d'applications web modernes, performantes et optimisées SEO. Disponible pour vos projets web.",
         keywords:
           'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France',
-        url: 'https://www.julien-nedellec.fr',
+        url: SITE_IDENTITY.siteUrl,
         type: 'website',
         structuredData: {
           '@context': 'https://schema.org',
           '@type': 'Person',
           name: 'Julien Nédellec',
           jobTitle: 'Développeur Full-Stack',
-          url: 'https://www.julien-nedellec.fr',
+          url: SITE_IDENTITY.siteUrl,
           sameAs: [
-            'https://www.linkedin.com/in/julien-nedellec/',
-            'https://github.com/djoudj-dev',
-            'https://x.com/djoudjDev',
+            SITE_IDENTITY.socials.linkedin,
+            SITE_IDENTITY.socials.github,
+            SITE_IDENTITY.socials.x,
           ],
           address: {
             '@type': 'PostalAddress',
-            addressLocality: 'Voisins-Le-Bretonneux',
+            addressLocality: SITE_IDENTITY.location,
             addressCountry: 'FR',
           },
           knowsAbout: ['Angular', 'NestJS', 'TypeScript', 'PostgreSQL', 'Docker'],
-          email: 'contact@julien-nedellec.fr',
+          email: SITE_IDENTITY.email,
         },
       },
     },
@@ -51,7 +52,7 @@ export const routes: Routes = [
           "Découvrez mon parcours de 20 ans dans l'industrie à reconversion développeur. Spécialiste Angular, NestJS et TypeScript. Exigence, autonomie et vision d'ensemble.",
         keywords:
           'Développeur Angular, Reconversion professionnelle, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
-        url: 'https://www.julien-nedellec.fr/about',
+        url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
       },
     },
@@ -69,7 +70,7 @@ export const routes: Routes = [
           'Découvrez mes projets Angular, NestJS et TypeScript. Applications web modernes, APIs REST, déploiements Docker. Code production-ready et bonnes pratiques.',
         keywords:
           'Portfolio Angular, Projets NestJS, Applications TypeScript, Développeur Full-Stack, PostgreSQL, Docker',
-        url: 'https://www.julien-nedellec.fr/projects',
+        url: `${SITE_IDENTITY.siteUrl}/projects`,
         type: 'website',
       },
     },

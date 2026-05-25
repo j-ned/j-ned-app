@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppIcon } from '@shared/icons';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 type SocialItem = {
   readonly label: string;
@@ -9,14 +10,10 @@ type SocialItem = {
 };
 
 const SOCIALS: readonly SocialItem[] = [
-  { label: 'GitHub', url: 'https://github.com/djoudj-dev', icon: 'lucide-github' },
-  {
-    label: 'LinkedIn',
-    url: 'https://www.linkedin.com/in/nedellec-julien/',
-    icon: 'lucide-linkedin',
-  },
-  { label: 'X (Twitter)', url: 'https://x.com/djoudj_78', icon: 'bi-twitter-x' },
-  { label: 'Email', url: 'mailto:contact@nedellec-julien.fr', icon: 'lucide-mail' },
+  { label: 'GitHub', url: SITE_IDENTITY.socials.github, icon: 'lucide-github' },
+  { label: 'LinkedIn', url: SITE_IDENTITY.socials.linkedin, icon: 'lucide-linkedin' },
+  { label: 'X (Twitter)', url: SITE_IDENTITY.socials.x, icon: 'bi-twitter-x' },
+  { label: 'Email', url: `mailto:${SITE_IDENTITY.email}`, icon: 'lucide-mail' },
 ];
 
 @Component({

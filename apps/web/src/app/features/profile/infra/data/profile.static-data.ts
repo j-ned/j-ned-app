@@ -8,13 +8,14 @@ import type {
   WhatISeek,
   SocialButton,
 } from '../../domain';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 export const STATIC_AVATAR_URL = '/avatar.avif';
 
 export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
   id: '9acfdedb-c00d-4370-858e-7215e30f5a41',
   displayName: 'Nédellec Julien',
-  location: 'Voisins-Le-Bretonneux',
+  location: SITE_IDENTITY.location,
   isAvailable: true,
   availabilityMessage: 'Ouvert aux opportunités',
 };
@@ -153,18 +154,18 @@ export const STATIC_SOCIAL_BUTTONS: readonly SocialButton[] = [
     id: 'f383f92a-d1ff-43b2-b212-87f2a1e43c23',
     icon: 'lucide-github',
     label: 'GitHub',
-    href: 'https://github.com/j-ned',
+    href: SITE_IDENTITY.socials.github,
   },
   {
     id: 'c3d221dc-eabf-4080-95de-6a60e512b6cd',
     icon: 'lucide-mail',
     label: 'Mail',
-    href: 'mailto:contact@julien-nedellec.fr',
+    href: `mailto:${SITE_IDENTITY.email}`,
   },
   {
     id: '9d35a214-1c80-4228-af92-5fe16e3bdd13',
     icon: 'bi-discord',
     label: 'Discord',
-    href: 'https://discord.gg/nedellec_julien',
+    href: SITE_IDENTITY.socials.discord,
   },
 ];

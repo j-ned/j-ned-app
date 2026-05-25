@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 export type SeoData = {
   title: string;
@@ -31,11 +32,11 @@ export class Seo {
     this.meta.updateTag({ property: 'og:type', content: data.type || 'website' });
     this.meta.updateTag({
       property: 'og:url',
-      content: data.url || 'https://www.julien-nedellec.fr',
+      content: data.url || SITE_IDENTITY.siteUrl,
     });
     this.meta.updateTag({
       property: 'og:image',
-      content: data.image || 'https://www.julien-nedellec.fr/photoProfil.webp',
+      content: data.image || `${SITE_IDENTITY.siteUrl}/photoProfil.webp`,
     });
 
     this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
@@ -43,7 +44,7 @@ export class Seo {
     this.meta.updateTag({ name: 'twitter:description', content: data.description });
     this.meta.updateTag({
       name: 'twitter:image',
-      content: data.image || 'https://www.julien-nedellec.fr/photoProfil.webp',
+      content: data.image || `${SITE_IDENTITY.siteUrl}/photoProfil.webp`,
     });
 
     if (data.url) {

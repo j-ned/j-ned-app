@@ -72,7 +72,7 @@ type ContactFormGroup = {
                 </a>
 
                 <a
-                  [href]="'tel:' + contactInfo.phone"
+                  [href]="socialLinks.phone.url"
                   class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
                 >
                   <div class="icon-tile bg-accent/10">
