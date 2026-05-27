@@ -157,9 +157,9 @@ export const appConfig: ApplicationConfig = {
       provide: API_BASE_URL,
       useFactory: (): string => {
         if (!isPlatformBrowser(inject(PLATFORM_ID))) {
-          return 'https://api.j-ned.dev/api';
+          return 'https://api.nedellec-julien.fr/api';
         }
-        return isDevMode() ? '/api' : 'https://api.j-ned.dev/api';
+        return isDevMode() ? '/api' : 'https://api.nedellec-julien.fr/api';
       },
     },
     { provide: ProjectsGateway, useClass: HttpProjectsGateway },

@@ -22,7 +22,7 @@ RUN pnpm run build --configuration production \
 # Angular 21 outputs a request handler in server/server.mjs but no Node listener;
 # this app is fully prerendered (or CSR for dynamic routes), so we serve the
 # browser bundle as static files with SPA fallback to /index.html.
-# NestJS backend lives on api.j-ned.dev and is reached directly from the client.
+# NestJS backend lives on api.nedellec-julien.fr and is reached directly from the client.
 # ==============================================================================
 FROM nginx:alpine AS production
 

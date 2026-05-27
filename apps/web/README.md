@@ -390,7 +390,7 @@ docker run -p 4000:4000 portfolio-front
 
 **Développé par [Julien Nédellec](https://nedellec-julien.fr)**
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-j--ned.dev-4f46e5?style=for-the-badge)](https://j-ned.dev)
+[![Portfolio](https://img.shields.io/badge/Portfolio-nedellec--julien.fr-4f46e5?style=for-the-badge)](https://nedellec-julien.fr)
 [![GitHub](https://img.shields.io/badge/GitHub-djoudj--dev-181717?style=for-the-badge&logo=github)](https://github.com/djoudj-dev)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-julien--nedellec-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/julien-nedellec/)
 

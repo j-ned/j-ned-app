@@ -32,7 +32,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     category: 'Web',
     tags: ['angular'],
     description: 'desc',
-    image: 'https://garage-s3.j-ned.dev/img.png',
+    image: 'https://example.com/img.png',
     featured: false,
     order: 1,
     ...overrides,

@@ -11,7 +11,7 @@ type RuntimeConfig = {
   };
 };
 
-const PROD_API_BASE = 'https://api.j-ned.dev/api';
+const PROD_API_BASE = 'https://api.nedellec-julien.fr/api';
 
 function apiBase(): string {
   const host = location.hostname;
@@ -62,7 +62,7 @@ async function initSentryFromBackend(): Promise<void> {
       }),
     ],
     tracesSampleRate: isProduction ? 0.1 : 1.0,
-    tracePropagationTargets: [/^\//, /^https:\/\/api\.j-ned\.dev/],
+    tracePropagationTargets: [/^\//, /^https:\/\/api\.nedellec-julien\.fr/],
     replaysSessionSampleRate: isProduction ? 0.1 : 0,
     replaysOnErrorSampleRate: 1.0,
     ignoreErrors: ['ChunkLoadError', /ResizeObserver loop/, 'NG0911'],
