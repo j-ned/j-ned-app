@@ -57,7 +57,8 @@
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
-    <!-- DNS prefetch pour l'API NestJS (proxy S3 + données) -->
+    <!-- Preconnect API NestJS (établit TCP+TLS handshake) — gain ~50-100ms vs dns-prefetch -->
+    <link rel="preconnect" href="https://api.nedellec-julien.fr" crossorigin />
     <link rel="dns-prefetch" href="https://api.nedellec-julien.fr" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

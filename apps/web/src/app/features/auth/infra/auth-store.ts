@@ -3,7 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, map, Observable, of, tap } from 'rxjs';
-import * as Sentry from '@sentry/angular';
+import { setUser as sentrySetUser } from '@sentry/angular';
 import type { User } from '../domain';
 import type { TwoFactorSecretResponse, UserResponse } from '../domain';
 import { AuthGateway } from '../domain';
@@ -115,7 +115,7 @@ export class AuthStore {
       )
       .subscribe(() => {
         this._currentUser.set(null);
-        Sentry.setUser(null);
+        sentrySetUser(null);
         void this.router.navigate(['/']);
       });
   }
@@ -127,7 +127,7 @@ export class AuthStore {
       displayName: apiUser.email,
       isTwoFactorEnabled: apiUser.isTwoFactorEnabled,
     });
-    Sentry.setUser({ id: apiUser.id });
+    sentrySetUser({ id: apiUser.id });
   }
 
   /**
@@ -147,7 +147,7 @@ export class AuthStore {
           tap((res) => this.setUserFromApi(res)),
           catchError(() => {
             this._currentUser.set(null);
-            Sentry.setUser(null);
+            sentrySetUser(null);
             return of(null);
           }),
           takeUntilDestroyed(this.destroyRef),

@@ -1,5 +1,9 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import * as Sentry from '@sentry/angular';
+import {
+  init as sentryInit,
+  browserTracingIntegration,
+  httpClientIntegration,
+} from '@sentry/angular';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
 
@@ -35,36 +39,22 @@ async function initSentryFromBackend(): Promise<void> {
 
   const isProduction = environment === 'production';
 
-  Sentry.init({
+  sentryInit({
     dsn,
     environment,
     release,
     sendDefaultPii: false,
     integrations: [
-      Sentry.browserTracingIntegration({
+      browserTracingIntegration({
         enableInp: true,
         enableLongAnimationFrame: true,
       }),
-      Sentry.httpClientIntegration({
+      httpClientIntegration({
         failedRequestStatusCodes: [[500, 599]],
-      }),
-      Sentry.replayIntegration({
-        maskAllInputs: true,
-        maskAllText: false,
-        blockAllMedia: false,
-        block: ['.sentry-block'],
-        mask: ['[data-sensitive]'],
-      }),
-      Sentry.feedbackIntegration({
-        autoInject: false,
-        colorScheme: 'system',
-        showBranding: false,
       }),
     ],
     tracesSampleRate: isProduction ? 0.1 : 1.0,
     tracePropagationTargets: [/^\//, /^https:\/\/api\.nedellec-julien\.fr/],
-    replaysSessionSampleRate: isProduction ? 0.1 : 0,
-    replaysOnErrorSampleRate: 1.0,
     ignoreErrors: ['ChunkLoadError', /ResizeObserver loop/, 'NG0911'],
     beforeSend(event) {
       const data = event.request?.data as Record<string, unknown> | undefined;
