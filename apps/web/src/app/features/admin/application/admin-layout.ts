@@ -4,12 +4,12 @@ import { RouterOutlet } from '@angular/router';
 import { AuthStore } from '../../auth/infra';
 import { ContactGateway } from '@features/contact/domain';
 import { AppIcon } from '@shared/icons';
-import { Drawer } from '@shared/ui';
+import { Drawer, AppIconTile } from '@shared/ui';
 import { AdminNav, type AdminNavItem } from './components/admin-nav';
 
 @Component({
-  selector: 'app-admin-layout',
-  imports: [RouterOutlet, AppIcon, Drawer, AdminNav],
+  selector: 'admin-layout',
+  imports: [RouterOutlet, AppIcon, Drawer, AdminNav, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-svh bg-background flex flex-col md:flex-row">
@@ -19,7 +19,7 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
         [class.md:w-64]="!collapsed()"
         [class.md:w-20]="collapsed()"
       >
-        <app-admin-nav
+        <admin-nav
           [collapsed]="collapsed()"
           [showCollapseButton]="true"
           [displayName]="authService.currentUser()?.displayName"
@@ -34,9 +34,9 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
         class="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-foreground/10 bg-background"
       >
         <div class="flex items-center gap-2">
-          <div class="icon-tile-sm bg-primary/10 border border-primary/30">
+          <app-icon-tile size="sm" class="bg-primary/10 border border-primary/30">
             <app-icon name="th-large" [size]="16" class="text-primary" />
-          </div>
+          </app-icon-tile>
           <span class="text-base font-bold text-foreground">Admin</span>
         </div>
         <button
@@ -62,7 +62,7 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
       heading="Admin"
       ariaLabel="Menu de navigation admin"
     >
-      <app-admin-nav
+      <admin-nav
         [collapsed]="false"
         [showCollapseButton]="false"
         [displayName]="authService.currentUser()?.displayName"

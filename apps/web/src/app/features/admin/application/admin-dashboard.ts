@@ -13,6 +13,7 @@ import { AuthStore } from '@features/auth/infra';
 import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
 import { RelativeTimePipe } from '@shared/calendar';
+import { AppSkeleton, AppIconTile } from '@shared/ui';
 
 const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
   weekday: 'long',
@@ -22,8 +23,8 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
 });
 
 @Component({
-  selector: 'app-admin-dashboard',
-  imports: [RouterLink, AppIcon, RelativeTimePipe],
+  selector: 'admin-dashboard',
+  imports: [RouterLink, AppIcon, RelativeTimePipe, AppSkeleton, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -42,12 +43,12 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
             routerLink="/admin/messages"
             class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-primary/40 hover:bg-primary/[0.02] transition-all"
           >
-            <div class="icon-tile bg-primary/10">
+            <app-icon-tile class="bg-primary/10">
               <app-icon name="envelope" [size]="20" class="text-primary" />
-            </div>
+            </app-icon-tile>
             <div class="flex-1 min-w-0">
               @if (unreadRes.isLoading()) {
-                <div class="h-7 w-10 rounded bg-foreground/10 animate-pulse"></div>
+                <app-skeleton class="h-7 w-10 rounded" tone="strong" />
               } @else {
                 <p class="text-2xl font-bold text-foreground leading-none">{{ unreadCount() }}</p>
               }
@@ -62,12 +63,12 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
             routerLink="/admin/analytics"
             class="group flex items-center gap-4 bg-surface border border-foreground/10 rounded-xl p-5 hover:border-accent/40 hover:bg-accent/[0.02] transition-all"
           >
-            <div class="icon-tile bg-accent/10">
+            <app-icon-tile class="bg-accent/10">
               <app-icon name="download" [size]="20" class="text-accent" />
-            </div>
+            </app-icon-tile>
             <div class="flex-1 min-w-0">
               @if (cvDownloadRes.isLoading()) {
-                <div class="h-7 w-10 rounded bg-foreground/10 animate-pulse"></div>
+                <app-skeleton class="h-7 w-10 rounded" tone="strong" />
               } @else {
                 <p class="text-2xl font-bold text-foreground leading-none">
                   {{ cvDownloadCount() }}

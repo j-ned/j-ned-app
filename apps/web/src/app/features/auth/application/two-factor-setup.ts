@@ -16,6 +16,7 @@ import {
 } from '@angular/forms';
 import { AuthStore } from '../infra';
 import { AppIcon } from '@shared/icons';
+import { Button } from '@shared/ui';
 
 type PasswordFormShape = {
   currentPassword: FormControl<string>;
@@ -32,8 +33,8 @@ type DisableFormShape = {
 };
 
 @Component({
-  selector: 'app-two-factor-setup',
-  imports: [ReactiveFormsModule, AppIcon],
+  selector: 'two-factor-setup',
+  imports: [ReactiveFormsModule, AppIcon, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -176,17 +177,18 @@ type DisableFormShape = {
             }
           </div>
 
-          <button
+          <app-button
             type="submit"
+            severity="primary"
+            [block]="true"
             [disabled]="pwdForm.invalid || isPwdLoading()"
-            class="btn-primary w-full"
           >
             @if (isPwdLoading()) {
               Modification...
             } @else {
               Modifier le mot de passe
             }
-          </button>
+          </app-button>
         </form>
       </div>
 
@@ -236,19 +238,22 @@ type DisableFormShape = {
 
               @if (!showDisableForm()) {
                 <div class="flex gap-3">
-                  <button
+                  <app-button
+                    severity="danger"
+                    variant="outlined"
+                    class="flex-1"
                     (click)="showDisableForm.set(true)"
-                    class="btn-outline flex-1 border-status-error/30 text-status-error hover:bg-status-error/10"
                   >
                     Désactiver le 2FA
-                  </button>
-                  <button
-                    (click)="reconfigure()"
+                  </app-button>
+                  <app-button
+                    severity="primary"
+                    class="flex-1"
                     [disabled]="isTfaLoading()"
-                    class="btn-primary flex-1"
+                    (click)="reconfigure()"
                   >
                     Reconfigurer
-                  </button>
+                  </app-button>
                 </div>
               } @else {
                 <form [formGroup]="disableForm" (ngSubmit)="disableTwoFactor()" class="space-y-4">
@@ -283,24 +288,26 @@ type DisableFormShape = {
                     }
                   </div>
                   <div class="flex gap-3">
-                    <button
-                      type="button"
+                    <app-button
+                      severity="secondary"
+                      variant="outlined"
+                      class="flex-1"
                       (click)="showDisableForm.set(false)"
-                      class="btn-outline flex-1"
                     >
                       Annuler
-                    </button>
-                    <button
+                    </app-button>
+                    <app-button
                       type="submit"
+                      severity="danger"
+                      class="flex-1"
                       [disabled]="disableForm.invalid || isTfaLoading()"
-                      class="btn-danger flex-1"
                     >
                       @if (isTfaLoading()) {
                         Désactivation...
                       } @else {
                         Confirmer
                       }
-                    </button>
+                    </app-button>
                   </div>
                 </form>
               }
@@ -408,17 +415,18 @@ type DisableFormShape = {
             </div>
           </div>
 
-          <button
-            (click)="generate()"
+          <app-button
+            severity="primary"
+            [block]="true"
             [disabled]="isTfaLoading()"
-            class="btn-primary w-full"
+            (click)="generate()"
           >
             @if (isTfaLoading()) {
               Génération...
             } @else {
               Configurer le 2FA
             }
-          </button>
+          </app-button>
         }
       </div>
     </div>

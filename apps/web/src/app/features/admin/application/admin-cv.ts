@@ -1,11 +1,11 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { CvGateway, type CvInfo } from '@features/cv/domain';
-import { ToastStore, FileDropzone } from '@shared/ui';
+import { ToastStore, FileDropzone, Button } from '@shared/ui';
 
 @Component({
-  selector: 'app-admin-cv',
-  imports: [FileDropzone],
+  selector: 'admin-cv',
+  imports: [FileDropzone, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -65,24 +65,16 @@ import { ToastStore, FileDropzone } from '@shared/ui';
 
       @if (selectedFile()) {
         <div class="flex gap-4 mt-4">
-          <button
-            (click)="uploadCv()"
-            [disabled]="isUploading()"
-            class="btn-primary"
-          >
+          <app-button severity="primary" [disabled]="isUploading()" (click)="uploadCv()">
             @if (isUploading()) {
               Upload en cours...
             } @else {
               Uploader
             }
-          </button>
-          <button
-            type="button"
-            (click)="clearSelection()"
-            class="btn-outline"
-          >
+          </app-button>
+          <app-button severity="secondary" variant="outlined" (click)="clearSelection()">
             Annuler
-          </button>
+          </app-button>
         </div>
       }
     </div>

@@ -1,10 +1,11 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppIcon } from '@shared/icons';
+import { AppIconTile } from '@shared/ui';
 
 @Component({
-  selector: 'app-admin-settings',
-  imports: [RouterLink, AppIcon],
+  selector: 'admin-settings',
+  imports: [RouterLink, AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -22,9 +23,9 @@ import { AppIcon } from '@shared/icons';
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
         <div class="flex items-center justify-between gap-4">
           <div class="flex items-start gap-4">
-            <div class="icon-tile bg-primary/10">
+            <app-icon-tile class="bg-primary/10">
               <app-icon name="shield" [size]="20" class="text-primary" />
-            </div>
+            </app-icon-tile>
             <div>
               <h3 class="text-base font-semibold text-foreground">
                 Authentification à deux facteurs
@@ -34,8 +35,11 @@ import { AppIcon } from '@shared/icons';
               </p>
             </div>
           </div>
-          <a routerLink="/admin/settings/security" class="btn-outline">
-            <app-icon name="cog" [size]="20" class="mr-2" />
+          <a
+            routerLink="/admin/settings/security"
+            class="inline-flex items-center justify-center gap-2 rounded-lg border border-muted/30 bg-transparent px-5 py-2.5 text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors"
+          >
+            <app-icon name="cog" [size]="20" />
             Configurer
           </a>
         </div>

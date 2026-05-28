@@ -14,12 +14,12 @@ import { ProjectsGateway } from '@features/projects/domain';
 import type { Project } from '@features/projects/domain';
 import { HomeGateway } from '@features/home/domain';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
-import { AppTag, ToastStore } from '@shared/ui';
+import { AppTag, ToastStore, Button } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 
 @Component({
-  selector: 'app-admin-projects',
-  imports: [AdminProjectInlineForm, FormsModule, NgOptimizedImage, AppTag, AppIcon],
+  selector: 'admin-projects',
+  imports: [AdminProjectInlineForm, FormsModule, NgOptimizedImage, AppTag, AppIcon, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
@@ -38,25 +38,25 @@ import { AppIcon } from '@shared/icons';
               <option [value]="category">{{ category }}</option>
             }
           </select>
-          <button
-            type="button"
+          <app-button
+            [severity]="showNewForm() ? 'secondary' : 'primary'"
+            [variant]="showNewForm() ? 'outlined' : 'solid'"
             (click)="toggleNewForm()"
-            [class]="showNewForm() ? 'btn-outline' : 'btn-primary'"
           >
             @if (showNewForm()) {
-              <app-icon name="times" [size]="20" class="mr-2" />
+              <app-icon name="times" [size]="20" />
             } @else {
-              <app-icon name="plus" [size]="20" class="mr-2" />
+              <app-icon name="plus" [size]="20" />
             }
             {{ showNewForm() ? 'Annuler' : 'Nouveau projet' }}
-          </button>
+          </app-button>
         </div>
       </div>
 
       <!-- New project form -->
       @if (showNewForm()) {
         <div class="mb-6">
-          <app-admin-project-inline-form
+          <admin-project-inline-form
             (saved)="createProject($event)"
             (cancelled)="showNewForm.set(false)"
           />
@@ -123,33 +123,28 @@ import { AppIcon } from '@shared/icons';
 
               <!-- Actions -->
               <div class="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
+                <app-button
+                  severity="secondary"
+                  variant="outlined"
+                  [ariaLabel]="editingId() === project.id ? 'Fermer' : 'Modifier'"
                   (click)="toggleEdit(project.id)"
-                  [attr.aria-label]="editingId() === project.id ? 'Fermer' : 'Modifier'"
-                  class="btn-outline"
                 >
                   @if (editingId() === project.id) {
                     <app-icon name="times" [size]="20" />
                   } @else {
                     <app-icon name="pencil" [size]="20" />
                   }
-                </button>
-                <button
-                  type="button"
-                  (click)="deleteProject(project)"
-                  aria-label="Supprimer"
-                  class="btn-danger"
-                >
+                </app-button>
+                <app-button severity="danger" ariaLabel="Supprimer" (click)="deleteProject(project)">
                   <app-icon name="trash" [size]="20" />
-                </button>
+                </app-button>
               </div>
             </div>
 
             <!-- Inline edit form -->
             @if (editingId() === project.id) {
               <div class="px-5 pb-5">
-                <app-admin-project-inline-form
+                <admin-project-inline-form
                   [project]="project"
                   (saved)="updateProject(project.id, $event)"
                   (cancelled)="editingId.set(null)"

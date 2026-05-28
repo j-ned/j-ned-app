@@ -12,7 +12,7 @@ const PROJECTS_SECTION = {
 } as const;
 
 @Component({
-  selector: 'app-home-projects',
+  selector: 'home-projects',
   imports: [ProjectCard, Button, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block animate-fade-up' },
@@ -38,7 +38,7 @@ const PROJECTS_SECTION = {
 
       <ul class="grid grid-cols-1 md:grid-cols-2 gap-6" role="list">
         @for (project of featuredProjects(); track project.id) {
-          <li><app-project-card [project]="project" /></li>
+          <li><project-card [project]="project" /></li>
         }
       </ul>
 

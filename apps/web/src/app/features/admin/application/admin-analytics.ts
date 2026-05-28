@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AppChart, AppTag } from '@shared/ui';
+import { AppChart, AppTag, Button, AppSkeleton, AppIconTile } from '@shared/ui';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
@@ -37,8 +37,8 @@ type DateRangeOption = {
 };
 
 @Component({
-  selector: 'app-admin-analytics',
-  imports: [FormsModule, AppChart, AppTag, AppIcon],
+  selector: 'admin-analytics',
+  imports: [FormsModule, AppChart, AppTag, AppIcon, Button, AppSkeleton, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -70,14 +70,14 @@ type DateRangeOption = {
           (ngModelChange)="dateRange.set($event)"
           aria-label="Période d'analyse"
         >
-          @for (opt of dateRangeOptions; track opt.value) {
+          @for (opt of DATE_RANGE_OPTIONS; track opt.value) {
             <option [value]="opt.value">{{ opt.label }}</option>
           }
         </select>
-        <button type="button" (click)="exportCsv()" class="btn-outline">
-          <app-icon name="download" [size]="20" class="mr-2" />
+        <app-button severity="secondary" variant="outlined" (click)="exportCsv()">
+          <app-icon name="download" [size]="20" />
           Export CSV
-        </button>
+        </app-button>
       </div>
     </header>
 
@@ -89,7 +89,7 @@ type DateRangeOption = {
           <span class="text-xs text-muted uppercase tracking-wider">Visiteurs</span>
         </div>
         @if (overviewResource.isLoading()) {
-          <div class="h-9 w-20 rounded bg-foreground/10 animate-pulse"></div>
+          <app-skeleton class="h-9 w-20 rounded" tone="strong" />
         } @else {
           <p class="text-3xl font-bold text-foreground leading-none">
             {{ overview()?.visitors ?? 0 }}
@@ -104,7 +104,7 @@ type DateRangeOption = {
           <span class="text-xs text-muted uppercase tracking-wider">Pages vues</span>
         </div>
         @if (overviewResource.isLoading()) {
-          <div class="h-9 w-20 rounded bg-foreground/10 animate-pulse"></div>
+          <app-skeleton class="h-9 w-20 rounded" tone="strong" />
         } @else {
           <p class="text-3xl font-bold text-foreground leading-none">
             {{ overview()?.pageviews ?? 0 }}
@@ -119,7 +119,7 @@ type DateRangeOption = {
           <span class="text-xs text-muted uppercase tracking-wider">Taux de rebond</span>
         </div>
         @if (overviewResource.isLoading()) {
-          <div class="h-9 w-20 rounded bg-foreground/10 animate-pulse"></div>
+          <app-skeleton class="h-9 w-20 rounded" tone="strong" />
         } @else {
           <p class="text-3xl font-bold text-foreground leading-none">
             {{ bounceRateFormatted() }}%
@@ -134,7 +134,7 @@ type DateRangeOption = {
           <span class="text-xs text-muted uppercase tracking-wider">Durée moyenne</span>
         </div>
         @if (overviewResource.isLoading()) {
-          <div class="h-9 w-20 rounded bg-foreground/10 animate-pulse"></div>
+          <app-skeleton class="h-9 w-20 rounded" tone="strong" />
         } @else {
           <p class="text-3xl font-bold text-foreground leading-none">{{ formattedDuration() }}</p>
           <p class="text-xs text-muted mt-2">par page</p>
@@ -158,7 +158,7 @@ type DateRangeOption = {
         </div>
       </header>
       @if (chartResource.isLoading()) {
-        <div class="h-72 rounded bg-foreground/5 animate-pulse"></div>
+        <app-skeleton class="h-72 rounded" />
       } @else {
         <app-chart type="line" [data]="chartData()" [options]="chartOptions()" height="18rem" />
       }
@@ -174,7 +174,7 @@ type DateRangeOption = {
         @if (pagesResource.isLoading()) {
           <div class="space-y-3">
             @for (_ of placeholder5; track $index) {
-              <div class="h-8 rounded bg-foreground/5 animate-pulse"></div>
+              <app-skeleton class="h-8 rounded" />
             }
           </div>
         } @else if (topPages().length === 0) {
@@ -207,7 +207,7 @@ type DateRangeOption = {
         @if (referrersResource.isLoading()) {
           <div class="space-y-3">
             @for (_ of placeholder5; track $index) {
-              <div class="h-8 rounded bg-foreground/5 animate-pulse"></div>
+              <app-skeleton class="h-8 rounded" />
             }
           </div>
         } @else if (topReferrers().length === 0) {
@@ -243,7 +243,7 @@ type DateRangeOption = {
           <h2 class="text-base font-semibold text-foreground">Navigateurs</h2>
         </header>
         @if (browsersResource.isLoading()) {
-          <div class="h-48 rounded bg-foreground/5 animate-pulse"></div>
+          <app-skeleton class="h-48 rounded" />
         } @else if (browsers().length === 0) {
           <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
         } @else {
@@ -262,7 +262,7 @@ type DateRangeOption = {
           <h2 class="text-base font-semibold text-foreground">Systèmes d'exploitation</h2>
         </header>
         @if (osResource.isLoading()) {
-          <div class="h-48 rounded bg-foreground/5 animate-pulse"></div>
+          <app-skeleton class="h-48 rounded" />
         } @else if (osList().length === 0) {
           <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
         } @else {
@@ -278,7 +278,7 @@ type DateRangeOption = {
         @if (countriesResource.isLoading()) {
           <div class="space-y-3">
             @for (_ of placeholder5; track $index) {
-              <div class="h-6 rounded bg-foreground/5 animate-pulse"></div>
+              <app-skeleton class="h-6 rounded" />
             }
           </div>
         } @else if (countries().length === 0) {
@@ -317,7 +317,7 @@ type DateRangeOption = {
         @if (projectsResource.isLoading()) {
           <div class="space-y-3">
             @for (_ of placeholder5; track $index) {
-              <div class="h-8 rounded bg-foreground/5 animate-pulse"></div>
+              <app-skeleton class="h-8 rounded" />
             }
           </div>
         } @else if (topProjects().length === 0) {
@@ -345,7 +345,7 @@ type DateRangeOption = {
         @if (articlesResource.isLoading()) {
           <div class="space-y-3">
             @for (_ of placeholder5; track $index) {
-              <div class="h-8 rounded bg-foreground/5 animate-pulse"></div>
+              <app-skeleton class="h-8 rounded" />
             }
           </div>
         } @else if (topArticles().length === 0) {
@@ -365,14 +365,12 @@ type DateRangeOption = {
       <div
         class="bg-surface border border-foreground/10 rounded-xl p-6 flex flex-col justify-center items-center text-center"
       >
-        <div
-          class="icon-tile-lg bg-accent/10 mb-4"
-        >
+        <app-icon-tile size="lg" class="bg-accent/10 mb-4">
           <app-icon name="download" [size]="24" class="text-accent" />
-        </div>
+        </app-icon-tile>
         <h2 class="text-base font-semibold text-foreground mb-1">CV téléchargés</h2>
         @if (overviewResource.isLoading()) {
-          <div class="h-10 w-24 rounded bg-foreground/5 animate-pulse"></div>
+          <app-skeleton class="h-10 w-24 rounded" />
         } @else {
           <p class="text-4xl font-bold text-foreground">{{ overview()?.cvDownloads ?? 0 }}</p>
         }
@@ -415,7 +413,7 @@ export class AdminAnalytics {
       .subscribe((r) => this.activeVisitors.set(r.count));
   }
 
-  readonly dateRangeOptions: DateRangeOption[] = [
+  readonly DATE_RANGE_OPTIONS: DateRangeOption[] = [
     { value: '7d', label: '7 derniers jours' },
     { value: '30d', label: '30 derniers jours' },
     { value: '90d', label: '90 derniers jours' },

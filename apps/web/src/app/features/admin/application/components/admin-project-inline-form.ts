@@ -10,17 +10,17 @@ import {
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import type { Project } from '@features/projects/domain';
-import { FileDropzone } from '@shared/ui';
+import { FileDropzone, Button } from '@shared/ui';
 
 @Component({
-  selector: 'app-admin-project-inline-form',
-  imports: [ReactiveFormsModule, FileDropzone],
+  selector: 'admin-project-inline-form',
+  imports: [ReactiveFormsModule, FileDropzone, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <form
       [formGroup]="form"
-      (ngSubmit)="onSubmit()"
+      (ngSubmit)="submitProject()"
       class="bg-foreground/5 border border-foreground/10 rounded-xl p-6 space-y-5"
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -147,20 +147,12 @@ import { FileDropzone } from '@shared/ui';
       </div>
 
       <div class="flex gap-3 pt-2">
-        <button
-          type="submit"
-          [disabled]="form.invalid"
-          class="btn-primary"
-        >
+        <app-button type="submit" severity="primary" [disabled]="form.invalid">
           {{ project() ? 'Enregistrer' : 'Créer' }}
-        </button>
-        <button
-          type="button"
-          (click)="cancelled.emit()"
-          class="btn-outline"
-        >
+        </app-button>
+        <app-button severity="secondary" variant="outlined" (click)="cancelled.emit()">
           Annuler
-        </button>
+        </app-button>
       </div>
     </form>
   `,
@@ -273,7 +265,7 @@ export class AdminProjectInlineForm {
     this.selectedTags.set(tags);
   }
 
-  onSubmit(): void {
+  submitProject(): void {
     if (this.form.invalid) return;
 
     const values = this.form.getRawValue();

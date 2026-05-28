@@ -12,7 +12,7 @@ import { AnalyticsGateway } from '@features/analytics/domain';
 import { firstValueFrom } from 'rxjs';
 import { CvGateway } from '@features/cv/domain';
 import { AppIcon } from '@shared/icons';
-import { Button, Drawer } from '@shared/ui';
+import { Button, Drawer, AppIconTile } from '@shared/ui';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
 type ThemePreference = 'dark' | 'light';
@@ -20,16 +20,16 @@ type ThemePreference = 'dark' | 'light';
 @Component({
   selector: 'app-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AppIcon, Button, Drawer],
+  imports: [RouterLink, AppIcon, Button, Drawer, AppIconTile],
   template: `
     <div class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-nav-border shadow-nav">
       <div class="page-container h-20 flex items-center justify-between">
         <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
-          <div
-            class="icon-tile bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
+          <app-icon-tile
+            class="bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
           >
             JN
-          </div>
+          </app-icon-tile>
           <div class="flex items-baseline gap-0.5">
             <span class="text-2xl font-bold text-foreground tracking-tight">Julien </span>
             <span class="text-2xl font-bold text-primary">N.</span>

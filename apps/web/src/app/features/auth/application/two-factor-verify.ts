@@ -4,14 +4,15 @@ import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '../infra';
 import { AppIcon } from '@shared/icons';
+import { Button, AppIconTile } from '@shared/ui';
 
 type TwoFactorVerifyFormShape = {
   code: FormControl<string>;
 };
 
 @Component({
-  selector: 'app-two-factor-verify',
-  imports: [ReactiveFormsModule, RouterLink, AppIcon],
+  selector: 'two-factor-verify',
+  imports: [ReactiveFormsModule, RouterLink, AppIcon, Button, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -20,9 +21,9 @@ type TwoFactorVerifyFormShape = {
         class="w-full max-w-md bg-surface border border-foreground/10 rounded-2xl p-8"
       >
         <div class="flex justify-center mb-6">
-          <div class="icon-tile-lg bg-primary/10 border border-primary/20">
+          <app-icon-tile size="lg" class="bg-primary/10 border border-primary/20">
             <app-icon name="shield" [size]="28" class="text-primary" />
-          </div>
+          </app-icon-tile>
         </div>
 
         <h1 class="text-2xl font-bold text-foreground mb-2 text-center">Vérification 2FA</h1>
@@ -68,17 +69,18 @@ type TwoFactorVerifyFormShape = {
             }
           </div>
 
-          <button
+          <app-button
             type="submit"
+            severity="primary"
+            [block]="true"
             [disabled]="form.invalid || isSubmitting()"
-            class="btn-primary w-full"
           >
             @if (isSubmitting()) {
               Vérification...
             } @else {
               Vérifier
             }
-          </button>
+          </app-button>
         </form>
 
         <nav class="mt-6 text-center">

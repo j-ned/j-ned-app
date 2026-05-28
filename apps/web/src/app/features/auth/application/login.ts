@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '../infra';
-import { ToastStore } from '@shared/ui';
+import { ToastStore, Button, AppIconTile } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 
 type LoginForm = {
@@ -12,8 +12,8 @@ type LoginForm = {
 };
 
 @Component({
-  selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, AppIcon],
+  selector: 'login',
+  imports: [ReactiveFormsModule, RouterLink, AppIcon, Button, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -21,11 +21,9 @@ type LoginForm = {
       <div class="w-full max-w-sm">
         <!-- Header -->
         <div class="text-center mb-8">
-          <div
-            class="icon-tile-lg bg-primary/10 border border-primary/20 mb-4"
-          >
+          <app-icon-tile size="lg" class="bg-primary/10 border border-primary/20 mb-4">
             <app-icon name="shield" [size]="28" class="text-primary" />
-          </div>
+          </app-icon-tile>
           <h1 class="text-xl font-bold text-foreground">Connexion Admin</h1>
           <p class="text-muted text-sm mt-1">Accédez au tableau de bord</p>
         </div>
@@ -101,17 +99,19 @@ type LoginForm = {
               </div>
             </fieldset>
 
-            <button
+            <app-button
               type="submit"
+              severity="primary"
+              [block]="true"
               [disabled]="form.invalid || isSubmitting()"
-              class="btn-primary w-full mt-5"
+              class="mt-5"
             >
               @if (isSubmitting()) {
                 Connexion...
               } @else {
                 Se connecter
               }
-            </button>
+            </app-button>
           </form>
         </div>
 

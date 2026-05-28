@@ -7,3 +7,5 @@ export type { ToastMessage, ToastSeverity, ToastEntry } from './toast.types';
 export { AppChart } from './chart';
 export { AppTag, type AppTagSeverity } from './tag';
 export { AppPaginator, type AppPaginatorEvent } from './paginator';
+export { AppSkeleton } from './skeleton';
+export { AppIconTile } from './icon-tile';

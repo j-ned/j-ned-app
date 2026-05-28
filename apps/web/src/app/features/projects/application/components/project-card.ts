@@ -5,7 +5,7 @@ import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
-  selector: 'app-project-card',
+  selector: 'project-card',
   imports: [NgOptimizedImage, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block h-full animate-fade-up' },

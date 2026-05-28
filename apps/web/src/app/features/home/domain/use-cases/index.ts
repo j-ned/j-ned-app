@@ -1,1 +1,2 @@
-export { GetHomeBundleUseCase } from './get-home-bundle.use-case';
+// Aucun use case pour le feature home — Home consomme HomeGateway directement.
+export {};

@@ -9,7 +9,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { STATIC_CONTACT_INFO, STATIC_SOCIAL_LINKS } from '@features/contact/infra';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ContactGateway } from '@features/contact/domain';
-import { ToastStore } from '@shared/ui';
+import { ToastStore, Button, AppIconTile } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 
 type ContactFormGroup = {
@@ -20,10 +20,10 @@ type ContactFormGroup = {
 };
 
 @Component({
-  selector: 'app-contact-form',
+  selector: 'contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ReactiveFormsModule, AppIcon],
+  imports: [ReactiveFormsModule, AppIcon, Button, AppIconTile],
   template: `
     <section id="contact" class="animate-fade-up py-16 md:py-20 px-6">
       <div class="max-w-5xl mx-auto">
@@ -58,9 +58,9 @@ type ContactFormGroup = {
                   [href]="'mailto:' + contactInfo.email"
                   class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
                 >
-                  <div class="icon-tile bg-primary/10">
+                  <app-icon-tile class="bg-primary/10">
                     <app-icon name="envelope" [size]="18" class="text-primary" />
-                  </div>
+                  </app-icon-tile>
                   <div class="min-w-0">
                     <p class="text-xs text-muted">Email</p>
                     <p
@@ -75,9 +75,9 @@ type ContactFormGroup = {
                   [href]="socialLinks.phone.url"
                   class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
                 >
-                  <div class="icon-tile bg-accent/10">
+                  <app-icon-tile class="bg-accent/10">
                     <app-icon name="phone" [size]="18" class="text-accent" />
-                  </div>
+                  </app-icon-tile>
                   <div>
                     <p class="text-xs text-muted">Téléphone</p>
                     <p
@@ -89,9 +89,9 @@ type ContactFormGroup = {
                 </a>
 
                 <div class="flex items-center gap-3 p-3 rounded-xl">
-                  <div class="icon-tile bg-status-success/15">
+                  <app-icon-tile class="bg-status-success/15">
                     <app-icon name="map-marker" [size]="18" class="text-status-success" />
-                  </div>
+                  </app-icon-tile>
                   <div>
                     <p class="text-xs text-muted">Localisation</p>
                     <p class="text-sm font-medium text-foreground">
@@ -271,10 +271,11 @@ type ContactFormGroup = {
                   </p>
                 }
               </div>
-              <button
+              <app-button
                 type="submit"
+                severity="primary"
+                [block]="true"
                 [disabled]="form.invalid || isSubmitting()"
-                class="btn-primary w-full gap-2"
               >
                 @if (isSubmitting()) {
                   <app-icon name="spinner" [size]="20" class="animate-spin" />
@@ -283,7 +284,7 @@ type ContactFormGroup = {
                   <span>Envoyer le message</span>
                   <app-icon name="send" [size]="20" />
                 }
-              </button>
+              </app-button>
             </form>
           </div>
         </div>

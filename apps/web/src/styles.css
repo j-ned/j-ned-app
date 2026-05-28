@@ -121,21 +121,13 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
- * Icon tile utilities — conteneurs carrés pour icônes décoratives
- * Radius constant (rounded-xl), 3 tailles (sm 36, md 44, lg 56).
- * Combiner avec bg-primary/10, bg-accent/10 etc. selon le contexte.
+ * Icon tile utility (anchor-only) — pour les <a> stylés en tuile d'icône.
+ * Pour les <div> wrappers, utiliser le composant <app-icon-tile size>.
+ * sm/lg ont été supprimés (uniquement utilisés par des <div>, migrés en composant).
  * ---------------------------------------------------------------- */
-
-@utility icon-tile-sm {
-  @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl;
-}
 
 @utility icon-tile {
   @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl;
-}
-
-@utility icon-tile-lg {
-  @apply inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl;
 }
 
 /* ---------------------------------------------------------------- *
@@ -169,28 +161,6 @@ input:-webkit-autofill:focus {
 
 @utility form-error {
   @apply block text-xs text-status-error mt-1;
-}
-
-@utility btn-primary {
-  @apply inline-flex items-center justify-center rounded-lg bg-primary-bg px-5 py-2.5 text-sm font-medium text-white shadow-sm;
-  @apply hover:opacity-90;
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
-  @apply disabled:opacity-50 disabled:cursor-not-allowed;
-  @apply transition-all;
-}
-
-@utility btn-outline {
-  @apply inline-flex items-center justify-center rounded-lg border border-muted/30 bg-transparent px-5 py-2.5 text-sm font-medium text-foreground;
-  @apply hover:bg-surface-elevated;
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted focus-visible:ring-offset-2 focus-visible:ring-offset-background;
-  @apply transition-colors;
-}
-
-@utility btn-danger {
-  @apply inline-flex items-center justify-center rounded-lg bg-status-error px-5 py-2.5 text-sm font-medium text-white shadow-sm;
-  @apply hover:bg-status-error/90;
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-error focus-visible:ring-offset-2 focus-visible:ring-offset-background;
-  @apply transition-colors;
 }
 
 /* ---------------------------------------------------------------- *

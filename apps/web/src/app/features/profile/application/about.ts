@@ -8,7 +8,7 @@ import { AboutWhatIDo } from './about-what-i-do';
 import { AboutHighlights } from './about-highlights';
 
 @Component({
-  selector: 'app-about',
+  selector: 'about',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   imports: [
@@ -25,10 +25,10 @@ import { AboutHighlights } from './about-highlights';
       <section class="page-container mb-10">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8">
           <div class="lg:col-span-2">
-            <app-about-hero />
+            <about-hero />
           </div>
           <div class="lg:col-span-1">
-            <app-about-stack />
+            <about-stack />
           </div>
         </div>
       </section>
@@ -37,14 +37,14 @@ import { AboutHighlights } from './about-highlights';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           <aside class="lg:col-span-1 space-y-8">
             @defer (hydrate on viewport) {
-              <app-about-search />
+              <about-search />
             } @placeholder {
               <div class="h-48" aria-hidden="true"></div>
             } @error {
               <p class="text-sm text-muted">Section indisponible.</p>
             }
             @defer (hydrate on viewport) {
-              <app-about-diploma />
+              <about-diploma />
             } @placeholder {
               <div class="h-96" aria-hidden="true"></div>
             } @error {
@@ -54,21 +54,21 @@ import { AboutHighlights } from './about-highlights';
 
           <div class="lg:col-span-2 space-y-8">
             @defer (hydrate on viewport) {
-              <app-about-journey />
+              <about-journey />
             } @placeholder {
               <div class="h-64" aria-hidden="true"></div>
             } @error {
               <p class="text-sm text-muted">Section indisponible.</p>
             }
             @defer (hydrate on viewport) {
-              <app-about-what-i-do />
+              <about-what-i-do />
             } @placeholder {
               <div class="h-64" aria-hidden="true"></div>
             } @error {
               <p class="text-sm text-muted">Section indisponible.</p>
             }
             @defer (hydrate on viewport) {
-              <app-about-highlights />
+              <about-highlights />
             } @placeholder {
               <div class="h-64" aria-hidden="true"></div>
             } @error {

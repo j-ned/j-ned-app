@@ -2,10 +2,11 @@ import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/c
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ProfileGateway } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
+import { AppIconTile } from '@shared/ui';
 
 @Component({
-  selector: 'app-about-highlights',
-  imports: [AppIcon],
+  selector: 'about-highlights',
+  imports: [AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class:
@@ -22,9 +23,9 @@ import { AppIcon } from '@shared/icons';
           <article
             class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-accent/50 hover:bg-accent/5 transition-all group"
           >
-            <div class="icon-tile bg-accent/10 mb-3">
+            <app-icon-tile class="bg-accent/10 mb-3">
               <app-icon [name]="highlight.icon" [size]="22" class="text-accent" />
-            </div>
+            </app-icon-tile>
             <h3
               class="text-base font-bold text-foreground mb-2 group-hover:text-primary transition-colors"
             >

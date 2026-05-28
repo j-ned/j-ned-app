@@ -4,7 +4,7 @@ import { ProfileGateway } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
-  selector: 'app-about-search',
+  selector: 'about-search',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AppIcon],
   host: { class: 'block' },

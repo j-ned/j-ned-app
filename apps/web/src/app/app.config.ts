@@ -33,6 +33,7 @@ import { filter } from 'rxjs';
 
 import { routes } from './app.routes';
 import { Seo } from '@shared/seo/seo';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { AnalyticsGateway } from '@features/analytics/domain';
 import { HttpAnalyticsGateway } from '@features/analytics/infra';
 import { CvGateway } from '@features/cv/domain';
@@ -64,7 +65,7 @@ function initializeSeo(): () => void {
 
     router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe(() => {
+      .subscribe((event) => {
         let route = router.routerState.snapshot.root;
         while (route.firstChild) {
           route = route.firstChild;
@@ -72,7 +73,8 @@ function initializeSeo(): () => void {
 
         const seoData = route.data['seo'];
         if (seoData) {
-          seoService.applySeoData(seoData);
+          const url = seoData.url ?? `${SITE_IDENTITY.siteUrl}${event.urlAfterRedirects}`;
+          seoService.applySeoData({ ...seoData, url });
         }
       });
   };

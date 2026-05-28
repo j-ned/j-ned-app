@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output, type Signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AppIcon } from '@shared/icons';
+import { AppIconTile } from '@shared/ui';
 
 export type AdminNavItem = {
   readonly route: string;
@@ -12,16 +13,16 @@ export type AdminNavItem = {
 };
 
 @Component({
-  selector: 'app-admin-nav',
-  imports: [RouterLink, RouterLinkActive, AppIcon],
+  selector: 'admin-nav',
+  imports: [RouterLink, RouterLinkActive, AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col h-full' },
   template: `
     <div class="p-4 border-b border-foreground/10">
       <div class="flex items-center gap-3">
-        <div class="icon-tile bg-primary/10 border border-primary/30">
+        <app-icon-tile class="bg-primary/10 border border-primary/30">
           <app-icon name="th-large" [size]="20" class="text-primary" />
-        </div>
+        </app-icon-tile>
         @if (!collapsed()) {
           <div class="overflow-hidden">
             <h2 class="text-lg font-bold text-foreground leading-tight">Admin</h2>

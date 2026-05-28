@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 @Component({
-  selector: 'app-page-not-found',
+  selector: 'page-not-found',
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -18,7 +18,7 @@ import { RouterLink } from '@angular/router';
       </p>
       <a
         routerLink="/"
-        class="btn-primary gap-2"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-bg px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 transition-all"
       >
         Retour à l'accueil
       </a>

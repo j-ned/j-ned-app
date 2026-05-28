@@ -1,13 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-type Severity = 'primary' | 'secondary';
+type Severity = 'primary' | 'secondary' | 'danger';
 type Size = 'default' | 'large';
 type Variant = 'solid' | 'outlined' | 'text';
 
 @Component({
   selector: 'app-button',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'inline-flex' },
+  host: {
+    '[class.inline-flex]': '!block()',
+    '[class.block]': 'block()',
+  },
   template: `
     <button
       [attr.type]="type()"
@@ -51,6 +54,7 @@ export class Button {
   readonly size = input<Size>('default');
   readonly variant = input<Variant>('solid');
   readonly rounded = input<boolean>(false);
+  readonly block = input<boolean>(false);
   readonly ariaLabel = input<string | undefined>(undefined);
   readonly disabled = input<boolean>(false);
   readonly type = input<'button' | 'submit'>('button');
@@ -60,9 +64,10 @@ export class Button {
     const sizeClass =
       this.size() === 'large'
         ? 'text-base md:text-lg px-6 py-3 min-h-11'
-        : 'text-sm px-4 py-2 min-h-11';
+        : 'text-sm px-5 py-2.5 min-h-11';
     const radiusClass = this.rounded() ? 'rounded-full' : 'rounded-lg';
-    return [sizeClass, radiusClass, this.variantClass()].join(' ');
+    const widthClass = this.block() ? 'w-full' : '';
+    return [sizeClass, radiusClass, widthClass, this.variantClass()].filter(Boolean).join(' ');
   });
 
   private variantClass(): string {
@@ -70,20 +75,29 @@ export class Button {
     const variant = this.variant();
 
     if (variant === 'text') {
+      if (sev === 'danger') {
+        return 'bg-transparent text-status-error hover:bg-status-error/10';
+      }
       return sev === 'primary'
         ? 'bg-transparent text-primary hover:bg-primary/10'
         : 'bg-transparent text-muted hover:bg-foreground/5 hover:text-foreground';
     }
 
     if (variant === 'outlined') {
+      if (sev === 'danger') {
+        return 'bg-transparent border border-status-error/40 text-status-error hover:bg-status-error/10 hover:border-status-error/60';
+      }
       return sev === 'primary'
         ? 'bg-transparent border border-primary/40 text-primary hover:bg-primary/10 hover:border-primary/60'
-        : 'bg-transparent border border-foreground/15 text-foreground hover:bg-foreground/5 hover:border-foreground/30';
+        : 'bg-transparent border border-muted/30 text-foreground hover:bg-surface-elevated hover:border-foreground/30';
     }
 
     // solid
+    if (sev === 'danger') {
+      return 'bg-status-error text-white border border-status-error shadow-sm hover:bg-status-error/90';
+    }
     return sev === 'primary'
-      ? 'bg-primary-bg text-white border border-primary-bg hover:bg-primary-bg/90 hover:border-primary-bg/90'
+      ? 'bg-primary-bg text-white border border-primary-bg shadow-sm hover:opacity-90'
       : 'bg-foreground/10 text-foreground border border-foreground/15 hover:bg-foreground/15';
   }
 }

@@ -17,7 +17,7 @@ import { AppIcon } from '@shared/icons';
 type SortDir = 'asc' | 'desc';
 
 @Component({
-  selector: 'app-admin-table',
+  selector: 'admin-table',
   imports: [RouterLink, NgTemplateOutlet, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -28,8 +28,11 @@ type SortDir = 'asc' | 'desc';
         <div class="flex items-center gap-3">
           <ng-content select="[adminTableHeaderActions]" />
           @if (newRoute()) {
-            <a [routerLink]="newRoute()" class="btn-primary">
-              <app-icon name="plus" [size]="20" class="mr-2" />
+            <a
+              [routerLink]="newRoute()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-bg px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 transition-all"
+            >
+              <app-icon name="plus" [size]="20" />
               {{ newLabel() }}
             </a>
           }
