@@ -27,6 +27,18 @@ export class HttpProjectsGateway extends ProjectsGateway {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
+  private readonly _refreshFeatured$ = new Subject<void>();
+  private readonly featuredProjects$ = this._refreshFeatured$.pipe(
+    startWith(undefined),
+    switchMap(() =>
+      this.http.get<Project[]>(`${this.apiUrl}/projects?featured=true&_sort=order`).pipe(
+        map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
+        catchError(() => of([] as readonly Project[])),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
   getAllProjects(): Observable<readonly Project[]> {
     return this.allProjects$;
   }
@@ -36,10 +48,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
   }
 
   getFeaturedProjects(): Observable<readonly Project[]> {
-    return this.http.get<Project[]>(`${this.apiUrl}/projects?featured=true&_sort=order`).pipe(
-      map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
-      catchError(() => of([])),
-    );
+    return this.featuredProjects$;
   }
 
   getCategories(): Observable<readonly string[]> {

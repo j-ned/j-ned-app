@@ -49,14 +49,6 @@ import { InMemoryHomeGateway } from '@features/home/infra';
 import { AuthGateway } from '@features/auth/domain';
 import { HttpAuthGateway, AuthStore } from '@features/auth/infra';
 
-function prefetchHomeBundle(): () => void {
-  return (): void => {
-    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
-    const gateway = inject(HomeGateway);
-    gateway.getHomeBundle().subscribe();
-  };
-}
-
 function initializeAuth(): () => Promise<void> | void {
   return (): Promise<void> | void => {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
@@ -144,7 +136,6 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
     provideAppInitializer(initializeAuth()),
-    provideAppInitializer(prefetchHomeBundle()),
     provideAppInitializer(initializeSeo()),
     provideAppInitializer(initializeTracking()),
     {
