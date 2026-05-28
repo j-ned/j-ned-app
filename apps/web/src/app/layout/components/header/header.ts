@@ -153,10 +153,10 @@ export class Header {
   protected readonly cvUrl = signal<string | null>(null);
 
   constructor() {
-    afterNextRender(() => {
-      this.applyTheme();
-      this.loadCvUrl();
+    afterNextRender({
+      write: () => this.applyTheme(),
     });
+    afterNextRender(() => this.loadCvUrl());
 
     effect(() => {
       const isDark = this.isDarkTheme();

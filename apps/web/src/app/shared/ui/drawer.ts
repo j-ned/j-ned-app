@@ -131,8 +131,10 @@ export class Drawer {
       }
     });
 
-    afterRenderEffect(() => {
-      this._panel()?.nativeElement.focus();
+    afterRenderEffect({
+      write: () => {
+        this._panel()?.nativeElement.focus();
+      },
     });
   }
 

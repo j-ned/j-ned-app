@@ -25,14 +25,16 @@ export class AppChart implements OnDestroy {
   private chart?: Chart;
 
   constructor() {
-    afterRenderEffect(() => {
-      const type = this.type();
-      const data = this.data();
-      const options = this.options();
-      const el = this.canvasRef().nativeElement;
+    afterRenderEffect({
+      write: () => {
+        const type = this.type();
+        const data = this.data();
+        const options = this.options();
+        const el = this.canvasRef().nativeElement;
 
-      this.chart?.destroy();
-      this.chart = new Chart(el, { type, data, options });
+        this.chart?.destroy();
+        this.chart = new Chart(el, { type, data, options });
+      },
     });
   }
 

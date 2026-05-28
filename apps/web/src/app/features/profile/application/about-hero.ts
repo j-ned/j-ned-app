@@ -23,8 +23,8 @@ import { AppIcon } from '@shared/icons';
             [ngSrc]="avatarUrl()"
             [alt]="profile.displayName"
             class="w-full h-full object-cover"
-            width="160"
-            height="160"
+            width="400"
+            height="400"
             priority
           />
         </figure>
