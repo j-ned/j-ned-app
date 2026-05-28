@@ -3,6 +3,7 @@ import {
   input,
   output,
   signal,
+  linkedSignal,
   effect,
   ChangeDetectionStrategy,
   inject,
@@ -172,8 +173,17 @@ export class AdminProjectInlineForm {
   readonly cancelled = output<void>();
 
   readonly selectedFile = signal<File | null>(null);
-  readonly imagePreview = signal('');
-  readonly selectedTags = signal(new Set<string>());
+
+  readonly imagePreview = linkedSignal({
+    source: this.project,
+    computation: (p, previous): string => p?.image ?? previous?.value ?? '',
+  });
+
+  readonly selectedTags = linkedSignal({
+    source: this.project,
+    computation: (p, previous): Set<string> =>
+      p ? new Set(p.tags ?? []) : (previous?.value ?? new Set<string>()),
+  });
 
   readonly categories = [
     'Application Web',
@@ -232,7 +242,7 @@ export class AdminProjectInlineForm {
     order: [0],
   });
 
-  private readonly _populateForm = effect(() => {
+  private readonly _patchForm = effect(() => {
     const p = this.project();
     if (!p) return;
 
@@ -247,12 +257,6 @@ export class AdminProjectInlineForm {
       featured: p.featured,
       order: p.order,
     });
-
-    this.selectedTags.set(new Set(p.tags ?? []));
-
-    if (p.image) {
-      this.imagePreview.set(p.image);
-    }
   });
 
   onFileSelected(file: File): void {
