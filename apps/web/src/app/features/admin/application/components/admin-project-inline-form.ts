@@ -9,7 +9,7 @@ import {
   inject,
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import type { Project } from '@features/projects/domain';
+import type { Project, ProjectInput } from '@features/projects/domain';
 import { FileDropzone, Button } from '@shared/ui';
 
 @Component({
@@ -161,7 +161,7 @@ export class AdminProjectInlineForm {
   private readonly fb = inject(FormBuilder);
 
   readonly project = input<Project>();
-  readonly saved = output<{ data: Omit<Project, 'id'>; file: File | null }>();
+  readonly saved = output<{ data: ProjectInput; file: File | null }>();
   readonly cancelled = output<void>();
 
   readonly selectedFile = signal<File | null>(null);
@@ -269,14 +269,14 @@ export class AdminProjectInlineForm {
     if (this.form.invalid) return;
 
     const values = this.form.getRawValue();
-    const existingProject = this.project();
 
-    const data: Omit<Project, 'id'> = {
+    // `image` est volontairement absent : l'image transite par `file` (uploadImage),
+    // jamais comme string dans le payload create/update (le DTO backend la rejette).
+    const data: ProjectInput = {
       title: values.title,
       category: values.category,
       tags: [...this.selectedTags()],
       description: values.description,
-      image: existingProject?.image ?? '',
       liveUrl: values.liveUrl || undefined,
       repoUrl: values.repoUrl || undefined,
       repoUrlFront: values.repoUrlFront || undefined,

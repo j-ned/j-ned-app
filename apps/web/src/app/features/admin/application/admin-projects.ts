@@ -11,7 +11,7 @@ import { firstValueFrom, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
 import { ProjectsGateway } from '@features/projects/domain';
-import type { Project } from '@features/projects/domain';
+import type { Project, ProjectInput } from '@features/projects/domain';
 import { HomeGateway } from '@features/home/domain';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
 import { AppTag, ToastStore, Button } from '@shared/ui';
@@ -203,7 +203,7 @@ export class AdminProjects {
     this.showNewForm.set(false);
   }
 
-  async createProject(event: { data: Omit<Project, 'id'>; file: File | null }): Promise<void> {
+  async createProject(event: { data: ProjectInput; file: File | null }): Promise<void> {
     let created: Project;
     try {
       created = await firstValueFrom(this.projectsGateway.createProject(event.data));
@@ -238,15 +238,13 @@ export class AdminProjects {
     this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet créé' });
   }
 
-  updateProject(id: string, event: { data: Omit<Project, 'id'>; file: File | null }): void {
+  updateProject(id: string, event: { data: ProjectInput; file: File | null }): void {
+    // uploadImage persiste déjà la nouvelle image côté backend ; le PATCH qui suit
+    // ne met à jour que les autres champs (sans image).
     const update$ = event.file
       ? this.projectsGateway
           .uploadImage(event.file, id)
-          .pipe(
-            switchMap((key) =>
-              this.projectsGateway.updateProject(id, { ...event.data, image: key }),
-            ),
-          )
+          .pipe(switchMap(() => this.projectsGateway.updateProject(id, event.data)))
       : this.projectsGateway.updateProject(id, event.data);
 
     update$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

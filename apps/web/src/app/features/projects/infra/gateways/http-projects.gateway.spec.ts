@@ -130,10 +130,10 @@ describe('HttpProjectsGateway', () => {
   });
 
   describe('Admin (NestJS) — 4 tests', () => {
-    it('createProject(data) émet POST /<base>/projects', async () => {
+    it('createProject(data) émet POST /<base>/projects sans champ image (géré via uploadImage)', async () => {
       const { gateway, httpController } = configure();
       const data = makeProject();
-      const { id: _id, ...payload } = data;
+      const { id: _id, image: _image, ...payload } = data;
       const created = makeProject({ id: 'new-uuid' });
 
       const promise = firstValueFrom(gateway.createProject(payload));
@@ -141,6 +141,7 @@ describe('HttpProjectsGateway', () => {
       const req = httpController.expectOne(`${BASE}/projects`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(payload);
+      expect(req.request.body).not.toHaveProperty('image');
       req.flush(created);
 
       const result = await promise;

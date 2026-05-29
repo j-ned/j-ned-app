@@ -1,7 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, shareReplay, startWith, Subject, switchMap } from 'rxjs';
-import { ProjectsGateway, type Project, type ProjectFilter } from '../../domain';
+import {
+  ProjectsGateway,
+  type Project,
+  type ProjectFilter,
+  type ProjectInput,
+} from '../../domain';
 import { API_BASE_URL } from '@shared/api';
 
 function resolveProject(apiUrl: string, p: Project): Project {
@@ -81,11 +86,11 @@ export class HttpProjectsGateway extends ProjectsGateway {
       .pipe(map((p) => resolveProject(this.apiUrl, p)));
   }
 
-  createProject(project: Omit<Project, 'id'>): Observable<Project> {
+  createProject(project: ProjectInput): Observable<Project> {
     return this.http.post<Project>(`${this.apiUrl}/projects`, project);
   }
 
-  updateProject(id: string, project: Partial<Project>): Observable<Project> {
+  updateProject(id: string, project: Partial<ProjectInput>): Observable<Project> {
     return this.http.patch<Project>(`${this.apiUrl}/projects/${id}`, project);
   }
 

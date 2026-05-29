@@ -12,3 +12,8 @@ export type Project = {
   readonly featured: boolean;
   readonly order: number;
 };
+
+// Payload d'écriture (create/update). `id` est généré côté serveur et `image`
+// est géré exclusivement via uploadImage (POST /:id/image) — jamais comme string
+// dans create/update, que le DTO backend rejette (400).
+export type ProjectInput = Omit<Project, 'id' | 'image'>;
