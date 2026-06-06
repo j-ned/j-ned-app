@@ -5,7 +5,6 @@ import {
   effect,
   afterNextRender,
   inject,
-  Injector,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
@@ -147,7 +146,6 @@ export class Header {
   private readonly analytics = inject(AnalyticsGateway);
   private readonly cvService = inject(CvGateway);
   private readonly router = inject(Router);
-  private readonly injector = inject(Injector);
 
   protected readonly navItems = signal(NAV_LINKS);
   protected readonly isMobileMenuOpen = signal(false);
@@ -207,15 +205,24 @@ export class Header {
     if (this.router.url.split(/[?#]/)[0] === '/') {
       this._scrollToAnchor(id);
     } else {
-      void this.router.navigateByUrl('/').then(() => {
-        afterNextRender(() => this._scrollToAnchor(id), { injector: this.injector });
-      });
+      void this.router.navigateByUrl('/').then(() => this._scrollToAnchor(id));
     }
   }
 
-  private _scrollToAnchor(id: string): void {
+  private _scrollToAnchor(id: string, attempt = 0): void {
     if (typeof document === 'undefined') return;
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const el = document.getElementById(id);
+    if (!el) {
+      // Cible pas encore rendue (navigation cross-page) → on réessaie au prochain frame.
+      if (attempt < 30) requestAnimationFrame(() => this._scrollToAnchor(id, attempt + 1));
+      return;
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Correction différée : les sections @defer situées au-dessus s'agrandissent en
+    // entrant dans le viewport pendant l'animation et décalent la cible vers le bas.
+    window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 600);
   }
 
   protected trackCvDownload(): void {
