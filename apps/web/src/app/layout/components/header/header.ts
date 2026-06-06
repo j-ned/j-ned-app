@@ -5,8 +5,9 @@ import {
   effect,
   afterNextRender,
   inject,
+  Injector,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain';
 import { firstValueFrom } from 'rxjs';
@@ -38,9 +39,10 @@ type ThemePreference = 'dark' | 'light';
 
         <nav class="hidden md:flex items-center gap-8" aria-label="Navigation principale">
           @for (item of navItems(); track item) {
-            @if (item.href.startsWith('#')) {
+            @if (item.scrollTo) {
               <a
                 [href]="item.href"
+                (click)="scrollToSection(item.scrollTo, $event)"
                 class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
               >
                 <app-icon [name]="item.icons" [size]="20" />
@@ -105,10 +107,10 @@ type ThemePreference = 'dark' | 'light';
     >
       <nav class="flex flex-col gap-4" aria-label="Navigation mobile">
         @for (item of navItems(); track item) {
-          @if (item.href.startsWith('#')) {
+          @if (item.scrollTo) {
             <a
               [href]="item.href"
-              (click)="closeMobileMenu()"
+              (click)="scrollToSection(item.scrollTo, $event)"
               class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
             >
               <app-icon [name]="item.icons" [size]="20" />
@@ -144,6 +146,8 @@ type ThemePreference = 'dark' | 'light';
 export class Header {
   private readonly analytics = inject(AnalyticsGateway);
   private readonly cvService = inject(CvGateway);
+  private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   protected readonly navItems = signal(NAV_LINKS);
   protected readonly isMobileMenuOpen = signal(false);
@@ -190,6 +194,28 @@ export class Header {
 
   protected closeMobileMenu(): void {
     this.isMobileMenuOpen.set(false);
+  }
+
+  /**
+   * Scrolle vers une section de la landing sans polluer l'URL avec une ancre `#`.
+   * Si on est déjà sur la home → scroll direct ; sinon on navigue d'abord vers `/`
+   * puis on scrolle après le rendu (`afterNextRender`, SSR-safe).
+   */
+  protected scrollToSection(id: string, event: Event): void {
+    event.preventDefault();
+    this.closeMobileMenu();
+    if (this.router.url.split(/[?#]/)[0] === '/') {
+      this._scrollToAnchor(id);
+    } else {
+      void this.router.navigateByUrl('/').then(() => {
+        afterNextRender(() => this._scrollToAnchor(id), { injector: this.injector });
+      });
+    }
+  }
+
+  private _scrollToAnchor(id: string): void {
+    if (typeof document === 'undefined') return;
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   protected trackCvDownload(): void {
