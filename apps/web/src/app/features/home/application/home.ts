@@ -2,14 +2,14 @@ import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/c
 import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
 import { HomeProjects } from './home-projects';
-import { RouterLink } from '@angular/router';
+import { ContactForm } from '@features/contact/application';
 import { HomeGateway } from '@features/home/domain';
 import { AppIcon } from '@shared/icons';
 import { AppIconTile } from '@shared/ui';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeProjects, RouterLink, AppIcon, AppIconTile],
+  imports: [HomeHeroSection, HomeProjects, ContactForm, AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -78,22 +78,19 @@ import { AppIconTile } from '@shared/ui';
         </div>
       }
 
-      <!-- Contact CTA : la page contact est une route dédiée (/contact), pas une ancre -->
-      <section class="w-full py-16 md:py-20" aria-labelledby="contact-cta-heading">
-        <div class="page-container text-center">
-          <h2 id="contact-cta-heading" class="text-2xl md:text-3xl font-bold text-foreground mb-3">
-            Un projet, une idée&nbsp;?
-          </h2>
-          <p class="text-muted mb-8 max-w-xl mx-auto">Discutons-en ! je réponds rapidement.</p>
-          <a
-            routerLink="/contact"
-            class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-white font-medium hover:bg-primary/90 transition-colors"
-          >
-            <app-icon name="envelope" [size]="20" />
-            Me contacter
-          </a>
-        </div>
-      </section>
+      <!-- Contact (section de la landing) ; id pour le scroll programmatique du header,
+           JAMAIS exposé comme ancre #contact dans l'URL. scroll-mt-20 compense le header fixe. -->
+      <div id="contact" class="scroll-mt-20">
+        @defer (on viewport; prefetch on idle) {
+          <app-contact-form />
+        } @placeholder {
+          <div class="block py-16 md:py-20 px-6 h-96"></div>
+        } @error {
+          <div class="block py-16 md:py-20 px-6 text-center text-muted text-sm">
+            Impossible de charger cette section.
+          </div>
+        }
+      </div>
     </main>
   `,
 })
