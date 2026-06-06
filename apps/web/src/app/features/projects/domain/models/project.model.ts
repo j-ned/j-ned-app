@@ -5,10 +5,13 @@ export type Project = {
   readonly tags: readonly string[];
   readonly description: string;
   readonly image: string;
-  readonly liveUrl?: string;
-  readonly repoUrl?: string;
-  readonly repoUrlFront?: string;
-  readonly repoUrlBack?: string;
+  // `null` = lien explicitement effacé (envoyé dans le PATCH pour vider le champ) ;
+  // `undefined`/absent = champ non fourni. La distinction est cruciale : JSON.stringify
+  // supprime les `undefined`, donc seul `null` transmet l'intention d'effacement au backend.
+  readonly liveUrl?: string | null;
+  readonly repoUrl?: string | null;
+  readonly repoUrlFront?: string | null;
+  readonly repoUrlBack?: string | null;
   readonly featured: boolean;
   readonly order: number;
 };
