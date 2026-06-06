@@ -1,4 +1,4 @@
-import type { Project } from '../models';
+import type { Project } from '../models/project.model';
 
 export function paginateProjects(
   projects: readonly Project[],

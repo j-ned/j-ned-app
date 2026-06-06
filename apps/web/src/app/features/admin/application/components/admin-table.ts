@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { AdminColumnBase } from './admin-column';
+import { AdminColumnBase } from './admin-column-base';
 import { AppIcon } from '@shared/icons';
 
 type SortDir = 'asc' | 'desc';

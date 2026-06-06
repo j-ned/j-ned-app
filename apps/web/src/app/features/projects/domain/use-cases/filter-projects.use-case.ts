@@ -1,4 +1,4 @@
-import type { Project } from '../models';
+import type { Project } from '../models/project.model';
 
 export const FILTER_ALL = '__ALL__';
 

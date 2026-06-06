@@ -1,4 +1,4 @@
-import type { Project } from '../models';
+import type { Project } from '../models/project.model';
 import { filterProjects, FILTER_ALL } from '@features/projects/domain';
 
 function makeProject(category: string, id = '1'): Project {

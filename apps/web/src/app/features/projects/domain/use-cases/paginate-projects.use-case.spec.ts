@@ -1,4 +1,4 @@
-import type { Project } from '../models';
+import type { Project } from '../models/project.model';
 import { calculateTotalPages, paginateProjects } from '@features/projects/domain';
 
 function makeProjects(count: number): readonly Project[] {

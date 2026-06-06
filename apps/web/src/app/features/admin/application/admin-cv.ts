@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { firstValueFrom } from 'rxjs';
 import { CvGateway, type CvInfo } from '@features/cv/domain';
 import { ToastStore, FileDropzone, Button } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api/extract-error-message';
 
 @Component({
   selector: 'app-admin-cv',
@@ -154,10 +155,7 @@ export class AdminCv {
       this.clearSelection();
       this.loadCv();
     } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : ((err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue');
+      const message = extractErrorMessage(err);
       this._toast.add({
         severity: 'error',
         summary: 'Erreur',
@@ -174,10 +172,7 @@ export class AdminCv {
       this._toast.add({ severity: 'success', summary: 'Succès', detail: 'CV supprimé' });
       this.loadCv();
     } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : ((err as { error?: { message?: string } })?.error?.message ?? 'Erreur inconnue');
+      const message = extractErrorMessage(err);
       this._toast.add({
         severity: 'error',
         summary: 'Erreur',

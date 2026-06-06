@@ -1,4 +1,4 @@
-You are an expert TypeScript / Angular / NestJS engineer. You write functional, maintainable, performant and accessible code.
+You are an expert TypeScript / Angular engineer. You write functional, maintainable, performant and accessible code.
 
 ---
 
@@ -261,45 +261,19 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 
 ---
 
-## Backend -- NestJS + PostgreSQL + Drizzle + Zod
+## API (backend séparé — repo distinct)
 
-### Structure NestJS
-```
-apps/api/src/
-├── modules/<feature>/
-│   ├── <feature>.module.ts
-│   ├── <feature>.controller.ts   # routes + DTO validation Zod
-│   ├── <feature>.service.ts      # logique metier
-│   ├── <feature>.repository.ts   # acces Drizzle
-│   ├── dto/                      # Zod schemas + types inferes
-│   └── *.spec.ts
-├── db/
-│   ├── schema/                   # Drizzle tables
-│   ├── migrations/               # genere par drizzle-kit
-│   └── index.ts                  # client db
-└── common/                       # guards, pipes, filters, interceptors
-```
+> **Ce repo est FRONT-ONLY.** Aucun backend dans l'arbre (`apps/api/**` n'existe pas ici, ce
+> n'est pas un monorepo). L'API (NestJS) vit dans un **dépôt séparé** avec ses propres
+> conventions (NestJS/Drizzle/Zod). Ici on ne documente que la **consommation** de l'API côté
+> Angular.
 
-### Drizzle
-- Schemas typees dans `db/schema/<feature>.ts`
-- Types inferes : `type User = typeof users.$inferSelect`, `type NewUser = typeof users.$inferInsert`
-- Migrations generees : `drizzle-kit generate` (jamais a la main)
-- Repository pattern : `db.select().from(users).where(eq(users.id, id))`
-- Relations explicites via `relations()` pour les `findMany({ with: { ... } })`
-- Pas de raw SQL sauf optimisation prouvee
-
-### Zod aux frontieres
-- 1 schema Zod par DTO d'entree (body, query, params)
-- Type infere : `type CreateUserDto = z.infer<typeof CreateUserSchema>`
-- `ZodValidationPipe` (NestJS) sur chaque controller
-- Schema partage front/back via package commun si monorepo
-- Sortie : DTO de reponse explicite, **jamais** l'entite Drizzle directe (fuite de schema BDD)
-
-### Gateway Angular <-> NestJS
-- `HttpClient` type sur les DTOs partages
-- Adapter cote front : DTO API -> modele domain
-- Intercepteur fonctionnel pour `Authorization: Bearer <token>`
-- Erreurs HTTP -> Result pattern dans le use case
+### Gateway Angular ↔ API
+- `HttpClient` typé sur les DTOs de réponse de l'API
+- Adapter côté front (`infra/*.adapter.ts`) : DTO API → modèle `domain` (fonction pure)
+- Types API isolés dans `infra/` (jamais dans `domain`)
+- Intercepteur fonctionnel pour l'`Authorization` (cf. `core/` / `auth/infra`)
+- Erreurs HTTP → Result pattern dans le use case (ou gestion locale dans le smart component)
 
 ---
 
@@ -358,6 +332,58 @@ apps/api/src/
 
 ---
 
+## Agents AAK (plugin `angular-team`)
+
+Pipeline d'agents spécialisés Angular 20+ qui orchestrent le cycle de dev en **TDD strict**.
+Chaque agent a un rôle **borné** ; on ne mélange jamais les rôles. Tous s'appuient sur
+`.claude/project-profile.md` pour connaître les conventions du repo.
+
+### Cycle TDD d'une feature (avec spec)
+1. **`architect`** — rédige la section `## Plan technique` d'une spec (après sa `## Description`).
+   Décide archi, fichiers à toucher, modèles de données, réactivité, abstractions cross-platform,
+   choix de libs, risques. Crée les **ADRs au format MADR** pour les décisions structurantes.
+   *Jamais downgradé.*
+2. **`qa`** — phase **RED**. Lit la spec, écrit les tests, lance la commande de test et **prouve
+   par le output que tous les nouveaux tests échouent** avant de rendre la main. N'écrit **JAMAIS**
+   de code applicatif. *Jamais downgradé.*
+3. **`angular-expert`** — phase **GREEN**. Implémente (standalone, **signals d'abord**, control
+   flow moderne `@if`/`@for`, `inject()`, naming Angular v20 **sans suffixe** `.component.`) pour
+   faire passer les tests au vert, **sans rien ajouter d'autre**. *Downgradable vers `sonnet`*
+   pour de l'exécution purement mécanique.
+4. **`code-reviewer`** — **gate finale de PR**, spécialisée Angular + écosystème (pnpm,
+   Vite/Vitest, Angular CLI, Capacitor). Lit la spec entière + le diff de branche
+   (`git diff main...HEAD`), lance tests/lint/build + vérif runtime, contrôle conventions
+   Angular 20+ et plan technique tenu. Rend **APPROVED** ou **REJECTED** avec des points concrets.
+   **Ne corrige pas lui-même.** *Jamais downgradé.*
+
+### Audit d'une codebase existante (hors cycle PR)
+- **`intake-auditor`** — audit d'entrée d'une feature ou du **repo entier**, lancé par
+  **`/aak-audit`** (et **non** le `code-reviewer`, qui ne traite que les PR/diff). Lit manifests +
+  arbre + churn + workflows CI, audite **10 dimensions**, écrit la section `## Intake audit` dans
+  une spec dédiée. Refuse les scopes hors écosystème Angular. **Ne corrige pas.** *Jamais downgradé.*
+
+### Commandes
+- **`/aak-init-profile`** — génère `.claude/project-profile.md` par interview + auto-détection
+  depuis le repo. **À faire en premier** sur un repo neuf : c'est le socle des agents ci-dessus.
+- **`/aak-audit`** — lance l'`intake-auditor` sur une feature (`scope=features/x`) ou tout le
+  repo (`scope=repo`).
+
+### Skill
+- **`angular-routing-patterns`** — patterns de routing 20+ : récupérer l'URL complète demandée
+  dans un guard fonctionnel (`CanMatchFn`/`CanActivateFn`), pattern `returnUrl`
+  (guard refuse → page de remédiation → retour vers l'intention initiale), et leurs footguns
+  (open redirect, reload-en-place qui piège l'utilisateur, `getCurrentNavigation()` null).
+
+### Règles d'usage
+- **Un rôle = un agent** : l'`architect` ne code pas, le `qa` n'implémente pas, l'`angular-expert`
+  n'invente rien hors du test à faire passer, le `code-reviewer`/`intake-auditor` ne corrigent pas.
+- **PR vs existant** : `code-reviewer` pour un **diff de PR** ; `intake-auditor` pour **auditer
+  l'existant** (via `/aak-audit`).
+- **Profil d'abord** : sans `project-profile.md`, les agents perdent le contexte conventions —
+  lancer `/aak-init-profile` avant tout sur un nouveau repo.
+
+---
+
 ## Auto-revision de CLAUDE.md
 
 **Regle** : a chaque correction utilisateur sur une convention, un pattern, une preference ou une decision d'architecture, proposer immediatement un patch CLAUDE.md avant de continuer la tache en cours.
@@ -384,10 +410,6 @@ apps/api/src/
 | Angular | https://angular.dev |
 | Angular AI | https://angular.dev/ai |
 | Angular RFC style guide 2025 | https://github.com/angular/angular/discussions/59522 |
-| NestJS | https://docs.nestjs.com |
-| Drizzle ORM | https://orm.drizzle.team/docs/overview |
-| Drizzle Kit | https://orm.drizzle.team/docs/kit-overview |
-| Zod | https://zod.dev |
 | TypeScript | https://www.typescriptlang.org/docs/handbook |
 | RxJS | https://rxjs.dev |
 | TailwindCSS v4 | https://tailwindcss.com/docs |
@@ -405,20 +427,15 @@ apps/api/src/
 ## Commandes
 
 ```bash
-# Frontend Angular
+# Frontend Angular (repo front-only)
 pnpm start                  # Dev server
-pnpm build                  # Build production
+pnpm build                  # Build production (SSR)
 pnpm test                   # Vitest
+pnpm lint                   # ng lint (gate)
 pnpm ng generate            # Schematics
-
-# Backend NestJS
-pnpm --filter api start:dev # Dev API
-pnpm drizzle-kit generate   # Generer migration depuis schema
-pnpm drizzle-kit migrate    # Appliquer migrations
-pnpm drizzle-kit studio     # UI inspection BDD
 ```
 
 ## Ressources
-- [Angular](https://angular.dev) · [NestJS](https://docs.nestjs.com) · [Drizzle](https://orm.drizzle.team) · [Zod](https://zod.dev) · [RxJS](https://rxjs.dev) · [Vitest](https://vitest.dev)
+- [Angular](https://angular.dev) · [RxJS](https://rxjs.dev) · [TailwindCSS v4](https://tailwindcss.com/docs) · [Vitest](https://vitest.dev)
 - Skills locales : `~/.claude/skills/`
 - Conventions EAK : `~/Documents/Obsidian Vault/EAK - Easy Angular Kit/`

@@ -11,15 +11,12 @@ import { ContactGateway } from '@features/contact/domain';
 import type { ContactMessage } from '@features/contact/domain';
 import { ToastStore } from '@shared/ui';
 import { AdminTable } from './components/admin-table';
-import {
-  AdminColExpand,
-  AdminColBadge,
-  AdminColContact,
-  AdminColText,
-  AdminColDate,
-  AdminColActions,
-  type ExtraAction,
-} from './components/admin-column';
+import { AdminColExpand } from './components/admin-col-expand';
+import { AdminColBadge } from './components/admin-col-badge';
+import { AdminColContact } from './components/admin-col-contact';
+import { AdminColText } from './components/admin-col-text';
+import { AdminColDate } from './components/admin-col-date';
+import { AdminColActions, type ExtraAction } from './components/admin-col-actions';
 
 @Component({
   selector: 'app-admin-messages',
