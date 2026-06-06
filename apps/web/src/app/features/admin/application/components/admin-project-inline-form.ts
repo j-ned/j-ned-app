@@ -277,10 +277,12 @@ export class AdminProjectInlineForm {
       category: values.category,
       tags: [...this.selectedTags()],
       description: values.description,
-      liveUrl: values.liveUrl || undefined,
-      repoUrl: values.repoUrl || undefined,
-      repoUrlFront: values.repoUrlFront || undefined,
-      repoUrlBack: values.repoUrlBack || undefined,
+      // `null` (et non `undefined`) pour qu'un champ vidé soit envoyé dans le PATCH
+      // et efface réellement le lien côté backend (undefined serait retiré du body).
+      liveUrl: values.liveUrl || null,
+      repoUrl: values.repoUrl || null,
+      repoUrlFront: values.repoUrlFront || null,
+      repoUrlBack: values.repoUrlBack || null,
       featured: values.featured,
       order: values.order,
     };
