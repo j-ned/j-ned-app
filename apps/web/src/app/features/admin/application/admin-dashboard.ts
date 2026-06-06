@@ -9,7 +9,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ContactGateway } from '@features/contact/domain';
-import { AuthStore } from '@features/auth/infra';
+import { AuthStore } from '@core/auth/auth-store';
 import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
 import { RelativeTimePipe } from '@shared/calendar';

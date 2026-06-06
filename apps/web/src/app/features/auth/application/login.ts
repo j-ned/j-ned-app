@@ -2,7 +2,7 @@ import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthStore } from '../infra';
+import { AuthStore } from '@core/auth/auth-store';
 import { ToastStore, Button, AppIconTile } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 

@@ -4,9 +4,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 import { setUser as sentrySetUser } from '@sentry/angular';
-import type { User } from '../domain';
-import type { TwoFactorSecretResponse, UserResponse } from '../domain';
-import { AuthGateway } from '../domain';
+import type { User } from '@features/auth/domain';
+import type { TwoFactorSecretResponse, UserResponse } from '@features/auth/domain';
+import { AuthGateway } from '@features/auth/domain';
 
 @Injectable({ providedIn: 'root' })
 export class AuthStore {

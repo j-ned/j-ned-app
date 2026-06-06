@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
-import { AuthStore } from '../../auth/infra';
+import { AuthStore } from '@core/auth/auth-store';
 import { ContactGateway } from '@features/contact/domain';
 import { AppIcon } from '@shared/icons';
 import { Drawer, AppIconTile } from '@shared/ui';

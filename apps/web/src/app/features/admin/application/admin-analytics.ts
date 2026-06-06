@@ -11,11 +11,26 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AppChart, AppTag, Button, AppSkeleton, AppIconTile } from '@shared/ui';
+import { AppChart, Button, AppSkeleton, AppIconTile } from '@shared/ui';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
 import { ThemeWatcher } from '@shared/theme/theme-watcher';
+import { AnalyticsBarList } from './components/analytics-bar-list';
+import { AnalyticsDonutPanel } from './components/analytics-donut-panel';
+import { AnalyticsEntityList } from './components/analytics-entity-list';
+import {
+  dateRangeToParams,
+  formatDuration,
+  pagesPerSession as computePagesPerSession,
+  buildVisitorsChartData,
+  buildLineChartOptions,
+  buildDonutChartData,
+  buildDonutOptions,
+  buildPalette,
+  buildAnalyticsCsv,
+  type DateRangeKey,
+} from '@features/analytics/domain/analytics-presenter';
 
 const THEME_FALLBACK: Record<string, string> = {
   '--theme-primary-text': 'oklch(74.5% 0.16 277)',
@@ -29,8 +44,6 @@ const THEME_FALLBACK: Record<string, string> = {
   '--theme-status-error': 'oklch(71.5% 0.18 22)',
 };
 
-type DateRangeKey = '7d' | '30d' | '90d' | 'all';
-
 type DateRangeOption = {
   readonly value: DateRangeKey;
   readonly label: string;
@@ -38,7 +51,17 @@ type DateRangeOption = {
 
 @Component({
   selector: 'app-admin-analytics',
-  imports: [FormsModule, AppChart, AppTag, AppIcon, Button, AppSkeleton, AppIconTile],
+  imports: [
+    FormsModule,
+    AppChart,
+    AppIcon,
+    Button,
+    AppSkeleton,
+    AppIconTile,
+    AnalyticsBarList,
+    AnalyticsDonutPanel,
+    AnalyticsEntityList,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -166,201 +189,78 @@ type DateRangeOption = {
 
     <!-- Top pages & Top referrers -->
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-      <div class="bg-surface border border-foreground/10 rounded-xl p-6">
-        <header class="flex items-center gap-2 mb-4">
-          <app-icon name="file" [size]="20" class="text-primary" />
-          <h2 class="text-base font-semibold text-foreground">Pages les plus visitées</h2>
-        </header>
-        @if (pagesResource.isLoading()) {
-          <div class="space-y-3">
-            @for (_ of placeholder5; track $index) {
-              <app-skeleton class="h-8 rounded" />
-            }
-          </div>
-        } @else if (topPages().length === 0) {
-          <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
-        } @else {
-          <ul class="space-y-3" role="list">
-            @for (row of topPages(); track row.name) {
-              <li>
-                <div class="flex items-center justify-between text-sm mb-1">
-                  <span class="text-foreground truncate mr-3">{{ row.name || '/' }}</span>
-                  <span class="text-xs text-muted shrink-0 font-medium">{{ row.count }}</span>
-                </div>
-                <div class="h-1 rounded-full bg-foreground/5 overflow-hidden">
-                  <div
-                    class="h-full bg-primary rounded-full"
-                    [style.width.%]="barWidth(row.count, pagesMax())"
-                  ></div>
-                </div>
-              </li>
-            }
-          </ul>
-        }
-      </div>
-
-      <div class="bg-surface border border-foreground/10 rounded-xl p-6">
-        <header class="flex items-center gap-2 mb-4">
-          <app-icon name="external-link" [size]="20" class="text-primary" />
-          <h2 class="text-base font-semibold text-foreground">Provenance du trafic</h2>
-        </header>
-        @if (referrersResource.isLoading()) {
-          <div class="space-y-3">
-            @for (_ of placeholder5; track $index) {
-              <app-skeleton class="h-8 rounded" />
-            }
-          </div>
-        } @else if (topReferrers().length === 0) {
-          <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
-        } @else {
-          <ul class="space-y-3" role="list">
-            @for (row of topReferrers(); track row.name) {
-              <li>
-                <div class="flex items-center justify-between text-sm mb-1">
-                  <span class="text-foreground truncate mr-3">
-                    {{ row.name || 'Accès direct' }}
-                  </span>
-                  <span class="text-xs text-muted shrink-0 font-medium">{{ row.count }}</span>
-                </div>
-                <div class="h-1 rounded-full bg-foreground/5 overflow-hidden">
-                  <div
-                    class="h-full bg-primary rounded-full"
-                    [style.width.%]="barWidth(row.count, referrersMax())"
-                  ></div>
-                </div>
-              </li>
-            }
-          </ul>
-        }
-      </div>
+      <app-analytics-bar-list
+        title="Pages les plus visitées"
+        icon="file"
+        [rows]="topPages()"
+        [max]="pagesMax()"
+        [loading]="pagesResource.isLoading()"
+        fallbackLabel="/"
+      />
+      <app-analytics-bar-list
+        title="Provenance du trafic"
+        icon="external-link"
+        [rows]="topReferrers()"
+        [max]="referrersMax()"
+        [loading]="referrersResource.isLoading()"
+        fallbackLabel="Accès direct"
+      />
     </section>
 
     <!-- Breakdowns: Browsers / OS / Countries -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-      <div class="bg-surface border border-foreground/10 rounded-xl p-6">
-        <header class="flex items-center gap-2 mb-4">
-          <app-icon name="globe" [size]="20" class="text-primary" />
-          <h2 class="text-base font-semibold text-foreground">Navigateurs</h2>
-        </header>
-        @if (browsersResource.isLoading()) {
-          <app-skeleton class="h-48 rounded" />
-        } @else if (browsers().length === 0) {
-          <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
-        } @else {
-          <app-chart
-            type="doughnut"
-            [data]="browsersChart()"
-            [options]="donutOptions()"
-            height="12rem"
-          />
-        }
-      </div>
-
-      <div class="bg-surface border border-foreground/10 rounded-xl p-6">
-        <header class="flex items-center gap-2 mb-4">
-          <app-icon name="desktop" [size]="20" class="text-accent" />
-          <h2 class="text-base font-semibold text-foreground">Systèmes d'exploitation</h2>
-        </header>
-        @if (osResource.isLoading()) {
-          <app-skeleton class="h-48 rounded" />
-        } @else if (osList().length === 0) {
-          <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
-        } @else {
-          <app-chart type="doughnut" [data]="osChart()" [options]="donutOptions()" height="12rem" />
-        }
-      </div>
-
-      <div class="bg-surface border border-foreground/10 rounded-xl p-6">
-        <header class="flex items-center gap-2 mb-4">
-          <app-icon name="map-marker" [size]="20" class="text-status-success" />
-          <h2 class="text-base font-semibold text-foreground">Pays</h2>
-        </header>
-        @if (countriesResource.isLoading()) {
-          <div class="space-y-3">
-            @for (_ of placeholder5; track $index) {
-              <app-skeleton class="h-6 rounded" />
-            }
-          </div>
-        } @else if (countries().length === 0) {
-          <p class="text-sm text-muted text-center py-6">Aucune donnée</p>
-        } @else {
-          <ul class="space-y-3" role="list">
-            @for (row of countries(); track row.name) {
-              <li>
-                <div class="flex items-center justify-between text-sm mb-1">
-                  <span class="text-foreground truncate mr-3">{{ row.name || 'Inconnu' }}</span>
-                  <span class="text-xs text-muted shrink-0 font-medium">{{ row.count }}</span>
-                </div>
-                <div class="h-1 rounded-full bg-foreground/5 overflow-hidden">
-                  <div
-                    class="h-full bg-status-success rounded-full"
-                    [style.width.%]="barWidth(row.count, countriesMax())"
-                  ></div>
-                </div>
-              </li>
-            }
-          </ul>
-        }
-      </div>
+      <app-analytics-donut-panel
+        title="Navigateurs"
+        icon="globe"
+        [data]="browsersChart()"
+        [options]="donutOptions()"
+        [loading]="browsersResource.isLoading()"
+        [isEmpty]="browsers().length === 0"
+      />
+      <app-analytics-donut-panel
+        title="Systèmes d'exploitation"
+        icon="desktop"
+        iconClass="text-accent"
+        [data]="osChart()"
+        [options]="donutOptions()"
+        [loading]="osResource.isLoading()"
+        [isEmpty]="osList().length === 0"
+      />
+      <app-analytics-bar-list
+        title="Pays"
+        icon="map-marker"
+        iconClass="text-status-success"
+        [rows]="countries()"
+        [max]="countriesMax()"
+        [loading]="countriesResource.isLoading()"
+        fallbackLabel="Inconnu"
+        barClass="bg-status-success"
+        skeletonClass="h-6 rounded"
+      />
     </section>
 
     <!-- Conversions: projects + articles + CV -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div class="bg-surface border border-foreground/10 rounded-xl p-6">
-        <header class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-2">
-            <app-icon name="desktop" [size]="20" class="text-status-success" />
-            <h2 class="text-base font-semibold text-foreground">Projets cliqués</h2>
-          </div>
-          <app-tag [value]="(overview()?.projectClicks ?? 0) + ' clics'" severity="success" />
-        </header>
-        @if (projectsResource.isLoading()) {
-          <div class="space-y-3">
-            @for (_ of placeholder5; track $index) {
-              <app-skeleton class="h-8 rounded" />
-            }
-          </div>
-        } @else if (topProjects().length === 0) {
-          <p class="text-sm text-muted text-center py-6">Aucun clic enregistré</p>
-        } @else {
-          <ul class="space-y-2" role="list">
-            @for (row of topProjectsTop5(); track row.entityId) {
-              <li class="flex items-center justify-between text-sm py-1">
-                <span class="text-foreground truncate mr-3">{{ row.entityTitle }}</span>
-                <span class="text-xs text-muted font-medium">{{ row.count }}</span>
-              </li>
-            }
-          </ul>
-        }
-      </div>
+      <app-analytics-entity-list
+        title="Projets cliqués"
+        icon="desktop"
+        iconClass="text-status-success"
+        [tagValue]="(overview()?.projectClicks ?? 0) + ' clics'"
+        tagSeverity="success"
+        [entities]="topProjectsTop5()"
+        [loading]="projectsResource.isLoading()"
+        emptyLabel="Aucun clic enregistré"
+      />
 
-      <div class="bg-surface border border-foreground/10 rounded-xl p-6">
-        <header class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-2">
-            <app-icon name="pencil" [size]="20" class="text-primary" />
-            <h2 class="text-base font-semibold text-foreground">Articles lus</h2>
-          </div>
-          <app-tag [value]="(overview()?.articleViews ?? 0) + ' vues'" severity="info" />
-        </header>
-        @if (articlesResource.isLoading()) {
-          <div class="space-y-3">
-            @for (_ of placeholder5; track $index) {
-              <app-skeleton class="h-8 rounded" />
-            }
-          </div>
-        } @else if (topArticles().length === 0) {
-          <p class="text-sm text-muted text-center py-6">Aucune vue enregistrée</p>
-        } @else {
-          <ul class="space-y-2" role="list">
-            @for (row of topArticlesTop5(); track row.entityId) {
-              <li class="flex items-center justify-between text-sm py-1">
-                <span class="text-foreground truncate mr-3">{{ row.entityTitle }}</span>
-                <span class="text-xs text-muted font-medium">{{ row.count }}</span>
-              </li>
-            }
-          </ul>
-        }
-      </div>
+      <app-analytics-entity-list
+        title="Articles lus"
+        icon="pencil"
+        [tagValue]="(overview()?.articleViews ?? 0) + ' vues'"
+        tagSeverity="info"
+        [entities]="topArticlesTop5()"
+        [loading]="articlesResource.isLoading()"
+        emptyLabel="Aucune vue enregistrée"
+      />
 
       <div
         class="bg-surface border border-foreground/10 rounded-xl p-6 flex flex-col justify-center items-center text-center"
@@ -399,10 +299,6 @@ export class AdminAnalytics {
     return v || fallback;
   }
 
-  private alpha(color: string, pct: number): string {
-    return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
-  }
-
   constructor() {
     interval(30_000)
       .pipe(
@@ -422,19 +318,8 @@ export class AdminAnalytics {
 
   readonly dateRange = signal<DateRangeKey>('30d');
   readonly activeVisitors = signal(0);
-  protected readonly placeholder5 = [1, 2, 3, 4, 5] as const;
 
-  private readonly range = computed(() => {
-    const key = this.dateRange();
-    if (key === 'all') return { startDate: undefined, endDate: undefined };
-    const days = key === '7d' ? 7 : key === '30d' ? 30 : 90;
-    const end = new Date();
-    const start = new Date(end.getTime() - days * 24 * 60 * 60 * 1000);
-    return {
-      startDate: start.toISOString().slice(0, 10),
-      endDate: end.toISOString().slice(0, 10),
-    };
-  });
+  private readonly range = computed(() => dateRangeToParams(this.dateRange(), new Date()));
 
   // ── Overview KPIs ────────────────────────────────────────────────
   readonly overviewResource = resource({
@@ -444,18 +329,9 @@ export class AdminAnalytics {
   });
   readonly overview = computed(() => this.overviewResource.value());
 
-  readonly formattedDuration = computed(() => {
-    const sec = this.overview()?.avgDuration ?? 0;
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return m > 0 ? `${m}m ${s.toString().padStart(2, '0')}s` : `${s}s`;
-  });
+  readonly formattedDuration = computed(() => formatDuration(this.overview()?.avgDuration ?? 0));
 
-  readonly pagesPerSession = computed(() => {
-    const o = this.overview();
-    if (!o || o.sessions === 0) return '0';
-    return (o.pageviews / o.sessions).toFixed(1);
-  });
+  readonly pagesPerSession = computed(() => computePagesPerSession(this.overview()));
 
   // ── Main chart ────────────────────────────────────────────────────
   readonly chartResource = resource({
@@ -464,67 +340,17 @@ export class AdminAnalytics {
       firstValueFrom(this.analytics.getChart(params.startDate, params.endDate)),
   });
 
-  readonly chartData = computed(() => {
-    const rows = this.chartResource.value() ?? [];
-    const primary = this.themeColor('--theme-primary-text');
-    const accent = this.themeColor('--theme-accent');
-    return {
-      labels: rows.map((r) => r.date),
-      datasets: [
-        {
-          label: 'Visiteurs',
-          data: rows.map((r) => r.visitors),
-          borderColor: primary,
-          backgroundColor: this.alpha(primary, 10),
-          tension: 0.35,
-          fill: true,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-        },
-        {
-          label: 'Pages vues',
-          data: rows.map((r) => r.pageviews),
-          borderColor: accent,
-          backgroundColor: this.alpha(accent, 5),
-          tension: 0.35,
-          fill: true,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-        },
-      ],
-    };
-  });
+  readonly chartData = computed(() =>
+    buildVisitorsChartData(
+      this.chartResource.value() ?? [],
+      this.themeColor('--theme-primary-text'),
+      this.themeColor('--theme-accent'),
+    ),
+  );
 
-  readonly chartOptions = computed(() => {
-    const foreground = this.themeColor('--theme-foreground');
-    const background = this.themeColor('--theme-background');
-    const muted40 = this.alpha(foreground, 40);
-    const grid = this.alpha(foreground, 6);
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { intersect: false, mode: 'index' as const },
-      scales: {
-        x: {
-          ticks: { color: muted40, maxTicksLimit: 8 },
-          grid: { color: grid },
-        },
-        y: {
-          beginAtZero: true,
-          ticks: { color: muted40, precision: 0 },
-          grid: { color: grid },
-        },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: this.alpha(background, 95),
-          borderColor: this.alpha(foreground, 10),
-          borderWidth: 1,
-        },
-      },
-    };
-  });
+  readonly chartOptions = computed(() =>
+    buildLineChartOptions(this.themeColor('--theme-foreground'), this.themeColor('--theme-background')),
+  );
 
   // ── Top pages ─────────────────────────────────────────────────────
   readonly pagesResource = resource({
@@ -551,16 +377,7 @@ export class AdminAnalytics {
       firstValueFrom(this.analytics.getMetrics('browser', params.startDate, params.endDate)),
   });
   readonly browsers = computed(() => this.browsersResource.value()?.slice(0, 6) ?? []);
-  readonly browsersChart = computed(() => ({
-    labels: this.browsers().map((r) => r.name || 'Inconnu'),
-    datasets: [
-      {
-        data: this.browsers().map((r) => r.count),
-        backgroundColor: this.palette(),
-        borderWidth: 0,
-      },
-    ],
-  }));
+  readonly browsersChart = computed(() => buildDonutChartData(this.browsers(), this.palette()));
 
   // ── OS ────────────────────────────────────────────────────────────
   readonly osResource = resource({
@@ -569,16 +386,7 @@ export class AdminAnalytics {
       firstValueFrom(this.analytics.getMetrics('os', params.startDate, params.endDate)),
   });
   readonly osList = computed(() => this.osResource.value()?.slice(0, 6) ?? []);
-  readonly osChart = computed(() => ({
-    labels: this.osList().map((r) => r.name || 'Inconnu'),
-    datasets: [
-      {
-        data: this.osList().map((r) => r.count),
-        backgroundColor: this.palette(),
-        borderWidth: 0,
-      },
-    ],
-  }));
+  readonly osChart = computed(() => buildDonutChartData(this.osList(), this.palette()));
 
   // ── Countries ─────────────────────────────────────────────────────
   readonly countriesResource = resource({
@@ -609,83 +417,32 @@ export class AdminAnalytics {
 
   readonly bounceRateFormatted = computed(() => (this.overview()?.bounceRate ?? 0).toFixed(1));
 
-  readonly donutOptions = computed(() => {
-    const foreground = this.themeColor('--theme-foreground');
-    const background = this.themeColor('--theme-background');
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '60%',
-      plugins: {
-        legend: {
-          position: 'bottom' as const,
-          labels: {
-            color: this.alpha(foreground, 70),
-            boxWidth: 12,
-            padding: 12,
-            font: { size: 11 },
-          },
-        },
-        tooltip: {
-          backgroundColor: this.alpha(background, 95),
-          borderColor: this.alpha(foreground, 10),
-          borderWidth: 1,
-        },
-      },
-    };
-  });
+  readonly donutOptions = computed(() =>
+    buildDonutOptions(this.themeColor('--theme-foreground'), this.themeColor('--theme-background')),
+  );
 
-  // Palette dérivée des tokens du design system. Les séries au-delà
-  // de primary/accent sont des variations d'opacité pour rester dans
-  // la famille Signal Indigo (One Indigo Rule).
-  private readonly palette = computed(() => {
-    const primary = this.themeColor('--theme-primary-text');
-    const accent = this.themeColor('--theme-accent');
-    const success = this.themeColor('--theme-status-success');
-    const warn = this.themeColor('--theme-status-warn');
-    return [
-      primary,
-      accent,
-      this.alpha(primary, 70),
-      this.alpha(accent, 70),
-      success,
-      warn,
-      this.alpha(primary, 40),
-    ];
-  });
-
-  barWidth(value: number, max: number): number {
-    return max > 0 ? (value / max) * 100 : 0;
-  }
+  private readonly palette = computed(() =>
+    buildPalette({
+      primary: this.themeColor('--theme-primary-text'),
+      accent: this.themeColor('--theme-accent'),
+      success: this.themeColor('--theme-status-success'),
+      warn: this.themeColor('--theme-status-warn'),
+    }),
+  );
 
   exportCsv(): void {
-    const rows: string[] = [];
-    rows.push('Section,Label,Count');
-    const o = this.overview();
-    if (o) {
-      rows.push(`KPI,Visiteurs,${o.visitors}`);
-      rows.push(`KPI,Sessions,${o.sessions}`);
-      rows.push(`KPI,Pages vues,${o.pageviews}`);
-      rows.push(`KPI,Rebonds,${o.bounces}`);
-      rows.push(`KPI,Taux de rebond (%),${o.bounceRate.toFixed(2)}`);
-      rows.push(`KPI,Durée moyenne (s),${o.avgDuration}`);
-      rows.push(`KPI,Clics projets,${o.projectClicks}`);
-      rows.push(`KPI,Vues articles,${o.articleViews}`);
-      rows.push(`KPI,Téléchargements CV,${o.cvDownloads}`);
-    }
-    for (const r of this.topPages()) rows.push(`Page,${this.escape(r.name)},${r.count}`);
-    for (const r of this.topReferrers())
-      rows.push(`Referrer,${this.escape(r.name || 'Direct')},${r.count}`);
-    for (const r of this.browsers()) rows.push(`Navigateur,${this.escape(r.name)},${r.count}`);
-    for (const r of this.osList()) rows.push(`OS,${this.escape(r.name)},${r.count}`);
-    for (const r of this.countries())
-      rows.push(`Pays,${this.escape(r.name || 'Inconnu')},${r.count}`);
-    for (const r of this.topProjects())
-      rows.push(`Projet,${this.escape(r.entityTitle)},${r.count}`);
-    for (const r of this.topArticles())
-      rows.push(`Article,${this.escape(r.entityTitle)},${r.count}`);
+    const content = buildAnalyticsCsv({
+      overview: this.overview(),
+      topPages: this.topPages(),
+      topReferrers: this.topReferrers(),
+      browsers: this.browsers(),
+      osList: this.osList(),
+      countries: this.countries(),
+      topProjects: this.topProjects(),
+      topArticles: this.topArticles(),
+    });
 
-    const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -696,10 +453,4 @@ export class AdminAnalytics {
     URL.revokeObjectURL(url);
   }
 
-  private escape(value: string): string {
-    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-      return `"${value.replace(/"/g, '""')}"`;
-    }
-    return value;
-  }
 }

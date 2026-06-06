@@ -1,4 +1,4 @@
-import type { ContactInfo, SocialLinks } from '../../domain';
+import type { ContactInfo, SocialLinks } from '@features/contact/domain';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 export const STATIC_CONTACT_INFO: ContactInfo = {

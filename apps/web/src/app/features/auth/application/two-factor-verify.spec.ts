@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
 import { TwoFactorVerify } from './two-factor-verify';
-import { AuthStore } from '../infra';
+import { AuthStore } from '@core/auth/auth-store';
 
 describe('TwoFactorVerify a11y', () => {
   let fixture: ComponentFixture<TwoFactorVerify>;

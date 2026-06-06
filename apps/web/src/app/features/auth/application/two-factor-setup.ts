@@ -14,7 +14,7 @@ import {
   Validators,
   type ValidationErrors,
 } from '@angular/forms';
-import { AuthStore } from '../infra';
+import { AuthStore } from '@core/auth/auth-store';
 import { AppIcon } from '@shared/icons';
 import { Button } from '@shared/ui';
 

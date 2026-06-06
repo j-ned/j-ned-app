@@ -4,8 +4,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '@shared/api';
 import { AuthStore } from './auth-store';
-import { AuthGateway } from '../domain';
-import { HttpAuthGateway } from './gateways/http-auth.gateway';
+import { AuthGateway } from '@features/auth/domain';
+import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 
 describe('AuthStore', () => {
   let service: AuthStore;

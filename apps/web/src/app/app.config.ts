@@ -48,7 +48,8 @@ import { InMemoryProfileGateway } from '@features/profile/infra';
 import { HttpContactGateway } from '@features/contact/infra';
 import { InMemoryHomeGateway } from '@features/home/infra';
 import { AuthGateway } from '@features/auth/domain';
-import { HttpAuthGateway, AuthStore } from '@features/auth/infra';
+import { HttpAuthGateway } from '@features/auth/infra';
+import { AuthStore } from '@core/auth/auth-store';
 
 function initializeAuth(): () => Promise<void> | void {
   return (): Promise<void> | void => {

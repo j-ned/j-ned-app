@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { Toast, ToastStore } from '@shared/ui';
 import { Header, Footer } from '@layout';
-import { AuthStore } from '@features/auth/infra';
+import { AuthStore } from '@core/auth/auth-store';
 
 @Component({
   selector: 'app-root',

@@ -2,7 +2,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { of, type Observable } from 'rxjs';
 import { TwoFactorSetup } from './two-factor-setup';
-import { AuthStore } from '../infra';
+import { AuthStore } from '@core/auth/auth-store';
 
 type AuthStoreMock = {
   currentUser: ReturnType<typeof signal<{ isTwoFactorEnabled: boolean } | null>>;

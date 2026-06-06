@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { STATIC_CONTACT_INFO, STATIC_SOCIAL_LINKS } from '@features/contact/infra';
+import { STATIC_CONTACT_INFO, STATIC_SOCIAL_LINKS } from '@shared/identity/contact-info.static-data';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ContactGateway } from '@features/contact/domain';
 import { ToastStore, Button, AppIconTile } from '@shared/ui';

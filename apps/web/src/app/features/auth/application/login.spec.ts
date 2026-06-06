@@ -2,7 +2,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { Login } from './login';
-import { AuthStore } from '../infra';
+import { AuthStore } from '@core/auth/auth-store';
 import { ToastStore } from '@shared/ui';
 
 describe('Login a11y', () => {
