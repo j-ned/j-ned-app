@@ -5,7 +5,7 @@ import { ProfileGateway } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
-  selector: 'about-stack',
+  selector: 'app-about-stack',
   imports: [NgOptimizedImage, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

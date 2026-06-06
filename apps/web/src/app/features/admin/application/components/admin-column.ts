@@ -34,7 +34,7 @@ export abstract class AdminColumnBase<T = unknown> {
 /* ───────────────────── Column: text ───────────────────── */
 
 @Component({
-  selector: 'admin-col-text',
+  selector: 'app-admin-col-text',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: AdminColumnBase, useExisting: AdminColText }],
   template: `
@@ -77,7 +77,7 @@ export class AdminColText<T> extends AdminColumnBase<T> {
 /* ───────────────────── Column: muted text (descriptions, secondary) ───────────────────── */
 
 @Component({
-  selector: 'admin-col-muted',
+  selector: 'app-admin-col-muted',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: AdminColumnBase, useExisting: AdminColMuted }],
   template: `
@@ -124,7 +124,7 @@ export class AdminColMuted<T> extends AdminColumnBase<T> {
 /* ───────────────────── Column: monospaced (icon names, codes) ───────────────────── */
 
 @Component({
-  selector: 'admin-col-mono',
+  selector: 'app-admin-col-mono',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: AdminColumnBase, useExisting: AdminColMono }],
   template: `
@@ -166,7 +166,7 @@ export class AdminColMono<T> extends AdminColumnBase<T> {
 /* ───────────────────── Column: numeric (right-aligned, tabular) ───────────────────── */
 
 @Component({
-  selector: 'admin-col-number',
+  selector: 'app-admin-col-number',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: AdminColumnBase, useExisting: AdminColNumber }],
   template: `
@@ -210,7 +210,7 @@ export class AdminColNumber<T> extends AdminColumnBase<T> {
 export type BadgeTone = 'primary' | 'accent' | 'neutral' | 'success';
 
 @Component({
-  selector: 'admin-col-badge',
+  selector: 'app-admin-col-badge',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: AdminColumnBase, useExisting: AdminColBadge }],
   template: `
@@ -275,7 +275,7 @@ export class AdminColBadge<T> extends AdminColumnBase<T> {
 /* ───────────────────── Column: date ───────────────────── */
 
 @Component({
-  selector: 'admin-col-date',
+  selector: 'app-admin-col-date',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe],
   providers: [{ provide: AdminColumnBase, useExisting: AdminColDate }],
@@ -319,7 +319,7 @@ export class AdminColDate<T> extends AdminColumnBase<T> {
 /* ───────────────────── Column: contact (name + email stacked) ───────────────────── */
 
 @Component({
-  selector: 'admin-col-contact',
+  selector: 'app-admin-col-contact',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: AdminColumnBase, useExisting: AdminColContact }],
   template: `
@@ -374,7 +374,7 @@ export type ExtraAction<T> = {
 };
 
 @Component({
-  selector: 'admin-col-actions',
+  selector: 'app-admin-col-actions',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, AppIcon],
   providers: [{ provide: AdminColumnBase, useExisting: AdminColActions }],
@@ -462,7 +462,7 @@ export class AdminColActions<T> extends AdminColumnBase<T> {
 /* ───────────────────── Column: toggle (boolean switch inline) ───────────────────── */
 
 @Component({
-  selector: 'admin-col-toggle',
+  selector: 'app-admin-col-toggle',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: AdminColumnBase, useExisting: AdminColToggle }],
   template: `
@@ -525,7 +525,7 @@ export class AdminColToggle<T> extends AdminColumnBase<T> {
 /* ───────────────────── Column: expand chevron ───────────────────── */
 
 @Component({
-  selector: 'admin-col-expand',
+  selector: 'app-admin-col-expand',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AppIcon],
   providers: [{ provide: AdminColumnBase, useExisting: AdminColExpand }],

@@ -18,7 +18,7 @@ import { AppTag, ToastStore, Button } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
 
 @Component({
-  selector: 'admin-projects',
+  selector: 'app-admin-projects',
   imports: [AdminProjectInlineForm, FormsModule, NgOptimizedImage, AppTag, AppIcon, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -56,7 +56,7 @@ import { AppIcon } from '@shared/icons';
       <!-- New project form -->
       @if (showNewForm()) {
         <div class="mb-6">
-          <admin-project-inline-form
+          <app-admin-project-inline-form
             (saved)="createProject($event)"
             (cancelled)="showNewForm.set(false)"
           />
@@ -144,7 +144,7 @@ import { AppIcon } from '@shared/icons';
             <!-- Inline edit form -->
             @if (editingId() === project.id) {
               <div class="px-5 pb-5">
-                <admin-project-inline-form
+                <app-admin-project-inline-form
                   [project]="project"
                   (saved)="updateProject(project.id, $event)"
                   (cancelled)="editingId.set(null)"

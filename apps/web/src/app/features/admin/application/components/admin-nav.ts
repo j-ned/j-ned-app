@@ -13,7 +13,7 @@ export type AdminNavItem = {
 };
 
 @Component({
-  selector: 'admin-nav',
+  selector: 'app-admin-nav',
   imports: [RouterLink, RouterLinkActive, AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col h-full' },

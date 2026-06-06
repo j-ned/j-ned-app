@@ -4,7 +4,7 @@ import { ProfileGateway } from '@features/profile/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
-  selector: 'about-journey',
+  selector: 'app-about-journey',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AppIcon],
   host: {

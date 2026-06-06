@@ -8,7 +8,7 @@ import { Drawer, AppIconTile } from '@shared/ui';
 import { AdminNav, type AdminNavItem } from './components/admin-nav';
 
 @Component({
-  selector: 'admin-layout',
+  selector: 'app-admin-layout',
   imports: [RouterOutlet, AppIcon, Drawer, AdminNav, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -19,7 +19,7 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
         [class.md:w-64]="!collapsed()"
         [class.md:w-20]="collapsed()"
       >
-        <admin-nav
+        <app-admin-nav
           [collapsed]="collapsed()"
           [showCollapseButton]="true"
           [displayName]="authService.currentUser()?.displayName"
@@ -62,7 +62,7 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
       heading="Admin"
       ariaLabel="Menu de navigation admin"
     >
-      <admin-nav
+      <app-admin-nav
         [collapsed]="false"
         [showCollapseButton]="false"
         [displayName]="authService.currentUser()?.displayName"

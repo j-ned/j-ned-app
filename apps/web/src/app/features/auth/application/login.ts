@@ -12,7 +12,7 @@ type LoginForm = {
 };
 
 @Component({
-  selector: 'login',
+  selector: 'app-login',
   imports: [ReactiveFormsModule, RouterLink, AppIcon, Button, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

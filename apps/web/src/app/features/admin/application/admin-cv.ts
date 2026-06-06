@@ -4,7 +4,7 @@ import { CvGateway, type CvInfo } from '@features/cv/domain';
 import { ToastStore, FileDropzone, Button } from '@shared/ui';
 
 @Component({
-  selector: 'admin-cv',
+  selector: 'app-admin-cv',
   imports: [FileDropzone, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

@@ -14,7 +14,7 @@ describe('Login a11y', () => {
       providers: [
         provideRouter([]),
         { provide: AuthStore, useValue: { login: () => of('success') } },
-        { provide: ToastStore, useValue: { add: () => {} } },
+        { provide: ToastStore, useValue: { add: () => undefined } },
       ],
     }).compileComponents();
 

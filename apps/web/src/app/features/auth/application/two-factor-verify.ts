@@ -11,7 +11,7 @@ type TwoFactorVerifyFormShape = {
 };
 
 @Component({
-  selector: 'two-factor-verify',
+  selector: 'app-two-factor-verify',
   imports: [ReactiveFormsModule, RouterLink, AppIcon, Button, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

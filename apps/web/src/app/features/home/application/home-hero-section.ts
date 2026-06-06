@@ -7,7 +7,7 @@ import { AppIcon } from '@shared/icons';
 import type { HeroData } from '../domain';
 
 @Component({
-  selector: 'home-hero-section',
+  selector: 'app-home-hero-section',
   imports: [HomeHero, Button, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -59,7 +59,7 @@ import type { HeroData } from '../domain';
 
     <div class="max-w-5xl mx-auto w-full relative z-10">
       <div class="flex flex-col items-center">
-        <home-hero [hero]="hero()" />
+        <app-home-hero [hero]="hero()" />
 
         <!-- CTAs : 1 primary (action principale) + 1 outlined + 1 text (hiérarchie claire) -->
         <div

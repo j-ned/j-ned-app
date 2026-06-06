@@ -20,7 +20,7 @@ type ContactFormGroup = {
 };
 
 @Component({
-  selector: 'contact-form',
+  selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   imports: [ReactiveFormsModule, AppIcon, Button, AppIconTile],

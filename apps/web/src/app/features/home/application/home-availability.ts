@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 type HeroData = { availability: string };
 
 @Component({
-  selector: 'home-availability',
+  selector: 'app-home-availability',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
   styles: `

@@ -37,7 +37,7 @@ type DateRangeOption = {
 };
 
 @Component({
-  selector: 'admin-analytics',
+  selector: 'app-admin-analytics',
   imports: [FormsModule, AppChart, AppTag, AppIcon, Button, AppSkeleton, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

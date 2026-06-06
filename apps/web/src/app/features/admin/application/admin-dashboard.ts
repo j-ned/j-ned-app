@@ -23,7 +23,7 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
 });
 
 @Component({
-  selector: 'admin-dashboard',
+  selector: 'app-admin-dashboard',
   imports: [RouterLink, AppIcon, RelativeTimePipe, AppSkeleton, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

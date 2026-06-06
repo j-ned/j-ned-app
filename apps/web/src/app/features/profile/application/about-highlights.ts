@@ -5,7 +5,7 @@ import { AppIcon } from '@shared/icons';
 import { AppIconTile } from '@shared/ui';
 
 @Component({
-  selector: 'about-highlights',
+  selector: 'app-about-highlights',
   imports: [AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

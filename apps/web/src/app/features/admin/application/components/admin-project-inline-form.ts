@@ -13,7 +13,7 @@ import type { Project, ProjectInput } from '@features/projects/domain';
 import { FileDropzone, Button } from '@shared/ui';
 
 @Component({
-  selector: 'admin-project-inline-form',
+  selector: 'app-admin-project-inline-form',
   imports: [ReactiveFormsModule, FileDropzone, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

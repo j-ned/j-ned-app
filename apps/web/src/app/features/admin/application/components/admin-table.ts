@@ -17,7 +17,7 @@ import { AppIcon } from '@shared/icons';
 type SortDir = 'asc' | 'desc';
 
 @Component({
-  selector: 'admin-table',
+  selector: 'app-admin-table',
   imports: [RouterLink, NgTemplateOutlet, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

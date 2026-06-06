@@ -8,7 +8,7 @@ import { AppIcon } from '@shared/icons';
 import { AppIconTile } from '@shared/ui';
 
 @Component({
-  selector: 'home',
+  selector: 'app-home',
   imports: [HomeHeroSection, HomeProjects, ContactForm, AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -17,7 +17,7 @@ import { AppIconTile } from '@shared/ui';
       <!-- First fold: hero + expertise vertically centered under header -->
       <div class="flex flex-col justify-center min-h-[calc(100svh-5rem)] mt-20">
         <!-- Hero Section -->
-        <home-hero-section [hero]="bundle()?.hero ?? null" />
+        <app-home-hero-section [hero]="bundle()?.hero ?? null" />
 
         <!-- Expertise Section -->
         <section class="w-full py-12 md:py-16" aria-labelledby="expertise-heading">
@@ -67,7 +67,7 @@ import { AppIconTile } from '@shared/ui';
       @defer (on viewport; prefetch on idle) {
         <section class="w-full py-16 md:py-20">
           <div class="page-container">
-            <home-projects [projects]="bundle()?.featuredProjects ?? []" />
+            <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
           </div>
         </section>
       } @placeholder {
@@ -82,7 +82,7 @@ import { AppIconTile } from '@shared/ui';
            dans le DOM des le prerender (les liens d'ancre fonctionnent
            immediatement, avant l'hydration JS). -->
       @defer (hydrate on viewport) {
-        <contact-form />
+        <app-contact-form />
       } @placeholder {
         <div class="block py-16 md:py-20 px-6 h-96"></div>
       } @error {

@@ -22,7 +22,7 @@ import {
 } from './components/admin-column';
 
 @Component({
-  selector: 'admin-messages',
+  selector: 'app-admin-messages',
   imports: [
     AdminTable,
     AdminColExpand,
@@ -35,7 +35,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <admin-table
+    <app-admin-table
       title="Messages"
       [items]="messages()"
       [defaultSort]="{ key: 'createdAt', dir: 'desc' }"
@@ -44,23 +44,23 @@ import {
       (rowClick)="toggleExpand($event)"
       emptyMessage="Aucun message"
     >
-      <admin-col-expand [isExpanded]="isExpandedAcc" />
-      <admin-col-badge
+      <app-admin-col-expand [isExpanded]="isExpandedAcc" />
+      <app-admin-col-badge
         key="read"
         label="Statut"
         [accessor]="statusLabel"
         [toneAccessor]="statusTone"
       />
-      <admin-col-contact
+      <app-admin-col-contact
         key="name"
         label="Expéditeur"
         sortable
         [nameAccessor]="senderName"
         [subAccessor]="senderEmail"
       />
-      <admin-col-text key="subject" label="Sujet" sortable [accessor]="subject" />
-      <admin-col-date key="createdAt" label="Date" sortable [accessor]="createdAt" />
-      <admin-col-actions [extraActions]="extraActions" (delete)="deleteMessage($event)" />
+      <app-admin-col-text key="subject" label="Sujet" sortable [accessor]="subject" />
+      <app-admin-col-date key="createdAt" label="Date" sortable [accessor]="createdAt" />
+      <app-admin-col-actions [extraActions]="extraActions" (delete)="deleteMessage($event)" />
       <ng-template #expandedRow let-msg>
         <tr>
           <td colspan="6" class="border-b border-foreground/5 bg-foreground/3 px-6 py-5">
@@ -70,7 +70,7 @@ import {
           </td>
         </tr>
       </ng-template>
-    </admin-table>
+    </app-admin-table>
   `,
 })
 export class AdminMessages {

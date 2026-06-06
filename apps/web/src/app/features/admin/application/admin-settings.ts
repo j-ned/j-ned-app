@@ -4,7 +4,7 @@ import { AppIcon } from '@shared/icons';
 import { AppIconTile } from '@shared/ui';
 
 @Component({
-  selector: 'admin-settings',
+  selector: 'app-admin-settings',
   imports: [RouterLink, AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

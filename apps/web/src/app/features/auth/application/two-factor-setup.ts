@@ -33,7 +33,7 @@ type DisableFormShape = {
 };
 
 @Component({
-  selector: 'two-factor-setup',
+  selector: 'app-two-factor-setup',
   imports: [ReactiveFormsModule, AppIcon, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

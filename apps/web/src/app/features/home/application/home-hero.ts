@@ -3,7 +3,7 @@ import { HomeAvailability } from './home-availability';
 import type { HeroData } from '../domain';
 
 @Component({
-  selector: 'home-hero',
+  selector: 'app-home-hero',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [HomeAvailability],
   host: { class: 'block' },
@@ -29,7 +29,7 @@ import type { HeroData } from '../domain';
       @let h = hero();
       @if (h) {
         <div class="animate-fade-up flex flex-wrap items-center justify-center gap-3 mb-3 md:mb-4">
-          <home-availability [hero]="h" />
+          <app-home-availability [hero]="h" />
         </div>
 
         <h1

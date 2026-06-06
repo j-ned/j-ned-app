@@ -18,7 +18,7 @@ const ITEMS_PER_PAGE = 3;
 
 
 @Component({
-  selector: 'projects',
+  selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   imports: [ProjectCard, AppPaginator],
@@ -54,7 +54,7 @@ const ITEMS_PER_PAGE = 3;
         <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12" role="list">
           @for (project of paginatedProjects(); track project.id) {
             <li>
-              <project-card [project]="project" />
+              <app-project-card [project]="project" />
             </li>
           }
         </ul>
