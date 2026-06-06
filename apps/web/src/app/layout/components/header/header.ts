@@ -6,10 +6,11 @@ import {
   afterNextRender,
   inject,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, Scroll } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain';
-import { firstValueFrom } from 'rxjs';
+import { filter, firstValueFrom } from 'rxjs';
 import { CvGateway } from '@features/cv/domain';
 import { AppIcon } from '@shared/icons';
 import { Button, Drawer, AppIconTile } from '@shared/ui';
@@ -38,24 +39,14 @@ type ThemePreference = 'dark' | 'light';
 
         <nav class="hidden md:flex items-center gap-8" aria-label="Navigation principale">
           @for (item of navItems(); track item) {
-            @if (item.scrollTo) {
-              <a
-                [href]="item.href"
-                (click)="scrollToSection(item.scrollTo, $event)"
-                class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
-              >
-                <app-icon [name]="item.icons" [size]="20" />
-                {{ item.label }}
-              </a>
-            } @else {
-              <a
-                [routerLink]="item.href"
-                class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
-              >
-                <app-icon [name]="item.icons" [size]="20" />
-                {{ item.label }}
-              </a>
-            }
+            <a
+              [routerLink]="item.href"
+              [fragment]="item.fragment"
+              class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+            >
+              <app-icon [name]="item.icons" [size]="20" />
+              {{ item.label }}
+            </a>
           }
         </nav>
 
@@ -106,25 +97,15 @@ type ThemePreference = 'dark' | 'light';
     >
       <nav class="flex flex-col gap-4" aria-label="Navigation mobile">
         @for (item of navItems(); track item) {
-          @if (item.scrollTo) {
-            <a
-              [href]="item.href"
-              (click)="scrollToSection(item.scrollTo, $event)"
-              class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
-            >
-              <app-icon [name]="item.icons" [size]="20" />
-              {{ item.label }}
-            </a>
-          } @else {
-            <a
-              [routerLink]="item.href"
-              (click)="closeMobileMenu()"
-              class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
-            >
-              <app-icon [name]="item.icons" [size]="20" />
-              {{ item.label }}
-            </a>
-          }
+          <a
+            [routerLink]="item.href"
+            [fragment]="item.fragment"
+            (click)="closeMobileMenu()"
+            class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
+          >
+            <app-icon [name]="item.icons" [size]="20" />
+            {{ item.label }}
+          </a>
         }
         @if (cvUrl()) {
           <a
@@ -165,6 +146,19 @@ export class Header {
         localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
       }
     });
+
+    // Scroll d'origine (anchorScrolling natif) MAIS sans laisser le `#contact`
+    // dans l'URL : une fois le scroll d'ancre effectué, on retire le fragment.
+    this.router.events
+      .pipe(
+        filter((e): e is Scroll => e instanceof Scroll),
+        takeUntilDestroyed(),
+      )
+      .subscribe((e) => {
+        if (e.anchor && typeof history !== 'undefined') {
+          history.replaceState(history.state, '', this.router.url.split('#')[0] || '/');
+        }
+      });
   }
 
   private static readStoredTheme(): ThemePreference {
@@ -192,55 +186,6 @@ export class Header {
 
   protected closeMobileMenu(): void {
     this.isMobileMenuOpen.set(false);
-  }
-
-  /**
-   * Scrolle vers une section de la landing sans polluer l'URL avec une ancre `#`.
-   * Si on est déjà sur la home → scroll direct ; sinon on navigue d'abord vers `/`
-   * puis on scrolle après le rendu (`afterNextRender`, SSR-safe).
-   */
-  protected scrollToSection(id: string, event: Event): void {
-    event.preventDefault();
-    this.closeMobileMenu();
-    if (this.router.url.split(/[?#]/)[0] === '/') {
-      this._scrollToAnchor(id);
-    } else {
-      void this.router.navigateByUrl('/').then(() => this._scrollToAnchor(id));
-    }
-  }
-
-  /**
-   * Scrolle vers la cible et la « suit » tant que sa position absolue bouge :
-   * les sections au-dessus (projets `@defer` + données async) se chargent
-   * progressivement et décalent la cible vers le bas. On re-vise le scroll fluide
-   * à chaque décalage, et on s'arrête une fois la position stable (~12 frames).
-   * `window.scrollY + rect.top` = position document-absolue, invariante pendant le
-   * scroll lui-même → on ne re-vise que sur un vrai décalage de mise en page.
-   */
-  private _scrollToAnchor(id: string): void {
-    if (typeof document === 'undefined') return;
-    let lastTop = -1;
-    let stableFrames = 0;
-    const follow = (frame: number): void => {
-      const el = document.getElementById(id);
-      if (!el) {
-        // Cible pas encore rendue (navigation cross-page) → on attend.
-        if (frame < 60) requestAnimationFrame(() => follow(frame + 1));
-        return;
-      }
-      const absTop = window.scrollY + el.getBoundingClientRect().top;
-      if (Math.abs(absTop - lastTop) < 1) {
-        stableFrames++;
-      } else {
-        stableFrames = 0;
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      lastTop = absTop;
-      if (stableFrames < 12 && frame < 180) {
-        requestAnimationFrame(() => follow(frame + 1));
-      }
-    };
-    follow(0);
   }
 
   protected trackCvDownload(): void {
