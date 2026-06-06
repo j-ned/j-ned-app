@@ -47,5 +47,8 @@ Thumbs.db
 
 # Claude
 .claude/*
+!.claude/project-profile.md
+!.claude/settings.json
+!.claude/CLAUDE.md
 .remember/*
 .superpowers/
