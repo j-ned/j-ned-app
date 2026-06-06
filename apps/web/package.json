@@ -90,6 +90,6 @@
     ]
   },
   "dependencies": {
-    "@sentry/angular": "^10.53.1"
+    "@sentry/angular": "^10.56.0"
   }
 }
