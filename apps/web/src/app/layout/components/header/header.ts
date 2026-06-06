@@ -209,20 +209,38 @@ export class Header {
     }
   }
 
-  private _scrollToAnchor(id: string, attempt = 0): void {
+  /**
+   * Scrolle vers la cible et la « suit » tant que sa position absolue bouge :
+   * les sections au-dessus (projets `@defer` + données async) se chargent
+   * progressivement et décalent la cible vers le bas. On re-vise le scroll fluide
+   * à chaque décalage, et on s'arrête une fois la position stable (~12 frames).
+   * `window.scrollY + rect.top` = position document-absolue, invariante pendant le
+   * scroll lui-même → on ne re-vise que sur un vrai décalage de mise en page.
+   */
+  private _scrollToAnchor(id: string): void {
     if (typeof document === 'undefined') return;
-    const el = document.getElementById(id);
-    if (!el) {
-      // Cible pas encore rendue (navigation cross-page) → on réessaie au prochain frame.
-      if (attempt < 30) requestAnimationFrame(() => this._scrollToAnchor(id, attempt + 1));
-      return;
-    }
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // Correction différée : les sections @defer situées au-dessus s'agrandissent en
-    // entrant dans le viewport pendant l'animation et décalent la cible vers le bas.
-    window.setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 600);
+    let lastTop = -1;
+    let stableFrames = 0;
+    const follow = (frame: number): void => {
+      const el = document.getElementById(id);
+      if (!el) {
+        // Cible pas encore rendue (navigation cross-page) → on attend.
+        if (frame < 60) requestAnimationFrame(() => follow(frame + 1));
+        return;
+      }
+      const absTop = window.scrollY + el.getBoundingClientRect().top;
+      if (Math.abs(absTop - lastTop) < 1) {
+        stableFrames++;
+      } else {
+        stableFrames = 0;
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      lastTop = absTop;
+      if (stableFrames < 12 && frame < 180) {
+        requestAnimationFrame(() => follow(frame + 1));
+      }
+    };
+    follow(0);
   }
 
   protected trackCvDownload(): void {
