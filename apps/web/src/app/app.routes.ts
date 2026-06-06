@@ -76,6 +76,24 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'contact',
+    title: 'Contact | Julien Nédellec',
+    loadComponent: () =>
+      import('./features/contact/application/contact-form').then((m) => m.ContactForm),
+    data: {
+      preload: true,
+      seo: {
+        title: 'Contact | Julien Nédellec - Développeur Full-Stack',
+        description:
+          'Une idée, un projet web Angular ou NestJS ? Contactez-moi via le formulaire — réponse rapide.',
+        keywords:
+          'Contact développeur Angular, Contact NestJS, Freelance Full-Stack, Devis projet web',
+        url: `${SITE_IDENTITY.siteUrl}/contact`,
+        type: 'website',
+      },
+    },
+  },
+  {
     path: 'login',
     title: 'Connexion | Julien Nédellec',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.LOGIN_ROUTES),

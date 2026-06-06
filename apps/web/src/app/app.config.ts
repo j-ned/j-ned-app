@@ -125,7 +125,6 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withInMemoryScrolling({
         scrollPositionRestoration: 'enabled',
-        anchorScrolling: 'enabled',
       }),
       withPreloading(SelectivePreload),
       withViewTransitions(),

@@ -2,14 +2,14 @@ import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/c
 import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
 import { HomeProjects } from './home-projects';
-import { ContactForm } from '@features/contact/application';
+import { RouterLink } from '@angular/router';
 import { HomeGateway } from '@features/home/domain';
 import { AppIcon } from '@shared/icons';
 import { AppIconTile } from '@shared/ui';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeProjects, ContactForm, AppIcon, AppIconTile],
+  imports: [HomeHeroSection, HomeProjects, RouterLink, AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -78,18 +78,22 @@ import { AppIconTile } from '@shared/ui';
         </div>
       }
 
-      <!-- Contact Section : hydrate on viewport pour que #contact soit
-           dans le DOM des le prerender (les liens d'ancre fonctionnent
-           immediatement, avant l'hydration JS). -->
-      @defer (hydrate on viewport) {
-        <app-contact-form />
-      } @placeholder {
-        <div class="block py-16 md:py-20 px-6 h-96"></div>
-      } @error {
-        <div class="block py-16 md:py-20 px-6 text-center text-muted text-sm">
-          Impossible de charger cette section.
+      <!-- Contact CTA : la page contact est une route dédiée (/contact), pas une ancre -->
+      <section class="w-full py-16 md:py-20" aria-labelledby="contact-cta-heading">
+        <div class="page-container text-center">
+          <h2 id="contact-cta-heading" class="text-2xl md:text-3xl font-bold text-foreground mb-3">
+            Un projet, une idée&nbsp;?
+          </h2>
+          <p class="text-muted mb-8 max-w-xl mx-auto">Discutons-en ! je réponds rapidement.</p>
+          <a
+            routerLink="/contact"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-white font-medium hover:bg-primary/90 transition-colors"
+          >
+            <app-icon name="envelope" [size]="20" />
+            Me contacter
+          </a>
         </div>
-      }
+      </section>
     </main>
   `,
 })
