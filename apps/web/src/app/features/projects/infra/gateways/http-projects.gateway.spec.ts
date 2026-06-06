@@ -196,4 +196,25 @@ describe('HttpProjectsGateway', () => {
       httpController.verify();
     });
   });
+
+  describe('Invalidation du cache featured — 1 test', () => {
+    it('invalidateFeatured() re-déclenche le GET featured pour les abonnés vivants', () => {
+      const { gateway, httpController } = configure();
+
+      // Abonnement vivant : maintient le shareReplay({ refCount: true }) chaud.
+      const sub = gateway.getFeaturedProjects().subscribe();
+      httpController
+        .expectOne(`${BASE}/projects?featured=true&_sort=order`)
+        .flush([makeProject({ id: 'uuid-1', featured: true })]);
+
+      gateway.invalidateFeatured();
+
+      const refetch = httpController.expectOne(`${BASE}/projects?featured=true&_sort=order`);
+      expect(refetch.request.method).toBe('GET');
+      refetch.flush([makeProject({ id: 'uuid-2', featured: true })]);
+
+      sub.unsubscribe();
+      httpController.verify();
+    });
+  });
 });

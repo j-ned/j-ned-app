@@ -2,18 +2,20 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { vi } from 'vitest';
 import { ProjectsGateway } from '@features/projects/domain';
-import { InMemoryHomeGateway } from './in-memory-home.gateway';
+import { InMemoryHomeGateway } from '@features/home/infra';
 import { STATIC_HERO, STATIC_HOME_HIGHLIGHTS } from '../data/home.static-data';
 
 describe('InMemoryHomeGateway', () => {
   let gateway: InMemoryHomeGateway;
   const projectsStub = {
     getFeaturedProjects: vi.fn(),
+    invalidateFeatured: vi.fn(),
   };
 
   beforeEach(() => {
     projectsStub.getFeaturedProjects.mockReset();
     projectsStub.getFeaturedProjects.mockReturnValue(of([]));
+    projectsStub.invalidateFeatured.mockReset();
     TestBed.configureTestingModule({
       providers: [
         InMemoryHomeGateway,
@@ -45,7 +47,8 @@ describe('InMemoryHomeGateway', () => {
     expect(projectsStub.getFeaturedProjects).toHaveBeenCalledOnce();
   });
 
-  it('invalidateBundle is a no-op (no error)', () => {
-    expect(() => gateway.invalidateBundle()).not.toThrow();
+  it('invalidateBundle délègue à ProjectsGateway.invalidateFeatured (rafraîchit la donnée dynamique)', () => {
+    gateway.invalidateBundle();
+    expect(projectsStub.invalidateFeatured).toHaveBeenCalledOnce();
   });
 });

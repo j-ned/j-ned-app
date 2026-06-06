@@ -56,6 +56,10 @@ export class HttpProjectsGateway extends ProjectsGateway {
     return this.featuredProjects$;
   }
 
+  invalidateFeatured(): void {
+    this._refreshFeatured$.next();
+  }
+
   getCategories(): Observable<readonly string[]> {
     return this.getAllProjects().pipe(
       map((projects) => {

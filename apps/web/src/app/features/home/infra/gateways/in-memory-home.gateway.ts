@@ -19,7 +19,10 @@ export class InMemoryHomeGateway extends HomeGateway {
   }
 
   invalidateBundle(): void {
-    // No-op: static data, no cache to invalidate.
+    // Hero/highlights sont statiques, mais `featuredProjects` vient du HTTP
+    // (`ProjectsGateway`) : on invalide ce flux pour que la landing reflète
+    // les mutations admin (create/update/delete) sans reload.
+    this.projectsGateway.invalidateFeatured();
   }
 
   getHeroData(): Observable<HeroData> {
