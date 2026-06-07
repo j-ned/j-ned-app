@@ -25,7 +25,7 @@ type ContactFormGroup = {
   host: { class: 'block' },
   imports: [ReactiveFormsModule, AppIcon, Button, AppIconTile],
   template: `
-    <section class="animate-fade-up py-16 md:py-20 px-6">
+    <section class="animate-fade-up py-16 md:py-10 px-6">
       <div class="max-w-5xl mx-auto">
         <header class="text-center mb-14">
           <span

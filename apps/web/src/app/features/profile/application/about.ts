@@ -21,7 +21,7 @@ import { AboutHighlights } from './about-highlights';
     AboutHighlights,
   ],
   template: `
-    <main class="min-h-svh pt-20 pb-16">
+    <main class="min-h-svh pt-15 pb-16">
       <section class="page-container mb-10">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8">
           <div class="lg:col-span-2">
