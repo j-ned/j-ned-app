@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { SectionScroller } from '@core/navigation/section-scroller';
 import { AppIcon } from '@shared/icons';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
@@ -34,6 +35,19 @@ const SOCIALS: readonly SocialItem[] = [
         <span class="text-muted font-normal">&copy; {{ currentYear }}</span>
       </a>
 
+      <button
+        type="button"
+        (click)="scrollToContact()"
+        class="group inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary transition-colors"
+      >
+        <app-icon
+          name="lucide-mail"
+          [size]="16"
+          class="text-muted group-hover:text-primary transition-colors"
+        />
+        Me contacter
+      </button>
+
       <nav class="flex items-center gap-2" aria-label="Réseaux sociaux">
         @for (social of socials; track social.label) {
           <a
@@ -51,6 +65,12 @@ const SOCIALS: readonly SocialItem[] = [
   `,
 })
 export class Footer {
+  private readonly scroller = inject(SectionScroller);
+
   protected readonly socials = SOCIALS;
   protected readonly currentYear = new Date().getFullYear();
+
+  protected scrollToContact(): void {
+    this.scroller.scrollTo('contact');
+  }
 }

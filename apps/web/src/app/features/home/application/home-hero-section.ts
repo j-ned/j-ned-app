@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
 import { Router } from '@angular/router';
+import { SectionScroller } from '@core/navigation/section-scroller';
 import { HomeHero } from './home-hero';
 import { Button } from '@shared/ui';
 import { AppIcon } from '@shared/icons';
@@ -90,17 +90,14 @@ import type { HeroData } from '../domain';
 export class HomeHeroSection {
   readonly hero = input<HeroData | null>(null);
   private readonly router = inject(Router);
-  private readonly document = inject(DOCUMENT);
+  private readonly scroller = inject(SectionScroller);
 
   goToProjects(): void {
     void this.router.navigate(['/projects']);
   }
 
   scrollToContact(): void {
-    const el = this.document.getElementById('contact');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    this.scroller.scrollTo('contact');
   }
 
   goToAbout(): void {

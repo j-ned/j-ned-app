@@ -121,6 +121,20 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
+ * Nav underline — indicateur d'état actif sous un lien/bouton de nav.
+ * Le parent doit être `group relative`. La barre indigo se révèle au hover
+ * et quand le parent porte `.is-link-active` (routerLinkActive ou scroll-spy).
+ * Anime uniquement transform (scaleX), jamais une propriété de layout.
+ * ---------------------------------------------------------------- */
+
+@utility nav-underline {
+  @apply pointer-events-none absolute inset-x-0 -bottom-1.5 h-0.5 origin-left scale-x-0 rounded-full bg-primary;
+  @apply transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)];
+  @apply group-hover:scale-x-100 group-[.is-link-active]:scale-x-100;
+  @apply motion-reduce:transition-none;
+}
+
+/* ---------------------------------------------------------------- *
  * Icon tile utility (anchor-only) — pour les <a> stylés en tuile d'icône.
  * Pour les <div> wrappers, utiliser le composant <app-icon-tile size>.
  * sm/lg ont été supprimés (uniquement utilisés par des <div>, migrés en composant).

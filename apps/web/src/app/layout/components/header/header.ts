@@ -6,12 +6,13 @@ import {
   afterNextRender,
   inject,
 } from '@angular/core';
-import { Router, RouterLink, Scroll } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain';
-import { filter, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { CvGateway } from '@features/cv/domain';
+import { SectionScroller } from '@core/navigation/section-scroller';
+import { ActiveSection } from '@core/navigation/active-section';
 import { AppIcon } from '@shared/icons';
 import { Button, Drawer, AppIconTile } from '@shared/ui';
 
@@ -21,11 +22,16 @@ type ThemePreference = 'dark' | 'light';
 @Component({
   selector: 'app-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AppIcon, Button, Drawer, AppIconTile],
+  imports: [RouterLink, RouterLinkActive, AppIcon, Button, Drawer, AppIconTile],
   template: `
     <div class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-nav-border shadow-nav">
       <div class="page-container h-20 flex items-center justify-between">
-        <a routerLink="/" class="group flex items-center gap-4 hover:opacity-90 transition-opacity">
+        <a
+          routerLink="/"
+          (click)="scrollToTop()"
+          aria-label="Retour en haut de la page d'accueil"
+          class="group flex items-center gap-4 hover:opacity-90 transition-opacity"
+        >
           <app-icon-tile
             class="bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
           >
@@ -38,15 +44,30 @@ type ThemePreference = 'dark' | 'light';
         </a>
 
         <nav class="hidden md:flex items-center gap-8" aria-label="Navigation principale">
-          @for (item of navItems(); track item) {
-            <a
-              [routerLink]="item.href"
-              [fragment]="item.fragment"
-              class="flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
-            >
-              <app-icon [name]="item.icons" [size]="20" />
-              {{ item.label }}
-            </a>
+          @for (item of navItems; track item.label) {
+            @if (item.kind === 'route') {
+              <a
+                [routerLink]="item.href"
+                routerLinkActive="is-link-active text-primary"
+                class="group relative flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+              >
+                <app-icon [name]="item.icons" [size]="20" />
+                {{ item.label }}
+                <span class="nav-underline" aria-hidden="true"></span>
+              </a>
+            } @else {
+              <button
+                type="button"
+                (click)="scrollToSection(item.sectionId)"
+                [class.is-link-active]="activeKey() === item.sectionId"
+                [class.text-primary]="activeKey() === item.sectionId"
+                class="group relative flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+              >
+                <app-icon [name]="item.icons" [size]="20" />
+                {{ item.label }}
+                <span class="nav-underline" aria-hidden="true"></span>
+              </button>
+            }
           }
         </nav>
 
@@ -95,17 +116,29 @@ type ThemePreference = 'dark' | 'light';
       heading="Menu"
       ariaLabel="Menu de navigation"
     >
-      <nav class="flex flex-col gap-4" aria-label="Navigation mobile">
-        @for (item of navItems(); track item) {
-          <a
-            [routerLink]="item.href"
-            [fragment]="item.fragment"
-            (click)="closeMobileMenu()"
-            class="flex items-center gap-3 text-lg font-medium text-muted hover:text-primary transition-colors"
-          >
-            <app-icon [name]="item.icons" [size]="20" />
-            {{ item.label }}
-          </a>
+      <nav class="flex flex-col gap-1" aria-label="Navigation mobile">
+        @for (item of navItems; track item.label) {
+          @if (item.kind === 'route') {
+            <a
+              [routerLink]="item.href"
+              routerLinkActive="text-primary bg-foreground/5"
+              (click)="closeMobileMenu()"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-lg font-medium text-muted hover:text-primary hover:bg-foreground/5 transition-colors"
+            >
+              <app-icon [name]="item.icons" [size]="20" />
+              {{ item.label }}
+            </a>
+          } @else {
+            <button
+              type="button"
+              (click)="scrollToSection(item.sectionId); closeMobileMenu()"
+              [class]="activeKey() === item.sectionId ? 'text-primary bg-foreground/5' : ''"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-lg font-medium text-muted hover:text-primary hover:bg-foreground/5 transition-colors"
+            >
+              <app-icon [name]="item.icons" [size]="20" />
+              {{ item.label }}
+            </button>
+          }
         }
         @if (cvUrl()) {
           <a
@@ -113,7 +146,7 @@ type ThemePreference = 'dark' | 'light';
             target="_blank"
             rel="noopener noreferrer"
             (click)="trackCvDownload(); closeMobileMenu()"
-            class="flex items-center gap-3 text-lg font-medium text-primary hover:text-primary/80 transition-colors py-2 border-t border-white/5 pt-4 mt-2"
+            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-lg font-medium text-primary hover:bg-foreground/5 transition-colors mt-2 border-t border-white/5 pt-4"
           >
             <app-icon name="download" [size]="20" />
             Télécharger mon CV
@@ -126,9 +159,10 @@ type ThemePreference = 'dark' | 'light';
 export class Header {
   private readonly analytics = inject(AnalyticsGateway);
   private readonly cvService = inject(CvGateway);
-  private readonly router = inject(Router);
+  private readonly scroller = inject(SectionScroller);
 
-  protected readonly navItems = signal(NAV_LINKS);
+  protected readonly navItems = NAV_LINKS;
+  protected readonly activeKey = inject(ActiveSection).key;
   protected readonly isMobileMenuOpen = signal(false);
   protected readonly isDarkTheme = signal(Header.readStoredTheme() === 'dark');
   protected readonly cvUrl = signal<string | null>(null);
@@ -146,19 +180,6 @@ export class Header {
         localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
       }
     });
-
-    // Scroll d'origine (anchorScrolling natif) MAIS sans laisser le `#contact`
-    // dans l'URL : une fois le scroll d'ancre effectué, on retire le fragment.
-    this.router.events
-      .pipe(
-        filter((e): e is Scroll => e instanceof Scroll),
-        takeUntilDestroyed(),
-      )
-      .subscribe((e) => {
-        if (e.anchor && typeof history !== 'undefined') {
-          history.replaceState(history.state, '', this.router.url.split('#')[0] || '/');
-        }
-      });
   }
 
   private static readStoredTheme(): ThemePreference {
@@ -178,6 +199,14 @@ export class Header {
     } else {
       document.documentElement.classList.remove('app-dark');
     }
+  }
+
+  protected scrollToSection(sectionId: string): void {
+    this.scroller.scrollTo(sectionId);
+  }
+
+  protected scrollToTop(): void {
+    this.scroller.scrollToTop();
   }
 
   protected toggleMobileMenu(): void {

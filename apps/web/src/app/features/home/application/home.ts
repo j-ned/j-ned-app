@@ -4,12 +4,14 @@ import { HomeHeroSection } from './home-hero-section';
 import { HomeProjects } from './home-projects';
 import { ContactForm } from '@features/contact/application';
 import { HomeGateway } from '@features/home/domain';
+import { SectionVisibility } from '@core/navigation/section-visibility';
+import { SectionScroller } from '@core/navigation/section-scroller';
 import { AppIcon } from '@shared/icons';
 import { AppIconTile } from '@shared/ui';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeProjects, ContactForm, AppIcon, AppIconTile],
+  imports: [HomeHeroSection, HomeProjects, ContactForm, SectionVisibility, AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -64,7 +66,7 @@ import { AppIconTile } from '@shared/ui';
       </div>
 
       <!-- Projects Section -->
-      @defer (on viewport; prefetch on idle) {
+      @defer (on viewport; prefetch on idle; when eagerSections()) {
         <section class="w-full py-16 md:py-20">
           <div class="page-container">
             <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
@@ -78,10 +80,12 @@ import { AppIconTile } from '@shared/ui';
         </div>
       }
 
-      <!-- Contact (section de la landing) ; id pour le scroll programmatique du header,
-           JAMAIS exposé comme ancre #contact dans l'URL. scroll-mt-20 compense le header fixe. -->
-      <div id="contact" class="scroll-mt-20">
-        @defer (on viewport; prefetch on idle) {
+      <!-- Contact (section de la landing) ; id pour le scroll programmatique unifié
+           (SectionScroller), JAMAIS exposé comme ancre #contact dans l'URL.
+           scroll-mt-20 compense le header fixe ; appSectionVisibility pilote
+           l'indicateur d'état actif du header (scroll-spy). -->
+      <div id="contact" class="scroll-mt-20" appSectionVisibility="contact">
+        @defer (on viewport; prefetch on idle; when eagerSections()) {
           <app-contact-form />
         } @placeholder {
           <div class="block py-16 md:py-20 px-6 h-96"></div>
@@ -96,6 +100,10 @@ import { AppIconTile } from '@shared/ui';
 })
 export class Home {
   private readonly _gateway = inject(HomeGateway);
+
+  /** Force le rendu des sections @defer dès qu'un défilement vers une section
+   *  est demandé, pour un scroll fluide sans décalage (cf. SectionScroller). */
+  protected readonly eagerSections = inject(SectionScroller).eager;
 
   private readonly bundleResource = rxResource({
     stream: () => this._gateway.getHomeBundle(),
