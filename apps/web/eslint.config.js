@@ -4,7 +4,12 @@ const tseslint = require("typescript-eslint");
 const angular = require("angular-eslint");
 const prettierConfig = require("eslint-config-prettier");
 
-module.exports = [
+module.exports = (async () => {
+  // Préréglage AAK vendoré (.mjs/ESM) — importé dynamiquement car cette config
+  // est en CommonJS. ESLint 9 flat config accepte un export Promise.
+  const aak = (await import("./.claude/eslint/aak-conventions.mjs")).default;
+
+  return [
   {
     files: ["**/*.ts"],
     ...eslint.configs.recommended,
@@ -70,4 +75,14 @@ module.exports = [
   },
   // Prettier DOIT être en dernier
   prettierConfig,
-];
+  // Préréglage AAK (no-restricted-syntax, …) — après prettier : aucune règle
+  // stylistique que prettier désactive.
+  ...aak,
+  {
+    // Point d'entrée SSR : `export default bootstrap` imposé par Angular SSR —
+    // hors périmètre de la règle AAK (réservée aux pages routées *-page.ts).
+    files: ["**/main.server.ts"],
+    rules: { "no-restricted-syntax": "off" },
+  },
+  ];
+})();

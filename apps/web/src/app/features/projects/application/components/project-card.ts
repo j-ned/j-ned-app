@@ -1,12 +1,13 @@
 import { Component, input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import type { Project } from '../../domain';
 import { AnalyticsGateway } from '@features/analytics/domain';
 import { AppIcon } from '@shared/icons';
 
 @Component({
   selector: 'app-project-card',
-  imports: [NgOptimizedImage, AppIcon],
+  imports: [NgOptimizedImage, RouterLink, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block h-full animate-fade-up' },
   template: `
@@ -37,7 +38,14 @@ import { AppIcon } from '@shared/icons';
         </p>
 
         <h2 class="text-xl md:text-2xl font-bold mb-2 text-foreground">
-          {{ project().title }}
+          <a
+            [routerLink]="['/projects', project().slug]"
+            data-testid="project-card-link"
+            class="after:absolute after:inset-0 hover:text-primary transition-colors focus:outline-none focus-visible:underline"
+            [attr.aria-label]="'Voir le détail du projet ' + project().title"
+          >
+            {{ project().title }}
+          </a>
         </h2>
 
         <p class="text-muted mb-3 grow text-sm leading-relaxed line-clamp-2">
@@ -60,7 +68,7 @@ import { AppIcon } from '@shared/icons';
           project().liveUrl || project().repoUrl || project().repoUrlFront || project().repoUrlBack
         ) {
           <nav
-            class="flex flex-wrap gap-3 mt-auto pt-3 border-t border-foreground/10"
+            class="relative z-10 flex flex-wrap gap-3 mt-auto pt-3 border-t border-foreground/10"
             aria-label="Liens du projet"
           >
             @if (project().liveUrl) {

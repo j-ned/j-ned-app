@@ -5,6 +5,7 @@ function makeProject(category: string, id = '1'): Project {
   return {
     id,
     title: `Project ${id}`,
+    slug: `p-${id}`,
     category,
     tags: [],
     description: '',
