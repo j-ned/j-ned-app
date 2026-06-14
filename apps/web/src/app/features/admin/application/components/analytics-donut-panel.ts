@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { ChartData, ChartOptions } from 'chart.js/auto';
-import { AppChart, AppSkeleton } from '@shared/ui';
-import { AppIcon } from '@shared/icons';
+import { AppChart } from '@shared/ui/chart';
+import { AppSkeleton } from '@shared/ui/skeleton';
+import { AppIcon } from '@shared/icons/app-icon';
 
 @Component({
   selector: 'app-analytics-donut-panel',

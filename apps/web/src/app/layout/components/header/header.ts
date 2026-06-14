@@ -8,13 +8,15 @@ import {
 } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
-import { AnalyticsGateway } from '@features/analytics/domain';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { firstValueFrom } from 'rxjs';
-import { CvGateway } from '@features/cv/domain';
+import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { ActiveSection } from '@core/navigation/active-section';
-import { AppIcon } from '@shared/icons';
-import { Button, Drawer, AppIconTile } from '@shared/ui';
+import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
+import { Drawer } from '@shared/ui/drawer';
+import { AppIconTile } from '@shared/ui/icon-tile';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
 type ThemePreference = 'dark' | 'light';

@@ -3,8 +3,8 @@ import { provideRouter } from '@angular/router';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { ProjectCard } from './project-card';
-import { AnalyticsGateway } from '@features/analytics/domain';
-import type { Project } from '../../domain';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import type { Project } from '../../domain/models/project.model';
 
 function project(overrides: Partial<Project> = {}): Project {
   return {

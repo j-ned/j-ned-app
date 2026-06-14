@@ -1,7 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { defer, map, of, type Observable } from 'rxjs';
-import { ProjectsGateway } from '@features/projects/domain';
-import { HomeGateway, type HeroData, type HomeBundle, type HomeHighlight } from '../../domain';
+import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
+import { HomeGateway } from '../../domain/gateways/home.gateway';
+import type { HeroData } from '../../domain/models/hero.model';
+import type { HomeBundle } from '../../domain/models/home-bundle.model';
+import type { HomeHighlight } from '../../domain/models/home-highlight.model';
 import { STATIC_HERO, STATIC_HOME_HIGHLIGHTS } from '../data/home.static-data';
 
 @Injectable()

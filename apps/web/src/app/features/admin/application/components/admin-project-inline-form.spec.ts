@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { AdminProjectInlineForm } from './admin-project-inline-form';
-import type { Project, ProjectInput } from '@features/projects/domain';
+import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -19,7 +19,10 @@ function makeProject(overrides: Partial<Project> = {}): Project {
   };
 }
 
-function mount(project?: Project) {
+function mount(project?: Project): {
+  cmp: AdminProjectInlineForm;
+  getEmitted: () => { data: ProjectInput; file: File | null };
+} {
   TestBed.configureTestingModule({
     imports: [AdminProjectInlineForm],
     schemas: [NO_ERRORS_SCHEMA],

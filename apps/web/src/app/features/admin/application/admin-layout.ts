@@ -2,9 +2,10 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 import { AuthStore } from '@core/auth/auth-store';
-import { ContactGateway } from '@features/contact/domain';
-import { AppIcon } from '@shared/icons';
-import { Drawer, AppIconTile } from '@shared/ui';
+import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
+import { AppIcon } from '@shared/icons/app-icon';
+import { Drawer } from '@shared/ui/drawer';
+import { AppIconTile } from '@shared/ui/icon-tile';
 import { AdminNav, type AdminNavItem } from './components/admin-nav';
 
 @Component({

@@ -1,5 +1,5 @@
 import type { Project } from '../models/project.model';
-import { calculateTotalPages, paginateProjects } from '@features/projects/domain';
+import { calculateTotalPages, paginateProjects } from '@features/projects/domain/use-cases/paginate-projects.use-case';
 
 function makeProjects(count: number): readonly Project[] {
   return Array.from({ length: count }, (_, i) => ({

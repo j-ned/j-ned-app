@@ -1,13 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, Observable, of, shareReplay, startWith, Subject, switchMap } from 'rxjs';
-import {
-  ContactGateway,
-  type ContactFormData,
-  type ContactFormSubmission,
-  type ContactMessage,
-} from '../../domain';
-import { API_BASE_URL } from '@shared/api';
+import { ContactGateway } from '../../domain/gateways/contact.gateway';
+import type { ContactFormData, ContactFormSubmission } from '../../domain/models/contact-form.model';
+import type { ContactMessage } from '../../domain/models/contact-message.model';
+import { API_BASE_URL } from '@shared/api/api-config';
 
 function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
   switch (err.status) {

@@ -1,16 +1,12 @@
 import { Injectable } from '@angular/core';
 import { defer, of, type Observable } from 'rxjs';
-import {
-  ProfileGateway,
-  type ProfileInfo,
-  type Biography,
-  type Diploma,
-  type Technology,
-  type Highlight,
-  type WhatIDo,
-  type WhatISeek,
-  type SocialButton,
-} from '../../domain';
+import { ProfileGateway } from '../../domain/gateways/profile.gateway';
+import type { ProfileInfo, SocialButton } from '../../domain/models/profile.model';
+import type { Biography } from '../../domain/models/biography.model';
+import type { Diploma } from '../../domain/models/diploma.model';
+import type { Technology } from '../../domain/models/technology.model';
+import type { Highlight } from '../../domain/models/highlight.model';
+import type { WhatIDo, WhatISeek } from '../../domain/models/what-i-do.model';
 import {
   STATIC_PROFILE_BASE,
   STATIC_AVATAR_URL,

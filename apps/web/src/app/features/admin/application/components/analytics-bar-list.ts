@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { AppSkeleton } from '@shared/ui';
-import { AppIcon } from '@shared/icons';
+import { AppSkeleton } from '@shared/ui/skeleton';
+import { AppIcon } from '@shared/icons/app-icon';
 import { barWidth } from '@features/analytics/domain/analytics-presenter';
-import type { MetricEntry } from '@features/analytics/domain';
+import type { MetricEntry } from '@features/analytics/domain/models/analytics.types';
 
 @Component({
   selector: 'app-analytics-bar-list',

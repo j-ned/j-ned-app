@@ -2,8 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { API_BASE_URL } from '@shared/api';
-import { CvGateway, type CvInfo } from '../../domain';
+import { API_BASE_URL } from '@shared/api/api-config';
+import { CvGateway } from '../../domain/gateways/cv.gateway';
+import type { CvInfo } from '../../domain/models/cv.model';
 
 @Injectable()
 export class HttpCvGateway extends CvGateway {

@@ -11,10 +11,13 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AppChart, Button, AppSkeleton, AppIconTile } from '@shared/ui';
+import { AppChart } from '@shared/ui/chart';
+import { Button } from '@shared/ui/button';
+import { AppSkeleton } from '@shared/ui/skeleton';
+import { AppIconTile } from '@shared/ui/icon-tile';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
-import { AnalyticsGateway } from '@features/analytics/domain';
-import { AppIcon } from '@shared/icons';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { AppIcon } from '@shared/icons/app-icon';
 import { ThemeWatcher } from '@shared/theme/theme-watcher';
 import { AnalyticsBarList } from './components/analytics-bar-list';
 import { AnalyticsDonutPanel } from './components/analytics-donut-panel';

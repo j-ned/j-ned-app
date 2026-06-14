@@ -1,7 +1,7 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
-import { of } from 'rxjs';
+import { of, type Observable } from 'rxjs';
 import { TwoFactorVerify } from './two-factor-verify';
 import { AuthStore } from '@core/auth/auth-store';
 
@@ -17,7 +17,7 @@ describe('TwoFactorVerify a11y', () => {
           provide: AuthStore,
           useValue: {
             pendingChallengeToken: signal('challenge-token-test'),
-            verifyTwoFactor: () => of(true),
+            verifyTwoFactor: (): Observable<boolean> => of(true),
           },
         },
       ],

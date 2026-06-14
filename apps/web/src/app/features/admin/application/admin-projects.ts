@@ -10,12 +10,14 @@ import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
-import { ProjectsGateway } from '@features/projects/domain';
-import type { Project, ProjectInput } from '@features/projects/domain';
-import { HomeGateway } from '@features/home/domain';
+import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
+import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
+import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
-import { AppTag, ToastStore, Button } from '@shared/ui';
-import { AppIcon } from '@shared/icons';
+import { AppTag } from '@shared/ui/tag';
+import { ToastStore } from '@shared/ui/toast-store';
+import { Button } from '@shared/ui/button';
+import { AppIcon } from '@shared/icons/app-icon';
 
 @Component({
   selector: 'app-admin-projects',

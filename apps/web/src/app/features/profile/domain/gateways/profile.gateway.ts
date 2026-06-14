@@ -1,10 +1,10 @@
 import type { Observable } from 'rxjs';
 import type { ProfileInfo, SocialButton } from '../models/profile.model';
-import type { Biography } from '@features/profile/domain';
+import type { Biography } from '@features/profile/domain/models/biography.model';
 import type { Diploma } from '../models/diploma.model';
-import type { Technology } from '@features/profile/domain';
-import type { Highlight } from '@features/profile/domain';
-import type { WhatIDo, WhatISeek } from '@features/profile/domain';
+import type { Technology } from '@features/profile/domain/models/technology.model';
+import type { Highlight } from '@features/profile/domain/models/highlight.model';
+import type { WhatIDo, WhatISeek } from '@features/profile/domain/models/what-i-do.model';
 
 export abstract class ProfileGateway {
   abstract getProfileInfo(): Observable<ProfileInfo>;

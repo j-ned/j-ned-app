@@ -1,9 +1,9 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { AnalyticsEntityList } from './analytics-entity-list';
-import type { EntityStat } from '@features/analytics/domain';
+import type { EntityStat } from '@features/analytics/domain/models/analytics.types';
 
-function setup(inputs: Record<string, unknown>) {
+function setup(inputs: Record<string, unknown>): { fixture: ComponentFixture<AnalyticsEntityList>; el: HTMLElement } {
   TestBed.configureTestingModule({ schemas: [NO_ERRORS_SCHEMA] });
   const fixture = TestBed.createComponent(AnalyticsEntityList);
   for (const [key, value] of Object.entries(inputs)) {

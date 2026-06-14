@@ -7,9 +7,9 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
-import { ContactGateway } from '@features/contact/domain';
-import type { ContactMessage } from '@features/contact/domain';
-import { ToastStore } from '@shared/ui';
+import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
+import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
+import { ToastStore } from '@shared/ui/toast-store';
 import { AdminTable } from './components/admin-table';
 import { AdminColExpand } from './components/admin-col-expand';
 import { AdminColBadge } from './components/admin-col-badge';

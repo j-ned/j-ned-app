@@ -2,12 +2,12 @@ import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/c
 import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
 import { HomeProjects } from './home-projects';
-import { ContactForm } from '@features/contact/application';
-import { HomeGateway } from '@features/home/domain';
+import { ContactForm } from '@features/contact/application/contact-form';
+import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { SectionVisibility } from '@core/navigation/section-visibility';
 import { SectionScroller } from '@core/navigation/section-scroller';
-import { AppIcon } from '@shared/icons';
-import { AppIconTile } from '@shared/ui';
+import { AppIcon } from '@shared/icons/app-icon';
+import { AppIconTile } from '@shared/ui/icon-tile';
 
 @Component({
   selector: 'app-home',

@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { AppSkeleton, AppTag, type AppTagSeverity } from '@shared/ui';
-import { AppIcon } from '@shared/icons';
-import type { EntityStat } from '@features/analytics/domain';
+import { AppSkeleton } from '@shared/ui/skeleton';
+import { AppTag, type AppTagSeverity } from '@shared/ui/tag';
+import { AppIcon } from '@shared/icons/app-icon';
+import type { EntityStat } from '@features/analytics/domain/models/analytics.types';
 
 @Component({
   selector: 'app-analytics-entity-list',

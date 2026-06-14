@@ -1,5 +1,5 @@
 import type { Routes } from '@angular/router';
-import { authGuard } from '@features/auth/infra';
+import { authGuard } from '@features/auth/infra/auth-guard';
 import { Home } from '@features/home/application/home';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 

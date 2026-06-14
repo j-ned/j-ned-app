@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SectionScroller } from '@core/navigation/section-scroller';
-import { AppIcon } from '@shared/icons';
+import { AppIcon } from '@shared/icons/app-icon';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 type SocialItem = {

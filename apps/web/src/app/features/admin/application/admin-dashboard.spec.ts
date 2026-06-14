@@ -3,8 +3,9 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { AdminDashboard } from './admin-dashboard';
-import { ContactGateway, type ContactMessage } from '@features/contact/domain';
-import { AnalyticsGateway } from '@features/analytics/domain';
+import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
+import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { AuthStore } from '@core/auth/auth-store';
 
 const msg = (p: Partial<ContactMessage> = {}): ContactMessage => ({
@@ -42,7 +43,10 @@ type Internals = {
   cvDownloadCount: () => number;
 };
 
-async function setup(contact: ContactGateway, analytics: AnalyticsGateway = makeAnalytics()) {
+async function setup(
+  contact: ContactGateway,
+  analytics: AnalyticsGateway = makeAnalytics(),
+): Promise<Internals> {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),

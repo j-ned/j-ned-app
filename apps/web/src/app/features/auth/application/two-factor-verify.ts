@@ -3,8 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '@core/auth/auth-store';
-import { AppIcon } from '@shared/icons';
-import { Button, AppIconTile } from '@shared/ui';
+import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
+import { AppIconTile } from '@shared/ui/icon-tile';
 
 type TwoFactorVerifyFormShape = {
   code: FormControl<string>;

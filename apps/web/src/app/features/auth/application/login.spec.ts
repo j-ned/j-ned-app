@@ -1,9 +1,9 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, type Observable } from 'rxjs';
 import { Login } from './login';
 import { AuthStore } from '@core/auth/auth-store';
-import { ToastStore } from '@shared/ui';
+import { ToastStore } from '@shared/ui/toast-store';
 
 describe('Login a11y', () => {
   let fixture: ComponentFixture<Login>;
@@ -13,8 +13,8 @@ describe('Login a11y', () => {
       imports: [Login],
       providers: [
         provideRouter([]),
-        { provide: AuthStore, useValue: { login: () => of('success') } },
-        { provide: ToastStore, useValue: { add: () => undefined } },
+        { provide: AuthStore, useValue: { login: (): Observable<string> => of('success') } },
+        { provide: ToastStore, useValue: { add: (): void => undefined } },
       ],
     }).compileComponents();
 

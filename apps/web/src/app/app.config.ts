@@ -21,7 +21,7 @@ import {
 import { SelectivePreload } from '@core/strategies/selective-preload';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from '@features/auth/infra/auth-interceptor';
-import { errorToastInterceptor } from '@core/interceptors';
+import { errorToastInterceptor } from '@core/interceptors/error-toast';
 import { IMAGE_CONFIG } from '@angular/common';
 import {
   provideClientHydration,
@@ -34,21 +34,21 @@ import { filter } from 'rxjs';
 import { routes } from './app.routes';
 import { Seo } from '@shared/seo/seo';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import { AnalyticsGateway } from '@features/analytics/domain';
-import { HttpAnalyticsGateway } from '@features/analytics/infra';
-import { CvGateway } from '@features/cv/domain';
-import { HttpCvGateway } from '@features/cv/infra';
-import { API_BASE_URL } from '@shared/api';
-import { ProjectsGateway } from '@features/projects/domain';
-import { ProfileGateway } from '@features/profile/domain';
-import { ContactGateway } from '@features/contact/domain';
-import { HomeGateway } from '@features/home/domain';
-import { HttpProjectsGateway } from '@features/projects/infra';
-import { InMemoryProfileGateway } from '@features/profile/infra';
-import { HttpContactGateway } from '@features/contact/infra';
-import { InMemoryHomeGateway } from '@features/home/infra';
-import { AuthGateway } from '@features/auth/domain';
-import { HttpAuthGateway } from '@features/auth/infra';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { HttpAnalyticsGateway } from '@features/analytics/infra/gateways/http-analytics.gateway';
+import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
+import { HttpCvGateway } from '@features/cv/infra/gateways/http-cv.gateway';
+import { API_BASE_URL } from '@shared/api/api-config';
+import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
+import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
+import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
+import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
+import { HttpProjectsGateway } from '@features/projects/infra/gateways/http-projects.gateway';
+import { InMemoryProfileGateway } from '@features/profile/infra/gateways/in-memory-profile.gateway';
+import { HttpContactGateway } from '@features/contact/infra/gateways/http-contact.gateway';
+import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-home.gateway';
+import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
+import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 import { AuthStore } from '@core/auth/auth-store';
 
 function initializeAuth(): () => Promise<void> | void {

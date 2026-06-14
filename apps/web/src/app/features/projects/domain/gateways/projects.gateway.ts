@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
 import type { Project, ProjectInput } from '../models/project.model';
-import type { ProjectFilter } from '@features/projects/domain';
+import type { ProjectFilter } from '@features/projects/domain/models/project-filter.model';
 
 export abstract class ProjectsGateway {
   abstract getAllProjects(): Observable<readonly Project[]>;

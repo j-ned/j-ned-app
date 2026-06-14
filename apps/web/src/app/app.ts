@@ -3,8 +3,10 @@ import { Component, PLATFORM_ID, computed, inject, ChangeDetectionStrategy } fro
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
-import { Toast, ToastStore } from '@shared/ui';
-import { Header, Footer } from '@layout';
+import { Toast } from '@shared/ui/toast';
+import { ToastStore } from '@shared/ui/toast-store';
+import { Header } from '@layout/components/header/header';
+import { Footer } from '@layout/components/footer/footer';
 import { AuthStore } from '@core/auth/auth-store';
 
 @Component({

@@ -8,7 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AppIcon } from '@shared/icons';
+import { AppIcon } from '@shared/icons/app-icon';
 import { AdminColumnBase } from './admin-column-base';
 
 export type ExtraAction<T> = {

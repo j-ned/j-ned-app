@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output, type Signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AppIcon } from '@shared/icons';
-import { AppIconTile } from '@shared/ui';
+import { AppIcon } from '@shared/icons/app-icon';
+import { AppIconTile } from '@shared/ui/icon-tile';
 
 export type AdminNavItem = {
   readonly route: string;

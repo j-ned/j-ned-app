@@ -5,7 +5,7 @@ import { PLATFORM_ID } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
-import { API_BASE_URL } from '@shared/api';
+import { API_BASE_URL } from '@shared/api/api-config';
 import { HttpAnalyticsGateway } from './http-analytics.gateway';
 import type {
   StatsOverview,
@@ -13,7 +13,7 @@ import type {
   MetricEntry,
   EntityStat,
   ActiveVisitors,
-} from '../../domain';
+} from '../../domain/models/analytics.types';
 
 const BASE = '/api';
 

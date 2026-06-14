@@ -1,9 +1,9 @@
 import { Component, input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import type { Project } from '../../domain';
-import { AnalyticsGateway } from '@features/analytics/domain';
-import { AppIcon } from '@shared/icons';
+import type { Project } from '../../domain/models/project.model';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { AppIcon } from '@shared/icons/app-icon';
 
 @Component({
   selector: 'app-project-card',

@@ -1,9 +1,10 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { AdminMessages } from './admin-messages';
-import { ContactGateway, type ContactMessage } from '@features/contact/domain';
-import { ToastStore } from '@shared/ui';
+import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
+import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
+import { ToastStore } from '@shared/ui/toast-store';
 
 const msg = (p: Partial<ContactMessage> = {}): ContactMessage => ({
   id: 1,
@@ -36,7 +37,9 @@ type Internals = {
   extraActions: readonly { handler: (m: ContactMessage) => void }[];
 };
 
-async function setup(gateway: ContactGateway = makeGateway()) {
+async function setup(
+  gateway: ContactGateway = makeGateway(),
+): Promise<{ fixture: ComponentFixture<AdminMessages>; cmp: Internals; toast: { add: ReturnType<typeof vi.fn> } }> {
   const toast = { add: vi.fn() };
   TestBed.configureTestingModule({
     providers: [

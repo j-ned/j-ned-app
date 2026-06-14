@@ -11,7 +11,7 @@ import {
   input,
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { AppIcon } from '@shared/icons';
+import { AppIcon } from '@shared/icons/app-icon';
 
 type Position = 'left' | 'right';
 

@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AppIcon } from '@shared/icons';
-import { AppIconTile } from '@shared/ui';
+import { AppIcon } from '@shared/icons/app-icon';
+import { AppIconTile } from '@shared/ui/icon-tile';
 
 @Component({
   selector: 'app-admin-settings',

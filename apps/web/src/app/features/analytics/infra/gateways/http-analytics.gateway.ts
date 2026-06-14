@@ -3,16 +3,16 @@ import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { catchError, EMPTY, map, Observable } from 'rxjs';
 
-import { API_BASE_URL } from '@shared/api';
-import {
-  AnalyticsGateway,
-  type ActiveVisitors,
-  type DailyChartPoint,
-  type EntityStat,
-  type MetricEntry,
-  type StatsOverview,
-  type TrackPayload,
-} from '../../domain';
+import { API_BASE_URL } from '@shared/api/api-config';
+import { AnalyticsGateway } from '../../domain/gateways/analytics.gateway';
+import type {
+  ActiveVisitors,
+  DailyChartPoint,
+  EntityStat,
+  MetricEntry,
+  StatsOverview,
+  TrackPayload,
+} from '../../domain/models/analytics.types';
 
 // Mirrors backend filter: don't burn HTTP calls on routes the server drops.
 function isExcludedUrl(url: string): boolean {
