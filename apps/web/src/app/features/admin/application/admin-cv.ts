@@ -185,9 +185,15 @@ export class AdminCv {
     this.selectedFile.set(file);
   }
 
-  private loadCv(): void {
-    firstValueFrom(this._cvService.getCurrent()).then((data) => {
-      this.cv.set(data);
-    });
+  private async loadCv(): Promise<void> {
+    try {
+      this.cv.set(await firstValueFrom(this._cvService.getCurrent()));
+    } catch (err) {
+      this._toast.add({
+        severity: 'error',
+        summary: 'Erreur',
+        detail: `Erreur de chargement du CV : ${extractErrorMessage(err)}`,
+      });
+    }
   }
 }

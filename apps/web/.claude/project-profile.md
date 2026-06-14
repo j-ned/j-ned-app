@@ -28,6 +28,10 @@
 
 ## Stack & bibliothèques (choix structurants)
 
+- **Version Angular & détection par défaut** : Angular `21` (`@angular/core
+  ^21.2.x`, `@angular/build ^21.2.x`). **< 22** ⇒ `changeDetection:
+  ChangeDetectionStrategy.OnPush` doit être écrit **explicitement** sur chaque
+  composant (la bascule du défaut framework `OnPush`/zoneless, c'est v22).
 - **État partagé** : aucun store générique tiers (pas de NgRx) ; stores maison à
   base de signals. **Seuil de promotion en store** : partagé entre **2+
   composants non liés**. Sous le seuil : signals locaux.
@@ -99,6 +103,16 @@
 ## Tests
 
 - **Framework** : Vitest 4 (builder `@angular/build:unit-test`) + jsdom.
+- **Régime zone** : `zoneless` (pas de `zone.js` en dépendance ; aucun
+  `provideZoneChangeDetection`). ⇒ **jamais** `fakeAsync`/`tick`/`flush`/
+  `waitForAsync` (plantent sans patches `zone-testing`) : fake timers du runner
+  (`vi.useFakeTimers`) + `await fixture.whenStable()`, cf. skill
+  `angular-async-testing`.
+- **Statut des adapters in-memory / fakes de persistance** : `implémentation
+  runtime`. `InMemoryProfileGateway` et `InMemoryHomeGateway` sont câblés en
+  **production** (`app.config.ts`) — l'app tourne réellement dessus (pas de
+  backend pour Profile/Home). ⇒ code applicatif livrable, légitimement doté de
+  specs dédiés (`in-memory-*.gateway.spec.ts` non rejeté).
 - **Frontières d'I/O** (seuls fakes légitimes — liste **fermée**) : réseau (HTTP,
   backend REST), horloge/timers (`Date`, `setTimeout`/`setInterval`), storage
   navigateur (`localStorage`/`sessionStorage` : thème, token auth), source d'aléa
