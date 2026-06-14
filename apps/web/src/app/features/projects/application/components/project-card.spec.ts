@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { ProjectCard } from './project-card';
 import { AnalyticsGateway } from '@features/analytics/domain';
@@ -21,7 +21,7 @@ describe('ProjectCard', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: AnalyticsGateway, useValue: { trackProjectClick: () => {} } },
+        { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
       ],
     });
     const fixture = TestBed.createComponent(ProjectCard);

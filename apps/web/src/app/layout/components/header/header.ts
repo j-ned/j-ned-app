@@ -225,11 +225,14 @@ export class Header {
     this.isDarkTheme.update((value) => !value);
   }
 
-  private loadCvUrl(): void {
-    firstValueFrom(this.cvService.getCurrent()).then((data) => {
+  private async loadCvUrl(): Promise<void> {
+    try {
+      const data = await firstValueFrom(this.cvService.getCurrent());
       if (data) {
         this.cvUrl.set(this.cvService.getDownloadUrl());
       }
-    });
+    } catch (err) {
+      console.warn('Header: chargement de l’URL du CV échoué, lien masqué.', err);
+    }
   }
 }
