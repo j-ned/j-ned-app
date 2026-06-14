@@ -7,6 +7,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
   return {
     id: 'p1',
     title: 'Projet',
+    slug: 'projet',
     category: 'Application Web',
     tags: ['Angular'],
     description: 'Une description suffisante',
@@ -59,5 +60,42 @@ describe('AdminProjectInlineForm — soumission', () => {
 
     expect(getEmitted().data.liveUrl).toBeNull();
     expect(getEmitted().data.repoUrl).toBeNull();
+  });
+});
+
+describe('listes détail (techChoices / architectureDecisions)', () => {
+  it('ajoute et retire une ligne de choix technique', () => {
+    const fixture = TestBed.createComponent(AdminProjectInlineForm);
+    const cmp = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(cmp.form.controls.techChoices.length).toBe(0);
+    cmp.addTechChoice();
+    expect(cmp.form.controls.techChoices.length).toBe(1);
+    cmp.removeTechChoice(0);
+    expect(cmp.form.controls.techChoices.length).toBe(0);
+  });
+
+  it('émet techChoices et architectureDecisions à la soumission', () => {
+    const fixture = TestBed.createComponent(AdminProjectInlineForm);
+    const cmp = fixture.componentInstance;
+    fixture.detectChanges();
+
+    cmp.form.patchValue({ title: 'X', category: 'Application Web', description: 'D' });
+    cmp.addTechChoice();
+    cmp.form.controls.techChoices.at(0).setValue({ techno: 'NestJS', why: 'modulaire' });
+    cmp.addArchitectureDecision();
+    cmp.form.controls.architectureDecisions
+      .at(0)
+      .setValue({ decision: 'hexagonale', rationale: 'testable' });
+
+    let emitted: { data: { techChoices?: unknown; architectureDecisions?: unknown } } | undefined;
+    cmp.saved.subscribe((e) => (emitted = e));
+    cmp.submitProject();
+
+    expect(emitted?.data.techChoices).toEqual([{ techno: 'NestJS', why: 'modulaire' }]);
+    expect(emitted?.data.architectureDecisions).toEqual([
+      { decision: 'hexagonale', rationale: 'testable' },
+    ]);
   });
 });

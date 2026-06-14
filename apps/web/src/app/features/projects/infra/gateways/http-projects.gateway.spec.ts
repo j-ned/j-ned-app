@@ -29,6 +29,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
   return {
     id: 'uuid-1',
     title: 'My Project',
+    slug: 'my-project',
     category: 'Web',
     tags: ['angular'],
     description: 'desc',
@@ -61,6 +62,33 @@ describe('HttpProjectsGateway', () => {
       const result = await promise;
       expect(result).toEqual(expected);
       httpController.verify();
+    });
+
+    it('getAllProjects() conserve slug, techChoices et architectureDecisions', async () => {
+      const { gateway, httpController } = configure();
+      const expected = [
+        makeProject({
+          slug: 'dashflow',
+          techChoices: [{ techno: 'NestJS', why: 'modulaire' }],
+          architectureDecisions: [
+            { decision: 'hexagonale', rationale: 'testable' },
+          ],
+        }),
+      ];
+
+      const promise = firstValueFrom(gateway.getAllProjects());
+      httpController
+        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
+        .flush(expected);
+
+      const result = await promise;
+      expect(result[0].slug).toBe('dashflow');
+      expect(result[0].techChoices).toEqual([
+        { techno: 'NestJS', why: 'modulaire' },
+      ]);
+      expect(result[0].architectureDecisions).toEqual([
+        { decision: 'hexagonale', rationale: 'testable' },
+      ]);
     });
 
     it('getFeaturedProjects() émet GET /<base>/projects?featured=true&_sort=order, retourne Project[]', async () => {

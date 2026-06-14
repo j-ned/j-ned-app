@@ -5,6 +5,7 @@ function makeProjects(count: number): readonly Project[] {
   return Array.from({ length: count }, (_, i) => ({
     id: String(i + 1),
     title: `Project ${i + 1}`,
+    slug: `p-${i + 1}`,
     category: 'Frontend',
     tags: [],
     description: '',

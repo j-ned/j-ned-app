@@ -9,6 +9,7 @@ import { ToastStore } from '@shared/ui';
 const project = (p: Partial<Project> = {}): Project => ({
   id: '1',
   title: 'Projet 1',
+  slug: `p-${p.id ?? '1'}`,
   category: 'Web',
   tags: ['angular'],
   description: 'desc',

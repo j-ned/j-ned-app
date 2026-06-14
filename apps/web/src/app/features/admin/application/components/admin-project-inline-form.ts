@@ -8,9 +8,24 @@ import {
   ChangeDetectionStrategy,
   inject,
 } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import type { Project, ProjectInput } from '@features/projects/domain';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormArray,
+  FormControl,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
+import type {
+  Project,
+  ProjectInput,
+  TechChoice,
+  ArchitectureDecision,
+} from '@features/projects/domain';
 import { FileDropzone, Button } from '@shared/ui';
+
+type TechChoiceForm = FormGroup<{ techno: FormControl<string>; why: FormControl<string> }>;
+type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: FormControl<string> }>;
 
 @Component({
   selector: 'app-admin-project-inline-form',
@@ -146,6 +161,56 @@ import { FileDropzone, Button } from '@shared/ui';
         </div>
       </div>
 
+      <fieldset formArrayName="techChoices" class="space-y-3">
+        <legend class="form-label">Choix techniques</legend>
+        @for (row of form.controls.techChoices.controls; track $index) {
+          <div
+            [formGroupName]="$index"
+            class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-2 items-start"
+          >
+            <input formControlName="techno" placeholder="Techno (ex: NestJS)" class="form-input" />
+            <input formControlName="why" placeholder="Pourquoi ce choix" class="form-input" />
+            <button
+              type="button"
+              (click)="removeTechChoice($index)"
+              class="px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              Supprimer
+            </button>
+          </div>
+        }
+        <app-button severity="secondary" variant="outlined" (click)="addTechChoice()">
+          + Ajouter un choix technique
+        </app-button>
+      </fieldset>
+
+      <fieldset formArrayName="architectureDecisions" class="space-y-3">
+        <legend class="form-label">Décisions d'architecture</legend>
+        @for (row of form.controls.architectureDecisions.controls; track $index) {
+          <div
+            [formGroupName]="$index"
+            class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-2 items-start"
+          >
+            <input
+              formControlName="decision"
+              placeholder="Décision (ex: hexagonale)"
+              class="form-input"
+            />
+            <input formControlName="rationale" placeholder="Justification" class="form-input" />
+            <button
+              type="button"
+              (click)="removeArchitectureDecision($index)"
+              class="px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              Supprimer
+            </button>
+          </div>
+        }
+        <app-button severity="secondary" variant="outlined" (click)="addArchitectureDecision()">
+          + Ajouter une décision d'architecture
+        </app-button>
+      </fieldset>
+
       <div class="flex gap-3 pt-2">
         <app-button type="submit" severity="primary" [disabled]="form.invalid">
           {{ project() ? 'Enregistrer' : 'Créer' }}
@@ -232,6 +297,8 @@ export class AdminProjectInlineForm {
     repoUrlBack: [''],
     featured: [false],
     order: [0],
+    techChoices: new FormArray<TechChoiceForm>([]),
+    architectureDecisions: new FormArray<ArchDecisionForm>([]),
   });
 
   private readonly _patchForm = effect(() => {
@@ -249,7 +316,46 @@ export class AdminProjectInlineForm {
       featured: p.featured,
       order: p.order,
     });
+
+    const tc = this.form.controls.techChoices;
+    tc.clear();
+    (p.techChoices ?? []).forEach((c) => tc.push(this.makeTechChoice(c)));
+    const ad = this.form.controls.architectureDecisions;
+    ad.clear();
+    (p.architectureDecisions ?? []).forEach((d) => ad.push(this.makeArchDecision(d)));
   });
+
+  private makeTechChoice(value: TechChoice = { techno: '', why: '' }): TechChoiceForm {
+    return this.fb.nonNullable.group({
+      techno: [value.techno, Validators.required],
+      why: [value.why, Validators.required],
+    });
+  }
+
+  private makeArchDecision(
+    value: ArchitectureDecision = { decision: '', rationale: '' },
+  ): ArchDecisionForm {
+    return this.fb.nonNullable.group({
+      decision: [value.decision, Validators.required],
+      rationale: [value.rationale, Validators.required],
+    });
+  }
+
+  addTechChoice(): void {
+    this.form.controls.techChoices.push(this.makeTechChoice());
+  }
+
+  removeTechChoice(index: number): void {
+    this.form.controls.techChoices.removeAt(index);
+  }
+
+  addArchitectureDecision(): void {
+    this.form.controls.architectureDecisions.push(this.makeArchDecision());
+  }
+
+  removeArchitectureDecision(index: number): void {
+    this.form.controls.architectureDecisions.removeAt(index);
+  }
 
   onFileSelected(file: File): void {
     if (file.type.startsWith('image/')) this.selectFile(file);
@@ -285,6 +391,8 @@ export class AdminProjectInlineForm {
       repoUrlBack: values.repoUrlBack || null,
       featured: values.featured,
       order: values.order,
+      techChoices: values.techChoices,
+      architectureDecisions: values.architectureDecisions,
     };
 
     this.saved.emit({ data, file: this.selectedFile() });
