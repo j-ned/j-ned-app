@@ -8,12 +8,13 @@ import {
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ContactGateway } from '@features/contact/domain';
+import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { AuthStore } from '@core/auth/auth-store';
-import { AnalyticsGateway } from '@features/analytics/domain';
-import { AppIcon } from '@shared/icons';
-import { RelativeTimePipe } from '@shared/calendar';
-import { AppSkeleton, AppIconTile } from '@shared/ui';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { AppIcon } from '@shared/icons/app-icon';
+import { RelativeTimePipe } from '@shared/calendar/relative-time';
+import { AppSkeleton } from '@shared/ui/skeleton';
+import { AppIconTile } from '@shared/ui/icon-tile';
 
 const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
   weekday: 'long',

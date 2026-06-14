@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import type { ChartData, ChartOptions } from 'chart.js/auto';
 import { AnalyticsDonutPanel } from './analytics-donut-panel';
@@ -6,7 +6,7 @@ import { AnalyticsDonutPanel } from './analytics-donut-panel';
 const DATA: ChartData = { labels: ['Chrome'], datasets: [{ data: [3] }] };
 const OPTIONS: ChartOptions = { responsive: true };
 
-function setup(inputs: Record<string, unknown>) {
+function setup(inputs: Record<string, unknown>): { fixture: ComponentFixture<AnalyticsDonutPanel>; el: HTMLElement } {
   TestBed.configureTestingModule({ schemas: [NO_ERRORS_SCHEMA] });
   const fixture = TestBed.createComponent(AnalyticsDonutPanel);
   for (const [key, value] of Object.entries(inputs)) {

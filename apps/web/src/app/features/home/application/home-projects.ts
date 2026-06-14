@@ -1,9 +1,9 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
-import { ProjectCard } from '@features/projects/application';
-import { Button } from '@shared/ui';
-import { AppIcon } from '@shared/icons';
-import type { Project } from '@features/projects/domain';
+import { ProjectCard } from '@features/projects/application/components/project-card';
+import { Button } from '@shared/ui/button';
+import { AppIcon } from '@shared/icons/app-icon';
+import type { Project } from '@features/projects/domain/models/project.model';
 
 const PROJECTS_SECTION = {
   title: 'Aperçu des projets',

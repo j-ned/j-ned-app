@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { AppIcon } from '@shared/icons';
+import { AppIcon } from '@shared/icons/app-icon';
 import type { ToastEntry, ToastSeverity } from './toast.types';
 
 type SeverityStyle = {

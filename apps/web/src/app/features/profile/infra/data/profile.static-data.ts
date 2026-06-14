@@ -1,13 +1,9 @@
-import type {
-  ProfileInfo,
-  Biography,
-  Diploma,
-  Technology,
-  Highlight,
-  WhatIDo,
-  WhatISeek,
-  SocialButton,
-} from '../../domain';
+import type { ProfileInfo, SocialButton } from '../../domain/models/profile.model';
+import type { Biography } from '../../domain/models/biography.model';
+import type { Diploma } from '../../domain/models/diploma.model';
+import type { Technology } from '../../domain/models/technology.model';
+import type { Highlight } from '../../domain/models/highlight.model';
+import type { WhatIDo, WhatISeek } from '../../domain/models/what-i-do.model';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 export const STATIC_AVATAR_URL = '/avatar.avif';

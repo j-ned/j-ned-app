@@ -2,11 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ToastStore } from '@shared/ui';
+import { ToastStore } from '@shared/ui/toast-store';
 import { App } from './app';
-import { AuthGateway } from '@features/auth/domain';
-import { HttpAuthGateway } from '@features/auth/infra';
-import { API_BASE_URL } from '@shared/api';
+import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
+import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
+import { API_BASE_URL } from '@shared/api/api-config';
 
 describe('App', () => {
   beforeEach(async () => {

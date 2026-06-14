@@ -5,7 +5,7 @@ import {
   input,
   viewChild,
 } from '@angular/core';
-import { AppIcon } from '@shared/icons';
+import { AppIcon } from '@shared/icons/app-icon';
 import { AdminColumnBase } from './admin-column-base';
 
 @Component({

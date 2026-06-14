@@ -2,9 +2,9 @@ import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core
 import { Router } from '@angular/router';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { HomeHero } from './home-hero';
-import { Button } from '@shared/ui';
-import { AppIcon } from '@shared/icons';
-import type { HeroData } from '../domain';
+import { Button } from '@shared/ui/button';
+import { AppIcon } from '@shared/icons/app-icon';
+import type { HeroData } from '../domain/models/hero.model';
 
 @Component({
   selector: 'app-home-hero-section',

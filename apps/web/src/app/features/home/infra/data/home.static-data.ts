@@ -1,4 +1,5 @@
-import type { HeroData, HomeHighlight } from '../../domain';
+import type { HeroData } from '../../domain/models/hero.model';
+import type { HomeHighlight } from '../../domain/models/home-highlight.model';
 
 export const STATIC_HERO: HeroData = {
   id: 'c64a566f-9e53-44f9-96de-f938f0166b9c',

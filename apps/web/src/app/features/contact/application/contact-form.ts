@@ -8,9 +8,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { STATIC_CONTACT_INFO, STATIC_SOCIAL_LINKS } from '@shared/identity/contact-info.static-data';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
-import { ContactGateway } from '@features/contact/domain';
-import { ToastStore, Button, AppIconTile } from '@shared/ui';
-import { AppIcon } from '@shared/icons';
+import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
+import { ToastStore } from '@shared/ui/toast-store';
+import { Button } from '@shared/ui/button';
+import { AppIconTile } from '@shared/ui/icon-tile';
+import { AppIcon } from '@shared/icons/app-icon';
 
 type ContactFormGroup = {
   name: FormControl<string>;

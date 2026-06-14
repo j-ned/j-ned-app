@@ -1,7 +1,10 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { CvGateway, type CvInfo } from '@features/cv/domain';
-import { ToastStore, FileDropzone, Button } from '@shared/ui';
+import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
+import type { CvInfo } from '@features/cv/domain/models/cv.model';
+import { ToastStore } from '@shared/ui/toast-store';
+import { FileDropzone } from '@shared/ui/file-dropzone';
+import { Button } from '@shared/ui/button';
 import { extractErrorMessage } from '@shared/api/extract-error-message';
 
 @Component({

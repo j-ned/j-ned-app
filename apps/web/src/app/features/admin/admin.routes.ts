@@ -1,5 +1,5 @@
 import type { Routes } from '@angular/router';
-import { AdminLayout } from './application';
+import { AdminLayout } from './application/admin-layout';
 
 export const ADMIN_ROUTES: Routes = [
   {

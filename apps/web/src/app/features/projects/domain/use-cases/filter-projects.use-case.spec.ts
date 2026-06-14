@@ -1,5 +1,5 @@
 import type { Project } from '../models/project.model';
-import { filterProjects, FILTER_ALL } from '@features/projects/domain';
+import { filterProjects, FILTER_ALL } from '@features/projects/domain/use-cases/filter-projects.use-case';
 
 function makeProject(category: string, id = '1'): Project {
   return {

@@ -3,8 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '@core/auth/auth-store';
-import { ToastStore, Button, AppIconTile } from '@shared/ui';
-import { AppIcon } from '@shared/icons';
+import { ToastStore } from '@shared/ui/toast-store';
+import { Button } from '@shared/ui/button';
+import { AppIconTile } from '@shared/ui/icon-tile';
+import { AppIcon } from '@shared/icons/app-icon';
 
 type LoginForm = {
   email: FormControl<string>;

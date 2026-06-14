@@ -1,3 +1,4 @@
+import type { ChartData } from 'chart.js';
 import type { StatsOverview, DailyChartPoint, MetricEntry, EntityStat } from './models/analytics.types';
 
 export type DateRangeKey = '7d' | '30d' | '90d' | 'all';
@@ -45,7 +46,7 @@ export function buildVisitorsChartData(
   rows: readonly DailyChartPoint[],
   primary: string,
   accent: string,
-) {
+): ChartData<'line'> {
   return {
     labels: rows.map((r) => r.date),
     datasets: [
@@ -74,6 +75,7 @@ export function buildVisitorsChartData(
 }
 
 /** Options Chart.js de la courbe principale. */
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- le type officiel `ChartOptions<'line'>` est DeepPartial et perd la forme concrète vérifiée par les tests ; on garde l'inférence.
 export function buildLineChartOptions(foreground: string, background: string) {
   const muted40 = alpha(foreground, 40);
   const grid = alpha(foreground, 6);
@@ -104,7 +106,10 @@ export function buildLineChartOptions(foreground: string, background: string) {
 }
 
 /** Dataset Chart.js d'un donut (navigateurs / OS). « Inconnu » si nom vide. */
-export function buildDonutChartData(entries: readonly MetricEntry[], palette: readonly string[]) {
+export function buildDonutChartData(
+  entries: readonly MetricEntry[],
+  palette: readonly string[],
+): ChartData<'doughnut'> {
   return {
     labels: entries.map((r) => r.name || 'Inconnu'),
     datasets: [
@@ -118,6 +123,7 @@ export function buildDonutChartData(entries: readonly MetricEntry[], palette: re
 }
 
 /** Options Chart.js des donuts. */
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- le type officiel `ChartOptions<'doughnut'>` est DeepPartial et perd la forme concrète vérifiée par les tests ; on garde l'inférence.
 export function buildDonutOptions(foreground: string, background: string) {
   return {
     responsive: true,

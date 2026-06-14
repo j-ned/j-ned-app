@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { vi } from 'vitest';
-import { ProjectsGateway } from '@features/projects/domain';
-import { InMemoryHomeGateway } from '@features/home/infra';
+import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
+import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-home.gateway';
 import { STATIC_HERO, STATIC_HOME_HIGHLIGHTS } from '../data/home.static-data';
 
 describe('InMemoryHomeGateway', () => {

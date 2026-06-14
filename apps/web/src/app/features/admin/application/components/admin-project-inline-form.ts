@@ -21,8 +21,9 @@ import type {
   ProjectInput,
   TechChoice,
   ArchitectureDecision,
-} from '@features/projects/domain';
-import { FileDropzone, Button } from '@shared/ui';
+} from '@features/projects/domain/models/project.model';
+import { FileDropzone } from '@shared/ui/file-dropzone';
+import { Button } from '@shared/ui/button';
 
 type TechChoiceForm = FormGroup<{ techno: FormControl<string>; why: FormControl<string> }>;
 type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: FormControl<string> }>;

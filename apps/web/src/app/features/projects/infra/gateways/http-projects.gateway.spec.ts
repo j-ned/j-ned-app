@@ -4,9 +4,9 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { firstValueFrom } from 'rxjs';
 import { describe, it, expect, afterEach } from 'vitest';
 
-import { API_BASE_URL } from '@shared/api';
+import { API_BASE_URL } from '@shared/api/api-config';
 import { HttpProjectsGateway } from './http-projects.gateway';
-import type { Project } from '../../domain';
+import type { Project } from '../../domain/models/project.model';
 
 const BASE = '/api';
 

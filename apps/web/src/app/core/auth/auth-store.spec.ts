@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { API_BASE_URL } from '@shared/api';
+import { API_BASE_URL } from '@shared/api/api-config';
 import { AuthStore } from './auth-store';
-import { AuthGateway } from '@features/auth/domain';
+import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 
 describe('AuthStore', () => {

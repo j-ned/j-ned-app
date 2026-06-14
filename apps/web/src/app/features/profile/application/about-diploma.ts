@@ -1,7 +1,7 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { ProfileGateway } from '@features/profile/domain';
-import { AppIcon } from '@shared/icons';
+import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
+import { AppIcon } from '@shared/icons/app-icon';
 
 @Component({
   selector: 'app-about-diploma',

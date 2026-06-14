@@ -1,13 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, shareReplay, startWith, Subject, switchMap } from 'rxjs';
-import {
-  ProjectsGateway,
-  type Project,
-  type ProjectFilter,
-  type ProjectInput,
-} from '../../domain';
-import { API_BASE_URL } from '@shared/api';
+import { ProjectsGateway } from '../../domain/gateways/projects.gateway';
+import type { Project, ProjectInput } from '../../domain/models/project.model';
+import type { ProjectFilter } from '../../domain/models/project-filter.model';
+import { API_BASE_URL } from '@shared/api/api-config';
 
 function resolveProject(apiUrl: string, p: Project): Project {
   if (!p.image) return p;

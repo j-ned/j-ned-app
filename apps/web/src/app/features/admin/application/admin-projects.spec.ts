@@ -2,9 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { AdminProjects } from './admin-projects';
-import { ProjectsGateway, type Project, type ProjectInput } from '@features/projects/domain';
-import { HomeGateway } from '@features/home/domain';
-import { ToastStore } from '@shared/ui';
+import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
+import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
+import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
+import { ToastStore } from '@shared/ui/toast-store';
 
 const project = (p: Partial<Project> = {}): Project => ({
   id: '1',
@@ -49,7 +50,9 @@ function makeHomeGateway(): HomeGateway {
   return { invalidateBundle: vi.fn() } as unknown as HomeGateway;
 }
 
-async function setup(projects: ProjectsGateway = makeProjectsGateway()) {
+async function setup(
+  projects: ProjectsGateway = makeProjectsGateway(),
+): Promise<{ component: AdminProjects; toast: { add: ReturnType<typeof vi.fn> } }> {
   const toast = { add: vi.fn() };
   TestBed.configureTestingModule({
     providers: [

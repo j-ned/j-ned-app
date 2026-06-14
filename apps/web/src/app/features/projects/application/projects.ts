@@ -7,10 +7,11 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { AppPaginator, type AppPaginatorEvent } from '@shared/ui';
+import { AppPaginator, type AppPaginatorEvent } from '@shared/ui/paginator';
 import { ProjectCard } from './components/project-card';
-import { ProjectsGateway } from '@features/projects/domain';
-import { filterProjects, paginateProjects, calculateTotalPages, FILTER_ALL } from '../domain';
+import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
+import { filterProjects, FILTER_ALL } from '../domain/use-cases/filter-projects.use-case';
+import { paginateProjects, calculateTotalPages } from '../domain/use-cases/paginate-projects.use-case';
 
 const ALL_LABEL = 'Tous';
 

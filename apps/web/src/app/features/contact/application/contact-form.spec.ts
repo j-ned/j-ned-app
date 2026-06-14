@@ -1,10 +1,11 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ToastStore } from '@shared/ui';
+import { ToastStore } from '@shared/ui/toast-store';
 import { of, throwError } from 'rxjs';
 import { ContactForm } from './contact-form';
-import { ContactGateway, type ContactMessage } from '@features/contact/domain';
+import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
+import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 
 function makeGatewayStub(overrides: Partial<ContactGateway> = {}): ContactGateway {
   return {
@@ -118,7 +119,7 @@ describe('ContactForm', () => {
   });
 
   describe('Accessibility — aria attributes', () => {
-    function setupFixture(gateway: ContactGateway = makeGatewayStub()) {
+    function setupFixture(gateway: ContactGateway = makeGatewayStub()): ComponentFixture<ContactForm> {
       TestBed.configureTestingModule({
         providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
       });

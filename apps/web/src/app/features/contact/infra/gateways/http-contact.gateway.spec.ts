@@ -4,9 +4,10 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { firstValueFrom } from 'rxjs';
 import { describe, it, expect, afterEach } from 'vitest';
 
-import { API_BASE_URL } from '@shared/api';
+import { API_BASE_URL } from '@shared/api/api-config';
 import { HttpContactGateway } from './http-contact.gateway';
-import type { ContactFormData, ContactMessage } from '../../domain';
+import type { ContactFormData } from '../../domain/models/contact-form.model';
+import type { ContactMessage } from '../../domain/models/contact-message.model';
 
 const BASE = '/api';
 

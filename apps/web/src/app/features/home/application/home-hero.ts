@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, input } from '@angular/core';
 import { HomeAvailability } from './home-availability';
-import type { HeroData } from '../domain';
+import type { HeroData } from '../domain/models/hero.model';
 
 @Component({
   selector: 'app-home-hero',
@@ -39,9 +39,10 @@ import type { HeroData } from '../domain';
         </h1>
 
         <p
-          class="animate-fade-up delay-2 text-lg md:text-2xl lg:text-3xl font-medium text-foreground/70 leading-snug max-w-3xl mx-auto [&>.kw]:text-primary [&>.kw]:font-semibold"
-          [innerHTML]="highlightedTagline()"
-        ></p>
+          class="animate-fade-up delay-2 text-lg md:text-2xl lg:text-3xl font-medium text-foreground/70 leading-snug max-w-3xl mx-auto [&_.kw]:text-primary [&_.kw]:font-semibold"
+        >@for (segment of taglineSegments(); track $index) {<span
+            [class.kw]="segment.keyword"
+          >{{ segment.text }}</span>}</p>
       } @else {
         <div class="space-y-4 animate-pulse flex flex-col items-center">
           <div class="h-6 bg-foreground/5 rounded-full w-48"></div>
@@ -55,9 +56,14 @@ import type { HeroData } from '../domain';
 export class HomeHero {
   readonly hero = input<HeroData | null>(null);
 
-  protected readonly highlightedTagline = computed(() => {
-    const tagline = this.hero()?.tagline;
-    if (!tagline) return '';
-    return tagline.replace(/(Angular|NestJS)/g, '<span class="kw">$1</span>');
-  });
+  protected readonly taglineSegments = computed<readonly { text: string; keyword: boolean }[]>(
+    () => {
+      const tagline = this.hero()?.tagline;
+      if (!tagline) return [];
+      return tagline
+        .split(/(Angular|NestJS)/g)
+        .filter((part) => part.length > 0)
+        .map((part) => ({ text: part, keyword: part === 'Angular' || part === 'NestJS' }));
+    },
+  );
 }
