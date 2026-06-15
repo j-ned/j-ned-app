@@ -121,22 +121,21 @@ import { AppIcon } from '@shared/icons/app-icon';
           }
         </header>
 
-        <!-- Visuel cinématique pleine largeur -->
+        <!-- Visuel du projet, aligné sur la colonne de contenu (même radius/border que la carte liste) -->
         @if (p.image) {
-          <figure
-            class="relative mt-10 md:mt-14 w-full aspect-[16/10] sm:aspect-[2/1] md:aspect-[21/9] md:max-h-[28rem] overflow-hidden border-y border-foreground/10"
-          >
-            <img
-              [ngSrc]="p.image"
-              [alt]="'Aperçu du projet ' + p.title"
-              fill
-              priority
-              sizes="100vw"
-              class="object-cover"
-            />
+          <figure class="page-container mt-10 md:mt-14">
             <div
-              class="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/55 via-background/5 to-transparent"
-            ></div>
+              class="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] overflow-hidden rounded-xl border border-foreground/8"
+            >
+              <img
+                [ngSrc]="p.image"
+                [alt]="'Aperçu du projet ' + p.title"
+                fill
+                priority
+                sizes="100vw"
+                class="object-cover"
+              />
+            </div>
           </figure>
         }
 
@@ -280,7 +279,7 @@ import { AppIcon } from '@shared/icons/app-icon';
           <div class="h-12 w-3/4 max-w-2xl rounded-lg bg-surface-elevated mb-6"></div>
           <div class="h-4 w-full max-w-xl rounded bg-surface-elevated mb-2"></div>
           <div class="h-4 w-2/3 max-w-md rounded bg-surface-elevated"></div>
-          <div class="mt-10 w-full aspect-[16/10] md:aspect-[21/9] md:max-h-[28rem] rounded-none bg-surface-elevated"></div>
+          <div class="mt-10 w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] rounded-xl border border-foreground/8 bg-surface-elevated"></div>
         </div>
         <span class="sr-only" role="status">Chargement du projet…</span>
       }
