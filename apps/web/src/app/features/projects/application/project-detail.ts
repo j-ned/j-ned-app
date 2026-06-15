@@ -14,14 +14,14 @@ import { AppIcon } from '@shared/icons/app-icon';
   host: { class: 'block' },
   template: `
     @let p = project();
-    <main class="min-h-svh pt-20 pb-24">
+    <main class="min-h-svh pt-20 pb-20">
       @if (p) {
         <!-- En-tête éditorial : eyebrow, titre XXL, lede, CTA, stack -->
         <header class="page-container pt-6 md:pt-10">
           <a
             routerLink="/projects"
             data-testid="back-link"
-            class="group inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors mb-10"
+            class="group inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors mb-8"
           >
             <app-icon
               name="arrow-left"
@@ -31,23 +31,23 @@ import { AppIcon } from '@shared/icons/app-icon';
             Retour aux projets
           </a>
 
-          <p class="text-accent text-xs font-semibold uppercase tracking-[0.2em] mb-4">
+          <p class="text-accent text-xs font-semibold uppercase tracking-[0.2em] mb-3">
             {{ p.category }}
           </p>
 
           <h1
             data-testid="project-detail-title"
-            class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-foreground text-balance max-w-4xl"
+            class="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground text-balance max-w-4xl"
           >
             {{ p.title }}
           </h1>
 
-          <p class="mt-6 text-lg md:text-xl text-muted leading-relaxed max-w-2xl text-pretty">
+          <p class="mt-5 text-lg text-muted leading-relaxed max-w-2xl text-pretty">
             {{ p.description }}
           </p>
 
           @if (hasLinks()) {
-            <div class="mt-8 flex flex-wrap items-center gap-3">
+            <div class="mt-7 flex flex-wrap items-center gap-3">
               @if (p.liveUrl) {
                 <a
                   [href]="p.liveUrl"
@@ -104,7 +104,7 @@ import { AppIcon } from '@shared/icons/app-icon';
           }
 
           @if (p.tags.length > 0) {
-            <div class="mt-9 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div class="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2">
               <span class="text-xs font-semibold uppercase tracking-[0.2em] text-muted/70">Stack</span>
               <ul class="flex flex-wrap gap-2" role="list">
                 @for (tag of p.tags; track tag) {
@@ -124,7 +124,7 @@ import { AppIcon } from '@shared/icons/app-icon';
         <!-- Visuel cinématique pleine largeur -->
         @if (p.image) {
           <figure
-            class="relative mt-12 md:mt-16 w-full aspect-[16/10] sm:aspect-[2/1] md:aspect-[21/9] md:max-h-[34rem] overflow-hidden border-y border-foreground/10"
+            class="relative mt-10 md:mt-14 w-full aspect-[16/10] sm:aspect-[2/1] md:aspect-[21/9] md:max-h-[28rem] overflow-hidden border-y border-foreground/10"
           >
             <img
               [ngSrc]="p.image"
@@ -144,10 +144,10 @@ import { AppIcon } from '@shared/icons/app-icon';
         @if (techChoices().length > 0) {
           <section
             data-testid="tech-choices"
-            class="page-container mt-16 md:mt-24"
+            class="page-container mt-14 md:mt-20"
             aria-labelledby="tech-choices-title"
           >
-            <div class="flex items-baseline gap-4 mb-8 md:mb-10">
+            <div class="flex items-baseline gap-4 mb-6 md:mb-8">
               <h2 id="tech-choices-title" class="text-2xl md:text-3xl font-bold text-foreground">
                 Choix techniques
               </h2>
@@ -156,10 +156,10 @@ import { AppIcon } from '@shared/icons/app-icon';
               </span>
             </div>
 
-            <ol class="border-t border-foreground/10">
+            <ol class="grid border-t border-foreground/10 lg:grid-cols-2 lg:gap-x-12">
               @for (choice of techChoices(); track choice.techno; let i = $index) {
                 <li
-                  class="grid grid-cols-[2.5rem_1fr] sm:grid-cols-[3.5rem_1fr] gap-x-4 sm:gap-x-8 py-6 md:py-8 border-b border-foreground/10 animate-fade-up"
+                  class="grid grid-cols-[2.5rem_1fr] sm:grid-cols-[3.5rem_1fr] gap-x-4 sm:gap-x-8 py-5 md:py-6 border-b border-foreground/10 animate-fade-up"
                   [style.animation-delay.ms]="i * 60"
                 >
                   <span
@@ -172,7 +172,7 @@ import { AppIcon } from '@shared/icons/app-icon';
                     <h3 class="text-lg md:text-xl font-semibold text-foreground">
                       {{ choice.techno }}
                     </h3>
-                    <p class="mt-2 text-muted leading-relaxed max-w-prose text-pretty">
+                    <p class="mt-1.5 text-muted leading-relaxed max-w-prose text-pretty">
                       {{ choice.why }}
                     </p>
                   </div>
@@ -186,20 +186,20 @@ import { AppIcon } from '@shared/icons/app-icon';
         @if (architectureDecisions().length > 0) {
           <section
             data-testid="architecture-decisions"
-            class="page-container mt-16 md:mt-24"
+            class="page-container mt-14 md:mt-20"
             aria-labelledby="architecture-decisions-title"
           >
             <h2
               id="architecture-decisions-title"
-              class="text-2xl md:text-3xl font-bold text-foreground mb-8 md:mb-10"
+              class="text-2xl md:text-3xl font-bold text-foreground mb-6 md:mb-8"
             >
               Décisions d'architecture
             </h2>
 
-            <dl class="border-t border-foreground/10">
+            <dl class="grid border-t border-foreground/10 lg:grid-cols-2 lg:gap-x-12">
               @for (item of architectureDecisions(); track item.decision; let i = $index) {
                 <div
-                  class="grid md:grid-cols-[2fr_3fr] gap-x-10 gap-y-2 py-6 md:py-8 border-b border-foreground/10 animate-fade-up"
+                  class="grid gap-y-1.5 py-5 md:py-6 border-b border-foreground/10 animate-fade-up md:grid-cols-[2fr_3fr] md:gap-x-8 lg:grid-cols-1 lg:gap-x-0"
                   [style.animation-delay.ms]="i * 60"
                 >
                   <dt class="flex items-start gap-3 text-base md:text-lg font-semibold text-foreground">
@@ -209,7 +209,7 @@ import { AppIcon } from '@shared/icons/app-icon';
                     ></span>
                     {{ item.decision }}
                   </dt>
-                  <dd class="text-muted leading-relaxed max-w-prose text-pretty md:pl-0 pl-[1.625rem]">
+                  <dd class="text-muted leading-relaxed max-w-prose text-pretty pl-[1.625rem] md:pl-0 lg:pl-[1.625rem]">
                     {{ item.rationale }}
                   </dd>
                 </div>
@@ -220,7 +220,7 @@ import { AppIcon } from '@shared/icons/app-icon';
 
         <!-- Navigation projet précédent / suivant -->
         <nav
-          class="page-container mt-20 md:mt-28 pt-8 border-t border-foreground/10 flex items-center justify-between gap-4"
+          class="page-container mt-16 md:mt-20 pt-8 border-t border-foreground/10 flex items-center justify-between gap-4"
           aria-label="Navigation entre projets"
         >
           @if (previousProject(); as prev) {
@@ -280,7 +280,7 @@ import { AppIcon } from '@shared/icons/app-icon';
           <div class="h-12 w-3/4 max-w-2xl rounded-lg bg-surface-elevated mb-6"></div>
           <div class="h-4 w-full max-w-xl rounded bg-surface-elevated mb-2"></div>
           <div class="h-4 w-2/3 max-w-md rounded bg-surface-elevated"></div>
-          <div class="mt-12 w-full aspect-[16/10] md:aspect-[21/9] md:max-h-[34rem] rounded-none bg-surface-elevated"></div>
+          <div class="mt-10 w-full aspect-[16/10] md:aspect-[21/9] md:max-h-[28rem] rounded-none bg-surface-elevated"></div>
         </div>
         <span class="sr-only" role="status">Chargement du projet…</span>
       }
