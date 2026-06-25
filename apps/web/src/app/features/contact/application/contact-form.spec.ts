@@ -15,6 +15,7 @@ function makeGatewayStub(overrides: Partial<ContactGateway> = {}): ContactGatewa
     deleteMessage: () => of(undefined),
     getUnreadCount: () => of(0),
     invalidateUnreadCount: () => undefined,
+    markAllRead: () => of({ count: 0 }),
     ...overrides,
   };
 }

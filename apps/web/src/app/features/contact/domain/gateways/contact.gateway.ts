@@ -10,4 +10,5 @@ export abstract class ContactGateway {
   abstract deleteMessage(id: number): Observable<void>;
   abstract getUnreadCount(): Observable<number>;
   abstract invalidateUnreadCount(): void;
+  abstract markAllRead(): Observable<{ readonly count: number }>;
 }

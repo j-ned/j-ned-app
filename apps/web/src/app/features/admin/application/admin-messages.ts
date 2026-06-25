@@ -9,6 +9,7 @@ import {
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
+import { filterMessagesByReadStatus } from '@features/contact/domain/use-cases/filter-messages-by-read-status.use-case';
 import { ToastStore } from '@shared/ui/toast-store';
 import { AdminTable } from './components/admin-table';
 import { AdminColExpand } from './components/admin-col-expand';
@@ -17,6 +18,12 @@ import { AdminColContact } from './components/admin-col-contact';
 import { AdminColText } from './components/admin-col-text';
 import { AdminColDate } from './components/admin-col-date';
 import { AdminColActions, type ExtraAction } from './components/admin-col-actions';
+
+const FILTER_OPTIONS = [
+  { id: 'all', label: 'Tous', value: 'all' as const },
+  { id: 'unread', label: 'Non lus', value: false as const },
+  { id: 'read', label: 'Lus', value: true as const },
+] satisfies readonly { id: string; label: string; value: boolean | 'all' }[];
 
 @Component({
   selector: 'app-admin-messages',
@@ -41,6 +48,38 @@ import { AdminColActions, type ExtraAction } from './components/admin-col-action
       (rowClick)="toggleExpand($event)"
       emptyMessage="Aucun message"
     >
+      <div adminTableHeaderActions class="flex items-center gap-3">
+        <div
+          class="inline-flex rounded-lg border border-foreground/10 p-0.5"
+          role="group"
+          aria-label="Filtrer par statut de lecture"
+        >
+          @for (opt of filterOptions; track opt.id) {
+            <button
+              type="button"
+              [attr.data-testid]="'filter-' + opt.id"
+              [attr.aria-pressed]="readFilter() === opt.value"
+              [class]="
+                readFilter() === opt.value
+                  ? 'rounded-md px-3 py-1.5 text-sm font-medium bg-primary-bg text-white transition-colors'
+                  : 'rounded-md px-3 py-1.5 text-sm font-medium text-muted hover:text-foreground transition-colors'
+              "
+              (click)="setFilter(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+        <button
+          type="button"
+          data-testid="mark-all-read"
+          [disabled]="!hasUnread()"
+          (click)="markAllRead()"
+          class="inline-flex items-center gap-2 rounded-lg border border-foreground/10 px-4 py-2 text-sm font-medium text-foreground hover:bg-foreground/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Tout marquer comme lu
+        </button>
+      </div>
       <app-admin-col-expand [isExpanded]="isExpandedAcc" />
       <app-admin-col-badge
         key="read"
@@ -102,9 +141,15 @@ export class AdminMessages {
     stream: () => this.contactGateway.getAllMessages(),
   });
 
-  protected readonly messages = computed(() => [...(this.messagesRes.value() ?? [])]);
+  private readonly allMessages = computed(() => [...(this.messagesRes.value() ?? [])]);
+  protected readonly readFilter = signal<boolean | 'all'>('all');
+  protected readonly messages = computed(() =>
+    filterMessagesByReadStatus(this.allMessages(), this.readFilter()),
+  );
+  protected readonly hasUnread = computed(() => this.allMessages().some((m) => !m.read));
   private readonly _expandedIds = signal<ReadonlySet<string | number>>(new Set());
   protected readonly expandedIds = this._expandedIds.asReadonly();
+  protected readonly filterOptions = FILTER_OPTIONS;
 
   protected toggleExpand(msg: ContactMessage): void {
     this._expandedIds.update((current) => {
@@ -161,5 +206,39 @@ export class AdminMessages {
           });
         },
       });
+  }
+
+  protected markAllRead(): void {
+    const snapshot = this.messagesRes.value() ?? [];
+    this.messagesRes.update((list) =>
+      (list ?? []).map((m) => (m.read ? m : { ...m, read: true })),
+    );
+
+    this.contactGateway
+      .markAllRead()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ count }) => {
+          this.contactGateway.invalidateUnreadCount();
+          const plural = count > 1 ? 's' : '';
+          this.toast.add({
+            severity: 'success',
+            summary: 'Succès',
+            detail: `${count} message${plural} marqué${plural} comme lu${plural}`,
+          });
+        },
+        error: () => {
+          this.messagesRes.set(snapshot);
+          this.toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Erreur lors de la mise à jour',
+          });
+        },
+      });
+  }
+
+  protected setFilter(value: boolean | 'all'): void {
+    this.readFilter.set(value);
   }
 }

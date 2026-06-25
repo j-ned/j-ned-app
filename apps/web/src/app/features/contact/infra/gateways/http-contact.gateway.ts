@@ -89,4 +89,8 @@ export class HttpContactGateway extends ContactGateway {
   invalidateUnreadCount(): void {
     this._unreadRefresh$.next();
   }
+
+  markAllRead(): Observable<{ readonly count: number }> {
+    return this.http.patch<{ count: number }>(`${this.apiUrl}/contact/messages/mark-all-read`, {});
+  }
 }
