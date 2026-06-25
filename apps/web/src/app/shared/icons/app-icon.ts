@@ -1,18 +1,8 @@
 import { Component, ChangeDetectionStrategy, computed, input } from '@angular/core';
 import { toFontAwesome } from './icon-map';
 
-/**
- * Renders a Font Awesome icon from the local SVG sprite.
- *
- * Usage:
- *   <app-icon name="envelope" />                       // 20px, decorative
- *   <app-icon name="lucide-github" [size]="24" />      // accepts Lucide tokens
- *   <app-icon name="lock" label="Verrouillé" />        // accessible
- *
- * The color is inherited from the parent via `currentColor` (compatible with
- * Tailwind text-* classes). The icon is `aria-hidden="true"` by default; pass
- * `label` to expose it to screen readers as `role="img"`.
- */
+// Couleur héritée via `currentColor` (compatible Tailwind text-*). `aria-hidden`
+// par défaut ; passer `label` pour l'exposer aux lecteurs d'écran (`role="img"`).
 @Component({
   selector: 'app-icon',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -8,24 +8,9 @@ const HEADER_OFFSET_PX = 80;
 /** Frames max attendues pour que la mise en page se stabilise avant de défiler. */
 const STABLE_FRAME_LIMIT = 30;
 
-/**
- * Unique mécanique de défilement de la landing.
- *
- * Remplace les deux approches divergentes qui coexistaient (anchorScrolling +
- * fragment côté header, `scrollIntoView` impératif côté hero). Garantit :
- * - depuis la home : un seul défilement fluide vers la section ;
- * - depuis une autre route : navigation vers `/` PUIS défilement, sans jamais
- *   exposer de fragment dans l'URL ;
- * - **pas de saccade** : on force d'abord le rendu des sections `@defer` (via
- *   `eager`) et on attend que la hauteur du document se stabilise, donc la cible
- *   ne se décale plus pendant le scroll et un seul `scrollTo` suffit ;
- * - **centrage vertical** : la section est centrée dans l'espace sous le header
- *   quand elle y tient, sinon alignée juste sous le header ;
- * - `prefers-reduced-motion` respecté (saut instantané) ;
- * - focus déplacé sur la section pour le clavier et les lecteurs d'écran.
- *
- * SSR-safe : no-op côté serveur.
- */
+// Force d'abord le rendu des sections `@defer` (via `eager`) puis attend la
+// stabilisation de la hauteur du document : la cible ne bouge plus, un seul
+// `scrollTo` suffit sans saccade. SSR-safe (no-op serveur).
 @Injectable({ providedIn: 'root' })
 export class SectionScroller {
   private readonly _router = inject(Router);
@@ -33,11 +18,7 @@ export class SectionScroller {
   private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly _eager = signal(false);
-  /**
-   * Passe à `true` au premier défilement demandé. Consommé par les `@defer`
-   * de la home (`when eager()`) pour forcer leur rendu immédiat, de sorte que
-   * la cible ne s'agrandisse plus pendant le scroll.
-   */
+  // Consommé par les `@defer` de la home (`when eager()`) pour les rendre avant le scroll.
   readonly eager = this._eager.asReadonly();
 
   scrollTo(sectionId: string): void {
@@ -53,11 +34,7 @@ export class SectionScroller {
     void this._router.navigateByUrl('/').then(() => this._scrollWhenStable(sectionId));
   }
 
-  /**
-   * Remonte en haut de la landing. Utile pour le logo quand on est déjà sur la
-   * home (où un `routerLink="/"` serait un no-op). Sur une autre route, le
-   * `routerLink` + le scroll-restoration du routeur s'en chargent.
-   */
+  // Pour le logo quand on est déjà sur la home (où `routerLink="/"` serait un no-op).
   scrollToTop(): void {
     if (!this._isBrowser || !this._onHome()) return;
     this._document.defaultView?.scrollTo?.({ top: 0, behavior: this._scrollBehavior() });
@@ -67,10 +44,6 @@ export class SectionScroller {
     return this._router.url.split(/[?#]/)[0] === '/';
   }
 
-  /**
-   * Attend que la hauteur du document soit stable (les `@defer` forcés ont fini
-   * de se charger et de s'agrandir) avant un unique défilement en douceur.
-   */
   private _scrollWhenStable(sectionId: string, attempt = 0, lastHeight = -1): void {
     const view = this._document.defaultView;
     const element = this._document.getElementById(sectionId);

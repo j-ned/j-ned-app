@@ -25,8 +25,6 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
   private readonly baseUrl = `${inject(API_BASE_URL)}/analytics`;
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  // --- Tracking write-side ---
-
   trackPageView(url: string): void {
     if (!this.isBrowser || isExcludedUrl(url)) return;
     this.fireAndForget({
@@ -64,16 +62,12 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
     this.fireAndForget({ type: 'cv_download' });
   }
 
-  // --- Beacon write-side ---
-
   sendBeacon(payload: TrackPayload): void {
     if (!this.isBrowser || typeof navigator === 'undefined' || !navigator.sendBeacon) return;
     if (payload.url && isExcludedUrl(payload.url)) return;
     const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
     navigator.sendBeacon(`${this.baseUrl}/track`, blob);
   }
-
-  // --- Admin read-side ---
 
   getOverview(startDate?: string, endDate?: string): Observable<StatsOverview> {
     return this.http.get<StatsOverview>(`${this.baseUrl}/stats/overview`, {
@@ -124,8 +118,6 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
       })
       .pipe(map((res) => res.count));
   }
-
-  // --- Helpers ---
 
   private fireAndForget(payload: TrackPayload): void {
     this.http

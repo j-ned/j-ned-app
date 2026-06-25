@@ -12,13 +12,9 @@ import { AppIcon } from '@shared/icons/app-icon';
 import { AdminColumnBase } from './admin-column-base';
 
 export type ExtraAction<T> = {
-  /** Nom de l'icône AppIcon (ex: 'check', 'pencil', 'trash') */
   readonly icon: string;
-  /** Label aria + tooltip */
   readonly label: string;
-  /** Handler appelé au clic */
   readonly handler: (row: T) => void;
-  /** Visibilité conditionnelle (default: toujours visible) */
   readonly visible?: (row: T) => boolean;
 };
 

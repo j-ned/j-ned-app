@@ -12,7 +12,7 @@ import { ContactGateway } from '@features/contact/domain/gateways/contact.gatewa
 import { AuthStore } from '@core/auth/auth-store';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
-import { RelativeTimePipe } from '@shared/calendar/relative-time';
+import { RelativeTime } from '@shared/calendar/relative-time';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import { AppIconTile } from '@shared/ui/icon-tile';
 
@@ -25,7 +25,7 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [RouterLink, AppIcon, RelativeTimePipe, AppSkeleton, AppIconTile],
+  imports: [RouterLink, AppIcon, RelativeTime, AppSkeleton, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `

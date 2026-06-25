@@ -92,7 +92,6 @@ export class Button {
         : 'bg-transparent border border-muted/30 text-foreground hover:bg-surface-elevated hover:border-foreground/30';
     }
 
-    // solid
     if (sev === 'danger') {
       return 'bg-status-error text-white border border-status-error shadow-sm hover:bg-status-error/90';
     }

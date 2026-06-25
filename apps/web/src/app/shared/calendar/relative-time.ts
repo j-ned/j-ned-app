@@ -17,7 +17,7 @@ export function relativeTime(date: Date | string): string {
 }
 
 @Pipe({ name: 'relativeTime' })
-export class RelativeTimePipe implements PipeTransform {
+export class RelativeTime implements PipeTransform {
   transform(date: Date | string | null | undefined): string {
     if (!date) return '';
     return relativeTime(date);
