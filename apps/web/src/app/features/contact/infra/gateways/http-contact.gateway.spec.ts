@@ -209,5 +209,20 @@ describe('HttpContactGateway', () => {
       expect(result).toBe(7);
       httpController.verify();
     });
+
+    it('markAllRead() émet PATCH /<base>/contact/messages/mark-all-read et mappe { count }', async () => {
+      const { gateway, httpController } = configure();
+
+      const promise = firstValueFrom(gateway.markAllRead());
+
+      const req = httpController.expectOne(`${BASE}/contact/messages/mark-all-read`);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({});
+      req.flush({ count: 3 });
+
+      const result = await promise;
+      expect(result).toEqual({ count: 3 });
+      httpController.verify();
+    });
   });
 });
