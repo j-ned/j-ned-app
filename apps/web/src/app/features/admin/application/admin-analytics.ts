@@ -4,24 +4,23 @@ import {
   DestroyRef,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   resource,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { AppChart } from '@shared/ui/chart';
-import { Button } from '@shared/ui/button';
-import { AppSkeleton } from '@shared/ui/skeleton';
-import { AppIconTile } from '@shared/ui/icon-tile';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { AppIcon } from '@shared/icons/app-icon';
 import { ThemeWatcher } from '@shared/theme/theme-watcher';
 import { AnalyticsBarList } from './components/analytics-bar-list';
 import { AnalyticsDonutPanel } from './components/analytics-donut-panel';
 import { AnalyticsEntityList } from './components/analytics-entity-list';
+import { AdminAnalyticsHeader } from './components/admin-analytics-header';
+import { AdminAnalyticsKpis } from './components/admin-analytics-kpis';
+import { AdminAnalyticsVisitorsChart } from './components/admin-analytics-visitors-chart';
+import { AdminAnalyticsCvPanel } from './components/admin-analytics-cv-panel';
 import {
   dateRangeToParams,
   formatDuration,
@@ -47,150 +46,59 @@ const THEME_FALLBACK: Record<string, string> = {
   '--theme-status-error': 'oklch(71.5% 0.18 22)',
 };
 
-type DateRangeOption = {
-  readonly value: DateRangeKey;
-  readonly label: string;
+type ChartPalette = {
+  readonly primaryText: string;
+  readonly accent: string;
+  readonly foreground: string;
+  readonly background: string;
+  readonly success: string;
+  readonly warn: string;
+};
+
+const DEFAULT_PALETTE: ChartPalette = {
+  primaryText: THEME_FALLBACK['--theme-primary-text'],
+  accent: THEME_FALLBACK['--theme-accent'],
+  foreground: THEME_FALLBACK['--theme-foreground'],
+  background: THEME_FALLBACK['--theme-background'],
+  success: THEME_FALLBACK['--theme-status-success'],
+  warn: THEME_FALLBACK['--theme-status-warn'],
 };
 
 @Component({
   selector: 'app-admin-analytics',
   imports: [
-    FormsModule,
-    AppChart,
-    AppIcon,
-    Button,
-    AppSkeleton,
-    AppIconTile,
     AnalyticsBarList,
     AnalyticsDonutPanel,
     AnalyticsEntityList,
+    AdminAnalyticsHeader,
+    AdminAnalyticsKpis,
+    AdminAnalyticsVisitorsChart,
+    AdminAnalyticsCvPanel,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <!-- Header avec date range et live -->
-    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-      <div>
-        <h1 class="text-3xl font-bold text-foreground mb-1">Analytics</h1>
-        <p class="text-sm text-muted">Visites, engagement, provenance, appareils</p>
-      </div>
-      <div class="flex items-center gap-4">
-        <div
-          class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-foreground/5 border border-foreground/10"
-        >
-          <span class="relative flex items-center justify-center">
-            <span
-              class="absolute w-2 h-2 rounded-full bg-status-success animate-ping"
-              aria-hidden="true"
-            ></span>
-            <span class="relative w-2 h-2 rounded-full bg-status-success" aria-hidden="true"></span>
-          </span>
-          <span class="text-xs font-medium text-foreground">
-            {{ activeVisitors() }}
-            {{ activeVisitors() > 1 ? 'visiteurs actifs' : 'visiteur actif' }}
-          </span>
-        </div>
-        <select
-          class="app-select"
-          [ngModel]="dateRange()"
-          (ngModelChange)="dateRange.set($event)"
-          aria-label="Période d'analyse"
-        >
-          @for (opt of DATE_RANGE_OPTIONS; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-        <app-button severity="secondary" variant="outlined" (click)="exportCsv()">
-          <app-icon name="download" [size]="20" />
-          Export CSV
-        </app-button>
-      </div>
-    </header>
+    <app-admin-analytics-header
+      [activeVisitors]="activeVisitors()"
+      [dateRange]="dateRange()"
+      (dateRangeChanged)="dateRange.set($event)"
+      (exportCsvClicked)="exportCsv()"
+    />
 
-    <!-- KPI cards -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" aria-label="Indicateurs clés">
-      <article class="bg-surface border border-foreground/10 rounded-xl p-5">
-        <div class="flex items-center gap-2 mb-2">
-          <app-icon name="users" [size]="20" class="text-primary" />
-          <span class="text-xs text-muted uppercase tracking-wider">Visiteurs</span>
-        </div>
-        @if (overviewResource.isLoading()) {
-          <app-skeleton class="h-9 w-20 rounded" tone="strong" />
-        } @else {
-          <p class="text-3xl font-bold text-foreground leading-none">
-            {{ overview()?.visitors ?? 0 }}
-          </p>
-          <p class="text-xs text-muted mt-2">{{ overview()?.sessions ?? 0 }} sessions</p>
-        }
-      </article>
+    <app-admin-analytics-kpis
+      [loading]="overviewResource.isLoading()"
+      [overview]="overview()"
+      [pagesPerSession]="pagesPerSession()"
+      [bounceRateFormatted]="bounceRateFormatted()"
+      [formattedDuration]="formattedDuration()"
+    />
 
-      <article class="bg-surface border border-foreground/10 rounded-xl p-5">
-        <div class="flex items-center gap-2 mb-2">
-          <app-icon name="eye" [size]="20" class="text-primary" />
-          <span class="text-xs text-muted uppercase tracking-wider">Pages vues</span>
-        </div>
-        @if (overviewResource.isLoading()) {
-          <app-skeleton class="h-9 w-20 rounded" tone="strong" />
-        } @else {
-          <p class="text-3xl font-bold text-foreground leading-none">
-            {{ overview()?.pageviews ?? 0 }}
-          </p>
-          <p class="text-xs text-muted mt-2">{{ pagesPerSession() }} pages / session</p>
-        }
-      </article>
+    <app-admin-analytics-visitors-chart
+      [loading]="chartResource.isLoading()"
+      [data]="chartData()"
+      [options]="chartOptions()"
+    />
 
-      <article class="bg-surface border border-foreground/10 rounded-xl p-5">
-        <div class="flex items-center gap-2 mb-2">
-          <app-icon name="arrow-right-arrow-left" [size]="20" class="text-status-warn" />
-          <span class="text-xs text-muted uppercase tracking-wider">Taux de rebond</span>
-        </div>
-        @if (overviewResource.isLoading()) {
-          <app-skeleton class="h-9 w-20 rounded" tone="strong" />
-        } @else {
-          <p class="text-3xl font-bold text-foreground leading-none">
-            {{ bounceRateFormatted() }}%
-          </p>
-          <p class="text-xs text-muted mt-2">{{ overview()?.bounces ?? 0 }} sessions en rebond</p>
-        }
-      </article>
-
-      <article class="bg-surface border border-foreground/10 rounded-xl p-5">
-        <div class="flex items-center gap-2 mb-2">
-          <app-icon name="clock" [size]="20" class="text-status-success" />
-          <span class="text-xs text-muted uppercase tracking-wider">Durée moyenne</span>
-        </div>
-        @if (overviewResource.isLoading()) {
-          <app-skeleton class="h-9 w-20 rounded" tone="strong" />
-        } @else {
-          <p class="text-3xl font-bold text-foreground leading-none">{{ formattedDuration() }}</p>
-          <p class="text-xs text-muted mt-2">par page</p>
-        }
-      </article>
-    </section>
-
-    <!-- Main chart -->
-    <section class="bg-surface border border-foreground/10 rounded-xl p-6 mb-8">
-      <header class="flex items-center justify-between mb-6">
-        <h2 class="text-base font-semibold text-foreground">Évolution des visites</h2>
-        <div class="flex items-center gap-4 text-xs">
-          <span class="flex items-center gap-2 text-muted">
-            <span class="w-3 h-0.5 rounded bg-primary" aria-hidden="true"></span>
-            Visiteurs
-          </span>
-          <span class="flex items-center gap-2 text-muted">
-            <span class="w-3 h-0.5 rounded bg-accent" aria-hidden="true"></span>
-            Pages vues
-          </span>
-        </div>
-      </header>
-      @if (chartResource.isLoading()) {
-        <app-skeleton class="h-72 rounded" />
-      } @else {
-        <app-chart type="line" [data]="chartData()" [options]="chartOptions()" height="18rem" />
-      }
-    </section>
-
-    <!-- Top pages & Top referrers -->
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
       <app-analytics-bar-list
         title="Pages les plus visitées"
@@ -210,7 +118,6 @@ type DateRangeOption = {
       />
     </section>
 
-    <!-- Breakdowns: Browsers / OS / Countries -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
       <app-analytics-donut-panel
         title="Navigateurs"
@@ -242,7 +149,6 @@ type DateRangeOption = {
       />
     </section>
 
-    <!-- Conversions: projects + articles + CV -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <app-analytics-entity-list
         title="Projets cliqués"
@@ -265,20 +171,10 @@ type DateRangeOption = {
         emptyLabel="Aucune vue enregistrée"
       />
 
-      <div
-        class="bg-surface border border-foreground/10 rounded-xl p-6 flex flex-col justify-center items-center text-center"
-      >
-        <app-icon-tile size="lg" class="bg-accent/10 mb-4">
-          <app-icon name="download" [size]="24" class="text-accent" />
-        </app-icon-tile>
-        <h2 class="text-base font-semibold text-foreground mb-1">CV téléchargés</h2>
-        @if (overviewResource.isLoading()) {
-          <app-skeleton class="h-10 w-24 rounded" />
-        } @else {
-          <p class="text-4xl font-bold text-foreground">{{ overview()?.cvDownloads ?? 0 }}</p>
-        }
-        <p class="text-xs text-muted mt-2">sur la période</p>
-      </div>
+      <app-admin-analytics-cv-panel
+        [loading]="overviewResource.isLoading()"
+        [cvDownloads]="overview()?.cvDownloads ?? 0"
+      />
     </section>
   `,
 })
@@ -289,16 +185,24 @@ export class AdminAnalytics {
   private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly _theme = inject(ThemeWatcher);
 
-  private themeColor(token: keyof typeof THEME_FALLBACK | string): string {
-    // Cree une dependency reactive sur le theme : les computed() qui
-    // appellent themeColor() se re-evaluent quand dark/light bascule.
-    this._theme.isDark();
+  private readonly _palette = signal<ChartPalette>(DEFAULT_PALETTE);
 
+  private readonly _syncPalette = effect(() => {
+    this._theme.isDark(); // reactive dependency – re-runs on theme switch
+    if (!this._isBrowser) return;
+    this._palette.set({
+      primaryText: this._readVar('--theme-primary-text'),
+      accent: this._readVar('--theme-accent'),
+      foreground: this._readVar('--theme-foreground'),
+      background: this._readVar('--theme-background'),
+      success: this._readVar('--theme-status-success'),
+      warn: this._readVar('--theme-status-warn'),
+    });
+  });
+
+  private _readVar(token: string): string {
     const fallback = THEME_FALLBACK[token] ?? 'oklch(50% 0 0)';
-    if (!this._isBrowser) return fallback;
-    const v = getComputedStyle(this._document.documentElement)
-      .getPropertyValue(token)
-      .trim();
+    const v = getComputedStyle(this._document.documentElement).getPropertyValue(token).trim();
     return v || fallback;
   }
 
@@ -312,19 +216,11 @@ export class AdminAnalytics {
       .subscribe((r) => this.activeVisitors.set(r.count));
   }
 
-  readonly DATE_RANGE_OPTIONS: DateRangeOption[] = [
-    { value: '7d', label: '7 derniers jours' },
-    { value: '30d', label: '30 derniers jours' },
-    { value: '90d', label: '90 derniers jours' },
-    { value: 'all', label: 'Tout le temps' },
-  ];
-
   readonly dateRange = signal<DateRangeKey>('30d');
   readonly activeVisitors = signal(0);
 
   private readonly range = computed(() => dateRangeToParams(this.dateRange(), new Date()));
 
-  // ── Overview KPIs ────────────────────────────────────────────────
   readonly overviewResource = resource({
     params: () => this.range(),
     loader: ({ params }) =>
@@ -336,7 +232,6 @@ export class AdminAnalytics {
 
   readonly pagesPerSession = computed(() => computePagesPerSession(this.overview()));
 
-  // ── Main chart ────────────────────────────────────────────────────
   readonly chartResource = resource({
     params: () => this.range(),
     loader: ({ params }) =>
@@ -346,16 +241,15 @@ export class AdminAnalytics {
   readonly chartData = computed(() =>
     buildVisitorsChartData(
       this.chartResource.value() ?? [],
-      this.themeColor('--theme-primary-text'),
-      this.themeColor('--theme-accent'),
+      this._palette().primaryText,
+      this._palette().accent,
     ),
   );
 
   readonly chartOptions = computed(() =>
-    buildLineChartOptions(this.themeColor('--theme-foreground'), this.themeColor('--theme-background')),
+    buildLineChartOptions(this._palette().foreground, this._palette().background),
   );
 
-  // ── Top pages ─────────────────────────────────────────────────────
   readonly pagesResource = resource({
     params: () => this.range(),
     loader: ({ params }) =>
@@ -364,7 +258,6 @@ export class AdminAnalytics {
   readonly topPages = computed(() => this.pagesResource.value()?.slice(0, 8) ?? []);
   readonly pagesMax = computed(() => Math.max(1, ...this.topPages().map((r) => r.count)));
 
-  // ── Top referrers ─────────────────────────────────────────────────
   readonly referrersResource = resource({
     params: () => this.range(),
     loader: ({ params }) =>
@@ -373,25 +266,22 @@ export class AdminAnalytics {
   readonly topReferrers = computed(() => this.referrersResource.value()?.slice(0, 8) ?? []);
   readonly referrersMax = computed(() => Math.max(1, ...this.topReferrers().map((r) => r.count)));
 
-  // ── Browsers ──────────────────────────────────────────────────────
   readonly browsersResource = resource({
     params: () => this.range(),
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getMetrics('browser', params.startDate, params.endDate)),
   });
   readonly browsers = computed(() => this.browsersResource.value()?.slice(0, 6) ?? []);
-  readonly browsersChart = computed(() => buildDonutChartData(this.browsers(), this.palette()));
+  readonly browsersChart = computed(() => buildDonutChartData(this.browsers(), this._buildPalette()));
 
-  // ── OS ────────────────────────────────────────────────────────────
   readonly osResource = resource({
     params: () => this.range(),
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getMetrics('os', params.startDate, params.endDate)),
   });
   readonly osList = computed(() => this.osResource.value()?.slice(0, 6) ?? []);
-  readonly osChart = computed(() => buildDonutChartData(this.osList(), this.palette()));
+  readonly osChart = computed(() => buildDonutChartData(this.osList(), this._buildPalette()));
 
-  // ── Countries ─────────────────────────────────────────────────────
   readonly countriesResource = resource({
     params: () => this.range(),
     loader: ({ params }) =>
@@ -400,7 +290,6 @@ export class AdminAnalytics {
   readonly countries = computed(() => this.countriesResource.value()?.slice(0, 8) ?? []);
   readonly countriesMax = computed(() => Math.max(1, ...this.countries().map((r) => r.count)));
 
-  // ── Top projects ──────────────────────────────────────────────────
   readonly projectsResource = resource({
     params: () => this.range(),
     loader: ({ params }) =>
@@ -409,7 +298,6 @@ export class AdminAnalytics {
   readonly topProjects = computed(() => this.projectsResource.value() ?? []);
   readonly topProjectsTop5 = computed(() => this.topProjects().slice(0, 5));
 
-  // ── Top articles ──────────────────────────────────────────────────
   readonly articlesResource = resource({
     params: () => this.range(),
     loader: ({ params }) =>
@@ -421,15 +309,15 @@ export class AdminAnalytics {
   readonly bounceRateFormatted = computed(() => (this.overview()?.bounceRate ?? 0).toFixed(1));
 
   readonly donutOptions = computed(() =>
-    buildDonutOptions(this.themeColor('--theme-foreground'), this.themeColor('--theme-background')),
+    buildDonutOptions(this._palette().foreground, this._palette().background),
   );
 
-  private readonly palette = computed(() =>
+  private readonly _buildPalette = computed(() =>
     buildPalette({
-      primary: this.themeColor('--theme-primary-text'),
-      accent: this.themeColor('--theme-accent'),
-      success: this.themeColor('--theme-status-success'),
-      warn: this.themeColor('--theme-status-warn'),
+      primary: this._palette().primaryText,
+      accent: this._palette().accent,
+      success: this._palette().success,
+      warn: this._palette().warn,
     }),
   );
 
@@ -455,5 +343,4 @@ export class AdminAnalytics {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
-
 }

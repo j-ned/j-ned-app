@@ -24,13 +24,15 @@ import type {
 } from '@features/projects/domain/models/project.model';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { Button } from '@shared/ui/button';
+import { AdminProjectTagsSelector } from './admin-project-tags-selector';
+import { PROJECT_CATEGORIES, AVAILABLE_PROJECT_TAGS } from './admin-project-form-data';
 
 type TechChoiceForm = FormGroup<{ techno: FormControl<string>; why: FormControl<string> }>;
 type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: FormControl<string> }>;
 
 @Component({
   selector: 'app-admin-project-inline-form',
-  imports: [ReactiveFormsModule, FileDropzone, Button],
+  imports: [ReactiveFormsModule, FileDropzone, Button, AdminProjectTagsSelector],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -73,25 +75,10 @@ type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: Fo
         </div>
       </div>
 
-      <div>
-        <span class="form-label">Tags</span>
-        <div class="flex flex-wrap gap-2">
-          @for (tag of availableTags; track tag) {
-            <button
-              type="button"
-              (click)="toggleTag(tag)"
-              [class]="
-                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ' +
-                (selectedTags().has(tag)
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-background text-foreground border-foreground/20 hover:border-primary/50')
-              "
-            >
-              {{ tag }}
-            </button>
-          }
-        </div>
-      </div>
+      <app-admin-project-tags-selector
+        [availableTags]="availableTags"
+        [(selectedTags)]="selectedTags"
+      />
 
       <div>
         <label for="description" class="form-label">Description</label>
@@ -243,50 +230,8 @@ export class AdminProjectInlineForm {
       p ? new Set(p.tags ?? []) : (previous?.value ?? new Set<string>()),
   });
 
-  readonly categories = [
-    'Application Web',
-    'Application Mobile',
-    'API / Backend',
-    'Script',
-    'Package / Librairie',
-    'Extension',
-    'Design / Maquette',
-  ];
-
-  readonly availableTags = [
-    'Angular',
-    'TypeScript',
-    'JavaScript',
-    'NestJS',
-    'Node.js',
-    'Python',
-    'Bash',
-    'TailwindCSS',
-    'SCSS',
-    'CSS',
-    'PostgreSQL',
-    'MongoDB',
-    'Supabase',
-    'Redis',
-    'SQLite',
-    'Docker',
-    'CI/CD',
-    'GitHub Actions',
-    'Nginx',
-    'Linux',
-    'Git',
-    'JWT',
-    'API',
-    'REST',
-    'GraphQL',
-    'WebSocket',
-    'CLI',
-    'Automation',
-    'DevOps',
-    'Vitest',
-    'SSR',
-    'Astro',
-  ];
+  readonly categories = PROJECT_CATEGORIES;
+  readonly availableTags = AVAILABLE_PROJECT_TAGS;
 
   readonly form = this.fb.nonNullable.group({
     title: ['', Validators.required],
@@ -360,16 +305,6 @@ export class AdminProjectInlineForm {
 
   onFileSelected(file: File): void {
     if (file.type.startsWith('image/')) this.selectFile(file);
-  }
-
-  toggleTag(tag: string): void {
-    const tags = new Set(this.selectedTags());
-    if (tags.has(tag)) {
-      tags.delete(tag);
-    } else {
-      tags.add(tag);
-    }
-    this.selectedTags.set(tags);
   }
 
   submitProject(): void {

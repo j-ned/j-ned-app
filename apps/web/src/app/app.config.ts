@@ -19,7 +19,7 @@ import {
   withViewTransitions,
 } from '@angular/router';
 import { SelectivePreload } from '@core/strategies/selective-preload';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from '@features/auth/infra/auth-interceptor';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
 import { IMAGE_CONFIG } from '@angular/common';
@@ -137,7 +137,7 @@ export const appConfig: ApplicationConfig = {
         filter: (req) => !req.url.includes('/home-bundle'),
       }),
     ),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, errorToastInterceptor])),
     provideAppInitializer(initializeAuth()),
     provideAppInitializer(initializeSeo()),
     provideAppInitializer(initializeTracking()),

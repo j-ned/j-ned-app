@@ -7,7 +7,6 @@ export type RangeParams = { startDate?: string; endDate?: string };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Convertit une plage ('7d'/'30d'/'90d'/'all') en bornes ISO (YYYY-MM-DD) relatives à `now`. */
 export function dateRangeToParams(key: DateRangeKey, now: Date): RangeParams {
   if (key === 'all') return { startDate: undefined, endDate: undefined };
   const days = key === '7d' ? 7 : key === '30d' ? 30 : 90;
@@ -18,30 +17,25 @@ export function dateRangeToParams(key: DateRangeKey, now: Date): RangeParams {
   };
 }
 
-/** Durée moyenne : secondes → « Xm YYs » (ou « Ys » sous la minute). */
 export function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return m > 0 ? `${m}m ${s.toString().padStart(2, '0')}s` : `${s}s`;
 }
 
-/** Pages par session, formaté à une décimale ; « 0 » si pas de session. */
 export function pagesPerSession(overview: StatsOverview | undefined): string {
   if (!overview || overview.sessions === 0) return '0';
   return (overview.pageviews / overview.sessions).toFixed(1);
 }
 
-/** Largeur de barre en % (value/max), bornée à 0 si max ≤ 0. */
 export function barWidth(value: number, max: number): number {
   return max > 0 ? (value / max) * 100 : 0;
 }
 
-/** Couleur translucide via color-mix (alpha en %). */
 export function alpha(color: string, pct: number): string {
   return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 }
 
-/** Dataset Chart.js de la courbe Visiteurs / Pages vues. */
 export function buildVisitorsChartData(
   rows: readonly DailyChartPoint[],
   primary: string,
@@ -74,7 +68,6 @@ export function buildVisitorsChartData(
   };
 }
 
-/** Options Chart.js de la courbe principale. */
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- le type officiel `ChartOptions<'line'>` est DeepPartial et perd la forme concrète vérifiée par les tests ; on garde l'inférence.
 export function buildLineChartOptions(foreground: string, background: string) {
   const muted40 = alpha(foreground, 40);
@@ -105,7 +98,6 @@ export function buildLineChartOptions(foreground: string, background: string) {
   };
 }
 
-/** Dataset Chart.js d'un donut (navigateurs / OS). « Inconnu » si nom vide. */
 export function buildDonutChartData(
   entries: readonly MetricEntry[],
   palette: readonly string[],
@@ -122,7 +114,6 @@ export function buildDonutChartData(
   };
 }
 
-/** Options Chart.js des donuts. */
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- le type officiel `ChartOptions<'doughnut'>` est DeepPartial et perd la forme concrète vérifiée par les tests ; on garde l'inférence.
 export function buildDonutOptions(foreground: string, background: string) {
   return {
@@ -148,7 +139,6 @@ export function buildDonutOptions(foreground: string, background: string) {
   };
 }
 
-/** Palette dérivée des tokens du design system (One Indigo Rule). */
 export function buildPalette(colors: {
   primary: string;
   accent: string;
@@ -177,7 +167,6 @@ export type AnalyticsCsvSections = {
   topArticles: readonly EntityStat[];
 };
 
-/** Échappe une valeur CSV (guillemets / virgules / sauts de ligne). */
 export function escapeCsv(value: string): string {
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`;
@@ -185,7 +174,6 @@ export function escapeCsv(value: string): string {
   return value;
 }
 
-/** Construit le contenu CSV de l'export analytics (sans BOM). */
 export function buildAnalyticsCsv(s: AnalyticsCsvSections): string {
   const rows: string[] = ['Section,Label,Count'];
   const o = s.overview;

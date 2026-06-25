@@ -120,7 +120,7 @@ type PasswordFormShape = {
           ) {
             <p id="twofa-setup-new-pw-error" role="alert" class="form-error">
               Minimum
-              {{ pwdForm.controls.newPassword.errors?.['minlength'].requiredLength }} caractères
+              {{ pwdForm.controls.newPassword.errors['minlength'].requiredLength }} caractères
               requis
             </p>
           } @else if (

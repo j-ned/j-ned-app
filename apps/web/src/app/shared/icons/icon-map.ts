@@ -18,7 +18,7 @@ export type IconRef = {
 const FALLBACK: IconRef = { id: 'question', style: 'solid' };
 
 export const ICON_MAP: Readonly<Record<string, IconRef>> = {
-  // ─── Navigation & layout ──────────────────────────────
+  // Navigation & layout
   'arrow-left':                 { id: 'arrow-left', style: 'solid' },
   'lucide-arrow-left':          { id: 'arrow-left', style: 'solid' },
   'arrow-right':                { id: 'arrow-right', style: 'solid' },
@@ -42,7 +42,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'external-link':              { id: 'up-right-from-square', style: 'solid' },
   'lucide-external-link':       { id: 'up-right-from-square', style: 'solid' },
 
-  // ─── Communication ────────────────────────────────────
+  // Communication
   'envelope':                   { id: 'envelope', style: 'solid' },
   'mail':                       { id: 'envelope', style: 'solid' },
   'lucide-mail':                { id: 'envelope', style: 'solid' },
@@ -58,7 +58,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'at':                         { id: 'at', style: 'solid' },
   'lucide-at-sign':             { id: 'at', style: 'solid' },
 
-  // ─── Brands (logos) ───────────────────────────────────
+  // Brands (logos)
   'github':                     { id: 'github', style: 'brands' },
   'lucide-github':              { id: 'github', style: 'brands' },
   'discord':                    { id: 'discord', style: 'brands' },
@@ -82,7 +82,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'telegram':                   { id: 'telegram', style: 'brands' },
   'lucide-telegram':            { id: 'telegram', style: 'brands' },
 
-  // ─── Status & feedback ────────────────────────────────
+  // Status & feedback
   'check':                      { id: 'check', style: 'solid' },
   'lucide-check':               { id: 'check', style: 'solid' },
   'check-circle':               { id: 'circle-check', style: 'solid' },
@@ -104,7 +104,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'lucide-loader-2':            { id: 'spinner', style: 'solid' },
   'spinners':                   { id: 'spinner', style: 'solid' },
 
-  // ─── Sort & filter ────────────────────────────────────
+  // Sort & filter
   'sort':                       { id: 'sort', style: 'solid' },
   'sort-up-fill':               { id: 'sort-up', style: 'solid' },
   'sort-down-fill':             { id: 'sort-down', style: 'solid' },
@@ -116,7 +116,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'lucide-binoculars':          { id: 'magnifying-glass-plus', style: 'solid' },
   'lucide-telescope':           { id: 'magnifying-glass-plus', style: 'solid' },
 
-  // ─── Files & data ─────────────────────────────────────
+  // Files & data
   'file':                       { id: 'file', style: 'solid' },
   'lucide-file-text':           { id: 'file', style: 'solid' },
   'file-pdf':                   { id: 'file-pdf', style: 'solid' },
@@ -139,7 +139,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'check-square':               { id: 'square-check', style: 'solid' },
   'lucide-list-checks':         { id: 'square-check', style: 'solid' },
 
-  // ─── UI / actions ─────────────────────────────────────
+  // UI / actions
   'pencil':                     { id: 'pencil', style: 'solid' },
   'lucide-pen-line':            { id: 'pencil', style: 'solid' },
   'lucide-notebook-pen':        { id: 'pencil', style: 'solid' },
@@ -163,17 +163,17 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'share-alt':                  { id: 'share-nodes', style: 'solid' },
   'lucide-share-2':             { id: 'share-nodes', style: 'solid' },
 
-  // ─── User & people ────────────────────────────────────
+  // User & people
   'user':                       { id: 'user', style: 'solid' },
   'lucide-user':                { id: 'user', style: 'solid' },
   'users':                      { id: 'users', style: 'solid' },
   'lucide-users':               { id: 'users', style: 'solid' },
 
-  // ─── Time & calendar ──────────────────────────────────
+  // Time & calendar
   'clock':                      { id: 'clock', style: 'solid' },
   'lucide-clock':               { id: 'clock', style: 'solid' },
 
-  // ─── Tech & dev ───────────────────────────────────────
+  // Tech & dev
   'code':                       { id: 'code', style: 'solid' },
   'lucide-code-xml':            { id: 'code', style: 'solid' },
   'desktop':                    { id: 'desktop', style: 'solid' },
@@ -211,7 +211,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'lucide-factory':             { id: 'building', style: 'solid' },
   'lucide-warehouse':           { id: 'building', style: 'solid' },
 
-  // ─── Charts & analytics ───────────────────────────────
+  // Charts & analytics
   'chart-bar':                  { id: 'chart-column', style: 'solid' },
   'chart-column':               { id: 'chart-column', style: 'solid' },
   'lucide-bar-chart-3':         { id: 'chart-column', style: 'solid' },
@@ -224,7 +224,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'location-dot':               { id: 'location-dot', style: 'solid' },
   'lucide-map-pin':             { id: 'location-dot', style: 'solid' },
 
-  // ─── Decorative / misc ────────────────────────────────
+  // Decorative / misc
   'sparkles':                   { id: 'wand-magic-sparkles', style: 'solid' },
   'lucide-sparkles':            { id: 'wand-magic-sparkles', style: 'solid' },
   'sun':                        { id: 'sun', style: 'solid' },

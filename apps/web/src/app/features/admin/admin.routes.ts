@@ -6,14 +6,11 @@ export const ADMIN_ROUTES: Routes = [
     path: '',
     component: AdminLayout,
     children: [
-      // ─── Dashboard ──────────────────────────────────────────────
       {
         path: '',
         title: 'Dashboard | Admin',
         loadComponent: () => import('./application/admin-dashboard').then((m) => m.AdminDashboard),
       },
-
-      // ─── Contenu ────────────────────────────────────────────────
       {
         path: 'projects',
         title: 'Projets | Admin',
@@ -24,14 +21,11 @@ export const ADMIN_ROUTES: Routes = [
         title: 'CV | Admin',
         loadComponent: () => import('./application/admin-cv').then((m) => m.AdminCv),
       },
-      // ─── Communication ──────────────────────────────────────────
       {
         path: 'messages',
         title: 'Messages | Admin',
         loadComponent: () => import('./application/admin-messages').then((m) => m.AdminMessages),
       },
-
-      // ─── Pilotage ───────────────────────────────────────────────
       {
         path: 'analytics',
         title: 'Analytics | Admin',
@@ -39,8 +33,6 @@ export const ADMIN_ROUTES: Routes = [
       },
       { path: 'analytics/visits', redirectTo: 'analytics', pathMatch: 'full' },
       { path: 'analytics/projects', redirectTo: 'analytics', pathMatch: 'full' },
-
-      // ─── Paramètres ─────────────────────────────────────────────
       {
         path: 'settings',
         title: 'Paramètres | Admin',
@@ -53,7 +45,7 @@ export const ADMIN_ROUTES: Routes = [
           import('../auth/application/two-factor-setup').then((m) => m.TwoFactorSetup),
       },
 
-      // ─── Backwards-compat redirects ─────────────────────────────
+      // Redirections des anciennes URLs (compat liens existants).
       { path: 'content', redirectTo: '', pathMatch: 'full' },
       { path: 'content/projects', redirectTo: 'projects', pathMatch: 'full' },
       { path: 'content/cv', redirectTo: 'cv', pathMatch: 'full' },

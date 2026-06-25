@@ -169,7 +169,7 @@ describe('AdminMessages', () => {
   });
 
   describe('filtre par statut de lecture', () => {
-    const seed = () =>
+    const seed = (): ContactGateway =>
       makeGateway({
         getAllMessages: () => of([msg({ id: 1, read: false }), msg({ id: 2, read: true })]),
       });
