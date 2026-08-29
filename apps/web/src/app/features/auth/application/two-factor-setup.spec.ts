@@ -72,7 +72,7 @@ function disableChild(
   );
 }
 
-describe('TwoFactorSetup — child selection follows 2FA state', () => {
+describe('TwoFactorSetup: child selection follows 2FA state', () => {
   it('renders the password change form in all states', async () => {
     const fixture = await setup(makeAuthStore());
     expect(passwordChild(fixture)).not.toBeNull();
@@ -94,7 +94,7 @@ describe('TwoFactorSetup — child selection follows 2FA state', () => {
   });
 });
 
-describe('TwoFactorSetup — password change orchestration', () => {
+describe('TwoFactorSetup: password change orchestration', () => {
   it('calls AuthStore.changePassword when the child submits', async () => {
     const store = makeAuthStore();
     const spy = vi.spyOn(store, 'changePassword');
@@ -156,7 +156,7 @@ describe('TwoFactorSetup — password change orchestration', () => {
   });
 });
 
-describe('TwoFactorSetup — 2FA enable orchestration', () => {
+describe('TwoFactorSetup: 2FA enable orchestration', () => {
   it('calls AuthStore.generateTwoFactorSecret when the child emits generate', async () => {
     const store = makeAuthStore();
     const spy = vi.spyOn(store, 'generateTwoFactorSecret');
@@ -243,7 +243,7 @@ describe('TwoFactorSetup — 2FA enable orchestration', () => {
   });
 });
 
-describe('TwoFactorSetup — 2FA disable orchestration', () => {
+describe('TwoFactorSetup: 2FA disable orchestration', () => {
   it('calls AuthStore.disableTwoFactor with the password when the child emits disable', async () => {
     const store = makeAuthStore();
     store.currentUser.set({ isTwoFactorEnabled: true });
@@ -294,7 +294,7 @@ describe('TwoFactorSetup — 2FA disable orchestration', () => {
   });
 });
 
-describe('TwoFactorSetup — deferred command keeps the child loading until resolution', () => {
+describe('TwoFactorSetup: deferred command keeps the child loading until resolution', () => {
   it('reflects the loading state on the password child while the command is in flight', async () => {
     const store = makeAuthStore({
       changePassword: () => defer(() => of(true)),

@@ -55,7 +55,7 @@ describe('ProjectDetail', () => {
     expect(text).toContain('testable');
   });
 
-  it("rend l'image d'en-tête avec un sizes responsive (sans pixel) — NG02952", () => {
+  it("rend l'image d'en-tête avec un sizes responsive (sans pixel): NG02952", () => {
     const fixture = setup([project({ image: 'https://cdn.test/cover.avif' })]);
     fixture.componentRef.setInput('slug', 'mon-site');
     fixture.detectChanges();

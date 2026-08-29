@@ -11,7 +11,7 @@ function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
     case 0:
       return {
         success: false,
-        message: 'Connexion impossible — vérifiez votre réseau, puis réessayez dans un instant.',
+        message: 'Connexion impossible. Vérifiez votre réseau, puis réessayez dans un instant.',
       };
     case 400:
       return {
@@ -61,7 +61,7 @@ export class HttpContactGateway extends ContactGateway {
     return this.http.post(`${this.apiUrl}/contact/messages`, data).pipe(
       map<unknown, ContactFormSubmission>(() => ({
         success: true,
-        message: 'Votre message a bien été envoyé — je reviens vers vous rapidement.',
+        message: 'Votre message a bien été envoyé. Je reviens vers vous rapidement.',
       })),
       catchError((err: HttpErrorResponse) => of(toSubmissionError(err))),
     );

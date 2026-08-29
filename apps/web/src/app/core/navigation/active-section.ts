@@ -1,10 +1,6 @@
 import { Injectable, signal, type Signal } from '@angular/core';
 
-/**
- * Source de vérité réactive de la section "active" pour l'indicateur de
- * navigation. Alimentée par la directive SectionVisibility (scroll-spy) côté
- * contenu, lue par le header pour afficher la barre d'état sous le lien actif.
- */
+// Alimentée par SectionVisibility (scroll-spy), lue par le header pour l'indicateur de nav.
 @Injectable({ providedIn: 'root' })
 export class ActiveSection {
   private readonly _key = signal<string | null>(null);

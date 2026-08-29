@@ -62,7 +62,7 @@ import { extractErrorMessage } from '@shared/api/extract-error-message';
       <app-file-dropzone
         accept="application/pdf"
         label="Fichier PDF"
-        helperText="PDF uniquement — sera versionné dans S3"
+        helperText="PDF uniquement, sera versionné dans S3"
         (fileSelected)="selectCvFile($event)"
         (cleared)="clearSelection()"
       />

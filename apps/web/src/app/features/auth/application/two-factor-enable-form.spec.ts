@@ -16,7 +16,7 @@ function withQr(): ComponentFixture<TwoFactorEnableForm> {
   return fixture;
 }
 
-describe('TwoFactorEnableForm — initial state (no QR yet)', () => {
+describe('TwoFactorEnableForm: initial state (no QR yet)', () => {
   it('does not render the code input before a QR code is provided', () => {
     const fixture = render();
     const code = fixture.nativeElement.querySelector('input[formcontrolname="code"]');
@@ -50,7 +50,7 @@ describe('TwoFactorEnableForm — initial state (no QR yet)', () => {
   });
 });
 
-describe('TwoFactorEnableForm — QR generated state', () => {
+describe('TwoFactorEnableForm: QR generated state', () => {
   it('renders the QR image with the accessible alt text and the secret', () => {
     const fixture = withQr();
 
@@ -103,7 +103,7 @@ describe('TwoFactorEnableForm — QR generated state', () => {
   });
 });
 
-describe('TwoFactorEnableForm — feedback inputs', () => {
+describe('TwoFactorEnableForm: feedback inputs', () => {
   it('renders the successMessage input', () => {
     const fixture = render();
     fixture.componentRef.setInput(
@@ -126,7 +126,7 @@ describe('TwoFactorEnableForm — feedback inputs', () => {
   });
 });
 
-describe('TwoFactorEnableForm — verify output', () => {
+describe('TwoFactorEnableForm: verify output', () => {
   it('does not emit verify when the code is invalid', () => {
     const fixture = withQr();
     let emitted = false;
@@ -155,7 +155,7 @@ describe('TwoFactorEnableForm — verify output', () => {
   });
 });
 
-describe('TwoFactorEnableForm — reset token', () => {
+describe('TwoFactorEnableForm: reset token', () => {
   it('resets the code form when the resetToken input changes', async () => {
     const fixture = withQr();
     fixture.componentRef.setInput('resetToken', 0);

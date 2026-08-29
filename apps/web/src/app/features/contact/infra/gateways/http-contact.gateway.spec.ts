@@ -31,7 +31,7 @@ describe('HttpContactGateway', () => {
     TestBed.resetTestingModule();
   });
 
-  describe('Public — 1 test', () => {
+  describe('Public: 1 test', () => {
     it('submitContactForm() retourne success:true sur 201 quel que soit le body backend', async () => {
       const { gateway, httpController } = configure();
       const data: ContactFormData = {
@@ -64,7 +64,7 @@ describe('HttpContactGateway', () => {
       const result = await promise;
       expect(result).toEqual({
         success: true,
-        message: 'Votre message a bien été envoyé — je reviens vers vous rapidement.',
+        message: 'Votre message a bien été envoyé. Je reviens vers vous rapidement.',
       });
       httpController.verify();
     });
@@ -138,13 +138,13 @@ describe('HttpContactGateway', () => {
       const result = await promise;
       expect(result).toEqual({
         success: false,
-        message: 'Connexion impossible — vérifiez votre réseau, puis réessayez dans un instant.',
+        message: 'Connexion impossible. Vérifiez votre réseau, puis réessayez dans un instant.',
       });
       httpController.verify();
     });
   });
 
-  describe('Admin — 4 tests', () => {
+  describe('Admin: 4 tests', () => {
     it('getAllMessages() émet GET /<base>/contact/messages, extrait res.data', async () => {
       const { gateway, httpController } = configure();
       const messages: ContactMessage[] = [

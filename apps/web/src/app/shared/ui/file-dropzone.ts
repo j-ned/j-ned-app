@@ -13,13 +13,6 @@ import {
   viewChild,
 } from '@angular/core';
 
-/**
- * Drag & drop file picker avec preview, accessible clavier (Enter/Espace).
- * - Clique sur la zone → ouvre le file picker natif
- * - Drag a file from desktop → highlight + dépose
- * - Preview image si type image, sinon nom de fichier
- * - Bouton X pour clear la sélection
- */
 @Component({
   selector: 'app-file-dropzone',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -168,8 +161,7 @@ export class FileDropzone {
   protected readonly previewSrc = computed(() => this._blobUrl() || this.previewUrl());
 
   constructor() {
-    // Genere/revoque le blob URL quand currentFile change. Pur effect = side-effect
-    // sur ressource externe (URL.createObjectURL alloue, URL.revokeObjectURL libere).
+    // Effect légitime : gère un blob URL, ressource externe hors état applicatif.
     effect(() => {
       const f = this.currentFile();
       const previous = untracked(() => this._blobUrl());
