@@ -5,7 +5,7 @@ export const STATIC_HERO: HeroData = {
   id: 'c64a566f-9e53-44f9-96de-f938f0166b9c',
   name: 'Développeur Angular',
   tagline:
-    "Reconversion réussie depuis l'industrie. Je recherche un CDI en Île-de-France pour rejoindre une équipe produit en fintech, greentech ou industrial tech.",
+    "3 ans à concevoir, développer et déployer des applications Angular en production. Je recherche un CDI en Île-de-France pour rejoindre une équipe produit en fintech, greentech ou industrial tech.",
   availability: 'Ouvert aux opportunités',
 };
 

@@ -22,7 +22,7 @@ export const STATIC_BIOGRAPHY: Biography = {
   paragraphs: [
     "20 ans dans l'industrie m'ont appris ce qu'est vraiment la rigueur. Aujourd'hui, je l'applique au code.",
     "Je ne suis pas venu au développement web par hasard. En métallurgie, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
-    "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence qui me sert aujourd'hui : chaque ligne de code doit être pensée pour durer. Autodidacte par nécessité, je ne me contente pas de faire fonctionner, je comprends pourquoi ça fonctionne, de la requête SQL au déploiement en production.",
+    "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence que j'applique à chaque ligne de code : pensée pour durer, comprise de bout en bout — de la requête SQL au déploiement en production. Je ne me contente jamais de faire fonctionner, je comprends pourquoi ça fonctionne.",
     "Cette expérience m'a donné une vision systémique rare : je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.",
   ],
 };
@@ -111,7 +111,7 @@ export const STATIC_ABOUT_HIGHLIGHTS: readonly Highlight[] = [
     id: 'bf68db5e-044f-400c-895a-e67de2f0d151',
     title: 'Autonomie réelle',
     description:
-      "Autodidacte par nécessité, je trouve des solutions quand il n'y a pas de tutoriel. Je lis la doc, je comprends les sources, je creuse jusqu'à résoudre.",
+      "Autodidacte, je trouve des solutions quand il n'y a pas de tutoriel. Je lis la doc, je comprends les sources, je creuse jusqu'à résoudre.",
     icon: 'book',
   },
   {
