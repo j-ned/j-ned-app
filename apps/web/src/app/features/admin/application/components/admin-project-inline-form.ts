@@ -99,7 +99,7 @@ type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: Fo
         <app-file-dropzone
           accept="image/*"
           label="Image du projet"
-          helperText="JPG, PNG, WebP — affichée dans la grille publique"
+          helperText="JPG, PNG, WebP, affichée dans la grille publique"
           [previewUrl]="imagePreview()"
           (fileSelected)="onFileSelected($event)"
         />

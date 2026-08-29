@@ -8,9 +8,7 @@ const HEADER_OFFSET_PX = 80;
 /** Frames max attendues pour que la mise en page se stabilise avant de défiler. */
 const STABLE_FRAME_LIMIT = 30;
 
-// Force d'abord le rendu des sections `@defer` (via `eager`) puis attend la
-// stabilisation de la hauteur du document : la cible ne bouge plus, un seul
-// `scrollTo` suffit sans saccade. SSR-safe (no-op serveur).
+// Force le rendu des `@defer` (via `eager`) puis attend la stabilisation de la page avant de scroller.
 @Injectable({ providedIn: 'root' })
 export class SectionScroller {
   private readonly _router = inject(Router);

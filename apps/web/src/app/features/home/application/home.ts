@@ -101,8 +101,7 @@ import { AppIconTile } from '@shared/ui/icon-tile';
 export class Home {
   private readonly _gateway = inject(HomeGateway);
 
-  /** Force le rendu des sections @defer dès qu'un défilement vers une section
-   *  est demandé, pour un scroll fluide sans décalage (cf. SectionScroller). */
+  // Force le rendu des @defer avant un scroll vers une section (cf. SectionScroller).
   protected readonly eagerSections = inject(SectionScroller).eager;
 
   private readonly bundleResource = rxResource({

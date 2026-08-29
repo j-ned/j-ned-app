@@ -50,14 +50,14 @@
     <meta name="theme-color" content="#000000" />
     <meta name="format-detection" content="telephone=no" />
 
-    <!-- Security Headers (CSP via meta tag — configure also via HTTP headers on Traefik/Dokploy for frame-ancestors + HSTS) -->
+    <!-- CSP via meta tag, complétée par les headers HTTP Traefik/Dokploy pour frame-ancestors et HSTS -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://api.nedellec-julien.fr; connect-src 'self' https://api.nedellec-julien.fr https://o4511049353723904.ingest.de.sentry.io; worker-src 'self' blob:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self';"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
-    <!-- Preconnect API NestJS (établit TCP+TLS handshake) — gain ~50-100ms vs dns-prefetch -->
+    <!-- Preconnect API NestJS : handshake TCP+TLS anticipé, ~50-100ms gagnés vs dns-prefetch seul -->
     <link rel="preconnect" href="https://api.nedellec-julien.fr" crossorigin />
     <link rel="dns-prefetch" href="https://api.nedellec-julien.fr" />
 

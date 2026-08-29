@@ -1,12 +1,4 @@
-/**
- * Mapping de tokens (Lucide-style ou court) vers Font Awesome.
- * Utilisé par `<app-icon name="...">` et `scripts/build-icons.mjs`.
- *
- * Pour ajouter une nouvelle icône :
- *   1. Ajouter l'entrée ici (style: solid | brands | regular)
- *   2. Lancer `pnpm icons:build` pour régénérer le sprite
- *   3. Vérifier que `pnpm icons:check` passe
- */
+// Mapping token → Font Awesome. Nouvelle icône : ajouter ici puis `pnpm icons:build`.
 
 export type FaStyle = 'solid' | 'brands' | 'regular';
 
@@ -263,10 +255,6 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'lucide-activity':            { id: 'wave-square', style: 'solid' },
 };
 
-/**
- * Résout un token (Lucide-style, court, ou autre) vers un IconRef Font Awesome.
- * Fallback : ICON_MAP[token] → ICON_MAP[strip prefix] → FALLBACK question.
- */
 export function toFontAwesome(token: string | null | undefined): IconRef {
   if (!token) return FALLBACK;
   const direct = ICON_MAP[token];
@@ -277,7 +265,6 @@ export function toFontAwesome(token: string | null | undefined): IconRef {
   return FALLBACK;
 }
 
-/** Liste dé-dupliquée pour le script de génération du sprite. */
 export function uniqueIcons(): readonly IconRef[] {
   const seen = new Set<string>();
   const result: IconRef[] = [];
@@ -288,7 +275,6 @@ export function uniqueIcons(): readonly IconRef[] {
       result.push(ref);
     }
   }
-  // S'assurer que le fallback est inclus
   const fbKey = `${FALLBACK.style}/${FALLBACK.id}`;
   if (!seen.has(fbKey)) result.push(FALLBACK);
   return result;

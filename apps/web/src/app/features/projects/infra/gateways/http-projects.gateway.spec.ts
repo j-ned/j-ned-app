@@ -45,7 +45,7 @@ describe('HttpProjectsGateway', () => {
     TestBed.resetTestingModule();
   });
 
-  describe('Public (NestJS) — 5 tests', () => {
+  describe('Public (NestJS): 5 tests', () => {
     it('getAllProjects() émet GET /<base>/projects?_sort=order&limit=100, retourne Project[] (NestJS array direct)', async () => {
       const { gateway, httpController } = configure();
       const expected = [
@@ -157,7 +157,7 @@ describe('HttpProjectsGateway', () => {
     });
   });
 
-  describe('Admin (NestJS) — 4 tests', () => {
+  describe('Admin (NestJS): 4 tests', () => {
     it('createProject(data) émet POST /<base>/projects sans champ image (géré via uploadImage)', async () => {
       const { gateway, httpController } = configure();
       const data = makeProject();
@@ -225,7 +225,7 @@ describe('HttpProjectsGateway', () => {
     });
   });
 
-  describe('Invalidation du cache featured — 1 test', () => {
+  describe('Invalidation du cache featured: 1 test', () => {
     it('invalidateFeatured() re-déclenche le GET featured pour les abonnés vivants', () => {
       const { gateway, httpController } = configure();
 

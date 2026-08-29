@@ -9,7 +9,7 @@ function render(showForm = false): ComponentFixture<TwoFactorDisableForm> {
   return fixture;
 }
 
-describe('TwoFactorDisableForm — enabled status (showForm=false)', () => {
+describe('TwoFactorDisableForm: enabled status (showForm=false)', () => {
   it('announces that 2FA is enabled', () => {
     const fixture = render(false);
     expect(fixture.nativeElement.textContent).toContain('2FA activé');
@@ -48,7 +48,7 @@ describe('TwoFactorDisableForm — enabled status (showForm=false)', () => {
   });
 });
 
-describe('TwoFactorDisableForm — disable form (showForm=true)', () => {
+describe('TwoFactorDisableForm: disable form (showForm=true)', () => {
   it('password input has autocomplete=current-password and aria-required=true', () => {
     const fixture = render(true);
     const input = fixture.nativeElement.querySelector(
@@ -93,7 +93,7 @@ describe('TwoFactorDisableForm — disable form (showForm=true)', () => {
   });
 });
 
-describe('TwoFactorDisableForm — feedback inputs', () => {
+describe('TwoFactorDisableForm: feedback inputs', () => {
   it('renders the successMessage input', () => {
     const fixture = render(false);
     fixture.componentRef.setInput(
@@ -116,7 +116,7 @@ describe('TwoFactorDisableForm — feedback inputs', () => {
   });
 });
 
-describe('TwoFactorDisableForm — disable output', () => {
+describe('TwoFactorDisableForm: disable output', () => {
   it('does not emit disable when the form is invalid', () => {
     const fixture = render(true);
     let emitted = false;
@@ -147,7 +147,7 @@ describe('TwoFactorDisableForm — disable output', () => {
   });
 });
 
-describe('TwoFactorDisableForm — reset token', () => {
+describe('TwoFactorDisableForm: reset token', () => {
   it('resets the password form when the resetToken input changes', async () => {
     const fixture = render(true);
     fixture.componentRef.setInput('resetToken', 0);
