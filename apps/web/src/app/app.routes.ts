@@ -49,9 +49,8 @@ export const routes: Routes = [
       seo: {
         title: 'À propos | Julien Nédellec - Développeur Full-Stack',
         description:
-          "Découvrez mon parcours de 20 ans dans l'industrie à reconversion développeur. Spécialiste Angular, NestJS et TypeScript. Exigence, autonomie et vision d'ensemble.",
-        keywords:
-          'Développeur Angular, Reconversion professionnelle, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
+          "Développeur Angular, NestJS et TypeScript avec 20 ans d'expérience en industrie. Exigence, autonomie et vision d'ensemble.",
+        keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
       },
