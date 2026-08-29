@@ -3,6 +3,7 @@ const eslint = require("@eslint/js");
 const tseslint = require("typescript-eslint");
 const angular = require("angular-eslint");
 const prettierConfig = require("eslint-config-prettier");
+const aak = require("./.claude/eslint/aak-conventions.mjs").default;
 
 module.exports = [
   {
@@ -63,4 +64,7 @@ module.exports = [
   })),
   // Prettier en dernier : désactive les règles stylistiques gérées par Prettier.
   prettierConfig,
+
+  // Conventions AAK mécanisables (préréglage vendoré, réécrit à chaque /aak-sync)
+  ...aak,
 ];
