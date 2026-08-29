@@ -50,5 +50,11 @@ Thumbs.db
 !.claude/project-profile.md
 !.claude/settings.json
 !.claude/CLAUDE.md
+# Agents AAK vendorés (committés pour les sessions cloud)
+!.claude/agents/
+!.claude/skills/
+!.claude/commands/
+!.claude/eslint/
+!.claude/.aak-version
 .remember/*
 .superpowers/
