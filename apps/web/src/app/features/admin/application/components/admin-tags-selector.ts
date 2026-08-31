@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, model } from '@angular/core';
 
 @Component({
-  selector: 'app-admin-project-tags-selector',
+  selector: 'app-admin-tags-selector',
   imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -25,7 +25,7 @@ import { Component, ChangeDetectionStrategy, input, model } from '@angular/core'
     </div>
   `,
 })
-export class AdminProjectTagsSelector {
+export class AdminTagsSelector {
   readonly availableTags = input.required<readonly string[]>();
   readonly selectedTags = model.required<Set<string>>();
 
