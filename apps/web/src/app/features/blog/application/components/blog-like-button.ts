@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, input, linkedSignal, ChangeDetectionStrategy } from '@angular/core';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
 
@@ -36,20 +36,22 @@ export class BlogLikeButton {
   readonly slug = input.required<string>();
   readonly likesCount = input.required<number>();
 
-  private readonly _liked = signal(false);
-  private readonly _count = signal<number | null>(null);
-
-  protected readonly liked = computed(() => this._liked() || likedSlugs().includes(this.slug()));
-  protected readonly count = computed(() => this._count() ?? this.likesCount());
+  protected readonly liked = linkedSignal(() => likedSlugs().includes(this.slug()));
+  protected readonly count = linkedSignal(() => this.likesCount());
 
   protected like(): void {
     if (this.liked()) return;
-    this._gateway.likePost(this.slug()).subscribe((res) => {
-      this._count.set(res.likesCount);
-      this._liked.set(true);
-      const slugs = likedSlugs();
-      slugs.push(this.slug());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(slugs));
+    this._gateway.likePost(this.slug()).subscribe({
+      next: (res) => {
+        this.count.set(res.likesCount);
+        this.liked.set(true);
+        const slugs = likedSlugs();
+        slugs.push(this.slug());
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(slugs));
+      },
+      error: () => {
+        // No UI state change on failure; the button stays enabled so the user can retry.
+      },
     });
   }
 }
