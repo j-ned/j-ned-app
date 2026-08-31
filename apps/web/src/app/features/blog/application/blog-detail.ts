@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, input, ChangeDetectionStrategy, resource } from '@angular/core';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -12,7 +13,7 @@ import { AppTag } from '@shared/ui/tag';
 
 @Component({
   selector: 'app-blog-detail',
-  imports: [BlogLikeButton, BlogComments, AppTag],
+  imports: [BlogLikeButton, BlogComments, AppTag, DatePipe, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -24,7 +25,24 @@ import { AppTag } from '@shared/ui/tag';
             <app-tag [value]="tag" severity="info" />
           }
         </div>
-        <h1 class="text-3xl md:text-4xl font-bold mb-6">{{ p.title }}</h1>
+        <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ p.title }}</h1>
+        @if (p.publishedAt) {
+          <p class="text-muted text-sm mb-6">{{ p.publishedAt | date: 'd MMMM y' }}</p>
+        }
+        @if (p.coverImage) {
+          <figure class="mb-8">
+            <div class="relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-xl border border-foreground/8">
+              <img
+                [ngSrc]="p.coverImage"
+                [alt]="'Illustration de l’article ' + p.title"
+                fill
+                priority
+                sizes="100vw"
+                class="object-cover"
+              />
+            </div>
+          </figure>
+        }
         <div data-testid="blog-content" class="prose" [innerHTML]="renderedContent()"></div>
         <div class="mt-8">
           <app-blog-like-button [slug]="p.slug" [likesCount]="p.likesCount" />
@@ -90,9 +108,9 @@ export class BlogDetail {
         '@type': 'BlogPosting',
         headline: p.title,
         description: p.excerpt,
-        image: p.coverImage,
-        datePublished: p.publishedAt,
         author: { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl },
+        ...(p.coverImage ? { image: p.coverImage } : {}),
+        ...(p.publishedAt ? { datePublished: p.publishedAt } : {}),
       },
     });
   });

@@ -63,8 +63,34 @@ describe('BlogDetail', () => {
         description: 'Résumé',
         image: 'https://x.test/img.webp',
         type: 'article',
-        structuredData: expect.objectContaining({ '@type': 'BlogPosting' }),
+        structuredData: expect.objectContaining({
+          '@type': 'BlogPosting',
+          image: 'https://x.test/img.webp',
+          datePublished: '2026-08-31T00:00:00Z',
+        }),
       }),
     );
+  });
+
+  it("omet image/datePublished du JSON-LD quand coverImage/publishedAt sont vides", async () => {
+    const { fixture, seoMock } = setup({
+      getPostBySlug: () => of(post({ coverImage: '', publishedAt: null })),
+    });
+    fixture.componentRef.setInput('slug', 'mon-article');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const call = seoMock.applySeoData.mock.calls.at(-1)?.[0];
+    expect(call.structuredData).not.toHaveProperty('image');
+    expect(call.structuredData).not.toHaveProperty('datePublished');
+  });
+
+  it('affiche la couverture de l\'article quand coverImage est renseignée', async () => {
+    const { fixture } = setup({ getPostBySlug: () => of(post()) });
+    fixture.componentRef.setInput('slug', 'mon-article');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('img')).not.toBeNull();
   });
 });
