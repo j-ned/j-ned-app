@@ -43,7 +43,7 @@ import { AppTag } from '@shared/ui/tag';
             </div>
           </figure>
         }
-        <div data-testid="blog-content" class="prose" [innerHTML]="renderedContent()"></div>
+        <div data-testid="blog-content" class="prose max-w-none dark:prose-invert" [innerHTML]="renderedContent()"></div>
         <div class="mt-8">
           <app-blog-like-button [slug]="p.slug" [likesCount]="p.likesCount" />
         </div>

@@ -80,7 +80,7 @@ import { AVAILABLE_BLOG_TAGS } from './admin-blog-form-data';
         <div>
           <span class="form-label">Aperçu</span>
           <div
-            class="prose max-w-none border border-foreground/10 rounded-lg p-4 h-[calc(100%-1.5rem)] overflow-y-auto"
+            class="prose max-w-none dark:prose-invert border border-foreground/10 rounded-lg p-4 h-[calc(100%-1.5rem)] overflow-y-auto"
             [innerHTML]="preview()"
           ></div>
         </div>
