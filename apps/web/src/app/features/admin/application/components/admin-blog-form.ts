@@ -5,8 +5,11 @@ import {
   output,
   signal,
   linkedSignal,
+  computed,
+  effect,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
@@ -148,13 +151,21 @@ export class AdminBlogForm {
     status: ['draft' as 'draft' | 'published', Validators.required],
   });
 
-  protected readonly preview = (): SafeHtml =>
-    this.sanitizer.bypassSecurityTrustHtml(parseMarkdown(this.form.controls.contentMarkdown.value));
+  private readonly _contentMarkdown = toSignal(
+    this.form.controls.contentMarkdown.valueChanges,
+    { initialValue: this.form.controls.contentMarkdown.value },
+  );
 
-  // IIFE (pas un effect()) : `post` est fixé une fois via input() avant que le parent
-  // ne (re)crée cette instance en mode création/édition (cf. AdminBlog) — un patch
-  // au moment de la construction suffit et évite un effect superflu.
-  private readonly _patchForm = ((): void => {
+  protected readonly preview = computed((): SafeHtml =>
+    this.sanitizer.bypassSecurityTrustHtml(parseMarkdown(this._contentMarkdown())),
+  );
+
+  // `effect()` (pas une IIFE en field initializer) : un champ initializer tourne pendant le
+  // constructeur, avant qu'Angular n'applique la valeur liée par `input()` à `this.post` — donc
+  // `this.post()` y est toujours `undefined` et le formulaire d'édition restait vide. `effect()`
+  // se relance dès que `post` est effectivement peuplé. Même pattern que
+  // `AdminProjectInlineForm._patchForm`.
+  private readonly _patchForm = effect(() => {
     const p = this.post();
     if (!p) return;
     this.form.patchValue({
@@ -163,7 +174,7 @@ export class AdminBlogForm {
       contentMarkdown: p.contentMarkdown,
       status: p.status,
     });
-  })();
+  });
 
   onFileSelected(file: File): void {
     this.selectedFile.set(file);
