@@ -23,4 +23,20 @@ describe('BlogPostCard', () => {
     expect(text).toContain('Résumé');
     expect(text).toContain('Angular');
   });
+
+  it('affiche la date de publication quand elle est renseignée', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(BlogPostCard);
+    fixture.componentRef.setInput('post', post({ publishedAt: '2026-08-31T00:00:00Z' }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent as string).toContain('2026');
+  });
+
+  it("n'affiche aucune date quand publishedAt est null", () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(BlogPostCard);
+    fixture.componentRef.setInput('post', post({ publishedAt: null }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent as string).not.toContain('2026');
+  });
 });

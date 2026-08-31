@@ -1,12 +1,12 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 import { AppTag } from '@shared/ui/tag';
 
 @Component({
   selector: 'app-blog-post-card',
-  imports: [NgOptimizedImage, RouterLink, AppTag],
+  imports: [NgOptimizedImage, RouterLink, AppTag, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block h-full animate-fade-up' },
   template: `
@@ -39,6 +39,10 @@ import { AppTag } from '@shared/ui/tag';
         <h2 class="text-xl md:text-2xl font-bold mb-2 text-foreground">
           <a [routerLink]="['/blog', post().slug]">{{ post().title }}</a>
         </h2>
+
+        @if (post().publishedAt) {
+          <p class="text-muted text-xs mb-2">{{ post().publishedAt | date: 'd MMMM y' }}</p>
+        }
 
         <p class="text-muted text-sm grow">{{ post().excerpt }}</p>
       </div>

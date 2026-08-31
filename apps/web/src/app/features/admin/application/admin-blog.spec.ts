@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { AdminBlog } from './admin-blog';
@@ -45,7 +45,11 @@ function makeBlogGateway(overrides: Partial<BlogGateway> = {}): BlogGateway {
 
 async function setup(
   gateway: BlogGateway = makeBlogGateway(),
-): Promise<{ component: AdminBlog; toast: { add: ReturnType<typeof vi.fn> } }> {
+): Promise<{
+  component: AdminBlog;
+  toast: { add: ReturnType<typeof vi.fn> };
+  fixture: ComponentFixture<AdminBlog>;
+}> {
   const toast = { add: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
@@ -58,7 +62,7 @@ async function setup(
   fixture.detectChanges();
   await fixture.whenStable();
   fixture.detectChanges();
-  return { component: fixture.componentInstance, toast };
+  return { component: fixture.componentInstance, toast, fixture };
 }
 
 describe('AdminBlog', () => {
@@ -69,6 +73,22 @@ describe('AdminBlog', () => {
       }),
     );
     expect(component.posts().map((p) => p.id)).toEqual(['1', '2']);
+  });
+
+  it('affiche la date de publication (ou « Brouillon ») dans la colonne Date', async () => {
+    const { fixture } = await setup(
+      makeBlogGateway({
+        getAllPostsForAdmin: () =>
+          of([
+            post({ id: '1', publishedAt: '2026-08-01T00:00:00Z' }),
+            post({ id: '2', publishedAt: null }),
+          ]),
+      }),
+    );
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('2026');
+    expect(text).toContain('Brouillon');
   });
 
   describe('onSaved (création)', () => {

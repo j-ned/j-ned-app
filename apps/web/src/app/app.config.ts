@@ -1,6 +1,7 @@
 import {
   ApplicationConfig,
   ErrorHandler,
+  LOCALE_ID,
   PLATFORM_ID,
   inject,
   isDevMode,
@@ -8,7 +9,8 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { createErrorHandler, TraceService } from '@sentry/angular';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
 import {
   NavigationEnd,
   Router,
@@ -119,8 +121,11 @@ function initializeTracking(): () => void {
   };
 }
 
+registerLocaleData(localeFr);
+
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: LOCALE_ID, useValue: 'fr-FR' },
     provideBrowserGlobalErrorListeners(),
     provideRouter(
       routes,

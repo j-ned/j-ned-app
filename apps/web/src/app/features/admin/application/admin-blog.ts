@@ -6,6 +6,7 @@ import {
   computed,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
@@ -17,7 +18,7 @@ import { AdminBlogForm } from './components/admin-blog-form';
 
 @Component({
   selector: 'app-admin-blog',
-  imports: [AppTag, Button, AdminBlogForm],
+  imports: [AppTag, Button, AdminBlogForm, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -43,6 +44,7 @@ import { AdminBlogForm } from './components/admin-blog-form';
             <tr class="text-left text-muted">
               <th class="py-2">Titre</th>
               <th class="py-2">Statut</th>
+              <th class="py-2">Date</th>
               <th class="py-2">Likes</th>
               <th class="py-2"></th>
             </tr>
@@ -56,6 +58,13 @@ import { AdminBlogForm } from './components/admin-blog-form';
                     [value]="post.status"
                     [severity]="post.status === 'published' ? 'success' : 'secondary'"
                   />
+                </td>
+                <td class="py-2 text-muted">
+                  @if (post.publishedAt) {
+                    {{ post.publishedAt | date: 'dd/MM/yyyy' }}
+                  } @else {
+                    Brouillon
+                  }
                 </td>
                 <td class="py-2">{{ post.likesCount }}</td>
                 <td class="py-2 text-right space-x-2">
@@ -77,7 +86,7 @@ import { AdminBlogForm } from './components/admin-blog-form';
               </tr>
             } @empty {
               <tr>
-                <td colspan="4" class="py-8 text-center text-muted">Aucun article</td>
+                <td colspan="5" class="py-8 text-center text-muted">Aucun article</td>
               </tr>
             }
           </tbody>
