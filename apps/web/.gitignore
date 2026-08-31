@@ -58,3 +58,6 @@ Thumbs.db
 !.claude/.aak-version
 .remember/*
 .superpowers/
+
+# Git worktrees (scratch, per-branch)
+.worktrees/
