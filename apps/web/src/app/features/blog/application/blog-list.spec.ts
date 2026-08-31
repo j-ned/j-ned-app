@@ -42,14 +42,46 @@ describe('BlogList', () => {
     expect(cards.length).toBe(2);
   });
 
-  it('filtre par tag via le signal tagFilter', () => {
+  it('filtre par tag via le query param /blog?tag=', () => {
     const fixture = setup([
       post({ tags: ['Angular'] }),
       post({ id: '2', slug: 'b', tags: ['DevOps'] }),
     ]);
-    fixture.componentInstance.setTagFilter('DevOps');
+    fixture.componentRef.setInput('tag', 'DevOps');
     fixture.detectChanges();
     const cards = fixture.nativeElement.querySelectorAll('app-blog-post-card');
     expect(cards.length).toBe(1);
+  });
+
+  it("affiche un bandeau de filtre actif avec un lien pour l'effacer", () => {
+    const fixture = setup([post({ tags: ['Angular'] })]);
+    fixture.componentRef.setInput('tag', 'Angular');
+    fixture.detectChanges();
+    const banner = fixture.nativeElement.querySelector('[data-testid="tag-filter-banner"]');
+    expect(banner?.textContent).toContain('Angular');
+    const clearLink = fixture.nativeElement.querySelector('[data-testid="tag-filter-clear"]');
+    expect(clearLink).toBeTruthy();
+  });
+
+  it("n'affiche pas le bandeau de filtre sans tag actif", () => {
+    const fixture = setup([post()]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="tag-filter-banner"]')).toBeNull();
+  });
+
+  it('revient à la première page quand le filtre change', () => {
+    const posts = Array.from({ length: 12 }, (_, i) =>
+      post({ id: String(i), slug: `p${i}`, title: `Article ${i}`, tags: ['Angular'] }),
+    );
+    const fixture = setup(posts);
+    fixture.detectChanges();
+    fixture.componentInstance.onPageChange({ first: 9, page: 1, rows: 9 });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Article 9');
+
+    fixture.componentRef.setInput('tag', 'Angular');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Article 0');
+    expect(fixture.nativeElement.textContent).not.toContain('Article 9');
   });
 });

@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, input, ChangeDetectionStrategy, resource } from '@angular/core';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
@@ -13,7 +13,7 @@ import { AppTag } from '@shared/ui/tag';
 
 @Component({
   selector: 'app-blog-detail',
-  imports: [BlogLikeButton, BlogComments, AppTag, DatePipe, NgOptimizedImage],
+  imports: [BlogLikeButton, BlogComments, AppTag, DatePipe, NgOptimizedImage, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -22,7 +22,9 @@ import { AppTag } from '@shared/ui/tag';
       @if (p) {
         <div class="flex flex-wrap gap-1.5 mb-4">
           @for (tag of p.tags; track tag) {
-            <app-tag [value]="tag" severity="info" />
+            <a data-testid="tag-link" routerLink="/blog" [queryParams]="{ tag }">
+              <app-tag [value]="tag" severity="info" />
+            </a>
           }
         </div>
         <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ p.title }}</h1>

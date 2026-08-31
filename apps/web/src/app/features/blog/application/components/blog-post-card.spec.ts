@@ -39,4 +39,15 @@ describe('BlogPostCard', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent as string).not.toContain('2026');
   });
+
+  it('chaque tag est un lien vers /blog?tag=', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(BlogPostCard);
+    fixture.componentRef.setInput('post', post({ tags: ['Angular', 'NestJS'] }));
+    fixture.detectChanges();
+    const links = fixture.nativeElement.querySelectorAll('[data-testid="tag-link"]') as NodeListOf<HTMLAnchorElement>;
+    expect(links.length).toBe(2);
+    expect(links[0].getAttribute('href')).toBe('/blog?tag=Angular');
+    expect(links[1].getAttribute('href')).toBe('/blog?tag=NestJS');
+  });
 });

@@ -32,7 +32,9 @@ import { AppTag } from '@shared/ui/tag';
       <div class="p-5 flex flex-col grow">
         <div class="flex flex-wrap gap-1.5 mb-2">
           @for (tag of post().tags; track tag) {
-            <app-tag [value]="tag" severity="info" />
+            <a data-testid="tag-link" routerLink="/blog" [queryParams]="{ tag }">
+              <app-tag [value]="tag" severity="info" />
+            </a>
           }
         </div>
 

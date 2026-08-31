@@ -1,5 +1,6 @@
-import { Component, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, input, computed, linkedSignal, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import { BlogPostCard } from './components/blog-post-card';
 import { AppPaginator, type AppPaginatorEvent } from '@shared/ui/paginator';
@@ -9,12 +10,19 @@ const PAGE_SIZE = 9;
 
 @Component({
   selector: 'app-blog-list',
-  imports: [BlogPostCard, AppPaginator],
+  imports: [BlogPostCard, AppPaginator, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <main class="page-container min-h-svh pt-20 pb-20">
       <h1 class="text-3xl md:text-4xl font-bold mb-8">Blog</h1>
+
+      @if (tag()) {
+        <p data-testid="tag-filter-banner" class="text-muted text-sm mb-6">
+          Filtré par : <strong class="text-foreground">{{ tag() }}</strong>
+          — <a data-testid="tag-filter-clear" routerLink="/blog" class="text-primary hover:underline">Effacer</a>
+        </p>
+      }
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         @for (post of pagedPosts(); track post.slug) {
@@ -39,15 +47,22 @@ export class BlogList {
   private readonly gateway = inject(BlogGateway);
   protected readonly PAGE_SIZE = PAGE_SIZE;
 
+  // Bound via withComponentInputBinding() to the ?tag= query param — /blog?tag=Angular.
+  readonly tag = input<string | null>(null);
+
   private readonly _posts = toSignal(this.gateway.getPublishedPosts(), {
     initialValue: [] as readonly BlogPost[],
   });
 
-  private readonly _tagFilter = signal<string | null>(null);
-  protected readonly first = signal(0);
+  // Reset to page 1 whenever the tag filter changes, but stays independently
+  // settable by the paginator while the filter is unchanged.
+  protected readonly first = linkedSignal({
+    source: this.tag,
+    computation: () => 0,
+  });
 
   protected readonly filteredPosts = computed(() => {
-    const tag = this._tagFilter();
+    const tag = this.tag();
     const posts = this._posts();
     return tag ? posts.filter((p) => p.tags.includes(tag)) : posts;
   });
@@ -55,11 +70,6 @@ export class BlogList {
   protected readonly pagedPosts = computed(() =>
     this.filteredPosts().slice(this.first(), this.first() + PAGE_SIZE),
   );
-
-  setTagFilter(tag: string | null): void {
-    this._tagFilter.set(tag);
-    this.first.set(0);
-  }
 
   onPageChange(event: AppPaginatorEvent): void {
     this.first.set(event.first);
