@@ -4,7 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "tsx scripts/generate-sitemap.mjs && ng build",
+    "sitemap:build": "tsx scripts/generate-sitemap.mjs",
     "icons:build": "tsx scripts/build-icons.mjs",
     "icons:check": "tsx scripts/build-icons.mjs --check",
     "watch": "ng build --watch --configuration development",

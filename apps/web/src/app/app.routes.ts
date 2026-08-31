@@ -13,7 +13,7 @@ export const routes: Routes = [
       seo: {
         title: 'Julien Nédellec | Développeur Full-Stack Angular & NestJS',
         description:
-          "Développeur Full-Stack spécialisé en Angular et NestJS. Création d'applications web modernes, performantes et optimisées SEO. Disponible pour vos projets web.",
+          'Développeur Full-Stack Angular & NestJS. Applications web modernes, performantes et optimisées SEO — disponible pour vos projets.',
         keywords:
           'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France',
         url: SITE_IDENTITY.siteUrl,
@@ -53,6 +53,14 @@ export const routes: Routes = [
         keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
+        structuredData: {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
+            { '@type': 'ListItem', position: 2, name: 'À propos', item: `${SITE_IDENTITY.siteUrl}/about` },
+          ],
+        },
       },
     },
   },
@@ -66,11 +74,19 @@ export const routes: Routes = [
       seo: {
         title: 'Projets | Julien Nédellec - Portfolio Développeur Full-Stack',
         description:
-          'Découvrez mes projets Angular, NestJS et TypeScript. Applications web modernes, APIs REST, déploiements Docker. Code production-ready et bonnes pratiques.',
+          'Découvrez mes projets Angular, NestJS et TypeScript : applications web modernes, APIs REST, déploiements Docker, code production-ready.',
         keywords:
           'Portfolio Angular, Projets NestJS, Applications TypeScript, Développeur Full-Stack, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/projects`,
         type: 'website',
+        structuredData: {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
+            { '@type': 'ListItem', position: 2, name: 'Projets', item: `${SITE_IDENTITY.siteUrl}/projects` },
+          ],
+        },
       },
     },
   },

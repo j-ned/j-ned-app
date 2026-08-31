@@ -4,6 +4,8 @@ import { NgOptimizedImage } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { Seo } from '@shared/seo/seo';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { ProjectDetailHeader } from './components/project-detail-header';
 import { ProjectDetailTechChoices } from './components/project-detail-tech-choices';
@@ -68,6 +70,7 @@ export class ProjectDetail {
   private readonly _gateway = inject(ProjectsGateway);
   private readonly _analytics = inject(AnalyticsGateway);
   private readonly _router = inject(Router);
+  private readonly _seo = inject(Seo);
 
   readonly slug = input.required<string>();
 
@@ -105,6 +108,30 @@ export class ProjectDetail {
     if (list.length > 0 && !list.some((p) => p.slug === this.slug())) {
       void this._router.navigate(['/projects']);
     }
+  });
+
+  private readonly _applyProjectSeo = effect(() => {
+    const p = this.project();
+    if (!p) return;
+
+    this._seo.applySeoData({
+      title: `${p.title} | Projet ${p.category} — Julien Nédellec`,
+      description: p.description.slice(0, 155),
+      keywords: [p.category, ...p.tags, 'Julien Nédellec', 'Portfolio Développeur'].join(', '),
+      url: `${SITE_IDENTITY.siteUrl}/projects/${p.slug}`,
+      type: 'article',
+      image: p.image,
+      structuredData: {
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        name: p.title,
+        description: p.description,
+        creator: { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl },
+        keywords: p.tags.join(', '),
+        ...(p.liveUrl ? { url: p.liveUrl } : {}),
+        ...(p.repoUrl ? { codeRepository: p.repoUrl } : {}),
+      },
+    });
   });
 
   protected trackClick(): void {
