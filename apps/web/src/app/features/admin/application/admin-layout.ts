@@ -95,6 +95,7 @@ export class AdminLayout {
       label: 'Projets',
       groupLabel: 'Contenu',
     },
+    { route: '/admin/blog', icon: 'book', label: 'Blog' },
     { route: '/admin/cv', icon: 'file-pdf', label: 'CV' },
     {
       route: '/admin/messages',

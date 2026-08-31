@@ -58,7 +58,12 @@ export const routes: Routes = [
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
-            { '@type': 'ListItem', position: 2, name: 'À propos', item: `${SITE_IDENTITY.siteUrl}/about` },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: 'À propos',
+              item: `${SITE_IDENTITY.siteUrl}/about`,
+            },
           ],
         },
       },
@@ -84,9 +89,30 @@ export const routes: Routes = [
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
-            { '@type': 'ListItem', position: 2, name: 'Projets', item: `${SITE_IDENTITY.siteUrl}/projects` },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: 'Projets',
+              item: `${SITE_IDENTITY.siteUrl}/projects`,
+            },
           ],
         },
+      },
+    },
+  },
+  {
+    path: 'blog',
+    title: 'Blog | Julien Nédellec',
+    loadChildren: () => import('./features/blog/blog.routes').then((m) => m.BLOG_ROUTES),
+    data: {
+      preload: true,
+      seo: {
+        title: 'Blog | Julien Nédellec — Développeur Full-Stack Angular & NestJS',
+        description:
+          "Retours d'expérience réels sur Angular, NestJS, PostgreSQL et le déploiement self-hosted.",
+        keywords: "Blog Angular, Blog NestJS, Développeur Full-Stack, Retour d'expérience",
+        url: `${SITE_IDENTITY.siteUrl}/blog`,
+        type: 'website',
       },
     },
   },

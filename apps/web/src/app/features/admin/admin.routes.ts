@@ -17,6 +17,11 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./application/admin-projects').then((m) => m.AdminProjects),
       },
       {
+        path: 'blog',
+        title: 'Blog | Admin',
+        loadComponent: () => import('./application/admin-blog').then((m) => m.AdminBlog),
+      },
+      {
         path: 'cv',
         title: 'CV | Admin',
         loadComponent: () => import('./application/admin-cv').then((m) => m.AdminCv),
