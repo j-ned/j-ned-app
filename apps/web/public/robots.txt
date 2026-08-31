@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://www.nedellec-julien.fr/sitemap.xml
+Sitemap: https://nedellec-julien.fr/sitemap.xml
 
 # Disallow specific files/folders if needed
 Disallow: /api/

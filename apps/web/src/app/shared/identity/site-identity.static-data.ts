@@ -8,5 +8,5 @@ export const SITE_IDENTITY = {
     x: 'https://x.com/Nedjuldev',
     discord: 'https://discord.gg/nedellec_julien',
   },
-  siteUrl: 'https://www.nedellec-julien.fr',
+  siteUrl: 'https://nedellec-julien.fr',
 } as const;
