@@ -21,12 +21,7 @@ export class AuthStore {
   readonly isLoggedIn = computed(() => this._currentUser() !== null);
   readonly pendingChallengeToken = this._pendingChallengeToken.asReadonly();
 
-  /**
-   * Promise résolue quand le check d'auth initial (restoreSession) est terminé.
-   * Récréée à chaque appel de `restoreSession()` pour que les nouveaux awaiters
-   * (router guards, etc.) attendent la restoration en cours plutôt qu'une
-   * promise déjà résolue côté SSG (où le constructor finit instantanément).
-   */
+  // Recréée à chaque restoreSession() pour que les guards attendent la restoration en cours.
   private _ready: Promise<void> = Promise.resolve();
   get ready(): Promise<void> {
     return this._ready;
@@ -130,14 +125,7 @@ export class AuthStore {
     sentrySetUser({ id: apiUser.id });
   }
 
-  /**
-   * Tente de restaurer la session depuis le cookie httpOnly via GET /auth/me.
-   * Public car appelé explicitement par App au boot client (le constructor
-   * d'AuthStore peut ne pas être re-exécuté lors de l'hydration SSG).
-   * Idempotent : reset puis reset le state selon la réponse backend.
-   * Recrée `ready` pour que les awaiters subséquents attendent le nouveau
-   * check (cas où ready avait déjà été résolue côté SSG sans fetch).
-   */
+  // Public : appelé explicitement par App au boot client (constructor pas rejoué à l'hydration SSG).
   restoreSession(): void {
     if (!this.isBrowser) return;
     this._ready = new Promise<void>((resolve) => {

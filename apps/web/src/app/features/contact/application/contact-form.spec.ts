@@ -119,7 +119,7 @@ describe('ContactForm', () => {
     });
   });
 
-  describe('Accessibility — aria attributes', () => {
+  describe('Accessibility: aria attributes', () => {
     function setupFixture(gateway: ContactGateway = makeGatewayStub()): ComponentFixture<ContactForm> {
       TestBed.configureTestingModule({
         providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],

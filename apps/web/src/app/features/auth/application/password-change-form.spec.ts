@@ -20,7 +20,7 @@ function input(
   ) as HTMLInputElement;
 }
 
-describe('PasswordChangeForm — a11y attributes', () => {
+describe('PasswordChangeForm: a11y attributes', () => {
   it('currentPassword input has autocomplete=current-password and aria-required=true', () => {
     const fixture = render();
     const el = input(fixture, 'currentPassword');
@@ -89,7 +89,7 @@ describe('PasswordChangeForm — a11y attributes', () => {
   });
 });
 
-describe('PasswordChangeForm — validation messages', () => {
+describe('PasswordChangeForm: validation messages', () => {
   it('shows the minlength message when newPassword is too short', () => {
     const fixture = render();
     fixture.componentInstance.pwdForm.controls.newPassword.markAsTouched();
@@ -126,7 +126,7 @@ describe('PasswordChangeForm — validation messages', () => {
   });
 });
 
-describe('PasswordChangeForm — feedback inputs', () => {
+describe('PasswordChangeForm: feedback inputs', () => {
   it('renders the successMessage input', () => {
     const fixture = render();
     fixture.componentRef.setInput('successMessage', 'Mot de passe modifié avec succès !');
@@ -157,7 +157,7 @@ describe('PasswordChangeForm — feedback inputs', () => {
   });
 });
 
-describe('PasswordChangeForm — submit output', () => {
+describe('PasswordChangeForm: submit output', () => {
   it('does not emit submit when the form is invalid', () => {
     const fixture = render();
     let emitted = false;
@@ -190,7 +190,7 @@ describe('PasswordChangeForm — submit output', () => {
   });
 });
 
-describe('PasswordChangeForm — reset token', () => {
+describe('PasswordChangeForm: reset token', () => {
   it('resets the form when the resetToken input changes', async () => {
     const fixture = render();
     fixture.componentRef.setInput('resetToken', 0);

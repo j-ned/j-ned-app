@@ -36,7 +36,7 @@ function mount(project?: Project): {
   return { cmp, getEmitted: (): { data: ProjectInput; file: File | null } => emitted! };
 }
 
-describe('AdminProjectInlineForm — soumission', () => {
+describe('AdminProjectInlineForm: soumission', () => {
   it('vider un lien de dépôt émet null (intention d’effacement) et non undefined', () => {
     const { cmp, getEmitted } = mount(makeProject({ repoUrl: 'https://github.com/x/repo' }));
 

@@ -41,13 +41,7 @@ export class App {
     this.resetScrollOnNavigation();
   }
 
-  /**
-   * Réinitialise le scroll en haut à chaque navigation de route (hors retour
-   * arrière, où le scroll-restoration du routeur restaure la position). Fiable
-   * même avec les view transitions, contrairement au scrollPositionRestoration
-   * seul, et inoffensif pour le scroll programmatique vers une section (qui se
-   * déclenche après, depuis SectionScroller).
-   */
+  // Manuel plutôt que scrollPositionRestoration : fiable avec les view transitions.
   private resetScrollOnNavigation(): void {
     this.router.events
       .pipe(

@@ -60,8 +60,7 @@ describe('AuthStore', () => {
   describe('login', () => {
     beforeEach(() => {
       setupService();
-      // Le restoreSession initial fire un GET /auth/me — on l'absorbe pour que
-      // les tests login se concentrent sur leur propre requête.
+      // Absorbe le GET /auth/me du restoreSession initial pour isoler la requête login testée.
       http.expectOne(`${apiBase}/auth/me`).flush({}, { status: 401, statusText: 'Unauthorized' });
     });
 

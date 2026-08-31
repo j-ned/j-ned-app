@@ -41,7 +41,7 @@ function makeCtx(canvas: HTMLCanvasElement): Ctx2D {
 }
 
 beforeAll(() => {
-  // Stub ResizeObserver — not implemented in jsdom
+  // Stub ResizeObserver: not implemented in jsdom
   (globalThis as unknown as Record<string, unknown>)['ResizeObserver'] = class {
     observe = noop;
     unobserve = noop;

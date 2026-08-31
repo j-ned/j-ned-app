@@ -10,7 +10,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const isTrackingEndpoint = req.url.includes('/analytics/track');
   const authReq = isTrackingEndpoint ? req : req.clone({ withCredentials: true });
 
-  // Never retry auth endpoints — they handle their own errors
+  // Never retry auth endpoints: they handle their own errors
   const isAuthEndpoint = req.url.includes('/auth/');
 
   return next(authReq).pipe(
