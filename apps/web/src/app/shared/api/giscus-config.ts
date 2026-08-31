@@ -7,15 +7,19 @@ export type GiscusConfig = {
   readonly categoryId: string;
 };
 
-// Valeurs `repoId`/`categoryId` à récupérer sur giscus.app une fois les
-// Discussions activées + l'app Giscus installée sur j-ned/ng-portfolio-app
-// (étape manuelle, cf. spec). Tant que ce n'est pas fait, le widget ne
-// s'affichera simplement pas (Giscus ignore silencieusement un repoId invalide).
+// repoId/categoryId récupérés via l'API GitHub GraphQL (Discussions déjà
+// activées sur ce repo, catégorie "General" réutilisée plutôt que d'en créer
+// une dédiée — l'API GitHub n'expose pas de mutation publique pour créer une
+// catégorie de discussion, seule l'UI web le permet).
+// Reste une étape manuelle : installer l'app Giscus (github.com/apps/giscus)
+// sur j-ned/ng-portfolio-app. Tant que ce n'est pas fait, le widget ne
+// s'affichera simplement pas (Giscus ignore silencieusement un repo sans
+// l'app installée).
 export const GISCUS_CONFIG = new InjectionToken<GiscusConfig>('GISCUS_CONFIG', {
   factory: (): GiscusConfig => ({
     repo: 'j-ned/ng-portfolio-app',
-    repoId: '', // TODO (utilisateur) : coller la valeur donnée par giscus.app
-    category: 'Comments',
-    categoryId: '', // TODO (utilisateur) : coller la valeur donnée par giscus.app
+    repoId: 'R_kgDOQZwuIw',
+    category: 'General',
+    categoryId: 'DIC_kwDOQZwuI84DEl1C',
   }),
 });
