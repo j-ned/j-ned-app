@@ -24,7 +24,7 @@ import type {
 } from '@features/projects/domain/models/project.model';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { Button } from '@shared/ui/button';
-import { AdminProjectTagsSelector } from './admin-project-tags-selector';
+import { AdminTagsSelector } from './admin-tags-selector';
 import { PROJECT_CATEGORIES, AVAILABLE_PROJECT_TAGS } from './admin-project-form-data';
 
 type TechChoiceForm = FormGroup<{ techno: FormControl<string>; why: FormControl<string> }>;
@@ -32,7 +32,7 @@ type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: Fo
 
 @Component({
   selector: 'app-admin-project-inline-form',
-  imports: [ReactiveFormsModule, FileDropzone, Button, AdminProjectTagsSelector],
+  imports: [ReactiveFormsModule, FileDropzone, Button, AdminTagsSelector],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -75,7 +75,7 @@ type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: Fo
         </div>
       </div>
 
-      <app-admin-project-tags-selector
+      <app-admin-tags-selector
         [availableTags]="availableTags"
         [(selectedTags)]="selectedTags"
       />

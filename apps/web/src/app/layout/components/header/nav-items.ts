@@ -16,6 +16,7 @@ export type NavItem = RouteNavItem | SectionNavItem;
 
 export const NAV_LINKS: readonly NavItem[] = [
   { kind: 'route', label: 'Projets', href: '/projects', icons: 'lucide-laptop' },
+  { kind: 'route', label: 'Blog', href: '/blog', icons: 'lucide-book-open' },
   { kind: 'route', label: 'À propos', href: '/about', icons: 'lucide-user' },
   { kind: 'section', label: 'Contact', sectionId: 'contact', icons: 'lucide-mail' },
 ];

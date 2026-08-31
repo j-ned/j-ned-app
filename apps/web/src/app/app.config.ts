@@ -1,6 +1,7 @@
 import {
   ApplicationConfig,
   ErrorHandler,
+  LOCALE_ID,
   PLATFORM_ID,
   inject,
   isDevMode,
@@ -8,7 +9,8 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { createErrorHandler, TraceService } from '@sentry/angular';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
 import {
   NavigationEnd,
   Router,
@@ -39,6 +41,8 @@ import { HttpAnalyticsGateway } from '@features/analytics/infra/gateways/http-an
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { HttpCvGateway } from '@features/cv/infra/gateways/http-cv.gateway';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
+import { HttpBlogGateway } from '@features/blog/infra/http-blog.gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
@@ -117,8 +121,11 @@ function initializeTracking(): () => void {
   };
 }
 
+registerLocaleData(localeFr);
+
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: LOCALE_ID, useValue: 'fr-FR' },
     provideBrowserGlobalErrorListeners(),
     provideRouter(
       routes,
@@ -157,6 +164,7 @@ export const appConfig: ApplicationConfig = {
       },
     },
     { provide: ProjectsGateway, useClass: HttpProjectsGateway },
+    { provide: BlogGateway, useClass: HttpBlogGateway },
     { provide: ProfileGateway, useClass: InMemoryProfileGateway },
     { provide: ContactGateway, useClass: HttpContactGateway },
     { provide: HomeGateway, useClass: InMemoryHomeGateway },

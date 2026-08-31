@@ -27,6 +27,7 @@ const staticUrls = [
   { loc: `${SITE_URL}/`, changefreq: 'weekly', priority: '1.0' },
   { loc: `${SITE_URL}/about`, changefreq: 'monthly', priority: '0.8' },
   { loc: `${SITE_URL}/projects`, changefreq: 'weekly', priority: '0.9' },
+  { loc: `${SITE_URL}/blog`, changefreq: 'weekly', priority: '0.9' },
 ];
 
 async function fetchProjectSlugs() {
@@ -36,19 +37,38 @@ async function fetchProjectSlugs() {
     const projects = await res.json();
     return projects.map((p) => p.slug);
   } catch (err) {
-    console.warn(`WARN: could not fetch projects for sitemap (${err.message}). Sitemap will only contain static routes.`);
+    console.warn(`WARN: could not fetch projects for sitemap (${err.message}).`);
     return [];
   }
 }
 
-const slugs = await fetchProjectSlugs();
+async function fetchBlogPosts() {
+  try {
+    const res = await fetch(`${PROD_API_URL}/blog/posts`);
+    if (!res.ok) throw new Error(`API returned ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn(`WARN: could not fetch blog posts for sitemap (${err.message}).`);
+    return [];
+  }
+}
+
+const [slugs, posts] = await Promise.all([fetchProjectSlugs(), fetchBlogPosts()]);
+
 const projectUrls = slugs.map((slug) => ({
   loc: `${SITE_URL}/projects/${slug}`,
   changefreq: 'monthly',
   priority: '0.7',
 }));
 
-const allUrls = [...staticUrls, ...projectUrls];
+const blogUrls = posts.map((p) => ({
+  loc: `${SITE_URL}/blog/${p.slug}`,
+  changefreq: 'monthly',
+  priority: '0.8',
+  lastmod: p.publishedAt ? p.publishedAt.slice(0, 10) : lastmod,
+}));
+
+const allUrls = [...staticUrls, ...projectUrls, ...blogUrls];
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -56,7 +76,7 @@ ${allUrls
   .map(
     (u) => `  <url>
     <loc>${u.loc}</loc>
-    <lastmod>${lastmod}</lastmod>
+    <lastmod>${u.lastmod ?? lastmod}</lastmod>
     <changefreq>${u.changefreq}</changefreq>
     <priority>${u.priority}</priority>
   </url>`,
@@ -66,4 +86,4 @@ ${allUrls
 `;
 
 writeFileSync(SITEMAP_PATH, xml);
-console.log(`Built ${SITEMAP_PATH} with ${allUrls.length} URLs (${projectUrls.length} projects).`);
+console.log(`Built ${SITEMAP_PATH} with ${allUrls.length} URLs (${projectUrls.length} projects, ${blogUrls.length} blog posts).`);
