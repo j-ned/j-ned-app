@@ -18,39 +18,41 @@ import { AppTag } from '@shared/ui/tag';
   host: { class: 'block' },
   template: `
     @let p = post();
-    <main class="page-container min-h-svh pt-20 pb-20 max-w-3xl mx-auto">
-      @if (p) {
-        <div class="flex flex-wrap gap-1.5 mb-4">
-          @for (tag of p.tags; track tag) {
-            <a data-testid="tag-link" routerLink="/blog" [queryParams]="{ tag }">
-              <app-tag [value]="tag" severity="info" />
-            </a>
+    <main class="min-h-svh pt-20 pb-20">
+      <section class="page-container max-w-3xl mx-auto pt-8">
+        @if (p) {
+          <div class="flex flex-wrap gap-1.5 mb-4">
+            @for (tag of p.tags; track tag) {
+              <a data-testid="tag-link" routerLink="/blog" [queryParams]="{ tag }">
+                <app-tag [value]="tag" severity="info" />
+              </a>
+            }
+          </div>
+          <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ p.title }}</h1>
+          @if (p.publishedAt) {
+            <p class="text-muted text-sm mb-6">{{ p.publishedAt | date: 'd MMMM y' }}</p>
           }
-        </div>
-        <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ p.title }}</h1>
-        @if (p.publishedAt) {
-          <p class="text-muted text-sm mb-6">{{ p.publishedAt | date: 'd MMMM y' }}</p>
+          @if (p.coverImage) {
+            <figure class="mb-8">
+              <div class="relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-xl border border-foreground/8">
+                <img
+                  [ngSrc]="p.coverImage"
+                  [alt]="'Illustration de l’article ' + p.title"
+                  fill
+                  priority
+                  sizes="100vw"
+                  class="object-cover"
+                />
+              </div>
+            </figure>
+          }
+          <div data-testid="blog-content" class="prose max-w-none dark:prose-invert" [innerHTML]="renderedContent()"></div>
+          <div class="mt-8">
+            <app-blog-like-button [slug]="p.slug" [likesCount]="p.likesCount" />
+          </div>
+          <app-blog-comments [slug]="p.slug" />
         }
-        @if (p.coverImage) {
-          <figure class="mb-8">
-            <div class="relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-xl border border-foreground/8">
-              <img
-                [ngSrc]="p.coverImage"
-                [alt]="'Illustration de l’article ' + p.title"
-                fill
-                priority
-                sizes="100vw"
-                class="object-cover"
-              />
-            </div>
-          </figure>
-        }
-        <div data-testid="blog-content" class="prose max-w-none dark:prose-invert" [innerHTML]="renderedContent()"></div>
-        <div class="mt-8">
-          <app-blog-like-button [slug]="p.slug" [likesCount]="p.likesCount" />
-        </div>
-        <app-blog-comments [slug]="p.slug" />
-      }
+      </section>
     </main>
   `,
 })

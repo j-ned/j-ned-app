@@ -14,32 +14,42 @@ const PAGE_SIZE = 9;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <main class="page-container min-h-svh pt-20 pb-20">
-      <h1 class="text-3xl md:text-4xl font-bold mb-8">Blog</h1>
+    <main class="min-h-svh pt-20 pb-20">
+      <section class="page-container pt-8">
+        <header class="mb-14 max-w-3xl">
+          <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 text-foreground">
+            Blog
+          </h1>
+          <p class="text-muted text-base md:text-lg leading-relaxed max-w-prose">
+            Retours d'expérience concrets sur mes projets, mon parcours et la façon dont je les
+            construis.
+          </p>
+        </header>
 
-      @if (tag()) {
-        <p data-testid="tag-filter-banner" class="text-muted text-sm mb-6">
-          Filtré par : <strong class="text-foreground">{{ tag() }}</strong>
-          — <a data-testid="tag-filter-clear" routerLink="/blog" class="text-primary hover:underline">Effacer</a>
-        </p>
-      }
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        @for (post of pagedPosts(); track post.slug) {
-          <app-blog-post-card [post]="post" />
-        } @empty {
-          <p class="text-muted col-span-full">Aucun article pour le moment.</p>
+        @if (tag()) {
+          <p data-testid="tag-filter-banner" class="text-muted text-sm mb-6">
+            Filtré par : <strong class="text-foreground">{{ tag() }}</strong>
+            — <a data-testid="tag-filter-clear" routerLink="/blog" class="text-primary hover:underline">Effacer</a>
+          </p>
         }
-      </div>
 
-      @if (filteredPosts().length > PAGE_SIZE) {
-        <app-paginator
-          [rows]="PAGE_SIZE"
-          [totalRecords]="filteredPosts().length"
-          [first]="first()"
-          (pageChange)="onPageChange($event)"
-        />
-      }
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          @for (post of pagedPosts(); track post.slug) {
+            <app-blog-post-card [post]="post" />
+          } @empty {
+            <p class="text-muted col-span-full">Aucun article pour le moment.</p>
+          }
+        </div>
+
+        @if (filteredPosts().length > PAGE_SIZE) {
+          <app-paginator
+            [rows]="PAGE_SIZE"
+            [totalRecords]="filteredPosts().length"
+            [first]="first()"
+            (pageChange)="onPageChange($event)"
+          />
+        }
+      </section>
     </main>
   `,
 })
