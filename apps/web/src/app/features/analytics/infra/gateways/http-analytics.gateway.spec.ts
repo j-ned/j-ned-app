@@ -126,6 +126,22 @@ describe('HttpAnalyticsGateway', () => {
       httpController.verify();
     });
 
+    it('trackArticleRead émet POST /<base>/analytics/track avec { type:article_read, entityId, entityTitle }', () => {
+      const { gateway, httpController } = configureBrowser();
+
+      gateway.trackArticleRead('art-1', 'My Article');
+
+      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({
+        type: 'article_read',
+        entityId: 'art-1',
+        entityTitle: 'My Article',
+      });
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      httpController.verify();
+    });
+
     it('trackCvDownload émet POST /<base>/analytics/track avec { type:cv_download }', () => {
       const { gateway, httpController } = configureBrowser();
 
@@ -301,6 +317,27 @@ describe('HttpAnalyticsGateway', () => {
       httpController.verify();
     });
 
+    it('getArticleReadStats émet GET /<base>/analytics/stats/articles-read avec params dates + withCredentials', async () => {
+      const { gateway, httpController } = configureBrowser();
+      const expected: EntityStat[] = [{ entityId: 'a1', entityTitle: 'Article 1', count: 2 }];
+
+      const promise = firstValueFrom(gateway.getArticleReadStats('2026-04-01', '2026-04-30'));
+
+      const req = httpController.expectOne(
+        (r) =>
+          r.url === `${BASE}/analytics/stats/articles-read` &&
+          r.params.get('startDate') === '2026-04-01' &&
+          r.params.get('endDate') === '2026-04-30',
+      );
+      expect(req.request.method).toBe('GET');
+      expect(req.request.withCredentials).toBe(true);
+      req.flush(expected);
+
+      const result = await promise;
+      expect(result).toEqual(expected);
+      httpController.verify();
+    });
+
     it('getCvDownloadCount émet GET /<base>/analytics/stats/cv-downloads, extrait res.count → number', async () => {
       const { gateway, httpController } = configureBrowser();
 
@@ -398,6 +435,15 @@ describe('HttpAnalyticsGateway', () => {
       const { gateway, httpController } = configureServer();
 
       gateway.trackProjectClick('abc-123', 'My Project');
+
+      httpController.expectNone(`${BASE}/analytics/track`);
+      httpController.verify();
+    });
+
+    it('trackArticleRead est no-op si platform !== browser', () => {
+      const { gateway, httpController } = configureServer();
+
+      gateway.trackArticleRead('art-1', 'My Article');
 
       httpController.expectNone(`${BASE}/analytics/track`);
       httpController.verify();

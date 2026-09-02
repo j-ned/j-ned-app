@@ -36,6 +36,7 @@ function makeAnalyticsGateway(overrides: Partial<AnalyticsGateway> = {}): Analyt
     getActiveVisitors: () => of(activeVisitors),
     getProjectStats: () => of(emptyEntities),
     getArticleStats: () => of(emptyEntities),
+    getArticleReadStats: () => of(emptyEntities),
     getCvDownloadCount: () => of(0),
     trackPageView: vi.fn(),
     trackPageDuration: vi.fn(),

@@ -160,6 +160,7 @@ describe('analytics-presenter', () => {
       countries: [{ name: '', count: 10 }] as MetricEntry[],
       topProjects: [{ entityId: 'p1', entityTitle: 'Projet, X', count: 7 }] as EntityStat[],
       topArticles: [{ entityId: 'a1', entityTitle: 'Article', count: 4 }] as EntityStat[],
+      topArticlesRead: [{ entityId: 'a1', entityTitle: 'Article', count: 2 }] as EntityStat[],
     };
 
     it('démarre par l’en-tête et liste les KPIs', () => {
@@ -178,6 +179,11 @@ describe('analytics-presenter', () => {
     it('échappe les valeurs contenant une virgule', () => {
       const csv = buildAnalyticsCsv(sections);
       expect(csv).toContain('Projet,"Projet, X",7');
+    });
+
+    it('liste les articles réellement lus (article_read) sous "Article lu"', () => {
+      const csv = buildAnalyticsCsv(sections);
+      expect(csv).toContain('Article lu,Article,2');
     });
 
     it('omet les KPIs si overview est absent', () => {

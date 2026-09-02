@@ -165,6 +165,7 @@ export type AnalyticsCsvSections = {
   countries: readonly MetricEntry[];
   topProjects: readonly EntityStat[];
   topArticles: readonly EntityStat[];
+  topArticlesRead: readonly EntityStat[];
 };
 
 export function escapeCsv(value: string): string {
@@ -195,5 +196,6 @@ export function buildAnalyticsCsv(s: AnalyticsCsvSections): string {
   for (const r of s.countries) rows.push(`Pays,${escapeCsv(r.name || 'Inconnu')},${r.count}`);
   for (const r of s.topProjects) rows.push(`Projet,${escapeCsv(r.entityTitle)},${r.count}`);
   for (const r of s.topArticles) rows.push(`Article,${escapeCsv(r.entityTitle)},${r.count}`);
+  for (const r of s.topArticlesRead) rows.push(`Article lu,${escapeCsv(r.entityTitle)},${r.count}`);
   return rows.join('\n');
 }

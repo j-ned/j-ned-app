@@ -13,6 +13,7 @@ export abstract class AnalyticsGateway {
   abstract trackPageDuration(url: string, duration: number): void;
   abstract trackProjectClick(projectId: string, title: string): void;
   abstract trackArticleView(articleId: string, title: string): void;
+  abstract trackArticleRead(articleId: string, title: string): void;
   abstract trackCvDownload(): void;
 
   abstract sendBeacon(payload: TrackPayload): void;
@@ -27,5 +28,6 @@ export abstract class AnalyticsGateway {
   abstract getActiveVisitors(): Observable<ActiveVisitors>;
   abstract getProjectStats(startDate?: string, endDate?: string): Observable<EntityStat[]>;
   abstract getArticleStats(startDate?: string, endDate?: string): Observable<EntityStat[]>;
+  abstract getArticleReadStats(startDate?: string, endDate?: string): Observable<EntityStat[]>;
   abstract getCvDownloadCount(startDate?: string, endDate?: string): Observable<number>;
 }

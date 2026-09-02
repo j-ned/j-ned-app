@@ -1,11 +1,41 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { BlogDetail } from './blog-detail';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { Seo } from '@shared/seo/seo';
 import type { BlogPost } from '../domain/models/blog-post.model';
+
+class MockIntersectionObserver {
+  static instances: MockIntersectionObserver[] = [];
+  readonly observed: Element[] = [];
+  disconnected = false;
+
+  constructor(private readonly _callback: IntersectionObserverCallback) {
+    MockIntersectionObserver.instances.push(this);
+  }
+
+  observe(element: Element): void {
+    this.observed.push(element);
+  }
+
+  disconnect(): void {
+    this.disconnected = true;
+  }
+
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+
+  emit(isIntersecting: boolean): void {
+    this._callback(
+      [{ isIntersecting } as IntersectionObserverEntry],
+      this as unknown as IntersectionObserver,
+    );
+  }
+}
 
 function post(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
@@ -17,19 +47,32 @@ function post(overrides: Partial<BlogPost> = {}): BlogPost {
 
 function setup(gatewayStub: { getPostBySlug: () => ReturnType<BlogGateway['getPostBySlug']> }) {
   const seoMock = { applySeoData: vi.fn() };
+  const analyticsMock = { trackArticleView: vi.fn(), trackArticleRead: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
       { provide: BlogGateway, useValue: gatewayStub },
       { provide: Seo, useValue: seoMock },
+      { provide: AnalyticsGateway, useValue: analyticsMock },
     ],
   });
   const fixture: ComponentFixture<BlogDetail> = TestBed.createComponent(BlogDetail);
-  return { fixture, seoMock };
+  return { fixture, seoMock, analyticsMock };
 }
 
 describe('BlogDetail', () => {
-  afterEach(() => TestBed.resetTestingModule());
+  const originalIntersectionObserver = globalThis.IntersectionObserver;
+
+  beforeEach(() => {
+    MockIntersectionObserver.instances = [];
+    globalThis.IntersectionObserver =
+      MockIntersectionObserver as unknown as typeof IntersectionObserver;
+  });
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+    globalThis.IntersectionObserver = originalIntersectionObserver;
+  });
 
   it('rend le contenu Markdown en HTML', async () => {
     const { fixture } = setup({ getPostBySlug: () => of(post()) });
@@ -92,5 +135,48 @@ describe('BlogDetail', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('img')).not.toBeNull();
+  });
+
+  it("track une vue d'article (trackArticleView) une fois le post chargé", async () => {
+    const { fixture, analyticsMock } = setup({ getPostBySlug: () => of(post()) });
+    fixture.componentRef.setInput('slug', 'mon-article');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(analyticsMock.trackArticleView).toHaveBeenCalledExactlyOnceWith(
+      '1',
+      'Mon article',
+    );
+  });
+
+  it("track la lecture de l'article (trackArticleRead) quand le lecteur scrolle jusqu'à la fin du contenu", async () => {
+    const { fixture, analyticsMock } = setup({ getPostBySlug: () => of(post()) });
+    fixture.componentRef.setInput('slug', 'mon-article');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(analyticsMock.trackArticleRead).not.toHaveBeenCalled();
+    MockIntersectionObserver.instances[0].emit(true);
+
+    expect(analyticsMock.trackArticleRead).toHaveBeenCalledExactlyOnceWith(
+      '1',
+      'Mon article',
+    );
+  });
+
+  it("ne track la lecture qu'une seule fois même si le sentinel entre plusieurs fois dans le viewport", async () => {
+    const { fixture, analyticsMock } = setup({ getPostBySlug: () => of(post()) });
+    fixture.componentRef.setInput('slug', 'mon-article');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    MockIntersectionObserver.instances[0].emit(true);
+    MockIntersectionObserver.instances[0].emit(false);
+    MockIntersectionObserver.instances[0].emit(true);
+
+    expect(analyticsMock.trackArticleRead).toHaveBeenCalledTimes(1);
   });
 });

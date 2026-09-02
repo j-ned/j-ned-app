@@ -1,9 +1,20 @@
-import { Component, computed, effect, inject, input, ChangeDetectionStrategy, resource } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  input,
+  viewChild,
+  ChangeDetectionStrategy,
+  resource,
+} from '@angular/core';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { parseMarkdown } from '../infra/parse-markdown';
 import { Seo } from '@shared/seo/seo';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
@@ -47,6 +58,7 @@ import { AppTag } from '@shared/ui/tag';
             </figure>
           }
           <div data-testid="blog-content" class="prose max-w-none dark:prose-invert" [innerHTML]="renderedContent()"></div>
+          <div #readSentinel data-testid="article-read-sentinel" aria-hidden="true"></div>
           <div class="mt-8">
             <app-blog-like-button [slug]="p.slug" [likesCount]="p.likesCount" />
           </div>
@@ -58,9 +70,12 @@ import { AppTag } from '@shared/ui/tag';
 })
 export class BlogDetail {
   private readonly gateway = inject(BlogGateway);
+  private readonly analytics = inject(AnalyticsGateway);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly seo = inject(Seo);
   private readonly router = inject(Router);
+
+  private readonly _readSentinel = viewChild<ElementRef<HTMLElement>>('readSentinel');
 
   readonly slug = input.required<string>();
 
@@ -117,5 +132,38 @@ export class BlogDetail {
         ...(p.publishedAt ? { datePublished: p.publishedAt } : {}),
       },
     });
+  });
+
+  private _viewTrackedId: string | null = null;
+  private readonly _trackView = effect(() => {
+    const p = this.post();
+    if (!p || this._viewTrackedId === p.id) return;
+    this._viewTrackedId = p.id;
+    this.analytics.trackArticleView(p.id, p.title);
+  });
+
+  // Sentinel juste après le contenu : sa présence dans le viewport signale que
+  // le lecteur a scrollé jusqu'au bout de l'article ("réellement lu", pas
+  // juste ouvert). Le sentinel persiste entre deux slugs (même instance de
+  // BlogDetail réutilisée, cf. `_postResource`), donc le tracking se
+  // dédoublonne par `post().id` lu au moment de l'intersection plutôt que
+  // par ré-exécution de l'effect.
+  private _readTrackedId: string | null = null;
+  private readonly _trackRead = effect((onCleanup) => {
+    const sentinel = this._readSentinel();
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const p = this.post();
+        if (!p || this._readTrackedId === p.id) continue;
+        this._readTrackedId = p.id;
+        this.analytics.trackArticleRead(p.id, p.title);
+      }
+    });
+
+    observer.observe(sentinel.nativeElement);
+    onCleanup(() => observer.disconnect());
   });
 }

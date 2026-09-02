@@ -57,6 +57,15 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
     });
   }
 
+  trackArticleRead(articleId: string, title: string): void {
+    if (!this.isBrowser) return;
+    this.fireAndForget({
+      type: 'article_read',
+      entityId: articleId,
+      entityTitle: title,
+    });
+  }
+
   trackCvDownload(): void {
     if (!this.isBrowser) return;
     this.fireAndForget({ type: 'cv_download' });
@@ -105,6 +114,13 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
 
   getArticleStats(startDate?: string, endDate?: string): Observable<EntityStat[]> {
     return this.http.get<EntityStat[]>(`${this.baseUrl}/stats/articles`, {
+      params: this.buildDateParams(startDate, endDate),
+      withCredentials: true,
+    });
+  }
+
+  getArticleReadStats(startDate?: string, endDate?: string): Observable<EntityStat[]> {
+    return this.http.get<EntityStat[]>(`${this.baseUrl}/stats/articles-read`, {
       params: this.buildDateParams(startDate, endDate),
       withCredentials: true,
     });

@@ -149,7 +149,7 @@ const DEFAULT_PALETTE: ChartPalette = {
       />
     </section>
 
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <section class="grid grid-cols-1 lg:grid-cols-4 gap-4">
       <app-analytics-entity-list
         title="Projets cliqués"
         icon="desktop"
@@ -162,13 +162,24 @@ const DEFAULT_PALETTE: ChartPalette = {
       />
 
       <app-analytics-entity-list
-        title="Articles lus"
+        title="Articles ouverts"
         icon="pencil"
         [tagValue]="(overview()?.articleViews ?? 0) + ' vues'"
         tagSeverity="info"
         [entities]="topArticlesTop5()"
         [loading]="articlesResource.isLoading()"
         emptyLabel="Aucune vue enregistrée"
+      />
+
+      <app-analytics-entity-list
+        title="Articles lus jusqu'au bout"
+        icon="check-circle"
+        iconClass="text-accent"
+        [tagValue]="articlesReadTotal() + ' lectures'"
+        tagSeverity="info"
+        [entities]="topArticlesReadTop5()"
+        [loading]="articlesReadResource.isLoading()"
+        emptyLabel="Aucune lecture complète enregistrée"
       />
 
       <app-admin-analytics-cv-panel
@@ -306,6 +317,17 @@ export class AdminAnalytics {
   readonly topArticles = computed(() => this.articlesResource.value() ?? []);
   readonly topArticlesTop5 = computed(() => this.topArticles().slice(0, 5));
 
+  readonly articlesReadResource = resource({
+    params: () => this.range(),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getArticleReadStats(params.startDate, params.endDate)),
+  });
+  readonly topArticlesRead = computed(() => this.articlesReadResource.value() ?? []);
+  readonly topArticlesReadTop5 = computed(() => this.topArticlesRead().slice(0, 5));
+  readonly articlesReadTotal = computed(() =>
+    this.topArticlesRead().reduce((sum, r) => sum + r.count, 0),
+  );
+
   readonly bounceRateFormatted = computed(() => (this.overview()?.bounceRate ?? 0).toFixed(1));
 
   readonly donutOptions = computed(() =>
@@ -331,6 +353,7 @@ export class AdminAnalytics {
       countries: this.countries(),
       topProjects: this.topProjects(),
       topArticles: this.topArticles(),
+      topArticlesRead: this.topArticlesRead(),
     });
 
     const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8' });

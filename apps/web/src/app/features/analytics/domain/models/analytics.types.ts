@@ -32,7 +32,13 @@ export type ActiveVisitors = {
 };
 
 export type TrackPayload = {
-  type: 'page_view' | 'project_click' | 'article_view' | 'cv_download' | 'page_duration';
+  type:
+    | 'page_view'
+    | 'project_click'
+    | 'article_view'
+    | 'article_read'
+    | 'cv_download'
+    | 'page_duration';
   url?: string;
   referrer?: string;
   entityId?: string;
