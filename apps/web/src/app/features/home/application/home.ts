@@ -29,7 +29,7 @@ import { AppIconTile } from '@shared/ui/icon-tile';
               <ul class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8" role="list">
                 @for (item of expertises(); track item.id) {
                   <li
-                    class="group animate-fade-up relative p-5 rounded-xl border border-foreground/8 bg-foreground/2 hover:border-primary/30 hover:bg-foreground/4 transition-colors duration-300 min-h-36.5"
+                    class="group animate-fade-up relative p-6 rounded-xl border border-foreground/8 bg-foreground/2 hover:border-primary/30 hover:bg-foreground/4 transition-colors duration-300 min-h-55.5"
                   >
                     <div class="flex items-center gap-3 mb-4">
                       <app-icon-tile
@@ -41,24 +41,24 @@ import { AppIconTile } from '@shared/ui/icon-tile';
                         {{ item.title }}
                       </h3>
                     </div>
-                    <p class="text-sm text-muted leading-relaxed line-clamp-2">
+                    <p class="text-sm text-muted leading-relaxed line-clamp-5">
                       {{ item.description }}
                     </p>
                   </li>
                 }
               </ul>
             } @else {
-              <!-- Skeleton placeholder: hauteur fixe 146px (doit matcher min-h de la vraie card) -->
+              <!-- Skeleton placeholder: hauteur fixe 222px (doit matcher min-h de la vraie card) -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-8" aria-hidden="true">
                 @for (_ of [1, 2, 3]; track $index) {
                   <div
-                    class="p-5 rounded-xl border border-foreground/8 bg-foreground/2 animate-pulse min-h-36.5"
+                    class="p-6 rounded-xl border border-foreground/8 bg-foreground/2 animate-pulse min-h-55.5"
                   >
                     <div class="flex items-center gap-3 mb-4">
                       <app-icon-tile class="bg-foreground/5" />
                       <div class="h-3.5 bg-foreground/5 rounded w-32"></div>
                     </div>
-                    <div class="h-11.5 rounded bg-foreground/5"></div>
+                    <div class="h-28.5 rounded bg-foreground/5"></div>
                   </div>
                 }
               </div>
