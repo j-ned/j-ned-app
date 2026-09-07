@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Julien Nédellec — Blog</title>
+    <link>https://nedellec-julien.fr/blog</link>
+    <description>Retours d'expérience Angular, NestJS, PostgreSQL et self-hosting.</description>
+    <language>fr</language>
+    <item>
+      <title>De 20 ans de métallurgie à développeur Full-Stack</title>
+      <link>https://nedellec-julien.fr/blog/de-20-ans-de-metallurgie-a-developpeur-full-stack</link>
+      <guid>https://nedellec-julien.fr/blog/de-20-ans-de-metallurgie-a-developpeur-full-stack</guid>
+      <description>Vingt ans dans l&apos;industrie, puis un virage complet vers le développement web. Ce que la métallurgie m&apos;a réellement appris sur la rigueur, et pourquoi ça fait de moi un meilleur développeur Angular/NestJS aujourd&apos;hui.</description>
+      <pubDate>Tue, 01 Sep 2026 17:51:08 GMT</pubDate>
+    </item>
+  </channel>
+</rss>
