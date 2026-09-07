@@ -6,6 +6,8 @@ export const STATIC_HERO: HeroData = {
   name: 'Développeur Angular',
   tagline:
     'Angular, NestJS, PostgreSQL, Docker : je mène une application du composant à la mise en production.',
+  support:
+    'Ce site en est la preuve : rendu serveur, API NestJS, déployé en CI/CD sur ma propre infrastructure.',
   availability: 'Ouvert aux opportunités · CDI · Île-de-France',
 };
 
@@ -13,22 +15,19 @@ export const STATIC_HOME_HIGHLIGHTS: readonly HomeHighlight[] = [
   {
     id: 'ba0760a4-4576-4136-a1d0-a78aa969de15',
     title: 'Frontend Moderne',
-    description:
-      'Applications Angular réactives avec architecture signals, standalone components et contrôle de flux optimisé. TypeScript strict pour une maintenance facilitée et moins de bugs en production.',
+    description: 'Angular 22, signals, SSR et hydratation incrémentale. TypeScript strict.',
     icon: 'lucide-layers',
   },
   {
     id: '1caf531c-24d0-4c46-b26d-9105b6a5304a',
     title: 'Backend & Data',
-    description:
-      "APIs REST avec NestJS : architecture modulaire, validation stricte des données, gestion d'erreurs professionnelle. PostgreSQL optimisé pour la performance et l'intégrité des données.",
+    description: 'API NestJS modulaire, validation stricte, PostgreSQL indexé.',
     icon: 'lucide-database',
   },
   {
     id: 'd6c5d2a6-a7f1-4d8b-9573-5a4219a8424c',
     title: 'Déploiement & Infrastructure',
-    description:
-      'Déploiements Docker automatisés, infrastructure self-hosted haute disponibilité (Traefik reverse proxy, Dokploy orchestration). CI/CD pour des mises en production sans friction.',
+    description: "Docker, Traefik, Dokploy, CI/CD : je déploie et j'exploite.",
     icon: 'lucide-boxes',
   },
 ];

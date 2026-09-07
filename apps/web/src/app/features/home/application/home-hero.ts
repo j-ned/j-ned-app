@@ -23,6 +23,9 @@ import type { HeroData } from '../domain/models/hero.model';
     .delay-2 {
       animation-delay: 0.16s;
     }
+    .delay-3 {
+      animation-delay: 0.24s;
+    }
   `,
   template: `
     <div class="text-center min-h-55 md:min-h-70 lg:min-h-80">
@@ -50,6 +53,13 @@ import type { HeroData } from '../domain/models/hero.model';
               >{{ segment.text }}</span
             >
           }
+        </p>
+
+        <p
+          class="animate-fade-up delay-3 mt-3 md:mt-4 text-sm md:text-base text-muted leading-relaxed max-w-2xl mx-auto"
+          data-testid="hero-support"
+        >
+          {{ h.support }}
         </p>
       } @else {
         <div class="space-y-4 animate-pulse flex flex-col items-center">

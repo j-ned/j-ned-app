@@ -38,6 +38,13 @@ describe('HomeHero', () => {
     expect(keywords()).toEqual(['Angular', 'NestJS']);
   });
 
+  // La ligne de preuve tient dans le `min-h` déjà réservé par le bloc hero :
+  // elle ne coûte aucun pixel au fold tant qu'elle reste sur deux lignes.
+  it('renders the support line under the tagline', () => {
+    renderWith(STATIC_HERO);
+    expect(textOf('hero-support')).toBe(STATIC_HERO.support);
+  });
+
   it('leaves the rest of the tagline unhighlighted', () => {
     renderWith(STATIC_HERO);
     expect(textOf('hero-tagline')).toBe(STATIC_HERO.tagline);

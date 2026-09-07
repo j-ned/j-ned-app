@@ -39,7 +39,7 @@ const aProject = (overrides: Partial<Project> = {}): Project => ({
 });
 
 const bundle = (overrides: Partial<HomeBundle> = {}): HomeBundle => ({
-  hero: { id: 'hero', name: 'Julien', tagline: 'Dev', availability: 'open' },
+  hero: { id: 'hero', name: 'Julien', tagline: 'Dev', support: 'Preuve', availability: 'open' },
   highlights: [highlight()],
   featuredProjects: [],
   ...overrides,
