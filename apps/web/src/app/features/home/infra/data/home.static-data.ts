@@ -5,7 +5,7 @@ export const STATIC_HERO: HeroData = {
   id: 'c64a566f-9e53-44f9-96de-f938f0166b9c',
   name: 'Julien Nédellec',
   tagline:
-    "Développeur Angular / NestJS. 20 ans dans l'industrie avant le code : je conçois, déploie et maintiens mes applications en production, sur ma propre infrastructure.",
+    'Angular, NestJS, PostgreSQL, Docker : je mène une application du composant à la mise en production.',
   availability: 'Ouvert aux opportunités · CDI · Île-de-France',
 };
 

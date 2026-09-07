@@ -145,7 +145,28 @@ Contraintes techniques du hero (à respecter par toute formulation) :
   sont **surlignés en `--color-primary` gratuitement**. Aucun autre mot ne l'est.
 - `availability` : badge à pastille verte, `text-xs` → 4-6 mots maximum
 
-- [x] **P2** — réécrire le hero : `home.static-data.ts:6-9` — **PROUVÉ** sur le prérendu
+- [x] **P2** — réécrire le hero : `home.static-data.ts:6-9` — **RÉVISÉ après validation visuelle
+      du 2026-09-07** : l'option A (nom en `h1`, tagline de 158 car.) rendait 4 lignes en `text-3xl`,
+      plus lourdes que le `h1` lui-même. Arbitrage utilisateur sur capture : `h1` = « Développeur
+      Angular », tagline courte centrée sur le niveau technique.
+
+  ```ts
+  name: 'Développeur Angular',
+  tagline:
+    'Angular, NestJS, PostgreSQL, Docker : je mène une application du composant à la mise en production.',
+  availability: 'Ouvert aux opportunités · CDI · Île-de-France',
+  ```
+
+  - 99 caractères → 2 lignes, `Angular` et `NestJS` toujours surlignés, « 3 ans » toujours absent,
+    la demande CDI reste dans le badge
+  - Le garde-fou `app.routes.spec.ts` (le `h1` et le `Person` schema.org nomment la même personne)
+    est **supprimé** : il posait une contrainte qui n'existe pas — un `h1` n'a pas à répéter le `name`
+    d'une métadonnée `Person`
+  - Constat visuel restant, **non traité** : le CTA unique flotte au centre d'un écran large, et les
+    3 cartes d'expertise occupent le premier écran avec de la prose invérifiable, à la place des
+    projets (cf. P2ter, dont la capture confirme que c'est le poste dominant)
+
+- [x] ~~**P2** — version initiale~~ — **PROUVÉ** sur le prérendu
       (`<h1>` = « Julien Nédellec », `Angular` et `NestJS` surlignés, badge `availability` porte le CDI)
 
   **Formulation retenue le 2026-09-06 (option A — « nom + preuve ») :**
