@@ -8,6 +8,7 @@ export type StatsOverview = {
   projectClicks: number;
   articleViews: number;
   cvDownloads: number;
+  ctaClicks: number;
 };
 
 export type MetricEntry = {

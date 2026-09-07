@@ -30,5 +30,6 @@ export abstract class AnalyticsGateway {
   abstract getProjectStats(startDate?: string, endDate?: string): Observable<EntityStat[]>;
   abstract getArticleStats(startDate?: string, endDate?: string): Observable<EntityStat[]>;
   abstract getArticleReadStats(startDate?: string, endDate?: string): Observable<EntityStat[]>;
+  abstract getCtaStats(startDate?: string, endDate?: string): Observable<EntityStat[]>;
   abstract getCvDownloadCount(startDate?: string, endDate?: string): Observable<number>;
 }

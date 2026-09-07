@@ -2,12 +2,17 @@ import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http'
 import { inject } from '@angular/core';
 import { ToastStore } from '@shared/ui/toast-store';
 import { catchError, throwError } from 'rxjs';
+import { SKIP_ERROR_TOAST } from './skip-error-toast';
 
 export const errorToastInterceptor: HttpInterceptorFn = (req, next) => {
   const toast = inject(ToastStore);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (req.context.get(SKIP_ERROR_TOAST)) {
+        return throwError(() => error);
+      }
+
       if (error.status === 401) {
         return throwError(() => error);
       }

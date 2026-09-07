@@ -149,7 +149,7 @@ const DEFAULT_PALETTE: ChartPalette = {
       />
     </section>
 
-    <section class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
       <app-analytics-entity-list
         title="Projets cliqués"
         icon="desktop"
@@ -180,6 +180,17 @@ const DEFAULT_PALETTE: ChartPalette = {
         [entities]="topArticlesReadTop5()"
         [loading]="articlesReadResource.isLoading()"
         emptyLabel="Aucune lecture complète enregistrée"
+      />
+
+      <app-analytics-entity-list
+        title="CTA cliqués"
+        icon="arrow-right"
+        iconClass="text-primary"
+        [tagValue]="(overview()?.ctaClicks ?? 0) + ' clics'"
+        tagSeverity="info"
+        [entities]="topCtaTop5()"
+        [loading]="ctaResource.isLoading()"
+        emptyLabel="Aucun clic enregistré"
       />
 
       <app-admin-analytics-cv-panel
@@ -283,7 +294,9 @@ export class AdminAnalytics {
       firstValueFrom(this.analytics.getMetrics('browser', params.startDate, params.endDate)),
   });
   readonly browsers = computed(() => this.browsersResource.value()?.slice(0, 6) ?? []);
-  readonly browsersChart = computed(() => buildDonutChartData(this.browsers(), this._buildPalette()));
+  readonly browsersChart = computed(() =>
+    buildDonutChartData(this.browsers(), this._buildPalette()),
+  );
 
   readonly osResource = resource({
     params: () => this.range(),
@@ -316,6 +329,14 @@ export class AdminAnalytics {
   });
   readonly topArticles = computed(() => this.articlesResource.value() ?? []);
   readonly topArticlesTop5 = computed(() => this.topArticles().slice(0, 5));
+
+  readonly ctaResource = resource({
+    params: () => this.range(),
+    loader: ({ params }) =>
+      firstValueFrom(this.analytics.getCtaStats(params.startDate, params.endDate)),
+  });
+  readonly topCta = computed(() => this.ctaResource.value() ?? []);
+  readonly topCtaTop5 = computed(() => this.topCta().slice(0, 5));
 
   readonly articlesReadResource = resource({
     params: () => this.range(),

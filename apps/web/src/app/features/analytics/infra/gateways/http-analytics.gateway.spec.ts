@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
+import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { HttpAnalyticsGateway } from './http-analytics.gateway';
 import type {
   StatsOverview,
@@ -142,6 +143,17 @@ describe('HttpAnalyticsGateway', () => {
       httpController.verify();
     });
 
+    it('marque les POST de tracking comme silencieux pour l’intercepteur de toast', () => {
+      const { gateway, httpController } = configureBrowser();
+
+      gateway.trackCtaClick('home_hero_projects', 'Voir les projets');
+
+      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      expect(req.request.context.get(SKIP_ERROR_TOAST)).toBe(true);
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      httpController.verify();
+    });
+
     it('trackCtaClick émet POST /<base>/analytics/track avec { type:cta_click, entityId, entityTitle }', () => {
       const { gateway, httpController } = configureBrowser();
 
@@ -213,6 +225,7 @@ describe('HttpAnalyticsGateway', () => {
         projectClicks: 12,
         articleViews: 5,
         cvDownloads: 3,
+        ctaClicks: 7,
       };
 
       const promise = firstValueFrom(gateway.getOverview('2026-04-01', '2026-04-30'));
@@ -351,6 +364,24 @@ describe('HttpAnalyticsGateway', () => {
 
       const result = await promise;
       expect(result).toEqual(expected);
+      httpController.verify();
+    });
+
+    it('getCtaStats émet GET /<base>/analytics/stats/cta avec params dates + withCredentials', async () => {
+      const { gateway, httpController } = configureBrowser();
+      const rows: EntityStat[] = [
+        { entityId: 'home_hero_projects', entityTitle: 'Voir les projets', count: 42 },
+      ];
+
+      const promise = firstValueFrom(gateway.getCtaStats('2026-01-01', '2026-01-31'));
+
+      const req = httpController.expectOne(
+        `${BASE}/analytics/stats/cta?startDate=2026-01-01&endDate=2026-01-31`,
+      );
+      expect(req.request.method).toBe('GET');
+      expect(req.request.withCredentials).toBe(true);
+      req.flush(rows);
+      await expect(promise).resolves.toEqual(rows);
       httpController.verify();
     });
 

@@ -12,7 +12,12 @@ import {
   escapeCsv,
   buildAnalyticsCsv,
 } from './analytics-presenter';
-import type { StatsOverview, DailyChartPoint, MetricEntry, EntityStat } from './models/analytics.types';
+import type {
+  StatsOverview,
+  DailyChartPoint,
+  MetricEntry,
+  EntityStat,
+} from './models/analytics.types';
 
 const overview = (p: Partial<StatsOverview> = {}): StatsOverview => ({
   visitors: 100,
@@ -24,6 +29,7 @@ const overview = (p: Partial<StatsOverview> = {}): StatsOverview => ({
   projectClicks: 12,
   articleViews: 8,
   cvDownloads: 3,
+  ctaClicks: 6,
   ...p,
 });
 
@@ -93,8 +99,16 @@ describe('analytics-presenter', () => {
       const data = buildVisitorsChartData(rows, '#primary', '#accent');
       expect(data.labels).toEqual(['2026-06-01', '2026-06-02']);
       expect(data.datasets).toHaveLength(2);
-      expect(data.datasets[0]).toMatchObject({ label: 'Visiteurs', data: [10, 20], borderColor: '#primary' });
-      expect(data.datasets[1]).toMatchObject({ label: 'Pages vues', data: [30, 40], borderColor: '#accent' });
+      expect(data.datasets[0]).toMatchObject({
+        label: 'Visiteurs',
+        data: [10, 20],
+        borderColor: '#primary',
+      });
+      expect(data.datasets[1]).toMatchObject({
+        label: 'Pages vues',
+        data: [30, 40],
+        borderColor: '#accent',
+      });
     });
   });
 

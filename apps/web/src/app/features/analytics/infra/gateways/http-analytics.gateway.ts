@@ -1,9 +1,10 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { catchError, EMPTY, map, Observable } from 'rxjs';
 
 import { API_BASE_URL } from '@shared/api/api-config';
+import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { AnalyticsGateway } from '../../domain/gateways/analytics.gateway';
 import type {
   ActiveVisitors,
@@ -137,6 +138,13 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
     });
   }
 
+  getCtaStats(startDate?: string, endDate?: string): Observable<EntityStat[]> {
+    return this.http.get<EntityStat[]>(`${this.baseUrl}/stats/cta`, {
+      params: this.buildDateParams(startDate, endDate),
+      withCredentials: true,
+    });
+  }
+
   getCvDownloadCount(startDate?: string, endDate?: string): Observable<number> {
     return this.http
       .get<{ count: number }>(`${this.baseUrl}/stats/cv-downloads`, {
@@ -146,9 +154,13 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
       .pipe(map((res) => res.count));
   }
 
+  // Le tracking ne parle jamais au visiteur : un 400 (type inconnu de l'API) ou
+  // un 429 (rafale) est un problème d'exploitation, pas un toast sur une page publique.
   private fireAndForget(payload: TrackPayload): void {
     this.http
-      .post(`${this.baseUrl}/track`, payload)
+      .post(`${this.baseUrl}/track`, payload, {
+        context: new HttpContext().set(SKIP_ERROR_TOAST, true),
+      })
       .pipe(catchError(() => EMPTY))
       .subscribe();
   }

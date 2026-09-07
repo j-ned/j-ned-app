@@ -21,6 +21,7 @@ const overview = (overrides: Partial<StatsOverview> = {}): StatsOverview => ({
   projectClicks: 12,
   articleViews: 8,
   cvDownloads: 4,
+  ctaClicks: 6,
   ...overrides,
 });
 
@@ -37,6 +38,7 @@ function makeAnalyticsGateway(overrides: Partial<AnalyticsGateway> = {}): Analyt
     getProjectStats: () => of(emptyEntities),
     getArticleStats: () => of(emptyEntities),
     getArticleReadStats: () => of(emptyEntities),
+    getCtaStats: () => of(emptyEntities),
     getCvDownloadCount: () => of(0),
     trackPageView: vi.fn(),
     trackPageDuration: vi.fn(),
@@ -48,9 +50,7 @@ function makeAnalyticsGateway(overrides: Partial<AnalyticsGateway> = {}): Analyt
   } as unknown as AnalyticsGateway;
 }
 
-async function setup(
-  gateway: AnalyticsGateway = makeAnalyticsGateway(),
-): Promise<{
+async function setup(gateway: AnalyticsGateway = makeAnalyticsGateway()): Promise<{
   component: AdminAnalytics;
   fixture: ReturnType<typeof TestBed.createComponent<AdminAnalytics>>;
 }> {
@@ -114,7 +114,9 @@ describe('AdminAnalytics', () => {
   describe('rendu des KPI', () => {
     it('expose les KPI de l’overview chargé', async () => {
       const { component } = await setup(
-        makeAnalyticsGateway({ getOverview: () => of(overview({ visitors: 999, bounceRate: 12.34 })) }),
+        makeAnalyticsGateway({
+          getOverview: () => of(overview({ visitors: 999, bounceRate: 12.34 })),
+        }),
       );
       expect(component.overview()?.visitors).toBe(999);
       expect(component.bounceRateFormatted()).toBe('12.3');
@@ -122,7 +124,9 @@ describe('AdminAnalytics', () => {
 
     it('formate la durée moyenne et les pages par session', async () => {
       const { component } = await setup(
-        makeAnalyticsGateway({ getOverview: () => of(overview({ avgDuration: 90, pageviews: 300, sessions: 100 })) }),
+        makeAnalyticsGateway({
+          getOverview: () => of(overview({ avgDuration: 90, pageviews: 300, sessions: 100 })),
+        }),
       );
       expect(component.formattedDuration()).toBeTypeOf('string');
       expect(component.pagesPerSession()).toBeDefined();
