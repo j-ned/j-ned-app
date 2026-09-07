@@ -16,13 +16,13 @@ import { AppIconTile } from '@shared/ui/icon-tile';
   host: { class: 'block' },
   template: `
     <main class="flex flex-col w-full">
-      <!-- First fold: hero + expertise vertically centered under header -->
-      <div class="flex flex-col justify-center min-h-[calc(100svh-5rem)] mt-20">
+      <!-- First fold: hero + expertise -->
+      <div class="flex flex-col mt-20">
         <!-- Hero Section -->
         <app-home-hero-section [hero]="bundle()?.hero ?? null" />
 
         <!-- Expertise Section -->
-        <section class="w-full py-12 md:py-16" aria-labelledby="expertise-heading">
+        <section class="w-full py-8" aria-labelledby="expertise-heading">
           <div class="page-container">
             <h2 id="expertise-heading" class="sr-only">Expertises</h2>
             @if (expertises().length > 0) {
@@ -66,14 +66,14 @@ import { AppIconTile } from '@shared/ui/icon-tile';
       </div>
 
       <!-- Projects Section -->
-      @defer (on viewport; prefetch on idle; when eagerSections()) {
-        <section class="w-full py-16 md:py-20">
+      @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
+        <section class="w-full pt-8 pb-16 md:pb-20" data-testid="home-projects-section">
           <div class="page-container">
             <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
           </div>
         </section>
       } @placeholder {
-        <div class="block py-16 md:py-20 px-6 h-64"></div>
+        <div class="block py-16 md:py-20 px-6 h-64" data-testid="home-projects-placeholder"></div>
       } @error {
         <div class="block py-16 md:py-20 px-6 text-center text-muted text-sm">
           Impossible de charger cette section.
@@ -85,10 +85,10 @@ import { AppIconTile } from '@shared/ui/icon-tile';
            scroll-mt-20 compense le header fixe ; appSectionVisibility pilote
            l'indicateur d'état actif du header (scroll-spy). -->
       <div id="contact" class="scroll-mt-20" appSectionVisibility="contact">
-        @defer (on viewport; prefetch on idle; when eagerSections()) {
-          <app-contact-form />
+        @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
+          <app-contact-form data-testid="home-contact-form" />
         } @placeholder {
-          <div class="block py-16 md:py-20 px-6 h-96"></div>
+          <div class="block py-16 md:py-20 px-6 h-96" data-testid="home-contact-placeholder"></div>
         } @error {
           <div class="block py-16 md:py-20 px-6 text-center text-muted text-sm">
             Impossible de charger cette section.

@@ -38,7 +38,8 @@ export type TrackPayload = {
     | 'article_view'
     | 'article_read'
     | 'cv_download'
-    | 'page_duration';
+    | 'page_duration'
+    | 'cta_click';
   url?: string;
   referrer?: string;
   entityId?: string;

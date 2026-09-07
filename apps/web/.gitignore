@@ -6,7 +6,11 @@
 /tmp
 /out-tsc
 /bazel-out
-/docs
+# Doc générée ignorée, SAUF les ADR : ce sont des décisions d'architecture, elles
+# se versionnent avec le code. `/docs/*` et non `/docs` : git ne redescend jamais
+# dans un répertoire exclu, une négation sous `/docs` serait sans effet.
+/docs/*
+!/docs/adr/
 
 # Node
 /node_modules

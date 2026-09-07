@@ -3,6 +3,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { EMPTY, of, throwError } from 'rxjs';
 import { Header } from './header';
+import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
@@ -105,6 +106,24 @@ describe('Header', () => {
       expect(labels.some((l) => l?.includes('Projets'))).toBe(true);
       expect(labels.some((l) => l?.includes('À propos'))).toBe(true);
       expect(sectionButtons.length).toBeGreaterThan(0);
+    });
+
+    // Non-régression du Lot 2 : le hero ne porte plus qu'un seul CTA. La nav est
+    // désormais le seul chemin vers Blog, À propos et Contact — elle doit les servir tous.
+    it('dessert toutes les destinations de NAV_LINKS', async () => {
+      const { fixture } = await setup();
+      const nav = fixture.nativeElement.querySelector('nav') as HTMLElement;
+      const anchors = Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href]'));
+      const buttons = Array.from(nav.querySelectorAll<HTMLButtonElement>('button[type="button"]'));
+
+      for (const item of NAV_LINKS) {
+        const target =
+          item.kind === 'route'
+            ? anchors.find((a) => a.getAttribute('href') === item.href)
+            : buttons.find((b) => b.textContent?.includes(item.label));
+        expect(target, `destination manquante dans la nav : ${item.label}`).toBeTruthy();
+        expect(target?.textContent).toContain(item.label);
+      }
     });
 
     it('délègue le scroll vers la section au SectionScroller au clic du bouton', async () => {

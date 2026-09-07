@@ -34,15 +34,23 @@ import type { HeroData } from '../domain/models/hero.model';
 
         <h1
           class="animate-fade-up delay-1 name-gradient text-5xl md:text-7xl lg:text-8xl font-extrabold mb-3 md:mb-4 tracking-tight leading-[1.2] pb-1"
+          data-testid="hero-name"
         >
           {{ h.name }}
         </h1>
 
         <p
           class="animate-fade-up delay-2 text-lg md:text-2xl lg:text-3xl font-medium text-foreground/70 leading-snug max-w-3xl mx-auto [&_.kw]:text-primary [&_.kw]:font-semibold"
-        >@for (segment of taglineSegments(); track $index) {<span
-            [class.kw]="segment.keyword"
-          >{{ segment.text }}</span>}</p>
+          data-testid="hero-tagline"
+        >
+          @for (segment of taglineSegments(); track $index) {
+            <span
+              [class.kw]="segment.keyword"
+              [attr.data-testid]="segment.keyword ? 'hero-keyword' : null"
+              >{{ segment.text }}</span
+            >
+          }
+        </p>
       } @else {
         <div class="space-y-4 animate-pulse flex flex-col items-center">
           <div class="h-6 bg-foreground/5 rounded-full w-48"></div>

@@ -60,7 +60,7 @@ describe('HttpAnalyticsGateway', () => {
     TestBed.resetTestingModule();
   });
 
-  describe('Tracking write-side (5 tests)', () => {
+  describe('Tracking write-side (7 tests)', () => {
     it('trackPageView émet POST /<base>/analytics/track avec { type:page_view, url, referrer }', () => {
       const { gateway, httpController } = configureBrowser();
 
@@ -137,6 +137,22 @@ describe('HttpAnalyticsGateway', () => {
         type: 'article_read',
         entityId: 'art-1',
         entityTitle: 'My Article',
+      });
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      httpController.verify();
+    });
+
+    it('trackCtaClick émet POST /<base>/analytics/track avec { type:cta_click, entityId, entityTitle }', () => {
+      const { gateway, httpController } = configureBrowser();
+
+      gateway.trackCtaClick('home_hero_projects', 'Voir les projets');
+
+      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({
+        type: 'cta_click',
+        entityId: 'home_hero_projects',
+        entityTitle: 'Voir les projets',
       });
       req.flush(null, { status: 204, statusText: 'No Content' });
       httpController.verify();
@@ -421,7 +437,7 @@ describe('HttpAnalyticsGateway', () => {
     );
   });
 
-  describe('SSR safety (3 tests)', () => {
+  describe('SSR safety (4 tests)', () => {
     it('trackPageView est no-op si platform !== browser', () => {
       const { gateway, httpController } = configureServer();
 
@@ -444,6 +460,15 @@ describe('HttpAnalyticsGateway', () => {
       const { gateway, httpController } = configureServer();
 
       gateway.trackArticleRead('art-1', 'My Article');
+
+      httpController.expectNone(`${BASE}/analytics/track`);
+      httpController.verify();
+    });
+
+    it('trackCtaClick est no-op si platform !== browser', () => {
+      const { gateway, httpController } = configureServer();
+
+      gateway.trackCtaClick('home_hero_projects', 'Voir les projets');
 
       httpController.expectNone(`${BASE}/analytics/track`);
       httpController.verify();

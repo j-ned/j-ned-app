@@ -15,6 +15,7 @@ export abstract class AnalyticsGateway {
   abstract trackArticleView(articleId: string, title: string): void;
   abstract trackArticleRead(articleId: string, title: string): void;
   abstract trackCvDownload(): void;
+  abstract trackCtaClick(ctaId: string, label: string): void;
 
   abstract sendBeacon(payload: TrackPayload): void;
 

@@ -13,9 +13,9 @@ export const routes: Routes = [
       seo: {
         title: 'Julien Nédellec | Développeur Full-Stack Angular & NestJS',
         description:
-          'Développeur Full-Stack Angular & NestJS. Applications web modernes, performantes et optimisées SEO — disponible pour vos projets.',
+          "Développeur Angular & NestJS. 20 ans d'industrie avant le code : je conçois, déploie et maintiens mes applications en production. CDI, Île-de-France.",
         keywords:
-          'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France',
+          'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France, Île-de-France, CDI, Industrie, Self-hosted',
         url: SITE_IDENTITY.siteUrl,
         type: 'website',
         structuredData: {
