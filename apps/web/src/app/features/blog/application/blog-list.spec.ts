@@ -1,6 +1,6 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, type Observable } from 'rxjs';
 import { describe, it, expect, afterEach } from 'vitest';
 import { BlogList } from './blog-list';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
@@ -26,7 +26,10 @@ function setup(posts: BlogPost[]): ComponentFixture<BlogList> {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
-      { provide: BlogGateway, useValue: { getPublishedPosts: () => of(posts) } },
+      {
+        provide: BlogGateway,
+        useValue: { getPublishedPosts: (): Observable<BlogPost[]> => of(posts) },
+      },
     ],
   });
   return TestBed.createComponent(BlogList);

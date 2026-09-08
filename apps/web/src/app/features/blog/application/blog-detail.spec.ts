@@ -1,7 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach, type Mock } from 'vitest';
 import { BlogDetail } from './blog-detail';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
@@ -39,13 +39,29 @@ class MockIntersectionObserver {
 
 function post(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
-    id: '1', title: 'Mon article', slug: 'mon-article', excerpt: 'Résumé',
-    contentMarkdown: '# Bonjour', coverImage: 'https://x.test/img.webp', tags: ['Angular'],
-    status: 'published', likesCount: 2, publishedAt: '2026-08-31T00:00:00Z', ...overrides,
+    id: '1',
+    title: 'Mon article',
+    slug: 'mon-article',
+    excerpt: 'Résumé',
+    contentMarkdown: '# Bonjour',
+    coverImage: 'https://x.test/img.webp',
+    tags: ['Angular'],
+    status: 'published',
+    likesCount: 2,
+    publishedAt: '2026-08-31T00:00:00Z',
+    ...overrides,
   };
 }
 
-function setup(gatewayStub: { getPostBySlug: () => ReturnType<BlogGateway['getPostBySlug']> }) {
+type Setup = {
+  readonly fixture: ComponentFixture<BlogDetail>;
+  readonly seoMock: { readonly applySeoData: Mock };
+  readonly analyticsMock: { readonly trackArticleView: Mock; readonly trackArticleRead: Mock };
+};
+
+function setup(gatewayStub: {
+  getPostBySlug: () => ReturnType<BlogGateway['getPostBySlug']>;
+}): Setup {
   const seoMock = { applySeoData: vi.fn() };
   const analyticsMock = { trackArticleView: vi.fn(), trackArticleRead: vi.fn() };
   TestBed.configureTestingModule({
@@ -80,7 +96,8 @@ describe('BlogDetail', () => {
     fixture.detectChanges();
     await fixture.whenStable(); // `resource()` charge de façon async, même si l'Observable sous-jacent est synchrone (of()).
     fixture.detectChanges();
-    const html = fixture.nativeElement.querySelector('[data-testid="blog-content"]').innerHTML as string;
+    const html = fixture.nativeElement.querySelector('[data-testid="blog-content"]')
+      .innerHTML as string;
     expect(html).toContain('<h1>Bonjour</h1>');
   });
 
@@ -94,7 +111,7 @@ describe('BlogDetail', () => {
     expect(navigateSpy).toHaveBeenCalledWith(['/blog']);
   });
 
-  it('applique le SEO avec les données de l\'article (title, description, image, JSON-LD BlogPosting)', async () => {
+  it("applique le SEO avec les données de l'article (title, description, image, JSON-LD BlogPosting)", async () => {
     const { fixture, seoMock } = setup({ getPostBySlug: () => of(post()) });
     fixture.componentRef.setInput('slug', 'mon-article');
     fixture.detectChanges();
@@ -115,7 +132,7 @@ describe('BlogDetail', () => {
     );
   });
 
-  it("omet image/datePublished du JSON-LD quand coverImage/publishedAt sont vides", async () => {
+  it('omet image/datePublished du JSON-LD quand coverImage/publishedAt sont vides', async () => {
     const { fixture, seoMock } = setup({
       getPostBySlug: () => of(post({ coverImage: '', publishedAt: null })),
     });
@@ -128,7 +145,7 @@ describe('BlogDetail', () => {
     expect(call.structuredData).not.toHaveProperty('datePublished');
   });
 
-  it('affiche la couverture de l\'article quand coverImage est renseignée', async () => {
+  it("affiche la couverture de l'article quand coverImage est renseignée", async () => {
     const { fixture } = setup({ getPostBySlug: () => of(post()) });
     fixture.componentRef.setInput('slug', 'mon-article');
     fixture.detectChanges();
@@ -144,10 +161,7 @@ describe('BlogDetail', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(analyticsMock.trackArticleView).toHaveBeenCalledExactlyOnceWith(
-      '1',
-      'Mon article',
-    );
+    expect(analyticsMock.trackArticleView).toHaveBeenCalledExactlyOnceWith('1', 'Mon article');
   });
 
   it("track la lecture de l'article (trackArticleRead) quand le lecteur scrolle jusqu'à la fin du contenu", async () => {
@@ -160,10 +174,7 @@ describe('BlogDetail', () => {
     expect(analyticsMock.trackArticleRead).not.toHaveBeenCalled();
     MockIntersectionObserver.instances[0].emit(true);
 
-    expect(analyticsMock.trackArticleRead).toHaveBeenCalledExactlyOnceWith(
-      '1',
-      'Mon article',
-    );
+    expect(analyticsMock.trackArticleRead).toHaveBeenCalledExactlyOnceWith('1', 'Mon article');
   });
 
   it("ne track la lecture qu'une seule fois même si le sentinel entre plusieurs fois dans le viewport", async () => {

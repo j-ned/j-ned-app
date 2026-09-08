@@ -1,65 +1,65 @@
 // @ts-check
-const eslint = require("@eslint/js");
-const tseslint = require("typescript-eslint");
-const angular = require("angular-eslint");
-const prettierConfig = require("eslint-config-prettier");
-const aak = require("./.claude/eslint/aak-conventions.mjs").default;
+const eslint = require('@eslint/js');
+const tseslint = require('typescript-eslint');
+const angular = require('angular-eslint');
+const prettierConfig = require('eslint-config-prettier');
+const aak = require('./.claude/eslint/aak-conventions.mjs').default;
 
 module.exports = [
   {
-    files: ["**/*.ts"],
+    files: ['**/*.ts'],
     ...eslint.configs.recommended,
   },
-  ...tseslint.configs.recommended.map(config => ({
-    files: ["**/*.ts"],
+  ...tseslint.configs.recommended.map((config) => ({
+    files: ['**/*.ts'],
     ...config,
   })),
-  ...tseslint.configs.stylistic.map(config => ({
-    files: ["**/*.ts"],
+  ...tseslint.configs.stylistic.map((config) => ({
+    files: ['**/*.ts'],
     ...config,
   })),
-  ...angular.configs.tsRecommended.map(config => ({
-    files: ["**/*.ts"],
+  ...angular.configs.tsRecommended.map((config) => ({
+    files: ['**/*.ts'],
     ...config,
   })),
   {
-    files: ["**/*.ts"],
+    files: ['**/*.ts'],
     processor: angular.processInlineTemplates,
     rules: {
-      "@angular-eslint/directive-selector": [
-        "error",
+      '@angular-eslint/directive-selector': [
+        'error',
         {
-          type: "attribute",
-          prefix: "app",
-          style: "camelCase",
+          type: 'attribute',
+          prefix: 'app',
+          style: 'camelCase',
         },
       ],
-      "@angular-eslint/component-selector": [
-        "error",
+      '@angular-eslint/component-selector': [
+        'error',
         {
-          type: "element",
-          prefix: "app",
-          style: "kebab-case",
+          type: 'element',
+          prefix: 'app',
+          style: 'kebab-case',
         },
       ],
-      "@typescript-eslint/consistent-type-definitions": ["error", "type"],
-      "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/explicit-function-return-type": "warn",
-      "@typescript-eslint/no-unused-vars": [
-        "error",
+      '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/explicit-function-return-type': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
         {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
         },
       ],
     },
   },
-  ...angular.configs.templateRecommended.map(config => ({
-    files: ["**/*.html"],
+  ...angular.configs.templateRecommended.map((config) => ({
+    files: ['**/*.html'],
     ...config,
   })),
-  ...angular.configs.templateAccessibility.map(config => ({
-    files: ["**/*.html"],
+  ...angular.configs.templateAccessibility.map((config) => ({
+    files: ['**/*.html'],
     ...config,
   })),
   // Prettier en dernier : désactive les règles stylistiques gérées par Prettier.
