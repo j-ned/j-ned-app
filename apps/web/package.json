@@ -17,7 +17,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,html,css,scss,json}\"",
     "check": "pnpm run format:check && pnpm run lint",
     "sentry:sourcemaps": "tsx scripts/upload-sentry-sourcemaps.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postbuild": "node scripts/apply-csp-hashes.mjs"
   },
   "lint-staged": {
     "*.ts": [

@@ -34,6 +34,18 @@ server {
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
+    server_tokens off;
+
+    # En-têtes de sécurité : Traefik ne pose que le TLS, le reste vient d'ici. La CSP complète
+    # (script-src haché par page) vit dans la <meta> de chaque index.html ; frame-ancestors ne
+    # peut être exprimé qu'en en-tête, d'où le second Content-Security-Policy.
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Content-Security-Policy "frame-ancestors 'none'" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
 
     gzip on;
     gzip_types text/plain text/css application/javascript application/json image/svg+xml application/xml+rss;
@@ -41,8 +53,9 @@ server {
 
     # Hashed assets : long cache, immutable
     location ~* \.(js|css|woff2?|ttf|otf|eot|png|jpe?g|gif|webp|avif|svg|ico)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+        add_header X-Content-Type-Options "nosniff" always;
         try_files $uri =404;
     }
 
