@@ -7,6 +7,7 @@
 
 import { writeFileSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
+import { fetchPublicJson } from './fetch-public-json.mjs';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,26 +32,12 @@ const staticUrls = [
 ];
 
 async function fetchProjectSlugs() {
-  try {
-    const res = await fetch(`${PROD_API_URL}/projects?_sort=order&limit=100`);
-    if (!res.ok) throw new Error(`API returned ${res.status}`);
-    const projects = await res.json();
-    return projects.map((p) => p.slug);
-  } catch (err) {
-    console.warn(`WARN: could not fetch projects for sitemap (${err.message}).`);
-    return [];
-  }
+  const projects = await fetchPublicJson(`${PROD_API_URL}/projects?_sort=order&limit=100`);
+  return projects.map((p) => p.slug);
 }
 
 async function fetchBlogPosts() {
-  try {
-    const res = await fetch(`${PROD_API_URL}/blog/posts`);
-    if (!res.ok) throw new Error(`API returned ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.warn(`WARN: could not fetch blog posts for sitemap (${err.message}).`);
-    return [];
-  }
+  return fetchPublicJson(`${PROD_API_URL}/blog/posts`);
 }
 
 const [slugs, posts] = await Promise.all([fetchProjectSlugs(), fetchBlogPosts()]);
@@ -86,4 +73,6 @@ ${allUrls
 `;
 
 writeFileSync(SITEMAP_PATH, xml);
-console.log(`Built ${SITEMAP_PATH} with ${allUrls.length} URLs (${projectUrls.length} projects, ${blogUrls.length} blog posts).`);
+console.log(
+  `Built ${SITEMAP_PATH} with ${allUrls.length} URLs (${projectUrls.length} projects, ${blogUrls.length} blog posts).`,
+);

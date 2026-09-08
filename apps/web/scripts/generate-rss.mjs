@@ -6,6 +6,7 @@
 
 import { writeFileSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
+import { fetchPublicJson } from './fetch-public-json.mjs';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -28,14 +29,7 @@ function escapeXml(str) {
 }
 
 async function fetchPublishedPosts() {
-  try {
-    const res = await fetch(`${PROD_API_URL}/blog/posts`);
-    if (!res.ok) throw new Error(`API returned ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.warn(`WARN: could not fetch blog posts for RSS (${err.message}). Feed will be empty.`);
-    return [];
-  }
+  return fetchPublicJson(`${PROD_API_URL}/blog/posts`);
 }
 
 const posts = await fetchPublishedPosts();

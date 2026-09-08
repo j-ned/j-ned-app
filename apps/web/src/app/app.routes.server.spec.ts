@@ -41,10 +41,52 @@ describe('fetchPrerenderSlugs', () => {
     );
   });
 
+  // Un site publié sans ses pages projet est pire qu'un build qui échoue : Dokploy garde alors
+  // l'image précédente en ligne. Le 429 (limite de débit) est réessayé, le reste fait échouer.
+  it('retries a 429 after the delay the API announces, then succeeds', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        headers: new Headers({ 'retry-after': '2' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async (): Promise<{ slug: string }[]> => [{ slug: 'dashflow' }],
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pending = fetchPrerenderSlugs('/projects');
+    await vi.advanceTimersByTimeAsync(2000);
+
+    await expect(pending).resolves.toEqual([{ slug: 'dashflow' }]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
+  it('gives up after three 429 in a row and fails the build', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 429, headers: new Headers() }),
+    );
+
+    const pending = fetchPrerenderSlugs('/projects').catch((e: Error) => e.message);
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    await expect(pending).resolves.toMatch(/429/);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    vi.useRealTimers();
+  });
+
   it.each([
-    ['a non-2xx response', { ok: false, json: async (): Promise<never[]> => [] }],
+    ['a non-2xx response', { ok: false, status: 503, headers: new Headers() }],
     ['a network failure', undefined],
-  ])('returns no params on %s so the build still succeeds', async (_label, response) => {
+  ])('fails the build on %s instead of publishing an amputated site', async (_label, response) => {
     vi.stubGlobal(
       'fetch',
       response
@@ -52,6 +94,6 @@ describe('fetchPrerenderSlugs', () => {
         : vi.fn().mockRejectedValue(new Error('ENOTFOUND')),
     );
 
-    await expect(fetchPrerenderSlugs('/blog/posts')).resolves.toEqual([]);
+    await expect(fetchPrerenderSlugs('/blog/posts')).rejects.toThrow(/blog\/posts/);
   });
 });
