@@ -15,7 +15,7 @@
   Binaire installé : `pnpm exec <cmd>` ; ad-hoc : `pnpm dlx <pkg>`. **Aucune**
   autre commande ne franchit les gates.
 - **test** (source de vérité du typecheck) : `pnpm test` (`ng test`, builder
-  `@angular/build:unit-test` → Vitest 4 + jsdom). `tsconfig.spec.json` inclut
+  `@angular/build:unit-test` → Vitest 4 + happy-dom, environnement fixé dans `vitest.config.mts`). `tsconfig.spec.json` inclut
   bien `src/**/*.spec.ts` ⇒ les specs sont type-checkées.
 - **lint** : `pnpm lint` (`ng lint`, `@angular-eslint/builder` + flat config
   `eslint.config.js`) — zéro warning, zéro erreur.
@@ -103,7 +103,7 @@
 
 ## Tests
 
-- **Framework** : Vitest 4 (builder `@angular/build:unit-test`) + jsdom.
+- **Framework** : Vitest 4 (builder `@angular/build:unit-test`) + happy-dom, fixé dans `vitest.config.mts`. jsdom ^30 n’est là que pour DOMPurify au prérendu (`isomorphic-dompurify`).
 - **Régime zone** : `zoneless` (pas de `zone.js` en dépendance ; aucun
   `provideZoneChangeDetection`). ⇒ **jamais** `fakeAsync`/`tick`/`flush`/
   `waitForAsync` (plantent sans patches `zone-testing`) : fake timers du runner

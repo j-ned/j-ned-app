@@ -283,6 +283,7 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 
 ## Tests Vitest
 
+- Environnement DOM : **happy-dom**, declare en devDependency et fixe dans `vitest.config.mts` (charge par `runnerConfig` d'`angular.json`). jsdom n'est present que comme dependance d'`isomorphic-dompurify` (prerender), jamais pour les tests
 - Fichier `.spec.ts`, pattern `describe` > `it` Given/When/Then
 - 3 niveaux : unitaire (tout mocke), composant (TestBed + mocks), integration (chaine complete)
 - Domain teste **sans TestBed** (TypeScript pur)
