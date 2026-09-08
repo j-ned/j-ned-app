@@ -1,15 +1,13 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
+import { FormField, FormRoot, form, required } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 
-type DisableFormShape = {
-  password: FormControl<string>;
-};
+const EMPTY = { password: '' };
 
 @Component({
   selector: 'app-two-factor-disable-form',
-  imports: [ReactiveFormsModule, AppIcon, Button],
+  imports: [FormRoot, FormField, AppIcon, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -78,32 +76,26 @@ type DisableFormShape = {
               </app-button>
             </div>
           } @else {
-            <form [formGroup]="disableForm" (ngSubmit)="submitDisable()" class="space-y-4">
+            <form [formRoot]="disableForm" class="space-y-4">
               <div>
+                @let password = disableForm.password();
                 <label for="disable-pw" class="form-label">Mot de passe</label>
                 <input
                   id="disable-pw"
                   type="password"
-                  formControlName="password"
+                  [formField]="disableForm.password"
                   autocomplete="current-password"
                   aria-required="true"
-                  [attr.aria-invalid]="
-                    disableForm.controls.password.touched && disableForm.controls.password.invalid
-                  "
+                  [attr.aria-invalid]="password.touched() && password.invalid()"
                   [attr.aria-describedby]="
-                    disableForm.controls.password.touched && disableForm.controls.password.invalid
-                      ? 'twofa-setup-disable-pw-error'
-                      : null
+                    password.touched() && password.invalid() ? 'twofa-setup-disable-pw-error' : null
                   "
                   class="form-input"
                   placeholder="Votre mot de passe"
                 />
-                @if (
-                  disableForm.controls.password.touched &&
-                  disableForm.controls.password.errors?.['required']
-                ) {
+                @if (password.touched() && password.invalid()) {
                   <p id="twofa-setup-disable-pw-error" role="alert" class="form-error">
-                    Ce champ est obligatoire
+                    {{ password.errors()[0].message }}
                   </p>
                 }
               </div>
@@ -123,7 +115,7 @@ type DisableFormShape = {
                   severity="danger"
                   [block]="true"
                   class="sm:flex-1"
-                  [disabled]="disableForm.invalid || loading()"
+                  [disabled]="loading()"
                 >
                   @if (loading()) {
                     Désactivation...
@@ -150,26 +142,27 @@ export class TwoFactorDisableForm {
   readonly reconfigure = output<void>();
   readonly requestDisable = output<void>();
 
-  readonly disableForm = new FormGroup<DisableFormShape>({
-    password: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-  });
+  private readonly _model = signal({ ...EMPTY });
+
+  readonly disableForm = form(
+    this._model,
+    (path) => {
+      required(path.password, { message: 'Ce champ est obligatoire' });
+    },
+    {
+      submission: {
+        action: async () => {
+          this.disable.emit(this._model().password);
+        },
+      },
+    },
+  );
 
   constructor() {
+    // Le parent incrémente `resetToken` après une désactivation : le formulaire repart à vide.
     effect(() => {
       this.resetToken();
-      this.disableForm.reset();
+      this.disableForm().reset({ ...EMPTY });
     });
-  }
-
-  protected submitDisable(): void {
-    if (this.disableForm.invalid) {
-      this.disableForm.markAllAsTouched();
-      return;
-    }
-
-    this.disable.emit(this.disableForm.getRawValue().password);
   }
 }

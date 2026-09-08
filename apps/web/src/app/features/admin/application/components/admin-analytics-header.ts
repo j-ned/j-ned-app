@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import type { DateRangeKey } from '@features/analytics/domain/analytics-presenter';
@@ -18,7 +17,7 @@ export const DATE_RANGE_OPTIONS: readonly DateRangeOption[] = [
 
 @Component({
   selector: 'app-admin-analytics-header',
-  imports: [FormsModule, Button, AppIcon],
+  imports: [Button, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
   template: `
@@ -45,8 +44,8 @@ export const DATE_RANGE_OPTIONS: readonly DateRangeOption[] = [
         </div>
         <select
           class="app-select"
-          [ngModel]="dateRange()"
-          (ngModelChange)="dateRangeChanged.emit($event)"
+          [value]="dateRange()"
+          (change)="selectDateRange($event)"
           aria-label="Période d'analyse"
         >
           @for (opt of DATE_RANGE_OPTIONS; track opt.value) {
@@ -69,4 +68,8 @@ export class AdminAnalyticsHeader {
 
   readonly dateRangeChanged = output<DateRangeKey>();
   readonly exportCsvClicked = output<void>();
+
+  protected selectDateRange(event: Event): void {
+    this.dateRangeChanged.emit((event.target as HTMLSelectElement).value as DateRangeKey);
+  }
 }

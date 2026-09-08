@@ -25,29 +25,27 @@ describe('AdminBlogForm', () => {
     fixture.componentRef.setInput('post', post());
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.form.controls.title.value).toBe('Article existant');
-    expect(fixture.componentInstance.form.controls.excerpt.value).toBe('Extrait existant');
-    expect(fixture.componentInstance.form.controls.contentMarkdown.value).toBe(
-      '# Contenu existant',
-    );
-    expect(fixture.componentInstance.form.controls.status.value).toBe('published');
+    expect(fixture.componentInstance.form.title().value()).toBe('Article existant');
+    expect(fixture.componentInstance.form.excerpt().value()).toBe('Extrait existant');
+    expect(fixture.componentInstance.form.contentMarkdown().value()).toBe('# Contenu existant');
+    expect(fixture.componentInstance.form.status().value()).toBe('published');
   });
 
-  it('émet saved avec le markdown, les tags et le statut au submit', () => {
+  it('émet saved avec le markdown, les tags et le statut au submit', async () => {
     const fixture = TestBed.createComponent(AdminBlogForm);
     fixture.detectChanges();
 
     let emitted: unknown;
     fixture.componentInstance.saved.subscribe((v) => (emitted = v));
 
-    fixture.componentInstance.form.setValue({
+    fixture.componentInstance.form().value.set({
       title: 'Mon article',
       excerpt: 'Résumé',
       contentMarkdown: '# Contenu',
       status: 'draft',
     });
     fixture.componentInstance.selectedTags.set(new Set(['Angular']));
-    fixture.componentInstance.submitPost();
+    await fixture.componentInstance.submitPost();
 
     expect(emitted).toEqual({
       data: {

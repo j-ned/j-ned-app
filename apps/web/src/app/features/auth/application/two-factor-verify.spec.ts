@@ -28,22 +28,18 @@ describe('TwoFactorVerify a11y', () => {
   });
 
   it('code input has autocomplete=one-time-code, inputmode=numeric, aria-required=true', () => {
-    const code = fixture.nativeElement.querySelector(
-      'input[formcontrolname="code"]',
-    ) as HTMLInputElement;
+    const code = fixture.nativeElement.querySelector('input#code') as HTMLInputElement;
     expect(code.autocomplete).toBe('one-time-code');
     expect(code.inputMode).toBe('numeric');
     expect(code.getAttribute('aria-required')).toBe('true');
   });
 
   it('code shows aria-invalid + aria-describedby when touched and invalid', () => {
-    fixture.componentInstance.form.controls.code.markAsTouched();
-    fixture.componentInstance.form.controls.code.setValue('');
+    fixture.componentInstance.form.code().markAsTouched();
+    fixture.componentInstance.form.code().value.set('');
     fixture.detectChanges();
 
-    const code = fixture.nativeElement.querySelector(
-      'input[formcontrolname="code"]',
-    ) as HTMLInputElement;
+    const code = fixture.nativeElement.querySelector('input#code') as HTMLInputElement;
     expect(code.getAttribute('aria-invalid')).toBe('true');
     expect(code.getAttribute('aria-describedby')).toBe('twofa-code-error');
 

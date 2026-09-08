@@ -1,19 +1,17 @@
-import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { FormField, FormRoot, form, pattern, required } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { AppIconTile } from '@shared/ui/icon-tile';
 
-type TwoFactorVerifyFormShape = {
-  code: FormControl<string>;
-};
+const TOTP_PATTERN = /^\d{6}$/;
 
 @Component({
   selector: 'app-two-factor-verify',
-  imports: [ReactiveFormsModule, RouterLink, AppIcon, Button, AppIconTile],
+  imports: [FormRoot, FormField, RouterLink, AppIcon, Button, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -40,30 +38,25 @@ type TwoFactorVerifyFormShape = {
           </div>
         }
 
-        <form [formGroup]="form" (ngSubmit)="verifyCode()" class="space-y-5">
+        <form [formRoot]="form" class="space-y-5">
           <div>
+            @let code = form.code();
             <label for="code" class="form-label">Code TOTP</label>
             <input
               id="code"
               type="text"
-              formControlName="code"
-              maxlength="6"
-              pattern="[0-9]*"
+              [formField]="form.code"
               autocomplete="one-time-code"
               inputmode="numeric"
               aria-required="true"
-              [attr.aria-invalid]="form.controls.code.touched && form.controls.code.invalid"
-              [attr.aria-describedby]="
-                form.controls.code.touched && form.controls.code.invalid ? 'twofa-code-error' : null
-              "
+              [attr.aria-invalid]="code.touched() && code.invalid()"
+              [attr.aria-describedby]="code.touched() && code.invalid() ? 'twofa-code-error' : null"
               class="form-input text-center text-2xl tracking-[0.5em] font-mono"
               placeholder="000000"
             />
-            @if (form.controls.code.touched && form.controls.code.errors?.['required']) {
-              <p id="twofa-code-error" role="alert" class="form-error">Le code est obligatoire</p>
-            } @else if (form.controls.code.touched && form.controls.code.errors?.['pattern']) {
+            @if (code.touched() && code.invalid()) {
               <p id="twofa-code-error" role="alert" class="form-error">
-                Le code doit contenir 6 chiffres
+                {{ code.errors()[0].message }}
               </p>
             }
           </div>
@@ -72,9 +65,9 @@ type TwoFactorVerifyFormShape = {
             type="submit"
             severity="primary"
             [block]="true"
-            [disabled]="form.invalid || isSubmitting()"
+            [disabled]="form().submitting()"
           >
-            @if (isSubmitting()) {
+            @if (form().submitting()) {
               Vérification...
             } @else {
               Vérifier
@@ -97,49 +90,39 @@ type TwoFactorVerifyFormShape = {
 export class TwoFactorVerify {
   private readonly authService = inject(AuthStore);
   private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
 
   readonly errorMessage = signal('');
-  readonly isSubmitting = signal(false);
 
-  readonly form = new FormGroup<TwoFactorVerifyFormShape>({
-    code: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.pattern(/^\d{6}$/)],
-    }),
-  });
+  private readonly _model = signal({ code: '' });
 
-  protected verifyCode(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+  readonly form = form(
+    this._model,
+    (path) => {
+      required(path.code, { message: 'Le code est obligatoire' });
+      pattern(path.code, TOTP_PATTERN, { message: 'Le code doit contenir 6 chiffres' });
+    },
+    { submission: { action: () => this.verify() } },
+  );
 
+  private async verify(): Promise<void> {
     const challengeToken = this.authService.pendingChallengeToken();
     if (!challengeToken) {
-      void this.router.navigate(['/login']);
+      await this.router.navigate(['/login']);
       return;
     }
 
-    this.isSubmitting.set(true);
     this.errorMessage.set('');
-
-    this.authService
-      .verifyTwoFactor(challengeToken, this.form.getRawValue().code)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (success) => {
-          this.isSubmitting.set(false);
-          if (success) {
-            void this.router.navigate(['/admin']);
-          } else {
-            this.errorMessage.set('Code invalide');
-          }
-        },
-        error: () => {
-          this.isSubmitting.set(false);
-          this.errorMessage.set('Erreur de vérification');
-        },
-      });
+    try {
+      const success = await firstValueFrom(
+        this.authService.verifyTwoFactor(challengeToken, this._model().code),
+      );
+      if (success) {
+        await this.router.navigate(['/admin']);
+      } else {
+        this.errorMessage.set('Code invalide');
+      }
+    } catch {
+      this.errorMessage.set('Erreur de vérification');
+    }
   }
 }

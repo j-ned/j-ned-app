@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, switchMap } from 'rxjs';
-import { FormsModule } from '@angular/forms';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
@@ -20,7 +19,7 @@ import { AppIcon } from '@shared/icons/app-icon';
 
 @Component({
   selector: 'app-admin-projects',
-  imports: [AdminProjectInlineForm, AdminProjectRow, FormsModule, AppIcon, Button],
+  imports: [AdminProjectInlineForm, AdminProjectRow, AppIcon, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
@@ -29,8 +28,8 @@ import { AppIcon } from '@shared/icons/app-icon';
         <div class="flex flex-wrap items-center gap-3 sm:gap-4">
           <select
             class="app-select min-w-0 flex-1 sm:flex-none sm:min-w-44"
-            [ngModel]="selectedCategory()"
-            (ngModelChange)="selectedCategory.set($event)"
+            [value]="selectedCategory()"
+            (change)="selectCategory($event)"
             aria-label="Filtrer par catégorie"
           >
             <option value="Tous">Catégorie</option>
@@ -212,5 +211,9 @@ export class AdminProjects {
           });
         },
       });
+  }
+
+  protected selectCategory(event: Event): void {
+    this.selectedCategory.set((event.target as HTMLSelectElement).value);
   }
 }

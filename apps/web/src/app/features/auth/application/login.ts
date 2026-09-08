@@ -1,21 +1,16 @@
-import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { FormField, FormRoot, email, form, minLength, required } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
 import { ToastStore } from '@shared/ui/toast-store';
 import { Button } from '@shared/ui/button';
 import { AppIconTile } from '@shared/ui/icon-tile';
 import { AppIcon } from '@shared/icons/app-icon';
 
-type LoginForm = {
-  email: FormControl<string>;
-  password: FormControl<string>;
-};
-
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, AppIcon, Button, AppIconTile],
+  imports: [FormRoot, FormField, RouterLink, AppIcon, Button, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -42,12 +37,13 @@ type LoginForm = {
             </div>
           }
 
-          <form [formGroup]="form" (ngSubmit)="submitLogin()">
+          <form [formRoot]="form">
             <fieldset class="border-0 p-0 m-0">
               <legend class="sr-only">Identifiants de connexion</legend>
 
               <!-- Email -->
               <div>
+                @let emailField = form.email();
                 <label for="email" class="form-label">Email</label>
                 <div class="relative">
                   <app-icon
@@ -58,32 +54,27 @@ type LoginForm = {
                   <input
                     id="email"
                     type="email"
-                    formControlName="email"
+                    [formField]="form.email"
                     autocomplete="email"
                     aria-required="true"
-                    [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+                    [attr.aria-invalid]="emailField.touched() && emailField.invalid()"
                     [attr.aria-describedby]="
-                      form.controls.email.touched && form.controls.email.invalid
-                        ? 'login-email-error'
-                        : null
+                      emailField.touched() && emailField.invalid() ? 'login-email-error' : null
                     "
                     class="form-input pl-10"
                     placeholder="Votre email"
                   />
                 </div>
-                @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
+                @if (emailField.touched() && emailField.invalid()) {
                   <p id="login-email-error" role="alert" class="form-error">
-                    L'email est obligatoire
-                  </p>
-                } @else if (form.controls.email.touched && form.controls.email.errors?.['email']) {
-                  <p id="login-email-error" role="alert" class="form-error">
-                    L'email n'est pas valide
+                    {{ emailField.errors()[0].message }}
                   </p>
                 }
               </div>
 
               <!-- Password -->
               <div class="mt-3">
+                @let password = form.password();
                 <label for="password" class="form-label">Mot de passe</label>
                 <div class="relative">
                   <app-icon
@@ -94,32 +85,20 @@ type LoginForm = {
                   <input
                     id="password"
                     type="password"
-                    formControlName="password"
+                    [formField]="form.password"
                     autocomplete="current-password"
                     aria-required="true"
-                    [attr.aria-invalid]="
-                      form.controls.password.touched && form.controls.password.invalid
-                    "
+                    [attr.aria-invalid]="password.touched() && password.invalid()"
                     [attr.aria-describedby]="
-                      form.controls.password.touched && form.controls.password.invalid
-                        ? 'login-password-error'
-                        : null
+                      password.touched() && password.invalid() ? 'login-password-error' : null
                     "
                     class="form-input pl-10"
                     placeholder="Votre mot de passe"
                   />
                 </div>
-                @if (
-                  form.controls.password.touched && form.controls.password.errors?.['required']
-                ) {
+                @if (password.touched() && password.invalid()) {
                   <p id="login-password-error" role="alert" class="form-error">
-                    Le mot de passe est obligatoire
-                  </p>
-                } @else if (
-                  form.controls.password.touched && form.controls.password.errors?.['minlength']
-                ) {
-                  <p id="login-password-error" role="alert" class="form-error">
-                    Le mot de passe doit contenir au moins 6 caractères
+                    {{ password.errors()[0].message }}
                   </p>
                 }
               </div>
@@ -129,10 +108,10 @@ type LoginForm = {
               type="submit"
               severity="primary"
               [block]="true"
-              [disabled]="form.invalid || isSubmitting()"
+              [disabled]="form().submitting()"
               class="mt-5"
             >
-              @if (isSubmitting()) {
+              @if (form().submitting()) {
                 Connexion...
               } @else {
                 Se connecter
@@ -159,61 +138,43 @@ export class Login {
   private readonly authService = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastStore);
-  private readonly destroyRef = inject(DestroyRef);
 
   readonly errorMessage = signal('');
-  readonly isSubmitting = signal(false);
 
-  readonly form = new FormGroup<LoginForm>({
-    email: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.email],
-    }),
-    password: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(6)],
-    }),
-  });
+  private readonly _model = signal({ email: '', password: '' });
 
-  protected submitLogin(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.isSubmitting.set(true);
-    this.errorMessage.set('');
-
-    const { email, password } = this.form.getRawValue();
-
-    this.authService
-      .login(email, password)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (result) => {
-          this.isSubmitting.set(false);
-          if (result === 'success') {
-            void this.router.navigate(['/admin']);
-          } else if (result === 'two-factor') {
-            void this.router.navigate(['/two-factor']);
-          } else {
-            this.errorMessage.set('Email ou mot de passe incorrect');
-            this.toast.add({
-              severity: 'error',
-              summary: 'Erreur',
-              detail: 'Email ou mot de passe incorrect',
-            });
-          }
-        },
-        error: () => {
-          this.isSubmitting.set(false);
-          this.errorMessage.set('Erreur de connexion au serveur');
-          this.toast.add({
-            severity: 'error',
-            summary: 'Erreur',
-            detail: 'Erreur de connexion au serveur',
-          });
-        },
+  readonly form = form(
+    this._model,
+    (path) => {
+      required(path.email, { message: "L'email est obligatoire" });
+      email(path.email, { message: "L'email n'est pas valide" });
+      required(path.password, { message: 'Le mot de passe est obligatoire' });
+      minLength(path.password, 6, {
+        message: 'Le mot de passe doit contenir au moins 6 caractères',
       });
+    },
+    { submission: { action: () => this.login() } },
+  );
+
+  private async login(): Promise<void> {
+    this.errorMessage.set('');
+    const { email, password } = this._model();
+    try {
+      const result = await firstValueFrom(this.authService.login(email, password));
+      if (result === 'success') {
+        await this.router.navigate(['/admin']);
+      } else if (result === 'two-factor') {
+        await this.router.navigate(['/two-factor']);
+      } else {
+        this.fail('Email ou mot de passe incorrect');
+      }
+    } catch {
+      this.fail('Erreur de connexion au serveur');
+    }
+  }
+
+  private fail(detail: string): void {
+    this.errorMessage.set(detail);
+    this.toast.add({ severity: 'error', summary: 'Erreur', detail });
   }
 }

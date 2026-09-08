@@ -59,6 +59,9 @@
 - **Forme des modèles** : `type` immutables (`readonly`) ; pas d'`interface` pour
   les modèles de domaine ; **union types > enums**. Pas de dérivation depuis un
   schéma (aucune lib de validation runtime côté front).
+- **Formulaires** : Signal Forms partout (`@angular/forms/signals`, migration achevée le
+  2026-09-08) ; plus de `ReactiveFormsModule`/`FormsModule`/`ngModel` dans `src/`.
+  Doctrine et footguns : skill `angular-signal-forms`, section « Formulaires » de CLAUDE.md.
 - **Contrats injectables** : `abstract class` **seulement si 2+ implémentations**
   réelles/planifiées (in-memory + HTTP, mock + prod) ; sinon **classe concrète**
   `@Injectable({ providedIn: 'root' })` directe (YAGNI). La testabilité passe par

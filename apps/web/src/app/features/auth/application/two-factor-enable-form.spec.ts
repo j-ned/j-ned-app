@@ -19,7 +19,7 @@ function withQr(): ComponentFixture<TwoFactorEnableForm> {
 describe('TwoFactorEnableForm: initial state (no QR yet)', () => {
   it('does not render the code input before a QR code is provided', () => {
     const fixture = render();
-    const code = fixture.nativeElement.querySelector('input[formcontrolname="code"]');
+    const code = fixture.nativeElement.querySelector('input#totp-code');
     expect(code).toBeNull();
   });
 
@@ -58,16 +58,14 @@ describe('TwoFactorEnableForm: QR generated state', () => {
     expect(img).not.toBeNull();
     expect(img.getAttribute('src')).toBe('data:image/png;base64,abc');
     expect(img.getAttribute('alt')).toBe(
-      'QR code à scanner avec votre application d\'authentification',
+      "QR code à scanner avec votre application d'authentification",
     );
     expect(fixture.nativeElement.textContent).toContain('SECRETXYZ');
   });
 
   it('code input has autocomplete=one-time-code, inputmode=numeric, aria-required=true', () => {
     const fixture = withQr();
-    const code = fixture.nativeElement.querySelector(
-      'input[formcontrolname="code"]',
-    ) as HTMLInputElement;
+    const code = fixture.nativeElement.querySelector('input#totp-code') as HTMLInputElement;
     expect(code).not.toBeNull();
     expect(code.autocomplete).toBe('one-time-code');
     expect(code.inputMode).toBe('numeric');
@@ -76,13 +74,11 @@ describe('TwoFactorEnableForm: QR generated state', () => {
 
   it('code input exposes aria-invalid + aria-describedby and a role=alert error when touched and empty', () => {
     const fixture = withQr();
-    fixture.componentInstance.tfaForm.controls.code.markAsTouched();
-    fixture.componentInstance.tfaForm.controls.code.setValue('');
+    fixture.componentInstance.tfaForm.code().markAsTouched();
+    fixture.componentInstance.tfaForm.code().value.set('');
     fixture.detectChanges();
 
-    const code = fixture.nativeElement.querySelector(
-      'input[formcontrolname="code"]',
-    ) as HTMLInputElement;
+    const code = fixture.nativeElement.querySelector('input#totp-code') as HTMLInputElement;
     expect(code.getAttribute('aria-invalid')).toBe('true');
     expect(code.getAttribute('aria-describedby')).toBe('twofa-setup-code-error');
 
@@ -94,8 +90,8 @@ describe('TwoFactorEnableForm: QR generated state', () => {
 
   it('shows the pattern message when the code is not 6 digits', () => {
     const fixture = withQr();
-    fixture.componentInstance.tfaForm.controls.code.markAsTouched();
-    fixture.componentInstance.tfaForm.controls.code.setValue('12');
+    fixture.componentInstance.tfaForm.code().markAsTouched();
+    fixture.componentInstance.tfaForm.code().value.set('12');
     fixture.detectChanges();
 
     const error = fixture.nativeElement.querySelector('#twofa-setup-code-error');
@@ -127,29 +123,29 @@ describe('TwoFactorEnableForm: feedback inputs', () => {
 });
 
 describe('TwoFactorEnableForm: verify output', () => {
-  it('does not emit verify when the code is invalid', () => {
+  it('does not emit verify when the code is invalid', async () => {
     const fixture = withQr();
     let emitted = false;
     fixture.componentInstance.verify.subscribe(() => (emitted = true));
 
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit'));
-    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(emitted).toBe(false);
   });
 
-  it('emits verify with the typed code when the form is valid', () => {
+  it('emits verify with the typed code when the form is valid', async () => {
     const fixture = withQr();
     let received: string | undefined;
     fixture.componentInstance.verify.subscribe((code: string) => (received = code));
 
-    fixture.componentInstance.tfaForm.controls.code.setValue('123456');
+    fixture.componentInstance.tfaForm.code().value.set('123456');
     fixture.detectChanges();
 
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit'));
-    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(received).toBe('123456');
   });
@@ -161,12 +157,12 @@ describe('TwoFactorEnableForm: reset token', () => {
     fixture.componentRef.setInput('resetToken', 0);
     fixture.detectChanges();
 
-    fixture.componentInstance.tfaForm.controls.code.setValue('123456');
+    fixture.componentInstance.tfaForm.code().value.set('123456');
 
     fixture.componentRef.setInput('resetToken', 1);
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(fixture.componentInstance.tfaForm.controls.code.value).toBe('');
+    expect(fixture.componentInstance.tfaForm.code().value()).toBe('');
   });
 });

@@ -141,18 +141,14 @@ You are an expert TypeScript / Angular engineer. You write functional, maintaina
 - Pas de `setTimeout` ni `ChangeDetectorRef.detectChanges()` pour trigger CD
 - Signals pour tout etat reactif
 
-### Formulaires : Signal Forms par defaut (v22, `@angular/forms/signals`)
-- Tout formulaire **neuf** = Signal Forms : modele `signal()` a defauts non-`null`, `form(model, schema, { submission })`, `<form [formRoot]>` + `[formField]` (qui possede l'element : pas de `required`/`disabled`/`[value]` en parallele), etat lu par appel du champ (`f.email().touched()`), messages dans le schema, `submit()` revele les erreurs et ne lance l'action que si valide (skill `angular-signal-forms`)
-- Reactive Forms tolere sur l'existant non migre ; migration = changement de forme complet, jamais un melange dans un meme formulaire. Reference migree : `features/contact/application/contact-form.ts`
-
-### Reactive Forms (existant non migre)
-- 1 form = 1 `FormGroup`, 1 champ = 1 `FormControl`, submit = `ngSubmit`
-- Toujours typer le shape du form, `nonNullable: true` par defaut
-- `getRawValue()` (inclut disabled), pas `.value`
-- `FormGroup` imbrique pour les sections
-- `<fieldset>` + `<legend>` pour grouper, `<label for>` toujours
-- `aria-required="true"`, `role="alert"` sur les erreurs
-- `control.updateValueAndValidity()` **obligatoire** apres changement dynamique de validators
+### Formulaires : Signal Forms (v22, `@angular/forms/signals`)
+- **Tout formulaire** = Signal Forms : modele `signal()` a defauts non-`null` (ou `linkedSignal()` sur l'`input()` a editer), `form(model, schema, { submission })`, `<form [formRoot]>` + `[formField]` (qui possede l'element : pas de `required`/`disabled`/`[value]`/`maxlength`/`pattern` en parallele), etat lu par appel du champ (`f.email().touched()`), messages dans le schema, premiere erreur du champ touche affichee sous lui, `submit()` revele les erreurs et ne lance l'action que si valide (skill `angular-signal-forms`)
+- Validation croisee : `validate(path.confirm, ({ value, valueOf }) => …)` sur le champ que l'utilisateur corrige. Tableaux : `applyEach(path.items, (item) => …)`, ajout/retrait par `model.update()`, et **copier les lignes champ par champ** dans le payload emis (Signal Forms marque les elements d'un symbole interne)
+- Bouton submit desactive **uniquement** sur `form().submitting()` (ou un `loading()` parent), jamais sur `invalid()` : un controle desactive n'est ni focusable ni annonce
+- Composant dumb : l'action de `submission` emet l'`output()`, un `input()` `resetToken` + `effect()` remet le modele a vide
+- `ReactiveFormsModule`, `FormsModule` et `ngModel` : **plus aucun usage dans le repo** (migration achevee le 2026-09-08). Un `<select>` de filtre se lie en `[value]` + `(change)`. Reactive Forms tolere uniquement pour une lib tierce qui n'expose qu'un `ControlValueAccessor`
+- References : `features/contact/application/contact-form.ts` (page), `features/auth/application/password-change-form.ts` (croisee), `features/admin/application/components/admin-project-inline-form.ts` (tableaux, `linkedSignal`)
+- `<fieldset>` + `<legend>` pour grouper, `<label for>` toujours, `aria-required="true"`, `role="alert"` sur les erreurs
 
 ### Routing
 - Lazy load partout (`loadComponent`, `loadChildren`), **sauf** la route par defaut

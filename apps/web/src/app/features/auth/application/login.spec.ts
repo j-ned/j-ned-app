@@ -36,8 +36,8 @@ describe('Login a11y', () => {
   });
 
   it('email shows aria-invalid + aria-describedby when touched and invalid', () => {
-    fixture.componentInstance.form.controls.email.markAsTouched();
-    fixture.componentInstance.form.controls.email.setValue('');
+    fixture.componentInstance.form.email().markAsTouched();
+    fixture.componentInstance.form.email().value.set('');
     fixture.detectChanges();
 
     const email = fixture.nativeElement.querySelector('input#email') as HTMLInputElement;
@@ -50,8 +50,8 @@ describe('Login a11y', () => {
   });
 
   it('password shows aria-invalid + aria-describedby when touched and invalid', () => {
-    fixture.componentInstance.form.controls.password.markAsTouched();
-    fixture.componentInstance.form.controls.password.setValue('');
+    fixture.componentInstance.form.password().markAsTouched();
+    fixture.componentInstance.form.password().value.set('');
     fixture.detectChanges();
 
     const password = fixture.nativeElement.querySelector('input#password') as HTMLInputElement;

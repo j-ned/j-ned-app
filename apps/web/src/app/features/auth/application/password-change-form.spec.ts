@@ -1,8 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  PasswordChangeForm,
-  type PasswordChangeRequest,
-} from './password-change-form';
+import { PasswordChangeForm, type PasswordChangeRequest } from './password-change-form';
 
 function render(): ComponentFixture<PasswordChangeForm> {
   TestBed.configureTestingModule({ imports: [PasswordChangeForm] });
@@ -15,8 +12,13 @@ function input(
   fixture: ComponentFixture<PasswordChangeForm>,
   controlName: string,
 ): HTMLInputElement {
+  const ids = {
+    currentPassword: 'current-pw',
+    newPassword: 'new-pw',
+    confirmPassword: 'confirm-pw',
+  };
   return fixture.nativeElement.querySelector(
-    `input[formcontrolname="${controlName}"]`,
+    `input#${ids[controlName as keyof typeof ids]}`,
   ) as HTMLInputElement;
 }
 
@@ -44,8 +46,8 @@ describe('PasswordChangeForm: a11y attributes', () => {
 
   it('currentPassword exposes aria-invalid + aria-describedby and a role=alert error when touched and empty', () => {
     const fixture = render();
-    fixture.componentInstance.pwdForm.controls.currentPassword.markAsTouched();
-    fixture.componentInstance.pwdForm.controls.currentPassword.setValue('');
+    fixture.componentInstance.pwdForm.currentPassword().markAsTouched();
+    fixture.componentInstance.pwdForm.currentPassword().value.set('');
     fixture.detectChanges();
 
     const el = input(fixture, 'currentPassword');
@@ -60,8 +62,8 @@ describe('PasswordChangeForm: a11y attributes', () => {
 
   it('newPassword exposes aria-invalid + aria-describedby and a role=alert error when touched and empty', () => {
     const fixture = render();
-    fixture.componentInstance.pwdForm.controls.newPassword.markAsTouched();
-    fixture.componentInstance.pwdForm.controls.newPassword.setValue('');
+    fixture.componentInstance.pwdForm.newPassword().markAsTouched();
+    fixture.componentInstance.pwdForm.newPassword().value.set('');
     fixture.detectChanges();
 
     const el = input(fixture, 'newPassword');
@@ -75,8 +77,8 @@ describe('PasswordChangeForm: a11y attributes', () => {
 
   it('confirmPassword exposes aria-invalid + aria-describedby and a role=alert error when touched and empty', () => {
     const fixture = render();
-    fixture.componentInstance.pwdForm.controls.confirmPassword.markAsTouched();
-    fixture.componentInstance.pwdForm.controls.confirmPassword.setValue('');
+    fixture.componentInstance.pwdForm.confirmPassword().markAsTouched();
+    fixture.componentInstance.pwdForm.confirmPassword().value.set('');
     fixture.detectChanges();
 
     const el = input(fixture, 'confirmPassword');
@@ -92,8 +94,8 @@ describe('PasswordChangeForm: a11y attributes', () => {
 describe('PasswordChangeForm: validation messages', () => {
   it('shows the minlength message when newPassword is too short', () => {
     const fixture = render();
-    fixture.componentInstance.pwdForm.controls.newPassword.markAsTouched();
-    fixture.componentInstance.pwdForm.controls.newPassword.setValue('Aa1!');
+    fixture.componentInstance.pwdForm.newPassword().markAsTouched();
+    fixture.componentInstance.pwdForm.newPassword().value.set('Aa1!');
     fixture.detectChanges();
 
     const error = fixture.nativeElement.querySelector('#twofa-setup-new-pw-error');
@@ -103,8 +105,8 @@ describe('PasswordChangeForm: validation messages', () => {
 
   it('shows the pattern message when newPassword lacks complexity', () => {
     const fixture = render();
-    fixture.componentInstance.pwdForm.controls.newPassword.markAsTouched();
-    fixture.componentInstance.pwdForm.controls.newPassword.setValue('aaaaaaaa');
+    fixture.componentInstance.pwdForm.newPassword().markAsTouched();
+    fixture.componentInstance.pwdForm.newPassword().value.set('aaaaaaaa');
     fixture.detectChanges();
 
     const error = fixture.nativeElement.querySelector('#twofa-setup-new-pw-error');
@@ -115,12 +117,17 @@ describe('PasswordChangeForm: validation messages', () => {
 
   it('flags mismatch and shows the dedicated message when passwords differ', () => {
     const fixture = render();
-    fixture.componentInstance.pwdForm.controls.newPassword.setValue('Abcdef1!');
-    fixture.componentInstance.pwdForm.controls.confirmPassword.setValue('Abcdef2!');
-    fixture.componentInstance.pwdForm.controls.confirmPassword.markAsTouched();
+    fixture.componentInstance.pwdForm.newPassword().value.set('Abcdef1!');
+    fixture.componentInstance.pwdForm.confirmPassword().value.set('Abcdef2!');
+    fixture.componentInstance.pwdForm.confirmPassword().markAsTouched();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.pwdForm.hasError('mismatch')).toBe(true);
+    expect(
+      fixture.componentInstance.pwdForm
+        .confirmPassword()
+        .errors()
+        .some((e) => e.kind === 'mismatch'),
+    ).toBe(true);
     const error = fixture.nativeElement.querySelector('#twofa-setup-confirm-pw-error');
     expect(error?.textContent).toContain('Les mots de passe ne correspondent pas');
   });
@@ -132,9 +139,7 @@ describe('PasswordChangeForm: feedback inputs', () => {
     fixture.componentRef.setInput('successMessage', 'Mot de passe modifié avec succès !');
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain(
-      'Mot de passe modifié avec succès !',
-    );
+    expect(fixture.nativeElement.textContent).toContain('Mot de passe modifié avec succès !');
   });
 
   it('renders the errorMessage input', () => {
@@ -158,33 +163,33 @@ describe('PasswordChangeForm: feedback inputs', () => {
 });
 
 describe('PasswordChangeForm: submit output', () => {
-  it('does not emit submit when the form is invalid', () => {
+  it('does not emit submit when the form is invalid', async () => {
     const fixture = render();
     let emitted = false;
     fixture.componentInstance.submitted.subscribe(() => (emitted = true));
 
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit'));
-    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(emitted).toBe(false);
   });
 
-  it('emits submit with { currentPassword, newPassword } when the form is valid', () => {
+  it('emits submit with { currentPassword, newPassword } when the form is valid', async () => {
     const fixture = render();
     let received: PasswordChangeRequest | undefined;
     fixture.componentInstance.submitted.subscribe(
       (payload: PasswordChangeRequest) => (received = payload),
     );
 
-    fixture.componentInstance.pwdForm.controls.currentPassword.setValue('OldPass1!');
-    fixture.componentInstance.pwdForm.controls.newPassword.setValue('NewPass1!');
-    fixture.componentInstance.pwdForm.controls.confirmPassword.setValue('NewPass1!');
+    fixture.componentInstance.pwdForm.currentPassword().value.set('OldPass1!');
+    fixture.componentInstance.pwdForm.newPassword().value.set('NewPass1!');
+    fixture.componentInstance.pwdForm.confirmPassword().value.set('NewPass1!');
     fixture.detectChanges();
 
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit'));
-    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(received).toEqual({ currentPassword: 'OldPass1!', newPassword: 'NewPass1!' });
   });
@@ -196,16 +201,16 @@ describe('PasswordChangeForm: reset token', () => {
     fixture.componentRef.setInput('resetToken', 0);
     fixture.detectChanges();
 
-    fixture.componentInstance.pwdForm.controls.currentPassword.setValue('OldPass1!');
-    fixture.componentInstance.pwdForm.controls.newPassword.setValue('NewPass1!');
-    fixture.componentInstance.pwdForm.controls.confirmPassword.setValue('NewPass1!');
+    fixture.componentInstance.pwdForm.currentPassword().value.set('OldPass1!');
+    fixture.componentInstance.pwdForm.newPassword().value.set('NewPass1!');
+    fixture.componentInstance.pwdForm.confirmPassword().value.set('NewPass1!');
 
     fixture.componentRef.setInput('resetToken', 1);
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(fixture.componentInstance.pwdForm.controls.currentPassword.value).toBe('');
-    expect(fixture.componentInstance.pwdForm.controls.newPassword.value).toBe('');
-    expect(fixture.componentInstance.pwdForm.controls.confirmPassword.value).toBe('');
+    expect(fixture.componentInstance.pwdForm.currentPassword().value()).toBe('');
+    expect(fixture.componentInstance.pwdForm.newPassword().value()).toBe('');
+    expect(fixture.componentInstance.pwdForm.confirmPassword().value()).toBe('');
   });
 });

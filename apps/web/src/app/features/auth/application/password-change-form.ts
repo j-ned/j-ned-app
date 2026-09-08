@@ -1,17 +1,13 @@
+import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  input,
-  output,
-} from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-  type ValidationErrors,
-} from '@angular/forms';
+  FormField,
+  FormRoot,
+  form,
+  minLength,
+  pattern,
+  required,
+  validate,
+} from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 
@@ -20,15 +16,13 @@ export type PasswordChangeRequest = {
   readonly newPassword: string;
 };
 
-type PasswordFormShape = {
-  currentPassword: FormControl<string>;
-  newPassword: FormControl<string>;
-  confirmPassword: FormControl<string>;
-};
+const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
 
 @Component({
   selector: 'app-password-change-form',
-  imports: [ReactiveFormsModule, AppIcon, Button],
+  imports: [FormRoot, FormField, AppIcon, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -58,123 +52,77 @@ type PasswordFormShape = {
         </div>
       }
 
-      <form [formGroup]="pwdForm" (ngSubmit)="submitForm()" class="space-y-4">
+      <form [formRoot]="pwdForm" class="space-y-4">
         <div>
+          @let current = pwdForm.currentPassword();
           <label for="current-pw" class="form-label">Mot de passe actuel</label>
           <input
             id="current-pw"
             type="password"
-            formControlName="currentPassword"
+            [formField]="pwdForm.currentPassword"
             autocomplete="current-password"
             aria-required="true"
-            [attr.aria-invalid]="
-              pwdForm.controls.currentPassword.touched && pwdForm.controls.currentPassword.invalid
-            "
+            [attr.aria-invalid]="current.touched() && current.invalid()"
             [attr.aria-describedby]="
-              pwdForm.controls.currentPassword.touched && pwdForm.controls.currentPassword.invalid
-                ? 'twofa-setup-current-pw-error'
-                : null
+              current.touched() && current.invalid() ? 'twofa-setup-current-pw-error' : null
             "
             class="form-input"
             placeholder="Mot de passe actuel"
           />
-          @if (
-            pwdForm.controls.currentPassword.touched &&
-            pwdForm.controls.currentPassword.errors?.['required']
-          ) {
+          @if (current.touched() && current.invalid()) {
             <p id="twofa-setup-current-pw-error" role="alert" class="form-error">
-              Champ obligatoire
+              {{ current.errors()[0].message }}
             </p>
           }
         </div>
 
         <div>
+          @let next = pwdForm.newPassword();
           <label for="new-pw" class="form-label">Nouveau mot de passe</label>
           <input
             id="new-pw"
             type="password"
-            formControlName="newPassword"
+            [formField]="pwdForm.newPassword"
             autocomplete="new-password"
             aria-required="true"
-            [attr.aria-invalid]="
-              pwdForm.controls.newPassword.touched && pwdForm.controls.newPassword.invalid
-            "
+            [attr.aria-invalid]="next.touched() && next.invalid()"
             [attr.aria-describedby]="
-              pwdForm.controls.newPassword.touched && pwdForm.controls.newPassword.invalid
-                ? 'twofa-setup-new-pw-error'
-                : null
+              next.touched() && next.invalid() ? 'twofa-setup-new-pw-error' : null
             "
             class="form-input"
             placeholder="Nouveau mot de passe"
           />
-          @if (
-            pwdForm.controls.newPassword.touched &&
-            pwdForm.controls.newPassword.errors?.['required']
-          ) {
+          @if (next.touched() && next.invalid()) {
             <p id="twofa-setup-new-pw-error" role="alert" class="form-error">
-              Champ obligatoire
-            </p>
-          } @else if (
-            pwdForm.controls.newPassword.touched &&
-            pwdForm.controls.newPassword.errors?.['minlength']
-          ) {
-            <p id="twofa-setup-new-pw-error" role="alert" class="form-error">
-              Minimum
-              {{ pwdForm.controls.newPassword.errors['minlength'].requiredLength }} caractères
-              requis
-            </p>
-          } @else if (
-            pwdForm.controls.newPassword.touched &&
-            pwdForm.controls.newPassword.errors?.['pattern']
-          ) {
-            <p id="twofa-setup-new-pw-error" role="alert" class="form-error">
-              Majuscule, minuscule, chiffre et caractère spécial requis
+              {{ next.errors()[0].message }}
             </p>
           }
         </div>
 
         <div>
+          @let confirm = pwdForm.confirmPassword();
           <label for="confirm-pw" class="form-label">Confirmer le mot de passe</label>
           <input
             id="confirm-pw"
             type="password"
-            formControlName="confirmPassword"
+            [formField]="pwdForm.confirmPassword"
             autocomplete="new-password"
             aria-required="true"
-            [attr.aria-invalid]="
-              pwdForm.controls.confirmPassword.touched &&
-              (pwdForm.controls.confirmPassword.invalid || pwdForm.hasError('mismatch'))
-            "
+            [attr.aria-invalid]="confirm.touched() && confirm.invalid()"
             [attr.aria-describedby]="
-              pwdForm.controls.confirmPassword.touched &&
-              (pwdForm.controls.confirmPassword.invalid || pwdForm.hasError('mismatch'))
-                ? 'twofa-setup-confirm-pw-error'
-                : null
+              confirm.touched() && confirm.invalid() ? 'twofa-setup-confirm-pw-error' : null
             "
             class="form-input"
             placeholder="Confirmer le mot de passe"
           />
-          @if (
-            pwdForm.controls.confirmPassword.touched &&
-            pwdForm.controls.confirmPassword.errors?.['required']
-          ) {
+          @if (confirm.touched() && confirm.invalid()) {
             <p id="twofa-setup-confirm-pw-error" role="alert" class="form-error">
-              Champ obligatoire
-            </p>
-          }
-          @if (pwdForm.controls.confirmPassword.touched && pwdForm.hasError('mismatch')) {
-            <p id="twofa-setup-confirm-pw-error" role="alert" class="form-error">
-              Les mots de passe ne correspondent pas
+              {{ confirm.errors()[0].message }}
             </p>
           }
         </div>
 
-        <app-button
-          type="submit"
-          severity="primary"
-          [block]="true"
-          [disabled]="pwdForm.invalid || loading()"
-        >
+        <app-button type="submit" severity="primary" [block]="true" [disabled]="loading()">
           @if (loading()) {
             Modification...
           } @else {
@@ -192,30 +140,33 @@ export class PasswordChangeForm {
   readonly resetToken = input<number>();
   readonly submitted = output<PasswordChangeRequest>();
 
-  readonly pwdForm = new FormGroup<PasswordFormShape>(
-    {
-      currentPassword: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
-      newPassword: new FormControl('', {
-        nonNullable: true,
-        validators: [
-          Validators.required,
-          Validators.minLength(8),
-          Validators.pattern(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/),
-        ],
-      }),
-      confirmPassword: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
+  private readonly _model = signal({ ...EMPTY });
+
+  readonly pwdForm = form(
+    this._model,
+    (path) => {
+      required(path.currentPassword, { message: 'Champ obligatoire' });
+      required(path.newPassword, { message: 'Champ obligatoire' });
+      minLength(path.newPassword, PASSWORD_MIN_LENGTH, {
+        message: `Minimum ${PASSWORD_MIN_LENGTH} caractères requis`,
+      });
+      pattern(path.newPassword, PASSWORD_COMPLEXITY, {
+        message: 'Majuscule, minuscule, chiffre et caractère spécial requis',
+      });
+      required(path.confirmPassword, { message: 'Champ obligatoire' });
+      // Validation croisée : l'erreur vit sur la confirmation, le champ que l'utilisateur corrige.
+      validate(path.confirmPassword, ({ value, valueOf }) =>
+        value() === valueOf(path.newPassword)
+          ? null
+          : { kind: 'mismatch', message: 'Les mots de passe ne correspondent pas' },
+      );
     },
     {
-      validators: (group): ValidationErrors | null => {
-        const newPw = group.get('newPassword')?.value;
-        const confirm = group.get('confirmPassword')?.value;
-        return newPw === confirm ? null : { mismatch: true };
+      submission: {
+        action: async () => {
+          const { currentPassword, newPassword } = this._model();
+          this.submitted.emit({ currentPassword, newPassword });
+        },
       },
     },
   );
@@ -223,17 +174,7 @@ export class PasswordChangeForm {
   constructor() {
     effect(() => {
       this.resetToken();
-      this.pwdForm.reset();
+      this.pwdForm().reset({ ...EMPTY });
     });
-  }
-
-  protected submitForm(): void {
-    if (this.pwdForm.invalid) {
-      this.pwdForm.markAllAsTouched();
-      return;
-    }
-
-    const { currentPassword, newPassword } = this.pwdForm.getRawValue();
-    this.submitted.emit({ currentPassword, newPassword });
   }
 }

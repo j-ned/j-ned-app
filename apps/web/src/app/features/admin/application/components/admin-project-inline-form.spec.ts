@@ -37,29 +37,29 @@ function mount(project?: Project): {
 }
 
 describe('AdminProjectInlineForm: soumission', () => {
-  it('vider un lien de dépôt émet null (intention d’effacement) et non undefined', () => {
+  it('vider un lien de dépôt émet null (intention d’effacement) et non undefined', async () => {
     const { cmp, getEmitted } = mount(makeProject({ repoUrl: 'https://github.com/x/repo' }));
 
-    cmp.form.controls.repoUrl.setValue(''); // l'utilisateur efface le lien
-    cmp.submitProject();
+    cmp.form.repoUrl().value.set(''); // l'utilisateur efface le lien
+    await cmp.submitProject();
 
     // null est sérialisé dans le PATCH (effacement) ; undefined serait supprimé par JSON.stringify.
     expect(getEmitted().data.repoUrl).toBeNull();
   });
 
-  it('conserve un lien de dépôt renseigné', () => {
+  it('conserve un lien de dépôt renseigné', async () => {
     const { cmp, getEmitted } = mount(makeProject({ repoUrl: '' }));
 
-    cmp.form.controls.repoUrl.setValue('https://github.com/y/repo');
-    cmp.submitProject();
+    cmp.form.repoUrl().value.set('https://github.com/y/repo');
+    await cmp.submitProject();
 
     expect(getEmitted().data.repoUrl).toBe('https://github.com/y/repo');
   });
 
-  it('un champ URL laissé vide émet null (pas de clé manquante dans le PATCH)', () => {
+  it('un champ URL laissé vide émet null (pas de clé manquante dans le PATCH)', async () => {
     const { cmp, getEmitted } = mount(makeProject({ liveUrl: undefined, repoUrl: undefined }));
 
-    cmp.submitProject();
+    await cmp.submitProject();
 
     expect(getEmitted().data.liveUrl).toBeNull();
     expect(getEmitted().data.repoUrl).toBeNull();
@@ -72,29 +72,32 @@ describe('listes détail (techChoices / architectureDecisions)', () => {
     const cmp = fixture.componentInstance;
     fixture.detectChanges();
 
-    expect(cmp.form.controls.techChoices.length).toBe(0);
+    expect(cmp.form.techChoices.length).toBe(0);
     cmp.addTechChoice();
-    expect(cmp.form.controls.techChoices.length).toBe(1);
+    expect(cmp.form.techChoices.length).toBe(1);
     cmp.removeTechChoice(0);
-    expect(cmp.form.controls.techChoices.length).toBe(0);
+    expect(cmp.form.techChoices.length).toBe(0);
   });
 
-  it('émet techChoices et architectureDecisions à la soumission', () => {
+  it('émet techChoices et architectureDecisions à la soumission', async () => {
     const fixture = TestBed.createComponent(AdminProjectInlineForm);
     const cmp = fixture.componentInstance;
     fixture.detectChanges();
 
-    cmp.form.patchValue({ title: 'X', category: 'Application Web', description: 'D' });
+    cmp
+      .form()
+      .value.update((m) => ({ ...m, title: 'X', category: 'Application Web', description: 'D' }));
     cmp.addTechChoice();
-    cmp.form.controls.techChoices.at(0).setValue({ techno: 'NestJS', why: 'modulaire' });
+    cmp.form.techChoices[0]().value.set({ techno: 'NestJS', why: 'modulaire' });
     cmp.addArchitectureDecision();
-    cmp.form.controls.architectureDecisions
-      .at(0)
-      .setValue({ decision: 'hexagonale', rationale: 'testable' });
+    cmp.form.architectureDecisions[0]().value.set({
+      decision: 'hexagonale',
+      rationale: 'testable',
+    });
 
     let emitted: { data: { techChoices?: unknown; architectureDecisions?: unknown } } | undefined;
     cmp.saved.subscribe((e) => (emitted = e));
-    cmp.submitProject();
+    await cmp.submitProject();
 
     expect(emitted?.data.techChoices).toEqual([{ techno: 'NestJS', why: 'modulaire' }]);
     expect(emitted?.data.architectureDecisions).toEqual([

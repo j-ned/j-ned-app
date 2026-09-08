@@ -1,26 +1,14 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  input,
-  output,
-} from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
+import { FormField, FormRoot, form, pattern, required } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 
-type TfaFormShape = {
-  code: FormControl<string>;
-};
+const EMPTY = { code: '' };
+const TOTP_PATTERN = /^\d{6}$/;
 
 @Component({
   selector: 'app-two-factor-enable-form',
-  imports: [ReactiveFormsModule, AppIcon, Button],
+  imports: [FormRoot, FormField, AppIcon, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -79,46 +67,34 @@ type TfaFormShape = {
             </div>
           }
 
-          <form [formGroup]="tfaForm" (ngSubmit)="submitCode()" class="space-y-4">
+          <form [formRoot]="tfaForm" class="space-y-4">
             <div>
+              @let code = tfaForm.code();
               <label for="totp-code" class="form-label">Code de vérification</label>
               <input
                 id="totp-code"
                 type="text"
-                formControlName="code"
-                maxlength="6"
-                pattern="[0-9]*"
+                [formField]="tfaForm.code"
                 autocomplete="one-time-code"
                 inputmode="numeric"
                 aria-required="true"
-                [attr.aria-invalid]="
-                  tfaForm.controls.code.touched && tfaForm.controls.code.invalid
-                "
+                [attr.aria-invalid]="code.touched() && code.invalid()"
                 [attr.aria-describedby]="
-                  tfaForm.controls.code.touched && tfaForm.controls.code.invalid
-                    ? 'twofa-setup-code-error'
-                    : null
+                  code.touched() && code.invalid() ? 'twofa-setup-code-error' : null
                 "
                 class="form-input text-center text-2xl tracking-[0.5em] font-mono"
                 placeholder="000000"
               />
-              @if (tfaForm.controls.code.touched && tfaForm.controls.code.errors?.['required']) {
+              @if (code.touched() && code.invalid()) {
                 <p id="twofa-setup-code-error" role="alert" class="form-error">
-                  Ce champ est obligatoire
-                </p>
-              } @else if (
-                tfaForm.controls.code.touched && tfaForm.controls.code.errors?.['pattern']
-              ) {
-                <p id="twofa-setup-code-error" role="alert" class="form-error">
-                  Le code doit contenir 6 chiffres
+                  {{ code.errors()[0].message }}
                 </p>
               }
             </div>
-
             <button
               type="submit"
-              [disabled]="tfaForm.invalid || loading()"
-              class="w-full py-2.5 px-4 rounded-lg bg-status-success hover:bg-status-success/90 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+              [disabled]="loading()"
+              class="w-full min-h-11 py-2.5 px-4 rounded-lg bg-status-success hover:bg-status-success/90 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
             >
               @if (loading()) {
                 Activation...
@@ -174,26 +150,27 @@ export class TwoFactorEnableForm {
   readonly generate = output<void>();
   readonly verify = output<string>();
 
-  readonly tfaForm = new FormGroup<TfaFormShape>({
-    code: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.pattern(/^\d{6}$/)],
-    }),
-  });
+  private readonly _model = signal({ ...EMPTY });
+
+  readonly tfaForm = form(
+    this._model,
+    (path) => {
+      required(path.code, { message: 'Ce champ est obligatoire' });
+      pattern(path.code, TOTP_PATTERN, { message: 'Le code doit contenir 6 chiffres' });
+    },
+    {
+      submission: {
+        action: async () => {
+          this.verify.emit(this._model().code);
+        },
+      },
+    },
+  );
 
   constructor() {
     effect(() => {
       this.resetToken();
-      this.tfaForm.reset();
+      this.tfaForm().reset({ ...EMPTY });
     });
-  }
-
-  protected submitCode(): void {
-    if (this.tfaForm.invalid) {
-      this.tfaForm.markAllAsTouched();
-      return;
-    }
-
-    this.verify.emit(this.tfaForm.getRawValue().code);
   }
 }

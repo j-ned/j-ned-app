@@ -6,11 +6,9 @@ import {
   signal,
   linkedSignal,
   computed,
-  effect,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormField, FormRoot, form, required, submit } from '@angular/forms/signals';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
 import { parseMarkdown } from '@features/blog/infra/parse-markdown';
@@ -19,42 +17,54 @@ import { FileDropzone } from '@shared/ui/file-dropzone';
 import { Button } from '@shared/ui/button';
 import { AVAILABLE_BLOG_TAGS } from './admin-blog-form-data';
 
+type BlogFormModel = Pick<BlogPostInput, 'title' | 'excerpt' | 'contentMarkdown' | 'status'>;
+
+const EMPTY: BlogFormModel = { title: '', excerpt: '', contentMarkdown: '', status: 'draft' };
+
+const toModel = (p: BlogPost): BlogFormModel => ({
+  title: p.title,
+  excerpt: p.excerpt,
+  contentMarkdown: p.contentMarkdown,
+  status: p.status,
+});
+
 @Component({
   selector: 'app-admin-blog-form',
-  imports: [ReactiveFormsModule, AdminTagsSelector, FileDropzone, Button],
+  imports: [FormRoot, FormField, AdminTagsSelector, FileDropzone, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <form
-      [formGroup]="form"
-      (ngSubmit)="submitPost()"
+      [formRoot]="form"
       class="bg-foreground/5 border border-foreground/10 rounded-xl p-6 space-y-5"
     >
       <div>
+        @let title = form.title();
         <label for="title" class="form-label">Titre</label>
         <input
           id="title"
           type="text"
-          formControlName="title"
+          [formField]="form.title"
           aria-required="true"
           class="form-input"
         />
-        @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
-          <span role="alert" class="form-error">Ce champ est obligatoire</span>
+        @if (title.touched() && title.invalid()) {
+          <span role="alert" class="form-error">{{ title.errors()[0].message }}</span>
         }
       </div>
 
       <div>
+        @let excerpt = form.excerpt();
         <label for="excerpt" class="form-label">Extrait</label>
         <textarea
           id="excerpt"
-          formControlName="excerpt"
+          [formField]="form.excerpt"
           rows="2"
           aria-required="true"
           class="form-textarea"
         ></textarea>
-        @if (form.controls.excerpt.touched && form.controls.excerpt.errors?.['required']) {
-          <span role="alert" class="form-error">Ce champ est obligatoire</span>
+        @if (excerpt.touched() && excerpt.invalid()) {
+          <span role="alert" class="form-error">{{ excerpt.errors()[0].message }}</span>
         }
       </div>
 
@@ -62,19 +72,17 @@ import { AVAILABLE_BLOG_TAGS } from './admin-blog-form-data';
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
+          @let content = form.contentMarkdown();
           <label for="contentMarkdown" class="form-label">Contenu (Markdown)</label>
           <textarea
             id="contentMarkdown"
-            formControlName="contentMarkdown"
+            [formField]="form.contentMarkdown"
             rows="20"
             aria-required="true"
             class="form-textarea font-mono text-sm"
           ></textarea>
-          @if (
-            form.controls.contentMarkdown.touched &&
-            form.controls.contentMarkdown.errors?.['required']
-          ) {
-            <span role="alert" class="form-error">Ce champ est obligatoire</span>
+          @if (content.touched() && content.invalid()) {
+            <span role="alert" class="form-error">{{ content.errors()[0].message }}</span>
           }
         </div>
         <div>
@@ -99,11 +107,11 @@ import { AVAILABLE_BLOG_TAGS } from './admin-blog-form-data';
 
       <div>
         <label for="status" class="form-label">Statut</label>
-        <select id="status" formControlName="status" class="app-select">
+        <select id="status" [formField]="form.status" class="app-select">
           <option value="draft">Brouillon</option>
           <option value="published">Publié</option>
         </select>
-        @if (form.controls.status.value === 'published') {
+        @if (form.status().value() === 'published') {
           <p class="text-xs text-muted mt-1">
             La publication déclenche un redéploiement du site — l'article sera visible en ligne
             d'ici quelques minutes.
@@ -112,7 +120,7 @@ import { AVAILABLE_BLOG_TAGS } from './admin-blog-form-data';
       </div>
 
       <div class="flex gap-3 pt-2">
-        <app-button type="submit" severity="primary" [disabled]="form.invalid">
+        <app-button type="submit" severity="primary" [disabled]="form().submitting()">
           Enregistrer
         </app-button>
         <app-button severity="secondary" variant="outlined" (click)="cancelled.emit()">
@@ -123,7 +131,6 @@ import { AVAILABLE_BLOG_TAGS } from './admin-blog-form-data';
   `,
 })
 export class AdminBlogForm {
-  private readonly fb = inject(FormBuilder);
   private readonly sanitizer = inject(DomSanitizer);
 
   readonly post = input<BlogPost>();
@@ -131,6 +138,7 @@ export class AdminBlogForm {
   readonly cancelled = output<void>();
 
   readonly availableTags = AVAILABLE_BLOG_TAGS;
+
   readonly selectedTags = linkedSignal({
     source: this.post,
     computation: (p, previous): Set<string> =>
@@ -144,46 +152,41 @@ export class AdminBlogForm {
 
   private readonly selectedFile = signal<File | null>(null);
 
-  readonly form = this.fb.nonNullable.group({
-    title: ['', Validators.required],
-    excerpt: ['', Validators.required],
-    contentMarkdown: ['', Validators.required],
-    status: ['draft' as 'draft' | 'published', Validators.required],
+  // Le modèle suit l'article à éditer dès qu'il arrive par `input()` et reste éditable ensuite.
+  private readonly _model = linkedSignal({
+    source: this.post,
+    computation: (p, previous): BlogFormModel => (p ? toModel(p) : (previous?.value ?? EMPTY)),
   });
 
-  private readonly _contentMarkdown = toSignal(
-    this.form.controls.contentMarkdown.valueChanges,
-    { initialValue: this.form.controls.contentMarkdown.value },
+  readonly form = form(
+    this._model,
+    (path) => {
+      required(path.title, { message: 'Ce champ est obligatoire' });
+      required(path.excerpt, { message: 'Ce champ est obligatoire' });
+      required(path.contentMarkdown, { message: 'Ce champ est obligatoire' });
+      required(path.status, { message: 'Ce champ est obligatoire' });
+    },
+    {
+      submission: {
+        action: async () => {
+          const data: BlogPostInput = { ...this._model(), tags: [...this.selectedTags()] };
+          this.saved.emit({ data, file: this.selectedFile() });
+        },
+      },
+    },
   );
 
-  protected readonly preview = computed((): SafeHtml =>
-    this.sanitizer.bypassSecurityTrustHtml(parseMarkdown(this._contentMarkdown())),
+  // L'aperçu lit le modèle : sortie déjà assainie par `parseMarkdown` (ADR-0002).
+  protected readonly preview = computed(
+    (): SafeHtml =>
+      this.sanitizer.bypassSecurityTrustHtml(parseMarkdown(this._model().contentMarkdown)),
   );
-
-  // `effect()` (pas une IIFE en field initializer) : un champ initializer tourne pendant le
-  // constructeur, avant qu'Angular n'applique la valeur liée par `input()` à `this.post` — donc
-  // `this.post()` y est toujours `undefined` et le formulaire d'édition restait vide. `effect()`
-  // se relance dès que `post` est effectivement peuplé. Même pattern que
-  // `AdminProjectInlineForm._patchForm`.
-  private readonly _patchForm = effect(() => {
-    const p = this.post();
-    if (!p) return;
-    this.form.patchValue({
-      title: p.title,
-      excerpt: p.excerpt,
-      contentMarkdown: p.contentMarkdown,
-      status: p.status,
-    });
-  });
 
   onFileSelected(file: File): void {
     this.selectedFile.set(file);
   }
 
-  submitPost(): void {
-    if (this.form.invalid) return;
-    const values = this.form.getRawValue();
-    const data: BlogPostInput = { ...values, tags: [...this.selectedTags()] };
-    this.saved.emit({ data, file: this.selectedFile() });
+  async submitPost(): Promise<void> {
+    await submit(this.form);
   }
 }

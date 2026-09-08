@@ -17,7 +17,7 @@ describe('TwoFactorDisableForm: enabled status (showForm=false)', () => {
 
   it('does not render the password form while showForm is false', () => {
     const fixture = render(false);
-    const input = fixture.nativeElement.querySelector('input[formcontrolname="password"]');
+    const input = fixture.nativeElement.querySelector('input#disable-pw');
     expect(input).toBeNull();
   });
 
@@ -51,9 +51,7 @@ describe('TwoFactorDisableForm: enabled status (showForm=false)', () => {
 describe('TwoFactorDisableForm: disable form (showForm=true)', () => {
   it('password input has autocomplete=current-password and aria-required=true', () => {
     const fixture = render(true);
-    const input = fixture.nativeElement.querySelector(
-      'input[formcontrolname="password"]',
-    ) as HTMLInputElement;
+    const input = fixture.nativeElement.querySelector('input#disable-pw') as HTMLInputElement;
     expect(input).not.toBeNull();
     expect(input.autocomplete).toBe('current-password');
     expect(input.getAttribute('aria-required')).toBe('true');
@@ -61,13 +59,11 @@ describe('TwoFactorDisableForm: disable form (showForm=true)', () => {
 
   it('password input exposes aria-invalid + aria-describedby and a role=alert error when touched and empty', () => {
     const fixture = render(true);
-    fixture.componentInstance.disableForm.controls.password.markAsTouched();
-    fixture.componentInstance.disableForm.controls.password.setValue('');
+    fixture.componentInstance.disableForm.password().markAsTouched();
+    fixture.componentInstance.disableForm.password().value.set('');
     fixture.detectChanges();
 
-    const input = fixture.nativeElement.querySelector(
-      'input[formcontrolname="password"]',
-    ) as HTMLInputElement;
+    const input = fixture.nativeElement.querySelector('input#disable-pw') as HTMLInputElement;
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-describedby')).toBe('twofa-setup-disable-pw-error');
 
@@ -96,10 +92,7 @@ describe('TwoFactorDisableForm: disable form (showForm=true)', () => {
 describe('TwoFactorDisableForm: feedback inputs', () => {
   it('renders the successMessage input', () => {
     const fixture = render(false);
-    fixture.componentRef.setInput(
-      'successMessage',
-      'Authentification à deux facteurs désactivée.',
-    );
+    fixture.componentRef.setInput('successMessage', 'Authentification à deux facteurs désactivée.');
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
@@ -117,31 +110,29 @@ describe('TwoFactorDisableForm: feedback inputs', () => {
 });
 
 describe('TwoFactorDisableForm: disable output', () => {
-  it('does not emit disable when the form is invalid', () => {
+  it('does not emit disable when the form is invalid', async () => {
     const fixture = render(true);
     let emitted = false;
     fixture.componentInstance.disable.subscribe(() => (emitted = true));
 
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit'));
-    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(emitted).toBe(false);
   });
 
-  it('emits disable with the typed password when the form is valid', () => {
+  it('emits disable with the typed password when the form is valid', async () => {
     const fixture = render(true);
     let received: string | undefined;
-    fixture.componentInstance.disable.subscribe(
-      (password: string) => (received = password),
-    );
+    fixture.componentInstance.disable.subscribe((password: string) => (received = password));
 
-    fixture.componentInstance.disableForm.controls.password.setValue('MyPass1!');
+    fixture.componentInstance.disableForm.password().value.set('MyPass1!');
     fixture.detectChanges();
 
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit'));
-    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(received).toBe('MyPass1!');
   });
@@ -153,12 +144,12 @@ describe('TwoFactorDisableForm: reset token', () => {
     fixture.componentRef.setInput('resetToken', 0);
     fixture.detectChanges();
 
-    fixture.componentInstance.disableForm.controls.password.setValue('MyPass1!');
+    fixture.componentInstance.disableForm.password().value.set('MyPass1!');
 
     fixture.componentRef.setInput('resetToken', 1);
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(fixture.componentInstance.disableForm.controls.password.value).toBe('');
+    expect(fixture.componentInstance.disableForm.password().value()).toBe('');
   });
 });
