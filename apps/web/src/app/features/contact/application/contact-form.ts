@@ -1,35 +1,34 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  DestroyRef,
-  ElementRef,
-  inject,
-  signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import {
   STATIC_CONTACT_INFO,
   STATIC_SOCIAL_LINKS,
 } from '@shared/identity/contact-info.static-data';
-import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
+import {
+  FormField,
+  FormRoot,
+  form,
+  minLength,
+  pattern,
+  required,
+  submit,
+  type FieldTree,
+} from '@angular/forms/signals';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
+import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
 import { ToastStore } from '@shared/ui/toast-store';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ContactInfoPanel } from './components/contact-info-panel';
 
-type ContactFormGroup = {
-  name: FormControl<string>;
-  email: FormControl<string>;
-  subject: FormControl<string>;
-  message: FormControl<string>;
-};
+const EMPTY_CONTACT: ContactFormData = { name: '', email: '', subject: '', message: '' };
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ReactiveFormsModule, AppIcon, Button, ContactInfoPanel],
+  imports: [FormRoot, FormField, AppIcon, Button, ContactInfoPanel],
   template: `
     <section class="animate-fade-up py-12 md:py-20">
       <div class="page-container max-w-5xl">
@@ -58,10 +57,11 @@ type ContactFormGroup = {
               Envoyer un message
             </h3>
 
-            <form [formGroup]="form" (ngSubmit)="submitContact()" class="flex flex-col gap-6">
+            <form [formRoot]="contactForm" class="flex flex-col gap-6">
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
                 <div>
+                  @let nameState = contactForm.name();
                   <label for="name" class="form-label">Nom complet *</label>
                   <div class="relative">
                     <app-icon
@@ -72,33 +72,25 @@ type ContactFormGroup = {
                     <input
                       id="name"
                       type="text"
-                      formControlName="name"
+                      [formField]="contactForm.name"
+                      aria-required="true"
                       placeholder="Votre nom"
                       autocomplete="name"
-                      aria-required="true"
-                      [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+                      [attr.aria-invalid]="nameState.touched() && nameState.invalid()"
                       [attr.aria-describedby]="
-                        form.controls.name.touched && form.controls.name.invalid
-                          ? 'contact-name-error'
-                          : null
+                        nameState.touched() && nameState.invalid() ? 'contact-name-error' : null
                       "
                       class="form-input pl-9"
                     />
                   </div>
-                  @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
+                  @if (nameState.touched() && nameState.invalid()) {
                     <p id="contact-name-error" role="alert" class="form-error">
-                      Le nom est obligatoire
-                    </p>
-                  } @else if (
-                    form.controls.name.touched && form.controls.name.errors?.['minlength']
-                  ) {
-                    <p id="contact-name-error" role="alert" class="form-error">
-                      Le nom doit contenir au moins 2 caractères
+                      {{ nameState.errors()[0].message }}
                     </p>
                   }
                 </div>
-
                 <div>
+                  @let emailState = contactForm.email();
                   <label for="email" class="form-label">Email *</label>
                   <div class="relative">
                     <app-icon
@@ -109,35 +101,26 @@ type ContactFormGroup = {
                     <input
                       id="email"
                       type="email"
-                      formControlName="email"
+                      [formField]="contactForm.email"
+                      aria-required="true"
                       placeholder="votre@email.com"
                       autocomplete="email"
-                      aria-required="true"
-                      [attr.aria-invalid]="
-                        form.controls.email.touched && form.controls.email.invalid
-                      "
+                      [attr.aria-invalid]="emailState.touched() && emailState.invalid()"
                       [attr.aria-describedby]="
-                        form.controls.email.touched && form.controls.email.invalid
-                          ? 'contact-email-error'
-                          : null
+                        emailState.touched() && emailState.invalid() ? 'contact-email-error' : null
                       "
                       class="form-input pl-9"
                     />
                   </div>
-                  @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
+                  @if (emailState.touched() && emailState.invalid()) {
                     <p id="contact-email-error" role="alert" class="form-error">
-                      L'email est obligatoire
-                    </p>
-                  } @else if (
-                    form.controls.email.touched && form.controls.email.errors?.['pattern']
-                  ) {
-                    <p id="contact-email-error" role="alert" class="form-error">
-                      Le format de l'email est invalide
+                      {{ emailState.errors()[0].message }}
                     </p>
                   }
                 </div>
               </fieldset>
               <div>
+                @let subjectState = contactForm.subject();
                 <label for="subject" class="form-label">Sujet *</label>
                 <div class="relative">
                   <app-icon
@@ -148,59 +131,44 @@ type ContactFormGroup = {
                   <input
                     id="subject"
                     type="text"
-                    formControlName="subject"
-                    placeholder="Objet de votre message"
+                    [formField]="contactForm.subject"
                     aria-required="true"
-                    [attr.aria-invalid]="
-                      form.controls.subject.touched && form.controls.subject.invalid
-                    "
+                    placeholder="Objet de votre message"
+                    [attr.aria-invalid]="subjectState.touched() && subjectState.invalid()"
                     [attr.aria-describedby]="
-                      form.controls.subject.touched && form.controls.subject.invalid
+                      subjectState.touched() && subjectState.invalid()
                         ? 'contact-subject-error'
                         : null
                     "
                     class="form-input pl-9"
                   />
                 </div>
-                @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
+                @if (subjectState.touched() && subjectState.invalid()) {
                   <p id="contact-subject-error" role="alert" class="form-error">
-                    Le sujet est obligatoire
-                  </p>
-                } @else if (
-                  form.controls.subject.touched && form.controls.subject.errors?.['minlength']
-                ) {
-                  <p id="contact-subject-error" role="alert" class="form-error">
-                    Le sujet doit contenir au moins 3 caractères
+                    {{ subjectState.errors()[0].message }}
                   </p>
                 }
               </div>
               <div>
+                @let messageState = contactForm.message();
                 <label for="message" class="form-label">Message *</label>
                 <textarea
                   id="message"
-                  formControlName="message"
+                  [formField]="contactForm.message"
+                  aria-required="true"
                   rows="6"
                   placeholder="Décrivez votre projet ou votre question..."
-                  aria-required="true"
-                  [attr.aria-invalid]="
-                    form.controls.message.touched && form.controls.message.invalid
-                  "
+                  [attr.aria-invalid]="messageState.touched() && messageState.invalid()"
                   [attr.aria-describedby]="
-                    form.controls.message.touched && form.controls.message.invalid
+                    messageState.touched() && messageState.invalid()
                       ? 'contact-message-error'
                       : null
                   "
                   class="form-textarea"
                 ></textarea>
-                @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
+                @if (messageState.touched() && messageState.invalid()) {
                   <p id="contact-message-error" role="alert" class="form-error">
-                    Le message est obligatoire
-                  </p>
-                } @else if (
-                  form.controls.message.touched && form.controls.message.errors?.['minlength']
-                ) {
-                  <p id="contact-message-error" role="alert" class="form-error">
-                    Le message doit contenir au moins 10 caractères
+                    {{ messageState.errors()[0].message }}
                   </p>
                 }
               </div>
@@ -208,9 +176,9 @@ type ContactFormGroup = {
                 type="submit"
                 severity="primary"
                 [block]="true"
-                [disabled]="isSubmitting()"
+                [disabled]="contactForm().submitting()"
               >
-                @if (isSubmitting()) {
+                @if (contactForm().submitting()) {
                   <app-icon name="spinner" [size]="20" class="animate-spin" />
                   <span>Envoi en cours...</span>
                 } @else {
@@ -228,83 +196,65 @@ type ContactFormGroup = {
 export class ContactForm {
   private readonly contactGateway = inject(ContactGateway);
   private readonly toast = inject(ToastStore);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly contactInfo = STATIC_CONTACT_INFO;
   protected readonly socialLinks = STATIC_SOCIAL_LINKS;
 
-  protected readonly isSubmitting = signal(false);
+  private readonly _model = signal<ContactFormData>(EMPTY_CONTACT);
 
-  readonly form = new FormGroup<ContactFormGroup>({
-    name: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(2)],
-    }),
-    email: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)],
-    }),
-    subject: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(3)],
-    }),
-    message: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(10)],
-    }),
-  });
-
-  submitContact(): void {
-    if (this.form.invalid) {
-      // Le bouton reste actif sur un formulaire invalide (un contrôle désactivé n'est ni
-      // focusable ni annoncé) : c'est le clic qui révèle les erreurs et guide vers la première.
-      this.form.markAllAsTouched();
-      this.focusFirstInvalidField();
-      return;
-    }
-
-    this.isSubmitting.set(true);
-
-    this.contactGateway
-      .submitContactForm(this.form.getRawValue())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (result) => {
-          this.isSubmitting.set(false);
-          if (result.success) {
-            this.toast.add({
-              severity: 'success',
-              summary: 'Message envoyé',
-              detail: result.message,
-            });
-            this.form.reset();
-          } else {
-            this.toast.add({
-              severity: 'error',
-              summary: 'Envoi impossible',
-              detail: result.message,
-            });
-          }
-        },
-        error: () => {
-          this.isSubmitting.set(false);
-          this.toast.add({
-            severity: 'error',
-            summary: 'Envoi impossible',
-            detail: 'Une erreur inattendue est survenue. Réessayez ou contactez-moi par email.',
-          });
-        },
+  // Validation au bord de la saisie : les messages vivent dans le schéma, le template n'affiche
+  // que la première erreur du champ touché. `FormField` pose lui-même `required` sur l'élément.
+  readonly contactForm = form(
+    this._model,
+    (path) => {
+      required(path.name, { message: 'Le nom est obligatoire' });
+      minLength(path.name, 2, { message: 'Le nom doit contenir au moins 2 caractères' });
+      required(path.email, { message: "L'email est obligatoire" });
+      pattern(path.email, EMAIL_PATTERN, { message: "Format d'email invalide" });
+      required(path.subject, { message: 'Le sujet est obligatoire' });
+      minLength(path.subject, 3, { message: 'Le sujet doit contenir au moins 3 caractères' });
+      required(path.message, { message: 'Le message est obligatoire' });
+      minLength(path.message, 10, {
+        message: 'Le message doit contenir au moins 10 caractères',
       });
+    },
+    {
+      submission: {
+        action: (field) => this.send(field),
+        // Le bouton reste actif sur un formulaire invalide (un contrôle désactivé n'est ni
+        // focusable ni annoncé) : `submit()` révèle les erreurs, on guide vers la première.
+        onInvalid: (field) => this.focusFirstInvalidField(field),
+      },
+    },
+  );
+
+  // Point d'entrée unique, partagé par `FormRoot` (événement submit) et les tests.
+  async submitContact(): Promise<void> {
+    await submit(this.contactForm);
   }
 
-  private focusFirstInvalidField(): void {
-    const controls = this.form.controls;
-    const firstInvalid = (Object.keys(controls) as (keyof ContactFormGroup)[]).find(
-      (key) => controls[key].invalid,
+  private async send(field: FieldTree<ContactFormData>): Promise<void> {
+    try {
+      const result = await firstValueFrom(this.contactGateway.submitContactForm(field().value()));
+      if (result.success) {
+        this.toast.add({ severity: 'success', summary: 'Message envoyé', detail: result.message });
+        field().reset(EMPTY_CONTACT);
+      } else {
+        this.toast.add({ severity: 'error', summary: 'Envoi impossible', detail: result.message });
+      }
+    } catch {
+      this.toast.add({
+        severity: 'error',
+        summary: 'Envoi impossible',
+        detail: 'Une erreur inattendue est survenue. Réessayez ou contactez-moi par email.',
+      });
+    }
+  }
+
+  private focusFirstInvalidField(field: FieldTree<ContactFormData>): void {
+    const firstInvalid = [field.name, field.email, field.subject, field.message].find((f) =>
+      f().invalid(),
     );
-    if (!firstInvalid) return;
-    // Les ids du template reprennent les noms des contrôles.
-    this.host.nativeElement.querySelector<HTMLElement>(`#${firstInvalid}`)?.focus();
+    firstInvalid?.().focusBoundControl();
   }
 }

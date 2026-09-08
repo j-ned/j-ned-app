@@ -1,10 +1,10 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ToastStore } from '@shared/ui/toast-store';
 import { NEVER, of, throwError } from 'rxjs';
 import { ContactForm } from './contact-form';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
+import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 
 function makeGatewayStub(overrides: Partial<ContactGateway> = {}): ContactGateway {
@@ -20,212 +20,182 @@ function makeGatewayStub(overrides: Partial<ContactGateway> = {}): ContactGatewa
   };
 }
 
-describe('ContactForm', () => {
-  function setup(gateway: ContactGateway = makeGatewayStub()): ContactForm {
-    TestBed.configureTestingModule({
-      providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
-      schemas: [NO_ERRORS_SCHEMA],
-    });
-    return TestBed.runInInjectionContext(() => {
-      const fixture = TestBed.createComponent(ContactForm);
-      return fixture.componentInstance as ContactForm;
-    });
-  }
+// Builder du domaine : jamais un littéral comme entrée sous test.
+function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormData {
+  return {
+    name: 'Alice',
+    email: 'alice@example.com',
+    subject: 'Projet Angular',
+    message: 'Bonjour, j’aimerais discuter d’un projet.',
+    ...overrides,
+  };
+}
 
-  function setupFixture(
+describe('ContactForm (Signal Forms)', () => {
+  async function setup(
     gateway: ContactGateway = makeGatewayStub(),
-  ): ComponentFixture<ContactForm> {
+  ): Promise<ComponentFixture<ContactForm>> {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
-      schemas: [NO_ERRORS_SCHEMA],
     });
     const fixture = TestBed.createComponent(ContactForm);
-    fixture.detectChanges();
+    await fixture.whenStable();
     return fixture;
   }
+
+  const fill = async (
+    fixture: ComponentFixture<ContactForm>,
+    data: ContactFormData,
+  ): Promise<void> => {
+    fixture.componentInstance.contactForm().value.set(data);
+    await fixture.whenStable();
+  };
 
   const submitButton = (fixture: ComponentFixture<ContactForm>): HTMLButtonElement =>
     fixture.nativeElement.querySelector('app-button button[type="submit"]');
 
-  describe('Given an empty form', () => {
-    it('form is invalid', () => {
-      const component = setup();
-      expect(component.form.invalid).toBe(true);
-    });
+  const alerts = (fixture: ComponentFixture<ContactForm>): string[] =>
+    [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="alert"]')].map((el) =>
+      el.textContent.trim(),
+    );
 
-    it('submitContact does not call gateway', () => {
-      const submit = vi.fn().mockReturnValue(of({ success: true, message: '' }));
-      const component = setup(makeGatewayStub({ submitContactForm: submit }));
-      component.submitContact();
-      expect(submit).not.toHaveBeenCalled();
-    });
-  });
+  describe('Validation at the edge', () => {
+    it('an empty form is invalid and every field carries a required error', async () => {
+      const fixture = await setup();
+      const form = fixture.componentInstance.contactForm;
 
-  describe('Given a fully valid form', () => {
-    it('form is valid with required fields filled', () => {
-      const component = setup();
-      component.form.setValue({
-        name: 'Alice',
-        email: 'alice@example.com',
-        subject: 'Projet Angular',
-        message: 'Bonjour, j\u2019aimerais discuter d\u2019un projet.',
-      });
-      expect(component.form.valid).toBe(true);
-    });
-
-    it('submitContact calls the gateway with form values', () => {
-      const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
-      const component = setup(makeGatewayStub({ submitContactForm: submit }));
-
-      component.form.setValue({
-        name: 'Alice',
-        email: 'alice@example.com',
-        subject: 'Projet Angular',
-        message: 'Bonjour, message test de plus de 10 caractères.',
-      });
-      component.submitContact();
-
-      expect(submit).toHaveBeenCalledWith({
-        name: 'Alice',
-        email: 'alice@example.com',
-        subject: 'Projet Angular',
-        message: 'Bonjour, message test de plus de 10 caractères.',
-      });
-    });
-
-    it('submitContact handles gateway error gracefully', () => {
-      const component = setup(
-        makeGatewayStub({
-          submitContactForm: () => throwError(() => new Error('network')),
-        }),
-      );
-
-      component.form.setValue({
-        name: 'Alice',
-        email: 'alice@example.com',
-        subject: 'Sujet valide',
-        message: 'Message assez long pour passer la validation.',
-      });
-
-      expect(() => component.submitContact()).not.toThrow();
-    });
-  });
-
-  describe('Given invalid email format', () => {
-    it('email control has pattern error', () => {
-      const component = setup();
-      component.form.setValue({
-        name: 'Alice',
-        email: 'not-an-email',
-        subject: 'Valide',
-        message: 'Message assez long pour validation.',
-      });
-      component.form.controls.email.markAsTouched();
-      expect(component.form.controls.email.errors?.['pattern']).toBeTruthy();
-    });
-  });
-
-  describe('Given a too-short message', () => {
-    it('message control has minlength error', () => {
-      const component = setup();
-      component.form.controls.message.setValue('court');
-      component.form.controls.message.markAsTouched();
-      expect(component.form.controls.message.errors?.['minlength']).toBeTruthy();
-    });
-  });
-
-  describe('Accessibility: aria attributes', () => {
-    function setupFixture(
-      gateway: ContactGateway = makeGatewayStub(),
-    ): ComponentFixture<ContactForm> {
-      TestBed.configureTestingModule({
-        providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
-      });
-      const fixture = TestBed.createComponent(ContactForm);
-      fixture.detectChanges();
-      return fixture;
-    }
-
-    it('exposes aria-invalid=true and aria-describedby on email when touched and invalid', () => {
-      const fixture = setupFixture();
-      fixture.componentInstance.form.controls.email.markAsTouched();
-      fixture.componentInstance.form.controls.email.setValue('');
-      fixture.detectChanges();
-
-      const emailInput = fixture.nativeElement.querySelector('input#email') as HTMLInputElement;
-      expect(emailInput.getAttribute('aria-invalid')).toBe('true');
-      expect(emailInput.getAttribute('aria-describedby')).toBe('contact-email-error');
-
-      const errorMsg = fixture.nativeElement.querySelector('#contact-email-error');
-      expect(errorMsg).not.toBeNull();
-      expect(errorMsg!.getAttribute('role')).toBe('alert');
-    });
-
-    it('removes aria-describedby when field becomes valid', () => {
-      const fixture = setupFixture();
-      fixture.componentInstance.form.controls.email.markAsTouched();
-      fixture.componentInstance.form.controls.email.setValue('valid@example.com');
-      fixture.detectChanges();
-
-      const emailInput = fixture.nativeElement.querySelector('input#email') as HTMLInputElement;
-      expect(emailInput.getAttribute('aria-invalid')).toBe('false');
-      expect(emailInput.getAttribute('aria-describedby')).toBeNull();
-    });
-
-    it('applies aria attributes to all 4 fields: name, email, subject, message', () => {
-      const fixture = setupFixture();
-      const fieldNames = ['name', 'email', 'subject', 'message'] as const;
-      for (const fieldName of fieldNames) {
-        fixture.componentInstance.form.controls[fieldName].markAsTouched();
-        fixture.componentInstance.form.controls[fieldName].setValue('');
-      }
-      fixture.detectChanges();
-
-      for (const fieldName of fieldNames) {
-        const input = fixture.nativeElement.querySelector(`#${fieldName}`) as HTMLElement;
-        expect(input).not.toBeNull();
-        expect(input.getAttribute('aria-invalid')).toBe('true');
-        expect(input.getAttribute('aria-describedby')).toBe(`contact-${fieldName}-error`);
-
-        const errorMsg = fixture.nativeElement.querySelector(`#contact-${fieldName}-error`);
-        expect(errorMsg).not.toBeNull();
+      expect(form().invalid()).toBe(true);
+      for (const field of [form.name, form.email, form.subject, form.message]) {
+        expect(
+          field()
+            .errors()
+            .map((e) => e.kind),
+        ).toContain('required');
       }
     });
+
+    it.each([
+      ['name', 'A', 'minLength'],
+      ['subject', 'Hi', 'minLength'],
+      ['message', 'court', 'minLength'],
+      ['email', 'not-an-email', 'pattern'],
+    ] as const)('%s = %j carries a %s error', async (field, value, kind) => {
+      const fixture = await setup();
+      await fill(fixture, makeContactData({ [field]: value }));
+
+      expect(
+        fixture.componentInstance.contactForm[field]()
+          .errors()
+          .map((e) => e.kind),
+      ).toEqual([kind]);
+    });
+
+    it('becomes valid once every field is corrected', async () => {
+      const fixture = await setup();
+      await fill(fixture, makeContactData({ email: 'not-an-email' }));
+      expect(fixture.componentInstance.contactForm().valid()).toBe(false);
+
+      await fill(fixture, makeContactData());
+      expect(fixture.componentInstance.contactForm().valid()).toBe(true);
+    });
+
+    it('does not show an error before the field is touched, then shows it with aria wiring', async () => {
+      const fixture = await setup();
+      const email = fixture.componentInstance.contactForm.email;
+      const input = (): HTMLInputElement => fixture.nativeElement.querySelector('input#email');
+
+      expect(alerts(fixture)).toEqual([]);
+      expect(input().getAttribute('aria-invalid')).toBe('false');
+
+      email().markAsTouched();
+      await fixture.whenStable();
+
+      expect(input().getAttribute('aria-invalid')).toBe('true');
+      expect(input().getAttribute('aria-describedby')).toBe('contact-email-error');
+      expect(
+        fixture.nativeElement.querySelector('#contact-email-error')?.getAttribute('role'),
+      ).toBe('alert');
+    });
+
+    it('drops the aria-describedby once the field becomes valid', async () => {
+      const fixture = await setup();
+      fixture.componentInstance.contactForm.email().markAsTouched();
+      await fill(fixture, makeContactData());
+
+      const input: HTMLInputElement = fixture.nativeElement.querySelector('input#email');
+      expect(input.getAttribute('aria-invalid')).toBe('false');
+      expect(input.getAttribute('aria-describedby')).toBeNull();
+    });
   });
 
-  // F007 : un bouton désactivé n'est ni focusable ni annoncé, et il rendait le garde-fou
-  // `markAllAsTouched()` inatteignable — le visiteur voyait un bouton grisé sans explication.
   describe('Submitting an incomplete form', () => {
-    it('keeps the submit button enabled while the form is invalid', () => {
-      const fixture = setupFixture();
+    it('keeps the submit button enabled while the form is invalid', async () => {
+      const fixture = await setup();
       expect(submitButton(fixture).disabled).toBe(false);
     });
 
-    it('reveals every field error on submit and moves focus to the first invalid field', () => {
-      const fixture = setupFixture();
-      fixture.componentInstance.form.controls.email.setValue('jean@example.com');
+    it('does not call the gateway, reveals every error and focuses the first invalid field', async () => {
+      const submit = vi.fn().mockReturnValue(of({ success: true, message: '' }));
+      const fixture = await setup(makeGatewayStub({ submitContactForm: submit }));
+      await fill(fixture, makeContactData({ name: '', subject: '', message: '' }));
 
-      fixture.componentInstance.submitContact();
-      fixture.detectChanges();
+      await fixture.componentInstance.submitContact();
+      await fixture.whenStable();
 
-      const alerts = fixture.nativeElement.querySelectorAll('[role="alert"]');
-      expect(alerts.length).toBe(3);
+      expect(submit).not.toHaveBeenCalled();
+      expect(alerts(fixture)).toEqual([
+        'Le nom est obligatoire',
+        'Le sujet est obligatoire',
+        'Le message est obligatoire',
+      ]);
       expect(document.activeElement?.id).toBe('name');
     });
+  });
 
-    it('disables the submit button only while the message is being sent', () => {
-      const fixture = setupFixture(makeGatewayStub({ submitContactForm: () => NEVER }));
-      fixture.componentInstance.form.setValue({
-        name: 'Jean Dupont',
-        email: 'jean@example.com',
-        subject: 'Bonjour',
-        message: 'Un message suffisamment long.',
+  describe('Submitting a valid form', () => {
+    it('calls the gateway once with the model, then resets the form', async () => {
+      const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
+      const fixture = await setup(makeGatewayStub({ submitContactForm: submit }));
+      await fill(fixture, makeContactData());
+
+      await fixture.componentInstance.submitContact();
+      await fixture.whenStable();
+
+      expect(submit).toHaveBeenCalledTimes(1);
+      expect(submit).toHaveBeenCalledWith(makeContactData());
+      expect(fixture.componentInstance.contactForm().value()).toEqual({
+        name: '',
+        email: '',
+        subject: '',
+        message: '',
       });
+      expect(alerts(fixture)).toEqual([]);
+    });
 
-      fixture.componentInstance.submitContact();
-      fixture.detectChanges();
+    it('disables the submit button only while the message is being sent', async () => {
+      const fixture = await setup(makeGatewayStub({ submitContactForm: () => NEVER }));
+      await fill(fixture, makeContactData());
 
+      void fixture.componentInstance.submitContact();
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.contactForm().submitting()).toBe(true);
       expect(submitButton(fixture).disabled).toBe(true);
+    });
+
+    it('keeps the entered values and surfaces a toast when the gateway fails', async () => {
+      const fixture = await setup(
+        makeGatewayStub({ submitContactForm: () => throwError(() => new Error('network')) }),
+      );
+      const toast = TestBed.inject(ToastStore);
+      await fill(fixture, makeContactData());
+
+      await expect(fixture.componentInstance.submitContact()).resolves.toBeUndefined();
+      await fixture.whenStable();
+
+      expect(toast.messages().at(-1)?.severity).toBe('error');
+      expect(fixture.componentInstance.contactForm().value()).toEqual(makeContactData());
+      expect(fixture.componentInstance.contactForm().submitting()).toBe(false);
     });
   });
 });

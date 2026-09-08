@@ -141,7 +141,11 @@ You are an expert TypeScript / Angular engineer. You write functional, maintaina
 - Pas de `setTimeout` ni `ChangeDetectorRef.detectChanges()` pour trigger CD
 - Signals pour tout etat reactif
 
-### Reactive Forms
+### Formulaires : Signal Forms par defaut (v22, `@angular/forms/signals`)
+- Tout formulaire **neuf** = Signal Forms : modele `signal()` a defauts non-`null`, `form(model, schema, { submission })`, `<form [formRoot]>` + `[formField]` (qui possede l'element : pas de `required`/`disabled`/`[value]` en parallele), etat lu par appel du champ (`f.email().touched()`), messages dans le schema, `submit()` revele les erreurs et ne lance l'action que si valide (skill `angular-signal-forms`)
+- Reactive Forms tolere sur l'existant non migre ; migration = changement de forme complet, jamais un melange dans un meme formulaire. Reference migree : `features/contact/application/contact-form.ts`
+
+### Reactive Forms (existant non migre)
 - 1 form = 1 `FormGroup`, 1 champ = 1 `FormControl`, submit = `ngSubmit`
 - Toujours typer le shape du form, `nonNullable: true` par defaut
 - `getRawValue()` (inclut disabled), pas `.value`
