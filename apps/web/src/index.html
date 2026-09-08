@@ -50,10 +50,13 @@
     <meta name="theme-color" content="#000000" />
     <meta name="format-detection" content="telephone=no" />
 
-    <!-- CSP via meta tag, complétée par les headers HTTP Traefik/Dokploy pour frame-ancestors et HSTS -->
+    <!-- CSP via meta tag, complétée par les headers HTTP Traefik/Dokploy pour frame-ancestors et HSTS.
+         Giscus (commentaires du blog) : client.js dans script-src, widget dans frame-src, et
+         default.css dans style-src (client.js l'injecte dans la page hôte pour dimensionner l'iframe).
+         Avatars et API vivent dans l'iframe et relèvent de la CSP de giscus.app. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://api.nedellec-julien.fr; connect-src 'self' https://api.nedellec-julien.fr https://o4511049353723904.ingest.de.sentry.io; worker-src 'self' blob:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self';"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://giscus.app; style-src 'self' 'unsafe-inline' https://giscus.app; font-src 'self'; img-src 'self' data: blob: https://api.nedellec-julien.fr; connect-src 'self' https://api.nedellec-julien.fr https://o4511049353723904.ingest.de.sentry.io; worker-src 'self' blob:; object-src 'none'; frame-src https://giscus.app; base-uri 'self'; form-action 'self';"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
