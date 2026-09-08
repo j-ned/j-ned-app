@@ -182,7 +182,10 @@
   `pnpm dlx knip` (dead code) ;
   `pnpm dlx depcheck` (deps inutilisées) ;
   `pnpm audit --prod` (CVEs). Dégradation propre si un outil échoue.
-- **CI/CD** (dimension 10, **GitHub Actions uniquement**) : `aucun workflow`
-  détecté (`.github/workflows/` absent) ⇒ `CI non auditée : aucun workflow
-  GitHub Actions` (trace, dégradation propre). Gates attendus en CI quand ils
-  existeront = `test` / `lint` / `build` ci-dessus.
+- **CI/CD** (dimension 10, **GitHub Actions uniquement**) : `.github/workflows/ci.yml`
+  (depuis le 2026-09-08), déclenché sur `push` master et `pull_request`. Job `verify` :
+  `pnpm install --frozen-lockfile` → `lint` → `test` → `build --configuration production`
+  → vérification du prerender (≥ 5 `index.html`). Job `docker` : build de l'image via le
+  Dockerfile du repo (réplique exacte de Dokploy) + smoke test HTTP. Déploiement : Dokploy
+  rejoue le Dockerfile sur `master` ; nginx sert le dossier `browser` prérendu (pas de
+  serveur SSR à la requête).

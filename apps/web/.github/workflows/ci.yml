@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Un run par branche/PR : le nouveau push annule le précédent.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HUSKY: '0' # pas de hooks git en CI
+
+jobs:
+  verify:
+    name: Lint · Test · Build production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # pnpm avant setup-node : la version vient du champ `packageManager` de package.json.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22 # même majeure que le Dockerfile (node:22-alpine)
+          cache: pnpm
+
+      # Même commande que le Dockerfile : un lockfile incohérent échoue ici, pas chez Dokploy.
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      # Même commande que le Dockerfile, puis les mêmes garanties que le déploiement attend.
+      - name: Build production (sitemap + rss + prerender)
+        run: pnpm run build --configuration production
+
+      - name: Verify prerendered output
+        run: |
+          set -euo pipefail
+          test -f dist/angular-portfolio-app/browser/index.html
+          routes=$(find dist/angular-portfolio-app/browser -name index.html | wc -l)
+          echo "Routes prérendues : $routes"
+          # 5 routes statiques minimum (/, /about, /projects, /blog, 404 client) ; les slugs
+          # (projets, articles) viennent de l'API de prod et peuvent manquer si elle est injoignable.
+          test "$routes" -ge 5
+
+  docker:
+    name: Docker build (réplique Dokploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Exactement ce que Dokploy exécute : le Dockerfile du repo, sans push.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ng-portfolio-app:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the image
+        run: |
+          set -euo pipefail
+          docker run -d --rm --name portfolio -p 3000:3000 ng-portfolio-app:ci
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:3000/ -o /tmp/index.html; then break; fi
+            sleep 1
+          done
+          grep -q '<app-root' /tmp/index.html
+          curl -fsS http://127.0.0.1:3000/about/ | grep -q '<app-about'
+          docker stop portfolio

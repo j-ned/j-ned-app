@@ -50,7 +50,7 @@ You are an expert TypeScript / Angular engineer. You write functional, maintaina
 
 ### Composants
 - `standalone: true` implicite (v19+), ne pas le declarer
-- `changeDetection: ChangeDetectionStrategy.OnPush` **obligatoire**
+- `OnPush` est le **defaut framework depuis v22** : ne pas ecrire `changeDetection: OnPush` sur du nouveau code (doc officielle, `ng mcp get_best_practices`) ; tolere sur l'existant, pas de diff massif pour le retirer
 - Balises auto-fermantes : `<dashboard />`
 - SFC privilegie : inline template + styles, `template` en dernier
 - Ordre des proprietes :
@@ -136,8 +136,8 @@ You are an expert TypeScript / Angular engineer. You write functional, maintaina
 - `prefetch on idle` sur composants `on interaction` (chargement avance, affichage a la demande)
 - `@error` obligatoire avec retry pour la resilience
 
-### Zoneless (Angular 21+)
-- Zoneless par defaut, **OnPush obligatoire**
+### Zoneless (Angular 22, defaut)
+- Zoneless et `OnPush` par defaut, plus rien a declarer
 - Pas de `setTimeout` ni `ChangeDetectorRef.detectChanges()` pour trigger CD
 - Signals pour tout etat reactif
 
@@ -312,9 +312,11 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 1. **Plan mode** pour toute tache non triviale (3+ etapes ou decision archi). Si derive -> STOP et replanifier.
 2. **Subagents liberalement** pour recherche, exploration, analyse parallele. Garde le contexte principal propre.
 3. **Self-improvement loop** : apres chaque correction utilisateur, mise a jour `tasks/lessons.md` ET du CLAUDE.md (cf. Auto-revision).
-4. **Verification before done** : prouver que ca marche (tests, logs, comportement diff). Ne jamais marquer "done" sans preuve.
+4. **Verification before done** : prouver que ca marche (tests, logs, comportement diff). Ne jamais marquer "done" sans preuve. Un HTML SSR present **n'est pas** une preuve d'hydratation : tester une reaction fonctionnelle (saisie + blur -> `aria-invalid`), cf. `tasks/lessons.md`.
 5. **Demand elegance** sur les changements non triviaux ("y a-t-il plus elegant ?").
 6. **Autonomous bug fixing** : un rapport de bug = je fixe, je n'attends pas qu'on me tienne la main.
+7. **PR paralleles** : une branche mergee est morte (tout complement = nouvelle branche depuis `master`) ; "independantes" se prouve par intersection vide de `git diff --name-only master...<branche>` entre PR (`package.json`, lockfile et fichiers reformates comptent) ; sinon annoncer l'ordre de merge et le rebase.
+8. **Gates = ceux du Dockerfile** : `pnpm install --frozen-lockfile` puis `pnpm run build --configuration production`, en local avant chaque PR et dans la CI. `pnpm test` seul ne couvre ni le lockfile ni le prerender.
 
 ### Task management
 1. Plan dans `tasks/todo.md` (cases a cocher)
@@ -433,6 +435,14 @@ pnpm build                  # Build production (SSR)
 pnpm test                   # Vitest
 pnpm lint                   # ng lint (gate)
 pnpm ng generate            # Schematics
+
+# Replique locale des gates Dokploy / CI (.github/workflows/ci.yml)
+pnpm install --frozen-lockfile                 # echoue si le lockfile est incoherent
+pnpm run build --configuration production      # sitemap + rss + build SSR + prerender
+docker build -t ng-portfolio-app:local .       # exactement ce que Dokploy execute
+
+# MCP officiel Angular (get_best_practices, search_documentation, onpush_zoneless_migration)
+claude mcp add angular-cli -- pnpm exec ng mcp
 ```
 
 ## Ressources
