@@ -39,7 +39,7 @@ export type AdminNavItem = {
         <button
           type="button"
           (click)="collapseToggle.emit()"
-          class="flex items-center justify-center w-full p-2 rounded-lg text-muted hover:text-foreground hover:bg-foreground/5 transition-colors"
+          class="flex items-center justify-center w-full min-h-11 p-2 rounded-lg text-muted hover:text-foreground hover:bg-foreground/5 transition-colors"
           [attr.title]="collapsed() ? 'Ouvrir le menu' : 'Réduire le menu'"
           [attr.aria-label]="collapsed() ? 'Ouvrir le menu' : 'Réduire le menu'"
           [attr.aria-expanded]="!collapsed()"

@@ -67,7 +67,7 @@ import {
           <button
             type="button"
             (click)="openPicker()"
-            class="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:underline"
+            class="inline-flex min-h-11 items-center px-2 text-sm text-primary hover:underline focus-visible:outline-none focus-visible:underline"
           >
             Remplacer
           </button>

@@ -145,7 +145,7 @@ type LoginForm = {
         <div class="mt-5 text-center">
           <a
             routerLink="/"
-            class="text-xs text-muted hover:text-primary transition-colors inline-flex items-center gap-1.5"
+            class="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted hover:text-primary transition-colors"
           >
             <app-icon name="arrow-left" [size]="14" />
             Retour au site

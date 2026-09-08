@@ -1,10 +1,4 @@
-import {
-  Component,
-  inject,
-  resource,
-  computed,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, inject, resource, computed, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -55,7 +49,11 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
               }
               <p class="text-xs text-muted mt-1">Messages non lus</p>
             </div>
-            <app-icon name="arrow-right" [size]="20" class="text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+            <app-icon
+              name="arrow-right"
+              [size]="20"
+              class="text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all"
+            />
           </a>
         </li>
 
@@ -77,7 +75,11 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
               }
               <p class="text-xs text-muted mt-1">CV téléchargés</p>
             </div>
-            <app-icon name="arrow-right" [size]="20" class="text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
+            <app-icon
+              name="arrow-right"
+              [size]="20"
+              class="text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all"
+            />
           </a>
         </li>
       </ul>
@@ -91,7 +93,7 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
         </h2>
         <a
           routerLink="/admin/messages"
-          class="text-xs text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1"
+          class="inline-flex min-h-11 items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
         >
           Tout voir
           <app-icon name="arrow-right" [size]="12" />
@@ -138,14 +140,14 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
       <div class="flex flex-wrap gap-3">
         <a
           routerLink="/admin/projects"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-sm font-medium text-foreground hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
+          class="inline-flex min-h-11 items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-sm font-medium text-foreground hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
         >
           <app-icon name="plus" [size]="20" />
           Nouveau projet
         </a>
         <a
           routerLink="/admin/cv"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-sm font-medium text-foreground hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
+          class="inline-flex min-h-11 items-center gap-2 px-4 py-2 rounded-full border border-foreground/15 text-sm font-medium text-foreground hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
         >
           <app-icon name="upload" [size]="20" />
           Téléverser CV

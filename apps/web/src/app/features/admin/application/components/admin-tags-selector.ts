@@ -13,7 +13,7 @@ import { Component, ChangeDetectionStrategy, input, model } from '@angular/core'
           type="button"
           (click)="toggleTag(tag)"
           [class]="
-            'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ' +
+            'inline-flex min-h-11 items-center px-3 py-2 rounded-lg text-sm font-medium border transition-colors ' +
             (selectedTags().has(tag)
               ? 'bg-primary text-white border-primary'
               : 'bg-background text-foreground border-foreground/20 hover:border-primary/50')

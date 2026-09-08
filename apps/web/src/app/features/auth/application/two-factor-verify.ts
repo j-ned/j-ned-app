@@ -83,7 +83,10 @@ type TwoFactorVerifyFormShape = {
         </form>
 
         <nav class="mt-6 text-center">
-          <a routerLink="/login" class="text-sm text-muted hover:text-primary transition-colors">
+          <a
+            routerLink="/login"
+            class="inline-flex min-h-11 items-center text-sm text-muted hover:text-primary transition-colors"
+          >
             Retour à la connexion
           </a>
         </nav>

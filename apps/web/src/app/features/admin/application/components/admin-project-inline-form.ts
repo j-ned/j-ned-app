@@ -28,7 +28,10 @@ import { AdminTagsSelector } from './admin-tags-selector';
 import { PROJECT_CATEGORIES, AVAILABLE_PROJECT_TAGS } from './admin-project-form-data';
 
 type TechChoiceForm = FormGroup<{ techno: FormControl<string>; why: FormControl<string> }>;
-type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: FormControl<string> }>;
+type ArchDecisionForm = FormGroup<{
+  decision: FormControl<string>;
+  rationale: FormControl<string>;
+}>;
 
 @Component({
   selector: 'app-admin-project-inline-form',
@@ -75,10 +78,7 @@ type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: Fo
         </div>
       </div>
 
-      <app-admin-tags-selector
-        [availableTags]="availableTags"
-        [(selectedTags)]="selectedTags"
-      />
+      <app-admin-tags-selector [availableTags]="availableTags" [(selectedTags)]="selectedTags" />
 
       <div>
         <label for="description" class="form-label">Description</label>
@@ -133,9 +133,14 @@ type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: Fo
             id="featured"
             type="checkbox"
             formControlName="featured"
-            class="w-4 h-4 rounded border-foreground/20 text-primary focus:ring-primary"
+            class="w-5 h-5 rounded border-foreground/20 text-primary focus:ring-primary"
           />
-          <label for="featured" class="text-sm font-medium text-foreground">Featured</label>
+          <label
+            for="featured"
+            class="inline-flex min-h-11 items-center text-sm font-medium text-foreground"
+          >
+            Featured
+          </label>
         </div>
 
         <div class="flex items-center gap-2">
@@ -161,7 +166,7 @@ type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: Fo
             <button
               type="button"
               (click)="removeTechChoice($index)"
-              class="px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+              class="min-h-11 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
             >
               Supprimer
             </button>
@@ -188,7 +193,7 @@ type ArchDecisionForm = FormGroup<{ decision: FormControl<string>; rationale: Fo
             <button
               type="button"
               (click)="removeArchitectureDecision($index)"
-              class="px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+              class="min-h-11 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
             >
               Supprimer
             </button>

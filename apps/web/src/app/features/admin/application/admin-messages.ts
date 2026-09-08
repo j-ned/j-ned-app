@@ -61,8 +61,8 @@ const FILTER_OPTIONS = [
               [attr.aria-pressed]="readFilter() === opt.value"
               [class]="
                 readFilter() === opt.value
-                  ? 'rounded-md px-3 py-1.5 text-sm font-medium bg-primary-bg text-white transition-colors'
-                  : 'rounded-md px-3 py-1.5 text-sm font-medium text-muted hover:text-foreground transition-colors'
+                  ? 'rounded-md min-h-11 px-3 py-1.5 text-sm font-medium bg-primary-bg text-white transition-colors'
+                  : 'rounded-md min-h-11 px-3 py-1.5 text-sm font-medium text-muted hover:text-foreground transition-colors'
               "
               (click)="setFilter(opt.value)"
             >
@@ -75,7 +75,7 @@ const FILTER_OPTIONS = [
           data-testid="mark-all-read"
           [disabled]="!hasUnread()"
           (click)="markAllRead()"
-          class="inline-flex items-center gap-2 rounded-lg border border-foreground/10 px-4 py-2 text-sm font-medium text-foreground hover:bg-foreground/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-foreground/10 px-4 py-2 text-sm font-medium text-foreground hover:bg-foreground/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Tout marquer comme lu
         </button>
