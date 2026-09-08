@@ -28,6 +28,13 @@ cible en priorité le respect des bonnes pratiques Angular 22 et la responsivit�
 >   `pt-15` → `pt-20`, tables/barres admin non wrappables, safe-area drawer, toast `100vw`).
 > - Le faux positif « `about.ts:24` est déjà `pt-20` » s'explique par ce chantier : le fichier a été
 >   patché **pendant** l'audit (`pt-15` sur `master`).
+> - **Défaut réel manqué par l'audit, voisin de F001** : sur Angular 22.0.x, aucun bloc
+>   `@defer (hydrate …)` d'un composant **routé** ne s'hydrate en **chargement direct**
+>   (angular/angular#69908, régression sans erreur ni warning). Reproduit sur la home (projets,
+>   contact) en dev et sur le build de prod : le formulaire de contact est inerte sur une visite
+>   directe, un clic sur « Envoyer » recharge la page. `/about` est touché de la même façon. Le
+>   correctif (#69920) est publié en 22.1.x ; vérifié hydraté avec 22.1.5 → **PR #81 à merger en
+>   priorité**.
 
 **Scope** : repo entier (tout `src/` — 205 fichiers `.ts` dont 54 specs, 17 593 LOC, 74 composants)
 **Date** : 2026-09-08
