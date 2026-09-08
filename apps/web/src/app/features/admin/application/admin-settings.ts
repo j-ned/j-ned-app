@@ -21,7 +21,7 @@ import { AppIconTile } from '@shared/ui/icon-tile';
         Sécurité du compte
       </h2>
       <div class="bg-surface border border-foreground/10 rounded-xl p-6">
-        <div class="flex items-center justify-between gap-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-start gap-4">
             <app-icon-tile class="bg-primary/10">
               <app-icon name="shield" [size]="20" class="text-primary" />
@@ -37,7 +37,7 @@ import { AppIconTile } from '@shared/ui/icon-tile';
           </div>
           <a
             routerLink="/admin/settings/security"
-            class="inline-flex items-center justify-center gap-2 rounded-lg border border-muted/30 bg-transparent px-5 py-2.5 text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors"
+            class="inline-flex w-full sm:w-auto min-h-11 items-center justify-center gap-2 rounded-lg border border-muted/30 bg-transparent px-5 py-2.5 text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors"
           >
             <app-icon name="cog" [size]="20" />
             Configurer

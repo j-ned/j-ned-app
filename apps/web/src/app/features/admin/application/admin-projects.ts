@@ -24,11 +24,11 @@ import { AppIcon } from '@shared/icons/app-icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
-      <div class="flex items-center justify-between mb-8">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <h1 class="text-2xl font-bold text-foreground">Projets</h1>
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-3 sm:gap-4">
           <select
-            class="app-select"
+            class="app-select min-w-0 flex-1 sm:flex-none sm:min-w-44"
             [ngModel]="selectedCategory()"
             (ngModelChange)="selectedCategory.set($event)"
             aria-label="Filtrer par catégorie"

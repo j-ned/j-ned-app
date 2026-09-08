@@ -48,7 +48,7 @@ const FILTER_OPTIONS = [
       (rowClick)="toggleExpand($event)"
       emptyMessage="Aucun message"
     >
-      <div adminTableHeaderActions class="flex items-center gap-3">
+      <div adminTableHeaderActions class="flex flex-wrap items-center gap-3">
         <div
           class="inline-flex rounded-lg border border-foreground/10 p-0.5"
           role="group"
@@ -210,9 +210,7 @@ export class AdminMessages {
 
   protected markAllRead(): void {
     const snapshot = this.messagesRes.value() ?? [];
-    this.messagesRes.update((list) =>
-      (list ?? []).map((m) => (m.read ? m : { ...m, read: true })),
-    );
+    this.messagesRes.update((list) => (list ?? []).map((m) => (m.read ? m : { ...m, read: true })));
 
     this.contactGateway
       .markAllRead()

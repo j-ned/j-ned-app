@@ -10,7 +10,7 @@ import { AppIcon } from '@shared/icons/app-icon';
   host: { class: 'contents' },
   template: `
     <nav
-      class="page-container mt-16 md:mt-20 pt-8 border-t border-foreground/10 flex items-center justify-between gap-4"
+      class="page-container mt-16 md:mt-20 pt-8 border-t border-foreground/10 grid grid-cols-2 gap-4 sm:flex sm:items-center sm:justify-between"
       aria-label="Navigation entre projets"
     >
       @if (previousProject(); as prev) {
@@ -18,7 +18,9 @@ import { AppIcon } from '@shared/icons/app-icon';
           [routerLink]="['/projects', prev.slug]"
           class="group flex-1 min-w-0 inline-flex flex-col items-start gap-0.5 text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background"
         >
-          <span class="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted">
+          <span
+            class="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted"
+          >
             <app-icon
               name="chevron-left"
               [size]="14"
@@ -26,7 +28,9 @@ import { AppIcon } from '@shared/icons/app-icon';
             />
             Précédent
           </span>
-          <span class="truncate max-w-full font-medium text-foreground group-hover:text-primary transition-colors">
+          <span
+            class="truncate max-w-full font-medium text-foreground group-hover:text-primary transition-colors"
+          >
             {{ prev.title }}
           </span>
         </a>
@@ -36,7 +40,7 @@ import { AppIcon } from '@shared/icons/app-icon';
 
       <a
         routerLink="/projects"
-        class="shrink-0 text-sm font-medium text-muted hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background rounded-lg"
+        class="col-span-2 order-last inline-flex min-h-11 items-center justify-center sm:order-none sm:col-span-1 sm:shrink-0 text-sm font-medium text-muted hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background rounded-lg"
       >
         Tous les projets
       </a>
@@ -46,7 +50,9 @@ import { AppIcon } from '@shared/icons/app-icon';
           [routerLink]="['/projects', next.slug]"
           class="group flex-1 min-w-0 inline-flex flex-col items-end gap-0.5 text-right rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background"
         >
-          <span class="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted">
+          <span
+            class="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted"
+          >
             Suivant
             <app-icon
               name="chevron-right"
@@ -54,7 +60,9 @@ import { AppIcon } from '@shared/icons/app-icon';
               class="transition-transform group-hover:translate-x-0.5"
             />
           </span>
-          <span class="truncate max-w-full font-medium text-foreground group-hover:text-primary transition-colors">
+          <span
+            class="truncate max-w-full font-medium text-foreground group-hover:text-primary transition-colors"
+          >
             {{ next.title }}
           </span>
         </a>

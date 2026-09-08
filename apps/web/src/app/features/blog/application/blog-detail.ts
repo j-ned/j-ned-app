@@ -30,11 +30,16 @@ import { AppTag } from '@shared/ui/tag';
   template: `
     @let p = post();
     <main class="min-h-svh pt-20 pb-20">
-      <section class="page-container max-w-3xl mx-auto pt-8">
+      <section class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-8">
         @if (p) {
           <div class="flex flex-wrap gap-1.5 mb-4">
             @for (tag of p.tags; track tag) {
-              <a data-testid="tag-link" routerLink="/blog" [queryParams]="{ tag }">
+              <a
+                data-testid="tag-link"
+                routerLink="/blog"
+                [queryParams]="{ tag }"
+                class="inline-flex min-h-11 items-center rounded-lg"
+              >
                 <app-tag [value]="tag" severity="info" />
               </a>
             }
@@ -45,7 +50,9 @@ import { AppTag } from '@shared/ui/tag';
           }
           @if (p.coverImage) {
             <figure class="mb-8">
-              <div class="relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-xl border border-foreground/8">
+              <div
+                class="relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-xl border border-foreground/8"
+              >
                 <img
                   [ngSrc]="p.coverImage"
                   [alt]="'Illustration de l’article ' + p.title"
@@ -57,7 +64,11 @@ import { AppTag } from '@shared/ui/tag';
               </div>
             </figure>
           }
-          <div data-testid="blog-content" class="prose max-w-none dark:prose-invert" [innerHTML]="renderedContent()"></div>
+          <div
+            data-testid="blog-content"
+            class="prose max-w-none dark:prose-invert break-words prose-pre:overflow-x-auto prose-table:block prose-table:w-full prose-table:overflow-x-auto prose-img:max-w-full prose-img:h-auto"
+            [innerHTML]="renderedContent()"
+          ></div>
           <div #readSentinel data-testid="article-read-sentinel" aria-hidden="true"></div>
           <div class="mt-8">
             <app-blog-like-button [slug]="p.slug" [likesCount]="p.likesCount" />

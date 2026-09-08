@@ -31,7 +31,7 @@ import { AppIconTile } from '@shared/ui/icon-tile';
             >
               {{ highlight.title }}
             </h3>
-            <p class="text-muted text-xs leading-relaxed">
+            <p class="text-muted text-sm leading-relaxed">
               {{ highlight.description }}
             </p>
           </article>

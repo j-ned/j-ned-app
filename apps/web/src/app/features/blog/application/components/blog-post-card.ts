@@ -13,7 +13,10 @@ import { AppTag } from '@shared/ui/tag';
     <article
       class="group relative bg-surface border border-foreground/8 rounded-xl overflow-hidden hover:border-primary/30 hover:bg-surface-elevated transition-colors duration-200 flex flex-col h-full"
     >
-      <a [routerLink]="['/blog', post().slug]" class="block aspect-[16/9] md:aspect-[2/1] w-full overflow-hidden relative">
+      <a
+        [routerLink]="['/blog', post().slug]"
+        class="block aspect-[16/9] md:aspect-[2/1] w-full overflow-hidden relative"
+      >
         @if (post().coverImage) {
           <img
             [ngSrc]="post().coverImage"
@@ -32,7 +35,12 @@ import { AppTag } from '@shared/ui/tag';
       <div class="p-5 flex flex-col grow">
         <div class="flex flex-wrap gap-1.5 mb-2">
           @for (tag of post().tags; track tag) {
-            <a data-testid="tag-link" routerLink="/blog" [queryParams]="{ tag }">
+            <a
+              data-testid="tag-link"
+              routerLink="/blog"
+              [queryParams]="{ tag }"
+              class="inline-flex min-h-11 items-center rounded-lg"
+            >
               <app-tag [value]="tag" severity="info" />
             </a>
           }

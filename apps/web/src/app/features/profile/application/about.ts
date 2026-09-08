@@ -21,9 +21,9 @@ import { AboutHighlights } from './about-highlights';
     AboutHighlights,
   ],
   template: `
-    <main class="min-h-svh pt-15 pb-16">
+    <main class="min-h-svh pt-20 pb-16">
       <section class="page-container mb-10">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 pt-8">
           <div class="lg:col-span-2">
             <app-about-hero />
           </div>
@@ -34,7 +34,7 @@ import { AboutHighlights } from './about-highlights';
       </section>
 
       <div class="page-container">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-12">
           <aside class="lg:col-span-1 space-y-8">
             @defer (hydrate on viewport) {
               <app-about-search />

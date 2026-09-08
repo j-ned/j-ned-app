@@ -17,7 +17,7 @@ import { AppIcon } from '@shared/icons/app-icon';
       <app-icon name="code" [size]="24" class="text-primary" />
       <h2 class="font-bold text-xl text-foreground">Stack Technique</h2>
     </header>
-    <ul class="grid grid-cols-3 gap-3" role="list">
+    <ul class="grid grid-cols-2 min-[400px]:grid-cols-3 gap-3" role="list">
       @for (tech of technologies(); track tech.id) {
         <li
           class="bg-background/50 border border-foreground/10 rounded-xl p-3 flex flex-col items-center gap-2 hover:border-accent/50 hover:bg-accent/5 transition-all group cursor-pointer"
@@ -29,7 +29,7 @@ import { AppIcon } from '@shared/icons/app-icon';
             height="32"
             class="w-8 h-8 group-hover:scale-110 transition-transform"
           />
-          <p class="text-[10px] font-medium text-foreground text-center leading-tight">
+          <p class="text-xs font-medium text-foreground text-center leading-tight">
             {{ tech.name }}
           </p>
         </li>

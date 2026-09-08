@@ -11,12 +11,14 @@ import { AppPaginator, type AppPaginatorEvent } from '@shared/ui/paginator';
 import { ProjectCard } from './components/project-card';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { filterProjects, FILTER_ALL } from '../domain/use-cases/filter-projects.use-case';
-import { paginateProjects, calculateTotalPages } from '../domain/use-cases/paginate-projects.use-case';
+import {
+  paginateProjects,
+  calculateTotalPages,
+} from '../domain/use-cases/paginate-projects.use-case';
 
 const ALL_LABEL = 'Tous';
 
 const ITEMS_PER_PAGE = 3;
-
 
 @Component({
   selector: 'app-projects',
@@ -52,7 +54,10 @@ const ITEMS_PER_PAGE = 3;
           }
         </nav>
 
-        <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12" role="list">
+        <ul
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-8 md:mb-12"
+          role="list"
+        >
           @for (project of paginatedProjects(); track project.id) {
             <li>
               <app-project-card [project]="project" />

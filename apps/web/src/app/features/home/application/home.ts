@@ -49,7 +49,7 @@ import { AppIconTile } from '@shared/ui/icon-tile';
               </ul>
             } @else {
               <!-- Skeleton placeholder: hauteur fixe 222px (doit matcher min-h de la vraie card) -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-8" aria-hidden="true">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8" aria-hidden="true">
                 @for (_ of [1, 2, 3]; track $index) {
                   <div
                     class="p-6 rounded-xl border border-foreground/8 bg-foreground/2 animate-pulse min-h-55.5"
@@ -75,9 +75,12 @@ import { AppIconTile } from '@shared/ui/icon-tile';
           </div>
         </section>
       } @placeholder {
-        <div class="block py-16 md:py-20 px-6 h-64" data-testid="home-projects-placeholder"></div>
+        <div
+          class="block py-16 md:py-20 px-4 sm:px-6 h-64"
+          data-testid="home-projects-placeholder"
+        ></div>
       } @error {
-        <div class="block py-16 md:py-20 px-6 text-center text-muted text-sm">
+        <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
           Impossible de charger cette section.
         </div>
       }
@@ -90,9 +93,12 @@ import { AppIconTile } from '@shared/ui/icon-tile';
         @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
           <app-contact-form data-testid="home-contact-form" />
         } @placeholder {
-          <div class="block py-16 md:py-20 px-6 h-96" data-testid="home-contact-placeholder"></div>
+          <div
+            class="block py-16 md:py-20 px-4 sm:px-6 h-96"
+            data-testid="home-contact-placeholder"
+          ></div>
         } @error {
-          <div class="block py-16 md:py-20 px-6 text-center text-muted text-sm">
+          <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
             Impossible de charger cette section.
           </div>
         }

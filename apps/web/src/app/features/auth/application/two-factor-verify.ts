@@ -17,10 +17,10 @@ type TwoFactorVerifyFormShape = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <main class="min-h-svh flex items-center justify-center bg-background px-4">
-      <div
-        class="w-full max-w-md bg-surface border border-foreground/10 rounded-2xl p-8"
-      >
+    <div
+      class="min-h-[calc(100svh-5rem)] mt-20 flex items-center justify-center bg-background px-4 py-8"
+    >
+      <div class="w-full max-w-md bg-surface border border-foreground/10 rounded-2xl p-8">
         <div class="flex justify-center mb-6">
           <app-icon-tile size="lg" class="bg-primary/10 border border-primary/20">
             <app-icon name="shield" [size]="28" class="text-primary" />
@@ -60,9 +60,7 @@ type TwoFactorVerifyFormShape = {
               placeholder="000000"
             />
             @if (form.controls.code.touched && form.controls.code.errors?.['required']) {
-              <p id="twofa-code-error" role="alert" class="form-error">
-                Le code est obligatoire
-              </p>
+              <p id="twofa-code-error" role="alert" class="form-error">Le code est obligatoire</p>
             } @else if (form.controls.code.touched && form.controls.code.errors?.['pattern']) {
               <p id="twofa-code-error" role="alert" class="form-error">
                 Le code doit contenir 6 chiffres
@@ -90,7 +88,7 @@ type TwoFactorVerifyFormShape = {
           </a>
         </nav>
       </div>
-    </main>
+    </div>
   `,
 })
 export class TwoFactorVerify {

@@ -57,7 +57,9 @@ const FOCUSABLE_SELECTOR =
             </button>
           </header>
         }
-        <div class="p-5 overflow-y-auto flex-1">
+        <div
+          class="p-5 overflow-y-auto overscroll-contain flex-1 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        >
           <ng-content />
         </div>
       </div>
@@ -112,7 +114,10 @@ export class Drawer {
   protected readonly panelClasses = computed(() => {
     const base =
       'fixed top-0 bottom-0 z-[1001] w-[85vw] max-w-sm bg-background border-foreground/10 flex flex-col shadow-2xl outline-none';
-    const side = this.position() === 'right' ? 'right-0 border-l' : 'left-0 border-r';
+    const side =
+      this.position() === 'right'
+        ? 'right-0 border-l pr-[env(safe-area-inset-right)]'
+        : 'left-0 border-r pl-[env(safe-area-inset-left)]';
     return `${base} ${side}`;
   });
 

@@ -28,7 +28,7 @@ import { AppIcon } from '@shared/icons/app-icon';
           <p class="text-accent font-medium mb-2 text-md">
             {{ diploma.provider }}
           </p>
-          <p class="text-muted text-xs mb-4 leading-relaxed">
+          <p class="text-muted text-sm mb-4 leading-relaxed">
             {{ diploma.shortDescription }}
           </p>
 

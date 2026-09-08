@@ -27,7 +27,7 @@ export const DATE_RANGE_OPTIONS: readonly DateRangeOption[] = [
         <h1 class="text-3xl font-bold text-foreground mb-1">Analytics</h1>
         <p class="text-sm text-muted">Visites, engagement, provenance, appareils</p>
       </div>
-      <div class="flex items-center gap-4">
+      <div class="flex flex-wrap items-center gap-3 sm:gap-4">
         <div
           class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-foreground/5 border border-foreground/10"
         >
@@ -36,10 +36,7 @@ export const DATE_RANGE_OPTIONS: readonly DateRangeOption[] = [
               class="absolute w-2 h-2 rounded-full bg-status-success animate-ping"
               aria-hidden="true"
             ></span>
-            <span
-              class="relative w-2 h-2 rounded-full bg-status-success"
-              aria-hidden="true"
-            ></span>
+            <span class="relative w-2 h-2 rounded-full bg-status-success" aria-hidden="true"></span>
           </span>
           <span class="text-xs font-medium text-foreground">
             {{ activeVisitors() }}

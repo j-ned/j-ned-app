@@ -18,10 +18,10 @@ import { extractErrorMessage } from '@shared/api/extract-error-message';
     @if (cv()) {
       <div class="bg-surface border border-foreground/10 rounded-2xl p-6 mb-8">
         <h2 class="text-lg font-semibold text-foreground mb-4">CV actuel</h2>
-        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="min-w-0">
             <p class="text-xs text-muted mb-1">Fichier</p>
-            <p class="text-sm text-foreground font-medium">{{ cv()!.fileName }}</p>
+            <p class="text-sm text-foreground font-medium break-all">{{ cv()!.fileName }}</p>
           </div>
           <div>
             <p class="text-xs text-muted mb-1">Date d'upload</p>
@@ -32,17 +32,17 @@ import { extractErrorMessage } from '@shared/api/extract-error-message';
             <p class="text-sm text-foreground">{{ formattedFileSize() }}</p>
           </div>
         </div>
-        <div class="flex gap-3 mt-4">
+        <div class="flex flex-wrap gap-3 mt-4">
           <a
             [href]="downloadUrl"
             target="_blank"
-            class="px-4 py-2 text-xs rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            class="inline-flex min-h-11 items-center px-4 py-2 text-sm rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
           >
             Voir le CV
           </a>
           <button
             (click)="deleteCv()"
-            class="px-4 py-2 text-xs rounded-lg bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
+            class="inline-flex min-h-11 items-center px-4 py-2 text-sm rounded-lg bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
           >
             Supprimer le CV
           </button>

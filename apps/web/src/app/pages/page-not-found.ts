@@ -7,10 +7,10 @@ import { RouterLink } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <main
-      class="min-h-svh flex flex-col items-center justify-center bg-background text-foreground px-4"
+    <div
+      class="min-h-[calc(100svh-5rem)] mt-20 flex flex-col items-center justify-center bg-background text-foreground px-4 py-8"
     >
-      <h1 class="text-7xl font-extrabold text-primary mb-4">404</h1>
+      <h1 class="text-6xl sm:text-7xl font-extrabold text-primary mb-4">404</h1>
       <h2 class="text-2xl md:text-3xl font-bold mb-2">Page non trouvée</h2>
       <p class="text-muted mb-8 max-w-md text-center">
         Oups ! La page que vous cherchez n'existe pas ou a été déplacée.<br />
@@ -22,7 +22,7 @@ import { RouterLink } from '@angular/router';
       >
         Retour à l'accueil
       </a>
-    </main>
+    </div>
   `,
 })
 export class PageNotFound {}

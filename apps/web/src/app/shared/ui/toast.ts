@@ -47,7 +47,7 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
   imports: [AppIcon],
   template: `
     <div
-      class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 w-[calc(100vw-2rem)] max-w-sm pointer-events-none"
+      class="fixed top-4 right-4 left-4 z-[9999] flex flex-col gap-3 max-w-sm ml-auto pointer-events-none"
       role="region"
       aria-label="Notifications"
       aria-live="polite"

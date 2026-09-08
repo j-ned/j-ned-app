@@ -1,12 +1,9 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  DestroyRef,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { STATIC_CONTACT_INFO, STATIC_SOCIAL_LINKS } from '@shared/identity/contact-info.static-data';
+import {
+  STATIC_CONTACT_INFO,
+  STATIC_SOCIAL_LINKS,
+} from '@shared/identity/contact-info.static-data';
 import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { ToastStore } from '@shared/ui/toast-store';
@@ -27,8 +24,8 @@ type ContactFormGroup = {
   host: { class: 'block' },
   imports: [ReactiveFormsModule, AppIcon, Button, ContactInfoPanel],
   template: `
-    <section class="animate-fade-up py-16 md:py-10 px-6">
-      <div class="max-w-5xl mx-auto">
+    <section class="animate-fade-up py-12 md:py-20">
+      <div class="page-container max-w-5xl">
         <header class="text-center mb-14">
           <span
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
@@ -49,20 +46,22 @@ type ContactFormGroup = {
 
         <div class="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-stretch">
           <app-contact-info-panel [contactInfo]="contactInfo" [socialLinks]="socialLinks" />
-          <div
-            class="bg-surface border border-foreground/10 rounded-2xl p-6 md:p-8"
-          >
+          <div class="bg-surface border border-foreground/10 rounded-2xl p-6 md:p-8">
             <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-6">
               Envoyer un message
             </h3>
 
-            <form [formGroup]="form" (ngSubmit)="submitContact()" class="flex flex-col gap-8">
-              <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-6 border-0 p-0 m-0">
+            <form [formGroup]="form" (ngSubmit)="submitContact()" class="flex flex-col gap-6">
+              <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
                 <div>
                   <label for="name" class="form-label">Nom complet *</label>
                   <div class="relative">
-                    <app-icon name="user" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                    <app-icon
+                      name="user"
+                      [size]="14"
+                      class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                    />
                     <input
                       id="name"
                       type="text"
@@ -71,12 +70,18 @@ type ContactFormGroup = {
                       autocomplete="name"
                       aria-required="true"
                       [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
-                      [attr.aria-describedby]="form.controls.name.touched && form.controls.name.invalid ? 'contact-name-error' : null"
+                      [attr.aria-describedby]="
+                        form.controls.name.touched && form.controls.name.invalid
+                          ? 'contact-name-error'
+                          : null
+                      "
                       class="form-input pl-9"
                     />
                   </div>
                   @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-                    <p id="contact-name-error" role="alert" class="form-error">Le nom est obligatoire</p>
+                    <p id="contact-name-error" role="alert" class="form-error">
+                      Le nom est obligatoire
+                    </p>
                   } @else if (
                     form.controls.name.touched && form.controls.name.errors?.['minlength']
                   ) {
@@ -89,7 +94,11 @@ type ContactFormGroup = {
                 <div>
                   <label for="email" class="form-label">Email *</label>
                   <div class="relative">
-                    <app-icon name="envelope" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                    <app-icon
+                      name="envelope"
+                      [size]="14"
+                      class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                    />
                     <input
                       id="email"
                       type="email"
@@ -97,13 +106,21 @@ type ContactFormGroup = {
                       placeholder="votre@email.com"
                       autocomplete="email"
                       aria-required="true"
-                      [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
-                      [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'contact-email-error' : null"
+                      [attr.aria-invalid]="
+                        form.controls.email.touched && form.controls.email.invalid
+                      "
+                      [attr.aria-describedby]="
+                        form.controls.email.touched && form.controls.email.invalid
+                          ? 'contact-email-error'
+                          : null
+                      "
                       class="form-input pl-9"
                     />
                   </div>
                   @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-                    <p id="contact-email-error" role="alert" class="form-error">L'email est obligatoire</p>
+                    <p id="contact-email-error" role="alert" class="form-error">
+                      L'email est obligatoire
+                    </p>
                   } @else if (
                     form.controls.email.touched && form.controls.email.errors?.['pattern']
                   ) {
@@ -116,20 +133,32 @@ type ContactFormGroup = {
               <div>
                 <label for="subject" class="form-label">Sujet *</label>
                 <div class="relative">
-                  <app-icon name="pencil" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                  <app-icon
+                    name="pencil"
+                    [size]="14"
+                    class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                  />
                   <input
                     id="subject"
                     type="text"
                     formControlName="subject"
                     placeholder="Objet de votre message"
                     aria-required="true"
-                    [attr.aria-invalid]="form.controls.subject.touched && form.controls.subject.invalid"
-                    [attr.aria-describedby]="form.controls.subject.touched && form.controls.subject.invalid ? 'contact-subject-error' : null"
+                    [attr.aria-invalid]="
+                      form.controls.subject.touched && form.controls.subject.invalid
+                    "
+                    [attr.aria-describedby]="
+                      form.controls.subject.touched && form.controls.subject.invalid
+                        ? 'contact-subject-error'
+                        : null
+                    "
                     class="form-input pl-9"
                   />
                 </div>
                 @if (form.controls.subject.touched && form.controls.subject.errors?.['required']) {
-                  <p id="contact-subject-error" role="alert" class="form-error">Le sujet est obligatoire</p>
+                  <p id="contact-subject-error" role="alert" class="form-error">
+                    Le sujet est obligatoire
+                  </p>
                 } @else if (
                   form.controls.subject.touched && form.controls.subject.errors?.['minlength']
                 ) {
@@ -146,12 +175,20 @@ type ContactFormGroup = {
                   rows="6"
                   placeholder="Décrivez votre projet ou votre question..."
                   aria-required="true"
-                  [attr.aria-invalid]="form.controls.message.touched && form.controls.message.invalid"
-                  [attr.aria-describedby]="form.controls.message.touched && form.controls.message.invalid ? 'contact-message-error' : null"
+                  [attr.aria-invalid]="
+                    form.controls.message.touched && form.controls.message.invalid
+                  "
+                  [attr.aria-describedby]="
+                    form.controls.message.touched && form.controls.message.invalid
+                      ? 'contact-message-error'
+                      : null
+                  "
                   class="form-textarea"
                 ></textarea>
                 @if (form.controls.message.touched && form.controls.message.errors?.['required']) {
-                  <p id="contact-message-error" role="alert" class="form-error">Le message est obligatoire</p>
+                  <p id="contact-message-error" role="alert" class="form-error">
+                    Le message est obligatoire
+                  </p>
                 } @else if (
                   form.controls.message.touched && form.controls.message.errors?.['minlength']
                 ) {

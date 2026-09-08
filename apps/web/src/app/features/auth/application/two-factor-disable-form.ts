@@ -1,16 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  input,
-  output,
-} from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 
@@ -66,11 +55,12 @@ type DisableFormShape = {
           </p>
 
           @if (!showForm()) {
-            <div class="flex gap-3">
+            <div class="flex flex-col gap-3 sm:flex-row">
               <app-button
                 severity="danger"
                 variant="outlined"
-                class="flex-1"
+                [block]="true"
+                class="sm:flex-1"
                 data-testid="twofa-disable-show"
                 (click)="requestDisable.emit()"
               >
@@ -78,7 +68,8 @@ type DisableFormShape = {
               </app-button>
               <app-button
                 severity="primary"
-                class="flex-1"
+                [block]="true"
+                class="sm:flex-1"
                 [disabled]="loading()"
                 data-testid="twofa-reconfigure"
                 (click)="reconfigure.emit()"
@@ -116,11 +107,12 @@ type DisableFormShape = {
                   </p>
                 }
               </div>
-              <div class="flex gap-3">
+              <div class="flex flex-col gap-3 sm:flex-row">
                 <app-button
                   severity="secondary"
                   variant="outlined"
-                  class="flex-1"
+                  [block]="true"
+                  class="sm:flex-1"
                   data-testid="twofa-disable-cancel"
                   (click)="cancelled.emit()"
                 >
@@ -129,7 +121,8 @@ type DisableFormShape = {
                 <app-button
                   type="submit"
                   severity="danger"
-                  class="flex-1"
+                  [block]="true"
+                  class="sm:flex-1"
                   [disabled]="disableForm.invalid || loading()"
                 >
                   @if (loading()) {

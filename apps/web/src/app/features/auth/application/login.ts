@@ -19,7 +19,9 @@ type LoginForm = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <main class="min-h-svh flex items-center justify-center bg-background px-4">
+    <div
+      class="min-h-[calc(100svh-5rem)] mt-20 flex items-center justify-center bg-background px-4 py-8"
+    >
       <div class="w-full max-w-sm">
         <!-- Header -->
         <div class="text-center mb-8">
@@ -31,9 +33,7 @@ type LoginForm = {
         </div>
 
         <!-- Card -->
-        <div
-          class="bg-surface border border-foreground/10 rounded-2xl p-6"
-        >
+        <div class="bg-surface border border-foreground/10 rounded-2xl p-6">
           @if (errorMessage()) {
             <div
               class="mb-4 p-2.5 rounded-lg bg-status-error/10 border border-status-error/30 text-status-error text-sm text-center"
@@ -50,7 +50,11 @@ type LoginForm = {
               <div>
                 <label for="email" class="form-label">Email</label>
                 <div class="relative">
-                  <app-icon name="envelope" [size]="16" class="text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                  <app-icon
+                    name="envelope"
+                    [size]="16"
+                    class="text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                  />
                   <input
                     id="email"
                     type="email"
@@ -58,15 +62,23 @@ type LoginForm = {
                     autocomplete="email"
                     aria-required="true"
                     [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
-                    [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'login-email-error' : null"
+                    [attr.aria-describedby]="
+                      form.controls.email.touched && form.controls.email.invalid
+                        ? 'login-email-error'
+                        : null
+                    "
                     class="form-input pl-10"
                     placeholder="Votre email"
                   />
                 </div>
                 @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-                  <p id="login-email-error" role="alert" class="form-error">L'email est obligatoire</p>
+                  <p id="login-email-error" role="alert" class="form-error">
+                    L'email est obligatoire
+                  </p>
                 } @else if (form.controls.email.touched && form.controls.email.errors?.['email']) {
-                  <p id="login-email-error" role="alert" class="form-error">L'email n'est pas valide</p>
+                  <p id="login-email-error" role="alert" class="form-error">
+                    L'email n'est pas valide
+                  </p>
                 }
               </div>
 
@@ -74,15 +86,25 @@ type LoginForm = {
               <div class="mt-3">
                 <label for="password" class="form-label">Mot de passe</label>
                 <div class="relative">
-                  <app-icon name="lock" [size]="16" class="text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                  <app-icon
+                    name="lock"
+                    [size]="16"
+                    class="text-muted absolute left-3 top-1/2 -translate-y-1/2"
+                  />
                   <input
                     id="password"
                     type="password"
                     formControlName="password"
                     autocomplete="current-password"
                     aria-required="true"
-                    [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
-                    [attr.aria-describedby]="form.controls.password.touched && form.controls.password.invalid ? 'login-password-error' : null"
+                    [attr.aria-invalid]="
+                      form.controls.password.touched && form.controls.password.invalid
+                    "
+                    [attr.aria-describedby]="
+                      form.controls.password.touched && form.controls.password.invalid
+                        ? 'login-password-error'
+                        : null
+                    "
                     class="form-input pl-10"
                     placeholder="Votre mot de passe"
                   />
@@ -90,7 +112,9 @@ type LoginForm = {
                 @if (
                   form.controls.password.touched && form.controls.password.errors?.['required']
                 ) {
-                  <p id="login-password-error" role="alert" class="form-error">Le mot de passe est obligatoire</p>
+                  <p id="login-password-error" role="alert" class="form-error">
+                    Le mot de passe est obligatoire
+                  </p>
                 } @else if (
                   form.controls.password.touched && form.controls.password.errors?.['minlength']
                 ) {
@@ -128,7 +152,7 @@ type LoginForm = {
           </a>
         </div>
       </div>
-    </main>
+    </div>
   `,
 })
 export class Login {

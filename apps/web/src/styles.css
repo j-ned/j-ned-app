@@ -32,9 +32,13 @@
   --theme-surface-elevated: color-mix(in srgb, #fff 6%, transparent); /* hover/elevated */
   --theme-nav-border: color-mix(in srgb, #fff 6%, transparent);
   --theme-nav-shadow: 0 1px 0 color-mix(in srgb, #fff 4%, transparent);
-  --theme-status-success: oklch(72.3% 0.19 145); /* green-500 (#22c55e) — lisible sur Console Black */
+  --theme-status-success: oklch(
+    72.3% 0.19 145
+  ); /* green-500 (#22c55e) — lisible sur Console Black */
   --theme-status-warn: oklch(76.6% 0.16 70); /* amber-500 (#f59e0b) */
-  --theme-status-error: oklch(71.5% 0.18 22); /* red-400 (#f87171) — moins agressif que red-500 sur fond sombre */
+  --theme-status-error: oklch(
+    71.5% 0.18 22
+  ); /* red-400 (#f87171) — moins agressif que red-500 sur fond sombre */
 }
 
 /* Mode clair crémeux — sous-tons chauds (stone) + indigo désaturé */
@@ -47,11 +51,17 @@
   --theme-foreground: oklch(26.6% 0.011 56); /* stone-800 (#292524) — chaud, pas slate-900 */
   --theme-surface: oklch(100% 0 0); /* cards blanches (#ffffff) */
   --theme-surface-elevated: oklch(99.5% 0.005 87); /* hover warm-white (#fefdfb) */
-  --theme-nav-border: color-mix(in srgb, oklch(26.6% 0.011 56) 8%, transparent); /* stone-800 à 8% */
+  --theme-nav-border: color-mix(
+    in srgb,
+    oklch(26.6% 0.011 56) 8%,
+    transparent
+  ); /* stone-800 à 8% */
   --theme-nav-shadow:
     0 1px 2px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent),
     0 4px 12px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent);
-  --theme-status-success: oklch(60.4% 0.18 145); /* green-600 (#16a34a) — lisible sur Ivoire Paper */
+  --theme-status-success: oklch(
+    60.4% 0.18 145
+  ); /* green-600 (#16a34a) — lisible sur Ivoire Paper */
   --theme-status-warn: oklch(63.5% 0.165 50); /* amber-600 (#d97706) */
   --theme-status-error: oklch(57.7% 0.224 27); /* red-600 (#dc2626) — contraste fort sur paper */
 }
@@ -150,7 +160,8 @@ input:-webkit-autofill:focus {
  * ---------------------------------------------------------------- */
 
 @utility form-input {
-  @apply block w-full rounded-lg border border-muted/30 bg-surface px-3.5 py-2.5 text-sm text-foreground;
+  /* text-base sur mobile : < 16px déclenche le zoom auto de Safari iOS au focus ; min-h-11 = cible 44px */
+  @apply block w-full min-h-11 rounded-lg border border-muted/30 bg-surface px-3.5 py-2.5 text-base sm:text-sm text-foreground;
   @apply placeholder:text-muted/60;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary;
   @apply transition-colors;
@@ -159,7 +170,7 @@ input:-webkit-autofill:focus {
 }
 
 @utility app-select {
-  @apply rounded-lg border border-muted/30 bg-surface px-3 py-2 text-sm text-foreground min-w-44;
+  @apply min-h-11 rounded-lg border border-muted/30 bg-surface px-3 py-2 text-base sm:text-sm text-foreground;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary;
   @apply transition-colors;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;

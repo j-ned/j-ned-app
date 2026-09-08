@@ -26,13 +26,15 @@ type ThemePreference = 'dark' | 'light';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive, AppIcon, Button, Drawer, AppIconTile],
   template: `
-    <div class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-nav-border shadow-nav">
+    <div
+      class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-nav-border shadow-nav"
+    >
       <div class="page-container h-20 flex items-center justify-between">
         <a
           routerLink="/"
           (click)="scrollToTop()"
           aria-label="Retour en haut de la page d'accueil"
-          class="group flex items-center gap-4 hover:opacity-90 transition-opacity"
+          class="group flex items-center gap-3 sm:gap-4 min-w-0 hover:opacity-90 transition-opacity"
         >
           <app-icon-tile
             class="bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
@@ -40,8 +42,10 @@ type ThemePreference = 'dark' | 'light';
             JN
           </app-icon-tile>
           <div class="flex items-baseline gap-0.5">
-            <span class="text-2xl font-bold text-foreground tracking-tight">Julien </span>
-            <span class="text-2xl font-bold text-primary">N.</span>
+            <span class="text-xl sm:text-2xl font-bold text-foreground tracking-tight"
+              >Julien
+            </span>
+            <span class="text-xl sm:text-2xl font-bold text-primary">N.</span>
           </div>
         </a>
 
@@ -73,7 +77,7 @@ type ThemePreference = 'dark' | 'light';
           }
         </nav>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 sm:gap-4">
           <app-button
             variant="outlined"
             severity="secondary"

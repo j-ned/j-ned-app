@@ -222,3 +222,49 @@ Deux semaines de mesure avant de retoucher quoi que ce soit. L'outil existe déj
 ## Review
 
 _(à remplir en fin de lot)_
+
+---
+
+# Responsive — toutes tailles d'écran (2026-09-08)
+
+> Origine : capture iPhone de la home — la carte « Frontend moderne » dépassait dans le premier
+> écran mobile. Audit responsive complet (agent Explore) + intake AAK `specs/005-intake-audit-repo.md`.
+> Preuves : captures Playwright 375/390/768/1280 (mock `/api/**`), `scrollWidth === clientWidth`
+> sur toutes les pages, 414/414 tests, lint 0 erreur, build SSR 5 routes prerendered.
+
+## Home (cause du ticket)
+- [x] `home-hero-section.ts` : hero = `min-h-[calc(100svh-5rem)]` + `justify-center` **sous md**
+      seulement (md+ garde hero + cartes dans le premier écran, décision #77). Carte à +32px sous le pli
+      sur iPhone SE et 15 (mesuré), tablette/desktop inchangés.
+- [x] Gouttières hero alignées sur `page-container` (`px-4 sm:px-6 lg:px-8` au lieu de `px-6`)
+- [x] Blobs ambiants réduits sous md (18/14rem, blur 60px) — coût repaint mobile
+- [x] Placeholders `@defer` et skeleton alignés (`px-4 sm:px-6`, `gap-6 md:gap-8`)
+
+## Pages publiques
+- [x] `login` / `two-factor-verify` / `404` : centrage sous le header fixe (`calc(100svh-5rem)` + `mt-20`),
+      suppression du `<main>` imbriqué dans celui de `app.ts`
+- [x] `about.ts` : `pt-15` (60px) → `pt-20` (header 80px) ; gaps mobiles `gap-6`
+- [x] `project-detail-nav.ts` : grille 2 colonnes sous sm, « Tous les projets » en dernière ligne
+- [x] `blog-detail.ts` : `page-container` + `max-w-3xl` en conflit → conteneur explicite ; `prose` protégé
+      (`break-words`, tables scrollables) ; liens tags 44px
+- [x] `contact-form.ts` : padding vertical inversé (`py-16 md:py-10`) → `py-12 md:py-20`, `page-container`
+- [x] `styles.css` : `form-input` / `app-select` en `text-base sm:text-sm` (zoom iOS < 16px) + `min-h-11`,
+      `min-w-44` retiré du défaut select
+- [x] `header.ts` : logo `text-xl sm:text-2xl`, gaps réduits sous sm (marge sur 320px)
+- [x] `drawer.ts` + `index.html` : `viewport-fit=cover`, safe-area, `overscroll-contain`
+- [x] `toast.ts` : `100vw` (inclut la scrollbar) → `left-4 right-4 ml-auto`
+- [x] `about-stack` (`text-[10px]` → `text-xs`, 2 col < 400px), `about-highlights` / `about-diploma` (`text-sm`)
+
+## Admin (débordements horizontaux à 375px)
+- [x] `admin-blog.ts` : table sans `admin-table-shell` → utilities admin ; `p-6` doublon retiré
+- [x] Barres d'actions non wrappables : `admin-projects`, `admin-analytics-header`, `admin-table`,
+      `admin-messages`, `admin-settings`, `two-factor-disable-form` (boutons empilés sous sm)
+- [x] `admin-cv.ts` : grille 1 col mobile, `break-all` sur le nom de fichier, boutons 44px
+
+## Hors lot (signalé, non corrigé)
+- [ ] CSP `index.html:56` : `script-src 'self'` + `frame-src 'none'` bloquent Giscus
+      (`blog-comments.ts` charge `https://giscus.app/client.js`) — les commentaires ne peuvent pas s'afficher
+- [ ] Angular 22 : la doc officielle (MCP `get_best_practices`) dit de ne plus écrire `OnPush`
+      explicitement (défaut v22) — CLAUDE.md et `project-profile.md` (« Angular 21 ») à mettre à jour
+- [ ] Cibles tactiles admin < 44px restantes (`admin-tags-selector`, `admin-nav` collapse, checkbox
+      inline-form, `file-dropzone` « Remplacer », `admin-dashboard` « Tout voir »)

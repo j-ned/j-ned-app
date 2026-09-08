@@ -25,7 +25,7 @@ type SortDir = 'asc' | 'desc';
     @if (title()) {
       <div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
         <h1 class="text-2xl font-bold text-foreground">{{ title() }}</h1>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <ng-content select="[adminTableHeaderActions]" />
           @if (newRoute()) {
             <a

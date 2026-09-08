@@ -22,7 +22,7 @@ import { AdminBlogForm } from './components/admin-blog-form';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div class="p-6">
+    <div>
       @let editingValue = editing();
 
       <div class="flex items-center justify-between mb-6">
@@ -39,58 +39,60 @@ import { AdminBlogForm } from './components/admin-blog-form';
           (cancelled)="editing.set(undefined)"
         />
       } @else {
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-left text-muted">
-              <th class="py-2">Titre</th>
-              <th class="py-2">Statut</th>
-              <th class="py-2">Date</th>
-              <th class="py-2">Likes</th>
-              <th class="py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (post of posts(); track post.id) {
-              <tr class="border-t border-foreground/8">
-                <td class="py-2">{{ post.title }}</td>
-                <td class="py-2">
-                  <app-tag
-                    [value]="post.status"
-                    [severity]="post.status === 'published' ? 'success' : 'secondary'"
-                  />
-                </td>
-                <td class="py-2 text-muted">
-                  @if (post.publishedAt) {
-                    {{ post.publishedAt | date: 'dd/MM/yyyy' }}
-                  } @else {
-                    Brouillon
-                  }
-                </td>
-                <td class="py-2">{{ post.likesCount }}</td>
-                <td class="py-2 text-right space-x-2">
-                  <button
-                    type="button"
-                    class="text-primary hover:underline"
-                    (click)="editing.set(post)"
-                  >
-                    Modifier
-                  </button>
-                  <button
-                    type="button"
-                    class="text-status-error hover:underline"
-                    (click)="remove(post.id)"
-                  >
-                    Supprimer
-                  </button>
-                </td>
+        <div class="admin-table-shell">
+          <table class="admin-table">
+            <thead>
+              <tr class="text-left text-muted">
+                <th class="admin-th">Titre</th>
+                <th class="admin-th">Statut</th>
+                <th class="admin-th">Date</th>
+                <th class="admin-th">Likes</th>
+                <th class="admin-th"></th>
               </tr>
-            } @empty {
-              <tr>
-                <td colspan="5" class="py-8 text-center text-muted">Aucun article</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (post of posts(); track post.id) {
+                <tr class="admin-row">
+                  <td class="admin-td">{{ post.title }}</td>
+                  <td class="admin-td">
+                    <app-tag
+                      [value]="post.status"
+                      [severity]="post.status === 'published' ? 'success' : 'secondary'"
+                    />
+                  </td>
+                  <td class="admin-td text-muted">
+                    @if (post.publishedAt) {
+                      {{ post.publishedAt | date: 'dd/MM/yyyy' }}
+                    } @else {
+                      Brouillon
+                    }
+                  </td>
+                  <td class="admin-td">{{ post.likesCount }}</td>
+                  <td class="admin-td text-right whitespace-nowrap space-x-2">
+                    <button
+                      type="button"
+                      class="inline-flex min-h-11 items-center px-2 text-primary hover:underline"
+                      (click)="editing.set(post)"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex min-h-11 items-center px-2 text-status-error hover:underline"
+                      (click)="remove(post.id)"
+                    >
+                      Supprimer
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="py-8 text-center text-muted">Aucun article</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </div>
   `,
