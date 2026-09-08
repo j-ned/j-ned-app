@@ -2,7 +2,7 @@
 id: 004
 title: Le transfer cache HTTP est vide sur toutes les routes prérendues — le client refait chaque appel après hydratation
 type: fix
-status: draft
+status: done
 created: 2026-09-07
 related: [specs/003-home-ssr-visibility.md, ADR-0001]
 ---
@@ -113,3 +113,26 @@ disponible dans la session du 2026-09-07 (ni playwright/puppeteer, ni extension
 Chrome). La première action de cette spec est d'ouvrir la home et de **lire la
 console** : présence ou absence d'erreur d'hydratation (NG0500 et apparentées),
 et nombre d'appels réseau à `/projects?featured=true` au chargement.
+
+
+## Résolution (2026-09-08)
+
+**Cause établie** dans `@angular/common` (`transferCacheInterceptorFn`) : le transfer cache
+refuse toute requête émise avec `withCredentials` tant que `includeRequestsWithCredentials`
+n'est pas activé — et `auth-interceptor.ts` clone **chaque** requête avec `withCredentials: true`.
+Rien n'était donc jamais sérialisé, sur aucune route, prérendu ou non. Le filtre `/home-bundle`
+n'y était pour rien (configuration morte, supprimée).
+
+**Correctif** (`app.config.ts`) : `includeRequestsWithCredentials: true` + `filter` restreint aux
+GET des lectures publiques (`/projects`, `/blog/posts`, `/config`, `/cv`) — les réponses de
+session ne vont jamais dans le HTML. Preuve sur le build : chaque page prérendue porte son entrée
+(`/projects?_sort=order&limit=100` sur home, liste et détails ; `/blog/posts/<slug>` sur l'article).
+
+**Second correctif, même symptôme côté SPA** (`http-projects.gateway.ts`) : `shareReplay` en
+`refCount: true` perdait la liste dès qu'une page la lâchait, et `featured` faisait sa propre
+requête. Une seule liste `refCount: false` pour la session, `featured` dérivé, invalidation admin
+conservée. Mesure Playwright sur le build de prod : **0** appel `/api/projects` au chargement
+direct de la home, **0** en navigation home → projets → détail (contre ≥ 1 par page avant).
+
+Motivation immédiate : le 2026-09-08, 538 requêtes API en 60 min dont 309 sur `/projects`, et des
+429 sous la limite de 10 req/min de l'API pour des visiteurs normaux (cf. PR API #28).

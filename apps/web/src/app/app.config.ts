@@ -123,6 +123,11 @@ function initializeTracking(): () => void {
 
 registerLocaleData(localeFr);
 
+const PUBLIC_READ_PATHS = ['/projects', '/blog/posts', '/config', '/cv'] as const;
+
+const isPublicReadUrl = (url: string): boolean =>
+  PUBLIC_READ_PATHS.some((path) => url.includes(`/api${path}`));
+
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: LOCALE_ID, useValue: 'fr-FR' },
@@ -140,8 +145,13 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(
       withEventReplay(),
       withIncrementalHydration(),
+      // L'intercepteur auth pose `withCredentials` sur chaque requête, et le transfer cache ignore
+      // ces requêtes par défaut : sans `includeRequestsWithCredentials`, rien n'était sérialisé au
+      // prérendu et le client refaisait chaque appel après hydratation (spec 004). Seules les
+      // lectures publiques sont mises en cache : les réponses de session restent hors HTML.
       withHttpTransferCacheOptions({
-        filter: (req) => !req.url.includes('/home-bundle'),
+        includeRequestsWithCredentials: true,
+        filter: (req) => req.method === 'GET' && isPublicReadUrl(req.url),
       }),
     ),
     provideHttpClient(withInterceptors([authInterceptor, errorToastInterceptor])),

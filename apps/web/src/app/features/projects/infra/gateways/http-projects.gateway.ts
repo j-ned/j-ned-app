@@ -17,8 +17,12 @@ export class HttpProjectsGateway extends ProjectsGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
-  private readonly _refreshAll$ = new Subject<void>();
-  private readonly allProjects$ = this._refreshAll$.pipe(
+  private readonly _refresh$ = new Subject<void>();
+
+  // Une seule liste, gardée pour toute la session (`refCount: false`) : home, /projects et chaque
+  // détail la partagent au lieu de la redemander à chaque page. Le premier chargement la lit dans
+  // le transfer cache du prérendu. L'admin l'invalide après une écriture.
+  private readonly allProjects$ = this._refresh$.pipe(
     startWith(undefined),
     switchMap(() =>
       this.http.get<Project[]>(`${this.apiUrl}/projects?_sort=order&limit=100`).pipe(
@@ -26,19 +30,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
         catchError(() => of([] as readonly Project[])),
       ),
     ),
-    shareReplay({ bufferSize: 1, refCount: true }),
-  );
-
-  private readonly _refreshFeatured$ = new Subject<void>();
-  private readonly featuredProjects$ = this._refreshFeatured$.pipe(
-    startWith(undefined),
-    switchMap(() =>
-      this.http.get<Project[]>(`${this.apiUrl}/projects?featured=true&_sort=order`).pipe(
-        map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
-        catchError(() => of([] as readonly Project[])),
-      ),
-    ),
-    shareReplay({ bufferSize: 1, refCount: true }),
+    shareReplay({ bufferSize: 1, refCount: false }),
   );
 
   getAllProjects(): Observable<readonly Project[]> {
@@ -46,15 +38,16 @@ export class HttpProjectsGateway extends ProjectsGateway {
   }
 
   invalidateAllProjects(): void {
-    this._refreshAll$.next();
+    this._refresh$.next();
   }
 
+  // Dérivé de la liste : zéro requête supplémentaire, même ordre (`_sort=order`).
   getFeaturedProjects(): Observable<readonly Project[]> {
-    return this.featuredProjects$;
+    return this.allProjects$.pipe(map((projects) => projects.filter((p) => p.featured)));
   }
 
   invalidateFeatured(): void {
-    this._refreshFeatured$.next();
+    this._refresh$.next();
   }
 
   getCategories(): Observable<readonly string[]> {

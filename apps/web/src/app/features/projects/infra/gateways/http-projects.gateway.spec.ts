@@ -70,39 +70,65 @@ describe('HttpProjectsGateway', () => {
         makeProject({
           slug: 'dashflow',
           techChoices: [{ techno: 'NestJS', why: 'modulaire' }],
-          architectureDecisions: [
-            { decision: 'hexagonale', rationale: 'testable' },
-          ],
+          architectureDecisions: [{ decision: 'hexagonale', rationale: 'testable' }],
         }),
       ];
 
       const promise = firstValueFrom(gateway.getAllProjects());
-      httpController
-        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
-        .flush(expected);
+      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush(expected);
 
       const result = await promise;
       expect(result[0].slug).toBe('dashflow');
-      expect(result[0].techChoices).toEqual([
-        { techno: 'NestJS', why: 'modulaire' },
-      ]);
+      expect(result[0].techChoices).toEqual([{ techno: 'NestJS', why: 'modulaire' }]);
       expect(result[0].architectureDecisions).toEqual([
         { decision: 'hexagonale', rationale: 'testable' },
       ]);
     });
 
-    it('getFeaturedProjects() émet GET /<base>/projects?featured=true&_sort=order, retourne Project[]', async () => {
+    // Un visiteur qui enchaîne home → /projects → détail ne doit coûter qu'une requête : la liste
+    // reste en cache tant que l'admin ne l'invalide pas, et « featured » en est dérivé.
+    it('getFeaturedProjects() dérive de la liste complète sans requête ?featured=true', async () => {
       const { gateway, httpController } = configure();
-      const expected = [makeProject({ featured: true })];
+      const featured = makeProject({ id: 'uuid-2', featured: true });
 
       const promise = firstValueFrom(gateway.getFeaturedProjects());
 
-      const req = httpController.expectOne(`${BASE}/projects?featured=true&_sort=order`);
-      expect(req.request.method).toBe('GET');
-      req.flush(expected);
+      httpController.expectNone(`${BASE}/projects?featured=true&_sort=order`);
+      httpController
+        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
+        .flush([makeProject({ id: 'uuid-1', featured: false }), featured]);
 
-      const result = await promise;
-      expect(result).toEqual(expected);
+      expect(await promise).toEqual([featured]);
+      httpController.verify();
+    });
+
+    it('getAllProjects() ne refait pas de requête quand un second consommateur arrive après le premier', async () => {
+      const { gateway, httpController } = configure();
+      const expected = [makeProject()];
+
+      const first = firstValueFrom(gateway.getAllProjects());
+      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush(expected);
+      await first;
+
+      // firstValueFrom s'est désabonné : une page suivante (détail projet) ressouscrit.
+      expect(await firstValueFrom(gateway.getAllProjects())).toEqual(expected);
+      httpController.expectNone(`${BASE}/projects?_sort=order&limit=100`);
+      httpController.verify();
+    });
+
+    it('invalidateAllProjects() force une nouvelle requête et pousse la nouvelle liste aux abonnés', () => {
+      const { gateway, httpController } = configure();
+      const seen: number[] = [];
+      const sub = gateway.getFeaturedProjects().subscribe((list) => seen.push(list.length));
+      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush([makeProject()]);
+
+      gateway.invalidateAllProjects();
+      httpController
+        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
+        .flush([makeProject({ featured: true })]);
+
+      expect(seen).toEqual([0, 1]);
+      sub.unsubscribe();
       httpController.verify();
     });
 
@@ -226,21 +252,21 @@ describe('HttpProjectsGateway', () => {
   });
 
   describe('Invalidation du cache featured: 1 test', () => {
-    it('invalidateFeatured() re-déclenche le GET featured pour les abonnés vivants', () => {
+    it('invalidateFeatured() re-déclenche le GET de la liste pour les abonnés vivants', () => {
       const { gateway, httpController } = configure();
-
-      // Abonnement vivant : maintient le shareReplay({ refCount: true }) chaud.
-      const sub = gateway.getFeaturedProjects().subscribe();
+      const seen: string[] = [];
+      const sub = gateway.getFeaturedProjects().subscribe((list) => seen.push(list[0]?.id ?? ''));
       httpController
-        .expectOne(`${BASE}/projects?featured=true&_sort=order`)
+        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
         .flush([makeProject({ id: 'uuid-1', featured: true })]);
 
       gateway.invalidateFeatured();
 
-      const refetch = httpController.expectOne(`${BASE}/projects?featured=true&_sort=order`);
+      const refetch = httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`);
       expect(refetch.request.method).toBe('GET');
       refetch.flush([makeProject({ id: 'uuid-2', featured: true })]);
 
+      expect(seen).toEqual(['uuid-1', 'uuid-2']);
       sub.unsubscribe();
       httpController.verify();
     });
