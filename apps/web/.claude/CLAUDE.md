@@ -201,7 +201,9 @@ You are an expert TypeScript / Angular engineer. You write functional, maintaina
 ## CSS / TailwindCSS v4 (full Tailwind)
 
 - **Tout en utility classes par defaut** dans les templates et `host: { class }`
-- **Reutilisation = composant Angular**, pas `@apply` ni classe CSS custom (doc officielle Tailwind v4 : "for anything more complicated than a single HTML element, use template partials so the styles and structure can be encapsulated in one place")
+- **Structure reutilisee de plus d'un element = composant Angular `shared/ui/`** (doc officielle Tailwind v4 : "for anything more complicated than a single HTML element, use template partials so the styles and structure can be encapsulated in one place"). Jamais une classe CSS ni un `@utility` multi-elements
+- **Liste de classes reutilisee sur un element natif unique qu'on ne peut pas envelopper** (`input`/`textarea`/`select` possedes par `[formField]`, `th`/`td`/`tr`, `a` style en bouton, conteneur de layout) = **`@utility` dans `src/styles.css`**, nomme par role, compose avec `@apply`, compatible variantes (ADR-0003 ; doc v4 : "writing some custom CSS is totally fine when a template partial feels heavy-handed")
+- **`@apply` uniquement dans un bloc `@utility` de `src/styles.css`** : jamais dans un `styles:` de composant, jamais dans une `.classe { }` ad hoc, pas de `@layer components`. Un `@utility` utilise par un seul composant est un candidat a l'inlining (sauf composition d'une autre utility ou etat multi-selecteur)
 - **Pas de fichier `.css` / `.scss` separe** pour les composants (sauf `styles.css` global et tokens `@theme`)
 - **Pas de `styles: ` inline** sauf exceptions ci-dessous
 - **CSS-first config v4** : `@theme`, `@utility`, `@custom-variant` dans `styles.css`. Pas de `tailwind.config.ts` sauf besoin specifique (plugin JS, extension complexe)

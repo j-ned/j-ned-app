@@ -86,8 +86,11 @@
 - **Règle styling** : Tailwind 4 **CSS-first** (utility classes par défaut dans
   templates et `host: { class }`) ; config dans `@theme`/`@utility` de
   `src/styles.css`, couleurs en **OKLCH**, alpha via `color-mix`. **Réutilisation
-  = composant Angular `shared/ui/`**, jamais `@apply` ni classe CSS custom. Pas de
-  couleur/espacement en dur hors tokens.
+  d'une structure de plus d'un élément = composant Angular `shared/ui/`** ; liste
+  de classes réutilisée sur un élément natif unique non enveloppable (`input`
+  sous `[formField]`, `th`/`td`, conteneur de layout) = **`@utility` dans
+  `src/styles.css`**, composé avec `@apply` (ADR-0003). `@apply` nulle part
+  ailleurs, pas de classe CSS ad hoc. Pas de couleur/espacement en dur hors tokens.
 - **Localisation des styles** : **pas de `.css`/`.scss` séparé** par composant
   (seul `src/styles.css` global porte `@theme` + tokens). `styles:` inline
   réservé aux exceptions (keyframes custom, pseudo-éléments complexes,
