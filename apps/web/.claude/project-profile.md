@@ -28,10 +28,11 @@
 
 ## Stack & bibliothèques (choix structurants)
 
-- **Version Angular & détection par défaut** : Angular `21` (`@angular/core
-  ^21.2.x`, `@angular/build ^21.2.x`). **< 22** ⇒ `changeDetection:
-  ChangeDetectionStrategy.OnPush` doit être écrit **explicitement** sur chaque
-  composant (la bascule du défaut framework `OnPush`/zoneless, c'est v22).
+- **Version Angular & détection par défaut** : Angular `22` (`@angular/core
+  ^22.1.x`, `@angular/build ^22.1.x`, mis à jour le 2026-09-08). En v22 le défaut
+  framework est `OnPush` + zoneless : le `changeDetection: OnPush` explicite des
+  composants existants est **redondant mais toléré** (pas de diff massif pour le
+  retirer) ; ne pas l'exiger sur du nouveau code.
 - **État partagé** : aucun store générique tiers (pas de NgRx) ; stores maison à
   base de signals. **Seuil de promotion en store** : partagé entre **2+
   composants non liés**. Sous le seuil : signals locaux.
