@@ -17,4 +17,34 @@ describe('parseMarkdown', () => {
     expect(html).toContain('<pre>');
     expect(html).toContain('language-ts');
   });
+
+  it('conserve les tables GFM', () => {
+    const html = parseMarkdown('| a | b |\n|---|---|\n| 1 | 2 |');
+    expect(html).toContain('<table>');
+    expect(html).toContain('<td>1</td>');
+  });
+
+  // marked laisse passer le HTML inline tel quel et `[innerHTML]` reçoit une sortie
+  // bypassSecurityTrustHtml : l'assainissement doit se faire ici, avant de faire confiance.
+  describe('assainit le HTML inline du Markdown', () => {
+    it.each([
+      ['un <script>', 'Salut <script>alert(1)</script> toi', '<script'],
+      ['un gestionnaire on*', '<img src="x" onerror="alert(1)">', 'onerror'],
+      ['un href javascript:', '<a href="javascript:alert(1)">clic</a>', 'javascript:'],
+      ['un <iframe>', '<iframe src="https://evil.test"></iframe>', '<iframe'],
+      ['un attribut style', '<p style="position:fixed">x</p>', 'style='],
+      ['un lien Markdown vers javascript:', '[clic](javascript:alert(1))', 'javascript:'],
+    ])('retire %s', (_label, markdown, forbidden) => {
+      expect(parseMarkdown(markdown)).not.toContain(forbidden);
+    });
+
+    it('garde le texte autour du contenu retiré', () => {
+      expect(parseMarkdown('Salut <script>alert(1)</script> toi')).toContain('Salut');
+      expect(parseMarkdown('Salut <script>alert(1)</script> toi')).toContain('toi');
+    });
+
+    it('garde le HTML inline inoffensif', () => {
+      expect(parseMarkdown('Un <kbd>Ctrl</kbd>+<kbd>L</kbd>')).toContain('<kbd>Ctrl</kbd>');
+    });
+  });
 });
