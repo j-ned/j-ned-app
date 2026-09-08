@@ -39,10 +39,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             <app-icon name="envelope" [size]="16" />
             Contact
           </span>
-          <h2
-            class="text-4xl md:text-5xl font-extrabold tracking-tight mb-5"
-            style="background: linear-gradient(135deg, var(--color-foreground) 40%, var(--color-primary) 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"
-          >
+          <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-5 heading-gradient">
             Contactez-moi
           </h2>
           <p class="text-muted max-w-xl mx-auto text-base md:text-lg leading-relaxed">

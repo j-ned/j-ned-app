@@ -156,6 +156,19 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
+ * Titre en dégradé (background-clip: text) — réutilisé sur plusieurs <h2>.
+ * En utility plutôt qu'en style="…" inline : un attribut style inline est un
+ * vecteur CSP (style-src-attr), une classe ne l'est pas.
+ * ---------------------------------------------------------------- */
+
+@utility heading-gradient {
+  background: linear-gradient(135deg, var(--color-foreground) 40%, var(--color-primary) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ---------------------------------------------------------------- *
  * Form utilities (admin) — pour ne pas dupliquer 10+ classes par input
  * ---------------------------------------------------------------- */
 

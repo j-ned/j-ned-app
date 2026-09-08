@@ -26,8 +26,7 @@ const PROJECTS_SECTION = {
           Portfolio
         </span>
         <h2
-          class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2 leading-[1.2] pb-1"
-          style="background: linear-gradient(135deg, var(--color-foreground) 40%, var(--color-primary) 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"
+          class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2 leading-[1.2] pb-1 heading-gradient"
         >
           {{ projectsSection.title }}
         </h2>
