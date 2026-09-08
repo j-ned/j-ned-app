@@ -2,7 +2,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ToastStore } from '@shared/ui/toast-store';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { ContactForm } from './contact-form';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
@@ -31,6 +31,21 @@ describe('ContactForm', () => {
       return fixture.componentInstance as ContactForm;
     });
   }
+
+  function setupFixture(
+    gateway: ContactGateway = makeGatewayStub(),
+  ): ComponentFixture<ContactForm> {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
+      schemas: [NO_ERRORS_SCHEMA],
+    });
+    const fixture = TestBed.createComponent(ContactForm);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  const submitButton = (fixture: ComponentFixture<ContactForm>): HTMLButtonElement =>
+    fixture.nativeElement.querySelector('app-button button[type="submit"]');
 
   describe('Given an empty form', () => {
     it('form is invalid', () => {
@@ -120,7 +135,9 @@ describe('ContactForm', () => {
   });
 
   describe('Accessibility: aria attributes', () => {
-    function setupFixture(gateway: ContactGateway = makeGatewayStub()): ComponentFixture<ContactForm> {
+    function setupFixture(
+      gateway: ContactGateway = makeGatewayStub(),
+    ): ComponentFixture<ContactForm> {
       TestBed.configureTestingModule({
         providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
       });
@@ -173,6 +190,42 @@ describe('ContactForm', () => {
         const errorMsg = fixture.nativeElement.querySelector(`#contact-${fieldName}-error`);
         expect(errorMsg).not.toBeNull();
       }
+    });
+  });
+
+  // F007 : un bouton désactivé n'est ni focusable ni annoncé, et il rendait le garde-fou
+  // `markAllAsTouched()` inatteignable — le visiteur voyait un bouton grisé sans explication.
+  describe('Submitting an incomplete form', () => {
+    it('keeps the submit button enabled while the form is invalid', () => {
+      const fixture = setupFixture();
+      expect(submitButton(fixture).disabled).toBe(false);
+    });
+
+    it('reveals every field error on submit and moves focus to the first invalid field', () => {
+      const fixture = setupFixture();
+      fixture.componentInstance.form.controls.email.setValue('jean@example.com');
+
+      fixture.componentInstance.submitContact();
+      fixture.detectChanges();
+
+      const alerts = fixture.nativeElement.querySelectorAll('[role="alert"]');
+      expect(alerts.length).toBe(3);
+      expect(document.activeElement?.id).toBe('name');
+    });
+
+    it('disables the submit button only while the message is being sent', () => {
+      const fixture = setupFixture(makeGatewayStub({ submitContactForm: () => NEVER }));
+      fixture.componentInstance.form.setValue({
+        name: 'Jean Dupont',
+        email: 'jean@example.com',
+        subject: 'Bonjour',
+        message: 'Un message suffisamment long.',
+      });
+
+      fixture.componentInstance.submitContact();
+      fixture.detectChanges();
+
+      expect(submitButton(fixture).disabled).toBe(true);
     });
   });
 });

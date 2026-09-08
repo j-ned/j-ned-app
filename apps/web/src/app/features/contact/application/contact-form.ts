@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  DestroyRef,
+  ElementRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   STATIC_CONTACT_INFO,
@@ -201,7 +208,7 @@ type ContactFormGroup = {
                 type="submit"
                 severity="primary"
                 [block]="true"
-                [disabled]="form.invalid || isSubmitting()"
+                [disabled]="isSubmitting()"
               >
                 @if (isSubmitting()) {
                   <app-icon name="spinner" [size]="20" class="animate-spin" />
@@ -222,6 +229,7 @@ export class ContactForm {
   private readonly contactGateway = inject(ContactGateway);
   private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly contactInfo = STATIC_CONTACT_INFO;
   protected readonly socialLinks = STATIC_SOCIAL_LINKS;
@@ -249,7 +257,10 @@ export class ContactForm {
 
   submitContact(): void {
     if (this.form.invalid) {
+      // Le bouton reste actif sur un formulaire invalide (un contrôle désactivé n'est ni
+      // focusable ni annoncé) : c'est le clic qui révèle les erreurs et guide vers la première.
       this.form.markAllAsTouched();
+      this.focusFirstInvalidField();
       return;
     }
 
@@ -285,5 +296,15 @@ export class ContactForm {
           });
         },
       });
+  }
+
+  private focusFirstInvalidField(): void {
+    const controls = this.form.controls;
+    const firstInvalid = (Object.keys(controls) as (keyof ContactFormGroup)[]).find(
+      (key) => controls[key].invalid,
+    );
+    if (!firstInvalid) return;
+    // Les ids du template reprennent les noms des contrôles.
+    this.host.nativeElement.querySelector<HTMLElement>(`#${firstInvalid}`)?.focus();
   }
 }
