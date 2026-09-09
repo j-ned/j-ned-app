@@ -1,8 +1,10 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, computed, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 import { AppTag } from '@shared/ui/tag';
+
+const MAX_VISIBLE_TAGS = 5;
 
 @Component({
   selector: 'app-blog-post-card',
@@ -34,7 +36,7 @@ import { AppTag } from '@shared/ui/tag';
 
       <div class="p-5 flex flex-col grow">
         <div class="flex flex-wrap gap-1.5 mb-2">
-          @for (tag of post().tags; track tag) {
+          @for (tag of visibleTags(); track tag) {
             <a
               data-testid="tag-link"
               routerLink="/blog"
@@ -44,9 +46,19 @@ import { AppTag } from '@shared/ui/tag';
               <app-tag [value]="tag" severity="info" />
             </a>
           }
+          @if (hiddenTagsCount() > 0) {
+            <a
+              data-testid="more-tags"
+              [routerLink]="['/blog', post().slug]"
+              class="inline-flex min-h-11 items-center rounded-lg"
+              [attr.aria-label]="'Voir les ' + hiddenTagsCount() + ' autres tags dans l’article'"
+            >
+              <app-tag [value]="'+' + hiddenTagsCount()" severity="secondary" />
+            </a>
+          }
         </div>
 
-        <h2 class="text-xl md:text-2xl font-bold mb-2 text-foreground">
+        <h2 class="text-xl md:text-2xl font-bold mb-2 text-foreground line-clamp-3">
           <a [routerLink]="['/blog', post().slug]">{{ post().title }}</a>
         </h2>
 
@@ -54,11 +66,17 @@ import { AppTag } from '@shared/ui/tag';
           <p class="text-muted text-xs mb-2">{{ post().publishedAt | date: 'd MMMM y' }}</p>
         }
 
-        <p class="text-muted text-sm grow">{{ post().excerpt }}</p>
+        <p class="text-muted text-sm grow line-clamp-4">{{ post().excerpt }}</p>
       </div>
     </article>
   `,
 })
 export class BlogPostCard {
   readonly post = input.required<BlogPost>();
+
+  /** Limite la hauteur de la carte : au-delà de 5 tags, un compteur "+N" renvoie vers l'article. */
+  readonly visibleTags = computed(() => this.post().tags.slice(0, MAX_VISIBLE_TAGS));
+  readonly hiddenTagsCount = computed(() =>
+    Math.max(0, this.post().tags.length - MAX_VISIBLE_TAGS),
+  );
 }

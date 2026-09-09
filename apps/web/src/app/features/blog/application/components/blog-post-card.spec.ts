@@ -50,4 +50,25 @@ describe('BlogPostCard', () => {
     expect(links[0].getAttribute('href')).toBe('/blog?tag=Angular');
     expect(links[1].getAttribute('href')).toBe('/blog?tag=NestJS');
   });
+
+  it("n'affiche que 5 tags et un compteur +N vers l'article au-delà", () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(BlogPostCard);
+    const tags = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    fixture.componentRef.setInput('post', post({ tags }));
+    fixture.detectChanges();
+    const links = fixture.nativeElement.querySelectorAll('[data-testid="tag-link"]') as NodeListOf<HTMLAnchorElement>;
+    expect(links.length).toBe(5);
+    const more = fixture.nativeElement.querySelector('[data-testid="more-tags"]') as HTMLAnchorElement;
+    expect(more.textContent).toContain('+3');
+    expect(more.getAttribute('href')).toBe('/blog/mon-article');
+  });
+
+  it("n'affiche pas de compteur quand il y a 5 tags ou moins", () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(BlogPostCard);
+    fixture.componentRef.setInput('post', post({ tags: ['A', 'B', 'C', 'D', 'E'] }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="more-tags"]')).toBeNull();
+  });
 });
