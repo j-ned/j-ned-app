@@ -117,6 +117,33 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'mentions-legales',
+    title: 'Mentions légales | Julien Nédellec',
+    loadComponent: () => import('./pages/legal-notice').then((m) => m.LegalNotice),
+    data: {
+      seo: {
+        title: 'Mentions légales | Julien Nédellec',
+        description: "Éditeur, hébergement et propriété intellectuelle du site nedellec-julien.fr.",
+        url: `${SITE_IDENTITY.siteUrl}/mentions-legales`,
+        type: 'website',
+      },
+    },
+  },
+  {
+    path: 'confidentialite',
+    title: 'Politique de confidentialité | Julien Nédellec',
+    loadComponent: () => import('./pages/privacy-policy').then((m) => m.PrivacyPolicy),
+    data: {
+      seo: {
+        title: 'Politique de confidentialité | Julien Nédellec',
+        description:
+          "Ce que le site collecte et pourquoi : formulaire de contact, mesure d'audience sans cookie, commentaires, suivi des erreurs, vos droits.",
+        url: `${SITE_IDENTITY.siteUrl}/confidentialite`,
+        type: 'website',
+      },
+    },
+  },
+  {
     path: 'login',
     title: 'Connexion | Julien Nédellec',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.LOGIN_ROUTES),

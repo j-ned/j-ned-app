@@ -29,6 +29,8 @@ const staticUrls = [
   { loc: `${SITE_URL}/about`, changefreq: 'monthly', priority: '0.8' },
   { loc: `${SITE_URL}/projects`, changefreq: 'weekly', priority: '0.9' },
   { loc: `${SITE_URL}/blog`, changefreq: 'weekly', priority: '0.9' },
+  { loc: `${SITE_URL}/mentions-legales`, changefreq: 'yearly', priority: '0.2' },
+  { loc: `${SITE_URL}/confidentialite`, changefreq: 'yearly', priority: '0.2' },
 ];
 
 async function fetchProjectSlugs() {

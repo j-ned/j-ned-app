@@ -35,6 +35,15 @@ const SOCIALS: readonly SocialItem[] = [
         <span class="text-muted font-normal">&copy; {{ currentYear }}</span>
       </a>
 
+      <nav class="flex items-center gap-4 text-sm" aria-label="Informations légales">
+        <a routerLink="/mentions-legales" class="text-muted hover:text-primary transition-colors">
+          Mentions légales
+        </a>
+        <a routerLink="/confidentialite" class="text-muted hover:text-primary transition-colors">
+          Confidentialité
+        </a>
+      </nav>
+
       <nav class="flex items-center gap-2" aria-label="Réseaux sociaux">
         @for (social of socials; track social.label) {
           <a

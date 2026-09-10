@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -28,7 +29,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [FormRoot, FormField, AppIcon, Button, ContactInfoPanel],
+  imports: [FormRoot, FormField, AppIcon, Button, ContactInfoPanel, RouterLink],
   template: `
     <section class="animate-fade-up py-12 md:py-20">
       <div class="page-container max-w-5xl">
@@ -183,6 +184,12 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   <app-icon name="send" [size]="20" />
                 }
               </app-button>
+              <p class="text-xs text-muted mt-3 text-center">
+                Vos nom, e-mail et message servent uniquement à vous répondre.
+                <a routerLink="/confidentialite" class="underline hover:text-primary">
+                  Politique de confidentialité
+                </a>
+              </p>
             </form>
           </div>
         </div>

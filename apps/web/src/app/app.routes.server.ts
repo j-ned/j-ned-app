@@ -54,6 +54,8 @@ export const serverRoutes: ServerRoute[] = [
     getPrerenderParams: () => fetchPrerenderSlugs('/projects?_sort=order&limit=100'),
   },
   { path: 'blog', renderMode: RenderMode.Prerender },
+  { path: 'mentions-legales', renderMode: RenderMode.Prerender },
+  { path: 'confidentialite', renderMode: RenderMode.Prerender },
   {
     path: 'blog/:slug',
     renderMode: RenderMode.Prerender,
