@@ -18,15 +18,29 @@ RUN pnpm run build --configuration production \
  && test -f dist/angular-portfolio-app/browser/index.html
 
 # ==============================================================================
-# Stage 2 — Runtime : nginx static serve (prerendered + CSR fallback)
-# Angular 21 outputs a request handler in server/server.mjs but no Node listener;
-# this app is fully prerendered (or CSR for dynamic routes), so we serve the
-# browser bundle as static files with SPA fallback to /index.html.
-# NestJS backend lives on api.nedellec-julien.fr and is reached directly from the client.
+# Stage 2 — Runtime : nginx static serve (prerendered + CSR shell)
+# Angular 22 (outputMode server) emits a request handler but no Node listener; every public
+# route is prerendered at build (index.html per route) and the rest is client-rendered from
+# index.csr.html, the shell without hydration state. NestJS lives on api.nedellec-julien.fr
+# and is reached directly from the client.
 # ==============================================================================
 FROM nginx:alpine AS production
 
 COPY --from=build /app/dist/angular-portfolio-app/browser /usr/share/nginx/html
+
+# En-têtes de sécurité : Traefik ne pose que le TLS, le reste vient d'ici. La CSP complète
+# (script-src haché par page) vit dans la <meta> de chaque page ; frame-ancestors ne peut être
+# exprimé qu'en en-tête, d'où le second Content-Security-Policy. Un `add_header` dans une
+# `location` annule ceux du `server` (héritage non cumulatif) : le snippet est inclus partout.
+RUN mkdir -p /etc/nginx/snippets && cat > /etc/nginx/snippets/security-headers.conf <<'HEADERS'
+add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header Content-Security-Policy "frame-ancestors 'none'" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+add_header Cross-Origin-Opener-Policy "same-origin" always;
+HEADERS
 
 RUN cat > /etc/nginx/conf.d/default.conf <<'NGINX'
 server {
@@ -36,32 +50,33 @@ server {
     index index.html;
     server_tokens off;
 
-    # En-têtes de sécurité : Traefik ne pose que le TLS, le reste vient d'ici. La CSP complète
-    # (script-src haché par page) vit dans la <meta> de chaque index.html ; frame-ancestors ne
-    # peut être exprimé qu'en en-tête, d'où le second Content-Security-Policy.
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "DENY" always;
-    add_header Content-Security-Policy "frame-ancestors 'none'" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
-    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    include /etc/nginx/snippets/security-headers.conf;
 
     gzip on;
     gzip_types text/plain text/css application/javascript application/json image/svg+xml application/xml+rss;
     gzip_min_length 1024;
 
+    # Une URL inconnue est une vraie 404 : la coquille CSR (pas la home prérendue, ni son
+    # <title>, son canonical et son état d'hydratation) avec le statut 404. Le routeur client
+    # y affiche la page « non trouvée » ; une route ajoutée depuis le dernier build s'y affiche
+    # aussi, le temps que le webhook Dokploy reconstruise l'image.
+    error_page 404 /index.csr.html;
+
     # Hashed assets : long cache, immutable
     location ~* \.(js|css|woff2?|ttf|otf|eot|png|jpe?g|gif|webp|avif|svg|ico)$ {
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
-        add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
-        add_header X-Content-Type-Options "nosniff" always;
         try_files $uri =404;
     }
 
-    # SPA fallback : prerendered routes have their own index.html, others land on /index.html
+    # Routes rendues côté client (RenderMode.Client dans app.routes.server.ts) : coquille CSR, 200
+    location ~ ^/(login|two-factor|admin)(/|$) {
+        try_files /index.csr.html =404;
+    }
+
+    # Routes prérendues : leur propre index.html ; sinon 404
     location / {
-        try_files $uri $uri/index.html /index.html;
+        try_files $uri $uri/index.html =404;
     }
 }
 NGINX

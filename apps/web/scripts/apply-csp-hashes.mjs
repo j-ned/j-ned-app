@@ -31,7 +31,8 @@ function* htmlFiles(dir) {
   for (const entry of readdirSync(dir)) {
     const p = join(dir, entry);
     if (statSync(p).isDirectory()) yield* htmlFiles(p);
-    else if (entry === 'index.html') yield p;
+    // index.csr.html : coquille sans hydratation, servie par nginx aux routes client et aux 404.
+    else if (entry === 'index.html' || entry === 'index.csr.html') yield p;
   }
 }
 
