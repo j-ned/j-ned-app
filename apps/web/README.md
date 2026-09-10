@@ -11,7 +11,7 @@
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![License](https://img.shields.io/badge/License-Private-333?style=for-the-badge)]()
+[![License](https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge)](LICENSE)
 
 [**🔗 Site live**](https://nedellec-julien.fr) · [**📸 Captures**](#-captures-décran) · [**🏗️ Architecture**](#️-architecture) · [**🛡️ Sécurité**](#️-sécurité--privacy-first) · [**🚀 Installation**](#-installation)
 
@@ -33,6 +33,7 @@
 - [📸 Captures d'écran](#-captures-décran)
 - [🚀 Installation](#-installation)
 - [🗺️ Roadmap](#️-roadmap)
+- [📄 Licence](#-licence)
 
 ---
 
@@ -383,6 +384,14 @@ docker run -p 4000:4000 portfolio-front
 - [ ] Newsletter (opt-in RGPD)
 - [ ] Export PDF des stats admin
 - [ ] Webhooks Calendar (Google/Outlook) pour synchro bookings
+
+---
+
+## 📄 Licence
+
+Le **code** de ce dépôt est publié sous licence [MIT](LICENSE).
+
+Le **contenu éditorial** (articles de blog, textes du site, CV, photos, visuels et logos) reste sous **tous droits réservés** : il n'est pas couvert par la licence MIT et ne peut être réutilisé sans autorisation.
 
 ---
 
