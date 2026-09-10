@@ -1,16 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { blogTagCategory, type BlogTagCategory } from '../../domain/models/blog-tag.model';
-
-const CATEGORY_CLASSES: Record<BlogTagCategory, string> = {
-  stack: 'bg-primary/10 text-primary hover:bg-primary/20',
-  security: 'bg-rose-500/12 text-rose-700 hover:bg-rose-500/22 dark:text-rose-300',
-  engineering: 'bg-emerald-500/12 text-emerald-700 hover:bg-emerald-500/22 dark:text-emerald-300',
-  journey: 'bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 dark:text-amber-300',
-  projects: 'bg-sky-500/12 text-sky-700 hover:bg-sky-500/22 dark:text-sky-300',
-};
-
-const FREE_TAG_CLASSES = 'bg-foreground/8 text-muted hover:bg-foreground/15';
+import { blogTagPalette } from '../blog-tag-palette';
 
 /** Pastille de tag colorée par catégorie, lien vers la liste filtrée `/blog?tag=`. */
 @Component({
@@ -32,8 +22,5 @@ const FREE_TAG_CLASSES = 'bg-foreground/8 text-muted hover:bg-foreground/15';
 export class BlogTagLink {
   readonly tag = input.required<string>();
 
-  protected readonly classes = computed(() => {
-    const category = blogTagCategory(this.tag());
-    return category ? CATEGORY_CLASSES[category] : FREE_TAG_CLASSES;
-  });
+  protected readonly classes = computed(() => blogTagPalette(this.tag()).tint);
 }
