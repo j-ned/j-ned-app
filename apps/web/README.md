@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🎯 Portfolio — Julien Nédellec
+# 🎯 Portfolio - Julien Nédellec
 
-### Portfolio **full-stack SSR** — vitrine, back-office admin, booking & analytics self-hosted
+### Portfolio **full-stack SSR** - vitrine, back-office admin, booking & analytics self-hosted
 
 **Angular 21 zoneless · NestJS API · PostgreSQL · Self-hosted · Zéro tracker tiers**
 
