@@ -10,7 +10,7 @@ import {
   resource,
 } from '@angular/core';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
@@ -20,11 +20,11 @@ import { Seo } from '@shared/seo/seo';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { BlogLikeButton } from './components/blog-like-button';
 import { BlogComments } from './components/blog-comments';
-import { AppTag } from '@shared/ui/tag';
+import { BlogTagLink } from './components/blog-tag-link';
 
 @Component({
   selector: 'app-blog-detail',
-  imports: [BlogLikeButton, BlogComments, AppTag, DatePipe, NgOptimizedImage, RouterLink],
+  imports: [BlogLikeButton, BlogComments, BlogTagLink, DatePipe, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -34,14 +34,7 @@ import { AppTag } from '@shared/ui/tag';
         @if (p) {
           <div class="flex flex-wrap gap-1.5 mb-4">
             @for (tag of p.tags; track tag) {
-              <a
-                data-testid="tag-link"
-                routerLink="/blog"
-                [queryParams]="{ tag }"
-                class="inline-flex min-h-11 items-center rounded-lg"
-              >
-                <app-tag [value]="tag" severity="info" />
-              </a>
+              <app-blog-tag-link [tag]="tag" />
             }
           </div>
           <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ p.title }}</h1>

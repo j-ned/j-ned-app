@@ -3,12 +3,13 @@ import { NgOptimizedImage, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 import { AppTag } from '@shared/ui/tag';
+import { BlogTagLink } from './blog-tag-link';
 
 const MAX_VISIBLE_TAGS = 5;
 
 @Component({
   selector: 'app-blog-post-card',
-  imports: [NgOptimizedImage, RouterLink, AppTag, DatePipe],
+  imports: [NgOptimizedImage, RouterLink, AppTag, DatePipe, BlogTagLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block h-full animate-fade-up' },
   template: `
@@ -35,22 +36,15 @@ const MAX_VISIBLE_TAGS = 5;
       </a>
 
       <div class="p-5 flex flex-col grow">
-        <div class="flex flex-wrap gap-1.5 mb-2">
+        <div class="flex flex-wrap gap-1.5 mb-3">
           @for (tag of visibleTags(); track tag) {
-            <a
-              data-testid="tag-link"
-              routerLink="/blog"
-              [queryParams]="{ tag }"
-              class="inline-flex min-h-11 items-center rounded-lg"
-            >
-              <app-tag [value]="tag" severity="info" />
-            </a>
+            <app-blog-tag-link [tag]="tag" />
           }
           @if (hiddenTagsCount() > 0) {
             <a
               data-testid="more-tags"
               [routerLink]="['/blog', post().slug]"
-              class="inline-flex min-h-11 items-center rounded-lg"
+              class="inline-flex rounded-md"
               [attr.aria-label]="'Voir les ' + hiddenTagsCount() + ' autres tags dans l’article'"
             >
               <app-tag [value]="'+' + hiddenTagsCount()" severity="secondary" />

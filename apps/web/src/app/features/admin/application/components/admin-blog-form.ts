@@ -15,7 +15,7 @@ import { parseMarkdown } from '@features/blog/infra/parse-markdown';
 import { AdminTagsSelector } from './admin-tags-selector';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { Button } from '@shared/ui/button';
-import { AVAILABLE_BLOG_TAGS } from './admin-blog-form-data';
+import { AVAILABLE_BLOG_TAGS } from '@features/blog/domain/models/blog-tag.model';
 
 type BlogFormModel = Pick<BlogPostInput, 'title' | 'excerpt' | 'contentMarkdown' | 'status'>;
 
