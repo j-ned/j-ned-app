@@ -1,9 +1,9 @@
-Contact: mailto:contact@julien-nedellec.fr
-Contact: https://www.julien-nedellec.fr/contact
+Contact: mailto:contact@nedellec-julien.fr
+Contact: https://nedellec-julien.fr/#contact
 Preferred-Languages: fr, en
-Canonical: https://www.julien-nedellec.fr/security.txt
+Canonical: https://nedellec-julien.fr/security.txt
 Expires: 2027-01-07T23:59:59Z
-Acknowledgments: https://www.julien-nedellec.fr/
+Acknowledgments: https://nedellec-julien.fr/
 
 # Si vous découvrez une vulnérabilité de sécurité, merci de nous en informer
 # de manière responsable en utilisant les coordonnées ci-dessus.

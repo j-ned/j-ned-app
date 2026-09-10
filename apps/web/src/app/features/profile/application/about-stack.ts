@@ -24,7 +24,7 @@ import { AppIcon } from '@shared/icons/app-icon';
         >
           <img
             [ngSrc]="'/icons/' + tech.icon + '.svg'"
-            [alt]="tech.name"
+            alt=""
             width="32"
             height="32"
             class="w-8 h-8 group-hover:scale-110 transition-transform"

@@ -35,7 +35,7 @@ const PAGE_SIZE = 9;
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
           @for (post of pagedPosts(); track post.slug) {
-            <app-blog-post-card [post]="post" />
+            <app-blog-post-card [post]="post" [priority]="$first" />
           } @empty {
             <p class="text-muted col-span-full">Aucun article pour le moment.</p>
           }

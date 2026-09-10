@@ -72,3 +72,24 @@ describe('BlogPostCard', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="more-tags"]')).toBeNull();
   });
 });
+
+describe('BlogPostCard priority', () => {
+  function render(priority: boolean): HTMLImageElement {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(BlogPostCard);
+    fixture.componentRef.setInput('post', post({ coverImage: '/covers/a.avif' }));
+    fixture.componentRef.setInput('priority', priority);
+    fixture.detectChanges();
+    return fixture.nativeElement.querySelector('img') as HTMLImageElement;
+  }
+
+  it('marks the cover as the LCP image when priority is set', () => {
+    const img = render(true);
+    expect(img.getAttribute('fetchpriority')).toBe('high');
+    expect(img.getAttribute('loading')).toBe('eager');
+  });
+
+  it('lazy-loads the cover by default', () => {
+    expect(render(false).getAttribute('loading')).toBe('lazy');
+  });
+});

@@ -33,7 +33,7 @@ type ThemePreference = 'dark' | 'light';
         <a
           routerLink="/"
           (click)="scrollToTop()"
-          aria-label="Retour en haut de la page d'accueil"
+          aria-label="Julien N. – retour à l'accueil"
           class="group flex items-center gap-3 sm:gap-4 min-w-0 hover:opacity-90 transition-opacity"
         >
           <app-icon-tile

@@ -25,7 +25,7 @@ describe('BlogTagLink', () => {
     ['Angular', 'text-primary'],
     ['PBKDF2', 'text-rose-700'],
     ['Tests', 'text-emerald-700'],
-    ['Carrière', 'text-amber-700'],
+    ['Carrière', 'text-amber-800'],
     ['CI/CD', 'text-sky-700'],
   ])('colours "%s" by its category (%s)', (tag, expectedClass) => {
     expect(render(tag).className).toContain(expectedClass);

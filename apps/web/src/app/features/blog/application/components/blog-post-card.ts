@@ -24,6 +24,7 @@ const MAX_VISIBLE_TAGS = 5;
           <img
             [ngSrc]="post().coverImage"
             [alt]="post().title"
+            [priority]="priority()"
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             class="object-cover"
@@ -67,6 +68,8 @@ const MAX_VISIBLE_TAGS = 5;
 })
 export class BlogPostCard {
   readonly post = input.required<BlogPost>();
+  /** Vrai pour la première carte de la liste : son visuel est le LCP de la page. */
+  readonly priority = input(false);
 
   /** Limite la hauteur de la carte : au-delà de 5 tags, un compteur "+N" renvoie vers l'article. */
   readonly visibleTags = computed(() => this.post().tags.slice(0, MAX_VISIBLE_TAGS));

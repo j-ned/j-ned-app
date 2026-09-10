@@ -39,7 +39,7 @@ describe('AdminTagsSelector', () => {
     ['Angular', 'text-primary', 'bg-primary-bg'],
     ['PBKDF2', 'text-rose-700', 'bg-rose-700'],
     ['Tests', 'text-emerald-700', 'bg-emerald-700'],
-    ['Carrière', 'text-amber-700', 'bg-amber-700'],
+    ['Carrière', 'text-amber-800', 'bg-amber-700'],
     ['CI/CD', 'text-sky-700', 'bg-sky-700'],
     ['Tag projet', 'text-muted', 'bg-primary-bg'],
   ])('colours "%s" by category: %s when idle, %s when selected', (tag, tint, solid) => {

@@ -17,7 +17,7 @@ const CATEGORY_PALETTE: Record<BlogTagCategory, BlogTagPalette> = {
     solid: 'bg-emerald-700 text-white border-emerald-700',
   },
   journey: {
-    tint: 'bg-amber-500/15 text-amber-700 border-amber-500/30 hover:bg-amber-500/25 dark:text-amber-300',
+    tint: 'bg-amber-500/15 text-amber-800 border-amber-500/30 hover:bg-amber-500/25 dark:text-amber-300',
     solid: 'bg-amber-700 text-white border-amber-700',
   },
   projects: {

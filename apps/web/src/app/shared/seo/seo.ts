@@ -34,18 +34,18 @@ export class Seo {
       property: 'og:url',
       content: data.url || SITE_IDENTITY.siteUrl,
     });
-    this.meta.updateTag({
-      property: 'og:image',
-      content: data.image || `${SITE_IDENTITY.siteUrl}/photoProfil.webp`,
-    });
+    // Sans visuel dédié (couverture d'article, image de projet), on retombe sur l'avatar 400×400 :
+    // une carte `summary` l'affiche en vignette, une `summary_large_image` l'étirerait.
+    const image = data.image || `${SITE_IDENTITY.siteUrl}/avatar.avif`;
+    this.meta.updateTag({ property: 'og:image', content: image });
 
-    this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.meta.updateTag({
+      name: 'twitter:card',
+      content: data.image ? 'summary_large_image' : 'summary',
+    });
     this.meta.updateTag({ name: 'twitter:title', content: data.title });
     this.meta.updateTag({ name: 'twitter:description', content: data.description });
-    this.meta.updateTag({
-      name: 'twitter:image',
-      content: data.image || `${SITE_IDENTITY.siteUrl}/photoProfil.webp`,
-    });
+    this.meta.updateTag({ name: 'twitter:image', content: image });
 
     if (data.url) {
       this.updateCanonicalUrl(data.url);

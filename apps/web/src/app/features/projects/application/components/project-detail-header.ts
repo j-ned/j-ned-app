@@ -104,7 +104,7 @@ import { AppIcon } from '@shared/icons/app-icon';
 
       @if (project().tags.length > 0) {
         <div class="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <span class="text-xs font-semibold uppercase tracking-[0.2em] text-muted/70">Stack</span>
+          <span class="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Stack</span>
           <ul class="flex flex-wrap gap-2" role="list">
             @for (tag of project().tags; track tag) {
               <li>

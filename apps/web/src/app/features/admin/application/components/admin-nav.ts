@@ -57,7 +57,7 @@ export type AdminNavItem = {
       @for (item of navItems(); track item.route) {
         @if (!collapsed() && item.groupLabel) {
           <div
-            class="px-3 pt-4 pb-2 text-[10px] uppercase tracking-widest font-semibold text-muted/70"
+            class="px-3 pt-4 pb-2 text-[10px] uppercase tracking-widest font-semibold text-muted"
           >
             {{ item.groupLabel }}
           </div>
