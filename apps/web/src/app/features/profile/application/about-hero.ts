@@ -33,7 +33,7 @@ import { AppIcon } from '@shared/icons/app-icon';
           <h1 class="text-2xl md:text-3xl font-bold text-foreground mb-1">
             {{ profile.displayName }}
           </h1>
-          <p class="text-lg text-muted">Développeur Full-Stack Angular / NestJS</p>
+          <p class="text-lg text-muted">Développeur Angular | NestJS & TypeScript</p>
 
           <div
             class="flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3 text-sm"

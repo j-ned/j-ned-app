@@ -1,6 +1,8 @@
 {
   "name": "angular-portfolio-app",
   "version": "0.0.0",
+  "description": "Portfolio de Julien Nédellec : Angular 22 zoneless en SSR et prérendu, clean architecture, Signal Forms, Tailwind v4",
+  "author": "Julien Nédellec <contact@nedellec-julien.fr> (https://nedellec-julien.fr)",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

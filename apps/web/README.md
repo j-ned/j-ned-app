@@ -1,393 +1,298 @@
 <div align="center">
 
-# 🎯 Portfolio - Julien Nédellec
+# Portfolio — Julien Nédellec
 
-### Portfolio **full-stack SSR** - vitrine, back-office admin, booking & analytics self-hosted
+### Site personnel full-stack : vitrine, blog, back-office et analytics maison, auto-hébergés
 
-**Angular 21 zoneless · NestJS API · PostgreSQL · Self-hosted · Zéro tracker tiers**
+**Angular 22 zoneless · SSR + prérendu · API NestJS · PostgreSQL · zéro tracker tiers**
 
-[![Angular](https://img.shields.io/badge/Angular-21-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Angular](https://img.shields.io/badge/Angular-22-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![CI](https://img.shields.io/github/actions/workflow/status/j-ned/ng-portfolio-app/ci.yml?branch=master&style=for-the-badge&label=CI)](https://github.com/j-ned/ng-portfolio-app/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge)](LICENSE)
 
-[**🔗 Site live**](https://nedellec-julien.fr) · [**📸 Captures**](#-captures-décran) · [**🏗️ Architecture**](#️-architecture) · [**🛡️ Sécurité**](#️-sécurité--privacy-first) · [**🚀 Installation**](#-installation)
-
-<img src="public/screen/home.webp" alt="Portfolio — Home" width="100%" />
+[**Site live**](https://nedellec-julien.fr) · [**API (dépôt séparé)**](https://github.com/j-ned/nest-portfolio-app) · [**Captures**](#captures-décran) · [**Architecture**](#architecture) · [**Installation**](#installation)
 
 </div>
 
 ---
 
-## 📖 Sommaire
+## Sommaire
 
-- [🎯 Le problème](#-le-problème)
-- [💡 La réponse](#-la-réponse)
-- [✨ Fonctionnalités](#-fonctionnalités)
-- [🏗️ Architecture](#️-architecture)
-- [🛡️ Sécurité & privacy-first](#️-sécurité--privacy-first)
-- [⚡ Performance & SEO](#-performance--seo)
-- [🧰 Stack technique](#-stack-technique)
-- [📸 Captures d'écran](#-captures-décran)
-- [🚀 Installation](#-installation)
-- [🗺️ Roadmap](#️-roadmap)
-- [📄 Licence](#-licence)
-
----
-
-## 🎯 Le problème
-
-Un portfolio de développeur, c'est rarement « juste une vitrine ». Il faut :
-
-- **Montrer du code production-ready** — pas un template bootstrap-sur-étagère
-- **Pouvoir éditer le contenu sans redéployer** — un CMS, mais sans Notion/Strapi/WordPress qui trahissent le positionnement technique
-- **Être trouvable** — SSR, SEO structuré, temps de chargement maîtrisé
-- **Être pilotable** — savoir qui visite quoi, sans envoyer les données à Google
-
-Les solutions « clés en main » (Notion-as-a-CMS, Webflow, SaaS portfolio) règlent 1 des 4 points.
-
-## 💡 La réponse
-
-Une application **full-stack self-hosted** construite comme un vrai produit :
-
-- 🖥️ **Frontend SSR** — Angular 21 zoneless, prerender, hydration, Clean Architecture par feature
-- 🔧 **Back-office admin** — édition live du hero, bio, CV, diplômes, projets, technos, services, highlights, réseaux sociaux
-- 📅 **Booking custom** — calendrier FR (jours fériés, disponibilités), time picker, validation métier, notifications mail
-- 📊 **Analytics privacy-first** — page views, durées, événements métier, agrégats journaliers, **zéro cookie tiers, zéro Google**
-- 🔐 **Auth durcie** — Argon2 + JWT rotation + 2FA TOTP
-- 🛡️ **Self-hosted** — Docker multi-stage, Traefik, Dokploy, VPS OVH
+- [Le problème](#le-problème)
+- [La réponse](#la-réponse)
+- [Fonctionnalités](#fonctionnalités)
+- [Architecture](#architecture)
+- [Sécurité et vie privée](#sécurité-et-vie-privée)
+- [Performance et SEO](#performance-et-seo)
+- [Stack technique](#stack-technique)
+- [Captures d'écran](#captures-décran)
+- [Installation](#installation)
+- [Qualité et livraison](#qualité-et-livraison)
+- [Licence](#licence)
 
 ---
 
-## ✨ Fonctionnalités
+## Le problème
 
-### 🌐 Site public
+Un portfolio de développeur est rarement « juste une vitrine ». Il doit :
+
+- **montrer du code de production**, pas un template sur étagère ;
+- **permettre d'éditer le contenu sans redéployer**, sans passer par un CMS externe qui contredit le positionnement technique ;
+- **être trouvable** : rendu serveur, données structurées, temps de chargement maîtrisé ;
+- **être pilotable** : savoir qui visite quoi, sans envoyer les données à un tiers.
+
+## La réponse
+
+Une application full-stack auto-hébergée, construite et exploitée comme un vrai produit :
+
+- **Front Angular 22** zoneless, signals, rendu serveur avec prérendu de toutes les pages publiques, clean architecture en trois couches par feature.
+- **Back-office** : projets, articles de blog, CV, messages de contact, analytics, sécurité du compte.
+- **API NestJS** dédiée ([`nest-portfolio-app`](https://github.com/j-ned/nest-portfolio-app)) : auth JWT + 2FA, PostgreSQL via Drizzle, stockage S3, mails, analytics.
+- **Analytics maison** : aucun cookie, aucun tracker tiers, données brutes purgées au bout de 30 jours.
+- **Auto-hébergement** : Docker multi-stage, Traefik, Dokploy, CI GitHub Actions qui rejoue exactement le build de production.
+
+Ce dépôt ne contient que le front. L'API vit dans son propre dépôt et est appelée directement depuis le navigateur.
+
+---
+
+## Fonctionnalités
+
+### Site public
 
 | Section | Détails |
-|---------|---------|
-| **Home** | Hero dynamique, highlights, what-I-do, aspirations, carrousel techno, tous éditables en admin |
-| **À propos** | Biographie, parcours, diplômes, expertises — contenu 100% CMS |
-| **Projets** | Portfolio filtrable, featured, liens live + repos front/back, tags |
-| **Contact** | Formulaire validé côté serveur, envoi SMTP, rate limiting |
-| **404 custom** | Page dédiée avec SEO désactivé |
+|---|---|
+| **Accueil** | Hero, points forts, aperçu des projets mis en avant, section contact. Prérendu, hydratation incrémentale des sections sous la ligne de flottaison. |
+| **À propos** | Parcours, diplômes, stack, expertises. |
+| **Projets** | Liste filtrable par catégorie et paginée ; fiche par projet avec choix techniques, décisions d'architecture, liens démo et dépôts, navigation précédent / suivant. Toutes les fiches sont prérendues. |
+| **Blog** | Articles en Markdown assainis par DOMPurify (ADR-0002), tags colorés par catégorie et filtre par tag, commentaires Giscus, compteur de « j'aime », flux RSS. |
+| **Contact** | Formulaire Signal Forms, validation au bord, envoi par l'API (mail à l'admin et confirmation au visiteur). |
+| **CV** | Téléchargement du PDF servi par l'API, comptabilisé dans les analytics. |
+| **404** | Page dédiée, servie avec un vrai statut 404 par nginx. |
 
-### 🔧 Back-office admin (`/admin`)
+### Back-office (`/admin`)
 
 | Module | Fonction |
-|--------|----------|
-| **Dashboard** | KPIs — visiteurs, sessions, téléchargements CV, clics projets |
-| **Projets** | CRUD complet, ordre, featured flag, upload image S3 |
-| **CV** | Upload / remplacement du PDF versionné S3 |
-| **Messages** | Inbox des messages de contact |
-| **Analytics** | Graphiques Chart.js — vues, durées, événements, bounces |
-| **Settings** | Profil admin, changement de mot de passe, 2FA TOTP |
+|---|---|
+| **Tableau de bord** | Indicateurs de visite, sessions, téléchargements du CV, clics projets. |
+| **Projets** | CRUD, ordre, mise en avant, image convertie en AVIF ≤ 1600 px à l'upload par l'API. |
+| **Blog** | CRUD, brouillon / publié, couverture, catalogue de tags, aperçu Markdown en direct. |
+| **CV** | Remplacement du PDF. |
+| **Messages** | Boîte de réception du formulaire de contact. |
+| **Analytics** | Courbes de visites, pages, provenances, navigateurs, OS, pays, projets et articles les plus vus, export CSV, exclusion de l'appareil courant. |
+| **Sécurité** | Changement de mot de passe, activation et désactivation de la 2FA TOTP avec codes de secours. |
 
-### ⚙️ Transversal
+### Transversal
 
-- 🔐 **Auth JWT** — access token (15min) + refresh token (7j) avec rotation
-- 🔑 **2FA TOTP** — compatible Google Authenticator / Authy (QR code)
-- ⚡ **View Transitions API** — animations natives entre routes
-- 🎨 **Dark mode** — thème centralisé, TailwindCSS v4
-- 🌍 **SEO dynamique** — meta tags et JSON-LD par route, sitemap.xml généré
-- ♿ **Accessibilité WCAG AA** — focus management, ARIA, navigation clavier
+- **Auth** par cookie httpOnly (JWT 7 jours) révocable, 2FA TOTP, restauration de session uniquement quand un indice local existe.
+- **Thème** sombre par défaut et thème clair, tokens OKLCH dans `@theme`, Tailwind v4 CSS-first (ADR-0003).
+- **View Transitions** entre routes, préchargement sélectif des routes.
+- **Accessibilité** WCAG AA : cibles tactiles, `focus-visible`, régions et libellés ARIA, contrastes vérifiés sur les deux thèmes.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
-### Clean Architecture par feature — frontend
+### Trois couches par feature
 
-```mermaid
-graph TD
-  subgraph "Application Layer"
-    SP[Smart Pages]
-    DC[Dumb Components]
-  end
-
-  subgraph "Domain Layer"
-    UC[Use Cases]
-    GW[Gateways - Interfaces]
-    MD[Models]
-  end
-
-  subgraph "Infrastructure Layer"
-    HTTP[HTTP Gateways]
-    ADP[Adapters]
-  end
-
-  SP --> UC
-  DC --> SP
-  UC --> GW
-  HTTP -.implements.-> GW
-  HTTP --> ADP
-  UC --> MD
+```
+src/app/
+├── core/          # singletons : auth store, exclusion analytics, intercepteurs, guards
+├── features/
+│   ├── admin/     # back-office (pages et composants)
+│   ├── analytics/ # tracking et statistiques
+│   ├── auth/      # login, 2FA, changement de mot de passe
+│   ├── blog/      # articles, tags, commentaires, likes
+│   ├── contact/   # formulaire
+│   ├── cv/        # téléchargement et upload du PDF
+│   ├── home/      # page d'accueil
+│   ├── profile/   # page à propos
+│   └── projects/  # liste, fiche, admin
+├── layout/        # shell, header, footer, drawer
+├── pages/         # 404
+└── shared/        # UI, icônes, SEO, thème, identité du site
 ```
 
-**Règle de dépendance** : `application → domain` ← `infrastructure`. Le domaine ne connaît ni Angular, ni HTTP, ni les types API.
-
-### Structure — 3 couches par feature
+Chaque feature suit la même règle de dépendance :
 
 ```
 src/app/features/<feature>/
-├── domain/             # TypeScript pur, zéro dépendance framework
-│   ├── models/         # Types métier (Booking, Project, Profile...)
-│   └── gateways/       # Contrats (interfaces)
-├── infrastructure/     # Services Angular, HTTP, adapters
-│   ├── http-*.gateway.ts
-│   └── *.adapter.ts    # Fonctions pures de transformation
-└── application/        # Couche UI
-    ├── pages/          # Smart components
-    ├── components/     # Dumb components
-    └── tokens/         # InjectionToken
+├── domain/        # TypeScript pur : modèles (type), gateways (abstract class), use cases
+├── infra/         # services Angular : gateways HTTP, adapters, données statiques
+└── application/   # composants : pages smart, composants dumb
 ```
 
-Switch d'implémentation = **une ligne** dans `app.config.ts` :
+`application → domain ← infra`. Le domaine ne connaît ni Angular, ni HTTP, ni les types de l'API. Le câblage des implémentations se fait dans `app.config.ts` :
 
-```typescript
+```ts
 providers: [
-  { provide: PROJECTS_GATEWAY, useClass: HttpProjectsGateway },
-  // { provide: PROJECTS_GATEWAY, useClass: InMemoryProjectsGateway }, // tests/dev
-]
+  { provide: ProjectsGateway, useClass: HttpProjectsGateway },
+  { provide: BlogGateway, useClass: HttpBlogGateway },
+  { provide: AnalyticsGateway, useClass: HttpAnalyticsGateway },
+];
 ```
 
-### Backend NestJS (repo séparé)
+### Rendu
 
-> Le backend est dans `~/WebstormProjects/J-Ned/nest-portfolio-app/` — repo indépendant.
-> L'Angular frontend consomme 100% NestJS via `/api` (proxy dev → `:3000`, prod → reverse proxy Traefik).
+- `outputMode: server` : les pages publiques (`/`, `/about`, `/projects`, `/projects/:slug`, `/blog`, `/blog/:slug`) sont **prérendues au build**, les slugs étant lus sur l'API de production. Le transfer cache du prérendu évite de refaire les appels après hydratation (spec 004).
+- `login`, `two-factor` et `admin/**` sont rendus côté client depuis `index.csr.html`.
+- En production, **nginx** sert le dossier `browser/` : une page prérendue par route, la coquille CSR pour les routes client, et un **404 réel** pour toute URL inconnue.
+- Les sections sous la ligne de flottaison de la home et de l'à-propos utilisent `@defer` avec hydratation incrémentale (ADR-0001).
 
-```
-nest-portfolio-app/
-├── src/
-│   ├── modules/       # Features NestJS (auth, projects, booking, analytics, contact, ...)
-│   ├── common/        # Guards, interceptors, pipes, decorators
-│   └── main.ts        # Bootstrap + port 3000
-├── drizzle/           # Migrations SQL versionnées (Drizzle ORM)
-└── .env               # PORT=3000, DATABASE_URL, JWT_*, S3_*, SMTP_*, ...
-```
+### Décisions documentées
 
-### Schéma base de données (13 tables)
-
-```mermaid
-erDiagram
-  USER ||--o{ SESSION : has
-  PROFILE ||--o{ DIPLOMA : contains
-  PROFILE ||--o{ EXPERTISE : contains
-  HOME ||--o{ HIGHLIGHT : features
-  HOME ||--o{ TECHNOLOGY : showcases
-  PROJECT }o--|| HOME : displayed
-  BOOKING }o--o{ DISABLED_DATE : conflicts
-  PAGE_VIEW }o--|| DAILY_STAT : aggregates
-  ANALYTICS_EVENT }o--|| DAILY_STAT : aggregates
-  CONTACT_MESSAGE ||--|| USER : notifies
-```
+- `docs/adr/` : hydratation incrémentale des `@defer`, assainissement du Markdown, utilitaires Tailwind et `@apply`.
+- `specs/` : audits d'entrée, refactors et audit global du 2026-09-10 avec plan d'action.
 
 ---
 
-## 🛡️ Sécurité & privacy-first
+## Sécurité et vie privée
 
-### Auth
+### Front
 
-- ✅ **Argon2id** — hashing des mots de passe (recommandation OWASP)
-- ✅ **JWT rotation** — access 15min + refresh 7j, refresh token invalidé au logout
-- ✅ **2FA TOTP** — `otplib` + QR code généré via `qrcode`, compatible Google Authenticator
-- ✅ **Rate limiting** sur routes sensibles (login, contact, booking)
-- ✅ **Secure headers** — CSP, Referrer-Policy, Permissions-Policy (camera, mic, geolocation **vides**)
-- ✅ **CORS** strict — limité au domaine frontend
-- ✅ **HTTPS** via Traefik (HSTS en amont)
+- **CSP par hachages** : après le build, `scripts/apply-csp-hashes.mjs` remplace `'unsafe-inline'` par les SHA-256 des scripts et styles inline de chaque page prérendue et de la coquille CSR. La CI vérifie qu'aucun `unsafe-inline` ne subsiste.
+- **En-têtes** posés par nginx sur toutes les réponses, assets compris : HSTS, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP.
+- **Markdown** des articles assaini par DOMPurify côté serveur et côté client avant injection.
+- **Auth** : cookie httpOnly `SameSite=Lax`, logout qui révoque toutes les sessions, 2FA TOTP, formulaire de connexion limité côté API.
+- `security.txt` (RFC 9116) et `robots.txt` servis à la racine.
 
-### Analytics — privacy-first par design
+### Analytics sans tracker
 
-**Aucun cookie, aucun Google Analytics, aucun tracker tiers.**
-
-- `sessionHash` dérivé côté serveur (IP + User-Agent + salt) — **non réversible**, rotation quotidienne
-- `geoip-lite` local — pas d'appel API externe pour le pays
-- `ua-parser-js` pour browser/OS — parsing côté serveur uniquement
-- Durée de page trackée via `sendBeacon` — aucune perte sur `unload`
-- Agrégats journaliers (`daily_stat`) — les visiteurs individuels **ne sont pas conservés** au-delà de 90 jours (cron de purge)
-
-### Envois SMTP
-
-- Validation `class-validator` stricte sur tous les inputs avant envoi (DTO NestJS)
-- Templates HTML dédiés côté backend (`nest-portfolio-app`)
-- Rate limiting sur formulaires publics
+- **Aucun cookie**, aucun script tiers.
+- Identifiant de session dérivé côté API de `SHA-256(ip | user-agent | jour)` : l'adresse IP n'est jamais stockée.
+- Pays via `geoip-lite` en local, navigateur et OS via `ua-parser-js`, aucun appel externe.
+- Robots, adresses IP privées, pages 404, propriétaire connecté et appareils exclus ne sont pas comptés.
+- Provenances réduites à l'hôte (`google.com`), jamais une URL du site lui-même.
+- Données brutes purgées après **30 jours**, seuls les agrégats journaliers sont conservés.
 
 ---
 
-## ⚡ Performance & SEO
+## Performance et SEO
 
-### Rendering strategy
+### Mesures Lighthouse mobile (10 septembre 2026, production)
 
-- **SSR + prerender** — les pages publiques sont générées au build, servies en statique par Angular SSR (`@angular/ssr`)
-- **Client Hydration** avec `withEventReplay()` — capture des clics pendant l'hydratation
-- **Selective preloading** — routes `about`, `projects`, `contact` préchargées après idle
-- **View Transitions API** — transitions natives entre routes
-- **App initializer** — bundle home prefetché dès le bootstrap
+| Page | Performance | Accessibilité | Bonnes pratiques | SEO |
+|---|---|---|---|---|
+| `/` | 87 | 100 | 96 | 100 |
+| `/about` | 92 | 99 | 96 | 100 |
+| `/projects` | 89 | 100 | 96 | 100 |
+| `/projects/dashflow` | 95 | 96 | 96 | 100 |
+| `/blog` | 85 | 100 | 96 | 100 |
+| `/blog/:slug` | 93 | 96 | 96 | 100 |
 
-### Images
+### Ce qui les tient
 
-```typescript
-IMAGE_CONFIG: {
-  breakpoints: [640, 768, 1024, 1280, 1920],
-}
-```
-
-`NgOptimizedImage` partout, Sharp pour le resize côté serveur, stockage S3 Garage.
-
-### SEO
-
-- **Meta tags dynamiques** par route (title, description, keywords, OG, Twitter)
-- **JSON-LD Person schema** sur la home — nom, job, adresse, `sameAs` réseaux sociaux, `knowsAbout`
-- **sitemap.xml** généré dynamiquement par NestJS
-- **robots.txt** + **security.txt** (RFC 9116)
-- **Hreflang / canonical** gérés côté app via `SeoService`
-
-### Backend perf
-
-- **Gzip compression** sur toutes les réponses (NestJS middleware)
-- **Connection pooling** Postgres (Drizzle + `postgres.js`)
-- **Healthcheck** natif Node (pas de curl/wget dans l'image)
+- `NgOptimizedImage` sur chaque image, `priority` sur le visuel LCP de chaque page, dimensions explicites : CLS à 0.
+- Images stockées en **AVIF ≤ 1600 px** par l'API à l'upload, clés dérivées du contenu et cache immuable d'un an.
+- Assets hachés servis avec `Cache-Control: immutable`, gzip, préchargement sélectif des routes.
+- `<title>`, meta, Open Graph et carte Twitter par route ; JSON-LD `Person`, `BreadcrumbList`, `BlogPosting` et `CreativeWork` ; canonical par page.
+- `sitemap.xml` et `rss.xml` générés au build depuis l'API (`scripts/generate-sitemap.mjs`, `scripts/generate-rss.mjs`).
 
 ---
 
-## 🧰 Stack technique
+## Stack technique
 
-### Frontend
+### Front (ce dépôt)
 
-- **Framework** : Angular 21 (zoneless, Signals, standalone, SSR + prerender)
-- **Routing** : lazy loading, `withComponentInputBinding`, `withViewTransitions`, `withInMemoryScrolling`
-- **UI** : TailwindCSS v4 + PrimeNG 21 (admin uniquement) + PrimeIcons
-- **Charts** : Chart.js (dashboard admin)
-- **Forms** : Reactive Forms typés (validation backend via `class-validator`)
-- **Tests** : Vitest (unit/component, conventions EAK)
-- **Lint** : ESLint + angular-eslint + Prettier + lint-staged + Husky
+- **Angular 22** : zoneless, signals, `@defer`, hydratation incrémentale, `httpResource` / `rxResource`, Signal Forms.
+- **Tailwind CSS v4** en CSS-first (`@theme`, `@utility`), aucun fichier de style par composant.
+- **Chart.js** pour les graphiques du back-office, **marked** + **DOMPurify** pour le Markdown, **Sentry** pour les erreurs.
+- **Vitest 4** + happy-dom pour les tests, **ESLint** + angular-eslint + Prettier, Husky + lint-staged.
 
-### Backend (nest-portfolio-app)
+### API ([`nest-portfolio-app`](https://github.com/j-ned/nest-portfolio-app))
 
-- **Runtime** : Node.js 22 + NestJS 11
-- **ORM** : Drizzle ORM (migrations SQL versionnées)
-- **Database** : PostgreSQL 17
-- **Auth** : JWT (access 15min + refresh 7j), Argon2id, TOTP 2FA
-- **Validation** : class-validator + class-transformer (DTOs)
-- **Storage** : S3 (Garage compatible) — buckets séparés CV / projets / about
-- **Email** : Nodemailer + templates HTML
-- **Cron** : NestJS `@Cron` — purge sessions, agrégation stats journalières
-- **Analytics** : ua-parser-js + geoip-lite (local, zéro appel externe)
+- **NestJS 11** sur Node 24, **Drizzle ORM** et **PostgreSQL 18**, migrations versionnées.
+- **Argon2id**, JWT HS256 avec `tokenVersion`, **otplib** pour la 2FA, throttling par route.
+- **S3** (compatible Garage / R2) derrière un proxy applicatif, **sharp** pour la conversion des images, **Nodemailer** pour les mails, **pino** pour les logs, **Sentry**.
 
-### DevOps
+### Exploitation
 
-- **Containerisation** : Docker multi-stage (build / prod-deps / production)
-- **Natifs rebuild** : argon2 + sharp dans le stage prod-deps
-- **Healthcheck** : Node natif sur `/api/sitemap.xml`
-- **Reverse proxy** : Traefik (HTTPS/HSTS/edge compression)
-- **Orchestration** : Dokploy sur VPS OVH
-- **CI/CD** : GitHub Actions
-- **Package manager** : pnpm 10
+- **Docker** multi-stage : build Angular puis image nginx alpine.
+- **Traefik** pour le TLS, **Dokploy** pour l'orchestration, sur un serveur auto-hébergé.
+- **GitHub Actions** : lint, tests, build de production avec vérification du prérendu et de la CSP, build de l'image Docker et tests de fumée HTTP.
 
 ---
 
-## 📸 Captures d'écran
+## Captures d'écran
 
 <table>
   <tr>
     <td width="50%">
-      <p align="center"><b>Home — Hero & highlights</b></p>
-      <img src="public/screen/home.webp" alt="Home" width="100%" />
+      <p align="center"><b>Accueil</b></p>
+      <img src="docs/screenshots/home.webp" alt="Page d'accueil : hero et points forts" width="100%" />
     </td>
     <td width="50%">
-      <p align="center"><b>À propos — Parcours & expertises</b></p>
-      <img src="public/screen/about.webp" alt="About" width="100%" />
+      <p align="center"><b>À propos</b></p>
+      <img src="docs/screenshots/about.webp" alt="Page à propos : parcours et stack" width="100%" />
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <p align="center"><b>Projets — Portfolio filtrable</b></p>
-      <img src="public/screen/projects.webp" alt="Projects" width="100%" />
+      <p align="center"><b>Projets</b></p>
+      <img src="docs/screenshots/projects.webp" alt="Liste des projets avec filtres par catégorie" width="100%" />
     </td>
     <td width="50%">
-      <p align="center"><b>Contact — Formulaire validé</b></p>
-      <img src="public/screen/contact.webp" alt="Contact" width="100%" />
-    </td>
-  </tr>
-  <tr>
-    <td colspan="2">
-      <p align="center"><b>Booking — Calendrier FR avec jours fériés</b></p>
-      <img src="public/screen/booking.webp" alt="Booking" width="100%" />
+      <p align="center"><b>Blog</b></p>
+      <img src="docs/screenshots/blog.webp" alt="Liste des articles avec tags colorés" width="100%" />
     </td>
   </tr>
 </table>
 
 ---
 
-## 🚀 Installation
+## Installation
 
-> Pré-requis : Node.js ≥ 20.19, pnpm ≥ 10, PostgreSQL 17, Docker (optionnel)
-
-### Dev local
+> Prérequis : Node.js 22, pnpm ≥ 10, et l'API [`nest-portfolio-app`](https://github.com/j-ned/nest-portfolio-app) lancée sur `http://localhost:3000` (elle embarque son propre `compose.yaml` pour PostgreSQL, MinIO et Mailpit).
 
 ```bash
-# 1. Cloner le repo Angular (ce repo)
-git clone https://github.com/djoudj-dev/angular-portfolio-app.git
-cd angular-portfolio-app
-pnpm install
-
-# 2. Démarrer le backend NestJS (repo séparé, PORT=3000)
-cd ../nest-portfolio-app
-pnpm install && pnpm start:dev
-# → API : http://localhost:3000/api
-
-# 3. Démarrer le frontend Angular
-cd ../angular-portfolio-app
-pnpm start
-# → Front : http://localhost:4200  (proxie /api → :3000 via proxy.conf.cjs)
+git clone https://github.com/j-ned/ng-portfolio-app.git
+cd ng-portfolio-app
+pnpm install --frozen-lockfile
+pnpm start          # http://localhost:4200, /api proxifié vers :3000 (proxy.conf.cjs)
 ```
 
-> Le frontend n'a **aucune variable d'environnement** à configurer — tout passe via le proxy Angular CLI.
-> Les variables d'environnement (DB, JWT, S3, SMTP) sont dans `nest-portfolio-app/.env`.
+Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production directement à `https://api.nedellec-julien.fr/api`.
 
-### Scripts disponibles
+### Scripts
 
 | Commande | Action |
-|----------|--------|
-| `pnpm start` | Front Angular (proxy `/api` → NestJS `:3000`) |
-| `pnpm build` | Build Angular SSR prerender |
-| `pnpm watch` | Build Angular en watch mode |
-| `pnpm test` | Tests unitaires (Vitest) |
-| `pnpm lint` | ESLint |
-| `pnpm check` | Format + lint (pré-commit) |
+|---|---|
+| `pnpm start` | Serveur de développement avec proxy `/api` |
+| `pnpm build` | Sitemap + RSS + build SSR ; `--configuration production` ajoute le prérendu et le hachage CSP |
+| `pnpm test` | Vitest (63 fichiers, 493 tests) |
+| `pnpm lint` | ESLint, zéro warning toléré |
+| `pnpm check` | Prettier + lint |
+| `pnpm icons:build` | Régénère le sprite d'icônes |
 
 ### Docker
 
 ```bash
-# Build Angular SSR uniquement (le backend NestJS a son propre Dockerfile)
-docker build -t portfolio-front .
-
-# Run Angular SSR (port 4000 interne)
-docker run -p 4000:4000 portfolio-front
-# Traefik en amont route /api → nest-portfolio-app container
+docker build -t ng-portfolio-app:local .
+docker run --rm -p 3000:3000 ng-portfolio-app:local   # nginx, pages prérendues + coquille CSR
 ```
 
 ---
 
-## 🗺️ Roadmap
+## Qualité et livraison
 
-- [x] Architecture Clean — 3 couches par feature
-- [x] SSR Angular 21 + prerender + hydration
-- [x] Back-office admin complet (hero, bio, CV, projets, technos, services, highlights)
-- [x] Booking custom avec calendrier FR + jours fériés
-- [x] Analytics privacy-first (page views, durées, événements, agrégats)
-- [x] Auth JWT + 2FA TOTP
-- [x] SEO dynamique + JSON-LD + sitemap.xml
-- [ ] Blog technique (markdown + syntax highlighting)
-- [ ] i18n FR/EN
-- [ ] Newsletter (opt-in RGPD)
-- [ ] Export PDF des stats admin
-- [ ] Webhooks Calendar (Google/Outlook) pour synchro bookings
+Les gates sont ceux du Dockerfile, rejoués en local avant chaque PR et dans la CI :
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run build --configuration production   # sitemap + rss + build SSR + prérendu + CSP
+docker build -t ng-portfolio-app:local .    # exactement ce que Dokploy exécute
+```
+
+- Une PR par changement, squash-merge sur `master`, branche protégée par les deux jobs de CI.
+- Tests à trois niveaux : domaine sans TestBed, composants avec TestBed et mocks, intégration HTTP avec `HttpTestingController`.
+- Conventions détaillées dans `.claude/CLAUDE.md` et `.claude/project-profile.md`.
 
 ---
 
-## 📄 Licence
+## Licence
 
 Le **code** de ce dépôt est publié sous licence [MIT](LICENSE).
 
@@ -400,7 +305,7 @@ Le **contenu éditorial** (articles de blog, textes du site, CV, photos, visuels
 **Développé par [Julien Nédellec](https://nedellec-julien.fr)**
 
 [![Portfolio](https://img.shields.io/badge/Portfolio-nedellec--julien.fr-4f46e5?style=for-the-badge)](https://nedellec-julien.fr)
-[![GitHub](https://img.shields.io/badge/GitHub-djoudj--dev-181717?style=for-the-badge&logo=github)](https://github.com/djoudj-dev)
+[![GitHub](https://img.shields.io/badge/GitHub-j--ned-181717?style=for-the-badge&logo=github)](https://github.com/j-ned)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-julien--nedellec-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/julien-nedellec/)
 
 </div>

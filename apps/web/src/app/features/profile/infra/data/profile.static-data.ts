@@ -10,7 +10,7 @@ export const STATIC_AVATAR_URL = '/avatar.avif';
 
 export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
   id: '9acfdedb-c00d-4370-858e-7215e30f5a41',
-  displayName: 'Nédellec Julien',
+  displayName: 'Julien Nédellec',
   location: SITE_IDENTITY.location,
   isAvailable: true,
   availabilityMessage: 'En poste, ouvert aux opportunités',
@@ -35,8 +35,8 @@ export const STATIC_DIPLOMAS: readonly Diploma[] = [
     shortDescription:
       "Titre professionnel de niveau 5 axé sur la conception, le développement et la maintenance d'applications web et mobiles, avec une pédagogie orientée bonnes pratiques et travail en équipe.",
     skills: [
-      'HTML5, CSS3, Javascript',
-      'Angular & Typescript',
+      'HTML5, CSS3, JavaScript',
+      'Angular & TypeScript',
       'SQL & NoSQL',
       'Git & GitHub',
       'Responsive Design',
@@ -94,7 +94,7 @@ export const STATIC_TECHNOLOGIES: readonly Technology[] = [
   {
     id: '89901eaf-377c-46e1-b3ae-75b2ec28465e',
     name: 'Docker',
-    category: 'Base de données',
+    category: 'DevOps',
     icon: 'docker',
   },
 ];
@@ -102,7 +102,7 @@ export const STATIC_TECHNOLOGIES: readonly Technology[] = [
 export const STATIC_ABOUT_HIGHLIGHTS: readonly Highlight[] = [
   {
     id: 'f91a2bc6-7369-4ff5-8ab3-7ece1426be50',
-    title: 'Exigence de production ',
+    title: 'Exigence de production',
     description:
       "Formé dans un environnement où l'erreur coûte cher, j'écris du code pensé pour durer. Type-safe, testé, documenté.",
     icon: 'valid',
