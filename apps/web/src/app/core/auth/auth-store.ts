@@ -8,6 +8,10 @@ import type { User } from '@features/auth/domain/models/user.model';
 import type { TwoFactorSecretResponse, UserResponse } from '@features/auth/domain/models/auth.types';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 
+// Indice local posé à la connexion : sans lui, aucun appel /auth/me au démarrage. Le cookie
+// httpOnly reste la source de vérité ; l'indice évite seulement un 401 par visite anonyme.
+export const SESSION_HINT_KEY = 'auth:session';
+
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly gateway = inject(AuthGateway);
@@ -110,6 +114,7 @@ export class AuthStore {
       )
       .subscribe(() => {
         this._currentUser.set(null);
+        this.writeSessionHint(false);
         sentrySetUser(null);
         void this.router.navigate(['/']);
       });
@@ -122,12 +127,13 @@ export class AuthStore {
       displayName: apiUser.email,
       isTwoFactorEnabled: apiUser.isTwoFactorEnabled,
     });
+    this.writeSessionHint(true);
     sentrySetUser({ id: apiUser.id });
   }
 
   // Public : appelé explicitement par App au boot client (constructor pas rejoué à l'hydration SSG).
   restoreSession(): void {
-    if (!this.isBrowser) return;
+    if (!this.isBrowser || !this.hasSessionHint()) return;
     this._ready = new Promise<void>((resolve) => {
       this.gateway
         .getCurrentUser()
@@ -135,6 +141,7 @@ export class AuthStore {
           tap((res) => this.setUserFromApi(res)),
           catchError(() => {
             this._currentUser.set(null);
+            this.writeSessionHint(false);
             sentrySetUser(null);
             return of(null);
           }),
@@ -142,5 +149,26 @@ export class AuthStore {
         )
         .subscribe(() => resolve());
     });
+  }
+
+  private hasSessionHint(): boolean {
+    try {
+      return localStorage.getItem(SESSION_HINT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private writeSessionHint(present: boolean): void {
+    if (!this.isBrowser) return;
+    try {
+      if (present) {
+        localStorage.setItem(SESSION_HINT_KEY, '1');
+      } else {
+        localStorage.removeItem(SESSION_HINT_KEY);
+      }
+    } catch {
+      // Stockage indisponible : on retombe sur l'ancien comportement (un /auth/me de plus).
+    }
   }
 }

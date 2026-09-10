@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '@shared/api/api-config';
-import { AuthStore } from './auth-store';
+import { AuthStore, SESSION_HINT_KEY } from './auth-store';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 
@@ -29,12 +29,20 @@ describe('AuthStore', () => {
 
   afterEach(() => {
     if (http) http.verify();
+    localStorage.removeItem(SESSION_HINT_KEY);
   });
 
   describe('Au boot (browser)', () => {
-    beforeEach(() => setupService());
+    it("ne fait aucune requête sans indice local de session (visiteur anonyme)", async () => {
+      setupService();
+      http.expectNone(`${apiBase}/auth/me`);
+      await service.ready;
+      expect(service.isLoggedIn()).toBe(false);
+    });
 
-    it('appelle toujours GET /auth/me au démarrage (cookie httpOnly = source de vérité)', () => {
+    it("appelle GET /auth/me quand l'indice est présent (cookie httpOnly = source de vérité)", () => {
+      localStorage.setItem(SESSION_HINT_KEY, '1');
+      setupService();
       const req = http.expectOne(`${apiBase}/auth/me`);
       expect(req.request.method).toBe('GET');
       expect(req.request.withCredentials).toBe(true);
@@ -42,27 +50,29 @@ describe('AuthStore', () => {
     });
 
     it('restore currentUser quand /auth/me retourne 200', async () => {
+      localStorage.setItem(SESSION_HINT_KEY, '1');
+      setupService();
       http
         .expectOne(`${apiBase}/auth/me`)
         .flush({ id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false });
       await service.ready;
       expect(service.isLoggedIn()).toBe(true);
       expect(service.currentUser()?.email).toBe('a@b.fr');
+      expect(localStorage.getItem(SESSION_HINT_KEY)).toBe('1');
     });
 
-    it('reste déconnecté silencieusement quand /auth/me retourne 401', async () => {
+    it("reste déconnecté silencieusement et efface l'indice quand /auth/me retourne 401", async () => {
+      localStorage.setItem(SESSION_HINT_KEY, '1');
+      setupService();
       http.expectOne(`${apiBase}/auth/me`).flush({}, { status: 401, statusText: 'Unauthorized' });
       await service.ready;
       expect(service.isLoggedIn()).toBe(false);
+      expect(localStorage.getItem(SESSION_HINT_KEY)).toBeNull();
     });
   });
 
   describe('login', () => {
-    beforeEach(() => {
-      setupService();
-      // Absorbe le GET /auth/me du restoreSession initial pour isoler la requête login testée.
-      http.expectOne(`${apiBase}/auth/me`).flush({}, { status: 401, statusText: 'Unauthorized' });
-    });
+    beforeEach(() => setupService());
 
     it('set currentUser sur success', () => {
       let outcome: string | undefined;
@@ -72,6 +82,7 @@ describe('AuthStore', () => {
         .flush({ user: { id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false } });
       expect(outcome).toBe('success');
       expect(service.isLoggedIn()).toBe(true);
+      expect(localStorage.getItem(SESSION_HINT_KEY)).toBe('1');
     });
 
     it('retourne "two-factor" quand requiresTwoFactor true et stocke le challengeToken', () => {
