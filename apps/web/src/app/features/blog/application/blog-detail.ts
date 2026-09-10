@@ -120,7 +120,7 @@ export class BlogDetail {
     if (!p) return;
 
     this.seo.applySeoData({
-      title: `${p.title} | Blog — Julien Nédellec`,
+      title: `${p.title} | Julien Nédellec`,
       description: p.excerpt,
       keywords: [...p.tags, 'Julien Nédellec', 'Blog Développeur'].join(', '),
       url: `${SITE_IDENTITY.siteUrl}/blog/${p.slug}`,

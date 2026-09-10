@@ -7,13 +7,13 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    title: 'Accueil | Julien Nédellec',
+    title: 'Julien Nédellec | Développeur Full-Stack Angular / NestJS',
     component: Home,
     data: {
       seo: {
-        title: 'Julien Nédellec | Développeur Full-Stack Angular & NestJS',
+        title: 'Julien Nédellec | Développeur Full-Stack Angular / NestJS',
         description:
-          "Développeur Angular & NestJS. 20 ans d'industrie avant le code : je conçois, déploie et maintiens mes applications en production. CDI, Île-de-France.",
+          "Développeur Full-Stack Angular / NestJS. 20 ans d'industrie avant le code : je conçois, déploie et maintiens mes applications en production. En poste, ouvert au CDI en Île-de-France.",
         keywords:
           'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France, Île-de-France, CDI, Industrie, Self-hosted',
         url: SITE_IDENTITY.siteUrl,
@@ -22,7 +22,7 @@ export const routes: Routes = [
           '@context': 'https://schema.org',
           '@type': 'Person',
           name: 'Julien Nédellec',
-          jobTitle: 'Développeur Full-Stack',
+          jobTitle: 'Développeur Full-Stack Angular / NestJS',
           url: SITE_IDENTITY.siteUrl,
           sameAs: [
             SITE_IDENTITY.socials.linkedin,
@@ -47,9 +47,9 @@ export const routes: Routes = [
     data: {
       preload: true,
       seo: {
-        title: 'À propos | Julien Nédellec - Développeur Full-Stack',
+        title: 'À propos | Julien Nédellec',
         description:
-          "Développeur Angular, NestJS et TypeScript avec 20 ans d'expérience en industrie. Exigence, autonomie et vision d'ensemble.",
+          "Développeur Full-Stack Angular / NestJS avec 20 ans d'industrie derrière moi. Exigence, autonomie et vision d'ensemble.",
         keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
@@ -77,7 +77,7 @@ export const routes: Routes = [
     data: {
       preload: true,
       seo: {
-        title: 'Projets | Julien Nédellec - Portfolio Développeur Full-Stack',
+        title: 'Projets | Julien Nédellec',
         description:
           'Découvrez mes projets Angular, NestJS et TypeScript : applications web modernes, APIs REST, déploiements Docker, code production-ready.',
         keywords:
@@ -107,7 +107,7 @@ export const routes: Routes = [
     data: {
       preload: true,
       seo: {
-        title: 'Blog | Julien Nédellec — Développeur Full-Stack Angular & NestJS',
+        title: 'Blog | Julien Nédellec',
         description:
           "Retours d'expérience réels sur Angular, NestJS, PostgreSQL et le déploiement self-hosted.",
         keywords: "Blog Angular, Blog NestJS, Développeur Full-Stack, Retour d'expérience",

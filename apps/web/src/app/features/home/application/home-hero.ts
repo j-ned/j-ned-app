@@ -36,7 +36,7 @@ import type { HeroData } from '../domain/models/hero.model';
         </div>
 
         <h1
-          class="animate-fade-up delay-1 name-gradient text-5xl md:text-7xl lg:text-8xl font-extrabold mb-3 md:mb-4 tracking-tight leading-[1.2] pb-1"
+          class="animate-fade-up delay-1 name-gradient text-5xl md:text-6xl lg:text-7xl font-extrabold mb-3 md:mb-4 tracking-tight leading-[1.2] pb-1"
           data-testid="hero-name"
         >
           {{ h.name }}

@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { Seo } from '@shared/seo/seo';
+import { truncateAtWord } from '@shared/seo/truncate-at-word';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { ProjectDetailHeader } from './components/project-detail-header';
@@ -115,8 +116,8 @@ export class ProjectDetail {
     if (!p) return;
 
     this._seo.applySeoData({
-      title: `${p.title} | Projet ${p.category} — Julien Nédellec`,
-      description: p.description.slice(0, 155),
+      title: `${p.title} | Julien Nédellec`,
+      description: truncateAtWord(p.description, 155),
       keywords: [p.category, ...p.tags, 'Julien Nédellec', 'Portfolio Développeur'].join(', '),
       url: `${SITE_IDENTITY.siteUrl}/projects/${p.slug}`,
       type: 'article',

@@ -13,7 +13,7 @@ export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
   displayName: 'Nédellec Julien',
   location: SITE_IDENTITY.location,
   isAvailable: true,
-  availabilityMessage: 'Ouvert aux opportunités',
+  availabilityMessage: 'En poste, ouvert aux opportunités',
 };
 
 export const STATIC_BIOGRAPHY: Biography = {

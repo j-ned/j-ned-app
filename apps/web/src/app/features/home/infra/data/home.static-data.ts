@@ -3,12 +3,12 @@ import type { HomeHighlight } from '../../domain/models/home-highlight.model';
 
 export const STATIC_HERO: HeroData = {
   id: 'c64a566f-9e53-44f9-96de-f938f0166b9c',
-  name: 'Développeur Angular',
+  name: 'Développeur Full\u2011Stack Angular / NestJS',
   tagline:
     'Angular, NestJS, PostgreSQL, Docker : je mène une application du composant à la mise en production.',
   support:
     'Ce site en est la preuve : rendu serveur, API NestJS, déployé en CI/CD sur ma propre infrastructure.',
-  availability: 'Ouvert aux opportunités · CDI · Île-de-France',
+  availability: 'En poste, ouvert aux opportunités · CDI · Île-de-France',
 };
 
 export const STATIC_HOME_HIGHLIGHTS: readonly HomeHighlight[] = [
