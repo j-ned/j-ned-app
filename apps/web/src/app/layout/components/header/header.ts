@@ -33,10 +33,11 @@ type ThemePreference = 'dark' | 'light';
         <a
           routerLink="/"
           (click)="scrollToTop()"
-          aria-label="Julien N. – retour à l'accueil"
+          title="Retour à l'accueil"
           class="group flex items-center gap-3 sm:gap-4 min-w-0 hover:opacity-90 transition-opacity"
         >
           <app-icon-tile
+            aria-hidden="true"
             class="bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
           >
             JN
