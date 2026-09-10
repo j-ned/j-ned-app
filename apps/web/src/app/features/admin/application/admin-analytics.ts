@@ -13,6 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { AnalyticsDeviceExclusion } from '@core/analytics/analytics-device-exclusion';
 import { ThemeWatcher } from '@shared/theme/theme-watcher';
 import { AnalyticsBarList } from './components/analytics-bar-list';
 import { AnalyticsDonutPanel } from './components/analytics-donut-panel';
@@ -81,8 +82,10 @@ const DEFAULT_PALETTE: ChartPalette = {
     <app-admin-analytics-header
       [activeVisitors]="activeVisitors()"
       [dateRange]="dateRange()"
+      [deviceExcluded]="deviceExclusion.excluded()"
       (dateRangeChanged)="dateRange.set($event)"
       (exportCsvClicked)="exportCsv()"
+      (deviceExclusionToggled)="deviceExclusion.toggle()"
     />
 
     <app-admin-analytics-kpis
@@ -202,6 +205,7 @@ const DEFAULT_PALETTE: ChartPalette = {
 })
 export class AdminAnalytics {
   private readonly analytics = inject(AnalyticsGateway);
+  protected readonly deviceExclusion = inject(AnalyticsDeviceExclusion);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _document = inject(DOCUMENT);
   private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

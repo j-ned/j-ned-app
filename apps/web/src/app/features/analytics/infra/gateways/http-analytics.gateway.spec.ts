@@ -1,11 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { PLATFORM_ID } from '@angular/core';
+import { PLATFORM_ID, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
+import { AnalyticsDeviceExclusion } from '@core/analytics/analytics-device-exclusion';
+import { AuthStore } from '@core/auth/auth-store';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { HttpAnalyticsGateway } from './http-analytics.gateway';
 import type {
@@ -18,7 +20,16 @@ import type {
 
 const BASE = '/api';
 
-function configureBrowser(): {
+type VisitorContext = { loggedIn?: boolean; deviceExcluded?: boolean };
+
+function visitorProviders(ctx: VisitorContext = {}): unknown[] {
+  return [
+    { provide: AuthStore, useValue: { isLoggedIn: signal(ctx.loggedIn ?? false) } },
+    { provide: AnalyticsDeviceExclusion, useValue: { excluded: signal(ctx.deviceExcluded ?? false) } },
+  ];
+}
+
+function configureBrowser(ctx: VisitorContext = {}): {
   gateway: HttpAnalyticsGateway;
   httpController: HttpTestingController;
 } {
@@ -29,6 +40,7 @@ function configureBrowser(): {
       provideHttpClientTesting(),
       { provide: API_BASE_URL, useValue: BASE },
       { provide: PLATFORM_ID, useValue: 'browser' },
+      ...visitorProviders(ctx),
     ],
   });
   return {
@@ -48,6 +60,7 @@ function configureServer(): {
       provideHttpClientTesting(),
       { provide: API_BASE_URL, useValue: BASE },
       { provide: PLATFORM_ID, useValue: 'server' },
+      ...visitorProviders(),
     ],
   });
   return {
@@ -466,6 +479,37 @@ describe('HttpAnalyticsGateway', () => {
         httpController.verify();
       },
     );
+  });
+
+  describe('visiteurs exclus', () => {
+    it.each<[string, { loggedIn?: boolean; deviceExcluded?: boolean }]>([
+      ['admin connecté', { loggedIn: true }],
+      ['appareil exclu', { deviceExcluded: true }],
+    ])('%s : aucun POST /track, quel que soit le type', (_label, ctx) => {
+      const { gateway, httpController } = configureBrowser(ctx);
+
+      gateway.trackPageView('/blog');
+      gateway.trackPageDuration('/blog', 12);
+      gateway.trackProjectClick('p1', 'Projet');
+      gateway.trackArticleView('a1', 'Article');
+      gateway.trackArticleRead('a1', 'Article');
+      gateway.trackCvDownload();
+      gateway.trackCtaClick('home_hero_projects', 'Voir les projets');
+
+      httpController.expectNone(`${BASE}/analytics/track`);
+      httpController.verify();
+    });
+
+    it('admin connecté : sendBeacon est no-op', () => {
+      const { gateway } = configureBrowser({ loggedIn: true });
+      const spy = vi.fn().mockReturnValue(true);
+      vi.stubGlobal('navigator', { sendBeacon: spy });
+
+      gateway.sendBeacon({ type: 'page_duration', url: '/blog', duration: 5 });
+
+      expect(spy).not.toHaveBeenCalled();
+      vi.unstubAllGlobals();
+    });
   });
 
   describe('SSR safety (4 tests)', () => {

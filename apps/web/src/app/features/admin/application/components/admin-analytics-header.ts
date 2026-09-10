@@ -56,6 +56,21 @@ export const DATE_RANGE_OPTIONS: readonly DateRangeOption[] = [
           <app-icon name="download" [size]="20" />
           Export CSV
         </app-button>
+        <button
+          type="button"
+          data-testid="device-exclusion-toggle"
+          [attr.aria-pressed]="deviceExcluded()"
+          (click)="deviceExclusionToggled.emit()"
+          class="inline-flex min-h-11 items-center gap-2 px-3 rounded-lg text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          [class]="
+            deviceExcluded()
+              ? 'bg-status-warn/15 text-status-warn border-status-warn/40'
+              : 'bg-background text-foreground border-foreground/20 hover:border-primary/50'
+          "
+        >
+          <app-icon [name]="deviceExcluded() ? 'shield' : 'eye'" [size]="18" />
+          {{ deviceExcluded() ? 'Appareil exclu des stats' : 'Exclure cet appareil' }}
+        </button>
       </div>
     </header>
   `,
@@ -65,9 +80,11 @@ export class AdminAnalyticsHeader {
 
   readonly activeVisitors = input<number>(0);
   readonly dateRange = input<DateRangeKey>('30d');
+  readonly deviceExcluded = input<boolean>(false);
 
   readonly dateRangeChanged = output<DateRangeKey>();
   readonly exportCsvClicked = output<void>();
+  readonly deviceExclusionToggled = output<void>();
 
   protected selectDateRange(event: Event): void {
     this.dateRangeChanged.emit((event.target as HTMLSelectElement).value as DateRangeKey);

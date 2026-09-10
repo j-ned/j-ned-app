@@ -54,6 +54,7 @@ import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-hom
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 import { AuthStore } from '@core/auth/auth-store';
+import { isNotFoundRoute } from '@core/analytics/not-found-route';
 
 function initializeAuth(): () => Promise<void> | void {
   return (): Promise<void> | void => {
@@ -103,6 +104,11 @@ function initializeTracking(): () => void {
           if (duration > 0) {
             analytics.trackPageDuration(currentUrl, duration);
           }
+        }
+
+        if (isNotFoundRoute(router.routerState.snapshot.root)) {
+          currentUrl = null;
+          return;
         }
 
         currentUrl = event.urlAfterRedirects;
