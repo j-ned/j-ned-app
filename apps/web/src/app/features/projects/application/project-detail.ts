@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, input, ChangeDetectionStrategy } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { NgOptimizedImage } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
@@ -12,10 +12,18 @@ import { ProjectDetailHeader } from './components/project-detail-header';
 import { ProjectDetailTechChoices } from './components/project-detail-tech-choices';
 import { ProjectDetailArchDecisions } from './components/project-detail-arch-decisions';
 import { ProjectDetailNav } from './components/project-detail-nav';
+import { Button } from '@shared/ui/button';
 
 @Component({
   selector: 'app-project-detail',
-  imports: [NgOptimizedImage, ProjectDetailHeader, ProjectDetailTechChoices, ProjectDetailArchDecisions, ProjectDetailNav],
+  imports: [
+    NgOptimizedImage,
+    ProjectDetailHeader,
+    ProjectDetailTechChoices,
+    ProjectDetailArchDecisions,
+    ProjectDetailNav,
+    Button,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -53,6 +61,13 @@ import { ProjectDetailNav } from './components/project-detail-nav';
           [previousProject]="previousProject()"
           [nextProject]="nextProject()"
         />
+      } @else if (failed()) {
+        <div class="page-container pt-10 text-center" role="alert" data-testid="project-error">
+          <p class="text-muted text-lg mb-4">
+            Le projet n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.
+          </p>
+          <app-button severity="secondary" variant="outlined" (click)="retry()">Réessayer</app-button>
+        </div>
       } @else if (loading()) {
         <div class="page-container pt-6 md:pt-10" aria-hidden="true">
           <div class="h-4 w-32 rounded bg-surface-elevated mb-10"></div>
@@ -75,11 +90,17 @@ export class ProjectDetail {
 
   readonly slug = input.required<string>();
 
-  private readonly _allProjects = toSignal(this._gateway.getAllProjects(), {
-    initialValue: [] as readonly Project[],
+  // Une ressource plutôt qu'un `toSignal` : elle distingue chargement, erreur et liste chargée,
+  // et `reload()` relance la requête (la gateway ne garde plus un échec en cache).
+  private readonly _projectsResource = rxResource({
+    stream: () => this._gateway.getAllProjects(),
   });
+  private readonly _allProjects = computed((): readonly Project[] =>
+    this._projectsResource.hasValue() ? this._projectsResource.value() : [],
+  );
 
-  protected readonly loading = computed(() => this._allProjects().length === 0);
+  protected readonly loading = computed(() => this._projectsResource.isLoading());
+  protected readonly failed = computed(() => this._projectsResource.status() === 'error');
 
   private readonly _currentIndex = computed(() =>
     this._allProjects().findIndex((p) => p.slug === this.slug()),
@@ -103,6 +124,10 @@ export class ProjectDetail {
     const index = this._currentIndex();
     return index !== -1 && index < list.length - 1 ? list[index + 1] : undefined;
   });
+
+  protected retry(): void {
+    this._projectsResource.reload();
+  }
 
   private readonly _redirectIfMissing = effect(() => {
     const list = this._allProjects();

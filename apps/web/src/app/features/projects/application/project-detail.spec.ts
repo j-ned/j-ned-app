@@ -1,6 +1,6 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import { ProjectDetail } from './project-detail';
@@ -124,5 +124,38 @@ describe('ProjectDetail', () => {
       fixture.nativeElement.querySelectorAll('a[href="/projects/autre-projet"]'),
     );
     expect(navLinks.length).toBeGreaterThan(0);
+  });
+
+  it("affiche un état d'erreur avec relance quand la liste ne charge pas, sans rediriger", async () => {
+    let calls = 0;
+    const gateway = {
+      getAllProjects: () => {
+        calls += 1;
+        return calls === 1 ? throwError(() => new Error('down')) : of([project()] as readonly Project[]);
+      },
+    } as unknown as ProjectsGateway;
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: ProjectsGateway, useValue: gateway },
+        { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(ProjectDetail);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const error = fixture.nativeElement.querySelector('[data-testid="project-error"]') as HTMLElement;
+    expect(error).not.toBeNull();
+    expect(navigate).not.toHaveBeenCalled();
+
+    (error.querySelector('button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="project-error"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Mon site');
   });
 });

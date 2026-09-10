@@ -183,6 +183,37 @@ describe('HttpProjectsGateway', () => {
     });
   });
 
+  describe('Échec de chargement', () => {
+    const URL = `${BASE}/projects?_sort=order&limit=100`;
+
+    it('relance la requête une fois avant de propager l\'erreur', async () => {
+      const { gateway, httpController } = configure();
+      const outcome = firstValueFrom(gateway.getAllProjects()).then(
+        () => 'ok',
+        () => 'error',
+      );
+
+      httpController.expectOne(URL).flush('boom', { status: 503, statusText: 'Unavailable' });
+      httpController.expectOne(URL).flush('boom', { status: 503, statusText: 'Unavailable' });
+
+      expect(await outcome).toBe('error');
+      httpController.verify();
+    });
+
+    it("un échec n'est pas mis en cache : le prochain abonné relance la requête", async () => {
+      const { gateway, httpController } = configure();
+      const failed = firstValueFrom(gateway.getAllProjects()).catch(() => 'error');
+      httpController.expectOne(URL).flush('boom', { status: 500, statusText: 'Error' });
+      httpController.expectOne(URL).flush('boom', { status: 500, statusText: 'Error' });
+      expect(await failed).toBe('error');
+
+      const recovered = firstValueFrom(gateway.getAllProjects());
+      httpController.expectOne(URL).flush([makeProject()]);
+      expect((await recovered).length).toBe(1);
+      httpController.verify();
+    });
+  });
+
   describe('Admin (NestJS): 4 tests', () => {
     it('createProject(data) émet POST /<base>/projects sans champ image (géré via uploadImage)', async () => {
       const { gateway, httpController } = configure();

@@ -1,6 +1,17 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, of, shareReplay, startWith, Subject, switchMap } from 'rxjs';
+import {
+  catchError,
+  map,
+  Observable,
+  of,
+  ReplaySubject,
+  retry,
+  share,
+  startWith,
+  Subject,
+  switchMap,
+} from 'rxjs';
 import { ProjectsGateway } from '../../domain/gateways/projects.gateway';
 import type { Project, ProjectInput } from '../../domain/models/project.model';
 import type { ProjectFilter } from '../../domain/models/project-filter.model';
@@ -19,18 +30,28 @@ export class HttpProjectsGateway extends ProjectsGateway {
 
   private readonly _refresh$ = new Subject<void>();
 
-  // Une seule liste, gardée pour toute la session (`refCount: false`) : home, /projects et chaque
-  // détail la partagent au lieu de la redemander à chaque page. Le premier chargement la lit dans
-  // le transfer cache du prérendu. L'admin l'invalide après une écriture.
+  // Une seule liste, gardée pour toute la session : home, /projects et chaque détail la partagent
+  // au lieu de la redemander à chaque page. Le premier chargement la lit dans le transfer cache du
+  // prérendu. L'admin l'invalide après une écriture.
+  //
+  // Un échec n'est jamais gardé : la requête est relancée une fois, puis l'erreur part aux abonnés
+  // (qui affichent un état d'erreur) et le flux partagé se réinitialise (`resetOnError`), si bien
+  // que le prochain abonné, ou un `reload()`, refait la requête. Avant, `catchError → []` figeait
+  // une liste vide pour toute la session, impossible à distinguer d'un portfolio sans projet.
   private readonly allProjects$ = this._refresh$.pipe(
     startWith(undefined),
     switchMap(() =>
       this.http.get<Project[]>(`${this.apiUrl}/projects?_sort=order&limit=100`).pipe(
+        retry(1),
         map((rows) => rows.map((p) => resolveProject(this.apiUrl, p))),
-        catchError(() => of([] as readonly Project[])),
       ),
     ),
-    shareReplay({ bufferSize: 1, refCount: false }),
+    share({
+      connector: () => new ReplaySubject<readonly Project[]>(1),
+      resetOnError: true,
+      resetOnComplete: false,
+      resetOnRefCountZero: false,
+    }),
   );
 
   getAllProjects(): Observable<readonly Project[]> {

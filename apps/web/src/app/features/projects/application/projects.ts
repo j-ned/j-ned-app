@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { AppPaginator, type AppPaginatorEvent } from '@shared/ui/paginator';
+import { Button } from '@shared/ui/button';
 import { ProjectCard } from './components/project-card';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { filterProjects, FILTER_ALL } from '../domain/use-cases/filter-projects.use-case';
@@ -24,7 +25,7 @@ const ITEMS_PER_PAGE = 3;
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [ProjectCard, AppPaginator],
+  imports: [ProjectCard, AppPaginator, Button],
   template: `
     <main class="min-h-svh pt-20 pb-16">
       <section class="page-container pt-8">
@@ -54,18 +55,27 @@ const ITEMS_PER_PAGE = 3;
           }
         </nav>
 
-        <ul
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-8 md:mb-12"
-          role="list"
-        >
-          @for (project of paginatedProjects(); track project.id) {
-            <li>
-              <app-project-card [project]="project" />
-            </li>
-          }
-        </ul>
+        @if (failed()) {
+          <div class="text-center py-12" role="alert" data-testid="projects-error">
+            <p class="text-muted text-lg mb-4">
+              Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez.
+            </p>
+            <app-button severity="secondary" variant="outlined" (click)="retry()">Réessayer</app-button>
+          </div>
+        } @else {
+          <ul
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-8 md:mb-12"
+            role="list"
+          >
+            @for (project of paginatedProjects(); track project.id) {
+              <li>
+                <app-project-card [project]="project" />
+              </li>
+            }
+          </ul>
+        }
 
-        @if (filteredProjects().length === 0) {
+        @if (!failed() && projectsResource.hasValue() && filteredProjects().length === 0) {
           <div class="text-center py-16">
             <p class="text-muted text-lg">Aucun projet trouvé pour ce filtre.</p>
           </div>
@@ -87,15 +97,20 @@ const ITEMS_PER_PAGE = 3;
 export class Projects {
   private readonly _projectsGateway = inject(ProjectsGateway);
 
-  private readonly projectsResource = rxResource({
+  protected readonly projectsResource = rxResource({
     stream: () => this._projectsGateway.getAllProjects(),
   });
-  protected readonly projects = computed(() => this.projectsResource.value() ?? []);
+  protected readonly projects = computed(() =>
+    this.projectsResource.hasValue() ? this.projectsResource.value() : [],
+  );
+  protected readonly failed = computed(() => this.projectsResource.status() === 'error');
 
   private readonly categoriesResource = rxResource({
     stream: () => this._projectsGateway.getCategories(),
   });
-  protected readonly filters = computed(() => this.categoriesResource.value() ?? [ALL_LABEL]);
+  protected readonly filters = computed(() =>
+    this.categoriesResource.hasValue() ? this.categoriesResource.value() : [ALL_LABEL],
+  );
 
   protected readonly activeFilter = signal(ALL_LABEL);
   protected readonly currentPage = signal(1);
@@ -116,6 +131,11 @@ export class Projects {
   protected readonly paginatorFirst = computed(() => (this.currentPage() - 1) * ITEMS_PER_PAGE);
 
   protected readonly ITEMS_PER_PAGE = ITEMS_PER_PAGE;
+
+  protected retry(): void {
+    this.projectsResource.reload();
+    this.categoriesResource.reload();
+  }
 
   constructor() {
     // Scroll-to-top a chaque changement de page (skip render initial).
