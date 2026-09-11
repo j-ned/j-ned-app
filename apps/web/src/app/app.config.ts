@@ -59,7 +59,9 @@ import { isNotFoundRoute } from '@core/analytics/not-found-route';
 function initializeAuth(): () => Promise<void> | void {
   return (): Promise<void> | void => {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+    // Le store est entièrement construit ici : la requête peut traverser `authInterceptor`.
     const auth = inject(AuthStore);
+    auth.restoreSession();
     return auth.ready;
   };
 }

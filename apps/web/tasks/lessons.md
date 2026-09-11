@@ -20,3 +20,23 @@ indépendantes. Deux casses de prod après merge :
   (`pnpm install --frozen-lockfile` puis `pnpm run build --configuration production`), pas
   seulement `pnpm test`.
 - Ce dépôt merge en **squash** : vérifier le contenu de `master`, pas celui de la branche.
+
+## 2026-09-11 — l'admin déconnecté à chaque rechargement (NG0200 avalé par `catchError`)
+
+**Ce qui s'est passé.** #110 a conditionné `restoreSession()` à un indice `localStorage`. Le
+constructeur d'`AuthStore` lançait la requête `/auth/me`, qui traverse `authInterceptor`, lequel
+injecte… `AuthStore` : NG0200 (dépendance circulaire) levée avant tout appel réseau, avalée par le
+`catchError`, qui effaçait l'indice. Le second appel (depuis `App`) ne trouvait plus d'indice :
+zéro `GET /auth/me` dans les logs API en 20 h, tandis que les 504 tests passaient (le spec
+n'enregistrait pas l'intercepteur). Avant #110, la même erreur existait déjà mais le second appel
+masquait le problème.
+
+**Règles.**
+- Jamais de requête HTTP dans le constructeur d'un service injecté par un intercepteur : la lancer
+  depuis un `provideAppInitializer` (le service est alors construit).
+- Un `catchError` qui a un effet de bord persistant (effacer un indice, un token) ne réagit qu'à
+  l'erreur qui le justifie (`HttpErrorResponse` 401), jamais à « toute erreur ».
+- Le test de non-régression enregistre l'intercepteur réel (`withInterceptors([authInterceptor])`)
+  : un `HttpTestingController` sans intercepteur ne voit pas les erreurs de DI.
+- Diagnostic utile : zéro requête côté API + indice absent ⇒ tracer `Storage.prototype.removeItem`
+  et `new Error('NG0…')` dans un Chromium headless (`playwright-core` + `addInitScript`).

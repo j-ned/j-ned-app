@@ -2,10 +2,14 @@ import { computed, DestroyRef, PLATFORM_ID, inject, Injectable, signal } from '@
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 import { setUser as sentrySetUser } from '@sentry/angular';
 import type { User } from '@features/auth/domain/models/user.model';
-import type { TwoFactorSecretResponse, UserResponse } from '@features/auth/domain/models/auth.types';
+import type {
+  TwoFactorSecretResponse,
+  UserResponse,
+} from '@features/auth/domain/models/auth.types';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 
 // Indice local posé à la connexion : sans lui, aucun appel /auth/me au démarrage. Le cookie
@@ -29,12 +33,6 @@ export class AuthStore {
   private _ready: Promise<void> = Promise.resolve();
   get ready(): Promise<void> {
     return this._ready;
-  }
-
-  constructor() {
-    if (this.isBrowser) {
-      this.restoreSession();
-    }
   }
 
   login(email: string, password: string): Observable<'success' | 'two-factor' | 'error'> {
@@ -131,7 +129,10 @@ export class AuthStore {
     sentrySetUser({ id: apiUser.id });
   }
 
-  // Public : appelé explicitement par App au boot client (constructor pas rejoué à l'hydration SSG).
+  // Appelé par l'initialiseur d'app (`initializeAuth`), jamais depuis le constructeur : la requête
+  // traverse `authInterceptor`, qui injecte AuthStore. Lancée pendant la construction du store,
+  // elle échouait en NG0200 (dépendance circulaire) avant même de partir, et l'erreur effaçait
+  // l'indice de session : chaque rechargement déconnectait l'admin.
   restoreSession(): void {
     if (!this.isBrowser || !this.hasSessionHint()) return;
     this._ready = new Promise<void>((resolve) => {
@@ -139,9 +140,13 @@ export class AuthStore {
         .getCurrentUser()
         .pipe(
           tap((res) => this.setUserFromApi(res)),
-          catchError(() => {
+          catchError((error: unknown) => {
             this._currentUser.set(null);
-            this.writeSessionHint(false);
+            // Seul un 401 prouve que le cookie ne vaut plus rien ; une panne réseau ou un 5xx
+            // garde l'indice pour réessayer à la prochaine visite.
+            if (error instanceof HttpErrorResponse && error.status === 401) {
+              this.writeSessionHint(false);
+            }
             sentrySetUser(null);
             return of(null);
           }),

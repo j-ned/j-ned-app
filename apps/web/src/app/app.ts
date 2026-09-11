@@ -7,7 +7,6 @@ import { Toast } from '@shared/ui/toast';
 import { ToastStore } from '@shared/ui/toast-store';
 import { Header } from '@layout/components/header/header';
 import { Footer } from '@layout/components/footer/footer';
-import { AuthStore } from '@core/auth/auth-store';
 
 @Component({
   selector: 'app-root',
@@ -31,13 +30,11 @@ import { AuthStore } from '@core/auth/auth-store';
 })
 export class App {
   private readonly router = inject(Router);
-  private readonly auth = inject(AuthStore);
   private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly toastStore = inject(ToastStore);
 
   constructor() {
-    this.auth.restoreSession();
     this.resetScrollOnNavigation();
   }
 

@@ -6,6 +6,13 @@
     <description>Retours d'expérience Angular, NestJS, PostgreSQL et self-hosting.</description>
     <language>fr</language>
     <item>
+      <title>Chiffrer des données sensibles côté client avec AES-256-GCM et PBKDF2 : retour d&apos;expérience sur DashFlow</title>
+      <link>https://nedellec-julien.fr/blog/chiffrer-des-donnees-sensibles-cote-client-avec-aes-256-gcm-et-pbkdf2-retour-d-experience-sur-dashflow</link>
+      <guid>https://nedellec-julien.fr/blog/chiffrer-des-donnees-sensibles-cote-client-avec-aes-256-gcm-et-pbkdf2-retour-d-experience-sur-dashflow</guid>
+      <description>Comment DashFlow chiffre budget et dossiers médicaux dans le navigateur avec la Web Crypto API : PBKDF2, AES-256-GCM, double enveloppe de clés, clé non extractible en IndexedDB. Architecture zero-knowledge Angular/NestJS, code à l&apos;appui, et les pièges rencontrés.</description>
+      <pubDate>Wed, 09 Sep 2026 17:11:20 GMT</pubDate>
+    </item>
+    <item>
       <title>De 20 ans de métallurgie à développeur Full-Stack</title>
       <link>https://nedellec-julien.fr/blog/de-20-ans-de-metallurgie-a-developpeur-full-stack</link>
       <guid>https://nedellec-julien.fr/blog/de-20-ans-de-metallurgie-a-developpeur-full-stack</guid>
