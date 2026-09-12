@@ -18,6 +18,7 @@ import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.
 import { parseMarkdown } from '../infra/parse-markdown';
 import { Seo } from '@shared/seo/seo';
 import { truncateAtWord } from '@shared/seo/truncate-at-word';
+import { toShareImageUrl } from '@shared/seo/share-image';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { BlogLikeButton } from './components/blog-like-button';
 import { BlogComments } from './components/blog-comments';
@@ -135,7 +136,9 @@ export class BlogDetail {
     return this.sanitizer.bypassSecurityTrustHtml(parseMarkdown(p.contentMarkdown));
   });
 
-  protected readonly coverImageAlt = computed(() => `Illustration de l’article ${this.post()?.title ?? ''}`);
+  protected readonly coverImageAlt = computed(
+    () => `Illustration de l’article ${this.post()?.title ?? ''}`,
+  );
 
   // Une correction éditoriale après publication (l'API ne touche pas `updatedAt` sur un like).
   // Comparaison au jour près : une relecture le jour même n'est pas une « mise à jour ».
@@ -149,6 +152,7 @@ export class BlogDetail {
     if (!p) return;
 
     const url = `${SITE_IDENTITY.siteUrl}/blog/${p.slug}`;
+    const shareImage = toShareImageUrl(p.coverImage);
     const author = { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl };
     this.seo.applySeoData({
       title: `${p.title} | Julien Nédellec`,
@@ -156,7 +160,7 @@ export class BlogDetail {
       keywords: [...p.tags, 'Julien Nédellec', 'Blog Développeur'].join(', '),
       url,
       type: 'article',
-      image: p.coverImage,
+      image: shareImage,
       imageAlt: this.coverImageAlt(),
       structuredData: {
         '@context': 'https://schema.org',
@@ -169,7 +173,7 @@ export class BlogDetail {
         keywords: p.tags.join(', '),
         author,
         publisher: author,
-        ...(p.coverImage ? { image: p.coverImage } : {}),
+        ...(shareImage ? { image: shareImage } : {}),
         ...(p.publishedAt
           ? { datePublished: p.publishedAt, dateModified: laterOf(p.updatedAt, p.publishedAt) }
           : {}),

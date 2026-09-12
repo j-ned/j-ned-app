@@ -6,7 +6,7 @@
     <atom:link href="https://nedellec-julien.fr/rss.xml" rel="self" type="application/rss+xml" />
     <description>Retours d'expérience Angular, NestJS, PostgreSQL et self-hosting.</description>
     <language>fr</language>
-    <lastBuildDate>Sat, 12 Sep 2026 15:32:39 GMT</lastBuildDate>
+    <lastBuildDate>Sat, 12 Sep 2026 15:50:11 GMT</lastBuildDate>
     <item>
       <title>Chiffrer des données sensibles côté client avec AES-256-GCM et PBKDF2 : retour d&apos;expérience sur DashFlow</title>
       <link>https://nedellec-julien.fr/blog/chiffrer-des-donnees-sensibles-cote-client-avec-aes-256-gcm-et-pbkdf2-retour-d-experience-sur-dashflow</link>
@@ -212,7 +212,7 @@ export async function decryptFile(encryptedBlob: Blob, key: CryptoKey, mimeType:
 <p>Je suis en recherche d'un poste de développeur Full-Stack, Angular, NestJS, TypeScript, de préférence dans un environnement où la sécurité des données et l'impact du produit comptent vraiment : santé, GreenTech, industrie, secteurs où une donnée mal protégée a des conséquences concrètes.</p>
 <p>Si ce profil vous parle, chiffrement pensé de bout en bout, rigueur d'atelier appliquée au code, autonomie sur toute la chaîne, mes coordonnées sont sur <a href="https://nedellec-julien.fr">nedellec-julien.fr</a>.</p>
 ]]></content:encoded>
-      <enclosure url="https://api.nedellec-julien.fr/api/storage/portfolio-storage/blog/40048280-b161-4d62-a5ca-d2f5f981b5d5.avif" length="76770" type="image/avif" />
+      <enclosure url="https://api.nedellec-julien.fr/api/storage/portfolio-storage/blog/40048280-b161-4d62-a5ca-d2f5f981b5d5.avif?variant=share" length="76770" type="image/avif" />
     </item>
     <item>
       <title>De 20 ans de métallurgie à développeur Full-Stack</title>
@@ -262,7 +262,7 @@ export async function decryptFile(encryptedBlob: Blob, key: CryptoKey, mimeType:
 <hr>
 <p><em>Le prochain article : comment j'ai chiffré les données sensibles de DashFlow côté client avec AES-256-GCM et PBKDF2, et pourquoi bien le faire est plus piégeux qu'il n'y paraît.</em></p>
 ]]></content:encoded>
-      <enclosure url="https://api.nedellec-julien.fr/api/storage/portfolio-storage/blog/bdaa8984-c24a-44e4-8975-0e8ad088ecdf.avif" length="43896" type="image/avif" />
+      <enclosure url="https://api.nedellec-julien.fr/api/storage/portfolio-storage/blog/bdaa8984-c24a-44e4-8975-0e8ad088ecdf.avif?variant=share" length="43896" type="image/avif" />
     </item>
   </channel>
 </rss>

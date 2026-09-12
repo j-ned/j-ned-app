@@ -6,6 +6,7 @@ import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gat
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { Seo } from '@shared/seo/seo';
 import { truncateAtWord } from '@shared/seo/truncate-at-word';
+import { toShareImageUrl } from '@shared/seo/share-image';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { ProjectDetailHeader } from './components/project-detail-header';
@@ -66,7 +67,9 @@ import { Button } from '@shared/ui/button';
           <p class="text-muted text-lg mb-4">
             Le projet n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.
           </p>
-          <app-button severity="secondary" variant="outlined" (click)="retry()">Réessayer</app-button>
+          <app-button severity="secondary" variant="outlined" (click)="retry()"
+            >Réessayer</app-button
+          >
         </div>
       } @else if (loading()) {
         <div class="page-container pt-6 md:pt-10" aria-hidden="true">
@@ -75,7 +78,9 @@ import { Button } from '@shared/ui/button';
           <div class="h-12 w-3/4 max-w-2xl rounded-lg bg-surface-elevated mb-6"></div>
           <div class="h-4 w-full max-w-xl rounded bg-surface-elevated mb-2"></div>
           <div class="h-4 w-2/3 max-w-md rounded bg-surface-elevated"></div>
-          <div class="mt-10 w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] rounded-xl border border-foreground/8 bg-surface-elevated"></div>
+          <div
+            class="mt-10 w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] rounded-xl border border-foreground/8 bg-surface-elevated"
+          ></div>
         </div>
         <span class="sr-only" role="status">Chargement du projet…</span>
       }
@@ -146,7 +151,7 @@ export class ProjectDetail {
       keywords: [p.category, ...p.tags, 'Julien Nédellec', 'Portfolio Développeur'].join(', '),
       url: `${SITE_IDENTITY.siteUrl}/projects/${p.slug}`,
       type: 'article',
-      image: p.image,
+      image: toShareImageUrl(p.image),
       structuredData: {
         '@context': 'https://schema.org',
         '@type': 'CreativeWork',

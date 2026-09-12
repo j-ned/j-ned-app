@@ -47,10 +47,26 @@ describe('Seo', () => {
     it("décrit l'avatar quand aucun visuel n'est fourni (image de repli)", () => {
       seo.applySeoData({ title: 'Blog', description: 'Résumé' });
 
-      expect(metaContent(doc, 'meta[property="og:image"]')).toContain('/avatar.avif');
+      expect(metaContent(doc, 'meta[property="og:image"]')).toContain('/avatar.png');
       expect(metaContent(doc, 'meta[property="og:image:alt"]')).toBe(
         'Photo de profil de Julien Nédellec',
       );
+      expect(metaContent(doc, 'meta[property="og:image:width"]')).toBe('400');
+      expect(metaContent(doc, 'meta[property="og:image:type"]')).toBe('image/png');
+      expect(metaContent(doc, 'meta[name="twitter:card"]')).toBe('summary');
+    });
+
+    it('annonce la carte de partage 1200×630 JPEG quand un visuel est fourni', () => {
+      seo.applySeoData({
+        title: 'Mon article',
+        description: 'Résumé',
+        image: 'https://x.test/c.avif?variant=share',
+      });
+
+      expect(metaContent(doc, 'meta[property="og:image:width"]')).toBe('1200');
+      expect(metaContent(doc, 'meta[property="og:image:height"]')).toBe('630');
+      expect(metaContent(doc, 'meta[property="og:image:type"]')).toBe('image/jpeg');
+      expect(metaContent(doc, 'meta[name="twitter:card"]')).toBe('summary_large_image');
     });
 
     it("remplace l'alt d'une page précédente au lieu de l'empiler", () => {

@@ -16,12 +16,19 @@
 - [x] nginx : `charset utf-8`, `/rss.xml` en `application/rss+xml`, `gzip_types` corrigé
 - [x] Gates : test, lint, `pnpm install --frozen-lockfile`, `pnpm run build --configuration production`
 
+## Partage social (carte JPEG) — API `feat/share-image-variant` + front
+- [x] API : `GET /storage/:bucket/*key?variant=share` → JPEG 1200×630 dérivé à la 1re demande, conservé `<key>.share.jpg`, invalidé par `upload`/`delete`
+- [x] Front : `toShareImageUrl()` pour `og:image` / `twitter:image` / JSON-LD / enclosure RSS, `og:image:width|height|type`, avatar PNG en repli
+- [ ] Ordre de merge : API d'abord (sinon `?variant=share` renvoie l'AVIF), puis front
+- [ ] Éditorial (admin, accès DB refusé ici) : titre < 70 car., lien vers le 1er article
+
 ## Review
 - Prérendu vérifié dans `dist/` : `og:image:alt` = illustration, description 152 car., JSON-LD avec
   `dateModified`/`mainEntityOfPage`/`publisher`/`inLanguage`, `<article>` + 2 `<time datetime>`, h2 avec `id`
 - RSS régénéré : 2 items, `content:encoded` (HTML assaini par `parseMarkdown`), `enclosure` AVIF (HEAD sur l'API)
 - Image Docker : `nginx -t` OK, `/rss.xml` servi `application/rss+xml; charset=utf-8`
-- Reste hors repo : `og:image` JPEG 1200×630 côté API, titre < 60 car. et lien vers le 1er article (éditorial)
+- Carte de partage : API `feat/share-image-variant` (332 tests), front prérendu avec `?variant=share` + dimensions
+- Reste éditorial (admin) : titre < 70 car., lien vers le 1er article
 
 ---
 

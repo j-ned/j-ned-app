@@ -23,6 +23,7 @@ const { SITE_IDENTITY } = await import(
 const { parseMarkdown } = await import(
   resolve(REPO_ROOT, 'src/app/features/blog/infra/parse-markdown.ts')
 );
+const { toShareImageUrl } = await import(resolve(REPO_ROOT, 'src/app/shared/seo/share-image.ts'));
 const SITE_URL = SITE_IDENTITY.siteUrl;
 const FEED_URL = `${SITE_URL}/rss.xml`;
 
@@ -40,10 +41,13 @@ function cdata(html) {
   return html.replaceAll(']]>', ']]]]><![CDATA[>');
 }
 
-// Même résolution que `HttpBlogGateway.resolvePost` : l'API renvoie une clé relative à sa racine.
+// Même résolution que `HttpBlogGateway.resolvePost` (clé relative à la racine de l'API), puis la
+// carte de partage JPEG (`toShareImageUrl`) : les agrégateurs affichent l'enclosure en vignette
+// et ne décodent pas tous l'AVIF.
 function resolveCoverUrl(coverImage) {
   if (!coverImage) return null;
-  return coverImage.startsWith('http') ? coverImage : `${PROD_API_URL}${coverImage}`;
+  const url = coverImage.startsWith('http') ? coverImage : `${PROD_API_URL}${coverImage}`;
+  return toShareImageUrl(url);
 }
 
 // RSS 2.0 exige `length` et `type` sur <enclosure> : une réponse HEAD les donne sans télécharger.

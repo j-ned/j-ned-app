@@ -122,12 +122,12 @@ describe('BlogDetail', () => {
       expect.objectContaining({
         title: expect.stringContaining('Mon article'),
         description: 'Résumé',
-        image: 'https://x.test/img.webp',
+        image: 'https://x.test/img.webp?variant=share',
         imageAlt: 'Illustration de l’article Mon article',
         type: 'article',
         structuredData: expect.objectContaining({
           '@type': 'BlogPosting',
-          image: 'https://x.test/img.webp',
+          image: 'https://x.test/img.webp?variant=share',
           datePublished: '2026-08-31T00:00:00Z',
           dateModified: '2026-08-31T00:00:00Z',
           url: 'https://nedellec-julien.fr/blog/mon-article',
