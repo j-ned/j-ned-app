@@ -320,6 +320,7 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 6. **Autonomous bug fixing** : un rapport de bug = je fixe, je n'attends pas qu'on me tienne la main.
 7. **PR paralleles** : une branche mergee est morte (tout complement = nouvelle branche depuis `master`) ; "independantes" se prouve par intersection vide de `git diff --name-only master...<branche>` entre PR (`package.json`, lockfile et fichiers reformates comptent) ; sinon annoncer l'ordre de merge et le rebase.
 8. **Gates = ceux du Dockerfile** : `pnpm install --frozen-lockfile` puis `pnpm run build --configuration production`, en local avant chaque PR et dans la CI. `pnpm test` seul ne couvre ni le lockfile ni le prerender.
+9. **Conflits de merge = en local, jamais dans l'editeur GitHub** : `git merge origin/master` sur la branche, resolution en gardant **les deux** ajouts quand les branches ecrivent au meme endroit (fin de fichier, meme liste de providers, meme `enum`), relecture du diff du commit de merge (`git diff HEAD~1 HEAD` : il ne doit rien retirer de `master`), gates de l'item 8, push, et merge seulement une fois la CI verte **sur ce commit de merge**. Une resolution faite dans l'UI n'est verifiee par personne : la CI a valide la branche d'avant, le build Docker de `master` decouvre la casse (API #38 → #39, `contentHash` perdu).
 
 ### Task management
 1. Plan dans `tasks/todo.md` (cases a cocher)
