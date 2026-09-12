@@ -21,6 +21,40 @@ indépendantes. Deux casses de prod après merge :
   seulement `pnpm test`.
 - Ce dépôt merge en **squash** : vérifier le contenu de `master`, pas celui de la branche.
 
+## 2026-09-12 — un conflit résolu dans GitHub a cassé le build Docker de l'API, et le front a été mergé avant l'API dont son build dépend
+
+**Ce qui s'est passé.**
+
+1. PR API #38 (carte de partage) ouverte depuis un `master` antérieur à #36 (clés d'images
+   hachées). Les deux ajoutaient des fonctions **en fin de `s3-utils.ts`** : conflit au merge,
+   résolu dans l'éditeur GitHub (« Merge branch 'master' into feat/share-image-variant »). La
+   résolution a gardé l'`import { createHash }` mais perdu `contentHash`, et laissé le
+   `Cache-Control` 24 h de #38 écraser le `max-age=31536000, immutable` de #36. La CI avait
+   validé la branche **avant** le merge ; le build Docker Dokploy (sur `master`) a échoué avec
+   `TS2305: no exported member 'contentHash'`. Corrigé par #39.
+2. PR front #118 mergée à 16:03, PR API #39 mergée à 16:12 et déployée à 16:14. Le script RSS du
+   build front fait un `HEAD` sur l'API prod pour typer l'`enclosure` : il a figé `image/avif`
+   (l'ancienne API ignorait `?variant=share`). Le HTML prérendu était juste (l'URL seule y figure),
+   seul le flux portait le mauvais type, jusqu'au redéploiement manuel du front.
+
+**Règles.**
+- Une résolution de conflit faite dans l'UI GitHub n'est vérifiée par personne : résoudre en
+  local (`git merge origin/master`), rejouer les gates du Dockerfile, pousser, et ne merger
+  qu'une fois la CI verte **sur le commit de merge**. Un conflit sur un fichier où les deux
+  branches ajoutent au même endroit (fin de fichier, même `Map` de providers, même `enum`) doit
+  garder **les deux** ajouts : relire le diff du commit de merge, pas seulement les marqueurs.
+- Deux PR qui touchent le même fichier ne sont pas indépendantes, même sans hunk commun
+  (cf. leçon du 2026-09-08) : ici la seconde PR aurait dû être rebasée sur `master` avant merge.
+- Quand le front dépend d'une évolution de l'API, la dépendance porte aussi sur le **build**
+  front : `generate-sitemap.mjs`, `generate-rss.mjs` et le prérendu interrogent l'API **prod**.
+  Ordre : merger l'API, attendre le nouveau conteneur (`docker ps` sur `homeserver`, ou tester
+  l'endpoint), puis merger le front. Front mergé trop tôt = artefact statique figé sur l'ancienne
+  réponse, à redéployer à la main (la CI GitHub ne déclenche pas Dokploy, seul le push ou
+  « Redeploy » le fait).
+- Ce qui est régénéré au build (sitemap, RSS, HTML prérendu) se vérifie **en prod après
+  déploiement**, pas seulement dans `dist/` : un `lastBuildDate` antérieur au déploiement de
+  l'API suffit à expliquer un écart.
+
 ## 2026-09-11 — l'admin déconnecté à chaque rechargement (NG0200 avalé par `catchError`)
 
 **Ce qui s'est passé.** #110 a conditionné `restoreSession()` à un indice `localStorage`. Le

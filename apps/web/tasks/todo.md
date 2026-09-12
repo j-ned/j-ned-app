@@ -1,4 +1,4 @@
-# Blog — SEO article + RSS (branche `fix/blog-seo-rss`)
+# Blog — SEO article + RSS (PR #117, #118 ; API #38, #39) — terminé le 2026-09-12
 
 > Créé le 2026-09-12. Audit prod de l'article AES-256-GCM : `og:image:alt` faux (statique index.html),
 > description 263 car., JSON-LD `BlogPosting` sans `dateModified`/`mainEntityOfPage`/`publisher`,
@@ -19,8 +19,9 @@
 ## Partage social (carte JPEG) — API `feat/share-image-variant` + front
 - [x] API : `GET /storage/:bucket/*key?variant=share` → JPEG 1200×630 dérivé à la 1re demande, conservé `<key>.share.jpg`, invalidé par `upload`/`delete`
 - [x] Front : `toShareImageUrl()` pour `og:image` / `twitter:image` / JSON-LD / enclosure RSS, `og:image:width|height|type`, avatar PNG en repli
-- [ ] Ordre de merge : API d'abord (sinon `?variant=share` renvoie l'AVIF), puis front
-- [ ] Éditorial (admin, accès DB refusé ici) : titre < 70 car., lien vers le 1er article
+- [x] Ordre de merge : API d'abord, puis front — raté (front 16:03, API 16:14) : enclosure RSS figée en `image/avif`, corrigée par un redéploiement front
+- [x] API #39 : `contentHash` et `Cache-Control` immutable de #36 perdus dans la résolution de conflit du merge de #38 (build Docker cassé)
+- [x] Éditorial (admin) : titre ramené à 67 car., lien vers le 1er article
 
 ## Review
 - Prérendu vérifié dans `dist/` : `og:image:alt` = illustration, description 152 car., JSON-LD avec
@@ -28,7 +29,9 @@
 - RSS régénéré : 2 items, `content:encoded` (HTML assaini par `parseMarkdown`), `enclosure` AVIF (HEAD sur l'API)
 - Image Docker : `nginx -t` OK, `/rss.xml` servi `application/rss+xml; charset=utf-8`
 - Carte de partage : API `feat/share-image-variant` (332 tests), front prérendu avec `?variant=share` + dimensions
-- Reste éditorial (admin) : titre < 70 car., lien vers le 1er article
+- Prod vérifiée : carte JPEG 1200×630 (110 Ko) servie en 0,2 s aux UA Twitterbot / LinkedInBot / facebookexternalhit,
+  enclosure RSS `image/jpeg` avec la taille exacte, `lastmod` sitemap au 12/09 ; carte confirmée à l'écran sur X et LinkedIn
+- Leçons : `tasks/lessons.md` 2026-09-12 (conflit résolu dans GitHub, dépendance de build front → API)
 
 ---
 
