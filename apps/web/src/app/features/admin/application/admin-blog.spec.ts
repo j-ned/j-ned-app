@@ -17,6 +17,7 @@ const post = (p: Partial<BlogPost> = {}): BlogPost => ({
   status: 'draft',
   likesCount: 0,
   publishedAt: null,
+  updatedAt: '2026-08-01T00:00:00Z',
   ...p,
 });
 

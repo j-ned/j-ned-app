@@ -1,23 +1,268 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>Julien Nédellec — Blog</title>
     <link>https://nedellec-julien.fr/blog</link>
+    <atom:link href="https://nedellec-julien.fr/rss.xml" rel="self" type="application/rss+xml" />
     <description>Retours d'expérience Angular, NestJS, PostgreSQL et self-hosting.</description>
     <language>fr</language>
+    <lastBuildDate>Sat, 12 Sep 2026 15:32:39 GMT</lastBuildDate>
     <item>
       <title>Chiffrer des données sensibles côté client avec AES-256-GCM et PBKDF2 : retour d&apos;expérience sur DashFlow</title>
       <link>https://nedellec-julien.fr/blog/chiffrer-des-donnees-sensibles-cote-client-avec-aes-256-gcm-et-pbkdf2-retour-d-experience-sur-dashflow</link>
-      <guid>https://nedellec-julien.fr/blog/chiffrer-des-donnees-sensibles-cote-client-avec-aes-256-gcm-et-pbkdf2-retour-d-experience-sur-dashflow</guid>
-      <description>Comment DashFlow chiffre budget et dossiers médicaux dans le navigateur avec la Web Crypto API : PBKDF2, AES-256-GCM, double enveloppe de clés, clé non extractible en IndexedDB. Architecture zero-knowledge Angular/NestJS, code à l&apos;appui, et les pièges rencontrés.</description>
+      <guid isPermaLink="true">https://nedellec-julien.fr/blog/chiffrer-des-donnees-sensibles-cote-client-avec-aes-256-gcm-et-pbkdf2-retour-d-experience-sur-dashflow</guid>
       <pubDate>Wed, 09 Sep 2026 17:11:20 GMT</pubDate>
+      <dc:creator>Julien Nédellec</dc:creator>
+      <category>Chiffrement</category>
+      <category>AES-256-GCM</category>
+      <category>PBKDF2</category>
+      <category>Web Crypto API</category>
+      <category>Zero-knowledge</category>
+      <category>E2EE</category>
+      <category>Sécurité web</category>
+      <category>Cryptographie</category>
+      <category>Angular</category>
+      <category>NestJS</category>
+      <category>TypeScript</category>
+      <category>IndexedDB</category>
+      <category>DashFlow</category>
+      <category>Full-Stack</category>
+      <category>Sécurité</category>
+      <description>Comment DashFlow chiffre budget et dossiers médicaux dans le navigateur avec la Web Crypto API : PBKDF2, AES-256-GCM, double enveloppe de clés, clé non extractible en IndexedDB. Architecture zero-knowledge Angular/NestJS, code à l&apos;appui, et les pièges rencontrés.</description>
+      <content:encoded><![CDATA[<p>DashFlow gère le budget et le suivi médical de la famille : comptes bancaires, enveloppes, prêts, fiches de paie, ordonnances, rendez-vous, documents scannés. Autrement dit, exactement le genre de données que je n'ai aucune envie de voir traîner en clair dans une base PostgreSQL, même la mienne, même sur mon propre VPS.</p>
+<p>Dans le premier article, j'avais promis de revenir en détail sur le chiffrement côté client de DashFlow. C'est le sujet de celui-ci : comment j'ai mis en place un chiffrement de bout en bout (E2EE) avec la Web Crypto API du navigateur, AES-256-GCM pour les données, PBKDF2 pour dériver une clé depuis le mot de passe, et une double enveloppe de clés pour que le serveur ne puisse jamais rien lire. Avec du code, parce que c'est là que ça se joue, et avec les pièges dans lesquels je suis tombé, parce que bien chiffrer est plus piégeux qu'il n'y paraît.</p>
+<h2 id="pourquoi-chiffrer-cote-client-et-pas-seulement-au-repos">Pourquoi chiffrer côté client, et pas seulement "au repos"</h2>
+<p>Quand on parle de sécurité d'une application web, on pense d'abord à HTTPS et au chiffrement du disque. Les deux sont nécessaires, mais ils protègent le transport et le support physique. Ils ne protègent pas contre le cas le plus banal : le serveur lui-même. Une injection SQL, un dump de base qui fuite, un accès admin compromis, une sauvegarde mal rangée, et tout est lisible.</p>
+<p>Le modèle de menace que je me suis fixé pour DashFlow est simple à énoncer : si quelqu'un compromet mon serveur, il repart avec des octets illisibles. Le serveur est "zero-knowledge", il stocke des données chiffrées qu'il ne peut pas ouvrir, parce que la clé qui permet de les ouvrir n'a jamais quitté le navigateur.</p>
+<p>Ça a un revers, et je préfère l'écrire noir sur blanc plutôt que de le cacher dans une FAQ : si vous perdez votre mot de passe et votre clé de récupération, personne ne peut déchiffrer vos données, moi compris. C'est le prix honnête du zero-knowledge.</p>
+<h2 id="l-architecture-une-double-enveloppe-de-cles">L'architecture : une double enveloppe de clés</h2>
+<p>Le premier réflexe, quand on découvre le chiffrement côté client, c'est de dériver une clé depuis le mot de passe et de chiffrer directement les données avec. Ça marche, jusqu'au jour où l'utilisateur change de mot de passe : il faut alors rechiffrer toute sa base. Sur un téléphone, avec des centaines de transactions et des pièces jointes, ce n'est pas envisageable.</p>
+<p>DashFlow utilise donc deux niveaux de clés, ce qu'on appelle une double enveloppe (ou "envelope encryption").</p>
+<p>La <strong>clé maîtresse</strong> est une clé AES-256 tirée au hasard à la création du compte. C'est elle, et elle seule, qui chiffre les données métier. Elle ne dépend pas du mot de passe.</p>
+<p>La <strong>clé d'enveloppe</strong> est dérivée du mot de passe avec PBKDF2. Elle ne sert qu'à une chose : emballer (wrap) la clé maîtresse pour pouvoir la stocker sur le serveur sous forme chiffrée.</p>
+<p>Voici la dérivation, telle qu'elle est dans le code :</p>
+<pre><code class="language-typescript">const PBKDF2_ITERATIONS = 600_000;
+const KEY_BITS = 256;
+
+async deriveWrappingKey(password: string, salt: Uint8Array): Promise&lt;CryptoKey&gt; {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits', 'deriveKey'],
+  );
+
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-KW', length: KEY_BITS },
+    false,
+    ['wrapKey', 'unwrapKey'],
+  );
+}
+</code></pre>
+<p>Trois détails comptent ici. Le sel de 16 octets est aléatoire et propre à chaque compte, ce qui rend inutiles les tables précalculées. Les 600 000 itérations de PBKDF2-SHA-256 sont dans la fourchette recommandée par l'OWASP : un peu moins d'une seconde sur un ordinateur portable, ce qui reste acceptable à la connexion et devient très coûteux pour qui voudrait tester des millions de mots de passe. Et la clé dérivée est de type AES-KW, l'algorithme de "key wrapping" de la Web Crypto API, conçu précisément pour chiffrer une autre clé.</p>
+<p>La création du compte assemble tout ça :</p>
+<pre><code class="language-typescript">async setupEncryption(password: string): Promise&lt;string&gt; {
+  const masterKey = await this.crypto.generateMasterKey();        // AES-256, aléatoire
+  const salt = this.crypto.generateSalt();                         // 16 octets aléatoires
+  const recoveryKey = this.crypto.generateRecoveryKey();           // 32 octets, affichés en hexa
+
+  const wrappingKey = await this.crypto.deriveWrappingKey(password, salt);
+  const recoveryWrappingKey = await this.crypto.deriveWrappingKeyFromRecovery(recoveryKey);
+
+  const wrappedMasterKey = await this.crypto.wrapKey(masterKey, wrappingKey);
+  const recoveryWrappedKey = await this.crypto.wrapKey(masterKey, recoveryWrappingKey);
+
+  this.auth.updateKeyMaterial({ salt: bytesToHex(salt), wrappedMasterKey, recoveryWrappedKey });
+  return recoveryKey; // montrée une seule fois à l'utilisateur
+}
+</code></pre>
+<p>Le serveur reçoit et stocke trois valeurs : le sel, la clé maîtresse emballée par le mot de passe, et la même clé maîtresse emballée par la clé de récupération. Côté NestJS, ça tient en trois colonnes texte sur la table utilisateur. Aucune de ces valeurs ne permet de retrouver la clé maîtresse sans le mot de passe ou la clé de récupération.</p>
+<p>Ce qu'on gagne avec cette double enveloppe :</p>
+<p>Changer de mot de passe revient à dériver une nouvelle clé d'enveloppe et à ré-emballer la clé maîtresse. Une opération, quelques millisecondes, zéro donnée rechiffrée.</p>
+<p>La clé de récupération est une seconde porte d'entrée vers la même clé maîtresse. Si le mot de passe est oublié, elle permet de déverrouiller, puis de ré-emballer la clé maîtresse avec un nouveau mot de passe.</p>
+<p>Et surtout, chaque appareil peut retrouver la clé maîtresse à partir du mot de passe, sans qu'aucune clé ne transite jamais en clair.</p>
+<h2 id="aes-256-gcm-un-iv-unique-pour-chaque-donnee-chiffree">AES-256-GCM : un IV unique pour chaque donnée chiffrée</h2>
+<p>Une fois la clé maîtresse déverrouillée, chaque donnée sensible est chiffrée en AES-256-GCM avant de partir vers l'API.</p>
+<pre><code class="language-typescript">const IV_BYTES = 12;
+
+export async function encryptWithKey(plaintext: string, key: CryptoKey): Promise&lt;string&gt; {
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+  const encoded = new TextEncoder().encode(plaintext);
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
+
+  // Le blob final = IV (12 octets) + chiffré + tag d'authentification GCM
+  const combined = new Uint8Array(IV_BYTES + ciphertext.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(ciphertext), IV_BYTES);
+
+  return bufferToBase64(combined.buffer);
+}
+
+export async function decryptWithKey(blob: string, key: CryptoKey): Promise&lt;string&gt; {
+  const combined = new Uint8Array(base64ToBuffer(blob));
+  const iv = combined.slice(0, IV_BYTES);
+  const ciphertext = combined.slice(IV_BYTES);
+  const plainBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  return new TextDecoder().decode(plainBuffer);
+}
+</code></pre>
+<p>Pourquoi GCM plutôt qu'un simple AES-CBC ? Parce que GCM est un mode de chiffrement authentifié : il produit un tag d'intégrité en plus du chiffré. Si un seul octet est modifié en base, le déchiffrement échoue proprement au lieu de renvoyer des données corrompues sans prévenir. Pour une application de budget, savoir qu'un montant n'a pas été altéré vaut autant que savoir qu'il n'a pas été lu.</p>
+<p>La règle absolue de GCM, c'est de ne jamais réutiliser un vecteur d'initialisation (IV) avec la même clé. Ici l'IV de 12 octets est tiré au hasard à chaque appel et préfixé au blob, ce qui rend le déchiffrement autonome : pas besoin de stocker l'IV ailleurs. J'ai un test dédié qui vérifie que deux chiffrements du même texte produisent deux résultats différents. Ce n'est pas un test sophistiqué, mais c'est celui qui m'aurait sauvé si un jour quelqu'un avait remplacé le tirage aléatoire par une constante "pour débugger".</p>
+<h2 id="separer-ce-qui-reste-en-clair-de-ce-qui-est-chiffre">Séparer ce qui reste en clair de ce qui est chiffré</h2>
+<p>Chiffrer une chaîne, c'est facile. La vraie question d'architecture, c'est : quels champs chiffre-t-on, et à quoi ressemble la ligne en base ?</p>
+<p>J'ai choisi une approche uniforme pour toutes les entités : chaque table garde ses colonnes techniques en clair (identifiant, propriétaire, dates de création) et tout le reste part dans une seule colonne <code>encryptedData</code>. Le découpage se fait dans le navigateur, avec une liste blanche explicite par entité.</p>
+<pre><code class="language-typescript">export async function encryptEntity&lt;T extends Record&lt;string, unknown&gt;&gt;(
+  data: T,
+  cleartextKeys: readonly (keyof T)[],
+  key: CryptoKey,
+): Promise&lt;Record&lt;string, unknown&gt; &amp; { encryptedData: string }&gt; {
+  const cleartext: Record&lt;string, unknown&gt; = {};
+  const sensitive: Record&lt;string, unknown&gt; = {};
+
+  for (const [k, v] of Object.entries(data)) {
+    if (cleartextKeys.includes(k as keyof T)) cleartext[k] = v;
+    else sensitive[k] = v;
+  }
+
+  const encryptedData = await encryptWithKey(JSON.stringify(sensitive), key);
+  return { ...cleartext, encryptedData };
+}
+</code></pre>
+<p>Et dans une gateway Angular, par exemple celle des comptes bancaires :</p>
+<pre><code class="language-typescript">const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
+
+create(data: Omit&lt;BankAccount, 'id'&gt;): Observable&lt;BankAccount&gt; {
+  return mutateEncrypted(
+    data as Record&lt;string, unknown&gt;,
+    CLEARTEXT_KEYS,
+    this.crypto.getMasterKey(),
+    (body) =&gt; this.api.post&lt;ApiRow&gt;('/bank-accounts', body),
+  );
+}
+</code></pre>
+<p>La liste blanche est volontairement inversée par rapport à l'intuition. Tout ce qui n'est pas explicitement déclaré "en clair" est chiffré. Ajouter un champ à une entité le chiffre par défaut ; il faut une décision consciente pour l'exposer au serveur. C'est le même principe que le typage strict : le comportement sûr est celui qu'on obtient sans rien faire.</p>
+<p>Côté NestJS, les colonnes historiques (nom, montant, type) reçoivent des valeurs de remplissage neutres, <code>"[chiffré]"</code> ou <code>"0"</code>, uniquement pour satisfaire les contraintes du schéma. Le serveur valide la forme du payload, vérifie que l'utilisateur est bien propriétaire de la ligne, et stocke. Il ne sait pas ce qu'il stocke.</p>
+<p>Cette décision a une conséquence qu'il faut assumer : le serveur ne peut plus rien calculer. Pas de somme des transactions en SQL, pas de projection de budget côté API, pas de recherche sur le nom d'un praticien. Tous les calculs de DashFlow (soldes d'enveloppes, échéances de prêts, statistiques sur douze mois) sont faits dans le navigateur, sur des données déchiffrées. J'ai dû déplacer plusieurs calculs qui vivaient côté API. C'est un vrai coût, et c'est le bon compromis pour ce type de données.</p>
+<h2 id="le-piege-que-j-ai-corrige-une-cle-maitresse-lisible-par-n-importe-quel-script">Le piège que j'ai corrigé : une clé maîtresse lisible par n'importe quel script</h2>
+<p>C'est la partie de l'article que je tenais le plus à écrire, parce que c'est là que "bien chiffrer" se distingue de "chiffrer".</p>
+<p>Dans une première version, après le déverrouillage, j'exportais la clé maîtresse en base64 dans <code>sessionStorage</code> pour survivre à un rechargement de page. Fonctionnellement, parfait. En termes de sécurité, c'était une erreur sérieuse : n'importe quel script exécuté dans la page, via une faille XSS ou une dépendance compromise, pouvait lire cette clé et déchiffrer l'intégralité des données. Le chiffrement de bout en bout ne protégeait plus que du serveur, pas du navigateur. Un audit de sécurité que j'ai mené sur le code l'a classé critique, et il avait raison.</p>
+<p>La correction repose sur une propriété de la Web Crypto API que je ne connaissais pas assez : une <code>CryptoKey</code> peut être créée <strong>non extractible</strong>. Elle reste utilisable pour chiffrer et déchiffrer, mais aucun code JavaScript ne peut jamais lire ses octets. Et comme IndexedDB supporte le clonage structuré des objets <code>CryptoKey</code>, on peut persister la clé elle-même, pas sa valeur.</p>
+<pre><code class="language-typescript">async unwrapKey(wrappedBase64: string, wrappingKey: CryptoKey, extractable = false): Promise&lt;CryptoKey&gt; {
+  return crypto.subtle.unwrapKey(
+    'raw',
+    base64ToBuffer(wrappedBase64),
+    wrappingKey,
+    'AES-KW',
+    { name: 'AES-GCM', length: KEY_BITS },
+    extractable,               // false : la clé n'est jamais lisible en JS
+    ['encrypt', 'decrypt'],
+  );
+}
+
+/** Restaure la clé maîtresse (non extractible) persistée en IndexedDB après un rechargement. */
+async restoreFromStorage(): Promise&lt;boolean&gt; {
+  const key = await idbGet(MASTER_KEY_ID);
+  if (!key) return false;
+  this._masterKey.set(key);
+  return true;
+}
+</code></pre>
+<p>Il reste un cas où une copie extractible est nécessaire : le ré-emballage de la clé maîtresse lors d'un changement de mot de passe ou d'une rotation de la clé de récupération. Cette copie existe uniquement en mémoire, depuis le dernier déverrouillage de la session, et n'est jamais persistée. Après un simple rechargement de page, elle vaut <code>null</code> : l'application redemande le mot de passe avant tout ré-emballage. Ce n'est pas très confortable pour l'utilisateur une fois par an, et c'est exactement le bon endroit pour lui demander un petit effort.</p>
+<p>La leçon que j'en tire : le chiffrement n'est pas un algorithme, c'est un cycle de vie. Où la clé naît, où elle vit, qui peut la lire, quand elle meurt. Le mode <code>lock()</code> vide la mémoire et supprime l'entrée IndexedDB. Le protocole et le format des données chiffrées n'ont pas changé d'un octet entre les deux versions ; seule la garde de la clé a changé, et c'est ce qui a fait toute la différence.</p>
+<h2 id="les-fichiers-aussi-ordonnances-et-fiches-de-paie">Les fichiers aussi : ordonnances et fiches de paie</h2>
+<p>Une application de santé sans pièces jointes ne sert pas à grand-chose. Les ordonnances, les résultats d'analyses, les fiches de paie sont chiffrés avec la même clé maîtresse, en binaire cette fois.</p>
+<pre><code class="language-typescript">export async function encryptFile(file: File, key: CryptoKey): Promise&lt;Blob&gt; {
+  const data = await file.arrayBuffer();
+  const encrypted = await encryptBufferWithKey(data, key);   // même schéma : IV + AES-GCM
+  return new Blob([encrypted], { type: 'application/octet-stream' });
+}
+
+export async function decryptFile(encryptedBlob: Blob, key: CryptoKey, mimeType: string): Promise&lt;Blob&gt; {
+  const data = await encryptedBlob.arrayBuffer();
+  const decrypted = await decryptBufferWithKey(data, key);
+  return new Blob([decrypted], { type: mimeType });
+}
+</code></pre>
+<p>Le stockage objet (compatible S3) ne voit passer que des flux <code>application/octet-stream</code> sans aucune information exploitable, pas même le type du fichier. Le type MIME réel voyage dans les métadonnées chiffrées de l'entité et n'est restauré que dans le navigateur, au moment de l'affichage.</p>
+<h2 id="valider-ce-qu-on-dechiffre">Valider ce qu'on déchiffre</h2>
+<p>Un point que je n'avais pas anticipé : une fois les données déchiffrées, elles reviennent d'un JSON opaque que le serveur n'a jamais pu valider. Un bug d'une ancienne version du front, une migration incomplète, et on se retrouve avec une ligne dont le montant est une chaîne au lieu d'un nombre. Le serveur ne peut pas vous protéger de ça, puisqu'il ne voit rien.</p>
+<p>Chaque entité déchiffrée passe donc par un schéma Zod avant d'atteindre le domaine. Une ligne invalide est exclue et signalée, sans jamais logger la valeur déchiffrée elle-même :</p>
+<pre><code class="language-typescript">function reportInvalid(ctx: ValidateCtx, issues: readonly z.core.$ZodIssue[]): void {
+  // Ne jamais logger `issues` brut : il pourrait contenir la valeur déchiffrée fautive.
+  const safeIssues = issues.map((i) =&gt; ({ code: i.code, path: i.path }));
+  console.error(`[E2EE] ${ctx.entity} : ligne déchiffrée invalide, exclue.`, safeIssues);
+}
+</code></pre>
+<p>C'est un détail, mais c'est le genre de détail qui fait qu'un chiffrement de bout en bout tient réellement ses promesses : à quoi bon chiffrer des données médicales si elles finissent en clair dans la console du navigateur au premier bug ?</p>
+<h2 id="ce-que-ca-change-dans-le-code-nestjs">Ce que ça change dans le code NestJS</h2>
+<p>Paradoxalement, le backend est devenu plus simple. Les contrôleurs acceptent deux formes de payload, en clair pour le compte de démonstration et chiffré pour les vrais comptes, et se contentent de valider la forme, de vérifier la propriété de la ligne et de persister. Un endpoint de migration permet à un compte existant de passer au chiffrement : le navigateur déchiffre, rechiffre et renvoie chaque ligne, le serveur remplace les colonnes en clair par leurs valeurs neutres. Un endpoint de suppression efface définitivement les données chiffrées et le matériel de clés.</p>
+<p>Le serveur garde ses responsabilités classiques, authentification par session, protection CSRF, double authentification TOTP, limitation de débit. Il a simplement perdu la capacité de lire ce qu'il garde, et c'était le but.</p>
+<h2 id="les-limites-honnetement">Les limites, honnêtement</h2>
+<p>Un chiffrement côté client ne protège pas d'un navigateur compromis. Une faille XSS dans l'application reste la menace principale, et c'est pour ça que le passage à une clé non extractible comptait autant : elle transforme "lire la clé une fois" en "devoir rester dans la page pour déchiffrer", ce qui est beaucoup plus détectable. La Content Security Policy et l'absence de dépendances inutiles font le reste.</p>
+<p>PBKDF2 n'est pas le meilleur algorithme de dérivation disponible. Argon2id résiste mieux aux attaques par GPU. Mais il n'est pas implémenté nativement dans la Web Crypto API, et embarquer une implémentation WebAssembly non auditée m'a paru plus risqué que d'utiliser PBKDF2 avec un nombre d'itérations élevé. C'est un choix que je réévaluerai quand le support natif arrivera.</p>
+<p>Enfin, le zero-knowledge interdit toute fonctionnalité côté serveur qui aurait besoin de lire les données : recherche plein texte, notifications basées sur un contenu, agrégations. Pour une application familiale, c'est acceptable. Pour un produit d'équipe, ce serait une discussion sérieuse à avoir avant d'écrire la première ligne.</p>
+<h2 id="ce-que-je-retiens">Ce que je retiens</h2>
+<p>Le plus difficile n'a pas été de choisir les algorithmes ; AES-256-GCM et PBKDF2 sont des choix documentés, disponibles nativement dans tous les navigateurs modernes. Le plus difficile a été de raisonner sur le cycle de vie des clés, de décider ce qui reste en clair et pourquoi, de déplacer des calculs métier hors du serveur, et d'accepter qu'un audit honnête de mon propre code révèle une faille critique que je devais corriger.</p>
+<p>C'est la même exigence que dans mon ancien métier : comprendre toute la chaîne avant d'y toucher, et ne pas se contenter de "ça marche". Un chiffrement qui fonctionne mais dont la clé est lisible par n'importe quel script, ça marche. Ça ne protège personne.</p>
+<p>DashFlow est en ligne sur <a href="https://dashflow.nedellec-julien.fr">dashflow.nedellec-julien.fr</a>, avec une démo accessible sans inscription, et le code est public sur <a href="https://github.com/j-ned">GitHub</a>. L'ensemble tourne sur mon propre VPS, déployé et maintenu par mes soins.</p>
+<h2 id="ce-que-je-cherche-maintenant">Ce que je cherche maintenant</h2>
+<p>Je suis en recherche d'un poste de développeur Full-Stack, Angular, NestJS, TypeScript, de préférence dans un environnement où la sécurité des données et l'impact du produit comptent vraiment : santé, GreenTech, industrie, secteurs où une donnée mal protégée a des conséquences concrètes.</p>
+<p>Si ce profil vous parle, chiffrement pensé de bout en bout, rigueur d'atelier appliquée au code, autonomie sur toute la chaîne, mes coordonnées sont sur <a href="https://nedellec-julien.fr">nedellec-julien.fr</a>.</p>
+]]></content:encoded>
+      <enclosure url="https://api.nedellec-julien.fr/api/storage/portfolio-storage/blog/40048280-b161-4d62-a5ca-d2f5f981b5d5.avif" length="76770" type="image/avif" />
     </item>
     <item>
       <title>De 20 ans de métallurgie à développeur Full-Stack</title>
       <link>https://nedellec-julien.fr/blog/de-20-ans-de-metallurgie-a-developpeur-full-stack</link>
-      <guid>https://nedellec-julien.fr/blog/de-20-ans-de-metallurgie-a-developpeur-full-stack</guid>
-      <description>Vingt ans dans l&apos;industrie, puis un virage complet vers le développement web. Ce que la métallurgie m&apos;a réellement appris sur la rigueur, et pourquoi ça fait de moi un meilleur développeur Angular/NestJS aujourd&apos;hui.</description>
+      <guid isPermaLink="true">https://nedellec-julien.fr/blog/de-20-ans-de-metallurgie-a-developpeur-full-stack</guid>
       <pubDate>Tue, 01 Sep 2026 17:51:08 GMT</pubDate>
+      <dc:creator>Julien Nédellec</dc:creator>
+      <category>Angular</category>
+      <category>NestJS</category>
+      <category>Reconversion</category>
+      <category>Carrière</category>
+      <category>Industrie</category>
+      <category>Métallurgie</category>
+      <category>Autodidacte</category>
+      <category>Full-Stack</category>
+      <category>Parcours</category>
+      <description>Vingt ans dans l&apos;industrie, puis un virage complet vers le développement web. Ce que la métallurgie m&apos;a réellement appris sur la rigueur, et pourquoi ça fait de moi un meilleur développeur Angular/NestJS aujourd&apos;hui.</description>
+      <content:encoded><![CDATA[<p>Pendant longtemps, ma journée s'est mesurée en tonnes de métal, en tolérances au centième de millimètre, en temps de cycle machine. Aujourd'hui elle se mesure en tests qui passent au vert et en temps de réponse API. Entre les deux : vingt ans d'industrie, et une idée qui a fini par s'imposer, celle de construire les outils numériques qui transforment un secteur plutôt que de simplement les subir.</p>
+<p>Je voulais raconter cette bascule dans ce premier article. Pas comme un récit motivant à la mode LinkedIn, mais parce qu'elle explique pas mal de choses dans ma façon de coder aujourd'hui.</p>
+<h2 id="vingt-ans-dans-l-industrie">Vingt ans dans l'industrie</h2>
+<p>Vingt ans dans l'industrie, en métallurgie. Je ne vais pas détailler ici les postes précis que j'ai occupés, ce n'est pas le sujet de cet article. Ce qui compte, c'est ce que cet environnement m'a laissé.</p>
+<p>Un environnement où l'erreur coûte cher, matière perdue, machine à l'arrêt, délai de production compromis, ça forme un réflexe qu'aucune formation accélérée ne remplace vraiment. On n'apprend pas à livrer "à peu près". On apprend à comprendre une chaîne avant d'y toucher, parce qu'un réglage mal maîtrisé à un poste se paie trois postes plus loin. Et on apprend l'autonomie, tout simplement parce que quand la ligne s'arrête un samedi matin et qu'il n'existe aucune procédure pour ce cas précis, il faut chercher soi-même, comprendre, et trouver la solution.</p>
+<p>C'est exactement ce que j'essaie de faire à chaque ligne de code : une solution pensée pour durer, comprise de bout en bout, de la requête SQL jusqu'au déploiement.</p>
+<h2 id="le-declic">Le déclic</h2>
+<p>Le déclic, pour moi, a été assez concret. À force de passer du temps en production à l'atelier, j'ai fini par vraiment regarder comment fonctionnait le suivi de production, et j'ai constaté qu'il laissait à désirer : pas de vue d'ensemble claire, des informations qui se perdaient d'un poste à l'autre. Je me suis dit qu'un outil bien pensé changerait la donne, pas seulement pour moi mais pour toute l'usine.</p>
+<p>C'est de là qu'est parti le reste. J'ai vu les outils numériques transformer un secteur de l'intérieur, traçabilité, supervision, gestion de production, et à un moment j'ai eu envie d'être de l'autre côté de l'écran. Pas celui qui utilise l'outil, celui qui le conçoit.</p>
+<h2 id="se-former-sans-sauter-dans-le-vide">Se former sans sauter dans le vide</h2>
+<p>Je n'ai pas quitté l'industrie du jour au lendemain pour trois semaines de bootcamp. La bascule s'est construite avec deux titres professionnels de niveau Bac+2, préparés l'un après l'autre.</p>
+<p>D'abord Développeur d'applications PGI/ERP chez ALT-RH, un titre qui parle directement à mon passé industriel : conception d'applications de gestion intégrées, architecture logicielle, Java/J2EE, MySQL, UML, méthodes agiles.</p>
+<p>Ensuite Développeur Web et Web Mobile chez Studi : conception, développement et maintenance d'applications web et mobiles, HTML5/CSS3/JavaScript, Angular et TypeScript, SQL/NoSQL, API REST, responsive design, Git.</p>
+<p>Le premier n'est pas un hasard de calendrier. Après vingt ans à utiliser des ERP et des outils de gestion de production, apprendre à en concevoir était la suite logique, presque une évidence. Ça m'a donné une longueur d'avance que je n'aurais pas eue en partant de zéro : je savais déjà ce qu'un utilisateur métier attend vraiment d'un outil, et ce qui, dans un logiciel mal pensé, fait perdre une demi-heure par jour à quelqu'un sur le terrain. Le second m'a ouvert au web au sens large, Angular, TypeScript, tout ce qui allait devenir mon terrain de jeu aujourd'hui.</p>
+<h2 id="ce-que-la-metallurgie-m-a-laisse-comme-bagage">Ce que la métallurgie m'a laissé comme bagage</h2>
+<p>Il y a surtout une chose que je remarque en regardant en arrière, c'est l'exigence. Formé dans un environnement où l'erreur coûte cher, j'écris du code pensé pour durer, typé strictement, testé, documenté quand ça a du sens. Je ne me contente pas de faire fonctionner, je veux comprendre pourquoi ça fonctionne, et ce qui casserait si une hypothèse changeait quelque part.</p>
+<p>Il y a aussi l'autonomie. Je suis autodidacte sur une bonne partie de ma pile actuelle. Quand il n'y a pas de tutoriel tout prêt, je lis la documentation officielle, parfois les sources s'il le faut, et je creuse jusqu'à trouver. C'est le même réflexe que dépanner une machine sans notice un dimanche.</p>
+<p>Et puis il y a la vision d'ensemble. Je n'aime pas coder une fonctionnalité isolée sans savoir à quoi elle sert dans le système global. Vingt ans à voir comment un poste de travail dépend du précédent, ça laisse des traces, et ça se retrouve directement dans la façon dont je découpe une architecture aujourd'hui.</p>
+<h2 id="ce-que-je-construis-maintenant">Ce que je construis maintenant</h2>
+<p>Depuis la reconversion, j'ai porté plusieurs projets de bout en bout, pas des démos isolées mais des applications réellement en production.</p>
+<p>DashFlow, une application de gestion budgétaire et santé pour ma famille, avec chiffrement côté client des données sensibles en AES-256-GCM. J'y reviendrai en détail dans un prochain article, le sujet mérite plus qu'un paragraphe.</p>
+<p>CandiDash, une application Angular de suivi de candidatures, avec son API NestJS et une extension Chrome qui capture les offres.</p>
+<p>Un ERP aéronautique, avec une architecture multi-tenant et de la sécurité au niveau ligne (RLS) sur PostgreSQL.</p>
+<p>Techniquement, c'est toujours à peu près le même socle : Angular avec les signals, une architecture domain/infra/application propre, NestJS, TypeScript strict, PostgreSQL, Docker. Et je gère moi-même toute mon infrastructure, de l'auto-hébergement sur mon VPS jusqu'au déploiement continu. Ce n'est pas un exercice de style, c'est la même logique qu'en atelier : comprendre toute la chaîne, pas juste le poste qu'on occupe.</p>
+<h2 id="ce-que-je-ferais-differemment">Ce que je ferais différemment</h2>
+<p>Si c'était à refaire, j'hésiterais moins longtemps avant de me lancer, et je construirais des projets réels beaucoup plus tôt dans la formation. C'est en mettant les mains dans du code qui doit vraiment tourner en production qu'on progresse, pas en enchaînant les exercices guidés. Le vrai déclic technique n'est pas venu d'un cours, mais du jour où j'ai dû déployer, sécuriser et maintenir une application avec de vrais utilisateurs, et de vraies conséquences si elle tombait.</p>
+<h2 id="ce-que-je-cherche-maintenant">Ce que je cherche maintenant</h2>
+<p>Je suis en poste et ouvert aux opportunités : un CDI de développeur Full-Stack Angular / NestJS, avec une préférence pour un environnement où la tech sert un impact positif. GreenTech, industrie durable, projets qui ont du sens. Après vingt ans dans l'industrie, ce n'est pas un vœu pieux de plus dans une lettre de motivation, je sais très concrètement ce que la technologie peut changer sur le terrain quand elle est bien pensée, et c'est cette conviction qui m'a fait basculer.</p>
+<p>Si ce profil vous parle, rigueur d'atelier appliquée au code, autonomie, vision d'ensemble, mes coordonnées sont sur <a href="https://nedellec-julien.fr">nedellec-julien.fr</a> et le code de mes projets est public sur <a href="https://github.com/j-ned">GitHub</a>.</p>
+<hr>
+<p><em>Le prochain article : comment j'ai chiffré les données sensibles de DashFlow côté client avec AES-256-GCM et PBKDF2, et pourquoi bien le faire est plus piégeux qu'il n'y paraît.</em></p>
+]]></content:encoded>
+      <enclosure url="https://api.nedellec-julien.fr/api/storage/portfolio-storage/blog/bdaa8984-c24a-44e4-8975-0e8ad088ecdf.avif" length="43896" type="image/avif" />
     </item>
   </channel>
 </rss>

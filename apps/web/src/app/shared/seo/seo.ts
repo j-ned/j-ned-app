@@ -9,9 +9,14 @@ export type SeoData = {
   keywords?: string;
   url?: string;
   image?: string;
+  /** Texte alternatif du visuel partagé (`og:image:alt`). Défaut : le titre. */
+  imageAlt?: string;
   type?: string;
   structuredData?: Record<string, unknown>;
 };
+
+// Même texte que le `og:image:alt` statique de index.html, que ce service remplace page par page.
+const AVATAR_ALT = 'Photo de profil de Julien Nédellec';
 
 @Injectable({ providedIn: 'root' })
 export class Seo {
@@ -37,7 +42,9 @@ export class Seo {
     // Sans visuel dédié (couverture d'article, image de projet), on retombe sur l'avatar 400×400 :
     // une carte `summary` l'affiche en vignette, une `summary_large_image` l'étirerait.
     const image = data.image || `${SITE_IDENTITY.siteUrl}/avatar.avif`;
+    const imageAlt = data.image ? data.imageAlt || data.title : AVATAR_ALT;
     this.meta.updateTag({ property: 'og:image', content: image });
+    this.meta.updateTag({ property: 'og:image:alt', content: imageAlt });
 
     this.meta.updateTag({
       name: 'twitter:card',
@@ -46,6 +53,7 @@ export class Seo {
     this.meta.updateTag({ name: 'twitter:title', content: data.title });
     this.meta.updateTag({ name: 'twitter:description', content: data.description });
     this.meta.updateTag({ name: 'twitter:image', content: image });
+    this.meta.updateTag({ name: 'twitter:image:alt', content: imageAlt });
 
     if (data.url) {
       this.updateCanonicalUrl(data.url);

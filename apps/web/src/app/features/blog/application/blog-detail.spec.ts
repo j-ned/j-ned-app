@@ -49,6 +49,7 @@ function post(overrides: Partial<BlogPost> = {}): BlogPost {
     status: 'published',
     likesCount: 2,
     publishedAt: '2026-08-31T00:00:00Z',
+    updatedAt: '2026-08-31T00:00:00Z',
     ...overrides,
   };
 }
@@ -98,7 +99,7 @@ describe('BlogDetail', () => {
     fixture.detectChanges();
     const html = fixture.nativeElement.querySelector('[data-testid="blog-content"]')
       .innerHTML as string;
-    expect(html).toContain('<h1>Bonjour</h1>');
+    expect(html).toContain('<h1 id="bonjour">Bonjour</h1>');
   });
 
   it('redirige vers /blog si le slug est introuvable (404)', async () => {
@@ -122,14 +123,51 @@ describe('BlogDetail', () => {
         title: expect.stringContaining('Mon article'),
         description: 'Résumé',
         image: 'https://x.test/img.webp',
+        imageAlt: 'Illustration de l’article Mon article',
         type: 'article',
         structuredData: expect.objectContaining({
           '@type': 'BlogPosting',
           image: 'https://x.test/img.webp',
           datePublished: '2026-08-31T00:00:00Z',
+          dateModified: '2026-08-31T00:00:00Z',
+          url: 'https://nedellec-julien.fr/blog/mon-article',
+          mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': 'https://nedellec-julien.fr/blog/mon-article',
+          },
+          inLanguage: 'fr',
+          keywords: 'Angular',
+          publisher: expect.objectContaining({ name: 'Julien Nédellec' }),
         }),
       }),
     );
+  });
+
+  it('coupe la meta description à 155 caractères sans couper un mot (extrait long)', async () => {
+    const excerpt =
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.';
+    const { fixture, seoMock } = setup({ getPostBySlug: () => of(post({ excerpt })) });
+    fixture.componentRef.setInput('slug', 'mon-article');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const call = seoMock.applySeoData.mock.calls.at(-1)?.[0];
+    expect(call.description.length).toBeLessThanOrEqual(155);
+    expect(call.description.endsWith('…')).toBe(true);
+    expect(call.structuredData.description).toBe(excerpt);
+  });
+
+  it('date dateModified du JSON-LD à la dernière retouche, jamais avant datePublished', async () => {
+    const { fixture, seoMock } = setup({
+      getPostBySlug: () =>
+        of(post({ publishedAt: '2026-08-31T00:00:00Z', updatedAt: '2026-08-30T00:00:00Z' })),
+    });
+    fixture.componentRef.setInput('slug', 'mon-article');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const call = seoMock.applySeoData.mock.calls.at(-1)?.[0];
+    expect(call.structuredData.dateModified).toBe('2026-08-31T00:00:00Z');
   });
 
   it('omet image/datePublished du JSON-LD quand coverImage/publishedAt sont vides', async () => {
@@ -143,6 +181,38 @@ describe('BlogDetail', () => {
     const call = seoMock.applySeoData.mock.calls.at(-1)?.[0];
     expect(call.structuredData).not.toHaveProperty('image');
     expect(call.structuredData).not.toHaveProperty('datePublished');
+    expect(call.structuredData).not.toHaveProperty('dateModified');
+  });
+
+  describe('dates affichées', () => {
+    it('rend la date de publication dans un <time datetime> lisible par les machines', async () => {
+      const { fixture } = setup({ getPostBySlug: () => of(post()) });
+      fixture.componentRef.setInput('slug', 'mon-article');
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const time = fixture.nativeElement.querySelector('[data-testid="published-at"]');
+      expect(time.tagName).toBe('TIME');
+      expect(time.getAttribute('datetime')).toBe('2026-08-31T00:00:00Z');
+      expect(fixture.nativeElement.querySelector('article')).not.toBeNull();
+    });
+
+    it.each([
+      ['une retouche un autre jour', '2026-09-02T10:00:00Z', true],
+      ['une retouche le jour même', '2026-08-31T18:00:00Z', false],
+      ['une retouche antérieure à la publication', '2026-08-30T00:00:00Z', false],
+    ])('affiche la mise à jour seulement pour %s', async (_label, updatedAt, shown) => {
+      const { fixture } = setup({ getPostBySlug: () => of(post({ updatedAt })) });
+      fixture.componentRef.setInput('slug', 'mon-article');
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const updated = fixture.nativeElement.querySelector('[data-testid="updated-at"]');
+      expect(updated !== null).toBe(shown);
+      if (shown) expect(updated.getAttribute('datetime')).toBe(updatedAt);
+    });
   });
 
   it("affiche la couverture de l'article quand coverImage est renseignée", async () => {

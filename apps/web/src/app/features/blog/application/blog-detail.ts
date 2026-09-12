@@ -17,10 +17,17 @@ import { BlogGateway } from '../domain/gateways/blog.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { parseMarkdown } from '../infra/parse-markdown';
 import { Seo } from '@shared/seo/seo';
+import { truncateAtWord } from '@shared/seo/truncate-at-word';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { BlogLikeButton } from './components/blog-like-button';
 import { BlogComments } from './components/blog-comments';
 import { BlogTagLink } from './components/blog-tag-link';
+
+// `updatedAt` peut précéder `publishedAt` (brouillon retouché puis publié) : `dateModified`
+// ne doit jamais être antérieur à `datePublished`.
+function laterOf(a: string, b: string): string {
+  return a > b ? a : b;
+}
 
 @Component({
   selector: 'app-blog-detail',
@@ -32,37 +39,50 @@ import { BlogTagLink } from './components/blog-tag-link';
     <main class="min-h-svh pt-20 pb-20">
       <section class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-8">
         @if (p) {
-          <div class="flex flex-wrap gap-1.5 mb-4">
-            @for (tag of p.tags; track tag) {
-              <app-blog-tag-link [tag]="tag" />
+          <article>
+            <div class="flex flex-wrap gap-1.5 mb-4">
+              @for (tag of p.tags; track tag) {
+                <app-blog-tag-link [tag]="tag" />
+              }
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ p.title }}</h1>
+            @if (p.publishedAt) {
+              <p class="text-muted text-sm mb-6">
+                Publié le
+                <time [attr.datetime]="p.publishedAt" data-testid="published-at">{{
+                  p.publishedAt | date: 'd MMMM y'
+                }}</time>
+                @if (updatedAfterPublication()) {
+                  · mis à jour le
+                  <time [attr.datetime]="p.updatedAt" data-testid="updated-at">{{
+                    p.updatedAt | date: 'd MMMM y'
+                  }}</time>
+                }
+              </p>
             }
-          </div>
-          <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ p.title }}</h1>
-          @if (p.publishedAt) {
-            <p class="text-muted text-sm mb-6">{{ p.publishedAt | date: 'd MMMM y' }}</p>
-          }
-          @if (p.coverImage) {
-            <figure class="mb-8">
-              <div
-                class="relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-xl border border-foreground/8"
-              >
-                <img
-                  [ngSrc]="p.coverImage"
-                  [alt]="'Illustration de l’article ' + p.title"
-                  fill
-                  priority
-                  sizes="100vw"
-                  class="object-cover"
-                />
-              </div>
-            </figure>
-          }
-          <div
-            data-testid="blog-content"
-            class="prose max-w-none dark:prose-invert break-words prose-pre:overflow-x-auto prose-table:block prose-table:w-full prose-table:overflow-x-auto prose-img:max-w-full prose-img:h-auto"
-            [innerHTML]="renderedContent()"
-          ></div>
-          <div #readSentinel data-testid="article-read-sentinel" aria-hidden="true"></div>
+            @if (p.coverImage) {
+              <figure class="mb-8">
+                <div
+                  class="relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-xl border border-foreground/8"
+                >
+                  <img
+                    [ngSrc]="p.coverImage"
+                    [alt]="coverImageAlt()"
+                    fill
+                    priority
+                    sizes="100vw"
+                    class="object-cover"
+                  />
+                </div>
+              </figure>
+            }
+            <div
+              data-testid="blog-content"
+              class="prose max-w-none dark:prose-invert break-words prose-pre:overflow-x-auto prose-table:block prose-table:w-full prose-table:overflow-x-auto prose-img:max-w-full prose-img:h-auto"
+              [innerHTML]="renderedContent()"
+            ></div>
+            <div #readSentinel data-testid="article-read-sentinel" aria-hidden="true"></div>
+          </article>
           <div class="mt-8">
             <app-blog-like-button [slug]="p.slug" [likesCount]="p.likesCount" />
           </div>
@@ -115,25 +135,44 @@ export class BlogDetail {
     return this.sanitizer.bypassSecurityTrustHtml(parseMarkdown(p.contentMarkdown));
   });
 
+  protected readonly coverImageAlt = computed(() => `Illustration de l’article ${this.post()?.title ?? ''}`);
+
+  // Une correction éditoriale après publication (l'API ne touche pas `updatedAt` sur un like).
+  // Comparaison au jour près : une relecture le jour même n'est pas une « mise à jour ».
+  protected readonly updatedAfterPublication = computed(() => {
+    const p = this.post();
+    return !!p?.publishedAt && p.updatedAt.slice(0, 10) > p.publishedAt.slice(0, 10);
+  });
+
   private readonly _applySeo = effect(() => {
     const p = this.post();
     if (!p) return;
 
+    const url = `${SITE_IDENTITY.siteUrl}/blog/${p.slug}`;
+    const author = { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl };
     this.seo.applySeoData({
       title: `${p.title} | Julien Nédellec`,
-      description: p.excerpt,
+      description: truncateAtWord(p.excerpt, 155),
       keywords: [...p.tags, 'Julien Nédellec', 'Blog Développeur'].join(', '),
-      url: `${SITE_IDENTITY.siteUrl}/blog/${p.slug}`,
+      url,
       type: 'article',
       image: p.coverImage,
+      imageAlt: this.coverImageAlt(),
       structuredData: {
         '@context': 'https://schema.org',
         '@type': 'BlogPosting',
         headline: p.title,
         description: p.excerpt,
-        author: { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl },
+        url,
+        mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+        inLanguage: 'fr',
+        keywords: p.tags.join(', '),
+        author,
+        publisher: author,
         ...(p.coverImage ? { image: p.coverImage } : {}),
-        ...(p.publishedAt ? { datePublished: p.publishedAt } : {}),
+        ...(p.publishedAt
+          ? { datePublished: p.publishedAt, dateModified: laterOf(p.updatedAt, p.publishedAt) }
+          : {}),
       },
     });
   });

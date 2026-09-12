@@ -52,8 +52,12 @@ server {
 
     include /etc/nginx/snippets/security-headers.conf;
 
+    # `Content-Type: text/html; charset=utf-8` (et text/xml, application/rss+xml) : sans charset,
+    # les validateurs de flux et certains agrégateurs devinent l'encodage.
+    charset utf-8;
+
     gzip on;
-    gzip_types text/plain text/css application/javascript application/json image/svg+xml application/xml+rss;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml application/rss+xml application/xml text/xml;
     gzip_min_length 1024;
 
     # Une URL inconnue est une vraie 404 : la coquille CSR (pas la home prérendue, ni son
@@ -66,6 +70,13 @@ server {
     location ~* \.(js|css|woff2?|ttf|otf|eot|png|jpe?g|gif|webp|avif|svg|ico)$ {
         include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    # Flux RSS : le type déclaré par les agrégateurs, pas le `text/xml` générique de l'extension
+    location = /rss.xml {
+        types { }
+        default_type application/rss+xml;
         try_files $uri =404;
     }
 

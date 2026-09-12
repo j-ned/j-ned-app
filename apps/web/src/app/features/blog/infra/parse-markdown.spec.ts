@@ -2,8 +2,33 @@ import { describe, it, expect } from 'vitest';
 import { parseMarkdown } from './parse-markdown';
 
 describe('parseMarkdown', () => {
-  it('convertit un titre H1 en <h1>', () => {
-    expect(parseMarkdown('# Titre')).toContain('<h1>Titre</h1>');
+  it('convertit un titre H1 en <h1> avec une ancre id', () => {
+    expect(parseMarkdown('# Titre')).toContain('<h1 id="titre">Titre</h1>');
+  });
+
+  describe('ancres des titres', () => {
+    it("dérive l'id du texte du titre, sans accents ni ponctuation", () => {
+      expect(parseMarkdown("## L'architecture : une double enveloppe de clés")).toContain(
+        '<h2 id="l-architecture-une-double-enveloppe-de-cles">',
+      );
+    });
+
+    it("ignore le balisage inline dans l'id mais le garde dans le titre", () => {
+      const html = parseMarkdown('## Un IV `unique` par donnée');
+      expect(html).toContain('<h2 id="un-iv-unique-par-donnee">');
+      expect(html).toContain('<code>unique</code>');
+    });
+
+    it('suffixe les titres en doublon pour garder des ids uniques', () => {
+      const html = parseMarkdown('## Limites\n\ntexte\n\n## Limites');
+      expect(html).toContain('id="limites"');
+      expect(html).toContain('id="limites-2"');
+    });
+
+    it("repart de zéro à chaque article (pas de suffixe hérité d'un parse précédent)", () => {
+      parseMarkdown('## Limites');
+      expect(parseMarkdown('## Limites')).toContain('<h2 id="limites">');
+    });
   });
 
   it('convertit un lien Markdown en <a>', () => {

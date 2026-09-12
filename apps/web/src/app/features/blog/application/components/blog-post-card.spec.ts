@@ -8,7 +8,7 @@ function post(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
     id: '1', title: 'Mon article', slug: 'mon-article', excerpt: 'Résumé',
     contentMarkdown: '', coverImage: '', tags: ['Angular'], status: 'published',
-    likesCount: 3, publishedAt: '2026-08-31T00:00:00Z', ...overrides,
+    likesCount: 3, publishedAt: '2026-08-31T00:00:00Z', updatedAt: '2026-08-31T00:00:00Z', ...overrides,
   };
 }
 

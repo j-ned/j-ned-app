@@ -54,7 +54,8 @@ const blogUrls = posts.map((p) => ({
   loc: `${SITE_URL}/blog/${p.slug}`,
   changefreq: 'monthly',
   priority: '0.8',
-  lastmod: p.publishedAt ? p.publishedAt.slice(0, 10) : lastmod,
+  // Dernière retouche éditoriale (jamais avant la publication ; un like ne touche pas updatedAt).
+  lastmod: [p.updatedAt, p.publishedAt].filter(Boolean).sort().at(-1)?.slice(0, 10) ?? lastmod,
 }));
 
 const allUrls = [...staticUrls, ...projectUrls, ...blogUrls];

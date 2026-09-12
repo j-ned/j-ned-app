@@ -36,6 +36,7 @@ function post(overrides: Partial<BlogPost> = {}): BlogPost {
     status: 'published',
     likesCount: 0,
     publishedAt: '2026-08-31T00:00:00Z',
+    updatedAt: '2026-08-31T00:00:00Z',
     ...overrides,
   };
 }
