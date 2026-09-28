@@ -3,7 +3,13 @@ const eslint = require('@eslint/js');
 const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 const prettierConfig = require('eslint-config-prettier');
-const aak = require('./.claude/eslint/aak-conventions.mjs').default;
+const fs = require('node:fs');
+const path = require('node:path');
+
+// Préréglage AAK : licence propriétaire, non committé (dépôt public). Présent
+// en local après /aak-sync, absent en CI → la config s'en passe.
+const aakPreset = path.join(__dirname, '.claude/eslint/aak-conventions.mjs');
+const aak = fs.existsSync(aakPreset) ? require(aakPreset).default : [];
 
 module.exports = [
   {
@@ -65,6 +71,6 @@ module.exports = [
   // Prettier en dernier : désactive les règles stylistiques gérées par Prettier.
   prettierConfig,
 
-  // Conventions AAK mécanisables (préréglage vendoré, réécrit à chaque /aak-sync)
+  // Conventions AAK mécanisables (préréglage local, réécrit à chaque /aak-sync)
   ...aak,
 ];
