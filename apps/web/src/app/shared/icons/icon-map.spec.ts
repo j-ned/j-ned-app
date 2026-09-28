@@ -7,7 +7,6 @@ describe('toFontAwesome', () => {
       { token: 'lucide-log-out', expected: { id: 'right-from-bracket', style: 'solid' } },
       { token: 'lucide-x', expected: { id: 'xmark', style: 'solid' } },
       { token: 'lucide-map-pin', expected: { id: 'location-dot', style: 'solid' } },
-      { token: 'bi-twitter-x', expected: { id: 'x-twitter', style: 'brands' } },
       { token: 'bi-discord', expected: { id: 'discord', style: 'brands' } },
       { token: 'lucide-github', expected: { id: 'github', style: 'brands' } },
       { token: 'spider-web', expected: { id: 'sitemap', style: 'solid' } },

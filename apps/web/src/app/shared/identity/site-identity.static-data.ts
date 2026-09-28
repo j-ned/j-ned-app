@@ -5,7 +5,6 @@ export const SITE_IDENTITY = {
   socials: {
     github: 'https://github.com/j-ned',
     linkedin: 'https://www.linkedin.com/in/julien-nedellec/',
-    x: 'https://x.com/Nedjuldev',
     discord: 'https://discord.gg/nedellec_julien',
   },
   siteUrl: 'https://nedellec-julien.fr',

@@ -13,7 +13,6 @@ type SocialItem = {
 const SOCIALS: readonly SocialItem[] = [
   { label: 'GitHub', url: SITE_IDENTITY.socials.github, icon: 'lucide-github' },
   { label: 'LinkedIn', url: SITE_IDENTITY.socials.linkedin, icon: 'lucide-linkedin' },
-  { label: 'X (Twitter)', url: SITE_IDENTITY.socials.x, icon: 'bi-twitter-x' },
   { label: 'Email', url: `mailto:${SITE_IDENTITY.email}`, icon: 'lucide-mail' },
 ];
 

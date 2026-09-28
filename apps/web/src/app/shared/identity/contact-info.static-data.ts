@@ -13,5 +13,4 @@ export const STATIC_SOCIAL_LINKS: SocialLinks = {
   github: { url: SITE_IDENTITY.socials.github, label: 'GitHub', icon: 'lucide-github' },
   email: { url: `mailto:${SITE_IDENTITY.email}`, label: 'Mail', icon: 'lucide-mail' },
   phone: { url: `tel:${SITE_IDENTITY.phone.tel}`, label: 'Phone', icon: 'lucide-phone' },
-  twitter: { url: SITE_IDENTITY.socials.x, label: 'X', icon: 'lucide-twitter' },
 };

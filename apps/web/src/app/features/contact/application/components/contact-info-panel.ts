@@ -96,21 +96,6 @@ import { AppIconTile } from '@shared/ui/icon-tile';
               />
             </a>
           }
-          @if (socialLinks().twitter.url) {
-            <a
-              [href]="socialLinks().twitter.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10 transition-colors"
-              [attr.aria-label]="socialLinks().twitter.label"
-            >
-              <app-icon
-                [name]="socialLinks().twitter.icon"
-                [size]="16"
-                class="text-muted group-hover:text-foreground transition-colors"
-              />
-            </a>
-          }
           @if (socialLinks().email.url) {
             <a
               [href]="socialLinks().email.url"

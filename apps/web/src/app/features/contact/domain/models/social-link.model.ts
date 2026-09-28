@@ -9,5 +9,4 @@ export type SocialLinks = {
   readonly github: SocialLink;
   readonly email: SocialLink;
   readonly phone: SocialLink;
-  readonly twitter: SocialLink;
 };

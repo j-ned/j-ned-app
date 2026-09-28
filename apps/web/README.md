@@ -188,7 +188,7 @@ providers: [
 - `NgOptimizedImage` sur chaque image, `priority` sur le visuel LCP de chaque page, dimensions explicites : CLS à 0.
 - Images stockées en **AVIF ≤ 1600 px** par l'API à l'upload, clés dérivées du contenu et cache immuable d'un an.
 - Assets hachés servis avec `Cache-Control: immutable`, gzip, préchargement sélectif des routes.
-- `<title>`, meta, Open Graph et carte Twitter par route ; JSON-LD `Person`, `BreadcrumbList`, `BlogPosting` et `CreativeWork` ; canonical par page.
+- `<title>`, meta, Open Graph et format de carte (`twitter:card`) par route ; JSON-LD `Person`, `BreadcrumbList`, `BlogPosting` et `CreativeWork` ; canonical par page.
 - `sitemap.xml` et `rss.xml` générés au build depuis l'API (`scripts/generate-sitemap.mjs`, `scripts/generate-rss.mjs`).
 
 ---

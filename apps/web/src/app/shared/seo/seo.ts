@@ -63,10 +63,6 @@ export class Seo {
       name: 'twitter:card',
       content: data.image ? 'summary_large_image' : 'summary',
     });
-    this.meta.updateTag({ name: 'twitter:title', content: data.title });
-    this.meta.updateTag({ name: 'twitter:description', content: data.description });
-    this.meta.updateTag({ name: 'twitter:image', content: image.url });
-    this.meta.updateTag({ name: 'twitter:image:alt', content: image.alt });
 
     if (data.url) {
       this.updateCanonicalUrl(data.url);

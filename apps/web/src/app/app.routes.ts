@@ -24,11 +24,7 @@ export const routes: Routes = [
           name: 'Julien Nédellec',
           jobTitle: 'Développeur Full-Stack Angular / NestJS',
           url: SITE_IDENTITY.siteUrl,
-          sameAs: [
-            SITE_IDENTITY.socials.linkedin,
-            SITE_IDENTITY.socials.github,
-            SITE_IDENTITY.socials.x,
-          ],
+          sameAs: [SITE_IDENTITY.socials.linkedin, SITE_IDENTITY.socials.github],
           address: {
             '@type': 'PostalAddress',
             addressLocality: SITE_IDENTITY.location,

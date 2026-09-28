@@ -29,9 +29,6 @@ describe('Seo', () => {
       expect(metaContent(doc, 'meta[property="og:image:alt"]')).toBe(
         "Illustration de l'article Mon article",
       );
-      expect(metaContent(doc, 'meta[name="twitter:image:alt"]')).toBe(
-        "Illustration de l'article Mon article",
-      );
     });
 
     it('retombe sur le titre quand un visuel est fourni sans alt', () => {
