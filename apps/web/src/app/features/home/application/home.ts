@@ -16,8 +16,9 @@ import { AppIconTile } from '@shared/ui/icon-tile';
   host: { class: 'block' },
   template: `
     <main class="flex flex-col w-full">
-      <!-- First fold: hero + expertise -->
-      <div class="flex flex-col mt-20">
+      <!-- First fold: hero + expertise. md+ : occupe tout l'écran sous le header (h-20) et
+           centre son contenu, pour que la section Portfolio commence sous le pli. -->
+      <div class="flex flex-col mt-20 md:min-h-[calc(100svh-5rem)] md:justify-center">
         <!-- Hero Section -->
         <app-home-hero-section [hero]="bundle()?.hero ?? null" />
 

@@ -26,7 +26,7 @@ import type { HeroData } from '../domain/models/hero.model';
     }
   `,
   template: `
-    <div class="text-center min-h-55 md:min-h-70 lg:min-h-80">
+    <div class="text-center min-h-55 md:min-h-57 lg:min-h-65">
       @let h = hero();
       @if (h) {
         <h1
@@ -57,7 +57,6 @@ import type { HeroData } from '../domain/models/hero.model';
         </p>
       } @else {
         <div class="space-y-4 animate-pulse flex flex-col items-center">
-          <div class="h-6 bg-foreground/5 rounded-full w-48"></div>
           <div class="h-14 md:h-20 lg:h-28 bg-foreground/5 rounded-lg w-3/4"></div>
           <div class="h-20 md:h-28 lg:h-32 bg-foreground/5 rounded-lg w-full max-w-2xl"></div>
         </div>
