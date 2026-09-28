@@ -4,7 +4,7 @@ export type WhatIDo = {
   readonly description: string;
 };
 
-export type WhatISeek = {
+export type Motivation = {
   readonly id: string;
   readonly title: string;
   readonly description: string;

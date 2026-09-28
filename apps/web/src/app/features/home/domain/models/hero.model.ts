@@ -3,5 +3,4 @@ export type HeroData = {
   readonly name: string;
   readonly tagline: string;
   readonly support: string;
-  readonly availability: string;
 };

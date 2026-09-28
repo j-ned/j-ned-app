@@ -1,11 +1,9 @@
 import { Component, ChangeDetectionStrategy, computed, input } from '@angular/core';
-import { HomeAvailability } from './home-availability';
 import type { HeroData } from '../domain/models/hero.model';
 
 @Component({
   selector: 'app-home-hero',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [HomeAvailability],
   host: { class: 'block' },
   styles: `
     .name-gradient {
@@ -31,10 +29,6 @@ import type { HeroData } from '../domain/models/hero.model';
     <div class="text-center min-h-55 md:min-h-70 lg:min-h-80">
       @let h = hero();
       @if (h) {
-        <div class="animate-fade-up flex flex-wrap items-center justify-center gap-3 mb-3 md:mb-4">
-          <app-home-availability [hero]="h" />
-        </div>
-
         <h1
           class="animate-fade-up delay-1 name-gradient text-5xl md:text-6xl lg:text-7xl font-extrabold mb-3 md:mb-4 tracking-tight leading-[1.2] pb-1"
           data-testid="hero-name"

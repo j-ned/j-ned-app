@@ -4,7 +4,7 @@ import type { Biography } from '@features/profile/domain/models/biography.model'
 import type { Diploma } from '../models/diploma.model';
 import type { Technology } from '@features/profile/domain/models/technology.model';
 import type { Highlight } from '@features/profile/domain/models/highlight.model';
-import type { WhatIDo, WhatISeek } from '@features/profile/domain/models/what-i-do.model';
+import type { WhatIDo, Motivation } from '@features/profile/domain/models/what-i-do.model';
 
 export abstract class ProfileGateway {
   abstract getProfileInfo(): Observable<ProfileInfo>;
@@ -14,5 +14,5 @@ export abstract class ProfileGateway {
   abstract getTechnologies(): Observable<readonly Technology[]>;
   abstract getHighlights(): Observable<readonly Highlight[]>;
   abstract getWhatIDo(): Observable<readonly WhatIDo[]>;
-  abstract getWhatISeek(): Observable<WhatISeek>;
+  abstract getMotivation(): Observable<Motivation>;
 }

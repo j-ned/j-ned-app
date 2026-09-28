@@ -4,7 +4,7 @@ import { ProfileGateway } from '@features/profile/domain/gateways/profile.gatewa
 import { AppIcon } from '@shared/icons/app-icon';
 
 @Component({
-  selector: 'app-about-search',
+  selector: 'app-about-motivation',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AppIcon],
   host: { class: 'block' },
@@ -14,19 +14,19 @@ import { AppIcon } from '@shared/icons/app-icon';
     >
       <div class="flex items-center gap-2 mb-4">
         <app-icon name="compass" [size]="20" class="text-accent" />
-        <h2 class="font-bold text-2xl text-foreground">{{ whatISeek()?.title }}</h2>
+        <h2 class="font-bold text-2xl text-foreground">{{ motivation()?.title }}</h2>
       </div>
       <p class="text-muted text-sm leading-relaxed">
-        {{ whatISeek()?.description }}
+        {{ motivation()?.description }}
       </p>
     </section>
   `,
 })
-export class AboutSearch {
+export class AboutMotivation {
   private readonly _gateway = inject(ProfileGateway);
 
-  private readonly whatISeekResource = rxResource({
-    stream: () => this._gateway.getWhatISeek(),
+  private readonly motivationResource = rxResource({
+    stream: () => this._gateway.getMotivation(),
   });
-  protected readonly whatISeek = computed(() => this.whatISeekResource.value());
+  protected readonly motivation = computed(() => this.motivationResource.value());
 }

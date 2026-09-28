@@ -3,8 +3,6 @@ export type ProfileInfo = {
   readonly displayName: string;
   readonly location: string;
   readonly avatarUrl: string;
-  readonly isAvailable: boolean;
-  readonly availabilityMessage: string;
 };
 
 export type SocialButton = {

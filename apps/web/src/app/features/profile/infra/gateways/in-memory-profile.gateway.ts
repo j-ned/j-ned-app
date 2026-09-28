@@ -6,7 +6,7 @@ import type { Biography } from '../../domain/models/biography.model';
 import type { Diploma } from '../../domain/models/diploma.model';
 import type { Technology } from '../../domain/models/technology.model';
 import type { Highlight } from '../../domain/models/highlight.model';
-import type { WhatIDo, WhatISeek } from '../../domain/models/what-i-do.model';
+import type { WhatIDo, Motivation } from '../../domain/models/what-i-do.model';
 import {
   STATIC_PROFILE_BASE,
   STATIC_AVATAR_URL,
@@ -15,7 +15,7 @@ import {
   STATIC_TECHNOLOGIES,
   STATIC_ABOUT_HIGHLIGHTS,
   STATIC_WHAT_I_DO,
-  STATIC_WHAT_I_SEEK,
+  STATIC_MOTIVATION,
   STATIC_SOCIAL_BUTTONS,
 } from '../data/profile.static-data';
 
@@ -45,8 +45,8 @@ export class InMemoryProfileGateway extends ProfileGateway {
     return defer(() => of([...STATIC_WHAT_I_DO]));
   }
 
-  getWhatISeek(): Observable<WhatISeek> {
-    return defer(() => of(STATIC_WHAT_I_SEEK));
+  getMotivation(): Observable<Motivation> {
+    return defer(() => of(STATIC_MOTIVATION));
   }
 
   getSocialButtons(): Observable<readonly SocialButton[]> {

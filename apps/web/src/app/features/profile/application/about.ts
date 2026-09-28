@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { AboutHero } from './about-hero';
 import { AboutStack } from './about-stack';
-import { AboutSearch } from './about-search';
+import { AboutMotivation } from './about-motivation';
 import { AboutDiploma } from './about-diploma';
 import { AboutJourney } from './about-journey';
 import { AboutWhatIDo } from './about-what-i-do';
@@ -14,7 +14,7 @@ import { AboutHighlights } from './about-highlights';
   imports: [
     AboutHero,
     AboutStack,
-    AboutSearch,
+    AboutMotivation,
     AboutDiploma,
     AboutJourney,
     AboutWhatIDo,
@@ -37,7 +37,7 @@ import { AboutHighlights } from './about-highlights';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-12">
           <aside class="lg:col-span-1 space-y-8">
             @defer (hydrate on viewport) {
-              <app-about-search />
+              <app-about-motivation />
             } @placeholder {
               <div class="h-48" aria-hidden="true"></div>
             } @error {

@@ -35,23 +35,9 @@ import { AppIcon } from '@shared/icons/app-icon';
           </h1>
           <p class="text-lg text-muted">Développeur Angular | NestJS & TypeScript</p>
 
-          <div
-            class="flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3 text-sm"
-          >
-            <div class="flex items-center gap-2 text-muted">
-              <app-icon name="map-marker" [size]="16" />
-              <span>{{ profile.location }}</span>
-            </div>
-            <span class="hidden sm:inline text-foreground/20">•</span>
-            <div class="flex items-center gap-2">
-              <div class="relative flex h-2.5 w-2.5">
-                <span
-                  class="animate-ping motion-reduce:animate-none will-change-[transform,opacity] absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"
-                ></span>
-                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-status-success"></span>
-              </div>
-              <span class="text-status-success font-medium">{{ profile.availabilityMessage }}</span>
-            </div>
+          <div class="flex items-center justify-center md:justify-start gap-2 text-sm text-muted">
+            <app-icon name="map-marker" [size]="16" />
+            <span>{{ profile.location }}</span>
           </div>
 
           <nav
@@ -66,7 +52,11 @@ import { AppIcon } from '@shared/icons/app-icon';
                 class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-primary/50 hover:bg-primary/10 transition-colors"
                 [attr.aria-label]="social.label"
               >
-                <app-icon [name]="social.icon" [size]="18" class="text-muted group-hover:text-primary transition-colors" />
+                <app-icon
+                  [name]="social.icon"
+                  [size]="18"
+                  class="text-muted group-hover:text-primary transition-colors"
+                />
               </a>
             }
           </nav>

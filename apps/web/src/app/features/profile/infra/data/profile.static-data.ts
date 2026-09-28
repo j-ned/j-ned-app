@@ -3,7 +3,7 @@ import type { Biography } from '../../domain/models/biography.model';
 import type { Diploma } from '../../domain/models/diploma.model';
 import type { Technology } from '../../domain/models/technology.model';
 import type { Highlight } from '../../domain/models/highlight.model';
-import type { WhatIDo, WhatISeek } from '../../domain/models/what-i-do.model';
+import type { WhatIDo, Motivation } from '../../domain/models/what-i-do.model';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 export const STATIC_AVATAR_URL = '/avatar.avif';
@@ -12,8 +12,6 @@ export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
   id: '9acfdedb-c00d-4370-858e-7215e30f5a41',
   displayName: 'Julien Nédellec',
   location: SITE_IDENTITY.location,
-  isAvailable: true,
-  availabilityMessage: 'En poste, ouvert aux opportunités',
 };
 
 export const STATIC_BIOGRAPHY: Biography = {
@@ -128,7 +126,7 @@ export const STATIC_WHAT_I_DO: readonly WhatIDo[] = [
     id: '23ff2843-921d-4b76-b070-83a50bd87665',
     title: 'Applications complètes',
     description:
-      "Je construis des applications de production de bout en bout : conception, Full Stack (Angular moderne, NestJS, PostgreSQL) et déploiement conteneurisé (Docker). Pas des démos, mais des systèmes qui tournent.",
+      'Je construis des applications de production de bout en bout : conception, Full Stack (Angular moderne, NestJS, PostgreSQL) et déploiement conteneurisé (Docker). Pas des démos, mais des systèmes qui tournent.',
   },
   {
     id: 'dffce031-2162-4f1b-97d9-ef2c9790734d',
@@ -138,11 +136,11 @@ export const STATIC_WHAT_I_DO: readonly WhatIDo[] = [
   },
 ];
 
-export const STATIC_WHAT_I_SEEK: WhatISeek = {
+export const STATIC_MOTIVATION: Motivation = {
   id: 'f963681b-3599-4801-9c7f-312afc70e4b2',
-  title: 'Ce que je cherche',
+  title: 'Ce qui me motive',
   description:
-    "Un environnement où la tech sert un impact positif. GreenTech, industrie durable, projets à sens. Une équipe qui valorise la qualité technique et l'apprentissage continu.",
+    "La tech au service d'un impact positif : GreenTech, industrie durable, projets qui ont du sens. La qualité technique et l'apprentissage continu, au travail comme sur mes projets personnels.",
 };
 
 export const STATIC_SOCIAL_BUTTONS: readonly SocialButton[] = [

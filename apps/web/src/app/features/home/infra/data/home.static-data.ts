@@ -8,7 +8,6 @@ export const STATIC_HERO: HeroData = {
     'Angular, NestJS, PostgreSQL, Docker : je mène une application du composant à la mise en production.',
   support:
     'Ce site en est la preuve : rendu serveur, API NestJS, déployé en CI/CD sur ma propre infrastructure.',
-  availability: 'En poste, ouvert aux opportunités · Île-de-France',
 };
 
 export const STATIC_HOME_HIGHLIGHTS: readonly HomeHighlight[] = [
