@@ -25,28 +25,38 @@ describe('HomeHero', () => {
     fixture = TestBed.createComponent(HomeHero);
   });
 
-  it('renders the hero name as the h1', () => {
+  it('Given le hero livré When il est rendu Then le h1 porte la phrase complète', () => {
     renderWith(STATIC_HERO);
-    expect(textOf('hero-name')).toBe(STATIC_HERO.name);
+    const h1 = host().querySelector('h1');
+    expect(h1?.getAttribute('data-testid')).toBe('hero-headline');
+    expect(textOf('hero-headline')).toBe(STATIC_HERO.headline);
   });
 
-  // Le surlignage `--color-primary` du hero est gratuit tant que la tagline
-  // écrit `Angular` et `NestJS` littéralement (split dans `HomeHero`) : une
-  // réécriture éditoriale qui les paraphrase l'éteindrait en silence.
-  it('highlights Angular and NestJS in the shipped tagline', () => {
+  // Le surlignage indigo est gratuit tant que le titre écrit `Angular` et `NestJS`
+  // littéralement (split dans `HomeHero`) : une réécriture qui les paraphrase l'éteindrait en silence.
+  it('Given le hero livré When il est rendu Then Angular et NestJS sont surlignés', () => {
     renderWith(STATIC_HERO);
     expect(keywords()).toEqual(['Angular', 'NestJS']);
   });
 
-  // La ligne de preuve tient dans le `min-h` déjà réservé par le bloc hero :
-  // elle ne coûte aucun pixel au fold tant qu'elle reste sur deux lignes.
-  it('renders the support line under the tagline', () => {
+  it('Given le hero livré When il est rendu Then le paragraphe d’appui suit le titre', () => {
     renderWith(STATIC_HERO);
-    expect(textOf('hero-support')).toBe(STATIC_HERO.support);
+    expect(textOf('hero-lead')).toBe(STATIC_HERO.lead);
   });
 
-  it('leaves the rest of the tagline unhighlighted', () => {
+  it('Given quatre preuves When le hero est rendu Then le relevé affiche chaque libellé et valeur', () => {
     renderWith(STATIC_HERO);
-    expect(textOf('hero-tagline')).toBe(STATIC_HERO.tagline);
+    const proofs = Array.from(host().querySelectorAll<HTMLElement>('[data-testid="hero-proof"]'));
+    expect(proofs).toHaveLength(STATIC_HERO.proofs.length);
+    STATIC_HERO.proofs.forEach((proof, i) => {
+      expect(proofs[i].querySelector('dt')?.textContent?.trim()).toBe(proof.label);
+      expect(proofs[i].textContent).toContain(proof.value);
+      expect(proofs[i].textContent).toContain(proof.detail);
+    });
+  });
+
+  it('Given aucun hero When le composant est rendu Then aucun h1 (squelette seul)', () => {
+    fixture.detectChanges();
+    expect(host().querySelector('h1')).toBeNull();
   });
 });

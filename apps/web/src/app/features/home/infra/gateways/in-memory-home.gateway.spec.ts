@@ -3,7 +3,7 @@ import { firstValueFrom, of } from 'rxjs';
 import { vi } from 'vitest';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-home.gateway';
-import { STATIC_HERO, STATIC_HOME_HIGHLIGHTS } from '../data/home.static-data';
+import { STATIC_BUILD_STEPS, STATIC_HERO, STATIC_HOME_HIGHLIGHTS } from '../data/home.static-data';
 
 describe('InMemoryHomeGateway', () => {
   let gateway: InMemoryHomeGateway;
@@ -17,10 +17,7 @@ describe('InMemoryHomeGateway', () => {
     projectsStub.getFeaturedProjects.mockReturnValue(of([]));
     projectsStub.invalidateFeatured.mockReset();
     TestBed.configureTestingModule({
-      providers: [
-        InMemoryHomeGateway,
-        { provide: ProjectsGateway, useValue: projectsStub },
-      ],
+      providers: [InMemoryHomeGateway, { provide: ProjectsGateway, useValue: projectsStub }],
     });
     gateway = TestBed.inject(InMemoryHomeGateway);
   });
@@ -35,7 +32,7 @@ describe('InMemoryHomeGateway', () => {
     expect(result).toEqual([...STATIC_HOME_HIGHLIGHTS]);
   });
 
-  it('getHomeBundle composes hero + highlights + featuredProjects from ProjectsGateway', async () => {
+  it('getHomeBundle composes hero + highlights + buildSteps + featuredProjects from ProjectsGateway', async () => {
     const fakeProjects = [{ id: 1, slug: 'proj-1', title: 'Project 1' } as never];
     projectsStub.getFeaturedProjects.mockReturnValue(of(fakeProjects));
 
@@ -43,6 +40,7 @@ describe('InMemoryHomeGateway', () => {
 
     expect(result.hero).toEqual(STATIC_HERO);
     expect(result.highlights).toEqual([...STATIC_HOME_HIGHLIGHTS]);
+    expect(result.buildSteps).toEqual([...STATIC_BUILD_STEPS]);
     expect(result.featuredProjects).toEqual(fakeProjects);
     expect(projectsStub.getFeaturedProjects).toHaveBeenCalledOnce();
   });

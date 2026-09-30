@@ -21,7 +21,7 @@ const highlight = (overrides: Partial<HomeHighlight> = {}): HomeHighlight => ({
   id: 'h1',
   title: 'Front',
   description: 'desc',
-  icon: 'lucide-code',
+  facts: [{ label: 'tests', value: 'Vitest' }],
   ...overrides,
 });
 
@@ -39,8 +39,9 @@ const aProject = (overrides: Partial<Project> = {}): Project => ({
 });
 
 const bundle = (overrides: Partial<HomeBundle> = {}): HomeBundle => ({
-  hero: { id: 'hero', name: 'Julien', tagline: 'Dev', support: 'Preuve' },
+  hero: { id: 'hero', headline: 'Je livre', lead: 'Preuve', proofs: [] },
   highlights: [highlight()],
+  buildSteps: [{ id: 's1', command: 'ng build', description: 'desc' }],
   featuredProjects: [],
   ...overrides,
 });
@@ -156,19 +157,24 @@ describe('Home', () => {
           getHomeBundle: () => of(bundle({ highlights: [highlight({ id: 'a' })] })),
         }),
       });
-      expect(component['bundle']()?.hero?.name).toBe('Julien');
+      expect(component['bundle']()?.hero?.headline).toBe('Je livre');
     });
   });
 
   describe('valeurs dérivées', () => {
-    it('expertises dérive les highlights du bundle', async () => {
+    it('highlights dérive les highlights du bundle', async () => {
       const { component } = await setup({
         gateway: makeHomeGateway({
           getHomeBundle: () =>
             of(bundle({ highlights: [highlight({ id: 'a' }), highlight({ id: 'b' })] })),
         }),
       });
-      expect(component['expertises']().map((h) => h.id)).toEqual(['a', 'b']);
+      expect(component['highlights']().map((h) => h.id)).toEqual(['a', 'b']);
+    });
+
+    it('buildSteps dérive les étapes de build du bundle', async () => {
+      const { component } = await setup();
+      expect(component['buildSteps']().map((s) => s.id)).toEqual(['s1']);
     });
   });
 

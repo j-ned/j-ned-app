@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi, type MockInstance } from 'vitest';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { STATIC_HERO } from '../infra/data/home.static-data';
 import { HomeHeroSection } from './home-hero-section';
 
 describe('HomeHeroSection', () => {
@@ -22,7 +23,7 @@ describe('HomeHeroSection', () => {
     }).compileComponents();
     fixture = TestBed.createComponent(HomeHeroSection);
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-    fixture.componentRef.setInput('hero', null);
+    fixture.componentRef.setInput('hero', STATIC_HERO);
     fixture.detectChanges();
   });
 

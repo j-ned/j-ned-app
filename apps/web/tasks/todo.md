@@ -1,3 +1,22 @@
+# Accueil direction A « Relevé de production » (branche feat/home-editorial-hero) — PR ouverte
+
+> Créé le 2026-09-30. Maquette validée : https://claude.ai/artifact/93JDiDpcnWs7phbZsW5LtY
+> Conservé du code existant : un seul CTA dans le hero (décision documentée dans le spec),
+> aucun signal de disponibilité (#128), premier écran plein en md+ (#129).
+
+- [x] Domain : `HeroData` = `headline` + `lead` + `proofs` ; `HomeHighlight` = faits (`facts`), plus d'icône ; `BuildStep`
+- [x] Hero : h1 affirmatif aligné à gauche, mots-clés en indigo, relevé mono ; retrait du dégradé et des halos
+- [x] Section preuves : grille 4×2 `grid-flow-dense` (tuile pipeline 2×2 + 4 tuiles de faits)
+- [x] Projets : en-tête sans pastille ni dégradé ; carte avec décision d'architecture clé (opt-in) ; catégorie indigo, plus de « Project Preview »
+- [x] Contact : retrait de la pastille et du dégradé ; suppression de l'utility `heading-gradient`
+- [x] DESIGN.md : retirer la mention du dégradé du hero à reprendre
+- [x] Gates : test, lint, `pnpm install --frozen-lockfile`, `pnpm run build --configuration production`, HTML prérendu
+
+## Review
+- Tests 534/534, lint OK, `pnpm install --frozen-lockfile` OK, build production OK (14 routes prérendues, CSP réappliquée)
+- HTML prérendu de `/` : un seul h1 (2 mots-clés), 4 preuves, tuile pipeline + 4 tuiles, décision clé sur les 2 cartes, plus de `heading-gradient`/`name-gradient`/`hero-ambient`
+- Non vérifié : rendu visuel en navigateur (aucun navigateur dans la session), à contrôler sur le preview avant merge
+
 # Blog — SEO article + RSS (PR #117, #118 ; API #38, #39) — terminé le 2026-09-12
 
 > Créé le 2026-09-12. Audit prod de l'article AES-256-GCM : `og:image:alt` faux (statique index.html),

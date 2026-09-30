@@ -5,7 +5,7 @@ import { HomeGateway } from '../../domain/gateways/home.gateway';
 import type { HeroData } from '../../domain/models/hero.model';
 import type { HomeBundle } from '../../domain/models/home-bundle.model';
 import type { HomeHighlight } from '../../domain/models/home-highlight.model';
-import { STATIC_HERO, STATIC_HOME_HIGHLIGHTS } from '../data/home.static-data';
+import { STATIC_BUILD_STEPS, STATIC_HERO, STATIC_HOME_HIGHLIGHTS } from '../data/home.static-data';
 
 @Injectable()
 export class InMemoryHomeGateway extends HomeGateway {
@@ -16,13 +16,14 @@ export class InMemoryHomeGateway extends HomeGateway {
       map((featuredProjects) => ({
         hero: STATIC_HERO,
         highlights: [...STATIC_HOME_HIGHLIGHTS],
+        buildSteps: [...STATIC_BUILD_STEPS],
         featuredProjects: [...featuredProjects],
       })),
     );
   }
 
   invalidateBundle(): void {
-    // Hero/highlights sont statiques, mais `featuredProjects` vient du HTTP
+    // Hero/highlights/buildSteps sont statiques, mais `featuredProjects` vient du HTTP
     // (`ProjectsGateway`) : on invalide ce flux pour que la landing reflète
     // les mutations admin (create/update/delete) sans reload.
     this.projectsGateway.invalidateFeatured();

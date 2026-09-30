@@ -34,15 +34,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     <section class="animate-fade-up py-12 md:py-20">
       <div class="page-container max-w-5xl">
         <header class="text-center mb-14">
-          <span
-            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-5"
-          >
-            <app-icon name="envelope" [size]="16" />
-            Contact
-          </span>
-          <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-5 heading-gradient">
-            Contactez-moi
-          </h2>
+          <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">Contactez-moi</h2>
           <p class="text-muted max-w-xl mx-auto text-base md:text-lg leading-relaxed">
             Vous avez un projet ou une question ? N'hésitez pas à me contacter.
           </p>

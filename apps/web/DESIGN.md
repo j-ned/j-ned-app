@@ -135,7 +135,7 @@ Ce que ce système refuse explicitement : le gradient violet/bleu de SaaS market
 
 ## 2. Colors: The Signal Indigo Palette
 
-Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signature décliné en trois intensités. Aucun gradient utilisé comme décoration ; le seul gradient toléré est `name-gradient` sur le `<h1>` du hero, et il est sur le banc d'essai (voir Do's and Don'ts).
+Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signature décliné en trois intensités. Aucun gradient utilisé comme décoration, titres compris : le `<h1>` du hero est en texte plein, ses mots-clés en Signal Indigo.
 
 ### Primary
 
@@ -207,7 +207,7 @@ Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signat
 
 **The Single-Display Rule.** Un seul `<h1>` par page, en Display, jamais réutilisé pour décorer une autre section. La hiérarchie `<h1>` → `<h2>` → `<h3>` ne saute jamais un niveau.
 
-**The Indigo Keyword Rule.** Dans la tagline du hero, les keywords techniques (`Angular`, `NestJS`) sont en Signal Indigo Lifted (dark) ou Signal Indigo Deep (light) avec `font-weight: 600`. Pattern réutilisable : `[innerHTML]` qui wrappe les keywords dans `<span class="kw">`. C'est le signal "ce profil revendique sa stack".
+**The Indigo Keyword Rule.** Dans le `<h1>` du hero, les keywords techniques (`Angular`, `NestJS`) sont en Signal Indigo Lifted (dark) ou Signal Indigo Deep (light). Pattern : `HomeHero` découpe le titre sur les mots-clés et les rend en `text-primary`. C'est le signal "ce profil revendique sa stack".
 
 ## 4. Elevation
 
@@ -317,7 +317,7 @@ Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionne
 ### Don't:
 
 - **Don't** introduire un second accent color. Pas de teal, pas de coral, pas de "blue-500 par accident". One Indigo Rule.
-- **Don't** utiliser `background-clip: text` + gradient comme style décoratif. **Le hero actuel (`name-gradient` sur `<h1>`) viole cette règle et est à reprendre.** Privilégier un Signal Indigo solide en `<span class="kw">` ou un weight contrast.
+- **Don't** utiliser `background-clip: text` + gradient comme style décoratif. Privilégier un Signal Indigo solide en `<span class="kw">` ou un weight contrast.
 - **Don't** ajouter `backdrop-filter: blur()` à une card "pour faire glass". No-Glass Rule.
 - **Don't** ajouter de shadow à une card "pour qu'elle ressorte". Flat-By-Default Rule — travaille la hiérarchie typographique ou la taille avant.
 - **Don't** charger une Google Font. System-Stack Rule.

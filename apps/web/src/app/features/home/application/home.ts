@@ -2,75 +2,36 @@ import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/c
 import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
 import { HomeProjects } from './home-projects';
+import { HomeProof } from './home-proof';
 import { ContactForm } from '@features/contact/application/contact-form';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { SectionVisibility } from '@core/navigation/section-visibility';
 import { SectionScroller } from '@core/navigation/section-scroller';
-import { AppIcon } from '@shared/icons/app-icon';
-import { AppIconTile } from '@shared/ui/icon-tile';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeProjects, ContactForm, SectionVisibility, AppIcon, AppIconTile],
+  imports: [HomeHeroSection, HomeProof, HomeProjects, ContactForm, SectionVisibility],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <main class="flex flex-col w-full">
-      <!-- First fold: hero + expertise. md+ : occupe tout l'écran sous le header (h-20) et
-           centre son contenu, pour que la section Portfolio commence sous le pli. -->
-      <div class="flex flex-col mt-20 md:min-h-[calc(100svh-5rem)] md:justify-center">
-        <!-- Hero Section -->
-        <app-home-hero-section [hero]="bundle()?.hero ?? null" />
+      <!-- Premier écran : le hero occupe tout l'espace sous le header (h-20). -->
+      <app-home-hero-section class="mt-20" [hero]="bundle()?.hero ?? null" />
 
-        <!-- Expertise Section -->
-        <section class="w-full py-8" aria-labelledby="expertise-heading">
-          <div class="page-container">
-            <h2 id="expertise-heading" class="sr-only">Expertises</h2>
-            @if (expertises().length > 0) {
-              <ul class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8" role="list">
-                @for (item of expertises(); track item.id) {
-                  <li
-                    class="group animate-fade-up relative p-6 rounded-xl border border-foreground/8 bg-foreground/2 hover:border-primary/30 hover:bg-foreground/4 transition-colors duration-300 min-h-55.5"
-                  >
-                    <div class="flex items-center gap-3 mb-4">
-                      <app-icon-tile
-                        class="bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
-                      >
-                        <app-icon [name]="item.icon" [size]="20" class="text-primary" />
-                      </app-icon-tile>
-                      <h3 class="text-sm font-bold text-primary uppercase tracking-widest">
-                        {{ item.title }}
-                      </h3>
-                    </div>
-                    <p class="text-sm text-muted leading-relaxed line-clamp-5">
-                      {{ item.description }}
-                    </p>
-                  </li>
-                }
-              </ul>
-            } @else {
-              <!-- Skeleton placeholder: hauteur fixe 222px (doit matcher min-h de la vraie card) -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8" aria-hidden="true">
-                @for (_ of [1, 2, 3]; track $index) {
-                  <div
-                    class="p-6 rounded-xl border border-foreground/8 bg-foreground/2 animate-pulse min-h-55.5"
-                  >
-                    <div class="flex items-center gap-3 mb-4">
-                      <app-icon-tile class="bg-foreground/5" />
-                      <div class="h-3.5 bg-foreground/5 rounded w-32"></div>
-                    </div>
-                    <div class="h-28.5 rounded bg-foreground/5"></div>
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        </section>
-      </div>
+      @if (highlights().length > 0) {
+        <app-home-proof [highlights]="highlights()" [buildSteps]="buildSteps()" />
+      } @else {
+        <!-- Réserve la hauteur de la grille des preuves tant que le bundle n'est pas chargé. -->
+        <div class="page-container py-24 md:py-32" aria-hidden="true">
+          <div
+            class="h-[52rem] md:h-[40rem] xl:h-[30rem] rounded-xl bg-foreground/2 animate-pulse"
+          ></div>
+        </div>
+      }
 
       <!-- Projects Section -->
       @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-        <section class="w-full pt-8 pb-16 md:pb-20" data-testid="home-projects-section">
+        <section class="w-full pb-24 md:pb-32" data-testid="home-projects-section">
           <div class="page-container">
             <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
           </div>
@@ -117,5 +78,6 @@ export class Home {
     stream: () => this._gateway.getHomeBundle(),
   });
   protected readonly bundle = computed(() => this.bundleResource.value());
-  protected readonly expertises = computed(() => this.bundle()?.highlights ?? []);
+  protected readonly highlights = computed(() => this.bundle()?.highlights ?? []);
+  protected readonly buildSteps = computed(() => this.bundle()?.buildSteps ?? []);
 }

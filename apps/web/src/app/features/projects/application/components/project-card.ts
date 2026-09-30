@@ -1,4 +1,4 @@
-import { Component, input, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { Project } from '../../domain/models/project.model';
@@ -24,16 +24,12 @@ import { AppIcon } from '@shared/icons/app-icon';
             class="object-cover"
           />
         } @else {
-          <div
-            class="w-full h-full flex items-center justify-center text-muted bg-primary/10"
-          >
-            <span class="text-lg font-medium">Project Preview</span>
-          </div>
+          <div class="w-full h-full bg-foreground/4" aria-hidden="true"></div>
         }
       </figure>
 
       <div class="p-5 flex flex-col grow">
-        <p class="text-accent text-xs font-medium uppercase tracking-wider mb-1.5">
+        <p class="text-primary text-xs font-medium uppercase tracking-wider mb-1.5">
           {{ project().category }}
         </p>
 
@@ -51,6 +47,25 @@ import { AppIcon } from '@shared/icons/app-icon';
         <p class="text-muted mb-3 grow text-sm leading-relaxed line-clamp-2">
           {{ project().description }}
         </p>
+
+        @if (keyDecision(); as decision) {
+          <dl
+            class="mb-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3.5"
+            data-testid="project-card-decision"
+          >
+            <dt
+              class="font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-primary"
+            >
+              Décision clé
+            </dt>
+            <dd class="mt-1.5 text-[0.9375rem] font-medium leading-snug text-foreground">
+              {{ decision.decision }}
+            </dd>
+            <dd class="mt-1 text-sm leading-relaxed text-muted line-clamp-3">
+              {{ decision.rationale }}
+            </dd>
+          </dl>
+        }
 
         <ul class="flex flex-wrap gap-1.5 mb-3" role="list">
           @for (tag of project().tags; track tag) {
@@ -133,6 +148,11 @@ export class ProjectCard {
   private readonly _analytics = inject(AnalyticsGateway);
 
   readonly project = input.required<Project>();
+  readonly showKeyDecision = input(false);
+
+  protected readonly keyDecision = computed(() =>
+    this.showKeyDecision() ? (this.project().architectureDecisions?.[0] ?? null) : null,
+  );
 
   protected trackClick(): void {
     this._analytics.trackProjectClick(this.project().id, this.project().title);
