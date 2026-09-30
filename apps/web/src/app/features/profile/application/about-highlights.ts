@@ -9,8 +9,7 @@ import { AppIconTile } from '@shared/ui/icon-tile';
   imports: [AppIcon, AppIconTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class:
-      'block animate-fade-up bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6',
+    class: 'block animate-fade-up bg-surface border border-foreground/8 rounded-2xl p-6',
   },
   template: `
     <section>
@@ -21,10 +20,10 @@ import { AppIconTile } from '@shared/ui/icon-tile';
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         @for (highlight of highlights(); track highlight.id) {
           <article
-            class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-accent/50 hover:bg-accent/5 transition-all group"
+            class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-primary/50 hover:bg-primary/5 transition-colors group"
           >
-            <app-icon-tile class="bg-accent/10 mb-3">
-              <app-icon [name]="highlight.icon" [size]="22" class="text-accent" />
+            <app-icon-tile class="bg-primary/10 mb-3">
+              <app-icon [name]="highlight.icon" [size]="22" class="text-primary" />
             </app-icon-tile>
             <h3
               class="text-base font-bold text-foreground mb-2 group-hover:text-primary transition-colors"

@@ -9,8 +9,7 @@ import { AppIcon } from '@shared/icons/app-icon';
   imports: [NgOptimizedImage, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class:
-      'block animate-fade-up bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 h-full',
+    class: 'block animate-fade-up bg-surface border border-foreground/8 rounded-2xl p-6 h-full',
   },
   template: `
     <header class="flex items-center gap-2 mb-6">
@@ -20,7 +19,7 @@ import { AppIcon } from '@shared/icons/app-icon';
     <ul class="grid grid-cols-2 min-[400px]:grid-cols-3 gap-3" role="list">
       @for (tech of technologies(); track tech.id) {
         <li
-          class="bg-background/50 border border-foreground/10 rounded-xl p-3 flex flex-col items-center gap-2 hover:border-accent/50 hover:bg-accent/5 transition-all group cursor-pointer"
+          class="bg-background/50 border border-foreground/10 rounded-xl p-3 flex flex-col items-center gap-2 hover:border-primary/50 hover:bg-primary/5 transition-colors group"
         >
           <img
             [ngSrc]="'/icons/' + tech.icon + '.svg'"

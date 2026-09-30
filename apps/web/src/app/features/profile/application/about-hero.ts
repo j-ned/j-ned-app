@@ -9,8 +9,7 @@ import { AppIcon } from '@shared/icons/app-icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgOptimizedImage, AppIcon],
   host: {
-    class:
-      'block animate-fade-up bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6 h-full',
+    class: 'block animate-fade-up bg-surface border border-foreground/8 rounded-2xl p-6 h-full',
   },
   template: `
     @let profile = profileInfo();

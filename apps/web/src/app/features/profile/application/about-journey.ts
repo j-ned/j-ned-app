@@ -8,8 +8,7 @@ import { AppIcon } from '@shared/icons/app-icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AppIcon],
   host: {
-    class:
-      'block animate-fade-up bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6',
+    class: 'block animate-fade-up bg-surface border border-foreground/8 rounded-2xl p-6',
   },
   template: `
     @if (biography()) {

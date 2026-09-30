@@ -8,8 +8,7 @@ import { AppIcon } from '@shared/icons/app-icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AppIcon],
   host: {
-    class:
-      'block animate-fade-up bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6',
+    class: 'block animate-fade-up bg-surface border border-foreground/8 rounded-2xl p-6',
   },
   template: `
     <section>
@@ -20,7 +19,7 @@ import { AppIcon } from '@shared/icons/app-icon';
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @for (item of whatIDo(); track item.id) {
           <article
-            class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-primary/50 hover:bg-primary/5 transition-all group"
+            class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-primary/50 hover:bg-primary/5 transition-colors group"
           >
             <h3
               class="text-base font-bold text-foreground mb-2 group-hover:text-primary transition-colors"

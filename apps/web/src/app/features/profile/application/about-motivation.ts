@@ -9,11 +9,9 @@ import { AppIcon } from '@shared/icons/app-icon';
   imports: [AppIcon],
   host: { class: 'block' },
   template: `
-    <section
-      class="animate-fade-up bg-linear-to-br from-accent/10 to-primary/10 border border-accent/20 rounded-2xl p-6"
-    >
+    <section class="animate-fade-up bg-surface border border-primary/20 rounded-2xl p-6">
       <div class="flex items-center gap-2 mb-4">
-        <app-icon name="compass" [size]="20" class="text-accent" />
+        <app-icon name="compass" [size]="20" class="text-primary" />
         <h2 class="font-bold text-2xl text-foreground">{{ motivation()?.title }}</h2>
       </div>
       <p class="text-muted text-sm leading-relaxed">

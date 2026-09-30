@@ -9,9 +9,7 @@ import { AppIcon } from '@shared/icons/app-icon';
   imports: [AppIcon],
   host: { class: 'block' },
   template: `
-    <section
-      class="animate-fade-up bg-linear-to-br from-background to-background/50 border border-foreground/10 rounded-2xl p-6"
-    >
+    <section class="animate-fade-up bg-surface border border-foreground/8 rounded-2xl p-6">
       <header class="flex items-center gap-2 mb-6">
         <app-icon name="graduation-cap" [size]="24" class="text-primary" />
         <h2 class="font-bold text-2xl text-foreground">Formations</h2>
@@ -25,7 +23,7 @@ import { AppIcon } from '@shared/icons/app-icon';
           <h3 class="text-lg font-bold text-foreground mb-2">
             {{ diploma.title }}
           </h3>
-          <p class="text-accent font-medium mb-2 text-md">
+          <p class="text-primary font-medium mb-2">
             {{ diploma.provider }}
           </p>
           <p class="text-muted text-sm mb-4 leading-relaxed">
