@@ -62,13 +62,20 @@ type Setup = {
 
 function setup(gatewayStub: {
   getPostBySlug: () => ReturnType<BlogGateway['getPostBySlug']>;
+  getPublishedPosts?: () => ReturnType<BlogGateway['getPublishedPosts']>;
 }): Setup {
   const seoMock = { applySeoData: vi.fn() };
   const analyticsMock = { trackArticleView: vi.fn(), trackArticleRead: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
-      { provide: BlogGateway, useValue: gatewayStub },
+      {
+        provide: BlogGateway,
+        useValue: {
+          getPublishedPosts: (): ReturnType<BlogGateway['getPublishedPosts']> => of([]),
+          ...gatewayStub,
+        },
+      },
       { provide: Seo, useValue: seoMock },
       { provide: AnalyticsGateway, useValue: analyticsMock },
     ],
@@ -259,5 +266,60 @@ describe('BlogDetail', () => {
     MockIntersectionObserver.instances[0].emit(true);
 
     expect(analyticsMock.trackArticleRead).toHaveBeenCalledTimes(1);
+  });
+
+  describe('en-tête et navigation entre articles', () => {
+    const render = async (
+      current: BlogPost,
+      published: readonly BlogPost[] = [],
+    ): Promise<HTMLElement> => {
+      const { fixture } = setup({
+        getPostBySlug: () => of(current),
+        getPublishedPosts: () => of(published),
+      });
+      fixture.componentRef.setInput('slug', current.slug);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    };
+
+    it('Given un article de 1 136 mots When il est rendu Then « 6 min de lecture » et l’extrait en chapeau', async () => {
+      const contentMarkdown = Array.from({ length: 1136 }, () => 'mot').join(' ');
+      const root = await render(post({ contentMarkdown, excerpt: 'Le chapeau.' }));
+      expect(root.querySelector('[data-testid="reading-time"]')?.textContent?.trim()).toBe(
+        '6 min de lecture',
+      );
+      expect(root.querySelector('[data-testid="blog-lead"]')?.textContent?.trim()).toBe(
+        'Le chapeau.',
+      );
+    });
+
+    it('Given l’article le plus récent When il est rendu Then seul un lien vers l’article précédent', async () => {
+      const older = post({
+        id: '2',
+        slug: 'ancien',
+        title: 'Ancien',
+        publishedAt: '2026-08-01T00:00:00Z',
+      });
+      const current = post({ publishedAt: '2026-09-01T00:00:00Z' });
+      const root = await render(current, [current, older]);
+      const link = root.querySelector('[data-testid="older-post"]');
+      expect(link?.getAttribute('href')).toBe('/blog/ancien');
+      expect(link?.textContent).toContain('Ancien');
+      expect(root.querySelector('[data-testid="newer-post"]')).toBeNull();
+    });
+
+    it('Given un article seul When il est rendu Then aucune navigation entre articles', async () => {
+      const current = post();
+      const root = await render(current, [current]);
+      expect(root.querySelector('nav[aria-label="Autres articles"]')).toBeNull();
+    });
+
+    it('Given plus de trois tags When l’article est rendu Then tous les tags sont affichés', async () => {
+      const tags = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+      const root = await render(post({ tags }));
+      expect(root.querySelectorAll('[data-testid="tag-link"]')).toHaveLength(tags.length);
+    });
   });
 });

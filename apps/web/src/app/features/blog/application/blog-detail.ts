@@ -10,7 +10,8 @@ import {
   resource,
 } from '@angular/core';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
@@ -23,6 +24,10 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { BlogLikeButton } from './components/blog-like-button';
 import { BlogComments } from './components/blog-comments';
 import { BlogTagLink } from './components/blog-tag-link';
+import { AppIcon } from '@shared/icons/app-icon';
+import { readingTimeMinutes } from '../domain/reading-time';
+import { adjacentPosts } from '../domain/adjacent-posts';
+import type { BlogPost } from '../domain/models/blog-post.model';
 
 // `updatedAt` peut précéder `publishedAt` (brouillon retouché puis publié) : `dateModified`
 // ne doit jamais être antérieur à `datePublished`.
@@ -32,64 +37,148 @@ function laterOf(a: string, b: string): string {
 
 @Component({
   selector: 'app-blog-detail',
-  imports: [BlogLikeButton, BlogComments, BlogTagLink, DatePipe, NgOptimizedImage],
+  imports: [
+    BlogLikeButton,
+    BlogComments,
+    BlogTagLink,
+    DatePipe,
+    NgOptimizedImage,
+    RouterLink,
+    AppIcon,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     @let p = post();
-    <main class="min-h-svh pt-20 pb-20">
-      <section class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-8">
-        @if (p) {
-          <article>
-            <div class="flex flex-wrap gap-1.5 mb-4">
+    <main class="min-h-svh pt-20 pb-16">
+      @if (p) {
+        <article>
+          <header class="mx-auto max-w-[46rem] px-4 pt-12 pb-10 sm:px-6 md:pt-18 md:pb-12">
+            <a
+              routerLink="/blog"
+              class="group inline-flex min-h-11 items-center gap-2 text-sm text-muted transition-colors hover:text-primary"
+            >
+              <app-icon
+                name="arrow-left"
+                [size]="16"
+                class="transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none"
+              />
+              Tous les articles
+            </a>
+            <p
+              class="mt-6 flex flex-wrap gap-x-3.5 gap-y-1.5 font-mono text-[0.8125rem] text-muted"
+            >
+              @if (p.publishedAt) {
+                <time
+                  class="text-primary"
+                  [attr.datetime]="p.publishedAt"
+                  data-testid="published-at"
+                  >{{ p.publishedAt | date: 'd MMMM y' }}</time
+                >
+              }
+              <span data-testid="reading-time">{{ readingTime() }} min de lecture</span>
+              @if (updatedAfterPublication()) {
+                <span
+                  >mis à jour le
+                  <time [attr.datetime]="p.updatedAt" data-testid="updated-at">{{
+                    p.updatedAt | date: 'd MMMM y'
+                  }}</time></span
+                >
+              }
+            </p>
+            <h1
+              class="mt-4 text-[clamp(2.125rem,4.4vw,3.5rem)] font-extrabold leading-[1.06] tracking-[-0.035em] text-balance"
+            >
+              {{ p.title }}
+            </h1>
+            <p
+              class="mt-5.5 text-[clamp(1.125rem,1.6vw,1.3125rem)] leading-[1.55] text-muted"
+              data-testid="blog-lead"
+            >
+              {{ p.excerpt }}
+            </p>
+            <div class="mt-6 flex flex-wrap gap-1.5">
               @for (tag of p.tags; track tag) {
                 <app-blog-tag-link [tag]="tag" />
               }
             </div>
-            <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ p.title }}</h1>
-            @if (p.publishedAt) {
-              <p class="text-muted text-sm mb-6">
-                Publié le
-                <time [attr.datetime]="p.publishedAt" data-testid="published-at">{{
-                  p.publishedAt | date: 'd MMMM y'
-                }}</time>
-                @if (updatedAfterPublication()) {
-                  · mis à jour le
-                  <time [attr.datetime]="p.updatedAt" data-testid="updated-at">{{
-                    p.updatedAt | date: 'd MMMM y'
-                  }}</time>
-                }
-              </p>
-            }
-            @if (p.coverImage) {
-              <figure class="mb-8">
-                <div
-                  class="relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-xl border border-foreground/8"
-                >
-                  <img
-                    [ngSrc]="p.coverImage"
-                    [alt]="coverImageAlt()"
-                    fill
-                    priority
-                    sizes="100vw"
-                    class="object-cover"
-                  />
-                </div>
-              </figure>
-            }
+          </header>
+
+          @if (p.coverImage) {
+            <figure class="mx-auto max-w-5xl px-4 sm:px-6">
+              <div
+                class="relative aspect-[1200/630] w-full overflow-hidden rounded-xl border border-foreground/8"
+              >
+                <img
+                  [ngSrc]="p.coverImage"
+                  [alt]="coverImageAlt()"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 64rem"
+                  class="object-cover"
+                />
+              </div>
+            </figure>
+          }
+
+          <div class="mx-auto max-w-[46rem] px-4 sm:px-6">
             <div
               data-testid="blog-content"
-              class="prose max-w-none dark:prose-invert break-words prose-pre:overflow-x-auto prose-table:block prose-table:w-full prose-table:overflow-x-auto prose-img:max-w-full prose-img:h-auto"
+              class="prose prose-lg max-w-none pt-14 pb-8 break-words dark:prose-invert prose-headings:tracking-tight prose-headings:text-foreground prose-h2:scroll-mt-24 prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground prose-a:text-primary prose-a:underline-offset-3 prose-code:text-primary prose-pre:overflow-x-auto prose-pre:border prose-pre:border-foreground/8 prose-pre:bg-foreground/4 prose-pre:text-foreground prose-table:block prose-table:w-full prose-table:overflow-x-auto prose-img:h-auto prose-img:max-w-full"
               [innerHTML]="renderedContent()"
             ></div>
             <div #readSentinel data-testid="article-read-sentinel" aria-hidden="true"></div>
-          </article>
-          <div class="mt-8">
-            <app-blog-like-button [slug]="p.slug" [likesCount]="p.likesCount" />
           </div>
+        </article>
+
+        <div class="mx-auto max-w-[46rem] px-4 sm:px-6">
+          <div
+            class="flex flex-wrap items-center justify-between gap-4 border-t border-foreground/8 py-7"
+          >
+            <app-blog-like-button [slug]="p.slug" [likesCount]="p.likesCount" />
+            <a
+              href="/rss.xml"
+              class="inline-flex min-h-11 items-center font-mono text-[0.8125rem] text-muted transition-colors hover:text-primary"
+            >
+              Flux RSS
+            </a>
+          </div>
+
+          @let around = neighbours();
+          @if (around.older || around.newer) {
+            <nav class="grid gap-3 sm:grid-cols-2" aria-label="Autres articles">
+              @if (around.older; as older) {
+                <a
+                  [routerLink]="['/blog', older.slug]"
+                  class="group grid gap-1 rounded-xl border border-foreground/8 bg-surface p-6 transition-colors hover:border-primary/35"
+                  data-testid="older-post"
+                >
+                  <span class="font-mono text-xs text-muted">article précédent</span>
+                  <span
+                    class="text-[1.1875rem] font-semibold tracking-tight transition-colors group-hover:text-primary"
+                    >{{ older.title }}</span
+                  >
+                </a>
+              }
+              @if (around.newer; as newer) {
+                <a
+                  [routerLink]="['/blog', newer.slug]"
+                  class="group grid gap-1 rounded-xl border border-foreground/8 bg-surface p-6 text-right transition-colors hover:border-primary/35 sm:col-start-2"
+                  data-testid="newer-post"
+                >
+                  <span class="font-mono text-xs text-muted">article suivant</span>
+                  <span
+                    class="text-[1.1875rem] font-semibold tracking-tight transition-colors group-hover:text-primary"
+                    >{{ newer.title }}</span
+                  >
+                </a>
+              }
+            </nav>
+          }
+
           <app-blog-comments [slug]="p.slug" />
-        }
-      </section>
+        </div>
+      }
     </main>
   `,
 })
@@ -129,6 +218,19 @@ export class BlogDetail {
   });
 
   protected readonly post = computed(() => this._postResource.value());
+
+  protected readonly readingTime = computed(() =>
+    readingTimeMinutes(this.post()?.contentMarkdown ?? ''),
+  );
+
+  // Liste publiée chargée une fois (même instance réutilisée d'un slug à l'autre) ; les voisins
+  // se recalculent sur le slug courant.
+  private readonly _publishedPosts = toSignal(this.gateway.getPublishedPosts(), {
+    initialValue: [] as readonly BlogPost[],
+  });
+  protected readonly neighbours = computed(() =>
+    adjacentPosts(this._publishedPosts(), this.slug()),
+  );
 
   protected readonly renderedContent = computed(() => {
     const p = this.post();

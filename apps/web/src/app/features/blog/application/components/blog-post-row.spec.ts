@@ -1,21 +1,30 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, it, expect } from 'vitest';
-import { BlogPostCard } from './blog-post-card';
+import { BlogPostRow } from './blog-post-row';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 
 function post(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
-    id: '1', title: 'Mon article', slug: 'mon-article', excerpt: 'Résumé',
-    contentMarkdown: '', coverImage: '', tags: ['Angular'], status: 'published',
-    likesCount: 3, publishedAt: '2026-08-31T00:00:00Z', updatedAt: '2026-08-31T00:00:00Z', ...overrides,
+    id: '1',
+    title: 'Mon article',
+    slug: 'mon-article',
+    excerpt: 'Résumé',
+    contentMarkdown: '',
+    coverImage: '',
+    tags: ['Angular'],
+    status: 'published',
+    likesCount: 3,
+    publishedAt: '2026-08-31T00:00:00Z',
+    updatedAt: '2026-08-31T00:00:00Z',
+    ...overrides,
   };
 }
 
-describe('BlogPostCard', () => {
-  it('affiche le titre, l\'extrait et les tags', () => {
+describe('BlogPostRow', () => {
+  it("affiche le titre, l'extrait et les tags", () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(BlogPostCard);
+    const fixture = TestBed.createComponent(BlogPostRow);
     fixture.componentRef.setInput('post', post());
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
@@ -26,7 +35,7 @@ describe('BlogPostCard', () => {
 
   it('affiche la date de publication quand elle est renseignée', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(BlogPostCard);
+    const fixture = TestBed.createComponent(BlogPostRow);
     fixture.componentRef.setInput('post', post({ publishedAt: '2026-08-31T00:00:00Z' }));
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent as string).toContain('2026');
@@ -34,7 +43,7 @@ describe('BlogPostCard', () => {
 
   it("n'affiche aucune date quand publishedAt est null", () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(BlogPostCard);
+    const fixture = TestBed.createComponent(BlogPostRow);
     fixture.componentRef.setInput('post', post({ publishedAt: null }));
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent as string).not.toContain('2026');
@@ -42,41 +51,47 @@ describe('BlogPostCard', () => {
 
   it('chaque tag est un lien vers /blog?tag=', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(BlogPostCard);
+    const fixture = TestBed.createComponent(BlogPostRow);
     fixture.componentRef.setInput('post', post({ tags: ['Angular', 'NestJS'] }));
     fixture.detectChanges();
-    const links = fixture.nativeElement.querySelectorAll('[data-testid="tag-link"]') as NodeListOf<HTMLAnchorElement>;
+    const links = fixture.nativeElement.querySelectorAll(
+      '[data-testid="tag-link"]',
+    ) as NodeListOf<HTMLAnchorElement>;
     expect(links.length).toBe(2);
     expect(links[0].getAttribute('href')).toBe('/blog?tag=Angular');
     expect(links[1].getAttribute('href')).toBe('/blog?tag=NestJS');
   });
 
-  it("n'affiche que 5 tags et un compteur +N vers l'article au-delà", () => {
+  it("n'affiche que 3 tags et un compteur +N vers l'article au-delà", () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(BlogPostCard);
+    const fixture = TestBed.createComponent(BlogPostRow);
     const tags = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     fixture.componentRef.setInput('post', post({ tags }));
     fixture.detectChanges();
-    const links = fixture.nativeElement.querySelectorAll('[data-testid="tag-link"]') as NodeListOf<HTMLAnchorElement>;
-    expect(links.length).toBe(5);
-    const more = fixture.nativeElement.querySelector('[data-testid="more-tags"]') as HTMLAnchorElement;
-    expect(more.textContent).toContain('+3');
+    const links = fixture.nativeElement.querySelectorAll(
+      '[data-testid="tag-link"]',
+    ) as NodeListOf<HTMLAnchorElement>;
+    expect(links.length).toBe(3);
+    const more = fixture.nativeElement.querySelector(
+      '[data-testid="more-tags"]',
+    ) as HTMLAnchorElement;
+    expect(more.textContent).toContain('+5');
     expect(more.getAttribute('href')).toBe('/blog/mon-article');
   });
 
-  it("n'affiche pas de compteur quand il y a 5 tags ou moins", () => {
+  it("n'affiche pas de compteur quand il y a 3 tags ou moins", () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(BlogPostCard);
-    fixture.componentRef.setInput('post', post({ tags: ['A', 'B', 'C', 'D', 'E'] }));
+    const fixture = TestBed.createComponent(BlogPostRow);
+    fixture.componentRef.setInput('post', post({ tags: ['A', 'B', 'C'] }));
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-testid="more-tags"]')).toBeNull();
   });
 });
 
-describe('BlogPostCard priority', () => {
+describe('BlogPostRow priority', () => {
   function render(priority: boolean): HTMLImageElement {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(BlogPostCard);
+    const fixture = TestBed.createComponent(BlogPostRow);
     fixture.componentRef.setInput('post', post({ coverImage: '/covers/a.avif' }));
     fixture.componentRef.setInput('priority', priority);
     fixture.detectChanges();
@@ -91,5 +106,28 @@ describe('BlogPostCard priority', () => {
 
   it('lazy-loads the cover by default', () => {
     expect(render(false).getAttribute('loading')).toBe('lazy');
+  });
+});
+
+describe('BlogPostRow lecture', () => {
+  it.each([
+    { words: 0, label: '1 min de lecture' },
+    { words: 1136, label: '6 min de lecture' },
+  ])('Given $words mots When la ligne est rendue Then « $label »', ({ words, label }) => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(BlogPostRow);
+    const contentMarkdown = Array.from({ length: words }, () => 'mot').join(' ');
+    fixture.componentRef.setInput('post', post({ contentMarkdown }));
+    fixture.detectChanges();
+    const el = fixture.nativeElement.querySelector('[data-testid="reading-time"]') as HTMLElement;
+    expect(el.textContent?.trim()).toBe(label);
+  });
+
+  it('Given une couverture When la ligne est rendue Then elle est décorative (le titre la nomme)', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(BlogPostRow);
+    fixture.componentRef.setInput('post', post({ coverImage: '/covers/a.avif' }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('img')?.getAttribute('alt')).toBe('');
   });
 });

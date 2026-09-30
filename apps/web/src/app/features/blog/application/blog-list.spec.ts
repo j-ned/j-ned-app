@@ -39,11 +39,11 @@ function setup(posts: BlogPost[]): ComponentFixture<BlogList> {
 describe('BlogList', () => {
   afterEach(() => TestBed.resetTestingModule());
 
-  it('affiche une carte par article publié', () => {
+  it('affiche une ligne par article publié', () => {
     const fixture = setup([post(), post({ id: '2', slug: 'autre', title: 'Autre article' })]);
     fixture.detectChanges();
-    const cards = fixture.nativeElement.querySelectorAll('app-blog-post-card');
-    expect(cards.length).toBe(2);
+    const rows = fixture.nativeElement.querySelectorAll('app-blog-post-row');
+    expect(rows.length).toBe(2);
   });
 
   it('filtre par tag via le query param /blog?tag=', () => {
@@ -53,8 +53,8 @@ describe('BlogList', () => {
     ]);
     fixture.componentRef.setInput('tag', 'DevOps');
     fixture.detectChanges();
-    const cards = fixture.nativeElement.querySelectorAll('app-blog-post-card');
-    expect(cards.length).toBe(1);
+    const rows = fixture.nativeElement.querySelectorAll('app-blog-post-row');
+    expect(rows.length).toBe(1);
   });
 
   it("affiche un bandeau de filtre actif avec un lien pour l'effacer", () => {
@@ -87,5 +87,27 @@ describe('BlogList', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Article 0');
     expect(fixture.nativeElement.textContent).not.toContain('Article 9');
+  });
+
+  it.each([
+    { count: 1, label: '1 article' },
+    { count: 2, label: '2 articles' },
+  ])(
+    'Given $count article(s) publié(s) When la liste est rendue Then « $label »',
+    ({ count, label }) => {
+      const posts = Array.from({ length: count }, (_, i) => post({ id: String(i), slug: `p${i}` }));
+      const fixture = setup(posts);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('header p')?.textContent?.trim()).toBe(label);
+    },
+  );
+
+  it('Given la liste When elle est rendue Then le flux RSS est proposé', () => {
+    const fixture = setup([post()]);
+    fixture.detectChanges();
+    const rss = fixture.nativeElement.querySelector(
+      '[data-testid="rss-link"]',
+    ) as HTMLAnchorElement;
+    expect(rss.getAttribute('href')).toBe('/rss.xml');
   });
 });
