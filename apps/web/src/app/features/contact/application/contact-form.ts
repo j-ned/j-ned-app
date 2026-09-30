@@ -31,48 +31,52 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   host: { class: 'block' },
   imports: [FormRoot, FormField, AppIcon, Button, ContactInfoPanel, RouterLink],
   template: `
-    <section class="animate-fade-up py-12 md:py-20">
-      <div class="page-container max-w-5xl">
-        <header class="text-center mb-14">
-          <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">Contactez-moi</h2>
-          <p class="text-muted max-w-xl mx-auto text-base md:text-lg leading-relaxed">
-            Vous avez un projet ou une question ? N'hésitez pas à me contacter.
-          </p>
-        </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-stretch">
-          <app-contact-info-panel [contactInfo]="contactInfo" [socialLinks]="socialLinks" />
-          <div class="bg-surface border border-foreground/10 rounded-2xl p-6 md:p-8">
-            <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-6">
-              Envoyer un message
-            </h3>
+    <section class="border-t border-foreground/8 py-26 md:py-34" aria-labelledby="contact-heading">
+      <div class="page-container">
+        <div
+          class="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-20"
+        >
+          <div>
+            <h2
+              id="contact-heading"
+              class="text-[clamp(2.25rem,4.6vw,3.75rem)] font-extrabold leading-[1.02] tracking-[-0.035em]"
+            >
+              Écrivez-moi.
+            </h2>
+            <p class="mt-5 max-w-[42ch] text-[1.0625rem] text-muted">
+              Une question sur un projet, sur le code de ce site ou sur mon parcours : je lis et je
+              réponds personnellement.
+            </p>
+            <app-contact-info-panel
+              class="mt-9"
+              [contactInfo]="contactInfo"
+              [socialLinks]="socialLinks"
+            />
+          </div>
+          <div class="rounded-xl border border-foreground/8 bg-surface p-7 md:p-9">
+            <h3 class="mb-6 text-lg font-semibold tracking-tight">Envoyer un message</h3>
 
             <form [formRoot]="contactForm" class="flex flex-col gap-6">
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
                 <div>
                   @let nameState = contactForm.name();
-                  <label for="name" class="form-label">Nom complet *</label>
-                  <div class="relative">
-                    <app-icon
-                      name="user"
-                      [size]="14"
-                      class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
-                    />
-                    <input
-                      id="name"
-                      type="text"
-                      [formField]="contactForm.name"
-                      aria-required="true"
-                      placeholder="Votre nom"
-                      autocomplete="name"
-                      [attr.aria-invalid]="nameState.touched() && nameState.invalid()"
-                      [attr.aria-describedby]="
-                        nameState.touched() && nameState.invalid() ? 'contact-name-error' : null
-                      "
-                      class="form-input pl-9"
-                    />
-                  </div>
+                  <label for="name" class="form-label"
+                    >Nom complet <span class="font-normal text-muted">(requis)</span></label
+                  >
+                  <input
+                    id="name"
+                    type="text"
+                    [formField]="contactForm.name"
+                    aria-required="true"
+                    placeholder="Votre nom"
+                    autocomplete="name"
+                    [attr.aria-invalid]="nameState.touched() && nameState.invalid()"
+                    [attr.aria-describedby]="
+                      nameState.touched() && nameState.invalid() ? 'contact-name-error' : null
+                    "
+                    class="form-input"
+                  />
                   @if (nameState.touched() && nameState.invalid()) {
                     <p id="contact-name-error" role="alert" class="form-error">
                       {{ nameState.errors()[0].message }}
@@ -81,27 +85,22 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 </div>
                 <div>
                   @let emailState = contactForm.email();
-                  <label for="email" class="form-label">Email *</label>
-                  <div class="relative">
-                    <app-icon
-                      name="envelope"
-                      [size]="14"
-                      class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
-                    />
-                    <input
-                      id="email"
-                      type="email"
-                      [formField]="contactForm.email"
-                      aria-required="true"
-                      placeholder="votre@email.com"
-                      autocomplete="email"
-                      [attr.aria-invalid]="emailState.touched() && emailState.invalid()"
-                      [attr.aria-describedby]="
-                        emailState.touched() && emailState.invalid() ? 'contact-email-error' : null
-                      "
-                      class="form-input pl-9"
-                    />
-                  </div>
+                  <label for="email" class="form-label"
+                    >Email <span class="font-normal text-muted">(requis)</span></label
+                  >
+                  <input
+                    id="email"
+                    type="email"
+                    [formField]="contactForm.email"
+                    aria-required="true"
+                    placeholder="votre@email.com"
+                    autocomplete="email"
+                    [attr.aria-invalid]="emailState.touched() && emailState.invalid()"
+                    [attr.aria-describedby]="
+                      emailState.touched() && emailState.invalid() ? 'contact-email-error' : null
+                    "
+                    class="form-input"
+                  />
                   @if (emailState.touched() && emailState.invalid()) {
                     <p id="contact-email-error" role="alert" class="form-error">
                       {{ emailState.errors()[0].message }}
@@ -111,28 +110,23 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               </fieldset>
               <div>
                 @let subjectState = contactForm.subject();
-                <label for="subject" class="form-label">Sujet *</label>
-                <div class="relative">
-                  <app-icon
-                    name="pencil"
-                    [size]="14"
-                    class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
-                  />
-                  <input
-                    id="subject"
-                    type="text"
-                    [formField]="contactForm.subject"
-                    aria-required="true"
-                    placeholder="Objet de votre message"
-                    [attr.aria-invalid]="subjectState.touched() && subjectState.invalid()"
-                    [attr.aria-describedby]="
-                      subjectState.touched() && subjectState.invalid()
-                        ? 'contact-subject-error'
-                        : null
-                    "
-                    class="form-input pl-9"
-                  />
-                </div>
+                <label for="subject" class="form-label"
+                  >Sujet <span class="font-normal text-muted">(requis)</span></label
+                >
+                <input
+                  id="subject"
+                  type="text"
+                  [formField]="contactForm.subject"
+                  aria-required="true"
+                  placeholder="Objet de votre message"
+                  [attr.aria-invalid]="subjectState.touched() && subjectState.invalid()"
+                  [attr.aria-describedby]="
+                    subjectState.touched() && subjectState.invalid()
+                      ? 'contact-subject-error'
+                      : null
+                  "
+                  class="form-input"
+                />
                 @if (subjectState.touched() && subjectState.invalid()) {
                   <p id="contact-subject-error" role="alert" class="form-error">
                     {{ subjectState.errors()[0].message }}
@@ -141,7 +135,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               </div>
               <div>
                 @let messageState = contactForm.message();
-                <label for="message" class="form-label">Message *</label>
+                <label for="message" class="form-label"
+                  >Message <span class="font-normal text-muted">(requis)</span></label
+                >
                 <textarea
                   id="message"
                   [formField]="contactForm.message"
@@ -162,26 +158,31 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   </p>
                 }
               </div>
-              <app-button
-                type="submit"
-                severity="primary"
-                [block]="true"
-                [disabled]="contactForm().submitting()"
-              >
-                @if (contactForm().submitting()) {
-                  <app-icon name="spinner" [size]="20" class="animate-spin" />
-                  <span>Envoi en cours...</span>
-                } @else {
-                  <span>Envoyer le message</span>
-                  <app-icon name="send" [size]="20" />
-                }
-              </app-button>
-              <p class="text-xs text-muted mt-3 text-center">
-                Vos nom, e-mail et message servent uniquement à vous répondre.
-                <a routerLink="/confidentialite" class="underline hover:text-primary">
-                  Politique de confidentialité
-                </a>
-              </p>
+              <div class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 pt-1">
+                <p class="max-w-[34ch] text-[0.8125rem] text-muted">
+                  Vos nom, e-mail et message servent uniquement à vous répondre.
+                  <a
+                    routerLink="/confidentialite"
+                    class="underline underline-offset-3 hover:text-primary"
+                  >
+                    Politique de confidentialité
+                  </a>
+                </p>
+                <app-button
+                  type="submit"
+                  severity="primary"
+                  size="large"
+                  [disabled]="contactForm().submitting()"
+                >
+                  @if (contactForm().submitting()) {
+                    <app-icon name="spinner" [size]="20" class="animate-spin" />
+                    <span>Envoi en cours...</span>
+                  } @else {
+                    <span>Envoyer le message</span>
+                    <app-icon name="send" [size]="20" />
+                  }
+                </app-button>
+              </div>
             </form>
           </div>
         </div>
