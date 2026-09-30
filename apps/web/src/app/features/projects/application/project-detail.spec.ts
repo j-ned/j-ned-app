@@ -131,7 +131,9 @@ describe('ProjectDetail', () => {
     const gateway = {
       getAllProjects: () => {
         calls += 1;
-        return calls === 1 ? throwError(() => new Error('down')) : of([project()] as readonly Project[]);
+        return calls === 1
+          ? throwError(() => new Error('down'))
+          : of([project()] as readonly Project[]);
       },
     } as unknown as ProjectsGateway;
     TestBed.configureTestingModule({
@@ -148,7 +150,9 @@ describe('ProjectDetail', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const error = fixture.nativeElement.querySelector('[data-testid="project-error"]') as HTMLElement;
+    const error = fixture.nativeElement.querySelector(
+      '[data-testid="project-error"]',
+    ) as HTMLElement;
     expect(error).not.toBeNull();
     expect(navigate).not.toHaveBeenCalled();
 
@@ -157,5 +161,28 @@ describe('ProjectDetail', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-testid="project-error"]')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Mon site');
+  });
+
+  it('Given une stack When le détail est rendu Then chaque outil est un élément de liste', async () => {
+    const fixture = setup([project({ tags: ['Angular', 'NestJS', 'PostgreSQL'] })]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const items = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="project-stack"] li'),
+    ).map((li) => li.textContent?.trim());
+    expect(items).toEqual(['Angular', 'NestJS', 'PostgreSQL']);
+  });
+
+  it('Given des choix techniques When le détail est rendu Then les sections sont nommées par leur h2, sans numérotation', async () => {
+    const fixture = setup([project()]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    for (const id of ['tech-choices-title', 'architecture-decisions-title']) {
+      expect(root.querySelector(`section[aria-labelledby="${id}"] h2#${id}`)).not.toBeNull();
+    }
+    expect(root.querySelector('[data-testid="tech-choices"]')?.textContent).not.toMatch(/\b01\b/);
   });
 });

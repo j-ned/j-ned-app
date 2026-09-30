@@ -1,48 +1,36 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import type { ArchitectureDecision } from '@features/projects/domain/models/project.model';
+import { SplitSection } from '@shared/ui/split-section';
+
+const SUMMARY = 'Les arbitrages structurants, avec leur justification.';
 
 @Component({
   selector: 'app-project-detail-arch-decisions',
-  imports: [],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'contents' },
+  imports: [SplitSection],
+  host: { class: 'block border-t border-foreground/8', 'data-testid': 'architecture-decisions' },
   template: `
-    <section
-      data-testid="architecture-decisions"
-      class="page-container mt-14 md:mt-20"
-      aria-labelledby="architecture-decisions-title"
+    <app-split-section
+      headingId="architecture-decisions-title"
+      heading="Décisions d'architecture"
+      [summary]="summary"
     >
-      <h2
-        id="architecture-decisions-title"
-        class="text-2xl md:text-3xl font-bold text-foreground mb-6 md:mb-8"
-      >
-        Décisions d'architecture
-      </h2>
-
-      <dl class="grid border-t border-foreground/10 lg:grid-cols-2 lg:gap-x-12">
-        @for (item of architectureDecisions(); track item.decision; let i = $index) {
+      <dl class="border-t border-foreground/8">
+        @for (item of architectureDecisions(); track item.decision) {
           <div
-            class="grid gap-y-1.5 py-5 md:py-6 border-b border-foreground/10 animate-fade-up md:grid-cols-[2fr_3fr] md:gap-x-8 lg:grid-cols-1 lg:gap-x-0"
-            [style.animation-delay.ms]="i * 60"
+            class="grid gap-x-8 gap-y-1.5 border-b border-foreground/8 py-6 lg:grid-cols-[14rem_minmax(0,1fr)]"
           >
-            <dt class="flex items-start gap-3 text-base md:text-lg font-semibold text-foreground">
-              <span
-                class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
-                aria-hidden="true"
-              ></span>
-              {{ item.decision }}
-            </dt>
-            <dd
-              class="text-muted leading-relaxed max-w-prose text-pretty pl-[1.625rem] md:pl-0 lg:pl-[1.625rem]"
-            >
+            <dt class="text-lg font-semibold tracking-tight">{{ item.decision }}</dt>
+            <dd class="max-w-[70ch] text-[0.96875rem] leading-relaxed text-muted text-pretty">
               {{ item.rationale }}
             </dd>
           </div>
         }
       </dl>
-    </section>
+    </app-split-section>
   `,
 })
 export class ProjectDetailArchDecisions {
   readonly architectureDecisions = input.required<readonly ArchitectureDecision[]>();
+
+  protected readonly summary = SUMMARY;
 }

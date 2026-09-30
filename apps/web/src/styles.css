@@ -112,6 +112,25 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
+ * Liens stylés en bouton (<a> externes : démo, dépôts). Même gabarit que
+ * <app-button> (rounded-lg, 44px), qui ne rend que des <button>.
+ * ---------------------------------------------------------------- */
+
+@utility link-btn {
+  @apply inline-flex min-h-11 items-center gap-2 rounded-lg px-5 text-[0.9375rem] font-semibold transition-colors;
+}
+
+@utility link-btn-primary {
+  @apply link-btn;
+  @apply bg-primary-bg text-white hover:bg-primary-bg/90;
+}
+
+@utility link-btn-outline {
+  @apply link-btn;
+  @apply border border-foreground/15 text-foreground hover:border-primary/40 hover:text-primary;
+}
+
+/* ---------------------------------------------------------------- *
  * Reveal animation — fade-up sobre pour cards/sections au mount.
  * Couplée avec @defer (on viewport), elle déclenche un reveal au scroll.
  * Respecte prefers-reduced-motion (no-op si l'utilisateur le demande).

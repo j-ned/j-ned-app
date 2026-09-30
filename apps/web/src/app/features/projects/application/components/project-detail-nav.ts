@@ -10,7 +10,7 @@ import { AppIcon } from '@shared/icons/app-icon';
   host: { class: 'contents' },
   template: `
     <nav
-      class="page-container mt-16 md:mt-20 pt-8 border-t border-foreground/10 grid grid-cols-2 gap-4 sm:flex sm:items-center sm:justify-between"
+      class="page-container mt-4 pt-8 border-t border-foreground/8 grid grid-cols-2 gap-4 sm:flex sm:items-center sm:justify-between"
       aria-label="Navigation entre projets"
     >
       @if (previousProject(); as prev) {

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
+import { Component, input, output, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { AppIcon } from '@shared/icons/app-icon';
@@ -6,52 +6,47 @@ import { AppIcon } from '@shared/icons/app-icon';
 @Component({
   selector: 'app-project-detail-header',
   imports: [RouterLink, AppIcon],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
   template: `
-    <header class="page-container pt-6 md:pt-10">
+    @let p = project();
+    <header class="page-container pt-8 md:pt-12">
       <a
         routerLink="/projects"
         data-testid="back-link"
-        class="group inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors mb-8"
+        class="group inline-flex min-h-11 items-center gap-2 text-sm text-muted transition-colors hover:text-primary"
       >
         <app-icon
           name="arrow-left"
-          [size]="18"
-          class="transition-transform group-hover:-translate-x-0.5"
+          [size]="16"
+          class="transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none"
         />
-        Retour aux projets
+        Tous les projets
       </a>
-
-      <p class="text-primary text-xs font-semibold uppercase tracking-[0.2em] mb-3">
-        {{ project().category }}
-      </p>
-
+      <p class="mt-7 font-mono text-[0.8125rem] font-medium text-primary">{{ p.category }}</p>
       <h1
         data-testid="project-detail-title"
-        class="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground text-balance max-w-4xl"
+        class="mt-3.5 max-w-4xl text-[clamp(2.75rem,6vw,5.25rem)] font-extrabold leading-none tracking-[-0.04em] text-balance"
       >
-        {{ project().title }}
+        {{ p.title }}
       </h1>
-
-      <p class="mt-5 text-lg text-muted leading-relaxed max-w-2xl text-pretty">
-        {{ project().description }}
+      <p
+        class="mt-6 max-w-[62ch] text-[clamp(1.0625rem,1.4vw,1.25rem)] leading-relaxed text-muted text-pretty"
+      >
+        {{ p.description }}
       </p>
-
       @if (hasLinks()) {
-        @let p = project();
-        <div class="mt-7 flex flex-wrap items-center gap-3">
+        <div class="mt-8 flex flex-wrap items-center gap-2.5">
           @if (p.liveUrl) {
             <a
               [href]="p.liveUrl"
               target="_blank"
               rel="noopener noreferrer"
               (click)="linkClicked.emit()"
-              class="inline-flex items-center gap-2 rounded-full bg-primary-bg px-6 py-3 text-sm font-semibold text-white transition-[transform,opacity] duration-200 hover:opacity-90 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              class="link-btn-primary"
               [attr.aria-label]="'Voir la démo de ' + p.title"
             >
-              <app-icon name="external-link" [size]="18" />
               Voir la démo
+              <app-icon name="external-link" [size]="14" />
             </a>
           }
           @if (p.repoUrl) {
@@ -60,10 +55,10 @@ import { AppIcon } from '@shared/icons/app-icon';
               target="_blank"
               rel="noopener noreferrer"
               (click)="linkClicked.emit()"
-              class="inline-flex items-center gap-2 rounded-full border border-foreground/15 px-6 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              class="link-btn-outline"
               [attr.aria-label]="'Code source de ' + p.title"
             >
-              <app-icon name="github" [size]="18" />
+              <app-icon name="github" [size]="16" />
               Code source
             </a>
           }
@@ -73,10 +68,10 @@ import { AppIcon } from '@shared/icons/app-icon';
               target="_blank"
               rel="noopener noreferrer"
               (click)="linkClicked.emit()"
-              class="inline-flex items-center gap-2 rounded-full border border-foreground/15 px-6 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              class="link-btn-outline"
               [attr.aria-label]="'Code frontend de ' + p.title"
             >
-              <app-icon name="github" [size]="18" />
+              <app-icon name="github" [size]="16" />
               Frontend
             </a>
           }
@@ -86,31 +81,34 @@ import { AppIcon } from '@shared/icons/app-icon';
               target="_blank"
               rel="noopener noreferrer"
               (click)="linkClicked.emit()"
-              class="inline-flex items-center gap-2 rounded-full border border-foreground/15 px-6 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              class="link-btn-outline"
               [attr.aria-label]="'Code backend de ' + p.title"
             >
-              <app-icon name="github" [size]="18" />
+              <app-icon name="github" [size]="16" />
               Backend
             </a>
           }
         </div>
       }
-
-      @if (project().tags.length > 0) {
-        <div class="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <span class="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Stack</span>
-          <ul class="flex flex-wrap gap-2" role="list">
-            @for (tag of project().tags; track tag) {
-              <li>
-                <span
-                  class="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-foreground/90 ring-1 ring-inset ring-primary/20"
-                >
+      @if (p.tags.length > 0) {
+        <dl
+          class="mt-11 grid gap-1.5 border-y border-foreground/8 py-4.5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-6"
+        >
+          <dt class="font-mono text-xs text-muted sm:pt-0.5">stack</dt>
+          <dd>
+            <ul
+              class="flex flex-wrap gap-x-2 font-mono text-[0.8125rem] leading-[1.7]"
+              role="list"
+              data-testid="project-stack"
+            >
+              @for (tag of p.tags; track tag) {
+                <li class="after:ml-2 after:text-muted after:content-['·'] last:after:content-none">
                   {{ tag }}
-                </span>
-              </li>
-            }
-          </ul>
-        </div>
+                </li>
+              }
+            </ul>
+          </dd>
+        </dl>
       }
     </header>
   `,

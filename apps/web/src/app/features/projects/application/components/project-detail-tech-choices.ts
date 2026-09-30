@@ -1,53 +1,36 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { Component, input } from '@angular/core';
 import type { TechChoice } from '@features/projects/domain/models/project.model';
+import { SplitSection } from '@shared/ui/split-section';
+
+const SUMMARY = "Pourquoi chaque brique, et ce qu'elle apporte au projet.";
 
 @Component({
   selector: 'app-project-detail-tech-choices',
-  imports: [DecimalPipe],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'contents' },
+  imports: [SplitSection],
+  host: { class: 'block border-t border-foreground/8', 'data-testid': 'tech-choices' },
   template: `
-    <section
-      data-testid="tech-choices"
-      class="page-container mt-14 md:mt-20"
-      aria-labelledby="tech-choices-title"
+    <app-split-section
+      headingId="tech-choices-title"
+      heading="Choix techniques"
+      [summary]="summary"
     >
-      <div class="flex items-baseline gap-4 mb-6 md:mb-8">
-        <h2 id="tech-choices-title" class="text-2xl md:text-3xl font-bold text-foreground">
-          Choix techniques
-        </h2>
-        <span class="text-sm font-medium text-muted tabular-nums">
-          {{ techChoices().length | number: '2.0-0' }}
-        </span>
-      </div>
-
-      <ol class="grid border-t border-foreground/10 lg:grid-cols-2 lg:gap-x-12">
-        @for (choice of techChoices(); track choice.techno; let i = $index) {
+      <ul class="border-t border-foreground/8" role="list">
+        @for (choice of techChoices(); track choice.techno) {
           <li
-            class="grid grid-cols-[2.5rem_1fr] sm:grid-cols-[3.5rem_1fr] gap-x-4 sm:gap-x-8 py-5 md:py-6 border-b border-foreground/10 animate-fade-up"
-            [style.animation-delay.ms]="i * 60"
+            class="grid gap-x-8 gap-y-1.5 border-b border-foreground/8 py-6 lg:grid-cols-[14rem_minmax(0,1fr)]"
           >
-            <span
-              class="text-2xl sm:text-3xl font-bold leading-none text-primary/60 tabular-nums pt-1"
-              aria-hidden="true"
-            >
-              {{ i + 1 | number: '2.0-0' }}
-            </span>
-            <div>
-              <h3 class="text-lg md:text-xl font-semibold text-foreground">
-                {{ choice.techno }}
-              </h3>
-              <p class="mt-1.5 text-muted leading-relaxed max-w-prose text-pretty">
-                {{ choice.why }}
-              </p>
-            </div>
+            <h3 class="text-lg font-semibold tracking-tight">{{ choice.techno }}</h3>
+            <p class="max-w-[70ch] text-[0.96875rem] leading-relaxed text-muted text-pretty">
+              {{ choice.why }}
+            </p>
           </li>
         }
-      </ol>
-    </section>
+      </ul>
+    </app-split-section>
   `,
 })
 export class ProjectDetailTechChoices {
   readonly techChoices = input.required<readonly TechChoice[]>();
+
+  protected readonly summary = SUMMARY;
 }

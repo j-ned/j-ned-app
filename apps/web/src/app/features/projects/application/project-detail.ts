@@ -29,12 +29,12 @@ import { Button } from '@shared/ui/button';
   host: { class: 'block' },
   template: `
     @let p = project();
-    <main class="min-h-svh pt-20 pb-20">
+    <main class="min-h-svh pt-20 pb-16">
       @if (p) {
         <app-project-detail-header [project]="p" (linkClicked)="trackClick()" />
 
         @if (p.image) {
-          <figure class="page-container mt-10 md:mt-14">
+          <figure class="page-container mt-12 mb-22 md:mt-14 md:mb-30">
             <div
               class="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] overflow-hidden rounded-xl border border-foreground/8"
             >
