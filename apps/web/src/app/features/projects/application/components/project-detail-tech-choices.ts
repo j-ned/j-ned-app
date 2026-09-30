@@ -29,7 +29,7 @@ import type { TechChoice } from '@features/projects/domain/models/project.model'
             [style.animation-delay.ms]="i * 60"
           >
             <span
-              class="text-2xl sm:text-3xl font-bold leading-none text-accent/60 tabular-nums pt-1"
+              class="text-2xl sm:text-3xl font-bold leading-none text-primary/60 tabular-nums pt-1"
               aria-hidden="true"
             >
               {{ i + 1 | number: '2.0-0' }}

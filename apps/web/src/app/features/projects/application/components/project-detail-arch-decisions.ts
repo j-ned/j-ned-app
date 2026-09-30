@@ -27,12 +27,14 @@ import type { ArchitectureDecision } from '@features/projects/domain/models/proj
           >
             <dt class="flex items-start gap-3 text-base md:text-lg font-semibold text-foreground">
               <span
-                class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+                class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
                 aria-hidden="true"
               ></span>
               {{ item.decision }}
             </dt>
-            <dd class="text-muted leading-relaxed max-w-prose text-pretty pl-[1.625rem] md:pl-0 lg:pl-[1.625rem]">
+            <dd
+              class="text-muted leading-relaxed max-w-prose text-pretty pl-[1.625rem] md:pl-0 lg:pl-[1.625rem]"
+            >
               {{ item.rationale }}
             </dd>
           </div>

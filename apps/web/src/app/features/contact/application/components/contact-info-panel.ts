@@ -37,13 +37,13 @@ import { AppIconTile } from '@shared/ui/icon-tile';
           [href]="socialLinks().phone.url"
           class="group flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 transition-colors duration-200"
         >
-          <app-icon-tile class="bg-accent/10">
-            <app-icon name="phone" [size]="18" class="text-accent" />
+          <app-icon-tile class="bg-primary/10">
+            <app-icon name="phone" [size]="18" class="text-primary" />
           </app-icon-tile>
           <div>
             <p class="text-xs text-muted">Téléphone</p>
             <p
-              class="text-sm font-medium text-foreground group-hover:text-accent transition-colors"
+              class="text-sm font-medium text-foreground group-hover:text-primary transition-colors"
             >
               {{ contactInfo().phone }}
             </p>
@@ -112,13 +112,13 @@ import { AppIconTile } from '@shared/ui/icon-tile';
           @if (socialLinks().phone.url) {
             <a
               [href]="socialLinks().phone.url"
-              class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-accent/30 hover:bg-accent/10 transition-colors"
+              class="group icon-tile bg-foreground/5 border border-foreground/10 hover:border-primary/30 hover:bg-primary/10 transition-colors"
               [attr.aria-label]="socialLinks().phone.label"
             >
               <app-icon
                 [name]="socialLinks().phone.icon"
                 [size]="16"
-                class="text-muted group-hover:text-accent transition-colors"
+                class="text-muted group-hover:text-primary transition-colors"
               />
             </a>
           }

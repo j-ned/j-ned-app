@@ -1,10 +1,4 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  input,
-  output,
-  computed,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { AppIcon } from '@shared/icons/app-icon';
@@ -29,7 +23,7 @@ import { AppIcon } from '@shared/icons/app-icon';
         Retour aux projets
       </a>
 
-      <p class="text-accent text-xs font-semibold uppercase tracking-[0.2em] mb-3">
+      <p class="text-primary text-xs font-semibold uppercase tracking-[0.2em] mb-3">
         {{ project().category }}
       </p>
 
