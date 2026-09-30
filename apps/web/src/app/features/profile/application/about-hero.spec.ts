@@ -6,6 +6,7 @@ import {
   STATIC_SOCIAL_BUTTONS,
 } from '../infra/data/profile.static-data';
 import { fakeProfileGateway } from '../testing/fake-profile-gateway';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { AboutHero } from './about-hero';
 
 describe('AboutHero', () => {
@@ -44,6 +45,21 @@ describe('AboutHero', () => {
       expect(link.getAttribute('target')).toBe(external ? '_blank' : null);
       expect(link.getAttribute('rel')).toBe(external ? 'noopener noreferrer' : null);
     }
+  });
+
+  it('Given les réseaux When le hero est rendu Then LinkedIn suit GitHub et s’ouvre dans un nouvel onglet', () => {
+    const links = Array.from(
+      host().querySelectorAll<HTMLAnchorElement>('[data-testid="about-social-link"]'),
+    );
+    expect(links.map((link) => link.textContent?.trim())).toEqual([
+      'GitHub',
+      'LinkedIn',
+      'Mail',
+      'Discord',
+    ]);
+    const linkedin = links[1];
+    expect(linkedin.getAttribute('href')).toBe(SITE_IDENTITY.socials.linkedin);
+    expect(linkedin.getAttribute('target')).toBe('_blank');
   });
 
   it('Given le portrait When le hero est rendu Then il porte un texte alternatif', () => {

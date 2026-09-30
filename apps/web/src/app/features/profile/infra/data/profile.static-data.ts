@@ -154,6 +154,12 @@ export const STATIC_SOCIAL_BUTTONS: readonly SocialButton[] = [
     href: SITE_IDENTITY.socials.github,
   },
   {
+    id: 'a447e2b5-5929-4ef9-91d7-85eb325e033f',
+    icon: 'lucide-linkedin',
+    label: 'LinkedIn',
+    href: SITE_IDENTITY.socials.linkedin,
+  },
+  {
     id: 'c3d221dc-eabf-4080-95de-6a60e512b6cd',
     icon: 'lucide-mail',
     label: 'Mail',
