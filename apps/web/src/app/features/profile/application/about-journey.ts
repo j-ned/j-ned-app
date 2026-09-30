@@ -1,28 +1,28 @@
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
-import { AppIcon } from '@shared/icons/app-icon';
+import { SplitSection } from '@shared/ui/split-section';
 
 @Component({
   selector: 'app-about-journey',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AppIcon],
-  host: {
-    class: 'block animate-fade-up bg-surface border border-foreground/8 rounded-2xl p-6',
-  },
+  imports: [SplitSection],
+  host: { class: 'block border-t border-foreground/8' },
   template: `
-    @if (biography()) {
-      <section>
-        <header class="flex items-center gap-2 mb-4">
-          <app-icon name="user" [size]="24" class="text-primary" />
-          <h2 class="text-2xl font-bold text-foreground">{{ biography()!.title }}</h2>
-        </header>
-        <div class="space-y-3">
-          @for (paragraph of biography()!.paragraphs; track paragraph) {
-            <p class="text-muted text-sm leading-relaxed">{{ paragraph }}</p>
+    @let bio = biography();
+    @if (bio) {
+      <app-split-section headingId="journey-heading" [heading]="bio.title" [summary]="bio.summary">
+        <div class="flex flex-col gap-5.5">
+          @for (paragraph of bio.paragraphs; track paragraph; let first = $first) {
+            <p
+              class="max-w-[64ch] text-[clamp(1.0625rem,1.3vw,1.1875rem)] leading-[1.7]"
+              [class]="first ? 'font-medium text-foreground' : 'text-foreground/80'"
+              data-testid="journey-paragraph"
+            >
+              {{ paragraph }}
+            </p>
           }
         </div>
-      </section>
+      </app-split-section>
     }
   `,
 })

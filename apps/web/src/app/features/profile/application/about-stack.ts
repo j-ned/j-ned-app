@@ -1,36 +1,33 @@
-import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
-import { AppIcon } from '@shared/icons/app-icon';
 
+// Filets entre cellules par `gap-px` sur fond de bordure : aucun double trait, quel que soit
+// le nombre de colonnes (2, 3 ou 6).
 @Component({
   selector: 'app-about-stack',
-  imports: [NgOptimizedImage, AppIcon],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    class: 'block animate-fade-up bg-surface border border-foreground/8 rounded-2xl p-6 h-full',
-  },
+  imports: [NgOptimizedImage],
+  host: { class: 'block' },
   template: `
-    <header class="flex items-center gap-2 mb-6">
-      <app-icon name="code" [size]="24" class="text-primary" />
-      <h2 class="font-bold text-xl text-foreground">Stack Technique</h2>
-    </header>
-    <ul class="grid grid-cols-2 min-[400px]:grid-cols-3 gap-3" role="list">
+    <ul
+      class="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-foreground/8 bg-foreground/8 sm:grid-cols-3 xl:grid-cols-6"
+      aria-label="Stack technique"
+      role="list"
+    >
       @for (tech of technologies(); track tech.id) {
-        <li
-          class="bg-background/50 border border-foreground/10 rounded-xl p-3 flex flex-col items-center gap-2 hover:border-primary/50 hover:bg-primary/5 transition-colors group"
-        >
+        <li class="flex items-center gap-3 bg-background px-5 py-4.5" data-testid="about-tech">
           <img
             [ngSrc]="'/icons/' + tech.icon + '.svg'"
             alt=""
             width="32"
             height="32"
-            class="w-8 h-8 group-hover:scale-110 transition-transform"
+            class="size-7 shrink-0"
           />
-          <p class="text-xs font-medium text-foreground text-center leading-tight">
-            {{ tech.name }}
-          </p>
+          <div class="min-w-0">
+            <p class="text-[0.90625rem] font-semibold leading-tight">{{ tech.name }}</p>
+            <p class="font-mono text-[0.71875rem] lowercase text-muted">{{ tech.category }}</p>
+          </div>
         </li>
       }
     </ul>

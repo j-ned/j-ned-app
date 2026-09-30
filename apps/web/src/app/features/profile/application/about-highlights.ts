@@ -1,41 +1,23 @@
-import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
-import { AppIcon } from '@shared/icons/app-icon';
-import { AppIconTile } from '@shared/ui/icon-tile';
 
 @Component({
   selector: 'app-about-highlights',
-  imports: [AppIcon, AppIconTile],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    class: 'block animate-fade-up bg-surface border border-foreground/8 rounded-2xl p-6',
-  },
+  host: { class: 'block border-t border-foreground/8' },
   template: `
-    <section>
-      <header class="flex items-center gap-2 mb-5">
-        <app-icon name="sparkles" [size]="24" class="text-primary" />
-        <h2 class="text-2xl font-bold text-foreground">Ce qui me caractérise</h2>
-      </header>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <section class="page-container py-22 md:py-30" aria-labelledby="traits-heading">
+      <h2 id="traits-heading" class="section-title">Ce qui me caractérise</h2>
+      <ul class="mt-12 grid lg:grid-cols-3 lg:gap-10" role="list">
         @for (highlight of highlights(); track highlight.id) {
-          <article
-            class="bg-background/50 border border-foreground/10 rounded-xl p-4 hover:border-primary/50 hover:bg-primary/5 transition-colors group"
-          >
-            <app-icon-tile class="bg-primary/10 mb-3">
-              <app-icon [name]="highlight.icon" [size]="22" class="text-primary" />
-            </app-icon-tile>
-            <h3
-              class="text-base font-bold text-foreground mb-2 group-hover:text-primary transition-colors"
-            >
-              {{ highlight.title }}
-            </h3>
-            <p class="text-muted text-sm leading-relaxed">
+          <li class="border-t-2 border-foreground pt-5 pb-7" data-testid="about-trait">
+            <h3 class="text-xl font-semibold tracking-tight">{{ highlight.title }}</h3>
+            <p class="mt-2.5 text-[0.96875rem] leading-relaxed text-muted">
               {{ highlight.description }}
             </p>
-          </article>
+          </li>
         }
-      </div>
+      </ul>
     </section>
   `,
 })

@@ -7,5 +7,6 @@ export type WhatIDo = {
 export type Motivation = {
   readonly id: string;
   readonly title: string;
+  readonly statement: string;
   readonly description: string;
 };

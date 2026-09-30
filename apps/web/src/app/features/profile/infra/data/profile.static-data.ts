@@ -17,8 +17,10 @@ export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
 export const STATIC_BIOGRAPHY: Biography = {
   id: '9acfdedb-c00d-4370-858e-7215e30f5a41',
   title: 'Mon parcours',
+  summary: 'De la métallurgie au développement web, avec la même exigence.',
+  lead: "20 ans dans l'industrie m'ont appris ce qu'est vraiment la rigueur.",
+  leadEmphasis: "Aujourd'hui, je l'applique au code.",
   paragraphs: [
-    "20 ans dans l'industrie m'ont appris ce qu'est vraiment la rigueur. Aujourd'hui, je l'applique au code.",
     "Je ne suis pas venu au développement web par hasard. En métallurgie, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
     "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence que j'applique à chaque ligne de code : pensée pour durer, comprise de bout en bout, de la requête SQL au déploiement en production. Je ne me contente jamais de faire fonctionner, je comprends pourquoi ça fonctionne.",
     "Cette expérience m'a donné une vision systémique rare : je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.",
@@ -28,8 +30,9 @@ export const STATIC_BIOGRAPHY: Biography = {
 export const STATIC_DIPLOMAS: readonly Diploma[] = [
   {
     id: '2a970a44-7422-4e6c-adaa-5b78f6620e10',
-    title: 'Développeur Web et Web Mobile - Bac+2',
+    title: 'Développeur Web et Web Mobile',
     provider: 'Studi',
+    level: 'titre professionnel · niveau 5',
     shortDescription:
       "Titre professionnel de niveau 5 axé sur la conception, le développement et la maintenance d'applications web et mobiles, avec une pédagogie orientée bonnes pratiques et travail en équipe.",
     skills: [
@@ -43,8 +46,9 @@ export const STATIC_DIPLOMAS: readonly Diploma[] = [
   },
   {
     id: '5886de30-2beb-4654-b61d-50c737594a47',
-    title: "Développeur d'applications PGI/ERP - Bac+2",
+    title: "Développeur d'applications PGI/ERP",
     provider: 'ALT-RH',
+    level: 'titre professionnel · niveau 5',
     shortDescription:
       "Titre professionnel de niveau 5 dédié à la conception et à la maintenance d'applications de gestion intégrées, avec un focus sur l'architecture logicielle et la collaboration agile.",
     skills: [
@@ -103,21 +107,18 @@ export const STATIC_ABOUT_HIGHLIGHTS: readonly Highlight[] = [
     title: 'Exigence de production',
     description:
       "Formé dans un environnement où l'erreur coûte cher, j'écris du code pensé pour durer. Type-safe, testé, documenté.",
-    icon: 'valid',
   },
   {
     id: 'bf68db5e-044f-400c-895a-e67de2f0d151',
     title: 'Autonomie réelle',
     description:
       "Autodidacte, je trouve des solutions quand il n'y a pas de tutoriel. Je lis la doc, je comprends les sources, je creuse jusqu'à résoudre.",
-    icon: 'book',
   },
   {
     id: '65665431-8b96-4957-bec3-8403689adfcf',
     title: "Vision d'ensemble",
     description:
       "Je ne code pas dans le vide. Je comprends le métier, l'architecture, les contraintes. Vingt ans à optimiser des systèmes complexes, ça laisse des traces.",
-    icon: 'spider-web',
   },
 ];
 
@@ -139,8 +140,10 @@ export const STATIC_WHAT_I_DO: readonly WhatIDo[] = [
 export const STATIC_MOTIVATION: Motivation = {
   id: 'f963681b-3599-4801-9c7f-312afc70e4b2',
   title: 'Ce qui me motive',
+  statement:
+    "La tech au service d'un impact positif : GreenTech, industrie durable, projets qui ont du sens.",
   description:
-    "La tech au service d'un impact positif : GreenTech, industrie durable, projets qui ont du sens. La qualité technique et l'apprentissage continu, au travail comme sur mes projets personnels.",
+    "La qualité technique et l'apprentissage continu, au travail comme sur mes projets personnels.",
 };
 
 export const STATIC_SOCIAL_BUTTONS: readonly SocialButton[] = [

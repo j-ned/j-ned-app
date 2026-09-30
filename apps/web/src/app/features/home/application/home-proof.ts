@@ -10,12 +10,7 @@ import type { HomeHighlight } from '../domain/models/home-highlight.model';
   template: `
     <section class="page-container py-24 md:py-32" aria-labelledby="proof-heading">
       <header class="grid gap-4 mb-12 lg:grid-cols-2 lg:items-end lg:gap-12">
-        <h2
-          id="proof-heading"
-          class="text-[clamp(1.75rem,3.2vw,2.5rem)] font-bold leading-[1.12] tracking-tight text-balance"
-        >
-          Ce que je maîtrise, vérifiable sur ce site
-        </h2>
+        <h2 id="proof-heading" class="section-title">Ce que je maîtrise, vérifiable sur ce site</h2>
         <p class="max-w-[52ch] text-muted">
           Quatre domaines, avec pour chacun ce qui tourne réellement ici. Le code est public :
           chaque point se contrôle en quelques minutes.

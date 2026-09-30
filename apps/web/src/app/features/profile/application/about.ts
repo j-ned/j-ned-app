@@ -1,82 +1,60 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component } from '@angular/core';
 import { AboutHero } from './about-hero';
-import { AboutStack } from './about-stack';
-import { AboutMotivation } from './about-motivation';
 import { AboutDiploma } from './about-diploma';
 import { AboutJourney } from './about-journey';
 import { AboutWhatIDo } from './about-what-i-do';
 import { AboutHighlights } from './about-highlights';
+import { AboutMotivation } from './about-motivation';
 
+// Page en lecture continue : hero, parcours, traits, travail + stack, formations, conclusion.
+// Seul le hero est rendu d'emblée ; les sections sous le pli s'hydratent à l'approche.
 @Component({
   selector: 'app-about',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [
-    AboutHero,
-    AboutStack,
-    AboutMotivation,
-    AboutDiploma,
-    AboutJourney,
-    AboutWhatIDo,
-    AboutHighlights,
-  ],
+  imports: [AboutHero, AboutJourney, AboutHighlights, AboutWhatIDo, AboutDiploma, AboutMotivation],
   template: `
-    <main class="min-h-svh pt-20 pb-16">
-      <section class="page-container mb-10">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 pt-8">
-          <div class="lg:col-span-2">
-            <app-about-hero />
-          </div>
-          <div class="lg:col-span-1">
-            <app-about-stack />
-          </div>
-        </div>
-      </section>
+    <main class="min-h-svh pt-20">
+      <app-about-hero />
 
-      <div class="page-container">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-12">
-          <aside class="lg:col-span-1 space-y-8">
-            @defer (hydrate on viewport) {
-              <app-about-motivation />
-            } @placeholder {
-              <div class="h-48" aria-hidden="true"></div>
-            } @error {
-              <p class="text-sm text-muted">Section indisponible.</p>
-            }
-            @defer (hydrate on viewport) {
-              <app-about-diploma />
-            } @placeholder {
-              <div class="h-96" aria-hidden="true"></div>
-            } @error {
-              <p class="text-sm text-muted">Section indisponible.</p>
-            }
-          </aside>
+      @defer (hydrate on viewport) {
+        <app-about-journey />
+      } @placeholder {
+        <div class="h-[36rem] border-t border-foreground/8" aria-hidden="true"></div>
+      } @error {
+        <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      }
 
-          <div class="lg:col-span-2 space-y-8">
-            @defer (hydrate on viewport) {
-              <app-about-journey />
-            } @placeholder {
-              <div class="h-64" aria-hidden="true"></div>
-            } @error {
-              <p class="text-sm text-muted">Section indisponible.</p>
-            }
-            @defer (hydrate on viewport) {
-              <app-about-what-i-do />
-            } @placeholder {
-              <div class="h-64" aria-hidden="true"></div>
-            } @error {
-              <p class="text-sm text-muted">Section indisponible.</p>
-            }
-            @defer (hydrate on viewport) {
-              <app-about-highlights />
-            } @placeholder {
-              <div class="h-64" aria-hidden="true"></div>
-            } @error {
-              <p class="text-sm text-muted">Section indisponible.</p>
-            }
-          </div>
-        </div>
-      </div>
+      @defer (hydrate on viewport) {
+        <app-about-highlights />
+      } @placeholder {
+        <div class="h-[28rem] border-t border-foreground/8" aria-hidden="true"></div>
+      } @error {
+        <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      }
+
+      @defer (hydrate on viewport) {
+        <app-about-what-i-do />
+      } @placeholder {
+        <div class="h-[36rem] border-t border-foreground/8" aria-hidden="true"></div>
+      } @error {
+        <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      }
+
+      @defer (hydrate on viewport) {
+        <app-about-diploma />
+      } @placeholder {
+        <div class="h-[36rem] border-t border-foreground/8" aria-hidden="true"></div>
+      } @error {
+        <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      }
+
+      @defer (hydrate on viewport) {
+        <app-about-motivation />
+      } @placeholder {
+        <div class="h-[30rem] border-t border-foreground/8" aria-hidden="true"></div>
+      } @error {
+        <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      }
     </main>
   `,
 })

@@ -19,10 +19,7 @@ const PROJECTS_SECTION = {
   template: `
     <section id="projects" aria-labelledby="projects-heading">
       <header class="grid gap-4 mb-12 lg:grid-cols-2 lg:items-end lg:gap-12">
-        <h2
-          id="projects-heading"
-          class="text-[clamp(1.75rem,3.2vw,2.5rem)] font-bold leading-[1.12] tracking-tight text-balance"
-        >
+        <h2 id="projects-heading" class="section-title">
           {{ projectsSection.title }}
         </h2>
         <p class="max-w-[52ch] text-muted">
