@@ -16,7 +16,9 @@ describe('AdminTagsSelector', () => {
     fixture.detectChanges();
     const chips = (): HTMLButtonElement[] =>
       Array.from(
-        fixture.nativeElement.querySelectorAll('[data-testid="tag-chip"]') as NodeListOf<HTMLButtonElement>,
+        fixture.nativeElement.querySelectorAll(
+          '[data-testid="tag-chip"]',
+        ) as NodeListOf<HTMLButtonElement>,
       );
     return { fixture, chips };
   }
@@ -37,12 +39,12 @@ describe('AdminTagsSelector', () => {
 
   it.each<[string, string, string]>([
     ['Angular', 'text-primary', 'bg-primary-bg'],
-    ['PBKDF2', 'text-rose-700', 'bg-rose-700'],
-    ['Tests', 'text-emerald-700', 'bg-emerald-700'],
-    ['Carrière', 'text-amber-800', 'bg-amber-700'],
-    ['CI/CD', 'text-sky-700', 'bg-sky-700'],
+    ['PBKDF2', 'text-primary', 'bg-primary-bg'],
+    ['Tests', 'text-primary', 'bg-primary-bg'],
+    ['Carrière', 'text-primary', 'bg-primary-bg'],
+    ['CI/CD', 'text-primary', 'bg-primary-bg'],
     ['Tag projet', 'text-muted', 'bg-primary-bg'],
-  ])('colours "%s" by category: %s when idle, %s when selected', (tag, tint, solid) => {
+  ])('colours "%s": %s when idle, %s when selected', (tag, tint, solid) => {
     const { fixture, chips } = render([tag]);
     expect(chips()[0].className).toContain(tint);
     chips()[0].click();

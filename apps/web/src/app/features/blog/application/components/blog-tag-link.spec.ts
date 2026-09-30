@@ -21,15 +21,13 @@ describe('BlogTagLink', () => {
     expect(link.getAttribute('href')).toBe('/blog?tag=Angular');
   });
 
-  it.each<[string, string]>([
-    ['Angular', 'text-primary'],
-    ['PBKDF2', 'text-rose-700'],
-    ['Tests', 'text-emerald-700'],
-    ['Carrière', 'text-amber-800'],
-    ['CI/CD', 'text-sky-700'],
-  ])('colours "%s" by its category (%s)', (tag, expectedClass) => {
-    expect(render(tag).className).toContain(expectedClass);
-  });
+  // One Indigo Rule : toutes les catégories du catalogue partagent Signal Indigo.
+  it.each(['Angular', 'PBKDF2', 'Tests', 'Carrière', 'CI/CD'])(
+    'colours catalogue tag "%s" in Signal Indigo',
+    (tag) => {
+      expect(render(tag).className).toContain('text-primary');
+    },
+  );
 
   it('falls back to the neutral style for a tag outside the catalogue', () => {
     expect(render('Inconnu').className).toContain('text-muted');

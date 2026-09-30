@@ -248,6 +248,7 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 
 - **Shape:** `rounded-md` (6px), padding `px-2 py-1`.
 - **Severities:** tokens du thème uniquement, identiques dans les deux registres : info `bg-primary/10 text-primary`, success/warn/error `bg-status-*/15 text-status-*`, secondary `bg-foreground/8 text-muted`. Aucune couleur de la palette Tailwind par défaut (test de garde dans `tag.spec.ts`).
+- **Tags du blog** (`blog-tag-palette.ts`) : tout le catalogue en `bg-primary/10 text-primary`, quelle que soit la catégorie ; tags libres neutres (`text-muted`) ; sélection en `bg-primary-bg`. Pas de couleur par catégorie (One Indigo Rule).
 
 ### Cards / Containers
 
