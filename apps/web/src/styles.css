@@ -125,8 +125,12 @@ input:-webkit-autofill:focus {
   will-change: transform, opacity;
 }
 
+/* Boucles décoratives Tailwind (indicateur « live », squelettes) coupées aussi : seul
+   animate-spin reste, car il signale une action en cours. */
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-up {
+  .animate-fade-up,
+  .animate-ping,
+  .animate-pulse {
     animation: none;
   }
 }

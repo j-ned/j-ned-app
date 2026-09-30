@@ -47,4 +47,16 @@ describe('AppTag', () => {
       expect(span.className).toContain(expectedClass);
     });
   }
+
+  // One Indigo Rule (DESIGN.md) : les tags passent par les tokens du thème, jamais par la
+  // palette Tailwind par défaut (blue, slate…) qui ignore les registres Console / Ivoire.
+  it.each(['info', 'success', 'warn', 'error', 'secondary'] as const)(
+    'Given severity="%s" When the tag renders Then no default Tailwind palette color is used',
+    (severity) => {
+      const span = renderTag({ value: 'X', severity });
+      expect(span.className).not.toMatch(
+        /\b(?:bg|text|border)-(?:slate|gray|zinc|neutral|stone|blue|sky|indigo|violet|green|amber|red)-\d{2,3}\b/,
+      );
+    },
+  );
 });

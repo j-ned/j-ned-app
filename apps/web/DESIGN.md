@@ -247,8 +247,7 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 ### Tags / Badges (`shared/ui/tag.ts`)
 
 - **Shape:** `rounded-md` (6px), padding `px-2 py-1`.
-- **Severities:** info (blue-100/blue-700, dark: blue-900/30 + blue-300), success (green), warn (amber), error (red), secondary (slate).
-- **⚠️ Drift:** les tags utilisent actuellement la palette Tailwind par défaut (blue, slate, etc.) au lieu de Signal Indigo. C'est cohérent pour status (success/warn/error) mais incohérent pour `info` et `secondary` qui devraient utiliser le système Signal/Console/Ivoire. À aligner.
+- **Severities:** tokens du thème uniquement, identiques dans les deux registres : info `bg-primary/10 text-primary`, success/warn/error `bg-status-*/15 text-status-*`, secondary `bg-foreground/8 text-muted`. Aucune couleur de la palette Tailwind par défaut (test de garde dans `tag.spec.ts`).
 
 ### Cards / Containers
 
@@ -325,6 +324,6 @@ Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionne
 - **Don't** utiliser `*ngIf` / `*ngFor` — control flow `@if` / `@for` uniquement (rappel CLAUDE.md).
 - **Don't** styliser un input avec `outline: none` sans `:focus-visible` de remplacement. C'est la violation a11y la plus rapide à repérer dans un audit.
 - **Don't** mettre une animation décorative au-dessus de 400ms ou avec un easing bouncy/elastic. Ease-out exponential uniquement (`cubic-bezier(0.16, 1, 0.3, 1)` ou équivalent).
-- **Don't** utiliser le slate Tailwind (slate-50 → slate-900) dans le portfolio. Le système est tinté zinc/neutral (Console) ou stone (Ivoire) — jamais slate (froid bleuté). Les tags `secondary` actuels font cette violation.
+- **Don't** utiliser le slate Tailwind (slate-50 → slate-900) dans le portfolio. Le système est tinté zinc/neutral (Console) ou stone (Ivoire) — jamais slate (froid bleuté).
 - **Don't** réutiliser le Display (800, clamp size) pour un autre élément que le `<h1>` du hero.
 - **Don't** introduire une 2e police custom "pour donner du caractère". La hiérarchie vient du weight + size + tracking.
