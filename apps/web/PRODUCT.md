@@ -6,21 +6,33 @@ brand
 
 ## Users
 
-**Primary**: Recruteur tech senior, CTO, lead engineer évaluant un profil pour un poste CDI senior (full-stack TypeScript / Angular). Lecture rapide (30s à 2min), souvent sur desktop entre deux entretiens, parfois sur mobile en réunion. Il cherche à répondre à trois questions :
+Le site sert trois publics. Les deux premiers partagent la home, la navigation et le ton. Le troisième a sa propre page.
+
+**1. Recruteur tech (CDI)** : recruteur tech senior, CTO, lead engineer évaluant un profil pour un poste CDI senior (full-stack TypeScript / Angular) en Île-de-France. Lecture rapide (30s à 2min), souvent sur desktop entre deux entretiens, parfois sur mobile en réunion. Il cherche à répondre à trois questions :
 
 1. Est-ce un ingénieur sérieux ou un junior qui se survend ?
 2. La stack et les choix techniques sont-ils alignés avec ce qu'on fait chez nous ?
 3. Vaut-il le coup de proposer un échange (ou de lui épargner le test technique générique) ?
 
-**Secondaire**: pair tech (autre dev) qui audite le code GitHub en parallèle pour juger l'architecture et la rigueur d'exécution.
+**2. Client tech (freelance via Malt)** : CTO, lead engineer ou fondateur qui cherche un développeur Angular / NestJS pour une mission. Il arrive souvent depuis le profil Malt, ou y repart pour contractualiser. Mêmes questions que le recruteur, plus une : est-il disponible, et sous quelle forme ? La réponse est visible sous le CTA du hero (`SITE_IDENTITY.availability`).
 
-Le site n'est **pas** une vitrine pour clients freelance. Il n'est pas non plus un blog ni un lab. C'est un outil de qualification senior, court et dense.
+**Lecteur associé** : pair tech (autre dev) qui audite le code GitHub en parallèle pour juger l'architecture et la rigueur d'exécution, pour le compte de l'un ou l'autre.
+
+**3. Gérant d'atelier mécanique (page d'offre)** : gérant ou responsable commercial d'un atelier d'usinage, de décolletage ou de mécanique de précision des Yvelines, 5 à 50 salariés. Peu technique, il lit sur téléphone entre deux réglages. Il ne cherche pas un ingénieur : il veut un site qui montre son savoir-faire à un acheteur, à un prix fixe et sans surprise. Il arrive par la prospection directe (visite, téléphone, email, LinkedIn), pas par la home.
+
+Le site n'est ni un blog ni un lab. Pour les publics 1 et 2, c'est un outil de qualification senior, court et dense. Pour le public 3, c'est une page d'offre commerciale, isolée du reste.
 
 ## Product Purpose
 
-Démontrer en moins de 2 minutes qu'un recruteur a en face de lui un ingénieur full-stack mature, capable de livrer en production seul une application Angular 21 + NestJS + PostgreSQL + observability + SSR avec une qualité non négociable.
+**Site principal (publics 1 et 2)** : démontrer en moins de 2 minutes qu'un recruteur ou un client a en face de lui un ingénieur full-stack mature, capable de livrer en production seul une application Angular + NestJS + PostgreSQL + observability + SSR avec une qualité non négociable.
 
-Succès = un recruteur qui passe de la home à un message contact (ou à un booking) sans avoir besoin d'un appel filtrage RH intermédiaire. Le portfolio remplace la lettre de motivation, le CV brut et le pre-screen.
+Succès = un recruteur ou un client qui passe de la home à un message contact, à un booking ou au profil Malt, sans appel de filtrage intermédiaire. Le portfolio remplace la lettre de motivation, le CV brut et le pre-screen.
+
+**Page d'offre `/offre-site-industrie` (public 3)** : présenter l'offre « Site pro en 7 jours » (690 €, prix final, maintenance optionnelle à 29 €/mois) et recueillir la demande via le formulaire de contact existant, sujet prérempli. Le site est désormais édité par un entrepreneur individuel (SIRET dans `SITE_IDENTITY.business`), les mentions légales sont en version professionnelle. Détail : `specs/007-offre-site-industrie.md`.
+
+Succès = un gérant qui lit l'offre sur son téléphone et envoie une demande depuis la page.
+
+**Séparation des publics** : la page d'offre vit à part. Elle n'apparaît ni sur la home, ni dans le menu principal. Son seul point d'entrée interne est un lien discret dans le pied de page, à côté des liens légaux (« Sites pour ateliers »). Elle parle le vocabulaire du métier (tolérances, parc machines, EN 9100), pas celui du web. La voix reste la même partout : phrases courtes, aucun superlatif, aucun em-dash. Elle ne cite jamais l'employeur de Julien.
 
 ## Brand Personality
 
