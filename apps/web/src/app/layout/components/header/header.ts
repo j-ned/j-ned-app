@@ -46,7 +46,10 @@ type ThemePreference = 'dark' | 'light';
             <span class="text-xl sm:text-2xl font-bold text-foreground tracking-tight"
               >Julien
             </span>
-            <span class="text-xl sm:text-2xl font-bold text-primary">N.</span>
+            <span class="text-xl sm:text-2xl font-bold text-primary"
+              ><span class="sm:hidden">N.</span
+              ><span class="hidden sm:inline">Nédellec</span></span
+            >
           </div>
         </a>
 

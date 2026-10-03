@@ -47,19 +47,23 @@ describe('AboutHero', () => {
     }
   });
 
-  it('Given les réseaux When le hero est rendu Then LinkedIn suit GitHub et s’ouvre dans un nouvel onglet', () => {
+  it('Given les réseaux When le hero est rendu Then LinkedIn puis Malt suivent GitHub et s’ouvrent dans un nouvel onglet', () => {
     const links = Array.from(
       host().querySelectorAll<HTMLAnchorElement>('[data-testid="about-social-link"]'),
     );
     expect(links.map((link) => link.textContent?.trim())).toEqual([
       'GitHub',
       'LinkedIn',
+      'Malt',
       'Mail',
       'Discord',
     ]);
     const linkedin = links[1];
     expect(linkedin.getAttribute('href')).toBe(SITE_IDENTITY.socials.linkedin);
     expect(linkedin.getAttribute('target')).toBe('_blank');
+    const malt = links[2];
+    expect(malt.getAttribute('href')).toBe(SITE_IDENTITY.socials.malt);
+    expect(malt.getAttribute('target')).toBe('_blank');
   });
 
   it('Given le portrait When le hero est rendu Then il porte un texte alternatif', () => {

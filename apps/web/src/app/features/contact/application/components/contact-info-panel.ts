@@ -70,6 +70,7 @@ export class ContactInfoPanel {
       { key: 'téléphone', value: info.phone, href: links.phone.url || null, external: false },
       web('linkedin', links.linkedin.url),
       web('github', links.github.url),
+      web('malt', links.malt.url),
       { key: 'localisation', value: info.location, href: null, external: false },
     ].filter((channel): channel is Channel => channel !== null);
   });

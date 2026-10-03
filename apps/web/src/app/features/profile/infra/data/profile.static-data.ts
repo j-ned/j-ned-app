@@ -17,11 +17,11 @@ export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
 export const STATIC_BIOGRAPHY: Biography = {
   id: '9acfdedb-c00d-4370-858e-7215e30f5a41',
   title: 'Mon parcours',
-  summary: 'De la métallurgie au développement web, avec la même exigence.',
-  lead: "20 ans dans l'industrie m'ont appris ce qu'est vraiment la rigueur.",
-  leadEmphasis: "Aujourd'hui, je l'applique au code.",
+  summary: "De la métallurgie à l'usinage aéronautique, puis au développement web : la même exigence.",
+  lead: "20 ans d'industrie, aujourd'hui tourneur CN en aéronautique de haute précision.",
+  leadEmphasis: 'Je livre du logiciel avec la même exigence.',
   paragraphs: [
-    "Je ne suis pas venu au développement web par hasard. En métallurgie, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
+    "Je ne suis pas venu au développement web par hasard. De la métallurgie à l'usinage aéronautique de haute précision, où je travaille aujourd'hui comme tourneur CN, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
     "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence que j'applique à chaque ligne de code : pensée pour durer, comprise de bout en bout, de la requête SQL au déploiement en production. Je ne me contente jamais de faire fonctionner, je comprends pourquoi ça fonctionne.",
     "Cette expérience m'a donné une vision systémique rare : je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.",
   ],
@@ -143,7 +143,7 @@ export const STATIC_MOTIVATION: Motivation = {
   statement:
     "La tech au service d'un impact positif : GreenTech, industrie durable, projets qui ont du sens.",
   description:
-    "La qualité technique et l'apprentissage continu, au travail comme sur mes projets personnels.",
+    "Disponible en freelance sur Malt pour vos projets Angular et NestJS, et ouvert au CDI en Île-de-France dans une équipe produit fintech, greentech ou industrial tech.",
 };
 
 export const STATIC_SOCIAL_BUTTONS: readonly SocialButton[] = [
@@ -158,6 +158,12 @@ export const STATIC_SOCIAL_BUTTONS: readonly SocialButton[] = [
     icon: 'lucide-linkedin',
     label: 'LinkedIn',
     href: SITE_IDENTITY.socials.linkedin,
+  },
+  {
+    id: '0b6f2f1e-6a1d-4c7e-9f0a-3d2b8c5e7a41',
+    icon: 'briefcase',
+    label: 'Malt',
+    href: SITE_IDENTITY.socials.malt,
   },
   {
     id: 'c3d221dc-eabf-4080-95de-6a60e512b6cd',

@@ -13,7 +13,7 @@ export const routes: Routes = [
       seo: {
         title: 'Julien Nédellec | Développeur Full-Stack Angular / NestJS',
         description:
-          "Développeur Full-Stack Angular / NestJS. 20 ans d'industrie avant le code : je conçois, déploie et maintiens mes applications en production.",
+          "Développeur Full-Stack Angular / NestJS, freelance et ouvert au CDI en Île-de-France. 20 ans d'industrie, aujourd'hui en aéronautique : je conçois, déploie et maintiens des applications en production.",
         keywords:
           'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France, Île-de-France, Industrie, Self-hosted',
         url: SITE_IDENTITY.siteUrl,
@@ -24,13 +24,26 @@ export const routes: Routes = [
           name: 'Julien Nédellec',
           jobTitle: 'Développeur Full-Stack Angular / NestJS',
           url: SITE_IDENTITY.siteUrl,
-          sameAs: [SITE_IDENTITY.socials.linkedin, SITE_IDENTITY.socials.github],
+          sameAs: [
+            SITE_IDENTITY.socials.linkedin,
+            SITE_IDENTITY.socials.github,
+            SITE_IDENTITY.socials.malt,
+          ],
           address: {
             '@type': 'PostalAddress',
             addressLocality: SITE_IDENTITY.location,
             addressCountry: 'FR',
           },
-          knowsAbout: ['Angular', 'NestJS', 'TypeScript', 'PostgreSQL', 'Docker'],
+          knowsAbout: [
+            'Angular',
+            'NestJS',
+            'TypeScript',
+            'Node.js',
+            'Angular Signals',
+            'PostgreSQL',
+            'Drizzle ORM',
+            'Docker',
+          ],
           email: SITE_IDENTITY.email,
         },
       },
@@ -45,7 +58,7 @@ export const routes: Routes = [
       seo: {
         title: 'À propos | Julien Nédellec',
         description:
-          "Développeur Full-Stack Angular / NestJS avec 20 ans d'industrie derrière moi. Exigence, autonomie et vision d'ensemble.",
+          "Développeur Full-Stack Angular / NestJS, freelance et ouvert au CDI. 20 ans d'industrie, aujourd'hui tourneur CN en aéronautique. Exigence, autonomie et vision d'ensemble.",
         keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',

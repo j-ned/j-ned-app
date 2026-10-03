@@ -13,6 +13,7 @@ type SocialItem = {
 const SOCIALS: readonly SocialItem[] = [
   { label: 'GitHub', url: SITE_IDENTITY.socials.github, icon: 'lucide-github' },
   { label: 'LinkedIn', url: SITE_IDENTITY.socials.linkedin, icon: 'lucide-linkedin' },
+  { label: 'Malt', url: SITE_IDENTITY.socials.malt, icon: 'briefcase' },
   { label: 'Email', url: `mailto:${SITE_IDENTITY.email}`, icon: 'lucide-mail' },
 ];
 
@@ -30,7 +31,7 @@ const SOCIALS: readonly SocialItem[] = [
         class="inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
       >
         <app-icon name="code" [size]="16" class="text-primary" />
-        Julien<span class="text-primary"> N.</span>
+        Julien<span class="text-primary"> Nédellec</span>
         <span class="text-muted font-normal">&copy; {{ currentYear }}</span>
       </a>
 

@@ -11,6 +11,7 @@ export const STATIC_CONTACT_INFO: ContactInfo = {
 export const STATIC_SOCIAL_LINKS: SocialLinks = {
   linkedin: { url: SITE_IDENTITY.socials.linkedin, label: 'LinkedIn', icon: 'lucide-linkedin' },
   github: { url: SITE_IDENTITY.socials.github, label: 'GitHub', icon: 'lucide-github' },
+  malt: { url: SITE_IDENTITY.socials.malt, label: 'Malt', icon: 'briefcase' },
   email: { url: `mailto:${SITE_IDENTITY.email}`, label: 'Mail', icon: 'lucide-mail' },
   phone: { url: `tel:${SITE_IDENTITY.phone.tel}`, label: 'Phone', icon: 'lucide-phone' },
 };

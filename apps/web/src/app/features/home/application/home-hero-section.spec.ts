@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi, type MockInstance } from 'vitest';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { STATIC_HERO } from '../infra/data/home.static-data';
 import { HomeHeroSection } from './home-hero-section';
 
@@ -46,5 +47,12 @@ describe('HomeHeroSection', () => {
   it('tracks the cta_click when the visitor leaves for the projects route', () => {
     clickCta();
     expect(trackCtaClick).toHaveBeenCalledWith('home_hero_projects', 'Voir les projets');
+  });
+
+  it('states the availability and links to the Malt profile in a new tab', () => {
+    const link = host().querySelector<HTMLAnchorElement>('[data-testid="hero-availability"]');
+    expect(link?.textContent?.trim()).toBe(SITE_IDENTITY.availability);
+    expect(link?.getAttribute('href')).toBe(SITE_IDENTITY.socials.malt);
+    expect(link?.getAttribute('rel')).toBe('noopener noreferrer');
   });
 });

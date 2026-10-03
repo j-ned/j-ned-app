@@ -4,6 +4,7 @@ import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.
 import { HomeHero } from './home-hero';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import type { HeroData } from '../domain/models/hero.model';
 
 // L'id porte l'emplacement : c'est lui qui rend le taux de clic lisible côté stats.
@@ -34,6 +35,16 @@ const HERO_CTA_LABEL = 'Voir les projets';
             <app-icon name="arrow-right" [size]="20" />
           </app-button>
         </div>
+        <p class="animate-fade-up [animation-delay:200ms] mt-5 text-sm text-muted">
+          <a
+            [href]="maltUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline decoration-foreground/20 underline-offset-4 hover:text-primary hover:decoration-primary transition-colors"
+            data-testid="hero-availability"
+            >{{ availability }}</a
+          >
+        </p>
       </app-home-hero>
     </div>
   `,
@@ -45,6 +56,8 @@ export class HomeHeroSection {
   readonly hero = input<HeroData | null>(null);
 
   protected readonly ctaLabel = HERO_CTA_LABEL;
+  protected readonly availability = SITE_IDENTITY.availability;
+  protected readonly maltUrl = SITE_IDENTITY.socials.malt;
 
   protected goToProjects(): void {
     this._analytics.trackCtaClick(HERO_CTA_ID, HERO_CTA_LABEL);

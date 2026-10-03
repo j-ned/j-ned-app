@@ -12,6 +12,7 @@ const links = (overrides: Partial<SocialLinks> = {}): SocialLinks => ({
     icon: 'lucide-linkedin',
   },
   github: { url: 'https://github.com/jdoe', label: 'GitHub', icon: 'lucide-github' },
+  malt: { url: 'https://www.malt.fr/profile/jdoe', label: 'Malt', icon: 'briefcase' },
   email: { url: 'mailto:a@b.fr', label: 'Mail', icon: 'lucide-mail' },
   phone: { url: 'tel:+33600000000', label: 'Phone', icon: 'lucide-phone' },
   ...overrides,
@@ -33,14 +34,15 @@ describe('ContactInfoPanel', () => {
   const row = (rows: HTMLElement[], key: string): HTMLElement | undefined =>
     rows.find((r) => r.textContent?.includes(key));
 
-  it('Given toutes les coordonnées When le bloc est rendu Then cinq canaux dans l’ordre', () => {
+  it('Given toutes les coordonnées When le bloc est rendu Then six canaux dans l’ordre', () => {
     const keys = render().map((r) => r.querySelector('span')?.textContent?.trim());
-    expect(keys).toEqual(['email', 'téléphone', 'linkedin', 'github', 'localisation']);
+    expect(keys).toEqual(['email', 'téléphone', 'linkedin', 'github', 'malt', 'localisation']);
   });
 
   it.each([
     { key: 'linkedin', display: 'linkedin.com/in/jdoe' },
     { key: 'github', display: 'github.com/jdoe' },
+    { key: 'malt', display: 'malt.fr/profile/jdoe' },
   ])(
     'Given l’URL $key When le bloc est rendu Then elle s’affiche sans protocole ni www',
     ({ key, display }) => {
@@ -52,6 +54,7 @@ describe('ContactInfoPanel', () => {
     { key: 'email', href: 'mailto:a@b.fr', external: false },
     { key: 'téléphone', href: 'tel:+33600000000', external: false },
     { key: 'linkedin', href: 'https://www.linkedin.com/in/jdoe/', external: true },
+    { key: 'malt', href: 'https://www.malt.fr/profile/jdoe', external: true },
   ])(
     'Given le canal $key When le bloc est rendu Then le lien cible $href',
     ({ key, href, external }) => {
@@ -70,6 +73,6 @@ describe('ContactInfoPanel', () => {
   it('Given un GitHub vide When le bloc est rendu Then la ligne GitHub disparaît', () => {
     const rows = render(links({ github: { url: '', label: 'GitHub', icon: 'lucide-github' } }));
     expect(row(rows, 'github')).toBeUndefined();
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
   });
 });
