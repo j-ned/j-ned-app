@@ -49,7 +49,7 @@ Succès = un gérant qui lit l'offre sur son téléphone et envoie une demande d
 ## Anti-references
 
 - **Template Bootstrap junior 2018** : hero centré générique, cards alignées avec icône stock, bleu marine + orange, "About me" avec photo formatée. Disqualifie en 2 secondes.
-- **Personal SaaS marketing creux** : "Big hero gradient", faux dashboard mockup, sections "Features", boutons "Get Started" partout. Le portfolio n'a rien à vendre, il qualifie.
+- **Personal SaaS marketing creux** : "Big hero gradient", faux dashboard mockup, sections "Features", boutons "Get Started" partout. Sur le site principal, le portfolio ne vend pas, il qualifie. La page d'offre vend une prestation, mais par des faits vérifiables (prix final, délai, contenu livré, déroulé jour par jour), sans gradient, sans mockup et sans « Get Started » générique.
 - **Awwwards over-design** : cursor custom, smooth scroll bloquant, intro animée, son d'ambiance, scroll-jacking. Impressionne 30s puis fatigue. Mauvais signal pour un poste senior (priorité à l'usage, pas au show).
 - **Portfolio designer pur** : grosse typo éditoriale + galerie d'images dominantes où le code devient invisible. Ici, l'ingénieur doit primer sur le directeur artistique.
 - **Glassmorphism décoratif partout** : surfaces translucides en réflexe esthétique. Toléré ponctuellement si justifié, jamais comme signature visuelle.
