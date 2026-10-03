@@ -5,20 +5,7 @@ import { NEVER, of, throwError } from 'rxjs';
 import { ContactForm } from './contact-form';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
-import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
-
-function makeGatewayStub(overrides: Partial<ContactGateway> = {}): ContactGateway {
-  return {
-    submitContactForm: () => of({ success: true, message: 'OK' }),
-    getAllMessages: () => of([]),
-    markMessageAsRead: () => of({} as ContactMessage),
-    deleteMessage: () => of(undefined),
-    getUnreadCount: () => of(0),
-    invalidateUnreadCount: () => undefined,
-    markAllRead: () => of({ count: 0 }),
-    ...overrides,
-  };
-}
+import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
 
 // Builder du domaine : jamais un littéral comme entrée sous test.
 function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormData {
@@ -33,12 +20,16 @@ function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormD
 
 describe('ContactForm (Signal Forms)', () => {
   async function setup(
-    gateway: ContactGateway = makeGatewayStub(),
+    gateway: ContactGateway = stubContactGateway(),
+    inputs: Readonly<Record<string, string>> = {},
   ): Promise<ComponentFixture<ContactForm>> {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
     });
     const fixture = TestBed.createComponent(ContactForm);
+    for (const [name, value] of Object.entries(inputs)) {
+      fixture.componentRef.setInput(name, value);
+    }
     await fixture.whenStable();
     return fixture;
   }
@@ -55,8 +46,8 @@ describe('ContactForm (Signal Forms)', () => {
     fixture.nativeElement.querySelector('app-button button[type="submit"]');
 
   const alerts = (fixture: ComponentFixture<ContactForm>): string[] =>
-    [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="alert"]')].map((el) =>
-      el.textContent.trim(),
+    [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="alert"]')].map(
+      (el) => el.textContent.trim(),
     );
 
   describe('Validation at the edge', () => {
@@ -136,7 +127,7 @@ describe('ContactForm (Signal Forms)', () => {
 
     it('does not call the gateway, reveals every error and focuses the first invalid field', async () => {
       const submit = vi.fn().mockReturnValue(of({ success: true, message: '' }));
-      const fixture = await setup(makeGatewayStub({ submitContactForm: submit }));
+      const fixture = await setup(stubContactGateway({ submitContactForm: submit }));
       await fill(fixture, makeContactData({ name: '', subject: '', message: '' }));
 
       await fixture.componentInstance.submitContact();
@@ -155,7 +146,7 @@ describe('ContactForm (Signal Forms)', () => {
   describe('Submitting a valid form', () => {
     it('calls the gateway once with the model, then resets the form', async () => {
       const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
-      const fixture = await setup(makeGatewayStub({ submitContactForm: submit }));
+      const fixture = await setup(stubContactGateway({ submitContactForm: submit }));
       await fill(fixture, makeContactData());
 
       await fixture.componentInstance.submitContact();
@@ -173,7 +164,7 @@ describe('ContactForm (Signal Forms)', () => {
     });
 
     it('disables the submit button only while the message is being sent', async () => {
-      const fixture = await setup(makeGatewayStub({ submitContactForm: () => NEVER }));
+      const fixture = await setup(stubContactGateway({ submitContactForm: () => NEVER }));
       await fill(fixture, makeContactData());
 
       void fixture.componentInstance.submitContact();
@@ -185,7 +176,7 @@ describe('ContactForm (Signal Forms)', () => {
 
     it('keeps the entered values and surfaces a toast when the gateway fails', async () => {
       const fixture = await setup(
-        makeGatewayStub({ submitContactForm: () => throwError(() => new Error('network')) }),
+        stubContactGateway({ submitContactForm: () => throwError(() => new Error('network')) }),
       );
       const toast = TestBed.inject(ToastStore);
       await fill(fixture, makeContactData());
@@ -196,6 +187,118 @@ describe('ContactForm (Signal Forms)', () => {
       expect(toast.messages().at(-1)?.severity).toBe('error');
       expect(fixture.componentInstance.contactForm().value()).toEqual(makeContactData());
       expect(fixture.componentInstance.contactForm().submitting()).toBe(false);
+    });
+  });
+
+  describe('Initial subject', () => {
+    const OFFER_SUBJECT = 'Site pro pour mon atelier';
+
+    const subjectInput = (fixture: ComponentFixture<ContactForm>): HTMLInputElement | null =>
+      fixture.nativeElement.querySelector('[data-testid="contact-subject"]');
+
+    const fillAllButSubject = async (fixture: ComponentFixture<ContactForm>): Promise<void> => {
+      const form = fixture.componentInstance.contactForm;
+      const { name, email, message } = makeContactData();
+      form.name().value.set(name);
+      form.email().value.set(email);
+      form.message().value.set(message);
+      await fixture.whenStable();
+    };
+
+    it('leaves the subject empty and required when no initial subject is bound', async () => {
+      const fixture = await setup();
+
+      expect(subjectInput(fixture)?.value).toBe('');
+      expect(
+        fixture.componentInstance.contactForm
+          .subject()
+          .errors()
+          .map((e) => e.kind),
+      ).toContain('required');
+    });
+
+    it('prefills the subject with the bound initial subject, without any subject error', async () => {
+      const fixture = await setup(stubContactGateway(), { initialSubject: OFFER_SUBJECT });
+
+      expect(subjectInput(fixture)?.value).toBe(OFFER_SUBJECT);
+      expect(fixture.componentInstance.contactForm.subject().errors()).toEqual([]);
+    });
+
+    it('sends the prefilled subject when the visitor leaves it untouched', async () => {
+      const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
+      const fixture = await setup(stubContactGateway({ submitContactForm: submit }), {
+        initialSubject: OFFER_SUBJECT,
+      });
+      await fillAllButSubject(fixture);
+
+      await fixture.componentInstance.submitContact();
+      await fixture.whenStable();
+
+      expect(submit).toHaveBeenCalledExactlyOnceWith(makeContactData({ subject: OFFER_SUBJECT }));
+    });
+
+    it('lets the visitor rewrite the prefilled subject and sends the rewritten one', async () => {
+      const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
+      const fixture = await setup(stubContactGateway({ submitContactForm: submit }), {
+        initialSubject: OFFER_SUBJECT,
+      });
+      await fillAllButSubject(fixture);
+
+      expect(subjectInput(fixture)).toBeInstanceOf(HTMLInputElement);
+      const input = subjectInput(fixture) as HTMLInputElement;
+      input.value = 'Refonte du site de mon atelier';
+      input.dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.contactForm.subject().value()).toBe(
+        'Refonte du site de mon atelier',
+      );
+
+      await fixture.componentInstance.submitContact();
+      await fixture.whenStable();
+
+      expect(submit).toHaveBeenCalledExactlyOnceWith(
+        makeContactData({ subject: 'Refonte du site de mon atelier' }),
+      );
+    });
+
+    it('restores the initial subject, not an empty one, after a successful send', async () => {
+      const fixture = await setup(stubContactGateway(), { initialSubject: OFFER_SUBJECT });
+      await fill(fixture, makeContactData({ subject: 'Autre chose' }));
+
+      await fixture.componentInstance.submitContact();
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.contactForm().value()).toEqual({
+        name: '',
+        email: '',
+        subject: OFFER_SUBJECT,
+        message: '',
+      });
+      expect(subjectInput(fixture)?.value).toBe(OFFER_SUBJECT);
+    });
+  });
+
+  describe('Intro', () => {
+    const intro = (fixture: ComponentFixture<ContactForm>): string =>
+      (fixture.nativeElement.querySelector('[data-testid="contact-intro"]')?.textContent ?? '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    it('keeps the default intro when none is bound', async () => {
+      const fixture = await setup();
+
+      expect(intro(fixture)).toBe(
+        'Une question sur un projet, sur le code de ce site ou sur mon parcours : je lis et je réponds personnellement.',
+      );
+    });
+
+    it('shows the bound intro instead of the default one', async () => {
+      const fixture = await setup(stubContactGateway(), {
+        intro: 'Dites-moi ce que vous usinez.',
+      });
+
+      expect(intro(fixture)).toBe('Dites-moi ce que vous usinez.');
     });
   });
 });

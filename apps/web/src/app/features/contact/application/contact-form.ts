@@ -1,5 +1,12 @@
 import { RouterLink } from '@angular/router';
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   STATIC_CONTACT_INFO,
@@ -43,9 +50,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             >
               Écrivez-moi.
             </h2>
-            <p class="mt-5 max-w-[42ch] text-[1.0625rem] text-muted">
-              Une question sur un projet, sur le code de ce site ou sur mon parcours : je lis et je
-              réponds personnellement.
+            <p class="mt-5 max-w-[42ch] text-[1.0625rem] text-muted" data-testid="contact-intro">
+              {{ intro() }}
             </p>
             <app-contact-info-panel
               class="mt-9"
@@ -116,6 +122,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 <input
                   id="subject"
                   type="text"
+                  data-testid="contact-subject"
                   [formField]="contactForm.subject"
                   aria-required="true"
                   placeholder="Objet de votre message"
@@ -194,10 +201,19 @@ export class ContactForm {
   private readonly contactGateway = inject(ContactGateway);
   private readonly toast = inject(ToastStore);
 
+  readonly initialSubject = input('');
+  readonly intro = input(
+    'Une question sur un projet, sur le code de ce site ou sur mon parcours : je lis et je réponds personnellement.',
+  );
+
   protected readonly contactInfo = STATIC_CONTACT_INFO;
   protected readonly socialLinks = STATIC_SOCIAL_LINKS;
 
-  private readonly _model = signal<ContactFormData>(EMPTY_CONTACT);
+  private readonly _blankContact = computed<ContactFormData>(() => ({
+    ...EMPTY_CONTACT,
+    subject: this.initialSubject(),
+  }));
+  private readonly _model = linkedSignal(() => this._blankContact());
 
   // Validation au bord de la saisie : les messages vivent dans le schéma, le template n'affiche
   // que la première erreur du champ touché. `FormField` pose lui-même `required` sur l'élément.
@@ -235,7 +251,7 @@ export class ContactForm {
       const result = await firstValueFrom(this.contactGateway.submitContactForm(field().value()));
       if (result.success) {
         this.toast.add({ severity: 'success', summary: 'Message envoyé', detail: result.message });
-        field().reset(EMPTY_CONTACT);
+        field().reset(this._blankContact());
       } else {
         this.toast.add({ severity: 'error', summary: 'Envoi impossible', detail: result.message });
       }

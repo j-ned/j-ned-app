@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
-export const LEGAL_LAST_UPDATE = '10 septembre 2026';
+export const LEGAL_LAST_UPDATE = '3 octobre 2026';
 
 @Component({
   selector: 'app-legal-notice',
@@ -16,14 +16,25 @@ export const LEGAL_LAST_UPDATE = '10 septembre 2026';
 
         <h2>Éditeur du site</h2>
         <p>
-          Ce site est édité à titre personnel et non professionnel par
-          <strong>Julien Nédellec</strong>, développeur Full-Stack, domicilié à
-          {{ identity.location }} (78960), France.
+          Ce site est édité par <strong>Julien Nédellec</strong>,
+          <span data-testid="legal-status">{{ identity.business.status }}</span
+          >, développeur Full-Stack, domicilié à {{ identity.location }} (78960), France.
         </p>
         <ul>
           <li>
+            SIRET : <span data-testid="legal-siret">{{ identity.business.siret }}</span>
+          </li>
+          <li>
+            Code APE : <span data-testid="legal-ape">{{ identity.business.ape }}</span>
+          </li>
+          <li>
+            <span data-testid="legal-vat">{{ identity.business.vatMention }}</span>
+          </li>
+          <li>
             Courriel :
-            <a [href]="'mailto:' + identity.email" data-testid="legal-email">{{ identity.email }}</a>
+            <a [href]="'mailto:' + identity.email" data-testid="legal-email">{{
+              identity.email
+            }}</a>
           </li>
           <li>
             Téléphone :
@@ -34,8 +45,8 @@ export const LEGAL_LAST_UPDATE = '10 septembre 2026';
 
         <h2>Hébergement</h2>
         <p>
-          Le site et son API sont hébergés par l'éditeur lui-même, sur un serveur personnel situé
-          en France. Les adresses de contact ci-dessus valent pour l'hébergeur.
+          Le site et son API sont hébergés par l'éditeur lui-même, sur un serveur personnel situé en
+          France. Les adresses de contact ci-dessus valent pour l'hébergeur.
         </p>
 
         <h2>Propriété intellectuelle</h2>

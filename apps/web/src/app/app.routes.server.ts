@@ -55,6 +55,7 @@ export const serverRoutes: ServerRoute[] = [
   },
   { path: 'blog', renderMode: RenderMode.Prerender },
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },
+  { path: 'offre-site-industrie', renderMode: RenderMode.Prerender },
   { path: 'confidentialite', renderMode: RenderMode.Prerender },
   {
     path: 'blog/:slug',

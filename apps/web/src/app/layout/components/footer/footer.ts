@@ -35,12 +35,22 @@ const SOCIALS: readonly SocialItem[] = [
         <span class="text-muted font-normal">&copy; {{ currentYear }}</span>
       </a>
 
-      <nav class="flex items-center gap-4 text-sm" aria-label="Informations légales">
+      <nav
+        class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm"
+        aria-label="Liens utiles"
+      >
         <a routerLink="/mentions-legales" class="text-muted hover:text-primary transition-colors">
           Mentions légales
         </a>
         <a routerLink="/confidentialite" class="text-muted hover:text-primary transition-colors">
           Confidentialité
+        </a>
+        <a
+          routerLink="/offre-site-industrie"
+          class="text-muted hover:text-primary transition-colors"
+          data-testid="footer-offer-link"
+        >
+          Sites pour ateliers
         </a>
       </nav>
 

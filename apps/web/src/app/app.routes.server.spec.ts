@@ -14,6 +14,10 @@ describe('serverRoutes', () => {
       expect(route).toHaveProperty('getPrerenderParams');
     },
   );
+
+  it('prerenders the site offer page', () => {
+    expect(findRoute('offre-site-industrie')?.renderMode).toBe(RenderMode.Prerender);
+  });
 });
 
 describe('fetchPrerenderSlugs', () => {

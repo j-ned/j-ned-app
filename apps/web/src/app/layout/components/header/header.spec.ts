@@ -126,6 +126,12 @@ describe('Header', () => {
       }
     });
 
+    it('garde le menu principal sur ses quatre destinations', () => {
+      expect(NAV_LINKS.map((item) => (item.kind === 'route' ? item.href : item.sectionId))).toEqual(
+        ['/projects', '/blog', '/about', 'contact'],
+      );
+    });
+
     it('délègue le scroll vers la section au SectionScroller au clic du bouton', async () => {
       const { fixture, scroller } = await setup();
       const button = fixture.nativeElement.querySelector(

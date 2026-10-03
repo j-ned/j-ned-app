@@ -10,4 +10,10 @@ export const SITE_IDENTITY = {
   },
   availability: 'Disponible en freelance sur Malt · ouvert au CDI en Île-de-France',
   siteUrl: 'https://nedellec-julien.fr',
+  business: {
+    status: 'entrepreneur individuel',
+    siret: '937 999 860 00029',
+    ape: '62.01Z',
+    vatMention: 'TVA non applicable, art. 293 B du CGI',
+  },
 } as const;

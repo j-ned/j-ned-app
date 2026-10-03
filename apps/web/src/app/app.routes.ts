@@ -1,6 +1,7 @@
 import type { Routes } from '@angular/router';
 import { authGuard } from '@features/auth/infra/auth-guard';
 import { Home } from '@features/home/application/home';
+import { SITE_OFFER_PRICES } from '@features/offer/domain/site-offer.static-data';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 export const routes: Routes = [
@@ -122,6 +123,67 @@ export const routes: Routes = [
         keywords: "Blog Angular, Blog NestJS, Développeur Full-Stack, Retour d'expérience",
         url: `${SITE_IDENTITY.siteUrl}/blog`,
         type: 'website',
+      },
+    },
+  },
+  {
+    path: 'offre-site-industrie',
+    title: 'Site pro pour ateliers de mécanique | Julien Nédellec',
+    loadComponent: () => import('./features/offer/application/site-offer').then((m) => m.SiteOffer),
+    data: {
+      seo: {
+        title: 'Site pro pour ateliers de mécanique | Julien Nédellec',
+        description: `Site vitrine pour ateliers d'usinage et de décolletage des Yvelines, en ligne en 7 jours. ${SITE_OFFER_PRICES.creationEur}\u00a0€ prix final, par un tourneur CN.`,
+        url: `${SITE_IDENTITY.siteUrl}/offre-site-industrie`,
+        type: 'website',
+        structuredData: {
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'Service',
+              name: 'Site pro pour ateliers de mécanique',
+              serviceType: 'Création de site vitrine',
+              description:
+                "Site vitrine pour ateliers d'usinage et de décolletage, en ligne en 7 jours, avec maintenance mensuelle.",
+              url: `${SITE_IDENTITY.siteUrl}/offre-site-industrie`,
+              provider: { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl },
+              areaServed: [
+                { '@type': 'AdministrativeArea', name: 'Yvelines' },
+                { '@type': 'AdministrativeArea', name: 'Île-de-France' },
+              ],
+              offers: [
+                {
+                  '@type': 'Offer',
+                  name: 'Création',
+                  price: String(SITE_OFFER_PRICES.creationEur),
+                  priceCurrency: 'EUR',
+                },
+                {
+                  '@type': 'Offer',
+                  name: 'Maintenance',
+                  priceSpecification: {
+                    '@type': 'UnitPriceSpecification',
+                    price: String(SITE_OFFER_PRICES.maintenanceMonthlyEur),
+                    priceCurrency: 'EUR',
+                    unitCode: 'MON',
+                  },
+                },
+              ],
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: 'Sites pour ateliers',
+                  item: `${SITE_IDENTITY.siteUrl}/offre-site-industrie`,
+                },
+              ],
+            },
+          ],
+        },
       },
     },
   },
