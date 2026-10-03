@@ -228,6 +228,16 @@ describe('Home', () => {
     });
   });
 
+  describe('landmarks', () => {
+    it('Given le template réel When la page est rendue Then elle n’émet aucun main et porte la mise en page sur l’host', async () => {
+      const { fixture } = await renderHomeTemplate([aProject()]);
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(host.querySelectorAll('main')).toHaveLength(0);
+      expect([...host.classList].sort()).toEqual(['flex', 'flex-col', 'w-full']);
+    });
+  });
+
   describe('rendu du bloc @defer contact', () => {
     it('Given le template réel When le bloc reste à son état initial Then le placeholder est rendu et le formulaire absent', async () => {
       const { fixture } = await renderHomeTemplate();

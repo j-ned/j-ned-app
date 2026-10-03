@@ -45,7 +45,7 @@ const FOCUSABLE_SELECTOR =
         (keydown.shift.tab)="trapBackward($event)"
       >
         @if (heading()) {
-          <header class="flex items-center justify-between p-5 border-b border-foreground/10">
+          <div class="flex items-center justify-between p-5 border-b border-foreground/10">
             <span class="text-lg font-bold text-foreground">{{ heading() }}</span>
             <button
               type="button"
@@ -55,7 +55,7 @@ const FOCUSABLE_SELECTOR =
             >
               <app-icon name="xmark" [size]="18" />
             </button>
-          </header>
+          </div>
         }
         <div
           class="p-5 overflow-y-auto overscroll-contain flex-1 pb-[max(1.25rem,env(safe-area-inset-bottom))]"

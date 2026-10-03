@@ -109,6 +109,19 @@ describe('BlogDetail', () => {
     expect(html).toContain('<h1 id="bonjour">Bonjour</h1>');
   });
 
+  it('Given l’article du slug When il est rendu Then il n’émet aucun main et porte la mise en page sur l’host', async () => {
+    const { fixture } = setup({ getPostBySlug: () => of(post()) });
+    fixture.componentRef.setInput('slug', 'mon-article');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('article')).not.toBeNull();
+    expect(host.querySelectorAll('main')).toHaveLength(0);
+    expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-16', 'pt-20']);
+  });
+
   it('redirige vers /blog si le slug est introuvable (404)', async () => {
     const { fixture } = setup({ getPostBySlug: () => throwError(() => new Error('404')) });
     const router = TestBed.inject(Router);

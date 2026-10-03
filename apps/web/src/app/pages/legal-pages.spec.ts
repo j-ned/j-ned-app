@@ -57,6 +57,23 @@ describe('Pages légales', () => {
     });
   });
 
+  it.each([
+    { name: 'LegalNotice', page: LegalNotice },
+    { name: 'PrivacyPolicy', page: PrivacyPolicy },
+  ])(
+    'Given $name When la page est rendue Then elle n’émet aucun main et porte la mise en page sur l’host',
+    ({ page }) => {
+      TestBed.configureTestingModule({ providers: [provideRouter([])] });
+      const fixture = TestBed.createComponent<LegalNotice | PrivacyPolicy>(page);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(host.querySelector('h1')).not.toBeNull();
+      expect(host.querySelectorAll('main')).toHaveLength(0);
+      expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-16', 'pt-20']);
+    },
+  );
+
   it('la politique de confidentialité couvre contact, audience, commentaires, erreurs et droits', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(PrivacyPolicy);

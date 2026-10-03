@@ -84,7 +84,7 @@ import { AppIcon } from '@shared/icons/app-icon';
         ) {
           <nav
             class="relative z-10 flex flex-wrap gap-3 mt-auto pt-3 border-t border-foreground/10"
-            aria-label="Liens du projet"
+            [attr.aria-label]="'Liens du projet ' + project().title"
           >
             @if (project().liveUrl) {
               <a

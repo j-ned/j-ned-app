@@ -42,6 +42,34 @@ describe('ProjectCard', () => {
     expect(link?.getAttribute('href')).toBe('/projects/mon-site');
   });
 
+  describe('navigation des liens du projet', () => {
+    const navLabel = (title: string): string | null | undefined => {
+      const fixture = TestBed.createComponent(ProjectCard);
+      fixture.componentRef.setInput(
+        'project',
+        project({ title, slug: title.toLowerCase(), liveUrl: 'https://demo.test' }),
+      );
+      fixture.detectChanges();
+      return (fixture.nativeElement as HTMLElement)
+        .querySelector('nav')
+        ?.getAttribute('aria-label');
+    };
+
+    it('Given deux cartes de titres différents When elles sont rendues Then chaque nav porte un nom distinct incluant son titre', () => {
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
+        ],
+      });
+
+      expect([navLabel('Alpha'), navLabel('Beta')]).toEqual([
+        'Liens du projet Alpha',
+        'Liens du projet Beta',
+      ]);
+    });
+  });
+
   describe('décision clé', () => {
     const DECISION = { decision: 'Chiffrement côté client', rationale: 'Le serveur ne voit rien.' };
 

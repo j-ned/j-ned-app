@@ -55,6 +55,18 @@ describe('ProjectDetail', () => {
     expect(text).toContain('testable');
   });
 
+  it('Given le projet du slug When le détail est rendu Then il n’émet aucun main et porte la mise en page sur l’host', async () => {
+    const fixture = setup([project()]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('h1')?.textContent).toContain('Mon site');
+    expect(host.querySelectorAll('main')).toHaveLength(0);
+    expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-16', 'pt-20']);
+  });
+
   it("rend l'image d'en-tête avec un sizes responsive (sans pixel): NG02952", () => {
     const fixture = setup([project({ image: 'https://cdn.test/cover.avif' })]);
     fixture.componentRef.setInput('slug', 'mon-site');

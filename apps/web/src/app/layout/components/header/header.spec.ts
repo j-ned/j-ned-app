@@ -153,6 +153,49 @@ describe('Header', () => {
     });
   });
 
+  describe('landmark banner', () => {
+    const banner = (fixture: { nativeElement: HTMLElement }): HTMLElement =>
+      fixture.nativeElement.children[0] as HTMLElement;
+
+    it('Given l’en-tête When il est rendu Then l’host ne contient qu’un header puis le drawer', async () => {
+      const { fixture } = await setup();
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(Array.from(host.children).map((el) => el.tagName.toLowerCase())).toEqual([
+        'header',
+        'app-drawer',
+      ]);
+    });
+
+    it('Given l’en-tête When il est rendu Then le header contient le lien d’accueil, la navigation principale et le bouton de thème', async () => {
+      const { fixture } = await setup();
+      const header = banner(fixture);
+
+      expect(header.tagName.toLowerCase()).toBe('header');
+      expect(header.querySelector('a[href="/"]')).not.toBeNull();
+      expect(header.querySelector('nav[aria-label="Navigation principale"]')).not.toBeNull();
+      expect(
+        header.querySelector(
+          'button[aria-label="Passer en mode sombre"], button[aria-label="Passer en mode clair"]',
+        ),
+      ).not.toBeNull();
+    });
+
+    it('Given le menu mobile ouvert When il est rendu Then le dialog reste hors du header', async () => {
+      const { component, fixture } = await setup();
+      component['toggleMobileMenu']();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const host = fixture.nativeElement as HTMLElement;
+      const dialog = host.querySelector('[role="dialog"]');
+      const header = banner(fixture);
+
+      expect(dialog).not.toBeNull();
+      expect(header.tagName.toLowerCase()).toBe('header');
+      expect(header.contains(dialog)).toBe(false);
+    });
+  });
+
   describe('toggle de thème', () => {
     it('inverse isDarkTheme et persiste la préférence dans localStorage', async () => {
       localStorage.setItem(THEME_STORAGE_KEY, 'dark');

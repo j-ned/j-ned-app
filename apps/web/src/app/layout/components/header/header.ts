@@ -26,7 +26,7 @@ type ThemePreference = 'dark' | 'light';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive, AppIcon, Button, Drawer, AppIconTile],
   template: `
-    <div
+    <header
       class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-nav-border shadow-nav"
     >
       <div class="page-container h-20 flex items-center justify-between">
@@ -47,8 +47,7 @@ type ThemePreference = 'dark' | 'light';
               >Julien
             </span>
             <span class="text-xl sm:text-2xl font-bold text-primary"
-              ><span class="sm:hidden">N.</span
-              ><span class="hidden sm:inline">Nédellec</span></span
+              ><span class="sm:hidden">N.</span><span class="hidden sm:inline">Nédellec</span></span
             >
           </div>
         </a>
@@ -117,7 +116,7 @@ type ThemePreference = 'dark' | 'light';
           </app-button>
         </div>
       </div>
-    </div>
+    </header>
 
     <app-drawer
       class="md:hidden"

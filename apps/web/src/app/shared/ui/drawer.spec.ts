@@ -52,7 +52,9 @@ describe('Drawer focus trap', () => {
     await fixture.whenStable();
 
     const last = fixture.nativeElement.querySelector('#last') as HTMLButtonElement;
-    const closeBtn = fixture.nativeElement.querySelector('[aria-label="Fermer"]') as HTMLButtonElement;
+    const closeBtn = fixture.nativeElement.querySelector(
+      '[aria-label="Fermer"]',
+    ) as HTMLButtonElement;
     last.focus();
 
     const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
@@ -67,7 +69,9 @@ describe('Drawer focus trap', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const closeBtn = fixture.nativeElement.querySelector('[aria-label="Fermer"]') as HTMLButtonElement;
+    const closeBtn = fixture.nativeElement.querySelector(
+      '[aria-label="Fermer"]',
+    ) as HTMLButtonElement;
     const last = fixture.nativeElement.querySelector('#last') as HTMLButtonElement;
     closeBtn.focus();
 
@@ -112,5 +116,23 @@ describe('Drawer focus trap', () => {
     panel.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(true);
+  });
+});
+
+describe('Drawer landmarks', () => {
+  it('renders the heading without a header element, so the app shell keeps the only banner', async () => {
+    // Given a drawer with a heading
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+
+    // When it opens
+    fixture.componentInstance.visible.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    // Then the heading is shown but no header (implicit banner) lives in the dialog
+    const panel = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
+    expect(panel.textContent).toContain('Test');
+    expect(panel.querySelectorAll('header')).toHaveLength(0);
   });
 });

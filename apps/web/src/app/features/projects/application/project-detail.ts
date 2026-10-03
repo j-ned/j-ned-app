@@ -26,65 +26,58 @@ import { Button } from '@shared/ui/button';
     Button,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: { class: 'block min-h-svh pt-20 pb-16' },
   template: `
     @let p = project();
-    <main class="min-h-svh pt-20 pb-16">
-      @if (p) {
-        <app-project-detail-header [project]="p" (linkClicked)="trackClick()" />
+    @if (p) {
+      <app-project-detail-header [project]="p" (linkClicked)="trackClick()" />
 
-        @if (p.image) {
-          <figure class="page-container mt-12 mb-22 md:mt-14 md:mb-30">
-            <div
-              class="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] overflow-hidden rounded-xl border border-foreground/8"
-            >
-              <img
-                [ngSrc]="p.image"
-                [alt]="'Aperçu du projet ' + p.title"
-                fill
-                priority
-                sizes="100vw"
-                class="object-cover"
-              />
-            </div>
-          </figure>
-        }
-
-        @if (techChoices().length > 0) {
-          <app-project-detail-tech-choices [techChoices]="techChoices()" />
-        }
-
-        @if (architectureDecisions().length > 0) {
-          <app-project-detail-arch-decisions [architectureDecisions]="architectureDecisions()" />
-        }
-
-        <app-project-detail-nav
-          [previousProject]="previousProject()"
-          [nextProject]="nextProject()"
-        />
-      } @else if (failed()) {
-        <div class="page-container pt-10 text-center" role="alert" data-testid="project-error">
-          <p class="text-muted text-lg mb-4">
-            Le projet n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.
-          </p>
-          <app-button severity="secondary" variant="outlined" (click)="retry()"
-            >Réessayer</app-button
-          >
-        </div>
-      } @else if (loading()) {
-        <div class="page-container pt-6 md:pt-10" aria-hidden="true">
-          <div class="h-4 w-32 rounded bg-surface-elevated mb-10"></div>
-          <div class="h-3 w-24 rounded bg-surface-elevated mb-4"></div>
-          <div class="h-12 w-3/4 max-w-2xl rounded-lg bg-surface-elevated mb-6"></div>
-          <div class="h-4 w-full max-w-xl rounded bg-surface-elevated mb-2"></div>
-          <div class="h-4 w-2/3 max-w-md rounded bg-surface-elevated"></div>
+      @if (p.image) {
+        <figure class="page-container mt-12 mb-22 md:mt-14 md:mb-30">
           <div
-            class="mt-10 w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] rounded-xl border border-foreground/8 bg-surface-elevated"
-          ></div>
-        </div>
-        <span class="sr-only" role="status">Chargement du projet…</span>
+            class="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] overflow-hidden rounded-xl border border-foreground/8"
+          >
+            <img
+              [ngSrc]="p.image"
+              [alt]="'Aperçu du projet ' + p.title"
+              fill
+              priority
+              sizes="100vw"
+              class="object-cover"
+            />
+          </div>
+        </figure>
       }
-    </main>
+
+      @if (techChoices().length > 0) {
+        <app-project-detail-tech-choices [techChoices]="techChoices()" />
+      }
+
+      @if (architectureDecisions().length > 0) {
+        <app-project-detail-arch-decisions [architectureDecisions]="architectureDecisions()" />
+      }
+
+      <app-project-detail-nav [previousProject]="previousProject()" [nextProject]="nextProject()" />
+    } @else if (failed()) {
+      <div class="page-container pt-10 text-center" role="alert" data-testid="project-error">
+        <p class="text-muted text-lg mb-4">
+          Le projet n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.
+        </p>
+        <app-button severity="secondary" variant="outlined" (click)="retry()">Réessayer</app-button>
+      </div>
+    } @else if (loading()) {
+      <div class="page-container pt-6 md:pt-10" aria-hidden="true">
+        <div class="h-4 w-32 rounded bg-surface-elevated mb-10"></div>
+        <div class="h-3 w-24 rounded bg-surface-elevated mb-4"></div>
+        <div class="h-12 w-3/4 max-w-2xl rounded-lg bg-surface-elevated mb-6"></div>
+        <div class="h-4 w-full max-w-xl rounded bg-surface-elevated mb-2"></div>
+        <div class="h-4 w-2/3 max-w-md rounded bg-surface-elevated"></div>
+        <div
+          class="mt-10 w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] rounded-xl border border-foreground/8 bg-surface-elevated"
+        ></div>
+      </div>
+      <span class="sr-only" role="status">Chargement du projet…</span>
+    }
   `,
 })
 export class ProjectDetail {

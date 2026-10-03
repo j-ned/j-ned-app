@@ -46,6 +46,16 @@ describe('BlogList', () => {
     expect(rows.length).toBe(2);
   });
 
+  it('Given des articles publiés When la liste est rendue Then elle n’émet aucun main et porte la mise en page sur l’host', () => {
+    const fixture = setup([post()]);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelectorAll('app-blog-post-row')).toHaveLength(1);
+    expect(host.querySelectorAll('main')).toHaveLength(0);
+    expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-24', 'pt-20']);
+  });
+
   it('filtre par tag via le query param /blog?tag=', () => {
     const fixture = setup([
       post({ tags: ['Angular'] }),

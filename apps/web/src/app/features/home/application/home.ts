@@ -12,60 +12,58 @@ import { SectionScroller } from '@core/navigation/section-scroller';
   selector: 'app-home',
   imports: [HomeHeroSection, HomeProof, HomeProjects, ContactForm, SectionVisibility],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: { class: 'flex flex-col w-full' },
   template: `
-    <main class="flex flex-col w-full">
-      <!-- Premier écran : le hero occupe tout l'espace sous le header (h-20). -->
-      <app-home-hero-section class="mt-20" [hero]="bundle()?.hero ?? null" />
+    <!-- Premier écran : le hero occupe tout l'espace sous le header (h-20). -->
+    <app-home-hero-section class="mt-20" [hero]="bundle()?.hero ?? null" />
 
-      @if (highlights().length > 0) {
-        <app-home-proof [highlights]="highlights()" [buildSteps]="buildSteps()" />
-      } @else {
-        <!-- Réserve la hauteur de la grille des preuves tant que le bundle n'est pas chargé. -->
-        <div class="page-container py-24 md:py-32" aria-hidden="true">
-          <div
-            class="h-[52rem] md:h-[40rem] xl:h-[30rem] rounded-xl bg-foreground/2 animate-pulse"
-          ></div>
+    @if (highlights().length > 0) {
+      <app-home-proof [highlights]="highlights()" [buildSteps]="buildSteps()" />
+    } @else {
+      <!-- Réserve la hauteur de la grille des preuves tant que le bundle n'est pas chargé. -->
+      <div class="page-container py-24 md:py-32" aria-hidden="true">
+        <div
+          class="h-[52rem] md:h-[40rem] xl:h-[30rem] rounded-xl bg-foreground/2 animate-pulse"
+        ></div>
+      </div>
+    }
+
+    <!-- Projects Section -->
+    @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
+      <section class="w-full pb-24 md:pb-32" data-testid="home-projects-section">
+        <div class="page-container">
+          <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
         </div>
-      }
+      </section>
+    } @placeholder {
+      <div
+        class="block py-16 md:py-20 px-4 sm:px-6 h-64"
+        data-testid="home-projects-placeholder"
+      ></div>
+    } @error {
+      <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
+        Impossible de charger cette section.
+      </div>
+    }
 
-      <!-- Projects Section -->
+    <!-- Contact (section de la landing) ; id pour le scroll programmatique unifié
+         (SectionScroller), JAMAIS exposé comme ancre #contact dans l'URL.
+         scroll-mt-20 compense le header fixe ; appSectionVisibility pilote
+         l'indicateur d'état actif du header (scroll-spy). -->
+    <div id="contact" class="scroll-mt-20" appSectionVisibility="contact">
       @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-        <section class="w-full pb-24 md:pb-32" data-testid="home-projects-section">
-          <div class="page-container">
-            <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
-          </div>
-        </section>
+        <app-contact-form data-testid="home-contact-form" />
       } @placeholder {
         <div
-          class="block py-16 md:py-20 px-4 sm:px-6 h-64"
-          data-testid="home-projects-placeholder"
+          class="block py-16 md:py-20 px-4 sm:px-6 h-96"
+          data-testid="home-contact-placeholder"
         ></div>
       } @error {
         <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
           Impossible de charger cette section.
         </div>
       }
-
-      <!-- Contact (section de la landing) ; id pour le scroll programmatique unifié
-           (SectionScroller), JAMAIS exposé comme ancre #contact dans l'URL.
-           scroll-mt-20 compense le header fixe ; appSectionVisibility pilote
-           l'indicateur d'état actif du header (scroll-spy). -->
-      <div id="contact" class="scroll-mt-20" appSectionVisibility="contact">
-        @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-          <app-contact-form data-testid="home-contact-form" />
-        } @placeholder {
-          <div
-            class="block py-16 md:py-20 px-4 sm:px-6 h-96"
-            data-testid="home-contact-placeholder"
-          ></div>
-        } @error {
-          <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
-            Impossible de charger cette section.
-          </div>
-        }
-      </div>
-    </main>
+    </div>
   `,
 })
 export class Home {

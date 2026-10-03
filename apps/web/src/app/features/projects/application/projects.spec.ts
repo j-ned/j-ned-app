@@ -74,6 +74,20 @@ describe('Projects', () => {
     expect(fixture.nativeElement.textContent).toContain('Mon site');
   });
 
+  it('Given des projets chargés When la page est rendue Then elle n’émet aucun main et porte la mise en page sur l’host', async () => {
+    const fixture = setup({
+      getAllProjects: () => of([project()] as readonly Project[]),
+      getCategories: () => of(['Tous', 'Web'] as readonly string[]),
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.textContent).toContain('Mon site');
+    expect(host.querySelectorAll('main')).toHaveLength(0);
+    expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-24', 'pt-20']);
+  });
+
   describe('hiérarchie mis en avant / index', () => {
     const CATALOG: readonly Project[] = [
       project({

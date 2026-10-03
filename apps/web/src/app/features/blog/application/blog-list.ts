@@ -20,71 +20,69 @@ const PAGE_SIZE = 9;
   selector: 'app-blog-list',
   imports: [BlogPostRow, AppPaginator, RouterLink, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: { class: 'block min-h-svh pt-20 pb-24' },
   template: `
-    <main class="min-h-svh pt-20 pb-24">
-      <section class="page-container" aria-labelledby="blog-heading">
-        <header class="pt-18 pb-12 md:pt-26 md:pb-16">
-          <p class="animate-fade-up font-mono text-[0.8125rem] font-medium text-primary">
-            {{ postCountLabel() }}
-          </p>
-          <h1
-            id="blog-heading"
-            class="animate-fade-up [animation-delay:60ms] mt-4.5 text-[clamp(2.75rem,6vw,5.25rem)] font-extrabold leading-none tracking-[-0.04em]"
-          >
-            Blog
-          </h1>
+    <section class="page-container" aria-labelledby="blog-heading">
+      <header class="pt-18 pb-12 md:pt-26 md:pb-16">
+        <p class="animate-fade-up font-mono text-[0.8125rem] font-medium text-primary">
+          {{ postCountLabel() }}
+        </p>
+        <h1
+          id="blog-heading"
+          class="animate-fade-up [animation-delay:60ms] mt-4.5 text-[clamp(2.75rem,6vw,5.25rem)] font-extrabold leading-none tracking-[-0.04em]"
+        >
+          Blog
+        </h1>
+        <p
+          class="animate-fade-up [animation-delay:120ms] mt-5.5 max-w-[56ch] text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted"
+        >
+          Retours d'expérience concrets sur mes projets, mon parcours et la façon dont je les
+          construis.
+        </p>
+        <a
+          href="/rss.xml"
+          class="mt-4.5 inline-flex min-h-11 items-center font-mono text-[0.8125rem] text-muted transition-colors hover:text-primary"
+          data-testid="rss-link"
+        >
+          S'abonner au flux RSS
+        </a>
+        @if (tag(); as activeTag) {
           <p
-            class="animate-fade-up [animation-delay:120ms] mt-5.5 max-w-[56ch] text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted"
+            data-testid="tag-filter-banner"
+            class="mt-5 flex flex-wrap items-center gap-2.5 text-sm text-muted"
           >
-            Retours d'expérience concrets sur mes projets, mon parcours et la façon dont je les
-            construis.
-          </p>
-          <a
-            href="/rss.xml"
-            class="mt-4.5 inline-flex min-h-11 items-center font-mono text-[0.8125rem] text-muted transition-colors hover:text-primary"
-            data-testid="rss-link"
-          >
-            S'abonner au flux RSS
-          </a>
-          @if (tag(); as activeTag) {
-            <p
-              data-testid="tag-filter-banner"
-              class="mt-5 flex flex-wrap items-center gap-2.5 text-sm text-muted"
+            Filtré par
+            <a
+              data-testid="tag-filter-clear"
+              routerLink="/blog"
+              class="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2.5 text-[0.8125rem] font-medium text-primary transition-colors hover:bg-primary/20"
+              [attr.aria-label]="'Retirer le filtre ' + activeTag"
             >
-              Filtré par
-              <a
-                data-testid="tag-filter-clear"
-                routerLink="/blog"
-                class="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2.5 text-[0.8125rem] font-medium text-primary transition-colors hover:bg-primary/20"
-                [attr.aria-label]="'Retirer le filtre ' + activeTag"
-              >
-                {{ activeTag }}
-                <app-icon name="times" [size]="12" />
-              </a>
-            </p>
-          }
-        </header>
-
-        <div class="border-t border-foreground/8">
-          @for (post of pagedPosts(); track post.slug) {
-            <app-blog-post-row [post]="post" [priority]="$first" />
-          } @empty {
-            <p class="py-12 text-muted">Aucun article pour le moment.</p>
-          }
-        </div>
-
-        @if (filteredPosts().length > PAGE_SIZE) {
-          <app-paginator
-            class="mt-12 block"
-            [rows]="PAGE_SIZE"
-            [totalRecords]="filteredPosts().length"
-            [first]="first()"
-            (pageChange)="onPageChange($event)"
-          />
+              {{ activeTag }}
+              <app-icon name="times" [size]="12" />
+            </a>
+          </p>
         }
-      </section>
-    </main>
+      </header>
+
+      <div class="border-t border-foreground/8">
+        @for (post of pagedPosts(); track post.slug) {
+          <app-blog-post-row [post]="post" [priority]="$first" />
+        } @empty {
+          <p class="py-12 text-muted">Aucun article pour le moment.</p>
+        }
+      </div>
+
+      @if (filteredPosts().length > PAGE_SIZE) {
+        <app-paginator
+          class="mt-12 block"
+          [rows]="PAGE_SIZE"
+          [totalRecords]="filteredPosts().length"
+          [first]="first()"
+          (pageChange)="onPageChange($event)"
+        />
+      }
+    </section>
   `,
 })
 export class BlogList {
