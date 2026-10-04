@@ -736,9 +736,25 @@ uniquement sur les modules applicatifs à créer au GREEN (`TS2307` / `Could not
 aux specs. Non-régression : nouvelles specs et `app.routes.spec.ts` mis de côté, `pnpm test` =
 80 fichiers, 643 passed / 643. Scaffold dû au GREEN : les sept modules ci-dessus.
 
+### Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »
+
+| Fichier | Tests |
+|---|---|
+| `features/profile/application/about-hiring.spec.ts` (8) | ancre `id="recrutement"` + h2 unique « Vous recrutez ? » relié par `aria-labelledby` ; `about-hiring-availability` = `SITE_IDENTITY.hiringAvailability` ; lien LinkedIn (`target="_blank"`, `rel` noopener noreferrer) ; sans CV ⇒ pas de `about-hiring-cv` ; aucun landmark ; CV publié ⇒ `href` = `CvGateway.getDownloadUrl()` ; clic ⇒ `trackCvDownload` × 1 ; erreur 500 ⇒ lien CV absent, LinkedIn présent |
+| `app.routes.about.spec.ts` (2) | `title` et `seo.title` = « Parcours \| Julien Nédellec », `seo.url`, `structuredData` BreadcrumbList Accueil → Parcours (fichier séparé pour ne pas croiser la réécriture de `app.routes.spec.ts` en T1) |
+| `features/profile/application/about.spec.ts` (+1) | sans déclencher les `@defer` (`DeferBlockBehavior.Manual`), `about-hiring` porte déjà `id="recrutement"` ; un seul h1 |
+| `shared/identity/site-identity.static-data.spec.ts` (+1) | `hiringAvailability` contient « CDI » |
+
+Builder partagé : `features/cv/testing/cv-builders.ts` (`makeCvInfo`).
+
+RED confirmé le 2026-10-04 12:49 (worktree dédié, spec hors arbre) : 12 failed / 698 total, tous
+comportementaux (assertions, requête `/api/cv` attendue) une fois les symboles posés en squelette
+vide ; suite existante verte.
+
 ## Journal des tranches
 
 - **Tranche 1 — l'offre atelier sur le modèle générique** : GREEN 701 passed / 701 total · refactor : aucun
+- **Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »** : GREEN 698 passed / 698 total · refactor : liens du bloc passés sur l'utilitaire `link-btn-outline` (revue)
 
 ## Verify
 
@@ -763,6 +779,27 @@ prérendues) → lecture de `dist/angular-portfolio-app/browser/offre-site-indus
   erreurs observées, toutes d'environnement : `GET /api/config` 404 (servi par nginx en
   production, absent de `http.server`) et CORS de `api.nedellec-julien.fr` refusant l'origine
   `localhost` (CV, analytics), d'où le toast d'erreur global. Indépendantes du diff.
+
+Verdict : **PASS**.
+
+### Tranche 5 — `/about` (page Parcours, surface atteignable en production)
+
+Steps : `pnpm run build --configuration production` → lecture de
+`dist/angular-portfolio-app/browser/about/index.html` → service statique de
+`dist/angular-portfolio-app/browser` sur `localhost:4317` → `/about/`, puis `/about#recrutement`
+en lien direct et en navigation SPA depuis la home, desktop et mobile 375 px.
+
+- HTML prérendu : un seul `h1`, un seul `main` (shell) ; `<title>Parcours | Julien Nédellec</title>` ;
+  meta description « Parcours de Julien Nédellec… ouvert à un CDI en Île-de-France » ; JSON-LD
+  BreadcrumbList Accueil → Parcours (`/about`) ; `<section id="recrutement" aria-labelledby
+  data-testid="about-hiring">` prérendu hors `@defer`, entre `app-about-diploma` et le bloc différé
+  `app-about-motivation`, avec h2, mention CDI et lien LinkedIn en `link-btn-outline`. Lien CV
+  absent du prérendu (chargé côté client, attendu).
+- Runtime : l'ancre `#recrutement` est atteinte en lien direct et en navigation SPA, h2 visible sous
+  le header fixe ; rendu mobile vérifié.
+- Console : aucune erreur applicative. Erreurs d'environnement seulement (`/api/config` 404 hors
+  nginx, CORS de l'API sur l'origine localhost) ; `AboutHiring` suit son repli (lien CV masqué).
+  Chemin heureux du lien CV couvert par les tests HTTP stubbés, non observable sans API locale.
 
 Verdict : **PASS**.
 
@@ -805,3 +842,25 @@ Re-revue : point bloquant 1 (ADR) soldé ; `offer-seo.spec.ts` épingle le repli
 - non couvert par les gates : en T1, le bundle initial porte la copy complète de l'offre atelier (régression de poids temporaire, résorbée en T2).
 
 Complément de revue (2026-10-04 12:43, code existant, tests verts d'emblée) : 2 tests sur les replis de `toOfferSeo` (`breadcrumbName ?? summary.name`, `description` posée seulement si `serviceDescription`). Discriminance vérifiée par mutation temporaire de `offer-seo.ts` : repli fil d'Ariane remplacé par un littéral ⇒ 1 failed / 6 ; `description: serviceDescription` posée sans condition ⇒ 1 failed / 6 ; fichier restauré à l'octet près (`cmp`). `pnpm test` : 703 passed / 703 ; `pnpm lint` : vert.
+
+### Tranche 5
+
+**Verdict** : APPROVED (re-revue, après un REJECTED en 1re revue)
+**Gates CI locaux** : tests ✅ (`pnpm test`, 85 fichiers / 698 passed) / lint ✅ / install ✅ (`pnpm install --frozen-lockfile`) / build ✅ (`pnpm run build --configuration production`, 15 routes prérendues, CSP sur 16 pages, relancé en re-revue)
+**Checks mécaniques** : `aak-checks.sh --diff origin/master --zoneless --archaeology` (version plugin), 0 hit sur 9 fichiers
+**Preuve de verify runtime** : ✅ (ancre en lien direct et en SPA, mobile 375 px, h1 unique, console sans erreur due au diff)
+**Conventions Angular 20+** : ✅ · **Cross-platform** : ✅ · **Tests** : ✅ · **Sécurité** : ✅ · **Alignement spec** : ✅
+
+1re revue, points corrigés :
+1. Bloquant : liste de classes « pilule à contour » dupliquée sur les deux liens d'`about-hiring.ts`
+   (ADR-0003). Corrigé par l'utilitaire existant `link-btn-outline` (arbitrage : boutons
+   rectangulaires conformes à la maquette). `header.ts` et `admin-dashboard.ts` portent encore
+   la même liste : dette antérieure, celle du header disparaît en T8.
+2. Mineur : commentaire descriptif dans `about.ts` supprimé, seul le WHY (bloc hors `@defer`) reste.
+
+Écarts jugés acceptables : `loadCvUrl` dupliqué depuis `header.ts` (transitoire, retiré en T8) ;
+texte de `hiringAvailability` (choix produit, épinglé par test).
+
+**Tests notables** :
+- ✨ `about.spec.ts` : `DeferBlockBehavior.Manual` prouve que le bloc existe sans déclencher les defer (décision 8.6).
+- ✨ `about-hiring.spec.ts` : l'échec HTTP 500 laisse LinkedIn et masque le CV.

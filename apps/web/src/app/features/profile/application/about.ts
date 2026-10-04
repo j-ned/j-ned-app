@@ -5,13 +5,21 @@ import { AboutJourney } from './about-journey';
 import { AboutWhatIDo } from './about-what-i-do';
 import { AboutHighlights } from './about-highlights';
 import { AboutMotivation } from './about-motivation';
+import { AboutHiring } from './about-hiring';
 
-// Page en lecture continue : hero, parcours, traits, travail + stack, formations, conclusion.
-// Seul le hero est rendu d'emblée ; les sections sous le pli s'hydratent à l'approche.
+// Le bloc recrutement reste hors @defer : l'ancre #recrutement doit exister au premier rendu.
 @Component({
   selector: 'app-about',
   host: { class: 'block min-h-svh pt-20' },
-  imports: [AboutHero, AboutJourney, AboutHighlights, AboutWhatIDo, AboutDiploma, AboutMotivation],
+  imports: [
+    AboutHero,
+    AboutJourney,
+    AboutHighlights,
+    AboutWhatIDo,
+    AboutDiploma,
+    AboutHiring,
+    AboutMotivation,
+  ],
   template: `
     <app-about-hero />
 
@@ -46,6 +54,8 @@ import { AboutMotivation } from './about-motivation';
     } @error {
       <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
     }
+
+    <app-about-hiring />
 
     @defer (hydrate on viewport) {
       <app-about-motivation />

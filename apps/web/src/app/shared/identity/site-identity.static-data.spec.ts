@@ -9,4 +9,8 @@ describe('SITE_IDENTITY', () => {
       vatMention: 'TVA non applicable, art. 293 B du CGI',
     });
   });
+
+  it('states the CDI opening for recruiters in its own availability', () => {
+    expect(SITE_IDENTITY.hiringAvailability).toMatch(/\bCDI\b/);
+  });
 });

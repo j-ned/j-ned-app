@@ -56,14 +56,14 @@ export const routes: Routes = [
   },
   {
     path: 'about',
-    title: 'À propos | Julien Nédellec',
+    title: 'Parcours | Julien Nédellec',
     loadComponent: () => import('./features/profile/application/about').then((m) => m.About),
     data: {
       preload: true,
       seo: {
-        title: 'À propos | Julien Nédellec',
+        title: 'Parcours | Julien Nédellec',
         description:
-          "Développeur Full-Stack Angular / NestJS, freelance et ouvert au CDI. 20 ans d'industrie, aujourd'hui tourneur CN en aéronautique. Exigence, autonomie et vision d'ensemble.",
+          "Parcours de Julien Nédellec, développeur Full-Stack Angular / NestJS : 20 ans d'industrie, aujourd'hui tourneur CN en aéronautique, ouvert à un CDI en Île-de-France.",
         keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
@@ -75,7 +75,7 @@ export const routes: Routes = [
             {
               '@type': 'ListItem',
               position: 2,
-              name: 'À propos',
+              name: 'Parcours',
               item: `${SITE_IDENTITY.siteUrl}/about`,
             },
           ],
