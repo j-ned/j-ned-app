@@ -6,70 +6,77 @@ brand
 
 ## Users
 
-Le site sert trois publics. Les deux premiers partagent la home, la navigation et le ton. Le troisième a sa propre page.
+Le site est la plateforme d'acquisition client de Julien Nédellec, entrepreneur individuel (SIRET dans `SITE_IDENTITY.business`). Il sert quatre publics. Les trois premiers sont des clients et partagent la home, la navigation et le ton. Le quatrième est secondaire et a sa propre entrée.
 
-**1. Recruteur tech (CDI)** : recruteur tech senior, CTO, lead engineer évaluant un profil pour un poste CDI senior (full-stack TypeScript / Angular) en Île-de-France. Lecture rapide (30s à 2min), souvent sur desktop entre deux entretiens, parfois sur mobile en réunion. Il cherche à répondre à trois questions :
+**1. Dirigeant de TPE, PME ou artisan (offre site vitrine)** : peu technique, lit souvent sur téléphone. Il veut un prix fixe, un délai et un interlocuteur unique. Ses questions : combien, quand, qu'est-ce que j'obtiens, est-ce sérieux ?
 
-1. Est-ce un ingénieur sérieux ou un junior qui se survend ?
-2. La stack et les choix techniques sont-ils alignés avec ce qu'on fait chez nous ?
-3. Vaut-il le coup de proposer un échange (ou de lui épargner le test technique générique) ?
+**2. Gérant d'atelier mécanique (offre site atelier)** : sous-cas du public 1. Gérant ou responsable commercial d'un atelier d'usinage, de décolletage ou de mécanique de précision des Yvelines, 5 à 50 salariés. Il arrive par la prospection directe (visite, téléphone, email, LinkedIn), pas par la home. Il attend le vocabulaire de son métier (tolérances, parc machines, EN 9100), pas celui du web.
 
-**2. Client tech (freelance via Malt)** : CTO, lead engineer ou fondateur qui cherche un développeur Angular / NestJS pour une mission. Il arrive souvent depuis le profil Malt, ou y repart pour contractualiser. Mêmes questions que le recruteur, plus une : est-il disponible, et sous quelle forme ? La réponse est visible sous le CTA du hero (`SITE_IDENTITY.availability`).
+**3. Responsable métier, fondateur ou CTO (application sur mesure, refonte et maintenance, renfort en régie)** : technique ou semi-technique. Il veut des preuves de livraison en production, une méthode, un cadre clair (devis ferme ou TJM). Il arrive par recommandation, Malt, LinkedIn ou recherche.
 
-**Lecteur associé** : pair tech (autre dev) qui audite le code GitHub en parallèle pour juger l'architecture et la rigueur d'exécution, pour le compte de l'un ou l'autre.
+**Lecteur associé** : pair tech qui audite le code GitHub pour le compte du public 3.
 
-**3. Gérant d'atelier mécanique (page d'offre)** : gérant ou responsable commercial d'un atelier d'usinage, de décolletage ou de mécanique de précision des Yvelines, 5 à 50 salariés. Peu technique, il lit sur téléphone entre deux réglages. Il ne cherche pas un ingénieur : il veut un site qui montre son savoir-faire à un acheteur, à un prix fixe et sans surprise. Il arrive par la prospection directe (visite, téléphone, email, LinkedIn), pas par la home.
+**4. Recruteur tech (secondaire)** : trouve le parcours, la stack, le CV et la disponibilité CDI sur la page Parcours (bloc « Vous recrutez ? »), accessible depuis le pied de page. Aucun signal de recrutement sur la home ni dans le tunnel de vente.
 
-Le site n'est ni un blog ni un lab. Pour les publics 1 et 2, c'est un outil de qualification senior, court et dense. Pour le public 3, c'est une page d'offre commerciale, isolée du reste.
+Le site n'est ni un blog ni un lab. Le blog existe comme preuve de compétence, pas comme produit.
 
 ## Product Purpose
 
-**Site principal (publics 1 et 2)** : démontrer en moins de 2 minutes qu'un recruteur ou un client a en face de lui un ingénieur full-stack mature, capable de livrer en production seul une application Angular + NestJS + PostgreSQL + observability + SSR avec une qualité non négociable.
+Transformer une visite en **demande de devis envoyée**. Le site présente un catalogue de cinq offres à prix ou cadre tarifaire publics, prouve la capacité à livrer en production, et recueille la demande par le formulaire de contact (sujet prérempli depuis chaque page d'offre). Détail : `specs/009-plateforme-acquisition.md`.
 
-Succès = un recruteur ou un client qui passe de la home à un message contact, à un booking ou au profil Malt, sans appel de filtrage intermédiaire. Le portfolio remplace la lettre de motivation, le CV brut et le pre-screen.
+| Offre | Public | Tarif |
+|---|---|---|
+| Site vitrine (TPE, PME, artisans), en ligne en 7 jours | 1 | 890 €, maintenance 29 €/mois |
+| Site atelier (mécanique de précision), en ligne en 7 jours | 2 | 690 €, maintenance 29 €/mois |
+| Application métier sur mesure | 3 | À partir de 4 500 €, devis ferme après cadrage |
+| Refonte, audit et maintenance | 3 | Audit 450 €, maintenance dès 190 €/mois |
+| Renfort Angular / NestJS en régie | 3 | TJM sur demande, possible via Malt |
 
-**Page d'offre `/offre-site-industrie` (public 3)** : présenter l'offre « Site pro en 7 jours » (690 €, prix final, maintenance optionnelle à 29 €/mois) et recueillir la demande via le formulaire de contact existant, sujet prérempli. Le site est désormais édité par un entrepreneur individuel (SIRET dans `SITE_IDENTITY.business`), les mentions légales sont en version professionnelle. Détail : `specs/007-offre-site-industrie.md`.
+Prix nets, TVA non applicable (art. 293 B du CGI). Les montants vivent dans une source unique du code, jamais en dur dans deux templates.
 
-Succès = un gérant qui lit l'offre sur son téléphone et envoie une demande depuis la page.
+Succès = un visiteur qui passe d'une page (home, catalogue, offre) au formulaire envoyé, sans appel de qualification préalable. Succès secondaire = un recruteur qui trouve CV et disponibilité en un clic depuis le pied de page.
 
-**Séparation des publics** : la page d'offre vit à part. Elle n'apparaît ni sur la home, ni dans le menu principal. Son seul point d'entrée interne est un lien discret dans le pied de page, à côté des liens légaux (« Sites pour ateliers »). Elle parle le vocabulaire du métier (tolérances, parc machines, EN 9100), pas celui du web. La voix reste la même partout : phrases courtes, aucun superlatif, aucun em-dash. Elle ne cite jamais l'employeur de Julien.
+**Séparation des publics** : l'offre atelier n'apparaît pas sur la home (son public arrive par la prospection) mais figure au catalogue et au pied de page. Le recruteur n'a qu'une entrée, la page Parcours. La voix reste la même partout. Le site ne cite jamais l'employeur de Julien.
 
 ## Brand Personality
 
-**Trois mots** : *Rigoureux · Confiant · Soigné*.
+**Marque** : nom propre, « Julien Nédellec ». Pas de nom de studio.
 
-- **Rigoureux** — chaque détail est intentionnel (typo, espacement, copy, a11y). Aucune approximation visible. Le site est lui-même un échantillon de code de production.
-- **Confiant** — parti pris technique affirmé (Angular 21 zoneless, Clean Architecture, signals, Tailwind v4, SSR), assumé sans surenchère. Pas de "passionate developer" générique.
-- **Soigné** — éditorial dans la respiration et la typographie ; premium dans le rendu (dark/light maîtrisés, transitions de route, identité visuelle cohérente).
+**Trois mots** : *Rigoureux · Fiable · Soigné*.
 
-**Voix** : technique, directe, en français pour le contenu rédactionnel, en anglais pour le code et les labels techniques. Phrases courtes. Aucun superlatif marketing ("amazing", "passionate", "rockstar"). Aucun em-dash. Le ton dit "je sais ce que je fais et je sais pourquoi".
+- **Rigoureux** : chaque détail est intentionnel (typo, espacement, copy, a11y). Le site est lui-même un échantillon du travail livré.
+- **Fiable** : prix annoncé avant de commencer, délai tenu, code et nom de domaine au nom du client, un seul interlocuteur. La confiance vient de faits vérifiables, pas de promesses.
+- **Soigné** : éditorial dans la respiration et la typographie, premium dans le rendu (clair et sombre maîtrisés). Le motif visuel vient du dessin technique (cartouche, cotes) : la rigueur d'atelier appliquée au logiciel.
 
-**Émotions cibles** : confiance immédiate, envie d'engager la conversation, sentiment "ce profil sait ce qu'il vaut".
+**Voix** : directe, en français, phrases courtes. Vocabulaire du client, pas du développeur : « mis en ligne », pas « déployé » ; « rapide sur téléphone », pas « Lighthouse 98 ». Les termes techniques restent bienvenus pour le public 3, sur ses pages. Aucun superlatif marketing. Aucun em-dash. Le ton dit « je sais ce que je fais, voici ce que vous obtenez ».
+
+**Émotions cibles** : confiance immédiate, sentiment de transparence, envie d'envoyer sa demande maintenant.
 
 ## Anti-references
 
-- **Template Bootstrap junior 2018** : hero centré générique, cards alignées avec icône stock, bleu marine + orange, "About me" avec photo formatée. Disqualifie en 2 secondes.
-- **Personal SaaS marketing creux** : "Big hero gradient", faux dashboard mockup, sections "Features", boutons "Get Started" partout. Sur le site principal, le portfolio ne vend pas, il qualifie. La page d'offre vend une prestation, mais par des faits vérifiables (prix final, délai, contenu livré, déroulé jour par jour), sans gradient, sans mockup et sans « Get Started » générique.
-- **Awwwards over-design** : cursor custom, smooth scroll bloquant, intro animée, son d'ambiance, scroll-jacking. Impressionne 30s puis fatigue. Mauvais signal pour un poste senior (priorité à l'usage, pas au show).
-- **Portfolio designer pur** : grosse typo éditoriale + galerie d'images dominantes où le code devient invisible. Ici, l'ingénieur doit primer sur le directeur artistique.
-- **Glassmorphism décoratif partout** : surfaces translucides en réflexe esthétique. Toléré ponctuellement si justifié, jamais comme signature visuelle.
+- **Template Bootstrap junior 2018** : hero centré générique, cards alignées avec icône stock, bleu marine + orange. Disqualifie en 2 secondes.
+- **Agence web creuse** : « Big hero gradient », faux mockup d'écran, sections « Features », « Get Started », « Solutions innovantes », prix « à partir de » sans détail. Ici on vend par des faits : prix, délai, livrables, déroulé jour par jour.
+- **Preuves inventées** : faux témoignages, logos clients sans client, chiffres non vérifiables. Une démo est libellée « Démo ». Un emplacement témoignage n'existe qu'avec un vrai témoignage.
+- **Awwwards over-design** : cursor custom, scroll-jacking, intro animée. Le client veut une réponse, pas un spectacle.
+- **Jargon développeur sur le chemin client** : commandes shell, noms de frameworks en hero, badges de stack. La stack se montre dans les réalisations et sur la page Parcours.
+- **Glassmorphism décoratif partout** : toléré ponctuellement si justifié, jamais comme signature.
 
 ## Design Principles
 
-1. **Practice what you preach** — Le site doit être un échantillon vivant des standards techniques affichés : Lighthouse > 95 partout, a11y WCAG AA strict, SSR + hydration sans regression, bundle initial minimal. Si le portfolio ne tient pas ses propres promesses, le reste perd toute crédibilité.
+1. **Practice what you preach** : le site doit tenir ce qu'il vend. Lighthouse > 95 partout, a11y WCAG AA strict, SSR et prérendu sans régression, bundle initial minimal. Un prestataire web dont le site est lent perd la vente.
 
-2. **Densité utile, pas remplissage** — Un recruteur a 90 secondes. Chaque section doit répondre à une question qu'il se pose, dans cet ordre : "qui ?", "quel niveau ?", "quoi en production ?", "comment le contacter ?". Pas de section "fun facts", pas de "my passions". Si une zone n'aide pas à la décision, elle disparaît.
+2. **Chaque section répond à une question du client** : dans cet ordre, « qu'est-ce que vous faites ? », « combien et en combien de temps ? », « vous l'avez déjà fait ? », « comment ça se passe ? », « pourquoi vous ? », « comment je vous contacte ? ». Une zone qui n'aide pas à la décision disparaît.
 
-3. **Identité visuelle stable, choix visuels frais** — L'identité indigo + dark/light + Tailwind v4 reste le socle (cohérence cross-pages, mémorabilité). À l'intérieur de ce socle, les variations visuelles peuvent et doivent être audacieuses (layouts, typographie, micro-interactions) tant qu'elles servent la lecture du recruteur.
+3. **Identité visuelle stable, choix visuels frais** : l'identité indigo + clair/sombre + Tailwind v4 reste le socle. Le motif du dessin technique (cartouche pour les prix et engagements, cotes pour les délais) est la seule signature ajoutée, utilisée avec retenue.
 
-4. **Le code est visible partout, pas seulement dans GitHub** — Les choix techniques affichés (Angular 21, NestJS, SSR, Drizzle, Sentry) doivent transparaitre dans le rendu : transitions de route fluides, formulaires accessibles, états de chargement nets, erreurs gérées. Le site est sa propre démonstration.
+4. **Les faits sont visibles** : prix, délais, livrables, mention TVA, propriété du code et du domaine sont écrits en clair sur chaque offre, jamais cachés derrière « Contactez-nous ».
 
-5. **Zéro friction sur la conversion** — Le chemin vers `contact` ou `booking` doit être atteignable depuis n'importe quelle page en un clic visible, sans modal piégeux, sans formulaire à rallonge. La conversion est la fonction primaire de la home.
+5. **Zéro friction sur la conversion** : le formulaire est atteignable depuis n'importe quelle page en un clic (bouton d'appel permanent dans le header), sans modal piégeux ni champ superflu. La qualification (type de projet, délai) reste optionnelle.
 
 ## Accessibility & Inclusion
 
 - **Cible** : WCAG 2.2 niveau **AA strict**, vérifié en CI via **axe-core** (zéro violation tolérée sur les pages publiques).
-- **Lighthouse** : score a11y minimum 95 sur home, about, projects, contact, booking.
+- **Lighthouse** : score a11y minimum 95 sur home, catalogue `/offres`, pages d'offre, réalisations, parcours.
 - **Navigation clavier** : tous les éléments interactifs atteignables au `Tab`, ordre logique, focus visible non ambigu (`:focus-visible` avec contraste suffisant).
 - **Contraste** : 4.5:1 minimum sur texte courant, 3:1 sur composants UI et texte large.
 - **Reduced motion** : `prefers-reduced-motion: reduce` respecté — toutes les transitions de route et animations décoratives désactivées.
