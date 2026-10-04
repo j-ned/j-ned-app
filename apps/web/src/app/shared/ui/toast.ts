@@ -16,28 +16,28 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
     icon: 'check-circle',
     iconClass: 'text-status-success',
     summary: 'text-status-success',
-    close: 'text-status-success/70 hover:bg-status-success/10',
+    close: 'text-status-success hover:bg-status-success/10',
   },
   info: {
     container: 'bg-primary/10 border-primary/40',
     icon: 'info-circle',
     iconClass: 'text-primary',
     summary: 'text-primary',
-    close: 'text-primary/70 hover:bg-primary/10',
+    close: 'text-primary hover:bg-primary/10',
   },
   warn: {
     container: 'bg-status-warn/10 border-status-warn/40',
     icon: 'exclamation-triangle',
     iconClass: 'text-status-warn',
     summary: 'text-status-warn',
-    close: 'text-status-warn/70 hover:bg-status-warn/10',
+    close: 'text-status-warn hover:bg-status-warn/10',
   },
   error: {
     container: 'bg-status-error/10 border-status-error/40',
     icon: 'times-circle',
     iconClass: 'text-status-error',
     summary: 'text-status-error',
-    close: 'text-status-error/70 hover:bg-status-error/10',
+    close: 'text-status-error hover:bg-status-error/10',
   },
 };
 
@@ -58,16 +58,22 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
           class="pointer-events-auto flex items-start gap-3 p-4 rounded-lg border-l-4 shadow-lg backdrop-blur-sm animate-slide-in-right"
           [class]="style.container"
           role="alert"
+          data-testid="toast"
         >
           <app-icon
             class="shrink-0 mt-0.5"
             [class]="style.iconClass"
             [name]="style.icon"
             [size]="20"
+            data-testid="toast-icon"
           />
           <div class="flex-1 min-w-0">
             @if (msg.summary) {
-              <div class="font-semibold text-sm leading-tight" [class]="style.summary">
+              <div
+                class="font-semibold text-sm leading-tight"
+                [class]="style.summary"
+                data-testid="toast-summary"
+              >
                 {{ msg.summary }}
               </div>
             }
@@ -82,6 +88,7 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
             class="shrink-0 w-11 h-11 -m-2 inline-flex items-center justify-center rounded-md transition-colors"
             [class]="style.close"
             aria-label="Fermer"
+            data-testid="toast-close"
             (click)="dismiss.emit(msg.id)"
           >
             <app-icon name="xmark" [size]="12" />

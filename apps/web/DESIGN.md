@@ -19,9 +19,9 @@ colors:
   ivoire-ink: "#292524"
   ivoire-muted: "#57534e"
   ivoire-divider: "rgba(41,37,36,0.08)"
-  status-success: "#16a34a"
-  status-warn: "#d97706"
-  status-error: "#dc2626"
+  status-success: "#016630"
+  status-warn: "#973c00"
+  status-error: "#9f0712"
 typography:
   display:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
@@ -171,9 +171,9 @@ Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signat
 
 ### Status
 
-- **Status Success** (`#16a34a`): badges success, états validés.
-- **Status Warn** (`#d97706`): badges avertissement.
-- **Status Error** (`#dc2626`): erreurs de form, messages destructifs.
+- **Status Success** (`#016630`, green-800 en Ivoire): badges success, états validés.
+- **Status Warn** (`#973c00`, amber-800 en Ivoire): badges avertissement.
+- **Status Error** (`#9f0712`, red-800 en Ivoire): erreurs de form, messages destructifs.
 
 ### Named Rules
 

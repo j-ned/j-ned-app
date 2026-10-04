@@ -59,11 +59,11 @@
   --theme-nav-shadow:
     0 1px 2px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent),
     0 4px 12px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent);
-  --theme-status-success: oklch(
-    60.4% 0.18 145
-  ); /* green-600 (#16a34a) — lisible sur Ivoire Paper */
-  --theme-status-warn: oklch(63.5% 0.165 50); /* amber-600 (#d97706) */
-  --theme-status-error: oklch(57.7% 0.224 27); /* red-600 (#dc2626) — contraste fort sur paper */
+  /* Teintes 800 : texte de statut ≥ 5:1 sur Ivoire Paper et sur ses fonds teintés /10 et /15
+   * (toast, tag). Les teintes 600 tombaient à 3:1 (WCAG 1.4.3). */
+  --theme-status-success: oklch(44.8% 0.119 151.3); /* green-800 (#016630) */
+  --theme-status-warn: oklch(47.3% 0.137 46.2); /* amber-800 (#973c00) */
+  --theme-status-error: oklch(44.4% 0.177 26.9); /* red-800 (#9f0712) */
 }
 
 /* View Transitions — instant swap */
