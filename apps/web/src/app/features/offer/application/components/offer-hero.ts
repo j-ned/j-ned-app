@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { OfferHeroContent } from '@features/offer/domain/models/site-offer.model';
+import type { OfferPageContent } from '@features/offer/domain/models/offer.model';
 
 @Component({
   selector: 'app-offer-hero',
@@ -28,12 +28,13 @@ import type { OfferHeroContent } from '@features/offer/domain/models/site-offer.
           {{ hero().ctaLabel }}
         </a>
         <p class="font-semibold text-primary" data-testid="offer-hero-price">
-          {{ hero().priceLabel }}
+          {{ priceTeaser() }}
         </p>
       </div>
     </section>
   `,
 })
 export class OfferHero {
-  readonly hero = input.required<OfferHeroContent>();
+  readonly hero = input.required<OfferPageContent['hero']>();
+  readonly priceTeaser = input.required<string>();
 }

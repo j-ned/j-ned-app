@@ -1,0 +1,168 @@
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
+import { formatEur } from './domain/format-eur';
+import { OFFERS } from './domain/offer-catalog.static-data';
+import { OFFER_PAGES } from './domain/offer-pages.static-data';
+import { OFFER_PRICES } from './domain/offer-prices.static-data';
+import { toOfferSeo } from './offer-seo';
+import {
+  makeOfferPageContent,
+  makeOfferPriceLine,
+  makeOfferSummary,
+  offerSummaryOf,
+} from './testing/offer-builders';
+
+type JsonLdNode = Readonly<Record<string, unknown>>;
+
+const OFFER_URL = `${SITE_IDENTITY.siteUrl}/offre-site-industrie`;
+
+const graphOf = (structuredData: Record<string, unknown> | undefined): readonly JsonLdNode[] =>
+  (structuredData?.['@graph'] as readonly JsonLdNode[] | undefined) ?? [];
+
+describe('toOfferSeo', () => {
+  it('describes the workshop offer with the same title, snippet and schema.org graph as before', () => {
+    const prices = OFFER_PRICES['site-atelier'];
+
+    const seo = toOfferSeo(offerSummaryOf('site-atelier'), OFFER_PAGES['site-atelier'], OFFER_URL);
+
+    expect(seo).toEqual({
+      title: 'Site pro pour ateliers de mécanique | Julien Nédellec',
+      description: `Site vitrine pour ateliers d'usinage et de décolletage des Yvelines, en ligne en 7 jours. ${formatEur(prices.creationEur)} prix final, par un tourneur CN.`,
+      url: OFFER_URL,
+      type: 'website',
+      structuredData: {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'Service',
+            name: 'Site pro pour ateliers de mécanique',
+            serviceType: 'Création de site vitrine',
+            description:
+              "Site vitrine pour ateliers d'usinage et de décolletage, en ligne en 7 jours, avec maintenance mensuelle.",
+            url: OFFER_URL,
+            provider: { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl },
+            areaServed: [
+              { '@type': 'AdministrativeArea', name: 'Yvelines' },
+              { '@type': 'AdministrativeArea', name: 'Île-de-France' },
+            ],
+            offers: [
+              {
+                '@type': 'Offer',
+                name: 'Création',
+                price: String(prices.creationEur),
+                priceCurrency: 'EUR',
+              },
+              {
+                '@type': 'Offer',
+                name: 'Maintenance',
+                priceSpecification: {
+                  '@type': 'UnitPriceSpecification',
+                  price: String(prices.maintenanceMonthlyEur),
+                  priceCurrency: 'EUR',
+                  unitCode: 'MON',
+                },
+              },
+            ],
+          },
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: 'Sites pour ateliers',
+                item: OFFER_URL,
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it('builds the Service from the summary it is given and the url it is told', () => {
+    const summary = makeOfferSummary({
+      name: 'Autre offre',
+      seo: { title: 'Autre offre | Julien Nédellec', description: 'Autre.', serviceType: 'Audit' },
+    });
+    const url = `${SITE_IDENTITY.siteUrl}/ailleurs`;
+
+    const seo = toOfferSeo(summary, makeOfferPageContent(), url);
+    const service = graphOf(seo.structuredData).find((node) => node['@type'] === 'Service');
+
+    expect({
+      url: seo.url,
+      serviceUrl: service?.['url'],
+      name: service?.['name'],
+      serviceType: service?.['serviceType'],
+    }).toEqual({ url, serviceUrl: url, name: 'Autre offre', serviceType: 'Audit' });
+  });
+
+  it('names the last breadcrumb after the offer when no breadcrumb name is given', () => {
+    const summary = makeOfferSummary({ name: 'Offre sans fil' });
+
+    const seo = toOfferSeo(summary, makeOfferPageContent(), OFFER_URL);
+    const breadcrumb = graphOf(seo.structuredData).find(
+      (node) => node['@type'] === 'BreadcrumbList',
+    );
+
+    expect(breadcrumb?.['itemListElement']).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Offre sans fil', item: OFFER_URL },
+    ]);
+  });
+
+  it('leaves the Service without description when none is given', () => {
+    const seo = toOfferSeo(makeOfferSummary(), makeOfferPageContent(), OFFER_URL);
+    const service = graphOf(seo.structuredData).find((node) => node['@type'] === 'Service');
+
+    expect(service).toBeDefined();
+    expect('description' in (service ?? {})).toBe(false);
+  });
+
+  it('derives one schema.org Offer per price line, monthly lines as a unit price', () => {
+    const content = makeOfferPageContent({
+      pricing: {
+        heading: 'Tarif',
+        lines: [
+          makeOfferPriceLine({ id: 'a', name: 'Forfait', amount: { kind: 'fixed', eur: 1234 } }),
+          makeOfferPriceLine({
+            id: 'b',
+            name: 'Suivi',
+            amount: { kind: 'fixed', eur: 45 },
+            period: 'month',
+          }),
+          makeOfferPriceLine({ id: 'c', name: 'Option', amount: { kind: 'fixed', eur: 80 } }),
+        ],
+      },
+    });
+
+    const seo = toOfferSeo(makeOfferSummary(), content, OFFER_URL);
+    const service = graphOf(seo.structuredData).find((node) => node['@type'] === 'Service');
+
+    expect(service?.['offers']).toEqual([
+      { '@type': 'Offer', name: 'Forfait', price: '1234', priceCurrency: 'EUR' },
+      {
+        '@type': 'Offer',
+        name: 'Suivi',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: '45',
+          priceCurrency: 'EUR',
+          unitCode: 'MON',
+        },
+      },
+      { '@type': 'Offer', name: 'Option', price: '80', priceCurrency: 'EUR' },
+    ]);
+  });
+
+  it.each(OFFERS)(
+    'gives $slug a search snippet of at most 160 characters without em dash',
+    (summary) => {
+      const { description } = toOfferSeo(summary, OFFER_PAGES[summary.slug], OFFER_URL);
+      expect(description.length).toBeGreaterThan(0);
+      expect(description.length).toBeLessThanOrEqual(160);
+      expect(description).not.toContain('—');
+    },
+  );
+});

@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import type { OfferReason } from '@features/offer/domain/models/site-offer.model';
+import type { OfferReason, OfferSection } from '@features/offer/domain/models/offer.model';
 import { SplitSection } from '@shared/ui/split-section';
 
 @Component({
@@ -7,12 +7,9 @@ import { SplitSection } from '@shared/ui/split-section';
   imports: [SplitSection],
   host: { class: 'block border-t border-foreground/8' },
   template: `
-    <app-split-section
-      headingId="offer-reasons-heading"
-      heading="Pourquoi un tourneur plutôt qu'une agence"
-    >
+    <app-split-section headingId="offer-reasons-heading" [heading]="reasons().heading">
       <ul class="space-y-6" role="list">
-        @for (reason of reasons(); track reason.id) {
+        @for (reason of reasons().items; track reason.id) {
           <li class="text-lg leading-[1.65]" data-testid="offer-reason">
             <span class="font-semibold" data-testid="offer-reason-lead">{{ reason.lead }}</span>
             <span class="text-muted">&nbsp;: </span>
@@ -24,5 +21,5 @@ import { SplitSection } from '@shared/ui/split-section';
   `,
 })
 export class OfferReasons {
-  readonly reasons = input.required<readonly OfferReason[]>();
+  readonly reasons = input.required<OfferSection<OfferReason>>();
 }
