@@ -2,7 +2,7 @@
 id: 009
 title: Transformer le portfolio en plateforme d'acquisition client (catalogue d'offres, home commerciale, profil CDI en secondaire)
 type: feat
-status: draft
+status: done
 created: 2026-10-04
 related: [PRODUCT.md, DESIGN.md, specs/007-offre-site-industrie.md, docs/adr/0004-contenu-statique-de-feature-sans-gateway.md, docs/adr/0005-catalogue-offres-routes-statiques.md, docs/adr/0006-polices-auto-hebergees.md]
 ---
@@ -3067,3 +3067,43 @@ Les deux mineurs sont corrigés après la revue : `MESSAGE_TOO_LONG` devient « 
 - réversibilité : profil muet (Dokploy continu sur `master`) · monitoring : Sentry
 - aucun état persistant touché
 - non couvert par les gates : la borne de 5 000 / 200 caractères reflète le DTO `CreateContactMessageDto` du repo API, sans test de contrat entre les deux dépôts ; une évolution de l'API ne serait vue qu'en 400 au runtime.
+
+## Clôture (2026-10-04)
+
+Toutes les tranches sont livrées en production :
+
+| Tranche | PR |
+|---|---|
+| Positionnement (`PRODUCT.md`) | #145 |
+| 1 — l'offre atelier sur le modèle générique | #146 |
+| 2 — l'atelier à son URL de catalogue, l'ancienne en 301 | #148 |
+| 3 — les quatre nouvelles offres | #149 |
+| 4 — la page catalogue `/offres` | #156 |
+| 5 — page Parcours et bloc « Vous recrutez ? » | #147 |
+| V — socle visuel « dessin technique », polices auto-hébergées | #153 |
+| 6 — home commerciale : hero et offres | #157 |
+| 7 — home : méthode, pourquoi moi, FAQ | #158 (+ #159, code mort) |
+| 8 — navigation, CTA permanent, footer | #161 |
+| 9 — qualification légère du formulaire | #162 |
+
+Hors tranches, issues de cette spec : typographie française unique (#155), élément LCP affiché sans
+fondu (#152 home, #154 portrait, #164 offre, blog, réalisations), `DESIGN.json` au format Prettier
+(#163).
+
+**Mesure en production** après #164 : Lighthouse mobile (lab, médiane de 5, lancé en local contre
+`https://nedellec-julien.fr`, l'API PageSpeed Insights anonyme ayant épuisé son quota) :
+
+| Page | Perf | LCP | Élément LCP |
+|---|---|---|---|
+| `/` | 87 | 2,78 s | titre du hero |
+| `/offres/site-vitrine/` | 88 | 3,02 s | sous-titre du hero |
+| `/about/` | 85 | 2,86 s | portrait |
+| `/projects/` | 80 | 3,54 s | image de la 1re carte |
+| `/blog/` | 80 | 3,78 s | couverture du 1er article |
+
+CLS ≤ 0,014 partout. Les données terrain (CrUX) ne sont pas encore disponibles.
+
+Reste hors périmètre, à reprendre dans une spec dédiée si besoin :
+- `contact-form.ts` (353 lignes) : composant `shared/ui/` « champ » (libellé, contrôle, alerte).
+- Aucun test de contrat entre les bornes 200 / 5 000 du formulaire et le DTO de l'API.
+- Typographie des articles et fiches projet : contenu en base, corrigé depuis l'admin.
