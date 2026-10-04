@@ -318,6 +318,23 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 - **Accessibilité:** hôte `aria-hidden="true"`, aucun élément focalisable ni rôle à l'intérieur.
 - **Règle d'usage:** la cote est **décorative** : son libellé répète une information écrite ailleurs dans le texte lisible. Cotes réservées aux délais et durées.
 
+### FAQ (`shared/ui/faq-list.ts`)
+
+Questions fréquentes de la home et des pages d'offre : un seul gabarit, des divulgations natives.
+
+- **API:** `heading`, `headingId` (requis, unique dans la page), `items: readonly { id, question, answer }[]`, `lead` (optionnel, défaut `''`, non rendu vide).
+- **Structure:** `section` nommée par son `h2` ; en-tête titre puis accroche (deux colonnes alignées en bas à partir de `lg`, comme les autres en-têtes de section de la home) ; chaque entrée est un `details` fermé au rendu, `summary` enfant direct, réponse en `text-muted` (34 rem max).
+- **Aucun script:** ni `button` ni état Angular, la réponse s'ouvre sans JavaScript (prérendu compris). Marqueur natif masqué, remplacé par un `+` mono `text-primary` en pseudo-élément au texte alternatif vide, tourné de 45° à l'ouverture (`motion-reduce` : sans transition).
+- **Mise en page:** une colonne, deux à partir de `lg`. Les deux colonnes sont **indépendantes** (moitié des entrées chacune, ordre de lecture conservé) : une réponse ouverte n'étire pas la ligne voisine. Entrées séparées par un trait `line` (décoratif).
+
+### Points clés (`shared/ui/key-point-list.ts`)
+
+Arguments courts, un intitulé puis son développement : « Pourquoi moi » de la home, raisons d'une page d'offre.
+
+- **API:** `points: readonly { id, lead, detail }[]`.
+- **Structure:** `ul role="list"`, une ligne par point : intitulé `font-semibold`, développement `text-muted` ; deux colonnes (11 rem puis le reste) à partir de `sm`, empilés en dessous.
+- **Traits:** lignes séparées et encadrées par un trait `line` (décoratif). Le titre de la section appartient au consommateur (`SplitSection` sur les pages d'offre, section « Pourquoi moi » sur la home).
+
 ### Inputs / Forms (utility `form-input`)
 
 - **Shape:** `rounded-lg` (8px), padding `px-3.5 py-2.5` (~14px / 10px).

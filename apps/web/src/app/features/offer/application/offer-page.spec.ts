@@ -89,12 +89,12 @@ describe('OfferPage', () => {
     });
 
     it('lists the three reasons with their lead and detail, in order', () => {
-      const items = allByTestId('offer-reason');
+      const items = allByTestId('key-point');
       expect(items).toHaveLength(3);
       expect(
         items.map((item) => ({
-          lead: text(byTestId('offer-reason-lead', item)),
-          detail: text(byTestId('offer-reason-detail', item)),
+          lead: text(byTestId('key-point-lead', item)),
+          detail: text(byTestId('key-point-detail', item)),
         })),
       ).toEqual(ATELIER.reasons?.items.map(({ lead, detail }) => ({ lead, detail })));
     });
@@ -136,7 +136,7 @@ describe('OfferPage', () => {
 
     describe('faq', () => {
       it('renders the five questions as closed native disclosures, in order', () => {
-        const items = allByTestId('offer-faq-item');
+        const items = allByTestId('faq-item');
         expect(items).toHaveLength(5);
         expect(items.map((item) => item.tagName)).toEqual(Array(5).fill('DETAILS'));
         expect(items.map((item) => (item as HTMLDetailsElement).open)).toEqual(
@@ -144,11 +144,11 @@ describe('OfferPage', () => {
         );
         expect(
           items.map((item) => {
-            const question = byTestId('offer-faq-question', item);
+            const question = byTestId('faq-question', item);
             return {
               summary: question?.tagName === 'SUMMARY' && question.parentElement === item,
               question: text(question),
-              answer: text(byTestId('offer-faq-answer', item)),
+              answer: text(byTestId('faq-answer', item)),
             };
           }),
         ).toEqual(
@@ -157,7 +157,7 @@ describe('OfferPage', () => {
       });
 
       it('needs no script to open an answer', () => {
-        expect(sectionOf('offer-faq-item')?.querySelectorAll('button')).toHaveLength(0);
+        expect(sectionOf('faq-item')?.querySelectorAll('button')).toHaveLength(0);
       });
     });
 
@@ -262,11 +262,11 @@ describe('OfferPage', () => {
     beforeEach(() => setup(content));
 
     it.each([
-      ['offer-reason', (c: OfferPageContent): string | undefined => c.reasons?.heading],
+      ['key-point', (c: OfferPageContent): string | undefined => c.reasons?.heading],
       ['offer-deliverable', (c: OfferPageContent): string | undefined => c.deliverables?.heading],
       ['offer-step', (c: OfferPageContent): string | undefined => c.steps?.heading],
       ['offer-price-line', (c: OfferPageContent): string | undefined => c.pricing.heading],
-      ['offer-faq-item', (c: OfferPageContent): string | undefined => c.faq?.heading],
+      ['faq-item', (c: OfferPageContent): string | undefined => c.faq?.heading],
     ])('labels the section holding %s with its h2 heading from the content', (testId, heading) => {
       const label = headingOf(testId);
       expect(label?.tagName).toBe('H2');
@@ -290,7 +290,7 @@ describe('OfferPage', () => {
     beforeEach(() => setup(content));
 
     it('renders neither steps nor questions', () => {
-      expect([allByTestId('offer-step'), allByTestId('offer-faq-item')]).toEqual([[], []]);
+      expect([allByTestId('offer-step'), allByTestId('faq-item')]).toEqual([[], []]);
     });
 
     it('renders only the headings of the sections it has', () => {

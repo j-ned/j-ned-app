@@ -5,11 +5,8 @@ import {
   HOME_OFFERS_CATALOGUE_LINK,
   HOME_OFFERS_HEADING,
 } from '@features/home/domain/home-offers.static-data';
-import {
-  STATIC_BUILD_STEPS,
-  STATIC_HERO,
-  STATIC_HOME_HIGHLIGHTS,
-} from '@features/home/infra/data/home.static-data';
+import { HOME_FAQ, HOME_METHOD, HOME_WHY } from '@features/home/domain/home-pitch.static-data';
+import { STATIC_HERO } from '@features/home/infra/data/home.static-data';
 import {
   STATIC_ABOUT_HIGHLIGHTS,
   STATIC_BIOGRAPHY,
@@ -93,8 +90,9 @@ const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['HOME_WORK_FRAME', HOME_WORK_FRAME],
   ['HOME_OFFERS_HEADING', HOME_OFFERS_HEADING],
   ['HOME_OFFERS_CATALOGUE_LINK', HOME_OFFERS_CATALOGUE_LINK],
-  ['STATIC_HOME_HIGHLIGHTS', STATIC_HOME_HIGHLIGHTS],
-  ['STATIC_BUILD_STEPS', STATIC_BUILD_STEPS],
+  ['HOME_METHOD', HOME_METHOD],
+  ['HOME_WHY', HOME_WHY],
+  ['HOME_FAQ', HOME_FAQ],
   ['STATIC_PROFILE_BASE', STATIC_PROFILE_BASE],
   ['STATIC_BIOGRAPHY', STATIC_BIOGRAPHY],
   ['STATIC_DIPLOMAS', STATIC_DIPLOMAS],

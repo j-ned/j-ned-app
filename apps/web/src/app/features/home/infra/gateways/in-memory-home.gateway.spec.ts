@@ -3,7 +3,7 @@ import { firstValueFrom, of } from 'rxjs';
 import { vi } from 'vitest';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-home.gateway';
-import { STATIC_BUILD_STEPS, STATIC_HERO, STATIC_HOME_HIGHLIGHTS } from '../data/home.static-data';
+import { STATIC_HERO } from '../data/home.static-data';
 
 describe('InMemoryHomeGateway', () => {
   let gateway: InMemoryHomeGateway;
@@ -27,21 +27,13 @@ describe('InMemoryHomeGateway', () => {
     expect(result).toEqual(STATIC_HERO);
   });
 
-  it('getHomeHighlights returns the static highlights', async () => {
-    const result = await firstValueFrom(gateway.getHomeHighlights());
-    expect(result).toEqual([...STATIC_HOME_HIGHLIGHTS]);
-  });
-
-  it('getHomeBundle composes hero + highlights + buildSteps + featuredProjects from ProjectsGateway', async () => {
+  it('getHomeBundle composes the static hero and the featured projects from ProjectsGateway, nothing else', async () => {
     const fakeProjects = [{ id: 1, slug: 'proj-1', title: 'Project 1' } as never];
     projectsStub.getFeaturedProjects.mockReturnValue(of(fakeProjects));
 
     const result = await firstValueFrom(gateway.getHomeBundle());
 
-    expect(result.hero).toEqual(STATIC_HERO);
-    expect(result.highlights).toEqual([...STATIC_HOME_HIGHLIGHTS]);
-    expect(result.buildSteps).toEqual([...STATIC_BUILD_STEPS]);
-    expect(result.featuredProjects).toEqual(fakeProjects);
+    expect(result).toEqual({ hero: STATIC_HERO, featuredProjects: fakeProjects });
     expect(projectsStub.getFeaturedProjects).toHaveBeenCalledOnce();
   });
 

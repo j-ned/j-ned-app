@@ -252,6 +252,8 @@ Liste par tranche (§ Tranches). Récapitulatif des fichiers porteurs :
 | `src/app/shared/ui/key-point-list.ts` | Liste `lead` + `detail`, promue depuis `OfferReasons` au 2e consommateur (T7) |
 | `src/app/features/home/application/home-offers.ts` | Section offres de la home (T6) |
 | `src/app/features/home/application/home-method.ts` | Section méthode + engagements (T7) |
+| `src/app/features/home/application/home-why.ts` | Section « Pourquoi moi » : citation + `KeyPointList` + lien `/about` ; lit `HOME_WHY` elle-même pour que sa copie reste hors de `main-*.js` (T7) |
+| `src/app/features/home/application/home-faq.ts` | FAQ de la home via `FaqList` ; lit `HOME_FAQ` elle-même, même raison (T7) |
 | `src/app/features/home/domain/models/home-pitch.model.ts` + `home-pitch.static-data.ts` | Méthode, pourquoi moi, FAQ générale (constantes de domaine, ADR-0004) (T7) |
 | `src/app/features/profile/application/about-hiring.ts` | Bloc « Vous recrutez ? » (T5) |
 | `src/app/features/contact/domain/compose-contact-message.ts` | Encodage de la qualification dans le message (T9) |
@@ -351,8 +353,9 @@ type OfferPages = Readonly<Record<OfferSlug, OfferPageContent>>;
 ### 4. Réactivité
 
 - Catalogue, pages d'offre, sections de home : aucune réactivité (constantes en `input()`).
-- Home : `rxResource` sur `HomeGateway` inchangé (hero, highlights, buildSteps, projets
-  vedettes). Les nouvelles sections lisent des constantes synchrones.
+- Home : `rxResource` sur `HomeGateway` ; le bundle ne contient plus que `{ hero,
+  featuredProjects }` (les preuves techniques `highlights` / `buildSteps` sont retirées avec
+  `HomeProof` en T7). Les nouvelles sections lisent des constantes synchrones.
 - `AboutHiring` : URL du CV chargée côté client comme le header aujourd'hui (`afterNextRender`
   + `CvGateway.getCurrent()`, lien masqué sans CV). Le lien LinkedIn et la mention CDI sont
   statiques et prérendus.
@@ -421,14 +424,15 @@ description ≤ 160 caractères, aucun `—`, URL = `siteUrl + offerPath(slug)`.
 `staticUrls` perd `/offre-site-industrie`, gagne `/offres` (0.8) et `OFFERS.map(offerPath)`
 (0.7), importés du domaine par `tsx`.
 
-**8.4 Home.** Ordre : hero → offres → preuves (`HomeProof` + `HomeProjects`) → méthode →
-pourquoi moi → FAQ → contact. Rendu :
+**8.4 Home.** Ordre : hero → offres → réalisations (`HomeProjects`) → méthode → pourquoi moi →
+FAQ → contact. La section de preuves techniques `HomeProof` (pipeline de build, tuiles Front/API)
+est **retirée** de la home en T7 (décision de Julien, 2026-10-04 : jargon développeur sur le
+chemin client, absente de la maquette) ; les preuves de la home sont les réalisations. Rendu :
 
 | Section | Rendu | Raison |
 |---|---|---|
 | Hero (`HomeHeroSection`, données `HomeGateway`) | eager | LCP, `h1` unique |
 | Offres (`HomeOffers`, `OFFERS`) | **eager** | chemin de conversion n° 1, contenu SEO, petit (résumés) |
-| `HomeProof` | eager (inchangé, réserve de hauteur conservée) | |
 | `HomeProjects` | `@defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections())` inchangé | images, données API |
 | Méthode, pourquoi moi, FAQ | même `@defer` que ci-dessus, placeholders dimensionnés | sous le pli ; le trigger `hydrate` les met dans le HTML prérendu (ADR-0001) |
 | Contact | `@defer` inchangé (ADR-0001, jamais `hydrate on interaction`) | |
@@ -1597,6 +1601,148 @@ Scaffold dû au GREEN : `features/home/domain/home-hero.static-data.ts` (`HOME_H
 (`toOfferCatalogJsonLd`), `home.static-data.ts` (copy), `site-identity.static-data.ts`
 (`availability`), `home-hero-section.ts`, `home.ts`, `app.routes.ts` (SEO home).
 
+### Tranche 7 — la home : méthode, pourquoi moi, FAQ
+
+**Copy validée par Julien (2026-10-04)**, mot pour mot depuis la maquette, épinglée en golden sur
+`home-pitch.static-data.ts` (U+00A0 avant `:`, U+202F avant `?`) :
+
+- Méthode (`HOME_METHOD`) : h2 « Comment je travaille. » ; lead « La même méthode qu'en
+  atelier⍽: une gamme claire, des contrôles à chaque étape, rien ne part sans être vérifié. » ;
+  étapes (liste ordonnée) Cadrer · « jour 1 · 30 min » · « On parle de votre besoin. Vous recevez
+  un devis ferme⍽: périmètre, délai, prix. » ; Construire · « selon l'offre » · « Je vous envoie un
+  lien de prévisualisation. Vous voyez avancer le travail, pas un tableau d'avancement. » ; Mettre
+  en ligne · « après validation » · « Sur votre nom de domaine, en HTTPS, avec les mentions légales
+  et le référencement de base. » ; Maintenir · « sans engagement » · « Hébergement, sauvegardes,
+  mises à jour et petites modifications, au mois. » ; engagements « Prix annoncé avant de
+  commencer, sans dépassement », « Code, contenus et nom de domaine à votre nom », « Un seul
+  interlocuteur, joignable directement », « Vous partez quand vous voulez, avec vos fichiers ».
+- Pourquoi moi (`HOME_WHY`) : h2 « Pourquoi travailler avec moi. » ; citation « En usinage
+  aéronautique, une pièce hors tolérance ne part pas. J'applique la même règle au logiciel. »
+  (sans guillemets dans la donnée) ; attribution « Julien Nédellec · tourneur CN, puis développeur
+  full-stack » ; arguments « Je connais le terrain » → « Vingt ans en métallurgie et en usinage. Je
+  comprends un atelier, une PME, des délais qui ne glissent pas. » ; « Je livre seul, de bout en
+  bout » → « Conception, développement, hébergement, maintenance. Personne entre vous et celui qui
+  fait le travail. » ; « Je tiens mes standards » → « Sites rapides, accessibles, sécurisés. Ce site
+  en est l'échantillon⍽: vous pouvez le mesurer. » ; lien « Mon parcours » vers `/about`.
+- FAQ (`HOME_FAQ`) : h2 « Questions fréquentes. » ; lead « Les réponses aux questions qu'on me
+  pose au premier appel. » ; six entrées, dans l'ordre : délai d'un site vitrine, nom de domaine,
+  arrêt de la maintenance, prix d'une application, hors des Yvelines, TVA (questions terminées par
+  U+202F + `?`, réponses de la décision de Julien, art. 293 B du CGI).
+
+**Décision de Julien : `HomeProof` retiré de la home.** Les preuves de la home sont les
+réalisations (`HomeProjects`). Code et données devenus morts, à supprimer au GREEN :
+`home-proof.ts` ; `HomeBundle.highlights` et `HomeBundle.buildSteps` ; `home-highlight.model.ts`
+(`HomeHighlight`, `HighlightFact`) ; `build-step.model.ts` (`BuildStep`) ; `STATIC_HOME_HIGHLIGHTS`
+et `STATIC_BUILD_STEPS` (`home.static-data.ts`) ; `HomeGateway.getHomeHighlights` et son
+implémentation `InMemoryHomeGateway.getHomeHighlights` (plus aucun consommateur) ; dans `Home`,
+les `computed` `highlights`/`buildSteps`, le `@if` et la réserve de hauteur `animate-pulse` ; le
+commentaire « Hero/highlights/buildSteps » de `invalidateBundle`. `OfferFaq` et `OfferReasons`
+(`offer/application/components/`) disparaissent au profit des promotions `shared/ui`.
+Hors périmètre, signalé : `HomeGateway.getHeroData` n'a aucun consommateur applicatif (seuls la
+spec du gateway et le stub de `home.spec.ts` l'appellent), mort avant cette tranche.
+
+Sweeps. Contrat retiré (`HomeProof`) : `grep` sur `src/`, `scripts/`, `DESIGN.md` de
+`home-proof`, `HomeProof`, `highlights`, `buildSteps`, `HomeHighlight`, `BuildStep`,
+`STATIC_HOME_HIGHLIGHTS`, `STATIC_BUILD_STEPS`, `getHomeHighlights`. Suites adaptées dans ce RED :
+`home-proof.spec.ts` **supprimé** (4 tests, composant retiré) ; `home.spec.ts` (tests « highlights
+dérive » et « buildSteps dérive » **retirés**, cas disparus ; builder `bundle()` et stub de gateway
+sans `highlights`/`buildSteps`/`getHomeHighlights` ; harnais `renderHomeTemplate` : blocs différés
+relevés en liste, projets = premier, contact = dernier, route `about` ajoutée au routeur de test ;
+test d'ordre DOM **réécrit** sur le nouvel ordre, pas doublé ; test « aucun CDI » rend désormais
+tous les blocs différés) ; `in-memory-home.gateway.spec.ts` (test `getHomeHighlights` **retiré** ;
+test du bundle recalibré en égalité stricte `{ hero, featuredProjects }`) ;
+`editorial-typography.spec.ts` (entrées `STATIC_HOME_HIGHLIGHTS`/`STATIC_BUILD_STEPS` retirées,
+`HOME_METHOD`/`HOME_WHY`/`HOME_FAQ` ajoutées). Contrat modifié (promotion `shared/ui`, testids
+génériques) : `grep` de `offer-faq`, `offer-reason`, `OfferFaq`, `OfferReasons` sur `src/` ;
+seul consommateur de test = `offer-page.spec.ts`, sélecteurs repointés (`offer-faq-item|question|answer`
+→ `faq-item|question|answer`, `offer-reason|-lead|-detail` → `key-point|-lead|-detail`), aucune
+valeur attendue ni assertion modifiée : 8 tests repointés, 7 rouges jusqu'au GREEN (changement de contrat de
+testid, pas adaptation mécanique). États seedés : aucun (les seules fixtures qui matérialisaient
+`highlights` étaient celles de `home.spec.ts`, traitées). Vertes par construction :
+`about-highlights` (feature profile, homonyme sans lien), `app.routes.home.spec.ts` (SEO inchangé).
+
+Contrats fixés par ce RED :
+
+- `src/app/features/home/domain/home-pitch.static-data.ts` (domaine pur, imports relatifs ;
+  types dans `domain/models/home-pitch.model.ts`) : `HOME_METHOD = { heading, lead, steps:
+  readonly { id; verb; when; detail }[], commitments: readonly string[] }` ; `HOME_WHY = { heading,
+  quote: { text; attribution }, points: readonly { id; lead; detail }[], aboutLinkLabel }` ;
+  `HOME_FAQ = { heading, lead, items: readonly { id; question; answer }[] }`. Ids libres, uniques
+  par liste (formes compatibles avec `OfferStep`, `OfferReason`, `OfferFaqItem`).
+- `shared/ui/faq-list.ts` (`FaqList`) : reçoit `headingId` ; rend une `section` `aria-labelledby`
+  → `h2` ; lead optionnel en `data-testid="faq-lead"` ; chaque entrée `DETAILS`
+  `data-testid="faq-item"` fermé au rendu, `SUMMARY` enfant direct `faq-question`, réponse
+  `faq-answer` ; aucun `button`. Consommé par `OfferPage` (sans lead) et la home.
+- `shared/ui/key-point-list.ts` (`KeyPointList`) : chaque point `data-testid="key-point"`, avec
+  `key-point-lead` et `key-point-detail`. Côté `OfferPage`, la section des raisons reste labellisée
+  par son `h2` = `content.reasons.heading` (via `SplitSection` ou non : laissé au GREEN).
+- `Home` : cinq blocs `@defer` de premier niveau, dans l'ordre projets, méthode, pourquoi moi, FAQ,
+  contact (`getDeferBlocks()` de longueur 5) ; à l'état initial, placeholders
+  `home-method-placeholder`, `home-why-placeholder`, `home-faq-placeholder` présents et sections
+  absentes ; après `Complete`, les sections remplacent les placeholders. Ordre DOM initial :
+  `hero-headline` → `home-offers` → `home-projects-placeholder` → `home-method-placeholder` →
+  `home-why-placeholder` → `home-faq-placeholder` → `home-contact-placeholder` (plus de
+  `home-proof-*`).
+- Ancre méthode : élément `id="methode"`, classe `scroll-mt-20`, **hors** `@defer` (présent et
+  ancêtre du placeholder avant tout déclenchement, ancêtre de `home-method` après) ; directives
+  `SectionVisibility` de la home, dans l'ordre : `{ id: 'methode', sectionId: 'methode' }` puis
+  `{ id: 'contact', sectionId: 'contact' }`.
+- Méthode : `home-method` = `SECTION` `aria-labelledby` → `H2` = `heading` ; `home-method-lead` =
+  `lead` ; `home-method-step` × 4 = `LI` enfants d'un `OL`, chacun avec `home-method-step-verb`
+  (`H3`), `home-method-step-when`, `home-method-step-detail` ; `home-method-commitment` × 4 = `LI`
+  dans `home-method`.
+- Pourquoi moi : `home-why` = `SECTION` `aria-labelledby` → `H2` = `heading` ; `home-why-quote` =
+  `BLOCKQUOTE` dans la section, `home-why-quote-text` = `quote.text` exactement (guillemets
+  éventuels hors de cet élément), `home-why-quote-attribution` = `quote.attribution` ; `key-point`
+  × 3 dans la section = `points` ; `home-why-about-link` = `A`, `href="/about"`, texte =
+  `aboutLinkLabel` ; clic ⇒ `router.url` = `/about`.
+- FAQ : section de `faq-item` labellisée par un `H2` = `HOME_FAQ.heading`, `faq-lead` = `lead`,
+  `faq-item` × 6 conformes à `FaqList`, aucun `button`.
+- Page entière (tous blocs rendus) : un seul `h1` ; aucun id dupliqué, chaque
+  `section[aria-labelledby]` résout exactement un élément ; aucun `main`, aucun `header`/`footer`
+  hors d'une `section` (un `footer` d'attribution dans le `blockquote` de la section est admis).
+- `InMemoryHomeGateway.getHomeBundle()` émet exactement `{ hero: STATIC_HERO, featuredProjects }`.
+
+| Fichier | Tests |
+|---|---|
+| `features/home/domain/home-pitch.static-data.spec.ts` (11, nouveau) | goldens méthode (titre + lead, étapes, engagements), pourquoi moi (titre + citation, points, libellé du lien), FAQ (titre + lead, six entrées) ; ids uniques × 3 |
+| `features/home/application/home.spec.ts` (+19, −2, 1 réécrit) | placeholders + 5 blocs ; remplacement après `Complete` ; ancre `methode` hors defer, méthode dans l'ancre, scroll-spy méthode puis contact ; méthode (section + lead, étapes `OL`/`H3`, engagements) ; pourquoi moi (section, citation, points, lien `/about`, clic) ; FAQ (section + lead, `details` fermés, aucun bouton) ; page entière (h1 unique, ids uniques, landmarks) ; ordre DOM réécrit ; harnais adapté |
+| `features/home/infra/gateways/in-memory-home.gateway.spec.ts` (−1, 1 recalibré) | bundle = `{ hero, featuredProjects }` |
+| `features/home/application/home-proof.spec.ts` (−4, supprimé) | composant retiré de la home |
+| `features/offer/application/offer-page.spec.ts` (8 repointés, 7 rouges) | raisons et FAQ sur les testids de `KeyPointList`/`FaqList`, valeurs attendues inchangées |
+| `editorial-typography.spec.ts` (+3, −2) | `HOME_METHOD`, `HOME_WHY`, `HOME_FAQ` ; données de `HomeProof` retirées |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-04 17:55, 25 failed / 973 total). Nature des échecs : sur l'arbre réel, `pnpm test`
+(après `ng cache clean` et purge de `node_modules/.vite`) s'arrête à la compilation, uniquement
+sur des symboles applicatifs dus au GREEN : `TS2307` / `Could not resolve`
+`home/domain/home-pitch.static-data` (et les `TS7031` qui en découlent dans les mêmes specs),
+`TS2322` sur le builder `bundle()` de `home.spec.ts` tant que `HomeBundle` exige `highlights` et
+`buildSteps` ; aucune faute de type propre aux specs, prettier et eslint verts sur les cinq
+fichiers, aucun hit du pattern d'archéologie. Mesure du rouge comportemental : scaffold posé le
+temps d'une exécution puis retiré (`home-pitch.static-data.ts` portant la copy validée,
+`highlights`/`buildSteps` rendus optionnels dans `HomeBundle` ; `git checkout` du modèle, fichier
+supprimé, `git status` sans fichier applicatif) : 101 fichiers, 25 failed / 973 total, les 25 en
+`AssertionError` (16 nouveaux tests de `home.spec.ts`, le test d'ordre réécrit, le bundle
+recalibré, 7 des 8 tests repointés de `offer-page.spec.ts` ; le huitième, « ni étapes ni
+questions », reste vert par construction). Verts sous ce scaffold, par nature : les 11 goldens (scaffold = copy ; ils
+tombent tous en compilation sur l'arbre réel, et 8 sur 11 tombaient en `AssertionError` sous un
+scaffold vide), les 3 cas typographiques et les 3 invariants « page entière » (ils jugeront le
+rendu réel). Harnais vérifié : sous une implémentation jetable (sections inline dans `home.ts`,
+testids renommés dans `OfferFaq`/`OfferReasons`, retirée par `git checkout`), 972 passed / 973,
+seul le bundle du gateway (non traité par le jetable) restant rouge. Non-régression : base avant
+RED 949 passed / 949 ; sous scaffold 948 passed = 949 − 9 retirés (4 `home-proof`, 2 dérivés, 1
+gateway, 2 typographiques) − 9 adaptés rouges + 17 nouveaux verts par nature ; aucun test
+préexistant non visé ne tombe.
+Hors Vitest, verify (implémenteur) : HTML prérendu de la home contenant méthode, pourquoi moi, FAQ
+et contact (trigger `hydrate`) ; nouveaux composants différés absents de `main-*.js` ;
+placeholders dimensionnés (hauteur réservée, pas de CLS) non mesurables en happy-dom.
+Scaffold dû au GREEN : `features/home/domain/models/home-pitch.model.ts`,
+`features/home/domain/home-pitch.static-data.ts` (`HOME_METHOD`, `HOME_WHY`, `HOME_FAQ`),
+`features/home/application/home-method.ts`, `shared/ui/faq-list.ts`, `shared/ui/key-point-list.ts`,
+`home.ts`, `offer-page.ts`, `home-bundle.model.ts` (sans `highlights`/`buildSteps`),
+`in-memory-home.gateway.ts`, `home.gateway.ts`, suppressions listées ci-dessus.
+
 ## Journal des tranches
 
 - **Tranche 1 — l'offre atelier sur le modèle générique** : GREEN 701 passed / 701 total · refactor : aucun
@@ -1606,6 +1752,7 @@ Scaffold dû au GREEN : `features/home/domain/home-hero.static-data.ts` (`HOME_H
 - **Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »** : GREEN 698 passed / 698 total · refactor : liens du bloc passés sur l'utilitaire `link-btn-outline` (revue)
 - **Tranche V — socle visuel « dessin technique »** : GREEN 716 passed / 716 total · refactor : aucun
 - **Tranche 6 — la home commerciale : hero et offres** : GREEN 947 passed / 947 total · refactor : liste d'offres d'une famille (cartes Sites / lignes Applications) sortie en `OfferFamilyList`, partagée par `OfferCatalogue` et `HomeOffers` (passe manuelle sur le diff, `simplify` non invoqué en sous-agent)
+- **Tranche 7 — la home : méthode, pourquoi moi, FAQ** : GREEN 973 passed / 973 total · refactor : FAQ de la home sortie en `HomeFaq` (lit `HOME_FAQ` elle-même) pour que la copie de `home-pitch.static-data` quitte `main-*.js` (mesuré : « Questions fréquentes », « Prix annoncé » 0 dans `main` après, 1 avant) ; hauteurs des placeholders recalées sur la mesure par point de rupture (passe manuelle sur le diff, `simplify` non invoqué en sous-agent) ; « Pourquoi moi » en `HomeWhy`, qui lit `HOME_WHY` elle-même pour la même raison (copie hors de `main-*.js`).
 
 ## Verify
 
@@ -2017,6 +2164,81 @@ restaurés par `git checkout` après les builds.
 Verdict : **PASS**. Réserve : CLS 0,014 dû au swap de police sous le texte du hero (sous le
 seuil « bon »).
 
+### Tranche 7 — `/` (méthode, pourquoi moi, FAQ ; surface atteignable en production, restructurée) et pages d'offre (FAQ et raisons migrées)
+
+Steps : `pnpm install --frozen-lockfile` → `pnpm run build --configuration production` (20 routes
+prérendues, CSP durcie sur 21 pages) → lecture de `dist/angular-portfolio-app/browser/index.html`
+et des chunks → `docker build` de l'arbre de travail (`portfolio-perf:t7-branch`) **et** de
+`feat/home-commerciale` `f202c0a` (worktree détaché dans le scratchpad, retiré ensuite ;
+`portfolio-perf:t7-base`), conteneurs nginx `:3341` (branche) et `:3342` (base) → Chromium headless
+(Playwright) sur `/` et `/offres/site-atelier/` à 375×812 et 1440×900, clair puis sombre (bascule de
+`app-dark`), axe-core injecté par évaluation de script → navigation SPA `/about/` → `/#methode`
+(`pushState` + `popstate`, routeur Angular, sans rechargement) → rendu client de `/` depuis
+`/about/` pour mesurer placeholders et sections → Lighthouse 12.8 mobile (throttling simulé),
+3 passes par image, médiane. `public/sitemap.xml` et `public/rss.xml` restaurés par `git checkout`.
+
+1. **HTML prérendu de `/`** (trigger `hydrate`) : `data-testid="home-method"` (1, quatre
+   `home-method-step` en `ol > li`, quatre engagements), `home-why` (1, `blockquote` +
+   trois `key-point` + lien `/about`), six `faq-item` (`details` fermés), `home-contact-form` (1),
+   `id="methode"` (1, wrapper hors `@defer`), un seul `<h1`. **`home-proof` : 0 occurrence.**
+   Ordre DOM : hero, offres, projets, méthode, pourquoi moi, FAQ, contact.
+2. **Bundle initial** : `HomeMethod`, `HomeWhy`, `HomeFaq`, `FaqList`, `KeyPointList` hors de
+   `main-*.js` (`home-method-step-when`, `home-why-quote-text`, `faq-question`, `key-point-lead` :
+   0 dans `main`, chacun dans son chunk lazy) ; copie de `home-pitch.static-data` hors de `main`
+   (« Comment je travaille », « Questions fréquentes », « Prix annoncé » : 0). Seules les balises
+   `app-home-*` du gabarit de `Home` restent dans `main`. `main` : −1,3 ko transférés (retrait de
+   `HomeProof` et de ses données).
+3. **Placeholders (CLS)** : rendu client de `/` (navigation SPA depuis `/about/`), hauteur du
+   placeholder puis de la section rendue, en px :
+
+   | Largeur | Méthode | Pourquoi moi | FAQ |
+   |---|---|---|---|
+   | 375 | 1472 / 1471 | 960 / 960 | 704 / 702 |
+   | 768 | 1012 / 1011 | 788 / 788 | 720 / 718 |
+   | 1024 | 748 / 748 | 632 / 632 | 512 / 513 |
+   | 1440 | 726 / 726 | 590 / 590 | 520 / 521 |
+
+   Écart ≤ 2 px à toutes les largeurs : hauteur réservée.
+4. **Pages d'offre** (`/offres/site-atelier/`, quatre combinaisons largeur × registre) : trois
+   `key-point` dans la section « Pourquoi un tourneur plutôt qu'une agence » (`SplitSection`,
+   `h2` `offer-reasons-heading`), cinq `faq-item` dans la section « Questions fréquentes »
+   (`h2` `offer-faq-heading`), aucun `button` dans la section FAQ. La FAQ d'offre adopte le
+   gabarit partagé (titre au-dessus, deux colonnes en `lg`) au lieu de la colonne droite d'un
+   `SplitSection`.
+5. **Rendu** (captures, scratchpad de session `lh/shots-t7/`) :
+   `home-{375,1440}-{light,dark}-{method,why,faq,faq-open}.png`,
+   `offer-{375,1440}-{light,dark}-{reasons,faq}.png`, `spa-375-methode.png`. En 1440, méthode en
+   quatre colonnes numérotées 01–04 (trait `line-strong` sous le numéro), bandeau d'engagements
+   deux colonnes en `primary/8` ; « pourquoi moi » en deux colonnes (titre + citation Archivo à
+   gauche, arguments + « Mon parcours → » à droite) ; FAQ en deux colonnes indépendantes, `+`
+   tourné en `×` à l'ouverture. En 375, tout empilé, aucun défilement horizontal. Deux registres
+   conformes. Une FAQ s'ouvre au clic (`details.open` = true).
+6. **Ancre `/#methode` en navigation SPA** : depuis `/about/`, l'URL devient `/#methode` sans
+   rechargement (entrée de navigation inchangée = `/about/`), le routeur fait défiler jusqu'à
+   `#methode` (`scrollY` 2489, haut de l'ancre à 0) ; le placeholder de la méthode est remplacé par
+   la section (`on viewport`). Observation hors diff : l'`anchorScrolling` du routeur ignore
+   `scroll-margin-top` (aucun `setOffset`), le haut de l'ancre passe sous le header fixe ; le
+   padding de la section (6 rem) garde le `h2` visible. L'entrée de menu « Méthode » (T8) passera par
+   `SectionScroller`, qui applique son propre décalage.
+7. **axe** (2 largeurs × 2 registres × 2 pages) : aucune violation sur `/`. Sur la page d'offre,
+   seule violation `color-contrast` sur `toast-summary` (clair), le toast d'erreur global affiché
+   parce que l'API refuse l'origine locale : identique sur l'image de base, préexistante.
+8. **Lighthouse mobile `/`** (médiane de 3) :
+
+   | Image | Perf (passes) | LCP | Render delay | CLS | SEO · a11y | Poids |
+   |---|---|---|---|---|---|---|
+   | base `f202c0a` | 89 (89/85/89) | 3 049 ms | 2 597 ms | 0,014 | 100 · 100 | 449 241 o |
+   | branche | 88 (85/89/88) | 3 057 ms | 2 605 ms | 0,014 | 100 · 100 | 461 488 o |
+
+   Élément LCP inchangé (`h1` du hero) : **pas de régression de LCP** (+8 ms, bruit, une passe à
+   ~3,3 s de chaque côté) **ni de CLS** (0,014 des deux côtés, swap de JN Sans sous le hero, déjà
+   relevé en Tranche 6). Poids +12 ko : HTML +2,5 ko (trois sections prérendues), chunks différés
+   chargés après coup (`prefetch on idle`), `main` −1,3 ko ; rien sur le chemin du LCP.
+9. **Console** : aucune erreur applicative (`NG0…`, hydratation). Erreurs d'environnement seules :
+   `GET /api/config` 404 et CORS de `api.nedellec-julien.fr` refusant l'origine locale.
+
+Verdict : **PASS**.
+
 ## Review code
 
 ### Tranche 1
@@ -2277,3 +2499,62 @@ Points de la 1re revue, vérifiés :
 2. **`DESIGN.md`** : soldé. Les lignes 151 et 380 renvoient à l'accent unique (`em` `not-italic text-primary`, The Indigo Accent Rule). Plus aucune occurrence de `kw` ni de « Keyword » dans `DESIGN.md` ni `DESIGN.json`.
 
 Advisories maintenus, non bloquants : bloc de famille dupliqué sur 2 sites, lien `founder` → `@id` non épinglé, branche de repli de `headlineSegments` non testée, double annonce du `Cartouche` du hero.
+
+### Tranche 7
+
+**Verdict** : APPROVED (re-revue ; la 1re revue a rendu REJECTED sur trois écarts de la spec, soldés, sans changement de code)
+**Gates CI locaux** : install ✅ (`pnpm install --frozen-lockfile`, exit 0) / tests ✅ (`pnpm test`, exit 0, après `pnpm exec ng cache clean` et purge de `node_modules/.vite` : 101 fichiers, 973 passed / 973) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting ») / build ✅ (`pnpm run build --configuration production`, exit 0 au premier essai : sitemap 20 URL, 20 routes prérendues, CSP durcie sur 21 pages). `public/` restauré par `git checkout`. Non rejouées à la re-revue : aucun fichier de `src/` ni `DESIGN.md` n'a changé depuis (vérifié par date de modification), seule la spec a été modifiée.
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent), auto-checks joués à la main sur `git diff f202c0a` et les fichiers non suivis. Archéologie (motif du profil) : 0 hit. Deux commentaires ajoutés, chacun sur une ligne et porteur d'un WHY (`home.ts`, ancre hors `@defer` ; `faq-list.ts`, colonnes indépendantes). `export default`, `effect(`, helpers zone, `innerHTML`, `console.`, `.only`/`.skip`, snapshot, `fireEvent`, `interface`, `@capacitor` : 0 hit. Exports ajoutés : `FaqList` et `KeyPointList` (2 consommateurs chacun, `Home*` et `OfferPage`), `HomeMethod`/`HomeWhy`/`HomeFaq` (`home.ts`), `HOME_METHOD`/`HOME_WHY`/`HOME_FAQ` (composants et specs), types du modèle (fichier de données). Code mort : `home-proof`, `HomeProof`, `highlights` (hors `about-highlights`), `buildSteps`, `HomeHighlight`, `HighlightFact`, `BuildStep`, `getHomeHighlights`, `STATIC_HOME_HIGHLIGHTS`, `STATIC_BUILD_STEPS`, `OfferFaq`, `OfferReasons`, `offer-faq`, `offer-reason` : 0 occurrence dans `src/`, `scripts/`, `.github/`, `DESIGN.md`, `PRODUCT.md`. Seuls restent les identifiants de titre `offer-faq-heading` et `offer-reasons-heading`, conservés exprès.
+**Warnings de gate** : aucun (sorties d'install, test, lint et build lues en entier)
+**Rendu compilé** : N/A (`FaqList` et `KeyPointList` ont des sélecteurs élément ; aucun sélecteur attribut touché)
+**Preuve de verify runtime** : ✅ (la preuve `## Verify` / Tranche 7 est complète et cohérente avec le diff. Rejouée par la revue sur le build de production servi en statique, Chromium 375×812 et 1440×900, clair et sombre, `/` et `/offres/site-atelier/`, toutes les sections hydratées par défilement : aucun défilement horizontal, aucun placeholder ni bloc `@error` restant, rendu conforme à la maquette. axe : 0 violation sur les 8 combinaisons. Clavier : chaque `summary` reçoit le focus au Tab avec `:focus-visible` et un outline plein, s'ouvre et se referme à Entrée comme à Espace (6/6 sur `/`, 5/5 sur l'offre). « Mon parcours » : `href="/about"`, cible de 44 px, `:focus-visible` et outline de 2 px, Entrée ⇒ `/about`. Console : uniquement les erreurs d'environnement, `GET /api/config` en 404 et CORS de l'API.)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅ (aucun lien externe, aucune donnée externe, CSP régénérée)
+**Alignement spec** : ✅ (re-revue : § 2, § 4, § 8.4 et journal alignés sur le code livré ; `HomeWhy` et `HomeFaq` justifiés)
+
+Vérifications du HTML prérendu. Sur `/` : `home-method` (1, quatre `home-method-step`, quatre engagements), `home-why` (1, trois `key-point`, lien `/about`), six `faq-item` (`details` sans `open`, 0 `button` dans la section), `home-contact-form` (1), `id="methode"` (1), `home-proof` (0), un seul `<h1`, aucun id dupliqué. Ordre du document : hero, offres, projets, `#methode`, méthode, pourquoi moi, FAQ, contact. Sur `/offres/site-atelier/` : trois `key-point`, cinq `faq-item`, sections labellisées par `offer-reasons-heading` et `offer-faq-heading`, un `<h1`, aucun `faq-lead`. Bundle : `home-method-step-when`, `home-why-quote-text`, `faq-question`, `key-point-lead`, « Comment je travaille », « Pourquoi travailler » et « sans dépassement » sont absents de `main-*.js`. Correction mineure de la preuve : « Prix annoncé » est présent une fois dans `main`. Il vient de la description SEO de `offer-seo.ts:86` (T4), pas de `home-pitch`, et la conclusion de la preuve tient. Attention aussi : `main` échappe les accents (`\xE9`), un grep sur « Questions fréquentes » y trouve toujours 0 occurrence.
+
+Points à juger, réponses de la revue :
+1. **Composants hors liste** :
+   - `HomeFaq` est justifié et mesuré : sans lui, la copie quittait le chunk différé pour entrer dans `main`. Le journal le trace.
+   - `HomeWhy` obéit à la même logique (la copie de `HOME_WHY` reste hors de `main`). Absent du § 2 et du journal en 1re revue, il y figure désormais avec sa justification.
+   - `FaqList` et `KeyPointList` dans `shared/ui` : légitimes. Ils sont prescrits au § 2 et au plan T7, avec 2 consommateurs chacun, des types structurels locaux et aucune dépendance de feature. Le `SplitSection` des raisons sur la page d'offre est un choix laissé au GREEN par le plan de test.
+2. **Pages d'offre** : la FAQ suit le gabarit de la maquette (`.faq` : deux colonnes indépendantes de 3+3, `+` mono tourné de 45°, trait en haut de chaque entrée). La vue « Page d'offre » de la maquette n'a ni FAQ ni raisons : l'alignement sur le gabarit de la home est une extrapolation cohérente, documentée dans `DESIGN.md`. Aucune régression d'a11y :
+   - les `h2` sont inchangés et labellisent leur section (testé) ;
+   - le `details`/`summary` est natif, sans `button` ;
+   - le marqueur natif est remplacé par un pseudo-élément au texte alternatif vide (`content: '+' / ''`), et `summary` garde l'état ouvert/fermé natif ;
+   - les raisons étaient des `span` et deviennent des `p` : pas de titre perdu (il n'y avait pas de `h3` avant) ;
+   - le séparateur « : » disparaît au profit de la grille. La lecture linéaire donne deux paragraphes, ce qui est acceptable.
+3. **Code mort** : la suppression est complète (voir les checks mécaniques). `HomeGateway.getHeroData` n'a aucun consommateur applicatif, mais il était déjà mort avant T7 et le diff ne l'aggrave pas. Ce n'est pas bloquant ici. À retirer dans une `chore` dédiée : la méthode abstraite, l'implémentation in-memory, le test `in-memory-home.gateway.spec.ts:25` et la ligne du stub `home.spec.ts:50`. La ligne du stub est déjà superflue, puisque le stub est casté `as unknown as HomeGateway`. Les retraits de tests passent par `qa`.
+4. **`@defer`** :
+   - les trois blocs portent `hydrate on viewport; on viewport; prefetch on idle; when eagerSections()`, conformes à ADR-0001 et au § 8.4 ;
+   - chacun a un `@placeholder` dimensionné par point de rupture et un `@error` ;
+   - `#methode` est hors `@defer`, avec `scroll-mt-20` et `appSectionVisibility="methode"`, contrat épinglé par 3 tests ;
+   - le prérendu contient les trois sections (trigger `hydrate`), et les placeholders ne servent qu'en navigation client.
+   Fragilité acceptée : les hauteurs sont en `rem` codées en dur (voir l'altitude ci-dessous).
+5. **Lighthouse** : 89 → 88, LCP +8 ms, CLS inchangé. C'est du bruit (les passes se recouvrent, 85 à 89 de chaque côté). L'élément LCP est inchangé et les nouveaux chunks ne sont pas sur le chemin critique. Pas de régression imputable à T7. À rappeler à l'orchestrateur : le critère d'acceptation global « Lighthouse ≥ 95 perf » n'est pas tenu, ni sur la base, ni sur la branche (dette antérieure à T7, à traiter avant la clôture de la spec).
+6. **Typographie** : tenue. Octets vérifiés : 3 U+00A0 (avant chaque `:`) et 6 U+202F (avant chaque `?`) dans `home-pitch.static-data.ts`. Les guillemets de la citation sont dans le gabarit de `HomeWhy` avec `&nbsp;`, hors de la donnée, conformément au contrat. `editorial-typography.spec.ts` couvre `HOME_METHOD`, `HOME_WHY` et `HOME_FAQ` et ne référence plus les données retirées.
+
+**Tests notables** :
+- ✨ `src/app/features/home/application/home.spec.ts` (« page entière ») : unicité des ids et résolution de chaque `aria-labelledby` vers exactement un élément, sur la page rendue en entier. Ce test protège la promotion de `FaqList` contre un `headingId` dupliqué.
+- ✨ `src/app/features/home/application/home.spec.ts` (« ancre de la méthode ») : épingle le contrat structurel « ancre hors `@defer` » avant tout déclenchement, et le scroll-spy dans l'ordre.
+- ⚠️ `src/app/features/home/application/home.spec.ts:50` : `getHeroData` dans le stub, sans usage (voir le point à juger 3).
+
+**Altitude composant** (advisory, non bloquant) :
+- ⚠️ `src/app/features/home/application/home.ts:55-90` : trois placeholders avec cinq hauteurs `rem` chacun, mesurées à la main. Toute retouche de la copie ou de la mise en page de ces sections fera dériver la réserve sans qu'aucun test le voie (CLS en navigation client seulement, le prérendu n'est pas concerné). Acceptable en l'état. À reprendre si une 4e section différée arrive.
+- ⚠️ `src/app/features/home/domain/models/home-pitch.model.ts` : les types `HomeMethod`, `HomeWhy` et `HomeFaq` portent le même nom que les classes de composant de `home-method.ts`, `home-why.ts` et `home-faq.ts`. Aucun fichier n'importe les deux aujourd'hui, mais l'auto-import peut confondre type et composant. Renommage suggéré, par exemple `HomeMethodContent`.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil muet (Dokploy continu sur `master`) · monitoring : Sentry
+- aucun état persistant touché
+- non couvert par les gates : la correspondance entre les hauteurs de placeholder et le rendu réel (mesurée une fois en verify, non testée) ; l'ordre de lecture des deux colonnes de FAQ (1-3 puis 4-6, conforme à la maquette, non épinglé visuellement).
+
+Points de la 1re revue, vérifiés à la re-revue (grep de `HomeProof` et `highlights` dans la spec : les occurrences restantes sont la trace de la décision, le plan de test T7, la preuve et le présent verdict) :
+1. **Soldé.** § 8.4 : l'ordre est réécrit (hero → offres → réalisations → méthode → pourquoi moi → FAQ → contact), le retrait de `HomeProof` est tracé comme décision de Julien et la ligne `HomeProof` du tableau est supprimée. Constat de la 1re revue, `:424` et `:431` : l'ordre « preuves (`HomeProof` + `HomeProjects`) » et la ligne `HomeProof | eager (inchangé…)` contredisent la décision de Julien, actée au plan de test T7 et livrée. Réécrire en « hero → offres → réalisations (`HomeProjects`) → méthode → pourquoi moi → FAQ → contact », supprimer la ligne `HomeProof` et indiquer que méthode, pourquoi moi et FAQ sont trois `@defer` distincts. T8 s'appuie sur ce paragraphe.
+2. **Soldé.** § 2 : `home-why.ts` et `home-faq.ts` ajoutés avec leur justification ; le journal T7 mentionne `HomeWhy`. Constat de la 1re revue, `:254` et `:1751` : `home-why.ts` (`HomeWhy`) et `home-faq.ts` (`HomeFaq`) manquent au tableau des fichiers à créer. `HomeWhy` n'est justifié nulle part. L'ajouter au § 2 avec `HomeFaq`, et compléter la ligne du journal : « pourquoi moi » est sortie en composant pour la même raison que la FAQ (copie hors de `main-*.js`).
+3. **Soldé.** § 4 : le bundle est décrit comme `{ hero, featuredProjects }`. Constat de la 1re revue, `:354` : « `rxResource` sur `HomeGateway` inchangé (hero, highlights, buildSteps, projets vedettes) » est périmé. Le bundle ne porte plus que `{ hero, featuredProjects }`.
+
+`getHeroData` : suivi dans une chore séparée, hors T7 (accord de l'orchestrateur). Advisories maintenus, non bloquants : hauteurs de placeholder en dur, collision de nom entre types de modèle et composants, inexactitude « Prix annoncé » de la preuve.

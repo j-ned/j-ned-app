@@ -1,9 +1,11 @@
 import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { HomeFaq } from './home-faq';
 import { HomeHeroSection } from './home-hero-section';
+import { HomeMethod } from './home-method';
 import { HomeOffers } from './home-offers';
 import { HomeProjects } from './home-projects';
-import { HomeProof } from './home-proof';
+import { HomeWhy } from './home-why';
 import { ContactForm } from '@features/contact/application/contact-form';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { SectionVisibility } from '@core/navigation/section-visibility';
@@ -11,7 +13,16 @@ import { SectionScroller } from '@core/navigation/section-scroller';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeOffers, HomeProof, HomeProjects, ContactForm, SectionVisibility],
+  imports: [
+    HomeHeroSection,
+    HomeOffers,
+    HomeProjects,
+    HomeMethod,
+    HomeWhy,
+    HomeFaq,
+    ContactForm,
+    SectionVisibility,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col w-full' },
   template: `
@@ -19,17 +30,6 @@ import { SectionScroller } from '@core/navigation/section-scroller';
     <app-home-hero-section class="mt-20" [hero]="bundle()?.hero ?? null" />
 
     <app-home-offers />
-
-    @if (highlights().length > 0) {
-      <app-home-proof [highlights]="highlights()" [buildSteps]="buildSteps()" />
-    } @else {
-      <!-- Réserve la hauteur de la grille des preuves tant que le bundle n'est pas chargé. -->
-      <div class="page-container py-24 md:py-32" aria-hidden="true">
-        <div
-          class="h-[52rem] md:h-[40rem] xl:h-[30rem] rounded-xl bg-foreground/2 animate-pulse"
-        ></div>
-      </div>
-    }
 
     <!-- Projects Section -->
     @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
@@ -42,6 +42,48 @@ import { SectionScroller } from '@core/navigation/section-scroller';
       <div
         class="block py-16 md:py-20 px-4 sm:px-6 h-64"
         data-testid="home-projects-placeholder"
+      ></div>
+    } @error {
+      <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
+        Impossible de charger cette section.
+      </div>
+    }
+
+    <!-- Ancre de l'entrée de menu « Méthode » : hors @defer pour exister avant le rendu de la section. -->
+    <div id="methode" class="scroll-mt-20" appSectionVisibility="methode">
+      @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
+        <app-home-method class="border-t border-line" />
+      } @placeholder {
+        <div
+          class="h-[92rem] border-t border-line sm:h-[62rem] md:h-[63.25rem] lg:h-[46.75rem] xl:h-[45.375rem]"
+          data-testid="home-method-placeholder"
+        ></div>
+      } @error {
+        <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
+          Impossible de charger cette section.
+        </div>
+      }
+    </div>
+
+    @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
+      <app-home-why class="border-t border-line" />
+    } @placeholder {
+      <div
+        class="h-[60rem] border-t border-line sm:h-[45.25rem] md:h-[49.25rem] lg:h-[39.5rem] xl:h-[36.875rem]"
+        data-testid="home-why-placeholder"
+      ></div>
+    } @error {
+      <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
+        Impossible de charger cette section.
+      </div>
+    }
+
+    @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
+      <app-home-faq class="border-t border-line" />
+    } @placeholder {
+      <div
+        class="h-[44rem] border-t border-line sm:h-[41rem] md:h-[45rem] lg:h-[32rem] xl:h-[32.5rem]"
+        data-testid="home-faq-placeholder"
       ></div>
     } @error {
       <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
@@ -79,6 +121,4 @@ export class Home {
     stream: () => this._gateway.getHomeBundle(),
   });
   protected readonly bundle = computed(() => this.bundleResource.value());
-  protected readonly highlights = computed(() => this.bundle()?.highlights ?? []);
-  protected readonly buildSteps = computed(() => this.bundle()?.buildSteps ?? []);
 }
