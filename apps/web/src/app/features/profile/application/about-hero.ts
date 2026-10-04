@@ -62,7 +62,7 @@ const STACK = 'Angular · NestJS · TypeScript';
               }
             </ul>
           </div>
-          <figure class="animate-fade-up [animation-delay:120ms] w-full max-w-80">
+          <figure class="w-full max-w-80" data-testid="about-portrait">
             <div
               class="relative aspect-[4/5] overflow-hidden rounded-xl border border-foreground/8 bg-surface"
             >

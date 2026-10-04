@@ -66,6 +66,13 @@ describe('AboutHero', () => {
     expect(malt.getAttribute('target')).toBe('_blank');
   });
 
+  // Portrait = élément LCP : un fondu d'entrée repousse le LCP à la fin de l'animation.
+  it('Given le portrait When le hero est rendu Then il est visible au premier rendu, sans animation d’entrée', () => {
+    const portrait = host().querySelector<HTMLElement>('[data-testid="about-portrait"]');
+    expect(portrait).not.toBeNull();
+    expect(portrait?.className).not.toMatch(/\banimate-/);
+  });
+
   it('Given le portrait When le hero est rendu Then il porte un texte alternatif', () => {
     expect(host().querySelector('img')?.getAttribute('alt')).toBe(
       `Portrait de ${STATIC_PROFILE_BASE.displayName}`,
