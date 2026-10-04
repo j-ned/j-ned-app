@@ -17,7 +17,7 @@ import { AppIcon } from '@shared/icons/app-icon';
       data-testid="about-hiring"
     >
       <h2 id="hiring-heading" class="font-mono text-[0.8125rem] font-medium text-muted">
-        Vous recrutez ?
+        Vous recrutez&#8239;?
       </h2>
       <p
         class="mt-4 max-w-[36ch] text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-[1.15] tracking-[-0.02em] text-balance"

@@ -14,7 +14,7 @@ export const routes: Routes = [
       seo: {
         title: 'Julien Nédellec | Développeur Full-Stack Angular / NestJS',
         description:
-          "Développeur Full-Stack Angular / NestJS, freelance et ouvert au CDI en Île-de-France. 20 ans d'industrie, aujourd'hui en aéronautique : je conçois, déploie et maintiens des applications en production.",
+          "Développeur Full-Stack Angular / NestJS, freelance et ouvert au CDI en Île-de-France. 20 ans d'industrie, aujourd'hui en aéronautique\u00a0: je conçois, déploie et maintiens des applications en production.",
         keywords:
           'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France, Île-de-France, Industrie, Self-hosted',
         url: SITE_IDENTITY.siteUrl,
@@ -59,7 +59,7 @@ export const routes: Routes = [
       seo: {
         title: 'Parcours | Julien Nédellec',
         description:
-          "Parcours de Julien Nédellec, développeur Full-Stack Angular / NestJS : 20 ans d'industrie, aujourd'hui tourneur CN en aéronautique, ouvert à un CDI en Île-de-France.",
+          "Parcours de Julien Nédellec, développeur Full-Stack Angular / NestJS\u00a0: 20 ans d'industrie, aujourd'hui tourneur CN en aéronautique, ouvert à un CDI en Île-de-France.",
         keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
@@ -89,7 +89,7 @@ export const routes: Routes = [
       seo: {
         title: 'Projets | Julien Nédellec',
         description:
-          'Découvrez mes projets Angular, NestJS et TypeScript : applications web modernes, APIs REST, déploiements Docker, code production-ready.',
+          'Découvrez mes projets Angular, NestJS et TypeScript\u00a0: applications web modernes, APIs REST, déploiements Docker, code production-ready.',
         keywords:
           'Portfolio Angular, Projets NestJS, Applications TypeScript, Développeur Full-Stack, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/projects`,
@@ -155,7 +155,7 @@ export const routes: Routes = [
       seo: {
         title: 'Politique de confidentialité | Julien Nédellec',
         description:
-          "Ce que le site collecte et pourquoi : formulaire de contact, mesure d'audience sans cookie, commentaires, suivi des erreurs, vos droits.",
+          "Ce que le site collecte et pourquoi\u00a0: formulaire de contact, mesure d'audience sans cookie, commentaires, suivi des erreurs, vos droits.",
         url: `${SITE_IDENTITY.siteUrl}/confidentialite`,
         type: 'website',
       },

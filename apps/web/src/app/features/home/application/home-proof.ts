@@ -12,7 +12,7 @@ import type { HomeHighlight } from '../domain/models/home-highlight.model';
       <header class="grid gap-4 mb-12 lg:grid-cols-2 lg:items-end lg:gap-12">
         <h2 id="proof-heading" class="section-title">Ce que je maîtrise, vérifiable sur ce site</h2>
         <p class="max-w-[52ch] text-muted">
-          Quatre domaines, avec pour chacun ce qui tourne réellement ici. Le code est public :
+          Quatre domaines, avec pour chacun ce qui tourne réellement ici. Le code est public&nbsp;:
           chaque point se contrôle en quelques minutes.
         </p>
       </header>

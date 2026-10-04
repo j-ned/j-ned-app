@@ -65,7 +65,7 @@ describe('AboutHiring', () => {
 
       expect(block?.id).toBe('recrutement');
       expect(headings).toHaveLength(1);
-      expect(headings[0]?.textContent?.trim()).toBe('Vous recrutez ?');
+      expect(headings[0]?.textContent?.trim()).toBe('Vous recrutez\u202F?');
       expect(block?.getAttribute('aria-labelledby')).toBe(headings[0]?.id);
       expect(headings[0]?.id).not.toBe('');
     });

@@ -52,7 +52,7 @@ describe('Pages légales', () => {
     it('date la dernière mise à jour du passage en version professionnelle', () => {
       expect(LEGAL_LAST_UPDATE).toBe('3 octobre 2026');
       expect(renderLegalNotice().textContent).toContain(
-        `Dernière mise à jour : ${LEGAL_LAST_UPDATE}`,
+        `Dernière mise à jour\u00A0: ${LEGAL_LAST_UPDATE}`,
       );
     });
   });

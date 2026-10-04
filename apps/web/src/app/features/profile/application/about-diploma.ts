@@ -30,7 +30,7 @@ const DIPLOMA_SUMMARY = 'Deux titres professionnels de niveau 5 (Bac+2).';
               </p>
               <ul
                 class="mt-3 flex flex-wrap gap-x-2 font-mono text-[0.8125rem] leading-[1.7] text-foreground/80"
-                [attr.aria-label]="'Compétences acquises : ' + diploma.title"
+                [attr.aria-label]="'Compétences acquises&nbsp;: ' + diploma.title"
                 role="list"
               >
                 @for (skill of diploma.skills; track skill) {

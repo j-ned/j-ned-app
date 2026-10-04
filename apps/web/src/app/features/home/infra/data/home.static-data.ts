@@ -7,7 +7,7 @@ import type { HomeHighlight } from '../../domain/models/home-highlight.model';
 export const STATIC_HERO: HeroData = {
   id: 'c64a566f-9e53-44f9-96de-f938f0166b9c',
   headline: "Je livre des applications Angular et NestJS jusqu'en production.",
-  lead: "Du composant au conteneur : architecture, API, base PostgreSQL, CI/CD et hébergement. Ce site en est l'échantillon, prérendu et déployé sur ma propre infrastructure.",
+  lead: "Du composant au conteneur\u00a0: architecture, API, base PostgreSQL, CI/CD et hébergement. Ce site en est l'échantillon, prérendu et déployé sur ma propre infrastructure.",
   proofs: [
     { label: 'runtime', value: 'Angular 22 zoneless', detail: 'signals · Signal Forms' },
     { label: 'rendu', value: 'Pages publiques prérendues', detail: 'hydratation incrémentale' },

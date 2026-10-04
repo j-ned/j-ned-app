@@ -10,7 +10,7 @@ import { LEGAL_LAST_UPDATE } from './legal-notice';
   template: `
     <article class="page-container max-w-3xl pt-8 prose dark:prose-invert">
       <h1>Politique de confidentialité</h1>
-      <p class="text-muted">Dernière mise à jour : {{ lastUpdate }}</p>
+      <p class="text-muted">Dernière mise à jour&nbsp;: {{ lastUpdate }}</p>
 
       <p>
         Ce site ne dépose aucun cookie de suivi et n'utilise aucun service publicitaire. Voici,
@@ -24,25 +24,25 @@ import { LEGAL_LAST_UPDATE } from './legal-notice';
       <p>
         Les informations saisies (nom, adresse e-mail, sujet, message) servent uniquement à répondre
         à votre demande. Elles sont enregistrées sur le serveur de l'éditeur et transmises par
-        e-mail à l'éditeur ; une confirmation vous est envoyée à l'adresse indiquée. Base légale :
-        l'intérêt légitime à répondre à une sollicitation. Elles sont conservées le temps du
-        traitement de la demande, puis supprimées par l'éditeur.
+        e-mail à l'éditeur&#8239;; une confirmation vous est envoyée à l'adresse indiquée. Base
+        légale&nbsp;: l'intérêt légitime à répondre à une sollicitation. Elles sont conservées le
+        temps du traitement de la demande, puis supprimées par l'éditeur.
       </p>
 
       <h2>Mesure d'audience</h2>
       <p>
         La fréquentation est mesurée par un outil développé pour ce site, sans cookie ni identifiant
-        persistant. Pour chaque page vue sont enregistrés : la page, la provenance (nom de domaine
-        du site d'origine uniquement), le pays déduit de l'adresse IP à partir d'une base locale, le
-        navigateur et le système d'exploitation, et la durée de visite. L'adresse IP n'est jamais
-        conservée : elle sert seulement, combinée au navigateur et à la date du jour, à calculer une
-        empreinte non réversible qui distingue les visites d'une même journée. Les visites des
-        robots et de l'éditeur sont exclues.
+        persistant. Pour chaque page vue sont enregistrés&nbsp;: la page, la provenance (nom de
+        domaine du site d'origine uniquement), le pays déduit de l'adresse IP à partir d'une base
+        locale, le navigateur et le système d'exploitation, et la durée de visite. L'adresse IP
+        n'est jamais conservée&nbsp;: elle sert seulement, combinée au navigateur et à la date du
+        jour, à calculer une empreinte non réversible qui distingue les visites d'une même journée.
+        Les visites des robots et de l'éditeur sont exclues.
       </p>
       <p>
-        Base légale : l'intérêt légitime à connaître l'usage du site. Les données brutes sont
-        supprimées après 30 jours ; seuls des totaux journaliers anonymes (visites, pages vues) sont
-        conservés au-delà.
+        Base légale&nbsp;: l'intérêt légitime à connaître l'usage du site. Les données brutes sont
+        supprimées après 30 jours&#8239;; seuls des totaux journaliers anonymes (visites, pages
+        vues) sont conservés au-delà.
       </p>
 
       <h2>Commentaires des articles</h2>
@@ -50,7 +50,7 @@ import { LEGAL_LAST_UPDATE } from './legal-notice';
         Les commentaires du blog reposent sur
         <a href="https://giscus.app" rel="noopener noreferrer" target="_blank">Giscus</a>, qui les
         stocke dans les discussions GitHub du dépôt du site. Rien n'est chargé depuis GitHub tant
-        que vous n'interagissez pas avec la zone de commentaires ; commenter suppose de vous
+        que vous n'interagissez pas avec la zone de commentaires&#8239;; commenter suppose de vous
         connecter avec votre compte GitHub, dont le traitement relève de la
         <a
           href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement"

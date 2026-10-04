@@ -106,31 +106,31 @@ export const OFFER_PAGES: OfferPages = {
       items: [
         {
           id: 'no-content',
-          question: "Je n'ai ni textes ni photos, c'est un problème ?",
+          question: "Je n'ai ni textes ni photos, c'est un problème\u202f?",
           answer:
             'Non. On les prépare au premier échange\u00a0: je rédige à partir de vos réponses, vous validez.',
         },
         {
           id: 'existing-site',
-          question: "J'ai déjà un site, ça vaut le coup ?",
+          question: "J'ai déjà un site, ça vaut le coup\u202f?",
           answer:
             'Si votre site est lent, illisible sur téléphone ou absent de Google, oui. Je reprends les contenus utiles.',
         },
         {
           id: 'domain',
-          question: 'Le nom de domaine reste à moi ?',
+          question: 'Le nom de domaine reste à moi\u202f?',
           answer: 'Oui, il est à votre nom.',
         },
         {
           id: 'stop-maintenance',
-          question: "Et si j'arrête la maintenance ?",
+          question: "Et si j'arrête la maintenance\u202f?",
           answer: "Vous récupérez les fichiers du site et pouvez l'héberger ailleurs.",
         },
         {
           id: 'more-pages',
-          question: 'Je pourrai ajouter des pages plus tard ?',
+          question: 'Je pourrai ajouter des pages plus tard\u202f?',
           answer:
-            "Oui. Les petites modifications entrent dans les 30 minutes mensuelles ; une nouvelle page fait l'objet d'un devis avant travaux.",
+            "Oui. Les petites modifications entrent dans les 30 minutes mensuelles\u202f; une nouvelle page fait l'objet d'un devis avant travaux.",
         },
       ],
     },
@@ -238,7 +238,7 @@ export const OFFER_PAGES: OfferPages = {
       items: [
         {
           id: 'existing-site',
-          question: "J'ai déjà un site, ça vaut le coup ?",
+          question: "J'ai déjà un site, ça vaut le coup\u202f?",
           answer:
             "Si votre site ne montre ni votre parc machines, ni vos matières, ni vos certifications, un acheteur ne trouve pas ce qu'il cherche. Je reprends ce qui sert et je refais le reste.",
         },
@@ -256,12 +256,12 @@ export const OFFER_PAGES: OfferPages = {
         },
         {
           id: 'domain',
-          question: 'Le nom de domaine reste à moi ?',
+          question: 'Le nom de domaine reste à moi\u202f?',
           answer: 'Oui. Il est enregistré à votre nom, vous en restez propriétaire.',
         },
         {
           id: 'stop-maintenance',
-          question: "Et si j'arrête la maintenance ?",
+          question: "Et si j'arrête la maintenance\u202f?",
           answer: "Vous récupérez les fichiers du site et vous l'hébergez où vous voulez.",
         },
       ],
@@ -369,31 +369,31 @@ export const OFFER_PAGES: OfferPages = {
       items: [
         {
           id: 'first-version',
-          question: 'Combien de temps pour une première version ?',
+          question: 'Combien de temps pour une première version\u202f?',
           answer:
             'Pour un outil de taille moyenne, 4 à 8 semaines. Le planning exact figure dans le devis.',
         },
         {
           id: 'off-the-shelf',
-          question: 'Pourquoi pas un logiciel du marché ?',
+          question: 'Pourquoi pas un logiciel du marché\u202f?',
           answer:
             "S'il couvre votre besoin, je vous le dirai au cadrage. Le sur mesure se justifie quand vous adaptez votre travail à l'outil au lieu de l'inverse.",
         },
         {
           id: 'scoping-cost',
-          question: 'Le cadrage est payant ?',
+          question: 'Le cadrage est payant\u202f?',
           answer:
             'Le premier échange de 30 minutes est gratuit. Le cadrage détaillé est compris dans le projet.',
         },
         {
           id: 'data-protection',
-          question: 'Mes données sont-elles protégées ?',
+          question: 'Mes données sont-elles protégées\u202f?',
           answer:
             'Hébergement en France, connexions chiffrées, sauvegardes quotidiennes, double authentification possible.',
         },
         {
           id: 'evolution',
-          question: "Je pourrai faire évoluer l'application ?",
+          question: "Je pourrai faire évoluer l'application\u202f?",
           answer:
             'Oui. Le code vous appartient\u00a0: vous pouvez aussi confier la suite à un autre prestataire.',
         },
@@ -513,24 +513,24 @@ export const OFFER_PAGES: OfferPages = {
       items: [
         {
           id: 'foreign-code',
-          question: "Vous reprenez du code que vous n'avez pas écrit ?",
+          question: "Vous reprenez du code que vous n'avez pas écrit\u202f?",
           answer:
-            "Oui, c'est l'objet de l'audit. Je travaille surtout sur Angular et NestJS ; pour une autre technologie, je vous le dis avant de commencer.",
+            "Oui, c'est l'objet de l'audit. Je travaille surtout sur Angular et NestJS\u202f; pour une autre technologie, je vous le dis avant de commencer.",
         },
         {
           id: 'commitment',
-          question: "L'audit m'engage pour la suite ?",
+          question: "L'audit m'engage pour la suite\u202f?",
           answer: 'Non. Le rapport vous appartient, vous pouvez le confier à un autre prestataire.',
         },
         {
           id: 'rewrite',
-          question: 'Faut-il tout refaire ?',
+          question: 'Faut-il tout refaire\u202f?',
           answer:
             "Rarement. L'audit distingue ce qui se corrige de ce qui doit être réécrit, avec le coût de chaque option.",
         },
         {
           id: 'maintenance-price',
-          question: 'Comment est fixé le prix de la maintenance ?',
+          question: 'Comment est fixé le prix de la maintenance\u202f?',
           answer: `Après l'audit, selon la taille de l'application et le niveau de suivi. À partir de ${formatEur(REWORK_PRICES.maintenanceMonthlyFromEur)}/mois, sans engagement.`,
         },
       ],
@@ -599,18 +599,18 @@ export const OFFER_PAGES: OfferPages = {
       items: [
         {
           id: 'part-time',
-          question: 'Temps plein ou temps partiel ?',
+          question: 'Temps plein ou temps partiel\u202f?',
           answer:
             'Temps partiel pour le moment. Pour une mission à temps plein, décrivez-la dans votre message\u00a0: on en parle.',
         },
         {
           id: 'remote',
-          question: 'À distance ou sur site ?',
+          question: 'À distance ou sur site\u202f?',
           answer: 'À distance partout en France, sur site en Île-de-France.',
         },
         {
           id: 'contract',
-          question: 'Comment contractualiser ?',
+          question: 'Comment contractualiser\u202f?',
           answer:
             'En direct par contrat de prestation, ou via Malt, qui gère le contrat et la facturation.',
         },

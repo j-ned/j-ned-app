@@ -11,7 +11,7 @@ export const LEGAL_LAST_UPDATE = '3 octobre 2026';
   template: `
     <article class="page-container max-w-3xl pt-8 prose dark:prose-invert">
       <h1>Mentions légales</h1>
-      <p class="text-muted">Dernière mise à jour : {{ lastUpdate }}</p>
+      <p class="text-muted">Dernière mise à jour&nbsp;: {{ lastUpdate }}</p>
 
       <h2>Éditeur du site</h2>
       <p>
@@ -21,24 +21,24 @@ export const LEGAL_LAST_UPDATE = '3 octobre 2026';
       </p>
       <ul>
         <li>
-          SIRET : <span data-testid="legal-siret">{{ identity.business.siret }}</span>
+          SIRET&nbsp;: <span data-testid="legal-siret">{{ identity.business.siret }}</span>
         </li>
         <li>
-          Code APE : <span data-testid="legal-ape">{{ identity.business.ape }}</span>
+          Code APE&nbsp;: <span data-testid="legal-ape">{{ identity.business.ape }}</span>
         </li>
         <li>
           <span data-testid="legal-vat">{{ identity.business.vatMention }}</span>
         </li>
         <li>
-          Courriel :
+          Courriel&nbsp;:
           <a [href]="'mailto:' + identity.email" data-testid="legal-email">{{ identity.email }}</a>
         </li>
         <li>
-          Téléphone :
+          Téléphone&nbsp;:
           <a [href]="'tel:' + identity.phone.tel">{{ identity.phone.display }}</a>
         </li>
       </ul>
-      <p>Directeur de la publication : Julien Nédellec.</p>
+      <p>Directeur de la publication&nbsp;: Julien Nédellec.</p>
 
       <h2>Hébergement</h2>
       <p>
@@ -51,8 +51,8 @@ export const LEGAL_LAST_UPDATE = '3 octobre 2026';
         Le code source de ce site est publié sous licence MIT sur
         <a [href]="identity.socials.github" rel="noopener noreferrer" target="_blank">GitHub</a>.
         Les contenus éditoriaux (articles, textes, CV, photographies, visuels et logos) restent la
-        propriété exclusive de Julien Nédellec ; toute reproduction sans autorisation écrite est
-        interdite.
+        propriété exclusive de Julien Nédellec&#8239;; toute reproduction sans autorisation écrite
+        est interdite.
       </p>
 
       <h2>Données personnelles</h2>

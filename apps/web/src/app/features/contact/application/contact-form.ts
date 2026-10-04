@@ -203,7 +203,7 @@ export class ContactForm {
 
   readonly initialSubject = input('');
   readonly intro = input(
-    'Une question sur un projet, sur le code de ce site ou sur mon parcours : je lis et je réponds personnellement.',
+    'Une question sur un projet, sur le code de ce site ou sur mon parcours\u00a0: je lis et je réponds personnellement.',
   );
 
   protected readonly contactInfo = STATIC_CONTACT_INFO;

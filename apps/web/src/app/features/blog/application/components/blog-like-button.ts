@@ -1,8 +1,17 @@
-import { Component, inject, input, linkedSignal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
 
 const STORAGE_KEY = 'blog-liked-posts';
+const LIKED_LABEL = 'Merci\u202f!';
+const UNLIKED_LABEL = "J'ai trouvé ça utile";
 
 function likedSlugs(): string[] {
   try {
@@ -26,7 +35,7 @@ function likedSlugs(): string[] {
       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-foreground/10 hover:border-primary/40 disabled:opacity-70 disabled:cursor-default transition-colors"
     >
       <app-icon name="lucide-heart" [size]="18" />
-      <span>{{ liked() ? 'Merci !' : "J'ai trouvé ça utile" }} ({{ count() }})</span>
+      <span>{{ label() }} ({{ count() }})</span>
     </button>
   `,
 })
@@ -38,6 +47,7 @@ export class BlogLikeButton {
 
   protected readonly liked = linkedSignal(() => likedSlugs().includes(this.slug()));
   protected readonly count = linkedSignal(() => this.likesCount());
+  protected readonly label = computed(() => (this.liked() ? LIKED_LABEL : UNLIKED_LABEL));
 
   protected like(): void {
     if (this.liked()) return;

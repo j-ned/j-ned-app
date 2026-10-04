@@ -108,7 +108,7 @@ describe('OFFER_PAGES', () => {
     it('states the payment terms and what the maintenance covers', () => {
       expect(page.pricing.lines.map(({ terms, includes }) => ({ terms, includes }))).toEqual([
         {
-          terms: 'Une fois. 50 % à la commande, 50 % à la mise en ligne.',
+          terms: 'Une fois. 50\u00a0% à la commande, 50\u00a0% à la mise en ligne.',
           includes: undefined,
         },
         {
@@ -127,7 +127,7 @@ describe('OFFER_PAGES', () => {
     it('answers the five questions with the validated copy', () => {
       expect(page.faq?.items.map(({ question, answer }) => ({ question, answer }))).toEqual([
         {
-          question: "J'ai déjà un site, ça vaut le coup ?",
+          question: "J'ai déjà un site, ça vaut le coup\u202f?",
           answer:
             "Si votre site ne montre ni votre parc machines, ni vos matières, ni vos certifications, un acheteur ne trouve pas ce qu'il cherche. Je reprends ce qui sert et je refais le reste.",
         },
@@ -142,11 +142,11 @@ describe('OFFER_PAGES', () => {
             "Un acheteur qui reçoit votre nom regarde souvent votre site avant d'appeler. Le site confirme ce que le réseau dit de vous.",
         },
         {
-          question: 'Le nom de domaine reste à moi ?',
+          question: 'Le nom de domaine reste à moi\u202f?',
           answer: 'Oui. Il est enregistré à votre nom, vous en restez propriétaire.',
         },
         {
-          question: "Et si j'arrête la maintenance ?",
+          question: "Et si j'arrête la maintenance\u202f?",
           answer: "Vous récupérez les fichiers du site et vous l'hébergez où vous voulez.",
         },
       ]);

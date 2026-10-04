@@ -17,13 +17,14 @@ export const STATIC_PROFILE_BASE: Omit<ProfileInfo, 'avatarUrl'> = {
 export const STATIC_BIOGRAPHY: Biography = {
   id: '9acfdedb-c00d-4370-858e-7215e30f5a41',
   title: 'Mon parcours',
-  summary: "De la métallurgie à l'usinage aéronautique, puis au développement web : la même exigence.",
+  summary:
+    "De la métallurgie à l'usinage aéronautique, puis au développement web\u00a0: la même exigence.",
   lead: "20 ans d'industrie, aujourd'hui tourneur CN en aéronautique de haute précision.",
   leadEmphasis: 'Je livre du logiciel avec la même exigence.',
   paragraphs: [
     "Je ne suis pas venu au développement web par hasard. De la métallurgie à l'usinage aéronautique de haute précision, où je travaille aujourd'hui comme tourneur CN, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
-    "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence que j'applique à chaque ligne de code : pensée pour durer, comprise de bout en bout, de la requête SQL au déploiement en production. Je ne me contente jamais de faire fonctionner, je comprends pourquoi ça fonctionne.",
-    "Cette expérience m'a donné une vision systémique rare : je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.",
+    "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence que j'applique à chaque ligne de code\u00a0: pensée pour durer, comprise de bout en bout, de la requête SQL au déploiement en production. Je ne me contente jamais de faire fonctionner, je comprends pourquoi ça fonctionne.",
+    "Cette expérience m'a donné une vision systémique rare\u00a0: je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.",
   ],
 };
 
@@ -127,13 +128,13 @@ export const STATIC_WHAT_I_DO: readonly WhatIDo[] = [
     id: '23ff2843-921d-4b76-b070-83a50bd87665',
     title: 'Applications complètes',
     description:
-      'Je construis des applications de production de bout en bout : conception, Full Stack (Angular moderne, NestJS, PostgreSQL) et déploiement conteneurisé (Docker). Pas des démos, mais des systèmes qui tournent.',
+      'Je construis des applications de production de bout en bout\u00a0: conception, Full Stack (Angular moderne, NestJS, PostgreSQL) et déploiement conteneurisé (Docker). Pas des démos, mais des systèmes qui tournent.',
   },
   {
     id: 'dffce031-2162-4f1b-97d9-ef2c9790734d',
     title: 'Infrastructure',
     description:
-      "Je gère l'intégralité de mon infrastructure : auto-hébergement (VPS) et déploiement continu (CI/CD) via Dokploy, jusqu'aux services en production. Ce contrôle opérationnel total garantit la fiabilité et fait de moi un développeur plus complet.",
+      "Je gère l'intégralité de mon infrastructure\u00a0: auto-hébergement (VPS) et déploiement continu (CI/CD) via Dokploy, jusqu'aux services en production. Ce contrôle opérationnel total garantit la fiabilité et fait de moi un développeur plus complet.",
   },
 ];
 
@@ -141,9 +142,9 @@ export const STATIC_MOTIVATION: Motivation = {
   id: 'f963681b-3599-4801-9c7f-312afc70e4b2',
   title: 'Ce qui me motive',
   statement:
-    "La tech au service d'un impact positif : GreenTech, industrie durable, projets qui ont du sens.",
+    "La tech au service d'un impact positif\u00a0: GreenTech, industrie durable, projets qui ont du sens.",
   description:
-    "Disponible en freelance sur Malt pour vos projets Angular et NestJS, et ouvert au CDI en Île-de-France dans une équipe produit fintech, greentech ou industrial tech.",
+    'Disponible en freelance sur Malt pour vos projets Angular et NestJS, et ouvert au CDI en Île-de-France dans une équipe produit fintech, greentech ou industrial tech.',
 };
 
 export const STATIC_SOCIAL_BUTTONS: readonly SocialButton[] = [

@@ -282,14 +282,14 @@ describe('ContactForm (Signal Forms)', () => {
   describe('Intro', () => {
     const intro = (fixture: ComponentFixture<ContactForm>): string =>
       (fixture.nativeElement.querySelector('[data-testid="contact-intro"]')?.textContent ?? '')
-        .replace(/\s+/g, ' ')
+        .replace(/[ \t\r\n]+/g, ' ')
         .trim();
 
     it('keeps the default intro when none is bound', async () => {
       const fixture = await setup();
 
       expect(intro(fixture)).toBe(
-        'Une question sur un projet, sur le code de ce site ou sur mon parcours : je lis et je réponds personnellement.',
+        'Une question sur un projet, sur le code de ce site ou sur mon parcours\u00A0: je lis et je réponds personnellement.',
       );
     });
 
