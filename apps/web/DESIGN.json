@@ -110,15 +110,15 @@
     "typographyMeta": {
       "display": {
         "displayName": "Display (Hero name)",
-        "purpose": "Réservé au <h1> du hero (nom J-Ned). Un par page, jamais réutilisé."
+        "purpose": "Réservé au <h1> du hero. Archivo élargi 108 %. Un par page, jamais réutilisé."
       },
       "headline": {
         "displayName": "Headline (Section titles)",
-        "purpose": "Titres <h2> de section (About, Projects, Contact)."
+        "purpose": "Titres <h2> de section. Archivo élargi 106 %."
       },
       "title": {
         "displayName": "Title (Card titles)",
-        "purpose": "Titres de cards, titres de projet dans la grille."
+        "purpose": "Titres de cards, titres de projet dans la grille. Archivo élargi 104 % en <h3>."
       },
       "body-large": {
         "displayName": "Body Large (Intros)",
@@ -134,7 +134,7 @@
       },
       "mono": {
         "displayName": "Mono (Technical content)",
-        "purpose": "Code inline, chiffres techniques KPI, labels observability."
+        "purpose": "JN Mono 500 (IBM Plex Mono renommée, Reserved Font Name). Code inline, chiffres techniques KPI, références et cotes ; données chiffrées en font-mono tabular-nums."
       }
     },
     "shadows": [
@@ -191,7 +191,7 @@
       "refersTo": "button-primary",
       "description": "Default CTA: indigo solid, white text, hover darkens 10%.",
       "html": "<button class=\"ds-btn-primary\">Me contacter</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border-radius: 8px; background: #4f46e5; color: #ffffff; border: 1px solid #4f46e5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; transition: background-color 200ms, border-color 200ms, transform 100ms; white-space: nowrap; } .ds-btn-primary:hover { background: rgba(79, 70, 229, 0.9); border-color: rgba(79, 70, 229, 0.9); } .ds-btn-primary:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border-radius: 6px; background: #4f46e5; color: #ffffff; border: 1px solid #4f46e5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; transition: background-color 200ms, border-color 200ms, transform 100ms; white-space: nowrap; } .ds-btn-primary:hover { background: rgba(79, 70, 229, 0.9); border-color: rgba(79, 70, 229, 0.9); } .ds-btn-primary:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
     },
     {
       "name": "Outline Button",
@@ -199,7 +199,7 @@
       "refersTo": "button-outline",
       "description": "Secondary action: transparent with indigo border, hover fills with indigo tint.",
       "html": "<button class=\"ds-btn-outline\">Voir le projet</button>",
-      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border-radius: 8px; background: transparent; color: #818cf8; border: 1px solid rgba(129, 140, 248, 0.4); cursor: pointer; transition: background-color 200ms, border-color 200ms; } .ds-btn-outline:hover { background: rgba(129, 140, 248, 0.1); border-color: rgba(129, 140, 248, 0.6); } .ds-btn-outline:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }"
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border-radius: 6px; background: transparent; color: #818cf8; border: 1px solid rgba(129, 140, 248, 0.4); cursor: pointer; transition: background-color 200ms, border-color 200ms; } .ds-btn-outline:hover { background: rgba(129, 140, 248, 0.1); border-color: rgba(129, 140, 248, 0.6); } .ds-btn-outline:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }"
     },
     {
       "name": "Form Input",
@@ -207,7 +207,7 @@
       "refersTo": "input-default",
       "description": "Text input: surface translucent (dark) or white (light), indigo focus ring.",
       "html": "<label class=\"ds-form-label\" for=\"email\">Email</label><input id=\"email\" type=\"email\" class=\"ds-form-input\" placeholder=\"you@example.com\" />",
-      "css": ".ds-form-label { display: block; font-family: system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; color: #fafafa; margin-bottom: 6px; } .ds-form-input { display: block; width: 100%; font-family: system-ui, sans-serif; font-size: 0.875rem; color: #fafafa; background: rgba(255,255,255,0.03); border: 1px solid rgba(161, 161, 170, 0.3); border-radius: 8px; padding: 10px 14px; transition: border-color 200ms, box-shadow 200ms; } .ds-form-input::placeholder { color: rgba(161, 161, 170, 0.6); } .ds-form-input:focus-visible { outline: none; border-color: #818cf8; box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3); } .ds-form-input[aria-invalid='true'] { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3); }"
+      "css": ".ds-form-label { display: block; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; color: #fafafa; margin-bottom: 6px; } .ds-form-input { display: block; width: 100%; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 0.875rem; color: #fafafa; background: rgba(255,255,255,0.03); border: 1px solid rgba(161, 161, 170, 0.3); border-radius: 8px; padding: 10px 14px; transition: border-color 200ms, box-shadow 200ms; } .ds-form-input::placeholder { color: rgba(161, 161, 170, 0.6); } .ds-form-input:focus-visible { outline: none; border-color: #818cf8; box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3); } .ds-form-input[aria-invalid='true'] { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3); }"
     },
     {
       "name": "Tag (info)",
@@ -215,7 +215,7 @@
       "refersTo": "tag-info",
       "description": "Inline status badge — small, no border, color-coded background.",
       "html": "<span class=\"ds-tag-info\">Disponible</span>",
-      "css": ".ds-tag-info { display: inline-flex; align-items: center; font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; padding: 4px 8px; border-radius: 6px; background: rgba(79, 70, 229, 0.2); color: #a5b4fc; }"
+      "css": ".ds-tag-info { display: inline-flex; align-items: center; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; padding: 4px 8px; border-radius: 6px; background: rgba(79, 70, 229, 0.2); color: #a5b4fc; }"
     },
     {
       "name": "Card Surface",
@@ -223,7 +223,7 @@
       "refersTo": "card-surface",
       "description": "Container surface, flat by default, hover lifts to elevated surface.",
       "html": "<article class=\"ds-card-surface\"><h3 class=\"ds-card-title\">Project title</h3><p class=\"ds-card-body\">Short description of the project, max 65 to 75 characters wide.</p></article>",
-      "css": ".ds-card-surface { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px; color: #fafafa; transition: background-color 200ms; } .ds-card-surface:hover { background: rgba(255,255,255,0.06); } .ds-card-title { font-family: system-ui, sans-serif; font-size: 1.25rem; font-weight: 600; line-height: 1.3; margin: 0 0 8px 0; color: #fafafa; } .ds-card-body { font-family: system-ui, sans-serif; font-size: 1rem; line-height: 1.6; margin: 0; color: rgba(250, 250, 250, 0.7); }"
+      "css": ".ds-card-surface { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px; color: #fafafa; transition: background-color 200ms; } .ds-card-surface:hover { background: rgba(255,255,255,0.06); } .ds-card-title { font-family: 'Archivo', 'Archivo Fallback', system-ui, sans-serif; font-stretch: 104%; font-size: 1.25rem; font-weight: 600; line-height: 1.3; margin: 0 0 8px 0; color: #fafafa; } .ds-card-body { font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 1rem; line-height: 1.6; margin: 0; color: rgba(250, 250, 250, 0.7); }"
     },
     {
       "name": "Admin Table",
@@ -231,7 +231,7 @@
       "refersTo": "admin-table",
       "description": "Densité dashboard, uppercase labels, hover rows, no shadows.",
       "html": "<div class=\"ds-admin-shell\"><table class=\"ds-admin-table\"><thead><tr><th class=\"ds-admin-th\">Date</th><th class=\"ds-admin-th\">Email</th><th class=\"ds-admin-th\">Status</th></tr></thead><tbody><tr class=\"ds-admin-row\"><td class=\"ds-admin-td\">2026-05-22</td><td class=\"ds-admin-td\">hello@example.com</td><td class=\"ds-admin-td\"><span class=\"ds-tag-info\">Lu</span></td></tr></tbody></table></div>",
-      "css": ".ds-admin-shell { overflow: hidden; border-radius: 12px; border: 1px solid rgba(250, 250, 250, 0.08); background: rgba(250, 250, 250, 0.02); } .ds-admin-table { width: 100%; border-collapse: collapse; font-family: system-ui, sans-serif; font-size: 0.875rem; } .ds-admin-th { padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #a1a1aa; border-bottom: 1px solid rgba(250, 250, 250, 0.08); } .ds-admin-td { padding: 14px 16px; color: rgba(250, 250, 250, 0.9); border-bottom: 1px solid rgba(250, 250, 250, 0.05); } .ds-admin-row { transition: background-color 200ms; } .ds-admin-row:hover { background: rgba(250, 250, 250, 0.03); } .ds-admin-row:last-child .ds-admin-td { border-bottom: none; }"
+      "css": ".ds-admin-shell { overflow: hidden; border-radius: 12px; border: 1px solid rgba(250, 250, 250, 0.08); background: rgba(250, 250, 250, 0.02); } .ds-admin-table { width: 100%; border-collapse: collapse; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 0.875rem; } .ds-admin-th { padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #a1a1aa; border-bottom: 1px solid rgba(250, 250, 250, 0.08); } .ds-admin-td { padding: 14px 16px; color: rgba(250, 250, 250, 0.9); border-bottom: 1px solid rgba(250, 250, 250, 0.05); } .ds-admin-row { transition: background-color 200ms; } .ds-admin-row:hover { background: rgba(250, 250, 250, 0.03); } .ds-admin-row:last-child .ds-admin-td { border-bottom: none; }"
     },
     {
       "name": "Navigation Link",
@@ -239,7 +239,7 @@
       "refersTo": "nav-link",
       "description": "Inline nav link, indigo hover, focus ring.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Principal\"><a class=\"ds-nav-link\" href=\"#projects\">Projets</a><a class=\"ds-nav-link ds-nav-link-active\" href=\"#about\">À propos</a><a class=\"ds-nav-link\" href=\"#contact\">Contact</a></nav>",
-      "css": ".ds-nav { display: inline-flex; gap: 24px; align-items: center; } .ds-nav-link { font-family: system-ui, sans-serif; font-size: 0.9375rem; font-weight: 500; color: rgba(250, 250, 250, 0.7); text-decoration: none; padding: 6px 4px; border-radius: 4px; transition: color 150ms; } .ds-nav-link:hover { color: #818cf8; } .ds-nav-link-active { color: #818cf8; } .ds-nav-link:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }"
+      "css": ".ds-nav { display: inline-flex; gap: 24px; align-items: center; } .ds-nav-link { font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 500; color: rgba(250, 250, 250, 0.7); text-decoration: none; padding: 6px 4px; border-radius: 4px; transition: color 150ms; } .ds-nav-link:hover { color: #818cf8; } .ds-nav-link-active { color: #818cf8; } .ds-nav-link:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }"
     }
   ],
   "narrative": {
@@ -256,7 +256,8 @@
       { "name": "The One Indigo Rule", "body": "Il n'y a qu'un Signal Indigo. Pas de teal qui s'invite, pas de blue-500 Tailwind par accident, pas de second accent. Pour différencier, change l'intensité (lifted / deep) ou le style (outline vs solid), jamais la teinte.", "section": "colors" },
       { "name": "The Two Registers Rule", "body": "Console (dark) et Ivoire (light) sont égaux. Ils ne sont pas thème par défaut et alternative. Toute décision de design doit fonctionner aussi bien dans les deux registres.", "section": "colors" },
       { "name": "The Glassmorphism Containment Rule", "body": "Les rgba sur Console Surfaces sont des dividers de profondeur subtils, pas un effet glassmorphic. Aucun backdrop-filter: blur n'est légitime en dehors du nav fixe.", "section": "colors" },
-      { "name": "The System-Stack Rule", "body": "Aucune font externe ne sera chargée. Pas de Google Fonts, pas de @font-face local. Le portfolio démontre la maîtrise des contraintes perf en assumant le rendu OS.", "section": "typography" },
+      { "name": "The Decorative Line Rule", "body": "line (9 % / 12 %) et line-strong (22 % / 28 %) sont des traits décoratifs sous 3:1 : jamais seuls porteurs d'information ni bord d'un composant interactif. Un trait porteur d'information utilise text-primary ou foreground à ≥ 50 % en Ivoire et ≥ 35 % en Console (3:1 calculé).", "section": "colors" },
+      { "name": "The Three Families Rule", "body": "Trois familles, pas une de plus : Archivo (titres h1-h3, élargis), JN Sans (IBM Plex Sans renommée, vraie italique), JN Mono 500 (IBM Plex Mono renommée) (données). Une version modifiée d'IBM Plex ne porte jamais le nom « Plex » (Reserved Font Name). Auto-hébergées (ADR-0006), jamais de Google Fonts ni de CDN ; font-synthesis-weight: none ; tout changement de binaire change le nom de fichier versionné.", "section": "typography" },
       { "name": "The Single-Display Rule", "body": "Un seul <h1> par page, en Display, jamais réutilisé. Hiérarchie <h1> → <h2> → <h3> sans saut.", "section": "typography" },
       { "name": "The Indigo Keyword Rule", "body": "Dans la tagline du hero, les keywords techniques (Angular, NestJS) sont en Signal Indigo Lifted (dark) ou Signal Indigo Deep (light) avec font-weight: 600.", "section": "typography" },
       { "name": "The Flat-By-Default Rule", "body": "Toute card, tout container commence sans shadow. Une shadow ne peut être ajoutée qu'avec une justification fonctionnelle (sticky nav, modal/drawer, dropdown).", "section": "elevation" },
@@ -277,14 +278,15 @@
       "Don't utiliser background-clip: text + gradient comme style décoratif. Le hero actuel (name-gradient) viole cette règle et est à reprendre.",
       "Don't ajouter backdrop-filter: blur() à une card pour faire glass.",
       "Don't ajouter de shadow à une card pour qu'elle ressorte. Travaille la hiérarchie typographique avant.",
-      "Don't charger une Google Font.",
+      "Don't charger une Google Font ni une police depuis un CDN (Three Families Rule, ADR-0006).",
+      "Don't confier une information à un trait line / line-strong seul (Decorative Line Rule).",
       "Don't utiliser border-left ou border-right > 1px comme accent coloré.",
       "Don't utiliser *ngIf / *ngFor — control flow @if / @for uniquement.",
       "Don't styliser un input avec outline: none sans :focus-visible de remplacement.",
       "Don't mettre une animation décorative au-dessus de 400ms ou avec un easing bouncy/elastic.",
       "Don't utiliser le slate Tailwind dans le portfolio. Le système est tinté zinc/neutral (Console) ou stone (Ivoire) — jamais slate.",
       "Don't réutiliser le Display pour un autre élément que le <h1> du hero.",
-      "Don't introduire une 2e police custom pour donner du caractère."
+      "Don't introduire une 4e famille pour donner du caractère."
     ]
   }
 }

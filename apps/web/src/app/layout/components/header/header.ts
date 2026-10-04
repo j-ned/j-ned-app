@@ -42,7 +42,7 @@ type ThemePreference = 'dark' | 'light';
           >
             JN
           </app-icon-tile>
-          <div class="flex items-baseline gap-0.5">
+          <div class="flex items-baseline gap-0.5 font-display">
             <span class="text-xl sm:text-2xl font-bold text-foreground tracking-tight"
               >Julien
             </span>

@@ -47,6 +47,14 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' 'unsafe-inline' https://giscus.app; style-src 'self' 'unsafe-inline' https://giscus.app; font-src 'self'; img-src 'self' data: blob: https://api.nedellec-julien.fr; connect-src 'self' https://api.nedellec-julien.fr https://o4511049353723904.ingest.de.sentry.io; worker-src 'self' blob:; object-src 'none'; frame-src https://giscus.app; base-uri 'self'; form-action 'self';"
     />
+    <!-- Police du h1 (LCP) seule ; crossorigin requis même en même origine, sinon double téléchargement -->
+    <link
+      rel="preload"
+      href="/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <!-- Preconnect API NestJS : handshake TCP+TLS anticipé, ~50-100ms gagnés vs dns-prefetch seul -->

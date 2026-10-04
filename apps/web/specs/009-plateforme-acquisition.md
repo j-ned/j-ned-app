@@ -4,7 +4,7 @@ title: Transformer le portfolio en plateforme d'acquisition client (catalogue d'
 type: feat
 status: draft
 created: 2026-10-04
-related: [PRODUCT.md, DESIGN.md, specs/007-offre-site-industrie.md, docs/adr/0004-contenu-statique-de-feature-sans-gateway.md, docs/adr/0005-catalogue-offres-routes-statiques.md]
+related: [PRODUCT.md, DESIGN.md, specs/007-offre-site-industrie.md, docs/adr/0004-contenu-statique-de-feature-sans-gateway.md, docs/adr/0005-catalogue-offres-routes-statiques.md, docs/adr/0006-polices-auto-hebergees.md]
 ---
 
 # 009 — Plateforme d'acquisition
@@ -498,6 +498,275 @@ après la saisie.
    décolletage et de mécanique de précision », `promise` inchangée.
 5. Numérotation : spec renumérotée **009** (`008-a11y-landmarks.md` existe sur `master`).
 
+### Tranche V — plan détaillé
+
+> Décision structurante : **ADR-0006** (polices auto-hébergées, remplace la « System-Stack Rule »
+> de `DESIGN.md`). Prolonge ADR-0003 (`@utility` réservé à l'élément natif unique). Profil lu.
+> **Aucune dépendance ajoutée, aucune modification de CSP, aucun changement backend.** Maquette de
+> référence : `maquette-plateforme.html` (validée par Julien le 2026-10-04), dont on reprend les
+> valeurs, pas le chargement Google Fonts.
+
+#### V.1 Hébergement des polices (tranché : auto-hébergées)
+
+- Quatre fichiers woff2 dans `public/fonts/`, servis par nginx depuis l'origine du site :
+  `archivo-2.001-latin-wdth100-110-wght600-800.woff2` (39 512 o, `wdth` 100–110 et `wght` 600–800, seules plages
+  employées), `jn-sans-3.201-latin-wght.woff2` (35 864 o),
+  `jn-sans-3.201-latin-wght-italic.woff2` (38 840 o, vraie italique, `wght` 400–700 comme le
+  romain), `jn-mono-2.3-latin-500.woff2` (14 924 o, fichier statique 500, non instancié).
+  Total mesuré **129 140 o** (fontTools 4.66.1) ; une page sans italique en charge au plus 90 300.
+  **IBM Plex renommée** : « Plex » est un *Reserved Font Name* de la licence amont, et les fichiers
+  servis (sous-ensemble latin, axes réduits) sont des *Modified Versions* au sens de l'OFL ; la
+  famille est renommée « JN Sans » / « JN Mono » dans la table `name` de **tous** les fichiers
+  Plex servis, Mono compris, glyphes et axes intacts (commande dans ADR-0006 § 6 et § 2).
+  Plage de l'italique non réduite : 400–600 ne gagnerait que 832 o (mesuré) et rendrait
+  `em strong` sans vraie graisse. Archivo réduit après mesure des parades au coût Lighthouse
+  (variante C, cf. `## Verify` / Tranche V) : 57 504 o → 39 512 o, rendu identique.
+  Source exacte (paquets Fontsource 5.3.0, sous-ensemble `latin`), plages d'axes réduites par
+  `fontTools.varLib.instancer`, commande de reproduction et licences : ADR-0006. L'implémenteur
+  rejoue la commande de l'ADR dans le scratchpad (aucun outil installé dans le repo) et commite
+  les quatre binaires plus `public/fonts/OFL-archivo.txt` et `public/fonts/OFL-ibm-plex.txt`
+  (en-tête amont `with Reserved Font Name "Plex"`, note sur les modifications et le renommage).
+- **Pourquoi pas Google Fonts** (la maquette l'utilise) : transfert d'IP sans consentement
+  (RGPD, LG München 2022), CSP à élargir sur deux origines, feuille externe bloquante. Auto-hébergé,
+  la CSP actuelle (`font-src 'self'`) couvre tout sans changement, et `scripts/apply-csp-hashes.mjs`
+  n'est pas touché (les `@font-face` qui atterrissent dans le CSS critique inliné sont hachés comme
+  le reste des `<style>`).
+- **Noms versionnés** : nginx sert `woff2` en `immutable` sur un an et `public/` n'est pas haché ;
+  tout changement de binaire change le nom (ADR-0006 § Decision 3).
+- **`@font-face`** dans `src/styles.css`, après les `@import`/`@plugin`, URLs **absolues**
+  (`url('/fonts/…') format('woff2')`, laissées telles quelles par le builder : à vérifier dans le
+  CSS émis, cf. verify) :
+
+  | `font-family` | Fichier | Descripteurs |
+  |---|---|---|
+  | `'Archivo'` | `archivo-2.001-…` | `font-weight: 600 800; font-stretch: 100% 110%; font-display: swap` |
+  | `'JN Sans'` | `jn-sans-3.201-…` | `font-weight: 400 700; font-display: swap` |
+  | `'JN Sans'` | `jn-sans-3.201-…-italic` | `font-style: italic; font-weight: 400 700; font-display: swap` (pas de préchargement) |
+  | `'JN Mono'` | `jn-mono-2.3-…` | `font-weight: 500; font-display: swap` |
+  | `'Archivo Fallback'` | `local('Arial Bold')`, `local('Arial-BoldMT')`, `local('Liberation Sans Bold')`, `local('LiberationSans-Bold')` | `font-weight: 600 800; size-adjust: 109.59%; ascent-override: 80.11%; descent-override: 19.16%; line-gap-override: 0%` |
+  | `'JN Sans Fallback'` | `local('Arial')` | `size-adjust: 101.88%; ascent-override: 100.60%; descent-override: 26.99%; line-gap-override: 0%` |
+
+  Les valeurs des faces de repli sont **calculées** (tables `hhea`/`OS/2` et chasse moyenne d'un
+  échantillon français, contre Liberation Sans, métriquement identique à Arial) ; méthode dans
+  ADR-0006. Pas d'`unicode-range` : chaque fichier ne contient que le sous-ensemble latin.
+- **Préchargement** de la seule police du LCP (Archivo, police du `h1` de chaque page publique)
+  dans `src/index.html`, juste après la `<meta>` CSP :
+  `<link rel="preload" href="/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2" as="font" type="font/woff2" crossorigin />`
+  (`crossorigin` obligatoire même en même origine, sinon double téléchargement). Aucune
+  préconnexion à ajouter.
+
+#### V.2 Tokens `@theme` (sans casser l'existant)
+
+Ajouts au bloc `@theme` de `src/styles.css` (aucun token existant renommé ni modifié) :
+
+```css
+--font-display: 'Archivo', 'Archivo Fallback', system-ui, sans-serif;
+--font-sans: 'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+--font-mono: 'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+--color-line: var(--theme-line);
+--color-line-strong: var(--theme-line-strong);
+```
+
+- `--font-sans` et `--font-mono` **surchargent** les défauts Tailwind : le preflight les applique
+  à `html` et à `code/kbd/pre`, donc tout le site (pages publiques, blog, admin) passe en Plex
+  sans toucher un template, et les 32 `font-mono` existants passent en Plex Mono.
+  `--font-display` crée l'utilitaire `font-display` (pas de collision : Tailwind n'a pas
+  d'utilitaire de ce nom).
+- Couche de thème, dans les deux blocs `:root` existants :
+
+  | Token | Sombre (`:root`) | Clair (`:root:not(.app-dark)`) |
+  |---|---|---|
+  | `--theme-line` | `color-mix(in srgb, var(--theme-foreground) 9%, transparent)` | `color-mix(in srgb, var(--theme-foreground) 12%, transparent)` |
+  | `--theme-line-strong` | `color-mix(in srgb, var(--theme-foreground) 22%, transparent)` | `color-mix(in srgb, var(--theme-foreground) 28%, transparent)` |
+
+  Valeurs de la maquette. Contrastes **calculés** (composition sRGB, formule WCAG 2.x) :
+
+  | Trait | Sur fond | Sur carte |
+  |---|---|---|
+  | `line` sombre | 1,22:1 | 1,25:1 |
+  | `line-strong` sombre | 1,88:1 | 1,94:1 |
+  | `line` clair | 1,26:1 | 1,26:1 |
+  | `line-strong` clair | 1,77:1 | 1,78:1 |
+  | cote (`text-primary`) sombre `#818cf8` | 6,64:1 | 6,33:1 |
+  | cote (`text-primary`) clair `#4338ca` | 7,40:1 | 7,90:1 |
+
+  **Décision** : `line` et `line-strong` sont des traits **décoratifs** (cadre et séparateurs du
+  cartouche, que le texte `dt`/`dd` rend redondants) ; ils sont sous 3:1 et ne doivent **jamais**
+  porter seuls une information ni délimiter un composant interactif (WCAG 1.4.11). Le seul trait
+  porteur de sens de la tranche, la cote, est dessiné en `currentColor` = `text-primary`, ≥ 6,3:1
+  dans les deux registres. Un futur trait porteur d'information utilise `text-primary` ou
+  `foreground` à **≥ 50 % en clair (3,04:1 sur fond) et ≥ 35 % en sombre (3,05:1)** : seuils
+  calculés, à écrire dans `DESIGN.md`.
+- Base typographique, dans un `@layer base` de `src/styles.css` (règles d'élément, comme le
+  `body` existant ; pas de classe ad hoc) :
+  - `html { font-synthesis-weight: none; }` (une graisse hors plage prend la plus proche, jamais
+    de faux gras). `em`/`i` utilisent la vraie italique Plex Sans ; seuls Archivo et Plex Mono, sans
+    italique livrée, retomberaient sur une oblique synthétisée (usage non prévu).
+  - `h1, h2, h3 { font-family: var(--font-display); }` et `font-stretch` par niveau, valeurs de la
+    maquette : `h1` 108 %, `h2` 106 %, `h3` 104 %. Les classes de taille, graisse et interlettrage
+    des titres existants ne changent pas (`font-extrabold` = 800, dans la plage d'Archivo).
+- **Pas de nouvelle `@utility`** (ADR-0003) : cartouche et cote sont des structures de plusieurs
+  éléments ⇒ composants `shared/ui/`. Les données chiffrées s'écrivent `font-mono tabular-nums`
+  dans le template (deux classes, pas d'abstraction).
+
+#### V.3 API des primitives
+
+**`src/app/shared/ui/cartouche.ts`** — `Cartouche`, sélecteur `app-cartouche`.
+
+```ts
+export type CartoucheRow = { readonly label: string; readonly value: string };
+// inputs
+readonly title = input.required<string>();
+readonly reference = input<string>('');
+readonly rows = input<readonly CartoucheRow[]>([]);
+```
+
+- Hôte : `class="block rounded-sm border-[1.5px] border-line-strong bg-surface text-sm"`,
+  `role="group"`, `[attr.aria-label]="title()"` (nom accessible = texte visible du titre ; pas
+  d'id à générer). Le type `CartoucheRow` est co-localisé dans le fichier (précédent :
+  `AppTagSeverity` dans `tag.ts`).
+- Barre de titre : `div` `flex items-baseline justify-between gap-4 border-b-[1.5px]
+  border-line-strong p-3.5`, contenant `<p data-testid="cartouche-title">` (`font-display
+  font-bold font-stretch-110%`) et, si `reference()` non vide, `<p data-testid="cartouche-reference">`
+  (`font-mono text-xs text-muted`). Le titre n'est **pas** un titre de section (`h*`) : son niveau
+  dépend du contexte ; un consommateur qui a besoin d'un titre le projette.
+- Si `rows().length > 0` : `<dl>` contenant, par ligne (`@for … track $index`, données
+  statiques jamais réordonnées), un
+  `<div data-testid="cartouche-row" class="grid grid-cols-[8.5rem_minmax(0,1fr)] border-t border-line first:border-t-0">`
+  avec `<dt data-testid="cartouche-label">` (`font-mono text-xs uppercase tracking-[0.06em]
+  text-muted border-r border-line px-3.5 py-2.5`) et `<dd data-testid="cartouche-value">`
+  (`font-medium tabular-nums px-3.5 py-2.5`). `dl > div > dt + dd` est du HTML valide.
+  `rows` vide ⇒ pas de `dl` (aucun `dl` vide dans l'arbre).
+- `<ng-content />` après le `dl` : le cadre et la barre de titre servent aussi de carte (carte
+  d'offre de T4, qui projette son corps et son prix).
+- Contrastes du contenu : `text-muted` sur carte 7,63:1 (clair) et 7,37:1 (sombre), calculés.
+
+**`src/app/shared/ui/dimension-line.ts`** — `DimensionLine`, sélecteur `app-dimension-line`.
+
+```ts
+readonly label = input.required<string>();
+```
+
+- Hôte : `aria-hidden="true"`, `class="flex max-w-120 items-center text-primary"`.
+- Gabarit (sept `span`, aucun pseudo-élément, aucun `styles:`) : trait de rappel gauche
+  (`h-3.5 border-l border-current`), pointe gauche (`size-0 border-y-4 border-y-transparent
+  border-r-8 border-r-current`), ligne (`flex-1 border-t border-current`),
+  `<span data-testid="dimension-line-label">` (`shrink-0 px-2 font-mono text-xs font-medium`),
+  ligne, pointe droite (`border-l-8`), trait de rappel droit. Les traits sont des **bordures**, pas
+  des fonds : elles restent visibles en `forced-colors`. La ligne s'interrompt autour du libellé
+  (deux segments `flex-1`) au lieu d'être masquée par un fond : la cote se pose sur n'importe quelle
+  surface (fond, carte).
+- **Règle d'usage** (dans `DESIGN.md`, vérifiée en revue, non testable en unitaire) : la cote
+  est décorative ; son libellé **répète** une information écrite ailleurs dans le texte lisible
+  (délai, durée). Cotes réservées aux délais ; au plus un cartouche par écran.
+
+#### V.4 Périmètre : ce qui change visuellement dès cette PR
+
+Le socle est posé et appliqué **globalement par la typographie**, sans refondre aucune page :
+
+1. **Texte courant** de toutes les pages (publiques, blog, admin) : pile système → IBM Plex Sans.
+2. **Titres `h1` à `h3`** (y compris ceux de la prose du blog) : Archivo, élargi de 104 à 108 %.
+   Tailles, graisses, interlettrages inchangés.
+3. **Italique** (`em`, `i`, prose du blog) : vraie italique IBM Plex Sans au lieu de l'italique
+   système.
+4. **Libellés `font-mono` et `code`** : IBM Plex Mono 500. Les deux `font-mono font-semibold`
+   (`home-proof.ts`, `project-card.ts`) s'affichent en 500, sans faux gras.
+5. **Boutons** : rayon 8 px → 6 px (`rounded-lg` → `rounded-md`) dans `shared/ui/button.ts`
+   (variante non `rounded`) et dans l'`@utility link-btn` de `src/styles.css`. La variante pilule
+   reste.
+6. **Marque du header** (« Julien Nédellec ») : `font-display` sur le conteneur des deux `span`
+   (`header.ts`).
+
+Ne change **pas** : couleurs (palette indigo, ivoire, console inchangées), mises en page,
+contenus, cartes existantes (`border-foreground/8` non migré vers `line`), formulaires. Le
+`Cartouche` et la `DimensionLine` ne sont rendus **nulle part** dans cette PR : T4 (carte d'offre),
+T6 (cartouche « Cadre de travail » et cote du hero) et T7 les consomment.
+
+#### V.5 Fichiers
+
+| Fichier | Action | Rôle |
+|---|---|---|
+| `public/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2` | créer | Archivo, axes réduits |
+| `public/fonts/jn-sans-3.201-latin-wght.woff2` | créer | IBM Plex Sans renommée JN Sans, `wght` 400–700 |
+| `public/fonts/jn-sans-3.201-latin-wght-italic.woff2` | créer | IBM Plex Sans Italic renommée, `wght` 400–700 |
+| `public/fonts/jn-mono-2.3-latin-500.woff2` | créer | IBM Plex Mono 500 renommée JN Mono |
+| `public/fonts/OFL-archivo.txt`, `public/fonts/OFL-ibm-plex.txt` | créer | licences OFL 1.1 jointes (`OFL-ibm-plex.txt` : en-tête amont avec le *Reserved Font Name* « Plex », note de modification et de renommage, un seul texte OFL) |
+| `src/styles.css` | modifier | `@font-face` (6), tokens `@theme`, `--theme-line*` (2 registres), `@layer base` titres, `link-btn` `rounded-md` |
+| `src/index.html` | modifier | `<link rel="preload">` d'Archivo |
+| `src/app/shared/ui/button.ts` | modifier | `rounded-lg` → `rounded-md` |
+| `src/app/layout/components/header/header.ts` | modifier | `font-display` sur la marque |
+| `src/app/shared/ui/cartouche.ts` (+ `.spec.ts`) | créer | primitive cartouche |
+| `src/app/shared/ui/dimension-line.ts` (+ `.spec.ts`) | créer | primitive cote |
+| `.github/workflows/ci.yml` | modifier | job `verify` : chaque `rel="preload"` de `browser/index.html` pointe un fichier existant du build ; job `docker` : `/fonts/archivo-…woff2` → 200, `content-type: font/woff2` |
+| `DESIGN.md` | modifier | § 3 Typographie réécrit (trois familles, rôles, plages de graisse, remplacement de la « System-Stack Rule » et de « Don't charger une Google Font »), § 2 tokens de trait et seuils 3:1, § 5 Cartouche et Cote (API, règles d'usage), boutons `rounded-md` |
+| `DESIGN.json` | modifier | miroir : `typography`, règles nommées, `ds-btn-*` `border-radius: 6px` |
+| `docs/adr/0006-polices-auto-hebergees.md` | créé | décision d'hébergement |
+
+#### V.6 Critères testables (`qa`) et preuves (verify)
+
+**V1 — hors TDD** (CSS, assets, config : aucun test unitaire ne lit une police calculée en
+happy-dom). Non-régression : la suite existante reste verte (aucun test ne dépend de `rounded-lg`
+ni d'une famille de police, vérifié par `grep`).
+
+**V2 — `Cartouche`** (hôte de test qui projette du contenu, sur le modèle de
+`split-section.spec.ts`) :
+- Titre et référence ⇒ `cartouche-title` = titre, `cartouche-reference` = référence ; hôte
+  `role="group"` et `aria-label` = titre.
+- Référence vide (défaut) ⇒ aucun `cartouche-reference`.
+- `it.each` sur 0, 1 et 3 lignes : `cartouche-row` × n ; chaque ligne a exactement un `dt`
+  (`cartouche-label` = `label`) et un `dd` (`cartouche-value` = `value`), dans l'ordre des
+  données ; les lignes sont les enfants directs de l'unique `dl` ; 0 ligne ⇒ aucun `dl`.
+- Contenu projeté rendu dans l'hôte, après le `dl`.
+
+**V3 — `DimensionLine`** :
+- Hôte `aria-hidden="true"` ; `dimension-line-label` = `label`.
+- L'arbre ne contient aucun élément focalisable ni rôle ARIA (rien n'échappe à `aria-hidden`).
+
+**Preuves verify** (section `## Verify` de la spec, sur `pnpm build` puis l'image Docker locale) :
+1. Gates : `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm test`, `pnpm build`.
+2. Assets : `dist/angular-portfolio-app/browser/fonts/` contient les quatre woff2 ; le CSS émis
+   contient `url(/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2)` non réécrit ; `browser/index.html`
+   contient le `preload` et la CSP hachée sans `unsafe-inline` (garde CI existante).
+3. CSP : aucune violation dans la console (Browser pane) sur `/`, `/about`, une page d'offre et
+   `/blog`, en clair et en sombre ; la `<meta>` CSP de prod est identique à `master` hors hachages.
+4. Réseau : les polices viennent de l'origine du site, aucune requête vers un tiers de polices ;
+   Archivo est demandée avant le CSS non critique (préchargement), Plex Mono seulement sur les
+   pages qui en affichent. **Italique** : `jn-sans-3.201-latin-wght-italic.woff2` absente
+   des requêtes de `/` et de l'offre atelier (pages sans `em`, à confirmer par `grep '<em'` dans
+   leur HTML prérendu), présente sur un article de blog qui contient de l'italique ; jamais en
+   `preload` dans `index.html`.
+5. Lighthouse mobile (image Docker locale), mesuré sur `master` puis sur la branche, sur `/`,
+   `/about` et l'offre atelier : perf, a11y, SEO **≥ 95** ; CLS ≤ 0,05 ; écart de LCP rapporté.
+6. axe : zéro violation sur les mêmes pages **dans les deux registres** (bascule de la classe
+   `app-dark` sur `<html>` dans le Browser pane, puis exécution d'axe-core injecté par évaluation
+   de script, qui n'est pas soumise à la CSP de la page).
+7. Rendu : captures clair et sombre de la home et d'une page d'offre (titres Archivo, texte Plex,
+   boutons à 6 px) et d'un article de blog (italique Plex réelle, pas une oblique) ; contrôle visuel des prix à séparateur de milliers (`4 500 €`, U+202F pris dans
+   la police de repli) et de la flèche `→` ; aucun décalage visible au chargement (repli ajusté).
+   `Cartouche` et `DimensionLine` ne sont pas atteignables en production dans cette PR : leur
+   preuve est la suite unitaire (V2, V3), leur rendu réel arrive avec T6.
+
+#### V.7 Risques & inconnues
+
+- CSS critique (beasties) : si les `@font-face` de Plex ne sont pas dans le CSS inliné, Plex Sans
+  n'est découverte qu'au chargement de la feuille complète ; le repli ajusté limite le CLS, mais
+  la mesure verify 5 tranche. Si le CLS dépasse 0,05, précharger aussi Plex Sans (36 Ko).
+- Primitives livrées sans consommateur jusqu'à T4/T6 : `knip` les signalera ; accepté et tracé
+  ici, la prochaine tranche consommatrice lève le signal.
+- Repli calculé contre Arial : Android n'a pas Arial (repli sur Roboto, métriques différentes),
+  l'ajustement y est approximatif ; le lab Lighthouse (desktop Chrome) ne le voit pas.
+  `ci.yml` est aussi modifié par T2 : rebaser l'une sur l'autre (conflit attendu, trivial).
+
+#### V.8 Questions pour Julien (tranchées le 2026-10-04)
+
+1. **Trait du cartouche** : discret, comme la maquette (`line-strong` 22 % / 28 %, environ 1,8:1),
+   décoratif, jamais seul porteur d'information. Plan inchangé.
+2. **Boutons à 6 px et marque du header en display** : dans cette PR. Plan inchangé.
+3. **Italique** : vraie italique IBM Plex Sans livrée (même source Fontsource, même instancer,
+   `wght` 400–700, licence OFL jointe), sans préchargement, téléchargée seulement sur les pages qui
+   en contiennent. Intégré en V.1, V.2, V.4, V.5, V.6 et dans ADR-0006.
+4. **Admin** : la nouvelle typographie s'applique partout, admin compris. Plan inchangé.
+
 ### Tranches
 
 Une PR par tranche, dans l'ordre. Chaque tranche part de `master` à jour (la précédente mergée),
@@ -618,17 +887,16 @@ preuves de prérendu se font en verify (`pnpm build` puis `grep` dans
   - `/projects` : `h1` et `title` « Réalisations ».
 
 - **Tranche V — socle visuel « dessin technique »** (direction validée par Julien le 2026-10-04 sur
-  la maquette v2). Prérequis avant T4, T6 et T7, qui consomment ses primitives. Fichiers :
-  `src/index.html` (préconnexion Google Fonts ou polices auto-hébergées, à trancher pour la CSP et
-  Lighthouse), `src/styles.css` (`@theme` : familles display / body / mono, tokens de trait),
-  `shared/ui/cartouche.ts` (bloc titre + lignes libellé/valeur, `dl` sémantique),
-  `shared/ui/dimension-line.ts` (cote décorative, `aria-hidden`), `DESIGN.md` (typographie,
-  cartouche, cote, règles d'usage : un cartouche par écran au plus, cotes réservées aux délais).
-  - `Cartouche` rend un titre, une référence optionnelle et un `dl` dont chaque ligne a `dt`/`dd`.
-  - `DimensionLine` est `aria-hidden="true"` et ne porte aucune information exclusive.
-  - Aucune régression axe (contraste des nouvelles couleurs de trait en clair et en sombre).
-  - Verify : Lighthouse perf ≥ 95 sur la home avec les nouvelles polices (`font-display: swap`,
-    sous-ensemble latin), CSP de prod toujours valide.
+  la maquette v2). **Plan détaillé : « Tranche V — plan détaillé » ci-dessus, ADR-0006.** Une PR,
+  partie de `master` ; prérequis de T4, T6 et T7 (qui consomment `Cartouche` et `DimensionLine`),
+  indépendante de T2, T3, T5, T9. Trois sous-tranches dans la même PR :
+  - **V1 — typographie et tokens** (CSS et assets, hors TDD, prouvée en verify) : polices
+    auto-hébergées, `@font-face`, `@theme` (`--font-display`/`--font-sans`/`--font-mono`,
+    `--color-line`/`--color-line-strong`), base titres, boutons `rounded-md`, marque du header,
+    garde CI du préchargement, `DESIGN.md`/`DESIGN.json`.
+  - **V2 — `Cartouche`** : titre, référence optionnelle, `dl` de lignes `dt`/`dd`, contenu
+    projeté, groupe nommé.
+  - **V3 — `DimensionLine`** : cote `aria-hidden`, libellé décoratif.
 
 - **Tranche 9 — qualification légère du formulaire.** Fichiers : `compose-contact-message.ts`,
   `contact-timelines.static-data.ts`, `contact-form.ts`, `home.ts` (passe `projectTypes`).
@@ -960,12 +1228,65 @@ RED confirmé le 2026-10-04 12:49 (worktree dédié, spec hors arbre) : 12 faile
 comportementaux (assertions, requête `/api/cv` attendue) une fois les symboles posés en squelette
 vide ; suite existante verte.
 
+### Tranche V — socle visuel « dessin technique » (V2 `Cartouche`, V3 `DimensionLine`)
+
+V1 (polices, tokens `@theme`, `@layer base`, rayon des boutons, préchargement) est **hors TDD**
+comme le prescrit le plan : aucun test unitaire ajouté. Non-régression V1 vérifiée par `grep` :
+aucune spec ne mentionne `rounded-lg`, `rounded-md`, `font-family`, `font-display` ni
+`font-mono`. Aucune suite existante impactée (primitives neuves, sans consommateur) : pas
+d'adaptation, pas de sweep de contrat.
+
+Contrats fixés par ce RED :
+
+- `CartoucheRow` exporté par `shared/ui/cartouche.ts` (`{ readonly label; readonly value }`).
+- `reference` à défaut `''` : `Cartouche` monté seul avec le seul `title` ne rend pas de
+  `cartouche-reference`.
+- Le titre et le `aria-label` de l'hôte suivent un changement de `title` (réactivité).
+- Le contenu projeté est rendu même sans ligne (`rows` vide), et hors du `dl` quand il existe.
+- `DimensionLine` : l'hôte ne porte ni `tabindex` ni `role` ; aucun descendant focalisable ni
+  `[role]`.
+
+**`src/app/shared/ui/cartouche.spec.ts`** (TestBed, hôte de test à signaux qui projette un
+`<p data-testid="projected">`, 9 tests)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| titre + référence, groupe nommé | `title` « Cadre de travail », `reference` « RÉF. 009 » | `cartouche-title` = `['Cadre de travail']`, `cartouche-reference` = `['RÉF. 009']` ; hôte `role="group"`, `aria-label` = titre |
+| titre en paragraphe | titre seul | `cartouche-title` est un `P` ; aucun `h1`–`h6` dans le cartouche |
+| référence par défaut | `Cartouche` seul, `setInput('title')` | aucun `cartouche-reference` ; titre rendu |
+| réactivité du titre | `title` → « Délais » | `cartouche-title` = « Délais », `aria-label` = « Délais » |
+| lignes (`it.each` 1, 3) | `rows` de n entrées | un seul `dl` ; `cartouche-row` × n = enfants directs du `dl` ; chaque ligne = `[DT, DD]` (`cartouche-label`, `cartouche-value`) aux textes `label`/`value`, dans l'ordre |
+| 0 ligne | `rows: []` | titre rendu ; aucun `dl`, `cartouche-row`, `cartouche-label`, `cartouche-value` |
+| contenu projeté après le `dl` | 2 lignes | `projected` = « Corps projeté », dans l'hôte, `DOCUMENT_POSITION_FOLLOWING` par rapport au `dl`, hors du `dl` |
+| contenu projeté sans ligne | `rows: []` | `projected` = « Corps projeté » dans l'hôte |
+
+**`src/app/shared/ui/dimension-line.spec.ts`** (TestBed, `setInput('label')`, 4 tests)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| hôte masqué + libellé (`it.each` « 7 jours », « 3 semaines ») | libellé posé | hôte `aria-hidden="true"` ; `dimension-line-label` = `[label]` |
+| réactivité du libellé | `label` → « 10 jours » | `dimension-line-label` = `['10 jours']` |
+| rien n'échappe au masquage | « 7 jours » | libellé rendu ; aucun `a[href]`, `button`, champ, `iframe`, `summary`, `[tabindex]`, `[contenteditable]`, `[role]` ; hôte sans `tabindex` ni `role` |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-04 14:03, 13 failed / 716 total). Nature des échecs : `pnpm test` sur l'arbre réel
+échoue à la compilation uniquement sur les deux modules applicatifs à créer au GREEN (`TS2307` /
+`Could not resolve` `./cartouche` et `./dimension-line`, et `NG1010` en cascade sur
+`imports: [Cartouche]` de l'hôte de test) ; aucune faute de type ni de format propre aux specs
+(`eslint` et `prettier --check` verts sur les deux fichiers). Chiffrage pris avec des stubs vides
+temporaires (inputs du plan, template vide, retirés ensuite) : 13 échecs, tous des
+`AssertionError` (`expected null to be 'true'`, `expected [] to deeply equal [ '7 jours' ]`,
+`expected undefined to be 'P'`…). Non-régression : 87 autres fichiers, 703 passed / 703.
+Scaffold dû au GREEN : `src/app/shared/ui/cartouche.ts` (`Cartouche`, `CartoucheRow`) et
+`src/app/shared/ui/dimension-line.ts` (`DimensionLine`).
+
 ## Journal des tranches
 
 - **Tranche 1 — l'offre atelier sur le modèle générique** : GREEN 701 passed / 701 total · refactor : aucun
 - **Tranche 2 — l'atelier à son URL de catalogue, l'ancienne redirige** : GREEN 711 passed / 711 total · refactor : aucun (passe manuelle sur le diff ; server route écrite `${OFFERS_BASE_PATH}/${slug}` plutôt que de retailler `offerPath`)
 - **Tranche 3 — les quatre nouvelles offres** : GREEN 804 passed / 804 total · refactor : zone servie de `toOfferSeo` factorisée (régions communes, France ajoutée pour la famille `applications`) ; id d'étape « audit » renommé `inspect` (collision avec la ligne de prix « audit » de la même page)
 - **Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »** : GREEN 698 passed / 698 total · refactor : liens du bloc passés sur l'utilitaire `link-btn-outline` (revue)
+- **Tranche V — socle visuel « dessin technique »** : GREEN 716 passed / 716 total · refactor : aucun
 
 ## Verify
 
@@ -1086,6 +1407,154 @@ en lien direct et en navigation SPA depuis la home, desktop et mobile 375 px.
   Chemin heureux du lien CV couvert par les tests HTTP stubbés, non observable sans API locale.
 
 Verdict : **PASS**.
+
+### Tranche V — socle visuel (polices, tokens, base titres, boutons 6 px, marque du header)
+
+Surfaces atteignables restructurées : **toutes les pages** (typographie globale, rayon des boutons,
+marque du header). `Cartouche` et `DimensionLine` ne sont rendus nulle part : preuve = suite
+unitaire (V2, V3).
+
+Steps : `pnpm install --frozen-lockfile` → `pnpm run build --configuration production` (API de prod
+joignable : sitemap 15 URL, 15 routes prérendues, CSP durcie sur 16 pages) → lecture de
+`dist/angular-portfolio-app/browser/**` → `docker build` de la branche **et** de sa base `0b758d8`
+(`git archive`, aucune écriture git), conteneurs nginx sur `:3301` (branche) et `:3302` (base) →
+Chromium headless (Playwright, viewport 375×812) sur `/`, `/about/`, `/offre-site-industrie/`,
+`/blog/`, `/blog/de-20-ans-de-metallurgie-a-developpeur-full-stack/`, chaque page en sombre puis en
+clair (bascule de `app-dark` sur `<html>`), axe-core injecté par évaluation de script →
+Lighthouse 12 mobile, 3 passes par page et par image, médiane. `public/sitemap.xml` et
+`public/rss.xml` restaurés par `git checkout` après le build.
+
+1. **Assets** : `browser/fonts/` contient les quatre woff2 et les deux `OFL-*.txt` ; le CSS émis
+   contient 6 `@font-face` et les quatre `url(/fonts/…woff2)` intactes (non réécrites vers
+   `media/`) ; `browser/index.html` contient `<link rel="preload" href="/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2" as="font" type="font/woff2" crossorigin>`
+   et aucun préchargement de l'italique. Garde CI du préchargement rejouée à la main sur le build :
+   OK. Image Docker : `/fonts/archivo-…woff2` → 200, `Content-Type: font/woff2`,
+   `Cache-Control: public, max-age=31536000, immutable`.
+2. **CSP** : `<meta>` CSP de la home identique à la base hors hachages (empreinte égale après
+   suppression des `sha256-…`) ; aucune `unsafe-inline` dans `script-src`/`style-src` des pages
+   prérendues. Aucune violation CSP liée aux polices ni à la feuille, dans les deux registres, sur
+   les cinq pages. Seule violation observée : `connect-src` sur `https://giscus.app/default.css`
+   dans l'article de blog, **identique sur la base** (préexistante, hors périmètre).
+3. **Réseau** : polices servies par l'origine du site, **aucune requête vers un tiers de polices**.
+   `/`, `/about/`, `/offre-site-industrie/`, `/blog/` : Archivo, JN Sans, JN Mono ; **italique
+   absente** (HTML prérendu de `/` et de l'offre sans `<em>` ni `<i>`). Article de blog (un `<em>`) :
+   italique **téléchargée**. Lighthouse : Archivo demandée en premier (priorité High, avant la
+   feuille de styles), JN Sans/Mono découvertes par le CSS critique inliné.
+4. **Rendu** (captures, scratchpad de session `lh/shots-branch/` : `_-{dark,light}.png`,
+   `_offre-site-industrie_-{dark,light}.png`, `_blog_de-20-ans-…_-{dark,light}.png`,
+   `blog-italic-{dark,light}.png`) : titres en Archivo élargi (`h1` calculé
+   `font-stretch: 108%`), texte en JN Sans, libellés mono en JN Mono ; boutons non pilule à
+   `6px` (« Demander mon site », « Envoyer le message ») ; italique du blog : vraie italique JN Sans
+   (`a` à un étage, `fontStyle: italic`), `font-synthesis-weight: none` effectif. Prix de l'offre
+   `690 €, prix final`, `690 €`, `29 €/mois` rendus sans glyphe manquant.
+5. **axe** (2 registres × 5 pages) : aucune violation imputable au diff. **Une violation
+   `color-contrast` existe**, sur le toast d'erreur global « Erreur » (`text-status-error` sur
+   `status-error/15`, **3,81:1**, sous les 4,5:1 requis) : le toast s'affiche dès que l'API refuse
+   l'origine locale (CORS), et la violation se reproduit **en clair sur `/`, l'offre et `/blog/`**
+   chaque fois que le toast est à l'écran au moment de l'analyse ; en sombre, elle n'a pas été
+   relevée. Elle est **identique sur la base `0b758d8`** (revérifiée par la revue) : préexistante,
+   hors du diff de la tranche, mais réelle en production dès qu'une erreur API survient. **Ticket
+   séparé** à ouvrir (contraste du toast d'erreur en registre clair). Hors toast, zéro violation
+   sur les cinq pages dans les deux registres.
+5bis. **Licence IBM Plex (*Reserved Font Name* « Plex »), après revue** : les trois fichiers Plex
+   servis sont renommés dans leur table `name` (« JN Sans » / « JN Mono », PostScript `JNSans-…` /
+   `JNMono-…`) et republiés sous de nouveaux noms versionnés (`jn-sans-3.201-latin-wght.woff2`
+   35 864 o, `jn-sans-3.201-latin-wght-italic.woff2` 38 840 o, `jn-mono-2.3-latin-500.woff2`
+   14 924 o). Preuves :
+   - fontTools sur `dist/…/browser/fonts/*.woff2` : **0 occurrence de « Plex »** dans les tables
+     `name` ; nameIDs 1/3/4/6 = `JN Sans` · `3.201;JN;JNSans-Regular` · `JN Sans Regular` ·
+     `JNSans-Regular` (italique : `…-Italic`), `JN Mono Medium` · `2.3;JN;JNMono-Medium` ·
+     `JN Mono Medium` · `JNMono-Medium` ; noms d'instances 264–272 en `JNSans-…` ;
+   - fontTools, comparaison table par table avec les fichiers d'avant renommage : seules `name` et
+     `head.checkSumAdjustment` diffèrent (glyphes, `fvar`, `gvar`, `STAT`, métriques intacts) ;
+   - CSS émis et `index.html` : aucune occurrence de « Plex » ; `@font-face` `'JN Sans'` /
+     `'JN Mono'`, `url(/fonts/jn-…)` intactes ;
+   - navigateur (build prod servi en statique, comparé à l'image de la variante C d'avant
+     renommage) : les polices se chargent sous leurs nouveaux noms (`jn-sans-…` et `jn-mono-…` en
+     200, `jn-sans-…-italic` seulement sur l'article), `document.fonts` = `Archivo`, `JN Sans`
+     (+ `italic` sur l'article), `JN Mono` ; **rendu identique au pixel** (0 px de différence) sur le
+     `h1`, le premier paragraphe et l'italique de `/`, de l'offre et de l'article, en clair et en
+     sombre ; aucune violation CSP.
+   - **Repli d'Archivo** (`Archivo Fallback` pointé vers Arial Bold, `font-weight: 600 800`) :
+     largeur du `h1` de l'offre sur une ligne (36 px, graisse 800), Archivo bloquée par
+     interception réseau dans Chromium : **735,5 px** avec le nouveau repli contre **740,4 px** en
+     Archivo (−0,7 %) ; l'ancienne face (`local('Arial')`) donnait **699,5 px** (−5,5 %). Sur ce
+     lab Linux, Arial est absente : l'ancienne face échouait (repli `system-ui`) et la nouvelle se
+     résout sur `Liberation Sans Bold`, métriquement identique à Arial Bold. La mesure du
+     relecteur (335,5 px regular contre 370,5 px bold, −9,4 %) est cohérente avec l'écart corrigé ;
+     macOS et Windows (Arial Bold native) non vérifiables ici.
+
+6. **Lighthouse mobile, parades au coût de la tranche** (image Docker locale, Lighthouse 12
+   mobile en throttling simulé, mêmes conditions pour toutes les images). Passe 1 : 3 passes par
+   page et par image, médiane, toutes images mesurées dans la même session. Passe 2 : 5 passes de
+   plus sur `/` et l'offre pour la base, la branche initiale et C (images jugées proches).
+   Variantes construites depuis une copie de la branche (scratchpad), seule la parade changeant :
+   - **branche initiale** : preload d'Archivo, `swap` partout, Archivo `wdth` 100–125 /
+     `wght` 500–800 (57 504 o) ;
+   - **A** : sans preload d'Archivo ;
+   - **B** : Archivo en `font-display: optional` (preload conservé), Plex en `swap` ;
+   - **C** : Archivo réduit aux seules plages employées, `wdth` 100–110 (marque du header 100 %,
+     titres 104–108 %, titre du cartouche 110 %) et `wght` 600–800 (graisses des titres : 600, 700,
+     800 ; aucun titre en 500 n'est rendu en Archivo), **39 512 o** (−17 992 o, −31 %). Une instance
+     figée à 108 % pèserait 25 024 o mais casserait la marque (100 %), les `h2`/`h3` (106/104 %)
+     et le cartouche (110 %) : écartée ;
+   - **D** : aucune combinaison utile, A et B n'apportant rien (ci-dessous) : D = C.
+
+   Passe 1, médiane de 3 (perf · LCP · CLS max) :
+
+   | Image | `/` | `/about/` | `/offre-site-industrie/` | Polices romanes |
+   |---|---|---|---|---|
+   | base `0b758d8` | 89 · 3 101 ms · 0 | 75 · 3 693 ms · 0 | 81 · 3 819 ms · 0 | 0 o |
+   | branche initiale | 78 · 4 167 ms · 0 | 70 · 4 412 ms · 0 | 79 · 3 995 ms · 0,003 | 108 284 o |
+   | A (sans preload) | 77 · 4 073 ms · 0 | 70 · 4 486 ms · 0 | 74 · 4 590 ms · **0,040** | 108 284 o |
+   | B (`optional`) | 72 · 4 429 ms · 0 | 71 · 4 398 ms · 0 | 74 · 4 576 ms · 0,003 | 108 284 o |
+   | C (plages réduites) | 80 · 3 992 ms · 0 | 67 · 4 248 ms · 0 | 71 · 4 506 ms · 0,003 | 90 292 o |
+
+   Passe 2, médiane de 5 (perf · LCP · render delay) :
+
+   | Image | `/` | `/offre-site-industrie/` |
+   |---|---|---|
+   | base `0b758d8` | 87 · 3 361 ms · 2 909 ms | 80 · 3 824 ms · 3 372 ms |
+   | branche initiale | 80 · 4 019 ms · 3 567 ms | 82 · 3 787 ms · 3 335 ms |
+   | C | 81 · 3 886 ms · 3 434 ms | 78 · 4 423 ms · 3 971 ms |
+
+   Toutes images confondues, a11y = 100 et SEO = 100 (passe 1). Dispersion entre passes d'une même
+   image : jusqu'à 26 points de perf (B sur `/` : 72/80/54), 8 à 12 points couramment. Le LCP est
+   à 89 % du « render delay » (le `h1` porte `animate-fade-up`), jamais du chargement d'une ressource.
+
+   Lecture :
+   - **Coût réel de la tranche** : sur `/`, −7 points et +650 ms de LCP, stable sur 8 passes ; sur
+     l'offre, dans le bruit (80 → 82 sur 5 passes). Les polices entrent dans le chemin critique
+     simulé : c'est l'ensemble des faces, pas Archivo seule, qui pèse.
+   - **A** n'apporte rien (perf égale ou plus basse) et fait monter le CLS de l'offre à 0,040 : sans
+     preload, Archivo arrive après le premier rendu et le `h1` change de métrique sous les yeux.
+     **Écartée.**
+   - **B** n'apporte rien de mesurable. Constat visuel à froid (cache désactivé, 4G lente émulée
+     par CDP, captures `cold-B-slow4g_*.png`) : **le `h1` reste sur la police de repli** pour toute
+     la visite. Sans throttling, Archivo s'affiche. Compromis visuel sans gain : **écartée.**
+   - **C** : −18 Ko par page, rendu inchangé (comparaison pixel à pixel avec la branche initiale :
+     2 à 3 px d'anticrénelage différents sur 38 759 à 64 484 px de `h1`, 0 px sur la marque du
+     header), CLS inchangé. Perf et LCP indiscernables de la branche initiale dans le bruit du lab
+     (`/` : 81 contre 80 ; offre : 78 contre 82, inversé en passe 1). **Retenue** : le seul gain
+     sûr (octets), sans contrepartie visuelle.
+   - **Perf ≥ 95** : la base elle-même est entre 75 et 89 dans ce lab ; le seuil n'y est pas
+     mesurable. Résiduel sur `/` à arbitrer, ou à mesurer en conditions de prod (PageSpeed sur le
+     déploiement).
+
+   Appliqué : C, avec un nouveau nom de fichier versionné
+   `archivo-2.001-latin-wdth100-110-wght600-800.woff2` (`@font-face` `font-weight: 600 800`,
+   `font-stretch: 100% 110%`), preload d'Archivo et `swap` conservés.
+7. **Console** : aucune erreur applicative (`NG0…`, hydratation). Erreurs d'environnement seules :
+   `GET /api/config` 404 (absent de l'image locale) et CORS de `api.nedellec-julien.fr` refusant
+   `localhost`, identiques sur la base.
+
+Verdict : **PASS** sur les critères fonctionnels (assets, CSP, réseau, italique, rendu, CLS
+≤ 0,05 ; axe sans violation imputable au diff, la violation de contraste du toast étant
+préexistante et suivie à part), constatés sur la branche initiale, revérifiés après passage à C
+puis après le renommage des polices IBM Plex : build prod (assets, `url()`, preload, garde CI),
+tables `name` sans « Plex », rendu identique au pixel. **Réserve** : Lighthouse perf ≥ 95 non vérifiable localement (base entre 75 et 89), et
+coût résiduel mesuré sur `/` (−7 points, +650 ms de LCP) qu'aucune parade testée ne réduit
+au-delà du bruit.
 
 ## Review code
 
@@ -1226,3 +1695,39 @@ texte de `hiringAvailability` (choix produit, épinglé par test).
 **Tests notables** :
 - ✨ `about.spec.ts` : `DeferBlockBehavior.Manual` prouve que le bloc existe sans déclencher les defer (décision 8.6).
 - ✨ `about-hiring.spec.ts` : l'échec HTTP 500 laisse LinkedIn et masque le CV.
+
+### Tranche V
+
+**Verdict** : APPROVED (re-revue ; 1re revue REJECTED sur la licence IBM Plex, soldée)
+**Gates CI locaux** : install ✅ (`pnpm install --frozen-lockfile`, exit 0, 1re revue ; lockfile inchangé depuis) / tests ✅ (`pnpm test`, exit 0, 716 passed / 716, après `ng cache clean` + purge `node_modules/.vite`) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting ») / build ✅ (`pnpm run build --configuration production`, exit 0, API de prod joignable du premier coup : sitemap 15 URL, 15 routes prérendues, CSP durcie sur 16 pages). `public/sitemap.xml` et `public/rss.xml` restaurés par `git checkout`.
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main sur le diff et les non suivis. Archéologie (motif du profil) 0 hit ; `export default`, `effect(`, helpers zone, `innerHTML`/`bypassSecurity`, `console.`, `.only`/`.skip`, snapshot, `fireEvent`, `interface`, `@capacitor` : 0 hit. `Cartouche`/`DimensionLine`/`CartoucheRow` sans consommateur hors specs : prescrits par le plan (V.3, V.7).
+**Warnings de gate** : aucun
+**Rendu compilé** : ✅ (sélecteurs élément ; CSS émis : 6 `@font-face`, quatre `url(/fonts/…woff2)` intactes, dont les trois `jn-*` ; replis émis avec leurs `local()` ; utilitaires des primitives générés)
+**Preuve de verify runtime** : ✅ (preuve `## Verify` complète ; rejouée par la revue sur l'image Docker reconstruite après renommage : quatre woff2 en 200, `font/woff2`, anciens `ibm-plex-*` non servis ; Chromium 375×812 sur `/` et l'offre, sombre et clair : `h1` Archivo à 108 %, texte en `JN Sans`, aucune violation CSP ; console : seules les erreurs d'environnement, `/api/config` 404 et CORS de l'API)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅ (CSP de `src/index.html` inchangée)
+**Alignement spec** : ✅
+
+Points de la 1re revue, vérifiés :
+1. **RFN « Plex » (bloquant)** : soldé.
+   - Table `name` lue avec fontTools : aucune occurrence de « plex » dans aucun enregistrement des quatre fichiers servis. Familles « JN Sans » / « JN Mono », PostScript `JNSans-Regular`, `JNSans-Italic`, `JNMono-Medium`.
+   - Comparaison table par table avec les anciens `ibm-plex-*` : seules `head` et `name` diffèrent, donc glyphes et axes identiques (`wght` 400–700).
+   - `OFL-ibm-plex.txt` porte l'en-tête amont « with Reserved Font Name "Plex" » et une note sur les versions modifiées renommées.
+   - ADR-0006 (titre, tableau, commande avec renommage, § 5, § 6, conséquences), plan et `DESIGN.md`/`DESIGN.json` sont cohérents.
+   - Tailles réelles = ADR : 39 512 / 35 864 / 38 840 / 14 924, total 129 140, romanes 90 300.
+2. **Repli d'Archivo** : soldé. `woff2` bloqués dans le navigateur, `Archivo Fallback 600 800` est chargé et un texte en 800 mesure 405,9 px, soit Arial Bold (370,5 px) × 109,59 %. Le repli gras est donc bien utilisé, avec son ajustement. `JN Sans Fallback` : 344,3 px = Arial (338,0 px) × 101,88 %, le repli résout désormais sur Linux.
+3. **Verify item 5** : soldé. La violation du toast est déclarée telle quelle. La revue la reproduit en clair sur `/` et l'offre, identique sur la base `0b758d8`.
+4. **Statut de l'ADR** : laissé à « proposé (à accepter avec la Tranche V) ». Non bloquant ; à passer à « accepté » au merge.
+5. **`aria-label` du `Cartouche`** : inchangé, advisory, à revoir en T6 si le doublon gêne.
+
+**Tests notables** :
+- ✨ `src/app/shared/ui/cartouche.spec.ts` : `children` du `dl` comparés aux lignes, qui épingle la structure `dl > div` et l'ordre.
+- ✨ `src/app/shared/ui/dimension-line.spec.ts` : sélecteur de focalisables et de rôles, qui garde l'invariant `aria-hidden`.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil muet (Dokploy continu sur `master`) · monitoring : Sentry
+- aucun état persistant touché ; polices en cache `immutable` sous noms versionnés
+- non couvert par les gates : Lighthouse perf ≥ 95 non mesurable en lab, coût sur `/` accepté par Julien ; contraste du toast d'erreur préexistant (ticket séparé).

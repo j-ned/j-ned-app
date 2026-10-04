@@ -19,48 +19,55 @@ colors:
   ivoire-ink: "#292524"
   ivoire-muted: "#57534e"
   ivoire-divider: "rgba(41,37,36,0.08)"
-  status-success: "#016630"
-  status-warn: "#973c00"
-  status-error: "#9f0712"
+  console-line: "color-mix(in srgb, #fafafa 9%, transparent)"
+  console-line-strong: "color-mix(in srgb, #fafafa 22%, transparent)"
+  ivoire-line: "color-mix(in srgb, #292524 12%, transparent)"
+  ivoire-line-strong: "color-mix(in srgb, #292524 28%, transparent)"
+  status-success: "#16a34a"
+  status-warn: "#d97706"
+  status-error: "#dc2626"
 typography:
   display:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontFamily: "'Archivo', 'Archivo Fallback', system-ui, sans-serif"
+    fontStretch: "108%"
     fontSize: "clamp(2.75rem, 7vw, 5.5rem)"
     fontWeight: 800
     lineHeight: 1.05
     letterSpacing: "-0.02em"
   headline:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    fontFamily: "'Archivo', 'Archivo Fallback', system-ui, sans-serif"
+    fontStretch: "106%"
     fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)"
     fontWeight: 700
     lineHeight: 1.15
     letterSpacing: "-0.01em"
   title:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    fontFamily: "'Archivo', 'Archivo Fallback', system-ui, sans-serif"
+    fontStretch: "104%"
     fontSize: "1.25rem"
     fontWeight: 600
     lineHeight: 1.3
     letterSpacing: "normal"
   body:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    fontFamily: "'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.6
     letterSpacing: "normal"
   body-large:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    fontFamily: "'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 400
     lineHeight: 1.65
     letterSpacing: "normal"
   label:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    fontFamily: "'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
     fontSize: "0.75rem"
     fontWeight: 600
     lineHeight: 1.4
     letterSpacing: "0.06em"
   mono:
-    fontFamily: "ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace"
+    fontFamily: "'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
     fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: 1.5
@@ -84,7 +91,7 @@ components:
   button-primary:
     backgroundColor: "{colors.signal-indigo}"
     textColor: "#ffffff"
-    rounded: "{rounded.md}"
+    rounded: "6px"
     padding: "10px 20px"
   button-primary-hover:
     backgroundColor: "{colors.signal-indigo-deep}"
@@ -92,7 +99,7 @@ components:
   button-outline:
     backgroundColor: "transparent"
     textColor: "{colors.console-text}"
-    rounded: "{rounded.md}"
+    rounded: "6px"
     padding: "10px 20px"
   button-outline-hover:
     backgroundColor: "{colors.console-surface-2}"
@@ -169,6 +176,13 @@ Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signat
 - **Ivoire Muted** (`#57534e`, canonical `oklch(45% 0.012 75)`): texte secondaire en light. Stone-600.
 - **Ivoire Divider** (`rgba(41,37,36,0.08)`): séparateurs et bordures en light.
 
+### Lines — traits du dessin technique
+
+- **Line** (`--color-line` : Console `foreground` à 9 %, Ivoire `foreground` à 12 %) : séparateurs internes du cartouche.
+- **Line Strong** (`--color-line-strong` : Console 22 %, Ivoire 28 %) : cadre et barre de titre du cartouche.
+
+Contrastes calculés (composition sRGB, WCAG 2.x) : `line` 1,22:1 (Console, fond) à 1,26:1 (Ivoire) ; `line-strong` 1,77:1 (Ivoire, fond) à 1,94:1 (Console, carte). Ces deux traits sont **décoratifs** : sous 3:1, ils ne portent jamais seuls une information et ne délimitent jamais un composant interactif (WCAG 1.4.11). Le trait de cote est dessiné en `currentColor` = `text-primary` (6,33:1 à 7,90:1 selon registre et surface).
+
 ### Status
 
 - **Status Success** (`#016630`, green-800 en Ivoire): badges success, états validés.
@@ -181,15 +195,22 @@ Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signat
 
 **The Two Registers Rule.** Console (dark) et Ivoire (light) sont **égaux**. Ils ne sont pas "thème par défaut et alternative". Toute décision de design doit fonctionner aussi bien dans les deux registres ou n'est pas valide. Tester chaque composant en `.app-dark` ET sans `.app-dark` est non négociable.
 
+**The Decorative Line Rule.** `line` et `line-strong` sont des traits d'ornement : le texte qu'ils encadrent porte l'information. Un trait **porteur d'information** (état, séparation d'un contrôle, graphique) utilise `text-primary` ou `foreground` à **≥ 50 % en Ivoire** (3,04:1 sur fond) et **≥ 35 % en Console** (3,05:1 sur fond) : seuils calculés pour atteindre 3:1.
+
 **The Glassmorphism Containment Rule.** Les `rgba` sur Console Surfaces sont des dividers de profondeur subtils, **pas** un effet glassmorphic. Aucun `backdrop-filter: blur` n'est légitime en dehors du nav fixe (s'il est ajouté plus tard, justifier). Si tu ajoutes du blur à une card, c'est un anti-pattern.
 
 ## 3. Typography
 
-**Display Font:** `system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`  
-**Body Font:** identique au display (single-stack)  
-**Label/Mono Font:** `ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace`
+**Display Font:** Archivo (variable, `wdth` 100–110, `wght` 600–800 : les seules largeurs et graisses employées) — `--font-display` : `'Archivo', 'Archivo Fallback', system-ui, sans-serif`  
+**Body Font:** JN Sans (IBM Plex Sans 3.201 modifiée : sous-ensemble latin, axes réduits, famille renommée car « Plex » est un *Reserved Font Name* de l'OFL ; variable, `wght` 400–700, romain et vraie italique) — `--font-sans`, appliquée à tout le site par le preflight (pages publiques, blog, admin)  
+**Label/Mono Font:** JN Mono 500 (IBM Plex Mono 2.3 renommée, même raison ; statique) — `--font-mono` : `'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace`
 
-**Character:** stack système 100% — aucun Google Font chargé, CSP `font-src 'self'`. Choix assumé : performance maximale (zéro flash de texte invisible, zéro coût réseau), rendu natif OS sur chaque plateforme. Le portfolio dit "je connais le coût d'une font externe" plutôt que "j'ai trouvé une typo cool sur Google Fonts". Le mono est réservé aux labels de status, code snippets éventuels, métriques admin.
+**Character:** la voix « plan d'atelier » du dessin technique. Archivo élargi donne aux titres la carrure d'un cartouche, JN Sans tient le texte courant sans fatigue, JN Mono pose les données (cotes, références, montants). Les trois familles sont **auto-hébergées** (`public/fonts/`, ADR-0006) : aucune requête tierce, CSP `font-src 'self'` inchangée, `font-display: swap` et faces de repli métriquement ajustées sur Arial pour ne pas décaler la mise en page. Seule Archivo (police du `<h1>`, élément LCP) est préchargée ; l'italique n'est téléchargée que sur les pages qui en affichent.
+
+- **Titres `h1` à `h3`** : Archivo, élargis par la base (`h1` 108 %, `h2` 106 %, `h3` 104 %). Tailles, graisses et interlettrages viennent des classes du template.
+- **Graisses** : Archivo 600–800 (largeurs 100–110 % : marque du header à 100 %, titres 104–108 %, titre du cartouche 110 %), JN Sans 400–700, JN Mono 500 seulement. `font-synthesis-weight: none` sur `html` : une graisse hors plage prend la plus proche disponible, jamais un faux gras (un `font-mono font-semibold` s'affiche en 500).
+- **Données chiffrées** : `font-mono tabular-nums` dans le template (deux classes, pas d'abstraction).
+- **Glyphes hors sous-ensemble latin** : U+202F (séparateur de milliers fr-FR) et `→` sont pris dans la police de repli.
 
 ### Hierarchy
 
@@ -203,7 +224,7 @@ Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signat
 
 ### Named Rules
 
-**The System-Stack Rule.** Aucune font externe ne sera chargée. Pas de Google Fonts, pas de @font-face local. Le portfolio démontre la maîtrise des contraintes perf en assumant le rendu OS. Si une font custom devient nécessaire, elle exige une justification produit écrite (pas "ça serait plus beau").
+**The Three Families Rule.** Trois familles, pas une de plus : Archivo pour les titres, JN Sans (IBM Plex Sans renommée) pour le texte, JN Mono (IBM Plex Mono renommée) pour les données. Une version modifiée d'IBM Plex ne porte jamais le nom « Plex » (*Reserved Font Name*, ADR-0006). Toutes auto-hébergées depuis l'origine du site (ADR-0006) : jamais de Google Fonts ni d'autre CDN de polices. Tout changement de binaire change le nom de fichier versionné (cache nginx `immutable`), dans `styles.css` **et** dans le `preload` d'`index.html`.
 
 **The Single-Display Rule.** Un seul `<h1>` par page, en Display, jamais réutilisé pour décorer une autre section. La hiérarchie `<h1>` → `<h2>` → `<h3>` ne saute jamais un niveau.
 
@@ -234,7 +255,7 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 
 ### Buttons (`shared/ui/button.ts`)
 
-- **Shape:** `rounded-lg` (8px) par défaut, `rounded-full` (pill) sur demande.
+- **Shape:** `rounded-md` (6px) par défaut, `rounded-full` (pill) sur demande. Les liens stylés en bouton (`@utility link-btn`) suivent le même rayon.
 - **Primary (solid):** `bg-primary-bg text-white border border-primary-bg` → hover `bg-primary-bg/90`. Padding `px-4 py-2` (default) / `px-6 py-3` (large).
 - **Primary (outlined):** `border-primary/40 text-primary` → hover `bg-primary/10 border-primary/60`. Transparent au repos.
 - **Primary (text):** `bg-transparent text-primary` → hover `bg-primary/10`. Aucun border.
@@ -257,6 +278,25 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 - **Hover:** background switch vers `surface-elevated` (`rgba(255,255,255,0.06)` ou `#fefdfb`).
 - **Shadow:** aucune au repos. Hover = changement de surface, pas d'ajout de shadow.
 - **Internal padding:** `p-6` (24px) standard, `p-8` (32px) pour cards principales du hero.
+
+### Cartouche (`shared/ui/cartouche.ts`)
+
+Le bloc-titre d'un plan technique, repris comme cadre de données.
+
+- **API:** `title` (requis), `reference` (optionnelle, défaut `''`), `rows: readonly CartoucheRow[]` (`{ label, value }`), contenu projeté après les lignes.
+- **Structure:** hôte `role="group"` nommé par le titre ; barre de titre (titre en `p` Archivo gras élargi 110 %, référence en mono `text-muted`) ; lignes en `dl > div > dt + dd` (libellé mono majuscule `text-muted`, valeur `font-medium tabular-nums`). Aucun `dl` sans ligne.
+- **Traits:** cadre et barre en `line-strong` 1,5px, séparateurs en `line` (décoratifs, Decorative Line Rule). Rayon `rounded-sm`.
+- **Titre:** jamais un `h*` : son niveau dépend du contexte, un consommateur qui a besoin d'un titre le projette.
+- **Usage:** au plus un cartouche par écran ; il sert aussi de carte (carte d'offre : corps et prix projetés).
+
+### Cote (`shared/ui/dimension-line.ts`)
+
+La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne interrompue autour d'un libellé.
+
+- **API:** `label` (requis).
+- **Rendu:** traits en bordures `currentColor` = `text-primary` (visibles en `forced-colors`), libellé mono `text-xs`. La ligne s'interrompt autour du libellé au lieu d'être masquée par un fond : la cote se pose sur toute surface.
+- **Accessibilité:** hôte `aria-hidden="true"`, aucun élément focalisable ni rôle à l'intérieur.
+- **Règle d'usage:** la cote est **décorative** : son libellé répète une information écrite ailleurs dans le texte lisible. Cotes réservées aux délais et durées.
 
 ### Inputs / Forms (utility `form-input`)
 
@@ -320,11 +360,12 @@ Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionne
 - **Don't** utiliser `background-clip: text` + gradient comme style décoratif. Privilégier un Signal Indigo solide en `<span class="kw">` ou un weight contrast.
 - **Don't** ajouter `backdrop-filter: blur()` à une card "pour faire glass". No-Glass Rule.
 - **Don't** ajouter de shadow à une card "pour qu'elle ressorte". Flat-By-Default Rule — travaille la hiérarchie typographique ou la taille avant.
-- **Don't** charger une Google Font. System-Stack Rule.
+- **Don't** charger une Google Font ni une police depuis un CDN. Three Families Rule : les polices sont auto-hébergées (ADR-0006).
 - **Don't** utiliser `border-left` ou `border-right` > 1px comme accent coloré (callout, alerte). Banned absolu impeccable.
 - **Don't** utiliser `*ngIf` / `*ngFor` — control flow `@if` / `@for` uniquement (rappel CLAUDE.md).
 - **Don't** styliser un input avec `outline: none` sans `:focus-visible` de remplacement. C'est la violation a11y la plus rapide à repérer dans un audit.
 - **Don't** mettre une animation décorative au-dessus de 400ms ou avec un easing bouncy/elastic. Ease-out exponential uniquement (`cubic-bezier(0.16, 1, 0.3, 1)` ou équivalent).
 - **Don't** utiliser le slate Tailwind (slate-50 → slate-900) dans le portfolio. Le système est tinté zinc/neutral (Console) ou stone (Ivoire) — jamais slate (froid bleuté).
 - **Don't** réutiliser le Display (800, clamp size) pour un autre élément que le `<h1>` du hero.
-- **Don't** introduire une 2e police custom "pour donner du caractère". La hiérarchie vient du weight + size + tracking.
+- **Don't** introduire une 4e famille "pour donner du caractère". La hiérarchie vient de la famille (display / texte / données), du weight, de la size et de la largeur.
+- **Don't** confier une information à un trait `line` / `line-strong` seul (Decorative Line Rule).

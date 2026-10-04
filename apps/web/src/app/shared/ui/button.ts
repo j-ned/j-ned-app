@@ -65,7 +65,7 @@ export class Button {
       this.size() === 'large'
         ? 'text-base md:text-lg px-6 py-3 min-h-11'
         : 'text-sm px-5 py-2.5 min-h-11';
-    const radiusClass = this.rounded() ? 'rounded-full' : 'rounded-lg';
+    const radiusClass = this.rounded() ? 'rounded-full' : 'rounded-md';
     const widthClass = this.block() ? 'w-full' : '';
     return [sizeClass, radiusClass, widthClass, this.variantClass()].filter(Boolean).join(' ');
   });
