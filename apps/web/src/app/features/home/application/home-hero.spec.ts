@@ -32,6 +32,14 @@ describe('HomeHero', () => {
     expect(textOf('hero-headline')).toBe(STATIC_HERO.headline);
   });
 
+  // Titre = élément LCP : un fondu d'entrée repousse le LCP à la fin de l'animation.
+  it('Given le hero livré When il est rendu Then le titre est visible au premier rendu, sans animation d’entrée', () => {
+    renderWith(STATIC_HERO);
+    const headline = host().querySelector<HTMLElement>('[data-testid="hero-headline"]');
+    expect(headline).not.toBeNull();
+    expect(headline?.className).not.toMatch(/\banimate-/);
+  });
+
   // Le surlignage indigo est gratuit tant que le titre écrit `Angular` et `NestJS`
   // littéralement (split dans `HomeHero`) : une réécriture qui les paraphrase l'éteindrait en silence.
   it('Given le hero livré When il est rendu Then Angular et NestJS sont surlignés', () => {

@@ -11,7 +11,7 @@ const HERO_KEYWORDS = /(Angular|NestJS)/g;
     @let h = hero();
     @if (h) {
       <h1
-        class="animate-fade-up [animation-delay:60ms] max-w-[21ch] text-[clamp(2.25rem,5.4vw,5rem)] font-extrabold leading-[1.04] tracking-[-0.035em] text-balance"
+        class="max-w-[21ch] text-[clamp(2.25rem,5.4vw,5rem)] font-extrabold leading-[1.04] tracking-[-0.035em] text-balance"
         data-testid="hero-headline"
       >
         @for (segment of headlineSegments(); track $index) {
