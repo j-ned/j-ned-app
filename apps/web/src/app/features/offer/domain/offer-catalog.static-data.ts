@@ -1,5 +1,5 @@
 import { formatEur } from './format-eur';
-import type { OfferSummary } from './models/offer.model';
+import type { OfferFamily, OfferSummary } from './models/offer.model';
 import { OFFER_PRICES } from './offer-prices.static-data';
 
 const SHOWCASE_CREATION = formatEur(OFFER_PRICES['site-vitrine'].creationEur);
@@ -10,6 +10,21 @@ const AUDIT = formatEur(OFFER_PRICES['refonte-maintenance'].auditEur);
 const REWORK_MAINTENANCE_FROM = formatEur(
   OFFER_PRICES['refonte-maintenance'].maintenanceMonthlyFromEur,
 );
+
+export const OFFER_CATALOGUE_HEADING = 'Cinq offres, un tarif annoncé avant de commencer.';
+
+export const OFFER_CATALOGUE_LEAD =
+  'Un site pour être trouvé, ou une application pour travailler mieux. Chaque offre précise ce qui est livré, en combien de temps et à quel prix.';
+
+export const OFFER_FAMILY_LEADS: Readonly<Record<OfferFamily, string>> = {
+  sites: 'Pour être trouvé sur Google et convaincre en trente secondes.',
+  applications: 'Pour remplacer un tableur, outiller une équipe ou reprendre un existant.',
+};
+
+export const OFFER_FAMILY_LABELS: Readonly<Record<OfferFamily, string>> = {
+  sites: 'Sites',
+  applications: 'Applications',
+};
 
 export const OFFERS: readonly OfferSummary[] = [
   {

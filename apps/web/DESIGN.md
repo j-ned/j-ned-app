@@ -284,10 +284,30 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 Le bloc-titre d'un plan technique, repris comme cadre de données.
 
 - **API:** `title` (requis), `reference` (optionnelle, défaut `''`), `rows: readonly CartoucheRow[]` (`{ label, value }`), contenu projeté après les lignes.
-- **Structure:** hôte `role="group"` nommé par le titre ; barre de titre (titre en `p` Archivo gras élargi 110 %, référence en mono `text-muted`) ; lignes en `dl > div > dt + dd` (libellé mono majuscule `text-muted`, valeur `font-medium tabular-nums`). Aucun `dl` sans ligne.
+- **Structure:** hôte `role="group"` nommé par le titre ; barre de titre empilée (titre en `p` Archivo gras élargi 110 %, puis référence en mono `text-muted` sous le titre, à toutes les largeurs, sans troncature) ; lignes en `dl > div > dt + dd` (libellé mono majuscule `text-muted`, valeur `font-medium tabular-nums`). Aucun `dl` sans ligne.
 - **Traits:** cadre et barre en `line-strong` 1,5px, séparateurs en `line` (décoratifs, Decorative Line Rule). Rayon `rounded-sm`.
 - **Titre:** jamais un `h*` : son niveau dépend du contexte, un consommateur qui a besoin d'un titre le projette.
-- **Usage:** au plus un cartouche par écran ; il sert aussi de carte (carte d'offre : corps et prix projetés).
+- **Usage:** au plus un cartouche **décoratif** par écran (cadre de travail, fiche technique). Il sert aussi de carte de données : la carte d'offre (ci-dessous) en est une, répétée par offre, et ne compte pas dans cette limite.
+
+### Carte d'offre (`features/offer/application/components/offer-card.ts`)
+
+L'offre d'une famille présentée en cartouche : réservée aux **Sites** du catalogue (`/offres`), où deux ou trois offres se comparent côte à côte.
+
+- **Entrée:** `summary: OfferSummary`.
+- **Structure:** `Cartouche` titré du nom de l'offre, référence = public visé ; corps projeté : la promesse (texte courant `font-medium`), puis un pied séparé par un trait `line` avec le `priceTeaser` (Archivo gras 105 %, `tabular-nums`) et le lien « Détail de l'offre → » (`text-primary`, nom de l'offre en `sr-only` pour que chaque lien reste distinct à la lecture d'écran, flèche `aria-hidden`).
+- **Cible:** le lien est étiré sur toute la carte (`after:absolute after:inset-0`, cartouche en `relative`) : toute la carte est cliquable, sans lien imbriqué ni second lien. Lien `min-h-11` (44 px).
+- **Survol:** cadre en `accent` (`hover:` est déjà sous `@media (hover: hover)` en Tailwind 4).
+- **Grille:** une colonne en mobile, deux à partir de `sm` ; cartes à hauteur égale (cartouche `flex flex-col h-full`, corps `flex-1`) pour aligner les pieds.
+
+### Ligne d'offre (`features/offer/application/components/offer-row.ts`)
+
+L'offre d'une famille présentée en ligne de nomenclature : réservée aux **Applications** du catalogue, dont les prix ne se comparent pas (projet, audit, régie) et se lisent mieux en liste.
+
+- **Entrée:** `summary: OfferSummary`.
+- **Structure:** un **unique** lien couvre toute la ligne : nom (Archivo gras 104 %), promesse (`text-muted`), `priceTeaser` (Archivo gras 105 %, `tabular-nums`) et flèche `text-primary` `aria-hidden`. Aucun autre élément interactif dans la ligne.
+- **Liste:** `ul role="list"` encadrée en haut et en bas d'un trait `line-strong` 1,5px, lignes séparées par un trait `line` (Decorative Line Rule).
+- **Mise en page:** en mobile, nom et promesse puis prix sur deux rangs, flèche à droite sur toute la hauteur ; à partir de `md`, trois colonnes (texte 1,5 fr, prix 1 fr, flèche).
+- **Survol:** nom en `text-primary`, flèche décalée de 4 px (`motion-reduce:transition-none`).
 
 ### Cote (`shared/ui/dimension-line.ts`)
 

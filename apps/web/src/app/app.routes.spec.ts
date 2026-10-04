@@ -1,6 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { type ActivatedRouteSnapshot, type Route, Router, provideRouter } from '@angular/router';
+import { OfferCatalogue } from '@features/offer/application/offer-catalogue';
+import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { OFFER_ROUTES } from '@features/offer/offer.routes';
+import { toOfferCatalogueSeo } from '@features/offer/offer-seo';
 import { offerSummaryOf } from '@features/offer/testing/offer-builders';
 import { routes } from './app.routes';
 
@@ -23,6 +26,13 @@ describe('routes', () => {
       expect(route?.component).toBeUndefined();
       expect(route?.children).toBeUndefined();
       expect(await route?.loadChildren?.()).toBe(OFFER_ROUTES);
+    });
+
+    it('serves the catalogue page at /offres', async () => {
+      const { url, leaf } = await navigate('/offres');
+      expect(url).toBe('/offres');
+      expect(leaf.component).toBe(OfferCatalogue);
+      expect(leaf.data['seo']).toEqual(toOfferCatalogueSeo(OFFERS));
     });
 
     it('serves the workshop offer at /offres/site-atelier', async () => {

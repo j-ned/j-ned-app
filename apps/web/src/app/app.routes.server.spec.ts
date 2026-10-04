@@ -16,6 +16,10 @@ describe('serverRoutes', () => {
     },
   );
 
+  it('prerenders the offer catalogue', () => {
+    expect(findRoute('offres')?.renderMode).toBe(RenderMode.Prerender);
+  });
+
   it.each(OFFERS.map(({ slug }) => slug))('prerenders the offer page offres/%s', (slug) => {
     expect(findRoute(`offres/${slug}`)?.renderMode).toBe(RenderMode.Prerender);
   });

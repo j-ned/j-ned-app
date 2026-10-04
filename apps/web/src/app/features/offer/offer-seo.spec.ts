@@ -1,10 +1,12 @@
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
+import type { SeoData } from '@shared/seo/seo';
 import { formatEur } from './domain/format-eur';
 import { OFFERS } from './domain/offer-catalog.static-data';
+import { offerPath } from './domain/offer-path';
 import { OFFER_PAGES } from './domain/offer-pages.static-data';
 import { OFFER_PRICES } from './domain/offer-prices.static-data';
 import type { OfferSlug } from './domain/models/offer.model';
-import { toOfferSeo } from './offer-seo';
+import { toOfferCatalogueSeo, toOfferSeo } from './offer-seo';
 import {
   makeOfferPageContent,
   makeOfferPriceLine,
@@ -14,6 +16,7 @@ import {
 
 type JsonLdNode = Readonly<Record<string, unknown>>;
 
+const CATALOGUE_URL = `${SITE_IDENTITY.siteUrl}/offres`;
 const OFFER_URL = `${SITE_IDENTITY.siteUrl}/offres/site-atelier`;
 
 const graphOf = (structuredData: Record<string, unknown> | undefined): readonly JsonLdNode[] =>
@@ -68,9 +71,10 @@ describe('toOfferSeo', () => {
             '@type': 'BreadcrumbList',
             itemListElement: [
               { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
+              { '@type': 'ListItem', position: 2, name: 'Offres', item: CATALOGUE_URL },
               {
                 '@type': 'ListItem',
-                position: 2,
+                position: 3,
                 name: 'Sites pour ateliers',
                 item: OFFER_URL,
               },
@@ -109,7 +113,8 @@ describe('toOfferSeo', () => {
 
     expect(breadcrumb?.['itemListElement']).toEqual([
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
-      { '@type': 'ListItem', position: 2, name: 'Offre sans fil', item: OFFER_URL },
+      { '@type': 'ListItem', position: 2, name: 'Offres', item: CATALOGUE_URL },
+      { '@type': 'ListItem', position: 3, name: 'Offre sans fil', item: OFFER_URL },
     ]);
   });
 
@@ -314,4 +319,82 @@ describe('toOfferSeo', () => {
       expect(description).not.toContain('—');
     },
   );
+});
+
+describe('toOfferCatalogueSeo', () => {
+  const nodeOf = (seo: SeoData, type: string): JsonLdNode | undefined =>
+    graphOf(seo.structuredData).find((node) => node['@type'] === type);
+  const itemsOf = (seo: SeoData): unknown =>
+    (nodeOf(seo, 'CollectionPage')?.['mainEntity'] as JsonLdNode | undefined)?.['itemListElement'];
+
+  it('describes the catalogue page at its own url, with its validated title and snippet', () => {
+    const seo = toOfferCatalogueSeo(OFFERS);
+
+    expect(seo.url).toBe(CATALOGUE_URL);
+    expect(seo.type).toBe('website');
+    expect(seo.title).toBe('Offres et tarifs, sites et applications web | Julien Nédellec');
+    expect(seo.description).toBe(
+      `Sites en 7 jours dès ${formatEur(OFFER_PRICES['site-atelier'].creationEur)}, application métier dès ${formatEur(OFFER_PRICES['application-metier'].projectFromEur)}, refonte, maintenance et renfort Angular. Prix annoncé avant de commencer.`,
+    );
+    expect(graphOf(seo.structuredData).map((node) => node['@type'])).toEqual([
+      'CollectionPage',
+      'BreadcrumbList',
+    ]);
+    expect(seo.structuredData?.['@context']).toBe('https://schema.org');
+  });
+
+  it('gives the catalogue a search snippet of at most 160 characters without em dash', () => {
+    const { description } = toOfferCatalogueSeo(OFFERS);
+    expect(description.length).toBeGreaterThan(0);
+    expect(description.length).toBeLessThanOrEqual(160);
+    expect(description).not.toContain('—');
+  });
+
+  it('names the collection page after the catalogue heading, at the catalogue url, with the offers as its main entity', () => {
+    const page = nodeOf(toOfferCatalogueSeo(OFFERS), 'CollectionPage');
+
+    expect(page?.['name']).toBe('Cinq offres, un tarif annoncé avant de commencer.');
+    expect(page?.['url']).toBe(CATALOGUE_URL);
+    expect((page?.['mainEntity'] as JsonLdNode | undefined)?.['@type']).toBe('ItemList');
+  });
+
+  it('lists the url of every offer of the catalogue, in catalogue order', () => {
+    expect(itemsOf(toOfferCatalogueSeo(OFFERS))).toEqual(
+      OFFERS.map((summary, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: summary.name,
+        url: `${SITE_IDENTITY.siteUrl}${offerPath(summary.slug)}`,
+      })),
+    );
+  });
+
+  it('lists only the offers it is given', () => {
+    const offers = [
+      makeOfferSummary({ slug: 'renfort-freelance', name: 'Renfort de test' }),
+      makeOfferSummary({ slug: 'site-vitrine', name: 'Vitrine de test' }),
+    ];
+
+    expect(itemsOf(toOfferCatalogueSeo(offers))).toEqual([
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Renfort de test',
+        url: `${SITE_IDENTITY.siteUrl}/offres/renfort-freelance`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Vitrine de test',
+        url: `${SITE_IDENTITY.siteUrl}/offres/site-vitrine`,
+      },
+    ]);
+  });
+
+  it('places the catalogue under the home page in the breadcrumb', () => {
+    expect(nodeOf(toOfferCatalogueSeo(OFFERS), 'BreadcrumbList')?.['itemListElement']).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Offres', item: CATALOGUE_URL },
+    ]);
+  });
 });

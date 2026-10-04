@@ -1,17 +1,37 @@
 import type { Route } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
+import { OfferCatalogue } from './application/offer-catalogue';
 import { OfferPage } from './application/offer-page';
 import { OFFERS } from './domain/offer-catalog.static-data';
 import { OFFER_PAGES } from './domain/offer-pages.static-data';
 import { OFFER_ROUTES } from './offer.routes';
-import { toOfferSeo } from './offer-seo';
+import { toOfferCatalogueSeo, toOfferSeo } from './offer-seo';
 
 const routeOf = (slug: string): Route | undefined =>
   OFFER_ROUTES.find((route) => route.path === slug);
 
 describe('OFFER_ROUTES', () => {
-  it('declares one static route per offer, in catalogue order', () => {
-    expect(OFFER_ROUTES.map((route) => route.path)).toEqual(OFFERS.map(({ slug }) => slug));
+  it('declares the catalogue, then one static route per offer, in catalogue order', () => {
+    expect(OFFER_ROUTES.map((route) => route.path)).toEqual([
+      '',
+      ...OFFERS.map(({ slug }) => slug),
+    ]);
+  });
+
+  describe('catalogue', () => {
+    it('lazy loads the catalogue page', async () => {
+      const route = routeOf('');
+      expect(route?.component).toBeUndefined();
+      expect(await route?.loadComponent?.()).toBe(OfferCatalogue);
+    });
+
+    it('titles the page and builds its SEO from the whole catalogue, and binds nothing else', () => {
+      const route = routeOf('');
+      const seo = toOfferCatalogueSeo(OFFERS);
+      expect(Object.keys(route?.data ?? {})).toEqual(['seo']);
+      expect(route?.data?.['seo']).toEqual(seo);
+      expect(route?.title).toBe(seo.title);
+    });
   });
 
   describe.each(OFFERS.map((summary) => [summary.slug, summary] as const))(

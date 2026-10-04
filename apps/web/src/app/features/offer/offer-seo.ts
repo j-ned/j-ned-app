@@ -6,6 +6,10 @@ import type {
   OfferPriceLine,
   OfferSummary,
 } from './domain/models/offer.model';
+import { formatEur } from './domain/format-eur';
+import { OFFER_CATALOGUE_HEADING } from './domain/offer-catalog.static-data';
+import { OFFERS_BASE_PATH, offerPath } from './domain/offer-path';
+import { OFFER_PRICES } from './domain/offer-prices.static-data';
 
 function toSchemaOffer({ name, amount, period }: OfferPriceLine): Record<string, unknown> {
   if (amount.kind === 'on-request') return { '@type': 'Offer', name };
@@ -22,6 +26,16 @@ function toSchemaOffer({ name, amount, period }: OfferPriceLine): Record<string,
     ? { '@type': 'Offer', name, priceSpecification: { '@type': 'PriceSpecification', ...price } }
     : { '@type': 'Offer', name, ...price };
 }
+
+const CATALOGUE_URL = `${SITE_IDENTITY.siteUrl}/${OFFERS_BASE_PATH}`;
+
+const HOME_CRUMB = {
+  '@type': 'ListItem',
+  position: 1,
+  name: 'Accueil',
+  item: SITE_IDENTITY.siteUrl,
+};
+const CATALOGUE_CRUMB = { '@type': 'ListItem', position: 2, name: 'Offres', item: CATALOGUE_URL };
 
 const REGIONS_SERVED = [
   { '@type': 'AdministrativeArea', name: 'Yvelines' },
@@ -56,10 +70,40 @@ export function toOfferSeo(summary: OfferSummary, content: OfferPageContent, url
         {
           '@type': 'BreadcrumbList',
           itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
-            { '@type': 'ListItem', position: 2, name: breadcrumbName ?? summary.name, item: url },
+            HOME_CRUMB,
+            CATALOGUE_CRUMB,
+            { '@type': 'ListItem', position: 3, name: breadcrumbName ?? summary.name, item: url },
           ],
         },
+      ],
+    },
+  };
+}
+
+export function toOfferCatalogueSeo(offers: readonly OfferSummary[]): SeoData {
+  return {
+    title: 'Offres et tarifs, sites et applications web | Julien Nédellec',
+    description: `Sites en 7 jours dès ${formatEur(OFFER_PRICES['site-atelier'].creationEur)}, application métier dès ${formatEur(OFFER_PRICES['application-metier'].projectFromEur)}, refonte, maintenance et renfort Angular. Prix annoncé avant de commencer.`,
+    url: CATALOGUE_URL,
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'CollectionPage',
+          name: OFFER_CATALOGUE_HEADING,
+          url: CATALOGUE_URL,
+          mainEntity: {
+            '@type': 'ItemList',
+            itemListElement: offers.map((summary, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              name: summary.name,
+              url: `${SITE_IDENTITY.siteUrl}${offerPath(summary.slug)}`,
+            })),
+          },
+        },
+        { '@type': 'BreadcrumbList', itemListElement: [HOME_CRUMB, CATALOGUE_CRUMB] },
       ],
     },
   };

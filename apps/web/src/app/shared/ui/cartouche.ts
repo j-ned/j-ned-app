@@ -10,9 +10,7 @@ export type CartoucheRow = { readonly label: string; readonly value: string };
     '[attr.aria-label]': 'title()',
   },
   template: `
-    <div
-      class="flex items-baseline justify-between gap-4 border-b-[1.5px] border-line-strong p-3.5"
-    >
+    <div class="grid gap-1 border-b-[1.5px] border-line-strong p-3.5">
       <p data-testid="cartouche-title" class="font-display font-bold font-stretch-110%">
         {{ title() }}
       </p>

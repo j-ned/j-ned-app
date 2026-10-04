@@ -57,6 +57,7 @@ export const serverRoutes: ServerRoute[] = [
   },
   { path: 'blog', renderMode: RenderMode.Prerender },
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },
+  { path: OFFERS_BASE_PATH, renderMode: RenderMode.Prerender },
   ...OFFERS.map(
     ({ slug }): ServerRoute => ({
       path: `${OFFERS_BASE_PATH}/${slug}`,

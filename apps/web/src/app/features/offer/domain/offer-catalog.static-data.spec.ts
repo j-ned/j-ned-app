@@ -1,5 +1,5 @@
 import { formatEur } from './format-eur';
-import { OFFERS } from './offer-catalog.static-data';
+import { OFFERS, OFFER_FAMILY_LABELS, OFFER_FAMILY_LEADS } from './offer-catalog.static-data';
 import { OFFER_PAGES } from './offer-pages.static-data';
 import { OFFER_PRICES } from './offer-prices.static-data';
 import { offerSummaryOf } from '../testing/offer-builders';
@@ -94,6 +94,21 @@ describe('OFFERS', () => {
       featuredOnHome: false,
       serviceType: 'Création de site vitrine',
       description: `Site vitrine pour ateliers d'usinage et de décolletage des Yvelines, en ligne en 7 jours. ${formatEur(OFFER_PRICES['site-atelier'].creationEur)} prix final, par un tourneur CN.`,
+    });
+  });
+});
+
+describe('OFFER_FAMILY_LABELS', () => {
+  it('names the two families of the catalogue', () => {
+    expect(OFFER_FAMILY_LABELS).toEqual({ sites: 'Sites', applications: 'Applications' });
+  });
+});
+
+describe('OFFER_FAMILY_LEADS', () => {
+  it('says in one sentence what each family is for', () => {
+    expect(OFFER_FAMILY_LEADS).toEqual({
+      sites: 'Pour être trouvé sur Google et convaincre en trente secondes.',
+      applications: 'Pour remplacer un tableur, outiller une équipe ou reprendre un existant.',
     });
   });
 });

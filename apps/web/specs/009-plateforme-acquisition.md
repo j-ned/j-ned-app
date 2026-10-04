@@ -237,7 +237,7 @@ Liste par tranche (§ Tranches). Récapitulatif des fichiers porteurs :
 |---|---|
 | `src/app/features/offer/domain/models/offer.model.ts` | `OfferSlug`, `OfferFamily`, `OfferSummary`, `OfferPageContent`, `OfferSection<T>`, `OfferPriceLine`, `OfferAmount`, `OfferPages` (remplace `site-offer.model.ts`) |
 | `src/app/features/offer/domain/offer-prices.static-data.ts` | `OFFER_PRICES` (montants, par offre) |
-| `src/app/features/offer/domain/offer-catalog.static-data.ts` | `OFFERS` (résumés ordonnés), `OFFER_FAMILY_LABELS` |
+| `src/app/features/offer/domain/offer-catalog.static-data.ts` | `OFFERS` (résumés ordonnés), `OFFER_FAMILY_LABELS`, `OFFER_FAMILY_LEADS`, `OFFER_CATALOGUE_HEADING`, `OFFER_CATALOGUE_LEAD` (T4) |
 | `src/app/features/offer/domain/offer-pages.static-data.ts` | `OFFER_PAGES` (`satisfies OfferPages`, remplace `site-offer.static-data.ts`) |
 | `src/app/features/offer/domain/format-eur.ts` | `formatEur(amount)` : `Intl.NumberFormat('fr-FR')` + ` €` |
 | `src/app/features/offer/domain/offer-path.ts` | `OFFERS_BASE_PATH = 'offres'`, `offerPath(slug)` → `/offres/<slug>` |
@@ -246,7 +246,8 @@ Liste par tranche (§ Tranches). Récapitulatif des fichiers porteurs :
 | `src/app/features/offer/offer.routes.ts` | `OFFER_ROUTES` générées depuis `OFFERS` |
 | `src/app/features/offer/application/offer-page.ts` | Page générique (remplace `site-offer.ts`) |
 | `src/app/features/offer/application/offer-catalogue.ts` | Page catalogue `/offres` (T4) |
-| `src/app/features/offer/application/components/offer-card.ts` | Carte d'offre (catalogue + home) (T4) |
+| `src/app/features/offer/application/components/offer-card.ts` | Carte d'offre de la famille Sites, sur `Cartouche` (T4) |
+| `src/app/features/offer/application/components/offer-row.ts` | Ligne d'offre de la famille Applications, lien unique (T4) |
 | `src/app/shared/ui/faq-list.ts` | FAQ `<details>` native, promue depuis `OfferFaq` au 2e consommateur (T7) |
 | `src/app/shared/ui/key-point-list.ts` | Liste `lead` + `detail`, promue depuis `OfferReasons` au 2e consommateur (T7) |
 | `src/app/features/home/application/home-offers.ts` | Section offres de la home (T6) |
@@ -625,8 +626,9 @@ readonly rows = input<readonly CartoucheRow[]>([]);
   `role="group"`, `[attr.aria-label]="title()"` (nom accessible = texte visible du titre ; pas
   d'id à générer). Le type `CartoucheRow` est co-localisé dans le fichier (précédent :
   `AppTagSeverity` dans `tag.ts`).
-- Barre de titre : `div` `flex items-baseline justify-between gap-4 border-b-[1.5px]
-  border-line-strong p-3.5`, contenant `<p data-testid="cartouche-title">` (`font-display
+- Barre de titre : `div` `grid gap-1 border-b-[1.5px] border-line-strong p-3.5` (référence
+  **empilée sous le titre**, décision de Julien en T4 : noms et publics d'offre trop longs pour
+  une barre sur une ligne), contenant `<p data-testid="cartouche-title">` (`font-display
   font-bold font-stretch-110%`) et, si `reference()` non vide, `<p data-testid="cartouche-reference">`
   (`font-mono text-xs text-muted`). Le titre n'est **pas** un titre de section (`h*`) : son niveau
   dépend du contexte ; un consommateur qui a besoin d'un titre le projette.
@@ -826,13 +828,15 @@ preuves de prérendu se font en verify (`pnpm build` puis `grep` dans
   - Verify : cinq `offres/<slug>/index.html` prérendus.
 
 - **Tranche 4 — la page catalogue `/offres`.** Fichiers : `group-offers-by-family.ts`,
-  `offer-catalogue.ts`, `offer-card.ts`, `offer.routes.ts` (route `''`), `offer-seo.ts`
-  (`toOfferCatalogueSeo`), `app.routes.server.ts`, sitemap, `DESIGN.md` (carte d'offre).
+  `offer-catalogue.ts`, `offer-card.ts`, `offer-row.ts`, `offer.routes.ts` (route `''`),
+  `offer-seo.ts` (`toOfferCatalogueSeo`), `app.routes.server.ts`, sitemap, `DESIGN.md` (carte et
+  ligne d'offre).
   - `groupOffersByFamily` : ordre Sites puis Applications, ordre interne de `OFFERS` conservé,
     famille vide omise (test pur, sans TestBed).
-  - La page rend un `h1`, deux sections `section[aria-labelledby]` (« Sites », « Applications »),
-    `offer-card` × 5, chacune avec nom, public, `priceTeaser` et un lien `href` =
-    `offerPath(slug)`.
+  - La page rend un `h1` et son accroche, deux sections `section[aria-labelledby]` (« Sites »,
+    « Applications ») avec leur accroche ; Sites en `offer-card` × 2 (`Cartouche` : nom, public,
+    `priceTeaser`, lien), Applications en `offer-row` × 3 (nom, promesse, `priceTeaser`, lien
+    unique) ; chaque lien a `href` = `offerPath(slug)` (décisions de Julien, maquette).
   - SEO : `CollectionPage` + `ItemList` de cinq URLs + `BreadcrumbList`.
   - Verify : `offres/index.html` prérendu avec les cinq liens.
 
@@ -1213,6 +1217,165 @@ Scaffold dû au GREEN : `offer.model.ts` (`OfferSlug`, `OfferAmount`, `OfferPeri
 `offer-prices`, `offer-catalog`, `offer-pages` `.static-data.ts`, `offer-seo.ts`, `offer-page.ts`
 ou `offer-pricing.ts` (lien Malt).
 
+### Tranche 4 — la page catalogue `/offres`
+
+Sweep de contrat (fil d'Ariane à trois niveaux, route `''` ajoutée à `OFFER_ROUTES`) sur tout
+`src/` : `BreadcrumbList`, `position: 2`, `OFFER_ROUTES`, `toOfferSeo`, `'/offres'`. Suites
+impactées et **adaptées dans ce RED** (pas de test parallèle) : `offer-seo.spec.ts` (golden atelier
+et repli du fil d'Ariane, désormais Accueil → Offres → offre) et `offer.routes.spec.ts` (le test
+« une route par offre » devient « catalogue puis une route par offre »). Vertes par construction :
+le test « titre et SEO » de `offer.routes.spec.ts` compare à `toOfferSeo(…)` et suit seul ;
+`app.routes.about.spec.ts` (fil d'Ariane de `/about`, hors offres) ; `app.routes.spec.ts` (route
+`offres` en `loadChildren`, atelier servi : la route `''` ne doit pas capturer
+`/offres/site-atelier`, ce test le garde) ; `footer.spec.ts` (atelier seul, T8). Aucun état seedé
+dont la sémantique change.
+
+Contrats fixés par ce RED :
+
+- `OFFER_FAMILY_LABELS` (dans `offer-catalog.static-data.ts`) : golden `{ sites: 'Sites',
+  applications: 'Applications' }`.
+- `groupOffersByFamily(offers)` (`domain/group-offers-by-family.ts`) rend
+  `readonly { family; offers }[]` : `sites` puis `applications`, ordre d'entrée conservé dans
+  chaque famille, famille vide omise, `[]` pour une entrée vide, mêmes références de résumés.
+- Présentation par famille (décision Julien du 2026-10-04, conforme à la maquette) : la famille
+  décide du rendu, pas un champ d'offre. Sites = 2 `offer-card`, Applications = 3 `offer-row`,
+  aucune carte chez les Applications ni ligne chez les Sites.
+- `OfferCard` réutilise `Cartouche` (plan V.3) : dans chaque `offer-card`, `cartouche-title` =
+  `summary.name`, `cartouche-reference` = `summary.audience` ; corps projeté : `offer-card-price`
+  = `summary.priceTeaser`, `offer-card-link` = `A`, `href` = `offerPath(slug)`, nom accessible non
+  vide. Le testid `offer-card` est sur l'élément qui contient le cartouche (hôte de `OfferCard` ou
+  `app-cartouche`, au choix du GREEN).
+- `OfferRow` (`application/components/offer-row.ts`, dumb) : dans chaque `offer-row`,
+  `offer-row-name` = `summary.name`, `offer-row-promise` = `summary.promise`, `offer-row-price` =
+  `summary.priceTeaser`, tous trois **à l'intérieur** de l'unique `A` de la ligne
+  (`offer-row-link`, `href` = `offerPath(slug)`, texte non vide) : toute la ligne est cliquable par
+  ce seul lien. Aucun lien imbriqué dans la page.
+- `OFFER_FAMILY_LEADS` (dans `offer-catalog.static-data.ts`, à côté de `OFFER_FAMILY_LABELS`) :
+  golden `{ sites: 'Pour être trouvé sur Google et convaincre en trente secondes.', applications:
+  'Pour remplacer un tableur, outiller une équipe ou reprendre un existant.' }` ; rendu dans la
+  section de sa famille sous le testid `offer-family-lead` (un par section, texte = la constante).
+- `OfferCatalogue` sans `input()` : un seul `h1` = « Cinq offres, un tarif annoncé avant de
+  commencer. », suivi de `offer-catalogue-lead` = « Un site pour être trouvé, ou une application
+  pour travailler mieux. Chaque offre précise ce qui est livré, en combien de temps et à quel
+  prix. » ; une
+  `section[aria-labelledby]` par famille, reliée à un `H2` = `OFFER_FAMILY_LABELS[family]`, ids
+  distincts ; mention TVA `offer-vat-mention` = `SITE_IDENTITY.business.vatMention` ; ni `main`,
+  ni `header`, ni `footer`.
+- Route `''` de `OFFER_ROUTES`, en tête : pas de `component`, `loadComponent` → `OfferCatalogue`,
+  `data` à la seule clé `seo` = `toOfferCatalogueSeo(OFFERS)`, `title` = `seo.title`.
+- `toOfferCatalogueSeo(offers)` : `url` = `siteUrl + '/offres'`, `type: 'website'`, `title` =
+  « Offres et tarifs, sites et applications web | Julien Nédellec », `description` = `` `Sites
+  en 7 jours dès ${formatEur(OFFER_PRICES['site-atelier'].creationEur)}, application métier
+  dès ${formatEur(OFFER_PRICES['application-metier'].projectFromEur)}, refonte, maintenance et
+  renfort Angular. Prix annoncé avant de commencer.` `` (≤ 160 caractères, sans `—` ; « Sites » et non « Site vitrine » : 690 € est le prix de l'atelier) ;
+  `@graph` = `[CollectionPage, BreadcrumbList]` (dans cet ordre, `@context` schema.org) ;
+  `CollectionPage.name` = le `h1`, `CollectionPage.url` = URL du catalogue, `mainEntity` =
+  `ItemList` dont `itemListElement` = `{ '@type': 'ListItem',
+  position, name: summary.name, url: siteUrl + offerPath(slug) }` pour chaque offre reçue, dans
+  l'ordre ; fil d'Ariane Accueil → Offres (`item` = URL du catalogue).
+- `toOfferSeo` : `BreadcrumbList` Accueil (1, `siteUrl`) → Offres (2, `siteUrl + '/offres'`) →
+  offre (3, `breadcrumbName ?? name`, URL de l'offre).
+- `serverRoutes` : `offres` en `Prerender`.
+
+**`domain/group-offers-by-family.spec.ts`** (TS pur, 6 tests, nouveau)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| catalogue groupé | `OFFERS` | `toEqual` [sites : vitrine, atelier ; applications : métier, refonte, renfort] |
+| sites d'abord | builders entrelacés app, site, app, site | `[['sites', [Site A, Site B]], ['applications', [App A, App B]]]` |
+| famille vide omise (`it.each` sites, applications) | deux offres d'une seule famille | familles = `[présente]` ; offres = l'entrée |
+| entrée vide | `[]` | `[]` |
+| références conservées | `OFFERS` | première offre des sites `toBe` le résumé vitrine |
+
+**`domain/offer-catalog.static-data.spec.ts`** (+2 tests) : goldens de `OFFER_FAMILY_LABELS` et de
+`OFFER_FAMILY_LEADS`.
+
+**`offer-seo.spec.ts`** (2 tests adaptés, +6 tests)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| golden atelier (adapté) | `toOfferSeo(atelier)` | fil d'Ariane à trois `ListItem` : Accueil, Offres, « Sites pour ateliers » |
+| repli fil d'Ariane (adapté) | builder sans `breadcrumbName` | trois `ListItem`, le dernier nommé `summary.name` |
+| page du catalogue | `toOfferCatalogueSeo(OFFERS)` | `url`, `website`, titre et description validés (égalité, montants via `formatEur(OFFER_PRICES…)`), types du `@graph`, `@context` |
+| snippet | idem | 0 < longueur ≤ 160, aucun `—` |
+| `CollectionPage` | idem | `name` = le `h1`, `url` = catalogue, `mainEntity['@type']` = `ItemList` |
+| liste des offres | idem | `itemListElement` `toEqual` les cinq `ListItem` (position, nom, URL) |
+| dérivée de l'argument | deux résumés de builder | deux `ListItem` exactement, dans l'ordre reçu |
+| fil d'Ariane | idem | Accueil → Offres |
+
+**`offer.routes.spec.ts`** (1 test adapté, +2 tests)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| routes (adapté) | `OFFER_ROUTES` | `path` = `['', ...slugs]` |
+| catalogue lazy | route `''` | pas de `component` ; `loadComponent()` → `OfferCatalogue` |
+| catalogue : titre et SEO | route `''` | clés de `data` = `['seo']` ; `seo` `toEqual` `toOfferCatalogueSeo(OFFERS)` ; `title` = `seo.title` |
+
+**`src/app/app.routes.spec.ts`** (+1 test) : `navigateByUrl('/offres')` ⇒ `router.url` = `/offres`,
+composant de la feuille = `OfferCatalogue`, `data.seo` `toEqual` `toOfferCatalogueSeo(OFFERS)`.
+
+**`src/app/app.routes.server.spec.ts`** (+1 test) : `offres` en `RenderMode.Prerender`.
+
+**`application/offer-catalogue.spec.ts`** (TestBed, `provideRouter` des cinq chemins d'offre vers
+une page vide, 23 tests, nouveau ; `OfferCard` et `OfferRow` sans spec isolé, dumb, couverts ici)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| h1 unique | rendu | un seul `h1` = « Cinq offres, un tarif annoncé avant de commencer. » |
+| accroche du catalogue | rendu | `offer-catalogue-lead` après le `h1` (`DOCUMENT_POSITION_FOLLOWING`), texte exact |
+| accroche de famille | sections | un `offer-family-lead` par section = `OFFER_FAMILY_LEADS.sites` puis `.applications` |
+| landmarks | rendu | aucun `main`, `header`, `footer` |
+| familles | sections | `section[aria-labelledby]` → `H2` « Sites » puis « Applications » ; deux ids distincts |
+| cartes et lignes par famille | sections | Sites : cartes [vitrine, atelier], aucune ligne ; Applications : lignes [métier, refonte, renfort], aucune carte (atelier présent, contrairement à la home) |
+| contenu de carte (`describe.each` × 2 sites) | carte nommée `summary.name` | `cartouche-reference` = `audience` ; `offer-card-price` = `priceTeaser` (égalité) |
+| lien de carte (× 2) | idem | `offer-card-link` est un `A`, `href` = `offerPath(slug)`, nom non vide |
+| clic de carte (× 2) | clic sur le lien | `router.url` = `offerPath(slug)` |
+| contenu de ligne (`describe.each` × 3 applications) | ligne nommée `summary.name` | `offer-row-promise` = `promise` ; `offer-row-price` = `priceTeaser` |
+| ligne = un seul lien (× 3) | idem | un seul `a` dans la ligne = `offer-row-link`, `href` = `offerPath(slug)` ; nom, promesse et prix contenus dans le lien ; texte non vide |
+| clic de ligne (× 3) | clic sur le lien | `router.url` = `offerPath(slug)` |
+| pas de lien imbriqué | rendu | aucun `a a` |
+| TVA | rendu | `offer-vat-mention` = `SITE_IDENTITY.business.vatMention` |
+
+Hors Vitest (verify) : sitemap régénéré (non commité) avec `/offres` à 0.8 ;
+`browser/offres/index.html` prérendu avec un `h1` et les cinq liens ; `DESIGN.md` (carte d'offre).
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-04 16:14, 38 failed / 864 total ; repris après les décisions de Julien sur la
+présentation par famille et la copy). Nature des échecs : sur l'arbre réel, `pnpm test` (après
+`ng cache clean` et purge de `node_modules/.vite`) s'arrête à la compilation, uniquement sur les
+symboles applicatifs à créer au GREEN (`TS2307` / `Could not resolve` :
+`domain/group-offers-by-family`, `application/offer-catalogue` ; `TS2305` : `OFFER_FAMILY_LABELS`,
+`toOfferCatalogueSeo`) et leur cascade (`TS7031` dans `group-offers-by-family.spec.ts`) ; aucune
+faute de type propre aux specs, prettier et eslint verts sur les sept fichiers. Mesure du rouge
+comportemental : scaffolds vides posés le temps d'une exécution puis retirés
+(`groupOffersByFamily` → `[]`, libellés vides, `toOfferCatalogueSeo` → titre et description
+factices, `OfferCatalogue` au gabarit vide, `OFFER_ROUTES` et `serverRoutes` inchangés) : 96
+fichiers, 38 failed / 864 total, les 38 en `AssertionError` (35 nouveaux tests, 3 tests adaptés).
+Trois nouveaux tests sont verts sous ce scaffold, par nature : « aucun landmark », « aucun lien
+imbriqué » (invariants) et « entrée vide ⇒ `[]` ». Harnais vérifié : sous une implémentation
+jetable (retirée), les 21 tests de `offer-catalogue.spec.ts` passent (cartes `Cartouche` et lignes
+à lien unique) ; navigation `/offres` vérifiée au tour précédent, `/offres/site-atelier` reste
+servi. Non-régression : base avant RED 826 passed / 826 ; sous scaffold 826 passed = 826 − 3
+adaptés + 3 nouveaux verts, aucun test préexistant ne tombe.
+Delta après GREEN (décisions de Julien du 2026-10-04 : description SEO corrigée, accroches de la
+maquette ; la référence du `Cartouche` passe sous le titre, point visuel prouvé en verify,
+`cartouche.spec.ts` ne dépend pas de la disposition) : RED confirmé via la commande test du profil
+le 2026-10-04 16:33, 4 failed / 867 total. Sur l'arbre réel, la compilation échoue uniquement sur
+`OFFER_FAMILY_LEADS` (`TS2724`, scaffold dû au GREEN). Avec ce seul symbole posé à vide le temps
+d'une exécution puis retiré (fichier restauré à l'octet près, `cmp`) : 4 failed / 867 total, tous
+en `AssertionError` (description SEO adaptée, golden `OFFER_FAMILY_LEADS`, accroche du catalogue,
+accroches de famille). Non-régression : 863 passed = 864 du GREEN − 1 test adapté. Typographie :
+aucun des textes épinglés ne contient `: ; ? !`.
+Scaffold dû au GREEN (delta) : `OFFER_FAMILY_LEADS` dans `offer-catalog.static-data.ts`, rendu de
+`offer-catalogue-lead` et `offer-family-lead` dans `offer-catalogue.ts`, description de
+`toOfferCatalogueSeo`.
+Scaffold dû au GREEN : `domain/group-offers-by-family.ts` (`groupOffersByFamily`),
+`offer-catalog.static-data.ts` (`OFFER_FAMILY_LABELS`), `offer-seo.ts` (`toOfferCatalogueSeo`, fil
+d'Ariane à trois niveaux), `application/offer-catalogue.ts` (`OfferCatalogue`),
+`application/components/offer-card.ts` (`OfferCard`), `application/components/offer-row.ts`
+(`OfferRow`), `offer.routes.ts` (route `''`),
+`app.routes.server.ts` (`offres`).
+
 ### Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »
 
 | Fichier | Tests |
@@ -1285,6 +1448,7 @@ Scaffold dû au GREEN : `src/app/shared/ui/cartouche.ts` (`Cartouche`, `Cartouch
 - **Tranche 1 — l'offre atelier sur le modèle générique** : GREEN 701 passed / 701 total · refactor : aucun
 - **Tranche 2 — l'atelier à son URL de catalogue, l'ancienne redirige** : GREEN 711 passed / 711 total · refactor : aucun (passe manuelle sur le diff ; server route écrite `${OFFERS_BASE_PATH}/${slug}` plutôt que de retailler `offerPath`)
 - **Tranche 3 — les quatre nouvelles offres** : GREEN 804 passed / 804 total · refactor : zone servie de `toOfferSeo` factorisée (régions communes, France ajoutée pour la famille `applications`) ; id d'étape « audit » renommé `inspect` (collision avec la ligne de prix « audit » de la même page)
+- **Tranche 4 — la page catalogue `/offres`** : GREEN 867 passed / 867 total (reprise : accroches, description SEO, référence du cartouche empilée ; 864 au premier passage) · refactor : aucun (passe manuelle sur le diff, `simplify` non invoqué ; fil d'Ariane factorisé dès l'écriture en `HOME_CRUMB`/`CATALOGUE_CRUMB`, partagés par `toOfferSeo` et `toOfferCatalogueSeo`)
 - **Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »** : GREEN 698 passed / 698 total · refactor : liens du bloc passés sur l'utilitaire `link-btn-outline` (revue)
 - **Tranche V — socle visuel « dessin technique »** : GREEN 716 passed / 716 total · refactor : aucun
 
@@ -1386,6 +1550,87 @@ prod joignable du premier coup ; 19 routes prérendues, CSP sur 20 pages) → le
   CORS de `api.nedellec-julien.fr` sur l'origine localhost (CV, analytics), d'où le toast global.
 
 Verdict : **PASS**.
+
+### Tranche 4 — `/offres` (catalogue) et fil d'Ariane des cinq pages d'offre
+
+Surface nouvelle (`/offres`) et restructuration d'une surface atteignable (`BreadcrumbList` des
+cinq `/offres/<slug>`). Joué le 2026-10-04 sur le build de production.
+
+**Steps**
+
+1. `pnpm install --frozen-lockfile` puis `pnpm run build --configuration production` (sitemap et
+   RSS régénérés par le script `build`, API de prod joignable) : « Prerendered 20 static routes ».
+2. `dist/angular-portfolio-app/browser/offres/index.html` inspecté (grep + `json.loads` du
+   JSON-LD), puis `offres/site-atelier/index.html`.
+3. `public/sitemap.xml` régénéré lu (copie de preuve hors repo), puis `git checkout public/`.
+4. Bundle : chaînes propres à `OFFER_PAGES` cherchées dans `main-*.js` et les chunks.
+5. `browser/` servi en statique (`127.0.0.1:4321`), `/offres/` ouvert dans le navigateur à
+   375×812 et 1440×900, thème clair et sombre (clé `j-ned:theme`) ; `scrollWidth` mesuré ;
+   axe-core 4.10.2 injecté (script même origine, retiré ensuite) ; clic dans le corps d'une carte.
+
+**Résultats**
+
+- Prérendu : un seul `h1` « Cinq offres, un tarif annoncé avant de commencer. » ; 2
+  `offer-card` + 3 `offer-row` ; cinq liens `href="/offres/<slug>"` (site-vitrine, site-atelier,
+  application-metier, refonte-maintenance, renfort-freelance) ; `offer-vat-mention` « TVA non
+  applicable, art. 293 B du CGI » ; `<link rel="canonical" href="https://nedellec-julien.fr/offres">` ;
+  `<title>` et meta description validés ; JSON-LD `@graph` = `CollectionPage` (nom = h1, url du
+  catalogue, `mainEntity` `ItemList` de cinq `ListItem` position/nom/URL) + `BreadcrumbList`
+  Accueil → Offres.
+- Page d'offre : `offres/site-atelier/index.html`, `BreadcrumbList` à trois niveaux : Accueil (1) →
+  Offres (2, `/offres`) → « Sites pour ateliers » (3, `/offres/site-atelier`).
+- Sitemap régénéré : `<loc>https://nedellec-julien.fr/offres</loc>` (priorité 0.8), suivi des cinq
+  pages d'offre (0.7). `public/` restauré (`git status public` vide).
+- Bundle : « Pourquoi un tourneur », « Le déroulé en 7 jours », « Ce que contient le site », « Le
+  nom de domaine reste à moi » : 0 occurrence dans `main-AYNBB62Y.js`, présents dans le seul chunk
+  lazy des offres ; le titre du catalogue n'est pas non plus dans `main`.
+- Mise en page : pas de débordement (`scrollWidth` = `clientWidth` : 375/375, 1425/1425) ; liens de
+  ligne 343×144 à 168 px, liens de carte 120×44 px étirés sur toute la carte (clic dans le corps
+  d'une carte → `/offres/site-vitrine`) ; `app-cartouche` en `display: flex`, pieds alignés.
+- axe : 0 violation à 375 px (clair et sombre) et à 1440 px (clair ; sombre rechargé en thème
+  sombre). Un premier passage sombre à 1440 px, lancé 300 ms après une bascule de classe, signalait
+  des contrastes sur le header et la référence du cartouche pendant la transition de couleurs ;
+  rejoué après rechargement en sombre : 0 violation.
+- Console : aucune erreur applicative. Erreurs présentes, toutes d'environnement (origine locale
+  `127.0.0.1` refusée par le CORS de l'API de prod pour `/api/cv` et `/api/analytics/track`,
+  `/api/config` absent du serveur statique), à l'origine du toast « Une erreur est survenue » des
+  captures ; aucune ne touche le catalogue.
+
+**Captures** (`~/.claude/projects/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/tool-results/`)
+
+- 1440 sombre : `mcp-Claude_Browser-blob-1791123726217-uiq9kn.jpg`, `…-c3nnmi.jpg`
+- 375 sombre : `mcp-Claude_Browser-blob-1791123745968-76lhp7.jpg`, `…1791123745969-v36xdm.jpg`, `…1791123745969-5kf7ai.jpg`
+- 1440 clair : `mcp-Claude_Browser-blob-1791123779067-puhct7.jpg`, `…-64ruyb.jpg`
+- 375 clair : `mcp-Claude_Browser-blob-1791123790791-y6y3ub.jpg`, `…-fl7e4p.jpg`
+
+**Verdict : PASS.**
+
+**Reprise après les arbitrages de Julien (2026-10-04)** : description SEO « Sites en 7 jours dès… »,
+accroches du catalogue et des familles, référence du cartouche empilée sous le titre. Rejoué sur un
+nouveau build de production (867 passed / 867).
+
+- Prérendu `offres/index.html` : `<meta name="description" content="Sites en 7 jours dès 690 €,
+  application métier dès 4 500 €, refonte, maintenance et renfort Angular. Prix annoncé avant de
+  commencer.">` ; `offer-catalogue-lead` juste après le `h1` ; deux `offer-family-lead` (Sites,
+  Applications) dans la colonne libellé de leur section.
+- Sitemap régénéré : `/offres` toujours présent ; `public/` restauré. `main-*.js` toujours sans
+  contenu de `OFFER_PAGES`.
+- Cartes : barre de titre lisible à toutes les largeurs, nom sur sa ligne puis public en mono dessous,
+  sans troncature (à 375 px, nom tenu sur une ligne pour la vitrine, public sur une à trois lignes).
+- `scrollWidth` = `clientWidth` aux quatre combinaisons (375/375, 1425/1425).
+- axe : 0 violation à 375 et 1440 px, clair et sombre (thème posé par rechargement, pas par
+  bascule de classe).
+- Console : seules les erreurs d'environnement déjà décrites (CORS de l'API de prod vers
+  `127.0.0.1`, `/api/config` absent du serveur statique).
+
+**Captures** (`~/.claude/projects/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/tool-results/`)
+
+- 1440 sombre : `mcp-Claude_Browser-blob-1791124615422-krqrgf.jpg`
+- 375 sombre : `mcp-Claude_Browser-blob-1791124615422-7xqhk8.jpg`, `…1791124615423-teqmgm.jpg`
+- 375 clair : `mcp-Claude_Browser-blob-1791124631762-e19at1.jpg`
+- 1440 clair : `mcp-Claude_Browser-blob-1791124631762-hfzp8b.jpg`
+
+**Verdict (reprise) : PASS.**
 
 ### Tranche 5 — `/about` (page Parcours, surface atteignable en production)
 
@@ -1673,6 +1918,47 @@ Remarques non bloquantes (pour la session principale) :
 **Risque résiduel** (advisory, § 8) :
 - réversibilité : profil muet (déploiement Dokploy continu sur `master`) · monitoring : Sentry
 - non couvert par les gates : la typographie et la majuscule des `detail` ne sont épinglées par aucun test.
+
+### Tranche 4
+
+**Verdict** : APPROVED (re-revue ; 1re revue REJECTED sur deux points, soldés)
+**Gates CI locaux** : install ✅ (`pnpm install --frozen-lockfile`, exit 0, 1re revue ; lockfile inchangé depuis) / tests ✅ (`pnpm test`, exit 0, 96 fichiers / 867 passed / 867, relancé en re-revue après `ng cache clean` + purge `node_modules/.vite`) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting », re-revue) / build ✅ (`pnpm run build --configuration production`, exit 0, relancé en re-revue : « Prerendered 20 static routes », CSP sur 21 pages). `public/` restauré par `git checkout`.
+**Checks mécaniques** : `aak-checks.sh --diff <merge-base> --zoneless --archaeology '<motif profil>'` (plugin 0.37.0, non vendoré) : « 1 hit(s) — archeologie », levé : `app.routes.server.ts:77` `'admin/**'` est une chaîne de glob, pas un commentaire, ligne hors diff. Les non suivis passés par `--scope src/app/features/offer` : « aucun hit sur 30 fichier(s) ». Immutabilité : profil muet, défaut universel.
+**Warnings de gate** : aucun
+**Rendu compilé** : ✅ (`Cartouche` à sélecteur élément : encapsulation normale ; `app-cartouche` de la carte en `display: flex`, pieds alignés)
+**Preuve de verify runtime** : ✅ (preuve `## Verify` / Tranche 4 et sa reprise complètes ; rejouée par la revue sur le build prod servi en statique : 375 et 1440 px, clair et sombre, axe-core sur le document entier 0 violation aux quatre combinaisons, `scrollWidth` = `clientWidth`, Tab atteint les cinq offres dans l'ordre (vitrine, atelier, métier, refonte, renfort) avec contour 2 px visible, clic routeur → `/offres/site-vitrine` ; console sans erreur due au diff, seulement CORS de l'API de prod et `/api/config` 404. La correction de la re-revue ne touche qu'un texte `sr-only` : prérendu contrôlé, pas de nouvelle passe navigateur)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+1re revue, points corrigés (vérifiés en re-revue) :
+1. `offer-card.ts:34` : le texte `sr-only` est désormais `&nbsp;: {{ summary().name }}`. Le prérendu de `offres/index.html` contient bien `&nbsp;: Site…` sur les deux cartes.
+2. Spec alignée sur le code. V.3 (l. 629) décrit la barre `grid gap-1 …` avec la référence empilée sous le titre (décision de Julien en T4). Le tableau du § 2 donne `offer-card` = Sites sur `Cartouche`, ajoute `offer-row.ts` et les constantes `OFFER_FAMILY_LEADS`, `OFFER_CATALOGUE_HEADING`, `OFFER_CATALOGUE_LEAD`. La tranche T4 (l. 830-841) décrit 2 cartes + 3 lignes, les accroches et `offer-row.ts`.
+
+Jugements demandés :
+- `shared/ui/cartouche.ts` (barre `grid gap-1`) : accepté. Seul consommateur en production : `OfferCard`. `cartouche.spec.ts` ne dépend pas de la disposition. `DESIGN.md` § Cartouche et le plan V.3 décrivent désormais tous deux la barre empilée.
+- Lien couvrant la carte : un seul `a` par carte, aucun `a a`, `after:absolute after:inset-0` contenu par le cartouche en `relative`. Le nom accessible est « Détail de l'offre : <nom> » (la flèche est `aria-hidden`). Contour de focus global 2 px sur le lien, cible 44 px. Ligne d'application : lien unique 343 × 144 à 168 px, nom, promesse et prix inclus.
+- Landmarks : le prérendu n'a qu'un `main` et un `header` (ceux du shell) et deux `section[aria-labelledby]` → `h2`. Aucun `header` dans les sections.
+- JSON-LD prérendu (`offres/index.html`, parsé) : `CollectionPage` (nom = h1, URL du catalogue) avec `mainEntity` `ItemList` de cinq `ListItem`, puis `BreadcrumbList` Accueil → Offres. `offres/site-atelier/index.html` a un fil à trois niveaux. Canonical, `og:*`, title et description conformes.
+- Sitemap : `/offres` est présent (0.8), suivi des cinq pages d'offre.
+- Bundle : aucun contenu de `OFFER_PAGES` dans `main-*.js`, et le h1 du catalogue non plus. Les deux vivent dans le seul chunk lazy.
+- Typographie : conforme après correction. Pas de `—`. L'apostrophe droite suit l'usage du repo et de la maquette.
+
+**Altitude composant** : rien (checker `[altitude]` 0 hit, `OfferCatalogue` 82 LOC)
+
+**Tests notables** :
+- ✨ `offer-catalogue.spec.ts` « makes the whole row a single link » : vérifie que nom, promesse et prix sont contenus dans l'unique `a`, ce qui épingle la décision « ligne = un lien » et pas seulement la présence d'un lien.
+- ✨ `group-offers-by-family.spec.ts` « puts sites first even when applications come first » : l'entrée entrelacée par builders prouve l'ordre de famille sans dépendre de l'ordre de `OFFERS`.
+- ⚠️ `offer-catalog.static-data.ts:14` : le h1 « Cinq offres » est figé alors qu'aucun test ne le lie à `OFFERS.length`. Une sixième offre laisserait un titre faux. Copy validée, donc non bloquant ; à garder en tête au prochain ajout d'offre.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil muet (déploiement Dokploy continu sur `master`) · monitoring : Sentry
+- Clic réel sans navigation dans le Browser pane : classé artefact du pane. Diagnostic de l'orchestrateur : `document.elementFromPoint` renvoie `<html>` partout dans l'onglet, aucun `click` n'atteint le lien. Le même comportement apparaît sur le header de la home et sur le site de production, donc antérieur au diff. Les tests Vitest valident la navigation au clic.
+- Une nuance reste non expliquée par ce diagnostic : la revue a aussi observé qu'un Entrée de confiance produit bien un `click` sur le lien focalisé (`defaultPrevented`), sans `pushState`. Un contrôle dans Chrome hors pane (Tab puis Entrée sur « Blog » en production) clôt la question en une minute.
+- `app-cartouche` de la carte porte à la fois `block` (hôte) et `flex` (consommateur). Le rendu est correct (`flex` gagne par l'ordre CSS de Tailwind), mais le conflit d'utilitaires est fragile.
 
 ### Tranche 5
 

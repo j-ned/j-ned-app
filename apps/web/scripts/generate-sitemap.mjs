@@ -25,7 +25,7 @@ const SITE_URL = SITE_IDENTITY.siteUrl;
 const { OFFERS } = await import(
   resolve(REPO_ROOT, 'src/app/features/offer/domain/offer-catalog.static-data.ts')
 );
-const { offerPath } = await import(
+const { OFFERS_BASE_PATH, offerPath } = await import(
   resolve(REPO_ROOT, 'src/app/features/offer/domain/offer-path.ts')
 );
 
@@ -38,6 +38,7 @@ const staticUrls = [
   { loc: `${SITE_URL}/blog`, changefreq: 'weekly', priority: '0.9' },
   { loc: `${SITE_URL}/mentions-legales`, changefreq: 'yearly', priority: '0.2' },
   { loc: `${SITE_URL}/confidentialite`, changefreq: 'yearly', priority: '0.2' },
+  { loc: `${SITE_URL}/${OFFERS_BASE_PATH}`, changefreq: 'monthly', priority: '0.8' },
   ...OFFERS.map(({ slug }) => ({
     loc: `${SITE_URL}${offerPath(slug)}`,
     changefreq: 'monthly',
