@@ -47,7 +47,6 @@ function makeHomeGateway(overrides: Partial<HomeGateway> = {}): HomeGateway {
   return {
     getHomeBundle: () => of(bundle()),
     invalidateBundle: vi.fn(),
-    getHeroData: () => of(bundle().hero),
     ...overrides,
   } as unknown as HomeGateway;
 }

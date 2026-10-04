@@ -22,11 +22,6 @@ describe('InMemoryHomeGateway', () => {
     gateway = TestBed.inject(InMemoryHomeGateway);
   });
 
-  it('getHeroData returns the static hero', async () => {
-    const result = await firstValueFrom(gateway.getHeroData());
-    expect(result).toEqual(STATIC_HERO);
-  });
-
   it('getHomeBundle composes the static hero and the featured projects from ProjectsGateway, nothing else', async () => {
     const fakeProjects = [{ id: 1, slug: 'proj-1', title: 'Project 1' } as never];
     projectsStub.getFeaturedProjects.mockReturnValue(of(fakeProjects));
