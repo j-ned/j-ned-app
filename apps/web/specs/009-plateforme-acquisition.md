@@ -288,6 +288,7 @@ type OfferPriceLine = {
   readonly amount: OfferAmount; readonly period: OfferPeriod;
   readonly label: string;                               // construit avec formatEur(OFFER_PRICES…)
   readonly terms: string; readonly includes?: readonly string[];
+  readonly link?: 'malt';                               // T3 : clé de plateforme, résolue par la page
 };
 
 type OfferSummary = {
@@ -337,6 +338,11 @@ type OfferPages = Readonly<Record<OfferSlug, OfferPageContent>>;
 - **Titres de section en données** : « Pourquoi un tourneur plutôt qu'une agence », « Le déroulé
   en 7 jours », « Ce que contient le site » sont propres à l'atelier ; ils passent dans
   `OfferSection.heading`. Les composants `offer-*` ne portent plus de texte métier.
+- **Lien de plateforme d'une ligne de prix (T3)** : `OfferPriceLine.link?: 'malt'` est une clé
+  de domaine, pas une URL (le domaine n'importe pas `@shared`). `OfferPage` la résout vers
+  `SITE_IDENTITY.socials.malt` et la transmet à `OfferPricing` en `input()` (`maltUrl`), comme la
+  mention TVA ; rendu `<a data-testid="offer-price-link" target="_blank" rel="noopener
+  noreferrer" class="link-btn-outline">` dans la carte de la ligne. Seule la régie la porte.
 - `SITE_IDENTITY` : `availability` reformulé pour les clients (T6), ajout de
   `hiringAvailability` (mention CDI, T5).
 - Validation runtime aux frontières : sans objet (aucune donnée externe ajoutée).
@@ -405,7 +411,9 @@ JSON-LD) : `Service` (`name`, `serviceType`, `provider` Person, `areaServed` Yve
 Île-de-France, et pour la régie et les applications `{ '@type': 'Country', name: 'France' }`) +
 `offers` dérivées des `OfferPriceLine` + `BreadcrumbList` Accueil → Offres → offre. Mapping :
 `fixed`/`once` → `Offer.price` ; `fixed`/`month` → `UnitPriceSpecification` `unitCode: 'MON'` ;
-`from` → `PriceSpecification.minPrice` ; `on-request` → `Offer` sans prix. Prix toujours
+`from`/`once` → `PriceSpecification.minPrice` ; `from`/`month` → `UnitPriceSpecification`
+`minPrice` + `unitCode: 'MON'` ; `on-request` → `Offer` sans prix (ni `price` ni
+`priceCurrency`), quelle que soit la période. Prix toujours
 `String(montant)`, `priceCurrency: 'EUR'`. Le catalogue : `CollectionPage` + `ItemList` des
 cinq URLs + `BreadcrumbList`. Invariants testés sur **toutes** les offres (`it.each(OFFERS)`) :
 description ≤ 160 caractères, aucun `—`, URL = `siteUrl + offerPath(slug)`. Sitemap :
@@ -827,6 +835,116 @@ app.routes 4, server routes 2, footer 3). Non-régression : les 696 autres tests
 `offer-seo.spec.ts` ré-aligné. Scaffold dû au GREEN : `src/app/features/offer/domain/offer-path.ts`
 (`OFFERS_BASE_PATH`, `offerPath`) et `src/app/features/offer/offer.routes.ts` (`OFFER_ROUTES`).
 
+### Tranche 3 — les quatre nouvelles offres
+
+Source des attendus : l'annexe validée `specs/009-copy-offres.md`. La copy n'est pas recopiée en
+entier : les tests épinglent ce qui engage (prix via `formatEur(OFFER_PRICES…)`, sujet prérempli,
+titre du hero, titres et effectifs de section, sections absentes, 24 heures ouvrées, 7 jours,
+4 à 8 semaines, échange gratuit, hébergement en France, restitution d'une heure, temps partiel).
+
+Sweep de recalibration (`OFFER_PRICES`, `OfferSlug`, `OfferAmount`, `OfferPeriod`) sur tout
+`src/` et `scripts/` : seule `offer-prices.static-data.spec.ts` assertait l'ancienne valeur (golden
+atelier seul), **adaptée** (pas de test parallèle). Les suites qui itèrent déjà sur `OFFERS`
+couvrent les cinq slugs sans modification une fois le catalogue étendu, et le nouveau test d'ordre
+de `OFFERS` les y oblige : `offer.routes.spec.ts` (route lazy, données, SEO par slug),
+`app.routes.server.spec.ts` (`offres/<slug>` en `Prerender`), `offer-seo.spec.ts` (snippet ≤ 160,
+aucun `—`), `offer-pages.static-data.spec.ts` (ids distincts, aucun `—`). Aucune autre suite ne
+nomme un slug autre que l'atelier (`footer.spec.ts`, `app.routes.spec.ts` : atelier seul,
+inchangés). Aucun état seedé dont la sémantique change.
+
+Contrats fixés par ce RED :
+
+- `OFFER_PRICES` (golden) : `site-vitrine` `{ creationEur: 890, maintenanceMonthlyEur: 29 }`,
+  `site-atelier` inchangé, `application-metier` `{ projectFromEur: 4500,
+  maintenanceMonthlyFromEur: 190 }`, `refonte-maintenance` `{ auditEur: 450,
+  maintenanceMonthlyFromEur: 190 }`, `renfort-freelance` `{}`.
+- Ordre de `OFFERS` : `site-vitrine`, `site-atelier`, `application-metier`,
+  `refonte-maintenance`, `renfort-freelance` ; `featuredOnHome` faux pour l'atelier seul.
+- `priceTeaser` : `` `${formatEur(890)}, prix final` ``, `` `À partir de ${formatEur(4500)}` ``,
+  `` `Audit ${formatEur(450)}, maintenance dès ${formatEur(190)}/mois` ``, `'TJM sur demande'`.
+- Lignes de prix (`name` / `amount` / `period` / `label`) : vitrine = Création `fixed`/`once`
+  `formatEur(890)` + Maintenance `fixed`/`month` `` `${formatEur(29)}/mois` `` (5 inclus, mêmes
+  `terms` que l'atelier, `50 %`) ; application = Projet `from`/`once`
+  `` `À partir de ${formatEur(4500)}` `` + Maintenance `from`/`month`
+  `` `Dès ${formatEur(190)}/mois` `` ; refonte = Audit `fixed`/`once` `formatEur(450)` + Chantiers
+  `on-request`/`once` `'Sur devis'` + Maintenance `from`/`month` (4 inclus) ; renfort = Régie
+  `on-request`/`day` `'TJM sur demande'`, `terms` commençant par « Temps partiel ».
+- JSON-LD : `from`/`once` → `priceSpecification` `{ '@type': 'PriceSpecification', minPrice,
+  priceCurrency: 'EUR' }` ; `from`/`month` → `UnitPriceSpecification` avec `minPrice` et
+  `unitCode: 'MON'` ; `on-request` → `{ '@type': 'Offer', name }` exactement (ni `price` ni
+  `priceCurrency`) ; montants en `String(…)`. `areaServed` : famille `applications` = Yvelines,
+  Île-de-France (`AdministrativeArea`) puis `{ '@type': 'Country', name: 'France' }` ; famille
+  `sites` inchangée (golden atelier).
+- Lien Malt : testid `offer-price-link`, un `A` dans la section tarif, `href` =
+  `SITE_IDENTITY.socials.malt`, `target="_blank"`, `rel="noopener noreferrer"`, nom non vide ;
+  aucun `offer-price-link` sur la page atelier. Le transport de l'URL jusqu'au composant est laissé
+  au GREEN (le domaine n'importe pas `@shared`, cf. § 3).
+
+**`domain/offer-prices.static-data.spec.ts`** (adapté, 1 test)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| montants de toutes les offres | `OFFER_PRICES` | golden `toEqual` des cinq entrées ci-dessus |
+
+**`domain/offer-catalog.static-data.spec.ts`** (+10 tests)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| ordre et mise en avant | `OFFERS` | `{ slug, family, featuredOnHome }` × 5 `toEqual` l'ordre fixé |
+| nom et prix d'appel (`it.each` × 4) | nouvelles offres | `name` + `priceTeaser` construit avec `formatEur(OFFER_PRICES…)` |
+| engagements de prix du snippet (`it.each` × 4) | `seo.description` | contient les montants (`prix final`, `/mois sans engagement`, `à partir de`, `dès …/mois`, `TJM sur demande`) |
+| renfort sans chiffre | `priceTeaser` + `seo.description` | aucun chiffre |
+
+**`domain/offer-pages.static-data.spec.ts`** (+21 tests)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| hero et sujet (`describe.each` × 4) | page | `hero.title` et `request.subject` mot pour mot |
+| titres de section (× 4) | page | `heading` des sections présentes ; `steps` absent pour le renfort |
+| effectifs (× 4) | page | raisons 3/3/3/3, livrables 9/8/6/6, étapes 4/4/4/absent, lignes 2/2/3/1, FAQ 5/5/4/3 |
+| lignes de prix (× 4) | `pricing.lines` | contrats ci-dessus, montants lus dans `OFFER_PRICES` |
+| engagements (× 5) | copy | vitrine : « sous 24 heures ouvrées », étapes jour 1 → jour 7 ; application : « 4 à 8 semaines », « 30 minutes est gratuit », « Hébergement en France » ; refonte : « restitution d'une heure » ; renfort : hero « à temps partiel » |
+
+**`offer-seo.spec.ts`** (+7 tests)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| mapping `from` / `on-request` | 3 lignes de builder (`from`/`once`, `from`/`month`, `on-request`/`day`) | `PriceSpecification.minPrice`, `UnitPriceSpecification` `minPrice` + `MON`, `Offer` sans prix |
+| zone servie (`it.each` famille) | résumé de builder `sites` / `applications` | `areaServed` exact, France en `Country` pour les applications seulement |
+| offres du catalogue (× 4) | `toOfferSeo` sur les vraies données | `offers` `toEqual`, prix `String(OFFER_PRICES…)` |
+
+**`application/offer-page.spec.ts`** (+19 tests)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| chaque offre du catalogue (`describe.each(OFFERS)` × 3) | page de chaque slug | un seul `h1` = `hero.title` ; `offer-hero-price` = `priceTeaser` ; sujet de `offer-request` = `request.subject` |
+| renfort sans déroulé | `renfort-freelance` | aucun `offer-step` ; h2 = raisons, livrables, tarif, FAQ |
+| renfort sur demande | idem | `offer-price-label` = libellés des lignes, aucun chiffre |
+| renfort lien Malt | idem | un `offer-price-link` dans la section tarif, contrat ci-dessus |
+| atelier sans plateforme | atelier | aucun `offer-price-link` |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-04 14:42, 39 failed / 804 total). Nature des échecs : sans le code du GREEN, `pnpm test`
+s'arrête à la compilation, uniquement sur les types et données applicatifs actés au plan
+(`OfferSlug` à un seul membre : `TS2345`, `TS2367`, `TS7053` sur `OFFER_PAGES`/`OFFER_PRICES` ;
+`OfferAmount` sans `from`/`on-request` et `OfferPeriod` sans `day` : `TS2322`) et leur cascade
+(`TS7031`) ; aucune faute de type propre aux specs, prettier et eslint verts sur les cinq fichiers.
+Mesure du rouge comportemental : scaffold temporaire posé le temps d'une exécution puis retiré
+(unions élargies, quatre slugs ajoutés à `OFFERS` et `OFFER_PAGES` en recopiant l'atelier,
+montants à 0, `toOfferSeo` tolérant l'absence de `eur`) : 91 fichiers, 39 failed / 804 total, les
+39 en `AssertionError`. Les 18 nouveaux tests verts sous ce scaffold sont du câblage donnée → DOM
+(`describe.each(OFFERS)` de la page) ou des effectifs que la vitrine partage avec l'atelier.
+Non-régression : base avant RED 723 passed / 723 ; sous scaffold, aucun test préexistant ne tombe.
+Recalibration du délai de réponse (décision Julien du 2026-10-04 : tous les délais = « 24 heures
+ouvrées ») : sweep de « 48 h » sur `src/` et la spec, une seule assertion concernée, le test
+« addresses the request form to a workshop owner » de `offer-pages.static-data.spec.ts`, dont
+l'intro atelier attendue devient « Dites-moi le nom de votre atelier et ce que vous usinez. Je vous
+rappelle sous 24 heures ouvrées. » (promesse de maquette retirée). `offer-page.spec.ts` compare à
+la donnée, inchangé. La donnée `offer-pages.static-data.ts` est due au GREEN.
+Scaffold dû au GREEN : `offer.model.ts` (`OfferSlug`, `OfferAmount`, `OfferPeriod`),
+`offer-prices`, `offer-catalog`, `offer-pages` `.static-data.ts`, `offer-seo.ts`, `offer-page.ts`
+ou `offer-pricing.ts` (lien Malt).
+
 ### Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »
 
 | Fichier | Tests |
@@ -846,6 +964,7 @@ vide ; suite existante verte.
 
 - **Tranche 1 — l'offre atelier sur le modèle générique** : GREEN 701 passed / 701 total · refactor : aucun
 - **Tranche 2 — l'atelier à son URL de catalogue, l'ancienne redirige** : GREEN 711 passed / 711 total · refactor : aucun (passe manuelle sur le diff ; server route écrite `${OFFERS_BASE_PATH}/${slug}` plutôt que de retailler `offerPath`)
+- **Tranche 3 — les quatre nouvelles offres** : GREEN 804 passed / 804 total · refactor : zone servie de `toOfferSeo` factorisée (régions communes, France ajoutée pour la famille `applications`) ; id d'étape « audit » renommé `inspect` (collision avec la ligne de prix « audit » de la même page)
 - **Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »** : GREEN 698 passed / 698 total · refactor : liens du bloc passés sur l'utilitaire `link-btn-outline` (revue)
 
 ## Verify
@@ -912,6 +1031,40 @@ navigation dans le navigateur de session. `public/sitemap.xml` et `public/rss.xm
   d'environnement et identiques à T1 : un 404 de ressource (`/api/config`, absent en local) et le
   CORS de `api.nedellec-julien.fr` refusant l'origine `localhost` (CV, analytics), d'où le toast
   d'erreur global.
+
+### Tranche 3 — les cinq pages `/offres/<slug>` (dont `/offres/site-atelier`, surface atteignable en production)
+
+Steps : `pnpm install --frozen-lockfile` → `pnpm run build --configuration production` (API de
+prod joignable du premier coup ; 19 routes prérendues, CSP sur 20 pages) → lecture scriptée de
+`dist/angular-portfolio-app/browser/offres/<slug>/index.html` → `public/` restauré par
+`git checkout` → `python3 -m http.server 4323` sur `dist/angular-portfolio-app/browser` →
+`/offres/renfort-freelance/` et `/offres/application-metier/` dans le navigateur de session.
+
+- HTML prérendu, pour chacun des cinq slugs (`site-vitrine`, `site-atelier`,
+  `application-metier`, `refonte-maintenance`, `renfort-freelance`) : un seul `h1` = titre du
+  hero ; `offer-hero-price` = `priceTeaser` (`890 €, prix final`, `690 €, prix final`,
+  `À partir de 4 500 €`, `Audit 450 €, maintenance dès 190 €/mois`, `TJM sur demande`) ; un
+  `<form>`, `contact-subject` prérempli avec le sujet de l'offre ; canonical
+  `https://nedellec-julien.fr/offres/<slug>` ; `<title>` = `seo.title`.
+- JSON-LD `Service.offers` : vitrine et atelier `Offer.price` + `UnitPriceSpecification` `price`
+  `MON` ; application `PriceSpecification.minPrice` `4500` + `UnitPriceSpecification.minPrice`
+  `190` `MON` ; refonte `Offer.price` `450`, `Chantiers` sans prix, maintenance `minPrice` `190`
+  `MON` ; renfort `{ "@type": "Offer", "name": "Régie" }` seul. `areaServed` : Yvelines +
+  Île-de-France pour les sites, plus `Country` France pour les trois offres `applications`.
+- `renfort-freelance` : `offer-step` × 0, « Temps partiel » présent, un seul `offer-price-link`
+  (`href="https://www.malt.fr/profile/juliennedellec"`, `target="_blank"`, `rel="noopener
+  noreferrer"`) ; aucun `offer-price-link` sur les quatre autres pages.
+- Bundle initial : `main-*.js` ne contient aucune copy des nouvelles offres (« ni textes ni
+  photos », « Stack et pratiques », « restitution d », « Fiche Google Business » : 0 occurrence) ;
+  elle n'est que dans le chunk lazy des pages d'offre.
+- Runtime : pages hydratées ; renfort : 1 `h1`, 0 étape, sujet « Proposition de mission Angular /
+  NestJS », carte « Régie / TJM sur demande » avec le bouton « Voir mon profil Malt ». Captures :
+  hero du renfort, section Conditions du renfort, hero de l'application métier.
+- Console : aucune erreur applicative (aucune `NG0…`, aucune erreur d'hydratation). Erreurs
+  d'environnement seulement, identiques aux tranches précédentes : `/api/config` 404 hors nginx et
+  CORS de `api.nedellec-julien.fr` sur l'origine localhost (CV, analytics), d'où le toast global.
+
+Verdict : **PASS**.
 
 ### Tranche 5 — `/about` (page Parcours, surface atteignable en production)
 
@@ -1014,6 +1167,43 @@ Re-revue (2026-10-04) :
 - Diff relu contre la base de branche `0b758d8` : mêmes 11 fichiers qu'en 1re revue, seul le `Dockerfile` a bougé (bloc de commentaire, aucune directive modifiée). Gates test/lint/build non rejouées : aucun fichier qu'elles lisent n'a changé.
 - `docker build` : **échec d'infra hors diff**, au `prebuild` du stage Node (`generate-sitemap.mjs` : `https://api.nedellec-julien.fr/api/blog/posts answered HTTP 502`, API de prod indisponible). Pas un REJECTED de correctness. Pour valider la conf nginx sans ce stage, le bloc `default.conf` extrait du `Dockerfile` courant a été monté sur l'image de la 1re revue (même `browser/`) : `nginx -t` OK ; `/offre-site-industrie?utm_source=x` → 301, `Location: /offres/site-atelier?utm_source=x`, 7 en-têtes de sécurité présents ; `/offre-site-industrie/` → 301 ; smoke `ci.yml` rejoué sous `set -euo pipefail` : vert. L'image complète reste à reconstruire une fois l'API revenue (le job docker de la CI le fera).
 - Information pour la session principale : `origin/master` a avancé pendant la revue (`c3e822e`, T5 mergée), qui touche aussi `app.routes.ts` (route `about`, hunk disjoint) et cette spec. Rebaser avant la PR, résoudre le conflit probable dans la spec, puis rejouer `pnpm test` / `pnpm lint` / `pnpm build` sur la branche rebasée.
+
+### Tranche 3
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm test`, exit 0, 91 fichiers / 804 passed, après `pnpm exec ng cache clean` + purge `node_modules/.vite`) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting ») / install ✅ (`pnpm install --frozen-lockfile`, exit 0) / build ✅ (`pnpm run build --configuration production`, exit 0, API de prod joignable du premier coup, 19 routes prérendues, CSP sur 20 pages ; `public/` restauré par `git checkout`)
+**Checks mécaniques** : `aak-checks.sh --diff origin/master --zoneless --immutability --archaeology '<motif du profil>'` (version plugin, `.claude/checks/` non vendoré) : « aucun hit sur 12 fichier(s) » ; défauts universels pour page-suffix et seuils d'altitude
+**Warnings de gate** : aucun (sorties test, lint et build lues en entier)
+**Rendu compilé** : N/A (pas de composant à sélecteur attribut ni de fichier `shared/ui/**` touché ; `link-btn-outline` est un `@utility` existant)
+**Preuve de verify runtime** : ✅ (preuve `## Verify` / Tranche 3 complète et cohérente avec le diff ; rejouée par la revue sur le build prod servi en statique : vitrine (desktop), renfort, refonte et atelier (375 px) hydratés, 1 `h1`, pas de débordement horizontal, sujets préremplis, lien Malt rendu ; console sans `NG0…` ni erreur d'hydratation, seulement `/api/config` 404 et CORS de l'API sur localhost, dus à l'environnement)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+Points jugés :
+1. **Copy** : les quatre offres sont fidèles à l'annexe validée, champ par champ (résumés, SEO, hero, sections, effectifs, lignes de prix, FAQ, demande). Tarifs 890 + 29/mois, à partir de 4 500, audit 450, dès 190/mois, TJM sur demande, tous lus dans `OFFER_PRICES` via `formatEur`. Engagements présents mot pour mot : 24 heures ouvrées (vitrine), 4 à 8 semaines, premier échange de 30 minutes gratuit et cadrage compris, hébergement en France, restitution d'une heure, temps partiel (hero, conditions et FAQ du renfort). Seuls écarts : la majuscule en tête des `detail` d'étape et de la `detail` « Angular récent… » d'une raison, et le scindage « Inclus : … » en `includes`, qui suivent les conventions de rendu de l'atelier. Aucun écart de fond.
+2. **24 heures ouvrées** : intro atelier = « … Je vous rappelle sous 24 heures ouvrées. » (`offer-pages.static-data.ts:272`), promesse de maquette retirée, test recalibré au lieu d'être doublé. `grep -rnE '48 ?h|48 heures' src/` : seul hit `w-48 h-48` (classe Tailwind de `two-factor-enable-form.ts`). Aucun « 48 h » dans le HTML prérendu ni dans les chunks.
+3. **Lien Malt** : `link?: 'malt'` reste une clé de domaine (aucun import `@` dans `domain/`). `OfferPage` la résout via `SITE_IDENTITY.socials.malt` et la passe en `input()` (`maltUrl`), comme la mention TVA, conformément au § 3. `offer-pricing.ts:29-39` : `target="_blank"`, `rel="noopener noreferrer"`, `link-btn-outline`. Libellé « Voir mon profil Malt » : validé par Julien et ajouté à l'annexe pendant la revue, ce n'est plus un écart.
+4. **JSON-LD** (`offer-seo.ts:9-24`) : `from`/`once` → `PriceSpecification.minPrice`, `from`/`month` → `UnitPriceSpecification` `minPrice` + `MON`, `on-request` → `{ '@type': 'Offer', name }` sans prix ni devise, quelle que soit la période. Les replis `fixed` de l'atelier sont inchangés (golden vert). `areaServed` dépend de la famille (`AREAS_SERVED`) : France en `Country` pour les trois offres `applications`. Conforme au § 8.3 et vérifié dans les cinq `index.html`.
+5. **Espaces insécables** : ` ` devant `:` dans 4 chaînes (`offer-pages.static-data.ts:111, 323, 398, 604`). Ce n'est pas une nouveauté dans la feature : `offer-reasons.ts:15` rend déjà `&nbsp;:` entre l'accroche et le détail, sur la même page. En revanche, le même fichier garde une espace simple devant `;` (`:133`, `:518`) et devant tous les `?` des questions, et le reste du site (`app.routes.ts`, pages légales) met une espace simple devant `:`. Convention partielle, non bloquante (cf. remarques).
+6. **`audit` → `inspect`** : légitime. Il fallait respecter l'invariant pré-existant « ids distincts par page », que l'id d'étape `audit` cassait face à la ligne de prix `audit`. Les ids ne servent que de clé de `track`, donc sans effet sur le DOM ni l'analytics.
+7. **Bundle initial** : `main-*.js` ne contient aucune chaîne des nouvelles offres (« ni textes ni photos », « Stack et pratiques », « restitution d », « Fiche Google Business », « Votre site vitrine », « Proposition de mission », « TJM sur demande », « Voir mon profil Malt » : 0 occurrence). Elles se trouvent uniquement dans les chunks lazy des pages d'offre.
+
+Remarques non bloquantes (pour la session principale) :
+- La ligne de journal de la tranche 3 (spec, l. 570) a été insérée dans `### Tranches` du Plan technique, entre T4 et T5, et non sous `## Journal des tranches`. À déplacer.
+- Typographie : trancher une règle unique pour `: ; ? !` (insécable partout, ou espace simple partout) et l'appliquer à la copy des offres. Aujourd'hui, une même FAQ mélange les deux. À soumettre à Julien avec le reste de la copy, sans incidence sur le contenu validé.
+
+**Tests notables** :
+- ✨ `offer-page.spec.ts` `describe.each(OFFERS…)` : le câblage donnée → DOM est couvert pour chaque slug, sans recopier la copy.
+- ✨ `offer-seo.spec.ts` « offers of the catalogue » : les `offers` réels sont comparés en `toEqual` exact à `String(OFFER_PRICES…)`, ce qui verrouille l'absence de prix sur `on-request`.
+- ⚠️ `offer-pages.static-data.spec.ts` « fills each section with the validated number of items » : les effectifs seuls ne détectent pas une item de copy altérée. Écart accepté par le Plan de test, qui n'épingle que ce qui engage.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil muet (déploiement Dokploy continu sur `master`) · monitoring : Sentry
+- non couvert par les gates : la typographie et la majuscule des `detail` ne sont épinglées par aucun test.
 
 ### Tranche 5
 

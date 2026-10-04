@@ -26,6 +26,17 @@ import { SplitSection } from '@shared/ui/split-section';
             <p class="mt-3 leading-relaxed text-muted" data-testid="offer-price-terms">
               {{ line.terms }}
             </p>
+            @if (line.link === 'malt') {
+              <a
+                [href]="maltUrl()"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="link-btn-outline mt-4"
+                data-testid="offer-price-link"
+              >
+                Voir mon profil Malt
+              </a>
+            }
             @if (line.includes) {
               <ul class="mt-4 space-y-1.5 text-[0.9375rem]" role="list">
                 @for (include of line.includes; track include) {
@@ -43,4 +54,5 @@ import { SplitSection } from '@shared/ui/split-section';
 export class OfferPricing {
   readonly pricing = input.required<OfferPageContent['pricing']>();
   readonly vatMention = input.required<string>();
+  readonly maltUrl = input.required<string>();
 }

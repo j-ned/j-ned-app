@@ -3,6 +3,7 @@ import { formatEur } from './domain/format-eur';
 import { OFFERS } from './domain/offer-catalog.static-data';
 import { OFFER_PAGES } from './domain/offer-pages.static-data';
 import { OFFER_PRICES } from './domain/offer-prices.static-data';
+import type { OfferSlug } from './domain/models/offer.model';
 import { toOfferSeo } from './offer-seo';
 import {
   makeOfferPageContent,
@@ -154,6 +155,154 @@ describe('toOfferSeo', () => {
       },
       { '@type': 'Offer', name: 'Option', price: '80', priceCurrency: 'EUR' },
     ]);
+  });
+
+  it('derives offers from a minimum price, a monthly minimum and a price on request', () => {
+    const content = makeOfferPageContent({
+      pricing: {
+        heading: 'Tarif',
+        lines: [
+          makeOfferPriceLine({ id: 'a', name: 'Projet', amount: { kind: 'from', eur: 4500 } }),
+          makeOfferPriceLine({
+            id: 'b',
+            name: 'Suivi',
+            amount: { kind: 'from', eur: 190 },
+            period: 'month',
+          }),
+          makeOfferPriceLine({
+            id: 'c',
+            name: 'Régie',
+            amount: { kind: 'on-request' },
+            period: 'day',
+          }),
+        ],
+      },
+    });
+
+    const seo = toOfferSeo(makeOfferSummary(), content, OFFER_URL);
+    const service = graphOf(seo.structuredData).find((node) => node['@type'] === 'Service');
+
+    expect(service?.['offers']).toEqual([
+      {
+        '@type': 'Offer',
+        name: 'Projet',
+        priceSpecification: {
+          '@type': 'PriceSpecification',
+          minPrice: '4500',
+          priceCurrency: 'EUR',
+        },
+      },
+      {
+        '@type': 'Offer',
+        name: 'Suivi',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          minPrice: '190',
+          priceCurrency: 'EUR',
+          unitCode: 'MON',
+        },
+      },
+      { '@type': 'Offer', name: 'Régie' },
+    ]);
+  });
+
+  it.each([
+    [
+      'sites',
+      [
+        { '@type': 'AdministrativeArea', name: 'Yvelines' },
+        { '@type': 'AdministrativeArea', name: 'Île-de-France' },
+      ],
+    ],
+    [
+      'applications',
+      [
+        { '@type': 'AdministrativeArea', name: 'Yvelines' },
+        { '@type': 'AdministrativeArea', name: 'Île-de-France' },
+        { '@type': 'Country', name: 'France' },
+      ],
+    ],
+  ] as const)('serves the %s family in its own area', (family, areaServed) => {
+    const seo = toOfferSeo(makeOfferSummary({ family }), makeOfferPageContent(), OFFER_URL);
+    const service = graphOf(seo.structuredData).find((node) => node['@type'] === 'Service');
+
+    expect(service?.['areaServed']).toEqual(areaServed);
+  });
+
+  describe('offers of the catalogue', () => {
+    const offersOf = (slug: OfferSlug): unknown =>
+      graphOf(toOfferSeo(offerSummaryOf(slug), OFFER_PAGES[slug], OFFER_URL).structuredData).find(
+        (node) => node['@type'] === 'Service',
+      )?.['offers'];
+
+    it('prices the showcase site creation once and its maintenance by the month', () => {
+      const prices = OFFER_PRICES['site-vitrine'];
+      expect(offersOf('site-vitrine')).toEqual([
+        {
+          '@type': 'Offer',
+          name: 'Création',
+          price: String(prices.creationEur),
+          priceCurrency: 'EUR',
+        },
+        {
+          '@type': 'Offer',
+          name: 'Maintenance',
+          priceSpecification: {
+            '@type': 'UnitPriceSpecification',
+            price: String(prices.maintenanceMonthlyEur),
+            priceCurrency: 'EUR',
+            unitCode: 'MON',
+          },
+        },
+      ]);
+    });
+
+    it('gives the business application and its maintenance their minimum price', () => {
+      const prices = OFFER_PRICES['application-metier'];
+      expect(offersOf('application-metier')).toEqual([
+        {
+          '@type': 'Offer',
+          name: 'Projet',
+          priceSpecification: {
+            '@type': 'PriceSpecification',
+            minPrice: String(prices.projectFromEur),
+            priceCurrency: 'EUR',
+          },
+        },
+        {
+          '@type': 'Offer',
+          name: 'Maintenance',
+          priceSpecification: {
+            '@type': 'UnitPriceSpecification',
+            minPrice: String(prices.maintenanceMonthlyFromEur),
+            priceCurrency: 'EUR',
+            unitCode: 'MON',
+          },
+        },
+      ]);
+    });
+
+    it('prices the audit, leaves the works unpriced and gives the maintenance its minimum', () => {
+      const prices = OFFER_PRICES['refonte-maintenance'];
+      expect(offersOf('refonte-maintenance')).toEqual([
+        { '@type': 'Offer', name: 'Audit', price: String(prices.auditEur), priceCurrency: 'EUR' },
+        { '@type': 'Offer', name: 'Chantiers' },
+        {
+          '@type': 'Offer',
+          name: 'Maintenance',
+          priceSpecification: {
+            '@type': 'UnitPriceSpecification',
+            minPrice: String(prices.maintenanceMonthlyFromEur),
+            priceCurrency: 'EUR',
+            unitCode: 'MON',
+          },
+        },
+      ]);
+    });
+
+    it('offers the reinforcement without any price', () => {
+      expect(offersOf('renfort-freelance')).toEqual([{ '@type': 'Offer', name: 'Régie' }]);
+    });
   });
 
   it.each(OFFERS)(

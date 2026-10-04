@@ -4,6 +4,7 @@ import { ContactGateway } from '@features/contact/domain/gateways/contact.gatewa
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import type { OfferPageContent, OfferSummary } from '../domain/models/offer.model';
+import { OFFERS } from '../domain/offer-catalog.static-data';
 import { OFFER_PAGES } from '../domain/offer-pages.static-data';
 import {
   makeOfferPageContent,
@@ -125,6 +126,10 @@ describe('OfferPage', () => {
       });
     });
 
+    it('links the pricing to no contracting platform', () => {
+      expect(allByTestId('offer-price-link')).toHaveLength(0);
+    });
+
     it('states the VAT exemption read from the site identity', () => {
       expect(text(byTestId('offer-vat-mention'))).toBe(SITE_IDENTITY.business.vatMention);
     });
@@ -181,6 +186,72 @@ describe('OfferPage', () => {
       it('speaks to a workshop owner in the form intro', () => {
         expect(text(inRequest('contact-intro'))).toBe(ATELIER.request.intro);
       });
+    });
+  });
+
+  describe.each(OFFERS.map((summary) => [summary.slug, summary] as const))(
+    'given the %s offer of the catalogue',
+    (slug, summary) => {
+      const content = OFFER_PAGES[slug];
+
+      beforeEach(() => setup(content, summary));
+
+      it('renders its hero title as the only h1 of the page', () => {
+        const headings = host().querySelectorAll('h1');
+        expect(headings).toHaveLength(1);
+        expect(text(headings[0])).toBe(content.hero.title);
+      });
+
+      it('teases its price in the hero', () => {
+        expect(text(byTestId('offer-hero-price'))).toBe(summary.priceTeaser);
+      });
+
+      it('prefills the request form with its own subject', () => {
+        const subject = byTestId('offer-request')?.querySelector<HTMLInputElement>(
+          '[data-testid="contact-subject"]',
+        );
+        expect(subject?.value).toBe(content.request.subject);
+      });
+    },
+  );
+
+  describe('given the freelance reinforcement offer', () => {
+    const RENFORT: OfferPageContent = OFFER_PAGES['renfort-freelance'];
+
+    beforeEach(() => setup(RENFORT, offerSummaryOf('renfort-freelance')));
+
+    it('renders no timeline, neither its steps nor its heading', () => {
+      expect(allByTestId('offer-step')).toHaveLength(0);
+      expect(sectionHeadings()).toEqual([
+        RENFORT.reasons?.heading,
+        RENFORT.deliverables?.heading,
+        RENFORT.pricing.heading,
+        RENFORT.faq?.heading,
+      ]);
+    });
+
+    it('states its day rate on request, without any figure', () => {
+      const labels = allByTestId('offer-price-label').map((label) => text(label));
+      expect(labels).toEqual(RENFORT.pricing.lines.map(({ label }) => label));
+      expect(labels.filter((label) => /\d/.test(label))).toEqual([]);
+    });
+
+    it('links the pricing to the Malt profile, in a new tab', () => {
+      const pricing = sectionOf('offer-price-line');
+      const links = pricing ? allByTestId('offer-price-link', pricing) : [];
+      expect(links).toHaveLength(1);
+      expect({
+        tag: links[0]?.tagName,
+        href: links[0]?.getAttribute('href'),
+        target: links[0]?.getAttribute('target'),
+        rel: links[0]?.getAttribute('rel'),
+      }).toEqual({
+        tag: 'A',
+        href: SITE_IDENTITY.socials.malt,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      });
+      expect(text(links[0])).not.toBe('');
     });
   });
 

@@ -257,6 +257,7 @@ automatisés · Accessibilité WCAG AA
 **Conditions** (section `pricing`)
 - **Régie** · TJM sur demande · Temps partiel, contrat direct ou via Malt (lien
   `SITE_IDENTITY.socials.malt`). Démarrage sous 2 semaines.
+  Bouton du lien : « Voir mon profil Malt » (validé le 2026-10-04).
 
 **Questions fréquentes**
 - *Temps plein ou temps partiel ?* Temps partiel pour le moment. Pour une mission à temps plein,

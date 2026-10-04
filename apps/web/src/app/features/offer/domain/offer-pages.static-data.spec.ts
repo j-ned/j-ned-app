@@ -156,8 +156,216 @@ describe('OFFER_PAGES', () => {
       expect(page.request).toEqual({
         subject: 'Site pro pour mon atelier',
         intro:
-          'Dites-moi le nom de votre atelier et ce que vous usinez. Je vous rappelle sous 48 h avec une première maquette.',
+          'Dites-moi le nom de votre atelier et ce que vous usinez. Je vous rappelle sous 24 heures ouvrées.',
       });
+    });
+  });
+
+  describe.each([
+    {
+      slug: 'site-vitrine',
+      heroTitle: 'Votre site vitrine, en ligne en 7 jours.',
+      subject: 'Site vitrine pour mon entreprise',
+      headings: {
+        reasons: 'Pourquoi passer par moi',
+        deliverables: 'Ce que contient le site',
+        steps: 'Le déroulé en 7 jours',
+        pricing: 'Tarif',
+        faq: 'Questions fréquentes',
+      },
+      counts: { reasons: 3, deliverables: 9, steps: 4, lines: 2, faq: 5 },
+    },
+    {
+      slug: 'application-metier',
+      heroTitle: 'Une application taillée pour votre façon de travailler.',
+      subject: 'Application métier sur mesure',
+      headings: {
+        reasons: 'Ce qui change avec une application sur mesure',
+        deliverables: 'Ce qui est livré',
+        steps: 'Comment ça se passe',
+        pricing: 'Tarif',
+        faq: 'Questions fréquentes',
+      },
+      counts: { reasons: 3, deliverables: 8, steps: 4, lines: 2, faq: 5 },
+    },
+    {
+      slug: 'refonte-maintenance',
+      heroTitle: 'Votre application existe. Je la reprends, je la sécurise, je la fais durer.',
+      subject: 'Audit de mon application',
+      headings: {
+        reasons: 'Quand faire appel à moi',
+        deliverables: "Ce que contient l'audit",
+        steps: 'Comment ça se passe',
+        pricing: 'Tarif',
+        faq: 'Questions fréquentes',
+      },
+      counts: { reasons: 3, deliverables: 6, steps: 4, lines: 3, faq: 4 },
+    },
+    {
+      slug: 'renfort-freelance',
+      heroTitle: 'Un développeur Angular et NestJS dans votre équipe.',
+      subject: 'Proposition de mission Angular / NestJS',
+      headings: {
+        reasons: "Ce que j'apporte",
+        deliverables: 'Stack et pratiques',
+        steps: undefined,
+        pricing: 'Conditions',
+        faq: 'Questions fréquentes',
+      },
+      counts: { reasons: 3, deliverables: 6, steps: undefined, lines: 1, faq: 3 },
+    },
+  ] as const)('$slug', ({ slug, heroTitle, subject, headings, counts }) => {
+    const page = OFFER_PAGES[slug];
+
+    it('titles the hero and prefills the request subject with the validated copy', () => {
+      expect({ title: page.hero.title, subject: page.request.subject }).toEqual({
+        title: heroTitle,
+        subject,
+      });
+    });
+
+    it('titles each section it has, and only those', () => {
+      expect({
+        reasons: page.reasons?.heading,
+        deliverables: page.deliverables?.heading,
+        steps: page.steps?.heading,
+        pricing: page.pricing.heading,
+        faq: page.faq?.heading,
+      }).toEqual(headings);
+    });
+
+    it('fills each section with the validated number of items', () => {
+      expect({
+        reasons: page.reasons?.items.length,
+        deliverables: page.deliverables?.items.length,
+        steps: page.steps?.items.length,
+        lines: page.pricing.lines.length,
+        faq: page.faq?.items.length,
+      }).toEqual(counts);
+    });
+  });
+
+  describe('price lines of the new offers', () => {
+    it('prices the showcase site like the workshop: fixed creation, fixed monthly maintenance', () => {
+      const prices = OFFER_PRICES['site-vitrine'];
+      const lines = OFFER_PAGES['site-vitrine'].pricing.lines;
+      expect(
+        lines.map(({ name, amount, period, label, terms }) => ({
+          name,
+          amount,
+          period,
+          label,
+          terms,
+        })),
+      ).toEqual([
+        {
+          name: 'Création',
+          amount: { kind: 'fixed', eur: prices.creationEur },
+          period: 'once',
+          label: formatEur(prices.creationEur),
+          terms: 'Une fois. 50\u00a0% à la commande, 50\u00a0% à la mise en ligne.',
+        },
+        {
+          name: 'Maintenance',
+          amount: { kind: 'fixed', eur: prices.maintenanceMonthlyEur },
+          period: 'month',
+          label: `${formatEur(prices.maintenanceMonthlyEur)}/mois`,
+          terms: 'Par mois, sans engagement.',
+        },
+      ]);
+      expect(lines.map(({ includes }) => includes?.length)).toEqual([undefined, 5]);
+    });
+
+    it('prices the business application from a minimum, with a maintenance from a monthly minimum', () => {
+      const prices = OFFER_PRICES['application-metier'];
+      expect(
+        OFFER_PAGES['application-metier'].pricing.lines.map(({ name, amount, period, label }) => ({
+          name,
+          amount,
+          period,
+          label,
+        })),
+      ).toEqual([
+        {
+          name: 'Projet',
+          amount: { kind: 'from', eur: prices.projectFromEur },
+          period: 'once',
+          label: `À partir de ${formatEur(prices.projectFromEur)}`,
+        },
+        {
+          name: 'Maintenance',
+          amount: { kind: 'from', eur: prices.maintenanceMonthlyFromEur },
+          period: 'month',
+          label: `Dès ${formatEur(prices.maintenanceMonthlyFromEur)}/mois`,
+        },
+      ]);
+    });
+
+    it('prices the audit fixed, the works on quote and the maintenance from a monthly minimum', () => {
+      const prices = OFFER_PRICES['refonte-maintenance'];
+      const lines = OFFER_PAGES['refonte-maintenance'].pricing.lines;
+      expect(
+        lines.map(({ name, amount, period, label }) => ({ name, amount, period, label })),
+      ).toEqual([
+        {
+          name: 'Audit',
+          amount: { kind: 'fixed', eur: prices.auditEur },
+          period: 'once',
+          label: formatEur(prices.auditEur),
+        },
+        { name: 'Chantiers', amount: { kind: 'on-request' }, period: 'once', label: 'Sur devis' },
+        {
+          name: 'Maintenance',
+          amount: { kind: 'from', eur: prices.maintenanceMonthlyFromEur },
+          period: 'month',
+          label: `Dès ${formatEur(prices.maintenanceMonthlyFromEur)}/mois`,
+        },
+      ]);
+      expect(lines.map(({ includes }) => includes?.length)).toEqual([undefined, undefined, 4]);
+    });
+
+    it('prices the reinforcement by the day, on request, part time only', () => {
+      const lines = OFFER_PAGES['renfort-freelance'].pricing.lines;
+      expect(
+        lines.map(({ name, amount, period, label }) => ({ name, amount, period, label })),
+      ).toEqual([
+        { name: 'Régie', amount: { kind: 'on-request' }, period: 'day', label: 'TJM sur demande' },
+      ]);
+      expect(lines[0]?.terms).toMatch(/^Temps partiel/);
+    });
+  });
+
+  describe('commitments of the new offers', () => {
+    it('answers showcase site requests within 24 working hours', () => {
+      expect(OFFER_PAGES['site-vitrine'].request.intro).toContain('sous 24 heures ouvrées');
+    });
+
+    it('delivers the showcase site on day 7', () => {
+      expect(OFFER_PAGES['site-vitrine'].steps?.items.map(({ when }) => when)).toEqual([
+        'jour 1',
+        'jours 2 à 5',
+        'jour 6',
+        'jour 7',
+      ]);
+    });
+
+    it('commits the business application to a first version in 4 to 8 weeks, a free first call and hosting in France', () => {
+      const answers = collectStrings(OFFER_PAGES['application-metier'].faq).join(' ');
+      expect(
+        ['4 à 8 semaines', '30 minutes est gratuit', 'Hébergement en France'].filter(
+          (commitment) => !answers.includes(commitment),
+        ),
+      ).toEqual([]);
+    });
+
+    it('closes the audit with a one hour debrief', () => {
+      expect(collectStrings(OFFER_PAGES['refonte-maintenance'].steps).join(' ')).toContain(
+        "restitution d'une heure",
+      );
+    });
+
+    it('offers the reinforcement part time only, from the hero on', () => {
+      expect(OFFER_PAGES['renfort-freelance'].hero.subtitle).toContain('à temps partiel');
     });
   });
 

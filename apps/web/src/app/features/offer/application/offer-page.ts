@@ -33,7 +33,7 @@ import { OfferTimeline } from './components/offer-timeline';
     @if (page.steps; as steps) {
       <app-offer-timeline [steps]="steps" />
     }
-    <app-offer-pricing [pricing]="page.pricing" [vatMention]="vatMention" />
+    <app-offer-pricing [pricing]="page.pricing" [vatMention]="vatMention" [maltUrl]="maltUrl" />
     @if (page.faq; as faq) {
       <app-offer-faq [faq]="faq" />
     }
@@ -46,4 +46,5 @@ export class OfferPage {
   readonly summary = input.required<OfferSummary>();
   readonly content = input.required<OfferPageContent>();
   protected readonly vatMention = SITE_IDENTITY.business.vatMention;
+  protected readonly maltUrl = SITE_IDENTITY.socials.malt;
 }

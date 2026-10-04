@@ -1,10 +1,18 @@
-export type OfferSlug = 'site-atelier';
+export type OfferSlug =
+  | 'site-vitrine'
+  | 'site-atelier'
+  | 'application-metier'
+  | 'refonte-maintenance'
+  | 'renfort-freelance';
 
 export type OfferFamily = 'sites' | 'applications';
 
-export type OfferAmount = { readonly kind: 'fixed'; readonly eur: number };
+export type OfferAmount =
+  | { readonly kind: 'fixed'; readonly eur: number }
+  | { readonly kind: 'from'; readonly eur: number }
+  | { readonly kind: 'on-request' };
 
-export type OfferPeriod = 'once' | 'month';
+export type OfferPeriod = 'once' | 'month' | 'day';
 
 export type OfferPriceLine = {
   readonly id: string;
@@ -14,6 +22,7 @@ export type OfferPriceLine = {
   readonly label: string;
   readonly terms: string;
   readonly includes?: readonly string[];
+  readonly link?: 'malt';
 };
 
 export type OfferSummary = {
