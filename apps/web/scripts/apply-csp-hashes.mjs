@@ -2,9 +2,10 @@
 // La source `src/index.html` garde `'unsafe-inline'` pour le dev server ; la CI vérifie que la
 // sortie de prod n'en contient plus.
 //
-// Scripts : le prérendu émet deux scripts inline par page (contrat d'event replay, bootstrap
-// jsaction dont la liste d'événements varie par page) et un gestionnaire inline (`onload` du CSS
-// non bloquant) → hachés page par page.
+// Scripts : le prérendu émet trois scripts inline par page (contrat d'event replay, bootstrap
+// jsaction dont la liste d'événements varie par page, bascule `media` du CSS non bloquant posée par
+// beasties >= 0.5) → hachés page par page. Un gestionnaire inline (`onload`, beasties < 0.5) serait
+// haché dans `script-src-attr`.
 //
 // Styles : les feuilles de composants (`<style ng-app-id>`) et le CSS critique varient par page,
 // mais en navigation SPA Angular réinjecte à la volée les mêmes feuilles que celles d'une page

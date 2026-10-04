@@ -63,7 +63,11 @@ jobs:
           # La coquille CSR est servie aux routes client et aux 404 : hachée elle aussi, sans état d'hydratation
           test -f dist/angular-portfolio-app/browser/index.csr.html
           ! grep -q 'ng-state' dist/angular-portfolio-app/browser/index.csr.html
-          grep -q "script-src-attr 'unsafe-hashes'" dist/angular-portfolio-app/browser/index.html
+          # Gestionnaire inline (`on…="…"`) présent => haché dans `script-src-attr`. beasties >= 0.5
+          # n'en émet plus (bascule du CSS par un `<script>` haché dans `script-src`) : directive absente.
+          if grep -qE '\son[a-z]+="' dist/angular-portfolio-app/browser/index.html; then
+            grep -q "script-src-attr 'unsafe-hashes'" dist/angular-portfolio-app/browser/index.html
+          fi
           grep -q "style-src-attr 'unsafe-hashes'" dist/angular-portfolio-app/browser/index.html
 
   docker:
