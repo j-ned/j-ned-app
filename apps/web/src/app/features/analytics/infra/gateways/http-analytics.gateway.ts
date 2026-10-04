@@ -76,7 +76,7 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
     this.fireAndForget({ type: 'cv_download' });
   }
 
-  // `ctaId` porte l'emplacement (`home_hero_projects`) : c'est lui qui rend le
+  // `ctaId` porte l'emplacement (`home_hero_contact`) : c'est lui qui rend le
   // taux de clic lisible par emplacement dans les stats d'entités existantes.
   trackCtaClick(ctaId: string, label: string): void {
     if (!this.canTrack()) return;

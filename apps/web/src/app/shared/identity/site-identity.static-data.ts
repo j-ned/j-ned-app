@@ -8,7 +8,7 @@ export const SITE_IDENTITY = {
     discord: 'https://discord.gg/nedellec_julien',
     malt: 'https://www.malt.fr/profile/juliennedellec',
   },
-  availability: 'Disponible en freelance sur Malt · ouvert au CDI en Île-de-France',
+  availability: 'Disponible pour de nouveaux projets, démarrage sous 2 semaines',
   hiringAvailability:
     'Ouvert à un CDI en Île-de-France, dans une équipe produit en fintech, greentech ou industrial tech.',
   siteUrl: 'https://nedellec-julien.fr',

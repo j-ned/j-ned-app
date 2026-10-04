@@ -1,66 +1,84 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { HomeHero } from './home-hero';
+import { SectionScroller } from '@core/navigation/section-scroller';
 import { Button } from '@shared/ui/button';
-import { AppIcon } from '@shared/icons/app-icon';
+import { Cartouche } from '@shared/ui/cartouche';
+import { DimensionLine } from '@shared/ui/dimension-line';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
+import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '../domain/home-hero.static-data';
 import type { HeroData } from '../domain/models/hero.model';
-
-// L'id porte l'emplacement : c'est lui qui rend le taux de clic lisible côté stats.
-const HERO_CTA_ID = 'home_hero_projects';
-const HERO_CTA_LABEL = 'Voir les projets';
+import { HomeHero } from './home-hero';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [HomeHero, Button, AppIcon],
+  imports: [HomeHero, Button, Cartouche, DimensionLine, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // Le hero (titre, CTA, relevé) occupe tout le premier écran sous le header (h-20),
-  // contenu centré verticalement : la section des preuves commence sous le pli.
+  // Le hero occupe tout le premier écran sous le header (h-20) : les offres commencent sous le pli.
   host: {
     class: 'flex flex-col justify-center min-h-[calc(100svh-5rem)] py-12 md:py-16',
   },
   template: `
-    <div class="page-container w-full">
+    <div
+      class="page-container grid w-full items-end gap-12 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-16"
+    >
       <app-home-hero [hero]="hero()">
-        <!-- Un seul CTA : Blog, À propos et Contact sont déjà servis par la nav (NAV_LINKS). -->
-        <div class="animate-fade-up [animation-delay:180ms] mt-9">
-          <app-button
-            severity="primary"
-            size="large"
-            data-testid="hero-cta-projects"
-            (click)="goToProjects()"
-          >
-            {{ ctaLabel }}
-            <app-icon name="arrow-right" [size]="20" />
+        <div class="animate-fade-up [animation-delay:180ms] mt-9 flex flex-wrap items-center gap-3">
+          <app-button data-testid="hero-cta-contact" (click)="describeProject()">
+            {{ ctaLabels.contact }}
           </app-button>
-        </div>
-        <p class="animate-fade-up [animation-delay:200ms] mt-5 text-sm text-muted">
           <a
-            [href]="maltUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="underline decoration-foreground/20 underline-offset-4 hover:text-primary hover:decoration-primary transition-colors"
-            data-testid="hero-availability"
-            >{{ availability }}</a
+            routerLink="/offres"
+            class="link-btn-outline"
+            data-testid="hero-cta-offers"
+            (click)="trackOffersClick()"
+            >{{ ctaLabels.offers }}</a
           >
+        </div>
+        <p
+          class="animate-fade-up [animation-delay:200ms] mt-5 flex items-center gap-2.5 text-sm text-muted"
+          data-testid="hero-availability"
+        >
+          <span
+            class="size-2 shrink-0 rounded-full bg-status-success ring-4 ring-status-success/20"
+            aria-hidden="true"
+          ></span>
+          {{ availability }}
         </p>
       </app-home-hero>
+
+      <div>
+        <app-cartouche
+          data-testid="hero-work-frame"
+          [title]="workFrame.title"
+          [reference]="workFrame.reference"
+          [rows]="workFrame.rows"
+        />
+        <app-dimension-line
+          class="mt-3.5"
+          data-testid="hero-work-frame-dimension"
+          [label]="workFrame.dimension"
+        />
+      </div>
     </div>
   `,
 })
 export class HomeHeroSection {
-  private readonly _router = inject(Router);
+  private readonly _scroller = inject(SectionScroller);
   private readonly _analytics = inject(AnalyticsGateway);
 
   readonly hero = input<HeroData | null>(null);
 
-  protected readonly ctaLabel = HERO_CTA_LABEL;
+  protected readonly ctaLabels = HOME_HERO_CTA_LABELS;
   protected readonly availability = SITE_IDENTITY.availability;
-  protected readonly maltUrl = SITE_IDENTITY.socials.malt;
+  protected readonly workFrame = HOME_WORK_FRAME;
 
-  protected goToProjects(): void {
-    this._analytics.trackCtaClick(HERO_CTA_ID, HERO_CTA_LABEL);
-    void this._router.navigate(['/projects']);
+  protected describeProject(): void {
+    this._analytics.trackCtaClick('home_hero_contact', HOME_HERO_CTA_LABELS.contact);
+    this._scroller.scrollTo('contact');
+  }
+
+  protected trackOffersClick(): void {
+    this._analytics.trackCtaClick('home_hero_offers', HOME_HERO_CTA_LABELS.offers);
   }
 }

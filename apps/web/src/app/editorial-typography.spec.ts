@@ -1,5 +1,10 @@
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { OFFER_PAGES } from '@features/offer/domain/offer-pages.static-data';
+import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '@features/home/domain/home-hero.static-data';
+import {
+  HOME_OFFERS_CATALOGUE_LINK,
+  HOME_OFFERS_HEADING,
+} from '@features/home/domain/home-offers.static-data';
 import {
   STATIC_BUILD_STEPS,
   STATIC_HERO,
@@ -84,6 +89,10 @@ const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['OFFERS', OFFERS],
   ['OFFER_PAGES', OFFER_PAGES],
   ['STATIC_HERO', STATIC_HERO],
+  ['HOME_HERO_CTA_LABELS', HOME_HERO_CTA_LABELS],
+  ['HOME_WORK_FRAME', HOME_WORK_FRAME],
+  ['HOME_OFFERS_HEADING', HOME_OFFERS_HEADING],
+  ['HOME_OFFERS_CATALOGUE_LINK', HOME_OFFERS_CATALOGUE_LINK],
   ['STATIC_HOME_HIGHLIGHTS', STATIC_HOME_HIGHLIGHTS],
   ['STATIC_BUILD_STEPS', STATIC_BUILD_STEPS],
   ['STATIC_PROFILE_BASE', STATIC_PROFILE_BASE],

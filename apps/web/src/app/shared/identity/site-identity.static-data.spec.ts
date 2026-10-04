@@ -10,6 +10,12 @@ describe('SITE_IDENTITY', () => {
     });
   });
 
+  it('states the availability for new client projects', () => {
+    expect(SITE_IDENTITY.availability).toBe(
+      'Disponible pour de nouveaux projets, démarrage sous 2 semaines',
+    );
+  });
+
   it('states the CDI opening for recruiters in its own availability', () => {
     expect(SITE_IDENTITY.hiringAvailability).toMatch(/\bCDI\b/);
   });

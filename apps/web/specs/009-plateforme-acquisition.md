@@ -1443,6 +1443,160 @@ temporaires (inputs du plan, template vide, retirés ensuite) : 13 échecs, tous
 Scaffold dû au GREEN : `src/app/shared/ui/cartouche.ts` (`Cartouche`, `CartoucheRow`) et
 `src/app/shared/ui/dimension-line.ts` (`DimensionLine`).
 
+### Tranche 6 — la home commerciale : hero et offres
+
+**Copy validée par Julien (2026-10-04)**, épinglée en golden sur les constantes :
+
+- h1 (`STATIC_HERO.headline`) : « Des sites et des applications web, livrés en production par un
+  seul interlocuteur. »
+- lead (`STATIC_HERO.lead`) : « Vingt ans d'industrie, aujourd'hui développeur full-stack. Je
+  cadre, je construis, je mets en ligne et je maintiens. Vous savez ce que vous payez et quand
+  c'est livré. »
+- CTA : `hero-cta-contact` « Décrire mon projet », `hero-cta-offers` « Voir les offres et les
+  prix ».
+- `SITE_IDENTITY.availability` : « Disponible pour de nouveaux projets, démarrage sous 2
+  semaines ».
+- Cartouche : « Cadre de travail », « réf. JN-2026 » ; Interlocuteur → « Un seul, du devis à la
+  maintenance » ; Site vitrine → « 7 jours, prix fixe » ; Application → « Devis ferme après
+  cadrage » ; Propriété → « Code et domaine à votre nom » ; Tolérance prix → « ±⍽0⍽€ hors avenant
+  signé » (U+00A0 après `±` et avant `€`).
+- Cote : « de la demande à la mise en ligne ».
+- h2 des offres de la home : « Ce que je peux faire pour vous. ».
+- Lien `home-offers-catalogue-link` (`HOME_OFFERS_CATALOGUE_LINK`) : « Voir toutes les offres et
+  leurs prix ».
+- Route `''` : `title` et `seo.title` « Julien Nédellec | Sites et applications web, Yvelines » ;
+  `seo.description` « Sites et applications web livrés en production par un seul
+  interlocuteur⍽: site vitrine en 7 jours, application sur mesure, maintenance. Yvelines et à
+  distance. » (U+00A0 avant `:`, 160 caractères mesurés).
+- Accent du h1 : « livrés en production » dans un `em` (couleur primaire), segment unique ; le
+  surlignage Angular/NestJS disparaît.
+- Relevé technique (`proofs`) retiré du premier écran ; la section `home-proof` (pipeline) reste
+  inchangée (T7).
+
+Sweeps. Contrat modifié (CTA du hero, disponibilité, h1/lead, JSON-LD home) : `grep` sur `src/`,
+`scripts/`, `.github/` de `hero-cta-projects`, `home_hero_projects`, `Voir les projets`,
+`hero-keyword`, `Disponible en freelance`, `jobTitle`, `Je livre des applications`,
+`STATIC_HERO`, `availability`. Suites adaptées dans ce RED : `home-hero-section.spec.ts` (les
+4 tests du CTA projets et de la disponibilité-lien Malt remplacés, pas doublés) ; `home-hero.spec.ts`
+(test « Angular et NestJS surlignés » **retiré** : la copy validée ne contient plus de mot-clé,
+le cas n'existe plus) ; `home.spec.ts` (harnais `renderHomeTemplate` : paramètre `overrides` de
+bundle, construction d'entrée seulement). Vertes par construction : `http-analytics.gateway.spec.ts`
+(`home_hero_projects` y est une donnée d'exemple du gateway générique, pas le contrat du hero) ;
+`in-memory-home.gateway.spec.ts` (compare à `STATIC_HERO`, suit la constante) ; `home-hero.spec.ts`
+h1/lead (comparent à `STATIC_HERO`) et h1 sans `animate-` (invariant #152, conservé) ;
+`app.routes.spec.ts`, `app.routes.about.spec.ts` (hors home). États seedés : seul consommateur de
+`SITE_IDENTITY.availability` = le hero (aucun autre seed impacté). Typographie : les trois
+nouvelles constantes ajoutées à `editorial-typography.spec.ts`.
+
+Contrats fixés par ce RED :
+
+- `src/app/features/home/domain/home-hero.static-data.ts` (domaine pur, imports relatifs) :
+  `HOME_HERO_CTA_LABELS = { contact, offers }` ; `HOME_WORK_FRAME = { title, reference, rows:
+  readonly { label; value }[], dimension }` (forme compatible `CartoucheRow`, sans importer
+  `@shared`).
+- `src/app/features/home/domain/home-offers.static-data.ts` : `HOME_OFFERS_HEADING`,
+  `HOME_OFFERS_CATALOGUE_LINK`.
+- `HomeHero` rendu avec `STATIC_HERO` : texte du h1 = `headline` (inchangé), exactement un `em`
+  dans `hero-headline`, de texte « livrés en production » ; h1 sans classe `animate-`. La source
+  de l'accent (champ de `HeroData` ou découpe dans le composant) est laissée au GREEN ;
+  recommandation : donnée, pas littéral de template.
+- Premier écran sans relevé technique : dans `HomeHeroSection`, l'unique `dl` est celui du
+  cartouche `hero-work-frame`. Le retrait de `HeroData.proofs`/`STATIC_HERO.proofs` est laissé au
+  GREEN ; s'il a lieu, le littéral `proofs: []` du builder local de `home.spec.ts` s'adapte
+  mécaniquement (aucune valeur attendue).
+- `STATIC_HERO.headline`/`lead` portent la copy validée (`home.static-data.ts`, données du
+  `HomeGateway`).
+- `HomeHeroSection` : `hero-cta-contact` (bouton, ou hôte contenant un `button`) au texte
+  `HOME_HERO_CTA_LABELS.contact` ; clic ⇒ `SectionScroller.scrollTo('contact')` × 1 et
+  `trackCtaClick('home_hero_contact', label)` × 1. `hero-cta-offers` = `A`, `href="/offres"`
+  (`routerLink`), texte = `HOME_HERO_CTA_LABELS.offers` ; clic ⇒ `router.url` = `/offres` et
+  `trackCtaClick('home_hero_offers', label)`. `hero-availability` = `SITE_IDENTITY.availability`,
+  ni dans ni contenant un `a`. Cartouche : `hero-work-frame` = hôte `Cartouche` (`role="group"`,
+  `aria-label` = titre), `cartouche-title`/`cartouche-reference`/lignes = `HOME_WORK_FRAME` ;
+  `hero-work-frame-dimension` = hôte `DimensionLine` (`aria-hidden="true"`,
+  `dimension-line-label` = `HOME_WORK_FRAME.dimension`).
+- `src/app/features/home/application/home-offers.ts` (`HomeOffers`, sans `input()`) :
+  `home-offers` = `SECTION` `aria-labelledby` → `H2` = `HOME_OFFERS_HEADING` ; une
+  `home-offers-family` par famille (Sites puis Applications) titrée par un `H3` =
+  `OFFER_FAMILY_LABELS[famille]` ; offres `featuredOnHome` seules, dans l'ordre de `OFFERS`
+  (atelier absent) ; Sites en `offer-card` (`OfferCard`), Applications en `offer-row` (`OfferRow`) ;
+  `home-offers-catalogue-link` = `A`, `href="/offres"`, texte = `HOME_OFFERS_CATALOGUE_LINK` ;
+  aucun landmark.
+- `Home` : `HomeOffers` rendu **eager** (présent sans déclencher aucun `@defer`), un seul `h1` ;
+  ordre DOM `hero-headline` → `home-offers` → `home-proof-pipeline` →
+  `home-projects-placeholder` → `home-contact-placeholder` ; aucun texte « CDI » une fois les
+  deux blocs différés rendus avec `STATIC_HERO`.
+- `toOfferCatalogJsonLd(offers): Record<string, unknown>` (`offer-seo.ts`) : `{ '@type':
+  'OfferCatalog', name: 'Offres', url: siteUrl + '/offres', itemListElement: offers.map(s => ({
+  '@type': 'Offer', itemOffered: { '@type': 'Service', name: s.name, url: siteUrl +
+  offerPath(s.slug) } })) }`, dérivé de l'argument.
+- Route `''` : `title` = `seo.title` = la copy validée ; `seo.description` golden ; 1–160 caractères, sans `—` ; aucune occurrence de « CDI » dans
+  tout `seo` (titre, description, mots-clés, JSON-LD) ; `structuredData` = `@context`
+  schema.org + `@graph` `[Person, ProfessionalService]` ; `Person` `name` « Julien Nédellec »,
+  `url` = `siteUrl` ; `ProfessionalService.areaServed` nommés `['Yvelines', 'Île-de-France',
+  'France']`, `address` `addressLocality` = `SITE_IDENTITY.location`, `addressCountry` `FR`,
+  `hasOfferCatalog` `toEqual` `toOfferCatalogJsonLd(OFFERS)`.
+
+| Fichier | Tests |
+|---|---|
+| `features/home/domain/home-hero.static-data.spec.ts` (2, nouveau) | goldens `HOME_HERO_CTA_LABELS` et `HOME_WORK_FRAME` |
+| `features/home/infra/data/home.static-data.spec.ts` (2, nouveau) | goldens `STATIC_HERO.headline` et `.lead` |
+| `shared/identity/site-identity.static-data.spec.ts` (+1) | golden `availability` |
+| `features/home/application/home-hero-section.spec.ts` (12, réécrit : 4 anciens retirés) | unique `dl` du premier écran = cartouche ; CTA contact : texte, `scrollTo('contact')` × 1, analytics `home_hero_contact` ; CTA offres : `A` `href="/offres"` + texte, clic ⇒ `router.url` `/offres`, analytics `home_hero_offers` ; disponibilité en texte, hors lien ; cartouche : groupe nommé, titre + référence, lignes `toEqual` `HOME_WORK_FRAME.rows` ; cote `aria-hidden` + libellé |
+| `features/home/application/home-hero.spec.ts` (−2, +1) | tests des mots-clés surlignés et du relevé de quatre preuves retirés (cas disparus) ; accent unique `em` « livrés en production » |
+| `features/home/application/home-offers.spec.ts` (15, nouveau ; `OfferCard`/`OfferRow` sans spec isolé) | section + `H2` ; offres = `featuredOnHome` dans l'ordre ; familles `H3` Sites puis Applications ; cartes (vitrine) vs lignes (métier, refonte, renfort) ; `describe.each` × 4 offres : `href` = `offerPath(slug)` et clic ⇒ `router.url` ; lien catalogue `href` + clic ; aucun landmark |
+| `features/home/application/home.spec.ts` (+3) | offres eager + h1 unique ; ordre DOM ; aucun « CDI » |
+| `app.routes.home.spec.ts` (9, nouveau) | `title`/`seo.title` et description goldens ; snippet ≤ 160 sans `—` ; aucun CDI dans `seo` ; `@graph` `[Person, ProfessionalService]` ; Person ; `areaServed` ; `address` ; `hasOfferCatalog` |
+| `features/offer/offer-seo.spec.ts` (+3) | `toOfferCatalogJsonLd` : type, nom, URL ; cinq `Offer`/`Service` en ordre ; dérivé de l'argument (builders) |
+| `editorial-typography.spec.ts` (+4) | `HOME_HERO_CTA_LABELS`, `HOME_WORK_FRAME`, `HOME_OFFERS_HEADING`, `HOME_OFFERS_CATALOGUE_LINK` |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-04 17:10, 43 failed / 943 total). Nature des échecs : sur l'arbre réel, `pnpm test`
+(après `ng cache clean` et purge de `node_modules/.vite`) s'arrête à la compilation, uniquement
+sur les symboles applicatifs à créer au GREEN (`TS2307` / `Could not resolve` :
+`home/domain/home-hero.static-data`, `home/domain/home-offers.static-data`,
+`home/application/home-offers` ; `TS2724` : `toOfferCatalogJsonLd`) ; aucune faute de type propre
+aux specs, prettier et eslint verts sur les dix fichiers, aucun hit du pattern d'archéologie.
+Mesure du rouge comportemental : scaffolds vides posés le temps d'une exécution puis retirés
+(constantes vides, `HomeOffers` au gabarit vide non branché, `toOfferCatalogJsonLd` factice ;
+`offer-seo.ts` restauré à l'octet près) : 101 fichiers, 43 failed / 943 total, les 43 en
+`AssertionError`. Quatre nouveaux tests verts sous scaffold, par nature : « aucun landmark » de
+`HomeOffers` et les trois cas typographiques (invariants qui jugeront la vraie copy). Harnais
+vérifié : sous une implémentation jetable (retirée, `home.ts` et `home-hero-section.ts` restaurés
+par `git checkout`), les 41 tests de `home-hero-section`, `home-offers` et `home.spec` passent,
+hormis la disponibilité volontairement fausse du jetable. Non-régression : base avant RED 901
+passed / 901 ; sous scaffold 900 passed = 901 − 5 retirés/remplacés + 4 nouveaux verts, aucun test
+préexistant ne tombe (h1 sans animation compris).
+Delta après les décisions de Julien du 2026-10-04 (copy du lien catalogue, titre et description
+SEO de la home, accent `em`, relevé retiré du hero) : RED confirmé via la commande test du profil
+le 2026-10-04 17:14, 47 failed / 947 total. Sur l'arbre réel, mêmes erreurs de compilation, toutes
+sur les symboles à créer (dont `HOME_OFFERS_CATALOGUE_LINK`). Sous les mêmes scaffolds vides
+(retirés, `offer-seo.ts` restauré, `git status` sans fichier applicatif) : 47 failed, tous en
+`AssertionError` = 43 + 4 nouveaux (accent `em`, unique `dl`, titre, description) ; le golden du
+lien catalogue est porté par un test existant de `home-offers.spec.ts`. Non-régression : 900
+passed = 900 − 1 (relevé de preuves retiré) + 1 (nouveau cas typographique, vert par nature) ;
+h1 sans animation toujours vert. Hors Vitest, verify (implémenteur) : les meta par défaut de
+`src/index.html` (`description`, `og:description`) ne contiennent plus « CDI ».
+Complément demandé par la revue (après GREEN) dans `home-offers.spec.ts` (+2) : « accroche par
+famille » (dans chaque `home-offers-family`, un `home-offers-family-lead` = `OFFER_FAMILY_LEADS
+[family]`, Sites puis Applications) et « mention TVA » (`home-offers-vat-mention` =
+`SITE_IDENTITY.business.vatMention`, mention légale : son retrait doit casser la suite).
+Volontairement omis, faute de copy validée par Julien : l'eyebrow de la maquette au-dessus du h1
+(« Développeur web indépendant · Yvelines et à distance ») et un lead sous le h2 des offres ; aucun
+test ne les exige. RED confirmé via la commande test du profil le 2026-10-04 17:36, 2 failed / 949
+total, tous deux en `AssertionError` (`expected [ [], [] ] to deeply equal …`, `expected '' to be
+'TVA non applicable, art. 293 B du CGI'`) ; compilation, prettier et eslint verts (testids
+absents de `home-offers.ts`, aucun symbole nouveau). Non-régression : 947 passed, le reste de la
+suite vert après GREEN.
+Scaffold dû au GREEN (complément) : `home-offers.ts` (rendu des accroches de famille et de la
+mention TVA).
+Scaffold dû au GREEN : `features/home/domain/home-hero.static-data.ts` (`HOME_HERO_CTA_LABELS`,
+`HOME_WORK_FRAME`), `features/home/domain/home-offers.static-data.ts` (`HOME_OFFERS_HEADING`,
+`HOME_OFFERS_CATALOGUE_LINK`), `home-hero.ts` (accent `em`, relevé retiré),
+`features/home/application/home-offers.ts` (`HomeOffers`), `offer-seo.ts`
+(`toOfferCatalogJsonLd`), `home.static-data.ts` (copy), `site-identity.static-data.ts`
+(`availability`), `home-hero-section.ts`, `home.ts`, `app.routes.ts` (SEO home).
+
 ## Journal des tranches
 
 - **Tranche 1 — l'offre atelier sur le modèle générique** : GREEN 701 passed / 701 total · refactor : aucun
@@ -1451,6 +1605,7 @@ Scaffold dû au GREEN : `src/app/shared/ui/cartouche.ts` (`Cartouche`, `Cartouch
 - **Tranche 4 — la page catalogue `/offres`** : GREEN 867 passed / 867 total (reprise : accroches, description SEO, référence du cartouche empilée ; 864 au premier passage) · refactor : aucun (passe manuelle sur le diff, `simplify` non invoqué ; fil d'Ariane factorisé dès l'écriture en `HOME_CRUMB`/`CATALOGUE_CRUMB`, partagés par `toOfferSeo` et `toOfferCatalogueSeo`)
 - **Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »** : GREEN 698 passed / 698 total · refactor : liens du bloc passés sur l'utilitaire `link-btn-outline` (revue)
 - **Tranche V — socle visuel « dessin technique »** : GREEN 716 passed / 716 total · refactor : aucun
+- **Tranche 6 — la home commerciale : hero et offres** : GREEN 947 passed / 947 total · refactor : liste d'offres d'une famille (cartes Sites / lignes Applications) sortie en `OfferFamilyList`, partagée par `OfferCatalogue` et `HomeOffers` (passe manuelle sur le diff, `simplify` non invoqué en sous-agent)
 
 ## Verify
 
@@ -1801,6 +1956,67 @@ tables `name` sans « Plex », rendu identique au pixel. **Réserve** : Lighthou
 coût résiduel mesuré sur `/` (−7 points, +650 ms de LCP) qu'aucune parade testée ne réduit
 au-delà du bruit.
 
+### Tranche 6 — `/` (home commerciale, surface atteignable en production, restructurée)
+
+Steps : `pnpm install --frozen-lockfile` → `pnpm run build --configuration production` (20 routes
+prérendues, CSP durcie sur 21 pages) → lecture de `dist/angular-portfolio-app/browser/index.html`
+et des chunks → `docker build` de la branche (arbre de travail) **et** de `origin/master` `5feff21`
+(worktree détaché dans le scratchpad, retiré ensuite), conteneurs nginx `:3331` (branche) et
+`:3332` (base) → Chromium headless (Playwright) sur `/` à 375×812 et 1440×900, clair puis sombre
+(bascule de `app-dark`), axe-core injecté par évaluation de script → Lighthouse 12.8 mobile
+(throttling simulé), 3 passes par image, médiane. `public/sitemap.xml` et `public/rss.xml`
+restaurés par `git checkout` après les builds.
+
+1. **HTML prérendu de `/`** : un seul `<h1 data-testid="hero-headline">`, texte « Des sites et des
+   applications web, livrés en production par un seul interlocuteur. », unique
+   `<em class="not-italic text-primary">livrés en production</em>` ; `hero-work-frame` (« Cadre de
+   travail », réf., cinq lignes) et `hero-work-frame-dimension` (« de la demande à la mise en
+   ligne ») présents ; section offres : `offer-card-link` → `/offres/site-vitrine`,
+   `offer-row-link` → `/offres/application-metier`, `/offres/refonte-maintenance`,
+   `/offres/renfort-freelance`, **aucune carte atelier** (les deux seules occurrences de
+   `site-atelier` sont le JSON-LD et le lien du footer) ; `hero-cta-offers` et
+   `home-offers-catalogue-link` en `href="/offres"`.
+2. **« CDI »** : 0 occurrence dans tout le document, `<head>` compris. `<title>` = « Julien
+   Nédellec | Sites et applications web, Yvelines » ; `meta description` et `og:description` =
+   la description validée (U+00A0 avant `:`). Les valeurs par défaut de `src/index.html`
+   (`title`, `description`, `og:title`, `og:description`) sont alignées sur la home.
+3. **JSON-LD** : `@graph` `[Person, ProfessionalService]` ; `Person` (`@id`, `name`, `url`,
+   `sameAs`, `knowsAbout`, `email`, plus de `jobTitle`) ; `ProfessionalService` (`name`, `url`,
+   `founder` → `@id` de la personne, `address`, `areaServed` Yvelines / Île-de-France / France,
+   `hasOfferCatalog` `OfferCatalog` des cinq URLs `/offres/<slug>`).
+4. **Bundle initial** : `main-*.js` contient les résumés (`Site vitrine pour TPE…`) mais aucun
+   contenu de page d'offre (« Site pro pour mon atelier », « Audit de mon application », « Ce qui
+   change avec une application sur mesure », « Comment ça se passe » : 0 dans `main`, présents
+   dans le seul chunk lazy des pages d'offre).
+5. **Rendu** (captures, scratchpad de session `lh/shots-t6/head-{375,1440}-{light,dark}-{hero,offers,offers-full}.png`) :
+   en 1440, texte à gauche (`h1` 682×366 px), cartouche à droite (470 px, aligné en bas) et cote
+   dessous, comme la maquette ; en 375, cartouche et cote empilés sous le texte (cartouche à
+   y = 729, sous le pli), aucun défilement horizontal. Accent en `text-primary` dans les deux
+   registres. Section offres : `h2`, familles Sites (une carte) puis Applications (trois lignes),
+   mention TVA et lien catalogue.
+6. **axe** (2 largeurs × 2 registres) : aucune violation imputable au diff. Seule violation
+   relevée : `color-contrast` sur `toast-summary` (375, clair), le toast d'erreur global affiché
+   parce que l'API refuse l'origine locale : préexistante (déjà constatée en Tranche V, ticket
+   séparé). Lighthouse a11y 100 et SEO 100 sur les six passes.
+7. **Lighthouse mobile `/`** (médiane de 3, perf · LCP · render delay · CLS) :
+
+   | Image | Perf (passes) | LCP | Render delay | CLS | Poids |
+   |---|---|---|---|---|---|
+   | base `5feff21` | 90 (90/88/90) | 3 045 ms | 2 594 ms | 0 | 440 634 o |
+   | branche | 89 (89/89/86) | 3 047 ms | 2 596 ms | 0,014 | 449 198 o |
+
+   L'élément LCP reste le `h1` (`app-home-hero > h1`) sur toutes les passes, opacité 1 au premier
+   rendu (aucune classe `animate-`) : **pas de régression du LCP** après #152 (+2 ms, bruit).
+   Perf dans le bruit (−1). CLS 0,014 (sous 0,1, base 0) : unique décalage attribué au chargement
+   de JN Sans (`font-display: swap`), qui réajuste la hauteur du paragraphe et des CTA et décale le
+   bloc cartouche placé dessous.
+8. **Console** : aucune erreur applicative (`NG0…`, hydratation). Erreurs d'environnement seules :
+   `GET /api/config` 404 et CORS de `api.nedellec-julien.fr` refusant l'origine locale, comme en
+   Tranche V.
+
+Verdict : **PASS**. Réserve : CLS 0,014 dû au swap de police sous le texte du hero (sous le
+seuil « bon »).
+
 ## Review code
 
 ### Tranche 1
@@ -1957,7 +2173,7 @@ Jugements demandés :
 **Risque résiduel** (advisory, § 8) :
 - réversibilité : profil muet (déploiement Dokploy continu sur `master`) · monitoring : Sentry
 - Clic réel sans navigation dans le Browser pane : classé artefact du pane. Diagnostic de l'orchestrateur : `document.elementFromPoint` renvoie `<html>` partout dans l'onglet, aucun `click` n'atteint le lien. Le même comportement apparaît sur le header de la home et sur le site de production, donc antérieur au diff. Les tests Vitest valident la navigation au clic.
-- Une nuance reste non expliquée par ce diagnostic : la revue a aussi observé qu'un Entrée de confiance produit bien un `click` sur le lien focalisé (`defaultPrevented`), sans `pushState`. Un contrôle dans Chrome hors pane (Tab puis Entrée sur « Blog » en production) clôt la question en une minute.
+- Nuance levée le 2026-10-04 : Julien a vérifié dans Chrome, hors du Browser pane, que Tab puis Entrée sur « Blog » en production ouvre bien la page. La navigation au clavier fonctionne ; le symptôme était propre au pane. Risque clos.
 - `app-cartouche` de la carte porte à la fois `block` (hôte) et `flex` (consommateur). Le rendu est correct (`flex` gagne par l'ordre CSS de Tailwind), mais le conflit d'utilitaires est fragile.
 
 ### Tranche 5
@@ -2017,3 +2233,47 @@ Points de la 1re revue, vérifiés :
 - réversibilité : profil muet (Dokploy continu sur `master`) · monitoring : Sentry
 - aucun état persistant touché ; polices en cache `immutable` sous noms versionnés
 - non couvert par les gates : Lighthouse perf ≥ 95 non mesurable en lab, coût sur `/` accepté par Julien ; contraste du toast d'erreur préexistant (ticket séparé).
+
+### Tranche 6
+
+**Verdict** : APPROVED (re-revue ; 1re revue REJECTED sur deux points, soldés)
+**Gates CI locaux** : install ✅ (`pnpm install --frozen-lockfile`, exit 0) / tests ✅ (`pnpm test`, exit 0, 101 fichiers, 949 passed / 949 à la re-revue, après `pnpm exec ng cache clean` et purge de `node_modules/.vite` ; 947 / 947 en 1re revue) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting », rejoué à la re-revue) / build ✅ (`pnpm run build --configuration production`, exit 0 en 1re revue ; non rejoué, la re-revue n'ajoute que deux `data-testid` et des tests, API de prod joignable du premier coup : sitemap 20 URL, 20 routes prérendues, CSP durcie sur 21 pages). `public/` restauré par `git checkout`.
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main sur `git diff 2ae4b66` et les non suivis. Archéologie (motif du profil) : 0 hit nouveau (le commentaire de `http-analytics.gateway.ts:79` est préexistant, son exemple est mis à jour ; celui de `home.static-data.ts:12-13` est déplacé). `export default`, `effect(`, helpers zone, `innerHTML`, `console.`, `.only`/`.skip`, snapshot, `fireEvent`, `interface` : 0 hit. Exports ajoutés : `toOfferCatalogJsonLd` (prescrit par le plan, consommé par `app.routes.ts`), `OfferFamilyList` (2 consommateurs), constantes `HOME_*` (composants + specs). Code mort : `HERO_KEYWORDS`, `HeroProof`, `proofs`, `hero-keyword`, `hero-proof`, `hero-cta-projects` : 0 occurrence dans `src/`, `scripts/`, `.github/` (`home_hero_projects` ne reste que comme donnée d'exemple de `http-analytics.gateway.spec.ts`, sans lien avec le hero).
+**Warnings de gate** : aucun (build, test et lint lus en entier, aucun warning ni stderr)
+**Rendu compilé** : N/A (aucun composant à sélecteur attribut touché ; `OfferFamilyList`, `HomeOffers`, `Cartouche` et `DimensionLine` ont des sélecteurs élément)
+**Preuve de verify runtime** : ✅ (toujours valable à la re-revue : le seul changement applicatif est l'ajout de deux `data-testid`, sans effet de rendu ; preuve `## Verify` / Tranche 6 complète et cohérente avec le diff ; rejouée par la revue sur le build de production servi en statique, Chromium 375×812 et 1440×900, clair et sombre : rendu conforme, aucun défilement horizontal, `h1` sans `animate-` et opacité 1, accent `em` `not-italic` en `text-primary` dans les deux registres. Clavier : CTA contact → CTA offres → carte vitrine → trois lignes → lien catalogue, `:focus-visible` et outline de 2 px sur chaque arrêt. axe : seule violation, `color-contrast` du toast d'erreur global en clair, préexistante et due à l'environnement. Console : seulement les erreurs d'environnement, un 404 et le CORS de l'API.)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅ (accroches de famille et mention TVA épinglées à la re-revue)
+**Sécurité** : ✅ (CSP inchangée, aucun lien externe ajouté ; le lien Malt quitte le hero)
+**Alignement spec** : ✅ (fichiers du plan T6 présents ; `OfferFamilyList` est un refactor sous vert, tracé au journal)
+
+Vérifications du HTML prérendu de `/` : un seul `h1`, texte validé, un seul `<em class="not-italic text-primary">livrés en production</em>` ; `hero-work-frame` (titre, réf., cinq lignes ; `± 0 €` porte des U+00A0 aux bons endroits) ; `hero-work-frame-dimension` ; `home-offers` avec une `offer-card` (vitrine) et trois `offer-row`, sans atelier (`site-atelier` n'apparaît que dans le JSON-LD et le footer) ; « CDI » : 0 occurrence dans tout le document, `<head>` compris. `<title>`, `description` et `og:*` portent la copy validée (U+00A0 avant `:`). JSON-LD : `@graph` `[Person, ProfessionalService]`, `founder` → `@id` de la personne, `areaServed` et `hasOfferCatalog` (cinq URL) conformes. `main-*.js` : les résumés des offres et la copy de la home y sont (section eager, attendu) ; aucun contenu de page d'offre (« Site pro pour mon atelier », « Audit de mon application », « Comment ça se passe », « Ce qui change avec une application » : seulement dans le chunk lazy des offres). « CDI » est présent 2 fois dans `main-*.js` via `SITE_IDENTITY.hiringAvailability`, qui n'est pas rendu sur la home (décision de Julien).
+
+Points à juger, réponses de la revue :
+1. **Frontière de `OfferFamilyList`** : acceptable dans `features/offer/application/components`. Le composant connaît `OfferSummary`, `OfferCard` et `OfferRow` : c'est un composant de feature, pas une primitive du DS. `shared/ui` serait la mauvaise couche. L'import entre features au niveau `application` a un précédent (`home.ts` importe `ContactForm` depuis `features/contact/application`). Refactor sous vert vérifié : `offer-catalogue.spec.ts` n'est pas modifié et passe. Reste un doublon, en advisory ci-dessous.
+2. **Ajouts non couverts** : la pastille de disponibilité est décorative (`aria-hidden`), son absence de test est acceptée. Les accroches de famille et la mention TVA de `HomeOffers` sont du contenu visible, et la mention TVA est légale. Ni le RED, ni le plan de test T6 ne les couvrent, et les retirer ne ferait échouer aucun test. Le catalogue, lui, les épingle (`offer-family-lead`, `offer-vat-mention`). Bloquant en 1re revue, soldé en re-revue. Eyebrow et lead sous le h2 : leur omission est cohérente avec la copy validée par Julien (h2 changé, aucun eyebrow ni lead validés), désormais tracée au plan de test T6.
+3. **Modifications hors brief** : `index.html` est légitime. Le delta RED l'annonce (« meta par défaut sans CDI »), il sert de repli aux routes sans SEO, et ses U+00A0 sont présentes. Le remplacement de la règle « Indigo Keyword » est nécessaire, puisque la règle contredisait le nouveau h1. Il laisse cependant deux mentions périmées, voir point 2. `@id` + `founder` : c'est la bonne pratique schema.org pour relier les deux nœuds du `@graph`, mais aucun test ne l'épingle (advisory).
+4. **CLS 0,014** : acceptable, sous le seuil « bon » de 0,1. Les replis métriques existent déjà (`JN Sans Fallback`, avec `size-adjust` et les trois overrides). Le résidu vient d'un retour à la ligne différent du lead, qui pousse le bloc dessous (empilé en mobile, aligné en bas `items-end` en desktop). Aucun correctif simple et sûr : une réserve de hauteur en `lh` sur un texte fluide serait fragile. Laisser tel quel.
+5. **h1 et LCP** : invariant tenu. Pas de `animate-`, opacité 1 au premier rendu, test conservé (`home-hero.spec.ts`). `HERO_KEYWORDS` et `proofs` sont supprimés sans reste.
+6. **Typographie** : tenue. U+00A0 après `±` et avant `€` (octets vérifiés), avant `:` dans la description (route et `index.html`). `editorial-typography.spec.ts` couvre les quatre nouvelles constantes. `STATIC_HERO` y était déjà.
+
+**Tests notables** :
+- ✨ `src/app/features/home/application/home.spec.ts:312` : « aucun CDI » vérifié après rendu forcé des deux blocs différés, avec `STATIC_HERO` réel. Le test couvre toute la page, pas seulement le hero.
+- ✨ `src/app/features/home/application/home-offers.spec.ts:88` : `describe.each` sur les offres mises en avant, `href` et navigation réelle, un cas nommé par offre.
+- ⚠️ `src/app/app.routes.home.spec.ts:48` : le lien `founder` → `@id` de `Person` n'est pas épinglé. Un renommage d'`@id` casserait le graphe en silence.
+
+**Duplication / dérivation** (advisory, non bloquant) :
+- ⚠️ `src/app/features/home/application/home-offers.ts:25-34` et `src/app/features/offer/application/offer-catalogue.ts:32-46` : même bloc de famille (grille `lg:grid-cols-[13rem_minmax(0,1fr)]`, colonne titre + accroche, mêmes classes), sur 2 sites. Le refactor n'a extrait que la liste. Seul le niveau de titre diffère (h3 contre h2, plus `section` contre `div`). On peut l'accepter tant qu'il n'y a que deux sites. Un troisième site imposerait un composant `OfferFamilyBlock` avec un niveau de titre en entrée.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil muet (Dokploy continu sur `master`) · monitoring : Sentry
+- aucun état persistant touché
+- non couvert par les gates : la branche de repli de `HomeHero.headlineSegments` (accent introuvable dans le titre) n'est pas testée ; le `Cartouche` du hero est annoncé deux fois par les lecteurs d'écran (`aria-label` = titre visible), un point advisory hérité de la Tranche V, où la maquette proposait un libellé distinct.
+
+Points de la 1re revue, vérifiés :
+1. **Tests manquants** : soldé. `home-offers.spec.ts` gagne deux tests. Le premier vérifie, dans chaque `home-offers-family`, que les `home-offers-family-lead` valent `[[OFFER_FAMILY_LEADS.sites], [OFFER_FAMILY_LEADS.applications]]` : il épingle aussi le rattachement de chaque accroche à sa famille. Le second vérifie que `home-offers-vat-mention` vaut `SITE_IDENTITY.business.vatMention`. RED tracé au plan de test (2 failed / 949, en `AssertionError`). Côté GREEN, `home-offers.ts:32` et `:42` ne portent que les deux `data-testid` ajoutés, rien d'autre. Le plan de test T6 trace aussi les omissions volontaires (eyebrow, lead sous le h2).
+2. **`DESIGN.md`** : soldé. Les lignes 151 et 380 renvoient à l'accent unique (`em` `not-italic text-primary`, The Indigo Accent Rule). Plus aucune occurrence de `kw` ni de « Keyword » dans `DESIGN.md` ni `DESIGN.json`.
+
+Advisories maintenus, non bloquants : bloc de famille dupliqué sur 2 sites, lien `founder` → `@id` non épinglé, branche de repli de `headlineSegments` non testée, double annonce du `Cartouche` du hero.

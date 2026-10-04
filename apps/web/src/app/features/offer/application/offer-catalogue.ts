@@ -8,12 +8,11 @@ import {
 } from '@features/offer/domain/offer-catalog.static-data';
 import { groupOffersByFamily } from '@features/offer/domain/group-offers-by-family';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import { OfferCard } from './components/offer-card';
-import { OfferRow } from './components/offer-row';
+import { OfferFamilyList } from './components/offer-family-list';
 
 @Component({
   selector: 'app-offer-catalogue',
-  imports: [OfferCard, OfferRow],
+  imports: [OfferFamilyList],
   host: { class: 'block pt-20' },
   template: `
     <div class="page-container pt-18 pb-22 md:pt-26 md:pb-30">
@@ -45,26 +44,7 @@ import { OfferRow } from './components/offer-row';
                 {{ familyLeads[group.family] }}
               </p>
             </div>
-            @switch (group.family) {
-              @case ('sites') {
-                <ul role="list" class="grid gap-6 sm:grid-cols-2">
-                  @for (offer of group.offers; track offer.slug) {
-                    <li>
-                      <app-offer-card data-testid="offer-card" [summary]="offer" />
-                    </li>
-                  }
-                </ul>
-              }
-              @case ('applications') {
-                <ul role="list" class="border-y-[1.5px] border-line-strong">
-                  @for (offer of group.offers; track offer.slug) {
-                    <li class="border-t border-line first:border-t-0">
-                      <app-offer-row data-testid="offer-row" [summary]="offer" />
-                    </li>
-                  }
-                </ul>
-              }
-            }
+            <app-offer-family-list [family]="group.family" [offers]="group.offers" />
           </section>
         }
       </div>

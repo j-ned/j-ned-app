@@ -6,7 +6,7 @@ import { offerPath } from './domain/offer-path';
 import { OFFER_PAGES } from './domain/offer-pages.static-data';
 import { OFFER_PRICES } from './domain/offer-prices.static-data';
 import type { OfferSlug } from './domain/models/offer.model';
-import { toOfferCatalogueSeo, toOfferSeo } from './offer-seo';
+import { toOfferCatalogJsonLd, toOfferCatalogueSeo, toOfferSeo } from './offer-seo';
 import {
   makeOfferPageContent,
   makeOfferPriceLine,
@@ -395,6 +395,55 @@ describe('toOfferCatalogueSeo', () => {
     expect(nodeOf(toOfferCatalogueSeo(OFFERS), 'BreadcrumbList')?.['itemListElement']).toEqual([
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
       { '@type': 'ListItem', position: 2, name: 'Offres', item: CATALOGUE_URL },
+    ]);
+  });
+});
+
+describe('toOfferCatalogJsonLd', () => {
+  it('names the catalogue Offres, at the catalogue url', () => {
+    const catalog = toOfferCatalogJsonLd(OFFERS);
+
+    expect(catalog['@type']).toBe('OfferCatalog');
+    expect(catalog['name']).toBe('Offres');
+    expect(catalog['url']).toBe(CATALOGUE_URL);
+  });
+
+  it('offers every service of the catalogue at its page url, in catalogue order', () => {
+    expect(toOfferCatalogJsonLd(OFFERS)['itemListElement']).toEqual(
+      OFFERS.map((summary) => ({
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Service',
+          name: summary.name,
+          url: `${SITE_IDENTITY.siteUrl}${offerPath(summary.slug)}`,
+        },
+      })),
+    );
+  });
+
+  it('lists only the offers it is given', () => {
+    const offers = [
+      makeOfferSummary({ slug: 'application-metier', name: 'Application de test' }),
+      makeOfferSummary({ slug: 'site-atelier', name: 'Atelier de test' }),
+    ];
+
+    expect(toOfferCatalogJsonLd(offers)['itemListElement']).toEqual([
+      {
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Service',
+          name: 'Application de test',
+          url: `${SITE_IDENTITY.siteUrl}/offres/application-metier`,
+        },
+      },
+      {
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Service',
+          name: 'Atelier de test',
+          url: `${SITE_IDENTITY.siteUrl}/offres/site-atelier`,
+        },
+      },
     ]);
   });
 });

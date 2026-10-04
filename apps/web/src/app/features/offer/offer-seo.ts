@@ -108,3 +108,19 @@ export function toOfferCatalogueSeo(offers: readonly OfferSummary[]): SeoData {
     },
   };
 }
+
+export function toOfferCatalogJsonLd(offers: readonly OfferSummary[]): Record<string, unknown> {
+  return {
+    '@type': 'OfferCatalog',
+    name: 'Offres',
+    url: CATALOGUE_URL,
+    itemListElement: offers.map((summary) => ({
+      '@type': 'Offer',
+      itemOffered: {
+        '@type': 'Service',
+        name: summary.name,
+        url: `${SITE_IDENTITY.siteUrl}${offerPath(summary.slug)}`,
+      },
+    })),
+  };
+}

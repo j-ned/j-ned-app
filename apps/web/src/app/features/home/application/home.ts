@@ -1,6 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from './home-hero-section';
+import { HomeOffers } from './home-offers';
 import { HomeProjects } from './home-projects';
 import { HomeProof } from './home-proof';
 import { ContactForm } from '@features/contact/application/contact-form';
@@ -10,12 +11,14 @@ import { SectionScroller } from '@core/navigation/section-scroller';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeProof, HomeProjects, ContactForm, SectionVisibility],
+  imports: [HomeHeroSection, HomeOffers, HomeProof, HomeProjects, ContactForm, SectionVisibility],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col w-full' },
   template: `
     <!-- Premier écran : le hero occupe tout l'espace sous le header (h-20). -->
     <app-home-hero-section class="mt-20" [hero]="bundle()?.hero ?? null" />
+
+    <app-home-offers />
 
     @if (highlights().length > 0) {
       <app-home-proof [highlights]="highlights()" [buildSteps]="buildSteps()" />

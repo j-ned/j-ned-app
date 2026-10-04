@@ -2,20 +2,15 @@ import type { BuildStep } from '../../domain/models/build-step.model';
 import type { HeroData } from '../../domain/models/hero.model';
 import type { HomeHighlight } from '../../domain/models/home-highlight.model';
 
-// Chaque preuve et chaque fait doit rester vérifiable dans ce repo ou dans celui de l'API :
-// pas de score chiffré tant qu'il n'est pas mesuré en CI.
 export const STATIC_HERO: HeroData = {
   id: 'c64a566f-9e53-44f9-96de-f938f0166b9c',
-  headline: "Je livre des applications Angular et NestJS jusqu'en production.",
-  lead: "Du composant au conteneur\u00a0: architecture, API, base PostgreSQL, CI/CD et hébergement. Ce site en est l'échantillon, prérendu et déployé sur ma propre infrastructure.",
-  proofs: [
-    { label: 'runtime', value: 'Angular 22 zoneless', detail: 'signals · Signal Forms' },
-    { label: 'rendu', value: 'Pages publiques prérendues', detail: 'hydratation incrémentale' },
-    { label: 'sécurité', value: 'CSP stricte par hash', detail: 'calculée au build' },
-    { label: 'déploiement', value: 'Docker sur Dokploy', detail: 'auto-hébergé · CI GitHub' },
-  ],
+  headline: 'Des sites et des applications web, livrés en production par un seul interlocuteur.',
+  headlineAccent: 'livrés en production',
+  lead: "Vingt ans d'industrie, aujourd'hui développeur full-stack. Je cadre, je construis, je mets en ligne et je maintiens. Vous savez ce que vous payez et quand c'est livré.",
 };
 
+// Chaque preuve et chaque fait doit rester vérifiable dans ce repo ou dans celui de l'API :
+// pas de score chiffré tant qu'il n'est pas mesuré en CI.
 export const STATIC_HOME_HIGHLIGHTS: readonly HomeHighlight[] = [
   {
     id: 'ba0760a4-4576-4136-a1d0-a78aa969de15',

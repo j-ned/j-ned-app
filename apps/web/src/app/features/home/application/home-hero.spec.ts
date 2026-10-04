@@ -15,11 +15,6 @@ describe('HomeHero', () => {
   const textOf = (testId: string): string =>
     (host().querySelector(`[data-testid="${testId}"]`)?.textContent ?? '').trim();
 
-  const keywords = (): readonly string[] =>
-    Array.from(host().querySelectorAll<HTMLElement>('[data-testid="hero-keyword"]')).map(
-      (span) => span.textContent ?? '',
-    );
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({}).compileComponents();
     fixture = TestBed.createComponent(HomeHero);
@@ -40,27 +35,17 @@ describe('HomeHero', () => {
     expect(headline?.className).not.toMatch(/\banimate-/);
   });
 
-  // Le surlignage indigo est gratuit tant que le titre écrit `Angular` et `NestJS`
-  // littéralement (split dans `HomeHero`) : une réécriture qui les paraphrase l'éteindrait en silence.
-  it('Given le hero livré When il est rendu Then Angular et NestJS sont surlignés', () => {
+  it('Given le hero livré When il est rendu Then « livrés en production » est l’unique accent du titre', () => {
     renderWith(STATIC_HERO);
-    expect(keywords()).toEqual(['Angular', 'NestJS']);
+    const accents = Array.from(
+      host().querySelectorAll<HTMLElement>('[data-testid="hero-headline"] em'),
+    ).map((em) => (em.textContent ?? '').trim());
+    expect(accents).toEqual(['livrés en production']);
   });
 
   it('Given le hero livré When il est rendu Then le paragraphe d’appui suit le titre', () => {
     renderWith(STATIC_HERO);
     expect(textOf('hero-lead')).toBe(STATIC_HERO.lead);
-  });
-
-  it('Given quatre preuves When le hero est rendu Then le relevé affiche chaque libellé et valeur', () => {
-    renderWith(STATIC_HERO);
-    const proofs = Array.from(host().querySelectorAll<HTMLElement>('[data-testid="hero-proof"]'));
-    expect(proofs).toHaveLength(STATIC_HERO.proofs.length);
-    STATIC_HERO.proofs.forEach((proof, i) => {
-      expect(proofs[i].querySelector('dt')?.textContent?.trim()).toBe(proof.label);
-      expect(proofs[i].textContent).toContain(proof.value);
-      expect(proofs[i].textContent).toContain(proof.detail);
-    });
   });
 
   it('Given aucun hero When le composant est rendu Then aucun h1 (squelette seul)', () => {

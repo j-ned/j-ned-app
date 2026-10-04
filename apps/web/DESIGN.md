@@ -142,13 +142,13 @@ Ce que ce système refuse explicitement : le gradient violet/bleu de SaaS market
 
 ## 2. Colors: The Signal Indigo Palette
 
-Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signature décliné en trois intensités. Aucun gradient utilisé comme décoration, titres compris : le `<h1>` du hero est en texte plein, ses mots-clés en Signal Indigo.
+Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signature décliné en trois intensités. Aucun gradient utilisé comme décoration, titres compris : le `<h1>` du hero est en texte plein, son accent unique en Signal Indigo.
 
 ### Primary
 
-- **Signal Indigo** (`#4f46e5`, canonical `oklch(54% 0.22 277)`): l'encre signature. Boutons primaires, liens, rings de focus, mots-clés techniques (Angular, NestJS) en `<span class="kw">`, bordures actives. Présent dans les deux registres exactement à la même valeur. C'est l'élément qui dit "ce portfolio appartient à J-Ned".
+- **Signal Indigo** (`#4f46e5`, canonical `oklch(54% 0.22 277)`): l'encre signature. Boutons primaires, liens, rings de focus, accent du `<h1>` du hero, bordures actives. Présent dans les deux registres exactement à la même valeur. C'est l'élément qui dit "ce portfolio appartient à J-Ned".
 
-- **Signal Indigo Lifted** (`#818cf8`, canonical `oklch(72% 0.16 277)`): le statut "actif" en dark, le texte indigo cliquable sur fond Console-Black. Utilisé pour `--theme-primary-text` en dark mode (la couleur du texte du nom, des kw, des liens).
+- **Signal Indigo Lifted** (`#818cf8`, canonical `oklch(72% 0.16 277)`): le statut "actif" en dark, le texte indigo cliquable sur fond Console-Black. Utilisé pour `--theme-primary-text` en dark mode (la couleur du texte du nom, de l'accent du `<h1>` du hero, des liens).
 
 - **Signal Indigo Deep** (`#4338ca`, canonical `oklch(45% 0.21 278)`): le statut "actif" en ivoire, le texte indigo lisible sur fond Ivoire-Paper. `--theme-primary-text` en light mode. Plus dense, moins flash, lisible sur paper.
 
@@ -228,7 +228,7 @@ Contrastes calculés (composition sRGB, WCAG 2.x) : `line` 1,22:1 (Console, fond
 
 **The Single-Display Rule.** Un seul `<h1>` par page, en Display, jamais réutilisé pour décorer une autre section. La hiérarchie `<h1>` → `<h2>` → `<h3>` ne saute jamais un niveau.
 
-**The Indigo Keyword Rule.** Dans le `<h1>` du hero, les keywords techniques (`Angular`, `NestJS`) sont en Signal Indigo Lifted (dark) ou Signal Indigo Deep (light). Pattern : `HomeHero` découpe le titre sur les mots-clés et les rend en `text-primary`. C'est le signal "ce profil revendique sa stack".
+**The Indigo Accent Rule.** Le `<h1>` du hero porte un seul accent, un segment de la promesse (« livrés en production ») en `em` `not-italic text-primary`. Le segment est une donnée (`HeroData.headlineAccent`), jamais un littéral de template : `HomeHero` découpe le titre autour de lui.
 
 ## 4. Elevation
 
@@ -377,7 +377,7 @@ Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionne
 ### Don't:
 
 - **Don't** introduire un second accent color. Pas de teal, pas de coral, pas de "blue-500 par accident". One Indigo Rule.
-- **Don't** utiliser `background-clip: text` + gradient comme style décoratif. Privilégier un Signal Indigo solide en `<span class="kw">` ou un weight contrast.
+- **Don't** utiliser `background-clip: text` + gradient comme style décoratif. Privilégier l'accent unique en Signal Indigo solide (`em` `not-italic text-primary`, The Indigo Accent Rule) ou un weight contrast.
 - **Don't** ajouter `backdrop-filter: blur()` à une card "pour faire glass". No-Glass Rule.
 - **Don't** ajouter de shadow à une card "pour qu'elle ressorte". Flat-By-Default Rule — travaille la hiérarchie typographique ou la taille avant.
 - **Don't** charger une Google Font ni une police depuis un CDN. Three Families Rule : les polices sont auto-hébergées (ADR-0006).

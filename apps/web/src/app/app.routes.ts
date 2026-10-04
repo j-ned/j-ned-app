@@ -1,51 +1,72 @@
 import type { Routes } from '@angular/router';
 import { authGuard } from '@features/auth/infra/auth-guard';
 import { Home } from '@features/home/application/home';
+import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { OFFERS_BASE_PATH, offerPath } from '@features/offer/domain/offer-path';
+import { toOfferCatalogJsonLd } from '@features/offer/offer-seo';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
+
+const HOME_TITLE = 'Julien Nédellec | Sites et applications web, Yvelines';
+const PERSON_ID = `${SITE_IDENTITY.siteUrl}/#person`;
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    title: 'Julien Nédellec | Développeur Full-Stack Angular / NestJS',
+    title: HOME_TITLE,
     component: Home,
     data: {
       seo: {
-        title: 'Julien Nédellec | Développeur Full-Stack Angular / NestJS',
+        title: HOME_TITLE,
         description:
-          "Développeur Full-Stack Angular / NestJS, freelance et ouvert au CDI en Île-de-France. 20 ans d'industrie, aujourd'hui en aéronautique\u00a0: je conçois, déploie et maintiens des applications en production.",
+          'Sites et applications web livrés en production par un seul interlocuteur\u00a0: site vitrine en 7 jours, application sur mesure, maintenance. Yvelines et à distance.',
         keywords:
           'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France, Île-de-France, Industrie, Self-hosted',
         url: SITE_IDENTITY.siteUrl,
         type: 'website',
         structuredData: {
           '@context': 'https://schema.org',
-          '@type': 'Person',
-          name: 'Julien Nédellec',
-          jobTitle: 'Développeur Full-Stack Angular / NestJS',
-          url: SITE_IDENTITY.siteUrl,
-          sameAs: [
-            SITE_IDENTITY.socials.linkedin,
-            SITE_IDENTITY.socials.github,
-            SITE_IDENTITY.socials.malt,
+          '@graph': [
+            {
+              '@type': 'Person',
+              '@id': PERSON_ID,
+              name: 'Julien Nédellec',
+              url: SITE_IDENTITY.siteUrl,
+              sameAs: [
+                SITE_IDENTITY.socials.linkedin,
+                SITE_IDENTITY.socials.github,
+                SITE_IDENTITY.socials.malt,
+              ],
+              knowsAbout: [
+                'Angular',
+                'NestJS',
+                'TypeScript',
+                'Node.js',
+                'Angular Signals',
+                'PostgreSQL',
+                'Drizzle ORM',
+                'Docker',
+              ],
+              email: SITE_IDENTITY.email,
+            },
+            {
+              '@type': 'ProfessionalService',
+              name: 'Julien Nédellec',
+              url: SITE_IDENTITY.siteUrl,
+              founder: { '@id': PERSON_ID },
+              address: {
+                '@type': 'PostalAddress',
+                addressLocality: SITE_IDENTITY.location,
+                addressCountry: 'FR',
+              },
+              areaServed: [
+                { '@type': 'AdministrativeArea', name: 'Yvelines' },
+                { '@type': 'AdministrativeArea', name: 'Île-de-France' },
+                { '@type': 'Country', name: 'France' },
+              ],
+              hasOfferCatalog: toOfferCatalogJsonLd(OFFERS),
+            },
           ],
-          address: {
-            '@type': 'PostalAddress',
-            addressLocality: SITE_IDENTITY.location,
-            addressCountry: 'FR',
-          },
-          knowsAbout: [
-            'Angular',
-            'NestJS',
-            'TypeScript',
-            'Node.js',
-            'Angular Signals',
-            'PostgreSQL',
-            'Drizzle ORM',
-            'Docker',
-          ],
-          email: SITE_IDENTITY.email,
         },
       },
     },

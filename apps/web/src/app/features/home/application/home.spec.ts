@@ -16,6 +16,8 @@ import { SectionScroller } from '@core/navigation/section-scroller';
 import type { HomeBundle } from '@features/home/domain/models/home-bundle.model';
 import type { HomeHighlight } from '@features/home/domain/models/home-highlight.model';
 import type { Project } from '@features/projects/domain/models/project.model';
+import { HOME_OFFERS_HEADING } from '../domain/home-offers.static-data';
+import { STATIC_HERO } from '../infra/data/home.static-data';
 
 const highlight = (overrides: Partial<HomeHighlight> = {}): HomeHighlight => ({
   id: 'h1',
@@ -39,7 +41,7 @@ const aProject = (overrides: Partial<Project> = {}): Project => ({
 });
 
 const bundle = (overrides: Partial<HomeBundle> = {}): HomeBundle => ({
-  hero: { id: 'hero', headline: 'Je livre', lead: 'Preuve', proofs: [] },
+  hero: { id: 'hero', headline: 'Je livre', lead: 'Preuve' },
   highlights: [highlight()],
   buildSteps: [{ id: 's1', command: 'ng build', description: 'desc' }],
   featuredProjects: [],
@@ -114,13 +116,16 @@ type DeferHarness = {
 
 async function renderHomeTemplate(
   featuredProjects: readonly Project[] = [],
+  overrides: Partial<HomeBundle> = {},
 ): Promise<DeferHarness> {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
       {
         provide: HomeGateway,
-        useValue: makeHomeGateway({ getHomeBundle: () => of(bundle({ featuredProjects })) }),
+        useValue: makeHomeGateway({
+          getHomeBundle: () => of(bundle({ featuredProjects, ...overrides })),
+        }),
       },
       { provide: SectionScroller, useValue: makeScroller() },
       { provide: ContactGateway, useValue: makeContactGateway() },
@@ -264,6 +269,56 @@ describe('Home', () => {
 
       const root = fixture.nativeElement as HTMLElement;
       expect(root.querySelector('form')).not.toBeNull();
+    });
+  });
+
+  describe('home commerciale', () => {
+    const text = (el: Element | null | undefined): string =>
+      (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
+
+    it('Given le template réel When aucun bloc différé n’est déclenché Then les offres sont déjà rendues, sous l’unique h1', async () => {
+      const { fixture } = await renderHomeTemplate();
+      const root = fixture.nativeElement as HTMLElement;
+
+      const offers = byTestId(fixture, 'home-offers');
+      expect(offers?.tagName).toBe('SECTION');
+      expect(text(offers?.querySelector('h2'))).toBe(HOME_OFFERS_HEADING);
+      expect(root.querySelectorAll('h1')).toHaveLength(1);
+    });
+
+    it('Given le template réel When la page est rendue Then hero, offres, preuves, projets puis contact se suivent dans le DOM', async () => {
+      const { fixture } = await renderHomeTemplate();
+
+      const sequence = [
+        'hero-headline',
+        'home-offers',
+        'home-proof-pipeline',
+        'home-projects-placeholder',
+        'home-contact-placeholder',
+      ].map((id) => byTestId(fixture, id));
+      expect(sequence.every((el) => el !== null)).toBe(true);
+      const follows = sequence
+        .slice(1)
+        .map((el, i) =>
+          Boolean(
+            (sequence[i]?.compareDocumentPosition(el as Node) ?? 0) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+          ),
+        );
+      expect(follows).toEqual([true, true, true, true]);
+    });
+
+    it('Given le hero livré et toutes les sections rendues When la page est lue Then aucun texte ne mentionne le CDI', async () => {
+      const { fixture, projectsBlock, contactBlock } = await renderHomeTemplate([], {
+        hero: STATIC_HERO,
+      });
+      await projectsBlock.render(DeferBlockState.Complete);
+      await contactBlock.render(DeferBlockState.Complete);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+
+      expect(byTestId(fixture, 'home-contact-form')).not.toBeNull();
+      expect(root.textContent).not.toMatch(/\bCDI\b/);
     });
   });
 });
