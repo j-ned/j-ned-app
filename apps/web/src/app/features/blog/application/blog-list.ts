@@ -29,7 +29,8 @@ const PAGE_SIZE = 9;
         </p>
         <h1
           id="blog-heading"
-          class="animate-fade-up [animation-delay:60ms] mt-4.5 text-[clamp(2.75rem,6vw,5.25rem)] font-extrabold leading-none tracking-[-0.04em]"
+          data-testid="blog-title"
+          class="mt-4.5 text-[clamp(2.75rem,6vw,5.25rem)] font-extrabold leading-none tracking-[-0.04em]"
         >
           Blog
         </h1>

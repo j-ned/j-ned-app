@@ -64,6 +64,20 @@ describe('OfferPage', () => {
         expect(text(headings[0])).toBe(ATELIER.hero.title);
       });
 
+      // Titre du premier écran : un fondu d'entrée (opacité nulle) le masque au premier rendu.
+      it('shows the title on the first render, without any entrance animation', () => {
+        const title = byTestId('offer-title');
+        expect(title).not.toBeNull();
+        expect(title?.className).not.toMatch(/\banimate-/);
+      });
+
+      // Sous-titre = élément LCP de la page : un fondu d'entrée repousse le LCP à la fin de l'animation.
+      it('shows the subtitle on the first render, without any entrance animation', () => {
+        const subtitle = byTestId('offer-subtitle');
+        expect(subtitle).not.toBeNull();
+        expect(subtitle?.className).not.toMatch(/\banimate-/);
+      });
+
       it('states the subtitle and the price teaser of the offer summary', () => {
         expect(text(byTestId('offer-subtitle'))).toBe(ATELIER.hero.subtitle);
         expect(text(byTestId('offer-hero-price'))).toBe(offerSummaryOf('site-atelier').priceTeaser);

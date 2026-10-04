@@ -44,7 +44,7 @@ const INDEX_STACK_SIZE = 3;
         <h1
           id="projects-heading"
           data-testid="projects-title"
-          class="animate-fade-up [animation-delay:60ms] mt-4.5 text-[clamp(2.75rem,6vw,5.25rem)] font-extrabold leading-none tracking-[-0.04em]"
+          class="mt-4.5 text-[clamp(2.75rem,6vw,5.25rem)] font-extrabold leading-none tracking-[-0.04em]"
         >
           Réalisations
         </h1>
@@ -89,7 +89,13 @@ const INDEX_STACK_SIZE = 3;
         @if (featuredOnPage().length > 0) {
           <ul class="mt-12 grid gap-6 md:grid-cols-2" role="list" aria-label="Projets mis en avant">
             @for (project of featuredOnPage(); track project.id) {
-              <li><app-project-card [project]="project" [showKeyDecision]="true" /></li>
+              <li>
+                <app-project-card
+                  [project]="project"
+                  [showKeyDecision]="true"
+                  [priority]="$first"
+                />
+              </li>
             }
           </ul>
         }

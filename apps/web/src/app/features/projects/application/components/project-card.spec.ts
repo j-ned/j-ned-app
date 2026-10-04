@@ -42,6 +42,43 @@ describe('ProjectCard', () => {
     expect(link?.getAttribute('href')).toBe('/projects/mon-site');
   });
 
+  describe('priorité de chargement', () => {
+    const render = (priority?: boolean): HTMLElement => {
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
+        ],
+      });
+      const fixture = TestBed.createComponent(ProjectCard);
+      fixture.componentRef.setInput('project', project({ image: '/projects/a.avif' }));
+      if (priority !== undefined) fixture.componentRef.setInput('priority', priority);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    };
+
+    it('Given priority When la carte est rendue Then son image est chargée en priorité', () => {
+      const img = render(true).querySelector('img');
+      expect(img?.getAttribute('fetchpriority')).toBe('high');
+      expect(img?.getAttribute('loading')).toBe('eager');
+    });
+
+    it('Given aucune priorité When la carte est rendue Then son image est chargée en différé', () => {
+      expect(render().querySelector('img')?.getAttribute('loading')).toBe('lazy');
+    });
+
+    // Image prioritaire = élément LCP : un hôte en fondu (opacité nulle) repousse son affichage.
+    it.each([
+      { priority: true, animated: false },
+      { priority: false, animated: true },
+    ])(
+      'Given priority $priority When la carte est rendue Then son animation d’entrée est $animated',
+      ({ priority, animated }) => {
+        expect(render(priority).classList.contains('animate-fade-up')).toBe(animated);
+      },
+    );
+  });
+
   describe('navigation des liens du projet', () => {
     const navLabel = (title: string): string | null | undefined => {
       const fixture = TestBed.createComponent(ProjectCard);

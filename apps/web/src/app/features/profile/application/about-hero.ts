@@ -27,7 +27,8 @@ const STACK = 'Angular · NestJS · TypeScript';
             </p>
             <h1
               id="about-heading"
-              class="animate-fade-up [animation-delay:60ms] mt-5 text-[clamp(2.5rem,5.6vw,5rem)] font-extrabold leading-[1.02] tracking-[-0.035em]"
+              data-testid="about-title"
+              class="mt-5 text-[clamp(2.5rem,5.6vw,5rem)] font-extrabold leading-[1.02] tracking-[-0.035em]"
             >
               {{ profile.displayName }}
             </h1>

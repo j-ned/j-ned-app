@@ -107,6 +107,23 @@ describe('BlogPostRow priority', () => {
   it('lazy-loads the cover by default', () => {
     expect(render(false).getAttribute('loading')).toBe('lazy');
   });
+
+  // Couverture prioritaire = élément LCP : un hôte en fondu (opacité nulle) repousse son affichage.
+  it.each([
+    { priority: true, animated: false },
+    { priority: false, animated: true },
+  ])(
+    'Given priority $priority When the row is rendered Then its entrance animation is $animated',
+    ({ priority, animated }) => {
+      TestBed.configureTestingModule({ providers: [provideRouter([])] });
+      const fixture = TestBed.createComponent(BlogPostRow);
+      fixture.componentRef.setInput('post', post({ coverImage: '/covers/a.avif' }));
+      fixture.componentRef.setInput('priority', priority);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.classList.contains('animate-fade-up')).toBe(animated);
+    },
+  );
 });
 
 describe('BlogPostRow lecture', () => {

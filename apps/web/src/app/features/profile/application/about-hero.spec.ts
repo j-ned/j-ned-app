@@ -29,6 +29,13 @@ describe('AboutHero', () => {
     expect(headings[0].textContent?.trim()).toBe(STATIC_PROFILE_BASE.displayName);
   });
 
+  // Titre du premier écran : un fondu d'entrée (opacité nulle) le masque au premier rendu.
+  it('Given le profil livré When le hero est rendu Then le nom est visible au premier rendu, sans animation d’entrée', () => {
+    const title = host().querySelector<HTMLElement>('[data-testid="about-title"]');
+    expect(title).not.toBeNull();
+    expect(title?.className).not.toMatch(/\banimate-/);
+  });
+
   it('Given la biographie When le hero est rendu Then l’accroche et son emphase sont affichées', () => {
     const lead = host().querySelector('[data-testid="about-lead"]');
     expect(lead?.textContent).toContain(STATIC_BIOGRAPHY.lead);

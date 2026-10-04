@@ -9,7 +9,7 @@ import { AppIcon } from '@shared/icons/app-icon';
   selector: 'app-project-card',
   imports: [NgOptimizedImage, RouterLink, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block h-full animate-fade-up' },
+  host: { class: 'block h-full', '[class.animate-fade-up]': '!priority()' },
   template: `
     <article
       class="group relative bg-surface border border-foreground/8 rounded-xl overflow-hidden hover:border-primary/30 hover:bg-surface-elevated transition-colors duration-200 flex flex-col h-full"
@@ -19,6 +19,7 @@ import { AppIcon } from '@shared/icons/app-icon';
           <img
             [ngSrc]="project().image"
             [alt]="project().title"
+            [priority]="priority()"
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             class="object-cover"
@@ -149,6 +150,7 @@ export class ProjectCard {
 
   readonly project = input.required<Project>();
   readonly showKeyDecision = input(false);
+  readonly priority = input(false);
 
   protected readonly keyDecision = computed(() =>
     this.showKeyDecision() ? (this.project().architectureDecisions?.[0] ?? null) : null,

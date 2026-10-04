@@ -10,15 +10,12 @@ import type { OfferPageContent } from '@features/offer/domain/models/offer.model
     <section class="page-container pt-18 pb-22 md:pt-26 md:pb-30" aria-labelledby="offer-heading">
       <h1
         id="offer-heading"
-        class="animate-fade-up text-[clamp(2.25rem,5.4vw,4.5rem)] font-extrabold leading-[1.04] tracking-[-0.035em] text-balance max-w-[20ch]"
+        class="text-[clamp(2.25rem,5.4vw,4.5rem)] font-extrabold leading-[1.04] tracking-[-0.035em] text-balance max-w-[20ch]"
         data-testid="offer-title"
       >
         {{ hero().title }}
       </h1>
-      <p
-        class="animate-fade-up [animation-delay:60ms] mt-7 max-w-[60ch] text-lg leading-[1.65] text-muted"
-        data-testid="offer-subtitle"
-      >
+      <p class="mt-7 max-w-[60ch] text-lg leading-[1.65] text-muted" data-testid="offer-subtitle">
         {{ hero().subtitle }}
       </p>
       <div

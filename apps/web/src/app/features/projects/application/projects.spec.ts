@@ -103,6 +103,38 @@ describe('Projects', () => {
     expect(host.querySelectorAll('h1')).toHaveLength(1);
   });
 
+  // Titre du premier écran : un fondu d'entrée (opacité nulle) le masque au premier rendu.
+  it('Given la page When elle est rendue Then le titre est visible au premier rendu, sans animation d’entrée', async () => {
+    const fixture = setup({
+      getAllProjects: () => of([project()] as readonly Project[]),
+      getCategories: () => of(['Tous', 'Web'] as readonly string[]),
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const title = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '[data-testid="projects-title"]',
+    );
+    expect(title).not.toBeNull();
+    expect(title?.className).not.toMatch(/\banimate-/);
+  });
+
+  it('Given deux projets mis en avant When la page est rendue Then seule l’image de la première carte est prioritaire', async () => {
+    const fixture = setup({
+      getAllProjects: () =>
+        of([
+          project({ id: 'a', slug: 'a', featured: true, image: '/projects/a.avif' }),
+          project({ id: 'b', slug: 'b', featured: true, image: '/projects/b.avif' }),
+        ] as readonly Project[]),
+      getCategories: () => of(['Tous', 'Web'] as readonly string[]),
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const images = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('app-project-card img'),
+    );
+    expect(images.map((img) => img.getAttribute('fetchpriority'))).toEqual(['high', 'auto']);
+  });
+
   describe('hiérarchie mis en avant / index', () => {
     const CATALOG: readonly Project[] = [
       project({

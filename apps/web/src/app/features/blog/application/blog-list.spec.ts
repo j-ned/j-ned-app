@@ -56,6 +56,17 @@ describe('BlogList', () => {
     expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-24', 'pt-20']);
   });
 
+  // Titre du premier écran : un fondu d'entrée (opacité nulle) le masque au premier rendu.
+  it('Given des articles publiés When la liste est rendue Then le titre est visible au premier rendu, sans animation d’entrée', () => {
+    const fixture = setup([post()]);
+    fixture.detectChanges();
+    const title = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '[data-testid="blog-title"]',
+    );
+    expect(title).not.toBeNull();
+    expect(title?.className).not.toMatch(/\banimate-/);
+  });
+
   it('filtre par tag via le query param /blog?tag=', () => {
     const fixture = setup([
       post({ tags: ['Angular'] }),

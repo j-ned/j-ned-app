@@ -13,7 +13,7 @@ const MAX_VISIBLE_TAGS = 3;
 @Component({
   selector: 'app-blog-post-row',
   imports: [NgOptimizedImage, RouterLink, AppTag, DatePipe, BlogTagLink],
-  host: { class: 'block animate-fade-up' },
+  host: { class: 'block', '[class.animate-fade-up]': '!priority()' },
   template: `
     @let p = post();
     <article
