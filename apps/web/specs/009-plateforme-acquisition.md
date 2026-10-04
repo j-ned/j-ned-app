@@ -1926,6 +1926,110 @@ Scaffold dû au GREEN : `shared/ui/button.ts` (`Size` élargi à `'icon'`), `hea
 dans le drawer, bascule de la barre masquée sous `sm`), puis rejouer la mesure à 320 px en
 verify.
 
+### Tranche 9 — qualification légère du formulaire
+
+Décisions de ce RED :
+
+- **Typographie du préfixe** : U+00A0 avant `:`, règle de `editorial-typography.spec.ts` et usage
+  du repo (intro par défaut de `ContactForm`, copy de la home). Le préfixe part tel quel dans le
+  message reçu par e-mail : la règle s'applique comme pour toute copy éditoriale.
+- **Apostrophe droite** (`D'ici 3 mois`), comme toutes les constantes de données du repo
+  (`OFFERS`, `HOME_FAQ`, `FOOTER_COPY`) ; l'apostrophe typographique ne vit que dans des
+  fixtures de test.
+- **Options du type de projet sur la home : `OfferSummary.shortName`**, pas `name`. Un `<select>`
+  affiche une ligne courte : « Site vitrine », « Application métier » se lisent d'un coup d'œil,
+  « Site vitrine pour TPE, PME et artisans » non. Les noms courts sont déjà ceux du footer,
+  validés par Julien en tranche 8 ; dans le message reçu, « Type de projet⍽: Site atelier » suffit
+  à identifier l'offre.
+- **Valeur d'une option = son libellé** : le message composé reprend le libellé choisi, sans
+  table de correspondance.
+
+Sweeps. Contrat modifié (modèle local de `ContactForm` étendu à `projectType` / `timeline`,
+§ 4) : `grep` de `contactForm()`, `.value()`, `value.set`, `app-contact-form`, `ContactFormData`,
+`initialSubject`, `contact-subject` sur `src/`. Suites touchées : `contact-form.spec.ts`
+(helper `fill` passé champ par champ, sans quoi `value.set(ContactFormData)` ne typerait plus
+sur le modèle étendu ; harnais `setup` élargi à `string | readonly string[]` pour l'input
+tableau ; trois valeurs attendues du modèle **recalibrées** avec `projectType: ''` et
+`timeline: ''` (remise à zéro après envoi, remise au sujet initial, valeurs conservées après
+échec) : changement de contrat, rouge jusqu'au GREEN). Vertes par construction :
+`offer-page.spec.ts` existants (lisent `contact-subject` / `contact-intro` du DOM, sans le
+modèle), `home.spec.ts` existants (montage du formulaire, sans le modèle),
+`http-contact.gateway.spec.ts` (payload `ContactFormData` inchangé), suites admin des messages
+(`ContactMessage`, autre modèle). États seedés : aucun (pas de seed du modèle hors
+`contact-form.spec.ts`). Le critère « formulaire valide sans selects ⇒ message brut, mêmes clés »
+est tenu par le test existant « calls the gateway once with the model » (`toHaveBeenCalledWith`
+sur un `ContactFormData` exact : une clé `projectType` ou `timeline` en trop le fait tomber), non
+dupliqué.
+
+Contrats fixés par ce RED :
+
+- `features/contact/domain/compose-contact-message.ts` : `composeContactMessage({ message,
+  projectType, timeline }): string`, chaîne vide = non choisi. Sans choix : `message` inchangé.
+  Sinon, dans cet ordre et pour les seules valeurs choisies, `Type de projet\u00a0: <type>` puis
+  `Délai souhaité\u00a0: <délai>`, séparées par `\n`, puis une ligne vide (`\n\n`), puis le
+  message.
+- `features/contact/domain/contact-timelines.static-data.ts` (golden) : `CONTACT_TIMELINES =
+  ['Dès que possible', 'Dans le mois', "D'ici 3 mois", 'Pas de date fixée']`, inscrit dans
+  `editorial-typography.spec.ts`.
+- `ContactForm` :
+  - input `projectTypes` (`readonly string[]`, défaut vide) ; vide ⇒ aucun
+    `select[data-testid="contact-project-type"]` ; non vide ⇒ ce `select`, options = `''` puis
+    les types dans l'ordre (valeur = libellé), `''` sélectionnée ; repasser l'input à `[]`
+    retire le select.
+  - `select[data-testid="contact-timeline"]` toujours rendu, options = `''` puis
+    `CONTACT_TIMELINES`, `''` sélectionnée.
+  - Chaque select a un `id` non vide et un `<label for>` dont le texte commence par « Type de
+    projet » / « Délai souhaité » (suffixe libre, p. ex. « (facultatif) ») ; ni `required` ni
+    `aria-required`. Libellé de l'option vide libre. Liaison par `[formField]` : les tests
+    choisissent par le DOM (`value` + événements `input` et `change`).
+  - Modèle local `{ name, email, subject, message, projectType, timeline }`, défauts `''` ; la
+    remise à zéro après envoi réussi vide aussi les deux selects.
+  - Payload du `ContactGateway` : exactement `{ name, email, subject, message }`, `message` =
+    `composeContactMessage(...)`.
+  - Sujet : 200 caractères valides, 201 ⇒ erreur `maxLength` seule ; à l'envoi, aucun appel,
+    focus sur `subject`, une seule alerte (`#contact-subject-error`).
+  - Message : invalide quand le message **composé** dépasse 5 000 caractères (5 000 tapés sans
+    qualification : valide ; 5 001 : invalide ; message tapé de `5 000 − préfixe` avec un délai :
+    valide et envoyé composé à 5 000 ; `+ 1` : invalide) ; à l'envoi invalide, aucun appel, focus
+    sur `message`, une seule alerte (`#contact-message-error`). Genre et texte de l'erreur libres.
+- `Home` : passe `projectTypes` = `OFFERS.map(shortName)` dans l'ordre de `OFFERS`, puis
+  `'Autre'`. Pages d'offre : ne passent rien (select de type absent, select de délai présent).
+
+| Fichier | Tests |
+|---|---|
+| `features/contact/domain/compose-contact-message.spec.ts` (+4, nouveau) | sans qualification inchangé ; `it.each` type seul, délai seul, les deux |
+| `features/contact/domain/contact-timelines.static-data.spec.ts` (+1, nouveau) | golden `CONTACT_TIMELINES` |
+| `features/contact/application/contact-form.spec.ts` (+19, 3 recalibrés, harnais adapté) | type de projet : absent sans input, options + défaut vide + label, optionnel, retiré quand l'input se vide ; délai : options + défaut vide + label, optionnel ; envoi `it.each` délai seul / type seul / les deux ⇒ payload composé exact ; selects vidés après envoi ; sujet 200/201 (`it.each`) + envoi refusé avec focus ; message 5 000/5 001 tapé et composé (`it.each` ×4) + envoi composé à 5 000 + envoi refusé avec focus |
+| `features/home/application/home.spec.ts` (+1) | options du type de projet = noms courts d'`OFFERS` puis « Autre » |
+| `features/offer/application/offer-page.spec.ts` (+5, `describe.each` ×5) | délai demandé, type de projet absent |
+| `editorial-typography.spec.ts` (+1) | `CONTACT_TIMELINES` |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-04 19:59, 29 failed / 1037 total). Nature des échecs : sur l'arbre réel, `pnpm test`
+(après `ng cache clean` et purge de `node_modules/.vite`, 2026-10-04 20:00) s'arrête à la
+compilation, uniquement sur des modules applicatifs dus au GREEN : `TS2307` / `Could not
+resolve` `compose-contact-message` (importé par sa spec) et `contact-timelines.static-data`
+(importé par sa spec, `contact-form.spec.ts` et `editorial-typography.spec.ts`) ; aucune faute
+de type propre aux specs, prettier et eslint verts sur les six fichiers, aucun hit du pattern
+d'archéologie. Mesure du rouge comportemental : scaffold vide posé le temps d'une exécution puis
+retiré (`CONTACT_TIMELINES = []`, `composeContactMessage` = identité sur `message`, input
+`projectTypes` ajouté seul à `ContactForm` pour que `setInput` ne lève pas NG0303 ; `git
+checkout` du composant, fichiers supprimés) : 105 fichiers, 29 failed / 1037 total, tous en
+`AssertionError` (3 `composeContactMessage`, 1 golden, 19 `ContactForm` dont les 3 recalibrés,
+1 home, 5 pages d'offre). Verts par nature sous scaffold : message sans qualification
+(identité), type de projet absent sans input, sujet de 200, message tapé de 5 000 sans délai
+(non-régressions), typographie de `CONTACT_TIMELINES` (vide sous le scaffold ; vérifie la vraie
+copy). Harnais vérifié : sous une implémentation jetable (composition, selects `[formField]`,
+`maxLength` + `validate` sur le message composé, payload recopié champ par champ, `projectTypes`
+passé par la home ; retirée par `git checkout` et suppression, `git status` sans fichier
+applicatif), 1037 passed / 1037.
+Non-régression : base avant RED 1006 passed / 1006 ; 1037 = 1006 + 31 ajoutés ; aucun test
+préexistant non visé ne tombe, préremplissage `initialSubject` vert hors la remise au sujet
+initial, recalibrée sur le modèle étendu.
+Scaffold dû au GREEN : `features/contact/domain/compose-contact-message.ts`,
+`features/contact/domain/contact-timelines.static-data.ts`, `contact-form.ts` (input, selects,
+modèle étendu, validations, payload composé), `home.ts` (`projectTypes`).
+
 ## Journal des tranches
 
 - **Tranche 1 — l'offre atelier sur le modèle générique** : GREEN 701 passed / 701 total · refactor : aucun
@@ -1937,6 +2041,7 @@ verify.
 - **Tranche 6 — la home commerciale : hero et offres** : GREEN 947 passed / 947 total · refactor : liste d'offres d'une famille (cartes Sites / lignes Applications) sortie en `OfferFamilyList`, partagée par `OfferCatalogue` et `HomeOffers` (passe manuelle sur le diff, `simplify` non invoqué en sous-agent)
 - **Tranche 7 — la home : méthode, pourquoi moi, FAQ** : GREEN 973 passed / 973 total · refactor : FAQ de la home sortie en `HomeFaq` (lit `HOME_FAQ` elle-même) pour que la copie de `home-pitch.static-data` quitte `main-*.js` (mesuré : « Questions fréquentes », « Prix annoncé » 0 dans `main` après, 1 avant) ; hauteurs des placeholders recalées sur la mesure par point de rupture (passe manuelle sur le diff, `simplify` non invoqué en sous-agent) ; « Pourquoi moi » en `HomeWhy`, qui lit `HOME_WHY` elle-même pour la même raison (copie hors de `main-*.js`).
 - **Tranche 8 — navigation, CTA permanent, footer enrichi** : GREEN 1004 passed / 1004 total · refactor : aucun (passe manuelle sur le diff, `simplify` non invoqué en sous-agent ; classes répétées du footer posées dès l'écriture en `@utility` `footer-heading` / `footer-link`, ADR-0003)
+- **Tranche 9 — qualification légère du formulaire** : GREEN 1037 passed / 1037 total · refactor : aucun (passe manuelle sur le diff, `simplify` non invoqué en sous-agent ; préfixes `Type de projet` / `Délai souhaité` et message d'erreur posés dès l'écriture en constantes TS, `\u00a0` échappé : aucune espace insécable brute dans le source, `no-irregular-whitespace` vert)
 
 ## Verify
 
@@ -2489,6 +2594,47 @@ injecté par évaluation de script sur `/`, `/offres/`, `/about/` (2 largeurs ×
 
 Verdict : **PASS**.
 
+### Tranche 9 — formulaire de contact sur `/` et les pages d'offre (surface atteignable en production, restructurée)
+
+Steps : `pnpm install --frozen-lockfile` → `pnpm test` → `pnpm lint` → `pnpm run build --configuration production`
+(20 routes prérendues, CSP durcie sur 21 pages) → lecture de `dist/angular-portfolio-app/browser/{index,offres/site-vitrine/index}.html`
+→ serveur statique local sur `dist/…/browser` (`:3348`, fichier prérendu sinon `index.csr.html`)
+→ Chromium headless (Playwright), `POST **/contact/messages` intercepté et répondu `201` par le
+harnais (aucun message envoyé à l'API prod) : `/` et `/offres/site-vitrine/`, 1440 px clair et
+375 px sombre ; saisie, choix, envoi ; axe-core injecté sur `app-contact-form`.
+`public/sitemap.xml` et `public/rss.xml` restaurés par `git checkout`.
+
+1. **Gates** : `pnpm install --frozen-lockfile` OK ; `pnpm test` 105 fichiers, 1037 passed / 1037 ;
+   `pnpm lint` « All files pass linting » ; build de production OK (`main` 339,29 kB brut,
+   91,94 kB transféré).
+2. **HTML prérendu** : `/` contient `select#project-type` (`contact-project-type`, options `''`,
+   Site vitrine, Site atelier, Application métier, Refonte et maintenance, Renfort Angular /
+   NestJS, Autre) et `select#timeline` (`contact-timeline`) ; `/offres/site-vitrine/` contient
+   le seul `contact-timeline` (type de projet : 0).
+3. **Hydratation et envoi** (par scénario : saisie « J » dans le nom puis sortie du champ ⇒
+   `aria-invalid="true"`, puis formulaire rempli, choix, clic sur « Envoyer le message ») :
+
+   | Page | Largeur / registre | Selects rendus | Choix | Corps du `POST` intercepté (`message`) | Après envoi |
+   |---|---|---|---|---|---|
+   | `/` | 1440 clair | type + délai, `''` sélectionnée | Site atelier, Dans le mois | `Type de projet : Site atelier` / `Délai souhaité : Dans le mois` / ligne vide / message | toast « Message envoyé », selects et champs vidés |
+   | `/` | 375 sombre | type + délai | délai « D'ici 3 mois » | `Délai souhaité : D'ici 3 mois` / ligne vide / message | idem |
+   | `/offres/site-vitrine/` | 1440 clair | délai seul | Dès que possible | `Délai souhaité : Dès que possible` / ligne vide / message | idem |
+   | `/offres/site-vitrine/` | 375 sombre | délai seul | aucun | message brut, inchangé | idem |
+
+   Corps envoyé : exactement `{ name, email, subject, message }` dans les quatre cas (aucune clé
+   `projectType` / `timeline`) ; deux `U+00A0` avant « : » dans le message du premier scénario.
+4. **Rendu** (captures, scratchpad de session `lh/shots-t9/form_-1440-light.png`,
+   `form_-375-dark.png`, `form_offres_site-vitrine_-{1440-light,375-dark}.png`) : les selects
+   reprennent l'utilitaire `form-input` (même hauteur, bordure, rayon que les champs texte) ;
+   en 1440, type et délai côte à côte sous nom / e-mail, délai seul en demi-largeur sur les
+   pages d'offre ; en 375, empilés pleine largeur. Libellés « Type de projet (facultatif) » /
+   « Délai souhaité (facultatif) », option vide « Non précisé ».
+5. **axe** : aucune violation sur `app-contact-form` dans les quatre scénarios.
+6. **Console** : aucune erreur applicative (`NG0…`, hydratation). Erreurs d'environnement seules :
+   `GET /api/config` 404 et CORS de `api.nedellec-julien.fr` refusant l'origine locale (analytics).
+
+Verdict : **PASS**.
+
 ## Review code
 
 ### Tranche 1
@@ -2870,3 +3016,54 @@ Si Julien préfère une seule bascule par largeur, il suffit de masquer celle du
 - non couvert par les gates : la tenue de la barre et la hauteur des cibles du footer selon la largeur. happy-dom ne mesure rien, seul le verify les prouve. Le commit de la tranche embarquera le reformatage Prettier complet de `DESIGN.json` par `lint-staged` (dette préexistante, voir la 1re revue, point à juger 6).
 
 Rappel de la 1re revue (REJECTED) : 320 px (chevauchement tuile / thème), cibles du footer à 18–20 px sous `PRODUCT.md:86`, motif `[&>button]` contre ADR-0003, § 2 incomplet. Les écarts 2 à 7 de l'implémenteur y ont été jugés acceptables, et le jugement est maintenu.
+
+### Tranche 9
+
+**Verdict** : APPROVED
+**Gates CI locaux** : install ✅ (`pnpm install --frozen-lockfile`, exit 0) / tests ✅ (`pnpm test`, exit 0 : 105 fichiers, 1037 passed / 1037 ; le diff ne touche aucun système de cache, pas d'invalidation requise) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting ») / build ✅ (`pnpm run build --configuration production`, exit 0 : 20 routes prérendues, CSP durcie sur 21 pages, `main` 339,29 kB brut / 91,94 kB transféré). `public/sitemap.xml` et `public/rss.xml` restaurés par `git checkout`.
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent), auto-checks joués à la main sur `git diff master` et les quatre fichiers non suivis. Archéologie (motif du profil) : 0 hit ; un seul commentaire ajouté (`contact-form.ts`, `validate` du message), une ligne de WHY sans référence, conservé. `export default`, `effect(`, helpers zone, `innerHTML`, `console.`, `.only`/`.skip`, snapshot, `fireEvent`, `getByTestId`, `interface`, `ngModel`/`ReactiveForms`, `@capacitor` : 0 hit. Aucune espace insécable brute dans le source (` ` échappé). Exports ajoutés : `composeContactMessage` (`contact-form.ts` + sa spec), `CONTACT_TIMELINES` (`contact-form.ts`, trois specs). Prettier : les fichiers de la tranche sont conformes ; la spec ne l'est pas, déjà non conforme sur `master` (vérifié sur `git show master:…`), non bloquant ; `contact.gateway.ts` / `http-contact.gateway.ts` signalés par Prettier sont hors diff (préexistant).
+**Warnings de gate** : aucun en test, lint ni build (sorties lues en entier). (b) préexistant : `pnpm install` signale « Ignored build scripts: @parcel/watcher ».
+**Rendu compilé** : N/A (aucun sélecteur attribut touché)
+**Preuve de verify runtime** : ✅ (`## Verify` / Tranche 9 : steps, PASS, quatre captures présentes dans le scratchpad de session, console propre hors environnement. La revue a rejoué la preuve sur son propre build de production servi en statique, voir ci-dessous.)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅ (aucune donnée nouvelle hors du message ; payload restreint aux quatre clés du DTO)
+**Alignement spec** : ✅ (§ 2, § 4, § 8.7 et contrats du RED tenus ; fichiers du plan seuls touchés)
+
+Contrats vérifiés dans le code :
+- `composeContactMessage` : préfixes `Type de projet : ` / `Délai souhaité : `, seules lignes choisies, `\n\n` puis le message ; identité sans choix. Domaine pur, zéro import Angular.
+- `ContactForm` : modèle local `ContactFormModel = ContactFormData & { projectType, timeline }`, défauts `''` ; payload recopié champ par champ en `ContactFormData` (`{ name, email, subject, message }`), `message` composé ; contrat API et `ContactGateway` inchangés.
+- Signal Forms : selects en `[formField]`, sans `required` / `aria-required` / `[value]` sur l'élément ; `maxLength(subject, 200)` ; `validate` sur `message` calculé sur la sortie composée (`valueOf` des deux selects), donc réactif au choix d'un délai après saisie.
+- Styling : selects sur l'utilitaire existant `form-input` (ADR-0003), aucune classe ni `styles:` ajoutés.
+- `Home` passe `[...OFFERS.map(shortName), 'Autre']` ; pages d'offre ne passent rien.
+- Bundle : `OFFERS` était déjà dans `main-*.js` (importé par `app.routes.ts` et `footer.ts`), l'import de `home.ts` n'ajoute rien (`main` 339,29 kB, identique au verify). `CONTACT_TIMELINES`, « Non précisé », les préfixes et l'erreur `composedMaxLength` vivent dans le chunk différé du formulaire (`chunk-skL9rB9_.js`), absents de `main`.
+- Non-régression du préremplissage : `initialSubject` vert (suite existante, remise au sujet initial recalibrée sur le modèle étendu) et prouvé au runtime.
+
+Verify rejouée par la revue (Chromium headless, `POST **/contact/messages` intercepté et répondu 201, aucun envoi à l'API) :
+- `/`, 1440 px clair : deux selects sous la `legend` « Votre projet », libellés « Type de projet (facultatif) » / « Délai souhaité (facultatif) », options `''` + cinq noms courts + « Autre », `''` sélectionnée ; hydratation prouvée (`aria-invalid="true"` après saisie + sortie du nom) ; envoi « Application métier » + « Pas de date fixée » ⇒ corps `{ name, email, subject, message }`, message préfixé des deux lignes ; selects vidés après envoi ; axe : 0 violation sur `app-contact-form`.
+- `/offres/site-vitrine/`, 375 px sombre : sujet prérempli « Site vitrine pour mon entreprise », select de type absent, délai présent ; `#subject` porte `maxlength="200"` (posé par `[formField]`) ; message de `5 001 − préfixe` caractères + « Dès que possible » ⇒ envoi refusé, focus sur `#message`, une seule alerte `#contact-message-error` (`role="alert"`, reliée par `aria-describedby`, `aria-invalid="true"`) ; délai remis à « Non précisé » ⇒ alerte retirée, envoi accepté (4 966 caractères, mêmes quatre clés, sujet prérempli conservé après envoi).
+- Console : aucune erreur applicative ni d'hydratation ; seules les erreurs d'environnement (`/api/config` 404, CORS analytics sur l'origine locale).
+- Captures : scratchpad de session, `lh/shots-review-t9/home-1440-light.png`, `offer-375-dark-error.png`.
+
+**Tests notables** :
+- ✨ `src/app/features/contact/application/contact-form.spec.ts` (« bounds accepted by the API ») : la borne est triangulée aux deux frontières, tapée et composée (`it.each` ×4), et l'envoi composé à exactement 5 000 est épinglé ; un validateur posé sur le message tapé seul ferait tomber deux cas.
+- ✨ `contact-form.spec.ts` (« sending ») : `toHaveBeenCalledExactlyOnceWith(makeContactData(...))` refuse toute clé `projectType` / `timeline` en trop dans le payload.
+
+**Altitude composant** (advisory, non bloquant) :
+- ⚠️ `src/app/features/contact/application/contact-form.ts` — 273 → 353 LOC, template inline au-delà de 150 lignes, déjà au-dessus avant le diff et aggravé. Candidat découpe, à une tranche ultérieure : un composant `shared/ui/` « champ » (label + contrôle + alerte) recevant un `FieldTree`, qui absorberait les quatre blocs input/textarea et les deux selects.
+
+**Duplication / dérivation** (advisory, non bloquant) :
+- ⚠️ `contact-form.ts` — structure label + `select` + option « Non précisé » + `@for` répétée à 2 sites (sous le seuil de 3) ; même remède que ci-dessus.
+
+Mineurs, non bloquants (à trancher par Julien, aucun ne justifie un nouveau cycle) :
+1. `MESSAGE_TOO_LONG` sépare les milliers par U+00A0 (`5 000`), alors que les montants du repo passent par `Intl.NumberFormat('fr-FR')` (U+202F, cf. `format-eur.spec.ts`). Les deux sont insécables, la règle de `editorial-typography.spec.ts` ne couvre pas ce cas ; harmonisation possible en U+202F.
+2. Le texte d'erreur mentionne « type de projet et délai compris » aussi sur les pages d'offre, où seul le délai est demandé. Exact pour la home, légèrement imprécis ailleurs.
+
+Les deux mineurs sont corrigés après la revue : `MESSAGE_TOO_LONG` devient « Le message ne doit pas dépasser 5 000 caractères, précisions sur le projet comprises » (U+202F, formulation valable sur la home comme sur les pages d'offre). Le texte de l'erreur est libre dans les tests : 1037 passed / 1037, lint vert.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil muet (Dokploy continu sur `master`) · monitoring : Sentry
+- aucun état persistant touché
+- non couvert par les gates : la borne de 5 000 / 200 caractères reflète le DTO `CreateContactMessageDto` du repo API, sans test de contrat entre les deux dépôts ; une évolution de l'API ne serait vue qu'en 400 au runtime.

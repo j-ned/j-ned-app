@@ -20,6 +20,7 @@ import type { Project } from '@features/projects/domain/models/project.model';
 import { HOME_OFFERS_HEADING } from '../domain/home-offers.static-data';
 import { HOME_FAQ, HOME_METHOD, HOME_WHY } from '../domain/home-pitch.static-data';
 import { STATIC_HERO } from '../infra/data/home.static-data';
+import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 
 @Component({ template: '' })
 class BlankPage {}
@@ -276,6 +277,22 @@ describe('Home', () => {
 
       const root = fixture.nativeElement as HTMLElement;
       expect(root.querySelector('form')).not.toBeNull();
+    });
+
+    it('Given le bloc contact rendu When le formulaire est lu Then le type de projet propose les noms courts des offres, dans l’ordre du catalogue, puis Autre', async () => {
+      const { fixture, contactBlock } = await renderHomeTemplate();
+
+      await contactBlock.render(DeferBlockState.Complete);
+      await fixture.whenStable();
+
+      const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+        'select[data-testid="contact-project-type"]',
+      );
+      expect([...(select?.options ?? [])].map((option) => option.value)).toEqual([
+        '',
+        ...OFFERS.map((offer) => offer.shortName),
+        'Autre',
+      ]);
     });
   });
 

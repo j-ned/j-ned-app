@@ -8,6 +8,7 @@ import { HomeProjects } from './home-projects';
 import { HomeWhy } from './home-why';
 import { ContactForm } from '@features/contact/application/contact-form';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
+import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { SectionVisibility } from '@core/navigation/section-visibility';
 import { SectionScroller } from '@core/navigation/section-scroller';
 
@@ -97,7 +98,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
          l'indicateur d'état actif du header (scroll-spy). -->
     <div id="contact" class="scroll-mt-20" appSectionVisibility="contact">
       @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-        <app-contact-form data-testid="home-contact-form" />
+        <app-contact-form data-testid="home-contact-form" [projectTypes]="projectTypes" />
       } @placeholder {
         <div
           class="block py-16 md:py-20 px-4 sm:px-6 h-96"
@@ -121,4 +122,6 @@ export class Home {
     stream: () => this._gateway.getHomeBundle(),
   });
   protected readonly bundle = computed(() => this.bundleResource.value());
+
+  protected readonly projectTypes = [...OFFERS.map((offer) => offer.shortName), 'Autre'];
 }

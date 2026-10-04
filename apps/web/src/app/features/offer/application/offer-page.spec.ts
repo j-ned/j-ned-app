@@ -212,6 +212,14 @@ describe('OfferPage', () => {
         );
         expect(subject?.value).toBe(content.request.subject);
       });
+
+      it('asks the request form for a timeline but not for a project type', () => {
+        const request = byTestId('offer-request');
+        expect([
+          request?.querySelector('select[data-testid="contact-project-type"]') ?? null,
+          request?.querySelector('select[data-testid="contact-timeline"]')?.tagName,
+        ]).toEqual([null, 'SELECT']);
+      });
     },
   );
 

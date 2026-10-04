@@ -6,6 +6,7 @@ import { ContactForm } from './contact-form';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
+import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
 
 // Builder du domaine : jamais un littéral comme entrée sous test.
 function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormData {
@@ -21,7 +22,7 @@ function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormD
 describe('ContactForm (Signal Forms)', () => {
   async function setup(
     gateway: ContactGateway = stubContactGateway(),
-    inputs: Readonly<Record<string, string>> = {},
+    inputs: Readonly<Record<string, string | readonly string[]>> = {},
   ): Promise<ComponentFixture<ContactForm>> {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
@@ -38,7 +39,11 @@ describe('ContactForm (Signal Forms)', () => {
     fixture: ComponentFixture<ContactForm>,
     data: ContactFormData,
   ): Promise<void> => {
-    fixture.componentInstance.contactForm().value.set(data);
+    const form = fixture.componentInstance.contactForm;
+    form.name().value.set(data.name);
+    form.email().value.set(data.email);
+    form.subject().value.set(data.subject);
+    form.message().value.set(data.message);
     await fixture.whenStable();
   };
 
@@ -159,6 +164,8 @@ describe('ContactForm (Signal Forms)', () => {
         email: '',
         subject: '',
         message: '',
+        projectType: '',
+        timeline: '',
       });
       expect(alerts(fixture)).toEqual([]);
     });
@@ -185,7 +192,11 @@ describe('ContactForm (Signal Forms)', () => {
       await fixture.whenStable();
 
       expect(toast.messages().at(-1)?.severity).toBe('error');
-      expect(fixture.componentInstance.contactForm().value()).toEqual(makeContactData());
+      expect(fixture.componentInstance.contactForm().value()).toEqual({
+        ...makeContactData(),
+        projectType: '',
+        timeline: '',
+      });
       expect(fixture.componentInstance.contactForm().submitting()).toBe(false);
     });
   });
@@ -274,8 +285,260 @@ describe('ContactForm (Signal Forms)', () => {
         email: '',
         subject: OFFER_SUBJECT,
         message: '',
+        projectType: '',
+        timeline: '',
       });
       expect(subjectInput(fixture)?.value).toBe(OFFER_SUBJECT);
+    });
+  });
+
+  describe('Qualification', () => {
+    const NBSP = '\u00a0';
+    const PROJECT_TYPES = ['Site vitrine', 'Application métier', 'Autre'];
+    const PROJECT_TYPE = 'contact-project-type';
+    const TIMELINE = 'contact-timeline';
+
+    const selectOf = (
+      fixture: ComponentFixture<ContactForm>,
+      testId: string,
+    ): HTMLSelectElement | null =>
+      fixture.nativeElement.querySelector(`select[data-testid="${testId}"]`);
+
+    const optionValues = (select: HTMLSelectElement | null): string[] =>
+      [...(select?.options ?? [])].map((option) => option.value);
+
+    const optionLabels = (select: HTMLSelectElement | null): string[] =>
+      [...(select?.options ?? [])]
+        .filter((option) => option.value !== '')
+        .map((option) => option.textContent.trim());
+
+    const labelOf = (
+      fixture: ComponentFixture<ContactForm>,
+      select: HTMLSelectElement | null,
+    ): string => {
+      const id = select?.id ?? '';
+      const label: HTMLLabelElement | null = id
+        ? fixture.nativeElement.querySelector(`label[for="${id}"]`)
+        : null;
+      return (label?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    };
+
+    const choose = async (
+      fixture: ComponentFixture<ContactForm>,
+      testId: string,
+      value: string,
+    ): Promise<void> => {
+      const select = selectOf(fixture, testId);
+      expect(select).toBeInstanceOf(HTMLSelectElement);
+      if (!select) return;
+      select.value = value;
+      select.dispatchEvent(new Event('input', { bubbles: true }));
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      await fixture.whenStable();
+    };
+
+    describe('project type', () => {
+      it('is not asked when no project types are bound', async () => {
+        const fixture = await setup();
+
+        expect(selectOf(fixture, PROJECT_TYPE)).toBeNull();
+      });
+
+      it('offers the bound project types after an empty default option, under its label', async () => {
+        const fixture = await setup(stubContactGateway(), { projectTypes: PROJECT_TYPES });
+        const select = selectOf(fixture, PROJECT_TYPE);
+
+        expect(optionValues(select)).toEqual(['', ...PROJECT_TYPES]);
+        expect(optionLabels(select)).toEqual(PROJECT_TYPES);
+        expect(select?.value).toBe('');
+        expect(labelOf(fixture, select).startsWith('Type de projet')).toBe(true);
+      });
+
+      it('is optional', async () => {
+        const fixture = await setup(stubContactGateway(), { projectTypes: PROJECT_TYPES });
+        const select = selectOf(fixture, PROJECT_TYPE);
+
+        expect(select).toBeInstanceOf(HTMLSelectElement);
+        expect([select?.required, select?.getAttribute('aria-required')]).toEqual([false, null]);
+      });
+
+      it('disappears when the bound project types become empty', async () => {
+        const fixture = await setup(stubContactGateway(), { projectTypes: PROJECT_TYPES });
+        expect(selectOf(fixture, PROJECT_TYPE)).toBeInstanceOf(HTMLSelectElement);
+
+        fixture.componentRef.setInput('projectTypes', []);
+        await fixture.whenStable();
+
+        expect(selectOf(fixture, PROJECT_TYPE)).toBeNull();
+      });
+    });
+
+    describe('timeline', () => {
+      it('is always asked, with the timelines after an empty default option, under its label', async () => {
+        const fixture = await setup();
+        const select = selectOf(fixture, TIMELINE);
+
+        expect(optionValues(select)).toEqual(['', ...CONTACT_TIMELINES]);
+        expect(optionLabels(select)).toEqual(CONTACT_TIMELINES);
+        expect(select?.value).toBe('');
+        expect(labelOf(fixture, select).startsWith('Délai souhaité')).toBe(true);
+      });
+
+      it('is optional', async () => {
+        const fixture = await setup();
+        const select = selectOf(fixture, TIMELINE);
+
+        expect(select).toBeInstanceOf(HTMLSelectElement);
+        expect([select?.required, select?.getAttribute('aria-required')]).toEqual([false, null]);
+      });
+    });
+
+    describe('sending', () => {
+      const MESSAGE = 'Bonjour, j’aimerais discuter d’un projet.';
+
+      it.each([
+        [
+          'a timeline only',
+          [],
+          '',
+          'Dans le mois',
+          `Délai souhaité${NBSP}: Dans le mois\n\n${MESSAGE}`,
+        ],
+        [
+          'a project type only',
+          PROJECT_TYPES,
+          'Autre',
+          '',
+          `Type de projet${NBSP}: Autre\n\n${MESSAGE}`,
+        ],
+        [
+          'a project type and a timeline',
+          PROJECT_TYPES,
+          'Site vitrine',
+          'Dès que possible',
+          `Type de projet${NBSP}: Site vitrine\nDélai souhaité${NBSP}: Dès que possible\n\n${MESSAGE}`,
+        ],
+      ])(
+        'Given %s chosen When the form is sent Then the gateway receives the composed message and the typed subject, nothing else',
+        async (_case, projectTypes, projectType, timeline, composed) => {
+          const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
+          const fixture = await setup(stubContactGateway({ submitContactForm: submit }), {
+            projectTypes,
+          });
+          await fill(fixture, makeContactData({ message: MESSAGE }));
+          if (projectType) await choose(fixture, PROJECT_TYPE, projectType);
+          if (timeline) await choose(fixture, TIMELINE, timeline);
+
+          await fixture.componentInstance.submitContact();
+          await fixture.whenStable();
+
+          expect(submit).toHaveBeenCalledExactlyOnceWith(makeContactData({ message: composed }));
+        },
+      );
+
+      it('clears the chosen qualification after a successful send', async () => {
+        const fixture = await setup(stubContactGateway(), { projectTypes: PROJECT_TYPES });
+        await fill(fixture, makeContactData());
+        await choose(fixture, PROJECT_TYPE, 'Site vitrine');
+        await choose(fixture, TIMELINE, 'Dans le mois');
+
+        await fixture.componentInstance.submitContact();
+        await fixture.whenStable();
+
+        expect([
+          selectOf(fixture, PROJECT_TYPE)?.value,
+          selectOf(fixture, TIMELINE)?.value,
+        ]).toEqual(['', '']);
+      });
+    });
+
+    describe('bounds accepted by the API', () => {
+      it.each([
+        [200, []],
+        [201, ['maxLength']],
+      ])('a %i-character subject carries %j errors', async (length, kinds) => {
+        const fixture = await setup();
+        await fill(fixture, makeContactData({ subject: 's'.repeat(length) }));
+
+        expect(
+          fixture.componentInstance.contactForm
+            .subject()
+            .errors()
+            .map((e) => e.kind),
+        ).toEqual(kinds);
+      });
+
+      it('does not send a subject over 200 characters and points the visitor to it', async () => {
+        const submit = vi.fn().mockReturnValue(of({ success: true, message: '' }));
+        const fixture = await setup(stubContactGateway({ submitContactForm: submit }));
+        await fill(fixture, makeContactData({ subject: 's'.repeat(201) }));
+
+        await fixture.componentInstance.submitContact();
+        await fixture.whenStable();
+
+        expect(submit).not.toHaveBeenCalled();
+        expect(document.activeElement?.id).toBe('subject');
+        expect(alerts(fixture)).toHaveLength(1);
+        expect(fixture.nativeElement.querySelector('#contact-subject-error')).not.toBeNull();
+      });
+
+      const PREFIX = `Délai souhaité${NBSP}: Dès que possible\n\n`;
+
+      it.each([
+        ['a typed message of 5 000 characters, no timeline', 5000, '', true],
+        ['a typed message of 5 001 characters, no timeline', 5001, '', false],
+        [
+          'a composed message of exactly 5 000 characters',
+          5000 - PREFIX.length,
+          'Dès que possible',
+          true,
+        ],
+        [
+          'a composed message of 5 001 characters, the typed one being shorter',
+          5001 - PREFIX.length,
+          'Dès que possible',
+          false,
+        ],
+      ])(
+        'Given %s (%i typed characters, timeline %j) When the validity is read Then the message is valid: %s',
+        async (_case, length, timeline, valid) => {
+          const fixture = await setup();
+          await fill(fixture, makeContactData({ message: 'm'.repeat(length) }));
+          if (timeline) await choose(fixture, TIMELINE, timeline);
+
+          expect(fixture.componentInstance.contactForm.message().valid()).toBe(valid);
+        },
+      );
+
+      it('sends a composed message of exactly 5 000 characters', async () => {
+        const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
+        const fixture = await setup(stubContactGateway({ submitContactForm: submit }));
+        const typed = 'm'.repeat(5000 - PREFIX.length);
+        await fill(fixture, makeContactData({ message: typed }));
+        await choose(fixture, TIMELINE, 'Dès que possible');
+
+        await fixture.componentInstance.submitContact();
+        await fixture.whenStable();
+
+        expect(submit).toHaveBeenCalledExactlyOnceWith(
+          makeContactData({ message: `${PREFIX}${typed}` }),
+        );
+      });
+
+      it('does not send a composed message over 5 000 characters and points the visitor to the message', async () => {
+        const submit = vi.fn().mockReturnValue(of({ success: true, message: '' }));
+        const fixture = await setup(stubContactGateway({ submitContactForm: submit }));
+        await fill(fixture, makeContactData({ message: 'm'.repeat(5001 - PREFIX.length) }));
+        await choose(fixture, TIMELINE, 'Dès que possible');
+
+        await fixture.componentInstance.submitContact();
+        await fixture.whenStable();
+
+        expect(submit).not.toHaveBeenCalled();
+        expect(document.activeElement?.id).toBe('message');
+        expect(alerts(fixture)).toHaveLength(1);
+        expect(fixture.nativeElement.querySelector('#contact-message-error')).not.toBeNull();
+      });
     });
   });
 

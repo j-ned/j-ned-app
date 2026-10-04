@@ -21,6 +21,7 @@ import {
   STATIC_CONTACT_INFO,
   STATIC_SOCIAL_LINKS,
 } from '@shared/identity/contact-info.static-data';
+import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { FOOTER_COPY } from './layout/components/footer/footer.static-data';
 import { NAV_LINKS } from './layout/components/header/nav-items';
@@ -104,6 +105,7 @@ const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['STATIC_SOCIAL_BUTTONS', STATIC_SOCIAL_BUTTONS],
   ['STATIC_CONTACT_INFO', STATIC_CONTACT_INFO],
   ['STATIC_SOCIAL_LINKS', STATIC_SOCIAL_LINKS],
+  ['CONTACT_TIMELINES', CONTACT_TIMELINES],
   ['SITE_IDENTITY', SITE_IDENTITY],
   ['NAV_LINKS', NAV_LINKS],
   ['FOOTER_COPY', FOOTER_COPY],
