@@ -20,7 +20,7 @@ import { AppIcon } from '@shared/icons/app-icon';
           [size]="16"
           class="transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none"
         />
-        Tous les projets
+        Toutes les réalisations
       </a>
       <p class="mt-7 font-mono text-[0.8125rem] font-medium text-primary">{{ p.category }}</p>
       <h1

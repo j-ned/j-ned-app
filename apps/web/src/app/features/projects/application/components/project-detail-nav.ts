@@ -42,7 +42,7 @@ import { AppIcon } from '@shared/icons/app-icon';
         routerLink="/projects"
         class="col-span-2 order-last inline-flex min-h-11 items-center justify-center sm:order-none sm:col-span-1 sm:shrink-0 text-sm font-medium text-muted hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background rounded-lg"
       >
-        Tous les projets
+        Toutes les réalisations
       </a>
 
       @if (nextProject(); as next) {

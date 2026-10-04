@@ -1,8 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 type Severity = 'primary' | 'secondary' | 'danger';
-type Size = 'default' | 'large';
+type Size = 'default' | 'large' | 'icon';
 type Variant = 'solid' | 'outlined' | 'text';
+
+const SIZE_CLASSES: Record<Size, string> = {
+  default: 'text-sm px-5 py-2.5 min-h-11',
+  large: 'text-base md:text-lg px-6 py-3 min-h-11',
+  icon: 'min-h-11 min-w-11',
+};
 
 @Component({
   selector: 'app-button',
@@ -61,10 +67,7 @@ export class Button {
 
   protected readonly classes = computed(() => {
     // min-h-11 garantit 44x44 px (WCAG 2.5.5 Target Size).
-    const sizeClass =
-      this.size() === 'large'
-        ? 'text-base md:text-lg px-6 py-3 min-h-11'
-        : 'text-sm px-5 py-2.5 min-h-11';
+    const sizeClass = SIZE_CLASSES[this.size()];
     const radiusClass = this.rounded() ? 'rounded-full' : 'rounded-md';
     const widthClass = this.block() ? 'w-full' : '';
     return [sizeClass, radiusClass, widthClass, this.variantClass()].filter(Boolean).join(' ');

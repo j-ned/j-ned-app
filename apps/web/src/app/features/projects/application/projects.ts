@@ -43,9 +43,10 @@ const INDEX_STACK_SIZE = 3;
         </p>
         <h1
           id="projects-heading"
+          data-testid="projects-title"
           class="animate-fade-up [animation-delay:60ms] mt-4.5 text-[clamp(2.75rem,6vw,5.25rem)] font-extrabold leading-none tracking-[-0.04em]"
         >
-          Projets
+          Réalisations
         </h1>
         <p
           class="animate-fade-up [animation-delay:120ms] mt-5.5 max-w-[56ch] text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted"

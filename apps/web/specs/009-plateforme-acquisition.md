@@ -235,9 +235,9 @@ Liste par tranche (§ Tranches). Récapitulatif des fichiers porteurs :
 
 | Fichier | Rôle |
 |---|---|
-| `src/app/features/offer/domain/models/offer.model.ts` | `OfferSlug`, `OfferFamily`, `OfferSummary`, `OfferPageContent`, `OfferSection<T>`, `OfferPriceLine`, `OfferAmount`, `OfferPages` (remplace `site-offer.model.ts`) |
+| `src/app/features/offer/domain/models/offer.model.ts` | `OfferSlug`, `OfferFamily`, `OfferSummary`, `OfferPageContent`, `OfferSection<T>`, `OfferPriceLine`, `OfferAmount`, `OfferPages` (remplace `site-offer.model.ts`) ; `OfferSummary.shortName` (libellé court du footer, T8) |
 | `src/app/features/offer/domain/offer-prices.static-data.ts` | `OFFER_PRICES` (montants, par offre) |
-| `src/app/features/offer/domain/offer-catalog.static-data.ts` | `OFFERS` (résumés ordonnés), `OFFER_FAMILY_LABELS`, `OFFER_FAMILY_LEADS`, `OFFER_CATALOGUE_HEADING`, `OFFER_CATALOGUE_LEAD` (T4) |
+| `src/app/features/offer/domain/offer-catalog.static-data.ts` | `OFFERS` (résumés ordonnés), `OFFER_FAMILY_LABELS`, `OFFER_FAMILY_LEADS`, `OFFER_CATALOGUE_HEADING`, `OFFER_CATALOGUE_LEAD` (T4) ; `shortName` des cinq offres (T8) |
 | `src/app/features/offer/domain/offer-pages.static-data.ts` | `OFFER_PAGES` (`satisfies OfferPages`, remplace `site-offer.static-data.ts`) |
 | `src/app/features/offer/domain/format-eur.ts` | `formatEur(amount)` : `Intl.NumberFormat('fr-FR')` + ` €` |
 | `src/app/features/offer/domain/offer-path.ts` | `OFFERS_BASE_PATH = 'offres'`, `offerPath(slug)` → `/offres/<slug>` |
@@ -250,6 +250,7 @@ Liste par tranche (§ Tranches). Récapitulatif des fichiers porteurs :
 | `src/app/features/offer/application/components/offer-row.ts` | Ligne d'offre de la famille Applications, lien unique (T4) |
 | `src/app/shared/ui/faq-list.ts` | FAQ `<details>` native, promue depuis `OfferFaq` au 2e consommateur (T7) |
 | `src/app/shared/ui/key-point-list.ts` | Liste `lead` + `detail`, promue depuis `OfferReasons` au 2e consommateur (T7) |
+| `src/app/layout/components/footer/footer.static-data.ts` | `FOOTER_COPY` : phrase, titres de colonnes, libellés Ressources / Contact / ligne légale (T8) |
 | `src/app/features/home/application/home-offers.ts` | Section offres de la home (T6) |
 | `src/app/features/home/application/home-method.ts` | Section méthode + engagements (T7) |
 | `src/app/features/home/application/home-why.ts` | Section « Pourquoi moi » : citation + `KeyPointList` + lien `/about` ; lit `HOME_WHY` elle-même pour que sa copie reste hors de `main-*.js` (T7) |
@@ -265,7 +266,9 @@ Liste par tranche (§ Tranches). Récapitulatif des fichiers porteurs :
 `Dockerfile` (nginx), `.github/workflows/ci.yml` (smoke 301), offer `components/*` (titres de
 section en données), `home.ts`, `home-hero-section.ts`, `home.static-data.ts`,
 `site-identity.static-data.ts`, `about.ts`, `header.ts`, `nav-items.ts`, `footer.ts`,
-`projects.ts` (libellé « Réalisations »), `contact-form.ts`, `PRODUCT.md`, `DESIGN.md`.
+`projects.ts` (libellé « Réalisations »), `project-detail-header.ts` et `project-detail-nav.ts`
+(« Toutes les réalisations », T8), `shared/ui/button.ts` (variante `size="icon"`, T8),
+`contact-form.ts`, `PRODUCT.md`, `DESIGN.md`.
 
 **Supprimer** (T1) : `site-offer.ts`, `site-offer.model.ts`, `site-offer.static-data.ts` et
 leurs specs (réécrits sur le modèle générique). **Ne pas committer** `public/sitemap.xml`
@@ -450,7 +453,8 @@ l'API, rendus par `ProjectCard` : **aucun champ « étude de cas » n'est ajout�
 pas de code ; `ProjectCard` et le filtre de `/projects` affichent déjà la catégorie).
 
 **8.5 Navigation.** `NAV_LINKS` : Offres (`/offres`), Réalisations (`/projects`), Méthode
-(section `methode`), Blog, À propos. L'entrée section « Contact » disparaît au profit d'un
+(section `methode`), Blog, Parcours (`/about`, décision de Julien du 2026-10-04). L'entrée
+section « Contact » disparaît au profit d'un
 **bouton d'appel** « Décrire mon projet » hors `nav` (`data-testid="header-cta"`), visible à
 toutes les largeurs (dans la barre en mobile, pas seulement dans le drawer). Il cible toujours
 le formulaire de la home (comportement unique et prévisible ; les pages d'offre ont leur propre
@@ -886,7 +890,7 @@ preuves de prérendu se font en verify (`pnpm build` puis `grep` dans
 - **Tranche 8 — navigation, CTA permanent, footer enrichi.** Prérequis : T4, T5, T7 mergées.
   Fichiers : `nav-items.ts`, `header.ts`, `footer.ts`, `app.routes.ts` (`preload` sur `offres`,
   libellés « Réalisations »), `projects.ts` (`h1`).
-  - `NAV_LINKS` = Offres, Réalisations, Méthode (section `methode`), Blog, À propos, dans cet
+  - `NAV_LINKS` = Offres, Réalisations, Méthode (section `methode`), Blog, Parcours, dans cet
     ordre ; aucune entrée « Contact ».
   - `header-cta` présent hors drawer, déclenche `scrollTo('contact')` ; plus aucun lien CV dans
     le header.
@@ -1743,6 +1747,185 @@ Scaffold dû au GREEN : `features/home/domain/models/home-pitch.model.ts`,
 `home.ts`, `offer-page.ts`, `home-bundle.model.ts` (sans `highlights`/`buildSteps`),
 `in-memory-home.gateway.ts`, `home.gateway.ts`, suppressions listées ci-dessus.
 
+### Tranche 8 — navigation, CTA permanent, footer enrichi
+
+**Décisions de Julien (2026-10-04)** :
+
+- L'entrée de menu vers `/about` s'appelle « Parcours » (cohérente avec le titre de la page) ;
+  § 8.5 et critères de la tranche corrigés en conséquence.
+- Copy du footer **validée** : phrase « Sites et applications web pour TPE, PME et ateliers.
+  Yvelines et à distance. », colonnes « Offres », « Ressources », « Contact », lien « Vous
+  recrutez⌴? » (U+202F).
+- Liens d'offre du footer en **noms courts** : nouveau champ de domaine `OfferSummary.shortName`
+  (« Site vitrine », « Site atelier », « Application métier », « Refonte et maintenance »,
+  « Renfort Angular / NestJS »).
+- Footer complet comme la maquette : Ressources = Réalisations, Blog, Parcours, « Vous
+  recrutez⌴? » ; Contact = bouton « Décrire mon projet » (solde la dette `scrollToContact`
+  inutilisé), puis Malt, LinkedIn, GitHub ; ligne légale `©` année, « Julien Nédellec », EI,
+  SIRET, mention TVA, liens mentions légales et confidentialité. Libellés dans `FOOTER_COPY`.
+- Bouton d'appel du header mesuré : `trackCtaClick('header_contact', 'Décrire mon projet')`.
+
+Sweeps. Contrat modifié (menu, libellés « Projets » → « Réalisations », « À propos » →
+« Parcours », entrée section `contact` → `methode`, lien « Sites pour ateliers », icônes sociales
+du footer) : `grep` de `Projets`, `À propos`, `Sites pour ateliers`, `footer-offer-link`,
+`Réseaux sociaux`, `Liens utiles`, `Télécharger mon CV`, `'contact'`, `sectionId`, `NAV_LINKS`,
+`CvGateway`, `trackCtaClick` sur `src/`, `scripts/`, `.github/`. Contrat élargi (`OfferSummary`
+gagne `shortName`) : `grep` des constructions d'`OfferSummary` dans les specs ; seule
+construction littérale = le builder `makeOfferSummary` (`offer-builders.ts`), étendu
+(`shortName: 'Offre courte'`) ; les autres specs passent par le builder ou `OFFERS`, aucun
+littéral à migrer. Suites adaptées dans ce RED : `header.spec.ts` (golden du menu **réécrit** sur
+les cinq entrées ; « rend un lien route » recalibré Réalisations/Parcours ; clic de section
+recalibré `methode` ; describe « lien CV conditionnel » **retiré**, 4 tests, cas disparu, remplacé
+par l'invariant « public recruteur » ; stub d'analytics complété de `trackCtaClick` ;
+commentaire narratif du test « dessert toutes les destinations » retiré, devenu faux) ;
+`footer.spec.ts` (3 tests du lien unique « Sites pour ateliers » et de la nav « Liens utiles »
+**remplacés**, cas disparu ; `SectionScroller` doublé) ; `offer-catalog.static-data.spec.ts`
+(+1) ; `app.routes.spec.ts` (+1) ; `projects.spec.ts` (+1) ; `editorial-typography.spec.ts` (+1,
+`FOOTER_COPY` ; `shortName` couvert via `OFFERS`, déjà balayé). Aucune adaptation mécanique :
+chaque valeur modifiée est un changement de contrat, rouge jusqu'au GREEN. Vertes par
+construction : `about-motivation.spec.ts` et `home-hero-section.spec.ts` (leur
+`scrollTo('contact')` et leur `trackCtaClick` sont ceux de leur propre CTA), `offer-seo.spec.ts`
+(`breadcrumbName` « Sites pour ateliers » = fil d'Ariane de l'offre, autre concept),
+`group-offers-by-family.spec.ts` (builder), `app.spec.ts` (création seule, sans rendu), suites
+admin (« Projets » de l'admin, hors périmètre). États seedés : `ActiveSection` seedé à
+`'contact'` dans `header.spec.ts` (test de reflet, indépendant du menu, conservé). Hors tests,
+signalés : `DESIGN.json` (exemple de nav Projets / À propos / Contact), commentaire « accueil et
+À propos » de `src/styles.css`, libellé « Tous les projets » de `project-detail-header.ts` et
+`project-detail-nav.ts`.
+
+Contrats fixés par ce RED :
+
+- `NAV_LINKS` (`nav-items.ts`), dans l'ordre : route « Offres » `/offres`, route
+  « Réalisations » `/projects`, section « Méthode » `methode`, route « Blog » `/blog`, route
+  « Parcours » `/about` ; aucune entrée « Contact ». Icônes libres.
+- Header : `data-testid="header-cta"` unique dans l'hôte (drawer ouvert compris), dans le
+  `header`, hors de toute `nav` et hors d'`app-drawer` ; c'est un `button type="button"` natif ou
+  un hôte (p. ex. `app-button`) qui en contient un, de texte « Décrire mon projet » ; ni lui ni
+  aucun ancêtre jusqu'au `header` ne porte de classe `hidden` / `<bp>:hidden` ; clic ⇒
+  `SectionScroller.scrollTo('contact')` exactement une fois **et**
+  `AnalyticsGateway.trackCtaClick('header_contact', 'Décrire mon projet')` exactement une fois.
+  Entrée « Méthode » (barre et drawer) ⇒ `scrollTo('methode')` ; dans le drawer, le menu se ferme.
+  Header et drawer ne rendent aucun lien vers l'URL du CV et `CvGateway.getCurrent` n'est jamais
+  appelé (un stub qui renvoie un CV reste fourni par le harnais : la preuve tient même si le CV
+  existe).
+- Domaine : `OfferSummary.shortName: string` (readonly), renseigné pour les cinq offres (golden
+  ci-dessus) ; builder `makeOfferSummary` par défaut `'Offre courte'`.
+- `src/app/layout/components/footer/footer.static-data.ts` (golden) : `FOOTER_COPY = { tagline,
+  headings: { offers, resources, contact }, resources: { projects: 'Réalisations', blog: 'Blog',
+  about: 'Parcours' }, hiringLink, contactCta: 'Décrire mon projet', socials: { malt: 'Malt',
+  linkedin: 'LinkedIn', github: 'GitHub' }, legal: { owner: 'Julien Nédellec', status: 'EI',
+  siretLabel: 'SIRET', legalNotice: 'Mentions légales', privacy: 'Confidentialité' } }`.
+- Footer :
+  - `footer-tagline` = `tagline` ; `footer-column-heading` × 3 = `offers`, `resources`,
+    `contact` dans l'ordre.
+  - Offres : `footer-offer-link` × 5 = `A`, `href` = `offerPath(slug)` dans l'ordre d'`OFFERS`,
+    texte = `shortName`, tous dans une `nav` dont le nom accessible (`aria-label` ou
+    `aria-labelledby`) = `headings.offers` ; clic ⇒ `router.url` = `offerPath(slug)` (`it.each`
+    sur les cinq).
+  - Ressources : la `nav` nommée `headings.resources` contient exactement, dans l'ordre, les liens
+    `/projects`, `/blog`, `/about` (`footer-resource-link`, textes `resources.*`, clic ⇒ la
+    route) puis `footer-hiring-link` (`href="/about#recrutement"`, texte `hiringLink`, clic ⇒
+    `/about#recrutement`).
+  - Contact : dans la `nav` nommée `headings.contact`, `footer-contact-cta` unique (`button
+    type="button"` natif ou hôte qui en contient un, texte `contactCta`, clic ⇒
+    `scrollTo('contact')` exactement une fois), puis `footer-social-link` × 3 = Malt, LinkedIn,
+    GitHub (`href` = `SITE_IDENTITY.socials.*`, texte `socials.*`, `target="_blank"`, `rel` =
+    `noopener noreferrer`).
+  - Ligne légale : `footer-legal` contient `footer-legal-mention` (texte, espaces normalisés, au
+    2026-10-04 : `© 2026 Julien Nédellec · EI · SIRET <business.siret> · <business.vatMention>`,
+    année lue de l'horloge) et les deux `footer-legal-link` = `A` `/mentions-legales` puis
+    `/confidentialite`, textes `legal.legalNotice`, `legal.privacy`, clic ⇒ `/mentions-legales`.
+  - Landmarks : l'hôte ne contient qu'un `footer` (le `contentinfo` du shell), aucun
+    `main`/`header`/`aside` ; chaque `nav` a un nom non vide, noms tous distincts, dont les trois
+    titres de colonnes.
+- `/projects` : `data-testid="projects-title"` = l'unique `H1`, texte « Réalisations » ; route
+  `projects` : `title` et `seo.title` « Réalisations | Julien Nédellec », `seo.url` inchangée
+  (`/projects`), fil d'Ariane Accueil → « Réalisations ».
+- Route `offres` : `data.preload` = `true`.
+
+| Fichier | Tests |
+|---|---|
+| `layout/components/header/header.spec.ts` (+7, −4, 3 recalibrés) | golden du menu (cinq entrées, réécrit) ; labels Réalisations/Parcours ; clic Méthode ⇒ `methode` ; CTA unique dans le header hors nav, CTA unique hors drawer menu ouvert, aucun ancêtre masquant, clic ⇒ `contact`, clic ⇒ `trackCtaClick('header_contact', …)` ; Méthode dans le drawer ⇒ scroll + fermeture ; aucun lien CV ni appel `CvGateway` ; describe CV retiré |
+| `layout/components/footer/footer.spec.ts` (+25, −3) | golden `FOOTER_COPY` ; phrase ; colonnes ordonnées ; cinq liens d'offre (href, `shortName`, ordre) ; nav « Offres » ; clic × 5 ; « Vous recrutez ? » (href, texte, nav « Ressources ») + clic ; Ressources ordonnées + clic × 3 ; CTA contact (nav « Contact ») + clic ; liens sociaux ; mention légale datée ; liens légaux dans la ligne légale + clic ; landmarks (un `footer`, navs nommées et distinctes) |
+| `features/offer/domain/offer-catalog.static-data.spec.ts` (+1) | golden `shortName` × 5 |
+| `features/offer/testing/offer-builders.ts` (builder) | défaut `shortName` |
+| `features/projects/application/projects.spec.ts` (+1) | `h1` unique « Réalisations » |
+| `app.routes.projects.spec.ts` (+2, nouveau) | title/seo.title/url ; fil d'Ariane |
+| `app.routes.spec.ts` (+1) | `offres` préchargée |
+| `editorial-typography.spec.ts` (+1) | `FOOTER_COPY` |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-04 18:46, 38 failed / 1004 total). Nature des échecs : sur l'arbre réel, `pnpm test`
+(après `ng cache clean` et purge de `node_modules/.vite`) s'arrête à la compilation, uniquement
+sur des symboles applicatifs dus au GREEN : `TS2307` / `Could not resolve`
+`footer/footer.static-data` (importé par `footer.spec.ts` et `editorial-typography.spec.ts`),
+`TS2353` sur `shortName` dans le builder et `TS2339` sur `shortName` dans `footer.spec.ts` et
+`offer-catalog.static-data.spec.ts`, tant qu'`OfferSummary` n'a pas le champ ; aucune faute de
+type propre aux specs, prettier et eslint verts sur les huit fichiers, aucun hit du pattern
+d'archéologie. Mesure du rouge comportemental : scaffold vide posé le temps d'une exécution puis
+retiré (`FOOTER_COPY` à chaînes vides, `shortName?` optionnel dans `OfferSummary` ; `git
+checkout` du modèle, fichier supprimé) : 102 fichiers, 38 failed / 1004 total, tous en
+`AssertionError` (10 header, 23 footer, 1 `shortName`, 1 projects, 1 route `offres`, 2 route
+`projects`). Sous un scaffold portant la copy validée, le golden `FOOTER_COPY` passe. Verts par
+nature sous scaffold : clic du lien atelier (lien existant), hôte du footer = un seul `footer`
+(non-régression), « dessert toutes les destinations » (juge le rendu contre `NAV_LINKS`, quel
+qu'il soit), typographie de `FOOTER_COPY` (vide sous le scaffold vide ; vérifie U+202F sur la
+vraie copy). Harnais vérifié : sous une implémentation jetable (header, nav, footer complet,
+`shortName` dans `OFFERS`, `h1`, routes ; retirée par `git checkout` et suppression, `git status`
+sans fichier applicatif), 1004 passed / 1004 (dont `aria-labelledby` résolu, navigation
+`/about#recrutement`, horloge figée sur `Date` seul).
+Non-régression : base avant RED 973 passed / 973 ; 1004 = 973 + 38 ajoutés − 7 retirés (4 CV
+header, 3 footer) ; aucun test préexistant non visé ne tombe.
+Hors Vitest, verify (implémenteur) : point de bascule de la nav (maquette : nav masquée sous
+~860 px, CTA conservé dans la barre ; risque § 9, cinq entrées + CTA + thème à 768 px) et CTA
+visible à 375 px, non mesurables en happy-dom ; `offres` présente dans les chunks préchargés ;
+rendu du footer en colonnes (maquette) et ligne légale lisible à 375 px.
+Scaffold dû au GREEN : `layout/components/footer/footer.static-data.ts` (`FOOTER_COPY`),
+`footer.ts` (sans les icônes sociales actuelles, `scrollToContact` désormais câblé),
+`offer.model.ts` (`shortName`), `offer-catalog.static-data.ts` (cinq `shortName`), `header.ts`
+(sans `CvGateway`, sans lien CV, CTA mesuré), `nav-items.ts`, `projects.ts`, `app.routes.ts`.
+
+**Complément RED après revue (2026-10-04)**, point 1 de `## Review code` / Tranche 8 (barre trop
+large à 320 px). Arbitrages de l'orchestrateur : variante de taille icône du `Button` (carré de
+44 px) et bascule de thème dupliquée dans le drawer, celle de la barre étant masquée sous `sm`
+(classe responsive, non mesurable en happy-dom : prouvée en verify, comme les cibles tactiles
+`min-h-11` du footer sous `md`). Nettoyage : `trackCvDownload` retiré du stub d'analytics de
+`header.spec.ts` (résidu du CV retiré, aucune assertion touchée).
+
+Sweeps. Contrat élargi (`Button.size` gagne `'icon'`) : `grep` de `app-button`, `size=`,
+`[size]` et `Button` dans les specs ; aucun test n'épinglait les classes du `Button` (pas de
+`button.spec.ts` avant ce RED), les consommateurs ne passent que `default`/`large` ou rien, donc
+rien à adapter. Thème : seuls les tests « toggle de thème » de `header.spec.ts` le couvrent,
+inchangés et verts.
+
+Contrats fixés par ce complément :
+
+- `shared/ui/button.ts` : avec `size` = `'icon'`, le `button` interne porte `min-h-11` et
+  `min-w-11` et aucune classe de padding horizontal (`px-*`, `pl-*`, `pr-*`, préfixées ou non) ;
+  sans `size`, classes inchangées (golden : `text-sm px-5 py-2.5 min-h-11 rounded-md
+  bg-primary-bg text-white border border-primary-bg shadow-sm hover:opacity-90`).
+- Header : menu mobile ouvert, `data-testid="drawer-theme-toggle"` unique, dans le
+  `[role="dialog"]` du drawer, `button` natif ou hôte qui en contient un ; clic ⇒ même effet que
+  la bascule de la barre (`app-dark` retiré de `<html>`, `j-ned:theme` = `light` depuis `dark`).
+
+| Fichier | Tests |
+|---|---|
+| `shared/ui/button.spec.ts` (+2, nouveau) | taille icône carrée 44 px sans padding horizontal ; rendu par défaut inchangé (golden) |
+| `layout/components/header/header.spec.ts` (+1, stub nettoyé) | bascule de thème dans le drawer, clic ⇒ thème clair persisté |
+
+Complément RED confirmé via la commande test du profil le 2026-10-04 19:16, 2 failed / 1007
+total (après `ng cache clean` et purge de `node_modules/.vite`) : compilation et typecheck verts
+(`setInput('size', 'icon')` n'est pas typé), les deux échecs en `AssertionError` (classes du
+bouton icône égales au rendu par défaut ; aucun `drawer-theme-toggle`). Le test du rendu par
+défaut est vert par nature (non-régression du `Button`). Harnais vérifié : sous une
+implémentation jetable (`'icon'` → `min-h-11 min-w-11`, bascule ajoutée au drawer ; fichiers
+restaurés depuis une copie, `git diff` de `button.ts` vide), 1007 passed / 1007.
+Non-régression : base avant le complément 1004 passed / 1004 (GREEN de la tranche) ; 1007 = 1004
++ 3 ajoutés ; aucun autre test ne tombe.
+Scaffold dû au GREEN : `shared/ui/button.ts` (`Size` élargi à `'icon'`), `header.ts` (bascule
+dans le drawer, bascule de la barre masquée sous `sm`), puis rejouer la mesure à 320 px en
+verify.
+
 ## Journal des tranches
 
 - **Tranche 1 — l'offre atelier sur le modèle générique** : GREEN 701 passed / 701 total · refactor : aucun
@@ -1753,6 +1936,7 @@ Scaffold dû au GREEN : `features/home/domain/models/home-pitch.model.ts`,
 - **Tranche V — socle visuel « dessin technique »** : GREEN 716 passed / 716 total · refactor : aucun
 - **Tranche 6 — la home commerciale : hero et offres** : GREEN 947 passed / 947 total · refactor : liste d'offres d'une famille (cartes Sites / lignes Applications) sortie en `OfferFamilyList`, partagée par `OfferCatalogue` et `HomeOffers` (passe manuelle sur le diff, `simplify` non invoqué en sous-agent)
 - **Tranche 7 — la home : méthode, pourquoi moi, FAQ** : GREEN 973 passed / 973 total · refactor : FAQ de la home sortie en `HomeFaq` (lit `HOME_FAQ` elle-même) pour que la copie de `home-pitch.static-data` quitte `main-*.js` (mesuré : « Questions fréquentes », « Prix annoncé » 0 dans `main` après, 1 avant) ; hauteurs des placeholders recalées sur la mesure par point de rupture (passe manuelle sur le diff, `simplify` non invoqué en sous-agent) ; « Pourquoi moi » en `HomeWhy`, qui lit `HOME_WHY` elle-même pour la même raison (copie hors de `main-*.js`).
+- **Tranche 8 — navigation, CTA permanent, footer enrichi** : GREEN 1004 passed / 1004 total · refactor : aucun (passe manuelle sur le diff, `simplify` non invoqué en sous-agent ; classes répétées du footer posées dès l'écriture en `@utility` `footer-heading` / `footer-link`, ADR-0003)
 
 ## Verify
 
@@ -2239,6 +2423,72 @@ et des chunks → `docker build` de l'arbre de travail (`portfolio-perf:t7-branc
 
 Verdict : **PASS**.
 
+### Tranche 8 — header, footer et menu sur toutes les pages (surface atteignable en production, restructurée)
+
+Steps : `pnpm install --frozen-lockfile` → `pnpm run build --configuration production` (20 routes
+prérendues, CSP durcie sur 21 pages) → lecture de `dist/angular-portfolio-app/browser/{index,offres/index,about/index}.html`
+→ serveur statique local sur `dist/…/browser` (`:3348`, fichier prérendu sinon `index.csr.html`)
+→ Chromium headless (Playwright) : header sur `/offres/` à 320, 360, 375, 640, 768, 860, 1024, 1280,
+1440 px, clair puis sombre ; footer à 375 et 1440 px, deux registres ; navigations SPA ; axe-core
+injecté par évaluation de script sur `/`, `/offres/`, `/about/` (2 largeurs × 2 registres).
+`public/sitemap.xml` et `public/rss.xml` restaurés par `git checkout`.
+
+1. **HTML prérendu** (`/`, `/offres/`, `/about/`, identique sur les trois) : `nav` « Navigation
+   principale » à cinq entrées (Offres, Réalisations, Méthode, Blog, Parcours), un seul
+   `header-cta`, 5 `footer-offer-link`, 3 `footer-resource-link`, 1 `footer-hiring-link`,
+   3 `footer-social-link`, 2 `footer-legal-link`, mention légale « © 2026 Julien Nédellec · EI ·
+   SIRET 937 999 860 00029 · TVA non applicable, art. 293 B du CGI » ; « Télécharger mon CV » : 0.
+2. **Barre du header** (mesure rejouée après la revue ; boîtes gauche–droite des éléments visibles,
+   `elementFromPoint` au centre de la tuile « JN », défilement horizontal ; identique en clair et en
+   sombre) :
+
+   | Largeur | Tuile « JN » | Thème | CTA | Menu | Nav | Centre de la tuile | Chevauchement / défilement |
+   |---|---|---|---|---|---|---|---|
+   | 320 | 16–60 (44) | masqué | 90–252 | 260–304 | masquée | lien de marque | non / non |
+   | 360 | 16–60 (44) | masqué | 130–292 | 300–344 | masquée | lien de marque | non / non |
+   | 375 | 16–60 (44) | masqué | 145–307 | 315–359 | masquée | lien de marque | non / non |
+   | 640 | 24–68 (44) | 334–378 | 394–556 | 572–616 | masquée | lien de marque | non / non |
+   | 768 | 24–68 (44) | 462–506 | 522–684 | 700–744 | masquée | lien de marque | non / non |
+   | 1024 | 32–76 (44) | 770–814 | 830–992 | masqué | 328–702 | lien de marque | non / non |
+
+   Point de bascule `lg` (1024) : la nav tient avec environ 60 px de marge de chaque côté ; à `md`
+   (768) elle exigerait environ 913 px pour 720 disponibles. Sous `sm`, la marque ne garde que la
+   tuile « JN » (nom en `sr-only`, nom accessible conservé), la bascule de thème quitte la barre
+   pour le drawer, et les boutons icônes sont des carrés de 44 px (`Button` `size="icon"`) : la
+   barre tient dans 288 px à 320 px, tuile entière, rien ne la recouvre. CTA visible, sur une
+   ligne, dans la barre à toutes les largeurs. Captures `fix-header-{320,360,375,640,768,1024}-{light,dark}.png`.
+3. **Rendu** (captures, scratchpad de session `lh/shots-t8/`) : `header-{375,768,860,1024,1280,1440}-{light,dark}.png`,
+   `header-{320,360}-narrow.png`, `footer-{375,1440}-{light,dark}.png`, `spa-*.png`. Footer en
+   1440 : marque + phrase puis colonnes Offres / Ressources / Contact (titres mono capitales),
+   « Décrire mon projet » en lien primaire, ligne légale sous un filet, liens légaux à droite. En
+   375 : colonnes empilées (2 colonnes à partir de `sm`), ligne légale sur trois lignes, SIRET
+   jamais coupé (`whitespace-nowrap`), liens légaux dessous ; aucun défilement horizontal.
+4. **Navigation SPA** (sans rechargement : l'entrée de navigation reste la page de départ) :
+   - « Méthode » de la barre depuis `/offres/` (1440) : URL `/`, haut de `#methode` à 127 px
+     (sous le header de 80 px) ; depuis le drawer (375) : haut à 80 px, drawer fermé.
+   - « Vous recrutez ? » du footer depuis `/` : URL `/about#recrutement`, l'ancre en haut de
+     fenêtre, sur-titre « Vous recrutez ? » visible sous le header.
+   - CTA du header depuis `/offres/` (375) : URL `/`, formulaire de contact à 80 px du haut.
+   - CTA du footer depuis `/about/` : URL `/`, `#contact` dans la fenêtre.
+5. **Préchargement** : sur `/about/`, le chunk des routes d'offre est demandé après le rendu
+   (`SelectivePreload`, `data.preload`), la page catalogue reste lazy.
+6. **axe** : aucune violation sur `/` et `/offres/` (2 largeurs × 2 registres). Sur `/about/` en
+   clair, seule `color-contrast` sur `toast-summary` : toast d'erreur global (l'API refuse
+   l'origine locale), préexistant, déjà relevé en Tranche 7 ; rien d'imputable au diff.
+7. **Console** : aucune erreur applicative (`NG0…`, hydratation). Erreurs d'environnement
+   seules : `GET /api/config` 404 et CORS de `api.nedellec-julien.fr` refusant l'origine locale.
+
+8. **Cibles du footer à 375 px** (hauteur mesurée des 15 cibles) : Site vitrine 44, Site atelier 44,
+   Application métier 44, Refonte et maintenance 44, Renfort Angular / NestJS 44, Réalisations 44,
+   Blog 44, Parcours 44, Vous recrutez ? 44, Décrire mon projet 44, Malt 44, LinkedIn 44, GitHub 44,
+   Mentions légales 44, Confidentialité 44. En 1440, les 15 restent à 20 px : rendu desktop de la
+   maquette inchangé (`fix-footer-{375,1440}.png`).
+9. **Bascule de thème du drawer** (375, `fix-drawer-375*.png`) : la bascule de la barre est masquée ;
+   menu ouvert, « Passer en mode sombre » met `app-dark` sur `<html>`, persiste `dark` dans
+   `j-ned:theme`, et le libellé devient « Passer en mode clair ».
+
+Verdict : **PASS**.
+
 ## Review code
 
 ### Tranche 1
@@ -2558,3 +2808,65 @@ Points de la 1re revue, vérifiés à la re-revue (grep de `HomeProof` et `highl
 3. **Soldé.** § 4 : le bundle est décrit comme `{ hero, featuredProjects }`. Constat de la 1re revue, `:354` : « `rxResource` sur `HomeGateway` inchangé (hero, highlights, buildSteps, projets vedettes) » est périmé. Le bundle ne porte plus que `{ hero, featuredProjects }`.
 
 `getHeroData` : suivi dans une chore séparée, hors T7 (accord de l'orchestrateur). Advisories maintenus, non bloquants : hauteurs de placeholder en dur, collision de nom entre types de modèle et composants, inexactitude « Prix annoncé » de la preuve.
+
+### Tranche 8
+
+**Verdict** : APPROVED (re-revue ; la 1re revue a rendu REJECTED sur quatre points, tous soldés)
+**Gates CI locaux** : tests ✅ (`pnpm test`, exit 0, après `pnpm exec ng cache clean` et purge de `node_modules/.vite` : 103 fichiers, 1007 passed / 1007) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting ») / build ✅ (`pnpm run build --configuration production`, exit 0 au premier essai : sitemap 20 URL, 20 routes prérendues, CSP durcie sur 21 pages). `pnpm install --frozen-lockfile` (1re revue) : exit 0, lockfile inchangé depuis. `public/` restauré par `git checkout`.
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent), auto-checks joués à la main sur `git diff 8496740` et les trois fichiers non suivis (`app.routes.projects.spec.ts`, `footer.static-data.ts`, `button.spec.ts`). Archéologie (motif du profil) : 0 hit dans le code ajouté (le bandeau `/* --- */` de `styles.css` suit la convention du fichier et porte une ligne de rôle). `export default`, `effect(` nouveau, helpers zone, `innerHTML`, `console.`, `.only`/`.skip`, snapshot, `fireEvent`, `getByTestId`, `interface`, `@capacitor` : 0 hit. `[&>button]` : 0 hit. Exports ajoutés : `FOOTER_COPY` (footer, deux specs). `Size` de `Button` gagne `'icon'`, employé deux fois dans le header. Code mort : `SOCIALS`, `SocialItem`, `workshopOfferPath`, `cvUrl`/`loadCvUrl` du header, « Liens utiles », « Réseaux sociaux », « À propos », « Tous les projets » : 0 occurrence (hors admin). `trackCvDownload` n'est plus dans `header.spec.ts`. Il reste dans `about-hiring.ts` et l'infra, son consommateur légitime.
+**Warnings de gate** : aucun en test, lint ni build (sorties lues en entier). (b) pré-existant : `pnpm install` signale « Ignored build scripts: @parcel/watcher » (1re revue).
+**Rendu compilé** : N/A (aucun sélecteur attribut touché)
+**Preuve de verify runtime** : ✅ (`## Verify` / Tranche 8 : point 2 réécrit, points 8 et 9 ajoutés, cohérents avec le diff. La revue a rejoué la preuve sur le build de production servi en statique, avec Chromium, en clair et en sombre. Voir le détail ci-dessous.)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅ (liens sociaux `target="_blank"` + `rel="noopener noreferrer"`, testés ; CSP régénérée)
+**Alignement spec** : ✅ (§ 2 complété : `footer.static-data.ts`, `shortName`, « Toutes les réalisations », `button.ts`)
+
+Vérifications du HTML prérendu (1re revue, inchangées en structure ; `/`, `/offres/`, `/about/`, `/projects/`) :
+- nav « Navigation principale » à cinq entrées dans l'ordre, un seul `header-cta`, 0 lien CV dans le `header` ;
+- footer complet : 3 titres, 5 offres, 3 ressources, `/about#recrutement`, CTA, 3 réseaux, 2 liens légaux, mention légale exacte ;
+- sur `/projects/` : unique `h1` et `<title>` « Réalisations ».
+
+Verify rejouée par la re-revue :
+- **Header** (`/offres/`, 320, 360, 375, 640, 768, 1024 et 1440 px, deux registres) :
+  - aucun défilement horizontal et aucun chevauchement entre éléments visibles de la barre (test par paires de boîtes) ;
+  - le centre et le bord droit de la tuile « JN » donnent le lien de marque (`elementFromPoint`) ;
+  - à 320 px : tuile 16–60, CTA 90–252, menu 260–304. La bascule de thème de la barre apparaît à partir de `sm`, en 44 × 44 (`size="icon"`), comme le bouton menu.
+- **Clavier** : à 375 px, Tab passe par la marque, le CTA puis le menu. À 1440 px : marque, cinq entrées, thème, CTA. Chaque arrêt est en `:focus-visible`.
+- **Drawer** (375 et 768 px) :
+  - Entrée sur « Ouvrir le menu » place le focus dans le dialogue, et Tab atteint `drawer-theme-toggle` (46 px de haut) ;
+  - Entrée bascule le thème (`app-dark`, `localStorage` à `dark`), et le libellé suit (« Passer en mode clair »), comme l'`aria-label` de la bascule de la barre à 768 px ;
+  - le thème persiste au rechargement ;
+  - Échap ferme le drawer et rend le focus au bouton menu.
+- **Footer** : à 375 px, les 15 cibles font 44 px de haut, sans défilement horizontal. À 1440 px, 20 px, rendu desktop inchangé (conforme à la maquette).
+- **Navigation SPA**, sans rechargement :
+  - « Méthode » depuis `/offres/` mène à `/`, `#methode` stable à 127 px du haut sur deux passes. Une mesure isolée à 265 px a été relevée dans une passe enchaînée, non reproduite ;
+  - « Vous recrutez ? » depuis `/` mène à `/about#recrutement`, l'ancre en haut.
+- **axe** (WCAG 2.2 AA et best-practice ; 320, 375 et 1440 px ; deux registres ; `/`, `/offres/`, `/about/`, `/projects/`) : 0 violation, hors `color-contrast` sur `toast-summary` de `/about/` en clair (préexistant, toast d'erreur de l'API, relevé dès la Tranche 7).
+- **Console** : aucune erreur `NG0` ni d'hydratation.
+
+Points de la 1re revue, vérifiés :
+1. **Soldé.** À 320 px, la barre tient dans 288 px. La bascule de thème est en `max-sm:hidden` dans la barre et doublée par `drawer-theme-toggle` dans le drawer, testé (clic, thème, persistance). Le lien de marque n'est plus écrasé, rien ne le recouvre. Le point 2 de `## Verify` est corrigé.
+2. **Soldé.** `@utility footer-link` porte `inline-flex items-center max-md:min-h-11`, le bouton « Décrire mon projet » `max-md:min-h-11`. Les 15 cibles font 44 px à 375 px, et le desktop ne change pas. L'utility porte désormais un état responsive en plus de la liste de classes : elle se défend malgré son usage dans un seul composant (ADR-0003, règle 5, advisory levé).
+3. **Soldé.** Le motif `[&>button]` est supprimé. `Button` gagne `size="icon"` (`min-h-11 min-w-11`, sans padding horizontal), via une table `SIZE_CLASSES` qui laisse inchangés les rendus `default` et `large`. Ce n'est pas une indirection spéculative : deux usages dans le diff, plus le passage des tailles en table. `button.spec.ts` épingle la variante icône (aucun `px`/`pl`/`pr`) et la liste exacte du rendu par défaut.
+4. **Soldé.** § 2 complété.
+
+Écart signalé, jugé : entre `sm` et `lg`, deux bascules de thème sont accessibles, celle de la barre et celle du drawer. Acceptable, non bloquant :
+- la bascule du drawer n'est atteignable qu'avec le menu ouvert ;
+- les deux portent le même libellé et le même état ;
+- aucune ne trompe l'utilisateur, et axe ne relève rien.
+
+Si Julien préfère une seule bascule par largeur, il suffit de masquer celle du drawer à partir de `sm` (`sm:hidden`). C'est une affaire de goût, pas un défaut.
+
+**Tests notables** :
+- ✨ `src/app/layout/components/header/header.spec.ts` (« aucun ancêtre ne le masque ») : épingle la visibilité permanente du CTA sans moteur de layout.
+- ✨ `src/app/shared/ui/button.spec.ts` : le rendu par défaut est épinglé classe par classe. L'ajout de la variante `icon` ne peut pas dériver silencieusement sur les composants qui emploient `Button` (20 fichiers).
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil muet (Dokploy continu sur `master`) · monitoring : Sentry
+- aucun état persistant touché (la clé `j-ned:theme` existante est réutilisée telle quelle)
+- non couvert par les gates : la tenue de la barre et la hauteur des cibles du footer selon la largeur. happy-dom ne mesure rien, seul le verify les prouve. Le commit de la tranche embarquera le reformatage Prettier complet de `DESIGN.json` par `lint-staged` (dette préexistante, voir la 1re revue, point à juger 6).
+
+Rappel de la 1re revue (REJECTED) : 320 px (chevauchement tuile / thème), cibles du footer à 18–20 px sous `PRODUCT.md:86`, motif `[&>button]` contre ADR-0003, § 2 incomplet. Les écarts 2 à 7 de l'implémenteur y ont été jugés acceptables, et le jugement est maintenu.

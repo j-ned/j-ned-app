@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   signal,
+  computed,
   effect,
   afterNextRender,
   inject,
@@ -9,8 +10,6 @@ import {
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { firstValueFrom } from 'rxjs';
-import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { ActiveSection } from '@core/navigation/active-section';
 import { AppIcon } from '@shared/icons/app-icon';
@@ -42,25 +41,20 @@ type ThemePreference = 'dark' | 'light';
           >
             JN
           </app-icon-tile>
-          <div class="flex items-baseline gap-0.5 font-display">
-            <span class="text-xl sm:text-2xl font-bold text-foreground tracking-tight"
-              >Julien
-            </span>
-            <span class="text-xl sm:text-2xl font-bold text-primary"
-              ><span class="sm:hidden">N.</span><span class="hidden sm:inline">Nédellec</span></span
-            >
-          </div>
+          <span
+            class="font-display text-2xl font-bold tracking-tight text-foreground max-sm:sr-only"
+            >Julien <span class="text-primary">Nédellec</span></span
+          >
         </a>
 
-        <nav class="hidden md:flex items-center gap-8" aria-label="Navigation principale">
+        <nav class="hidden lg:flex items-center gap-6" aria-label="Navigation principale">
           @for (item of navItems; track item.label) {
             @if (item.kind === 'route') {
               <a
                 [routerLink]="item.href"
                 routerLinkActive="is-link-active text-primary"
-                class="group relative flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+                class="group relative text-[0.9375rem] font-medium text-muted hover:text-primary transition-colors"
               >
-                <app-icon [name]="item.icons" [size]="20" />
                 {{ item.label }}
                 <span class="nav-underline" aria-hidden="true"></span>
               </a>
@@ -70,9 +64,8 @@ type ThemePreference = 'dark' | 'light';
                 (click)="scrollToSection(item.sectionId)"
                 [class.is-link-active]="activeKey() === item.sectionId"
                 [class.text-primary]="activeKey() === item.sectionId"
-                class="group relative flex items-center gap-2 text-lg font-medium text-muted hover:text-primary transition-colors"
+                class="group relative cursor-pointer text-[0.9375rem] font-medium text-muted hover:text-primary transition-colors"
               >
-                <app-icon [name]="item.icons" [size]="20" />
                 {{ item.label }}
                 <span class="nav-underline" aria-hidden="true"></span>
               </button>
@@ -82,32 +75,26 @@ type ThemePreference = 'dark' | 'light';
 
         <div class="flex items-center gap-2 sm:gap-4">
           <app-button
+            class="max-sm:hidden"
             variant="outlined"
             severity="secondary"
+            size="icon"
             [rounded]="true"
-            [ariaLabel]="isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre'"
+            [ariaLabel]="themeToggleLabel()"
             (click)="toggleTheme()"
           >
             <app-icon [name]="isDarkTheme() ? 'moon' : 'sun'" [size]="16" />
           </app-button>
 
-          @if (cvUrl()) {
-            <a
-              [href]="cvUrl()"
-              target="_blank"
-              rel="noopener noreferrer"
-              (click)="trackCvDownload()"
-              class="hidden md:inline-flex items-center gap-2 min-h-11 px-4 py-2 rounded-full border border-foreground/15 text-foreground text-sm font-medium hover:bg-foreground/5 hover:border-foreground/30 transition-colors"
-            >
-              <app-icon name="download" />
-              Télécharger mon CV
-            </a>
-          }
+          <app-button data-testid="header-cta" (click)="describeProject()">
+            {{ ctaLabel }}
+          </app-button>
 
           <app-button
-            class="md:hidden"
+            class="lg:hidden"
             variant="text"
             severity="secondary"
+            size="icon"
             [rounded]="true"
             [ariaLabel]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
             (click)="toggleMobileMenu()"
@@ -119,7 +106,7 @@ type ThemePreference = 'dark' | 'light';
     </header>
 
     <app-drawer
-      class="md:hidden"
+      class="lg:hidden"
       [(visible)]="isMobileMenuOpen"
       position="right"
       heading="Menu"
@@ -149,38 +136,36 @@ type ThemePreference = 'dark' | 'light';
             </button>
           }
         }
-        @if (cvUrl()) {
-          <a
-            [href]="cvUrl()"
-            target="_blank"
-            rel="noopener noreferrer"
-            (click)="trackCvDownload(); closeMobileMenu()"
-            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-lg font-medium text-primary hover:bg-foreground/5 transition-colors mt-2 border-t border-white/5 pt-4"
-          >
-            <app-icon name="download" [size]="20" />
-            Télécharger mon CV
-          </a>
-        }
       </nav>
+      <button
+        type="button"
+        data-testid="drawer-theme-toggle"
+        (click)="toggleTheme()"
+        class="mt-4 flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-lg border border-foreground/15 px-3 py-2.5 text-left text-base font-medium text-foreground hover:bg-foreground/5 transition-colors"
+      >
+        <app-icon [name]="isDarkTheme() ? 'moon' : 'sun'" [size]="20" />
+        {{ themeToggleLabel() }}
+      </button>
     </app-drawer>
   `,
 })
 export class Header {
   private readonly analytics = inject(AnalyticsGateway);
-  private readonly cvService = inject(CvGateway);
   private readonly scroller = inject(SectionScroller);
 
   protected readonly navItems = NAV_LINKS;
   protected readonly activeKey = inject(ActiveSection).key;
   protected readonly isMobileMenuOpen = signal(false);
   protected readonly isDarkTheme = signal(Header.readStoredTheme() === 'dark');
-  protected readonly cvUrl = signal<string | null>(null);
+  protected readonly themeToggleLabel = computed(() =>
+    this.isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre',
+  );
+  protected readonly ctaLabel = 'Décrire mon projet';
 
   constructor() {
     afterNextRender({
       write: () => this.applyTheme(),
     });
-    afterNextRender(() => this.loadCvUrl());
 
     effect(() => {
       const isDark = this.isDarkTheme();
@@ -226,22 +211,12 @@ export class Header {
     this.isMobileMenuOpen.set(false);
   }
 
-  protected trackCvDownload(): void {
-    this.analytics.trackCvDownload();
+  protected describeProject(): void {
+    this.analytics.trackCtaClick('header_contact', this.ctaLabel);
+    this.scroller.scrollTo('contact');
   }
 
   protected toggleTheme(): void {
     this.isDarkTheme.update((value) => !value);
-  }
-
-  private async loadCvUrl(): Promise<void> {
-    try {
-      const data = await firstValueFrom(this.cvService.getCurrent());
-      if (data) {
-        this.cvUrl.set(this.cvService.getDownloadUrl());
-      }
-    } catch (err) {
-      console.warn('Header: chargement de l’URL du CV échoué, lien masqué.', err);
-    }
   }
 }

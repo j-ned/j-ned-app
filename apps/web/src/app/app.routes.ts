@@ -102,13 +102,13 @@ export const routes: Routes = [
   },
   {
     path: 'projects',
-    title: 'Projets | Julien Nédellec',
+    title: 'Réalisations | Julien Nédellec',
     loadChildren: () =>
       import('./features/projects/projects.routes').then((m) => m.PROJECTS_ROUTES),
     data: {
       preload: true,
       seo: {
-        title: 'Projets | Julien Nédellec',
+        title: 'Réalisations | Julien Nédellec',
         description:
           'Découvrez mes projets Angular, NestJS et TypeScript\u00a0: applications web modernes, APIs REST, déploiements Docker, code production-ready.',
         keywords:
@@ -123,7 +123,7 @@ export const routes: Routes = [
             {
               '@type': 'ListItem',
               position: 2,
-              name: 'Projets',
+              name: 'Réalisations',
               item: `${SITE_IDENTITY.siteUrl}/projects`,
             },
           ],
@@ -150,6 +150,7 @@ export const routes: Routes = [
   {
     path: OFFERS_BASE_PATH,
     loadChildren: () => import('./features/offer/offer.routes').then((m) => m.OFFER_ROUTES),
+    data: { preload: true },
   },
   {
     path: 'offre-site-industrie',

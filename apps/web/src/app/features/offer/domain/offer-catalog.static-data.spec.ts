@@ -26,6 +26,16 @@ describe('OFFERS', () => {
     ]);
   });
 
+  it('gives each offer a short name for compact lists', () => {
+    expect(OFFERS.map(({ slug, shortName }) => ({ slug, shortName }))).toEqual([
+      { slug: 'site-vitrine', shortName: 'Site vitrine' },
+      { slug: 'site-atelier', shortName: 'Site atelier' },
+      { slug: 'application-metier', shortName: 'Application métier' },
+      { slug: 'refonte-maintenance', shortName: 'Refonte et maintenance' },
+      { slug: 'renfort-freelance', shortName: 'Renfort Angular / NestJS' },
+    ]);
+  });
+
   it.each([
     [
       'site-vitrine',

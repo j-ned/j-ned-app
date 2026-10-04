@@ -194,7 +194,7 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
- * Titre de section (h2) des pages éditoriales : accueil et À propos.
+ * Titre de section (h2) des pages éditoriales : accueil et Parcours.
  * ---------------------------------------------------------------- */
 
 @utility section-title {
@@ -218,6 +218,18 @@ input:-webkit-autofill:focus {
 @utility link-btn-outline {
   @apply link-btn;
   @apply border border-foreground/15 text-foreground hover:border-primary/40 hover:text-primary;
+}
+
+/* ---------------------------------------------------------------- *
+ * Footer : titre de colonne (h2) et lien (cible tactile de 44 px sous md).
+ * ---------------------------------------------------------------- */
+
+@utility footer-heading {
+  @apply mb-3 font-mono text-xs font-medium uppercase tracking-[0.06em] text-muted;
+}
+
+@utility footer-link {
+  @apply inline-flex items-center text-muted transition-colors hover:text-foreground max-md:min-h-11;
 }
 
 /* ---------------------------------------------------------------- *

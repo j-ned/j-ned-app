@@ -88,6 +88,21 @@ describe('Projects', () => {
     expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-24', 'pt-20']);
   });
 
+  it('Given la page When elle est rendue Then son unique h1 la titre « Réalisations »', async () => {
+    const fixture = setup({
+      getAllProjects: () => of([project()] as readonly Project[]),
+      getCategories: () => of(['Tous', 'Web'] as readonly string[]),
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const title = host.querySelector('[data-testid="projects-title"]');
+
+    expect(title?.tagName).toBe('H1');
+    expect(title?.textContent?.trim()).toBe('Réalisations');
+    expect(host.querySelectorAll('h1')).toHaveLength(1);
+  });
+
   describe('hiérarchie mis en avant / index', () => {
     const CATALOG: readonly Project[] = [
       project({

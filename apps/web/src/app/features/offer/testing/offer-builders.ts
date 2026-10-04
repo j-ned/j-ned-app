@@ -20,6 +20,7 @@ export function makeOfferSummary(overrides: Partial<OfferSummary> = {}): OfferSu
     slug: 'site-atelier',
     family: 'sites',
     name: 'Offre de test',
+    shortName: 'Offre courte',
     audience: 'Public de test',
     promise: 'Promesse de test',
     priceTeaser: 'Prix de test',

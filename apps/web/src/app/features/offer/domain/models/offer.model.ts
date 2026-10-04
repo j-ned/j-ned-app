@@ -29,6 +29,7 @@ export type OfferSummary = {
   readonly slug: OfferSlug;
   readonly family: OfferFamily;
   readonly name: string;
+  readonly shortName: string;
   readonly audience: string;
   readonly promise: string;
   readonly priceTeaser: string;

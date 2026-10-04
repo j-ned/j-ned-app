@@ -28,6 +28,10 @@ describe('routes', () => {
       expect(await route?.loadChildren?.()).toBe(OFFER_ROUTES);
     });
 
+    it('preloads the offer routes, reachable from the main menu', () => {
+      expect(findRoute('offres')?.data?.['preload']).toBe(true);
+    });
+
     it('serves the catalogue page at /offres', async () => {
       const { url, leaf } = await navigate('/offres');
       expect(url).toBe('/offres');

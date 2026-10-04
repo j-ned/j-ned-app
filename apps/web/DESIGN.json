@@ -238,7 +238,7 @@
       "kind": "nav",
       "refersTo": "nav-link",
       "description": "Inline nav link, indigo hover, focus ring.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"Principal\"><a class=\"ds-nav-link\" href=\"#projects\">Projets</a><a class=\"ds-nav-link ds-nav-link-active\" href=\"#about\">À propos</a><a class=\"ds-nav-link\" href=\"#contact\">Contact</a></nav>",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Principal\"><a class=\"ds-nav-link\" href=\"#offres\">Offres</a><a class=\"ds-nav-link\" href=\"#projects\">Réalisations</a><a class=\"ds-nav-link\" href=\"#methode\">Méthode</a><a class=\"ds-nav-link\" href=\"#blog\">Blog</a><a class=\"ds-nav-link ds-nav-link-active\" href=\"#about\">Parcours</a></nav>",
       "css": ".ds-nav { display: inline-flex; gap: 24px; align-items: center; } .ds-nav-link { font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 500; color: rgba(250, 250, 250, 0.7); text-decoration: none; padding: 6px 4px; border-radius: 4px; transition: color 150ms; } .ds-nav-link:hover { color: #818cf8; } .ds-nav-link-active { color: #818cf8; } .ds-nav-link:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }"
     }
   ],

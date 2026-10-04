@@ -22,6 +22,7 @@ import {
   STATIC_SOCIAL_LINKS,
 } from '@shared/identity/contact-info.static-data';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
+import { FOOTER_COPY } from './layout/components/footer/footer.static-data';
 import { NAV_LINKS } from './layout/components/header/nav-items';
 import { LEGAL_LAST_UPDATE } from './pages/legal-notice';
 import { routes } from './app.routes';
@@ -105,6 +106,7 @@ const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['STATIC_SOCIAL_LINKS', STATIC_SOCIAL_LINKS],
   ['SITE_IDENTITY', SITE_IDENTITY],
   ['NAV_LINKS', NAV_LINKS],
+  ['FOOTER_COPY', FOOTER_COPY],
   ['LEGAL_LAST_UPDATE', LEGAL_LAST_UPDATE],
   ['routes', ROUTE_TEXTS],
 ];
