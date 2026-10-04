@@ -736,6 +736,97 @@ uniquement sur les modules applicatifs à créer au GREEN (`TS2307` / `Could not
 aux specs. Non-régression : nouvelles specs et `app.routes.spec.ts` mis de côté, `pnpm test` =
 80 fichiers, 643 passed / 643. Scaffold dû au GREEN : les sept modules ci-dessus.
 
+### Tranche 2 — l'atelier à son URL de catalogue, l'ancienne redirige
+
+Sweep de l'ancienne URL (`offre-site-industrie`) sur tout `src/` : `app.routes.spec.ts`,
+`app.routes.server.spec.ts`, `footer.spec.ts`, `offer-seo.spec.ts`, plus le code (`app.routes.ts`,
+`app.routes.server.ts`, `footer.ts`) et `scripts/generate-sitemap.mjs`. Les quatre specs sont
+ré-alignées dans ce RED ; aucun test ne porte plus l'ancienne URL sauf celui qui en épingle la
+redirection et le non-prérendu.
+
+Contrats fixés par ce RED :
+
+- `domain/offer-path.ts` : `OFFERS_BASE_PATH = 'offres'`, `offerPath(slug)` = `/offres/<slug>`.
+- `offer.routes.ts` exporte `OFFER_ROUTES` : en T2, exactement une route par entrée de `OFFERS`,
+  dans l'ordre, `path` = slug (aucune route `:slug`, aucune route `''`, que T4 ajoutera en adaptant
+  le premier test). Chaque route : pas de `component`, `loadComponent` → `OfferPage`,
+  `title` = `summary.seo.title`, `data` aux seules clés `content`, `seo`, `summary` (le `preload`
+  de T8 ira sur la route parente `offres`).
+- `app.routes.ts` : route `offres` sans `component` ni `children`, `loadChildren` → `OFFER_ROUTES` ;
+  route `offre-site-industrie` à `redirectTo: '/offres/site-atelier'`, sans `loadComponent`. La
+  redirection Angular ne conserve pas la query (comportement du routeur) : seule celle de nginx le
+  fait, ce n'est pas testé en Vitest.
+- `serverRoutes` : `offres/<slug>` en `Prerender` pour chaque slug, aucune entrée
+  `offre-site-industrie` (le `**` Client la prend).
+
+**`domain/offer-path.spec.ts`** (TS pur, 2 tests, nouveau)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| racine du catalogue | `OFFERS_BASE_PATH` | `toBe('offres')` |
+| chemin d'une offre | `offerPath('site-atelier')` | `toBe('/offres/site-atelier')` |
+
+**`offer.routes.spec.ts`** (sans TestBed, 4 tests, nouveau ; `describe.each(OFFERS)`)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| une route par offre | `OFFER_ROUTES` | `path` × n `toEqual` slugs de `OFFERS`, dans l'ordre |
+| lazy | route du slug | `component` absent ; `loadComponent()` → `OfferPage` |
+| données liées | `data` | clés triées = `content`, `seo`, `summary` ; `summary` = l'entrée de `OFFERS` (même référence) ; `content` = `OFFER_PAGES[slug]` (même référence) |
+| titre et SEO | `title` + `data.seo` | `title` = `summary.seo.title` ; `seo` `toEqual` `toOfferSeo(summary, OFFER_PAGES[slug], siteUrl + '/offres/' + slug)` ; `seo.url` = cette URL |
+
+**`src/app/app.routes.spec.ts`** (réécrit, 4 tests ; les 3 tests de la route `offre-site-industrie`
+de T1 migrent dans `offer.routes.spec.ts`)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| catalogue lazy | route `offres` | pas de `component` ni `children` ; `loadChildren()` → `OFFER_ROUTES` (même référence) |
+| atelier servi | `provideRouter(routes)` + `navigateByUrl('/offres/site-atelier')` | `router.url` = `/offres/site-atelier` ; `data.summary` de la route feuille = résumé atelier |
+| redirection déclarée | route `offre-site-industrie` | `redirectTo` = `/offres/site-atelier` ; pas de `loadComponent` |
+| redirection naviguée | `navigateByUrl('/offre-site-industrie')` | `router.url` = `/offres/site-atelier` ; `data.summary` de la feuille = résumé atelier |
+
+**`src/app/app.routes.server.spec.ts`** (adapté : 1 test remplacé par 2)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| prérendu des offres (`it.each(OFFERS)`) | `offres/<slug>` | `renderMode` = `RenderMode.Prerender` |
+| ancienne URL non prérendue | `offre-site-industrie` | aucune server route (un redirect prérendu ne produit qu'un `meta refresh`, pas un 301) |
+
+**`footer.spec.ts`** (ré-aligné, 3 tests inchangés en nombre) : le routeur de test déclare
+`offres/site-atelier` et un `**` (une ancienne URL tombe sur une assertion d'URL, pas sur une
+erreur `NG04002`) ; `href` du `footer-offer-link`, liste des `href` de la nav « Liens utiles » et URL
+après clic = `/offres/site-atelier`. Libellé « Sites pour ateliers » inchangé (T8).
+
+**`offer-seo.spec.ts`** (ré-aligné, reste vert) : `OFFER_URL` passé à `toOfferSeo` = l'URL
+canonique `/offres/site-atelier`. La fonction prend l'URL en paramètre : le golden reste valide,
+seule la donnée d'entrée (et donc les `url`/`item` dérivés) suit la nouvelle URL.
+
+Hors Vitest, preuves de verify à la charge de l'implémenteur :
+
+- `scripts/generate-sitemap.mjs` : script à `await` de premier niveau qui interroge l'API et écrit
+  `public/sitemap.xml`, hors du `include` de `tsconfig.spec.json` ; pas de fonction pure exportée à
+  tester sans changer sa forme. Verify : sitemap régénéré (non commité) contient `/offres/site-atelier`
+  et plus `/offre-site-industrie`.
+- `Dockerfile` (nginx) : `curl` sur l'image locale, `/offre-site-industrie?utm_source=x` → 301,
+  `Location: /offres/site-atelier?utm_source=x` (relatif) ; `/offres/site-atelier/` → 200 avec
+  `<app-offer-page` ; `/offres/inexistant` → 404.
+- `.github/workflows/ci.yml` : smoke du job docker sur ces mêmes requêtes.
+- Build de prod : `browser/offres/site-atelier/index.html` existe (`<h1`, prix, FAQ, formulaire),
+  `browser/offre-site-industrie/index.html` n'existe pas ; `main-*.js` ne contient plus la copy de
+  la FAQ atelier (point 4 de la revue T1).
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-04 13:13, 15 failed / 711 total). Nature des échecs : sans les modules à créer,
+`pnpm test` s'arrête à la compilation, uniquement sur eux (`TS2307` / `Could not resolve` :
+`domain/offer-path`, `offer.routes`) et leur cascade (`TS7006` sur `route` dans
+`offer.routes.spec.ts`) ; aucune faute de type propre aux specs, format et lint verts sur les six
+fichiers. Mesure du rouge comportemental : avec deux scaffolds vides posés le temps d'une exécution
+puis supprimés (`OFFERS_BASE_PATH = ''`, `offerPath` identité, `OFFER_ROUTES = []`), `pnpm test` =
+89 fichiers, 15 failed / 711 total, les 15 en `AssertionError` (offer-path 2, offer.routes 4,
+app.routes 4, server routes 2, footer 3). Non-régression : les 696 autres tests passent, dont
+`offer-seo.spec.ts` ré-aligné. Scaffold dû au GREEN : `src/app/features/offer/domain/offer-path.ts`
+(`OFFERS_BASE_PATH`, `offerPath`) et `src/app/features/offer/offer.routes.ts` (`OFFER_ROUTES`).
+
 ### Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »
 
 | Fichier | Tests |
@@ -754,6 +845,7 @@ vide ; suite existante verte.
 ## Journal des tranches
 
 - **Tranche 1 — l'offre atelier sur le modèle générique** : GREEN 701 passed / 701 total · refactor : aucun
+- **Tranche 2 — l'atelier à son URL de catalogue, l'ancienne redirige** : GREEN 711 passed / 711 total · refactor : aucun (passe manuelle sur le diff ; server route écrite `${OFFERS_BASE_PATH}/${slug}` plutôt que de retailler `offerPath`)
 - **Tranche 5 — la page Parcours et le bloc « Vous recrutez ? »** : GREEN 698 passed / 698 total · refactor : liens du bloc passés sur l'utilitaire `link-btn-outline` (revue)
 
 ## Verify
@@ -781,6 +873,45 @@ prérendues) → lecture de `dist/angular-portfolio-app/browser/offre-site-indus
   `localhost` (CV, analytics), d'où le toast d'erreur global. Indépendantes du diff.
 
 Verdict : **PASS**.
+
+### Tranche 2 — `/offres/site-atelier` et redirection de `/offre-site-industrie`
+
+Steps : `pnpm install --frozen-lockfile` → `pnpm run build --configuration production` (15 routes
+prérendues, CSP sur 16 pages) → lecture de `dist/angular-portfolio-app/browser/**` →
+`docker build -t ng-portfolio-app:local .` → `docker run -p 3917:3000` → `curl -sI` puis
+navigation dans le navigateur de session. `public/sitemap.xml` et `public/rss.xml` restaurés par
+`git checkout` après build.
+
+- HTML prérendu `browser/offres/site-atelier/index.html` : un seul `h1` (« Le site de votre
+  atelier, en ligne en 7 jours. ») ; `offer-hero-price` = `690&nbsp;€, prix final` ;
+  `offer-reason` × 3, `offer-deliverable` × 9, `offer-step` × 4, `offer-faq-item` × 5,
+  `offer-price-line` × 2, `offer-request` × 1, un `<form>` ; canonical
+  `https://nedellec-julien.fr/offres/site-atelier` ; JSON-LD `url` et `item` du fil d'Ariane sur
+  la nouvelle URL ; aucune occurrence de `offre-site-industrie`.
+- `browser/offre-site-industrie/index.html` : absent (dossier inexistant).
+- Bundle initial : `main-*.js` ne contient ni la question de FAQ « J'ai déjà un site, ça vaut le
+  coup ? » ni le nom de l'offre (0 occurrence) ; la copy n'est que dans le chunk lazy
+  (`chunk-Dxwr4x-x.js`, préchargé par la seule page d'offre prérendue). Point 4 de la revue T1
+  soldé.
+- Sitemap régénéré (`pnpm sitemap:build`, non commité) : contient
+  `https://nedellec-julien.fr/offres/site-atelier`, plus aucune `/offre-site-industrie`.
+- nginx (image locale) :
+  - `curl -sI '/offre-site-industrie?utm_source=x'` → `HTTP/1.1 301 Moved Permanently`,
+    `Location: /offres/site-atelier?utm_source=x` (relatif, query conservée), en-têtes de sécurité
+    présents (HSTS, `X-Frame-Options: DENY`) ;
+  - `/offre-site-industrie/` → 301, `Location: /offres/site-atelier` ;
+  - `/offres/site-atelier/` → 200, contient `<app-offer-page` ;
+  - `/offres/inexistant` → 404 ;
+  - le bloc smoke de `ci.yml` rejoué tel quel contre l'image (port adapté) : exit 0.
+- Runtime : `http://localhost:3917/offre-site-industrie?utm_source=x` aboutit à
+  `/offres/site-atelier?utm_source=x`, page hydratée (`app-offer-page`, 1 `h1`, 2 cartes de prix,
+  5 FAQ, sujet prérempli « Site pro pour mon atelier ») ; sur la home, le lien footer « Sites pour
+  ateliers » a `href="/offres/site-atelier"`. Capture : hero de la page d'offre, prise dans le
+  navigateur de session.
+- Console : aucune erreur applicative (aucune `NG0…`, aucune erreur d'hydratation). Seules erreurs,
+  d'environnement et identiques à T1 : un 404 de ressource (`/api/config`, absent en local) et le
+  CORS de `api.nedellec-julien.fr` refusant l'origine `localhost` (CV, analytics), d'où le toast
+  d'erreur global.
 
 ### Tranche 5 — `/about` (page Parcours, surface atteignable en production)
 
@@ -842,6 +973,47 @@ Re-revue : point bloquant 1 (ADR) soldé ; `offer-seo.spec.ts` épingle le repli
 - non couvert par les gates : en T1, le bundle initial porte la copy complète de l'offre atelier (régression de poids temporaire, résorbée en T2).
 
 Complément de revue (2026-10-04 12:43, code existant, tests verts d'emblée) : 2 tests sur les replis de `toOfferSeo` (`breadcrumbName ?? summary.name`, `description` posée seulement si `serviceDescription`). Discriminance vérifiée par mutation temporaire de `offer-seo.ts` : repli fil d'Ariane remplacé par un littéral ⇒ 1 failed / 6 ; `description: serviceDescription` posée sans condition ⇒ 1 failed / 6 ; fichier restauré à l'octet près (`cmp`). `pnpm test` : 703 passed / 703 ; `pnpm lint` : vert.
+
+### Tranche 2
+
+**Verdict** : APPROVED (re-revue ; 1re revue REJECTED sur le seul point de commentaire du `Dockerfile`, soldé)
+**Gates CI locaux** : tests ✅ (`pnpm test`, exit 0, 89 fichiers / 711 passed, après `pnpm exec ng cache clean` + `rm -rf node_modules/.vite`) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting ») / install ✅ (`pnpm install --frozen-lockfile`, exit 0) / build ✅ (`pnpm run build --configuration production`, exit 0, 15 routes prérendues, CSP sur 16 pages ; `public/` restauré par `git checkout`)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main sur les lignes ajoutées. Motif d'archéologie du profil : 0 hit. `export default`, `effect(`, helpers zone, `innerHTML`, `console.`, `.only`/`.skip`, snapshot, `interface` : 0 hit. Sweep de l'ancienne URL (`git grep`, hors `specs/` et `public/`) : restent la route `redirectTo` (`app.routes.ts:134`), le bloc nginx, le smoke CI, les 3 tests qui épinglent redirection et non-prérendu, et l'historique des ADR 0004/0005 (légitime).
+**Warnings de gate** : aucun (sorties complètes de test, lint et build relues)
+**Rendu compilé** : N/A (ni `shared/ui/**` ni composant à sélecteur attribut touché)
+**Preuve de verify runtime** : ✅ (preuve `## Verify` / Tranche 2 complète et cohérente avec le diff ; rejouée par la revue sur l'image `ng-portfolio-app:review` : `/offre-site-industrie?utm_source=x` aboutit à `/offres/site-atelier?utm_source=x`, page hydratée, 1 `h1`, 5 FAQ, 2 cartes de prix, sujet prérempli, canonical sur la nouvelle URL, `footer-offer-link` = `/offres/site-atelier` ; `/offres/inexistant` affiche la page 404 client ; console sans `NG0…`, seules erreurs `/api/config` 404 et CORS de l'API refusant l'origine `localhost`, environnementales)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+Points jugés :
+
+1. **Redirection.** `nginx -t` OK dans l'image. Ordre des `location` correct : la regex des assets (`\.(js|css|…)$`) ne capture pas l'ancienne URL, `= /rss.xml` est exacte, la regex `^/offre-site-industrie/?$` passe avant celle des routes CSR et avant le `location /` préfixe ; `/offre-site-industrie-x` tombe bien en 404. `curl -sI` sur l'image : `?utm_source=x` → `301`, `Location: /offres/site-atelier?utm_source=x` (relatif) ; sans slash et avec slash → `301`, `Location: /offres/site-atelier` ; les 7 en-têtes de sécurité du snippet sont présents sur la 301 (héritage du `server`, la `location` ne pose aucun `add_header`). `/offres/site-atelier/` et `/offres/site-atelier` → 200 ; `/offres/inexistant` → 404 sans `ng-state`. Smoke `ci.yml` rejoué 50 fois sous `set -euo pipefail` contre l'image : vert (le `curl … | grep -q` reprend le gabarit déjà en place pour `/about/`). `redirectTo` Angular limité aux navigations client, non prérendu : conforme au § 1.
+2. **Server routes.** `OFFERS.map(({ slug }): ServerRoute => …)` : l'annotation de retour est nécessaire pour que le spread garde `renderMode` typé en littéral dans `ServerRoute[]`. Plus aucune entrée `offre-site-industrie` : le `**` Client la prend, épinglé par `app.routes.server.spec.ts:24`.
+3. **Bundle initial.** `main-*.js` et les 5 chunks préchargés par la home ne contiennent ni « J'ai déjà un site », ni « Le site de votre atelier », ni « prix final », ni le sujet du formulaire. Toute la copy est dans le chunk lazy `chunk-Dxwr4x-x.js` (5,3 kB, cible du `loadChildren`, préchargé par la seule page d'offre). `main` ne garde que la table de routes et `offerPath('site-atelier')` (footer). Remarque 4 de la revue T1 soldée.
+4. **Sitemap.** Régénéré par le `build` : `https://nedellec-julien.fr/offres/site-atelier` présent, aucune `/offre-site-industrie`. Import par `tsx` sans alias : `offer-catalog.static-data.ts` → `./format-eur`, `./offer-prices.static-data`, `./models/offer.model` (type) ; `offer-path.ts` → `import type` relatif.
+
+Prérendu : `browser/offres/site-atelier/index.html` contient un seul `h1`, `690&nbsp;€, prix final`, `offer-faq-item` × 5, un `<form>`, canonical `/offres/site-atelier`, zéro occurrence de l'ancienne URL ; JSON-LD `Service.url` et fil d'Ariane (Accueil → Sites pour ateliers) sur la nouvelle URL, sans lien vers `/offres` (404 jusqu'à T4). `browser/offre-site-industrie/` absent.
+
+**Tests notables** :
+- ✨ `src/app/app.routes.spec.ts:43` : la redirection est prouvée par une vraie navigation (`navigateByUrl`, URL finale et `data.summary` de la feuille), pas seulement par la lecture de `redirectTo`.
+- ✨ `src/app/features/offer/offer.routes.spec.ts:34` : l'URL attendue est recalculée indépendamment de `offerPath`, l'oracle ne réutilise pas le code testé.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : livraison continue Dokploy sur `master` · monitoring : Sentry
+- aucun état persistant touché
+- non couvert par les gates : la redirection Angular perd la query string (comportement du routeur, documenté au Plan de test) ; seuls les liens servis par nginx gardent les UTM.
+
+**Points à corriger (1re revue)** — soldés :
+1. ~~`Dockerfile:83-85` — bloc de commentaire de 3 lignes au-dessus de la `location` (QUOI + WHY ; le profil admet un WHY d'une ligne).~~ Soldé : le bloc est supprimé, une seule ligne de WHY au-dessus de `absolute_redirect off;` (« Traefik termine le TLS devant : un Location absolu pointerait sur http://<host>:3000. »).
+
+Re-revue (2026-10-04) :
+- Diff relu contre la base de branche `0b758d8` : mêmes 11 fichiers qu'en 1re revue, seul le `Dockerfile` a bougé (bloc de commentaire, aucune directive modifiée). Gates test/lint/build non rejouées : aucun fichier qu'elles lisent n'a changé.
+- `docker build` : **échec d'infra hors diff**, au `prebuild` du stage Node (`generate-sitemap.mjs` : `https://api.nedellec-julien.fr/api/blog/posts answered HTTP 502`, API de prod indisponible). Pas un REJECTED de correctness. Pour valider la conf nginx sans ce stage, le bloc `default.conf` extrait du `Dockerfile` courant a été monté sur l'image de la 1re revue (même `browser/`) : `nginx -t` OK ; `/offre-site-industrie?utm_source=x` → 301, `Location: /offres/site-atelier?utm_source=x`, 7 en-têtes de sécurité présents ; `/offre-site-industrie/` → 301 ; smoke `ci.yml` rejoué sous `set -euo pipefail` : vert. L'image complète reste à reconstruire une fois l'API revenue (le job docker de la CI le fera).
+- Information pour la session principale : `origin/master` a avancé pendant la revue (`c3e822e`, T5 mergée), qui touche aussi `app.routes.ts` (route `about`, hunk disjoint) et cette spec. Rebaser avant la PR, résoudre le conflit probable dans la spec, puis rejouer `pnpm test` / `pnpm lint` / `pnpm build` sur la branche rebasée.
 
 ### Tranche 5
 

@@ -11,7 +11,12 @@ async function setup(): Promise<{
   offerLink: HTMLAnchorElement | null;
 }> {
   TestBed.configureTestingModule({
-    providers: [provideRouter([{ path: 'offre-site-industrie', component: BlankPage }])],
+    providers: [
+      provideRouter([
+        { path: 'offres/site-atelier', component: BlankPage },
+        { path: '**', component: BlankPage },
+      ]),
+    ],
   });
   const fixture = TestBed.createComponent(Footer);
   fixture.detectChanges();
@@ -26,7 +31,7 @@ describe('Footer', () => {
   it('propose le lien « Sites pour ateliers » vers la page d’offre', async () => {
     const { offerLink } = await setup();
     expect(offerLink).toBeInstanceOf(HTMLAnchorElement);
-    expect(offerLink?.getAttribute('href')).toBe('/offre-site-industrie');
+    expect(offerLink?.getAttribute('href')).toBe('/offres/site-atelier');
     expect(offerLink?.textContent?.trim()).toBe('Sites pour ateliers');
   });
 
@@ -35,7 +40,7 @@ describe('Footer', () => {
     const nav = offerLink?.closest('nav');
     expect(nav?.getAttribute('aria-label')).toBe('Liens utiles');
     const hrefs = Array.from(nav?.querySelectorAll('a') ?? []).map((a) => a.getAttribute('href'));
-    expect(hrefs).toEqual(['/mentions-legales', '/confidentialite', '/offre-site-industrie']);
+    expect(hrefs).toEqual(['/mentions-legales', '/confidentialite', '/offres/site-atelier']);
   });
 
   it('mène à la page d’offre au clic', async () => {
@@ -43,6 +48,6 @@ describe('Footer', () => {
     expect(offerLink).toBeInstanceOf(HTMLAnchorElement);
     offerLink?.click();
     await fixture.whenStable();
-    expect(TestBed.inject(Router).url).toBe('/offre-site-industrie');
+    expect(TestBed.inject(Router).url).toBe('/offres/site-atelier');
   });
 });

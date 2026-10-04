@@ -80,6 +80,12 @@ server {
         try_files $uri =404;
     }
 
+    location ~ ^/offre-site-industrie/?$ {
+        # Traefik termine le TLS devant : un Location absolu pointerait sur http://<host>:3000.
+        absolute_redirect off;
+        return 301 /offres/site-atelier$is_args$args;
+    }
+
     # Routes rendues côté client (RenderMode.Client dans app.routes.server.ts) : coquille CSR, 200
     location ~ ^/(login|two-factor|admin)(/|$) {
         try_files /index.csr.html =404;

@@ -1,4 +1,6 @@
 import { RenderMode, type ServerRoute } from '@angular/ssr';
+import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
+import { OFFERS_BASE_PATH } from '@features/offer/domain/offer-path';
 
 // Même origine que le API_BASE_URL serveur d'app.config.ts : le prérendu tourne au build,
 // hors injection Angular, donc l'URL est répétée ici plutôt qu'injectée.
@@ -55,7 +57,12 @@ export const serverRoutes: ServerRoute[] = [
   },
   { path: 'blog', renderMode: RenderMode.Prerender },
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },
-  { path: 'offre-site-industrie', renderMode: RenderMode.Prerender },
+  ...OFFERS.map(
+    ({ slug }): ServerRoute => ({
+      path: `${OFFERS_BASE_PATH}/${slug}`,
+      renderMode: RenderMode.Prerender,
+    }),
+  ),
   { path: 'confidentialite', renderMode: RenderMode.Prerender },
   {
     path: 'blog/:slug',

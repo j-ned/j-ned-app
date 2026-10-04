@@ -13,7 +13,7 @@ import {
 
 type JsonLdNode = Readonly<Record<string, unknown>>;
 
-const OFFER_URL = `${SITE_IDENTITY.siteUrl}/offre-site-industrie`;
+const OFFER_URL = `${SITE_IDENTITY.siteUrl}/offres/site-atelier`;
 
 const graphOf = (structuredData: Record<string, unknown> | undefined): readonly JsonLdNode[] =>
   (structuredData?.['@graph'] as readonly JsonLdNode[] | undefined) ?? [];

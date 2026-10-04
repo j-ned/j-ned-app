@@ -1,4 +1,5 @@
 import { RenderMode, type ServerRoute } from '@angular/ssr';
+import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchPrerenderSlugs, serverRoutes } from './app.routes.server';
 
@@ -15,8 +16,13 @@ describe('serverRoutes', () => {
     },
   );
 
-  it('prerenders the site offer page', () => {
-    expect(findRoute('offre-site-industrie')?.renderMode).toBe(RenderMode.Prerender);
+  it.each(OFFERS.map(({ slug }) => slug))('prerenders the offer page offres/%s', (slug) => {
+    expect(findRoute(`offres/${slug}`)?.renderMode).toBe(RenderMode.Prerender);
+  });
+
+  // Un redirect prérendu ne donne qu'une page meta refresh, pas un 301 : nginx s'en charge.
+  it('leaves the legacy offer url to the client fallback instead of prerendering it', () => {
+    expect(findRoute('offre-site-industrie')).toBeUndefined();
   });
 });
 

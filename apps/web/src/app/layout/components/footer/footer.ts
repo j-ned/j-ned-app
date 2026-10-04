@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SectionScroller } from '@core/navigation/section-scroller';
+import { offerPath } from '@features/offer/domain/offer-path';
 import { AppIcon } from '@shared/icons/app-icon';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
@@ -46,7 +47,7 @@ const SOCIALS: readonly SocialItem[] = [
           Confidentialité
         </a>
         <a
-          routerLink="/offre-site-industrie"
+          [routerLink]="workshopOfferPath"
           class="text-muted hover:text-primary transition-colors"
           data-testid="footer-offer-link"
         >
@@ -74,6 +75,7 @@ export class Footer {
   private readonly scroller = inject(SectionScroller);
 
   protected readonly socials = SOCIALS;
+  protected readonly workshopOfferPath = offerPath('site-atelier');
   protected readonly currentYear = new Date().getFullYear();
 
   protected scrollToContact(): void {

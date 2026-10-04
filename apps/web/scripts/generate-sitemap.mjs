@@ -22,6 +22,13 @@ const { SITE_IDENTITY } = await import(
 );
 const SITE_URL = SITE_IDENTITY.siteUrl;
 
+const { OFFERS } = await import(
+  resolve(REPO_ROOT, 'src/app/features/offer/domain/offer-catalog.static-data.ts')
+);
+const { offerPath } = await import(
+  resolve(REPO_ROOT, 'src/app/features/offer/domain/offer-path.ts')
+);
+
 const lastmod = new Date().toISOString().slice(0, 10);
 
 const staticUrls = [
@@ -29,9 +36,13 @@ const staticUrls = [
   { loc: `${SITE_URL}/about`, changefreq: 'monthly', priority: '0.8' },
   { loc: `${SITE_URL}/projects`, changefreq: 'weekly', priority: '0.9' },
   { loc: `${SITE_URL}/blog`, changefreq: 'weekly', priority: '0.9' },
-  { loc: `${SITE_URL}/offre-site-industrie`, changefreq: 'monthly', priority: '0.6' },
   { loc: `${SITE_URL}/mentions-legales`, changefreq: 'yearly', priority: '0.2' },
   { loc: `${SITE_URL}/confidentialite`, changefreq: 'yearly', priority: '0.2' },
+  ...OFFERS.map(({ slug }) => ({
+    loc: `${SITE_URL}${offerPath(slug)}`,
+    changefreq: 'monthly',
+    priority: '0.7',
+  })),
 ];
 
 async function fetchProjectSlugs() {

@@ -103,6 +103,12 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/admin/analytics)" = "200"
           test "$(curl -s -o /tmp/404.html -w '%{http_code}' http://127.0.0.1:3000/does-not-exist)" = "404"
           grep -q '<app-root' /tmp/404.html && ! grep -q 'ng-state' /tmp/404.html
+          # Offre à son URL de catalogue ; slug inconnu → 404 ; ancienne URL → 301 relatif, query conservée
+          curl -fsS http://127.0.0.1:3000/offres/site-atelier/ | grep -q '<app-offer-page'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/offres/inexistant)" = "404"
+          legacy=$(curl -s -D - -o /dev/null 'http://127.0.0.1:3000/offre-site-industrie?utm_source=x')
+          echo "$legacy" | head -1 | grep -q ' 301'
+          echo "$legacy" | grep -qi '^location: /offres/site-atelier?utm_source=x'
           # Les en-têtes de sécurité tiennent aussi sur les assets (snippet inclus dans la location)
           asset=$(grep -o 'main-[A-Za-z0-9_-]*\.js' /tmp/index.html | head -1)
           curl -fsS -D - -o /dev/null "http://127.0.0.1:3000/$asset" | grep -qi 'x-frame-options: deny'

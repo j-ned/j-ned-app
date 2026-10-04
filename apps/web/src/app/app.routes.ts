@@ -1,12 +1,8 @@
 import type { Routes } from '@angular/router';
 import { authGuard } from '@features/auth/infra/auth-guard';
 import { Home } from '@features/home/application/home';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { OFFER_PAGES } from '@features/offer/domain/offer-pages.static-data';
-import { toOfferSeo } from '@features/offer/offer-seo';
+import { OFFERS_BASE_PATH, offerPath } from '@features/offer/domain/offer-path';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-
-const WORKSHOP_OFFER = OFFERS.find(({ slug }) => slug === 'site-atelier')!;
 
 export const routes: Routes = [
   {
@@ -131,18 +127,12 @@ export const routes: Routes = [
     },
   },
   {
+    path: OFFERS_BASE_PATH,
+    loadChildren: () => import('./features/offer/offer.routes').then((m) => m.OFFER_ROUTES),
+  },
+  {
     path: 'offre-site-industrie',
-    title: WORKSHOP_OFFER.seo.title,
-    loadComponent: () => import('./features/offer/application/offer-page').then((m) => m.OfferPage),
-    data: {
-      summary: WORKSHOP_OFFER,
-      content: OFFER_PAGES['site-atelier'],
-      seo: toOfferSeo(
-        WORKSHOP_OFFER,
-        OFFER_PAGES['site-atelier'],
-        `${SITE_IDENTITY.siteUrl}/offre-site-industrie`,
-      ),
-    },
+    redirectTo: offerPath('site-atelier'),
   },
   {
     path: 'mentions-legales',
