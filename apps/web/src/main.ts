@@ -1,11 +1,9 @@
+import type { ApplicationRef } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import {
-  init as sentryInit,
-  browserTracingIntegration,
-  httpClientIntegration,
-} from '@sentry/angular';
+import { Router } from '@angular/router';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
+import { Monitoring } from './app/core/monitoring/monitoring';
 
 type RuntimeConfig = {
   sentry: {
@@ -19,12 +17,10 @@ const PROD_API_BASE = 'https://api.nedellec-julien.fr/api';
 
 function apiBase(): string {
   const host = location.hostname;
-  return host === 'localhost' || host === '127.0.0.1'
-    ? '/api'
-    : PROD_API_BASE;
+  return host === 'localhost' || host === '127.0.0.1' ? '/api' : PROD_API_BASE;
 }
 
-async function initSentryFromBackend(): Promise<void> {
+async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<void> {
   let config: RuntimeConfig;
   try {
     const res = await fetch(`${apiBase()}/config`, { credentials: 'omit' });
@@ -38,18 +34,19 @@ async function initSentryFromBackend(): Promise<void> {
   if (!dsn) return;
 
   const isProduction = environment === 'production';
+  const sentry = await import('@sentry/angular');
 
-  sentryInit({
+  sentry.init({
     dsn,
     environment,
     release,
     sendDefaultPii: false,
     integrations: [
-      browserTracingIntegration({
+      sentry.browserTracingIntegration({
         enableInp: true,
         enableLongAnimationFrame: true,
       }),
-      httpClientIntegration({
+      sentry.httpClientIntegration({
         failedRequestStatusCodes: [[500, 599]],
       }),
     ],
@@ -78,8 +75,13 @@ async function initSentryFromBackend(): Promise<void> {
       return event;
     },
   });
+
+  // Un échec du bootstrap est déjà journalisé par son propre catch : rien à rattacher.
+  const ref = await appRef.catch(() => null);
+  if (!ref) return;
+  ref.injector.get(Monitoring).attach(sentry, ref.injector.get(Router));
 }
 
-void initSentryFromBackend();
-
-bootstrapApplication(App, appConfig).catch((err) => console.error(err));
+const appRef = bootstrapApplication(App, appConfig);
+appRef.catch((err) => console.error(err));
+initSentryFromBackend(appRef).catch((err: unknown) => console.warn('Sentry indisponible', err));

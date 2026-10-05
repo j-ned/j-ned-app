@@ -4,13 +4,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, Observable, of, tap } from 'rxjs';
-import { setUser as sentrySetUser } from '@sentry/angular';
 import type { User } from '@features/auth/domain/models/user.model';
 import type {
   TwoFactorSecretResponse,
   UserResponse,
 } from '@features/auth/domain/models/auth.types';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
+import { Monitoring } from '@core/monitoring/monitoring';
 
 // Indice local posé à la connexion : sans lui, aucun appel /auth/me au démarrage. Le cookie
 // httpOnly reste la source de vérité ; l'indice évite seulement un 401 par visite anonyme.
@@ -20,6 +20,7 @@ export const SESSION_HINT_KEY = 'auth:session';
 export class AuthStore {
   private readonly gateway = inject(AuthGateway);
   private readonly router = inject(Router);
+  private readonly monitoring = inject(Monitoring);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly _currentUser = signal<User | null>(null);
@@ -113,7 +114,7 @@ export class AuthStore {
       .subscribe(() => {
         this._currentUser.set(null);
         this.writeSessionHint(false);
-        sentrySetUser(null);
+        this.monitoring.setUser(null);
         void this.router.navigate(['/']);
       });
   }
@@ -126,7 +127,7 @@ export class AuthStore {
       isTwoFactorEnabled: apiUser.isTwoFactorEnabled,
     });
     this.writeSessionHint(true);
-    sentrySetUser({ id: apiUser.id });
+    this.monitoring.setUser({ id: apiUser.id });
   }
 
   // Appelé par l'initialiseur d'app (`initializeAuth`), jamais depuis le constructeur : la requête
@@ -147,7 +148,7 @@ export class AuthStore {
             if (error instanceof HttpErrorResponse && error.status === 401) {
               this.writeSessionHint(false);
             }
-            sentrySetUser(null);
+            this.monitoring.setUser(null);
             return of(null);
           }),
           takeUntilDestroyed(this.destroyRef),

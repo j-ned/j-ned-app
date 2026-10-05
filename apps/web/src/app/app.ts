@@ -23,7 +23,14 @@ import { Footer } from '@layout/components/footer/footer';
       <router-outlet />
     </main>
     @if (!isAdminRoute()) {
-      <app-footer />
+      @defer (hydrate on viewport; on viewport) {
+        <app-footer />
+      } @placeholder {
+        <!-- Hauteurs calées sur les breakpoints ; écart résiduel entre paliers assumé (CSR seul, hors fenêtre). -->
+        <div
+          class="h-[71.15625rem] border-t border-nav-border bg-surface sm:h-[54.6875rem] md:h-[26.3125rem] lg:h-[21.84375rem]"
+        ></div>
+      }
     }
     <app-toast [messages]="toastStore.messages()" (dismiss)="toastStore.dismiss($event)" />
   `,

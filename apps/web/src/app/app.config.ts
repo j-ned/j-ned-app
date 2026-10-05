@@ -8,7 +8,6 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { createErrorHandler, TraceService } from '@sentry/angular';
 import { isPlatformBrowser, registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import {
@@ -55,6 +54,7 @@ import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 import { AuthStore } from '@core/auth/auth-store';
 import { isNotFoundRoute } from '@core/analytics/not-found-route';
+import { MonitoringErrorHandler } from '@core/monitoring/monitoring';
 
 function initializeAuth(): () => Promise<void> | void {
   return (): Promise<void> | void => {
@@ -189,16 +189,6 @@ export const appConfig: ApplicationConfig = {
     { provide: AnalyticsGateway, useClass: HttpAnalyticsGateway },
     { provide: CvGateway, useClass: HttpCvGateway },
     { provide: AuthGateway, useClass: HttpAuthGateway },
-    {
-      provide: ErrorHandler,
-      useValue: createErrorHandler({ showDialog: false }),
-    },
-    {
-      provide: TraceService,
-      deps: [Router],
-    },
-    provideAppInitializer(() => {
-      inject(TraceService);
-    }),
+    { provide: ErrorHandler, useClass: MonitoringErrorHandler },
   ],
 };
