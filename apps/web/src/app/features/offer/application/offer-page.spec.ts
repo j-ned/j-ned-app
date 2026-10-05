@@ -7,6 +7,7 @@ import type { OfferPageContent, OfferSummary } from '../domain/models/offer.mode
 import { OFFERS } from '../domain/offer-catalog.static-data';
 import { OFFER_PAGES } from '../domain/offer-pages.static-data';
 import {
+  makeOfferDemo,
   makeOfferPageContent,
   makeOfferPriceLine,
   offerSummaryOf,
@@ -15,6 +16,9 @@ import {
 import { OfferPage } from './offer-page';
 
 const ATELIER: OfferPageContent = OFFER_PAGES['site-atelier'];
+const NBSP = '\u00a0';
+const DEMO_IMAGE_SIZES =
+  '(min-width: 80rem) 54rem, (min-width: 64rem) calc(100vw - 26rem), (min-width: 40rem) calc(100vw - 3rem), calc(100vw - 2rem)';
 
 describe('OfferPage', () => {
   let fixture: ComponentFixture<OfferPage>;
@@ -117,6 +121,119 @@ describe('OfferPage', () => {
       const items = allByTestId('offer-deliverable');
       expect(items).toHaveLength(9);
       expect(items.map((item) => text(item))).toEqual(ATELIER.deliverables?.items);
+    });
+
+    describe('examples', () => {
+      const demos = (): HTMLElement[] => allByTestId('offer-demo');
+      const inDemo = (id: string): HTMLElement | null => {
+        const demo = demos()[0];
+        return demo ? byTestId(id, demo) : null;
+      };
+
+      it('states under its heading that the demo sites are fictitious companies', () => {
+        expect(text(sectionOf('offer-examples')?.querySelector('header p'))).toBe(
+          'Des sites de démonstration, construits pour montrer le résultat. Les entreprises sont fictives.',
+        );
+      });
+
+      it('presents the single demo by its fictitious name, its sector, a Démo badge and what it illustrates', () => {
+        expect(demos()).toHaveLength(1);
+        expect({
+          tag: demos()[0]?.tagName,
+          list: demos()[0]?.parentElement === byTestId('offer-examples'),
+          name: text(inDemo('cartouche-title')),
+          sector: text(inDemo('cartouche-reference')),
+          badge: text(inDemo('offer-demo-badge')),
+          illustrates: text(inDemo('offer-demo-illustrates')),
+        }).toEqual({
+          tag: 'LI',
+          list: true,
+          name: 'Delaunay Précision',
+          sector: "Atelier d'usinage CN à Élancourt",
+          badge: 'Démo',
+          illustrates: ATELIER.examples?.items[0]?.illustrates,
+        });
+      });
+
+      it('links to the demo site in a new tab, naming the demo and the new tab after the visible label', () => {
+        const link = inDemo('offer-demo-link');
+        expect({
+          tag: link?.tagName,
+          href: link?.getAttribute('href'),
+          target: link?.getAttribute('target'),
+          rel: link?.getAttribute('rel'),
+          ariaLabel: link?.getAttribute('aria-label') ?? null,
+          name: text(link),
+        }).toEqual({
+          tag: 'A',
+          href: 'https://site-industrie.nedellec-julien.fr/',
+          target: '_blank',
+          rel: 'noopener',
+          ariaLabel: null,
+          name: `Voir la démo${NBSP}: Delaunay Précision, nouvel onglet`,
+        });
+      });
+
+      it('makes the link the only interactive element of the card', () => {
+        expect(demos()[0]?.querySelectorAll('a, button')).toHaveLength(1);
+      });
+
+      it('offers the AVIF variants, then the WebP ones, ahead of the fallback image of a picture', () => {
+        const avif = inDemo('offer-demo-source-avif');
+        const picture = avif?.parentElement;
+        expect(picture?.tagName).toBe('PICTURE');
+        expect(
+          Array.from(picture?.children ?? []).map((child) => child.getAttribute('data-testid')),
+        ).toEqual(['offer-demo-source-avif', 'offer-demo-source-webp', 'offer-demo-image']);
+        expect(
+          ['offer-demo-source-avif', 'offer-demo-source-webp'].map((id) => {
+            const source = inDemo(id);
+            return {
+              type: source?.getAttribute('type'),
+              srcset: source?.getAttribute('srcset'),
+              sizes: source?.getAttribute('sizes'),
+            };
+          }),
+        ).toEqual([
+          {
+            type: 'image/avif',
+            srcset:
+              '/demos/site-industrie-20261005-800.avif 800w, /demos/site-industrie-20261005-1600.avif 1600w',
+            sizes: DEMO_IMAGE_SIZES,
+          },
+          {
+            type: 'image/webp',
+            srcset:
+              '/demos/site-industrie-20261005-800.webp 800w, /demos/site-industrie-20261005-1600.webp 1600w',
+            sizes: DEMO_IMAGE_SIZES,
+          },
+        ]);
+      });
+
+      it('loads the fallback image lazily, never as a priority, at its intrinsic size and with the alt of the content', () => {
+        const image = inDemo('offer-demo-image');
+        expect({
+          tag: image?.tagName,
+          src: image?.getAttribute('src'),
+          width: image?.getAttribute('width'),
+          height: image?.getAttribute('height'),
+          loading: image?.getAttribute('loading'),
+          fetchpriority: image?.getAttribute('fetchpriority'),
+          srcset: image?.getAttribute('srcset') ?? null,
+          sizes: image?.getAttribute('sizes') ?? null,
+          alt: image?.getAttribute('alt'),
+        }).toEqual({
+          tag: 'IMG',
+          src: '/demos/site-industrie-20261005-1600.webp',
+          width: '1600',
+          height: '1000',
+          loading: 'lazy',
+          fetchpriority: 'auto',
+          srcset: null,
+          sizes: null,
+          alt: ATELIER.examples?.items[0]?.image.alt,
+        });
+      });
     });
 
     describe('timeline', () => {
@@ -286,6 +403,7 @@ describe('OfferPage', () => {
     it.each([
       ['key-point', (c: OfferPageContent): string | undefined => c.reasons?.heading],
       ['offer-deliverable', (c: OfferPageContent): string | undefined => c.deliverables?.heading],
+      ['offer-demo', (c: OfferPageContent): string | undefined => c.examples?.heading],
       ['offer-step', (c: OfferPageContent): string | undefined => c.steps?.heading],
       ['offer-price-line', (c: OfferPageContent): string | undefined => c.pricing.heading],
       ['faq-item', (c: OfferPageContent): string | undefined => c.faq?.heading],
@@ -299,6 +417,7 @@ describe('OfferPage', () => {
       expect(sectionHeadings()).toEqual([
         content.reasons?.heading,
         content.deliverables?.heading,
+        content.examples?.heading,
         content.steps?.heading,
         content.pricing.heading,
         content.faq?.heading,
@@ -319,8 +438,90 @@ describe('OfferPage', () => {
       expect(sectionHeadings()).toEqual([
         content.reasons?.heading,
         content.deliverables?.heading,
+        content.examples?.heading,
         content.pricing.heading,
       ]);
+    });
+  });
+
+  describe('given an offer without examples', () => {
+    const content = withoutSections(makeOfferPageContent(), 'examples');
+
+    beforeEach(() => setup(content));
+
+    it('renders neither the examples section nor any demo', () => {
+      expect([allByTestId('offer-examples'), allByTestId('offer-demo')]).toEqual([[], []]);
+    });
+
+    it('goes straight from the deliverables to the timeline', () => {
+      expect(sectionHeadings()).toEqual([
+        content.reasons?.heading,
+        content.deliverables?.heading,
+        content.steps?.heading,
+        content.pricing.heading,
+        content.faq?.heading,
+      ]);
+    });
+  });
+
+  describe.each([
+    ['a single demo', [makeOfferDemo()]],
+    [
+      'two demos',
+      [
+        makeOfferDemo({
+          id: 'a',
+          name: 'Alpha',
+          sector: 'Boulangerie',
+          illustrates: 'La carte du jour.',
+          url: 'https://alpha.example.test/',
+          image: { file: '/demos/alpha-20260102', alt: 'Accueil Alpha' },
+        }),
+        makeOfferDemo({
+          id: 'b',
+          name: 'Bravo',
+          sector: 'Garage',
+          illustrates: 'La prise de rendez-vous.',
+          url: 'https://bravo.example.test/',
+          image: { file: '/demos/bravo-20260203', alt: 'Accueil Bravo' },
+        }),
+      ],
+    ],
+  ])('examples, given %s', (_label, items) => {
+    const content = makeOfferPageContent({
+      examples: { heading: 'Exemples', lead: 'Des démos.', items },
+    });
+
+    beforeEach(() => setup(content));
+
+    it('renders one card per demo with its name, sector, badge, sentence, link and image, in order', () => {
+      expect(
+        allByTestId('offer-demo').map((demo) => ({
+          name: text(byTestId('cartouche-title', demo)),
+          sector: text(byTestId('cartouche-reference', demo)),
+          badge: text(byTestId('offer-demo-badge', demo)),
+          illustrates: text(byTestId('offer-demo-illustrates', demo)),
+          href: byTestId('offer-demo-link', demo)?.getAttribute('href'),
+          linkName: text(byTestId('offer-demo-link', demo)),
+          src: byTestId('offer-demo-image', demo)?.getAttribute('src'),
+          alt: byTestId('offer-demo-image', demo)?.getAttribute('alt'),
+        })),
+      ).toEqual(
+        items.map(({ name, sector, illustrates, url, image }) => ({
+          name,
+          sector,
+          badge: 'Démo',
+          illustrates,
+          href: url,
+          linkName: `Voir la démo${NBSP}: ${name}, nouvel onglet`,
+          src: `${image.file}-1600.webp`,
+          alt: image.alt,
+        })),
+      );
+    });
+
+    it('states the lead of the content under the section heading', () => {
+      expect(text(sectionOf('offer-examples')?.querySelector('header p'))).toBe('Des démos.');
     });
   });
 

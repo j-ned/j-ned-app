@@ -6,6 +6,7 @@ import { FaqList } from '@shared/ui/faq-list';
 import { KeyPointList } from '@shared/ui/key-point-list';
 import { SplitSection } from '@shared/ui/split-section';
 import { OfferDeliverables } from './components/offer-deliverables';
+import { OfferExamples } from './components/offer-examples';
 import { OfferHero } from './components/offer-hero';
 import { OfferPricing } from './components/offer-pricing';
 import { OfferTimeline } from './components/offer-timeline';
@@ -17,6 +18,7 @@ import { OfferTimeline } from './components/offer-timeline';
     SplitSection,
     KeyPointList,
     OfferDeliverables,
+    OfferExamples,
     OfferTimeline,
     OfferPricing,
     FaqList,
@@ -37,6 +39,9 @@ import { OfferTimeline } from './components/offer-timeline';
     }
     @if (page.deliverables; as deliverables) {
       <app-offer-deliverables [deliverables]="deliverables" />
+    }
+    @if (page.examples; as examples) {
+      <app-offer-examples [examples]="examples" />
     }
     @if (page.steps; as steps) {
       <app-offer-timeline [steps]="steps" />

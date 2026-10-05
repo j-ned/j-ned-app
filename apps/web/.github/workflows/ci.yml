@@ -75,6 +75,16 @@ jobs:
           for f in $preloads; do
             test -f "dist/angular-portfolio-app/browser/$f" || { echo "preload sans fichier : $f"; exit 1; }
           done
+          # Les démos sont dans le HTML servi, et chaque visuel cité existe : un nom périmé casse la CI, pas la prod.
+          for page in site-atelier; do
+            html="dist/angular-portfolio-app/browser/offres/$page/index.html"
+            grep -q 'data-testid="offer-examples"' "$html" || { echo "section Exemples absente : $page"; exit 1; }
+            demos=$(grep -o '/demos/[a-z0-9.-]*' "$html" | sort -u)
+            test -n "$demos"
+            for f in $demos; do
+              test -f "dist/angular-portfolio-app/browser$f" || { echo "visuel de démo sans fichier : $f"; exit 1; }
+            done
+          done
 
   docker:
     name: Docker build (réplique Dokploy)
@@ -131,4 +141,10 @@ jobs:
           # Polices auto-hébergées servies par nginx avec le bon type (sinon rejetées par le navigateur)
           font=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2)
           echo "$font" | grep -qi 'content-type: font/woff2' || { echo "police mal servie"; echo "$font"; exit 1; }
+          # Visuel de démo : AVIF reconnu par le navigateur, cache immuable (le nom porte la date de capture)
+          demo=$(curl -fsS http://127.0.0.1:3000/offres/site-atelier/ | grep -o '/demos/[a-z0-9-]*\.avif' | head -1)
+          test -n "$demo"
+          demo_headers=$(curl -fsS -D - -o /dev/null "http://127.0.0.1:3000$demo")
+          echo "$demo_headers" | grep -qi 'content-type: image/avif' || { echo "visuel de démo mal servi"; echo "$demo_headers"; exit 1; }
+          echo "$demo_headers" | grep -qi 'cache-control: .*immutable' || { echo "visuel de démo sans cache immuable"; echo "$demo_headers"; exit 1; }
           docker stop portfolio

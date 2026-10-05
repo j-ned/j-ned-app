@@ -287,7 +287,7 @@ Le bloc-titre d'un plan technique, repris comme cadre de données.
 - **Structure:** hôte `role="group"` nommé par le titre ; barre de titre empilée (titre en `p` Archivo gras élargi 110 %, puis référence en mono `text-muted` sous le titre, à toutes les largeurs, sans troncature) ; lignes en `dl > div > dt + dd` (libellé mono majuscule `text-muted`, valeur `font-medium tabular-nums`). Aucun `dl` sans ligne.
 - **Traits:** cadre et barre en `line-strong` 1,5px, séparateurs en `line` (décoratifs, Decorative Line Rule). Rayon `rounded-sm`.
 - **Titre:** jamais un `h*` : son niveau dépend du contexte, un consommateur qui a besoin d'un titre le projette.
-- **Usage:** au plus un cartouche **décoratif** par écran (cadre de travail, fiche technique). Il sert aussi de carte de données : la carte d'offre (ci-dessous) en est une, répétée par offre, et ne compte pas dans cette limite.
+- **Usage:** au plus un cartouche **décoratif** par écran (cadre de travail, fiche technique). Il sert aussi de carte de données : la carte d'offre et la carte de démo (ci-dessous) en sont, répétées par élément, et ne comptent pas dans cette limite.
 
 ### Carte d'offre (`features/offer/application/components/offer-card.ts`)
 
@@ -298,6 +298,17 @@ L'offre d'une famille présentée en cartouche : réservée aux **Sites** du cat
 - **Cible:** le lien est étiré sur toute la carte (`after:absolute after:inset-0`, cartouche en `relative`) : toute la carte est cliquable, sans lien imbriqué ni second lien. Lien `min-h-11` (44 px).
 - **Survol:** cadre en `accent` (`hover:` est déjà sous `@media (hover: hover)` en Tailwind 4).
 - **Grille:** une colonne en mobile, deux à partir de `sm` ; cartes à hauteur égale (cartouche `flex flex-col h-full`, corps `flex-1`) pour aligner les pieds.
+
+### Carte de démo (`features/offer/application/components/offer-demo-card.ts`)
+
+Un site de démonstration présenté sur une page d'offre, dans la section « Exemples » (`offer-examples.ts`), pour montrer le résultat livré. Une démo n'est jamais une référence client.
+
+- **Entrée:** `demo: OfferDemo` (nom fictif, secteur, phrase « ce que la démo illustre », URL HTTPS, visuel).
+- **Section:** `SplitSection` dont le résumé (`lead`) dit que les entreprises sont fictives ; cartes en une colonne à toutes les largeurs (deux colonnes rendraient les captures illisibles).
+- **Structure:** `Cartouche` titré du nom fictif, référence = secteur ; corps projeté : le visuel (`<picture>` AVIF puis WebP autour de `NgOptimizedImage`, chargement différé, jamais `priority`, ADR-0007), puis un pied séparé par un trait `line` avec la phrase (texte courant) et le lien.
+- **Badge « Démo »:** dans le gabarit, jamais dans la donnée. Posé sur le coin haut gauche du visuel, comme un tampon de plan : mono majuscule `text-xs`, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`. Pas d'indigo : c'est une mention, pas un accent (One Indigo Rule).
+- **Lien:** « Voir la démo » en `link-btn-outline` (44 px), icône `external-link` `aria-hidden`, nouvel onglet avec `rel="noopener"` ; nom de la démo et « nouvel onglet » en `sr-only` après le libellé visible. Seul interactif de la carte : ni le visuel ni la carte ne sont cliquables.
+- **Honnêteté:** aucun visuel ni nom de démo dans les Réalisations, la home ou les données structurées ; aucun chiffre, avis ou logo inventé autour.
 
 ### Ligne d'offre (`features/offer/application/components/offer-row.ts`)
 
@@ -406,3 +417,4 @@ Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionne
 - **Don't** réutiliser le Display (800, clamp size) pour un autre élément que le `<h1>` du hero.
 - **Don't** introduire une 4e famille "pour donner du caractère". La hiérarchie vient de la famille (display / texte / données), du weight, de la size et de la largeur.
 - **Don't** confier une information à un trait `line` / `line-strong` seul (Decorative Line Rule).
+- **Don't** présenter un site de démonstration comme une référence client : badge « Démo » dans le gabarit, aucune démo dans les Réalisations, la home ni les données structurées.

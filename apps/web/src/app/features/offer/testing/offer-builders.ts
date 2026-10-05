@@ -1,12 +1,13 @@
 import { OFFERS } from '../domain/offer-catalog.static-data';
 import type {
+  OfferDemo,
   OfferPageContent,
   OfferPriceLine,
   OfferSlug,
   OfferSummary,
 } from '../domain/models/offer.model';
 
-type OptionalOfferSection = 'reasons' | 'deliverables' | 'steps' | 'faq';
+type OptionalOfferSection = 'reasons' | 'deliverables' | 'examples' | 'steps' | 'faq';
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
 export function offerSummaryOf(slug: OfferSlug): OfferSummary {
@@ -46,6 +47,18 @@ export function makeOfferPriceLine(overrides: Partial<OfferPriceLine> = {}): Off
   };
 }
 
+export function makeOfferDemo(overrides: Partial<OfferDemo> = {}): OfferDemo {
+  return {
+    id: 'demo',
+    name: 'Démo de test',
+    sector: 'Secteur de test',
+    illustrates: 'Ce que la démo de test illustre.',
+    url: 'https://demo.example.test/',
+    image: { file: '/demos/demo-de-test-20260101', alt: 'Visuel de la démo de test' },
+    ...overrides,
+  };
+}
+
 export function makeOfferPageContent(overrides: Partial<OfferPageContent> = {}): OfferPageContent {
   return {
     hero: { title: 'Titre de test', subtitle: 'Sous-titre de test', ctaLabel: 'Demander' },
@@ -57,6 +70,11 @@ export function makeOfferPageContent(overrides: Partial<OfferPageContent> = {}):
       ],
     },
     deliverables: { heading: 'Livrables de test', items: ['Livrable un', 'Livrable deux'] },
+    examples: {
+      heading: 'Exemples de test',
+      lead: 'Phrase d’en-tête de test.',
+      items: [makeOfferDemo()],
+    },
     steps: {
       heading: 'Déroulé de test',
       items: [{ id: 's1', verb: 'Faire', when: 'jour 1', detail: 'Détail de l’étape' }],

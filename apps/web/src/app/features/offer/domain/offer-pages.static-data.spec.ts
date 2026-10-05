@@ -3,6 +3,8 @@ import { OFFERS } from './offer-catalog.static-data';
 import { OFFER_PAGES } from './offer-pages.static-data';
 import { OFFER_PRICES } from './offer-prices.static-data';
 
+const NBSP = '\u00a0';
+
 const collectStrings = (value: unknown): string[] => {
   if (typeof value === 'string') return [value];
   if (Array.isArray(value)) return value.flatMap(collectStrings);
@@ -29,12 +31,14 @@ describe('OFFER_PAGES', () => {
       expect({
         reasons: page.reasons?.heading,
         deliverables: page.deliverables?.heading,
+        examples: page.examples?.heading,
         steps: page.steps?.heading,
         pricing: page.pricing.heading,
         faq: page.faq?.heading,
       }).toEqual({
         reasons: "Pourquoi un tourneur plutôt qu'une agence",
         deliverables: 'Ce que contient le site',
+        examples: 'Exemples',
         steps: 'Le déroulé en 7 jours',
         pricing: 'Tarif',
         faq: 'Questions fréquentes',
@@ -70,6 +74,26 @@ describe('OFFER_PAGES', () => {
         'Adapté au téléphone',
         'Référencement local Google',
       ]);
+    });
+
+    it('shows the Delaunay Précision demo with the validated copy, an honest lead and a versioned image', () => {
+      expect(page.examples).toEqual({
+        heading: 'Exemples',
+        lead: 'Des sites de démonstration, construits pour montrer le résultat. Les entreprises sont fictives.',
+        items: [
+          {
+            id: 'site-industrie',
+            name: 'Delaunay Précision',
+            sector: "Atelier d'usinage CN à Élancourt",
+            illustrates: `Ce qu'un acheteur vérifie en trente secondes${NBSP}: savoir-faire, parc machines, certifications et demande de devis.`,
+            url: 'https://site-industrie.nedellec-julien.fr/',
+            image: {
+              file: '/demos/site-industrie-20261005',
+              alt: `Page d'accueil de Delaunay Précision sur ordinateur et sur téléphone${NBSP}: un bandeau Site de démonstration, le titre «${NBSP}Vos pièces de précision, usinées au centième près${NBSP}» et un bouton Demander un devis.`,
+            },
+          },
+        ],
+      });
     });
 
     it('names the four steps with action verbs and their day', () => {
@@ -381,6 +405,14 @@ describe('OFFER_PAGES', () => {
       expect(new Set(ids).size).toBe(ids.length);
     },
   );
+
+  it('names every demo image after its capture date, so that a new capture never hits a stale cache', () => {
+    const files = Object.values(OFFER_PAGES).flatMap(
+      (page) => page.examples?.items.map(({ image }) => image.file) ?? [],
+    );
+    expect(files.length).toBeGreaterThan(0);
+    expect(files.filter((file) => !/^\/demos\/[a-z0-9-]+-\d{8}$/.test(file))).toEqual([]);
+  });
 
   it('contains no em dash anywhere in the offers copy', () => {
     expect(collectStrings([OFFERS, OFFER_PAGES]).filter((text) => text.includes('—'))).toEqual([]);

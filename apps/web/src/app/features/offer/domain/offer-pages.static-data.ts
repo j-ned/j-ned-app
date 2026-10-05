@@ -180,6 +180,24 @@ export const OFFER_PAGES: OfferPages = {
         'Référencement local Google',
       ],
     },
+    examples: {
+      heading: 'Exemples',
+      lead: 'Des sites de démonstration, construits pour montrer le résultat. Les entreprises sont fictives.',
+      items: [
+        {
+          id: 'site-industrie',
+          name: 'Delaunay Précision',
+          sector: "Atelier d'usinage CN à Élancourt",
+          illustrates:
+            "Ce qu'un acheteur vérifie en trente secondes\u00a0: savoir-faire, parc machines, certifications et demande de devis.",
+          url: 'https://site-industrie.nedellec-julien.fr/',
+          image: {
+            file: '/demos/site-industrie-20261005',
+            alt: "Page d'accueil de Delaunay Précision sur ordinateur et sur téléphone\u00a0: un bandeau Site de démonstration, le titre «\u00a0Vos pièces de précision, usinées au centième près\u00a0» et un bouton Demander un devis.",
+          },
+        },
+      ],
+    },
     steps: {
       heading: 'Le déroulé en 7 jours',
       items: [

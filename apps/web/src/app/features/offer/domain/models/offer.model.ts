@@ -64,10 +64,26 @@ export type OfferFaqItem = {
 
 export type OfferSection<T> = { readonly heading: string; readonly items: readonly T[] };
 
+export type DemoImageFile = `/demos/${string}`;
+
+export type OfferDemoImage = { readonly file: DemoImageFile; readonly alt: string };
+
+export type OfferDemo = {
+  readonly id: string;
+  readonly name: string;
+  readonly sector: string;
+  readonly illustrates: string;
+  readonly url: `https://${string}`;
+  readonly image: OfferDemoImage;
+};
+
+export type OfferExamples = OfferSection<OfferDemo> & { readonly lead: string };
+
 export type OfferPageContent = {
   readonly hero: { readonly title: string; readonly subtitle: string; readonly ctaLabel: string };
   readonly reasons?: OfferSection<OfferReason>;
   readonly deliverables?: OfferSection<string>;
+  readonly examples?: OfferExamples;
   readonly steps?: OfferSection<OfferStep>;
   readonly pricing: { readonly heading: string; readonly lines: readonly OfferPriceLine[] };
   readonly faq?: OfferSection<OfferFaqItem>;

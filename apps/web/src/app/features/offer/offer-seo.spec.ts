@@ -85,6 +85,22 @@ describe('toOfferSeo', () => {
     });
   });
 
+  it('keeps the workshop demo out of the structured data, so that it never reads as a client reference', () => {
+    const content = OFFER_PAGES['site-atelier'];
+    const demoStrings = (content.examples?.items ?? []).flatMap(({ name, url, image }) => [
+      name,
+      url,
+      image.file,
+    ]);
+
+    const serialized = JSON.stringify(
+      toOfferSeo(offerSummaryOf('site-atelier'), content, OFFER_URL),
+    );
+
+    expect(demoStrings).toHaveLength(3);
+    expect(demoStrings.filter((value) => serialized.includes(value))).toEqual([]);
+  });
+
   it('builds the Service from the summary it is given and the url it is told', () => {
     const summary = makeOfferSummary({
       name: 'Autre offre',
