@@ -593,9 +593,112 @@ Squelette dû au GREEN : `domain/models/offer.model.ts` (types du § 3), `domain
 `application/components/offer-examples.ts`, `application/components/offer-demo-card.ts`,
 `application/offer-page.ts` (insertion).
 
+### Tranche 2 — la vitrine montre ses deux démos, les autres offres aucune
+
+La structure de la T1 suffit : la T2 n'ajoute que des données. Aucun spec isolé, aucun builder
+nouveau. Les tests existants qui couvraient déjà la surface sont recalibrés, sans test parallèle
+(titres et décomptes par offre, ids uniques, garde SEO). `editorial-typography.spec.ts` parcourt
+déjà tout `OFFER_PAGES`, il n'y a donc rien à y ajouter. Le harnais validé ci-dessous montre que
+la nouvelle copie y passe.
+
+Contrats fixés par ce RED :
+
+- **Copie** : § 11 mot pour mot (arbitrage 1), avec **un ajustement des `alt`**, demandé le
+  2026-10-05. Les captures refaites ce jour-là montrent le bandeau « Site de démonstration » en
+  haut des deux sites. Comme pour Delaunay, « un bandeau Site de démonstration, » s'insère donc
+  juste après le deux-points des `alt` de Coaching Life et du Vieux Comptoir. Le reste est
+  inchangé :
+  - Coaching Life : « Page d'accueil de Coaching Life sur ordinateur et sur téléphone&nbsp;: un
+    bandeau Site de démonstration, le titre «&nbsp;Révélez votre plein potentiel
+    intérieur&nbsp;», un bouton Prendre rendez-vous et la photo d'une coach dans un salon
+    lumineux. »
+  - Le Vieux Comptoir : « Page d'accueil du Vieux Comptoir sur ordinateur et sur
+    téléphone&nbsp;: un bandeau Site de démonstration, une salle de brasserie aux lustres
+    anciens, le titre «&nbsp;L'Âme de Paris&nbsp;» et les boutons Réserver une table et
+    Découvrir la carte. »
+- **Données vitrine** : `examples` entre `deliverables` et `steps`. Titre `Exemples` et `lead`
+  identiques à ceux de l'atelier. Ordre : Coaching Life, puis Le Vieux Comptoir. Les apostrophes
+  sont droites. U+00A0 avant `:` et à l'intérieur des « ».
+  - `id` = slug du fichier, comme `site-industrie` : `coaching-life`, `le-vieux-comptoir`.
+  - URL (arbitrage 4, sous-domaines servis) : `https://coaching-life.nedellec-julien.fr/`,
+    `https://vieux-comptoir.nedellec-julien.fr/`. Il n'y a pas de `le-` dans le sous-domaine.
+  - `file` : `/demos/coaching-life-20261005`, `/demos/le-vieux-comptoir-20261005`.
+- **Offres sans exemples** : `application-metier`, `refonte-maintenance` et `renfort-freelance`
+  ont un titre et un décompte `examples` à `undefined`. Au rendu, chaque offre du catalogue
+  affiche exactement 2 cartes (vitrine), 1 (atelier) ou 0 (les trois autres).
+- **Honnêteté** : les chaînes surveillées sont le nom, l'URL et le `file` de **toutes** les démos
+  d'`OFFER_PAGES`, soit exactement 9, pour que la garde ne passe pas à vide. Aucune ne doit
+  apparaître :
+  - dans les chaînes d'`OFFERS` ;
+  - dans le `SeoData` sérialisé de chacune des cinq offres (`title`, `description`, `url`,
+    JSON-LD).
+- **Dû au GREEN, hors tests** :
+  - `examples` de `site-vitrine` dans `offer-pages.static-data.ts` ;
+  - les 8 fichiers `public/demos/{coaching-life,le-vieux-comptoir}-20261005-{800,1600}.{avif,webp}`,
+    copiés depuis `…/scratchpad/demos/out/{coaching-life,le-vieux-comptoir}-{800,1600}.{avif,webp}` ;
+  - `site-vitrine` ajouté à la boucle de la garde `verify` de `.github/workflows/ci.yml`
+    (`for page in site-atelier site-vitrine`, point de la Review code de la T1).
+
+**`domain/offer-pages.static-data.spec.ts`** (+2 tests, 13 recalibrés : 4 + 4 + 5)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| titres des sections (`describe.each`, recalibré × 4) | vitrine, application, refonte, renfort | clé `examples` : `'Exemples'` pour la vitrine, `undefined` pour les trois autres |
+| décomptes (`describe.each`, recalibré × 4) | idem | `examples` : `2` pour la vitrine, `undefined` pour les trois autres |
+| démos de la vitrine | `site-vitrine.examples` | golden `toEqual` : titre, lead, Coaching Life puis Le Vieux Comptoir (id, nom, secteur, phrase, URL, `file`, `alt` ajusté) |
+| ids distincts (`it.each` × 5, recalibré) | toutes les offres | les démos entrent dans la liste des ids uniques |
+| `OFFERS` sans démo | toutes les démos d'`OFFER_PAGES` | 9 chaînes ; aucune dans `collectStrings(OFFERS)` |
+
+**`offer-seo.spec.ts`** (+4 tests : 1 test atelier remplacé par un `it.each` × 5)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| démos hors données de recherche (`it.each(OFFERS)`) | `toOfferSeo` de chaque offre | 9 chaînes de démo ; aucune dans le `SeoData` sérialisé |
+
+**`application/offer-page.spec.ts`** (+14 tests)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| cartes par offre (`describe.each(OFFERS)`, × 5) | les cinq offres réelles | `offer-demo` : 2 / 1 / 0 / 0 / 0 (table `DEMO_COUNT` littérale) |
+| démos de la vitrine | `site-vitrine` | ordre Coaching Life puis Le Vieux Comptoir : nom, secteur, badge `Démo`, `href`, `src` `…-20261005-1600.webp` |
+| noms de lien distincts | `site-vitrine` | `Voir la démo : Coaching Life, nouvel onglet`, puis `… Le Vieux Comptoir, …` |
+| section nommée et ordre des `h2` (`describe.each` + 1 contenu, × 7) | `site-vitrine` | chaque section (dont `offer-demo`) nommée par son `h2` ; `Exemples` entre livrables et déroulé |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-05 21:27, 14 failed / 1100 total). Nature des échecs : `pnpm test` complet, après
+`ng cache clean` et purge de `node_modules/.vite`. La compilation passe sans aucune erreur
+`TS` : les types de la T1 suffisent. Les 14 échecs sont tous des `AssertionError` :
+
+- 5 SEO : 9 chaînes de démo attendues, 3 trouvées ;
+- 4 `OFFER_PAGES` : golden vitrine, titres et décomptes de la vitrine (2 recalibrés), garde
+  `OFFERS` ;
+- 5 `OfferPage` : 2 cartes attendues sur la vitrine, ordre et contenu des cartes, noms de lien,
+  section `offer-demo` nommée, ordre des `h2`.
+
+Prettier et eslint sont verts sur `features/offer`. Le motif d'archéologie ne donne aucun
+résultat (aucun commentaire ajouté).
+
+Certains tests sont verts par nature sous le RED, parce qu'ils gardent des absences ou des
+invariants :
+- les 3 offres sans exemples (titres, décomptes, 0 carte) ;
+- l'atelier (1 carte) ;
+- les 5 autres sections nommées de la vitrine ;
+- les ids distincts.
+
+Harnais vérifié : les seules données `examples` de `site-vitrine`, ajoutées le temps d'une
+exécution sans aucun autre code, donnent 1100 passed / 1100, typographie comprise. Elles ont
+ensuite été retirées par `git checkout`. `git status` ne montre que les 3 specs.
+
+Non-régression : la base avant RED donne 1080 passed / 1080. Le total de 1100 correspond à
+1080 + 20 tests ajoutés (2 + 4 + 14). Parmi les tests existants, seuls tombent les tests
+recalibrés sur le nouveau contrat : les 2 titres et décomptes de la vitrine, et le cas atelier
+de la garde SEO généralisée. Ce cas exige désormais les 9 chaînes des trois démos. Aucun autre
+test de la T1 ne tombe.
+
 ## Journal des tranches
 
 - **Tranche 1 — l'offre atelier montre sa démo** : GREEN 1080 passed / 1080 total · refactor : aucun (passe manuelle sur le diff, `simplify` non invoqué en sous-agent : `demoPicture` dérive repli et dimensions de `DEMO_IMAGE_WIDTHS`, sans littéral recopié ; `computed` de la carte nommé `picture` pour ne pas masquer la fonction du domaine ; aucun wrapper de rôle, aucun nom cryptique ; espaces insécables de la copie en ` ` dans les données, `&nbsp;` dans le seul gabarit du lien, comme `OfferCard`). Deux écarts au § 7 et au § 8 du plan : pas de `border-t-[1.5px]` sur le visuel, car la barre de titre du cartouche porte déjà ce trait (il serait doublé) ; `srcset` et `sizes` des `<source>` liés en `[attr.…]`, qui garantit l'attribut dans le HTML prérendu.
+- **Tranche 2 — la vitrine montre ses deux démos, les autres offres aucune** : GREEN 1100 passed / 1100 total · refactor : aucun (diff de données seul : `examples` de `site-vitrine` recopié du Plan de test, espaces insécables en `\u00a0` comme l'atelier ; aucun code applicatif, aucun nom ni wrapper à revoir ; 8 visuels copiés ; boucle de la garde CI étendue à `site-vitrine`).
 
 ## Verify
 
@@ -693,6 +796,63 @@ Captures (scratchpad de session, `t1/shots/`) :
 `site-atelier-{1440,375}-{light,dark}-examples.png`. Rapports Lighthouse : `t1/lh/`,
 `t1/lh-devtools/` ; mesures runtime : `t1/verify-after.json`.
 
+### Tranche 2 — `/offres/site-vitrine/` (surface atteignable en production, restructurée)
+
+Steps : `pnpm run build --configuration production` (exit 0, 21 pages durcies par la CSP) →
+`public/sitemap.xml` et `public/rss.xml` restaurés par `git checkout` → lecture de
+`dist/angular-portfolio-app/browser/offres/*/index.html` → garde CI `verify` rejouée à la main →
+`python3 -m http.server 4371` sur `browser/` → Chromium headless (Playwright) sur
+`/offres/site-vitrine/` à 1440×900 (DPR 1) et 375×812 (DPR 2), clair puis sombre (thème posé
+avant chargement par `j-ned:theme`), défilement jusqu'à la section, axe-core 4.13 injecté, clic
+sur chaque lien. Aucune mesure Lighthouse (consigne du propriétaire). Serveur arrêté par
+`fuser -k 4371/tcp`.
+
+1. **HTML prérendu** : `site-vitrine` contient la section `offer-examples` avec 2 `offer-demo`
+   (8 chemins `/demos/…`), `site-atelier` 1 carte (4 chemins). `application-metier`,
+   `refonte-maintenance` et `renfort-freelance` n'ont ni section ni chemin `/demos/`, et aucune
+   autre page du build ne cite `/demos/`. Les deux `<img>` : `src="/demos/<slug>-20261005-1600.webp"`,
+   `width="1600"` `height="1000"` `loading="lazy"` `fetchpriority="auto"`, `alt` de la donnée.
+   Les liens sont `target="_blank" rel="noopener"`, vers `https://coaching-life.nedellec-julien.fr/`
+   puis `https://vieux-comptoir.nedellec-julien.fr/`.
+2. **Garde CI** (`for page in site-atelier site-vitrine`) rejouée sous `bash -euo pipefail` :
+   `site-atelier OK : 4 chemins`, `site-vitrine OK : 8 chemins`, exit 0. Contre-épreuve sur une
+   copie du build sans `le-vieux-comptoir-20261005-800.avif` :
+   `visuel de démo sans fichier : /demos/le-vieux-comptoir-20261005-800.avif`, exit 1.
+3. **Visuels** : 8 fichiers `public/demos/{coaching-life,le-vieux-comptoir}-20261005-{800,1600}.{avif,webp}`.
+   Dimensions lues dans les en-têtes (`ispe` AVIF, `VP8` WebP) : 1 600 × 1 000 et 800 × 500.
+   Tailles de 17 501 à 71 010 o. Les captures montrent le bandeau « Site de démonstration »
+   sur les deux sites.
+4. **Runtime** (4 combinaisons largeur × registre ; décompte de cartes au rendu : vitrine 2,
+   atelier 1, les trois autres 0) :
+
+   | Largeur | Registre | Variantes chargées | CLS | axe | Liens (nom, hauteur) |
+   |---|---|---|---|---|---|
+   | 1440 | clair | `coaching-life-…-1600.avif`, `le-vieux-comptoir-…-1600.avif` | 0 | 0 | 2 noms distincts, 44 px |
+   | 1440 | sombre | idem | 0 | 0 | idem |
+   | 375 | clair | `…-800.avif` × 2 | 0 | 0 | idem |
+   | 375 | sombre | `…-800.avif` × 2 | 0 | 0 | idem |
+
+   - AVIF choisi par Chromium à chaque fois, `loading="lazy"` sur les deux images. Images
+     rendues en 862 × 539 (1440) et 341 × 213 (375), ratio conservé. Badge « DÉMO » sur le
+     visuel, mêmes couleurs que la T1 dans les deux registres.
+   - Requêtes avant défilement : seul le **premier** visuel est demandé, le second l'est au
+     défilement. À 375 px, le premier visuel commence à 2 014 px, sous le seuil de chargement
+     anticipé de Chromium (812 + 1 250 = 2 062 px). Sur l'atelier, le visuel commençait à 2 074 px
+     et restait hors du seuil. Ce n'est pas une préférence de chargement : l'image reste en
+     `loading="lazy"` / `fetchpriority="auto"` et n'est pas préchargée.
+   - Noms accessibles : « Voir la démo : Coaching Life, nouvel onglet » puis « Voir la démo : Le
+     Vieux Comptoir, nouvel onglet ». Les deux clics ont été faits dans chaque combinaison. Chacun
+     ouvre un nouvel onglet sur la bonne URL de démo, avec `window.opener` nul, et la page
+     d'origine reste sur `/offres/site-vitrine`.
+   - Console : les trois mêmes entrées qu'à la T1, préexistantes et dues au serveur statique
+     local (`/api/config` en 404, `analytics/track` refusé par CORS depuis `localhost`). Aucune
+     erreur liée à la section.
+
+Verdict : **PASS**.
+
+Captures (scratchpad de session, `t2/shots/`) :
+`site-vitrine-{1440,375}-{light,dark}-examples.png`. Mesures runtime : `t2/verify.json`.
+
 ## Review code
 
 ### Tranche 1
@@ -738,3 +898,50 @@ désormais `[attr.srcset]` / `[attr.sizes]`, avec une puce qui en donne la raiso
 au prérendu) ; les Consequences ramènent la garde CI à sa portée réelle (chemins `/demos/` des
 pages d'offre listées dans `ci.yml`). Documentation seule : aucun code, test ni CI modifié.
 **Verdict après correction : APPROVED.**
+
+### Tranche 2
+
+**Verdict** : REJECTED
+**Gates CI locaux** : install ✅ (`pnpm install --frozen-lockfile`, exit 0) / tests ✅ (`pnpm test`, exit 0, 107 fichiers / 1100 passed, après `ng cache clean` + purge `node_modules/.vite`) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting ») / build ✅ (`pnpm run build --configuration production`, exit 0, 20 routes prérendues, CSP sur 21 pages, `Initial total` 582,94 kB / 144,73 kB) ; `public/sitemap.xml` et `public/rss.xml` restaurés par `git checkout`
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main sur le diff. Archéologie (motif du profil) 0 hit. `export default`, `effect(`, `fakeAsync`/`waitForAsync`, `innerHTML`, `console.`, snapshot, boucle `for`/`forEach` génératrice d'`it` : 0 hit. U+00A0 brut dans les données : 6 (point 1).
+**Warnings de gate** : aucun (test, lint et build relus en entier)
+**Rendu compilé** : N/A (aucun sélecteur attribut ni `shared/ui/**` touché ; rendu observé au verify)
+**Preuve de verify runtime** : ✅ (preuve `## Verify` complète, rejouée par la revue, cf. ci-dessous)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ❌ (point 1 : le Journal décrit un encodage que le code ne suit pas)
+
+Contrôles de la revue :
+
+- **Copie** : les 7 valeurs de chaque démo de `site-vitrine` (id, nom, secteur, phrase, URL, `file`, `alt`) se retrouvent mot pour mot dans la spec, `&nbsp;` lu comme U+00A0 (comparaison scriptée). Les deux `alt` sont exactement ceux du § 11 avec « un bandeau Site de démonstration, » inséré après le deux-points, et rien d'autre. Titre et `lead` identiques à l'atelier. Les deux captures montrent bien ce que décrit leur `alt` (bandeau, titre, boutons, photo), et la barre d'adresse affiche `vieux-comptoir.nedellec-julien.fr`.
+- **Ordre et ids** : `examples` entre `deliverables` et `steps` de `site-vitrine` (`offer-pages.static-data.ts:52`) ; Coaching Life puis Le Vieux Comptoir ; ids `coaching-life`, `le-vieux-comptoir`, distincts entre eux et des autres ids de l'offre (test des ids recalibré).
+- **URLs** : `https://coaching-life.nedellec-julien.fr/` et `https://vieux-comptoir.nedellec-julien.fr/` (arbitrage 4).
+- **Versionnement (ADR-0007)** : 8 fichiers `public/demos/{coaching-life,le-vieux-comptoir}-20261005-{800,1600}.{avif,webp}`, jamais publiés auparavant (pas de `-2` à prévoir, rien à supprimer). Dimensions relues par un script indépendant (`ispe` AVIF unique, en-tête `VP8 ` WebP) : 1600 × 1000 et 800 × 500 pour les 8. 17 501 à 71 010 o.
+- **Tests modifiés** : la garde d'honnêteté exige d'abord ses 9 chaînes (`toHaveLength(9)`) puis les cherche dans le `SeoData` sérialisé de chacune des 5 offres (`offer-seo.spec.ts:88`) et dans `collectStrings(OFFERS)` : elle ne passe pas à vide. `DEMO_COUNT` est un `Record<OfferSlug, number>` littéral, exhaustif au typage. Recalibrages légitimes : les tables titres/décomptes gagnent la clé `examples` (valeur explicite `undefined` pour les 3 offres sans démo), le test des ids inclut les démos, le test SEO atelier est généralisé et non doublé. Aucun test resté sur l'ancienne valeur (`toHaveLength(3)` de la T1 remplacé ; grep `examples`/`offer-demo`/`/demos/` sur toute la suite).
+- **CI `verify`** : bloc rejoué tel quel sous `bash -eo pipefail` sur le build : exit 0. Contre-épreuves sur une copie du build : `coaching-life-20261005-1600.webp` retiré ⇒ exit 1 « visuel de démo sans fichier : /demos/coaching-life-20261005-1600.webp », alors que **l'ancienne boucle** (`site-atelier` seul) rend exit 0 sur la même copie ; testid retiré de la vitrine ⇒ exit 1 « section Exemples absente : site-vitrine ». Le point de la Review code T1 est repris.
+- **HTML prérendu** : `offer-demo` 2 / 1 / 0 / 0 / 0 (vitrine, atelier, application, refonte, renfort) ; chemins `/demos/` uniques 8 / 4 / 0 / 0 / 0 ; aucune autre page du build ne cite `/demos/`.
+- **Verify runtime** (`python3 -m http.server 4381` sur `browser/`, Chromium 1208 headless, 1440 DPR 1 et 375 DPR 2, clair et sombre posés par `j-ned:theme`) : page hydratée ; décompte au rendu 2 / 1 / 0 / 0 / 0 ; `loading="lazy"`, `fetchpriority="auto"`, AVIF choisi (`…-1600.avif` à 1440, `…-800.avif` à 375), images 862 × 539 et 341 × 213 ; liens 44 px, `target="_blank"`, `rel="noopener"`, noms « Voir la démo : Coaching Life, nouvel onglet » puis « … Le Vieux Comptoir, … » ; **axe-core 4.10.2 (wcag2a/aa, 21a/aa, best-practice) : 0 violation** dans les 4 combinaisons ; clic sur chaque lien : popup sur `https://coaching-life.nedellec-julien.fr/` puis `https://vieux-comptoir.nedellec-julien.fr/`, `window.opener === null`, page d'origine restée sur `/offres/site-vitrine`. Console : seulement `/api/config` 404 et le CORS d'`analytics/track`, préexistants et dus au serveur local ; aucune `pageerror`. Aucun Lighthouse (consigne du propriétaire). Serveur arrêté par `fuser -k 4381/tcp`.
+- **Démos en ligne** (curl, 2026-10-05) : les deux accueils répondent 200 avec `<meta name="robots" content="noindex">` et le bandeau « Site de démonstration. » dans le HTML servi. Condition de merge du plan (Risques) remplie pour les pages d'accueil.
+- **Premier visuel demandé avant défilement à 375 px** : constaté (haut du visuel à 2 014 px, seuil lazy de Chromium 812 + 1 250 = 2 062 px ; même chose à 1440, visuel à 1 691 px). **Acceptable** : c'est le comportement natif du `loading="lazy"`, la requête reste en priorité basse, sans préchargement, après les ressources critiques ; 17,5 Ko (800 AVIF) ; l'élément LCP est le `h1`. Le contourner (observer maison, `loading` piloté par script) coûterait du code pour un gain non mesuré. Le risque est la même réserve qu'en T1 sur le LCP *simulé* de Lighthouse, non remesurée ici.
+
+**Duplication / dérivation** (advisory) :
+- ⚠️ `offer-seo.spec.ts:91-94` et `offer-pages.static-data.spec.ts:465-468` : même extraction `Object.values(OFFER_PAGES).flatMap(… [name, url, image.file])` à 2 sites. Sous le seuil bloquant ; candidate à un helper de test (`testing/`) si un troisième site apparaît.
+
+**Tests notables** :
+- ✨ `src/app/features/offer/application/offer-page.spec.ts:20` et `:356` : `DEMO_COUNT` littéral et typé `Record<OfferSlug, number>`, une nouvelle offre sans entrée casse la compilation.
+- ✨ `src/app/features/offer/offer-seo.spec.ts:88` : garde généralisée aux 5 offres, ancrée sur 9 chaînes.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil muet (Dokploy continu sur `master`) · monitoring : Sentry
+- aucun état persistant touché
+- non couvert par les gates : `noindex` et bandeau vérifiés sur les pages d'accueil des démos seulement ; effet du premier visuel préchargé par le seuil lazy sur le LCP mobile simulé non mesuré (consigne).
+
+**Points à corriger** :
+1. `src/app/features/offer/domain/offer-pages.static-data.ts:65` et `:77` : les deux `alt` de la vitrine portent 6 U+00A0 **bruts** (3 par ligne), alors que les 14 autres insécables du fichier, dont l'`alt` de Delaunay (`:226`), sont écrits ` `. Le rendu est identique, mais un caractère invisible dans la source échappe à la relecture et se perd au premier copier-coller ; et le Journal de la T2 affirme « espaces insécables en ` ` comme l'atelier », ce qui est faux. Remplacer les 6 occurrences par ` ` (donnée seule, tests inchangés).
+
+Point 1 corrigé après la revue (2026-10-05) : les 6 espaces insécables bruts des deux `alt` de la
+vitrine sont écrits ` `, comme le reste du fichier (rendu identique). `pnpm test` 1100/1100,
+`pnpm lint` et Prettier verts. **Verdict après correction : APPROVED.**

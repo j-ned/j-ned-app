@@ -85,21 +85,20 @@ describe('toOfferSeo', () => {
     });
   });
 
-  it('keeps the workshop demo out of the structured data, so that it never reads as a client reference', () => {
-    const content = OFFER_PAGES['site-atelier'];
-    const demoStrings = (content.examples?.items ?? []).flatMap(({ name, url, image }) => [
-      name,
-      url,
-      image.file,
-    ]);
+  it.each(OFFERS)(
+    'keeps every demo out of the search data of $slug, so that none reads as a client reference',
+    (summary) => {
+      const demoStrings = Object.values(OFFER_PAGES).flatMap(
+        (page) =>
+          page.examples?.items.flatMap(({ name, url, image }) => [name, url, image.file]) ?? [],
+      );
 
-    const serialized = JSON.stringify(
-      toOfferSeo(offerSummaryOf('site-atelier'), content, OFFER_URL),
-    );
+      const serialized = JSON.stringify(toOfferSeo(summary, OFFER_PAGES[summary.slug], OFFER_URL));
 
-    expect(demoStrings).toHaveLength(3);
-    expect(demoStrings.filter((value) => serialized.includes(value))).toEqual([]);
-  });
+      expect(demoStrings).toHaveLength(9);
+      expect(demoStrings.filter((value) => serialized.includes(value))).toEqual([]);
+    },
+  );
 
   it('builds the Service from the summary it is given and the url it is told', () => {
     const summary = makeOfferSummary({

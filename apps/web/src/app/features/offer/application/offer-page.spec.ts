@@ -3,7 +3,7 @@ import { Router, provideRouter } from '@angular/router';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import type { OfferPageContent, OfferSummary } from '../domain/models/offer.model';
+import type { OfferPageContent, OfferSlug, OfferSummary } from '../domain/models/offer.model';
 import { OFFERS } from '../domain/offer-catalog.static-data';
 import { OFFER_PAGES } from '../domain/offer-pages.static-data';
 import {
@@ -16,6 +16,14 @@ import {
 import { OfferPage } from './offer-page';
 
 const ATELIER: OfferPageContent = OFFER_PAGES['site-atelier'];
+const VITRINE: OfferPageContent = OFFER_PAGES['site-vitrine'];
+const DEMO_COUNT: Record<OfferSlug, number> = {
+  'site-vitrine': 2,
+  'site-atelier': 1,
+  'application-metier': 0,
+  'refonte-maintenance': 0,
+  'renfort-freelance': 0,
+};
 const NBSP = '\u00a0';
 const DEMO_IMAGE_SIZES =
   '(min-width: 80rem) 54rem, (min-width: 64rem) calc(100vw - 26rem), (min-width: 40rem) calc(100vw - 3rem), calc(100vw - 2rem)';
@@ -344,6 +352,10 @@ describe('OfferPage', () => {
         expect(subject?.value).toBe(content.request.subject);
       });
 
+      it('shows a demo card only on the sites offers', () => {
+        expect(allByTestId('offer-demo')).toHaveLength(DEMO_COUNT[slug]);
+      });
+
       it('asks the request form for a timeline but not for a project type', () => {
         const request = byTestId('offer-request');
         expect([
@@ -353,6 +365,44 @@ describe('OfferPage', () => {
       });
     },
   );
+
+  describe('given the showcase site offer', () => {
+    beforeEach(() => setup(VITRINE, offerSummaryOf('site-vitrine')));
+
+    it('presents Coaching Life then Le Vieux Comptoir, each linked to its own site and image', () => {
+      expect(
+        allByTestId('offer-demo').map((demo) => ({
+          name: text(byTestId('cartouche-title', demo)),
+          sector: text(byTestId('cartouche-reference', demo)),
+          badge: text(byTestId('offer-demo-badge', demo)),
+          href: byTestId('offer-demo-link', demo)?.getAttribute('href'),
+          src: byTestId('offer-demo-image', demo)?.getAttribute('src'),
+        })),
+      ).toEqual([
+        {
+          name: 'Coaching Life',
+          sector: 'Coaching de vie, coaching équin et accompagnement parental',
+          badge: 'Démo',
+          href: 'https://coaching-life.nedellec-julien.fr/',
+          src: '/demos/coaching-life-20261005-1600.webp',
+        },
+        {
+          name: 'Le Vieux Comptoir',
+          sector: 'Brasserie parisienne',
+          badge: 'Démo',
+          href: 'https://vieux-comptoir.nedellec-julien.fr/',
+          src: '/demos/le-vieux-comptoir-20261005-1600.webp',
+        },
+      ]);
+    });
+
+    it('gives each demo link its own accessible name', () => {
+      expect(allByTestId('offer-demo-link').map((link) => text(link))).toEqual([
+        `Voir la démo${NBSP}: Coaching Life, nouvel onglet`,
+        `Voir la démo${NBSP}: Le Vieux Comptoir, nouvel onglet`,
+      ]);
+    });
+  });
 
   describe('given the freelance reinforcement offer', () => {
     const RENFORT: OfferPageContent = OFFER_PAGES['renfort-freelance'];
@@ -396,6 +446,7 @@ describe('OfferPage', () => {
 
   describe.each([
     ['the workshop offer', ATELIER],
+    ['the showcase site offer', VITRINE],
     ['an offer with its own headings', makeOfferPageContent()],
   ])('given %s', (_label, content) => {
     beforeEach(() => setup(content));

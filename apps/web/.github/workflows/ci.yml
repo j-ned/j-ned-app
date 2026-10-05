@@ -76,7 +76,7 @@ jobs:
             test -f "dist/angular-portfolio-app/browser/$f" || { echo "preload sans fichier : $f"; exit 1; }
           done
           # Les démos sont dans le HTML servi, et chaque visuel cité existe : un nom périmé casse la CI, pas la prod.
-          for page in site-atelier; do
+          for page in site-atelier site-vitrine; do
             html="dist/angular-portfolio-app/browser/offres/$page/index.html"
             grep -q 'data-testid="offer-examples"' "$html" || { echo "section Exemples absente : $page"; exit 1; }
             demos=$(grep -o '/demos/[a-z0-9.-]*' "$html" | sort -u)

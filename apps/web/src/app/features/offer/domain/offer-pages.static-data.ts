@@ -49,6 +49,36 @@ export const OFFER_PAGES: OfferPages = {
         'Référencement local Google',
       ],
     },
+    examples: {
+      heading: 'Exemples',
+      lead: 'Des sites de démonstration, construits pour montrer le résultat. Les entreprises sont fictives.',
+      items: [
+        {
+          id: 'coaching-life',
+          name: 'Coaching Life',
+          sector: 'Coaching de vie, coaching équin et accompagnement parental',
+          illustrates:
+            'Trois activités sur un seul site, et la prise de rendez-vous à portée de clic sur chaque page.',
+          url: 'https://coaching-life.nedellec-julien.fr/',
+          image: {
+            file: '/demos/coaching-life-20261005',
+            alt: "Page d'accueil de Coaching Life sur ordinateur et sur téléphone\u00a0: un bandeau Site de démonstration, le titre «\u00a0Révélez votre plein potentiel intérieur\u00a0», un bouton Prendre rendez-vous et la photo d'une coach dans un salon lumineux.",
+          },
+        },
+        {
+          id: 'le-vieux-comptoir',
+          name: 'Le Vieux Comptoir',
+          sector: 'Brasserie parisienne',
+          illustrates:
+            "Une ambiance qui se voit dès la première image, la carte en ligne et la réservation d'une table.",
+          url: 'https://vieux-comptoir.nedellec-julien.fr/',
+          image: {
+            file: '/demos/le-vieux-comptoir-20261005',
+            alt: "Page d'accueil du Vieux Comptoir sur ordinateur et sur téléphone\u00a0: un bandeau Site de démonstration, une salle de brasserie aux lustres anciens, le titre «\u00a0L'Âme de Paris\u00a0» et les boutons Réserver une table et Découvrir la carte.",
+          },
+        },
+      ],
+    },
     steps: {
       heading: 'Le déroulé en 7 jours',
       items: [

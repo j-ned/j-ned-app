@@ -193,11 +193,12 @@ describe('OFFER_PAGES', () => {
       headings: {
         reasons: 'Pourquoi passer par moi',
         deliverables: 'Ce que contient le site',
+        examples: 'Exemples',
         steps: 'Le déroulé en 7 jours',
         pricing: 'Tarif',
         faq: 'Questions fréquentes',
       },
-      counts: { reasons: 3, deliverables: 9, steps: 4, lines: 2, faq: 5 },
+      counts: { reasons: 3, deliverables: 9, examples: 2, steps: 4, lines: 2, faq: 5 },
     },
     {
       slug: 'application-metier',
@@ -206,11 +207,12 @@ describe('OFFER_PAGES', () => {
       headings: {
         reasons: 'Ce qui change avec une application sur mesure',
         deliverables: 'Ce qui est livré',
+        examples: undefined,
         steps: 'Comment ça se passe',
         pricing: 'Tarif',
         faq: 'Questions fréquentes',
       },
-      counts: { reasons: 3, deliverables: 8, steps: 4, lines: 2, faq: 5 },
+      counts: { reasons: 3, deliverables: 8, examples: undefined, steps: 4, lines: 2, faq: 5 },
     },
     {
       slug: 'refonte-maintenance',
@@ -219,11 +221,12 @@ describe('OFFER_PAGES', () => {
       headings: {
         reasons: 'Quand faire appel à moi',
         deliverables: "Ce que contient l'audit",
+        examples: undefined,
         steps: 'Comment ça se passe',
         pricing: 'Tarif',
         faq: 'Questions fréquentes',
       },
-      counts: { reasons: 3, deliverables: 6, steps: 4, lines: 3, faq: 4 },
+      counts: { reasons: 3, deliverables: 6, examples: undefined, steps: 4, lines: 3, faq: 4 },
     },
     {
       slug: 'renfort-freelance',
@@ -232,11 +235,19 @@ describe('OFFER_PAGES', () => {
       headings: {
         reasons: "Ce que j'apporte",
         deliverables: 'Stack et pratiques',
+        examples: undefined,
         steps: undefined,
         pricing: 'Conditions',
         faq: 'Questions fréquentes',
       },
-      counts: { reasons: 3, deliverables: 6, steps: undefined, lines: 1, faq: 3 },
+      counts: {
+        reasons: 3,
+        deliverables: 6,
+        examples: undefined,
+        steps: undefined,
+        lines: 1,
+        faq: 3,
+      },
     },
   ] as const)('$slug', ({ slug, heroTitle, subject, headings, counts }) => {
     const page = OFFER_PAGES[slug];
@@ -252,6 +263,7 @@ describe('OFFER_PAGES', () => {
       expect({
         reasons: page.reasons?.heading,
         deliverables: page.deliverables?.heading,
+        examples: page.examples?.heading,
         steps: page.steps?.heading,
         pricing: page.pricing.heading,
         faq: page.faq?.heading,
@@ -262,10 +274,44 @@ describe('OFFER_PAGES', () => {
       expect({
         reasons: page.reasons?.items.length,
         deliverables: page.deliverables?.items.length,
+        examples: page.examples?.items.length,
         steps: page.steps?.items.length,
         lines: page.pricing.lines.length,
         faq: page.faq?.items.length,
       }).toEqual(counts);
+    });
+  });
+
+  it('shows Coaching Life then Le Vieux Comptoir on the showcase site, with the validated copy and versioned images', () => {
+    expect(OFFER_PAGES['site-vitrine'].examples).toEqual({
+      heading: 'Exemples',
+      lead: 'Des sites de démonstration, construits pour montrer le résultat. Les entreprises sont fictives.',
+      items: [
+        {
+          id: 'coaching-life',
+          name: 'Coaching Life',
+          sector: 'Coaching de vie, coaching équin et accompagnement parental',
+          illustrates:
+            'Trois activités sur un seul site, et la prise de rendez-vous à portée de clic sur chaque page.',
+          url: 'https://coaching-life.nedellec-julien.fr/',
+          image: {
+            file: '/demos/coaching-life-20261005',
+            alt: `Page d'accueil de Coaching Life sur ordinateur et sur téléphone${NBSP}: un bandeau Site de démonstration, le titre «${NBSP}Révélez votre plein potentiel intérieur${NBSP}», un bouton Prendre rendez-vous et la photo d'une coach dans un salon lumineux.`,
+          },
+        },
+        {
+          id: 'le-vieux-comptoir',
+          name: 'Le Vieux Comptoir',
+          sector: 'Brasserie parisienne',
+          illustrates:
+            "Une ambiance qui se voit dès la première image, la carte en ligne et la réservation d'une table.",
+          url: 'https://vieux-comptoir.nedellec-julien.fr/',
+          image: {
+            file: '/demos/le-vieux-comptoir-20261005',
+            alt: `Page d'accueil du Vieux Comptoir sur ordinateur et sur téléphone${NBSP}: un bandeau Site de démonstration, une salle de brasserie aux lustres anciens, le titre «${NBSP}L'Âme de Paris${NBSP}» et les boutons Réserver une table et Découvrir la carte.`,
+          },
+        },
+      ],
     });
   });
 
@@ -394,10 +440,11 @@ describe('OFFER_PAGES', () => {
   });
 
   it.each(Object.entries(OFFER_PAGES))(
-    'gives each reason, step, question and price line of %s a distinct id',
+    'gives each reason, demo, step, question and price line of %s a distinct id',
     (_slug, page) => {
       const ids = [
         ...(page.reasons?.items ?? []),
+        ...(page.examples?.items ?? []),
         ...(page.steps?.items ?? []),
         ...(page.faq?.items ?? []),
         ...page.pricing.lines,
@@ -412,6 +459,19 @@ describe('OFFER_PAGES', () => {
     );
     expect(files.length).toBeGreaterThan(0);
     expect(files.filter((file) => !/^\/demos\/[a-z0-9-]+-\d{8}$/.test(file))).toEqual([]);
+  });
+
+  it('never names a demo, its site or its image in the offer summaries read by the home, the header and the footer', () => {
+    const demoStrings = Object.values(OFFER_PAGES).flatMap(
+      (page) =>
+        page.examples?.items.flatMap(({ name, url, image }) => [name, url, image.file]) ?? [],
+    );
+    const summaries = collectStrings(OFFERS);
+
+    expect(demoStrings).toHaveLength(9);
+    expect(demoStrings.filter((value) => summaries.some((text) => text.includes(value)))).toEqual(
+      [],
+    );
   });
 
   it('contains no em dash anywhere in the offers copy', () => {
