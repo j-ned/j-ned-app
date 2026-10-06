@@ -6,21 +6,7 @@ import { Projects } from './projects';
 import { ProjectsGateway } from '../domain/gateways/projects.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { Project } from '../domain/models/project.model';
-
-function project(overrides: Partial<Project> = {}): Project {
-  return {
-    id: 'id-1',
-    title: 'Mon site',
-    slug: 'mon-site',
-    category: 'Web',
-    tags: [],
-    description: 'desc',
-    image: '',
-    featured: false,
-    order: 0,
-    ...overrides,
-  };
-}
+import { makeProject } from '../testing/project-builders';
 
 function setup(gateway: Partial<ProjectsGateway>): ComponentFixture<Projects> {
   TestBed.configureTestingModule({
@@ -38,7 +24,7 @@ describe('Projects', () => {
 
   it("affiche les projets chargés, sans état d'erreur", async () => {
     const fixture = setup({
-      getAllProjects: () => of([project()] as readonly Project[]),
+      getAllProjects: () => of([makeProject()] as readonly Project[]),
       getCategories: () => of(['Tous', 'Web'] as readonly string[]),
     });
     await fixture.whenStable();
@@ -54,7 +40,7 @@ describe('Projects', () => {
         calls += 1;
         return calls === 1
           ? throwError(() => new Error('down'))
-          : of([project()] as readonly Project[]);
+          : of([makeProject()] as readonly Project[]);
       },
       getCategories: () => of(['Tous'] as readonly string[]),
     });
@@ -76,7 +62,7 @@ describe('Projects', () => {
 
   it('Given des projets chargés When la page est rendue Then elle n’émet aucun main et porte la mise en page sur l’host', async () => {
     const fixture = setup({
-      getAllProjects: () => of([project()] as readonly Project[]),
+      getAllProjects: () => of([makeProject()] as readonly Project[]),
       getCategories: () => of(['Tous', 'Web'] as readonly string[]),
     });
     await fixture.whenStable();
@@ -90,7 +76,7 @@ describe('Projects', () => {
 
   it('Given la page When elle est rendue Then son unique h1 la titre « Réalisations »', async () => {
     const fixture = setup({
-      getAllProjects: () => of([project()] as readonly Project[]),
+      getAllProjects: () => of([makeProject()] as readonly Project[]),
       getCategories: () => of(['Tous', 'Web'] as readonly string[]),
     });
     await fixture.whenStable();
@@ -106,7 +92,7 @@ describe('Projects', () => {
   // Titre du premier écran : un fondu d'entrée (opacité nulle) le masque au premier rendu.
   it('Given la page When elle est rendue Then le titre est visible au premier rendu, sans animation d’entrée', async () => {
     const fixture = setup({
-      getAllProjects: () => of([project()] as readonly Project[]),
+      getAllProjects: () => of([makeProject()] as readonly Project[]),
       getCategories: () => of(['Tous', 'Web'] as readonly string[]),
     });
     await fixture.whenStable();
@@ -122,8 +108,8 @@ describe('Projects', () => {
     const fixture = setup({
       getAllProjects: () =>
         of([
-          project({ id: 'a', slug: 'a', featured: true, image: '/projects/a.avif' }),
-          project({ id: 'b', slug: 'b', featured: true, image: '/projects/b.avif' }),
+          makeProject({ id: 'a', slug: 'a', featured: true, image: '/projects/a.avif' }),
+          makeProject({ id: 'b', slug: 'b', featured: true, image: '/projects/b.avif' }),
         ] as readonly Project[]),
       getCategories: () => of(['Tous', 'Web'] as readonly string[]),
     });
@@ -137,7 +123,7 @@ describe('Projects', () => {
 
   describe('hiérarchie mis en avant / index', () => {
     const CATALOG: readonly Project[] = [
-      project({
+      makeProject({
         id: 'a',
         slug: 'a',
         title: 'Alpha',
@@ -145,17 +131,17 @@ describe('Projects', () => {
         featured: true,
         description: 'Alpha fait X. Détail.',
       }),
-      project({ id: 'b', slug: 'b', title: 'Beta', category: 'Web', featured: true }),
-      project({
+      makeProject({ id: 'b', slug: 'b', title: 'Beta', category: 'Web', featured: true }),
+      makeProject({
         id: 'c',
         slug: 'c',
         title: 'Gamma',
         category: 'Web',
         tags: ['Astro', 'Tailwind', 'CI/CD', 'Docker'],
       }),
-      project({ id: 'd', slug: 'd', title: 'Delta', category: 'Script' }),
-      project({ id: 'e', slug: 'e', title: 'Epsilon', category: 'Script' }),
-      project({
+      makeProject({ id: 'd', slug: 'd', title: 'Delta', category: 'Script' }),
+      makeProject({ id: 'e', slug: 'e', title: 'Epsilon', category: 'Script' }),
+      makeProject({
         id: 'f',
         slug: 'f',
         title: 'Zeta',
@@ -251,6 +237,53 @@ describe('Projects', () => {
       expect(zeta?.textContent).toContain('Zeta automatise Y.');
       expect(zeta?.textContent).not.toContain('Suite');
       expect(zeta?.getAttribute('href')).toBe('/projects/f');
+    });
+  });
+
+  describe('nature des projets de l’index', () => {
+    const renderIndexRow = async (kind: Project['kind']): Promise<HTMLElement> => {
+      const fixture = setup({
+        getAllProjects: () =>
+          of([makeProject({ id: 'g', slug: 'g', title: 'Gamma', kind })] as readonly Project[]),
+        getCategories: () => of(['Tous', 'Web'] as readonly string[]),
+      });
+      await fixture.whenStable();
+      fixture.detectChanges();
+      const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+        '[data-testid="project-index-link"]',
+      );
+      const row = link?.closest('li');
+      if (!row) throw new Error('index row not rendered');
+      return row;
+    };
+
+    const kindStamp = (row: HTMLElement): HTMLElement | null =>
+      row.querySelector<HTMLElement>('[data-testid="project-index-kind"]');
+
+    it.each([
+      { kind: 'production' as const, label: 'En production' },
+      { kind: 'demo' as const, label: 'Démo' },
+      { kind: 'script' as const, label: 'Script' },
+      { kind: null, label: null },
+    ])(
+      'Given an index project of kind $kind When the row renders Then its stamp reads $label',
+      async ({ kind, label }) => {
+        const stamp = kindStamp(await renderIndexRow(kind));
+        expect(stamp?.textContent?.trim() ?? null).toBe(label);
+      },
+    );
+
+    it('Given a stamped index row When it renders Then the stamp is the shared kind stamp, read before the link and outside its name', async () => {
+      const row = await renderIndexRow('demo');
+      const stamp = kindStamp(row);
+      const link = row.querySelector<HTMLElement>('[data-testid="project-index-link"]');
+
+      expect(stamp?.tagName).toBe('APP-PROJECT-KIND-STAMP');
+      expect(stamp?.closest('a')).toBeNull();
+      expect(stamp?.closest('[aria-hidden="true"]')).toBeNull();
+      expect(
+        stamp && link ? stamp.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING : 0,
+      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     });
   });
 });

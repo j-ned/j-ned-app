@@ -1,12 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, type Observable } from 'rxjs';
 import { describe, it, expect, afterEach } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
 import { HttpProjectsGateway } from './http-projects.gateway';
 import type { Project } from '../../domain/models/project.model';
+import { makeProject, makeProjectImage, makeProjectInput } from '../../testing/project-builders';
 
 const BASE = '/api';
 
@@ -22,21 +23,6 @@ function configure(): { gateway: HttpProjectsGateway; httpController: HttpTestin
   return {
     gateway: TestBed.inject(HttpProjectsGateway),
     httpController: TestBed.inject(HttpTestingController),
-  };
-}
-
-function makeProject(overrides: Partial<Project> = {}): Project {
-  return {
-    id: 'uuid-1',
-    title: 'My Project',
-    slug: 'my-project',
-    category: 'Web',
-    tags: ['angular'],
-    description: 'desc',
-    image: 'https://example.com/img.png',
-    featured: false,
-    order: 1,
-    ...overrides,
   };
 }
 
@@ -99,6 +85,27 @@ describe('HttpProjectsGateway', () => {
         .flush([makeProject({ id: 'uuid-1', featured: false }), featured]);
 
       expect(await promise).toEqual([featured]);
+      httpController.verify();
+    });
+
+    it('getFeaturedProjects() ne retient que les projets mis en avant et en production', async () => {
+      const { gateway, httpController } = configure();
+      const { kind: _kind, ...featuredWithoutKind } = makeProject({
+        id: 'no-kind',
+        featured: true,
+      });
+
+      const promise = firstValueFrom(gateway.getFeaturedProjects());
+      httpController
+        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
+        .flush([
+          makeProject({ id: 'featured-demo', featured: true, kind: 'demo' }),
+          makeProject({ id: 'featured-production', featured: true, kind: 'production' }),
+          makeProject({ id: 'production', featured: false, kind: 'production' }),
+          featuredWithoutKind,
+        ]);
+
+      expect((await promise).map((p) => p.id)).toEqual(['featured-production']);
       httpController.verify();
     });
 
@@ -183,10 +190,96 @@ describe('HttpProjectsGateway', () => {
     });
   });
 
+  describe('Adaptation des réponses', () => {
+    const {
+      kind: _kind,
+      gallery: _gallery,
+      ...legacyRow
+    } = makeProject({
+      image: '/storage/portfolio-storage/projects/uuid-1-fb6c30aa.avif',
+    });
+    const adapted = makeProject({
+      image: `${BASE}/storage/portfolio-storage/projects/uuid-1-fb6c30aa.avif`,
+      kind: null,
+      gallery: [],
+    });
+    const payload = makeProjectInput();
+
+    it.each<{
+      label: string;
+      url: string;
+      list: boolean;
+      call: (g: HttpProjectsGateway) => Observable<Project | readonly Project[]>;
+    }>([
+      {
+        label: 'getAllProjects()',
+        url: `${BASE}/projects?_sort=order&limit=100`,
+        list: true,
+        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
+          g.getAllProjects(),
+      },
+      {
+        label: 'filterProjects()',
+        url: `${BASE}/projects?_sort=order&category=Web`,
+        list: true,
+        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
+          g.filterProjects({ category: 'Web' }),
+      },
+      {
+        label: 'getProjectById()',
+        url: `${BASE}/projects/uuid-1`,
+        list: false,
+        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
+          g.getProjectById('uuid-1'),
+      },
+      {
+        label: 'createProject()',
+        url: `${BASE}/projects`,
+        list: false,
+        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
+          g.createProject(payload),
+      },
+      {
+        label: 'updateProject()',
+        url: `${BASE}/projects/uuid-1`,
+        list: false,
+        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
+          g.updateProject('uuid-1', { title: 'Mon site' }),
+      },
+    ])(
+      'Given a row without kind nor gallery and a relative cover When $label answers Then the project is adapted',
+      async ({ url, list, call }) => {
+        const { gateway, httpController } = configure();
+
+        const promise = firstValueFrom(call(gateway));
+        httpController.expectOne(url).flush(list ? [legacyRow] : legacyRow);
+
+        const result = await promise;
+        expect(Array.isArray(result) ? result : [result]).toEqual([adapted]);
+        httpController.verify();
+      },
+    );
+
+    it('Given an unknown kind in the list When it is read Then the project has no kind', async () => {
+      const { gateway, httpController } = configure();
+
+      const promise = firstValueFrom(gateway.getAllProjects());
+      httpController
+        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
+        .flush([
+          { ...makeProject({ id: 'uuid-1' }), kind: 'client' },
+          makeProject({ id: 'uuid-2', kind: 'demo' }),
+        ]);
+
+      expect((await promise).map((p) => p.kind)).toEqual([null, 'demo']);
+      httpController.verify();
+    });
+  });
+
   describe('Échec de chargement', () => {
     const URL = `${BASE}/projects?_sort=order&limit=100`;
 
-    it('relance la requête une fois avant de propager l\'erreur', async () => {
+    it("relance la requête une fois avant de propager l'erreur", async () => {
       const { gateway, httpController } = configure();
       const outcome = firstValueFrom(gateway.getAllProjects()).then(
         () => 'ok',
@@ -217,8 +310,7 @@ describe('HttpProjectsGateway', () => {
   describe('Admin (NestJS): 4 tests', () => {
     it('createProject(data) émet POST /<base>/projects sans champ image (géré via uploadImage)', async () => {
       const { gateway, httpController } = configure();
-      const data = makeProject();
-      const { id: _id, image: _image, ...payload } = data;
+      const payload = makeProjectInput();
       const created = makeProject({ id: 'new-uuid' });
 
       const promise = firstValueFrom(gateway.createProject(payload));
@@ -278,6 +370,123 @@ describe('HttpProjectsGateway', () => {
 
       const result = await promise;
       expect(result).toBe('projects/uuid-1/test.png');
+      httpController.verify();
+    });
+  });
+
+  describe('Galerie (admin)', () => {
+    const imageDto = (
+      id: string,
+      order: number,
+      alt = `Capture ${id}`,
+    ): Record<string, unknown> => ({
+      id,
+      url: `/storage/portfolio-storage/project-images/${id}-ab12cd34.avif`,
+      alt,
+      width: 1280,
+      height: 800,
+      order,
+    });
+    const adaptedImage = (id: string, alt = `Capture ${id}`): ReturnType<typeof makeProjectImage> =>
+      makeProjectImage({
+        id,
+        src: `${BASE}/storage/portfolio-storage/project-images/${id}-ab12cd34.avif`,
+        alt,
+        width: 1280,
+        height: 800,
+      });
+
+    it('Given a file and an alt When a capture is uploaded Then POST /projects/:id/images sends multipart file + alt and returns the adapted capture', async () => {
+      const { gateway, httpController } = configure();
+      const file = new File(['png'], 'vue.png', { type: 'image/png' });
+
+      const promise = firstValueFrom(gateway.uploadGalleryImage('uuid-1', file, 'Vue globale'));
+
+      const req = httpController.expectOne(`${BASE}/projects/uuid-1/images`);
+      const body = req.request.body as FormData;
+      expect({
+        method: req.request.method,
+        isFormData: body instanceof FormData,
+        file: body.get('file'),
+        alt: body.get('alt'),
+      }).toEqual({ method: 'POST', isFormData: true, file, alt: 'Vue globale' });
+      req.flush(imageDto('img-9', 3, 'Vue globale'), { status: 201, statusText: 'Created' });
+
+      expect(await promise).toEqual(adaptedImage('img-9', 'Vue globale'));
+      httpController.verify();
+    });
+
+    it.each([413, 422])(
+      'Given the API refuses the upload with %i When a capture is uploaded Then the error reaches the caller with its status',
+      async (status) => {
+        const { gateway, httpController } = configure();
+        const file = new File(['png'], 'vue.png', { type: 'image/png' });
+
+        const outcome = firstValueFrom(
+          gateway.uploadGalleryImage('uuid-1', file, 'Vue globale'),
+        ).then(
+          () => 'ok',
+          (error: { status?: number }) => error.status,
+        );
+        httpController
+          .expectOne(`${BASE}/projects/uuid-1/images`)
+          .flush('refused', { status, statusText: 'Refused' });
+
+        expect(await outcome).toBe(status);
+        httpController.verify();
+      },
+    );
+
+    it('Given a new alt When it is saved Then PATCH /projects/:id/images/:imageId sends { alt } and returns the adapted capture', async () => {
+      const { gateway, httpController } = configure();
+
+      const promise = firstValueFrom(
+        gateway.updateGalleryImageAlt('uuid-1', 'img-9', 'Liste des transactions'),
+      );
+
+      const req = httpController.expectOne(`${BASE}/projects/uuid-1/images/img-9`);
+      expect({ method: req.request.method, body: req.request.body }).toEqual({
+        method: 'PATCH',
+        body: { alt: 'Liste des transactions' },
+      });
+      req.flush(imageDto('img-9', 0, 'Liste des transactions'));
+
+      expect(await promise).toEqual(adaptedImage('img-9', 'Liste des transactions'));
+      httpController.verify();
+    });
+
+    it('Given a capture When it is deleted Then DELETE /projects/:id/images/:imageId is sent', async () => {
+      const { gateway, httpController } = configure();
+
+      const outcome = firstValueFrom(gateway.deleteGalleryImage('uuid-1', 'img-9'), {
+        defaultValue: undefined,
+      }).then(() => 'deleted');
+
+      const req = httpController.expectOne(`${BASE}/projects/uuid-1/images/img-9`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+
+      expect(await outcome).toBe('deleted');
+      httpController.verify();
+    });
+
+    it('Given a new order When the gallery is reordered Then PUT /projects/:id/images/order sends the whole permutation and returns the adapted gallery', async () => {
+      const { gateway, httpController } = configure();
+
+      const promise = firstValueFrom(gateway.reorderGallery('uuid-1', ['img-c', 'img-a', 'img-b']));
+
+      const req = httpController.expectOne(`${BASE}/projects/uuid-1/images/order`);
+      expect({ method: req.request.method, body: req.request.body }).toEqual({
+        method: 'PUT',
+        body: { imageIds: ['img-c', 'img-a', 'img-b'] },
+      });
+      req.flush([imageDto('img-c', 0), imageDto('img-a', 1), imageDto('img-b', 2)]);
+
+      expect(await promise).toEqual([
+        adaptedImage('img-c'),
+        adaptedImage('img-a'),
+        adaptedImage('img-b'),
+      ]);
       httpController.verify();
     });
   });

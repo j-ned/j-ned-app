@@ -9,7 +9,11 @@ import {
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, switchMap } from 'rxjs';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
-import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
+import type {
+  Project,
+  ProjectImage,
+  ProjectInput,
+} from '@features/projects/domain/models/project.model';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
 import { AdminProjectRow } from './components/admin-project-row';
@@ -70,6 +74,7 @@ import { AppIcon } from '@shared/icons/app-icon';
             (deleteClicked)="deleteProject(proj)"
             (saved)="updateProject(proj.id, $event)"
             (cancelled)="editingId.set(null)"
+            (galleryChange)="updateGallery(proj.id, $event)"
           />
         } @empty {
           <div
@@ -184,6 +189,14 @@ export class AdminProjects {
           detail: 'Erreur lors de la mise à jour du projet',
         }),
     });
+  }
+
+  updateGallery(id: string, gallery: readonly ProjectImage[]): void {
+    this.projectsResource.update((list) =>
+      (list ?? []).map((p) => (p.id === id ? { ...p, gallery } : p)),
+    );
+    this.projectsGateway.invalidateAllProjects();
+    this.homeGateway.invalidateBundle();
   }
 
   deleteProject(project: Project): void {

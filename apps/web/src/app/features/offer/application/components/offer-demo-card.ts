@@ -4,23 +4,19 @@ import { demoPicture } from '@features/offer/domain/demo-picture';
 import type { OfferDemo } from '@features/offer/domain/models/offer.model';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Cartouche } from '@shared/ui/cartouche';
+import { Stamp } from '@shared/ui/stamp';
 
 const DEMO_IMAGE_SIZES =
   '(min-width: 80rem) 54rem, (min-width: 64rem) calc(100vw - 26rem), (min-width: 40rem) calc(100vw - 3rem), calc(100vw - 2rem)';
 
 @Component({
   selector: 'app-offer-demo-card',
-  imports: [Cartouche, NgOptimizedImage, AppIcon],
+  imports: [Cartouche, NgOptimizedImage, AppIcon, Stamp],
   host: { class: 'block' },
   template: `
     <app-cartouche [title]="demo().name" [reference]="demo().sector">
       <div class="relative">
-        <span
-          data-testid="offer-demo-badge"
-          class="absolute left-3 top-3 rounded-sm border border-line-strong bg-background px-2 py-1 font-mono text-xs uppercase tracking-[0.06em] text-foreground"
-        >
-          Démo
-        </span>
+        <app-stamp data-testid="offer-demo-badge" class="absolute left-3 top-3">Démo</app-stamp>
         <picture>
           <source
             type="image/avif"

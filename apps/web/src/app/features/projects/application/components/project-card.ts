@@ -4,10 +4,12 @@ import { RouterLink } from '@angular/router';
 import type { Project } from '../../domain/models/project.model';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
+import { liveLinkContext, liveLinkLabel } from '../project-kind-copy';
+import { ProjectKindStamp } from './project-kind-stamp';
 
 @Component({
   selector: 'app-project-card',
-  imports: [NgOptimizedImage, RouterLink, AppIcon],
+  imports: [NgOptimizedImage, RouterLink, AppIcon, ProjectKindStamp],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block h-full', '[class.animate-fade-up]': '!priority()' },
   template: `
@@ -26,6 +28,13 @@ import { AppIcon } from '@shared/icons/app-icon';
           />
         } @else {
           <div class="w-full h-full bg-foreground/4" aria-hidden="true"></div>
+        }
+        @if (project().kind; as kind) {
+          <app-project-kind-stamp
+            data-testid="project-card-kind"
+            class="absolute left-3 top-3 z-10"
+            [kind]="kind"
+          />
         }
       </figure>
 
@@ -93,11 +102,10 @@ import { AppIcon } from '@shared/icons/app-icon';
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors font-medium"
-                [attr.aria-label]="'Voir le projet ' + project().title"
                 (click)="trackClick()"
               >
                 <app-icon name="external-link" [size]="20" />
-                Voir le projet
+                {{ liveLabel() }}<span class="sr-only">{{ liveContext() }}</span>
               </a>
             }
             @if (project().repoUrl) {
@@ -151,6 +159,9 @@ export class ProjectCard {
   readonly project = input.required<Project>();
   readonly showKeyDecision = input(false);
   readonly priority = input(false);
+
+  protected readonly liveLabel = computed(() => liveLinkLabel(this.project().kind));
+  protected readonly liveContext = computed(() => liveLinkContext(this.project().title));
 
   protected readonly keyDecision = computed(() =>
     this.showKeyDecision() ? (this.project().architectureDecisions?.[0] ?? null) : null,

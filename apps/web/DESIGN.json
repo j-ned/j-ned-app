@@ -316,7 +316,7 @@
       "Don't ajouter de shadow à une card pour qu'elle ressorte. Travaille la hiérarchie typographique avant.",
       "Don't charger une Google Font ni une police depuis un CDN (Three Families Rule, ADR-0006).",
       "Don't confier une information à un trait line / line-strong seul (Decorative Line Rule).",
-      "Don't présenter un site de démonstration comme une référence client : badge « Démo » dans le gabarit, aucune démo dans les Réalisations, la home ni les données structurées.",
+      "Don't présenter un site de démonstration comme une référence client : badge « Démo » dans le gabarit sur toute démo des Réalisations, aucune démo sur la home (qui ne montre que des projets en production) ni dans les données structurées d'avis ou de référence client.",
       "Don't utiliser border-left ou border-right > 1px comme accent coloré.",
       "Don't utiliser *ngIf / *ngFor — control flow @if / @for uniquement.",
       "Don't styliser un input avec outline: none sans :focus-visible de remplacement.",

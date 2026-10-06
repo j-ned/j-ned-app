@@ -57,7 +57,8 @@ sites en ligne : AVIF et WebP en 1 600 et 800 px de large, 13 à 47 Ko en AVIF, 
 
 #### 2. Honnêteté : une démo ne passe jamais pour une référence client
 
-- Aucun visuel de démo dans `/projects` (Réalisations), sur la home, ni dans les données
+- Aucune démo sur la home. Dans `/projects` (Réalisations), une démo n'apparaît qu'avec le tampon
+  « Démo » (amendement du 2026-10-06, spec 011, ADR-0008 §7). Aucune démo dans les données
   structurées comme `review`, `testimonial` ou portfolio client.
 - Aucun chiffre, avis ou logo inventé autour des démos.
 - La copie du site qui oppose « des démos » à « des systèmes qui tournent »
@@ -110,8 +111,9 @@ sites en ligne : AVIF et WebP en 1 600 et 800 px de large, 13 à 47 Ko en AVIF, 
    `width`/`height` intrinsèques et un `alt` descriptif. Aucun `priority`.
 5. La section est présente dans le HTML prérendu des deux pages. Un seul `<h1>`, hiérarchie de
    titres sans saut, zéro violation axe, cibles tactiles ≥ 44 px.
-6. Aucun visuel ni nom de démo dans `/projects`, la home ou les données structurées de type avis
-   ou référence client.
+6. Aucun visuel ni nom de démo sur la home ni dans les données structurées de type avis ou
+   référence client ; dans `/projects`, une démo porte toujours le tampon « Démo » (amendement du
+   2026-10-06, spec 011, ADR-0008 §7).
 7. Lighthouse mobile et desktop sur les deux pages : LCP et CLS sans régression mesurable
    (médiane de 5, avant / après).
 8. Typographie française du repo respectée (invariant `editorial-typography.spec.ts`).

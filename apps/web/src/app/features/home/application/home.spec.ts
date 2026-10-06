@@ -17,6 +17,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
 import { SectionVisibility } from '@core/navigation/section-visibility';
 import type { HomeBundle } from '@features/home/domain/models/home-bundle.model';
 import type { Project } from '@features/projects/domain/models/project.model';
+import { makeProject } from '@features/projects/testing/project-builders';
 import { HOME_OFFERS_HEADING } from '../domain/home-offers.static-data';
 import { HOME_FAQ, HOME_METHOD, HOME_WHY } from '../domain/home-pitch.static-data';
 import { STATIC_HERO } from '../infra/data/home.static-data';
@@ -24,19 +25,6 @@ import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 
 @Component({ template: '' })
 class BlankPage {}
-
-const aProject = (overrides: Partial<Project> = {}): Project => ({
-  id: 'p1',
-  title: 'Portfolio',
-  slug: 'portfolio',
-  category: 'Web',
-  tags: [],
-  description: 'desc',
-  image: '',
-  featured: true,
-  order: 0,
-  ...overrides,
-});
 
 const bundle = (overrides: Partial<HomeBundle> = {}): HomeBundle => ({
   hero: { id: 'hero', headline: 'Je livre', lead: 'Preuve' },
@@ -207,7 +195,7 @@ describe('Home', () => {
 
   describe('rendu du bloc @defer projets', () => {
     it('Given le template réel When le bloc reste à son état initial Then le placeholder est rendu et la section projets absente', async () => {
-      const { fixture } = await renderHomeTemplate([aProject()]);
+      const { fixture } = await renderHomeTemplate([makeProject()]);
 
       expect(byTestId(fixture, 'home-projects-placeholder')).not.toBeNull();
       expect(byTestId(fixture, 'home-projects-section')).toBeNull();
@@ -215,8 +203,8 @@ describe('Home', () => {
 
     it('Given deux projets mis en avant When le bloc passe à Complete Then la section remplace le placeholder', async () => {
       const projects = [
-        aProject({ id: 'p1', slug: 'alpha', title: 'Alpha' }),
-        aProject({ id: 'p2', slug: 'beta', title: 'Beta' }),
+        makeProject({ id: 'p1', slug: 'alpha', title: 'Alpha' }),
+        makeProject({ id: 'p2', slug: 'beta', title: 'Beta' }),
       ];
       const { fixture, projectsBlock } = await renderHomeTemplate(projects);
 
@@ -229,8 +217,8 @@ describe('Home', () => {
 
     it('Given deux projets mis en avant When le bloc passe à Complete Then une carte par projet est projetée', async () => {
       const projects = [
-        aProject({ id: 'p1', slug: 'alpha', title: 'Alpha' }),
-        aProject({ id: 'p2', slug: 'beta', title: 'Beta' }),
+        makeProject({ id: 'p1', slug: 'alpha', title: 'Alpha' }),
+        makeProject({ id: 'p2', slug: 'beta', title: 'Beta' }),
       ];
       const { fixture, projectsBlock } = await renderHomeTemplate(projects);
 
@@ -243,7 +231,7 @@ describe('Home', () => {
 
   describe('landmarks', () => {
     it('Given le template réel When la page est rendue Then elle n’émet aucun main et porte la mise en page sur l’host', async () => {
-      const { fixture } = await renderHomeTemplate([aProject()]);
+      const { fixture } = await renderHomeTemplate([makeProject()]);
       const host = fixture.nativeElement as HTMLElement;
 
       expect(host.querySelectorAll('main')).toHaveLength(0);

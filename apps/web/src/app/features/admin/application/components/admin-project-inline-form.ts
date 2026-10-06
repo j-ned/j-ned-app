@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   input,
   output,
   signal,
@@ -7,12 +8,16 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormField, FormRoot, applyEach, form, required, submit } from '@angular/forms/signals';
-import type {
-  Project,
-  ProjectInput,
-  TechChoice,
-  ArchitectureDecision,
+import {
+  PROJECT_KINDS,
+  type Project,
+  type ProjectInput,
+  type ProjectKind,
+  type TechChoice,
+  type ArchitectureDecision,
 } from '@features/projects/domain/models/project.model';
+import { isProjectKind } from '@features/projects/domain/is-project-kind';
+import { PROJECT_KIND_LABELS } from '@features/projects/application/project-kind-copy';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { Button } from '@shared/ui/button';
 import { AdminTagsSelector } from './admin-tags-selector';
@@ -28,6 +33,7 @@ type ProjectFormModel = {
   repoUrlBack: string;
   featured: boolean;
   order: number;
+  kind: ProjectKind | '';
   techChoices: TechChoice[];
   architectureDecisions: ArchitectureDecision[];
 };
@@ -42,6 +48,7 @@ const EMPTY: ProjectFormModel = {
   repoUrlBack: '',
   featured: false,
   order: 0,
+  kind: '',
   techChoices: [],
   architectureDecisions: [],
 };
@@ -56,6 +63,7 @@ const toModel = (p: Project): ProjectFormModel => ({
   repoUrlBack: p.repoUrlBack ?? '',
   featured: p.featured,
   order: p.order,
+  kind: p.kind ?? '',
   techChoices: [...(p.techChoices ?? [])],
   architectureDecisions: [...(p.architectureDecisions ?? [])],
 });
@@ -103,6 +111,28 @@ const toModel = (p: Project): ProjectFormModel => ({
             <span role="alert" class="form-error">{{ category.errors()[0].message }}</span>
           }
         </div>
+      </div>
+
+      <div>
+        @let kind = form.kind();
+        <label for="kind" class="form-label">Nature</label>
+        <select
+          id="kind"
+          data-testid="admin-project-kind"
+          [formField]="form.kind"
+          aria-required="true"
+          class="app-select w-full"
+        >
+          <option value="" disabled>Choisir une nature</option>
+          @for (option of kinds; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @if (kind.touched() && kind.invalid()) {
+          <span data-testid="admin-project-kind-error" role="alert" class="form-error">
+            {{ kind.errors()[0].message }}
+          </span>
+        }
       </div>
 
       <app-admin-tags-selector [availableTags]="availableTags" [(selectedTags)]="selectedTags" />
@@ -240,23 +270,31 @@ export class AdminProjectInlineForm {
 
   readonly selectedFile = signal<File | null>(null);
 
+  // Une écriture de galerie garde l'id : la saisie ne se réinitialise qu'au changement de projet.
+  private readonly _editedProject = computed(() => this.project(), {
+    equal: (a, b) => a?.id === b?.id,
+  });
+
   readonly imagePreview = linkedSignal({
-    source: this.project,
+    source: this._editedProject,
     computation: (p, previous): string => p?.image ?? previous?.value ?? '',
   });
 
   readonly selectedTags = linkedSignal({
-    source: this.project,
+    source: this._editedProject,
     computation: (p, previous): Set<string> =>
       p ? new Set(p.tags ?? []) : (previous?.value ?? new Set<string>()),
   });
 
   readonly categories = PROJECT_CATEGORIES;
   readonly availableTags = AVAILABLE_PROJECT_TAGS;
+  protected readonly kinds = PROJECT_KINDS.map((value) => ({
+    value,
+    label: PROJECT_KIND_LABELS[value],
+  }));
 
-  // Le modèle suit le projet à éditer dès qu'il arrive par `input()` et reste éditable ensuite.
   private readonly _model = linkedSignal({
-    source: this.project,
+    source: this._editedProject,
     computation: (p, previous): ProjectFormModel => (p ? toModel(p) : (previous?.value ?? EMPTY)),
   });
 
@@ -266,6 +304,7 @@ export class AdminProjectInlineForm {
       required(path.title, { message: 'Ce champ est obligatoire' });
       required(path.category, { message: 'Ce champ est obligatoire' });
       required(path.description, { message: 'Ce champ est obligatoire' });
+      required(path.kind, { message: 'Ce champ est obligatoire' });
       applyEach(path.techChoices, (item) => {
         required(item.techno, { message: 'Ce champ est obligatoire' });
         required(item.why, { message: 'Ce champ est obligatoire' });
@@ -278,7 +317,12 @@ export class AdminProjectInlineForm {
     {
       submission: {
         action: async () => {
-          this.saved.emit({ data: this.toInput(this._model()), file: this.selectedFile() });
+          const model = this._model();
+          if (!isProjectKind(model.kind)) return;
+          this.saved.emit({
+            data: this.toInput(model, model.kind),
+            file: this.selectedFile(),
+          });
         },
       },
     },
@@ -320,7 +364,7 @@ export class AdminProjectInlineForm {
   // `image` est volontairement absent : l'image transite par `file` (uploadImage), jamais comme
   // string dans le payload create/update (le DTO backend la rejette). `null` (et non `undefined`)
   // pour qu'un champ vidé soit envoyé dans le PATCH et efface réellement le lien côté backend.
-  private toInput(m: ProjectFormModel): ProjectInput {
+  private toInput(m: ProjectFormModel, kind: ProjectKind): ProjectInput {
     return {
       title: m.title,
       category: m.category,
@@ -339,6 +383,7 @@ export class AdminProjectInlineForm {
         decision,
         rationale,
       })),
+      kind,
     };
   }
 

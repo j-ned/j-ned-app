@@ -1,26 +1,16 @@
 import type { Project } from '../models/project.model';
-import { filterProjects, FILTER_ALL } from '@features/projects/domain/use-cases/filter-projects.use-case';
-
-function makeProject(category: string, id = '1'): Project {
-  return {
-    id,
-    title: `Project ${id}`,
-    slug: `p-${id}`,
-    category,
-    tags: [],
-    description: '',
-    image: '',
-    featured: false,
-    order: 0,
-  };
-}
+import { makeProject } from '../../testing/project-builders';
+import {
+  filterProjects,
+  FILTER_ALL,
+} from '@features/projects/domain/use-cases/filter-projects.use-case';
 
 describe('filterProjects', () => {
   const projects: readonly Project[] = [
-    makeProject('Frontend', '1'),
-    makeProject('Backend', '2'),
-    makeProject('Frontend', '3'),
-    makeProject('Fullstack', '4'),
+    makeProject({ id: '1', category: 'Frontend' }),
+    makeProject({ id: '2', category: 'Backend' }),
+    makeProject({ id: '3', category: 'Frontend' }),
+    makeProject({ id: '4', category: 'Fullstack' }),
   ];
 
   describe('Given the category is FILTER_ALL', () => {

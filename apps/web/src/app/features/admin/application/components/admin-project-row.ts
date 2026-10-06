@@ -1,14 +1,19 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
+import type {
+  Project,
+  ProjectImage,
+  ProjectInput,
+} from '@features/projects/domain/models/project.model';
 import { AdminProjectInlineForm } from './admin-project-inline-form';
+import { AdminProjectGallery } from './admin-project-gallery';
 import { AppTag } from '@shared/ui/tag';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 
 @Component({
   selector: 'app-admin-project-row',
-  imports: [NgOptimizedImage, AdminProjectInlineForm, AppTag, AppIcon, Button],
+  imports: [NgOptimizedImage, AdminProjectInlineForm, AdminProjectGallery, AppTag, AppIcon, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block bg-surface border border-foreground/10 rounded-xl overflow-hidden' },
   template: `
@@ -23,15 +28,8 @@ import { AppIcon } from '@shared/icons/app-icon';
             class="w-12 h-12 rounded-lg object-cover"
           />
         } @else {
-          <div
-            class="w-12 h-12 rounded-lg bg-foreground/10 flex items-center justify-center"
-          >
-            <svg
-              class="w-6 h-6 text-muted"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+          <div class="w-12 h-12 rounded-lg bg-foreground/10 flex items-center justify-center">
+            <svg class="w-6 h-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -82,11 +80,16 @@ import { AppIcon } from '@shared/icons/app-icon';
     </div>
 
     @if (isEditing()) {
-      <div class="px-5 pb-5">
+      <div class="px-5 pb-5 space-y-5">
         <app-admin-project-inline-form
           [project]="project()"
           (saved)="saved.emit($event)"
           (cancelled)="cancelled.emit()"
+        />
+        <app-admin-project-gallery
+          [projectId]="project().id"
+          [images]="project().gallery"
+          (galleryChange)="galleryChange.emit($event)"
         />
       </div>
     }
@@ -100,4 +103,5 @@ export class AdminProjectRow {
   readonly deleteClicked = output<void>();
   readonly saved = output<{ data: ProjectInput; file: File | null }>();
   readonly cancelled = output<void>();
+  readonly galleryChange = output<readonly ProjectImage[]>();
 }

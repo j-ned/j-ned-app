@@ -2,10 +2,12 @@ import { Component, input, output, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { AppIcon } from '@shared/icons/app-icon';
+import { liveLinkContext, liveLinkLabel } from '../project-kind-copy';
+import { ProjectKindStamp } from './project-kind-stamp';
 
 @Component({
   selector: 'app-project-detail-header',
-  imports: [RouterLink, AppIcon],
+  imports: [RouterLink, AppIcon, ProjectKindStamp],
   host: { class: 'contents' },
   template: `
     @let p = project();
@@ -22,7 +24,12 @@ import { AppIcon } from '@shared/icons/app-icon';
         />
         Toutes les réalisations
       </a>
-      <p class="mt-7 font-mono text-[0.8125rem] font-medium text-primary">{{ p.category }}</p>
+      <div class="mt-7 flex items-center gap-3">
+        <p class="font-mono text-[0.8125rem] font-medium text-primary">{{ p.category }}</p>
+        @if (p.kind; as kind) {
+          <app-project-kind-stamp data-testid="project-detail-kind" [kind]="kind" />
+        }
+      </div>
       <h1
         data-testid="project-detail-title"
         class="mt-3.5 max-w-4xl text-[clamp(2.75rem,6vw,5.25rem)] font-extrabold leading-none tracking-[-0.04em] text-balance"
@@ -43,9 +50,8 @@ import { AppIcon } from '@shared/icons/app-icon';
               rel="noopener noreferrer"
               (click)="linkClicked.emit()"
               class="link-btn-primary"
-              [attr.aria-label]="'Voir la démo de ' + p.title"
             >
-              Voir la démo
+              {{ liveLabel() }}<span class="sr-only">{{ liveContext() }}</span>
               <app-icon name="external-link" [size]="14" />
             </a>
           }
@@ -116,6 +122,9 @@ import { AppIcon } from '@shared/icons/app-icon';
 export class ProjectDetailHeader {
   readonly project = input.required<Project>();
   readonly linkClicked = output<void>();
+
+  protected readonly liveLabel = computed(() => liveLinkLabel(this.project().kind));
+  protected readonly liveContext = computed(() => liveLinkContext(this.project().title));
 
   protected readonly hasLinks = computed(() => {
     const p = this.project();

@@ -12,6 +12,7 @@ import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import { RouterLink } from '@angular/router';
 import { ProjectCard } from './components/project-card';
+import { ProjectKindStamp } from './components/project-kind-stamp';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { filterProjects, FILTER_ALL } from '../domain/use-cases/filter-projects.use-case';
 import {
@@ -34,7 +35,7 @@ const INDEX_STACK_SIZE = 3;
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block min-h-svh pt-20 pb-24' },
-  imports: [ProjectCard, AppPaginator, Button, AppIcon, RouterLink],
+  imports: [ProjectCard, ProjectKindStamp, AppPaginator, Button, AppIcon, RouterLink],
   template: `
     <section class="page-container" aria-labelledby="projects-heading">
       <header class="pt-18 pb-14 md:pt-26 md:pb-18">
@@ -111,10 +112,13 @@ const INDEX_STACK_SIZE = 3;
             </h2>
             <ul role="list">
               @for (project of indexOnPage(); track project.id) {
-                <li class="border-b border-foreground/8">
+                <li class="border-b border-foreground/8 pt-5">
+                  @if (project.kind; as kind) {
+                    <app-project-kind-stamp data-testid="project-index-kind" [kind]="kind" />
+                  }
                   <a
                     [routerLink]="['/projects', project.slug]"
-                    class="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 py-5.5 lg:grid-cols-[15rem_minmax(0,1fr)_14rem_auto]"
+                    class="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 pt-2 pb-5.5 lg:grid-cols-[15rem_minmax(0,1fr)_14rem_auto]"
                     data-testid="project-index-link"
                   >
                     <span
@@ -207,6 +211,7 @@ export class Projects {
       .map((p) => ({
         id: p.id,
         slug: p.slug,
+        kind: p.kind,
         title: p.title,
         summary: firstSentence(p.description),
         stack: p.tags.slice(0, INDEX_STACK_SIZE).join(' · '),

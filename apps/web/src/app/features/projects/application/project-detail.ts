@@ -13,6 +13,7 @@ import { ProjectDetailHeader } from './components/project-detail-header';
 import { ProjectDetailTechChoices } from './components/project-detail-tech-choices';
 import { ProjectDetailArchDecisions } from './components/project-detail-arch-decisions';
 import { ProjectDetailNav } from './components/project-detail-nav';
+import { ProjectGallery } from './components/project-gallery';
 import { Button } from '@shared/ui/button';
 
 @Component({
@@ -23,6 +24,7 @@ import { Button } from '@shared/ui/button';
     ProjectDetailTechChoices,
     ProjectDetailArchDecisions,
     ProjectDetailNav,
+    ProjectGallery,
     Button,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,6 +49,10 @@ import { Button } from '@shared/ui/button';
             />
           </div>
         </figure>
+      }
+
+      @if (p.gallery.length > 0) {
+        <app-project-gallery [images]="p.gallery" />
       }
 
       @if (techChoices().length > 0) {

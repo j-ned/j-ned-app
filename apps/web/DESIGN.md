@@ -308,7 +308,28 @@ Un site de démonstration présenté sur une page d'offre, dans la section « Ex
 - **Structure:** `Cartouche` titré du nom fictif, référence = secteur ; corps projeté : le visuel (`<picture>` AVIF puis WebP autour de `NgOptimizedImage`, chargement différé, jamais `priority`, ADR-0007), puis un pied séparé par un trait `line` avec la phrase (texte courant) et le lien.
 - **Badge « Démo »:** dans le gabarit, jamais dans la donnée. Posé sur le coin haut gauche du visuel, comme un tampon de plan : mono majuscule `text-xs`, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`. Pas d'indigo : c'est une mention, pas un accent (One Indigo Rule).
 - **Lien:** « Voir la démo » en `link-btn-outline` (44 px), icône `external-link` `aria-hidden`, nouvel onglet avec `rel="noopener"` ; nom de la démo et « nouvel onglet » en `sr-only` après le libellé visible. Seul interactif de la carte : ni le visuel ni la carte ne sont cliquables.
-- **Honnêteté:** aucun visuel ni nom de démo dans les Réalisations, la home ou les données structurées ; aucun chiffre, avis ou logo inventé autour.
+- **Honnêteté:** une démo n'apparaît dans les Réalisations qu'avec le tampon « Démo » (ADR-0008) ; jamais sur la home ni dans des données structurées d'avis ou de référence client ; aucun chiffre, avis ou logo inventé autour.
+
+### Tampon (`shared/ui/stamp.ts`)
+
+La mention portée sur un plan, reprise pour dire la nature d'une chose : « Démo » sur la carte de démo, « En production », « Démo » ou « Script » sur un projet (`ProjectKindStamp`, ADR-0008).
+
+- **API:** aucune entrée ; le texte est projeté.
+- **Apparence unique:** classes sur l'hôte, sans élément enveloppant : mono majuscule `text-xs`, interlettrage 0,06 em, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`, `rounded-sm`, marges `px-2 py-1`. Une seule apparence pour toutes les natures : c'est le **texte** qui les distingue, jamais une couleur.
+- **Placement:** le consommateur le positionne : coin haut gauche du visuel sur la carte de démo et la carte de projet, au-dessus du `h1` dans l'en-tête du détail, avant le lien dans la ligne d'index.
+- **Accessibilité:** texte lu tel quel, sans rôle ni `aria-*` ; la nature est dite par le texte, pas par une couleur ni par la seule position.
+- **Don't:** pas d'indigo ni de couleur de statut (One Indigo Rule : c'est une mention, pas un accent) ; jamais un `h*` ni à l'intérieur d'un titre ; jamais interactif ; pas de variante par nature.
+
+### Galerie de projet (`features/projects/application/components/project-gallery.ts`)
+
+Les captures d'écran d'une réalisation, sur sa page détail, quand le projet en a (ADR-0009).
+
+- **Entrée:** `images: readonly ProjectImage[]`, déjà triées par l'adapter ; rien n'est rendu pour une galerie vide (`@if` côté page).
+- **Section:** `SplitSection` `headingId="gallery-title"`, titre « Captures », résumé court ; placée après la couverture et avant les choix techniques. Jamais sous `@defer` : la galerie est dans le HTML prérendu.
+- **Grille:** `ul role="list"`, une colonne en mobile, deux à partir de `md`, `items-start` (une capture portrait garde son ratio sans étirer sa voisine).
+- **Miniature:** un `button` natif par capture, qui porte l'image (`NgOptimizedImage`, `width`/`height` intrinsèques, `h-auto w-full`, chargement différé, **jamais** `priority`, ni `fill` ni `ngSrcset`) ; nom accessible « Agrandir : » en `sr-only` suivi de l'`alt`. Curseur `zoom-in`.
+- **Agrandissement:** `dialog` natif ouvert par `showModal()` (fond inerte, Échap natif), nommé « Capture agrandie : <alt> » ; bouton « Fermer » en premier, focus posé dessus à l'ouverture ; à la fermeture (bouton ou Échap), le focus revient à la miniature d'origine. `::backdrop` en `background/90`, dialog cerné de `line-strong`, image contenue dans le viewport (`object-contain`).
+- **Don't:** pas de carrousel ni de défilement automatique ; pas de lien ni de `div` cliquable à la place du `button` ; pas de dialog maison ni de bibliothèque de lightbox ; pas d'`alt` vide (une capture est un contenu, jamais une décoration).
 
 ### Ligne d'offre (`features/offer/application/components/offer-row.ts`)
 
@@ -417,4 +438,4 @@ Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionne
 - **Don't** réutiliser le Display (800, clamp size) pour un autre élément que le `<h1>` du hero.
 - **Don't** introduire une 4e famille "pour donner du caractère". La hiérarchie vient de la famille (display / texte / données), du weight, de la size et de la largeur.
 - **Don't** confier une information à un trait `line` / `line-strong` seul (Decorative Line Rule).
-- **Don't** présenter un site de démonstration comme une référence client : badge « Démo » dans le gabarit, aucune démo dans les Réalisations, la home ni les données structurées.
+- **Don't** présenter un site de démonstration comme une référence client : badge « Démo » dans le gabarit sur toute démo des Réalisations, aucune démo sur la home (qui ne montre que des projets en production) ni dans les données structurées d'avis ou de référence client.

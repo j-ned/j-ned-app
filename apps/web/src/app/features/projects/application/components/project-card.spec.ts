@@ -5,21 +5,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { ProjectCard } from './project-card';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { Project } from '../../domain/models/project.model';
-
-function project(overrides: Partial<Project> = {}): Project {
-  return {
-    id: 'id-1',
-    title: 'Mon site',
-    slug: 'mon-site',
-    category: 'Web',
-    tags: [],
-    description: 'desc',
-    image: '',
-    featured: false,
-    order: 0,
-    ...overrides,
-  };
-}
+import { makeProject } from '../../testing/project-builders';
 
 describe('ProjectCard', () => {
   afterEach(() => TestBed.resetTestingModule());
@@ -32,7 +18,7 @@ describe('ProjectCard', () => {
       ],
     });
     const fixture = TestBed.createComponent(ProjectCard);
-    fixture.componentRef.setInput('project', project());
+    fixture.componentRef.setInput('project', makeProject());
     fixture.detectChanges();
 
     const link = fixture.nativeElement.querySelector(
@@ -51,7 +37,7 @@ describe('ProjectCard', () => {
         ],
       });
       const fixture = TestBed.createComponent(ProjectCard);
-      fixture.componentRef.setInput('project', project({ image: '/projects/a.avif' }));
+      fixture.componentRef.setInput('project', makeProject({ image: '/projects/a.avif' }));
       if (priority !== undefined) fixture.componentRef.setInput('priority', priority);
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
@@ -84,7 +70,7 @@ describe('ProjectCard', () => {
       const fixture = TestBed.createComponent(ProjectCard);
       fixture.componentRef.setInput(
         'project',
-        project({ title, slug: title.toLowerCase(), liveUrl: 'https://demo.test' }),
+        makeProject({ title, slug: title.toLowerCase(), liveUrl: 'https://demo.test' }),
       );
       fixture.detectChanges();
       return (fixture.nativeElement as HTMLElement)
@@ -118,7 +104,7 @@ describe('ProjectCard', () => {
         ],
       });
       const fixture = TestBed.createComponent(ProjectCard);
-      fixture.componentRef.setInput('project', project(overrides));
+      fixture.componentRef.setInput('project', makeProject(overrides));
       fixture.componentRef.setInput('showKeyDecision', showKeyDecision);
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
@@ -143,4 +129,70 @@ describe('ProjectCard', () => {
       expect(host.querySelector('[data-testid="project-card-decision"]')).toBeNull();
     });
   });
+});
+
+describe('ProjectCard: nature du projet', () => {
+  const NBSP = ' ';
+  const text = (el: Element | null | undefined): string =>
+    (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
+
+  const render = (overrides: Partial<Project>): HTMLElement => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProjectCard);
+    fixture.componentRef.setInput('project', makeProject(overrides));
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  };
+  const kindStamp = (host: HTMLElement): HTMLElement | null =>
+    host.querySelector<HTMLElement>('[data-testid="project-card-kind"]');
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  it.each([
+    { kind: 'production', label: 'En production' },
+    { kind: 'demo', label: 'Démo' },
+    { kind: 'script', label: 'Script' },
+  ] as const)(
+    'Given the kind $kind When the card renders Then it is stamped « $label »',
+    ({ kind, label }) => {
+      expect(text(kindStamp(render({ kind })))).toBe(label);
+    },
+  );
+
+  it('Given no kind When the card renders Then no stamp is shown', () => {
+    expect(kindStamp(render({ kind: null }))).toBeNull();
+  });
+
+  it('Given a stamped card When it renders Then the stamp sits on the cover, outside the heading', () => {
+    const stamp = kindStamp(render({ kind: 'demo' }));
+
+    expect(stamp?.closest('figure')).not.toBeNull();
+    expect(stamp?.closest('h1, h2, h3, h4, h5, h6')).toBeNull();
+  });
+
+  it.each([
+    { kind: 'production', label: "Ouvrir l'application" },
+    { kind: 'demo', label: 'Voir la démo' },
+    { kind: 'script', label: 'Voir le site' },
+    { kind: null, label: 'Voir le site' },
+  ] as const)(
+    'Given the kind $kind When the card renders Then its live link reads « $label », with the project and the new tab spelled out',
+    ({ kind, label }) => {
+      const link = render({
+        kind,
+        title: 'DashFlow',
+        liveUrl: 'https://dashflow.test/',
+      }).querySelector('a[href="https://dashflow.test/"]');
+
+      expect({ ariaLabel: link?.getAttribute('aria-label') ?? null, name: text(link) }).toEqual({
+        ariaLabel: null,
+        name: `${label}${NBSP}: DashFlow, nouvel onglet`,
+      });
+    },
+  );
 });

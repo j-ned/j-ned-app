@@ -1,18 +1,12 @@
 import type { Project } from '../models/project.model';
-import { calculateTotalPages, paginateProjects } from '@features/projects/domain/use-cases/paginate-projects.use-case';
+import { makeProject } from '../../testing/project-builders';
+import {
+  calculateTotalPages,
+  paginateProjects,
+} from '@features/projects/domain/use-cases/paginate-projects.use-case';
 
 function makeProjects(count: number): readonly Project[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: String(i + 1),
-    title: `Project ${i + 1}`,
-    slug: `p-${i + 1}`,
-    category: 'Frontend',
-    tags: [],
-    description: '',
-    image: '',
-    featured: false,
-    order: i,
-  }));
+  return Array.from({ length: count }, (_, i) => makeProject({ id: String(i + 1), order: i }));
 }
 
 describe('paginateProjects', () => {

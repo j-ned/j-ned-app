@@ -1,3 +1,14 @@
+export const PROJECT_KINDS = ['production', 'demo', 'script'] as const;
+export type ProjectKind = (typeof PROJECT_KINDS)[number];
+
+export type ProjectImage = {
+  readonly id: string;
+  readonly src: string;
+  readonly alt: string;
+  readonly width: number;
+  readonly height: number;
+};
+
 export type TechChoice = { readonly techno: string; readonly why: string };
 export type ArchitectureDecision = {
   readonly decision: string;
@@ -23,9 +34,14 @@ export type Project = {
   readonly repoUrlBack?: string | null;
   readonly featured: boolean;
   readonly order: number;
+  // `null` : l'API n'a pas envoyé de nature reconnue ; elle n'est jamais déduite d'un autre champ.
+  readonly kind: ProjectKind | null;
+  readonly gallery: readonly ProjectImage[];
 };
 
 // Payload d'écriture (create/update). `id`, `image` et `slug` sont gérés côté
 // serveur : `id`/`slug` générés (slug dérivé du titre), `image` via uploadImage
 // (POST /:id/image). techChoices/architectureDecisions, eux, sont éditables.
-export type ProjectInput = Omit<Project, 'id' | 'image' | 'slug'>;
+export type ProjectInput = Omit<Project, 'id' | 'image' | 'slug' | 'kind' | 'gallery'> & {
+  readonly kind: ProjectKind;
+};
