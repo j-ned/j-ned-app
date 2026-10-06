@@ -25,7 +25,7 @@ colors:
   ivoire-line-strong: "color-mix(in srgb, #292524 28%, transparent)"
   status-success: "#16a34a"
   status-warn: "#d97706"
-  status-error: "#dc2626"
+  status-error: "#c10007"
 typography:
   display:
     fontFamily: "'Archivo', 'Archivo Fallback', system-ui, sans-serif"
@@ -187,7 +187,7 @@ Contrastes calculés (composition sRGB, WCAG 2.x) : `line` 1,22:1 (Console, fond
 
 - **Status Success** (`#016630`, green-800 en Ivoire): badges success, états validés.
 - **Status Warn** (`#973c00`, amber-800 en Ivoire): badges avertissement.
-- **Status Error** (`#9f0712`, red-800 en Ivoire): erreurs de form, messages destructifs.
+- **Status Error** (`#c10007`, red-700 en Ivoire ; red-400 en Console): erreurs de form, messages destructifs. En Ivoire, le texte d'erreur reste ≥ 4,5:1 sur le fond et sur une carte blanche.
 
 ### Named Rules
 
@@ -316,7 +316,7 @@ La mention portée sur un plan, reprise pour dire la nature d'une chose : « Dé
 
 - **API:** aucune entrée ; le texte est projeté.
 - **Apparence unique:** classes sur l'hôte, sans élément enveloppant : mono majuscule `text-xs`, interlettrage 0,06 em, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`, `rounded-sm`, marges `px-2 py-1`. Une seule apparence pour toutes les natures : c'est le **texte** qui les distingue, jamais une couleur.
-- **Placement:** le consommateur le positionne : coin haut gauche du visuel sur la carte de démo et la carte de projet, au-dessus du `h1` dans l'en-tête du détail, avant le lien dans la ligne d'index.
+- **Placement:** le consommateur le positionne : coin haut gauche du visuel sur la carte de démo, sur la carte de projet de la home et sur la couverture de projet (`ProjectCover`, ci-dessous), au-dessus du `h1` dans l'en-tête du détail. Posé sur un visuel couvert par un lien étiré, il laisse passer le clic (`pointer-events-none`).
 - **Accessibilité:** texte lu tel quel, sans rôle ni `aria-*` ; la nature est dite par le texte, pas par une couleur ni par la seule position.
 - **Don't:** pas d'indigo ni de couleur de statut (One Indigo Rule : c'est une mention, pas un accent) ; jamais un `h*` ni à l'intérieur d'un titre ; jamais interactif ; pas de variante par nature.
 
@@ -330,6 +330,34 @@ Les captures d'écran d'une réalisation, sur sa page détail, quand le projet e
 - **Miniature:** un `button` natif par capture, qui porte l'image (`NgOptimizedImage`, `width`/`height` intrinsèques, `h-auto w-full`, chargement différé, **jamais** `priority`, ni `fill` ni `ngSrcset`) ; nom accessible « Agrandir : » en `sr-only` suivi de l'`alt`. Curseur `zoom-in`.
 - **Agrandissement:** `dialog` natif ouvert par `showModal()` (fond inerte, Échap natif), nommé « Capture agrandie : <alt> » ; bouton « Fermer » en premier, focus posé dessus à l'ouverture ; à la fermeture (bouton ou Échap), le focus revient à la miniature d'origine. `::backdrop` en `background/90`, dialog cerné de `line-strong`, image contenue dans le viewport (`object-contain`).
 - **Don't:** pas de carrousel ni de défilement automatique ; pas de lien ni de `div` cliquable à la place du `button` ; pas de dialog maison ni de bibliothèque de lightbox ; pas d'`alt` vide (une capture est un contenu, jamais une décoration).
+
+### Étude de cas (`features/projects/application/components/project-case-study.ts`)
+
+Un projet en production présenté en détail dans les Réalisations (`/projects`, section « En production », ADR-0010).
+
+- **Entrée:** `caseStudy: CaseStudyView`, `priority` (défaut `false`), `reversed` (défaut `false`) ; sortie `liveLinkClicked` (suivi du lien externe par la page).
+- **Couverture (`ProjectCover`):** `figure` à ratio fixe `aspect-[16/10]` (zéro CLS), `rounded-md`, trait `line-strong`, `bg-surface` ; image `NgOptimizedImage` en `fill` + `object-cover`, sans `ngSrcset` ni `sizes` (aucun `IMAGE_LOADER` : une seule variante servie) ; repli `div aria-hidden` de même ratio sans image. Tampon de nature en haut à gauche, qui laisse passer le clic. Une seule couverture `priority` par page : la première étude de cas.
+- **Structure:** `article` en grille `lg:grid-cols-12`, couverture `lg:col-span-7` puis texte `lg:col-span-5` ; empilés en mobile, couverture au-dessus. L'alternance gauche/droite passe par `lg:order-last` sur la couverture (`reversed`, la page passe `$even`) : seul l'ordre visuel change, jamais le DOM ni l'ordre du focus.
+- **Texte:** overline mono `text-muted` (« 01 · catégorie »), `h3` du nom, accroche `text-muted max-w-[46ch]`, puis les repères (Stack, Point fort, Périmètre) en `dl` à deux colonnes (`dt` mono `text-xs text-muted`), séparés par des traits `line` (décoratifs) ; pas de `dl` sans repère.
+- **Actions:** « Voir la fiche » en `link-btn-primary`, nom du projet en `sr-only`, flèche `aria-hidden` ; « Ouvrir l'application » en `link-btn-outline` si le projet a une URL, nouvel onglet `rel="noopener noreferrer"`, nom et « nouvel onglet » en `sr-only`, icône `external-link`.
+
+### Carte de projet (grille) (`features/projects/application/components/project-grid-card.ts`)
+
+Une démo ou un script dans les Réalisations (section « Démos et outils »).
+
+- **Entrée:** `card: ProjectCardView`.
+- **Structure:** `article relative` : couverture (`ProjectCover`, tampon « Démo » ou « Script », jamais `priority`, chargement différé), puis une ligne `h3` + stack mono `text-muted` (deux outils, empilés en mobile, `sm:justify-between`), puis l'accroche `text-muted`.
+- **Cible:** un seul interactif, le lien « Voir la fiche » `text-primary` `min-h-11` (44 px), nom du projet en `sr-only`, étiré sur toute la carte (`after:absolute after:inset-0`) : toute la carte est cliquable, tampon compris (`pointer-events-none`). Pas de lien externe sur la carte : il est sur la fiche.
+- **Survol:** le titre passe en `primary` (`group-hover`).
+- **Grille:** `ul role="list"`, une colonne en mobile, deux à partir de `md`.
+
+### Légende par nature (`features/projects/application/components/project-kind-legend.ts`)
+
+L'en-tête des Réalisations dit de quelles natures sont les projets et combien il y en a de chaque.
+
+- **Entrée:** `rows: readonly LegendRow[]` (nature, définition, compte).
+- **Structure:** `Cartouche` titré « Légende », référence « Nature du projet », sans `rows` ; `dl` projeté en grille à trois colonnes : `dt` = tampon de nature, `dd` = définition, `dd` = compte en mono `tabular-nums` suivi de son unité (« projet(s) ») en `sr-only`, pour que le nombre soit lu avec ce qu'il compte. Lignes séparées par des traits `line`.
+- **Usage:** cartouche de données, hors de la limite d'un cartouche décoratif par écran ; à droite de l'introduction sur grand écran, empilé dessous en mobile.
 
 ### Ligne d'offre (`features/offer/application/components/offer-row.ts`)
 
@@ -378,7 +406,7 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **Autofill override:** custom `-webkit-box-shadow` inset pour préserver la couleur de fond du thème (bug Chrome jaune par défaut neutralisé).
 - **Textarea:** hérite de `form-input` + `min-h-[8rem] resize-y leading-relaxed`.
 - **Label:** utility `form-label` → `text-sm font-medium mb-1.5`.
-- **Error:** utility `form-error` → `text-xs text-red-400 mt-1`.
+- **Error:** utility `form-error` → `block text-xs text-status-error mt-1`.
 
 ### Navigation
 

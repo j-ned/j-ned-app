@@ -1,7 +1,12 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { AdminProjectInlineForm } from './admin-project-inline-form';
-import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
+import {
+  PROJECT_FACT_MAX_LENGTH,
+  PROJECT_PITCH_MAX_LENGTH,
+  type Project,
+  type ProjectInput,
+} from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
 
 function editableProject(overrides: Partial<Project> = {}): Project {
@@ -268,7 +273,265 @@ describe('AdminProjectInlineForm: nature du projet', () => {
         techChoices: [],
         architectureDecisions: [],
         kind: 'script',
+        pitch: null,
+        highlight: null,
+        scope: null,
       },
     ]);
+  });
+});
+
+const PRESENTATION_FIELDS = [
+  {
+    field: 'pitch',
+    label: 'Accroche',
+    tag: 'TEXTAREA',
+    max: 160,
+    hint: '160 caractères au plus',
+    message: "L'accroche ne doit pas dépasser 160 caractères",
+    existing: 'Le budget familial dans une seule app.',
+  },
+  {
+    field: 'highlight',
+    label: 'Point fort',
+    tag: 'INPUT',
+    max: 80,
+    hint: '80 caractères au plus',
+    message: 'Le point fort ne doit pas dépasser 80 caractères',
+    existing: 'Chiffrement de bout en bout côté client',
+  },
+  {
+    field: 'scope',
+    label: 'Périmètre',
+    tag: 'INPUT',
+    max: 80,
+    hint: '80 caractères au plus',
+    message: 'Le périmètre ne doit pas dépasser 80 caractères',
+    existing: 'Conception, développement, déploiement',
+  },
+] as const;
+
+type PresentationField = (typeof PRESENTATION_FIELDS)[number]['field'];
+type TextControl = HTMLInputElement | HTMLTextAreaElement;
+
+function root(fixture: ComponentFixture<AdminProjectInlineForm>): HTMLElement {
+  return fixture.nativeElement as HTMLElement;
+}
+
+function normalized(text: string | null | undefined): string | undefined {
+  return text?.replace(/\s+/g, ' ').trim();
+}
+
+function presentationControl(
+  fixture: ComponentFixture<AdminProjectInlineForm>,
+  field: PresentationField,
+): TextControl | null {
+  return root(fixture).querySelector(`[data-testid="admin-project-${field}"]`);
+}
+
+function presentationError(
+  fixture: ComponentFixture<AdminProjectInlineForm>,
+  field: PresentationField,
+): HTMLElement | null {
+  return root(fixture).querySelector(`[data-testid="admin-project-${field}-error"]`);
+}
+
+function existingControl(
+  fixture: ComponentFixture<AdminProjectInlineForm>,
+  field: PresentationField,
+): TextControl {
+  const control = presentationControl(fixture, field);
+  expect(control).toBeInstanceOf(HTMLElement);
+  return control as TextControl;
+}
+
+async function typeIn(
+  fixture: ComponentFixture<AdminProjectInlineForm>,
+  field: PresentationField,
+  value: string,
+): Promise<void> {
+  const control = existingControl(fixture, field);
+  control.value = value;
+  control.dispatchEvent(new Event('input'));
+  fixture.detectChanges();
+  await fixture.whenStable();
+}
+
+async function leave(
+  fixture: ComponentFixture<AdminProjectInlineForm>,
+  field: PresentationField,
+): Promise<void> {
+  existingControl(fixture, field).dispatchEvent(new Event('blur'));
+  fixture.detectChanges();
+  await fixture.whenStable();
+}
+
+function describedTexts(
+  fixture: ComponentFixture<AdminProjectInlineForm>,
+  control: TextControl | null,
+): (string | undefined)[] {
+  const ids = control?.getAttribute('aria-describedby')?.split(/\s+/).filter(Boolean) ?? [];
+  return ids.map((id) => normalized(root(fixture).querySelector(`[id="${id}"]`)?.textContent));
+}
+
+function presentedProject(): Project {
+  return editableProject({
+    kind: 'production',
+    pitch: PRESENTATION_FIELDS[0].existing,
+    highlight: PRESENTATION_FIELDS[1].existing,
+    scope: PRESENTATION_FIELDS[2].existing,
+  });
+}
+
+describe('AdminProjectInlineForm: présentation dans les Réalisations', () => {
+  it('Given the shared bounds When they are read Then the pitch allows 160 characters and each fact 80', () => {
+    expect({ pitch: PROJECT_PITCH_MAX_LENGTH, fact: PROJECT_FACT_MAX_LENGTH }).toEqual({
+      pitch: 160,
+      fact: 80,
+    });
+  });
+
+  it('Given the form When it renders Then a fieldset after the description groups the pitch, the highlight and the scope', async () => {
+    const { fixture } = await render();
+    const fieldset = root(fixture).querySelector('[data-testid="admin-project-presentation"]');
+    const description = root(fixture).querySelector('#description');
+    const follows =
+      !!description &&
+      !!fieldset &&
+      (description.compareDocumentPosition(fieldset) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+    expect({
+      tag: fieldset?.tagName,
+      legend: normalized(fieldset?.querySelector('legend')?.textContent),
+      controls: [...(fieldset?.querySelectorAll('[data-testid^="admin-project-"]') ?? [])]
+        .map((el) => el.getAttribute('data-testid'))
+        .filter((id) => PRESENTATION_FIELDS.some(({ field }) => id === `admin-project-${field}`)),
+      follows,
+    }).toEqual({
+      tag: 'FIELDSET',
+      legend: 'Présentation dans les Réalisations',
+      controls: ['admin-project-pitch', 'admin-project-highlight', 'admin-project-scope'],
+      follows: true,
+    });
+  });
+
+  it('Given a project without presentation When it is edited Then the three fields are empty', async () => {
+    const { fixture } = await render(editableProject({ kind: 'demo' }));
+
+    expect(
+      PRESENTATION_FIELDS.map(({ field }) => presentationControl(fixture, field)?.value),
+    ).toEqual(['', '', '']);
+  });
+
+  it('Given a pitch over the limit shown in error When the form is read Then the submit button stays enabled', async () => {
+    const { fixture } = await render(presentedProject());
+
+    await typeIn(fixture, 'pitch', 'a'.repeat(161));
+    await leave(fixture, 'pitch');
+    const button = root(fixture).querySelector<HTMLButtonElement>('button[type="submit"]');
+
+    expect({
+      error: normalized(presentationError(fixture, 'pitch')?.textContent),
+      disabled: button?.disabled,
+    }).toEqual({ error: "L'accroche ne doit pas dépasser 160 caractères", disabled: false });
+  });
+
+  describe.each(PRESENTATION_FIELDS)('$label', (spec) => {
+    it('Given the form When it renders Then the field is labelled, optional and announces its limit', async () => {
+      const { fixture } = await render();
+      const control = presentationControl(fixture, spec.field);
+      const label = control?.id ? root(fixture).querySelector(`label[for="${control.id}"]`) : null;
+
+      expect({
+        tag: control?.tagName,
+        type: control instanceof HTMLInputElement ? control.type : 'textarea',
+        label: normalized(label?.textContent),
+        ariaRequired: control?.getAttribute('aria-required') ?? null,
+        described: describedTexts(fixture, control),
+      }).toEqual({
+        tag: spec.tag,
+        type: spec.tag === 'INPUT' ? 'text' : 'textarea',
+        label: spec.label,
+        ariaRequired: null,
+        described: [spec.hint],
+      });
+    });
+
+    it('Given a project with that text When it is edited and submitted unchanged Then the field shows it and the payload keeps it', async () => {
+      const { fixture, emitted } = await render(presentedProject());
+      const shown = presentationControl(fixture, spec.field)?.value;
+
+      await submitAndRender(fixture);
+
+      expect({ shown, sent: emitted.map((e) => e.data[spec.field]) }).toEqual({
+        shown: spec.existing,
+        sent: [spec.existing],
+      });
+    });
+
+    it('Given a typed text with surrounding spaces When it is submitted Then the payload carries it trimmed', async () => {
+      const { fixture, emitted } = await render(presentedProject());
+
+      await typeIn(fixture, spec.field, '  Texte saisi  ');
+      await submitAndRender(fixture);
+
+      expect(emitted.map((e) => e.data[spec.field])).toEqual(['Texte saisi']);
+    });
+
+    it.each([
+      ['emptied', ''],
+      ['left with spaces only', '   '],
+    ])(
+      'Given a filled field When it is %s and submitted Then the payload sends null to erase it',
+      async (_case, value) => {
+        const { fixture, emitted } = await render(presentedProject());
+
+        await typeIn(fixture, spec.field, value);
+        await submitAndRender(fixture);
+
+        expect(emitted.map((e) => e.data[spec.field])).toEqual([null]);
+      },
+    );
+
+    it('Given a text over the limit When it is typed Then no error shows until the field is left, then a role=alert error gives the limit', async () => {
+      const { fixture } = await render(presentedProject());
+
+      await typeIn(fixture, spec.field, 'a'.repeat(spec.max + 1));
+      const before = presentationError(fixture, spec.field);
+      await leave(fixture, spec.field);
+      const after = presentationError(fixture, spec.field);
+
+      expect({
+        before,
+        role: after?.getAttribute('role'),
+        message: normalized(after?.textContent),
+      }).toEqual({ before: null, role: 'alert', message: spec.message });
+    });
+
+    it('Given a text exactly at the limit When it is submitted Then it is sent without error', async () => {
+      const { fixture, emitted } = await render(presentedProject());
+      const atLimit = 'a'.repeat(spec.max);
+
+      await typeIn(fixture, spec.field, atLimit);
+      await leave(fixture, spec.field);
+      await submitAndRender(fixture);
+
+      expect({
+        error: presentationError(fixture, spec.field),
+        sent: emitted.map((e) => e.data[spec.field]),
+      }).toEqual({ error: null, sent: [atLimit] });
+    });
+
+    it('Given a text one character over the limit When it is submitted Then nothing is emitted and the error is revealed', async () => {
+      const { fixture, emitted } = await render(presentedProject());
+
+      await typeIn(fixture, spec.field, 'a'.repeat(spec.max + 1));
+      await submitAndRender(fixture);
+
+      expect({
+        emitted: emitted.length,
+        message: normalized(presentationError(fixture, spec.field)?.textContent),
+      }).toEqual({ emitted: 0, message: spec.message });
+    });
   });
 });

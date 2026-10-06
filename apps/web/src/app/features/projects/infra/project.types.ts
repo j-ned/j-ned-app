@@ -9,7 +9,10 @@ export type ProjectImageDto = {
   readonly order: number;
 };
 
-export type ProjectDto = Omit<Project, 'kind' | 'gallery'> & {
+export type ProjectDto = Omit<Project, 'kind' | 'gallery' | 'pitch' | 'highlight' | 'scope'> & {
   readonly kind?: string;
   readonly gallery?: readonly ProjectImageDto[];
+  readonly pitch?: string | null;
+  readonly highlight?: string | null;
+  readonly scope?: string | null;
 };

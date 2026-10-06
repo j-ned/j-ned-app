@@ -13,6 +13,9 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     order: 0,
     kind: 'production',
     gallery: [],
+    pitch: null,
+    highlight: null,
+    scope: null,
     ...overrides,
   };
 }
@@ -26,6 +29,9 @@ export function makeProjectInput(overrides: Partial<ProjectInput> = {}): Project
     featured: false,
     order: 0,
     kind: 'production',
+    pitch: null,
+    highlight: null,
+    scope: null,
     ...overrides,
   };
 }

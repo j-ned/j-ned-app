@@ -6,6 +6,10 @@ function resolveUrl(url: string, apiUrl: string): string {
   return url && !url.startsWith('http') ? `${apiUrl}${url}` : url;
 }
 
+function toNullableText(value: string | null | undefined): string | null {
+  return value?.trim() || null;
+}
+
 export function toProjectImage(dto: ProjectImageDto, apiUrl: string): ProjectImage {
   return {
     id: dto.id,
@@ -17,7 +21,7 @@ export function toProjectImage(dto: ProjectImageDto, apiUrl: string): ProjectIma
 }
 
 export function toProject(dto: ProjectDto, apiUrl: string): Project {
-  const { kind, gallery = [], ...fields } = dto;
+  const { kind, gallery = [], pitch, highlight, scope, ...fields } = dto;
   return {
     ...fields,
     image: resolveUrl(dto.image, apiUrl),
@@ -25,5 +29,8 @@ export function toProject(dto: ProjectDto, apiUrl: string): Project {
     gallery: [...gallery]
       .sort((a, b) => a.order - b.order)
       .map((image) => toProjectImage(image, apiUrl)),
+    pitch: toNullableText(pitch),
+    highlight: toNullableText(highlight),
+    scope: toNullableText(scope),
   };
 }

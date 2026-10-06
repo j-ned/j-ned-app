@@ -34,6 +34,9 @@ function dto(overrides: Partial<ProjectDto> = {}): ProjectDto {
     order: 1,
     kind: 'production',
     gallery: [],
+    pitch: 'Le budget et la santé du foyer.',
+    highlight: 'Chiffrement de bout en bout',
+    scope: 'Conception, développement, déploiement',
     ...overrides,
   };
 }
@@ -56,6 +59,9 @@ describe('toProject', () => {
       order: 1,
       kind: 'production',
       gallery: [],
+      pitch: 'Le budget et la santé du foyer.',
+      highlight: 'Chiffrement de bout en bout',
+      scope: 'Conception, développement, déploiement',
     });
   });
 
@@ -110,6 +116,33 @@ describe('toProject', () => {
 
     it('Given an empty gallery When adapted Then the gallery is empty', () => {
       expect(toProject(dto({ gallery: [] }), API_URL).gallery).toEqual([]);
+    });
+  });
+});
+
+describe('toProject: editorial fields', () => {
+  const EDITORIAL_FIELDS = ['pitch', 'highlight', 'scope'] as const;
+
+  describe.each(EDITORIAL_FIELDS)('%s', (field) => {
+    it('Given an API that does not send the field yet When adapted Then it is null', () => {
+      const { [field]: _omitted, ...withoutField } = dto();
+
+      expect(toProject(withoutField, API_URL)[field]).toBeNull();
+    });
+
+    it.each([
+      { label: 'null', value: null },
+      { label: 'an empty string', value: '' },
+      { label: 'blank spaces', value: '   ' },
+      { label: 'a blank line', value: '\n\t ' },
+    ])('Given $label When adapted Then it is null, never an empty text', ({ value }) => {
+      expect(toProject(dto({ [field]: value }), API_URL)[field]).toBeNull();
+    });
+
+    it('Given a text with surrounding spaces When adapted Then it is trimmed', () => {
+      expect(toProject(dto({ [field]: '  Conception et maintenance  ' }), API_URL)[field]).toBe(
+        'Conception et maintenance',
+      );
     });
   });
 });

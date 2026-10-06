@@ -126,7 +126,9 @@
     60.4% 0.18 145
   ); /* green-600 (#16a34a) — lisible sur Ivoire Paper */
   --theme-status-warn: oklch(63.5% 0.165 50); /* amber-600 (#d97706) */
-  --theme-status-error: oklch(57.7% 0.224 27); /* red-600 (#dc2626) — contraste fort sur paper */
+  --theme-status-error: oklch(
+    50.5% 0.213 27.5
+  ); /* red-700 (#c10007) — texte d'erreur ≥ 4,5:1 sur paper */
   --theme-line: color-mix(in srgb, var(--theme-foreground) 12%, transparent);
   --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 28%, transparent);
 }

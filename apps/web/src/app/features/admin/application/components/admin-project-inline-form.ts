@@ -7,9 +7,19 @@ import {
   linkedSignal,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { FormField, FormRoot, applyEach, form, required, submit } from '@angular/forms/signals';
 import {
+  FormField,
+  FormRoot,
+  applyEach,
+  form,
+  maxLength,
+  required,
+  submit,
+} from '@angular/forms/signals';
+import {
+  PROJECT_FACT_MAX_LENGTH,
   PROJECT_KINDS,
+  PROJECT_PITCH_MAX_LENGTH,
   type Project,
   type ProjectInput,
   type ProjectKind,
@@ -36,6 +46,9 @@ type ProjectFormModel = {
   kind: ProjectKind | '';
   techChoices: TechChoice[];
   architectureDecisions: ArchitectureDecision[];
+  pitch: string;
+  highlight: string;
+  scope: string;
 };
 
 const EMPTY: ProjectFormModel = {
@@ -51,6 +64,9 @@ const EMPTY: ProjectFormModel = {
   kind: '',
   techChoices: [],
   architectureDecisions: [],
+  pitch: '',
+  highlight: '',
+  scope: '',
 };
 
 const toModel = (p: Project): ProjectFormModel => ({
@@ -66,6 +82,9 @@ const toModel = (p: Project): ProjectFormModel => ({
   kind: p.kind ?? '',
   techChoices: [...(p.techChoices ?? [])],
   architectureDecisions: [...(p.architectureDecisions ?? [])],
+  pitch: p.pitch ?? '',
+  highlight: p.highlight ?? '',
+  scope: p.scope ?? '',
 });
 
 @Component({
@@ -151,6 +170,92 @@ const toModel = (p: Project): ProjectFormModel => ({
           <span role="alert" class="form-error">{{ description.errors()[0].message }}</span>
         }
       </div>
+
+      <fieldset data-testid="admin-project-presentation" class="space-y-4">
+        <legend class="form-label">Présentation dans les Réalisations</legend>
+        <div>
+          @let pitch = form.pitch();
+          <label for="pitch" class="form-label">Accroche</label>
+          <textarea
+            id="pitch"
+            data-testid="admin-project-pitch"
+            [formField]="form.pitch"
+            rows="2"
+            [attr.aria-invalid]="pitch.touched() && pitch.invalid()"
+            [attr.aria-describedby]="
+              pitch.touched() && pitch.invalid() ? 'pitch-hint pitch-error' : 'pitch-hint'
+            "
+            class="form-textarea"
+          ></textarea>
+          <span id="pitch-hint" class="block mt-1 text-xs text-muted">{{ pitchHint }}</span>
+          @if (pitch.touched() && pitch.invalid()) {
+            <span
+              id="pitch-error"
+              data-testid="admin-project-pitch-error"
+              role="alert"
+              class="form-error"
+            >
+              {{ pitch.errors()[0].message }}
+            </span>
+          }
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            @let highlight = form.highlight();
+            <label for="highlight" class="form-label">Point fort</label>
+            <input
+              id="highlight"
+              type="text"
+              data-testid="admin-project-highlight"
+              [formField]="form.highlight"
+              [attr.aria-invalid]="highlight.touched() && highlight.invalid()"
+              [attr.aria-describedby]="
+                highlight.touched() && highlight.invalid()
+                  ? 'highlight-hint highlight-error'
+                  : 'highlight-hint'
+              "
+              class="form-input"
+            />
+            <span id="highlight-hint" class="block mt-1 text-xs text-muted">{{ factHint }}</span>
+            @if (highlight.touched() && highlight.invalid()) {
+              <span
+                id="highlight-error"
+                data-testid="admin-project-highlight-error"
+                role="alert"
+                class="form-error"
+              >
+                {{ highlight.errors()[0].message }}
+              </span>
+            }
+          </div>
+          <div>
+            @let scope = form.scope();
+            <label for="scope" class="form-label">Périmètre</label>
+            <input
+              id="scope"
+              type="text"
+              data-testid="admin-project-scope"
+              [formField]="form.scope"
+              [attr.aria-invalid]="scope.touched() && scope.invalid()"
+              [attr.aria-describedby]="
+                scope.touched() && scope.invalid() ? 'scope-hint scope-error' : 'scope-hint'
+              "
+              class="form-input"
+            />
+            <span id="scope-hint" class="block mt-1 text-xs text-muted">{{ factHint }}</span>
+            @if (scope.touched() && scope.invalid()) {
+              <span
+                id="scope-error"
+                data-testid="admin-project-scope-error"
+                role="alert"
+                class="form-error"
+              >
+                {{ scope.errors()[0].message }}
+              </span>
+            }
+          </div>
+        </div>
+      </fieldset>
 
       <div>
         <span class="form-label">Image</span>
@@ -288,6 +393,8 @@ export class AdminProjectInlineForm {
 
   readonly categories = PROJECT_CATEGORIES;
   readonly availableTags = AVAILABLE_PROJECT_TAGS;
+  protected readonly pitchHint = `${PROJECT_PITCH_MAX_LENGTH}\u00a0caractères au plus`;
+  protected readonly factHint = `${PROJECT_FACT_MAX_LENGTH}\u00a0caractères au plus`;
   protected readonly kinds = PROJECT_KINDS.map((value) => ({
     value,
     label: PROJECT_KIND_LABELS[value],
@@ -305,6 +412,15 @@ export class AdminProjectInlineForm {
       required(path.category, { message: 'Ce champ est obligatoire' });
       required(path.description, { message: 'Ce champ est obligatoire' });
       required(path.kind, { message: 'Ce champ est obligatoire' });
+      maxLength(path.pitch, PROJECT_PITCH_MAX_LENGTH, {
+        message: `L'accroche ne doit pas dépasser ${PROJECT_PITCH_MAX_LENGTH}\u00a0caractères`,
+      });
+      maxLength(path.highlight, PROJECT_FACT_MAX_LENGTH, {
+        message: `Le point fort ne doit pas dépasser ${PROJECT_FACT_MAX_LENGTH}\u00a0caractères`,
+      });
+      maxLength(path.scope, PROJECT_FACT_MAX_LENGTH, {
+        message: `Le périmètre ne doit pas dépasser ${PROJECT_FACT_MAX_LENGTH}\u00a0caractères`,
+      });
       applyEach(path.techChoices, (item) => {
         required(item.techno, { message: 'Ce champ est obligatoire' });
         required(item.why, { message: 'Ce champ est obligatoire' });
@@ -384,6 +500,9 @@ export class AdminProjectInlineForm {
         rationale,
       })),
       kind,
+      pitch: m.pitch.trim() || null,
+      highlight: m.highlight.trim() || null,
+      scope: m.scope.trim() || null,
     };
   }
 

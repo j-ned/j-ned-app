@@ -1,5 +1,10 @@
 export const PROJECT_KINDS = ['production', 'demo', 'script'] as const;
 export type ProjectKind = (typeof PROJECT_KINDS)[number];
+export type ProjectKindFilter = ProjectKind | 'all';
+export type ProjectKindCounts = Readonly<Record<ProjectKind, number>>;
+
+export const PROJECT_PITCH_MAX_LENGTH = 160;
+export const PROJECT_FACT_MAX_LENGTH = 80;
 
 export type ProjectImage = {
   readonly id: string;
@@ -37,6 +42,9 @@ export type Project = {
   // `null` : l'API n'a pas envoyé de nature reconnue ; elle n'est jamais déduite d'un autre champ.
   readonly kind: ProjectKind | null;
   readonly gallery: readonly ProjectImage[];
+  readonly pitch: string | null;
+  readonly highlight: string | null;
+  readonly scope: string | null;
 };
 
 // Payload d'écriture (create/update). `id`, `image` et `slug` sont gérés côté
