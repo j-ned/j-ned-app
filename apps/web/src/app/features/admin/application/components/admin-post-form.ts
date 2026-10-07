@@ -1,10 +1,10 @@
-import { Component, computed, inject, input, model, output } from '@angular/core';
+import { Component, computed, input, model, output } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { FormField, FormRoot, form, required } from '@angular/forms/signals';
-import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import type { BlogPostInput } from '@features/blog/domain/models/blog-post.model';
 import { AVAILABLE_BLOG_TAGS } from '@features/blog/domain/models/blog-tag.model';
-import { parseMarkdown } from '@features/blog/infra/parse-markdown';
+import { BlogArticleBody } from '@features/blog/application/components/blog-article-body';
+import { CodeCopy } from '@features/blog/application/components/code-copy';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { AdminTagsSelector } from './admin-tags-selector';
 import { AdminFormSection } from './admin-form-section';
@@ -21,6 +21,8 @@ const REQUIRED = 'Ce champ est obligatoire';
     FileDropzone,
     AdminTagsSelector,
     AdminFormSection,
+    BlogArticleBody,
+    CodeCopy,
   ],
   host: { class: 'block' },
   template: `
@@ -116,9 +118,15 @@ const REQUIRED = 'Ce champ est obligatoire';
               data-testid="admin-post-content-preview"
               role="group"
               aria-labelledby="post-content-preview-label"
-              class="prose max-h-[32rem] max-w-none overflow-y-auto rounded-sm border border-line p-4 dark:prose-invert"
-              [innerHTML]="contentPreview()"
-            ></div>
+              class="max-h-[32rem] overflow-y-auto rounded-sm border border-line p-4"
+              appCodeCopy
+              #codeCopy="appCodeCopy"
+            >
+              <app-blog-article-body [markdown]="value().contentMarkdown" [topHeadingLevel]="2" />
+            </div>
+            <p role="status" data-testid="code-copy-status" class="sr-only">
+              {{ codeCopy.status() }}
+            </p>
           </div>
         </div>
       </fieldset>
@@ -186,8 +194,6 @@ const REQUIRED = 'Ce champ est obligatoire';
   `,
 })
 export class AdminPostForm {
-  private readonly sanitizer = inject(DomSanitizer);
-
   readonly value = model.required<PostDraft>();
   readonly tags = model.required<ReadonlySet<string>>();
   readonly persistedCover = input('');
@@ -204,16 +210,6 @@ export class AdminPostForm {
   ] as const;
   protected readonly currentCoverAlt = computed(
     () => `Couverture actuelle de ${this.value().title}`,
-  );
-  // Sortie déjà assainie par `parseMarkdown` ; un `pre` qui défile doit être focalisable.
-  protected readonly contentPreview = computed(
-    (): SafeHtml =>
-      this.sanitizer.bypassSecurityTrustHtml(
-        parseMarkdown(this.value().contentMarkdown, { topHeadingLevel: 2 }).replaceAll(
-          '<pre>',
-          '<pre tabindex="0">',
-        ),
-      ),
   );
 
   readonly form = form(

@@ -75,6 +75,12 @@
   --color-field: var(--theme-field);
   --color-line: var(--theme-line);
   --color-line-strong: var(--theme-line-strong);
+  --color-code-keyword: var(--theme-code-keyword);
+  --color-code-function: var(--theme-code-function);
+  --color-code-string: var(--theme-code-string);
+  --color-code-number: var(--theme-code-number);
+  --color-code-tag: var(--theme-code-tag);
+  --color-code-comment: var(--theme-code-comment);
 
   --font-display: 'Archivo', 'Archivo Fallback', system-ui, sans-serif;
   --font-sans:
@@ -108,6 +114,13 @@
   /* Traits décoratifs (< 3:1) : jamais seuls porteurs d'information */
   --theme-line: color-mix(in srgb, var(--theme-foreground) 9%, transparent);
   --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 22%, transparent);
+  /* Coloration syntaxique (blocs de code seuls) : ratios sur foreground 4 % sur le fond */
+  --theme-code-keyword: oklch(74.5% 0.16 277); /* 7,71:1 */
+  --theme-code-function: oklch(72% 0.157 296); /* 7,07:1 */
+  --theme-code-string: oklch(72.3% 0.19 145); /* 8,08:1 */
+  --theme-code-number: oklch(76.6% 0.16 70); /* 8,54:1 */
+  --theme-code-tag: oklch(71.5% 0.18 22); /* 6,73:1 */
+  --theme-code-comment: oklch(70.4% 0.011 286); /* 7,01:1 */
 }
 
 /* Mode clair crémeux — sous-tons chauds (stone) + indigo désaturé */
@@ -140,6 +153,13 @@
   --theme-field: color-mix(in srgb, var(--theme-foreground) 50%, transparent);
   --theme-line: color-mix(in srgb, var(--theme-foreground) 12%, transparent);
   --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 28%, transparent);
+  /* Vert et ambre des statuts (3,08 et 3,10:1) assombris pour le code */
+  --theme-code-keyword: oklch(43.3% 0.21 278); /* 7,47:1 */
+  --theme-code-function: oklch(45.7% 0.244 297); /* 7,08:1 */
+  --theme-code-string: oklch(49% 0.14 150); /* 4,98:1 */
+  --theme-code-number: oklch(51% 0.155 47); /* 5,20:1 */
+  --theme-code-tag: oklch(50.5% 0.213 27.5); /* 5,47:1 */
+  --theme-code-comment: oklch(43.8% 0.013 56); /* 6,69:1 */
 }
 
 /* View Transitions — instant swap */
@@ -356,4 +376,62 @@ input:-webkit-autofill:focus {
 
 @utility table-head {
   @apply py-2.5 font-mono text-xs font-medium whitespace-nowrap uppercase tracking-[0.06em] text-muted;
+}
+
+/* ---------------------------------------------------------------- *
+ * Coloration syntaxique des blocs de code (`code` émis par parseMarkdown).
+ * Les `span.hljs-*` de highlight.js arrivent par innerHTML et ne peuvent pas
+ * porter d'utilitaires : d'où les sélecteurs descendants.
+ * Seule exception à la One Indigo Rule (DESIGN.md).
+ * ---------------------------------------------------------------- */
+
+@utility code-syntax {
+  color: var(--color-foreground);
+
+  & :is(.hljs-keyword, .hljs-literal, .hljs-doctag, .hljs-meta) {
+    color: var(--color-code-keyword);
+  }
+
+  & :is(.hljs-title, .hljs-section, .hljs-built_in, .hljs-type) {
+    color: var(--color-code-function);
+  }
+
+  & :is(.hljs-string, .hljs-regexp, .hljs-addition, .hljs-template-tag) {
+    color: var(--color-code-string);
+  }
+
+  &
+    :is(
+      .hljs-number,
+      .hljs-symbol,
+      .hljs-bullet,
+      .hljs-variable,
+      .hljs-template-variable,
+      .hljs-attr
+    ) {
+    color: var(--color-code-number);
+  }
+
+  &
+    :is(
+      .hljs-name,
+      .hljs-selector-tag,
+      .hljs-selector-id,
+      .hljs-selector-class,
+      .hljs-selector-attr,
+      .hljs-selector-pseudo,
+      .hljs-attribute,
+      .hljs-deletion
+    ) {
+    color: var(--color-code-tag);
+  }
+
+  & :is(.hljs-comment, .hljs-quote) {
+    color: var(--color-code-comment);
+  }
+
+  /* Interpolation dans une chaîne : le code interpolé reprend la couleur du texte */
+  & .hljs-subst {
+    color: var(--color-foreground);
+  }
 }

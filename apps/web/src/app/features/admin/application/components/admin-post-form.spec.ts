@@ -2,6 +2,7 @@ import { inputBinding, signal, twoWayBinding, type WritableSignal } from '@angul
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
+import { BlogArticleBody } from '@features/blog/application/components/blog-article-body';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
@@ -322,6 +323,44 @@ describe('AdminPostForm: contenu et aperçu Markdown', () => {
         pre.getAttribute('tabindex'),
       ),
     ).toEqual(['0']);
+  });
+
+  it('Given the preview When it renders Then the body is the public article body, coloured code included', async () => {
+    const { fixture, host } = await renderForm({
+      post: makeBlogPost({ contentMarkdown: '## Exemple\n\n```ts\ntype Id = string;\n```' }),
+    });
+    const body = fixture.debugElement.query(By.directive(BlogArticleBody))?.nativeElement as
+      | HTMLElement
+      | undefined;
+
+    expect({
+      inPreview: preview(host)?.contains(body ?? null) ?? false,
+      heading: normalized(body?.querySelector('[data-testid="blog-content"] h2')),
+      label: normalized(body?.querySelector('[data-code-label]')),
+    }).toEqual({ inPreview: true, heading: 'Exemple', label: 'TypeScript' });
+  });
+
+  it('Given a code block in the preview When its « Copier » is clicked Then the code is copied, the status announces it and the article is not submitted', async () => {
+    await navigator.clipboard.writeText('avant');
+    const rendered = await renderForm({
+      post: makeBlogPost({ contentMarkdown: '```ts\ntype Id = string;\n```' }),
+    });
+
+    preview(rendered.host)?.querySelector<HTMLButtonElement>('button[data-code-copy]')?.click();
+    await settleBounded(rendered.fixture);
+    const region = byTestId(rendered.host, 'code-copy-status');
+
+    expect({
+      clipboard: await navigator.clipboard.readText(),
+      role: region?.getAttribute('role'),
+      status: testIdText(rendered.host, 'code-copy-status'),
+      submitted: rendered.submitted.length,
+    }).toEqual({
+      clipboard: 'type Id = string;',
+      role: 'status',
+      status: 'Code copié dans le presse-papiers',
+      submitted: 0,
+    });
   });
 
   it('Given the preview When the admin types Markdown Then the preview follows the typing', async () => {

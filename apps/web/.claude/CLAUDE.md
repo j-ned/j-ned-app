@@ -132,6 +132,7 @@ You are an expert TypeScript / Angular engineer. You write functional, maintaina
 ### @defer
 - **Utiliser pour** : sections under-the-fold, widgets non critiques, composants lourds derriere interaction
 - **Jamais pour** : above-the-fold, contenu principal d'une route, SEO critique sans hydrate
+  — sauf `@defer (on immediate; hydrate never)` sur un contenu prérendu statique, dont le JS ne sert qu'au rendu client (corps d'article, ADR-0014)
 - Toujours fournir `@placeholder` (skeleton CSS pur, dimensions identiques au composant final)
 - `prefetch on idle` sur composants `on interaction` (chargement avance, affichage a la demande)
 - `@error` obligatoire avec retry pour la resilience

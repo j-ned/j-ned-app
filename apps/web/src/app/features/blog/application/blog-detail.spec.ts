@@ -1,12 +1,20 @@
-import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import {
+  DeferBlockBehavior,
+  DeferBlockState,
+  TestBed,
+  type ComponentFixture,
+} from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { describe, it, expect, vi, afterEach, beforeEach, type Mock } from 'vitest';
 import { BlogDetail } from './blog-detail';
+import { BlogArticleBody } from './components/blog-article-body';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { Seo } from '@shared/seo/seo';
 import type { BlogPost } from '../domain/models/blog-post.model';
+import { makeBlogPost } from '../testing/blog-post-builders';
 
 class MockIntersectionObserver {
   static instances: MockIntersectionObserver[] = [];
@@ -60,10 +68,13 @@ type Setup = {
   readonly analyticsMock: { readonly trackArticleView: Mock; readonly trackArticleRead: Mock };
 };
 
-function setup(gatewayStub: {
-  getPostBySlug: () => ReturnType<BlogGateway['getPostBySlug']>;
-  getPublishedPosts?: () => ReturnType<BlogGateway['getPublishedPosts']>;
-}): Setup {
+function setup(
+  gatewayStub: {
+    getPostBySlug: (slug: string) => ReturnType<BlogGateway['getPostBySlug']>;
+    getPublishedPosts?: () => ReturnType<BlogGateway['getPublishedPosts']>;
+  },
+  deferBlockBehavior: DeferBlockBehavior = DeferBlockBehavior.Playthrough,
+): Setup {
   const seoMock = { applySeoData: vi.fn() };
   const analyticsMock = { trackArticleView: vi.fn(), trackArticleRead: vi.fn() };
   TestBed.configureTestingModule({
@@ -79,6 +90,7 @@ function setup(gatewayStub: {
       { provide: Seo, useValue: seoMock },
       { provide: AnalyticsGateway, useValue: analyticsMock },
     ],
+    deferBlockBehavior,
   });
   const fixture: ComponentFixture<BlogDetail> = TestBed.createComponent(BlogDetail);
   return { fixture, seoMock, analyticsMock };
@@ -333,6 +345,144 @@ describe('BlogDetail', () => {
       const tags = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
       const root = await render(post({ tags }));
       expect(root.querySelectorAll('[data-testid="tag-link"]')).toHaveLength(tags.length);
+    });
+  });
+
+  describe('corps de l’article', () => {
+    const show = async (fixture: ComponentFixture<BlogDetail>, slug: string): Promise<void> => {
+      fixture.componentRef.setInput('slug', slug);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    const bodyOf = (fixture: ComponentFixture<BlogDetail>): HTMLElement | null =>
+      (fixture.debugElement.query(By.directive(BlogArticleBody))?.nativeElement as
+        | HTMLElement
+        | undefined) ?? null;
+
+    const testId = (fixture: ComponentFixture<BlogDetail>, id: string): HTMLElement | null =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(`[data-testid="${id}"]`);
+
+    it('Given an article When it is shown Then its Markdown goes through the public article body, before the read sentinel', async () => {
+      const { fixture } = setup({
+        getPostBySlug: () => of(makeBlogPost({ contentMarkdown: '# Bonjour' })),
+      });
+
+      await show(fixture, 'mon-article');
+      const body = bodyOf(fixture);
+      const sentinel = testId(fixture, 'article-read-sentinel');
+
+      expect({
+        heading: body?.querySelector('[data-testid="blog-content"] h1')?.textContent,
+        sentinelAfter:
+          body && sentinel
+            ? body.compareDocumentPosition(sentinel) & Node.DOCUMENT_POSITION_FOLLOWING
+            : 0,
+      }).toEqual({ heading: 'Bonjour', sentinelAfter: Node.DOCUMENT_POSITION_FOLLOWING });
+    });
+
+    it('Given an article whose body is still deferred When the page shows Then a placeholder stands in, and the body comes once the block completes', async () => {
+      const { fixture } = setup(
+        { getPostBySlug: () => of(makeBlogPost({ contentMarkdown: '# Bonjour' })) },
+        DeferBlockBehavior.Manual,
+      );
+      await show(fixture, 'mon-article');
+      const before = {
+        placeholder: testId(fixture, 'blog-content-placeholder') !== null,
+        content: testId(fixture, 'blog-content'),
+        sentinel: testId(fixture, 'article-read-sentinel') !== null,
+      };
+
+      const [block] = await fixture.getDeferBlocks();
+      await block?.render(DeferBlockState.Complete);
+      fixture.detectChanges();
+
+      expect({
+        before,
+        after: {
+          placeholder: testId(fixture, 'blog-content-placeholder') !== null,
+          heading: testId(fixture, 'blog-content')?.querySelector('h1')?.textContent,
+        },
+      }).toEqual({
+        before: { placeholder: true, content: null, sentinel: true },
+        after: { placeholder: false, heading: 'Bonjour' },
+      });
+    });
+
+    it('Given the body chunk fails to load When the block errors Then a link reloads the article page in full, outside the router', async () => {
+      const { fixture } = setup(
+        { getPostBySlug: () => of(makeBlogPost()) },
+        DeferBlockBehavior.Manual,
+      );
+      await show(fixture, 'mon-article');
+      const navigateByUrl = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
+
+      const [block] = await fixture.getDeferBlocks();
+      await block?.render(DeferBlockState.Error);
+      fixture.detectChanges();
+      const link = testId(fixture, 'blog-content-error')?.querySelector('a');
+      link?.click();
+      await fixture.whenStable();
+
+      expect({
+        href: link?.getAttribute('href'),
+        content: testId(fixture, 'blog-content'),
+        routed: navigateByUrl.mock.calls.length,
+      }).toEqual({ href: '/blog/mon-article', content: null, routed: 0 });
+    });
+
+    it('Given an article whose body is still deferred When the page shows Then an empty status region already waits outside the body', async () => {
+      const { fixture } = setup(
+        { getPostBySlug: () => of(makeBlogPost({ contentMarkdown: '```ts\nconst a = 1;\n```' })) },
+        DeferBlockBehavior.Manual,
+      );
+
+      await show(fixture, 'mon-article');
+      const region = testId(fixture, 'code-copy-status');
+
+      expect({
+        role: region?.getAttribute('role'),
+        text: region?.textContent?.trim(),
+        placeholder: testId(fixture, 'blog-content-placeholder') !== null,
+      }).toEqual({ role: 'status', text: '', placeholder: true });
+    });
+
+    it('Given an article with code When its « Copier » is clicked Then the code reaches the clipboard and the page status announces it', async () => {
+      await navigator.clipboard.writeText('avant');
+      const { fixture } = setup({
+        getPostBySlug: () =>
+          of(makeBlogPost({ contentMarkdown: 'Texte\n\n```bash\npnpm test\n```' })),
+      });
+      await show(fixture, 'mon-article');
+
+      bodyOf(fixture)?.querySelector<HTMLButtonElement>('button[data-code-copy]')?.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect({
+        clipboard: await navigator.clipboard.readText(),
+        status: testId(fixture, 'code-copy-status')?.textContent?.trim(),
+      }).toEqual({ clipboard: 'pnpm test', status: 'Code copié dans le presse-papiers' });
+    });
+
+    it('Given article A on screen When the same page moves to article B Then a new body instance shows B', async () => {
+      const articles: Record<string, BlogPost> = {
+        a: makeBlogPost({ id: 'a', slug: 'a', title: 'A', contentMarkdown: '## Corps de A' }),
+        b: makeBlogPost({ id: 'b', slug: 'b', title: 'B', contentMarkdown: '## Corps de B' }),
+      };
+      const { fixture } = setup({ getPostBySlug: (slug) => of(articles[slug]) });
+
+      await show(fixture, 'a');
+      const first = bodyOf(fixture);
+      await show(fixture, 'b');
+      const second = bodyOf(fixture);
+
+      expect({
+        firstShown: first !== null,
+        recreated: second !== null && second !== first,
+        headings: [...(second?.querySelectorAll('h2') ?? [])].map((h) => h.textContent),
+      }).toEqual({ firstShown: true, recreated: true, headings: ['Corps de B'] });
     });
   });
 });

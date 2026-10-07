@@ -247,7 +247,7 @@
     "rules": [
       {
         "name": "The One Indigo Rule",
-        "body": "Il n'y a qu'un Signal Indigo. Pas de teal qui s'invite, pas de blue-500 Tailwind par accident, pas de second accent. Pour différencier, change l'intensité (lifted / deep) ou le style (outline vs solid), jamais la teinte.",
+        "body": "Il n'y a qu'un Signal Indigo. Pas de teal qui s'invite, pas de blue-500 Tailwind par accident, pas de second accent. Pour différencier, change l'intensité (lifted / deep) ou le style (outline vs solid), jamais la teinte. Exception bornée : la coloration syntaxique. Dans un bloc de code (code.code-syntax, et nulle part ailleurs), six teintes --color-code-* distinguent les rôles des jetons ; l'indigo garde les mots-clés. Elles ne servent à rien d'autre (ni badge, ni lien, ni état) et ne reprennent pas les tokens de statut.",
         "section": "colors"
       },
       {
@@ -302,7 +302,7 @@
       "Do documenter toute exception aux Named Rules dans un commentaire au point d'usage."
     ],
     "donts": [
-      "Don't introduire un second accent color. Pas de teal, pas de coral, pas de blue-500 par accident.",
+      "Don't introduire un second accent color. Pas de teal, pas de coral, pas de blue-500 par accident (seule exception : les six teintes --color-code-* de la coloration syntaxique, dans un bloc de code).",
       "Don't utiliser background-clip: text + gradient comme style décoratif. Le hero actuel (name-gradient) viole cette règle et est à reprendre.",
       "Don't ajouter backdrop-filter: blur() à une card pour faire glass.",
       "Don't ajouter de shadow à une card pour qu'elle ressorte. Travaille la hiérarchie typographique avant.",

@@ -546,6 +546,18 @@ describe('AdminMessages: chargement, erreur et vide', () => {
 
     expect(testIdText(host, 'empty-state-stamp')).toBe('Boîte vide');
   });
+
+  it('Given an empty inbox When the page renders Then the empty state points to the contact form of the home page', async () => {
+    const { host } = await renderWith(() => of([]));
+
+    expect(
+      (byTestId(host, 'empty-state')?.querySelector('p')?.textContent ?? '')
+        .replace(/[ \t\n\r]+/g, ' ')
+        .trim(),
+    ).toBe(
+      "Aucun message pour le moment. Le formulaire de contact de l'accueil est en ligne\u00a0; chaque envoi arrive ici et par e-mail.",
+    );
+  });
 });
 
 describe('AdminMessages: relance après une erreur HTTP', () => {

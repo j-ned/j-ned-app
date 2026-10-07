@@ -13,16 +13,16 @@ import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-import { DomSanitizer } from '@angular/platform-browser';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { parseMarkdown } from '../infra/parse-markdown';
 import { Seo } from '@shared/seo/seo';
 import { truncateAtWord } from '@shared/seo/truncate-at-word';
 import { toShareImageUrl } from '@shared/seo/share-image';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { BlogLikeButton } from './components/blog-like-button';
 import { BlogComments } from './components/blog-comments';
+import { BlogArticleBody } from './components/blog-article-body';
+import { CodeCopy } from './components/code-copy';
 import { BlogTagLink } from './components/blog-tag-link';
 import { AppIcon } from '@shared/icons/app-icon';
 import { readingTimeMinutes } from '../domain/reading-time';
@@ -38,6 +38,8 @@ function laterOf(a: string, b: string): string {
 @Component({
   selector: 'app-blog-detail',
   imports: [
+    BlogArticleBody,
+    CodeCopy,
     BlogLikeButton,
     BlogComments,
     BlogTagLink,
@@ -119,11 +121,40 @@ function laterOf(a: string, b: string): string {
         }
 
         <div class="mx-auto max-w-[46rem] px-4 sm:px-6">
-          <div
-            data-testid="blog-content"
-            class="prose prose-lg max-w-none pt-14 pb-8 break-words dark:prose-invert prose-headings:tracking-tight prose-headings:text-foreground prose-h2:scroll-mt-24 prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground prose-a:text-primary prose-a:underline-offset-3 prose-code:text-primary prose-pre:overflow-x-auto prose-pre:border prose-pre:border-foreground/8 prose-pre:bg-foreground/4 prose-pre:text-foreground prose-table:block prose-table:w-full prose-table:overflow-x-auto prose-img:h-auto prose-img:max-w-full"
-            [innerHTML]="renderedContent()"
-          ></div>
+          <div appCodeCopy #codeCopy="appCodeCopy">
+            <!-- Un bloc « hydrate never » ne reçoit plus ses entrées : il est recréé à chaque article. -->
+            @for (current of [p]; track current.id) {
+              @defer (on immediate; hydrate never) {
+                <app-blog-article-body class="pt-14 pb-8" [markdown]="current.contentMarkdown" />
+              } @placeholder {
+                <div
+                  data-testid="blog-content-placeholder"
+                  class="grid min-h-svh content-start gap-4 pt-14 pb-8"
+                  aria-hidden="true"
+                >
+                  <div class="h-4 w-full rounded-sm bg-foreground/6"></div>
+                  <div class="h-4 w-11/12 rounded-sm bg-foreground/6"></div>
+                  <div class="h-4 w-4/5 rounded-sm bg-foreground/6"></div>
+                </div>
+              } @error {
+                <p
+                  data-testid="blog-content-error"
+                  role="alert"
+                  class="pt-14 pb-8 text-foreground/85"
+                >
+                  Le texte de l’article n’a pas pu être chargé.
+                  <a
+                    [attr.href]="'/blog/' + current.slug"
+                    class="text-primary underline underline-offset-3"
+                    >Recharger la page</a
+                  >
+                </p>
+              }
+            }
+          </div>
+          <p role="status" data-testid="code-copy-status" class="sr-only">
+            {{ codeCopy.status() }}
+          </p>
           <div #readSentinel data-testid="article-read-sentinel" aria-hidden="true"></div>
         </div>
       </article>
@@ -181,7 +212,6 @@ function laterOf(a: string, b: string): string {
 export class BlogDetail {
   private readonly gateway = inject(BlogGateway);
   private readonly analytics = inject(AnalyticsGateway);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly seo = inject(Seo);
   private readonly router = inject(Router);
 
@@ -227,12 +257,6 @@ export class BlogDetail {
   protected readonly neighbours = computed(() =>
     adjacentPosts(this._publishedPosts(), this.slug()),
   );
-
-  protected readonly renderedContent = computed(() => {
-    const p = this.post();
-    if (!p) return '';
-    return this.sanitizer.bypassSecurityTrustHtml(parseMarkdown(p.contentMarkdown));
-  });
 
   protected readonly coverImageAlt = computed(
     () => `Illustration de l’article ${this.post()?.title ?? ''}`,

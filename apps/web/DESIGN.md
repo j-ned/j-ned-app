@@ -26,6 +26,18 @@ colors:
   status-success: "#16a34a"
   status-warn: "#d97706"
   status-error: "#c10007"
+  console-code-keyword: "#94a0ff"
+  console-code-function: "#ae8dfb"
+  console-code-string: "#44c352"
+  console-code-number: "#f29e1c"
+  console-code-tag: "#ff6c6e"
+  console-code-comment: "#9f9fa6"
+  ivoire-code-keyword: "#4030bf"
+  ivoire-code-function: "#6c08ca"
+  ivoire-code-string: "#007531"
+  ivoire-code-number: "#a94000"
+  ivoire-code-tag: "#c10007"
+  ivoire-code-comment: "#58504b"
 typography:
   display:
     fontFamily: "'Archivo', 'Archivo Fallback', system-ui, sans-serif"
@@ -193,6 +205,8 @@ Contrastes calculés (composition sRGB, WCAG 2.x) : `line` 1,22:1 (Console, fond
 ### Named Rules
 
 **The One Indigo Rule.** Il n'y a qu'un Signal Indigo. Pas de teal qui s'invite, pas de blue-500 Tailwind par accident, pas de "second accent pour différencier". Si tu veux différencier, tu changes l'intensité (lifted / deep) ou le style (outline vs solid), jamais la teinte.
+
+*Exception bornée : la coloration syntaxique.* Dans un bloc de code (`code.code-syntax`, et nulle part ailleurs), six teintes `--color-code-*` distinguent les rôles des jetons, dans l'esprit d'Obsidian ; l'indigo garde les mots-clés. Elles ne servent à rien d'autre (ni badge, ni lien, ni état) et ne reprennent pas les tokens de statut : le code ne change pas de couleur si un statut change (spec 016, arbitrage B ; « Corps d'article et blocs de code », § 5).
 
 **The Two Registers Rule.** Console (dark) et Ivoire (light) sont **égaux**. Ils ne sont pas "thème par défaut et alternative". Toute décision de design doit fonctionner aussi bien dans les deux registres ou n'est pas valide. Tester chaque composant en `.app-dark` ET sans `.app-dark` est non négociable. La classe a un seul écrivain à l'exécution, `ThemeStore` (`core/theme/`), partagé par le site et l'admin ; le script en tête d'`index.html` la pose avant la première peinture selon la même règle (choix enregistré, sinon préférence système).
 
@@ -397,6 +411,31 @@ Un article de la liste du blog, lu comme une étude de cas.
 - **Cible:** un seul interactif, le lien « Lire l'article » `text-primary` `min-h-11`, titre de l'article en `sr-only` pour un nom distinct par ligne, étiré sur toute la ligne (`after:absolute after:inset-0`). Pas de pastille ni de lien par tag.
 - **Survol:** le titre passe en `primary` (`group-hover`).
 
+### Corps d'article et blocs de code (`features/blog/application/components/blog-article-body.ts`, `infra/render-code-block.ts`)
+
+Le Markdown d'un article, rendu par `parseMarkdown` (seul assainissement, ADR-0002) et posé en `innerHTML`. Même composant sur la page article et dans l'aperçu de l'éditeur (ADR-0013, ADR-0014).
+
+- **Corps:** `prose prose-lg` du plugin typographique, `dark:prose-invert`, titres `foreground`, paragraphes et listes `foreground/85`, liens `text-primary`, tableaux défilants. Sur la page article, le corps est sous `@defer (on immediate; hydrate never)` : servi dans le HTML prérendu, jamais hydraté ; en navigation interne, un squelette (trois barres `foreground/6`) le précède et un chunk introuvable affiche « Le texte de l'article n'a pas pu être chargé. » avec un lien de rechargement complet.
+- **Bloc de code:** `div[data-code-block]` `not-prose`, `rounded-lg`, trait `foreground/8`, fond `foreground/4` (`#141415` Console, `#efece7` Ivoire), `my-8`. Si le langage est connu, une barre d'étiquette (hauteur 40 px, mono `text-xs text-muted`, filet bas `foreground/8`) porte son libellé (« TypeScript », « Dockerfile »…). Puis `pre tabindex="0"` (défilement horizontal au clavier, anneau `primary` en `focus-visible`), mono 14 px, `leading-relaxed`, `p-4`. Langage inconnu ou absent : texte échappé, sans barre ni couleur.
+- **Couleurs du code:** `@utility code-syntax` sur le `code` : texte `foreground`, puis une couleur par rôle. Ratios sur le fond du bloc (composition sRGB, WCAG 2.x) :
+
+  | Rôle (`--color-code-*`) | Jetons `hljs-*` | Console | Ivoire |
+  |---|---|---|---|
+  | `keyword` | `keyword`, `literal`, `doctag`, `meta` | `oklch(74.5% 0.16 277)` 7,71 | `oklch(43.3% 0.21 278)` 7,47 |
+  | `function` | `title`, `section`, `built_in`, `type` | `oklch(72% 0.157 296)` 7,07 | `oklch(45.7% 0.244 297)` 7,08 |
+  | `string` | `string`, `regexp`, `addition`, `template-tag` | `oklch(72.3% 0.19 145)` 8,08 | `oklch(49% 0.14 150)` 4,98 |
+  | `number` | `number`, `symbol`, `bullet`, `variable`, `template-variable`, `attr` | `oklch(76.6% 0.16 70)` 8,54 | `oklch(51% 0.155 47)` 5,20 |
+  | `tag` | `name`, `selector-*`, `attribute`, `deletion` | `oklch(71.5% 0.18 22)` 6,73 | `oklch(50.5% 0.213 27.5)` 5,47 |
+  | `comment` | `comment`, `quote` | `oklch(70.4% 0.011 286)` 7,01 | `oklch(43.8% 0.013 56)` 6,69 |
+  | texte | le reste (`property`, `params`, `punctuation`…) | `foreground` 17,70 | `foreground` 13,02 |
+
+  Étiquette `text-muted` : 7,01 (Console), 6,69 (Ivoire).
+- **Copier:** sur le site et dans l'aperçu, chaque bloc porte un `button[data-code-copy]` à droite de la barre (barre présente même sans langage connu) : mono `text-xs text-muted`, survol `foreground`, 32 px de haut dans la barre de 40 px pour que l'anneau `focus-visible` global (2 px, décalé de 2 px) ne soit pas rogné. Cet anneau vient de la règle globale `:where(a, button, …):focus-visible` de `styles.css`, non stratifiée : elle l'emporte sur les classes `focus-visible:outline-*` du bouton, qui restent inertes (même anneau, doublon assumé et figé par un test de `parse-markdown`). Libellé visible « Copier », nom « Copier le bloc de code N » (texte `sr-only`), « Copié » pendant 2 s après le dernier clic, « Échec » pendant 2 s si le presse-papiers refuse. Deux copies rapprochées sont annoncées toutes les deux (la région est vidée puis réécrite au rendu suivant). La directive `appCodeCopy` écoute le clic sur un ancêtre hydraté (rejoué avant hydratation par `withEventReplay`) et une région `role="status"` `sr-only`, hors du `@defer`, annonce « Code copié dans le presse-papiers » ou « Copie impossible : sélectionnez le code. ». Absent du flux RSS.
+- **Code en ligne:** `text-primary` sur fond `foreground/6`, `rounded-sm`, `px-1.5 py-0.5`, graisse 500 (la seule de JN Mono), sans les accents graves du plugin typographique. Le fond, la chasse fixe et l'absence de soulignement le distinguent d'un lien, qui partage l'indigo.
+- **Souligné (`<u>`):** couleur du texte, trait `foreground/40` de 2 px décalé de `0.3em` ; jamais en `primary`, pour ne pas passer pour un lien.
+- **Images du corps:** `loading="lazy"`, `decoding="async"` ; `width`/`height` lus dans la clé `blog-content/<uuid>-<empreinte>-<l>x<h>.avif` (ADR-0015) réservent la place avant l'arrivée de l'image, `h-auto max-w-full` garde le ratio.
+- **Don't:** pas d'italique sur les commentaires (JN Mono n'a ni italique ni autre graisse que 500 : on obtiendrait un oblique synthétique) ; jamais de `style` inline (DOMPurify le retire, la CSP le refuserait) ; aucune de ces six teintes hors d'un bloc de code.
+
 ### Ligne d'offre (`features/offer/application/components/offer-row.ts`)
 
 L'offre d'une famille présentée en ligne de nomenclature : réservée aux **Applications** du catalogue, dont les prix ne se comparent pas (projet, audit, régie) et se lisent mieux en liste.
@@ -528,7 +567,7 @@ Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, s
 
 - **En-tête:** fil d'Ariane « Articles », `h1` = titre enregistré ou « Nouvel article » ; seule action, « Voir l'aperçu » sous `lg`.
 - **États:** squelette `role="status"` ; `LoadError` avec « Réessayer » ; article absent de la liste : « Cet article n'existe pas ou a été supprimé. » centré `text-muted` ; les deux derniers suivis du lien « Retour aux articles ».
-- **Sections:** `01 · Article` (titre, extrait, sujets), `02 · Contenu` (Markdown en mono 14 px sur 20 lignes, puis son rendu `prose` sous le champ, groupe nommé « Rendu », 32rem de haut au plus avec défilement), `03 · Couverture` (image enregistrée 1200/630 `15rem` et zone de dépôt côte à côte à partir de `sm`), `04 · Publication` (deux cartes-radios « Brouillon » / « Publié », bord `field`, cochée en `primary`, et la mention « Publier l'article redéploie le site : il est en ligne quelques minutes plus tard. » en `field-hint` si « Publié »).
+- **Sections:** `01 · Article` (titre, extrait, sujets), `02 · Contenu` (Markdown en mono 14 px sur 20 lignes, puis son rendu sous le champ par le corps d'article du site (`BlogArticleBody`, titres abaissés d'un niveau, code coloré), groupe nommé « Rendu », 32rem de haut au plus avec défilement), `03 · Couverture` (image enregistrée 1200/630 `15rem` et zone de dépôt côte à côte à partir de `sm`), `04 · Publication` (deux cartes-radios « Brouillon » / « Publié », bord `field`, cochée en `primary`, et la mention « Publier l'article redéploie le site : il est en ligne quelques minutes plus tard. » en `field-hint` si « Publié »).
 - **Aperçu public (`components/admin-post-preview.ts`):** même cadre que celui des projets, référence « Blog · Liste des articles » ; corps `inert` : la vraie `BlogPostRow` (jamais prioritaire), empilée dans la colonne de 25rem, temps de lecture en direct.
 
 ### Audience (`features/admin/application/admin-audience.ts`, facade `audience-report.ts`)

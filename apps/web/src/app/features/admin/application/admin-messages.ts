@@ -74,7 +74,7 @@ import { AdminPageHeader } from './components/admin-page-header';
           class="mt-5 justify-items-center! py-14! text-center [&_p]:mx-auto"
         >
           <p>
-            Aucun message pour le moment. Le formulaire est en ligne sur la page Contact&nbsp;;
+            Aucun message pour le moment. Le formulaire de contact de l'accueil est en ligne&nbsp;;
             chaque envoi arrive ici et par e-mail.
           </p>
         </app-admin-empty-state>
