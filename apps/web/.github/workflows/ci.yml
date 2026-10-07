@@ -117,34 +117,42 @@ jobs:
             sleep 1
           done
           grep -q '<app-root' /tmp/index.html
-          curl -fsS http://127.0.0.1:3000/about/ | grep -q '<app-about'
+          # Corps écrit dans un fichier avant grep : `curl | grep -q` casse sous pipefail
+          # (grep sort au premier match, curl échoue en écrivant dans le tube fermé : code 23)
+          curl -fsS http://127.0.0.1:3000/about/ -o /tmp/about.html
+          grep -q '<app-about' /tmp/about.html
           # Routes client → coquille CSR en 200 ; URL inconnue → coquille CSR en 404 (pas la home)
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login)" = "200"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/admin/analytics)" = "200"
           test "$(curl -s -o /tmp/404.html -w '%{http_code}' http://127.0.0.1:3000/does-not-exist)" = "404"
           grep -q '<app-root' /tmp/404.html && ! grep -q 'ng-state' /tmp/404.html
           # Offre à son URL de catalogue ; slug inconnu → 404 ; ancienne URL → 301 relatif, query conservée
-          curl -fsS http://127.0.0.1:3000/offres/site-atelier/ | grep -q '<app-offer-page'
+          curl -fsS http://127.0.0.1:3000/offres/site-atelier/ -o /tmp/offer.html
+          grep -q '<app-offer-page' /tmp/offer.html
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/offres/inexistant)" = "404"
           legacy=$(curl -s -D - -o /dev/null 'http://127.0.0.1:3000/offre-site-industrie?utm_source=x')
-          echo "$legacy" | head -1 | grep -q ' 301'
-          echo "$legacy" | grep -qi '^location: /offres/site-atelier?utm_source=x'
+          grep -q ' 301' <<<"${legacy%%$'\n'*}"
+          grep -qi '^location: /offres/site-atelier?utm_source=x' <<<"$legacy"
           # Les en-têtes de sécurité tiennent aussi sur les assets (snippet inclus dans la location)
-          asset=$(grep -o 'main-[A-Za-z0-9_-]*\.js' /tmp/index.html | head -1)
-          curl -fsS -D - -o /dev/null "http://127.0.0.1:3000/$asset" | grep -qi 'x-frame-options: deny'
+          # -o sort toutes les occurrences de la ligne (HTML minifié) : on garde la première
+          asset=$(grep -o 'main-[A-Za-z0-9_-]*\.js' /tmp/index.html)
+          asset=${asset%%$'\n'*}
+          asset_headers=$(curl -fsS -D - -o /dev/null "http://127.0.0.1:3000/$asset")
+          grep -qi 'x-frame-options: deny' <<<"$asset_headers"
           # En-têtes de sécurité posés par nginx (Traefik ne fait que le TLS)
           headers=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/)
           for h in 'strict-transport-security' 'x-content-type-options: nosniff' 'x-frame-options: deny' "content-security-policy: frame-ancestors 'none'" 'referrer-policy' 'permissions-policy'; do
-            echo "$headers" | grep -qi "$h" || { echo "en-tête manquant : $h"; exit 1; }
+            grep -qi "$h" <<<"$headers" || { echo "en-tête manquant : $h"; exit 1; }
           done
-          ! echo "$headers" | grep -qi '^server: nginx/'
+          ! grep -qi '^server: nginx/' <<<"$headers"
           # Polices auto-hébergées servies par nginx avec le bon type (sinon rejetées par le navigateur)
           font=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2)
-          echo "$font" | grep -qi 'content-type: font/woff2' || { echo "police mal servie"; echo "$font"; exit 1; }
+          grep -qi 'content-type: font/woff2' <<<"$font" || { echo "police mal servie"; echo "$font"; exit 1; }
           # Visuel de démo : AVIF reconnu par le navigateur, cache immuable (le nom porte la date de capture)
-          demo=$(curl -fsS http://127.0.0.1:3000/offres/site-atelier/ | grep -o '/demos/[a-z0-9-]*\.avif' | head -1)
+          demo=$(grep -o '/demos/[a-z0-9-]*\.avif' /tmp/offer.html)
+          demo=${demo%%$'\n'*}
           test -n "$demo"
           demo_headers=$(curl -fsS -D - -o /dev/null "http://127.0.0.1:3000$demo")
-          echo "$demo_headers" | grep -qi 'content-type: image/avif' || { echo "visuel de démo mal servi"; echo "$demo_headers"; exit 1; }
-          echo "$demo_headers" | grep -qi 'cache-control: .*immutable' || { echo "visuel de démo sans cache immuable"; echo "$demo_headers"; exit 1; }
+          grep -qi 'content-type: image/avif' <<<"$demo_headers" || { echo "visuel de démo mal servi"; echo "$demo_headers"; exit 1; }
+          grep -qi 'cache-control: .*immutable' <<<"$demo_headers" || { echo "visuel de démo sans cache immuable"; echo "$demo_headers"; exit 1; }
           docker stop portfolio
