@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { firstValueFrom } from 'rxjs';
-import { describe, it, expect, afterEach } from 'vitest';
+import { firstValueFrom, type Observable } from 'rxjs';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
+import { errorToastInterceptor } from '@core/interceptors/error-toast';
+import { ToastStore } from '@shared/ui/toast-store';
 import { HttpCvGateway } from './http-cv.gateway';
 import type { CvInfo } from '../../domain/models/cv.model';
 
@@ -120,5 +122,75 @@ describe('HttpCvGateway', () => {
       expect(url).toBe(`${BASE}/cv/download`);
       httpController.verify();
     });
+  });
+});
+
+describe('HttpCvGateway: écritures de l’admin derrière l’intercepteur de toasts', () => {
+  const add = vi.fn();
+
+  function configureWithToasts(): {
+    gateway: HttpCvGateway;
+    httpController: HttpTestingController;
+  } {
+    add.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        HttpCvGateway,
+        provideHttpClient(withInterceptors([errorToastInterceptor])),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: BASE },
+        { provide: ToastStore, useValue: { add } },
+      ],
+    });
+    return {
+      gateway: TestBed.inject(HttpCvGateway),
+      httpController: TestBed.inject(HttpTestingController),
+    };
+  }
+
+  async function failingStatus(
+    request: Observable<unknown>,
+    httpController: HttpTestingController,
+    url: string,
+  ): Promise<number | null> {
+    const outcome = firstValueFrom(request).then(
+      () => null,
+      (error: unknown) => (error instanceof HttpErrorResponse ? error.status : -1),
+    );
+    httpController.expectOne(url).flush(null, { status: 500, statusText: 'Server Error' });
+    return outcome;
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it.each<{ write: string; url: string; call: (gateway: HttpCvGateway) => Observable<unknown> }>([
+    {
+      write: 'upload',
+      url: `${BASE}/cv/upload`,
+      call: (g): Observable<unknown> =>
+        g.upload(new File(['%PDF'], 'cv.pdf', { type: 'application/pdf' })),
+    },
+    { write: 'delete', url: `${BASE}/cv`, call: (g): Observable<unknown> => g.delete() },
+  ])(
+    'Given the API answers 500 When $write is called Then no toast is shown and the caller still receives the error',
+    async ({ url, call }) => {
+      const { gateway, httpController } = configureWithToasts();
+
+      const status = await failingStatus(call(gateway), httpController, url);
+
+      expect({ status, toasts: add.mock.calls.length }).toEqual({ status: 500, toasts: 0 });
+      httpController.verify();
+    },
+  );
+
+  it('Given the public page reads the current CV When the API answers 500 Then the interceptor still shows its toast', async () => {
+    const { gateway, httpController } = configureWithToasts();
+
+    const status = await failingStatus(gateway.getCurrent(), httpController, `${BASE}/cv`);
+
+    expect({ status, toasts: add.mock.calls.length }).toEqual({ status: 500, toasts: 1 });
+    httpController.verify();
   });
 });

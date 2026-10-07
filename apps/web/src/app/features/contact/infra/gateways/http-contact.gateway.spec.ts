@@ -369,3 +369,38 @@ describe('HttpContactGateway: toasts des non-lus avec relance', () => {
     },
   );
 });
+
+describe('HttpContactGateway: lecture des messages derrière l’intercepteur de toasts', () => {
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('Given the messages answer 500 When the admin reads them Then no toast is shown and the caller still receives the error', async () => {
+    const add = vi.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        HttpContactGateway,
+        provideHttpClient(withInterceptors([errorToastInterceptor])),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: BASE },
+        { provide: ToastStore, useValue: { add } },
+      ],
+    });
+    const gateway = TestBed.inject(HttpContactGateway);
+    const httpController = TestBed.inject(HttpTestingController);
+    const outcome = firstValueFrom(gateway.getAllMessages()).then(
+      () => 'read',
+      () => 'error',
+    );
+
+    httpController
+      .expectOne(`${BASE}/contact/messages`)
+      .flush('down', { status: 500, statusText: 'Error' });
+
+    expect({ toasts: add.mock.calls.length, outcome: await outcome }).toEqual({
+      toasts: 0,
+      outcome: 'error',
+    });
+    httpController.verify();
+  });
+});

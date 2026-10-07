@@ -3,7 +3,7 @@ import { Component, input, model } from '@angular/core';
 export type FilterOption<T extends string> = {
   readonly value: T;
   readonly label: string;
-  readonly count: number;
+  readonly count?: number;
   readonly disabled?: boolean;
 };
 
@@ -27,9 +27,11 @@ export type FilterOption<T extends string> = {
           class="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-2 text-sm sm:px-3 text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary aria-pressed:border-primary aria-pressed:font-semibold aria-pressed:text-foreground aria-disabled:cursor-not-allowed aria-disabled:*:opacity-50 aria-disabled:hover:text-muted"
         >
           <span data-testid="filter-option-label">{{ option.label }}</span>
-          <span data-testid="filter-option-count" class="font-mono text-xs tabular-nums">
-            {{ option.count }}
-          </span>
+          @if (option.count !== undefined) {
+            <span data-testid="filter-option-count" class="font-mono text-xs tabular-nums">
+              {{ option.count }}
+            </span>
+          }
         </button>
       }
     </div>

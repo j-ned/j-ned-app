@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { catchError, EMPTY, map, Observable } from 'rxjs';
@@ -6,7 +6,7 @@ import { catchError, EMPTY, map, Observable } from 'rxjs';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { AnalyticsDeviceExclusion } from '@core/analytics/analytics-device-exclusion';
 import { AuthStore } from '@core/auth/auth-store';
-import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
+import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { AnalyticsGateway } from '../../domain/gateways/analytics.gateway';
 import type {
   ActiveVisitors,
@@ -95,67 +95,45 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
   }
 
   getOverview(startDate?: string, endDate?: string): Observable<StatsOverview> {
-    return this.http.get<StatsOverview>(`${this.baseUrl}/stats/overview`, {
-      params: this.buildDateParams(startDate, endDate),
-      withCredentials: true,
-    });
+    return this.getStats<StatsOverview>('overview', this.buildDateParams(startDate, endDate));
   }
 
   getChart(startDate?: string, endDate?: string): Observable<DailyChartPoint[]> {
-    return this.http.get<DailyChartPoint[]>(`${this.baseUrl}/stats/chart`, {
-      params: this.buildDateParams(startDate, endDate),
-      withCredentials: true,
-    });
+    return this.getStats<DailyChartPoint[]>('chart', this.buildDateParams(startDate, endDate));
   }
 
   getMetrics(type: string, startDate?: string, endDate?: string): Observable<MetricEntry[]> {
-    return this.http.get<MetricEntry[]>(`${this.baseUrl}/stats/metrics`, {
-      params: { type, ...this.buildDateParams(startDate, endDate) },
-      withCredentials: true,
+    return this.getStats<MetricEntry[]>('metrics', {
+      type,
+      ...this.buildDateParams(startDate, endDate),
     });
   }
 
   getActiveVisitors(): Observable<ActiveVisitors> {
-    return this.http.get<ActiveVisitors>(`${this.baseUrl}/stats/active`, {
-      withCredentials: true,
-    });
+    return this.getStats<ActiveVisitors>('active', {});
   }
 
   getProjectStats(startDate?: string, endDate?: string): Observable<EntityStat[]> {
-    return this.http.get<EntityStat[]>(`${this.baseUrl}/stats/projects`, {
-      params: this.buildDateParams(startDate, endDate),
-      withCredentials: true,
-    });
+    return this.getStats<EntityStat[]>('projects', this.buildDateParams(startDate, endDate));
   }
 
   getArticleStats(startDate?: string, endDate?: string): Observable<EntityStat[]> {
-    return this.http.get<EntityStat[]>(`${this.baseUrl}/stats/articles`, {
-      params: this.buildDateParams(startDate, endDate),
-      withCredentials: true,
-    });
+    return this.getStats<EntityStat[]>('articles', this.buildDateParams(startDate, endDate));
   }
 
   getArticleReadStats(startDate?: string, endDate?: string): Observable<EntityStat[]> {
-    return this.http.get<EntityStat[]>(`${this.baseUrl}/stats/articles-read`, {
-      params: this.buildDateParams(startDate, endDate),
-      withCredentials: true,
-    });
+    return this.getStats<EntityStat[]>('articles-read', this.buildDateParams(startDate, endDate));
   }
 
   getCtaStats(startDate?: string, endDate?: string): Observable<EntityStat[]> {
-    return this.http.get<EntityStat[]>(`${this.baseUrl}/stats/cta`, {
-      params: this.buildDateParams(startDate, endDate),
-      withCredentials: true,
-    });
+    return this.getStats<EntityStat[]>('cta', this.buildDateParams(startDate, endDate));
   }
 
   getCvDownloadCount(startDate?: string, endDate?: string): Observable<number> {
-    return this.http
-      .get<{ count: number }>(`${this.baseUrl}/stats/cv-downloads`, {
-        params: this.buildDateParams(startDate, endDate),
-        withCredentials: true,
-      })
-      .pipe(map((res) => res.count));
+    return this.getStats<{ count: number }>(
+      'cv-downloads',
+      this.buildDateParams(startDate, endDate),
+    ).pipe(map((res) => res.count));
   }
 
   // L'admin connecté et les appareils exclus ne sont pas des visiteurs : l'API ne reçoit pas le
@@ -169,10 +147,19 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
   private fireAndForget(payload: TrackPayload): void {
     this.http
       .post(`${this.baseUrl}/track`, payload, {
-        context: new HttpContext().set(SKIP_ERROR_TOAST, true),
+        context: silentErrors(),
       })
       .pipe(catchError(() => EMPTY))
       .subscribe();
+  }
+
+  // Chaque écran qui lit ces statistiques affiche son propre état d'erreur : pas de toast par requête en plus.
+  private getStats<T>(path: string, params: Record<string, string>): Observable<T> {
+    return this.http.get<T>(`${this.baseUrl}/stats/${path}`, {
+      params,
+      withCredentials: true,
+      context: silentErrors(),
+    });
   }
 
   private buildDateParams(startDate?: string, endDate?: string): Record<string, string> {

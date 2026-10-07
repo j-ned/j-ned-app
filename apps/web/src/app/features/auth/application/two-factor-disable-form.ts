@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, effect, input, output, signal } fro
 import { FormField, FormRoot, form, required } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
+import { Stamp } from '@shared/ui/stamp';
 
 const EMPTY = { password: '' };
 
 @Component({
   selector: 'app-two-factor-disable-form',
-  imports: [FormRoot, FormField, AppIcon, Button],
+  imports: [FormRoot, FormField, AppIcon, Button, Stamp],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -34,16 +35,11 @@ const EMPTY = { password: '' };
       }
 
       <div class="space-y-6">
-        <div
-          class="flex items-center gap-3 p-4 rounded-lg bg-status-success/10 border border-status-success/30"
-        >
-          <app-icon name="shield" [size]="20" class="text-status-success shrink-0" />
-          <div>
-            <p class="text-status-success font-medium text-sm">2FA activé</p>
-            <p class="text-muted text-xs">
-              Votre compte est protégé par l'authentification à deux facteurs.
-            </p>
-          </div>
+        <div class="grid justify-items-start gap-2">
+          <app-stamp data-testid="twofa-status">2FA activé</app-stamp>
+          <p class="text-muted text-sm">
+            Votre compte est protégé par l'authentification à deux facteurs.
+          </p>
         </div>
 
         <div class="border-t border-foreground/10 pt-6">

@@ -6,6 +6,8 @@ import {
   dateRangeToParams,
   type DateRangeKey,
 } from '@features/analytics/domain/analytics-presenter';
+import { formatFileSize } from '@shared/ui/format-file-size';
+import { formatUploadDay } from './admin-cv-view';
 import { capitalize } from './capitalize';
 import { pluralize } from './pluralize';
 import { withFirstOfMonth } from './with-first-of-month';
@@ -24,33 +26,14 @@ const PERIOD_DAY_MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
   timeZone: 'UTC',
 });
-const DAY_MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
 const FULL_DATE = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
   day: 'numeric',
   month: 'long',
   year: 'numeric',
 });
-const ONE_DECIMAL = new Intl.NumberFormat('fr-FR', {
-  maximumFractionDigits: 1,
-  useGrouping: false,
-});
-
-const KIB = 1024;
-const MIB = KIB * KIB;
-
 const counted = (count: number, singular: string, plural: string): string =>
   `${count} ${pluralize(count, singular, plural)}`;
-
-function fileSize(bytes: number): string {
-  if (bytes < KIB) return `${bytes} o`;
-  if (bytes < MIB) return `${Math.round(bytes / KIB)} Ko`;
-  return `${ONE_DECIMAL.format(bytes / MIB)} Mo`;
-}
 
 export function projectsOverline(projects: readonly Project[]): string {
   const featured = projects.filter((project) => project.featured).length;
@@ -74,8 +57,7 @@ export function messagesOverline(messages: readonly ContactMessage[]): string {
 export function cvOverline(cv: CvInfo | null): string {
   if (cv === null) return 'Aucun CV en ligne';
   const format = (cv.mimeType.split('/')[1] ?? cv.mimeType).toUpperCase();
-  const uploadedOn = withFirstOfMonth(DAY_MONTH_YEAR, new Date(cv.uploadedAt));
-  return `${format} · ${fileSize(cv.fileSize)} · mis en ligne le ${uploadedOn}`;
+  return `${format} · ${formatFileSize(cv.fileSize)} · mis en ligne le ${formatUploadDay(cv)}`;
 }
 
 export function audienceOverline(range: DateRangeKey, now: Date): string {

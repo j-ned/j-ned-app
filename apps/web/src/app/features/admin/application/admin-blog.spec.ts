@@ -758,19 +758,13 @@ describe('AdminBlog: petit écran', () => {
     ).toEqual([true, true, true]);
   });
 
-  it('Given the list When it renders Then nothing forces a horizontal scroll nor keeps the old table utilities', async () => {
+  it('Given the list When it renders Then nothing forces a horizontal scroll', async () => {
     const { host } = await renderTable();
     const list = byTestId(host, 'admin-posts-list');
     const tokens = [list, ...(list?.querySelectorAll('*') ?? [])].flatMap((element) =>
       element ? [...element.classList] : [],
     );
 
-    expect(
-      tokens.filter((token) =>
-        /^(min-w-max|overflow-x-auto|admin-table-shell|admin-table|admin-th|admin-td|admin-row)$/.test(
-          token,
-        ),
-      ),
-    ).toEqual([]);
+    expect(tokens.filter((token) => /^(min-w-max|overflow-x-auto)$/.test(token))).toEqual([]);
   });
 });

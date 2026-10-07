@@ -488,6 +488,27 @@ describe('AdminProjectEditor: mise à jour', () => {
     }).toEqual({ uploads: [[COVER, 'p-1']], patches: 1, uploadFirst: true });
   });
 
+  it('Given a new cover picked in the dropzone for an existing project When the save succeeds Then the dropzone no longer shows the sent file', async () => {
+    const editor = await openEditor('/admin/projects/p-1');
+    const inZone = (selector: string): HTMLElement | null =>
+      editor.host.querySelector(`[data-testid="admin-project-cover"] ${selector}`);
+    const input = inZone('input[type="file"]') as HTMLInputElement | null;
+    if (input) {
+      Object.defineProperty(input, 'files', { value: [COVER], configurable: true });
+      input.dispatchEvent(new Event('change'));
+    }
+    await settle(editor.fixture);
+    const chosen = inZone('[data-testid="file-dropzone-replace"]') !== null;
+
+    await save(editor);
+
+    expect({
+      chosen,
+      replace: inZone('[data-testid="file-dropzone-replace"]'),
+      trigger: inZone('[data-testid="file-dropzone-trigger"]') !== null,
+    }).toEqual({ chosen: true, replace: null, trigger: true });
+  });
+
   it('Given a new cover sent for an existing project When the save ends Then the current cover and the preview show the image of the patch answer, without a new request', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
       updateProject: vi.fn(
@@ -529,6 +550,65 @@ describe('AdminProjectEditor: mise à jour', () => {
       toasts: [{ severity: 'error', detail: 'Erreur lors de la mise à jour du projet' }],
       title: 'DashFlow',
     });
+  });
+});
+
+describe('AdminProjectEditor: couverture retirée ou refusée', () => {
+  async function pickInZone(editor: Editor, file: File): Promise<void> {
+    const input = editor.host.querySelector<HTMLInputElement>(
+      '[data-testid="admin-project-cover"] input[type="file"]',
+    );
+    if (input) {
+      Object.defineProperty(input, 'files', { value: [file], configurable: true });
+      input.dispatchEvent(new Event('change'));
+    }
+    await settle(editor.fixture);
+  }
+
+  const inZone = (editor: Editor, testId: string): HTMLElement | null =>
+    editor.host.querySelector(`[data-testid="admin-project-cover"] [data-testid="${testId}"]`);
+
+  it('Given a cover chosen then removed from the dropzone When the project is saved Then no cover is sent', async () => {
+    const editor = await openEditor('/admin/projects/p-1');
+    await pickInZone(editor, COVER);
+    const chosen = inZone(editor, 'file-dropzone-replace') !== null;
+
+    inZone(editor, 'file-dropzone-clear')?.click();
+    await settle(editor.fixture);
+    await save(editor);
+
+    expect({ chosen, uploads: editor.uploadImage.mock.calls.length }).toEqual({
+      chosen: true,
+      uploads: 0,
+    });
+  });
+
+  it('Given a file that is not an image When it is dropped in the cover zone Then the page says so and the zone empties', async () => {
+    const editor = await openEditor('/admin/projects/p-1');
+
+    await pickInZone(editor, new File(['%PDF'], 'notes.pdf', { type: 'application/pdf' }));
+
+    expect({
+      toasts: toasts(editor.toast),
+      replace: inZone(editor, 'file-dropzone-replace'),
+      trigger: inZone(editor, 'file-dropzone-trigger') !== null,
+      name: normalized(editor.host).includes('notes.pdf'),
+    }).toEqual({
+      toasts: [{ severity: 'error', detail: 'Seules les images sont acceptées.' }],
+      replace: null,
+      trigger: true,
+      name: false,
+    });
+  });
+
+  it('Given a cover chosen then a refused file When the project is saved Then the earlier cover is not sent', async () => {
+    const editor = await openEditor('/admin/projects/p-1');
+    await pickInZone(editor, COVER);
+
+    await pickInZone(editor, new File(['%PDF'], 'notes.pdf', { type: 'application/pdf' }));
+    await save(editor);
+
+    expect(editor.uploadImage.mock.calls.length).toBe(0);
   });
 });
 

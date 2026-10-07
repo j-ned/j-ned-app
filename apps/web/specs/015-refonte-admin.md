@@ -479,8 +479,8 @@ décalage des ancres), `features/blog/infra/parse-markdown.ts` (+spec, option `t
 
 **PR c2** — créer : `audience-report.ts` (+spec), `audience-view.ts` (+spec), `admin-cv-view.ts`
 (+spec), `admin-messages-view.ts` (+spec), `components/audience-chart.ts` (+spec),
-`components/audience-share-table.ts` (+spec), `components/audience-tally.ts` (+spec),
-`components/admin-message-row.ts` (+spec), `admin-cv.spec.ts`, `admin-settings.spec.ts`. Renommer :
+`components/audience-share-table.ts` (+spec), `components/audience-tally.ts` (rendu prouvé par
+la page, choix du RED), `components/admin-message-row.ts` (+spec), `admin-cv.spec.ts`, `admin-settings.spec.ts`. Renommer :
 `admin-analytics.ts` → `admin-audience.ts` (+spec). Modifier : `admin.routes.ts`, `admin-messages.ts`,
 `admin-cv.ts`, `admin-settings.ts`, `features/auth/application/two-factor-setup.ts` (+spec),
 `shared/ui/filter-group.ts` (+spec),
@@ -488,6 +488,22 @@ décalage des ancres), `features/blog/infra/parse-markdown.ts` (+spec, option `t
 `components/{admin-analytics-header,admin-analytics-kpis,admin-analytics-visitors-chart,admin-analytics-cv-panel,analytics-bar-list,analytics-donut-panel,analytics-entity-list,admin-table,admin-col-actions,admin-col-badge,admin-col-contact,admin-col-date,admin-col-expand,admin-col-text,admin-column-base}.ts`
 (+specs), `shared/ui/tag.ts` (+spec) si plus aucun consommateur, les onze `@utility admin-*` de
 `styles.css`.
+Ajouts hors plan, relevés en revue (point 7) : créer `components/admin-setting-row.ts`,
+`features/analytics/testing/stub-analytics-gateway.ts` ; modifier
+`features/analytics/infra/gateways/http-analytics.gateway.ts` (+spec, C7bis),
+`features/contact/infra/gateways/http-contact.gateway.ts` (écritures silencieuses, C8),
+`features/auth/application/two-factor-disable-form.ts`, `components/admin-section-head.ts`,
+`shared/ui/file-dropzone.ts` (+spec, `resetToken`), `components/admin-post-form.ts`,
+`components/admin-project-form.ts`, `admin-post-editor.ts` (+spec), `admin-project-editor.ts`
+(+spec), `admin-page-copy.ts`, `features/analytics/testing/analytics-builders.ts`,
+`features/blog/application/blog-list-view.spec.ts`. Correctifs de la revue : créer
+`shared/ui/format-file-size.ts` (+spec, déplacé d'`admin-cv-view.ts`) ; modifier
+`core/interceptors/skip-error-toast.ts` (`silentErrors()`, cinq consommateurs),
+`features/cv/infra/gateways/http-cv.gateway.ts` (+spec),
+`features/contact/infra/gateways/http-contact.gateway.ts` (+spec),
+`features/projects/infra/gateways/http-projects.gateway.ts` (+spec),
+`features/blog/infra/http-blog.gateway.ts` (+spec), `admin-blog.spec.ts` (garde obsolète
+retirée), `DESIGN.json`, `docs/adr/0012-*`, `docs/adr/0013-*` (statut accepté).
 
 ### 7. Tranches
 
@@ -1018,7 +1034,8 @@ antérieure.
     statut en tampon ou en texte contrasté).
   - Option (relevé de la revue de la PR b, à trancher avec l'utilisateur) : repères « CV en
     ligne » et « Sécurité » sous les actions rapides de la vue d'ensemble (maquette), non repris en
-    B5.
+    B5. **Écartée (2026-10-07, décision de l'utilisateur au GREEN C9–C10)** : non tranchée, et le CV
+    figure déjà dans « Contacts » de la vue d'ensemble ; rien d'implémenté.
   - Supprimé : carte bordée, `AppIconTile`.
 
 - **Suivi de la revue de la PR c1** (advisory, sans refactor en c1) :
@@ -1835,52 +1852,7 @@ Aucun test source-based sur `styles.css` n'est ajouté.
 
 ### Correctifs de la revue de la PR a
 
-Points de la `### Tranches C1 et C2
-
-Build de production servi en local, Chromium (Playwright), axe-core 4.14 (WCAG 2.0 à 2.2 A/AA +
-best-practice).
-
-**Steps reproductibles.**
-
-1. `pnpm run build --configuration production`, puis `git checkout public/rss.xml public/sitemap.xml`.
-2. `dist/angular-portfolio-app/browser` servi sur `http://localhost:4341`, `/admin/**` réécrit vers `index.csr.html`.
-3. Script `scratchpad/v/c12.mjs` : session simulée (`auth:session`), `sendBeacon` neutralisé ; GET de l'API servis
-   par fixtures (liste de projets copiée une fois en GET public, `GET /projects/:id` tiré de cette liste) ; toute
-   requête non-GET **annulée** et journalisée, sauf le `POST /projects` du seul scénario de création, **satisfait
-   localement** par le harnais (réponse fabriquée, rien ne part vers l'API) pour suivre la redirection ; toute autre
-   origine annulée.
-4. Cas joués : liste à 1 440 et 375 px en clair et en sombre ; filtres En production, Démos, Scripts, retour à Tous ;
-   « Modifier » de la première ligne ; éditeur à 1 440 (deux registres) et 375 px ; titre modifié puis
-   « Enregistrer » ; `/admin/projects/new` parcouru et rempli au clavier puis envoyé par Entrée ; envoi vide ;
-   `GET /projects/:id` en 500 (deux registres).
-
-**Résultats.**
-
-| Cas | Observé |
-|---|---|
-| Liste | 6 lignes dans l'ordre public, sur-titres « 01 · Application Web »…, un seul `h1`, aucun défilement horizontal à 375 px |
-| Filtres | Tous 6 / En production 2 / Démos 2 / Scripts 2, `aria-pressed` suit le choix, lignes filtrées, rang conservé, retour à Tous complet |
-| Modifier | `/admin/projects/<id>`, onglet « Modifier un projet \| Admin », fil « Projets / DashFlow », `h1` DashFlow, champs remplis, nature « En production » cochée, 5 sections, « Voir la fiche » → `/projects/dashflow` |
-| Mise à jour | `PATCH /projects/<id>` annulé par le harnais ; notification « Erreur lors de la mise à jour du projet », `h1` inchangé, saisie conservée |
-| Création au clavier | tabulation : titre, catégorie, **un seul arrêt** pour la nature (flèches pour changer), position, mise en avant, accroche, point fort, périmètre, description, couverture, 4 liens, tags, deux « Ajouter », « Enregistrer » ; focus de carte : contour `primary` 2 px ; Entrée sur « Enregistrer » → `POST /projects` intercepté avec le payload attendu (`kind: "demo"`, liens `null`), notification « Projet créé », adresse `/admin/projects/p-new-fixture` |
-| Envoi vide | 4 erreurs `role="alert"` « Ce champ est obligatoire » (titre, catégorie, nature, description), aucune requête |
-| Erreur de chargement | `LoadError` + « Retour aux projets » → `/admin/projects`, aucun formulaire, `h1` « Modifier un projet » |
-| axe | **0 violation** sur la liste (4 rendus), les filtres, l'éditeur (3 rendus), `/new`, l'erreur (2 rendus) ; après création, 1 `color-contrast` sur `toast-summary` (toast en cours d'apparition, composant hors tranche) |
-
-**Console** : aucune erreur applicative. Restent des artefacts du harnais : `404 /api/config` (route du serveur
-SSR, absente du service statique), le `500` simulé, `net::ERR_FAILED` du `PATCH` annulé (doublé par le toast
-générique de l'intercepteur, comportement antérieur).
-
-**Captures** (scratchpad) : `c12-projets-{1440,375}-{clair,sombre}.jpg`, `c12-projets-filtre-demos-1440-clair.jpg`,
-`c12-editeur-1440-{clair,sombre}.jpg`, `c12-editeur-375-clair.jpg`, `c12-editeur-patch-annule-clair.jpg`,
-`c12-nouveau-1440-clair.jpg`, `c12-nouveau-nature-clavier-clair.jpg`, `c12-nouveau-vide-erreurs-clair.jpg`,
-`c12-apres-creation-clair.jpg`, `c12-editeur-erreur-{clair,sombre}.jpg`, rapport `c12-report.json`. Les captures
-pleine page figent la barre « Enregistrer » (`sticky`) à la hauteur de la fenêtre, et les images chargées à la
-demande hors de la fenêtre restent vides : artefacts de capture.
-
-**Verdict : PASS.**
-
-## Review code` couverts par un test (les autres sont de forme, sans comportement).
+Points de la `## Review code` couverts par un test (les autres sont de forme, sans comportement).
 
 **`shared/ui/file-dropzone.spec.ts`** (+4 tests, sélecteurs passés en `data-testid`)
 
@@ -3127,6 +3099,441 @@ Sans test (mise en page que happy-dom ne calcule pas, vérifiée au navigateur) 
 (`scroll-padding-bottom`, radio de nature sur toute la carte), point 2 (`grid-cols-1` des trois
 grilles de l'éditeur d'article), m3 (insécables), m4, m6 (« l'envoi de l'image »).
 
+### Outils de test de la PR c2 (tranches C7 et C8)
+
+- `features/analytics/testing/stub-analytics-gateway.ts` (nouveau) : `stubAnalyticsGateway(overrides)`,
+  doublure partagée d'`AnalyticsGateway` sur le modèle de `stubContactGateway` (sans `vi`, défaut
+  `makeStatsOverview()`). `admin-overview.spec.ts` garde son double, hors de ces tranches.
+- `features/analytics/testing/analytics-builders.ts` : `makeEntityStat` ajouté (Portfolio, 7).
+- Page Audience : `vi.useFakeTimers()` (le relevé des visiteurs actifs toutes les 30 s rend la
+  fixture instable, `whenStable` et `pressTestId` ne rendent jamais la main) ; aides locales
+  `advance` (`detectChanges`, `advanceTimersByTimeAsync(0)`, `detectChanges`) et `press`.
+  `AudienceChart` rendu sans `AppChart` (`overrideComponent` + `CUSTOM_ELEMENTS_SCHEMA`), comme la
+  vue d'ensemble : la propriété `data` de l'élément `app-chart` reste lisible.
+- Facade : `TestBed.inject(AudienceReport)` sous `vi.useFakeTimers({ toFake: ['Date'] })` ; les
+  ressources se résolvent par `TestBed.tick()` puis `ApplicationRef.whenStable()` ; doublures en
+  `defer(() => of(...))`.
+
+Adaptation mécanique, sur la construction des entrées et les types seulement :
+
+- `analytics-presenter.spec.ts` : `overview()` local remplacé par `makeStatsOverview` (suivi de la
+  revue de la PR b, dette des `overview()` locaux). Défauts différents, mais chaque test conservé
+  fixe les champs qu'il lit (`sessions`, `pageviews`, `visitors`, `bounceRate`) : aucune valeur
+  attendue modifiée. Le second `overview()` local disparaît avec `admin-analytics.spec.ts`.
+- `blog-list-view.spec.ts` : type de retour de l'aide `optionsOf` élargi à `number | undefined`
+  (conséquence de `FilterOption.count` facultatif), 1 site, aucune valeur attendue modifiée.
+
+### Tranche C7 — Audience
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **`audience-view.ts`** (TS pur) :
+  - `ShareRow = { label, count, share, width }` ; `toShareRows(entries, total, limit,
+    fallbackLabel)` garde l'ordre reçu, nomme une entrée vide par `fallbackLabel`, regroupe ce qui
+    dépasse `limit` sous une ligne « Autres » (somme des restes, aucune ligne « Autres » si rien ne
+    dépasse) ; `share` = part de `total` arrondie à l'entier + « ` `% » (« 0` `% » si
+    `total` vaut 0) ; `width` = poids de la ligne rapporté à la **plus grande ligne affichée**,
+    arrondi (maquette : `v / max`), 0 si tout est nul. La somme des `count` égale celle des entrées.
+  - `audienceLead(overview, referrer)` : `''` sans chiffres ; « Aucun visiteur sur la période. » à
+    0 ; sinon « 42 visiteurs, dont 18 venus de google.com. 9 sur 10 repartent après une page. »
+    (nombre groupé à l'espace fine insécable, accords par `pluralize`, référent ignoré si son nom
+    est vide, phrase de rebond omise quand `Math.round(bounceRate / 10)` vaut 0, « 1 sur 10 repart »).
+  - `TallyRow = { label, value }` ; `toTallyRows(entries, limit, fallbackLabel)` : les `limit`
+    premières entrées, nombre groupé.
+- **`AudienceReport`** (`@Injectable()`, fournie par la page) : `range` (`signal`, `'30d'`) ; les dix
+  sources liées à la période (overview, courbe, métriques `url`, `referrer`, `browser`, `os`,
+  `country`, projets, articles, articles lus, CTA) demandées aux bornes de
+  `dateRangeToParams(range, now)` et redemandées à chaque changement de période ; `pages` =
+  `toShareRows(url, somme, 5, '/')`, `referrers` = `toShareRows(referrer, somme, 5, 'Accès
+  direct')` (le total est la somme des entrées, pas `pageviews`/`sessions` : la part reste juste
+  quel que soit l'état de l'overview) ; `hasError` ; `retry()` ne relance que les sources en échec.
+- **`AudienceChart`** : entrées `points`, `data`, `options` ; `figure` (`app-chart type="line"`) et
+  `figcaption.sr-only` = `chartSummary(points)` ; `details` `audience-chart-data` fermé, `summary`
+  « Voir les données en tableau », table `audience-chart-table` : Jour, Visiteurs, Pages vues
+  (`th scope="col"`), une ligne `audience-chart-row` par jour, jour en `th scope="row"`
+  (`formatChartDay`), nombres groupés.
+- **`AudienceShareTable`** : entrées `heading`, `headingId`, `labelHeader`, `unitLabel`, `rows`
+  (`heading` plutôt que le `title` du plan : un input `title` posé en attribut statique laisse
+  l'attribut HTML `title`, donc une infobulle) ; `section aria-labelledby` sur un `h2` ;
+  `caption.sr-only` = titre ; colonnes `labelHeader`, `unitLabel`, « Part » ; lignes `share-row`
+  (`share-label`, `share-count` groupé, `share-part`, barre `share-bar` en `width: n%` sous
+  `aria-hidden`) ; sans ligne, `share-empty` « Aucune donnée sur la période. » et pas de table.
+- **`AudienceTally`** (rendu prouvé par la page, composant présentationnel) : `audience-tally`,
+  titre `tally-heading` en `h3`, `dl` de `tally-row` (`dt` nom, `dd` nombre), vide :
+  `tally-empty` « Rien sur la période. ». Groupes dans l'ordre : Totaux (Projets cliqués, Articles
+  ouverts, Articles lus jusqu'au bout, CTA cliqués, CV téléchargés : reprend les totaux des
+  anciennes pastilles et le panneau CV), Projets cliqués, Articles ouverts, Articles lus jusqu'au
+  bout, CTA cliqués, Navigateurs, Systèmes, Pays (« Inconnu » pour un nom vide), cinq lignes au plus.
+- **`AdminAudience`** (`admin-audience.ts`, route `audience`) : sur-titre `audienceOverline`
+  inchangé ; introduction `audience-lead` ; à côté, `audience-active-visitors` « 5 visiteurs en ce
+  moment » / « 0 visiteur en ce moment », texte simple (ni `aria-live` ni `role="status"`, ni sur
+  lui ni sur un parent) ; `device-exclusion-toggle` natif, `aria-pressed`, « Exclure cet appareil »
+  / « Cet appareil est exclu » ; `analytics-export-csv` « Exporter en CSV » télécharge
+  `analytics-<période>-<AAAA-MM-JJ>.csv` (en-tête `Section,Label,Count`, `KPI,Visiteurs,42`,
+  `Page,/,24`) puis révoque l'URL. Période : `app-filter-group` « Période », 7 jours, 30 jours,
+  90 jours, Depuis le début, **sans compte**. Relevé `app-admin-readout` à quatre repères
+  (Visiteurs / sessions, puis `toAudienceReadout`). `h2` dans l'ordre : Visites par jour, Pages les
+  plus vues, Provenance, Ce que les visiteurs font. Chargement de l'overview : `audience-loading`
+  `role="status"` à la place du relevé. Une source en échec : une seule `load-error`, « Réessayer »
+  par `retry()`.
+- **`FilterGroup`** : `count` facultatif ; `filter-option-count` rendu seulement s'il est défini
+  (0 compris).
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `audience-view.spec.ts` (nouveau, TS pur) | 20 | `toShareRows` (`it.each` ×6 : sous la limite, « Autres », limite pile, part sur le total donné, total 0, vide ; nom vide ; somme `it.each` ×4) ; `audienceLead` (`it.each` ×6) ; `toTallyRows` (`it.each` ×2, vide) | égalité exacte |
+| `audience-report.spec.ts` (nouveau) | 6 | 30 jours par défaut (onze appels datés) ; `it.each` 7 j, 90 j, tout le temps ; `pages` et `referrers` ; relance de la seule source en échec | bornes de chaque appel, nombre d'appels, lignes exactes |
+| `components/audience-chart.spec.ts` (nouveau) | 4 | figure et légende ; `details` fermé ; table jour par jour ; aucune visite | textes, `scope`, `open`, identité de `data` |
+| `components/audience-share-table.spec.ts` (nouveau) | 3 | `h2`, légende, en-têtes ; lignes et barres ; vide | textes, `scope`, `style.width`, `aria-hidden` |
+| `admin-audience.spec.ts` (nouveau, remplace `admin-analytics.spec.ts`) | 25 | visiteurs en ce moment (4) ; en-tête, exclusion aller-retour, export CSV ; période (groupe, `it.each` ×2) ; relevé (golden, 999 / 12,3, `it.each` ×2) ; `h2` ; pages et provenance ; courbe ; « Ce que les visiteurs font » ; chargement ; erreurs (`it.each` ×5, relance) | textes, `aria-pressed`, appels datés, fichier téléchargé |
+| `shared/ui/filter-group.spec.ts` | +1 | compte présent sur une seule option, 0 compris | compte ou `null` par bouton |
+| `admin.routes.spec.ts` | +1 | `audience` charge `AdminAudience` | identité du composant |
+
+Tests migrés ou supprimés :
+
+| Ancien test | Devenir | Raison |
+|---|---|---|
+| `admin-analytics.spec.ts` (16) : visiteurs actifs (3) | migrés, lus dans `audience-active-visitors` au lieu de `activeVisitors()` | même comportement, sans interne |
+| idem : KPI de l'overview, `it.each` durée et pages par session (3) | migrés dans « relevé », valeurs attendues identiques | `kpi-*` remplacés par `readout-item` |
+| idem : 30 jours par défaut, rechargement à la période (2) | migrés dans « période » (bouton pressé, dernier appel daté) et dans la facade | `dateRange` devient `AudienceReport.range` |
+| idem : erreurs `it.each` ×5, relance (6) | migrés tels quels (+ relevé revenu après relance) | — |
+| idem : sur-titre 30 puis 7 jours (1) | migré dans « en-tête » et « période », mêmes chaînes | la période se choisit au bouton |
+| idem : traits droits, pages vues tiretées (1) | migré dans « sections », lu sur `app-chart` | `chartData` devient interne |
+| `admin-analytics-header.spec.ts` (11) : exclusion (3) | un test aller-retour sur la page ; « Appareil exclu des stats » devient « Cet appareil est exclu » | maquette `#audience`, plan C7 |
+| idem : `select` de période (6) | supprimés, remplacés par les tests « période » | le `select` devient `FilterGroup` ; « 7 derniers jours » → « 7 jours », « Tout le temps » → « Depuis le début » (plan) ; le sur-titre garde « Tout le temps » |
+| idem : titre et libellé d'export (1), export émis (1) | migrés dans « en-tête » (`h1` unique) et « export » (fichier téléchargé, plus fort qu'un événement) | composant supprimé |
+| `analytics-bar-list.spec.ts` (7) | titre, lignes, nom de repli, largeur de barre → `audience-share-table.spec.ts` et `toShareRows` ; état vide → `share-empty` ; squelettes par panneau → `audience-loading` de la page | composant supprimé |
+| `analytics-donut-panel.spec.ts` (4) | supprimés ; navigateurs et systèmes deviennent des listes nommées (test « Ce que les visiteurs font ») | donuts supprimés (plan) |
+| `analytics-entity-list.spec.ts` (4) | titre, lignes, vide → `audience-tally` (page) ; squelettes → `audience-loading` | composant supprimé |
+| `shared/ui/tag.spec.ts` (7) | supprimés | `AnalyticsEntityList` était le seul consommateur d'`AppTag` (suivi : variante `secondary` sans consommateur) ; `tag.ts` retiré au GREEN, `grep` à zéro |
+| `analytics-presenter.spec.ts` : `barWidth`, `buildDonutChartData`, `buildDonutOptions`, `buildPalette` (4) | supprimés | fonctions supprimées (plan C7) |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 18:33 : arrêt à la compilation sur les symboles dus au GREEN ; sous le squelette
+jetable, 60 failed / 2429 total pour C7, tous en `AssertionError`).
+
+Preuve au navigateur à fournir : Audience à 375 et 1 440 px, deux registres, axe 0 violation ;
+tableau de la courbe ouvert au clavier ; export téléchargé (contenu) ; exclusion de l'appareil
+persistée après rechargement ; aucun défilement horizontal des tableaux de parts.
+
+### Tranche C8 — Messages
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **`admin-messages-view.ts`** (TS pur) : `AdminMessagesFilter = 'all' | 'unread' | 'read'` ;
+  `toAdminMessagesView(messages, filter)` → `{ filters, rows, unread }`. `filters` : Tous, Non lus,
+  Lus, comptes de la boîte entière quel que soit le filtre, `disabled` explicite (`true` à 0, « Tous »
+  compris, comme `toAdminPostsView`). `rows` : `filterMessagesByReadStatus`, triées par `createdAt`
+  décroissant, tri stable, boîte d'entrée non mutée. `unread` : non-lus de la boîte entière.
+  `receivedAgo(createdAt, now)` : « à l'instant » (moins d'une minute, ou date future), « il y a
+  5` `min », « il y a 2` `h », « il y a 1 jour » / « il y a 6 jours », puis la date
+  `d MMM y` locale avec « 1er » (`withFirstOfMonth`) à partir de 7 jours.
+- **`AdminMessageRow`** : entrées `message`, `expanded` ; sorties `toggle`, `markRead`,
+  `deleteRequested` (`output<void>`). `message-sender`, `message-email` ; `message-subject` dont le
+  premier enfant est `app-stamp` `message-new` « Nouveau » si non lu, sujet dans
+  `message-subject-text` ; `<time>` `message-date` (`datetime` = `createdAt` brut, texte
+  `receivedAgo`, horloge lue à la construction) ; `message-expand` bouton natif `type="button"`,
+  `aria-expanded`, `aria-controls="message-body-<id>"`, nom « Afficher / Masquer le message de X »
+  (noms A5 conservés plutôt que le « Replier » de la maquette) ; `message-reply` lien
+  `mailto:<e-mail>` nommé « Répondre à X » ; `message-mark-read` (non lu seulement) « Marquer comme
+  lu` `: X » ; `message-delete` « Supprimer le message de X » ; corps `message-body`
+  `id="message-body-<id>"` rendu seulement déplié.
+- **Page** : `ul role="list"` `admin-messages-list` dont les enfants sont des `li` ; lignes dans
+  l'ordre de `rows` ; `app-filter-group` « Filtrer par lecture » ; « Tout marquer comme lu »
+  (`mark-all-read`) : bouton natif jamais `disabled`, `aria-disabled="true"` et sans effet quand rien
+  n'est non lu, sinon sans `aria-disabled` ; vide : `AdminEmptyState` (`empty-state`) « Boîte vide »
+  à la place de `admin-messages-empty` ; dépliage, suppression confirmée (A1), focus sur le titre,
+  relance HTTP inchangés.
+- **Double toast (suivi m2 de la revue de la PR c1, pour Messages)** : un échec d'écriture
+  (suppression, marquer comme lu, tout marquer) produit **une seule** notification d'erreur avec
+  l'intercepteur réel. Le choix du côté qui parle (`SKIP_ERROR_TOAST` sur les écritures de
+  `HttpContactGateway`, ou la page muette) revient au GREEN ; l'état restauré et le toast d'erreur
+  de la page restent prouvés avec la doublure.
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `admin-messages-view.spec.ts` (nouveau, TS pur) | 24 | comptes stables (`it.each` ×3) ; inactifs à zéro (`it.each` ×3) ; lignes (`it.each` ×3) ; égalité de date ; boîte non mutée ; non-lus (`it.each` ×3) ; `receivedAgo` (`it.each` ×10) | égalité exacte |
+| `components/admin-message-row.spec.ts` (nouveau) | 8 | non lu (expéditeur, tampon, `<time>`) ; noms d'action et `mailto` ; lu ; dépliage (`it.each` ×2) ; sorties (`it.each` ×3) | textes, `href`, `aria-*`, émissions |
+| `admin-messages.spec.ts` (réécrit) | 34 | liste ; filtre (5) ; clavier (5) ; marquer comme lu (2) ; tout marquer (3) ; suppression (7) ; états (6) ; relance HTTP ; une seule notification (`it.each` ×3) ; en-tête | DOM et appels de la doublure, plus aucun interne du composant |
+
+Tests migrés ou supprimés (`admin-messages.spec.ts`, 31 avant, 34 après) :
+
+| Ancien test | Devenir | Raison |
+|---|---|---|
+| « charge les messages » | « liste » : expéditeurs affichés, plus récent d'abord, `li` | plus d'interne `messages()` |
+| `toggleExpand` ajoute puis retire | supprimé, doublon des tests clavier (déplier, replier) qui passent par le bouton | interne `toggleExpand`/`expandedIds` |
+| `markAsRead` succès, échec (2) | « marquer comme lu » : tampon et action retirés, compteur invalidé, toast ; échec : reste non lu | action pressée au lieu de `extraActions[0].handler` |
+| `deleteMessage` succès, échec (2) | « suppression confirmée » : compteur et toast après confirmation ; échec : message revenu | suppression toujours derrière le dialogue (A1) |
+| `markAllRead` succès, échec, `hasUnread` (3) | « tout marquer comme lu » (3), dont `aria-disabled` à la place de `hasUnread()` et du `disabled` natif | plan C8 : reste focusable et annoncé |
+| filtre all / false / true (3) | « filtre par lecture » `it.each` sur les boutons | `readFilter` interne remplacé par `FilterGroup` |
+| suppression confirmée (5) | conservés, `messages()` remplacé par les expéditeurs affichés | — |
+| états `it.each` (4) et statut (1) | conservés ; `admin-messages-empty` devient `empty-state` (+1 test « Boîte vide ») | `AdminEmptyState` (plan) |
+| relance HTTP, clavier (3), noms d'action, marquer pressé, en-tête | conservés (sans `NO_ERRORS_SCHEMA`) | — |
+| en-têtes triables, tri par expéditeur (2) | supprimés, remplacés par « plus récent d'abord » | plus de tableau ni de tri (plan C8) ; risque noté au plan au-delà de 100 messages |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 18:33 : arrêt à la compilation sur les symboles dus au GREEN ; sous le squelette
+jetable, 51 failed / 2429 total pour C8, tous en `AssertionError`).
+
+Sous le squelette (ancienne page Messages en place), 14 tests de `admin-messages.spec.ts` passent :
+ce sont les comportements conservés (dépliage, noms d'action, suppression confirmée et focus, états
+hors vide, relance HTTP, en-tête, succès de « marquer comme lu »). Le 15ᵉ, « la boîte d'entrée n'est
+pas mutée », est une garde contre un tri en place.
+
+Preuve au navigateur à fournir : Messages au clavier seul (Tab, Entrée sur le dépliage, `mailto`),
+« Tout marquer comme lu » annoncé indisponible, filtre, vide « Boîte vide », 375 et 1 440 px, deux
+registres, axe 0 violation ; un `DELETE` annulé ne produit qu'un toast.
+
+### Bilan du RED C7 et C8
+
+- Base : 2387 passed / 2387 (`master` à `24e7089`).
+- Arbre de tests : 2429 = 2387 − 16 (`admin-analytics.spec.ts`) − 11 (`admin-analytics-header`)
+  − 7 (`analytics-bar-list`) − 4 (`analytics-donut-panel`) − 4 (`analytics-entity-list`) − 7
+  (`tag`) − 4 (`analytics-presenter`) − 31 (`admin-messages.spec.ts` d'avant) + 25
+  (`admin-audience`) + 6 (`audience-report`) + 20 (`audience-view`) + 4 (`audience-chart`) + 3
+  (`audience-share-table`) + 1 (`filter-group`) + 1 (routes) + 24 (`admin-messages-view`) + 8
+  (`admin-message-row`) + 34 (`admin-messages.spec.ts` réécrit).
+- **Arbre réel**, après `ng cache clean` et purge de `node_modules/.vite` : `pnpm test` s'arrête à
+  la compilation, sur des symboles dus au GREEN seulement : `TS2307` ×10 (`admin-audience` ×2,
+  `audience-view` ×2, `audience-report`, `audience-chart` ×2, `audience-share-table`,
+  `admin-messages-view`, `admin-message-row`), `TS2741` ×2 (`FilterOption.count` encore
+  obligatoire), et les `TS7006` qui en découlent. Une faute de type propre au spec (`TS2345`, typage
+  des appels de la doublure de toasts) a été corrigée au premier passage.
+- **Squelette jetable** (8 fichiers créés aux signatures du contrat, valeurs fausses mais typées,
+  composants sans gabarit ; `FilterOption.count` facultatif sans changement de rendu ; route et
+  page Messages inchangées) : **111 failed / 2429**, tous en `AssertionError` (aucun `TypeError`,
+  `NG0`, délai dépassé ni `stderr`) : C7 60, C8 51 ; aucun test antérieur ne tombe. Rendre `count`
+  facultatif a révélé le site de `blog-list-view.spec.ts` (adaptation mécanique ci-dessus).
+- **Harnais vérifié** : implémentation jetable complète (8 fichiers créés plus `audience-tally.ts` ;
+  `admin-messages.ts`, `admin.routes.ts`, `filter-group.ts`, `http-contact.gateway.ts` modifiés) :
+  **2429 passed / 2429**, sans `stderr` ni avertissement. Mutations vérifiées : largeur de barre
+  rapportée au total (6 tests tombent), relance de toutes les sources (1), tri des messages retiré
+  (4). Fichiers modifiés restaurés depuis l'instantané (`md5sum -c` : 5 OK), fichiers créés
+  supprimés ; rien dans l'index git.
+- Prettier et ESLint passent sur les 14 fichiers touchés ; ni le motif d'archéologie ni
+  `grep -P '\x{00A0}|\x{202F}'` n'y trouvent rien (insécables écrites en échappement, repassées
+  à `perl` après écriture).
+- Specs supprimés (`/bin/rm`) : `admin-analytics.spec.ts`, `components/admin-analytics-header.spec.ts`,
+  `components/analytics-bar-list.spec.ts`, `components/analytics-donut-panel.spec.ts`,
+  `components/analytics-entity-list.spec.ts`, `shared/ui/tag.spec.ts`. Le `git mv` d'`admin-analytics.ts`
+  et les suppressions de composants reviennent au GREEN. `admin-table.ts`, `admin-column-base.ts` et
+  les six `admin-col-*` n'ont pas de spec.
+
+Suivis rattachés à c2 :
+
+- m5 de la revue a (fonctions appelées dans les gabarits d'`AdminTable`) : sans test, il disparaît
+  avec la suppression d'`AdminTable` en C8.
+- `overview()` locaux : soldés (adaptation d'`analytics-presenter.spec.ts`, suppression
+  d'`admin-analytics.spec.ts`).
+- Variante `secondary` d'`AppTag` : `tag.spec.ts` supprimé, `tag.ts` à retirer au GREEN.
+- Double toast : couvert pour Messages (C8) ; les éditeurs restent hors de ces tranches.
+
+Pièges relevés pour le GREEN :
+
+- Le relevé des visiteurs actifs (`interval(30_000)`) laisse la page instable : ses tests n'utilisent
+  ni `whenStable` ni `pressTestId`.
+- `AudienceChart` doit importer `AppChart` (le test le retire par `overrideComponent`).
+- Sans `aria-disabled` natif, le clic sur « Tout marquer comme lu » arrive au gestionnaire : la page
+  doit l'ignorer quand rien n'est non lu.
+- `AdminEmptyState` pose déjà `data-testid="empty-state"` sur son hôte.
+- Styles (`@utility admin-*`) et `DESIGN.md` : sans test, `grep` à zéro avant suppression.
+
+Points de copie à valider en revue : « Rien sur la période. », « Aucune donnée sur la période. »,
+groupe « Totaux », « il y a 1 jour », « à l'instant », « 0 visiteur en ce moment », phrase
+d'introduction d'Audience, absence du compte de section (« 56 vues », « 42 sessions ») de la
+maquette.
+
+### Outils de test des tranches C9 et C10
+
+- Aucun nouvel outil. `admin-cv.spec.ts` fournit `stubAnalyticsGateway` (doublure partagée de C7)
+  et fige l'horloge par `vi.useFakeTimers({ toFake: ['Date'] })` (seule `Date` est simulée :
+  `settleBounded` garde son `setTimeout`).
+- Choix d'un fichier par la vraie `FileDropzone` : `change` sur son `input[type="file"]` (motif de
+  `file-dropzone.spec.ts`), plus d'appel à la méthode interne `selectCvFile`.
+- Paramètres : `ThemeStore` réel (stockage du navigateur de happy-dom, frontière d'I/O réelle),
+  `installSystemColorScheme(false)` de `core/theme/testing`, `provideRouter` avec une route
+  `admin/settings/security` vide pour suivre le lien « Configurer ».
+
+### Tranche C9 — CV
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **`admin-cv-view.ts`** (TS pur) :
+  - `formatFileSize(bytes)` : « 512 o » sous 1 024, « 76 Ko » arrondi à l'entier sous 1 Mio,
+    « 1,2 Mo » au-delà (une décimale au plus, virgule, « 1 Mo » pile). Mêmes règles que la taille
+    de `cvOverline` : le GREEN peut faire de `formatFileSize` la source unique des deux.
+  - `toCvRows(cv, downloads: number | null)` → `CartoucheRow[]` dans l'ordre « Mis en ligne »
+    (`d MMM y`, « 1er »), « Taille », « Téléchargé » (« 3 fois en 30 j », nombre groupé à l'espace
+    fine insécable `\u202f`, « fois » invariable) ; `downloads` à `null` → « indisponible » (copie de
+    la vue d'ensemble).
+- **Source des téléchargements** (le plan ne la nomme pas) : `AnalyticsGateway.getCvDownloadCount`
+  aux bornes de `dateRangeToParams('30d', now)`, lue à la construction de la page ; un échec ne
+  touche ni l'état du CV, ni l'alerte, ni les toasts : la ligne affiche « indisponible ».
+- **Page** :
+  - aside de l'en-tête : `app-cartouche` « CV en ligne », `reference` = nom du fichier, lignes
+    `toCvRows`, dans le même `header` que le `h1` ; aucun cartouche sans CV ;
+  - `admin-cv-current` porte les actions : `admin-cv-view` « Ouvrir le PDF » + `sr-only`
+    « (nouvel onglet) » (`target="_blank"`, `rel="noopener noreferrer"`, `href` = URL de
+    téléchargement), `admin-cv-delete` « Retirer le CV du site… » (`app-button` danger texte),
+    dialogue A1 inchangé ;
+  - section de téléversement : `h2` `admin-cv-upload-heading` « Remplacer le fichier » avec un CV,
+    « Mettre un CV en ligne » sans ; `FileDropzone` existante ; envoi réussi → fichier transmis tel
+    quel, toast « CV mis en ligne », CV relu (nouveau nom dans le cartouche), bouton d'envoi retiré ;
+    fichier non PDF → toast d'erreur, aucun bouton d'envoi ;
+  - vide : `AdminEmptyState` (`empty-state`), tampon « Aucun CV », à la place d'`admin-cv-empty`.
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `admin-cv-view.spec.ts` (nouveau, TS pur, builder `makeCvInfo`) | 11 | `formatFileSize` (`it.each` ×7 : 0, 512, 1 023, 1 024, 76 Ko, 1 Mo, 1,2 Mo) ; `toCvRows` (`it.each` ×4 : jamais téléchargé, « 1er » et 1,2 Mo, 1 234 groupé, indisponible) | égalité exacte |
+| `admin-cv.spec.ts` (réécrit) | 24 | suppression (5, inchangés) ; états (`it.each` ×4, statut, pas de toast, relance, tampon « Aucun CV ») ; cartouche (3 : contenu et place, bornes des 30 jours, compte indisponible) ; actions (2) ; téléversement (`it.each` ×2 titres, attente, succès, non PDF) ; en-tête | textes, `tagName`, `href`/`target`/`rel`, appels datés, toasts, `File` transmis |
+
+Tests migrés ou supprimés (`admin-cv.spec.ts`, 17 avant, 24 après) :
+
+| Ancien test | Devenir | Raison |
+|---|---|---|
+| états `it.each`, ligne « vide » sur `admin-cv-empty` | même test, `empty-state` | `AdminEmptyState` (plan C9) |
+| « Aucun CV en ligne » dans `admin-cv-empty` | remplacé par le tampon « Aucun CV » (et absence de cartouche) | maquette `#cv`, plan C9 ; « Aucun CV en ligne » reste le sur-titre (`cvOverline`) |
+| « Mis en ligne le » (`admin-cv-uploaded-at-label`) | remplacé par la ligne « Mis en ligne » du cartouche | la grille « CV actuel » disparaît |
+| lien « Voir le CV (nouvel onglet) » | même test, nom « Ouvrir le PDF (nouvel onglet) », `href` ajouté | maquette `#cv` |
+| « Mettre en ligne » puis « Mise en ligne… » | conservé, fichier choisi par la zone de dépôt au lieu de `selectCvFile` | plus aucun interne du composant |
+| suppression (5), états (6 autres), en-tête | conservés tels quels | — |
+
+Adaptation mécanique : `render` reçoit une doublure `AnalyticsGateway` (défaut
+`stubAnalyticsGateway()`, 0 téléchargement), aucun appel existant modifié.
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 19:06 : arrêt à la compilation sur `TS2307 './admin-cv-view'`, symbole dû au GREEN ;
+sous le squelette jetable, 21 failed / 2472 total pour C9, tous en `AssertionError`).
+
+Sous le squelette, 14 tests d'`admin-cv.spec.ts` passent : les comportements conservés
+(suppression 5, états hors vide 6, en-tête, « Mise en ligne… ») et le refus d'un fichier non PDF,
+nouveau, qui garde ce comportement pendant la réécriture de la page.
+
+Preuve au navigateur à fournir : CV à 375 et 1 440 px, deux registres, axe 0 violation ; cartouche
+dans l'en-tête ; « Ouvrir le PDF » au clavier ; retrait annulé puis confirmé (0 puis 1 `DELETE`
+annulé) ; état vide « Aucun CV » ; téléchargements en 500 → « indisponible », sans toast.
+
+### Tranche C10 — Paramètres
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **Page** : `h2` « Sécurité » puis « Apparence ».
+  - Double authentification : lien natif `settings-two-factor-link` « Configurer » vers
+    `/admin/settings/security` (navigation suivie par le routeur) ;
+  - session : `settings-session` « Connecté en tant que <e-mail>. » ; `settings-logout` bouton
+    natif `type="button"` « Se déconnecter » → `AuthStore.logout()` une fois ;
+  - Apparence : `fieldset` `theme-fieldset`, `legend` « Thème de l'administration », phrase
+    `theme-hint` « Le même réglage que sur le site public, enregistré dans ce navigateur. » dans le
+    `fieldset` ; trois `input type="radio"` natifs d'un même `name`, `theme-option-system`,
+    `-light`, `-dark`, chacun nommé par son `label` (Système, Clair, Sombre), coché =
+    `ThemeStore.preference()` ; choisir → préférence, stockage (`'system'` retire la clé) et classe
+    `app-dark` suivent.
+- **`/admin/settings/security`** (`TwoFactorSetup`) : un seul `h1` « Sécurité » (titre de l'onglet
+  « Sécurité | Admin »), premier titre de la page, 2FA activée ou non. Statut « 2FA activé » :
+  `app-stamp` `twofa-status` (tampon `foreground` sur fond, 14,02:1 en clair au § 3), à la place du
+  texte `status-success` sur `status-success/10`. Le texte « 2FA activé » est conservé
+  (`two-factor-disable-form.spec.ts` le lit). Le contraste lui-même se vérifie au navigateur.
+- **Option « repères CV en ligne et Sécurité » sous les actions rapides de la vue d'ensemble** :
+  non tranchée (plan C10 : « à trancher avec l'utilisateur » ; revue de la PR b : « à inscrire en
+  C10 s'ils sont voulus »). Aucun test, rien à implémenter tant que l'utilisateur ne l'a pas
+  retenue.
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `admin-settings.spec.ts` (réécrit) | 12 | en-tête (conservé) ; sections ; lien « Configurer » suivi ; session ; déconnexion ; `fieldset` et radios ; cochée selon le stockage (`it.each` ×3) ; choix (`it.each` ×3 : sombre, clair, système) | textes, `tagName`, `type`, `name`, `labels`, URL du routeur, préférence, clé de stockage, `app-dark` |
+| `features/auth/application/two-factor-setup.spec.ts` | +3 | `h1` unique et premier (`it.each` ×2, activée ou non) ; statut en tampon | balises, textes |
+
+Test existant d'`admin-settings.spec.ts` : l'en-tête est conservé, son `AuthStore` reçoit
+`logout` (doublure), et le `ThemeStore` réel est instancié (adaptation mécanique, aucune valeur
+attendue modifiée). `two-factor-setup.spec.ts` et `http-analytics.gateway.spec.ts` n'étaient pas au
+format Prettier : le formateur les a réindentés, aucune ligne de test existante modifiée.
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 19:06 ; sous le squelette jetable de C9, 14 failed / 2472 total pour C10, tous en
+`AssertionError`).
+
+Preuve au navigateur à fournir : Paramètres à 375 et 1 440 px, deux registres, axe 0 violation ;
+radios au clavier (flèches), thème appliqué sans rechargement puis conservé après rechargement ;
+`/admin/settings/security` sans `page-has-heading-one` ni `color-contrast`, deux registres ;
+« Se déconnecter » mène à `/login`.
+
+### Tranche C7bis — corrective : une erreur d'Audience ne produit pas de toasts en rafale
+
+Origine : Verify C7–C8 (« en erreur partielle, `errorToastInterceptor` affiche un toast par GET en
+échec, 5 pour les métriques, en plus de l'alerte »). Règle : une page qui affiche sa propre alerte
+d'erreur ne reçoit pas en plus un toast par requête échouée.
+
+Contrat fixé par ce RED :
+
+- Mécanisme : les **neuf lectures** de `HttpAnalyticsGateway` (`stats/overview`, `chart`,
+  `metrics`, `active`, `projects`, `articles`, `articles-read`, `cta`, `cv-downloads`) portent
+  `SKIP_ERROR_TOAST`, comme les écritures de `HttpContactGateway` en C8 et le suivi déjà
+  silencieux. L'erreur continue de remonter à l'appelant (statut 500 reçu), les états d'erreur des
+  pages restent pilotés par les ressources.
+- Pourquoi la passerelle et pas la facade : la facade ne voit pas la requête (contrat abstrait
+  d'`AnalyticsGateway`, `HttpContext` hors du domaine). Toutes ces lectures ne servent qu'à
+  l'admin, et chaque consommateur montre déjà son propre état : Audience (`load-error`), vue
+  d'ensemble (`LoadError` par section), visiteurs actifs (`catchError → EMPTY`, sinon un toast
+  toutes les 30 s en panne), CV (« indisponible », C9). Aucune page publique ne les appelle.
+- Les autres requêtes gardent leur toast (test témoin : un GET hors analytics en 500 → 1 toast,
+  qui prouve aussi que l'intercepteur est bien monté).
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `http-analytics.gateway.spec.ts` | +10 | vraie chaîne `provideHttpClient(withInterceptors([errorToastInterceptor]))` : `it.each` ×9 lectures en 500 ; témoin hors analytics | statut reçu par l'appelant, nombre de toasts |
+| `audience-report.spec.ts` | +1 | facade réelle sur `HttpAnalyticsGateway` réelle et intercepteur réel, 11 requêtes dont les 5 métriques en 500 | `hasError()`, 0 toast, `verify()` |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 19:06 : 10 failed / 2472 total, tous en `AssertionError` « `toasts: 1` attendu 0 » ; le
+témoin passe).
+
+Preuve au navigateur à fournir : Audience avec les métriques en 500 → une seule `load-error`, aucun
+toast ; vue d'ensemble avec l'overview en 500 → alerte de section, aucun toast.
+
+### Bilan du RED C9, C10 et C7bis
+
+- Base : 2429 passed / 2429 (`feat/admin-audience`, C7 et C8 verts non commités).
+- Arbre de tests : 2472 = 2429 + 11 (`admin-cv-view`) + 7 (`admin-cv.spec.ts`, 17 → 24) + 11
+  (`admin-settings.spec.ts`, 1 → 12) + 3 (`two-factor-setup`) + 10 (`http-analytics.gateway`) + 1
+  (`audience-report`).
+- **Arbre réel**, après `ng cache clean` et purge de `node_modules/.vite` : `pnpm test` s'arrête à
+  la compilation sur un seul symbole dû au GREEN, `TS2307 './admin-cv-view'`. Aucune autre erreur
+  de type.
+- **Squelette jetable** (`admin-cv-view.ts` aux signatures du contrat, valeurs fausses mais typées) :
+  **45 failed / 2472**, tous en `AssertionError` (aucun `TypeError`, `NG0`, délai dépassé ni
+  `stderr`) : C9 21 (`admin-cv-view` 11, `admin-cv` 10), C10 14 (`admin-settings` 11,
+  `two-factor-setup` 3), C7bis 10 (passerelle 9, facade 1) ; aucun test antérieur ne tombe.
+- **Harnais vérifié** : implémentation jetable (`admin-cv-view.ts` créé ; `admin-cv.ts`,
+  `admin-settings.ts`, `two-factor-setup.ts`, `two-factor-disable-form.ts`,
+  `http-analytics.gateway.ts` modifiés) : **2472 passed / 2472**, sans `stderr` ni avertissement.
+  Mutations vérifiées : radios sans `(change)` (3 tests tombent), `getMetrics` sans
+  `SKIP_ERROR_TOAST` (2 : passerelle et facade). Fichiers modifiés restaurés depuis l'instantané
+  (`md5sum -c` : 5 OK), fichier créé supprimé ; rien dans l'index git.
+- Prettier et ESLint passent sur les 6 specs touchés ; ni le motif d'archéologie ni
+  `grep -P '\x{00A0}|\x{202F}'` n'y trouvent rien (insécables repassées en échappement à `perl`
+  après écriture).
+- Réparation de structure de la spec, sans changement de texte : la phrase « Points de la
+  `## Review code` couverts par un test » des correctifs de la PR a avait été coupée par l'insertion
+  du Verify C1–C2 au milieu de la ligne ; la ligne orpheline « ## Review code` … » ouvrait une
+  fausse section (le contrôle `aak-spec-lint` lisait la revue au mauvais endroit). La phrase est
+  recollée, les blocs Verify « Tranches C1 et C2 » et « Tranches C7 et C8 » sont déplacés tels quels
+  sous `## Verify` (avant C3–C4, et en fin de section).
+
+Pièges relevés pour le GREEN :
+
+- `two-factor-setup.ts` est dans `features/auth` : le `h1` n'y importe pas `AdminPageHeader`
+  (dépendance `auth → admin`) ; le test ne lit que la balise et le texte.
+- Le `ThemeStore` réel écrit la classe `app-dark` : les radios se lient en `[checked]` + `(change)`,
+  pas de Signal Forms (plan C10).
+- `formattedSelectedSize`, `formatDate`, `formatSize` d'`AdminCv` : sans consommateur après C9
+  (plan), à supprimer ; la taille de `cvOverline` peut passer par `formatFileSize`.
+- Après un envoi réussi, `FileDropzone` garde le fichier affiché (suivi de la revue de c1, même
+  défaut sur la page CV) : hors de ces tranches, aucun test ne le fige.
+
+Points de copie à valider en revue : « Sécurité » comme `h1` de `/admin/settings/security`,
+« indisponible » pour un compte de téléchargements en échec, phrase de l'état vide du CV (non
+fixée par le test, seul le tampon « Aucun CV » l'est).
+
 ## Journal des tranches
 
 - **Tranche A1 — supprimer demande confirmation** : GREEN 1720 passed / 1720 total · refactor : `ConfirmDialog` ferme le `<dialog>` avant d'émettre (sinon le reste de la page reste inerte et le focus ne peut pas atteindre le `h1`) ; requête `viewChild` de titre remontée sous les dépendances injectées sur les 4 pages (ordre `CLAUDE.md`).
@@ -3153,6 +3560,13 @@ grilles de l'éditeur d'article), m3 (insécables), m4, m6 (« l'envoi de l'imag
 - **Tranche C6 — liste des articles** : GREEN 2377 passed / 2377 total · refactor : corps du `@for` sorti dans `components/admin-post-row.ts` (`tr[app-admin-post-row]`, noms d'action en `computed`, comme `AdminProjectRow`) ; `admin-table*` gardé (Messages s'en sert encore).
 - **Correctifs de la revue de la PR c1** : GREEN 2387 passed / 2387 total · refactor : aucun. Points 1 à 4, m1, m3, m4, m5, m6, m8 (inscrit en suivi de la PR c2), m9 de la `## Review code`. Barre d'enregistrement : `scroll-padding-bottom` sur `:root:has(app-admin-save-bar)`, cinq paliers mesurés (la barre fait 105, 73, 125, 105 puis 73 px selon la largeur) ; radio de nature étendue à toute la carte (`absolute inset-0 size-full opacity-0`). Grilles de « 01 · Article », « 02 · Contenu », « 03 · Couverture » en `grid-cols-1`. Couverture d'article : `postsResource.reload()` après un téléversement réussi sur un article existant, seul cas où la liste est redemandée (le flux partagé de `HttpBlogGateway` réémet aussi sur `invalidateAdminPosts`, sans requête HTTP de plus : mesuré, 1 GET). Hors liste : m5 traité par une option `topHeadingLevel` de `parseMarkdown` (le titre le plus haut du contenu devient `h2`, le reste suit) plutôt qu'un décalage fixe, qui aurait fait d'un article réel en `##` une suite de `h3` sous le `h1` (axe `heading-order`, constaté au navigateur) ; blocs de code du rendu en `tabindex="0"` (ils défilent désormais dans leur cadre, axe `scrollable-region-focusable`, constaté au navigateur). Commentaire de `styles.css` sur `field-label` retiré (m4).
 - **Colonne d'aperçu des éditeurs à `2xl`** : GREEN 2387 passed / 2387 total · refactor : aucun. Mesuré au navigateur : avec la colonne de 25rem dès `lg`, le formulaire tombait à 204 px à 1 024 et 460 px à 1 280. La colonne d'aperçu, son `sticky`, le lien « Voir l'aperçu » et la réserve du squelette passent à `2xl` (1 536 px) ; le formulaire fait au moins 660 px à partir de 1 024. Paliers 80rem et 82.5rem du `scroll-padding-bottom` supprimés (la barre ne passe plus sur deux lignes au-dessus de 527 px) ; balayage 320 à 1 920 px : marge ≥ barre + 16 px partout, 0 élément de focus entièrement masqué à 1 280 et 1 536, axe 0 violation à 1 280, 1 536 et 1 920 en clair et en sombre.
+
+- **Tranche C7 — Audience** : GREEN 2429 passed / 2429 total · refactor : aucun. Hors liste du plan : `@utility table-head` dans `styles.css` (en-têtes de colonne des deux tableaux d'Audience, six `th` natifs) ; nombre des visiteurs actifs tiré d'un `toSignal` (désabonnement à la destruction par le `DestroyRef` du composant) au lieu d'un `subscribe` manuel ; export : le CSV reprend les listes entières (plus le découpage d'affichage) ; supprimés au `grep` : `admin-analytics.ts`, sept composants `admin-analytics-*` / `analytics-*`, `buildDonutChartData`, `buildDonutOptions`, `buildPalette`, `barWidth`, `shared/ui/tag.ts` (0 consommateur).
+- **Tranche C8 — Messages** : GREEN 2429 passed / 2429 total · refactor : aucun. Double toast tranché côté passerelle : les trois écritures de `HttpContactGateway` (`markMessageAsRead`, `deleteMessage`, `markAllRead`, seule consommatrice la page Messages) portent `SKIP_ERROR_TOAST`, la page garde son toast nommé et la restauration (la page muette aurait fait tomber les tests à la doublure, qui exigent le toast de la page). Sortie `toggle` de `AdminMessageRow` : `eslint-disable-next-line @angular-eslint/no-output-native` justifié (nom fixé par le contrat, hôte `li`). Supprimés au `grep` : `admin-table.ts`, `admin-column-base.ts`, six `admin-col-*.ts`, les onze `@utility admin-*` de `styles.css`. Après le navigateur : colonne d'actions de la ligne fixée à `8.25rem` (les dates se décalaient d'une ligne à l'autre selon la présence de « Marquer comme lu ») et table des données de la courbe bornée à `max-w-lg`.
+- **Tranche C9 — CV** : GREEN 2478 passed / 2478 total · refactor : `formatFileSize` et `formatUploadDay` (`admin-cv-view.ts`) deviennent la source unique de la taille et du jour de mise en ligne, consommés par `toCvRows` et `cvOverline` (2 sites chacun, `fileSize`, `DAY_MONTH_YEAR`, `ONE_DECIMAL`, `KIB`/`MIB` retirés d'`admin-page-copy.ts`) ; supprimés au `grep` : `formatDate`, `formatSize`, `formattedSelectedSize`, `formattedDate`, `formattedFileSize`, `selectFile` d'`AdminCv`, et `ChangeDetectionStrategy.OnPush` du fichier réécrit. Hors liste du plan : `AdminSectionHead` pose `data-testid` = `headingId` sur son `h2` (le test lit `admin-cv-upload-heading`, réutiliser la tête de section plutôt que la recopier) ; « Erreur de suppression » prend l'espace insécable avant le deux-points. **Zone de dépôt après envoi (demande de l'utilisateur, suivi de la revue de c1)** : `FileDropzone.resetToken` (entrée) remet le fichier affiché à `null` par un `linkedSignal` sur ce jeton (même effet que `resetToken` + `effect()` de `CLAUDE.md`, sans `effect` qui réécrit un signal), sans émettre `cleared` ; le champ natif est remis à blanc à chaque choix (même fichier rechoisissable). Branché sur le CV (`uploadCount`) et sur les couvertures des deux éditeurs (`coverResetToken`, incrémenté après un enregistrement réussi, relayé par `AdminProjectForm` / `AdminPostForm`). +6 tests : `file-dropzone.spec.ts` (3), `admin-cv.spec.ts` (1), `admin-project-editor.spec.ts` (1), `admin-post-editor.spec.ts` (1) ; les trois tests de page tombent sans la liaison `[resetToken]` (mutation vérifiée, 3 failed).
+- **Tranche C10 — Paramètres** : GREEN 2478 passed / 2478 total · refactor : la ligne de réglage (titre, explication, réglage à droite) répétée trois fois sort dans `components/admin-setting-row.ts` (`div[app-admin-setting-row]`, `fieldset[app-admin-setting-row]`, légende flottante pour en faire un élément de grille) ; `AppIconTile` et la carte bordée retirés de la page (le composant garde trois consommateurs). `/admin/settings/security` : `h1` « Sécurité » écrit dans `TwoFactorSetup` (pas d'`AdminPageHeader`, dépendance `auth → admin` interdite), statut « 2FA activé » en `Stamp` `twofa-status`.
+- **Tranche C7bis — corrective : une erreur d'Audience ne produit pas de toasts en rafale** : GREEN 2478 passed / 2478 total · refactor : les neuf lectures de `HttpAnalyticsGateway` passent par un `getStats<T>(path, params)` privé qui porte `withCredentials` et `SKIP_ERROR_TOAST` (neuf appels `http.get` dupliqués remplacés).
+- **Correctifs de la revue de la PR c2** : RED 31 failed / 236 total sur les neuf fichiers de spec touchés, tous en `AssertionError`, plus 1 failed joué à part (m5, NG0955) et `format-file-size.spec.ts` rouge à la compilation (module absent) ; les trois témoins « l'intercepteur garde son toast » (`getCurrent`, `getProjectById`, `likePost`) verts dès le RED puis GREEN 2510 passed / 2510 total · refactor : `silentErrors()` sorti dans `core/interceptors/skip-error-toast.ts` (5 consommateurs : passerelles analytics, contact, CV, projets, articles ; `HttpContext` construit à la main retiré des cinq) ; `uploadCount` d'`AdminCv` renommé `dropzoneResetToken` (il sert aussi au refus) ; `formatFileSize` déplacé dans `shared/ui/format-file-size.ts` (2 consommateurs `features/admin`, 1 `shared/ui`). Points 1 à 7, m1, m2, m3 (moitié), m5, m6, m7 de la `## Review code`. Point 1 : `SKIP_ERROR_TOAST` sur `upload` et `delete` de `HttpCvGateway`, test à vraie chaîne + `errorToastInterceptor`. Point 2 : sorties `coverCleared` des deux formulaires, `pendingCover.set(null)` dans les deux éditeurs. Point 3 : refus → jeton de remise à zéro incrémenté et sélection vidée (CV : `dropzoneResetToken`, toast inchangé ; couvertures : sortie `coverRejected`, toast « Seules les images sont acceptées. » de l'éditeur, même forme que le CV) ; focus de la zone relayé à « Remplacer » ou, si la zone a été remise à zéro par le parent, au bouton de la zone. Point 4 : `'\uFEFF'` réécrit en perl, `grep -rlP '\x{FEFF}' src` vide. Point 6 : `DESIGN.json` tenu à la main (aucun script) : composant « Admin Table » retiré, règle *Do* réécrite (`form-*`, `field-*`, `table-head`, `link-btn-*`, même texte dans `DESIGN.md`, qui disait encore `admin-*`, `btn-*`), démo « Tag (info) » renvoyée à la pastille de sujet d'article (`tag.ts` retiré en C7) ; les sections d'écran de `DESIGN.md` ne sont pas reprises : `DESIGN.json` ne porte que sept démos et les règles, pas le catalogue des composants. m2 : `SKIP_ERROR_TOAST` sur les huit écritures de `HttpProjectsGateway` et les quatre de `HttpBlogGateway` (`grep` : seul consommateur l'admin, chaque page nomme l'échec par son toast) ; `likePost` (public) garde le toast de l'intercepteur. m3 : `GET /contact/messages` silencieux (`AdminMessages`, `AdminOverview`, tous deux avec leur état d'erreur) ; `GET /cv` **laissé** : lu aussi par `AboutHiring` (page publique), voir les suivis. m5 : `track $index` dans `AudienceShareTable` et `AudienceTally` (listes recalculées, jamais mutées), test sur la table (NG0955 levé avant). m6 : « 30\u00a0j », 1 048 064 octets → « 1 Mo ». m7 : garde `admin-table*` retirée d'`admin-blog.spec.ts` (assertion d'absence d'un état disparu, pas une valeur attendue ; `min-w-max` / `overflow-x-auto` gardés). Valeurs attendues changées à la demande de la revue : « 30 j » → « 30\u00a0j » dans `admin-cv-view.spec.ts` (3) et `admin-cv.spec.ts` (1).
 
 ## Verify
 
@@ -3462,6 +3876,51 @@ harnais (`addScriptTag`, 0 avant, 1 après l'injection, mesuré).
 
 **Verdict : PASS.**
 
+### Tranches C1 et C2
+
+Build de production servi en local, Chromium (Playwright), axe-core 4.14 (WCAG 2.0 à 2.2 A/AA +
+best-practice).
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production`, puis `git checkout public/rss.xml public/sitemap.xml`.
+2. `dist/angular-portfolio-app/browser` servi sur `http://localhost:4341`, `/admin/**` réécrit vers `index.csr.html`.
+3. Script `scratchpad/v/c12.mjs` : session simulée (`auth:session`), `sendBeacon` neutralisé ; GET de l'API servis
+   par fixtures (liste de projets copiée une fois en GET public, `GET /projects/:id` tiré de cette liste) ; toute
+   requête non-GET **annulée** et journalisée, sauf le `POST /projects` du seul scénario de création, **satisfait
+   localement** par le harnais (réponse fabriquée, rien ne part vers l'API) pour suivre la redirection ; toute autre
+   origine annulée.
+4. Cas joués : liste à 1 440 et 375 px en clair et en sombre ; filtres En production, Démos, Scripts, retour à Tous ;
+   « Modifier » de la première ligne ; éditeur à 1 440 (deux registres) et 375 px ; titre modifié puis
+   « Enregistrer » ; `/admin/projects/new` parcouru et rempli au clavier puis envoyé par Entrée ; envoi vide ;
+   `GET /projects/:id` en 500 (deux registres).
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| Liste | 6 lignes dans l'ordre public, sur-titres « 01 · Application Web »…, un seul `h1`, aucun défilement horizontal à 375 px |
+| Filtres | Tous 6 / En production 2 / Démos 2 / Scripts 2, `aria-pressed` suit le choix, lignes filtrées, rang conservé, retour à Tous complet |
+| Modifier | `/admin/projects/<id>`, onglet « Modifier un projet \| Admin », fil « Projets / DashFlow », `h1` DashFlow, champs remplis, nature « En production » cochée, 5 sections, « Voir la fiche » → `/projects/dashflow` |
+| Mise à jour | `PATCH /projects/<id>` annulé par le harnais ; notification « Erreur lors de la mise à jour du projet », `h1` inchangé, saisie conservée |
+| Création au clavier | tabulation : titre, catégorie, **un seul arrêt** pour la nature (flèches pour changer), position, mise en avant, accroche, point fort, périmètre, description, couverture, 4 liens, tags, deux « Ajouter », « Enregistrer » ; focus de carte : contour `primary` 2 px ; Entrée sur « Enregistrer » → `POST /projects` intercepté avec le payload attendu (`kind: "demo"`, liens `null`), notification « Projet créé », adresse `/admin/projects/p-new-fixture` |
+| Envoi vide | 4 erreurs `role="alert"` « Ce champ est obligatoire » (titre, catégorie, nature, description), aucune requête |
+| Erreur de chargement | `LoadError` + « Retour aux projets » → `/admin/projects`, aucun formulaire, `h1` « Modifier un projet » |
+| axe | **0 violation** sur la liste (4 rendus), les filtres, l'éditeur (3 rendus), `/new`, l'erreur (2 rendus) ; après création, 1 `color-contrast` sur `toast-summary` (toast en cours d'apparition, composant hors tranche) |
+
+**Console** : aucune erreur applicative. Restent des artefacts du harnais : `404 /api/config` (route du serveur
+SSR, absente du service statique), le `500` simulé, `net::ERR_FAILED` du `PATCH` annulé (doublé par le toast
+générique de l'intercepteur, comportement antérieur).
+
+**Captures** (scratchpad) : `c12-projets-{1440,375}-{clair,sombre}.jpg`, `c12-projets-filtre-demos-1440-clair.jpg`,
+`c12-editeur-1440-{clair,sombre}.jpg`, `c12-editeur-375-clair.jpg`, `c12-editeur-patch-annule-clair.jpg`,
+`c12-nouveau-1440-clair.jpg`, `c12-nouveau-nature-clavier-clair.jpg`, `c12-nouveau-vide-erreurs-clair.jpg`,
+`c12-apres-creation-clair.jpg`, `c12-editeur-erreur-{clair,sombre}.jpg`, rapport `c12-report.json`. Les captures
+pleine page figent la barre « Enregistrer » (`sticky`) à la hauteur de la fenêtre, et les images chargées à la
+demande hors de la fenêtre restent vides : artefacts de capture.
+
+**Verdict : PASS.**
+
 ### Tranches C3, C4 et complément de fidélité
 
 Build de production servi en local (port 4342), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
@@ -3656,6 +4115,206 @@ service statique).
 
 **Verdict : PASS** (sous réserve de l'arbitrage `target-size` à l'ouverture de l'éditeur
 d'article à 1 440 px, ci-dessus).
+
+### Tranches C7 et C8
+
+Build de production servi en local (port 4378), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
++ best-practice), CSP de la page appliquée.
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production` (exit 0, « Prerendered 20 static routes »), puis
+   `git checkout public/rss.xml public/sitemap.xml`.
+2. Script `scratchpad/v/c78.mjs` : session simulée (`localStorage['auth:session'] = '1'`), GET de
+   l'API servis par fixtures (relevé de production : 42 visiteurs, 56 pages vues, 88,1 % de rebond ;
+   huit pages, quatre sources dont l'accès direct, navigateurs, systèmes, pays, projets, articles,
+   CTA ; trois messages dont deux non lus, puis boîte entièrement lue, puis boîte vide). **Toute
+   requête non-GET annulée** (`route.abort()`) et journalisée ; aucune réponse simulée à une écriture.
+3. Cas joués : Audience et Messages à 1 440 et 375 px en clair et en sombre (axe, défilement
+   horizontal) ; période 7 jours ; export CSV ; tableau de la courbe ouvert au clavier ; exclusion
+   de l'appareil puis rechargement ; bascule de thème depuis la coque, courbe redessinée ; métriques
+   en 500 puis « Réessayer » ; messages au clavier (Tab depuis le filtre, Entrée), filtres,
+   « Tout marquer comme lu » annulé, suppression annulée puis confirmée, boîte entièrement lue,
+   boîte vide.
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| Audience, en-tête | sur-titre « 7 sept. au 7 oct. 2026 · 30 derniers jours », introduction « 42 visiteurs, dont 18 venus de google.com. 9 sur 10 repartent après une page. », « 1 visiteur en ce moment » ; un seul `h1`, un seul `main` |
+| Relevé, sections | Visiteurs 42 / 42 sessions, Pages vues 56 / 1,3 page par session, Rebond 88,1 % / 37 sessions sur 42, Durée moyenne 22 s ; `h2` Visites par jour, Pages les plus vues, Provenance, Ce que les visiteurs font ; pages « / 24 43 % » … « Autres 11 20 % » ; huit listes `h3` |
+| Période 7 jours | bouton pressé, sur-titre « 30 sept. au 7 oct. 2026 · 7 derniers jours », 1 nouveau GET `overview?startDate=2026-09-30&endDate=2026-10-07`, métriques aux mêmes bornes |
+| Export | `analytics-30d-2026-10-07.csv`, BOM puis `Section,Label,Count`, `KPI,Visiteurs,42`, 38 lignes |
+| Tableau de la courbe | `summary` focalisé (`:focus-visible`), Entrée → `details` ouvert, 30 lignes |
+| Exclusion | `aria-pressed="true"` après le clic et après rechargement, « Cet appareil est exclu » |
+| Courbe, deux thèmes | trait `primary` plein et pages vues tiretées `foreground` 55 %, relues après bascule en sombre depuis la coque (capture) |
+| Erreur partielle | métriques en 500 : une seule `LoadError` (« Une partie des statistiques n'a pas pu être chargée. »), axe 0 ; « Réessayer » : 5 GET de métriques, 0 GET d'overview, erreur levée |
+| Messages | « 2 non lus · 3 au total », plus récent d'abord, « il y a 2 h », « il y a 3 jours », « 20 sept. 2026 » ; filtres « Tous 3 / Non lus 2 / Lus 1 » ; Non lus → Claire Martin, Inès Morel ; Lus → Paul Durand |
+| Clavier | 3 Tab depuis le filtre jusqu'au dépliage, Entrée : `aria-expanded="true"`, corps affiché, Tab suivant sur « Répondre à » (`mailto:`) |
+| Tout marquer comme lu | 1 `PATCH /contact/messages/mark-all-read` annulé, deux tampons « Nouveau » restaurés, **un seul toast** « Erreur lors de la mise à jour » ; boîte lue : `aria-disabled="true"`, focalisable, Entrée sans requête, « Non lus 0 » inactif |
+| Suppression | Annuler : 0 `DELETE` ; confirmer : 1 `DELETE /contact/messages/1` annulé, focus sur le `h1`, ligne revenue, **un seul toast** « Erreur lors de la suppression » |
+| Vide | tampon « Boîte vide » centré, filtres à 0 inactifs, deux registres, 1 440 et 375 |
+| Défilement horizontal | aucun, aux 16 points mesurés |
+
+**axe** : **0 violation** sur Audience (1 440 et 375, clair et sombre, et en erreur), Messages
+(1 440 et 375, clair et sombre, premier message déplié), dialogue de suppression ouvert, boîte vide
+(1 440 et 375, deux registres).
+
+**Console** : aucune erreur applicative. Restent des artefacts du harnais : 404 `/api/config` (route
+du serveur SSR, absente du service statique), `net::ERR_FAILED` des écritures annulées, refus CSP de
+l'injection d'axe par balise inline (repli `evaluate`). Préexistant, hors de ces tranches : en
+erreur partielle, `errorToastInterceptor` affiche un toast par GET en échec (5 pour les métriques),
+en plus de l'alerte.
+
+**Captures** (scratchpad) : `c78-audience-{1440,375}-{clair,sombre}.jpg`, `c78-audience-7j-clair.jpg`,
+`c78-audience-tableau-clavier-clair.jpg`, `c78-audience-courbe-apres-bascule-sombre.jpg`,
+`c78-audience-erreur-sombre.jpg`, `c78-messages-{1440,375}-{clair,sombre}.jpg`,
+`c78-messages-clavier-clair.jpg`, `c78-messages-tout-marquer-annule-clair.jpg`,
+`c78-messages-dialogue-clair.jpg`, `c78-messages-tout-lu-sombre.jpg`,
+`c78-messages-vide-{1440,375}-{clair,sombre}.jpg`, rapport `c78-report.json`.
+
+**Verdict : PASS.**
+
+### Tranches C9, C10 et C7bis
+
+Build de production servi en local (port 4379), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
++ best-practice), CSP de la page appliquée.
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production` (exit 0, « Prerendered 20 static routes »), puis
+   `git checkout public/rss.xml public/sitemap.xml`.
+2. Script `scratchpad/v/c910.mjs` (harnais de `c78.mjs`) : session simulée
+   (`localStorage['auth:session'] = '1'`), GET de l'API servis par fixtures (CV
+   `cvNedellecJulien.pdf`, 77 824 octets, mis en ligne le 19 sept. 2026, 0 téléchargement ; puis
+   sans CV). **Toute requête non-GET annulée** (`route.abort()`) et journalisée, à une exception
+   près, demandée pour prouver la remise à zéro de la zone : dans un seul cas, `POST /cv/upload` est
+   **intercepté par le navigateur et servi par une réponse locale** (rien ne part vers l'API).
+3. Cas joués : CV avec et sans CV à 1 440 et 375 px en clair et en sombre ; « Ouvrir le PDF » au
+   clavier ; retrait annulé puis confirmé ; envoi annulé ; envoi intercepté ; téléchargements en
+   500 ; Paramètres aux quatre formats ; radios au clavier, rechargement, retour à « Système » ;
+   « Configurer » ; « Se déconnecter » ; `/admin/settings/security` aux quatre formats ; Audience
+   avec les cinq métriques en 500 ; vue d'ensemble avec l'overview en 500.
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| CV, en-tête | sur-titre « PDF · 76 Ko · mis en ligne le 19 sept. 2026 », un seul `h1` ; cartouche « CV en ligne » / « cvNedellecJulien.pdf » dans le même `header` que le `h1` : Mis en ligne 19 sept. 2026, Taille 76 Ko, Téléchargé 0 fois en 30 j ; actions « Ouvrir le PDF (nouvel onglet) », « Retirer le CV du site… » ; `h2` « Remplacer le fichier » |
+| Clavier | Tab depuis le `h1` jusqu'à « Ouvrir le PDF » (`:focus-visible`), `href` `…/api/cv/download`, `target="_blank"`, `rel="noopener noreferrer"` |
+| Retrait | Annuler : 0 `DELETE` ; confirmer : 1 `DELETE /cv` annulé, focus sur le `h1`, CV toujours affiché (l'écriture n'a pas abouti), toast d'échec |
+| Envoi annulé | 1 `POST /cv/upload` annulé, toast d'échec, la zone garde le fichier (on peut réessayer) |
+| Envoi intercepté | avant : « nouveau-cv.pdf 15 o Remplacer » ; après : toast « CV mis en ligne », cartouche « nouveau-cv.pdf » / 7 oct. 2026, **zone vidée** (0 « Remplacer », zone de dépôt revenue), bouton d'envoi retiré ; le même fichier rechoisi est de nouveau accepté |
+| Téléchargements en 500 | ligne « Téléchargé indisponible », 0 toast, 0 alerte, CV affiché ; bornes `startDate=2026-09-07&endDate=2026-10-07` |
+| Sans CV | sur-titre « Aucun CV en ligne », tampon « Aucun CV » et sa phrase, aucun cartouche, `h2` « Mettre un CV en ligne » |
+| Paramètres | `h2` Sécurité, Apparence ; `h3` Double authentification, Session ; `legend` « Thème de l'administration » ; « Connecté en tant que admin@example.test. » ; radio cochée = registre de départ |
+| Radios au clavier | focus sur « Système », → : « Clair » coché, stockage `light`, pas d'`app-dark` ; → : « Sombre » coché, `dark`, `app-dark` posée sans rechargement, focus visible ; rechargement : « Sombre » coché, sombre conservé ; clic sur « Système » : clé retirée, registre système (clair) |
+| Configurer | navigation vers `/admin/settings/security` |
+| Se déconnecter | 1 `POST /auth/logout` annulé, puis navigation vers `/` (comportement d'`AuthStore.logout()`, inchangé : la spec de test annonçait `/login`) |
+| Sécurité | titre « Sécurité \| Admin », un seul `h1` « Sécurité », premier titre du `main` ; statut « 2FA activé » en tampon |
+| C7bis, Audience | 5 GET `stats/metrics` en 500 : **1 `load-error`, 0 toast** |
+| C7bis, vue d'ensemble | GET `stats/overview` en 500 : 1 alerte de section, **0 toast** |
+| Défilement horizontal | aucun, aux 16 formats mesurés |
+
+**axe** : **0 violation** sur CV (1 440 et 375, clair et sombre), dialogue de retrait ouvert, CV
+vide (quatre formats), Paramètres (quatre formats) et `/admin/settings/security` (quatre formats :
+plus de `page-has-heading-one` ni de `color-contrast`).
+
+**Console** : aucune erreur applicative. Restent les artefacts du harnais : 404 `/api/config`
+(route du serveur SSR, absente du service statique), `net::ERR_FAILED` des écritures annulées.
+Préexistant, hors de ces tranches (m2 de la revue de c1, resté ouvert) : un échec d'écriture du CV
+(retrait, envoi) affiche deux toasts, celui de l'intercepteur (« Une erreur est survenue ») et celui
+de la page ; `HttpCvGateway` ne porte pas `SKIP_ERROR_TOAST`, contrairement à `HttpContactGateway`
+depuis C8.
+
+**Captures** (scratchpad) : `c910-cv-{1440,375}-{clair,sombre}.jpg`, `c910-cv-clavier-clair.jpg`,
+`c910-cv-dialogue-clair.jpg`, `c910-cv-fichier-choisi-clair.jpg`, `c910-cv-apres-envoi-clair.jpg`,
+`c910-cv-telechargements-indisponibles-sombre.jpg`, `c910-cv-vide-{1440,375}-{clair,sombre}.jpg`,
+`c910-parametres-{1440,375}-{clair,sombre}.jpg`, `c910-parametres-sombre-clavier.jpg`,
+`c910-securite-{1440,375}-{clair,sombre}.jpg`, `c910-audience-metriques-500-clair.jpg`,
+`c910-vue-ensemble-overview-500-clair.jpg`, rapport `c910-report.json`.
+
+**Verdict : PASS.**
+
+### Correctifs de la revue de la PR c2
+
+Build de production servi en local (port 4393), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
++ best-practice), CSP de la page appliquée.
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production` (exit 0, « Prerendered 20 static routes »), puis
+   `git checkout public/rss.xml public/sitemap.xml`.
+2. Script `scratchpad/v/rvc2fix.mjs` (harnais de `rvc2.mjs`) : session simulée
+   (`localStorage['auth:session'] = '1'`), GET de l'API servis par fixtures (CV de 1 258 291 octets
+   pour la taille, projet `p-1`, article `b-1`). **Toute requête non-GET annulée**
+   (`route.abort()`) et journalisée, **aucune réponse simulée à une écriture**.
+3. Cas joués : retrait et envoi du CV ; PDF de 1 258 291 octets choisi, puis `lettre.docx` déposé,
+   focus posé sur « Remplacer » avant (clair et sombre) ; `GET /cv` et `GET /contact/messages` en
+   500 ; sur `/admin/projects/p-1` et `/admin/blog/b-1` : `cover.png` choisi, retiré (×), puis
+   « Enregistrer » ; `cover.png` choisi puis `notes.pdf` déposé, puis « Enregistrer ».
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| CV, retrait | 1 `DELETE /cv` annulé, **1 toast** (« Erreur de suppression : Failed to fetch ») ; avant : 2 |
+| CV, envoi | 1 `POST /cv/upload` annulé, **1 toast** (« Échec de la mise en ligne : Failed to fetch ») ; avant : 2 |
+| Taille | zone « cv-1-2-mo.pdf **1,2 Mo** Remplacer », cartouche « Taille 1,2 Mo », sur-titre « PDF · 1,2 Mo · mis en ligne le 19 sept. 2026 » (avant : « 1.2 Mo » dans la zone) |
+| CV, fichier refusé | toast « Seuls les fichiers PDF sont acceptés. », **zone vidée** (0 « Remplacer », bouton de la zone revenu, « lettre.docx » absent), bouton d'envoi du PDF précédent retiré, focus sur le bouton de la zone, `:focus-visible` |
+| `GET /cv` en 500 | 1 `LoadError` **et** 1 toast « Erreur serveur, veuillez réessayer » : laissé (lecture partagée avec la page publique, suivis) |
+| `GET /contact/messages` en 500 | 1 `LoadError`, **0 toast** |
+| Projet, couverture retirée | choisie : « 1 modification non enregistrée » ; retirée : « Aucune modification », plus de mention de couverture en attente, focus sur le bouton de la zone ; enregistrer : `PATCH /projects/p-1` seul, **aucun `POST /projects/p-1/image`**, 1 toast (« Erreur lors de la mise à jour du projet ») |
+| Projet, fichier refusé | toast « Seules les images sont acceptées. », zone vidée, « Aucune modification », focus sur le bouton de la zone ; enregistrer : `PATCH` seul, aucune image envoyée, 1 toast d'écriture |
+| Article, couverture retirée | même résultat : `PATCH /blog/posts/b-1` seul, **aucun `POST /blog/posts/b-1/image`**, 1 toast (« Erreur lors de l'enregistrement de l'article ») |
+| Article, fichier refusé | toast « Seules les images sont acceptées. », zone vidée, `PATCH` seul, 1 toast d'écriture |
+
+**axe** : **0 violation** sur la page CV avec le PDF choisi et après le refus (clair et sombre) et
+sur les deux éditeurs après le refus.
+
+**Console** : aucune erreur applicative. Restent les artefacts du harnais : 404 `/api/config`
+(route du serveur SSR, absente du service statique), `net::ERR_FAILED` des écritures annulées.
+
+**Captures** (scratchpad, `rvc2fix/`) : `rvc2fix-cv-retrait-un-toast.jpg`,
+`rvc2fix-cv-envoi-un-toast.jpg`, `rvc2fix-cv-taille-{clair,sombre}.jpg`,
+`rvc2fix-cv-refuse-{clair,sombre}.jpg`, `rvc2fix-messages-lecture-500.jpg`,
+`rvc2fix-{projects,blog}-couverture-retiree.jpg`, `rvc2fix-{projects,blog}-fichier-refuse.jpg`,
+rapport `rvc2fix-report.json`.
+
+**Verdict : PASS.**
+
+## Suivis restants
+
+La spec se clôt avec la PR c2. Ce qui reste ouvert, à reprendre hors de la spec :
+
+1. **Ticket à ouvrir : découpage d'`admin-project-form.ts` et coque d'éditeur commune** (écart 6
+   de la revue de c2). `components/admin-project-form.ts` fait environ 590 lignes (gabarit d'environ
+   420) : sortir les deux blocs de lignes répétées (choix techniques, décisions d'architecture), les
+   cartes de nature et le champ de présentation. `admin-project-editor.ts` et `admin-post-editor.ts`
+   dupliquent l'en-tête, les colonnes, la barre, le sommaire, le dialogue de sortie, `notify()` et
+   désormais `rejectCover()`. À joindre : `iconLinkClass` (dupliqué dans `admin-project-row.ts` et
+   `admin-post-row.ts`), la mention « obligatoire » écrite sept fois dans les deux formulaires, le
+   bouton contour natif écrit deux fois (`admin-audience.ts`, `admin-messages.ts`), et le relevé
+   axe `target-size` des champs « Pourquoi » des choix techniques à 1 024 px.
+2. **m4 de la revue de c2** : une seule source d'Audience en échec masque tout le relevé, la courbe
+   et les listes, alors que le message dit « Une partie des statistiques n'a pas pu être chargée ».
+   Conforme au contrat C7 ; à revoir (alerte au-dessus des sections chargées).
+3. **m3 de la revue de c2, moitié restante** : `GET /cv` en 500 affiche encore la `LoadError` de
+   la page CV **et** le toast de l'intercepteur. La lecture est partagée avec `AboutHiring` (page
+   publique), qui masque le lien et journalise l'échec sans rien afficher : le toast de
+   l'intercepteur y apparaît donc aussi pour un visiteur. Rendre `getCurrent()` silencieux réglerait
+   les deux pages ; c'est une décision sur la page publique, laissée à l'utilisateur.
+4. **Erreurs d'écriture des éditeurs** : depuis m2, le toast de l'intercepteur ne passe plus sur les
+   écritures de projets et d'articles. Un 400 de l'API (message de validation) n'est plus montré :
+   les éditeurs affichent un libellé fixe. Nommer l'erreur par `extractErrorMessage` comme le CV.
+5. **m7 de la revue de c1** : un clic dans le sommaire des éditeurs ajoute une entrée d'historique ;
+   le premier Retour revient à l'éditeur sans fragment, sans dialogue.
+6. **Messages** : pagination retirée en C8 (0 message en prod) ; au-delà de 100 messages, règle de
+   défilement virtuel de `CLAUDE.md` à reprendre.
+7. **Mineurs** : `AudienceTally` sans spec propre (rendu prouvé par la page, `track $index` prouvé
+   sur `AudienceShareTable`) ; sortie `toggle` d'`AdminMessageRow` à renommer (`expandToggle`) pour
+   retirer son `eslint-disable`, facultatif ; `effect()` nu dans le constructeur de
+   `file-dropzone.ts` et de `two-factor-disable-form.ts` (antérieurs, relevés par le checker).
 
 ## Review code
 
@@ -3862,3 +4521,72 @@ Verify de la revue (build de la branche servi en local, port 4381, Chromium, CSP
 - m8. Altitude et duplication des éditeurs (ci-dessus).
 - m9. Cohérence de la spec : le § 6 (PR c1) omet `form-toc-entries.ts`, `leave-confirmation.ts`, `components/admin-post-row.ts`, `app.config.ts` (+spec), `eslint.config.js`, `icon-map.ts`, `public/icons/sprite.svg`, `src/styles.css`, `admin-tags-selector.ts`, `admin-gallery-image-item.ts`, `admin-project-gallery.ts` et les deux doublures `testing/`.
 - Suivis des revues a et b : m3 et m6 (PR a) soldés en C1/C2 ; m8 (`post()` local) soldé en C6.
+
+### PR c2 (`feat/admin-audience`), revue du 2026-10-07
+
+Base `master` `24e7089`, diff non commité + fichiers non suivis, tranches C7 à C10 et C7bis. Périmètre : aucun `specs/016-*`, `docs/adr/0014-*` ni `0015-*` dans le diff ni parmi les fichiers non suivis ou ignorés.
+
+**Verdict** : REJECTED
+**Gates CI locaux** : install `pnpm install --frozen-lockfile` exit 0 / tests `pnpm test` exit 0 (168 fichiers, 2478 passed / 2478) / lint `pnpm lint` exit 0 (« All files pass linting ») / build `pnpm run build --configuration production` exit 0 (« Prerendered 20 static routes », « CSP hardened on 21 page(s) ») / étape « Verify prerendered output » de `ci.yml` exit 0 (20 routes) / Docker `docker build -t ng-portfolio-app:ci .` exit 0 + script « Smoke test the image » de `ci.yml` exit 0. `public/rss.xml` et `public/sitemap.xml` restaurés.
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent), joué depuis le plugin (`aak-checks.sh` 0.37.0) sur un instantané fichiers suivis + non suivis : 15 hits, `effect-nu securite altitude presenter`. `effect-nu` (`two-factor-disable-form.ts:159`, `file-dropzone.ts:181`) et `securite` (`admin-post-form.ts:120`, `:208`, ADR-0002) : lignes antérieures, hors des hunks. `altitude`, `presenter` : advisory (ci-dessous). Archéologie, helpers zone, tests interdits, export default, alias nus, irréversible : 0. Immutabilité : profil muet, défaut appliqué. À la main : U+FEFF littéral 2 (point 4) ; export sans consommateur 1 (point 5) ; `effect(` ajouté 0 ; `value() ??` hors garde `hasValue()` 0 ; restes de code mort (`AdminTable`, `admin-col-*`, `admin-column-base`, `admin-analytics*`, `AppTag`, `tag.ts`, `@utility admin-*`, `buildDonut*`, `buildPalette`, `barWidth`, `formattedSelectedSize`) : 0 dans `src/`, 2 dans `DESIGN.json` (point 6).
+**Warnings de gate** : aucun (0 `stderr`, `NG0`, `▲` ou `WARNING` dans les sorties test, lint et build).
+**Rendu compilé** : ✅ (sélecteurs d'attribut `li[…]`, `div[…]`, `fieldset[…]` sans `styles:` encapsulés, tout en classes Tailwind ; rendu contrôlé au navigateur)
+**Preuve de verify runtime** : ✅ (preuves C7-C8 et C9-C10-C7bis de `## Verify` complètes ; rejouées par un harnais indépendant, ci-dessous ; les défauts trouvés sont fonctionnels, listés en points 1 à 3)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ❌ (points 4 et 5)
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ❌ (points 1 à 3, 6 et 7)
+
+Verify de la revue (build de la branche servi en local, port 4391, Chromium, CSP de la page appliquée, session simulée, GET servis par fixtures, **toute requête non-GET annulée**, aucune réponse simulée à une écriture ; axe-core 4.14 WCAG 2.2 AA + best-practice ; harnais `scratchpad/v/rvc2.mjs`, rapport `scratchpad/rvc2/rvc2-report.json`) :
+
+- Site public : HTML prérendu des 21 pages comparé à un build de `master` (copie jetable) : titres, `meta`, canonical, JSON-LD, titres `h1`-`h6`, texte, `main`, `app-header`/`app-footer` **identiques** ; seules différences : CSS critique (utilities retirées ou ajoutées) et noms de chunks. Thème partagé : « Sombre » choisi dans Paramètres, puis `/` → `app-dark` présent dès `DOMContentLoaded`.
+- Audience, Messages, CV, Paramètres, `/admin/settings/security` à 1 440 et 375 px, clair et sombre (20 rendus) : axe **0 violation**, 1 `h1`, 1 `main`, aucun défilement horizontal, 0 toast. Comparaison avec `specs/assets/015/05-audience-1440-sombre.jpg` : en-tête, période, relevé, courbe, parts et listes conformes, aux écarts de copie près (comptes de section absents, « Autres », « Accès direct »).
+- Audience : métriques en 500 → 1 `LoadError`, 0 toast ; export `analytics-30d-2026-10-07.csv`, BOM, `Section,Label,Count`, 38 lignes ; « Voir les données en tableau » au clavier (7 Tab depuis le `h1`, `:focus-visible`, Entrée → ouvert, 30 lignes) ; 90 jours → sur-titre « 9 juil. au 7 oct. 2026 », `overview?startDate=2026-07-09&endDate=2026-10-07`.
+- Messages : Tab depuis le `h1` : « Tout marquer comme lu », trois filtres, dépliage ; Entrée → `aria-expanded="true"` et corps, Espace → replié ; dialogue axe 0 ; Échap → 0 `DELETE` ; confirmer → 1 `DELETE` annulé, ligne revenue, focus sur le `h1`, **1 toast** ; « Tout marquer comme lu » → 1 `PATCH` annulé, tampons restaurés, **1 toast**.
+- CV : retrait confirmé → 1 `DELETE /cv` annulé, **2 toasts** (« Une erreur est survenue » + « Erreur de suppression : Failed to fetch ») ; envoi → 1 `POST /cv/upload` annulé, **2 toasts** (point 1) ; fichier `.docx` choisi → toast « Seuls les fichiers PDF sont acceptés. », aucun bouton d'envoi, mais la zone affiche « lettre.docx 1.2 Mo Remplacer » (point 3, m1) ; `GET /cv` en 500 → `LoadError` **et** toast « Erreur serveur, veuillez réessayer » (même chose pour `GET /contact/messages`, m3).
+- Paramètres : flèches au clavier → « Sombre » coché, stockage `dark`, `app-dark` sans rechargement, focus visible ; rechargement → conservé ; « Système » → clé retirée, registre clair ; « Se déconnecter » → `POST /auth/logout` annulé, navigation vers `/`.
+- Console : seul le `404 /api/config` du service statique.
+
+**Écarts signalés par l'implémentation** :
+1. Double toast du CV : **à corriger ici** (point 1). Le mécanisme est celui de C8 et C7bis.
+2. `(cleared)` absent des éditeurs : **à corriger ici** (point 2) ; ce n'est pas qu'un affichage, l'enregistrement envoie la couverture retirée.
+3. Fichier refusé encore affiché : **à corriger ici** (point 3), sur le CV et sur les deux éditeurs, où le refus est en plus silencieux.
+4. `FileDropzone.formatSize` : **mineur, à faire ici de préférence** (m1) : en plus du doublon, il affiche « 1.2 Mo » à côté du « 1,2 Mo » du cartouche, et c'est une méthode appelée dans le gabarit.
+5. `linkedSignal` sur `resetToken` : **justifié** (dérivation remise à `null` à chaque changement de jeton, aucun `effect` qui réécrit un signal ; l'`effect` du blob est antérieur et ne touche pas `currentFile`). `eslint-disable` sur `toggle` : **justifié** (l'événement natif `toggle` ne remonte pas et n'est émis que par `details` et les popovers, absents de l'hôte `li` ; nom fixé par le contrat C8) ; renommer la sortie (`expandToggle`) supprimerait la dérogation, facultatif.
+6. Taille d'`admin-project-form.ts` (587 LOC) et duplication des éditeurs : **ticket**, pas dans cette PR. Ces deux points n'appartiennent à aucune tranche c2, et un découpage de 587 lignes sans tranche dédiée ni test qui le pilote alourdirait la PR qui clôt la spec. Le ticket doit être créé et cité dans les suivis de la spec (point 7).
+7. `DESIGN.json` : **à corriger ici** (point 6, précédent de la revue de la spec 011). ADR-0012 : la mention d'`AdminAnalytics` est dans le **Contexte**, relevé daté de `master` `30ef475` : c'est un fait historique, à laisser. Le statut des deux ADR, lui, doit changer (point 7).
+- Points de copie du RED : « Rien sur la période. », « Aucune donnée sur la période. », « Totaux », « il y a 1 jour », « à l'instant », « 0 visiteur en ce moment », phrase d'introduction, comptes de section absents, « Sécurité », « indisponible » : **acceptés**. « Se déconnecter » → `/` au lieu de `/login` : comportement d'`AuthStore.logout()` inchangé, accepté.
+
+**Altitude composant** (advisory, non bloquant) :
+- ⚠️ `components/admin-project-form.ts` 585 → 587 LOC (gabarit 417 l.), `admin-project-editor.ts` 334 → 337, `admin-post-editor.ts` 275 → 278 : seuils déjà franchis en c1, la PR n'y ajoute que la liaison `coverResetToken`. Découpage à sortir en ticket (écart 6).
+- ⚠️ `shared/ui/file-dropzone.ts` atteint 250 LOC (seuil) : sortir `formatSize` (m1) le ramène sous le seuil.
+
+**Duplication / dérivation** (advisory) :
+- ⚠️ `formatFileSize` (`admin-cv-view.ts:19`) et `FileDropzone.formatSize` (`file-dropzone.ts:235`) : même calcul, deux formats (m1).
+- ⚠️ le bouton contour natif est écrit en ligne deux fois (`admin-audience.ts:74`, `admin-messages.ts:40`, même liste de classes à `aria-pressed` / `aria-disabled` près) : candidat `@utility` ou variante de `Button`, à joindre au ticket de l'écart 6.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet · monitoring : Sentry (profil)
+- Neuf lectures d'analytics, trois écritures de messages muettes côté intercepteur : un échec n'est plus signalé que par la page. Toutes ont un état d'erreur prouvé (tests et navigateur).
+- Non couvert par les gates : pagination des messages retirée (risque noté au plan au-delà de 100 messages).
+
+**Points à corriger** (bloquants) :
+1. `src/app/features/cv/infra/gateways/http-cv.gateway.ts:17-19` et `:27` — `upload` et `delete` sans `SKIP_ERROR_TOAST` : un échec affiche deux toasts (mesuré : retrait et envoi). `AdminCv` restaure son état et nomme l'échec lui-même, comme Messages (C8) : porter le jeton sur ces deux écritures (même forme que `silentErrors()` de `http-contact.gateway.ts:57`) et ajouter le test « vraie chaîne + intercepteur → 0 toast d'intercepteur » dans `http-cv.gateway.spec.ts` (motif de `http-analytics.gateway.spec.ts`).
+2. `components/admin-post-form.ts:146-152` et `components/admin-project-form.ts:289-295` — `app-file-dropzone` sans `(cleared)`, et aucune sortie pour le relayer : retirer le fichier de la zone (×) laisse `pendingCover` rempli dans `admin-post-editor.ts` et `admin-project-editor.ts`, et l'enregistrement suivant **envoie la couverture que l'utilisateur a retirée**. Ajouter une sortie (par exemple `coverCleared`) relayée par les deux formulaires, `pendingCover.set(null)` dans les deux éditeurs ; un test par éditeur (choisir, retirer, enregistrer → aucun téléversement).
+3. Fichier refusé encore affiché, trois sites : `admin-cv.ts:176-186` (toast, mais la zone garde « lettre.docx », mesuré), `components/admin-post-form.ts:232-234` et `components/admin-project-form.ts:584-586` (`selectCover` ignore un fichier non image **sans rien dire**, la zone l'affiche ; le dépôt par glisser contourne `accept`). Le mécanisme existe : incrémenter le jeton de remise à zéro au refus (`uploadCount` pour le CV, `coverResetToken` côté formulaire ou éditeur) et, pour les couvertures, nommer le refus comme le CV. Un test par site.
+4. `admin-audience.ts:200` — U+FEFF **littéral** dans `new Blob([<U+FEFF> + …])` (`master` écrivait `'\uFEFF'`), idem `admin-audience.spec.ts:234`. Un caractère invisible dans le source se perd à la première retouche et casse en silence l'ouverture du CSV dans Excel. Revenir à l'échappement `'\uFEFF'` aux deux sites.
+5. `audience-report.ts:18` — `export type TallyGroup` sans consommateur hors du fichier : retirer `export`.
+6. `DESIGN.json:229-235` (composant `admin-table`, classes `ds-admin-*`) et `:309` (« Do utiliser les utilities form-*, admin-*, btn-* ») — le miroir de `DESIGN.md` décrit encore le tableau et les utilities supprimés en C8. Aligner `DESIGN.json` sur la nouvelle section « Admin » de `DESIGN.md` (retirer `admin-table`, remplacer la règle par `form-*`, `field-*`, `table-head`, `link-btn-*`), comme exigé à la revue de la spec 011.
+7. Clôture de la spec, `specs/015-refonte-admin.md` et `docs/adr/` : (a) ADR-0012 et ADR-0013 au statut « proposé » alors que leurs PR (a, c1) sont mergées : passer à « accepté » dans cette PR, qui clôt la spec (m10 de la revue a) ; (b) le § 6 de la PR c2 omet `components/admin-setting-row.ts`, `features/analytics/testing/stub-analytics-gateway.ts`, `http-analytics.gateway.ts` (+spec), `http-contact.gateway.ts`, `two-factor-disable-form.ts`, `components/admin-section-head.ts`, `shared/ui/file-dropzone.ts` (+spec), `components/admin-post-form.ts`, `components/admin-project-form.ts`, les deux éditeurs (+specs), `admin-page-copy.ts`, `analytics-builders.ts`, `blog-list-view.spec.ts`, et annonce `audience-tally.ts (+spec)` alors que son rendu est prouvé par la page (choix du RED) : ajouter la ligne « Ajouts hors plan » comme en c1 ; (c) ajouter une liste « Suivis restants » qui ferme la spec : ticket du découpage d'`admin-project-form.ts` et de la coque d'éditeur (écart 6, avec `iconLinkClass` et la mention « obligatoire »), m2 à m5 ci-dessous s'ils ne sont pas faits ici, m7 de la revue de c1 (entrée d'historique du sommaire), relevé `target-size` des champs « Pourquoi » à 1 024 px.
+
+**Mineurs** (à traiter ici si peu coûteux, sinon à inscrire aux suivis) :
+- m1. `shared/ui/file-dropzone.ts:68` et `:235-239` — `formatSize` appelé dans le gabarit (méthode, antérieur), doublon de `formatFileSize`, et format anglais (« 1.2 Mo », `toFixed`) affiché sur la page CV à côté de « 1,2 Mo ». Déplacer `formatFileSize` dans `shared/` (une fonction pure, `shared/ui` ne peut pas importer `features/admin`), la consommer par un `computed` dans la zone et dans `admin-cv-view.ts`.
+- m2. Double toast des écritures des éditeurs (m2 de la revue de c1, encore ouvert) : même remède que le point 1 sur les écritures de `HttpProjectsGateway` et `HttpBlogGateway`. Après les points 1 et 2, c'est la dernière surface d'admin où il reste ; à faire ici par cohérence, sinon suivi nommé.
+- m3. `GET /cv` et `GET /contact/messages` en 500 : `LoadError` **et** toast « Erreur serveur, veuillez réessayer » (mesuré), même chose attendue sur Projets et Articles. La règle de C7bis (« une page qui affiche sa propre alerte ne reçoit pas en plus un toast ») n'est appliquée qu'à l'analytics. Suivi.
+- m4. `admin-audience.ts:94-99` — une seule source en échec masque tout le relevé, la courbe et les listes, alors que le message dit « Une partie des statistiques n'a pas pu être chargée ». Conforme au contrat C7 ; à revoir en suivi (alerte au-dessus des sections chargées).
+- m5. `components/audience-share-table.ts:28` et `components/audience-tally.ts:16` — `track row.label` : deux entrées au même libellé (deux noms vides ramenés au même repli, une entrée nommée « Autres » plus le regroupement) donnent une clé dupliquée. Pister par `$index` (listes recalculées, jamais mutées) ou par libellé et rang.
+- m6. `admin-cv-view.ts:35` — « 30 j » sans espace insécable entre le nombre et l'unité (`receivedAgo` l'applique à « 2 h », « 5 min ») ; `formatFileSize` arrondit 1 048 064 octets à « 1024 Ko ».
+- m7. `admin-blog.spec.ts:770` — la garde contre les classes `admin-table*` porte sur des utilities qui n'existent plus : test d'absence d'un ancien état, à retirer (antérieur, informatif).
+- Suivis des revues précédentes : m5 de la revue a (accesseurs dans les gabarits d'`AdminTable`) **soldé** par la suppression ; `overview()` locaux **soldés** ; variante `secondary` d'`AppTag` **soldée** (`tag.ts` retiré) ; option « repères CV en ligne et Sécurité » **écartée** par l'utilisateur ; zone de dépôt après envoi (c1) **soldée** par `resetToken` ; m2 de c1 soldé pour Messages et l'analytics, ouvert pour le CV (point 1) et les éditeurs (m2).

@@ -212,9 +212,9 @@
     {
       "name": "Tag (info)",
       "kind": "chip",
-      "refersTo": "tag-info",
-      "description": "Inline status badge — small, no border, color-coded background.",
-      "html": "<span class=\"ds-tag-info\">Disponible</span>",
+      "refersTo": "blog-tag",
+      "description": "Pastille de sujet d'article (page article, sélecteur de l'admin) : petite, sans bord, fond indigo léger. Jamais un statut : un statut est un tampon.",
+      "html": "<span class=\"ds-tag-info\">Chiffrement</span>",
       "css": ".ds-tag-info { display: inline-flex; align-items: center; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; padding: 4px 8px; border-radius: 6px; background: rgba(79, 70, 229, 0.2); color: #a5b4fc; }"
     },
     {
@@ -224,14 +224,6 @@
       "description": "Container surface, flat by default, hover lifts to elevated surface.",
       "html": "<article class=\"ds-card-surface\"><h3 class=\"ds-card-title\">Project title</h3><p class=\"ds-card-body\">Short description of the project, max 65 to 75 characters wide.</p></article>",
       "css": ".ds-card-surface { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px; color: #fafafa; transition: background-color 200ms; } .ds-card-surface:hover { background: rgba(255,255,255,0.06); } .ds-card-title { font-family: 'Archivo', 'Archivo Fallback', system-ui, sans-serif; font-stretch: 104%; font-size: 1.25rem; font-weight: 600; line-height: 1.3; margin: 0 0 8px 0; color: #fafafa; } .ds-card-body { font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 1rem; line-height: 1.6; margin: 0; color: rgba(250, 250, 250, 0.7); }"
-    },
-    {
-      "name": "Admin Table",
-      "kind": "custom",
-      "refersTo": "admin-table",
-      "description": "Densité dashboard, uppercase labels, hover rows, no shadows.",
-      "html": "<div class=\"ds-admin-shell\"><table class=\"ds-admin-table\"><thead><tr><th class=\"ds-admin-th\">Date</th><th class=\"ds-admin-th\">Email</th><th class=\"ds-admin-th\">Status</th></tr></thead><tbody><tr class=\"ds-admin-row\"><td class=\"ds-admin-td\">2026-05-22</td><td class=\"ds-admin-td\">hello@example.com</td><td class=\"ds-admin-td\"><span class=\"ds-tag-info\">Lu</span></td></tr></tbody></table></div>",
-      "css": ".ds-admin-shell { overflow: hidden; border-radius: 12px; border: 1px solid rgba(250, 250, 250, 0.08); background: rgba(250, 250, 250, 0.02); } .ds-admin-table { width: 100%; border-collapse: collapse; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 0.875rem; } .ds-admin-th { padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #a1a1aa; border-bottom: 1px solid rgba(250, 250, 250, 0.08); } .ds-admin-td { padding: 14px 16px; color: rgba(250, 250, 250, 0.9); border-bottom: 1px solid rgba(250, 250, 250, 0.05); } .ds-admin-row { transition: background-color 200ms; } .ds-admin-row:hover { background: rgba(250, 250, 250, 0.03); } .ds-admin-row:last-child .ds-admin-td { border-bottom: none; }"
     },
     {
       "name": "Navigation Link",
@@ -306,7 +298,7 @@
       "Do respecter prefers-reduced-motion: reduce — désactiver fade-up, view-transitions, scroll animations.",
       "Do réserver le mono à du contenu vraiment technique (code, chiffres, status).",
       "Do garder body line-length à 65–75ch maximum.",
-      "Do utiliser les utilities form-*, admin-*, btn-* plutôt que de redéclarer les classes Tailwind.",
+      "Do utiliser les utilities form-*, field-*, table-head, link-btn-* plutôt que de redéclarer les classes Tailwind. Si tu dupliques 10+ classes, crée une utility.",
       "Do documenter toute exception aux Named Rules dans un commentaire au point d'usage."
     ],
     "donts": [

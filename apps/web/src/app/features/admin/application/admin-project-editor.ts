@@ -167,7 +167,10 @@ const toEditedProject = (project: Project | null): EditedProject => ({
               [gallery]="gallery()"
               [persistedCover]="saved()?.image ?? ''"
               (submitted)="save($event)"
+              [coverResetToken]="coverResetToken()"
               (coverSelected)="pendingCover.set($event)"
+              (coverCleared)="pendingCover.set(null)"
+              (coverRejected)="rejectCover()"
               (galleryChange)="updateGallery($event)"
             />
             <app-admin-save-bar
@@ -234,6 +237,7 @@ export class AdminProjectEditor implements LeaveConfirmable {
     () => this.loaded()?.gallery ?? [],
   );
   protected readonly pendingCover = signal<File | null>(null);
+  protected readonly coverResetToken = signal(0);
   protected readonly saving = signal(false);
   protected readonly leave = new LeaveConfirmation();
 
@@ -261,6 +265,12 @@ export class AdminProjectEditor implements LeaveConfirmable {
 
   protected warnBeforeUnload(event: BeforeUnloadEvent): void {
     if (this.changes() > 0) event.preventDefault();
+  }
+
+  protected rejectCover(): void {
+    this.pendingCover.set(null);
+    this.coverResetToken.update((token) => token + 1);
+    this.notify('error', 'Seules les images sont acceptées.');
   }
 
   protected async save(payload: ProjectInput): Promise<void> {
@@ -319,6 +329,7 @@ export class AdminProjectEditor implements LeaveConfirmable {
 
   private markSaved(): void {
     this.pendingCover.set(null);
+    this.coverResetToken.update((token) => token + 1);
     this.baseline.set(this.edited());
   }
 

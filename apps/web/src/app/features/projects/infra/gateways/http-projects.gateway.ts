@@ -5,6 +5,7 @@ import { ProjectsGateway } from '../../domain/gateways/projects.gateway';
 import type { Project, ProjectImage, ProjectInput } from '../../domain/models/project.model';
 import { isShowcaseProject } from '../../domain/is-showcase-project';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { toProject, toProjectImage } from '../project.adapter';
 import type { ProjectDto, ProjectImageDto } from '../project.types';
 
@@ -62,27 +63,30 @@ export class HttpProjectsGateway extends ProjectsGateway {
       .pipe(map((row) => toProject(row, this.apiUrl)));
   }
 
+  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même.
   createProject(project: ProjectInput): Observable<Project> {
     return this.http
-      .post<ProjectDto>(`${this.apiUrl}/projects`, project)
+      .post<ProjectDto>(`${this.apiUrl}/projects`, project, { context: silentErrors() })
       .pipe(map((row) => toProject(row, this.apiUrl)));
   }
 
   updateProject(id: string, project: Partial<ProjectInput>): Observable<Project> {
     return this.http
-      .patch<ProjectDto>(`${this.apiUrl}/projects/${id}`, project)
+      .patch<ProjectDto>(`${this.apiUrl}/projects/${id}`, project, { context: silentErrors() })
       .pipe(map((row) => toProject(row, this.apiUrl)));
   }
 
   deleteProject(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/projects/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/projects/${id}`, { context: silentErrors() });
   }
 
   uploadImage(file: File, id: string): Observable<string> {
     const formData = new FormData();
     formData.append('file', file);
     return this.http
-      .post<{ key: string }>(`${this.apiUrl}/projects/${id}/image`, formData)
+      .post<{ key: string }>(`${this.apiUrl}/projects/${id}/image`, formData, {
+        context: silentErrors(),
+      })
       .pipe(map((res) => res.key));
   }
 
@@ -91,13 +95,19 @@ export class HttpProjectsGateway extends ProjectsGateway {
     formData.append('file', file);
     formData.append('alt', alt);
     return this.http
-      .post<ProjectImageDto>(`${this.apiUrl}/projects/${projectId}/images`, formData)
+      .post<ProjectImageDto>(`${this.apiUrl}/projects/${projectId}/images`, formData, {
+        context: silentErrors(),
+      })
       .pipe(map((dto) => toProjectImage(dto, this.apiUrl)));
   }
 
   updateGalleryImageAlt(projectId: string, imageId: string, alt: string): Observable<ProjectImage> {
     return this.http
-      .patch<ProjectImageDto>(`${this.apiUrl}/projects/${projectId}/images/${imageId}`, { alt })
+      .patch<ProjectImageDto>(
+        `${this.apiUrl}/projects/${projectId}/images/${imageId}`,
+        { alt },
+        { context: silentErrors() },
+      )
       .pipe(map((dto) => toProjectImage(dto, this.apiUrl)));
   }
 
@@ -105,12 +115,15 @@ export class HttpProjectsGateway extends ProjectsGateway {
     projectId: string,
     imageIds: readonly string[],
   ): Observable<readonly ProjectImage[]> {
+    const url = `${this.apiUrl}/projects/${projectId}/images/order`;
     return this.http
-      .put<ProjectImageDto[]>(`${this.apiUrl}/projects/${projectId}/images/order`, { imageIds })
+      .put<ProjectImageDto[]>(url, { imageIds }, { context: silentErrors() })
       .pipe(map((dtos) => dtos.map((dto) => toProjectImage(dto, this.apiUrl))));
   }
 
   deleteGalleryImage(projectId: string, imageId: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/projects/${projectId}/images/${imageId}`);
+    return this.http.delete<void>(`${this.apiUrl}/projects/${projectId}/images/${imageId}`, {
+      context: silentErrors(),
+    });
   }
 }

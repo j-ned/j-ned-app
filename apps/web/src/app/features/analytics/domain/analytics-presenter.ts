@@ -69,10 +69,6 @@ export function formatChartDay(day: string): string {
   return `${part('day')} ${part('month')}`;
 }
 
-export function barWidth(value: number, max: number): number {
-  return max > 0 ? (value / max) * 100 : 0;
-}
-
 export function alpha(color: string, pct: number): string {
   return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 }
@@ -157,64 +153,6 @@ export function buildLineChartOptions(foreground: string, background: string) {
       },
     },
   };
-}
-
-export function buildDonutChartData(
-  entries: readonly MetricEntry[],
-  palette: readonly string[],
-): ChartData<'doughnut'> {
-  return {
-    labels: entries.map((r) => r.name || 'Inconnu'),
-    datasets: [
-      {
-        data: entries.map((r) => r.count),
-        backgroundColor: palette,
-        borderWidth: 0,
-      },
-    ],
-  };
-}
-
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- le type officiel `ChartOptions<'doughnut'>` est DeepPartial et perd la forme concrète vérifiée par les tests ; on garde l'inférence.
-export function buildDonutOptions(foreground: string, background: string) {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '60%',
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: alpha(foreground, 70),
-          boxWidth: 12,
-          padding: 12,
-          font: { size: 11 },
-        },
-      },
-      tooltip: {
-        backgroundColor: alpha(background, 95),
-        borderColor: alpha(foreground, 10),
-        borderWidth: 1,
-      },
-    },
-  };
-}
-
-export function buildPalette(colors: {
-  primary: string;
-  accent: string;
-  success: string;
-  warn: string;
-}): string[] {
-  return [
-    colors.primary,
-    colors.accent,
-    alpha(colors.primary, 70),
-    alpha(colors.accent, 70),
-    colors.success,
-    colors.warn,
-    alpha(colors.primary, 40),
-  ];
 }
 
 export type AnalyticsCsvSections = {

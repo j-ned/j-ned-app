@@ -63,7 +63,7 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'audience',
         title: 'Audience | Admin',
-        loadComponent: () => import('./application/admin-analytics').then((m) => m.AdminAnalytics),
+        loadComponent: () => import('./application/admin-audience').then((m) => m.AdminAudience),
       },
       {
         path: 'settings',

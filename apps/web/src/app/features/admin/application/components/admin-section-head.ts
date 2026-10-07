@@ -9,6 +9,7 @@ import { Component, input } from '@angular/core';
   template: `
     <h2
       [id]="headingId()"
+      [attr.data-testid]="headingId()"
       class="font-display text-[1.375rem] font-bold tracking-[-0.02em] font-stretch-106%"
     >
       {{ heading() }}

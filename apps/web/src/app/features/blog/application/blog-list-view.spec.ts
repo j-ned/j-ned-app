@@ -252,7 +252,7 @@ describe('toBlogListView', () => {
   describe('filters', () => {
     const optionsOf = (
       view: ReturnType<typeof toBlogListView>,
-    ): readonly (readonly [BlogCategoryFilter, string, number, boolean])[] =>
+    ): readonly (readonly [BlogCategoryFilter, string, number | undefined, boolean])[] =>
       view.filters.map((option) => [
         option.value,
         option.label,

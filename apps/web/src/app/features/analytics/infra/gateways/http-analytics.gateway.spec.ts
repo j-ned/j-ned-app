@@ -1,14 +1,21 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { PLATFORM_ID, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, type Observable } from 'rxjs';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
 import { AnalyticsDeviceExclusion } from '@core/analytics/analytics-device-exclusion';
 import { AuthStore } from '@core/auth/auth-store';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
+import { errorToastInterceptor } from '@core/interceptors/error-toast';
+import { ToastStore } from '@shared/ui/toast-store';
 import { HttpAnalyticsGateway } from './http-analytics.gateway';
 import type {
   StatsOverview,
@@ -25,7 +32,10 @@ type VisitorContext = { loggedIn?: boolean; deviceExcluded?: boolean };
 function visitorProviders(ctx: VisitorContext = {}): unknown[] {
   return [
     { provide: AuthStore, useValue: { isLoggedIn: signal(ctx.loggedIn ?? false) } },
-    { provide: AnalyticsDeviceExclusion, useValue: { excluded: signal(ctx.deviceExcluded ?? false) } },
+    {
+      provide: AnalyticsDeviceExclusion,
+      useValue: { excluded: signal(ctx.deviceExcluded ?? false) },
+    },
   ];
 }
 
@@ -562,5 +572,131 @@ describe('HttpAnalyticsGateway', () => {
 
       expect(sendBeaconSpy).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('HttpAnalyticsGateway: lectures de l’admin derrière l’intercepteur de toasts', () => {
+  const add = vi.fn();
+
+  function configureWithToasts(): {
+    gateway: HttpAnalyticsGateway;
+    http: HttpClient;
+    httpController: HttpTestingController;
+  } {
+    add.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        HttpAnalyticsGateway,
+        provideHttpClient(withInterceptors([errorToastInterceptor])),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: BASE },
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        { provide: ToastStore, useValue: { add } },
+        ...visitorProviders(),
+      ],
+    });
+    return {
+      gateway: TestBed.inject(HttpAnalyticsGateway),
+      http: TestBed.inject(HttpClient),
+      httpController: TestBed.inject(HttpTestingController),
+    };
+  }
+
+  async function failingStatus(
+    request: Observable<unknown>,
+    httpController: HttpTestingController,
+    path: string,
+  ): Promise<number | null> {
+    const outcome = firstValueFrom(request).then(
+      () => null,
+      (error: unknown) => (error instanceof HttpErrorResponse ? error.status : -1),
+    );
+    httpController
+      .expectOne((r) => r.url === path)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    return outcome;
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it.each<{
+    read: string;
+    path: string;
+    call: (gateway: HttpAnalyticsGateway) => Observable<unknown>;
+  }>([
+    {
+      read: 'getOverview',
+      path: 'overview',
+      call: (g): Observable<unknown> => g.getOverview('2026-09-07', '2026-10-07'),
+    },
+    {
+      read: 'getChart',
+      path: 'chart',
+      call: (g): Observable<unknown> => g.getChart('2026-09-07', '2026-10-07'),
+    },
+    {
+      read: 'getMetrics',
+      path: 'metrics',
+      call: (g): Observable<unknown> => g.getMetrics('url', '2026-09-07', '2026-10-07'),
+    },
+    {
+      read: 'getActiveVisitors',
+      path: 'active',
+      call: (g): Observable<unknown> => g.getActiveVisitors(),
+    },
+    {
+      read: 'getProjectStats',
+      path: 'projects',
+      call: (g): Observable<unknown> => g.getProjectStats('2026-09-07', '2026-10-07'),
+    },
+    {
+      read: 'getArticleStats',
+      path: 'articles',
+      call: (g): Observable<unknown> => g.getArticleStats('2026-09-07', '2026-10-07'),
+    },
+    {
+      read: 'getArticleReadStats',
+      path: 'articles-read',
+      call: (g): Observable<unknown> => g.getArticleReadStats('2026-09-07', '2026-10-07'),
+    },
+    {
+      read: 'getCtaStats',
+      path: 'cta',
+      call: (g): Observable<unknown> => g.getCtaStats('2026-09-07', '2026-10-07'),
+    },
+    {
+      read: 'getCvDownloadCount',
+      path: 'cv-downloads',
+      call: (g): Observable<unknown> => g.getCvDownloadCount('2026-09-07', '2026-10-07'),
+    },
+  ])(
+    'Given the API answers 500 When $read is read Then no toast is shown and the caller still receives the error',
+    async ({ path, call }) => {
+      const { gateway, httpController } = configureWithToasts();
+
+      const status = await failingStatus(
+        call(gateway),
+        httpController,
+        `${BASE}/analytics/stats/${path}`,
+      );
+
+      expect({ status, toasts: add.mock.calls.length }).toEqual({ status: 500, toasts: 0 });
+      httpController.verify();
+    },
+  );
+
+  it('Given the same interceptor When another GET answers 500 Then it still shows its toast', async () => {
+    const { http, httpController } = configureWithToasts();
+
+    const status = await failingStatus(
+      http.get(`${BASE}/projects`),
+      httpController,
+      `${BASE}/projects`,
+    );
+
+    expect({ status, toasts: add.mock.calls.length }).toEqual({ status: 500, toasts: 1 });
+    httpController.verify();
   });
 });

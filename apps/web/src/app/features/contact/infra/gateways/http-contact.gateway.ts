@@ -18,7 +18,7 @@ import type {
 } from '../../domain/models/contact-form.model';
 import type { ContactMessage } from '../../domain/models/contact-message.model';
 import { API_BASE_URL } from '@shared/api/api-config';
-import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
+import { silentErrors } from '@core/interceptors/skip-error-toast';
 
 function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
   switch (err.status) {
@@ -64,9 +64,7 @@ export class HttpContactGateway extends ContactGateway {
   private readonly unreadCount$ = this._unreadRefresh$.pipe(
     startWith(undefined),
     switchMap(() =>
-      this.fetchUnreadCount(new HttpContext().set(SKIP_ERROR_TOAST, true)).pipe(
-        catchError(() => this.fetchUnreadCount()),
-      ),
+      this.fetchUnreadCount(silentErrors()).pipe(catchError(() => this.fetchUnreadCount())),
     ),
     share({
       connector: () => new ReplaySubject<number>(1),
@@ -86,18 +84,28 @@ export class HttpContactGateway extends ContactGateway {
     );
   }
 
+  // Lue par l'admin seul, qui affiche son propre état d'erreur.
   getAllMessages(): Observable<readonly ContactMessage[]> {
     return this.http
-      .get<{ data: ContactMessage[] }>(`${this.apiUrl}/contact/messages`)
+      .get<{ data: ContactMessage[] }>(`${this.apiUrl}/contact/messages`, {
+        context: silentErrors(),
+      })
       .pipe(map((res) => res.data));
   }
 
+  // Les écritures de l'admin : la page restaure son état et nomme l'échec elle-même.
   markMessageAsRead(id: number): Observable<ContactMessage> {
-    return this.http.patch<ContactMessage>(`${this.apiUrl}/contact/messages/${id}/read`, {});
+    return this.http.patch<ContactMessage>(
+      `${this.apiUrl}/contact/messages/${id}/read`,
+      {},
+      { context: silentErrors() },
+    );
   }
 
   deleteMessage(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/contact/messages/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/contact/messages/${id}`, {
+      context: silentErrors(),
+    });
   }
 
   private fetchUnreadCount(context?: HttpContext): Observable<number> {
@@ -115,6 +123,10 @@ export class HttpContactGateway extends ContactGateway {
   }
 
   markAllRead(): Observable<{ readonly count: number }> {
-    return this.http.patch<{ count: number }>(`${this.apiUrl}/contact/messages/mark-all-read`, {});
+    return this.http.patch<{ count: number }>(
+      `${this.apiUrl}/contact/messages/mark-all-read`,
+      {},
+      { context: silentErrors() },
+    );
   }
 }

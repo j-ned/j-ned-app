@@ -1,6 +1,6 @@
 # ADR-0013 — Édition des projets et des articles en pages dédiées, avec aperçu par les composants publics
 
-- **Statut** : proposé (2026-10-07, spec 015, PR c1)
+- **Statut** : accepté (2026-10-07, PR c1 de la spec 015 mergée, clôture de la spec)
 - **Date** : 2026-10-07
 - **Contexte spec** : `specs/015-refonte-admin.md` (arbitrages 2 et 3, tranches C1 à C6)
 - **Prolonge** : ADR-0010 (champs éditoriaux et présentation par nature)

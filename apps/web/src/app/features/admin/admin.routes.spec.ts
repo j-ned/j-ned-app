@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 import { ADMIN_ROUTES } from './admin.routes';
+import { AdminAudience } from './application/admin-audience';
 import { AdminOverview } from './application/admin-overview';
 import { AdminPostEditor } from './application/admin-post-editor';
 import { AdminProjectEditor } from './application/admin-project-editor';
@@ -56,6 +57,12 @@ describe('ADMIN_ROUTES: Audience', () => {
       expect(await navigate(url)).toEqual({ url: '/admin/audience', title: 'Audience | Admin' });
     },
   );
+
+  it('Given /admin/audience When its page is loaded Then it is the Audience page', async () => {
+    const audience = ADMIN_ROUTES[0]?.children?.find((route) => route.path === 'audience');
+
+    expect(await audience?.loadComponent?.()).toBe(AdminAudience);
+  });
 });
 
 describe("ADMIN_ROUTES: vue d'ensemble", () => {

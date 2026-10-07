@@ -9,11 +9,13 @@ import {
   inject,
   Injector,
   input,
+  linkedSignal,
   output,
   signal,
   untracked,
   viewChild,
 } from '@angular/core';
+import { formatFileSize } from './format-file-size';
 
 @Component({
   selector: 'app-file-dropzone',
@@ -63,8 +65,8 @@ import {
           <p class="text-sm font-medium text-foreground truncate">
             {{ currentFile()?.name ?? 'Fichier actuel' }}
           </p>
-          @if (currentFile(); as f) {
-            <p class="text-xs text-muted">{{ formatSize(f.size) }}</p>
+          @if (currentFileSize(); as size) {
+            <p data-testid="file-dropzone-size" class="text-xs text-muted">{{ size }}</p>
           }
         </div>
         <div class="flex items-center gap-2">
@@ -148,11 +150,15 @@ export class FileDropzone {
   readonly label = input<string>('Choisir un fichier');
   readonly helperText = input<string>('');
   readonly previewUrl = input<string>('');
+  readonly resetToken = input<number>();
 
   readonly fileSelected = output<File>();
   readonly cleared = output<void>();
 
-  protected readonly currentFile = signal<File | null>(null);
+  protected readonly currentFile = linkedSignal<number | undefined, File | null>({
+    source: this.resetToken,
+    computation: () => null,
+  });
   protected readonly isDragging = signal(false);
 
   private readonly _blobUrl = signal<string>('');
@@ -170,6 +176,10 @@ export class FileDropzone {
   });
 
   protected readonly previewSrc = computed(() => this._blobUrl() || this.previewUrl());
+  protected readonly currentFileSize = computed(() => {
+    const file = this.currentFile();
+    return file ? formatFileSize(file.size) : '';
+  });
 
   constructor() {
     // Effect légitime : gère un blob URL, ressource externe hors état applicatif.
@@ -191,10 +201,14 @@ export class FileDropzone {
   }
 
   protected onInputChange(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
+    // Sans remise à blanc, choisir à nouveau le même fichier après une remise à zéro ne déclenche pas `change`.
+    input.value = '';
     this.handleFile(file);
-    this.focusAfterRender(this.replaceButton);
+    // Un parent qui refuse le fichier remet aussitôt la zone à zéro : « Remplacer » n'existe pas.
+    this.focusAfterRender(() => this.replaceButton() ?? this.triggerButton());
   }
 
   protected openPicker(): void {
@@ -220,15 +234,8 @@ export class FileDropzone {
 
   protected clear(): void {
     this.currentFile.set(null);
-    this.fileInput().nativeElement.value = '';
     this.cleared.emit();
     this.focusAfterRender(this.triggerButton);
-  }
-
-  protected formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} o`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
   }
 
   // Le bouton qui avait le focus disparaît avec le changement d'état : sans relais, le focus tombe sur `body`.

@@ -4,6 +4,7 @@ import { map, Observable, ReplaySubject, retry, share, startWith, Subject, switc
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { silentErrors } from '@core/interceptors/skip-error-toast';
 
 function resolvePost(apiUrl: string, p: BlogPost): BlogPost {
   if (!p.coverImage) return p;
@@ -55,23 +56,32 @@ export class HttpBlogGateway extends BlogGateway {
       .pipe(map((p) => resolvePost(this.apiUrl, p)));
   }
 
+  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même.
   createPost(post: BlogPostInput): Observable<BlogPost> {
-    return this.http.post<BlogPost>(`${this.apiUrl}/blog/posts`, post);
+    return this.http.post<BlogPost>(`${this.apiUrl}/blog/posts`, post, {
+      context: silentErrors(),
+    });
   }
 
   updatePost(id: string, post: Partial<BlogPostInput>): Observable<BlogPost> {
-    return this.http.patch<BlogPost>(`${this.apiUrl}/blog/posts/${id}`, post);
+    return this.http.patch<BlogPost>(`${this.apiUrl}/blog/posts/${id}`, post, {
+      context: silentErrors(),
+    });
   }
 
   deletePost(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/blog/posts/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/blog/posts/${id}`, {
+      context: silentErrors(),
+    });
   }
 
   uploadCoverImage(file: File, id: string): Observable<string> {
     const formData = new FormData();
     formData.append('file', file);
     return this.http
-      .post<{ key: string }>(`${this.apiUrl}/blog/posts/${id}/image`, formData)
+      .post<{ key: string }>(`${this.apiUrl}/blog/posts/${id}/image`, formData, {
+        context: silentErrors(),
+      })
       .pipe(map((res) => res.key));
   }
 

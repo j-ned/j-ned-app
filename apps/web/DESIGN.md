@@ -266,10 +266,9 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 - **Disabled:** opacity 0.5, cursor not-allowed.
 - **Loading state:** non implémenté actuellement → à ajouter (voir Do's and Don'ts).
 
-### Tags / Badges (`shared/ui/tag.ts`)
+### Tags / Badges
 
-- **Shape:** `rounded-md` (6px), padding `px-2 py-1`.
-- **Severities:** deux seulement, tokens du thème, identiques dans les deux registres : info `bg-primary/10 text-primary`, secondary `bg-foreground/8 text-muted`. Aucune couleur de la palette Tailwind par défaut (test de garde dans `tag.spec.ts`). Un statut (« Publié », « Brouillon », « Mis en avant ») n'est pas une pastille colorée : c'est un tampon (`app-stamp`), `status-*` sur `status-*/15` restant sous 4,5:1 en Ivoire.
+- **Pas de composant de pastille générique** (`shared/ui/tag.ts` retiré avec la page Audience, son dernier consommateur). Un statut (« Publié », « Brouillon », « Mis en avant ») n'est pas une pastille colorée : c'est un tampon (`app-stamp`), `status-*` sur `status-*/15` restant sous 4,5:1 en Ivoire.
 - **Tags du blog** (`blog-tag-palette.ts`) : tout le catalogue en `bg-primary/10 text-primary`, quelle que soit la catégorie ; tags libres neutres (`text-muted`) ; sélection en `bg-primary-bg`. Pas de couleur par catégorie (One Indigo Rule). Les pastilles de tags ne vivent que sur la page article (`BlogTagLink`, lien vers `/blog?tag=`) et dans le sélecteur de l'admin : la liste du blog n'en affiche plus, ses lignes disent leurs sujets en repère (« Ligne d'article », ci-dessous).
 
 ### Cards / Containers
@@ -365,8 +364,8 @@ L'en-tête des Réalisations dit de quelles natures sont les projets et combien 
 
 Un filtre local à une liste, une seule valeur active : les natures des Réalisations (« Filtrer par nature »), les thèmes du blog (« Filtrer par thème »).
 
-- **API:** `label` (requis, nom du groupe), `options: readonly FilterOption<T>[]` (`{ value, label, count, disabled? }`), `active = model.required<T>()` lié en `[(active)]` au `linkedSignal` de la page. Générique sur la valeur.
-- **Structure:** hôte `block overflow-x-auto` (défile horizontalement en mobile plutôt que de passer à la ligne) ; `div role="group"` nommé par `label` ; un `button type="button"` par option, libellé puis compte en mono `text-xs tabular-nums`. Pas de `nav` : le filtre ne navigue pas, l'URL ne change pas.
+- **API:** `label` (requis, nom du groupe), `options: readonly FilterOption<T>[]` (`{ value, label, count?, disabled? }`), `active = model.required<T>()` lié en `[(active)]` au `linkedSignal` de la page. Générique sur la valeur.
+- **Structure:** hôte `block overflow-x-auto` (défile horizontalement en mobile plutôt que de passer à la ligne) ; `div role="group"` nommé par `label` ; un `button type="button"` par option, libellé puis compte en mono `text-xs tabular-nums`, rendu seulement s'il est défini (0 compris) : la période d'Audience n'a pas de compte. Pas de `nav` : le filtre ne navigue pas, l'URL ne change pas.
 - **États:** au repos `text-muted`, trait bas transparent ; survol `text-foreground` ; pressé (`aria-pressed="true"`, une seule option à la fois) trait bas `primary` 2px, `font-semibold`, `text-foreground` ; focus `outline-primary` 2px rentré (`-outline-offset-2`), sur `:focus-visible` seulement. Trait de base du groupe en `line` (ombre interne de 1px). Cible `min-h-11` (44 px).
 - **Option inactive** (`disabled: true`, thème sans article) : `aria-disabled="true"`, **jamais** l'attribut `disabled` natif, pour qu'elle reste dans l'ordre de tabulation, garde son focus visible et soit annoncée « indisponible » avec son compte 0. Le clic ne change rien et le focus reste sur le bouton. Apparence de l'état désactivé des boutons : `opacity-50` posé sur le libellé et le compte seulement (`aria-disabled:*:opacity-50`), pour que le contour de focus garde son contraste, `cursor-not-allowed`, survol neutralisé (`aria-disabled:hover:text-muted`). L'opacité n'est pas le seul porteur : le compte « 0 » le dit aussi. « Tous » n'est jamais inactif.
 - **Statut:** la page annonce le résultat d'un choix par un `p role="status"` `sr-only` (« N article(s) affiché(s) », « N réalisation(s) affichée(s) »), hors du groupe ; le focus ne bouge pas.
@@ -505,7 +504,7 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 
 - **En-tête:** fil d'Ariane `nav aria-label="Fil d'Ariane"` mono 13 px (« Projets » `text-primary` 44 px, `/` décoratif, page courante `aria-current="page"`), `h1` de l'en-tête admin (titre **enregistré**, il ne suit pas la saisie), phrase sur le déploiement ; actions à droite : « Voir l'aperçu » `link-btn-outline` (icône `eye`, `routerLink="." fragment="apercu"`, masqué à partir de `lg`) et « Voir la fiche » `link-btn-outline` pour un projet existant.
 - **Colonnes:** à partir de `2xl` (1 536 px), grille `minmax(0,1fr) / 25rem`, `gap-14` ; la seconde colonne (`id="apercu"`, `scroll-mt-6`) suit le formulaire dans le DOM, `2xl:sticky 2xl:top-6`, et empile l'aperçu public puis le sommaire, `gap-3.5`. Sous `2xl`, elle passe sous le formulaire (`gap-10`) et le lien « Voir l'aperçu » y mène : avec la barre latérale, une colonne de 25rem plus tôt laisserait moins de 560 px au formulaire (204 px à 1 024, 460 à 1 280, mesurés).
-- **Couverture:** groupe « Couverture » (`role="group"`) ; avec une image enregistrée, `ProjectCover` (tampon de nature, `alt` « Couverture actuelle de X ») et zone de dépôt côte à côte à partir de `sm` (`15rem / minmax(0,1fr)`, `gap-4.5`), empilées dessous ; sans image, la zone seule. La zone ne montre plus l'image enregistrée, seulement le fichier choisi.
+- **Couverture:** groupe « Couverture » (`role="group"`) ; avec une image enregistrée, `ProjectCover` (tampon de nature, `alt` « Couverture actuelle de X ») et zone de dépôt côte à côte à partir de `sm` (`15rem / minmax(0,1fr)`, `gap-4.5`), empilées dessous ; sans image, la zone seule. La zone ne montre plus l'image enregistrée, seulement le fichier choisi. Retirer le fichier (×) annule la couverture en attente ; un fichier qui n'est pas une image vide la zone avec le toast « Seules les images sont acceptées. » (même règle sur l'éditeur d'article).
 - **Sections:** `fieldset[app-admin-form-section]`, légende flottante pleine largeur : numéro mono 13 px `text-primary` « 01 · », titre Archivo gras 21 px élargi 106 %, description 14 px `text-muted`, filet bas `line-strong` 1,5 px. 34 px entre deux sections. La section Galerie est hors du `<form>` (formulaires imbriqués interdits).
 - **Nature:** trois cartes-radios (`label` bord `field` `rounded-md` `p-3.5`, radio natif invisible, pastille 18 px dessinée, tampon, définition 13 px `text-muted`) ; cochée : bord et trait intérieur `primary` ; focus clavier : contour 2 px `primary` décalé de 2 px sur la carte.
 - **Lignes répétées:** colonnes `2rem / 11rem / 1fr / 2.75rem` (N°, champ, champ, suppression), en-tête mono 12 px capitales décoratif, libellés numérotés en `sr-only` ; sous `sm`, le second champ passe sous le premier.
@@ -532,18 +531,46 @@ Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, s
 - **Sections:** `01 · Article` (titre, extrait, sujets), `02 · Contenu` (Markdown en mono 14 px sur 20 lignes, puis son rendu `prose` sous le champ, groupe nommé « Rendu », 32rem de haut au plus avec défilement), `03 · Couverture` (image enregistrée 1200/630 `15rem` et zone de dépôt côte à côte à partir de `sm`), `04 · Publication` (deux cartes-radios « Brouillon » / « Publié », bord `field`, cochée en `primary`, et la mention « Publier l'article redéploie le site : il est en ligne quelques minutes plus tard. » en `field-hint` si « Publié »).
 - **Aperçu public (`components/admin-post-preview.ts`):** même cadre que celui des projets, référence « Blog · Liste des articles » ; corps `inert` : la vraie `BlogPostRow` (jamais prioritaire), empilée dans la colonne de 25rem, temps de lecture en direct.
 
-### Admin Table (`admin-table*` utilities)
+### Audience (`features/admin/application/admin-audience.ts`, facade `audience-report.ts`)
 
-- **Shell:** `overflow-hidden rounded-xl border border-foreground/8 bg-foreground/2`.
-- **TH:** `px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted border-b border-foreground/8`. Label style.
-- **TD:** `px-4 py-3.5 text-foreground/90 border-b border-foreground/5`.
-- **Row hover:** `bg-foreground/3` transition-colors.
-- **Sortable header:** `th scope="col"` qui porte `aria-sort` sur la seule colonne triée et contient un `button` (`sort-<clé>`) ; jamais `role="button"` sur la cellule. Cursor pointer + hover text-foreground.
-- **Ligne dépliable:** bouton natif dans la première colonne (`aria-expanded`, `aria-controls` vers la cellule dépliée), nom « Afficher / Masquer le message de X » ; la ligne elle-même n'est pas cliquable.
-- **Actions de ligne:** nom accessible propre à la ligne (« Marquer comme lu : X », « Supprimer le message de X »).
-- **Empty state:** même shell, `px-6 py-16 text-center text-muted text-sm`.
-- **Icon button:** `h-9 w-9 rounded-lg`, hover bg-surface-elevated. Variante danger : hover bg-red-500/10 + text-red-400.
-- **Pagination:** `h-11 min-w-11 rounded-lg`, active = `bg-primary-bg/15 text-primary`.
+- **En-tête:** `AdminPageHeader` (sur-titre de période, `h1` « Audience », introduction `audienceLead` : « 42 visiteurs, dont 18 venus de google.com. 9 sur 10 repartent après une page. »). Aside aligné à droite à partir de `lg` : « N visiteur(s) en ce moment » (point `status-success` décoratif, nombre en mono gras, texte simple sans région live : relevé toutes les 30 s), puis deux boutons contour 44 px, « Exclure cet appareil » / « Cet appareil est exclu » (`button` natif, `aria-pressed`, bord `primary` une fois pressé) et « Exporter en CSV ».
+- **Période:** `FilterGroup` « Période » sans compte (7 jours, 30 jours, 90 jours, Depuis le début).
+- **Relevé:** `AdminReadout` à quatre repères (Visiteurs, Pages vues, Rebond, Durée moyenne). Chargement : un squelette `role="status"` à la place du relevé et des sections ; une source en échec : une seule `LoadError` dont « Réessayer » ne relance que les sources en échec.
+- **Visites par jour:** `AdminSectionHead` avec légende décorative (`aria-hidden`, trait plein `primary` « Visiteurs », tireté `foreground` 55 % « Pages vues ») ; `AudienceChart` : `figure` (courbe Chart.js de 15rem, `figcaption` `sr-only` = résumé de la période) puis `details` « Voir les données en tableau » (`summary` `text-primary` semi-gras 44 px, table jour / visiteurs / pages vues, jour en `th scope="row"`, nombres groupés, défilement vertical au-delà de 24rem dans une région focalisable).
+- **Pages les plus vues, Provenance (`components/audience-share-table.ts`):** deux colonnes à partir de `lg`. `section` nommée par son `h2`, `table` à `caption` `sr-only`, en-têtes `table-head` (mono 12 px capitales `text-muted`, filet bas `line-strong` 1,5 px) ; une ligne par entrée (cinq au plus, le reste en « Autres ») : libellé (mono pour un chemin), barre décorative `h-1 bg-primary` sur piste `bg-line` rapportée à la plus grande ligne, nombre mono semi-gras, part mono `text-muted` (« 43 % »). Sans donnée : « Aucune donnée sur la période. »
+- **Ce que les visiteurs font (`components/audience-tally.ts`):** grille 1 / 2 / 4 colonnes de listes `dl` titrées en `h3` mono capitales : Totaux, Projets cliqués, Articles ouverts, Articles lus jusqu'au bout, CTA cliqués, Navigateurs, Systèmes, Pays ; nom à gauche, nombre mono à droite, filets `line`. Liste vide : « Rien sur la période. » Plus de donuts.
+
+### Messages (`features/admin/application/admin-messages.ts`, `components/admin-message-row.ts`)
+
+- **En-tête:** sur-titre « N non lu(s) · N au total » ; aside « Tout marquer comme lu » (bouton contour natif, icône `check`), `aria-disabled="true"` sans effet quand rien n'est non lu (reste focalisable et annoncé, `opacity-55`), jamais `disabled`.
+- **Filtre:** `FilterGroup` « Filtrer par lecture » (Tous, Non lus, Lus ; comptes de la boîte entière, filtre à 0 inactif).
+- **Liste:** `ul role="list"`, plus récent d'abord, sans pagination. Ligne `li[app-admin-message-row]` à filet bas `line` : grille 44 px / expéditeur (`14rem`, nom semi-gras, e-mail 13 px `text-muted`) / sujet (tronqué, précédé du tampon « Nouveau » si non lu) / date relative mono 12 px dans un `<time datetime>` (`8rem`) / actions (`8.25rem`, alignées à droite) ; sous `md`, actions sur la première ligne, sujet et date dessous. Bouton de dépliage natif 44 px (chevron qui pivote, `aria-expanded`, `aria-controls`, nom « Afficher / Masquer le message de X ») ; corps `text-muted` `max-w-[70ch]` décalé sous l'expéditeur.
+- **Actions:** cibles de 44 px : « Répondre à X » (lien `mailto:`), « Marquer comme lu : X » (non lus seulement), « Supprimer le message de X » (`Button` danger texte, confirmation).
+- **Vide:** `AdminEmptyState` centré, tampon « Boîte vide ».
+- **Échec:** un seul signalement, celui de la page : toast pour une écriture (état restauré), `LoadError` pour la lecture de la boîte. La lecture et les écritures de `HttpContactGateway` utilisées par l'admin portent `SKIP_ERROR_TOAST`.
+
+### CV (`features/admin/application/admin-cv.ts`, `admin-cv-view.ts`)
+
+- **En-tête:** sur-titre « PDF · 76 Ko · mis en ligne le 19 sept. 2026 » (taille par `formatFileSize`, source unique avec le cartouche et la zone de dépôt), `h1` « CV », phrase sur le bouton du site ; aside : `Cartouche` « CV en ligne », référence = nom du fichier, lignes Mis en ligne / Taille / Téléchargé (« 0 fois en 30 j », espace insécable, « indisponible » si le compte échoue, sans alerte ni toast). Aucun cartouche sans CV.
+- **Actions:** « Ouvrir le PDF » `link-btn-outline` (icône `external-link`, « (nouvel onglet) » `sr-only`, `noopener noreferrer`) puis « Retirer le CV du site… » (`Button` danger texte, confirmation).
+- **Téléversement:** `AdminSectionHead` « Remplacer le fichier » (ou « Mettre un CV en ligne » sans CV), `mt-12`, puis `FileDropzone` ; « Mettre en ligne » / « Annuler » sous la zone dès qu'un PDF est choisi. Un envoi réussi vide la zone (`resetToken`) ; un fichier qui n'est pas un PDF aussi, avec le toast « Seuls les fichiers PDF sont acceptés. ». Un échec d'envoi ou de retrait : un seul toast, celui de la page (`SKIP_ERROR_TOAST` sur les deux écritures).
+- **Vide:** `AdminEmptyState` tampon « Aucun CV », phrase sur le bouton du site absent.
+
+### Paramètres (`features/admin/application/admin-settings.ts`, `components/admin-setting-row.ts`)
+
+- **Sections:** `AdminSectionHead` « Sécurité » puis « Apparence » (`mt-12`).
+- **Ligne de réglage (`div[app-admin-setting-row]`, `fieldset[app-admin-setting-row]`):** filet bas `line`, `py-4.5` ; titre (`h3`, ou `legend` flottante pour un `fieldset`) Archivo gras 16,5 px élargi 104 %, explication 14 px `text-muted` limitée à 60 caractères, réglage à droite à partir de `sm` (deuxième colonne sur deux rangées), dessous sinon.
+- **Sécurité:** « Double authentification » → « Configurer » (`link-btn-outline` vers `/admin/settings/security`) ; « Session » « Connecté en tant que <e-mail>. » → « Se déconnecter » (bouton natif `link-btn-outline`, icône `sign-out`).
+- **Apparence:** `fieldset` « Thème de l'administration », trois radios natives Système / Clair / Sombre (même `name`, appliquées au changement, sans soumission) dessinées en onglets comme `FilterGroup` : `label` 44 px `text-muted`, cochée = trait bas `primary` 2 px et texte `foreground` semi-gras, focus clavier = contour 2 px `primary` intérieur, piste `line` en trait intérieur bas. Même stockage que la bascule de la coque et du site.
+
+### Sécurité (`features/auth/application/two-factor-setup.ts`)
+
+- `h1` « Sécurité » en tête de colonne (style de l'en-tête admin, sans l'importer : `features/auth` ne dépend pas de `features/admin`) ; statut « 2FA activé » en `Stamp` (`twofa-status`), plus en vert sur fond vert.
+
+### Zone de dépôt (`shared/ui/file-dropzone.ts`)
+
+- **API:** `accept`, `label`, `helperText`, `previewUrl`, `resetToken` (tout changement efface le fichier affiché, sans émettre `cleared`) ; sorties `fileSelected`, `cleared`. Le parent incrémente `resetToken` après un envoi réussi et au refus d'un fichier (CV, couvertures des éditeurs), et relaie `cleared` jusqu'à l'état qu'il envoie : un fichier retiré ou refusé n'est jamais envoyé.
+- **Fichier choisi:** nom, puis taille par `formatFileSize` (`shared/ui/format-file-size.ts`, « 1,2 Mo », la même que le cartouche du CV). Après le choix, le focus va sur « Remplacer », ou sur le bouton de la zone si le parent l'a remise à zéro ; après un retrait, sur le bouton de la zone.
 
 ### Toast (`shared/ui/toast.ts`)
 
@@ -569,7 +596,7 @@ Courbe des visiteurs (`buildVisitorsChartData`) : une seule teinte, « Visiteurs
 - **Do** respecter `prefers-reduced-motion: reduce` — désactiver fade-up, view-transitions, scroll animations.
 - **Do** réserver le mono à du contenu vraiment technique (code, chiffres, status).
 - **Do** garder body line-length à 65–75ch maximum (`max-w-prose` ou équivalent).
-- **Do** utiliser les utilities `form-*`, `admin-*`, `btn-*` plutôt que de redéclarer les classes Tailwind. Si tu dupliques 10+ classes, crée une utility.
+- **Do** utiliser les utilities `form-*`, `field-*`, `table-head`, `link-btn-*` plutôt que de redéclarer les classes Tailwind. Si tu dupliques 10+ classes, crée une utility.
 - **Do** documenter toute exception aux Named Rules dans un commentaire au point d'usage (`/* exception: ... */`).
 
 ### Don't:

@@ -31,9 +31,7 @@ function makeAuthStore(overrides: Partial<AuthStoreMock> = {}): AuthStoreMock {
   };
 }
 
-async function setup(
-  authStore: AuthStoreMock,
-): Promise<ComponentFixture<TwoFactorSetup>> {
+async function setup(authStore: AuthStoreMock): Promise<ComponentFixture<TwoFactorSetup>> {
   await TestBed.configureTestingModule({
     imports: [TwoFactorSetup],
     providers: [{ provide: AuthStore, useValue: authStore }],
@@ -45,31 +43,16 @@ async function setup(
   return fixture;
 }
 
-function passwordChild(
-  fixture: ComponentFixture<TwoFactorSetup>,
-): PasswordChangeForm | null {
-  return (
-    fixture.debugElement.query(By.directive(PasswordChangeForm))?.componentInstance ??
-    null
-  );
+function passwordChild(fixture: ComponentFixture<TwoFactorSetup>): PasswordChangeForm | null {
+  return fixture.debugElement.query(By.directive(PasswordChangeForm))?.componentInstance ?? null;
 }
 
-function enableChild(
-  fixture: ComponentFixture<TwoFactorSetup>,
-): TwoFactorEnableForm | null {
-  return (
-    fixture.debugElement.query(By.directive(TwoFactorEnableForm))?.componentInstance ??
-    null
-  );
+function enableChild(fixture: ComponentFixture<TwoFactorSetup>): TwoFactorEnableForm | null {
+  return fixture.debugElement.query(By.directive(TwoFactorEnableForm))?.componentInstance ?? null;
 }
 
-function disableChild(
-  fixture: ComponentFixture<TwoFactorSetup>,
-): TwoFactorDisableForm | null {
-  return (
-    fixture.debugElement.query(By.directive(TwoFactorDisableForm))?.componentInstance ??
-    null
-  );
+function disableChild(fixture: ComponentFixture<TwoFactorSetup>): TwoFactorDisableForm | null {
+  return fixture.debugElement.query(By.directive(TwoFactorDisableForm))?.componentInstance ?? null;
 }
 
 describe('TwoFactorSetup: child selection follows 2FA state', () => {
@@ -309,5 +292,41 @@ describe('TwoFactorSetup: deferred command keeps the child loading until resolut
     await fixture.whenStable();
 
     expect(passwordChild(fixture)!.loading()).toBe(false);
+  });
+});
+
+describe('TwoFactorSetup: titre de page et statut de la double authentification', () => {
+  const headingsOf = (fixture: ComponentFixture<TwoFactorSetup>): readonly string[] =>
+    [...(fixture.nativeElement as HTMLElement).querySelectorAll('h1, h2, h3')].map(
+      (heading) => heading.tagName,
+    );
+
+  it.each([{ enabled: false }, { enabled: true }])(
+    'Given two-factor enabled is $enabled When the security page renders Then it opens on a single h1 « Sécurité »',
+    async ({ enabled }) => {
+      const store = makeAuthStore();
+      store.currentUser.set({ isTwoFactorEnabled: enabled });
+      const fixture = await setup(store);
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect({
+        first: headingsOf(fixture)[0],
+        h1: [...host.querySelectorAll('h1')].map((heading) => heading.textContent?.trim()),
+      }).toEqual({ first: 'H1', h1: ['Sécurité'] });
+    },
+  );
+
+  it('Given two-factor is enabled When the security page renders Then its status is a stamp', async () => {
+    const store = makeAuthStore();
+    store.currentUser.set({ isTwoFactorEnabled: true });
+    const fixture = await setup(store);
+    const status = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="twofa-status"]',
+    );
+
+    expect({ tag: status?.tagName, text: status?.textContent?.trim() }).toEqual({
+      tag: 'APP-STAMP',
+      text: '2FA activé',
+    });
   });
 });

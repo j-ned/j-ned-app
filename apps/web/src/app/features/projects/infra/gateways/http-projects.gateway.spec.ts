@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { firstValueFrom, type Observable } from 'rxjs';
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
+import { errorToastInterceptor } from '@core/interceptors/error-toast';
+import { ToastStore } from '@shared/ui/toast-store';
 import { HttpProjectsGateway } from './http-projects.gateway';
 import type { Project } from '../../domain/models/project.model';
 import { makeProject, makeProjectImage, makeProjectInput } from '../../testing/project-builders';
@@ -468,5 +470,132 @@ describe('HttpProjectsGateway', () => {
       sub.unsubscribe();
       httpController.verify();
     });
+  });
+});
+
+describe('HttpProjectsGateway: écritures de l’admin derrière l’intercepteur de toasts', () => {
+  const add = vi.fn();
+
+  function configureWithToasts(): {
+    gateway: HttpProjectsGateway;
+    httpController: HttpTestingController;
+  } {
+    add.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        HttpProjectsGateway,
+        provideHttpClient(withInterceptors([errorToastInterceptor])),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: BASE },
+        { provide: ToastStore, useValue: { add } },
+      ],
+    });
+    return {
+      gateway: TestBed.inject(HttpProjectsGateway),
+      httpController: TestBed.inject(HttpTestingController),
+    };
+  }
+
+  async function toastsOnFailure(
+    request: Observable<unknown>,
+    httpController: HttpTestingController,
+    method: string,
+    url: string,
+  ): Promise<{ status: number | null; toasts: number }> {
+    const outcome = firstValueFrom(request).then(
+      () => null,
+      (error: unknown) => (error instanceof HttpErrorResponse ? error.status : -1),
+    );
+    httpController
+      .expectOne({ method, url })
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    return { status: await outcome, toasts: add.mock.calls.length };
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  const IMAGE = new File(['x'], 'cover.png', { type: 'image/png' });
+
+  it.each<{
+    write: string;
+    method: string;
+    url: string;
+    call: (gateway: HttpProjectsGateway) => Observable<unknown>;
+  }>([
+    {
+      write: 'createProject',
+      method: 'POST',
+      url: `${BASE}/projects`,
+      call: (g): Observable<unknown> => g.createProject(makeProjectInput()),
+    },
+    {
+      write: 'updateProject',
+      method: 'PATCH',
+      url: `${BASE}/projects/p-1`,
+      call: (g): Observable<unknown> => g.updateProject('p-1', { title: 'X' }),
+    },
+    {
+      write: 'deleteProject',
+      method: 'DELETE',
+      url: `${BASE}/projects/p-1`,
+      call: (g): Observable<unknown> => g.deleteProject('p-1'),
+    },
+    {
+      write: 'uploadImage',
+      method: 'POST',
+      url: `${BASE}/projects/p-1/image`,
+      call: (g): Observable<unknown> => g.uploadImage(IMAGE, 'p-1'),
+    },
+    {
+      write: 'uploadGalleryImage',
+      method: 'POST',
+      url: `${BASE}/projects/p-1/images`,
+      call: (g): Observable<unknown> => g.uploadGalleryImage('p-1', IMAGE, 'Capture'),
+    },
+    {
+      write: 'updateGalleryImageAlt',
+      method: 'PATCH',
+      url: `${BASE}/projects/p-1/images/i-1`,
+      call: (g): Observable<unknown> => g.updateGalleryImageAlt('p-1', 'i-1', 'Capture'),
+    },
+    {
+      write: 'reorderGallery',
+      method: 'PUT',
+      url: `${BASE}/projects/p-1/images/order`,
+      call: (g): Observable<unknown> => g.reorderGallery('p-1', ['i-2', 'i-1']),
+    },
+    {
+      write: 'deleteGalleryImage',
+      method: 'DELETE',
+      url: `${BASE}/projects/p-1/images/i-1`,
+      call: (g): Observable<unknown> => g.deleteGalleryImage('p-1', 'i-1'),
+    },
+  ])(
+    'Given the API answers 500 When $write is called Then no toast is shown and the caller still receives the error',
+    async ({ method, url, call }) => {
+      const { gateway, httpController } = configureWithToasts();
+
+      expect(await toastsOnFailure(call(gateway), httpController, method, url)).toEqual({
+        status: 500,
+        toasts: 0,
+      });
+      httpController.verify();
+    },
+  );
+
+  it('Given the public detail page reads a project When the API answers 500 Then the interceptor still shows its toast', async () => {
+    const { gateway, httpController } = configureWithToasts();
+
+    expect(
+      await toastsOnFailure(
+        gateway.getProjectById('p-1'),
+        httpController,
+        'GET',
+        `${BASE}/projects/p-1`,
+      ),
+    ).toEqual({ status: 500, toasts: 1 });
+    httpController.verify();
   });
 });

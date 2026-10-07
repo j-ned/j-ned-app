@@ -5,37 +5,15 @@ import {
   formatChartDay,
   pagesPerSession,
   pagesPerSessionLabel,
-  barWidth,
   alpha,
   buildVisitorsChartData,
   buildVisitorsOnlyChartData,
   buildLineChartOptions,
-  buildDonutChartData,
-  buildDonutOptions,
-  buildPalette,
   escapeCsv,
   buildAnalyticsCsv,
 } from './analytics-presenter';
-import type {
-  StatsOverview,
-  DailyChartPoint,
-  MetricEntry,
-  EntityStat,
-} from './models/analytics.types';
-
-const overview = (p: Partial<StatsOverview> = {}): StatsOverview => ({
-  visitors: 100,
-  pageviews: 250,
-  sessions: 50,
-  bounces: 20,
-  bounceRate: 40,
-  avgDuration: 75,
-  projectClicks: 12,
-  articleViews: 8,
-  cvDownloads: 3,
-  ctaClicks: 6,
-  ...p,
-});
+import type { DailyChartPoint, MetricEntry, EntityStat } from './models/analytics.types';
+import { makeStatsOverview } from '../testing/analytics-builders';
 
 describe('analytics-presenter', () => {
   describe('dateRangeToParams', () => {
@@ -73,7 +51,7 @@ describe('analytics-presenter', () => {
   describe('pagesPerSession', () => {
     it('renvoie « 0 » sans overview ou sans session', () => {
       expect(pagesPerSession(undefined)).toBe('0');
-      expect(pagesPerSession(overview({ sessions: 0 }))).toBe('0');
+      expect(pagesPerSession(makeStatsOverview({ sessions: 0 }))).toBe('0');
     });
 
     it.each([
@@ -83,7 +61,7 @@ describe('analytics-presenter', () => {
     ] as const)(
       'calcule %i pages vues / %i sessions à une décimale française : %s',
       (pageviews, sessions, expected) => {
-        expect(pagesPerSession(overview({ pageviews, sessions }))).toBe(expected);
+        expect(pagesPerSession(makeStatsOverview({ pageviews, sessions }))).toBe(expected);
       },
     );
   });
@@ -98,7 +76,7 @@ describe('analytics-presenter', () => {
     ] as const)(
       'accorde « page » sur le nombre affiché : %i vues / %i sessions → %s',
       (pageviews, sessions, expected) => {
-        expect(pagesPerSessionLabel(overview({ pageviews, sessions }))).toBe(expected);
+        expect(pagesPerSessionLabel(makeStatsOverview({ pageviews, sessions }))).toBe(expected);
       },
     );
   });
@@ -121,14 +99,6 @@ describe('analytics-presenter', () => {
       ['2026-01-31', '31 janv.'],
     ] as const)('libelle le jour %s en %s, sans décalage de fuseau', (day, expected) => {
       expect(formatChartDay(day)).toBe(expected);
-    });
-  });
-
-  describe('barWidth', () => {
-    it('renvoie le pourcentage value/max, 0 si max ≤ 0', () => {
-      expect(barWidth(5, 10)).toBe(50);
-      expect(barWidth(10, 10)).toBe(100);
-      expect(barWidth(5, 0)).toBe(0);
     });
   });
 
@@ -205,37 +175,6 @@ describe('analytics-presenter', () => {
     });
   });
 
-  describe('buildDonutChartData', () => {
-    it('mappe les noms (« Inconnu » si vide) et applique la palette', () => {
-      const entries: MetricEntry[] = [
-        { name: 'Chrome', count: 5 },
-        { name: '', count: 2 },
-      ];
-      const data = buildDonutChartData(entries, ['#a', '#b']);
-      expect(data.labels).toEqual(['Chrome', 'Inconnu']);
-      expect(data.datasets[0].data).toEqual([5, 2]);
-      expect(data.datasets[0].backgroundColor).toEqual(['#a', '#b']);
-    });
-  });
-
-  describe('buildDonutOptions', () => {
-    it('utilise un cutout 60% et une légende en bas', () => {
-      const opts = buildDonutOptions('#fg', '#bg');
-      expect(opts.cutout).toBe('60%');
-      expect(opts.plugins.legend.position).toBe('bottom');
-    });
-  });
-
-  describe('buildPalette', () => {
-    it('produit 7 entrées dérivées des tokens', () => {
-      const palette = buildPalette({ primary: '#p', accent: '#a', success: '#s', warn: '#w' });
-      expect(palette).toHaveLength(7);
-      expect(palette[0]).toBe('#p');
-      expect(palette[4]).toBe('#s');
-      expect(palette[2]).toBe('color-mix(in srgb, #p 70%, transparent)');
-    });
-  });
-
   describe('escapeCsv', () => {
     it('laisse une valeur simple intacte', () => {
       expect(escapeCsv('Chrome')).toBe('Chrome');
@@ -249,7 +188,7 @@ describe('analytics-presenter', () => {
 
   describe('buildAnalyticsCsv', () => {
     const sections = {
-      overview: overview({ visitors: 100, bounceRate: 40.5 }),
+      overview: makeStatsOverview({ visitors: 100, bounceRate: 40.5 }),
       topPages: [{ name: '/home', count: 80 }] as MetricEntry[],
       topReferrers: [{ name: '', count: 5 }] as MetricEntry[],
       browsers: [{ name: 'Chrome', count: 60 }] as MetricEntry[],

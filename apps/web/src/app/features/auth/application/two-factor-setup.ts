@@ -19,6 +19,7 @@ import { TwoFactorDisableForm } from './two-factor-disable-form';
   host: { class: 'block' },
   template: `
     <div class="max-w-lg mx-auto space-y-8">
+      <h1 class="text-[2.5rem] leading-none font-extrabold tracking-[-0.04em]">Sécurité</h1>
       <app-password-change-form
         [loading]="isPwdLoading()"
         [successMessage]="pwdSuccess()"

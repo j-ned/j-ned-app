@@ -1,11 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { firstValueFrom } from 'rxjs';
-import { describe, it, expect, afterEach } from 'vitest';
+import { firstValueFrom, type Observable } from 'rxjs';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { HttpBlogGateway } from './http-blog.gateway';
 import { API_BASE_URL } from '@shared/api/api-config';
-import type { BlogPost } from '../domain/models/blog-post.model';
+import { errorToastInterceptor } from '@core/interceptors/error-toast';
+import { ToastStore } from '@shared/ui/toast-store';
+import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
 import { makeBlogPost } from '../testing/blog-post-builders';
 
 const BASE = 'https://api.test';
@@ -154,5 +156,115 @@ describe('HttpBlogGateway: liste admin partagée', () => {
       recovered: (await recovered).map((post) => post.coverImage),
     }).toEqual({ retries: 1, outcome: 'error', recovered: ['https://api.test/blog/a.webp'] });
     httpMock.verify();
+  });
+});
+
+describe('HttpBlogGateway: écritures de l’admin derrière l’intercepteur de toasts', () => {
+  const add = vi.fn();
+
+  function configureWithToasts(): {
+    gateway: HttpBlogGateway;
+    httpController: HttpTestingController;
+  } {
+    add.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        HttpBlogGateway,
+        provideHttpClient(withInterceptors([errorToastInterceptor])),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: BASE },
+        { provide: ToastStore, useValue: { add } },
+      ],
+    });
+    return {
+      gateway: TestBed.inject(HttpBlogGateway),
+      httpController: TestBed.inject(HttpTestingController),
+    };
+  }
+
+  async function toastsOnFailure(
+    request: Observable<unknown>,
+    httpController: HttpTestingController,
+    method: string,
+    url: string,
+  ): Promise<{ status: number | null; toasts: number }> {
+    const outcome = firstValueFrom(request).then(
+      () => null,
+      (error: unknown) => (error instanceof HttpErrorResponse ? error.status : -1),
+    );
+    httpController
+      .expectOne({ method, url })
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    return { status: await outcome, toasts: add.mock.calls.length };
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  const INPUT: BlogPostInput = {
+    title: 'Mon article',
+    excerpt: 'Résumé',
+    contentMarkdown: '# Titre',
+    tags: [],
+    status: 'draft',
+  };
+
+  it.each<{
+    write: string;
+    method: string;
+    url: string;
+    call: (gateway: HttpBlogGateway) => Observable<unknown>;
+  }>([
+    {
+      write: 'createPost',
+      method: 'POST',
+      url: `${BASE}/blog/posts`,
+      call: (g): Observable<unknown> => g.createPost(INPUT),
+    },
+    {
+      write: 'updatePost',
+      method: 'PATCH',
+      url: `${BASE}/blog/posts/b-1`,
+      call: (g): Observable<unknown> => g.updatePost('b-1', { title: 'X' }),
+    },
+    {
+      write: 'deletePost',
+      method: 'DELETE',
+      url: `${BASE}/blog/posts/b-1`,
+      call: (g): Observable<unknown> => g.deletePost('b-1'),
+    },
+    {
+      write: 'uploadCoverImage',
+      method: 'POST',
+      url: `${BASE}/blog/posts/b-1/image`,
+      call: (g): Observable<unknown> =>
+        g.uploadCoverImage(new File(['x'], 'cover.png', { type: 'image/png' }), 'b-1'),
+    },
+  ])(
+    'Given the API answers 500 When $write is called Then no toast is shown and the caller still receives the error',
+    async ({ method, url, call }) => {
+      const { gateway, httpController } = configureWithToasts();
+
+      expect(await toastsOnFailure(call(gateway), httpController, method, url)).toEqual({
+        status: 500,
+        toasts: 0,
+      });
+      httpController.verify();
+    },
+  );
+
+  it('Given a visitor likes a post When the API answers 500 Then the interceptor still shows its toast', async () => {
+    const { gateway, httpController } = configureWithToasts();
+
+    expect(
+      await toastsOnFailure(
+        gateway.likePost('mon-article'),
+        httpController,
+        'POST',
+        `${BASE}/blog/posts/mon-article/like`,
+      ),
+    ).toEqual({ status: 500, toasts: 1 });
+    httpController.verify();
   });
 });

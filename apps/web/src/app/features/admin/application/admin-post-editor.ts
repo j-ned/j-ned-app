@@ -126,7 +126,10 @@ const toEditedPost = (post: BlogPost | null): EditedPost => ({
               [(tags)]="tags"
               [persistedCover]="saved()?.coverImage ?? ''"
               (submitted)="save($event)"
+              [coverResetToken]="coverResetToken()"
               (coverSelected)="pendingCover.set($event)"
+              (coverCleared)="pendingCover.set(null)"
+              (coverRejected)="rejectCover()"
             />
             <app-admin-save-bar
               class="mt-10"
@@ -200,6 +203,7 @@ export class AdminPostEditor implements LeaveConfirmable {
     () => new Set(this.loaded()?.tags ?? []),
   );
   protected readonly pendingCover = signal<File | null>(null);
+  protected readonly coverResetToken = signal(0);
   protected readonly saving = signal(false);
   protected readonly leave = new LeaveConfirmation();
 
@@ -229,6 +233,12 @@ export class AdminPostEditor implements LeaveConfirmable {
     if (this.changes() > 0) event.preventDefault();
   }
 
+  protected rejectCover(): void {
+    this.pendingCover.set(null);
+    this.coverResetToken.update((token) => token + 1);
+    this.notify('error', 'Seules les images sont acceptées.');
+  }
+
   // Une couverture refusée après l'écriture laisse l'article enregistré : la page le traite ainsi.
   protected async save(payload: BlogPostInput): Promise<void> {
     const id = this.id();
@@ -249,6 +259,7 @@ export class AdminPostEditor implements LeaveConfirmable {
       this.notify('success', 'Article enregistré');
       this.saved.set(saved);
       this.pendingCover.set(null);
+      this.coverResetToken.update((token) => token + 1);
       this.baseline.set(this.edited());
       if (!id) await this.router.navigate(['/admin/blog', saved.id], { replaceUrl: true });
     } finally {

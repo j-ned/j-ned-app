@@ -74,3 +74,122 @@ describe('FileDropzone accessibility', () => {
     });
   });
 });
+
+describe('FileDropzone: remise à zéro par le parent', () => {
+  let fixture: ComponentFixture<FileDropzone>;
+
+  const byTestId = (testId: string): HTMLElement | null =>
+    fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+
+  const chooseFile = async (): Promise<void> => {
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input[type="file"]');
+    const file = new File(['%PDF'], 'cv.pdf', { type: 'application/pdf' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+  };
+
+  beforeEach(async () => {
+    fixture = TestBed.createComponent(FileDropzone);
+    fixture.componentRef.setInput('resetToken', 0);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  it('Given a chosen file When the parent changes the reset token Then the dropzone offers the picker again', async () => {
+    await chooseFile();
+    const chosen = byTestId('file-dropzone-replace') !== null;
+
+    fixture.componentRef.setInput('resetToken', 1);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect({
+      chosen,
+      replace: byTestId('file-dropzone-replace'),
+      trigger: byTestId('file-dropzone-trigger')?.tagName,
+      name: fixture.nativeElement.textContent.includes('cv.pdf'),
+    }).toEqual({ chosen: true, replace: null, trigger: 'BUTTON', name: false });
+  });
+
+  it('Given a chosen file When the parent resets it Then no « cleared » is emitted back to the parent', async () => {
+    const cleared = vi.fn();
+    fixture.componentInstance.cleared.subscribe(cleared);
+    await chooseFile();
+
+    fixture.componentRef.setInput('resetToken', 1);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(cleared).not.toHaveBeenCalled();
+  });
+
+  it('Given a reset already done When a file is chosen afterwards Then it is shown', async () => {
+    fixture.componentRef.setInput('resetToken', 1);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    await chooseFile();
+
+    expect(byTestId('file-dropzone-replace')).not.toBeNull();
+  });
+});
+
+describe('FileDropzone: fichier refusé par le parent', () => {
+  let fixture: ComponentFixture<FileDropzone>;
+
+  const byTestId = (testId: string): HTMLElement | null =>
+    fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+
+  beforeEach(async () => {
+    fixture = TestBed.createComponent(FileDropzone);
+    fixture.componentRef.setInput('resetToken', 0);
+    fixture.componentInstance.fileSelected.subscribe(() =>
+      fixture.componentRef.setInput('resetToken', 1),
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  it('Given the parent resets the zone as soon as a file is chosen When the picker closes Then the picker is offered again and holds the focus', async () => {
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input[type="file"]');
+    const file = new File(['PK'], 'lettre.docx', { type: 'application/msword' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect({
+      replace: byTestId('file-dropzone-replace'),
+      name: fixture.nativeElement.textContent.includes('lettre.docx'),
+      focused: document.activeElement === byTestId('file-dropzone-trigger'),
+    }).toEqual({ replace: null, name: false, focused: true });
+  });
+});
+
+describe('FileDropzone: taille du fichier choisi', () => {
+  it.each([
+    { bytes: 1_258_291, size: '1,2 Mo' },
+    { bytes: 1_048_064, size: '1 Mo' },
+    { bytes: 77_824, size: '76 Ko' },
+  ])(
+    'Given a chosen file of $bytes bytes When it is shown Then its size reads « $size »',
+    async ({ bytes, size }) => {
+      const fixture = TestBed.createComponent(FileDropzone);
+      fixture.detectChanges();
+      const input: HTMLInputElement = fixture.nativeElement.querySelector('input[type="file"]');
+      const file = new File([new Uint8Array(bytes)], 'cv.pdf', { type: 'application/pdf' });
+      Object.defineProperty(input, 'files', { value: [file], configurable: true });
+      input.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(
+        fixture.nativeElement
+          .querySelector('[data-testid="file-dropzone-size"]')
+          ?.textContent?.trim(),
+      ).toBe(size);
+    },
+  );
+});

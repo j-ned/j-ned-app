@@ -351,64 +351,9 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
- * Admin table utilities — listes du dashboard
+ * En-tête de colonne des tableaux de l'admin (Audience).
  * ---------------------------------------------------------------- */
 
-@utility admin-table-shell {
-  @apply overflow-x-auto rounded-xl border border-foreground/8 bg-foreground/2;
-}
-
-@utility admin-table {
-  @apply w-full min-w-max border-collapse text-sm;
-}
-
-@utility admin-th {
-  @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted;
-  @apply border-b border-foreground/8;
-}
-
-@utility admin-th-sortable {
-  @apply admin-th;
-  @apply cursor-pointer select-none;
-  @apply hover:text-foreground transition-colors;
-}
-
-@utility admin-td {
-  @apply px-4 py-3.5 text-foreground/90;
-  @apply border-b border-foreground/5;
-}
-
-@utility admin-row {
-  @apply transition-colors hover:bg-foreground/3;
-  @apply last:[&>td]:border-b-0;
-}
-
-@utility admin-empty {
-  @apply admin-table-shell;
-  @apply px-6 py-16 text-center text-muted text-sm;
-}
-
-@utility admin-icon-btn {
-  @apply inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted;
-  @apply hover:bg-surface-elevated hover:text-foreground;
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
-  @apply transition-colors;
-}
-
-@utility admin-icon-btn-danger {
-  @apply admin-icon-btn;
-  @apply hover:bg-status-error/10 hover:text-status-error;
-  @apply focus-visible:ring-status-error;
-}
-
-@utility admin-pager-btn {
-  @apply inline-flex h-11 min-w-11 items-center justify-center rounded-lg px-3 text-sm text-muted;
-  @apply hover:bg-surface-elevated hover:text-foreground;
-  @apply disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted;
-  @apply transition-colors;
-}
-
-@utility admin-pager-btn-active {
-  @apply admin-pager-btn;
-  @apply bg-primary-bg/15 text-primary hover:bg-primary-bg/20 hover:text-primary;
+@utility table-head {
+  @apply py-2.5 font-mono text-xs font-medium whitespace-nowrap uppercase tracking-[0.06em] text-muted;
 }

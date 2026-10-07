@@ -109,6 +109,29 @@ describe('FilterGroup', () => {
     ]);
   });
 
+  it('Given options of which only one is counted When the filters render Then only that one shows a count, zero included', async () => {
+    const root = rootOf(
+      await mountKinds('all', [
+        { value: 'all', label: 'Tous' },
+        { value: 'demo', label: 'Démos', count: 0 },
+        { value: 'script', label: 'Scripts' },
+      ]),
+    );
+
+    expect(
+      buttons(root).map((button) => [
+        normalized(button.querySelector('[data-testid="filter-option-label"]')),
+        button.querySelector('[data-testid="filter-option-count"]') === null
+          ? null
+          : normalized(button.querySelector('[data-testid="filter-option-count"]')),
+      ]),
+    ).toEqual([
+      ['Tous', null],
+      ['Démos', '0'],
+      ['Scripts', null],
+    ]);
+  });
+
   it('Given only « Tous » and the demos are offered When the filters render Then only those two buttons exist', async () => {
     const root = rootOf(
       await mountKinds('all', [

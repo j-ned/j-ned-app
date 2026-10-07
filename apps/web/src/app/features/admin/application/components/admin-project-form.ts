@@ -290,7 +290,9 @@ const presentationText = (
                 accept="image/*"
                 label="Remplacer l'image"
                 helperText="AVIF, WebP, JPG ou PNG · ratio 16/10 conseillé"
+                [resetToken]="coverResetToken()"
                 (fileSelected)="selectCover($event)"
+                (cleared)="coverCleared.emit()"
               />
             </div>
           </div>
@@ -484,8 +486,11 @@ export class AdminProjectForm {
   readonly projectId = input<string | null>(null);
   readonly gallery = input<readonly ProjectImage[]>([]);
   readonly persistedCover = input('');
+  readonly coverResetToken = input<number>();
   readonly submitted = output<ProjectInput>();
   readonly coverSelected = output<File>();
+  readonly coverCleared = output<void>();
+  readonly coverRejected = output<void>();
   readonly galleryChange = output<readonly ProjectImage[]>();
 
   protected readonly currentCoverAlt = computed(
@@ -581,5 +586,6 @@ export class AdminProjectForm {
 
   protected selectCover(file: File): void {
     if (file.type.startsWith('image/')) this.coverSelected.emit(file);
+    else this.coverRejected.emit();
   }
 }

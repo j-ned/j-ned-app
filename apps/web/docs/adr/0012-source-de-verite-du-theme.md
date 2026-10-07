@@ -1,6 +1,6 @@
 # ADR-0012 — Source de vérité du thème clair / sombre, partagée par le site et l'admin
 
-- **Statut** : proposé (2026-10-07, spec 015, PR a)
+- **Statut** : accepté (2026-10-07, PR a de la spec 015 mergée, clôture de la spec)
 - **Date** : 2026-10-07
 - **Contexte spec** : `specs/015-refonte-admin.md` (constat A.4, tranche A4)
 

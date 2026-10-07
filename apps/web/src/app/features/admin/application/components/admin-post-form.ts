@@ -147,7 +147,9 @@ const REQUIRED = 'Ce champ est obligatoire';
             accept="image/*"
             label="Remplacer l'image"
             helperText="AVIF, WebP, JPG ou PNG · ratio 1200/630 conseillé"
+            [resetToken]="coverResetToken()"
             (fileSelected)="selectCover($event)"
+            (cleared)="coverCleared.emit()"
           />
         </div>
       </fieldset>
@@ -189,8 +191,11 @@ export class AdminPostForm {
   readonly value = model.required<PostDraft>();
   readonly tags = model.required<ReadonlySet<string>>();
   readonly persistedCover = input('');
+  readonly coverResetToken = input<number>();
   readonly submitted = output<BlogPostInput>();
   readonly coverSelected = output<File>();
+  readonly coverCleared = output<void>();
+  readonly coverRejected = output<void>();
 
   protected readonly availableTags = AVAILABLE_BLOG_TAGS;
   protected readonly statuses = [
@@ -229,5 +234,6 @@ export class AdminPostForm {
 
   protected selectCover(file: File): void {
     if (file.type.startsWith('image/')) this.coverSelected.emit(file);
+    else this.coverRejected.emit();
   }
 }
