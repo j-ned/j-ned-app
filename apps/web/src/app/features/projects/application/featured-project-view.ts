@@ -1,6 +1,7 @@
 import type { Project, ProjectKind } from '../domain/models/project.model';
 import { projectPitch } from '../domain/project-pitch';
-import { projectFacts, type ProjectFact } from './project-facts';
+import type { Fact } from '@shared/ui/fact-list';
+import { projectFacts } from './project-facts';
 import { liveLinkLabel } from './project-kind-copy';
 
 export type FeaturedProjectView = {
@@ -11,7 +12,7 @@ export type FeaturedProjectView = {
   readonly kind: ProjectKind | null;
   readonly image: string;
   readonly pitch: string;
-  readonly facts: readonly ProjectFact[];
+  readonly facts: readonly Fact[];
   readonly liveLink: { readonly url: string; readonly label: string } | null;
 };
 

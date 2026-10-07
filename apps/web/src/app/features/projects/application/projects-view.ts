@@ -9,7 +9,9 @@ import {
 import { projectPitch } from '../domain/project-pitch';
 import { projectStack } from '../domain/project-stack';
 import { splitCaseStudies } from '../domain/split-case-studies';
-import { projectFacts, type ProjectFact } from './project-facts';
+import type { Fact } from '@shared/ui/fact-list';
+import type { FilterOption } from '@shared/ui/filter-group';
+import { projectFacts } from './project-facts';
 import { PROJECT_KIND_DEFINITIONS, PROJECT_KIND_FILTER_LABELS } from './project-kind-copy';
 import { projectsIntro } from './projects-intro';
 
@@ -21,19 +23,13 @@ export type LegendRow = {
   readonly count: number;
 };
 
-export type KindFilterOption = {
-  readonly value: ProjectKindFilter;
-  readonly label: string;
-  readonly count: number;
-};
-
 export type CaseStudyView = {
   readonly id: string;
   readonly slug: string;
   readonly title: string;
   readonly overline: string;
   readonly pitch: string;
-  readonly facts: readonly ProjectFact[];
+  readonly facts: readonly Fact[];
   readonly liveUrl: string | null;
   readonly image: string;
 };
@@ -52,7 +48,7 @@ type ProjectsView = {
   readonly total: number;
   readonly intro: string;
   readonly legend: readonly LegendRow[];
-  readonly filters: readonly KindFilterOption[];
+  readonly filters: readonly FilterOption<ProjectKindFilter>[];
   readonly visibleCount: number;
   readonly caseStudies: readonly CaseStudyView[];
   readonly cards: readonly ProjectCardView[];

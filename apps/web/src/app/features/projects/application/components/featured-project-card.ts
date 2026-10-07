@@ -4,11 +4,11 @@ import { AppIcon } from '@shared/icons/app-icon';
 import type { FeaturedProjectView } from '../featured-project-view';
 import { liveLinkContext, projectCoverAlt, sheetLinkContext } from '../project-kind-copy';
 import { ProjectCover } from './project-cover';
-import { ProjectFactList } from './project-fact-list';
+import { FactList } from '@shared/ui/fact-list';
 
 @Component({
   selector: 'app-featured-project-card',
-  imports: [RouterLink, AppIcon, ProjectCover, ProjectFactList],
+  imports: [RouterLink, AppIcon, ProjectCover, FactList],
   host: { class: 'block h-full' },
   template: `
     @let project = card();
@@ -35,7 +35,7 @@ import { ProjectFactList } from './project-fact-list';
         {{ project.pitch }}
       </p>
       @if (project.facts.length > 0) {
-        <app-project-fact-list class="mt-5" [facts]="project.facts" />
+        <app-fact-list class="mt-5" [facts]="project.facts" />
       }
       <div
         data-testid="featured-project-card-actions"

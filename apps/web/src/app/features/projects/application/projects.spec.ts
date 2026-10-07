@@ -584,8 +584,8 @@ describe('Projects', () => {
       expect({
         overline: byTestId('project-case-study-overline'),
         pitch: byTestId('project-case-study-pitch'),
-        labels: byTestId('project-fact-label'),
-        values: byTestId('project-fact-value'),
+        labels: byTestId('fact-label'),
+        values: byTestId('fact-value'),
         page: root.querySelector('[data-testid="project-case-study-link"]')?.getAttribute('href'),
         live: root
           .querySelector('[data-testid="project-case-study-live-link"]')
@@ -711,13 +711,13 @@ describe('Projects', () => {
       Array.from(root.querySelectorAll(`[data-testid="${testId}"]`)).map(normalized);
 
     const filterButtons = (root: HTMLElement): HTMLButtonElement[] =>
-      Array.from(root.querySelectorAll<HTMLButtonElement>('[data-testid="project-kind-filter"]'));
+      Array.from(root.querySelectorAll<HTMLButtonElement>('[data-testid="filter-option"]'));
 
     const choose = async (fixture: ComponentFixture<Projects>, label: string): Promise<void> => {
       filterButtons(rootOf(fixture))
         .find(
           (button) =>
-            normalized(button.querySelector('[data-testid="project-kind-filter-label"]')) === label,
+            normalized(button.querySelector('[data-testid="filter-option-label"]')) === label,
         )
         ?.click();
       fixture.detectChanges();
@@ -731,14 +731,14 @@ describe('Projects', () => {
 
     it('Given le catalogue de la maquette When la page est rendue Then le groupe « Filtrer par nature » propose Tous et chaque nature avec son compte, Tous pressé', async () => {
       const root = rootOf(await mount(WITH_UNKNOWN));
-      const group = root.querySelector('[data-testid="project-kind-filters"]');
+      const group = root.querySelector('[data-testid="filter-group"]');
 
       expect(group?.getAttribute('role')).toBe('group');
       expect(group?.getAttribute('aria-label')).toBe('Filtrer par nature');
       expect(
         filterButtons(root).map((button) => [
-          normalized(button.querySelector('[data-testid="project-kind-filter-label"]')),
-          normalized(button.querySelector('[data-testid="project-kind-filter-count"]')),
+          normalized(button.querySelector('[data-testid="filter-option-label"]')),
+          normalized(button.querySelector('[data-testid="filter-option-count"]')),
           button.getAttribute('aria-pressed'),
         ]),
       ).toEqual([
@@ -754,11 +754,7 @@ describe('Projects', () => {
         await mount([project('DashFlow', 'production'), project('GitPush Auto', 'script')]),
       );
 
-      expect(textsOf(root, 'project-kind-filter-label')).toEqual([
-        'Tous',
-        'En production',
-        'Scripts',
-      ]);
+      expect(textsOf(root, 'filter-option-label')).toEqual(['Tous', 'En production', 'Scripts']);
     });
 
     it.each([
@@ -823,7 +819,7 @@ describe('Projects', () => {
         count: textsOf(root, 'projects-count'),
         intro: textsOf(root, 'projects-intro'),
         legend: textsOf(root, 'project-kind-legend-count'),
-        filters: textsOf(root, 'project-kind-filter-count'),
+        filters: textsOf(root, 'filter-option-count'),
       });
       const before = header(rootOf(fixture));
 
@@ -906,7 +902,7 @@ describe('Projects', () => {
 
       expect(
         filterButtons(root).map((button) => [
-          normalized(button.querySelector('[data-testid="project-kind-filter-label"]')),
+          normalized(button.querySelector('[data-testid="filter-option-label"]')),
           button.getAttribute('aria-pressed'),
         ]),
       ).toEqual([

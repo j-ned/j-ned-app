@@ -269,7 +269,7 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 
 - **Shape:** `rounded-md` (6px), padding `px-2 py-1`.
 - **Severities:** tokens du thème uniquement, identiques dans les deux registres : info `bg-primary/10 text-primary`, success/warn/error `bg-status-*/15 text-status-*`, secondary `bg-foreground/8 text-muted`. Aucune couleur de la palette Tailwind par défaut (test de garde dans `tag.spec.ts`).
-- **Tags du blog** (`blog-tag-palette.ts`) : tout le catalogue en `bg-primary/10 text-primary`, quelle que soit la catégorie ; tags libres neutres (`text-muted`) ; sélection en `bg-primary-bg`. Pas de couleur par catégorie (One Indigo Rule).
+- **Tags du blog** (`blog-tag-palette.ts`) : tout le catalogue en `bg-primary/10 text-primary`, quelle que soit la catégorie ; tags libres neutres (`text-muted`) ; sélection en `bg-primary-bg`. Pas de couleur par catégorie (One Indigo Rule). Les pastilles de tags ne vivent que sur la page article (`BlogTagLink`, lien vers `/blog?tag=`) et dans le sélecteur de l'admin : la liste du blog n'en affiche plus, ses lignes disent leurs sujets en repère (« Ligne d'article », ci-dessous).
 
 ### Cards / Containers
 
@@ -338,7 +338,7 @@ Un projet en production présenté en détail dans les Réalisations (`/projects
 - **Entrée:** `caseStudy: CaseStudyView`, `priority` (défaut `false`), `reversed` (défaut `false`) ; sortie `liveLinkClicked` (suivi du lien externe par la page).
 - **Couverture (`ProjectCover`):** `figure` à ratio fixe `aspect-[16/10]` (zéro CLS), `rounded-md`, trait `line-strong`, `bg-surface` ; image `NgOptimizedImage` en `fill` + `object-cover`, sans `ngSrcset` ni `sizes` (aucun `IMAGE_LOADER` : une seule variante servie) ; repli `div aria-hidden` de même ratio sans image. Tampon de nature en haut à gauche, qui laisse passer le clic. Une seule couverture `priority` par page : la première étude de cas.
 - **Structure:** `article` en grille `lg:grid-cols-12`, couverture `lg:col-span-7` puis texte `lg:col-span-5` ; empilés en mobile, couverture au-dessus. L'alternance gauche/droite passe par `lg:order-last` sur la couverture (`reversed`, la page passe `$even`) : seul l'ordre visuel change, jamais le DOM ni l'ordre du focus.
-- **Texte:** overline mono `text-muted` (« 01 · catégorie »), `h3` du nom, accroche `text-muted max-w-[46ch]`, puis les repères (Stack, Point fort, Périmètre) en `dl` à deux colonnes (`dt` mono `text-xs text-muted`), séparés par des traits `line` (décoratifs) ; pas de `dl` sans repère.
+- **Texte:** overline mono `text-muted` (« 01 · catégorie »), `h3` du nom, accroche `text-muted max-w-[46ch]`, puis les repères (Stack, Point fort, Périmètre) en `FactList` (« Liste de repères », ci-dessous).
 - **Actions:** « Voir la fiche » en `link-btn-primary`, nom du projet en `sr-only`, flèche `aria-hidden` ; « Ouvrir l'application » en `link-btn-outline` si le projet a une URL, nouvel onglet `rel="noopener noreferrer"`, nom et « nouvel onglet » en `sr-only`, icône `external-link`.
 
 ### Carte de projet (grille) (`features/projects/application/components/project-grid-card.ts`)
@@ -358,6 +358,43 @@ L'en-tête des Réalisations dit de quelles natures sont les projets et combien 
 - **Entrée:** `rows: readonly LegendRow[]` (nature, définition, compte).
 - **Structure:** `Cartouche` titré « Légende », référence « Nature du projet », sans `rows` ; `dl` projeté en grille à trois colonnes : `dt` = tampon de nature, `dd` = définition, `dd` = compte en mono `tabular-nums` suivi de son unité (« projet(s) ») en `sr-only`, pour que le nombre soit lu avec ce qu'il compte. Lignes séparées par des traits `line`.
 - **Usage:** cartouche de données, hors de la limite d'un cartouche décoratif par écran ; à droite de l'introduction sur grand écran, empilé dessous en mobile.
+
+### Groupe de filtres (`shared/ui/filter-group.ts`)
+
+Un filtre local à une liste, une seule valeur active : les natures des Réalisations (« Filtrer par nature »), les thèmes du blog (« Filtrer par thème »).
+
+- **API:** `label` (requis, nom du groupe), `options: readonly FilterOption<T>[]` (`{ value, label, count, disabled? }`), `active = model.required<T>()` lié en `[(active)]` au `linkedSignal` de la page. Générique sur la valeur.
+- **Structure:** hôte `block overflow-x-auto` (défile horizontalement en mobile plutôt que de passer à la ligne) ; `div role="group"` nommé par `label` ; un `button type="button"` par option, libellé puis compte en mono `text-xs tabular-nums`. Pas de `nav` : le filtre ne navigue pas, l'URL ne change pas.
+- **États:** au repos `text-muted`, trait bas transparent ; survol `text-foreground` ; pressé (`aria-pressed="true"`, une seule option à la fois) trait bas `primary` 2px, `font-semibold`, `text-foreground` ; focus `outline-primary` 2px rentré (`-outline-offset-2`), sur `:focus-visible` seulement. Trait de base du groupe en `line` (ombre interne de 1px). Cible `min-h-11` (44 px).
+- **Option inactive** (`disabled: true`, thème sans article) : `aria-disabled="true"`, **jamais** l'attribut `disabled` natif, pour qu'elle reste dans l'ordre de tabulation, garde son focus visible et soit annoncée « indisponible » avec son compte 0. Le clic ne change rien et le focus reste sur le bouton. Apparence de l'état désactivé des boutons : `opacity-50` posé sur le libellé et le compte seulement (`aria-disabled:*:opacity-50`), pour que le contour de focus garde son contraste, `cursor-not-allowed`, survol neutralisé (`aria-disabled:hover:text-muted`). L'opacité n'est pas le seul porteur : le compte « 0 » le dit aussi. « Tous » n'est jamais inactif.
+- **Statut:** la page annonce le résultat d'un choix par un `p role="status"` `sr-only` (« N article(s) affiché(s) », « N réalisation(s) affichée(s) »), hors du groupe ; le focus ne bouge pas.
+
+### Liste de repères (`shared/ui/fact-list.ts`)
+
+Les repères d'un plan : un libellé court, une valeur. Étude de cas (Stack, Point fort, Périmètre), carte de projet de la home, ligne d'article (Sujets).
+
+- **API:** `facts: readonly Fact[]` (`{ label, value }`). Le consommateur ne la rend pas sans repère (`@if (facts.length)`) : jamais de `dl` vide.
+- **Structure:** `dl` en grille à deux colonnes (`6.5rem` puis le reste, `subgrid` par ligne) ; `dt` mono `text-xs text-muted`, `dd` en texte courant `text-sm`. Traits `line` au-dessus de la liste et sous chaque ligne (décoratifs, Decorative Line Rule).
+
+### Liste du blog (`features/blog/application/blog-list.ts`)
+
+La page `/blog` reprend le gabarit des Réalisations : en-tête à cartouche, filtre local, liste.
+
+- **En-tête:** même grille que `/projects` (texte à gauche, cartouche à droite à partir de `lg`, empilé dessous en mobile). Sur-titre mono `text-primary` « N article(s) », `h1` « Blog » sans animation, introduction fixe, lien RSS `min-h-11`.
+- **Cartouche « Thèmes »:** `Cartouche` titré « Thèmes », référence « Articles par thème », `rows` = les cinq thèmes dans l'ordre du catalogue (Stack, Sécurité, Ingénierie, Parcours, Projets), valeur « N article(s) » avec son unité en clair. Les comptes portent sur tous les articles, quel que soit le filtre. Cartouche de données, hors de la limite d'un cartouche décoratif par écran.
+- **Filtre:** sous l'en-tête, hors du `header`, un seul des deux : le groupe « Filtrer par thème » (« Tous » puis les cinq thèmes, un thème vide en option inactive), ou, quand la page article a envoyé `?tag=`, le bandeau « Filtré par X » avec son lien de retrait. Absent pendant le chargement, en erreur et sans article. Un thème actif est toujours un thème non vide.
+- **États:** erreur en `role="alert"` avec « Réessayer » (comme `/projects`) ; « Aucun article pour le moment. » sans article ; « Aucun article avec ce tag. » sous un tag sans résultat.
+- **Liste:** `ul role="list"` sous un trait, une ligne d'article par `li`, tous les articles sur une seule page (pas de pagination). Une seule couverture `priority` : celle du premier article de la liste complète, sous tout filtre.
+
+### Ligne d'article (`features/blog/application/components/blog-post-row.ts`)
+
+Un article de la liste du blog, lu comme une étude de cas.
+
+- **Entrée:** `post: BlogPostRowView` (vue calculée par `toBlogListView`), aucun calcul dans le composant.
+- **Structure:** `article relative` en grille, texte puis couverture à droite (`20rem`) à partir de `lg`, couverture au-dessus en mobile ; séparée de la suivante par un trait `line`. Texte : surtitre mono `text-xs text-muted` (« 9 sept. 2026 · 13 min de lecture », date omise si absente), `h2` du titre (texte simple), extrait `text-muted max-w-[62ch]`, repère « Sujets » (trois premiers tags, `FactList`), lien « Lire l'article ».
+- **Couverture:** `figure` à ratio `aspect-[1200/630]`, `rounded-md`, trait `line-strong`, `bg-surface`, image `NgOptimizedImage` en `fill` + `object-cover`, `alt=""` (décorative : le titre et le lien nomment l'article), qui laisse passer le clic (`pointer-events-none`). Pas de zoom au survol.
+- **Cible:** un seul interactif, le lien « Lire l'article » `text-primary` `min-h-11`, titre de l'article en `sr-only` pour un nom distinct par ligne, étiré sur toute la ligne (`after:absolute after:inset-0`). Pas de pastille ni de lien par tag.
+- **Survol:** le titre passe en `primary` (`group-hover`).
 
 ### Ligne d'offre (`features/offer/application/components/offer-row.ts`)
 
@@ -424,7 +461,7 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **Sortable header:** cursor pointer + hover text-foreground.
 - **Empty state:** même shell, `px-6 py-16 text-center text-muted text-sm`.
 - **Icon button:** `h-9 w-9 rounded-lg`, hover bg-surface-elevated. Variante danger : hover bg-red-500/10 + text-red-400.
-- **Pagination:** `h-9 min-w-9 rounded-lg`, active = `bg-primary-bg/15 text-primary`.
+- **Pagination:** `h-11 min-w-11 rounded-lg`, active = `bg-primary-bg/15 text-primary`.
 
 ### Toast (`shared/ui/toast.ts`)
 

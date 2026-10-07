@@ -1,17 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import type { ProjectFact } from '../project-facts';
-import { ProjectFactList } from './project-fact-list';
+import { FactList, type Fact } from './fact-list';
 
-const FACTS: readonly ProjectFact[] = [
+const FACTS: readonly Fact[] = [
   { label: 'Décision clé', value: 'Chiffrement côté client' },
   { label: 'Stack', value: 'Angular · NestJS · PostgreSQL · Docker' },
 ];
 
-describe('ProjectFactList', () => {
+describe('FactList', () => {
   afterEach(() => TestBed.resetTestingModule());
 
-  const render = async (facts: readonly ProjectFact[] = FACTS): Promise<HTMLElement> => {
-    const fixture = TestBed.createComponent(ProjectFactList);
+  const render = async (facts: readonly Fact[] = FACTS): Promise<HTMLElement> => {
+    const fixture = TestBed.createComponent(FactList);
     fixture.componentRef.setInput('facts', facts);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -29,9 +28,9 @@ describe('ProjectFactList', () => {
 
   it('Given facts When the list renders Then they form one description list, label then value, in order', async () => {
     const root = await render();
-    const list = byTestId(root, 'project-fact-list');
-    const labels = allByTestId(root, 'project-fact-label');
-    const values = allByTestId(root, 'project-fact-value');
+    const list = byTestId(root, 'fact-list');
+    const labels = allByTestId(root, 'fact-label');
+    const values = allByTestId(root, 'fact-value');
 
     expect(list?.tagName).toBe('DL');
     expect(labels.map((label) => [label.tagName, normalized(label)])).toEqual([
@@ -57,13 +56,13 @@ describe('ProjectFactList', () => {
     async (facts, expectedLabels, expectedValues) => {
       const root = await render(facts);
 
-      expect(allByTestId(root, 'project-fact-label').map(normalized)).toEqual(expectedLabels);
-      expect(allByTestId(root, 'project-fact-value').map(normalized)).toEqual(expectedValues);
+      expect(allByTestId(root, 'fact-label').map(normalized)).toEqual(expectedLabels);
+      expect(allByTestId(root, 'fact-value').map(normalized)).toEqual(expectedValues);
     },
   );
 
   it('Given facts When the list renders Then every row shares the column width sized for « Décision clé »', async () => {
-    const list = byTestId(await render(), 'project-fact-list');
+    const list = byTestId(await render(), 'fact-list');
 
     expect(list?.className).toContain('grid-cols-[6.5rem_minmax(0,1fr)]');
     expect(

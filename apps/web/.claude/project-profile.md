@@ -147,8 +147,7 @@
 - **Chemin du bundle compilé** (grep des règles `[_nghost-…]`) :
   `dist/angular-portfolio-app/browser/**`.
 - **Composants à forte interaction tactile** (validation interactive séparée,
-  cible mobile-first) : `app-drawer`, `app-file-dropzone`, `app-paginator`,
-  `app-toast`.
+  cible mobile-first) : `app-drawer`, `app-file-dropzone`, `app-toast`.
 
 ## Politique commentaires (archéologie interdite)
 

@@ -73,11 +73,11 @@ describe('FeaturedProjectCard', () => {
 
     it('Given a card with facts When it renders Then they form a definition list, label then value, in the order of the view', async () => {
       const root = await render();
-      const facts = byTestId(root, 'project-fact-list');
+      const facts = byTestId(root, 'fact-list');
 
       expect(facts?.tagName).toBe('DL');
       expect(
-        allByTestId(root, 'project-fact-label').map((label) => [label.tagName, normalized(label)]),
+        allByTestId(root, 'fact-label').map((label) => [label.tagName, normalized(label)]),
       ).toEqual([
         ['DT', 'Décision clé'],
         ['DT', 'Point fort'],
@@ -85,7 +85,7 @@ describe('FeaturedProjectCard', () => {
         ['DT', 'Stack'],
       ]);
       expect(
-        allByTestId(root, 'project-fact-value').map((value) => [value.tagName, normalized(value)]),
+        allByTestId(root, 'fact-value').map((value) => [value.tagName, normalized(value)]),
       ).toEqual([
         ['DD', 'Chiffrement côté client'],
         ['DD', 'Chiffrement de bout en bout côté client'],
@@ -97,7 +97,7 @@ describe('FeaturedProjectCard', () => {
     it('Given a card without facts When it renders Then no definition list is rendered', async () => {
       const root = await render(cardView({ facts: [] }));
 
-      expect(byTestId(root, 'project-fact-list')).toBeNull();
+      expect(byTestId(root, 'fact-list')).toBeNull();
       expect(normalized(byTestId(root, 'featured-project-card-title'))).toBe('DashFlow');
     });
 

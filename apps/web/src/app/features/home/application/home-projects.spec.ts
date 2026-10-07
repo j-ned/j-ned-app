@@ -130,9 +130,7 @@ describe('HomeProjects', () => {
       'Une phrase de description assez longue pour déborder.',
     );
     expect(
-      Array.from(card?.querySelectorAll('[data-testid="project-fact-value"]') ?? []).map(
-        normalized,
-      ),
+      Array.from(card?.querySelectorAll('[data-testid="fact-value"]') ?? []).map(normalized),
     ).toEqual(['Chiffrement côté client', 'Angular · TypeScript · TailwindCSS · Docker']);
   });
 

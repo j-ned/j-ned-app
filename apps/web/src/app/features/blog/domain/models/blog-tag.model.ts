@@ -1,4 +1,13 @@
-export type BlogTagCategory = 'stack' | 'security' | 'engineering' | 'journey' | 'projects';
+export const BLOG_TAG_CATEGORIES = [
+  'stack',
+  'security',
+  'engineering',
+  'journey',
+  'projects',
+] as const;
+export type BlogTagCategory = (typeof BLOG_TAG_CATEGORIES)[number];
+export type BlogCategoryFilter = BlogTagCategory | 'all';
+export type BlogCategoryCounts = Readonly<Record<BlogTagCategory, number>>;
 
 export const BLOG_TAGS_BY_CATEGORY: Record<BlogTagCategory, readonly string[]> = {
   stack: [
@@ -12,6 +21,7 @@ export const BLOG_TAGS_BY_CATEGORY: Record<BlogTagCategory, readonly string[]> =
     'Web Crypto API',
     'Zod',
     'RxJS',
+    'Full-Stack',
   ],
   security: [
     'Sécurité',
@@ -33,15 +43,7 @@ export const BLOG_TAGS_BY_CATEGORY: Record<BlogTagCategory, readonly string[]> =
     'Privacy by design',
   ],
   engineering: ['Architecture', 'Tests', 'SEO', 'Audit de sécurité', "Retour d'expérience"],
-  journey: [
-    'Parcours',
-    'Reconversion',
-    'Carrière',
-    'Industrie',
-    'Métallurgie',
-    'Autodidacte',
-    'Full-Stack',
-  ],
+  journey: ['Parcours', 'Reconversion', 'Carrière', 'Industrie', 'Métallurgie', 'Autodidacte'],
   projects: ['DashFlow', 'Auto-hébergement', 'CI/CD', 'GreenTech'],
 };
 

@@ -1,9 +1,9 @@
 import { Component, computed, inject, linkedSignal, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Button } from '@shared/ui/button';
+import { FilterGroup } from '@shared/ui/filter-group';
 import { ProjectCaseStudy } from './components/project-case-study';
 import { ProjectGridCard } from './components/project-grid-card';
-import { ProjectKindFilters } from './components/project-kind-filters';
 import { ProjectKindLegend } from './components/project-kind-legend';
 import { toProjectsView, type CaseStudyView } from './projects-view';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
@@ -15,7 +15,7 @@ import type { Project, ProjectKindFilter } from '../domain/models/project.model'
   selector: 'app-projects',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block min-h-svh pt-20 pb-24' },
-  imports: [ProjectCaseStudy, ProjectGridCard, ProjectKindFilters, ProjectKindLegend, Button],
+  imports: [ProjectCaseStudy, ProjectGridCard, FilterGroup, ProjectKindLegend, Button],
   template: `
     @let v = view();
     <section class="page-container" aria-labelledby="projects-heading">
@@ -59,7 +59,7 @@ import type { Project, ProjectKindFilter } from '../domain/models/project.model'
           >
         </div>
       } @else {
-        <app-project-kind-filters [options]="v.filters" [(active)]="filter" />
+        <app-filter-group label="Filtrer par nature" [options]="v.filters" [(active)]="filter" />
         <p data-testid="projects-visible-count" role="status" class="sr-only">
           {{ visibleCountLabel() }}
         </p>

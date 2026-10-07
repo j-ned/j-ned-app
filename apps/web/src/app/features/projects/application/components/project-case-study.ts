@@ -9,11 +9,11 @@ import {
 } from '../project-kind-copy';
 import type { CaseStudyView } from '../projects-view';
 import { ProjectCover } from './project-cover';
-import { ProjectFactList } from './project-fact-list';
+import { FactList } from '@shared/ui/fact-list';
 
 @Component({
   selector: 'app-project-case-study',
-  imports: [RouterLink, AppIcon, ProjectCover, ProjectFactList],
+  imports: [RouterLink, AppIcon, ProjectCover, FactList],
   host: { class: 'block' },
   template: `
     @let study = caseStudy();
@@ -44,7 +44,7 @@ import { ProjectFactList } from './project-fact-list';
           {{ study.pitch }}
         </p>
         @if (study.facts.length > 0) {
-          <app-project-fact-list class="mt-6" [facts]="study.facts" />
+          <app-fact-list class="mt-6" [facts]="study.facts" />
         }
         <div class="mt-7 flex flex-wrap gap-3">
           <a
