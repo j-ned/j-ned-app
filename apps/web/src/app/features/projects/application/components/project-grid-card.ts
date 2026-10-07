@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppIcon } from '@shared/icons/app-icon';
+import { projectCoverAlt, sheetLinkContext } from '../project-kind-copy';
 import type { ProjectCardView } from '../projects-view';
 import { ProjectCover } from './project-cover';
 
@@ -53,6 +54,6 @@ import { ProjectCover } from './project-cover';
 export class ProjectGridCard {
   readonly card = input.required<ProjectCardView>();
 
-  protected readonly coverAlt = computed(() => `Aperçu du projet ${this.card().title}`);
-  protected readonly linkContext = computed(() => `\u00a0: ${this.card().title}`);
+  protected readonly coverAlt = computed(() => projectCoverAlt(this.card().title));
+  protected readonly linkContext = computed(() => sheetLinkContext(this.card().title));
 }

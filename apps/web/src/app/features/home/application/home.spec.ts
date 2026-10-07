@@ -225,7 +225,7 @@ describe('Home', () => {
       await projectsBlock.render(DeferBlockState.Complete);
       await fixture.whenStable();
 
-      expect(allByTestId(fixture, 'project-card-link')).toHaveLength(2);
+      expect(allByTestId(fixture, 'featured-project-card-link')).toHaveLength(2);
     });
   });
 

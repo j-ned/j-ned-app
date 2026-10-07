@@ -9,14 +9,10 @@ import {
 import { projectPitch } from '../domain/project-pitch';
 import { projectStack } from '../domain/project-stack';
 import { splitCaseStudies } from '../domain/split-case-studies';
-import {
-  PROJECT_FACT_LABELS,
-  PROJECT_KIND_DEFINITIONS,
-  PROJECT_KIND_FILTER_LABELS,
-} from './project-kind-copy';
+import { projectFacts, type ProjectFact } from './project-facts';
+import { PROJECT_KIND_DEFINITIONS, PROJECT_KIND_FILTER_LABELS } from './project-kind-copy';
 import { projectsIntro } from './projects-intro';
 
-const CASE_STUDY_STACK_SIZE = 4;
 const CARD_STACK_SIZE = 2;
 
 export type LegendRow = {
@@ -30,8 +26,6 @@ export type KindFilterOption = {
   readonly label: string;
   readonly count: number;
 };
-
-type ProjectFact = { readonly label: string; readonly value: string };
 
 export type CaseStudyView = {
   readonly id: string;
@@ -64,16 +58,6 @@ type ProjectsView = {
   readonly cards: readonly ProjectCardView[];
 };
 
-function caseStudyFacts(project: Project): readonly ProjectFact[] {
-  const stack = projectStack(project.tags, CASE_STUDY_STACK_SIZE).join(' · ');
-  const facts: readonly (ProjectFact | null)[] = [
-    stack ? { label: PROJECT_FACT_LABELS.stack, value: stack } : null,
-    project.highlight ? { label: PROJECT_FACT_LABELS.highlight, value: project.highlight } : null,
-    project.scope ? { label: PROJECT_FACT_LABELS.scope, value: project.scope } : null,
-  ];
-  return facts.filter((fact) => fact !== null);
-}
-
 function toCaseStudyView(project: Project, index: number): CaseStudyView {
   return {
     id: project.id,
@@ -81,7 +65,7 @@ function toCaseStudyView(project: Project, index: number): CaseStudyView {
     title: project.title,
     overline: `${String(index + 1).padStart(2, '0')} · ${project.category}`,
     pitch: projectPitch(project),
-    facts: caseStudyFacts(project),
+    facts: projectFacts(project, ['stack', 'highlight', 'scope']),
     liveUrl: project.liveUrl ?? null,
     image: project.image,
   };

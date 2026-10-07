@@ -1,6 +1,11 @@
-import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
-import { ProjectCard } from '@features/projects/application/components/project-card';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { FeaturedProjectCard } from '@features/projects/application/components/featured-project-card';
+import {
+  toFeaturedProjectView,
+  type FeaturedProjectView,
+} from '@features/projects/application/featured-project-view';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import type { Project } from '@features/projects/domain/models/project.model';
@@ -13,7 +18,7 @@ const PROJECTS_SECTION = {
 
 @Component({
   selector: 'app-home-projects',
-  imports: [ProjectCard, Button, AppIcon],
+  imports: [FeaturedProjectCard, Button, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block animate-fade-up' },
   template: `
@@ -29,7 +34,12 @@ const PROJECTS_SECTION = {
 
       <ul class="grid grid-cols-1 md:grid-cols-2 gap-6" role="list">
         @for (project of featuredProjects(); track project.id) {
-          <li><app-project-card [project]="project" [showKeyDecision]="true" /></li>
+          <li>
+            <app-featured-project-card
+              [card]="project"
+              (liveLinkClicked)="trackLiveLink(project)"
+            />
+          </li>
         }
       </ul>
 
@@ -44,11 +54,16 @@ const PROJECTS_SECTION = {
 })
 export class HomeProjects {
   private readonly _router = inject(Router);
+  private readonly _analytics = inject(AnalyticsGateway);
   readonly projects = input<readonly Project[]>([]);
-  protected readonly featuredProjects = this.projects;
+  protected readonly featuredProjects = computed(() => this.projects().map(toFeaturedProjectView));
   protected readonly projectsSection = PROJECTS_SECTION;
 
   protected goToProjects(): void {
     void this._router.navigate(['/projects']);
+  }
+
+  protected trackLiveLink({ id, title }: FeaturedProjectView): void {
+    this._analytics.trackProjectClick(id, title);
   }
 }

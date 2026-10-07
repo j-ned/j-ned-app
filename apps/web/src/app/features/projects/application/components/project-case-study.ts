@@ -1,13 +1,19 @@
 import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppIcon } from '@shared/icons/app-icon';
-import { liveLinkContext, liveLinkLabel } from '../project-kind-copy';
+import {
+  liveLinkContext,
+  liveLinkLabel,
+  projectCoverAlt,
+  sheetLinkContext,
+} from '../project-kind-copy';
 import type { CaseStudyView } from '../projects-view';
 import { ProjectCover } from './project-cover';
+import { ProjectFactList } from './project-fact-list';
 
 @Component({
   selector: 'app-project-case-study',
-  imports: [RouterLink, AppIcon, ProjectCover],
+  imports: [RouterLink, AppIcon, ProjectCover, ProjectFactList],
   host: { class: 'block' },
   template: `
     @let study = caseStudy();
@@ -38,22 +44,7 @@ import { ProjectCover } from './project-cover';
           {{ study.pitch }}
         </p>
         @if (study.facts.length > 0) {
-          <dl
-            data-testid="project-case-study-facts"
-            class="mt-6 grid grid-cols-[6rem_minmax(0,1fr)] border-t border-line text-sm"
-          >
-            @for (fact of study.facts; track fact.label) {
-              <div class="col-span-full grid grid-cols-subgrid gap-x-4 border-b border-line py-2.5">
-                <dt
-                  data-testid="project-case-study-fact-label"
-                  class="font-mono text-xs leading-5 text-muted"
-                >
-                  {{ fact.label }}
-                </dt>
-                <dd data-testid="project-case-study-fact-value">{{ fact.value }}</dd>
-              </div>
-            }
-          </dl>
+          <app-project-fact-list class="mt-6" [facts]="study.facts" />
         }
         <div class="mt-7 flex flex-wrap gap-3">
           <a
@@ -89,7 +80,7 @@ export class ProjectCaseStudy {
   readonly liveLinkClicked = output<void>();
 
   protected readonly liveLabel = liveLinkLabel('production');
-  protected readonly coverAlt = computed(() => `Aperçu du projet ${this.caseStudy().title}`);
-  protected readonly linkContext = computed(() => `\u00a0: ${this.caseStudy().title}`);
+  protected readonly coverAlt = computed(() => projectCoverAlt(this.caseStudy().title));
+  protected readonly linkContext = computed(() => sheetLinkContext(this.caseStudy().title));
   protected readonly liveContext = computed(() => liveLinkContext(this.caseStudy().title));
 }

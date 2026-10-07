@@ -584,8 +584,8 @@ describe('Projects', () => {
       expect({
         overline: byTestId('project-case-study-overline'),
         pitch: byTestId('project-case-study-pitch'),
-        labels: byTestId('project-case-study-fact-label'),
-        values: byTestId('project-case-study-fact-value'),
+        labels: byTestId('project-fact-label'),
+        values: byTestId('project-fact-value'),
         page: root.querySelector('[data-testid="project-case-study-link"]')?.getAttribute('href'),
         live: root
           .querySelector('[data-testid="project-case-study-live-link"]')

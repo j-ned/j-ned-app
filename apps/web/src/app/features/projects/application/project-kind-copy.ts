@@ -37,7 +37,16 @@ export function liveLinkContext(title: string): string {
   return `${NBSP}: ${title}, nouvel onglet`;
 }
 
+export function sheetLinkContext(title: string): string {
+  return `${NBSP}: ${title}`;
+}
+
+export function projectCoverAlt(title: string): string {
+  return `Aperçu du projet ${title}`;
+}
+
 export const PROJECT_FACT_LABELS = {
+  keyDecision: 'Décision clé',
   stack: 'Stack',
   highlight: 'Point fort',
   scope: 'Périmètre',

@@ -70,9 +70,9 @@ describe('ProjectCaseStudy', () => {
 
   it('Given three facts When the case study renders Then they form one description list, label then value, in order', async () => {
     const root = await render();
-    const facts = byTestId(root, 'project-case-study-facts');
-    const labels = allByTestId(root, 'project-case-study-fact-label');
-    const values = allByTestId(root, 'project-case-study-fact-value');
+    const facts = byTestId(root, 'project-fact-list');
+    const labels = allByTestId(root, 'project-fact-label');
+    const values = allByTestId(root, 'project-fact-value');
 
     expect(facts?.tagName).toBe('DL');
     expect(labels.map((label) => [label.tagName, normalized(label)])).toEqual([
@@ -93,18 +93,14 @@ describe('ProjectCaseStudy', () => {
       caseStudy: caseStudyView({ facts: [{ label: 'Périmètre', value: 'Conception' }] }),
     });
 
-    expect(allByTestId(root, 'project-case-study-fact-label').map(normalized)).toEqual([
-      'Périmètre',
-    ]);
-    expect(allByTestId(root, 'project-case-study-fact-value').map(normalized)).toEqual([
-      'Conception',
-    ]);
+    expect(allByTestId(root, 'project-fact-label').map(normalized)).toEqual(['Périmètre']);
+    expect(allByTestId(root, 'project-fact-value').map(normalized)).toEqual(['Conception']);
   });
 
   it('Given no fact When the case study renders Then no description list is rendered', async () => {
     const root = await render({ caseStudy: caseStudyView({ facts: [] }) });
 
-    expect(byTestId(root, 'project-case-study-facts')).toBeNull();
+    expect(byTestId(root, 'project-fact-list')).toBeNull();
     expect(root.querySelectorAll('dl')).toHaveLength(0);
   });
 
