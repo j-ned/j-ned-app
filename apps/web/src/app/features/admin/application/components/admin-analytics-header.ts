@@ -1,7 +1,9 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import type { DateRangeKey } from '@features/analytics/domain/analytics-presenter';
+import { AdminPageHeader } from './admin-page-header';
+import { audienceOverline } from '../admin-page-copy';
 
 export type DateRangeOption = {
   readonly value: DateRangeKey;
@@ -17,18 +19,13 @@ export const DATE_RANGE_OPTIONS: readonly DateRangeOption[] = [
 
 @Component({
   selector: 'app-admin-analytics-header',
-  imports: [Button, AppIcon],
+  imports: [Button, AppIcon, AdminPageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'contents' },
+  host: { class: 'block' },
   template: `
-    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-      <div>
-        <h1 data-testid="admin-page-title" class="text-3xl font-bold text-foreground mb-1">
-          Audience
-        </h1>
-        <p class="text-sm text-muted">Visites, engagement, provenance, appareils</p>
-      </div>
-      <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+    <app-admin-page-header [overline]="overline()" heading="Audience">
+      Visites, engagement, provenance, appareils.
+      <div adminPageAside class="flex flex-wrap items-center gap-2.5 lg:justify-end">
         <div
           class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-foreground/5 border border-foreground/10"
         >
@@ -81,7 +78,7 @@ export const DATE_RANGE_OPTIONS: readonly DateRangeOption[] = [
           {{ deviceExcluded() ? 'Appareil exclu des stats' : 'Exclure cet appareil' }}
         </button>
       </div>
-    </header>
+    </app-admin-page-header>
   `,
 })
 export class AdminAnalyticsHeader {
@@ -94,6 +91,10 @@ export class AdminAnalyticsHeader {
   readonly dateRangeChanged = output<DateRangeKey>();
   readonly exportCsvClicked = output<void>();
   readonly deviceExclusionToggled = output<void>();
+
+  private readonly _openedAt = new Date();
+
+  protected readonly overline = computed(() => audienceOverline(this.dateRange(), this._openedAt));
 
   protected selectDateRange(event: Event): void {
     this.dateRangeChanged.emit((event.target as HTMLSelectElement).value as DateRangeKey);

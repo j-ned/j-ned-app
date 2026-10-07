@@ -8,7 +8,10 @@ import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
 import { ToastStore } from '@shared/ui/toast-store';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
-import { byTestId, captureCrash, pressTestId, settleBounded } from '@shared/testing/press-test-id';
+import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { captureCrash } from '@shared/testing/capture-crash';
+import { pressTestId } from '@shared/testing/press-test-id';
+import { settleBounded } from '@shared/testing/settle';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 
 registerLocaleData(localeFr);
@@ -41,6 +44,7 @@ function makeBlogGateway(overrides: Partial<BlogGateway> = {}): BlogGateway {
   return {
     getPublishedPosts: () => of([]),
     getAllPostsForAdmin: () => of([]),
+    invalidateAdminPosts: () => undefined,
     getPostBySlug: () => of(post()),
     createPost: () => of(post()),
     updatePost: () => of(post()),
@@ -425,5 +429,88 @@ describe('AdminBlog: tableau en français, tampons et actions nommées', () => {
     await pressTestId(fixture, 'admin-post-edit', 1);
 
     expect(fixture.componentInstance.editing()).toEqual(DRAFT);
+  });
+});
+
+describe('AdminBlog: la liste partagée est invalidée après une écriture', () => {
+  async function writeWith(write: 'create' | 'update' | 'delete'): Promise<{
+    invalidations: number;
+    listSubscriptions: number;
+  }> {
+    const invalidateAdminPosts = vi.fn();
+    const getAllPostsForAdmin = vi.fn(() => of([makeBlogPost({ id: 'b-1' })]));
+    const { component, fixture } = await setup(
+      makeBlogGateway({ getAllPostsForAdmin, invalidateAdminPosts }),
+    );
+
+    if (write === 'delete') component.remove('b-1');
+    else
+      await component.onSaved(
+        { data: input(), file: null },
+        write === 'update' ? 'b-1' : undefined,
+      );
+    await settleBounded(fixture);
+
+    return {
+      invalidations: invalidateAdminPosts.mock.calls.length,
+      listSubscriptions: getAllPostsForAdmin.mock.calls.length,
+    };
+  }
+
+  it.each(['create', 'update', 'delete'] as const)(
+    'Given the list When a %s succeeds Then the shared admin list is invalidated once instead of being requested again',
+    async (write) => {
+      expect(await writeWith(write)).toEqual({ invalidations: 1, listSubscriptions: 1 });
+    },
+  );
+
+  it('Given the list When a deletion fails Then the list is restored and only a successful deletion invalidates it', async () => {
+    const invalidateAdminPosts = vi.fn();
+    const deletePost = vi
+      .fn<BlogGateway['deletePost']>()
+      .mockReturnValueOnce(throwError(() => new Error('down')))
+      .mockReturnValueOnce(of(undefined));
+    const { component, fixture } = await setup(
+      makeBlogGateway({
+        getAllPostsForAdmin: () => of([makeBlogPost({ id: 'b-1' })]),
+        deletePost,
+        invalidateAdminPosts,
+      }),
+    );
+
+    component.remove('b-1');
+    await settleBounded(fixture);
+    const afterFailure = {
+      invalidations: invalidateAdminPosts.mock.calls.length,
+      posts: component.posts().map((post) => post.id),
+    };
+    component.remove('b-1');
+    await settleBounded(fixture);
+
+    expect({ afterFailure, afterSuccess: invalidateAdminPosts.mock.calls.length }).toEqual({
+      afterFailure: { invalidations: 0, posts: ['b-1'] },
+      afterSuccess: 1,
+    });
+  });
+});
+
+describe('AdminBlog: en-tête de page', () => {
+  it('Given one published article and one draft When the page renders Then its single h1 is « Articles » under the overline « 2 articles · 1 publié · 1 brouillon »', async () => {
+    const { fixture } = await setup(
+      makeBlogGateway({
+        getAllPostsForAdmin: () =>
+          of([
+            makeBlogPost({ id: 'b-1', status: 'published' }),
+            makeBlogPost({ id: 'b-2', status: 'draft', publishedAt: null }),
+          ]),
+      }),
+    );
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect({
+      overline: testIdText(host, 'admin-page-overline'),
+      title: testIdText(host, 'admin-page-title'),
+      headings: host.querySelectorAll('h1').length,
+    }).toEqual({ overline: '2 articles · 1 publié · 1 brouillon', title: 'Articles', headings: 1 });
   });
 });

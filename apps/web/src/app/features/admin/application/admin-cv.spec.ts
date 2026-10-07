@@ -4,7 +4,10 @@ import { AdminCv } from './admin-cv';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { makeCvInfo } from '@features/cv/testing/cv-builders';
 import { ToastStore } from '@shared/ui/toast-store';
-import { byTestId, captureCrash, pressTestId, settleBounded } from '@shared/testing/press-test-id';
+import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { captureCrash } from '@shared/testing/capture-crash';
+import { pressTestId } from '@shared/testing/press-test-id';
+import { settleBounded } from '@shared/testing/settle';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 
 function makeCvGateway(overrides: Partial<CvGateway> = {}): CvGateway {
@@ -212,6 +215,33 @@ describe('AdminCv: textes en français et lien annoncé', () => {
       rel: 'noopener noreferrer',
       name: 'Voir le CV (nouvel onglet)',
       hidden: '(nouvel onglet)',
+    });
+  });
+});
+
+describe('AdminCv: en-tête de page', () => {
+  it('Given a 76 Ko PDF uploaded on 19 September 2026 When the page renders Then its single h1 is « CV » under the overline « PDF · 76 Ko · mis en ligne le 19 sept. 2026 »', async () => {
+    const { host } = await render(
+      makeCvGateway({
+        getCurrent: () =>
+          of(
+            makeCvInfo({
+              fileSize: 77_824,
+              mimeType: 'application/pdf',
+              uploadedAt: '2026-09-19T10:00:00.000Z',
+            }),
+          ),
+      }),
+    );
+
+    expect({
+      overline: testIdText(host, 'admin-page-overline'),
+      title: testIdText(host, 'admin-page-title'),
+      headings: host.querySelectorAll('h1').length,
+    }).toEqual({
+      overline: 'PDF · 76 Ko · mis en ligne le 19 sept. 2026',
+      title: 'CV',
+      headings: 1,
     });
   });
 });

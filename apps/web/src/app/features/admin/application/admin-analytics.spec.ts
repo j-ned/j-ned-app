@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError, type Observable } from 'rxjs';
-import { captureCrash } from '@shared/testing/press-test-id';
+import { testIdText } from '@shared/testing/by-test-id';
+import { captureCrash } from '@shared/testing/capture-crash';
 import { AdminAnalytics } from './admin-analytics';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type {
@@ -240,5 +241,70 @@ describe('AdminAnalytics: un endpoint en erreur', () => {
       retried: getOverview.mock.calls.length - callsBefore,
       errors: host.querySelectorAll('[data-testid="load-error"]').length,
     }).toEqual({ crash: null, retried: 1, errors: 0 });
+  });
+});
+
+describe('AdminAnalytics: en-tête de page', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 7, 10, 0));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const header = (host: HTMLElement): { overline: string; title: string; headings: number } => ({
+    overline: testIdText(host, 'admin-page-overline'),
+    title: testIdText(host, 'admin-page-title'),
+    headings: host.querySelectorAll('h1').length,
+  });
+
+  it('Given Wednesday 7 October 2026 When the page opens on 30 days, then switches to 7 days Then the overline names the period shown', async () => {
+    const { component, fixture } = await setup();
+    const host = fixture.nativeElement as HTMLElement;
+    const initial = header(host);
+
+    component.dateRange.set('7d');
+    await vi.advanceTimersByTimeAsync(0);
+    fixture.detectChanges();
+
+    expect({ initial, switched: header(host) }).toEqual({
+      initial: {
+        overline: '7 sept. au 7 oct. 2026 · 30 derniers jours',
+        title: 'Audience',
+        headings: 1,
+      },
+      switched: {
+        overline: '30 sept. au 7 oct. 2026 · 7 derniers jours',
+        title: 'Audience',
+        headings: 1,
+      },
+    });
+  });
+});
+
+describe('AdminAnalytics: courbe des visiteurs', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('Given the Audience chart When it is built Then it draws straight lines in one hue, page views dashed', async () => {
+    const { component } = await setup();
+
+    expect(
+      component.chartData().datasets.map((dataset) => ({
+        label: dataset.label,
+        tension: dataset.tension,
+        borderDash: dataset.borderDash,
+      })),
+    ).toEqual([
+      { label: 'Visiteurs', tension: 0, borderDash: undefined },
+      { label: 'Pages vues', tension: 0, borderDash: [4, 4] },
+    ]);
   });
 });

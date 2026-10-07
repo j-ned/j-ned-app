@@ -1,6 +1,8 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { LoadError } from './load-error';
-import { byTestId, pressTestId, settle, testIdText } from '@shared/testing/press-test-id';
+import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { pressTestId } from '@shared/testing/press-test-id';
+import { settle } from '@shared/testing/settle';
 
 const MESSAGE = "Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez.";
 

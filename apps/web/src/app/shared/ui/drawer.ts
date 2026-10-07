@@ -171,7 +171,8 @@ export class Drawer {
     }
     const first = focusables[0];
     const last = focusables[focusables.length - 1];
-    if (this._document.activeElement === first) {
+    const active = this._document.activeElement;
+    if (active === first || active === this._panel()?.nativeElement) {
       event.preventDefault();
       last.focus();
     }

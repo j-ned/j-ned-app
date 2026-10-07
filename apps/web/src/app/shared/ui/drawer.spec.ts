@@ -87,6 +87,29 @@ describe('Drawer focus trap', () => {
     expect(document.activeElement).toBe(last);
   });
 
+  it('Given the panel itself focused on opening When Shift+Tab is pressed Then focus wraps to the last focusable instead of leaving the drawer', async () => {
+    host.visible.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const panel = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
+    const last = fixture.nativeElement.querySelector('#last') as HTMLButtonElement;
+    panel.focus();
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    panel.dispatchEvent(event);
+
+    expect({ prevented: event.defaultPrevented, focused: document.activeElement }).toEqual({
+      prevented: true,
+      focused: last,
+    });
+  });
+
   it('keeps focus on the panel when no focusables are present (no heading, empty slot)', async () => {
     @Component({
       imports: [Drawer],

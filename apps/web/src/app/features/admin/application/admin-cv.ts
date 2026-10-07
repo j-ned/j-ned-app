@@ -1,6 +1,5 @@
 import {
   Component,
-  ElementRef,
   inject,
   signal,
   computed,
@@ -18,21 +17,19 @@ import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import { extractErrorMessage } from '@shared/api/extract-error-message';
+import { AdminPageHeader } from './components/admin-page-header';
+import { cvOverline } from './admin-page-copy';
 
 @Component({
   selector: 'app-admin-cv',
-  imports: [FileDropzone, Button, ConfirmDialog, LoadError, AppSkeleton],
+  imports: [FileDropzone, Button, ConfirmDialog, LoadError, AppSkeleton, AdminPageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <h1
-      #pageTitle
-      tabindex="-1"
-      data-testid="admin-page-title"
-      class="text-2xl font-bold text-foreground mb-8"
-    >
-      Gestion du CV
-    </h1>
+    <app-admin-page-header [overline]="overline()" heading="CV">
+      Le PDF servi par le bouton «&nbsp;Télécharger le CV&nbsp;» du site. Un nouveau fichier
+      remplace l'ancien, qui reste versionné.
+    </app-admin-page-header>
 
     @let current = cv();
     @let state = cvState();
@@ -147,13 +144,16 @@ import { extractErrorMessage } from '@shared/api/extract-error-message';
 export class AdminCv {
   private readonly _cvService = inject(CvGateway);
   private readonly _toast = inject(ToastStore);
-  private readonly _pageTitle = viewChild.required<ElementRef<HTMLHeadingElement>>('pageTitle');
+  private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
   protected readonly cvResource = rxResource({ stream: () => this._cvService.getCurrent() });
   protected readonly cv = computed(() =>
     this.cvResource.hasValue() ? this.cvResource.value() : null,
   );
   protected readonly cvState = computed(() => loadState(this.cvResource, () => this.cv() === null));
+  protected readonly overline = computed(() =>
+    this.cvResource.hasValue() ? cvOverline(this.cvResource.value()) : '',
+  );
   protected readonly deletionPending = signal(false);
   protected readonly deletionHeading = 'Retirer le CV du site\u202f?';
   protected readonly selectedFile = signal<File | null>(null);
@@ -234,7 +234,7 @@ export class AdminCv {
 
   protected confirmDeletion(): void {
     this.deletionPending.set(false);
-    this._pageTitle().nativeElement.focus();
+    this._pageHeader().focusTitle();
     void this.deleteCv();
   }
 

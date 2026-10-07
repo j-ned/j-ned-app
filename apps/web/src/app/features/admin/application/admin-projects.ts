@@ -1,7 +1,6 @@
 import {
   Component,
   DestroyRef,
-  ElementRef,
   inject,
   signal,
   computed,
@@ -26,6 +25,8 @@ import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
+import { AdminPageHeader } from './components/admin-page-header';
+import { projectsOverline } from './admin-page-copy';
 
 @Component({
   selector: 'app-admin-projects',
@@ -37,20 +38,15 @@ import { AppSkeleton } from '@shared/ui/skeleton';
     ConfirmDialog,
     LoadError,
     AppSkeleton,
+    AdminPageHeader,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
-        <h1
-          #pageTitle
-          tabindex="-1"
-          data-testid="admin-page-title"
-          class="text-2xl font-bold text-foreground"
-        >
-          Projets
-        </h1>
-        <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+      <app-admin-page-header [overline]="overline()" heading="Projets">
+        Ce que montrent Réalisations et l'accueil. L'ordre de la liste est l'ordre public, la nature
+        décide de la section et du tampon.
+        <div adminPageAside class="flex flex-wrap items-center gap-2.5 lg:justify-end">
           <select
             class="app-select min-w-0 flex-1 sm:flex-none sm:min-w-44"
             [value]="selectedCategory()"
@@ -75,7 +71,7 @@ import { AppSkeleton } from '@shared/ui/skeleton';
             {{ showNewForm() ? 'Annuler' : 'Nouveau projet' }}
           </app-button>
         </div>
-      </div>
+      </app-admin-page-header>
 
       @if (showNewForm()) {
         <div class="mb-6">
@@ -148,7 +144,7 @@ export class AdminProjects {
   private readonly homeGateway = inject(HomeGateway);
   private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly _pageTitle = viewChild.required<ElementRef<HTMLHeadingElement>>('pageTitle');
+  private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
   readonly selectedCategory = signal('Tous');
   readonly editingId = signal<string | null>(null);
@@ -174,6 +170,10 @@ export class AdminProjects {
 
   protected readonly listState = computed(() =>
     loadState(this.projectsResource, () => this.projects().length === 0),
+  );
+
+  protected readonly overline = computed(() =>
+    this.projectsResource.hasValue() ? projectsOverline(this.projectsResource.value()) : '',
   );
   readonly categories = computed(() =>
     this.categoriesResource.hasValue() ? [...this.categoriesResource.value()] : ['Tous'],
@@ -278,7 +278,7 @@ export class AdminProjects {
   protected confirmDeletion(): void {
     const project = this.pendingDeletion();
     this.pendingDeletion.set(null);
-    this._pageTitle().nativeElement.focus();
+    this._pageHeader().focusTitle();
     if (project) this.deleteProject(project);
   }
 

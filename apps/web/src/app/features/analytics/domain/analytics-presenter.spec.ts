@@ -8,6 +8,7 @@ import {
   barWidth,
   alpha,
   buildVisitorsChartData,
+  buildVisitorsOnlyChartData,
   buildLineChartOptions,
   buildDonutChartData,
   buildDonutOptions,
@@ -143,20 +144,54 @@ describe('analytics-presenter', () => {
       { date: '2026-06-02', visitors: 20, pageviews: 40 },
     ];
 
-    it('mappe labels et deux datasets (visiteurs, pages vues)', () => {
-      const data = buildVisitorsChartData(rows, '#primary', '#accent');
+    const palette = { primary: '#primary', foreground: '#foreground' };
+
+    it('mappe labels et deux datasets (visiteurs, pages vues) à traits droits', () => {
+      const data = buildVisitorsChartData(rows, palette);
       expect(data.labels).toEqual(['1 juin', '2 juin']);
       expect(data.datasets).toHaveLength(2);
       expect(data.datasets[0]).toMatchObject({
         label: 'Visiteurs',
         data: [10, 20],
         borderColor: '#primary',
+        tension: 0,
       });
       expect(data.datasets[1]).toMatchObject({
         label: 'Pages vues',
         data: [30, 40],
-        borderColor: '#accent',
+        borderColor: 'color-mix(in srgb, #foreground 55%, transparent)',
+        borderDash: [4, 4],
+        tension: 0,
       });
+    });
+
+    it('trace les visiteurs en plein et les pages vues en tirets', () => {
+      const data = buildVisitorsChartData(rows, palette);
+      expect(data.datasets.map((dataset) => dataset.borderDash)).toEqual([undefined, [4, 4]]);
+    });
+
+    it("ne tire chaque couleur que de l'indigo ou du texte du registre", () => {
+      const colors = buildVisitorsChartData(rows, palette).datasets.flatMap((dataset) =>
+        Object.entries(dataset)
+          .filter(([key]) => key.endsWith('Color'))
+          .map(([, value]) => String(value)),
+      );
+      expect(colors.length).toBeGreaterThan(0);
+      expect(colors.filter((color) => !/#primary\b|#foreground\b/.test(color))).toEqual([]);
+    });
+  });
+
+  describe('buildVisitorsOnlyChartData', () => {
+    const rows: DailyChartPoint[] = [
+      { date: '2026-06-01', visitors: 10, pageviews: 30 },
+      { date: '2026-06-02', visitors: 20, pageviews: 40 },
+    ];
+    const palette = { primary: '#primary', foreground: '#foreground' };
+
+    it('ne trace que la courbe des visiteurs, identique à celle de la courbe complète', () => {
+      const data = buildVisitorsOnlyChartData(rows, palette);
+      expect(data.labels).toEqual(['1 juin', '2 juin']);
+      expect(data.datasets).toEqual([buildVisitorsChartData(rows, palette).datasets[0]]);
     });
   });
 

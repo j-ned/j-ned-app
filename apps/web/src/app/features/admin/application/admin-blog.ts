@@ -1,7 +1,6 @@
 import {
   Component,
   DestroyRef,
-  ElementRef,
   inject,
   signal,
   computed,
@@ -21,29 +20,36 @@ import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import { AdminBlogForm } from './components/admin-blog-form';
+import { AdminPageHeader } from './components/admin-page-header';
+import { postsOverline } from './admin-page-copy';
 
 @Component({
   selector: 'app-admin-blog',
-  imports: [Stamp, Button, AdminBlogForm, DatePipe, ConfirmDialog, LoadError, AppSkeleton],
+  imports: [
+    Stamp,
+    Button,
+    AdminBlogForm,
+    AdminPageHeader,
+    DatePipe,
+    ConfirmDialog,
+    LoadError,
+    AppSkeleton,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div>
       @let editingValue = editing();
 
-      <div class="flex items-center justify-between mb-6">
-        <h1
-          #pageTitle
-          tabindex="-1"
-          data-testid="admin-page-title"
-          class="text-2xl font-bold text-foreground"
-        >
-          Articles
-        </h1>
+      <app-admin-page-header [overline]="overline()" heading="Articles">
+        Les articles du blog. Publier un article redéploie le site&nbsp;: il est en ligne quelques
+        minutes plus tard.
         @if (editingValue === undefined) {
-          <app-button (click)="startCreate()">Nouvel article</app-button>
+          <div adminPageAside class="flex flex-wrap items-center gap-2.5 lg:justify-end">
+            <app-button (click)="startCreate()">Nouvel article</app-button>
+          </div>
         }
-      </div>
+      </app-admin-page-header>
 
       @if (editingValue !== undefined) {
         <app-admin-blog-form
@@ -143,7 +149,7 @@ export class AdminBlog {
   private readonly gateway = inject(BlogGateway);
   private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly _pageTitle = viewChild.required<ElementRef<HTMLHeadingElement>>('pageTitle');
+  private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
   protected readonly postsResource = rxResource({
     stream: () => this.gateway.getAllPostsForAdmin(),
@@ -162,6 +168,10 @@ export class AdminBlog {
       editLabel: `Modifier\u00a0: ${post.title}`,
       deleteLabel: `Supprimer\u00a0: ${post.title}`,
     })),
+  );
+
+  protected readonly overline = computed(() =>
+    this.postsResource.hasValue() ? postsOverline(this.postsResource.value()) : '',
   );
 
   protected readonly listState = computed(() =>
@@ -221,7 +231,7 @@ export class AdminBlog {
   protected confirmDeletion(): void {
     const post = this.pendingDeletion();
     this.pendingDeletion.set(null);
-    this._pageTitle().nativeElement.focus();
+    this._pageHeader().focusTitle();
     if (post) this.remove(post.id);
   }
 
@@ -233,8 +243,10 @@ export class AdminBlog {
       .deletePost(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () =>
-          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Article supprimé' }),
+        next: () => {
+          this.gateway.invalidateAdminPosts();
+          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Article supprimé' });
+        },
         error: () => {
           this.postsResource.set(snapshot);
           this.toast.add({
@@ -248,7 +260,7 @@ export class AdminBlog {
 
   private finishSave(): void {
     this.editing.set(undefined);
-    this.postsResource.reload();
+    this.gateway.invalidateAdminPosts();
     this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Article enregistré' });
   }
 }

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { map, Observable, ReplaySubject, retry, share, startWith, Subject, switchMap } from 'rxjs';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
 import { API_BASE_URL } from '@shared/api/api-config';
@@ -16,6 +16,25 @@ export class HttpBlogGateway extends BlogGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
+  private readonly _adminRefresh$ = new Subject<void>();
+
+  // Un échec n'est jamais gardé (`resetOnError`) : le prochain lecteur refait la requête.
+  private readonly adminPosts$ = this._adminRefresh$.pipe(
+    startWith(undefined),
+    switchMap(() =>
+      this.http.get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`).pipe(
+        retry(1),
+        map((rows) => rows.map((p) => resolvePost(this.apiUrl, p))),
+      ),
+    ),
+    share({
+      connector: () => new ReplaySubject<readonly BlogPost[]>(1),
+      resetOnError: true,
+      resetOnComplete: false,
+      resetOnRefCountZero: false,
+    }),
+  );
+
   getPublishedPosts(): Observable<readonly BlogPost[]> {
     return this.http
       .get<BlogPost[]>(`${this.apiUrl}/blog/posts`)
@@ -23,9 +42,11 @@ export class HttpBlogGateway extends BlogGateway {
   }
 
   getAllPostsForAdmin(): Observable<readonly BlogPost[]> {
-    return this.http
-      .get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`)
-      .pipe(map((rows) => rows.map((p) => resolvePost(this.apiUrl, p))));
+    return this.adminPosts$;
+  }
+
+  invalidateAdminPosts(): void {
+    this._adminRefresh$.next();
   }
 
   getPostBySlug(slug: string): Observable<BlogPost> {

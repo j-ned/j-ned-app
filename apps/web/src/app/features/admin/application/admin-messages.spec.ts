@@ -11,13 +11,10 @@ import { API_BASE_URL } from '@shared/api/api-config';
 import { HttpContactGateway } from '@features/contact/infra/gateways/http-contact.gateway';
 import { makeContactMessage } from '@features/contact/testing/contact-message-builders';
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
-import {
-  byTestId,
-  captureCrash,
-  pressTestId,
-  settle,
-  settleBounded,
-} from '@shared/testing/press-test-id';
+import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { captureCrash } from '@shared/testing/capture-crash';
+import { pressTestId } from '@shared/testing/press-test-id';
+import { settle, settleBounded } from '@shared/testing/settle';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 
 const msg = makeContactMessage;
@@ -558,5 +555,23 @@ describe('AdminMessages: lecture au clavier et tri annoncé', () => {
     await pressTestId(fixture, 'message-mark-read', 0);
 
     expect(markMessageAsRead.mock.calls).toEqual([[1]]);
+  });
+});
+
+describe('AdminMessages: en-tête de page', () => {
+  it('Given one unread and one read message When the page renders Then its single h1 is « Messages » under the overline « 1 non lu · 2 au total »', async () => {
+    const { fixture } = await setup(
+      makeGateway({
+        getAllMessages: () => of([msg({ id: 1, read: false }), msg({ id: 2, read: true })]),
+      }),
+    );
+    await settle(fixture);
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect({
+      overline: testIdText(host, 'admin-page-overline'),
+      title: testIdText(host, 'admin-page-title'),
+      headings: host.querySelectorAll('h1').length,
+    }).toEqual({ overline: '1 non lu · 2 au total', title: 'Messages', headings: 1 });
   });
 });

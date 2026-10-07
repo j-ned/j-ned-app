@@ -440,12 +440,15 @@ Chemins relatifs à `src/app/` sauf mention. `(+spec)` = spec créé ou modifié
 
 **PR b** — créer (dans `features/admin/application/`) : `admin-nav-groups.ts` (+spec),
 `admin-page-copy.ts` (+spec), `admin-overview.ts` (+spec), `overview-view.ts` (+spec),
-`overview-copy.ts` (+spec), `chart-palette.ts` (+spec), `components/admin-page-header.ts` (+spec),
-`components/admin-readout.ts` (+spec), `components/admin-empty-state.ts` (+spec),
-`components/overview-audience.ts` (+spec), `components/overview-contacts.ts` (+spec),
-`components/overview-content.ts` (+spec), `admin-layout.spec.ts`, `components/admin-nav.spec.ts`.
+`overview-copy.ts` (+spec), `chart-palette.ts` (+spec), `with-first-of-month.ts`,
+`pluralize.ts` (+spec), `capitalize.ts` (+spec), `components/admin-page-header.ts` (+spec),
+`components/admin-section-head.ts`, `components/admin-readout.ts` (+spec),
+`components/admin-empty-state.ts` (+spec), `components/overview-audience.ts` (+spec),
+`components/overview-contacts.ts` (+spec), `components/overview-content.ts` (+spec),
+`admin-layout.spec.ts`, `components/admin-nav.spec.ts` ; builders de test
+`features/analytics/testing/analytics-builders.ts`, `features/auth/testing/user-builders.ts`.
 Modifier : `admin.routes.ts`, `admin-layout.ts`, `components/admin-nav.ts`, pages (en-têtes),
-`components/admin-table.ts`, `features/blog/domain/gateways/blog.gateway.ts`,
+`features/blog/domain/gateways/blog.gateway.ts`,
 `features/blog/infra/http-blog.gateway.ts` (+spec), `features/analytics/domain/analytics-presenter.ts`
 (+spec). Supprimer : `admin-dashboard.ts` (+spec).
 
@@ -689,7 +692,7 @@ antérieure.
 - **Tranche B2 — un en-tête de page commun.**
   - Fichiers : `components/admin-page-header.ts`, `admin-page-copy.ts` (nouveaux), toutes les pages
     (`admin-projects`, `admin-blog`, `admin-cv`, `admin-messages`, `admin-analytics-header`,
-    `admin-settings`), `components/admin-table.ts` (+specs).
+    `admin-settings`) (+specs).
   - Contrat `AdminPageHeader` (`app-admin-page-header`) : `overline = input.required<string>()`,
     `heading = input.required<string>()` ; contenu projeté par défaut = phrase d'introduction,
     `[adminPageAside]` = action principale ou cartouche. `<header class="grid gap-7 pb-8
@@ -749,9 +752,13 @@ antérieure.
   - Contrat `AdminEmptyState` : `stamp = input.required<string>()`, texte et action projetés ;
     cadre tireté `line-strong` ; testid `empty-state`.
   - `OverviewContacts` : `unread: number | null`, `cvDownloads: number | null`,
-    `latest: readonly ContactMessage[]` ; chiffres liés (`/admin/messages`, `/admin/cv`) ; vide →
-    `AdminEmptyState` « Boîte vide » + lien « Ouvrir la page Contact » (`/#contact`, nouvel
-    onglet).
+    `latest: readonly ContactMessage[]`, `unreadLoading` / `cvLoading` (`boolean`, squelette au
+    lieu de « indisponible » pendant le chargement) ; chiffres liés (`/admin/messages`,
+    `/admin/cv`), unité accordée (« 1 message », « 2 téléchargements ») ; vide →
+    `AdminEmptyState` « Boîte vide », « Aucun message pour l'instant. Le formulaire de contact de
+    l'accueil est en ligne ; un nouveau message apparaîtra ici avec son sujet. » + lien « Voir le
+    site » (`href="/"`, nouvel onglet). Décision de la revue de la PR b : pas de lien vers
+    `/#contact`, l'accueil n'expose jamais la section en ancre (`home.ts`).
   - `OverviewContent` : `rows: readonly ContentRow[]` (`toContentRows(projects, posts, 5)` :
     articles publiés par date décroissante puis projets par `order`) ; vignette 16/10 ou 1200/630
     (`NgOptimizedImage fill`, `alt=""`), titre lien étiré, méta mono, `app-stamp` (nature ou
@@ -1000,6 +1007,9 @@ antérieure.
     `status-success/10` échoue `color-contrast`). Fichier :
     `features/auth/application/two-factor-setup.ts`, composant de la route (+spec : `h1` présent,
     statut en tampon ou en texte contrasté).
+  - Option (relevé de la revue de la PR b, à trancher avec l'utilisateur) : repères « CV en
+    ligne » et « Sécurité » sous les actions rapides de la vue d'ensemble (maquette), non repris en
+    B5.
   - Supprimé : carte bordée, `AppIconTile`.
 
 ### 8. Vérification au navigateur (pas d'e2e)
@@ -1824,6 +1834,561 @@ focus), puis les 2 tests de focus sur le correctif sans relais (2 failed / 6) ; 
 (`calls: 1`, catégories `['Tous']`), les cas m2 (export `pagesPerSessionLabel` absent, échec de
 compilation).
 
+### Outils de test de la PR b (suivi m7)
+
+`shared/testing/press-test-id.ts` regroupait six aides. Il est découpé, un concept par fichier :
+
+- `shared/testing/settle.ts` : `settle`, `settleBounded`. La macro-tâche de `settleBounded` est
+  gardée et commentée d'une ligne : une ressource en attente (`NEVER`) laisse la fixture
+  instable, et seule une macro-tâche garantit que les micro-tâches des chargeurs sont vidées.
+  Elle ne se combine pas avec `vi.useFakeTimers()` (le `setTimeout` serait gelé) : les specs sous
+  faux minuteurs (Audience) n'utilisent que `captureCrash` et `advanceTimersByTimeAsync`.
+- `shared/testing/by-test-id.ts` : `byTestId`, `testIdText` ;
+- `shared/testing/capture-crash.ts` : `captureCrash` ;
+- `shared/testing/press-test-id.ts` : `pressTestId` seul.
+
+Adaptation mécanique : `app.spec.ts`, `confirm-dialog.spec.ts`, `load-error.spec.ts`,
+`testing/confirm-dialog-page.ts`, `admin-messages.spec.ts`, `admin-projects.spec.ts`,
+`admin-layout.spec.ts`, `admin-blog.spec.ts`, `admin-cv.spec.ts`,
+`admin-analytics-header.spec.ts`, `admin-dashboard.spec.ts`, `admin-analytics.spec.ts` — 12 sites
+d'import repointés, aucune valeur attendue modifiée.
+
+Nouveau builder : `features/auth/testing/user-builders.ts` (`makeUser`), pour l'e-mail de la coque
+et des Paramètres.
+
+### Tranche B1 — coque : navigation groupée, thème, « Voir le site », tiroir
+
+Contrats fixés par ce RED :
+
+- **`admin-nav-groups.ts`** : `adminNavGroups(counts)` rend quatre groupes, dans l'ordre
+  `[null : overview] · [Contenu : projects, posts, cv] · [Audience : audience, messages] ·
+  [Compte : settings]`. Routes : `/admin` (seule `exact`), `/admin/projects`, `/admin/blog`,
+  `/admin/cv`, `/admin/audience`, `/admin/messages`, `/admin/settings`. `count` vaut le compte
+  reçu pour projets, articles et non-lus, `null` ailleurs ou si la source est inconnue.
+  `countSuffix` vaut `'non lu'` pour 0 et 1, `'non lus'` au-delà, `''` hors messages. Le libellé
+  ne porte pas d'espace : le gabarit l'ajoute.
+- `activeNavLabel(groups, url)` ignore `?` et `#`, compare par segment (`/admin/blogroll` n'est
+  pas Articles, `/admin/projects/new` est Projets) et rend « Administration » sans
+  correspondance.
+- **`AdminNav`** : entrées `groups` (requise), `email`, `isDark` (requise) ; sorties `navigate`,
+  `themeToggle`, `logout`. Un seul `nav` nommé « Administration » ; « Vue d'ensemble » hors
+  groupe ; chaque groupe est un `role="group"` dont le nom est résolu par `aria-labelledby`.
+  Aucun titre (`h1` à `h6`) dans la coque. testids : `nav-link-<key>`, `nav-count-<key>` (dans
+  le lien, absent si `null`, `sr-only` pour le suffixe), `admin-view-site`,
+  `admin-theme-toggle`, `admin-logout` (« Se déconnecter »), `admin-user-email`.
+- **`AdminLayout`** : ni `main`, ni `aside`, ni titre, tiroir ouvert ou fermé. Comptes lus sur
+  `ProjectsGateway.getAllProjects()`, `BlogGateway.getAllPostsForAdmin()` et
+  `ContactGateway.getUnreadCount()` ; une source en erreur retire son compte sans faire tomber
+  la coque ; une nouvelle émission du flux partagé met le compte à jour. Barre mobile :
+  `admin-topbar-title` = `activeNavLabel` de l'URL courante, suit la navigation ;
+  `admin-menu-button` porte `aria-expanded` et un `aria-controls` qui désigne l'élément
+  contenant le `role="dialog"` du tiroir. Un lien du tiroir navigue et ferme le tiroir ;
+  « Se déconnecter » du tiroir ferme le tiroir et appelle `AuthStore.logout()`.
+- **Routes** : `audience` (titre « Audience | Admin ») ; `analytics`, `analytics/visits`,
+  `analytics/projects` et `stats` y redirigent.
+- **`BlogGateway.invalidateAdminPosts()`** ; `HttpBlogGateway.getAllPostsForAdmin()` partagé :
+  un second lecteur ne relance pas la requête, l'invalidation la relance et pousse la liste aux
+  lecteurs vivants, un échec est relancé une fois puis n'est pas gardé.
+- **`AdminBlog`** : création, mise à jour et suppression réussies appellent
+  `invalidateAdminPosts()` une fois et ne réabonnent pas la liste ; une suppression en échec
+  restaure la liste sans invalider.
+
+**`admin-nav-groups.spec.ts`** (20 tests, nouveau)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| groupes | comptes 6 / 2 / 3 | libellés de groupe, `key`, `route`, `label`, `exact` |
+| comptes | idem | `count` et `countSuffix` des 7 entrées |
+| suffixe (`it.each` × 4) | 0, 1, 2, 12 non-lus | `{ count, countSuffix }` |
+| source inconnue (`it.each` × 3) | projets, articles, non-lus à `null` | seul ce compte vaut `null` |
+| barre mobile (`it.each` × 11) | URL, requête, fragment, sous-page, préfixe trompeur, inconnue | libellé exact |
+
+**`components/admin-nav.spec.ts`** (21 tests, nouveau, vrai `Router`)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| structure | rendu | un `nav` « Administration », trois groupes nommés et leurs liens, aucun titre |
+| liens | comptes `null` | `href` et texte des 7 liens |
+| page courante (`it.each` × 6) | `/admin`, projets, articles, audience, messages, sécurité | `aria-current="page"` sur le seul lien attendu |
+| page qui change | `/admin` puis `/admin/messages` | `aria-current` suit |
+| comptes | 6 / 2 / 3 | présents sur 3 clés, « 3 non lus », suffixe en `sr-only`, compte dans le lien |
+| comptes faibles (`it.each` × 2) | 0, 1 | « 0 non lu », « 1 non lu » |
+| comptes inconnus | `null` partout | aucun `nav-count-*` |
+| « Voir le site » | rendu | `a`, `href="/"`, `_blank`, `noopener`, « (nouvel onglet) » en `sr-only` |
+| e-mail | `email` fourni | texte |
+| libellé du thème (`it.each` × 2) | sombre, clair | « Passer en mode clair » / « sombre » |
+| lien suivi | clic sur Projets | `navigate` × 1, URL `/admin/projects` |
+| actions (`it.each` × 2) | thème, déconnexion | seule la sortie concernée émet |
+| déconnexion | rendu | `button` « Se déconnecter » |
+
+**`admin-layout.spec.ts`** (16 tests, réécrit)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| landmarks (`it.each` × 2) | tiroir fermé, ouvert | 0 `main`, 0 `aside`, 0 titre, `nav` « Administration » présent |
+| comptes | 6 projets, 2 articles, 3 non-lus | « 6 », « 2 », « 3 non lus », aucune exception |
+| flux partagé | `BehaviorSubject` 6 puis 5 | compte 6 puis 5 |
+| source en erreur (`it.each` × 3) | projets, articles, non-lus | compte absent, coque rendue |
+| barre mobile (`it.each` × 3) | `/admin`, messages, sécurité | `admin-topbar-title` |
+| barre mobile qui suit | `/admin` puis `/admin/audience` | « Audience » |
+| ouverture du tiroir | clic sur `admin-menu-button` | `aria-expanded` `false` puis `true`, `aria-controls` désigne le tiroir, navigation dedans |
+| lien du tiroir | clic sur Messages | URL `/admin/messages`, tiroir fermé, `aria-expanded="false"` |
+| déconnexion du tiroir | clic | `logout` × 1, tiroir fermé |
+| pied de la barre latérale | rendu puis clic | e-mail, `logout` × 1 |
+| bascule de thème | inchangé | inchangé |
+
+**`admin.routes.spec.ts`** (+5 tests) : `/admin/audience`, `/admin/analytics`,
+`/admin/analytics/visits`, `/admin/analytics/projects`, `/admin/stats` → URL `/admin/audience`,
+titre « Audience | Admin » (vrai `Router`, `TitleStrategy` par défaut).
+
+**`http-blog.gateway.spec.ts`** (+3 tests) : second lecteur sans requête ; invalidation → une
+requête, `[['a-1'], ['a-1', 'a-2']]` reçus ; échec relancé une fois, non gardé, nouveau lecteur
+servi (URL de couverture résolue).
+
+**`admin-blog.spec.ts`** (+4 tests) : création, mise à jour, suppression (`it.each` × 3) →
+`{ invalidations: 1, listSubscriptions: 1 }` ; suppression en échec puis réussie → liste
+restaurée sans invalidation, puis une invalidation.
+
+Contrat réaligné (changement de contrat acté par le plan, pas une adaptation mécanique) :
+
+- `admin-layout.spec.ts` : les 8 tests de la PR a sont remplacés. « pastille des non-lus »
+  (3 tests, testid `nav-unread-count`, 0 non lu masqué) devient `nav-count-messages`, avec
+  « 0 non lu » affiché comme dans la maquette ; « navigation en français » et « page courante »
+  passent dans `admin-nav.spec.ts`, avec `/admin/audience` au lieu de `/admin/analytics` ;
+  « non-lus annoncés » (2 tests) devient le test des comptes faibles. La bascule de thème est
+  gardée telle quelle (fournisseurs ajoutés pour les deux nouvelles sources).
+- `admin.routes.spec.ts` : le titre d'Audience est lu sous la clé `audience` au lieu
+  d'`analytics`, valeur inchangée.
+- `admin-blog.spec.ts` : le double `makeBlogGateway` reçoit `invalidateAdminPosts` (construction
+  des entrées seulement).
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 13:15, 65 failed / 1897 total).
+
+Sur l'arbre réel, après `ng cache clean` et purge de `node_modules/.vite`, `pnpm test` s'arrête à
+la compilation, sur des symboles dus au GREEN seulement : `TS2307` (`admin-nav-groups`,
+`admin-page-copy`, `admin-page-header`), `TS2339` (`invalidateAdminPosts` sur
+`HttpBlogGateway`, `logout` sur `AdminNav`), `TS2353` (`invalidateAdminPosts` absent de
+`Partial<BlogGateway>`), et les `TS7006` / `TS7031` / `NG1010` qui en découlent. Les specs n'ont
+aucune faute de type propre ; Prettier et ESLint passent sur les 24 fichiers touchés.
+
+**Squelette jetable de mesure** (B1 et B2 ensemble), posé puis retiré : `adminNavGroups` rend
+`[]`, `activeNavLabel` rend `''`, copies vides, `AdminPageHeader` sans gabarit, `AdminNav` gagne
+`groups`, `email` et `logout` sans les rendre, `invalidateAdminPosts` abstrait et vide.
+Résultat : **100 failed / 1897 total**, tous en `AssertionError` (aucun `TypeError`, `NG0`, délai
+dépassé ni erreur de `HttpTestingController`). 65 appartiennent à B1 :
+
+| Suite | Échecs |
+|---|---|
+| `admin-nav-groups` | 20 / 20 |
+| `admin-nav` | 17 / 21 |
+| `admin-layout` | 15 / 16 |
+| routes | 6 / 6 |
+| `http-blog.gateway` | 3 / 3 |
+| `admin-blog` (invalidation) | 4 / 4 |
+
+Verts sous le squelette, rouges sur l'arbre réel (compilation) : la bascule de thème de la coque
+et les trois tests de thème d'`AdminNav` (contrat de la PR a conservé), et « aucun compte
+inconnu » (le squelette ne rend aucun compte).
+
+**Harnais vérifié** : une implémentation jetable complète de B1 et B2 (14 fichiers applicatifs,
+11 modifiés et 3 créés) a donné **1897 passed / 1897**, sans `stderr` ni `NG0`. Les fichiers
+modifiés ont été restaurés depuis l'instantané (`md5sum -c` : 12 OK), les 3 fichiers créés
+supprimés.
+
+Preuve navigateur attendue (mise en page et focus, hors de portée de happy-dom) :
+
+- 375 px : barre latérale absente, barre mobile visible ; `admin-menu-button` ouvre le tiroir à
+  gauche ; Tab et Maj+Tab restent dans le tiroir ; Échap le ferme et rend le focus au bouton
+  menu ; un lien du tiroir navigue et ferme le tiroir ;
+- 1 008, 1 023 et 1 024 px : bascule barre mobile / barre latérale à `lg` (D10), aucun
+  défilement horizontal ; barre latérale collante sur toute la hauteur ;
+- clavier seul sur la barre latérale : ordre des liens, `aria-current`, soulignement de la page
+  active visible dans les deux registres ;
+- axe-core WCAG 2.2 AA sur `/admin` et une page par groupe, deux registres : plus de
+  `landmark-no-duplicate-main`, `landmark-main-is-top-level`, `landmark-unique` ; un seul `main`
+  par page ;
+- `/admin/analytics` dans la barre d'adresse → `/admin/audience`, titre d'onglet « Audience |
+  Admin ».
+
+### Tranche B2 — un en-tête de page commun
+
+Contrats fixés par ce RED :
+
+- **`components/admin-page-header.ts`** (`app-admin-page-header`) : `overline` et `heading`
+  requis. Un `header` contient, dans l'ordre, le sur-titre (`admin-page-overline`), le `h1`
+  (`admin-page-title`, `tabindex="-1"`, seul `h1`), puis l'introduction projetée ; l'action
+  `[adminPageAside]` est projetée après l'introduction, hors de son conteneur (seconde colonne).
+  Sans contenu projeté, seuls le sur-titre et le titre portent du texte.
+- **`admin-page-copy.ts`** (fonctions pures) :
+  - `projectsOverline(projects)` : « 6 réalisations · 2 mises en avant » (`featured`) ;
+  - `postsOverline(posts)` : « 3 articles · 1 publié · 2 brouillons » ;
+  - `messagesOverline(messages)` : « 2 non lus · 3 au total » ;
+  - `cvOverline(cv | null)` : « PDF · 76 Ko · mis en ligne le 19 sept. 2026 », tailles en `o`,
+    `Ko` (arrondi) et `Mo` à virgule (« 1,2 Mo ») ; `null` → « Aucun CV en ligne » ;
+  - `audienceOverline(range, now)` : « 7 sept. au 6 oct. 2026 · 30 derniers jours », du jour
+    `now − n` à la veille de `now`, année répétée si elle change, `all` → « Tout le temps » ;
+  - `todayOverline(now)` : « Mercredi 7 octobre 2026 », jour de la semaine en capitale.
+  - Singulier pour 0 et 1, pluriel au-delà ; espaces simples (aucune règle de
+    `editorial-typography.spec.ts` ne s'applique), dates `Intl` `fr-FR`.
+- **Pages** : Projets, Articles, Messages, CV, Audience et Paramètres rendent l'en-tête commun,
+  avec un seul `h1`. Titres : « Projets », « Articles », « Messages », « CV » (au lieu de
+  « Gestion du CV », comme la maquette), « Audience », « Paramètres ». Sur-titre de Paramètres :
+  l'e-mail du compte (`AuthStore.currentUser()`). Sur-titre d'Audience : suit la période.
+
+**`components/admin-page-header.spec.ts`** (4 tests, nouveau, hôte de test)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| titre | sur-titre et titre | textes, `H1`, `tabindex="-1"`, un `h1`, même `header`, sur-titre avant |
+| projections | introduction et action | dans le `header`, introduction après le titre, action après l'introduction, conteneurs distincts |
+| réactivité | signaux de l'hôte changés | sur-titre et titre suivent |
+| sans projection | balise nue | seuls `admin-page-overline` et `admin-page-title` portent du texte |
+
+**`admin-page-copy.spec.ts`** (25 tests, nouveau, TypeScript pur, builders)
+
+| Test | Cas |
+|---|---|
+| `projectsOverline` (`it.each` × 5) | 0/0, 1/0, 1/1, 2/1, 6/2 |
+| `postsOverline` (`it.each` × 5) | 0/0, 1/0, 0/1, 2/0, 1/2 |
+| `messagesOverline` (`it.each` × 4) | 0/0, 1/0, 0/2, 2/1 |
+| `cvOverline` (`it.each` × 3, + 1) | 512 o, 76 Ko, 1,2 Mo ; `null` |
+| `audienceOverline` (`it.each` × 5) | 7, 30, 90 jours le 7 oct. 2026 ; 30 jours le 10 janv. 2026 ; `all` |
+| `todayOverline` (`it.each` × 2) | mercredi matin, dimanche 23 h 30 |
+
+**Câblage des pages** (+6 tests, un par page) : `admin-projects.spec.ts` (« 2 réalisations ·
+1 mise en avant »), `admin-blog.spec.ts` (« 2 articles · 1 publié · 1 brouillon »),
+`admin-messages.spec.ts` (« 1 non lu · 2 au total »), `admin-cv.spec.ts` (« PDF · 76 Ko · mis
+en ligne le 19 sept. 2026 », titre « CV »), `admin-analytics.spec.ts` (7 oct. 2026 sous
+`vi.setSystemTime` : 30 jours puis 7 jours après changement de période),
+`admin-settings.spec.ts` (nouveau, créé ici plutôt qu'en C10 parce que B2 modifie la page :
+e-mail du compte, « Paramètres »). Chacun vérifie le sur-titre, le titre et un seul `h1`. Les
+tests A1 qui attendent le focus sur `admin-page-title` après une suppression restent la preuve
+que la page sait toujours focaliser le titre une fois celui-ci dans le composant.
+
+Adaptation mécanique : `admin-projects.spec.ts`, `setup()` rend aussi la `fixture` (aucun appel
+existant modifié).
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 13:15, 35 failed / 1897 total).
+
+Même exécution que B1 (arbre réel arrêté à la compilation, squelette jetable, harnais vérifié).
+Sous le squelette, 35 échecs, tous en `AssertionError` : copies 25 / 25, en-tête 4 / 4, pages
+6 / 6.
+
+Points de copie à valider en revue (non tranchés par le plan) : « Tout le temps » pour la période
+`all`, « Aucun CV en ligne » comme sur-titre sans CV, le jour 1 écrit « 1 » (pas « 1er »), et la
+période affichée qui s'arrête la veille alors que `dateRangeToParams` envoie `endDate` = aujourd'hui.
+
+### Bilan du RED B1 et B2
+
+- Base : 1801 passed / 1801.
+- Arbre de tests : 1897 = 1801 − 8 (anciens tests de la coque) + 104 nouveaux.
+- Sous le squelette : 100 failed (65 + 35), tous en `AssertionError`.
+- Sous l'implémentation jetable : 1897 passed.
+- Ni le motif d'archéologie ni `grep -P '\x{00A0}|\x{202F}'` ne trouvent rien dans les 24
+  fichiers touchés.
+
+### Outils de test des tranches B3 à B5
+
+- `features/analytics/testing/analytics-builders.ts` (nouveau) : `makeStatsOverview` (défauts =
+  relevé de prod du 2026-10-07 : 42 visiteurs, 56 pages vues, 42 sessions, 37 rebonds, 88,1 %,
+  22 s), `makeChartPoint`, `makeMetricEntry`. Les `overview()` locaux d'`admin-analytics.spec.ts`
+  et d'`analytics-presenter.spec.ts` restent en place (dette notée, hors de ces tranches).
+- Conventions communes de la vue d'ensemble : `null` en entrée d'une fonction pure ou d'un
+  composant dumb = source **indisponible** (chargement ou erreur, la page décide de l'affichage) ;
+  jamais remplacé par `0` ou `[]`. La page sous `vi.useFakeTimers({ toFake: ['Date'] })` (seule
+  l'horloge est figée, `settleBounded` garde son `setTimeout`) ; `OverviewAudience` est rendu sans
+  `AppChart` (`overrideComponent` + `CUSTOM_ELEMENTS_SCHEMA`) : le `<canvas>` de happy-dom n'a pas
+  de contexte, et la propriété `data` de l'élément `app-chart` reste lisible pour vérifier le
+  câblage.
+
+### Tranche B3 — vue d'ensemble : en-tête, cartouche « En ligne », actions rapides
+
+Contrats fixés par ce RED :
+
+- **`overview-view.ts`** : `toOnlineRows(projects: readonly Project[] | null, posts: readonly
+  BlogPost[] | null): readonly CartoucheRow[]` rend toujours quatre rangées, dans l'ordre
+  « En production », « Démos », « Scripts » (« n projet(s) », singulier pour 0 et 1, nature `null`
+  ignorée), « Articles » (« n publié(s) », brouillons exclus). Source `null` → valeur
+  « indisponible » sur ses rangées, jamais « 0 ».
+- **`AdminOverview`** (`admin-overview.ts`, `app-admin-overview`) : `AdminPageHeader` avec le
+  sur-titre `todayOverline(now) + ' · 30 derniers jours'`, `now` lu à la construction de la page
+  (le cas du 8 octobre fait tomber une date figée au chargement du module), titre « Vue
+  d'ensemble », seul `h1`. Aside `[adminPageAside]` `data-testid="overview-online"` dans le
+  `header` : `app-cartouche` « En ligne », référence « nedellec-julien.fr », `[rows]` =
+  `toOnlineRows`. Tant que projets **ou** articles chargent : `overview-online-loading` à la place
+  du cartouche (aucune rangée). Source en erreur : rangées « indisponible » ; l'alerte et
+  « Réessayer » sont portées par la section « Contenu en ligne » (B5), une seule par source.
+- **Actions rapides** : `section` `overview-quick` nommée par son `h2` « Actions rapides » ;
+  quatre `a` : `quick-new-project` « Nouveau projet » → `/admin/projects`, `quick-new-post`
+  « Nouvel article » → `/admin/blog`, `quick-cv` « Remplacer le CV » → `/admin/cv`,
+  `quick-audience` « Voir l'audience » → `/admin/audience`. Chaque lien est suivi au clic (vrai
+  `Router`), pas seulement rendu.
+- **Routes** : la route `''` charge `AdminOverview` ; `admin-dashboard.ts` est supprimé au GREEN.
+
+Choix documenté — « Nouveau projet » : le plan fixe `/admin/projects` en PR b et
+`/admin/projects/new` en C1 (première vraie page de création). Le test épingle `/admin/projects`
+et le libellé de la maquette ; C1 mettra à jour l'`href` attendu dans ce même test (contrat
+modifié, pas un test parallèle). D'ici là, le lien mène à la liste dont l'action principale est
+« Nouveau projet ». « Exporter l'audience » (maquette) devient « Voir l'audience » : un lien
+« Exporter » qui ne télécharge rien reproduirait le défaut du point 10 de la `## Description`.
+
+**`overview-view.spec.ts` — `toOnlineRows`** (8 tests, nouveau, TypeScript pur, builders)
+
+| Test | Cas |
+|---|---|
+| comptes (`it.each` × 5) | catalogue 2/2/2 + 2 publiés ; rien ; un de chaque ; nature `null` ; brouillons |
+| source indisponible (`it.each` × 3) | projets, articles, les deux à `null` → « indisponible » |
+
+**`admin-overview.spec.ts` — B3** (11 tests, nouveau, vrai `Router`)
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| en-tête (`it.each` × 2) | 7 puis 8 oct. 2026 | sur-titre « Mercredi 7 octobre 2026 · 30 derniers jours » / « Jeudi 8 … », « Vue d'ensemble », un `h1`, aucune exception |
+| cartouche | catalogue de prod | dans le `header`, titre, référence, 4 rangées libellé/valeur |
+| cartouche en erreur (`it.each` × 2) | projets, articles | valeurs « indisponible » sur la seule source tombée |
+| cartouche en chargement | projets `NEVER` | `overview-online-loading`, aucune valeur |
+| actions rapides | rendu | quatre liens dans la section nommée « Actions rapides » |
+| liens suivis (`it.each` × 4) | clic | `A`, libellé, `href`, URL du routeur après clic |
+
+**`admin.routes.spec.ts`** (+1 test) : `loadComponent()` de la route `''` rend `AdminOverview`.
+
+Tests supprimés : `admin-dashboard.spec.ts` (7 tests). Ses contrats passent à la vue d'ensemble :
+non-lus et CV « — indisponible » (B5, `OverviewContacts` et page), trois derniers messages triés
+(B5, `latestMessages`).
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 13:56, 20 failed / 2005 total).
+
+### Tranche B4 — vue d'ensemble : relevé « Audience »
+
+Contrats fixés par ce RED :
+
+- **`components/admin-readout.ts`** : `ReadoutItem = { label, value, unit, detail }` (tous
+  `string`) ; `items` requis ; un seul `dl`, chaque entrée `readout-item` = `dt` (libellé) +
+  `dd` portant `readout-value` (valeur suivie de l'unité) et `readout-detail`.
+- **`overview-view.ts`** :
+  - `toAudienceReadout(overview)` : « Pages vues » (nombre `fr-FR`, « 12 345 » avec U+202F,
+    détail `pagesPerSessionLabel`), « Rebond » (valeur de `formatPercent` sans l'unité, unité
+    U+00A0 « % », détail « n session(s) sur N » à partir de `bounces` / `sessions`), « Durée
+    moyenne » (valeur de `formatDuration` sans le « s » final, unité U+00A0 « s », détail « par
+    page ») ;
+  - `chartSummary(points)` : « Aucune visite sur la période. » sans point ; « Visiteurs le
+    7 septembre 2026 : 6. » pour un seul jour ; sinon « Visiteurs par jour du 7 septembre au
+    6 octobre 2026 : maximum 6 le 7 septembre. », égalités listées (« le 7 septembre et le
+    20 septembre », « le 1er septembre, le 3 septembre et le 9 septembre »), « aucune visite »
+    si le maximum vaut 0, année sur chaque date quand la période change d'année ; jours
+    calendaires UTC, « 1er » pour le premier du mois, U+00A0 avant « : ».
+- **`chart-palette.ts`** : `readChartPalette(document): { primary, foreground }` lit
+  `--theme-primary-text` et `--theme-foreground` sur la racine ; jeton vide → `'CanvasText'`.
+- **`analytics-presenter.ts`** : `buildVisitorsChartData(rows, { primary, foreground })` (plus
+  d'`accent`) : « Visiteurs » trait `primary` plein, « Pages vues » `alpha(foreground, 55)`,
+  `borderDash: [4, 4]`, `tension: 0` sur les deux ; toute clé `*Color` dérive de `primary` ou de
+  `foreground`. La page Audience l'adopte.
+- **`components/overview-audience.ts`** : entrées `visitors`, `sessions` (nombres), `readout`,
+  `chartData`, `chartOptions`, `chartSummary` ; `section` nommée par son `h2` « Audience » ;
+  `overview-visitors` (« 1 234 » groupé), `overview-sessions` (« 1 session », « 42 sessions ») ;
+  `app-chart` de type `line` dans un `figure` dont le `figcaption` est `chartSummary` ;
+  `overview-audience-link` → `/admin/audience` ; `app-admin-readout`.
+- **Page** : `data-testid="overview-audience"` ; `getOverview`, `getChart` et
+  `getMetrics('referrer', …)` appelés une fois chacun avec `dateRangeToParams('30d', now)`
+  (« 2026-09-07 », « 2026-10-07 ») ; statistiques en chargement → `overview-audience-loading`,
+  aucun chiffre ; en erreur → une `LoadError` dans la section, aucun `overview-visitors` ni
+  relevé, « Réessayer » relance `getOverview` ; courbe seule en erreur → chiffres gardés et une
+  `LoadError` ; palette relue quand `ThemeStore.isDark` change.
+
+**`overview-view.spec.ts` — Audience** (10 tests) : `toAudienceReadout` (`it.each` × 3 : relevé
+de prod, grands nombres et durée > 1 min, période vide) ; `chartSummary` (`it.each` × 7 : vide,
+un jour, un pic, deux égalités, trois égalités avec « 1er », aucune visite, deux années).
+
+**`chart-palette.spec.ts`** (3 tests, nouveau) : deux jetons, aucun, un seul.
+
+**`analytics-presenter.spec.ts`** (1 test modifié, +2) : datasets (signature à palette, couleur
+de « Pages vues », `tension: 0`) ; plein / tirets ; une seule teinte.
+
+**`admin-analytics.spec.ts`** (+1 test) : `chartData()` de la page Audience à traits droits,
+« Pages vues » tiretée.
+
+**`components/admin-readout.spec.ts`** (2 tests, nouveau) : structure `dl` / `dt` / `dd` et
+textes ; réactivité de `items`.
+
+**`components/overview-audience.spec.ts`** (6 tests, nouveau)
+
+| Test | Assertions clés |
+|---|---|
+| section | nom « Audience » par `aria-labelledby` (`H2`), visiteurs, sessions, 3 entrées de relevé |
+| figure | `figcaption` = résumé, `app-chart` de type `line`, `data` = la donnée reçue |
+| lien | `A` vers `/admin/audience` |
+| nombres (`it.each` × 3) | 1 / 1, 0 / 0, 1 234 / 1 500 : singulier, groupement |
+
+**`admin-overview.spec.ts` — B4** (7 tests) : relevé prêt (42, « 42 sessions », valeurs du
+relevé, légende) ; période des requêtes ; statistiques en erreur ; « Réessayer » (2 requêtes,
+plus d'erreur, 42) ; courbe seule en erreur ; chargement ; bascule de thème (couleur du trait
+« Visiteurs » relue).
+
+Contrat réaligné : le test « mappe labels et deux datasets » d'`analytics-presenter.spec.ts` passe
+de `(rows, '#primary', '#accent')` à `(rows, palette)` et attend la couleur de « Pages vues »
+dérivée du texte, conformément au plan (`accent` retiré du graphique). Changement de contrat, pas
+une adaptation mécanique.
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 13:56, 31 failed / 2005 total).
+
+Vert sous le squelette, rouge sur l'arbre réel (compilation) : « une seule teinte » (le squelette
+passait `foreground` comme second trait).
+
+### Tranche B5 — vue d'ensemble : contacts, contenu en ligne, phrase de synthèse
+
+Contrats fixés par ce RED :
+
+- **`overview-copy.ts`** : `OverviewSummaryInput = { overview: StatsOverview | null; referrers:
+  readonly MetricEntry[] | null; unread: number | null; projects: readonly Project[] | null;
+  posts: readonly BlogPost[] | null }` ; `overviewSummary(input)` rend jusqu'à trois phrases
+  séparées d'une espace :
+  - audience : « 42 visiteurs en 30 jours, dont 18 venus de google.com. » (premier référent au nom
+    non vide, nom tel que l'API le donne), « 1 visiteur …, dont 1 venu de … », « Aucun visiteur en
+    30 jours. », sans référent nommé ou référents indisponibles : « 42 visiteurs en 30 jours. » ;
+  - contacts : « Aucun message en attente, aucun CV téléchargé. », « 3 messages en attente, 1 CV
+    téléchargé. », CV lus sur `overview.cvDownloads` (même période de 30 jours que le reste) ;
+    chaque moitié omise si sa source manque, majuscule reportée sur la première restante ;
+  - contenu : nombres de 2 à 10 en lettres (« Six », « dix »), « Une réalisation » / « un
+    article », chiffres au-delà de 10 ; « … et … sont en ligne. », « Six réalisations sont en
+    ligne, aucun article. », « Deux articles sont en ligne, aucune réalisation. », « Rien n'est en
+    ligne. » ; source indisponible : seule l'autre est citée (« Deux articles sont en ligne. »,
+    « Aucun article n'est en ligne. ») ; articles = publiés seulement.
+  - toutes les sources indisponibles : `''`.
+- **`overview-view.ts`** :
+  - `ContentRow = { key, kind: 'post' | 'project', title, href, image, meta, stamp: string |
+    null }` ; `toContentRows(projects | null, posts | null, limit)` : articles publiés par date de
+    publication décroissante (`updatedAt` à défaut), puis projets par `order` ; `key`
+    `post:<id>` / `project:<id>` ; `href` `/admin/blog` / `/admin/projects` (pages d'édition en
+    C1) ; méta « Article · 9 sept. 2026 · 2 min » (`readingTimeMinutes`, U+00A0 avant « min »,
+    « 1er ») et « Projet · Application Web · mis en avant » ; tampon « Publié » ou
+    `PROJECT_KIND_LABELS[kind]`, `null` sans nature ; source `null` = liste vide de cette source ;
+  - `latestMessages(messages, limit)` : plus récents d'abord.
+- **`components/admin-empty-state.ts`** : `stamp` requis ; `empty-state` contient le tampon
+  (`empty-state-stamp`, en premier) puis le texte et l'action projetés.
+- **`components/overview-contacts.ts`** : `unread`, `cvDownloads` (`number | null`), `latest`
+  (`readonly ContactMessage[] | null`). Liens `overview-unread` → `/admin/messages` et
+  `overview-cv` → `/admin/cv` contenant `overview-unread-count` / `overview-cv-count` ; `null` →
+  « — » `aria-hidden` + « indisponible » `sr-only`. `latest` vide → `AdminEmptyState` « Boîte
+  vide » avec `overview-contact-page` (`/#contact`, `_blank`, `noopener`, « (nouvel onglet) » en
+  `sr-only`, contrat révisé par les correctifs de la revue de la PR b : « Voir le site », `/`) ; `null` → ni liste ni état vide ; sinon `overview-message` (expéditeur et sujet) avec
+  `overview-message-link` → `/admin/messages`.
+- **`components/overview-content.ts`** : `rows` requis ; `section` nommée par son `h2` « Contenu
+  en ligne » ; `overview-content-item` avec `overview-content-link`, `overview-content-meta`,
+  `overview-content-stamp` (absent si `null`) ; `img` `alt=""` seulement si `image` non vide ;
+  aucune rangée → `AdminEmptyState` « Rien en ligne ».
+- **Page** : `overview-summary` (introduction projetée de l'en-tête) ; `overview-contacts` :
+  trois derniers messages, `getAllMessages` en chargement → `overview-contacts-loading`, en erreur
+  → `LoadError` sans état vide, « Réessayer » relance ; `overview-content` : cinq rangées,
+  `overview-content-loading` tant qu'une des deux sources charge, `LoadError` si projets ou
+  articles en erreur (rangées de l'autre source gardées), « Réessayer » relance la source tombée
+  et rétablit aussi le cartouche.
+
+**`overview-view.spec.ts` — contenu et messages** (10 tests) : ordre et forme des cinq rangées ;
+`it.each` × 5 (limite 2, tout, projets absents, articles absents, rien) ; article publié sans date
+de publication ; `latestMessages` (`it.each` × 3).
+
+**`overview-copy.spec.ts`** (21 tests, nouveau) : phrase complète de la maquette ; audience
+(`it.each` × 4) ; contacts (`it.each` × 3) ; contenu (`it.each` × 10) ; sources manquantes
+(`it.each` × 3).
+
+**`components/admin-empty-state.spec.ts`** (2 tests, nouveau, hôte de test) : tampon, texte et
+action dans `empty-state`, tampon en premier ; réactivité du tampon.
+
+**`components/overview-contacts.spec.ts`** (8 tests, nouveau) : chiffres et liens ;
+indisponibles (`it.each` × 3) ; tiret caché aux aides techniques ; deux messages ; état vide et
+lien Contact ; `latest` à `null`.
+
+**`components/overview-content.spec.ts`** (4 tests, nouveau) : nom de section ; rangées
+(lien, méta, tampon) ; image décorative seulement avec couverture ; état vide.
+
+**`admin-overview.spec.ts` — B5** (14 tests) : synthèse complète ; synthèse sans statistiques ni
+non-lus ; contacts (3, 2, David / Bob / Chloé) ; chiffre indisponible (`it.each` × 2) ; boîte
+vide ; messages en erreur ; « Réessayer » des messages ; messages en chargement ; contenu (ordre
+des cinq titres) ; projets en erreur ; « Réessayer » des projets (2 requêtes, 5 rangées, cartouche
+rétabli) ; articles en chargement ; toutes les sources en panne (« indisponible » partout, aucun
+visiteur, synthèse vide, au moins une alerte, page debout).
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 13:56, 55 failed / 2005 total).
+
+Verts sous le squelette (cas dégénérés, la valeur attendue est vide), rouges sur l'arbre réel :
+`toContentRows` « rien en ligne », `latestMessages` « aucun message », `overviewSummary` « toutes
+les sources indisponibles », `OverviewContacts` « `latest` à `null` ».
+
+### Bilan du RED B3 à B5
+
+- Base : 1902 passed / 1902 (B1 et B2 verts, non commités).
+- Arbre de tests : 2005 = 1902 − 7 (`admin-dashboard.spec.ts`) + 110 nouveaux (B3 20, B4 31 hors
+  test modifié, B5 59).
+- Arbre réel, après `ng cache clean` et purge de `node_modules/.vite` : `pnpm test` s'arrête à la
+  compilation, sur des symboles dus au GREEN seulement : `TS2307` (`admin-overview`,
+  `overview-view`, `overview-copy`, `chart-palette`, `admin-readout`, `admin-empty-state`,
+  `overview-audience`, `overview-contacts`, `overview-content`), `TS2554` (×3, nouvelle signature
+  de `buildVisitorsChartData` dans `analytics-presenter.spec.ts`), et les `TS7006` / `NG1010` qui en
+  découlent. Aucune faute de type propre aux specs ; Prettier et ESLint passent sur les 13 fichiers
+  touchés.
+- **Squelette jetable** (9 fichiers créés : fonctions pures qui rendent `[]` / `''`, composants
+  sans gabarit, `AdminOverview` vide ; `buildVisitorsChartData` à la nouvelle signature avec
+  l'ancien rendu ; route `''` laissée sur le tableau de bord) : **106 failed / 2005**, tous en
+  `AssertionError` (aucun `TypeError`, `NG0`, délai dépassé ni `stderr`) : B3 20, B4 31, B5 55.
+- **Harnais vérifié** : implémentation jetable complète (9 fichiers créés, 3 modifiés) :
+  **2005 passed / 2005**, sans `stderr` ni `NG0`. Fichiers modifiés restaurés depuis l'instantané
+  (`md5sum -c` : 3 OK), fichiers créés supprimés.
+- Ni le motif d'archéologie ni `grep -P '\x{00A0}|\x{202F}'` ne trouvent rien dans les 13
+  fichiers touchés ; les insécables y sont écrites en échappement.
+
+Hors de portée de happy-dom (à prouver au navigateur) : la courbe dessinée (canvas), sa couleur
+effective dans les deux registres, la mise en page du cartouche à droite à partir de `lg`, les
+vignettes `fill` 16/10 et 1200/630, le rendu de l'état vide tireté.
+
+Points de copie à valider en revue (non tranchés par le plan) : « Voir l'audience » au lieu
+d'« Exporter l'audience » ; « indisponible » dans le cartouche ; nombres en lettres jusqu'à dix ;
+« Rien n'est en ligne. », « Rien en ligne » (tampon) ; « Article · date · n min » (durée de
+lecture plutôt que j'aime) ; « Visiteurs le … : n. » pour un seul jour ; CV de la synthèse et du
+relevé « Contacts » lus sur `overview.cvDownloads` (30 jours) plutôt que `getCvDownloadCount()`
+sans période, comme l'ancien tableau de bord.
+
+### Correctifs de la revue de la PR b
+
+Points de la `## Review code` (PR b, revue du 2026-10-07) couverts par un test. Les tests sont
+écrits avec le correctif, à la demande de la session principale (pas de passage `qa` séparé).
+
+**Changement de contrat acté par la revue (point 1)** : le sur-titre d'Audience dérive ses bornes
+de `dateRangeToParams(range, now)`, celles qu'on envoie à l'API (dates calendaires UTC, jour de fin
+inclus en entier par l'API). La période finit donc **aujourd'hui** et non plus la veille. Seules les
+attentes de date de fin changent :
+
+| Test | Avant | Après |
+|---|---|---|
+| `admin-page-copy.spec.ts`, `7d`, 7 oct. 2026 | « 30 sept. au 6 oct. 2026 » | « 30 sept. au 7 oct. 2026 » |
+| idem `30d` | « 7 sept. au 6 oct. 2026 » | « 7 sept. au 7 oct. 2026 » |
+| idem `90d` | « 9 juil. au 6 oct. 2026 » | « 9 juil. au 7 oct. 2026 » |
+| idem `30d`, 10 janv. 2026 | « 11 déc. 2025 au 9 janv. 2026 » | « 11 déc. 2025 au 10 janv. 2026 » |
+| `admin-analytics.spec.ts`, câblage 30 j puis 7 j | « … au 6 oct. 2026 » | « … au 7 oct. 2026 » |
+
+**Point 2, `overview-contacts.spec.ts`** (test de l'état vide réécrit) : texte « Aucun message pour
+l'instant. Le formulaire de contact de l'accueil est en ligne ; un nouveau message apparaîtra ici
+avec son sujet. » (U+202F avant « ; »), lien `overview-contact-page` « Voir le site (nouvel
+onglet) », `href="/"`, `_blank`, `noopener`.
+
+**m1, `overview-contacts.spec.ts`** (+4 cas) : unités `overview-unread-unit` / `overview-cv-unit`
+accordées : 1 et 0 → « message » / « téléchargement », 2 et 12 → pluriel, `null` → pluriel.
+
+**m6, `overview-contacts.spec.ts`** (+2 cas) et **`admin-overview.spec.ts`** (+1) : `unreadLoading`
+ou `cvLoading` → `overview-unread-loading` / `overview-cv-loading` présent, aucun « indisponible » ;
+page avec statistiques en attente → squelette du chiffre CV, pas « indisponible ». Les non-lus
+suivent la même règle (même défaut, même composant).
+
+**m3, `analytics-presenter.spec.ts`** (+1) : `buildVisitorsOnlyChartData` rend les mêmes libellés et
+un seul jeu de données, égal à la courbe « Visiteurs » de `buildVisitorsChartData`.
+
+**m5, `pluralize.spec.ts`** (+4 cas : 0, 1, 2, 1 500) et **`capitalize.spec.ts`** (+4 cas, dont
+initiale accentuée et chaîne vide).
+
 ## Journal des tranches
 
 - **Tranche A1 — supprimer demande confirmation** : GREEN 1720 passed / 1720 total · refactor : `ConfirmDialog` ferme le `<dialog>` avant d'émettre (sinon le reste de la page reste inerte et le focus ne peut pas atteindre le `h1`) ; requête `viewChild` de titre remontée sous les dépendances injectées sur les 4 pages (ordre `CLAUDE.md`).
@@ -1835,6 +2400,12 @@ compilation).
 - **Tranche A6 — libellés et nombres en français** : GREEN 1791 passed / 1791 total · refactor : aucun.
 - **Tranche A7 — contrastes, étiquettes et noms d'action** : GREEN 1791 passed / 1791 total · refactor : `tagSeverity` d'`AnalyticsEntityList` supprimé (les quatre appelants passaient la valeur par défaut `info` une fois `success` retiré).
 - **Correctifs de la revue** : GREEN 1801 passed / 1801 total · refactor : aucun. Points 1 à 5, m1, m2, m4, m9 de la `## Review code`. `FileDropzone` : champ fichier hors tabulation et hors arbre accessible, nom du bouton tiré de son contenu, focus relayé à « Remplacer » après un choix et au bouton de la zone après un retrait (le bouton focalisé disparaissait avec l'état, le focus tombait sur `body`, constaté au navigateur). « Réessayer » de Projets recharge aussi les catégories. Pluriel des pages par session décidé dans le presenter (`pagesPerSessionLabel`) sur le nombre arrondi. Rattrapage du journal : `admin-column-base.ts` (`isLabelHidden`, en-tête de la colonne de dépliage en `sr-only`) a été modifié en A5 sans y figurer.
+- **Tranche B1 — coque : navigation groupée, thème, « Voir le site », tiroir** : GREEN 1902 passed / 1902 total · refactor : espacement des groupes passé de `[class.pt-3.5]` (classe à point non appliquée, vu au navigateur) à `[class]` ; couleur du compte des non-lus décidée sur la clé `messages` au lieu du suffixe ; commentaire du flux partagé d'articles réduit à une ligne. Hors liste du plan : `App` masque Header et Footer publics dès le premier rendu (adresse initiale lue par `Location.path()`, +4 tests), `Drawer` retient Maj+Tab quand le focus est sur le panneau lui-même (le focus sortait du tiroir à l'ouverture, constaté au navigateur, +1 test), lien « Audience » du tableau de bord pointé sur `/admin/audience`.
+- **Tranche B2 — un en-tête de page commun** : GREEN 1902 passed / 1902 total · refactor : le focus du titre après suppression passe par `AdminPageHeader.focusTitle()` (4 pages, plus de requête `#pageTitle`) ; « 1er » pour le premier jour du mois dans les dates des sur-titres (aucun test ne fige « 1 »).
+- **Tranche B3 — vue d'ensemble : en-tête, cartouche « En ligne », actions rapides** : GREEN 2005 passed / 2005 total · refactor : `withFirstOfMonth` sorti d'`admin-page-copy.ts` dans `with-first-of-month.ts` (3 consommateurs : sur-titres, méta des articles, légende de la courbe).
+- **Tranche B4 — vue d'ensemble : relevé « Audience »** : GREEN 2005 passed / 2005 total · refactor : `THEME_FALLBACK` et `DEFAULT_PALETTE` d'Audience remplacés par `readThemeColor` (repli couleur système, partagé avec la vue d'ensemble) ; garde `isPlatformBrowser` retirée (l'admin n'est rendu que côté client, `readThemeColor` tolère un document sans fenêtre).
+- **Tranche B5 — vue d'ensemble : contacts, contenu en ligne, phrase de synthèse** : GREEN 2005 passed / 2005 total · refactor : titre de section (`h2` + filet + lien) répété quatre fois sorti dans `components/admin-section-head.ts` (Audience, Contacts, Contenu en ligne, Actions rapides). Hors contrat : les composants de section prennent `null` (« indisponible ») sur leurs entrées principales et projettent l'état (squelette ou `LoadError`) fourni par la page, ce qui garde le `h2` de la section dans les quatre états.
+- **Correctifs de la revue de la PR b** : GREEN 2021 passed / 2021 total · refactor : accord singulier/pluriel (4 sites) et mise en capitale (2 sites) remplacés par `pluralize.ts` et `capitalize.ts` ; courbe « Visiteurs » seule tirée de `buildVisitorsOnlyChartData` (jeu de données partagé avec `buildVisitorsChartData`) au lieu d'un filtre sur le libellé ; lignes vides retirées des imports. Points 1 et 2, m1, m2, m3, m5, m6, m7, m8 de la revue ; m4 et la taille d'`admin-overview.ts` tolérés. Hors liste : le chiffre des non-lus suit la même règle de chargement que le CV (`unreadLoading`, même défaut, même composant).
 
 ## Verify
 
@@ -1999,6 +2570,151 @@ serveur SSR, absente du service statique).
 
 **Verdict : PASS.**
 
+### Tranches B1 et B2
+
+Build de production servi en local (port 4340), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
++ best-practice), CSP de la page appliquée.
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production` (exit 0, « Prerendered 20 static routes », « CSP
+   hardened on 21 page(s) »), puis `git checkout public/rss.xml public/sitemap.xml`.
+2. Script `scratchpad/v/b12.mjs` (harnais de `rv2.mjs`) : session simulée
+   (`localStorage['auth:session'] = '1'`), GET de l'API servis par fixtures (listes de projets et
+   d'articles copiées une fois en GET public), **toute requête non-GET annulée** et journalisée,
+   toute autre origine annulée ; sonde `MutationObserver` posée avant tout script, qui note si
+   `app-header` ou `app-footer` est monté une seule fois.
+3. Cas joués : les 7 pages de la coque à 1 440 px en clair et en sombre ; `/admin/messages` à
+   375 px en clair et en sombre (Entrée sur le bouton menu, 16 × Tab, 16 × Maj+Tab, Échap, puis
+   lien « Projets » du tiroir) ; Maj+Tab juste après l'ouverture (`b12-shift.mjs`) ; `/admin` à
+   1 008, 1 023 et 1 024 px ; Tab depuis le haut de `/admin/projects` ; `/admin/analytics`,
+   `/admin/stats`, `/admin/analytics/visits` ; `/admin/projects` capturé dès `commit` ; `/`,
+   `/projects/`, `/blog/` à 1 440 et 375 px.
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| Landmarks | 1 `main`, 0 `aside`, 1 `h1` sur chaque page (le tableau de bord garde son `h1` jusqu'à B3) |
+| axe | **0 violation** sur les 7 pages × 2 registres, à 375 px tiroir fermé et ouvert ; plus aucune règle `landmark-*` |
+| `aria-current` | sur le seul lien de la page (`nav-link-settings` pour Paramètres), soulignement intérieur 2 px `oklch(0.433 0.21 278)` en clair |
+| Comptes | « 6 », « 2 », « 1 non lu » |
+| Sur-titres | « 6 réalisations · 2 mises en avant », « 2 articles · 2 publiés · 0 brouillon », « 1 non lu · 2 au total », « PDF · 178 Ko · mis en ligne le 20 sept. 2026 », « 7 sept. au 6 oct. 2026 · 30 derniers jours », e-mail du compte |
+| Tiroir | `aria-expanded` `false` → `true`, `aria-controls="admin-drawer"`, focus sur le panneau ; Tab et Maj+Tab restent dedans (16 arrêts chacun, boucle bouton Fermer → liens → pied) ; Maj+Tab à l'ouverture → « Se déconnecter » (sortait vers la page avant le correctif du `Drawer`) ; Échap → tiroir fermé, `aria-expanded="false"`, focus sur `admin-menu-button` ; lien « Projets » → `/admin/projects`, tiroir fermé, barre « Projets » |
+| Bascule | 1 008 et 1 023 px : barre mobile, pas de barre latérale ; 1 024 px : barre latérale, pas de barre mobile ; aucun défilement horizontal |
+| Clavier, barre latérale | liens dans l'ordre de la maquette, puis « Voir le site », thème, « Se déconnecter », puis l'en-tête de page |
+| Redirections | `/admin/analytics`, `/admin/stats`, `/admin/analytics/visits` → `/admin/audience`, onglet « Audience \| Admin », `nav-link-audience` courant |
+| Premier rendu | `app-header` et `app-footer` jamais montés sous `/admin/projects`, dès `commit` comme après `networkidle` |
+| Site public | `/`, `/projects/`, `/blog/` : Header présent, 1 `main`, 1 `h1`, 0 violation CSP, aucune erreur applicative |
+| Écritures | 0 requête non-GET émise |
+
+**Console** : aucune erreur applicative. Seul le `404 /api/config` (route du serveur SSR, absente du
+service statique).
+
+**Écarts avec la maquette** : icônes Font Awesome pleines du sprite du site au lieu des pictos au
+trait (aucune icône nouvelle) ; tiroir rendu par le `Drawer` existant (titre « Administration » et
+bouton Fermer, voile noir flouté) au lieu de l'en-tête au monogramme ; bascule à 1 024 px (D10) ;
+listes, filtres et cartouches des pages inchangés jusqu'à C1 et C2 ; vue d'ensemble inchangée
+jusqu'à B3.
+
+**Captures** (scratchpad) : `b12-<page>-1440-{clair,sombre}.jpg` pour vue-ensemble, projets,
+articles, cv, messages, audience, parametres ; `b12-messages-375-{clair,sombre}.jpg`,
+`b12-tiroir-375-{clair,sombre}.jpg`, `b12-vue-ensemble-{1008,1023,1024}-clair.jpg`,
+`b12-public-{accueil,realisations,blog}-{1440,375}.jpg`, rapport `b12-report.json`.
+
+**Verdict : PASS.**
+
+### Tranches B3 à B5
+
+Build de production servi en local (port 4350), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
++ best-practice), CSP de la page appliquée.
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production` (exit 0, « Prerendered 20 static routes », « CSP
+   hardened on 21 page(s) », aucun avertissement), puis `git checkout public/rss.xml public/sitemap.xml`.
+2. Script `scratchpad/v/b35.mjs` (harnais de `b12.mjs`) : session simulée
+   (`localStorage['auth:session'] = '1'`), GET de l'API servis par fixtures (listes de projets et
+   d'articles copiées une fois en GET public, référents `''` 20 et `google.com` 18), **toute requête
+   non-GET annulée** et journalisée, toute autre origine annulée.
+3. Cas joués : `/admin` à 1 440 et 375 px en clair et en sombre ; couleur dominante des pixels opaques
+   du `<canvas>` comparée à `--theme-primary-text` résolu ; bascule de thème dans la coque, courbe
+   relue ; 500 sur `/analytics/stats/overview`, `/analytics/stats/chart`, `/contact/messages`,
+   `/projects`, puis « Réessayer » de la section, panne retirée ; projets, articles et messages vides
+   en clair et en sombre ; `/admin/audience` en clair et en sombre.
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| En-tête | « Mercredi 7 octobre 2026 · 30 derniers jours », 1 `h1` « Vue d'ensemble », synthèse « 42 visiteurs en 30 jours, dont 18 venus de google.com. 1 message en attente, 2 CV téléchargés. Six réalisations et deux articles sont en ligne. » |
+| Cartouche | « En production 2 projets », « Démos 2 projets », « Scripts 2 projets », « Articles 2 publiés », colonne de droite à 1 440 px, sous l'introduction à 375 px |
+| Audience | 42, « 42 sessions », relevé « 56 / 1,3 page par session », « 88,1 % / 37 sessions sur 42 », « 1 min 05 s / par page » ; `figcaption` = résumé des pics |
+| Courbe | clair : pixel dominant `64,48,191` = `--theme-primary-text` ; sombre : `148,160,255` = jeton ; bascule en direct : `64,48,191` → `148,160,255` |
+| Contacts | non-lus 1, CV 2, deux derniers messages |
+| Contenu | 5 rangées : 2 articles (« 9 sept. 2026 · 13 min », « 1er sept. 2026 · 6 min », « Publié »), puis 3 projets dans l'ordre public (tampon de nature) |
+| Erreurs partielles | statistiques : une `LoadError` dans Audience, CV « — indisponible », synthèse sans audience ni CV ; courbe seule : chiffres gardés + une `LoadError` ; messages : une `LoadError` dans Contacts, pas d'état vide ; projets : une `LoadError` dans Contenu, 2 articles gardés, cartouche « indisponible » sur les trois natures. « Réessayer » : une seule nouvelle requête vers la source tombée, section rétablie |
+| États vides | « Boîte vide » + « Ouvrir la page Contact », « Rien en ligne », cartouche à 0, synthèse « … Rien n'est en ligne. » |
+| Audience (page) | courbe dessinée (`1026x288`), aucune erreur, deux registres |
+| axe | **0 violation** sur tous les passages (vue d'ensemble × 4, erreurs × 4, vides × 2, Audience × 2) |
+| Mise en page | aucun défilement horizontal à 375 px |
+| Écritures | 0 requête non-GET émise |
+
+**Console** : aucune erreur applicative. Seul le `404 /api/config` (route du serveur SSR, absente du
+service statique). En erreur, `errorToastInterceptor` affiche aussi son toast (`role="alert"` hors
+section, double signal assumé par le plan).
+
+**Écarts avec la maquette** : courbe des visiteurs seule, sans axes (comme la maquette ; « Pages
+vues » reste sur la page Audience) ; « Voir l'audience » au lieu d'« Exporter l'audience » (choix du
+RED) ; méta des articles en durée de lecture au lieu des j'aime (choix du RED) ; synthèse en texte
+courant, sans le gras de « 42 visiteurs » ; compte « 6 projets · 2 articles » du titre « Contenu en
+ligne » et repères « CV en ligne » / « Sécurité » sous les actions rapides non repris (hors contrat) ;
+lien « Ouvrir la page Contact » vers `/#contact` ; icônes du sprite du site.
+
+**Captures** (scratchpad) : `b35-vue-ensemble-{1440,375}-{clair,sombre}.jpg`,
+`b35-bascule-sombre.jpg`, `b35-erreur-{statistiques,courbe,messages,projets}.jpg`,
+`b35-vides-{clair,sombre}.jpg`, `b35-audience-{clair,sombre}.jpg`, rapport `b35-report.json`.
+
+**Verdict : PASS.**
+
+### Correctifs de la revue de la PR b
+
+Build de production servi en local (port 4370), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
++ best-practice), CSP de la page appliquée.
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production` (exit 0, « Prerendered 20 static routes », « CSP
+   hardened on 21 page(s) », 0 avertissement), puis `git checkout public/rss.xml public/sitemap.xml`.
+2. Script `scratchpad/v/rvb.mjs` (harnais de `b35.mjs`) : session simulée
+   (`localStorage['auth:session'] = '1'`), GET de l'API servis par fixtures, **toute requête
+   non-GET annulée** et journalisée, toute autre origine annulée. Horloge réelle : 7 oct. 2026.
+3. Cas joués : `/admin/audience` en clair et en sombre ; `/admin` avec 1 non-lu et 1 CV à 1 440 et
+   375 px, deux registres ; `/admin` avec la réponse des statistiques retardée de 4 s ; `/admin`
+   sans message, deux registres, puis clic sur « Voir le site ».
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| Sur-titre d'Audience | « 7 sept. au 7 oct. 2026 · 30 derniers jours » ; requêtes `startDate=2026-09-07&endDate=2026-10-07` (mêmes bornes) |
+| Accords | « Non lus 1 message », « CV · 30 j 1 téléchargement » (nom accessible du lien « Non lus 1 message ») ; à 0 non-lu : « message » ; 2 CV : « téléchargements » |
+| Chargement | statistiques en attente : squelette `overview-cv-loading` dans le chiffre CV, texte lu « chargement », jamais « indisponible » ; puis « 2 » |
+| Boîte vide | « Aucun message pour l'instant. Le formulaire de contact de l'accueil est en ligne ; un nouveau message apparaîtra ici avec son sujet. » (U+202F avant « ; ») ; lien « Voir le site (nouvel onglet) », `href="/"`, `_blank`, `noopener` ; le clic ouvre `http://localhost:4370/` dans un nouvel onglet |
+| axe | **0 violation** sur les 8 passages (Audience × 2, vue d'ensemble × 4, vide × 2) |
+| Mise en page | aucun défilement horizontal à 375 px |
+| Écritures | 0 requête non-GET émise |
+
+**Console** : aucune erreur applicative. Seul le `404 /api/config` (route du serveur SSR, absente du
+service statique). La violation CSP « inline script » relevée vient de l'injection d'axe par le
+harnais (`addScriptTag`, 0 avant, 1 après l'injection, mesuré).
+
+**Captures** (scratchpad `rvb/`) : `rvb-audience-{light,dark}.jpg`,
+`rvb-overview-singulier-{light,dark}-{1440,375}.jpg`, `rvb-overview-chargement.jpg`,
+`rvb-vide-{light,dark}.jpg`, rapport `rvb-report.json`.
+
+**Verdict : PASS.**
+
 ## Review code
 
 PR a (`fix/admin-correctifs`, base `master` `30ef475`, diff non commité + fichiers non suivis), revue du 2026-10-07.
@@ -2077,3 +2793,66 @@ de `## Verify`) :
     premier lot de tests à les réemployer ;
   - m8 (`post()` local d'`admin-blog.spec.ts`) → **PR c1** (C6, liste des articles).
 - m10 : statut des ADR-0012 et ADR-0013 inchangé (« proposé »), passage à « accepté » au merge.
+
+### PR b (`feat/admin-coque`), revue du 2026-10-07
+
+Base `master` `86177a6`, diff non commité + fichiers non suivis, tranches B1 à B5.
+
+**Verdict** : REJECTED
+**Gates CI locaux** : install `pnpm install --frozen-lockfile` exit 0 / tests `pnpm test` exit 0 (151 fichiers, 2005 passed / 2005) / lint `pnpm lint` exit 0 (« All files pass linting ») / build `pnpm run build --configuration production` exit 0 (« Prerendered 20 static routes », « CSP hardened on 21 page(s) ») / Docker `docker build -t ng-portfolio-app:ci .` exit 0 + script « Smoke test the image » de `ci.yml` exit 0. `public/rss.xml` et `public/sitemap.xml` restaurés.
+**Checks mécaniques** : checker non vendoré : auto-checks joués à la main sur les lignes ajoutées. Archéologie (motif du profil) : 0. Insécables littérales : 0 (échappements et `&nbsp;` seulement). `fakeAsync`/`waitForAsync` : 0. `export default` : 0. `console`/`innerHTML` : 0. `effect(` ajouté : 0. `value() ??` hors garde `hasValue()` : 0. Snapshot, `fireEvent`, `.only`/`.skip` : 0. Exports sans consommateur hors fichier : 2 (mineur m4). Restes de code mort (`admin-dashboard`, `AdminDashboard`, `THEME_FALLBACK`, `DEFAULT_PALETTE`, `FORMATTED_DATE`, `nav-unread-count`, `collapseToggle`, liens `/admin/analytics`) : 0.
+**Warnings de gate** : aucun (0 `stderr`, `NG0`, `▲` ou `WARNING` dans les sorties test, lint et build).
+**Rendu compilé** : ✅ (sélecteurs élément uniquement ; rendu contrôlé au navigateur, ci-dessous)
+**Preuve de verify runtime** : ✅ (preuves B1-B2 et B3-B5 de `## Verify` complètes, rejouées par la revue avec un harnais indépendant, cf. ci-dessous)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ❌ (points 1 et 2)
+
+Verify de la revue (build de la branche servi en local, port 4360, Chromium, CSP de la page appliquée, session simulée, GET de l'API servis par fixtures, **toute requête non-GET annulée** : 0 émise ; axe-core 4.14 WCAG 2.2 AA + best-practice) :
+
+- Site public : HTML prérendu des 21 pages comparé à un build de `master` (worktree jetable) : titres, `meta`, canonical, JSON-LD, `h1`-`h6`, texte, présence d'`app-header` / `app-footer` et nombre de `main` **identiques** (0 différence). `/`, `/projects/`, `/blog/` à 375 px : menu `Drawer` ouvert au clavier, Tab et Maj+Tab bouclent dans le panneau, Maj+Tab depuis le panneau va désormais au dernier focusable (sortait avant), Échap ferme et rend le focus au bouton menu, défilement déverrouillé, bascule de thème du tiroir écrit `dark` ; axe 0 violation tiroir ouvert.
+- Coque : 1 `main`, 0 `aside`, 1 `h1` sur les 7 pages, `app-header`/`app-footer` jamais montés sous `/admin` ; `aria-current="page"` sur le seul lien attendu (Paramètres pour `/admin/settings/security`) ; `/admin/analytics`, `/admin/stats`, `/admin/analytics/visits`, `/admin/analytics/projects` → `/admin/audience`, onglet « Audience | Admin » ; axe 0 violation sur les 7 pages (sombre), seule `page-has-heading-one` sur `/admin/settings/security` (renvoyé à C10). Tiroir à 375 px : `aria-expanded` `false` → `true`, `aria-controls="admin-drawer"`, focus sur le panneau, Maj+Tab → « Se déconnecter », Tab × 18 et Maj+Tab × 18 restent dans le dialogue, Échap → `aria-expanded="false"`, focus sur `admin-menu-button` ; lien « Projets » du tiroir → `/admin/projects`, tiroir fermé, barre « Projets ».
+- Barre latérale (écart 5) : à 1 440 × 800, après 457 px de défilement, la colonne reste `top 0` / `bottom 800`. Le bord qui s'arrête sur une capture pleine page est un artefact de capture (`h-svh` vaut la hauteur de la fenêtre, pas du document) : **pas un défaut** en navigation réelle.
+- Vue d'ensemble 1 440 et 375 px, deux registres : axe 0 violation, aucun défilement horizontal ; courbe : pixel dominant `64,48,191` (clair) et `148,160,255` (sombre) = `--theme-primary-text` résolu ; bascule de thème dans la coque : `64,48,191` → `148,160,255` en direct. Erreur par source (statistiques, courbe, référents, messages, non-lus, projets, articles) : une seule `LoadError` dans la section concernée, `h2` gardé, les autres sections intactes, synthèse privée de la seule phrase touchée ; chargement (statistiques, courbe, messages) : squelette `role="status"` dans la section ; vides, deux registres : « Boîte vide », « Rien en ligne », cartouche à 0, synthèse « … Rien n'est en ligne. », axe 0. Comparaison avec `specs/assets/015/01-vue-ensemble-1440-sombre.jpg` : grille, cartouche, relevé, contacts, contenu et actions conformes, aux écarts listés près.
+- `/#contact` (écart 4) : l'élément `#contact` existe dans le HTML prérendu de l'accueil, mais l'ouverture directe de `/#contact` laisse la page en haut (`scrollY 0`, section à 4 968 px) : point 2.
+- Console : seul le `404 /api/config` du service statique.
+
+**Écarts signalés par l'implémentation** :
+1. Courbe des visiteurs seule : **accepté** (maquette ; « Pages vues » reste sur Audience). Voir m3 pour la manière.
+2. « Voir l'audience » au lieu d'« Exporter l'audience » : **accepté** (un « Exporter » qui ne télécharge rien reproduirait le défaut 10).
+3. Non repris (gras de « 42 visiteurs », compte « 6 projets · 2 articles » de « Contenu en ligne », repères « CV en ligne » / « Sécurité ») : **accepté** pour cette PR ; les repères CV et Sécurité sont à inscrire en C10 s'ils sont voulus.
+4. `/#contact` : **à corriger** (point 2).
+5. Barre latérale `sticky h-svh` : **pas un défaut** (mesuré, ci-dessus).
+6. Piège de focus du `Drawer` : **aucune régression** sur le menu public (mesuré sur trois pages) ; le changement corrige aussi la fuite par Maj+Tab du menu public.
+7. `App` et `Location.path()` : **accepté** ; HTML prérendu identique à `master`, Header jamais monté sous `/admin`, `/administration` couvert par le test.
+- Points de copie du RED : « Tout le temps », « Aucun CV en ligne », « 1er », « indisponible », nombres en lettres jusqu'à dix, « Rien n'est en ligne. », durée de lecture, « Visiteurs le … : n. », CV sur 30 jours : **acceptés**. La période qui s'arrête la veille : **refusée** (point 1).
+
+**Altitude composant** (advisory, non bloquant) :
+- ⚠️ `admin-overview.ts` — 265 LOC, 6 collaborateurs injectés (seuils 250 / 6) ; gabarit 100 lignes. Candidat : sortir la palette et les options de courbe (`_palette`, `chartData`, `chartOptions`, lignes 226-254) dans un builder pur à côté de `chart-palette.ts`, partagé avec Audience.
+- ⚠️ `admin-blog.ts` 254 → 266 LOC (découpe prévue en C1).
+
+**Duplication / dérivation** (advisory) :
+- ⚠️ accord singulier/pluriel réécrit à 4 sites : `counted` (`admin-page-copy.ts:51`, `overview-view.ts:55`), `plural` (`overview-copy.ts:209`), `sessionsLabel` (`overview-audience.ts:195`) ; mise en capitale à 2 sites (`overview-copy.ts:207`, `admin-page-copy.ts:98`). Un seul helper suffit (m5).
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet · monitoring : Sentry (profil)
+- `/admin/analytics` reste une URL valide (redirection) : favoris et smoke test CI (`ci.yml:126`) inchangés.
+- non couvert par les gates : un échec du flux partagé d'articles après invalidation fait tomber le compte de la coque jusqu'au prochain abonné (comportement du précédent `allProjects$`, assumé par le plan).
+
+**Points à corriger** (bloquants) :
+1. `src/app/features/admin/application/admin-page-copy.ts:86-94` — `audienceOverline` affiche une période qui s'arrête la veille (`now.getDate() - 1`), en dates locales, alors que `dateRangeToParams` (`analytics-presenter.ts:15-23`) demande `endDate` = aujourd'hui en UTC et que l'API inclut ce jour entier (`nest-portfolio-app/src/analytics/analytics-stats.service.ts:249-252`, `endOfDay(endDate)`). Le sur-titre d'Audience annonce « 7 sept. au 6 oct. » pour des données qui vont jusqu'au 7 oct. : c'est le défaut que A2 a corrigé (« la période affichée est celle des données »). Dériver le sur-titre des bornes réellement envoyées (`dateRangeToParams(range, now)`), pas d'un second calcul ; recaler `admin-page-copy.spec.ts` (cas `audienceOverline`) et le test de câblage d'`admin-analytics.spec.ts`.
+2. `src/app/features/admin/application/components/overview-contacts.ts:76-82` — « Ouvrir la page Contact » mène à `/#contact` : l'ancre existe, mais l'ouverture directe de `/#contact` laisse la page en haut (mesuré : `scrollY 0`, section à 4 968 px), et `src/app/features/home/application/home.ts:95-96` pose que la section n'est **jamais** exposée en ancre dans l'URL. Le lien ment sur sa destination. Choisir avec l'utilisateur : soit un lien honnête vers l'accueil (« Ouvrir le site »), soit un vrai support du fragment à l'arrivée (et la règle de `home.ts` révisée) ; mettre à jour `overview-contacts.spec.ts` et la `## Description`/le plan B5.
+
+**Mineurs** (à traiter ici si peu coûteux, sinon à noter) :
+- m1. `overview-contacts.ts:44` et `:64` — « messages » et « téléchargements » figés sous le chiffre : « 1 messages », « 1 téléchargements » (nom accessible du lien « Non lus 1 messages »). Accorder sur la valeur.
+- m2. `overview-contacts.ts:72` — « Aucun message reçu sur la période » alors que `latest` n'est pas filtré par période (vide = aucun message du tout).
+- m3. `admin-overview.ts:238` — la courbe garde ses données en filtrant les datasets sur le libellé `'Visiteurs'` : couplage à une chaîne du presenter. Préférer un builder dédié (ou une option) dans `analytics-presenter.ts`.
+- m4. `admin-nav-groups.ts:1` (`AdminNavKey`) et `:10` (`AdminNavItem`) — exportés sans consommateur hors du fichier (prescrits par le § 4 du plan, donc tolérés) : retirer `export` ou les consommer (`AdminNav` pourrait typer ses testids).
+- m5. Helpers d'accord et de capitale dupliqués (cf. Duplication).
+- m6. `admin-overview.ts:102` — pendant le chargement des statistiques, le chiffre CV des Contacts annonce « indisponible » (`null` = chargement ou erreur, convention du RED) : acceptable, mais une aide technique entend « indisponible » pendant une seconde.
+- m7. Ligne vide au milieu des imports : `overview-audience.ts:132`, `overview-contacts.ts:6`, `overview-content.ts:118`.
+- m8. Cohérence de la spec : la tranche B2 et le § 6 (PR b) listent encore `components/admin-table.ts` (+specs) à modifier, alors que rien n'y est touché (fait en PR a) ; `with-first-of-month.ts`, `components/admin-section-head.ts` et les builders de test (`analytics-builders.ts`, `user-builders.ts`) sont au journal mais absents du § 6.
+- Suivis de la revue de la PR a : m7 traité ici (`settle.ts`, `by-test-id.ts`, `capture-crash.ts`, `press-test-id.ts`, un concept par fichier, `settleBounded` commenté d'une ligne) ; m3 et m6 restent en C1, m5 en C2, m8 en C1, comme décidé.

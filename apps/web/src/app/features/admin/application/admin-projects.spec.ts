@@ -13,13 +13,10 @@ import {
 import { AdminProjectInlineForm } from './components/admin-project-inline-form';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { ToastStore } from '@shared/ui/toast-store';
-import {
-  byTestId,
-  captureCrash,
-  pressTestId,
-  settle,
-  settleBounded,
-} from '@shared/testing/press-test-id';
+import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { captureCrash } from '@shared/testing/capture-crash';
+import { pressTestId } from '@shared/testing/press-test-id';
+import { settle, settleBounded } from '@shared/testing/settle';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 
 function makeProjectsGateway(overrides: Partial<ProjectsGateway> = {}): ProjectsGateway {
@@ -42,9 +39,11 @@ function makeHomeGateway(): HomeGateway {
   return { invalidateBundle: vi.fn() } as unknown as HomeGateway;
 }
 
-async function setup(
-  projects: ProjectsGateway = makeProjectsGateway(),
-): Promise<{ component: AdminProjects; toast: { add: ReturnType<typeof vi.fn> } }> {
+async function setup(projects: ProjectsGateway = makeProjectsGateway()): Promise<{
+  component: AdminProjects;
+  toast: { add: ReturnType<typeof vi.fn> };
+  fixture: ComponentFixture<AdminProjects>;
+}> {
   const toast = { add: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
@@ -58,7 +57,7 @@ async function setup(
   fixture.detectChanges();
   await fixture.whenStable();
   fixture.detectChanges();
-  return { component: fixture.componentInstance, toast };
+  return { component: fixture.componentInstance, toast, fixture };
 }
 
 describe('AdminProjects', () => {
@@ -612,5 +611,26 @@ describe('AdminProjects: lignes en français, tampon et édition annoncée', () 
       panelHoldsForm: true,
       editingId: 'p-1',
     });
+  });
+});
+
+describe('AdminProjects: en-tête de page', () => {
+  it('Given two projects of which one is featured When the page renders Then its single h1 is « Projets » under the overline « 2 réalisations · 1 mise en avant »', async () => {
+    const { fixture } = await setup(
+      makeProjectsGateway({
+        getAllProjects: () =>
+          of([
+            makeProject({ id: 'p-1', featured: true }),
+            makeProject({ id: 'p-2', featured: false }),
+          ]),
+      }),
+    );
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect({
+      overline: testIdText(host, 'admin-page-overline'),
+      title: testIdText(host, 'admin-page-title'),
+      headings: host.querySelectorAll('h1').length,
+    }).toEqual({ overline: '2 réalisations · 1 mise en avant', title: 'Projets', headings: 1 });
   });
 });

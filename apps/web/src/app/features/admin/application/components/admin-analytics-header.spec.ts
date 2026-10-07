@@ -2,7 +2,9 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { describe, it, expect } from 'vitest';
 import { AdminAnalyticsHeader } from './admin-analytics-header';
 import type { DateRangeKey } from '@features/analytics/domain/analytics-presenter';
-import { byTestId, pressTestId, settle, testIdText } from '@shared/testing/press-test-id';
+import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { pressTestId } from '@shared/testing/press-test-id';
+import { settle } from '@shared/testing/settle';
 
 describe('AdminAnalyticsHeader', () => {
   function render(deviceExcluded: boolean): {

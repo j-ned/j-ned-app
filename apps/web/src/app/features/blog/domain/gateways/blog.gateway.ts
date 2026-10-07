@@ -4,6 +4,7 @@ import type { BlogPost, BlogPostInput } from '../models/blog-post.model';
 export abstract class BlogGateway {
   abstract getPublishedPosts(): Observable<readonly BlogPost[]>;
   abstract getAllPostsForAdmin(): Observable<readonly BlogPost[]>;
+  abstract invalidateAdminPosts(): void;
   abstract getPostBySlug(slug: string): Observable<BlogPost>;
   abstract createPost(post: BlogPostInput): Observable<BlogPost>;
   abstract updatePost(id: string, post: Partial<BlogPostInput>): Observable<BlogPost>;

@@ -1,4 +1,4 @@
-import type { ChartData } from 'chart.js';
+import type { ChartData, ChartDataset } from 'chart.js';
 import type {
   StatsOverview,
   DailyChartPoint,
@@ -77,36 +77,56 @@ export function alpha(color: string, pct: number): string {
   return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 }
 
+export type LinePalette = { readonly primary: string; readonly foreground: string };
+
+const dayLabels = (rows: readonly DailyChartPoint[]): string[] =>
+  rows.map((r) => formatChartDay(r.date));
+
+function visitorsDataset(
+  rows: readonly DailyChartPoint[],
+  palette: LinePalette,
+): ChartDataset<'line'> {
+  return {
+    label: 'Visiteurs',
+    data: rows.map((r) => r.visitors),
+    borderColor: palette.primary,
+    backgroundColor: alpha(palette.primary, 12),
+    borderWidth: 2,
+    tension: 0,
+    fill: true,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+  };
+}
+
 export function buildVisitorsChartData(
   rows: readonly DailyChartPoint[],
-  primary: string,
-  accent: string,
+  palette: LinePalette,
 ): ChartData<'line'> {
   return {
-    labels: rows.map((r) => formatChartDay(r.date)),
+    labels: dayLabels(rows),
     datasets: [
-      {
-        label: 'Visiteurs',
-        data: rows.map((r) => r.visitors),
-        borderColor: primary,
-        backgroundColor: alpha(primary, 10),
-        tension: 0.35,
-        fill: true,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-      },
+      visitorsDataset(rows, palette),
       {
         label: 'Pages vues',
         data: rows.map((r) => r.pageviews),
-        borderColor: accent,
-        backgroundColor: alpha(accent, 5),
-        tension: 0.35,
-        fill: true,
+        borderColor: alpha(palette.foreground, 55),
+        borderWidth: 1.5,
+        borderDash: [4, 4],
+        tension: 0,
+        fill: false,
         pointRadius: 0,
         pointHoverRadius: 4,
       },
     ],
   };
+}
+
+export function buildVisitorsOnlyChartData(
+  rows: readonly DailyChartPoint[],
+  palette: LinePalette,
+): ChartData<'line'> {
+  return { labels: dayLabels(rows), datasets: [visitorsDataset(rows, palette)] };
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- le type officiel `ChartOptions<'line'>` est DeepPartial et perd la forme concrète vérifiée par les tests ; on garde l'inférence.

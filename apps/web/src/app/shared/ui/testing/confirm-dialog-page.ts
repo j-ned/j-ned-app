@@ -1,5 +1,6 @@
 import type { ComponentFixture } from '@angular/core/testing';
-import { byTestId, settleBounded } from '@shared/testing/press-test-id';
+import { byTestId } from '@shared/testing/by-test-id';
+import { settleBounded } from '@shared/testing/settle';
 
 type ConfirmDialogView = {
   readonly open: boolean;

@@ -1,7 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { ConfirmDialog } from './confirm-dialog';
-import { byTestId, settle } from '@shared/testing/press-test-id';
+import { byTestId } from '@shared/testing/by-test-id';
+import { settle } from '@shared/testing/settle';
 import {
   answerConfirmDialog,
   confirmDialogElement,

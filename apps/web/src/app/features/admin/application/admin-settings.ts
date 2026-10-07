@@ -1,18 +1,19 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthStore } from '@core/auth/auth-store';
 import { AppIcon } from '@shared/icons/app-icon';
 import { AppIconTile } from '@shared/ui/icon-tile';
+import { AdminPageHeader } from './components/admin-page-header';
 
 @Component({
   selector: 'app-admin-settings',
-  imports: [RouterLink, AppIcon, AppIconTile],
+  imports: [RouterLink, AppIcon, AppIconTile, AdminPageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <header class="mb-10">
-      <h1 class="text-3xl font-bold text-foreground mb-2">Paramètres</h1>
-      <p class="text-sm text-muted">Sécurité du compte</p>
-    </header>
+    <app-admin-page-header [overline]="email()" heading="Paramètres">
+      La sécurité du compte d'administration.
+    </app-admin-page-header>
 
     <section class="mb-10">
       <h2
@@ -47,4 +48,8 @@ import { AppIconTile } from '@shared/ui/icon-tile';
     </section>
   `,
 })
-export class AdminSettings {}
+export class AdminSettings {
+  private readonly _auth = inject(AuthStore);
+
+  protected readonly email = computed(() => this._auth.currentUser()?.email ?? '');
+}

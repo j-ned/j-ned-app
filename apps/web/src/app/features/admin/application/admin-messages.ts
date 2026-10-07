@@ -1,7 +1,6 @@
 import {
   Component,
   DestroyRef,
-  ElementRef,
   inject,
   signal,
   computed,
@@ -18,6 +17,8 @@ import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import { AdminTable } from './components/admin-table';
+import { AdminPageHeader } from './components/admin-page-header';
+import { messagesOverline } from './admin-page-copy';
 import { AdminColExpand } from './components/admin-col-expand';
 import { AdminColBadge } from './components/admin-col-badge';
 import { AdminColContact } from './components/admin-col-contact';
@@ -44,42 +45,15 @@ const FILTER_OPTIONS = [
     ConfirmDialog,
     LoadError,
     AppSkeleton,
+    AdminPageHeader,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
-      <h1
-        #pageTitle
-        tabindex="-1"
-        data-testid="admin-page-title"
-        class="text-2xl font-bold text-foreground"
-      >
-        Messages
-      </h1>
+    <app-admin-page-header [overline]="overline()" heading="Messages">
+      Les demandes reçues par le formulaire Contact, de la plus récente à la plus ancienne.
       @if (listState() === 'ready') {
-        <div class="flex flex-wrap items-center gap-3">
-          <div
-            class="inline-flex rounded-lg border border-foreground/10 p-0.5"
-            role="group"
-            aria-label="Filtrer par statut de lecture"
-          >
-            @for (opt of filterOptions; track opt.id) {
-              <button
-                type="button"
-                [attr.data-testid]="'filter-' + opt.id"
-                [attr.aria-pressed]="readFilter() === opt.value"
-                [class]="
-                  readFilter() === opt.value
-                    ? 'rounded-md min-h-11 px-3 py-1.5 text-sm font-medium bg-primary-bg text-white transition-colors'
-                    : 'rounded-md min-h-11 px-3 py-1.5 text-sm font-medium text-muted hover:text-foreground transition-colors'
-                "
-                (click)="setFilter(opt.value)"
-              >
-                {{ opt.label }}
-              </button>
-            }
-          </div>
+        <div adminPageAside class="flex flex-wrap items-center gap-2.5 lg:justify-end">
           <button
             type="button"
             data-testid="mark-all-read"
@@ -91,7 +65,33 @@ const FILTER_OPTIONS = [
           </button>
         </div>
       }
-    </div>
+    </app-admin-page-header>
+
+    @if (listState() === 'ready') {
+      <div class="mb-6">
+        <div
+          class="inline-flex rounded-lg border border-foreground/10 p-0.5"
+          role="group"
+          aria-label="Filtrer par statut de lecture"
+        >
+          @for (opt of filterOptions; track opt.id) {
+            <button
+              type="button"
+              [attr.data-testid]="'filter-' + opt.id"
+              [attr.aria-pressed]="readFilter() === opt.value"
+              [class]="
+                readFilter() === opt.value
+                  ? 'rounded-md min-h-11 px-3 py-1.5 text-sm font-medium bg-primary-bg text-white transition-colors'
+                  : 'rounded-md min-h-11 px-3 py-1.5 text-sm font-medium text-muted hover:text-foreground transition-colors'
+              "
+              (click)="setFilter(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+    }
 
     @switch (listState()) {
       @case ('loading') {
@@ -179,7 +179,7 @@ export class AdminMessages {
   private readonly contactGateway = inject(ContactGateway);
   private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly _pageTitle = viewChild.required<ElementRef<HTMLHeadingElement>>('pageTitle');
+  private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
   protected readonly statusLabel = (m: ContactMessage): string => (m.read ? 'Lu' : 'Nouveau');
   protected readonly statusTone = (m: ContactMessage): 'neutral' | 'primary' =>
@@ -215,6 +215,9 @@ export class AdminMessages {
 
   private readonly allMessages = computed(() =>
     this.messagesRes.hasValue() ? [...this.messagesRes.value()] : [],
+  );
+  protected readonly overline = computed(() =>
+    this.messagesRes.hasValue() ? messagesOverline(this.messagesRes.value()) : '',
   );
   protected readonly listState = computed(() =>
     loadState(this.messagesRes, () => this.allMessages().length === 0),
@@ -269,7 +272,7 @@ export class AdminMessages {
   protected confirmDeletion(): void {
     const msg = this.pendingDeletion();
     this.pendingDeletion.set(null);
-    this._pageTitle().nativeElement.focus();
+    this._pageHeader().focusTitle();
     if (msg) this.deleteMessage(msg);
   }
 

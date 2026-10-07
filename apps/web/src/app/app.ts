@@ -1,4 +1,4 @@
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, Location, isPlatformBrowser } from '@angular/common';
 import { Component, PLATFORM_ID, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -8,6 +8,8 @@ import { ToastStore } from '@shared/ui/toast-store';
 import { Header } from '@layout/components/header/header';
 import { Footer } from '@layout/components/footer/footer';
 import { ThemeStore } from '@core/theme/theme-store';
+
+const ADMIN_URL = /^\/admin(?:[/?#]|$)/;
 
 @Component({
   selector: 'app-root',
@@ -39,6 +41,7 @@ import { ThemeStore } from '@core/theme/theme-store';
 export class App {
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
+  private readonly initialPath = inject(Location).path();
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly toastStore = inject(ToastStore);
 
@@ -67,8 +70,9 @@ export class App {
     ),
   );
 
-  readonly isAdminRoute = computed(
-    () => this.navigationEnd()?.urlAfterRedirects.startsWith('/admin') ?? false,
+  // Avant le premier NavigationEnd, seule l'adresse demandée dit si la page est admin.
+  readonly isAdminRoute = computed(() =>
+    ADMIN_URL.test(this.navigationEnd()?.urlAfterRedirects ?? this.initialPath),
   );
 
   protected openAdminShortcut(event: Event): void {

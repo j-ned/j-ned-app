@@ -2,7 +2,6 @@ import {
   Component,
   ChangeDetectionStrategy,
   DestroyRef,
-  PLATFORM_ID,
   computed,
   inject,
   resource,
@@ -10,7 +9,7 @@ import {
   type ResourceRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { AnalyticsDeviceExclusion } from '@core/analytics/analytics-device-exclusion';
@@ -35,36 +34,16 @@ import {
   buildPalette,
   buildAnalyticsCsv,
   type DateRangeKey,
+  type LinePalette,
 } from '@features/analytics/domain/analytics-presenter';
-
-const THEME_FALLBACK: Record<string, string> = {
-  '--theme-primary-text': 'oklch(74.5% 0.16 277)',
-  '--theme-primary-bg': 'oklch(54% 0.225 277)',
-  '--theme-accent': 'oklch(72% 0.157 296)',
-  '--theme-foreground': 'oklch(98.5% 0.003 286)',
-  '--theme-muted': 'oklch(70.4% 0.011 286)',
-  '--theme-background': 'oklch(14.5% 0.003 286)',
-  '--theme-status-success': 'oklch(72.3% 0.19 145)',
-  '--theme-status-warn': 'oklch(76.6% 0.16 70)',
-  '--theme-status-error': 'oklch(71.5% 0.18 22)',
-};
+import { readChartPalette, readThemeColor } from './chart-palette';
 
 type ChartPalette = {
-  readonly primaryText: string;
+  readonly line: LinePalette;
   readonly accent: string;
-  readonly foreground: string;
   readonly background: string;
   readonly success: string;
   readonly warn: string;
-};
-
-const DEFAULT_PALETTE: ChartPalette = {
-  primaryText: THEME_FALLBACK['--theme-primary-text'],
-  accent: THEME_FALLBACK['--theme-accent'],
-  foreground: THEME_FALLBACK['--theme-foreground'],
-  background: THEME_FALLBACK['--theme-background'],
-  success: THEME_FALLBACK['--theme-status-success'],
-  warn: THEME_FALLBACK['--theme-status-warn'],
 };
 
 // `value()` lève en état d'erreur : toute lecture de ressource passe par `hasValue()`.
@@ -219,28 +198,19 @@ export class AdminAnalytics {
   protected readonly deviceExclusion = inject(AnalyticsDeviceExclusion);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _document = inject(DOCUMENT);
-  private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly _isDark = inject(ThemeStore).isDark;
 
   // Les couleurs viennent des variables CSS du registre courant : relues à chaque bascule de thème.
   private readonly _palette = computed<ChartPalette>(() => {
     this._isDark();
-    if (!this._isBrowser) return DEFAULT_PALETTE;
     return {
-      primaryText: this._readVar('--theme-primary-text'),
-      accent: this._readVar('--theme-accent'),
-      foreground: this._readVar('--theme-foreground'),
-      background: this._readVar('--theme-background'),
-      success: this._readVar('--theme-status-success'),
-      warn: this._readVar('--theme-status-warn'),
+      line: readChartPalette(this._document),
+      accent: readThemeColor(this._document, '--theme-accent'),
+      background: readThemeColor(this._document, '--theme-background', 'Canvas'),
+      success: readThemeColor(this._document, '--theme-status-success'),
+      warn: readThemeColor(this._document, '--theme-status-warn'),
     };
   });
-
-  private _readVar(token: string): string {
-    const fallback = THEME_FALLBACK[token] ?? 'oklch(50% 0 0)';
-    const v = getComputedStyle(this._document.documentElement).getPropertyValue(token).trim();
-    return v || fallback;
-  }
 
   constructor() {
     interval(30_000)
@@ -275,15 +245,11 @@ export class AdminAnalytics {
   });
 
   readonly chartData = computed(() =>
-    buildVisitorsChartData(
-      valueOr(this.chartResource, []),
-      this._palette().primaryText,
-      this._palette().accent,
-    ),
+    buildVisitorsChartData(valueOr(this.chartResource, []), this._palette().line),
   );
 
   readonly chartOptions = computed(() =>
-    buildLineChartOptions(this._palette().foreground, this._palette().background),
+    buildLineChartOptions(this._palette().line.foreground, this._palette().background),
   );
 
   readonly pagesResource = resource({
@@ -384,12 +350,12 @@ export class AdminAnalytics {
   protected readonly hasLoadError = computed(() => this._failedSources().length > 0);
 
   readonly donutOptions = computed(() =>
-    buildDonutOptions(this._palette().foreground, this._palette().background),
+    buildDonutOptions(this._palette().line.foreground, this._palette().background),
   );
 
   private readonly _buildPalette = computed(() =>
     buildPalette({
-      primary: this._palette().primaryText,
+      primary: this._palette().line.primary,
       accent: this._palette().accent,
       success: this._palette().success,
       warn: this._palette().warn,

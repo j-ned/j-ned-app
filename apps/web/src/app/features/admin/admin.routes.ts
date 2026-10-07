@@ -9,7 +9,7 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: '',
         title: "Vue d'ensemble | Admin",
-        loadComponent: () => import('./application/admin-dashboard').then((m) => m.AdminDashboard),
+        loadComponent: () => import('./application/admin-overview').then((m) => m.AdminOverview),
       },
       {
         path: 'projects',
@@ -32,12 +32,10 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./application/admin-messages').then((m) => m.AdminMessages),
       },
       {
-        path: 'analytics',
+        path: 'audience',
         title: 'Audience | Admin',
         loadComponent: () => import('./application/admin-analytics').then((m) => m.AdminAnalytics),
       },
-      { path: 'analytics/visits', redirectTo: 'analytics', pathMatch: 'full' },
-      { path: 'analytics/projects', redirectTo: 'analytics', pathMatch: 'full' },
       {
         path: 'settings',
         title: 'Paramètres | Admin',
@@ -59,7 +57,10 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'home', redirectTo: '', pathMatch: 'full' },
       { path: 'about', redirectTo: '', pathMatch: 'full' },
       { path: 'about/cv', redirectTo: 'cv', pathMatch: 'full' },
-      { path: 'stats', redirectTo: 'analytics', pathMatch: 'full' },
+      { path: 'analytics', redirectTo: 'audience', pathMatch: 'full' },
+      { path: 'analytics/visits', redirectTo: 'audience', pathMatch: 'full' },
+      { path: 'analytics/projects', redirectTo: 'audience', pathMatch: 'full' },
+      { path: 'stats', redirectTo: 'audience', pathMatch: 'full' },
       { path: 'security', redirectTo: 'settings/security', pathMatch: 'full' },
 
       { path: '**', redirectTo: '' },

@@ -455,6 +455,42 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **Mobile:** drawer (`shared/ui/drawer.ts`) via icon hamburger.
 - **Focus visible:** outline 2px Signal Indigo cohérent avec les boutons.
 
+### Coque admin (`features/admin/application/admin-layout.ts`, `components/admin-nav.ts`)
+
+- **Landmarks:** `App` garde le seul `<main>` ; la coque n'émet ni `main`, ni `aside`, ni titre. Header et Footer publics absents sous `/admin` dès le premier rendu (l'adresse demandée suffit, sans attendre la navigation).
+- **Barre latérale (à partir de `lg`, 1 024 px):** colonne de `15.75rem`, `sticky top-0 h-svh`, filet droit `line`. En tête, monogramme « JN » (carré 40 px, `rounded-[0.625rem]`, `border-primary/30`, `bg-primary/12`, `text-primary`) et « Julien Nédellec / Administration » (mono 12 px). Contenu de page : `max-w-[72.5rem]`, `px-14 pt-11`, corps 15 px.
+- **Navigation:** un seul `<nav aria-label="Administration">`. « Vue d'ensemble » hors groupe, puis trois groupes `role="group"` nommés par `aria-labelledby` : Contenu (Projets, Articles, CV), Audience (Audience, Messages), Compte (Paramètres). Libellé de groupe en mono 12 px capitales, `tracking-[0.06em]`, `text-muted`. Lien de 44 px, `text-muted`, survol `bg-surface-elevated`. Page courante : `aria-current="page"` (via `routerLinkActive`), texte `foreground` semi-gras, libellé souligné d'un trait intérieur de 2 px `primary` (même grammaire que le groupe de filtres), icône `primary`. Comptes en mono 12 px à droite (projets, articles, non-lus, ce dernier en `primary` dès qu'il y en a un), suffixe « non lu(s) » en `sr-only`.
+- **Pied:** « Voir le site » (nouvel onglet, annoncé en `sr-only`), bascule de thème (« Passer en mode clair / sombre »), « Se déconnecter », e-mail du compte en mono 12 px.
+- **Mobile (sous `lg`):** barre `sticky` (monogramme 34 px, libellé de la page courante en display 16 px, bouton menu 44 px `aria-expanded` + `aria-controls="admin-drawer"`), tiroir `Drawer` à gauche avec la même navigation ; un lien ou « Se déconnecter » le ferme.
+
+### En-tête de page admin (`features/admin/application/components/admin-page-header.ts`)
+
+- Grammaire des pages publiques, plus dense : sur-titre mono 13 px `text-primary` (compte ou période, `admin-page-copy.ts`), `h1` unique `font-extrabold leading-none tracking-[-0.04em]` (`2.5rem` en mobile, `clamp(2.25rem, 3.4vw, 3.25rem)` à partir de `lg`), `tabindex="-1"` pour recevoir le focus après une suppression, introduction `max-w-[60ch]` `text-muted` 17 px.
+- Action principale ou cartouche projetées par `[adminPageAside]` dans une seconde colonne de `22rem` alignée en bas (à partir de `lg`, seulement si un aside est projeté).
+- Dates des sur-titres en français, « 1er » pour le premier jour du mois.
+
+### Vue d'ensemble admin (`features/admin/application/admin-overview.ts`)
+
+- **En-tête:** sur-titre « Mercredi 7 octobre 2026 · 30 derniers jours » (date lue à l'ouverture de la page), `h1` « Vue d'ensemble », introduction = phrase de synthèse (`overview-copy.ts`) ; cartouche « En ligne » (`nedellec-julien.fr`, une rangée par nature puis « Articles ») en aside.
+- **Grille:** deux rangées de deux colonnes `minmax(0,1.65fr) / minmax(0,1fr)`, gouttière 56 px, à partir de `lg` ; une colonne en dessous. Audience et Contacts, puis Contenu en ligne et Actions rapides.
+- **Titres de section:** `AdminSectionHead` (`h2` Archivo gras 22 px élargi 106 %, filet bas `line-strong` 1,5 px, lien « … → » `text-primary` 44 px à droite).
+- **Audience:** grand chiffre des visiteurs (Archivo extra-gras 64 px, 52 px en mobile), sessions en `text-muted`, courbe des visiteurs seule (trait `primary` 2 px, aire `primary` 12 %, traits droits, sans axes), légende textuelle en `figcaption` `sr-only` ; relevé en dessous.
+- **Contacts:** deux chiffres liés (non-lus, CV sur 30 jours), puis les trois derniers messages ou l'état vide « Boîte vide » avec « Ouvrir la page Contact » (nouvel onglet).
+- **Contenu en ligne:** cinq rangées (articles publiés récents, puis projets dans l'ordre public), vignette 16/10 (projet) ou 1200/630 (article) décorative, titre en lien étiré, méta mono 12 px, tampon (« Publié » ou nature) ; état vide « Rien en ligne ».
+- **Actions rapides:** liens en `link-btn-primary` (« Nouveau projet ») puis `link-btn-outline`.
+- **Indisponible ≠ zéro:** une source en chargement montre un squelette (`role="status"`), une source en erreur affiche « indisponible » (ou « — » `aria-hidden` + `sr-only`) là où elle compte et une seule `LoadError` par section, jamais un « 0 ».
+
+### Relevé (`features/admin/application/components/admin-readout.ts`)
+
+- **API:** `items: readonly ReadoutItem[]` (`{ label, value, unit, detail }`).
+- **Structure:** un seul `dl`, une entrée par `div` : `dt` mono 12 px capitales `text-muted`, `dd` = valeur Archivo gras 34 px `tabular-nums` suivie de l'unité à 0,55 em, puis détail 13 px `text-muted`.
+- **Traits:** filet haut `line-strong` 1,5 px, filet bas et séparateurs verticaux `line` ; colonnes égales à partir de `sm`, deux colonnes en dessous.
+
+### État vide (`features/admin/application/components/admin-empty-state.ts`)
+
+- **API:** `stamp` (requis) ; phrase et action projetées.
+- **Apparence:** cadre tireté `line-strong` 1 px, `rounded-sm`, tampon en premier, texte 14 px `text-muted` limité à 42 caractères. Un état vide dessiné, pas un texte centré gris.
+
 ### Admin Table (`admin-table*` utilities)
 
 - **Shell:** `overflow-hidden rounded-xl border border-foreground/8 bg-foreground/2`.
@@ -474,11 +510,13 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 
 ### Drawer (`shared/ui/drawer.ts`)
 
-À documenter — overlay, scroll-lock, focus trap, escape-to-close.
+Overlay, verrouillage du défilement, piège de focus (Tab et Maj+Tab restent dans le panneau), Échap ferme et rend le focus à l'élément qui l'a ouvert. Dans la coque admin, le bouton qui l'ouvre porte `aria-expanded` et `aria-controls` vers l'hôte du tiroir.
 
 ### Chart (`shared/ui/chart.ts`)
 
 Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionnelles (au-delà de Signal Indigo + status) sont tolérées pour différencier les séries — mais elles doivent rester dans la famille des dérivées indigo/violet (pas de teal/coral aléatoire).
+
+Courbe des visiteurs (`buildVisitorsChartData`) : une seule teinte, « Visiteurs » trait `primary` plein, « Pages vues » `foreground` 55 % tireté (4/4), traits droits (`tension: 0`). Couleurs lues sur les jetons du registre courant (`readChartPalette`) et relues à chaque bascule de thème ; repli couleur système `CanvasText`, jamais une couleur en dur.
 
 ## 6. Do's and Don'ts
 
