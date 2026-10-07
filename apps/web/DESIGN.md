@@ -315,7 +315,8 @@ Un site de démonstration présenté sur une page d'offre, dans la section « Ex
 
 La mention portée sur un plan, reprise pour dire la nature d'une chose : « Démo » sur la carte de démo, « En production », « Démo » ou « Script » sur un projet (`ProjectKindStamp`, ADR-0008).
 
-- **API:** aucune entrée ; le texte est projeté.
+- **API:** `dashed` (défaut `false`) ; le texte est projeté.
+- **Pointillé:** `dashed` ajoute `border-dashed` à l'hôte et rien d'autre : un état provisoire (« Brouillon » de la liste des articles admin), jamais une nature.
 - **Apparence unique:** classes sur l'hôte, sans élément enveloppant : mono majuscule `text-xs`, interlettrage 0,06 em, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`, `rounded-sm`, marges `px-2 py-1`. Une seule apparence pour toutes les natures : c'est le **texte** qui les distingue, jamais une couleur.
 - **Placement:** le consommateur le positionne : coin haut gauche du visuel sur la carte de démo, sur la carte de projet de la home et sur la couverture de projet (`ProjectCover`, ci-dessous), au-dessus du `h1` dans l'en-tête du détail. Posé sur un visuel couvert par un lien étiré, il laisse passer le clic (`pointer-events-none`).
 - **Accessibilité:** texte lu tel quel, sans rôle ni `aria-*` ; la nature est dite par le texte, pas par une couleur ni par la seule position.
@@ -338,7 +339,7 @@ Un projet en production présenté en détail dans les Réalisations (`/projects
 
 - **Entrée:** `caseStudy: CaseStudyView`, `priority` (défaut `false`), `reversed` (défaut `false`) ; sortie `liveLinkClicked` (suivi du lien externe par la page).
 - **Couverture (`ProjectCover`):** `figure` à ratio fixe `aspect-[16/10]` (zéro CLS), `rounded-md`, trait `line-strong`, `bg-surface` ; image `NgOptimizedImage` en `fill` + `object-cover`, sans `ngSrcset` ni `sizes` (aucun `IMAGE_LOADER` : une seule variante servie) ; repli `div aria-hidden` de même ratio sans image. Tampon de nature en haut à gauche, qui laisse passer le clic. Une seule couverture `priority` par page : la première étude de cas.
-- **Structure:** `article` en grille `lg:grid-cols-12`, couverture `lg:col-span-7` puis texte `lg:col-span-5` ; empilés en mobile, couverture au-dessus. L'alternance gauche/droite passe par `lg:order-last` sur la couverture (`reversed`, la page passe `$even`) : seul l'ordre visuel change, jamais le DOM ni l'ordre du focus.
+- **Structure:** hôte `@container` (requête de conteneur, ADR-0013) ; `article` en grille `@min-[60rem]:grid-cols-12`, couverture `@min-[60rem]:col-span-7` puis texte `@min-[60rem]:col-span-5` ; empilés sous un conteneur de 60rem, couverture au-dessus. Sur `/projects`, la bascule tombe à 1 008 px de viewport (conteneur de 960 px) ; dans la colonne de 25rem de l'aperçu admin, l'étude de cas reste empilée. Aucune classe de point de rupture de viewport dans le composant. L'alternance gauche/droite passe par `@min-[60rem]:order-last` sur la couverture (`reversed`, la page passe `$even`, liée par `[class]` : un nom à crochets ne se lie pas en `[class.x]`) : seul l'ordre visuel change, jamais le DOM ni l'ordre du focus.
 - **Texte:** overline mono `text-muted` (« 01 · catégorie »), `h3` du nom, accroche `text-muted max-w-[46ch]`, puis les repères (Stack, Point fort, Périmètre) en `FactList` (« Liste de repères », ci-dessous).
 - **Actions:** « Voir la fiche » en `link-btn-primary`, nom du projet en `sr-only`, flèche `aria-hidden` ; « Ouvrir l'application » en `link-btn-outline` si le projet a une URL, nouvel onglet `rel="noopener noreferrer"`, nom et « nouvel onglet » en `sr-only`, icône `external-link`.
 
@@ -391,8 +392,8 @@ La page `/blog` reprend le gabarit des Réalisations : en-tête à cartouche, fi
 
 Un article de la liste du blog, lu comme une étude de cas.
 
-- **Entrée:** `post: BlogPostRowView` (vue calculée par `toBlogListView`), aucun calcul dans le composant.
-- **Structure:** `article relative` en grille, texte puis couverture à droite (`20rem`) à partir de `lg`, couverture au-dessus en mobile ; séparée de la suivante par un trait `line`. Texte : surtitre mono `text-xs text-muted` (« 9 sept. 2026 · 13 min de lecture », date omise si absente), `h2` du titre (texte simple), extrait `text-muted max-w-[62ch]`, repère « Sujets » (trois premiers tags, `FactList`), lien « Lire l'article ».
+- **Entrée:** `post: BlogPostRowView` (vue calculée par `toBlogPostRowView`, appliquée par `toBlogListView` à chaque article et par l'aperçu admin), aucun calcul dans le composant.
+- **Structure:** hôte `@container` (ADR-0013) ; `article relative` en grille, texte puis couverture à droite (`20rem`) à partir d'un conteneur de 60rem (`@min-[60rem]:`), couverture au-dessus en dessous ; aucune classe de point de rupture de viewport. Sur `/blog`, la bascule tombe à 1 008 px de viewport (conteneur de 960 px) ; dans la colonne de 25rem de l'aperçu admin, la ligne reste empilée ; séparée de la suivante par un trait `line`. Texte : surtitre mono `text-xs text-muted` (« 9 sept. 2026 · 13 min de lecture », date omise si absente), `h2` du titre (texte simple), extrait `text-muted max-w-[62ch]`, repère « Sujets » (trois premiers tags, `FactList`), lien « Lire l'article ».
 - **Couverture:** `figure` à ratio `aspect-[1200/630]`, `rounded-md`, trait `line-strong`, `bg-surface`, image `NgOptimizedImage` en `fill` + `object-cover`, `alt=""` (décorative : le titre et le lien nomment l'article), qui laisse passer le clic (`pointer-events-none`). Pas de zoom au survol.
 - **Cible:** un seul interactif, le lien « Lire l'article » `text-primary` `min-h-11`, titre de l'article en `sr-only` pour un nom distinct par ligne, étiré sur toute la ligne (`after:absolute after:inset-0`). Pas de pastille ni de lien par tag.
 - **Survol:** le titre passe en `primary` (`group-hover`).
@@ -447,6 +448,8 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **Textarea:** hérite de `form-input` + `min-h-[8rem] resize-y leading-relaxed`.
 - **Label:** utility `form-label` → `text-sm font-medium mb-1.5`.
 - **Error:** utility `form-error` → `block text-xs text-status-error mt-1`.
+- **Libellé d'éditeur:** utility `field-label` → `flex justify-between items-baseline gap-3 text-sm font-semibold mb-1.5` ; mention à droite (« obligatoire ») en mono 12 px `text-muted`, dans le `label`.
+- **Indication d'éditeur:** utility `field-hint` → `flex justify-between gap-3 mt-1.5 text-[0.78125rem] text-muted` ; à gauche le texte lié par `aria-describedby`, à droite un compteur mono 12 px `tabular-nums` « 137 / 160 » hors de la description accessible.
 
 ### Navigation
 
@@ -490,6 +493,44 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 
 - **API:** `stamp` (requis) ; phrase et action projetées.
 - **Apparence:** cadre tireté `line-strong` 1 px, `rounded-sm`, tampon en premier, texte 14 px `text-muted` limité à 42 caractères. Un état vide dessiné, pas un texte centré gris.
+
+### Liste éditoriale des projets (`features/admin/application/components/admin-project-row.ts`)
+
+- **Filtre:** `FilterGroup` « Filtrer par nature » (Tous + trois natures, comptes, nature vide désactivée) au-dessus de la liste.
+- **Ligne:** hôte `li` (liste `ul role="list"`), filet bas `line`, `py-6.5`. À partir de `lg`, grille `2.25rem / 13.5rem / minmax(0,1fr) / auto`, `gap-7` : rang mono 13 px `text-muted` (décoratif, `aria-hidden`), `ProjectCover` 16/10 avec son tampon, corps, actions. Entre `sm` et `lg` : couverture `10rem` à gauche, actions sous le corps ; sous `sm`, tout empilé.
+- **Corps:** sur-titre mono 12 px « 01 · Catégorie » (rang dans la liste complète, stable sous un filtre), `h2` Archivo extra-gras 22 px élargi 106 % `tracking-[-0.03em]`, accroche 14,5 px `text-muted` `line-clamp-2` limitée à 62 caractères, ou mention « Accroche vide : … » 13 px précédée d'un point `primary` 6 px ; `FactList` (Stack : 4 outils + « +N », Accueil : Mis en avant) limitée à `40rem`.
+- **Actions:** trois cibles de 44 px nommées « Voir la fiche publique : X (nouvel onglet) », « Modifier : X » (liens, `text-foreground`, survol `surface-elevated`) et « Supprimer : X » (`Button` danger texte).
+
+### Éditeur de projet (`features/admin/application/admin-project-editor.ts`, `components/admin-project-form.ts`)
+
+- **En-tête:** fil d'Ariane `nav aria-label="Fil d'Ariane"` mono 13 px (« Projets » `text-primary` 44 px, `/` décoratif, page courante `aria-current="page"`), `h1` de l'en-tête admin (titre **enregistré**, il ne suit pas la saisie), phrase sur le déploiement ; actions à droite : « Voir l'aperçu » `link-btn-outline` (icône `eye`, `routerLink="." fragment="apercu"`, masqué à partir de `lg`) et « Voir la fiche » `link-btn-outline` pour un projet existant.
+- **Colonnes:** à partir de `2xl` (1 536 px), grille `minmax(0,1fr) / 25rem`, `gap-14` ; la seconde colonne (`id="apercu"`, `scroll-mt-6`) suit le formulaire dans le DOM, `2xl:sticky 2xl:top-6`, et empile l'aperçu public puis le sommaire, `gap-3.5`. Sous `2xl`, elle passe sous le formulaire (`gap-10`) et le lien « Voir l'aperçu » y mène : avec la barre latérale, une colonne de 25rem plus tôt laisserait moins de 560 px au formulaire (204 px à 1 024, 460 à 1 280, mesurés).
+- **Couverture:** groupe « Couverture » (`role="group"`) ; avec une image enregistrée, `ProjectCover` (tampon de nature, `alt` « Couverture actuelle de X ») et zone de dépôt côte à côte à partir de `sm` (`15rem / minmax(0,1fr)`, `gap-4.5`), empilées dessous ; sans image, la zone seule. La zone ne montre plus l'image enregistrée, seulement le fichier choisi.
+- **Sections:** `fieldset[app-admin-form-section]`, légende flottante pleine largeur : numéro mono 13 px `text-primary` « 01 · », titre Archivo gras 21 px élargi 106 %, description 14 px `text-muted`, filet bas `line-strong` 1,5 px. 34 px entre deux sections. La section Galerie est hors du `<form>` (formulaires imbriqués interdits).
+- **Nature:** trois cartes-radios (`label` bord `field` `rounded-md` `p-3.5`, radio natif invisible, pastille 18 px dessinée, tampon, définition 13 px `text-muted`) ; cochée : bord et trait intérieur `primary` ; focus clavier : contour 2 px `primary` décalé de 2 px sur la carte.
+- **Lignes répétées:** colonnes `2rem / 11rem / 1fr / 2.75rem` (N°, champ, champ, suppression), en-tête mono 12 px capitales décoratif, libellés numérotés en `sr-only` ; sous `sm`, le second champ passe sous le premier.
+- **Galerie:** légende de section seul titre ; liste `ul role="list"` en grille de requête de conteneur (hôte `@container`) : 1 colonne, 2 à partir de 26rem, 3 à partir de 36rem, `gap-4.5` ; la zone d'ajout reste sous la liste. Chaque capture est un seul `form` (texte alternatif) en pile : vignette 16/10 `rounded-md` trait `line-strong`, libellé `field-label`, champ puis « Enregistrer » `outlined`, et une barre position mono 12 px « 2 / 5 » + actions icônes 44 px (`arrow-up`, `arrow-down`, `trash` danger), noms accessibles « Monter / Descendre / Supprimer la capture n ». « Monter » absent sur la première, « Descendre » sur la dernière ; la suppression se confirme en ligne.
+- **Barre d'enregistrement (`components/admin-save-bar.ts`):** hôte `sticky bottom-0 z-10`, filet haut `line-strong` 1,5 px, fond `background`, `py-3.5`, `mt-10` sous le formulaire. À gauche l'état `role="status"` 14 px précédé d'un point 6 px (`primary` s'il y a des modifications, `line-strong` sinon) : « Aucune modification », « 1 modification non enregistrée », « n modifications non enregistrées » (brouillon, ensemble de tags et couverture choisie comptés champ par champ). À droite « Annuler » `link-btn-outline` (lien vers la liste, passe par la garde) et « Enregistrer » `link-btn-primary` `type="submit" form="project-form"`, désactivé **seulement** pendant l'envoi (`disabled:opacity-60 disabled:cursor-wait`), jamais par une erreur ni à zéro modification.
+- **Aperçu public (`components/admin-project-preview.ts`):** `section` nommée par son `h2` « Aperçu public », cadre `rounded-sm` trait `line-strong` 1,5 px ; tête `bg-surface` `p-3.5` (titre Archivo gras élargi 110 %, référence mono 12 px « Réalisations · <nature> », « en direct » mono 12 px à droite), filet `line-strong` 1,5 px ; mention « Nouvelle couverture : visible ici après l'enregistrement. » 13 px quand un fichier attend (`NgOptimizedImage` refuse `blob:`) ; corps `inert` `bg-background` `p-4.5` : la vraie `ProjectCaseStudy` (production, rang `max(order, 1) − 1`) ou la vraie `ProjectGridCard` (démo, script), hors focus et hors arbre accessible ; sans nature, « Choisissez une nature pour voir la carte. » centré 14 px `text-muted`.
+- **Sommaire (`components/admin-form-toc.ts`):** `nav aria-label="Sections du formulaire"`, filet haut `line` ; cinq liens 44 px, filet bas `line`, 14 px `text-muted` (survol `foreground`) : libellé court « 02 · Présentation » à gauche, état mono 12 px `text-primary` « modifié » à droite. `routerLink="." [fragment]` (un `href="#id"` sous `<base href="/">` ouvrirait `/#id`) ; le défilement passe par `anchorScrolling`.
+- **Quitter:** garde `unsavedChangesGuard` sur `projects/new` et `projects/:id` ; avec des modifications, `ConfirmDialog` « Quitter sans enregistrer ? » / « Quitter sans enregistrer » (danger) / « Continuer l'édition » (focus initial) ; fermeture d'onglet ou rechargement : boîte native `beforeunload`.
+
+### Liste des articles (`features/admin/application/admin-blog.ts`, `components/admin-post-row.ts`)
+
+- **Filtre:** `FilterGroup` « Filtrer par statut » (Tous, Publiés, Brouillons ; comptes de la liste entière, statut vide désactivé) au-dessus du tableau.
+- **Tableau:** `table` pleine largeur, `caption` `sr-only` qui dit l'ordre (« Articles, du plus récent au plus ancien » ou l'inverse) ; six `th scope="col"` mono 12 px capitales `text-muted`, filet bas `line-strong` 1,5 px : Article, Statut, Publié le, Lecture, J'aime, actions (`sr-only`). Seul « Publié le » est triable : `aria-sort` sur le `th`, `button` natif 44 px avec flèche `arrow-down` / `arrow-up` décorative ; les brouillons restent en fin dans les deux sens.
+- **Ligne (`tr[app-admin-post-row]`):** filet bas `line`, `py-3.5`. Cellule Article : vignette 1200/630 de `8rem` (`rounded-sm`, trait `line-strong`, `bg-surface`, `alt=""`, « sans couverture » mono décoratif sans image), titre Archivo gras 17 px, sujets mono 12 px `text-muted` (trois premiers, « A · B · C ») ; statut en `Stamp` (« Publié », « Brouillon » pointillé) ; date mono 14 px (« — » décoratif et « non publié » `sr-only` pour un brouillon) ; lecture mono « 13 min » ; j'aime mono aligné à droite `tabular-nums`.
+- **Actions:** cibles de 44 px sur une ligne à partir de `sm` : « Lire en ligne : X (nouvel onglet) » (publiés seulement, `/blog/<slug>`, `noopener`), « Modifier : X » (lien vers l'éditeur), « Supprimer : X » (`Button` danger, confirmation).
+- **Petit écran:** sous `md`, Publié le, Lecture et J'aime (`th` et `td`) passent en `hidden md:table-cell` et la cellule Article les reprend en méta mono 12 px (« 9 sept. 2026 · 13 min · 0 j'aime », « Non publié · … ») ; sous `sm`, la vignette disparaît et les actions s'empilent dans leur cellule. Aucun défilement horizontal à 375 px.
+
+### Éditeur d'article (`features/admin/application/admin-post-editor.ts`, `components/admin-post-form.ts`)
+
+Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, sommaire, garde), à ces différences près :
+
+- **En-tête:** fil d'Ariane « Articles », `h1` = titre enregistré ou « Nouvel article » ; seule action, « Voir l'aperçu » sous `lg`.
+- **États:** squelette `role="status"` ; `LoadError` avec « Réessayer » ; article absent de la liste : « Cet article n'existe pas ou a été supprimé. » centré `text-muted` ; les deux derniers suivis du lien « Retour aux articles ».
+- **Sections:** `01 · Article` (titre, extrait, sujets), `02 · Contenu` (Markdown en mono 14 px sur 20 lignes, puis son rendu `prose` sous le champ, groupe nommé « Rendu », 32rem de haut au plus avec défilement), `03 · Couverture` (image enregistrée 1200/630 `15rem` et zone de dépôt côte à côte à partir de `sm`), `04 · Publication` (deux cartes-radios « Brouillon » / « Publié », bord `field`, cochée en `primary`, et la mention « Publier l'article redéploie le site : il est en ligne quelques minutes plus tard. » en `field-hint` si « Publié »).
+- **Aperçu public (`components/admin-post-preview.ts`):** même cadre que celui des projets, référence « Blog · Liste des articles » ; corps `inert` : la vraie `BlogPostRow` (jamais prioritaire), empilée dans la colonne de 25rem, temps de lecture en direct.
 
 ### Admin Table (`admin-table*` utilities)
 

@@ -141,10 +141,14 @@ const failed = (sources: readonly ResourceRef<unknown>[]): readonly ResourceRef<
       <section data-testid="overview-quick" aria-labelledby="overview-quick-heading">
         <app-admin-section-head heading="Actions rapides" headingId="overview-quick-heading" />
         <div class="mt-5 flex flex-wrap gap-2.5">
-          <a data-testid="quick-new-project" routerLink="/admin/projects" class="link-btn-primary">
+          <a
+            data-testid="quick-new-project"
+            routerLink="/admin/projects/new"
+            class="link-btn-primary"
+          >
             <app-icon name="plus" [size]="16" />Nouveau projet
           </a>
-          <a data-testid="quick-new-post" routerLink="/admin/blog" class="link-btn-outline">
+          <a data-testid="quick-new-post" routerLink="/admin/blog/new" class="link-btn-outline">
             <app-icon name="plus" [size]="16" />Nouvel article
           </a>
           <a data-testid="quick-cv" routerLink="/admin/cv" class="link-btn-outline">

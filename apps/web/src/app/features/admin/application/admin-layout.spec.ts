@@ -1,3 +1,4 @@
+import { ViewportScroller } from '@angular/common';
 import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
@@ -290,6 +291,22 @@ describe('AdminLayout: bascule de thème', () => {
     }).toEqual({
       before: { label: 'Passer en mode clair', htmlDark: true },
       after: { label: 'Passer en mode sombre', htmlDark: false, stored: 'light' },
+    });
+  });
+});
+
+describe('AdminLayout: décalage des ancres', () => {
+  it('Given the shell When it opens and then closes Then anchors stop 24 px under the top inside it and at 0 once it is gone', async () => {
+    const setOffset = vi.fn<ViewportScroller['setOffset']>();
+    TestBed.overrideProvider(ViewportScroller, { useValue: { setOffset } });
+    const { fixture } = await renderShell('/admin');
+    const opened = [...setOffset.mock.calls];
+
+    fixture.destroy();
+
+    expect({ opened, closed: setOffset.mock.calls.at(-1) }).toEqual({
+      opened: [[[0, 24]]],
+      closed: [[0, 0]],
     });
   });
 });

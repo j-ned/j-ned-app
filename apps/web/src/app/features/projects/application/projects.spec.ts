@@ -622,7 +622,7 @@ describe('Projects', () => {
         root.querySelectorAll<HTMLElement>('[data-testid="project-case-study-cover"]'),
       );
 
-      expect(covers.map((cover) => cover.classList.contains('lg:order-last'))).toEqual([
+      expect(covers.map((cover) => cover.classList.contains('@min-[60rem]:order-last'))).toEqual([
         true,
         false,
         true,

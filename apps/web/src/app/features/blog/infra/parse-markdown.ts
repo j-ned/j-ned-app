@@ -15,6 +15,10 @@ const SANITIZE_OPTIONS = {
 // `mon-titre` puis `mon-titre-2`. Remis à zéro à chaque `parse` par le hook `preprocess`.
 const usedHeadingIds = new Map<string, number>();
 
+// État de l'appel en cours : `parse` est synchrone et `walkTokens` parcourt tout avant le rendu.
+let topHeadingLevel = 1;
+let highestHeadingDepth = 6;
+
 function uniqueHeadingId(text: string): string {
   const base = slugifyHeading(text) || 'section';
   const count = (usedHeadingIds.get(base) ?? 0) + 1;
@@ -28,14 +32,20 @@ const marked = new Marked({
   hooks: {
     preprocess(markdown: string): string {
       usedHeadingIds.clear();
+      highestHeadingDepth = 6;
       return markdown;
     },
+  },
+  walkTokens(token): void {
+    if (token.type === 'heading') highestHeadingDepth = Math.min(highestHeadingDepth, token.depth);
   },
   renderer: {
     // Ancre stable par titre (`#aes-256-gcm-un-iv-unique`) : liens profonds et sommaire possibles.
     heading({ tokens, depth }: Tokens.Heading): string {
       const id = uniqueHeadingId(this.parser.parseInline(tokens, this.parser.textRenderer));
-      return `<h${depth} id="${id}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
+      const shift = Math.max(0, topHeadingLevel - highestHeadingDepth);
+      const level = Math.min(depth + shift, 6);
+      return `<h${level} id="${id}">${this.parser.parseInline(tokens)}</h${level}>\n`;
     },
   },
 });
@@ -45,7 +55,11 @@ const marked = new Marked({
  * a disparu en v5) : c'est ici, et seulement ici, que le HTML devient digne de confiance pour
  * `bypassSecurityTrustHtml` (cf. ADR-0002).
  */
-export function parseMarkdown(markdown: string): string {
+export function parseMarkdown(
+  markdown: string,
+  options: { topHeadingLevel?: number } = {},
+): string {
+  topHeadingLevel = options.topHeadingLevel ?? 1;
   const html = marked.parse(markdown, { async: false }) as string;
   return DOMPurify.sanitize(html, SANITIZE_OPTIONS);
 }

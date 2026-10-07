@@ -3,7 +3,12 @@ import type { Fact } from '@shared/ui/fact-list';
 import type { BlogPost } from '../domain/models/blog-post.model';
 import type { BlogCategoryFilter } from '../domain/models/blog-tag.model';
 import { makeBlogPost, productionPosts } from '../testing/blog-post-builders';
-import { toBlogListView, type BlogListFilter, type BlogPostRowView } from './blog-list-view';
+import {
+  toBlogListView,
+  toBlogPostRowView,
+  type BlogListFilter,
+  type BlogPostRowView,
+} from './blog-list-view';
 
 const ALL: BlogListFilter = { by: 'category', category: 'all' };
 
@@ -359,5 +364,42 @@ describe('toBlogListView', () => {
         ['chiffrement-cote-client', true],
       ]);
     });
+  });
+});
+
+describe('toBlogPostRowView', () => {
+  const POST = makeBlogPost({
+    slug: 'chiffrement-cote-client',
+    title: 'Chiffrement côté client',
+    excerpt: 'Le cas DashFlow.',
+    contentMarkdown: Array.from({ length: 1136 }, () => 'mot').join(' '),
+    coverImage: '/covers/chiffrement.avif',
+    tags: ['Chiffrement', 'AES-256-GCM', 'PBKDF2', 'Angular'],
+    publishedAt: '2026-08-31T12:00:00Z',
+  });
+
+  it.each([true, false])(
+    'Given a post and priority %s When its row is built on its own Then it carries everything the article line shows',
+    (priority) => {
+      expect(toBlogPostRowView(POST, priority)).toEqual({
+        slug: 'chiffrement-cote-client',
+        title: 'Chiffrement côté client',
+        excerpt: 'Le cas DashFlow.',
+        publishedAt: '2026-08-31T12:00:00Z',
+        readingTime: '6\u00a0min de lecture',
+        facts: [{ label: 'Sujets', value: 'Chiffrement · AES-256-GCM · PBKDF2' }],
+        coverImage: '/covers/chiffrement.avif',
+        linkContext: '\u00a0: Chiffrement côté client',
+        priority,
+      } satisfies BlogPostRowView);
+    },
+  );
+
+  it('Given the blog list When its rows are built Then each one is the row built on its own, only the first with priority', () => {
+    const posts = productionPosts();
+
+    expect(toBlogListView(posts, ALL).rows).toEqual(
+      posts.map((post, index) => toBlogPostRowView(post, index === 0)),
+    );
   });
 });

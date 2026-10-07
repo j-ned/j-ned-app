@@ -6,7 +6,6 @@ export abstract class ProjectsGateway {
   abstract invalidateAllProjects(): void;
   abstract getFeaturedProjects(): Observable<readonly Project[]>;
   abstract invalidateFeatured(): void;
-  abstract getCategories(): Observable<readonly string[]>;
   abstract getProjectById(id: string): Observable<Project>;
   abstract createProject(project: ProjectInput): Observable<Project>;
   abstract updateProject(id: string, project: Partial<ProjectInput>): Observable<Project>;

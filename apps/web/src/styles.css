@@ -186,6 +186,15 @@ body {
   border-radius: 4px;
 }
 
+/* Focus au-dessus de la barre collante (WCAG 2.4.11) : sa hauteur mesurée par largeur + 1rem. */
+:root:has(app-admin-save-bar) {
+  scroll-padding-bottom: 7.625rem;
+
+  @media (width >= 40rem) {
+    scroll-padding-bottom: 5.625rem;
+  }
+}
+
 /* Override autofill du navigateur pour garder le thème */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
@@ -331,6 +340,14 @@ input:-webkit-autofill:focus {
 
 @utility form-error {
   @apply block text-xs text-status-error mt-1;
+}
+
+@utility field-label {
+  @apply mb-1.5 flex items-baseline justify-between gap-3 text-sm font-semibold text-foreground;
+}
+
+@utility field-hint {
+  @apply mt-1.5 flex justify-between gap-3 text-[0.78125rem] text-muted;
 }
 
 /* ---------------------------------------------------------------- *

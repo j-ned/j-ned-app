@@ -8,12 +8,12 @@ import type { BlogPostRowView } from '../blog-list-view';
 @Component({
   selector: 'app-blog-post-row',
   imports: [NgOptimizedImage, RouterLink, DatePipe, AppIcon, FactList],
-  host: { class: 'block', '[class.animate-fade-up]': '!post().priority' },
+  host: { class: '@container block', '[class.animate-fade-up]': '!post().priority' },
   template: `
     @let p = post();
     <article
       data-testid="post-row"
-      class="group relative grid gap-5 border-b border-line py-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-12"
+      class="group relative grid gap-5 border-b border-line py-10 @min-[60rem]:grid-cols-[minmax(0,1fr)_20rem] @min-[60rem]:items-start @min-[60rem]:gap-12"
     >
       <div>
         <p data-testid="post-overline" class="font-mono text-xs text-muted">
@@ -46,7 +46,7 @@ import type { BlogPostRowView } from '../blog-list-view';
       @if (p.coverImage) {
         <figure
           data-testid="post-cover"
-          class="pointer-events-none relative -order-1 aspect-[1200/630] w-full overflow-hidden rounded-md border border-line-strong bg-surface lg:order-none"
+          class="pointer-events-none relative -order-1 aspect-[1200/630] w-full overflow-hidden rounded-md border border-line-strong bg-surface @min-[60rem]:order-none"
         >
           <img [ngSrc]="p.coverImage" alt="" fill [priority]="p.priority" class="object-cover" />
         </figure>

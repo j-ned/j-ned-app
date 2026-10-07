@@ -153,26 +153,6 @@ describe('HttpProjectsGateway', () => {
       expect(result).toEqual(expected);
       httpController.verify();
     });
-
-    it('getCategories() ne fait PAS de GET /categories ; dérive depuis getAllProjects, retourne ["Tous", ...uniques triées]', async () => {
-      const { gateway, httpController } = configure();
-      const projects = [
-        makeProject({ id: '1', category: 'Web' }),
-        makeProject({ id: '2', category: 'Mobile' }),
-        makeProject({ id: '3', category: 'Web' }),
-      ];
-
-      const promise = firstValueFrom(gateway.getCategories());
-
-      const req = httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`);
-      req.flush(projects);
-
-      httpController.expectNone(`${BASE}/projects/categories`);
-
-      const result = await promise;
-      expect(result).toEqual(['Tous', 'Mobile', 'Web']);
-      httpController.verify();
-    });
   });
 
   describe('Adaptation des réponses', () => {

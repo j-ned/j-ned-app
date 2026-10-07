@@ -27,7 +27,7 @@ type TagChip = { readonly tag: string; readonly selected: boolean; readonly clas
 })
 export class AdminTagsSelector {
   readonly availableTags = input.required<readonly string[]>();
-  readonly selectedTags = model.required<Set<string>>();
+  readonly selectedTags = model.required<ReadonlySet<string>>();
 
   protected readonly chips = computed((): readonly TagChip[] => {
     const selected = this.selectedTags();

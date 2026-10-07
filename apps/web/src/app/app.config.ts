@@ -17,6 +17,7 @@ import {
   withComponentInputBinding,
   withInMemoryScrolling,
   withPreloading,
+  withRouterConfig,
   withViewTransitions,
 } from '@angular/router';
 import { SelectivePreload } from '@core/strategies/selective-preload';
@@ -149,6 +150,7 @@ export const appConfig: ApplicationConfig = {
       }),
       withPreloading(SelectivePreload),
       withViewTransitions(),
+      withRouterConfig({ canceledNavigationResolution: 'computed' }),
     ),
     provideClientHydration(
       withEventReplay(),

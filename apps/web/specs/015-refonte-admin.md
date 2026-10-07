@@ -467,6 +467,15 @@ Modifier : `admin.routes.ts`, `admin-layout.ts`, `components/admin-nav.ts`, page
 `features/blog/application/components/blog-post-row.ts` (+spec),
 `features/projects/domain/gateways/projects.gateway.ts`,
 `features/projects/infra/gateways/http-projects.gateway.ts` (+spec), `DESIGN.md`.
+Ajouts hors plan, acceptés en revue (m9) : créer `form-toc-entries.ts`, `leave-confirmation.ts`,
+`components/admin-post-row.ts`, `app.config.spec.ts`, `features/projects/testing/stub-projects-gateway.ts`,
+`features/blog/testing/stub-blog-gateway.ts` ; modifier `app.config.ts`
+(`canceledNavigationResolution: 'computed'`), `eslint.config.js` (`component-selector` ouvert aux
+sélecteurs d'attribut), `shared/icons/icon-map.ts` et `public/icons/sprite.svg` (`arrow-up`,
+`arrow-down`), `src/styles.css` (`field-label`, `field-hint`, `scroll-padding-bottom` de la barre),
+`components/admin-tags-selector.ts` (`ReadonlySet`), `components/admin-gallery-image-item.ts`,
+`components/admin-project-gallery.ts` (+spec). Correctifs de la revue : `admin-layout.ts` (+spec,
+décalage des ancres), `features/blog/infra/parse-markdown.ts` (+spec, option `topHeadingLevel`).
 
 **PR c2** — créer : `audience-report.ts` (+spec), `audience-view.ts` (+spec), `admin-cv-view.ts`
 (+spec), `admin-messages-view.ts` (+spec), `components/audience-chart.ts` (+spec),
@@ -1011,6 +1020,25 @@ antérieure.
     ligne » et « Sécurité » sous les actions rapides de la vue d'ensemble (maquette), non repris en
     B5.
   - Supprimé : carte bordée, `AppIconTile`.
+
+- **Suivi de la revue de la PR c1** (advisory, sans refactor en c1) :
+  - Taille de `components/admin-project-form.ts` (585 lignes, gabarit d'environ 415) : sortir les
+    deux blocs de lignes répétées (choix techniques, décisions d'architecture, identiques à la clé
+    près), les cartes de nature et le champ de présentation en sous-composants.
+  - Duplication entre `admin-project-editor.ts` et `admin-post-editor.ts` : en-tête, colonnes,
+    barre, sommaire, dialogue de sortie et `notify()` identiques ; candidat : une coque d'éditeur
+    commune. `iconLinkClass` est dupliqué dans `admin-project-row.ts` et `admin-post-row.ts`, la
+    mention « obligatoire » écrite en ligne sept fois dans les deux formulaires.
+  - Restent ouverts : m2 (double toast sur un échec d'écriture, préexistant) et m7 (un clic dans le
+    sommaire ajoute une entrée d'historique : le premier Retour revient à l'éditeur sans fragment,
+    sans dialogue).
+  - Relevé au navigateur hors du périmètre de la revue : à 1 024 px, la colonne du formulaire de
+    projet ne fait que 204 px (cartes de nature de 61 px) et axe signale `target-size` sur les
+    champs « Pourquoi » des choix techniques, barre masquée ou non. À reprendre avec le découpage
+    du formulaire.
+  - Après un enregistrement réussi, la zone de dépôt garde le fichier envoyé (« cover.png »,
+    « Remplacer ») alors que la couverture actuelle l'affiche déjà : `FileDropzone` porte son propre
+    état. Même comportement sur les deux éditeurs, préexistant à la revue.
 
 ### 8. Vérification au navigateur (pas d'e2e)
 
@@ -1807,7 +1835,52 @@ Aucun test source-based sur `styles.css` n'est ajouté.
 
 ### Correctifs de la revue de la PR a
 
-Points de la `## Review code` couverts par un test (les autres sont de forme, sans comportement).
+Points de la `### Tranches C1 et C2
+
+Build de production servi en local, Chromium (Playwright), axe-core 4.14 (WCAG 2.0 à 2.2 A/AA +
+best-practice).
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production`, puis `git checkout public/rss.xml public/sitemap.xml`.
+2. `dist/angular-portfolio-app/browser` servi sur `http://localhost:4341`, `/admin/**` réécrit vers `index.csr.html`.
+3. Script `scratchpad/v/c12.mjs` : session simulée (`auth:session`), `sendBeacon` neutralisé ; GET de l'API servis
+   par fixtures (liste de projets copiée une fois en GET public, `GET /projects/:id` tiré de cette liste) ; toute
+   requête non-GET **annulée** et journalisée, sauf le `POST /projects` du seul scénario de création, **satisfait
+   localement** par le harnais (réponse fabriquée, rien ne part vers l'API) pour suivre la redirection ; toute autre
+   origine annulée.
+4. Cas joués : liste à 1 440 et 375 px en clair et en sombre ; filtres En production, Démos, Scripts, retour à Tous ;
+   « Modifier » de la première ligne ; éditeur à 1 440 (deux registres) et 375 px ; titre modifié puis
+   « Enregistrer » ; `/admin/projects/new` parcouru et rempli au clavier puis envoyé par Entrée ; envoi vide ;
+   `GET /projects/:id` en 500 (deux registres).
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| Liste | 6 lignes dans l'ordre public, sur-titres « 01 · Application Web »…, un seul `h1`, aucun défilement horizontal à 375 px |
+| Filtres | Tous 6 / En production 2 / Démos 2 / Scripts 2, `aria-pressed` suit le choix, lignes filtrées, rang conservé, retour à Tous complet |
+| Modifier | `/admin/projects/<id>`, onglet « Modifier un projet \| Admin », fil « Projets / DashFlow », `h1` DashFlow, champs remplis, nature « En production » cochée, 5 sections, « Voir la fiche » → `/projects/dashflow` |
+| Mise à jour | `PATCH /projects/<id>` annulé par le harnais ; notification « Erreur lors de la mise à jour du projet », `h1` inchangé, saisie conservée |
+| Création au clavier | tabulation : titre, catégorie, **un seul arrêt** pour la nature (flèches pour changer), position, mise en avant, accroche, point fort, périmètre, description, couverture, 4 liens, tags, deux « Ajouter », « Enregistrer » ; focus de carte : contour `primary` 2 px ; Entrée sur « Enregistrer » → `POST /projects` intercepté avec le payload attendu (`kind: "demo"`, liens `null`), notification « Projet créé », adresse `/admin/projects/p-new-fixture` |
+| Envoi vide | 4 erreurs `role="alert"` « Ce champ est obligatoire » (titre, catégorie, nature, description), aucune requête |
+| Erreur de chargement | `LoadError` + « Retour aux projets » → `/admin/projects`, aucun formulaire, `h1` « Modifier un projet » |
+| axe | **0 violation** sur la liste (4 rendus), les filtres, l'éditeur (3 rendus), `/new`, l'erreur (2 rendus) ; après création, 1 `color-contrast` sur `toast-summary` (toast en cours d'apparition, composant hors tranche) |
+
+**Console** : aucune erreur applicative. Restent des artefacts du harnais : `404 /api/config` (route du serveur
+SSR, absente du service statique), le `500` simulé, `net::ERR_FAILED` du `PATCH` annulé (doublé par le toast
+générique de l'intercepteur, comportement antérieur).
+
+**Captures** (scratchpad) : `c12-projets-{1440,375}-{clair,sombre}.jpg`, `c12-projets-filtre-demos-1440-clair.jpg`,
+`c12-editeur-1440-{clair,sombre}.jpg`, `c12-editeur-375-clair.jpg`, `c12-editeur-patch-annule-clair.jpg`,
+`c12-nouveau-1440-clair.jpg`, `c12-nouveau-nature-clavier-clair.jpg`, `c12-nouveau-vide-erreurs-clair.jpg`,
+`c12-apres-creation-clair.jpg`, `c12-editeur-erreur-{clair,sombre}.jpg`, rapport `c12-report.json`. Les captures
+pleine page figent la barre « Enregistrer » (`sticky`) à la hauteur de la fenêtre, et les images chargées à la
+demande hors de la fenêtre restent vides : artefacts de capture.
+
+**Verdict : PASS.**
+
+## Review code` couverts par un test (les autres sont de forme, sans comportement).
 
 **`shared/ui/file-dropzone.spec.ts`** (+4 tests, sélecteurs passés en `data-testid`)
 
@@ -2389,6 +2462,671 @@ un seul jeu de données, égal à la courbe « Visiteurs » de `buildVisitorsCha
 **m5, `pluralize.spec.ts`** (+4 cas : 0, 1, 2, 1 500) et **`capitalize.spec.ts`** (+4 cas, dont
 initiale accentuée et chaîne vide).
 
+### Outils de test de la PR c1 (tranches C1 et C2)
+
+- `features/projects/testing/stub-projects-gateway.ts` (nouveau) : `stubProjectsGateway(overrides)`,
+  doublure partagée de `ProjectsGateway` sur le modèle de `stubContactGateway`. Elle remplace le
+  `makeProjectsGateway` local d'`admin-projects.spec.ts` et sert à l'éditeur et au formulaire. Elle
+  n'implémente pas `getCategories` (retiré en C2) ; le `as ProjectsGateway` tient tant que la méthode
+  abstraite existe. `admin-project-gallery.spec.ts` garde son double, hors de ces tranches.
+- Pages routées : `RouterTestingHarness` + `provideRouter(routes, withComponentInputBinding())`
+  (vrai `Router`, `id` lu dans l'URL), règle du profil. La liste reçoit `provideRouter` (ses liens
+  deviennent des `routerLink`).
+- Formulaire : monté par l'API de liaison d'Angular 22, `twoWayBinding('value', draft)` et
+  `twoWayBinding('tags', tags)` sur des signaux tenus par le test (le test joue le rôle de la page),
+  `inputBinding` pour `projectId`, `gallery`, `persistedCover`. La soumission passe par l'événement
+  `submit` du `<form>` ; côté page, par le bouton `savebar-submit`.
+
+### Tranche C1 — page d'édition d'un projet
+
+**Risque Signal Forms : levé.** Sonde jetable (composant à `model.required`, `form()` dessus, trois
+radios sous `[formField]`, bouton externe `form="project-form"`), puis implémentation jetable
+complète :
+
+- `form(this.value, …)` sur un `ModelSignal` : aucun `NG0950`, la valeur liée est lue au premier
+  rendu. Une saisie dans le formulaire écrit le signal de la page, une écriture de la page met à
+  jour les champs ;
+- radios : `<input type="radio" [value]="k" [formField]="form.kind">` coche la nature du brouillon,
+  le clic écrit `kind` dans le brouillon de la page. `[formField]` pose lui-même un `name` partagé et
+  `required` (déduit du schéma) ; écrire `name` est refusé à la compilation (`NG8022`), donc pas de
+  `name` ni de `required` dans le gabarit ;
+- happy-dom soumet le `<form id="project-form">` depuis un bouton placé hors du formulaire
+  (`form="project-form"`).
+
+Le repli prévu au plan (modèle interne en `linkedSignal` + `output` de valeur) n'est pas nécessaire.
+
+Piège relevé pour le GREEN : une écriture de la page sur le brouillon n'atteint le `model()` de
+l'enfant qu'au cycle de détection suivant. Une action de l'enfant faite avant ce cycle repart de
+l'ancienne valeur et l'écrase chez la page. Le test qui pré-remplit le brouillon stabilise la
+fixture avant de cliquer ; côté page, ne jamais écrire le brouillon puis déclencher une action du
+formulaire dans le même tour.
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **`project-draft.ts`** : `toProjectDraft(null)` rend le brouillon vide (`order: 0`, `kind: ''`) ;
+  les `null`/`undefined` du projet deviennent `''`, les listes sont copiées. `toProjectInput` :
+  liens vides → `null`, accroche, point fort et périmètre rognés (vides → `null`), tags dans l'ordre
+  de l'ensemble, lignes répétées copiées champ par champ (aucun symbole conservé).
+- **`AdminFormSection`** (`fieldset[app-admin-form-section]`) : `number`, `heading`, `description`
+  en `string` ; l'hôte porte `data-testid="form-section"` ; le premier enfant est le `legend`, qui
+  contient `form-section-title` (« 02 · Présentation dans les Réalisations ») puis
+  `form-section-description` ; le contenu projeté suit le `legend`.
+- **`AdminProjectForm`** :
+  - `<form data-testid="admin-project-form" id="project-form" [formRoot]>` contient les sections
+    01 à 04. **La section `05 · Galerie` est rendue hors du `<form>`**, dans le même composant : les
+    formulaires de la galerie sont des `[formRoot]` dont l'événement `submit` remonterait jusqu'à
+    l'écouteur `(submit)` du formulaire de projet (et le HTML interdit les formulaires imbriqués).
+    C'est l'invariant de l'ancien test « galerie hors du formulaire », conservé ;
+  - champs par section : 01 `admin-project-title`, `-category`, `-kind`, `-order`,
+    `-featured-input` ; 02 `-pitch`, `-highlight`, `-scope`, `-description`, `-cover` ;
+    03 `-live-url`, `-repo-url`, `-repo-url-front`, `-repo-url-back` ; 04 `admin-project-tags`
+    (sur `app-admin-tags-selector`), `tech-choice-add`, `decision-add` ; 05 `admin-project-gallery`
+    ou `admin-project-gallery-pending` ;
+  - nature : `fieldset` `admin-project-kind`, légende `admin-project-kind-legend` « Nature », radios
+    `admin-project-kind-<nature>`, chacune dans un `label` qui contient le tampon
+    (`admin-project-kind-stamp`) et la définition (`admin-project-kind-definition`, valeurs de
+    `PROJECT_KIND_DEFINITIONS`) ; erreur `admin-project-kind-error` inchangée ;
+  - compteurs `admin-project-<champ>-count` : « longueur / limite » (espaces simples, longueur
+    brute, suivie à la frappe) ; l'indication liée par `aria-describedby` reste « 160 caractères au
+    plus » / « 80 caractères au plus » ;
+  - couverture : `persistedCover` est l'aperçu de `app-file-dropzone` ; un fichier image choisi part
+    en `coverSelected`, un autre type est ignoré ;
+  - galerie : sans `projectId`, « Enregistrez le projet pour ajouter des captures. » ; avec, la
+    galerie reçoit `gallery` et son `galleryChange` est réémis ;
+  - soumission : `submitted` reçoit `toProjectInput(value(), tags(), kind)`.
+- **`AdminProjectEditor`** : fil d'Ariane `nav` `admin-breadcrumb` (`aria-label` « Fil d'Ariane »),
+  lien `admin-breadcrumb-projects` « Projets » → `/admin/projects`, page courante
+  `admin-breadcrumb-current` (`aria-current="page"`) ; `h1` `admin-page-title`, seul `h1` de la page,
+  égal au titre **enregistré** (il suit la réponse du `PATCH`, pas la saisie) ou « Nouveau projet » ;
+  `admin-project-public-link` vers `/projects/<slug>`, `_blank`, `noopener`, texte « Voir la fiche
+  publique de DashFlow (nouvel onglet) », absent sur `new` ; chargement `admin-project-editor-loading`
+  (`role="status"`), erreur `app-load-error` + lien `admin-project-editor-back` → `/admin/projects`,
+  sans formulaire ; bouton `savebar-submit` (`type="submit"`, `form="project-form"`, « Enregistrer »,
+  jamais désactivé par une erreur) posé par la page en C1, déplacé dans `AdminSaveBar` en C4 sous le
+  même testid. Notifications reprises d'`AdminProjects` (« Projet créé », « Projet mis à jour »,
+  « Erreur lors de la création du projet », « Erreur lors de la mise à jour du projet », échec de
+  couverture après création : `warn` puis `success`). `replaceUrl` vérifié par
+  `Location.replaceState('/admin/projects/p-9')`.
+- **Routes** : `projects/new` « Nouveau projet | Admin », `projects/:id` « Modifier un projet |
+  Admin » (titres non fixés par le plan, copie à valider), toutes deux chargeant
+  `AdminProjectEditor` ; `/admin/projects` reste servi par `projects`.
+- **Liste** : `admin-project-new` (`a`, « Nouveau projet », `/admin/projects/new`) ;
+  `admin-project-edit` (`a`, « Modifier : X », `/admin/projects/<id>`, sans `aria-expanded`). La
+  bascule en `button` brut disparaît (m3 de la revue de la PR a).
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `project-draft.spec.ts` (nouveau, TS pur) | 21 | brouillon vide, projet complet, champs absents, listes copiées ; payload « golden » (déplacé du formulaire inline), liens (`it.each` ×5), présentation (`it.each` ×6), tags, lignes marquées, nature (`it.each` ×3) | égalité exacte des objets, `null` d'effacement, aucun symbole dans le payload |
+| `components/admin-form-section.spec.ts` (nouveau, hôte à gabarit) | 3 | hôte `FIELDSET`, `legend` premier enfant ; titre et description dans le `legend` ; contenu projeté après | `firstElementChild`, textes exacts, position DOM |
+| `components/admin-project-form.spec.ts` (nouveau, remplace `admin-project-inline-form.spec.ts`) | 69 | 5 sections dans l'ordre, champs par section (`it.each` ×5), sections dans ou hors du `<form>` ; brouillon lu, saisie écrite chez la page, remplacement par la page, tags, soumission inchangée ; nature (cartes, groupe requis, rien coché, erreur, `it.each` ×3 ×2, nature absente) ; présentation (bornes, bloc, champs vides, `describe.each` ×3 de 10 cas dont 2 compteurs) ; lignes répétées (5) ; étiquettes (2) ; couverture (3) ; galerie (3) | valeurs de champs et du signal de la page, payloads exacts, `role="alert"`, noms accessibles, compteurs « n / max » |
+| `admin-project-editor.spec.ts` (nouveau) | 22 | ouverture par `id` et `new`, fil d'Ariane (`it.each` ×2) et retour, fiche publique ; chargement, erreur, « Réessayer » ; bouton, bouton actif malgré une erreur, rien créé si vide ; création (payload, invalidations + notification + `replaceUrl`, couverture après création, échec, échec de couverture) ; mise à jour (`PATCH`, couverture avant le `PATCH`, échec) ; galerie (suppression, saisie conservée) | appels du gateway et leur ordre (`invocationCallOrder`), `Router.url`, `replaceState`, notifications exactes, `h1` |
+| `admin.routes.spec.ts` | +5, 1 modifié | titres des deux routes ; `/admin/projects/new`, `/p-1`, `/admin/projects` (route, titre, `id`) ; `loadComponent` des deux routes | égalité de `{ url, title, path, id }` |
+| `admin-projects.spec.ts` | +3 | « Nouveau projet » suivi ; liens « Modifier : X » nommés ; lien de CandiDash suivi | `href`, `Router.url`, `aria-expanded` absent |
+| `admin-overview.spec.ts` | 1 modifié | `quick-new-project` → `/admin/projects/new` (contrat prévu par B3, même test) | `href` et URL suivie |
+
+Tests migrés ou supprimés (aucun cas perdu) :
+
+| Ancien test | Devient | Raison |
+|---|---|---|
+| `admin-project-inline-form.spec.ts`, soumission (3 : lien vidé → `null`, lien conservé, URL vide → `null`) | `project-draft.spec.ts`, `it.each` des liens (5 cas) | conversion pure, sortie du composant |
+| idem, listes (ajout/retrait, émission) | formulaire, « lignes répétées » (boutons `tech-choice-add` / `-remove`, saisie DOM) | méthodes publiques remplacées par l'interaction |
+| idem, nature (12) | formulaire, « nature du projet » (11) + golden dans `project-draft.spec.ts` | `select` → radios ; libellé « Nature » + `aria-required` → légende + groupe `required` ; golden → pur, le formulaire vérifie le câblage |
+| idem, présentation (28) | formulaire (27, dont les 24 du `describe.each`) + éditeur (« Enregistrer » actif malgré une erreur) | le bouton de soumission sort du formulaire ; « le fieldset suit la description » devient « le bloc groupe les trois champs dans l'ordre » (la description suit désormais la présentation, maquette) |
+| idem, étiquettes (5) | formulaire, étiquettes (2) + lignes répétées (3) | inchangés, renumérotation lue dans le brouillon de la page |
+| `admin-projects.spec.ts`, `toggleNewForm` / `toggleEdit` (2) | supprimés ; « Nouveau projet » et « Modifier » suivis | bascules supprimées au plan |
+| idem, `createProject` (3), `updateProject` (2) | éditeur, création (5) et mise à jour (3) | enregistrement déplacé dans la page |
+| idem, galerie dépliée (`it.each` ×2) | formulaire : galerie hors du `<form>`, galerie listée / en attente | la galerie vit dans la section 05 |
+| idem, capture supprimée, titre conservé | éditeur, galerie (2) | même invariant : le brouillon ne se réinitialise pas quand la galerie change |
+| idem, noms « Modifier » + `aria-expanded`, bascule pressée | liste : liens « Modifier : X », lien suivi | la bascule devient un lien |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 15:15, 120 failed / 2104 total).
+
+Les 120 échecs sont mesurés sous le squelette jetable décrit au bilan, tous en `AssertionError`.
+Les 5 tests de C1 qui passent sous ce squelette : rien n'est créé pour un projet vide, un PDF n'est
+pas une couverture, bornes 160 / 80 (constantes du domaine, test conservé), `/admin/projects` reste
+servi par `projects` (garde d'ordre des routes), payload de nature `production` (le squelette rend
+cette constante).
+
+### Tranche C2 — liste éditoriale des projets, filtre par nature
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **`toAdminProjectsView(projects, filter)`** : `filters` toujours dans l'ordre Tous, En production,
+  Démos, Scripts, chacun avec `disabled: boolean` explicite (`true` à 0), indépendants du filtre
+  actif. `rows` filtrées dans l'ordre de la liste. `order` = **rang dans la liste complète** sur deux
+  chiffres, stable sous un filtre (« 03 » reste « 03 » sous Démos), `overline` = `order · catégorie`
+  (choix du RED : le plan ne disait pas si le rang suivait le filtre). `pitch` vide ou `null` →
+  `null`. `facts` : `Stack` = 4 premiers outils joints par « · » puis « +N » après une espace simple,
+  omis sans outil ; `Accueil` / `Mis en avant` si `featured`.
+- **Ligne** (hôte `admin-project-row`) : `admin-project-row-overline`, `admin-project-row-title`
+  (`h2`), `admin-project-row-pitch` ou `admin-project-pitch-missing` « Accroche vide : la carte
+  publique reprend la première phrase de la description. » (U+00A0 avant « : ») ; `ProjectCover` avec
+  son tampon (`project-cover-kind`) ; `FactList` ; `admin-project-view` (`a`, `/projects/<slug>`,
+  `_blank`, `noopener`, nom « Voir la fiche publique : X (nouvel onglet) ») ; `admin-project-edit` et
+  `admin-project-delete` (C1, A1). Composant présentationnel : testé par la page.
+- **Page** : `app-filter-group` étiqueté « Filtrer par nature » ; le `<select>` par catégorie
+  disparaît (m6 de la revue de la PR a).
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `admin-projects-view.spec.ts` (nouveau, TS pur) | 21 | filtres (comptes, `disabled`, identiques sous les 4 filtres) ; lignes par filtre (`it.each` ×4) ; ligne complète (golden) ; rang stable sous filtre ; « 10 » ; faits (`it.each` ×4 : 0, 1, 4, 5 outils) ; mis en avant sans outil ; accroche (`it.each` ×3) ; nature `null` sous « Tous » seulement | égalité exacte |
+| `admin-projects.spec.ts` | +8 | lignes (rang, `h2`, accroche ou mention), tampons de couverture, faits, lien public ; filtre (comptes, `aria-pressed`, `aria-disabled`), « En production » et « Démos » (`it.each` ×2), retour à « Tous » | titres des lignes visibles, attributs ARIA |
+
+Tests migrés ou supprimés :
+
+| Ancien test | Devient | Raison |
+|---|---|---|
+| `admin-projects.spec.ts`, « charge les projets et catégories » | « charge les projets » (assertion des catégories retirée) | `categoriesResource` et `getCategories` supprimés |
+| idem, `filteredProjects` par catégorie | filtre par nature (page) + `it.each` du builder | le filtre change d'axe |
+| idem, liste et catégories en erreur ensemble (2) | supprimés | la relance des catégories n'existe plus ; « Réessayer » reste couvert par le test A3 conservé |
+| idem, tampon « Mis en avant » (2) | fait « Accueil : Mis en avant » de la seule ligne mise en avant | le tampon devient un repère |
+| `http-projects.gateway.spec.ts`, `getCategories()` dérivé de la liste | supprimé | dernier consommateur retiré (C2 : méthode, implémentation, test) |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 15:15, 28 failed / 2104 total).
+
+Un test de C2 passe sous le squelette : les lignes sous « Scripts » sont vides (le squelette ne rend
+aucune ligne).
+
+Hors de portée de happy-dom (navigateur) : grille de la ligne à partir de `lg`, `line-clamp-2`,
+couverture 16/10, défilement du filtre à 375 px.
+
+### Bilan du RED C1 et C2
+
+- Base : 2021 passed / 2021 (`master` à `5b7abcc`).
+- Arbre de tests : 2104 = 2021 − 50 (`admin-project-inline-form.spec.ts`) − 33 + 26
+  (`admin-projects.spec.ts` réécrit : 15 conservés, 3 C1, 8 C2) − 1 (`getCategories`) + 21
+  (`project-draft`) + 3 (`admin-form-section`) + 69 (`admin-project-form`) + 22
+  (`admin-project-editor`) + 21 (`admin-projects-view`) + 5 (routes).
+- **Arbre réel**, après `ng cache clean` et purge de `node_modules/.vite` : `pnpm test` s'arrête à la
+  compilation, sur des symboles dus au GREEN seulement : `TS2307` ×7 (`project-draft`,
+  `admin-project-editor` ×2, `admin-projects-view`, `admin-project-form`, `admin-form-section`) et
+  les `TS7006` / `TS18046` / `NG1010` qui en découlent. Aucune faute de type propre aux specs.
+- **Squelette jetable** (5 fichiers créés aux signatures du contrat : builders qui rendent des
+  valeurs fausses mais typées, composants sans gabarit ; fichiers existants intacts) :
+  **148 failed / 2104**, tous en `AssertionError` (aucun `TypeError`, `NG0`, délai dépassé ni
+  `stderr`) : C1 120, C2 28.
+- **Harnais vérifié** : implémentation jetable complète (5 fichiers créés ; `admin.routes.ts`,
+  `admin-projects.ts`, `admin-project-row.ts`, `admin-overview.ts`, `projects.gateway.ts`,
+  `http-projects.gateway.ts` modifiés) : **2104 passed / 2104**, rejouée après la dernière retouche
+  des specs. Fichiers modifiés restaurés depuis l'instantané (`md5sum -c` : 6 OK), fichiers créés
+  supprimés ; rien dans l'index git.
+- Prettier et ESLint passent sur les 10 fichiers touchés ; ni le motif d'archéologie ni
+  `grep -P '\x{00A0}|\x{202F}'` n'y trouvent rien (insécables écrites en échappement).
+- Suivis de revue : m3 et m6 de la PR a sont couverts ici (C1, C2) ; m8 (`post()` local
+  d'`admin-blog.spec.ts`) reste affecté à C6 par la revue de la PR a, non traité dans ce RED.
+
+Points de copie à valider en revue : titres d'onglet « Nouveau projet | Admin » et « Modifier un
+projet | Admin » ; rang stable sous filtre ; « +N » après une espace simple ; compteur « n / max ».
+
+### Outils de test des tranches C3 et C4
+
+Aucun outil nouveau. `confirm-dialog-page.ts` (A1) lit et répond au dialogue de sortie ; les routes
+du harnais de l'éditeur portent désormais `canDeactivate: [unsavedChangesGuard]` (construction des
+entrées seulement), si bien que les tests existants de création et de mise à jour franchissent la
+garde : une ligne de base non remise à jour avant la navigation `replaceUrl` les fait tomber
+(vérifié par mutation, 3 tests rouges).
+
+### Tranche C3 — aperçu en direct de la carte publique
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **`projects-view.ts`** : `toCaseStudyView(project, index)` et `toProjectCardView(project)`
+  exportés ; la page publique les utilise tels quels (`toProjectsView(...).caseStudies` égale
+  `toCaseStudyView` appliqué à chaque rang, idem pour les cartes).
+- **`ProjectCaseStudy`** : hôte `@container` ; article `@min-[60rem]:grid-cols-12` ; couverture
+  inversée `@min-[60rem]:order-last` ; **aucune** classe de point de rupture de viewport (`sm:` à
+  `2xl:`) dans l'étude de cas ni ses enfants (la bascule suit le conteneur).
+- **`toPreviewProject(draft, tags, base)`** : `null` si `kind === ''` ; sinon le `Project` que le
+  brouillon produirait : champs saisis, tags dans l'ordre de l'ensemble, liens vides → `null`,
+  accroche, point fort et périmètre rognés (vides → `null`), `id`, `slug`, `image`, `gallery` repris
+  de la base (`''` / `[]` sans base).
+- **`AdminProjectPreview`** : `section` `admin-project-preview` nommée par
+  `admin-project-preview-title` « Aperçu public » (`aria-labelledby`) ; référence
+  `admin-project-preview-reference` « Réalisations · » + `PROJECT_KIND_LABELS` (En production, Démo,
+  Script) ; `admin-project-preview-live` « en direct » ; corps `admin-project-preview-body` `inert`
+  contenant l'étude de cas (`production`, rang `max(order, 1) - 1`) ou la carte (`demo`, `script`) ;
+  `null` → `admin-project-preview-empty` « Choisissez une nature pour voir la carte. » ;
+  `pendingCover` → `admin-project-preview-pending-cover` « Nouvelle couverture`\u00a0`: visible ici
+  après l'enregistrement. ».
+- **Éditeur** : colonne `admin-project-aside` (aperçu + sommaire C4), après le formulaire dans le
+  DOM, `lg:sticky lg:top-6`, enfant de la grille `lg:grid-cols-[minmax(0,1fr)_25rem]` ; elle porte
+  `id="apercu"` ; lien d'en-tête `admin-project-preview-link` « Voir l'aperçu »,
+  `routerLink="." fragment="apercu"` (`/admin/projects/p-1#apercu`, `/admin/projects/new#apercu`),
+  `lg:hidden`. L'aperçu suit la saisie (titre, accroche, nature) ; le `h1` garde le titre
+  enregistré.
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `project-draft.spec.ts` | +14 | golden (brouillon édité d'un projet enregistré) ; nature vide → `null` ; présentation (`it.each` ×6) ; liens (`it.each` ×5) ; nouveau projet sans base | égalité exacte du `Project` |
+| `projects-view.spec.ts` | +4 | étude de cas seule (golden, rang 2 → « 03 ») ; cohérence avec la page ; carte seule (golden) ; cohérence | égalité exacte |
+| `components/project-case-study.spec.ts` | +2, 1 modifié (`it.each` ×3) | hôte `@container` + 12 colonnes à 60rem ; aucune classe de viewport | `classList` |
+| `components/admin-project-preview.spec.ts` (nouveau) | 17 | section nommée ; référence (`it.each` ×3) ; corps `inert` ; étude de cas ; numérotation (`it.each` ×4 : 0, 1, 2, 12) ; accroche vide → première phrase ; carte (`it.each` ×2) ; sans nature ; couverture en attente (`it.each` ×3) | textes exacts, `inert`, absence de l'autre gabarit |
+| `admin-project-editor.spec.ts` | +9 | aperçu du projet chargé ; accroche et titre suivis (`h1` inchangé) ; « Démo » ; nouveau projet sans puis avec nature ; couverture en attente ; colonne (contenu, ordre, classes) ; « Voir l'aperçu » (`it.each` ×2) | textes de l'aperçu, `href`, `classList`, `compareDocumentPosition` |
+| `projects.spec.ts` | 1 modifié | alternance des couvertures | `@min-[60rem]:order-last` |
+
+Tests modifiés (changement de contrat prévu par le plan, pas une adaptation mécanique) :
+
+| Test | Avant | Après | Raison |
+|---|---|---|---|
+| `project-case-study.spec.ts`, couverture inversée (`it.each` ×3) | `lg:order-last` | `@min-[60rem]:order-last` (titre : « in a wide container ») | requêtes de conteneur, ADR-0013 §4 |
+| `projects.spec.ts`, « les couvertures alternent de côté sur grand écran » | `lg:order-last` | `@min-[60rem]:order-last` | idem (sweep de `lg:order-last` : 2 occurrences, toutes deux reprises) |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 15:46, 45 failed / 2219 total).
+
+Sous le squelette jetable, 3 tests de C3 passent : nature vide → `null` (le squelette rend
+`null`), « pas de couverture en attente » (`it.each` ×2 : `false`, absent ; branche d'absence,
+triangulation du cas `true`).
+
+Preuve au navigateur à fournir (happy-dom ne met rien en page) : `/projects` à 1 008, 1 023 et
+1 024 px (bascule de l'étude de cas à 1 008 px, bande de 16 px assumée) ; éditeur à 1 440 px :
+aperçu dans la colonne de 25rem, étude de cas **empilée** (conteneur < 60rem), collant au
+défilement ; à 390 px : aperçu sous le formulaire, « Voir l'aperçu » y défile ; aperçu ni focusable
+ni dans l'arbre d'accessibilité (axe, Tab).
+
+### Tranche C4 — modifications non enregistrées : barre, sommaire, garde
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **`countChangedFields(a, b)`** : nombre de clés propres de `a` dont la valeur diffère de `b` ;
+  égalité profonde des lignes répétées (une ligne ajoutée, retirée ou éditée compte **un** champ) ;
+  clés symboles ignorées (lignes marquées par Signal Forms) ; ensembles comparés par contenu, ordre
+  indifférent ; une saisie ramenée à sa valeur d'origine ne compte plus.
+- **`unsavedChangesGuard`** : appelle `canLeave()` une fois et rend sa réponse telle quelle (même
+  `Promise`), sans contexte d'injection. Routes `projects/new` et `projects/:id` :
+  `canDeactivate: [unsavedChangesGuard]`.
+- **`AdminSaveBar`** (entrées requises `formId`, `changes`, `submitting`, `cancelRoute`) : hôte
+  `sticky bottom-0 border-line-strong` ; `savebar-state` `role="status"` : « Aucune modification »,
+  « 1 modification non enregistrée », « n modifications non enregistrées » ; `savebar-cancel` lien
+  « Annuler » vers `cancelRoute` ; `savebar-submit` `type="submit"` `form=formId` « Enregistrer »,
+  désactivé **seulement** si `submitting` (actif à 0 modification).
+- **Éditeur** : les modifications comptent le brouillon, l'ensemble de tags **et** la couverture en
+  attente (un fichier choisi est perdu si l'on quitte) ; ligne de base = projet chargé, remise à
+  jour après un `PATCH` réussi et **avant** la navigation `replaceUrl` d'une création ;
+  « Enregistrer » désactivé pendant l'envoi, réactivé après un échec (la modification reste
+  comptée).
+- **Sommaire** (`form-toc`, `nav` « Sections du formulaire ») : cinq liens `form-toc-link`
+  (`form-toc-label` « 01 · Identité », « 02 · Présentation », « 03 · Liens », « 04 · Choix
+  techniques », « 05 · Galerie » ; `form-toc-state` « modifié » ou vide), `href` =
+  `/admin/projects/p-1#<id de section>`, chaque cible étant un `form-section`. Répartition :
+  01 titre, catégorie, nature, position, mise en avant ; 02 accroche, point fort, périmètre,
+  description, couverture ; 03 liens ; 04 tags, choix techniques, décisions ; 05 jamais (la galerie
+  s'enregistre à chaque action).
+- **Garde** : sans modification, la navigation passe sans dialogue ; avec, `ConfirmDialog` s'ouvre
+  (« Quitter sans enregistrer`\u202f`? », « Quitter sans enregistrer », « Continuer l'édition »)
+  et la page reste ; confirmer navigue, annuler ou Échap reste, saisie et compte conservés.
+  `beforeunload` : `preventDefault()` seulement s'il y a des modifications.
+- **`AdminFormToc` sans spec isolé** (écart au plan) : composant présentationnel (entrée `sections`
+  → liens), couvert par l'éditeur qui calcule les états ; la dérivation vit dans la page.
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `count-draft-changes.spec.ts` (nouveau, TS pur) | 23 | copie ; champs simples (`it.each` ×7 : 1, 2, 3 champs) ; saisie restaurée ; lignes répétées (`it.each` ×6 dont lignes marquées par symbole) ; tags (`it.each` ×4) ; trois natures de champ ; valeur optionnelle (`it.each` ×3) | nombre exact |
+| `unsaved-changes-guard.spec.ts` (nouveau, TS pur) | 3 | `true`, `false` (`it.each`), promesse | réponse, appel unique, même promesse |
+| `admin.routes.spec.ts` | +2 | `canDeactivate` des deux routes d'édition (`it.each`) | `toEqual([unsavedChangesGuard])` |
+| `components/admin-save-bar.spec.ts` (nouveau) | 10 | état (`it.each` ×4 : 0, 1, 2, 12) ; bouton ; désactivation (`it.each` ×3) ; « Annuler » suivi ; hôte collant | `role`, textes, `disabled`, `href` + `Router.url`, `classList` |
+| `admin-project-editor.spec.ts` | +24 | aucun changement à l'ouverture (lignes répétées) ; une modification par section (`it.each` ×7) ; deux ; saisie restaurée ; sommaire ; « Annuler » ; envoi en cours ; échec ; après enregistrement ; sortie sans modification ; dialogue ; réponses (`it.each` ×3) ; saisie conservée ; création sans dialogue ; `beforeunload` (`it.each` ×2) | `savebar-state`, états du sommaire, `Router.url`, `readConfirmDialog`, `defaultPrevented` |
+
+Adaptation mécanique : `admin-project-editor.spec.ts` — 2 routes du harnais reçoivent
+`canDeactivate: [unsavedChangesGuard]`, aucune valeur attendue modifiée.
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 15:46, 58 failed / 2219 total).
+
+Sous le squelette (garde qui rend `true`), 4 tests de C4 passent : sortie sans modification,
+réponse « confirmer » (la navigation a lieu dans les deux cas), création sans dialogue,
+`beforeunload` sans modification. Ils tombent contre une garde qui bloque ou une ligne de base non
+remise à jour (mutation vérifiée sur la création).
+
+Preuve au navigateur à fournir : la boîte native `beforeunload` (rechargement et fermeture d'onglet
+avec puis sans modification) ; Retour arrière du navigateur avec modification → dialogue ; liens du
+sommaire qui font défiler jusqu'à la section (`anchorScrolling`) sans quitter la page ni ouvrir
+`/#id` ; barre collante en bas à 1 440 et 390 px.
+
+### Complément de fidélité à la maquette (écran `#editor`, joué avec C3 et C4)
+
+Contrats fixés par ce RED :
+
+- **Couverture** : groupe `admin-project-cover-field` (`role="group"`, nommé « Couverture »),
+  vignette `admin-project-cover-current` (image enregistrée, `alt` « Couverture actuelle de
+  <titre> ») **puis** zone de dépôt `admin-project-cover` côte à côte (classe
+  `grid-cols-[15rem_minmax(0,1fr)]`, préfixe de point de rupture ou de conteneur libre) ; la zone
+  montre son bouton « Remplacer l'image » (`file-dropzone-trigger`, `FileDropzone` corrigé en
+  PR a), elle ne reprend plus l'image enregistrée en aperçu ; sans couverture, la zone seule.
+- **Galerie** (`05 · Galerie`) : liste `admin-gallery-list` (`ul`, `grid`, trois colonnes
+  `grid-cols-3` sous un préfixe libre), un `li` par capture (la zone d'ajout reste hors de la
+  liste : le nombre d'éléments annoncé égale le nombre de captures) ; dans chaque capture : vignette,
+  texte alternatif, position `admin-gallery-item-position` « 2 / 3 », puis actions ; « Monter »,
+  « Descendre », « Supprimer » deviennent des boutons icônes (`app-icon`, aucun texte visible),
+  noms accessibles inchangés ; la légende de section est le seul titre (le `h2` « Captures »
+  disparaît).
+- **Écart accepté — tags** : le sélecteur à bascules (`AdminTagsSelector`) est conservé ; les puces
+  « + Ajouter » de la maquette supposent une saisie libre que le modèle (catalogue fermé
+  `AVAILABLE_PROJECT_TAGS`) n'a pas. Aucun test ajouté, ceux de C1 restent.
+- **Écarts conservés** : « Monter » absent sur la première capture et « Descendre » sur la dernière
+  (la maquette les grise) ; libellé « Texte alternatif de la capture n » ; confirmation de
+  suppression en ligne.
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `components/admin-project-form.spec.ts` | +2, 1 remplacé | vignette et zone côte à côte ; zone seule ; légende seul titre de la galerie | rôle et nom du groupe, ordre DOM, `src`/`alt`, `classList`, nombre de titres |
+| `components/admin-project-gallery.spec.ts` | +5 | grille (liste, nombre d'éléments, colonnes) ; ordre interne et position ; boutons icônes (`it.each` ×3) | `tagName`, `classList`, `compareDocumentPosition`, texte vide + nom |
+
+Test remplacé (changement de contrat, pas une adaptation mécanique) :
+
+| Ancien test | Devient | Raison |
+|---|---|---|
+| `admin-project-form.spec.ts`, « the cover field previews it » (`FileDropzone.previewUrl()` égal à l'image enregistrée) | « the current cover stands beside the drop zone… » + « the drop zone stands alone » | la vignette sort de la zone de dépôt (maquette) ; l'aperçu interne de la zone ne montre plus que le fichier choisi |
+
+Tous les tests de ce complément échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 15:46, 7 failed / 2219 total).
+
+Sous le squelette, « zone seule sans couverture » passe (comportement actuel, branche d'absence).
+
+Preuve au navigateur : couverture en deux colonnes à 1 440 px, empilée à 390 px ; galerie en trois
+colonnes à 1 440 px sans débordement, une ou deux colonnes à 390 px ; boutons icônes de 44 px.
+
+### Bilan du RED C3, C4 et du complément
+
+- Base : 2104 passed / 2104 (C1 et C2 verts, non commités).
+- Arbre de tests : 2219 = 2104 + 46 (C3) + 62 (C4) + 7 (complément). Par fichier :
+  `count-draft-changes` 23, `unsaved-changes-guard` 3, `admin.routes` +2, `project-draft` +14,
+  `projects-view` +4, `project-case-study` +2, `admin-project-preview` 17, `admin-save-bar` 10,
+  `admin-project-editor` +33, `admin-project-form` +3 −1, `admin-project-gallery` +5.
+- **Arbre réel**, après `ng cache clean` et purge de `node_modules/.vite` : `pnpm test` s'arrête à
+  la compilation, sur des symboles dus au GREEN seulement : `TS2307` ×6 (`count-draft-changes`,
+  `unsaved-changes-guard` ×3, `admin-save-bar`, `admin-project-preview`), `TS2305`
+  (`toPreviewProject`), `TS2724` ×2 (`toCaseStudyView`, `toProjectCardView`). Aucune faute de type
+  propre aux specs.
+- **Squelette jetable** (4 fichiers créés aux signatures du contrat, `toPreviewProject` et les deux
+  builders publics ajoutés en rendant des valeurs fausses, composants sans gabarit) :
+  **110 failed / 2219**, tous en `AssertionError` (aucun `TypeError`, `NG0`, délai dépassé ni
+  `stderr`) : C3 45, C4 58, complément 7 ; aucun test antérieur ne tombe hors des 2 modifiés et du
+  remplacé.
+- **Harnais vérifié** : implémentation jetable complète (5 fichiers créés : `count-draft-changes`,
+  `unsaved-changes-guard`, `admin-save-bar`, `admin-form-toc`, `admin-project-preview` ;
+  `projects-view.ts`, `project-case-study.ts`, `project-draft.ts`, `admin-project-editor.ts`,
+  `admin-project-form.ts`, `admin-project-gallery.ts`, `admin-gallery-image-item.ts`,
+  `admin.routes.ts` modifiés) : **2219 passed / 2219**, rejouée après la dernière retouche des
+  specs, sans `stderr`. Fichiers modifiés restaurés depuis l'instantané (`md5sum -c` : 9 OK),
+  fichiers créés supprimés ; rien dans l'index git.
+- Prettier et ESLint passent sur les 12 fichiers de test touchés ; ni le motif d'archéologie ni
+  `grep -P '\x{00A0}|\x{202F}'` n'y trouvent rien (insécables écrites en échappement).
+
+Pièges relevés pour le GREEN :
+
+- `[class.@min-[60rem]:order-last]` ne se lie pas (nom de classe à crochets, cf. le `[class.pt-3.5]`
+  de B1) : passer par `[class]` à côté de l'attribut `class` statique.
+- La remise à zéro de la ligne de base après création doit précéder `router.navigate` : sinon la
+  garde ouvre le dialogue et la navigation reste en attente (trois tests existants tombent).
+- Les lignes répétées sortent du formulaire marquées d'un symbole : comparer par `Object.keys`, pas
+  par référence ni par `toEqual` maison qui lirait les symboles.
+
+Points de copie à valider en revue : description du dialogue de sortie (non fixée par ce RED) ;
+libellés courts du sommaire (« 02 · Présentation » au lieu du titre complet de section, maquette) ;
+référence « Réalisations · Démo » au singulier (libellé de nature) ; position « 2 / 3 ».
+
+### Outils de test des tranches C5 et C6
+
+- `features/blog/testing/stub-blog-gateway.ts` (nouveau) : `stubBlogGateway(overrides)`, doublure
+  partagée de `BlogGateway` sur le modèle de `stubProjectsGateway`. Elle remplace le
+  `makeBlogGateway` local d'`admin-blog.spec.ts` et sert à l'éditeur. `admin-layout.spec.ts` et
+  `admin-overview.spec.ts` gardent leur double, hors de ces tranches.
+- Éditeur : même harnais que celui des projets (`RouterTestingHarness`,
+  `provideRouter(routes, withComponentInputBinding())`, routes `admin/blog/new` et `admin/blog/:id`
+  sous `canDeactivate: [unsavedChangesGuard]`). Formulaire : `twoWayBinding('value')`,
+  `twoWayBinding('tags')`, `inputBinding('persistedCover')`.
+- Suivi m8 de la revue de la PR a : le `post()` local d'`admin-blog.spec.ts` est remplacé par
+  `makeBlogPost`. Ses défauts diffèrent (titre, statut, date), mais aucun test conservé n'en lit
+  un : ils comparent des `id`.
+
+Adaptation mécanique : `admin-blog.spec.ts` — `post()` local remplacé par `makeBlogPost` dans les
+tests conservés (`input()` part avec les tests `onSaved` migrés), `makeBlogGateway` par
+`stubBlogGateway` (plus `withPosts` pour le cas « liste seule »), `provideRouter` ajouté aux deux
+configurations du module (les actions deviennent des `routerLink`) ; aucune valeur attendue modifiée
+sur les 17 tests conservés.
+
+### Tranche C5 — page d'édition d'un article et aperçu
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **`post-draft.ts`** : `toPostDraft(null)` rend `{ title: '', excerpt: '', contentMarkdown: '',
+  status: 'draft' }` ; un article donne ses quatre champs. `toPostInput(draft, tags)` : les quatre
+  champs tels quels (pas de rognage), `tags` dans l'ordre de l'ensemble, **seulement** les cinq clés
+  du payload (aucune clé ni symbole hérité du brouillon). `toPreviewPost(draft, tags, base)` rend
+  toujours un `BlogPost` : champs saisis, `id`, `slug`, `coverImage`, `likesCount`, `publishedAt`,
+  `updatedAt` repris de la base (`''`, `0`, `null` sans base). `findPostById(posts, id)` rend l'objet
+  de la liste ou `null` (pur, dans `post-draft.ts`).
+- **`AdminPostForm`** (`app-admin-post-form`) : `<form data-testid="admin-post-form"
+  id="post-form" [formRoot]>`, sans bouton d'envoi ni « Annuler » (la barre d'enregistrement les
+  porte). Sections `fieldset[app-admin-form-section]`, ids `post-article`, `post-content`,
+  `post-cover`, `post-publication` : `01 · Article` (`admin-post-title` « Titre »,
+  `admin-post-excerpt` « Extrait », `admin-post-tags` sur `app-admin-tags-selector`), `02 · Contenu`
+  (`admin-post-content` « Contenu (Markdown) », aperçu `admin-post-content-preview` rendu par
+  `parseMarkdown`, donc assaini : `<script>` et `onerror` n'atteignent pas la page, ADR-0002),
+  `03 · Couverture` (`admin-post-cover-current`, image enregistrée, `alt` « Couverture actuelle de
+  <titre> », **puis** la zone `admin-post-cover` ; un fichier non image est ignoré), `04 ·
+  Publication` (radios `admin-post-status-draft` / `-published` dans des `label` « Brouillon » /
+  « Publié », même `name` ; `admin-post-redeploy-note` « Publier l'article redéploie le
+  site`\u00a0`: il est en ligne quelques minutes plus tard. » seulement si « Publié »). Erreurs
+  `admin-post-{title,excerpt,content}-error`, `role="alert"`, « Ce champ est obligatoire ».
+- **`AdminPostPreview`** : `post = input.required<BlogPost>()`, `pendingCover = input(false)` ;
+  `section` `admin-post-preview` nommée « Aperçu public », référence `admin-post-preview-reference`
+  « Blog · Liste des articles », `admin-post-preview-live` « en direct » ; corps
+  `admin-post-preview-body` `inert` contenant `app-blog-post-row` nourri par
+  `toBlogPostRowView(post, false)` (jamais prioritaire : `fetchpriority="auto"`) ;
+  `admin-post-preview-pending-cover` comme pour les projets.
+- **`toBlogPostRowView(post, priority)`** exporté de `blog-list-view.ts` (renommé de `toRowView`) ;
+  `toBlogListView(...).rows` égale `toBlogPostRowView` appliqué à chaque article.
+- **`BlogPostRow`** : hôte `@container`, article `@min-[60rem]:grid-cols-[minmax(0,1fr)_20rem]`,
+  couverture `@min-[60rem]:order-none`, aucune classe de point de rupture de viewport.
+- **`AdminPostEditor`** : chargement par `getAllPostsForAdmin()` puis `findPostById`, aucune
+  requête sur `new` ; états `admin-post-editor-loading` (`role="status"`), `load-error` +
+  « Réessayer », **introuvable** `admin-post-editor-missing` « Cet article n'existe pas ou a été
+  supprimé. », les deux derniers avec `admin-post-editor-back` → `/admin/blog`, sans formulaire.
+  Fil d'Ariane `admin-breadcrumb-posts` « Articles » → `/admin/blog` ; `h1` = titre enregistré ou
+  « Nouvel article ». Enregistrement repris d'`AdminBlog.onSaved` : création ou mise à jour
+  **puis** téléversement de la couverture (ordre inverse des projets, conservé) ; échec de
+  l'écriture → `error` « Erreur lors de l'enregistrement de l'article », rien de téléversé ni
+  d'invalidé ; échec du téléversement → `warn` puis `success` ; succès → une invalidation de la liste
+  partagée, aucune nouvelle requête de la liste, `success` « Article enregistré », création →
+  `replaceUrl` vers `/admin/blog/<id>` après remise à zéro de la ligne de base. Aperçu, sommaire
+  (« 01 · Article », « 02 · Contenu », « 03 · Couverture », « 04 · Publication » ; répartition :
+  titre, extrait, sujets / contenu / couverture en attente / statut), barre, garde,
+  `beforeunload`, colonne `admin-post-aside` (`id="apercu"`) et lien `admin-post-preview-link`
+  repris de l'éditeur de projet.
+- **Routes** : `blog/new` « Nouvel article | Admin », `blog/:id` « Modifier un article | Admin »
+  (copie à valider), `AdminPostEditor`, `canDeactivate: [unsavedChangesGuard]`.
+- **Liste** : `admin-post-new` lien « Nouvel article » → `/admin/blog/new` ; `admin-post-edit`
+  lien « Modifier`\u00a0`: X » → `/admin/blog/<id>`.
+- **Vue d'ensemble** (écart au plan, même raison que `quick-new-project` en C1) : `quick-new-post`
+  mène à `/admin/blog/new`.
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `post-draft.spec.ts` (nouveau, TS pur) | 18 | brouillon vide, article ; payload golden, tags (`it.each` ×3), clés du payload, aller-retour ; aperçu golden, nouvel article, champs saisis (`it.each` ×3) ; `findPostById` (`it.each` ×4), identité de l'objet | égalité exacte, `Reflect.ownKeys`, `toBe` |
+| `components/admin-post-form.spec.ts` (nouveau, remplace `admin-blog-form.spec.ts`) | 31 | 4 sections, champs par section (`it.each` ×4), formulaire sans bouton propre, étiquettes (`it.each` ×3) ; brouillon lu, saisie (`it.each` ×3), remplacement, sujets, payload ; obligatoires (2) ; Markdown (rendu, suivi, assaini) ; publication (radios, `it.each` ×2, choix, mention `it.each` ×2) ; couverture (3) | valeurs de champs et du signal de la page, payloads exacts, `role="alert"`, absence de `script`/`onerror` |
+| `components/admin-post-preview.spec.ts` (nouveau) | 9 | section nommée ; corps `inert` ; ligne publique ; date (`it.each` ×2) ; jamais prioritaire ; couverture en attente (`it.each` ×3) | textes exacts, `inert`, `fetchpriority` |
+| `admin-post-editor.spec.ts` (nouveau) | 51 | ouverture (`it.each` ×2, `new`, fil d'Ariane `it.each` ×2, retour) ; chargement, erreur, « Réessayer », introuvable ; bouton, rien créé si vide ; création (5) ; mise à jour (4) ; aperçu (7) ; modifications (14 dont `it.each` ×6) ; sortie (8) | appels du gateway et leur ordre, `Router.url`, `replaceState`, notifications, `savebar-state`, sommaire, dialogue |
+| `blog-list-view.spec.ts` | +3 | ligne seule (`it.each` ×2 : priorité) ; cohérence avec la liste | égalité exacte |
+| `components/blog-post-row.spec.ts` | +2 | hôte `@container` + colonnes à 60rem ; aucune classe de viewport | `classList` |
+| `admin.routes.spec.ts` | +7, 1 modifié | titres ; trois adresses ; `loadComponent` (`it.each` ×2) ; garde (`it.each` ×2) | égalité de `{ url, title, path, id }` |
+| `admin-blog.spec.ts` | +1, 2 modifiés | « Nouvel article » suivi ; liens « Modifier`\u00a0`: X » ; lien suivi | `href`, `Router.url` |
+| `admin-overview.spec.ts` | 1 modifié | `quick-new-post` → `/admin/blog/new` | `href` et URL suivie |
+
+Tests migrés ou supprimés (aucun cas perdu) :
+
+| Ancien test | Devient | Raison |
+|---|---|---|
+| `admin-blog-form.spec.ts`, préchargement de l'article | formulaire, « shows the draft values » | le formulaire lit le brouillon de la page (`model()`), plus un `input()` |
+| idem, `saved` émis au submit (`submitPost()`) | formulaire, payload du brouillon converti + nouvel article rempli ; `post-draft.spec.ts`, golden du payload | `submitPost` et `saved` disparaissent ; la soumission passe par l'événement `submit`, la conversion est pure |
+| `admin-blog.spec.ts`, `onSaved` création (3) | éditeur, création (5) | enregistrement déplacé dans la page |
+| idem, `onSaved` édition (2) | éditeur, mise à jour (4) | idem |
+| idem, invalidation après création et mise à jour (`it.each` ×2 sur 3) | éditeur : « invalidated without being requested again » et création | idem ; la suppression reste dans la liste (1 test) |
+| idem, noms d'action « Modifier » (boutons) | liens « Modifier`\u00a0`: X » avec `href` | la bascule devient un lien |
+| idem, « Modifier » ouvre le formulaire (`editing()`) | lien suivi → `/admin/blog/b-2` | `editing` supprimé au plan |
+
+Tests modifiés (changement de contrat, pas une adaptation mécanique) :
+
+| Test | Avant | Après | Raison |
+|---|---|---|---|
+| `admin.routes.spec.ts`, titres des pages | 10 routes titrées | + `blog/new`, `blog/:id` | routes d'édition |
+| `admin-overview.spec.ts`, actions rapides | `quick-new-post` → `/admin/blog` | `/admin/blog/new` | le raccourci « Nouvel article » devient vrai |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 16:24, 113 failed / 2376 total).
+
+Sous le squelette jetable, 13 tests de C5 passent, tous des branches d'absence ou de non-action
+triangulées par un cas qui tombe : payload limité à ses cinq clés (le squelette rend un littéral à
+ces clés), deux « introuvable » de `findPostById`, pas de mention de redéploiement pour un
+brouillon, PDF ignoré, aperçu non daté, pas de couverture en attente (×2), rien de créé si vide,
+réponses « annuler » et Échap au dialogue, `beforeunload` sans modification, `/admin/blog` toujours
+servi par `blog`.
+
+Preuve au navigateur à fournir : `/blog` à 1 008, 1 023 et 1 024 px (bascule de la ligne à 1 008 px,
+bande de 16 px assumée, ADR-0013 §4) ; éditeur à 1 440 px (ligne d'aperçu empilée dans la colonne de
+25rem, collante) et à 390 px (aperçu sous le formulaire, « Voir l'aperçu ») ; aperçu Markdown d'un
+article réel ; garde et `beforeunload`.
+
+### Tranche C6 — liste des articles
+
+Contrats fixés par ce RED (précisions au plan) :
+
+- **`toAdminPostsView(posts, filter, sortDir)`** (`admin-posts-view.ts`) : types exportés
+  `AdminPostsFilter = 'all' | 'published' | 'draft'`, `PostsSortDirection = 'descending' |
+  'ascending'` (valeurs d'`aria-sort`), `AdminPostRowView = { id, slug, title, subjects, cover,
+  status, publishedAt, readingTime, likes }`. `filters` : Tous, Publiés, Brouillons, comptes de la
+  liste entière quel que soit le filtre, `disabled` explicite (`true` à 0, « Tous » compris).
+  `rows` : filtrées par statut, triées par `publishedAt` (tri stable : égalité → ordre de la liste),
+  brouillons toujours en fin, dans l'ordre de la liste ; la liste d'entrée n'est pas mutée.
+  `subjects` = trois premiers sujets joints par « · » (`''` sans sujet) ; `readingTime` =
+  « 13`\u00a0`min » (`readingTimeMinutes`).
+- **`Stamp`** : `dashed = input(false)` ajoute `border-dashed` à l'hôte, rien d'autre.
+- **Page** : `app-filter-group` « Filtrer par statut » ; tableau dans `admin-posts-list` avec
+  `caption` `sr-only` « Articles, du plus récent au plus ancien » (« du plus ancien au plus récent »
+  après inversion) ; six `th scope="col"` : Article, Statut, Publié le, Lecture, J'aime, actions
+  (`sr-only`) ; seul « Publié le » porte `aria-sort` (`descending` par défaut) et un `button`
+  `sort-published` qui l'inverse. Ligne `admin-post-row` : `admin-post-cover` (vignette décorative
+  `alt=""`, cadre présent même sans image, `hidden sm:block`), `admin-post-title`,
+  `admin-post-subjects`, `admin-post-meta` (`md:hidden`) « 9 sept. 2026 · 13`\u00a0`min ·
+  0`\u00a0`j'aime » ou « Non publié · … » ; `admin-post-status` (`Stamp`, pointillé pour
+  « Brouillon ») ; `admin-post-date` « 9 sept. 2026 », ou pour un brouillon un
+  `admin-post-unpublished` `sr-only` « non publié » ; `admin-post-reading-time`, `admin-post-likes` ;
+  les trois cellules et leurs en-têtes en `hidden md:table-cell` ; actions `admin-post-view` (publiés
+  seulement, `/blog/<slug>`, `_blank`, `noopener`, « Lire en ligne`\u00a0`: X (nouvel onglet) »),
+  `admin-post-edit` (C5), `admin-post-delete` (A1). Aucune classe `min-w-max`, `overflow-x-auto`,
+  `admin-table-shell`, `admin-table`, `admin-th`, `admin-td`, `admin-row` dans la liste.
+
+| Fichier | Tests | Cas | Assertions clés |
+|---|---|---|---|
+| `admin-posts-view.spec.ts` (nouveau, TS pur) | 25 | filtres (comptes, `disabled` `it.each` ×3, stables `it.each` ×3) ; lignes (`it.each` ×6 : 3 filtres × 2 sens), égalité de date, liste non mutée ; ligne golden, sujets (`it.each` ×4), lecture (`it.each` ×4), brouillon sans couverture | égalité exacte |
+| `shared/ui/stamp.spec.ts` | +2 | pointillé ou non (`it.each`) | `classList` exacte |
+| `admin-blog.spec.ts` | +17, 2 modifiés | en-têtes ; tampons pointillés ; « Lire en ligne » ; tableau (légende, ligne, brouillon, vignettes) ; tri (3) ; filtre (5) ; petit écran (4) | textes, `aria-sort`, `aria-pressed`, `aria-disabled`, `classList`, ordre des lignes |
+
+Tests modifiés (changement de contrat) :
+
+| Test | Avant | Après | Raison |
+|---|---|---|---|
+| `admin-blog.spec.ts`, en-têtes en français | Titre, Statut, Date, J'aime | Article, Statut, Publié le, Lecture, J'aime | maquette `#blog` |
+| idem, statut en tampon | tag et texte | + `border-dashed` du seul brouillon | `Stamp dashed` |
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil
+le 2026-10-07 16:24, 44 failed / 2376 total).
+
+Sous le squelette, 2 tests de C6 passent : « la liste d'entrée n'est pas mutée » (garde contre un
+tri en place) et le tampon plein (`dashed` à `false`, triangulé par le cas pointillé).
+
+Preuve au navigateur à fournir : liste à 375 px sans défilement horizontal (vignette masquée, méta
+sous le titre) ; tri au clavier et annonce de l'ordre (lecteur d'écran) ; tampon pointillé dans les
+deux registres.
+
+### Bilan du RED C5 et C6
+
+- Base : 2219 passed / 2219 (C1 à C4 et complément verts, non commités).
+- Arbre de tests : 2376 = 2219 − 29 (`admin-blog.spec.ts` d'avant) − 2 (`admin-blog-form.spec.ts`)
+  + 40 (`admin-blog.spec.ts` réécrit : 17 conservés, 4 modifiés, 1 suppression invalidée, 1 C5,
+  17 C6) + 51 (`admin-post-editor`) + 31 (`admin-post-form`) + 9 (`admin-post-preview`) + 18
+  (`post-draft`) + 25 (`admin-posts-view`) + 3 (`blog-list-view`) + 2 (`blog-post-row`) + 2
+  (`stamp`) + 7 (routes).
+- **Arbre réel**, après `ng cache clean` et purge de `node_modules/.vite` : `pnpm test` s'arrête à
+  la compilation, sur des symboles dus au GREEN seulement : `TS2307` ×7 (`post-draft` ×2,
+  `admin-post-editor` ×2, `admin-post-form`, `admin-post-preview`, `admin-posts-view`), `TS2724`
+  (`toBlogPostRowView`), `NG8002` ×2 (`dashed` sur `app-stamp`), et les `TS7006` / `TS18046` qui en
+  découlent. Aucune faute de type propre aux specs (un `TS4111` relevé au premier passage a été
+  corrigé dans le spec).
+- **Squelette jetable** (5 fichiers créés aux signatures du contrat, valeurs fausses mais typées,
+  composants sans gabarit ; `Stamp.dashed` sans effet, `toBlogPostRowView` faux) :
+  **157 failed / 2376**, tous en `AssertionError` (aucun `TypeError`, `NG0`, délai dépassé ni
+  `stderr`) : C5 113, C6 44 ; aucun test antérieur ne tombe hors des modifiés.
+- **Harnais vérifié** : implémentation jetable complète (5 fichiers créés ; `admin-blog.ts`,
+  `admin.routes.ts`, `admin-overview.ts`, `stamp.ts`, `blog-list-view.ts`, `blog-post-row.ts`
+  modifiés) : **2376 passed / 2376**, sans `stderr`. Mutations vérifiées : ligne de base remise à
+  zéro après la navigation (3 tests tombent), brouillons en tête (13 tests tombent). Fichiers
+  modifiés restaurés depuis l'instantané (`md5sum -c` : 7 OK), fichiers créés supprimés ; rien dans
+  l'index git.
+- Prettier et ESLint passent sur les 12 fichiers touchés ; ni le motif d'archéologie ni
+  `grep -P '\x{00A0}|\x{202F}'` n'y trouvent rien (insécables écrites en échappement).
+- `components/admin-blog-form.spec.ts` est supprimé (`/bin/rm`) ; le `git mv` du composant vers
+  `admin-post-form.ts` revient au GREEN.
+
+Pièges relevés pour le GREEN :
+
+- L'aperçu Markdown du formulaire produit des titres `h1` si le contenu commence par `#` : l'éditeur
+  doit garder un seul `h1` (le test d'ouverture le compte, avec un contenu en `##`) ; à vérifier au
+  navigateur sur un article réel.
+- `@if (row.publishedAt)` dans la méta et la cellule : la date est formatée par `DatePipe` sous
+  `LOCALE_ID` fr (« 9 sept. 2026 »), comme aujourd'hui.
+
+Points de copie à valider en revue : titres d'onglet « Nouvel article | Admin » et « Modifier un
+article | Admin » ; « Cet article n'existe pas ou a été supprimé. » ; mention de redéploiement ;
+référence « Blog · Liste des articles » ; méta sous `md` (« Non publié · 5 min · 0 j'aime ») ;
+`readingTime` en « 13 min » avec insécable ; ordre « écriture puis couverture » conservé de
+l'ancien `onSaved` (inverse des projets).
+
+### Correctifs de la revue de la PR c1
+
+Points de la `## Review code` (PR c1, revue du 2026-10-07) couverts par un test. Les tests sont
+écrits avec le correctif, à la demande de la session principale (pas de passage `qa` séparé).
+
+**Changement de contrat acté par la revue (point 3)** : les libellés obligatoires de l'éditeur
+d'article portent la mention « obligatoire », comme ceux de l'éditeur de projet. Le texte exact du
+`label` change dans `admin-post-form.spec.ts` :
+
+| Champ | Avant | Après |
+|---|---|---|
+| `admin-post-title` | « Titre » | « Titre obligatoire » |
+| `admin-post-excerpt` | « Extrait » | « Extrait obligatoire » |
+| `admin-post-content` | « Contenu (Markdown) » | « Contenu (Markdown) obligatoire » |
+
+**Changement de contrat acté par la revue (point 4)** : « aucune nouvelle requête de la liste »
+après un enregistrement ne vaut plus quand une couverture vient d'être envoyée pour un article
+existant. Dans ce seul cas, la page relance `postsResource` : la « Couverture actuelle » et l'aperçu
+montrent l'image téléversée (`uploadCoverImage` ne renvoie qu'une clé). Le test « Given an edited
+title… » (sans couverture) garde `requested: 1`.
+
+- `admin-post-editor.spec.ts` (+2) : couverture envoyée → liste demandée 2 fois, image de la seconde
+  réponse dans `admin-post-cover-current` et dans l'aperçu, plus de mention « visible ici après
+  l'enregistrement », « Aucune modification » ; téléversement refusé → liste demandée une fois.
+- `admin-project-editor.spec.ts` (+1) : couverture envoyée → l'image de la réponse du `PATCH`
+  (postérieur au téléversement) apparaît dans la couverture actuelle et l'aperçu, `getProjectById`
+  appelé une seule fois. L'éditeur de projet n'a pas le défaut.
+- `admin-post-form.spec.ts` (+2) : contenu `# Titre`, `## Partie`, `###### Note` → `H2`, `H3`,
+  `H6` dans le rendu (m5, un seul `h1` dans la page) ; un bloc de code rendu porte
+  `tabindex="0"` (il défile dans son cadre et doit être atteignable au clavier, axe
+  `scrollable-region-focusable`). Un contenu en `##` garde ses `h2` : les deux tests existants
+  restent inchangés.
+- `parse-markdown.spec.ts` (+4) : option `topHeadingLevel: 2` (le titre le plus haut descend à
+  `h2`, le reste suit, plafond `h6`, un contenu déjà en `##` ne bouge pas) ; ni le plafond ni le
+  titre le plus haut ne survivent à l'appel suivant.
+- `admin-layout.spec.ts` (+1, m1) : la coque pose `ViewportScroller.setOffset([0, 24])` à
+  l'ouverture et `[0, 0]` à la destruction.
+
+Sans test (mise en page que happy-dom ne calcule pas, vérifiée au navigateur) : point 1
+(`scroll-padding-bottom`, radio de nature sur toute la carte), point 2 (`grid-cols-1` des trois
+grilles de l'éditeur d'article), m3 (insécables), m4, m6 (« l'envoi de l'image »).
+
 ## Journal des tranches
 
 - **Tranche A1 — supprimer demande confirmation** : GREEN 1720 passed / 1720 total · refactor : `ConfirmDialog` ferme le `<dialog>` avant d'émettre (sinon le reste de la page reste inerte et le focus ne peut pas atteindre le `h1`) ; requête `viewChild` de titre remontée sous les dépendances injectées sur les 4 pages (ordre `CLAUDE.md`).
@@ -2406,6 +3144,15 @@ initiale accentuée et chaîne vide).
 - **Tranche B4 — vue d'ensemble : relevé « Audience »** : GREEN 2005 passed / 2005 total · refactor : `THEME_FALLBACK` et `DEFAULT_PALETTE` d'Audience remplacés par `readThemeColor` (repli couleur système, partagé avec la vue d'ensemble) ; garde `isPlatformBrowser` retirée (l'admin n'est rendu que côté client, `readThemeColor` tolère un document sans fenêtre).
 - **Tranche B5 — vue d'ensemble : contacts, contenu en ligne, phrase de synthèse** : GREEN 2005 passed / 2005 total · refactor : titre de section (`h2` + filet + lien) répété quatre fois sorti dans `components/admin-section-head.ts` (Audience, Contacts, Contenu en ligne, Actions rapides). Hors contrat : les composants de section prennent `null` (« indisponible ») sur leurs entrées principales et projettent l'état (squelette ou `LoadError`) fourni par la page, ce qui garde le `h2` de la section dans les quatre états.
 - **Correctifs de la revue de la PR b** : GREEN 2021 passed / 2021 total · refactor : accord singulier/pluriel (4 sites) et mise en capitale (2 sites) remplacés par `pluralize.ts` et `capitalize.ts` ; courbe « Visiteurs » seule tirée de `buildVisitorsOnlyChartData` (jeu de données partagé avec `buildVisitorsChartData`) au lieu d'un filtre sur le libellé ; lignes vides retirées des imports. Points 1 et 2, m1, m2, m3, m5, m6, m7, m8 de la revue ; m4 et la taille d'`admin-overview.ts` tolérés. Hors liste : le chiffre des non-lus suit la même règle de chargement que le CV (`unreadLoading`, même défaut, même composant).
+- **Tranche C1 — page d'édition d'un projet** : GREEN 2104 passed / 2104 total · refactor : enregistrement de l'éditeur ramené à un seul style (`async` + `firstValueFrom` pour la création et la mise à jour, au lieu d'un `subscribe` pour la seconde) ; invalidations et notifications regroupées (`invalidatePublicCaches`, `notify`, 3 et 6 sites) ; identifiants de description des champs de présentation calculés une fois dans `presentationText` (plus de méthode dans le gabarit). Hors liste du plan : `AdminTagsSelector.selectedTags` passe en `ReadonlySet<string>` (le brouillon de la page est un ensemble en lecture seule, liaison `[(selectedTags)]` directe), d'où le type de `AdminBlogForm.selectedTags` ; règle ESLint `component-selector` ouverte aux sélecteurs d'attribut (`fieldset[app-admin-form-section]` prescrit par le plan, `li[app-admin-project-row]`) ; utilities `field-label` et `field-hint` (`styles.css`, une dizaine d'éléments natifs chacune).
+- **Tranche C2 — liste éditoriale des projets, filtre par nature** : GREEN 2104 passed / 2104 total · refactor : le fait « Stack » réutilise `projectStack` du domaine au lieu d'un `slice` local ; relance de la liste appelée directement sur la ressource (`reloadList` supprimé avec la relance des catégories).
+- **Tranche C3 — aperçu en direct de la carte publique** : GREEN 2219 passed / 2219 total · refactor : aucun. L'aperçu se construit sur le projet enregistré (`saved`) comme base de `toPreviewProject`, donc l'image et le slug suivent un `PATCH` réussi.
+- **Tranche C4 — modifications non enregistrées : barre, sommaire, garde** : GREEN 2219 passed / 2219 total · refactor : `canLeave()` résout à `false` une demande de sortie restée en attente avant d'en ouvrir une nouvelle (une seconde demande de navigation pendant que le dialogue est ouvert ne laisse plus la première en suspens) ; « Enregistrer » ne vit plus que dans `AdminSaveBar` (le bouton de la page est retiré). Hors liste : la répartition des champs par section du sommaire est une constante de la page (`FORM_SECTIONS`), conformément à la note « dérivation dans la page » du RED.
+- **Complément de fidélité à la maquette** : GREEN 2219 passed / 2219 total · refactor : chaque capture de la galerie est un seul `form` qui porte vignette, texte alternatif, position et actions (happy-dom 20.9 calcule `compareDocumentPosition` faux entre un nœud hors d'un `form` et un nœud dedans : le mandataire de `HTMLFormElement` n'est pas l'objet rangé chez le parent ; les boutons `app-button` sont `type="button"` par défaut, rien ne soumet par erreur). Hors liste du plan : icônes `arrow-up` et `arrow-down` ajoutées à `icon-map.ts`, sprite régénéré (`pnpm icons:build`) ; galerie en requêtes de conteneur (`@container`, 1 / 2 / 3 colonnes à 0, 26 et 36rem) pour suivre la colonne du formulaire plutôt que le viewport.
+- **Tranche C5 — page d'édition d'un article et aperçu** : GREEN 2377 passed / 2377 total · refactor : sommaire et garde de sortie mis en commun avec l'éditeur de projet (`form-toc-entries.ts` : `toFormTocEntries` et le type `FormTocEntry`, sorti du fichier du composant ; `leave-confirmation.ts` : `LeaveConfirmation`, 2 consommateurs chacun) ; enregistrement en un seul chemin (écriture, couverture, invalidation, ligne de base) pour la création et la mise à jour. Hors liste du plan : `withRouterConfig({ canceledNavigationResolution: 'computed' })` dans `app.config.ts` (validé par l'utilisateur, +1 test `app.config.spec.ts` sur `ROUTER_CONFIGURATION`, rouge sans l'option) ; le message d'échec du téléversement ne renvoie plus à « Modifier » (le bouton n'existe plus).
+- **Tranche C6 — liste des articles** : GREEN 2377 passed / 2377 total · refactor : corps du `@for` sorti dans `components/admin-post-row.ts` (`tr[app-admin-post-row]`, noms d'action en `computed`, comme `AdminProjectRow`) ; `admin-table*` gardé (Messages s'en sert encore).
+- **Correctifs de la revue de la PR c1** : GREEN 2387 passed / 2387 total · refactor : aucun. Points 1 à 4, m1, m3, m4, m5, m6, m8 (inscrit en suivi de la PR c2), m9 de la `## Review code`. Barre d'enregistrement : `scroll-padding-bottom` sur `:root:has(app-admin-save-bar)`, cinq paliers mesurés (la barre fait 105, 73, 125, 105 puis 73 px selon la largeur) ; radio de nature étendue à toute la carte (`absolute inset-0 size-full opacity-0`). Grilles de « 01 · Article », « 02 · Contenu », « 03 · Couverture » en `grid-cols-1`. Couverture d'article : `postsResource.reload()` après un téléversement réussi sur un article existant, seul cas où la liste est redemandée (le flux partagé de `HttpBlogGateway` réémet aussi sur `invalidateAdminPosts`, sans requête HTTP de plus : mesuré, 1 GET). Hors liste : m5 traité par une option `topHeadingLevel` de `parseMarkdown` (le titre le plus haut du contenu devient `h2`, le reste suit) plutôt qu'un décalage fixe, qui aurait fait d'un article réel en `##` une suite de `h3` sous le `h1` (axe `heading-order`, constaté au navigateur) ; blocs de code du rendu en `tabindex="0"` (ils défilent désormais dans leur cadre, axe `scrollable-region-focusable`, constaté au navigateur). Commentaire de `styles.css` sur `field-label` retiré (m4).
+- **Colonne d'aperçu des éditeurs à `2xl`** : GREEN 2387 passed / 2387 total · refactor : aucun. Mesuré au navigateur : avec la colonne de 25rem dès `lg`, le formulaire tombait à 204 px à 1 024 et 460 px à 1 280. La colonne d'aperçu, son `sticky`, le lien « Voir l'aperçu » et la réserve du squelette passent à `2xl` (1 536 px) ; le formulaire fait au moins 660 px à partir de 1 024. Paliers 80rem et 82.5rem du `scroll-padding-bottom` supprimés (la barre ne passe plus sur deux lignes au-dessus de 527 px) ; balayage 320 à 1 920 px : marge ≥ barre + 16 px partout, 0 élément de focus entièrement masqué à 1 280 et 1 536, axe 0 violation à 1 280, 1 536 et 1 920 en clair et en sombre.
 
 ## Verify
 
@@ -2715,6 +3462,201 @@ harnais (`addScriptTag`, 0 avant, 1 après l'injection, mesuré).
 
 **Verdict : PASS.**
 
+### Tranches C3, C4 et complément de fidélité
+
+Build de production servi en local (port 4342), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
++ best-practice), CSP de la page appliquée.
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production` (exit 0, « Prerendered 20 static routes », « CSP
+   hardened on 21 page(s) »), puis `git checkout public/rss.xml public/sitemap.xml`.
+2. Même build sur `master` (`5b7abcc`, worktree jetable) ; HTML prérendu de `/projects` comparé
+   au nôtre, styles inline, empreintes de fichiers et hachages CSP neutralisés.
+3. Scripts `scratchpad/v/c34.mjs` et `c34b.mjs` (harnais de `c12.mjs`) : session simulée
+   (`localStorage['auth:session'] = '1'`), GET de l'API servis par fixtures (listes copiées une fois
+   en GET public), **toute requête non-GET annulée** et journalisée, toute autre origine annulée.
+   Projet ouvert : DashFlow (`/admin/projects/81239d51-…`).
+4. Cas joués : `/projects` à 1 000, 1 007, 1 008, 1 023, 1 024 et 1 440 px ; éditeur à 1 440 px
+   en clair et en sombre (saisie, nature « Démo », défilement, sommaire, fil d'Ariane, Échap) ;
+   liste → éditeur → saisie → Retour arrière (annuler, puis confirmer) ; rechargement et fermeture
+   d'onglet avec puis sans modification ; éditeur à 390 px en clair et en sombre (« Voir
+   l'aperçu », barre) ; `/admin/projects/new` sans puis avec nature.
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| HTML prérendu de `/projects` | seules les classes changent : `@container` sur l'hôte, `lg:` → `@min-[60rem]:` (article, couverture, texte, `order-last` sur la deuxième étude de cas). Ailleurs, une ligne `modulepreload` de plus (découpage des chunks, pas du HTML de page) |
+| Bascule de `/projects` | conteneur 952 px à 1 000, 959 px à 1 007 : empilé ; 960 px à 1 008, 975 px à 1 023, 960 px à 1 024 : 12 colonnes. Bande de 1 008 à 1 023 px assumée (ADR-0013 §4) ; aucun défilement horizontal |
+| Aperçu à 1 440 | « Réalisations · En production », corps `inert`, étude de cas **empilée** (1 colonne) dans la colonne de 25rem ; aucun lien de l'aperçu ne prend le focus |
+| En direct | accroche et titre saisis repris aussitôt par l'aperçu, `h1` reste « DashFlow » ; « Démo » → « Réalisations · Démo » et carte de grille ; nouveau projet : « Choisissez une nature pour voir la carte. » puis carte « Atelier », « Réalisations · Script » |
+| Colonne collante | défilement à 1 600 px : haut de la colonne à 24 px du viewport ; barre d'enregistrement collée au bas (900 / 900) |
+| Barre | « Aucune modification » à l'ouverture ; « 2 modifications non enregistrées » après titre et accroche, sommaire « modifié » sur 01 et 02 ; à 390 px, barre collée au bas, « 1 modification non enregistrée » |
+| Sommaire | « 03 · Liens » → `/admin/projects/<id>#project-links`, même page, section au haut du viewport (défilement 1 474 px), pas de `/#id` |
+| Dialogue de sortie | fil d'Ariane avec modification : dialogue ouvert, URL inchangée, focus sur « Continuer l'édition », titre « Quitter sans enregistrer ? » (U+202F) ; Échap : fermé, saisie conservée |
+| Retour arrière | dialogue ouvert, l'éditeur reste ; « Continuer l'édition » : URL de l'éditeur, saisie conservée ; dans une seconde session, confirmer → `/admin/projects` |
+| `beforeunload` | rechargement modifié : boîte native `beforeunload`, refusée → saisie conservée ; fermeture modifiée : boîte native, onglet gardé ; rechargement et fermeture sans modification : aucune boîte |
+| Couverture | 1 440 px : vignette 240 px + zone de dépôt 362 px côte à côte, tampon de nature ; 390 px : empilées |
+| Galerie | 1 440 px : 3 colonnes, aucun débordement, vignettes chargées ; boutons icônes 44 × 44 (13 relevés) ; 390 px : 1 colonne |
+| axe | **0 violation** : éditeur à l'ouverture (clair, sombre), après saisie (clair, sombre), dialogue ouvert (clair, sombre), 390 px (clair, sombre), nouveau projet |
+| Écritures | 0 requête non-GET émise (journal `aborted` vide sur tous les passages) |
+
+**Console** : aucune erreur applicative. Seul le `404 /api/config` (route du serveur SSR, absente
+du service statique). Une `SecurityError` sur `sessionStorage` apparaît quand le second Retour
+arrière sort de l'application vers `about:blank` (script d'amorçage du harnais, pas l'app).
+
+**Écart constaté, hors périmètre** : après un Retour arrière refusé, le routeur remplace l'entrée
+d'historique précédente par l'éditeur (`canceledNavigationResolution: 'replace'`, défaut) ; un
+second Retour arrière sort alors de l'application au lieu de rouvrir le dialogue (la boîte native
+`beforeunload` prend le relais si des modifications restent). `withRouterConfig({
+canceledNavigationResolution: 'computed' })` le corrigerait, mais touche toute l'application.
+
+**Captures** (scratchpad) : `c34-projects-{1008,1023,1024,1440}.jpg`,
+`c34-editeur-1440-{clair,sombre}.jpg`, `c34-editeur-1440-defile-clair.jpg`,
+`c34-sommaire-liens-clair.jpg`, `c34-dialogue-sortie-{clair,sombre}.jpg`,
+`c34-retour-arriere-dialogue-clair.jpg`, `c34-editeur-390-{clair,sombre}.jpg`,
+`c34-barre-390-clair.jpg`, `c34-voir-apercu-390-clair.jpg`, `c34-nouveau-apercu-clair.jpg`,
+`c34-couverture-{1440-clair,1440-sombre,390-clair}.jpg`, `c34-galerie-{1440-clair,1440-sombre,390-clair}.jpg`,
+rapport `c34-report.json`.
+
+**Verdict : PASS.**
+
+### Tranches C5 et C6
+
+Build de production servi en local (port 4356), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
++ best-practice), CSP de la page appliquée.
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production` (exit 0, « Prerendered 20 static routes », « CSP
+   hardened on 21 page(s) »), puis `git checkout public/rss.xml public/sitemap.xml`.
+2. Même build sur `master` (`5b7abcc`, worktree jetable supprimé ensuite) ; HTML prérendu de
+   `/blog` comparé au nôtre, styles inline, empreintes de fichiers et hachages CSP neutralisés.
+3. Script `scratchpad/v/c56.mjs` (harnais de `c34.mjs`) : session simulée
+   (`localStorage['auth:session'] = '1'`), GET de l'API servis par fixtures (articles copiés une
+   fois en GET public, plus un brouillon fictif sans couverture), **toute requête non-GET annulée**
+   et journalisée, toute autre origine annulée. Article ouvert : « Chiffrement côté client avec
+   AES-256-GCM et PBKDF2 » (`/admin/blog/40048280-…`).
+4. Cas joués : `/blog` à 375, 1 008, 1 023, 1 024 et 1 440 px ; liste à 1 440 et 375 px en clair
+   et en sombre (tri au clavier deux fois, filtres Brouillons puis Publiés) ; éditeur à 1 440 px en
+   clair et en sombre (saisie, Markdown piégé, statut, fil d'Ariane, Échap, rechargement) ;
+   liste → éditeur → saisie → Retour arrière → « Continuer l'édition » → **second** Retour arrière →
+   « Quitter sans enregistrer » → Avancer ; navigation publique (accueil → `/blog` → article,
+   Retour ×2, Avancer, ancre du pied de page `/about#recrutement`, Retour) ; `/admin/blog/new` à
+   1 440 et 390 px (clair, sombre).
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| HTML prérendu de `/blog` | seules les classes changent : `@container` sur l'hôte des deux lignes, `lg:` → `@min-[60rem]:` (grille, alignement, écart, `order-none` de la couverture). Ailleurs, deux lignes `modulepreload` de moins (découpage des chunks, pas du HTML de page) |
+| Bascule de `/blog` | conteneur 343 px à 375 : 1 colonne, couverture au-dessus (`order: -1`) ; 960 px à 1 008, 975 à 1 023, 960 à 1 024, 1 216 à 1 440 : 2 colonnes, couverture à droite. Bande de 1 008 à 1 023 px assumée (ADR-0013 §4) ; aucun défilement horizontal |
+| Liste à 1 440 | six colonnes, tampons « Publié » pleins et « Brouillon » pointillé (`border-top-style: dashed`), « — » pour la date du brouillon, actions sur une ligne ; légende « Articles, du plus récent au plus ancien », `aria-sort="descending"` sur « Publié le » seul |
+| Tri au clavier | Entrée sur « Publié le » (focus conservé) : ordre inversé, brouillon en fin, `aria-sort="ascending"`, légende « du plus ancien au plus récent » ; seconde Entrée : retour à l'ordre initial |
+| Filtre | Brouillons : 1 ligne (le brouillon) ; Publiés : 2 lignes ; comptes 3 / 2 / 1 |
+| Liste à 375 | tableau de 343 px, aucun défilement horizontal ; Publié le, Lecture, J'aime masqués et repris en méta (« 9 sept. 2026 · 13 min · 0 j'aime », « Non publié · 1 min · 0 j'aime ») ; vignettes masquées ; actions empilées dans leur cellule |
+| Éditeur à 1 440 | un seul `h1` (titre enregistré), rendu Markdown de l'article réel : 11 `h2`, 0 `h1` ; colonne `sticky`, aperçu `inert` (aucun lien focalisable), ligne publique empilée dans les 25rem ; « Aucune modification », sommaire 01 à 04 |
+| En direct | « (révisé) » tapé : titre de l'aperçu suit, `h1` inchangé, « 1 modification non enregistrée », sommaire « modifié » sur 01 seulement |
+| Assainissement | contenu `<img onerror>`, `<script>`, lien `javascript:` : 0 `script`, aucun `onerror`, aucun `href` `javascript:`, aucun drapeau posé sur `window` ; « ## Partie » rendu en `h2` |
+| Publication | « Brouillon » : pas de mention ; « Publié » : « Publier l'article redéploie le site : il est en ligne quelques minutes plus tard. » |
+| Garde | fil d'Ariane avec modification : dialogue ouvert, URL inchangée, focus sur « Continuer l'édition » ; Échap : fermé, saisie conservée ; rechargement modifié : boîte native `beforeunload`, refusée → saisie conservée |
+| Retour arrière (`computed`) | 1er Retour : dialogue ; « Continuer l'édition » : URL de l'éditeur, saisie conservée, `history.length` inchangé (3) ; **2e Retour : le dialogue se rouvre** (l'écart relevé en C4 est levé) ; « Quitter sans enregistrer » : `/admin/blog` ; Avancer : l'éditeur, sans dialogue |
+| Navigation publique | `/` → `/blog` → article ; Retour : `/blog`, Retour : `/`, Avancer : `/blog` ; pied de page → `/about#recrutement`, cible en haut du viewport (0 px) ; Retour : `/blog` |
+| Nouvel article | « Nouvel article », aucun GET de la liste ; 390 px : « Voir l'aperçu » → `/admin/blog/new#apercu`, aperçu sous le formulaire |
+| axe | **0 violation** : liste (1 440 et 375, clair et sombre, filtrée), dialogue (clair, sombre), nouvel article à 390 (clair, sombre). Voir l'écart ci-dessous pour l'éditeur à 1 440 |
+| Écritures | 0 requête non-GET émise (journal `aborted` vide sur tous les passages) |
+
+**Console** : aucune erreur applicative. 404 `/api/config` (route du serveur SSR, absente du
+service statique) ; 404 `x.png` dans l'éditeur (image du Markdown piégé saisi par le script) ;
+`ERR_FAILED` de `giscus.app` sur l'article public (origine annulée par le harnais).
+
+**Écarts constatés.**
+
+- axe `target-size` (1 ou 2 puces de sujets) sur l'éditeur à 1 440 px, à l'ouverture : la barre
+  d'enregistrement `sticky bottom-0` (C4) recouvre la rangée de puces au bas du viewport. Preuve :
+  même page, barre masquée, 0 violation. L'éditeur de projet a la même barre (son 0 de C4 tenait
+  à ce qui se trouvait sous la barre). À trancher : laisser (recouvrement passager, inhérent à une
+  barre collante) ou ajouter un `scroll-padding-bottom` à la hauteur de la barre pour qu'un champ
+  focalisé ne passe pas dessous (WCAG 2.4.11).
+- axe `image-alt` après saisie : l'`<img>` sans `alt` vient du Markdown piégé du script, pas de
+  l'app.
+
+**Captures** (scratchpad) : `c56-blog-{375,1008,1023,1024,1440}.jpg`,
+`c56-liste-{1440,375}-{clair,sombre}.jpg`, `c56-liste-1440-tri-clair.jpg`,
+`c56-liste-1440-brouillons-clair.jpg`, `c56-editeur-1440-{clair,sombre}.jpg`,
+`c56-editeur-markdown-{clair,sombre}.jpg`, `c56-editeur-barre-{clair,sombre}.jpg`,
+`c56-dialogue-sortie-{clair,sombre}.jpg`, `c56-retour-arriere-{1,2}-clair.jpg`,
+`c56-nouvel-1440-clair.jpg`, `c56-nouvel-390-{clair,sombre}.jpg`,
+`c56-voir-apercu-390-{clair,sombre}.jpg`, rapport `c56-report.json`.
+
+**Verdict : PASS** (sous réserve de l'arbitrage `target-size` ci-dessus).
+
+### Correctifs de la revue de la PR c1
+
+Build de production servi en local (port 4390), Chromium (Playwright), axe-core 4.14 (WCAG 2.2 AA
++ best-practice), CSP de la page appliquée.
+
+**Steps reproductibles.**
+
+1. `pnpm run build --configuration production` (exit 0, « Prerendered 20 static routes », « CSP
+   hardened on 21 page(s) »), puis `git checkout public/rss.xml public/sitemap.xml`.
+2. Script `scratchpad/v/c1fix.mjs` : session simulée (`localStorage['auth:session'] = '1'`), GET
+   de l'API servis par fixtures ; articles copiés du GET public de prod **article par article**
+   (`/blog/posts/<slug>`, contenu complet : « Chiffrement côté client avec AES-256-GCM et PBKDF2 »,
+   8 blocs de code, le plus large à 914 px), plus un brouillon fictif sans couverture. **Toute
+   requête non-GET annulée**, sauf, dans le seul scénario « couverture », le `PATCH` et le
+   `POST …/image` du brouillon fictif, simulés par le harnais (réponse locale, rien n'atteint l'API).
+3. Cas joués : hauteur de la barre (libellé le plus long, « 12 modifications non enregistrées »)
+   de 320 à 1 920 px ; Tab depuis le `h1` jusqu'à la barre, avant et après une saisie, sur les deux
+   éditeurs à 1 440 et 375 px en clair et en sombre (plus 1 024 et 1 200 px en clair) ; axe aux
+   mêmes points ; contenu ouvert par `#` ; clic dans le sommaire ; couverture choisie puis
+   enregistrée.
+
+**Résultats.**
+
+| Cas | Observé |
+|---|---|
+| Hauteur de la barre / `scroll-padding-bottom` | 105 / 122 px jusqu'à 527, 73 / 122 de 528 à 639, 73 / 90 de 640 à 1 023, 125 / 142 de 1 024 à 1 051, 105 / 142 de 1 052 à 1 055, 105 / 122 ensuite, 73 / 122 de 1 315 à 1 319, 73 / 90 à partir de 1 320 : marge ≥ barre + 16 px aux 18 largeurs mesurées, deux éditeurs |
+| Focus masqué (point 1) | **0 élément entièrement sous la barre** : projet 96 arrêts à 1 440 (clair, sombre), 97 à 375 (clair, sombre), 96 à 1 024 et 1 200 ; article 60 à 1 440, 61 à 375, 60 à 1 024 et 1 200 ; avant et après saisie. Seuls recouvrements partiels : les `pre` du rendu, plus hauts que l'espace libre (2.4.11 vise le masquage complet) |
+| Radio de nature | 198 × 82 px dans une carte de 200 × 84 (1 440), 341 × 82 dans 343 × 84 (375) ; clic dans un coin de la carte → nature cochée ; focus clavier : anneau sur la carte |
+| Débordement (point 2), 375 px | `scrollWidth` = `clientWidth` = 375 ; Markdown et « Rendu » de 16 à 359 px ; `pre` de 309 px qui défile dans son cadre (`scrollLeft` 120 après trois flèches, focus sur le `pre`) |
+| Débordement, 1 440 px | colonne 308 → 928, Markdown et « Rendu » 308 → 928, aperçu 984 → 1 384 : plus rien sous l'aperçu ; `pre` de 586 px qui défile ; 1 024 px : 308 → 512, aperçu à 568 |
+| Mention « obligatoire » (point 3) | libellés « Titre obligatoire », « Extrait obligatoire », « Contenu (Markdown) obligatoire », « Rendu » |
+| Couverture (point 4) | brouillon sans couverture, image choisie : « Nouvelle couverture : visible ici après l'enregistrement. » ; Enregistrer : `PATCH` puis `POST …/image` simulés, 1 GET `/blog/posts/admin` de plus, « Couverture actuelle » et aperçu sur l'image téléversée, mention retirée, « Aucune modification », toast « Article enregistré » |
+| `h1` (m5) | contenu « # Titre un » puis « ## Partie » : 1 `h1` dans la page, rendu `H2 Titre un`, `H3 Partie` ; article réel en `##` : 11 `h2`, inchangés |
+| Sommaire (m1) | « 03 · Liens » → section à **24 px** du haut (0 px avant) |
+| Écritures | 0 requête non-GET émise hors des deux réponses simulées du scénario « couverture » |
+
+**axe** : **0 violation** sur l'éditeur de projet (1 440 et 375, clair et sombre, à l'ouverture et
+après saisie) et sur l'éditeur d'article à 375 (clair et sombre) et après saisie à 1 440. Reste,
+sur l'éditeur d'article à 1 440 **à l'ouverture seulement**, `target-size` ×1 sur une puce de sujet
+que la barre collante recouvre en partie au bas de la fenêtre (barre de 827 à 900 px) : barre
+masquée, 0 ; après 120 px de défilement, 0. C'est un recouvrement de position, pas un focus
+masqué (le focus clavier s'arrête au-dessus de la barre) ; seul un changement de conception de la
+barre l'éteindrait. Hors du périmètre demandé : à 1 024 px, `target-size` ×7 sur les champs
+« Pourquoi » de l'éditeur de projet, barre masquée ou non (colonne de 204 px, inscrit en suivi de
+la PR c2).
+
+**Décalage remis à zéro hors de l'admin** : couvert par `admin-layout.spec.ts` (`[0, 0]` à la
+destruction). Pas de parcours naturel pour l'observer au navigateur : « Voir le site » ouvre un
+nouvel onglet et la déconnexion mène à `/` sans pied de page. Un retour simulé par `pushState`
+depuis l'admin puis un clic sur `/about#recrutement` ne fait pas défiler du tout, avec ou sans le
+correctif (build témoin sans `setOffset`, même résultat) : artefact du `popstate` synthétique, pas
+du décalage.
+
+**Console** : aucune erreur applicative ; 404 `/api/config` (route du serveur SSR, absente du
+service statique).
+
+**Captures** (scratchpad `shots/`) : `c1fix-projet-{1440,375}-{light,dark}.jpg`,
+`c1fix-projet-{1024,1200}-light.jpg`, `c1fix-article-{1440,375}-{light,dark}.jpg`,
+`c1fix-article-contenu-{1440,375}-{light,dark}.jpg`, `c1fix-pre-defile-{375,1440}.jpg`,
+`c1fix-nature-focus-375.jpg`, `c1fix-couverture-apres-enregistrement.jpg`, rapport
+`c1fix-report.json`.
+
+**Verdict : PASS** (sous réserve de l'arbitrage `target-size` à l'ouverture de l'éditeur
+d'article à 1 440 px, ci-dessus).
+
 ## Review code
 
 PR a (`fix/admin-correctifs`, base `master` `30ef475`, diff non commité + fichiers non suivis), revue du 2026-10-07.
@@ -2856,3 +3798,67 @@ Verify de la revue (build de la branche servi en local, port 4360, Chromium, CSP
 - m7. Ligne vide au milieu des imports : `overview-audience.ts:132`, `overview-contacts.ts:6`, `overview-content.ts:118`.
 - m8. Cohérence de la spec : la tranche B2 et le § 6 (PR b) listent encore `components/admin-table.ts` (+specs) à modifier, alors que rien n'y est touché (fait en PR a) ; `with-first-of-month.ts`, `components/admin-section-head.ts` et les builders de test (`analytics-builders.ts`, `user-builders.ts`) sont au journal mais absents du § 6.
 - Suivis de la revue de la PR a : m7 traité ici (`settle.ts`, `by-test-id.ts`, `capture-crash.ts`, `press-test-id.ts`, un concept par fichier, `settleBounded` commenté d'une ligne) ; m3 et m6 restent en C1, m5 en C2, m8 en C1, comme décidé.
+
+### PR c1 (`feat/admin-edition`), revue du 2026-10-07
+
+Base `master` `5b7abcc`, diff non commité + fichiers non suivis, tranches C1 à C6 et complément de fidélité.
+
+**Verdict** : REJECTED
+**Gates CI locaux** : install `pnpm install --frozen-lockfile` exit 0 / tests `pnpm test` exit 0 (166 fichiers, 2377 passed / 2377) / lint `pnpm lint` exit 0 (« All files pass linting ») / build `pnpm run build --configuration production` exit 0 (« Prerendered 20 static routes », « CSP hardened on 21 page(s) ») / Docker `docker build -t ng-portfolio-app:ci .` exit 0 + script « Smoke test the image » de `ci.yml` exit 0. `public/rss.xml` et `public/sitemap.xml` restaurés.
+**Checks mécaniques** : checker non vendoré : auto-checks joués à la main sur les lignes ajoutées. Archéologie (motif du profil) : 0. Insécables littérales : 0 ; espace simple avant « : » dans un gabarit : 3 (m3). `fakeAsync`/`waitForAsync` : 0. `export default` : 0. `effect(` ajouté : 0. Méthode appelée dans un gabarit : 0. Exports ajoutés sans second fichier consommateur : 0. Restes de code mort (`AdminBlogForm`, `admin-project-inline-form`, `getCategories`, `toCardView`, `toRowView`, `editingId`, `categoriesResource`) : 0 ; `AdminTable` encore utilisé par Messages (C8).
+**Warnings de gate** : aucun (0 `stderr`, `NG0`, `▲` ou `WARNING` dans les sorties test, lint et build).
+**Rendu compilé** : ✅ (sélecteurs d'attribut `fieldset[…]`, `li[…]`, `tr[…]` sans `styles:` encapsulés, tout en classes Tailwind ; rendu contrôlé au navigateur)
+**Preuve de verify runtime** : ❌ (preuves C3-C4 et C5-C6 rejouées par un harnais indépendant : deux défauts runtime non relevés, points 1 et 2)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ❌ (points 3 et 4)
+
+Verify de la revue (build de la branche servi en local, port 4381, Chromium, CSP de la page appliquée, session simulée, GET de l'API servis par fixtures ou relayés en lecture, **toute requête non-GET annulée** ; axe-core 4.14 WCAG 2.2 AA + best-practice) :
+
+- Site public : HTML prérendu des 21 pages comparé à un build de `master` (worktree jetable, supprimé) : titres, `meta`, canonical, JSON-LD, `h1`-`h6`, texte et nombre de `main` **identiques** ; seules différences : classes `@container` / `@min-[60rem]:` sur `/projects` et `/blog`, lignes `modulepreload`, numérotation d'hydratation et des formulaires. `/projects` et `/blog` : 1 colonne à 375, 12 colonnes / 2 colonnes à 1 008, 1 023, 1 024 et 1 440 px, aucun défilement horizontal. Navigation `/` → `/blog` → article, Retour ×2, Avancer, ancre `/about#recrutement` (cible à 0 px), Retour : conformes avec `canceledNavigationResolution: 'computed'`.
+- Listes Projets et Articles, 1 440 et 375 px, deux registres : axe 0 violation, aucun défilement horizontal.
+- Éditeur de projet : axe 0 violation à l'ouverture (1 440 et 375, deux registres) et sur un nouveau projet ; aperçu en direct, sommaire « modifié », `PATCH` et `POST` annulés avec le bon corps ; garde : Retour arrière → dialogue, « Continuer » puis second Retour → dialogue de nouveau ; `beforeunload` refusé → saisie conservée ; confirmer → `/admin/projects`.
+- Éditeur d'article : Markdown piégé (`onerror`, `<script>`, `javascript:`) neutralisé ; mention de redéploiement ; Retour ×2 rouvre le dialogue, Avancer sans dialogue.
+- Console : seul le `404 /api/config` du service statique.
+
+**Écarts signalés par l'implémentation** :
+1. Barre qui masque le focus : **à corriger ici** (point 1).
+2. Sommaire au ras du haut : **toléré** (m1). Confirmé dans `@angular/common` 22.2.1 : `scrollToElement` fait un `window.scrollTo` moins `offset()`, il ignore `scroll-margin`.
+3. Mention « obligatoire » absente de l'éditeur d'article : **à corriger ici** (point 3).
+4. Ajouts hors plan : **acceptés**. `form-toc-entries.ts` et `leave-confirmation.ts` ont deux consommateurs chacun. `admin-post-row.ts` suit le modèle d'`AdminProjectRow`. `ReadonlySet` est cohérent avec `model.required<ReadonlySet<string>>`. `component-selector` `type: ['element', 'attribute']` garde le préfixe `app` : Angular admet les sélecteurs d'attribut pour un composant posé sur un élément natif (`fieldset`, `li`, `tr` ne s'enveloppent pas), et `CLAUDE.md` ne l'interdit pas (« Host » : pas de wrapper). À inscrire au § 6 (m9).
+5. Galerie, un `form` par capture : **accepté**. Chaque texte alternatif a sa propre soumission, ce qui est sémantiquement juste ; la galerie reste hors du formulaire de projet.
+6. Bascule à 1 008 px : **acceptée** (mesurée ; prérendu inchangé hors classes).
+7. Double toast : **constaté** (« Une erreur est survenue » de l'intercepteur, puis « Erreur lors de la mise à jour du projet ») ; préexistant, suivi en m2.
+
+**Altitude composant** (advisory, non bloquant) :
+- ⚠️ `components/admin-project-form.ts` : 585 LOC, gabarit d'environ 415 lignes (seuils 250 / 150). Candidats : les deux blocs de lignes répétées (identiques à la clé près), les cartes de nature, le champ de présentation.
+- ⚠️ `admin-project-editor.ts` (331 LOC) et `admin-post-editor.ts` (273) : en-tête, colonnes, barre, sommaire, dialogue de sortie et `notify` dupliqués. Candidat : une coque d'éditeur commune.
+
+**Duplication / dérivation** (advisory) :
+- ⚠️ `notify()` identique dans les deux éditeurs ; `iconLinkClass` dans `admin-project-row.ts` et `admin-post-row.ts` ; mention « obligatoire » écrite 5 fois en ligne dans `admin-project-form.ts`.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet · monitoring : Sentry (profil)
+- `canceledNavigationResolution: 'computed'` touche toute l'application ; seules les gardes d'édition annulent une navigation aujourd'hui. Pendant que le dialogue de sortie est ouvert sur un Retour, la barre d'adresse montre déjà l'URL de destination (popstate).
+- Non couvert par les gates : la mise en page avec un vrai contenu long (point 2), que happy-dom ne calcule pas.
+
+**Points à corriger** (bloquants) :
+1. `components/admin-save-bar.ts:117` (`sticky bottom-0`) — WCAG 2.4.11 (focus non masqué, AA). Mesuré en tabulant depuis le haut, élément focalisé entièrement sous la barre : éditeur de projet 16 éléments à 1 440 px et 20 à 375 px (puces de stack, lignes répétées, galerie…), éditeur d'article 5 à 8 (puces de sujets) ; axe `target-size` sur l'article à 1 440. Remède **mesuré** : un `scroll-padding-bottom` égal à la hauteur de la barre + 1 rem sur le défileur racine (`<html>`), tant qu'une barre est montée. Par exemple, dans `src/styles.css`, `:root:has(app-admin-save-bar) { scroll-padding-bottom: … }`, en valeurs de point de rupture (la barre mesure 73 px à 1 440 et 105 px à 375 parce qu'elle passe à la ligne). Avec ce réglage, on tombe à 0 élément masqué sur les deux éditeurs et les deux largeurs, sauf la radio de nature (`admin-project-form.ts:130`, `absolute size-px` : le navigateur fait défiler pour un point de 1 px). Il faut donc aussi que la radio couvre sa carte (`inset-0 size-full opacity-0` à la place de `size-px`). Preuve au navigateur à ajouter à `## Verify`.
+2. `components/admin-post-form.ts:89` (grille de `02 · Contenu`), et le même motif `grid gap-5` aux lignes 41 et 126 — sur un **vrai** article (blocs `pre` de 914 px), la piste `auto` de la grille prend la largeur min-content du rendu. Le champ Markdown et le « Rendu » font alors 948 px de large. À 1 440 px, ils passent sous la colonne d'aperçu (x 308 → 1 256 pour une colonne 308 → 928, aperçu à 984) ; à 375 px, la page défile horizontalement (`scrollWidth` 964). La preuve C5 n'a testé que `/admin/blog/new` à 390 px. Corriger avec `grid-cols-1` (`minmax(0,1fr)`) ou `min-w-0` sur ces grilles : le `pre` défilera alors dans le cadre du rendu. Il faut aussi rejouer 375 et 1 440 px avec un article réel.
+3. `components/admin-post-form.ts:44`, `:60`, `:92` — Titre, Extrait et Contenu sont obligatoires (schéma, `required` natif), mais sans la mention visible « obligatoire » que l'éditeur de projet affiche et que `DESIGN.md` (« Libellé d'éditeur ») prescrit. C'est une incohérence entre les deux éditeurs (WCAG 3.3.2). Ajouter la mention et son test.
+4. `admin-post-editor.ts:240-252` — lors de la mise à jour d'un article avec une nouvelle couverture, `saved` reçoit la réponse du `PATCH`, **antérieure** au téléversement (`uploadCoverImage` ne renvoie qu'une clé). La ressource n'est pas relancée. Après « Article enregistré », la « Couverture actuelle » et l'aperçu montrent donc l'ancienne image (ou aucune), et la mention « visible ici après l'enregistrement » a disparu. L'éditeur de projet n'a pas le défaut : son `PATCH` suit le téléversement. Relancer `postsResource` (ou relire l'article) quand une couverture a été envoyée, recaler le contrat RED « aucune nouvelle requête de la liste » pour ce seul cas, et ajouter un test.
+
+**Mineurs** (à traiter ici si peu coûteux, sinon à noter) :
+- m1. Sommaire : la section arrive au ras du haut (0 px). Pour un décalage limité à l'admin, `ViewportScroller.setOffset([0, 24])` dans `AdminLayout`, remis à `[0, 0]` par `DestroyRef`. Sinon, accepter.
+- m2. Double toast sur un échec d'écriture (`admin-project-editor.ts:309`, `admin-post-editor.ts:244`) : passer `SKIP_ERROR_TOAST` sur les écritures de l'éditeur, ou laisser l'intercepteur seul parler. Préexistant.
+- m3. Espace simple avant « : » dans un gabarit : `admin-project-form.ts:75`, `:305`, `admin-post-form.ts:39` (`&nbsp;`).
+- m4. `admin-post-editor.ts:232-233` : commentaire de deux lignes, à réduire à une ; `src/styles.css:336-337` : le commentaire décrit le QUOI.
+- m5. Un contenu Markdown commençant par `#` donne un second `h1` dans la page (mesuré : 2). Abaisser les titres du rendu, ou l'assumer explicitement.
+- m6. `admin-project-editor.ts:294` : « upload image échoué » ; l'article dit « l'envoi de l'image ». Harmoniser en français.
+- m7. Après un clic dans le sommaire, le premier Retour revient à l'éditeur sans fragment (entrée d'historique par ancre), sans dialogue. C'est attendu, mais à signaler dans la note de la garde.
+- m8. Altitude et duplication des éditeurs (ci-dessus).
+- m9. Cohérence de la spec : le § 6 (PR c1) omet `form-toc-entries.ts`, `leave-confirmation.ts`, `components/admin-post-row.ts`, `app.config.ts` (+spec), `eslint.config.js`, `icon-map.ts`, `public/icons/sprite.svg`, `src/styles.css`, `admin-tags-selector.ts`, `admin-gallery-image-item.ts`, `admin-project-gallery.ts` et les deux doublures `testing/`.
+- Suivis des revues a et b : m3 et m6 (PR a) soldés en C1/C2 ; m8 (`post()` local) soldé en C6.

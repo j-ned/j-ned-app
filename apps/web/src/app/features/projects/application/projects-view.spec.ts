@@ -1,6 +1,12 @@
 import type { Project, ProjectKind, ProjectKindFilter } from '../domain/models/project.model';
 import { makeProject } from '../testing/project-builders';
-import { toProjectsView, type CaseStudyView, type ProjectCardView } from './projects-view';
+import {
+  toCaseStudyView,
+  toProjectCardView,
+  toProjectsView,
+  type CaseStudyView,
+  type ProjectCardView,
+} from './projects-view';
 
 const CLOSING = 'Chaque fiche montre le résultat et les choix techniques.';
 
@@ -461,5 +467,80 @@ describe('toProjectsView', () => {
         }).toEqual({ caseStudies: all.caseStudies, cards: all.cards, visibleCount: kinds.length });
       },
     );
+  });
+});
+
+describe('toCaseStudyView', () => {
+  const PROJECT = makeProject({
+    id: 'p-1',
+    slug: 'dashflow',
+    title: 'DashFlow',
+    category: 'Application Web',
+    kind: 'production',
+    tags: ['Angular', 'TypeScript', 'NestJS', 'PostgreSQL', 'Docker'],
+    description: 'Budget et santé du foyer. Auto-hébergé.',
+    pitch: null,
+    highlight: 'Chiffrement côté client',
+    scope: null,
+    image: 'https://cdn.test/projects/p-1.avif',
+  });
+
+  it('Given a project and its rank When the case study is built on its own Then it numbers the overline from that rank', () => {
+    expect(toCaseStudyView(PROJECT, 2)).toEqual({
+      id: 'p-1',
+      slug: 'dashflow',
+      title: 'DashFlow',
+      overline: '03 · Application Web',
+      pitch: 'Budget et santé du foyer.',
+      facts: [
+        { label: 'Stack', value: 'Angular · TypeScript · NestJS · PostgreSQL' },
+        { label: 'Point fort', value: 'Chiffrement côté client' },
+      ],
+      liveUrl: null,
+      image: 'https://cdn.test/projects/p-1.avif',
+    } satisfies CaseStudyView);
+  });
+
+  it('Given the projects page When its case studies are built Then each one is the case study built on its own at its rank', () => {
+    const second = makeProject({ id: 'p-2', slug: 'candidash', kind: 'production' });
+
+    expect(toProjectsView([PROJECT, second], 'all').caseStudies).toEqual([
+      toCaseStudyView(PROJECT, 0),
+      toCaseStudyView(second, 1),
+    ]);
+  });
+});
+
+describe('toProjectCardView', () => {
+  const DEMO = makeProject({
+    id: 'p-3',
+    slug: 'atelier',
+    title: 'Atelier',
+    kind: 'demo',
+    tags: ['Astro', 'TailwindCSS', 'TypeScript'],
+    description: 'Site vitrine fictif. Pour la démonstration.',
+    pitch: 'Un site vitrine pour un artisan.',
+    image: 'https://cdn.test/projects/p-3.avif',
+  });
+
+  it('Given a demo When its card is built on its own Then it shows its nature, its first two tools and its pitch', () => {
+    expect(toProjectCardView(DEMO)).toEqual({
+      id: 'p-3',
+      slug: 'atelier',
+      title: 'Atelier',
+      kind: 'demo',
+      stack: 'Astro · TailwindCSS',
+      pitch: 'Un site vitrine pour un artisan.',
+      image: 'https://cdn.test/projects/p-3.avif',
+    } satisfies ProjectCardView);
+  });
+
+  it('Given the projects page When its cards are built Then each one is the card built on its own', () => {
+    const script = makeProject({ id: 'p-4', slug: 'cli', kind: 'script' });
+
+    expect(toProjectsView([DEMO, script], 'all').cards).toEqual([
+      toProjectCardView(DEMO),
+      toProjectCardView(script),
+    ]);
   });
 });

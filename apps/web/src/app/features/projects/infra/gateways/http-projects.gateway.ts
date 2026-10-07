@@ -56,15 +56,6 @@ export class HttpProjectsGateway extends ProjectsGateway {
     this._refresh$.next();
   }
 
-  getCategories(): Observable<readonly string[]> {
-    return this.getAllProjects().pipe(
-      map((projects) => {
-        const unique = [...new Set(projects.map((p) => p.category))].sort();
-        return ['Tous', ...unique];
-      }),
-    );
-  }
-
   getProjectById(id: string): Observable<Project> {
     return this.http
       .get<ProjectDto>(`${this.apiUrl}/projects/${id}`)

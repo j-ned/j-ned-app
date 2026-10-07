@@ -22,6 +22,8 @@ const STAMP_CLASSES = [
   template: `
     <app-stamp data-testid="plain-stamp">Démo</app-stamp>
     <app-stamp data-testid="placed-stamp" class="absolute left-3 top-3">Script</app-stamp>
+    <app-stamp data-testid="dashed-stamp" [dashed]="true">Brouillon</app-stamp>
+    <app-stamp data-testid="solid-stamp" [dashed]="false">Publié</app-stamp>
   `,
 })
 class Host {}
@@ -48,4 +50,14 @@ describe('Stamp', () => {
       [...STAMP_CLASSES, 'absolute', 'left-3', 'top-3'].sort(),
     );
   });
+
+  it.each([
+    { testId: 'dashed-stamp', expected: [...STAMP_CLASSES, 'border-dashed'].sort() },
+    { testId: 'solid-stamp', expected: STAMP_CLASSES },
+  ])(
+    'Given the stamp $testId When it renders Then its host carries the stamp look, dashed only when asked',
+    ({ testId, expected }) => {
+      expect([...(byTestId(render(), testId)?.classList ?? [])].sort()).toEqual(expected);
+    },
+  );
 });

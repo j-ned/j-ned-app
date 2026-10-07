@@ -1,128 +1,95 @@
-import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
-import type {
-  Project,
-  ProjectImage,
-  ProjectInput,
-} from '@features/projects/domain/models/project.model';
-import { AdminProjectInlineForm } from './admin-project-inline-form';
-import { AdminProjectGallery } from './admin-project-gallery';
-import { AppTag } from '@shared/ui/tag';
-import { Stamp } from '@shared/ui/stamp';
+import { Component, computed, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { ProjectCover } from '@features/projects/application/components/project-cover';
+import { FactList } from '@shared/ui/fact-list';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
+import type { AdminProjectRowView } from '../admin-projects-view';
 
 @Component({
-  selector: 'app-admin-project-row',
-  imports: [
-    NgOptimizedImage,
-    AdminProjectInlineForm,
-    AdminProjectGallery,
-    AppTag,
-    Stamp,
-    AppIcon,
-    Button,
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block bg-surface border border-foreground/10 rounded-xl overflow-hidden' },
+  selector: 'li[app-admin-project-row]',
+  imports: [RouterLink, ProjectCover, FactList, Button, AppIcon],
+  host: {
+    'data-testid': 'admin-project-row',
+    class:
+      'grid items-start gap-4 border-b border-line py-6.5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-6 lg:grid-cols-[2.25rem_13.5rem_minmax(0,1fr)_auto] lg:gap-7',
+  },
   template: `
-    <div class="flex items-center gap-4 px-5 py-4">
-      <div class="shrink-0">
-        @if (project().image) {
-          <img
-            [ngSrc]="project().image"
-            [alt]="project().title"
-            width="48"
-            height="48"
-            class="w-12 h-12 rounded-lg object-cover"
-          />
-        } @else {
-          <div class="w-12 h-12 rounded-lg bg-foreground/10 flex items-center justify-center">
-            <svg class="w-6 h-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1.5"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-        }
-      </div>
-
-      <div class="flex-1 min-w-0">
-        <p class="text-sm font-medium text-foreground truncate">{{ project().title }}</p>
-        <div class="flex flex-wrap gap-1 mt-1">
-          @for (tag of project().tags.slice(0, 4); track tag) {
-            <app-tag [value]="tag" severity="info" />
-          }
-          @if (project().tags.length > 4) {
-            <app-tag [value]="'+' + (project().tags.length - 4)" severity="secondary" />
-          }
-        </div>
-      </div>
-
-      <div class="hidden sm:flex flex-col items-end gap-1 shrink-0">
-        <span class="text-xs text-muted">{{ project().category }}</span>
-        @if (project().featured) {
-          <app-stamp data-testid="admin-project-featured">Mis en avant</app-stamp>
-        }
-      </div>
-
-      <div class="flex items-center gap-2 shrink-0">
-        <button
-          type="button"
-          data-testid="admin-project-edit-toggle"
-          [attr.aria-label]="editLabel()"
-          [attr.aria-expanded]="isEditing()"
-          [attr.aria-controls]="panelId()"
-          (click)="editToggled.emit()"
-          class="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border border-muted/30 text-foreground transition-colors hover:border-foreground/30 hover:bg-surface-elevated"
+    <span aria-hidden="true" class="pt-1 font-mono text-[0.8125rem] text-muted max-lg:hidden">
+      {{ row().order }}
+    </span>
+    <app-project-cover [image]="row().image" alt="" [kind]="row().kind" />
+    <div class="min-w-0">
+      <p data-testid="admin-project-row-overline" class="font-mono text-xs text-muted">
+        {{ row().overline }}
+      </p>
+      <h2
+        data-testid="admin-project-row-title"
+        class="mt-1.5 text-[1.375rem] leading-[1.1] font-extrabold tracking-[-0.03em] font-stretch-106%"
+      >
+        {{ row().title }}
+      </h2>
+      @if (row().pitch; as pitch) {
+        <p
+          data-testid="admin-project-row-pitch"
+          class="mt-2 line-clamp-2 max-w-[62ch] text-[0.90625rem] text-muted"
         >
-          <app-icon [name]="isEditing() ? 'times' : 'pencil'" [size]="20" />
-        </button>
-        <app-button
-          severity="danger"
-          [ariaLabel]="deleteLabel()"
-          data-testid="admin-project-delete"
-          (click)="deleteClicked.emit()"
+          {{ pitch }}
+        </p>
+      } @else {
+        <p
+          data-testid="admin-project-pitch-missing"
+          class="mt-2.5 flex items-center gap-2 text-[0.8125rem] text-muted"
         >
-          <app-icon name="trash" [size]="20" />
-        </app-button>
-      </div>
+          <span aria-hidden="true" class="size-1.5 shrink-0 rounded-full bg-primary"></span>
+          Accroche vide&nbsp;: la carte publique reprend la première phrase de la description.
+        </p>
+      }
+      @if (row().facts.length > 0) {
+        <app-fact-list class="mt-3.5 max-w-[40rem]" [facts]="row().facts" />
+      }
     </div>
-
-    @if (isEditing()) {
-      <div [id]="panelId()" class="px-5 pb-5 space-y-5">
-        <app-admin-project-inline-form
-          [project]="project()"
-          (saved)="saved.emit($event)"
-          (cancelled)="cancelled.emit()"
-        />
-        <app-admin-project-gallery
-          [projectId]="project().id"
-          [images]="project().gallery"
-          (galleryChange)="galleryChange.emit($event)"
-        />
-      </div>
-    }
+    <div class="flex gap-1 sm:col-start-2 lg:col-start-auto">
+      <a
+        data-testid="admin-project-view"
+        [href]="'/projects/' + row().slug"
+        target="_blank"
+        rel="noopener noreferrer"
+        [attr.aria-label]="viewLabel()"
+        [class]="iconLinkClass"
+      >
+        <app-icon name="external-link" [size]="18" />
+      </a>
+      <a
+        data-testid="admin-project-edit"
+        [routerLink]="['/admin/projects', row().id]"
+        [attr.aria-label]="editLabel()"
+        [class]="iconLinkClass"
+      >
+        <app-icon name="pencil" [size]="18" />
+      </a>
+      <app-button
+        severity="danger"
+        variant="text"
+        size="icon"
+        data-testid="admin-project-delete"
+        [ariaLabel]="deleteLabel()"
+        (click)="deleteRequested.emit()"
+      >
+        <app-icon name="trash" [size]="18" />
+      </app-button>
+    </div>
   `,
 })
 export class AdminProjectRow {
-  readonly project = input.required<Project>();
-  readonly isEditing = input<boolean>(false);
+  readonly row = input.required<AdminProjectRowView>();
+  readonly deleteRequested = output<void>();
 
-  readonly editToggled = output<void>();
-  readonly deleteClicked = output<void>();
-  readonly saved = output<{ data: ProjectInput; file: File | null }>();
-  readonly cancelled = output<void>();
-  readonly galleryChange = output<readonly ProjectImage[]>();
-
-  protected readonly panelId = computed(() => `admin-project-edit-${this.project().id}`);
-  protected readonly editLabel = computed(() =>
-    this.isEditing()
-      ? `Fermer l'édition\u00a0: ${this.project().title}`
-      : `Modifier\u00a0: ${this.project().title}`,
+  protected readonly iconLinkClass =
+    'inline-flex size-11 items-center justify-center rounded-md text-foreground transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-primary';
+  protected readonly viewLabel = computed(
+    () => `Voir la fiche publique\u00a0: ${this.row().title} (nouvel onglet)`,
   );
-  protected readonly deleteLabel = computed(() => `Supprimer\u00a0: ${this.project().title}`);
+  protected readonly editLabel = computed(() => `Modifier\u00a0: ${this.row().title}`);
+  protected readonly deleteLabel = computed(() => `Supprimer\u00a0: ${this.row().title}`);
 }

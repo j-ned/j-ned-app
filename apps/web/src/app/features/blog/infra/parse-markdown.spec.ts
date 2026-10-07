@@ -6,6 +6,24 @@ describe('parseMarkdown', () => {
     expect(parseMarkdown('# Titre')).toContain('<h1 id="titre">Titre</h1>');
   });
 
+  describe('niveau du titre le plus haut', () => {
+    it.each([
+      ['# Titre\n\n### Partie', ['<h2 id="titre">', '<h4 id="partie">']],
+      ['## Partie\n\n### Détail', ['<h2 id="partie">', '<h3 id="detail">']],
+      ['# Titre\n\n###### Note', ['<h2 id="titre">', '<h6 id="note">']],
+    ])('avec un plafond h2, « %s » descend juste assez, sans dépasser h6', (markdown, expected) => {
+      const html = parseMarkdown(markdown, { topHeadingLevel: 2 });
+      expect(expected.filter((tag) => !html.includes(tag))).toEqual([]);
+    });
+
+    it("ne garde ni le plafond ni le titre le plus haut d'un appel précédent", () => {
+      parseMarkdown('# Titre', { topHeadingLevel: 2 });
+      expect(parseMarkdown('# Titre')).toContain('<h1 id="titre">');
+      parseMarkdown('# Titre\n\n## Partie', { topHeadingLevel: 2 });
+      expect(parseMarkdown('## Partie', { topHeadingLevel: 2 })).toContain('<h2 id="partie">');
+    });
+  });
+
   describe('ancres des titres', () => {
     it("dérive l'id du texte du titre, sans accents ni ponctuation", () => {
       expect(parseMarkdown("## L'architecture : une double enveloppe de clés")).toContain(

@@ -1,129 +1,86 @@
-import {
-  Component,
-  DestroyRef,
-  inject,
-  signal,
-  computed,
-  viewChild,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, DestroyRef, inject, signal, computed, viewChild } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom, switchMap } from 'rxjs';
+import { RouterLink } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
-import type {
-  Project,
-  ProjectImage,
-  ProjectInput,
-} from '@features/projects/domain/models/project.model';
+import type { Project, ProjectKindFilter } from '@features/projects/domain/models/project.model';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
-import { AdminProjectInlineForm } from './components/admin-project-inline-form';
 import { AdminProjectRow } from './components/admin-project-row';
 import { ToastStore } from '@shared/ui/toast-store';
-import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
+import { FilterGroup } from '@shared/ui/filter-group';
 import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import { AdminPageHeader } from './components/admin-page-header';
 import { projectsOverline } from './admin-page-copy';
+import { toAdminProjectsView } from './admin-projects-view';
 
 @Component({
   selector: 'app-admin-projects',
   imports: [
-    AdminProjectInlineForm,
+    RouterLink,
     AdminProjectRow,
     AppIcon,
-    Button,
     ConfirmDialog,
+    FilterGroup,
     LoadError,
     AppSkeleton,
     AdminPageHeader,
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div>
-      <app-admin-page-header [overline]="overline()" heading="Projets">
-        Ce que montrent Réalisations et l'accueil. L'ordre de la liste est l'ordre public, la nature
-        décide de la section et du tampon.
-        <div adminPageAside class="flex flex-wrap items-center gap-2.5 lg:justify-end">
-          <select
-            class="app-select min-w-0 flex-1 sm:flex-none sm:min-w-44"
-            [value]="selectedCategory()"
-            (change)="selectCategory($event)"
-            aria-label="Filtrer par catégorie"
-          >
-            <option value="Tous">Catégorie</option>
-            @for (category of categories(); track category) {
-              <option [value]="category">{{ category }}</option>
-            }
-          </select>
-          <app-button
-            [severity]="showNewForm() ? 'secondary' : 'primary'"
-            [variant]="showNewForm() ? 'outlined' : 'solid'"
-            (click)="toggleNewForm()"
-          >
-            @if (showNewForm()) {
-              <app-icon name="times" [size]="20" />
-            } @else {
-              <app-icon name="plus" [size]="20" />
-            }
-            {{ showNewForm() ? 'Annuler' : 'Nouveau projet' }}
-          </app-button>
-        </div>
-      </app-admin-page-header>
+    <app-admin-page-header [overline]="overline()" heading="Projets">
+      Ce que montrent Réalisations et l'accueil. L'ordre de la liste est l'ordre public, la nature
+      décide de la section et du tampon.
+      <div adminPageAside class="flex lg:justify-end">
+        <a
+          data-testid="admin-project-new"
+          routerLink="/admin/projects/new"
+          class="link-btn-primary"
+        >
+          <app-icon name="plus" [size]="16" />Nouveau projet
+        </a>
+      </div>
+    </app-admin-page-header>
 
-      @if (showNewForm()) {
-        <div class="mb-6">
-          <app-admin-project-inline-form
-            (saved)="createProject($event)"
-            (cancelled)="showNewForm.set(false)"
-          />
+    @switch (listState()) {
+      @case ('loading') {
+        <div data-testid="admin-projects-loading" role="status" class="space-y-3">
+          <span class="sr-only">Chargement des projets…</span>
+          <app-skeleton class="block h-36 rounded-md" />
+          <app-skeleton class="block h-36 rounded-md" />
+          <app-skeleton class="block h-36 rounded-md" />
         </div>
       }
-
-      @switch (listState()) {
-        @case ('loading') {
-          <div data-testid="admin-projects-loading" role="status" class="space-y-3">
-            <span class="sr-only">Chargement des projets…</span>
-            <app-skeleton class="block h-20 rounded-xl" />
-            <app-skeleton class="block h-20 rounded-xl" />
-            <app-skeleton class="block h-20 rounded-xl" />
-          </div>
-        }
-        @case ('error') {
-          <app-load-error
-            message="Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
-            (retry)="reloadList()"
-          />
-        }
-        @case ('empty') {
-          <p
-            data-testid="admin-projects-empty"
-            class="text-center py-12 text-muted text-sm bg-surface border border-foreground/10 rounded-xl"
-          >
-            Aucun projet
-          </p>
-        }
-        @default {
-          <div data-testid="admin-projects-list" class="space-y-3">
-            @for (proj of filteredProjects(); track proj.id) {
-              <app-admin-project-row
-                [project]="proj"
-                [isEditing]="editingId() === proj.id"
-                (editToggled)="toggleEdit(proj.id)"
-                (deleteClicked)="pendingDeletion.set(proj)"
-                (saved)="updateProject(proj.id, $event)"
-                (cancelled)="editingId.set(null)"
-                (galleryChange)="updateGallery(proj.id, $event)"
-              />
-            } @empty {
-              <p class="text-center py-12 text-muted text-sm">Aucun projet dans cette catégorie</p>
-            }
-          </div>
-        }
+      @case ('error') {
+        <app-load-error
+          message="Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
+          (retry)="projectsResource.reload()"
+        />
       }
-    </div>
+      @case ('empty') {
+        <p
+          data-testid="admin-projects-empty"
+          class="rounded-xs border border-dashed border-line-strong px-5.5 py-14 text-center text-sm text-muted"
+        >
+          Aucun projet
+        </p>
+      }
+      @default {
+        <app-filter-group
+          label="Filtrer par nature"
+          [options]="view().filters"
+          [(active)]="filter"
+        />
+        <ul data-testid="admin-projects-list" role="list">
+          @for (row of view().rows; track row.id) {
+            <li app-admin-project-row [row]="row" (deleteRequested)="requestDeletion(row.id)"></li>
+          } @empty {
+            <li class="py-12 text-center text-sm text-muted">Aucun projet de cette nature</li>
+          }
+        </ul>
+      }
+    }
 
     <app-confirm-dialog
       [open]="pendingDeletion() !== null"
@@ -146,9 +103,7 @@ export class AdminProjects {
   private readonly destroyRef = inject(DestroyRef);
   private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
-  readonly selectedCategory = signal('Tous');
-  readonly editingId = signal<string | null>(null);
-  readonly showNewForm = signal(false);
+  protected readonly filter = signal<ProjectKindFilter>('all');
   protected readonly pendingDeletion = signal<Project | null>(null);
 
   protected readonly deletionCopy = computed(() => {
@@ -158,10 +113,6 @@ export class AdminProjects {
 
   protected readonly projectsResource = rxResource({
     stream: () => this.projectsGateway.getAllProjects(),
-  });
-
-  private readonly categoriesResource = rxResource({
-    stream: () => this.projectsGateway.getCategories(),
   });
 
   readonly projects = computed(() =>
@@ -175,104 +126,11 @@ export class AdminProjects {
   protected readonly overline = computed(() =>
     this.projectsResource.hasValue() ? projectsOverline(this.projectsResource.value()) : '',
   );
-  readonly categories = computed(() =>
-    this.categoriesResource.hasValue() ? [...this.categoriesResource.value()] : ['Tous'],
-  );
 
-  readonly filteredProjects = computed(() => {
-    const cat = this.selectedCategory();
-    const all = this.projects();
-    if (!cat || cat === 'Tous') return all;
-    return all.filter((p) => p.category === cat);
-  });
+  protected readonly view = computed(() => toAdminProjectsView(this.projects(), this.filter()));
 
-  protected reloadList(): void {
-    this.projectsResource.reload();
-    this.categoriesResource.reload();
-  }
-
-  toggleNewForm(): void {
-    this.showNewForm.update((v) => !v);
-    if (this.showNewForm()) {
-      this.editingId.set(null);
-    }
-  }
-
-  toggleEdit(id: string): void {
-    this.editingId.update((current) => (current === id ? null : id));
-    this.showNewForm.set(false);
-  }
-
-  async createProject(event: { data: ProjectInput; file: File | null }): Promise<void> {
-    let created: Project;
-    try {
-      created = await firstValueFrom(this.projectsGateway.createProject(event.data));
-    } catch {
-      this.toast.add({
-        severity: 'error',
-        summary: 'Erreur',
-        detail: 'Erreur lors de la création du projet',
-      });
-      return;
-    }
-
-    if (event.file) {
-      try {
-        const key = await firstValueFrom(this.projectsGateway.uploadImage(event.file, created.id));
-        created = { ...created, image: key };
-      } catch (err) {
-        console.warn('Project created, but image upload failed:', err);
-        this.toast.add({
-          severity: 'warn',
-          summary: 'Attention',
-          detail: 'Projet créé, mais upload image échoué. Réessayez via Modifier.',
-        });
-      }
-    }
-
-    this.projectsResource.update((list) => [...(list ?? []), created]);
-    this.categoriesResource.reload();
-    this.homeGateway.invalidateBundle();
-    this.projectsGateway.invalidateAllProjects();
-    this.showNewForm.set(false);
-    this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet créé' });
-  }
-
-  updateProject(id: string, event: { data: ProjectInput; file: File | null }): void {
-    // uploadImage persiste déjà la nouvelle image côté backend ; le PATCH qui suit
-    // ne met à jour que les autres champs (sans image).
-    const update$ = event.file
-      ? this.projectsGateway
-          .uploadImage(event.file, id)
-          .pipe(switchMap(() => this.projectsGateway.updateProject(id, event.data)))
-      : this.projectsGateway.updateProject(id, event.data);
-
-    update$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (updated) => {
-        this.projectsResource.update((list) =>
-          (list ?? []).map((p) => (p.id === id ? updated : p)),
-        );
-        this.categoriesResource.reload();
-        this.homeGateway.invalidateBundle();
-        this.projectsGateway.invalidateAllProjects();
-        this.editingId.set(null);
-        this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet mis à jour' });
-      },
-      error: () =>
-        this.toast.add({
-          severity: 'error',
-          summary: 'Erreur',
-          detail: 'Erreur lors de la mise à jour du projet',
-        }),
-    });
-  }
-
-  updateGallery(id: string, gallery: readonly ProjectImage[]): void {
-    this.projectsResource.update((list) =>
-      (list ?? []).map((p) => (p.id === id ? { ...p, gallery } : p)),
-    );
-    this.projectsGateway.invalidateAllProjects();
-    this.homeGateway.invalidateBundle();
+  protected requestDeletion(id: string): void {
+    this.pendingDeletion.set(this.projects().find((project) => project.id === id) ?? null);
   }
 
   protected confirmDeletion(): void {
@@ -292,7 +150,6 @@ export class AdminProjects {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.categoriesResource.reload();
           this.homeGateway.invalidateBundle();
           this.projectsGateway.invalidateAllProjects();
           this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet supprimé' });
@@ -307,9 +164,5 @@ export class AdminProjects {
           });
         },
       });
-  }
-
-  protected selectCategory(event: Event): void {
-    this.selectedCategory.set((event.target as HTMLSelectElement).value);
   }
 }

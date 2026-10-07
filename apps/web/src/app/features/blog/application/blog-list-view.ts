@@ -51,7 +51,7 @@ function subjectFacts(tags: readonly string[]): readonly Fact[] {
     : [];
 }
 
-function toRowView(post: BlogPost, priority: boolean): BlogPostRowView {
+export function toBlogPostRowView(post: BlogPost, priority: boolean): BlogPostRowView {
   return {
     slug: post.slug,
     title: post.title,
@@ -99,6 +99,6 @@ export function toBlogListView(posts: readonly BlogPost[], filter: BlogListFilte
       })),
     ],
     visibleCount: visible.length,
-    rows: visible.map((post) => toRowView(post, post === lcpPost)),
+    rows: visible.map((post) => toBlogPostRowView(post, post === lcpPost)),
   };
 }

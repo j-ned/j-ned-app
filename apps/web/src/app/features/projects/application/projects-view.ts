@@ -54,7 +54,7 @@ type ProjectsView = {
   readonly cards: readonly ProjectCardView[];
 };
 
-function toCaseStudyView(project: Project, index: number): CaseStudyView {
+export function toCaseStudyView(project: Project, index: number): CaseStudyView {
   return {
     id: project.id,
     slug: project.slug,
@@ -67,7 +67,7 @@ function toCaseStudyView(project: Project, index: number): CaseStudyView {
   };
 }
 
-function toCardView(project: Project): ProjectCardView {
+export function toProjectCardView(project: Project): ProjectCardView {
   return {
     id: project.id,
     slug: project.slug,
@@ -105,6 +105,6 @@ export function toProjectsView(
     ],
     visibleCount: visible.length,
     caseStudies: caseStudies.map(toCaseStudyView),
-    cards: others.map(toCardView),
+    cards: others.map(toProjectCardView),
   };
 }

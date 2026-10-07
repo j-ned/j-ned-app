@@ -38,14 +38,17 @@ const uploadErrorDetail = (error: unknown): string =>
   selector: 'app-admin-project-gallery',
   imports: [AdminGalleryImageItem, AdminGalleryUploadForm],
   host: {
-    class: 'block space-y-4 border-t border-line pt-5',
+    class: '@container block space-y-4.5',
     'data-testid': 'admin-project-gallery',
   },
   template: `
-    <h2 class="text-lg font-semibold text-foreground">Captures</h2>
-    <ul role="list" class="space-y-4">
+    <ul
+      data-testid="admin-gallery-list"
+      role="list"
+      class="grid grid-cols-1 gap-4.5 @min-[26rem]:grid-cols-2 @min-[36rem]:grid-cols-3"
+    >
       @for (image of gallery(); track image.id; let index = $index, count = $count) {
-        <li class="rounded-lg border border-line p-4">
+        <li class="min-w-0">
           <app-admin-gallery-image-item
             [image]="image"
             [rank]="index + 1"

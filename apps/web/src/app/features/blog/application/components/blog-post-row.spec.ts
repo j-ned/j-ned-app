@@ -227,4 +227,27 @@ describe('BlogPostRow', () => {
       },
     );
   });
+
+  describe('container', () => {
+    it('Given a post with a cover When the row renders Then its host is a size container and the article gives the cover its column from a 60rem container', async () => {
+      const root = await render(rowOf(WITH_COVER));
+      const article = byTestId(root, 'post-row');
+      const cover = byTestId(root, 'post-cover');
+
+      expect({
+        container: root.classList.contains('@container'),
+        columns: article?.classList.contains('@min-[60rem]:grid-cols-[minmax(0,1fr)_20rem]'),
+        coverBack: cover?.classList.contains('@min-[60rem]:order-none'),
+      }).toEqual({ container: true, columns: true, coverBack: true });
+    });
+
+    it('Given a post with a cover When the row renders Then none of its layout depends on the viewport width', async () => {
+      const root = await render(rowOf(WITH_COVER));
+      const viewportClasses = [root, ...root.querySelectorAll('*')].flatMap((element) =>
+        [...element.classList].filter((token) => /^(sm|md|lg|xl|2xl):/.test(token)),
+      );
+
+      expect(viewportClasses).toEqual([]);
+    });
+  });
 });

@@ -235,6 +235,67 @@ describe('AdminProjectGallery', () => {
     });
   });
 
+  describe('grille de vignettes', () => {
+    it('Given three captures When the gallery renders Then they form a list of three columns, one item per capture', async () => {
+      const { host } = await render();
+      const list = byTestId(host, 'admin-gallery-list');
+
+      expect({
+        tag: list?.tagName,
+        items: list?.querySelectorAll(':scope > li').length,
+        captures: [...(list?.querySelectorAll(':scope > li') ?? [])].map(
+          (li) => byTestId(li, 'admin-gallery-item-thumb')?.getAttribute('alt') ?? null,
+        ),
+        grid: list?.classList.contains('grid') ?? false,
+        threeColumns: [...(list?.classList ?? [])].some((token) => /(^|:)grid-cols-3$/.test(token)),
+      }).toEqual({
+        tag: 'UL',
+        items: 3,
+        captures: ['Vue globale', 'Transactions', 'Enveloppes'],
+        grid: true,
+        threeColumns: true,
+      });
+    });
+
+    it('Given a capture When it renders Then its thumbnail comes first, then its alt text, then its position and its actions', async () => {
+      const { host } = await render();
+      const second = items(host)[1];
+      const order = [
+        'admin-gallery-item-thumb',
+        'admin-gallery-item-alt',
+        'admin-gallery-item-position',
+        'admin-gallery-item-up',
+        'admin-gallery-item-down',
+        'admin-gallery-item-remove',
+      ].map((testId) => byTestId(second, testId));
+      const followsPrevious = order.slice(1).map((element, index) => {
+        const previous = order[index];
+        return previous && element
+          ? (previous.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+          : false;
+      });
+
+      expect({
+        followsPrevious,
+        position: normalized(byTestId(second, 'admin-gallery-item-position')?.textContent),
+      }).toEqual({ followsPrevious: [true, true, true, true, true], position: '2 / 3' });
+    });
+
+    it.each(['admin-gallery-item-up', 'admin-gallery-item-down', 'admin-gallery-item-remove'])(
+      'Given a capture in the grid When its action %s renders Then it is an icon button named by its label',
+      async (testId) => {
+        const { host } = await render();
+        const button = buttonIn(items(host)[1], testId);
+
+        expect({
+          icon: button?.querySelector('app-icon') !== null && button !== null,
+          text: normalized(button?.textContent),
+          named: (button?.getAttribute('aria-label') ?? '').endsWith('la capture 2'),
+        }).toEqual({ icon: true, text: '', named: true });
+      },
+    );
+  });
+
   describe('ajout d’une capture', () => {
     it('Given the upload form When it renders Then the alt field is labelled and required and the file input accepts the four API formats', async () => {
       const { host } = await render();

@@ -15,6 +15,8 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'lucide-arrow-left':          { id: 'arrow-left', style: 'solid' },
   'arrow-right':                { id: 'arrow-right', style: 'solid' },
   'lucide-arrow-right':         { id: 'arrow-right', style: 'solid' },
+  'arrow-up':                   { id: 'arrow-up', style: 'solid' },
+  'arrow-down':                 { id: 'arrow-down', style: 'solid' },
   'arrow-right-arrow-left':     { id: 'right-left', style: 'solid' },
   'angles-left':                { id: 'angles-left', style: 'solid' },
   'lucide-panel-left-close':    { id: 'angles-left', style: 'solid' },

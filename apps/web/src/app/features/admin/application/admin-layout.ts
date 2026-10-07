@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ViewportScroller } from '@angular/common';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -11,6 +12,9 @@ import { AppIcon } from '@shared/icons/app-icon';
 import { Drawer } from '@shared/ui/drawer';
 import { AdminNav } from './components/admin-nav';
 import { activeNavLabel, adminNavGroups } from './admin-nav-groups';
+
+// `scrollToAnchor` ignore `scroll-margin` : l'écart sous le haut passe par le scroller.
+const ANCHOR_OFFSET: [number, number] = [0, 24];
 
 @Component({
   selector: 'app-admin-layout',
@@ -100,6 +104,7 @@ export class AdminLayout {
   private readonly _projectsGateway = inject(ProjectsGateway);
   private readonly _blogGateway = inject(BlogGateway);
   private readonly _contactGateway = inject(ContactGateway);
+  private readonly _viewportScroller = inject(ViewportScroller);
 
   protected readonly menuOpen = signal(false);
 
@@ -126,6 +131,11 @@ export class AdminLayout {
   protected readonly topbarTitle = computed(() => activeNavLabel(this.groups(), this._url()));
 
   protected readonly email = computed(() => this.auth.currentUser()?.email);
+
+  constructor() {
+    this._viewportScroller.setOffset(ANCHOR_OFFSET);
+    inject(DestroyRef).onDestroy(() => this._viewportScroller.setOffset([0, 0]));
+  }
 
   protected logoutFromDrawer(): void {
     this.menuOpen.set(false);

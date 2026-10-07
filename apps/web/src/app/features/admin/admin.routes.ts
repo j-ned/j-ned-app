@@ -1,5 +1,6 @@
 import type { Routes } from '@angular/router';
 import { AdminLayout } from './application/admin-layout';
+import { unsavedChangesGuard } from './application/unsaved-changes-guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -12,9 +13,37 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./application/admin-overview').then((m) => m.AdminOverview),
       },
       {
+        path: 'projects/new',
+        title: 'Nouveau projet | Admin',
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () =>
+          import('./application/admin-project-editor').then((m) => m.AdminProjectEditor),
+      },
+      {
+        path: 'projects/:id',
+        title: 'Modifier un projet | Admin',
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () =>
+          import('./application/admin-project-editor').then((m) => m.AdminProjectEditor),
+      },
+      {
         path: 'projects',
         title: 'Projets | Admin',
         loadComponent: () => import('./application/admin-projects').then((m) => m.AdminProjects),
+      },
+      {
+        path: 'blog/new',
+        title: 'Nouvel article | Admin',
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () =>
+          import('./application/admin-post-editor').then((m) => m.AdminPostEditor),
+      },
+      {
+        path: 'blog/:id',
+        title: 'Modifier un article | Admin',
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () =>
+          import('./application/admin-post-editor').then((m) => m.AdminPostEditor),
       },
       {
         path: 'blog',

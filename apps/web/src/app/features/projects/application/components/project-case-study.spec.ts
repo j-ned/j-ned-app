@@ -181,13 +181,13 @@ describe('ProjectCaseStudy', () => {
     { reversed: false, last: false },
     { reversed: undefined, last: false },
   ])(
-    'Given reversed $reversed When the case study renders Then the cover is moved last on wide screens: $last, the reading order unchanged',
+    'Given reversed $reversed When the case study renders Then the cover is moved last in a wide container: $last, the reading order unchanged',
     async ({ reversed, last }) => {
       const root = await render({ reversed });
       const cover = byTestId(root, 'project-case-study-cover');
       const title = byTestId(root, 'project-case-study-title');
 
-      expect(cover?.classList.contains('lg:order-last')).toBe(last);
+      expect(cover?.classList.contains('@min-[60rem]:order-last')).toBe(last);
       expect(
         cover && title
           ? cover.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -195,4 +195,24 @@ describe('ProjectCaseStudy', () => {
       ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     },
   );
+
+  it('Given a case study When it renders Then its host is a size container and the article switches to twelve columns from a 60rem container', async () => {
+    const fixture = await mount();
+    const host = fixture.nativeElement as HTMLElement;
+    const article = byTestId(host, 'project-case-study');
+
+    expect({
+      container: host.classList.contains('@container'),
+      columns: article?.classList.contains('@min-[60rem]:grid-cols-12') ?? false,
+    }).toEqual({ container: true, columns: true });
+  });
+
+  it('Given a case study When it renders Then none of its layout depends on the viewport width', async () => {
+    const host = await render({ reversed: true });
+    const viewportClasses = [host, ...host.querySelectorAll('*')].flatMap((element) =>
+      [...element.classList].filter((token) => /^(sm|md|lg|xl|2xl):/.test(token)),
+    );
+
+    expect(viewportClasses).toEqual([]);
+  });
 });

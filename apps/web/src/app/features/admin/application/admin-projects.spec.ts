@@ -1,175 +1,117 @@
+import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { NEVER, map, of, throwError, type Observable } from 'rxjs';
+import { Router, provideRouter } from '@angular/router';
+import { NEVER, of, throwError, type Observable } from 'rxjs';
 import { AdminProjects } from './admin-projects';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { Project } from '@features/projects/domain/models/project.model';
-import {
-  makeProject,
-  makeProjectImage,
-  makeProjectInput,
-} from '@features/projects/testing/project-builders';
-import { AdminProjectInlineForm } from './components/admin-project-inline-form';
+import { makeProject } from '@features/projects/testing/project-builders';
+import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { ToastStore } from '@shared/ui/toast-store';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
-import { settle, settleBounded } from '@shared/testing/settle';
+import { settleBounded } from '@shared/testing/settle';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 
-function makeProjectsGateway(overrides: Partial<ProjectsGateway> = {}): ProjectsGateway {
-  const getAllProjects = overrides.getAllProjects ?? ((): Observable<readonly Project[]> => of([]));
-  return {
-    invalidateAllProjects: () => undefined,
-    getFeaturedProjects: () => of([]),
-    getCategories: () => of(['Tous']),
-    getProjectById: () => of(makeProject()),
-    createProject: () => of(makeProject()),
-    updateProject: () => of(makeProject()),
-    deleteProject: () => of(undefined),
-    uploadImage: () => of('uploaded-key'),
-    ...overrides,
-    getAllProjects,
-  } as ProjectsGateway;
-}
+@Component({ template: '' })
+class BlankPage {}
 
-function makeHomeGateway(): HomeGateway {
-  return { invalidateBundle: vi.fn() } as unknown as HomeGateway;
-}
+const DASHFLOW = makeProject({
+  id: 'p-1',
+  title: 'DashFlow',
+  slug: 'dashflow',
+  category: 'Application Web',
+  kind: 'production',
+  featured: true,
+  tags: ['Angular', 'TypeScript', 'NestJS', 'Docker', 'PostgreSQL'],
+  pitch: 'Le foyer dans une seule app.',
+});
 
-async function setup(projects: ProjectsGateway = makeProjectsGateway()): Promise<{
-  component: AdminProjects;
-  toast: { add: ReturnType<typeof vi.fn> };
-  fixture: ComponentFixture<AdminProjects>;
-}> {
+const CANDIDASH = makeProject({
+  id: 'p-2',
+  title: 'CandiDash',
+  slug: 'candidash',
+  category: 'Application Web',
+  kind: 'production',
+  featured: false,
+  tags: ['Angular'],
+  pitch: null,
+});
+
+const COMPTOIR = makeProject({
+  id: 'p-3',
+  title: 'Le Vieux Comptoir',
+  slug: 'le-vieux-comptoir',
+  category: 'Site vitrine',
+  kind: 'demo',
+  featured: false,
+  tags: ['Astro'],
+  pitch: 'Un restaurant fictif.',
+});
+
+type Rendered = {
+  readonly fixture: ComponentFixture<AdminProjects>;
+  readonly host: HTMLElement;
+  readonly component: AdminProjects;
+  readonly toast: { add: ReturnType<typeof vi.fn> };
+  readonly crash: unknown;
+};
+
+async function renderProjects(gateway: ProjectsGateway = stubProjectsGateway()): Promise<Rendered> {
   const toast = { add: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
-      { provide: ProjectsGateway, useValue: projects },
-      { provide: HomeGateway, useValue: makeHomeGateway() },
+      provideRouter([{ path: '**', component: BlankPage }]),
+      { provide: ProjectsGateway, useValue: gateway },
+      { provide: HomeGateway, useValue: { invalidateBundle: vi.fn() } },
       { provide: ToastStore, useValue: toast },
     ],
-    schemas: [NO_ERRORS_SCHEMA],
   });
   const fixture = TestBed.createComponent(AdminProjects);
-  fixture.detectChanges();
-  await fixture.whenStable();
-  fixture.detectChanges();
-  return { component: fixture.componentInstance, toast, fixture };
+  const crash = await captureCrash(() => settleBounded(fixture));
+  return {
+    fixture,
+    host: fixture.nativeElement as HTMLElement,
+    component: fixture.componentInstance,
+    toast,
+    crash,
+  };
 }
 
+const withProjects = (projects: readonly Project[]): ProjectsGateway =>
+  stubProjectsGateway({ getAllProjects: () => of(projects) });
+
+const normalized = (element: Element | null | undefined): string =>
+  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
+
+const nativeButton = (element: Element | null): HTMLButtonElement | null =>
+  element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
+
+const accessibleName = (element: Element | null): string =>
+  element?.getAttribute('aria-label') ?? normalized(element);
+
+const all = (host: ParentNode, testId: string): readonly HTMLElement[] => [
+  ...host.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),
+];
+
+const rowTitles = (host: HTMLElement): readonly string[] =>
+  all(host, 'admin-project-row').map((row) => testIdText(row, 'admin-project-row-title'));
+
 describe('AdminProjects', () => {
-  it('charge les projets et catégories depuis le gateway', async () => {
-    const { component } = await setup(
-      makeProjectsGateway({
-        getAllProjects: () => of([makeProject({ id: '1' }), makeProject({ id: '2' })]),
-        getCategories: () => of(['Tous', 'Web', 'Mobile']),
-      }),
+  it('charge les projets depuis le gateway', async () => {
+    const { component } = await renderProjects(
+      withProjects([makeProject({ id: '1' }), makeProject({ id: '2' })]),
     );
+
     expect(component.projects().map((p) => p.id)).toEqual(['1', '2']);
-    expect(component.categories()).toContain('Mobile');
-  });
-
-  it('filteredProjects filtre par catégorie sélectionnée', async () => {
-    const { component } = await setup(
-      makeProjectsGateway({
-        getAllProjects: () =>
-          of([
-            makeProject({ id: '1', category: 'Web' }),
-            makeProject({ id: '2', category: 'Mobile' }),
-          ]),
-      }),
-    );
-    component.selectedCategory.set('Mobile');
-    expect(component.filteredProjects().map((p) => p.id)).toEqual(['2']);
-  });
-
-  describe('états de formulaire', () => {
-    it('toggleNewForm ouvre le formulaire et ferme une édition en cours', async () => {
-      const { component } = await setup();
-      component.editingId.set('1');
-      component.toggleNewForm();
-      expect(component.showNewForm()).toBe(true);
-      expect(component.editingId()).toBeNull();
-    });
-
-    it('toggleEdit ouvre l’édition et ferme le formulaire de création', async () => {
-      const { component } = await setup();
-      component.showNewForm.set(true);
-      component.toggleEdit('7');
-      expect(component.editingId()).toBe('7');
-      expect(component.showNewForm()).toBe(false);
-    });
-  });
-
-  describe('createProject', () => {
-    it('ajoute le projet créé et notifie le succès (sans image)', async () => {
-      const { component, toast } = await setup(
-        makeProjectsGateway({ createProject: () => of(makeProject({ id: '99', title: 'Créé' })) }),
-      );
-      await component.createProject({ data: makeProjectInput(), file: null });
-      expect(component.projects().map((p) => p.id)).toContain('99');
-      expect(component.showNewForm()).toBe(false);
-      expect(toast.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' }));
-    });
-
-    it('notifie une erreur et n’ajoute rien si la création échoue', async () => {
-      const { component, toast } = await setup(
-        makeProjectsGateway({
-          getAllProjects: () => of([makeProject({ id: '1' })]),
-          createProject: () => throwError(() => new Error('boom')),
-        }),
-      );
-      await component.createProject({ data: makeProjectInput(), file: null });
-      expect(component.projects().map((p) => p.id)).toEqual(['1']);
-      expect(toast.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
-    });
-
-    it('crée quand même le projet mais avertit si l’upload image échoue', async () => {
-      const { component, toast } = await setup(
-        makeProjectsGateway({
-          createProject: () => of(makeProject({ id: '99' })),
-          uploadImage: () => throwError(() => new Error('upload')),
-        }),
-      );
-      await component.createProject({ data: makeProjectInput(), file: new File([], 'img.png') });
-      expect(component.projects().map((p) => p.id)).toContain('99');
-      expect(toast.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'warn' }));
-    });
-  });
-
-  describe('updateProject', () => {
-    it('remplace le projet et notifie le succès', async () => {
-      const { component, toast } = await setup(
-        makeProjectsGateway({
-          getAllProjects: () => of([makeProject({ id: '1', title: 'Avant' })]),
-          updateProject: () => of(makeProject({ id: '1', title: 'Après' })),
-        }),
-      );
-      component.updateProject('1', { data: makeProjectInput({ title: 'Après' }), file: null });
-      expect(component.projects().find((p) => p.id === '1')?.title).toBe('Après');
-      expect(component.editingId()).toBeNull();
-      expect(toast.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' }));
-    });
-
-    it('notifie une erreur si la mise à jour échoue', async () => {
-      const { component, toast } = await setup(
-        makeProjectsGateway({
-          getAllProjects: () => of([makeProject({ id: '1' })]),
-          updateProject: () => throwError(() => new Error('boom')),
-        }),
-      );
-      component.updateProject('1', { data: makeProjectInput(), file: null });
-      expect(toast.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
-    });
   });
 
   describe('deleteProject', () => {
     it('retire le projet de façon optimiste et notifie le succès', async () => {
-      const { component, toast } = await setup(
-        makeProjectsGateway({
+      const { component, toast } = await renderProjects(
+        stubProjectsGateway({
           getAllProjects: () => of([makeProject({ id: '1' }), makeProject({ id: '2' })]),
           deleteProject: () => of(undefined),
         }),
@@ -180,8 +122,8 @@ describe('AdminProjects', () => {
     });
 
     it('restaure la liste et notifie une erreur si la suppression échoue', async () => {
-      const { component, toast } = await setup(
-        makeProjectsGateway({
+      const { component, toast } = await renderProjects(
+        stubProjectsGateway({
           getAllProjects: () => of([makeProject({ id: '1' }), makeProject({ id: '2' })]),
           deleteProject: () => throwError(() => new Error('boom')),
         }),
@@ -193,138 +135,16 @@ describe('AdminProjects', () => {
   });
 });
 
-describe('AdminProjects: galerie du projet en édition', () => {
-  const GALLERY = [
-    makeProjectImage({ id: 'img-a', alt: 'Vue globale' }),
-    makeProjectImage({ id: 'img-b', alt: 'Transactions' }),
-  ];
-
-  async function renderEditing(editing: boolean): Promise<{
-    fixture: ComponentFixture<AdminProjects>;
-    host: HTMLElement;
-    invalidateAllProjects: ReturnType<typeof vi.fn>;
-    invalidateBundle: ReturnType<typeof vi.fn>;
-  }> {
-    const invalidateAllProjects = vi.fn();
-    const invalidateBundle = vi.fn();
-    TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: ProjectsGateway,
-          useValue: {
-            ...makeProjectsGateway({
-              getAllProjects: () => of([makeProject({ id: '1', gallery: GALLERY })]),
-              invalidateAllProjects,
-            }),
-            deleteGalleryImage: (): Observable<void> => of(undefined),
-          },
-        },
-        { provide: HomeGateway, useValue: { invalidateBundle } },
-        { provide: ToastStore, useValue: { add: vi.fn() } },
-      ],
-      schemas: [NO_ERRORS_SCHEMA],
-    });
-    const fixture = TestBed.createComponent(AdminProjects);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    if (editing) fixture.componentInstance.toggleEdit('1');
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    return {
-      fixture,
-      host: fixture.nativeElement as HTMLElement,
-      invalidateAllProjects,
-      invalidateBundle,
-    };
-  }
-
-  async function deleteSecondCapture(fixture: ComponentFixture<AdminProjects>): Promise<void> {
-    const host = fixture.nativeElement as HTMLElement;
-    const second = (): Element | undefined =>
-      host.querySelectorAll('[data-testid="admin-gallery-item"]')[1];
-    const press = async (testId: string): Promise<void> => {
-      const element = second()?.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
-      const button = element?.tagName === 'BUTTON' ? element : element?.querySelector('button');
-      button?.click();
-      fixture.detectChanges();
-      await fixture.whenStable();
-      fixture.detectChanges();
-    };
-    await press('admin-gallery-item-remove');
-    await press('admin-gallery-item-confirm-remove');
-  }
-
-  it.each([
-    { editing: true, galleries: 1 },
-    { editing: false, galleries: 0 },
-  ])(
-    'Given the row editing is $editing When the list renders Then $galleries gallery block is shown, outside the project form',
-    async ({ editing, galleries }) => {
-      const { host } = await renderEditing(editing);
-      const blocks = [...host.querySelectorAll('[data-testid="admin-project-gallery"]')];
-
-      expect({
-        galleries: blocks.length,
-        insideForm: blocks.some((block) => block.parentElement?.closest('form') !== null),
-      }).toEqual({ galleries, insideForm: false });
-    },
-  );
-
-  it('Given the open gallery When a capture is deleted Then the project list holds the new gallery and the public caches are invalidated', async () => {
-    const { fixture, invalidateAllProjects, invalidateBundle } = await renderEditing(true);
-
-    await deleteSecondCapture(fixture);
-
-    expect({
-      gallery: fixture.componentInstance.projects()[0].gallery.map((image) => image.id),
-      invalidateAllProjects: invalidateAllProjects.mock.calls.length,
-      invalidateBundle: invalidateBundle.mock.calls.length,
-    }).toEqual({ gallery: ['img-a'], invalidateAllProjects: 1, invalidateBundle: 1 });
-  });
-
-  it('Given an unsaved title in the project form When a capture is deleted Then the title typed so far is kept', async () => {
-    const { fixture } = await renderEditing(true);
-    const form = (): AdminProjectInlineForm | undefined =>
-      fixture.debugElement.query(By.directive(AdminProjectInlineForm))?.componentInstance;
-    form()?.form.title().value.set('Titre en cours');
-
-    await deleteSecondCapture(fixture);
-
-    expect({
-      title: form()?.form.title().value(),
-      gallery: fixture.componentInstance.projects()[0].gallery.map((image) => image.id),
-    }).toEqual({ title: 'Titre en cours', gallery: ['img-a'] });
-  });
-});
-
 describe('AdminProjects: suppression confirmée', () => {
-  const DASHFLOW = makeProject({ id: 'p-1', title: 'DashFlow' });
-  const CANDIDASH = makeProject({ id: 'p-2', title: 'CandiDash' });
+  const FIRST = makeProject({ id: 'p-1', title: 'DashFlow' });
+  const SECOND = makeProject({ id: 'p-2', title: 'CandiDash' });
 
-  async function renderList(): Promise<{
-    fixture: ComponentFixture<AdminProjects>;
-    host: HTMLElement;
-    deleteProject: ReturnType<typeof vi.fn>;
-  }> {
+  async function renderList(): Promise<Rendered & { deleteProject: ReturnType<typeof vi.fn> }> {
     const deleteProject = vi.fn((): Observable<void> => of(undefined));
-    TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: ProjectsGateway,
-          useValue: makeProjectsGateway({
-            getAllProjects: () => of([DASHFLOW, CANDIDASH]),
-            deleteProject,
-          }),
-        },
-        { provide: HomeGateway, useValue: makeHomeGateway() },
-        { provide: ToastStore, useValue: { add: vi.fn() } },
-      ],
-      schemas: [NO_ERRORS_SCHEMA],
-    });
-    const fixture = TestBed.createComponent(AdminProjects);
-    await settle(fixture);
-    return { fixture, host: fixture.nativeElement as HTMLElement, deleteProject };
+    const rendered = await renderProjects(
+      stubProjectsGateway({ getAllProjects: () => of([FIRST, SECOND]), deleteProject }),
+    );
+    return { ...rendered, deleteProject };
   }
 
   it('Given the list When the trash of DashFlow is pressed Then the dialog asks to confirm and nothing is deleted yet', async () => {
@@ -393,23 +213,8 @@ describe('AdminProjects: chargement, erreur et vide', () => {
     'admin-projects-list',
   ] as const;
 
-  async function renderWith(getAllProjects: ProjectsGateway['getAllProjects']): Promise<{
-    fixture: ComponentFixture<AdminProjects>;
-    host: HTMLElement;
-    crash: unknown;
-  }> {
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: ProjectsGateway, useValue: makeProjectsGateway({ getAllProjects }) },
-        { provide: HomeGateway, useValue: makeHomeGateway() },
-        { provide: ToastStore, useValue: { add: vi.fn() } },
-      ],
-      schemas: [NO_ERRORS_SCHEMA],
-    });
-    const fixture = TestBed.createComponent(AdminProjects);
-    const crash = await captureCrash(() => settleBounded(fixture));
-    return { fixture, host: fixture.nativeElement as HTMLElement, crash };
-  }
+  const renderWith = (getAllProjects: ProjectsGateway['getAllProjects']): Promise<Rendered> =>
+    renderProjects(stubProjectsGateway({ getAllProjects }));
 
   const present = (host: HTMLElement): readonly string[] =>
     STATE_TEST_IDS.filter((testId) => byTestId(host, testId) !== null);
@@ -455,182 +260,245 @@ describe('AdminProjects: chargement, erreur et vide', () => {
   });
 });
 
-describe('AdminProjects: liste et catégories en erreur ensemble', () => {
-  it('Given the list and the categories failed When Réessayer is pressed Then the categories are requested again and offered', async () => {
-    const getAllProjects = vi
-      .fn<ProjectsGateway['getAllProjects']>()
-      .mockReturnValueOnce(throwError(() => new Error('down')))
-      .mockReturnValue(of([makeProject({ id: 'p-1', category: 'Mobile' })]));
-    const getCategories = vi
-      .fn<ProjectsGateway['getCategories']>()
-      .mockReturnValueOnce(throwError(() => new Error('down')))
-      .mockReturnValue(of(['Tous', 'Mobile']));
-    TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: ProjectsGateway,
-          useValue: makeProjectsGateway({ getAllProjects, getCategories }),
-        },
-        { provide: HomeGateway, useValue: makeHomeGateway() },
-        { provide: ToastStore, useValue: { add: vi.fn() } },
-      ],
-      schemas: [NO_ERRORS_SCHEMA],
-    });
-    const fixture = TestBed.createComponent(AdminProjects);
-    await settleBounded(fixture);
-
-    const crash = await captureCrash(() => pressTestId(fixture, 'load-error-retry'));
-
-    expect({
-      crash,
-      calls: getCategories.mock.calls.length,
-      categories: fixture.componentInstance.categories(),
-    }).toEqual({ crash: null, calls: 2, categories: ['Tous', 'Mobile'] });
-  });
-
-  it('Given the project list fails and the categories derive from that failure When the page renders Then the error state is shown instead of a frozen loading state', async () => {
-    const failing = (): Observable<readonly Project[]> => throwError(() => new Error('down'));
-    TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: ProjectsGateway,
-          useValue: makeProjectsGateway({
-            getAllProjects: failing,
-            getCategories: () =>
-              failing().pipe(map((projects) => projects.map((project) => project.category))),
-          }),
-        },
-        { provide: HomeGateway, useValue: makeHomeGateway() },
-        { provide: ToastStore, useValue: { add: vi.fn() } },
-      ],
-      schemas: [NO_ERRORS_SCHEMA],
-    });
-    const fixture = TestBed.createComponent(AdminProjects);
-    const crash = await captureCrash(() => settleBounded(fixture));
-    const host = fixture.nativeElement as HTMLElement;
-
-    expect({
-      crash,
-      present: [
-        'admin-projects-loading',
-        'load-error',
-        'admin-projects-empty',
-        'admin-projects-list',
-      ].filter((testId) => byTestId(host, testId) !== null),
-    }).toEqual({ crash: null, present: ['load-error'] });
-  });
-});
-
-describe('AdminProjects: lignes en français, tampon et édition annoncée', () => {
-  const DASHFLOW = makeProject({ id: 'p-1', title: 'DashFlow', featured: true });
-  const CANDIDASH = makeProject({ id: 'p-2', title: 'CandiDash', featured: false });
-
-  const normalized = (element: Element | null | undefined): string =>
-    (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
-
-  const nativeButton = (element: Element | null): HTMLButtonElement | null =>
-    element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
-
-  const accessibleName = (button: HTMLButtonElement | null): string =>
-    button?.getAttribute('aria-label') ?? normalized(button);
-
-  const all = (host: HTMLElement, testId: string): readonly HTMLElement[] => [
-    ...host.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),
-  ];
-
-  async function renderRows(): Promise<{
-    fixture: ComponentFixture<AdminProjects>;
-    host: HTMLElement;
-  }> {
-    TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: ProjectsGateway,
-          useValue: makeProjectsGateway({ getAllProjects: () => of([DASHFLOW, CANDIDASH]) }),
-        },
-        { provide: HomeGateway, useValue: makeHomeGateway() },
-        { provide: ToastStore, useValue: { add: vi.fn() } },
-      ],
-      schemas: [NO_ERRORS_SCHEMA],
-    });
-    const fixture = TestBed.createComponent(AdminProjects);
-    await settle(fixture);
-    return { fixture, host: fixture.nativeElement as HTMLElement };
-  }
-
-  it('Given a featured project When the list renders Then only its row says « Mis en avant »', async () => {
-    const { host } = await renderRows();
-
-    expect(all(host, 'admin-project-featured').map((mark) => normalized(mark))).toEqual([
-      'Mis en avant',
-    ]);
-  });
-
-  it('Given a featured project When the list renders Then its mark is a stamp', async () => {
-    const { host } = await renderRows();
-
-    expect(all(host, 'admin-project-featured').map((mark) => mark.tagName)).toEqual(['APP-STAMP']);
-  });
-
-  it('Given the list When it renders Then each row names its project in its edit and delete actions, editing collapsed', async () => {
-    const { host } = await renderRows();
-
-    expect({
-      edit: all(host, 'admin-project-edit-toggle').map((el) => {
-        const button = nativeButton(el);
-        return { name: accessibleName(button), expanded: button?.getAttribute('aria-expanded') };
-      }),
-      delete: all(host, 'admin-project-delete').map((el) => accessibleName(nativeButton(el))),
-    }).toEqual({
-      edit: [
-        { name: 'Modifier\u00a0: DashFlow', expanded: 'false' },
-        { name: 'Modifier\u00a0: CandiDash', expanded: 'false' },
-      ],
-      delete: ['Supprimer\u00a0: DashFlow', 'Supprimer\u00a0: CandiDash'],
-    });
-  });
-
-  it('Given the list When the edit toggle of DashFlow is pressed Then it is expanded, renamed to close, and controls the editing panel now shown', async () => {
-    const { fixture, host } = await renderRows();
-
-    await pressTestId(fixture, 'admin-project-edit-toggle', 0);
-    const button = nativeButton(all(host, 'admin-project-edit-toggle')[0] ?? null);
-    const controls = button?.getAttribute('aria-controls') ?? '';
-    const panel = controls === '' ? null : host.ownerDocument.getElementById(controls);
-
-    expect({
-      name: accessibleName(button),
-      expanded: button?.getAttribute('aria-expanded'),
-      panelInPage: panel !== null && host.contains(panel),
-      panelHoldsForm: panel?.querySelector('app-admin-project-inline-form') != null,
-      editingId: fixture.componentInstance.editingId(),
-    }).toEqual({
-      name: "Fermer l'édition\u00a0: DashFlow",
-      expanded: 'true',
-      panelInPage: true,
-      panelHoldsForm: true,
-      editingId: 'p-1',
-    });
-  });
-});
-
 describe('AdminProjects: en-tête de page', () => {
   it('Given two projects of which one is featured When the page renders Then its single h1 is « Projets » under the overline « 2 réalisations · 1 mise en avant »', async () => {
-    const { fixture } = await setup(
-      makeProjectsGateway({
-        getAllProjects: () =>
-          of([
-            makeProject({ id: 'p-1', featured: true }),
-            makeProject({ id: 'p-2', featured: false }),
-          ]),
-      }),
+    const { host } = await renderProjects(
+      withProjects([
+        makeProject({ id: 'p-1', featured: true }),
+        makeProject({ id: 'p-2', featured: false }),
+      ]),
     );
-    const host = fixture.nativeElement as HTMLElement;
 
     expect({
       overline: testIdText(host, 'admin-page-overline'),
       title: testIdText(host, 'admin-page-title'),
       headings: host.querySelectorAll('h1').length,
     }).toEqual({ overline: '2 réalisations · 1 mise en avant', title: 'Projets', headings: 1 });
+  });
+});
+
+describe('AdminProjects: créer et modifier mènent aux pages d’édition', () => {
+  it('Given the page When « Nouveau projet » is followed Then the creation page opens', async () => {
+    const { fixture, host } = await renderProjects(withProjects([DASHFLOW]));
+    const link = byTestId(host, 'admin-project-new');
+    const before = {
+      tag: link?.tagName,
+      text: normalized(link),
+      href: link?.getAttribute('href'),
+    };
+
+    link?.click();
+    await settleBounded(fixture);
+
+    expect({ ...before, url: TestBed.inject(Router).url }).toEqual({
+      tag: 'A',
+      text: 'Nouveau projet',
+      href: '/admin/projects/new',
+      url: '/admin/projects/new',
+    });
+  });
+
+  it('Given the list When it renders Then each row names its project in an edit link and a delete action', async () => {
+    const { host } = await renderProjects(withProjects([DASHFLOW, CANDIDASH]));
+
+    expect({
+      edit: all(host, 'admin-project-edit').map((link) => ({
+        tag: link.tagName,
+        name: accessibleName(link),
+        href: link.getAttribute('href'),
+        expanded: link.getAttribute('aria-expanded'),
+      })),
+      delete: all(host, 'admin-project-delete').map((element) =>
+        accessibleName(nativeButton(element)),
+      ),
+    }).toEqual({
+      edit: [
+        {
+          tag: 'A',
+          name: 'Modifier\u00a0: DashFlow',
+          href: '/admin/projects/p-1',
+          expanded: null,
+        },
+        {
+          tag: 'A',
+          name: 'Modifier\u00a0: CandiDash',
+          href: '/admin/projects/p-2',
+          expanded: null,
+        },
+      ],
+      delete: ['Supprimer\u00a0: DashFlow', 'Supprimer\u00a0: CandiDash'],
+    });
+  });
+
+  it('Given the list When the edit link of CandiDash is followed Then its editing page opens', async () => {
+    const { fixture, host } = await renderProjects(withProjects([DASHFLOW, CANDIDASH]));
+
+    all(host, 'admin-project-edit')[1]?.click();
+    await settleBounded(fixture);
+
+    expect(TestBed.inject(Router).url).toBe('/admin/projects/p-2');
+  });
+});
+
+describe('AdminProjects: lignes éditoriales', () => {
+  it('Given three projects When the list renders Then each row reads its rank and category, its title as h2 and its pitch, or says the pitch is empty', async () => {
+    const { host } = await renderProjects(withProjects([DASHFLOW, CANDIDASH, COMPTOIR]));
+
+    expect(
+      all(host, 'admin-project-row').map((row) => ({
+        overline: testIdText(row, 'admin-project-row-overline'),
+        heading: byTestId(row, 'admin-project-row-title')?.tagName,
+        title: testIdText(row, 'admin-project-row-title'),
+        pitch: byTestId(row, 'admin-project-row-pitch')
+          ? testIdText(row, 'admin-project-row-pitch')
+          : null,
+        missing: byTestId(row, 'admin-project-pitch-missing')
+          ? testIdText(row, 'admin-project-pitch-missing')
+          : null,
+      })),
+    ).toEqual([
+      {
+        overline: '01 · Application Web',
+        heading: 'H2',
+        title: 'DashFlow',
+        pitch: 'Le foyer dans une seule app.',
+        missing: null,
+      },
+      {
+        overline: '02 · Application Web',
+        heading: 'H2',
+        title: 'CandiDash',
+        pitch: null,
+        missing:
+          'Accroche vide\u00a0: la carte publique reprend la première phrase de la description.',
+      },
+      {
+        overline: '03 · Site vitrine',
+        heading: 'H2',
+        title: 'Le Vieux Comptoir',
+        pitch: 'Un restaurant fictif.',
+        missing: null,
+      },
+    ]);
+  });
+
+  it('Given three projects When the list renders Then each cover carries the nature stamp', async () => {
+    const { host } = await renderProjects(withProjects([DASHFLOW, CANDIDASH, COMPTOIR]));
+
+    expect(
+      all(host, 'admin-project-row').map((row) => ({
+        cover: byTestId(row, 'project-cover') !== null,
+        kind: testIdText(row, 'project-cover-kind'),
+      })),
+    ).toEqual([
+      { cover: true, kind: 'En production' },
+      { cover: true, kind: 'En production' },
+      { cover: true, kind: 'Démo' },
+    ]);
+  });
+
+  it('Given a featured project with five tools When the list renders Then its facts give the stack with the remainder, then « Accueil : Mis en avant » only for it', async () => {
+    const { host } = await renderProjects(withProjects([DASHFLOW, CANDIDASH]));
+
+    expect(
+      all(host, 'admin-project-row').map((row) =>
+        all(row, 'fact-label').map((label, index) => [
+          normalized(label),
+          normalized(all(row, 'fact-value')[index]),
+        ]),
+      ),
+    ).toEqual([
+      [
+        ['Stack', 'Angular · TypeScript · NestJS · Docker +1'],
+        ['Accueil', 'Mis en avant'],
+      ],
+      [['Stack', 'Angular']],
+    ]);
+  });
+
+  it('Given the list When it renders Then each row opens its public page in a new tab', async () => {
+    const { host } = await renderProjects(withProjects([DASHFLOW, CANDIDASH]));
+
+    expect(
+      all(host, 'admin-project-view').map((link) => ({
+        tag: link.tagName,
+        href: link.getAttribute('href'),
+        target: link.getAttribute('target'),
+        noopener: link.getAttribute('rel')?.split(/\s+/).includes('noopener') ?? false,
+        name: accessibleName(link),
+      })),
+    ).toEqual([
+      {
+        tag: 'A',
+        href: '/projects/dashflow',
+        target: '_blank',
+        noopener: true,
+        name: 'Voir la fiche publique\u00a0: DashFlow (nouvel onglet)',
+      },
+      {
+        tag: 'A',
+        href: '/projects/candidash',
+        target: '_blank',
+        noopener: true,
+        name: 'Voir la fiche publique\u00a0: CandiDash (nouvel onglet)',
+      },
+    ]);
+  });
+});
+
+describe('AdminProjects: filtre par nature', () => {
+  const readFilters = (
+    host: HTMLElement,
+  ): { label: string | null; options: readonly Record<string, string | null>[] } => ({
+    label: byTestId(host, 'filter-group')?.getAttribute('aria-label') ?? null,
+    options: all(host, 'filter-option').map((option) => ({
+      label: testIdText(option, 'filter-option-label'),
+      count: testIdText(option, 'filter-option-count'),
+      pressed: option.getAttribute('aria-pressed'),
+      disabled: option.getAttribute('aria-disabled'),
+    })),
+  });
+
+  it('Given two projects in production and one demo When the page renders Then the nature filter counts them, « Tous » pressed and « Scripts » disabled', async () => {
+    const { host } = await renderProjects(withProjects([DASHFLOW, CANDIDASH, COMPTOIR]));
+
+    expect(readFilters(host)).toEqual({
+      label: 'Filtrer par nature',
+      options: [
+        { label: 'Tous', count: '3', pressed: 'true', disabled: null },
+        { label: 'En production', count: '2', pressed: 'false', disabled: null },
+        { label: 'Démos', count: '1', pressed: 'false', disabled: null },
+        { label: 'Scripts', count: '0', pressed: 'false', disabled: 'true' },
+      ],
+    });
+  });
+
+  it.each([
+    { index: 1, filter: 'En production', titles: ['DashFlow', 'CandiDash'] },
+    { index: 2, filter: 'Démos', titles: ['Le Vieux Comptoir'] },
+  ])(
+    'Given the full list When « $filter » is pressed Then only its projects remain',
+    async ({ index, titles }) => {
+      const { fixture, host } = await renderProjects(withProjects([DASHFLOW, CANDIDASH, COMPTOIR]));
+
+      await pressTestId(fixture, 'filter-option', index);
+
+      expect({
+        titles: rowTitles(host),
+        pressed: all(host, 'filter-option').map((option) => option.getAttribute('aria-pressed')),
+      }).toEqual({
+        titles,
+        pressed: [0, 1, 2, 3].map((position) => (position === index ? 'true' : 'false')),
+      });
+    },
+  );
+
+  it('Given the demos filtered When « Tous » is pressed again Then every project is back', async () => {
+    const { fixture, host } = await renderProjects(withProjects([DASHFLOW, CANDIDASH, COMPTOIR]));
+
+    await pressTestId(fixture, 'filter-option', 2);
+    await pressTestId(fixture, 'filter-option', 0);
+
+    expect(rowTitles(host)).toEqual(['DashFlow', 'CandiDash', 'Le Vieux Comptoir']);
   });
 });

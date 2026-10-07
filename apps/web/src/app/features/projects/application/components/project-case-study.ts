@@ -14,23 +14,23 @@ import { FactList } from '@shared/ui/fact-list';
 @Component({
   selector: 'app-project-case-study',
   imports: [RouterLink, AppIcon, ProjectCover, FactList],
-  host: { class: 'block' },
+  host: { class: '@container block' },
   template: `
     @let study = caseStudy();
     <article
       data-testid="project-case-study"
-      class="grid gap-8 lg:grid-cols-12 lg:items-center lg:gap-12"
+      class="grid gap-8 @min-[60rem]:grid-cols-12 @min-[60rem]:items-center @min-[60rem]:gap-12"
     >
       <app-project-cover
         data-testid="project-case-study-cover"
-        class="lg:col-span-7"
-        [class.lg:order-last]="reversed()"
+        class="@min-[60rem]:col-span-7"
+        [class]="coverOrder()"
         [image]="study.image"
         [alt]="coverAlt()"
         kind="production"
         [priority]="priority()"
       />
-      <div class="lg:col-span-5">
+      <div class="@min-[60rem]:col-span-5">
         <p data-testid="project-case-study-overline" class="font-mono text-xs text-muted">
           {{ study.overline }}
         </p>
@@ -79,6 +79,9 @@ export class ProjectCaseStudy {
   readonly reversed = input(false);
   readonly liveLinkClicked = output<void>();
 
+  protected readonly coverOrder = computed(() =>
+    this.reversed() ? '@min-[60rem]:order-last' : '',
+  );
   protected readonly liveLabel = liveLinkLabel('production');
   protected readonly coverAlt = computed(() => projectCoverAlt(this.caseStudy().title));
   protected readonly linkContext = computed(() => sheetLinkContext(this.caseStudy().title));

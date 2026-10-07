@@ -292,8 +292,8 @@ describe('AdminOverview: actions rapides', () => {
   });
 
   it.each([
-    { testId: 'quick-new-project', text: 'Nouveau projet', url: '/admin/projects' },
-    { testId: 'quick-new-post', text: 'Nouvel article', url: '/admin/blog' },
+    { testId: 'quick-new-project', text: 'Nouveau projet', url: '/admin/projects/new' },
+    { testId: 'quick-new-post', text: 'Nouvel article', url: '/admin/blog/new' },
     { testId: 'quick-cv', text: 'Remplacer le CV', url: '/admin/cv' },
     { testId: 'quick-audience', text: "Voir l'audience", url: '/admin/audience' },
   ])(
