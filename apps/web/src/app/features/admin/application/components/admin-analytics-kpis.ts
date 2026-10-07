@@ -36,7 +36,9 @@ import type { StatsOverview } from '@features/analytics/domain/models/analytics.
           <p class="text-3xl font-bold text-foreground leading-none">
             {{ overview()?.pageviews ?? 0 }}
           </p>
-          <p class="text-xs text-muted mt-2">{{ pagesPerSession() }} pages / session</p>
+          <p data-testid="kpi-pages-per-session" class="text-xs text-muted mt-2">
+            {{ pagesPerSessionLabel() }}
+          </p>
         }
       </article>
 
@@ -48,8 +50,8 @@ import type { StatsOverview } from '@features/analytics/domain/models/analytics.
         @if (loading()) {
           <app-skeleton class="h-9 w-20 rounded" tone="strong" />
         } @else {
-          <p class="text-3xl font-bold text-foreground leading-none">
-            {{ bounceRateFormatted() }}%
+          <p data-testid="kpi-bounce-rate" class="text-3xl font-bold text-foreground leading-none">
+            {{ bounceRate() }}
           </p>
           <p class="text-xs text-muted mt-2">{{ overview()?.bounces ?? 0 }} sessions en rebond</p>
         }
@@ -63,7 +65,9 @@ import type { StatsOverview } from '@features/analytics/domain/models/analytics.
         @if (loading()) {
           <app-skeleton class="h-9 w-20 rounded" tone="strong" />
         } @else {
-          <p class="text-3xl font-bold text-foreground leading-none">{{ formattedDuration() }}</p>
+          <p data-testid="kpi-avg-duration" class="text-3xl font-bold text-foreground leading-none">
+            {{ formattedDuration() }}
+          </p>
           <p class="text-xs text-muted mt-2">par page</p>
         }
       </article>
@@ -73,7 +77,7 @@ import type { StatsOverview } from '@features/analytics/domain/models/analytics.
 export class AdminAnalyticsKpis {
   readonly loading = input<boolean>(false);
   readonly overview = input<StatsOverview | undefined>(undefined);
-  readonly pagesPerSession = input<string>('0');
-  readonly bounceRateFormatted = input<string>('0.0');
-  readonly formattedDuration = input<string>('0s');
+  readonly pagesPerSessionLabel = input.required<string>();
+  readonly bounceRate = input.required<string>();
+  readonly formattedDuration = input.required<string>();
 }

@@ -45,7 +45,17 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
               @if (unreadRes.isLoading()) {
                 <app-skeleton class="h-7 w-10 rounded" tone="strong" />
               } @else {
-                <p class="text-2xl font-bold text-foreground leading-none">{{ unreadCount() }}</p>
+                <p
+                  data-testid="dashboard-unread-count"
+                  class="text-2xl font-bold text-foreground leading-none"
+                >
+                  @let count = unreadCount();
+                  @if (count === null) {
+                    <span aria-hidden="true">—</span><span class="sr-only">indisponible</span>
+                  } @else {
+                    {{ count }}
+                  }
+                </p>
               }
               <p class="text-xs text-muted mt-1">Messages non lus</p>
             </div>
@@ -69,8 +79,16 @@ const FORMATTED_DATE = new Date().toLocaleDateString('fr-FR', {
               @if (cvDownloadRes.isLoading()) {
                 <app-skeleton class="h-7 w-10 rounded" tone="strong" />
               } @else {
-                <p class="text-2xl font-bold text-foreground leading-none">
-                  {{ cvDownloadCount() }}
+                <p
+                  data-testid="dashboard-cv-count"
+                  class="text-2xl font-bold text-foreground leading-none"
+                >
+                  @let count = cvDownloadCount();
+                  @if (count === null) {
+                    <span aria-hidden="true">—</span><span class="sr-only">indisponible</span>
+                  } @else {
+                    {{ count }}
+                  }
                 </p>
               }
               <p class="text-xs text-muted mt-1">CV téléchargés</p>
@@ -166,13 +184,15 @@ export class AdminDashboard {
   protected readonly unreadRes = rxResource({
     stream: () => this._contactGateway.getUnreadCount(),
   });
-  protected readonly unreadCount = computed(() => this.unreadRes.value() ?? 0);
+  protected readonly unreadCount = computed(() =>
+    this.unreadRes.hasValue() ? this.unreadRes.value() : null,
+  );
 
   protected readonly messagesRes = rxResource({
     stream: () => this._contactGateway.getAllMessages(),
   });
   protected readonly latestMessages = computed(() => {
-    const messages = this.messagesRes.value() ?? [];
+    const messages = this.messagesRes.hasValue() ? this.messagesRes.value() : [];
     return [...messages]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 3);
@@ -181,5 +201,7 @@ export class AdminDashboard {
   protected readonly cvDownloadRes = resource({
     loader: () => firstValueFrom(this._analytics.getCvDownloadCount()),
   });
-  protected readonly cvDownloadCount = computed(() => this.cvDownloadRes.value() ?? 0);
+  protected readonly cvDownloadCount = computed(() =>
+    this.cvDownloadRes.hasValue() ? this.cvDownloadRes.value() : null,
+  );
 }

@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, output, type Signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+  type Signal,
+} from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AppIcon } from '@shared/icons/app-icon';
 import { AppIconTile } from '@shared/ui/icon-tile';
@@ -65,22 +72,25 @@ export type AdminNavItem = {
         <a
           [routerLink]="item.route"
           routerLinkActive="bg-primary/10 text-primary border-primary/30"
+          ariaCurrentWhenActive="page"
           [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
           (click)="navigate.emit()"
           class="relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
           [attr.title]="collapsed() ? item.label : null"
         >
           <app-icon [name]="item.icon" [size]="20" class="shrink-0" />
+          @let unread = item.badge?.() ?? 0;
           @if (!collapsed()) {
             <span class="flex-1">{{ item.label }}</span>
-            @if (item.badge && item.badge()! > 0) {
+            @if (unread > 0) {
               <span
+                data-testid="nav-unread-count"
                 class="px-1.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-semibold min-w-[1.25rem] text-center"
               >
-                {{ item.badge() }}
+                {{ unread }}<span class="sr-only">{{ unread === 1 ? ' non lu' : ' non lus' }}</span>
               </span>
             }
-          } @else if (item.badge && item.badge()! > 0) {
+          } @else if (unread > 0) {
             <span
               class="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary"
               aria-hidden="true"
@@ -94,6 +104,7 @@ export type AdminNavItem = {
       <a
         routerLink="/admin/settings"
         routerLinkActive="bg-primary/10 text-primary border-primary/30"
+        ariaCurrentWhenActive="page"
         (click)="navigate.emit()"
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent transition-colors"
         [attr.title]="collapsed() ? 'Paramètres' : null"
@@ -103,6 +114,16 @@ export type AdminNavItem = {
           <span>Paramètres</span>
         }
       </a>
+      <button
+        type="button"
+        data-testid="admin-theme-toggle"
+        (click)="themeToggle.emit()"
+        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-foreground hover:bg-foreground/5 transition-colors"
+        [attr.title]="collapsed() ? themeToggleLabel() : null"
+      >
+        <app-icon [name]="isDark() ? 'moon' : 'sun'" [size]="20" class="shrink-0" />
+        <span [class.sr-only]="collapsed()">{{ themeToggleLabel() }}</span>
+      </button>
       <a
         routerLink="/"
         (click)="navigate.emit()"
@@ -134,8 +155,14 @@ export class AdminNav {
   readonly showCollapseButton = input<boolean>(true);
   readonly displayName = input<string | undefined>(undefined);
   readonly navItems = input.required<readonly AdminNavItem[]>();
+  readonly isDark = input.required<boolean>();
+
+  protected readonly themeToggleLabel = computed(() =>
+    this.isDark() ? 'Passer en mode clair' : 'Passer en mode sombre',
+  );
 
   readonly collapseToggle = output<void>();
   readonly logoutClick = output<void>();
   readonly navigate = output<void>();
+  readonly themeToggle = output<void>();
 }

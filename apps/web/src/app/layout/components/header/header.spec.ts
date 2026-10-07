@@ -9,6 +9,8 @@ import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { ActiveSection } from '@core/navigation/active-section';
 import type { CvInfo } from '@features/cv/domain/models/cv.model';
+import { ThemeStore } from '@core/theme/theme-store';
+import { installSystemColorScheme } from '@core/theme/testing/system-color-scheme';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
 
@@ -286,31 +288,58 @@ describe('Header', () => {
   });
 
   describe('toggle de thème', () => {
-    it('inverse isDarkTheme et persiste la préférence dans localStorage', async () => {
-      localStorage.setItem(THEME_STORAGE_KEY, 'dark');
-      const { component, fixture } = await setup();
-      expect(component['isDarkTheme']()).toBe(true);
+    const themeButton = (host: HTMLElement): HTMLButtonElement | null =>
+      host.querySelector<HTMLButtonElement>(
+        'header button[aria-label="Passer en mode clair"], header button[aria-label="Passer en mode sombre"]',
+      );
 
-      component['toggleTheme']();
+    it('Given a stored dark preference When the header theme button is pressed Then the shared store holds light, the page leaves the dark register and the choice is stored', async () => {
+      localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+      const { fixture } = await setup();
+      const button = themeButton(fixture.nativeElement as HTMLElement);
+      const labelBefore = button?.getAttribute('aria-label');
+
+      button?.click();
       fixture.detectChanges();
       await fixture.whenStable();
+      TestBed.tick();
 
-      expect(component['isDarkTheme']()).toBe(false);
-      expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
+      expect({
+        labelBefore,
+        labelAfter: themeButton(fixture.nativeElement as HTMLElement)?.getAttribute('aria-label'),
+        preference: TestBed.inject(ThemeStore).preference(),
+        htmlDark: document.documentElement.classList.contains('app-dark'),
+        stored: localStorage.getItem(THEME_STORAGE_KEY),
+      }).toEqual({
+        labelBefore: 'Passer en mode clair',
+        labelAfter: 'Passer en mode sombre',
+        preference: 'light',
+        htmlDark: false,
+        stored: 'light',
+      });
     });
 
-    it('applique la classe app-dark sur <html> en thème sombre, la retire en clair', async () => {
-      localStorage.setItem(THEME_STORAGE_KEY, 'dark');
-      const { component, fixture } = await setup();
-      expect(document.documentElement.classList.contains('app-dark')).toBe(true);
+    it.each([
+      { systemDark: true, label: 'Passer en mode clair', htmlDark: true },
+      { systemDark: false, label: 'Passer en mode sombre', htmlDark: false },
+    ])(
+      'Given no stored preference and a system dark scheme at $systemDark When the header renders Then it follows the system and stores nothing',
+      async ({ systemDark, label, htmlDark }) => {
+        const scheme = installSystemColorScheme(systemDark);
+        try {
+          const { fixture } = await setup();
+          TestBed.tick();
 
-      component['toggleTheme']();
-      fixture.detectChanges();
-      await fixture.whenStable();
-
-      expect(document.documentElement.classList.contains('app-dark')).toBe(false);
-      expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
-    });
+          expect({
+            label: themeButton(fixture.nativeElement as HTMLElement)?.getAttribute('aria-label'),
+            htmlDark: document.documentElement.classList.contains('app-dark'),
+            stored: localStorage.getItem(THEME_STORAGE_KEY),
+          }).toEqual({ label, htmlDark, stored: null });
+        } finally {
+          scheme.restore();
+        }
+      },
+    );
   });
 
   describe('bascule de thème dans le drawer', () => {

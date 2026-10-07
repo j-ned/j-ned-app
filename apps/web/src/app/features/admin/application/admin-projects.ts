@@ -1,9 +1,11 @@
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   signal,
   computed,
+  viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
@@ -20,15 +22,34 @@ import { AdminProjectRow } from './components/admin-project-row';
 import { ToastStore } from '@shared/ui/toast-store';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
+import { ConfirmDialog } from '@shared/ui/confirm-dialog';
+import { LoadError } from '@shared/ui/load-error';
+import { loadState } from '@shared/ui/load-state';
+import { AppSkeleton } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-admin-projects',
-  imports: [AdminProjectInlineForm, AdminProjectRow, AppIcon, Button],
+  imports: [
+    AdminProjectInlineForm,
+    AdminProjectRow,
+    AppIcon,
+    Button,
+    ConfirmDialog,
+    LoadError,
+    AppSkeleton,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
-        <h1 class="text-2xl font-bold text-foreground">Projets</h1>
+        <h1
+          #pageTitle
+          tabindex="-1"
+          data-testid="admin-page-title"
+          class="text-2xl font-bold text-foreground"
+        >
+          Projets
+        </h1>
         <div class="flex flex-wrap items-center gap-3 sm:gap-4">
           <select
             class="app-select min-w-0 flex-1 sm:flex-none sm:min-w-44"
@@ -65,26 +86,61 @@ import { AppIcon } from '@shared/icons/app-icon';
         </div>
       }
 
-      <div class="space-y-3">
-        @for (proj of filteredProjects(); track proj.id) {
-          <app-admin-project-row
-            [project]="proj"
-            [isEditing]="editingId() === proj.id"
-            (editToggled)="toggleEdit(proj.id)"
-            (deleteClicked)="deleteProject(proj)"
-            (saved)="updateProject(proj.id, $event)"
-            (cancelled)="editingId.set(null)"
-            (galleryChange)="updateGallery(proj.id, $event)"
+      @switch (listState()) {
+        @case ('loading') {
+          <div data-testid="admin-projects-loading" role="status" class="space-y-3">
+            <span class="sr-only">Chargement des projets…</span>
+            <app-skeleton class="block h-20 rounded-xl" />
+            <app-skeleton class="block h-20 rounded-xl" />
+            <app-skeleton class="block h-20 rounded-xl" />
+          </div>
+        }
+        @case ('error') {
+          <app-load-error
+            message="Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
+            (retry)="reloadList()"
           />
-        } @empty {
-          <div
+        }
+        @case ('empty') {
+          <p
+            data-testid="admin-projects-empty"
             class="text-center py-12 text-muted text-sm bg-surface border border-foreground/10 rounded-xl"
           >
             Aucun projet
+          </p>
+        }
+        @default {
+          <div data-testid="admin-projects-list" class="space-y-3">
+            @for (proj of filteredProjects(); track proj.id) {
+              <app-admin-project-row
+                [project]="proj"
+                [isEditing]="editingId() === proj.id"
+                (editToggled)="toggleEdit(proj.id)"
+                (deleteClicked)="pendingDeletion.set(proj)"
+                (saved)="updateProject(proj.id, $event)"
+                (cancelled)="editingId.set(null)"
+                (galleryChange)="updateGallery(proj.id, $event)"
+              />
+            } @empty {
+              <p class="text-center py-12 text-muted text-sm">Aucun projet dans cette catégorie</p>
+            }
           </div>
         }
-      </div>
+      }
     </div>
+
+    <app-confirm-dialog
+      [open]="pendingDeletion() !== null"
+      [heading]="deletionCopy().heading"
+      [confirmLabel]="deletionCopy().confirm"
+      (confirmed)="confirmDeletion()"
+      (cancelled)="pendingDeletion.set(null)"
+    >
+      <p>
+        Le projet disparaît des Réalisations et de l'accueil au prochain déploiement, avec ses
+        captures. Cette action est définitive.
+      </p>
+    </app-confirm-dialog>
   `,
 })
 export class AdminProjects {
@@ -92,21 +148,36 @@ export class AdminProjects {
   private readonly homeGateway = inject(HomeGateway);
   private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly _pageTitle = viewChild.required<ElementRef<HTMLHeadingElement>>('pageTitle');
 
   readonly selectedCategory = signal('Tous');
   readonly editingId = signal<string | null>(null);
   readonly showNewForm = signal(false);
+  protected readonly pendingDeletion = signal<Project | null>(null);
 
-  private readonly projectsResource = rxResource({
-    stream: () => this.projectsGateway.filterProjects({}),
+  protected readonly deletionCopy = computed(() => {
+    const title = this.pendingDeletion()?.title ?? '';
+    return { heading: `Supprimer le projet ${title}\u202f?`, confirm: `Supprimer ${title}` };
+  });
+
+  protected readonly projectsResource = rxResource({
+    stream: () => this.projectsGateway.getAllProjects(),
   });
 
   private readonly categoriesResource = rxResource({
     stream: () => this.projectsGateway.getCategories(),
   });
 
-  readonly projects = computed(() => [...(this.projectsResource.value() ?? [])]);
-  readonly categories = computed(() => [...(this.categoriesResource.value() ?? ['Tous'])]);
+  readonly projects = computed(() =>
+    this.projectsResource.hasValue() ? [...this.projectsResource.value()] : [],
+  );
+
+  protected readonly listState = computed(() =>
+    loadState(this.projectsResource, () => this.projects().length === 0),
+  );
+  readonly categories = computed(() =>
+    this.categoriesResource.hasValue() ? [...this.categoriesResource.value()] : ['Tous'],
+  );
 
   readonly filteredProjects = computed(() => {
     const cat = this.selectedCategory();
@@ -114,6 +185,11 @@ export class AdminProjects {
     if (!cat || cat === 'Tous') return all;
     return all.filter((p) => p.category === cat);
   });
+
+  protected reloadList(): void {
+    this.projectsResource.reload();
+    this.categoriesResource.reload();
+  }
 
   toggleNewForm(): void {
     this.showNewForm.update((v) => !v);
@@ -199,9 +275,16 @@ export class AdminProjects {
     this.homeGateway.invalidateBundle();
   }
 
+  protected confirmDeletion(): void {
+    const project = this.pendingDeletion();
+    this.pendingDeletion.set(null);
+    this._pageTitle().nativeElement.focus();
+    if (project) this.deleteProject(project);
+  }
+
   deleteProject(project: Project): void {
     // Optimistic update: retire le projet de la liste avant la réponse serveur
-    const snapshot = this.projectsResource.value() ?? [];
+    const snapshot = this.projects();
     this.projectsResource.update((list) => (list ?? []).filter((p) => p.id !== project.id));
 
     this.projectsGateway

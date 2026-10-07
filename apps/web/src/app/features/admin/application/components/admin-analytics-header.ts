@@ -23,7 +23,9 @@ export const DATE_RANGE_OPTIONS: readonly DateRangeOption[] = [
   template: `
     <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
       <div>
-        <h1 class="text-3xl font-bold text-foreground mb-1">Analytics</h1>
+        <h1 data-testid="admin-page-title" class="text-3xl font-bold text-foreground mb-1">
+          Audience
+        </h1>
         <p class="text-sm text-muted">Visites, engagement, provenance, appareils</p>
       </div>
       <div class="flex flex-wrap items-center gap-3 sm:gap-4">
@@ -44,17 +46,24 @@ export const DATE_RANGE_OPTIONS: readonly DateRangeOption[] = [
         </div>
         <select
           class="app-select"
-          [value]="dateRange()"
+          data-testid="analytics-date-range"
           (change)="selectDateRange($event)"
           aria-label="Période d'analyse"
         >
           @for (opt of DATE_RANGE_OPTIONS; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
+            <option [value]="opt.value" [selected]="opt.value === dateRange()">
+              {{ opt.label }}
+            </option>
           }
         </select>
-        <app-button severity="secondary" variant="outlined" (click)="exportCsvClicked.emit()">
+        <app-button
+          severity="secondary"
+          variant="outlined"
+          data-testid="analytics-export-csv"
+          (click)="exportCsvClicked.emit()"
+        >
           <app-icon name="download" [size]="20" />
-          Export CSV
+          Exporter en CSV
         </app-button>
         <button
           type="button"

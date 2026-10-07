@@ -96,7 +96,7 @@ export class Button {
     }
 
     if (sev === 'danger') {
-      return 'bg-status-error text-white border border-status-error shadow-sm hover:bg-status-error/90';
+      return 'bg-status-error text-on-status-error border border-status-error shadow-sm hover:bg-status-error/90';
     }
     return sev === 'primary'
       ? 'bg-primary-bg text-white border border-primary-bg shadow-sm hover:opacity-90'

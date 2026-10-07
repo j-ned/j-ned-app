@@ -1,20 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {
-  catchError,
-  map,
-  Observable,
-  of,
-  ReplaySubject,
-  retry,
-  share,
-  startWith,
-  Subject,
-  switchMap,
-} from 'rxjs';
+import { map, Observable, ReplaySubject, retry, share, startWith, Subject, switchMap } from 'rxjs';
 import { ProjectsGateway } from '../../domain/gateways/projects.gateway';
 import type { Project, ProjectImage, ProjectInput } from '../../domain/models/project.model';
-import type { ProjectFilter } from '../../domain/models/project-filter.model';
 import { isShowcaseProject } from '../../domain/is-showcase-project';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { toProject, toProjectImage } from '../project.adapter';
@@ -74,21 +62,6 @@ export class HttpProjectsGateway extends ProjectsGateway {
         const unique = [...new Set(projects.map((p) => p.category))].sort();
         return ['Tous', ...unique];
       }),
-    );
-  }
-
-  filterProjects(filter: ProjectFilter): Observable<readonly Project[]> {
-    const params = new URLSearchParams();
-    params.set('_sort', 'order');
-    if (filter.category && filter.category !== 'Tous') {
-      params.set('category', filter.category);
-    }
-    if (filter.featured !== undefined) {
-      params.set('featured', String(filter.featured));
-    }
-    return this.http.get<ProjectDto[]>(`${this.apiUrl}/projects?${params.toString()}`).pipe(
-      map((rows) => rows.map((row) => toProject(row, this.apiUrl))),
-      catchError(() => of([])),
     );
   }
 

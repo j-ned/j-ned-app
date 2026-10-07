@@ -4,17 +4,18 @@ import {
   DestroyRef,
   PLATFORM_ID,
   computed,
-  effect,
   inject,
   resource,
   signal,
+  type ResourceRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { catchError, EMPTY, firstValueFrom, interval, startWith, switchMap } from 'rxjs';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { AnalyticsDeviceExclusion } from '@core/analytics/analytics-device-exclusion';
-import { ThemeWatcher } from '@shared/theme/theme-watcher';
+import { ThemeStore } from '@core/theme/theme-store';
+import { LoadError } from '@shared/ui/load-error';
 import { AnalyticsBarList } from './components/analytics-bar-list';
 import { AnalyticsDonutPanel } from './components/analytics-donut-panel';
 import { AnalyticsEntityList } from './components/analytics-entity-list';
@@ -25,7 +26,8 @@ import { AdminAnalyticsCvPanel } from './components/admin-analytics-cv-panel';
 import {
   dateRangeToParams,
   formatDuration,
-  pagesPerSession as computePagesPerSession,
+  formatPercent,
+  pagesPerSessionLabel,
   buildVisitorsChartData,
   buildLineChartOptions,
   buildDonutChartData,
@@ -65,6 +67,11 @@ const DEFAULT_PALETTE: ChartPalette = {
   warn: THEME_FALLBACK['--theme-status-warn'],
 };
 
+// `value()` lève en état d'erreur : toute lecture de ressource passe par `hasValue()`.
+function valueOr<T, F>(source: ResourceRef<T | undefined>, fallback: F): T | F {
+  return source.hasValue() ? source.value() : fallback;
+}
+
 @Component({
   selector: 'app-admin-analytics',
   imports: [
@@ -75,6 +82,7 @@ const DEFAULT_PALETTE: ChartPalette = {
     AdminAnalyticsKpis,
     AdminAnalyticsVisitorsChart,
     AdminAnalyticsCvPanel,
+    LoadError,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -88,119 +96,122 @@ const DEFAULT_PALETTE: ChartPalette = {
       (deviceExclusionToggled)="deviceExclusion.toggle()"
     />
 
-    <app-admin-analytics-kpis
-      [loading]="overviewResource.isLoading()"
-      [overview]="overview()"
-      [pagesPerSession]="pagesPerSession()"
-      [bounceRateFormatted]="bounceRateFormatted()"
-      [formattedDuration]="formattedDuration()"
-    />
-
-    <app-admin-analytics-visitors-chart
-      [loading]="chartResource.isLoading()"
-      [data]="chartData()"
-      [options]="chartOptions()"
-    />
-
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-      <app-analytics-bar-list
-        title="Pages les plus visitées"
-        icon="file"
-        [rows]="topPages()"
-        [max]="pagesMax()"
-        [loading]="pagesResource.isLoading()"
-        fallbackLabel="/"
+    @if (hasLoadError()) {
+      <app-load-error
+        message="Une partie des statistiques n'a pas pu être chargée."
+        (retry)="retryFailed()"
       />
-      <app-analytics-bar-list
-        title="Provenance du trafic"
-        icon="external-link"
-        [rows]="topReferrers()"
-        [max]="referrersMax()"
-        [loading]="referrersResource.isLoading()"
-        fallbackLabel="Accès direct"
-      />
-    </section>
-
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-      <app-analytics-donut-panel
-        title="Navigateurs"
-        icon="globe"
-        [data]="browsersChart()"
-        [options]="donutOptions()"
-        [loading]="browsersResource.isLoading()"
-        [isEmpty]="browsers().length === 0"
-      />
-      <app-analytics-donut-panel
-        title="Systèmes d'exploitation"
-        icon="desktop"
-        iconClass="text-accent"
-        [data]="osChart()"
-        [options]="donutOptions()"
-        [loading]="osResource.isLoading()"
-        [isEmpty]="osList().length === 0"
-      />
-      <app-analytics-bar-list
-        title="Pays"
-        icon="map-marker"
-        iconClass="text-status-success"
-        [rows]="countries()"
-        [max]="countriesMax()"
-        [loading]="countriesResource.isLoading()"
-        fallbackLabel="Inconnu"
-        barClass="bg-status-success"
-        skeletonClass="h-6 rounded"
-      />
-    </section>
-
-    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-      <app-analytics-entity-list
-        title="Projets cliqués"
-        icon="desktop"
-        iconClass="text-status-success"
-        [tagValue]="(overview()?.projectClicks ?? 0) + ' clics'"
-        tagSeverity="success"
-        [entities]="topProjectsTop5()"
-        [loading]="projectsResource.isLoading()"
-        emptyLabel="Aucun clic enregistré"
-      />
-
-      <app-analytics-entity-list
-        title="Articles ouverts"
-        icon="pencil"
-        [tagValue]="(overview()?.articleViews ?? 0) + ' vues'"
-        tagSeverity="info"
-        [entities]="topArticlesTop5()"
-        [loading]="articlesResource.isLoading()"
-        emptyLabel="Aucune vue enregistrée"
-      />
-
-      <app-analytics-entity-list
-        title="Articles lus jusqu'au bout"
-        icon="check-circle"
-        iconClass="text-accent"
-        [tagValue]="articlesReadTotal() + ' lectures'"
-        tagSeverity="info"
-        [entities]="topArticlesReadTop5()"
-        [loading]="articlesReadResource.isLoading()"
-        emptyLabel="Aucune lecture complète enregistrée"
-      />
-
-      <app-analytics-entity-list
-        title="CTA cliqués"
-        icon="arrow-right"
-        iconClass="text-primary"
-        [tagValue]="(overview()?.ctaClicks ?? 0) + ' clics'"
-        tagSeverity="info"
-        [entities]="topCtaTop5()"
-        [loading]="ctaResource.isLoading()"
-        emptyLabel="Aucun clic enregistré"
-      />
-
-      <app-admin-analytics-cv-panel
+    } @else {
+      <app-admin-analytics-kpis
         [loading]="overviewResource.isLoading()"
-        [cvDownloads]="overview()?.cvDownloads ?? 0"
+        [overview]="overview()"
+        [pagesPerSessionLabel]="pagesPerSessionLabel()"
+        [bounceRate]="bounceRate()"
+        [formattedDuration]="formattedDuration()"
       />
-    </section>
+
+      <app-admin-analytics-visitors-chart
+        [loading]="chartResource.isLoading()"
+        [data]="chartData()"
+        [options]="chartOptions()"
+      />
+
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <app-analytics-bar-list
+          title="Pages les plus visitées"
+          icon="file"
+          [rows]="topPages()"
+          [max]="pagesMax()"
+          [loading]="pagesResource.isLoading()"
+          fallbackLabel="/"
+        />
+        <app-analytics-bar-list
+          title="Provenance du trafic"
+          icon="external-link"
+          [rows]="topReferrers()"
+          [max]="referrersMax()"
+          [loading]="referrersResource.isLoading()"
+          fallbackLabel="Accès direct"
+        />
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+        <app-analytics-donut-panel
+          title="Navigateurs"
+          icon="globe"
+          [data]="browsersChart()"
+          [options]="donutOptions()"
+          [loading]="browsersResource.isLoading()"
+          [isEmpty]="browsers().length === 0"
+        />
+        <app-analytics-donut-panel
+          title="Systèmes d'exploitation"
+          icon="desktop"
+          iconClass="text-accent"
+          [data]="osChart()"
+          [options]="donutOptions()"
+          [loading]="osResource.isLoading()"
+          [isEmpty]="osList().length === 0"
+        />
+        <app-analytics-bar-list
+          title="Pays"
+          icon="map-marker"
+          iconClass="text-status-success"
+          [rows]="countries()"
+          [max]="countriesMax()"
+          [loading]="countriesResource.isLoading()"
+          fallbackLabel="Inconnu"
+          barClass="bg-status-success"
+          skeletonClass="h-6 rounded"
+        />
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <app-analytics-entity-list
+          title="Projets cliqués"
+          icon="desktop"
+          iconClass="text-status-success"
+          [tagValue]="(overview()?.projectClicks ?? 0) + ' clics'"
+          [entities]="topProjectsTop5()"
+          [loading]="projectsResource.isLoading()"
+          emptyLabel="Aucun clic enregistré"
+        />
+
+        <app-analytics-entity-list
+          title="Articles ouverts"
+          icon="pencil"
+          [tagValue]="(overview()?.articleViews ?? 0) + ' vues'"
+          [entities]="topArticlesTop5()"
+          [loading]="articlesResource.isLoading()"
+          emptyLabel="Aucune vue enregistrée"
+        />
+
+        <app-analytics-entity-list
+          title="Articles lus jusqu'au bout"
+          icon="check-circle"
+          iconClass="text-accent"
+          [tagValue]="articlesReadTotal() + ' lectures'"
+          [entities]="topArticlesReadTop5()"
+          [loading]="articlesReadResource.isLoading()"
+          emptyLabel="Aucune lecture complète enregistrée"
+        />
+
+        <app-analytics-entity-list
+          title="CTA cliqués"
+          icon="arrow-right"
+          iconClass="text-primary"
+          [tagValue]="(overview()?.ctaClicks ?? 0) + ' clics'"
+          [entities]="topCtaTop5()"
+          [loading]="ctaResource.isLoading()"
+          emptyLabel="Aucun clic enregistré"
+        />
+
+        <app-admin-analytics-cv-panel
+          [loading]="overviewResource.isLoading()"
+          [cvDownloads]="overview()?.cvDownloads ?? 0"
+        />
+      </section>
+    }
   `,
 })
 export class AdminAnalytics {
@@ -209,21 +220,20 @@ export class AdminAnalytics {
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _document = inject(DOCUMENT);
   private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  private readonly _theme = inject(ThemeWatcher);
+  private readonly _isDark = inject(ThemeStore).isDark;
 
-  private readonly _palette = signal<ChartPalette>(DEFAULT_PALETTE);
-
-  private readonly _syncPalette = effect(() => {
-    this._theme.isDark(); // reactive dependency – re-runs on theme switch
-    if (!this._isBrowser) return;
-    this._palette.set({
+  // Les couleurs viennent des variables CSS du registre courant : relues à chaque bascule de thème.
+  private readonly _palette = computed<ChartPalette>(() => {
+    this._isDark();
+    if (!this._isBrowser) return DEFAULT_PALETTE;
+    return {
       primaryText: this._readVar('--theme-primary-text'),
       accent: this._readVar('--theme-accent'),
       foreground: this._readVar('--theme-foreground'),
       background: this._readVar('--theme-background'),
       success: this._readVar('--theme-status-success'),
       warn: this._readVar('--theme-status-warn'),
-    });
+    };
   });
 
   private _readVar(token: string): string {
@@ -252,11 +262,11 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getOverview(params.startDate, params.endDate)),
   });
-  readonly overview = computed(() => this.overviewResource.value());
+  readonly overview = computed(() => valueOr(this.overviewResource, undefined));
 
   readonly formattedDuration = computed(() => formatDuration(this.overview()?.avgDuration ?? 0));
 
-  readonly pagesPerSession = computed(() => computePagesPerSession(this.overview()));
+  readonly pagesPerSessionLabel = computed(() => pagesPerSessionLabel(this.overview()));
 
   readonly chartResource = resource({
     params: () => this.range(),
@@ -266,7 +276,7 @@ export class AdminAnalytics {
 
   readonly chartData = computed(() =>
     buildVisitorsChartData(
-      this.chartResource.value() ?? [],
+      valueOr(this.chartResource, []),
       this._palette().primaryText,
       this._palette().accent,
     ),
@@ -281,7 +291,7 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getMetrics('url', params.startDate, params.endDate)),
   });
-  readonly topPages = computed(() => this.pagesResource.value()?.slice(0, 8) ?? []);
+  readonly topPages = computed(() => valueOr(this.pagesResource, []).slice(0, 8));
   readonly pagesMax = computed(() => Math.max(1, ...this.topPages().map((r) => r.count)));
 
   readonly referrersResource = resource({
@@ -289,7 +299,7 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getMetrics('referrer', params.startDate, params.endDate)),
   });
-  readonly topReferrers = computed(() => this.referrersResource.value()?.slice(0, 8) ?? []);
+  readonly topReferrers = computed(() => valueOr(this.referrersResource, []).slice(0, 8));
   readonly referrersMax = computed(() => Math.max(1, ...this.topReferrers().map((r) => r.count)));
 
   readonly browsersResource = resource({
@@ -297,7 +307,7 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getMetrics('browser', params.startDate, params.endDate)),
   });
-  readonly browsers = computed(() => this.browsersResource.value()?.slice(0, 6) ?? []);
+  readonly browsers = computed(() => valueOr(this.browsersResource, []).slice(0, 6));
   readonly browsersChart = computed(() =>
     buildDonutChartData(this.browsers(), this._buildPalette()),
   );
@@ -307,7 +317,7 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getMetrics('os', params.startDate, params.endDate)),
   });
-  readonly osList = computed(() => this.osResource.value()?.slice(0, 6) ?? []);
+  readonly osList = computed(() => valueOr(this.osResource, []).slice(0, 6));
   readonly osChart = computed(() => buildDonutChartData(this.osList(), this._buildPalette()));
 
   readonly countriesResource = resource({
@@ -315,7 +325,7 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getMetrics('country', params.startDate, params.endDate)),
   });
-  readonly countries = computed(() => this.countriesResource.value()?.slice(0, 8) ?? []);
+  readonly countries = computed(() => valueOr(this.countriesResource, []).slice(0, 8));
   readonly countriesMax = computed(() => Math.max(1, ...this.countries().map((r) => r.count)));
 
   readonly projectsResource = resource({
@@ -323,7 +333,7 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getProjectStats(params.startDate, params.endDate)),
   });
-  readonly topProjects = computed(() => this.projectsResource.value() ?? []);
+  readonly topProjects = computed(() => valueOr(this.projectsResource, []));
   readonly topProjectsTop5 = computed(() => this.topProjects().slice(0, 5));
 
   readonly articlesResource = resource({
@@ -331,7 +341,7 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getArticleStats(params.startDate, params.endDate)),
   });
-  readonly topArticles = computed(() => this.articlesResource.value() ?? []);
+  readonly topArticles = computed(() => valueOr(this.articlesResource, []));
   readonly topArticlesTop5 = computed(() => this.topArticles().slice(0, 5));
 
   readonly ctaResource = resource({
@@ -339,7 +349,7 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getCtaStats(params.startDate, params.endDate)),
   });
-  readonly topCta = computed(() => this.ctaResource.value() ?? []);
+  readonly topCta = computed(() => valueOr(this.ctaResource, []));
   readonly topCtaTop5 = computed(() => this.topCta().slice(0, 5));
 
   readonly articlesReadResource = resource({
@@ -347,13 +357,31 @@ export class AdminAnalytics {
     loader: ({ params }) =>
       firstValueFrom(this.analytics.getArticleReadStats(params.startDate, params.endDate)),
   });
-  readonly topArticlesRead = computed(() => this.articlesReadResource.value() ?? []);
+  readonly topArticlesRead = computed(() => valueOr(this.articlesReadResource, []));
   readonly topArticlesReadTop5 = computed(() => this.topArticlesRead().slice(0, 5));
   readonly articlesReadTotal = computed(() =>
     this.topArticlesRead().reduce((sum, r) => sum + r.count, 0),
   );
 
-  readonly bounceRateFormatted = computed(() => (this.overview()?.bounceRate ?? 0).toFixed(1));
+  readonly bounceRate = computed(() => formatPercent(this.overview()?.bounceRate ?? 0));
+
+  private readonly _sources: readonly ResourceRef<unknown>[] = [
+    this.overviewResource,
+    this.chartResource,
+    this.pagesResource,
+    this.referrersResource,
+    this.browsersResource,
+    this.osResource,
+    this.countriesResource,
+    this.projectsResource,
+    this.articlesResource,
+    this.ctaResource,
+    this.articlesReadResource,
+  ];
+  private readonly _failedSources = computed(() =>
+    this._sources.filter((source) => source.status() === 'error'),
+  );
+  protected readonly hasLoadError = computed(() => this._failedSources().length > 0);
 
   readonly donutOptions = computed(() =>
     buildDonutOptions(this._palette().foreground, this._palette().background),
@@ -367,6 +395,10 @@ export class AdminAnalytics {
       warn: this._palette().warn,
     }),
   );
+
+  protected retryFailed(): void {
+    this._failedSources().forEach((source) => source.reload());
+  }
 
   exportCsv(): void {
     const content = buildAnalyticsCsv({

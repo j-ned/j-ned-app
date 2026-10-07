@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  signal,
-  computed,
-  effect,
-  afterNextRender,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
@@ -16,9 +8,7 @@ import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { Drawer } from '@shared/ui/drawer';
 import { AppIconTile } from '@shared/ui/icon-tile';
-
-const THEME_STORAGE_KEY = 'j-ned:theme';
-type ThemePreference = 'dark' | 'light';
+import { ThemeStore } from '@core/theme/theme-store';
 
 @Component({
   selector: 'app-header',
@@ -152,48 +142,16 @@ type ThemePreference = 'dark' | 'light';
 export class Header {
   private readonly analytics = inject(AnalyticsGateway);
   private readonly scroller = inject(SectionScroller);
+  private readonly theme = inject(ThemeStore);
 
   protected readonly navItems = NAV_LINKS;
   protected readonly activeKey = inject(ActiveSection).key;
   protected readonly isMobileMenuOpen = signal(false);
-  protected readonly isDarkTheme = signal(Header.readStoredTheme() === 'dark');
+  protected readonly isDarkTheme = this.theme.isDark;
   protected readonly themeToggleLabel = computed(() =>
     this.isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre',
   );
   protected readonly ctaLabel = 'Décrire mon projet';
-
-  constructor() {
-    afterNextRender({
-      write: () => this.applyTheme(),
-    });
-
-    effect(() => {
-      const isDark = this.isDarkTheme();
-      this.applyTheme();
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
-      }
-    });
-  }
-
-  private static readStoredTheme(): ThemePreference {
-    if (typeof localStorage === 'undefined') return 'dark';
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored === 'dark' || stored === 'light') return stored;
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    }
-    return 'dark';
-  }
-
-  private applyTheme(): void {
-    if (typeof document === 'undefined') return;
-    if (this.isDarkTheme()) {
-      document.documentElement.classList.add('app-dark');
-    } else {
-      document.documentElement.classList.remove('app-dark');
-    }
-  }
 
   protected scrollToSection(sectionId: string): void {
     this.scroller.scrollTo(sectionId);
@@ -217,6 +175,6 @@ export class Header {
   }
 
   protected toggleTheme(): void {
-    this.isDarkTheme.update((value) => !value);
+    this.theme.toggle();
   }
 }

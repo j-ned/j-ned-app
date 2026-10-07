@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { of } from 'rxjs';
+import { of, throwError, type Observable } from 'rxjs';
+import { captureCrash } from '@shared/testing/press-test-id';
 import { AdminAnalytics } from './admin-analytics';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type {
@@ -112,25 +113,44 @@ describe('AdminAnalytics', () => {
   });
 
   describe('rendu des KPI', () => {
+    const kpi = (fixture: { nativeElement: HTMLElement }, testId: string): string =>
+      (fixture.nativeElement.querySelector(`[data-testid="${testId}"]`)?.textContent ?? '')
+        .replace(/[ \t\n\r]+/g, ' ')
+        .replace(/^ | $/g, '');
+
     it('expose les KPI de l’overview chargé', async () => {
-      const { component } = await setup(
+      const { component, fixture } = await setup(
         makeAnalyticsGateway({
           getOverview: () => of(overview({ visitors: 999, bounceRate: 12.34 })),
         }),
       );
       expect(component.overview()?.visitors).toBe(999);
-      expect(component.bounceRateFormatted()).toBe('12.3');
+      expect(kpi(fixture, 'kpi-bounce-rate')).toBe('12,3\u00a0%');
     });
 
-    it('formate la durée moyenne et les pages par session', async () => {
-      const { component } = await setup(
-        makeAnalyticsGateway({
-          getOverview: () => of(overview({ avgDuration: 90, pageviews: 300, sessions: 100 })),
-        }),
-      );
-      expect(component.formattedDuration()).toBeTypeOf('string');
-      expect(component.pagesPerSession()).toBeDefined();
-    });
+    it.each([
+      {
+        given: { avgDuration: 90, pageviews: 300, sessions: 100 },
+        duration: '1\u00a0min 30\u00a0s',
+        perSession: '3,0 pages par session',
+      },
+      {
+        given: { avgDuration: 22, pageviews: 56, sessions: 42 },
+        duration: '22\u00a0s',
+        perSession: '1,3 page par session',
+      },
+    ])(
+      'formate la durée moyenne ($duration) et les pages par session ($perSession) en français',
+      async ({ given, duration, perSession }) => {
+        const { fixture } = await setup(
+          makeAnalyticsGateway({ getOverview: () => of(overview(given)) }),
+        );
+        expect({
+          duration: kpi(fixture, 'kpi-avg-duration'),
+          perSession: kpi(fixture, 'kpi-pages-per-session'),
+        }).toEqual({ duration, perSession });
+      },
+    );
   });
 
   describe('changement de plage de dates', () => {
@@ -150,5 +170,75 @@ describe('AdminAnalytics', () => {
       expect(component.dateRange()).toBe('7d');
       expect(getOverview.mock.calls.length).toBeGreaterThan(callsBefore);
     });
+  });
+});
+
+describe('AdminAnalytics: un endpoint en erreur', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function renderFailing(overrides: Partial<AnalyticsGateway>): Promise<{
+    fixture: ReturnType<typeof TestBed.createComponent<AdminAnalytics>>;
+    host: HTMLElement;
+    crash: unknown;
+  }> {
+    TestBed.configureTestingModule({
+      providers: [{ provide: AnalyticsGateway, useValue: makeAnalyticsGateway(overrides) }],
+      schemas: [NO_ERRORS_SCHEMA],
+    });
+    const fixture = TestBed.createComponent(AdminAnalytics);
+    const crash = await captureCrash(async () => {
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(0);
+      fixture.detectChanges();
+    });
+    return { fixture, host: fixture.nativeElement as HTMLElement, crash };
+  }
+
+  const down = (): Observable<never> => throwError(() => new Error('down'));
+
+  it.each<{ endpoint: string; overrides: Partial<AnalyticsGateway> }>([
+    { endpoint: 'overview', overrides: { getOverview: down } },
+    { endpoint: 'chart', overrides: { getChart: down } },
+    { endpoint: 'metrics', overrides: { getMetrics: down } },
+    { endpoint: 'project stats', overrides: { getProjectStats: down } },
+    { endpoint: 'article read stats', overrides: { getArticleReadStats: down } },
+  ])(
+    'Given the $endpoint endpoint fails When the Audience page renders Then it shows one error state instead of throwing',
+    async ({ overrides }) => {
+      const { host, crash } = await renderFailing(overrides);
+
+      expect({
+        crash,
+        errors: host.querySelectorAll('[data-testid="load-error"]').length,
+      }).toEqual({ crash: null, errors: 1 });
+    },
+  );
+
+  it('Given the overview endpoint failed once When Réessayer is pressed Then it is requested again and the error state goes away', async () => {
+    const getOverview = vi
+      .fn<AnalyticsGateway['getOverview']>()
+      .mockReturnValueOnce(down())
+      .mockReturnValue(of(overview()));
+    const { fixture, host } = await renderFailing({ getOverview });
+    const callsBefore = getOverview.mock.calls.length;
+
+    const crash = await captureCrash(async () => {
+      host.querySelector<HTMLButtonElement>('[data-testid="load-error-retry"]')?.click();
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(0);
+      fixture.detectChanges();
+    });
+
+    expect({
+      crash,
+      retried: getOverview.mock.calls.length - callsBefore,
+      errors: host.querySelectorAll('[data-testid="load-error"]').length,
+    }).toEqual({ crash: null, retried: 1, errors: 0 });
   });
 });

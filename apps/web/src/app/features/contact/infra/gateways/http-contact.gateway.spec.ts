@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { firstValueFrom } from 'rxjs';
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
+import { ToastStore } from '@shared/ui/toast-store';
+import { errorToastInterceptor } from '@core/interceptors/error-toast';
 import { HttpContactGateway } from './http-contact.gateway';
 import type { ContactFormData } from '../../domain/models/contact-form.model';
 import type { ContactMessage } from '../../domain/models/contact-message.model';
@@ -225,4 +227,145 @@ describe('HttpContactGateway', () => {
       httpController.verify();
     });
   });
+
+  describe('Échec de chargement', () => {
+    const MESSAGES_URL = `${BASE}/contact/messages`;
+    const UNREAD_URL = `${BASE}/contact/messages/unread-count`;
+    const settled = <T>(source: Promise<T>): Promise<T | 'error'> =>
+      source.then(
+        (value) => value,
+        () => 'error' as const,
+      );
+
+    it('getAllMessages() propage une erreur HTTP au lieu de rendre une liste vide', async () => {
+      const { gateway, httpController } = configure();
+      const outcome = settled(firstValueFrom(gateway.getAllMessages()));
+
+      httpController.expectOne(MESSAGES_URL).flush('down', { status: 500, statusText: 'Error' });
+
+      expect(await outcome).toBe('error');
+      httpController.verify();
+    });
+
+    it('getAllMessages() après une erreur : un nouvel abonnement relance la requête', async () => {
+      const { gateway, httpController } = configure();
+      const failed = settled(firstValueFrom(gateway.getAllMessages()));
+      httpController.expectOne(MESSAGES_URL).flush('down', { status: 500, statusText: 'Error' });
+      await failed;
+
+      const retried = firstValueFrom(gateway.getAllMessages());
+      httpController.expectOne(MESSAGES_URL).flush({ data: [] });
+
+      expect(await retried).toEqual([]);
+      httpController.verify();
+    });
+
+    it("getUnreadCount() relance la requête une fois puis propage l'erreur au lieu de rendre 0", async () => {
+      const { gateway, httpController } = configure();
+      const outcome = settled(firstValueFrom(gateway.getUnreadCount()));
+
+      httpController
+        .expectOne(UNREAD_URL)
+        .flush('down', { status: 503, statusText: 'Unavailable' });
+      const retries = httpController.match(UNREAD_URL);
+      retries.forEach((request) =>
+        request.flush('down', { status: 503, statusText: 'Unavailable' }),
+      );
+
+      expect({ retries: retries.length, outcome: await outcome }).toEqual({
+        retries: 1,
+        outcome: 'error',
+      });
+      httpController.verify();
+    });
+
+    it("getUnreadCount() : un échec n'est pas mis en cache, le prochain abonné relance la requête", async () => {
+      const { gateway, httpController } = configure();
+      const failed = settled(firstValueFrom(gateway.getUnreadCount()));
+      httpController
+        .match(UNREAD_URL)
+        .forEach((request) => request.flush('down', { status: 500, statusText: 'Error' }));
+      httpController
+        .match(UNREAD_URL)
+        .forEach((request) => request.flush('down', { status: 500, statusText: 'Error' }));
+      const first = await failed;
+
+      const next = settled(firstValueFrom(gateway.getUnreadCount()));
+      const relaunched = httpController.match(UNREAD_URL);
+      relaunched.forEach((request) => request.flush({ count: 4 }));
+
+      expect({ first, relaunched: relaunched.length, next: await next }).toEqual({
+        first: 'error',
+        relaunched: 1,
+        next: 4,
+      });
+      httpController.verify();
+    });
+
+    it('getUnreadCount() partage une seule requête entre deux abonnés simultanés', async () => {
+      const { gateway, httpController } = configure();
+      const seen: number[] = [];
+      const first = gateway.getUnreadCount().subscribe((count) => seen.push(count));
+      const second = gateway.getUnreadCount().subscribe((count) => seen.push(count));
+
+      httpController.expectOne(UNREAD_URL).flush({ count: 2 });
+
+      expect(seen).toEqual([2, 2]);
+      first.unsubscribe();
+      second.unsubscribe();
+      httpController.verify();
+    });
+  });
+});
+
+describe('HttpContactGateway: toasts des non-lus avec relance', () => {
+  const UNREAD_URL = `${BASE}/contact/messages/unread-count`;
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it.each([
+    {
+      scenario: 'both attempts fail',
+      second: { body: 'down', init: { status: 500, statusText: 'Error' } },
+      toasts: 1,
+      outcome: 'error',
+    },
+    {
+      scenario: 'the retry succeeds',
+      second: { body: { count: 4 }, init: { status: 200, statusText: 'OK' } },
+      toasts: 0,
+      outcome: 4,
+    },
+  ])(
+    'Given the unread count answers 500 When $scenario Then the visitor sees $toasts error toast(s)',
+    async ({ second, toasts, outcome }) => {
+      const add = vi.fn();
+      TestBed.configureTestingModule({
+        providers: [
+          HttpContactGateway,
+          provideHttpClient(withInterceptors([errorToastInterceptor])),
+          provideHttpClientTesting(),
+          { provide: API_BASE_URL, useValue: BASE },
+          { provide: ToastStore, useValue: { add } },
+        ],
+      });
+      const gateway = TestBed.inject(HttpContactGateway);
+      const httpController = TestBed.inject(HttpTestingController);
+      const result = firstValueFrom(gateway.getUnreadCount()).then(
+        (count) => count,
+        () => 'error' as const,
+      );
+
+      httpController.expectOne(UNREAD_URL).flush('down', { status: 500, statusText: 'Error' });
+      httpController.expectOne(UNREAD_URL).flush(second.body, second.init);
+
+      expect({ toasts: add.mock.calls.length, outcome: await result }).toEqual({
+        toasts,
+        outcome,
+      });
+      httpController.verify();
+    },
+  );
 });

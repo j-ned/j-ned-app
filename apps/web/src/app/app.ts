@@ -7,6 +7,7 @@ import { Toast } from '@shared/ui/toast';
 import { ToastStore } from '@shared/ui/toast-store';
 import { Header } from '@layout/components/header/header';
 import { Footer } from '@layout/components/footer/footer';
+import { ThemeStore } from '@core/theme/theme-store';
 
 @Component({
   selector: 'app-root',
@@ -42,6 +43,7 @@ export class App {
   protected readonly toastStore = inject(ToastStore);
 
   constructor() {
+    inject(ThemeStore);
     this.resetScrollOnNavigation();
   }
 

@@ -1,7 +1,10 @@
 import {
   dateRangeToParams,
   formatDuration,
+  formatPercent,
+  formatChartDay,
   pagesPerSession,
+  pagesPerSessionLabel,
   barWidth,
   alpha,
   buildVisitorsChartData,
@@ -54,10 +57,13 @@ describe('analytics-presenter', () => {
 
   describe('formatDuration', () => {
     it.each([
-      [0, '0s'],
-      [45, '45s'],
-      [75, '1m 15s'],
-      [600, '10m 00s'],
+      [0, '0\u00a0s'],
+      [22, '22\u00a0s'],
+      [59, '59\u00a0s'],
+      [60, '1\u00a0min 00\u00a0s'],
+      [65, '1\u00a0min 05\u00a0s'],
+      [600, '10\u00a0min 00\u00a0s'],
+      [3600, '60\u00a0min 00\u00a0s'],
     ] as const)('formate %i secondes en %s', (sec, expected) => {
       expect(formatDuration(sec)).toBe(expected);
     });
@@ -69,9 +75,51 @@ describe('analytics-presenter', () => {
       expect(pagesPerSession(overview({ sessions: 0 }))).toBe('0');
     });
 
-    it('calcule pageviews/sessions à une décimale', () => {
-      expect(pagesPerSession(overview({ pageviews: 250, sessions: 50 }))).toBe('5.0');
-      expect(pagesPerSession(overview({ pageviews: 10, sessions: 3 }))).toBe('3.3');
+    it.each([
+      [250, 50, '5,0'],
+      [10, 3, '3,3'],
+      [56, 42, '1,3'],
+    ] as const)(
+      'calcule %i pages vues / %i sessions à une décimale française : %s',
+      (pageviews, sessions, expected) => {
+        expect(pagesPerSession(overview({ pageviews, sessions }))).toBe(expected);
+      },
+    );
+  });
+
+  describe('pagesPerSessionLabel', () => {
+    it.each([
+      [0, 0, '0 page par session'],
+      [56, 42, '1,3 page par session'],
+      [194, 100, '1,9 page par session'],
+      [196, 100, '2,0 pages par session'],
+      [300, 100, '3,0 pages par session'],
+    ] as const)(
+      'accorde « page » sur le nombre affiché : %i vues / %i sessions → %s',
+      (pageviews, sessions, expected) => {
+        expect(pagesPerSessionLabel(overview({ pageviews, sessions }))).toBe(expected);
+      },
+    );
+  });
+
+  describe('formatPercent', () => {
+    it.each([
+      [0, '0\u00a0%'],
+      [88.1, '88,1\u00a0%'],
+      [12.34, '12,3\u00a0%'],
+      [100, '100\u00a0%'],
+    ] as const)('formate %f en %s', (value, expected) => {
+      expect(formatPercent(value)).toBe(expected);
+    });
+  });
+
+  describe('formatChartDay', () => {
+    it.each([
+      ['2026-09-07', '7 sept.'],
+      ['2026-06-01', '1 juin'],
+      ['2026-01-31', '31 janv.'],
+    ] as const)('libelle le jour %s en %s, sans décalage de fuseau', (day, expected) => {
+      expect(formatChartDay(day)).toBe(expected);
     });
   });
 
@@ -97,7 +145,7 @@ describe('analytics-presenter', () => {
 
     it('mappe labels et deux datasets (visiteurs, pages vues)', () => {
       const data = buildVisitorsChartData(rows, '#primary', '#accent');
-      expect(data.labels).toEqual(['2026-06-01', '2026-06-02']);
+      expect(data.labels).toEqual(['1 juin', '2 juin']);
       expect(data.datasets).toHaveLength(2);
       expect(data.datasets[0]).toMatchObject({
         label: 'Visiteurs',

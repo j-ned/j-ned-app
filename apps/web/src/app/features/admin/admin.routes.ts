@@ -8,7 +8,7 @@ export const ADMIN_ROUTES: Routes = [
     children: [
       {
         path: '',
-        title: 'Dashboard | Admin',
+        title: "Vue d'ensemble | Admin",
         loadComponent: () => import('./application/admin-dashboard').then((m) => m.AdminDashboard),
       },
       {
@@ -18,7 +18,7 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'blog',
-        title: 'Blog | Admin',
+        title: 'Articles | Admin',
         loadComponent: () => import('./application/admin-blog').then((m) => m.AdminBlog),
       },
       {
@@ -33,7 +33,7 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'analytics',
-        title: 'Analytics | Admin',
+        title: 'Audience | Admin',
         loadComponent: () => import('./application/admin-analytics').then((m) => m.AdminAnalytics),
       },
       { path: 'analytics/visits', redirectTo: 'analytics', pathMatch: 'full' },

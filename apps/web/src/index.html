@@ -47,6 +47,14 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' 'unsafe-inline' https://giscus.app; style-src 'self' 'unsafe-inline' https://giscus.app; font-src 'self'; img-src 'self' data: blob: https://api.nedellec-julien.fr; connect-src 'self' https://api.nedellec-julien.fr https://o4511049353723904.ingest.de.sentry.io; worker-src 'self' blob:; object-src 'none'; frame-src https://giscus.app; base-uri 'self'; form-action 'self';"
     />
+    <!-- Pré-peinture du thème : clé et règle de ThemeStore dupliquées ; après la CSP, car une CSP en <meta> ne régit que ce qui la suit -->
+    <script>
+      try {
+        var t = localStorage.getItem('j-ned:theme');
+        if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches))
+          document.documentElement.classList.add('app-dark');
+      } catch (e) {}
+    </script>
     <!-- Police du h1 (LCP) seule ; crossorigin requis même en même origine, sinon double téléchargement -->
     <link
       rel="preload"

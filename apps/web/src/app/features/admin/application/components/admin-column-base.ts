@@ -11,4 +11,7 @@ export abstract class AdminColumnBase<T = unknown> {
   getSortAccessor(): ((row: T) => unknown) | undefined {
     return undefined;
   }
+  isLabelHidden(): boolean {
+    return false;
+  }
 }

@@ -10,7 +10,7 @@ import {
   input,
 } from '@angular/core';
 import { GISCUS_CONFIG } from '@shared/api/giscus-config';
-import { ThemeWatcher } from '@shared/theme/theme-watcher';
+import { ThemeStore } from '@core/theme/theme-store';
 
 // Origine unique de Giscus : script, iframe et cible du postMessage. Toute autre origine est
 // refusée par la CSP d'index.html (script-src / frame-src).
@@ -29,7 +29,7 @@ export class BlogComments {
   private readonly _host = inject(ElementRef<HTMLElement>);
   private readonly _document = inject(DOCUMENT);
   private readonly _config = inject(GISCUS_CONFIG);
-  private readonly _isDark = inject(ThemeWatcher).isDark;
+  private readonly _isDark = inject(ThemeStore).isDark;
 
   readonly slug = input.required<string>();
 

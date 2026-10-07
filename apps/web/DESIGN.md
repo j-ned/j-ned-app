@@ -180,6 +180,7 @@ Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signat
 
 - **Line** (`--color-line` : Console `foreground` à 9 %, Ivoire `foreground` à 12 %) : séparateurs internes du cartouche.
 - **Line Strong** (`--color-line-strong` : Console 22 %, Ivoire 28 %) : cadre et barre de titre du cartouche.
+- **Field** (`--color-field` : Console `foreground` à 38 %, Ivoire à 50 %) : bord des champs (`form-input`, `app-select`). Trait **porteur d'information** (il délimite un contrôle) : 3,41:1 fond / 3,47:1 surface en Console, 3,04:1 / 3,11:1 en Ivoire (WCAG 1.4.11).
 
 Contrastes calculés (composition sRGB, WCAG 2.x) : `line` 1,22:1 (Console, fond) à 1,26:1 (Ivoire) ; `line-strong` 1,77:1 (Ivoire, fond) à 1,94:1 (Console, carte). Ces deux traits sont **décoratifs** : sous 3:1, ils ne portent jamais seuls une information et ne délimitent jamais un composant interactif (WCAG 1.4.11). Le trait de cote est dessiné en `currentColor` = `text-primary` (6,33:1 à 7,90:1 selon registre et surface).
 
@@ -193,7 +194,7 @@ Contrastes calculés (composition sRGB, WCAG 2.x) : `line` 1,22:1 (Console, fond
 
 **The One Indigo Rule.** Il n'y a qu'un Signal Indigo. Pas de teal qui s'invite, pas de blue-500 Tailwind par accident, pas de "second accent pour différencier". Si tu veux différencier, tu changes l'intensité (lifted / deep) ou le style (outline vs solid), jamais la teinte.
 
-**The Two Registers Rule.** Console (dark) et Ivoire (light) sont **égaux**. Ils ne sont pas "thème par défaut et alternative". Toute décision de design doit fonctionner aussi bien dans les deux registres ou n'est pas valide. Tester chaque composant en `.app-dark` ET sans `.app-dark` est non négociable.
+**The Two Registers Rule.** Console (dark) et Ivoire (light) sont **égaux**. Ils ne sont pas "thème par défaut et alternative". Toute décision de design doit fonctionner aussi bien dans les deux registres ou n'est pas valide. Tester chaque composant en `.app-dark` ET sans `.app-dark` est non négociable. La classe a un seul écrivain à l'exécution, `ThemeStore` (`core/theme/`), partagé par le site et l'admin ; le script en tête d'`index.html` la pose avant la première peinture selon la même règle (choix enregistré, sinon préférence système).
 
 **The Decorative Line Rule.** `line` et `line-strong` sont des traits d'ornement : le texte qu'ils encadrent porte l'information. Un trait **porteur d'information** (état, séparation d'un contrôle, graphique) utilise `text-primary` ou `foreground` à **≥ 50 % en Ivoire** (3,04:1 sur fond) et **≥ 35 % en Console** (3,05:1 sur fond) : seuils calculés pour atteindre 3:1.
 
@@ -268,7 +269,7 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 ### Tags / Badges (`shared/ui/tag.ts`)
 
 - **Shape:** `rounded-md` (6px), padding `px-2 py-1`.
-- **Severities:** tokens du thème uniquement, identiques dans les deux registres : info `bg-primary/10 text-primary`, success/warn/error `bg-status-*/15 text-status-*`, secondary `bg-foreground/8 text-muted`. Aucune couleur de la palette Tailwind par défaut (test de garde dans `tag.spec.ts`).
+- **Severities:** deux seulement, tokens du thème, identiques dans les deux registres : info `bg-primary/10 text-primary`, secondary `bg-foreground/8 text-muted`. Aucune couleur de la palette Tailwind par défaut (test de garde dans `tag.spec.ts`). Un statut (« Publié », « Brouillon », « Mis en avant ») n'est pas une pastille colorée : c'est un tampon (`app-stamp`), `status-*` sur `status-*/15` restant sous 4,5:1 en Ivoire.
 - **Tags du blog** (`blog-tag-palette.ts`) : tout le catalogue en `bg-primary/10 text-primary`, quelle que soit la catégorie ; tags libres neutres (`text-muted`) ; sélection en `bg-primary-bg`. Pas de couleur par catégorie (One Indigo Rule). Les pastilles de tags ne vivent que sur la page article (`BlogTagLink`, lien vers `/blog?tag=`) et dans le sélecteur de l'admin : la liste du blog n'en affiche plus, ses lignes disent leurs sujets en repère (« Ligne d'article », ci-dessous).
 
 ### Cards / Containers
@@ -436,7 +437,9 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 
 - **Shape:** `rounded-lg` (8px), padding `px-3.5 py-2.5` (~14px / 10px).
 - **Background:** `bg-surface` (Console Surface 1 en dark, white en light).
-- **Border:** `border border-muted/30` (zinc-400 à 30% dark, stone-600 à 30% light) au repos.
+- **Border:** `border border-field` au repos (token Field, ≥ 3:1 dans les deux registres), commun à `form-input` et `app-select`.
+- **Placeholder:** `placeholder:text-muted` (7,86:1 Ivoire, 7,14:1 Console). Jamais atténué : un texte de substitution reste du texte.
+- **Contrôles natifs:** `color-scheme: dark` sur `:root`, `light` sur `:root:not(.app-dark)` : case à cocher, liste d'un `select` et barres de défilement suivent le registre. Case à cocher en `accent-primary-bg size-5`, focus par le `:focus-visible` global.
 - **Focus:** `focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`. Pas d'outline supplémentaire.
 - **Invalid:** `aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-red-500/30`.
 - **Disabled:** opacity 0.5, cursor not-allowed.
@@ -458,7 +461,9 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **TH:** `px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted border-b border-foreground/8`. Label style.
 - **TD:** `px-4 py-3.5 text-foreground/90 border-b border-foreground/5`.
 - **Row hover:** `bg-foreground/3` transition-colors.
-- **Sortable header:** cursor pointer + hover text-foreground.
+- **Sortable header:** `th scope="col"` qui porte `aria-sort` sur la seule colonne triée et contient un `button` (`sort-<clé>`) ; jamais `role="button"` sur la cellule. Cursor pointer + hover text-foreground.
+- **Ligne dépliable:** bouton natif dans la première colonne (`aria-expanded`, `aria-controls` vers la cellule dépliée), nom « Afficher / Masquer le message de X » ; la ligne elle-même n'est pas cliquable.
+- **Actions de ligne:** nom accessible propre à la ligne (« Marquer comme lu : X », « Supprimer le message de X »).
 - **Empty state:** même shell, `px-6 py-16 text-center text-muted text-sm`.
 - **Icon button:** `h-9 w-9 rounded-lg`, hover bg-surface-elevated. Variante danger : hover bg-red-500/10 + text-red-400.
 - **Pagination:** `h-11 min-w-11 rounded-lg`, active = `bg-primary-bg/15 text-primary`.

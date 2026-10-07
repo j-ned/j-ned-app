@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import type {
   Project,
@@ -8,12 +8,21 @@ import type {
 import { AdminProjectInlineForm } from './admin-project-inline-form';
 import { AdminProjectGallery } from './admin-project-gallery';
 import { AppTag } from '@shared/ui/tag';
+import { Stamp } from '@shared/ui/stamp';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 
 @Component({
   selector: 'app-admin-project-row',
-  imports: [NgOptimizedImage, AdminProjectInlineForm, AdminProjectGallery, AppTag, AppIcon, Button],
+  imports: [
+    NgOptimizedImage,
+    AdminProjectInlineForm,
+    AdminProjectGallery,
+    AppTag,
+    Stamp,
+    AppIcon,
+    Button,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block bg-surface border border-foreground/10 rounded-xl overflow-hidden' },
   template: `
@@ -56,31 +65,35 @@ import { AppIcon } from '@shared/icons/app-icon';
       <div class="hidden sm:flex flex-col items-end gap-1 shrink-0">
         <span class="text-xs text-muted">{{ project().category }}</span>
         @if (project().featured) {
-          <app-tag value="Featured" severity="warn" />
+          <app-stamp data-testid="admin-project-featured">Mis en avant</app-stamp>
         }
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <app-button
-          severity="secondary"
-          variant="outlined"
-          [ariaLabel]="isEditing() ? 'Fermer' : 'Modifier'"
+        <button
+          type="button"
+          data-testid="admin-project-edit-toggle"
+          [attr.aria-label]="editLabel()"
+          [attr.aria-expanded]="isEditing()"
+          [attr.aria-controls]="panelId()"
           (click)="editToggled.emit()"
+          class="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border border-muted/30 text-foreground transition-colors hover:border-foreground/30 hover:bg-surface-elevated"
         >
-          @if (isEditing()) {
-            <app-icon name="times" [size]="20" />
-          } @else {
-            <app-icon name="pencil" [size]="20" />
-          }
-        </app-button>
-        <app-button severity="danger" ariaLabel="Supprimer" (click)="deleteClicked.emit()">
+          <app-icon [name]="isEditing() ? 'times' : 'pencil'" [size]="20" />
+        </button>
+        <app-button
+          severity="danger"
+          [ariaLabel]="deleteLabel()"
+          data-testid="admin-project-delete"
+          (click)="deleteClicked.emit()"
+        >
           <app-icon name="trash" [size]="20" />
         </app-button>
       </div>
     </div>
 
     @if (isEditing()) {
-      <div class="px-5 pb-5 space-y-5">
+      <div [id]="panelId()" class="px-5 pb-5 space-y-5">
         <app-admin-project-inline-form
           [project]="project()"
           (saved)="saved.emit($event)"
@@ -104,4 +117,12 @@ export class AdminProjectRow {
   readonly saved = output<{ data: ProjectInput; file: File | null }>();
   readonly cancelled = output<void>();
   readonly galleryChange = output<readonly ProjectImage[]>();
+
+  protected readonly panelId = computed(() => `admin-project-edit-${this.project().id}`);
+  protected readonly editLabel = computed(() =>
+    this.isEditing()
+      ? `Fermer l'édition\u00a0: ${this.project().title}`
+      : `Modifier\u00a0: ${this.project().title}`,
+  );
+  protected readonly deleteLabel = computed(() => `Supprimer\u00a0: ${this.project().title}`);
 }

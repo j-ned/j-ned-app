@@ -1,9 +1,11 @@
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   signal,
   computed,
+  viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
@@ -11,14 +13,18 @@ import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
-import { AppTag } from '@shared/ui/tag';
 import { Button } from '@shared/ui/button';
+import { Stamp } from '@shared/ui/stamp';
 import { ToastStore } from '@shared/ui/toast-store';
+import { ConfirmDialog } from '@shared/ui/confirm-dialog';
+import { LoadError } from '@shared/ui/load-error';
+import { loadState } from '@shared/ui/load-state';
+import { AppSkeleton } from '@shared/ui/skeleton';
 import { AdminBlogForm } from './components/admin-blog-form';
 
 @Component({
   selector: 'app-admin-blog',
-  imports: [AppTag, Button, AdminBlogForm, DatePipe],
+  imports: [Stamp, Button, AdminBlogForm, DatePipe, ConfirmDialog, LoadError, AppSkeleton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -26,7 +32,14 @@ import { AdminBlogForm } from './components/admin-blog-form';
       @let editingValue = editing();
 
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-foreground">Blog</h1>
+        <h1
+          #pageTitle
+          tabindex="-1"
+          data-testid="admin-page-title"
+          class="text-2xl font-bold text-foreground"
+        >
+          Articles
+        </h1>
         @if (editingValue === undefined) {
           <app-button (click)="startCreate()">Nouvel article</app-button>
         }
@@ -39,78 +52,129 @@ import { AdminBlogForm } from './components/admin-blog-form';
           (cancelled)="editing.set(undefined)"
         />
       } @else {
-        <div class="admin-table-shell">
-          <table class="admin-table">
-            <thead>
-              <tr class="text-left text-muted">
-                <th class="admin-th">Titre</th>
-                <th class="admin-th">Statut</th>
-                <th class="admin-th">Date</th>
-                <th class="admin-th">Likes</th>
-                <th class="admin-th"></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (post of posts(); track post.id) {
-                <tr class="admin-row">
-                  <td class="admin-td">{{ post.title }}</td>
-                  <td class="admin-td">
-                    <app-tag
-                      [value]="post.status"
-                      [severity]="post.status === 'published' ? 'success' : 'secondary'"
-                    />
-                  </td>
-                  <td class="admin-td text-muted">
-                    @if (post.publishedAt) {
-                      {{ post.publishedAt | date: 'dd/MM/yyyy' }}
-                    } @else {
-                      Brouillon
-                    }
-                  </td>
-                  <td class="admin-td">{{ post.likesCount }}</td>
-                  <td class="admin-td text-right whitespace-nowrap space-x-2">
-                    <button
-                      type="button"
-                      class="inline-flex min-h-11 items-center px-2 text-primary hover:underline"
-                      (click)="editing.set(post)"
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      type="button"
-                      class="inline-flex min-h-11 items-center px-2 text-status-error hover:underline"
-                      (click)="remove(post.id)"
-                    >
-                      Supprimer
-                    </button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="5" class="py-8 text-center text-muted">Aucun article</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        @switch (listState()) {
+          @case ('loading') {
+            <div data-testid="admin-posts-loading" role="status" class="space-y-3">
+              <span class="sr-only">Chargement des articles…</span>
+              <app-skeleton class="block h-12 rounded-md" />
+              <app-skeleton class="block h-12 rounded-md" />
+              <app-skeleton class="block h-12 rounded-md" />
+            </div>
+          }
+          @case ('error') {
+            <app-load-error
+              message="Les articles n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
+              (retry)="postsResource.reload()"
+            />
+          }
+          @case ('empty') {
+            <p data-testid="admin-posts-empty" class="py-8 text-center text-muted">Aucun article</p>
+          }
+          @default {
+            <div data-testid="admin-posts-list" class="admin-table-shell">
+              <table class="admin-table">
+                <thead>
+                  <tr class="text-left text-muted">
+                    <th class="admin-th">Titre</th>
+                    <th class="admin-th">Statut</th>
+                    <th class="admin-th">Date</th>
+                    <th class="admin-th">J'aime</th>
+                    <th class="admin-th"><span class="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of rows(); track row.post.id) {
+                    @let post = row.post;
+                    <tr class="admin-row">
+                      <td class="admin-td">{{ post.title }}</td>
+                      <td class="admin-td">
+                        <app-stamp data-testid="admin-post-status">{{ row.statusLabel }}</app-stamp>
+                      </td>
+                      <td data-testid="admin-post-date" class="admin-td text-muted">
+                        @if (post.publishedAt) {
+                          {{ post.publishedAt | date: 'd MMM y' }}
+                        } @else {
+                          Brouillon
+                        }
+                      </td>
+                      <td class="admin-td">{{ post.likesCount }}</td>
+                      <td class="admin-td text-right whitespace-nowrap space-x-2">
+                        <button
+                          type="button"
+                          data-testid="admin-post-edit"
+                          [attr.aria-label]="row.editLabel"
+                          class="inline-flex min-h-11 items-center px-2 text-primary hover:underline"
+                          (click)="editing.set(post)"
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="admin-post-delete"
+                          [attr.aria-label]="row.deleteLabel"
+                          class="inline-flex min-h-11 items-center px-2 text-status-error hover:underline"
+                          (click)="pendingDeletion.set(post)"
+                        >
+                          Supprimer
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
       }
     </div>
+
+    <app-confirm-dialog
+      [open]="pendingDeletion() !== null"
+      [heading]="deletionCopy().heading"
+      [confirmLabel]="deletionCopy().confirm"
+      (confirmed)="confirmDeletion()"
+      (cancelled)="pendingDeletion.set(null)"
+    >
+      <p>L'article disparaît du blog au prochain déploiement. Cette action est définitive.</p>
+    </app-confirm-dialog>
   `,
 })
 export class AdminBlog {
   private readonly gateway = inject(BlogGateway);
   private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly _pageTitle = viewChild.required<ElementRef<HTMLHeadingElement>>('pageTitle');
 
-  private readonly postsResource = rxResource({
+  protected readonly postsResource = rxResource({
     stream: () => this.gateway.getAllPostsForAdmin(),
   });
 
   // Non protected (comme AdminProjects.projects/editingId) : ces signaux sont assertés
   // directement par les tests, en plus d'être lus par le template.
-  readonly posts = computed(() => this.postsResource.value() ?? []);
+  readonly posts = computed(() =>
+    this.postsResource.hasValue() ? this.postsResource.value() : [],
+  );
+
+  protected readonly rows = computed(() =>
+    this.posts().map((post) => ({
+      post,
+      statusLabel: post.status === 'published' ? 'Publié' : 'Brouillon',
+      editLabel: `Modifier\u00a0: ${post.title}`,
+      deleteLabel: `Supprimer\u00a0: ${post.title}`,
+    })),
+  );
+
+  protected readonly listState = computed(() =>
+    loadState(this.postsResource, () => this.posts().length === 0),
+  );
 
   readonly editing = signal<BlogPost | 'new' | undefined>(undefined);
+  protected readonly pendingDeletion = signal<BlogPost | null>(null);
+
+  protected readonly deletionCopy = computed(() => {
+    const title = this.pendingDeletion()?.title ?? '';
+    return { heading: `Supprimer l'article ${title}\u202f?`, confirm: `Supprimer ${title}` };
+  });
 
   startCreate(): void {
     this.editing.set('new');
@@ -154,8 +218,15 @@ export class AdminBlog {
     this.finishSave();
   }
 
+  protected confirmDeletion(): void {
+    const post = this.pendingDeletion();
+    this.pendingDeletion.set(null);
+    this._pageTitle().nativeElement.focus();
+    if (post) this.remove(post.id);
+  }
+
   remove(id: string): void {
-    const snapshot = this.postsResource.value() ?? [];
+    const snapshot = this.posts();
     this.postsResource.update((list) => (list ?? []).filter((p) => p.id !== id));
 
     this.gateway

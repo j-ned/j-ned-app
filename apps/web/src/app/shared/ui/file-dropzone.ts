@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -6,6 +7,7 @@ import {
   ElementRef,
   effect,
   inject,
+  Injector,
   input,
   output,
   signal,
@@ -22,6 +24,8 @@ import {
       #input
       type="file"
       [accept]="accept()"
+      tabindex="-1"
+      aria-hidden="true"
       class="sr-only"
       (change)="onInputChange($event)"
     />
@@ -65,7 +69,9 @@ import {
         </div>
         <div class="flex items-center gap-2">
           <button
+            #replace
             type="button"
+            data-testid="file-dropzone-replace"
             (click)="openPicker()"
             class="inline-flex min-h-11 items-center px-2 text-sm text-primary hover:underline focus-visible:outline-none focus-visible:underline"
           >
@@ -73,6 +79,7 @@ import {
           </button>
           <button
             type="button"
+            data-testid="file-dropzone-clear"
             (click)="clear()"
             aria-label="Retirer le fichier"
             class="w-11 h-11 rounded-full bg-foreground/5 hover:bg-status-error/15 hover:text-status-error text-muted flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -94,8 +101,9 @@ import {
       </div>
     } @else {
       <button
+        #trigger
         type="button"
-        [attr.aria-label]="label()"
+        data-testid="file-dropzone-trigger"
         (click)="openPicker()"
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave($event)"
@@ -149,8 +157,11 @@ export class FileDropzone {
 
   private readonly _blobUrl = signal<string>('');
   private readonly _destroyRef = inject(DestroyRef);
+  private readonly _injector = inject(Injector);
 
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('input');
+  private readonly replaceButton = viewChild<ElementRef<HTMLButtonElement>>('replace');
+  private readonly triggerButton = viewChild<ElementRef<HTMLButtonElement>>('trigger');
 
   protected readonly isImage = computed(() => {
     const f = this.currentFile();
@@ -181,7 +192,9 @@ export class FileDropzone {
 
   protected onInputChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.handleFile(file);
+    if (!file) return;
+    this.handleFile(file);
+    this.focusAfterRender(this.replaceButton);
   }
 
   protected openPicker(): void {
@@ -209,12 +222,18 @@ export class FileDropzone {
     this.currentFile.set(null);
     this.fileInput().nativeElement.value = '';
     this.cleared.emit();
+    this.focusAfterRender(this.triggerButton);
   }
 
   protected formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} o`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  }
+
+  // Le bouton qui avait le focus disparaît avec le changement d'état : sans relais, le focus tombe sur `body`.
+  private focusAfterRender(target: () => ElementRef<HTMLButtonElement> | undefined): void {
+    afterNextRender({ write: () => target()?.nativeElement.focus() }, { injector: this._injector });
   }
 
   private handleFile(file: File): void {

@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 import { AuthStore } from '@core/auth/auth-store';
+import { ThemeStore } from '@core/theme/theme-store';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Drawer } from '@shared/ui/drawer';
@@ -25,7 +26,9 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
           [showCollapseButton]="true"
           [displayName]="authService.currentUser()?.displayName"
           [navItems]="navItems"
+          [isDark]="theme.isDark()"
           (collapseToggle)="collapsed.set(!collapsed())"
+          (themeToggle)="theme.toggle()"
           (logoutClick)="authService.logout()"
         />
       </aside>
@@ -68,6 +71,8 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
         [showCollapseButton]="false"
         [displayName]="authService.currentUser()?.displayName"
         [navItems]="navItems"
+        [isDark]="theme.isDark()"
+        (themeToggle)="theme.toggle()"
         (logoutClick)="onMobileLogout()"
         (navigate)="mobileMenuOpen.set(false)"
       />
@@ -76,6 +81,7 @@ import { AdminNav, type AdminNavItem } from './components/admin-nav';
 })
 export class AdminLayout {
   protected readonly authService = inject(AuthStore);
+  protected readonly theme = inject(ThemeStore);
   private readonly _contactGateway = inject(ContactGateway);
 
   protected readonly collapsed = signal(false);
@@ -85,17 +91,19 @@ export class AdminLayout {
     stream: () => this._contactGateway.getUnreadCount(),
   });
 
-  private readonly _inboxCount = computed(() => this._unreadRes.value() ?? 0);
+  private readonly _inboxCount = computed(() =>
+    this._unreadRes.hasValue() ? this._unreadRes.value() : 0,
+  );
 
   protected readonly navItems: readonly AdminNavItem[] = [
-    { route: '/admin', icon: 'th-large', label: 'Dashboard', exact: true },
+    { route: '/admin', icon: 'th-large', label: "Vue d'ensemble", exact: true },
     {
       route: '/admin/projects',
       icon: 'desktop',
       label: 'Projets',
       groupLabel: 'Contenu',
     },
-    { route: '/admin/blog', icon: 'book', label: 'Blog' },
+    { route: '/admin/blog', icon: 'book', label: 'Articles' },
     { route: '/admin/cv', icon: 'file-pdf', label: 'CV' },
     {
       route: '/admin/messages',
@@ -103,7 +111,7 @@ export class AdminLayout {
       label: 'Messages',
       badge: this._inboxCount,
     },
-    { route: '/admin/analytics', icon: 'chart-bar', label: 'Analytics' },
+    { route: '/admin/analytics', icon: 'chart-bar', label: 'Audience' },
   ];
 
   protected onMobileLogout(): void {

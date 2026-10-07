@@ -1,5 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { AppTag } from './tag';
+import { AppTag, type AppTagSeverity } from './tag';
+
+const SEVERITY_LOOK: Record<AppTagSeverity, readonly string[]> = {
+  info: ['bg-primary/10', 'text-primary'],
+  secondary: ['bg-foreground/8', 'text-muted'],
+};
 
 describe('AppTag', () => {
   beforeEach(() => {
@@ -8,7 +13,7 @@ describe('AppTag', () => {
 
   function renderTag(props: {
     value: string | number;
-    severity?: 'info' | 'success' | 'warn' | 'error' | 'secondary';
+    severity?: AppTagSeverity;
   }): HTMLSpanElement {
     const fixture = TestBed.createComponent(AppTag);
     fixture.componentRef.setInput('value', props.value);
@@ -29,28 +34,22 @@ describe('AppTag', () => {
 
   it('defaults to info severity classes when severity is omitted', () => {
     const span = renderTag({ value: 'X' });
-    expect(span.className).toContain('bg-primary/10');
-    expect(span.className).toContain('text-primary');
+    expect(SEVERITY_LOOK.info.filter((token) => span.classList.contains(token))).toEqual(
+      SEVERITY_LOOK.info,
+    );
   });
 
-  const cases: ['info' | 'success' | 'warn' | 'error' | 'secondary', string][] = [
-    ['info', 'bg-primary/10'],
-    ['success', 'bg-status-success/15'],
-    ['warn', 'bg-status-warn/15'],
-    ['error', 'bg-status-error/15'],
-    ['secondary', 'bg-foreground/8'],
-  ];
-
-  for (const [severity, expectedClass] of cases) {
-    it(`applies the correct Tailwind class for severity="${severity}"`, () => {
+  it.each(Object.entries(SEVERITY_LOOK) as [AppTagSeverity, readonly string[]][])(
+    'Given severity="%s" When the tag renders Then it carries the matching theme classes',
+    (severity, look) => {
       const span = renderTag({ value: 'X', severity });
-      expect(span.className).toContain(expectedClass);
-    });
-  }
+      expect(look.filter((token) => span.classList.contains(token))).toEqual(look);
+    },
+  );
 
   // One Indigo Rule (DESIGN.md) : les tags passent par les tokens du thème, jamais par la
   // palette Tailwind par défaut (blue, slate…) qui ignore les registres Console / Ivoire.
-  it.each(['info', 'success', 'warn', 'error', 'secondary'] as const)(
+  it.each(Object.keys(SEVERITY_LOOK) as AppTagSeverity[])(
     'Given severity="%s" When the tag renders Then no default Tailwind palette color is used',
     (severity) => {
       const span = renderTag({ value: 'X', severity });

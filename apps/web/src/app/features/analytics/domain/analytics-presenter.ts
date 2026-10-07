@@ -1,5 +1,10 @@
 import type { ChartData } from 'chart.js';
-import type { StatsOverview, DailyChartPoint, MetricEntry, EntityStat } from './models/analytics.types';
+import type {
+  StatsOverview,
+  DailyChartPoint,
+  MetricEntry,
+  EntityStat,
+} from './models/analytics.types';
 
 export type DateRangeKey = '7d' | '30d' | '90d' | 'all';
 
@@ -17,15 +22,51 @@ export function dateRangeToParams(key: DateRangeKey, now: Date): RangeParams {
   };
 }
 
+const ONE_DECIMAL = new Intl.NumberFormat('fr-FR', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+  useGrouping: false,
+});
+const AT_MOST_ONE_DECIMAL = new Intl.NumberFormat('fr-FR', {
+  maximumFractionDigits: 1,
+  useGrouping: false,
+});
+// Les jours de l'API sont des dates calendaires (`YYYY-MM-DD`) que `Date` lit à minuit UTC.
+const CHART_DAY = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'UTC',
+});
+
 export function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return m > 0 ? `${m}m ${s.toString().padStart(2, '0')}s` : `${s}s`;
+  return m > 0 ? `${m}\u00a0min ${s.toString().padStart(2, '0')}\u00a0s` : `${s}\u00a0s`;
+}
+
+function sessionRatio(overview: StatsOverview | undefined): number {
+  return !overview || overview.sessions === 0 ? 0 : overview.pageviews / overview.sessions;
 }
 
 export function pagesPerSession(overview: StatsOverview | undefined): string {
   if (!overview || overview.sessions === 0) return '0';
-  return (overview.pageviews / overview.sessions).toFixed(1);
+  return ONE_DECIMAL.format(sessionRatio(overview));
+}
+
+export function pagesPerSessionLabel(overview: StatsOverview | undefined): string {
+  const shown = Math.round(sessionRatio(overview) * 10) / 10;
+  return `${pagesPerSession(overview)} ${shown < 2 ? 'page' : 'pages'} par session`;
+}
+
+export function formatPercent(value: number): string {
+  return `${AT_MOST_ONE_DECIMAL.format(value)}\u00a0%`;
+}
+
+export function formatChartDay(day: string): string {
+  const parts = CHART_DAY.formatToParts(new Date(day));
+  const part = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((p) => p.type === type)?.value ?? '';
+  return `${part('day')} ${part('month')}`;
 }
 
 export function barWidth(value: number, max: number): number {
@@ -42,7 +83,7 @@ export function buildVisitorsChartData(
   accent: string,
 ): ChartData<'line'> {
   return {
-    labels: rows.map((r) => r.date),
+    labels: rows.map((r) => formatChartDay(r.date)),
     datasets: [
       {
         label: 'Visiteurs',

@@ -139,21 +139,6 @@ describe('HttpProjectsGateway', () => {
       httpController.verify();
     });
 
-    it('filterProjects({category:Web}) émet GET /<base>/projects?_sort=order&category=Web', async () => {
-      const { gateway, httpController } = configure();
-      const expected = [makeProject({ category: 'Web' })];
-
-      const promise = firstValueFrom(gateway.filterProjects({ category: 'Web' }));
-
-      const req = httpController.expectOne(`${BASE}/projects?_sort=order&category=Web`);
-      expect(req.request.method).toBe('GET');
-      req.flush(expected);
-
-      const result = await promise;
-      expect(result).toEqual(expected);
-      httpController.verify();
-    });
-
     it('getProjectById(id) émet GET /<base>/projects/:id, retourne Project', async () => {
       const { gateway, httpController } = configure();
       const expected = makeProject({ id: 'uuid-9' });
@@ -217,13 +202,6 @@ describe('HttpProjectsGateway', () => {
         list: true,
         call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
           g.getAllProjects(),
-      },
-      {
-        label: 'filterProjects()',
-        url: `${BASE}/projects?_sort=order&category=Web`,
-        list: true,
-        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
-          g.filterProjects({ category: 'Web' }),
       },
       {
         label: 'getProjectById()',

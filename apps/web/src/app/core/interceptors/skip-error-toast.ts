@@ -1,8 +1,4 @@
 import { HttpContextToken } from '@angular/common/http';
 
-/**
- * Marque une requête dont l'échec ne doit jamais atteindre le visiteur.
- * Réservé au fire-and-forget (tracking analytics) : l'erreur y est un problème
- * d'exploitation, pas un message adressé à qui lit la page.
- */
+/** L'échec d'une requête marquée par ce jeton n'est pas signalé par un toast. */
 export const SKIP_ERROR_TOAST = new HttpContextToken<boolean>(() => false);

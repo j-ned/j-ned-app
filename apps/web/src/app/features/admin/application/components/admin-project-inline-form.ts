@@ -287,28 +287,30 @@ const toModel = (p: Project): ProjectFormModel => ({
         </div>
       </div>
 
-      <div class="flex gap-6 items-center">
+      <div class="flex flex-wrap gap-6 items-end">
         <div class="flex items-center gap-2">
           <input
             id="featured"
             type="checkbox"
+            data-testid="admin-project-featured-input"
             [formField]="form.featured"
-            class="w-5 h-5 rounded border-foreground/20 text-primary focus:ring-primary"
+            class="accent-primary-bg size-5"
           />
           <label
             for="featured"
             class="inline-flex min-h-11 items-center text-sm font-medium text-foreground"
           >
-            Featured
+            Mettre en avant sur l'accueil
           </label>
         </div>
-        <div class="flex items-center gap-2">
-          <label for="order" class="text-sm font-medium text-foreground">Ordre</label>
+        <div class="w-40">
+          <label for="order" class="form-label">Position dans la liste</label>
           <input
             id="order"
             type="number"
+            data-testid="admin-project-order"
             [formField]="form.order"
-            class="w-20 min-h-11 px-3 py-1.5 rounded-lg bg-background border border-foreground/20 text-foreground focus:border-primary focus:outline-none transition-colors"
+            class="form-input"
           />
         </div>
       </div>
@@ -316,16 +318,39 @@ const toModel = (p: Project): ProjectFormModel => ({
       <fieldset class="space-y-3">
         <legend class="form-label">Choix techniques</legend>
         @for (row of form.techChoices; track $index) {
+          @let rank = $index + 1;
           <div class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-2 items-start">
-            <input [formField]="row.techno" placeholder="Techno (ex: NestJS)" class="form-input" />
-            <input [formField]="row.why" placeholder="Pourquoi ce choix" class="form-input" />
-            <button
-              type="button"
+            <div>
+              <label class="sr-only" [attr.for]="'tech-' + rank + '-techno'"
+                >Outil {{ rank }}</label
+              >
+              <input
+                [id]="'tech-' + rank + '-techno'"
+                data-testid="tech-choice-techno"
+                [formField]="row.techno"
+                placeholder="Techno (ex: NestJS)"
+                class="form-input"
+              />
+            </div>
+            <div>
+              <label class="sr-only" [attr.for]="'tech-' + rank + '-why'">Raison {{ rank }}</label>
+              <input
+                [id]="'tech-' + rank + '-why'"
+                data-testid="tech-choice-why"
+                [formField]="row.why"
+                placeholder="Pourquoi ce choix"
+                class="form-input"
+              />
+            </div>
+            <app-button
+              severity="danger"
+              variant="text"
+              data-testid="tech-choice-remove"
+              [ariaLabel]="'Supprimer le choix technique ' + rank"
               (click)="removeTechChoice($index)"
-              class="min-h-11 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
             >
               Supprimer
-            </button>
+            </app-button>
           </div>
         }
         <app-button severity="secondary" variant="outlined" (click)="addTechChoice()">
@@ -336,20 +361,41 @@ const toModel = (p: Project): ProjectFormModel => ({
       <fieldset class="space-y-3">
         <legend class="form-label">Décisions d'architecture</legend>
         @for (row of form.architectureDecisions; track $index) {
+          @let rank = $index + 1;
           <div class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-2 items-start">
-            <input
-              [formField]="row.decision"
-              placeholder="Décision (ex: hexagonale)"
-              class="form-input"
-            />
-            <input [formField]="row.rationale" placeholder="Justification" class="form-input" />
-            <button
-              type="button"
+            <div>
+              <label class="sr-only" [attr.for]="'decision-' + rank + '-text'">
+                Décision {{ rank }}
+              </label>
+              <input
+                [id]="'decision-' + rank + '-text'"
+                data-testid="decision-text"
+                [formField]="row.decision"
+                placeholder="Décision (ex: hexagonale)"
+                class="form-input"
+              />
+            </div>
+            <div>
+              <label class="sr-only" [attr.for]="'decision-' + rank + '-rationale'">
+                Justification {{ rank }}
+              </label>
+              <input
+                [id]="'decision-' + rank + '-rationale'"
+                data-testid="decision-rationale"
+                [formField]="row.rationale"
+                placeholder="Justification"
+                class="form-input"
+              />
+            </div>
+            <app-button
+              severity="danger"
+              variant="text"
+              data-testid="decision-remove"
+              [ariaLabel]="'Supprimer la décision ' + rank"
               (click)="removeArchitectureDecision($index)"
-              class="min-h-11 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
             >
               Supprimer
-            </button>
+            </app-button>
           </div>
         }
         <app-button severity="secondary" variant="outlined" (click)="addArchitectureDecision()">

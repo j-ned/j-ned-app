@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { AppSkeleton } from '@shared/ui/skeleton';
-import { AppTag, type AppTagSeverity } from '@shared/ui/tag';
+import { AppTag } from '@shared/ui/tag';
 import { AppIcon } from '@shared/icons/app-icon';
 import type { EntityStat } from '@features/analytics/domain/models/analytics.types';
 
@@ -18,7 +18,7 @@ import type { EntityStat } from '@features/analytics/domain/models/analytics.typ
         <app-icon [name]="icon()" [size]="20" [class]="iconClass()" />
         <h2 class="text-base font-semibold text-foreground">{{ title() }}</h2>
       </div>
-      <app-tag [value]="tagValue()" [severity]="tagSeverity()" />
+      <app-tag [value]="tagValue()" />
     </header>
     @if (loading()) {
       <div class="space-y-3">
@@ -45,7 +45,6 @@ export class AnalyticsEntityList {
   readonly icon = input.required<string>();
   readonly iconClass = input<string>('text-primary');
   readonly tagValue = input.required<string>();
-  readonly tagSeverity = input<AppTagSeverity>('info');
   readonly entities = input.required<readonly EntityStat[]>();
   readonly loading = input<boolean>(false);
   readonly emptyLabel = input<string>('Aucune donnée');

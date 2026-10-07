@@ -535,3 +535,144 @@ describe('AdminProjectInlineForm: présentation dans les Réalisations', () => {
     });
   });
 });
+
+describe('AdminProjectInlineForm: étiquettes et actions des champs', () => {
+  const normalized = (element: Element | null | undefined): string =>
+    (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
+
+  const all = (host: HTMLElement, testId: string): readonly HTMLElement[] => [
+    ...host.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),
+  ];
+
+  const nativeButton = (element: Element | null): HTMLButtonElement | null =>
+    element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
+
+  const accessibleName = (button: HTMLButtonElement | null): string =>
+    button?.getAttribute('aria-label') ?? normalized(button);
+
+  const labelOf = (host: HTMLElement, control: HTMLElement | undefined): string | null => {
+    if (!control?.id) return null;
+    const labels = [...host.querySelectorAll('label')].filter(
+      (label) => label.getAttribute('for') === control.id,
+    );
+    return labels.length === 1 ? normalized(labels[0]) : null;
+  };
+
+  const withRepeatedRows = (): Project =>
+    editableProject({
+      techChoices: [
+        { techno: 'Angular', why: 'signals' },
+        { techno: 'NestJS', why: 'modules' },
+      ],
+      architectureDecisions: [{ decision: 'Hexagonale', rationale: 'tests' }],
+    });
+
+  const localFocusClasses = (control: HTMLElement | undefined): readonly string[] =>
+    [...(control?.classList ?? [])].filter((token) => token.startsWith('focus:'));
+
+  it('Given the form When it renders Then the featured box and the order field carry French labels', async () => {
+    const { fixture } = await render(editableProject());
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect({
+      featured: labelOf(host, all(host, 'admin-project-featured-input')[0]),
+      order: labelOf(host, all(host, 'admin-project-order')[0]),
+    }).toEqual({
+      featured: "Mettre en avant sur l'accueil",
+      order: 'Position dans la liste',
+    });
+  });
+
+  it('Given the form When it renders Then the order field is a form input and neither field keeps a local focus style', async () => {
+    const { fixture } = await render(editableProject());
+    const host = fixture.nativeElement as HTMLElement;
+    const order = all(host, 'admin-project-order')[0];
+    const featured = all(host, 'admin-project-featured-input')[0];
+
+    expect({
+      orderIsFormInput: order?.classList.contains('form-input') ?? false,
+      featuredAccent: ['accent-primary-bg', 'size-5'].filter((token) =>
+        featured?.classList.contains(token),
+      ),
+      localFocus: [...localFocusClasses(order), ...localFocusClasses(featured)],
+    }).toEqual({
+      orderIsFormInput: true,
+      featuredAccent: ['accent-primary-bg', 'size-5'],
+      localFocus: [],
+    });
+  });
+
+  it('Given two technical choices and one decision When the form renders Then every repeated field has its own numbered label', async () => {
+    const { fixture } = await render(withRepeatedRows());
+    const host = fixture.nativeElement as HTMLElement;
+    const labels = (testId: string): readonly (string | null)[] =>
+      all(host, testId).map((control) => labelOf(host, control));
+    const ids = [
+      'tech-choice-techno',
+      'tech-choice-why',
+      'decision-text',
+      'decision-rationale',
+    ].flatMap((testId) => all(host, testId).map((control) => control.id));
+
+    expect({
+      techno: labels('tech-choice-techno'),
+      why: labels('tech-choice-why'),
+      decision: labels('decision-text'),
+      rationale: labels('decision-rationale'),
+      uniqueIds: new Set(ids).size === ids.length && ids.every((id) => id !== ''),
+    }).toEqual({
+      techno: ['Outil 1', 'Outil 2'],
+      why: ['Raison 1', 'Raison 2'],
+      decision: ['Décision 1'],
+      rationale: ['Justification 1'],
+      uniqueIds: true,
+    });
+  });
+
+  it('Given two technical choices and one decision When the form renders Then each remove action names its row and uses the error token', async () => {
+    const { fixture } = await render(withRepeatedRows());
+    const host = fixture.nativeElement as HTMLElement;
+    const removals = (testId: string): readonly { name: string; error: boolean }[] =>
+      all(host, testId).map((el) => {
+        const button = nativeButton(el);
+        return {
+          name: accessibleName(button),
+          error: button?.classList.contains('text-status-error') ?? false,
+        };
+      });
+
+    expect({
+      tech: removals('tech-choice-remove'),
+      decision: removals('decision-remove'),
+    }).toEqual({
+      tech: [
+        { name: 'Supprimer le choix technique 1', error: true },
+        { name: 'Supprimer le choix technique 2', error: true },
+      ],
+      decision: [{ name: 'Supprimer la décision 1', error: true }],
+    });
+  });
+
+  it('Given two technical choices When the first one is removed Then the remaining row is renumbered', async () => {
+    const { fixture, cmp } = await render(withRepeatedRows());
+    const host = fixture.nativeElement as HTMLElement;
+
+    nativeButton(all(host, 'tech-choice-remove')[0] ?? null)?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect({
+      rows: cmp.form
+        .techChoices()
+        .value()
+        .map((row) => ({ techno: row.techno, why: row.why })),
+      techno: all(host, 'tech-choice-techno').map((control) => labelOf(host, control)),
+      remove: all(host, 'tech-choice-remove').map((el) => accessibleName(nativeButton(el))),
+    }).toEqual({
+      rows: [{ techno: 'NestJS', why: 'modules' }],
+      techno: ['Outil 1'],
+      remove: ['Supprimer le choix technique 1'],
+    });
+  });
+});

@@ -71,6 +71,8 @@
   --color-status-success: var(--theme-status-success);
   --color-status-warn: var(--theme-status-warn);
   --color-status-error: var(--theme-status-error);
+  --color-on-status-error: var(--theme-on-status-error);
+  --color-field: var(--theme-field);
   --color-line: var(--theme-line);
   --color-line-strong: var(--theme-line-strong);
 
@@ -82,6 +84,7 @@
 
 /* Mode sombre par défaut (noir neutre + accents indigo) */
 :root {
+  color-scheme: dark;
   --theme-primary-text: oklch(74.5% 0.16 277); /* indigo-400 (#818cf8) */
   --theme-primary-bg: oklch(54% 0.225 277); /* indigo-600 (#4f46e5) */
   --theme-accent: oklch(72% 0.157 296); /* violet-400 (#a78bfa) */
@@ -99,6 +102,9 @@
   --theme-status-error: oklch(
     71.5% 0.18 22
   ); /* red-400 (#f87171) — moins agressif que red-500 sur fond sombre */
+  --theme-on-status-error: var(--theme-background); /* blanc sur red-400 = 2,75:1 */
+  /* Bord de champ ≥ 3:1 sur le fond comme sur la surface (WCAG 1.4.11) */
+  --theme-field: color-mix(in srgb, var(--theme-foreground) 38%, transparent);
   /* Traits décoratifs (< 3:1) : jamais seuls porteurs d'information */
   --theme-line: color-mix(in srgb, var(--theme-foreground) 9%, transparent);
   --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 22%, transparent);
@@ -106,6 +112,7 @@
 
 /* Mode clair crémeux — sous-tons chauds (stone) + indigo désaturé */
 :root:not(.app-dark) {
+  color-scheme: light;
   --theme-primary-text: oklch(43.3% 0.21 278); /* indigo-700 (#4338ca, moins flash que 800) */
   --theme-primary-bg: oklch(54% 0.225 277); /* indigo-600 (#4f46e5) — boutons */
   --theme-accent: oklch(45.7% 0.244 297); /* violet-700 (#6d28d9, plus feutré) */
@@ -129,6 +136,8 @@
   --theme-status-error: oklch(
     50.5% 0.213 27.5
   ); /* red-700 (#c10007) — texte d'erreur ≥ 4,5:1 sur paper */
+  --theme-on-status-error: oklch(100% 0 0);
+  --theme-field: color-mix(in srgb, var(--theme-foreground) 50%, transparent);
   --theme-line: color-mix(in srgb, var(--theme-foreground) 12%, transparent);
   --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 28%, transparent);
 }
@@ -296,8 +305,8 @@ input:-webkit-autofill:focus {
 
 @utility form-input {
   /* text-base sur mobile : < 16px déclenche le zoom auto de Safari iOS au focus ; min-h-11 = cible 44px */
-  @apply block w-full min-h-11 rounded-lg border border-muted/30 bg-surface px-3.5 py-2.5 text-base sm:text-sm text-foreground;
-  @apply placeholder:text-muted/60;
+  @apply block w-full min-h-11 rounded-lg border border-field bg-surface px-3.5 py-2.5 text-base sm:text-sm text-foreground;
+  @apply placeholder:text-muted;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary;
   @apply transition-colors;
   @apply aria-[invalid=true]:border-status-error aria-[invalid=true]:ring-status-error/30;
@@ -305,7 +314,7 @@ input:-webkit-autofill:focus {
 }
 
 @utility app-select {
-  @apply min-h-11 rounded-lg border border-muted/30 bg-surface px-3 py-2 text-base sm:text-sm text-foreground;
+  @apply min-h-11 rounded-lg border border-field bg-surface px-3 py-2 text-base sm:text-sm text-foreground;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary;
   @apply transition-colors;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;

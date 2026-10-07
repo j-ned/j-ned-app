@@ -13,7 +13,8 @@ import { AdminColumnBase } from './admin-column-base';
 
 export type ExtraAction<T> = {
   readonly icon: string;
-  readonly label: string;
+  readonly testId: string;
+  readonly label: (row: T) => string;
   readonly handler: (row: T) => void;
   readonly visible?: (row: T) => boolean;
 };
@@ -27,32 +28,30 @@ export type ExtraAction<T> = {
     <ng-template #tpl let-row>
       <td class="admin-td text-right">
         <div class="flex items-center justify-end gap-1">
-          @for (extra of visibleExtras(row); track extra.label) {
+          @for (extra of visibleExtras(row); track extra.testId) {
+            @let extraLabel = extra.label(row);
             <button
               type="button"
-              (click)="onExtraClick(extra, row, $event)"
-              [attr.aria-label]="extra.label"
-              [title]="extra.label"
+              [attr.data-testid]="extra.testId"
+              (click)="extra.handler(row)"
+              [attr.aria-label]="extraLabel"
+              [title]="extraLabel"
               class="admin-icon-btn"
             >
               <app-icon [name]="extra.icon" [size]="20" />
             </button>
           }
           @if (editRoute(); as editFn) {
-            <a
-              [routerLink]="editFn(row)"
-              aria-label="Modifier"
-              class="admin-icon-btn"
-              (click)="$event.stopPropagation()"
-            >
+            <a [routerLink]="editFn(row)" aria-label="Modifier" class="admin-icon-btn">
               <app-icon name="pencil" [size]="20" />
             </a>
           }
           @if (!hideDelete()) {
             <button
               type="button"
-              (click)="onDeleteClick(row, $event)"
-              aria-label="Supprimer"
+              data-testid="message-delete"
+              (click)="delete.emit(row)"
+              [attr.aria-label]="deleteLabel()(row)"
               class="admin-icon-btn-danger"
             >
               <app-icon name="trash" [size]="20" />
@@ -70,6 +69,7 @@ export class AdminColActions<T> extends AdminColumnBase<T> {
   readonly editRoute = input<((row: T) => readonly string[]) | undefined>(undefined);
   readonly hideDelete = input(false, { transform: booleanAttribute });
   readonly extraActions = input<readonly ExtraAction<T>[]>([]);
+  readonly deleteLabel = input<(row: T) => string>(() => 'Supprimer');
   readonly delete = output<T>();
   protected readonly _tpl = viewChild.required<TemplateRef<{ $implicit: T }>>('tpl');
 
@@ -91,15 +91,5 @@ export class AdminColActions<T> extends AdminColumnBase<T> {
 
   protected visibleExtras(row: T): readonly ExtraAction<T>[] {
     return this.extraActions().filter((a) => (a.visible ? a.visible(row) : true));
-  }
-
-  protected onExtraClick(extra: ExtraAction<T>, row: T, event: Event): void {
-    event.stopPropagation();
-    extra.handler(row);
-  }
-
-  protected onDeleteClick(row: T, event: Event): void {
-    event.stopPropagation();
-    this.delete.emit(row);
   }
 }

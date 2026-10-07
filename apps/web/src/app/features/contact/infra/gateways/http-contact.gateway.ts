@@ -1,10 +1,24 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, Observable, of, shareReplay, startWith, Subject, switchMap } from 'rxjs';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import {
+  catchError,
+  map,
+  Observable,
+  of,
+  ReplaySubject,
+  share,
+  startWith,
+  Subject,
+  switchMap,
+} from 'rxjs';
 import { ContactGateway } from '../../domain/gateways/contact.gateway';
-import type { ContactFormData, ContactFormSubmission } from '../../domain/models/contact-form.model';
+import type {
+  ContactFormData,
+  ContactFormSubmission,
+} from '../../domain/models/contact-form.model';
 import type { ContactMessage } from '../../domain/models/contact-message.model';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 
 function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
   switch (err.status) {
@@ -46,15 +60,20 @@ export class HttpContactGateway extends ContactGateway {
   private readonly apiUrl = inject(API_BASE_URL);
 
   private readonly _unreadRefresh$ = new Subject<void>();
+  // Seule la relance peut afficher un toast : un échec suivi d'une relance réussie reste muet.
   private readonly unreadCount$ = this._unreadRefresh$.pipe(
     startWith(undefined),
     switchMap(() =>
-      this.http.get<{ count: number }>(`${this.apiUrl}/contact/messages/unread-count`).pipe(
-        map((res) => res.count),
-        catchError(() => of(0)),
+      this.fetchUnreadCount(new HttpContext().set(SKIP_ERROR_TOAST, true)).pipe(
+        catchError(() => this.fetchUnreadCount()),
       ),
     ),
-    shareReplay({ bufferSize: 1, refCount: true }),
+    share({
+      connector: () => new ReplaySubject<number>(1),
+      resetOnError: true,
+      resetOnComplete: false,
+      resetOnRefCountZero: false,
+    }),
   );
 
   submitContactForm(data: ContactFormData): Observable<ContactFormSubmission> {
@@ -68,10 +87,9 @@ export class HttpContactGateway extends ContactGateway {
   }
 
   getAllMessages(): Observable<readonly ContactMessage[]> {
-    return this.http.get<{ data: ContactMessage[] }>(`${this.apiUrl}/contact/messages`).pipe(
-      map((res) => res.data),
-      catchError(() => of([])),
-    );
+    return this.http
+      .get<{ data: ContactMessage[] }>(`${this.apiUrl}/contact/messages`)
+      .pipe(map((res) => res.data));
   }
 
   markMessageAsRead(id: number): Observable<ContactMessage> {
@@ -80,6 +98,12 @@ export class HttpContactGateway extends ContactGateway {
 
   deleteMessage(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/contact/messages/${id}`);
+  }
+
+  private fetchUnreadCount(context?: HttpContext): Observable<number> {
+    return this.http
+      .get<{ count: number }>(`${this.apiUrl}/contact/messages/unread-count`, { context })
+      .pipe(map((res) => res.count));
   }
 
   getUnreadCount(): Observable<number> {

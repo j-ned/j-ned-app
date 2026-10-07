@@ -5,12 +5,10 @@ import {
   contentChild,
   contentChildren,
   input,
-  output,
   signal,
   TemplateRef,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { AdminColumnBase } from './admin-column-base';
 import { AppIcon } from '@shared/icons/app-icon';
 
@@ -18,28 +16,10 @@ type SortDir = 'asc' | 'desc';
 
 @Component({
   selector: 'app-admin-table',
-  imports: [RouterLink, NgTemplateOutlet, AppIcon],
+  imports: [NgTemplateOutlet, AppIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    @if (title()) {
-      <div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
-        <h1 class="text-2xl font-bold text-foreground">{{ title() }}</h1>
-        <div class="flex flex-wrap items-center gap-3">
-          <ng-content select="[adminTableHeaderActions]" />
-          @if (newRoute()) {
-            <a
-              [routerLink]="newRoute()"
-              class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-bg px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 transition-all"
-            >
-              <app-icon name="plus" [size]="20" />
-              {{ newLabel() }}
-            </a>
-          }
-        </div>
-      </div>
-    }
-
     <ng-content />
 
     @if (sortedItems().length === 0) {
@@ -52,13 +32,17 @@ type SortDir = 'asc' | 'desc';
               @for (col of columns(); track col.getKey()) {
                 @if (col.isSortable()) {
                   <th
+                    scope="col"
                     class="admin-th-sortable"
                     [class.text-right]="col.getAlign() === 'right'"
-                    (click)="toggleSort(col)"
-                    role="button"
                     [attr.aria-sort]="ariaSortFor(col.getKey())"
                   >
-                    <span class="inline-flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      [attr.data-testid]="'sort-' + col.getKey()"
+                      (click)="toggleSort(col)"
+                      class="inline-flex min-h-11 cursor-pointer items-center gap-1.5 uppercase"
+                    >
                       {{ col.getLabel() }}
                       @if (sortKey() === col.getKey()) {
                         @if (sortDir() === 'asc') {
@@ -69,11 +53,11 @@ type SortDir = 'asc' | 'desc';
                       } @else {
                         <app-icon name="sort" [size]="12" class="opacity-40" />
                       }
-                    </span>
+                    </button>
                   </th>
                 } @else {
-                  <th class="admin-th" [class.text-right]="col.getAlign() === 'right'">
-                    {{ col.getLabel() }}
+                  <th scope="col" class="admin-th" [class.text-right]="col.getAlign() === 'right'">
+                    <span [class.sr-only]="col.isLabelHidden()">{{ col.getLabel() }}</span>
                   </th>
                 }
               }
@@ -81,7 +65,7 @@ type SortDir = 'asc' | 'desc';
           </thead>
           <tbody>
             @for (row of pagedItems(); track trackId(row); let idx = $index) {
-              <tr [class]="rowClass()(row, idx)" (click)="rowClick.emit(row)">
+              <tr [class]="rowClass()(row, idx)">
                 @for (col of columns(); track col.getKey()) {
                   <ng-container *ngTemplateOutlet="col.getTpl(); context: { $implicit: row }" />
                 }
@@ -135,10 +119,7 @@ type SortDir = 'asc' | 'desc';
   `,
 })
 export class AdminTable<T extends { id?: string | number }> {
-  readonly title = input<string>();
   readonly items = input<readonly T[]>([]);
-  readonly newRoute = input<string | readonly string[] | undefined>(undefined);
-  readonly newLabel = input<string>('Nouveau');
   readonly emptyMessage = input<string>('Aucun élément');
   readonly pageSize = input<number>(10);
   readonly defaultSort = input<{ key: string; dir?: SortDir } | undefined>(undefined);
@@ -149,8 +130,6 @@ export class AdminTable<T extends { id?: string | number }> {
 
   protected readonly columns = contentChildren<AdminColumnBase<T>>(AdminColumnBase);
   protected readonly expandedTpl = contentChild<TemplateRef<unknown>>('expandedRow');
-
-  readonly rowClick = output<T>();
 
   protected readonly sortKey = signal<string | null>(null);
   protected readonly sortDir = signal<SortDir>('asc');
@@ -222,8 +201,8 @@ export class AdminTable<T extends { id?: string | number }> {
     this.currentPage.set(1);
   }
 
-  protected ariaSortFor(key: string): 'ascending' | 'descending' | 'none' {
-    if (this.sortKey() !== key) return 'none';
+  protected ariaSortFor(key: string): 'ascending' | 'descending' | null {
+    if (this.sortKey() !== key) return null;
     return this.sortDir() === 'asc' ? 'ascending' : 'descending';
   }
 

@@ -1,9 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { Button } from './button';
 
-async function renderButton(size?: string): Promise<HTMLButtonElement> {
+async function renderButton(
+  size?: string,
+  inputs: Readonly<Record<string, string>> = {},
+): Promise<HTMLButtonElement> {
   const fixture = TestBed.createComponent(Button);
   if (size !== undefined) fixture.componentRef.setInput('size', size);
+  for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
   fixture.detectChanges();
   await fixture.whenStable();
   return (fixture.nativeElement as HTMLElement).querySelector('button') as HTMLButtonElement;
@@ -36,6 +40,26 @@ describe('Button', () => {
         'border-primary-bg',
         'shadow-sm',
         'hover:opacity-90',
+      ].sort(),
+    );
+  });
+
+  it('Given the solid danger severity When rendered Then the label uses the on-status-error token', async () => {
+    const button = await renderButton(undefined, { severity: 'danger' });
+
+    expect(sorted(button)).toEqual(
+      [
+        'text-sm',
+        'px-5',
+        'py-2.5',
+        'min-h-11',
+        'rounded-md',
+        'bg-status-error',
+        'text-on-status-error',
+        'border',
+        'border-status-error',
+        'shadow-sm',
+        'hover:bg-status-error/90',
       ].sort(),
     );
   });

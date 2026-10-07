@@ -1,7 +1,7 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { ThemeWatcher } from '@shared/theme/theme-watcher';
+import { ThemeStore } from '@core/theme/theme-store';
 import { BlogComments } from './blog-comments';
 
 const GISCUS_SCRIPT = 'script[src="https://giscus.app/client.js"]';
@@ -12,7 +12,7 @@ describe('BlogComments', () => {
   beforeEach(() => {
     isDark.set(true);
     TestBed.configureTestingModule({
-      providers: [{ provide: ThemeWatcher, useValue: { isDark: isDark.asReadonly() } }],
+      providers: [{ provide: ThemeStore, useValue: { isDark: isDark.asReadonly() } }],
     });
   });
 
