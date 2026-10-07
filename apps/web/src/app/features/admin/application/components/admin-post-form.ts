@@ -3,11 +3,14 @@ import { NgOptimizedImage } from '@angular/common';
 import { FormField, FormRoot, form, required } from '@angular/forms/signals';
 import type { BlogPostInput } from '@features/blog/domain/models/blog-post.model';
 import { AVAILABLE_BLOG_TAGS } from '@features/blog/domain/models/blog-tag.model';
+import { CODE_LANGUAGES } from '@features/blog/domain/code-language';
 import { BlogArticleBody } from '@features/blog/application/components/blog-article-body';
 import { CodeCopy } from '@features/blog/application/components/code-copy';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { AdminTagsSelector } from './admin-tags-selector';
 import { AdminFormSection } from './admin-form-section';
+import { AdminMarkdownToolbar } from './admin-markdown-toolbar';
+import { MarkdownEditor } from './markdown-editor';
 import { toPostInput, type PostDraft } from '../post-draft';
 
 const REQUIRED = 'Ce champ est obligatoire';
@@ -23,6 +26,8 @@ const REQUIRED = 'Ce champ est obligatoire';
     AdminFormSection,
     BlogArticleBody,
     CodeCopy,
+    AdminMarkdownToolbar,
+    MarkdownEditor,
   ],
   host: { class: 'block' },
   template: `
@@ -99,13 +104,26 @@ const REQUIRED = 'Ce champ est obligatoire';
               Contenu (Markdown)
               <span class="font-mono text-xs font-medium text-muted">obligatoire</span>
             </label>
+            <app-admin-markdown-toolbar [editor]="markdownEditor" />
             <textarea
               id="post-content-markdown"
               data-testid="admin-post-content"
               [formField]="form.contentMarkdown"
+              appMarkdownEditor
+              #markdownEditor="markdownEditor"
+              aria-describedby="post-content-hint"
               rows="20"
               class="form-textarea font-mono text-sm"
             ></textarea>
+            <p id="post-content-hint" data-testid="admin-post-content-hint" class="field-hint">
+              <span>
+                Langage d'un bloc de code, après les trois accents graves&nbsp;:
+                @for (language of codeLanguages; track language; let last = $last) {
+                  <code class="font-mono">{{ language }}</code
+                  >{{ last ? '.' : ', ' }}
+                }
+              </span>
+            </p>
             @if (content.touched() && content.invalid()) {
               <span data-testid="admin-post-content-error" role="alert" class="form-error">
                 {{ content.errors()[0].message }}
@@ -204,6 +222,7 @@ export class AdminPostForm {
   readonly coverRejected = output<void>();
 
   protected readonly availableTags = AVAILABLE_BLOG_TAGS;
+  protected readonly codeLanguages = CODE_LANGUAGES.map(({ aliases }) => aliases[0]);
   protected readonly statuses = [
     { value: 'draft', label: 'Brouillon' },
     { value: 'published', label: 'Publié' },

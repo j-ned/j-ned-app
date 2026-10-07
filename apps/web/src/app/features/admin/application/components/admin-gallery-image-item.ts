@@ -17,7 +17,7 @@ import { FormField, FormRoot, form } from '@angular/forms/signals';
 import type { ProjectImage } from '@features/projects/domain/models/project.model';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
-import { galleryAltSchema } from './admin-gallery-alt-schema';
+import { imageAltSchema } from './admin-image-alt-schema';
 
 const focusButton = (ref: ElementRef<HTMLElement> | undefined): void =>
   ref?.nativeElement.querySelector('button')?.focus();
@@ -160,7 +160,7 @@ export class AdminGalleryImageItem {
 
   private readonly _model = linkedSignal(() => ({ alt: this.image().alt }));
 
-  protected readonly altForm = form(this._model, galleryAltSchema, {
+  protected readonly altForm = form(this._model, imageAltSchema, {
     submission: {
       action: async () => this.altSaved.emit(this._model().alt.trim()),
     },

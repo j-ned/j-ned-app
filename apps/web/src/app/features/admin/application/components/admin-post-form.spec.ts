@@ -3,10 +3,20 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
 import { BlogArticleBody } from '@features/blog/application/components/blog-article-body';
-import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
+import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
+import { makeBlogPost, makeContentImage } from '@features/blog/testing/blog-post-builders';
+import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { toPostDraft, toPostInput, type PostDraft } from '../post-draft';
+import {
+  imagePanel,
+  insertBodyImage,
+  openImagePanel,
+  pickImageFile,
+  pressKeyInImageAlt,
+  typeImageAlt,
+} from '../testing/content-image-panel-page';
 import { AdminPostForm } from './admin-post-form';
 
 type FormOptions = {
@@ -34,6 +44,9 @@ const EDITABLE = makeBlogPost({
 });
 
 async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
+  TestBed.configureTestingModule({
+    providers: [{ provide: BlogGateway, useValue: stubBlogGateway() }],
+  });
   const post = options.post ?? null;
   const value = signal(toPostDraft(post));
   const tags = signal<ReadonlySet<string>>(new Set(post?.tags ?? []));
@@ -384,6 +397,322 @@ describe('AdminPostForm: contenu et aperçu Markdown', () => {
       handler: image?.hasAttribute('onerror'),
       scripts: preview(host)?.querySelectorAll('script').length,
     }).toEqual({ image: 'x.png', handler: false, scripts: 0 });
+  });
+});
+
+describe('AdminPostForm: barre de mise en forme', () => {
+  const contentZone = (host: HTMLElement): HTMLTextAreaElement =>
+    byTestId(host, 'admin-post-content') as HTMLTextAreaElement;
+
+  async function selectInContent(
+    rendered: RenderedForm,
+    start: number,
+    end: number,
+  ): Promise<void> {
+    const zone = contentZone(rendered.host);
+    zone.focus();
+    zone.setSelectionRange(start, end);
+    zone.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowRight', bubbles: true }));
+    await settle(rendered.fixture);
+  }
+
+  it('Given the content section When it renders Then the formatting toolbar stands above the Markdown zone it controls, with plain buttons only', async () => {
+    const { host } = await renderForm({ post: EDITABLE });
+    const toolbar = byTestId(host, 'markdown-toolbar');
+    const section = all(host, 'form-section').find(
+      (candidate) => testIdText(candidate, 'form-section-title') === '02 · Contenu',
+    );
+
+    expect({
+      inContent: section?.contains(toolbar) ?? false,
+      beforeZone: toolbar
+        ? toolbar.compareDocumentPosition(contentZone(host)) & Node.DOCUMENT_POSITION_FOLLOWING
+        : 0,
+      controls: toolbar?.getAttribute('aria-controls'),
+      buttons: [...(toolbar?.querySelectorAll('button') ?? [])].every(
+        (button) => button.getAttribute('type') === 'button',
+      ),
+    }).toEqual({
+      inContent: true,
+      beforeZone: Node.DOCUMENT_POSITION_FOLLOWING,
+      controls: 'post-content-markdown',
+      buttons: true,
+    });
+  });
+
+  it('Given « IV » selected in the content When « Gras » is clicked Then the page draft and the preview hold it in bold, the focus is back in the zone and nothing is submitted', async () => {
+    const rendered = await renderForm({ post: EDITABLE });
+    await selectInContent(rendered, 19, 21);
+
+    byTestId(rendered.host, 'markdown-tool-bold')?.click();
+    await settle(rendered.fixture);
+
+    expect({
+      draft: rendered.value().contentMarkdown,
+      strong: normalized(preview(rendered.host)?.querySelector('strong')),
+      focused: document.activeElement === contentZone(rendered.host),
+      selection: [
+        contentZone(rendered.host).selectionStart,
+        contentZone(rendered.host).selectionEnd,
+      ],
+      submitted: rendered.submitted.length,
+    }).toEqual({
+      draft: '## AES-256-GCM\n\nUn **IV** unique.',
+      strong: 'IV',
+      focused: true,
+      selection: [21, 23],
+      submitted: 0,
+    });
+  });
+
+  it('Given « IV » selected in the content When Ctrl+B is pressed in the zone Then the page draft holds it in bold', async () => {
+    const rendered = await renderForm({ post: EDITABLE });
+    await selectInContent(rendered, 19, 21);
+
+    contentZone(rendered.host).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true }),
+    );
+    await settle(rendered.fixture);
+
+    expect({
+      draft: rendered.value().contentMarkdown,
+      submitted: rendered.submitted.length,
+    }).toEqual({ draft: '## AES-256-GCM\n\nUn **IV** unique.', submitted: 0 });
+  });
+
+  it('Given the toolbar When each of its buttons is clicked Then the article is never submitted', async () => {
+    const rendered = await renderForm({ post: EDITABLE });
+    const buttons = [
+      ...(byTestId(rendered.host, 'markdown-toolbar')?.querySelectorAll('button') ?? []),
+    ];
+
+    for (const button of buttons) {
+      button.click();
+      await settleBounded(rendered.fixture);
+    }
+
+    expect({ clicked: buttons.length >= 5, submitted: rendered.submitted.length }).toEqual({
+      clicked: true,
+      submitted: 0,
+    });
+  });
+
+  it('Given a content that starts with a level-2 title When the page renders, before the zone is ever focused Then the level select reads « Titre 2 »', async () => {
+    const rendered = await renderForm({ post: makeBlogPost({ contentMarkdown: '## Titre' }) });
+    const select = byTestId(rendered.host, 'markdown-block-level');
+
+    expect({
+      focused: document.activeElement === contentZone(rendered.host),
+      value: select instanceof HTMLSelectElement ? select.value : null,
+      label:
+        select instanceof HTMLSelectElement
+          ? select.options[select.selectedIndex]?.textContent?.trim()
+          : null,
+    }).toEqual({ focused: false, value: 'h2', label: 'Titre 2' });
+  });
+
+  it('Given the caret in the paragraph When « Titre 2 » is chosen Then the page draft holds the line as a level-2 title', async () => {
+    const rendered = await renderForm({ post: EDITABLE });
+    await selectInContent(rendered, 19, 19);
+    const select = byTestId(rendered.host, 'markdown-block-level');
+
+    if (select instanceof HTMLSelectElement) select.value = 'h2';
+    select?.dispatchEvent(new Event('change', { bubbles: true }));
+    await settle(rendered.fixture);
+
+    expect({
+      draft: rendered.value().contentMarkdown,
+      headings: [...(preview(rendered.host)?.querySelectorAll('h2') ?? [])].map(normalized),
+    }).toEqual({
+      draft: '## AES-256-GCM\n\n## Un IV unique.',
+      headings: ['AES-256-GCM', 'Un IV unique.'],
+    });
+  });
+
+  describe('listes, citation, lien, bloc de code, séparateur', () => {
+    it.each([
+      {
+        testId: 'markdown-tool-bullet-list',
+        from: [19, 19],
+        draft: '## AES-256-GCM\n\n- Un IV unique.',
+        rendered: (root: HTMLElement): readonly string[] =>
+          [...root.querySelectorAll('ul > li')].map(normalized),
+        expected: ['Un IV unique.'],
+      },
+      {
+        testId: 'markdown-tool-ordered-list',
+        from: [19, 19],
+        draft: '## AES-256-GCM\n\n1. Un IV unique.',
+        rendered: (root: HTMLElement): readonly string[] =>
+          [...root.querySelectorAll('ol > li')].map(normalized),
+        expected: ['Un IV unique.'],
+      },
+      {
+        testId: 'markdown-tool-quote',
+        from: [19, 19],
+        draft: '## AES-256-GCM\n\n> Un IV unique.',
+        rendered: (root: HTMLElement): readonly string[] =>
+          [...root.querySelectorAll('blockquote')].map(normalized),
+        expected: ['Un IV unique.'],
+      },
+      {
+        testId: 'markdown-tool-link',
+        from: [19, 21],
+        draft: '## AES-256-GCM\n\nUn [IV](https://) unique.',
+        rendered: (root: HTMLElement): readonly string[] =>
+          [...root.querySelectorAll('a')].map(
+            (link) => `${normalized(link)} → ${link.getAttribute('href')}`,
+          ),
+        expected: ['IV → https://'],
+      },
+      {
+        testId: 'markdown-tool-code-block',
+        from: [16, 29],
+        draft: '## AES-256-GCM\n\n```ts\nUn IV unique.\n```',
+        rendered: (root: HTMLElement): readonly string[] =>
+          [...root.querySelectorAll('[data-code-block]')].map(
+            (block) =>
+              `${normalized(block.querySelector('[data-code-label]'))} | ${block.querySelector('pre code')?.textContent}`,
+          ),
+        expected: ['TypeScript | Un IV unique.'],
+      },
+      {
+        testId: 'markdown-tool-rule',
+        from: [29, 29],
+        draft: '## AES-256-GCM\n\nUn IV unique.\n\n---',
+        rendered: (root: HTMLElement): readonly string[] =>
+          [...root.querySelectorAll('hr, h2, p')].map((element) => element.tagName),
+        expected: ['H2', 'P', 'HR'],
+      },
+    ])(
+      'Given the content When $testId is clicked Then the page draft reads $draft and the preview renders it, without submitting',
+      async ({ testId, from, draft, rendered: read, expected }) => {
+        const rendered = await renderForm({ post: EDITABLE });
+        await selectInContent(rendered, from[0], from[1]);
+
+        byTestId(rendered.host, testId)?.click();
+        await settle(rendered.fixture);
+
+        expect({
+          draft: rendered.value().contentMarkdown,
+          preview: read(preview(rendered.host) ?? rendered.host),
+          submitted: rendered.submitted.length,
+        }).toEqual({ draft, preview: expected, submitted: 0 });
+      },
+    );
+
+    it('Given the Markdown zone When it renders Then it is described by a hint listing the short names of the code languages', async () => {
+      const { host } = await renderForm();
+      const hint = byTestId(host, 'admin-post-content-hint');
+
+      expect({
+        id: hint?.id,
+        describedBy: contentZone(host).getAttribute('aria-describedby')?.split(/\s+/) ?? [],
+        languages: [...(hint?.querySelectorAll('code') ?? [])].map(normalized),
+      }).toEqual({
+        id: 'post-content-hint',
+        describedBy: expect.arrayContaining(['post-content-hint']),
+        languages: [
+          'ts',
+          'js',
+          'html',
+          'css',
+          'scss',
+          'json',
+          'bash',
+          'sql',
+          'yaml',
+          'md',
+          'dockerfile',
+          'py',
+        ],
+      });
+    });
+  });
+
+  describe('image du corps', () => {
+    const IMAGE = makeContentImage();
+    const IMAGE_MARKDOWN = `![Schéma du chiffrement](${IMAGE.url})`;
+
+    it('Given the caret at the end of the content When an image is sent with its alt text Then the page draft holds it in its own paragraph, the preview shows it with its size, and the article is not submitted', async () => {
+      const rendered = await renderForm({ post: EDITABLE });
+      await selectInContent(rendered, 29, 29);
+
+      await insertBodyImage(rendered.fixture, 'Schéma du chiffrement');
+      const image = preview(rendered.host)?.querySelector('img');
+
+      expect({
+        draft: rendered.value().contentMarkdown,
+        image: {
+          src: image?.getAttribute('src'),
+          alt: image?.getAttribute('alt'),
+          width: image?.getAttribute('width'),
+          height: image?.getAttribute('height'),
+        },
+        focused: document.activeElement === contentZone(rendered.host),
+        submitted: rendered.submitted.length,
+      }).toEqual({
+        draft: `## AES-256-GCM\n\nUn IV unique.\n\n${IMAGE_MARKDOWN}`,
+        image: { src: IMAGE.url, alt: 'Schéma du chiffrement', width: '1600', height: '900' },
+        focused: true,
+        submitted: 0,
+      });
+    });
+
+    it('Given an alt text with Markdown marks When the image is inserted Then the preview reads the alt text as typed', async () => {
+      const rendered = await renderForm({ post: EDITABLE });
+      await selectInContent(rendered, 29, 29);
+
+      await insertBodyImage(rendered.fixture, '*Clé* de _session_ et `iv`');
+
+      expect(preview(rendered.host)?.querySelector('img')?.getAttribute('alt')).toBe(
+        '*Clé* de _session_ et `iv`',
+      );
+    });
+
+    it.each([
+      { case: 'an empty alt text', alt: '', draft: '## AES-256-GCM\n\nUn IV unique.' },
+      {
+        case: 'an alt text',
+        alt: 'Schéma du chiffrement',
+        draft: `## AES-256-GCM\n\nUn IV unique.\n\n${IMAGE_MARKDOWN}`,
+      },
+    ])(
+      'Given a file and $case When Enter is pressed in the alt field Then the key never reaches the article form, which is not submitted',
+      async ({ alt, draft }) => {
+        const rendered = await renderForm({ post: EDITABLE });
+        await selectInContent(rendered, 29, 29);
+        await openImagePanel(rendered.fixture);
+        await pickImageFile(rendered.fixture);
+        await typeImageAlt(rendered.fixture, alt);
+
+        const event = await pressKeyInImageAlt(rendered.fixture, 'Enter');
+
+        expect({
+          prevented: event.defaultPrevented,
+          submitted: rendered.submitted.length,
+          draft: rendered.value().contentMarkdown,
+        }).toEqual({ prevented: true, submitted: 0, draft });
+      },
+    );
+
+    it('Given the image panel When its buttons are pressed Then the article is never submitted', async () => {
+      const rendered = await renderForm({ post: EDITABLE });
+      await openImagePanel(rendered.fixture);
+      const panel = imagePanel(rendered.host);
+      const buttons = [...(panel?.querySelectorAll('button') ?? [])];
+
+      for (const button of buttons) {
+        button.click();
+        await settleBounded(rendered.fixture);
+      }
+
+      expect({
+        clicked: buttons.length >= 3,
+        types: buttons.every((button) => button.getAttribute('type') === 'button'),
+        submitted: rendered.submitted.length,
+      }).toEqual({ clicked: true, types: true, submitted: 0 });
+    });
   });
 });
 

@@ -11,7 +11,7 @@ import {
 import { FormField, FormRoot, form } from '@angular/forms/signals';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { Button } from '@shared/ui/button';
-import { galleryAltSchema } from './admin-gallery-alt-schema';
+import { imageAltSchema } from './admin-image-alt-schema';
 
 @Component({
   selector: 'app-admin-gallery-upload-form',
@@ -73,7 +73,7 @@ export class AdminGalleryUploadForm {
 
   private readonly _model = signal({ alt: '' });
 
-  protected readonly uploadForm = form(this._model, galleryAltSchema, {
+  protected readonly uploadForm = form(this._model, imageAltSchema, {
     submission: {
       action: async () => {
         const file = this.file();

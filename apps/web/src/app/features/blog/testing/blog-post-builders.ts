@@ -1,4 +1,5 @@
 import type { BlogPost } from '../domain/models/blog-post.model';
+import type { ContentImage } from '../domain/models/content-image.model';
 
 export function makeBlogPost(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
@@ -13,6 +14,15 @@ export function makeBlogPost(overrides: Partial<BlogPost> = {}): BlogPost {
     likesCount: 0,
     publishedAt: '2026-08-31T00:00:00Z',
     updatedAt: '2026-08-31T00:00:00Z',
+    ...overrides,
+  };
+}
+
+export function makeContentImage(overrides: Partial<ContentImage> = {}): ContentImage {
+  return {
+    url: 'https://api.nedellec-julien.fr/api/storage/portfolio-storage/blog-content/3f2c1a9e-8b7d-4c6e-9f10-2a3b4c5d6e7f-a1b2c3d4-1600x900.avif',
+    width: 1600,
+    height: 900,
     ...overrides,
   };
 }

@@ -8,7 +8,8 @@ import { NEVER, of, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
-import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
+import type { ContentImage } from '@features/blog/domain/models/content-image.model';
+import { makeBlogPost, makeContentImage } from '@features/blog/testing/blog-post-builders';
 import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
@@ -18,6 +19,7 @@ import { FileDropzone } from '@shared/ui/file-dropzone';
 import { ToastStore } from '@shared/ui/toast-store';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { AdminPostEditor } from './admin-post-editor';
+import { BODY_IMAGE_FILE, insertBodyImage } from './testing/content-image-panel-page';
 import { unsavedChangesGuard } from './unsaved-changes-guard';
 
 @Component({ template: '' })
@@ -47,6 +49,7 @@ type Spies = {
   readonly createPost: Mock<BlogGateway['createPost']>;
   readonly updatePost: Mock<BlogGateway['updatePost']>;
   readonly uploadCoverImage: Mock<BlogGateway['uploadCoverImage']>;
+  readonly uploadContentImage: Mock<BlogGateway['uploadContentImage']>;
   readonly invalidateAdminPosts: Mock<BlogGateway['invalidateAdminPosts']>;
   readonly toast: Mock<ToastStore['add']>;
 };
@@ -66,6 +69,7 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
     createPost: vi.fn((): Observable<BlogPost> => of(makeBlogPost({ id: 'b-9', title: 'X' }))),
     updatePost: vi.fn((): Observable<BlogPost> => of(CHIFFREMENT)),
     uploadCoverImage: vi.fn((): Observable<string> => of('blog/b-9.avif')),
+    uploadContentImage: vi.fn((): Observable<ContentImage> => of(makeContentImage())),
     invalidateAdminPosts: vi.fn(),
     toast: vi.fn(),
     ...overrides,
@@ -96,6 +100,7 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
           createPost: spies.createPost,
           updatePost: spies.updatePost,
           uploadCoverImage: spies.uploadCoverImage,
+          uploadContentImage: spies.uploadContentImage,
           invalidateAdminPosts: spies.invalidateAdminPosts,
         }),
       },
@@ -704,7 +709,8 @@ describe('AdminPostEditor: aperçu de la ligne publique', () => {
       afterForm:
         form && aside ? form.compareDocumentPosition(aside) & Node.DOCUMENT_POSITION_FOLLOWING : 0,
       sticky: ['2xl:sticky', '2xl:top-6'].filter((token) => !aside?.classList.contains(token)),
-      grid: aside?.parentElement?.classList.contains('2xl:grid-cols-[minmax(0,1fr)_25rem]') ?? false,
+      grid:
+        aside?.parentElement?.classList.contains('2xl:grid-cols-[minmax(0,1fr)_25rem]') ?? false,
     }).toEqual({
       holdsPreview: true,
       holdsSummary: true,
@@ -907,6 +913,72 @@ describe('AdminPostEditor: modifications non enregistrées', () => {
       dialog: readConfirmDialog(editor.host).open,
       url: TestBed.inject(Router).url,
     }).toEqual({ state: 'Aucune modification', dialog: false, url: '/admin/blog' });
+  });
+});
+
+describe('AdminPostEditor: barre de mise en forme', () => {
+  async function boldInContent(editor: Editor, start: number, end: number): Promise<void> {
+    const zone = byTestId(editor.host, 'admin-post-content') as HTMLTextAreaElement;
+    zone.focus();
+    zone.setSelectionRange(start, end);
+    await settle(editor.fixture);
+    byTestId(editor.host, 'markdown-tool-bold')?.click();
+    await settle(editor.fixture);
+  }
+
+  it('Given an opened article When a word of the content is set in bold from the toolbar Then one change is reported in the content section', async () => {
+    const editor = await openEditor('/admin/blog/b-1');
+
+    await boldInContent(editor, 19, 21);
+
+    expect({
+      content: fieldValue(editor.host, 'admin-post-content'),
+      state: saveBarState(editor),
+      toc: tocStates(editor),
+    }).toEqual({
+      content: '## AES-256-GCM\n\nUn **IV** unique.',
+      state: '1 modification non enregistrée',
+      toc: ['', 'modifié', '', ''],
+    });
+  });
+
+  it('Given a word set in bold from the toolbar When the admin leaves Then the leave dialog is asked and the page stays', async () => {
+    const editor = await openEditor('/admin/blog/b-1');
+
+    await boldInContent(editor, 19, 21);
+    await followBreadcrumb(editor);
+
+    expect({
+      dialog: readConfirmDialog(editor.host).open,
+      url: TestBed.inject(Router).url,
+    }).toEqual({ dialog: true, url: '/admin/blog/b-1' });
+  });
+});
+
+describe('AdminPostEditor: image du corps', () => {
+  it('Given a new article never saved When an image is inserted in its content Then the file alone is sent, nothing is saved and the content holds the image', async () => {
+    const editor = await openEditor('/admin/blog/new');
+    await fillNewPost(editor);
+    const zone = byTestId(editor.host, 'admin-post-content') as HTMLTextAreaElement;
+    zone.focus();
+    zone.setSelectionRange(9, 9);
+    await settle(editor.fixture);
+
+    await insertBodyImage(editor.fixture, 'Schéma');
+
+    expect({
+      crash: editor.crash,
+      calls: editor.uploadContentImage.mock.calls,
+      created: editor.createPost.mock.calls.length,
+      updated: editor.updatePost.mock.calls.length,
+      content: fieldValue(editor.host, 'admin-post-content'),
+    }).toEqual({
+      crash: null,
+      calls: [[BODY_IMAGE_FILE]],
+      created: 0,
+      updated: 0,
+      content: `# Contenu\n\n![Schéma](${makeContentImage().url})`,
+    });
   });
 });
 

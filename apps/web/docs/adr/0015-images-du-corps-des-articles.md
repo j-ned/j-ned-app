@@ -1,6 +1,6 @@
 # ADR-0015 — Images du corps des articles : ressource sans rattachement, dimensions dans la clé
 
-- **Statut** : proposé (2026-10-07, spec 016)
+- **Statut** : accepté (2026-10-07, livré par la PR « barre » de la spec 016, route API par nest #45)
 - **Date** : 2026-10-07
 - **Contexte spec** : `specs/016-editeur-articles.md` (tranches A1, A2, R4, E4)
 - **À distinguer de** : ADR-0009 (galerie de projet, table dédiée)

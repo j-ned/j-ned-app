@@ -1,5 +1,6 @@
 import type { Observable } from 'rxjs';
 import type { BlogPost, BlogPostInput } from '../models/blog-post.model';
+import type { ContentImage } from '../models/content-image.model';
 
 export abstract class BlogGateway {
   abstract getPublishedPosts(): Observable<readonly BlogPost[]>;
@@ -10,5 +11,6 @@ export abstract class BlogGateway {
   abstract updatePost(id: string, post: Partial<BlogPostInput>): Observable<BlogPost>;
   abstract deletePost(id: string): Observable<void>;
   abstract uploadCoverImage(file: File, id: string): Observable<string>;
+  abstract uploadContentImage(file: File): Observable<ContentImage>;
   abstract likePost(slug: string): Observable<{ likesCount: number }>;
 }

@@ -89,6 +89,85 @@ describe('HttpBlogGateway', () => {
   });
 });
 
+describe('HttpBlogGateway: images du corps', () => {
+  const KEY = '3f2c1a9e-8b7d-4c6e-9f10-2a3b4c5d6e7f-a1b2c3d4-1600x900.avif';
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('Given a body image When it is uploaded Then the file alone is posted as multipart « file », with no article id', async () => {
+    const { gateway, httpMock } = configure();
+    const file = new File(['png'], 'schema.png', { type: 'image/png' });
+
+    const promise = firstValueFrom(gateway.uploadContentImage(file));
+    const request = httpMock.expectOne(`${BASE}/blog/content-images`);
+    const body = request.request.body;
+    const sent = {
+      method: request.request.method,
+      isFormData: body instanceof FormData,
+      fields: body instanceof FormData ? [...body.keys()] : [],
+      file: body instanceof FormData ? body.get('file') === file : false,
+    };
+    request.flush(
+      { url: `/storage/portfolio-storage/blog-content/${KEY}`, width: 1600, height: 900 },
+      { status: 201, statusText: 'Created' },
+    );
+    await promise;
+
+    expect(sent).toEqual({ method: 'POST', isFormData: true, fields: ['file'], file: true });
+    httpMock.verify();
+  });
+
+  it.each([
+    {
+      case: 'a relative address',
+      url: `/storage/portfolio-storage/blog-content/${KEY}`,
+      resolved: `${BASE}/storage/portfolio-storage/blog-content/${KEY}`,
+    },
+    {
+      case: 'an absolute address',
+      url: `https://cdn.test/blog-content/${KEY}`,
+      resolved: `https://cdn.test/blog-content/${KEY}`,
+    },
+  ])(
+    'Given the API answers 201 with $case When the image is uploaded Then the caller receives the absolute address and the size',
+    async ({ url, resolved }) => {
+      const { gateway, httpMock } = configure();
+
+      const promise = firstValueFrom(
+        gateway.uploadContentImage(new File(['png'], 'schema.png', { type: 'image/png' })),
+      );
+      httpMock
+        .expectOne(`${BASE}/blog/content-images`)
+        .flush({ url, width: 1600, height: 900 }, { status: 201, statusText: 'Created' });
+
+      expect(await promise).toEqual({ url: resolved, width: 1600, height: 900 });
+      httpMock.verify();
+    },
+  );
+
+  it.each([413, 422])(
+    'Given the API refuses the image with %i When it is uploaded Then the caller receives that status',
+    async (status) => {
+      const { gateway, httpMock } = configure();
+
+      const outcome = firstValueFrom(
+        gateway.uploadContentImage(new File(['png'], 'schema.png', { type: 'image/png' })),
+      ).then(
+        () => null,
+        (error: unknown) => (error instanceof HttpErrorResponse ? error.status : -1),
+      );
+      httpMock
+        .expectOne(`${BASE}/blog/content-images`)
+        .flush(null, { status, statusText: 'Refused' });
+
+      expect(await outcome).toBe(status);
+      httpMock.verify();
+    },
+  );
+});
+
 describe('HttpBlogGateway: liste admin partagée', () => {
   const ADMIN_URL = `${BASE}/blog/posts/admin`;
   const UNAVAILABLE = { status: 503, statusText: 'Unavailable' };
@@ -240,6 +319,13 @@ describe('HttpBlogGateway: écritures de l’admin derrière l’intercepteur de
       url: `${BASE}/blog/posts/b-1/image`,
       call: (g): Observable<unknown> =>
         g.uploadCoverImage(new File(['x'], 'cover.png', { type: 'image/png' }), 'b-1'),
+    },
+    {
+      write: 'uploadContentImage',
+      method: 'POST',
+      url: `${BASE}/blog/content-images`,
+      call: (g): Observable<unknown> =>
+        g.uploadContentImage(new File(['x'], 'schema.png', { type: 'image/png' })),
     },
   ])(
     'Given the API answers 500 When $write is called Then no toast is shown and the caller still receives the error',

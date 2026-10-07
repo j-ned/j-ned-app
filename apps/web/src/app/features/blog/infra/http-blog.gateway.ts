@@ -3,13 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { map, Observable, ReplaySubject, retry, share, startWith, Subject, switchMap } from 'rxjs';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
+import type { ContentImage } from '../domain/models/content-image.model';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 
+const resolveApiUrl = (apiUrl: string, url: string): string =>
+  url.startsWith('http') ? url : `${apiUrl}${url}`;
+
 function resolvePost(apiUrl: string, p: BlogPost): BlogPost {
-  if (!p.coverImage) return p;
-  const coverImage = p.coverImage.startsWith('http') ? p.coverImage : `${apiUrl}${p.coverImage}`;
-  return { ...p, coverImage };
+  return p.coverImage ? { ...p, coverImage: resolveApiUrl(apiUrl, p.coverImage) } : p;
 }
 
 @Injectable()
@@ -83,6 +85,20 @@ export class HttpBlogGateway extends BlogGateway {
         context: silentErrors(),
       })
       .pipe(map((res) => res.key));
+  }
+
+  uploadContentImage(file: File): Observable<ContentImage> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http
+      .post<{
+        url: string;
+        width: number;
+        height: number;
+      }>(`${this.apiUrl}/blog/content-images`, formData, { context: silentErrors() })
+      .pipe(
+        map(({ url, width, height }) => ({ url: resolveApiUrl(this.apiUrl, url), width, height })),
+      );
   }
 
   likePost(slug: string): Observable<{ likesCount: number }> {

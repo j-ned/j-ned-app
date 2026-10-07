@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import type { BlogGateway } from '../domain/gateways/blog.gateway';
-import { makeBlogPost } from './blog-post-builders';
+import { makeBlogPost, makeContentImage } from './blog-post-builders';
 
 export function stubBlogGateway(overrides: Partial<BlogGateway> = {}): BlogGateway {
   return {
@@ -12,6 +12,7 @@ export function stubBlogGateway(overrides: Partial<BlogGateway> = {}): BlogGatew
     updatePost: () => of(makeBlogPost()),
     deletePost: () => of(undefined),
     uploadCoverImage: () => of('uploaded-key'),
+    uploadContentImage: () => of(makeContentImage()),
     likePost: () => of({ likesCount: 1 }),
     ...overrides,
   } as BlogGateway;
