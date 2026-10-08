@@ -625,3 +625,160 @@ sortie.
 L1 (nettoyage), L2 (outillage et CI), L4 (formats de copie), L7 (toasts), L8 (coque d'éditeur,
 après L6 et la décision F005), L9 (étiquettes en `FormValueControl`), L10 (boutons), L11
 (couches).
+
+## Plan de test
+
+Lot **L5** joué en un seul RED (demande de la session principale). Commande : `pnpm test; echo
+exit=$?` (`ng test`, typecheck des specs compris). Base avant RED : `182 passed (182)` fichiers,
+`3034 passed (3034)` tests, exit 0.
+
+**Échafaudage de signature (à remplacer en GREEN)** : `shared/ui/field-error.ts` (`FieldError`,
+entrées `field`/`errorId`/`testId`, gabarit vide) et `shared/forms/focus-first-invalid.ts`
+(`focusFirstInvalid`, corps vide). Sans eux, l'import manquant fait échouer la génération du
+bundle (`TS2307`, vérifié) et **aucun** test ne tourne ; avec eux, les échecs restent localisés et
+sont tous des assertions. Aucun comportement n'y est écrit : `angular-expert` les implémente.
+
+### Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée
+
+**`shared/ui/field-error.spec.ts`** (nouveau, hôte avec `form()` : `required`, un second
+validateur sur la valeur vide, `maxLength` 5 ; 5 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| non touché | champ vide, jamais quitté | aucun `[data-testid=name-error]`, aucune `role=alert` |
+| message (`it.each` × 2) | vide quitté ; « abcdef » quitté | une seule alerte : `P`, `id` `name-error`, `data-testid` `name-error`, texte = **premier** message (« Le nom est obligatoire » malgré le second validateur ; « 5 caractères au plus ») |
+| corrigé | vide quitté puis « Alice » | plus d'erreur ni d'alerte |
+| sans `testId` | `testId` `undefined` | une alerte `id` `name-error`, sans attribut `data-testid` |
+
+**`admin-post-form.spec.ts`**, describe « erreur de champ annoncée et reliée » (7 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| erreur reliée (`it.each` titre / extrait / contenu) | article édité, champ vidé puis quitté | `aria-invalid="true"` ; `aria-describedby` = `post-title-error` / `post-excerpt-error` / `post-content-hint post-content-error` ; l'élément désigné porte `data-testid` `admin-post-*-error`, `role=alert`, « Ce champ est obligatoire » |
+| au rendu (`it.each` × 3) | article édité | `aria-invalid="false"` ; `aria-describedby` absent (titre, extrait) / `post-content-hint` (contenu) |
+| contenu repris | contenu vidé quitté puis « # Repris » | `aria-invalid="false"`, `aria-describedby` = `post-content-hint`, plus de `#post-content-error` |
+
+RED confirmé via `pnpm test` le 2026-10-08 19:37 : 10 failed / 3060 total pour cette tranche (12
+tests neufs, 2 verts d'emblée : « non touché » et « corrigé » de `FieldError`, gardes contre le
+faux affichage). Échecs = assertions (`expected [] to deeply equal [...]`, `invalid: null` au lieu
+de `'true'`/`'false'`), aucune erreur de harnais.
+
+### Tranche L5.3 — une soumission d'article invalide amène au premier champ fautif
+
+**`shared/forms/focus-first-invalid.spec.ts`** (nouveau, hôte avec a, b, c liés dans cet ordre,
+clés du modèle dans l'ordre inverse, `unbound` requis non lié, focus initial sur un bouton
+« ailleurs » ; 6 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| premier fautif (`it.each` × 4) | tout vide ; a rempli ; a et b remplis ; b et `unbound` vides | focus sur `a` ; `b` ; `c` ; `b` (un champ non lié passe après les liés) |
+| tout valide | a, b, c remplis | focus reste sur `elsewhere` |
+| seul le non lié invalide | `unbound` vide | ne lève pas ; focus reste sur `elsewhere` |
+
+**`admin-post-form.spec.ts`**, describe « soumission invalide » (`it.each` × 3, événement `submit`
+du `<form>`) : nouvel article tout vide → `admin-post-title` ; titre rempli → `admin-post-excerpt` ;
+titre et extrait → `admin-post-content` ; `document.activeElement`, rien d'émis.
+
+Filet de la bascule de `contact-form.ts` : `contact-form.spec.ts` existant (focus sur `#name`), vert.
+
+RED confirmé via `pnpm test` le 2026-10-08 19:37 : 7 failed / 3060 total pour cette tranche (9
+tests neufs ; les 2 gardes « tout valide » et « seul le non lié » passent contre l'échafaudage
+vide, c'est attendu). Échecs = assertions (`expected 'elsewhere' to be 'a'`, `focused: null`).
+
+### Tranche L5.4 — l'erreur du texte alternatif d'une capture est annoncée et reliée
+
+**`admin-project-gallery.spec.ts`**, describe « erreur du texte alternatif annoncée et reliée »
+(5 tests ; placés dans le spec existant qui rend déjà les deux formulaires de galerie, avec son
+harnais, plutôt que dans deux specs neufs)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| erreur reliée (`it.each` capture 2 / formulaire d'ajout) | texte vidé puis quitté | `aria-invalid="true"` ; `aria-describedby` = `gallery-alt-img-b-error` / `gallery-upload-alt-error` ; l'élément désigné porte `admin-gallery-item-alt-error` / `admin-gallery-upload-alt-error`, `role=alert`, « Ce champ est obligatoire » |
+| au rendu (`it.each` × 2) | rien saisi | `aria-invalid="false"`, `aria-describedby` absent |
+| deux captures | textes 1 et 2 vidés puis quittés | `gallery-alt-img-a-error`, `gallery-alt-img-b-error`, chacun contenu dans sa propre capture |
+
+RED confirmé via `pnpm test` le 2026-10-08 19:37 : 5 failed / 3060 total pour cette tranche (5
+tests neufs). Échecs = assertions (`invalid: null`, `describedBy: null`).
+
+### Sans RED : L5.2 et L5.5
+
+- **L5.2** : aucun test écrit. Le plan prévoit un `required-mark.spec.ts` « vert d'emblée », ce qui
+  est impossible tant que `required-mark.ts` n'existe pas (import manquant = bundle en échec), et
+  `RequiredMark` est purement présentationnel, déjà couvert par le parent
+  (`admin-post-form.spec.ts`, libellés « Titre obligatoire »…). Filet : specs existantes citées par
+  le plan.
+- **L5.5** : aucun test écrit ; filet = specs existantes qui sélectionnent les `id` d'erreur.
+
+Total du lot : 22 failed / 3060 total (4 fichiers en échec sur 184), exit 1 ; les 3034 tests de la
+base restent verts.
+
+## Journal des tranches
+
+- **Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée** : GREEN 3059 passed / 3060 total (seul rouge : « sans testId » de `field-error.spec.ts`, défaut du test, cf. ## Verify) · refactor : aucun
+- **Tranche L5.2 — sans RED** : GREEN inchangé (filet `admin-post-form.spec.ts`, `admin-content-image-upload.spec.ts`) · refactor : `RequiredMark` ×3 et `REQUIRED_MESSAGE` (2 consommateurs : `admin-post-form.ts`, `admin-image-alt-schema.ts`)
+- **Tranche L5.3 — une soumission d'article invalide amène au premier champ fautif** : GREEN 3059 passed / 3060 total · refactor : `focusFirstInvalidField` privé du contact supprimé au profit de `focusFirstInvalid`
+- **Tranche L5.4 — l'erreur du texte alternatif d'une capture est annoncée et reliée** : GREEN 3059 passed / 3060 total · refactor : aucun
+- **Tranche L5.5 — sans RED** : GREEN 3059 passed / 3060 total · refactor : prédicat « erreur affichée » lu une fois par `@let <champ>InError` dans le contact, l'auth et l'insertion d'image (il était écrit deux à trois fois par champ)
+
+## Verify
+
+Lot L5 entier, 2026-10-08, branche `refactor/form-fields-l5` (non commitée).
+
+Gates (codes de sortie lus) :
+
+- `pnpm test; echo exit=$?` → `Test Files 1 failed | 183 passed (184)`, `Tests 1 failed | 3059 passed (3060)`, **exit=1**. Seul rouge :
+  `field-error.spec.ts` « Given no testId … no data-testid ». Défaut du test, pas de l'implémentation :
+  `renderHost(testId: string | undefined = 'name-error')` appelé avec `undefined` explicite applique
+  la valeur par défaut, l'hôte reçoit donc `'name-error'`. Preuve : copie temporaire du spec (supprimée
+  ensuite) où l'appel passe une sentinelle convertie en `undefined` → 5 passed / 5.
+  Corrigé ensuite dans le harnais (paramètre `string | null`, appel `renderHost(null)`) : rejoué,
+  `Tests 3060 passed (3060)`, **exit=0**.
+- `pnpm lint; echo exit=$?` → `All files pass linting.`, **exit=0**.
+- `pnpm exec prettier --check <15 fichiers touchés>` → `All matched files use Prettier code style!`, **exit=0**.
+- `pnpm run build --configuration production; echo exit=$?` → `Prerendered 20 static routes.`, **exit=0** ;
+  puis `git checkout -- public/sitemap.xml public/rss.xml`.
+
+Runtime (`ng serve`, API de prod en lecture via un proxy temporaire hors dépôt ; aucune soumission valide) :
+
+1. `/` (formulaire dans un `@defer (hydrate on viewport)`), défiler jusqu'au contact, vider « Nom » puis
+   quitter → `aria-invalid="true"`, `aria-describedby="contact-name-error"`, `p#contact-name-error`
+   « Le nom est obligatoire ». Focus sur « Sujet », soumettre → focus sur `#name`, 4 alertes
+   (`contact-name/email/subject/message-error`). **PASS**.
+2. `/offre-site-industrie` (contact sans `@defer`) : mêmes étapes → même résultat, focus sur `#name`. **PASS**.
+3. `/login` : vider « Email » puis quitter → `aria-invalid="true"`, `aria-describedby="login-email-error"`,
+   `p#login-email-error` « L'email est obligatoire ». **PASS**.
+4. Capture : contact de l'accueil après soumission invalide, 4 erreurs sous leurs champs (capture
+   d'écran prise dans le panneau navigateur de la session).
+5. Console (onglet neuf) : une seule erreur, `InvalidStateError: Transition was aborted…` (View
+   Transitions), présente à l'identique sur `master` servi dans les mêmes conditions : préexistante.
+   Aucune `NG0xxx`.
+
+Formulaires d'admin (article, galerie, insertion d'image) : non joués au navigateur (authentification
+requise) ; couverts par `admin-post-form.spec.ts`, `admin-project-gallery.spec.ts`,
+`admin-content-image-upload.spec.ts`, verts.
+
+## Review code
+
+Lot L5, 2026-10-08, diff de travail `git diff master` + fichiers non suivis (`field-error.ts`(+spec),
+`shared/forms/focus-first-invalid.ts`(+spec), `required-mark.ts`, `required-message.ts`).
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm test` → 184 fichiers / 3060 tests passés, exit=0) / lint ✅ (`pnpm lint` → `All files pass linting.`, exit=0) / build ✅ (`pnpm run build --configuration production` → `Prerendered 20 static routes.`, exit=0, puis `git checkout -- public/sitemap.xml public/rss.xml`)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/aak-checks.sh` absent) : auto-checks joués à la main sur le diff (export default, effect, helpers zone, archéologie, tests interdits, sécurité, snapshot) : 0 hit
+**Warnings de gate** : aucun (test, lint et build relus en entier)
+**Rendu compilé** : N/A (pas de composant à sélecteur attribut ; `app-field-error` est un sélecteur élément)
+**Preuve de verify runtime** : ✅ (section `## Verify` cohérente avec le diff, rejouée en `ng serve` API injoignable : `/` contact hydraté, soumission vide → focus `#name`, 4 alertes reliées, `aria-invalid="true"`)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅ (écart `required-mark.spec.ts` non écrit, motivé au `## Plan de test` : composant présentationnel couvert par son parent)
+
+**Tests notables** :
+- ✨ `focus-first-invalid.spec.ts` — clés du modèle dans l'ordre inverse du DOM : épingle l'ordre des contrôles liés, pas celui du modèle.
+- ✨ `admin-project-gallery.spec.ts` « deux captures » — vérifie que chaque `aria-describedby` désigne une erreur contenue dans sa propre capture (collision d'`id` attrapée).
+
+**Risque résiduel** (advisory) :
+- NG0950 signalée en `ng serve` API injoignable : non reproduite (5 essais, avec et sans HMR, 502 immédiat et différé de 4 s, défilement avant et après l'échec, CTA d'en-tête). Seule erreur Angular observée, identique sur `master` : `ResourceValueError` levée par `home.ts:124` (`computed(() => this.bundleResource.value())` lit une ressource en erreur). `FieldError` reçoit des liaisons statiques posées par la passe de mise à jour de `ContactForm` avant son propre rafraîchissement, le même contrat que `ContactInfoPanel` (`input.required`, lu dans le gabarit) sur `master`. Une NG0950 ne peut venir que d'une passe parente interrompue, donc en cascade de cette exception préexistante, hors diff.
+- Préexistant, risque produit : en prod, une API en échec côté client lève la même `ResourceValueError` dans `Home` (accueil). À traiter dans une PR séparée.

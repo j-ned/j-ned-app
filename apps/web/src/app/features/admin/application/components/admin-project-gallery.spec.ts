@@ -524,6 +524,91 @@ describe('AdminProjectGallery', () => {
     });
   });
 
+  describe('erreur du texte alternatif annoncée et reliée', () => {
+    const ALT_FIELDS = [
+      {
+        form: 'the second capture',
+        root: (host: HTMLElement): HTMLElement | null => items(host)[1] ?? null,
+        field: 'admin-gallery-item-alt',
+        errorId: 'gallery-alt-img-b-error',
+        errorTestId: 'admin-gallery-item-alt-error',
+      },
+      {
+        form: 'the upload form',
+        root: (host: HTMLElement): HTMLElement | null => byTestId(host, 'admin-gallery-upload'),
+        field: 'admin-gallery-upload-alt',
+        errorId: 'gallery-upload-alt-error',
+        errorTestId: 'admin-gallery-upload-alt-error',
+      },
+    ];
+
+    async function emptyAndLeave(rendered: Rendered, input: HTMLElement | null): Promise<void> {
+      type(input, '');
+      input?.dispatchEvent(new Event('blur'));
+      await settle(rendered.fixture);
+    }
+
+    const elementWithId = (host: HTMLElement, id: string | null | undefined): HTMLElement | null =>
+      id ? host.querySelector<HTMLElement>(`[id="${id}"]`) : null;
+
+    it.each(ALT_FIELDS)(
+      'Given $form When its alt is emptied then left Then the field is invalid and described by its announced error',
+      async ({ root, field, errorId, errorTestId }) => {
+        const rendered = await render();
+        const input = byTestId(root(rendered.host), field);
+
+        await emptyAndLeave(rendered, input);
+        const error = elementWithId(rendered.host, errorId);
+
+        expect({
+          invalid: input?.getAttribute('aria-invalid'),
+          describedBy: input?.getAttribute('aria-describedby'),
+          error: {
+            testId: error?.getAttribute('data-testid'),
+            role: error?.getAttribute('role'),
+            text: normalized(error?.textContent),
+          },
+        }).toEqual({
+          invalid: 'true',
+          describedBy: errorId,
+          error: { testId: errorTestId, role: 'alert', text: 'Ce champ est obligatoire' },
+        });
+      },
+    );
+
+    it.each(ALT_FIELDS)(
+      'Given $form When it renders Then its alt is valid and described by nothing',
+      async ({ root, field }) => {
+        const rendered = await render();
+        const input = byTestId(root(rendered.host), field);
+
+        expect({
+          invalid: input?.getAttribute('aria-invalid'),
+          describedBy: input?.getAttribute('aria-describedby'),
+        }).toEqual({ invalid: 'false', describedBy: null });
+      },
+    );
+
+    it('Given two captures with their alt emptied then left Then each field is described by its own error, inside its own capture', async () => {
+      const rendered = await render();
+      for (const item of items(rendered.host).slice(0, 2)) {
+        await emptyAndLeave(rendered, byTestId(item, 'admin-gallery-item-alt'));
+      }
+
+      expect(
+        items(rendered.host)
+          .slice(0, 2)
+          .map((item) => {
+            const id = byTestId(item, 'admin-gallery-item-alt')?.getAttribute('aria-describedby');
+            return { id, inItem: item.contains(elementWithId(rendered.host, id)) };
+          }),
+      ).toEqual([
+        { id: 'gallery-alt-img-a-error', inItem: true },
+        { id: 'gallery-alt-img-b-error', inItem: true },
+      ]);
+    });
+  });
+
   describe('suppression d’une capture', () => {
     it('Given a capture When « Supprimer » is activated Then an in-page confirmation takes focus and nothing is deleted yet', async () => {
       const nativeConfirm = vi.fn(() => true);

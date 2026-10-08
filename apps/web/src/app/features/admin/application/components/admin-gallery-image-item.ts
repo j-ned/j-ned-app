@@ -17,6 +17,7 @@ import { FormField, FormRoot, form } from '@angular/forms/signals';
 import type { ProjectImage } from '@features/projects/domain/models/project.model';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
+import { FieldError } from '@shared/ui/field-error';
 import { imageAltSchema } from './admin-image-alt-schema';
 
 const focusButton = (ref: ElementRef<HTMLElement> | undefined): void =>
@@ -24,7 +25,7 @@ const focusButton = (ref: ElementRef<HTMLElement> | undefined): void =>
 
 @Component({
   selector: 'app-admin-gallery-image-item',
-  imports: [NgOptimizedImage, FormRoot, FormField, Button, AppIcon],
+  imports: [NgOptimizedImage, FormRoot, FormField, Button, AppIcon, FieldError],
   host: {
     class: 'block',
     'data-testid': 'admin-gallery-item',
@@ -39,7 +40,7 @@ const focusButton = (ref: ElementRef<HTMLElement> | undefined): void =>
         [height]="image().height"
         class="aspect-[16/10] h-auto w-full rounded-md border border-line-strong bg-surface object-cover"
       />
-      @let alt = altForm.alt();
+      @let altInError = altForm.alt().touched() && altForm.alt().invalid();
       <label [attr.for]="altFieldId()" class="field-label">
         Texte alternatif de la capture {{ rank() }}
       </label>
@@ -50,6 +51,8 @@ const focusButton = (ref: ElementRef<HTMLElement> | undefined): void =>
           type="text"
           [formField]="altForm.alt"
           aria-required="true"
+          [attr.aria-invalid]="altInError"
+          [attr.aria-describedby]="altInError ? altErrorId() : null"
           class="form-input"
         />
         <app-button
@@ -61,11 +64,11 @@ const focusButton = (ref: ElementRef<HTMLElement> | undefined): void =>
           Enregistrer
         </app-button>
       </div>
-      @if (alt.touched() && alt.invalid()) {
-        <p data-testid="admin-gallery-item-alt-error" role="alert" class="form-error">
-          {{ alt.errors()[0].message }}
-        </p>
-      }
+      <app-field-error
+        [field]="altForm.alt"
+        [errorId]="altErrorId()"
+        testId="admin-gallery-item-alt-error"
+      />
       <div class="flex flex-wrap items-center justify-between gap-1">
         <span
           data-testid="admin-gallery-item-position"
@@ -156,6 +159,7 @@ export class AdminGalleryImageItem {
   private readonly removeButton = viewChild('remove', { read: ElementRef<HTMLElement> });
 
   protected readonly altFieldId = computed(() => `gallery-alt-${this.image().id}`);
+  protected readonly altErrorId = computed(() => `${this.altFieldId()}-error`);
   protected readonly confirmingRemoval = signal(false);
 
   private readonly _model = linkedSignal(() => ({ alt: this.image().alt }));

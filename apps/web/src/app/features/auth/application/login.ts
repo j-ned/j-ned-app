@@ -7,10 +7,11 @@ import { ToastStore } from '@shared/ui/toast-store';
 import { Button } from '@shared/ui/button';
 import { AppIconTile } from '@shared/ui/icon-tile';
 import { AppIcon } from '@shared/icons/app-icon';
+import { FieldError } from '@shared/ui/field-error';
 
 @Component({
   selector: 'app-login',
-  imports: [FormRoot, FormField, RouterLink, AppIcon, Button, AppIconTile],
+  imports: [FormRoot, FormField, RouterLink, AppIcon, Button, AppIconTile, FieldError],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -43,7 +44,7 @@ import { AppIcon } from '@shared/icons/app-icon';
 
               <!-- Email -->
               <div>
-                @let emailField = form.email();
+                @let emailInError = form.email().touched() && form.email().invalid();
                 <label for="email" class="form-label">Email</label>
                 <div class="relative">
                   <app-icon
@@ -57,24 +58,18 @@ import { AppIcon } from '@shared/icons/app-icon';
                     [formField]="form.email"
                     autocomplete="email"
                     aria-required="true"
-                    [attr.aria-invalid]="emailField.touched() && emailField.invalid()"
-                    [attr.aria-describedby]="
-                      emailField.touched() && emailField.invalid() ? 'login-email-error' : null
-                    "
+                    [attr.aria-invalid]="emailInError"
+                    [attr.aria-describedby]="emailInError ? 'login-email-error' : null"
                     class="form-input pl-10"
                     placeholder="Votre email"
                   />
                 </div>
-                @if (emailField.touched() && emailField.invalid()) {
-                  <p id="login-email-error" role="alert" class="form-error">
-                    {{ emailField.errors()[0].message }}
-                  </p>
-                }
+                <app-field-error [field]="form.email" errorId="login-email-error" />
               </div>
 
               <!-- Password -->
               <div class="mt-3">
-                @let password = form.password();
+                @let passwordInError = form.password().touched() && form.password().invalid();
                 <label for="password" class="form-label">Mot de passe</label>
                 <div class="relative">
                   <app-icon
@@ -88,19 +83,13 @@ import { AppIcon } from '@shared/icons/app-icon';
                     [formField]="form.password"
                     autocomplete="current-password"
                     aria-required="true"
-                    [attr.aria-invalid]="password.touched() && password.invalid()"
-                    [attr.aria-describedby]="
-                      password.touched() && password.invalid() ? 'login-password-error' : null
-                    "
+                    [attr.aria-invalid]="passwordInError"
+                    [attr.aria-describedby]="passwordInError ? 'login-password-error' : null"
                     class="form-input pl-10"
                     placeholder="Votre mot de passe"
                   />
                 </div>
-                @if (password.touched() && password.invalid()) {
-                  <p id="login-password-error" role="alert" class="form-error">
-                    {{ password.errors()[0].message }}
-                  </p>
-                }
+                <app-field-error [field]="form.password" errorId="login-password-error" />
               </div>
             </fieldset>
 

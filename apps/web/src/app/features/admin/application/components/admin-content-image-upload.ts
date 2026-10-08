@@ -12,6 +12,7 @@ import {
 import { FormField, form, submit } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
+import { FieldError } from '@shared/ui/field-error';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { imageAltSchema } from './admin-image-alt-schema';
 
@@ -27,7 +28,7 @@ const uploadErrorDetail = (error: unknown): string =>
 // Vit dans le formulaire de l'article : pas de <form> imbriqué, Entrée ne doit pas l'enregistrer.
 @Component({
   selector: 'app-admin-content-image-upload',
-  imports: [FormField, FileDropzone],
+  imports: [FormField, FileDropzone, FieldError],
   host: {
     role: 'group',
     '[attr.aria-labelledby]': 'titleId()',
@@ -52,8 +53,7 @@ const uploadErrorDetail = (error: unknown): string =>
       }
     </div>
     <div>
-      @let alt = altForm.alt();
-      @let altInError = alt.touched() && alt.invalid();
+      @let altInError = altForm.alt().touched() && altForm.alt().invalid();
       <label [for]="altId()" class="field-label">Texte alternatif</label>
       <input
         [id]="altId()"
@@ -66,16 +66,11 @@ const uploadErrorDetail = (error: unknown): string =>
         class="form-input"
         (keydown.enter)="send($event)"
       />
-      @if (altInError) {
-        <p
-          [id]="altErrorId()"
-          data-testid="markdown-image-alt-error"
-          role="alert"
-          class="form-error"
-        >
-          {{ alt.errors()[0].message }}
-        </p>
-      }
+      <app-field-error
+        [field]="altForm.alt"
+        [errorId]="altErrorId()"
+        testId="markdown-image-alt-error"
+      />
     </div>
     @if (error(); as message) {
       <p data-testid="markdown-image-error" role="alert" class="form-error">{{ message }}</p>

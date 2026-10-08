@@ -3,12 +3,13 @@ import { FormField, FormRoot, form, required } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { Stamp } from '@shared/ui/stamp';
+import { FieldError } from '@shared/ui/field-error';
 
 const EMPTY = { password: '' };
 
 @Component({
   selector: 'app-two-factor-disable-form',
-  imports: [FormRoot, FormField, AppIcon, Button, Stamp],
+  imports: [FormRoot, FormField, AppIcon, Button, Stamp, FieldError],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -74,7 +75,8 @@ const EMPTY = { password: '' };
           } @else {
             <form [formRoot]="disableForm" class="space-y-4">
               <div>
-                @let password = disableForm.password();
+                @let passwordInError =
+                  disableForm.password().touched() && disableForm.password().invalid();
                 <label for="disable-pw" class="form-label">Mot de passe</label>
                 <input
                   id="disable-pw"
@@ -82,18 +84,15 @@ const EMPTY = { password: '' };
                   [formField]="disableForm.password"
                   autocomplete="current-password"
                   aria-required="true"
-                  [attr.aria-invalid]="password.touched() && password.invalid()"
-                  [attr.aria-describedby]="
-                    password.touched() && password.invalid() ? 'twofa-setup-disable-pw-error' : null
-                  "
+                  [attr.aria-invalid]="passwordInError"
+                  [attr.aria-describedby]="passwordInError ? 'twofa-setup-disable-pw-error' : null"
                   class="form-input"
                   placeholder="Votre mot de passe"
                 />
-                @if (password.touched() && password.invalid()) {
-                  <p id="twofa-setup-disable-pw-error" role="alert" class="form-error">
-                    {{ password.errors()[0].message }}
-                  </p>
-                }
+                <app-field-error
+                  [field]="disableForm.password"
+                  errorId="twofa-setup-disable-pw-error"
+                />
               </div>
               <div class="flex flex-col gap-3 sm:flex-row">
                 <app-button

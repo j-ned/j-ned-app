@@ -6,14 +6,16 @@ import { AVAILABLE_BLOG_TAGS } from '@features/blog/domain/models/blog-tag.model
 import { CODE_LANGUAGES } from '@features/blog/domain/code-language';
 import { BlogArticleBody } from '@features/blog/application/components/blog-article-body';
 import { CodeCopy } from '@features/blog/application/components/code-copy';
+import { FieldError } from '@shared/ui/field-error';
 import { FileDropzone } from '@shared/ui/file-dropzone';
+import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
 import { AdminTagsSelector } from './admin-tags-selector';
 import { AdminFormSection } from './admin-form-section';
 import { AdminMarkdownToolbar } from './admin-markdown-toolbar';
 import { MarkdownEditor } from './markdown-editor';
+import { RequiredMark } from './required-mark';
+import { REQUIRED_MESSAGE } from './required-message';
 import { toPostInput, type PostDraft } from '../post-draft';
-
-const REQUIRED = 'Ce champ est obligatoire';
 
 @Component({
   selector: 'app-admin-post-form',
@@ -28,6 +30,8 @@ const REQUIRED = 'Ce champ est obligatoire';
     CodeCopy,
     AdminMarkdownToolbar,
     MarkdownEditor,
+    FieldError,
+    RequiredMark,
   ],
   host: { class: 'block' },
   template: `
@@ -47,40 +51,40 @@ const REQUIRED = 'Ce champ est obligatoire';
       >
         <div class="grid grid-cols-1 gap-5">
           <div>
-            @let title = form.title();
-            <label for="post-title" class="field-label">
-              Titre <span class="font-mono text-xs font-medium text-muted">obligatoire</span>
-            </label>
+            @let titleInError = form.title().touched() && form.title().invalid();
+            <label for="post-title" class="field-label">Titre <app-required-mark /></label>
             <input
               id="post-title"
               type="text"
               data-testid="admin-post-title"
               [formField]="form.title"
+              [attr.aria-invalid]="titleInError"
+              [attr.aria-describedby]="titleInError ? 'post-title-error' : null"
               class="form-input"
             />
-            @if (title.touched() && title.invalid()) {
-              <span data-testid="admin-post-title-error" role="alert" class="form-error">
-                {{ title.errors()[0].message }}
-              </span>
-            }
+            <app-field-error
+              [field]="form.title"
+              errorId="post-title-error"
+              testId="admin-post-title-error"
+            />
           </div>
           <div>
-            @let excerpt = form.excerpt();
-            <label for="post-excerpt" class="field-label">
-              Extrait <span class="font-mono text-xs font-medium text-muted">obligatoire</span>
-            </label>
+            @let excerptInError = form.excerpt().touched() && form.excerpt().invalid();
+            <label for="post-excerpt" class="field-label">Extrait <app-required-mark /></label>
             <textarea
               id="post-excerpt"
               data-testid="admin-post-excerpt"
               [formField]="form.excerpt"
+              [attr.aria-invalid]="excerptInError"
+              [attr.aria-describedby]="excerptInError ? 'post-excerpt-error' : null"
               rows="2"
               class="form-textarea min-h-0"
             ></textarea>
-            @if (excerpt.touched() && excerpt.invalid()) {
-              <span data-testid="admin-post-excerpt-error" role="alert" class="form-error">
-                {{ excerpt.errors()[0].message }}
-              </span>
-            }
+            <app-field-error
+              [field]="form.excerpt"
+              errorId="post-excerpt-error"
+              testId="admin-post-excerpt-error"
+            />
           </div>
           <app-admin-tags-selector
             data-testid="admin-post-tags"
@@ -99,10 +103,10 @@ const REQUIRED = 'Ce champ est obligatoire';
       >
         <div class="grid grid-cols-1 gap-5">
           <div>
-            @let content = form.contentMarkdown();
+            @let contentInError =
+              form.contentMarkdown().touched() && form.contentMarkdown().invalid();
             <label for="post-content-markdown" class="field-label">
-              Contenu (Markdown)
-              <span class="font-mono text-xs font-medium text-muted">obligatoire</span>
+              Contenu (Markdown) <app-required-mark />
             </label>
             <app-admin-markdown-toolbar [editor]="markdownEditor" />
             <textarea
@@ -111,7 +115,10 @@ const REQUIRED = 'Ce champ est obligatoire';
               [formField]="form.contentMarkdown"
               appMarkdownEditor
               #markdownEditor="markdownEditor"
-              aria-describedby="post-content-hint"
+              [attr.aria-invalid]="contentInError"
+              [attr.aria-describedby]="
+                contentInError ? 'post-content-hint post-content-error' : 'post-content-hint'
+              "
               rows="20"
               class="form-textarea font-mono text-sm"
             ></textarea>
@@ -124,11 +131,11 @@ const REQUIRED = 'Ce champ est obligatoire';
                 }
               </span>
             </p>
-            @if (content.touched() && content.invalid()) {
-              <span data-testid="admin-post-content-error" role="alert" class="form-error">
-                {{ content.errors()[0].message }}
-              </span>
-            }
+            <app-field-error
+              [field]="form.contentMarkdown"
+              errorId="post-content-error"
+              testId="admin-post-content-error"
+            />
           </div>
           <div>
             <p id="post-content-preview-label" class="field-label">Rendu</p>
@@ -234,15 +241,16 @@ export class AdminPostForm {
   readonly form = form(
     this.value,
     (path) => {
-      required(path.title, { message: REQUIRED });
-      required(path.excerpt, { message: REQUIRED });
-      required(path.contentMarkdown, { message: REQUIRED });
+      required(path.title, { message: REQUIRED_MESSAGE });
+      required(path.excerpt, { message: REQUIRED_MESSAGE });
+      required(path.contentMarkdown, { message: REQUIRED_MESSAGE });
     },
     {
       submission: {
         action: async () => {
           this.submitted.emit(toPostInput(this.value(), this.tags()));
         },
+        onInvalid: (field) => focusFirstInvalid(field),
       },
     },
   );

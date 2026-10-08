@@ -29,6 +29,8 @@ import type { ContactFormData } from '@features/contact/domain/models/contact-fo
 import { composeContactMessage } from '@features/contact/domain/compose-contact-message';
 import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
 import { ToastStore } from '@shared/ui/toast-store';
+import { FieldError } from '@shared/ui/field-error';
+import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ContactInfoPanel } from './components/contact-info-panel';
@@ -56,7 +58,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [FormRoot, FormField, AppIcon, Button, ContactInfoPanel, RouterLink],
+  imports: [FormRoot, FormField, AppIcon, Button, ContactInfoPanel, RouterLink, FieldError],
   template: `
     <section class="border-t border-foreground/8 py-26 md:py-34" aria-labelledby="contact-heading">
       <div class="page-container">
@@ -86,7 +88,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-0 p-0 m-0">
                 <legend class="sr-only">Informations personnelles</legend>
                 <div>
-                  @let nameState = contactForm.name();
+                  @let nameInError = contactForm.name().touched() && contactForm.name().invalid();
                   <label for="name" class="form-label"
                     >Nom complet <span class="font-normal text-muted">(requis)</span></label
                   >
@@ -97,20 +99,15 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     aria-required="true"
                     placeholder="Votre nom"
                     autocomplete="name"
-                    [attr.aria-invalid]="nameState.touched() && nameState.invalid()"
-                    [attr.aria-describedby]="
-                      nameState.touched() && nameState.invalid() ? 'contact-name-error' : null
-                    "
+                    [attr.aria-invalid]="nameInError"
+                    [attr.aria-describedby]="nameInError ? 'contact-name-error' : null"
                     class="form-input"
                   />
-                  @if (nameState.touched() && nameState.invalid()) {
-                    <p id="contact-name-error" role="alert" class="form-error">
-                      {{ nameState.errors()[0].message }}
-                    </p>
-                  }
+                  <app-field-error [field]="contactForm.name" errorId="contact-name-error" />
                 </div>
                 <div>
-                  @let emailState = contactForm.email();
+                  @let emailInError =
+                    contactForm.email().touched() && contactForm.email().invalid();
                   <label for="email" class="form-label"
                     >Email <span class="font-normal text-muted">(requis)</span></label
                   >
@@ -121,17 +118,11 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     aria-required="true"
                     placeholder="votre@email.com"
                     autocomplete="email"
-                    [attr.aria-invalid]="emailState.touched() && emailState.invalid()"
-                    [attr.aria-describedby]="
-                      emailState.touched() && emailState.invalid() ? 'contact-email-error' : null
-                    "
+                    [attr.aria-invalid]="emailInError"
+                    [attr.aria-describedby]="emailInError ? 'contact-email-error' : null"
                     class="form-input"
                   />
-                  @if (emailState.touched() && emailState.invalid()) {
-                    <p id="contact-email-error" role="alert" class="form-error">
-                      {{ emailState.errors()[0].message }}
-                    </p>
-                  }
+                  <app-field-error [field]="contactForm.email" errorId="contact-email-error" />
                 </div>
               </fieldset>
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-0 p-0 m-0">
@@ -173,7 +164,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 </div>
               </fieldset>
               <div>
-                @let subjectState = contactForm.subject();
+                @let subjectInError =
+                  contactForm.subject().touched() && contactForm.subject().invalid();
                 <label for="subject" class="form-label"
                   >Sujet <span class="font-normal text-muted">(requis)</span></label
                 >
@@ -184,22 +176,15 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   [formField]="contactForm.subject"
                   aria-required="true"
                   placeholder="Objet de votre message"
-                  [attr.aria-invalid]="subjectState.touched() && subjectState.invalid()"
-                  [attr.aria-describedby]="
-                    subjectState.touched() && subjectState.invalid()
-                      ? 'contact-subject-error'
-                      : null
-                  "
+                  [attr.aria-invalid]="subjectInError"
+                  [attr.aria-describedby]="subjectInError ? 'contact-subject-error' : null"
                   class="form-input"
                 />
-                @if (subjectState.touched() && subjectState.invalid()) {
-                  <p id="contact-subject-error" role="alert" class="form-error">
-                    {{ subjectState.errors()[0].message }}
-                  </p>
-                }
+                <app-field-error [field]="contactForm.subject" errorId="contact-subject-error" />
               </div>
               <div>
-                @let messageState = contactForm.message();
+                @let messageInError =
+                  contactForm.message().touched() && contactForm.message().invalid();
                 <label for="message" class="form-label"
                   >Message <span class="font-normal text-muted">(requis)</span></label
                 >
@@ -209,19 +194,11 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   aria-required="true"
                   rows="6"
                   placeholder="Décrivez votre projet ou votre question..."
-                  [attr.aria-invalid]="messageState.touched() && messageState.invalid()"
-                  [attr.aria-describedby]="
-                    messageState.touched() && messageState.invalid()
-                      ? 'contact-message-error'
-                      : null
-                  "
+                  [attr.aria-invalid]="messageInError"
+                  [attr.aria-describedby]="messageInError ? 'contact-message-error' : null"
                   class="form-textarea"
                 ></textarea>
-                @if (messageState.touched() && messageState.invalid()) {
-                  <p id="contact-message-error" role="alert" class="form-error">
-                    {{ messageState.errors()[0].message }}
-                  </p>
-                }
+                <app-field-error [field]="contactForm.message" errorId="contact-message-error" />
               </div>
               <div class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 pt-1">
                 <p class="max-w-[34ch] text-[0.8125rem] text-muted">
@@ -309,7 +286,7 @@ export class ContactForm {
         action: (field) => this.send(field),
         // Le bouton reste actif sur un formulaire invalide (un contrôle désactivé n'est ni
         // focusable ni annoncé) : `submit()` révèle les erreurs, on guide vers la première.
-        onInvalid: (field) => this.focusFirstInvalidField(field),
+        onInvalid: (field) => focusFirstInvalid(field),
       },
     },
   );
@@ -342,12 +319,5 @@ export class ContactForm {
         detail: 'Une erreur inattendue est survenue. Réessayez ou contactez-moi par email.',
       });
     }
-  }
-
-  private focusFirstInvalidField(field: FieldTree<ContactFormModel>): void {
-    const firstInvalid = [field.name, field.email, field.subject, field.message].find((f) =>
-      f().invalid(),
-    );
-    firstInvalid?.().focusBoundControl();
   }
 }

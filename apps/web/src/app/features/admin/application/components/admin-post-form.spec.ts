@@ -302,6 +302,100 @@ describe('AdminPostForm: champs obligatoires', () => {
   });
 });
 
+describe('AdminPostForm: erreur de champ annoncée et reliée', () => {
+  const REQUIRED_FIELDS = [
+    { testId: 'admin-post-title', errorId: 'post-title-error', hint: [] },
+    { testId: 'admin-post-excerpt', errorId: 'post-excerpt-error', hint: [] },
+    { testId: 'admin-post-content', errorId: 'post-content-error', hint: ['post-content-hint'] },
+  ] as const;
+
+  async function emptyAndLeave(rendered: RenderedForm, testId: string): Promise<void> {
+    await typeIn(rendered, testId, '');
+    byTestId(rendered.host, testId)?.dispatchEvent(new Event('blur'));
+    await settle(rendered.fixture);
+  }
+
+  const describedBy = (host: HTMLElement, testId: string): readonly string[] =>
+    byTestId(host, testId)?.getAttribute('aria-describedby')?.split(/\s+/) ?? [];
+
+  const elementWithId = (host: HTMLElement, id: string): HTMLElement | null =>
+    host.querySelector<HTMLElement>(`[id="${id}"]`);
+
+  it.each(REQUIRED_FIELDS)(
+    'Given an edited article When $testId is emptied then left Then it is invalid and described by its error « Ce champ est obligatoire »',
+    async ({ testId, errorId, hint }) => {
+      const rendered = await renderForm({ post: EDITABLE });
+
+      await emptyAndLeave(rendered, testId);
+      const error = elementWithId(rendered.host, errorId);
+
+      expect({
+        invalid: byTestId(rendered.host, testId)?.getAttribute('aria-invalid'),
+        describedBy: describedBy(rendered.host, testId),
+        error: {
+          testId: error?.getAttribute('data-testid'),
+          role: error?.getAttribute('role'),
+          text: normalized(error),
+        },
+      }).toEqual({
+        invalid: 'true',
+        describedBy: [...hint, errorId],
+        error: { testId: `${testId}-error`, role: 'alert', text: 'Ce champ est obligatoire' },
+      });
+    },
+  );
+
+  it.each(REQUIRED_FIELDS)(
+    'Given an edited article When the form renders Then $testId is valid and described by its hint only',
+    async ({ testId, hint }) => {
+      const { host } = await renderForm({ post: EDITABLE });
+
+      expect({
+        invalid: byTestId(host, testId)?.getAttribute('aria-invalid'),
+        describedBy: describedBy(host, testId),
+      }).toEqual({ invalid: 'false', describedBy: hint });
+    },
+  );
+
+  it('Given the content showing its error When it is filled again Then it is valid and described by its hint only', async () => {
+    const rendered = await renderForm({ post: EDITABLE });
+    await emptyAndLeave(rendered, 'admin-post-content');
+
+    await typeIn(rendered, 'admin-post-content', '# Repris');
+
+    expect({
+      invalid: byTestId(rendered.host, 'admin-post-content')?.getAttribute('aria-invalid'),
+      describedBy: describedBy(rendered.host, 'admin-post-content'),
+      error: elementWithId(rendered.host, 'post-content-error'),
+    }).toEqual({ invalid: 'false', describedBy: ['post-content-hint'], error: null });
+  });
+});
+
+describe('AdminPostForm: soumission invalide', () => {
+  it.each([
+    { given: 'everything empty', filled: [], focused: 'admin-post-title' },
+    { given: 'only the title', filled: ['admin-post-title'], focused: 'admin-post-excerpt' },
+    {
+      given: 'the title and the excerpt',
+      filled: ['admin-post-title', 'admin-post-excerpt'],
+      focused: 'admin-post-content',
+    },
+  ])(
+    'Given a new article with $given filled in When the form is submitted Then the focus lands on $focused and nothing is emitted',
+    async ({ filled, focused }) => {
+      const rendered = await renderForm();
+      for (const testId of filled) await typeIn(rendered, testId, 'Rempli');
+
+      await submitForm(rendered);
+
+      expect({
+        focused: document.activeElement?.getAttribute('data-testid') ?? null,
+        submitted: rendered.submitted.length,
+      }).toEqual({ focused, submitted: 0 });
+    },
+  );
+});
+
 describe('AdminPostForm: contenu et aperçu Markdown', () => {
   it('Given an article in Markdown When the form renders Then the preview shows it as HTML', async () => {
     const { host } = await renderForm({

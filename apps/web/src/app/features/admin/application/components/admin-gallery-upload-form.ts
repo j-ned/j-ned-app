@@ -11,11 +11,12 @@ import {
 import { FormField, FormRoot, form } from '@angular/forms/signals';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { Button } from '@shared/ui/button';
+import { FieldError } from '@shared/ui/field-error';
 import { imageAltSchema } from './admin-image-alt-schema';
 
 @Component({
   selector: 'app-admin-gallery-upload-form',
-  imports: [FormRoot, FormField, FileDropzone, Button],
+  imports: [FormRoot, FormField, FileDropzone, Button, FieldError],
   host: { class: 'block', 'data-testid': 'admin-gallery-upload' },
   template: `
     <form [formRoot]="uploadForm" class="space-y-4">
@@ -38,7 +39,7 @@ import { imageAltSchema } from './admin-image-alt-schema';
         }
       </div>
       <div>
-        @let alt = uploadForm.alt();
+        @let altInError = uploadForm.alt().touched() && uploadForm.alt().invalid();
         <label for="gallery-upload-alt" class="field-label">Texte alternatif</label>
         <input
           #altInput
@@ -47,13 +48,15 @@ import { imageAltSchema } from './admin-image-alt-schema';
           type="text"
           [formField]="uploadForm.alt"
           aria-required="true"
+          [attr.aria-invalid]="altInError"
+          [attr.aria-describedby]="altInError ? 'gallery-upload-alt-error' : null"
           class="form-input"
         />
-        @if (alt.touched() && alt.invalid()) {
-          <p data-testid="admin-gallery-upload-alt-error" role="alert" class="form-error">
-            {{ alt.errors()[0].message }}
-          </p>
-        }
+        <app-field-error
+          [field]="uploadForm.alt"
+          errorId="gallery-upload-alt-error"
+          testId="admin-gallery-upload-alt-error"
+        />
       </div>
       <app-button type="submit" severity="primary" [disabled]="busy()">
         Ajouter la capture

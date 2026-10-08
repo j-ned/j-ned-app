@@ -10,6 +10,7 @@ import {
 } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
+import { FieldError } from '@shared/ui/field-error';
 
 export type PasswordChangeRequest = {
   readonly currentPassword: string;
@@ -22,7 +23,7 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
 
 @Component({
   selector: 'app-password-change-form',
-  imports: [FormRoot, FormField, AppIcon, Button],
+  imports: [FormRoot, FormField, AppIcon, Button, FieldError],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -54,7 +55,8 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
 
       <form [formRoot]="pwdForm" class="space-y-4">
         <div>
-          @let current = pwdForm.currentPassword();
+          @let currentPasswordInError =
+            pwdForm.currentPassword().touched() && pwdForm.currentPassword().invalid();
           <label for="current-pw" class="form-label">Mot de passe actuel</label>
           <input
             id="current-pw"
@@ -62,22 +64,20 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
             [formField]="pwdForm.currentPassword"
             autocomplete="current-password"
             aria-required="true"
-            [attr.aria-invalid]="current.touched() && current.invalid()"
-            [attr.aria-describedby]="
-              current.touched() && current.invalid() ? 'twofa-setup-current-pw-error' : null
-            "
+            [attr.aria-invalid]="currentPasswordInError"
+            [attr.aria-describedby]="currentPasswordInError ? 'twofa-setup-current-pw-error' : null"
             class="form-input"
             placeholder="Mot de passe actuel"
           />
-          @if (current.touched() && current.invalid()) {
-            <p id="twofa-setup-current-pw-error" role="alert" class="form-error">
-              {{ current.errors()[0].message }}
-            </p>
-          }
+          <app-field-error
+            [field]="pwdForm.currentPassword"
+            errorId="twofa-setup-current-pw-error"
+          />
         </div>
 
         <div>
-          @let next = pwdForm.newPassword();
+          @let newPasswordInError =
+            pwdForm.newPassword().touched() && pwdForm.newPassword().invalid();
           <label for="new-pw" class="form-label">Nouveau mot de passe</label>
           <input
             id="new-pw"
@@ -85,22 +85,17 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
             [formField]="pwdForm.newPassword"
             autocomplete="new-password"
             aria-required="true"
-            [attr.aria-invalid]="next.touched() && next.invalid()"
-            [attr.aria-describedby]="
-              next.touched() && next.invalid() ? 'twofa-setup-new-pw-error' : null
-            "
+            [attr.aria-invalid]="newPasswordInError"
+            [attr.aria-describedby]="newPasswordInError ? 'twofa-setup-new-pw-error' : null"
             class="form-input"
             placeholder="Nouveau mot de passe"
           />
-          @if (next.touched() && next.invalid()) {
-            <p id="twofa-setup-new-pw-error" role="alert" class="form-error">
-              {{ next.errors()[0].message }}
-            </p>
-          }
+          <app-field-error [field]="pwdForm.newPassword" errorId="twofa-setup-new-pw-error" />
         </div>
 
         <div>
-          @let confirm = pwdForm.confirmPassword();
+          @let confirmPasswordInError =
+            pwdForm.confirmPassword().touched() && pwdForm.confirmPassword().invalid();
           <label for="confirm-pw" class="form-label">Confirmer le mot de passe</label>
           <input
             id="confirm-pw"
@@ -108,18 +103,15 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
             [formField]="pwdForm.confirmPassword"
             autocomplete="new-password"
             aria-required="true"
-            [attr.aria-invalid]="confirm.touched() && confirm.invalid()"
-            [attr.aria-describedby]="
-              confirm.touched() && confirm.invalid() ? 'twofa-setup-confirm-pw-error' : null
-            "
+            [attr.aria-invalid]="confirmPasswordInError"
+            [attr.aria-describedby]="confirmPasswordInError ? 'twofa-setup-confirm-pw-error' : null"
             class="form-input"
             placeholder="Confirmer le mot de passe"
           />
-          @if (confirm.touched() && confirm.invalid()) {
-            <p id="twofa-setup-confirm-pw-error" role="alert" class="form-error">
-              {{ confirm.errors()[0].message }}
-            </p>
-          }
+          <app-field-error
+            [field]="pwdForm.confirmPassword"
+            errorId="twofa-setup-confirm-pw-error"
+          />
         </div>
 
         <app-button type="submit" severity="primary" [block]="true" [disabled]="loading()">

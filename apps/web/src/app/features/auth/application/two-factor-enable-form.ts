@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, effect, input, output, signal } fro
 import { FormField, FormRoot, form, pattern, required } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
+import { FieldError } from '@shared/ui/field-error';
 
 const EMPTY = { code: '' };
 const TOTP_PATTERN = /^\d{6}$/;
 
 @Component({
   selector: 'app-two-factor-enable-form',
-  imports: [FormRoot, FormField, AppIcon, Button],
+  imports: [FormRoot, FormField, AppIcon, Button, FieldError],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -69,7 +70,7 @@ const TOTP_PATTERN = /^\d{6}$/;
 
           <form [formRoot]="tfaForm" class="space-y-4">
             <div>
-              @let code = tfaForm.code();
+              @let codeInError = tfaForm.code().touched() && tfaForm.code().invalid();
               <label for="totp-code" class="form-label">Code de vérification</label>
               <input
                 id="totp-code"
@@ -78,18 +79,12 @@ const TOTP_PATTERN = /^\d{6}$/;
                 autocomplete="one-time-code"
                 inputmode="numeric"
                 aria-required="true"
-                [attr.aria-invalid]="code.touched() && code.invalid()"
-                [attr.aria-describedby]="
-                  code.touched() && code.invalid() ? 'twofa-setup-code-error' : null
-                "
+                [attr.aria-invalid]="codeInError"
+                [attr.aria-describedby]="codeInError ? 'twofa-setup-code-error' : null"
                 class="form-input text-center text-2xl tracking-[0.5em] font-mono"
                 placeholder="000000"
               />
-              @if (code.touched() && code.invalid()) {
-                <p id="twofa-setup-code-error" role="alert" class="form-error">
-                  {{ code.errors()[0].message }}
-                </p>
-              }
+              <app-field-error [field]="tfaForm.code" errorId="twofa-setup-code-error" />
             </div>
             <button
               type="submit"

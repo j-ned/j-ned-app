@@ -6,12 +6,13 @@ import { AuthStore } from '@core/auth/auth-store';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { AppIconTile } from '@shared/ui/icon-tile';
+import { FieldError } from '@shared/ui/field-error';
 
 const TOTP_PATTERN = /^\d{6}$/;
 
 @Component({
   selector: 'app-two-factor-verify',
-  imports: [FormRoot, FormField, RouterLink, AppIcon, Button, AppIconTile],
+  imports: [FormRoot, FormField, RouterLink, AppIcon, Button, AppIconTile, FieldError],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -40,7 +41,7 @@ const TOTP_PATTERN = /^\d{6}$/;
 
         <form [formRoot]="form" class="space-y-5">
           <div>
-            @let code = form.code();
+            @let codeInError = form.code().touched() && form.code().invalid();
             <label for="code" class="form-label">Code TOTP</label>
             <input
               id="code"
@@ -49,16 +50,12 @@ const TOTP_PATTERN = /^\d{6}$/;
               autocomplete="one-time-code"
               inputmode="numeric"
               aria-required="true"
-              [attr.aria-invalid]="code.touched() && code.invalid()"
-              [attr.aria-describedby]="code.touched() && code.invalid() ? 'twofa-code-error' : null"
+              [attr.aria-invalid]="codeInError"
+              [attr.aria-describedby]="codeInError ? 'twofa-code-error' : null"
               class="form-input text-center text-2xl tracking-[0.5em] font-mono"
               placeholder="000000"
             />
-            @if (code.touched() && code.invalid()) {
-              <p id="twofa-code-error" role="alert" class="form-error">
-                {{ code.errors()[0].message }}
-              </p>
-            }
+            <app-field-error [field]="form.code" errorId="twofa-code-error" />
           </div>
 
           <app-button
