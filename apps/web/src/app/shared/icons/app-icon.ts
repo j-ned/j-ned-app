@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, input } from '@angular/core';
 import { toFontAwesome } from './icon-map';
+import { SPRITE_VERSION } from './sprite-version';
 
 // Couleur héritée via `currentColor` (compatible Tailwind text-*). `aria-hidden`
 // par défaut ; passer `label` pour l'exposer aux lecteurs d'écran (`role="img"`).
@@ -28,6 +29,6 @@ export class AppIcon {
 
   protected readonly href = computed(() => {
     const ref = toFontAwesome(this.name());
-    return `/icons/sprite.svg#${ref.style}-${ref.id}`;
+    return `/icons/sprite.svg?v=${SPRITE_VERSION}#${ref.style}-${ref.id}`;
   });
 }

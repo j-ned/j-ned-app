@@ -5,7 +5,11 @@
 //
 // Usage :
 //   pnpm icons:build           # génère + écrit le sprite
-//   pnpm icons:check           # exit 1 si le sprite est désynchronisé
+//   pnpm icons:check           # exit 1 si le sprite ou son empreinte est désynchronisé
+//
+// L'empreinte (SPRITE_VERSION) entre dans l'URL du sprite : nginx ne le sert en cache immuable
+// qu'avec `?v=`, un sprite modifié doit donc changer d'URL.
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +20,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
 const FA_BASE = join(REPO_ROOT, 'node_modules', '@fortawesome', 'fontawesome-free', 'svgs');
 const SPRITE_PATH = join(REPO_ROOT, 'public', 'icons', 'sprite.svg');
+const VERSION_PATH = join(REPO_ROOT, 'src', 'app', 'shared', 'icons', 'sprite-version.ts');
 const CHECK_MODE = process.argv.includes('--check');
 
 const { uniqueIcons } = await import(resolve(REPO_ROOT, 'src/app/shared/icons/icon-map.ts'));
@@ -56,6 +61,10 @@ if (missingIcons.length > 0) {
 
 const { result } = await spriter.compileAsync();
 const spriteContents = result.symbol.sprite.contents.toString('utf-8');
+const spriteVersion = createHash('sha256').update(spriteContents).digest('hex').slice(0, 8);
+const versionContents = `// Généré par \`pnpm icons:build\` : empreinte du contenu de public/icons/sprite.svg.
+export const SPRITE_VERSION = '${spriteVersion}';
+`;
 
 if (CHECK_MODE) {
   if (!existsSync(SPRITE_PATH)) {
@@ -67,10 +76,16 @@ if (CHECK_MODE) {
     console.error(`ERROR: ${SPRITE_PATH} is out of sync with icon-map.ts. Run \`pnpm icons:build\`.`);
     process.exit(1);
   }
-  console.log(`OK: sprite is in sync (${icons.length} icons).`);
+  const existingVersion = existsSync(VERSION_PATH) ? readFileSync(VERSION_PATH, 'utf-8') : '';
+  if (existingVersion !== versionContents) {
+    console.error(`ERROR: ${VERSION_PATH} does not match the sprite fingerprint. Run \`pnpm icons:build\`.`);
+    process.exit(1);
+  }
+  console.log(`OK: sprite and fingerprint ${spriteVersion} are in sync (${icons.length} icons).`);
   process.exit(0);
 }
 
 mkdirSync(dirname(SPRITE_PATH), { recursive: true });
 writeFileSync(SPRITE_PATH, spriteContents);
-console.log(`Built ${SPRITE_PATH} with ${icons.length} icons.`);
+writeFileSync(VERSION_PATH, versionContents);
+console.log(`Built ${SPRITE_PATH} with ${icons.length} icons, fingerprint ${spriteVersion}.`);

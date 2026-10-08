@@ -42,6 +42,11 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # Sprite et empreinte SPRITE_VERSION synchrones : une empreinte périmée resservirait
+      # l'ancien sprite, mis en cache immuable sous l'ancienne URL.
+      - name: Icons in sync
+        run: pnpm icons:check
+
       - name: Test
         run: pnpm test
 
@@ -155,4 +160,19 @@ jobs:
           demo_headers=$(curl -fsS -D - -o /dev/null "http://127.0.0.1:3000$demo")
           grep -qi 'content-type: image/avif' <<<"$demo_headers" || { echo "visuel de démo mal servi"; echo "$demo_headers"; exit 1; }
           grep -qi 'cache-control: .*immutable' <<<"$demo_headers" || { echo "visuel de démo sans cache immuable"; echo "$demo_headers"; exit 1; }
+          # Cache immuable réservé aux URL empreintées : un fichier dont l'URL ne change pas avec le
+          # contenu reste figé un an chez le visiteur (sprite d'icônes resté périmé après un ajout)
+          grep -qi 'cache-control: .*immutable' <<<"$asset_headers" || { echo "chunk haché sans cache immuable"; echo "$asset_headers"; exit 1; }
+          sprite=$(grep -o '/icons/sprite\.svg?v=[0-9a-f]*' /tmp/index.html)
+          sprite=${sprite%%$'\n'*}
+          test -n "$sprite"
+          sprite_headers=$(curl -fsS -D - -o /dev/null "http://127.0.0.1:3000$sprite")
+          grep -qi 'cache-control: .*immutable' <<<"$sprite_headers" || { echo "sprite empreinté sans cache immuable"; echo "$sprite_headers"; exit 1; }
+          grep -qi 'x-frame-options: deny' <<<"$sprite_headers" || { echo "sprite sans en-têtes de sécurité"; echo "$sprite_headers"; exit 1; }
+          for path in /favicon.svg /icons/sprite.svg; do
+            mutable_headers=$(curl -fsS -D - -o /dev/null "http://127.0.0.1:3000$path")
+            ! grep -qi 'cache-control: .*immutable' <<<"$mutable_headers" || { echo "fichier non empreinté en cache immuable : $path"; echo "$mutable_headers"; exit 1; }
+            grep -qi 'cache-control: .*must-revalidate' <<<"$mutable_headers" || { echo "fichier non empreinté sans revalidation : $path"; echo "$mutable_headers"; exit 1; }
+            grep -qi 'x-frame-options: deny' <<<"$mutable_headers" || { echo "en-têtes de sécurité absents : $path"; echo "$mutable_headers"; exit 1; }
+          done
           docker stop portfolio

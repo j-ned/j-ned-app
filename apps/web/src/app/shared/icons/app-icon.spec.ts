@@ -1,5 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { AppIcon } from './app-icon';
+import { SPRITE_VERSION } from './sprite-version';
+
+const SPRITE = `/icons/sprite.svg?v=${SPRITE_VERSION}`;
 
 describe('AppIcon', () => {
   beforeEach(() => {
@@ -19,7 +22,16 @@ describe('AppIcon', () => {
     const svg = renderIcon({ name: 'envelope' });
     expect(svg).toBeTruthy();
     const use = svg.querySelector('use');
-    expect(use?.getAttribute('href')).toBe('/icons/sprite.svg#solid-envelope');
+    expect(use?.getAttribute('href')).toBe(`${SPRITE}#solid-envelope`);
+  });
+
+  it('Given the sprite fingerprint When an icon renders Then its URL carries the content hash so a new sprite gets a new URL', () => {
+    const use = renderIcon({ name: 'envelope' }).querySelector('use');
+
+    expect({
+      fingerprint: /^[0-9a-f]{8}$/.test(SPRITE_VERSION),
+      href: use?.getAttribute('href'),
+    }).toEqual({ fingerprint: true, href: `/icons/sprite.svg?v=${SPRITE_VERSION}#solid-envelope` });
   });
 
   it('defaults size to 20', () => {
@@ -51,18 +63,18 @@ describe('AppIcon', () => {
   it('resolves Lucide-prefixed tokens', () => {
     const svg = renderIcon({ name: 'lucide-mail' });
     const use = svg.querySelector('use');
-    expect(use?.getAttribute('href')).toBe('/icons/sprite.svg#solid-envelope');
+    expect(use?.getAttribute('href')).toBe(`${SPRITE}#solid-envelope`);
   });
 
   it('resolves brands icons', () => {
     const svg = renderIcon({ name: 'lucide-github' });
     const use = svg.querySelector('use');
-    expect(use?.getAttribute('href')).toBe('/icons/sprite.svg#brands-github');
+    expect(use?.getAttribute('href')).toBe(`${SPRITE}#brands-github`);
   });
 
   it('falls back to question icon for unknown tokens', () => {
     const svg = renderIcon({ name: 'totally-unknown-xyz' });
     const use = svg.querySelector('use');
-    expect(use?.getAttribute('href')).toBe('/icons/sprite.svg#solid-question');
+    expect(use?.getAttribute('href')).toBe(`${SPRITE}#solid-question`);
   });
 });

@@ -10,6 +10,7 @@ import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
 import { accessibleName } from '@shared/testing/accessible-name';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
+import { SPRITE_VERSION } from '@shared/icons/sprite-version';
 import {
   BODY_IMAGE_FILE,
   imagePanel,
@@ -108,36 +109,38 @@ async function click(rendered: Rendered, testId: string): Promise<void> {
   await settle(rendered.fixture);
 }
 
+const SPRITE = `/icons/sprite.svg?v=${SPRITE_VERSION}`;
+
 const INLINE_TOOLS = [
   {
     testId: 'markdown-tool-bold',
     name: 'Gras',
     shortcut: 'Control+B Meta+B',
-    icon: '/icons/sprite.svg#solid-bold',
+    icon: `${SPRITE}#solid-bold`,
   },
   {
     testId: 'markdown-tool-italic',
     name: 'Italique',
     shortcut: 'Control+I Meta+I',
-    icon: '/icons/sprite.svg#solid-italic',
+    icon: `${SPRITE}#solid-italic`,
   },
   {
     testId: 'markdown-tool-underline',
     name: 'Souligné',
     shortcut: 'Control+U Meta+U',
-    icon: '/icons/sprite.svg#solid-underline',
+    icon: `${SPRITE}#solid-underline`,
   },
   {
     testId: 'markdown-tool-strikethrough',
     name: 'Barré',
     shortcut: null,
-    icon: '/icons/sprite.svg#solid-strikethrough',
+    icon: `${SPRITE}#solid-strikethrough`,
   },
   {
     testId: 'markdown-tool-inline-code',
     name: 'Code en ligne',
     shortcut: 'Control+E Meta+E',
-    icon: '/icons/sprite.svg#solid-code',
+    icon: `${SPRITE}#solid-code`,
   },
 ] as const;
 
@@ -488,37 +491,37 @@ const BLOCK_TOOLS = [
     testId: 'markdown-tool-link',
     name: 'Lien',
     shortcut: 'Control+K Meta+K',
-    icon: '/icons/sprite.svg#solid-link',
+    icon: `${SPRITE}#solid-link`,
   },
   {
     testId: 'markdown-tool-bullet-list',
     name: 'Liste à puces',
     shortcut: null,
-    icon: '/icons/sprite.svg#solid-list-ul',
+    icon: `${SPRITE}#solid-list-ul`,
   },
   {
     testId: 'markdown-tool-ordered-list',
     name: 'Liste numérotée',
     shortcut: null,
-    icon: '/icons/sprite.svg#solid-list-ol',
+    icon: `${SPRITE}#solid-list-ol`,
   },
   {
     testId: 'markdown-tool-quote',
     name: 'Citation',
     shortcut: null,
-    icon: '/icons/sprite.svg#solid-quote-left',
+    icon: `${SPRITE}#solid-quote-left`,
   },
   {
     testId: 'markdown-tool-code-block',
     name: 'Bloc de code',
     shortcut: null,
-    icon: '/icons/sprite.svg#solid-file-code',
+    icon: `${SPRITE}#solid-file-code`,
   },
   {
     testId: 'markdown-tool-rule',
     name: 'Séparateur',
     shortcut: null,
-    icon: '/icons/sprite.svg#solid-minus',
+    icon: `${SPRITE}#solid-minus`,
   },
 ] as const;
 
@@ -714,7 +717,7 @@ describe('AdminMarkdownToolbar: image', () => {
         type: 'button',
         name: 'Image',
         shortcut: null,
-        icon: '/icons/sprite.svg#solid-image',
+        icon: `${SPRITE}#solid-image`,
       },
       expanded: 'false',
       panel: null,

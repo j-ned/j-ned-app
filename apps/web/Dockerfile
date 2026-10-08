@@ -43,6 +43,12 @@ add_header Cross-Origin-Opener-Policy "same-origin" always;
 HEADERS
 
 RUN cat > /etc/nginx/conf.d/default.conf <<'NGINX'
+# `location` ignore la query string : c'est `?v=` qui distingue le sprite empreinté du nu.
+map $arg_v $sprite_cache_control {
+    ""      "public, max-age=0, must-revalidate";
+    default "public, max-age=31536000, immutable";
+}
+
 server {
     listen 3000;
     server_name _;
@@ -66,10 +72,33 @@ server {
     # aussi, le temps que le webhook Dokploy reconstruise l'image.
     error_page 404 /index.csr.html;
 
-    # Hashed assets : long cache, immutable
-    location ~* \.(js|css|woff2?|ttf|otf|eot|png|jpe?g|gif|webp|avif|svg|ico)$ {
+    # Cache immuable réservé aux URL qui changent avec le contenu ; tout autre fichier statique
+    # est revalidé (ETag → 304), sinon un fichier modifié reste périmé un an chez le visiteur.
+
+    # Chunks Angular : le nom porte le hash du contenu (regex entre guillemets à cause des `{}`)
+    location ~ "^/(chunk|main|styles)-[A-Za-z0-9_-]{8}\.(js|css)$" {
         include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    # Polices (version dans le nom) et visuels de démo (date de capture dans le nom)
+    location ~ ^/(fonts|demos)/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    # Sprite d'icônes : immuable seulement via l'URL empreintée `?v=<SPRITE_VERSION>`
+    location = /icons/sprite.svg {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control $sprite_cache_control always;
+        try_files $uri =404;
+    }
+
+    location ~* \.(js|css|woff2?|ttf|otf|eot|png|jpe?g|gif|webp|avif|svg|ico)$ {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "public, max-age=0, must-revalidate" always;
         try_files $uri =404;
     }
 
