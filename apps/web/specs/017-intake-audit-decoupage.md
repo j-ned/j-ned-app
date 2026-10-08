@@ -810,6 +810,479 @@ production`, `pnpm lint`, `pnpm test; echo exit=$?` (code de sortie lu, pas le r
 - **ICU du runner** : `groupedNumber` normalise tout blanc en U+202F ; ses tests restent stables
   quel que soit l'ICU de Node, c'est précisément le rôle du `replace`.
 
+### Lot L8 — Coque d'éditeur (ajout, branche `refactor/editor-shell-l8` empilée sur L7 #188)
+
+Décisions utilisateur du 2026-10-08, appliquées ici :
+
+- **F005** : en mise à jour d'un projet, un échec d'envoi de la couverture **n'annule plus**
+  l'enregistrement. On écrit, puis on envoie l'image, puis on avertit en cas d'échec. Les deux
+  éditeurs suivent le même ordre en création et en mise à jour.
+- **P5b** : sur un 404, l'éditeur de projet affiche un état **« introuvable »** (message et lien
+  retour vers la liste), comme l'article.
+
+#### Vérification des références de l'audit (branche L8, `e661067`)
+
+L6 a ajouté la galerie dans `admin-project-editor.ts` (373 lignes, et non 349). Ses numéros de
+ligne ont donc tous bougé. Ceux d'`admin-post-editor.ts` (296 lignes) et d'`admin-page-header.ts`
+sont exacts.
+
+| Réf. audit | Projet, audit → actuel | Article |
+| --- | --- | --- |
+| En-tête (F003, P5a) | 79-130 → **83-134** | 57-95, exact |
+| États et grille (P5b) | 132-209 → **136-222** | 97-165, exact (lien retour 155-165, après le `@switch`) |
+| Dialogue de sortie | 200-209 → **224-233** | 167-176, exact |
+| Brouillon (F004) | 225-275 → **256-299** | 201-241, exact |
+| `rejectCover` | 271-275 → **295-299** | 237-241, exact |
+| Remise à zéro | 334-338 → **358-362** (`markSaved`) | 264-267, exact |
+| `notify()` | 345-348 → **369-372** | 292-295, exact |
+| Couverture (F005) | création 300-313 → **316-342**, mise à jour 320/323 → **344-356** (envoi l. 347, avant le `PATCH` l. 348) | 244-290, exact |
+
+- Le projet n'a **pas** d'état `empty` : `loadState(this.projectResource, () => false)` (l. 254).
+  Son lien retour n'existe que dans `@case ('error')` (155-163). L'article le pose après le
+  `@switch`, pour `error` **et** `empty` (155-165).
+- `uploadImage` et `uploadCoverImage` renvoient la **clé** de stockage (`res.key`), pas une URL
+  résolue (`http-projects.gateway.ts:83-89`, `http-blog.gateway.ts:80-88`). Pour afficher la
+  nouvelle couverture après l'envoi, il faut donc **relire** l'entité. L'article le fait déjà
+  (`postsResource.reload()`, l. 262).
+- `getProjectById` n'a qu'un seul consommateur, l'éditeur. Un `GET` en 404 ne déclenche pas de
+  toast : `errorToastInterceptor` le laisse passer (`error-toast.ts:20-22`).
+- `AdminPageHeader` est utilisé par 7 pages. 4 d'entre elles appellent `focusTitle()` après un
+  dialogue de suppression (`admin-projects.ts:139`, `admin-blog.ts:184`, `admin-cv.ts:212`,
+  `admin-messages.ts:172`). `overline` est `input.required`. Les éditeurs n'ont pas de `tabindex`
+  sur leur `h1`. Seul celui de l'article porte `text-balance`.
+- `data-testid` de la coque lus par les specs : **18 références** dans chaque spec d'éditeur
+  (`admin-page-title` ×5, `admin-breadcrumb*` ×5 côté projet et ×4 côté article,
+  `admin-*-editor-loading/back/missing`, `admin-*-aside`, `admin-*-preview-link`,
+  `admin-project-public-link`, `load-error*`). Aucun autre fichier de `src/` ni de la doc ne les
+  lit.
+
+#### Verdict KISS par morceau
+
+| Morceau | Verdict | Raison |
+| --- | --- | --- |
+| P5a, en-tête | **Gardé, mais réduit** : pas d'emplacement projeté. `AdminPageHeader` reçoit une entrée facultative `parent`. Quand elle est fournie, il rend le fil d'Ariane à la place de l'`overline`. | Le dernier élément du fil d'Ariane, c'est le titre lui-même. Dans l'en-tête, il se déduit de `heading()` au lieu d'être recopié par chaque éditeur. On évite ainsi un composant `AdminBreadcrumb` et un emplacement à contenu de repli. |
+| P5c, `editor-draft.ts` | **Gardé, et élargi** à l'ordre d'enregistrement (`save()`). | L'audit recommande, pour F005, d'« écrire une seule fois » cet ordre. C'est justement la logique qui a divergé (F005). Avec `save()`, elle vit en un seul endroit et se teste sans TestBed. Les appels au gateway, les toasts, l'invalidation des caches et la navigation restent dans les éditeurs. |
+| P5b, `admin-editor-frame.ts` | **Gardé**, sans spec dédiée. | Gain net modeste : environ 60 lignes de moins par éditeur, contre environ 95 lignes de cadre. Ce qui le justifie : la machine d'états (chargement, erreur, introuvable, lien retour) s'écrit une fois, alors qu'elle a déjà divergé (lien retour) et qu'elle grandirait encore avec la décision 2. Ses deux consommateurs testent déjà tous les états : un `admin-editor-frame.spec.ts` dupliquerait ces tests. |
+| Retrait de `notify()` | **Fait** | Le titre par défaut de L7 rend ce tableau local inutile. |
+
+#### Architecture
+
+```mermaid
+flowchart TD
+  E[AdminProjectEditor / AdminPostEditor — resource, gateway, toasts, caches, navigation]
+  E -->|"[heading] [parent] + intro + actions [adminPageAside]"| H[AdminPageHeader — fil d'Ariane ou overline, h1 tabindex=-1]
+  E -->|"[state] [copy] [leaveAsked] (retry) (leaveAnswered) + ng-template #editorForm / #editorAside"| F[AdminEditorFrame — chargement, erreur, introuvable, retour, grille, dialogue]
+  E -->|"new EditorDraft({ loaded, toDraft, sections })"| D[EditorDraft — saved, value, tags, couverture, changes, toc, leave, save()]
+  D --> C[countChangedFields / toFormTocEntries / LeaveConfirmation — existants]
+  E -->|"getProjectById → Project | null"| G[ProjectsGateway]
+```
+
+- **Pas de presenter, pas de facade, pas de store.** `EditorDraft` est un **objet par instance**,
+  créé dans un initialiseur de champ (précédent : `LeaveConfirmation`). Il n'est ni injecté ni
+  `@Injectable`, et il n'a ni I/O ni dépendance Angular autre que les primitives de signal.
+  `signal`, `computed` et `linkedSignal` n'exigent pas de contexte d'injection, et aucun
+  `effect()` n'est ajouté. Ce n'est pas une facade, puisqu'il ne coordonne aucun gateway : il
+  reçoit des fonctions `write` et `uploadCover`. Ce n'est pas un store non plus : rien n'est
+  partagé entre composants.
+- **Cadre à gabarits (`<ng-template>`), pas `<ng-content>`.** Le formulaire et l'aperçu ne
+  doivent exister qu'à l'état `ready`. Or Angular instancie toujours le contenu projeté par
+  `<ng-content>`, même quand l'emplacement est sous un `@switch` ou un `@if` faux (doc
+  angular.dev, « Content projection »). Le formulaire, `AdminProjectGallery` (qui injecte un
+  gateway) et l'éditeur Markdown tourneraient alors en arrière-plan pendant le chargement. Le
+  cadre lit donc `contentChild.required('editorForm', { read: TemplateRef })` et
+  `contentChild.required('editorAside', …)`, puis les rend par `NgTemplateOutlet` dans
+  `@default`. Les gabarits sont déclarés dans l'éditeur et gardent son contexte de liaison.
+- **L'en-tête reste hors du cadre.** Il est affiché dans tous les états (titre « Modifier un
+  projet » pendant le chargement). Ses actions diffèrent aussi d'un éditeur à l'autre (« Voir la
+  fiche » seulement pour le projet). Le cadre ne reprojette rien.
+- **Landmarks** : le `<header>` d'`AdminPageHeader` remplace celui de l'éditeur, qui disparaît.
+  Le nombre d'éléments `header` ne change pas, et un `header` placé dans `main` n'est pas un
+  `banner`. Le dialogue reste unique (dans le cadre).
+- **404 → `null` dans le gateway, pas dans l'application.** Le contrat de domaine devient
+  `getProjectById(id): Observable<Project | null>`, avec `null` = introuvable. L'adapter HTTP
+  traduit le statut 404, comme la frontière infra le doit. L'éditeur ne lit aucun
+  `HttpErrorResponse`. La contrainte est encodée dans le type : le compilateur oblige l'éditeur à
+  traiter `null`. On obtient la même forme que l'article (`findPostById` → `null`) et la même
+  dérivation d'état : `loadState(resource, () => this.loaded() === null)`. Les autres échecs
+  (500, réseau) restent des erreurs, avec « Réessayer ».
+- **Ordre d'enregistrement unique** (F005), dans `EditorDraft.save()` :
+  1. `write()` ; en cas d'échec, `{ success: false, error }`, et le brouillon est intact ;
+  2. si une couverture est en attente, `uploadCover(cover, saved.id)` ; un échec est **capturé**
+     et rendu dans le résultat ;
+  3. `markSaved(saved)` dans tous les cas où l'écriture a réussi ;
+  4. `{ success: true, data: { saved, cover } }`.
+
+  L'éditeur en déduit les toasts (erreur, avertissement puis succès), invalide ses caches, relit
+  l'entité si la couverture est partie **et** qu'il s'agit d'une mise à jour (les deux éditeurs,
+  faute d'URL dans la réponse d'envoi), et navigue vers `/…/:id` après une création.
+
+#### Fichiers
+
+| Fichier | Rôle |
+| --- | --- |
+| `features/admin/application/editor-draft.ts` (+ `.spec.ts`) | **Nouveau.** `EditorDraft<TEntity, TDraft>`, `EditedDraft<TDraft>`, `CoverUpload`, `SaveResult<TEntity>` (API ci-dessous). |
+| `features/admin/application/components/admin-editor-frame.ts` | **Nouveau.** Cadre muet `app-admin-editor-frame`, avec le type `AdminEditorCopy`. Pas de spec (cf. verdict). |
+| `features/admin/application/components/admin-page-header.ts` (+ spec) | `parent = input<AdminPageParent>()` et rendu du fil d'Ariane. `overline` devient `input('')`. `text-balance` sur le `h1`. Import de `RouterLink`. |
+| `shared/ui/load-state.ts` | `export type LoadState` (aujourd'hui local), pour l'entrée `state` du cadre. |
+| `features/admin/application/admin-project-editor.ts` (+ spec) | Adopte l'en-tête, le cadre et `EditorDraft` ; F005 ; état introuvable ; `notify()` retiré. `EditedProject`, `toEditedProject` et les 8 signaux de brouillon disparaissent. Taille visée ≈ 215 lignes (estimation : imports ≈ 26, constantes ≈ 35, gabarit ≈ 75, classe ≈ 80). |
+| `features/admin/application/admin-post-editor.ts` (+ spec) | Mêmes adoptions, `notify()` retiré. Taille visée ≈ 170 lignes. |
+| `features/projects/domain/gateways/projects.gateway.ts` | `getProjectById(id: string): Observable<Project \| null>`. |
+| `features/projects/infra/gateways/http-projects.gateway.ts` (+ spec) | `catchError` : statut 404 → `of(null)`, tout le reste relancé. |
+| `features/projects/testing/stub-projects-gateway.ts` | Inchangé : `of(makeProject())` reste assignable. |
+
+**Non touchés** : `styles.css` (l'intersection L1/L3 ∩ L8 prévue par l'audit tombe),
+`toast-store.ts`, `LeaveConfirmation`, `count-draft-changes.ts`, `form-toc-entries.ts`,
+`project-draft.ts`, `post-draft.ts`, les formulaires, `unsaved-changes-guard.ts`,
+`admin.routes.ts`.
+
+#### API des nouveaux modules (signatures, à titre de contrat)
+
+```ts
+// editor-draft.ts
+type EditorEntity = { readonly id: string; readonly tags: readonly string[] };
+export type EditedDraft<TDraft> = TDraft & {
+  readonly tags: ReadonlySet<string>;
+  readonly cover: File | null;
+};
+export type CoverUpload =
+  | { readonly status: 'none' }
+  | { readonly status: 'sent' }
+  | { readonly status: 'failed'; readonly error: unknown };
+export type SaveResult<TEntity> =
+  | { readonly success: true; readonly data: { readonly saved: TEntity; readonly cover: CoverUpload } }
+  | { readonly success: false; readonly error: unknown };
+
+export class EditorDraft<TEntity extends EditorEntity, TDraft extends object> {
+  constructor(options: {
+    readonly loaded: () => TEntity | null;
+    readonly toDraft: (entity: TEntity | null) => TDraft;
+    readonly sections: readonly FormTocSection<EditedDraft<TDraft>>[];
+  });
+  readonly saved: Signal<TEntity | null>;            // linkedSignal(loaded), exposé en lecture seule
+  readonly value: WritableSignal<TDraft>;             // [(value)] du formulaire
+  readonly tags: WritableSignal<ReadonlySet<string>>; // [(tags)] du formulaire (jusqu'à L9)
+  readonly pendingCover: Signal<File | null>;
+  readonly coverResetToken: Signal<number>;
+  readonly saving: Signal<boolean>;
+  readonly changes: Signal<number>;
+  readonly toc: Signal<readonly FormTocEntry[]>;
+  readonly leave: LeaveConfirmation;
+  selectCover(file: File): void;
+  clearCover(): void;
+  rejectCover(): void;                                // vide la couverture et incrémente le jeton, sans toast
+  canLeave(): boolean | Promise<boolean>;
+  warnBeforeUnload(event: BeforeUnloadEvent): void;
+  save(
+    write: () => Promise<TEntity>,
+    uploadCover: (cover: File, id: string) => Promise<unknown>,
+  ): Promise<SaveResult<TEntity>>;
+}
+```
+
+- `value` et `tags` restent des `WritableSignal` publics. C'est la seule écriture externe admise :
+  `[(value)]` et `[(tags)]` exigent un signal inscriptible (`model()` du formulaire). Tout le reste
+  est exposé par `.asReadonly()` (règle « encapsuler » de `CLAUDE.md`) et ne s'écrit que par les
+  méthodes.
+- `baseline` = `linkedSignal(() => ({ ...toDraft(loaded()), tags: new Set(loaded()?.tags ?? []), cover: null }))`
+  et `edited` = `computed`, tous deux privés. `markSaved(saved)` (privé) fait, dans cet ordre :
+  `saved` ← entité, couverture à `null`, jeton + 1, `baseline` ← `edited()`. C'est l'ordre
+  actuel des deux éditeurs : la couverture est vidée **avant** de figer la référence.
+- `saving` passe à `true` au début de `save()` et revient à `false` dans un `finally`. La
+  navigation qui suit une création a lieu **après** (cf. risques).
+- Le formateur de toast reste dans l'éditeur : `rejectCover()` dans l'éditeur appelle
+  `draft.rejectCover()` puis `toast.add({ severity: 'error', detail: 'Seules les images sont acceptées.' })`.
+- Le champ `draft` est déclaré **après** `loaded` dans la classe de l'éditeur (ordre des
+  initialiseurs de champ).
+- L. 243 de l'article : le commentaire de WHY (« une couverture refusée après l'écriture laisse
+  l'article enregistré ») part sur `save()`, en une ligne et en termes neutres (« l'entité »).
+
+```ts
+// admin-editor-frame.ts — sélecteur app-admin-editor-frame
+export type AdminEditorCopy = {
+  readonly testIdPrefix: 'admin-project' | 'admin-post';
+  readonly loading: string;    // « Chargement du projet… »
+  readonly loadError: string;  // « Le projet n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez. »
+  readonly missing: string;    // « Ce projet n'existe pas ou a été supprimé. »
+  readonly backRoute: string;  // '/admin/projects'
+  readonly backLabel: string;  // « Retour aux projets »
+  readonly leave: string;      // « Les modifications non enregistrées de ce projet seront perdues. »
+};
+// entrées : state = input.required<LoadState>(), copy = input.required<AdminEditorCopy>(), leaveAsked = input(false)
+// sorties : retry = output<void>(), leaveAnswered = output<boolean>()
+// gabarits : contentChild.required('editorForm', { read: TemplateRef }), idem 'editorAside'
+```
+
+- Gabarit du cadre, transposé des éditeurs **sans changer aucune classe** :
+  - `loading` : `role="status"`, `sr-only` = `copy().loading`, 4 squelettes ;
+  - `error` : `app-load-error [message]="copy().loadError" (retry)="retry.emit()"` ;
+  - `empty` : `<p class="py-8 text-center text-muted">` = `copy().missing` ;
+  - après le `@switch`, pour `error` **ou** `empty`, le lien retour (forme de l'article,
+    l. 155-165) ;
+  - `@default` : la grille `2xl:grid-cols-[minmax(0,1fr)_25rem]`, `<div class="min-w-0">` +
+    gabarit `editorForm`, puis `<div id="apercu" …sticky>` + gabarit `editorAside` ;
+  - le `app-confirm-dialog` (titre et libellés identiques, corps = `copy().leave`) branché sur
+    `leaveAsked` / `leaveAnswered`.
+- `data-testid` **conservés à l'identique** (aucune réécriture de sélecteur dans les specs pour
+  le cadre), dérivés de `testIdPrefix` : `${p}-editor-loading`, `${p}-editor-back`,
+  `${p}-editor-missing`, `${p}-aside`. Pour le projet, cela donne
+  `admin-project-editor-missing`, qui est nouveau.
+- Squelettes : une seule série pour les deux éditeurs, celle du projet (`h-12`, `h-28`, `h-12`,
+  `h-40`), cf. changements visibles.
+- L'éditeur : `<app-admin-editor-frame [state]="state()" [copy]="COPY" [leaveAsked]="draft.leave.asked()" (retry)="…Resource.reload()" (leaveAnswered)="draft.leave.answer($event)">`.
+  Le projet range dans `#editorForm` le formulaire, la section « 05 · Galerie » et la barre
+  d'enregistrement. L'article y range le formulaire et la barre. `#editorAside` contient
+  l'aperçu et le sommaire. `PROJECT_EDITOR_COPY` et `POST_EDITOR_COPY` sont des constantes
+  locales à chaque éditeur (un seul consommateur chacune).
+
+**`AdminPageHeader`** après L8
+
+- `export type AdminPageParent = { readonly label: string; readonly route: string }`.
+- `layoutClass = computed(...)` : colonne d'actions `minmax(0,1fr)_auto` quand `parent` est défini
+  (éditeurs : un ou deux liens), `minmax(0,1fr)_22rem` sinon (pages). Deux constantes de classes
+  complètes, pour que Tailwind les détecte.
+- `parent = input<AdminPageParent>()`. Quand il est défini, l'en-tête rend le
+  `nav[aria-label="Fil d'Ariane"]` actuel des éditeurs, avec les mêmes classes, au lieu du
+  `<p admin-page-overline>`. Le lien parent porte `data-testid="admin-breadcrumb-parent"`
+  (harmonisé : un composant générique ne porte pas de nom de feature). Le courant
+  `admin-breadcrumb-current` vaut `{{ heading() }}`, avec `aria-current="page"`.
+- `overline = input('')`. Les 7 pages continuent de le passer. L'exclusion mutuelle avec
+  `parent` ne s'exprime pas en entrées de signal : on l'accepte (cf. risques).
+- `h1` : `tabindex="-1"` et `focusTitle()` inchangés. Les éditeurs en héritent. **Aucun appel à
+  `focusTitle()` n'est ajouté dans les éditeurs** : leur seul dialogue (sortie) se ferme soit par
+  une navigation, soit par un retour natif du focus à l'élément déclencheur (`<dialog>.close()`).
+  Le `mt-1.5` du `h1` des éditeurs devient le `mt-3.5` de l'en-tête (cf. changements visibles).
+- Les éditeurs projettent l'intro (`<p>`, texte inchangé) en contenu par défaut, et
+  `<div adminPageAside class="flex flex-wrap gap-2.5 lg:justify-end">` pour « Voir l'aperçu »
+  (`admin-*-preview-link`, inchangé) et, côté projet, « Voir la fiche »
+  (`admin-project-public-link`, inchangé).
+
+#### Réactivité / état
+
+- Signaux uniquement : aucun `effect()` ni RxJS ajouté (le `catchError` du gateway mis à part).
+  `rxResource` reste dans les éditeurs.
+- `loaded` (projet) = `projectResource.hasValue() ? projectResource.value() : null`. `null`
+  compte comme une valeur : `hasValue()` = `isValueDefined()`, vérifié dans
+  `@angular/core/fesm2022/_resource-chunk.mjs`. Un 404 donne donc `ready` → `empty`.
+- Après une relecture (`reload()`), le `linkedSignal` de `EditorDraft` se réaligne sur l'entité
+  serveur, comme l'article le fait aujourd'hui. Pendant la relecture, `hasValue()` reste vrai :
+  pas de retour au squelette.
+
+#### Tranches
+
+Leçons des lots précédents pour `qa`, à appliquer dans chaque tranche :
+
+- **Squelette de signature au RED** pour tout module neuf ou membre neuf que le spec importe ou
+  lie. Sans lui, la génération du bundle échoue (`TS2307`, ou `NG8002` pour une entrée inconnue
+  liée dans le gabarit d'un hôte) et **aucun** test ne tourne. Concrètement :
+  - L8.3 : `editor-draft.ts` entier (types exportés, classe aux membres typés, corps neutres :
+    signaux à leur valeur initiale, `save` → `{ success: false, error: null }`) ;
+  - L8.4 : `AdminPageParent` exporté et `parent = input<AdminPageParent>()` déclaré, sans rendu ;
+  - L8.6 : la signature abstraite `Observable<Project | null>`. Dans
+    `http-projects.gateway.spec.ts:179-206`, élargir le type des `call` à
+    `Observable<Project | readonly Project[] | null>` dès le RED, sinon l'implémentation GREEN
+    casse le typecheck des specs.
+- **Pas de valeur par défaut piégée dans les harnais.** Un paramètre `x: T | undefined = défaut`
+  appelé avec `undefined` prend le défaut (L5, `field-error.spec.ts`). Pour « pas d'entité »,
+  passer `null` explicitement (`makeDraft(null)`), sans paramètre par défaut.
+- **Copier les objets partagés passés à Signal Forms** (L6.2). Les fixtures de module
+  (`DASHFLOW`, `CHIFFREMENT`) traversent les stubs jusqu'au formulaire, qui marque ses tableaux
+  d'un symbole. Tout attendu se construit sur une copie neuve (appel de builder par test, ou
+  `structuredClone`), jamais sur la référence servie au formulaire. Dans `editor-draft.spec.ts`,
+  chaque test construit sa propre entité.
+- `toEqual` ignore une clé à `undefined` mais échoue sur une clé définie : c'est le levier de L8.2.
+
+**L8.1 — En mise à jour, un projet est enregistré même si sa couverture échoue (F005)**
+
+- Pas de squelette : aucun module neuf.
+- `admin-project-editor.spec.ts`, describe « mise à jour » :
+  - **réécrit** (478) : « Given a new cover for an existing project When it is saved Then the
+    project is patched first, then the cover uploaded for its id ». On attend
+    `uploads: [[COVER, 'p-1']]`, `patches: 1`, et l'appel à `updateProject` **avant**
+    `uploadImage` (même forme que `admin-post-editor.spec.ts:481`).
+  - **réécrit** (514) : « …Then the project is requested again and the current cover and the
+    preview show the uploaded image ». `getProjectById` répond d'abord `DASHFLOW` (copie), puis
+    le même projet avec `image: 'https://cdn.test/projects/p-1.avif'`. On attend
+    `requested: 2`, la couverture courante et l'aperçu sur cette URL, plus d'aperçu
+    « en attente », et la barre à « Aucune modification ».
+  - **nouveau** : « Given the cover upload fails after the update When the project is saved Then
+    a warning then the update are told, the new title stays and nothing is left to save ». Avec
+    `uploadImage` en erreur et le titre modifié en « Après », on attend `toasts` =
+    `[{ warn, "Projet mis à jour, mais l'envoi de l'image a échoué. Réessayez." }, { success, 'Projet mis à jour' }]`,
+    `patches: 1`, titre de page « Après », barre « Aucune modification », `requested: 1`.
+  - RED attendus : ces 3 tests (ordre inversé, `requested: 1`, toast d'erreur sans `PATCH`).
+- GREEN : l'éditeur de projet suit l'ordre de l'article (écriture, envoi, avertissement), puis
+  `projectResource.reload()` si la couverture est partie. Il n'y a plus de branche
+  `create`/`update` séparée pour la couverture.
+
+**L8.2 — Les éditeurs laissent le titre du toast au store**
+
+- Pas de squelette.
+- `admin-project-editor.spec.ts:162` et `admin-post-editor.spec.ts:180` : l'aide `toasts()`
+  rend l'argument **brut** de `add()` (`toast.mock.calls.map(([message]) => message)`, typé
+  `ToastMessage`). C'est la variante retenue par la revue L7 pour `admin-cv.spec.ts`. Aucun
+  attendu ne change.
+- RED attendus : tout test qui compare un toast entier (`toEqual` sur `{ severity, detail }`),
+  car `notify()` y ajoute `summary`. Les tests qui ne projettent que `severity` restent verts.
+  `qa` relève le compte exact.
+- GREEN : `notify()` est supprimé des deux éditeurs. Chaque appel devient
+  `this.toast.add({ severity, detail })`.
+
+**L8.3 — Le brouillon d'édition s'écrit une fois (P5c)**
+
+- Squelette : `editor-draft.ts` (cf. leçons).
+- `editor-draft.spec.ts`, **sans TestBed**. Entité de test locale
+  `{ id, title, tags }`, `toDraft` = `{ title }`, deux sections (`title` / `tags`, `cover`).
+  `loaded` est un `signal` du test. Cas :
+  - Given une entité chargée Then `value` = `toDraft(entité)`, `tags` = ses étiquettes,
+    `saved` = l'entité, `changes` = 0, sommaire sans « modifié ».
+  - `it.each` modifications : titre changé, étiquette ajoutée, couverture choisie → `changes` = 1
+    et la bonne section du sommaire marquée « modifié ». Titre rétabli, ou couverture choisie
+    puis retirée par `clearCover()` → 0.
+  - Given une couverture choisie When `rejectCover()` Then `pendingCover` = `null` et jeton + 1.
+  - Given `loaded` qui change Then `value`, `tags` et `saved` se réalignent.
+  - `canLeave` : sans changement → `true` ; avec changement → une promesse,
+    `leave.asked()` = `true`, puis `leave.answer(true)` la résout à `true`.
+  - `warnBeforeUnload` (`it.each` 0 / 1 changement) : `preventDefault` appelé seulement s'il y a
+    un changement (événement factice `{ preventDefault: vi.fn() }`).
+  - `save`, écriture réussie sans couverture : `{ success: true, data: { saved, cover: { status: 'none' } } }`,
+    `uploadCover` jamais appelé, `saved()` = l'entité renvoyée, `changes` = 0.
+  - `save`, avec couverture : `uploadCover(cover, saved.id)` appelé **après** `write`, statut
+    `'sent'`, couverture vidée, jeton + 1.
+  - `save`, envoi de couverture rejeté : statut `'failed'` avec l'erreur, et le brouillon est
+    **quand même** marqué enregistré (`changes` = 0). C'est le contrat F005 au niveau unitaire.
+  - `save`, écriture rejetée : `{ success: false, error }`, `uploadCover` jamais appelé,
+    `changes` inchangé, couverture conservée.
+  - `saving` : `true` tant que `write` est en attente (promesse contrôlée par le test), `false`
+    après un succès **et** après un échec.
+  - RED attendus : tous, sauf l'état initial de `coverResetToken` s'il est asserté seul. Le
+    squelette rend des valeurs neutres.
+- GREEN : les deux éditeurs adoptent `EditorDraft` (`[(value)]="draft.value"`,
+  `[(tags)]="draft.tags"`, `draft.selectCover($event)`, `host` →
+  `draft.warnBeforeUnload($event)`, `canLeave()` → `draft.canLeave()`, `save()` →
+  `draft.save(…)`). Filet : les deux specs d'éditeur, inchangées, et en particulier
+  « modifications non enregistrées », « quitter la page », « couverture retirée ou refusée »,
+  « création » et « mise à jour ».
+
+**L8.4 — Les éditeurs partagent l'en-tête d'admin, fil d'Ariane compris (P5a)**
+
+- Squelette : `AdminPageParent` et `parent` (cf. leçons).
+- `admin-page-header.spec.ts` : nouvel hôte avec `[parent]` et `provideRouter([])`.
+  - Given un parent Then un `nav` « Fil d'Ariane » dans le `header`, lien
+    `admin-breadcrumb-parent` (texte = libellé, `href` = route), `admin-breadcrumb-current`
+    = titre avec `aria-current="page"`, aucun `admin-page-overline`, un seul `h1`, `tabindex`
+    `-1`.
+  - Given le titre qui change Then le courant du fil d'Ariane suit.
+  - Les 4 tests existants restent verts (sans parent, l'overline est rendue).
+- Specs d'éditeur :
+  - `admin-breadcrumb-projects` (×3) et `admin-breadcrumb-posts` (×2) deviennent
+    `admin-breadcrumb-parent` ;
+  - le test d'ouverture d'un projet existant (et son pendant côté article) ajoute
+    `titleTabindex: '-1'`. Ne pas compter les `header` de la page : l'aperçu du projet en rend
+    d'autres (`project-detail-header.ts`). Le `h1` unique est déjà asserté.
+- RED attendus : en-tête, 2 tests ; éditeurs, les tests de fil d'Ariane (lien absent) et les 2
+  tests d'ouverture (`tabindex` `null`).
+- GREEN : en-tête + adoption dans les deux éditeurs (leur `<header>` disparaît).
+
+**L8.5 — Cadre d'éditeur, sans RED (P5b)**
+
+- `admin-editor-frame.ts` extrait des deux éditeurs, `LoadState` exporté. Comportement constant
+  pour l'article. Pour le projet, le lien retour reste affiché sur erreur, et l'état `empty`
+  n'est pas encore atteignable (L8.6).
+- Filet, inchangé : « chargement et erreur » des deux specs (statut, `load-error`, « Réessayer »,
+  `*-editor-back`), « introuvable » de l'article (`admin-post-editor-missing`), « quitter la
+  page » (dialogue), les tests de colonne de l'aperçu (`admin-*-aside`, `#apercu`), la galerie
+  (`compareDocumentPosition` hors `<form>`). Ce dernier prouve que le gabarit `editorForm`
+  garde l'ordre formulaire → galerie → barre.
+- Preuve de fin de tranche : `grep -c "app-skeleton\|app-confirm-dialog\|app-load-error" src/app/features/admin/application/admin-*-editor.ts` → 0 et 0.
+
+**L8.6 — Un projet introuvable le dit et ramène à la liste (P5b, décision 2)**
+
+- Squelette : signature abstraite `Observable<Project | null>` (cf. leçons).
+- `http-projects.gateway.spec.ts` : `it.each` statut 404 → la valeur émise est `null` ;
+  statut 500 → l'observable est en erreur avec le même statut (le 500 n'est pas avalé).
+  `httpController.verify()` en `afterEach`, comme le fichier.
+- `admin-project-editor.spec.ts`, describe « chargement et erreur » → « chargement, erreur et
+  introuvable » : « Given an id the API does not know When the page renders Then it says the
+  project is not found and leads back, without form nor error ». Avec
+  `getProjectById: vi.fn((): Observable<Project | null> => of(null))`, on attend `crash: null`,
+  `admin-project-editor-missing` = « Ce projet n'existe pas ou a été supprimé. », aucun
+  `load-error`, aucun `admin-project-form`, et `admin-project-editor-back` = `A` vers
+  `/admin/projects` (forme de `admin-post-editor.spec.ts`, « introuvable »).
+- RED attendus : le 404 de la spec du gateway (erreur au lieu de `null`) et le test de l'éditeur
+  (formulaire rendu, pas de message). Le 500 est vert d'emblée (non-régression, assumé).
+- GREEN : `catchError` dans `HttpProjectsGateway.getProjectById`, et
+  `state = loadState(this.projectResource, () => this.loaded() === null)`.
+
+Ordre : L8.1 → L8.2 → L8.3 → L8.4 → L8.5 → L8.6.
+
+- **L8.1 avant L8.3** : on ne factorise l'ordre d'enregistrement qu'une fois les deux éditeurs
+  alignés. `save()` est alors un refactor sous vert pour les éditeurs.
+- **L8.2 avant L8.3** : `notify()` ne passe pas dans l'objet partagé.
+- **L8.5 avant L8.6** : l'état introuvable s'écrit une seule fois, dans le cadre.
+
+Preuves de fin de lot :
+
+- `grep -n "notify\|summary" src/app/features/admin/application/admin-*-editor.ts` → vide ;
+- `grep -rn "Fil d'Ariane" src/app/features/admin/application --include=*.ts | grep -v spec` →
+  `admin-page-header.ts` seul ;
+- `grep -n "linkedSignal" src/app/features/admin/application/admin-post-editor.ts` → vide (le
+  projet garde celui de `gallery`).
+
+#### Changements visibles
+
+- **Projet, mise à jour avec couverture en échec** : le projet est enregistré, puis un
+  avertissement « Projet mis à jour, mais l'envoi de l'image a échoué. Réessayez. » et le succès
+  sont affichés. Avant, un toast d'erreur s'affichait et rien n'était enregistré (décision
+  F005).
+- **Projet, mise à jour avec couverture réussie** : une requête `GET /projects/:id` de plus
+  (relecture), et la couverture affichée est celle de l'entité relue.
+- **Projet sur 404** : « Ce projet n'existe pas ou a été supprimé. » et « Retour aux projets »,
+  au lieu de l'erreur de chargement avec « Réessayer » (décision P5b).
+- **En-tête des deux éditeurs**, rendu par `AdminPageHeader` :
+  - `pb-6` → `pb-8` ;
+  - `h1` `mt-1.5` → `mt-3.5`, soit 8 px de plus sous le fil d'Ariane ;
+  - intro `mt-3` → `mt-4` ;
+  - à partir de `lg`, colonne d'actions dimensionnée au contenu (`auto`) dans les éditeurs, 22rem
+    conservés sur les pages : décision prise après la mesure de l'implémentation (cf. `## Verify` ›
+    Lot L8, point d'attention soldé) ;
+  - `h1` focalisable par script (`tabindex="-1"`, invisible au clavier) ;
+  - `text-balance` sur tous les `h1` d'admin : effet nul sur les titres d'un mot des 7 pages,
+    retour à la ligne équilibré pour les titres longs de projet (l'article l'avait déjà).
+- **Squelette de chargement de l'article** : `h-20` / `h-60` → `h-28` / `h-40` (série unique).
+- **Toasts** : aucun. Les titres par défaut sont ceux que posait `notify()`.
+
+#### Intersection de fichiers
+
+| Couple | Intersection | Conséquence |
+| --- | --- | --- |
+| L7 ∩ L8 | Vide en fichiers. L8 dépend de L7 **sémantiquement** : sans titre par défaut, le retrait de `notify()` (L8.2) enlève le titre des toasts. | La branche est empilée sur L7 (#188). On la rebase sur `master` une fois #188 mergée, et la PR L8 part après. |
+| L1 / L3 ∩ L8 | Vide : L8 ne touche plus `styles.css`, contrairement au tableau de l'audit. | Indépendants. |
+| L8 ∩ L9 | Les deux éditeurs et leurs specs. L9 retire en plus `tags` de `EditorDraft` (le champ passe dans `value`). | L9 après L8, `editor-draft.ts` ajouté à la liste de L9. |
+| L8 ∩ L11 | Les éditeurs importent `ToastStore` (chemin `shared/ui`). | L11 en dernier, comme prévu. |
+
+Gates : `pnpm install --frozen-lockfile`, `pnpm run build --configuration production` (puis
+`git checkout -- public/sitemap.xml public/rss.xml`), `pnpm lint`, `pnpm test; echo exit=$?`
+(code de sortie lu). Le runtime de l'admin exige le faux backend local décrit au `## Verify` du
+lot L6 : il faut y simuler un `PATCH` réussi suivi d'un envoi d'image en 500, et un
+`GET /projects/inconnu` en 404.
+
+#### Risques & inconnues
+
+- **`saving` repasse à `false` avant la navigation qui suit une création** (avant : pendant). Le
+  bouton « Enregistrer » est réactivé pendant la navigation `replaceUrl`. `canLeave()` vaut
+  `true` (aucun changement), donc pas de dialogue parasite. Un double envoi reste théoriquement
+  possible pendant ces quelques millisecondes. Si la revue le juge gênant, repli : l'éditeur
+  garde son propre `try/finally` autour de la navigation.
+- **Requêtes de debug à travers `NgTemplateOutlet`** : les specs lisent `By.directive(AdminProjectForm)`
+  et `By.directive(FileDropzone)`. Les vues insérées depuis un gabarit déclaré dans l'éditeur
+  sont dans l'arbre de debug du DOM ; à confirmer au premier GREEN de L8.5. Si une requête ne
+  trouve plus l'élément, `qa` est saisi par renvoi de tranche (pas de contournement dans le
+  cadre).
+- **Exclusion `overline` / `parent` non typée** : une page qui passerait les deux n'aurait que le
+  fil d'Ariane, et une page qui n'en passerait aucun aurait une overline vide (comme aujourd'hui
+  avec `''`). Le couplage implicite `fragment="apercu"` (en-tête de l'éditeur) ↔ `id="apercu"`
+  (cadre) est couvert par le test de colonne de l'aperçu.
+
 ## Plan de test
 
 Lot **L5** joué en un seul RED (demande de la session principale). Commande : `pnpm test; echo
@@ -1094,6 +1567,144 @@ RED confirmé via `pnpm test` le 2026-10-08 21:10 : 5 failed / 3105 total (1 fic
 188), exit 1. Échecs = assertions : `"summary": undefined` reçu au lieu du titre attendu (5). Les
 3099 tests de la base et le test « titre fourni » restent verts.
 
+Lot **L8** joué en un seul RED (demande de la session principale), branche
+`refactor/editor-shell-l8` (master `51b3e6c`, L7 mergé). Commande : `pnpm test; echo exit=$?`, après
+`ng cache clean` et purge de `node_modules/.vite`. Base avant RED : `188 passed (188)` fichiers,
+`3105 passed (3105)` tests, exit 0.
+
+**Échafaudage de signature (à remplacer en GREEN)** :
+
+- `features/admin/application/editor-draft.ts` : types exportés du plan (`EditedDraft`,
+  `CoverUpload`, `SaveResult`) et classe `EditorDraft` aux membres typés, corps neutres (signaux à
+  leur valeur initiale, `value` = `toDraft(null)`, méthodes vides, `canLeave` → `true`, `save` →
+  `{ success: false, error: null }`).
+- `components/admin-page-header.ts` : `AdminPageParent` exporté, `parent = input<AdminPageParent>()`
+  déclaré sans rendu, et `overline` passé de `input.required` à `input('')` (prévu au plan pour le
+  GREEN, avancé ici : l'hôte de test qui ne passe que `parent` lèverait sinon l'erreur de
+  compilation d'entrée requise, et aucun test du fichier ne tournerait).
+- `projects/domain/gateways/projects.gateway.ts` : `getProjectById(id): Observable<Project | null>`.
+  `HttpProjectsGateway` (`Observable<Project>`) et `stubProjectsGateway` restent assignables, le
+  typecheck des specs passe.
+
+Aucun comportement n'y est écrit : `angular-expert` les implémente.
+
+### Tranche L8.1 — en mise à jour, un projet est enregistré même si sa couverture échoue
+
+**`admin-project-editor.spec.ts`**, describe « mise à jour » (2 tests réécrits, 1 nouveau)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| écriture puis envoi (réécrit) | couverture choisie sur `p-1`, enregistrée | `uploads` `[[COVER, 'p-1']]`, `patches` 1, `updateProject` appelé avant `uploadImage` |
+| relecture (réécrit) | `getProjectById` répond une copie de `DASHFLOW`, puis le même projet avec `image` `https://cdn.test/projects/p-1.avif` | `requested` 2, couverture courante et aperçu sur cette URL, pas d'aperçu « en attente », barre « Aucune modification » |
+| envoi en échec (nouveau) | titre « Après », couverture choisie, `uploadImage` en erreur | `toasts` = `[{ warn, "Projet mis à jour, mais l'envoi de l'image a échoué. Réessayez." }, { success, 'Projet mis à jour' }]`, `patches` 1, titre « Après », « Aucune modification », `requested` 1 |
+
+RED confirmé via `pnpm test` le 2026-10-08 21:36 : 3 failed / 3129 total pour cette tranche.
+Échecs = assertions (`patchFirst: false` ; `requested: 1`, `current: undefined` ; `patches: 0`,
+« 2 modifications non enregistrées », toast d'erreur). Le 3ᵉ compare des toasts entiers par l'aide
+brute de L8.2 : après le GREEN de L8.1, il ne doit plus échouer que sur `summary`, jusqu'au GREEN de
+L8.2.
+
+### Tranche L8.2 — les éditeurs laissent le titre du toast au store
+
+Aide `toasts()` des deux specs d'éditeur : rend l'argument brut de `add()`
+(`toast.mock.calls.map(([message]) => message)`, typé `ToastMessage`). Aucun attendu modifié.
+
+RED confirmé via `pnpm test` le 2026-10-08 21:36 : 23 failed / 3129 total pour cette tranche. Échecs
+= assertions, tous de la forme `+ "summary": "Succès" | "Attention" | "Erreur"` reçu en plus :
+
+- `admin-project-editor.spec.ts` (12) : création (2), mise à jour (titre édité, `PATCH` en échec),
+  détail du refus de l'API (5 `it.each` + 2 couvertures en 400 / 500), fichier qui n'est pas une
+  image ;
+- `admin-post-editor.spec.ts` (11) : création (2), mise à jour (titre édité, écriture en échec),
+  détail du refus de l'API (4 `it.each` + 2 couvertures), fichier qui n'est pas une image.
+
+Les tests qui ne projettent que `severity` restent verts.
+
+### Tranche L8.3 — le brouillon d'édition s'écrit une fois
+
+**`editor-draft.spec.ts`** (nouveau, sans TestBed ; entité locale `{ id, title, tags }` construite
+par appel de `aNote()` dans chaque test, `toDraft` = `{ title }`, sections `note-text`
+(`title`, `tags`) et `note-cover` (`cover`), `loaded` = `signal` du test, `makeDraft(null)`
+explicite pour une entité neuve ; 18 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| état initial | entité chargée | `value` `{ title: 'Carnet' }`, `tags` `['Angular']`, `saved` = l'entité, `changes` 0, sommaire à 2 entrées sans « modifié » |
+| modifications (`it.each` × 5) | titre changé ; étiquette ajoutée ; couverture choisie ; titre rétabli ; couverture choisie puis `clearCover()` | `changes` 1 / 1 / 1 / 0 / 0, sommaire `['modifié', '']` / `['modifié', '']` / `['', 'modifié']` / `['', '']` / `['', '']` |
+| couverture refusée | `selectCover` puis `rejectCover()` | choisie = `COVER`, puis `pendingCover` `null`, jeton 1, `changes` 0 |
+| réalignement | titre édité, puis `loaded` → `n-2` « Journal » `['RxJS']` | `value`, `tags`, `saved` suivent, `changes` 0 |
+| quitter sans changement | — | `canLeave()` `true`, `leave.asked()` `false` |
+| quitter avec changement | titre édité | une promesse, `asked` `true`, `answer(true)` la résout à `true` |
+| `warnBeforeUnload` (`it.each` × 2) | édité / intact | `preventDefault` appelé 1 / 0 fois |
+| `save` sans couverture | titre édité | `{ success: true, data: { saved, cover: { status: 'none' } } }`, aucun envoi, `saved()` = l'entité écrite, `changes` 0 |
+| `save` avec couverture | entité neuve, écriture → `n-9` | `cover` `{ status: 'sent' }`, `uploadCover` `[[COVER, 'n-9']]` après `write`, couverture vidée, jeton 1, `changes` 0 |
+| envoi rejeté | couverture choisie | `cover` `{ status: 'failed', error }`, `saved` « Après », couverture vidée, `changes` 0 |
+| écriture rejetée | titre et couverture | `{ success: false, error }`, aucun envoi, `saved` « Carnet », couverture conservée, `changes` 2 |
+| `saving` (`it.each` × 2) | écriture tenue par le test, puis résolue / rejetée | `true` pendant, `false` après |
+
+RED confirmé via `pnpm test` le 2026-10-08 21:36 : 16 failed / 3129 total pour cette tranche (18
+tests neufs ; verts d'emblée contre l'échafaudage : « quitter sans changement » et
+`warnBeforeUnload` intact, gardes contre le faux positif). Échecs = assertions (`value: { title: '' }`,
+`changes: 0`, `toc: []`, `{ success: false, error: null }`, `during: false`).
+
+Le test `saving` suppose que `save()` appelle `write()` de façon synchrone (avant tout `await`),
+comme le font les éditeurs aujourd'hui.
+
+### Tranche L8.4 — les éditeurs partagent l'en-tête d'admin, fil d'Ariane compris
+
+**`admin-page-header.spec.ts`**, describe « with a parent page » (hôte `[heading]` + `[parent]`
+`{ Projets, /admin/projects }`, sans `overline`, `provideRouter([])` ; 2 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| fil d'Ariane | parent fourni | `admin-breadcrumb` `NAV` « Fil d'Ariane », dans le même `header` que le titre et avant lui ; `admin-breadcrumb-parent` `A` « Projets » `href` `/admin/projects` ; `admin-breadcrumb-current` « DashFlow », `aria-current="page"` ; aucun `admin-page-overline` ; un seul `h1`, `tabindex` `-1` |
+| titre qui change | `heading` → « DashFlow 2 » | courant et titre « DashFlow 2 » |
+
+Les 4 tests existants restent verts.
+
+**Specs d'éditeur** : `admin-breadcrumb-projects` (×3) et `admin-breadcrumb-posts` (×2) deviennent
+`admin-breadcrumb-parent` ; le test d'ouverture du projet existant et l'`it.each` d'ouverture de
+l'article (× 2) ajoutent `titleTabindex: '-1'`.
+
+RED confirmé via `pnpm test` le 2026-10-08 21:36 : 20 failed / 3129 total pour cette tranche. Échecs
+= assertions :
+
+- en-tête (2) : `breadcrumb.tag: undefined`, `overline` présent, courant vide ;
+- ouverture (3 : projet, article × 2) : `titleTabindex: null` ;
+- fil d'Ariane (6 : `it.each` × 2 et « suivre le lien » par éditeur) : lien absent ;
+- sortie par le fil d'Ariane (9) : l'aide `followBreadcrumb` clique `admin-breadcrumb-parent`, qui
+  n'existe pas encore, donc l'adresse ne change pas et le dialogue ne s'ouvre pas. Projet : « quitter
+  la page » (sans changement, avec changement, réponse `confirm`) et « enregistré puis quitter » ;
+  article : les mêmes 4, plus « gras depuis la barre puis quitter ». Les réponses `cancel` / `escape`
+  et « dialogue écarté » restent vertes (elles attendent l'adresse de l'éditeur).
+
+### Sans RED : L8.5
+
+Aucun test écrit (cadre extrait, comportement constant). Filet : specs existantes citées par le plan.
+L'état `empty` du projet, que le cadre rendra, est éprouvé par L8.6.
+
+### Tranche L8.6 — un projet introuvable le dit et ramène à la liste
+
+**`http-projects.gateway.spec.ts`**, describe « Projet introuvable » (`it.each` × 2, issue lue par
+`then(value → { value }, erreur → { failedWith: status })`, `verify()` en fin de test comme le
+reste du fichier) : 404 → `{ value: null }` ; 500 → `{ failedWith: 500 }`. Type des `call` de
+« Adaptation des réponses » élargi à `Observable<Project | readonly Project[] | null>`.
+
+**`admin-project-editor.spec.ts`**, describe renommé « chargement, erreur et introuvable », 1 test :
+`/admin/projects/p-404` avec `getProjectById` → `of(null)` ; `crash` `null`,
+`admin-project-editor-missing` « Ce projet n'existe pas ou a été supprimé. », aucun `load-error`, aucun
+`admin-project-form`, `admin-project-editor-back` `A` vers `/admin/projects`.
+
+RED confirmé via `pnpm test` le 2026-10-08 21:36 : 2 failed / 3129 total pour cette tranche (3 tests
+neufs ; le 500 est vert d'emblée, non-régression assumée). Échecs = assertions (`{ failedWith: 404 }`
+au lieu de `{ value: null }` ; formulaire rendu, pas de message).
+
+Total du lot : 64 failed / 3129 total (5 fichiers en échec sur 189), exit 1. 64 = 3 + 23 + 16 + 20
++ 2 ; 60 `AssertionError` affichées (Vitest regroupe les erreurs identiques), aucune erreur de
+compilation, de harnais, `NG0` ni dépassement de délai. Les 3065 autres tests passent : la base
+(3105) moins les 43 tests existants rendus rouges (dont les 2 réécrits de L8.1), plus les 3 neufs
+verts d'emblée (24 tests neufs, 21 rouges).
+
 ## Journal des tranches
 
 - **Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée** : GREEN 3059 passed / 3060 total (seul rouge : « sans testId » de `field-error.spec.ts`, défaut du test, cf. ## Verify) · refactor : aucun
@@ -1111,6 +1722,12 @@ RED confirmé via `pnpm test` le 2026-10-08 21:10 : 5 failed / 3105 total (1 fic
 - **Tranche L4.3 — adoption, sans RED** : GREEN 3099 passed / 3099 total · refactor : imports `@shared/format/*` rangés à leur place alphabétique dans les 17 fichiers touchés
 - **Tranche L7.1 — un toast sans titre prend celui de sa sévérité** : GREEN 3105 passed / 3105 total · refactor : aucun
 - **Tranche L7.2 — retrait des littéraux, sans RED** : GREEN 3105 passed / 3105 total · refactor : les 12 appels à `add()` réduits à `{ severity, detail }` tiennent sur une ligne et sont repliés, comme les appels déjà écrits sur une ligne (prettier garde les objets multilignes tels quels)
+- **Tranche L8.1 — en mise à jour, un projet est enregistré même si sa couverture échoue** : GREEN, joué d'affilée avec L8.2 (son 3ᵉ test compare des toasts entiers) ; les 3 tests de la tranche passent, 19 rouges restants dans les deux specs d'éditeur, tous de L8.4 et L8.6 · refactor : aucun (la branche `create`/`update` de la couverture disparaît dans la tranche elle-même)
+- **Tranche L8.2 — les éditeurs laissent le titre du toast au store** : GREEN, mêmes 19 rouges restants (L8.4, L8.6) · refactor : aucun
+- **Tranche L8.3 — le brouillon d'édition s'écrit une fois** : GREEN, `editor-draft.spec.ts` 18 passed / 18, mêmes 19 rouges restants · refactor : `CoverUpload` et `SaveResult` ne sont plus exportés (aucun consommateur hors d'`editor-draft.ts`) ; `EditedProject`, `EditedPost`, `toEditedProject`, `toEditedPost`, les 8 signaux de brouillon et les `uploadCover`/`markSaved` locaux disparaissent des éditeurs
+- **Tranche L8.4 — les éditeurs partagent l'en-tête d'admin, fil d'Ariane compris** : GREEN, 1297 passed / 1298 dans `features/admin/application` (seul rouge : l'introuvable de L8.6) · refactor : aucun (parent passé en littéral dans le gabarit, sans constante à un seul site)
+- **Tranche L8.5 — sans RED** : GREEN inchangé (même rouge unique de L8.6) ; les requêtes `By.directive(AdminProjectForm)` / `By.directive(FileDropzone)` traversent `NgTemplateOutlet`, le risque du plan ne se matérialise pas · refactor : aucun
+- **Tranche L8.6 — un projet introuvable le dit et ramène à la liste** : GREEN 3129 passed / 3129 total · refactor : ordre alphabétique des imports `components/*` rétabli dans `admin-project-editor.ts`
 
 ## Verify
 
@@ -1219,6 +1836,33 @@ Runtime (`ng serve` local, navigateur intégré) :
 2. Même page, `ng.getComponent(app-root).toastStore.add({ severity, detail, life: 0 })` pour les 4 sévérités, puis un toast titré « Message envoyé » → titres rendus dans `[data-testid="toast-summary"]` : « Succès », « Information », « Attention », « Erreur », « Message envoyé ». **PASS**.
 3. Capture : les 5 toasts empilés sur l'accueil (prise au navigateur intégré pendant la session, non versionnée).
 4. Console : aucune erreur Angular (`NG0…`). Erreurs propres à l'environnement local : 4 × `502 (Bad Gateway)` (pas d'API derrière le proxy) et un `InvalidStateError: Transition was aborted` de la View Transitions API au chargement.
+
+### Lot L8
+
+2026-10-08, branche `refactor/editor-shell-l8` (non commitée).
+
+Gates (codes de sortie lus) :
+
+- `pnpm test; echo exit=$?` → `Test Files 189 passed (189)`, `Tests 3129 passed (3129)`, **exit=0**.
+- `pnpm lint; echo exit=$?` → `All files pass linting.`, **exit=0**.
+- `pnpm exec prettier --check <8 fichiers de code touchés>` → `All matched files use Prettier code style!`, **exit=0**.
+- `pnpm run build --configuration production; echo exit=$?` → `Prerendered 20 static routes.`, **exit=0** ; puis `git checkout -- public/sitemap.xml public/rss.xml`.
+- `grep -nP '\x{202F}|\x{00A0}'` sur les fichiers de code touchés et les specs du lot → aucune ligne.
+- Preuves du plan : `grep -c "app-skeleton\|app-confirm-dialog\|app-load-error"` sur les deux éditeurs → 0 et 0 ; `grep -n "notify\|summary"` → vide ; « Fil d'Ariane » hors spec → `admin-page-header.ts` seul ; `linkedSignal` dans `admin-post-editor.ts` → vide.
+- Tailles : `admin-project-editor.ts` 373 → 252 lignes, `admin-post-editor.ts` 296 → 183 ; nouveaux `editor-draft.ts` 129, `admin-editor-frame.ts` 95.
+
+Runtime : `ng serve` (port 4300) derrière un faux backend local sur le port 3000. GET relayés vers l'API de prod ; `/auth/me`, `unread-count` simulés ; `blog/posts/admin` servi par la liste publique ; `PATCH /projects/:id` répondu **localement** (projet de prod lu en GET, fusionné avec le corps) ; `POST /projects/:id/image` → 500 local ; toute autre écriture → 403 local. Aucune requête non-GET n'est partie vers la prod (journal du faux backend). Indice `auth:session=1` en `localStorage`. Navigateur intégré, 1024 px.
+
+1. `/admin/projects/<DashFlow>` : fil d'Ariane `Projets` → `/admin/projects`, courant « DashFlow », pas d'overline, un `h1` (`tabindex="-1"`, `text-balance`), un `header` dans `app-admin-page-header`, formulaire, aperçu et « Voir la fiche » rendus. **PASS**.
+2. Même page, titre « DashFlow (local) » et couverture PNG choisie (« 2 modifications non enregistrées »), puis « Enregistrer » : journal `PATCH` (19:45:06.836) puis `POST …/image` (06.897, 500), pas de nouvelle lecture du projet ; toasts « Attention — Projet mis à jour, mais l'envoi de l'image a échoué. Réessayez. » puis « Succès — Projet mis à jour » ; `h1` « DashFlow (local) » ; barre « Aucune modification ». **PASS** (F005).
+3. `/admin/projects/00000000-…` (404 de l'API) : « Ce projet n'existe pas ou a été supprimé. », lien `A` « Retour aux projets » → `/admin/projects`, ni `load-error` ni formulaire, aucun toast, `h1` « Modifier un projet ». **PASS**.
+4. `/admin/blog/<Chiffrement…>` : fil d'Ariane `Articles` → `/admin/blog`, courant = titre, un `h1` `tabindex="-1"`, formulaire, `#apercu`, un seul `app-confirm-dialog`. `/admin/blog/00000000-…` : « Cet article n'existe pas ou a été supprimé. », retour `/admin/blog`. **PASS**.
+5. Captures : en-tête du projet, toasts après l'enregistrement, état introuvable du projet, en-tête de l'article (prises au navigateur intégré pendant la session, non versionnées).
+6. Console : aucune `NG0…` ni erreur Angular issue de ces étapes. Entrées propres à l'environnement : `500` (envoi simulé), `404` (projet inconnu, attendu), `403` (`POST /analytics/track` refusé par le faux backend), `InvalidStateError: Transition was aborted` (View Transitions, préexistante), `NG02955` sur la couverture courante (LCP sans `priority`, composant non touché). L'onglet réutilisé gardait des entrées d'une session antérieure (`502`, `NG0950` sur des scripts injectés avant le démarrage du faux backend) : hors de cette vérification.
+
+Point d'attention (changement visible prévu au plan, plus marqué que prévu) : à 1024 px, la colonne d'actions de 22rem réserve 352 px pour le seul « Voir l'aperçu » de l'article, et le titre n'a plus que 245 px (`gridTemplateColumns: 245px 352px`) : un long titre d'article passe sur 6 lignes. Avant, la colonne était `auto`.
+
+**Soldé** (session principale, 2026-10-08) : colonne `auto` quand `parent` est fourni, 22rem pour les pages. Mesure de la revue à 1024 px : article au titre de 68 caractères `443.5px 153.5px`, titre sur 4 lignes ; projet DashFlow (deux liens) `285.9px 311.1px` ; `/admin/projects` inchangé `245px 352px`. Les deux variantes sont dans le CSS compilé. `pnpm test` 3129/3129 exit 0, lint exit 0.
 
 ## Review code
 
@@ -1335,3 +1979,48 @@ Contrôles demandés : `DEFAULT_SUMMARY: Record<ToastSeverity, string>` exhausti
 - non couvert par les gates : un appel avec `summary: ''` afficherait désormais un titre vide (`??` ne remplace pas la chaîne vide, et le `@if` n'est plus là). Aucun appelant ne le fait. Les toasts d'admin n'ont pas été observés au navigateur (authentification requise), seulement l'intercepteur et l'injection directe dans le store.
 
 Suite de la revue L7 (session principale, 2026-10-08) : avertissement « réduction des 6 assertions » soldé — `admin-cv.spec.ts` et l'aide `toasts()` de `admin-project-gallery.spec.ts` comparent désormais l'argument brut de `add()` (`toEqual` ignore une clé `undefined`, échoue sur un titre défini) ; projection de `toast-store.spec.ts` en `summary: string`. Mutant `summary: 'Succès'` sur l'erreur PDF d'`admin-cv.ts:182` → 1 failed / 3105, exit 1 (fichier restauré) ; suite réelle 3105/3105 exit 0, lint exit 0.
+
+Lot L8, 2026-10-08, diff de travail `git diff master` + fichiers non suivis (`editor-draft.ts`(+spec),
+`components/admin-editor-frame.ts`), y compris la retouche de la session principale sur
+`admin-page-header.ts` (colonne d'actions `auto` avec `parent`).
+
+**Verdict** : REJECTED
+**Gates CI locaux** : tests ✅ (`pnpm test; echo exit=$?` → 189 fichiers / 3129 tests passés, exit=0) / lint ✅ (`pnpm lint` → `All files pass linting.`, exit=0) / build ✅ (`pnpm run build --configuration production` → `Prerendered 20 static routes.`, exit=0, puis `git checkout -- public/sitemap.xml public/rss.xml`, `public/` propre)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/aak-checks.sh` absent) : auto-checks joués à la main sur les lignes ajoutées des 14 fichiers de code (export default, effect, helpers zone, archéologie selon le motif du profil, tests exclus, sécurité, snapshot, boucles générant des `it`, mutation en place, U+202F/U+00A0 littéraux) : 0 hit ; 2 commentaires ajoutés, tous deux WHY d'une ligne sans référence (`admin-page-header.ts:6`, `editor-draft.ts:88`) ; `prettier --check` exit=0
+**Warnings de gate** : aucun (sorties de test, lint et build relues en entier)
+**Rendu compilé** : ✅ (CSS compilé : `grid-template-columns:minmax(0,1fr) 22rem` et `minmax(0,1fr) auto`, toutes deux sous `@media(width>=64rem)` ; sélecteurs élément, pas d'encapsulation à contrôler)
+**Preuve de verify runtime** : ✅ (`## Verify` › Lot L8 cohérente avec le diff, et rejouée par le reviewer après la retouche de l'en-tête : `ng serve` derrière un faux backend local strictement en lecture seule, toute requête non-GET refusée en 403 localement, journal = GET uniquement, 1024 px)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ❌ (la retouche de la colonne d'actions n'est pas reportée dans la spec, cf. point 1)
+
+Contrôles demandés :
+- Plan tenu, 6 tranches : `EditorDraft` objet par instance, ni `@Injectable` ni `inject()`, aucun `effect()`, construit en initialiseur de champ après `loaded` (`admin-project-editor.ts:182-193`, `admin-post-editor.ts:120-134`) ; écritures externes limitées à `value` et `tags`, le reste en `.asReadonly()` (`editor-draft.ts:33-38`).
+- Ordre F005 écrit une fois (`editor-draft.ts:89-107`) : écriture, envoi capturé (`sendCover`, `:109-121`), `markSaved` dans tous les cas où l'écriture a réussi, `saving` remis à `false` dans le `finally`. Les deux éditeurs n'ont plus de branche `create`/`update` pour la couverture et relisent l'entité si la couverture est partie en mise à jour (`admin-project-editor.ts:238`, `admin-post-editor.ts:179`).
+- `notify()` et `summary` absents des deux éditeurs (grep vide).
+- `AdminPageHeader` : `parent` facultatif, fil d'Ariane à la place de l'overline, courant = `heading()`, `h1` `tabindex="-1"` + `text-balance` ; « Fil d'Ariane » hors spec seulement dans `admin-page-header.ts`. `overline` devenu `input('')`, les 7 pages inchangées.
+- `AdminEditorFrame` muet (entrées/sorties seulement), gabarits lus par `contentChild.required(…, { read: TemplateRef })` et rendus par `NgTemplateOutlet` dans `@default` seulement : au runtime, ni formulaire ni galerie à l'état introuvable. `grep -c "app-skeleton\|app-confirm-dialog\|app-load-error"` sur les éditeurs → 0 et 0 ; un seul `app-confirm-dialog` par page.
+- 404 → `null` uniquement dans `HttpProjectsGateway.getProjectById` (`http-projects.gateway.ts:72-81`), tout autre statut relancé (`it.each` 404/500 dans la spec du gateway). Autres consommateurs : aucun. `getProjectById` n'est appelé que par l'éditeur ; la page publique `project-detail.ts:98-100` lit `getAllProjects()` et filtre par slug ; le prerender (`app.routes.server.ts:54-56`) découvre les slugs par `fetchPrerenderSlugs('/projects?…')`, sans le gateway. Le stub de test (`of(makeProject())`) reste assignable. Le type `Project | null` force le traitement du `null` à la compilation (typecheck des specs vert).
+- Pas de code mort : `EditedProject`/`EditedPost`, `toEdited*`, les signaux de brouillon, les `uploadCover`/`markSaved` locaux et `notify()` sont supprimés. `CoverUpload`/`SaveResult` ne sont pas exportés. Les exports neufs ont des consommateurs hors de leur fichier (`EditedDraft`, `AdminEditorCopy` : les deux éditeurs ; `LoadState` : le cadre ; `AdminPageParent` : sa spec, export prescrit par le plan).
+- `data-testid` conservés : `${prefix}-editor-loading/back/missing`, `${prefix}-aside`, `admin-*-preview-link`, `admin-project-public-link`. Seul renommage, prévu par le plan : `admin-breadcrumb-projects/posts` → `admin-breadcrumb-parent`.
+- Aucune U+202F ni U+00A0 littérale dans le code : le cadre écrit `&#8239;` (`admin-editor-frame.ts:76`).
+- Retouche de l'en-tête : deux constantes de classes complètes (`PAGE_LAYOUT`, `EDITOR_LAYOUT`), donc détectables par le scanner Tailwind ; les deux variantes sont dans le CSS compilé. Rendu à 1024 px : article au titre de 68 caractères → colonnes `443.5px 153.5px`, titre sur 4 lignes (contre `245px 352px` et 6 lignes mesurés par l'implémenteur) ; projet DashFlow → `285.9px 311.1px` (deux liens) ; la page `/admin/projects` garde `245px 352px` (22rem). Projet inconnu : message, lien `A` vers `/admin/projects`, ni `load-error` ni formulaire, aucun toast. Console : aucune `NG0…` en erreur ; restent le 404 attendu, `InvalidStateError: Transition was aborted` (préexistante) et un avertissement de préchargement de police.
+
+**Tests notables** :
+- ✨ `editor-draft.spec.ts` « Given the cover upload rejected… » : épingle le contrat F005 au niveau unitaire, sans TestBed (entité marquée enregistrée malgré l'échec de l'envoi).
+- ✨ `admin-project-editor.spec.ts` « Given the cover upload fails after the update… » : compare les toasts entiers dans l'ordre (avertissement puis succès), `patches` 1 et `requested` 1. Un retour à l'ancien ordre ou un titre propre réintroduit fait échouer le test.
+- ⚠️ Rien ne tient le choix de colonne `auto`/22rem (`admin-page-header.ts:64`). Le profil interdit les sélecteurs de classe en test, donc il n'est vérifiable qu'au rendu. Non bloquant.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet sur la livraison (déploiement Dokploy continu d'après `CLAUDE.md`) · monitoring : Sentry
+- `saving` repasse à `false` avant la navigation qui suit une création (risque déjà nommé par le plan) : double envoi théoriquement possible pendant la navigation `replaceUrl`. Non observé.
+- Couplage implicite : la largeur de colonne dépend de la présence de `parent`. Une future page avec fil d'Ariane et plusieurs actions aurait une colonne `auto`. Acceptable tant que seuls les éditeurs passent `parent`.
+- non couvert par les gates : le scénario F005 (`PATCH` puis envoi en 500) n'a pas été rejoué par le reviewer, puisque son faux backend refuse toute écriture. Il est couvert par les specs et par l'étape 2 du `## Verify` › Lot L8.
+
+**Points à corriger** :
+1. `specs/017-intake-audit-decoupage.md:1242-1243` (`## Plan technique › Lot L8 › Changements visibles`) annonce encore « à partir de `lg`, colonne d'actions `auto` → `22rem` », avec la colonne vide de l'article à `2xl`. La section « `AdminPageHeader` après L8 » (l. 1037-1055) ne mentionne pas `layoutClass`, et le « Point d'attention » du `## Verify` › Lot L8 (l. 1859) décrit un rendu (`245px 352px`, 6 lignes) que le code ne produit plus. Correction attendue : reporter dans le plan la décision (colonne `auto` quand `parent` est fourni, 22rem pour les pages, via `layoutClass` et deux constantes de classes complètes) et la mesure d'après la retouche (`443.5px 153.5px`, 4 lignes à 1024 px), puis requalifier le point d'attention en « soldé ». Aucun changement de code requis.
+
+Correction du point 1 de la revue L8 (session principale, 2026-10-08) : « Changements visibles », section « `AdminPageHeader` après L8 » et point d'attention du `## Verify` › Lot L8 mis à jour (colonne `auto` dans les éditeurs, mesures à 1024 px). Seul point bloquant soldé, sans changement de code.

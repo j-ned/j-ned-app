@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { AdminPageHeader } from './admin-page-header';
+import { provideRouter } from '@angular/router';
+import { AdminPageHeader, type AdminPageParent } from './admin-page-header';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 
@@ -23,6 +24,15 @@ class HeaderHost {
   template: `<app-admin-page-header overline="0 non lu · 0 au total" heading="Messages" />`,
 })
 class BareHeaderHost {}
+
+@Component({
+  imports: [AdminPageHeader],
+  template: `<app-admin-page-header [heading]="heading()" [parent]="parent" />`,
+})
+class ParentHeaderHost {
+  readonly heading = signal('DashFlow');
+  readonly parent: AdminPageParent = { label: 'Projets', route: '/admin/projects' };
+}
 
 async function render<T>(component: new () => T): Promise<{
   fixture: ComponentFixture<T>;
@@ -114,6 +124,62 @@ describe('AdminPageHeader', () => {
       overline: '0 non lu · 0 au total',
       title: 'Messages',
       textBearers: ['admin-page-overline', 'admin-page-title'],
+    });
+  });
+
+  describe('with a parent page', () => {
+    beforeEach(() => {
+      TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    });
+
+    it('Given a parent When the header renders Then a breadcrumb leads to the parent and marks the heading as the current page, in place of the overline', async () => {
+      const { host } = await render(ParentHeaderHost);
+      const breadcrumb = byTestId(host, 'admin-breadcrumb');
+      const parent = byTestId(host, 'admin-breadcrumb-parent');
+      const current = byTestId(host, 'admin-breadcrumb-current');
+      const title = byTestId(host, 'admin-page-title');
+
+      expect({
+        breadcrumb: {
+          tag: breadcrumb?.tagName,
+          label: breadcrumb?.getAttribute('aria-label'),
+          inTitleHeader:
+            breadcrumb?.closest('header') !== null &&
+            breadcrumb?.closest('header') === title?.closest('header'),
+          beforeTitle: follows(breadcrumb, title),
+        },
+        parent: {
+          tag: parent?.tagName,
+          text: testIdText(host, 'admin-breadcrumb-parent'),
+          href: parent?.getAttribute('href'),
+        },
+        current: {
+          text: testIdText(host, 'admin-breadcrumb-current'),
+          ariaCurrent: current?.getAttribute('aria-current'),
+        },
+        overline: byTestId(host, 'admin-page-overline'),
+        headings: host.querySelectorAll('h1').length,
+        titleTabindex: title?.getAttribute('tabindex'),
+      }).toEqual({
+        breadcrumb: { tag: 'NAV', label: "Fil d'Ariane", inTitleHeader: true, beforeTitle: true },
+        parent: { tag: 'A', text: 'Projets', href: '/admin/projects' },
+        current: { text: 'DashFlow', ariaCurrent: 'page' },
+        overline: null,
+        headings: 1,
+        titleTabindex: '-1',
+      });
+    });
+
+    it('Given a breadcrumb When the heading changes Then the current page follows it', async () => {
+      const { fixture, host } = await render(ParentHeaderHost);
+
+      fixture.componentInstance.heading.set('DashFlow 2');
+      await settle(fixture);
+
+      expect({
+        current: testIdText(host, 'admin-breadcrumb-current'),
+        title: testIdText(host, 'admin-page-title'),
+      }).toEqual({ current: 'DashFlow 2', title: 'DashFlow 2' });
     });
   });
 });

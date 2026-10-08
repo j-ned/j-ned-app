@@ -1,6 +1,18 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { map, Observable, ReplaySubject, retry, share, startWith, Subject, switchMap } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import {
+  catchError,
+  map,
+  Observable,
+  of,
+  ReplaySubject,
+  retry,
+  share,
+  startWith,
+  Subject,
+  switchMap,
+  throwError,
+} from 'rxjs';
 import { ProjectsGateway } from '../../domain/gateways/projects.gateway';
 import type { Project, ProjectImage, ProjectInput } from '../../domain/models/project.model';
 import { isShowcaseProject } from '../../domain/is-showcase-project';
@@ -57,10 +69,15 @@ export class HttpProjectsGateway extends ProjectsGateway {
     this._refresh$.next();
   }
 
-  getProjectById(id: string): Observable<Project> {
-    return this.http
-      .get<ProjectDto>(`${this.apiUrl}/projects/${id}`)
-      .pipe(map((row) => toProject(row, this.apiUrl)));
+  getProjectById(id: string): Observable<Project | null> {
+    return this.http.get<ProjectDto>(`${this.apiUrl}/projects/${id}`).pipe(
+      map((row) => toProject(row, this.apiUrl)),
+      catchError((error: unknown) =>
+        error instanceof HttpErrorResponse && error.status === 404
+          ? of(null)
+          : throwError(() => error),
+      ),
+    );
   }
 
   // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même.

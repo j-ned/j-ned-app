@@ -1,6 +1,6 @@
 import type { Resource } from '@angular/core';
 
-type LoadState = 'loading' | 'error' | 'empty' | 'ready';
+export type LoadState = 'loading' | 'error' | 'empty' | 'ready';
 
 // `value()` lève en état d'erreur : on ne lit la donnée (via `isEmpty`) qu'après `hasValue()`.
 export function loadState(resource: Resource<unknown>, isEmpty: () => boolean): LoadState {

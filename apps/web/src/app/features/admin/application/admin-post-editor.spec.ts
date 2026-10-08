@@ -18,6 +18,7 @@ import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { ToastStore } from '@shared/ui/toast-store';
+import type { ToastMessage } from '@shared/ui/toast.types';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { AdminPostEditor } from './admin-post-editor';
 import { BODY_IMAGE_FILE, insertBodyImage } from './testing/content-image-panel-page';
@@ -171,14 +172,14 @@ async function save(editor: Editor): Promise<void> {
 }
 
 async function followBreadcrumb(editor: Editor): Promise<void> {
-  byTestId(editor.host, 'admin-breadcrumb-posts')?.click();
+  byTestId(editor.host, 'admin-breadcrumb-parent')?.click();
   await settleBounded(editor.fixture);
 }
 
 const COVER = new File(['x'], 'cover.png', { type: 'image/png' });
 
-const toasts = (toast: Spies['toast']): readonly { severity?: string; detail?: string }[] =>
-  toast.mock.calls.map(([message]) => ({ severity: message.severity, detail: message.detail }));
+const toasts = (toast: Spies['toast']): readonly ToastMessage[] =>
+  toast.mock.calls.map(([message]) => message);
 
 const saveBarState = (editor: Editor): string => normalized(byTestId(editor.host, 'savebar-state'));
 
@@ -205,7 +206,15 @@ describe('AdminPostEditor: ouverture', () => {
         title: testIdText(editor.host, 'admin-page-title'),
         field: fieldValue(editor.host, 'admin-post-title'),
         headings: editor.host.querySelectorAll('h1').length,
-      }).toEqual({ crash: null, requested: 1, title, field: title, headings: 1 });
+        titleTabindex: byTestId(editor.host, 'admin-page-title')?.getAttribute('tabindex'),
+      }).toEqual({
+        crash: null,
+        requested: 1,
+        title,
+        field: title,
+        headings: 1,
+        titleTabindex: '-1',
+      });
     },
   );
 
@@ -235,7 +244,7 @@ describe('AdminPostEditor: ouverture', () => {
     async ({ url, current }) => {
       const editor = await openEditor(url);
       const breadcrumb = byTestId(editor.host, 'admin-breadcrumb');
-      const back = byTestId(editor.host, 'admin-breadcrumb-posts');
+      const back = byTestId(editor.host, 'admin-breadcrumb-parent');
       const here = byTestId(editor.host, 'admin-breadcrumb-current');
 
       expect({

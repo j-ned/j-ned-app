@@ -18,6 +18,7 @@ import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { ToastStore } from '@shared/ui/toast-store';
+import type { ToastMessage } from '@shared/ui/toast.types';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { AdminProjectForm } from './components/admin-project-form';
 import { AdminProjectEditor } from './admin-project-editor';
@@ -158,8 +159,8 @@ async function save(editor: Editor): Promise<void> {
 
 const COVER = new File(['x'], 'cover.png', { type: 'image/png' });
 
-const toasts = (toast: Spies['toast']): readonly { severity?: string; detail?: string }[] =>
-  toast.mock.calls.map(([message]) => ({ severity: message.severity, detail: message.detail }));
+const toasts = (toast: Spies['toast']): readonly ToastMessage[] =>
+  toast.mock.calls.map(([message]) => message);
 
 describe('AdminProjectEditor: ouverture', () => {
   it('Given an existing project When /admin/projects/p-1 is opened Then the project is loaded and its form filled', async () => {
@@ -171,12 +172,14 @@ describe('AdminProjectEditor: ouverture', () => {
       title: testIdText(editor.host, 'admin-page-title'),
       field: fieldValue(editor.host, 'admin-project-title'),
       headings: editor.host.querySelectorAll('h1').length,
+      titleTabindex: byTestId(editor.host, 'admin-page-title')?.getAttribute('tabindex'),
     }).toEqual({
       crash: null,
       requested: [['p-1']],
       title: 'DashFlow',
       field: 'DashFlow',
       headings: 1,
+      titleTabindex: '-1',
     });
   });
 
@@ -208,7 +211,7 @@ describe('AdminProjectEditor: ouverture', () => {
     async ({ url, current }) => {
       const editor = await openEditor(url);
       const breadcrumb = byTestId(editor.host, 'admin-breadcrumb');
-      const back = byTestId(editor.host, 'admin-breadcrumb-projects');
+      const back = byTestId(editor.host, 'admin-breadcrumb-parent');
       const here = byTestId(editor.host, 'admin-breadcrumb-current');
 
       expect({
@@ -228,7 +231,7 @@ describe('AdminProjectEditor: ouverture', () => {
   it('Given the breadcrumb When « Projets » is followed Then the admin returns to the list', async () => {
     const editor = await openEditor('/admin/projects/p-1');
 
-    byTestId(editor.host, 'admin-breadcrumb-projects')?.click();
+    byTestId(editor.host, 'admin-breadcrumb-parent')?.click();
     await settleBounded(editor.fixture);
 
     expect(TestBed.inject(Router).url).toBe('/admin/projects');
@@ -254,7 +257,7 @@ describe('AdminProjectEditor: ouverture', () => {
   });
 });
 
-describe('AdminProjectEditor: chargement et erreur', () => {
+describe('AdminProjectEditor: chargement, erreur et introuvable', () => {
   it('Given the project is loading When the page renders Then a status placeholder stands instead of the form', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
       getProjectById: vi.fn((): Observable<Project> => NEVER),
@@ -301,6 +304,27 @@ describe('AdminProjectEditor: chargement et erreur', () => {
       calls: getProjectById.mock.calls.length,
       field: fieldValue(editor.host, 'admin-project-title'),
     }).toEqual({ crash: null, calls: 2, field: 'DashFlow' });
+  });
+
+  it('Given an id the API does not know When the page renders Then it says the project is not found and leads back, without form nor error', async () => {
+    const editor = await openEditor('/admin/projects/p-404', {
+      getProjectById: vi.fn((): Observable<Project | null> => of(null)),
+    });
+    const back = byTestId(editor.host, 'admin-project-editor-back');
+
+    expect({
+      crash: editor.crash,
+      missing: testIdText(editor.host, 'admin-project-editor-missing'),
+      error: byTestId(editor.host, 'load-error'),
+      form: byTestId(editor.host, 'admin-project-form'),
+      back: { tag: back?.tagName, href: back?.getAttribute('href') },
+    }).toEqual({
+      crash: null,
+      missing: "Ce projet n'existe pas ou a été supprimé.",
+      error: null,
+      form: null,
+      back: { tag: 'A', href: '/admin/projects' },
+    });
   });
 });
 
@@ -475,7 +499,7 @@ describe('AdminProjectEditor: mise à jour', () => {
     });
   });
 
-  it('Given a new cover for an existing project When it is saved Then the cover is uploaded before the patch', async () => {
+  it('Given a new cover for an existing project When it is saved Then the project is patched first, then the cover uploaded for its id', async () => {
     const editor = await openEditor('/admin/projects/p-1');
 
     await chooseCover(editor, COVER);
@@ -484,10 +508,10 @@ describe('AdminProjectEditor: mise à jour', () => {
     expect({
       uploads: editor.uploadImage.mock.calls,
       patches: editor.updateProject.mock.calls.length,
-      uploadFirst:
-        (editor.uploadImage.mock.invocationCallOrder[0] ?? Infinity) <
-        (editor.updateProject.mock.invocationCallOrder[0] ?? 0),
-    }).toEqual({ uploads: [[COVER, 'p-1']], patches: 1, uploadFirst: true });
+      patchFirst:
+        (editor.updateProject.mock.invocationCallOrder[0] ?? Infinity) <
+        (editor.uploadImage.mock.invocationCallOrder[0] ?? 0),
+    }).toEqual({ uploads: [[COVER, 'p-1']], patches: 1, patchFirst: true });
   });
 
   it('Given a new cover picked in the dropzone for an existing project When the save succeeds Then the dropzone no longer shows the sent file', async () => {
@@ -511,29 +535,65 @@ describe('AdminProjectEditor: mise à jour', () => {
     }).toEqual({ chosen: true, replace: null, trigger: true });
   });
 
-  it('Given a new cover sent for an existing project When the save ends Then the current cover and the preview show the image of the patch answer, without a new request', async () => {
-    const editor = await openEditor('/admin/projects/p-1', {
-      updateProject: vi.fn(
-        (): Observable<Project> =>
-          of(makeProject({ ...DASHFLOW, image: 'https://cdn.test/projects/p-1.avif' })),
-      ),
-    });
+  it('Given a new cover sent for an existing project When the save ends Then the project is requested again and the current cover and the preview show the uploaded image', async () => {
+    const getProjectById = vi
+      .fn<ProjectsGateway['getProjectById']>()
+      .mockReturnValueOnce(of(makeProject({ ...DASHFLOW })))
+      .mockReturnValue(
+        of(makeProject({ ...DASHFLOW, image: 'https://cdn.test/projects/p-1.avif' })),
+      );
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById });
 
     await chooseCover(editor, COVER);
     await save(editor);
 
     expect({
-      requested: editor.getProjectById.mock.calls.length,
+      requested: getProjectById.mock.calls.length,
       current: byTestId(editor.host, 'admin-project-cover-current')
         ?.querySelector('img')
         ?.getAttribute('src'),
       preview: byTestId(preview(editor), 'project-cover-image')?.getAttribute('src'),
       pending: byTestId(editor.host, 'admin-project-preview-pending-cover'),
+      state: saveBarState(editor),
     }).toEqual({
-      requested: 1,
+      requested: 2,
       current: 'https://cdn.test/projects/p-1.avif',
       preview: 'https://cdn.test/projects/p-1.avif',
       pending: null,
+      state: 'Aucune modification',
+    });
+  });
+
+  it('Given the cover upload fails after the update When the project is saved Then a warning then the update are told, the new title stays and nothing is left to save', async () => {
+    const editor = await openEditor('/admin/projects/p-1', {
+      updateProject: vi.fn(
+        (): Observable<Project> => of(makeProject({ ...DASHFLOW, title: 'Après' })),
+      ),
+      uploadImage: vi.fn((): Observable<string> => throwError(() => new Error('upload'))),
+    });
+
+    await typeIn(editor, 'admin-project-title', 'Après');
+    await chooseCover(editor, COVER);
+    await save(editor);
+
+    expect({
+      toasts: toasts(editor.toast),
+      patches: editor.updateProject.mock.calls.length,
+      title: testIdText(editor.host, 'admin-page-title'),
+      state: saveBarState(editor),
+      requested: editor.getProjectById.mock.calls.length,
+    }).toEqual({
+      toasts: [
+        {
+          severity: 'warn',
+          detail: "Projet mis à jour, mais l'envoi de l'image a échoué. Réessayez.",
+        },
+        { severity: 'success', detail: 'Projet mis à jour' },
+      ],
+      patches: 1,
+      title: 'Après',
+      state: 'Aucune modification',
+      requested: 1,
     });
   });
 
@@ -1001,7 +1061,7 @@ async function pickTag(editor: Editor, name: string): Promise<void> {
 }
 
 async function followBreadcrumb(editor: Editor): Promise<void> {
-  byTestId(editor.host, 'admin-breadcrumb-projects')?.click();
+  byTestId(editor.host, 'admin-breadcrumb-parent')?.click();
   await settleBounded(editor.fixture);
 }
 

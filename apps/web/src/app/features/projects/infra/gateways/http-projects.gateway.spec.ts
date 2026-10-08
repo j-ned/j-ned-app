@@ -176,34 +176,34 @@ describe('HttpProjectsGateway', () => {
       label: string;
       url: string;
       list: boolean;
-      call: (g: HttpProjectsGateway) => Observable<Project | readonly Project[]>;
+      call: (g: HttpProjectsGateway) => Observable<Project | readonly Project[] | null>;
     }>([
       {
         label: 'getAllProjects()',
         url: `${BASE}/projects?_sort=order&limit=100`,
         list: true,
-        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
+        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[] | null> =>
           g.getAllProjects(),
       },
       {
         label: 'getProjectById()',
         url: `${BASE}/projects/uuid-1`,
         list: false,
-        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
+        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[] | null> =>
           g.getProjectById('uuid-1'),
       },
       {
         label: 'createProject()',
         url: `${BASE}/projects`,
         list: false,
-        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
+        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[] | null> =>
           g.createProject(payload),
       },
       {
         label: 'updateProject()',
         url: `${BASE}/projects/uuid-1`,
         list: false,
-        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[]> =>
+        call: (g: HttpProjectsGateway): Observable<Project | readonly Project[] | null> =>
           g.updateProject('uuid-1', { title: 'Mon site' }),
       },
     ])(
@@ -234,6 +234,31 @@ describe('HttpProjectsGateway', () => {
       expect((await promise).map((p) => p.kind)).toEqual([null, 'demo']);
       httpController.verify();
     });
+  });
+
+  describe('Projet introuvable', () => {
+    it.each([
+      { status: 404, statusText: 'Not Found', outcome: { value: null } },
+      { status: 500, statusText: 'Internal Server Error', outcome: { failedWith: 500 } },
+    ])(
+      'Given GET /projects/:id answering $status When the project is read Then the outcome is $outcome',
+      async ({ status, statusText, outcome }) => {
+        const { gateway, httpController } = configure();
+        const read = firstValueFrom(gateway.getProjectById('uuid-404')).then(
+          (value) => ({ value }),
+          (error: unknown) => ({
+            failedWith: error instanceof HttpErrorResponse ? error.status : error,
+          }),
+        );
+
+        httpController
+          .expectOne(`${BASE}/projects/uuid-404`)
+          .flush('missing', { status, statusText });
+
+        expect(await read).toEqual(outcome);
+        httpController.verify();
+      },
+    );
   });
 
   describe('Échec de chargement', () => {
