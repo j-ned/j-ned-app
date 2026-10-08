@@ -16,8 +16,10 @@ import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { ToastStore } from '@shared/ui/toast-store';
+import { AdminFormSection } from './components/admin-form-section';
 import { AdminFormToc } from './components/admin-form-toc';
 import { AdminProjectForm } from './components/admin-project-form';
+import { AdminProjectGallery } from './components/admin-project-gallery';
 import { AdminProjectPreview } from './components/admin-project-preview';
 import { AdminSaveBar } from './components/admin-save-bar';
 import { countChangedFields } from './count-draft-changes';
@@ -70,6 +72,8 @@ const toEditedProject = (project: Project | null): EditedProject => ({
     AppSkeleton,
     ConfirmDialog,
     AdminProjectForm,
+    AdminFormSection,
+    AdminProjectGallery,
     AdminProjectPreview,
     AdminFormToc,
     AdminSaveBar,
@@ -164,16 +168,36 @@ const toEditedProject = (project: Project | null): EditedProject => ({
             <app-admin-project-form
               [(value)]="draft"
               [(tags)]="tags"
-              [projectId]="id() ?? null"
-              [gallery]="gallery()"
               [persistedCover]="saved()?.image ?? ''"
               (submitted)="save($event)"
               [coverResetToken]="coverResetToken()"
               (coverSelected)="pendingCover.set($event)"
               (coverCleared)="pendingCover.set(null)"
               (coverRejected)="rejectCover()"
-              (galleryChange)="updateGallery($event)"
             />
+            <fieldset
+              app-admin-form-section
+              id="project-gallery"
+              number="05"
+              heading="Galerie"
+              description="Captures de la fiche, dans cet ordre. Chaque capture a un texte alternatif."
+              class="mt-8.5"
+            >
+              @if (id(); as projectId) {
+                <app-admin-project-gallery
+                  [projectId]="projectId"
+                  [images]="gallery()"
+                  (galleryChange)="updateGallery($event)"
+                />
+              } @else {
+                <p
+                  data-testid="admin-project-gallery-pending"
+                  class="rounded-xs border border-dashed border-line-strong px-5.5 py-6.5 text-sm text-muted"
+                >
+                  Enregistrez le projet pour ajouter des captures.
+                </p>
+              }
+            </fieldset>
             <app-admin-save-bar
               class="mt-10"
               formId="project-form"

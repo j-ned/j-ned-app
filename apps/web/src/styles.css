@@ -352,6 +352,7 @@ input:-webkit-autofill:focus {
   @apply min-h-11 rounded-lg border border-field bg-surface px-3 py-2 text-base sm:text-sm text-foreground;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary;
   @apply transition-colors;
+  @apply aria-[invalid=true]:border-status-error aria-[invalid=true]:ring-status-error/30;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 

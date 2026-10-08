@@ -712,6 +712,125 @@ tests neufs). Échecs = assertions (`invalid: null`, `describedBy: null`).
 Total du lot : 22 failed / 3060 total (4 fichiers en échec sur 184), exit 1 ; les 3034 tests de la
 base restent verts.
 
+Lot **L6** joué en un seul RED (demande de la session principale), branche
+`refactor/project-form-split-l6`. Commande : `pnpm test; echo exit=$?`, après `ng cache clean` et
+purge de `node_modules/.vite`. Base avant RED : `184 passed (184)` fichiers, `3061 passed (3061)`
+tests, exit 0.
+
+**Échafaudage de signature (à remplacer en GREEN)** : `components/admin-pair-rows.ts`
+(`AdminPairRows<A, B>`, entrées `rows`/`config`, types `PairRow`, `PairColumn`, `PairRowsConfig`,
+gabarit vide), importé par son spec. `AdminProjectIdentityFields` et
+`AdminProjectPresentationFields` n'ont pas d'échafaudage : composants de découpe sans logique
+propre, ils sont testés à travers `admin-project-form.spec.ts`, qui n'importe que le parent.
+`PairRow` est écrit `Readonly<Record<A | B, string>>` (même type que le type mappé du plan, que
+`@typescript-eslint/consistent-indexed-object-style` refuse).
+
+### Tranche L6.1 — une soumission de projet invalide amène au premier champ fautif
+
+**`admin-project-form.spec.ts`**, describe « soumission invalide » (`it.each` × 4, événement
+`submit` du `<form>`, focus lu sur `document.activeElement`, rien d'émis)
+
+| Cas | Brouillon | Focus attendu |
+| --- | --- | --- |
+| rien de rempli | nouveau projet | `admin-project-title` |
+| titre seul | titre | `admin-project-category` |
+| titre, catégorie, description | sans nature | `admin-project-kind-production` |
+| identité complète + rangée « Pourquoi » ajoutée vide | nature `demo` | `tech-choice-techno` |
+
+RED confirmé via `pnpm test` le 2026-10-08 20:12 : 4 failed / 3083 total pour cette tranche (4
+tests neufs). Échecs = assertions (`focused: null` au lieu du `data-testid` attendu).
+
+### Tranche L6.2 — les rangées répétées deviennent une section et signalent leurs cellules vides
+
+**`components/admin-pair-rows.spec.ts`** (nouveau ; hôte avec `form()` sur
+`{ rows: PairRow<'a','b'>[] }`, `applyEach` requis « Requis », configuration `p` / `pair`, colonnes
+`A`/`x` et `B`/`y` ; 9 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| titre | 2 rangées | un seul titre de section : `H2 Paires` |
+| en-têtes de colonnes | 2 rangées | un seul bloc `aria-hidden="true"` non vide, enfants `N°`, `A`, `B` |
+| cellules | 2 rangées | libellés `A 1`/`A 2`, `B 1`/`B 2` ; `id` `p-1-x`, `p-2-x`, `p-1-y`, `p-2-y` ; valeurs ; `placeholder` ; rangs `pair-rank` « 01 », « 02 » |
+| noms de retrait | 2 rangées | « Retirer la paire 1 », « Retirer la paire 2 » |
+| ajout | `pair-add` pressé | libellé « Ajouter une paire » ; modèle = 2 rangées + `{ a: '', b: '' }` ; 3ᵉ cellule `p-3-x` |
+| retrait | `pair-remove` n° 0 pressé | modèle = seconde rangée seule ; cellule restante `p-1-x` « A 1 » valeur `a2` ; rang « 01 » ; retrait « Retirer la paire 1 » |
+| erreur de cellule (`it.each` `pair-x` / `pair-y`) | rangée vide, une cellule quittée | `aria-invalid="true"`, `aria-describedby` = `p-1-<slug>-error` ; erreur `data-testid` `pair-<slug>-error`, `role=alert`, « Requis » ; l'autre cellule `aria-invalid="false"` sans `aria-describedby` |
+| erreur de la bonne rangée | 2ᵉ rangée vidée, quittée | une seule `pair-x-error`, `id` `p-2-x-error` |
+
+**`admin-project-form.spec.ts`**, describe « cellules de rangée vides » (1 test) : projet édité,
+rangée « Pourquoi » ajoutée vide, soumis → rien d'émis ; `tech-choice-techno-error`
+(`id` `tech-1-techno-error`) et `tech-choice-why-error` (`id` `tech-1-why-error`), `role=alert`,
+« Ce champ est obligatoire ».
+
+Filet : les 5 tests « lignes répétées » de `admin-project-form.spec.ts`, inchangés.
+
+RED confirmé via `pnpm test` le 2026-10-08 20:12 : 10 failed / 3083 total pour cette tranche (10
+tests neufs). Échecs = assertions (`expected [] to deeply equal [...]` contre le gabarit vide ;
+`errors` vides côté formulaire).
+
+### Tranche L6.3 — les champs obligatoires de l'identité sont annoncés et reliés
+
+**`admin-project-form.spec.ts`**, describe « identité, erreur annoncée et reliée » (6 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| erreur reliée (`it.each` titre / catégorie) | nouveau projet, champ quitté vide | `aria-invalid="true"` ; `aria-describedby` = `project-title-error` / `project-category-error` ; l'élément porte `admin-project-title-error` / `admin-project-category-error`, `role=alert`, « Ce champ est obligatoire » |
+| au rendu (`it.each` × 2) | projet édité | `aria-invalid="false"`, aucun `aria-describedby` |
+| nature invalide | soumission sans nature | `fieldset[admin-project-kind]` : `role=radiogroup`, `aria-invalid="true"`, `aria-describedby` = `project-kind-error` ; `admin-project-kind-error` porte cet `id` |
+| nature valide | projet `demo` édité | `role=radiogroup`, `aria-invalid="false"`, aucun `aria-describedby` |
+
+Le scénario « vidé puis quitté » du plan devient « quitté vide » sur un nouveau projet : une
+catégorie ne se vide pas (option vide `disabled`). Filet : « nature du projet » et « sections
+numérotées », inchangés.
+
+RED confirmé via `pnpm test` le 2026-10-08 20:12 : 6 failed / 3083 total pour cette tranche (6 tests
+neufs). Échecs = assertions (`role: null`, `invalid: null`/`undefined`).
+
+### Tranche L6.4 — la description obligatoire est annoncée et reliée
+
+**`admin-project-form.spec.ts`**, describe « description, erreur annoncée et reliée » (3 tests) :
+vidée puis quittée → `aria-invalid="true"`, `aria-describedby` = `project-description-hint
+project-description-error`, erreur `admin-project-description-error`, `role=alert` ; au rendu →
+`aria-invalid="false"`, `project-description-hint` seul ; reprise (« Reprise ») → idem, plus
+d'élément `project-description-error`.
+
+Filet : « présentation dans les Réalisations » et « couverture », inchangés.
+
+RED confirmé via `pnpm test` le 2026-10-08 20:12 : 3 failed / 3083 total pour cette tranche (3 tests
+neufs). Échecs = assertions (`invalid: null` au lieu de `'true'`/`'false'`).
+
+### Tranche L6.5 — la galerie est rendue par l'éditeur
+
+**`admin-project-form.spec.ts`** (changement de contrat) : `renderForm` perd `projectId`,
+`gallery`, `galleries` et ses fournisseurs (`ProjectsGateway`, `ToastStore`, inutiles sans
+galerie) ; `SECTION_CONTROLS` passe à 4 sections ; « cinq fieldsets » → « quatre » ; « quatre
+sections dans `project-form` et la galerie dehors » → `inForm` = 4 × `true` ; nouveau `it.each`
+(nouveau projet / projet enregistré) : ni `admin-project-gallery` ni
+`admin-project-gallery-pending` dans l'hôte. Le describe « galerie » (4 tests) est retiré : trois
+sont repris dans l'éditeur ci-dessous, la suppression d'une capture l'est déjà par
+`admin-project-editor.spec.ts` (« galerie », 2 tests existants).
+
+**`admin-project-editor.spec.ts`**, describe « galerie » (2 tests neufs ; l'hôte du formulaire est
+lu par `By.directive(AdminProjectForm)`)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| projet enregistré | `/admin/projects/p-1` | 5ᵉ `form-section` « 05 · Galerie », **hors** de l'hôte `AdminProjectForm`, après lui, hors de tout `<form>`, avant `savebar-submit` ; 2 `admin-gallery-item`, aucun titre `h1`-`h6`, pas de `pending` |
+| nouveau projet | `/admin/projects/new` | section hors de l'hôte du formulaire ; pas d'`admin-project-gallery` ; « Enregistrez le projet pour ajouter des captures. » |
+
+Filet : « galerie » (suppression, titre conservé) et sommaire (`#project-gallery`), inchangés.
+
+RED confirmé via `pnpm test` le 2026-10-08 20:12 : 6 failed / 3083 total pour cette tranche (4
+tests du formulaire, dont 2 réécrits, et 2 de l'éditeur). Échecs = assertions (5 fieldsets au lieu
+de 4, `pending` présent, `renderedByForm: true`).
+
+Sans test : style invalide d'`app-select` (CSS, aucun projet de test visuel) et `RequiredMark`
+(présentationnel, couvert par les libellés du parent).
+
+Total du lot : 29 failed / 3083 total (3 fichiers en échec sur 185), exit 1 ; les 3054 autres
+tests passent, soit la base moins les 4 tests de galerie retirés, la 5ᵉ entrée de
+`SECTION_CONTROLS` et les 2 tests réécrits.
+
 ## Journal des tranches
 
 - **Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée** : GREEN 3059 passed / 3060 total (seul rouge : « sans testId » de `field-error.spec.ts`, défaut du test, cf. ## Verify) · refactor : aucun
@@ -719,6 +838,11 @@ base restent verts.
 - **Tranche L5.3 — une soumission d'article invalide amène au premier champ fautif** : GREEN 3059 passed / 3060 total · refactor : `focusFirstInvalidField` privé du contact supprimé au profit de `focusFirstInvalid`
 - **Tranche L5.4 — l'erreur du texte alternatif d'une capture est annoncée et reliée** : GREEN 3059 passed / 3060 total · refactor : aucun
 - **Tranche L5.5 — sans RED** : GREEN 3059 passed / 3060 total · refactor : prédicat « erreur affichée » lu une fois par `@let <champ>InError` dans le contact, l'auth et l'insertion d'image (il était écrit deux à trois fois par champ)
+- **Tranche L6.1 — une soumission de projet invalide amène au premier champ fautif** : GREEN (les 4 tests de la tranche passent ; 25 failed / 3083 total, tous des tranches suivantes) · refactor : aucun
+- **Tranche L6.2 — les rangées répétées deviennent une section et signalent leurs cellules vides** : GREEN 9 passed / 9 dans `admin-pair-rows.spec.ts` après correction du harnais par la session principale (le seul rouge était un défaut du test : attendu construit sur les objets partagés `TWO_ROWS`, que Signal Forms marque d'un symbole par formulaire rendu ; prouvé par une copie temporaire du spec, 9 passed / 9, copie supprimée) · refactor : les 4 méthodes de rangées et les classes `repeatHeadClass`/`repeatRowClass` du parent supprimées au profit d'`AdminPairRows` (2 consommateurs : « Pourquoi ces outils », « Décisions »)
+- **Tranche L6.3 — les champs obligatoires de l'identité sont annoncés et reliés** : GREEN · refactor : section extraite dans `AdminProjectIdentityFields` (`categories`, `kinds` déplacés), `REQUIRED` local du parent remplacé par `REQUIRED_MESSAGE`
+- **Tranche L6.4 — la description obligatoire est annoncée et reliée** : GREEN · refactor : section extraite dans `AdminProjectPresentationFields` (couverture comprise) ; les 3 erreurs de présentation passent aussi par `FieldError` (`span` → `p`, mêmes `id`/`data-testid`)
+- **Tranche L6.5 — la galerie est rendue par l'éditeur** : GREEN 3083 passed / 3083 total · refactor : `PairColumn` n'est plus exporté (aucun consommateur hors de son fichier)
 
 ## Verify
 
@@ -757,6 +881,32 @@ Formulaires d'admin (article, galerie, insertion d'image) : non joués au naviga
 requise) ; couverts par `admin-post-form.spec.ts`, `admin-project-gallery.spec.ts`,
 `admin-content-image-upload.spec.ts`, verts.
 
+### Lot L6
+
+2026-10-08, branche `refactor/project-form-split-l6` (non commitée).
+
+Gates (codes de sortie lus) :
+
+- `pnpm exec ng cache clean`, purge de `node_modules/.vite`, puis `pnpm test; echo exit=$?` → `Test Files 185 passed (185)`, `Tests 3083 passed (3083)`, **exit=0**.
+- `pnpm lint; echo exit=$?` → `All files pass linting.`, **exit=0**.
+- `pnpm exec prettier --check <10 fichiers touchés>` → `All matched files use Prettier code style!`, **exit=0**.
+- `pnpm run build --configuration production; echo exit=$?` → `Prerendered 20 static routes.`, **exit=0** ; règle `app-select[aria-invalid=true]` présente dans le CSS compilé ; puis `git checkout -- public/sitemap.xml public/rss.xml`.
+
+Runtime :
+
+1. Éditeur de projet (`/admin/projects/*`) : **non joué au navigateur**, l'authentification est requise et aucun identifiant de test n'est disponible. Couvert par `admin-project-form.spec.ts`, `admin-project-editor.spec.ts`, `admin-pair-rows.spec.ts`, verts. Aucune surface publique modifiée (seule la règle `app-select` gagne une variante `aria-[invalid=true]`, inerte sans cet attribut).
+2. Nom accessible du `fieldset role="radiogroup"` (risque du plan) : reproduction statique du gabarit de la nature (`fieldset role="radiogroup" aria-invalid="true" aria-describedby="project-kind-error"`, `legend` « Nature obligatoire »), servie en local et lue par l'arbre d'accessibilité de Chromium (`Accessibility.getFullAXTree`, headless shell 1208) : `radiogroup "Nature obligatoire"`, description « Ce champ est obligatoire », `invalid=true`. Témoins : `fieldset` sans rôle → `group "Plain legend"` ; `role="radiogroup"` → nom pris dans la `legend`. **PASS** (Chromium). Firefox et lecteur d'écran non vérifiés : repli du plan non nécessaire à ce stade.
+3. Rejoué par le `code-reviewer` (2026-10-08) : `ng serve` (port 4300) derrière un faux backend local en lecture seule sur le port 3000 (`/api/auth/me`, `unread-count` et `blog/posts/admin` simulés, autres GET relayés vers l'API de prod, toute écriture refusée en 403), indice de session `auth:session=1` posé en `localStorage`. Steps :
+   - `/admin/projects/<LabelSync Pro>` : 5 sections, les 4 premières dans `form#project-form` et l'hôte `app-admin-project-form`, « 05 · Galerie » hors de tout `<form>` et hors de l'hôte, avec 2 captures ; nature `role="radiogroup"` `aria-invalid="false"` ; `id` des rangées conservés (`tech-1-techno`, `decision-1-text`…).
+   - « Ajouter un choix technique » ×2 puis « Enregistrer » de la barre : rien n'est envoyé, le focus va sur `tech-3-techno`, 4 alertes `tech-{3,4}-{techno,why}-error` « Ce champ est obligatoire », `aria-invalid="true"` et `aria-describedby="tech-3-techno-error"`.
+   - Retrait de la 3ᵉ rangée : rangs renumérotés, noms « Supprimer le choix technique 1…3 ».
+   - Titre vidé puis quitté : `aria-invalid="true"`, `aria-describedby="project-title-error"`.
+   - `/admin/projects/new`, catégorie quittée vide : `aria-invalid="true"`, `project-category-error`, bordure rouge d'`app-select` visible ; galerie « Enregistrez le projet pour ajouter des captures. » hors du `<form>`.
+   - Captures d'écran : rangées en erreur après soumission ; catégorie invalide (panneau navigateur de la session).
+   - Console : aucune `NG0xxx` en erreur. Restent `InvalidStateError: Transition was aborted…` (View Transitions, préexistante, cf. Verify L5), un avertissement de préchargement de police et `NG02960` sur les 2 vignettes de la galerie (composant et grille inchangés, préexistant).
+   **PASS**.
+
+
 ## Review code
 
 Lot L5, 2026-10-08, diff de travail `git diff master` + fichiers non suivis (`field-error.ts`(+spec),
@@ -782,3 +932,35 @@ Lot L5, 2026-10-08, diff de travail `git diff master` + fichiers non suivis (`fi
 **Risque résiduel** (advisory) :
 - NG0950 signalée en `ng serve` API injoignable : non reproduite (5 essais, avec et sans HMR, 502 immédiat et différé de 4 s, défilement avant et après l'échec, CTA d'en-tête). Seule erreur Angular observée, identique sur `master` : `ResourceValueError` levée par `home.ts:124` (`computed(() => this.bundleResource.value())` lit une ressource en erreur). `FieldError` reçoit des liaisons statiques posées par la passe de mise à jour de `ContactForm` avant son propre rafraîchissement, le même contrat que `ContactInfoPanel` (`input.required`, lu dans le gabarit) sur `master`. Une NG0950 ne peut venir que d'une passe parente interrompue, donc en cascade de cette exception préexistante, hors diff.
 - Préexistant, risque produit : en prod, une API en échec côté client lève la même `ResourceValueError` dans `Home` (accueil). À traiter dans une PR séparée.
+
+Lot L6, 2026-10-08, diff de travail `git diff master` + fichiers non suivis (`admin-pair-rows.ts`(+spec),
+`admin-project-identity-fields.ts`, `admin-project-presentation-fields.ts`).
+
+**Verdict** : REJECTED
+**Gates CI locaux** : tests ✅ (`pnpm test; echo exit=$?` → 185 fichiers / 3083 tests passés, exit=0) / lint ✅ (`pnpm lint` → `All files pass linting.`, exit=0) / build ✅ (`pnpm run build --configuration production` → `Prerendered 20 static routes.`, exit=0, règle `app-select[aria-invalid=true]` présente dans le CSS compilé, puis `git checkout -- public/sitemap.xml public/rss.xml`)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/aak-checks.sh` absent) : auto-checks joués à la main sur les 9 fichiers de code du diff (export default, effect, helpers zone, archéologie, tests exclus, sécurité, snapshot, boucles générant des `it`) : 0 hit
+**Warnings de gate** : aucun (sorties de test, lint et build relues en entier)
+**Rendu compilé** : N/A (pas de composant à sélecteur attribut ajouté ; `app-select` contrôlé dans le CSS compilé)
+**Preuve de verify runtime** : ✅ (éditeur rejoué au navigateur derrière un faux backend local, cf. `## Verify` › Lot L6 › 3 : focus du premier champ invalide, alertes de cellule reliées, galerie hors du `<form>`, console sans `NG0xxx`)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ❌ (le journal des tranches a été écrit dans le `## Plan technique`, cf. point 1)
+
+Contrôles demandés : règle CSS conforme (une ligne `@apply aria-[invalid=true]:…` dans le bloc `@utility app-select` existant, copie conforme de `form-input`, aucune classe ad hoc) ; un seul `form()` (`admin-project-form.ts:129`), les enfants reçoivent `FieldTree<ProjectDraft>` ou `FieldTree<PairRow<A, B>[]>` et ne posent que `[formField]` ; `AdminPairRows<A, B>` typé par `PairRowsConfig<A, B>`, deux transtypages locaux prévus par le plan (`admin-pair-rows.ts:106, 119`) ; ajout et retrait par `value.update` sur une nouvelle référence (`:120, :124`) ; ARIA ADR-0016 (prédicat lu une fois par `@let`, `role="radiogroup"` sur le `fieldset` de la nature, indication puis erreur dans `aria-describedby`) ; galerie rendue par l'éditeur hors du `<form>` (`admin-project-editor.ts:178-200`) ; `id` et `data-testid` conservés (`tech-N-techno`, `decision-N-text`, `admin-project-*`) ; aucun code mort (méthodes de rangées, `REQUIRED`, `projectId`/`gallery`/`galleryChange` retirés, `PairColumn` non exporté). Correction du harnais `admin-pair-rows.spec.ts:55` : elle porte sur la construction de l'entrée (copie des rangées), l'attendu `[...TWO_ROWS, { a: '', b: '' }]` (`:157`) n'a pas bougé : légitime.
+
+**Tests notables** :
+- ⚠️ `admin-project-form.spec.ts` « holds no gallery, saved or pending » (`it.each` ×2) : vérifie l'absence d'un état historique dans le formulaire. Prescrit par le plan, mais c'est le test positif de l'éditeur (« renderedByForm: false ») qui porte le contrat. Candidat à la suppression, non bloquant.
+- ✨ `admin-project-editor.spec.ts` « galerie » : place la section par `compareDocumentPosition` (après le formulaire, avant la barre) et `closest('form')`. Épingle le contrat P2b sans dépendre de la structure interne.
+- ✨ `admin-pair-rows.spec.ts` « only the second row shows an error » : attrape une collision d'`id` d'erreur entre rangées.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet sur la livraison (déploiement Dokploy continu d'après `CLAUDE.md`) · monitoring : Sentry
+- non couvert par les gates : nom accessible du `radiogroup` sous Firefox et lecteur d'écran (Chromium seul vérifié) ; rendu mobile des rangées (classes reprises à l'identique, non rejoué à 375 px).
+
+**Points à corriger** :
+1. `specs/017-intake-audit-decoupage.md:543-546` : les entrées de journal L6.2 à L6.5 ont été écrites dans `## Plan technique › Tranches › L6` au lieu de `## Journal des tranches`. Elles ont remplacé la ligne de titre de la tranche L6.2 du plan (« **Tranche L6.2 — les rangées répétées deviennent une section et signalent leurs cellules », dont il reste la fin orpheline « vides** : `AdminPairRows` + … » à la l. 547) et s'intercalent avant le contenu de L6.2, alors que L6.3 à L6.5 réapparaissent plus bas avec leur vrai contenu. Le journal (l. 844-845), lui, s'arrête à L6.2 avec la version « 8 passed / 9 » d'avant la correction du harnais. Correction attendue : rétablir dans le plan la ligne de titre d'origine (`git show master:specs/017-intake-audit-decoupage.md`, l. 543) ; déplacer les quatre entrées dans `## Journal des tranches`, l'entrée L6.2 corrigée (9 passed / 9 après correction du harnais) remplaçant celle de la l. 845. Aucun changement de code requis.
+
+Correction du point 1 (session principale, 2026-10-08) : titre de la tranche L6.2 du plan rétabli à l'identique de `master`, entrées L6.2 à L6.5 déplacées dans `## Journal des tranches` (L6.2 en version 9 passed / 9). Seul point bloquant soldé (aucun changement de code).

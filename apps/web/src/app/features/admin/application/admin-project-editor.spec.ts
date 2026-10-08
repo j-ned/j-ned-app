@@ -19,6 +19,7 @@ import { settle, settleBounded } from '@shared/testing/settle';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { ToastStore } from '@shared/ui/toast-store';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
+import { AdminProjectForm } from './components/admin-project-form';
 import { AdminProjectEditor } from './admin-project-editor';
 import { unsavedChangesGuard } from './unsaved-changes-guard';
 
@@ -731,6 +732,70 @@ describe('AdminProjectEditor: couverture retirée ou refusée', () => {
 });
 
 describe('AdminProjectEditor: galerie', () => {
+  const formComponentHost = (editor: Editor): HTMLElement | null =>
+    (editor.fixture.debugElement.query(By.directive(AdminProjectForm))?.nativeElement as
+      | HTMLElement
+      | undefined) ?? null;
+
+  const gallerySection = (editor: Editor): HTMLElement | null =>
+    [...editor.host.querySelectorAll<HTMLElement>('[data-testid="form-section"]')].find(
+      (section) => testIdText(section, 'form-section-title') === '05 · Galerie',
+    ) ?? null;
+
+  it('Given a saved project When the page renders Then the editor renders a fifth section « 05 · Galerie » after the form, outside any form, before the save bar, listing its captures', async () => {
+    const editor = await openEditor('/admin/projects/p-1');
+    const section = gallerySection(editor);
+    const formHost = formComponentHost(editor);
+    const submit = byTestId(editor.host, 'savebar-submit');
+
+    expect({
+      crash: editor.crash,
+      fifth:
+        testIdText(
+          editor.host.querySelectorAll('[data-testid="form-section"]')[4] ?? editor.host,
+          'form-section-title',
+        ) === '05 · Galerie',
+      renderedByForm: formHost?.contains(section ?? null) ?? true,
+      afterForm:
+        formHost && section
+          ? formHost.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING
+          : 0,
+      inAForm: section?.closest('form') ?? null,
+      beforeSaveBar:
+        section && submit
+          ? section.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING
+          : 0,
+      items: section?.querySelectorAll('[data-testid="admin-gallery-item"]').length,
+      headings: section?.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
+      pending: byTestId(editor.host, 'admin-project-gallery-pending'),
+    }).toEqual({
+      crash: null,
+      fifth: true,
+      renderedByForm: false,
+      afterForm: Node.DOCUMENT_POSITION_FOLLOWING,
+      inAForm: null,
+      beforeSaveBar: Node.DOCUMENT_POSITION_FOLLOWING,
+      items: 2,
+      headings: 0,
+      pending: null,
+    });
+  });
+
+  it('Given a new project When the page renders Then the gallery section, rendered by the editor, asks to save first', async () => {
+    const editor = await openEditor('/admin/projects/new');
+    const section = gallerySection(editor);
+
+    expect({
+      renderedByForm: formComponentHost(editor)?.contains(section ?? null) ?? true,
+      gallery: byTestId(editor.host, 'admin-project-gallery'),
+      pending: section ? testIdText(section, 'admin-project-gallery-pending') : null,
+    }).toEqual({
+      renderedByForm: false,
+      gallery: null,
+      pending: 'Enregistrez le projet pour ajouter des captures.',
+    });
+  });
+
   async function deleteSecondCapture(editor: Editor): Promise<void> {
     const second = (): HTMLElement | null =>
       editor.host.querySelectorAll<HTMLElement>('[data-testid="admin-gallery-item"]')[1] ?? null;

@@ -1,27 +1,21 @@
 import { inputBinding, signal, twoWayBinding, type WritableSignal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import {
   PROJECT_FACT_MAX_LENGTH,
   PROJECT_PITCH_MAX_LENGTH,
   type Project,
-  type ProjectImage,
   type ProjectInput,
 } from '@features/projects/domain/models/project.model';
-import { makeProject, makeProjectImage } from '@features/projects/testing/project-builders';
-import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
+import { makeProject } from '@features/projects/testing/project-builders';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
-import { ToastStore } from '@shared/ui/toast-store';
 import { toProjectDraft, toProjectInput, type ProjectDraft } from '../project-draft';
 import { AdminProjectForm } from './admin-project-form';
 
 type FormOptions = {
   readonly project?: Project;
-  readonly projectId?: string | null;
-  readonly gallery?: readonly ProjectImage[];
   readonly persistedCover?: string;
 };
 
@@ -32,7 +26,6 @@ type RenderedForm = {
   readonly tags: WritableSignal<ReadonlySet<string>>;
   readonly submitted: ProjectInput[];
   readonly covers: File[];
-  readonly galleries: (readonly ProjectImage[])[];
 };
 
 function editableProject(overrides: Partial<Project> = {}): Project {
@@ -52,27 +45,17 @@ async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
   const project = options.project ?? null;
   const value = signal(toProjectDraft(project));
   const tags = signal<ReadonlySet<string>>(new Set(project?.tags ?? []));
-  TestBed.configureTestingModule({
-    providers: [
-      { provide: ProjectsGateway, useValue: stubProjectsGateway() },
-      { provide: ToastStore, useValue: { add: vi.fn() } },
-    ],
-  });
   const fixture = TestBed.createComponent(AdminProjectForm, {
     bindings: [
       twoWayBinding('value', value),
       twoWayBinding('tags', tags),
-      inputBinding('projectId', () => options.projectId ?? null),
-      inputBinding('gallery', () => options.gallery ?? []),
       inputBinding('persistedCover', () => options.persistedCover ?? ''),
     ],
   });
   const submitted: ProjectInput[] = [];
   const covers: File[] = [];
-  const galleries: (readonly ProjectImage[])[] = [];
   fixture.componentInstance.submitted.subscribe((payload) => submitted.push(payload));
   fixture.componentInstance.coverSelected.subscribe((file) => covers.push(file));
-  fixture.componentInstance.galleryChange.subscribe((gallery) => galleries.push(gallery));
   await settle(fixture);
   return {
     fixture,
@@ -81,7 +64,6 @@ async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
     tags,
     submitted,
     covers,
-    galleries,
   };
 }
 
@@ -185,10 +167,9 @@ describe('AdminProjectForm: sections numérotées', () => {
       title: '04 · Choix techniques',
       controls: ['admin-project-tags', 'tech-choice-add', 'decision-add'],
     },
-    { title: '05 · Galerie', controls: ['admin-project-gallery-pending'] },
   ] as const;
 
-  it('Given the form When it renders Then five numbered fieldsets follow one another', async () => {
+  it('Given the form When it renders Then four numbered fieldsets follow one another', async () => {
     const { host } = await renderForm();
 
     expect(
@@ -213,23 +194,31 @@ describe('AdminProjectForm: sections numérotées', () => {
     },
   );
 
-  it('Given the form When it renders Then the four editing sections live in the form « project-form » and the gallery outside it', async () => {
-    const { host } = await renderForm({ project: editableProject(), projectId: 'p1' });
+  it('Given the form When it renders Then the four sections live in the form « project-form »', async () => {
+    const { host } = await renderForm({ project: editableProject() });
     const form = byTestId(host, 'admin-project-form');
 
     expect({
       tag: form?.tagName,
       id: form?.id,
       inForm: all(host, 'form-section').map((section) => form?.contains(section) ?? false),
-      galleryInAForm:
-        byTestId(host, 'admin-project-gallery')?.parentElement?.closest('form') ?? null,
-    }).toEqual({
-      tag: 'FORM',
-      id: 'project-form',
-      inForm: [true, true, true, true, false],
-      galleryInAForm: null,
-    });
+    }).toEqual({ tag: 'FORM', id: 'project-form', inForm: [true, true, true, true] });
   });
+
+  it.each([
+    { given: 'a new project', project: undefined },
+    { given: 'a saved project', project: editableProject() },
+  ])(
+    'Given $given When the form renders Then it holds no gallery, saved or pending',
+    async ({ project }) => {
+      const { host } = await renderForm({ project });
+
+      expect({
+        gallery: byTestId(host, 'admin-project-gallery'),
+        pending: byTestId(host, 'admin-project-gallery-pending'),
+      }).toEqual({ gallery: null, pending: null });
+    },
+  );
 });
 
 describe('AdminProjectForm: brouillon possédé par la page', () => {
@@ -838,69 +827,217 @@ describe('AdminProjectForm: couverture', () => {
   );
 });
 
-describe('AdminProjectForm: galerie', () => {
-  const GALLERY = [
-    makeProjectImage({ id: 'img-a', alt: 'Vue globale' }),
-    makeProjectImage({ id: 'img-b', alt: 'Transactions' }),
-  ];
+const focusedTestId = (): string | null =>
+  document.activeElement?.getAttribute('data-testid') ?? null;
 
-  it('Given a saved project When the form renders Then the gallery lists its captures and no pending notice', async () => {
-    const { host } = await renderForm({
-      project: editableProject(),
-      projectId: 'p1',
-      gallery: GALLERY,
-    });
+const describedIds = (control: HTMLElement | null): readonly string[] =>
+  control?.getAttribute('aria-describedby')?.split(/\s+/).filter(Boolean) ?? [];
+
+const elementWithId = (host: HTMLElement, id: string): HTMLElement | null =>
+  host.querySelector<HTMLElement>(`[id="${id}"]`);
+
+const announcedError = (
+  host: HTMLElement,
+  id: string,
+): { testId: string | null; role: string | null; text: string } | null => {
+  const error = elementWithId(host, id);
+  return error
+    ? {
+        testId: error.getAttribute('data-testid'),
+        role: error.getAttribute('role'),
+        text: normalized(error),
+      }
+    : null;
+};
+
+describe('AdminProjectForm: soumission invalide', () => {
+  it.each([
+    {
+      given: 'nothing filled in',
+      filled: {},
+      kind: null,
+      row: false,
+      focused: 'admin-project-title',
+    },
+    {
+      given: 'only the title',
+      filled: { title: 'X' },
+      kind: null,
+      row: false,
+      focused: 'admin-project-category',
+    },
+    {
+      given: 'the title, the category and the description',
+      filled: { title: 'X', category: 'Application Web', description: 'D' },
+      kind: null,
+      row: false,
+      focused: 'admin-project-kind-production',
+    },
+    {
+      given: 'a complete identity and an empty technical choice',
+      filled: { title: 'X', category: 'Application Web', description: 'D' },
+      kind: 'demo',
+      row: true,
+      focused: 'tech-choice-techno',
+    },
+  ])(
+    'Given a new project with $given When the form is submitted Then the focus lands on $focused and nothing is emitted',
+    async ({ filled, kind, row, focused }) => {
+      const rendered = await renderForm();
+      rendered.value.update((draft) => ({ ...draft, ...filled }));
+      await settle(rendered.fixture);
+      if (kind) await chooseKind(rendered, kind);
+      if (row) await pressTestId(rendered.fixture, 'tech-choice-add');
+
+      await submitForm(rendered);
+
+      expect({ focused: focusedTestId(), submitted: rendered.submitted.length }).toEqual({
+        focused,
+        submitted: 0,
+      });
+    },
+  );
+});
+
+describe('AdminProjectForm: cellules de rangée vides', () => {
+  it('Given an empty technical choice added When the form is submitted Then both cells show their error and nothing is emitted', async () => {
+    const rendered = await renderForm({ project: editableProject({ kind: 'demo' }) });
+    await pressTestId(rendered.fixture, 'tech-choice-add');
+
+    await submitForm(rendered);
 
     expect({
-      items: all(host, 'admin-gallery-item').length,
-      pending: byTestId(host, 'admin-project-gallery-pending'),
-    }).toEqual({ items: 2, pending: null });
-  });
-
-  it('Given a saved project When the gallery section renders Then its legend is its only title', async () => {
-    const { host } = await renderForm({
-      project: editableProject(),
-      projectId: 'p1',
-      gallery: GALLERY,
-    });
-    const section = all(host, 'form-section')[4];
-
-    expect({
-      title: section ? testIdText(section, 'form-section-title') : null,
-      headings: section?.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
-    }).toEqual({ title: '05 · Galerie', headings: 0 });
-  });
-
-  it('Given a project not saved yet When the form renders Then the gallery section asks to save first', async () => {
-    const { host } = await renderForm();
-
-    expect({
-      gallery: byTestId(host, 'admin-project-gallery'),
-      pending: testIdText(host, 'admin-project-gallery-pending'),
+      submitted: rendered.submitted.length,
+      errors: ['tech-choice-techno-error', 'tech-choice-why-error'].map((testId) => {
+        const error = byTestId(rendered.host, testId);
+        return { id: error?.id, role: error?.getAttribute('role'), text: normalized(error) };
+      }),
     }).toEqual({
-      gallery: null,
-      pending: 'Enregistrez le projet pour ajouter des captures.',
+      submitted: 0,
+      errors: [
+        { id: 'tech-1-techno-error', role: 'alert', text: 'Ce champ est obligatoire' },
+        { id: 'tech-1-why-error', role: 'alert', text: 'Ce champ est obligatoire' },
+      ],
+    });
+  });
+});
+
+describe('AdminProjectForm: identité, erreur annoncée et reliée', () => {
+  const IDENTITY_FIELDS = [
+    { testId: 'admin-project-title', errorId: 'project-title-error' },
+    { testId: 'admin-project-category', errorId: 'project-category-error' },
+  ] as const;
+
+  it.each(IDENTITY_FIELDS)(
+    'Given a new project When $testId is left empty Then it is invalid and described by its error « Ce champ est obligatoire »',
+    async ({ testId, errorId }) => {
+      const rendered = await renderForm();
+
+      await leave(rendered, testId);
+      const control = byTestId(rendered.host, testId);
+
+      expect({
+        invalid: control?.getAttribute('aria-invalid'),
+        describedBy: describedIds(control),
+        error: announcedError(rendered.host, errorId),
+      }).toEqual({
+        invalid: 'true',
+        describedBy: [errorId],
+        error: { testId: `${testId}-error`, role: 'alert', text: 'Ce champ est obligatoire' },
+      });
+    },
+  );
+
+  it.each(IDENTITY_FIELDS)(
+    'Given an edited project When the form renders Then $testId is valid and described by nothing',
+    async ({ testId }) => {
+      const { host } = await renderForm({ project: editableProject() });
+      const control = byTestId(host, testId);
+
+      expect({
+        invalid: control?.getAttribute('aria-invalid'),
+        describedBy: describedIds(control),
+      }).toEqual({ invalid: 'false', describedBy: [] });
+    },
+  );
+
+  it('Given a new project without nature When it is submitted Then the nature group is an invalid radio group described by its error', async () => {
+    const rendered = await renderForm();
+    await fillRequiredFieldsOfNewProject(rendered);
+
+    await submitForm(rendered);
+    const group = byTestId(rendered.host, 'admin-project-kind');
+
+    expect({
+      role: group?.getAttribute('role'),
+      invalid: group?.getAttribute('aria-invalid'),
+      describedBy: describedIds(group),
+      errorId: byTestId(rendered.host, 'admin-project-kind-error')?.id,
+    }).toEqual({
+      role: 'radiogroup',
+      invalid: 'true',
+      describedBy: ['project-kind-error'],
+      errorId: 'project-kind-error',
     });
   });
 
-  it('Given the gallery When a capture is deleted Then the new gallery is handed to the page', async () => {
-    const rendered = await renderForm({
-      project: editableProject(),
-      projectId: 'p1',
-      gallery: GALLERY,
+  it('Given an edited project with a nature When the form renders Then the nature group is a valid radio group described by nothing', async () => {
+    const { host } = await renderForm({ project: editableProject({ kind: 'demo' }) });
+    const group = byTestId(host, 'admin-project-kind');
+
+    expect({
+      role: group?.getAttribute('role'),
+      invalid: group?.getAttribute('aria-invalid'),
+      describedBy: describedIds(group),
+    }).toEqual({ role: 'radiogroup', invalid: 'false', describedBy: [] });
+  });
+});
+
+describe('AdminProjectForm: description, erreur annoncée et reliée', () => {
+  it('Given an edited project When the description is emptied then left Then it is invalid and described by its hint then its error', async () => {
+    const rendered = await renderForm({ project: editableProject() });
+
+    await typeIn(rendered, 'admin-project-description', '');
+    await leave(rendered, 'admin-project-description');
+    const control = byTestId(rendered.host, 'admin-project-description');
+
+    expect({
+      invalid: control?.getAttribute('aria-invalid'),
+      describedBy: describedIds(control),
+      error: announcedError(rendered.host, 'project-description-error'),
+    }).toEqual({
+      invalid: 'true',
+      describedBy: ['project-description-hint', 'project-description-error'],
+      error: {
+        testId: 'admin-project-description-error',
+        role: 'alert',
+        text: 'Ce champ est obligatoire',
+      },
     });
-    const second = (): HTMLElement | null => all(rendered.host, 'admin-gallery-item')[1] ?? null;
-    const press = async (testId: string): Promise<void> => {
-      const element = second();
-      nativeButton(element ? byTestId(element, testId) : null)?.click();
-      await settleBounded(rendered.fixture);
-    };
+  });
 
-    await press('admin-gallery-item-remove');
-    await press('admin-gallery-item-confirm-remove');
+  it('Given an edited project When the form renders Then the description is valid and described by its hint only', async () => {
+    const { host } = await renderForm({ project: editableProject() });
+    const control = byTestId(host, 'admin-project-description');
 
-    expect(rendered.galleries.map((gallery) => gallery.map((image) => image.id))).toEqual([
-      ['img-a'],
-    ]);
+    expect({
+      invalid: control?.getAttribute('aria-invalid'),
+      describedBy: describedIds(control),
+    }).toEqual({ invalid: 'false', describedBy: ['project-description-hint'] });
+  });
+
+  it('Given the description showing its error When it is filled again Then it is valid and described by its hint only', async () => {
+    const rendered = await renderForm({ project: editableProject() });
+    await typeIn(rendered, 'admin-project-description', '');
+    await leave(rendered, 'admin-project-description');
+
+    await typeIn(rendered, 'admin-project-description', 'Reprise');
+    const control = byTestId(rendered.host, 'admin-project-description');
+
+    expect({
+      invalid: control?.getAttribute('aria-invalid'),
+      describedBy: describedIds(control),
+      error: elementWithId(rendered.host, 'project-description-error'),
+    }).toEqual({ invalid: 'false', describedBy: ['project-description-hint'], error: null });
   });
 });
