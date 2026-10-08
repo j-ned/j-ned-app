@@ -94,7 +94,10 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "@tailwindcss/typography>postcss-selector-parser": "^7.1.6"
+    }
   },
   "dependencies": {
     "@sentry/angular": "^10.73.0",
