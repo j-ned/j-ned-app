@@ -1,9 +1,9 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
+import { pluralize } from '@shared/format/pluralize';
 import { AppIcon } from '@shared/icons/app-icon';
 import { AppSkeleton } from '@shared/ui/skeleton';
-import { pluralize } from '../pluralize';
 import { AdminEmptyState } from './admin-empty-state';
 import { AdminSectionHead } from './admin-section-head';
 

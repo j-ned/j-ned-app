@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { counted } from '@shared/format/counted';
 import { AppIcon } from '@shared/icons/app-icon';
-import { pluralize } from '../pluralize';
 
 @Component({
   selector: 'app-admin-save-bar',
@@ -45,6 +45,6 @@ export class AdminSaveBar {
     const changes = this.changes();
     return changes === 0
       ? 'Aucune modification'
-      : `${changes} ${pluralize(changes, 'modification non enregistrée', 'modifications non enregistrées')}`;
+      : counted(changes, 'modification non enregistrée', 'modifications non enregistrées');
   });
 }

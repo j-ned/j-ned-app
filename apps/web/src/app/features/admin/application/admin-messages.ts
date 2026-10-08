@@ -2,6 +2,7 @@ import { Component, DestroyRef, computed, inject, signal, viewChild } from '@ang
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
+import { counted } from '@shared/format/counted';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
@@ -215,11 +216,10 @@ export class AdminMessages {
       .subscribe({
         next: ({ count }) => {
           this.contactGateway.invalidateUnreadCount();
-          const plural = count > 1 ? 's' : '';
           this.toast.add({
             severity: 'success',
             summary: 'Succès',
-            detail: `${count} message${plural} marqué${plural} comme lu${plural}`,
+            detail: counted(count, 'message marqué comme lu', 'messages marqués comme lus'),
           });
         },
         error: () => {

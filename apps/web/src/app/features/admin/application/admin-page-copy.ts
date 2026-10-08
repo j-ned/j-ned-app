@@ -6,10 +6,11 @@ import {
   dateRangeToParams,
   type DateRangeKey,
 } from '@features/analytics/domain/analytics-presenter';
-import { formatFileSize } from '@shared/ui/format-file-size';
+import { counted } from '@shared/format/counted';
+import { formatFileSize } from '@shared/format/format-file-size';
+import { groupedNumber } from '@shared/format/grouped-number';
 import { formatUploadDay } from './admin-cv-view';
 import { capitalize } from './capitalize';
-import { pluralize } from './pluralize';
 import { withFirstOfMonth } from './with-first-of-month';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -32,8 +33,6 @@ const FULL_DATE = new Intl.DateTimeFormat('fr-FR', {
   month: 'long',
   year: 'numeric',
 });
-const counted = (count: number, singular: string, plural: string): string =>
-  `${count} ${pluralize(count, singular, plural)}`;
 
 export function projectsOverline(projects: readonly Project[]): string {
   const featured = projects.filter((project) => project.featured).length;
@@ -51,7 +50,7 @@ export function postsOverline(posts: readonly BlogPost[]): string {
 
 export function messagesOverline(messages: readonly ContactMessage[]): string {
   const unread = messages.filter((message) => !message.read).length;
-  return `${counted(unread, 'non lu', 'non lus')} · ${messages.length} au total`;
+  return `${counted(unread, 'non lu', 'non lus')} · ${groupedNumber(messages.length)} au total`;
 }
 
 export function cvOverline(cv: CvInfo | null): string {

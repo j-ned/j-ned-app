@@ -1,10 +1,10 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { ChartData, ChartOptions } from 'chart.js';
+import { counted } from '@shared/format/counted';
+import { groupedNumber } from '@shared/format/grouped-number';
 import { AppIcon } from '@shared/icons/app-icon';
 import { AppChart } from '@shared/ui/chart';
-import { groupedNumber } from '../overview-view';
-import { pluralize } from '../pluralize';
 import { AdminReadout, type ReadoutItem } from './admin-readout';
 import { AdminSectionHead } from './admin-section-head';
 
@@ -68,6 +68,6 @@ export class OverviewAudience {
   });
   protected readonly sessionsLabel = computed(() => {
     const sessions = this.sessions() ?? 0;
-    return `${groupedNumber(sessions)} ${pluralize(sessions, 'session', 'sessions')}`;
+    return counted(sessions, 'session', 'sessions');
   });
 }

@@ -9,11 +9,12 @@ import {
 } from '@features/analytics/domain/analytics-presenter';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { EntityStat, MetricEntry } from '@features/analytics/domain/models/analytics.types';
+import { counted } from '@shared/format/counted';
+import { groupedNumber } from '@shared/format/grouped-number';
 import { audienceOverline } from './admin-page-copy';
 import { audienceLead, toShareRows, toTallyRows, type TallyRow } from './audience-view';
 import type { ReadoutItem } from './components/admin-readout';
-import { groupedNumber, toAudienceReadout } from './overview-view';
-import { pluralize } from './pluralize';
+import { toAudienceReadout } from './overview-view';
 
 type TallyGroup = { readonly heading: string; readonly rows: readonly TallyRow[] };
 
@@ -102,7 +103,7 @@ export class AudienceReport {
         label: 'Visiteurs',
         value: groupedNumber(visitors),
         unit: '',
-        detail: `${groupedNumber(sessions)} ${pluralize(sessions, 'session', 'sessions')}`,
+        detail: counted(sessions, 'session', 'sessions'),
       },
       ...toAudienceReadout(overview),
     ];

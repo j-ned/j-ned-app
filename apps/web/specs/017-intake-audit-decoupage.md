@@ -253,9 +253,10 @@ formulaire de projet découpé), puis **L7 → L8** pour la coque.
 
 ## Plan technique
 
-Périmètre : chemin critique **L3 → L5 → L6** de l'audit (le formulaire de projet découpé). L1, L2,
-L4, L7 à L11 sont hors de ce plan (cf. « Suite »). Décisions transverses : cf. **ADR-0016** (erreur
-de champ partagée, convention ARIA des champs, focus sur soumission invalide).
+Périmètre : chemin critique **L3 → L5 → L6** de l'audit (le formulaire de projet découpé), puis
+**L4 → L7** (cf. « Lots L4 et L7 », en fin de plan). L1, L2, L8 à L11 sont hors de ce plan (cf.
+« Suite »). Décisions transverses : cf. **ADR-0016** (erreur de champ partagée, convention ARIA des
+champs, focus sur soumission invalide).
 
 ### Vérification des références de l'audit (master `acda8c0`)
 
@@ -622,9 +623,192 @@ sortie.
 
 ### Suite (hors de ce plan)
 
-L1 (nettoyage), L2 (outillage et CI), L4 (formats de copie), L7 (toasts), L8 (coque d'éditeur,
-après L6 et la décision F005), L9 (étiquettes en `FormValueControl`), L10 (boutons), L11
-(couches).
+L1 (nettoyage), L2 (outillage et CI), L8 (coque d'éditeur, après L6, L7 et la décision F005),
+L9 (étiquettes en `FormValueControl`), L10 (boutons), L11 (couches).
+
+### Lots L4 et L7 (ajout, master `61c02d6`)
+
+#### Vérification des références de l'audit (P9, P5d)
+
+- `pluralize` : **10 importeurs, tous dans l'admin** (`audience-view`, `admin-audience`,
+  `admin-page-copy`, `audience-report`, `overview-copy`, `overview-view`, `admin-messages-view`,
+  `components/overview-audience`, `components/admin-save-bar`, `components/overview-contacts`).
+  L'audit annonce « dont 1 hors admin » : **inexact**, le blog l'écrit à la main
+  (`blog-list-copy.ts:17, 29-30`, exacts) ; c'est L4 qui crée le premier consommateur hors admin.
+- `groupedNumber` (`overview-view.ts:60`, `GROUPED` l. 37, `NNBSP` l. 35) : 8 importeurs,
+  **exact** (`audience-view`, `admin-audience`, `admin-cv-view`, `audience-report`,
+  `overview-copy`, `components/overview-audience`, `components/audience-chart`,
+  `components/audience-share-table`), plus son propre fichier.
+- `formatFileSize` : **3 importeurs** et non 2 (`shared/ui/file-dropzone.ts:18`,
+  `admin-cv-view.ts:3`, `admin-page-copy.ts:9`).
+- `counted` : `admin-page-copy.ts:35-36` (sans groupement) et `overview-view.ts:56-57` (avec),
+  **exacts**. `messagesOverline` écrit en plus `${messages.length} au total` sans groupement
+  (l. 54), non relevé par l'audit.
+- Toasts : **18 littéraux** `summary` et non 17 — `admin-messages.ts` 164, 171, 194, 200, 221,
+  229 ; `admin-cv.ts` 184, 204, 214, 231, 237 ; `admin-blog.ts` 198, 204 ; `admin-projects.ts`
+  155, 162 ; `admin-project-gallery.ts:173` ; `login.ts:167` (et non 178) ;
+  `core/interceptors/error-toast.ts:26`. Tous valent exactement « Succès » (success) ou
+  « Erreur » (error). Le contact garde ses 3 titres (`contact-form.ts:310, 313, 318`).
+- `ToastMessage.summary` est **déjà facultatif** (`toast.types.ts:5`) ; ce qui manque est la
+  valeur par défaut. `ToastEntry.summary` est facultatif aussi et le gabarit le garde par
+  `@if (msg.summary)` (`toast.ts:71`).
+- Il n'existe **pas** de `toast-store.spec.ts` : la règle se teste là, pas dans `toast.spec.ts`
+  (qui rend des entrées déjà construites).
+
+#### Architecture
+
+Aucune couche nouvelle, aucun état partagé. L4 : fonctions pures dans un nouveau dossier
+`shared/format/` (précédent : `shared/forms/` créé par L5 pour une fonction pure), un concept par
+fichier. L7 : la règle « titre par sévérité » vit dans `ToastStore.add()`, seul point d'entrée des
+toasts ; les consommateurs ne passent plus que `severity` et `detail`.
+
+- **Emplacement de `groupedNumber` et `counted`** : leurs consommateurs sont tous dans l'admin
+  aujourd'hui. Ils vont quand même dans `shared/format/`, à côté de `pluralize` (qui, lui, sert
+  admin **et** blog) : `counted` compose les deux, et le séparer de ses briques couperait la
+  famille en deux dossiers. Choix assumé, pas d'abstraction nouvelle (fonctions pures).
+- **`capitalize.ts` et `with-first-of-month.ts`** (admin) ne bougent pas : un seul domaine
+  consommateur, hors du périmètre de P9.
+- **Blog** : adopte `pluralize` **seul**. Il garde son espace insécable entre le nombre et le nom
+  (`${count}${NBSP}…`) et ne groupe pas : sortie inchangée (`blog-list-copy.spec.ts`). Divergence
+  explicite avec `counted` (espace simple, groupement), cf. question ouverte.
+- **Compile-time** : les titres par défaut sont un `Record<ToastSeverity, string>` exhaustif ;
+  ajouter une sévérité à l'union sans titre casse la compilation, aucun `if` runtime.
+
+#### Fichiers — lot L4 (PR « formats de copie »)
+
+| Fichier | Rôle |
+| --- | --- |
+| `shared/format/pluralize.ts` (+ `.spec.ts`) | Déplacé (`git mv`) depuis `features/admin/application/`, contenu et spec inchangés. |
+| `shared/format/grouped-number.ts` (+ `.spec.ts`) | `groupedNumber` extrait d'`overview-view.ts` avec `GROUPED`, `NNBSP` et le commentaire ICU. Spec nouvelle. |
+| `shared/format/format-file-size.ts` (+ `.spec.ts`) | Déplacé (`git mv`) depuis `shared/ui/`, inchangé. |
+| `shared/format/counted.ts` (+ `.spec.ts`) | `counted(count, singular, plural)` = `` `${groupedNumber(count)} ${pluralize(count, singular, plural)}` `` : la seule définition. |
+| `features/admin/application/overview-view.ts` | Perd la définition de `groupedNumber` et ses constantes `GROUPED`, `NNBSP` (seul usage, l. 61) ; l'importe depuis `@shared/format/grouped-number` (encore utilisé l. 91, 99, 124, 132). Son `counted` local est supprimé en L4.2. |
+| `features/admin/application/admin-page-copy.ts` (+ spec) | `counted` local supprimé, import partagé ; `${messages.length} au total` → `groupedNumber(...)`. **Changement visible** : « 1234 » → « 1 234 » (espace fine insécable). |
+| `features/admin/application/admin-messages.ts` | `markAllRead` : pluriel manuscrit (218-222) → `counted(count, 'message marqué comme lu', 'messages marqués comme lus')`. |
+| `features/blog/application/blog-list-copy.ts` | `articleCountLabel`, `visibleArticleCountLabel` → `pluralize` (sortie inchangée). |
+| `features/admin/application/{audience-view,audience-report,overview-copy}.ts`, `components/overview-audience.ts` | Import `@shared/format/*` ; le motif `${groupedNumber(n)} ${pluralize(n, …)}` devient `counted(n, …)` (audience-view 51 et 58, audience-report 105, overview-copy 35, 38 et 48, overview-audience 71) : sortie identique. |
+| `features/admin/application/{admin-messages-view.ts, components/admin-save-bar.ts}` | `${n} ${pluralize(n, …)}` → `counted(n, …)` (identique sous 1 000, groupé au-delà). |
+| `features/admin/application/{admin-audience,admin-cv-view}.ts`, `components/{audience-chart,audience-share-table,overview-contacts}.ts`, `shared/ui/file-dropzone.ts` | Chemins d'import seulement. |
+| `features/admin/application/pluralize.ts` (+ spec), `shared/ui/format-file-size.ts` (+ spec) | Supprimés par le déplacement. |
+
+#### Fichiers — lot L7 (PR « toasts »)
+
+| Fichier | Rôle |
+| --- | --- |
+| `shared/ui/toast-store.ts` | `DEFAULT_SUMMARY: Record<ToastSeverity, string>` = success « Succès », info « Information », warn « Attention », error « Erreur » ; `add()` pose `summary: message.summary ?? DEFAULT_SUMMARY[severity]`. |
+| `shared/ui/toast-store.spec.ts` | Nouveau. |
+| `shared/ui/toast.types.ts` | `ToastEntry.summary` devient obligatoire (`string`). `ToastMessage` inchangé (déjà facultatif). |
+| `shared/ui/toast.ts` | `@if (msg.summary)` retiré (le titre est toujours présent). |
+| `features/admin/application/{admin-messages,admin-cv,admin-blog,admin-projects}.ts`, `components/admin-project-gallery.ts`, `features/auth/application/login.ts`, `core/interceptors/error-toast.ts` | Les 18 `summary` littéraux retirés. |
+| `features/admin/application/admin-cv.spec.ts`, `components/admin-project-gallery.spec.ts` | 6 assertions (`admin-cv.spec.ts:351, 381` ; gallery 419, 517, 697, 810) qui figent `summary: 'Erreur'/'Succès'` dans l'appel à `add()`. |
+| **Non touchés** | `contact-form.ts` (titres propres) ; `notify()` d'`admin-project-editor.ts:369` et d'`admin-post-editor.ts:292` (L8, attend l'arbitrage F005). |
+
+#### Réactivité / état
+
+L4 : aucun signal ajouté, fonctions pures. L7 : `ToastStore.messages` inchangé (le profil ne pose
+pas de clé d'immutabilité ; on ne change pas son exposition dans ce lot, hors périmètre P5d).
+
+#### Tranches
+
+Leçon L5/L6 pour `qa` : **un import vers un module absent fait échouer la génération du bundle
+(`TS2307`) et aucun test ne tourne**. Tout fichier nouveau qu'un spec RED importe reçoit au RED
+un **squelette de signature** (export typé, corps neutre, aucun comportement), à remplacer en
+GREEN ; les échecs restent alors des assertions localisées. Seconde leçon (L6.2) : un attendu ne
+se construit pas sur des objets partagés que Signal Forms marque — sans objet ici (aucun
+formulaire), à garder en tête.
+
+**L4 — Formats de copie**
+
+- **Tranche L4.1 — déplacement, sans RED** : `pluralize` et `format-file-size` déplacés par
+  `git mv` (specs comprises), `groupedNumber` extrait dans `shared/format/grouped-number.ts`, tous
+  les importeurs repointés (tableau ci-dessus). Structure porteuse des tranches suivantes ; aucune
+  sortie ne change. Filet : `pluralize.spec.ts`, `format-file-size.spec.ts` (déplacés),
+  `overview-view.spec.ts`, `audience-view.spec.ts`, `overview-audience.spec.ts`,
+  `audience-share-table.spec.ts`, `audience-chart.spec.ts`, `admin-cv-view.spec.ts` (ils
+  assertent déjà `1 234` / `1 500`). Preuve : `pnpm test; echo exit=$?` = même total
+  qu'avant, exit 0 ; `grep -rn "application/pluralize\|ui/format-file-size\|groupedNumber.*overview-view" src` vide.
+- **Tranche L4.2 — les compteurs des en-têtes d'admin groupent les milliers** : `counted`
+  partagé, adopté par `admin-page-copy.ts` et `overview-view.ts` (locaux supprimés) ;
+  `au total` groupé.
+  - **Squelette RED** : `shared/format/counted.ts` exportant
+    `counted(count: number, singular: string, plural: string): string` au corps `return ''`.
+  - `counted.spec.ts` : `it.each` [0 → « 0 projet »], [1 → « 1 projet »], [2 → « 2 projets »],
+    [1234 → « 1 234 projets »], [1500000 → « 1 500 000 projets »].
+  - `grouped-number.spec.ts` (primitive déplacée sans spec directe, vert d'emblée — assumé, même
+    statut que `required-mark.spec.ts` en L5.2) : `it.each` 0, 999, 1234, 12345 ; aucun espace
+    autre que U+202F dans la sortie.
+  - `admin-page-copy.spec.ts` : cas ajoutés aux `it.each` existants — `projectsOverline` 1234
+    réalisations dont 1000 en avant → « 1 234 réalisations · 1 000 mises en avant » ;
+    `postsOverline` 1000 publiés et 234 brouillons → « 1\u202f234 articles · 1\u202f000 publiés · 234 brouillons » ; `messagesOverline` 1200 non lus, 34 lus →
+    « 1 200 non lus · 1 234 au total ». RED attendus : ces trois cas (sortie actuelle
+    « 1234 ») et les 5 cas de `counted.spec.ts` (le squelette rend `''`) ; tout le reste vert.
+- **Tranche L4.3 — adoption, sans RED** : `counted` dans `audience-view`, `audience-report`,
+  `overview-copy`, `overview-audience` (sortie identique), `admin-save-bar`,
+  `admin-messages-view` (identique sous 1 000) ; `admin-messages.ts` `markAllRead` ;
+  `blog-list-copy.ts` → `pluralize`. Filet : `audience-view.spec.ts`, `audience-report.spec.ts`,
+  `overview-copy.spec.ts`, `overview-audience.spec.ts`, `admin-save-bar.spec.ts`,
+  `admin-messages-view.spec.ts`, `admin-messages.spec.ts` (`severities` seulement : le texte du
+  succès n'y est pas asserté, il reste « 2 messages marqués comme lus »), `blog-list-copy.spec.ts`.
+  Preuve de fin de lot : `grep -rnE "> 1 \? 's'" src` vide ; `grep -rn "const counted" src` vide.
+
+Ordre : L4.1 → L4.2 → L4.3.
+
+**L7 — Toasts** (branche neuve depuis `master` **après** le merge de L4)
+
+- **Tranche L7.1 — un toast sans titre prend celui de sa sévérité** : `DEFAULT_SUMMARY` dans
+  `ToastStore.add()`, `ToastEntry.summary` obligatoire, `@if` du gabarit retiré.
+  - Pas de squelette : `toast-store.ts` existe.
+  - `toast-store.spec.ts` (`TestBed.inject(ToastStore)`, `life: 0` pour n'armer aucun minuteur) :
+    `it.each` success/info/warn/error — Given `add({ severity, detail })` Then
+    `messages()[0].summary` = « Succès » / « Information » / « Attention » / « Erreur » ;
+    Given `add({ detail })` Then sévérité `info` et titre « Information » ; Given
+    `add({ severity: 'success', summary: 'Message envoyé' })` Then le titre fourni est gardé.
+    RED attendus : les 5 premiers (titre `undefined` aujourd'hui) ; le dernier est vert d'emblée
+    (non-régression du contact, assumé).
+  - `admin-cv.spec.ts` (351, 381) et `admin-project-gallery.spec.ts` (419, 517, 697, 810) :
+    projeter les appels sur `{ severity, detail }` (même forme que l'aide `toasts()` des specs
+    d'éditeur, `admin-project-editor.spec.ts:161`) au lieu de figer `summary`. Verts avant et
+    après : le titre est désormais prouvé par `toast-store.spec.ts`, plus par chaque appelant.
+- **Tranche L7.2 — retrait des littéraux, sans RED** : les 18 `summary` retirés (fichiers
+  ci-dessus). Les titres affichés sont identiques (défauts = littéraux retirés). Filet :
+  `admin-messages.spec.ts`, `admin-blog.spec.ts`, `admin-projects.spec.ts`, `admin-cv.spec.ts`,
+  `admin-project-gallery.spec.ts`, `login.spec.ts`, `error-toast.spec.ts`, `contact-form.spec.ts`
+  (titre propre conservé). Preuve de fin de lot :
+  `grep -rn "summary: '" src | grep -v '\.spec\.ts'` ne liste plus que les 3 titres du contact
+  (les `notify()` d'éditeur passent par un tableau local, hors de ce motif, et restent pour L8).
+
+Ordre : L7.1 → L7.2.
+
+#### Changements visibles
+
+- L4 : nombres ≥ 1 000 des sous-titres d'en-tête d'admin (Réalisations, Articles, Messages) et du
+  total de messages groupés par une espace fine insécable ; toast « tout marquer comme lu »,
+  barre d'enregistrement et âge des messages groupés au-delà de 999. Rien sous 1 000. Blog
+  inchangé.
+- L7 : aucun (titres par défaut = littéraux retirés). Un toast `info` sans titre afficherait
+  « Information » ; aucun appelant n'en émet aujourd'hui.
+
+#### Intersection de fichiers L4 ∩ L7
+
+| Couple | Intersection | Conséquence |
+| --- | --- | --- |
+| L4 ∩ L7 | **`admin-messages.ts`**, même littéral d'objet (`markAllRead`, l. 218-222 : L4 réécrit `detail`, L7 retire `summary` deux lignes plus haut) | **Confirmé** : conflit textuel certain en parallèle. L7 part de `master` après le merge de L4. `admin-cv.ts` (L7) ≠ `admin-cv-view.ts` (L4) : pas d'intersection. |
+| L4 ∩ L8 / L7 ∩ L8 | vide en fichiers (L7 ne touche pas les éditeurs) | L8 dépend de L7 **sémantiquement** : le retrait de `notify()` suppose le titre par défaut. |
+| L4, L7 ∩ L1/L2 | vide (`styles.css`, outillage non touchés) | Indépendants. |
+
+Gates de chaque PR : `pnpm install --frozen-lockfile`, `pnpm run build --configuration
+production`, `pnpm lint`, `pnpm test; echo exit=$?` (code de sortie lu, pas le résumé).
+
+#### Risques & inconnues
+
+- **Titre « Information »** pour `info` : choisi pour l'exhaustivité du `Record`, aucun appelant ;
+  à valider en revue si un autre libellé est préféré.
+- **`counted` à espace simple** vs blog à espace insécable : deux typographies du « nombre + nom »
+  coexistent (admin / public). Défaut : on ne touche pas le blog (sortie inchangée demandée par
+  l'audit). Question ouverte : `counted` doit-il passer à l'insécable (≈ 30 attendus de specs
+  d'admin à réécrire) ?
+- **ICU du runner** : `groupedNumber` normalise tout blanc en U+202F ; ses tests restent stables
+  quel que soit l'ICU de Node, c'est précisément le rôle du `replace`.
 
 ## Plan de test
 
@@ -831,6 +1015,52 @@ Total du lot : 29 failed / 3083 total (3 fichiers en échec sur 185), exit 1 ; l
 tests passent, soit la base moins les 4 tests de galerie retirés, la 5ᵉ entrée de
 `SECTION_CONTROLS` et les 2 tests réécrits.
 
+Lot **L4** : RED de la seule tranche L4.2, branche `refactor/copy-formats-l4` (L4.1 pas encore
+jouée). Commande : `pnpm test; echo exit=$?`, après `ng cache clean` et purge de
+`node_modules/.vite`. Base avant RED : `184 passed (184)` fichiers, `3083 passed (3083)` tests.
+
+**Échafaudage de signature (à remplacer en GREEN)** : `shared/format/counted.ts`, `counted(_count,
+_singular, _plural): string` au corps `return ''` (paramètres préfixés `_` pour la règle
+`no-unused-vars`, à renommer en GREEN). Le spec n'importe que `counted` : `pluralize` et
+`groupedNumber` ne sont pas encore à leur emplacement `shared/format/`.
+
+### Sans RED : L4.1 et L4.3
+
+- **L4.1** (déplacements `git mv`, extraction de `groupedNumber`) : aucun test écrit, filet = specs
+  existantes citées par le plan. Le `grouped-number.spec.ts` que le plan range sous L4.2 n'est pas
+  écrit : il importe `shared/format/grouped-number.ts`, créé par L4.1, et serait vert d'emblée ;
+  il se joint à L4.1.
+- **L4.3** (adoption de `counted` et `pluralize`, sortie identique) : aucun test écrit, filet =
+  specs existantes citées par le plan.
+
+### Tranche L4.2 — les compteurs des en-têtes d'admin groupent les milliers
+
+Les attendus écrivent le séparateur de milliers en échappement ` ` (espace fine insécable,
+celle que produit `Intl.NumberFormat('fr-FR')` sous Node 24, vérifié), jamais en littéral.
+
+**`shared/format/counted.spec.ts`** (nouveau, `it.each` × 8, unité `projet`/`projets`)
+
+| Nombre | Attendu |
+| --- | --- |
+| 0, 1 | `0 projet`, `1 projet` |
+| 2, 999 | `2 projets`, `999 projets` |
+| 1000, 1234 | `1 000 projets`, `1 234 projets` |
+| 12 345, 1 500 000 | `12 345 projets`, `1 500 000 projets` |
+
+Espace simple entre le nombre et le nom (le plan fixe cette typographie pour `counted`).
+
+**`admin-page-copy.spec.ts`** (3 cas ajoutés aux `it.each` existants)
+
+| Fonction | Données | Attendu |
+| --- | --- | --- |
+| `projectsOverline` | 1234 réalisations, 1000 en avant | `1 234 réalisations · 1 000 mises en avant` |
+| `postsOverline` | 1000 publiés, 234 brouillons | `1 234 articles · 1 000 publiés · 234 brouillons` |
+| `messagesOverline` | 1200 non lus, 34 lus | `1 200 non lus · 1 234 au total` |
+
+RED confirmé via `pnpm test` le 2026-10-08 20:44 : 11 failed / 3094 total (2 fichiers en échec sur
+186), exit 1. Échecs = assertions : `expected '' to be '…'` (8, squelette) et `expected '1234
+réalisations · 1000 mises en avant…'` sans groupement (3). Les 3083 tests de la base restent verts.
+
 ## Journal des tranches
 
 - **Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée** : GREEN 3059 passed / 3060 total (seul rouge : « sans testId » de `field-error.spec.ts`, défaut du test, cf. ## Verify) · refactor : aucun
@@ -843,6 +1073,9 @@ tests passent, soit la base moins les 4 tests de galerie retirés, la 5ᵉ entr�
 - **Tranche L6.3 — les champs obligatoires de l'identité sont annoncés et reliés** : GREEN · refactor : section extraite dans `AdminProjectIdentityFields` (`categories`, `kinds` déplacés), `REQUIRED` local du parent remplacé par `REQUIRED_MESSAGE`
 - **Tranche L6.4 — la description obligatoire est annoncée et reliée** : GREEN · refactor : section extraite dans `AdminProjectPresentationFields` (couverture comprise) ; les 3 erreurs de présentation passent aussi par `FieldError` (`span` → `p`, mêmes `id`/`data-testid`)
 - **Tranche L6.5 — la galerie est rendue par l'éditeur** : GREEN 3083 passed / 3083 total · refactor : `PairColumn` n'est plus exporté (aucun consommateur hors de son fichier)
+- **Tranche L4.1 — déplacement, sans RED** : GREEN hors RED de L4.2 (11 failed, les mêmes / 3099 total, dont 5 nouveaux `grouped-number.spec.ts` verts) · refactor : aucun
+- **Tranche L4.2 — les compteurs des en-têtes d'admin groupent les milliers** : GREEN 3099 passed / 3099 total · refactor : aucun (les deux `counted` locaux supprimés font partie de la tranche)
+- **Tranche L4.3 — adoption, sans RED** : GREEN 3099 passed / 3099 total · refactor : imports `@shared/format/*` rangés à leur place alphabétique dans les 17 fichiers touchés
 
 ## Verify
 
@@ -907,6 +1140,31 @@ Runtime :
    **PASS**.
 
 
+### Lot L4
+
+2026-10-08, branche `refactor/copy-formats-l4` (non commitée).
+
+Gates (codes de sortie lus) :
+
+- `pnpm test; echo exit=$?` → `Test Files 187 passed (187)`, `Tests 3099 passed (3099)`, **exit=0** (3083 de base + 11 RED de L4.2 + 5 de `grouped-number.spec.ts`).
+- `pnpm lint; echo exit=$?` → `All files pass linting.`, **exit=0**.
+- `pnpm exec prettier --check <25 fichiers touchés>` → `All matched files use Prettier code style!`, **exit=0**.
+- `pnpm run build --configuration production; echo exit=$?` → `Prerendered 20 static routes.`, **exit=0** ; puis `git checkout -- public/sitemap.xml public/rss.xml`.
+- `grep -nP '[\x{202F}\x{00A0}]'` sur les 25 fichiers touchés → aucune ligne (échappements seulement).
+- `grep -rn "const counted" src` → vide. `grep -rn "application/pluralize\|ui/format-file-size\|groupedNumber.*overview-view" src` → vide.
+- `grep -rnE "> 1 \? 's'" src` → **non vide** : 4 lignes de `features/projects/application/projects.ts` (156, 161, 167, 172), fichier absent de la liste du plan, non touché. Écart entre la preuve de fin de lot et le périmètre du plan, à trancher.
+  Soldé par la session principale : `projects.ts` adopte `pluralize` (insécable conservée, sorties identiques, specs `projects.spec.ts` vertes) ; le grep est vide, `pnpm test` 3099/3099 exit 0, lint exit 0.
+
+Runtime :
+
+1. Blog (seule surface publique touchée) : `dist/angular-portfolio-app/browser/blog/index.html` prérendu → `0&nbsp;article`, `1&nbsp;article`, `2&nbsp;articles`, `2&nbsp;articles affichés` : insécable et pluriels inchangés. **PASS**.
+2. Admin (en-têtes Réalisations / Articles / Messages, toast « tout marquer comme lu », barre d'enregistrement, âge des messages) : **non joué au navigateur** (authentification requise). Couvert par `admin-page-copy.spec.ts`, `counted.spec.ts`, `admin-save-bar.spec.ts`, `admin-messages-view.spec.ts`, `admin-messages.spec.ts`, verts ; la différence n'apparaît qu'au-delà de 999.
+3. Rejoué par le code-reviewer (2026-10-08), parce que le point 1 ne couvrait pas `projects.ts` (ajouté après coup, page publique) et ne portait ni capture ni console. Build prod de la branche servi en statique (`dist/angular-portfolio-app/browser`, `127.0.0.1:4317`), navigateur intégré, capture prise sur chaque page.
+   - Comparaison avec `master` (build prod du même commit `61c02d6` dans un worktree temporaire, supprimé ensuite) : `blog/index.html` et `projects/index.html` sont identiques octet pour octet, hormis les noms de chunks hachés et la meta CSP (le build `master` n'a pas lancé `postbuild`). Sorties publiques inchangées.
+   - `/blog/` : hydraté ; `2 articles`, `1 article`, `0 article`, `2 articles affichés` ; filtre « Sécurité » → `1 article affiché`, recalculé côté client. **PASS**.
+   - `/projects/` : hydraté ; `6 réalisations`, `6 réalisations affichées`, `2 applications`, `4 projets`, séparateur U+00A0 vérifié caractère par caractère ; filtre « Démos » → `2 réalisations affichées`, `2 projets`. **PASS**.
+   - Console : aucune erreur Angular (`NG0…`) ni exception. Seules erreurs, propres au serveur statique local : `/api/config` en 404 (route servie par le serveur Node en prod) et `api/analytics/track` refusé par CORS depuis l'origine `127.0.0.1`.
+
 ## Review code
 
 Lot L5, 2026-10-08, diff de travail `git diff master` + fichiers non suivis (`field-error.ts`(+spec),
@@ -964,3 +1222,33 @@ Contrôles demandés : règle CSS conforme (une ligne `@apply aria-[invalid=true
 1. `specs/017-intake-audit-decoupage.md:543-546` : les entrées de journal L6.2 à L6.5 ont été écrites dans `## Plan technique › Tranches › L6` au lieu de `## Journal des tranches`. Elles ont remplacé la ligne de titre de la tranche L6.2 du plan (« **Tranche L6.2 — les rangées répétées deviennent une section et signalent leurs cellules », dont il reste la fin orpheline « vides** : `AdminPairRows` + … » à la l. 547) et s'intercalent avant le contenu de L6.2, alors que L6.3 à L6.5 réapparaissent plus bas avec leur vrai contenu. Le journal (l. 844-845), lui, s'arrête à L6.2 avec la version « 8 passed / 9 » d'avant la correction du harnais. Correction attendue : rétablir dans le plan la ligne de titre d'origine (`git show master:specs/017-intake-audit-decoupage.md`, l. 543) ; déplacer les quatre entrées dans `## Journal des tranches`, l'entrée L6.2 corrigée (9 passed / 9 après correction du harnais) remplaçant celle de la l. 845. Aucun changement de code requis.
 
 Correction du point 1 (session principale, 2026-10-08) : titre de la tranche L6.2 du plan rétabli à l'identique de `master`, entrées L6.2 à L6.5 déplacées dans `## Journal des tranches` (L6.2 en version 9 passed / 9). Seul point bloquant soldé (aucun changement de code).
+
+Lot L4, 2026-10-08, diff de travail `git diff -M master` + fichiers non suivis (`shared/format/counted.ts`(+spec),
+`shared/format/grouped-number.ts`(+spec)).
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm test` → 187 fichiers / 3099 tests passés, exit=0) / lint ✅ (`pnpm lint` → `All files pass linting.`, exit=0) / build ✅ (`pnpm run build --configuration production` → `Prerendered 20 static routes.`, exit=0, puis `git checkout -- public/sitemap.xml public/rss.xml`, `public/` propre)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/aak-checks.sh` absent) : auto-checks joués à la main sur les 22 fichiers de code du diff. U+202F/U+00A0 littéral (`grep -nP '[\x{202F}\x{00A0}]'`) : 0 ; `grep -rnE "> 1 \? 's'" src` : 0 ; `grep -rn "const counted" src` : 0 ; anciens chemins (`application/pluralize`, `ui/format-file-size`, `groupedNumber` depuis `overview-view`) : 0 ; export default, effect, helpers zone, archéologie (seul commentaire ajouté : la ligne ICU de `grouped-number.ts:4`, déplacée telle quelle, WHY intemporel), tests exclus, snapshot, boucles générant des `it` : 0
+**Warnings de gate** : aucun (sorties de test, lint et build relues en entier)
+**Rendu compilé** : N/A (aucun composant à sélecteur attribut touché)
+**Preuve de verify runtime** : ✅ (`## Verify` › Lot L4 › 3, rejoué par le reviewer : `/blog/` et `/projects/` hydratés, libellés et filtres corrects, HTML prérendu identique à celui de `master`, console sans erreur Angular)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅ (écart `projects.ts` hors plan, motivé au journal du `## Verify` › Lot L4 : il fallait l'adopter pour que la preuve de fin de lot soit vide)
+
+Contrôles demandés : L4.1, les quatre fichiers déplacés sont des renommages à 100 % de similarité (`git diff -M`), `groupedNumber` extrait avec `GROUPED`, `NNBSP` et son commentaire, `overview-view.ts` ne garde que `NBSP` (encore utilisé l. 88-89) ; L4.2, une seule définition de `counted` (`shared/format/counted.ts:4`), les deux locales supprimées, `au total` groupé (`admin-page-copy.ts:53`) ; L4.3, les 9 sites du plan adoptés, sorties identiques sous 1 000 (`pluralize` = `count > 1`, donc « 0 message marqué comme lu » est inchangé dans le toast). `shared/format/` : un concept par fichier, 4 exports, chacun consommé hors de son fichier, aucun `index.ts`, aucun `utils.ts`. Sorties publiques : le HTML prérendu de `/blog` et `/projects` (route réelle de la page Réalisations) est identique octet pour octet à un build `master` du même commit, hors chunks hachés et CSP ; insécable U+00A0 vérifiée caractère par caractère sur « 6 réalisations affichées », « 2 applications », « 4 projets ».
+
+**Tests notables** :
+- ✨ `grouped-number.spec.ts:15` : retire les chiffres et affirme `[NNBSP, NNBSP]`. Toute espace parasite que laisserait passer l'ICU fait échouer le test, quel que soit le runner.
+- ✨ `admin-page-copy.spec.ts:42-46, 62-66, 81` : les cas ≥ 1 000 sont ajoutés aux `it.each` existants, pas en tests parallèles. Ils épinglent le seul changement visible du lot.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet sur la livraison (déploiement Dokploy continu d'après `CLAUDE.md`) · monitoring : Sentry
+- non couvert par les gates : les surfaces d'admin (en-têtes, toast, barre d'enregistrement) n'ont pas été observées au navigateur (authentification requise). Elles ne sont couvertes que par les specs, et la différence n'apparaît qu'au-delà de 999.
+
+Remarques non bloquantes :
+- `projects.ts:13` : l'import `@shared/format/pluralize` arrive après les imports relatifs. Le fichier mêlait déjà l'ordre des imports sur `master`, donc le lot n'aggrave rien, mais l'entrée du journal « imports rangés à leur place alphabétique dans les 17 fichiers touchés » ne le couvre pas.
+- `## Verify` › Lot L4 › 1 dit encore « seule surface publique touchée » pour le blog. Le point 3 ajoute la page Réalisations.

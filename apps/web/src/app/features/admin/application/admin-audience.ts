@@ -10,6 +10,8 @@ import {
   type DateRangeKey,
 } from '@features/analytics/domain/analytics-presenter';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { groupedNumber } from '@shared/format/grouped-number';
+import { pluralize } from '@shared/format/pluralize';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { FilterGroup, type FilterOption } from '@shared/ui/filter-group';
@@ -23,8 +25,6 @@ import { AdminSectionHead } from './components/admin-section-head';
 import { AudienceChart } from './components/audience-chart';
 import { AudienceShareTable } from './components/audience-share-table';
 import { AudienceTally } from './components/audience-tally';
-import { groupedNumber } from './overview-view';
-import { pluralize } from './pluralize';
 
 const ACTIVE_VISITORS_REFRESH_MS = 30_000;
 

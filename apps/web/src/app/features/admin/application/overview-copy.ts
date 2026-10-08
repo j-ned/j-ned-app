@@ -1,9 +1,10 @@
 import type { MetricEntry, StatsOverview } from '@features/analytics/domain/models/analytics.types';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
 import type { Project } from '@features/projects/domain/models/project.model';
+import { counted } from '@shared/format/counted';
+import { groupedNumber } from '@shared/format/grouped-number';
+import { pluralize } from '@shared/format/pluralize';
 import { capitalize } from './capitalize';
-import { groupedNumber } from './overview-view';
-import { pluralize } from './pluralize';
 
 export type OverviewSummaryInput = {
   readonly overview: StatsOverview | null;
@@ -32,10 +33,10 @@ function audienceSentence(
   referrers: readonly MetricEntry[] | null,
 ): string {
   if (overview.visitors === 0) return 'Aucun visiteur en 30 jours.';
-  const visitors = `${groupedNumber(overview.visitors)} ${pluralize(overview.visitors, 'visiteur', 'visiteurs')} en 30 jours`;
+  const visitors = `${counted(overview.visitors, 'visiteur', 'visiteurs')} en 30 jours`;
   const source = referrers?.find((referrer) => referrer.name !== '');
   if (!source) return `${visitors}.`;
-  return `${visitors}, dont ${groupedNumber(source.count)} ${pluralize(source.count, 'venu', 'venus')} de ${source.name}.`;
+  return `${visitors}, dont ${counted(source.count, 'venu', 'venus')} de ${source.name}.`;
 }
 
 function contactsSentence(unread: number | null, overview: StatsOverview | null): string {
@@ -45,7 +46,7 @@ function contactsSentence(unread: number | null, overview: StatsOverview | null)
       : [
           unread === 0
             ? 'aucun message en attente'
-            : `${groupedNumber(unread)} ${pluralize(unread, 'message', 'messages')} en attente`,
+            : `${counted(unread, 'message', 'messages')} en attente`,
         ]),
     ...(overview === null
       ? []

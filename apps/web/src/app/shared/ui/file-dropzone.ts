@@ -15,7 +15,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { formatFileSize } from './format-file-size';
+import { formatFileSize } from '@shared/format/format-file-size';
 
 @Component({
   selector: 'app-file-dropzone',

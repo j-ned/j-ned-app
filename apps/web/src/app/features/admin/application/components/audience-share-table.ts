@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
+import { groupedNumber } from '@shared/format/grouped-number';
 import type { ShareRow } from '../audience-view';
-import { groupedNumber } from '../overview-view';
 import { AdminSectionHead } from './admin-section-head';
 
 @Component({

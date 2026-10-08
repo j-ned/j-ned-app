@@ -39,6 +39,11 @@ describe('projectsOverline', () => {
     { total: 1, featured: 1, overline: '1 réalisation · 1 mise en avant' },
     { total: 2, featured: 1, overline: '2 réalisations · 1 mise en avant' },
     { total: 6, featured: 2, overline: '6 réalisations · 2 mises en avant' },
+    {
+      total: 1234,
+      featured: 1000,
+      overline: '1\u202f234 réalisations · 1\u202f000 mises en avant',
+    },
   ])(
     'Given $total project(s) of which $featured featured When the overline is written Then it reads « $overline »',
     ({ total, featured, overline }) => {
@@ -54,6 +59,11 @@ describe('postsOverline', () => {
     { published: 0, drafts: 1, overline: '1 article · 0 publié · 1 brouillon' },
     { published: 2, drafts: 0, overline: '2 articles · 2 publiés · 0 brouillon' },
     { published: 1, drafts: 2, overline: '3 articles · 1 publié · 2 brouillons' },
+    {
+      published: 1000,
+      drafts: 234,
+      overline: '1\u202f234 articles · 1\u202f000 publiés · 234 brouillons',
+    },
   ])(
     'Given $published published and $drafts draft(s) When the overline is written Then it reads « $overline »',
     ({ published, drafts, overline }) => {
@@ -68,6 +78,7 @@ describe('messagesOverline', () => {
     { unread: 1, read: 0, overline: '1 non lu · 1 au total' },
     { unread: 0, read: 2, overline: '0 non lu · 2 au total' },
     { unread: 2, read: 1, overline: '2 non lus · 3 au total' },
+    { unread: 1200, read: 34, overline: '1\u202f200 non lus · 1\u202f234 au total' },
   ])(
     'Given $unread unread and $read read message(s) When the overline is written Then it reads « $overline »',
     ({ unread, read, overline }) => {

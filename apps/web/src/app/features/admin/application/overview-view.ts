@@ -15,9 +15,10 @@ import {
   PROJECT_KIND_LABELS,
 } from '@features/projects/application/project-kind-copy';
 import { PROJECT_KINDS, type Project } from '@features/projects/domain/models/project.model';
+import { counted } from '@shared/format/counted';
+import { groupedNumber } from '@shared/format/grouped-number';
 import type { CartoucheRow } from '@shared/ui/cartouche';
 import type { ReadoutItem } from './components/admin-readout';
-import { pluralize } from './pluralize';
 import { withFirstOfMonth } from './with-first-of-month';
 
 export type ContentRow = {
@@ -32,9 +33,7 @@ export type ContentRow = {
 
 const UNAVAILABLE = 'indisponible';
 const NBSP = '\u00a0';
-const NNBSP = '\u202f';
 
-const GROUPED = new Intl.NumberFormat('fr-FR');
 const SHORT_DATE = new Intl.DateTimeFormat('fr-FR', {
   day: 'numeric',
   month: 'short',
@@ -52,14 +51,6 @@ const LONG_DATE = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
   timeZone: 'UTC',
 });
-
-const counted = (count: number, singular: string, plural: string): string =>
-  `${groupedNumber(count)} ${pluralize(count, singular, plural)}`;
-
-// Le séparateur de milliers d'Intl varie selon l'ICU : l'espace fine insécable est posée ici.
-export function groupedNumber(value: number): string {
-  return GROUPED.format(value).replace(/\s/g, NNBSP);
-}
 
 export function toOnlineRows(
   projects: readonly Project[] | null,

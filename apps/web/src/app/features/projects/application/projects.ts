@@ -8,6 +8,7 @@ import { ProjectKindLegend } from './components/project-kind-legend';
 import { toProjectsView, type CaseStudyView } from './projects-view';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
+import { pluralize } from '@shared/format/pluralize';
 import { filterProjectsByKind } from '../domain/filter-projects-by-kind';
 import type { Project, ProjectKindFilter } from '../domain/models/project.model';
 
@@ -153,23 +154,22 @@ export class Projects {
 
   protected readonly projectCountLabel = computed(() => {
     const { total } = this.view();
-    return `${total}\u00a0réalisation${total > 1 ? 's' : ''}`;
+    return `${total}\u00a0${pluralize(total, 'réalisation', 'réalisations')}`;
   });
 
   protected readonly visibleCountLabel = computed(() => {
     const { visibleCount } = this.view();
-    const plural = visibleCount > 1 ? 's' : '';
-    return `${visibleCount}\u00a0réalisation${plural} affichée${plural}`;
+    return `${visibleCount}\u00a0${pluralize(visibleCount, 'réalisation affichée', 'réalisations affichées')}`;
   });
 
   protected readonly caseStudiesCountLabel = computed(() => {
     const count = this.view().caseStudies.length;
-    return `${count}\u00a0application${count > 1 ? 's' : ''}`;
+    return `${count}\u00a0${pluralize(count, 'application', 'applications')}`;
   });
 
   protected readonly cardsCountLabel = computed(() => {
     const count = this.view().cards.length;
-    return `${count}\u00a0projet${count > 1 ? 's' : ''}`;
+    return `${count}\u00a0${pluralize(count, 'projet', 'projets')}`;
   });
 
   protected retry(): void {

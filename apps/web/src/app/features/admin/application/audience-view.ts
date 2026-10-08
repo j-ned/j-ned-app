@@ -1,6 +1,7 @@
 import type { MetricEntry, StatsOverview } from '@features/analytics/domain/models/analytics.types';
-import { groupedNumber } from './overview-view';
-import { pluralize } from './pluralize';
+import { counted } from '@shared/format/counted';
+import { groupedNumber } from '@shared/format/grouped-number';
+import { pluralize } from '@shared/format/pluralize';
 
 export type ShareRow = {
   readonly label: string;
@@ -48,14 +49,14 @@ export function audienceLead(overview: StatsOverview | null, referrer: MetricEnt
   if (visitors === 0) return 'Aucun visiteur sur la période.';
   const source =
     referrer && referrer.name !== ''
-      ? `, dont ${groupedNumber(referrer.count)} ${pluralize(referrer.count, 'venu', 'venus')} de ${referrer.name}`
+      ? `, dont ${counted(referrer.count, 'venu', 'venus')} de ${referrer.name}`
       : '';
   const tenths = Math.round(bounceRate / 10);
   const bounce =
     tenths > 0
       ? ` ${tenths} sur 10 ${pluralize(tenths, 'repart', 'repartent')} après une page.`
       : '';
-  return `${groupedNumber(visitors)} ${pluralize(visitors, 'visiteur', 'visiteurs')}${source}.${bounce}`;
+  return `${counted(visitors, 'visiteur', 'visiteurs')}${source}.${bounce}`;
 }
 
 export function toTallyRows(

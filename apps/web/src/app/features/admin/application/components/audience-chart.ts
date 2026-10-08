@@ -2,8 +2,9 @@ import { Component, computed, input } from '@angular/core';
 import type { ChartData, ChartOptions } from 'chart.js';
 import { formatChartDay } from '@features/analytics/domain/analytics-presenter';
 import type { DailyChartPoint } from '@features/analytics/domain/models/analytics.types';
+import { groupedNumber } from '@shared/format/grouped-number';
 import { AppChart } from '@shared/ui/chart';
-import { chartSummary, groupedNumber } from '../overview-view';
+import { chartSummary } from '../overview-view';
 
 @Component({
   selector: 'app-audience-chart',

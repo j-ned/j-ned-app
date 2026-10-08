@@ -1,3 +1,4 @@
+import { pluralize } from '@shared/format/pluralize';
 import type { BlogCategoryFilter } from '../domain/models/blog-tag.model';
 
 const NBSP = '\u00a0';
@@ -14,7 +15,7 @@ export const BLOG_CATEGORY_FILTER_LABELS: Record<BlogCategoryFilter, string> = {
 export const SUBJECTS_FACT_LABEL = 'Sujets';
 
 export function articleCountLabel(count: number): string {
-  return `${count}${NBSP}article${count > 1 ? 's' : ''}`;
+  return `${count}${NBSP}${pluralize(count, 'article', 'articles')}`;
 }
 
 export function readingTimeLabel(minutes: number): string {
@@ -26,6 +27,5 @@ export function readLinkContext(title: string): string {
 }
 
 export function visibleArticleCountLabel(count: number): string {
-  const plural = count > 1 ? 's' : '';
-  return `${count}${NBSP}article${plural} affiché${plural}`;
+  return `${count}${NBSP}${pluralize(count, 'article affiché', 'articles affichés')}`;
 }

@@ -1,7 +1,7 @@
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 import { filterMessagesByReadStatus } from '@features/contact/domain/use-cases/filter-messages-by-read-status.use-case';
+import { counted } from '@shared/format/counted';
 import type { FilterOption } from '@shared/ui/filter-group';
-import { pluralize } from './pluralize';
 import { withFirstOfMonth } from './with-first-of-month';
 
 export type AdminMessagesFilter = 'all' | 'unread' | 'read';
@@ -65,6 +65,6 @@ export function receivedAgo(createdAt: string, now: Date): string {
   if (elapsed < HOUR_MS) return `il y a ${Math.floor(elapsed / MINUTE_MS)}${NBSP}min`;
   if (elapsed < DAY_MS) return `il y a ${Math.floor(elapsed / HOUR_MS)}${NBSP}h`;
   const days = Math.floor(elapsed / DAY_MS);
-  if (days < 7) return `il y a ${days} ${pluralize(days, 'jour', 'jours')}`;
+  if (days < 7) return `il y a ${counted(days, 'jour', 'jours')}`;
   return withFirstOfMonth(RECEIVED_ON, new Date(createdAt));
 }
