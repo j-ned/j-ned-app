@@ -71,7 +71,7 @@ const PERIODS: readonly FilterOption<DateRangeKey>[] = [
             data-testid="device-exclusion-toggle"
             [attr.aria-pressed]="deviceExclusion.excluded()"
             (click)="deviceExclusion.toggle()"
-            class="inline-flex min-h-11 items-center gap-2 rounded-md border border-muted/30 px-5 text-sm font-medium text-foreground transition-colors hover:border-foreground/30 hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-pressed:border-primary"
+            class="link-btn-outline cursor-pointer aria-pressed:border-primary"
           >
             <app-icon [name]="deviceExclusion.excluded() ? 'shield' : 'eye'" [size]="16" />
             {{ deviceExclusion.excluded() ? 'Cet appareil est exclu' : 'Exclure cet appareil' }}

@@ -37,7 +37,7 @@ import { AdminPageHeader } from './components/admin-page-header';
           data-testid="mark-all-read"
           [attr.aria-disabled]="view().unread === 0 ? 'true' : null"
           (click)="markAllRead()"
-          class="inline-flex min-h-11 items-center gap-2 rounded-md border border-muted/30 px-5 text-sm font-medium text-foreground transition-colors hover:border-foreground/30 hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-disabled:cursor-not-allowed aria-disabled:opacity-55 aria-disabled:hover:border-muted/30 aria-disabled:hover:bg-transparent"
+          class="link-btn-outline cursor-pointer aria-disabled:cursor-not-allowed aria-disabled:opacity-55 aria-disabled:hover:border-foreground/15 aria-disabled:hover:text-foreground"
         >
           <app-icon name="check" [size]="16" />
           Tout marquer comme lu

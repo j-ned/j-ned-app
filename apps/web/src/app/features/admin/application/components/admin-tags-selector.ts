@@ -8,7 +8,7 @@ type TagChip = { readonly tag: string; readonly selected: boolean; readonly clas
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <span class="form-label">Tags</span>
+    <span class="field-label">Tags</span>
     <div class="flex flex-wrap gap-2">
       @for (chip of chips(); track chip.tag) {
         <button

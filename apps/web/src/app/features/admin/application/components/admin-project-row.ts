@@ -56,7 +56,7 @@ import type { AdminProjectRowView } from '../admin-projects-view';
         target="_blank"
         rel="noopener noreferrer"
         [attr.aria-label]="viewLabel()"
-        [class]="iconLinkClass"
+        class="icon-link"
       >
         <app-icon name="external-link" [size]="18" />
       </a>
@@ -64,7 +64,7 @@ import type { AdminProjectRowView } from '../admin-projects-view';
         data-testid="admin-project-edit"
         [routerLink]="['/admin/projects', row().id]"
         [attr.aria-label]="editLabel()"
-        [class]="iconLinkClass"
+        class="icon-link"
       >
         <app-icon name="pencil" [size]="18" />
       </a>
@@ -85,8 +85,6 @@ export class AdminProjectRow {
   readonly row = input.required<AdminProjectRowView>();
   readonly deleteRequested = output<void>();
 
-  protected readonly iconLinkClass =
-    'inline-flex size-11 items-center justify-center rounded-md text-foreground transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-primary';
   protected readonly viewLabel = computed(
     () => `Voir la fiche publique\u00a0: ${this.row().title} (nouvel onglet)`,
   );

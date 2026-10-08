@@ -260,6 +260,12 @@ input:-webkit-autofill:focus {
   @apply border border-foreground/15 text-foreground hover:border-primary/40 hover:text-primary;
 }
 
+/* Lien icône des listes de l'admin : cible tactile de 44px. */
+
+@utility icon-link {
+  @apply inline-flex size-11 items-center justify-center rounded-md text-foreground transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-primary;
+}
+
 /* ---------------------------------------------------------------- *
  * Footer : titre de colonne (h2) et lien (cible tactile de 44 px sous md).
  * ---------------------------------------------------------------- */

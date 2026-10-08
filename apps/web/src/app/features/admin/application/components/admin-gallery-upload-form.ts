@@ -20,7 +20,7 @@ import { imageAltSchema } from './admin-image-alt-schema';
   template: `
     <form [formRoot]="uploadForm" class="space-y-4">
       <div>
-        <span class="form-label">Nouvelle capture</span>
+        <span class="field-label">Nouvelle capture</span>
         <!-- Un nouveau jeton recrée la zone de dépôt : c'est le seul moyen d'en vider l'aperçu. -->
         @for (token of [resetToken()]; track token) {
           <app-file-dropzone
@@ -39,7 +39,7 @@ import { imageAltSchema } from './admin-image-alt-schema';
       </div>
       <div>
         @let alt = uploadForm.alt();
-        <label for="gallery-upload-alt" class="form-label">Texte alternatif</label>
+        <label for="gallery-upload-alt" class="field-label">Texte alternatif</label>
         <input
           #altInput
           id="gallery-upload-alt"
