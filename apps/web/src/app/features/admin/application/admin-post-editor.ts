@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
+import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { LoadError } from '@shared/ui/load-error';
@@ -249,8 +250,11 @@ export class AdminPostEditor implements LeaveConfirmable {
         saved = await firstValueFrom(
           id ? this.gateway.updatePost(id, payload) : this.gateway.createPost(payload),
         );
-      } catch {
-        this.notify('error', "Erreur lors de l'enregistrement de l'article");
+      } catch (err: unknown) {
+        this.notify(
+          'error',
+          withValidationDetail("Erreur lors de l'enregistrement de l'article", err),
+        );
         return;
       }
       const coverSent = await this.uploadCover(saved.id);
@@ -273,8 +277,14 @@ export class AdminPostEditor implements LeaveConfirmable {
     try {
       await firstValueFrom(this.gateway.uploadCoverImage(cover, id));
       return true;
-    } catch {
-      this.notify('warn', "Article enregistré, mais l'envoi de l'image a échoué. Réessayez.");
+    } catch (err: unknown) {
+      this.notify(
+        'warn',
+        withValidationDetail(
+          "Article enregistré, mais l'envoi de l'image a échoué. Réessayez.",
+          err,
+        ),
+      );
       return false;
     }
   }

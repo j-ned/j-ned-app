@@ -9,6 +9,14 @@ describe('extractErrorMessage', () => {
     expect(extractErrorMessage({ error: { message: 'Quota dépassé' } })).toBe('Quota dépassé');
   });
 
+  it('joint et dédoublonne un message d’erreur API en tableau (validation)', () => {
+    expect(
+      extractErrorMessage({
+        error: { message: ['file is required', 'file is required', 'too large'] },
+      }),
+    ).toBe('file is required; too large');
+  });
+
   it('renvoie le défaut pour une erreur sans forme connue', () => {
     expect(extractErrorMessage(null)).toBe('Erreur inconnue');
     expect(extractErrorMessage('oops')).toBe('Erreur inconnue');

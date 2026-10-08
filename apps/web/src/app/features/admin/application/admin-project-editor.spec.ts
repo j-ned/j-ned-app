@@ -11,6 +11,7 @@ import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gat
 import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
 import { makeProject, makeProjectImage } from '@features/projects/testing/project-builders';
 import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
+import { apiRejection } from '@shared/testing/api-rejection';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
@@ -553,6 +554,123 @@ describe('AdminProjectEditor: mise à jour', () => {
   });
 });
 
+describe('AdminProjectEditor: détail du refus de l’API', () => {
+  const VALIDATION = [
+    'pitch must be shorter than or equal to 160 characters',
+    'title should not be empty',
+    'pitch must be shorter than or equal to 160 characters',
+  ];
+  const DETAIL = 'pitch must be shorter than or equal to 160 characters; title should not be empty';
+
+  it.each([
+    {
+      given: 'the creation refused with a 400',
+      url: '/admin/projects/new',
+      overrides: {
+        createProject: vi.fn(
+          (): Observable<Project> => throwError(() => apiRejection(400, VALIDATION)),
+        ),
+      },
+      expected: {
+        severity: 'error',
+        detail: `Erreur lors de la création du projet\u00a0: ${DETAIL}`,
+      },
+    },
+    {
+      given: 'the update refused with a 400',
+      url: '/admin/projects/p-1',
+      overrides: {
+        updateProject: vi.fn(
+          (): Observable<Project> => throwError(() => apiRejection(400, VALIDATION)),
+        ),
+      },
+      expected: {
+        severity: 'error',
+        detail: `Erreur lors de la mise à jour du projet\u00a0: ${DETAIL}`,
+      },
+    },
+    {
+      given: 'the update refused with a 422',
+      url: '/admin/projects/p-1',
+      overrides: {
+        updateProject: vi.fn(
+          (): Observable<Project> => throwError(() => apiRejection(422, 'slug already exists')),
+        ),
+      },
+      expected: {
+        severity: 'error',
+        detail: 'Erreur lors de la mise à jour du projet\u00a0: slug already exists',
+      },
+    },
+    {
+      given: 'the creation failing with a 500',
+      url: '/admin/projects/new',
+      overrides: {
+        createProject: vi.fn(
+          (): Observable<Project> => throwError(() => apiRejection(500, 'Internal server error')),
+        ),
+      },
+      expected: { severity: 'error', detail: 'Erreur lors de la création du projet' },
+    },
+    {
+      given: 'the update failing with a 500',
+      url: '/admin/projects/p-1',
+      overrides: {
+        updateProject: vi.fn(
+          (): Observable<Project> => throwError(() => apiRejection(500, 'Internal server error')),
+        ),
+      },
+      expected: { severity: 'error', detail: 'Erreur lors de la mise à jour du projet' },
+    },
+  ])(
+    'Given $given When the project is saved Then the toast reads the label and only a validation detail',
+    async ({ url, overrides, expected }) => {
+      const editor = await openEditor(url, overrides);
+
+      if (url.endsWith('/new')) await fillNewProject(editor);
+      else await typeIn(editor, 'admin-project-title', 'Après');
+      await save(editor);
+
+      expect(toasts(editor.toast)).toEqual([expected]);
+    },
+  );
+
+  it('Given the cover of a new project refused with a 400 When the project is saved Then the warning names the refusal', async () => {
+    const editor = await openEditor('/admin/projects/new', {
+      uploadImage: vi.fn(
+        (): Observable<string> => throwError(() => apiRejection(400, 'file must be an image')),
+      ),
+    });
+
+    await fillNewProject(editor);
+    await chooseCover(editor, COVER);
+    await save(editor);
+
+    expect(toasts(editor.toast)[0]).toEqual({
+      severity: 'warn',
+      detail:
+        "Projet créé, mais l'envoi de l'image a échoué. Réessayez depuis sa page. Détail\u00a0: file must be an image",
+    });
+  });
+
+  it('Given the cover of a new project failing with a 500 When the project is saved Then the warning stays the fixed one', async () => {
+    const editor = await openEditor('/admin/projects/new', {
+      uploadImage: vi.fn(
+        (): Observable<string> => throwError(() => apiRejection(500, 'Internal server error')),
+      ),
+    });
+
+    await fillNewProject(editor);
+    await chooseCover(editor, COVER);
+    await save(editor);
+
+    expect(toasts(editor.toast)[0]).toEqual({
+      severity: 'warn',
+      detail: "Projet créé, mais l'envoi de l'image a échoué. Réessayez depuis sa page.",
+    });
+  });
+});
+
 describe('AdminProjectEditor: couverture retirée ou refusée', () => {
   async function pickInZone(editor: Editor, file: File): Promise<void> {
     const input = editor.host.querySelector<HTMLInputElement>(
@@ -754,7 +872,8 @@ describe('AdminProjectEditor: aperçu de la carte publique', () => {
       afterForm:
         form && aside ? form.compareDocumentPosition(aside) & Node.DOCUMENT_POSITION_FOLLOWING : 0,
       sticky: ['2xl:sticky', '2xl:top-6'].filter((token) => !aside?.classList.contains(token)),
-      grid: aside?.parentElement?.classList.contains('2xl:grid-cols-[minmax(0,1fr)_25rem]') ?? false,
+      grid:
+        aside?.parentElement?.classList.contains('2xl:grid-cols-[minmax(0,1fr)_25rem]') ?? false,
     }).toEqual({
       holdsPreview: true,
       holdsSummary: true,

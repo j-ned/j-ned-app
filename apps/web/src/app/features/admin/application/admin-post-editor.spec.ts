@@ -11,6 +11,7 @@ import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-
 import type { ContentImage } from '@features/blog/domain/models/content-image.model';
 import { makeBlogPost, makeContentImage } from '@features/blog/testing/blog-post-builders';
 import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
+import { apiRejection } from '@shared/testing/api-rejection';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
@@ -583,6 +584,104 @@ describe('AdminPostEditor: mise à jour', () => {
     await save(editor);
 
     expect(toasts(editor.toast).map((toast) => toast.severity)).toEqual(['warn', 'success']);
+  });
+});
+
+describe('AdminPostEditor: détail du refus de l’API', () => {
+  const VALIDATION = [
+    'excerpt should not be empty',
+    'title should not be empty',
+    'title should not be empty',
+  ];
+  const LABEL = "Erreur lors de l'enregistrement de l'article";
+
+  it.each([
+    {
+      given: 'the creation refused with a 400',
+      url: '/admin/blog/new',
+      overrides: {
+        createPost: vi.fn(
+          (): Observable<BlogPost> => throwError(() => apiRejection(400, VALIDATION)),
+        ),
+      },
+      expected: `${LABEL}\u00a0: excerpt should not be empty; title should not be empty`,
+    },
+    {
+      given: 'the update refused with a 422',
+      url: '/admin/blog/b-1',
+      overrides: {
+        updatePost: vi.fn(
+          (): Observable<BlogPost> => throwError(() => apiRejection(422, 'slug already exists')),
+        ),
+      },
+      expected: `${LABEL}\u00a0: slug already exists`,
+    },
+    {
+      given: 'the creation failing with a 500',
+      url: '/admin/blog/new',
+      overrides: {
+        createPost: vi.fn(
+          (): Observable<BlogPost> => throwError(() => apiRejection(500, 'Internal server error')),
+        ),
+      },
+      expected: LABEL,
+    },
+    {
+      given: 'the update failing with a 500',
+      url: '/admin/blog/b-1',
+      overrides: {
+        updatePost: vi.fn(
+          (): Observable<BlogPost> => throwError(() => apiRejection(500, 'Internal server error')),
+        ),
+      },
+      expected: LABEL,
+    },
+  ])(
+    'Given $given When the article is saved Then the toast reads the label and only a validation detail',
+    async ({ url, overrides, expected }) => {
+      const editor = await openEditor(url, overrides);
+
+      if (url.endsWith('/new')) await fillNewPost(editor);
+      else await typeIn(editor, 'admin-post-title', 'Après');
+      await save(editor);
+
+      expect(toasts(editor.toast)).toEqual([{ severity: 'error', detail: expected }]);
+    },
+  );
+
+  it('Given the cover refused with a 400 When the article is saved Then the warning names the refusal', async () => {
+    const editor = await openEditor('/admin/blog/new', {
+      uploadCoverImage: vi.fn(
+        (): Observable<string> => throwError(() => apiRejection(400, 'file must be an image')),
+      ),
+    });
+
+    await fillNewPost(editor);
+    await chooseCover(editor, COVER);
+    await save(editor);
+
+    expect(toasts(editor.toast)[0]).toEqual({
+      severity: 'warn',
+      detail:
+        "Article enregistré, mais l'envoi de l'image a échoué. Réessayez. Détail\u00a0: file must be an image",
+    });
+  });
+
+  it('Given the cover failing with a 500 When the article is saved Then the warning stays the fixed one', async () => {
+    const editor = await openEditor('/admin/blog/new', {
+      uploadCoverImage: vi.fn(
+        (): Observable<string> => throwError(() => apiRejection(500, 'Internal server error')),
+      ),
+    });
+
+    await fillNewPost(editor);
+    await chooseCover(editor, COVER);
+    await save(editor);
+
+    expect(toasts(editor.toast)[0]).toEqual({
+      severity: 'warn',
+      detail: "Article enregistré, mais l'envoi de l'image a échoué. Réessayez.",
+    });
   });
 });
 

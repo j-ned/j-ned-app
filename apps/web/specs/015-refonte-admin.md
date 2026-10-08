@@ -4315,6 +4315,13 @@ La spec se clôt avec la PR c2. Ce qui reste ouvert, à reprendre hors de la spe
    sur `AudienceShareTable`) ; sortie `toggle` d'`AdminMessageRow` à renommer (`expandToggle`) pour
    retirer son `eslint-disable`, facultatif ; `effect()` nu dans le constructeur de
    `file-dropzone.ts` et de `two-factor-disable-form.ts` (antérieurs, relevés par le checker).
+8. **Point 4 soldé le 2026-10-08** (branche `fix/editeurs-message-400`) : sur un 400 ou un 422, les
+   deux éditeurs (création, mise à jour, envoi de la couverture) complètent le libellé par le message
+   de l'API (`withValidationDetail`, `shared/api/`, séparateur ` : `) ; chaîne ou tableau de
+   class-validator, dédoublonné, joint par « ; », borné à 300 caractères. Les autres statuts (500,
+   réseau) gardent le libellé fixe. `extractErrorMessage` (CV) lit aussi le tableau.
+9. **Messages de validation en anglais** : le détail affiché est celui de class-validator, non
+   traduit. Un mappage FR (par contrainte ou par champ) est possible plus tard.
 
 ## Review code
 

@@ -9,6 +9,7 @@ import type {
   ProjectInput,
 } from '@features/projects/domain/models/project.model';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
+import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { AppIcon } from '@shared/icons/app-icon';
 import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
@@ -292,18 +293,21 @@ export class AdminProjectEditor implements LeaveConfirmable {
     let created: Project;
     try {
       created = await firstValueFrom(this.gateway.createProject(payload));
-    } catch {
-      this.notify('error', 'Erreur lors de la création du projet');
+    } catch (err: unknown) {
+      this.notify('error', withValidationDetail('Erreur lors de la création du projet', err));
       return;
     }
     const cover = this.pendingCover();
     if (cover) {
       try {
         await firstValueFrom(this.gateway.uploadImage(cover, created.id));
-      } catch {
+      } catch (err: unknown) {
         this.notify(
           'warn',
-          "Projet créé, mais l'envoi de l'image a échoué. Réessayez depuis sa page.",
+          withValidationDetail(
+            "Projet créé, mais l'envoi de l'image a échoué. Réessayez depuis sa page.",
+            err,
+          ),
         );
       }
     }
@@ -318,8 +322,8 @@ export class AdminProjectEditor implements LeaveConfirmable {
     try {
       if (cover) await firstValueFrom(this.gateway.uploadImage(cover, id));
       this.saved.set(await firstValueFrom(this.gateway.updateProject(id, payload)));
-    } catch {
-      this.notify('error', 'Erreur lors de la mise à jour du projet');
+    } catch (err: unknown) {
+      this.notify('error', withValidationDetail('Erreur lors de la mise à jour du projet', err));
       return;
     }
     this.markSaved();
