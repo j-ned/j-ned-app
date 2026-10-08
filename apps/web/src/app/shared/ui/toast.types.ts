@@ -10,7 +10,7 @@ export type ToastMessage = {
 export type ToastEntry = {
   id: number;
   severity: ToastSeverity;
-  summary?: string;
+  summary: string;
   detail?: string;
   life: number;
 };

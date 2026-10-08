@@ -348,7 +348,7 @@ describe('AdminCv: téléversement', () => {
       uploadButton: byTestId(host, 'admin-cv-upload'),
     }).toEqual({
       sent: [file],
-      toasts: [{ severity: 'success', summary: 'Succès', detail: 'CV mis en ligne' }],
+      toasts: [{ severity: 'success', detail: 'CV mis en ligne' }],
       reference: 'nouveau.pdf',
       uploadButton: null,
     });
@@ -377,9 +377,7 @@ describe('AdminCv: téléversement', () => {
       toasts: toast.add.mock.calls.map(([message]) => message),
       uploadButton: byTestId(host, 'admin-cv-upload'),
     }).toEqual({
-      toasts: [
-        { severity: 'error', summary: 'Erreur', detail: 'Seuls les fichiers PDF sont acceptés.' },
-      ],
+      toasts: [{ severity: 'error', detail: 'Seuls les fichiers PDF sont acceptés.' }],
       uploadButton: null,
     });
   });

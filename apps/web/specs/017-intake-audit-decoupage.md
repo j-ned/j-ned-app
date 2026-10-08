@@ -1061,6 +1061,39 @@ RED confirmé via `pnpm test` le 2026-10-08 20:44 : 11 failed / 3094 total (2 fi
 186), exit 1. Échecs = assertions : `expected '' to be '…'` (8, squelette) et `expected '1234
 réalisations · 1000 mises en avant…'` sans groupement (3). Les 3083 tests de la base restent verts.
 
+Lot **L7** : RED de la seule tranche L7.1, branche `refactor/toast-default-summary-l7` (depuis
+master `0d7758b`, L4 mergé). Commande : `pnpm test; echo exit=$?`, après `ng cache clean` et purge
+de `node_modules/.vite`. Base avant RED : `187 passed (187)` fichiers, `3099 passed (3099)` tests.
+Aucun squelette : `toast-store.ts` existe.
+
+### Sans RED : L7.2
+
+Retrait des 18 `summary` littéraux : aucun test écrit, filet = specs citées par le plan
+(`admin-messages`, `admin-blog`, `admin-projects`, `admin-cv`, `admin-project-gallery`, `login`,
+`error-toast`, `contact-form`). Sweep des specs : seuls `admin-cv.spec.ts` et
+`admin-project-gallery.spec.ts` figeaient « Succès »/« Erreur » sur un toast ; aucun autre
+consommateur n'asserte le titre.
+
+### Tranche L7.1 — un toast sans titre prend celui de sa sévérité
+
+**`shared/ui/toast-store.spec.ts`** (nouveau, `TestBed.inject(ToastStore)`, `life: 0` : aucun
+minuteur ; lu par le signal `messages()`, projeté sur `{ severity, summary }` ; 6 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| titre par sévérité (`it.each` × 4) | `add({ severity, detail })` | success « Succès », info « Information », warn « Attention », error « Erreur » |
+| sans sévérité ni titre | `add({ detail })` | `{ severity: 'info', summary: 'Information' }` |
+| titre fourni | `add({ severity: 'success', summary: 'Message envoyé' })` | titre gardé ; vert d'emblée (non-régression du contact, assumé) |
+
+**Réduction prescrite par le plan** (le titre est désormais prouvé par le store, plus par chaque
+appelant) : `admin-cv.spec.ts` (2 assertions) et `admin-project-gallery.spec.ts` (4, via une aide
+locale `toasts()`) projettent les appels à `add()` sur `{ severity, detail }` ; `summary` retiré
+des 6 attendus, aucun autre attendu modifié. Verts avant et après.
+
+RED confirmé via `pnpm test` le 2026-10-08 21:10 : 5 failed / 3105 total (1 fichier en échec sur
+188), exit 1. Échecs = assertions : `"summary": undefined` reçu au lieu du titre attendu (5). Les
+3099 tests de la base et le test « titre fourni » restent verts.
+
 ## Journal des tranches
 
 - **Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée** : GREEN 3059 passed / 3060 total (seul rouge : « sans testId » de `field-error.spec.ts`, défaut du test, cf. ## Verify) · refactor : aucun
@@ -1076,6 +1109,8 @@ réalisations · 1000 mises en avant…'` sans groupement (3). Les 3083 tests de
 - **Tranche L4.1 — déplacement, sans RED** : GREEN hors RED de L4.2 (11 failed, les mêmes / 3099 total, dont 5 nouveaux `grouped-number.spec.ts` verts) · refactor : aucun
 - **Tranche L4.2 — les compteurs des en-têtes d'admin groupent les milliers** : GREEN 3099 passed / 3099 total · refactor : aucun (les deux `counted` locaux supprimés font partie de la tranche)
 - **Tranche L4.3 — adoption, sans RED** : GREEN 3099 passed / 3099 total · refactor : imports `@shared/format/*` rangés à leur place alphabétique dans les 17 fichiers touchés
+- **Tranche L7.1 — un toast sans titre prend celui de sa sévérité** : GREEN 3105 passed / 3105 total · refactor : aucun
+- **Tranche L7.2 — retrait des littéraux, sans RED** : GREEN 3105 passed / 3105 total · refactor : les 12 appels à `add()` réduits à `{ severity, detail }` tiennent sur une ligne et sont repliés, comme les appels déjà écrits sur une ligne (prettier garde les objets multilignes tels quels)
 
 ## Verify
 
@@ -1165,6 +1200,26 @@ Runtime :
    - `/projects/` : hydraté ; `6 réalisations`, `6 réalisations affichées`, `2 applications`, `4 projets`, séparateur U+00A0 vérifié caractère par caractère ; filtre « Démos » → `2 réalisations affichées`, `2 projets`. **PASS**.
    - Console : aucune erreur Angular (`NG0…`) ni exception. Seules erreurs, propres au serveur statique local : `/api/config` en 404 (route servie par le serveur Node en prod) et `api/analytics/track` refusé par CORS depuis l'origine `127.0.0.1`.
 
+### Lot L7
+
+2026-10-08, branche `refactor/toast-default-summary-l7` (non commitée).
+
+Gates (codes de sortie lus) :
+
+- `pnpm test; echo exit=$?` → `Test Files 188 passed (188)`, `Tests 3105 passed (3105)`, **exit=0** (3099 de base + 6 de `toast-store.spec.ts`).
+- `pnpm lint; echo exit=$?` → `All files pass linting.`, **exit=0**.
+- `pnpm exec prettier --check <13 fichiers de code touchés>` → `All matched files use Prettier code style!`, **exit=0**. (La spec elle-même échoue `prettier --check`, déjà le cas sur `master` `0d7758b` : non touché.)
+- `pnpm run build --configuration production; echo exit=$?` → `Prerendered 20 static routes.`, **exit=0** ; puis `git checkout -- public/sitemap.xml public/rss.xml`.
+- `grep -nP '[\x{202F}\x{00A0}]'` sur les fichiers de code touchés → aucune ligne.
+- Preuve de fin de lot, `grep -rn "summary: '" src | grep -v '\.spec\.ts'` → 7 lignes : `contact-form.ts:310, 313, 318` (titres propres « Message envoyé », « Envoi impossible », gardés par le plan) et `toast.ts:18, 25, 32, 39` (clé `summary` de `SEVERITY_STYLES` : classes CSS du titre, pas un titre). Hors motif : `notify()` d'`admin-project-editor.ts:370` et d'`admin-post-editor.ts:293` (tableau local, réservé à L8). Les 18 littéraux retirés valaient tous le défaut de leur sévérité (12 « Erreur » sur `error`, 6 « Succès » sur `success`), vérifié appel par appel avant retrait.
+
+Runtime (`ng serve` local, navigateur intégré) :
+
+1. `/` : `errorToastInterceptor` (littéral retiré) émet de vrais toasts, le proxy de dev répondant 502 faute d'API locale → 2 toasts titrés « Erreur », détail « Erreur serveur, veuillez réessayer ». **PASS**.
+2. Même page, `ng.getComponent(app-root).toastStore.add({ severity, detail, life: 0 })` pour les 4 sévérités, puis un toast titré « Message envoyé » → titres rendus dans `[data-testid="toast-summary"]` : « Succès », « Information », « Attention », « Erreur », « Message envoyé ». **PASS**.
+3. Capture : les 5 toasts empilés sur l'accueil (prise au navigateur intégré pendant la session, non versionnée).
+4. Console : aucune erreur Angular (`NG0…`). Erreurs propres à l'environnement local : 4 × `502 (Bad Gateway)` (pas d'API derrière le proxy) et un `InvalidStateError: Transition was aborted` de la View Transitions API au chargement.
+
 ## Review code
 
 Lot L5, 2026-10-08, diff de travail `git diff master` + fichiers non suivis (`field-error.ts`(+spec),
@@ -1252,3 +1307,31 @@ Contrôles demandés : L4.1, les quatre fichiers déplacés sont des renommages 
 Remarques non bloquantes :
 - `projects.ts:13` : l'import `@shared/format/pluralize` arrive après les imports relatifs. Le fichier mêlait déjà l'ordre des imports sur `master`, donc le lot n'aggrave rien, mais l'entrée du journal « imports rangés à leur place alphabétique dans les 17 fichiers touchés » ne le couvre pas.
 - `## Verify` › Lot L4 › 1 dit encore « seule surface publique touchée » pour le blog. Le point 3 ajoute la page Réalisations.
+
+Lot L7, 2026-10-08, diff de travail `git diff master` + fichier non suivi (`shared/ui/toast-store.spec.ts`).
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm test; echo exit=$?` → 188 fichiers / 3105 tests passés, exit=0) / lint ✅ (`pnpm lint` → `All files pass linting.`, exit=0) / build ✅ (`pnpm run build --configuration production` → `Prerendered 20 static routes.`, exit=0, puis `git checkout -- public/sitemap.xml public/rss.xml`, `public/` propre)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/aak-checks.sh` absent) : auto-checks joués à la main sur les 12 fichiers de code du diff (export default, effect, helpers zone, archéologie selon le motif du profil, tests exclus, sécurité, snapshot, boucles générant des `it`, commentaire ajouté) : 0 hit
+**Warnings de gate** : aucun (sorties de test, lint et build relues en entier)
+**Rendu compilé** : N/A (`app-toast` est un sélecteur élément)
+**Preuve de verify runtime** : ✅ (`## Verify` › Lot L7 : steps, PASS, capture, console sans `NG0…`, cohérente avec le diff : intercepteur et rendu des 4 titres par défaut + titre propre)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+Contrôles demandés : `DEFAULT_SUMMARY: Record<ToastSeverity, string>` exhaustif sur les 4 sévérités, non exporté (`toast-store.ts:7-12`), appliqué par `??` (`:31`) ; `ToastEntry.summary` obligatoire (`toast.types.ts:13`), seul constructeur `ToastStore.add()`, typecheck des specs vert (`toast.spec.ts:20` fournit déjà `summary`). Les 18 littéraux retirés, vérifiés un par un contre `git show master:<fichier>` : `error-toast.ts:26` error/Erreur ; `admin-blog.ts:198` success/Succès, `:204` error/Erreur ; `admin-cv.ts:184, 214, 237` error/Erreur, `:204, 231` success/Succès ; `admin-messages.ts:165, 195, 221` success/Succès, `:172, 201, 229` error/Erreur ; `admin-projects.ts:155` success/Succès, `:162` error/Erreur ; `admin-project-gallery.ts:173`, `login.ts:167` error/Erreur. 12 « Erreur » + 6 « Succès », tous égaux au défaut de leur sévérité. Les 23 appels à `add()` de `master` passaient tous un titre : le retrait de `@if (msg.summary)` (`toast.ts:71-77`) ne change aucun rendu réel. Contact (`contact-form.ts:310, 313, 318`) et `notify()` des éditeurs (`admin-post-editor.ts:293-294`, `admin-project-editor.ts:370-371`) hors diff. Réduction des 6 assertions : seule la clé `summary` quitte les attendus, `severity` et `detail` inchangés.
+
+**Tests notables** :
+- ⚠️ `admin-cv.spec.ts:346-349, 380-383` et `admin-project-gallery.spec.ts:143-147` : la projection sur `{ severity, detail }` jette la clé `summary`. Un appelant qui se remettrait à passer un titre faux (« Succès » sur une erreur) resterait vert. Le contrat du titre par défaut est bien prouvé par `toast-store.spec.ts`, mais l'absence de titre propre chez l'appelant n'est plus épinglée. Variante sans projection : `toEqual` sur l'argument brut ignore une clé `undefined` mais échoue sur une clé définie. Prescrit par le plan, non bloquant.
+- ⚠️ `toast-store.spec.ts:8` : la projection garde `summary?: string` alors que `ToastEntry.summary` est maintenant obligatoire. Utile au RED, plus maintenant. Cosmétique.
+- ✨ `toast-store.spec.ts:15-27` : `it.each` sur les 4 sévérités avec `life: 0`. Une sévérité ajoutée sans titre casse la compilation, et un titre faux casse le test nommé.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet sur la livraison (déploiement Dokploy continu d'après `CLAUDE.md`) · monitoring : Sentry
+- non couvert par les gates : un appel avec `summary: ''` afficherait désormais un titre vide (`??` ne remplace pas la chaîne vide, et le `@if` n'est plus là). Aucun appelant ne le fait. Les toasts d'admin n'ont pas été observés au navigateur (authentification requise), seulement l'intercepteur et l'injection directe dans le store.
+
+Suite de la revue L7 (session principale, 2026-10-08) : avertissement « réduction des 6 assertions » soldé — `admin-cv.spec.ts` et l'aide `toasts()` de `admin-project-gallery.spec.ts` comparent désormais l'argument brut de `add()` (`toEqual` ignore une clé `undefined`, échoue sur un titre défini) ; projection de `toast-store.spec.ts` en `summary: string`. Mutant `summary: 'Succès'` sur l'erreur PDF d'`admin-cv.ts:182` → 1 failed / 3105, exit 1 (fichier restauré) ; suite réelle 3105/3105 exit 0, lint exit 0.

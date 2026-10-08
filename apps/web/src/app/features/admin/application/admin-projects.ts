@@ -152,16 +152,12 @@ export class AdminProjects {
         next: () => {
           this.homeGateway.invalidateBundle();
           this.projectsGateway.invalidateAllProjects();
-          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Projet supprimé' });
+          this.toast.add({ severity: 'success', detail: 'Projet supprimé' });
         },
         error: () => {
           // Réconciliation : restaure la liste en cas d'échec
           this.projectsResource.set(snapshot);
-          this.toast.add({
-            severity: 'error',
-            summary: 'Erreur',
-            detail: 'Erreur lors de la suppression du projet',
-          });
+          this.toast.add({ severity: 'error', detail: 'Erreur lors de la suppression du projet' });
         },
       });
   }

@@ -21,11 +21,7 @@ export const errorToastInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      toast.add({
-        severity: 'error',
-        summary: 'Erreur',
-        detail: getErrorMessage(error),
-      });
+      toast.add({ severity: 'error', detail: getErrorMessage(error) });
 
       return throwError(() => error);
     }),

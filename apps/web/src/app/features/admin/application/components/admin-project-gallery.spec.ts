@@ -8,6 +8,7 @@ import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gat
 import type { ProjectImage } from '@features/projects/domain/models/project.model';
 import { makeProjectImage } from '@features/projects/testing/project-builders';
 import { ToastStore } from '@shared/ui/toast-store';
+import type { ToastMessage } from '@shared/ui/toast.types';
 
 const capture = (key: string, alt: string): ProjectImage =>
   makeProjectImage({
@@ -138,6 +139,9 @@ const formOf = (element: Element | null | undefined): HTMLFormElement | null => 
 
 const thumbnailAlts = (host: HTMLElement): (string | null | undefined)[] =>
   items(host).map((item) => byTestId(item, 'admin-gallery-item-thumb')?.getAttribute('alt'));
+
+const toasts = (toast: Rendered['toast']): readonly ToastMessage[] =>
+  toast.add.mock.calls.map(([message]: ToastMessage[]) => message);
 
 function type(input: HTMLElement | null, value: string): void {
   if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) return;
@@ -410,13 +414,13 @@ describe('AdminProjectGallery', () => {
         await upload(rendered, 'Vue mobile');
 
         expect({
-          toasts: rendered.toast.add.mock.calls,
+          toasts: toasts(rendered.toast),
           alts: thumbnailAlts(rendered.host),
           changes: rendered.changes,
           alt: (byTestId(rendered.host, 'admin-gallery-upload-alt') as HTMLInputElement | null)
             ?.value,
         }).toEqual({
-          toasts: [[{ severity: 'error', summary: 'Erreur', detail }]],
+          toasts: [{ severity: 'error', detail }],
           alts: ['Vue globale', 'Transactions', 'Enveloppes'],
           changes: [],
           alt: 'Vue mobile',
@@ -509,15 +513,9 @@ describe('AdminProjectGallery', () => {
       type(byTestId(second, 'admin-gallery-item-alt'), 'Liste des transactions');
       await submit(rendered.fixture, formOf(second));
 
-      expect({ toasts: rendered.toast.add.mock.calls, changes: rendered.changes }).toEqual({
+      expect({ toasts: toasts(rendered.toast), changes: rendered.changes }).toEqual({
         toasts: [
-          [
-            {
-              severity: 'error',
-              summary: 'Erreur',
-              detail: "Erreur lors de l'enregistrement du texte alternatif",
-            },
-          ],
+          { severity: 'error', detail: "Erreur lors de l'enregistrement du texte alternatif" },
         ],
         changes: [],
       });
@@ -686,19 +684,11 @@ describe('AdminProjectGallery', () => {
       );
 
       expect({
-        toasts: rendered.toast.add.mock.calls,
+        toasts: toasts(rendered.toast),
         alts: thumbnailAlts(rendered.host),
         changes: rendered.changes,
       }).toEqual({
-        toasts: [
-          [
-            {
-              severity: 'error',
-              summary: 'Erreur',
-              detail: 'Erreur lors de la suppression de la capture',
-            },
-          ],
-        ],
+        toasts: [{ severity: 'error', detail: 'Erreur lors de la suppression de la capture' }],
         alts: ['Vue globale', 'Transactions', 'Enveloppes'],
         changes: [],
       });
@@ -799,19 +789,11 @@ describe('AdminProjectGallery', () => {
       await click(rendered.fixture, buttonIn(items(rendered.host)[0], 'admin-gallery-item-down'));
 
       expect({
-        toasts: rendered.toast.add.mock.calls,
+        toasts: toasts(rendered.toast),
         alts: thumbnailAlts(rendered.host),
         changes: rendered.changes,
       }).toEqual({
-        toasts: [
-          [
-            {
-              severity: 'error',
-              summary: 'Erreur',
-              detail: 'Erreur lors du déplacement de la capture',
-            },
-          ],
-        ],
+        toasts: [{ severity: 'error', detail: 'Erreur lors du déplacement de la capture' }],
         alts: ['Vue globale', 'Transactions', 'Enveloppes'],
         changes: [],
       });

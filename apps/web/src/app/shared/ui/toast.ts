@@ -68,15 +68,13 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
             data-testid="toast-icon"
           />
           <div class="flex-1 min-w-0">
-            @if (msg.summary) {
-              <div
-                class="font-semibold text-sm leading-tight"
-                [class]="style.summary"
-                data-testid="toast-summary"
-              >
-                {{ msg.summary }}
-              </div>
-            }
+            <div
+              class="font-semibold text-sm leading-tight"
+              [class]="style.summary"
+              data-testid="toast-summary"
+            >
+              {{ msg.summary }}
+            </div>
             @if (msg.detail) {
               <div class="text-sm mt-1 text-foreground/80 leading-relaxed">
                 {{ msg.detail }}

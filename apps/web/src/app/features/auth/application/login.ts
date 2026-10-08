@@ -164,6 +164,6 @@ export class Login {
 
   private fail(detail: string): void {
     this.errorMessage.set(detail);
-    this.toast.add({ severity: 'error', summary: 'Erreur', detail });
+    this.toast.add({ severity: 'error', detail });
   }
 }

@@ -170,7 +170,7 @@ export class AdminProjectGallery {
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: onSuccess,
       error: (error: unknown) => {
-        this.toast.add({ severity: 'error', summary: 'Erreur', detail: errorDetail(error) });
+        this.toast.add({ severity: 'error', detail: errorDetail(error) });
         onError();
       },
     });

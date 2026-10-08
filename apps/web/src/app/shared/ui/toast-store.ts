@@ -4,6 +4,13 @@ import type { ToastEntry, ToastMessage, ToastSeverity } from './toast.types';
 
 const DEFAULT_LIFE_MS = 3000;
 
+const DEFAULT_SUMMARY: Record<ToastSeverity, string> = {
+  success: 'Succès',
+  info: 'Information',
+  warn: 'Attention',
+  error: 'Erreur',
+};
+
 @Injectable({ providedIn: 'root' })
 export class ToastStore {
   private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -21,7 +28,7 @@ export class ToastStore {
     const entry: ToastEntry = {
       id: this._nextId++,
       severity,
-      summary: message.summary,
+      summary: message.summary ?? DEFAULT_SUMMARY[severity],
       detail: message.detail,
       life: message.life ?? DEFAULT_LIFE_MS,
     };

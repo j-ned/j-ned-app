@@ -195,13 +195,12 @@ export class AdminBlog {
       .subscribe({
         next: () => {
           this.gateway.invalidateAdminPosts();
-          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Article supprimé' });
+          this.toast.add({ severity: 'success', detail: 'Article supprimé' });
         },
         error: () => {
           this.postsResource.set(snapshot);
           this.toast.add({
             severity: 'error',
-            summary: 'Erreur',
             detail: "Erreur lors de la suppression de l'article",
           });
         },

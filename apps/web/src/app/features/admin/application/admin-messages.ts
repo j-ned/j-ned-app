@@ -160,18 +160,9 @@ export class AdminMessages {
             (list ?? []).map((m) => (m.id === message.id ? updated : m)),
           );
           this.contactGateway.invalidateUnreadCount();
-          this.toast.add({
-            severity: 'success',
-            summary: 'Succès',
-            detail: 'Message marqué comme lu',
-          });
+          this.toast.add({ severity: 'success', detail: 'Message marqué comme lu' });
         },
-        error: () =>
-          this.toast.add({
-            severity: 'error',
-            summary: 'Erreur',
-            detail: 'Erreur lors de la mise à jour',
-          }),
+        error: () => this.toast.add({ severity: 'error', detail: 'Erreur lors de la mise à jour' }),
       });
   }
 
@@ -192,15 +183,11 @@ export class AdminMessages {
       .subscribe({
         next: () => {
           this.contactGateway.invalidateUnreadCount();
-          this.toast.add({ severity: 'success', summary: 'Succès', detail: 'Message supprimé' });
+          this.toast.add({ severity: 'success', detail: 'Message supprimé' });
         },
         error: () => {
           this.messagesRes.set(snapshot);
-          this.toast.add({
-            severity: 'error',
-            summary: 'Erreur',
-            detail: 'Erreur lors de la suppression',
-          });
+          this.toast.add({ severity: 'error', detail: 'Erreur lors de la suppression' });
         },
       });
   }
@@ -218,17 +205,12 @@ export class AdminMessages {
           this.contactGateway.invalidateUnreadCount();
           this.toast.add({
             severity: 'success',
-            summary: 'Succès',
             detail: counted(count, 'message marqué comme lu', 'messages marqués comme lus'),
           });
         },
         error: () => {
           this.messagesRes.set(snapshot);
-          this.toast.add({
-            severity: 'error',
-            summary: 'Erreur',
-            detail: 'Erreur lors de la mise à jour',
-          });
+          this.toast.add({ severity: 'error', detail: 'Erreur lors de la mise à jour' });
         },
       });
   }

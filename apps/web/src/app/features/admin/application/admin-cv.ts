@@ -179,11 +179,7 @@ export class AdminCv {
     } else {
       this.clearSelection();
       this.dropzoneResetToken.update((token) => token + 1);
-      this._toast.add({
-        severity: 'error',
-        summary: 'Erreur',
-        detail: 'Seuls les fichiers PDF sont acceptés.',
-      });
+      this._toast.add({ severity: 'error', detail: 'Seuls les fichiers PDF sont acceptés.' });
     }
   }
 
@@ -199,21 +195,13 @@ export class AdminCv {
 
     try {
       await firstValueFrom(this._cvService.upload(file));
-      this._toast.add({
-        severity: 'success',
-        summary: 'Succès',
-        detail: 'CV mis en ligne',
-      });
+      this._toast.add({ severity: 'success', detail: 'CV mis en ligne' });
       this.clearSelection();
       this.dropzoneResetToken.update((token) => token + 1);
       this.cvResource.reload();
     } catch (err: unknown) {
       const message = extractErrorMessage(err);
-      this._toast.add({
-        severity: 'error',
-        summary: 'Erreur',
-        detail: `Échec de la mise en ligne\u00a0: ${message}`,
-      });
+      this._toast.add({ severity: 'error', detail: `Échec de la mise en ligne\u00a0: ${message}` });
     } finally {
       this.isUploading.set(false);
     }
@@ -228,15 +216,11 @@ export class AdminCv {
   private async deleteCv(): Promise<void> {
     try {
       await firstValueFrom(this._cvService.delete());
-      this._toast.add({ severity: 'success', summary: 'Succès', detail: 'CV supprimé' });
+      this._toast.add({ severity: 'success', detail: 'CV supprimé' });
       this.cvResource.reload();
     } catch (err: unknown) {
       const message = extractErrorMessage(err);
-      this._toast.add({
-        severity: 'error',
-        summary: 'Erreur',
-        detail: `Erreur de suppression\u00a0: ${message}`,
-      });
+      this._toast.add({ severity: 'error', detail: `Erreur de suppression\u00a0: ${message}` });
     }
   }
 }
