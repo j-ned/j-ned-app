@@ -1,13 +1,6 @@
-export type AdminNavKey =
-  | 'overview'
-  | 'projects'
-  | 'posts'
-  | 'cv'
-  | 'audience'
-  | 'messages'
-  | 'settings';
+type AdminNavKey = 'overview' | 'projects' | 'posts' | 'cv' | 'audience' | 'messages' | 'settings';
 
-export type AdminNavItem = {
+type AdminNavItem = {
   readonly key: AdminNavKey;
   readonly route: string;
   readonly icon: string;

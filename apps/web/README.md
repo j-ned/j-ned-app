@@ -256,13 +256,15 @@ pnpm start          # http://localhost:4200, /api proxifié vers :3000 (proxy.co
 
 Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production directement à `https://api.nedellec-julien.fr/api`.
 
+Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discussions de ce dépôt (catégorie « General », identifiants dans `src/app/shared/api/giscus-config.ts`). Le widget n'apparaît que si l'app [Giscus](https://github.com/apps/giscus) est installée sur le dépôt : sans elle, Giscus ignore le dépôt sans erreur.
+
 ### Scripts
 
 | Commande | Action |
 |---|---|
 | `pnpm start` | Serveur de développement avec proxy `/api` |
 | `pnpm build` | Sitemap + RSS + build SSR ; `--configuration production` ajoute le prérendu et le hachage CSP |
-| `pnpm test` | Vitest (63 fichiers, 493 tests) |
+| `pnpm test` | Vitest (happy-dom) |
 | `pnpm lint` | ESLint, zéro warning toléré |
 | `pnpm check` | Prettier + lint |
 | `pnpm icons:build` | Régénère le sprite d'icônes |

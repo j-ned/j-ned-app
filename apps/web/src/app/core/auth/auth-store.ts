@@ -131,9 +131,7 @@ export class AuthStore {
   }
 
   // Appelé par l'initialiseur d'app (`initializeAuth`), jamais depuis le constructeur : la requête
-  // traverse `authInterceptor`, qui injecte AuthStore. Lancée pendant la construction du store,
-  // elle échouait en NG0200 (dépendance circulaire) avant même de partir, et l'erreur effaçait
-  // l'indice de session : chaque rechargement déconnectait l'admin.
+  // traverse `authInterceptor`, qui injecte AuthStore (dépendance circulaire pendant la construction).
   restoreSession(): void {
     if (!this.isBrowser || !this.hasSessionHint()) return;
     this._ready = new Promise<void>((resolve) => {

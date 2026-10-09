@@ -34,8 +34,8 @@ export class HttpProjectsGateway extends ProjectsGateway {
   //
   // Un échec n'est jamais gardé : la requête est relancée une fois, puis l'erreur part aux abonnés
   // (qui affichent un état d'erreur) et le flux partagé se réinitialise (`resetOnError`), si bien
-  // que le prochain abonné, ou un `reload()`, refait la requête. Avant, `catchError → []` figeait
-  // une liste vide pour toute la session, impossible à distinguer d'un portfolio sans projet.
+  // que le prochain abonné, ou un `reload()`, refait la requête. Une liste vide de repli serait
+  // indiscernable d'un portfolio sans projet.
   private readonly allProjects$ = this._refresh$.pipe(
     startWith(undefined),
     switchMap(() =>

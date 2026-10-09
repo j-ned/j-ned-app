@@ -325,16 +325,6 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
- * Icon tile utility (anchor-only) — pour les <a> stylés en tuile d'icône.
- * Pour les <div> wrappers, utiliser le composant <app-icon-tile size>.
- * sm/lg ont été supprimés (uniquement utilisés par des <div>, migrés en composant).
- * ---------------------------------------------------------------- */
-
-@utility icon-tile {
-  @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl;
-}
-
-/* ---------------------------------------------------------------- *
  * Form utilities (admin) — pour ne pas dupliquer 10+ classes par input
  * ---------------------------------------------------------------- */
 

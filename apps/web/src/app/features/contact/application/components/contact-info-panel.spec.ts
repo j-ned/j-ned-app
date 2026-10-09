@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import type { ContactInfo } from '@features/contact/domain/models/contact-info.model';
-import type { SocialLinks } from '@features/contact/domain/models/social-link.model';
+import type { ContactInfo } from '@shared/identity/contact-info.model';
+import type { SocialLinks } from '@shared/identity/social-link.model';
 import { ContactInfoPanel } from './contact-info-panel';
 
 const INFO: ContactInfo = { email: 'a@b.fr', phone: '06 00 00 00 00', location: 'Paris' };

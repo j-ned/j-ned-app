@@ -148,7 +148,7 @@ You are an expert TypeScript / Angular engineer. You write functional, maintaina
 - Bouton submit desactive **uniquement** sur `form().submitting()` (ou un `loading()` parent), jamais sur `invalid()` : un controle desactive n'est ni focusable ni annonce
 - Composant dumb : l'action de `submission` emet l'`output()`, un `input()` `resetToken` + `effect()` remet le modele a vide
 - `ReactiveFormsModule`, `FormsModule` et `ngModel` : **plus aucun usage dans le repo** (migration achevee le 2026-09-08). Un `<select>` de filtre se lie en `(change)` ; la selection se pose par `[value]` sur le `<select>` seulement si ses options sont statiques. Options generees par `@for` : `[selected]` sur chaque `<option>` (sinon `[value]` est applique avant que les options existent et le navigateur affiche la premiere). Reactive Forms tolere uniquement pour une lib tierce qui n'expose qu'un `ControlValueAccessor`
-- References : `features/contact/application/contact-form.ts` (page), `features/auth/application/password-change-form.ts` (croisee), `features/admin/application/components/admin-project-inline-form.ts` (tableaux, `linkedSignal`)
+- References : `features/contact/application/contact-form.ts` (page), `features/auth/application/password-change-form.ts` (croisee), `features/admin/application/components/admin-project-form.ts` (tableaux `applyEach`), `features/admin/application/components/admin-pair-rows.ts` (ajout/retrait de lignes par `value.update`), `features/admin/application/editor-draft.ts` (`linkedSignal` sur l'entite editee)
 - `<fieldset>` + `<legend>` pour grouper, `<label for>` toujours, `aria-required="true"`, `role="alert"` sur les erreurs
 
 ### Routing

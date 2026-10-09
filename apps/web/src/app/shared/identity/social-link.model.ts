@@ -1,4 +1,4 @@
-export type SocialLink = {
+type SocialLink = {
   readonly url: string;
   readonly label: string;
   readonly icon: string;

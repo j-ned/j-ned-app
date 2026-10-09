@@ -27,7 +27,7 @@ export function makeContentImage(overrides: Partial<ContentImage> = {}): Content
   };
 }
 
-export const PRODUCTION_POST_TAGS = {
+const PRODUCTION_POST_TAGS = {
   encryption: [
     'Chiffrement',
     'AES-256-GCM',

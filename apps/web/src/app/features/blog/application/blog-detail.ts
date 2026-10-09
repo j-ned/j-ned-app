@@ -225,9 +225,6 @@ export class BlogDetail {
   // fait que le loader se relance automatiquement à chaque changement de slug —
   // un `toSignal` souscrit une seule fois à l'Observable initial et raterait
   // silencieusement le changement de slug sur une navigation in-page.
-  // NB : sur Angular 22, l'option `resource()` s'appelle `params` (et la clé
-  // correspondante dans `ResourceLoaderParams` aussi) — le brief d'origine
-  // utilisait `request`, nom antérieur à cette release ; corrigé ici.
   private readonly _postResource = resource({
     params: () => this.slug(),
     loader: async ({ params: slug }) => {
@@ -311,12 +308,8 @@ export class BlogDetail {
     this.analytics.trackArticleView(p.id, p.title);
   });
 
-  // Sentinel juste après le contenu : sa présence dans le viewport signale que
-  // le lecteur a scrollé jusqu'au bout de l'article ("réellement lu", pas
-  // juste ouvert). Le sentinel persiste entre deux slugs (même instance de
-  // BlogDetail réutilisée, cf. `_postResource`), donc le tracking se
-  // dédoublonne par `post().id` lu au moment de l'intersection plutôt que
-  // par ré-exécution de l'effect.
+  // Sentinel en fin d'article : visible = article lu jusqu'au bout. Il survit à un changement de
+  // slug (instance réutilisée), d'où le dédoublonnage par `post().id` lu à l'intersection.
   private _readTrackedId: string | null = null;
   private readonly _trackRead = effect((onCleanup) => {
     const sentinel = this._readSentinel();

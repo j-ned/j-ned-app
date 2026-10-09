@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
-import type { ContactInfo } from '@features/contact/domain/models/contact-info.model';
-import type { SocialLinks } from '@features/contact/domain/models/social-link.model';
+import type { ContactInfo } from '@shared/identity/contact-info.model';
+import type { SocialLinks } from '@shared/identity/social-link.model';
 import { AppIcon } from '@shared/icons/app-icon';
 
 type Channel = {

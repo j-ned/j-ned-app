@@ -79,7 +79,7 @@ const marked = new Marked({
 /**
  * Markdown → HTML **assaini**. marked laisse passer le HTML inline tel quel (l'option `sanitize`
  * a disparu en v5) : c'est ici, et seulement ici, que le HTML devient digne de confiance pour
- * `bypassSecurityTrustHtml` (cf. ADR-0002).
+ * `bypassSecurityTrustHtml`.
  */
 export function parseMarkdown(
   markdown: string,

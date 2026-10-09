@@ -155,10 +155,9 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(
       withEventReplay(),
       withIncrementalHydration(),
-      // L'intercepteur auth pose `withCredentials` sur chaque requête, et le transfer cache ignore
-      // ces requêtes par défaut : sans `includeRequestsWithCredentials`, rien n'était sérialisé au
-      // prérendu et le client refaisait chaque appel après hydratation (spec 004). Seules les
-      // lectures publiques sont mises en cache : les réponses de session restent hors HTML.
+      // L'intercepteur auth pose `withCredentials` partout, et le transfer cache ignore ces requêtes
+      // par défaut : sans `includeRequestsWithCredentials`, le client referait chaque appel après
+      // hydratation. Seules les lectures publiques sont sérialisées, la session reste hors HTML.
       withHttpTransferCacheOptions({
         includeRequestsWithCredentials: true,
         filter: (req) => req.method === 'GET' && isPublicReadUrl(req.url),

@@ -1,5 +1,5 @@
-import type { ContactInfo } from '@features/contact/domain/models/contact-info.model';
-import type { SocialLinks } from '@features/contact/domain/models/social-link.model';
+import type { ContactInfo } from '@shared/identity/contact-info.model';
+import type { SocialLinks } from '@shared/identity/social-link.model';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 export const STATIC_CONTACT_INFO: ContactInfo = {

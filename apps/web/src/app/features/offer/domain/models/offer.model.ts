@@ -7,12 +7,12 @@ export type OfferSlug =
 
 export type OfferFamily = 'sites' | 'applications';
 
-export type OfferAmount =
+type OfferAmount =
   | { readonly kind: 'fixed'; readonly eur: number }
   | { readonly kind: 'from'; readonly eur: number }
   | { readonly kind: 'on-request' };
 
-export type OfferPeriod = 'once' | 'month' | 'day';
+type OfferPeriod = 'once' | 'month' | 'day';
 
 export type OfferPriceLine = {
   readonly id: string;
@@ -43,7 +43,7 @@ export type OfferSummary = {
   };
 };
 
-export type OfferReason = {
+type OfferReason = {
   readonly id: string;
   readonly lead: string;
   readonly detail: string;
@@ -56,7 +56,7 @@ export type OfferStep = {
   readonly detail: string;
 };
 
-export type OfferFaqItem = {
+type OfferFaqItem = {
   readonly id: string;
   readonly question: string;
   readonly answer: string;
@@ -66,7 +66,7 @@ export type OfferSection<T> = { readonly heading: string; readonly items: readon
 
 export type DemoImageFile = `/demos/${string}`;
 
-export type OfferDemoImage = { readonly file: DemoImageFile; readonly alt: string };
+type OfferDemoImage = { readonly file: DemoImageFile; readonly alt: string };
 
 export type OfferDemo = {
   readonly id: string;
