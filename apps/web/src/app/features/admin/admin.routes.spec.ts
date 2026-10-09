@@ -2,10 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 import { ADMIN_ROUTES } from './admin.routes';
-import { AdminAudience } from './application/admin-audience';
-import { AdminOverview } from './application/admin-overview';
-import { AdminPostEditor } from './application/admin-post-editor';
-import { AdminProjectEditor } from './application/admin-project-editor';
+import { AdminAudience } from './pages/admin-audience/admin-audience';
+import { AdminOverview } from './pages/admin-overview/admin-overview';
+import { AdminPostEditor } from './pages/admin-post-editor/admin-post-editor';
+import { AdminProjectEditor } from './pages/admin-project-editor/admin-project-editor';
 import { unsavedChangesGuard } from './application/unsaved-changes-guard';
 
 describe('ADMIN_ROUTES: titres des pages', () => {

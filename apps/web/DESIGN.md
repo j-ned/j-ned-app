@@ -391,7 +391,7 @@ Les repères d'un plan : un libellé court, une valeur. Étude de cas (Stack, Po
 - **API:** `facts: readonly Fact[]` (`{ label, value }`). Le consommateur ne la rend pas sans repère (`@if (facts.length)`) : jamais de `dl` vide.
 - **Structure:** `dl` en grille à deux colonnes (`6.5rem` puis le reste, `subgrid` par ligne) ; `dt` mono `text-xs text-muted`, `dd` en texte courant `text-sm`. Traits `line` au-dessus de la liste et sous chaque ligne (décoratifs, Decorative Line Rule).
 
-### Liste du blog (`features/blog/application/blog-list.ts`)
+### Liste du blog (`features/blog/pages/blog-list/blog-list.ts`)
 
 La page `/blog` reprend le gabarit des Réalisations : en-tête à cartouche, filtre local, liste.
 
@@ -496,7 +496,7 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **Mobile:** drawer (`shared/ui/drawer.ts`) via icon hamburger.
 - **Focus visible:** outline 2px Signal Indigo cohérent avec les boutons.
 
-### Coque admin (`features/admin/application/admin-layout.ts`, `components/admin-nav.ts`)
+### Coque admin (`features/admin/pages/admin-layout/admin-layout.ts`, `application/components/admin-nav.ts`)
 
 - **Landmarks:** `App` garde le seul `<main>` ; la coque n'émet ni `main`, ni `aside`, ni titre. Header et Footer publics absents sous `/admin` dès le premier rendu (l'adresse demandée suffit, sans attendre la navigation).
 - **Barre latérale (à partir de `lg`, 1 024 px):** colonne de `15.75rem`, `sticky top-0 h-svh`, filet droit `line`. En tête, monogramme « JN » (carré 40 px, `rounded-[0.625rem]`, `border-primary/30`, `bg-primary/12`, `text-primary`) et « Julien Nédellec / Administration » (mono 12 px). Contenu de page : `max-w-[72.5rem]`, `px-14 pt-11`, corps 15 px.
@@ -510,7 +510,7 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - Action principale ou cartouche projetées par `[adminPageAside]` dans une seconde colonne de `22rem` alignée en bas (à partir de `lg`, seulement si un aside est projeté).
 - Dates des sur-titres en français, « 1er » pour le premier jour du mois.
 
-### Vue d'ensemble admin (`features/admin/application/admin-overview.ts`)
+### Vue d'ensemble admin (`features/admin/pages/admin-overview/admin-overview.ts`)
 
 - **En-tête:** sur-titre « Mercredi 7 octobre 2026 · 30 derniers jours » (date lue à l'ouverture de la page), `h1` « Vue d'ensemble », introduction = phrase de synthèse (`overview-copy.ts`) ; cartouche « En ligne » (`nedellec-julien.fr`, une rangée par nature puis « Articles ») en aside.
 - **Grille:** deux rangées de deux colonnes `minmax(0,1.65fr) / minmax(0,1fr)`, gouttière 56 px, à partir de `lg` ; une colonne en dessous. Audience et Contacts, puis Contenu en ligne et Actions rapides.
@@ -539,7 +539,7 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **Corps:** sur-titre mono 12 px « 01 · Catégorie » (rang dans la liste complète, stable sous un filtre), `h2` Archivo extra-gras 22 px élargi 106 % `tracking-[-0.03em]`, accroche 14,5 px `text-muted` `line-clamp-2` limitée à 62 caractères, ou mention « Accroche vide : … » 13 px précédée d'un point `primary` 6 px ; `FactList` (Stack : 4 outils + « +N », Accueil : Mis en avant) limitée à `40rem`.
 - **Actions:** trois cibles de 44 px nommées « Voir la fiche publique : X (nouvel onglet) », « Modifier : X » (liens `appButton variant="ghost-icon"`) et « Supprimer : X » (`appButton variant="text-danger"`).
 
-### Éditeur de projet (`features/admin/application/admin-project-editor.ts`, `components/admin-project-form.ts`)
+### Éditeur de projet (`features/admin/pages/admin-project-editor/admin-project-editor.ts`, `application/components/admin-project-form.ts`)
 
 - **En-tête:** fil d'Ariane `nav aria-label="Fil d'Ariane"` mono 13 px (« Projets » `text-primary` 44 px, `/` décoratif, page courante `aria-current="page"`), `h1` de l'en-tête admin (titre **enregistré**, il ne suit pas la saisie), phrase sur le déploiement ; actions à droite : « Voir l'aperçu » `appButton variant="outlined"` (icône `eye`, `routerLink="." fragment="apercu"`, masqué à partir de `lg`) et « Voir la fiche » `appButton variant="outlined"` pour un projet existant.
 - **Colonnes:** à partir de `2xl` (1 536 px), grille `minmax(0,1fr) / 25rem`, `gap-14` ; la seconde colonne (`id="apercu"`, `scroll-mt-6`) suit le formulaire dans le DOM, `2xl:sticky 2xl:top-6`, et empile l'aperçu public puis le sommaire, `gap-3.5`. Sous `2xl`, elle passe sous le formulaire (`gap-10`) et le lien « Voir l'aperçu » y mène : avec la barre latérale, une colonne de 25rem plus tôt laisserait moins de 560 px au formulaire (204 px à 1 024, 460 à 1 280, mesurés).
@@ -553,7 +553,7 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **Sommaire (`components/admin-form-toc.ts`):** `nav aria-label="Sections du formulaire"`, filet haut `line` ; cinq liens 44 px, filet bas `line`, 14 px `text-muted` (survol `foreground`) : libellé court « 02 · Présentation » à gauche, état mono 12 px `text-primary` « modifié » à droite. `routerLink="." [fragment]` (un `href="#id"` sous `<base href="/">` ouvrirait `/#id`) ; le défilement passe par `anchorScrolling`.
 - **Quitter:** garde `unsavedChangesGuard` sur `projects/new` et `projects/:id` ; avec des modifications, `ConfirmDialog` « Quitter sans enregistrer ? » / « Quitter sans enregistrer » (danger) / « Continuer l'édition » (focus initial) ; fermeture d'onglet ou rechargement : boîte native `beforeunload`.
 
-### Liste des articles (`features/admin/application/admin-blog.ts`, `components/admin-post-row.ts`)
+### Liste des articles (`features/admin/pages/admin-blog/admin-blog.ts`, `components/admin-post-row.ts`)
 
 - **Filtre:** `FilterGroup` « Filtrer par statut » (Tous, Publiés, Brouillons ; comptes de la liste entière, statut vide désactivé) au-dessus du tableau.
 - **Tableau:** `table` pleine largeur, `caption` `sr-only` qui dit l'ordre (« Articles, du plus récent au plus ancien » ou l'inverse) ; six `th scope="col"` mono 12 px capitales `text-muted`, filet bas `line-strong` 1,5 px : Article, Statut, Publié le, Lecture, J'aime, actions (`sr-only`). Seul « Publié le » est triable : `aria-sort` sur le `th`, `button` natif 44 px avec flèche `arrow-down` / `arrow-up` décorative ; les brouillons restent en fin dans les deux sens.
@@ -561,7 +561,7 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **Actions:** cibles de 44 px sur une ligne à partir de `sm` : « Lire en ligne : X (nouvel onglet) » (publiés seulement, `/blog/<slug>`, `noopener`), « Modifier : X » (lien vers l'éditeur), « Supprimer : X » (`appButton variant="text-danger"`, confirmation).
 - **Petit écran:** sous `md`, Publié le, Lecture et J'aime (`th` et `td`) passent en `hidden md:table-cell` et la cellule Article les reprend en méta mono 12 px (« 9 sept. 2026 · 13 min · 0 j'aime », « Non publié · … ») ; sous `sm`, la vignette disparaît et les actions s'empilent dans leur cellule. Aucun défilement horizontal à 375 px.
 
-### Éditeur d'article (`features/admin/application/admin-post-editor.ts`, `components/admin-post-form.ts`)
+### Éditeur d'article (`features/admin/pages/admin-post-editor/admin-post-editor.ts`, `application/components/admin-post-form.ts`)
 
 Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, sommaire, garde), à ces différences près :
 
@@ -572,7 +572,7 @@ Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, s
 - **Panneau « Insérer une image » (`components/admin-content-image-upload.ts`):** bouton Image en disclosure (`aria-expanded`, fond `surface-elevated` ouvert, `aria-controls` vers le panneau). Panneau sous la barre, hors du `role="toolbar"`, `div role="group"` (pas de `<form>`, il vit dans celui de l'article) : carte `bg-surface`, bord `line`, `rounded-md`, `p-4`, une colonne `gap-4`. Titre « Insérer une image » en `field-label`, zone de dépôt partagée (AVIF, WebP, PNG, JPEG, 5 Mo), champ « Texte alternatif » (`form-input`, `aria-required`, 300 caractères), message d'envoi `form-error` `role="alert"` (413, 422, autre), boutons `appButton` « Insérer l'image » (désactivé pendant l'envoi, il reprend le focus après) et `appButton variant="outlined"` « Annuler ». Le focus entre sur la zone de dépôt à l'ouverture ; Entrée dans le champ envoie sans enregistrer l'article ; Échap et « Annuler » rendent le focus au bouton Image ; après l'insertion, focus dans la zone et annonce « Image insérée ».
 - **Aperçu public (`components/admin-post-preview.ts`):** même cadre que celui des projets, référence « Blog · Liste des articles » ; corps `inert` : la vraie `BlogPostRow` (jamais prioritaire), empilée dans la colonne de 25rem, temps de lecture en direct.
 
-### Audience (`features/admin/application/admin-audience.ts`, facade `audience-report.ts`)
+### Audience (`features/admin/pages/admin-audience/admin-audience.ts`, facade `audience-report.ts`)
 
 - **En-tête:** `AdminPageHeader` (sur-titre de période, `h1` « Audience », introduction `audienceLead` : « 42 visiteurs, dont 18 venus de google.com. 9 sur 10 repartent après une page. »). Aside aligné à droite à partir de `lg` : « N visiteur(s) en ce moment » (point `status-success` décoratif, nombre en mono gras, texte simple sans région live : relevé toutes les 30 s), puis deux boutons contour 44 px, « Exclure cet appareil » / « Cet appareil est exclu » (`button` natif, `aria-pressed`, bord `primary` une fois pressé) et « Exporter en CSV ».
 - **Période:** `FilterGroup` « Période » sans compte (7 jours, 30 jours, 90 jours, Depuis le début).
@@ -581,7 +581,7 @@ Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, s
 - **Pages les plus vues, Provenance (`components/audience-share-table.ts`):** deux colonnes à partir de `lg`. `section` nommée par son `h2`, `table` à `caption` `sr-only`, en-têtes `table-head` (mono 12 px capitales `text-muted`, filet bas `line-strong` 1,5 px) ; une ligne par entrée (cinq au plus, le reste en « Autres ») : libellé (mono pour un chemin), barre décorative `h-1 bg-primary` sur piste `bg-line` rapportée à la plus grande ligne, nombre mono semi-gras, part mono `text-muted` (« 43 % »). Sans donnée : « Aucune donnée sur la période. »
 - **Ce que les visiteurs font (`components/audience-tally.ts`):** grille 1 / 2 / 4 colonnes de listes `dl` titrées en `h3` mono capitales : Totaux, Projets cliqués, Articles ouverts, Articles lus jusqu'au bout, CTA cliqués, Navigateurs, Systèmes, Pays ; nom à gauche, nombre mono à droite, filets `line`. Liste vide : « Rien sur la période. » Plus de donuts.
 
-### Messages (`features/admin/application/admin-messages.ts`, `components/admin-message-row.ts`)
+### Messages (`features/admin/pages/admin-messages/admin-messages.ts`, `application/components/admin-message-row.ts`)
 
 - **En-tête:** sur-titre « N non lu(s) · N au total » ; aside « Tout marquer comme lu » (bouton contour natif, icône `check`), `aria-disabled="true"` sans effet quand rien n'est non lu (reste focalisable et annoncé, `opacity-55`), jamais `disabled`.
 - **Filtre:** `FilterGroup` « Filtrer par lecture » (Tous, Non lus, Lus ; comptes de la boîte entière, filtre à 0 inactif).
@@ -590,21 +590,21 @@ Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, s
 - **Vide:** `AdminEmptyState` centré, tampon « Boîte vide ».
 - **Échec:** un seul signalement, celui de la page : toast pour une écriture (état restauré), `LoadError` pour la lecture de la boîte. La lecture et les écritures de `HttpContactGateway` utilisées par l'admin portent `SKIP_ERROR_TOAST`.
 
-### CV (`features/admin/application/admin-cv.ts`, `admin-cv-view.ts`)
+### CV (`features/admin/pages/admin-cv/admin-cv.ts`, `application/admin-cv-view.ts`)
 
 - **En-tête:** sur-titre « PDF · 76 Ko · mis en ligne le 19 sept. 2026 » (taille par `formatFileSize`, source unique avec le cartouche et la zone de dépôt), `h1` « CV », phrase sur le bouton du site ; aside : `Cartouche` « CV en ligne », référence = nom du fichier, lignes Mis en ligne / Taille / Téléchargé (« 0 fois en 30 j », espace insécable, « indisponible » si le compte échoue, sans alerte ni toast). Aucun cartouche sans CV.
 - **Actions:** « Ouvrir le PDF » `appButton variant="outlined"` (icône `external-link`, « (nouvel onglet) » `sr-only`, `noopener noreferrer`) puis « Retirer le CV du site… » (`appButton variant="text-danger"`, confirmation).
 - **Téléversement:** `AdminSectionHead` « Remplacer le fichier » (ou « Mettre un CV en ligne » sans CV), `mt-12`, puis `FileDropzone` ; « Mettre en ligne » / « Annuler » sous la zone dès qu'un PDF est choisi. Un envoi réussi vide la zone (`resetToken`) ; un fichier qui n'est pas un PDF aussi, avec le toast « Seuls les fichiers PDF sont acceptés. ». Un échec d'envoi ou de retrait : un seul toast, celui de la page (`SKIP_ERROR_TOAST` sur les deux écritures).
 - **Vide:** `AdminEmptyState` tampon « Aucun CV », phrase sur le bouton du site absent.
 
-### Paramètres (`features/admin/application/admin-settings.ts`, `components/admin-setting-row.ts`)
+### Paramètres (`features/admin/pages/admin-settings/admin-settings.ts`, `application/components/admin-setting-row.ts`)
 
 - **Sections:** `AdminSectionHead` « Sécurité » puis « Apparence » (`mt-12`).
 - **Ligne de réglage (`div[app-admin-setting-row]`, `fieldset[app-admin-setting-row]`):** filet bas `line`, `py-4.5` ; titre (`h3`, ou `legend` flottante pour un `fieldset`) Archivo gras 16,5 px élargi 104 %, explication 14 px `text-muted` limitée à 60 caractères, réglage à droite à partir de `sm` (deuxième colonne sur deux rangées), dessous sinon.
 - **Sécurité:** « Double authentification » → « Configurer » (`appButton variant="outlined"` vers `/admin/settings/security`) ; « Session » « Connecté en tant que <e-mail>. » → « Se déconnecter » (`appButton variant="outlined"`, icône `sign-out`).
 - **Apparence:** `fieldset` « Thème de l'administration », trois radios natives Système / Clair / Sombre (même `name`, appliquées au changement, sans soumission) dessinées en onglets comme `FilterGroup` : `label` 44 px `text-muted`, cochée = trait bas `primary` 2 px et texte `foreground` semi-gras, focus clavier = contour 2 px `primary` intérieur, piste `line` en trait intérieur bas. Même stockage que la bascule de la coque et du site.
 
-### Sécurité (`features/auth/application/two-factor-setup.ts`)
+### Sécurité (`features/auth/pages/two-factor-setup/two-factor-setup.ts`)
 
 - `h1` « Sécurité » en tête de colonne (style de l'en-tête admin, sans l'importer : `features/auth` ne dépend pas de `features/admin`) ; statut « 2FA activé » en `Stamp` (`twofa-status`), plus en vert sur fond vert.
 

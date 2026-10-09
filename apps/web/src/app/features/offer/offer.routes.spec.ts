@@ -1,7 +1,7 @@
 import type { Route } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import { OfferCatalogue } from './application/offer-catalogue';
-import { OfferPage } from './application/offer-page';
+import { OfferCatalogue } from './pages/offer-catalogue/offer-catalogue';
+import { OfferPage } from './pages/offer-page/offer-page';
 import { OFFERS } from './domain/offer-catalog.static-data';
 import { OFFER_PAGES } from './domain/offer-pages.static-data';
 import { OFFER_ROUTES } from './offer.routes';

@@ -122,10 +122,11 @@ Chaque feature suit la même règle de dépendance :
 src/app/features/<feature>/
 ├── domain/        # TypeScript pur : modèles (type), gateways (abstract class), use cases
 ├── infra/         # services Angular : gateways HTTP, adapters, données statiques
-└── application/   # composants : pages smart, composants dumb
+├── application/   # composants non routés
+└── pages/         # pages routées, smart, un dossier par page
 ```
 
-`application → domain ← infra`. Le domaine ne connaît ni Angular, ni HTTP, ni les types de l'API. Le câblage des implémentations se fait dans `app.config.ts` :
+`pages → application → domain ← infra`. Le domaine ne connaît ni Angular, ni HTTP, ni les types de l'API. Le câblage des implémentations se fait dans `app.config.ts` :
 
 ```ts
 providers: [

@@ -36,7 +36,8 @@
 - **État partagé** : aucun store générique tiers (pas de NgRx) ; stores maison à
   base de signals. **Seuil de promotion en store** : partagé entre **2+
   composants non liés**. Sous le seuil : signals locaux.
-- **Coordinateur de feature (facade)** : couche `features/<x>/application/**`,
+- **Coordinateur de feature (facade)** : `features/<x>/application/**`, ou le
+  dossier de sa page s'il ne sert qu'à elle (`pages/admin-audience/audience-report.ts`) ;
   services injectables qui *frontent* les use-cases/gateways du domaine et les
   adaptent au view (signals, `resource()`/`rxResource()`). Naming : **nommés par
   use-case, sans suffixe** (`login.ts`, `contact-form.ts`, `admin-cv.ts`) —
@@ -140,7 +141,7 @@
   lisibilité ; agrégats récurrents candidats (`User`, `SiteStats`,
   `StatsOverview`, `Project`) — à doter d'un builder dès qu'ils sont construits
   >1× dans les tests.
-- **Exemple Router-en-test stable** : `src/app/features/auth/application/login.spec.ts`.
+- **Exemple Router-en-test stable** : `src/app/features/auth/pages/login/login.spec.ts`.
 
 ## Revue UI/design (optionnelle)
 

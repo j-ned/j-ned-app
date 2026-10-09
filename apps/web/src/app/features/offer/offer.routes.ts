@@ -11,7 +11,8 @@ export const OFFER_ROUTES: Routes = [
   {
     path: '',
     title: catalogueSeo.title,
-    loadComponent: () => import('./application/offer-catalogue').then((m) => m.OfferCatalogue),
+    loadComponent: () =>
+      import('./pages/offer-catalogue/offer-catalogue').then((m) => m.OfferCatalogue),
     data: { seo: catalogueSeo },
   },
   ...OFFERS.map((summary) => {
@@ -19,7 +20,7 @@ export const OFFER_ROUTES: Routes = [
     return {
       path: summary.slug,
       title: summary.seo.title,
-      loadComponent: () => import('./application/offer-page').then((m) => m.OfferPage),
+      loadComponent: () => import('./pages/offer-page/offer-page').then((m) => m.OfferPage),
       data: {
         summary,
         content,

@@ -229,8 +229,8 @@ src/app/features/<feature>/
 │   ├── http-*.gateway.ts
 │   ├── *.adapter.ts        # fonctions pures
 │   └── *.types.ts          # types API
-├── pages/         # composants smart routes (injectent gateways/use cases), un dossier par page
-└── application/   # composants dumb (input/output uniquement), tokens
+├── pages/         # composants routes (smart) : pages/<nom>/<nom>.ts, nom de classe sans suffixe -page
+└── application/   # composants non routes : dumb (input/output), ou bloc autonome reutilise par plusieurs pages (ex. ContactForm)
 ```
 
 Dossiers transverses : `core/` (singletons, interceptors, guards), `pages/` (pages hors feature : mentions legales, 404), `layout/` (shell `<router-outlet />`), `shared/` (UI reutilisable, **pas de services**).

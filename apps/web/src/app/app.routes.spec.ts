@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { type ActivatedRouteSnapshot, type Route, Router, provideRouter } from '@angular/router';
-import { OfferCatalogue } from '@features/offer/application/offer-catalogue';
+import { OfferCatalogue } from '@features/offer/pages/offer-catalogue/offer-catalogue';
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { OFFER_ROUTES } from '@features/offer/offer.routes';
 import { toOfferCatalogueSeo } from '@features/offer/offer-seo';

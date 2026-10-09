@@ -2069,6 +2069,294 @@ la preuve visuelle ci-dessus.
   d'auth peut s'étaler sur deux lignes. C'est le comportement des appels aujourd'hui. Les captures
   à 375 px le montrent ; à signaler s'il gêne, sans le corriger dans le lot.
 
+### Lot L12 — Pages dans `features/<x>/pages/` (décision utilisateur du 2026-10-09 ; ajout, branche `refactor/pages-folder-l12` depuis master `085462f`)
+
+Décision de l'utilisateur, déjà écrite dans `CLAUDE.md` (#193, § Clean Architecture EAK) et dans
+le profil (§ Naming) : `features/<x>/pages/` contient les composants smart routés, un dossier par
+page ; `application/` contient les composants dumb ; `src/app/pages/` garde les pages hors
+feature. Aujourd'hui, **aucun** dossier `features/*/pages/` n'existe : les 21 pages routées sont
+dans `application/`.
+
+Exigence du lot : **déplacement pur**. Aucun changement de comportement, de classe, de sélecteur,
+de route, de mode de rendu ni de découpage en chunks. Le diff des `.ts` ne contient que des lignes
+d'import (statiques, dynamiques) et leur remise en forme par Prettier.
+
+#### Inventaire (master `085462f`)
+
+Lu dans `app.routes.ts`, `app.routes.server.ts` et les 5 `*.routes.ts` de feature. Chaque page a
+déjà sa spec voisine (21 sur 21).
+
+| Route | Composant | Emplacement actuel (`features/…`) | Déclaré dans |
+| --- | --- | --- | --- |
+| `''` | `Home` (**eager**, import statique) | `home/application/home.ts` | `app.routes.ts:3` |
+| `about` | `About` | `profile/application/about.ts` | `app.routes.ts:77` |
+| `projects` | `Projects` | `projects/application/projects.ts` | `projects.routes.ts` |
+| `projects/:slug` | `ProjectDetail` | `projects/application/project-detail.ts` | `projects.routes.ts` |
+| `blog` | `BlogList` | `blog/application/blog-list.ts` | `blog.routes.ts` |
+| `blog/:slug` | `BlogDetail` | `blog/application/blog-detail.ts` | `blog.routes.ts` |
+| `offres` | `OfferCatalogue` | `offer/application/offer-catalogue.ts` | `offer.routes.ts` |
+| `offres/<slug>` (× `OFFERS`) | `OfferPage` | `offer/application/offer-page.ts` | `offer.routes.ts` |
+| `login` | `Login` | `auth/application/login.ts` | `auth.routes.ts` |
+| `two-factor` | `TwoFactorVerify` | `auth/application/two-factor-verify.ts` | `auth.routes.ts` |
+| `admin/settings/security` | `TwoFactorSetup` | `auth/application/two-factor-setup.ts` | `admin.routes.ts` (import `../auth/application/…`) |
+| `admin` (coque, `children`) | `AdminLayout` (import statique dans le chunk admin) | `admin/application/admin-layout.ts` | `admin.routes.ts:2` |
+| `admin` | `AdminOverview` | `admin/application/admin-overview.ts` | `admin.routes.ts` |
+| `admin/projects` | `AdminProjects` | `admin/application/admin-projects.ts` | idem |
+| `admin/projects/new`, `admin/projects/:id` | `AdminProjectEditor` | `admin/application/admin-project-editor.ts` | idem |
+| `admin/blog` | `AdminBlog` | `admin/application/admin-blog.ts` | idem |
+| `admin/blog/new`, `admin/blog/:id` | `AdminPostEditor` | `admin/application/admin-post-editor.ts` | idem |
+| `admin/cv` | `AdminCv` | `admin/application/admin-cv.ts` | idem |
+| `admin/messages` | `AdminMessages` | `admin/application/admin-messages.ts` | idem |
+| `admin/audience` | `AdminAudience` | `admin/application/admin-audience.ts` | idem |
+| `admin/settings` | `AdminSettings` | `admin/application/admin-settings.ts` | idem |
+| `mentions-legales`, `confidentialite`, `**` | `LegalNotice`, `PrivacyPolicy`, `PageNotFound` | `src/app/pages/*.ts` (hors feature) | `app.routes.ts` |
+
+`app.routes.server.ts` ne référence **aucun** fichier de composant : il ne connaît que des chemins
+d'URL (`''`, `about`, `projects/:slug`, `blog/:slug`, `offres/<slug>`…) et `fetchPrerenderSlugs`
+interroge l'API par URL. Le lot ne le touche pas.
+
+Importeurs des pages hors routes (graphe d'imports calculé sur `src/app`, specs comprises) :
+`app.routes.spec.ts:3` (`OfferCatalogue`), `offer.routes.spec.ts:3-4`, `admin.routes.spec.ts:5-8`.
+**Aucun** fichier de `application/`, `domain/` ou `infra/` n'importe une page.
+
+#### Règle de placement (décisions)
+
+1. **Critère = le routage, pas l'injection.** Va dans `pages/` : tout composant référencé par une
+   route (`component:` ou `loadComponent`). Rien d'autre, sauf la règle 3. Justification : le
+   critère se lit dans les fichiers de routes et se vérifie par grep. Le critère « injecte un
+   gateway » ne partitionne pas proprement : `admin-project-gallery.ts` (injecte `ProjectsGateway`)
+   et `admin-content-image-upload.ts` (injecte `BlogGateway`) sont embarqués par des formulaires
+   dumb (`admin-project-form.ts`, `admin-post-form.ts`). Les déplacer dans `pages/` ferait importer
+   `pages/` par `application/`, dépendance inversée.
+2. **Composants non routés : restent dans `application/`, smart compris.** Cela tranche
+   `ContactForm` : il reste `features/contact/application/contact-form.ts`. C'est un bloc
+   autonome, embarqué par deux pages de deux **autres** features (`Home`, `OfferPage`) ; il n'a ni
+   route ni page propre dans `contact`, et le ranger dans `pages/` mentirait sur le routage.
+   Même sort pour les autres blocs smart non routés, inventoriés ici comme écart connu à la
+   formule « `application/` = dumb » : les 8 sections `about-*` (`ProfileGateway`, `CvGateway`,
+   `AnalyticsGateway`), `home-hero-section.ts` et `home-projects.ts` (`AnalyticsGateway`),
+   `blog-like-button.ts` (`BlogGateway`), `blog-comments.ts` (`ThemeStore`),
+   `admin-project-gallery.ts`, `admin-content-image-upload.ts`. Les rendre dumb (remonter la
+   donnée dans la page) change leur contrat d'entrée : hors d'un lot de déplacement (cf. risques).
+3. **Fichiers voisins : suivent la page seulement s'ils ne sont pas des composants et si la page
+   (ou un fichier qui la suit) est leur seul importeur, dans la même feature.** Calcul fait par
+   point fixe sur le graphe d'imports (specs exclues des importeurs). Résultat : **2 fichiers**.
+   - `admin/application/audience-report.ts` (+ spec) → `admin/pages/admin-audience/`. Facade
+     `@Injectable()` instance-scopée, fournie par `providers: [AudienceReport]` de
+     `admin-audience.ts:53`, seul importeur. Elle injecte `AnalyticsGateway` : smart, partie
+     intégrante de la page ; l'import `./audience-report` de la page reste inchangé.
+   - `admin/application/overview-copy.ts` (+ spec) → `admin/pages/admin-overview/` (seul
+     importeur : `admin-overview.ts`).
+   - **Tout le reste reste**, y compris les `*-view.ts` et `*-copy.ts` qui ont l'air propres à une
+     page : chacun a au moins un importeur composant resté dans `application/`
+     (`admin-posts-view` ← `admin-post-row`, `admin-projects-view` ← `admin-project-row`,
+     `admin-messages-view` ← `admin-message-row`, `admin-cv-view` ← `admin-page-copy`,
+     `audience-view` ← `audience-share-table`, `overview-view` ← `audience-chart`,
+     `blog-list-view` ← `blog-post-row` et l'admin, `blog-list-copy` ← `blog-list-view`,
+     `projects-view` ← `project-grid-card`, `admin-nav-groups` ← `admin-nav`…). Les déplacer ferait
+     dépendre `application/` de `pages/`. La direction autorisée est `pages → application → domain`.
+   - Les composants d'une seule page **ne suivent pas** (ex. `components/offer-hero.ts`,
+     `home-faq.ts`, `components/project-detail-nav.ts`) : ce sont des composants, ils restent dans
+     `application/` (règle 2). Le graphe d'exclusivité les rattacherait à une page, mais
+     `CLAUDE.md` range les composants dumb dans `application/`, sans condition d'exclusivité.
+   - `unsaved-changes-guard.ts` (guard fonctionnel, importé par `admin.routes.ts` et les deux
+     éditeurs) reste dans `application/`.
+4. **La spec suit toujours son sujet**, dans le même commit.
+5. **Nommage : `pages/home/home.ts`, pas `pages/home-page/home-page.ts`.** Dossier = fichier = nom
+   de la classe en kebab-case, classe et sélecteur inchangés.
+   - `CLAUDE.md` § Nommage : « Classes PascalCase **sans suffixe** ». `-page` / `Page` est un
+     suffixe de rôle, comme `Component` ; le dossier `pages/` porte déjà le rôle.
+   - Style guide Angular (angular.dev/style-guide) : le nom de fichier reflète le nom de la classe
+     qu'il contient (`UserProfile` → `user-profile.ts`). `home-page.ts` imposerait de renommer la
+     classe en `HomePage`, donc le sélecteur en `app-home-page` : interdit par l'exigence du lot.
+   - **Exception sans en être une** : `OfferPage` garde son nom, déjà présent
+     (`pages/offer-page/offer-page.ts`). « Page d'offre » est le nom métier de la fiche d'une offre
+     (face à `OfferCatalogue`) ; le renommer serait un changement de classe et de sélecteur.
+   - La note Obsidian (`Clean Architecture.md` : `pages/users-page/users-page.ts`, `UsersPage` ;
+     `Méthode — …` : `features/home/pages/home-page/home-page.ts`) diverge de ce dépôt. À aligner
+     par l'utilisateur, hors plan.
+6. **Un dossier par page**, même quand il ne contient que la page et sa spec (19 sur 21) : c'est la
+   règle écrite, et elle donne leur place aux voisins colocalisés (règle 3). Pas de fichiers à
+   plat.
+7. **`src/app/pages/` : inchangé.** Les 3 pages hors feature restent à plat. `legal-pages.spec.ts`
+   couvre à la fois `LegalNotice` et `PrivacyPolicy` : un dossier par page obligerait à scinder la
+   spec, ce qui n'est pas mécanique. `CLAUDE.md` n'impose le dossier qu'aux pages de feature.
+8. **Imports** : à l'intérieur d'une feature, relatifs comme aujourd'hui (`./x` devient
+   `../../application/x`, `../testing/x` devient `../../testing/x`, `../domain/x` devient
+   `../../domain/x`) ; entre features, l'alias `@features/…` existant est conservé tel quel. Les
+   fichiers de routes gardent leur forme actuelle (relative dans les routes de feature, y compris
+   `../auth/…` dans `admin.routes.ts` ; alias pour l'import statique de `Home` dans
+   `app.routes.ts`).
+
+#### Fichiers
+
+**Déplacés par `git mv` (46)**, chaque `.ts` avec sa `.spec.ts` :
+
+| Feature | Avant (`application/`) | Après (`pages/`) |
+| --- | --- | --- |
+| auth | `login`, `two-factor-verify`, `two-factor-setup` | `login/login`, `two-factor-verify/two-factor-verify`, `two-factor-setup/two-factor-setup` |
+| offer | `offer-catalogue`, `offer-page` | `offer-catalogue/offer-catalogue`, `offer-page/offer-page` |
+| blog | `blog-list`, `blog-detail` | `blog-list/blog-list`, `blog-detail/blog-detail` |
+| projects | `projects`, `project-detail` | `projects/projects`, `project-detail/project-detail` |
+| profile | `about` | `about/about` |
+| home | `home` | `home/home` |
+| admin | `admin-layout`, `admin-overview` + `overview-copy`, `admin-projects`, `admin-project-editor`, `admin-blog`, `admin-post-editor`, `admin-cv`, `admin-messages`, `admin-audience` + `audience-report`, `admin-settings` | `admin-layout/…`, `admin-overview/{admin-overview,overview-copy}`, `admin-projects/…`, `admin-project-editor/…`, `admin-blog/…`, `admin-post-editor/…`, `admin-cv/…`, `admin-messages/…`, `admin-audience/{admin-audience,audience-report}`, `admin-settings/…` |
+
+**Modifiés (imports seulement)** : les 46 fichiers déplacés (leurs imports relatifs) ; `app.routes.ts` (`Home`, `about`) ; `auth.routes.ts`,
+`offer.routes.ts`, `blog.routes.ts`, `projects.routes.ts`, `admin.routes.ts` ;
+`app.routes.spec.ts`, `offer.routes.spec.ts`, `admin.routes.spec.ts`.
+
+**Documentation (L12.8)** :
+
+- `DESIGN.md` : chemins des lignes 394 (`blog-list.ts`), 499 (`admin-layout.ts`), 513, 542, 556,
+  564, 575 (dont la facade `audience-report.ts`), 584, 593 (`admin-cv.ts` seulement :
+  `admin-cv-view.ts` reste), 600, 607 (`two-factor-setup.ts`). Les chemins de `components/` ne
+  bougent pas.
+- `README.md` : arbre de la feature (vers la l. 121) — ajouter `pages/` (« pages routées, smart, un
+  dossier par page ») et `application/` devient « composants non routés ».
+
+**À faire valider par l'utilisateur, hors plan** (fichiers d'instructions) :
+
+- `.claude/project-profile.md:143` : exemple Router-en-test `src/app/features/auth/application/login.spec.ts`
+  → `…/auth/pages/login/login.spec.ts` (sinon chemin mort pour les agents) ;
+- `.claude/project-profile.md:39` : « Coordinateur de feature (facade) : couche
+  `features/<x>/application/**` » → une facade instance-scopée à une seule page vit dans le
+  dossier de cette page (`audience-report.ts`) ;
+- `.claude/CLAUDE.md:233` : `application/ # composants dumb (input/output uniquement), tokens` →
+  « composants non routés : dumb par défaut ; un bloc autonome qui injecte son gateway
+  (`ContactForm`) y reste » ; et une ligne au § Nommage : « page de feature :
+  `pages/<nom>/<nom>.ts`, classe sans suffixe `Page` ».
+
+Pas d'ADR : la convention est décidée et écrite dans `CLAUDE.md` (#193) ; le lot l'applique.
+
+**Non touchés** : `app.routes.server.ts`, `src/app/pages/**`, tout `domain/`, `infra/`, `testing/`,
+`components/`, `angular.json`, `eslint.config.js`, `tsconfig*.json`, `vitest.config.mts`,
+`src/styles.css` (Tailwind analyse tout `src/`, seuls `specs/`, `docs/`, `tasks/` sont exclus).
+`specs/`, `docs/adr/` et `tasks/` gardent les anciens chemins : ce sont des archives datées.
+
+#### Réactivité / état
+
+Aucun changement. `AudienceReport` reste fourni par la page (`providers`), donc instance-scopé.
+
+#### Tranches
+
+**Sans RED, toutes.** Justification : aucun comportement ne change, donc aucun test ne peut être
+rouge puis vert de façon honnête. Un test qui affirmerait l'emplacement d'un fichier testerait le
+système de fichiers, pas l'application. Le filet est l'existant : les 21 specs de pages et les
+3 specs de routes suivent leur sujet et doivent rester vertes **à l'identique** (même nombre de
+fichiers de test et de tests qu'au départ). Le typecheck de `pnpm test` attrape tout import cassé.
+Une tranche par feature, verticale (page, spec, fichier de routes, spec de routes) et autonome :
+chaque commit compile et passe les gates sans les suivants.
+
+Mode opératoire, identique pour chaque tranche :
+
+1. `mkdir -p` du dossier cible, `git mv` du `.ts` et de sa spec (jamais copier-supprimer) ;
+2. réécriture des seuls chemins d'import, dans les fichiers déplacés puis dans leurs importeurs ;
+3. `pnpm exec prettier --write` sur les fichiers touchés (un `import()` plus long peut passer à la
+   ligne) ;
+4. `pnpm test; echo exit=$?` : vert, `exit=0`, compte de tests égal à la référence ;
+5. **un commit par tranche**, `git mv` et imports dans le même commit (la détection de renommage
+   de git compare le contenu : seules quelques lignes d'import changent, la similarité reste
+   élevée).
+
+Référence à relever **avant** L12.1, sur `085462f` : `pnpm exec ng cache clean`, puis
+`pnpm test; echo exit=$?` → noter « Test Files » et « Tests ».
+
+- **L12.1 — auth** : `login`, `two-factor-verify`, `two-factor-setup` (+ specs). Importeurs :
+  `auth.routes.ts` (2 `loadComponent`), `admin.routes.ts` (route `settings/security`,
+  `../auth/pages/two-factor-setup/two-factor-setup`). Les trois formulaires
+  (`password-change-form`, `two-factor-enable-form`, `two-factor-disable-form`) restent ;
+  `two-factor-setup.ts` et sa spec les importent par `../../application/…`.
+- **L12.2 — offer** : `offer-catalogue`, `offer-page` (+ specs). Importeurs : `offer.routes.ts`,
+  `offer.routes.spec.ts`, `app.routes.spec.ts:3` (`@features/offer/pages/offer-catalogue/offer-catalogue`).
+  `components/*` reste.
+- **L12.3 — blog** : `blog-list`, `blog-detail` (+ specs). Importeur : `blog.routes.ts`.
+  `blog-list-copy`, `blog-list-view`, `blog-tag-palette`, `components/*` restent (l'admin en
+  importe plusieurs).
+- **L12.4 — projects** : `projects`, `project-detail` (+ specs). Importeur : `projects.routes.ts`.
+  `projects-view`, `projects-intro`, `project-facts`, `project-kind-copy`,
+  `featured-project-view`, `components/*` restent.
+- **L12.5 — profile** : `about` (+ spec). Importeur : `app.routes.ts:77` (`loadComponent`). Les
+  8 sections `about-*` restent (règle 2).
+- **L12.6 — home** : `home` (+ spec). Importeur : `app.routes.ts:3`, import **statique**
+  conservé (route par défaut eager). Les sections `home-*` restent.
+- **L12.7 — admin** : 10 pages + `overview-copy` + `audience-report` (+ specs, 24 fichiers).
+  Importeurs : `admin.routes.ts` (import statique d'`AdminLayout`, 10 `loadComponent`),
+  `admin.routes.spec.ts:5-8`. `import { unsavedChangesGuard } from './application/unsaved-changes-guard'`
+  de la spec de routes ne change pas ; dans les éditeurs et leurs specs, il devient
+  `../../application/unsaved-changes-guard`.
+- **L12.8 — documentation** : `DESIGN.md`, `README.md` (cf. Fichiers). Pas de code.
+
+Ordre : L12.1 d'abord (elle touche `admin.routes.ts`, que L12.7 réécrit ensuite : pas de conflit
+dans la même branche, mais l'ordre inverse ferait toucher deux fois la même ligne). L12.2 à L12.6
+sont indépendantes. L12.7 après L12.1. L12.8 en dernier, quand tous les chemins finaux existent.
+Une seule PR.
+
+#### Preuves de fin de lot
+
+Gates : `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm run format:check`,
+`pnpm test; echo exit=$?`, `pnpm run build --configuration production` (puis
+`git checkout -- public/sitemap.xml public/rss.xml`).
+
+1. **Tests** : `exit=0` ; « Test Files » et « Tests » **égaux** à la référence relevée sur
+   `085462f`.
+2. **Que des renommages** : `git diff -M --name-status master...HEAD -- src` → uniquement des
+   lignes `R…` (46) et `M` (les 9 fichiers de routes et specs de routes) ; **aucune** ligne `A`
+   ou `D`. `git log --follow --oneline -- src/app/features/home/pages/home/home.ts` remonte
+   au-delà de L12 (un échantillon par feature).
+3. **Que des imports** : dans `git diff -M master...HEAD -- 'src/**/*.ts'`, chaque ligne `+`/`-`
+   contient `from '`, `import(`, `loadComponent` ou `.then((m) =>` ; en particulier
+   `git diff -M master...HEAD | grep -E '^[-+]\s*selector:'` → vide.
+4. **Placement** :
+   - `find src/app/features -mindepth 3 -maxdepth 3 -path '*/pages/*' -type d | wc -l` → **21** ;
+   - `grep -rn "/pages/" src/app/features/*/application src/app/features/*/domain src/app/features/*/infra`
+     → vide (`application/` ne dépend pas de `pages/`) ;
+   - chaque `loadComponent` / `component:` des 6 fichiers de routes pointe sous `/pages/`
+     (feature) ou `./pages/` (hors feature) :
+     `grep -nE "import\(|^import \{ (Home|AdminLayout) " src/app/app.routes.ts src/app/features/*/*.routes.ts | grep -v "/pages/"`
+     → seulement les imports de données (`offer-catalog.static-data`, `offer-path`, `offer-seo`,
+     `site-identity`, `auth-guard`, `unsaved-changes-guard`, `*.routes`).
+5. **Anciens chemins absents** :
+   `git grep -nE "application/(home|about|projects|project-detail|blog-list|blog-detail|offer-catalogue|offer-page|login|two-factor-verify|two-factor-setup|admin-(layout|overview|projects|project-editor|blog|post-editor|cv|messages|audience|settings)|audience-report|overview-copy)['.]" -- ':!specs' ':!docs/adr' ':!tasks'`
+   → vide (le `['.]` final exclut `projects-view`, `admin-cv-view`, `blog-list-view`…).
+6. **Prerender identique** : build prod de `master` dans un worktree temporaire
+   (`git worktree add <scratchpad>/l12-before master`) et de la branche, **le même jour** (les
+   slugs viennent de l'API de prod) :
+   - `find dist/angular-portfolio-app/browser -name index.html | sed 's|.*/browser||' | sort` →
+     **diff vide** entre les deux arbres ;
+   - même nombre de fichiers `*.js` dans `browser/` et même taille du `main-*.js` (la route `''`
+     reste eager, aucune page ne change de chunk) ;
+   - `diff -r` des `index.html` après normalisation des noms hachés
+     (`sed -E 's/(chunk|main|polyfills|styles)-[A-Z0-9]+\.(js|css)/\1-H.\2/g'`) → vide. En
+     production, Angular n'émet pas le chemin source des classes : un écart signale un vrai
+     défaut, pas du bruit ;
+   - ensuite `git checkout -- public/sitemap.xml public/rss.xml` dans les deux arbres, suppression
+     du worktree.
+7. **Navigateur** (`ng serve`) : `/`, `/about`, `/projects/<slug>`, `/blog/<slug>`,
+   `/offres/site-vitrine`, `/login` rendent, console sans erreur ; `/admin/audience` et
+   `/admin/settings/security` derrière le faux backend de L6 (chunk lazy résolu).
+
+#### Intersection de fichiers
+
+| Couple | Intersection | Conséquence |
+| --- | --- | --- |
+| L1 à L11 ∩ L12 | Tous mergés ; la branche part de `085462f`. | Aucune. |
+| Branche ouverte qui touche une page déplacée | Renommage d'un côté, édition de l'autre. | Git suit le renommage au rebase (`-M`) si la page n'a pas été réécrite ; merger L12 vite et rebaser les autres ensuite. |
+
+#### Risques & inconnues
+
+- **Blocs smart non routés laissés dans `application/`** (règle 2, 15 composants) : la formule
+  « `application/` = dumb » reste fausse pour eux après L12. Les sections `about-*` injectent
+  `ProfileGateway` sept fois pour une même page : candidat à un lot ultérieur (page qui charge,
+  sections dumb), à décider par l'utilisateur ; sinon, la formule de `CLAUDE.md` doit admettre
+  le bloc autonome (patch proposé ci-dessus).
+- **Similarité de renommage** sur les petits fichiers à beaucoup d'imports (`about.ts` : 69
+  lignes, 7 imports ; `offer-catalogue.ts` : 62 lignes) : si git ne détecte pas le renommage, la
+  preuve 2 le montre (`A` + `D`). Correctif : `git log --follow -M30%`, ou commit du `git mv`
+  seul puis des imports, dans la même tranche.
+- **Chunks** : un déplacement de fichier ne devrait changer ni le graphe des chunks ni leur
+  contenu ; seule la preuve 6 le confirme.
+
 ## Plan de test
 
 Lot **L5** joué en un seul RED (demande de la session principale). Commande : `pnpm test; echo
@@ -2719,6 +3007,14 @@ sur les chunks compilés, décrites au plan.
 - **Tranche L10.2 — les appels et les liens icônes passent par la directive** : GREEN 3156 passed / 3156 total · refactor : imports de `Button` rangés dans les 15 fichiers qui l'ont gagné (ligne d'import à sa place alphabétique parmi `@shared/*`, entrée du tableau `imports` après `AppIcon` ou les imports Angular)
 - **Tranche L10.3 — sans RED** : GREEN inchangé · refactor : aucun
 - **Tranche L10.4 — sans RED** : GREEN inchangé · refactor : aucun
+- **Tranche L12.1 — auth, sans RED** : GREEN 3156 passed / 3156 total (189 fichiers, `exit=0`, référence relevée sur `085462f` : 189 / 3156) · refactor : aucun
+- **Tranche L12.2 — offer, sans RED** : GREEN 3156 passed / 3156 total, joué d'affilée avec L12.3 à L12.6 (un seul passage de tests pour les cinq, aucune dépendance entre elles) · refactor : aucun
+- **Tranche L12.3 — blog, sans RED** : GREEN 3156 passed / 3156 total (passage commun L12.2-L12.6) · refactor : aucun
+- **Tranche L12.4 — projects, sans RED** : GREEN 3156 passed / 3156 total (passage commun L12.2-L12.6) · refactor : aucun
+- **Tranche L12.5 — profile, sans RED** : GREEN 3156 passed / 3156 total (passage commun L12.2-L12.6) · refactor : aucun
+- **Tranche L12.6 — home, sans RED** : GREEN 3156 passed / 3156 total (passage commun L12.2-L12.6) ; import statique de `Home` conservé · refactor : aucun
+- **Tranche L12.7 — admin, sans RED** : GREEN 3156 passed / 3156 total ; `./audience-report` et `./overview-copy` inchangés dans leur page (colocalisés) · refactor : aucun
+- **Tranche L12.8 — documentation, sans RED** : `DESIGN.md` (11 chemins), `README.md` (arbre de feature : `pages/` ajouté, `application/` = composants non routés) · refactor : aucun
 
 ## Verify
 
@@ -2917,6 +3213,41 @@ Preuve visuelle. Builds prod de `master` (`1f4d9c1`, worktree temporaire dans le
 Non couvert : « Réessayer » des chargements en erreur (états non provoqués) et les écrans 2FA activée.
 
 **PASS**, sous réserve de l'arbitrage des 2 écarts d'appel non listés au plan (curseur de `settings-logout`, opacité en `disabled` forcé sur 3 boutons jamais désactivés).
+
+### Lot L12
+
+Lot L12 entier (L12.1 à L12.8), 2026-10-09, branche `refactor/pages-folder-l12` depuis `085462f` (non commitée, fichiers indexés).
+
+Mode opératoire : `git mv` des 46 fichiers par un script de la session (scratchpad, non versionné) qui résout chaque chemin d'import relatif ou `@features/…` depuis l'ancien emplacement et le réécrit depuis le nouveau, puis `pnpm exec prettier --write` sur les seuls fichiers touchés.
+
+Gates (codes de sortie lus) :
+
+- `pnpm install --frozen-lockfile` : exit 0 ;
+- `pnpm test; echo exit=$?` : 189 fichiers sur 189, 3156 tests sur 3156, `exit=0` (identique à la référence relevée avant L12.1 : 189 / 3156) ;
+- `pnpm lint` : « All files pass linting. » ;
+- `pnpm run format:check` : « All matched files use Prettier code style! » ;
+- `pnpm run build --configuration production` : exit 0, 20 routes prérendues, CSP sur 21 pages, puis `git checkout -- public/sitemap.xml public/rss.xml` (dans les deux arbres).
+
+Preuves de fin de lot :
+
+1. Tests : cf. gates, comptes égaux à la référence.
+2. Que des renommages : `git diff -M --name-status master -- src` → 46 `R` (similarité de 80 % à 100 %, 13 à 100 %) et 9 `M` (les 6 fichiers de routes et les 3 specs de routes), aucun `A` ni `D`. Hors `src` : `DESIGN.md`, `README.md`, la spec. `git log --follow` non jouable avant le commit.
+3. Que des imports : toutes les lignes `+`/`-` de `git diff -M master -- 'src/**/*.ts'` sont des lignes d'import (statique, `import()`, `loadComponent`, `.then((m) => …)`) ou leur repli Prettier ; `grep -E '^[-+]\s*selector:'` → vide.
+4. Placement : 21 dossiers `features/*/pages/*` ; `grep -rn "/pages/"` dans `application`, `domain`, `infra` → vide ; dans les 6 fichiers de routes, les seuls `import(` hors `/pages/` sont les 6 `loadChildren` vers `*.routes`.
+5. Anciens chemins : le `git grep` du plan (hors `specs`, `docs/adr`, `tasks`) ne renvoie qu'une ligne, `.claude/project-profile.md:143` (`…/auth/application/login.spec.ts`), fichier hors périmètre du lot, déjà listé au plan parmi les patchs à faire valider par l'utilisateur.
+6. Prerender comparé à `master` : build prod de `085462f` dans un worktree temporaire du scratchpad (`pnpm install --frozen-lockfile`, supprimé ensuite) et build de la branche, le même jour, à quelques minutes d'écart.
+   - Liste des `index.html` : identique, 20 pages.
+   - Chunks : 79 `*.js` de chaque côté ; `main-*.js` 179 114 octets des deux côtés ; multiset des tailles identique.
+   - Contenu des chunks : **identique pour les 79**, après normalisation de ce que le déplacement fait bouger sans toucher au code : noms hachés (`chunk-XXXXXXXX.js`), commentaire `//# debugId=` (dérivé de la source map, donc des chemins), noms courts du minifieur (`var t`/`var o` permutés) et **ordre des `import` en tête de chunk** (esbuild les range selon les chemins source).
+   - HTML : la normalisation du plan (`sed` sur `[A-Z0-9]+`) ne suffit pas, les hachages contiennent minuscules, `_` et `-`. Après normalisation des hachages, de l'ordre des `modulepreload`, des identifiants de gabarit d'hydratation (`"t65"` ↔ `"t33"`), des compteurs Signal Forms (`ng.form2.name` ↔ `ng.form0.name`) et de l'ordre des clés du JSON `ng-state` : **20 pages identiques sur 20**. Les trois derniers sont des compteurs de processus du prérendu : ils dépendent de l'ordre dans lequel les pages passent dans chaque worker, pas du code.
+   - **Écart réel, expliqué, un seul** : sur `/projects`, l'ensemble des `modulepreload` diffère d'un chunk (14 liens des deux côtés). Avant : `app-filter-group` (2,5 ko) préchargé, `app-project-case-study`/`app-project-grid-card` (6,9 ko) non ; après : l'inverse. Cause : `@angular/ssr` plafonne les préchargements d'une route à `MODULE_PRELOAD_MAX = 10` (`node_modules/@angular/ssr/fesm2022/ssr.mjs:444`) et les prend dans l'ordre des imports du chunk de la page ; le chunk de `Projects` importe les mêmes 13 chunks qu'avant (identité vérifiée par contenu normalisé), dans un autre ordre, donc le 13ᵉ coupé n'est plus le même. Les deux chunks restent chargés par la route à l'hydratation ; seul l'indice de préchargement change. Aucune autre page n'est concernée. **À arbitrer par l'utilisateur** (accepter : effet nul à faible ; le plan prévoyait « un écart signale un vrai défaut »).
+7. Navigateur (`ng serve` port 4300, navigateur intégré, 2026-10-09) derrière un faux backend local en lecture seule sur le port 3000 (scratchpad) : `/auth/me`, `unread-count`, `GET /contact/messages` et `analytics/stats/*` simulés, `blog/posts/admin` servi par la liste publique, autres GET relayés vers l'API de prod, toute requête non-GET refusée localement en 403, jamais relayée ; `auth:session=1` en `localStorage`.
+   - Steps et `h1` lus : `/` (« Des sites et des applications web… », `app-home` présent), `/about` (« Julien Nédellec »), `/projects` (« Réalisations »), `/projects/dashflow` (« DashFlow »), `/blog` (« Blog »), `/blog/de-20-ans-de-metallurgie-a-developpeur-full-stack`, `/offres` (« Cinq offres… »), `/offres/site-vitrine` (« Votre site vitrine, en ligne en 7 jours. »), `/login` (« Connexion Admin »), `/two-factor` (« Vérification 2FA ») ; admin : `/admin` (« Vue d'ensemble »), `/admin/projects`, `/admin/projects/new`, `/admin/projects/<id dashflow>` (« DashFlow »), `/admin/blog`, `/admin/blog/new`, `/admin/blog/<id>`, `/admin/cv`, `/admin/messages`, `/admin/audience` (« Audience », `app-admin-audience` présent, statistiques simulées rendues), `/admin/settings`, `/admin/settings/security` (« Sécurité », `app-two-factor-setup` présent). Les 21 pages rendent, chunks lazy résolus.
+   - Premier passage admin sans simulation des statistiques ni de `GET /contact/messages` : 401 de l'API de prod → déconnexion et retour à `/login`. Comportement attendu de l'app face à une API sans session, pas un défaut du lot ; faux backend complété, rejoué vert.
+   - Captures : accueil `/home/j-ned/.claude/projects/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/tool-results/mcp-Claude_Browser-blob-1791571443489-qkhbj7.jpg`, audience `…/mcp-Claude_Browser-blob-1791571516953-aboutq.jpg`, sécurité `…/mcp-Claude_Browser-blob-1791571516954-glujr1.jpg`.
+   - Console : aucune erreur Angular. Erreurs présentes : `InvalidStateError: Transition was aborted` (View Transitions, préexistante, cf. Lot L8), 403 du faux backend (`POST /analytics/track`, `POST /auth/logout`), 401 du premier passage. Avertissements : `NG0751` (HMR + `@defer`, mode dev), `NG02952` sur l'image `fill` de l'aperçu des deux éditeurs (composants non touchés par le lot ; chunks identiques à `master` au point 6).
+
+**PASS**, sous réserve de l'arbitrage de l'écart de préchargement sur `/projects` (point 6).
 
 ## Review code
 
@@ -3165,3 +3496,37 @@ Contrôles demandés :
 - `disabled:opacity-60` / `disabled:cursor-wait` de `admin-save-bar.ts` l'emportent sur la base par l'ordre de génération de Tailwind 4.3.3, pas par construction (risque nommé par le plan et l'ADR) ; rejoué identique (0,6, `wait`).
 - (b) préexistant, informatif : la détection automatique de sources de Tailwind lit `specs/*.md`. Le build du reviewer, lancé après l'écriture du `## Verify`, émet `.bg-foreground/15`, `.border-primary/60`, `.hover:border-primary/60` (cités dans ce texte), absents du build de l'implémenteur : JS identique, feuille globale différente. Du CSS mort qui dépend de la doc ; un `@source not "../specs"` le réglerait, hors lot.
 - non couvert par les gates : « Réessayer » des chargements en erreur et écrans 2FA activée (non provoqués) ; couverts par les specs de composant au niveau classes et clic.
+
+Lot L12, 2026-10-09, diff indexé `git diff -M --cached master` (base `085462f`, non commité) ; spec modifiée hors index.
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm exec ng cache clean` puis `pnpm test; echo exit=$?` → 189 fichiers / 3156 tests passés, exit=0, égal à la référence) / lint ✅ (`pnpm lint` → `All files pass linting.`, exit=0) / build ✅ (`pnpm install --frozen-lockfile` exit=0 ; `pnpm run format:check` → `All matched files use Prettier code style!`, exit=0 ; `pnpm run build --configuration production` → `Prerendered 20 static routes.`, CSP sur 21 pages, exit=0, puis `git checkout -- public/sitemap.xml public/rss.xml`)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/aak-checks.sh` absent) : auto-checks joués à la main. Diff `src` : 46 `R` (80 % à 100 %, 13 à 100 %), 9 `M`, aucun `A`/`D` ; toutes les lignes `+`/`-` des `.ts` sont des imports ou leur repli Prettier ; `selector:`/`providers:`/`host:`/`export class`/`changeDetection:` : 0 ligne touchée ; commentaires ajoutés : 0 (archéologie, export default, effect, helpers zone, tests exclus, snapshot : 0 hit)
+**Warnings de gate** : aucun (sorties de test, lint, format et build relues en entier)
+**Rendu compilé** : N/A (aucun composant à sélecteur attribut touché, aucun gabarit modifié)
+**Preuve de verify runtime** : ✅ (`## Verify` › Lot L12 › 7 : 21 pages en `ng serve`, steps, `h1`, captures présentes sur disque, console sans erreur Angular ; rejoué par le reviewer sur le build prod servi en statique : `/projects/` hydraté, filtre « Démos » → 12 → 4 éléments, `aria-pressed="true"`, statut « 2 réalisations affichées » ; console : seulement `GET /api/config` 404 et CORS de `analytics/track`, propres au serveur statique local sur `127.0.0.1`)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+Contrôles demandés :
+- Placement : 21 dossiers `features/*/pages/*`, liste identique à l'inventaire du plan ; `audience-report.ts`(+spec) dans `admin/pages/admin-audience/`, `overview-copy.ts`(+spec) dans `admin/pages/admin-overview/`, chacun importé par sa seule page (`./audience-report`, `./overview-copy`) et sa spec. `grep -rn "/pages/"` dans `application`, `domain`, `infra`, `testing`, `shared`, `core` : vide.
+- Routes : `Home` en import statique (`app.routes.ts:3`, `component: Home` l. 17) ; tous les `loadComponent` pointent sous `/pages/`, les seuls `import(` restants sont les 6 `loadChildren` vers `*.routes` ; `app.routes.server.ts`, `src/app/pages/**`, `angular.json` : 0 ligne de diff.
+- Anciens chemins (`git grep` du plan, hors `specs`, `docs/adr`, `tasks`) : seul `.claude/project-profile.md:143`, hors périmètre, déjà listé parmi les patchs à faire valider.
+- `DESIGN.md` : les 11 titres pointent sur les nouveaux chemins ; `README.md:125-126` : `application/` = composants non routés, `pages/` ajouté.
+
+Écart de prerender `/projects` (preuve 6), rejoué : build de `master` dans un worktree temporaire du scratchpad, le même jour, comparé au build de la branche. 20 `index.html` identiques, 79 `*.js` des deux côtés, multiset des tailles identique. Seule différence de préchargement sur les 20 pages (tailles des chunks `modulepreload`) : `/projects`, `master` précharge le chunk de 2 576 o, la branche celui de 6 941 o, 14 liens des deux côtés. Le chunk de `Projects` (7 323 o des deux côtés) importe les deux ; seul leur ordre s'inverse (`master` : …`CKS7Cbak`, `DQdVTwPd` (2 576), …, `BtQ_T5lJ` (6 941) ; branche : `CKS7Cbak`, `C8ENQ-Ee` (6 941), `DQdVTwPd` (2 576)). `appendPreloadToMetadata` (`@angular/ssr/fesm2022/ssr.mjs:601-618`) coupe à `MODULE_PRELOAD_MAX = 10` dans l'ordre fourni par la carte d'entrées du build. Le diagnostic consigné est exact.
+
+**Arbitrage : acceptable, à ne pas éviter.** Le `modulepreload` est un indice de chargement, pas une dépendance : les deux chunks sont importés par la page et chargés avant hydratation dans les deux cas (rejoué : `/projects/` hydraté et interactif). Celui qui sort du plafond est découvert au parsing du chunk de page, un aller-retour plus tard, d'un côté comme de l'autre. Le nouveau choix précharge les cartes et l'étude de cas, contenu principal de la page, plutôt que le filtre : neutre à légèrement favorable. L'éviter imposerait d'ordonner les imports pour piloter l'ordre de sortie d'esbuild, couplage fragile à un détail interne de l'outil, que le prochain déplacement de fichier casserait. La phrase du plan (« un écart signale un vrai défaut ») est fausse pour cette catégorie : la sélection des préchargements sous plafond dépend des chemins, pas du code.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet sur la livraison (Dokploy continu d'après `CLAUDE.md`) · monitoring : Sentry
+- aucun état persistant touché ; un revert est un renommage inverse.
+- non couvert par les gates : preuve 2 (`git log --follow`) non jouable avant commit. `about.ts` est le renommage le plus faible (80 %), au-dessus du seuil de 50 % par défaut de `--follow`. Le plan prévoyait un commit par tranche : si le lot part en un seul commit, la détection reste correcte (similarités relevées sur le diff complet).
+
+Remarques non bloquantes :
+- `DESIGN.md:499, 542, 564, 584, 593, 600` : les chemins secondaires restent relatifs à l'ancien dossier (`components/admin-nav.ts`, `admin-cv-view.ts`). Placés après un chemin `pages/<x>/`, ils se lisent désormais comme des voisins de la page. Le plan a choisi de ne pas les toucher ; les préfixer par `application/` lèverait l'ambiguïté.
+- `README.md:129` : la règle `application → domain ← infra` ne cite pas `pages` ; la direction `pages → application → domain` du plan pourrait y figurer.

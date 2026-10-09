@@ -1,6 +1,6 @@
 import type { Routes } from '@angular/router';
 import { authGuard } from '@features/auth/infra/auth-guard';
-import { Home } from '@features/home/application/home';
+import { Home } from '@features/home/pages/home/home';
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { OFFERS_BASE_PATH, offerPath } from '@features/offer/domain/offer-path';
 import { toOfferCatalogJsonLd } from '@features/offer/offer-seo';
@@ -74,7 +74,7 @@ export const routes: Routes = [
   {
     path: 'about',
     title: 'Parcours | Julien Nédellec',
-    loadComponent: () => import('./features/profile/application/about').then((m) => m.About),
+    loadComponent: () => import('./features/profile/pages/about/about').then((m) => m.About),
     data: {
       preload: true,
       seo: {

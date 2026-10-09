@@ -1,5 +1,5 @@
 import type { Routes } from '@angular/router';
-import { AdminLayout } from './application/admin-layout';
+import { AdminLayout } from './pages/admin-layout/admin-layout';
 import { unsavedChangesGuard } from './application/unsaved-changes-guard';
 
 export const ADMIN_ROUTES: Routes = [
@@ -10,71 +10,80 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: '',
         title: "Vue d'ensemble | Admin",
-        loadComponent: () => import('./application/admin-overview').then((m) => m.AdminOverview),
+        loadComponent: () =>
+          import('./pages/admin-overview/admin-overview').then((m) => m.AdminOverview),
       },
       {
         path: 'projects/new',
         title: 'Nouveau projet | Admin',
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
-          import('./application/admin-project-editor').then((m) => m.AdminProjectEditor),
+          import('./pages/admin-project-editor/admin-project-editor').then(
+            (m) => m.AdminProjectEditor,
+          ),
       },
       {
         path: 'projects/:id',
         title: 'Modifier un projet | Admin',
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
-          import('./application/admin-project-editor').then((m) => m.AdminProjectEditor),
+          import('./pages/admin-project-editor/admin-project-editor').then(
+            (m) => m.AdminProjectEditor,
+          ),
       },
       {
         path: 'projects',
         title: 'Projets | Admin',
-        loadComponent: () => import('./application/admin-projects').then((m) => m.AdminProjects),
+        loadComponent: () =>
+          import('./pages/admin-projects/admin-projects').then((m) => m.AdminProjects),
       },
       {
         path: 'blog/new',
         title: 'Nouvel article | Admin',
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
-          import('./application/admin-post-editor').then((m) => m.AdminPostEditor),
+          import('./pages/admin-post-editor/admin-post-editor').then((m) => m.AdminPostEditor),
       },
       {
         path: 'blog/:id',
         title: 'Modifier un article | Admin',
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
-          import('./application/admin-post-editor').then((m) => m.AdminPostEditor),
+          import('./pages/admin-post-editor/admin-post-editor').then((m) => m.AdminPostEditor),
       },
       {
         path: 'blog',
         title: 'Articles | Admin',
-        loadComponent: () => import('./application/admin-blog').then((m) => m.AdminBlog),
+        loadComponent: () => import('./pages/admin-blog/admin-blog').then((m) => m.AdminBlog),
       },
       {
         path: 'cv',
         title: 'CV | Admin',
-        loadComponent: () => import('./application/admin-cv').then((m) => m.AdminCv),
+        loadComponent: () => import('./pages/admin-cv/admin-cv').then((m) => m.AdminCv),
       },
       {
         path: 'messages',
         title: 'Messages | Admin',
-        loadComponent: () => import('./application/admin-messages').then((m) => m.AdminMessages),
+        loadComponent: () =>
+          import('./pages/admin-messages/admin-messages').then((m) => m.AdminMessages),
       },
       {
         path: 'audience',
         title: 'Audience | Admin',
-        loadComponent: () => import('./application/admin-audience').then((m) => m.AdminAudience),
+        loadComponent: () =>
+          import('./pages/admin-audience/admin-audience').then((m) => m.AdminAudience),
       },
       {
         path: 'settings',
         title: 'Paramètres | Admin',
-        loadComponent: () => import('./application/admin-settings').then((m) => m.AdminSettings),
+        loadComponent: () =>
+          import('./pages/admin-settings/admin-settings').then((m) => m.AdminSettings),
       },
       {
         path: 'settings/security',
         title: 'Sécurité | Admin',
         loadComponent: () =>
-          import('../auth/application/two-factor-setup').then((m) => m.TwoFactorSetup),
+          import('../auth/pages/two-factor-setup/two-factor-setup').then((m) => m.TwoFactorSetup),
       },
 
       // Redirections des anciennes URLs (compat liens existants).
