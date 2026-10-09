@@ -75,8 +75,9 @@
 - **Nommage des fichiers** : **pas de suffixe `.component.`** (0 fichier dans le
   repo) ; templates inline ; modèles `*.model.ts` / `*.types.ts`.
 - **Préfixe sélecteur** : `app-`.
-- **Pages de feature** : `src/app/features/<x>/application/**` (composants
-  use-case) ; pages de premier niveau dans `src/app/pages/**`.
+- **Pages de feature** : `src/app/features/<x>/pages/**` (composants smart
+  routés, un dossier par page) ; `application/**` = composants dumb ; pages hors
+  feature dans `src/app/pages/**`.
 - **DS / primitives partagées** : `src/app/shared/ui/**`.
 - **Domaine pur** (logique testable hors UI) : `src/app/features/<x>/domain/**`
   (models + gateways). Infra (gateways HTTP) : `features/<x>/infra/**`.
@@ -92,7 +93,8 @@
   d'une structure de plus d'un élément = composant Angular `shared/ui/`** ; liste
   de classes réutilisée sur un élément natif unique non enveloppable (`input`
   sous `[formField]`, `th`/`td`, conteneur de layout) = **`@utility` dans
-  `src/styles.css`**, composé avec `@apply` (ADR-0003). `@apply` nulle part
+  `src/styles.css`**, composé avec `@apply` (ADR-0003). Bouton et lien stylé en
+  bouton = directive `button[appButton], a[appButton]` (ADR-0017), sans `@apply`. `@apply` nulle part
   ailleurs, pas de classe CSS ad hoc. Pas de couleur/espacement en dur hors tokens.
 - **Localisation des styles** : **pas de `.css`/`.scss` séparé** par composant
   (seul `src/styles.css` global porte `@theme` + tokens). `styles:` inline

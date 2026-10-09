@@ -199,7 +199,8 @@ You are an expert TypeScript / Angular engineer. You write functional, maintaina
 
 - **Tout en utility classes par defaut** dans les templates et `host: { class }`
 - **Structure reutilisee de plus d'un element = composant Angular `shared/ui/`** (doc officielle Tailwind v4 : "for anything more complicated than a single HTML element, use template partials so the styles and structure can be encapsulated in one place"). Jamais une classe CSS ni un `@utility` multi-elements
-- **Liste de classes reutilisee sur un element natif unique qu'on ne peut pas envelopper** (`input`/`textarea`/`select` possedes par `[formField]`, `th`/`td`/`tr`, `a` style en bouton, conteneur de layout) = **`@utility` dans `src/styles.css`**, nomme par role, compose avec `@apply`, compatible variantes (ADR-0003 ; doc v4 : "writing some custom CSS is totally fine when a template partial feels heavy-handed")
+- **Liste de classes reutilisee sur un element natif unique qu'on ne peut pas envelopper** (`input`/`textarea`/`select` possedes par `[formField]`, `th`/`td`/`tr`, conteneur de layout) = **`@utility` dans `src/styles.css`**, nomme par role, compose avec `@apply`, compatible variantes (ADR-0003 ; doc v4 : "writing some custom CSS is totally fine when a template partial feels heavy-handed")
+- **Bouton et lien style en bouton = directive a selecteur d'attribut** (`button[appButton], a[appButton]`, ADR-0017) : classes posees par `host` via `computed()` depuis des entrees (variante), etats en variantes Tailwind (`disabled:`, `aria-disabled:`, `aria-pressed:`), ni `@apply` ni `styles:`. `type`, `routerLink`, `aria-*` restent natifs sur l'element ; jamais `role: 'button'` sur un hote (note Obsidian « Tailwind v4 — Setup & @theme » §4)
 - **`@apply` uniquement dans un bloc `@utility` de `src/styles.css`** : jamais dans un `styles:` de composant, jamais dans une `.classe { }` ad hoc, pas de `@layer components`. Un `@utility` utilise par un seul composant est un candidat a l'inlining (sauf composition d'une autre utility ou etat multi-selecteur)
 - **Pas de fichier `.css` / `.scss` separe** pour les composants (sauf `styles.css` global et tokens `@theme`)
 - **Pas de `styles: ` inline** sauf exceptions ci-dessous
@@ -228,10 +229,11 @@ src/app/features/<feature>/
 │   ├── http-*.gateway.ts
 │   ├── *.adapter.ts        # fonctions pures
 │   └── *.types.ts          # types API
-└── application/   # composants dumb, tokens
+├── pages/         # composants smart routes (injectent gateways/use cases), un dossier par page
+└── application/   # composants dumb (input/output uniquement), tokens
 ```
 
-Dossiers transverses : `core/` (singletons, interceptors, guards), `pages/` (smart), `layout/` (shell `<router-outlet />`), `shared/` (UI reutilisable, **pas de services**).
+Dossiers transverses : `core/` (singletons, interceptors, guards), `pages/` (pages hors feature : mentions legales, 404), `layout/` (shell `<router-outlet />`), `shared/` (UI reutilisable, **pas de services**).
 
 ### Regle de dependance
 - `application` -> `domain`
