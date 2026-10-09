@@ -7,7 +7,6 @@ export const PROJECTS_ROUTES: Routes = [
   },
   {
     path: ':slug',
-    loadComponent: () =>
-      import('./application/project-detail').then((m) => m.ProjectDetail),
+    loadComponent: () => import('./application/project-detail').then((m) => m.ProjectDetail),
   },
 ];

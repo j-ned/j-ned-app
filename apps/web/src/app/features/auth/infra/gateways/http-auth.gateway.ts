@@ -4,7 +4,11 @@ import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '@shared/api/api-config';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
-import type { LoginResponse, TwoFactorSecretResponse, UserResponse } from '@features/auth/domain/models/auth.types';
+import type {
+  LoginResponse,
+  TwoFactorSecretResponse,
+  UserResponse,
+} from '@features/auth/domain/models/auth.types';
 
 @Injectable()
 export class HttpAuthGateway extends AuthGateway {

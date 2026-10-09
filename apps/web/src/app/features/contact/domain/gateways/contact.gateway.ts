@@ -1,5 +1,8 @@
 import type { Observable } from 'rxjs';
-import type { ContactFormData, ContactFormSubmission } from '@features/contact/domain/models/contact-form.model';
+import type {
+  ContactFormData,
+  ContactFormSubmission,
+} from '@features/contact/domain/models/contact-form.model';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 
 export abstract class ContactGateway {

@@ -15,4 +15,7 @@ export type BlogPost = {
 
 // Payload d'écriture. `id`, `slug`, `likesCount`, `publishedAt`, `updatedAt` gérés serveur ;
 // `coverImage` transite par uploadCoverImage (POST /:id/image), jamais en string ici.
-export type BlogPostInput = Pick<BlogPost, 'title' | 'excerpt' | 'contentMarkdown' | 'tags' | 'status'>;
+export type BlogPostInput = Pick<
+  BlogPost,
+  'title' | 'excerpt' | 'contentMarkdown' | 'tags' | 'status'
+>;

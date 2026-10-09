@@ -1,7 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AnalyticsDeviceExclusion, DEVICE_EXCLUSION_STORAGE_KEY } from './analytics-device-exclusion';
+import {
+  AnalyticsDeviceExclusion,
+  DEVICE_EXCLUSION_STORAGE_KEY,
+} from './analytics-device-exclusion';
 
 function configure(platform: 'browser' | 'server'): AnalyticsDeviceExclusion {
   TestBed.configureTestingModule({ providers: [{ provide: PLATFORM_ID, useValue: platform }] });

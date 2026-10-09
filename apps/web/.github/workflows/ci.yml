@@ -42,6 +42,10 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # Le pré-commit formate les fichiers indexés ; ce contrôle attrape un commit qui l'a contourné.
+      - name: Format
+        run: pnpm run format:check
+
       # Sprite et empreinte SPRITE_VERSION synchrones : une empreinte périmée resservirait
       # l'ancien sprite, mis en cache immuable sous l'ancienne URL.
       - name: Icons in sync

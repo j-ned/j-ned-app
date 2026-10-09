@@ -157,9 +157,9 @@
   légitime = **une ligne** de WHY intemporel non-évident. Interdits : numéro de
   spec/ticket, réf ADR/§, récit de diagnostic/rétro, « ajouté pour X », le QUOI,
   le bloc narratif.
-- **Garde-fou `pre-commit`** : Husky `.husky/pre-commit` lance les tests
-  (`npm test`) ; `lint-staged` applique `prettier --write` + `eslint --fix` sur
-  `*.ts`/`*.html` et `prettier` sur `*.{css,scss,json}`. Pas de garde-fou
+- **Garde-fou `pre-commit`** : Husky `.husky/pre-commit` lance `pnpm exec lint-staged`
+  (`prettier --write` + `eslint --fix` sur `*.ts`/`*.html`, `prettier` sur
+  `*.{css,scss,json}`) puis `pnpm test`. La CI rejoue `pnpm run format:check`. Pas de garde-fou
   spécifique anti-archéologie de commentaire.
 
 ## Patterns projet (respectés ; signalés en finding si violés)

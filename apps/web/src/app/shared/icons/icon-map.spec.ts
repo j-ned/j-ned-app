@@ -71,6 +71,8 @@ describe('uniqueIcons', () => {
 
   it('includes the fallback question icon', () => {
     const result = uniqueIcons();
-    expect(result.some((ref: IconRef) => ref.id === 'question' && ref.style === 'solid')).toBe(true);
+    expect(result.some((ref: IconRef) => ref.id === 'question' && ref.style === 'solid')).toBe(
+      true,
+    );
   });
 });
