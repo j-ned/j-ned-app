@@ -1,4 +1,9 @@
 @import 'tailwindcss';
+
+/* Specs, ADR et notes de travail citent des classes : elles n'ont pas à finir dans la feuille de prod. */
+@source not '../specs';
+@source not '../docs';
+@source not '../tasks';
 @plugin '@tailwindcss/typography';
 
 @custom-variant dark (&:where(.app-dark, .app-dark *));
