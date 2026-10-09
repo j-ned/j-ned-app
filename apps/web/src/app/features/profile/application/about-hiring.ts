@@ -1,7 +1,4 @@
-import { Component, afterNextRender, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
+import { Component, input, output } from '@angular/core';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
@@ -45,7 +42,7 @@ import { Button } from '@shared/ui/button';
             [href]="url"
             target="_blank"
             rel="noopener noreferrer"
-            (click)="trackCvDownload()"
+            (click)="cvDownloaded.emit()"
             data-testid="about-hiring-cv"
           >
             <app-icon name="download" />
@@ -57,29 +54,10 @@ import { Button } from '@shared/ui/button';
   `,
 })
 export class AboutHiring {
-  private readonly analytics = inject(AnalyticsGateway);
-  private readonly cvGateway = inject(CvGateway);
+  readonly cvUrl = input.required<string | null>();
+
+  readonly cvDownloaded = output<void>();
 
   protected readonly hiringAvailability = SITE_IDENTITY.hiringAvailability;
   protected readonly linkedinUrl = SITE_IDENTITY.socials.linkedin;
-  protected readonly cvUrl = signal<string | null>(null);
-
-  constructor() {
-    afterNextRender(() => this.loadCvUrl());
-  }
-
-  protected trackCvDownload(): void {
-    this.analytics.trackCvDownload();
-  }
-
-  private async loadCvUrl(): Promise<void> {
-    try {
-      const cv = await firstValueFrom(this.cvGateway.getCurrent());
-      if (cv) {
-        this.cvUrl.set(this.cvGateway.getDownloadUrl());
-      }
-    } catch (err) {
-      console.warn('AboutHiring: chargement du CV échoué, lien masqué.', err);
-    }
-  }
 }

@@ -1,7 +1,7 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
+import type { Biography } from '@features/profile/domain/models/biography.model';
+import type { ProfileInfo, SocialButton } from '@features/profile/domain/models/profile.model';
 import { AppIcon } from '@shared/icons/app-icon';
 
 const ROLE = 'développeur full-stack';
@@ -13,9 +13,9 @@ const STACK = 'Angular · NestJS · TypeScript';
   host: { class: 'block' },
   template: `
     <section class="page-container pt-18 pb-22 md:pt-26 md:pb-30" aria-labelledby="about-heading">
-      @let profile = profileInfo();
+      @let info = profile();
       @let bio = biography();
-      @if (profile && bio) {
+      @if (info && bio) {
         <div class="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
           <div>
             <p
@@ -23,14 +23,14 @@ const STACK = 'Angular · NestJS · TypeScript';
             >
               <span class="text-primary">{{ role }}</span>
               <span>{{ stack }}</span>
-              <span>{{ profile.location }}</span>
+              <span>{{ info.location }}</span>
             </p>
             <h1
               id="about-heading"
               data-testid="about-title"
               class="mt-5 text-[clamp(2.5rem,5.6vw,5rem)] font-extrabold leading-[1.02] tracking-[-0.035em]"
             >
-              {{ profile.displayName }}
+              {{ info.displayName }}
             </h1>
             <p
               class="animate-fade-up [animation-delay:120ms] mt-7 max-w-[32ch] text-[clamp(1.25rem,2.1vw,1.75rem)] font-medium leading-snug tracking-tight text-balance"
@@ -68,8 +68,8 @@ const STACK = 'Angular · NestJS · TypeScript';
               class="relative aspect-[4/5] overflow-hidden rounded-xl border border-foreground/8 bg-surface"
             >
               <img
-                [ngSrc]="avatarUrl()"
-                [alt]="'Portrait de ' + profile.displayName"
+                [ngSrc]="info.avatarUrl"
+                [alt]="'Portrait de ' + info.displayName"
                 fill
                 priority
                 sizes="20rem"
@@ -92,28 +92,16 @@ const STACK = 'Angular · NestJS · TypeScript';
   `,
 })
 export class AboutHero {
-  private readonly _gateway = inject(ProfileGateway);
+  readonly profile = input.required<ProfileInfo | undefined>();
+  readonly biography = input.required<Biography | undefined>();
+  readonly socials = input.required<readonly SocialButton[]>();
 
   protected readonly role = ROLE;
   protected readonly stack = STACK;
 
-  private readonly profileResource = rxResource({
-    stream: () => this._gateway.getProfileInfo(),
-  });
-  protected readonly profileInfo = computed(() => this.profileResource.value());
-  protected readonly avatarUrl = computed(() => this.profileInfo()?.avatarUrl ?? '');
-
-  private readonly biographyResource = rxResource({
-    stream: () => this._gateway.getBiography(),
-  });
-  protected readonly biography = computed(() => this.biographyResource.value());
-
-  private readonly socialButtonsResource = rxResource({
-    stream: () => this._gateway.getSocialButtons(),
-  });
   // `mailto:` ne s'ouvre pas dans un nouvel onglet : seuls les liens web sont externes.
   protected readonly socialLinks = computed(() =>
-    (this.socialButtonsResource.value() ?? []).map((social) => ({
+    this.socials().map((social) => ({
       ...social,
       external: social.href.startsWith('http'),
     })),

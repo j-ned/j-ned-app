@@ -1,18 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-import { ProfileGateway } from '../domain/gateways/profile.gateway';
 import { STATIC_DIPLOMAS } from '../infra/data/profile.static-data';
-import { fakeProfileGateway } from '../testing/fake-profile-gateway';
 import { AboutDiploma } from './about-diploma';
 
 describe('AboutDiploma', () => {
   const render = async (): Promise<HTMLElement> => {
-    TestBed.configureTestingModule({
-      providers: [{ provide: ProfileGateway, useFactory: fakeProfileGateway }],
-    });
     const fixture = TestBed.createComponent(AboutDiploma);
+    fixture.componentRef.setInput('diplomas', STATIC_DIPLOMAS);
     fixture.detectChanges();
     await fixture.whenStable();
-    fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   };
 

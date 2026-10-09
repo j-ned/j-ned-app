@@ -1,6 +1,5 @@
-import { Component, inject, computed } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
+import { Component, input } from '@angular/core';
+import type { Biography } from '@features/profile/domain/models/biography.model';
 import { SplitSection } from '@shared/ui/split-section';
 
 @Component({
@@ -27,9 +26,5 @@ import { SplitSection } from '@shared/ui/split-section';
   `,
 })
 export class AboutJourney {
-  private readonly _gateway = inject(ProfileGateway);
-  private readonly biographyResource = rxResource({
-    stream: () => this._gateway.getBiography(),
-  });
-  protected readonly biography = computed(() => this.biographyResource.value());
+  readonly biography = input.required<Biography | undefined>();
 }

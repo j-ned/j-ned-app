@@ -1,15 +1,13 @@
-import { Component, inject, computed } from '@angular/core';
-import { Router } from '@angular/router';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
-import { SectionScroller } from '@core/navigation/section-scroller';
+import { Component, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import type { Motivation } from '@features/profile/domain/models/what-i-do.model';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 
 // Conclusion de la page : la motivation, puis deux sorties (projets, contact) au lieu d'une impasse.
 @Component({
   selector: 'app-about-motivation',
-  imports: [Button, AppIcon],
+  imports: [RouterLink, Button, AppIcon],
   host: { class: 'block border-t border-foreground/8' },
   template: `
     @let m = motivation();
@@ -26,16 +24,16 @@ import { AppIcon } from '@shared/icons/app-icon';
         </p>
         <p class="mt-5 max-w-[56ch] text-[1.0625rem] text-muted">{{ m.description }}</p>
         <div class="mt-9 flex flex-wrap gap-3">
-          <button appButton type="button" data-testid="about-cta-projects" (click)="goToProjects()">
+          <a appButton routerLink="/projects" data-testid="about-cta-projects">
             Voir les projets
             <app-icon name="arrow-right" [size]="20" />
-          </button>
+          </a>
           <button
             appButton
             type="button"
             variant="outlined"
             data-testid="about-cta-contact"
-            (click)="goToContact()"
+            (click)="contactRequested.emit()"
           >
             Me contacter
           </button>
@@ -45,20 +43,7 @@ import { AppIcon } from '@shared/icons/app-icon';
   `,
 })
 export class AboutMotivation {
-  private readonly _gateway = inject(ProfileGateway);
-  private readonly _router = inject(Router);
-  private readonly _scroller = inject(SectionScroller);
+  readonly motivation = input.required<Motivation | undefined>();
 
-  private readonly motivationResource = rxResource({
-    stream: () => this._gateway.getMotivation(),
-  });
-  protected readonly motivation = computed(() => this.motivationResource.value());
-
-  protected goToProjects(): void {
-    void this._router.navigate(['/projects']);
-  }
-
-  protected goToContact(): void {
-    this._scroller.scrollTo('contact');
-  }
+  readonly contactRequested = output<void>();
 }

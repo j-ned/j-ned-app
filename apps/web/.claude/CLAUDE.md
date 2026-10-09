@@ -230,7 +230,7 @@ src/app/features/<feature>/
 │   ├── *.adapter.ts        # fonctions pures
 │   └── *.types.ts          # types API
 ├── pages/         # composants routes (smart) : pages/<nom>/<nom>.ts, nom de classe sans suffixe -page
-└── application/   # composants non routes : dumb (input/output), ou bloc autonome reutilise par plusieurs pages (ex. ContactForm)
+└── application/   # composants non routes : dumb (input/output), bloc autonome reutilise par plusieurs pages (ex. ContactForm), ou widget qui porte sa propre mutation quand le rendre dumb ferait relayer sur plusieurs niveaux (ex. AdminContentImageUpload)
 ```
 
 Dossiers transverses : `core/` (singletons, interceptors, guards), `pages/` (pages hors feature : mentions legales, 404), `layout/` (shell `<router-outlet />`), `shared/` (UI reutilisable, **pas de services**).

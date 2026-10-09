@@ -1,7 +1,6 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
+import type { Technology } from '@features/profile/domain/models/technology.model';
 
 // Filets entre cellules par `gap-px` sur fond de bordure : aucun double trait, quel que soit
 // le nombre de colonnes (2, 3 ou 6).
@@ -34,10 +33,5 @@ import { ProfileGateway } from '@features/profile/domain/gateways/profile.gatewa
   `,
 })
 export class AboutStack {
-  private readonly _gateway = inject(ProfileGateway);
-
-  private readonly technologiesResource = rxResource({
-    stream: () => this._gateway.getTechnologies(),
-  });
-  protected readonly technologies = computed(() => this.technologiesResource.value() ?? []);
+  readonly technologies = input.required<readonly Technology[]>();
 }

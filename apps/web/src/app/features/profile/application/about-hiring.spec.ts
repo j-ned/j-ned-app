@@ -1,62 +1,26 @@
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
-import { HttpCvGateway } from '@features/cv/infra/gateways/http-cv.gateway';
-import { makeCvInfo } from '@features/cv/testing/cv-builders';
-import { API_BASE_URL } from '@shared/api/api-config';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { AboutHiring } from './about-hiring';
 
-const API = '/api';
-const CV_URL = `${API}/cv`;
-const CV_DOWNLOAD_URL = `${API}/cv/download`;
+const CV_DOWNLOAD_URL = '/api/cv/download';
 
 describe('AboutHiring', () => {
   let fixture: ComponentFixture<AboutHiring>;
-  let http: HttpTestingController;
-  const trackCvDownload = vi.fn();
 
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const byTestId = <T extends HTMLElement = HTMLElement>(testId: string): T | null =>
     host().querySelector<T>(`[data-testid="${testId}"]`);
 
-  const render = async (): Promise<void> => {
+  const render = async (cvUrl: string | null): Promise<void> => {
     fixture = TestBed.createComponent(AboutHiring);
+    fixture.componentRef.setInput('cvUrl', cvUrl);
     fixture.detectChanges();
     await fixture.whenStable();
   };
 
-  const settle = async (): Promise<void> => {
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
-
-  beforeEach(() => {
-    trackCvDownload.mockClear();
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        { provide: API_BASE_URL, useValue: API },
-        { provide: CvGateway, useClass: HttpCvGateway },
-        { provide: AnalyticsGateway, useValue: { trackCvDownload } as unknown as AnalyticsGateway },
-      ],
-    });
-    http = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    http.verify();
-    vi.restoreAllMocks();
-  });
-
-  describe('Given aucun CV publié', () => {
+  describe('Given aucune URL de CV', () => {
     beforeEach(async () => {
-      await render();
-      http.expectOne(CV_URL).flush(null);
-      await settle();
+      await render(null);
     });
 
     it('When le bloc est rendu Then il est l’ancre recrutement, titré par son unique h2', () => {
@@ -96,11 +60,9 @@ describe('AboutHiring', () => {
     });
   });
 
-  describe('Given un CV publié', () => {
+  describe('Given l’URL du CV', () => {
     beforeEach(async () => {
-      await render();
-      http.expectOne(CV_URL).flush(makeCvInfo());
-      await settle();
+      await render(CV_DOWNLOAD_URL);
     });
 
     it('When le bloc est rendu Then le lien CV pointe sur le téléchargement dans un nouvel onglet', () => {
@@ -111,25 +73,15 @@ describe('AboutHiring', () => {
       expect(link?.getAttribute('target')).toBe('_blank');
     });
 
-    it('When le visiteur clique le lien CV Then le téléchargement est mesuré une fois', () => {
+    it('When le visiteur clique le lien CV Then le bloc signale le téléchargement une fois', () => {
+      const cvDownloaded = vi.fn();
+      fixture.componentInstance.cvDownloaded.subscribe(cvDownloaded);
       const link = byTestId<HTMLAnchorElement>('about-hiring-cv');
       link?.addEventListener('click', (event) => event.preventDefault());
 
       link?.click();
 
-      expect(trackCvDownload).toHaveBeenCalledOnce();
-    });
-  });
-
-  describe('Given le chargement du CV en échec', () => {
-    it('When le bloc est rendu Then le lien CV reste absent', async () => {
-      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-      await render();
-      http.expectOne(CV_URL).flush(null, { status: 500, statusText: 'Server Error' });
-      await settle();
-
-      expect(byTestId('about-hiring-cv')).toBeNull();
-      expect(byTestId('about-hiring-linkedin')).not.toBeNull();
+      expect(cvDownloaded).toHaveBeenCalledOnce();
     });
   });
 });

@@ -1,6 +1,6 @@
-import { Component, inject, computed } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
+import { Component, input } from '@angular/core';
+import type { Technology } from '@features/profile/domain/models/technology.model';
+import type { WhatIDo } from '@features/profile/domain/models/what-i-do.model';
 import { SplitSection } from '@shared/ui/split-section';
 import { AboutStack } from './about-stack';
 
@@ -22,17 +22,13 @@ const WORK_SUMMARY = 'Du composant au serveur qui le sert.';
           </article>
         }
       </div>
-      <app-about-stack class="mt-4" />
+      <app-about-stack class="mt-4" [technologies]="technologies()" />
     </app-split-section>
   `,
 })
 export class AboutWhatIDo {
-  private readonly _gateway = inject(ProfileGateway);
+  readonly whatIDo = input.required<readonly WhatIDo[]>();
+  readonly technologies = input.required<readonly Technology[]>();
 
   protected readonly summary = WORK_SUMMARY;
-
-  private readonly whatIDoResource = rxResource({
-    stream: () => this._gateway.getWhatIDo(),
-  });
-  protected readonly whatIDo = computed(() => this.whatIDoResource.value() ?? []);
 }

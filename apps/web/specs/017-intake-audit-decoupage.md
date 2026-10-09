@@ -2357,6 +2357,404 @@ Gates : `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm run format:check`,
 - **Chunks** : un déplacement de fichier ne devrait changer ni le graphe des chunks ni leur
   contenu ; seule la preuve 6 le confirme.
 
+### Lot L13 — Composants non routés sans service (ajout, branche `refactor/about-sections-dumb-l13` depuis master `a8c57b8`)
+
+Suite du risque de L12 (« blocs smart restent dans `application/` »). Règle écrite
+(`CLAUDE.md:233`, notes `Clean Architecture.md:29`, `Composants.md:186`) : `application/` =
+composants non routés, **dumb** (`input()`/`output()`, zéro injection de service) **ou** bloc
+autonome réutilisé par plusieurs pages (`ContactForm`). Le lot rend dumb ce qui y gagne, et
+écrit ce qui reste et pourquoi.
+
+Exigence : aucun changement visuel. Mêmes textes, mêmes `data-testid` (un ajout :
+`home-projects-all`), mêmes sélecteurs, même HTML prérendu (écarts tolérés listés plus bas), même
+découpage en chunks, mêmes événements mesurés.
+
+**Arbitrages utilisateur du 2026-10-09** (intégrés ci-dessous) : (1) exception écrite dans
+`.claude/CLAUDE.md` pour les trois widgets (d), patch appliqué dans la PR L13 (L13.7) ; (2) les
+deux « Voir les projets » / « Voir tous les projets » deviennent des liens
+`<a appButton routerLink="/projects">` : plus aucun `output` de navigation, seuls restent le
+défilement vers le contact (`SectionScroller`) et les mesures.
+
+**Écart visible attendu (et lui seul)** : `about-cta-projects` (conclusion de `/about`) et
+« Voir tous les projets » (accueil) passent de `<button type="button">` à `<a href="/projects">`.
+Aucun changement visuel (même directive `appButton`, même variante, même icône). Sémantique : rôle
+`link` annoncé au lieu de `button` ; Entrée active, Espace fait défiler ; clic du milieu ou
+Ctrl+clic ouvre un onglet ; le lien figure dans le HTML prérendu et fonctionne sans JavaScript.
+Conforme à `CLAUDE.md` (« `<a routerLink>` nav »), précédent `hero-cta-offers`
+(`home-hero-section.ts:34-40`).
+
+#### Inventaire (master `a8c57b8`, `grep -rl "inject(" src/app/features/*/application`, specs exclues)
+
+| Composant | Injecte | Parents | Verdict |
+| --- | --- | --- | --- |
+| `profile/application/about-hero.ts` | `ProfileGateway` (3 lectures) | `About` | **(c) dumb** |
+| `about-journey.ts` | `ProfileGateway` (`getBiography`, **2ᵉ** lecture : le hero la fait aussi) | `About` | **(c)** |
+| `about-highlights.ts`, `about-diploma.ts` | `ProfileGateway` | `About` | **(c)** |
+| `about-what-i-do.ts` | `ProfileGateway` | `About` | **(c)** |
+| `about-stack.ts` | `ProfileGateway` | `AboutWhatIDo` | **(c)** (données relayées par `AboutWhatIDo`) |
+| `about-motivation.ts` | `ProfileGateway`, `Router`, `SectionScroller` | `About` | **(c)** ; « Voir les projets » en lien |
+| `about-hiring.ts` | `CvGateway`, `AnalyticsGateway` | `About` | **(c)** |
+| `home/application/home-hero-section.ts` | `SectionScroller`, `AnalyticsGateway` (données déjà en `input`) | `Home` | **(c)** |
+| `home/application/home-projects.ts` | `Router`, `AnalyticsGateway` (données déjà en `input`) | `Home` | **(c)** ; « Voir tous les projets » en lien |
+| `contact/application/contact-form.ts` | `ContactGateway`, `ToastStore` | `Home`, `OfferPage` | **(b)** reste |
+| `blog/application/components/blog-comments.ts` | `DOCUMENT`, `ElementRef`, `GISCUS_CONFIG`, `ThemeStore` | `BlogDetail` | **(a)** reste |
+| `blog/application/components/code-copy.ts` (directive) | `PendingTasks`, `DestroyRef` | `BlogDetail`, `AdminPostForm` | **(a)** reste |
+| `admin/application/components/markdown-editor.ts` (directive) | `DOCUMENT`, `FormField` (hôte) | `AdminPostForm`, `AdminMarkdownToolbar` | **(a)** reste |
+| `blog/application/components/blog-article-body.ts` | `DomSanitizer` | `BlogDetail`, `AdminPostForm` | **(a)** reste |
+| `admin/application/components/admin-gallery-image-item.ts` | `Injector` (pour `afterNextRender` hors constructeur, l. 203) | `AdminProjectGallery` | **(a)** reste |
+| `blog/application/components/blog-like-button.ts` | `BlogGateway` (`likePost`) + `localStorage` | `BlogDetail` | **(d)** reste, écart écrit |
+| `admin/application/components/admin-project-gallery.ts` | `ProjectsGateway`, `ToastStore`, `DestroyRef`, `Injector` | `AdminProjectEditor` | **(d)** reste, écart écrit |
+| `admin/application/components/admin-content-image-upload.ts` | `BlogGateway` (`uploadContentImage`) | `AdminMarkdownToolbar` ← `AdminPostForm` ← `AdminPostEditor` | **(d)** reste, écart écrit |
+
+Catégories : **(a)** dépendance technique, pas un service métier (primitives Angular, jeton de
+configuration, `ThemeStore` lu pour un script tiers) : conforme ; **(b)** bloc autonome
+réutilisé par plusieurs pages : conforme à la règle ; **(c)** rendu dumb par ce lot ;
+**(d)** widget à mutation propre (requête, réponse, état local d'attente ou d'erreur), un seul
+parent : **non conforme** à la lettre de la règle, laissé en place parce que le rendre dumb
+coûte plus qu'il ne rapporte :
+
+- `blog-like-button` : le résultat de `likePost` (nouveau compteur) et la mémoire `localStorage`
+  devraient revenir par `input` après un `output`, avec un `linkedSignal` des deux côtés ; la
+  page `BlogDetail` (331 lignes, au-dessus du seuil de 250) grossirait encore.
+- `admin-project-gallery` : 4 mutations (ajout, retrait, déplacement, texte alternatif) avec un
+  état d'attente par image et des toasts d'erreur par statut HTTP. La remonter dans
+  `AdminProjectEditor` (263 lignes, 4 injections) donne une page de plus de 400 lignes, ou une
+  facade dédiée qui ne ferait que déplacer le composant.
+- `admin-content-image-upload` : l'envoi vit dans la soumission Signal Forms du composant, sous
+  trois niveaux dumb (`AdminPostForm` → `AdminMarkdownToolbar` → upload). Le remonter =
+  relayer `output` et résultat (`url` ou erreur) sur trois niveaux.
+
+Ces trois cas sont admis par une exception écrite dans `.claude/CLAUDE.md` (arbitrage
+utilisateur, patch exact en « Fichiers », appliqué en L13.7).
+
+#### Vérification : `input()` liés par le parent sous `@defer (hydrate on viewport)`
+
+- **Doc** (angular.dev/guide/incremental-hydration) : avec un déclencheur `hydrate`, le serveur
+  rend le contenu principal ; côté client, les dépendances restent différées jusqu'au
+  déclencheur, puis le bloc s'hydrate. Les événements reçus avant hydratation sont mis en file
+  et rejoués après. Mêmes contraintes que l'hydratation complète. La doc ne dit **rien** des
+  liaisons d'entrée d'un bloc déshydraté : vérifié dans la source et par le précédent.
+- **Source** (`@angular/core` 22.2.1, `fesm2022/_debug_node-chunk.mjs`) : `ɵɵdefer` (l. 13941)
+  inscrit le bloc déshydraté dans `DEHYDRATED_BLOCK_REGISTRY` **sans créer de vue** ;
+  `applyDeferBlockState` (l. 11492) crée la vue du gabarit principal
+  (`createAndRenderEmbeddedLView(…, { dehydratedView })`) seulement au changement d'état.
+  Les liaisons `[x]="…"` écrites dans le bloc appartiennent à ce gabarit principal : elles sont
+  évaluées pour la première fois **à l'hydratation**, sur le DOM rendu par le serveur. Avant, un
+  changement d'un signal de la page ne touche pas le bloc et ne l'hydrate pas. Seuls les
+  déclencheurs (`viewport`, ou un événement reçu dans le bloc) l'hydratent.
+- **Précédent en production** : `Home` charge `getHomeBundle()` dans un `rxResource` et lie
+  `[projects]="bundle()?.featuredProjects ?? []"` dans un `@defer (hydrate on viewport; …)`
+  (`home.ts:36-39`). Le lot **reprend ce motif** (une ressource dans la page, repli `?? []` ou
+  `undefined` dans la liaison).
+- **Event replay** : le `(click)` de « Me contacter » reste sur le `<button>` à l'intérieur de
+  la section. Le `ngb` (`d4` × 2 dans le `/about/index.html` actuel = les deux boutons de la
+  conclusion) est posé par le serveur sur ces éléments, pas sur l'hôte. Un `output()` n'est pas
+  un événement DOM : la liaison `(contactRequested)="…"` de la page ne produit ni `jsaction` ni
+  `ngb`. Le clic rejoué atteint le `<button>` hydraté, qui émet, et la page (hydratée dès le
+  chargement) traite. Le lien « Voir les projets » porte un `href` réel : avant hydratation, le
+  navigateur suit le lien (chargement complet de `/projects`) ; après, `RouterLink` (écouteur
+  `click` sur l'hôte `<a>`) navigue côté client. La preuve 4 rejoue les deux.
+- **Conséquence pour le gabarit** : un `@if` qui dépend de la donnée chargée doit vivre **dans**
+  le bloc ou dans la section, jamais **autour** d'un `@defer`. Autour, il serait évalué à
+  l'hydratation de la page : une valeur absente à ce moment détruirait le DOM serveur des blocs,
+  et un bloc recréé côté client sans déclencheur client attendrait `idle`.
+
+#### Décisions
+
+1. **Une ressource pour la page, un seul état de chargement.**
+   `About` porte un `rxResource` dont le flux est `forkJoin({ profile, biography, socials,
+   diplomas, technologies, highlights, whatIDo, motivation })` sur les 8 méthodes existantes de
+   `ProfileGateway`. Chaque méthode est appelée **une fois** (aujourd'hui `getBiography` deux
+   fois). Type inféré : pas de type `AboutContent` nommé, pas de use case (composition triviale
+   d'un seul gateway, un seul consommateur).
+   - **Pas de `getAboutBundle()`** sur le gateway, contrairement à `HomeGateway` : il rendrait
+     mortes les 8 méthodes actuelles et toucherait domaine, in-memory et faux. Si `Profile`
+     passe un jour en HTTP, un point d'accès groupé remplacera le `forkJoin`.
+   - Lecture : `content = computed(() => resource.hasValue() ? resource.value() : undefined)`.
+     `value()` lève sur une ressource en erreur (v20+) ; `hasValue()` ne lève pas. Le précédent
+     `Home` lit `value()` : non touché ici.
+   - **Erreur** : inatteignable (`InMemoryProfileGateway` = `defer(() => of(constante))`).
+     Elle se rend comme le chargement : skeleton du hero, sections vides. Pas d'interface
+     d'erreur (YAGNI). À concevoir si le gateway passe en HTTP (cf. risques).
+   - Gabarit : `@let about = content();` en tête, lu dans les blocs.
+2. **Par section, la valeur « pas encore là » reste celle d'aujourd'hui**, reportée dans la
+   liaison et non dans un `@if` de page. C'est ce qui garde le HTML prérendu identique :
+   - listes : `input.required<readonly T[]>()`, la page lie `about?.x ?? []` (rendu actuel
+     `value() ?? []`) ;
+   - objets : `input.required<T | undefined>()`, la section garde son `@if` interne (hero :
+     skeleton ; parcours, conclusion : rien).
+   - **Aucune valeur par défaut** d'entrée (`input.required` partout) : une liaison oubliée est
+     une erreur de compilation (`NG8008`), pas un rendu vide silencieux.
+3. **Contrats** (signatures à titre de contrat, noms définitifs) :
+
+   | Section | Entrées | Sorties |
+   | --- | --- | --- |
+   | `AboutHero` | `profile: ProfileInfo \| undefined`, `biography: Biography \| undefined`, `socials: readonly SocialButton[]` | — |
+   | `AboutJourney` | `biography: Biography \| undefined` | — |
+   | `AboutHighlights` | `highlights: readonly Highlight[]` | — |
+   | `AboutWhatIDo` | `whatIDo: readonly WhatIDo[]`, `technologies: readonly Technology[]` (relayé à `AboutStack`) | — |
+   | `AboutStack` | `technologies: readonly Technology[]` | — |
+   | `AboutDiploma` | `diplomas: readonly Diploma[]` | — |
+   | `AboutMotivation` | `motivation: Motivation \| undefined` | `contactRequested: void` (« Voir les projets » = `<a appButton routerLink="/projects">`) |
+   | `AboutHiring` | `cvUrl: string \| null` | `cvDownloaded: void` |
+   | `HomeHeroSection` | `hero` (inchangé) | `contactRequested: void`, `offersOpened: void` |
+   | `HomeProjects` | `projects` (inchangé) | `liveLinkClicked: FeaturedProjectView` (« Voir tous les projets » = `<a appButton routerLink="/projects" data-testid="home-projects-all">`) |
+
+   Nommage des sorties : précédents `liveLinkClicked`, `moveRequested`, `uploadRequested`.
+   Le `computed` `socialLinks` (`external` selon `http`) reste dans le hero : dérivation locale
+   d'une ligne, pas de presenter. Les constantes `ROLE`, `STACK`, `DIPLOMA_SUMMARY`,
+   `WORK_SUMMARY` restent dans leur section.
+4. **Navigation : un lien ; défilement et mesure : à la page.** « Voir les projets » devient
+   `<a appButton routerLink="/projects" data-testid="about-cta-projects">` dans la section
+   (`RouterLink` = directive, catégorie (a), comme `hero-cta-offers`) : ni `output`, ni `Router`
+   injecté nulle part. « Me contacter » reste un `<button>` et émet `contactRequested` ; la page
+   injecte `SectionScroller` (`goToContact()` : `scrollTo('contact')`).
+5. **CV : chargé par la page, après rendu, comme aujourd'hui.** `About` reprend tel quel
+   `afterNextRender(() => loadCvUrl())` : `firstValueFrom(cvGateway.getCurrent())`, puis
+   `getDownloadUrl()` si un CV existe, `console.warn` du même message en cas d'échec (préfixe
+   `About:` au lieu d'`AboutHiring:`). Signal `cvUrl` (`string | null`, `null` au départ) lié à
+   `[cvUrl]`. Le lien CV reste absent du HTML prérendu (chargement côté navigateur seulement).
+   `(cvDownloaded)` → `analytics.trackCvDownload()`. `AboutHiring` reste hors `@defer` (ancre
+   `#recrutement`).
+6. **Collaborateurs de `About`** : `ProfileGateway`, `CvGateway`, `AnalyticsGateway`,
+   `SectionScroller` = 4 (seuil 6). ≈ 115 lignes estimées (seuil 250). Pas de facade : un seul
+   site, la page est le coordinateur.
+7. **Accueil** : même règle, données déjà en `input`. `Home` reçoit `AnalyticsGateway` et garde
+   une référence à `SectionScroller` (elle l'injecte déjà pour `eager`). Pas de `Router` :
+   « Voir tous les projets » devient un lien dans `HomeProjects`. Méthodes de page :
+   `describeProject()` (mesure `home_hero_contact` puis `scrollTo('contact')`),
+   `trackOffersClick()` (mesure `home_hero_offers` ; la navigation reste le
+   `routerLink="/offres"` de la section, directive, catégorie (a)), `trackLiveLink({ id, title })`
+   (précédent : `projects.ts:177`). `Home` : 3 collaborateurs (`HomeGateway`, `SectionScroller`,
+   `AnalyticsGateway`).
+   `HOME_HERO_CTA_LABELS` est importé par la page pour les libellés mesurés.
+8. **Chunks** : la page n'importe des sections que les classes listées dans `imports`, et des
+   modèles que des `import type`. Toute valeur importée d'un fichier de section rendrait cette
+   section eager.
+
+#### Fichiers
+
+**Modifiés** (aucun créé, aucun supprimé) :
+
+- `features/profile/pages/about/about.ts` + `about.spec.ts` : ressource, CV, navigation, mesure,
+  liaisons.
+- `features/profile/application/about-hero.ts` + spec, `about-journey.ts`,
+  `about-highlights.ts`, `about-what-i-do.ts`, `about-stack.ts`, `about-diploma.ts` + spec,
+  `about-motivation.ts` + spec, `about-hiring.ts` + spec : entrées, sorties, plus d'injection.
+- `features/home/application/home-hero-section.ts` + spec, `home-projects.ts` + spec,
+  `features/home/pages/home/home.ts` + `home.spec.ts`.
+- `.claude/CLAUDE.md:233` (L13.7, arbitrage utilisateur), patch exact, une ligne :
+
+  ```diff
+  -└── application/   # composants non routes : dumb (input/output), ou bloc autonome reutilise par plusieurs pages (ex. ContactForm)
+  +└── application/   # composants non routes : dumb (input/output), bloc autonome reutilise par plusieurs pages (ex. ContactForm), ou widget qui porte sa propre mutation quand le rendre dumb ferait relayer sur plusieurs niveaux (ex. AdminContentImageUpload)
+  ```
+
+  Sans accents, comme le reste du fichier. Commit dédié
+  `docs(claude): application admet le widget a mutation propre` (règle d'auto-révision : une
+  règle par patch).
+
+**Non touchés** : `ProfileGateway`, `InMemoryProfileGateway`, `profile.static-data.ts`,
+`testing/fake-profile-gateway.ts` (le spec de page reste son seul utilisateur),
+`app.config.ts`, `app.routes*.ts`, `SectionScroller`, les composants (a), (b), (d).
+
+Pas de spec créée pour `AboutJourney`, `AboutHighlights`, `AboutWhatIDo`, `AboutStack` (affichage
+pur, aucune spec aujourd'hui) : le spec de page les rend pour de vrai (L13.2).
+
+Pas d'ADR : application de la règle déjà écrite.
+
+**À faire valider par l'utilisateur, hors plan** :
+
+- notes Obsidian `Clean Architecture.md:29,45` et `Composants.md:186` : reprendre la formule du
+  patch `CLAUDE.md` ci-dessus (hors dépôt) ;
+- `.claude/project-profile.md:80` : « `application/**` = composants dumb » → reprendre la formule
+  de `CLAUDE.md:233`.
+
+#### Réactivité / état
+
+`rxResource` + `computed` dans la page, signal `cvUrl` écrit une fois par la page. Sections :
+`input.required` et `output` seulement, plus aucun `rxResource`. Modèles inchangés (`type`
+`readonly`, collections `readonly T[]`).
+
+#### Tranches
+
+Leçons des lots précédents pour `qa` :
+
+- **Squelette de signature au RED** pour tout membre neuf que le spec lit par le type : les
+  sorties neuves (`contactRequested` ×2, `cvDownloaded`, `offersOpened`, `liveLinkClicked` de
+  `HomeProjects`) déclarées `output<…>()`, jamais émises. Sans elles,
+  `fixture.componentInstance.x.subscribe(…)` lève `TS2339` et **aucun** test ne tourne. Les
+  entrées se posent par `fixture.componentRef.setInput('nom', …)` (chaîne, pas de squelette) :
+  ne **pas** les déclarer au RED, `biography` (hero) et `cvUrl` (hiring) entreraient en
+  collision avec des membres existants.
+- **Pas de valeur par défaut piégée.** Chaque test lie **toutes** les entrées de la section,
+  explicitement. « Pas encore chargé » se teste en passant `undefined` (objet) ou `[]` (liste)
+  par `setInput`, jamais par omission. Pas de paramètre à défaut dans les harnais (`render(…)`).
+- **Jamais d'U+202F / U+00A0 littéral** dans une spec : écrire `\u202F` / `\u00A0` (déjà le cas
+  dans `about-hiring.spec.ts:488`).
+- Données de test : les constantes `STATIC_*` de `profile.static-data.ts` suffisent. Les specs de
+  section ne fournissent **plus** `ProfileGateway`, `CvGateway`, `AnalyticsGateway`,
+  `SectionScroller` ni `provideHttpClient` : c'est ce qui prouve l'absence d'injection.
+- **Piège du mode `Manual`** (spec de page) : sans `render(DeferBlockState.Complete)` sur chaque
+  bloc (`await fixture.getDeferBlocks()`), les sections différées n'existent pas, et un test de
+  comptage d'appels ou de rendu est vert à tort.
+
+Référence à relever **avant** L13.1, sur `a8c57b8` : `pnpm exec ng cache clean`, puis
+`pnpm test; echo exit=$?` → « Test Files » et « Tests ».
+
+- **L13.1 — le hero reçoit le profil de la page.**
+  RED : `about-hero.spec.ts` réécrit, sans `ProfileGateway` : profil, biographie et réseaux
+  posés par `setInput` → les 7 tests existants ; plus « Given profil et biographie `undefined`
+  When le hero est rendu Then le skeleton `aria-hidden` est rendu et aucun `h1` ». Échec
+  attendu : `NG0201` (`ProfileGateway` encore injecté). Spec de page : inchangé, vert (filet :
+  `h1` = `displayName`).
+  GREEN : ressource `forkJoin` de la page (clés du hero d'abord, ou les 8 d'emblée), liaisons du
+  hero, hero sans injection.
+- **L13.2 — les sections différées reçoivent leurs données.** Parcours, traits, « ce que je
+  fais » + stack, formations, et la **donnée** de la conclusion (pas encore ses boutons).
+  RED :
+  - `about-diploma.spec.ts` : `setInput('diplomas', STATIC_DIPLOMAS)`, sans gateway (2 tests
+    existants ; le 3ᵉ, `it.each` sur les titres, ne rend rien et reste tel quel). Échec :
+    `NG0201`.
+  - `about-motivation.spec.ts` : l'énoncé rendu depuis `setInput('motivation', …)`, sans
+    gateway ; plus « Given `undefined` Then aucune section ». Échec : `NG0201`. Ses deux tests de
+    clic restent tels quels dans cette tranche (ils passent encore par `Router`/`SectionScroller`,
+    fournis).
+  - `about.spec.ts` : `it.each` sur les 8 méthodes de `ProfileGateway` (espions sur le faux) →
+    « Given la page rendue et ses 5 blocs `Complete` Then la méthode est appelée une fois ».
+    Échec attendu : `expected 2 to be 1` sur les 6 méthodes encore lues par une section ; vert
+    pour `getProfileInfo` et `getSocialButtons` (hero, L13.1). Et un filet « blocs `Complete`
+    → chaque section affiche la donnée du faux » (nombre de `journey-paragraph`, `about-trait`,
+    `about-tech`, `about-diploma`, texte de `motivation-statement`), vert dès le RED.
+  GREEN : `forkJoin` complet, `@let about`, liaisons dans chaque bloc, sections sans injection,
+  `AboutWhatIDo` relaie `technologies` à `AboutStack`.
+- **L13.3 — « Voir les projets » devient un lien, le contact passe par la page.**
+  RED :
+  - `about-motivation.spec.ts` : providers = `provideRouter([{ path: 'projects', component:
+    BlankPage }])` seulement (requis par `RouterLink`), plus de `SectionScroller`.
+    - `about-cta-projects` est un `<a>` dont `href` vaut `/projects` (modèle :
+      `home-hero-section.spec.ts:70-81`, « is a link … usable without JavaScript ») ; clic →
+      `TestBed.inject(Router).url === '/projects'` après `whenStable` ;
+    - clic `about-cta-contact` (toujours un `<button>`) → `contactRequested` émis une fois.
+    Squelette : `contactRequested = output<void>()`. Échec attendu : `expected 'BUTTON' to be
+    'A'` (ou `href` `null`) pour le lien, `expected "spy" to be called once` pour le contact.
+    Tant que la section injecte encore `SectionScroller` (RED), sans faux c'est le vrai qui
+    tourne (`navigateByUrl('/')` : la plateforme de test est un navigateur) ; sans effet sur le
+    rouge, l'espion `contactRequested` reste à zéro (cf. risques).
+  - `about.spec.ts` : bloc conclusion `Complete`, clic contact → `scrollTo('contact')` (faux
+    `SectionScroller` : `{ scrollTo, eager: signal(false) }`). Vert dès le RED (la section le
+    fait encore) : filet du déplacement. Pas de test de navigation au niveau page (le lien est
+    couvert par la section).
+  GREEN : lien `routerLink`, `contactRequested` émis, `Router` supprimé de la section,
+  `SectionScroller` dans la page.
+- **L13.4 — le bloc recrutement reçoit l'URL du CV et signale son téléchargement.**
+  RED :
+  - `about-hiring.spec.ts` réécrit sans HTTP ni gateway : `setInput('cvUrl', null)` → ancre
+    `#recrutement` + `h2` unique, disponibilité, LinkedIn, aucun lien CV, aucun landmark (les 5
+    tests actuels) ; `setInput('cvUrl', '/api/cv/download')` → lien `href`, `target="_blank"` ;
+    clic → `cvDownloaded` émis une fois. Squelette : `cvDownloaded`. Échec : `NG0201`
+    (`CvGateway`).
+  - `about.spec.ts` : CV publié (`flush(makeCvInfo())`) → lien CV vers `${API}/cv/download` ;
+    échec 500 → lien absent, LinkedIn présent, `console.warn` appelé ; clic du lien →
+    `trackCvDownload` une fois. Vert dès le RED (filet, la section le fait encore).
+  GREEN : chargement du CV et mesure dans la page, section dumb.
+- **L13.5 — le premier écran de l'accueil confie ses appels à la page.**
+  RED : `home-hero-section.spec.ts` sans `AnalyticsGateway` ni `SectionScroller` : clic
+  `hero-cta-contact` → `contactRequested` une fois ; clic `hero-cta-offers` → `offersOpened` une
+  fois et navigation vers `/offres` (inchangé) ; le reste du spec tel quel. Squelette : les deux
+  `output()`. Échec : `NG0201` (`AnalyticsGateway`). `home.spec.ts` : clic contact du hero →
+  `trackCtaClick('home_hero_contact', libellé)` puis `scrollTo('contact')` ; clic offres →
+  `trackCtaClick('home_hero_offers', libellé)`. Vert dès le RED (filet).
+  GREEN : sorties, méthodes dans `Home`.
+- **L13.6 — « Voir tous les projets » devient un lien, la mesure passe par la page.**
+  RED : `home-projects.spec.ts` sans `AnalyticsGateway`, avec `provideRouter` (déjà présent) :
+  `[data-testid="home-projects-all"]` est un `<a>` dont `href` vaut `/projects`, clic → URL du
+  routeur `/projects` ; clic du lien en ligne d'une carte → `liveLinkClicked` émis avec la vue
+  de ce projet ; le test « Voir la fiche » reste tel quel. Squelette : `liveLinkClicked`
+  seulement. Échec : `NG0201` (`AnalyticsGateway`). `home.spec.ts` (bloc projets `Complete`) :
+  clic du lien en ligne → `trackProjectClick(id, title)`. Vert dès le RED (filet).
+  GREEN : lien `routerLink` (+ `data-testid`), `liveLinkClicked` émis, `Router` et
+  `AnalyticsGateway` supprimés de la section, `trackLiveLink` dans `Home`.
+- **L13.7 — exception écrite dans `CLAUDE.md`, sans RED.** Patch exact en « Fichiers ». Aucun
+  test : fichier d'instructions. Commit dédié.
+
+Ordre : L13.1 → L13.4 dans l'ordre (L13.2 complète la ressource posée par L13.1, L13.3 et L13.4
+touchent `about.ts` après elle). L13.7 n'importe quand. L13.5 et L13.6 indépendantes du profil, entre elles dans cet
+ordre (même `home.ts`). Une PR, un commit par tranche. Si l'accueil doit sortir du lot, L13.5 et
+L13.6 forment une PR à part sans conflit (intersection vide avec L13.1-L13.4).
+
+#### Preuves de fin de lot
+
+Gates : `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm run format:check`,
+`pnpm test; echo exit=$?`, `pnpm run build --configuration production` (puis
+`git checkout -- public/sitemap.xml public/rss.xml`).
+
+1. **Tests** : `exit=0`, « Tests » = référence + tests ajoutés, comptés par tranche dans le
+   journal.
+2. **Plus d'injection** : `grep -n "inject(" src/app/features/profile/application/*.ts
+   src/app/features/home/application/home-hero-section.ts
+   src/app/features/home/application/home-projects.ts` → vide.
+   `grep -rln "inject(" src/app/features/*/application --include='*.ts' | grep -v spec` → les
+   9 fichiers (a), (b), (d) de l'inventaire, rien d'autre.
+3. **HTML prérendu** : build de `master` dans un worktree temporaire
+   (`git worktree add <scratchpad>/l13-before master`) et de la branche, le même jour. Pour
+   `about/index.html` et `index.html` (accueil) :
+   - après normalisation (`sed -E 's/(chunk|main|polyfills|styles)-[A-Z0-9]+\.(js|css)/\1-H.\2/g'`,
+     suppression du `<script id="ng-state" …>…</script>` et des attributs ` ngh="[0-9]+"`) :
+     **diff vide** ;
+   - `__nghDeferData__` (extrait du `ng-state`) **identique** : aujourd'hui `d0`…`d5`, tous
+     `{"r":1,"s":2,"t":[2]}` ;
+   - comptes `ngb="d5"` (12) **identiques** sur `/about` ; `ngb="d4"` et `jsaction=` : identiques
+     attendus (2 et 23 ; `RouterLink` écoute `click` sur l'hôte `<a>`), écart limité au lien
+     « Voir les projets » toléré s'il apparaît ;
+   - **écarts tolérés, et eux seuls** : (1) le contenu de `__nghData__` et les valeurs `ngh`, si
+     l'ajout de `@let` décale les index de nœuds du gabarit de page ; (2) les deux liens
+     arbitrés : `<button type="button" … data-testid="about-cta-projects">` devient
+     `<a href="/projects" … data-testid="about-cta-projects">` sur `/about`, et le bouton
+     « Voir tous les projets » devient `<a href="/projects" … data-testid="home-projects-all">`
+     sur l'accueil (mêmes classes `appButton`). Tout autre écart est un défaut.
+4. **Hydratation et chunks** (`node dist/angular-portfolio-app/server/server.mjs`, puis
+   navigateur, cache vidé) :
+   - `/about` chargé sans défiler : aucune requête vers le chunk qui contient
+     `motivation-statement` (`grep -l motivation-statement dist/…/browser/*.js` → un fichier,
+     distinct de celui qui contient `about-hiring`) ; console sans `NG05xx` ;
+   - défilement jusqu'en bas : les chunks différés arrivent, les sections ne clignotent pas
+     (pas de passage par le placeholder) ;
+   - **event replay** : sur un chargement neuf, dans la même tâche,
+     `scrollTo(0, document.body.scrollHeight)` puis clic sur `[data-testid="about-cta-contact"]`
+     → accueil, section contact focalisée ;
+   - **lien** : `about-cta-projects` a `href="/projects"` dans le HTML prérendu ; clic après
+     hydratation → `/projects` sans rechargement (aucune nouvelle requête document) ; JavaScript
+     désactivé → `/projects` chargé par le serveur ;
+   - lien CV présent après chargement si un CV est publié en prod, clic → requête de mesure ;
+   - navigation client `/` → menu « À propos » : sections rendues (déclencheur client par défaut
+     `idle`), console propre ;
+   - même nombre de fichiers `*.js` dans `browser/` que `master`.
+   - Accueil : clic « Décrire mon projet » → défilement vers le contact et requête de mesure ;
+     bloc projets hydraté au défilement, clic « Voir tous les projets » (lien) → `/projects`
+     sans rechargement.
+
+#### Intersection de fichiers
+
+| Couple | Intersection | Conséquence |
+| --- | --- | --- |
+| L1 à L12 ∩ L13 | Tous mergés ; la branche part de `a8c57b8`. | Aucune. |
+| L13.1-L13.4 ∩ L13.5-L13.6 | Vide (`profile/**` contre `home/**`). | Séparables en deux PR sans rebase. |
+
+#### Risques & inconnues
+
+- **Hero au premier rendu client** : comme aujourd'hui, le `@if` du hero suppose que la donnée
+  est là au premier passage de détection d'hydratation. `forkJoin` sur des `defer(of(…))` émet
+  de façon synchrone, comme les trois ressources actuelles : comportement inchangé, à confirmer
+  par la preuve 4 (console sans `NG05xx`, pas de skeleton visible).
+- **Passage en HTTP de `ProfileGateway`** : un `forkJoin` échoue en bloc, et l'erreur se rend
+  aujourd'hui en skeleton permanent sans `h1`. À ce moment : point d'accès groupé et état
+  d'erreur de page, à concevoir.
+- **`SectionScroller` réel dans un spec de section** (L13.3, en RED seulement) : tant que la
+  section l'injecte encore, retirer son faux laisse tourner le vrai (`navigateByUrl('/')`).
+  Sans effet sur la conclusion du RED (l'espion `contactRequested` reste à zéro), mais `qa`
+  peut garder le faux jusqu'au GREEN s'il voit du bruit de navigation.
+
 ## Plan de test
 
 Lot **L5** joué en un seul RED (demande de la session principale). Commande : `pnpm test; echo
@@ -2978,6 +3376,125 @@ Aucun test écrit, conformément au plan : happy-dom n'applique ni les couches d
 `:focus-visible` (L10.3), ni les media queries ni les animations (L10.4). Preuves au navigateur et
 sur les chunks compilés, décrites au plan.
 
+### Lot L13 — RED commun de L13.1 à L13.4 (page À propos)
+
+Joué en un seul RED à la demande de la session principale ; L13.5 et L13.6 (accueil) partent dans
+une PR séparée, rien n'est écrit pour elles. Référence relevée sur `a8c57b8` après
+`pnpm exec ng cache clean` : `189 passed (189)` fichiers, `3156 passed (3156)` tests, `exit=0`.
+
+**Décision utilisateur reçue pendant le RED (modifie L13.3)** : « Voir les projets » de la
+conclusion devient `<a appButton routerLink="/projects">`. Plus de sortie `projectsRequested` ;
+seule `contactRequested` reste, et `Router` n'entre pas dans `About` pour ce lien (`goToProjects()`
+du plan disparaît ; `SectionScroller` reste injecté par la page pour `goToContact()`).
+
+**Squelettes (à remplacer en GREEN)** : `AboutMotivation.contactRequested = output<void>()` et
+`AboutHiring.cvDownloaded = output<void>()`, déclarées, jamais émises. Aucune entrée déclarée : les
+entrées passent par `setInput('nom', …)`. Aucune autre ligne de code applicatif.
+
+Sanity du harnais (hors livrable, annulé) : une implémentation dumb jetable des 8 sections et de la
+page (`forkJoin`, `@let about`, liaisons, CV dans la page, lien `routerLink`) fait passer les
+5 fichiers au vert (41 / 41, puis 4 / 4 pour la conclusion en lien). Fichiers restaurés depuis
+sauvegarde, `git diff` des composants réduit aux deux squelettes.
+
+**Nature des rouges, écart avec la consigne « pas de NG0 »** : les 23 rouges des specs de section
+sont des `NG0201` (`No provider found for ProfileGateway` / `AnalyticsGateway`), comme le plan les
+annonce. Ils sont délibérés : le spec ne fournit plus le service, et l'erreur disparaît exactement
+quand la section cesse de l'injecter. Les transformer en échecs d'assertion obligerait à garder des
+providers morts après le GREEN. Le seul rouge d'assertion du RED commun est le comptage de
+`getBiography` dans le spec de page.
+
+### Tranche L13.1 — le hero reçoit le profil de la page
+
+**`about-hero.spec.ts`** (réécrit sans `ProfileGateway` ; `render({ profile, biography, socials })`
+sans défaut, les trois entrées toujours liées ; profil = `STATIC_PROFILE_BASE` + `STATIC_AVATAR_URL` ;
+10 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| les 7 existants | profil, biographie, réseaux livrés | `h1` unique = `displayName` ; titre et portrait sans `animate-` ; accroche + emphase ; 5 liens, `target`/`rel` sur les seuls `http` ; ordre GitHub, LinkedIn, Malt, Mail, Discord ; `alt` du portrait |
+| skeleton (`it.each` × 3) | profil et biographie `undefined` ; profil seul `undefined` ; biographie seule `undefined` ; réseaux toujours livrés | la `section` a un seul enfant, `aria-hidden="true"` ; aucun `h1`, aucun `about-social-link`, aucune `img` |
+
+Spec de page inchangé pour cette tranche : filet `h1` = `displayName`, vert.
+
+RED confirmé via `pnpm test` (après `ng cache clean`) le 2026-10-09 21:27 : 10 failed / 3173 total
+pour cette tranche, `exit=1` pour le RED commun (24 failed / 3173, 5 fichiers sur 189). Échecs =
+`NG0201` (`ProfileGateway`) à `createComponent`, conformes au plan ; aucune erreur TS ni de format.
+
+### Tranche L13.2 — les sections différées reçoivent leurs données
+
+**`about-diploma.spec.ts`** : `setInput('diplomas', STATIC_DIPLOMAS)`, sans provider (2 tests
+réécrits ; l'`it.each` sur les titres, qui ne rend rien, reste tel quel et vert).
+
+**`about-motivation.spec.ts`** (sans `ProfileGateway`, `render(motivation)` sans défaut,
+`provideRouter([])` pour le lien de L13.3)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| énoncé | `STATIC_MOTIVATION` | texte de `motivation-statement` = `statement` |
+| pas encore chargée | `undefined` | aucune `section`, ni `about-cta-projects` ni `about-cta-contact` |
+
+**`about.spec.ts`** (réécrit : `beforeEach` configure, `render(answerCv)` sans défaut, `NO_CV`,
+`PUBLISHED_CV`, `CV_FAILURE` ; `stubAnalyticsGateway` partagé ; faux `SectionScroller`
+`{ scrollTo, eager: signal(false) }` ; `completeDeferredSections()` passe les 5 blocs à `Complete`)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| lecture unique (`it.each` × 8) | espion sur la méthode du faux, page rendue, 5 blocs `Complete` | `toHaveBeenCalledTimes(1)` |
+| filet données | 5 blocs `Complete` | comptes `journey-paragraph`, `about-trait`, `about-tech`, `about-diploma` = longueurs `STATIC_*` ; `motivation-statement` = `statement` |
+
+RED confirmé via `pnpm test` le 2026-10-09 21:27 : 5 failed / 3173 total pour cette tranche :
+4 `NG0201` (diplômes × 2, motivation × 2) et 1 assertion
+(`expected "getBiography" to be called 1 times, but got 2 times`). Écart avec le plan : sur master,
+7 lectures uniques sont vertes, seule `getBiography` (hero + parcours) est rouge ; le
+`expected 2 to be 1` sur 6 méthodes n'apparaît qu'après le GREEN de L13.1 si la ressource lit les
+8 clés d'emblée. Le filet est vert dès le RED.
+
+### Tranche L13.3 — la conclusion confie le contact à la page, « Voir les projets » devient un lien
+
+**`about-motivation.spec.ts`** (`Given la motivation livrée` ; sortie `contactRequested` abonnée ;
+aucun `Router` ni `SectionScroller` fourni ; hôte de référence `<button appButton type="button">`)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| lien projets | rendu | `about-cta-projects` : `tagName` `A`, `href` `/projects`, classes triées = celles du bouton `appButton` par défaut |
+| clic contact | clic `about-cta-contact` | `contactRequested` une fois ; `Router.navigate` et `navigateByUrl` (espions sur l'instance racine) jamais appelés |
+
+**`about.spec.ts`** (`Given la conclusion affichée`, route `projects` → page vide)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| projets | clic `about-cta-projects` | `Router.url` = `/projects` (vrai pour `navigate` aujourd'hui et pour `routerLink` demain) |
+| contact | clic `about-cta-contact` | `scrollTo` appelé une fois avec `contact` |
+
+RED confirmé via `pnpm test` le 2026-10-09 21:27 : 2 failed / 3173 total pour cette tranche
+(`NG0201` tant que L13.2 n'est pas verte ; ensuite assertions : `BUTTON` au lieu de `A`, sortie
+jamais émise, `navigateByUrl('/')` du vrai `SectionScroller`). Les 2 filets de page sont verts.
+
+### Tranche L13.4 — le bloc recrutement reçoit l'URL du CV et signale son téléchargement
+
+**`about-hiring.spec.ts`** (réécrit sans HTTP ni gateway ; `render(cvUrl)` sans défaut ; 7 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| les 5 existants | `cvUrl` `null` | ancre `#recrutement`, `h2` unique « Vous recrutez&#8239;? » (attendu `\u202F`) relié ; disponibilité ; LinkedIn `_blank` `noopener noreferrer` ; aucun `about-hiring-cv` ; aucun landmark |
+| lien CV | `'/api/cv/download'` | `A`, `href`, `target="_blank"` |
+| clic CV | idem, `preventDefault` | `cvDownloaded` une fois |
+
+**`about.spec.ts`**
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| CV publié | `PUBLISHED_CV` | `about-hiring-cv` `href` = `/api/cv/download` |
+| clic CV | idem | `trackCvDownload` une fois |
+| échec 500 | `CV_FAILURE`, `console.warn` espionné | pas de lien CV, LinkedIn présent, `warn` appelé une fois (message non asserté : le préfixe change) |
+
+RED confirmé via `pnpm test` le 2026-10-09 21:27 : 7 failed / 3173 total pour cette tranche,
+`NG0201` sur `AnalyticsGateway` (premier injecté de la section ; le plan citait `CvGateway`). Les
+3 filets de page sont verts.
+
+Récapitulatif : 10 + 5 + 2 + 7 = 24 failed / 3173 total ; 3173 = 3156 + 3 (hero) + 1
+(motivation) − 1 (hiring) + 14 (page). Les 3149 autres tests passent.
+
 ## Journal des tranches
 
 - **Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée** : GREEN 3059 passed / 3060 total (seul rouge : « sans testId » de `field-error.spec.ts`, défaut du test, cf. ## Verify) · refactor : aucun
@@ -3015,6 +3532,11 @@ sur les chunks compilés, décrites au plan.
 - **Tranche L12.6 — home, sans RED** : GREEN 3156 passed / 3156 total (passage commun L12.2-L12.6) ; import statique de `Home` conservé · refactor : aucun
 - **Tranche L12.7 — admin, sans RED** : GREEN 3156 passed / 3156 total ; `./audience-report` et `./overview-copy` inchangés dans leur page (colocalisés) · refactor : aucun
 - **Tranche L12.8 — documentation, sans RED** : `DESIGN.md` (11 chemins), `README.md` (arbre de feature : `pages/` ajouté, `application/` = composants non routés) · refactor : aucun
+- **Tranche L13.1 — le hero reçoit le profil de la page** : GREEN joué d'un seul passage avec L13.2 à L13.4 (implémentation écrite d'affilée, pas de mesure intermédiaire par tranche) ; `--include` profil 41 passed / 41, suite complète 3173 passed / 3173 total (189 fichiers, `exit=0`) · refactor : variable de gabarit `@let profile` renommée `info` (collision avec l'entrée `profile`) ; `avatarUrl` calculé supprimé, lu dans le `@if` sur `info.avatarUrl`
+- **Tranche L13.2 — les sections différées reçoivent leurs données** : GREEN 3173 passed / 3173 total (passage commun L13.1-L13.4) · refactor : aucun
+- **Tranche L13.3 — la conclusion confie le contact à la page, « Voir les projets » devient un lien** : GREEN 3173 passed / 3173 total (passage commun) · refactor : `goToProjects()`/`goToContact()` de la section supprimés, `(click)="contactRequested.emit()"` directement dans le gabarit
+- **Tranche L13.4 — le bloc recrutement reçoit l'URL du CV et signale son téléchargement** : GREEN 3173 passed / 3173 total (passage commun) · refactor : `trackCvDownload()` de la section remplacé par `(click)="cvDownloaded.emit()"`
+- **Tranche L13.7 — sans RED** : `.claude/CLAUDE.md:233` patché à l'identique du plan ; GREEN inchangé · refactor : aucun
 
 ## Verify
 
@@ -3248,6 +3770,39 @@ Preuves de fin de lot :
    - Console : aucune erreur Angular. Erreurs présentes : `InvalidStateError: Transition was aborted` (View Transitions, préexistante, cf. Lot L8), 403 du faux backend (`POST /analytics/track`, `POST /auth/logout`), 401 du premier passage. Avertissements : `NG0751` (HMR + `@defer`, mode dev), `NG02952` sur l'image `fill` de l'aperçu des deux éditeurs (composants non touchés par le lot ; chunks identiques à `master` au point 6).
 
 **PASS**, sous réserve de l'arbitrage de l'écart de préchargement sur `/projects` (point 6).
+
+### Lot L13 (L13.1 à L13.4, L13.7)
+
+2026-10-09, branche `refactor/about-sections-dumb-l13` depuis `a8c57b8` (non commitée). L13.5 et L13.6 (accueil) hors de ce passage (PR séparée).
+
+Gates (codes de sortie lus) :
+
+- `pnpm install --frozen-lockfile` : exit 0 ;
+- `pnpm exec ng cache clean` puis `pnpm test; echo exit=$?` : 189 fichiers sur 189, 3173 tests sur 3173, `exit=0` (référence `a8c57b8` : 3156 ; + 17 du RED de `qa`) ;
+- `pnpm lint` : « All files pass linting. » ;
+- `pnpm run format:check` : « All matched files use Prettier code style! » ;
+- `pnpm run build --configuration production` : exit 0, CSP sur 21 pages, puis `git checkout -- public/sitemap.xml public/rss.xml`.
+
+Preuves de fin de lot :
+
+1. Tests : cf. gates.
+2. Plus d'injection : `grep -n "inject(" src/app/features/profile/application/*.ts` (specs exclues) → vide. `grep -rln "inject(" src/app/features/*/application` (specs exclues) → les 9 fichiers (a), (b), (d) de l'inventaire, plus `home-hero-section.ts` et `home-projects.ts` (L13.5/L13.6, PR séparée). Aucun U+202F/U+00A0 littéral dans les fichiers touchés (`grep -nP '\x{202F}|\x{00A0}'` → vide).
+3. Prerender comparé à `master` : build prod de `master` dans un worktree temporaire du scratchpad (`pnpm install --frozen-lockfile`, supprimé ensuite), même jour. Normalisation : hachages `(chunk|main|polyfills|styles)-[A-Za-z0-9_-]+` (le `[A-Z0-9]+` du plan ne suffit pas), `<script id="ng-state">` retiré, ` ngh="…"` retiré.
+   - `/about/index.html` : **un seul écart**, toléré : `<button appbutton="" type="button" data-testid="about-cta-projects" …>` devient `<a appbutton="" routerlink="/projects" data-testid="about-cta-projects" href="/projects" …>`, mêmes classes, même `jsaction="click:;" ngb="d4"`.
+   - `__nghDeferData__` identique (`d0`…`d5`, tous `{"r":1,"s":2,"t":[2]}`) ; `ngb="d5"` 12 / 12, `ngb="d4"` 2 / 2, `jsaction=` 23 / 23 ; hachages CSP identiques.
+   - `index.html` (accueil) : identique après normalisation.
+   - 79 fichiers `*.js` de chaque côté. `motivation-statement` dans un seul chunk, distinct de celui de `about-hiring`.
+4. Navigateur : build prod de la branche servi en statique (`python3 -m http.server`, 127.0.0.1:4310), Chromium headless (playwright-core, script du scratchpad). Toute requête vers `api.nedellec-julien.fr` est interceptée par le script : les non-GET (11 `POST /analytics/track`) et les pré-vols sont répondus localement (204), `GET /api/cv` reçoit un faux CV publié, les autres GET un `[]` local. **Aucune requête non-GET n'a atteint la prod** par ce script. Seule exception, un premier essai dans le navigateur intégré (non intercepté) : un pré-vol `OPTIONS /api/analytics/track`, refusé par CORS (origine 127.0.0.1), le `POST` n'est jamais parti ; exclusion d'appareil posée ensuite. Le navigateur intégré, panneau masqué (`visibilityState: hidden`, `requestAnimationFrame` et `requestIdleCallback` suspendus), ne peut prouver ni le défilement ni les déclencheurs `viewport`/`idle` : même blocage constaté sur le build de `master`, d'où le passage en headless.
+   - `/about` chargé sans défiler : chunk de `motivation-statement` **non** demandé, chunk de `about-hiring` chargé (hors `@defer`), `h1` « Julien Nédellec », lien CV `href` = `https://api.nedellec-julien.fr/api/cv/download` (chargé par la page après rendu).
+   - Défilement à la molette jusqu'en bas : chunk de la conclusion demandé, 0 placeholder dans le DOM (pas de clignotement), 3 `journey-paragraph`, 3 `about-trait`, 6 `about-tech`, 2 `about-diploma`, 1 `motivation-statement`.
+   - Clic lien CV : une mesure `{"type":"cv_download"}` (interceptée).
+   - **Event replay** : chargement neuf, dans la même tâche `scrollTo(0, scrollHeight)` puis clic `about-cta-contact` → `/`, `#contact` à 80 px du haut (sous le header), focus dans `#contact` ; une seule requête document.
+   - **Lien** : après hydratation, clic `about-cta-projects` → `/projects`, même document (marqueur `window` conservé), 0 nouvelle requête document, `h1` « Réalisations ». JavaScript désactivé : `href="/projects"`, clic → `/projects/` servi par le serveur, `h1` « Réalisations ».
+   - Navigation client `/` → menu « Parcours » : `/about`, même document, sections rendues (3 paragraphes, 2 formations, énoncé).
+   - Console : aucun `NG0` ; seule erreur, 404 de `/api/config` sur le serveur statique local (absent hors serveur Node, préexistant).
+   - Captures : `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/about-top.png`, `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/about-bottom.png` (conclusion, lien et bouton identiques à l'œil), `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/replay-contact.png`.
+
+**PASS**.
 
 ## Review code
 
@@ -3530,3 +4085,41 @@ Contrôles demandés :
 Remarques non bloquantes :
 - `DESIGN.md:499, 542, 564, 584, 593, 600` : les chemins secondaires restent relatifs à l'ancien dossier (`components/admin-nav.ts`, `admin-cv-view.ts`). Placés après un chemin `pages/<x>/`, ils se lisent désormais comme des voisins de la page. Le plan a choisi de ne pas les toucher ; les préfixer par `application/` lèverait l'ambiguïté.
 - `README.md:129` : la règle `application → domain ← infra` ne cite pas `pages` ; la direction `pages → application → domain` du plan pourrait y figurer.
+
+Lot L13 (L13.1 à L13.4, L13.7), 2026-10-09, diff de travail `git diff master` (base `a8c57b8`, non commité, 16 fichiers suivis, aucun non suivi). L13.5/L13.6 (accueil) hors PR.
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm exec ng cache clean` puis `pnpm test; echo exit=$?` → 189 fichiers / 3173 tests passés, exit=0 ; `pnpm exec tsc -p tsconfig.spec.json --noEmit` exit=0) / lint ✅ (`pnpm lint` → `All files pass linting.`, exit=0) / build ✅ (`pnpm install --frozen-lockfile` exit=0 ; `pnpm run format:check` → `All matched files use Prettier code style!`, exit=0 ; `pnpm run build --configuration production` exit=0, CSP sur 21 pages, puis `git checkout -- public/sitemap.xml public/rss.xml`, `public/` propre)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/aak-checks.sh` absent) : auto-checks joués à la main. `grep -n "inject(" profile/application/*.ts` (specs exclues) : vide ; `grep -rln "inject(" features/*/application` : les 9 fichiers (a)/(b)/(d) + `home-hero-section.ts`, `home-projects.ts` (L13.5/L13.6, hors PR). U+202F/U+00A0 dans les lignes ajoutées : 0. Export default, `effect(`, helpers zone, `console.log`, `innerHTML`, `.only`/`.skip`, snapshot : 0. Commentaires ajoutés : 1 (`about.ts:102`, WHY intemporel d'une ligne) ; les deux de `about-hero.spec.ts` sont déplacés tels quels.
+**Warnings de gate** : aucun (sorties de test, typecheck, lint, format et build relues en entier)
+**Rendu compilé** : ✅ (`about-cta-projects` : classes `appButton` identiques à `master` dans le HTML prérendu, et égales à celles d'un `<button appButton>` de référence dans `about-motivation.spec.ts`)
+**Preuve de verify runtime** : ✅ (`## Verify` › Lot L13 cohérente avec le diff ; rejouée par le reviewer sur le build prod de la branche servi en statique, Chromium headless, toute requête hors `127.0.0.1` servie localement ou avortée : aucune requête n'a atteint `api.nedellec-julien.fr`)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+Contrôles demandés :
+- Sections : 8 composants `about-*` sans `inject()` ni `rxResource` ; entrées toutes en `input.required` sans défaut (`about-hero.ts:95-97`, `about-journey.ts:29`, `about-highlights.ts:24`, `about-what-i-do.ts:30-31`, `about-stack.ts:36`, `about-diploma.ts:51`, `about-motivation.ts:46`, `about-hiring.ts:57`) ; sorties `contactRequested` (`about-motivation.ts:48`) et `cvDownloaded` (`about-hiring.ts:59`), émises directement depuis le gabarit ; `AboutWhatIDo` relaie `technologies` à `AboutStack`.
+- Page : un seul `rxResource` sur `forkJoin` des 8 méthodes (`about.ts:89-101`), lu par `hasValue()` (`about.ts:103-105`) ; `@let about = content()` en tête, aucun `@if` autour d'un `@defer` ; 4 collaborateurs, 130 lignes. Chargement du CV repris tel quel (`afterNextRender`, préfixe `About:`).
+- CTA projets : `<a appButton routerLink="/projects">` (`about-motivation.ts:27`), plus aucun `Router` ni `SectionScroller` dans la section.
+- `.claude/CLAUDE.md:233` : identique caractère pour caractère au patch du plan.
+- Code mort : aucun (`goToProjects`/`goToContact`/`trackCvDownload`/`loadCvUrl`/`avatarUrl` des sections supprimés ; `fakeProfileGateway` toujours utilisé par le spec de page).
+- Tests de `qa` non modifiés par l'implémenteur : les 5 specs ont un `mtime` entre 21:23:35 et 21:26:54, avant le RED confirmé à 21:27 ; tous les fichiers de code sont postérieurs (21:30:37 à 21:31:17).
+- RED en `NG0201` : accepté. L'erreur nomme exactement le service que le lot retire, et disparaît exactement quand la section cesse de l'injecter ; un rouge d'assertion aurait exigé des providers morts après le GREEN. Le risque propre à ce choix (un rouge qui ne prouve pas que les assertions échoueraient pour la bonne raison) est couvert par la passe de sanity du harnais consignée au `## Plan de test` (implémentation dumb jetable → 41/41 vert, puis restaurée).
+- Prerender rejoué : build de `master` dans un worktree temporaire du scratchpad (supprimé ensuite), même jour. Après normalisation, `/about/index.html` : **un seul écart**, le `<button type="button" data-testid="about-cta-projects">` devenu `<a routerlink="/projects" href="/projects" data-testid="about-cta-projects">`, mêmes classes, même `jsaction="click:;" ngb="d4"` ; `index.html` identique. `__nghDeferData__` identique (`d0`…`d5`), `ngb="d5"` 12/12, `ngb="d4"` 2/2, `jsaction=` 23/23, 79 `*.js` de chaque côté. Écart toléré par le plan.
+- Navigateur (reviewer) : `/about` sans défiler → chunk de `motivation-statement` non demandé, `h1` « Julien Nédellec », lien CV présent ; défilement → 3/3/6/2/1 éléments ; clic CV → une mesure `cv_download` (interceptée) ; event replay du contact (même tâche) → `/`, `#contact` à 80 px, focus dans `#contact`, un seul document ; clic du lien projets **avant** hydratation → `/projects` par chargement complet (le navigateur suit le `href`) ; **après** hydratation → `/projects` dans le même document, 0 nouvelle requête document. Console : seulement `GET /api/config` 404 (5×, serveur statique local, préexistant), aucun `NG0`.
+
+Pré-vol `OPTIONS /api/analytics/track` envoyé à la prod par l'implémenteur (navigateur intégré, non intercepté) : **réel et plausible tel que décrit, sans effet sur les données.** `HttpAnalyticsGateway.fireAndForget` poste en `application/json` (`http-analytics.gateway.ts:153-160`) et `sendBeacon` envoie un `Blob` `application/json` (`:93-94`) : les deux exigent un pré-vol CORS. L'API (`nest-portfolio-app/src/main.ts:32`) répond via `enableCors({ origin: config.corsOrigins })` ; le middleware `cors` termine le pré-vol lui-même, sans atteindre le contrôleur, et sans `Access-Control-Allow-Origin` pour une origine `127.0.0.1` absente de `CORS_ORIGINS` : le navigateur n'envoie alors pas le `POST`. Effet en prod : une ligne de journal d'accès, aucune mesure enregistrée. Non vérifiable d'ici : la valeur réelle de `CORS_ORIGINS` en prod (le refus CORS observé par l’implémenteur la confirme indirectement). Le reviewer n'a émis aucune requête vers la prod pour le vérifier.
+
+**Tests notables** :
+- ⚠️ `about.spec.ts` « Voir les projets → /projects » : doublonne le test de lien de `about-motivation.spec.ts` alors que le plan écartait la navigation au niveau page. Utile comme filet du passage `navigate` → `routerLink` pendant le RED ; candidat à la suppression, non bloquant.
+- ⚠️ `about-diploma.spec.ts` `it.each` « ne contient pas le niveau » : teste la constante `STATIC_DIPLOMAS`, pas le composant (préexistant, non touché par le lot).
+- ✨ `about.spec.ts` `it.each(PROFILE_READS)` : épingle « une lecture par méthode » après passage des 5 blocs en `Complete`, ce qui évite le faux vert du mode `Manual`.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet sur la livraison (Dokploy continu d'après `CLAUDE.md`) · monitoring : Sentry ; aucun état persistant touché.
+- `forkJoin` échoue en bloc : si `ProfileGateway` passe un jour en HTTP, une erreur rendra le skeleton du hero sans `h1` et des sections vides (consigné au plan, inatteignable aujourd'hui).
+- non couvert par les gates : Ctrl/Cmd+clic sur « Voir les projets » dans la fenêtre entre l'apparition du bloc et son hydratation (le contrat d'événements préempte les clics sur `<a jsaction>`, `primitives-event-dispatch.mjs:491`) ; non rejoué. Le clic simple, lui, est prouvé avant et après hydratation.

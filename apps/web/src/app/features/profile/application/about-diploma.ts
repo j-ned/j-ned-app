@@ -1,6 +1,5 @@
-import { Component, inject, computed } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
+import { Component, input } from '@angular/core';
+import type { Diploma } from '@features/profile/domain/models/diploma.model';
 import { SplitSection } from '@shared/ui/split-section';
 
 const DIPLOMA_SUMMARY = 'Deux titres professionnels de niveau 5 (Bac+2).';
@@ -49,12 +48,7 @@ const DIPLOMA_SUMMARY = 'Deux titres professionnels de niveau 5 (Bac+2).';
   `,
 })
 export class AboutDiploma {
-  private readonly _gateway = inject(ProfileGateway);
+  readonly diplomas = input.required<readonly Diploma[]>();
 
   protected readonly summary = DIPLOMA_SUMMARY;
-
-  private readonly diplomasResource = rxResource({
-    stream: () => this._gateway.getDiplomas(),
-  });
-  protected readonly diplomas = computed(() => this.diplomasResource.value() ?? []);
 }

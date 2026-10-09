@@ -1,6 +1,5 @@
-import { Component, inject, computed } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
+import { Component, input } from '@angular/core';
+import type { Highlight } from '@features/profile/domain/models/highlight.model';
 
 @Component({
   selector: 'app-about-highlights',
@@ -22,10 +21,5 @@ import { ProfileGateway } from '@features/profile/domain/gateways/profile.gatewa
   `,
 })
 export class AboutHighlights {
-  private readonly _gateway = inject(ProfileGateway);
-
-  private readonly highlightsResource = rxResource({
-    stream: () => this._gateway.getHighlights(),
-  });
-  protected readonly highlights = computed(() => this.highlightsResource.value() ?? []);
+  readonly highlights = input.required<readonly Highlight[]>();
 }
