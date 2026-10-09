@@ -1,10 +1,11 @@
 import { Component, input } from '@angular/core';
 import type { OfferPageContent } from '@features/offer/domain/models/offer.model';
+import { Button } from '@shared/ui/button';
 import { SplitSection } from '@shared/ui/split-section';
 
 @Component({
   selector: 'app-offer-pricing',
-  imports: [SplitSection],
+  imports: [Button, SplitSection],
   host: { class: 'block border-t border-foreground/8' },
   template: `
     <app-split-section headingId="offer-pricing-heading" [heading]="pricing().heading">
@@ -28,10 +29,12 @@ import { SplitSection } from '@shared/ui/split-section';
             </p>
             @if (line.link === 'malt') {
               <a
+                appButton
+                variant="outlined"
                 [href]="maltUrl()"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="link-btn-outline mt-4"
+                class="mt-4"
                 data-testid="offer-price-link"
               >
                 Voir mon profil Malt

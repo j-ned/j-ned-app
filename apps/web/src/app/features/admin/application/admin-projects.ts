@@ -5,6 +5,7 @@ import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gat
 import type { Project, ProjectKindFilter } from '@features/projects/domain/models/project.model';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { AdminProjectRow } from './components/admin-project-row';
+import { Button } from '@shared/ui/button';
 import { ToastStore } from '@shared/ui/toast-store';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
@@ -22,6 +23,7 @@ import { toAdminProjectsView } from './admin-projects-view';
     RouterLink,
     AdminProjectRow,
     AppIcon,
+    Button,
     ConfirmDialog,
     FilterGroup,
     LoadError,
@@ -33,11 +35,7 @@ import { toAdminProjectsView } from './admin-projects-view';
       Ce que montrent Réalisations et l'accueil. L'ordre de la liste est l'ordre public, la nature
       décide de la section et du tampon.
       <div adminPageAside class="flex lg:justify-end">
-        <a
-          data-testid="admin-project-new"
-          routerLink="/admin/projects/new"
-          class="link-btn-primary"
-        >
+        <a appButton data-testid="admin-project-new" routerLink="/admin/projects/new">
           <app-icon name="plus" [size]="16" />Nouveau projet
         </a>
       </div>

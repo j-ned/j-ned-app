@@ -197,13 +197,17 @@ body {
   h3 {
     font-stretch: 104%;
   }
+
+  /* En couche : un rayon posé par une classe rounded-* l'emporte, l'anneau suit alors la forme de l'élément. */
+  :where(a, button, [role='button'], summary):focus-visible {
+    border-radius: 4px;
+  }
 }
 
 /* Focus ring global cohérent pour navigation clavier (pas au clic souris) */
 :where(a, button, [role='button'], summary):focus-visible {
   outline: 2px solid var(--theme-primary-text);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 /* Focus au-dessus de la barre collante (WCAG 2.4.11) : sa hauteur mesurée par largeur + 1rem. */
@@ -239,31 +243,6 @@ input:-webkit-autofill:focus {
 
 @utility section-title {
   @apply text-[clamp(1.75rem,3.2vw,2.5rem)] font-bold leading-[1.12] tracking-tight text-balance;
-}
-
-/* ---------------------------------------------------------------- *
- * Liens stylés en bouton (<a> externes : démo, dépôts). Même gabarit que
- * <app-button> (rounded-md, 44px), qui ne rend que des <button>.
- * ---------------------------------------------------------------- */
-
-@utility link-btn {
-  @apply inline-flex min-h-11 items-center gap-2 rounded-md px-5 text-[0.9375rem] font-semibold transition-colors;
-}
-
-@utility link-btn-primary {
-  @apply link-btn;
-  @apply bg-primary-bg text-white hover:bg-primary-bg/90;
-}
-
-@utility link-btn-outline {
-  @apply link-btn;
-  @apply border border-foreground/15 text-foreground hover:border-primary/40 hover:text-primary;
-}
-
-/* Lien icône des listes de l'admin : cible tactile de 44px. */
-
-@utility icon-link {
-  @apply inline-flex size-11 items-center justify-center rounded-md text-foreground transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-primary;
 }
 
 /* ---------------------------------------------------------------- *

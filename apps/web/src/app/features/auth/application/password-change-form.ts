@@ -114,13 +114,13 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
           />
         </div>
 
-        <app-button type="submit" severity="primary" [block]="true" [disabled]="loading()">
+        <button appButton type="submit" [block]="true" [disabled]="loading()">
           @if (loading()) {
             Modification...
           } @else {
             Modifier le mot de passe
           }
-        </app-button>
+        </button>
       </form>
     </div>
   `,

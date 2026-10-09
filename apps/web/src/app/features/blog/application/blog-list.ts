@@ -74,9 +74,7 @@ import { toBlogListView, type BlogListFilter } from './blog-list-view';
           <p class="mb-4 text-lg text-muted">
             Les articles n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez.
           </p>
-          <app-button severity="secondary" variant="outlined" (click)="retry()"
-            >Réessayer</app-button
-          >
+          <button appButton type="button" variant="outlined" (click)="retry()">Réessayer</button>
         </div>
       } @else {
         @if (tag(); as activeTag) {

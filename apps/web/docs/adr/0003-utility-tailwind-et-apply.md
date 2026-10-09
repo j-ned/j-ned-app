@@ -1,6 +1,6 @@
 # ADR-0003 — `@utility` de design system et `@apply` : où ils sont légitimes
 
-- **Statut** : accepté
+- **Statut** : accepté ; remplacé en partie par ADR-0017 (boutons et liens stylés en bouton)
 - **Date** : 2026-09-08
 - **Contexte spec** : `specs/005-intake-audit-repo.md` (question ouverte « `@apply` dans `@utility` »)
 

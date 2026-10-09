@@ -58,18 +58,13 @@ const TOTP_PATTERN = /^\d{6}$/;
             <app-field-error [field]="form.code" errorId="twofa-code-error" />
           </div>
 
-          <app-button
-            type="submit"
-            severity="primary"
-            [block]="true"
-            [disabled]="form().submitting()"
-          >
+          <button appButton type="submit" [block]="true" [disabled]="form().submitting()">
             @if (form().submitting()) {
               Vérification...
             } @else {
               Vérifier
             }
-          </app-button>
+          </button>
         </form>
 
         <nav class="mt-6 text-center">

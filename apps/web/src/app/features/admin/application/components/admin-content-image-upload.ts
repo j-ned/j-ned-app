@@ -12,6 +12,7 @@ import {
 import { FormField, form, submit } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
+import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { imageAltSchema } from './admin-image-alt-schema';
@@ -28,7 +29,7 @@ const uploadErrorDetail = (error: unknown): string =>
 // Vit dans le formulaire de l'article : pas de <form> imbriqué, Entrée ne doit pas l'enregistrer.
 @Component({
   selector: 'app-admin-content-image-upload',
-  imports: [FormField, FileDropzone, FieldError],
+  imports: [FormField, Button, FileDropzone, FieldError],
   host: {
     role: 'group',
     '[attr.aria-labelledby]': 'titleId()',
@@ -77,18 +78,20 @@ const uploadErrorDetail = (error: unknown): string =>
     }
     <div class="flex flex-wrap gap-2.5">
       <button
+        appButton
         type="button"
         data-testid="markdown-image-submit"
         [attr.aria-disabled]="altForm().submitting()"
-        class="link-btn-primary cursor-pointer aria-disabled:cursor-wait aria-disabled:opacity-60"
+        class="aria-disabled:cursor-wait aria-disabled:opacity-60"
         (click)="send()"
       >
         Insérer l'image
       </button>
       <button
+        appButton
+        variant="outlined"
         type="button"
         data-testid="markdown-image-cancel"
-        class="link-btn-outline cursor-pointer"
         (click)="cancelled.emit()"
       >
         Annuler

@@ -82,34 +82,37 @@ import type { AdminPostRowView } from '../admin-posts-view';
       <div class="flex flex-wrap justify-end gap-1 sm:flex-nowrap">
         @if (row().status === 'published') {
           <a
+            appButton
+            variant="ghost-icon"
             data-testid="admin-post-view"
             [href]="'/blog/' + row().slug"
             target="_blank"
             rel="noopener noreferrer"
             [attr.aria-label]="viewLabel()"
-            class="icon-link"
           >
             <app-icon name="external-link" [size]="18" />
           </a>
         }
         <a
+          appButton
+          variant="ghost-icon"
           data-testid="admin-post-edit"
           [routerLink]="['/admin/blog', row().id]"
           [attr.aria-label]="editLabel()"
-          class="icon-link"
         >
           <app-icon name="pencil" [size]="18" />
         </a>
-        <app-button
-          severity="danger"
-          variant="text"
+        <button
+          appButton
+          type="button"
+          variant="text-danger"
           size="icon"
           data-testid="admin-post-delete"
-          [ariaLabel]="deleteLabel()"
+          [attr.aria-label]="deleteLabel()"
           (click)="deleteRequested.emit()"
         >
           <app-icon name="trash" [size]="18" />
-        </app-button>
+        </button>
       </div>
     </td>
   `,

@@ -1,105 +1,60 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Directive, computed, input } from '@angular/core';
 
-type Severity = 'primary' | 'secondary' | 'danger';
-type Size = 'default' | 'large' | 'icon';
-type Variant = 'solid' | 'outlined' | 'text';
+export type ButtonVariant =
+  | 'primary'
+  | 'outlined'
+  | 'danger'
+  | 'outlined-danger'
+  | 'text'
+  | 'text-muted'
+  | 'text-danger'
+  | 'ghost-icon';
+type ButtonSize = 'default' | 'icon';
 
-const SIZE_CLASSES: Record<Size, string> = {
-  default: 'text-sm px-5 py-2.5 min-h-11',
-  large: 'text-base md:text-lg px-6 py-3 min-h-11',
-  icon: 'min-h-11 min-w-11',
+const BASE_CLASSES =
+  'inline-flex min-h-11 items-center gap-2 text-[0.9375rem] font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50';
+
+const GHOST_ICON_CLASSES =
+  'inline-flex size-11 items-center justify-center rounded-md text-foreground transition-colors hover:bg-surface-elevated';
+
+const SIZE_CLASSES: Record<ButtonSize, string> = {
+  default: 'px-5',
+  icon: 'min-w-11 justify-center',
 };
 
-@Component({
-  selector: 'app-button',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '[class.inline-flex]': '!block()',
-    '[class.block]': 'block()',
-  },
-  template: `
-    <button
-      [attr.type]="type()"
-      [attr.aria-label]="ariaLabel() || null"
-      [disabled]="disabled()"
-      [class]="classes()"
-    >
-      <ng-content />
-    </button>
-  `,
-  styles: `
-    :host button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      font-weight: 500;
-      white-space: nowrap;
-      transition:
-        background-color 0.2s,
-        border-color 0.2s,
-        color 0.2s,
-        transform 0.1s;
-      cursor: pointer;
-    }
-    :host button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    :host button:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 2px;
-    }
-    :host button:not(:disabled):active {
-      transform: translateY(1px);
-    }
-  `,
+const VARIANT_CLASSES: Record<Exclude<ButtonVariant, 'ghost-icon'>, string> = {
+  primary: 'bg-primary-bg text-white hover:bg-primary-bg/90',
+  outlined:
+    'border border-foreground/15 text-foreground hover:border-primary/40 hover:text-primary',
+  danger: 'bg-status-error text-on-status-error hover:bg-status-error/90',
+  'outlined-danger':
+    'border border-status-error/40 text-status-error hover:border-status-error/60 hover:bg-status-error/10',
+  text: 'text-primary hover:bg-primary/10',
+  'text-muted': 'text-muted hover:bg-foreground/5 hover:text-foreground',
+  'text-danger': 'text-status-error hover:bg-status-error/10',
+};
+
+@Directive({
+  selector: 'button[appButton], a[appButton]',
+  host: { '[class]': 'classes()' },
 })
 export class Button {
-  readonly severity = input<Severity>('primary');
-  readonly size = input<Size>('default');
-  readonly variant = input<Variant>('solid');
+  readonly variant = input<ButtonVariant>('primary');
+  readonly size = input<ButtonSize>('default');
   readonly rounded = input<boolean>(false);
   readonly block = input<boolean>(false);
-  readonly ariaLabel = input<string | undefined>(undefined);
-  readonly disabled = input<boolean>(false);
-  readonly type = input<'button' | 'submit'>('button');
 
   protected readonly classes = computed(() => {
-    // min-h-11 garantit 44x44 px (WCAG 2.5.5 Target Size).
-    const sizeClass = SIZE_CLASSES[this.size()];
-    const radiusClass = this.rounded() ? 'rounded-full' : 'rounded-md';
-    const widthClass = this.block() ? 'w-full' : '';
-    return [sizeClass, radiusClass, widthClass, this.variantClass()].filter(Boolean).join(' ');
-  });
-
-  private variantClass(): string {
-    const sev = this.severity();
     const variant = this.variant();
-
-    if (variant === 'text') {
-      if (sev === 'danger') {
-        return 'bg-transparent text-status-error hover:bg-status-error/10';
-      }
-      return sev === 'primary'
-        ? 'bg-transparent text-primary hover:bg-primary/10'
-        : 'bg-transparent text-muted hover:bg-foreground/5 hover:text-foreground';
-    }
-
-    if (variant === 'outlined') {
-      if (sev === 'danger') {
-        return 'bg-transparent border border-status-error/40 text-status-error hover:bg-status-error/10 hover:border-status-error/60';
-      }
-      return sev === 'primary'
-        ? 'bg-transparent border border-primary/40 text-primary hover:bg-primary/10 hover:border-primary/60'
-        : 'bg-transparent border border-muted/30 text-foreground hover:bg-surface-elevated hover:border-foreground/30';
-    }
-
-    if (sev === 'danger') {
-      return 'bg-status-error text-on-status-error border border-status-error shadow-sm hover:bg-status-error/90';
-    }
-    return sev === 'primary'
-      ? 'bg-primary-bg text-white border border-primary-bg shadow-sm hover:opacity-90'
-      : 'bg-foreground/10 text-foreground border border-foreground/15 hover:bg-foreground/15';
-  }
+    if (variant === 'ghost-icon') return GHOST_ICON_CLASSES;
+    return [
+      BASE_CLASSES,
+      this.rounded() ? 'rounded-full' : 'rounded-md',
+      SIZE_CLASSES[this.size()],
+      this.block() ? 'w-full justify-center' : '',
+      VARIANT_CLASSES[variant],
+    ]
+      .filter(Boolean)
+      .join(' ');
+  });
 }

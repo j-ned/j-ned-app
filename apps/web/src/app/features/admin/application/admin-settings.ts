@@ -4,6 +4,7 @@ import { AuthStore } from '@core/auth/auth-store';
 import type { ThemePreference } from '@core/theme/theme-preference';
 import { ThemeStore } from '@core/theme/theme-store';
 import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
 import { AdminPageHeader } from './components/admin-page-header';
 import { AdminSectionHead } from './components/admin-section-head';
 import { AdminSettingRow } from './components/admin-setting-row';
@@ -16,7 +17,7 @@ const THEME_OPTIONS: readonly { readonly value: ThemePreference; readonly label:
 
 @Component({
   selector: 'app-admin-settings',
-  imports: [RouterLink, AppIcon, AdminPageHeader, AdminSectionHead, AdminSettingRow],
+  imports: [RouterLink, AppIcon, Button, AdminPageHeader, AdminSectionHead, AdminSettingRow],
   host: { class: 'block' },
   template: `
     <app-admin-page-header [overline]="email()" heading="Paramètres">
@@ -32,9 +33,11 @@ const THEME_OPTIONS: readonly { readonly value: ThemePreference; readonly label:
           du mot de passe.
         </p>
         <a
+          appButton
+          variant="outlined"
           data-testid="settings-two-factor-link"
           routerLink="/admin/settings/security"
-          class="link-btn-outline justify-self-start"
+          class="justify-self-start"
         >
           Configurer
         </a>
@@ -43,9 +46,11 @@ const THEME_OPTIONS: readonly { readonly value: ThemePreference; readonly label:
         <h3>Session</h3>
         <p data-testid="settings-session">Connecté en tant que {{ email() }}.</p>
         <button
+          appButton
+          variant="outlined"
           type="button"
           data-testid="settings-logout"
-          class="link-btn-outline justify-self-start"
+          class="justify-self-start"
           (click)="logout()"
         >
           <app-icon name="sign-out" [size]="16" />

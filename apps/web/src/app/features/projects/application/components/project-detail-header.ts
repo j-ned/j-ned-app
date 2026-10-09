@@ -2,12 +2,13 @@ import { Component, input, output, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
 import { liveLinkContext, liveLinkLabel } from '../project-kind-copy';
 import { ProjectKindStamp } from './project-kind-stamp';
 
 @Component({
   selector: 'app-project-detail-header',
-  imports: [RouterLink, AppIcon, ProjectKindStamp],
+  imports: [RouterLink, AppIcon, Button, ProjectKindStamp],
   host: { class: 'contents' },
   template: `
     @let p = project();
@@ -45,11 +46,11 @@ import { ProjectKindStamp } from './project-kind-stamp';
         <div class="mt-8 flex flex-wrap items-center gap-2.5">
           @if (p.liveUrl) {
             <a
+              appButton
               [href]="p.liveUrl"
               target="_blank"
               rel="noopener noreferrer"
               (click)="linkClicked.emit()"
-              class="link-btn-primary"
             >
               {{ liveLabel() }}<span class="sr-only">{{ liveContext() }}</span>
               <app-icon name="external-link" [size]="14" />
@@ -57,11 +58,12 @@ import { ProjectKindStamp } from './project-kind-stamp';
           }
           @if (p.repoUrl) {
             <a
+              appButton
+              variant="outlined"
               [href]="p.repoUrl"
               target="_blank"
               rel="noopener noreferrer"
               (click)="linkClicked.emit()"
-              class="link-btn-outline"
               [attr.aria-label]="'Code source de ' + p.title"
             >
               <app-icon name="github" [size]="16" />
@@ -70,11 +72,12 @@ import { ProjectKindStamp } from './project-kind-stamp';
           }
           @if (p.repoUrlFront) {
             <a
+              appButton
+              variant="outlined"
               [href]="p.repoUrlFront"
               target="_blank"
               rel="noopener noreferrer"
               (click)="linkClicked.emit()"
-              class="link-btn-outline"
               [attr.aria-label]="'Code frontend de ' + p.title"
             >
               <app-icon name="github" [size]="16" />
@@ -83,11 +86,12 @@ import { ProjectKindStamp } from './project-kind-stamp';
           }
           @if (p.repoUrlBack) {
             <a
+              appButton
+              variant="outlined"
               [href]="p.repoUrlBack"
               target="_blank"
               rel="noopener noreferrer"
               (click)="linkClicked.emit()"
-              class="link-btn-outline"
               [attr.aria-label]="'Code backend de ' + p.title"
             >
               <app-icon name="github" [size]="16" />

@@ -35,9 +35,15 @@ let nextDialogId = 0;
         >
           {{ cancelLabel() }}
         </button>
-        <app-button severity="danger" data-testid="confirm-dialog-confirm" (click)="confirm()">
+        <button
+          appButton
+          type="button"
+          variant="danger"
+          data-testid="confirm-dialog-confirm"
+          (click)="confirm()"
+        >
           {{ confirmLabel() }}
-        </app-button>
+        </button>
       </div>
     </dialog>
   `,

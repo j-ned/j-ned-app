@@ -1,10 +1,11 @@
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { OfferPageContent } from '@features/offer/domain/models/offer.model';
+import { Button } from '@shared/ui/button';
 
 @Component({
   selector: 'app-offer-hero',
-  imports: [RouterLink],
+  imports: [RouterLink, Button],
   host: { class: 'block' },
   template: `
     <section class="page-container pt-18 pb-22 md:pt-26 md:pb-30" aria-labelledby="offer-heading">
@@ -21,7 +22,7 @@ import type { OfferPageContent } from '@features/offer/domain/models/offer.model
       <div
         class="animate-fade-up [animation-delay:120ms] mt-9 flex flex-wrap items-center gap-x-6 gap-y-3"
       >
-        <a routerLink="." fragment="demande" class="link-btn-primary" data-testid="offer-cta">
+        <a appButton routerLink="." fragment="demande" data-testid="offer-cta">
           {{ hero().ctaLabel }}
         </a>
         <p class="font-semibold text-primary" data-testid="offer-hero-price">

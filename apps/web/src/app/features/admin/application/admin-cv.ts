@@ -64,23 +64,25 @@ import { toCvRows } from './admin-cv-view';
     } @else if (current) {
       <div data-testid="admin-cv-current" class="flex flex-wrap items-center gap-2.5">
         <a
+          appButton
+          variant="outlined"
           data-testid="admin-cv-view"
           [href]="downloadUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="link-btn-outline"
         >
           <app-icon name="external-link" [size]="16" />
           Ouvrir le PDF<span class="sr-only"> (nouvel onglet)</span>
         </a>
-        <app-button
+        <button
+          appButton
+          type="button"
+          variant="text-danger"
           data-testid="admin-cv-delete"
-          severity="danger"
-          variant="text"
           (click)="deletionPending.set(true)"
         >
           Retirer le CV du site…
-        </app-button>
+        </button>
       </div>
     } @else {
       <app-admin-empty-state stamp="Aucun CV">
@@ -110,8 +112,9 @@ import { toCvRows } from './admin-cv-view';
 
         @if (selectedFile()) {
           <div class="mt-4 flex flex-wrap gap-2.5">
-            <app-button
-              severity="primary"
+            <button
+              appButton
+              type="button"
               data-testid="admin-cv-upload"
               [disabled]="isUploading()"
               (click)="uploadCv()"
@@ -121,10 +124,10 @@ import { toCvRows } from './admin-cv-view';
               } @else {
                 Mettre en ligne
               }
-            </app-button>
-            <app-button severity="secondary" variant="outlined" (click)="clearSelection()">
+            </button>
+            <button appButton type="button" variant="outlined" (click)="clearSelection()">
               Annuler
-            </app-button>
+            </button>
           </div>
         }
       </section>

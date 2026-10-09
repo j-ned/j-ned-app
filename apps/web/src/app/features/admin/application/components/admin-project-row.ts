@@ -51,33 +51,36 @@ import type { AdminProjectRowView } from '../admin-projects-view';
     </div>
     <div class="flex gap-1 sm:col-start-2 lg:col-start-auto">
       <a
+        appButton
+        variant="ghost-icon"
         data-testid="admin-project-view"
         [href]="'/projects/' + row().slug"
         target="_blank"
         rel="noopener noreferrer"
         [attr.aria-label]="viewLabel()"
-        class="icon-link"
       >
         <app-icon name="external-link" [size]="18" />
       </a>
       <a
+        appButton
+        variant="ghost-icon"
         data-testid="admin-project-edit"
         [routerLink]="['/admin/projects', row().id]"
         [attr.aria-label]="editLabel()"
-        class="icon-link"
       >
         <app-icon name="pencil" [size]="18" />
       </a>
-      <app-button
-        severity="danger"
-        variant="text"
+      <button
+        appButton
+        type="button"
+        variant="text-danger"
         size="icon"
         data-testid="admin-project-delete"
-        [ariaLabel]="deleteLabel()"
+        [attr.aria-label]="deleteLabel()"
         (click)="deleteRequested.emit()"
       >
         <app-icon name="trash" [size]="18" />
-      </app-button>
+      </button>
     </div>
   `,
 })

@@ -11,14 +11,15 @@ import { Button } from './button';
   },
   template: `
     <p data-testid="load-error-message" class="mb-4 text-lg text-muted">{{ message() }}</p>
-    <app-button
-      severity="secondary"
+    <button
+      appButton
+      type="button"
       variant="outlined"
       data-testid="load-error-retry"
       (click)="retry.emit()"
     >
       Réessayer
-    </app-button>
+    </button>
   `,
 })
 export class LoadError {

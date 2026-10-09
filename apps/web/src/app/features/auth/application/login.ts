@@ -93,9 +93,9 @@ import { FieldError } from '@shared/ui/field-error';
               </div>
             </fieldset>
 
-            <app-button
+            <button
+              appButton
               type="submit"
-              severity="primary"
               [block]="true"
               [disabled]="form().submitting()"
               class="mt-5"
@@ -105,7 +105,7 @@ import { FieldError } from '@shared/ui/field-error';
               } @else {
                 Se connecter
               }
-            </app-button>
+            </button>
           </form>
         </div>
 

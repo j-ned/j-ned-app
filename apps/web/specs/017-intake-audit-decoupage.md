@@ -1612,6 +1612,463 @@ sur un article (création : `POST` avec `tags`).
   `toEdited` typée qui déstructure (`const { tags, ...rest } = draft`), toujours sans cast. Si
   ce repli échoue aussi, `qa` est saisi par renvoi de tranche.
 
+### Lot L10 — Boutons en directive `appButton`, gabarit unique, focus, mouvement réduit (P12, F030 ; P8 abandonné ; ajout, branche `refactor/buttons-l10` depuis master `1f4d9c1`)
+
+Décisions de l'utilisateur (2026-10-09), actées par **ADR-0017** :
+
+- un bouton réutilisé est une **directive d'attribut** `button[appButton], a[appButton]`, jamais
+  un `@utility`. `<app-button>`, `@utility link-btn*` et `@utility icon-link` disparaissent ;
+- **arbitrage A, oui** : un seul gabarit de bouton, **celui des appels** (`link-btn` : 15 px,
+  graisse 600, contour `foreground/15`, survol teinté primaire). Les 38 `<app-button>` l'adoptent.
+  C'est un changement visible voulu ;
+- **arbitrage B, oui** : un élément arrondi ne change plus de forme au focus clavier ;
+- P8 : les classes du lien étiré des cartes restent en ligne.
+
+Exigence du lot : **les seuls changements visibles sont ceux listés dans « Écarts attendus »**
+(gabarit des anciens `<app-button>`, forme au focus, mouvement réduit). Tout autre écart relevé
+par la preuve visuelle est un défaut du lot.
+
+#### Vérification des références de l'audit (master `1f4d9c1`)
+
+| Réf. audit | Actuel |
+| --- | --- |
+| F012 `button.ts:30` (bloc `styles:` 30-56) | exact : `styles:` **30-56**, classes de variante **76-104**, `SIZE_CLASSES` **7-11** |
+| P12 « 28 usages de `link-btn-*` dans 16 fichiers » | **30 usages dans 18 fichiers** (8 `link-btn-primary`, 22 `link-btn-outline`). **24 sur `<a>`, 6 sur `<button>` natifs** : `admin-audience.ts:74` (`aria-pressed`), `admin-messages.ts:41` (`aria-disabled`), `admin-settings.ts:48`, `admin-save-bar.ts:31` (`disabled:` propres), `admin-content-image-upload.ts:83` (`aria-disabled`) et `:91` |
+| P12 `styles.css:249-262` | `link-btn` **249-251**, `link-btn-primary` **253-256**, `link-btn-outline` **258-261**, `icon-link` (L3) **265-267** |
+| `<app-button>` | **38 usages dans 23 fichiers**. Aucun ne porte `aria-pressed` ni `aria-disabled`. Entrées employées : `size="icon"` (12 sites), `size="large"` (3 : `about-motivation.ts:31, 41`, `contact-form.ts:216`), `[rounded]="true"` (2, `header.ts`), `[block]="true"` (8, formulaires d'auth) |
+| `icon-link` | 4 `<a>` : `admin-project-row.ts:59, 67`, `admin-post-row.ts:90, 99` |
+| F011 (bouton contour recopié) | **soldé par L3** (P7) |
+| P8 / F013 : 4 cartes, 3 specs | exacts. **Hors lot** (classes en ligne) |
+| F030 `toast.ts:100-113`, `drawer.ts:68-101` | `toast.ts` **98-112**, `drawer.ts` **68-102**. Moitié vraie : aucune règle `prefers-reduced-motion`. Moitié **fausse** : les deux `@keyframes slide-in-right` ne se percutent pas. Angular préfixe les noms de keyframes en encapsulation émulée (`_ngcontent-ng-c190173092_slide-in-right` et `_ngcontent-ng-c2889082527_slide-in-right` dans `dist/angular-portfolio-app/browser`) |
+| Arbitrage B | `styles.css:202-206` : `:where(a, button, [role='button'], summary):focus-visible { outline: …; outline-offset: 2px; border-radius: 4px }`, **hors couche**. Elle l'emporte donc sur toute classe `rounded-*` (couche `utilities`). Tout `<a>` ou `<button>` arrondi passe à 4 px de rayon au focus clavier : le bouton de thème rond devient un carré à coins arrondis, un `rounded-md` passe de 6 à 4 px |
+
+**Dépendances au gabarit `<app-button>` hors gabarits** (à migrer avec lui) :
+
+- code applicatif : `admin-gallery-image-item.ts:24`. `ref?.nativeElement.querySelector('button')?.focus()`
+  cherche le `<button>` **dans** l'hôte. Une fois l'hôte devenu le `<button>`, le focus après
+  déplacement ou suppression d'une capture serait perdu en silence ;
+- specs qui descendent sans condition de l'hôte vers le `<button>` interne :
+  `contact-form.spec.ts:51`, `about-motivation.spec.ts:15`, `admin-overview.spec.ts:183`,
+  `two-factor-disable-form.spec.ts:31, 46, 83`, `two-factor-enable-form.spec.ts:48`,
+  `confirm-dialog.spec.ts:58`, `button.spec.ts`. Les autres helpers (`press-test-id.ts:11`,
+  `confirm-dialog-page.ts:50`, une quinzaine de specs) testent déjà
+  `tagName === 'BUTTON' ? element : querySelector('button')` et passent tels quels.
+
+#### Verdict KISS par morceau
+
+- **Gabarit unique = celui des appels**, à l'identique : `inline-flex min-h-11 items-center gap-2 rounded-md px-5 text-[0.9375rem] font-semibold transition-colors`.
+  Les 30 sites d'appel ne changent pas.
+- **Ce que l'ex-`<app-button>` perd** (il prend le gabarit d'appel) : `text-sm` / graisse 500,
+  `py-2.5`, `whitespace-nowrap`, `justify-center` (sauf icône et pleine largeur, cf. tailles),
+  `border` + `shadow-sm` des pleins, la pression `translateY(1px)`, la transition 0,2 s.
+- **Couleurs** : `primary` et `outlined` prennent celles des appels. Les variantes **sans
+  équivalent d'appel** (danger, texte) gardent leurs couleurs et prennent la forme et la
+  typographie du gabarit. `danger` plein suit le modèle du primaire d'appel : sans bordure ni
+  ombre, survol `bg-status-error/90`. Le contour danger garde sa bordure (c'est un contour).
+- **Entrées, chacune justifiée par un consommateur réel** :
+  - `variant` : 8 valeurs, toutes employées (cf. API) ;
+  - `size: 'default' | 'icon'` : 12 boutons icônes. **`large` disparaît** : le gabarit d'appel n'a
+    qu'une taille, et les 3 sites `large` (deux CTA d'À propos, envoi du formulaire de contact)
+    prennent celle des autres CTA publics. Le héros d'accueil, par exemple, juxtapose aujourd'hui
+    un `<app-button>` de 14 px et un `link-btn-outline` de 15 px ;
+  - `rounded` : 2 boutons ronds de l'en-tête (thème, menu) ;
+  - `block` : 8 boutons pleine largeur des formulaires d'auth.
+- **`ghost-icon`** (ex-`icon-link`) : hors des deux familles fusionnées, chaîne reprise à
+  l'identique (sans ses classes `focus-visible:`, mortes, cf. focus). Ce n'est pas la combinaison
+  `text-muted` + `icon` : couleur et survol diffèrent.
+- **`pressed` / `ariaDisabled` : pas d'entrée.** `aria-pressed`, `aria-disabled`, `disabled`,
+  `type`, `routerLink`, `href` et `aria-label` restent natifs. Les variantes propres à un site
+  (`aria-pressed:border-primary`, `aria-disabled:*`, `disabled:cursor-wait disabled:opacity-60`)
+  restent en ligne sur ce site. L'ordre a été vérifié en compilant Tailwind 4.3.3 du dépôt (cf.
+  risques pour `disabled:`).
+- **P8 : classes en ligne.** Une directive `a[appCardLink]` ne porterait que 8 classes, sans
+  comportement, pour 4 liens. Le contrat est déjà testé sur 3 des 4 cartes (ADR-0003 §1).
+- **B : à la racine, sans toucher au focus des autres éléments.** Les navigateurs actuels font
+  suivre à `outline` le `border-radius` de l'élément (Chrome 94, Firefox 88, Safari 16.4). Le
+  défaut ne vient donc pas de l'anneau mais du `border-radius: 4px` qui **remplace** le rayon de
+  l'élément. Supprimer la déclaration changerait le focus des éléments sans rayon : liens de
+  texte, liens de pied de page, aujourd'hui arrondis à 4 px au focus, deviendraient à angles vifs.
+  **Retenu** : sortir `border-radius: 4px` dans une règle jumelle **dans le `@layer base`
+  existant** (`styles.css:177`). Un rayon posé par une classe `rounded-*` (couche `utilities`,
+  au-dessus de `base`) l'emporte alors, et un élément sans rayon garde ses 4 px. `outline` et
+  `outline-offset` restent dans la règle hors couche. Le preflight Tailwind (`button { border-radius: 0 }`,
+  spécificité 0,0,1) perd contre `:where(…):focus-visible` (0,1,0) dans la même couche : un
+  `<button>` sans classe de rayon garde aussi 4 px.
+- **F030 : gardé, réduit au mouvement.** Le toast (translation + opacité) et les deux tiroirs
+  latéraux s'arrêtent sous `prefers-reduced-motion: reduce`. Le fondu du fond du tiroir
+  (`animate-fade-in`, opacité seule) reste.
+
+#### Architecture
+
+Aucune couche, aucun état, aucun service. `shared/ui/button.ts` change de nature : un
+`@Directive` à la place du `@Component`, comme les précédents `textarea[appMarkdownEditor]`
+(`markdown-editor.ts:15`) et `[appCodeCopy]` (`code-copy.ts:21`).
+
+- **Hôte** : `host: { '[class]': 'classes()' }`. Angular fusionne cette liaison avec le `class`
+  statique et les `[class.x]` du consommateur (`mt-5`, `sm:flex-1`, `max-sm:hidden`,
+  `2xl:hidden`, `justify-self-start`, `aria-pressed:border-primary`…). Ces classes atterrissent
+  désormais sur le `<button>` / `<a>` lui-même. Pas de `role`, pas de `changeDetection`, pas de
+  `type` posé par la directive.
+- **`type` explicite, garanti par le lint.** L'ancien `Button` valait `type="button"` par
+  défaut. Chaque `<button appButton>` écrit son `type`, et
+  `@angular-eslint/template/button-has-type` passe en `error`. Tous les `<button>` natifs du dépôt
+  déclarent déjà un `type` (vérifié par balayage).
+- **Focus clavier : aucune classe.** La règle globale porte l'anneau, hors couche, pour tous les
+  interactifs ; une classe `focus-visible:outline-*` serait sans effet. B ne déplace que son
+  rayon.
+- **Classes** (une seule chaîne, composée) :
+
+  | Morceau | Classes |
+  | --- | --- |
+  | Base (tout sauf `ghost-icon`) | `inline-flex min-h-11 items-center gap-2 text-[0.9375rem] font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50` |
+  | Rayon | `rounded-md`, ou `rounded-full` si `rounded` |
+  | Taille | `default` : `px-5` ; `icon` : `min-w-11 justify-center` |
+  | Largeur | `block` : `w-full justify-center` |
+  | `primary` | `bg-primary-bg text-white hover:bg-primary-bg/90` |
+  | `outlined` | `border border-foreground/15 text-foreground hover:border-primary/40 hover:text-primary` |
+  | `danger` | `bg-status-error text-on-status-error hover:bg-status-error/90` |
+  | `outlined-danger` | `border border-status-error/40 text-status-error hover:border-status-error/60 hover:bg-status-error/10` |
+  | `text` | `text-primary hover:bg-primary/10` |
+  | `text-muted` | `text-muted hover:bg-foreground/5 hover:text-foreground` |
+  | `text-danger` | `text-status-error hover:bg-status-error/10` |
+  | `ghost-icon` (chaîne complète, sans base) | `inline-flex size-11 items-center justify-center rounded-md text-foreground transition-colors hover:bg-surface-elevated` |
+
+  - `cursor-pointer` : il n'a aucun effet visible sur un `<a href>` (déjà `pointer`). Il est retiré
+    des 5 `<button>` d'appel qui l'écrivaient en ligne.
+  - `disabled:` dans la base : les boutons d'action en ont besoin (envoi, connexion). Sur les
+    6 `<button>` d'appel, seul `admin-save-bar.ts:31` peut être `disabled`, et il garde ses
+    `disabled:cursor-wait disabled:opacity-60` (cf. risques).
+  - `bg-transparent` des variantes texte disparaît : sans effet, car le fond est déjà
+    transparent par le preflight et sur un `<a>`.
+  - `justify-center` seulement en icône et en pleine largeur : sur un élément à la largeur de son
+    contenu, il ne fait rien. Le poser dans la base changerait la valeur calculée sur les 30
+    sites d'appel, sans effet visible mais avec du bruit dans la preuve.
+- **B** : dans `styles.css`, la règle 202-206 garde `outline` et `outline-offset`, et le
+  `@layer base` (177) reçoit `:where(a, button, [role='button'], summary):focus-visible { border-radius: 4px; }`.
+- **F030** : dans les blocs `styles:` (exception keyframes de CLAUDE.md), après les règles
+  `.animate-*` : `@media (prefers-reduced-motion: reduce) { .animate-slide-in-right { animation: none; } }`
+  (toast), et la même chose pour `.animate-slide-right, .animate-slide-left` (tiroir). Pas de
+  `motion-reduce:animate-none` : la règle du composant est hors couche et l'emporterait.
+- **Landmarks / titres** : sans objet.
+
+#### API (à titre de contrat)
+
+```ts
+// shared/ui/button.ts
+export type ButtonVariant =
+  | 'primary' | 'outlined'                          // gabarit d'appel
+  | 'danger' | 'outlined-danger'
+  | 'text' | 'text-muted' | 'text-danger'
+  | 'ghost-icon';                                   // ex-icon-link, chaîne propre
+type ButtonSize = 'default' | 'icon';
+
+@Directive({ selector: 'button[appButton], a[appButton]', host: { '[class]': 'classes()' } })
+export class Button {
+  readonly variant = input<ButtonVariant>('primary');
+  readonly size = input<ButtonSize>('default');
+  readonly rounded = input<boolean>(false);
+  readonly block = input<boolean>(false);
+  protected readonly classes: Signal<string>;
+}
+```
+
+- `size`, `rounded` et `block` sont sans effet sur `ghost-icon` (aucun site ne les combine). C'est
+  figé par un test.
+- `ariaLabel` disparaît au profit de `[attr.aria-label]` natif. Pas de `booleanAttribute`
+  (`[rounded]="true"`, `[block]="true"` restent tels quels).
+
+**Correspondance de migration** (mécanique, site par site) :
+
+| Avant | Après |
+| --- | --- |
+| `<app-button …>…</app-button>` | `<button appButton type="button" …>…</button>` (`type="submit"` si `type="submit"`) |
+| `severity` + `variant` : plein primaire (défaut) / plein danger / contour secondaire / contour danger / texte primaire / texte secondaire / texte danger | `variant` absent / `danger` / `outlined` / `outlined-danger` / `text` / `text-muted` / `text-danger` |
+| `size="large"` | retiré |
+| `size="icon"`, `[rounded]`, `[block]`, `[disabled]`, `class`, `data-testid`, `(click)`, `#ref` | inchangés (`disabled` devient la propriété native) |
+| `[ariaLabel]="x"` | `[attr.aria-label]="x"` |
+| `class="link-btn-primary …"` / `class="link-btn-outline …"` | `appButton` (variante par défaut) / `appButton variant="outlined"`, le reste de `class` gardé, `cursor-pointer` retiré |
+| `class="icon-link"` | `appButton variant="ghost-icon"` |
+
+#### Fichiers
+
+| Fichier | Rôle |
+| --- | --- |
+| `docs/adr/0017-bouton-en-directive-d-attribut.md` | ADR (MADR) : directive `appButton`, gabarit unique d'appel, rayon de focus en couche `base`. Remplace en partie ADR-0003. |
+| `docs/adr/0003-utility-tailwind-et-apply.md` | Statut : « remplacé en partie par ADR-0017 ». |
+| `shared/ui/button.ts` (+ spec réécrite) | Directive `Button` (cf. API). |
+| les 23 fichiers à `<app-button>` | correspondance de migration. |
+| `admin-gallery-image-item.ts` (en plus) | l. 24 : `ref?.nativeElement.focus()`. |
+| les 18 fichiers à `link-btn-*` | correspondance de migration, import de `Button`. |
+| `admin-project-row.ts`, `admin-post-row.ts` | `icon-link` → `ghost-icon`. |
+| `src/styles.css` | `@utility link-btn*`, `icon-link` et leurs commentaires supprimés ; `border-radius` du focus déplacé dans `@layer base` (B). |
+| `eslint.config.js` | `@angular-eslint/template/button-has-type: 'error'` dans le bloc `**/*.html`. |
+| 8 specs (listées plus haut) | descente vers le `<button>` interne remplacée par l'élément lui-même. |
+| `shared/ui/toast.ts`, `shared/ui/drawer.ts` | règle `prefers-reduced-motion`. |
+| `DESIGN.md` | § Buttons (273-280) réécrit : directive `appButton`, gabarit unique et ses variantes, tailles `default` / `icon`, `rounded`, `block`. Les mentions `link-btn-*` (lignes 273, 324, 357, 521, 596, 604, 640) deviennent `appButton` ; la ligne 640 suit l'ADR-0017. Focus (152, 278) : l'anneau suit le rayon de l'élément. Toast et tiroir : mouvement réduit. |
+
+**À faire valider par l'utilisateur, hors plan** : `CLAUDE.md` (section CSS : « `a` stylé en
+bouton » parmi les cas d'`@utility`) et `.claude/project-profile.md` (§ Styling), à aligner sur
+l'ADR-0017 dans la même PR.
+
+**Non touchés** : les 4 cartes et leurs specs, `overview-content.ts`, `overview-contacts.ts`. Le
+tableau « Lots de PR » (L10) est remplacé par cette liste.
+
+**Taille** : environ 45 fichiers, presque tous des substitutions de gabarit. Découpage possible
+en deux PR : L10.1 (directive + `<app-button>`), puis L10.2 à L10.4. Intersection :
+`button.ts`, `button.spec.ts`, `DESIGN.md`. Merger L10.1 d'abord.
+
+#### Réactivité / état
+
+`classes` est un `computed` sur les quatre entrées. Aucun `effect()`, aucun état.
+
+#### Tranches
+
+Leçons des lots précédents pour `qa` :
+
+- **Échafaudage de signature au RED, obligatoire ici.** Sans lui, la spec réécrite ne compile pas
+  (`appButton` inconnu, NG8002 sur `variant`). Et si la directive remplace le composant sans
+  migrer les sites, les 23 gabarits lèvent NG8001 (`app-button` inconnu) : **aucun** test ne
+  tourne. L'échafaudage exact est donné par tranche.
+- **Pas de valeur par défaut piégée.** Les défauts (`primary`, `default`, `false`) se testent par
+  un gabarit **sans aucune liaison**, jamais par un hôte dont les signaux valent déjà ces défauts.
+  Les autres tests lient explicitement chaque entrée qu'ils exercent. Les attendus de classes sont
+  écrits **en littéral**, jamais par import depuis `button.ts`.
+- **Jamais d'U+202F / U+00A0 littéral** dans une spec : écrire `\u202F` / `\u00A0`.
+- Sélection par `data-testid` uniquement ; le `data-testid` est désormais sur le `<button>` / `<a>`
+  lui-même.
+
+**L10.1 — Le bouton devient une directive au gabarit d'appel (ex-`<app-button>`)**
+
+- **Échafaudage (à remplacer en GREEN)** : `button.ts` devient la directive de l'API, sans
+  `ghost-icon` dans l'union, avec `classes` = `''`. Les 38 `<app-button>` passent par la
+  correspondance de migration (gabarits seuls). `admin-gallery-image-item.ts:24` **reste tel
+  quel**. Le dépôt compile, les boutons sont nus.
+- `button.spec.ts` (réécrite ; hôtes de test `@Component` locaux, `imports: [Button]`) :
+  - gabarit sans liaison `<button appButton type="button" data-testid="b">` : l'élément est un
+    `HTMLButtonElement` qui porte exactement (trié) la base + `rounded-md` + `px-5` + la chaîne
+    `primary` ;
+  - `it.each` sur les 7 variantes (`variant` lié) : base + `rounded-md` + `px-5` + chaîne de la
+    variante (tableau « Classes ») ;
+  - `size="icon"` : `min-w-11 justify-center`, et aucune classe `px|pl|pr` (filtre actuel
+    `/^(\w+:)?(px|pl|pr)-/` conservé) ;
+  - `[rounded]="true"` → `rounded-full` et pas `rounded-md` ; `[block]="true"` → `w-full justify-center` ;
+  - aucune classe de l'ancien gabarit (`text-sm`, `font-medium`, `py-2.5`, `shadow-sm`,
+    `whitespace-nowrap`) n'apparaît, quelle que soit la variante (une assertion dans l'`it.each`) ;
+  - attributs natifs intacts : `type="submit"` reste `submit`, la `class="mt-5"` du consommateur
+    reste présente, `<a appButton routerLink="/projects">` (avec `provideRouter([])`) a un `href`
+    `/projects` et porte la base ;
+  - aucun élément `app-button` dans le DOM rendu.
+- Specs migrées (8 fichiers) : la descente vise l'élément du `data-testid` lui-même. Elles passent
+  dès l'échafaudage : c'est voulu, elles testent le clic et le libellé.
+- Focus de la galerie : le test de focus après déplacement ou suppression (`qa` le repère par
+  `grep -n "activeElement"` dans `admin-project-gallery.spec.ts` et
+  `admin-gallery-image-item.spec.ts`) devient **rouge par assertion** à l'échafaudage. S'il
+  n'existe pas, `qa` l'écrit : « Given a capture moved up When the move ends Then focus is on its
+  up button ».
+- RED attendus : les tests de classes de `button.spec.ts` et le test de focus de la galerie.
+  `qa` relève le compte exact.
+- GREEN : `classes`, l. 24 de la galerie, règle `button-has-type`, DESIGN.md § Buttons, ADR-0017,
+  statut d'ADR-0003.
+
+**L10.2 — Les appels et les liens icônes passent par la directive (ex-`link-btn-*`, `icon-link`)**
+
+- **Échafaudage** : l'union gagne `'ghost-icon'`, et `classes` rend `''` pour elle. Les 30 sites
+  d'appel et les 4 liens icônes passent par la correspondance (classes `link-btn-*`, `icon-link`
+  et `cursor-pointer` retirées, `appButton` ajouté, `Button` importé). Les `@utility` restent dans
+  `styles.css` jusqu'au GREEN, sans usage.
+- `button.spec.ts` :
+  - `<a appButton variant="ghost-icon">` → exactement la chaîne `ghost-icon`, et rien de la base ;
+    avec `size="icon"` et `[rounded]="true"` liés → chaîne identique ;
+  - `<a appButton variant="outlined">` → base + `rounded-md` + `px-5` + chaîne `outlined` (même
+    attendu que sur `<button>`, sur un `<a>`) ;
+  - site à état : `<button appButton variant="outlined" type="button" aria-pressed="true" class="aria-pressed:border-primary">`
+    garde `aria-pressed="true"` et la classe du site.
+- RED attendus : le cas `ghost-icon` (les deux autres sont verts dès L10.1, triangulation
+  assumée).
+- GREEN : chaîne `ghost-icon`, suppression des 4 `@utility` et de leurs commentaires, mentions
+  `link-btn-*` de DESIGN.md.
+- La preuve que les 34 sites rendent à l'identique est la preuve visuelle (point 2), pas un test :
+  happy-dom ne compile pas Tailwind.
+
+**L10.3 — Sans RED : un élément arrondi garde sa forme au focus clavier (B)**
+
+- Justification : happy-dom n'applique ni les couches de cascade ni `:focus-visible` à des
+  feuilles Tailwind compilées. Un test lirait du texte CSS, pas un rendu.
+- Changement : `border-radius: 4px` passe de la règle hors couche (202-206) à une règle jumelle
+  dans `@layer base` (177).
+- Preuve (navigateur, avant / après, cf. point 3 de la preuve visuelle) : `Tab` jusqu'à
+  l'élément, puis `getComputedStyle(document.activeElement).borderTopLeftRadius`, et une capture
+  zoomée (`computer zoom`) de l'anneau :
+  - bouton de thème (`rounded-full`) : avant `4px`, après le rayon plein (anneau rond) ;
+  - un bouton `rounded-md` (CTA de l'en-tête) : avant `4px`, après `6px` ;
+  - un lien de pied de page (`footer-link`, sans rayon) et un lien de texte du blog : `4px` avant
+    **et** après ;
+  - `outline-width`, `outline-color` et `outline-offset` identiques avant et après, sur les
+    quatre.
+  - Statique : dans la feuille compilée, la déclaration `border-radius:4px` du sélecteur de focus
+    est à l'intérieur de `@layer base`, et la règle hors couche n'en a plus.
+
+**L10.4 — Sans RED : mouvement réduit du toast et du tiroir (F030)**
+
+- Justification : happy-dom n'évalue ni les media queries ni les animations CSS.
+- Preuve : `grep -c "prefers-reduced-motion"` sur les chunks compilés qui contiennent
+  `_slide-in-right` → la règle accompagne chaque animation, avec le sélecteur préfixé
+  `[_ngcontent-…]`. Au navigateur, sur `/` : un `CSSMediaRule` `(prefers-reduced-motion: reduce)`
+  qui vise `.animate-slide-in-right[_ngcontent-…]` (toast rendu en permanence par `app.ts:38`).
+  Pour le tiroir, ouvrir le menu mobile à 375 px avant la lecture.
+
+Ordre : L10.1 → L10.2 (L10.2 étend l'union posée par L10.1). L10.3 et L10.4 sont indépendantes.
+L10.3 va **après** L10.1 : sa preuve sur le CTA de l'en-tête suppose le gabarit final.
+
+Preuves de fin de lot (grep) :
+
+- `grep -rn "<app-button\|app-button " src/app` → vide ;
+- `grep -rn "link-btn\|icon-link" src DESIGN.md` → vide ;
+- `grep -rn 'size="large"' src/app` → vide ;
+- `grep -n "styles:" src/app/shared/ui/button.ts` → vide ;
+- `grep -rn "querySelector('button')" src/app --include='*.ts' | grep -v spec` →
+  `admin-content-image-upload.ts:138` seul (premier bouton de son propre hôte, sans rapport).
+
+#### Preuve visuelle avant / après (exigence du lot)
+
+Précédent repris de L4 (`## Verify`, point 3) : build prod de `master` dans un worktree
+temporaire et build prod de la branche, chacun servi en statique et lu au navigateur intégré.
+Pour l'admin, `ng serve` de chaque arbre derrière le faux backend de L6.
+
+1. **Builds.** `git worktree add <scratchpad>/l10-before master`, puis
+   `pnpm install --frozen-lockfile && pnpm run build --configuration production` dans le
+   worktree. Même chose sur la branche. Servir les deux `dist/angular-portfolio-app/browser`
+   (avant `127.0.0.1:4317`, après `127.0.0.1:4318`). Ensuite, `git checkout -- public/sitemap.xml
+   public/rss.xml` dans les deux arbres, et suppression du worktree.
+2. **Instantané des styles calculés et des boîtes** (méthode principale, mécanique). Un même
+   script `javascript_tool`, joué à l'identique sur les deux origines, sérialise en JSON, pour
+   chaque élément ciblé :
+   - `getComputedStyle` sur une liste fixe : `display`, `align-items`, `justify-content`, `gap`,
+     `font-size`, `font-weight`, `line-height`, `white-space`, `padding`, `border-*` (largeur,
+     style, couleur, rayon), `background-color`, `color`, `opacity`, `box-shadow`, `cursor`,
+     `transition`, `transform`, `outline-*`, `text-decoration-line` ;
+   - `getBoundingClientRect()` de l'élément **et de son parent**.
+   - Cibles. Avant : `app-button > button, [class*="link-btn"], .icon-link`. Après : `[appbutton]`.
+     Clé = page + `data-testid` (sinon texte normalisé + rang). Chaque entrée est marquée
+     `famille: action | appel | icône` selon son origine avant migration. **Le nombre de cibles
+     par page est identique** des deux côtés.
+   - Matrice publique : `/`, `/about`, `/projects`, `/projects/dashflow`, `/blog`, `/offres`,
+     `/offres/site-vitrine`, `/login` × thème clair et sombre (bascule par le bouton de thème,
+     ADR-0012) × 375 et 1280 px (`resize_window`, remis à `desktop` ensuite).
+   - Matrice admin, obligatoire (25 des 38 anciens `<app-button>`, 18 des 30 appels et les
+     4 icônes y sont) : faux backend local du `## Verify` de L6 (lecture seule, écritures
+     refusées), `auth:session=1` en `localStorage`. Pages `/admin`, `/admin/projects`,
+     `/admin/projects/<id>` (éditeur, barre d'enregistrement, galerie), `/admin/blog`,
+     `/admin/blog/new`, `/admin/messages`, `/admin/audience`, `/admin/cv`, `/admin/settings`,
+     `/admin/settings/security`, à 1280 px, en clair et en sombre.
+   - État forcé par le même script : chaque cible `<button>` repassée en `disabled = true`,
+     instantané, puis restaurée.
+   - **Critère** :
+     - entrées `appel` et `icône` : **identiques** (diff vide), boîte du parent comprise ;
+     - entrées `action` : seules les propriétés de la liste « Écarts attendus » diffèrent, et les
+       **boîtes des parents** sont identiques, ou l'écart s'explique par la nouvelle taille du
+       bouton (hauteur des anciens `large`, largeur des libellés). Chaque écart de boîte est
+       listé ;
+     - tout le reste : identique.
+3. **États non forçables par script**, joués à la main sur les deux origines, lecture de
+   `getComputedStyle` sur l'élément visé :
+   - survol (`computer hover`) : `header-cta` → avant opacité 0,9, après fond `primary-bg/90`
+     (écart attendu) ; un lien d'appel contour (`/about`) → identique ;
+   - **désactivé et survolé** : `disabled = true` sur `header-cta`, puis survol → opacité 0,5 des
+     deux côtés ;
+   - barre d'enregistrement en `disabled` (soumission en cours, faux backend lent) → opacité 0,6 et
+     curseur `wait` des deux côtés ;
+   - bouton d'exclusion d'Audience en `aria-pressed="true"`, survolé → `border-primary` des deux
+     côtés ;
+   - « Tout marquer comme lu » en `aria-disabled="true"`, survolé → identique des deux côtés ;
+   - focus clavier : cf. L10.3.
+4. **Diff des sélecteurs compilés** (complément). Feuille globale `styles-*.css` avant / après.
+   Retraits attendus : `.link-btn`, `.link-btn-primary`, `.link-btn-outline`, `.icon-link`, et les
+   classes qui n'étaient employées que par l'ancien `Button` (`.shadow-sm` si plus aucun usage,
+   `.border-muted\/30`…). Ajouts attendus : les classes des chaînes de la directive qui
+   n'existaient pas encore en classe autonome. Le chunk de `Button` perd ses règles
+   `[_ngcontent-…]` ; ceux du toast et du tiroir gagnent leur `@media (prefers-reduced-motion: reduce)`.
+   La règle de focus est scindée (B).
+5. **Captures** des pages publiques à 375 et 1280 px et des pages admin à 1280 px, en clair,
+   avant et après, côte à côte. Les écarts visibles doivent tous figurer dans « Écarts attendus ».
+6. **Fonctionnel** : soumettre le formulaire de contact vide (submit natif, erreurs révélées) ;
+   dans un formulaire, un `<button appButton type="button">` (« Ajouter une ligne »
+   d'`admin-pair-rows`) **ne soumet pas** ; déplacer une capture de la galerie → le focus suit le
+   bouton.
+
+#### Écarts attendus
+
+**1. Ex-`<app-button>` → gabarit d'appel (voulu, arbitrage A).** Sur chaque bouton concerné :
+15 px au lieu de 14 px, graisse 600 au lieu de 500, plus de `py-2.5` (la hauteur reste 44 px par
+`min-h-11`, sauf pour les anciens `large`), retour à la ligne possible (plus de `nowrap`),
+`justify-content` normal hors icône et pleine largeur, transition 150 ms des couleurs, plus de
+pression `translateY(1px)`. En plus, selon la variante :
+
+- plein primaire : sans bordure ni ombre ; survol = fond à 90 % au lieu de l'opacité 0,9 ;
+- plein danger : sans bordure ni ombre, survol inchangé (`status-error/90`) ;
+- contour secondaire : bordure `foreground/15` au lieu de `muted/30` ; survol = bordure
+  `primary/40` et texte `primary`, au lieu du fond `surface-elevated` et de la bordure
+  `foreground/30` ;
+- contour danger, texte, texte secondaire, texte danger : couleurs inchangées, typographie
+  seulement ;
+- anciens `large` : 15 px au lieu de 16 px (18 px à partir de `md`), `px-5` au lieu de `px-6`,
+  hauteur 44 px au lieu d'environ 50 px (54 px à partir de `md`).
+
+Par page :
+
+| Page | Boutons qui changent |
+| --- | --- |
+| toutes les pages publiques (en-tête) | CTA « Décrire mon projet » (plein primaire) ; bouton de thème (contour, icône, rond) ; bouton de menu (texte secondaire, icône, rond, sous `lg`) |
+| `/` | CTA du héros (plein primaire) ; bouton de la section projets (plein primaire) ; envoi du formulaire de contact (ancien `large`) |
+| `/offres/<slug>` | envoi du formulaire de contact (ancien `large`) |
+| `/about` | les deux CTA de motivation (anciens `large`, plein primaire et contour) |
+| `/projects`, `/projects/<slug>`, `/blog` | « Réessayer » (contour), en cas d'erreur de chargement seulement |
+| `/login`, `/two-factor` | envoi (plein primaire, pleine largeur) |
+| `/admin` (vue d'ensemble) | « Réessayer » du chargement en erreur |
+| `/admin/projects`, `/admin/blog` | suppression par ligne (texte danger, icône) ; dialogue de confirmation (plein danger) |
+| `/admin/projects/<id>` | rangées répétées (suppression texte danger icône, ajout texte primaire) ; galerie (enregistrer le texte alternatif en contour, monter / descendre en texte secondaire icône, suppression texte danger icône, confirmer en contour danger, annuler en contour) ; envoi de capture (plein primaire) |
+| `/admin/messages` | marquer comme lu (texte secondaire, icône), suppression (texte danger, icône) |
+| `/admin/audience` | export CSV (contour) |
+| `/admin/cv` | retirer le CV (texte danger), envoyer (plein primaire), annuler la sélection (contour) |
+| `/admin/settings/security` | formulaires 2FA et mot de passe, pleine largeur (plein primaire, plein danger, contour, contour danger) |
+
+**2. Forme au focus clavier (voulu, arbitrage B).** Tout `<a>`, `<button>` ou `summary` qui porte
+une classe `rounded-*` garde son rayon au focus au lieu de passer à 4 px. Le bouton de thème
+reste rond, les boutons et liens `rounded-md` gardent 6 px, et l'anneau suit cette forme. Les
+éléments sans rayon : inchangés (4 px au focus).
+
+**3. Mouvement réduit (voulu, F030).** Sous `prefers-reduced-motion: reduce`, le toast apparaît sans
+glisser ni fondu, et le tiroir sans glisser (son fond garde le fondu).
+
+**Aucun autre**, en particulier sur les 30 sites d'appel et les 4 liens icônes.
+
+#### Intersection de fichiers
+
+| Couple | Intersection | Conséquence |
+| --- | --- | --- |
+| L1, L3, L9 ∩ L10 | Mergés (#192, #186, #190) ; la branche part de `1f4d9c1`. | Aucune. |
+| L11 ∩ L10 | Imports de nombreux fichiers touchés ici. | L11 après L10, rebase attendu. |
+
+Gates : `pnpm install --frozen-lockfile`, `pnpm run build --configuration production` (puis
+`git checkout -- public/sitemap.xml public/rss.xml`), `pnpm lint` (règle `button-has-type`
+comprise), `pnpm exec prettier --check` sur les fichiers touchés, `pnpm test; echo exit=$?`. Puis
+la preuve visuelle ci-dessus.
+
+#### Risques & inconnues
+
+- **`disabled:` de la base contre `disabled:` de la barre d'enregistrement** (même variante, même
+  propriété). Compilé avec Tailwind 4.3.3 : `disabled:opacity-60` sort après `disabled:opacity-50`
+  et `disabled:cursor-wait` après `disabled:cursor-not-allowed`. Le site gagne, mais par l'ordre
+  alphabétique des classes, pas par construction. Le point 3 de la preuve le vérifie. Si une
+  montée de version l'inverse, le site passera par `aria-disabled` comme ses voisins (hors lot).
+- **Disparition de l'enveloppe** : un écart de ligne de base ou de `gap` (`inline-flex` dans un
+  parent bloc, élément de grille d'`admin-pair-rows`) ne se voit qu'au rendu. Le
+  `getBoundingClientRect` du parent (point 2) le détecte ; on corrige site par site par une classe
+  de placement, sans toucher la directive.
+- **Libellés qui passent à la ligne** (`nowrap` perdu) : en 375 px, un libellé long d'admin ou
+  d'auth peut s'étaler sur deux lignes. C'est le comportement des appels aujourd'hui. Les captures
+  à 375 px le montrent ; à signaler s'il gêne, sans le corriger dans le lot.
+
 ## Plan de test
 
 Lot **L5** joué en un seul RED (demande de la session principale). Commande : `pnpm test; echo
@@ -2143,6 +2600,96 @@ de 0 ; « 1 modification non enregistrée », section 04 « modifié »). Aucune
 harnais ni de délai. Les 3140 autres tests passent : les 3139 de la base, plus la ligne de
 triangulation.
 
+Lot **L10**, RED de L10.1 et L10.2 joués d'affilée (demande de la session principale), avant tout
+GREEN. Base sur `refactor/buttons-l10` (plan, ADR non commités) : `189 passed (189)` fichiers,
+`3142 passed (3142)` tests, exit 0. Chaque preuve : `pnpm exec ng cache clean`,
+`rm -rf node_modules/.vite`, puis `pnpm test; echo exit=$?`. `pnpm lint` : « All files pass
+linting » ; `prettier --check` vert sur tout `src/` touché.
+
+### Tranche L10.1 — le bouton devient une directive au gabarit d'appel
+
+**Échafaudage (à remplacer en GREEN)** : `shared/ui/button.ts` est la directive de l'API
+(`button[appButton], a[appButton]`, `host: { '[class]': 'classes()' }`, entrées `variant`,
+`size`, `rounded`, `block`), union sans `ghost-icon`, `classes = computed(() => '')`. Les 38
+`<app-button>` des 23 fichiers passent par la correspondance de migration (script, puis
+prettier) : `appButton`, `type` explicite (`submit` sur les 6 envois, `button` ailleurs),
+`severity` + `variant` → `variant`, `size="large"` retiré (3), `[ariaLabel]` →
+`[attr.aria-label]`. `admin-gallery-image-item.ts:24` **inchangé**.
+
+**`shared/ui/button.spec.ts`** (réécrit ; hôtes `@Component` locaux, `imports: [Button]`,
+`provideRouter([])`, sélection par `data-testid="b"` ; attendus littéraux `BASE`, `PRIMARY` en tête
+du fichier ; 13 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| sans liaison | `<button appButton type="button">` | `HTMLButtonElement` ; classes triées = base + `rounded-md` + `px-5` + `primary` |
+| variantes (`it.each` × 7) | `variant` lié par `input.required` de l'hôte (`setInput`) | base + `rounded-md` + `px-5` + chaîne de la variante, égalité exacte |
+| `size="icon"` | littéral | base + `rounded-md` + `min-w-11` + `justify-center` + `primary` ; aucune classe `px`, `pl` ou `pr` |
+| `[rounded]="true"` | littéral | base + `rounded-full` + `px-5` + `primary` |
+| `[block]="true"` | littéral | base + `rounded-md` + `px-5` + `w-full` + `justify-center` + `primary` |
+| `type="submit"` + `class="mt-5"` | littéral | `type` `submit` ; classes = gabarit + `mt-5` (fusion avec la liaison d'hôte) |
+| `<a appButton routerLink="/projects">` | `RouterLink` importé | `HTMLAnchorElement`, `href` `/projects`, classes = gabarit `primary` |
+
+Les deux points « aucune classe de l'ancien gabarit » et « aucun élément `app-button` » ne sont
+pas écrits : l'égalité exacte des classes implique le premier, et le second, sur un hôte de test qui
+ne contient pas `app-button`, ne peut pas échouer.
+
+Adaptation mécanique : `contact-form.spec.ts` (`'button[type="submit"]'`),
+`about-motivation.spec.ts` et `admin-overview.spec.ts` (sélecteur `[data-testid=…]` sans
+` button`), `two-factor-disable-form.spec.ts` (3 `?.querySelector('button')` retirés),
+`confirm-dialog.spec.ts` (`nativeButton` : l'élément du `data-testid` s'il est un `<button>`) — 7
+sites repointés, aucune valeur attendue modifiée. `two-factor-enable-form.spec.ts` non touché : son
+`data-testid="twofa-generate"` est sur un `<div>` qui contient le bouton, la descente reste juste.
+
+RED confirmé via `pnpm test` le 2026-10-09 18:32 : 23 failed / 3152 total pour cette tranche (4
+fichiers en échec sur 189), exit 1. Échecs = assertions uniquement (`AssertionError` ; aucune
+erreur TS, `NG0`, de harnais ni dépassement de délai) :
+
+- `button.spec.ts` (13/13) : classes `[]` (ou `['mt-5']`) au lieu du gabarit ;
+- `admin-project-gallery.spec.ts` (8) : `focused: false` — confirmation qui prend le focus,
+  retour sur « Supprimer » après annulation, focus sur le bouton déplacé (`it.each` × 4), focus
+  après suppression (`it.each` × 2). La ligne 24 cherche un `<button>` **dans** l'hôte devenu
+  `<button>` ;
+- `confirm-dialog.spec.ts` (1) : « solid danger button » (`bg-status-error`,
+  `text-on-status-error` absents) ;
+- `admin-project-form.spec.ts` (1) : « uses the error token » (`text-status-error` absent).
+
+Les deux derniers ne sont pas listés au plan : ils assertent des classes que le nouveau contrat
+garde (`danger`, `text-danger`), et repassent au vert avec `classes`. Les 3129 autres tests
+passent : la base (3142) moins les 3 de l'ancien `button.spec.ts` et les 10 existants rendus
+rouges.
+
+### Tranche L10.2 — les appels et les liens icônes passent par la directive
+
+**Échafaudage (à remplacer en GREEN)** : l'union gagne `'ghost-icon'` (`classes` rend toujours
+`''`). Les 30 sites `link-btn-*` (18 fichiers) et les 4 `icon-link` (2 fichiers) passent par la
+correspondance : `appButton` (+ `variant="outlined"` / `variant="ghost-icon"`), classes
+`link-btn-*`, `icon-link` et `cursor-pointer` retirées (attribut `class` supprimé s'il est vide),
+`Button` importé là où il ne l'était pas (15 fichiers, import ajouté après le dernier import et en
+tête du tableau `imports`, ordre à ranger au refactor). Les 4 `@utility` restent dans `styles.css`,
+sans usage.
+
+**`shared/ui/button.spec.ts`** (4 tests ajoutés ; attendus littéraux `OUTLINED`, `GHOST_ICON`)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| `ghost-icon` (`it.each` × 2) | `<a appButton variant="ghost-icon" href>` seul, puis avec `size="icon"` et `[rounded]="true"` | `HTMLAnchorElement` ; classes = exactement la chaîne `ghost-icon`, rien de la base |
+| lien contour | `<a appButton variant="outlined" href>` | base + `rounded-md` + `px-5` + `outlined` |
+| bascule pressée | `<button appButton variant="outlined" type="button" aria-pressed="true" class="aria-pressed:border-primary">` | `aria-pressed` `true` ; classes = gabarit `outlined` + `aria-pressed:border-primary` |
+
+RED confirmé via `pnpm test` le 2026-10-09 18:33 : 27 failed / 3156 total, cumul avec L10.1 (4
+fichiers en échec sur 189), exit 1. Les 4 tests neufs sont rouges par assertion (classes `[]` ou
+`['aria-pressed:border-primary']`). Seuls les 2 `ghost-icon` sont le RED propre de la tranche ; le
+lien contour et la bascule pressée repassent au vert avec le GREEN de L10.1 (triangulation assumée
+par le plan). Aucune suite ne citait `link-btn` ni `icon-link` ; les 23 autres rouges sont ceux de
+L10.1, inchangés, et les 3129 autres tests passent.
+
+### Sans RED : L10.3 et L10.4
+
+Aucun test écrit, conformément au plan : happy-dom n'applique ni les couches de cascade ni
+`:focus-visible` (L10.3), ni les media queries ni les animations (L10.4). Preuves au navigateur et
+sur les chunks compilés, décrites au plan.
+
 ## Journal des tranches
 
 - **Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée** : GREEN 3059 passed / 3060 total (seul rouge : « sans testId » de `field-error.spec.ts`, défaut du test, cf. ## Verify) · refactor : aucun
@@ -2168,6 +2715,10 @@ triangulation.
 - **Tranche L8.6 — un projet introuvable le dit et ramène à la liste** : GREEN 3129 passed / 3129 total · refactor : ordre alphabétique des imports `components/*` rétabli dans `admin-project-editor.ts`
 - **Tranche L9.1 — les étiquettes passent par le champ `tags` du formulaire** : GREEN 3139 passed / 3139 total ; `[formField]` accepte `readonly string[]` des deux côtés (`ngc -p tsconfig.app.json`, `strictTemplates`, exit 0), repli `string[]` non nécessaire · refactor : aucun (le membre `tags` d'`EditorDraft`, son `linkedSignal` et les clés `tags` de `baseline`/`edited` disparaissent dans la tranche elle-même)
 - **Tranche L9.2 — retirer puis rajouter une étiquette ne compte pas comme une modification** : GREEN 3142 passed / 3142 total ; le spread `{ ...draft, tags: new Set(draft.tags), cover }` est accepté tel quel comme `Omit<TDraft, 'tags'> & …` (`ngc`, exit 0), repli par déstructuration non nécessaire · refactor : aucun (`baseline` et `edited` passent par `toEdited` dans la tranche elle-même)
+- **Tranche L10.1 — le bouton devient une directive au gabarit d'appel** : GREEN 3156 passed / 3156 total (L10.2 compris : la chaîne `ghost-icon` est posée dans le même `computed`) · refactor : aucun
+- **Tranche L10.2 — les appels et les liens icônes passent par la directive** : GREEN 3156 passed / 3156 total · refactor : imports de `Button` rangés dans les 15 fichiers qui l'ont gagné (ligne d'import à sa place alphabétique parmi `@shared/*`, entrée du tableau `imports` après `AppIcon` ou les imports Angular)
+- **Tranche L10.3 — sans RED** : GREEN inchangé · refactor : aucun
+- **Tranche L10.4 — sans RED** : GREEN inchangé · refactor : aucun
 
 ## Verify
 
@@ -2335,6 +2886,37 @@ Runtime : `ng serve` (port 4300) derrière un faux backend local sur le port 300
 8. Console : aucune `NG0…` en erreur (seulement `NG0751`, un log HMR du serveur de dev). Entrées propres à l'environnement : `403` (écritures refusées par le faux backend) et `InvalidStateError: Transition was aborted` (View Transitions, préexistante).
 
 **PASS**.
+
+### Lot L10
+
+Lot L10 entier (L10.1 à L10.4), 2026-10-09, branche `refactor/buttons-l10` (non commitée).
+
+Gates (codes de sortie lus) :
+
+- `pnpm exec ng cache clean`, `rm -rf node_modules/.vite`, puis `pnpm test; echo exit=$?` : 189 fichiers sur 189, 3156 tests sur 3156, `exit=0` ;
+- `pnpm lint` : « All files pass linting. », exit 0. `@angular-eslint/template/button-has-type` en `error` : sonde temporaire (`<button>` sans `type` dans un gabarit en ligne, fichier supprimé ensuite) → « Type for <button> is missing », la règle couvre les gabarits en ligne ;
+- `pnpm run format:check` : « All matched files use Prettier code style! », exit 0 ;
+- `pnpm run build --configuration production` : 20 routes prérendues, CSP sur 21 pages, exit 0, puis `git checkout -- public/sitemap.xml public/rss.xml`.
+
+Preuves de fin de lot (grep) : `<app-button` / `app-button ` dans `src/app`, `link-btn` / `icon-link` dans `src` et `DESIGN.md`, `size="large"`, `styles:` dans `button.ts` : vides. `querySelector('button')` hors spec : `admin-content-image-upload.ts` (son propre hôte) et les deux aides de test `press-test-id.ts`, `confirm-dialog-page.ts` (déjà conditionnelles).
+
+Preuve visuelle. Builds prod de `master` (`1f4d9c1`, worktree temporaire dans le scratchpad, `pnpm install --frozen-lockfile`, supprimé ensuite) et de la branche, copiés et servis en statique (avant `127.0.0.1:4317`, après `127.0.0.1:4318`, repli `index.csr.html` pour l'admin). Dans les **copies servies seulement**, l'URL d'API de prod est remplacée par un faux backend local (`127.0.0.1:4319`) et la balise CSP retirée, à l'identique des deux côtés. Faux backend : `/auth/me`, messages, `unread-count` et statistiques simulés, `blog/posts/admin` servi par la liste publique, autres GET relayés en lecture vers l'API de prod, **toute requête non-GET refusée localement (403), jamais relayée** : journal de 1931 requêtes, 1011 GET relayés, 539 simulés, 381 refusés (375 `POST /analytics/track`, 6 `PUT …/images/order`). Navigateur : Chromium sans tête (Playwright), thème posé par la clé `j-ned:theme` qu'écrit le bouton de thème, `auth:session=1` pour l'admin.
+
+1. Instantané (41 propriétés calculées, boîte de l'élément et de son parent, état `disabled` forcé puis restauré) sur 9 pages publiques × clair/sombre × 375/1280 px et 10 pages admin × clair/sombre à 1280 px. Clé = page + `data-testid`, sinon nom + texte + rang. **358 entrées, même nombre de cibles par page des deux côtés, 0 entrée sans correspondance.**
+   - Appels (92) et icônes (32) : styles, boîtes et boîtes des parents identiques, sauf : `settings-logout` (`<button>` d'appel qui n'écrivait pas `cursor-pointer`) passe de `default` à `pointer` ; en `disabled` forcé, 3 `<button>` d'appel (`settings-logout`, `mark-all-read`, `device-exclusion-toggle`) prennent l'opacité 0,5 de la base, alors qu'aucun n'est jamais `disabled` (ils passent par `aria-disabled` / `aria-pressed`) ; `hero-cta-offers` est décalé de 8 px parce que son voisin, l'ex-`<app-button>` du héros, s'élargit (parent identique). `savebar-submit` : identique (0,6, `wait`).
+   - Actions (234) : seuls écarts relevés, tous dans « Écarts attendus » 1 : 15 px, graisse 600, interlignage 22,5 px, plus de `py-2.5`, de `nowrap` ni de `justify-content: center`, transition 150 ms, pleins sans bordure ni ombre, contour secondaire en `foreground/15`, anciens `large` à 44 px de haut et `px-5`. `display` : `flex` → `inline-flex` (10 : l'enveloppe `inline-flex` blockifiait le bouton) et `inline-flex` → `none` (36 : bouton de thème sous `sm`, de menu à partir de `lg`, la classe de masquage est désormais sur le bouton ; invisibles des deux côtés). Boîtes des parents : groupe d'actions de l'en-tête +8 px de large (libellé du CTA), CTA d'À propos sur une ligne (112 → 44 px à 375, 54 → 44 à 1280), envoi du contact 124,5 → 118,5 px (ancien `large`).
+   - **Défaut trouvé et corrigé** : « Enregistrer » du texte alternatif de la galerie, élément direct d'une grille, s'étirait sur toute la largeur (113 → 293 px) une fois l'enveloppe partie. Classe de placement `justify-self-start` sur le site (`admin-gallery-image-item.ts`), directive inchangée ; rejoué : 113 → 119 px (police seule).
+2. États joués sur les deux origines : lien d'appel contour (À propos, « Profil LinkedIn ») au repos et survolé : identique ; `header-cta` survolé : avant opacité 0,9, après fond `primary-bg/90` (attendu) ; désactivé et survolé : opacité 0,5 des deux côtés ; barre d'enregistrement `disabled` survolée : 0,6 et `wait` des deux côtés (désactivation forcée, pas un envoi lent) ; bascule d'Audience `aria-pressed="true"` survolée : bordure `primary` des deux côtés ; « Tout marquer comme lu » `aria-disabled="true"` survolé : identique.
+3. Focus clavier (L10.3), `Tab` puis focus, lu après 400 ms : bouton de thème `4px` → rayon plein, `header-cta` `4px` → `6px`, lien de pied de page et lien de texte d'article `4px` des deux côtés ; `outline` 2 px, décalage 2 px et couleur identiques sur les quatre. Feuille compilée : la déclaration `border-radius:4px` du sélecteur de focus est dans `@layer base`, la règle hors couche ne porte plus que `outline` et `outline-offset`. Effet de bord : l'anneau d'un ex-`<app-button>` apparaît désormais en fondu de 150 ms (`transition-colors` inclut `outline-color`), comme celui des appels avant le lot.
+4. Mouvement réduit (L10.4) : le bundle principal contient les deux règles sous `@media(prefers-reduced-motion:reduce)` (`.animate-slide-in-right[_ngcontent-%COMP%]` ; `.animate-slide-right…, .animate-slide-left…`), 3 occurrences contre 1 avant ; au navigateur sur `/`, les deux `CSSMediaRule` sont présentes ; tiroir ouvert à 375 px sous `reduce` : `animation-name` `none` sur le panneau (avant : `slide-in-right`), fondu du fond conservé.
+5. Diff des sélecteurs de la feuille globale : retirés `.link-btn`, `.link-btn-primary(:hover)`, `.link-btn-outline(:hover)`, `.icon-link(:hover, :focus-visible)`, `.bg-foreground/15`, `.border-primary/60`, `.hover:border-primary/60` ; ajoutés `.bg-status-error/90`, `.border-status-error/60`, `.hover:bg-primary-bg/90` et `.border-muted` (candidat lu par Tailwind dans le texte de la spec, sans usage).
+6. Fonctionnel : contact vide soumis → 3 alertes, focus sur `#name`, identique ; « Ajouter » des rangées répétées : 5 → 6 rangées, **aucune** requête d'écriture ; déplacement d'une capture : le focus reste sur le bouton du déplacement.
+7. Captures côte à côte (clair, avant à gauche) : `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/harness/out/ecarts/*-side-by-side.png` (en-tête 375/1280, héros, projets de l'accueil, contact, À propos 375/1280, offre, connexion 375/1280, liste et éditeur de projet, galerie, messages, audience, CV, paramètres, sécurité) ; anneaux de focus `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/harness/out/shots/focus-*-{before,after}.png`.
+8. Console : seules erreurs, des deux côtés, les 403 du faux backend (écritures refusées). Aucune `NG0…`.
+
+Non couvert : « Réessayer » des chargements en erreur (états non provoqués) et les écrans 2FA activée.
+
+**PASS**, sous réserve de l'arbitrage des 2 écarts d'appel non listés au plan (curseur de `settings-logout`, opacité en `disabled` forcé sur 3 boutons jamais désactivés).
 
 ## Review code
 
@@ -2540,3 +3122,46 @@ Contrôles demandés :
 - non couvert par les gates : la création d'article (`POST` avec `tags`) n'a pas été rejouée par le reviewer, seulement la mise à jour d'un projet (`PATCH` bloqué) et le compteur d'un article. Elle est couverte par `admin-post-editor.spec.ts` (`pickSubject` → payload).
 
 Remarque non bloquante : compléter l'énumération du `## Verify` › Lot L9 › Preuves de fin de lot avec `editor-draft.ts:126` (projection `toEdited`, prescrite par le plan).
+
+Lot L10, 2026-10-09, diff de travail `git diff master` (base `1f4d9c1`, 52 fichiers suivis) + fichier non suivi `docs/adr/0017-bouton-en-directive-d-attribut.md`. Règle CSS de `CLAUDE.md` / profil lue dans la PR #193 (ouverte) : le code s'y conforme.
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm exec ng cache clean` + `rm -rf node_modules/.vite`, `pnpm install --frozen-lockfile` exit 0, puis `pnpm test; echo exit=$?` → 189 fichiers / 3156 tests passés, `exit=0`) / lint ✅ (`pnpm lint` → `All files pass linting.`, exit 0) / format ✅ (`pnpm run format:check` → `All matched files use Prettier code style!`, exit 0) / build ✅ (`pnpm run build --configuration production` → `Prerendered 20 static routes.`, CSP sur 21 pages, exit 0, puis `git checkout -- public/sitemap.xml public/rss.xml`, `public/` propre)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main sur les lignes ajoutées (`src/`, `eslint.config.js`) : export default 0, `effect(` 0, helpers zone 0, archéologie (motif du profil) 0, tests exclus 0, sécurité/debug 0, `let` 0, `any` 0, snapshot 0, mutation en place 11 hits levés (tous `.sort()` sur un tableau neuf `[...x]` dans `button.spec.ts`) ; U+202F/U+00A0 littéral dans les lignes ajoutées : 0 ; un commentaire ajouté, WHY d'une ligne sans référence (`styles.css:201`)
+**Warnings de gate** : aucun (sorties de test, lint, format et build relues en entier)
+**Rendu compilé** : ✅ (directive sans `styles:` : plus aucune règle `[_nghost]`/`[_ngcontent]` de bouton ; feuille globale : `:where(a,button,[role=button],summary):focus-visible{border-radius:4px}` dans `@layer base`, règle hors couche réduite à `outline`/`outline-offset` ; `main-*.js` porte les deux `@media (prefers-reduced-motion:reduce)` préfixés `[_ngcontent-%COMP%]`)
+**Preuve de verify runtime** : ✅ (`## Verify` › Lot L10 complète et cohérente avec le diff ; relue — `diff.txt`/`diff.json`, captures — et rejouée par le reviewer : `states.mjs` sur les copies servies avant/après derrière le faux backend local, journal = uniquement des `POST /analytics/track` et 2 `PUT …/images/order` refusés en 403 localement, aucune écriture relayée ; résultats identiques à ceux consignés ; console de la branche relevée sur 12 pages publiques et admin : aucune erreur hors 403 du faux backend, 0 élément `app-button` ; serveurs arrêtés)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅ (deux écarts d'appel hors liste arbitrés ci-dessous ; `justify-self-start` hors liste de fichiers mais prescrit par les risques du plan)
+
+Contrôles demandés :
+- Directive `button[appButton], a[appButton]` (`button.ts:38-39`), classes par `host: { '[class]': 'classes()' }` via `computed()`, ni `@apply` ni `styles:`, ni `changeDetection`, ni `role`, ni `type` posé. Chaînes conformes au tableau « Classes » du plan, morceau par morceau ; `ghost-icon` court-circuite la base (`size`/`rounded`/`block` sans effet, épinglé par l'`it.each` × 2).
+- Migration vérifiée par script contre `master` : les 38 `<app-button>` (23 fichiers) retrouvent sur la branche le même triplet (variante attendue d'après `severity` + `variant`, `type`, `data-testid`) ; les 34 sites `link-btn-*` / `icon-link` (20 fichiers) retrouvent élément, variante, classes restantes (moins `cursor-pointer`) et `data-testid`. `size="icon"` 10/10, `[block]` 8/8, `[rounded]` 2/2, `[disabled]` conservés (le seul retiré est l'interne de l'ancien `button.ts`).
+- Preuves de fin de lot (grep) : `<app-button`, `link-btn`, `icon-link` (dans `src` et `DESIGN.md`), `size="large"`, `styles:` de `button.ts` : vides. `querySelector('button')` hors spec : `admin-content-image-upload.ts:141` (son propre hôte) et les deux aides de test conditionnelles.
+- `@utility link-btn*` et `icon-link` supprimés avec leur commentaire (`styles.css`) ; `button-has-type` en `error` (`eslint.config.js:74`).
+- Focus de la galerie : `admin-gallery-image-item.ts:23`, `ref?.nativeElement.focus()` ; rejoué : après déplacement, focus sur `admin-gallery-item-down` lui-même.
+- L10.3 : `styles.css:200-204` ; rejoué : bouton de thème `4px` → rayon plein, `header-cta` `4px` → `6px`, pied de page et lien de texte d'article `4px` des deux côtés, anneau identique.
+- L10.4 : `toast.ts:112`, `drawer.ts:102` ; rejoué : tiroir sous `reduce` → `animation-name: none` (avant : `slide-in-right`), fondu du fond conservé.
+- `justify-self-start` (`admin-gallery-image-item.ts:61`) : **légitime**. Le bouton devient l'élément direct d'une grille (`grid gap-2`, l. 46) une fois l'enveloppe partie et s'étirait (113 → 293 px) ; le plan prescrit exactement ce remède (« classe de placement sur le site, sans toucher la directive ») et `admin-settings.ts` emploie le même. Capture côte à côte : rendu conforme.
+- Imports rangés (`Button` à sa place parmi les `@shared/*` et dans `imports`), aucun code mort (`ButtonVariant` exporté pour la spec, prescrit par l'API du plan ; `ButtonSize` privé).
+- `prettier --write` sur les specs de `qa` : aucune valeur attendue modifiée. `button.spec.ts` porte exactement les attendus du plan (base, 7 variantes, `OUTLINED`, `GHOST_ICON`, 17 tests) ; les 5 specs adaptées ne changent que le sélecteur (`two-factor-disable-form.spec.ts` : re-coupe de ligne seule). `two-factor-enable-form.spec.ts` non touché, à raison.
+
+Écarts hors liste relevés par la preuve visuelle, arbitrés :
+- `settings-logout` (`admin-settings.ts:52`), curseur `default` → `pointer` : **acceptable**. C'était le seul `<button>` d'appel sans `cursor-pointer` en ligne ; il rejoint ses 5 voisins et tous les autres boutons du site. Le plan l'a manqué parce qu'il n'a raisonné le `cursor-pointer` de la base que sur les `<a>` et les 5 boutons qui l'écrivaient. Correction de l'oubli, pas une régression.
+- Opacité 0,5 (et `not-allowed`) en `disabled` **forcé** sur `settings-logout`, `mark-all-read`, `device-exclusion-toggle` : **acceptable, invisible en usage**. Aucun des trois ne lie `disabled` (vérifié dans les gabarits : rien, `aria-disabled`, `aria-pressed`) ; l'écart n'existe que sous l'état forcé du harnais. S'ils deviennent un jour désactivables, ils prendront l'apparence désactivée commune, ce qui est le comportement voulu.
+- Autres écarts calculés sans effet visible, relus dans `diff.txt` : `display` `inline-flex` → `none` (36, éléments masqués des deux côtés), `min-width` `auto` → `0px` (10, bouton « Enregistrer » devenu élément de grille), décalage de 8 px de `hero-cta-offers` dû à l'élargissement de son voisin (écart attendu 1).
+
+**Tests notables** :
+- ✨ `button.spec.ts` : égalité exacte des classes triées contre des attendus littéraux, défauts testés par un hôte sans liaison ; une classe ajoutée ou perdue dans le `computed` fait échouer.
+- ✨ `admin-project-gallery.spec.ts` (focus après déplacement/suppression) : est passé rouge par assertion à l'échafaudage, il épingle bien la ligne 23 de la galerie.
+- ⚠️ `button.spec.ts:211` : pas de ligne vide avant l'`it.each` `ghost-icon`. Cosmétique, non bloquant.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet sur la livraison (Dokploy continu d'après `CLAUDE.md`) · monitoring : Sentry
+- `disabled:opacity-60` / `disabled:cursor-wait` de `admin-save-bar.ts` l'emportent sur la base par l'ordre de génération de Tailwind 4.3.3, pas par construction (risque nommé par le plan et l'ADR) ; rejoué identique (0,6, `wait`).
+- (b) préexistant, informatif : la détection automatique de sources de Tailwind lit `specs/*.md`. Le build du reviewer, lancé après l'écriture du `## Verify`, émet `.bg-foreground/15`, `.border-primary/60`, `.hover:border-primary/60` (cités dans ce texte), absents du build de l'implémenteur : JS identique, feuille globale différente. Du CSS mort qui dépend de la doc ; un `@source not "../specs"` le réglerait, hors lot.
+- non couvert par les gates : « Réessayer » des chargements en erreur et écrans 2FA activée (non provoqués) ; couverts par les specs de composant au niveau classes et clic.

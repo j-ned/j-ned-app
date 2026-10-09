@@ -20,8 +20,7 @@ import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
 import { imageAltSchema } from './admin-image-alt-schema';
 
-const focusButton = (ref: ElementRef<HTMLElement> | undefined): void =>
-  ref?.nativeElement.querySelector('button')?.focus();
+const focusButton = (ref: ElementRef<HTMLElement> | undefined): void => ref?.nativeElement.focus();
 
 @Component({
   selector: 'app-admin-gallery-image-item',
@@ -55,14 +54,15 @@ const focusButton = (ref: ElementRef<HTMLElement> | undefined): void =>
           [attr.aria-describedby]="altInError ? altErrorId() : null"
           class="form-input"
         />
-        <app-button
+        <button
+          appButton
           type="submit"
-          severity="secondary"
           variant="outlined"
-          [ariaLabel]="'Enregistrer le texte alternatif de la capture ' + rank()"
+          class="justify-self-start"
+          [attr.aria-label]="'Enregistrer le texte alternatif de la capture ' + rank()"
         >
           Enregistrer
-        </app-button>
+        </button>
       </div>
       <app-field-error
         [field]="altForm.alt"
@@ -77,65 +77,70 @@ const focusButton = (ref: ElementRef<HTMLElement> | undefined): void =>
         >
         <div class="flex flex-wrap justify-end">
           @if (rank() > 1) {
-            <app-button
+            <button
+              appButton
+              type="button"
+              variant="text-muted"
               #up
               data-testid="admin-gallery-item-up"
-              severity="secondary"
-              variant="text"
               size="icon"
-              [ariaLabel]="'Monter la capture ' + rank()"
+              [attr.aria-label]="'Monter la capture ' + rank()"
               [disabled]="busy()"
               (click)="moveRequested.emit(-1)"
             >
               <app-icon name="arrow-up" [size]="16" />
-            </app-button>
+            </button>
           }
           @if (rank() < total()) {
-            <app-button
+            <button
+              appButton
+              type="button"
+              variant="text-muted"
               #down
               data-testid="admin-gallery-item-down"
-              severity="secondary"
-              variant="text"
               size="icon"
-              [ariaLabel]="'Descendre la capture ' + rank()"
+              [attr.aria-label]="'Descendre la capture ' + rank()"
               [disabled]="busy()"
               (click)="moveRequested.emit(1)"
             >
               <app-icon name="arrow-down" [size]="16" />
-            </app-button>
+            </button>
           }
           @if (confirmingRemoval()) {
-            <app-button
+            <button
+              appButton
+              type="button"
+              variant="outlined-danger"
               #confirm
               data-testid="admin-gallery-item-confirm-remove"
-              severity="danger"
-              variant="outlined"
-              [ariaLabel]="'Confirmer la suppression de la capture ' + rank()"
+              [attr.aria-label]="'Confirmer la suppression de la capture ' + rank()"
               [disabled]="busy()"
               (click)="removeRequested.emit()"
             >
               Confirmer
-            </app-button>
-            <app-button
-              data-testid="admin-gallery-item-cancel-remove"
-              severity="secondary"
+            </button>
+            <button
+              appButton
+              type="button"
               variant="outlined"
+              data-testid="admin-gallery-item-cancel-remove"
               (click)="cancelRemoval()"
             >
               Annuler
-            </app-button>
+            </button>
           } @else {
-            <app-button
+            <button
+              appButton
+              type="button"
+              variant="text-danger"
               #remove
               data-testid="admin-gallery-item-remove"
-              severity="danger"
-              variant="text"
               size="icon"
-              [ariaLabel]="'Supprimer la capture ' + rank()"
+              [attr.aria-label]="'Supprimer la capture ' + rank()"
               (click)="askRemoval()"
             >
               <app-icon name="trash" [size]="16" />
-            </app-button>
+            </button>
           }
         </div>
       </div>

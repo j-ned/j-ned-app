@@ -99,6 +99,12 @@ const FOCUSABLE_SELECTOR =
     .animate-slide-left {
       animation: slide-in-left 0.25s ease-out;
     }
+    @media (prefers-reduced-motion: reduce) {
+      .animate-slide-right,
+      .animate-slide-left {
+        animation: none;
+      }
+    }
   `,
 })
 export class Drawer {

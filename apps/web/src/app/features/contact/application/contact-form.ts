@@ -210,12 +210,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     Politique de confidentialité
                   </a>
                 </p>
-                <app-button
-                  type="submit"
-                  severity="primary"
-                  size="large"
-                  [disabled]="contactForm().submitting()"
-                >
+                <button appButton type="submit" [disabled]="contactForm().submitting()">
                   @if (contactForm().submitting()) {
                     <app-icon name="spinner" [size]="20" class="animate-spin" />
                     <span>Envoi en cours...</span>
@@ -223,7 +218,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     <span>Envoyer le message</span>
                     <app-icon name="send" [size]="20" />
                   }
-                </app-button>
+                </button>
               </div>
             </form>
           </div>

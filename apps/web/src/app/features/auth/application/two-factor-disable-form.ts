@@ -51,18 +51,20 @@ const EMPTY = { password: '' };
 
           @if (!showForm()) {
             <div class="flex flex-col gap-3 sm:flex-row">
-              <app-button
-                severity="danger"
-                variant="outlined"
+              <button
+                appButton
+                type="button"
+                variant="outlined-danger"
                 [block]="true"
                 class="sm:flex-1"
                 data-testid="twofa-disable-show"
                 (click)="requestDisable.emit()"
               >
                 Désactiver le 2FA
-              </app-button>
-              <app-button
-                severity="primary"
+              </button>
+              <button
+                appButton
+                type="button"
                 [block]="true"
                 class="sm:flex-1"
                 [disabled]="loading()"
@@ -70,7 +72,7 @@ const EMPTY = { password: '' };
                 (click)="reconfigure.emit()"
               >
                 Reconfigurer
-              </app-button>
+              </button>
             </div>
           } @else {
             <form [formRoot]="disableForm" class="space-y-4">
@@ -95,8 +97,9 @@ const EMPTY = { password: '' };
                 />
               </div>
               <div class="flex flex-col gap-3 sm:flex-row">
-                <app-button
-                  severity="secondary"
+                <button
+                  appButton
+                  type="button"
                   variant="outlined"
                   [block]="true"
                   class="sm:flex-1"
@@ -104,10 +107,11 @@ const EMPTY = { password: '' };
                   (click)="cancelled.emit()"
                 >
                   Annuler
-                </app-button>
-                <app-button
+                </button>
+                <button
+                  appButton
                   type="submit"
-                  severity="danger"
+                  variant="danger"
                   [block]="true"
                   class="sm:flex-1"
                   [disabled]="loading()"
@@ -117,7 +121,7 @@ const EMPTY = { password: '' };
                   } @else {
                     Confirmer
                   }
-                </app-button>
+                </button>
               </div>
             </form>
           }

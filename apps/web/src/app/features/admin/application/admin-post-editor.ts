@@ -6,6 +6,7 @@ import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPostInput } from '@features/blog/domain/models/blog-post.model';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
 import { loadState } from '@shared/ui/load-state';
 import { ToastStore } from '@shared/ui/toast-store';
 import { AdminEditorFrame, type AdminEditorCopy } from './components/admin-editor-frame';
@@ -41,6 +42,7 @@ const POST_EDITOR_COPY: AdminEditorCopy = {
   imports: [
     RouterLink,
     AppIcon,
+    Button,
     AdminEditorFrame,
     AdminPostForm,
     AdminPostPreview,
@@ -60,10 +62,12 @@ const POST_EDITOR_COPY: AdminEditorCopy = {
       </p>
       <div adminPageAside class="flex flex-wrap gap-2.5 lg:justify-end">
         <a
+          appButton
+          variant="outlined"
           data-testid="admin-post-preview-link"
           routerLink="."
           fragment="apercu"
-          class="link-btn-outline 2xl:hidden"
+          class="2xl:hidden"
         >
           <app-icon name="eye" [size]="16" />Voir l'aperçu
         </a>

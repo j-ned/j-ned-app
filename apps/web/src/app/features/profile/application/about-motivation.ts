@@ -26,24 +26,19 @@ import { AppIcon } from '@shared/icons/app-icon';
         </p>
         <p class="mt-5 max-w-[56ch] text-[1.0625rem] text-muted">{{ m.description }}</p>
         <div class="mt-9 flex flex-wrap gap-3">
-          <app-button
-            severity="primary"
-            size="large"
-            data-testid="about-cta-projects"
-            (click)="goToProjects()"
-          >
+          <button appButton type="button" data-testid="about-cta-projects" (click)="goToProjects()">
             Voir les projets
             <app-icon name="arrow-right" [size]="20" />
-          </app-button>
-          <app-button
-            severity="secondary"
+          </button>
+          <button
+            appButton
+            type="button"
             variant="outlined"
-            size="large"
             data-testid="about-cta-contact"
             (click)="goToContact()"
           >
             Me contacter
-          </app-button>
+          </button>
         </div>
       </section>
     }

@@ -54,8 +54,7 @@ async function renderHost(open: boolean): Promise<{
 
 function nativeButton(root: ParentNode, testId: string): HTMLButtonElement | null {
   const element = byTestId(root, testId);
-  if (element instanceof HTMLButtonElement) return element;
-  return element?.querySelector('button') ?? null;
+  return element instanceof HTMLButtonElement ? element : null;
 }
 
 describe('ConfirmDialog', () => {

@@ -109,6 +109,11 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
     .animate-slide-in-right {
       animation: slide-in-right 0.25s ease-out;
     }
+    @media (prefers-reduced-motion: reduce) {
+      .animate-slide-in-right {
+        animation: none;
+      }
+    }
   `,
 })
 export class Toast {

@@ -26,9 +26,9 @@ describe('TwoFactorDisableForm: enabled status (showForm=false)', () => {
     let emitted = 0;
     fixture.componentInstance.reconfigure.subscribe(() => (emitted += 1));
 
-    const button = fixture.nativeElement
-      .querySelector('[data-testid="twofa-reconfigure"]')
-      ?.querySelector('button') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector(
+      '[data-testid="twofa-reconfigure"]',
+    ) as HTMLButtonElement;
     expect(button).not.toBeNull();
     button.click();
     fixture.detectChanges();
@@ -41,9 +41,9 @@ describe('TwoFactorDisableForm: enabled status (showForm=false)', () => {
     fixture.componentRef.setInput('loading', true);
     fixture.detectChanges();
 
-    const button = fixture.nativeElement
-      .querySelector('[data-testid="twofa-reconfigure"]')
-      ?.querySelector('button') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector(
+      '[data-testid="twofa-reconfigure"]',
+    ) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
   });
 });
@@ -78,9 +78,9 @@ describe('TwoFactorDisableForm: disable form (showForm=true)', () => {
     let emitted = 0;
     fixture.componentInstance.cancelled.subscribe(() => (emitted += 1));
 
-    const button = fixture.nativeElement
-      .querySelector('[data-testid="twofa-disable-cancel"]')
-      ?.querySelector('button') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector(
+      '[data-testid="twofa-disable-cancel"]',
+    ) as HTMLButtonElement;
     expect(button).not.toBeNull();
     button.click();
     fixture.detectChanges();

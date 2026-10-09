@@ -72,28 +72,31 @@ export type PairRowsConfig<A extends string, B extends string> = {
               />
             </div>
           }
-          <app-button
-            severity="danger"
-            variant="text"
+          <button
+            appButton
+            type="button"
+            variant="text-danger"
             size="icon"
             [attr.data-testid]="settings.testIdPrefix + '-remove'"
             class="max-sm:col-start-3 max-sm:row-start-1"
-            [ariaLabel]="settings.removeLabel + ' ' + rank"
+            [attr.aria-label]="settings.removeLabel + ' ' + rank"
             (click)="removeRow(rowIndex)"
           >
             <app-icon name="trash" [size]="18" />
-          </app-button>
+          </button>
         </div>
       }
     </div>
-    <app-button
+    <button
+      appButton
+      type="button"
       variant="text"
       [attr.data-testid]="settings.testIdPrefix + '-add'"
       class="mt-1.5"
       (click)="addRow()"
     >
       <app-icon name="plus" [size]="16" />{{ settings.addLabel }}
-    </app-button>
+    </button>
   `,
 })
 export class AdminPairRows<A extends string, B extends string> {

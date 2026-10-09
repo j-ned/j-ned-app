@@ -67,24 +67,27 @@ const PERIODS: readonly FilterOption<DateRangeKey>[] = [
         </p>
         <div class="flex flex-wrap gap-2.5 lg:justify-end">
           <button
+            appButton
+            variant="outlined"
             type="button"
             data-testid="device-exclusion-toggle"
             [attr.aria-pressed]="deviceExclusion.excluded()"
             (click)="deviceExclusion.toggle()"
-            class="link-btn-outline cursor-pointer aria-pressed:border-primary"
+            class="aria-pressed:border-primary"
           >
             <app-icon [name]="deviceExclusion.excluded() ? 'shield' : 'eye'" [size]="16" />
             {{ deviceExclusion.excluded() ? 'Cet appareil est exclu' : 'Exclure cet appareil' }}
           </button>
-          <app-button
-            severity="secondary"
+          <button
+            appButton
+            type="button"
             variant="outlined"
             data-testid="analytics-export-csv"
             (click)="exportCsv()"
           >
             <app-icon name="download" [size]="16" />
             Exporter en CSV
-          </app-button>
+          </button>
         </div>
       </div>
     </app-admin-page-header>

@@ -62,27 +62,29 @@ import { receivedAgo } from '../admin-messages-view';
           <span class="sr-only">{{ replyLabel() }}</span>
         </a>
         @if (!message().read) {
-          <app-button
-            severity="secondary"
-            variant="text"
+          <button
+            appButton
+            type="button"
+            variant="text-muted"
             size="icon"
             data-testid="message-mark-read"
-            [ariaLabel]="markReadLabel()"
+            [attr.aria-label]="markReadLabel()"
             (click)="markRead.emit()"
           >
             <app-icon name="check" [size]="18" />
-          </app-button>
+          </button>
         }
-        <app-button
-          severity="danger"
-          variant="text"
+        <button
+          appButton
+          type="button"
+          variant="text-danger"
           size="icon"
           data-testid="message-delete"
-          [ariaLabel]="deleteLabel()"
+          [attr.aria-label]="deleteLabel()"
           (click)="deleteRequested.emit()"
         >
           <app-icon name="trash" [size]="18" />
-        </app-button>
+        </button>
       </div>
     </div>
     @if (expanded()) {

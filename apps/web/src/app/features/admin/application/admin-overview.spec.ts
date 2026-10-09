@@ -180,7 +180,7 @@ const errorsIn = (host: HTMLElement, testId: string): number =>
 
 async function retryIn(overview: Overview, testId: string): Promise<void> {
   section(overview.host, testId)
-    .querySelector<HTMLButtonElement>('[data-testid="load-error-retry"] button')
+    .querySelector<HTMLButtonElement>('[data-testid="load-error-retry"]')
     ?.click();
   await settleBounded(overview.fixture);
 }

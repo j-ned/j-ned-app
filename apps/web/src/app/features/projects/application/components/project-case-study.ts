@@ -9,11 +9,12 @@ import {
 } from '../project-kind-copy';
 import type { CaseStudyView } from '../projects-view';
 import { ProjectCover } from './project-cover';
+import { Button } from '@shared/ui/button';
 import { FactList } from '@shared/ui/fact-list';
 
 @Component({
   selector: 'app-project-case-study',
-  imports: [RouterLink, AppIcon, ProjectCover, FactList],
+  imports: [RouterLink, AppIcon, Button, ProjectCover, FactList],
   host: { class: '@container block' },
   template: `
     @let study = caseStudy();
@@ -48,8 +49,8 @@ import { FactList } from '@shared/ui/fact-list';
         }
         <div class="mt-7 flex flex-wrap gap-3">
           <a
+            appButton
             data-testid="project-case-study-link"
-            class="link-btn-primary"
             [routerLink]="['/projects', study.slug]"
             >Voir la fiche<span data-testid="project-case-study-link-context" class="sr-only">{{
               linkContext()
@@ -58,8 +59,9 @@ import { FactList } from '@shared/ui/fact-list';
           </a>
           @if (study.liveUrl; as liveUrl) {
             <a
+              appButton
+              variant="outlined"
               data-testid="project-case-study-live-link"
-              class="link-btn-outline"
               [href]="liveUrl"
               target="_blank"
               rel="noopener noreferrer"

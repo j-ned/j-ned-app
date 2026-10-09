@@ -7,6 +7,7 @@ import type { ProjectImage, ProjectInput } from '@features/projects/domain/model
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
 import { loadState } from '@shared/ui/load-state';
 import { ToastStore } from '@shared/ui/toast-store';
 import { AdminEditorFrame, type AdminEditorCopy } from './components/admin-editor-frame';
@@ -61,6 +62,7 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
   imports: [
     RouterLink,
     AppIcon,
+    Button,
     AdminEditorFrame,
     AdminProjectForm,
     AdminFormSection,
@@ -82,20 +84,23 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
       </p>
       <div adminPageAside class="flex flex-wrap gap-2.5 lg:justify-end">
         <a
+          appButton
+          variant="outlined"
           data-testid="admin-project-preview-link"
           routerLink="."
           fragment="apercu"
-          class="link-btn-outline 2xl:hidden"
+          class="2xl:hidden"
         >
           <app-icon name="eye" [size]="16" />Voir l'aperçu
         </a>
         @if (draft.saved(); as project) {
           <a
+            appButton
+            variant="outlined"
             data-testid="admin-project-public-link"
             [href]="'/projects/' + project.slug"
             target="_blank"
             rel="noopener noreferrer"
-            class="link-btn-outline"
           >
             <app-icon name="external-link" [size]="16" />Voir la fiche<span class="sr-only">
               publique de {{ project.title }} (nouvel onglet)</span

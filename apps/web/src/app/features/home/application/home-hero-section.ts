@@ -24,12 +24,18 @@ import { HomeHero } from './home-hero';
     >
       <app-home-hero [hero]="hero()">
         <div class="animate-fade-up [animation-delay:180ms] mt-9 flex flex-wrap items-center gap-3">
-          <app-button data-testid="hero-cta-contact" (click)="describeProject()">
+          <button
+            appButton
+            type="button"
+            data-testid="hero-cta-contact"
+            (click)="describeProject()"
+          >
             {{ ctaLabels.contact }}
-          </app-button>
+          </button>
           <a
+            appButton
+            variant="outlined"
             routerLink="/offres"
-            class="link-btn-outline"
             data-testid="hero-cta-offers"
             (click)="trackOffersClick()"
             >{{ ctaLabels.offers }}</a

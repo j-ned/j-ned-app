@@ -58,9 +58,7 @@ import { imageAltSchema } from './admin-image-alt-schema';
           testId="admin-gallery-upload-alt-error"
         />
       </div>
-      <app-button type="submit" severity="primary" [disabled]="busy()">
-        Ajouter la capture
-      </app-button>
+      <button appButton type="submit" [disabled]="busy()">Ajouter la capture</button>
     </form>
   `,
 })

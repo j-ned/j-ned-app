@@ -64,33 +64,35 @@ import { ThemeStore } from '@core/theme/theme-store';
         </nav>
 
         <div class="flex items-center gap-2 sm:gap-4">
-          <app-button
-            class="max-sm:hidden"
+          <button
+            appButton
+            type="button"
             variant="outlined"
-            severity="secondary"
+            class="max-sm:hidden"
             size="icon"
             [rounded]="true"
-            [ariaLabel]="themeToggleLabel()"
+            [attr.aria-label]="themeToggleLabel()"
             (click)="toggleTheme()"
           >
             <app-icon [name]="isDarkTheme() ? 'moon' : 'sun'" [size]="16" />
-          </app-button>
+          </button>
 
-          <app-button data-testid="header-cta" (click)="describeProject()">
+          <button appButton type="button" data-testid="header-cta" (click)="describeProject()">
             {{ ctaLabel }}
-          </app-button>
+          </button>
 
-          <app-button
+          <button
+            appButton
+            type="button"
+            variant="text-muted"
             class="lg:hidden"
-            variant="text"
-            severity="secondary"
             size="icon"
             [rounded]="true"
-            [ariaLabel]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
+            [attr.aria-label]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
             (click)="toggleMobileMenu()"
           >
             <app-icon [name]="isMobileMenuOpen() ? 'times' : 'bars'" [size]="20" />
-          </app-button>
+          </button>
         </div>
       </div>
     </header>

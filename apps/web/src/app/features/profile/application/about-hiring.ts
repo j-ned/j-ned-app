@@ -4,10 +4,11 @@ import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
 
 @Component({
   selector: 'app-about-hiring',
-  imports: [AppIcon],
+  imports: [AppIcon, Button],
   host: { class: 'block border-t border-foreground/8' },
   template: `
     <section
@@ -27,10 +28,11 @@ import { AppIcon } from '@shared/icons/app-icon';
       </p>
       <div class="mt-9 flex flex-wrap gap-3">
         <a
+          appButton
+          variant="outlined"
           [href]="linkedinUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="link-btn-outline"
           data-testid="about-hiring-linkedin"
         >
           <app-icon name="linkedin" />
@@ -38,11 +40,12 @@ import { AppIcon } from '@shared/icons/app-icon';
         </a>
         @if (cvUrl(); as url) {
           <a
+            appButton
+            variant="outlined"
             [href]="url"
             target="_blank"
             rel="noopener noreferrer"
             (click)="trackCvDownload()"
-            class="link-btn-outline"
             data-testid="about-hiring-cv"
           >
             <app-icon name="download" />

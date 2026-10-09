@@ -118,8 +118,9 @@ const TOTP_PATTERN = /^\d{6}$/;
         </div>
 
         <div data-testid="twofa-generate">
-          <app-button
-            severity="primary"
+          <button
+            appButton
+            type="button"
             [block]="true"
             [disabled]="loading()"
             (click)="generate.emit()"
@@ -129,7 +130,7 @@ const TOTP_PATTERN = /^\d{6}$/;
             } @else {
               Configurer le 2FA
             }
-          </app-button>
+          </button>
         </div>
       }
     </div>

@@ -4,6 +4,7 @@ import { ContactGateway } from '@features/contact/domain/gateways/contact.gatewa
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 import { counted } from '@shared/format/counted';
 import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { LoadError } from '@shared/ui/load-error';
@@ -20,6 +21,7 @@ import { AdminPageHeader } from './components/admin-page-header';
   selector: 'app-admin-messages',
   imports: [
     AppIcon,
+    Button,
     ConfirmDialog,
     FilterGroup,
     LoadError,
@@ -34,11 +36,13 @@ import { AdminPageHeader } from './components/admin-page-header';
       Les demandes reçues par le formulaire Contact, de la plus récente à la plus ancienne.
       <div adminPageAside class="flex flex-wrap items-center gap-2.5 lg:justify-end">
         <button
+          appButton
+          variant="outlined"
           type="button"
           data-testid="mark-all-read"
           [attr.aria-disabled]="view().unread === 0 ? 'true' : null"
           (click)="markAllRead()"
-          class="link-btn-outline cursor-pointer aria-disabled:cursor-not-allowed aria-disabled:opacity-55 aria-disabled:hover:border-foreground/15 aria-disabled:hover:text-foreground"
+          class="aria-disabled:cursor-not-allowed aria-disabled:opacity-55 aria-disabled:hover:border-foreground/15 aria-disabled:hover:text-foreground"
         >
           <app-icon name="check" [size]="16" />
           Tout marquer comme lu

@@ -68,6 +68,12 @@ module.exports = [
     files: ['**/*.html'],
     ...config,
   })),
+  {
+    files: ['**/*.html'],
+    rules: {
+      '@angular-eslint/template/button-has-type': 'error',
+    },
+  },
   // Prettier en dernier : désactive les règles stylistiques gérées par Prettier.
   prettierConfig,
 

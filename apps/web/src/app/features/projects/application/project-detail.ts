@@ -69,7 +69,7 @@ import { Button } from '@shared/ui/button';
         <p class="text-muted text-lg mb-4">
           Le projet n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.
         </p>
-        <app-button severity="secondary" variant="outlined" (click)="retry()">Réessayer</app-button>
+        <button appButton type="button" variant="outlined" (click)="retry()">Réessayer</button>
       </div>
     } @else if (loading()) {
       <div class="page-container pt-6 md:pt-10" aria-hidden="true">

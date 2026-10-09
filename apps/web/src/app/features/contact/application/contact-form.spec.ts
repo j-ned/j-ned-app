@@ -48,7 +48,7 @@ describe('ContactForm (Signal Forms)', () => {
   };
 
   const submitButton = (fixture: ComponentFixture<ContactForm>): HTMLButtonElement =>
-    fixture.nativeElement.querySelector('app-button button[type="submit"]');
+    fixture.nativeElement.querySelector('button[type="submit"]');
 
   const alerts = (fixture: ComponentFixture<ContactForm>): string[] =>
     [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="alert"]')].map(

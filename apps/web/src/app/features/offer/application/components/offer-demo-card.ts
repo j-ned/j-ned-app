@@ -3,6 +3,7 @@ import { Component, computed, input } from '@angular/core';
 import { demoPicture } from '@features/offer/domain/demo-picture';
 import type { OfferDemo } from '@features/offer/domain/models/offer.model';
 import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
 import { Cartouche } from '@shared/ui/cartouche';
 import { Stamp } from '@shared/ui/stamp';
 
@@ -11,7 +12,7 @@ const DEMO_IMAGE_SIZES =
 
 @Component({
   selector: 'app-offer-demo-card',
-  imports: [Cartouche, NgOptimizedImage, AppIcon, Stamp],
+  imports: [Cartouche, NgOptimizedImage, AppIcon, Button, Stamp],
   host: { class: 'block' },
   template: `
     <app-cartouche [title]="demo().name" [reference]="demo().sector">
@@ -45,10 +46,12 @@ const DEMO_IMAGE_SIZES =
           {{ demo().illustrates }}
         </p>
         <a
+          appButton
+          variant="outlined"
           [href]="demo().url"
           target="_blank"
           rel="noopener"
-          class="link-btn-outline justify-self-start"
+          class="justify-self-start"
           data-testid="offer-demo-link"
         >
           Voir la démo<span class="sr-only">&nbsp;: {{ demo().name }}, nouvel onglet</span>

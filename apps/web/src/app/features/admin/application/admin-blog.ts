@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
 import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { LoadError } from '@shared/ui/load-error';
@@ -24,6 +25,7 @@ import {
   imports: [
     RouterLink,
     AppIcon,
+    Button,
     ConfirmDialog,
     FilterGroup,
     LoadError,
@@ -37,7 +39,7 @@ import {
       Les articles du blog. Publier un article redéploie le site&nbsp;: il est en ligne quelques
       minutes plus tard.
       <div adminPageAside class="flex lg:justify-end">
-        <a data-testid="admin-post-new" routerLink="/admin/blog/new" class="link-btn-primary">
+        <a appButton data-testid="admin-post-new" routerLink="/admin/blog/new">
           <app-icon name="plus" [size]="16" />Nouvel article
         </a>
       </div>

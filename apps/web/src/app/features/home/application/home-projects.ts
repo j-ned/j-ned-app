@@ -44,10 +44,10 @@ const PROJECTS_SECTION = {
       </ul>
 
       <nav class="mt-10" aria-label="Voir tous les projets">
-        <app-button severity="primary" (click)="goToProjects()">
+        <button appButton type="button" (click)="goToProjects()">
           Voir tous les projets
           <app-icon name="arrow-right" [size]="20" />
-        </app-button>
+        </button>
       </nav>
     </section>
   `,

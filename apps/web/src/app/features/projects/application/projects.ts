@@ -55,9 +55,7 @@ import type { Project, ProjectKindFilter } from '../domain/models/project.model'
           <p class="text-muted text-lg mb-4">
             Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez.
           </p>
-          <app-button severity="secondary" variant="outlined" (click)="retry()"
-            >Réessayer</app-button
-          >
+          <button appButton type="button" variant="outlined" (click)="retry()">Réessayer</button>
         </div>
       } @else {
         <app-filter-group label="Filtrer par nature" [options]="v.filters" [(active)]="filter" />

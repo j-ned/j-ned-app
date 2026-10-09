@@ -12,7 +12,7 @@ describe('AboutMotivation', () => {
   const scrollTo = vi.fn();
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const click = (testId: string): void =>
-    host().querySelector<HTMLButtonElement>(`[data-testid="${testId}"] button`)?.click();
+    host().querySelector<HTMLButtonElement>(`[data-testid="${testId}"]`)?.click();
 
   beforeEach(async () => {
     scrollTo.mockClear();
