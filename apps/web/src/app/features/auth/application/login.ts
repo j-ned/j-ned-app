@@ -3,7 +3,7 @@ import { FormField, FormRoot, email, form, minLength, required } from '@angular/
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { Button } from '@shared/ui/button';
 import { AppIconTile } from '@shared/ui/icon-tile';
 import { AppIcon } from '@shared/icons/app-icon';

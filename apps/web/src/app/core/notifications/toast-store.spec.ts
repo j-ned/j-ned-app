@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ToastStore } from './toast-store';
-import type { ToastSeverity } from './toast.types';
+import type { ToastSeverity } from '@shared/ui/toast.types';
 
 describe('ToastStore', () => {
   let store: ToastStore;

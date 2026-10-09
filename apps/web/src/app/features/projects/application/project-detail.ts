@@ -4,7 +4,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { Seo } from '@shared/seo/seo';
+import { Seo } from '@core/seo/seo';
 import { truncateAtWord } from '@shared/seo/truncate-at-word';
 import { toShareImageUrl } from '@shared/seo/share-image';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';

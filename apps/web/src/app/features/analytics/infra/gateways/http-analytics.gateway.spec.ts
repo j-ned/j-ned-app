@@ -15,7 +15,7 @@ import { AnalyticsDeviceExclusion } from '@core/analytics/analytics-device-exclu
 import { AuthStore } from '@core/auth/auth-store';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { HttpAnalyticsGateway } from './http-analytics.gateway';
 import type {
   StatsOverview,

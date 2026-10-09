@@ -1,6 +1,6 @@
 import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { catchError, throwError } from 'rxjs';
 import { SKIP_ERROR_TOAST } from './skip-error-toast';
 

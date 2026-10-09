@@ -4,7 +4,7 @@ import { Router, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { MOCK_PLATFORM_LOCATION_CONFIG } from '@angular/common/testing';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { App } from './app';
 import { Header } from '@layout/components/header/header';
 import { Footer } from '@layout/components/footer/footer';

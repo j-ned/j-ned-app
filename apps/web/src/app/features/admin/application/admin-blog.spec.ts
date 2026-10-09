@@ -7,7 +7,7 @@ import { NEVER, of, throwError, type Observable } from 'rxjs';
 import { AdminBlog } from './admin-blog';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';

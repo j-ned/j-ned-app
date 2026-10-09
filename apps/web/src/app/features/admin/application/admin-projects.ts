@@ -6,7 +6,7 @@ import type { Project, ProjectKindFilter } from '@features/projects/domain/model
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { AdminProjectRow } from './components/admin-project-row';
 import { Button } from '@shared/ui/button';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';

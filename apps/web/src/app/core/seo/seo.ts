@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import { SHARE_IMAGE } from './share-image';
+import { SHARE_IMAGE } from '@shared/seo/share-image';
 
 export type SeoData = {
   title: string;

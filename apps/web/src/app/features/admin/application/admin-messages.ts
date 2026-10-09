@@ -10,7 +10,7 @@ import { FilterGroup } from '@shared/ui/filter-group';
 import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { toAdminMessagesView, type AdminMessagesFilter } from './admin-messages-view';
 import { messagesOverline } from './admin-page-copy';
 import { AdminEmptyState } from './components/admin-empty-state';

@@ -1,6 +1,6 @@
 import { DestroyRef, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import type { ToastEntry, ToastMessage, ToastSeverity } from './toast.types';
+import type { ToastEntry, ToastMessage, ToastSeverity } from '@shared/ui/toast.types';
 
 const DEFAULT_LIFE_MS = 3000;
 

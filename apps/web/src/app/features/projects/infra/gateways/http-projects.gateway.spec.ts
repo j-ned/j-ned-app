@@ -6,7 +6,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { HttpProjectsGateway } from './http-projects.gateway';
 import type { Project } from '../../domain/models/project.model';
 import { makeProject, makeProjectImage, makeProjectInput } from '../../testing/project-builders';

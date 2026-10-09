@@ -18,7 +18,7 @@ import { defer, finalize, type Observable } from 'rxjs';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { moveGalleryImage } from '@features/projects/domain/move-gallery-image';
 import type { ProjectImage } from '@features/projects/domain/models/project.model';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { AdminGalleryImageItem } from './admin-gallery-image-item';
 import { AdminGalleryUploadForm } from './admin-gallery-upload-form';
 

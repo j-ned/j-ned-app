@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of, type Observable } from 'rxjs';
 import { Login } from './login';
 import { AuthStore } from '@core/auth/auth-store';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 
 describe('Login a11y', () => {
   let fixture: ComponentFixture<Login>;

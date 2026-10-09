@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
 import { HttpContactGateway } from './http-contact.gateway';
 import type { ContactFormData } from '../../domain/models/contact-form.model';

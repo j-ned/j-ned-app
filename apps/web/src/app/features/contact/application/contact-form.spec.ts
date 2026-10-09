@@ -1,6 +1,6 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { NEVER, of, throwError } from 'rxjs';
 import { ContactForm } from './contact-form';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';

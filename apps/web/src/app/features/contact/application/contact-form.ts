@@ -28,7 +28,7 @@ import { ContactGateway } from '@features/contact/domain/gateways/contact.gatewa
 import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
 import { composeContactMessage } from '@features/contact/domain/compose-contact-message';
 import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { FieldError } from '@shared/ui/field-error';
 import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
 import { Button } from '@shared/ui/button';

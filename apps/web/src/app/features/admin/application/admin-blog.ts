@@ -10,7 +10,7 @@ import { FilterGroup } from '@shared/ui/filter-group';
 import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { AdminPageHeader } from './components/admin-page-header';
 import { AdminPostRow } from './components/admin-post-row';
 import { postsOverline } from './admin-page-copy';

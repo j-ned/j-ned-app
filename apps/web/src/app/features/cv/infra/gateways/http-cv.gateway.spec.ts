@@ -6,7 +6,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { HttpCvGateway } from './http-cv.gateway';
 import type { CvInfo } from '../../domain/models/cv.model';
 

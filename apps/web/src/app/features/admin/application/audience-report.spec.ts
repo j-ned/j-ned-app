@@ -19,7 +19,7 @@ import { AuthStore } from '@core/auth/auth-store';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
 import { HttpAnalyticsGateway } from '@features/analytics/infra/gateways/http-analytics.gateway';
 import { API_BASE_URL } from '@shared/api/api-config';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { AudienceReport } from './audience-report';
 
 type Period = readonly [string | undefined, string | undefined];

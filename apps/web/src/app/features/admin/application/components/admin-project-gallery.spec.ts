@@ -7,7 +7,7 @@ import { AdminProjectGallery } from './admin-project-gallery';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { ProjectImage } from '@features/projects/domain/models/project.model';
 import { makeProjectImage } from '@features/projects/testing/project-builders';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import type { ToastMessage } from '@shared/ui/toast.types';
 
 const capture = (key: string, alt: string): ProjectImage =>

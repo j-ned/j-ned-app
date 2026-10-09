@@ -6,7 +6,7 @@ import { AdminMessages } from './admin-messages';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 import type { Mock } from 'vitest';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import type { ToastMessage } from '@shared/ui/toast.types';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';

@@ -9,7 +9,7 @@ import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { loadState } from '@shared/ui/load-state';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { AdminEditorFrame, type AdminEditorCopy } from './components/admin-editor-frame';
 import { AdminFormSection } from './components/admin-form-section';
 import { AdminFormToc } from './components/admin-form-toc';

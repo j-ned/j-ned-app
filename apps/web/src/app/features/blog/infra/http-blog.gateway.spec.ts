@@ -6,7 +6,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { HttpBlogGateway } from './http-blog.gateway';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
 import { makeBlogPost } from '../testing/blog-post-builders';
 

@@ -8,7 +8,7 @@ import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
 import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';

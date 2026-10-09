@@ -1,5 +1,5 @@
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import type { SeoData } from '@shared/seo/seo';
+import type { SeoData } from '@core/seo/seo';
 import type {
   OfferFamily,
   OfferPageContent,

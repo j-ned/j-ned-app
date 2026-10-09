@@ -5,7 +5,7 @@ import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { makeCvInfo } from '@features/cv/testing/cv-builders';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';

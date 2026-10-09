@@ -5,7 +5,7 @@ import { dateRangeToParams } from '@features/analytics/domain/analytics-presente
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { Button } from '@shared/ui/button';
 import { Cartouche } from '@shared/ui/cartouche';

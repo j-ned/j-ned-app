@@ -12,7 +12,7 @@ import { BlogDetail } from './blog-detail';
 import { BlogArticleBody } from './components/blog-article-body';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { Seo } from '@shared/seo/seo';
+import { Seo } from '@core/seo/seo';
 import type { BlogPost } from '../domain/models/blog-post.model';
 import { makeBlogPost } from '../testing/blog-post-builders';
 

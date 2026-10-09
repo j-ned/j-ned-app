@@ -17,7 +17,7 @@ import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { FileDropzone } from '@shared/ui/file-dropzone';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import type { ToastMessage } from '@shared/ui/toast.types';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { AdminPostEditor } from './admin-post-editor';

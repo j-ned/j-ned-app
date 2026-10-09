@@ -4,7 +4,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { Toast } from '@shared/ui/toast';
-import { ToastStore } from '@shared/ui/toast-store';
+import { ToastStore } from '@core/notifications/toast-store';
 import { Header } from '@layout/components/header/header';
 import { Footer } from '@layout/components/footer/footer';
 import { ThemeStore } from '@core/theme/theme-store';

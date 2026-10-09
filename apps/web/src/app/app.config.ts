@@ -34,7 +34,7 @@ import {
 import { filter } from 'rxjs';
 
 import { routes } from './app.routes';
-import { Seo } from '@shared/seo/seo';
+import { Seo } from '@core/seo/seo';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { HttpAnalyticsGateway } from '@features/analytics/infra/gateways/http-analytics.gateway';
