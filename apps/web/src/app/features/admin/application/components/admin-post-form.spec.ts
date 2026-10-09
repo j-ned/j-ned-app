@@ -28,7 +28,6 @@ type RenderedForm = {
   readonly fixture: ComponentFixture<AdminPostForm>;
   readonly host: HTMLElement;
   readonly value: WritableSignal<PostDraft>;
-  readonly tags: WritableSignal<ReadonlySet<string>>;
   readonly submitted: BlogPostInput[];
   readonly covers: File[];
 };
@@ -49,11 +48,9 @@ async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
   });
   const post = options.post ?? null;
   const value = signal(toPostDraft(post));
-  const tags = signal<ReadonlySet<string>>(new Set(post?.tags ?? []));
   const fixture = TestBed.createComponent(AdminPostForm, {
     bindings: [
       twoWayBinding('value', value),
-      twoWayBinding('tags', tags),
       inputBinding('persistedCover', () => options.persistedCover ?? ''),
     ],
   });
@@ -62,7 +59,7 @@ async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
   fixture.componentInstance.submitted.subscribe((payload) => submitted.push(payload));
   fixture.componentInstance.coverSelected.subscribe((file) => covers.push(file));
   await settle(fixture);
-  return { fixture, host: fixture.nativeElement as HTMLElement, value, tags, submitted, covers };
+  return { fixture, host: fixture.nativeElement as HTMLElement, value, submitted, covers };
 }
 
 const normalized = (element: Element | null | undefined): string =>
@@ -230,7 +227,18 @@ describe('AdminPostForm: brouillon possédé par la page', () => {
     }).toEqual({ title: 'Remplacé', published: true });
   });
 
-  it('Given the subject chips When the admin selects RxJS Then the page subjects and the payload hold it', async () => {
+  it('Given an edited post When the form renders Then its tags are pressed', async () => {
+    const rendered = await renderForm({
+      post: makeBlogPost({ id: 'b-2', tags: ['Chiffrement', 'Angular'] }),
+    });
+    const chips = all(byTestId(rendered.host, 'admin-post-tags') ?? rendered.host, 'tag-chip');
+
+    expect(
+      chips.filter((chip) => chip.getAttribute('aria-pressed') === 'true').map(normalized),
+    ).toEqual(['Angular', 'Chiffrement']);
+  });
+
+  it('Given the subject chips When the admin selects RxJS Then the draft subjects and the payload hold it', async () => {
     const rendered = await renderForm({ post: EDITABLE });
     const chip = all(rendered.host, 'tag-chip').find((element) => normalized(element) === 'RxJS');
 
@@ -239,7 +247,7 @@ describe('AdminPostForm: brouillon possédé par la page', () => {
     await submitForm(rendered);
 
     expect({
-      tags: [...rendered.tags()],
+      tags: rendered.value().tags,
       sent: rendered.submitted.map((payload) => payload.tags),
       chipInSubjects: byTestId(rendered.host, 'admin-post-tags')?.contains(chip ?? null) ?? false,
     }).toEqual({
@@ -249,14 +257,12 @@ describe('AdminPostForm: brouillon possédé par la page', () => {
     });
   });
 
-  it('Given an edited article When it is submitted unchanged Then the payload is the draft converted with the page subjects', async () => {
+  it('Given an edited article When it is submitted unchanged Then the payload is the draft converted', async () => {
     const rendered = await renderForm({ post: EDITABLE });
 
     await submitForm(rendered);
 
-    expect(rendered.submitted).toEqual([
-      toPostInput(toPostDraft(EDITABLE), new Set(EDITABLE.tags)),
-    ]);
+    expect(rendered.submitted).toEqual([toPostInput(toPostDraft(EDITABLE))]);
   });
 });
 

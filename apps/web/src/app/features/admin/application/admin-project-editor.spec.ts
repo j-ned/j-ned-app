@@ -1148,6 +1148,23 @@ describe('AdminProjectEditor: modifications non enregistrées', () => {
     });
   });
 
+  it('Given a project tagged Angular and TypeScript When Angular is unpicked then picked again Then nothing is reported as changed', async () => {
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: vi.fn(
+        (): Observable<Project> =>
+          of(makeProject({ id: 'p-1', kind: 'production', tags: ['Angular', 'TypeScript'] })),
+      ),
+    });
+
+    await pickTag(editor, 'Angular');
+    await pickTag(editor, 'Angular');
+
+    expect({ state: saveBarState(editor), toc: tocStates(editor) }).toEqual({
+      state: 'Aucune modification',
+      toc: ['', '', '', '', ''],
+    });
+  });
+
   it('Given the page When the section summary renders Then it lists the five sections and links each one in the page', async () => {
     const editor = await openEditor('/admin/projects/p-1');
     const toc = byTestId(editor.host, 'form-toc');

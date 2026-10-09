@@ -1283,6 +1283,335 @@ lot L6 : il faut y simuler un `PATCH` réussi suivi d'un envoi d'image en 500, e
   avec `''`). Le couplage implicite `fragment="apercu"` (en-tête de l'éditeur) ↔ `id="apercu"`
   (cadre) est couvert par le test de colonne de l'aperçu.
 
+### Lot L9 — Étiquettes en `FormValueControl` (P13, ajout, branche `refactor/tags-form-value-control-l9` depuis master `fc1f214`)
+
+Les étiquettes deviennent un champ du brouillon comme les autres. `AdminTagsSelector` implémente
+`FormValueControl<readonly string[]>` et se lie par `[formField]="form.tags"`. Le canal `tags`
+parallèle (modèle `Set` des formulaires, liaison `[(tags)]` des éditeurs, signal `tags`
+d'`EditorDraft`, paramètre `tags` des conversions) disparaît.
+
+#### Vérification des références de l'audit (master `fc1f214`)
+
+L6 et L8 ont tout déplacé. Seules les références de `post-draft.ts` tiennent encore.
+
+| Réf. audit (P13) | Actuel |
+| --- | --- |
+| `admin-project-form.ts:334-338` (sélecteur) | **98-102** (`[(selectedTags)]="tags"` l. 101) |
+| `admin-project-form.ts:485` | modèle `tags` **111**, appel `toProjectInput(draft, this.tags(), draft.kind)` **159** |
+| `admin-post-form.ts:85-89` (sélecteur) | **89-93** (`[(selectedTags)]="tags"` l. 92) |
+| `admin-post-form.ts:216` | modèle `tags` **223**, appel `toPostInput(this.value(), this.tags())` **251** |
+| `admin-project-editor.ts:29-32, 234-236, 248` | les signaux de brouillon sont partis dans `EditorDraft` (L8). Restent : `[(tags)]="draft.tags"` **118**, aperçu `toPreviewProject(…, this.draft.tags(), …)` **201-203** |
+| `admin-post-editor.ts:24-27, 203-205, 214` | idem : `[(tags)]="draft.tags"` **83**, aperçu **139-141** |
+| *(hors audit, créé par L8)* `editor-draft.ts` | `EditorEntity.tags` **6**, `EditedDraft` (clé `tags: ReadonlySet`) **8-11**, membre `tags` **35**, `linkedSignal` **52**, `baseline` **53-57**, `edited` **58-62** |
+| `project-draft.ts:51, 80` | `toProjectInput(draft, tags, kind)` **49-53** (`tags: [...tags]` l. 57), `toPreviewProject(draft, tags, base)` **78-82** (appel l. 85) |
+| `post-draft.ts:19, 31` | `toPostInput` **19**, exact (`tags: [...tags]` l. 24) ; `toPreviewPost` **29-32** (l. 31 dans la plage) |
+| `AdminTagsSelector` | `selectedTags = model.required<ReadonlySet<string>>()` **30**, `chips` **32-39**, `toggleTag` (public) **41-49** |
+
+Consommateurs vérifiés par `grep` : `AdminTagsSelector` n'a que les deux formulaires ;
+`toProjectInput`, `toPostInput`, `toPreview*` et `EditedDraft` n'ont que les formulaires, les
+éditeurs, `editor-draft.ts` et leurs specs. Aucun autre fichier de `src/` ni de la doc vivante
+n'est touché.
+
+#### Contrat réel de `FormValueControl` (lu dans `node_modules/@angular/forms`, 22.2.1)
+
+- `types/signals.d.ts:636-650` : `FormValueControl<TValue> extends FormUiControl<TValue>`. **Seul
+  membre requis** : `readonly value: ModelSignal<TValue>`. `checked` est interdit (réservé à
+  `FormCheckboxControl`). Le type est exporté par `@angular/forms/signals`.
+- `FormUiControl` (l. 521-628) : tout le reste est **facultatif**. Ce sont des entrées
+  (`errors`, `disabled`, `disabledReasons`, `readonly`, `hidden`, `invalid`, `pending`,
+  `touched`, `dirty`, `name`, `required`, `min`/`max`, `minLength`/`maxLength`, `pattern`), une
+  sortie `touch`, et les méthodes `focus()` et `reset()`. La directive ne les lie **que si le
+  composant les déclare**.
+- Exécution (`fesm2022/signals.mjs:951-977`, `customControlCreate`) :
+  - écriture du `model` `value` par le composant → `controlValue.set()`, qui **marque le champ
+    `dirty`** (`_validation_errors-chunk.mjs:1538-1544`) ;
+  - le champ ne passe `touched` **que** sur la sortie `touch` du composant. Il n'y a aucun
+    écouteur `blur` sur un contrôle personnalisé : le `blur` (l. 1098) ne vaut que pour les
+    éléments natifs ;
+  - aucune propriété DOM native n'est posée sur l'hôte : `elementAcceptsNativeProperty` rend
+    `false` hors `input`/`select`/`textarea` (l. 1392-1395, `forms.mjs:1303-1305`). Donc ni
+    `name`, ni `disabled`, ni `required` sur `<app-admin-tags-selector>` ;
+  - `focusBoundControl()` appelle `focus()` sur l'élément hôte si le composant n'implémente pas
+    `focus()` (l. 1263).
+- Les éléments **primitifs** d'un tableau ne sont pas marqués : le symbole d'identité ne vise que
+  les éléments objets (`_validation_errors-chunk.mjs:1179-1180`). La copie champ par champ de L6
+  ne s'applique donc pas aux étiquettes. Une copie du tableau reste prescrite (cf. modèles).
+- `FieldTree` gère `ReadonlyArray` (`_structure-chunk.d.ts:1153`) : `form.tags` existe pour un
+  champ `readonly string[]`.
+
+**Membres implémentés : `value` seul.** Pas de `touch`, `disabled`, `errors` ni `focus` (YAGNI).
+Aucune règle de schéma ne porte sur les étiquettes, aucun formulaire n'est désactivé, et rien ne
+lit `form.tags().touched()`. Comme le champ ne peut pas être invalide, `focusFirstInvalid` ne
+l'atteint jamais, et le repli de focus sur l'hôte (non focalisable) reste sans effet. Le jour où
+une règle portera sur les étiquettes (un nombre maximal, par exemple), il faudra ajouter `focus()`
+(première puce) et `touch` : c'est noté en risque.
+
+#### Verdict KISS
+
+**Gardé**, au périmètre minimal. Ce qu'on gagne : un seul canal d'état par formulaire, ce qui
+retire 2 `model.required`, 2 liaisons `[(tags)]` dans les éditeurs, le membre `tags` et son
+`linkedSignal` dans `EditorDraft`, un paramètre dans 4 fonctions de conversion, et la liaison
+`tags` des deux harnais de spec de formulaire. On s'aligne aussi sur la doctrine (« Tout
+formulaire = Signal Forms », `[formField]` possède le contrôle ; CLAUDE.md, section
+« Formulaires »). Ce que ça coûte : la comparaison en ensemble doit migrer (L9.2), plus une
+projection privée et un `Omit` dans `EditorDraft`. Le bilan en lignes est légèrement négatif.
+Aucun membre facultatif de `FormUiControl` n'est implémenté.
+
+#### Architecture
+
+```mermaid
+flowchart LR
+  E[Éditeur] -->|"[(value)]=draft.value"| F[AdminProjectForm / AdminPostForm — form(value)]
+  F -->|"[formField]=form.tags"| S[AdminTagsSelector — value = model&lt;readonly string[]&gt;]
+  E -->|"new EditorDraft(...)"| D[EditorDraft — value (tags compris), edited/baseline : tags projetés en Set]
+  D --> C[countChangedFields — branche Set existante]
+```
+
+- **Rien de nouveau** : ni composant, ni presenter, ni store, ni facade. Le sélecteur reste muet
+  (une entrée, un `model`).
+- **Où vit la comparaison à l'ordre près : dans `EditorDraft`.** C'est le seul endroit qui
+  compare le brouillon à sa référence. Sa projection privée `toEdited(draft, cover)` convertit
+  `draft.tags` en `ReadonlySet<string>` pour `edited` **et** `baseline`. La comparaison
+  proprement dite reste celle de `countChangedFields` : sa branche `Set` existe déjà (taille et
+  appartenance, `count-draft-changes.ts:12-14`) et elle est déjà testée (« the same tags in
+  another order » → 0, `count-draft-changes.spec.ts:99`). Variantes écartées :
+  - **trier** (dans `toXDraft` et dans le sélecteur) : le `PATCH` réordonnerait les étiquettes
+    stockées. Or l'ordre est visible en public (`project-detail-header.ts:110`,
+    `blog-detail.ts:100`, `blog-list-view.ts:50` qui ne garde que les premières). Ce serait un
+    changement visible, hors du périmètre d'un refactor ;
+  - **comparer en ensemble tout tableau de chaînes dans `sameValue`** : le comparateur générique
+    mentirait pour toute future liste ordonnée de chaînes ;
+  - **ranger dans le sélecteur selon `availableTags`** : la référence serveur n'est pas dans cet
+    ordre, et filtrer par `availableTags` perdrait les étiquettes hors catalogue.
+- **Ordre du tableau, identique à celui du `Set` actuel** : un retrait filtre, un ajout va en
+  fin, et une étiquette hors catalogue (sans puce) est conservée. Le payload garde donc l'ordre
+  serveur suivi des ajouts. Retirer puis rajouter une étiquette la place en fin, ce que fait déjà
+  l'ordre d'insertion du `Set`. Sans changement de modification compté (L9.2), comme aujourd'hui.
+
+#### Modèles et signatures (à titre de contrat)
+
+```ts
+// admin-tags-selector.ts
+export class AdminTagsSelector implements FormValueControl<readonly string[]> {
+  readonly availableTags = input.required<readonly string[]>();
+  readonly value = model<readonly string[]>([]);
+  protected readonly chips: Signal<readonly TagChip[]>; // selected = value().includes(tag)
+  protected toggleTag(tag: string): void;               // value.update : filtre ou ajout en fin
+}
+
+// project-draft.ts / post-draft.ts
+export type ProjectDraft = { title: string; category: string; tags: readonly string[]; /* … */ };
+export type PostDraft = { title: string; excerpt: string; tags: readonly string[]; /* … */ };
+toProjectDraft(project)          // tags: [...(project?.tags ?? [])]
+toProjectInput(draft, kind)      // tags: [...draft.tags]
+toPreviewProject(draft, base)
+toPostDraft(post)                // tags: [...(post?.tags ?? [])]
+toPostInput(draft)               // tags: [...draft.tags]
+toPreviewPost(draft, base)
+
+// editor-draft.ts (après L9.2)
+type EditorEntity = { readonly id: string };
+type TaggedDraft = { readonly tags: readonly string[] };
+export type EditedDraft<TDraft extends TaggedDraft> = Omit<TDraft, 'tags'> & {
+  readonly tags: ReadonlySet<string>; // comparées en ensemble : l'ordre de sélection ne compte pas
+  readonly cover: File | null;
+};
+export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraft> { /* sans membre `tags` */ }
+```
+
+- `value = model<readonly string[]>([])`, **pas** `model.required`. C'est la directive
+  `FormField` qui écrit ce modèle, pas une liaison de gabarit. `required` n'apporterait donc
+  aucune vérification à la compilation, et une lecture avant la première écriture lèverait
+  NG0950.
+- `readonly string[]` **des deux côtés** (champ du brouillon et `model`). La vérification de
+  type de `[formField]` compare le type du champ à celui du `model` : un `string[]` d'un côté et
+  un `readonly string[]` de l'autre la ferait échouer.
+- Les copies `[...x]` dans `toXDraft` / `toXInput` découplent le modèle du formulaire de l'entité
+  chargée, et le payload du modèle (immutabilité). Ce n'est pas le marquage de Signal Forms,
+  puisque les chaînes ne sont pas marquées.
+- `toggleTag` passe `protected` (gabarit seul ; les specs cliquent les puces).
+- `EditedDraft` reste exporté : les `FORM_SECTIONS` des éditeurs le typent, et leurs clés
+  (`'tags'` comprise) ne changent pas.
+
+#### Fichiers
+
+| Fichier | Rôle |
+| --- | --- |
+| `components/admin-tags-selector.ts` (+ spec) | `FormValueControl<readonly string[]>` : `value` remplace `selectedTags`, `toggleTag` protégé. |
+| `components/admin-project-form.ts` (+ spec) | Modèle `tags` supprimé. `[formField]="form.tags"` à la place de `[(selectedTags)]="tags"`. Soumission : `toProjectInput(draft, draft.kind)`. |
+| `components/admin-post-form.ts` (+ spec) | Idem : `toPostInput(this.value())`. |
+| `project-draft.ts` (+ spec) | `tags` dans `ProjectDraft`, `toProjectDraft` ; `toProjectInput` et `toPreviewProject` perdent `tags`. |
+| `post-draft.ts` (+ spec) | Idem pour `PostDraft`, `toPostInput`, `toPreviewPost`. |
+| `editor-draft.ts` (+ spec) | Membre `tags` supprimé, `EditorEntity` réduit à `id`. Projection `toEdited` et `EditedDraft` en `Omit` (L9.2). |
+| `admin-project-editor.ts` (+ spec) | Liaison `[(tags)]` retirée ; aperçu `toPreviewProject(this.draft.value(), this.draft.saved())`. Spec : un test neuf (L9.2). |
+| `admin-post-editor.ts` | Liaison `[(tags)]` retirée ; aperçu `toPreviewPost(this.draft.value(), this.draft.saved())`. Spec inchangée (filet). |
+| `count-draft-changes.spec.ts` | Type local `Edited` (l. 5) → `Omit<ProjectDraft, 'tags'> & { readonly tags: ReadonlySet<string> }`. Sans cela, `ProjectDraft.tags: readonly string[]` intersecté avec un `Set` refuse les fixtures. Aucun attendu ne change. |
+
+**Non touchés** : `count-draft-changes.ts`, `form-toc-entries.ts`, `admin-project-form-data.ts`,
+`blog-tag.model.ts`, les composants d'aperçu, `admin-editor-frame.ts`, `styles.css`.
+
+**`data-testid` conservés à l'identique** : `tag-chip` (puces), `admin-project-tags` et
+`admin-post-tags`, posés sur l'hôte `<app-admin-tags-selector>`, qui porte désormais aussi
+`[formField]`. La liste des contrôles de la section « 04 · Choix techniques »
+(`admin-project-form.spec.ts:168`) et de « 01 · Article » (`admin-post-form.spec.ts:115`) ne
+change pas.
+
+#### Réactivité / état
+
+- Aucun `effect()`, aucun RxJS. Le flux est le suivant : clic sur une puce → `value.update()` →
+  `FormField` → modèle du formulaire → `draft.value` (`linkedSignal` d'`EditorDraft`, par
+  `[(value)]`) → `edited` / `changes` / `toc` / aperçu.
+- Le rechargement de l'entité (`reload()` après envoi de couverture) réaligne `value`, étiquettes
+  comprises, par le seul `linkedSignal` de `value`. Celui des étiquettes disparaît.
+
+#### Tranches
+
+Leçons des lots précédents pour `qa`, à appliquer dans chaque tranche :
+
+- **Échafaudage de signature au RED.** Sans lui, les specs réécrites ne compilent pas
+  (`TS2554`, argument en trop ; `TS2339`, `draft.tags` ; NG8002, `[(tags)]` sur un formulaire
+  qui n'a plus l'entrée) et **aucun** test ne tourne. Le contenu exact est donné dans L9.1.
+- **Pas de valeur par défaut piégée dans les harnais.** `project-draft.spec.ts:248-250` a
+  aujourd'hui `previewOf(overrides, tags: ReadonlySet<string> = new Set(BASE.tags), base)`. Le
+  paramètre disparaît, et les étiquettes passent par `overrides` (`{ tags: [...] }`),
+  explicitement. Pour « pas d'entité », passer `null`.
+- **Copier les objets passés à Signal Forms.** Toute entité ou tout brouillon servi à un
+  formulaire est construit **par test** (appel de builder, littéral neuf). Aucun attendu n'est
+  construit sur la référence servie. Le test L9.2 de l'éditeur ne réutilise pas `DASHFLOW` (son
+  `techChoices` serait marqué) : il construit son projet par `makeProject({ … })`. L'hôte
+  `[formField]` du sélecteur crée son `signal({ tags: [...] })` dans chaque test.
+- **Jamais d'U+202F / U+00A0 littéral** dans une spec : écrire ` ` / ` ` (forme déjà
+  utilisée dans `admin-project-form.spec.ts:421-430`).
+- `toEqual` sur un `Set` compare le contenu sans l'ordre, sur un tableau avec l'ordre. Les
+  attendus d'étiquettes deviennent des tableaux : l'ordre y compte (c'est voulu, cf. L9.1).
+
+**L9.1 — Les étiquettes passent par le champ `tags` du formulaire (P13)**
+
+- **Échafaudage (à remplacer en GREEN), signatures seules, corps neutres** :
+  - `AdminTagsSelector` : `selectedTags` remplacé par `readonly value = model<readonly string[]>([])`,
+    `chips` rend toutes les puces non pressées, et `toggleTag` a un corps vide ;
+  - `ProjectDraft` / `PostDraft` : champ `tags: readonly string[]`, et `toXDraft` rend
+    `tags: []`. `toProjectInput(draft, kind)`, `toPostInput(draft)`,
+    `toPreviewProject(draft, base)` et `toPreviewPost(draft, base)` rendent `tags: []` ;
+  - formulaires : modèle `tags` supprimé, sélecteur **sans liaison** (ni `[(selectedTags)]` ni
+    `[formField]`), appels de soumission à la nouvelle signature ;
+  - éditeurs : `[(tags)]` retiré, appels d'aperçu à la nouvelle signature ;
+  - `editor-draft.ts` **non touché** : son membre `tags` survit, sans lecteur, jusqu'au GREEN.
+    Il compile, car `EditedDraft<ProjectDraft>` intersecte `readonly string[]` et
+    `ReadonlySet<string>`.
+- `admin-tags-selector.spec.ts` (réécrit, `setInput('value', [...])`, lecture de
+  `componentInstance.value()`) :
+  - puces pressées selon `value` (`aria-pressed`) ;
+  - `it.each`, cliquer sur une puce : depuis `['Angular']`, PBKDF2 → `['Angular', 'PBKDF2']`, puis
+    Angular → `['PBKDF2']` ; une étiquette retirée puis rajoutée passe **en fin** (depuis
+    `['Angular', 'PBKDF2']` : Angular, Angular → `['PBKDF2', 'Angular']`) ;
+  - étiquette hors catalogue conservée : `value` `['Héritée', 'Angular']`, disponibles
+    `['Angular', 'PBKDF2']`, clic sur PBKDF2 → `['Héritée', 'Angular', 'PBKDF2']`, et aucune puce
+    « Héritée » ;
+  - **hôte `[formField]`** (`imports: [AdminTagsSelector, FormField]`, modèle
+    `signal({ tags: ['Angular'] })` et `form(model)` en initialiseurs de champ) : la puce Angular
+    est pressée ; un clic sur PBKDF2 → `model().tags` = `['Angular', 'PBKDF2']` ; un
+    `model.set({ tags: ['PBKDF2'] })` externe → les puces suivent ;
+  - les 6 lignes de couleur, attendus inchangés (rouges au RED : la puce cliquée ne passe pas en
+    `solid`).
+- `admin-project-form.spec.ts` / `admin-post-form.spec.ts` : `tags` retiré de `RenderedForm` et
+  du harnais (l. 26, 47, 51, 64 / 31, 52, 56, 65) ; `[...rendered.tags()]` →
+  `rendered.value().tags` (l. 270 / 242) ; `toProjectInput(toProjectDraft(project), 'script')`
+  (l. 287) et `toPostInput(toPostDraft(EDITABLE))` (l. 258). Un test **neuf** dans chaque spec :
+  « Given an edited project/post When the form renders Then its tags are pressed » (puces de
+  `admin-project-tags` / `admin-post-tags`, `aria-pressed` = `'true'` sur les étiquettes de
+  l'entité seulement).
+- `project-draft.spec.ts` / `post-draft.spec.ts` : un argument en moins à chaque appel (l. 138,
+  169, 185, 194, 210, 227, 266, 325 / 54, 70, 77, 87, 101, 117, 140), et les étiquettes passent
+  par le brouillon. Le test « selection order » (l. 191-198) devient « Given draft tags When the
+  payload is built Then they are sent in the draft order, as a copy » : même ordre,
+  `payload.tags` `not.toBe(draft.tags)`. `toXDraft` d'une entité → `tags` = ses étiquettes, et
+  copie (`not.toBe(entity.tags)`).
+- `editor-draft.spec.ts` : `NoteDraft = { title; tags: readonly string[] }` ; `toNoteDraft` copie
+  les étiquettes ; `draft.tags()` → `draft.value().tags` (l. 47, 135) ; « a tag added » →
+  `draft.value.update((v) => ({ ...v, tags: [...v.tags, 'RxJS'] }))` (l. 73).
+- `count-draft-changes.spec.ts` : type `Edited` (cf. fichiers).
+- RED attendus, tous par assertion : pression et clic du sélecteur (hôte `[formField]` compris),
+  les tests de puce des deux formulaires, les deux tests neufs « pressed », les tests de
+  conversion porteurs d'étiquettes, « a tag added » d'`editor-draft.spec.ts` (le `tags` de
+  l'ancien membre écrase celui de `value`), `pickTag` → 1 modification
+  (`admin-project-editor.spec.ts:1108`) et `pickSubject` → payload `['Angular']`
+  (`admin-post-editor.spec.ts:371-380`). Les tests qui comparent deux appels des conversions
+  échafaudées (`admin-project-form.spec.ts:280`, `admin-post-form.spec.ts:258`) restent verts. Le
+  `tags: []` de création (`admin-project-editor.spec.ts:381`) aussi. `qa` relève le compte exact.
+- GREEN : le sélecteur dérive les puces de `value` et `toggleTag` filtre ou ajoute en fin ; les
+  formulaires lient `[formField]="form.tags"` ; les conversions copient `tags` ; `EditorDraft`
+  perd son membre `tags`, `EditorEntity` se réduit à `id`, et `edited` / `baseline` deviennent
+  `{ ...draft, cover }`. Pas de projection en `Set` à ce stade (comparaison **à l'ordre près**,
+  volontairement naïve) : c'est L9.2.
+
+**L9.2 — Retirer puis rajouter une étiquette ne compte pas comme une modification**
+
+- Pas d'échafaudage.
+- `editor-draft.spec.ts`, `it.each` sur une entité `tags: ['Angular', 'RxJS']` :
+  - `value.tags` ← `['RxJS', 'Angular']` → `changes` 0, sommaire sans « modifié » ;
+  - `value.tags` ← `['Angular', 'Zod']` → `changes` 1 (triangulation, vert d'emblée, assumé).
+- `admin-project-editor.spec.ts`, describe « modifications non enregistrées » : « Given a project
+  tagged Angular and TypeScript When Angular is unpicked then picked again Then nothing is
+  reported as changed ». `getProjectById` répond `makeProject({ id: 'p-1', kind: 'production', tags: ['Angular', 'TypeScript'] })`,
+  construit dans le test. `pickTag` deux fois sur « Angular ». On attend la barre
+  « Aucune modification » et le sommaire `['', '', '', '', '']`.
+- RED attendus : la ligne 0 de l'`it.each` et le test de l'éditeur (« 1 modification non
+  enregistrée », section 04 « modifié »).
+- GREEN : `EditedDraft` en `Omit<TDraft, 'tags'> & { tags: ReadonlySet<string>; cover }`,
+  contrainte `TDraft extends TaggedDraft`, et une projection privée `toEdited(draft, cover)`
+  utilisée par `baseline` et `edited`. Une ligne de commentaire de WHY sur la clé `tags` de
+  `EditedDraft` (« l'ordre de sélection ne compte pas »).
+
+Ordre : L9.1 → L9.2. L9.2 suppose que le brouillon porte les étiquettes en tableau. Sans L9.1, la
+comparaison est déjà en `Set` et le test de l'éditeur serait vert d'emblée.
+
+Preuves de fin de lot :
+
+- `grep -rn "selectedTags\|\[(tags)\]\|draft\.tags" src/app` → vide ;
+- `grep -rn "ReadonlySet<string>" src/app/features/admin/application --include=*.ts | grep -v spec`
+  → `editor-draft.ts` seul (la clé `tags` d'`EditedDraft`) ;
+- `grep -n "formField]=\"form.tags\"" src/app/features/admin/application/components/admin-*-form.ts`
+  → une ligne par formulaire.
+
+#### Changements visibles
+
+Aucun. Les puces, `aria-pressed`, les couleurs, l'ordre des étiquettes dans le payload (ordre
+serveur, puis ajouts), le compteur de la barre et le sommaire sont identiques. Retirer puis
+rajouter une étiquette ne compte toujours pas comme une modification. Dans ce cas, comme
+aujourd'hui, l'étiquette passe en fin au prochain enregistrement motivé par un autre champ.
+
+#### Intersection de fichiers
+
+| Couple | Intersection | Conséquence |
+| --- | --- | --- |
+| L8 ∩ L9 | L8 mergé (#189) : la branche part de `fc1f214`. | Aucune. |
+| L10 ∩ L9 | Ni `styles.css` ni `link-btn-*` touchés par L9. | Indépendants, sous réserve du plan L10. |
+| L11 ∩ L9 | Les imports des fichiers d'admin touchés ici. | L11 en dernier, comme prévu. |
+
+Gates : `pnpm install --frozen-lockfile`, `pnpm run build --configuration production` (puis
+`git checkout -- public/sitemap.xml public/rss.xml`), `pnpm lint`, `pnpm test; echo exit=$?`.
+Runtime (faux backend local du `## Verify` de L6) : ouvrir un projet à 2 étiquettes ; cocher une
+étiquette → « 1 modification », section 04 « modifié » ; la décocher → « Aucune modification » ;
+retirer puis rajouter une étiquette existante → « Aucune modification » ; enregistrer après un
+ajout → corps du `PATCH` avec `tags` dans l'ordre serveur puis l'ajout. Même parcours, abrégé,
+sur un article (création : `POST` avec `tags`).
+
+#### Risques & inconnues
+
+- **Vérification de type de `[formField]` sur un contrôle personnalisé.** Si le compilateur
+  refuse `FieldTree<readonly string[]>` ↔ `ModelSignal<readonly string[]>` (variance, ou
+  `FieldTree` d'un tableau en lecture seule), on le saura au premier GREEN de L9.1. Repli :
+  `tags: string[]` des deux côtés, mutation toujours interdite par `value.update` (nouvelle
+  référence). Pas de cast.
+- **`touched` jamais posé, focus sur un hôte non focalisable** : sans effet aujourd'hui (aucune
+  règle sur `tags`). Une future règle de schéma exigera `focus()` (première puce) et la sortie
+  `touch`, sans quoi `focusFirstInvalid` resterait muet sur ce champ.
+- **`Omit` sur un générique dans `EditorDraft`** : le spread `{ ...draft, tags: new Set(…), cover }`
+  peut ne pas être reconnu assignable à `Omit<TDraft, 'tags'> & …`. Repli : une fonction
+  `toEdited` typée qui déstructure (`const { tags, ...rest } = draft`), toujours sans cast. Si
+  ce repli échoue aussi, `qa` est saisi par renvoi de tranche.
+
 ## Plan de test
 
 Lot **L5** joué en un seul RED (demande de la session principale). Commande : `pnpm test; echo
@@ -1705,6 +2034,115 @@ compilation, de harnais, `NG0` ni dépassement de délai. Les 3065 autres tests 
 (3105) moins les 43 tests existants rendus rouges (dont les 2 réécrits de L8.1), plus les 3 neufs
 verts d'emblée (24 tests neufs, 21 rouges).
 
+Lot **L9**, branche `refactor/tags-form-value-control-l9` (master `fc1f214`, L8 mergé). Commande :
+`pnpm test; echo exit=$?`, après `ng cache clean` et purge de `node_modules/.vite`. Base avant RED :
+`189 passed (189)` fichiers, `3129 passed (3129)` tests, exit 0. L9.2 est jouée après le GREEN de L9.1.
+
+**Échafaudage de signature (à remplacer en GREEN)**, conforme au plan :
+
+- `components/admin-tags-selector.ts` : `implements FormValueControl<readonly string[]>`,
+  `value = model<readonly string[]>([])` à la place de `selectedTags`, `chips` rend toutes les puces
+  non pressées (teinte `tint`), `toggleTag` `protected` à corps vide (seule erreur `pnpm lint` du
+  lot : `no-empty-function`, levée par le GREEN) ;
+- `project-draft.ts` / `post-draft.ts` : champ `tags: readonly string[]`, `toXDraft` rend
+  `tags: []`, `toProjectInput(draft, kind)`, `toPostInput(draft)`, `toPreviewProject(draft, base)`,
+  `toPreviewPost(draft, base)` rendent `tags: []` ;
+- formulaires : modèle `tags` supprimé, sélecteur sans liaison, soumission à la nouvelle signature ;
+- éditeurs : `[(tags)]` retiré, aperçu à la nouvelle signature ;
+- `editor-draft.ts` non touché (il compile : son membre `tags` survit sans lecteur).
+
+### Tranche L9.1 — les étiquettes passent par le champ `tags` du formulaire
+
+**`admin-tags-selector.spec.ts`** (réécrit ; `setInput('value', [...])`, lecture de
+`componentInstance.value()`, `settle` ; 14 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| puces pressées | disponibles `['Angular', 'PBKDF2']`, `value` `['Angular']` | noms `['Angular', 'PBKDF2']`, `aria-pressed` `['true', 'false']` |
+| clic (`it.each` × 3) | `['Angular']` + PBKDF2 ; `['Angular']` + PBKDF2, Angular ; `['Angular', 'PBKDF2']` + Angular, Angular | `value` `['Angular', 'PBKDF2']` / `['PBKDF2']` / `['PBKDF2', 'Angular']` (retirée puis rajoutée : en fin), `aria-pressed` explicite par ligne, tableau passé à `setInput` inchangé (nouvelle liste à chaque clic) |
+| hors catalogue | `value` `['Héritée', 'Angular']`, clic PBKDF2 | `value` `['Héritée', 'Angular', 'PBKDF2']`, puces `['Angular', 'PBKDF2']` seules |
+| couleurs (`it.each` × 6) | attendus inchangés | `tint` au repos, `solid` après clic, plus de `tint` |
+| hôte `[formField]` : rendu | `imports: [AdminTagsSelector, FormField]`, `draft = signal({ tags: ['Angular'] })`, `form(draft)` en initialiseurs de champ | `aria-pressed` `['true', 'false']` |
+| hôte `[formField]` : clic | clic PBKDF2 | `draft().tags` `['Angular', 'PBKDF2']`, `aria-pressed` `['true', 'true']` |
+| hôte `[formField]` : écriture externe | `draft.set({ tags: ['PBKDF2'] })` | `aria-pressed` `['false', 'true']` |
+
+**`project-draft.spec.ts`** / **`post-draft.spec.ts`** : un argument en moins à chaque appel ; les
+étiquettes passent par le brouillon. `previewOf(overrides, base)` sans défaut (le `BASE` ou `null`
+est passé à chaque appel ; plus de paramètre `tags` à défaut piégé). `DRAFT` littéral remplacé par
+un builder local `aDraft(overrides)` (étiquettes par test). Attendus de `toXDraft` complétés de
+`tags` (`[]` sans entité ; les étiquettes de l'entité sinon, « cinq champs » pour l'article).
+Tests neufs : « Given a tagged project / a saved article When the draft is built Then its tags are
+a copy in the … order » (`tags` égal, `same` `false`). « selection order » devient « Given draft
+tags When the payload is built Then they are sent in the draft order, as a copy » (même ordre,
+`same` `false`).
+
+**`admin-project-form.spec.ts`** / **`admin-post-form.spec.ts`** : `tags` retiré de `RenderedForm` et
+du harnais ; `rendered.value().tags` ; `toProjectInput(toProjectDraft(project), 'script')` et
+`toPostInput(toPostDraft(EDITABLE))`. Tests neufs : « Given an edited project/post When the form
+renders Then its tags are pressed » (entité construite dans le test ; puces pressées de
+`admin-project-tags` = `['Angular', 'NestJS']`, de `admin-post-tags` = `['Angular', 'Chiffrement']`,
+ordre du catalogue).
+
+**`editor-draft.spec.ts`** : `NoteDraft = { title; tags: readonly string[] }`, `toNoteDraft` copie
+les étiquettes ; `value` attendu `{ title, tags }` (état initial, réalignement) ; « a tag added » =
+`value.update` qui ajoute `RxJS`. Les 11 `value.set({ title })` deviennent
+`value.update((value) => ({ ...value, title }))`.
+
+**`count-draft-changes.spec.ts`** : `Edited` = `Omit<ProjectDraft, 'tags'> & { readonly tags:
+ReadonlySet<string> }`.
+
+Adaptation mécanique : `count-draft-changes.spec.ts` (1 type), `editor-draft.spec.ts` (11 écritures
+`value.set` → `value.update`), specs de formulaire et de conversion (signatures) — aucune valeur
+attendue modifiée hors des attendus que le contrat change (`value` et `toXDraft` portent désormais
+`tags`).
+
+RED confirmé via `pnpm test` le 2026-10-09 17:27 : 35 failed / 3139 total pour cette tranche (8
+fichiers en échec sur 189), exit 1. Échecs = assertions uniquement (31 `AssertionError` affichées,
+Vitest regroupe les identiques ; aucune erreur TS, `NG0`, de harnais ni dépassement de délai) :
+
+- `admin-tags-selector.spec.ts` (14/14) : `aria-pressed` tout à `'false'`, `value` inchangée après
+  clic, couleur `solid` absente ;
+- `project-draft.spec.ts` (5) : `toProjectDraft` complet, copie des étiquettes, charge utile
+  intacte, ordre du brouillon, aperçu édité (`tags: []` reçu) ;
+- `post-draft.spec.ts` (8) : brouillon « cinq champs », copie, charge utile × 2, `it.each` des
+  sujets × 2 (la ligne `[]` reste verte), aperçu édité, aperçu neuf ;
+- formulaires (2 + 2) : test neuf « pressed » (`[]` reçu), clic de puce (`tags: []`, `sent: [[]]`) ;
+- `editor-draft.spec.ts` (1) : « a tag added » (`changes` 0 : l'ancien membre `tags` écrase celui
+  de `value`) ;
+- `admin-project-editor.spec.ts` (1) : `pickTag` → « Aucune modification » ;
+- `admin-post-editor.spec.ts` (2) : création avec `pickSubject` (payload `tags: []`) et « a
+  subject » des modifications non enregistrées (l. 881, non listé au plan).
+
+Restent verts, comme prévu : la soumission inchangée des deux formulaires (deux appels de la même
+conversion échafaudée), le `tags: []` de création du projet, `toXDraft(null)`. Les 3104 autres
+tests passent : la base (3129) moins les 25 tests existants rendus rouges, plus les 10 neufs dont
+aucun n'est vert d'emblée.
+
+### Tranche L9.2 — retirer puis rajouter une étiquette ne compte pas comme une modification
+
+Jouée après le GREEN de L9.1 (3139/3139, exit 0 ; `EditorDraft` compare `{ ...draft, cover }`, à
+l'ordre près). Pas d'échafaudage.
+
+**`editor-draft.spec.ts`**, `it.each` neuf (entité `aNote({ tags: ['Angular', 'RxJS'] })` construite
+par test, `value.update` avec une copie du tableau ; 2 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| même ensemble, autre ordre | `tags` ← `['RxJS', 'Angular']` | `changes` 0, sommaire `['', '']` |
+| triangulation | `tags` ← `['Angular', 'Zod']` | `changes` 1, sommaire `['modifié', '']` (vert d'emblée, assumé) |
+
+**`admin-project-editor.spec.ts`**, describe « modifications non enregistrées », 1 test neuf : « Given
+a project tagged Angular and TypeScript When Angular is unpicked then picked again Then nothing is
+reported as changed ». `getProjectById` répond `makeProject({ id: 'p-1', kind: 'production', tags:
+['Angular', 'TypeScript'] })`, construit à chaque appel (pas de `DASHFLOW`) ; `pickTag` deux fois
+sur « Angular » ; barre « Aucune modification », sommaire `['', '', '', '', '']`.
+
+RED confirmé via `pnpm test` le 2026-10-09 17:31 : 2 failed / 3142 total pour cette tranche (2
+fichiers en échec sur 189), exit 1. Échecs = assertions (`changes: 1, toc: ['modifié', '']` au lieu
+de 0 ; « 1 modification non enregistrée », section 04 « modifié »). Aucune erreur TS, `NG0`, de
+harnais ni de délai. Les 3140 autres tests passent : les 3139 de la base, plus la ligne de
+triangulation.
+
 ## Journal des tranches
 
 - **Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée** : GREEN 3059 passed / 3060 total (seul rouge : « sans testId » de `field-error.spec.ts`, défaut du test, cf. ## Verify) · refactor : aucun
@@ -1728,6 +2166,8 @@ verts d'emblée (24 tests neufs, 21 rouges).
 - **Tranche L8.4 — les éditeurs partagent l'en-tête d'admin, fil d'Ariane compris** : GREEN, 1297 passed / 1298 dans `features/admin/application` (seul rouge : l'introuvable de L8.6) · refactor : aucun (parent passé en littéral dans le gabarit, sans constante à un seul site)
 - **Tranche L8.5 — sans RED** : GREEN inchangé (même rouge unique de L8.6) ; les requêtes `By.directive(AdminProjectForm)` / `By.directive(FileDropzone)` traversent `NgTemplateOutlet`, le risque du plan ne se matérialise pas · refactor : aucun
 - **Tranche L8.6 — un projet introuvable le dit et ramène à la liste** : GREEN 3129 passed / 3129 total · refactor : ordre alphabétique des imports `components/*` rétabli dans `admin-project-editor.ts`
+- **Tranche L9.1 — les étiquettes passent par le champ `tags` du formulaire** : GREEN 3139 passed / 3139 total ; `[formField]` accepte `readonly string[]` des deux côtés (`ngc -p tsconfig.app.json`, `strictTemplates`, exit 0), repli `string[]` non nécessaire · refactor : aucun (le membre `tags` d'`EditorDraft`, son `linkedSignal` et les clés `tags` de `baseline`/`edited` disparaissent dans la tranche elle-même)
+- **Tranche L9.2 — retirer puis rajouter une étiquette ne compte pas comme une modification** : GREEN 3142 passed / 3142 total ; le spread `{ ...draft, tags: new Set(draft.tags), cover }` est accepté tel quel comme `Omit<TDraft, 'tags'> & …` (`ngc`, exit 0), repli par déstructuration non nécessaire · refactor : aucun (`baseline` et `edited` passent par `toEdited` dans la tranche elle-même)
 
 ## Verify
 
@@ -1863,6 +2303,38 @@ Runtime : `ng serve` (port 4300) derrière un faux backend local sur le port 300
 Point d'attention (changement visible prévu au plan, plus marqué que prévu) : à 1024 px, la colonne d'actions de 22rem réserve 352 px pour le seul « Voir l'aperçu » de l'article, et le titre n'a plus que 245 px (`gridTemplateColumns: 245px 352px`) : un long titre d'article passe sur 6 lignes. Avant, la colonne était `auto`.
 
 **Soldé** (session principale, 2026-10-08) : colonne `auto` quand `parent` est fourni, 22rem pour les pages. Mesure de la revue à 1024 px : article au titre de 68 caractères `443.5px 153.5px`, titre sur 4 lignes ; projet DashFlow (deux liens) `285.9px 311.1px` ; `/admin/projects` inchangé `245px 352px`. Les deux variantes sont dans le CSS compilé. `pnpm test` 3129/3129 exit 0, lint exit 0.
+
+
+### Lot L9
+
+Lot L9 entier (L9.1 et L9.2), 2026-10-09, branche `refactor/tags-form-value-control-l9` (non commitée).
+
+Gates (codes de sortie lus) :
+
+- `pnpm test; echo exit=$?` : 189 fichiers passent sur 189, 3142 tests sur 3142, `exit=0` ;
+- `pnpm lint; echo exit=$?` : « All files pass linting. », `exit=0` ;
+- `prettier --check` sur les `.ts` touchés : « All matched files use Prettier code style! », exit 0 ;
+- `pnpm run build --configuration production; echo exit=$?` : 20 routes prérendues, CSP posée sur 21 pages, `exit=0`, puis `git checkout -- public/sitemap.xml public/rss.xml` ;
+- `pnpm exec ngc -p tsconfig.app.json --noEmit` (`strictTemplates`) : exit 0. `[formField]="form.tags"` sur `readonly string[]` et le spread vers `Omit<TDraft, 'tags'>` passent sans repli ni cast.
+
+Preuves de fin de lot (plan) :
+
+- `grep -rn "selectedTags\|\[(tags)\]" src/app` : vide. Le motif `draft\.tags` du plan sort encore les copies `[...draft.tags]` de `toProjectInput` et `toPostInput` (que le plan prescrit lui-même), la projection `new Set(draft.tags)` de `toEdited` (`editor-draft.ts:126`, L9.2) et trois lectures de spec. Plus aucun `draft.tags()` (signal) ;
+- `ReadonlySet<string>` hors spec dans `features/admin/application` : `editor-draft.ts` (clé `tags` d'`EditedDraft`) et `components/admin-project-gallery.ts:92` (`pendingImageIds`, préexistant, hors L9) ;
+- `formField]="form.tags"` : une ligne par formulaire (`admin-project-form.ts:101`, `admin-post-form.ts:92`).
+
+Runtime : `ng serve` (port 4300) derrière un faux backend local sur le port 3000. `/auth/me` et `unread-count` sont simulés, `blog/posts/admin` est servi par la liste publique, les autres GET sont relayés vers l'API de prod, et toute requête non-GET reçoit un 403 local. Journal du faux backend : 2 `PATCH /projects/:id`, 4 `POST /auth/logout` et 2 `POST /analytics/track`, tous refusés localement. Aucune requête non-GET n'est partie vers la prod. Indice `auth:session=1` en `localStorage`. Navigateur intégré.
+
+1. `/admin/projects/<DashFlow>` (8 étiquettes) : les puces pressées sont exactement les étiquettes du projet, barre « Aucune modification ».
+2. Vitest coché : « 1 modification non enregistrée ». Décoché : « Aucune modification ».
+3. Angular décoché : « 1 modification non enregistrée ». Recoché : « Aucune modification » (L9.2).
+4. Vitest coché de nouveau : sommaire « 04 · Choix techniques modifié », les autres sections sans marque.
+5. « Enregistrer » : corps du `PATCH` reçu par le faux backend : `"tags":["NestJS","PostgreSQL","Docker","TypeScript","TailwindCSS","JWT","API","Angular","Vitest"]`. C'est l'ordre serveur, puis Angular (retirée puis rajoutée, donc passée en fin, comme avec l'ancien `Set`), puis l'ajout. Réponse 403 locale.
+6. `/admin/blog/<article Reconversion>` : étiquettes de l'article pressées. Angular décoché : « 1 modification non enregistrée ». Recoché : « Aucune modification ».
+7. Capture : barre « 1 modification non enregistrée » de l'éditeur de projet, prise après l'étape 5 (panneau navigateur de la session).
+8. Console : aucune `NG0…` en erreur (seulement `NG0751`, un log HMR du serveur de dev). Entrées propres à l'environnement : `403` (écritures refusées par le faux backend) et `InvalidStateError: Transition was aborted` (View Transitions, préexistante).
+
+**PASS**.
 
 ## Review code
 
@@ -2024,3 +2496,47 @@ Contrôles demandés :
 1. `specs/017-intake-audit-decoupage.md:1242-1243` (`## Plan technique › Lot L8 › Changements visibles`) annonce encore « à partir de `lg`, colonne d'actions `auto` → `22rem` », avec la colonne vide de l'article à `2xl`. La section « `AdminPageHeader` après L8 » (l. 1037-1055) ne mentionne pas `layoutClass`, et le « Point d'attention » du `## Verify` › Lot L8 (l. 1859) décrit un rendu (`245px 352px`, 6 lignes) que le code ne produit plus. Correction attendue : reporter dans le plan la décision (colonne `auto` quand `parent` est fourni, 22rem pour les pages, via `layoutClass` et deux constantes de classes complètes) et la mesure d'après la retouche (`443.5px 153.5px`, 4 lignes à 1024 px), puis requalifier le point d'attention en « soldé ». Aucun changement de code requis.
 
 Correction du point 1 de la revue L8 (session principale, 2026-10-08) : « Changements visibles », section « `AdminPageHeader` après L8 » et point d'attention du `## Verify` › Lot L8 mis à jour (colonne `auto` dans les éditeurs, mesures à 1024 px). Seul point bloquant soldé, sans changement de code.
+
+Lot L9, 2026-10-09, diff de travail `git diff master` (base `fc1f214`, 16 fichiers de code, aucun fichier non suivi).
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm exec ng cache clean` + `rm -rf node_modules/.vite`, puis `pnpm test; echo exit=$?` → 189 fichiers / 3142 tests passés, `exit=0` ; contre-vérification `pnpm exec tsc -p tsconfig.spec.json --noEmit` → exit 0) / lint ✅ (`pnpm lint` → `All files pass linting.`, exit=0) / build ✅ (`pnpm run build --configuration production` → `Prerendered 20 static routes.`, exit=0, puis `git checkout -- public/sitemap.xml public/rss.xml`, `public/` propre)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/aak-checks.sh` absent) : auto-checks joués à la main sur les lignes ajoutées des 16 fichiers de code (export default, effect, helpers zone, archéologie selon le motif du profil, tests exclus, sécurité, snapshot, `let`, `any`, mutation en place `push`/`splice`/`sort`/`reverse`) : 1 hit, levé (`post-draft.spec.ts:92`, `.sort()` sur le tableau neuf rendu par `Reflect.ownKeys`, ligne préexistante dont seul l'argument a changé) ; U+202F/U+00A0 littéral (`grep -P '[\x{202F}\x{00A0}]'` sur les fichiers du diff) : 0 ; un seul commentaire ajouté, WHY d'une ligne sans référence (`editor-draft.ts:10`)
+**Warnings de gate** : aucun (sorties de test, lint et build relues en entier)
+**Rendu compilé** : N/A (`app-admin-tags-selector` est un sélecteur élément, aucune classe ni style touché)
+**Preuve de verify runtime** : ✅ (`## Verify` › Lot L9 cohérente avec le diff, et rejouée par le reviewer : `ng serve` port 4300 derrière le même faux backend local en lecture seule, toute requête non-GET refusée en 403 localement ; journal = 1 `PATCH` bloqué, aucune écriture vers la prod ; serveurs arrêtés ensuite)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅ (écarts des preuves de fin de lot jugés légitimes, cf. ci-dessous)
+
+Contrôles demandés :
+- `AdminTagsSelector implements FormValueControl<readonly string[]>` (`admin-tags-selector.ts:29`), un seul membre du contrat : `value = model<readonly string[]>([])` (`:31`), sans `touch`, `disabled`, `errors` ni `focus` ; `import type` ; `toggleTag` `protected` (`:42`), gabarit seul consommateur.
+- `[formField]="form.tags"` : `admin-project-form.ts:101`, `admin-post-form.ts:92`. `model.required<ReadonlySet<string>>` supprimé des deux formulaires ; soumissions `toProjectInput(draft, draft.kind)` (`admin-project-form.ts:158`) et `toPostInput(this.value())` (`admin-post-form.ts:250`).
+- Plus aucun canal parallèle : `grep -n tags` sur les deux éditeurs, les deux formulaires et `editor-draft.ts` ne sort que les clés `'tags'` des `FORM_SECTIONS`, `TaggedDraft`, `EditedDraft` et `toEdited`. `[(tags)]` retiré des éditeurs ; aperçus `toPreviewProject(this.draft.value(), this.draft.saved())` / `toPreviewPost(…)`.
+- Ordre du payload : `toggleTag` filtre au retrait et ajoute en fin (`[...tags, tag]`), sans filtrage par `availableTags`. Observé au runtime sur « Coaching Life » (serveur `["Angular","TailwindCSS","PostgreSQL","Git"]`) : Angular décoché puis recoché, puis Vitest coché → corps du `PATCH` bloqué `"tags":["TailwindCSS","PostgreSQL","Git","Angular","Vitest"]`, même ordre que l'ancien `Set` (ordre serveur, retirée-rajoutée en fin, puis ajout). Hors catalogue conservée : épinglé par `admin-tags-selector.spec.ts` (`['Héritée', 'Angular']` + PBKDF2).
+- Comparaison en ensemble : `toEdited` privée (`editor-draft.ts:122-127`), utilisée par `baseline` et `edited` (`:52-53`) ; `EditedDraft<TDraft extends TaggedDraft> = Omit<TDraft, 'tags'> & { tags: ReadonlySet<string>; cover }`, spread accepté sans cast ni déstructuration (typecheck des specs vert). `count-draft-changes.ts` non touché (branche `Set` existante). Runtime : retirer puis rajouter → « Aucune modification » sur projet et article ; Vitest coché → « 1 modification non enregistrée », sommaire « 04 · Choix techniques modifié » seul.
+- Pas de mutation en place : copies `[...(x?.tags ?? [])]` dans `toXDraft`, `[...draft.tags]` dans `toXInput`, `value.update` sur nouvelle référence ; épinglé par l'`it.each` du sélecteur (tableau passé à `setInput` inchangé après clics) et les tests d'identité `same: false` (les builders `makeProject`/`makeBlogPost` passent la référence par `...overrides`, donc ces assertions ont du mordant).
+- `data-testid` conservés : `tag-chip`, `admin-project-tags`, `admin-post-tags`.
+- Pas de code mort : `EditorEntity` réduit à `id`, `TaggedDraft`/`toEdited` non exportés, membre `tags` et son `linkedSignal` supprimés, paramètres `tags` retirés des 4 conversions. Aucun export neuf.
+- Adaptation mécanique déclarée, vérifiée contre le diff : attendus inchangés hors des clés que le contrat ajoute (`tags` dans `toXDraft` et `value`). Les attendus des tests de puce des formulaires et de « draft order » n'ont pas bougé.
+
+Écarts consignés au `## Verify` › Lot L9, jugés :
+- `grep -rn "selectedTags\|\[(tags)\]\|draft\.tags" src/app` non vide : légitime, le motif `draft\.tags` du plan était trop large. Il sort les copies prescrites (`project-draft.ts:55`, `post-draft.ts:26`), la projection prescrite `editor-draft.ts:126` (`new Set(draft.tags)`, **omise de l'énumération du `## Verify`**) et trois lectures de spec (`post-draft.spec.ts:60`, `project-draft.spec.ts:124, 210`). Aucun `draft.tags()` (signal) ni `[(tags)]`.
+- `ReadonlySet<string>` hors spec : `editor-draft.ts:10` et `admin-project-gallery.ts:92` (`pendingImageIds`, identique sur `master`, hors L9) : légitime, la prédiction du plan ignorait ce préexistant.
+- `formField]="form.tags"` : une ligne par formulaire, conforme.
+
+**Tests notables** :
+- ✨ `admin-tags-selector.spec.ts` `it.each` des clics : vérifie que le tableau passé à `setInput` est intact après les clics. Un `push` en place fait échouer le test.
+- ✨ `admin-tags-selector.spec.ts` « bound by [formField] » : passe par la vraie directive `FormField` dans les deux sens (clic → modèle, `draft.set` → puces), ce qui épingle le contrat `FormValueControl`, pas seulement l'API du composant.
+- ⚠️ `admin-project-form.spec.ts:259`, `admin-post-form.spec.ts:234` : `byTestId(…) ?? rendered.host` retombe sur tout l'hôte si le `data-testid` disparaît. L'appartenance des puces à la section n'est donc tenue que par le test de clic (`chipsInTags`). Non bloquant.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet sur la livraison (déploiement Dokploy continu d'après `CLAUDE.md`) · monitoring : Sentry
+- comparaison en `Set` : des étiquettes serveur dupliquées (`['A', 'A']` contre `['A']`) compteraient comme identiques alors que le payload diffère. Comportement identique à `master`, et `toggleTag` ne crée pas de doublon.
+- risque déjà nommé par le plan : une future règle de schéma sur `tags` exigera `focus()` et `touch`, sinon `focusFirstInvalid` resterait muet sur ce champ.
+- non couvert par les gates : la création d'article (`POST` avec `tags`) n'a pas été rejouée par le reviewer, seulement la mise à jour d'un projet (`PATCH` bloqué) et le compteur d'un article. Elle est couverte par `admin-post-editor.spec.ts` (`pickSubject` → payload).
+
+Remarque non bloquante : compléter l'énumération du `## Verify` › Lot L9 › Preuves de fin de lot avec `editor-draft.ts:126` (projection `toEdited`, prescrite par le plan).

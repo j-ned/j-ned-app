@@ -98,7 +98,7 @@ import { toProjectInput, type ProjectDraft } from '../project-draft';
         <app-admin-tags-selector
           data-testid="admin-project-tags"
           [availableTags]="availableTags"
-          [(selectedTags)]="tags"
+          [formField]="form.tags"
         />
         <app-admin-pair-rows [rows]="form.techChoices" [config]="techChoiceRows" />
         <app-admin-pair-rows [rows]="form.architectureDecisions" [config]="decisionRows" />
@@ -108,7 +108,6 @@ import { toProjectInput, type ProjectDraft } from '../project-draft';
 })
 export class AdminProjectForm {
   readonly value = model.required<ProjectDraft>();
-  readonly tags = model.required<ReadonlySet<string>>();
   readonly persistedCover = input('');
   readonly coverResetToken = input<number>();
   readonly submitted = output<ProjectInput>();
@@ -156,7 +155,7 @@ export class AdminProjectForm {
         action: async () => {
           const draft = this.value();
           if (isProjectKind(draft.kind)) {
-            this.submitted.emit(toProjectInput(draft, this.tags(), draft.kind));
+            this.submitted.emit(toProjectInput(draft, draft.kind));
           }
         },
         onInvalid: (field) => focusFirstInvalid(field),

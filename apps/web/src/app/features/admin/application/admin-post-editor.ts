@@ -80,7 +80,6 @@ const POST_EDITOR_COPY: AdminEditorCopy = {
       <ng-template #editorForm>
         <app-admin-post-form
           [(value)]="draft.value"
-          [(tags)]="draft.tags"
           [persistedCover]="draft.saved()?.coverImage ?? ''"
           (submitted)="save($event)"
           [coverResetToken]="draft.coverResetToken()"
@@ -137,7 +136,7 @@ export class AdminPostEditor implements LeaveConfirmable {
     () => this.draft.saved()?.title ?? (this.id() ? 'Modifier un article' : 'Nouvel article'),
   );
   protected readonly preview = computed(() =>
-    toPreviewPost(this.draft.value(), this.draft.tags(), this.draft.saved()),
+    toPreviewPost(this.draft.value(), this.draft.saved()),
   );
 
   canLeave(): boolean | Promise<boolean> {

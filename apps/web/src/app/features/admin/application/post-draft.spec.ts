@@ -22,36 +22,51 @@ const SAVED = makeBlogPost({
   updatedAt: '2026-09-10T08:00:00Z',
 });
 
-const DRAFT: PostDraft = {
+const aDraft = (overrides: Partial<PostDraft> = {}): PostDraft => ({
   title: 'Signal Forms en production',
   excerpt: 'Retour sur une migration.',
+  tags: [],
   contentMarkdown: '## Avant\n\nDes formulaires réactifs.',
   status: 'draft',
-};
+  ...overrides,
+});
 
 describe('toPostDraft', () => {
   it('Given no article When the draft is built Then it is empty and unpublished', () => {
     expect(toPostDraft(null)).toEqual({
       title: '',
       excerpt: '',
+      tags: [],
       contentMarkdown: '',
       status: 'draft',
     } satisfies PostDraft);
   });
 
-  it('Given a saved article When the draft is built Then it holds exactly its four editable fields', () => {
+  it('Given a saved article When the draft is built Then it holds exactly its five editable fields', () => {
     expect(toPostDraft(SAVED)).toEqual({
       title: 'Chiffrement côté client',
       excerpt: 'Le cas DashFlow.',
+      tags: ['Chiffrement', 'Angular'],
       contentMarkdown: '## AES-256-GCM\n\nUn IV unique par message.',
       status: 'published',
     } satisfies PostDraft);
   });
+
+  it('Given a saved article When the draft is built Then its tags are a copy in the article order', () => {
+    const post = makeBlogPost({ tags: ['RxJS', 'Angular'] });
+
+    const draft = toPostDraft(post);
+
+    expect({ tags: draft.tags, same: draft.tags === post.tags }).toEqual({
+      tags: ['RxJS', 'Angular'],
+      same: false,
+    });
+  });
 });
 
 describe('toPostInput', () => {
-  it('Given a draft and its subjects When the payload is built Then it carries the draft fields and the subjects in set order', () => {
-    expect(toPostInput(DRAFT, new Set(['RxJS', 'Angular']))).toEqual({
+  it('Given a draft and its subjects When the payload is built Then it carries the draft fields and the subjects in draft order', () => {
+    expect(toPostInput(aDraft({ tags: ['RxJS', 'Angular'] }))).toEqual({
       title: 'Signal Forms en production',
       excerpt: 'Retour sur une migration.',
       contentMarkdown: '## Avant\n\nDes formulaires réactifs.',
@@ -67,14 +82,14 @@ describe('toPostInput', () => {
   ])(
     'Given the subjects $tags When the payload is built Then its tags are $expected',
     ({ tags, expected }) => {
-      expect(toPostInput(DRAFT, new Set(tags)).tags).toEqual(expected);
+      expect(toPostInput(aDraft({ tags })).tags).toEqual(expected);
     },
   );
 
   it('Given a draft carrying a field outside the payload When the payload is built Then only the five written fields leave', () => {
-    const marked = { ...DRAFT, [Symbol('form')]: true, likesCount: 9 } as PostDraft;
+    const marked = { ...aDraft(), [Symbol('form')]: true, likesCount: 9 } as PostDraft;
 
-    expect(Reflect.ownKeys(toPostInput(marked, new Set())).sort()).toEqual([
+    expect(Reflect.ownKeys(toPostInput(marked)).sort()).toEqual([
       'contentMarkdown',
       'excerpt',
       'status',
@@ -84,7 +99,7 @@ describe('toPostInput', () => {
   });
 
   it('Given a saved article When it is turned into a draft then a payload Then the payload equals its saved fields', () => {
-    expect(toPostInput(toPostDraft(SAVED), new Set(SAVED.tags))).toEqual({
+    expect(toPostInput(toPostDraft(SAVED))).toEqual({
       title: SAVED.title,
       excerpt: SAVED.excerpt,
       contentMarkdown: SAVED.contentMarkdown,
@@ -96,9 +111,13 @@ describe('toPostInput', () => {
 
 describe('toPreviewPost', () => {
   it('Given an edited draft of a saved article When the preview is built Then it is the article the draft would publish, keeping the server fields', () => {
-    const edited: PostDraft = { ...toPostDraft(SAVED), title: 'Chiffrer côté client' };
+    const edited: PostDraft = {
+      ...toPostDraft(SAVED),
+      title: 'Chiffrer côté client',
+      tags: ['Chiffrement'],
+    };
 
-    expect(toPreviewPost(edited, new Set(['Chiffrement']), SAVED)).toEqual({
+    expect(toPreviewPost(edited, SAVED)).toEqual({
       id: 'b-1',
       slug: 'chiffrement-cote-client',
       title: 'Chiffrer côté client',
@@ -114,7 +133,7 @@ describe('toPreviewPost', () => {
   });
 
   it('Given a new article When the preview is built Then the server fields are empty and it is not dated', () => {
-    expect(toPreviewPost(DRAFT, new Set(['Angular']), null)).toEqual({
+    expect(toPreviewPost(aDraft({ tags: ['Angular'] }), null)).toEqual({
       id: '',
       slug: '',
       title: 'Signal Forms en production',
@@ -136,9 +155,7 @@ describe('toPreviewPost', () => {
   ] as const)(
     'Given the $field typed When the preview is built Then it reads the typed $field',
     ({ field, value }) => {
-      expect(
-        toPreviewPost({ ...toPostDraft(SAVED), [field]: value }, new Set(), SAVED)[field],
-      ).toBe(value);
+      expect(toPreviewPost({ ...toPostDraft(SAVED), [field]: value }, SAVED)[field]).toBe(value);
     },
   );
 });

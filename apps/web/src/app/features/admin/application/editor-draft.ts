@@ -3,10 +3,11 @@ import { countChangedFields } from './count-draft-changes';
 import { toFormTocEntries, type FormTocEntry, type FormTocSection } from './form-toc-entries';
 import { LeaveConfirmation } from './leave-confirmation';
 
-type EditorEntity = { readonly id: string; readonly tags: readonly string[] };
+type EditorEntity = { readonly id: string };
+type TaggedDraft = { readonly tags: readonly string[] };
 
-export type EditedDraft<TDraft> = TDraft & {
-  readonly tags: ReadonlySet<string>;
+export type EditedDraft<TDraft extends TaggedDraft> = Omit<TDraft, 'tags'> & {
+  readonly tags: ReadonlySet<string>; // l'ordre de sélection ne compte pas
   readonly cover: File | null;
 };
 
@@ -22,7 +23,7 @@ type SaveResult<TEntity> =
     }
   | { readonly success: false; readonly error: unknown };
 
-export class EditorDraft<TEntity extends EditorEntity, TDraft extends object> {
+export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraft> {
   private readonly _saved: WritableSignal<TEntity | null>;
   private readonly _pendingCover = signal<File | null>(null);
   private readonly _coverResetToken = signal(0);
@@ -32,7 +33,6 @@ export class EditorDraft<TEntity extends EditorEntity, TDraft extends object> {
 
   readonly saved: Signal<TEntity | null>;
   readonly value: WritableSignal<TDraft>;
-  readonly tags: WritableSignal<ReadonlySet<string>>;
   readonly pendingCover = this._pendingCover.asReadonly();
   readonly coverResetToken = this._coverResetToken.asReadonly();
   readonly saving = this._saving.asReadonly();
@@ -49,17 +49,8 @@ export class EditorDraft<TEntity extends EditorEntity, TDraft extends object> {
     this._saved = linkedSignal(loaded);
     this.saved = this._saved.asReadonly();
     this.value = linkedSignal(() => toDraft(loaded()));
-    this.tags = linkedSignal<ReadonlySet<string>>(() => new Set(loaded()?.tags ?? []));
-    this.baseline = linkedSignal<EditedDraft<TDraft>>(() => ({
-      ...toDraft(loaded()),
-      tags: new Set(loaded()?.tags ?? []),
-      cover: null,
-    }));
-    this.edited = computed<EditedDraft<TDraft>>(() => ({
-      ...this.value(),
-      tags: this.tags(),
-      cover: this._pendingCover(),
-    }));
+    this.baseline = linkedSignal(() => toEdited(toDraft(loaded()), null));
+    this.edited = computed(() => toEdited(this.value(), this._pendingCover()));
     this.changes = computed(() => countChangedFields(this.edited(), this.baseline()));
     this.toc = computed(() => toFormTocEntries(sections, this.edited(), this.baseline()));
   }
@@ -126,4 +117,11 @@ export class EditorDraft<TEntity extends EditorEntity, TDraft extends object> {
     this._coverResetToken.update((token) => token + 1);
     this.baseline.set(this.edited());
   }
+}
+
+function toEdited<TDraft extends TaggedDraft>(
+  draft: TDraft,
+  cover: File | null,
+): EditedDraft<TDraft> {
+  return { ...draft, tags: new Set(draft.tags), cover };
 }

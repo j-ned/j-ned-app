@@ -115,7 +115,6 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
       <ng-template #editorForm>
         <app-admin-project-form
           [(value)]="draft.value"
-          [(tags)]="draft.tags"
           [persistedCover]="draft.saved()?.image ?? ''"
           (submitted)="save($event)"
           [coverResetToken]="draft.coverResetToken()"
@@ -199,7 +198,7 @@ export class AdminProjectEditor implements LeaveConfirmable {
     () => this.draft.saved()?.title ?? (this.id() ? 'Modifier un projet' : 'Nouveau projet'),
   );
   protected readonly preview = computed(() =>
-    toPreviewProject(this.draft.value(), this.draft.tags(), this.draft.saved()),
+    toPreviewProject(this.draft.value(), this.draft.saved()),
   );
 
   canLeave(): boolean | Promise<boolean> {

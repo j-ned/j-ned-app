@@ -89,7 +89,7 @@ import { toPostInput, type PostDraft } from '../post-draft';
           <app-admin-tags-selector
             data-testid="admin-post-tags"
             [availableTags]="availableTags"
-            [(selectedTags)]="tags"
+            [formField]="form.tags"
           />
         </div>
       </fieldset>
@@ -220,7 +220,6 @@ import { toPostInput, type PostDraft } from '../post-draft';
 })
 export class AdminPostForm {
   readonly value = model.required<PostDraft>();
-  readonly tags = model.required<ReadonlySet<string>>();
   readonly persistedCover = input('');
   readonly coverResetToken = input<number>();
   readonly submitted = output<BlogPostInput>();
@@ -248,7 +247,7 @@ export class AdminPostForm {
     {
       submission: {
         action: async () => {
-          this.submitted.emit(toPostInput(this.value(), this.tags()));
+          this.submitted.emit(toPostInput(this.value()));
         },
         onInvalid: (field) => focusFirstInvalid(field),
       },

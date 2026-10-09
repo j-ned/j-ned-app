@@ -3,7 +3,7 @@ import { EditorDraft, type EditedDraft } from './editor-draft';
 import type { FormTocSection } from './form-toc-entries';
 
 type Note = { readonly id: string; readonly title: string; readonly tags: readonly string[] };
-type NoteDraft = { readonly title: string };
+type NoteDraft = { readonly title: string; readonly tags: readonly string[] };
 
 const aNote = (overrides: Partial<Note> = {}): Note => ({
   id: 'n-1',
@@ -12,7 +12,10 @@ const aNote = (overrides: Partial<Note> = {}): Note => ({
   ...overrides,
 });
 
-const toNoteDraft = (note: Note | null): NoteDraft => ({ title: note?.title ?? '' });
+const toNoteDraft = (note: Note | null): NoteDraft => ({
+  title: note?.title ?? '',
+  tags: [...(note?.tags ?? [])],
+});
 
 const SECTIONS: readonly FormTocSection<EditedDraft<NoteDraft>>[] = [
   { id: 'note-text', label: 'Texte', fields: ['title', 'tags'] },
@@ -44,13 +47,11 @@ describe('EditorDraft: brouillon chargé', () => {
 
     expect({
       value: draft.value(),
-      tags: [...draft.tags()],
       saved: draft.saved(),
       changes: draft.changes(),
       toc: draft.toc(),
     }).toEqual({
-      value: { title: 'Carnet' },
-      tags: ['Angular'],
+      value: { title: 'Carnet', tags: ['Angular'] },
       saved: aNote(),
       changes: 0,
       toc: [
@@ -63,14 +64,15 @@ describe('EditorDraft: brouillon chargé', () => {
   it.each([
     {
       edit: 'the title changed',
-      act: (draft: EditorDraft<Note, NoteDraft>): void => draft.value.set({ title: 'Autre' }),
+      act: (draft: EditorDraft<Note, NoteDraft>): void =>
+        draft.value.update((value) => ({ ...value, title: 'Autre' })),
       changes: 1,
       toc: ['modifié', ''],
     },
     {
       edit: 'a tag added',
       act: (draft: EditorDraft<Note, NoteDraft>): void =>
-        draft.tags.set(new Set(['Angular', 'RxJS'])),
+        draft.value.update((value) => ({ ...value, tags: [...value.tags, 'RxJS'] })),
       changes: 1,
       toc: ['modifié', ''],
     },
@@ -83,8 +85,8 @@ describe('EditorDraft: brouillon chargé', () => {
     {
       edit: 'the title changed then restored',
       act: (draft: EditorDraft<Note, NoteDraft>): void => {
-        draft.value.set({ title: 'Autre' });
-        draft.value.set({ title: 'Carnet' });
+        draft.value.update((value) => ({ ...value, title: 'Autre' }));
+        draft.value.update((value) => ({ ...value, title: 'Carnet' }));
       },
       changes: 0,
       toc: ['', ''],
@@ -109,6 +111,20 @@ describe('EditorDraft: brouillon chargé', () => {
     },
   );
 
+  it.each([
+    { tags: ['RxJS', 'Angular'], changes: 0, toc: ['', ''] },
+    { tags: ['Angular', 'Zod'], changes: 1, toc: ['modifié', ''] },
+  ])(
+    'Given an entity tagged Angular and RxJS When the tags become $tags Then $changes change is counted',
+    ({ tags, changes, toc }) => {
+      const { draft } = makeDraft(aNote({ tags: ['Angular', 'RxJS'] }));
+
+      draft.value.update((value) => ({ ...value, tags: [...tags] }));
+
+      expect({ changes: draft.changes(), toc: tocStates(draft) }).toEqual({ changes, toc });
+    },
+  );
+
   it('Given a chosen cover When it is rejected Then no cover is pending and the dropzone is told to reset', () => {
     const { draft } = makeDraft(aNote());
     draft.selectCover(COVER);
@@ -124,18 +140,17 @@ describe('EditorDraft: brouillon chargé', () => {
     }).toEqual({ chosen: COVER, pending: null, token: 1, changes: 0 });
   });
 
-  it('Given an edited draft When the loaded entity changes Then the value, the tags and the saved entity follow it', () => {
+  it('Given an edited draft When the loaded entity changes Then the value, tags included, and the saved entity follow it', () => {
     const { loaded, draft } = makeDraft(aNote());
-    draft.value.set({ title: 'Brouillon' });
+    draft.value.update((value) => ({ ...value, title: 'Brouillon' }));
 
     loaded.set(aNote({ id: 'n-2', title: 'Journal', tags: ['RxJS'] }));
 
     expect({
       value: draft.value(),
-      tags: [...draft.tags()],
       saved: draft.saved()?.id,
       changes: draft.changes(),
-    }).toEqual({ value: { title: 'Journal' }, tags: ['RxJS'], saved: 'n-2', changes: 0 });
+    }).toEqual({ value: { title: 'Journal', tags: ['RxJS'] }, saved: 'n-2', changes: 0 });
   });
 });
 
@@ -151,7 +166,7 @@ describe('EditorDraft: quitter', () => {
 
   it('Given a change When leaving is asked Then a confirmation is asked and its answer decides', async () => {
     const { draft } = makeDraft(aNote());
-    draft.value.set({ title: 'Autre' });
+    draft.value.update((value) => ({ ...value, title: 'Autre' }));
 
     const leave = draft.canLeave();
     const asked = draft.leave.asked();
@@ -171,7 +186,7 @@ describe('EditorDraft: quitter', () => {
     'Given unsaved changes $edited When the tab is about to close Then the browser warning is requested $prevented time(s)',
     ({ edited, prevented }) => {
       const { draft } = makeDraft(aNote());
-      if (edited) draft.value.set({ title: 'Autre' });
+      if (edited) draft.value.update((value) => ({ ...value, title: 'Autre' }));
       const event = { preventDefault: vi.fn() };
 
       draft.warnBeforeUnload(event as unknown as BeforeUnloadEvent);
@@ -184,7 +199,7 @@ describe('EditorDraft: quitter', () => {
 describe('EditorDraft: enregistrer', () => {
   it('Given an edited title without cover When it is saved Then the written entity becomes the saved one, nothing is uploaded and nothing is left to save', async () => {
     const { draft } = makeDraft(aNote());
-    draft.value.set({ title: 'Après' });
+    draft.value.update((value) => ({ ...value, title: 'Après' }));
     const written = aNote({ title: 'Après' });
     const uploadCover = vi.fn(async (): Promise<unknown> => 'key');
 
@@ -208,7 +223,7 @@ describe('EditorDraft: enregistrer', () => {
 
   it('Given a cover chosen for a new entity When it is saved Then the cover is uploaded for the written id, after the write, and the dropzone resets', async () => {
     const { draft } = makeDraft(null);
-    draft.value.set({ title: 'Nouveau' });
+    draft.value.update((value) => ({ ...value, title: 'Nouveau' }));
     draft.selectCover(COVER);
     const write = vi.fn(
       async (): Promise<Note> => aNote({ id: 'n-9', title: 'Nouveau', tags: [] }),
@@ -238,7 +253,7 @@ describe('EditorDraft: enregistrer', () => {
 
   it('Given the cover upload rejected When it is saved Then the failure is reported and the entity is still marked saved', async () => {
     const { draft } = makeDraft(aNote());
-    draft.value.set({ title: 'Après' });
+    draft.value.update((value) => ({ ...value, title: 'Après' }));
     draft.selectCover(COVER);
     const error = new Error('upload');
 
@@ -265,7 +280,7 @@ describe('EditorDraft: enregistrer', () => {
 
   it('Given the write rejected When it is saved Then the failure is returned, no cover is sent and the draft is kept', async () => {
     const { draft } = makeDraft(aNote());
-    draft.value.set({ title: 'Après' });
+    draft.value.update((value) => ({ ...value, title: 'Après' }));
     draft.selectCover(COVER);
     const error = new Error('boom');
     const uploadCover = vi.fn(async (): Promise<unknown> => 'key');
@@ -291,7 +306,7 @@ describe('EditorDraft: enregistrer', () => {
     'Given a write in progress When it $outcome Then saving is on meanwhile and off after',
     async ({ outcome }) => {
       const { draft } = makeDraft(aNote());
-      draft.value.set({ title: 'Après' });
+      draft.value.update((value) => ({ ...value, title: 'Après' }));
       let settleWrite: () => void = () => undefined;
       const write = (): Promise<Note> =>
         new Promise<Note>((resolve, reject) => {

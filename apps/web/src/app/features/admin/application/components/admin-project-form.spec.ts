@@ -23,7 +23,6 @@ type RenderedForm = {
   readonly fixture: ComponentFixture<AdminProjectForm>;
   readonly host: HTMLElement;
   readonly value: WritableSignal<ProjectDraft>;
-  readonly tags: WritableSignal<ReadonlySet<string>>;
   readonly submitted: ProjectInput[];
   readonly covers: File[];
 };
@@ -44,11 +43,9 @@ function editableProject(overrides: Partial<Project> = {}): Project {
 async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
   const project = options.project ?? null;
   const value = signal(toProjectDraft(project));
-  const tags = signal<ReadonlySet<string>>(new Set(project?.tags ?? []));
   const fixture = TestBed.createComponent(AdminProjectForm, {
     bindings: [
       twoWayBinding('value', value),
-      twoWayBinding('tags', tags),
       inputBinding('persistedCover', () => options.persistedCover ?? ''),
     ],
   });
@@ -61,7 +58,6 @@ async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
     fixture,
     host: fixture.nativeElement as HTMLElement,
     value,
-    tags,
     submitted,
     covers,
   };
@@ -256,7 +252,18 @@ describe('AdminProjectForm: brouillon possédé par la page', () => {
     }).toEqual({ title: 'Remplacé', demo: true });
   });
 
-  it('Given the tag chips When the admin selects TypeScript Then the page tag set and the payload hold it', async () => {
+  it('Given an edited project When the form renders Then its tags are pressed', async () => {
+    const rendered = await renderForm({
+      project: editableProject({ tags: ['Angular', 'NestJS'] }),
+    });
+    const chips = all(byTestId(rendered.host, 'admin-project-tags') ?? rendered.host, 'tag-chip');
+
+    expect(
+      chips.filter((chip) => chip.getAttribute('aria-pressed') === 'true').map(normalized),
+    ).toEqual(['Angular', 'NestJS']);
+  });
+
+  it('Given the tag chips When the admin selects TypeScript Then the draft tags and the payload hold it', async () => {
     const rendered = await renderForm({ project: editableProject({ kind: 'demo' }) });
     const chip = all(rendered.host, 'tag-chip').find(
       (element) => normalized(element) === 'TypeScript',
@@ -267,7 +274,7 @@ describe('AdminProjectForm: brouillon possédé par la page', () => {
     await submitForm(rendered);
 
     expect({
-      tags: [...rendered.tags()],
+      tags: rendered.value().tags,
       sent: rendered.submitted.map((payload) => payload.tags),
       chipsInTags: byTestId(rendered.host, 'admin-project-tags')?.contains(chip ?? null) ?? false,
     }).toEqual({
@@ -277,15 +284,13 @@ describe('AdminProjectForm: brouillon possédé par la page', () => {
     });
   });
 
-  it('Given an edited project When it is submitted unchanged Then the payload is the draft converted with the page tags', async () => {
+  it('Given an edited project When it is submitted unchanged Then the payload is the draft converted', async () => {
     const project = editableProject({ kind: 'script' });
     const rendered = await renderForm({ project });
 
     await submitForm(rendered);
 
-    expect(rendered.submitted).toEqual([
-      toProjectInput(toProjectDraft(project), new Set(project.tags), 'script'),
-    ]);
+    expect(rendered.submitted).toEqual([toProjectInput(toProjectDraft(project), 'script')]);
   });
 });
 

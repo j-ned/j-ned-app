@@ -9,6 +9,7 @@ import type {
 export type ProjectDraft = {
   title: string;
   category: string;
+  tags: readonly string[];
   description: string;
   liveUrl: string;
   repoUrl: string;
@@ -28,6 +29,7 @@ export function toProjectDraft(project: Project | null): ProjectDraft {
   return {
     title: project?.title ?? '',
     category: project?.category ?? '',
+    tags: [...(project?.tags ?? [])],
     description: project?.description ?? '',
     liveUrl: project?.liveUrl ?? '',
     repoUrl: project?.repoUrl ?? '',
@@ -46,15 +48,11 @@ export function toProjectDraft(project: Project | null): ProjectDraft {
 
 // `image` n'est jamais dans le payload : la couverture passe par `uploadImage`, le DTO la refuse.
 // `null` plutôt qu'absent : un lien vidé doit effacer la valeur dans le PATCH.
-export function toProjectInput(
-  draft: ProjectDraft,
-  tags: ReadonlySet<string>,
-  kind: ProjectKind,
-): ProjectInput {
+export function toProjectInput(draft: ProjectDraft, kind: ProjectKind): ProjectInput {
   return {
     title: draft.title,
     category: draft.category,
-    tags: [...tags],
+    tags: [...draft.tags],
     description: draft.description,
     liveUrl: draft.liveUrl || null,
     repoUrl: draft.repoUrl || null,
@@ -75,14 +73,10 @@ export function toProjectInput(
   };
 }
 
-export function toPreviewProject(
-  draft: ProjectDraft,
-  tags: ReadonlySet<string>,
-  base: Project | null,
-): Project | null {
+export function toPreviewProject(draft: ProjectDraft, base: Project | null): Project | null {
   if (draft.kind === '') return null;
   return {
-    ...toProjectInput(draft, tags, draft.kind),
+    ...toProjectInput(draft, draft.kind),
     id: base?.id ?? '',
     slug: base?.slug ?? '',
     image: base?.image ?? '',

@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed, input, model } from '@angular/core';
+import type { FormValueControl } from '@angular/forms/signals';
 import { blogTagPalette } from '@features/blog/application/blog-tag-palette';
 
 type TagChip = { readonly tag: string; readonly selected: boolean; readonly classes: string };
@@ -25,26 +26,22 @@ type TagChip = { readonly tag: string; readonly selected: boolean; readonly clas
     </div>
   `,
 })
-export class AdminTagsSelector {
+export class AdminTagsSelector implements FormValueControl<readonly string[]> {
   readonly availableTags = input.required<readonly string[]>();
-  readonly selectedTags = model.required<ReadonlySet<string>>();
+  readonly value = model<readonly string[]>([]);
 
   protected readonly chips = computed((): readonly TagChip[] => {
-    const selected = this.selectedTags();
+    const selected = this.value();
     return this.availableTags().map((tag) => {
       const palette = blogTagPalette(tag);
-      const isSelected = selected.has(tag);
+      const isSelected = selected.includes(tag);
       return { tag, selected: isSelected, classes: isSelected ? palette.solid : palette.tint };
     });
   });
 
-  toggleTag(tag: string): void {
-    const tags = new Set(this.selectedTags());
-    if (tags.has(tag)) {
-      tags.delete(tag);
-    } else {
-      tags.add(tag);
-    }
-    this.selectedTags.set(tags);
+  protected toggleTag(tag: string): void {
+    this.value.update((tags) =>
+      tags.includes(tag) ? tags.filter((selected) => selected !== tag) : [...tags, tag],
+    );
   }
 }

@@ -2,7 +2,7 @@ import { toProjectDraft, type ProjectDraft } from './project-draft';
 import { makeProject } from '@features/projects/testing/project-builders';
 import { countChangedFields } from './count-draft-changes';
 
-type Edited = ProjectDraft & { readonly tags: ReadonlySet<string> };
+type Edited = Omit<ProjectDraft, 'tags'> & { readonly tags: ReadonlySet<string> };
 
 const BASELINE: Edited = {
   ...toProjectDraft(

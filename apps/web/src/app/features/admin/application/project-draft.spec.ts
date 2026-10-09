@@ -28,6 +28,7 @@ describe('toProjectDraft', () => {
     expect(toProjectDraft(null)).toEqual({
       title: '',
       category: '',
+      tags: [],
       description: '',
       liveUrl: '',
       repoUrl: '',
@@ -48,6 +49,7 @@ describe('toProjectDraft', () => {
     const project = makeProject({
       title: 'DashFlow',
       category: 'Application Web',
+      tags: ['NestJS', 'Angular'],
       description: 'Budget et santé du foyer.',
       liveUrl: 'https://dashflow.nedellec-julien.fr',
       repoUrl: null,
@@ -66,6 +68,7 @@ describe('toProjectDraft', () => {
     expect(toProjectDraft(project)).toEqual({
       title: 'DashFlow',
       category: 'Application Web',
+      tags: ['NestJS', 'Angular'],
       description: 'Budget et santé du foyer.',
       liveUrl: 'https://dashflow.nedellec-julien.fr',
       repoUrl: '',
@@ -113,6 +116,17 @@ describe('toProjectDraft', () => {
     });
   });
 
+  it('Given a tagged project When the draft is built Then its tags are a copy in the project order', () => {
+    const tags = ['TypeScript', 'Angular'];
+
+    const draft = toProjectDraft(makeProject({ tags }));
+
+    expect({ tags: draft.tags, same: draft.tags === tags }).toEqual({
+      tags: ['TypeScript', 'Angular'],
+      same: false,
+    });
+  });
+
   it('Given a project with repeated rows When the draft is built Then its lists are copies holding the same rows', () => {
     const techChoices = [{ techno: 'Angular', why: 'signals' }];
     const architectureDecisions = [{ decision: 'Hexagonale', rationale: 'tests' }];
@@ -135,7 +149,7 @@ describe('toProjectDraft', () => {
 
 describe('toProjectInput', () => {
   it('Given an edited project unchanged When the payload is built Then it is exactly the writable fields, nature included', () => {
-    const payload = toProjectInput(toProjectDraft(EDITABLE), new Set(EDITABLE.tags), 'script');
+    const payload = toProjectInput(toProjectDraft(EDITABLE), 'script');
 
     expect(payload).toEqual({
       title: 'Projet',
@@ -166,7 +180,7 @@ describe('toProjectInput', () => {
   ] as const)(
     'Given the link $field set to « $typed » When the payload is built Then it sends $sent',
     ({ field, typed, sent }) => {
-      const payload = toProjectInput(draftOf({ [field]: typed }), new Set(), 'demo');
+      const payload = toProjectInput(draftOf({ [field]: typed }), 'demo');
 
       expect(payload[field]).toBe(sent);
     },
@@ -182,20 +196,21 @@ describe('toProjectInput', () => {
   ] as const)(
     'Given the presentation field $field set to « $typed » When the payload is built Then it sends $sent',
     ({ field, typed, sent }) => {
-      const payload = toProjectInput(draftOf({ [field]: typed }), new Set(), 'demo');
+      const payload = toProjectInput(draftOf({ [field]: typed }), 'demo');
 
       expect(payload[field]).toBe(sent);
     },
   );
 
-  it('Given selected tags When the payload is built Then they are sent as a list in selection order', () => {
-    const payload = toProjectInput(
-      draftOf(),
-      new Set(['TypeScript', 'Angular', 'NestJS']),
-      'production',
-    );
+  it('Given draft tags When the payload is built Then they are sent in the draft order, as a copy', () => {
+    const draft = draftOf({ tags: ['TypeScript', 'Angular', 'NestJS'] });
 
-    expect(payload.tags).toEqual(['TypeScript', 'Angular', 'NestJS']);
+    const payload = toProjectInput(draft, 'production');
+
+    expect({ tags: payload.tags, same: payload.tags === draft.tags }).toEqual({
+      tags: ['TypeScript', 'Angular', 'NestJS'],
+      same: false,
+    });
   });
 
   it('Given repeated rows marked by the form When the payload is built Then each row is copied field by field', () => {
@@ -207,7 +222,7 @@ describe('toProjectInput', () => {
       ],
     });
 
-    const payload = toProjectInput(draft, new Set(), 'demo');
+    const payload = toProjectInput(draft, 'demo');
     const rows = [...(payload.techChoices ?? []), ...(payload.architectureDecisions ?? [])];
 
     expect({
@@ -224,7 +239,7 @@ describe('toProjectInput', () => {
   it.each(['production', 'demo', 'script'] as const)(
     'Given the nature %s When the payload is built Then it carries that nature',
     (kind) => {
-      expect(toProjectInput(draftOf({ kind }), new Set(), kind).kind).toBe(kind);
+      expect(toProjectInput(draftOf({ kind }), kind).kind).toBe(kind);
     },
   );
 });
@@ -243,11 +258,8 @@ describe('toPreviewProject', () => {
     gallery: [makeProjectImage({ id: 'img-a' })],
   });
 
-  const previewOf = (
-    overrides: Partial<ProjectDraft> = {},
-    tags: ReadonlySet<string> = new Set(BASE.tags),
-    base: Project | null = BASE,
-  ): Project | null => toPreviewProject({ ...toProjectDraft(base), ...overrides }, tags, base);
+  const previewOf = (overrides: Partial<ProjectDraft>, base: Project | null): Project | null =>
+    toPreviewProject({ ...toProjectDraft(base), ...overrides }, base);
 
   it('Given an edited draft of a saved project When the preview is built Then it is the public project the draft would make', () => {
     const preview = previewOf(
@@ -262,8 +274,9 @@ describe('toPreviewProject', () => {
         liveUrl: 'https://dashflow.nedellec-julien.fr',
         repoUrlFront: '',
         techChoices: [{ techno: 'NestJS', why: 'modules' }],
+        tags: ['TypeScript', 'Angular'],
       },
-      new Set(['TypeScript', 'Angular']),
+      BASE,
     );
 
     expect(preview).toEqual({
@@ -291,7 +304,7 @@ describe('toPreviewProject', () => {
   });
 
   it('Given a draft without nature When the preview is built Then there is no preview', () => {
-    expect(previewOf({ kind: '' })).toBeNull();
+    expect(previewOf({ kind: '' }, BASE)).toBeNull();
   });
 
   it.each([
@@ -304,7 +317,7 @@ describe('toPreviewProject', () => {
   ] as const)(
     'Given the presentation field $field set to « $typed » When the preview is built Then it shows $shown',
     ({ field, typed, shown }) => {
-      expect(previewOf({ [field]: typed })?.[field]).toBe(shown);
+      expect(previewOf({ [field]: typed }, BASE)?.[field]).toBe(shown);
     },
   );
 
@@ -317,12 +330,12 @@ describe('toPreviewProject', () => {
   ] as const)(
     'Given the link $field set to « $typed » When the preview is built Then it shows $shown',
     ({ field, typed, shown }) => {
-      expect(previewOf({ [field]: typed })?.[field]).toBe(shown);
+      expect(previewOf({ [field]: typed }, BASE)?.[field]).toBe(shown);
     },
   );
 
   it('Given a new project When the preview is built Then it has no address, no cover and no capture yet', () => {
-    const preview = previewOf({ title: 'Nouveau', kind: 'script' }, new Set(), null);
+    const preview = previewOf({ title: 'Nouveau', kind: 'script' }, null);
 
     expect({
       id: preview?.id,
