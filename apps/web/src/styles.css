@@ -147,10 +147,9 @@
   --theme-nav-shadow:
     0 1px 2px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent),
     0 4px 12px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent);
-  --theme-status-success: oklch(
-    60.4% 0.18 145
-  ); /* green-600 (#16a34a) — lisible sur Ivoire Paper */
-  --theme-status-warn: oklch(63.5% 0.165 50); /* amber-600 (#d97706) */
+  /* Texte ≥ 4,5:1 jusque sur la teinte à 10 % posée sur le paper (4,75 et 4,97) : mêmes teintes que code-string et code-number */
+  --theme-status-success: oklch(49% 0.14 150); /* #007531 */
+  --theme-status-warn: oklch(51% 0.155 47); /* #a94000 */
   --theme-status-error: oklch(
     50.5% 0.213 27.5
   ); /* red-700 (#c10007) — texte d'erreur ≥ 4,5:1 sur paper */

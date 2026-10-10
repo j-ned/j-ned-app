@@ -23,8 +23,8 @@ colors:
   console-line-strong: "color-mix(in srgb, #fafafa 22%, transparent)"
   ivoire-line: "color-mix(in srgb, #292524 12%, transparent)"
   ivoire-line-strong: "color-mix(in srgb, #292524 28%, transparent)"
-  status-success: "#16a34a"
-  status-warn: "#d97706"
+  status-success: "#007531"
+  status-warn: "#a94000"
   status-error: "#c10007"
   console-code-keyword: "#94a0ff"
   console-code-function: "#ae8dfb"
@@ -642,7 +642,7 @@ Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, s
 
 ### Toast (`shared/ui/toast.ts`)
 
-À documenter — variantes info/success/warn/error, position, durée, dismiss. Couleur : le titre est en `foreground` quelle que soit la sévérité (en Ivoire, `status-success` et `status-warn` pleins tombent sous 4,5:1 sur la teinte à 10 % du conteneur) ; la sévérité reste portée par l'icône, la bordure gauche, la teinte et le bouton fermer, au token plein. Sous `prefers-reduced-motion: reduce`, il apparaît sans glisser ni fondu.
+À documenter — variantes info/success/warn/error, position, durée, dismiss. Couleur : le titre est en `foreground` quelle que soit la sévérité ; la sévérité reste portée par l'icône, la bordure gauche, la teinte et le bouton fermer, au token plein (≥ 3:1 sur la teinte à 10 %, dans les deux registres). Sous `prefers-reduced-motion: reduce`, il apparaît sans glisser ni fondu.
 
 ### Drawer (`shared/ui/drawer.ts`)
 
