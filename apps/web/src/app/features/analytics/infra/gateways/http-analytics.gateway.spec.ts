@@ -8,7 +8,7 @@ import {
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { PLATFORM_ID, signal } from '@angular/core';
 import { firstValueFrom, type Observable } from 'rxjs';
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, vi, type Mock } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
 import { AnalyticsDeviceExclusion } from '@core/analytics/analytics-device-exclusion';
@@ -25,9 +25,11 @@ import type {
   ActiveVisitors,
 } from '../../domain/models/analytics.types';
 
-const BASE = '/api';
+const API = 'https://api.test/api';
+const TRACK_URL = '/api/analytics/track';
 
 type VisitorContext = { loggedIn?: boolean; deviceExcluded?: boolean };
+type BeaconSpy = Mock<(url: string, data: Blob) => boolean>;
 
 function visitorProviders(ctx: VisitorContext = {}): unknown[] {
   return [
@@ -48,7 +50,7 @@ function configureBrowser(ctx: VisitorContext = {}): {
       HttpAnalyticsGateway,
       provideHttpClient(),
       provideHttpClientTesting(),
-      { provide: API_BASE_URL, useValue: BASE },
+      { provide: API_BASE_URL, useValue: API },
       { provide: PLATFORM_ID, useValue: 'browser' },
       ...visitorProviders(ctx),
     ],
@@ -68,7 +70,7 @@ function configureServer(): {
       HttpAnalyticsGateway,
       provideHttpClient(),
       provideHttpClientTesting(),
-      { provide: API_BASE_URL, useValue: BASE },
+      { provide: API_BASE_URL, useValue: API },
       { provide: PLATFORM_ID, useValue: 'server' },
       ...visitorProviders(),
     ],
@@ -79,13 +81,28 @@ function configureServer(): {
   };
 }
 
+function installBeacon(value: BeaconSpy | undefined): void {
+  Object.defineProperty(globalThis.navigator, 'sendBeacon', {
+    value,
+    writable: true,
+    configurable: true,
+  });
+}
+
+function beaconSpy(): BeaconSpy {
+  const spy: BeaconSpy = vi.fn<(url: string, data: Blob) => boolean>().mockReturnValue(true);
+  installBeacon(spy);
+  return spy;
+}
+
 describe('HttpAnalyticsGateway', () => {
   afterEach(() => {
+    Reflect.deleteProperty(globalThis.navigator, 'sendBeacon');
     TestBed.resetTestingModule();
   });
 
-  describe('Tracking write-side (7 tests)', () => {
-    it('trackPageView émet POST /<base>/analytics/track avec { type:page_view, url, referrer }', () => {
+  describe('Tracking write-side, same origin', () => {
+    it('trackPageView émet POST /api/analytics/track sur l’origine du site avec { type:page_view, url, referrer }', () => {
       const { gateway, httpController } = configureBrowser();
 
       Object.defineProperty(document, 'referrer', {
@@ -95,7 +112,7 @@ describe('HttpAnalyticsGateway', () => {
 
       gateway.trackPageView('/home');
 
-      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      const req = httpController.expectOne(TRACK_URL);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({
         type: 'page_view',
@@ -106,24 +123,12 @@ describe('HttpAnalyticsGateway', () => {
       httpController.verify();
     });
 
-    it('trackPageDuration émet POST /<base>/analytics/track avec { type:page_duration, url, duration }', () => {
-      const { gateway, httpController } = configureBrowser();
-
-      gateway.trackPageDuration('/home', 12);
-
-      const req = httpController.expectOne(`${BASE}/analytics/track`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ type: 'page_duration', url: '/home', duration: 12 });
-      req.flush(null, { status: 204, statusText: 'No Content' });
-      httpController.verify();
-    });
-
-    it('trackProjectClick émet POST /<base>/analytics/track avec { type:project_click, entityId, entityTitle }', () => {
+    it('trackProjectClick émet POST /api/analytics/track avec { type:project_click, entityId, entityTitle }', () => {
       const { gateway, httpController } = configureBrowser();
 
       gateway.trackProjectClick('abc-123', 'My Project');
 
-      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      const req = httpController.expectOne(TRACK_URL);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({
         type: 'project_click',
@@ -134,12 +139,12 @@ describe('HttpAnalyticsGateway', () => {
       httpController.verify();
     });
 
-    it('trackArticleView émet POST /<base>/analytics/track avec { type:article_view, entityId, entityTitle }', () => {
+    it('trackArticleView émet POST /api/analytics/track avec { type:article_view, entityId, entityTitle }', () => {
       const { gateway, httpController } = configureBrowser();
 
       gateway.trackArticleView('art-1', 'My Article');
 
-      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      const req = httpController.expectOne(TRACK_URL);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({
         type: 'article_view',
@@ -150,12 +155,12 @@ describe('HttpAnalyticsGateway', () => {
       httpController.verify();
     });
 
-    it('trackArticleRead émet POST /<base>/analytics/track avec { type:article_read, entityId, entityTitle }', () => {
+    it('trackArticleRead émet POST /api/analytics/track avec { type:article_read, entityId, entityTitle }', () => {
       const { gateway, httpController } = configureBrowser();
 
       gateway.trackArticleRead('art-1', 'My Article');
 
-      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      const req = httpController.expectOne(TRACK_URL);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({
         type: 'article_read',
@@ -171,18 +176,18 @@ describe('HttpAnalyticsGateway', () => {
 
       gateway.trackCtaClick('home_hero_projects', 'Voir les projets');
 
-      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      const req = httpController.expectOne(TRACK_URL);
       expect(req.request.context.get(SKIP_ERROR_TOAST)).toBe(true);
       req.flush(null, { status: 204, statusText: 'No Content' });
       httpController.verify();
     });
 
-    it('trackCtaClick émet POST /<base>/analytics/track avec { type:cta_click, entityId, entityTitle }', () => {
+    it('trackCtaClick émet POST /api/analytics/track avec { type:cta_click, entityId, entityTitle }', () => {
       const { gateway, httpController } = configureBrowser();
 
       gateway.trackCtaClick('home_hero_projects', 'Voir les projets');
 
-      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      const req = httpController.expectOne(TRACK_URL);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({
         type: 'cta_click',
@@ -193,12 +198,12 @@ describe('HttpAnalyticsGateway', () => {
       httpController.verify();
     });
 
-    it('trackCvDownload émet POST /<base>/analytics/track avec { type:cv_download }', () => {
+    it('trackCvDownload émet POST /api/analytics/track avec { type:cv_download }', () => {
       const { gateway, httpController } = configureBrowser();
 
       gateway.trackCvDownload();
 
-      const req = httpController.expectOne(`${BASE}/analytics/track`);
+      const req = httpController.expectOne(TRACK_URL);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ type: 'cv_download' });
       req.flush(null, { status: 204, statusText: 'No Content' });
@@ -206,32 +211,29 @@ describe('HttpAnalyticsGateway', () => {
     });
   });
 
-  describe('Beacon (2 tests)', () => {
-    it('sendBeacon appelle navigator.sendBeacon avec URL /<base>/analytics/track et Blob JSON correct', () => {
-      const { gateway } = configureBrowser();
-      const sendBeaconSpy = vi.fn().mockReturnValue(true);
-      Object.defineProperty(globalThis.navigator, 'sendBeacon', {
-        value: sendBeaconSpy,
-        writable: true,
-        configurable: true,
+  describe('page_duration par beacon', () => {
+    it('Given a visitor When trackPageDuration is called Then a JSON beacon leaves for /api/analytics/track and no HttpClient request is made', async () => {
+      const { gateway, httpController } = configureBrowser();
+      const beacon = beaconSpy();
+
+      gateway.trackPageDuration('/home', 12);
+
+      expect(beacon).toHaveBeenCalledTimes(1);
+      const [url, blob] = beacon.mock.calls[0];
+      expect({ url, type: blob.type, body: JSON.parse(await blob.text()) }).toEqual({
+        url: TRACK_URL,
+        type: 'application/json',
+        body: { type: 'page_duration', url: '/home', duration: 12 },
       });
-
-      gateway.sendBeacon({ type: 'page_duration', url: '/home', duration: 5 });
-
-      expect(sendBeaconSpy).toHaveBeenCalledWith(`${BASE}/analytics/track`, expect.any(Blob));
-      const blob: Blob = sendBeaconSpy.mock.calls[0][1];
-      expect(blob.type).toBe('application/json');
+      httpController.verify();
     });
 
-    it("sendBeacon est no-op si navigator.sendBeacon n'existe pas", () => {
-      const { gateway } = configureBrowser();
-      Object.defineProperty(globalThis.navigator, 'sendBeacon', {
-        value: undefined,
-        writable: true,
-        configurable: true,
-      });
+    it('Given a browser without navigator.sendBeacon When trackPageDuration is called Then nothing throws and no HttpClient request is made', () => {
+      const { gateway, httpController } = configureBrowser();
+      installBeacon(undefined);
 
-      expect(() => gateway.sendBeacon({ type: 'cv_download' })).not.toThrow();
+      expect(() => gateway.trackPageDuration('/home', 12)).not.toThrow();
+      httpController.verify();
     });
   });
 
@@ -255,7 +257,7 @@ describe('HttpAnalyticsGateway', () => {
 
       const req = httpController.expectOne(
         (r) =>
-          r.url === `${BASE}/analytics/stats/overview` &&
+          r.url === `${API}/analytics/stats/overview` &&
           r.params.get('startDate') === '2026-04-01' &&
           r.params.get('endDate') === '2026-04-30',
       );
@@ -276,7 +278,7 @@ describe('HttpAnalyticsGateway', () => {
 
       const req = httpController.expectOne(
         (r) =>
-          r.url === `${BASE}/analytics/stats/chart` &&
+          r.url === `${API}/analytics/stats/chart` &&
           r.params.get('startDate') === '2026-04-01' &&
           r.params.get('endDate') === '2026-04-30',
       );
@@ -297,7 +299,7 @@ describe('HttpAnalyticsGateway', () => {
 
       const req = httpController.expectOne(
         (r) =>
-          r.url === `${BASE}/analytics/stats/metrics` &&
+          r.url === `${API}/analytics/stats/metrics` &&
           r.params.get('type') === 'url' &&
           r.params.get('startDate') === '2026-04-01' &&
           r.params.get('endDate') === '2026-04-30',
@@ -317,7 +319,7 @@ describe('HttpAnalyticsGateway', () => {
 
       const promise = firstValueFrom(gateway.getActiveVisitors());
 
-      const req = httpController.expectOne(`${BASE}/analytics/stats/active`);
+      const req = httpController.expectOne(`${API}/analytics/stats/active`);
       expect(req.request.method).toBe('GET');
       expect(req.request.withCredentials).toBe(true);
       req.flush(expected);
@@ -335,7 +337,7 @@ describe('HttpAnalyticsGateway', () => {
 
       const req = httpController.expectOne(
         (r) =>
-          r.url === `${BASE}/analytics/stats/projects` &&
+          r.url === `${API}/analytics/stats/projects` &&
           r.params.get('startDate') === '2026-04-01' &&
           r.params.get('endDate') === '2026-04-30',
       );
@@ -356,7 +358,7 @@ describe('HttpAnalyticsGateway', () => {
 
       const req = httpController.expectOne(
         (r) =>
-          r.url === `${BASE}/analytics/stats/articles` &&
+          r.url === `${API}/analytics/stats/articles` &&
           r.params.get('startDate') === '2026-04-01' &&
           r.params.get('endDate') === '2026-04-30',
       );
@@ -377,7 +379,7 @@ describe('HttpAnalyticsGateway', () => {
 
       const req = httpController.expectOne(
         (r) =>
-          r.url === `${BASE}/analytics/stats/articles-read` &&
+          r.url === `${API}/analytics/stats/articles-read` &&
           r.params.get('startDate') === '2026-04-01' &&
           r.params.get('endDate') === '2026-04-30',
       );
@@ -399,7 +401,7 @@ describe('HttpAnalyticsGateway', () => {
       const promise = firstValueFrom(gateway.getCtaStats('2026-01-01', '2026-01-31'));
 
       const req = httpController.expectOne(
-        `${BASE}/analytics/stats/cta?startDate=2026-01-01&endDate=2026-01-31`,
+        `${API}/analytics/stats/cta?startDate=2026-01-01&endDate=2026-01-31`,
       );
       expect(req.request.method).toBe('GET');
       expect(req.request.withCredentials).toBe(true);
@@ -415,7 +417,7 @@ describe('HttpAnalyticsGateway', () => {
 
       const req = httpController.expectOne(
         (r) =>
-          r.url === `${BASE}/analytics/stats/cv-downloads` &&
+          r.url === `${API}/analytics/stats/cv-downloads` &&
           r.params.get('startDate') === '2026-04-01' &&
           r.params.get('endDate') === '2026-04-30',
       );
@@ -435,7 +437,7 @@ describe('HttpAnalyticsGateway', () => {
       (url) => {
         const { gateway, httpController } = configureBrowser();
         gateway.trackPageView(url);
-        httpController.expectNone(`${BASE}/analytics/track`);
+        httpController.expectNone(TRACK_URL);
         httpController.verify();
       },
     );
@@ -444,46 +446,19 @@ describe('HttpAnalyticsGateway', () => {
       'trackPageDuration est no-op pour url=%s',
       (url) => {
         const { gateway, httpController } = configureBrowser();
+        const beacon = beaconSpy();
         gateway.trackPageDuration(url, 30);
-        httpController.expectNone(`${BASE}/analytics/track`);
+        expect(beacon).not.toHaveBeenCalled();
         httpController.verify();
       },
     );
-
-    it('sendBeacon est no-op pour page_duration sur /admin/*', () => {
-      const { gateway } = configureBrowser();
-      const sendBeaconSpy = vi.fn().mockReturnValue(true);
-      Object.defineProperty(globalThis.navigator, 'sendBeacon', {
-        value: sendBeaconSpy,
-        writable: true,
-        configurable: true,
-      });
-
-      gateway.sendBeacon({ type: 'page_duration', url: '/admin/inbox', duration: 5 });
-
-      expect(sendBeaconSpy).not.toHaveBeenCalled();
-    });
-
-    it('sendBeacon laisse passer un payload sans url (custom event)', () => {
-      const { gateway } = configureBrowser();
-      const sendBeaconSpy = vi.fn().mockReturnValue(true);
-      Object.defineProperty(globalThis.navigator, 'sendBeacon', {
-        value: sendBeaconSpy,
-        writable: true,
-        configurable: true,
-      });
-
-      gateway.sendBeacon({ type: 'cv_download' });
-
-      expect(sendBeaconSpy).toHaveBeenCalledTimes(1);
-    });
 
     it.each([['/logins'], ['/admin-public'], ['/login/something'], ['/home']])(
       'trackPageView est OK pour url=%s (pas filtré)',
       (url) => {
         const { gateway, httpController } = configureBrowser();
         gateway.trackPageView(url);
-        const req = httpController.expectOne(`${BASE}/analytics/track`);
+        const req = httpController.expectOne(TRACK_URL);
         expect(req.request.body).toEqual(expect.objectContaining({ url }));
         req.flush(null, { status: 204, statusText: 'No Content' });
         httpController.verify();
@@ -492,11 +467,12 @@ describe('HttpAnalyticsGateway', () => {
   });
 
   describe('visiteurs exclus', () => {
-    it.each<[string, { loggedIn?: boolean; deviceExcluded?: boolean }]>([
+    it.each<[string, VisitorContext]>([
       ['admin connecté', { loggedIn: true }],
       ['appareil exclu', { deviceExcluded: true }],
-    ])('%s : aucun POST /track, quel que soit le type', (_label, ctx) => {
+    ])('%s : aucun POST /track ni beacon, quel que soit le type', (_label, ctx) => {
       const { gateway, httpController } = configureBrowser(ctx);
+      const beacon = beaconSpy();
 
       gateway.trackPageView('/blog');
       gateway.trackPageDuration('/blog', 12);
@@ -506,29 +482,34 @@ describe('HttpAnalyticsGateway', () => {
       gateway.trackCvDownload();
       gateway.trackCtaClick('home_hero_projects', 'Voir les projets');
 
-      httpController.expectNone(`${BASE}/analytics/track`);
+      expect(beacon).not.toHaveBeenCalled();
       httpController.verify();
     });
 
-    it('admin connecté : sendBeacon est no-op', () => {
-      const { gateway } = configureBrowser({ loggedIn: true });
-      const spy = vi.fn().mockReturnValue(true);
-      vi.stubGlobal('navigator', { sendBeacon: spy });
+    it.each<[string, number, VisitorContext]>([
+      ['visiteur', 1, {}],
+      ['admin connecté', 0, { loggedIn: true }],
+      ['appareil exclu', 0, { deviceExcluded: true }],
+    ])(
+      'Given a %s When a visible duration is reported Then %i beacon leaves',
+      (_label, beacons, ctx) => {
+        const { gateway } = configureBrowser(ctx);
+        const beacon = beaconSpy();
 
-      gateway.sendBeacon({ type: 'page_duration', url: '/blog', duration: 5 });
+        gateway.trackPageDuration('/offres/site-vitrine', 40);
 
-      expect(spy).not.toHaveBeenCalled();
-      vi.unstubAllGlobals();
-    });
+        expect(beacon).toHaveBeenCalledTimes(beacons);
+      },
+    );
   });
 
-  describe('SSR safety (4 tests)', () => {
+  describe('SSR safety', () => {
     it('trackPageView est no-op si platform !== browser', () => {
       const { gateway, httpController } = configureServer();
 
       gateway.trackPageView('/home');
 
-      httpController.expectNone(`${BASE}/analytics/track`);
+      httpController.expectNone(TRACK_URL);
       httpController.verify();
     });
 
@@ -537,7 +518,7 @@ describe('HttpAnalyticsGateway', () => {
 
       gateway.trackProjectClick('abc-123', 'My Project');
 
-      httpController.expectNone(`${BASE}/analytics/track`);
+      httpController.expectNone(TRACK_URL);
       httpController.verify();
     });
 
@@ -546,7 +527,7 @@ describe('HttpAnalyticsGateway', () => {
 
       gateway.trackArticleRead('art-1', 'My Article');
 
-      httpController.expectNone(`${BASE}/analytics/track`);
+      httpController.expectNone(TRACK_URL);
       httpController.verify();
     });
 
@@ -555,22 +536,18 @@ describe('HttpAnalyticsGateway', () => {
 
       gateway.trackCtaClick('home_hero_projects', 'Voir les projets');
 
-      httpController.expectNone(`${BASE}/analytics/track`);
+      httpController.expectNone(TRACK_URL);
       httpController.verify();
     });
 
-    it('sendBeacon est no-op si platform !== browser', () => {
-      const { gateway } = configureServer();
-      const sendBeaconSpy = vi.fn();
-      Object.defineProperty(globalThis.navigator ?? {}, 'sendBeacon', {
-        value: sendBeaconSpy,
-        writable: true,
-        configurable: true,
-      });
+    it('trackPageDuration est no-op si platform !== browser', () => {
+      const { gateway, httpController } = configureServer();
+      const beacon = beaconSpy();
 
-      gateway.sendBeacon({ type: 'cv_download' });
+      gateway.trackPageDuration('/home', 12);
 
-      expect(sendBeaconSpy).not.toHaveBeenCalled();
+      expect(beacon).not.toHaveBeenCalled();
+      httpController.verify();
     });
   });
 });
@@ -589,7 +566,7 @@ describe('HttpAnalyticsGateway: lectures de l’admin derrière l’intercepteur
         HttpAnalyticsGateway,
         provideHttpClient(withInterceptors([errorToastInterceptor])),
         provideHttpClientTesting(),
-        { provide: API_BASE_URL, useValue: BASE },
+        { provide: API_BASE_URL, useValue: API },
         { provide: PLATFORM_ID, useValue: 'browser' },
         { provide: ToastStore, useValue: { add } },
         ...visitorProviders(),
@@ -679,7 +656,7 @@ describe('HttpAnalyticsGateway: lectures de l’admin derrière l’intercepteur
       const status = await failingStatus(
         call(gateway),
         httpController,
-        `${BASE}/analytics/stats/${path}`,
+        `${API}/analytics/stats/${path}`,
       );
 
       expect({ status, toasts: add.mock.calls.length }).toEqual({ status: 500, toasts: 0 });
@@ -691,9 +668,9 @@ describe('HttpAnalyticsGateway: lectures de l’admin derrière l’intercepteur
     const { http, httpController } = configureWithToasts();
 
     const status = await failingStatus(
-      http.get(`${BASE}/projects`),
+      http.get(`${API}/projects`),
       httpController,
-      `${BASE}/projects`,
+      `${API}/projects`,
     );
 
     expect({ status, toasts: add.mock.calls.length }).toEqual({ status: 500, toasts: 1 });

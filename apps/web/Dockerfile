@@ -22,7 +22,8 @@ RUN pnpm run build --configuration production \
 # Angular 22 (outputMode server) emits a request handler but no Node listener; every public
 # route is prerendered at build (index.html per route) and the rest is client-rendered from
 # index.csr.html, the shell without hydration state. NestJS lives on api.nedellec-julien.fr
-# and is reached directly from the client, except /api/storage/ (images) relayed below.
+# and is reached directly from the client, except /api/storage/ (images) and
+# /api/analytics/track (audience writes), relayed below.
 # ==============================================================================
 FROM nginx:alpine AS production
 
@@ -40,6 +41,27 @@ add_header Content-Security-Policy "frame-ancestors 'none'" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
 add_header Cross-Origin-Opener-Policy "same-origin" always;
+HEADERS
+
+# En-têtes helmet/CORS de l'API masqués sur chaque relais (Cache-Control, Content-Type, Content-Length gardés).
+RUN cat > /etc/nginx/snippets/api-response-headers.conf <<'HEADERS'
+proxy_hide_header Vary;
+proxy_hide_header Set-Cookie;
+proxy_hide_header X-Powered-By;
+proxy_hide_header Access-Control-Allow-Origin;
+proxy_hide_header Access-Control-Allow-Credentials;
+proxy_hide_header Content-Security-Policy;
+proxy_hide_header Cross-Origin-Opener-Policy;
+proxy_hide_header Cross-Origin-Resource-Policy;
+proxy_hide_header Origin-Agent-Cluster;
+proxy_hide_header Referrer-Policy;
+proxy_hide_header Strict-Transport-Security;
+proxy_hide_header X-Content-Type-Options;
+proxy_hide_header X-DNS-Prefetch-Control;
+proxy_hide_header X-Download-Options;
+proxy_hide_header X-Frame-Options;
+proxy_hide_header X-Permitted-Cross-Domain-Policies;
+proxy_hide_header X-XSS-Protection;
 HEADERS
 
 # Images servies depuis l'origine du site (pas de connexion TLS de plus vers api.) : nginx relaie
@@ -137,25 +159,28 @@ server {
         proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
         proxy_ignore_headers Set-Cookie Vary;
 
-        # En-têtes de l'API (helmet, CORS) remplacés par ceux du site ; Cache-Control, Content-Type
-        # et Content-Length de l'API sont conservés.
-        proxy_hide_header Vary;
-        proxy_hide_header Set-Cookie;
-        proxy_hide_header X-Powered-By;
-        proxy_hide_header Access-Control-Allow-Origin;
-        proxy_hide_header Access-Control-Allow-Credentials;
-        proxy_hide_header Content-Security-Policy;
-        proxy_hide_header Cross-Origin-Opener-Policy;
-        proxy_hide_header Cross-Origin-Resource-Policy;
-        proxy_hide_header Origin-Agent-Cluster;
-        proxy_hide_header Referrer-Policy;
-        proxy_hide_header Strict-Transport-Security;
-        proxy_hide_header X-Content-Type-Options;
-        proxy_hide_header X-DNS-Prefetch-Control;
-        proxy_hide_header X-Download-Options;
-        proxy_hide_header X-Frame-Options;
-        proxy_hide_header X-Permitted-Cross-Domain-Policies;
-        proxy_hide_header X-XSS-Protection;
+        include /etc/nginx/snippets/api-response-headers.conf;
+    }
+
+    # Mesure d'audience par l'origine du site : un beacon même origine part sans CORS ni pré-vol.
+    location = /api/analytics/track {
+        include /etc/nginx/snippets/security-headers.conf;
+
+        limit_except POST { deny all; }
+        client_max_body_size 4k;
+
+        resolver 127.0.0.11 valid=30s ipv6=off;
+        set $track_upstream ${STORAGE_UPSTREAM};
+        proxy_pass $track_upstream$uri;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+
+        # XFF de Traefik tel quel ($proxy_add_x_forwarded_for ferait retenir une IP privée : mesure écartée).
+        proxy_set_header X-Forwarded-For $http_x_forwarded_for;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+
+        include /etc/nginx/snippets/api-response-headers.conf;
     }
 
     # Flux RSS : le type déclaré par les agrégateurs, pas le `text/xml` générique de l'extension

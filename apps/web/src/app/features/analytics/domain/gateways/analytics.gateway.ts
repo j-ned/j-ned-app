@@ -5,7 +5,6 @@ import type {
   EntityStat,
   MetricEntry,
   StatsOverview,
-  TrackPayload,
 } from '../models/analytics.types';
 
 export abstract class AnalyticsGateway {
@@ -16,8 +15,6 @@ export abstract class AnalyticsGateway {
   abstract trackArticleRead(articleId: string, title: string): void;
   abstract trackCvDownload(): void;
   abstract trackCtaClick(ctaId: string, label: string): void;
-
-  abstract sendBeacon(payload: TrackPayload): void;
 
   abstract getOverview(startDate?: string, endDate?: string): Observable<StatsOverview>;
   abstract getChart(startDate?: string, endDate?: string): Observable<DailyChartPoint[]>;

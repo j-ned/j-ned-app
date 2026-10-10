@@ -17,6 +17,9 @@ import type {
   TrackPayload,
 } from '../../domain/models/analytics.types';
 
+// Même origine : nginx relaie à l'API, un beacon n'y déclenche ni CORS ni pré-vol.
+const ANALYTICS_TRACK_URL = '/api/analytics/track';
+
 // Mirrors backend filter: don't burn HTTP calls on routes the server drops.
 function isExcludedUrl(url: string): boolean {
   return url === '/login' || url === '/admin' || url.startsWith('/admin/');
@@ -40,8 +43,10 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
   }
 
   trackPageDuration(url: string, duration: number): void {
-    if (!this.canTrack() || isExcludedUrl(url)) return;
-    this.fireAndForget({ type: 'page_duration', url, duration });
+    if (!this.canTrack() || isExcludedUrl(url) || !navigator.sendBeacon) return;
+    const payload: TrackPayload = { type: 'page_duration', url, duration };
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+    navigator.sendBeacon(ANALYTICS_TRACK_URL, blob);
   }
 
   trackProjectClick(projectId: string, title: string): void {
@@ -87,13 +92,6 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
     });
   }
 
-  sendBeacon(payload: TrackPayload): void {
-    if (!this.canTrack() || typeof navigator === 'undefined' || !navigator.sendBeacon) return;
-    if (payload.url && isExcludedUrl(payload.url)) return;
-    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-    navigator.sendBeacon(`${this.baseUrl}/track`, blob);
-  }
-
   getOverview(startDate?: string, endDate?: string): Observable<StatsOverview> {
     return this.getStats<StatsOverview>('overview', this.buildDateParams(startDate, endDate));
   }
@@ -136,8 +134,8 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
     ).pipe(map((res) => res.count));
   }
 
-  // L'admin connecté et les appareils exclus ne sont pas des visiteurs : l'API ne reçoit pas le
-  // cookie de session sur /track (cross-origin), le filtre vit donc ici.
+  // L'admin connecté et les appareils exclus ne sont pas des visiteurs : le relais retire le cookie
+  // de session de /track, le filtre vit donc ici.
   private canTrack(): boolean {
     return this.isBrowser && !this.auth.isLoggedIn() && !this.deviceExclusion.excluded();
   }
@@ -146,7 +144,7 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
   // un 429 (rafale) est un problème d'exploitation, pas un toast sur une page publique.
   private fireAndForget(payload: TrackPayload): void {
     this.http
-      .post(`${this.baseUrl}/track`, payload, {
+      .post(ANALYTICS_TRACK_URL, payload, {
         context: silentErrors(),
       })
       .pipe(catchError(() => EMPTY))

@@ -11,7 +11,6 @@ export function stubAnalyticsGateway(overrides: Partial<AnalyticsGateway> = {}):
     trackArticleRead: () => undefined,
     trackCvDownload: () => undefined,
     trackCtaClick: () => undefined,
-    sendBeacon: () => undefined,
     getOverview: () => of(makeStatsOverview()),
     getChart: () => of([]),
     getMetrics: () => of([]),

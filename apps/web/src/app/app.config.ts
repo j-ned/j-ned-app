@@ -54,7 +54,7 @@ import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-hom
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 import { AuthStore } from '@core/auth/auth-store';
-import { isNotFoundRoute } from '@core/analytics/not-found-route';
+import { initializePageTracking } from '@core/analytics/page-tracking';
 import { MonitoringErrorHandler } from '@core/monitoring/monitoring';
 
 function initializeAuth(): () => Promise<void> | void {
@@ -86,47 +86,6 @@ function initializeSeo(): () => void {
           seoService.applySeoData({ ...seoData, url });
         }
       });
-  };
-}
-
-function initializeTracking(): () => void {
-  return (): void => {
-    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
-
-    const router = inject(Router);
-    const analytics = inject(AnalyticsGateway);
-
-    let currentUrl: string | null = null;
-    let pageEnteredAt = Date.now();
-
-    router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => {
-        if (currentUrl) {
-          const duration = Math.round((Date.now() - pageEnteredAt) / 1000);
-          if (duration > 0) {
-            analytics.trackPageDuration(currentUrl, duration);
-          }
-        }
-
-        if (isNotFoundRoute(router.routerState.snapshot.root)) {
-          currentUrl = null;
-          return;
-        }
-
-        currentUrl = event.urlAfterRedirects;
-        pageEnteredAt = Date.now();
-        analytics.trackPageView(currentUrl);
-      });
-
-    window.addEventListener('beforeunload', () => {
-      if (currentUrl) {
-        const duration = Math.round((Date.now() - pageEnteredAt) / 1000);
-        if (duration > 0) {
-          analytics.sendBeacon({ type: 'page_duration', url: currentUrl, duration });
-        }
-      }
-    });
   };
 }
 
@@ -166,7 +125,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, errorToastInterceptor])),
     provideAppInitializer(initializeAuth()),
     provideAppInitializer(initializeSeo()),
-    provideAppInitializer(initializeTracking()),
+    provideAppInitializer(initializePageTracking()),
     {
       provide: IMAGE_CONFIG,
       useValue: {
