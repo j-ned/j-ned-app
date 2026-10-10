@@ -6,7 +6,6 @@ type SeverityStyle = {
   container: string;
   icon: string;
   iconClass: string;
-  summary: string;
   close: string;
 };
 
@@ -15,28 +14,24 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
     container: 'bg-status-success/10 border-status-success/40',
     icon: 'check-circle',
     iconClass: 'text-status-success',
-    summary: 'text-status-success',
     close: 'text-status-success hover:bg-status-success/10',
   },
   info: {
     container: 'bg-primary/10 border-primary/40',
     icon: 'info-circle',
     iconClass: 'text-primary',
-    summary: 'text-primary',
     close: 'text-primary hover:bg-primary/10',
   },
   warn: {
     container: 'bg-status-warn/10 border-status-warn/40',
     icon: 'exclamation-triangle',
     iconClass: 'text-status-warn',
-    summary: 'text-status-warn',
     close: 'text-status-warn hover:bg-status-warn/10',
   },
   error: {
     container: 'bg-status-error/10 border-status-error/40',
     icon: 'times-circle',
     iconClass: 'text-status-error',
-    summary: 'text-status-error',
     close: 'text-status-error hover:bg-status-error/10',
   },
 };
@@ -69,8 +64,7 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
           />
           <div class="flex-1 min-w-0">
             <div
-              class="font-semibold text-sm leading-tight"
-              [class]="style.summary"
+              class="font-semibold text-sm leading-tight text-foreground"
               data-testid="toast-summary"
             >
               {{ msg.summary }}

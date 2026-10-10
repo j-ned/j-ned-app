@@ -642,7 +642,7 @@ Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, s
 
 ### Toast (`shared/ui/toast.ts`)
 
-À documenter — variantes info/success/warn/error, position, durée, dismiss. Sous `prefers-reduced-motion: reduce`, il apparaît sans glisser ni fondu.
+À documenter — variantes info/success/warn/error, position, durée, dismiss. Couleur : le titre est en `foreground` quelle que soit la sévérité (en Ivoire, `status-success` et `status-warn` pleins tombent sous 4,5:1 sur la teinte à 10 % du conteneur) ; la sévérité reste portée par l'icône, la bordure gauche, la teinte et le bouton fermer, au token plein. Sous `prefers-reduced-motion: reduce`, il apparaît sans glisser ni fondu.
 
 ### Drawer (`shared/ui/drawer.ts`)
 
