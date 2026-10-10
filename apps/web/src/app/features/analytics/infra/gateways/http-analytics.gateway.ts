@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { catchError, EMPTY, map, Observable } from 'rxjs';
 
 import { API_BASE_URL } from '@shared/api/api-config';
@@ -10,9 +10,14 @@ import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { AnalyticsGateway } from '../../domain/gateways/analytics.gateway';
 import type {
   ActiveVisitors,
+  ContactPlacement,
   DailyChartPoint,
   EntityStat,
+  EventCount,
+  EventCountType,
   MetricEntry,
+  OutboundChannel,
+  SectionId,
   StatsOverview,
   TrackPayload,
 } from '../../domain/models/analytics.types';
@@ -20,7 +25,7 @@ import type {
 // Même origine : nginx relaie à l'API, un beacon n'y déclenche ni CORS ni pré-vol.
 const ANALYTICS_TRACK_URL = '/api/analytics/track';
 
-// Mirrors backend filter: don't burn HTTP calls on routes the server drops.
+// Pages de connexion et d'administration : jamais mesurées (l'API ne filtre que les pages vues).
 function isExcludedUrl(url: string): boolean {
   return url === '/login' || url === '/admin' || url.startsWith('/admin/');
 }
@@ -32,21 +37,20 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly auth = inject(AuthStore);
   private readonly deviceExclusion = inject(AnalyticsDeviceExclusion);
+  private readonly document = inject(DOCUMENT);
+  // Dans une SPA `document.referrer` reste celui de l'arrivée : seule la première page vue le porte.
+  private referrerSent = false;
 
   trackPageView(url: string): void {
     if (!this.canTrack() || isExcludedUrl(url)) return;
-    this.fireAndForget({
-      type: 'page_view',
-      url,
-      referrer: document.referrer || undefined,
-    });
+    const referrer = this.referrerSent ? undefined : this.document.referrer || undefined;
+    this.referrerSent = true;
+    this.fireAndForget({ type: 'page_view', url, referrer });
   }
 
   trackPageDuration(url: string, duration: number): void {
-    if (!this.canTrack() || isExcludedUrl(url) || !navigator.sendBeacon) return;
-    const payload: TrackPayload = { type: 'page_duration', url, duration };
-    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-    navigator.sendBeacon(ANALYTICS_TRACK_URL, blob);
+    if (!this.canTrack() || isExcludedUrl(url)) return;
+    this.beacon({ type: 'page_duration', url, duration });
   }
 
   trackProjectClick(projectId: string, title: string): void {
@@ -84,12 +88,27 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
   // `ctaId` porte l'emplacement (`home_hero_contact`) : c'est lui qui rend le
   // taux de clic lisible par emplacement dans les stats d'entités existantes.
   trackCtaClick(ctaId: string, label: string): void {
-    if (!this.canTrack()) return;
+    if (!this.canTrack() || isExcludedUrl(this.document.location.pathname)) return;
     this.fireAndForget({
       type: 'cta_click',
       entityId: ctaId,
       entityTitle: label,
     });
+  }
+
+  trackContactSubmit(placement: ContactPlacement): void {
+    if (!this.canTrack()) return;
+    this.fireAndForget({ type: 'contact_submit', entityId: placement });
+  }
+
+  trackOutboundClick(channel: OutboundChannel, path: string): void {
+    if (!this.canTrack() || isExcludedUrl(path)) return;
+    this.beacon({ type: 'outbound_click', entityId: channel, entityTitle: path });
+  }
+
+  trackSectionView(section: SectionId, path: string): void {
+    if (!this.canTrack() || isExcludedUrl(path)) return;
+    this.fireAndForget({ type: 'section_view', entityId: section, entityTitle: path });
   }
 
   getOverview(startDate?: string, endDate?: string): Observable<StatsOverview> {
@@ -134,6 +153,17 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
     ).pipe(map((res) => res.count));
   }
 
+  getEventCounts(
+    type: EventCountType,
+    startDate?: string,
+    endDate?: string,
+  ): Observable<EventCount[]> {
+    return this.getStats<EventCount[]>('events', {
+      type,
+      ...this.buildDateParams(startDate, endDate),
+    });
+  }
+
   // L'admin connecté et les appareils exclus ne sont pas des visiteurs : le relais retire le cookie
   // de session de /track, le filtre vit donc ici.
   private canTrack(): boolean {
@@ -149,6 +179,13 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
       })
       .pipe(catchError(() => EMPTY))
       .subscribe();
+  }
+
+  // Un beacon survit au départ de la page, là où une requête HttpClient serait annulée.
+  private beacon(payload: TrackPayload): void {
+    if (!navigator.sendBeacon) return;
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+    navigator.sendBeacon(ANALYTICS_TRACK_URL, blob);
   }
 
   // Chaque écran qui lit ces statistiques affiche son propre état d'erreur : pas de toast par requête en plus.

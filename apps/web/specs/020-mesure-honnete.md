@@ -723,6 +723,195 @@ L'arrivée sur la 404 envoie le reste de la page précédente. Sans `sendBeacon`
 `app.config.ts`. Les initialiseurs de `appConfig` ne tournent pas en test. Preuve : diff relu, et
 onglet Réseau du parcours local (Preuves front 3) : aucun envoi sur `beforeunload`.
 
+### PR front 2 : tranches F3 à F7 (RED commun)
+
+Branche `feat/honest-analytics-events` (depuis `origin/master` `857ada1`, PR front 1 mergée). RED
+pris ensemble par `pnpm test; echo exit=$?` après `pnpm exec ng cache clean` et
+`rm -rf node_modules/.vite`, le 2026-10-10 18:23 : **110 failed / 3621 total**, `exit=1`,
+17 fichiers rouges, 190 verts. Nature des échecs : 100 `AssertionError` et 10
+`HttpTestingController` (« Expected one matching request … found none ») ; aucun `NG0201`,
+`NG0303`, `NG0950`, module introuvable ni rejet non géré.
+
+Squelettes de signature (aucun ne fait passer un test : chaque test rouge attend une valeur ou un
+appel que le squelette ne produit pas) :
+
+- types `OutboundChannel`, `ContactPlacement`, `SectionId`, `EventCountType`, `EventCount`,
+  `EngagementOverview`, `ConversionsOverview`, `StatsOverview` étendu (`analytics.types.ts`) ;
+- `AnalyticsGateway` : `trackContactSubmit`, `trackOutboundClick`, `trackSectionView`,
+  `getEventCounts` (abstraits) ; `HttpAnalyticsGateway` : corps vides, `getEventCounts` rend
+  `NEVER` (ni valeur ni erreur) ;
+- `ContactForm.placement = input<ContactPlacement>()` (facultatif : `input.required` casserait la
+  compilation des gabarits de `Home` et `OfferPage`) ; `OfferHero.requestOpened = output<void>()`,
+  jamais émis ;
+- `outboundChannel` rend `null` ; `initializeOutboundClickTracking()` rend un initialiseur vide ;
+- `toAudienceReadout(overview, _periodStart?)` (paramètre ignoré) ; `detailNote` rend `''` ;
+  `audience-conversions-view.ts` : fonctions qui rendent `[]` ou `''`.
+
+Harnais contrôlé : une implémentation jetable de F3 à F5 (formulaire, accueil, offre, pied de
+page, clics sortants), écrite puis retirée avant la preuve (fichiers comparés octet par octet à
+leur sauvegarde), fait passer les 7 fichiers concernés (242/242).
+
+### Tranche F3 — un formulaire envoyé est compté, par emplacement
+
+| Fichier | Test | Scénario | Assertions clés |
+|---|---|---|---|
+| `contact-form.spec.ts` (adapté) | `it.each` `home` / `offer_site-vitrine` | message accepté par l'API | `trackContactSubmit` appelé `[[placement]]`, après `submitContactForm` |
+| | refus métier | `success: false` | jamais appelé |
+| | exception | `throwError` | jamais appelé |
+| | formulaire invalide | e-mail invalide | ni envoi ni comptage |
+| `home.spec.ts` (adapté) | formulaire de l'accueil | bloc contact rendu, envoi | `[['home']]` |
+| `offer-page.spec.ts` (adapté) | `it.each` `site-atelier` / `renfort-freelance` | envoi du formulaire de l'offre | `[['offer_<slug>']]` |
+| `http-analytics.gateway.spec.ts` (adapté) | `it.each` `home` / `offer_site-vitrine` | `trackContactSubmit` | `POST /api/analytics/track`, corps `{ type: 'contact_submit', entityId }` exact, silencieux |
+
+Harnais : `AnalyticsGateway` (stub espion) fourni partout où `ContactForm` est monté ;
+`setInput('placement', 'home')` posé par défaut dans le `setup` de `contact-form.spec`.
+
+Échecs F3 : 7 (5 `AssertionError` « expected [] to deeply equal [[…]] », 2 `HttpTestingController`).
+
+RED confirmé via la commande test du profil le 2026-10-10 18:23, 7 failed / 3621 total (part F3
+du run commun F3–F7 : 110 failed / 3621 total, `exit=1`).
+
+### Tranche F4 — les clics de contact, de profil et de démo sont comptés partout
+
+| Fichier | Test | Scénario | Assertions clés |
+|---|---|---|---|
+| `features/analytics/domain/outbound-channel.spec.ts` (créé) | `it.each` ×9 | `mailto:` (avec et sans `?subject`), `tel:`, `SITE_IDENTITY.socials.*`, deux démos | canal exact (`toBe`) |
+| | `it.each` ×8 | site, `www.`, `api.`, chemin relatif, fragment, `cnil.fr`, `faux-nedellec-julien.fr`, `nedellec-julien.fr.example.com` | `null` |
+| `core/analytics/outbound-click-tracking.spec.ts` (créé ; `TestBed` + `provideRouter` + stub espion) | mailto | clic, page `/offres/site-vitrine#demande` | `('email', '/offres/site-vitrine')` une fois |
+| | enfant du lien | clic sur le `<span>` d'un lien LinkedIn | `('linkedin', …)` une fois |
+| | accueil | `tel:` depuis `/#contact` | `('phone', '/')` |
+| | bouton du milieu | `auxclick` bouton 1 sur une démo | `('demo', …)` une fois |
+| | bouton secondaire | `auxclick` bouton 2 | rien |
+| | `it.each` ignorés | lien interne, sortant non classé, site lui-même, `<a>` sans `href` | rien |
+| | hors lien | clic sur un `<button>` | rien |
+| | serveur / destruction | plateforme `server` ; `resetTestingModule` puis clic | rien ; seul l'appel d'avant la destruction |
+| `http-analytics.gateway.spec.ts` (adapté) | beacon | `trackOutboundClick('linkedin', '/about')` | 1 `sendBeacon(TRACK_URL, Blob json)`, corps `{ type: 'outbound_click', entityId, entityTitle }`, aucune requête `HttpClient` |
+| | `it.each` visiteur 1 / admin 0 / appareil exclu 0 | | nombre de beacons |
+| | sans `sendBeacon`, serveur | | ne lève pas ; rien |
+
+Échecs F4 : 16 (14 `AssertionError`, dont « expected null to be 'email' » et « expected "vi.fn()"
+to be called once with … », 2 beacons appelés 0 fois). Lignes `null`, clics ignorés, serveur et
+exclusions : vertes par construction (garde-fous).
+
+RED confirmé via la commande test du profil le 2026-10-10 18:23, 16 failed / 3621 total (part F4
+du run commun F3–F7 : 110 failed / 3621 total, `exit=1`).
+
+### Tranche F5 — arrivée sur le formulaire et CTA d'offre
+
+| Fichier | Test | Scénario | Assertions clés |
+|---|---|---|---|
+| `home.spec.ts` (adapté) | arrivée unique | `ActiveSection` : `contact` → `methode` → `contact` | `trackSectionView` `[['home_contact', '/']]` |
+| | autre section | `methode` seule | jamais appelé |
+| `offer-hero.spec.ts` (créé) | clic | « Demander mon site » | `requestOpened` émis 1 fois, fragment `demande`, lien `A` conservé |
+| `offer-page.spec.ts` (adapté) | `it.each` `site-vitrine` / `application-metier` | clic sur `offer-cta` | `trackCtaClick` `[['offer_request_<slug>', hero.ctaLabel]]` |
+| `footer.spec.ts` (adapté) | « Décrire mon projet » | clic | `[['footer_contact', 'Décrire mon projet']]`, mesuré avant `scrollToRequestForm` |
+| `http-analytics.gateway.spec.ts` (adapté) | section | `trackSectionView('home_contact', '/')` | `POST`, corps `{ type: 'section_view', entityId: 'home_contact', entityTitle: '/' }` |
+| | `it.each` visiteur 2 / admin 0 / appareil exclu 0 | formulaire + section | nombre de `POST` |
+
+Échecs F5 : 7 (6 `AssertionError`, 1 `HttpTestingController`).
+
+RED confirmé via la commande test du profil le 2026-10-10 18:23, 7 failed / 3621 total (part F5
+du run commun F3–F7 : 110 failed / 3621 total, `exit=1`).
+
+### Tranche F6 — l'admin affiche engagement, conversions et couvertures
+
+| Fichier | Test | Scénario | Assertions clés |
+|---|---|---|---|
+| `overview-view.spec.ts` (adapté) | `toAudienceReadout` `it.each` ×3 | chiffres d'octobre, grands nombres, période mesurée sans visite | 4 tuiles exactes : Pages vues (« par visite »), Rebond (une page), Rebond réel (« engagement X % »), Durée mesurée (« par page, sur X % des pages vues ») |
+| | « mesuré depuis » `it.each` ×3 | `measuredSince` = début, 12 sept., 1er oct. | détail sans note ; « · mesuré depuis le 12 septembre » ; « le 1er octobre » |
+| | jamais mesuré | `measuredSince: null` | `{ value: '–', unit: '', detail: 'non mesuré sur la période' }` |
+| | `chartSummary` ×6 | inchangés sauf le mot | « Visites par jour … », « Visites le … » |
+| `audience-view.spec.ts` (adapté) | `audienceLead` `it.each` ×8 | visites (`sessions`, pas `visitors`), provenance, rebond réel, seuil 45 s, engagement non mesuré | phrase exacte |
+| | `detailNote` `it.each` ×4 | `detailSince` ≤ début ; > début ; 1er du mois | `''` ; note exacte |
+| `audience-conversions-view.spec.ts` (créé) | totaux | conversions mesurées ; non mesurées | 6 lignes nommées dans l'ordre ; `[]` (aucun zéro non mesuré) |
+| | `conversionsNote` ×5 | absent, début, 11 oct., 1er oct., non mesuré | `''`, `''`, « Mesurées depuis le 11 octobre 2026. », « … le 1er octobre 2026. », « Conversions non mesurées sur la période. » |
+| | `placementLabel` ×6 | `home`, trois offres, offre inconnue, `footer` | « Accueil », « Offre <shortName> », « Emplacement inconnu (<id>) » |
+| | `channelLabel` ×8 | les 7 canaux + inconnu | libellés exacts |
+| | entrées | comptes par emplacement / canal | ordre de l'API, comptes conservés |
+| `audience-report.spec.ts` (adapté) | périodes | 30 j, 7 j, 90 j, `all` | `getEventCounts` demandé pour `contact_submit` et `outbound_click` sur la même période que les autres sources ; `all` ⇒ `['2026-04-26', '2026-10-07']` |
+| | un appel par type | ouverture | `['contact_submit', 'outbound_click']` |
+| | vraie passerelle | métriques en 500 | 13 requêtes (11 + 2), 0 toast |
+| `admin-audience.spec.ts` (adapté) | relevé | production | 5 tuiles : Visites (« un appareil, une journée »), Pages vues, Rebond (une page), Rebond réel, Durée mesurée |
+| | 999 visites | `sessions: 999`, `visitors: 1500` | « 999 » (les visites, pas les visiteurs) |
+| | « mesuré depuis » | `measuredSince` 12 sept. sur 30 j | détail de la tuile Rebond réel |
+| | en-tête | phrase d'introduction | rebond réel et seuil |
+| | sections | h2 | `Visites par jour`, `Conversions`, `Pages les plus vues`, `Provenance`, `Ce que les visiteurs font` |
+| | courbe | jeux de données et légende | `Visites` ; `data-testid="audience-chart-legend"` = « Visites Pages vues » |
+| | conversions mesurées | stub `getEventCounts` par type | tallies `Totaux`, `Formulaires par emplacement`, `Liens par canal`, lignes exactes, pas de note |
+| | conversions non mesurées | `measuredSince: null` | `audience-conversions-note` = « Conversions non mesurées sur la période. », aucun tally |
+| | note de couverture | 30 j puis « 90 jours » | absente, puis `audience-detail-note` exacte |
+| | CSV | export | contient `KPI,Formulaires envoyés,0` |
+| | « Depuis le début » | clic | `getOverview('2026-04-26', '2026-10-07')`, sur-titre toujours « Tout le temps » |
+| | erreur `getEventCounts` | source en échec | un état d'erreur |
+| `admin-overview.spec.ts` (adapté) | tableau de bord | relevé partagé | `['56', '88,1 %', '40,5 %', '22 s']`, légende « Visites par jour … » |
+| `audience-chart.spec.ts` (adapté) | légende lecteur d'écran | `chartSummary` | « Visites par jour … » |
+| `analytics-presenter.spec.ts` (adapté) | `all` | | `{ startDate: '2026-04-26', endDate: <aujourd'hui> }` |
+| | `pagesPerSessionLabel` ×5 | | « … par visite » |
+| | `buildVisitorsChartData` | | jeu de données `Visites` |
+| | CSV | conversions mesurées ; non mesurées | lignes `KPI,Formulaires envoyés,3` … `Formulaire,home,3`, `Lien,linkedin,2` ; aucune ligne de conversion |
+| `http-analytics.gateway.spec.ts` (adapté) | `getEventCounts` `it.each` ×2 | | `GET https://api.test/api/analytics/stats/events?type&startDate&endDate`, `withCredentials`, valeur rendue |
+| | 500 | ligne ajoutée à l'`it.each` intercepteur | aucun toast, erreur rendue |
+
+Échecs F6 : 76 (73 `AssertionError`, 3 `HttpTestingController`).
+
+RED confirmé via la commande test du profil le 2026-10-10 18:23, 76 failed / 3621 total (part F6
+du run commun F3–F7 : 110 failed / 3621 total, `exit=1`).
+
+Ré-alignement de contrat (balayage de `Visiteurs`, `Rebond`, `Durée moyenne`, `par session`,
+`[undefined, undefined]`, `KPI,Visiteurs`) : `overview-view.spec`, `audience-view.spec`,
+`admin-audience.spec`, `audience-report.spec`, `admin-overview.spec`, `audience-chart.spec`,
+`analytics-presenter.spec`. Non modifiés : `overview-audience.spec` et `admin-readout.spec`
+(libellés passés en entrée à des composants d'affichage, pas le contrat) ; `admin-page-copy.spec`
+(`audienceOverline('all')` reste « Tout le temps »).
+
+Adaptation mécanique : `http-analytics.gateway.spec.ts` — 1 site repointé (littéral
+`StatsOverview` remplacé par `makeStatsOverview({…})` avec les mêmes valeurs), aucune valeur
+attendue modifiée.
+
+### Tranche F7 — la confidentialité décrit la mesure réelle
+
+| Fichier | Test | Scénario | Assertions clés |
+|---|---|---|---|
+| `pages/legal-pages.spec.ts` (adapté) | `it.each` ×3 | `privacy-audience-pages`, `privacy-audience-actions`, `privacy-audience-retention` | texte exact du paragraphe (blancs de mise en forme normalisés) |
+| | date | `privacy-last-update` | « Dernière mise à jour : 10 octobre 2026 », `LEGAL_LAST_UPDATE` des mentions inchangé |
+
+Échecs F7 : 4 `AssertionError` (texte vide, l'élément n'existe pas encore).
+
+RED confirmé via la commande test du profil le 2026-10-10 18:23, 4 failed / 3621 total (part F7
+du run commun F3–F7 : 110 failed / 3621 total, `exit=1`).
+
+```
+ Test Files  17 failed | 190 passed (207)
+      Tests  110 failed | 3511 passed (3621)
+  2 / 47  home.spec.ts                     9 / 65  http-analytics.gateway.spec.ts
+ 15 / 30  admin-audience.spec.ts           2 / 44  contact-form.spec.ts
+  4 / 91  offer-page.spec.ts               1 / 30  footer.spec.ts
+ 13 / 32  overview-view.spec.ts            1 / 33  admin-overview.spec.ts
+  6 /  8  audience-report.spec.ts          8 / 42  analytics-presenter.spec.ts
+  9 / 26  audience-view.spec.ts            4 / 14  legal-pages.spec.ts
+  5 / 12  outbound-click-tracking.spec.ts  1 /  4  audience-chart.spec.ts
+ 20 / 23  audience-conversions-view.spec.ts 9 / 17  outbound-channel.spec.ts
+  1 /  1  offer-hero.spec.ts
+exit=1
+```
+
+**Dû au GREEN (signaux)** :
+
+- `ContactForm.placement` en `input.required`, `placement="home"` dans `home.ts`,
+  `` `offer_${summary().slug}` `` dans `offer-page.ts` ;
+- `toAudienceReadout(overview, periodStart)` : paramètre requis, passé par `AudienceReport` et
+  `AdminOverview` ; la tuile Visites est ajoutée par la facade (le tableau de bord affiche déjà
+  ses visites à part) ;
+- `dateRangeToParams('all')` borne à `ANALYTICS_EPOCH` ; `audienceOverline('all')` doit rester
+  « Tout le temps » ;
+- `AnalyticsCsvSections` gagne `contactSubmits` et `outboundClicks` (`EventCount[]`) ;
+- la page de confidentialité prend sa propre date (les mentions légales gardent le 3 octobre) ;
+  si cette constante rejoint `testing/editorial-sources.ts`, la contrôler comme les autres.
+
+**Hors filet Vitest** : l'enregistrement de `initializeOutboundClickTracking()` dans
+`app.config.ts` (les initialiseurs de `appConfig` ne tournent pas en test). Preuve : diff relu et
+onglet Réseau du parcours local (Preuves front 3).
+
 ## Journal des tranches (API)
 
 Dépôt `nest-portfolio-app`, branche `feat/honest-analytics` (depuis `master` `fbf8716`), non commité.
@@ -1112,6 +1301,111 @@ approuvée : le socket (saut 0) est approuvé, donc `req.ip` = **dernier éléme
   Docker de nginx (constaté en local sans Traefik). En prod, Traefik pose toujours l'en-tête ; la
   garde reste l'observation passive après déploiement (Preuves front 5) et le retour arrière.
 
+### PR front 2 (tranches F3 à F7)
+
+Branche `feat/honest-analytics-events` (PR front 2), non commitée. RED de `qa` : 110 échecs
+d'assertion (F3 7, F4 16, F5 7, F6 76, F7 4). GREEN commun F3–F7 : 3626 passed / 3626 total
+(3621 de `qa` + 5 cas GitHub ajoutés à la demande de l'utilisateur, décision (c)).
+
+- **Tranche F3 — un formulaire envoyé est compté, par emplacement** : GREEN 3626 passed / 3626 total ·
+  refactor : aucun. `ContactForm.placement` passe en `input.required`, `trackContactSubmit` sur
+  `result.success` seulement ; `placement="home"` (accueil), `computed<ContactPlacement>` dans
+  `OfferPage` (le littéral de gabarit serait typé `string`). `TrackPayload` devient l'union
+  discriminée du Plan technique.
+- **Tranche F4 — les clics de contact, de profil et de démo sont comptés partout** : GREEN 3626
+  passed / 3626 total · refactor : l'envoi par beacon de `page_duration` et d'`outbound_click`
+  partage une méthode privée `beacon()` (2 sites, même fichier) ; `outboundChannel` précalcule ses
+  profils dans une `Map` (une recherche, aucune URL reconstruite par clic). Décision (c) : seul
+  `github.com/j-ned` est un profil, `github.com/j-ned/<dépôt>` est classé `demo` (canal existant de
+  `OUTBOUND_CHANNELS`, API lue en lecture seule), `github.com/j-nedellec` reste non classé.
+  Initialiseur enregistré dans `app.config.ts` (hors filet Vitest, prouvé au parcours local).
+- **Tranche F5 — arrivée sur le formulaire et CTA d'offre** : GREEN 3626 passed / 3626 total ·
+  refactor : aucun. `Home` : `effect()` nommé `contactArrivalEffect` qui se détruit après le
+  premier envoi (pas de drapeau mutable) ; `OfferHero` émet `requestOpened` au clic, `OfferPage`
+  mesure `offer_request_<slug>` ; pied de page : `footer_contact` avant le défilement.
+- **Tranche F6 — l'admin affiche engagement, conversions et couvertures** : GREEN 3626 passed /
+  3626 total · refactor : `calendarDay` sort de `overview-view.ts` dans `calendar-day.ts`, importé
+  par 3 fichiers (`overview-view`, `audience-view`, `audience-conversions-view` ; vérifié par
+  `grep`) ; `tallyGroup` hissé au niveau du module de `audience-report.ts` (utilisé par
+  `events` et `conversions`). `RangeParams` devient `{ startDate: string; endDate: string }`
+  (`'all'` borné au `2026-04-26`), `audienceOverline('all')` teste la clé. `getEventCounts` : aucun
+  `limit` explicite, celui de l'API vaut 20 (`EventsQueryDto` hérite de `DateRangeQueryDto`) pour au
+  plus 7 canaux et 6 emplacements connus. Décision (b) « Visites » partout dans l'admin (hors lignes
+  CSV `KPI,Visiteurs`/`KPI,Sessions`, inchangées) : tableau de bord « Visites · 30 j » sans le doublon
+  « N sessions » (entrée `visits` = `sessions`), phrase du tableau de bord, « visites en ce moment »,
+  colonne « Visites » de Provenance et du tableau de la courbe, section « Ce que les visiteurs
+  font » renommée **« Détail des visites »** (libellé choisi ici : la section mêle actions,
+  navigateurs, systèmes et pays).
+- **Tranche F7 — la confidentialité décrit la mesure réelle** : GREEN 3626 passed / 3626 total ·
+  refactor : aucun. Date « 10 octobre 2026 » écrite dans le gabarit (un seul site) : la page ne lit
+  plus `LEGAL_LAST_UPDATE`, qui reste au 3 octobre pour les mentions légales.
+
+Tests touchés en GREEN pour la décision (b) de l'utilisateur, en deux catégories :
+
+- **Libellés seuls** : `admin-audience.spec.ts` (« visites en ce moment » ×4, « Détail des
+  visites » ×2), `audience-chart.spec.ts` (en-tête de colonne « Visites »), phrases de
+  `overview-copy.spec.ts` et `admin-overview.spec.ts`.
+- **Changements de contrat** (faits en GREEN, à contresigner par `qa`) : `overview-audience.spec.ts`
+  (assertion `overview-sessions` retirée avec l'élément, entrée `visits` au lieu de `visitors` +
+  `sessions`, `it.each` de 3 cas `{visitors, sessions}` réduit à 3 cas `{visits}`),
+  `admin-overview.spec.ts` (clé `sessions: '42 sessions'` retirée), `overview-copy.spec.ts` (source
+  du nombre repointée : fixtures `visitors: 1|0` ⇒ `sessions: 1|0`). Ce ne sont pas des adaptations
+  mécaniques : la valeur affichée change de source et un élément disparaît (doublon « N sessions »).
+
+Test ajouté : `outbound-channel.spec.ts`, `it.each` ×5 sur GitHub (profil avec `/` final ⇒
+`github` ; dépôt et fichier d'un dépôt ⇒ `demo` ; `j-nedellec` et `angular/angular` ⇒ `null`).
+
+### Corrections après la revue REJECTED (front 2, 2026-10-10)
+
+RED par assertion d'abord (`pnpm exec ng cache clean && rm -rf node_modules/.vite` puis
+`pnpm test; echo exit=$?`) : **8 failed / 3633 total, `exit=1`**, 8 `AssertionError` (aucune
+erreur de harnais) ; puis GREEN **3633 passed / 3633 total, `exit=0`**.
+
+- **Point 1 — provenance une fois par visite (le code suit le texte)** : `HttpAnalyticsGateway`
+  n'envoie `referrer` qu'avec la première page vue **effectivement envoyée** du document (une page
+  exclue comme `/login` ne la consomme pas). Tests (`http-analytics.gateway.spec`) : visite de 3
+  pages venue de Google ⇒ `referrer` sur la 1re seulement ; arrivée sur `/login` puis `/` ⇒ `/`
+  porte le `referrer`. RED 2 (« expected [ … ] to deeply equal [ … ] »). API relue en lecture seule
+  (`0486320`) : `upsertPageView` stocke `normalizeReferrer(dto.referrer)` (`NULL` sans referrer) ;
+  `referrersByVisit` prend par session `(array_agg(referrer ORDER BY created_at) FILTER (WHERE
+  referrer IS NOT NULL))[1]`, sinon `''`. Les pages suivantes sans referrer ne comptent donc **pas**
+  un accès direct en plus pour la même visite ; les chiffres de Provenance sont inchangés.
+  Phrase « une fois par visite » conservée.
+- **Point 2 — totaux conservés** : 3e paragraphe complété par « durée d'affichage cumulée » (texte
+  validé par l'utilisateur), attendu de `legal-pages.spec.ts` mis à jour. RED 1.
+- **Point 3 — exclusion par URL** : `trackOutboundClick` et `trackSectionView` testent
+  `isExcludedUrl(path)` ; `trackCtaClick` (pas de chemin dans l'événement) teste le chemin courant du
+  document — `footer_contact` est émis par le pied de page, visible sur `/login`. Tests : `/login`,
+  `/admin`, `/admin/messages` ⇒ 0 beacon, 0 POST ; `cta_click` sur `/login` et `/admin/messages`
+  ⇒ 0 POST. RED 5. `trackContactSubmit` non filtré : le formulaire n'existe ni sur `/login` ni dans
+  l'admin (accueil et offres seulement).
+- **Point 4** : Journal reclassé ci-dessus (changements de contrat vs libellés).
+- **Point 5** : `_contactArrivalEffect` (préfixe des privés du fichier). `trackedPath` **laissé
+  tel quel** : `tracked-path.spec.ts` attend `/blog?tag=angular` conservé pour les pages vues
+  (contrat existant) ; la requête reste retirée par l'API avant stockage. Captures copiées sous
+  `specs/assets/020/`.
+
+Refactor : aucun (commentaire du filtre d'URL corrigé : il ne « reflète » plus seulement le filtre
+de l'API).
+
+**Contre-signature `qa` (2026-10-10), « Visites partout dans l'admin »** : contrat révisé juste,
+signé **avec réserves**. Relu `git diff origin/master` de `overview-audience.spec.ts`,
+`admin-overview.spec.ts` et `overview-copy.spec.ts`. Retirer `overview-sessions` découle de la
+décision et ne relève pas de l'anti-archéologie. `overview-copy.spec` garde du mordant : les
+fixtures `sessions: 1` et `sessions: 0` laissent `visitors` à 42, donc un mutant qui compterait
+les visiteurs (phrase ou garde « Aucune visite ») est tué. Deux mutants survivent :
+
+- (a) `admin-overview.ts` `[visits]="overview()?.visitors"` : le builder a `visitors` = `sessions`
+  = 42. Il faudrait des valeurs distinctes dans le test du relevé Audience, par exemple
+  `makeStatsOverview({ sessions: 42, visitors: 57 })`, attendu `'42'`.
+- (b) `overview-audience.ts` : aucun test ne lit le libellé « Visites · 30 j ». Un retour à
+  « Visiteurs · 30 j », ou un paragraphe « N sessions » réajouté sans `data-testid`, resterait
+  vert. Il faudrait une assertion positive sur le texte exact du bloc (libellé + nombre, par un
+  `data-testid` posé sur le bloc), pas un test d'absence.
+
+Résidu de nommage, mineur : le `data-testid` `overview-visitors` porte une valeur de visites
+(`overview-visits`).
+
 ## Verify (front)
 
 Build local uniquement ; aucune requête de mesure vers la prod (URL relative, amont = conteneur
@@ -1295,3 +1589,232 @@ Réseau (entrée `beacon`) aurait plus de valeur.
 3. Au commit : ajouter **tous** les fichiers non suivis (`page-tracking.ts`, `tracked-path.ts`,
    `visible-time-meter.ts`, specs, ADR-0021/0022). `app.config.ts` importe `page-tracking.ts`, donc
    un oubli casserait la CI.
+
+## Verify (front 2)
+
+**Gates** (codes de sortie lus, 2026-10-10) : `pnpm exec ng cache clean && rm -rf node_modules/.vite`
+puis `pnpm test` ⇒ `exit=0`, 207 fichiers / 3626 tests ; `pnpm lint` ⇒ `exit=0` ;
+`pnpm run format:check` ⇒ `exit=0` ; `pnpm install --frozen-lockfile` ⇒ `exit=0` ;
+`pnpm run build --configuration production` ⇒ `exit=0` (lancé **après** le parcours : le build lit
+l'API de prod en GET pour sitemap, RSS et prérendu, comme toujours). Aucun U+00A0 ni U+202F
+littéral dans les fichiers touchés (`grep -P`, 0 occurrence).
+
+**Confidentialité prérendue** : `dist/angular-portfolio-app/browser/confidentialite/index.html`
+contient `privacy-audience-pages`, `privacy-audience-actions`, `privacy-audience-retention`,
+`privacy-last-update` (1 fois chacun), « Dernière mise à jour&nbsp;: 10 octobre 2026 » et « jamais
+le contenu du formulaire ni l'adresse du lien ». Le bundle `main-*.js` contient `auxclick` et
+`outbound_click` (initialiseur enregistré).
+
+**Parcours local, rien vers la prod.** Postgres `postgres:17-alpine` jetable (`127.0.0.1:55497`) et
+Mailpit (`127.0.0.1:11025`), API `nest-portfolio-app` (`0486320`, lecture seule, `pnpm start`, env
+factice hors dépôt, admin de test semé localement), front `pnpm start` (proxy de dev,
+`X-Forwarded-For: 203.0.113.10`). Garde-fous : (1) le serveur de dev tournait avec un préchargement
+Node qui refuse `fetch`/`http(s)`/DNS vers `*.nedellec-julien.fr` et journalise : 6 lectures SSR de
+l'accueil vers `api.` **bloquées** (le rendu serveur de dev vise l'API de prod pour les lectures,
+préexistant), aucune autre tentative ; (2) dans le navigateur, un écouteur de capture annulait la
+navigation de tout lien d'une autre origine (l'événement atteint quand même l'écouteur délégué du
+`document`) ; onglet Réseau filtré sur `nedellec-julien` : **0 requête**. Le volet navigateur étant
+masqué (viewport nul, aucun `IntersectionObserver`), viewport émulé 1280×800 et rendu forcé par une
+capture.
+
+| Étape (navigateur) | Ligne en base locale |
+|---|---|
+| Accueil | `page_view /` (durée 41 s à la sortie) |
+| Défilement jusqu'à `#contact` | `section_view home_contact /` (une seule) |
+| Envoi du formulaire de l'accueil (données de test) | `contact_submit home`, message en base, e-mail dans Mailpit |
+| Clics `mailto:`, `tel:`, Malt, LinkedIn, GitHub profil | `outbound_click` `email`, `phone`, `malt`, `linkedin`, `github`, page `/` (beacons) ; `cta_click` du bandeau recruteur conservés |
+| Pied de page « Décrire mon projet » | `cta_click footer_contact` |
+| Offre site vitrine, « Demander mon site » | `cta_click offer_request_site-vitrine` ; **aucune** page vue `#demande` |
+| Démo au bouton du milieu, autre démo au clic | `outbound_click demo /offres/site-vitrine` ×2 |
+| Lien `github.com/j-ned/ng-portfolio-app` (ancre injectée : aucun projet en base locale) | `outbound_click demo` (décision (c)) |
+| Envoi du formulaire de l'offre | `contact_submit offer_site-vitrine` |
+| Onglet visible 5 s puis masqué | `page_duration` ⇒ `page_view /offres/site-vitrine` durée 46 s |
+
+Une visite à rebond ajoutée par `curl` **sur l'API locale** (`/blog`, Google, 8 s, autre IP de
+documentation) pour voir un rebond réel non nul. Admin local (connexion de test) :
+
+- relevé 30 jours : Visites 2 « un appareil, une journée » · Pages vues 3 « 1,5 page par visite » ·
+  Rebond (une page) 50 % « 1 visite sur 2 » · Rebond réel 50 % « engagement 50 % · mesuré depuis le
+  10 octobre » · Durée mesurée 32 s « par page, sur 100 % des pages vues » ; phrase : « 2 visites,
+  dont 1 venue de google.com. 5 sur 10 repartent en moins de 30 s, sans autre page ni action. » ;
+  « 1 visite en ce moment » ;
+- Conversions : « Mesurées depuis le 10 octobre 2026. » ; Totaux 2 / 3 / 2 / 0 / 3 / 1 ;
+  Formulaires : Accueil 1, Offre Site vitrine 1 ; Liens : Démos 3, E-mail 1, GitHub 1, LinkedIn 1,
+  Malt 1, Téléphone 1 — conformes au parcours ;
+- 90 jours puis « Depuis le début » : note « … 30 derniers jours au plus, depuis le 10 septembre
+  2026. », sur-titre « Tout le temps », requêtes `startDate=2026-07-12` puis `startDate=2026-04-26` ;
+  13 sources par période dont `stats/events` ×2 ;
+- tableau de bord : « Visites · 30 j » sans doublon de sessions, tuile Rebond réel.
+
+Console : deux `InvalidStateError: Transition was aborted` (transitions de vue du routeur dans un
+document masqué, sans lien avec ce diff) ; aucune autre erreur.
+
+Captures : `specs/assets/020/verify-f6-audience-releve.jpg`,
+`specs/assets/020/verify-f6-audience-conversions.jpg`,
+`specs/assets/020/verify-f6-audience-tout-le-temps-note.jpg`.
+
+Nettoyage : conteneurs supprimés, serveurs arrêtés, ports 3000/4200 libres, env factice effacé,
+dépôt API sans modification.
+
+**Après les corrections de la revue** (2026-10-10, codes de sortie lus) : `pnpm exec ng cache clean
+&& rm -rf node_modules/.vite` puis `pnpm test` ⇒ `exit=0`, 207 fichiers / 3633 tests ; `pnpm lint`
+⇒ `exit=0` ; `pnpm run format:check` ⇒ `exit=0` ; `pnpm install --frozen-lockfile` ⇒ `exit=0` ;
+`pnpm run build --configuration production` ⇒ `exit=0`. `confidentialite/index.html` prérendu
+contient « durée d'affichage cumulée ». Aucun U+00A0/U+202F littéral. Le parcours navigateur n'a pas
+été rejoué pour ces corrections (gateway seul : referrer de la première page vue, filtre d'URL des
+événements) : elles sont tenues par les 7 tests du gateway ; aucune requête vers la prod.
+
+**Verdict : PASS.**
+
+## Review code (front 2)
+
+Gate finale de la PR front 2 (F3 à F7), branche `feat/honest-analytics-events`, non commitée
+(`git diff origin/master` + fichiers non suivis). API #48 (`19ba6dc`) lue en lecture seule.
+
+**Verdict** : REJECTED
+**Gates CI locaux** : tests ✅ / lint ✅ / build ✅ (`pnpm exec ng cache clean && rm -rf node_modules/.vite` puis `pnpm test` exit=0, 207 fichiers / 3626 tests ; `pnpm lint` exit=0 ; `pnpm run format:check` exit=0 ; `pnpm install --frozen-lockfile` exit=0 ; `pnpm run build --configuration production` exit=0)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main (archéologie : 5 commentaires d'une ligne, tous des WHY, 0 réf ADR/spec ; zoneless/snapshot/`.only`/`fireEvent`/boucle d'`it` : 0 ; `innerHTML`/`bypassSecurity` : 0 ; U+00A0/U+202F littéraux : 0)
+**Warnings de gate** : aucun (sorties test, lint, build relues en entier)
+**Rendu compilé** : N/A (ni `shared/ui/**` ni nouvelle page ; vérifié au rendu par le verify)
+**Preuve de verify runtime** : ✅ (`## Verify (front 2)` : étapes, PASS, 3 captures, console relevée ; cohérente avec le diff. Captures relues : relevé et conversions conformes)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅ (une remarque mineure, ci-dessous)
+**Cross-platform** : ✅
+**Tests** : ❌ (point 3 : le Journal dit « libellés seulement » pour des retraits d'assertion)
+**Sécurité** : ❌ (point 2 : exclusion par URL d'admin non appliquée aux nouveaux événements)
+**Alignement spec** : ❌ (point 1 : une affirmation de la page de confidentialité est fausse au regard du code)
+
+### Vérifié conforme
+
+- **`contact_submit`** : envoyé seulement sur `result.success` (`contact-form.ts:309`), avant le
+  toast ; refus métier, exception, formulaire invalide : jamais. Corps `{ type, entityId }` :
+  accepté par l'API (`entityTitle` absent passe, `@IsOptional` court-circuite `PathForV2Events`) ;
+  `offer_<slug>` respecte `/^[a-z0-9_-]{1,64}$/`.
+- **`outbound_click`** : seuls le canal et `trackedPath(router.url)` partent, jamais `anchor.href`
+  (`outbound-click-tracking.ts:33-34`) ; canal ∈ `OUTBOUND_CHANNELS` (miroir exact) ; écouteur
+  délégué `click` + `auxclick` filtré sur `button === 1`, sans `preventDefault` ; pas de double
+  comptage (un clic du milieu ne déclenche pas `click`). Démo = sous-domaine du site hors `www`/`api`
+  (sous-domaines référencés dans `src/` : `api`, `www`, 4 démos) ; `github.com/j-ned/<dépôt>` ⇒
+  `demo`, profil seul ⇒ `github` (décision (c)). Beacon pour survivre au départ.
+- **`section_view home_contact`** : une fois par instance de `Home` (l'effet se détruit après
+  l'envoi) ; `SectionVisibility` libère `ActiveSection` à la destruction, donc pas d'envoi fantôme
+  au retour sur l'accueil. Corps conforme à l'API.
+- **Exclusions admin connecté / appareil exclu / serveur** : `canTrack()` en tête des 3 méthodes,
+  testé (`http-analytics.gateway.spec`).
+- **Admin** : tuile Rebond réel (« engagement X % · mesuré depuis … », « – » / « non mesuré sur la
+  période »), section Conversions (Totaux, par emplacement, par canal, note « Mesurées depuis … » /
+  « non mesurées »), note de couverture, `'all'` borné au `2026-04-26` avec sur-titre « Tout le
+  temps », lignes CSV ajoutées **après** les lignes existantes (aucune modifiée, `KPI,Visiteurs` et
+  `KPI,Sessions` conservées). Aucun « Visiteurs »/« visiteur »/« sessions » affiché dans l'admin
+  hors ces deux lignes CSV (grep sur `features/admin` et `features/analytics`, hors commentaires).
+- **Confidentialité** : prérendue (`dist/.../confidentialite/index.html` : 3 paragraphes + date,
+  1 occurrence chacun). Vrai au regard de l'API : pays par `geoip-lite` local, IP non conservée,
+  empreinte `sha256(ip|ua|jour)`, purge brute à 30 jours (`RETENTION_DAYS`), totaux journaliers
+  (`daily_stat`), requête et ancre retirées du chemin des événements v2 (`toPathForV2`,
+  `ValidationPipe({ transform: true })`), métadonnées refusées. Sauf le point 1.
+- Bundle : `auxclick` et `outbound_click` présents dans `main-*.js` (initialiseur enregistré dans
+  `app.config.ts:130`).
+
+### Points à corriger
+
+1. `src/app/pages/privacy-policy.ts:37` — « la provenance (…, **une fois par visite**) » est faux :
+   `trackPageView` envoie `document.referrer` à **chaque** page vue
+   (`http-analytics.gateway.ts:46`), et dans une SPA `document.referrer` ne change pas d'une
+   navigation à l'autre ; l'API l'enregistre normalisé sur **chaque** ligne `page_view`
+   (`nest-portfolio-app/src/analytics/analytics-tracker.service.ts`, `upsertPageView`). Une visite
+   de 3 pages venue de Google stocke trois fois `google.com`. Le comptage *par visite*
+   (`metrics`) n'est pas le stockage. Deux remèdes, au choix de l'utilisateur (le texte a été
+   validé) : (a) retirer « une fois par visite » du paragraphe et de l'attendu de
+   `legal-pages.spec.ts` ; (b) n'envoyer le `referrer` qu'avec la première page vue du document
+   (`page-tracking.ts`), ce qui rend la phrase vraie sans changer les chiffres de Provenance (déjà
+   par visite côté API) — RED d'abord. Au passage, si le texte est rouvert : la liste des totaux
+   conservés (ligne 55) omet la durée d'affichage totale (`total_duration`, `duration_samples`),
+   également conservée ; anonyme, mais la parenthèse se lit comme exhaustive.
+2. `src/app/features/analytics/infra/gateways/http-analytics.gateway.ts:103-111` — l'exclusion par
+   URL d'admin n'est pas appliquée aux nouveaux événements : `trackOutboundClick` et
+   `trackSectionView` ne testent pas `isExcludedUrl(path)`, et l'API ne filtre l'URL que pour
+   `page_view`/`page_duration`. Cas réel : `/login` affiche le pied de page (`app.ts:12`, seul
+   `/admin` le masque) ; un clic `mailto:`/LinkedIn depuis `/login` par un appareil non exclu,
+   non connecté, est compté comme conversion. Le Plan technique annonçait « exclusions (…, URL
+   admin) appliquées aux nouveaux types ». Attendu : `if (!this.canTrack() || isExcludedUrl(path))
+   return;` sur les deux méthodes, avec un test `qa` (`/login`, `/admin/messages` ⇒ 0 beacon / 0
+   POST) en RED d'abord.
+3. `## Journal des tranches (front)`, paragraphe « Adaptations mécaniques de tests » — « aucune
+   autre valeur attendue changée » est inexact : `overview-audience.spec.ts` retire l'assertion
+   `overview-sessions` et réduit l'`it.each` (3 cas `{visitors, sessions}` ⇒ 3 cas `{visits}`),
+   `admin-overview.spec.ts` retire la clé `sessions: '42 sessions'`, `overview-copy.spec.ts`
+   repointe la source du nombre (`visitors` ⇒ `sessions`). Ce sont des changements de contrat
+   légitimes (décision (b) : le doublon « N sessions » disparaît), mais faits en GREEN : les
+   reclasser comme tels dans le Journal, contresignés par `qa`. `audience-chart.spec.ts` et les
+   libellés de `admin-audience.spec.ts` sont bien des libellés seuls.
+
+### À signaler (non bloquant)
+
+- **Libellé « Détail des visites »** (`admin-audience.ts`, h2 de l'ancienne section « Ce que les
+  visiteurs font ») : choisi par l'implémenteur, à valider par l'utilisateur.
+- `trackedPath(router.url)` garde la requête (`/blog?tag=x`) : elle part sur le réseau et l'API la
+  retire avant stockage. Retirer `?…` côté front aussi serait une défense en profondeur. Un chemin
+  hors `TRACKED_PATH` (> 200 caractères, ou `@ : $ , &` que le sérialiseur Angular laisse en clair)
+  serait refusé en 400, silencieusement ; aucun slug actuel n'est concerné.
+- `home.ts:182` : `contactArrivalEffect` sans `_`, alors que les autres privés du fichier en ont
+  un (`_analytics`, `_activeSection`) — convention CLAUDE.md.
+- Captures du verify dans le scratchpad de session seulement : les copier sous `specs/assets/020/`
+  comme pour la PR front 1, sinon la preuve disparaît avec la session.
+- `placementLabel`/`channelLabel` exportés pour leurs seuls tests : prescrits par le Plan de test
+  (F6), accepté.
+
+**Altitude composant** (advisory, non bloquant) :
+- `src/app/features/contact/application/contact-form.ts` — 323 LOC (déjà au-dessus de 250 avant le
+  diff, +3) ; pas de découpe exigée ici.
+
+**Risque résiduel** (advisory) :
+- réversibilité : profil muet · monitoring : Sentry (profil), mais les envois de mesure sont
+  silencieux par construction : un 400 de l'API ne se voit nulle part. Contrôle à faire après
+  déploiement : `GET stats/overview` ⇒ `conversions.measuredSince` non nul dans la journée.
+- non couvert par les gates : l'enregistrement de l'initialiseur dans `app.config.ts` (hors filet
+  Vitest), couvert par le parcours local du verify et la présence dans le bundle.
+
+### Addendum — relecture des corrections (front 2, 2026-10-10)
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ / lint ✅ / build ✅ (`pnpm exec ng cache clean && rm -rf node_modules/.vite` puis `pnpm test` exit=0, 207 fichiers / 3633 tests ; `pnpm lint` exit=0 ; `pnpm run format:check` exit=0 ; `pnpm install --frozen-lockfile` exit=0 ; `pnpm run build --configuration production` exit=0)
+**Checks mécaniques** : checker non vendoré : relu à la main sur le delta (2 commentaires d'une ligne, des WHY ; 0 U+00A0/U+202F littéral)
+**Warnings de gate** : aucun
+**Rendu compilé** : N/A
+**Preuve de verify runtime** : ✅ (inchangée sur le rendu ; delta couvert par les tests du gateway ; captures désormais sous `specs/assets/020/`)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+Le build de production lit l'API de prod en GET (sitemap, RSS, prérendu), comme le gate du
+Dockerfile ; aucun POST, aucune requête de mesure.
+
+- **Point 1, provenance** : `HttpAnalyticsGateway` n'envoie `referrer` qu'avec la première page vue
+  réellement envoyée (`referrerSent`, positionné après les gardes `canTrack`/`isExcludedUrl` : une
+  arrivée sur `/login` ne le consomme pas). Le gateway est un singleton (`app.config.ts:151`), le
+  drapeau vaut donc pour le document. API relue en lecture seule : la Provenance passe par
+  `referrersByVisit` (`analytics-stats.service.ts:174-194`) : par session, premier referrer non
+  nul, sinon `''`. C'est le seul consommateur de `page_view.referrer`. Une page suivante sans
+  referrer (`NULL`) n'ajoute donc pas d'accès direct à la même visite : les chiffres sont
+  inchangés et « une fois par visite » devient vrai. Limites connues, négligeables : une première
+  page vue perdue (429, réseau) fait passer la visite en accès direct ; après minuit UTC, la
+  nouvelle empreinte n'a plus de referrer (même biais qu'avant pour la durée).
+- **Totaux conservés** : « durée d'affichage cumulée » ajoutée (`privacy-policy.ts:55`), attendu
+  de `legal-pages.spec.ts:100` aligné. Prérendu `confidentialite/index.html` : 3 paragraphes, date,
+  « une fois par visite » et « durée d'affichage cumulée », 1 occurrence chacun.
+- **Point 2, exclusion par URL** : `isExcludedUrl(path)` sur `trackOutboundClick` et
+  `trackSectionView` ; `trackCtaClick` filtré sur `document.location.pathname` (après `canTrack`,
+  donc jamais évalué côté serveur). Tests `/login`, `/admin`, `/admin/messages` ⇒ 0 beacon / 0
+  POST. `trackContactSubmit` non filtré : justifié, le formulaire n'existe ni sur `/login` ni dans
+  l'admin.
+- **Point 3, Journal** : reclassé en « Libellés seuls » et « Changements de contrat (faits en
+  GREEN, à contresigner par `qa`) », exact au regard du diff. La contre-signature de `qa` reste à
+  obtenir par la session principale (non bloquant : la décision (b) vient de l'utilisateur).
+- `_contactArrivalEffect` renommé ; captures copiées sous `specs/assets/020/` ; « Détail des
+  visites » validé par l'utilisateur. `trackedPath` garde la requête (contrat existant de
+  `tracked-path.spec.ts`), que l'API retire avant stockage : accepté.
+
+Réserves de la contre-signature soldées (session principale, 2026-10-10) : `data-testid` `overview-visitors` renommé `overview-visits` ; assertion positive sur le bloc `overview-visits-block` (« Visites · 30 j 42 », rien d'autre) dans `overview-audience.spec.ts` ; test à valeurs distinctes (`sessions: 42`, `visitors: 57` → `42`) dans `admin-overview.spec.ts`. Mutants vérifiés puis restaurés : libellé « Visiteurs · 30 j » → 1 failed, exit 1 ; `[visits]="overview()?.visitors"` → 1 failed, exit 1. Suite réelle 3635/3635 exit 0, lint et format exit 0.

@@ -9,6 +9,8 @@ import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.
 import type {
   DailyChartPoint,
   EntityStat,
+  EventCount,
+  EventCountType,
   MetricEntry,
   StatsOverview,
 } from '@features/analytics/domain/models/analytics.types';
@@ -32,6 +34,7 @@ type Doubles = {
   readonly getArticleStats: Mock<AnalyticsGateway['getArticleStats']>;
   readonly getArticleReadStats: Mock<AnalyticsGateway['getArticleReadStats']>;
   readonly getCtaStats: Mock<AnalyticsGateway['getCtaStats']>;
+  readonly getEventCounts: Mock<AnalyticsGateway['getEventCounts']>;
 };
 
 const METRIC_TYPES = ['url', 'referrer', 'browser', 'os', 'country'] as const;
@@ -67,6 +70,7 @@ function makeDoubles(overview?: Mock<AnalyticsGateway['getOverview']>): Doubles 
       later<EntityStat[]>([]),
     ),
     getCtaStats: vi.fn<AnalyticsGateway['getCtaStats']>(() => later<EntityStat[]>([])),
+    getEventCounts: vi.fn<AnalyticsGateway['getEventCounts']>(() => later<EventCount[]>([])),
   };
 }
 
@@ -100,6 +104,11 @@ const lastMetricPeriod = (doubles: Doubles, type: string): Period | null => {
   return call ? [call[1], call[2]] : null;
 };
 
+const lastEventPeriod = (doubles: Doubles, type: EventCountType): Period | null => {
+  const call = doubles.getEventCounts.mock.calls.filter(([requested]) => requested === type).at(-1);
+  return call ? [call[1], call[2]] : null;
+};
+
 function requestedPeriods(doubles: Doubles): Readonly<Record<string, Period | null>> {
   return {
     overview: lastPeriod(doubles.getOverview),
@@ -109,6 +118,8 @@ function requestedPeriods(doubles: Doubles): Readonly<Record<string, Period | nu
     articles: lastPeriod(doubles.getArticleStats),
     articlesRead: lastPeriod(doubles.getArticleReadStats),
     cta: lastPeriod(doubles.getCtaStats),
+    contactSubmits: lastEventPeriod(doubles, 'contact_submit'),
+    outboundClicks: lastEventPeriod(doubles, 'outbound_click'),
   };
 }
 
@@ -124,6 +135,8 @@ const everyEndpoint = (period: Period): Readonly<Record<string, Period>> => ({
   articles: period,
   articlesRead: period,
   cta: period,
+  contactSubmits: period,
+  outboundClicks: period,
 });
 
 describe('AudienceReport', () => {
@@ -136,7 +149,7 @@ describe('AudienceReport', () => {
     vi.useRealTimers();
   });
 
-  it('Given the report is opened on Wednesday 7 October 2026 When nothing is chosen Then the ten period-bound sources are asked for the last 30 days', async () => {
+  it('Given the report is opened on Wednesday 7 October 2026 When nothing is chosen Then every period-bound source, conversion details included, is asked for the last 30 days', async () => {
     const doubles = makeDoubles();
 
     const report = await openReport(doubles);
@@ -150,7 +163,7 @@ describe('AudienceReport', () => {
   it.each<{ range: DateRangeKey; period: Period }>([
     { range: '7d', period: ['2026-09-30', '2026-10-07'] },
     { range: '90d', period: ['2026-07-09', '2026-10-07'] },
-    { range: 'all', period: [undefined, undefined] },
+    { range: 'all', period: ['2026-04-26', '2026-10-07'] },
   ])(
     'Given the report on 30 days When the period becomes $range Then every source is asked again with the new dates',
     async ({ range, period }) => {
@@ -166,6 +179,16 @@ describe('AudienceReport', () => {
       }).toEqual({ overviewCalls: 2, periods: everyEndpoint(period) });
     },
   );
+
+  it('Given the report on 30 days When it loads Then the conversion details are asked once per event type', async () => {
+    const doubles = makeDoubles();
+
+    await openReport(doubles);
+
+    expect(
+      doubles.getEventCounts.mock.calls.map(([type]) => type).sort((a, b) => a.localeCompare(b)),
+    ).toEqual(['contact_submit', 'outbound_click']);
+  });
 
   it('Given pages and referrers When the report is loaded Then both become share rows, direct access named', async () => {
     const report = await openReport();
@@ -213,6 +236,7 @@ describe('AudienceReport: vraie passerelle HTTP et intercepteur de toasts', () =
     articles: [],
     'articles-read': [],
     cta: [],
+    events: [],
   };
 
   beforeEach(() => {
@@ -260,7 +284,7 @@ describe('AudienceReport: vraie passerelle HTTP et intercepteur de toasts', () =
       failed: failed.length,
       hasError: report.hasError(),
       toasts: add.mock.calls.length,
-    }).toEqual({ requests: 11, failed: 5, hasError: true, toasts: 0 });
+    }).toEqual({ requests: 13, failed: 5, hasError: true, toasts: 0 });
     httpController.verify();
   });
 });

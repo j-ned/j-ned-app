@@ -60,8 +60,8 @@ export function cvOverline(cv: CvInfo | null): string {
 }
 
 export function audienceOverline(range: DateRangeKey, now: Date): string {
+  if (range === 'all') return 'Tout le temps';
   const { startDate, endDate } = dateRangeToParams(range, now);
-  if (startDate === undefined || endDate === undefined) return 'Tout le temps';
   const start = new Date(startDate);
   const end = new Date(endDate);
   const days = Math.round((end.getTime() - start.getTime()) / DAY_MS);

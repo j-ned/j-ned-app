@@ -16,6 +16,8 @@ import { ContactGateway } from '@features/contact/domain/gateways/contact.gatewa
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { SectionVisibility } from '@core/navigation/section-visibility';
+import { ActiveSection } from '@core/navigation/active-section';
+import { ContactForm } from '@features/contact/application/contact-form';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { STUB_CV_DOWNLOAD_URL, stubCvGateway } from '@features/cv/testing/stub-cv-gateway';
@@ -62,17 +64,29 @@ type AnalyticsStub = {
   readonly trackCtaClick: Mock<AnalyticsGateway['trackCtaClick']>;
   readonly trackProjectClick: Mock<AnalyticsGateway['trackProjectClick']>;
   readonly trackCvDownload: Mock<AnalyticsGateway['trackCvDownload']>;
+  readonly trackContactSubmit: Mock<AnalyticsGateway['trackContactSubmit']>;
+  readonly trackSectionView: Mock<AnalyticsGateway['trackSectionView']>;
 };
 
 function makeAnalytics(): AnalyticsStub {
   const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
   const trackProjectClick = vi.fn<AnalyticsGateway['trackProjectClick']>();
   const trackCvDownload = vi.fn<AnalyticsGateway['trackCvDownload']>();
+  const trackContactSubmit = vi.fn<AnalyticsGateway['trackContactSubmit']>();
+  const trackSectionView = vi.fn<AnalyticsGateway['trackSectionView']>();
   return {
-    gateway: stubAnalyticsGateway({ trackCtaClick, trackProjectClick, trackCvDownload }),
+    gateway: stubAnalyticsGateway({
+      trackCtaClick,
+      trackProjectClick,
+      trackCvDownload,
+      trackContactSubmit,
+      trackSectionView,
+    }),
     trackCtaClick,
     trackProjectClick,
     trackCvDownload,
+    trackContactSubmit,
+    trackSectionView,
   };
 }
 
@@ -87,15 +101,21 @@ function makeScroller(eager = false): SectionScrollerStub {
 
 async function setup(
   options: { gateway?: HomeGateway; scroller?: SectionScrollerStub } = {},
-): Promise<{ component: Home; scroller: SectionScrollerStub }> {
+): Promise<{
+  component: Home;
+  scroller: SectionScrollerStub;
+  fixture: ComponentFixture<Home>;
+  analytics: AnalyticsStub;
+}> {
   const gateway = options.gateway ?? makeHomeGateway();
   const scroller = options.scroller ?? makeScroller();
+  const analytics = makeAnalytics();
 
   TestBed.configureTestingModule({
     providers: [
       { provide: HomeGateway, useValue: gateway },
       { provide: SectionScroller, useValue: scroller },
-      { provide: AnalyticsGateway, useValue: makeAnalytics().gateway },
+      { provide: AnalyticsGateway, useValue: analytics.gateway },
       { provide: CvGateway, useValue: stubCvGateway() },
     ],
     schemas: [NO_ERRORS_SCHEMA],
@@ -112,7 +132,7 @@ async function setup(
   fixture.detectChanges();
   await fixture.whenStable();
   fixture.detectChanges();
-  return { component: fixture.componentInstance, scroller };
+  return { component: fixture.componentInstance, scroller, fixture, analytics };
 }
 
 type DeferHarness = {
@@ -441,6 +461,50 @@ describe('Home', () => {
         ...OFFERS.map((offer) => offer.shortName),
         'Autre',
       ]);
+    });
+  });
+
+  describe('mesure du contact', () => {
+    it('Given the contact block rendered When its form is sent Then the submission is counted under home', async () => {
+      const { fixture, contactBlock, analytics } = await renderHomeTemplate();
+      await contactBlock.render(DeferBlockState.Complete);
+      await fixture.whenStable();
+      const form = fixture.debugElement.query(By.directive(ContactForm))
+        .componentInstance as ContactForm;
+      const fields = form.contactForm;
+      fields.name().value.set('Alice');
+      fields.email().value.set('alice@example.com');
+      fields.subject().value.set('Projet de site');
+      fields.message().value.set('Bonjour, j’aimerais discuter d’un projet.');
+      await fixture.whenStable();
+
+      await form.submitContact();
+      await fixture.whenStable();
+
+      expect(analytics.trackContactSubmit.mock.calls).toEqual([['home']]);
+    });
+
+    it('Given the home When the contact section becomes active, then another one, then contact again Then the arrival on the form is reported once, on the home path', async () => {
+      const { fixture, analytics } = await setup();
+      const active = TestBed.inject(ActiveSection);
+
+      active.set('contact');
+      await fixture.whenStable();
+      active.set('methode');
+      await fixture.whenStable();
+      active.set('contact');
+      await fixture.whenStable();
+
+      expect(analytics.trackSectionView.mock.calls).toEqual([['home_contact', '/']]);
+    });
+
+    it('Given the home When only the method section becomes active Then no arrival on the form is reported', async () => {
+      const { fixture, analytics } = await setup();
+
+      TestBed.inject(ActiveSection).set('methode');
+      await fixture.whenStable();
+
+      expect(analytics.trackSectionView).not.toHaveBeenCalled();
     });
   });
 

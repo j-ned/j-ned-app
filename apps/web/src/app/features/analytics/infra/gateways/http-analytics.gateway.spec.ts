@@ -23,7 +23,9 @@ import type {
   MetricEntry,
   EntityStat,
   ActiveVisitors,
+  EventCount,
 } from '../../domain/models/analytics.types';
+import { makeEventCount, makeStatsOverview } from '../../testing/analytics-builders';
 
 const API = 'https://api.test/api';
 const TRACK_URL = '/api/analytics/track';
@@ -211,6 +213,194 @@ describe('HttpAnalyticsGateway', () => {
     });
   });
 
+  describe('provenance une fois par visite', () => {
+    const flushBodies = (httpController: HttpTestingController): unknown[] =>
+      httpController.match(TRACK_URL).map((req) => {
+        req.flush(null, { status: 204, statusText: 'No Content' });
+        return req.request.body;
+      });
+
+    it('Given a visit arriving from Google When three pages are viewed Then only the first page view carries the referrer', () => {
+      const { gateway, httpController } = configureBrowser();
+      Object.defineProperty(document, 'referrer', {
+        value: 'https://www.google.com/',
+        configurable: true,
+      });
+
+      gateway.trackPageView('/');
+      gateway.trackPageView('/blog');
+      gateway.trackPageView('/about');
+
+      expect(flushBodies(httpController)).toEqual([
+        { type: 'page_view', url: '/', referrer: 'https://www.google.com/' },
+        { type: 'page_view', url: '/blog' },
+        { type: 'page_view', url: '/about' },
+      ]);
+      httpController.verify();
+    });
+
+    it('Given a visit landing on an excluded page When the next page is viewed Then that first measured page view carries the referrer', () => {
+      const { gateway, httpController } = configureBrowser();
+      Object.defineProperty(document, 'referrer', {
+        value: 'https://www.google.com/',
+        configurable: true,
+      });
+
+      gateway.trackPageView('/login');
+      gateway.trackPageView('/');
+      gateway.trackPageView('/blog');
+
+      expect(flushBodies(httpController)).toEqual([
+        { type: 'page_view', url: '/', referrer: 'https://www.google.com/' },
+        { type: 'page_view', url: '/blog' },
+      ]);
+      httpController.verify();
+    });
+  });
+
+  describe('exclusion des pages de connexion et d’administration', () => {
+    afterEach(() => history.replaceState(null, '', '/'));
+
+    it.each([['/login'], ['/admin'], ['/admin/messages']])(
+      'Given a visitor on %s When an outbound link is clicked or the home form comes into view Then neither beacon nor POST leaves',
+      (path) => {
+        const { gateway, httpController } = configureBrowser();
+        const beacon = beaconSpy();
+
+        gateway.trackOutboundClick('email', path);
+        gateway.trackSectionView('home_contact', path);
+
+        expect({
+          beacons: beacon.mock.calls.length,
+          posts: httpController.match(TRACK_URL).length,
+        }).toEqual({ beacons: 0, posts: 0 });
+        httpController.verify();
+      },
+    );
+
+    it.each([['/login'], ['/admin/messages']])(
+      'Given a visitor on %s When a call to action is clicked Then no POST leaves',
+      (path) => {
+        const { gateway, httpController } = configureBrowser();
+        history.replaceState(null, '', path);
+
+        gateway.trackCtaClick('footer_contact', 'Décrire mon projet');
+
+        expect(httpController.match(TRACK_URL)).toHaveLength(0);
+        httpController.verify();
+      },
+    );
+  });
+
+  describe('conversions', () => {
+    it.each([['home'], ['offer_site-vitrine']] as const)(
+      'Given a visitor When the form sent from %s succeeds Then POST /api/analytics/track carries only the placement',
+      (placement) => {
+        const { gateway, httpController } = configureBrowser();
+
+        gateway.trackContactSubmit(placement);
+
+        const req = httpController.expectOne(TRACK_URL);
+        expect({
+          method: req.request.method,
+          body: req.request.body,
+          silent: req.request.context.get(SKIP_ERROR_TOAST),
+        }).toEqual({
+          method: 'POST',
+          body: { type: 'contact_submit', entityId: placement },
+          silent: true,
+        });
+        req.flush(null, { status: 204, statusText: 'No Content' });
+        httpController.verify();
+      },
+    );
+
+    it('Given a visitor When the home form comes into view Then POST /api/analytics/track carries the section and the page', () => {
+      const { gateway, httpController } = configureBrowser();
+
+      gateway.trackSectionView('home_contact', '/');
+
+      const req = httpController.expectOne(TRACK_URL);
+      expect({ method: req.request.method, body: req.request.body }).toEqual({
+        method: 'POST',
+        body: { type: 'section_view', entityId: 'home_contact', entityTitle: '/' },
+      });
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      httpController.verify();
+    });
+
+    it('Given a visitor When an outbound link is clicked Then a JSON beacon carries the channel and the page, and no HttpClient request is made', async () => {
+      const { gateway, httpController } = configureBrowser();
+      const beacon = beaconSpy();
+
+      gateway.trackOutboundClick('linkedin', '/about');
+
+      expect(beacon).toHaveBeenCalledTimes(1);
+      const [url, blob] = beacon.mock.calls[0];
+      expect({ url, type: blob.type, body: JSON.parse(await blob.text()) }).toEqual({
+        url: TRACK_URL,
+        type: 'application/json',
+        body: { type: 'outbound_click', entityId: 'linkedin', entityTitle: '/about' },
+      });
+      httpController.verify();
+    });
+
+    it('Given a browser without navigator.sendBeacon When an outbound link is clicked Then nothing throws and no HttpClient request is made', () => {
+      const { gateway, httpController } = configureBrowser();
+      installBeacon(undefined);
+
+      expect(() => gateway.trackOutboundClick('email', '/')).not.toThrow();
+      httpController.verify();
+    });
+
+    it.each<[string, number, VisitorContext]>([
+      ['visiteur', 1, {}],
+      ['admin connecté', 0, { loggedIn: true }],
+      ['appareil exclu', 0, { deviceExcluded: true }],
+    ])(
+      'Given a %s When an outbound link is clicked Then %i beacon leaves',
+      (_label, beacons, ctx) => {
+        const { gateway } = configureBrowser(ctx);
+        const beacon = beaconSpy();
+
+        gateway.trackOutboundClick('phone', '/offres/site-vitrine');
+
+        expect(beacon).toHaveBeenCalledTimes(beacons);
+      },
+    );
+
+    it.each<[string, number, VisitorContext]>([
+      ['visiteur', 2, {}],
+      ['admin connecté', 0, { loggedIn: true }],
+      ['appareil exclu', 0, { deviceExcluded: true }],
+    ])(
+      'Given a %s When a form is sent and the home form comes into view Then %i POST leave',
+      (_label, posts, ctx) => {
+        const { gateway, httpController } = configureBrowser(ctx);
+
+        gateway.trackContactSubmit('home');
+        gateway.trackSectionView('home_contact', '/');
+
+        const requests = httpController.match(TRACK_URL);
+        expect(requests).toHaveLength(posts);
+        requests.forEach((req) => req.flush(null, { status: 204, statusText: 'No Content' }));
+        httpController.verify();
+      },
+    );
+
+    it('Given the server platform When conversions are reported Then neither POST nor beacon leaves', () => {
+      const { gateway, httpController } = configureServer();
+      const beacon = beaconSpy();
+
+      gateway.trackContactSubmit('home');
+      gateway.trackSectionView('home_contact', '/');
+      gateway.trackOutboundClick('email', '/');
+
+      expect(beacon).not.toHaveBeenCalled();
+      httpController.verify();
+    });
+  });
+
   describe('page_duration par beacon', () => {
     it('Given a visitor When trackPageDuration is called Then a JSON beacon leaves for /api/analytics/track and no HttpClient request is made', async () => {
       const { gateway, httpController } = configureBrowser();
@@ -240,7 +430,7 @@ describe('HttpAnalyticsGateway', () => {
   describe('Admin read-side (7 tests)', () => {
     it('getOverview émet GET /<base>/analytics/stats/overview avec params dates + withCredentials', async () => {
       const { gateway, httpController } = configureBrowser();
-      const expected: StatsOverview = {
+      const expected: StatsOverview = makeStatsOverview({
         visitors: 100,
         pageviews: 250,
         sessions: 80,
@@ -251,7 +441,7 @@ describe('HttpAnalyticsGateway', () => {
         articleViews: 5,
         cvDownloads: 3,
         ctaClicks: 7,
-      };
+      });
 
       const promise = firstValueFrom(gateway.getOverview('2026-04-01', '2026-04-30'));
 
@@ -429,6 +619,37 @@ describe('HttpAnalyticsGateway', () => {
       expect(result).toBe(42);
       httpController.verify();
     });
+  });
+
+  describe('détail des conversions', () => {
+    it.each(['contact_submit', 'outbound_click'] as const)(
+      'getEventCounts(%s) émet GET /<base>/analytics/stats/events avec type + dates + withCredentials',
+      async (type) => {
+        const { gateway, httpController } = configureBrowser();
+        const expected: EventCount[] = [
+          makeEventCount({ entityId: 'home', count: 3 }),
+          makeEventCount({ entityId: 'email', count: 1 }),
+        ];
+
+        const promise = firstValueFrom(gateway.getEventCounts(type, '2026-09-07', '2026-10-07'));
+
+        const req = httpController.expectOne(
+          (r) =>
+            r.url === `${API}/analytics/stats/events` &&
+            r.params.get('type') === type &&
+            r.params.get('startDate') === '2026-09-07' &&
+            r.params.get('endDate') === '2026-10-07',
+        );
+        expect({ method: req.request.method, credentials: req.request.withCredentials }).toEqual({
+          method: 'GET',
+          credentials: true,
+        });
+        req.flush(expected);
+
+        await expect(promise).resolves.toEqual(expected);
+        httpController.verify();
+      },
+    );
   });
 
   describe('URL filter (login + admin)', () => {
@@ -647,6 +868,12 @@ describe('HttpAnalyticsGateway: lectures de l’admin derrière l’intercepteur
       read: 'getCvDownloadCount',
       path: 'cv-downloads',
       call: (g): Observable<unknown> => g.getCvDownloadCount('2026-09-07', '2026-10-07'),
+    },
+    {
+      read: 'getEventCounts',
+      path: 'events',
+      call: (g): Observable<unknown> =>
+        g.getEventCounts('contact_submit', '2026-09-07', '2026-10-07'),
     },
   ])(
     'Given the API answers 500 When $read is read Then no toast is shown and the caller still receives the error',

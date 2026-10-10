@@ -111,9 +111,13 @@ const PERIODS: readonly FilterOption<DateRangeKey>[] = [
 
       <section class="mt-12" aria-labelledby="audience-chart-heading">
         <app-admin-section-head heading="Visites par jour" headingId="audience-chart-heading">
-          <p aria-hidden="true" class="flex gap-4.5 text-[0.8125rem] text-muted">
+          <p
+            aria-hidden="true"
+            data-testid="audience-chart-legend"
+            class="flex gap-4.5 text-[0.8125rem] text-muted"
+          >
             <span class="inline-flex items-center gap-2">
-              <i class="inline-block w-4 border-t-2 border-primary"></i>Visiteurs
+              <i class="inline-block w-4 border-t-2 border-primary"></i>Visites
             </span>
             <span class="inline-flex items-center gap-2">
               <i class="inline-block w-4 border-t-2 border-dashed border-foreground/55"></i>Pages
@@ -128,6 +132,24 @@ const PERIODS: readonly FilterOption<DateRangeKey>[] = [
         />
       </section>
 
+      <section class="mt-12" aria-labelledby="audience-conversions-heading">
+        <app-admin-section-head heading="Conversions" headingId="audience-conversions-heading" />
+        @if (report.conversionsNote(); as note) {
+          <p data-testid="audience-conversions-note" class="mt-3 text-sm text-muted">{{ note }}</p>
+        }
+        @if (report.conversions().length > 0) {
+          <div class="mt-5 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+            @for (group of report.conversions(); track group.heading) {
+              <app-audience-tally [heading]="group.heading" [rows]="group.rows" />
+            }
+          </div>
+        }
+      </section>
+
+      @if (report.detailNote(); as note) {
+        <p data-testid="audience-detail-note" class="mt-12 text-sm text-muted">{{ note }}</p>
+      }
+
       <div class="mt-12 grid gap-10 lg:grid-cols-2 lg:gap-14">
         <app-audience-share-table
           heading="Pages les plus vues"
@@ -140,16 +162,13 @@ const PERIODS: readonly FilterOption<DateRangeKey>[] = [
           heading="Provenance"
           headingId="audience-referrers-heading"
           labelHeader="Source"
-          unitLabel="Sessions"
+          unitLabel="Visites"
           [rows]="report.referrers()"
         />
       </div>
 
       <section class="mt-12" aria-labelledby="audience-events-heading">
-        <app-admin-section-head
-          heading="Ce que les visiteurs font"
-          headingId="audience-events-heading"
-        />
+        <app-admin-section-head heading="Détail des visites" headingId="audience-events-heading" />
         <div class="mt-5 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
           @for (group of report.events(); track group.heading) {
             <app-audience-tally [heading]="group.heading" [rows]="group.rows" />
@@ -180,7 +199,7 @@ export class AdminAudience {
     const count = this._activeCount();
     return {
       count: groupedNumber(count),
-      label: `${pluralize(count, 'visiteur', 'visiteurs')} en ce moment`,
+      label: `${pluralize(count, 'visite', 'visites')} en ce moment`,
     };
   });
 

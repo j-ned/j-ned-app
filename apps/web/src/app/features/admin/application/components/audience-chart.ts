@@ -31,7 +31,7 @@ import { chartSummary } from '../overview-view';
           <thead>
             <tr class="border-b-[1.5px] border-line-strong">
               <th scope="col" class="table-head pr-3 text-left">Jour</th>
-              <th scope="col" class="table-head pl-3 text-right">Visiteurs</th>
+              <th scope="col" class="table-head pl-3 text-right">Visites</th>
               <th scope="col" class="table-head pl-3 text-right">Pages vues</th>
             </tr>
           </thead>

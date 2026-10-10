@@ -4,22 +4,24 @@ import type {
   DailyChartPoint,
   MetricEntry,
   EntityStat,
+  EventCount,
 } from './models/analytics.types';
 
 export type DateRangeKey = '7d' | '30d' | '90d' | 'all';
 
-export type RangeParams = { startDate?: string; endDate?: string };
+export type RangeParams = { readonly startDate: string; readonly endDate: string };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Premier jour de mesure : sans borne, l'API retomberait sur ses 30 jours par défaut.
+const ANALYTICS_EPOCH = '2026-04-26';
+
+const isoDay = (date: Date): string => date.toISOString().slice(0, 10);
+
 export function dateRangeToParams(key: DateRangeKey, now: Date): RangeParams {
-  if (key === 'all') return { startDate: undefined, endDate: undefined };
+  if (key === 'all') return { startDate: ANALYTICS_EPOCH, endDate: isoDay(now) };
   const days = key === '7d' ? 7 : key === '30d' ? 30 : 90;
-  const start = new Date(now.getTime() - days * DAY_MS);
-  return {
-    startDate: start.toISOString().slice(0, 10),
-    endDate: now.toISOString().slice(0, 10),
-  };
+  return { startDate: isoDay(new Date(now.getTime() - days * DAY_MS)), endDate: isoDay(now) };
 }
 
 const ONE_DECIMAL = new Intl.NumberFormat('fr-FR', {
@@ -55,7 +57,7 @@ export function pagesPerSession(overview: StatsOverview | undefined): string {
 
 export function pagesPerSessionLabel(overview: StatsOverview | undefined): string {
   const shown = Math.round(sessionRatio(overview) * 10) / 10;
-  return `${pagesPerSession(overview)} ${shown < 2 ? 'page' : 'pages'} par session`;
+  return `${pagesPerSession(overview)} ${shown < 2 ? 'page' : 'pages'} par visite`;
 }
 
 export function formatPercent(value: number): string {
@@ -83,7 +85,7 @@ function visitorsDataset(
   palette: LinePalette,
 ): ChartDataset<'line'> {
   return {
-    label: 'Visiteurs',
+    label: 'Visites',
     data: rows.map((r) => r.visitors),
     borderColor: palette.primary,
     backgroundColor: alpha(palette.primary, 12),
@@ -165,6 +167,8 @@ export type AnalyticsCsvSections = {
   topProjects: readonly EntityStat[];
   topArticles: readonly EntityStat[];
   topArticlesRead: readonly EntityStat[];
+  contactSubmits: readonly EventCount[];
+  outboundClicks: readonly EventCount[];
 };
 
 export function escapeCsv(value: string): string {
@@ -187,6 +191,14 @@ export function buildAnalyticsCsv(s: AnalyticsCsvSections): string {
     rows.push(`KPI,Clics projets,${o.projectClicks}`);
     rows.push(`KPI,Vues articles,${o.articleViews}`);
     rows.push(`KPI,Téléchargements CV,${o.cvDownloads}`);
+    const c = o.conversions;
+    if (c.measuredSince !== null) {
+      rows.push(`KPI,Formulaires envoyés,${c.contactSubmits}`);
+      rows.push(`KPI,Contacts directs,${c.contactClicks}`);
+      rows.push(`KPI,Profils ouverts,${c.profileClicks}`);
+      rows.push(`KPI,Démos ouvertes,${c.demoClicks}`);
+      rows.push(`KPI,Arrivées sur le formulaire de l'accueil,${c.contactSectionViews}`);
+    }
   }
   for (const r of s.topPages) rows.push(`Page,${escapeCsv(r.name)},${r.count}`);
   for (const r of s.topReferrers) rows.push(`Referrer,${escapeCsv(r.name || 'Direct')},${r.count}`);
@@ -196,5 +208,7 @@ export function buildAnalyticsCsv(s: AnalyticsCsvSections): string {
   for (const r of s.topProjects) rows.push(`Projet,${escapeCsv(r.entityTitle)},${r.count}`);
   for (const r of s.topArticles) rows.push(`Article,${escapeCsv(r.entityTitle)},${r.count}`);
   for (const r of s.topArticlesRead) rows.push(`Article lu,${escapeCsv(r.entityTitle)},${r.count}`);
+  for (const r of s.contactSubmits) rows.push(`Formulaire,${escapeCsv(r.entityId)},${r.count}`);
+  for (const r of s.outboundClicks) rows.push(`Lien,${escapeCsv(r.entityId)},${r.count}`);
   return rows.join('\n');
 }

@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import { LEGAL_LAST_UPDATE } from './legal-notice';
 
 @Component({
   selector: 'app-privacy-policy',
@@ -10,7 +9,9 @@ import { LEGAL_LAST_UPDATE } from './legal-notice';
   template: `
     <article class="page-container max-w-3xl pt-8 prose dark:prose-invert">
       <h1>Politique de confidentialité</h1>
-      <p class="text-muted">Dernière mise à jour&nbsp;: {{ lastUpdate }}</p>
+      <p class="text-muted" data-testid="privacy-last-update">
+        Dernière mise à jour&nbsp;: 10 octobre 2026
+      </p>
 
       <p>
         Ce site ne dépose aucun cookie de suivi et n'utilise aucun service publicitaire. Voici,
@@ -30,19 +31,29 @@ import { LEGAL_LAST_UPDATE } from './legal-notice';
       </p>
 
       <h2>Mesure d'audience</h2>
-      <p>
+      <p data-testid="privacy-audience-pages">
         La fréquentation est mesurée par un outil développé pour ce site, sans cookie ni identifiant
-        persistant. Pour chaque page vue sont enregistrés&nbsp;: la page, la provenance (nom de
-        domaine du site d'origine uniquement), le pays déduit de l'adresse IP à partir d'une base
-        locale, le navigateur et le système d'exploitation, et la durée de visite. L'adresse IP
-        n'est jamais conservée&nbsp;: elle sert seulement, combinée au navigateur et à la date du
-        jour, à calculer une empreinte non réversible qui distingue les visites d'une même journée.
-        Les visites des robots et de l'éditeur sont exclues.
+        persistant. Pour chaque page vue sont enregistrés&nbsp;: la page (sans l'ancre éventuelle),
+        la provenance (nom de domaine du site d'origine uniquement, une fois par visite), le pays
+        déduit de l'adresse IP à partir d'une base locale, le navigateur, le système d'exploitation
+        et le temps d'affichage de la page. L'adresse IP n'est jamais conservée&nbsp;: elle sert
+        seulement, combinée au navigateur et à la date du jour, à calculer une empreinte non
+        réversible qui distingue les visites d'une même journée. Les visites des robots et de
+        l'éditeur sont exclues.
       </p>
-      <p>
+      <p data-testid="privacy-audience-actions">
+        Certaines actions sont aussi comptées&nbsp;: le clic sur un bouton d'appel, sur un lien de
+        contact (e-mail, téléphone, Malt, Discord), de profil (LinkedIn, GitHub) ou de
+        démonstration, l'arrivée sur le formulaire de l'accueil, l'envoi réussi du formulaire, le
+        téléchargement du CV, l'ouverture et la lecture complète d'un article. Seuls le type
+        d'action, son emplacement et la page sont enregistrés, jamais le contenu du formulaire ni
+        l'adresse du lien.
+      </p>
+      <p data-testid="privacy-audience-retention">
         Base légale&nbsp;: l'intérêt légitime à connaître l'usage du site. Les données brutes sont
         supprimées après 30 jours&#8239;; seuls des totaux journaliers anonymes (visites, pages
-        vues) sont conservés au-delà.
+        vues, visites engagées, rebonds, durée d'affichage cumulée, nombre d'actions par type) sont
+        conservés au-delà.
       </p>
 
       <h2>Commentaires des articles</h2>
@@ -93,5 +104,4 @@ import { LEGAL_LAST_UPDATE } from './legal-notice';
 })
 export class PrivacyPolicy {
   protected readonly identity = SITE_IDENTITY;
-  protected readonly lastUpdate = LEGAL_LAST_UPDATE;
 }

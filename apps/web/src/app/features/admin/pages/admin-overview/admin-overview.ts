@@ -76,8 +76,7 @@ const failed = (sources: readonly ResourceRef<unknown>[]): readonly ResourceRef<
     <div class="grid gap-12 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-14">
       <app-overview-audience
         data-testid="overview-audience"
-        [visitors]="overview()?.visitors ?? null"
-        [sessions]="overview()?.sessions ?? null"
+        [visits]="overview()?.sessions ?? null"
         [readout]="readout()"
         [chartData]="chartData()"
         [chartOptions]="chartOptions()"
@@ -224,7 +223,7 @@ export class AdminOverview {
   );
   protected readonly readout = computed(() => {
     const overview = this.overview();
-    return overview ? toAudienceReadout(overview) : [];
+    return overview ? toAudienceReadout(overview, this._period.startDate) : [];
   });
 
   // Les couleurs viennent des variables CSS du registre courant : relues à chaque bascule de thème.

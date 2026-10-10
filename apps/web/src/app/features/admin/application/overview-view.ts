@@ -1,5 +1,6 @@
 import type {
   DailyChartPoint,
+  EngagementOverview,
   StatsOverview,
 } from '@features/analytics/domain/models/analytics.types';
 import {
@@ -19,6 +20,7 @@ import { counted } from '@shared/format/counted';
 import { groupedNumber } from '@shared/format/grouped-number';
 import type { CartoucheRow } from '@shared/ui/cartouche';
 import type { ReadoutItem } from './components/admin-readout';
+import { calendarDay } from './calendar-day';
 import { withFirstOfMonth } from './with-first-of-month';
 
 export type ContentRow = {
@@ -37,17 +39,6 @@ const NBSP = '\u00a0';
 const SHORT_DATE = new Intl.DateTimeFormat('fr-FR', {
   day: 'numeric',
   month: 'short',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-const LONG_DAY = new Intl.DateTimeFormat('fr-FR', {
-  day: 'numeric',
-  month: 'long',
-  timeZone: 'UTC',
-});
-const LONG_DATE = new Intl.DateTimeFormat('fr-FR', {
-  day: 'numeric',
-  month: 'long',
   year: 'numeric',
   timeZone: 'UTC',
 });
@@ -75,7 +66,30 @@ export function toOnlineRows(
 const withoutSuffix = (text: string, suffix: string): string =>
   text.endsWith(suffix) ? text.slice(0, -suffix.length) : text;
 
-export function toAudienceReadout(overview: StatsOverview): readonly ReadoutItem[] {
+const percentParts = (rate: number): Pick<ReadoutItem, 'value' | 'unit'> => ({
+  value: withoutSuffix(formatPercent(rate), `${NBSP}%`),
+  unit: `${NBSP}%`,
+});
+
+function realBounceItem(engagement: EngagementOverview, periodStart: string): ReadoutItem {
+  const label = 'Rebond réel';
+  const { measuredSince } = engagement;
+  if (measuredSince === null) {
+    return { label, value: '–', unit: '', detail: 'non mesuré sur la période' };
+  }
+  const since =
+    measuredSince > periodStart ? ` · mesuré depuis le ${calendarDay(measuredSince, false)}` : '';
+  return {
+    label,
+    ...percentParts(engagement.realBounceRate),
+    detail: `engagement ${formatPercent(engagement.engagementRate)}${since}`,
+  };
+}
+
+export function toAudienceReadout(
+  overview: StatsOverview,
+  periodStart: string,
+): readonly ReadoutItem[] {
   return [
     {
       label: 'Pages vues',
@@ -84,22 +98,19 @@ export function toAudienceReadout(overview: StatsOverview): readonly ReadoutItem
       detail: pagesPerSessionLabel(overview),
     },
     {
-      label: 'Rebond',
-      value: withoutSuffix(formatPercent(overview.bounceRate), `${NBSP}%`),
-      unit: `${NBSP}%`,
-      detail: `${counted(overview.bounces, 'session', 'sessions')} sur ${groupedNumber(overview.sessions)}`,
+      label: 'Rebond (une page)',
+      ...percentParts(overview.bounceRate),
+      detail: `${counted(overview.bounces, 'visite', 'visites')} sur ${groupedNumber(overview.sessions)}`,
     },
+    realBounceItem(overview.engagement, periodStart),
     {
-      label: 'Durée moyenne',
+      label: 'Durée mesurée',
       value: withoutSuffix(formatDuration(overview.avgDuration), `${NBSP}s`),
       unit: `${NBSP}s`,
-      detail: 'par page',
+      detail: `par page, sur ${formatPercent(overview.durationCoverage)} des pages vues`,
     },
   ];
 }
-
-const calendarDay = (date: string, withYear: boolean): string =>
-  withFirstOfMonth(withYear ? LONG_DATE : LONG_DAY, new Date(date));
 
 function listDays(days: readonly string[]): string {
   const named = days.map((day) => `le ${day}`);
@@ -112,7 +123,7 @@ export function chartSummary(points: readonly DailyChartPoint[]): string {
   const last = points.at(-1);
   if (!first || !last) return 'Aucune visite sur la période.';
   if (points.length === 1) {
-    return `Visiteurs le ${calendarDay(first.date, true)}${NBSP}: ${groupedNumber(first.visitors)}.`;
+    return `Visites le ${calendarDay(first.date, true)}${NBSP}: ${groupedNumber(first.visitors)}.`;
   }
   const acrossYears = first.date.slice(0, 4) !== last.date.slice(0, 4);
   const period = `du ${calendarDay(first.date, acrossYears)} au ${calendarDay(last.date, true)}`;
@@ -125,7 +136,7 @@ export function chartSummary(points: readonly DailyChartPoint[]): string {
             .filter((point) => point.visitors === max)
             .map((point) => calendarDay(point.date, acrossYears)),
         )}`;
-  return `Visiteurs par jour ${period}${NBSP}: ${peaks}.`;
+  return `Visites par jour ${period}${NBSP}: ${peaks}.`;
 }
 
 const postDate = (post: BlogPost): string => post.publishedAt ?? post.updatedAt;

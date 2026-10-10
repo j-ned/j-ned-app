@@ -55,6 +55,7 @@ import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 import { AuthStore } from '@core/auth/auth-store';
 import { initializePageTracking } from '@core/analytics/page-tracking';
+import { initializeOutboundClickTracking } from '@core/analytics/outbound-click-tracking';
 import { MonitoringErrorHandler } from '@core/monitoring/monitoring';
 
 function initializeAuth(): () => Promise<void> | void {
@@ -126,6 +127,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(initializeAuth()),
     provideAppInitializer(initializeSeo()),
     provideAppInitializer(initializePageTracking()),
+    provideAppInitializer(initializeOutboundClickTracking()),
     {
       provide: IMAGE_CONFIG,
       useValue: {

@@ -49,7 +49,7 @@ describe('AudienceChart', () => {
       chartData: chart?.data === CHART_DATA,
     }).toEqual({
       caption:
-        'Visiteurs par jour du 7 septembre au 8 septembre 2026\u00a0: maximum 6 le 7 septembre.',
+        'Visites par jour du 7 septembre au 8 septembre 2026\u00a0: maximum 6 le 7 septembre.',
       hidden: true,
       chartType: 'line',
       chartData: true,
@@ -92,7 +92,7 @@ describe('AudienceChart', () => {
     }).toEqual({
       headers: [
         { text: 'Jour', scope: 'col' },
-        { text: 'Visiteurs', scope: 'col' },
+        { text: 'Visites', scope: 'col' },
         { text: 'Pages vues', scope: 'col' },
       ],
       rows: [

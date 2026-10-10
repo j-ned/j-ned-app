@@ -1,4 +1,6 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import type { ContactPlacement } from '@features/analytics/domain/models/analytics.types';
 import { ContactForm } from '@features/contact/application/contact-form';
 import type { OfferPageContent, OfferSummary } from '@features/offer/domain/models/offer.model';
 import { OFFER_REQUEST_FRAGMENT } from '@features/offer/domain/offer-path';
@@ -28,7 +30,11 @@ import { OfferTimeline } from '../../application/components/offer-timeline';
   host: { class: 'block pt-20' },
   template: `
     @let page = content();
-    <app-offer-hero [hero]="page.hero" [priceTeaser]="summary().priceTeaser" />
+    <app-offer-hero
+      [hero]="page.hero"
+      [priceTeaser]="summary().priceTeaser"
+      (requestOpened)="trackRequestOpened()"
+    />
     @if (page.reasons; as reasons) {
       <app-split-section
         class="border-t border-foreground/8"
@@ -57,14 +63,28 @@ import { OfferTimeline } from '../../application/components/offer-timeline';
       />
     }
     <div [id]="requestFragment" class="scroll-mt-20" data-testid="offer-request">
-      <app-contact-form [initialSubject]="page.request.subject" [intro]="page.request.intro" />
+      <app-contact-form
+        [placement]="placement()"
+        [initialSubject]="page.request.subject"
+        [intro]="page.request.intro"
+      />
     </div>
   `,
 })
 export class OfferPage {
+  private readonly analytics = inject(AnalyticsGateway);
+
   readonly summary = input.required<OfferSummary>();
   readonly content = input.required<OfferPageContent>();
   protected readonly requestFragment = OFFER_REQUEST_FRAGMENT;
   protected readonly vatMention = SITE_IDENTITY.business.vatMention;
   protected readonly maltUrl = SITE_IDENTITY.socials.malt;
+  protected readonly placement = computed<ContactPlacement>(() => `offer_${this.summary().slug}`);
+
+  protected trackRequestOpened(): void {
+    this.analytics.trackCtaClick(
+      `offer_request_${this.summary().slug}`,
+      this.content().hero.ctaLabel,
+    );
+  }
 }

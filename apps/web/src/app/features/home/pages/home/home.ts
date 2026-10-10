@@ -1,4 +1,11 @@
-import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/core';
+import {
+  Component,
+  inject,
+  ChangeDetectionStrategy,
+  computed,
+  effect,
+  type EffectRef,
+} from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeFaq } from '../../application/home-faq';
 import { HomeHeroSection } from '../../application/home-hero-section';
@@ -16,6 +23,7 @@ import { CvDownload } from '@features/cv/application/cv-download';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import type { FeaturedProjectView } from '@features/projects/application/featured-project-view';
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
+import { ActiveSection } from '@core/navigation/active-section';
 import { SectionVisibility } from '@core/navigation/section-visibility';
 import { SectionScroller } from '@core/navigation/section-scroller';
 
@@ -132,7 +140,11 @@ import { SectionScroller } from '@core/navigation/section-scroller';
          l'indicateur d'état actif du header (scroll-spy). -->
     <div id="contact" class="scroll-mt-20" appSectionVisibility="contact">
       @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-        <app-contact-form data-testid="home-contact-form" [projectTypes]="projectTypes" />
+        <app-contact-form
+          data-testid="home-contact-form"
+          placement="home"
+          [projectTypes]="projectTypes"
+        />
       } @placeholder {
         <div
           class="block py-16 md:py-20 px-4 sm:px-6 h-96"
@@ -151,6 +163,7 @@ export class Home {
   private readonly _analytics = inject(AnalyticsGateway);
   private readonly _scroller = inject(SectionScroller);
   private readonly _cvDownload = inject(CvDownload);
+  private readonly _activeSection = inject(ActiveSection);
 
   // Force le rendu des @defer avant un scroll vers une section (cf. SectionScroller).
   protected readonly eagerSections = this._scroller.eager;
@@ -165,6 +178,12 @@ export class Home {
   protected readonly reviews = HOME_REVIEWS;
 
   protected readonly projectTypes = [...OFFERS.map((offer) => offer.shortName), 'Autre'];
+
+  private readonly _contactArrivalEffect: EffectRef = effect(() => {
+    if (this._activeSection.key() !== 'contact') return;
+    this._analytics.trackSectionView('home_contact', '/');
+    this._contactArrivalEffect.destroy();
+  });
 
   protected goToContact(): void {
     this._analytics.trackCtaClick('home_hero_contact', HOME_HERO_CTA_LABELS.contact);

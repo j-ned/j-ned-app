@@ -1,7 +1,12 @@
-import type { MetricEntry, StatsOverview } from '@features/analytics/domain/models/analytics.types';
+import type {
+  EngagementOverview,
+  MetricEntry,
+  StatsOverview,
+} from '@features/analytics/domain/models/analytics.types';
 import { counted } from '@shared/format/counted';
 import { groupedNumber } from '@shared/format/grouped-number';
 import { pluralize } from '@shared/format/pluralize';
+import { calendarDay } from './calendar-day';
 
 export type ShareRow = {
   readonly label: string;
@@ -43,20 +48,30 @@ export function toShareRows(
   }));
 }
 
+function realBounceSentence({
+  measuredSince,
+  realBounceRate,
+  thresholdSeconds,
+}: EngagementOverview): string {
+  if (measuredSince === null) return '';
+  const tenths = Math.round(realBounceRate / 10);
+  if (tenths === 0) return '';
+  return ` ${tenths} sur 10 ${pluralize(tenths, 'repart', 'repartent')} en moins de ${thresholdSeconds}${NBSP}s, sans autre page ni action.`;
+}
+
 export function audienceLead(overview: StatsOverview | null, referrer: MetricEntry | null): string {
   if (overview === null) return '';
-  const { visitors, bounceRate } = overview;
-  if (visitors === 0) return 'Aucun visiteur sur la période.';
+  if (overview.sessions === 0) return 'Aucune visite sur la période.';
   const source =
     referrer && referrer.name !== ''
-      ? `, dont ${counted(referrer.count, 'venu', 'venus')} de ${referrer.name}`
+      ? `, dont ${counted(referrer.count, 'venue', 'venues')} de ${referrer.name}`
       : '';
-  const tenths = Math.round(bounceRate / 10);
-  const bounce =
-    tenths > 0
-      ? ` ${tenths} sur 10 ${pluralize(tenths, 'repart', 'repartent')} après une page.`
-      : '';
-  return `${counted(visitors, 'visiteur', 'visiteurs')}${source}.${bounce}`;
+  return `${counted(overview.sessions, 'visite', 'visites')}${source}.${realBounceSentence(overview.engagement)}`;
+}
+
+export function detailNote(overview: StatsOverview | null, periodStart: string): string {
+  if (overview === null || overview.detailSince <= periodStart) return '';
+  return `Pages, provenances, actions et conversions par emplacement${NBSP}: 30 derniers jours au plus, depuis le ${calendarDay(overview.detailSince, true)}.`;
 }
 
 export function toTallyRows(

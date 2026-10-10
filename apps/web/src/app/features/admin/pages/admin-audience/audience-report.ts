@@ -9,11 +9,17 @@ import {
 } from '@features/analytics/domain/analytics-presenter';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { EntityStat, MetricEntry } from '@features/analytics/domain/models/analytics.types';
-import { counted } from '@shared/format/counted';
 import { groupedNumber } from '@shared/format/grouped-number';
 import { audienceOverline } from '../../application/admin-page-copy';
 import {
+  conversionTotals,
+  conversionsNote,
+  toChannelEntries,
+  toPlacementEntries,
+} from '../../application/audience-conversions-view';
+import {
   audienceLead,
+  detailNote,
   toShareRows,
   toTallyRows,
   type TallyRow,
@@ -25,6 +31,8 @@ type TallyGroup = { readonly heading: string; readonly rows: readonly TallyRow[]
 
 const SHARE_LIMIT = 5;
 const TALLY_LIMIT = 5;
+// Conversions : peu de lignes possibles (emplacements, canaux), toutes comptent.
+const ALL_ROWS = Number.POSITIVE_INFINITY;
 
 // `value()` lève en état d'erreur : toute lecture de ressource passe par `hasValue()`.
 const valueOr = <T, F>(source: ResourceRef<T | undefined>, fallback: F): T | F =>
@@ -35,6 +43,12 @@ const sum = (entries: readonly { readonly count: number }[]): number =>
 
 const asEntries = (stats: readonly EntityStat[]): readonly MetricEntry[] =>
   stats.map((stat) => ({ name: stat.entityTitle, count: stat.count }));
+
+const tallyGroup = (
+  heading: string,
+  entries: readonly MetricEntry[],
+  limit = TALLY_LIMIT,
+): TallyGroup => ({ heading, rows: toTallyRows(entries, limit, 'Inconnu') });
 
 @Injectable()
 export class AudienceReport {
@@ -63,6 +77,12 @@ export class AudienceReport {
     this._analytics.getArticleReadStats(p.startDate, p.endDate),
   );
   private readonly _cta = this.periodic((p) => this._analytics.getCtaStats(p.startDate, p.endDate));
+  private readonly _contactSubmits = this.periodic((p) =>
+    this._analytics.getEventCounts('contact_submit', p.startDate, p.endDate),
+  );
+  private readonly _outboundClicks = this.periodic((p) =>
+    this._analytics.getEventCounts('outbound_click', p.startDate, p.endDate),
+  );
 
   private readonly _sources: readonly ResourceRef<unknown>[] = [
     this._overview,
@@ -76,6 +96,8 @@ export class AudienceReport {
     this._articles,
     this._articlesRead,
     this._cta,
+    this._contactSubmits,
+    this._outboundClicks,
   ];
   private readonly _failed = computed(() =>
     this._sources.filter((source) => source.status() === 'error'),
@@ -91,6 +113,8 @@ export class AudienceReport {
   private readonly _pageEntries = computed(() => valueOr(this._pages, []));
   private readonly _referrerEntries = computed(() => valueOr(this._referrers, []));
   private readonly _articlesReadStats = computed(() => valueOr(this._articlesRead, []));
+  private readonly _contactSubmitCounts = computed(() => valueOr(this._contactSubmits, []));
+  private readonly _outboundClickCounts = computed(() => valueOr(this._outboundClicks, []));
 
   readonly lead = computed(() =>
     audienceLead(
@@ -102,15 +126,34 @@ export class AudienceReport {
   readonly readout = computed<readonly ReadoutItem[]>(() => {
     const overview = this.overview();
     if (overview === null) return [];
-    const { visitors, sessions } = overview;
     return [
       {
-        label: 'Visiteurs',
-        value: groupedNumber(visitors),
+        label: 'Visites',
+        value: groupedNumber(overview.sessions),
         unit: '',
-        detail: counted(sessions, 'session', 'sessions'),
+        detail: 'un appareil, une journée',
       },
-      ...toAudienceReadout(overview),
+      ...toAudienceReadout(overview, this._period().startDate),
+    ];
+  });
+
+  readonly detailNote = computed(() => detailNote(this.overview(), this._period().startDate));
+  readonly conversionsNote = computed(() =>
+    conversionsNote(this.overview(), this._period().startDate),
+  );
+
+  readonly conversions = computed<readonly TallyGroup[]>(() => {
+    const overview = this.overview();
+    const totals = overview ? conversionTotals(overview) : [];
+    if (totals.length === 0) return [];
+    return [
+      tallyGroup('Totaux', totals, ALL_ROWS),
+      tallyGroup(
+        'Formulaires par emplacement',
+        toPlacementEntries(this._contactSubmitCounts()),
+        ALL_ROWS,
+      ),
+      tallyGroup('Liens par canal', toChannelEntries(this._outboundClickCounts()), ALL_ROWS),
     ];
   });
 
@@ -132,19 +175,15 @@ export class AudienceReport {
           { name: 'CV téléchargés', count: overview.cvDownloads },
         ]
       : [];
-    const group = (heading: string, entries: readonly MetricEntry[]): TallyGroup => ({
-      heading,
-      rows: toTallyRows(entries, TALLY_LIMIT, 'Inconnu'),
-    });
     return [
-      group('Totaux', totals),
-      group('Projets cliqués', asEntries(valueOr(this._projects, []))),
-      group('Articles ouverts', asEntries(valueOr(this._articles, []))),
-      group("Articles lus jusqu'au bout", asEntries(this._articlesReadStats())),
-      group('CTA cliqués', asEntries(valueOr(this._cta, []))),
-      group('Navigateurs', valueOr(this._browsers, [])),
-      group('Systèmes', valueOr(this._systems, [])),
-      group('Pays', valueOr(this._countries, [])),
+      tallyGroup('Totaux', totals),
+      tallyGroup('Projets cliqués', asEntries(valueOr(this._projects, []))),
+      tallyGroup('Articles ouverts', asEntries(valueOr(this._articles, []))),
+      tallyGroup("Articles lus jusqu'au bout", asEntries(this._articlesReadStats())),
+      tallyGroup('CTA cliqués', asEntries(valueOr(this._cta, []))),
+      tallyGroup('Navigateurs', valueOr(this._browsers, [])),
+      tallyGroup('Systèmes', valueOr(this._systems, [])),
+      tallyGroup('Pays', valueOr(this._countries, [])),
     ];
   });
 
@@ -159,6 +198,8 @@ export class AudienceReport {
       topProjects: valueOr(this._projects, []),
       topArticles: valueOr(this._articles, []),
       topArticlesRead: this._articlesReadStats(),
+      contactSubmits: this._contactSubmitCounts(),
+      outboundClicks: this._outboundClickCounts(),
     }),
   );
 

@@ -11,6 +11,9 @@ export function stubAnalyticsGateway(overrides: Partial<AnalyticsGateway> = {}):
     trackArticleRead: () => undefined,
     trackCvDownload: () => undefined,
     trackCtaClick: () => undefined,
+    trackContactSubmit: () => undefined,
+    trackOutboundClick: () => undefined,
+    trackSectionView: () => undefined,
     getOverview: () => of(makeStatsOverview()),
     getChart: () => of([]),
     getMetrics: () => of([]),
@@ -20,6 +23,7 @@ export function stubAnalyticsGateway(overrides: Partial<AnalyticsGateway> = {}):
     getArticleReadStats: () => of([]),
     getCtaStats: () => of([]),
     getCvDownloadCount: () => of(0),
+    getEventCounts: () => of([]),
     ...overrides,
   };
 }

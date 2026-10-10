@@ -32,11 +32,11 @@ function audienceSentence(
   overview: StatsOverview,
   referrers: readonly MetricEntry[] | null,
 ): string {
-  if (overview.visitors === 0) return 'Aucun visiteur en 30 jours.';
-  const visitors = `${counted(overview.visitors, 'visiteur', 'visiteurs')} en 30 jours`;
+  if (overview.sessions === 0) return 'Aucune visite en 30 jours.';
+  const visits = `${counted(overview.sessions, 'visite', 'visites')} en 30 jours`;
   const source = referrers?.find((referrer) => referrer.name !== '');
-  if (!source) return `${visitors}.`;
-  return `${visitors}, dont ${counted(source.count, 'venu', 'venus')} de ${source.name}.`;
+  if (!source) return `${visits}.`;
+  return `${visits}, dont ${counted(source.count, 'venue', 'venues')} de ${source.name}.`;
 }
 
 function contactsSentence(unread: number | null, overview: StatsOverview | null): string {

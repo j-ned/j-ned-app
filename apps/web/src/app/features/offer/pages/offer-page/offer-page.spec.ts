@@ -1,5 +1,9 @@
 import { ComponentFixture, DeferBlockBehavior, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
+import { ContactForm } from '@features/contact/application/contact-form';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
@@ -53,9 +57,14 @@ describe('OfferPage', () => {
   async function setup(
     content: OfferPageContent = ATELIER,
     summary: OfferSummary = offerSummaryOf('site-atelier'),
+    analytics: AnalyticsGateway = stubAnalyticsGateway(),
   ): Promise<void> {
     await TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: ContactGateway, useValue: stubContactGateway() }],
+      providers: [
+        provideRouter([]),
+        { provide: ContactGateway, useValue: stubContactGateway() },
+        { provide: AnalyticsGateway, useValue: analytics },
+      ],
       deferBlockBehavior: DeferBlockBehavior.Manual,
     }).compileComponents();
     fixture = TestBed.createComponent(OfferPage);
@@ -326,6 +335,56 @@ describe('OfferPage', () => {
         expect(text(inRequest('contact-intro'))).toBe(ATELIER.request.intro);
       });
     });
+  });
+
+  describe('mesure', () => {
+    const sendRequestForm = async (): Promise<void> => {
+      const form = fixture.debugElement.query(By.directive(ContactForm))
+        .componentInstance as ContactForm;
+      const fields = form.contactForm;
+      fields.name().value.set('Alice');
+      fields.email().value.set('alice@example.com');
+      fields.subject().value.set('Site pour mon atelier');
+      fields.message().value.set('Bonjour, j’aimerais un site pour mon atelier.');
+      await fixture.whenStable();
+      await form.submitContact();
+      await fixture.whenStable();
+    };
+
+    it.each<OfferSlug>(['site-atelier', 'renfort-freelance'])(
+      'Given the %s offer When its request form is sent Then the submission is counted under that offer',
+      async (slug) => {
+        const trackContactSubmit = vi.fn<AnalyticsGateway['trackContactSubmit']>();
+        await setup(
+          OFFER_PAGES[slug],
+          offerSummaryOf(slug),
+          stubAnalyticsGateway({ trackContactSubmit }),
+        );
+
+        await sendRequestForm();
+
+        expect(trackContactSubmit.mock.calls).toEqual([[`offer_${slug}`]]);
+      },
+    );
+
+    it.each<OfferSlug>(['site-vitrine', 'application-metier'])(
+      'Given the %s offer When its call to action is clicked Then the click is measured under the offer, with its label',
+      async (slug) => {
+        const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
+        await setup(
+          OFFER_PAGES[slug],
+          offerSummaryOf(slug),
+          stubAnalyticsGateway({ trackCtaClick }),
+        );
+
+        byTestId('offer-cta')?.click();
+        await fixture.whenStable();
+
+        expect(trackCtaClick.mock.calls).toEqual([
+          [`offer_request_${slug}`, OFFER_PAGES[slug].hero.ctaLabel],
+        ]);
+      },
+    );
   });
 
   describe.each(OFFERS.map((summary) => [summary.slug, summary] as const))(

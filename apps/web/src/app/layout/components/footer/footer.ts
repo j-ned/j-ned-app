@@ -165,6 +165,7 @@ export class Footer {
   protected readonly currentYear = new Date().getFullYear();
 
   protected scrollToContact(): void {
+    this.analytics.trackCtaClick('footer_contact', FOOTER_COPY.contactCta);
     this.scroller.scrollToRequestForm();
   }
 

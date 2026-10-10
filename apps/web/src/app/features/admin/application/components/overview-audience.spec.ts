@@ -24,15 +24,14 @@ const SUMMARY =
 
 type ChartHost = HTMLElement & { readonly type?: unknown; readonly data?: unknown };
 
-async function renderAudience(visitors: number, sessions: number): Promise<{ host: HTMLElement }> {
+async function renderAudience(visits: number): Promise<{ host: HTMLElement }> {
   TestBed.configureTestingModule({ providers: [provideRouter([])] });
   TestBed.overrideComponent(OverviewAudience, {
     remove: { imports: [AppChart] },
     add: { schemas: [CUSTOM_ELEMENTS_SCHEMA] },
   });
   const fixture = TestBed.createComponent(OverviewAudience);
-  fixture.componentRef.setInput('visitors', visitors);
-  fixture.componentRef.setInput('sessions', sessions);
+  fixture.componentRef.setInput('visits', visits);
   fixture.componentRef.setInput('readout', READOUT);
   fixture.componentRef.setInput('chartData', CHART_DATA);
   fixture.componentRef.setInput('chartOptions', { responsive: true });
@@ -42,28 +41,34 @@ async function renderAudience(visitors: number, sessions: number): Promise<{ hos
 }
 
 describe('OverviewAudience', () => {
-  it('Given the 30-day audience When the section renders Then it is named « Audience » and shows the visitors, the sessions and the readout', async () => {
-    const { host } = await renderAudience(42, 42);
+  it('Given the 30-day audience When the section renders Then it is named « Audience » and shows the visits and the readout', async () => {
+    const { host } = await renderAudience(42);
     const section = host.querySelector('section');
     const labelledBy = section?.getAttribute('aria-labelledby') ?? '';
 
     expect({
       name: host.querySelector(`[id="${labelledBy}"]`)?.textContent?.trim() ?? null,
       headingLevel: host.querySelector(`[id="${labelledBy}"]`)?.tagName ?? null,
-      visitors: testIdText(host, 'overview-visitors'),
-      sessions: testIdText(host, 'overview-sessions'),
+      visitors: testIdText(host, 'overview-visits'),
       readout: host.querySelectorAll('[data-testid="readout-item"]').length,
     }).toEqual({
       name: 'Audience',
       headingLevel: 'H2',
       visitors: '42',
-      sessions: '42 sessions',
       readout: 3,
     });
   });
 
+  it('Given the 30-day visits When the section renders Then the block reads exactly « Visites · 30 j » and the number, nothing else', async () => {
+    const { host } = await renderAudience(42);
+
+    expect(
+      (byTestId(host, 'overview-visits-block')?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+    ).toBe('Visites · 30 j 42');
+  });
+
   it('Given a chart summary When the section renders Then the curve sits in a figure whose caption is the text alternative', async () => {
-    const { host } = await renderAudience(42, 42);
+    const { host } = await renderAudience(42);
     const figure = host.querySelector('figure');
     const chart = figure?.querySelector<ChartHost>('app-chart') ?? null;
 
@@ -75,7 +80,7 @@ describe('OverviewAudience', () => {
   });
 
   it('Given the section When rendered Then its link leads to the detailed audience page', async () => {
-    const { host } = await renderAudience(42, 42);
+    const { host } = await renderAudience(42);
     const link = byTestId(host, 'overview-audience-link');
 
     expect({ tag: link?.tagName ?? null, href: link?.getAttribute('href') ?? null }).toEqual({
@@ -85,22 +90,15 @@ describe('OverviewAudience', () => {
   });
 
   it.each([
-    { visitors: 1, sessions: 1, expected: { visitors: '1', sessions: '1 session' } },
-    { visitors: 0, sessions: 0, expected: { visitors: '0', sessions: '0 session' } },
-    {
-      visitors: 1234,
-      sessions: 1500,
-      expected: { visitors: '1\u202f234', sessions: '1\u202f500 sessions' },
-    },
+    { visits: 1, expected: '1' },
+    { visits: 0, expected: '0' },
+    { visits: 1234, expected: '1\u202f234' },
   ])(
-    'Given $visitors visitors and $sessions sessions When rendered Then they read $expected.visitors and « $expected.sessions »',
-    async ({ visitors, sessions, expected }) => {
-      const { host } = await renderAudience(visitors, sessions);
+    'Given $visits visits When rendered Then they read $expected',
+    async ({ visits, expected }) => {
+      const { host } = await renderAudience(visits);
 
-      expect({
-        visitors: testIdText(host, 'overview-visitors'),
-        sessions: testIdText(host, 'overview-sessions'),
-      }).toEqual(expected);
+      expect(testIdText(host, 'overview-visits')).toBe(expected);
     },
   );
 });

@@ -7,11 +7,16 @@ import type {
   ActiveVisitors,
   DailyChartPoint,
   EntityStat,
+  EventCount,
+  EventCountType,
   MetricEntry,
 } from '@features/analytics/domain/models/analytics.types';
 import {
   makeChartPoint,
+  makeConversions,
+  makeEngagement,
   makeEntityStat,
+  makeEventCount,
   makeMetricEntry,
   makeStatsOverview,
 } from '@features/analytics/testing/analytics-builders';
@@ -118,15 +123,15 @@ describe('AdminAudience', () => {
     localStorage.removeItem(DEVICE_EXCLUSION_STORAGE_KEY);
   });
 
-  describe('visiteurs en ce moment', () => {
-    it('Given 5 active visitors When the page opens Then « 5 visiteurs en ce moment » shows at once, after a single request', async () => {
+  describe('visites en ce moment', () => {
+    it('Given 5 active visitors When the page opens Then « 5 visites en ce moment » shows at once, after a single request', async () => {
       const getActiveVisitors = vi.fn(() => of<ActiveVisitors>({ count: 5 }));
       const { host } = await renderAudience(makeGateway({ getActiveVisitors }));
 
       expect({
         text: testIdText(host, 'audience-active-visitors'),
         requests: getActiveVisitors.mock.calls.length,
-      }).toEqual({ text: '5 visiteurs en ce moment', requests: 1 });
+      }).toEqual({ text: '5 visites en ce moment', requests: 1 });
     });
 
     it('Given the page is open When 30 s, then 30 s more go by Then the count is asked again each time and shown in the singular', async () => {
@@ -141,13 +146,13 @@ describe('AdminAudience', () => {
       await vi.advanceTimersByTimeAsync(30_000);
 
       expect({ first, second, requests: getActiveVisitors.mock.calls.length }).toEqual({
-        first: '1 visiteur en ce moment',
-        second: '2 visiteurs en ce moment',
+        first: '1 visite en ce moment',
+        second: '2 visites en ce moment',
         requests: 3,
       });
     });
 
-    it('Given no active visitor When the page renders Then « 0 visiteur en ce moment » is plain text, not a live region', async () => {
+    it('Given no active visitor When the page renders Then « 0 visite en ce moment » is plain text, not a live region', async () => {
       const { host } = await renderAudience();
       const live = byTestId(host, 'audience-active-visitors');
 
@@ -155,7 +160,7 @@ describe('AdminAudience', () => {
         text: testIdText(host, 'audience-active-visitors'),
         ariaLive: live?.closest('[aria-live]') ?? null,
         status: live?.closest('[role="status"]') ?? null,
-      }).toEqual({ text: '0 visiteur en ce moment', ariaLive: null, status: null });
+      }).toEqual({ text: '0 visite en ce moment', ariaLive: null, status: null });
     });
 
     it('Given the page was open When it is destroyed Then the gateway is no longer polled', async () => {
@@ -182,7 +187,7 @@ describe('AdminAudience', () => {
         overline: '7 sept. au 7 oct. 2026 · 30 derniers jours',
         title: 'Audience',
         headings: 1,
-        lead: '42 visiteurs, dont 18 venus de google.com. 9 sur 10 repartent après une page.',
+        lead: '42 visites, dont 18 venues de google.com. 4 sur 10 repartent en moins de 30\u00a0s, sans autre page ni action.',
       });
     });
 
@@ -234,6 +239,7 @@ describe('AdminAudience', () => {
         header: lines[0]?.replace('\uFEFF', ''),
         visitors: lines.includes('KPI,Visiteurs,42'),
         home: lines.includes('Page,/,24'),
+        forms: lines.includes('KPI,Formulaires envoyés,0'),
       }).toEqual({
         label: 'Exporter en CSV',
         downloads: ['analytics-30d-2026-10-07.csv'],
@@ -241,6 +247,7 @@ describe('AdminAudience', () => {
         header: 'Section,Label,Count',
         visitors: true,
         home: true,
+        forms: true,
       });
       createObjectURL.mockRestore();
       revokeObjectURL.mockRestore();
@@ -281,7 +288,7 @@ describe('AdminAudience', () => {
       {
         label: 'Depuis le début',
         overline: 'Tout le temps',
-        period: [undefined, undefined],
+        period: ['2026-04-26', '2026-10-07'],
       },
     ])(
       'Given the page on 30 days When « $label » is pressed Then the overline names the period and the figures are asked for it',
@@ -311,41 +318,64 @@ describe('AdminAudience', () => {
         detail: testIdText(item, 'readout-detail'),
       }));
 
-    it('Given the production readout When the page renders Then visitors, page views, bounce and duration are read out in French', async () => {
+    it('Given the production readout When the page renders Then visits, page views, both bounces and the measured duration are read out in French', async () => {
       const { host } = await renderAudience();
 
       expect(readout(host)).toEqual([
-        { label: 'Visiteurs', value: '42', detail: '42 sessions' },
-        { label: 'Pages vues', value: '56', detail: '1,3 page par session' },
-        { label: 'Rebond', value: '88,1\u00a0%', detail: '37 sessions sur 42' },
-        { label: 'Durée moyenne', value: '22\u00a0s', detail: 'par page' },
+        { label: 'Visites', value: '42', detail: 'un appareil, une journée' },
+        { label: 'Pages vues', value: '56', detail: '1,3 page par visite' },
+        { label: 'Rebond (une page)', value: '88,1\u00a0%', detail: '37 visites sur 42' },
+        { label: 'Rebond réel', value: '40,5\u00a0%', detail: 'engagement 59,5\u00a0%' },
+        {
+          label: 'Durée mesurée',
+          value: '22\u00a0s',
+          detail: 'par page, sur 62,5\u00a0% des pages vues',
+        },
       ]);
     });
 
-    it('Given 999 visitors and a 12.34 % bounce When the page renders Then they read « 999 » and « 12,3 % »', async () => {
+    it('Given 999 visits, 1 500 legacy visitors and a 12.34 % one-page bounce When the page renders Then they read « 999 » and « 12,3 % »', async () => {
       const { host } = await renderAudience(
         makeGateway({
-          getOverview: () => of(makeStatsOverview({ visitors: 999, bounceRate: 12.34 })),
+          getOverview: () =>
+            of(makeStatsOverview({ sessions: 999, visitors: 1500, bounceRate: 12.34 })),
         }),
       );
       const items = readout(host);
 
       expect({
-        visitors: items.find((item) => item.label === 'Visiteurs')?.value,
-        bounce: items.find((item) => item.label === 'Rebond')?.value,
-      }).toEqual({ visitors: '999', bounce: '12,3\u00a0%' });
+        visits: items.find((item) => item.label === 'Visites')?.value,
+        bounce: items.find((item) => item.label === 'Rebond (une page)')?.value,
+      }).toEqual({ visits: '999', bounce: '12,3\u00a0%' });
+    });
+
+    it('Given an engagement measured from 12 September only When the 30-day readout renders Then the real bounce tile says since when', async () => {
+      const { host } = await renderAudience(
+        makeGateway({
+          getOverview: () =>
+            of(
+              makeStatsOverview({
+                engagement: makeEngagement({ measuredSince: '2026-09-12' }),
+              }),
+            ),
+        }),
+      );
+
+      expect(readout(host).find((item) => item.label === 'Rebond réel')?.detail).toBe(
+        'engagement 59,5\u00a0% · mesuré depuis le 12 septembre',
+      );
     });
 
     it.each([
       {
         given: { avgDuration: 90, pageviews: 300, sessions: 100 },
         duration: '1\u00a0min 30\u00a0s',
-        perSession: '3,0 pages par session',
+        perSession: '3,0 pages par visite',
       },
       {
         given: { avgDuration: 22, pageviews: 56, sessions: 42 },
         duration: '22\u00a0s',
-        perSession: '1,3 page par session',
+        perSession: '1,3 page par visite',
       },
     ])(
       'Given $given When the page renders Then the duration reads « $duration » and the page views « $perSession »',
@@ -356,7 +386,7 @@ describe('AdminAudience', () => {
         const items = readout(host);
 
         expect({
-          duration: items.find((item) => item.label === 'Durée moyenne')?.value,
+          duration: items.find((item) => item.label === 'Durée mesurée')?.value,
           perSession: items.find((item) => item.label === 'Pages vues')?.detail,
         }).toEqual({ duration, perSession });
       },
@@ -364,14 +394,15 @@ describe('AdminAudience', () => {
   });
 
   describe('sections', () => {
-    it('Given the production readout When the page renders Then its sections are named by four h2 in reading order', async () => {
+    it('Given the production readout When the page renders Then its sections are named by five h2 in reading order', async () => {
       const { host } = await renderAudience();
 
       expect([...host.querySelectorAll('h2')].map((heading) => normalized(heading))).toEqual([
         'Visites par jour',
+        'Conversions',
         'Pages les plus vues',
         'Provenance',
-        'Ce que les visiteurs font',
+        'Détail des visites',
       ]);
     });
 
@@ -417,12 +448,14 @@ describe('AdminAudience', () => {
           borderDash: dataset['borderDash'],
         })),
         rows: host.querySelectorAll('[data-testid="audience-chart-row"]').length,
+        legend: normalized(byTestId(host, 'audience-chart-legend')),
       }).toEqual({
         datasets: [
-          { label: 'Visiteurs', tension: 0, borderDash: undefined },
+          { label: 'Visites', tension: 0, borderDash: undefined },
           { label: 'Pages vues', tension: 0, borderDash: [4, 4] },
         ],
         rows: 2,
+        legend: 'Visites Pages vues',
       });
     });
 
@@ -446,7 +479,7 @@ describe('AdminAudience', () => {
           getArticleReadStats: () => of(read),
         }),
       );
-      const events = sectionNamed(host, 'Ce que les visiteurs font');
+      const events = sectionNamed(host, 'Détail des visites');
       const groups = [
         ...(events?.querySelectorAll<HTMLElement>('[data-testid="audience-tally"]') ?? []),
       ];
@@ -497,6 +530,120 @@ describe('AdminAudience', () => {
     });
   });
 
+  describe('conversions', () => {
+    const EVENT_COUNTS: Readonly<Record<EventCountType, readonly EventCount[]>> = {
+      contact_submit: [
+        makeEventCount({ entityId: 'home', count: 1 }),
+        makeEventCount({ entityId: 'offer_site-vitrine', count: 1 }),
+      ],
+      outbound_click: [
+        makeEventCount({ entityId: 'linkedin', count: 2 }),
+        makeEventCount({ entityId: 'email', count: 1 }),
+      ],
+    };
+
+    const tallies = (
+      host: HTMLElement,
+    ): readonly { heading: string; rows: readonly (readonly string[])[] }[] =>
+      [
+        ...(sectionNamed(host, 'Conversions')?.querySelectorAll<HTMLElement>(
+          '[data-testid="audience-tally"]',
+        ) ?? []),
+      ].map((tally) => ({
+        heading: testIdText(tally, 'tally-heading'),
+        rows: [...tally.querySelectorAll<HTMLElement>('[data-testid="tally-row"]')].map((row) => [
+          normalized(row.querySelector('dt')),
+          normalized(row.querySelector('dd')),
+        ]),
+      }));
+
+    it('Given measured conversions When the page renders Then the totals, the forms by placement and the links by channel are told', async () => {
+      const { host } = await renderAudience(
+        makeGateway({
+          getOverview: () =>
+            of(
+              makeStatsOverview({
+                cvDownloads: 4,
+                conversions: makeConversions({
+                  contactSubmits: 2,
+                  contactClicks: 3,
+                  profileClicks: 1,
+                  demoClicks: 5,
+                  contactSectionViews: 6,
+                }),
+              }),
+            ),
+          getEventCounts: (type) => of([...EVENT_COUNTS[type]]),
+        }),
+      );
+
+      expect({
+        note: byTestId(host, 'audience-conversions-note'),
+        tallies: tallies(host),
+      }).toEqual({
+        note: null,
+        tallies: [
+          {
+            heading: 'Totaux',
+            rows: [
+              ['Formulaires envoyés', '2'],
+              ['Contacts directs', '3'],
+              ['Profils ouverts', '1'],
+              ['CV téléchargés', '4'],
+              ['Démos ouvertes', '5'],
+              ["Arrivées sur le formulaire de l'accueil", '6'],
+            ],
+          },
+          {
+            heading: 'Formulaires par emplacement',
+            rows: [
+              ['Accueil', '1'],
+              ['Offre Site vitrine', '1'],
+            ],
+          },
+          {
+            heading: 'Liens par canal',
+            rows: [
+              ['LinkedIn', '2'],
+              ['E-mail', '1'],
+            ],
+          },
+        ],
+      });
+    });
+
+    it('Given conversions never measured over the period When the page renders Then it says so and shows no zero', async () => {
+      const { host } = await renderAudience(
+        makeGateway({
+          getOverview: () =>
+            of(makeStatsOverview({ conversions: makeConversions({ measuredSince: null }) })),
+        }),
+      );
+
+      expect({
+        note: testIdText(host, 'audience-conversions-note'),
+        tallies: tallies(host).length,
+      }).toEqual({ note: 'Conversions non mesurées sur la période.', tallies: 0 });
+    });
+
+    it('Given the page on 30 days When « 90 jours » is pressed Then a note says the details cover the last 30 days at most', async () => {
+      const { fixture, host } = await renderAudience(
+        makeGateway({
+          getOverview: () => of(makeStatsOverview({ detailSince: '2026-09-07' })),
+        }),
+      );
+      const before = byTestId(host, 'audience-detail-note');
+
+      await press(fixture, periodOption(host, '90 jours'));
+
+      expect({ before, after: testIdText(host, 'audience-detail-note') }).toEqual({
+        before: null,
+        after:
+          'Pages, provenances, actions et conversions par emplacement\u00a0: 30 derniers jours au plus, depuis le 7 septembre 2026.',
+      });
+    });
+  });
+
   describe('chargement et erreur', () => {
     it('Given the overview is still loading When the page renders Then a placeholder announced as a status stands in for the readout', async () => {
       const { host } = await renderAudience(makeGateway({ getOverview: () => NEVER }));
@@ -514,6 +661,7 @@ describe('AdminAudience', () => {
       { endpoint: 'metrics', overrides: { getMetrics: down } },
       { endpoint: 'project stats', overrides: { getProjectStats: down } },
       { endpoint: 'article read stats', overrides: { getArticleReadStats: down } },
+      { endpoint: 'event counts', overrides: { getEventCounts: down } },
     ])(
       'Given the $endpoint endpoint fails When the page renders Then it shows one error state instead of throwing',
       async ({ overrides }) => {
@@ -541,7 +689,7 @@ describe('AdminAudience', () => {
         retried: getOverview.mock.calls.length - callsBefore,
         errors: host.querySelectorAll('[data-testid="load-error"]').length,
         readout: host.querySelectorAll('[data-testid="readout-item"]').length,
-      }).toEqual({ crash: null, retried: 1, errors: 0, readout: 4 });
+      }).toEqual({ crash: null, retried: 1, errors: 0, readout: 5 });
     });
   });
 });

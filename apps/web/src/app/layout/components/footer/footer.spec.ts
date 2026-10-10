@@ -238,6 +238,17 @@ describe('Footer', () => {
       expect(scrollTo).not.toHaveBeenCalled();
     });
 
+    it('Given the call to action When it is clicked Then the click is measured once under footer_contact, before scrolling', async () => {
+      const { host, scrollToRequestForm, trackCtaClick } = await setup();
+
+      byTestId<HTMLButtonElement>(host, 'footer-contact-cta')[0]?.click();
+
+      expect(trackCtaClick.mock.calls).toEqual([['footer_contact', 'Décrire mon projet']]);
+      expect(trackCtaClick.mock.invocationCallOrder[0]).toBeLessThan(
+        scrollToRequestForm.mock.invocationCallOrder[0],
+      );
+    });
+
     it('Given the footer When it is rendered Then Malt, LinkedIn and GitHub open in a new tab from the Contact navigation', async () => {
       const { host } = await setup();
       const links = byTestId<HTMLAnchorElement>(host, 'footer-social-link');

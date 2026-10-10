@@ -24,6 +24,8 @@ import {
   validate,
   type FieldTree,
 } from '@angular/forms/signals';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import type { ContactPlacement } from '@features/analytics/domain/models/analytics.types';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
 import { composeContactMessage } from '@features/contact/domain/compose-contact-message';
@@ -230,7 +232,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export class ContactForm {
   private readonly contactGateway = inject(ContactGateway);
   private readonly toast = inject(ToastStore);
+  private readonly analytics = inject(AnalyticsGateway);
 
+  readonly placement = input.required<ContactPlacement>();
   readonly initialSubject = input('');
   readonly projectTypes = input<readonly string[]>([]);
   readonly intro = input(
@@ -302,6 +306,7 @@ export class ContactForm {
     try {
       const result = await firstValueFrom(this.contactGateway.submitContactForm(payload));
       if (result.success) {
+        this.analytics.trackContactSubmit(this.placement());
         this.toast.add({ severity: 'success', summary: 'Message envoyé', detail: result.message });
         field().reset(this._blankContact());
       } else {

@@ -12,15 +12,23 @@ import {
   escapeCsv,
   buildAnalyticsCsv,
 } from './analytics-presenter';
-import type { DailyChartPoint, MetricEntry, EntityStat } from './models/analytics.types';
-import { makeStatsOverview } from '../testing/analytics-builders';
+import type {
+  DailyChartPoint,
+  MetricEntry,
+  EntityStat,
+  EventCount,
+} from './models/analytics.types';
+import { makeConversions, makeEventCount, makeStatsOverview } from '../testing/analytics-builders';
 
 describe('analytics-presenter', () => {
   describe('dateRangeToParams', () => {
     const now = new Date('2026-06-06T12:00:00Z');
 
-    it('renvoie des bornes vides pour « all »', () => {
-      expect(dateRangeToParams('all', now)).toEqual({ startDate: undefined, endDate: undefined });
+    it('borne « all » du premier jour de mesure à aujourd’hui', () => {
+      expect(dateRangeToParams('all', now)).toEqual({
+        startDate: '2026-04-26',
+        endDate: '2026-06-06',
+      });
     });
 
     it.each([
@@ -68,11 +76,11 @@ describe('analytics-presenter', () => {
 
   describe('pagesPerSessionLabel', () => {
     it.each([
-      [0, 0, '0 page par session'],
-      [56, 42, '1,3 page par session'],
-      [194, 100, '1,9 page par session'],
-      [196, 100, '2,0 pages par session'],
-      [300, 100, '3,0 pages par session'],
+      [0, 0, '0 page par visite'],
+      [56, 42, '1,3 page par visite'],
+      [194, 100, '1,9 page par visite'],
+      [196, 100, '2,0 pages par visite'],
+      [300, 100, '3,0 pages par visite'],
     ] as const)(
       'accorde « page » sur le nombre affiché : %i vues / %i sessions → %s',
       (pageviews, sessions, expected) => {
@@ -116,12 +124,12 @@ describe('analytics-presenter', () => {
 
     const palette = { primary: '#primary', foreground: '#foreground' };
 
-    it('mappe labels et deux datasets (visiteurs, pages vues) à traits droits', () => {
+    it('mappe labels et deux datasets (visites, pages vues) à traits droits', () => {
       const data = buildVisitorsChartData(rows, palette);
       expect(data.labels).toEqual(['1 juin', '2 juin']);
       expect(data.datasets).toHaveLength(2);
       expect(data.datasets[0]).toMatchObject({
-        label: 'Visiteurs',
+        label: 'Visites',
         data: [10, 20],
         borderColor: '#primary',
         tension: 0,
@@ -197,6 +205,8 @@ describe('analytics-presenter', () => {
       topProjects: [{ entityId: 'p1', entityTitle: 'Projet, X', count: 7 }] as EntityStat[],
       topArticles: [{ entityId: 'a1', entityTitle: 'Article', count: 4 }] as EntityStat[],
       topArticlesRead: [{ entityId: 'a1', entityTitle: 'Article', count: 2 }] as EntityStat[],
+      contactSubmits: [] as EventCount[],
+      outboundClicks: [] as EventCount[],
     };
 
     it('démarre par l’en-tête et liste les KPIs', () => {
@@ -220,6 +230,48 @@ describe('analytics-presenter', () => {
     it('liste les articles réellement lus (article_read) sous "Article lu"', () => {
       const csv = buildAnalyticsCsv(sections);
       expect(csv).toContain('Article lu,Article,2');
+    });
+
+    it('liste les conversions mesurées, puis les formulaires par emplacement et les liens par canal', () => {
+      const withConversions = {
+        ...sections,
+        overview: makeStatsOverview({
+          conversions: makeConversions({
+            contactSubmits: 3,
+            contactClicks: 4,
+            profileClicks: 2,
+            demoClicks: 1,
+            contactSectionViews: 7,
+          }),
+        }),
+        contactSubmits: [makeEventCount({ entityId: 'home', count: 3 })],
+        outboundClicks: [makeEventCount({ entityId: 'linkedin', count: 2 })],
+      };
+
+      const csv = buildAnalyticsCsv(withConversions).split('\n');
+
+      expect(
+        csv.filter((line) =>
+          /^KPI,(Formulaires|Contacts|Profils|Démos|Arrivées)|^(Formulaire|Lien),/.test(line),
+        ),
+      ).toEqual([
+        'KPI,Formulaires envoyés,3',
+        'KPI,Contacts directs,4',
+        'KPI,Profils ouverts,2',
+        'KPI,Démos ouvertes,1',
+        "KPI,Arrivées sur le formulaire de l'accueil,7",
+        'Formulaire,home,3',
+        'Lien,linkedin,2',
+      ]);
+    });
+
+    it('n’écrit aucun zéro de conversion sur une période non mesurée', () => {
+      const csv = buildAnalyticsCsv({
+        ...sections,
+        overview: makeStatsOverview({ conversions: makeConversions({ measuredSince: null }) }),
+      });
+
+      expect(csv).not.toMatch(/^KPI,Formulaires envoyés,/m);
     });
 
     it('omet les KPIs si overview est absent', () => {

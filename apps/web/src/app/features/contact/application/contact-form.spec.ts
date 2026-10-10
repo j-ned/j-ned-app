@@ -2,11 +2,15 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ToastStore } from '@core/notifications/toast-store';
 import { NEVER, of, throwError } from 'rxjs';
+import type { Mock } from 'vitest';
 import { ContactForm } from './contact-form';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
 import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import type { ContactPlacement } from '@features/analytics/domain/models/analytics.types';
+import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 
 // Builder du domaine : jamais un littéral comme entrée sous test.
 function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormData {
@@ -23,12 +27,18 @@ describe('ContactForm (Signal Forms)', () => {
   async function setup(
     gateway: ContactGateway = stubContactGateway(),
     inputs: Readonly<Record<string, string | readonly string[]>> = {},
+    analytics: AnalyticsGateway = stubAnalyticsGateway(),
   ): Promise<ComponentFixture<ContactForm>> {
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), ToastStore, { provide: ContactGateway, useValue: gateway }],
+      providers: [
+        provideRouter([]),
+        ToastStore,
+        { provide: ContactGateway, useValue: gateway },
+        { provide: AnalyticsGateway, useValue: analytics },
+      ],
     });
     const fixture = TestBed.createComponent(ContactForm);
-    for (const [name, value] of Object.entries(inputs)) {
+    for (const [name, value] of Object.entries({ placement: 'home', ...inputs })) {
       fixture.componentRef.setInput(name, value);
     }
     await fixture.whenStable();
@@ -198,6 +208,85 @@ describe('ContactForm (Signal Forms)', () => {
         timeline: '',
       });
       expect(fixture.componentInstance.contactForm().submitting()).toBe(false);
+    });
+  });
+
+  describe('Measuring a sent form', () => {
+    const measured = (): {
+      analytics: AnalyticsGateway;
+      trackContactSubmit: Mock<AnalyticsGateway['trackContactSubmit']>;
+    } => {
+      const trackContactSubmit = vi.fn<AnalyticsGateway['trackContactSubmit']>();
+      return { analytics: stubAnalyticsGateway({ trackContactSubmit }), trackContactSubmit };
+    };
+
+    it.each<ContactPlacement>(['home', 'offer_site-vitrine'])(
+      'counts one submission under %s once the API accepts the message',
+      async (placement) => {
+        const { analytics, trackContactSubmit } = measured();
+        const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
+        const fixture = await setup(
+          stubContactGateway({ submitContactForm: submit }),
+          { placement },
+          analytics,
+        );
+        await fill(fixture, makeContactData());
+
+        await fixture.componentInstance.submitContact();
+        await fixture.whenStable();
+
+        expect(trackContactSubmit.mock.calls).toEqual([[placement]]);
+        expect(submit.mock.invocationCallOrder[0]).toBeLessThan(
+          trackContactSubmit.mock.invocationCallOrder[0],
+        );
+      },
+    );
+
+    it('counts nothing when the API refuses the message', async () => {
+      const { analytics, trackContactSubmit } = measured();
+      const fixture = await setup(
+        stubContactGateway({
+          submitContactForm: () => of({ success: false, message: 'Refusé' }),
+        }),
+        {},
+        analytics,
+      );
+      await fill(fixture, makeContactData());
+
+      await fixture.componentInstance.submitContact();
+      await fixture.whenStable();
+
+      expect(trackContactSubmit).not.toHaveBeenCalled();
+    });
+
+    it('counts nothing when sending throws', async () => {
+      const { analytics, trackContactSubmit } = measured();
+      const fixture = await setup(
+        stubContactGateway({ submitContactForm: () => throwError(() => new Error('network')) }),
+        {},
+        analytics,
+      );
+      await fill(fixture, makeContactData());
+
+      await fixture.componentInstance.submitContact();
+      await fixture.whenStable();
+
+      expect(trackContactSubmit).not.toHaveBeenCalled();
+    });
+
+    it('counts nothing when the form is invalid', async () => {
+      const { analytics, trackContactSubmit } = measured();
+      const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
+      const fixture = await setup(stubContactGateway({ submitContactForm: submit }), {}, analytics);
+      await fill(fixture, makeContactData({ email: 'pas-un-email' }));
+
+      await fixture.componentInstance.submitContact();
+      await fixture.whenStable();
+
+      expect({ sent: submit.mock.calls.length, counted: trackContactSubmit.mock.calls }).toEqual({
+        sent: 0,
+        counted: [],
+      });
     });
   });
 

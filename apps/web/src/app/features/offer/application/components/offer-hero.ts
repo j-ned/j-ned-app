@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { OfferPageContent } from '@features/offer/domain/models/offer.model';
 import { OFFER_REQUEST_FRAGMENT } from '@features/offer/domain/offer-path';
@@ -23,7 +23,13 @@ import { Button } from '@shared/ui/button';
       <div
         class="animate-fade-up [animation-delay:120ms] mt-9 flex flex-wrap items-center gap-x-6 gap-y-3"
       >
-        <a appButton routerLink="." [fragment]="requestFragment" data-testid="offer-cta">
+        <a
+          appButton
+          routerLink="."
+          [fragment]="requestFragment"
+          data-testid="offer-cta"
+          (click)="requestOpened.emit()"
+        >
           {{ hero().ctaLabel }}
         </a>
         <p class="font-semibold text-primary" data-testid="offer-hero-price">
@@ -36,6 +42,7 @@ import { Button } from '@shared/ui/button';
 export class OfferHero {
   readonly hero = input.required<OfferPageContent['hero']>();
   readonly priceTeaser = input.required<string>();
+  readonly requestOpened = output<void>();
 
   protected readonly requestFragment = OFFER_REQUEST_FRAGMENT;
 }

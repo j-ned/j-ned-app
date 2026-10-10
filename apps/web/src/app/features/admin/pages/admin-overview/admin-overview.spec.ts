@@ -327,8 +327,7 @@ describe('AdminOverview: relevé « Audience »', () => {
 
     expect({
       crash,
-      visitors: testIdText(audience, 'overview-visitors'),
-      sessions: testIdText(audience, 'overview-sessions'),
+      visitors: testIdText(audience, 'overview-visits'),
       readout: [...audience.querySelectorAll('[data-testid="readout-value"]')].map((value) =>
         normalized(value),
       ),
@@ -336,11 +335,18 @@ describe('AdminOverview: relevé « Audience »', () => {
     }).toEqual({
       crash: null,
       visitors: '42',
-      sessions: '42 sessions',
-      readout: ['56', '88,1\u00a0%', '22\u00a0s'],
+      readout: ['56', '88,1\u00a0%', '40,5\u00a0%', '22\u00a0s'],
       caption:
-        'Visiteurs par jour du 7 septembre au 8 septembre 2026\u00a0: maximum 6 le 7 septembre.',
+        'Visites par jour du 7 septembre au 8 septembre 2026\u00a0: maximum 6 le 7 septembre.',
     });
+  });
+
+  it('Given visitors that differ from visits When the page renders Then the audience block shows the visits', async () => {
+    const { host } = await renderOverview({
+      overview: () => of(makeStatsOverview({ sessions: 42, visitors: 57 })),
+    });
+
+    expect(testIdText(section(host, 'overview-audience'), 'overview-visits')).toBe('42');
   });
 
   it('Given Wednesday 7 October 2026 When the page loads Then the statistics are requested over the last 30 days', async () => {
@@ -363,7 +369,7 @@ describe('AdminOverview: relevé « Audience »', () => {
     expect({
       crash,
       errors: errorsIn(host, 'overview-audience'),
-      visitors: byTestId(host, 'overview-visitors'),
+      visitors: byTestId(host, 'overview-visits'),
       readout: host.querySelectorAll('[data-testid="readout-item"]').length,
     }).toEqual({ crash: null, errors: 1, visitors: null, readout: 0 });
   });
@@ -379,7 +385,7 @@ describe('AdminOverview: relevé « Audience »', () => {
     expect({
       requests: overview.doubles.getOverview.mock.calls.length,
       errors: errorsIn(overview.host, 'overview-audience'),
-      visitors: testIdText(overview.host, 'overview-visitors'),
+      visitors: testIdText(overview.host, 'overview-visits'),
     }).toEqual({ requests: 2, errors: 0, visitors: '42' });
   });
 
@@ -389,7 +395,7 @@ describe('AdminOverview: relevé « Audience »', () => {
     expect({
       crash,
       errors: errorsIn(host, 'overview-audience'),
-      visitors: testIdText(host, 'overview-visitors'),
+      visitors: testIdText(host, 'overview-visits'),
     }).toEqual({ crash: null, errors: 1, visitors: '42' });
   });
 
@@ -399,7 +405,7 @@ describe('AdminOverview: relevé « Audience »', () => {
     expect({
       crash,
       loading: byTestId(host, 'overview-audience-loading') !== null,
-      visitors: byTestId(host, 'overview-visitors'),
+      visitors: byTestId(host, 'overview-visits'),
     }).toEqual({ crash: null, loading: true, visitors: null });
   });
 
@@ -444,7 +450,7 @@ describe('AdminOverview: phrase de synthèse', () => {
     const { host } = await renderOverview();
 
     expect(testIdText(host, 'overview-summary')).toBe(
-      '42 visiteurs en 30 jours, dont 18 venus de google.com. Aucun message en attente, aucun CV téléchargé. Six réalisations et deux articles sont en ligne.',
+      '42 visites en 30 jours, dont 18 venues de google.com. Aucun message en attente, aucun CV téléchargé. Six réalisations et deux articles sont en ligne.',
     );
   });
 
@@ -631,7 +637,7 @@ describe('AdminOverview: toutes les sources en panne', () => {
       title: testIdText(host, 'admin-page-title'),
       online: onlineValues(host),
       figures: [compact(host, 'overview-unread-count'), compact(host, 'overview-cv-count')],
-      visitors: byTestId(host, 'overview-visitors'),
+      visitors: byTestId(host, 'overview-visits'),
       summary: testIdText(host, 'overview-summary'),
       alerts: host.querySelectorAll('[role="alert"]').length > 0,
     }).toEqual({

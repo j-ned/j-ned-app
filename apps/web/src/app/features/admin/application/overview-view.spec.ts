@@ -3,7 +3,11 @@ import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 import { makeContactMessage } from '@features/contact/testing/contact-message-builders';
 import type { DailyChartPoint } from '@features/analytics/domain/models/analytics.types';
-import { makeChartPoint, makeStatsOverview } from '@features/analytics/testing/analytics-builders';
+import {
+  makeChartPoint,
+  makeEngagement,
+  makeStatsOverview,
+} from '@features/analytics/testing/analytics-builders';
 import type { Project, ProjectKind } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
 import {
@@ -106,33 +110,55 @@ describe('toOnlineRows', () => {
 });
 
 describe('toAudienceReadout', () => {
+  const PERIOD_START = '2026-09-07';
+
   it.each([
     {
       label: 'the October 2026 figures',
       overview: makeStatsOverview(),
       expected: [
-        { label: 'Pages vues', value: '56', unit: '', detail: '1,3 page par session' },
-        { label: 'Rebond', value: '88,1', unit: '\u00a0%', detail: '37 sessions sur 42' },
-        { label: 'Durée moyenne', value: '22', unit: '\u00a0s', detail: 'par page' },
+        { label: 'Pages vues', value: '56', unit: '', detail: '1,3 page par visite' },
+        { label: 'Rebond (une page)', value: '88,1', unit: '\u00a0%', detail: '37 visites sur 42' },
+        { label: 'Rebond réel', value: '40,5', unit: '\u00a0%', detail: 'engagement 59,5\u00a0%' },
+        {
+          label: 'Durée mesurée',
+          value: '22',
+          unit: '\u00a0s',
+          detail: 'par page, sur 62,5\u00a0% des pages vues',
+        },
       ],
     },
     {
-      label: 'large figures and a duration over a minute',
+      label: 'large figures, every visit engaged and a duration over a minute',
       overview: makeStatsOverview({
         pageviews: 12345,
         sessions: 500,
         bounces: 1,
         bounceRate: 0.02,
         avgDuration: 65,
+        durationCoverage: 100,
+        engagement: makeEngagement({
+          measuredSessions: 500,
+          engagedSessions: 500,
+          realBounces: 0,
+          realBounceRate: 0,
+          engagementRate: 100,
+        }),
       }),
       expected: [
-        { label: 'Pages vues', value: '12\u202f345', unit: '', detail: '24,7 pages par session' },
-        { label: 'Rebond', value: '0', unit: '\u00a0%', detail: '1 session sur 500' },
-        { label: 'Durée moyenne', value: '1\u00a0min 05', unit: '\u00a0s', detail: 'par page' },
+        { label: 'Pages vues', value: '12\u202f345', unit: '', detail: '24,7 pages par visite' },
+        { label: 'Rebond (une page)', value: '0', unit: '\u00a0%', detail: '1 visite sur 500' },
+        { label: 'Rebond réel', value: '0', unit: '\u00a0%', detail: 'engagement 100\u00a0%' },
+        {
+          label: 'Durée mesurée',
+          value: '1\u00a0min 05',
+          unit: '\u00a0s',
+          detail: 'par page, sur 100\u00a0% des pages vues',
+        },
       ],
     },
     {
-      label: 'a period without any visit',
+      label: 'a measured period without any visit',
       overview: makeStatsOverview({
         visitors: 0,
         pageviews: 0,
@@ -140,19 +166,95 @@ describe('toAudienceReadout', () => {
         bounces: 0,
         bounceRate: 0,
         avgDuration: 0,
+        durationCoverage: 0,
+        engagement: makeEngagement({
+          measuredSessions: 0,
+          engagedSessions: 0,
+          realBounces: 0,
+          realBounceRate: 0,
+          engagementRate: 0,
+        }),
       }),
       expected: [
-        { label: 'Pages vues', value: '0', unit: '', detail: '0 page par session' },
-        { label: 'Rebond', value: '0', unit: '\u00a0%', detail: '0 session sur 0' },
-        { label: 'Durée moyenne', value: '0', unit: '\u00a0s', detail: 'par page' },
+        { label: 'Pages vues', value: '0', unit: '', detail: '0 page par visite' },
+        { label: 'Rebond (une page)', value: '0', unit: '\u00a0%', detail: '0 visite sur 0' },
+        { label: 'Rebond réel', value: '0', unit: '\u00a0%', detail: 'engagement 0\u00a0%' },
+        {
+          label: 'Durée mesurée',
+          value: '0',
+          unit: '\u00a0s',
+          detail: 'par page, sur 0\u00a0% des pages vues',
+        },
       ],
     },
   ])(
     'Given $label When the readout is built Then it is written in French',
     ({ overview, expected }) => {
-      expect(toAudienceReadout(overview)).toEqual(expected);
+      expect(toAudienceReadout(overview, PERIOD_START)).toEqual(expected);
     },
   );
+
+  it.each([
+    {
+      label: 'measured from the first day of the period',
+      measuredSince: '2026-09-07',
+      tile: { value: '40,5', unit: '\u00a0%', detail: 'engagement 59,5\u00a0%' },
+    },
+    {
+      label: 'measured from a later day',
+      measuredSince: '2026-09-12',
+      tile: {
+        value: '40,5',
+        unit: '\u00a0%',
+        detail: 'engagement 59,5\u00a0% · mesuré depuis le 12 septembre',
+      },
+    },
+    {
+      label: 'measured from the first of a month',
+      measuredSince: '2026-10-01',
+      tile: {
+        value: '40,5',
+        unit: '\u00a0%',
+        detail: 'engagement 59,5\u00a0% · mesuré depuis le 1er octobre',
+      },
+    },
+  ])(
+    'Given an engagement $label When the readout is built Then the real bounce tile reads $tile.detail',
+    ({ measuredSince, tile }) => {
+      const readout = toAudienceReadout(
+        makeStatsOverview({ engagement: makeEngagement({ measuredSince }) }),
+        PERIOD_START,
+      );
+
+      expect(readout.find((item) => item.label === 'Rebond réel')).toEqual({
+        label: 'Rebond réel',
+        ...tile,
+      });
+    },
+  );
+
+  it('Given a period where the engagement was never measured When the readout is built Then the real bounce tile says so instead of a zero', () => {
+    const readout = toAudienceReadout(
+      makeStatsOverview({
+        engagement: makeEngagement({
+          measuredSince: null,
+          measuredSessions: 0,
+          engagedSessions: 0,
+          realBounces: 0,
+          realBounceRate: 0,
+          engagementRate: 0,
+        }),
+      }),
+      PERIOD_START,
+    );
+
+    expect(readout.find((item) => item.label === 'Rebond réel')).toEqual({
+      label: 'Rebond réel',
+      value: '–',
+      unit: '',
+      detail: 'non mesuré sur la période',
+    });
+  });
 });
 
 describe('chartSummary', () => {
@@ -168,36 +270,36 @@ describe('chartSummary', () => {
     {
       label: 'a single day',
       points: [day('2026-09-07', 6)],
-      expected: 'Visiteurs le 7 septembre 2026\u00a0: 6.',
+      expected: 'Visites le 7 septembre 2026\u00a0: 6.',
     },
     {
       label: 'one peak',
       points: [day('2026-09-07', 6), day('2026-09-20', 5), day('2026-10-06', 1)],
       expected:
-        'Visiteurs par jour du 7 septembre au 6 octobre 2026\u00a0: maximum 6 le 7 septembre.',
+        'Visites par jour du 7 septembre au 6 octobre 2026\u00a0: maximum 6 le 7 septembre.',
     },
     {
       label: 'two days tied',
       points: [day('2026-09-07', 5), day('2026-09-20', 5), day('2026-10-06', 1)],
       expected:
-        'Visiteurs par jour du 7 septembre au 6 octobre 2026\u00a0: maximum 5 le 7 septembre et le 20 septembre.',
+        'Visites par jour du 7 septembre au 6 octobre 2026\u00a0: maximum 5 le 7 septembre et le 20 septembre.',
     },
     {
       label: 'three days tied, the first of the month among them',
       points: [day('2026-09-01', 2), day('2026-09-03', 2), day('2026-09-09', 2)],
       expected:
-        'Visiteurs par jour du 1er septembre au 9 septembre 2026\u00a0: maximum 2 le 1er septembre, le 3 septembre et le 9 septembre.',
+        'Visites par jour du 1er septembre au 9 septembre 2026\u00a0: maximum 2 le 1er septembre, le 3 septembre et le 9 septembre.',
     },
     {
       label: 'days without any visit',
       points: [day('2026-09-07', 0), day('2026-09-08', 0)],
-      expected: 'Visiteurs par jour du 7 septembre au 8 septembre 2026\u00a0: aucune visite.',
+      expected: 'Visites par jour du 7 septembre au 8 septembre 2026\u00a0: aucune visite.',
     },
     {
       label: 'a period across two years',
       points: [day('2025-12-30', 3), day('2026-01-02', 1)],
       expected:
-        'Visiteurs par jour du 30 décembre 2025 au 2 janvier 2026\u00a0: maximum 3 le 30 décembre 2025.',
+        'Visites par jour du 30 décembre 2025 au 2 janvier 2026\u00a0: maximum 3 le 30 décembre 2025.',
     },
   ] satisfies readonly { label: string; points: readonly DailyChartPoint[]; expected: string }[])(
     'Given $label When the chart is summarised Then the text alternative reads « $expected »',

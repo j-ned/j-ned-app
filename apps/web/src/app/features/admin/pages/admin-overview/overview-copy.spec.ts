@@ -22,7 +22,7 @@ const BASE: OverviewSummaryInput = {
   posts: published(2),
 };
 
-const AUDIENCE = '42 visiteurs en 30 jours, dont 18 venus de google.com.';
+const AUDIENCE = '42 visites en 30 jours, dont 18 venues de google.com.';
 const CONTACTS = 'Aucun message en attente, aucun CV téléchargé.';
 const CONTENT = 'Six réalisations et deux articles sont en ligne.';
 
@@ -33,27 +33,27 @@ describe('overviewSummary', () => {
 
   it.each([
     {
-      label: 'a single visitor from a single referrer',
+      label: 'a single visit from a single referrer',
       overrides: {
-        overview: makeStatsOverview({ visitors: 1, cvDownloads: 0 }),
+        overview: makeStatsOverview({ sessions: 1, cvDownloads: 0 }),
         referrers: [makeMetricEntry({ name: 'github.com', count: 1 })],
       },
-      expected: '1 visiteur en 30 jours, dont 1 venu de github.com.',
+      expected: '1 visite en 30 jours, dont 1 venue de github.com.',
     },
     {
-      label: 'no visitor',
-      overrides: { overview: makeStatsOverview({ visitors: 0, cvDownloads: 0 }), referrers: [] },
-      expected: 'Aucun visiteur en 30 jours.',
+      label: 'no visit',
+      overrides: { overview: makeStatsOverview({ sessions: 0, cvDownloads: 0 }), referrers: [] },
+      expected: 'Aucune visite en 30 jours.',
     },
     {
       label: 'only direct visits',
       overrides: { referrers: [makeMetricEntry({ name: '', count: 42 })] },
-      expected: '42 visiteurs en 30 jours.',
+      expected: '42 visites en 30 jours.',
     },
     {
       label: 'the referrers unavailable',
       overrides: { referrers: null },
-      expected: '42 visiteurs en 30 jours.',
+      expected: '42 visites en 30 jours.',
     },
   ] satisfies readonly {
     label: string;
