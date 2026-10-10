@@ -86,8 +86,8 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
       [parent]="{ label: 'Projets', route: '/admin/projects' }"
     >
       <p>
-        Les changements partent en ligne au prochain déploiement, quelques minutes après
-        l'enregistrement.
+        Les changements sont visibles sur le site au plus une seconde après l'enregistrement, au
+        rechargement de la page.
       </p>
       <div adminPageAside class="flex flex-wrap gap-2.5 lg:justify-end">
         <a

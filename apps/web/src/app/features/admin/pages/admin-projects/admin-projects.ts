@@ -88,8 +88,8 @@ import { toAdminProjectsView } from '../../application/admin-projects-view';
       (cancelled)="pendingDeletion.set(null)"
     >
       <p>
-        Le projet disparaît des Réalisations et de l'accueil au prochain déploiement, avec ses
-        captures. Cette action est définitive.
+        Le projet disparaît des Réalisations et de l'accueil dans la seconde, avec ses captures.
+        Cette action est définitive.
       </p>
     </app-confirm-dialog>
   `,

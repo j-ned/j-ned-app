@@ -452,6 +452,7 @@ describe('parseMarkdown', () => {
       ['un href javascript:', '<a href="javascript:alert(1)">clic</a>', 'javascript:'],
       ['un <iframe>', '<iframe src="https://evil.test"></iframe>', '<iframe'],
       ['un attribut style', '<p style="position:fixed">x</p>', 'style='],
+      ['un élément <style>', 'Avant <style>body{background:red}</style> après', '<style'],
       ['un lien Markdown vers javascript:', '[clic](javascript:alert(1))', 'javascript:'],
     ])('retire %s', (_label, markdown, forbidden) => {
       expect(parseMarkdown(markdown)).not.toContain(forbidden);

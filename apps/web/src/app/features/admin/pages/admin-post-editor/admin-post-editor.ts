@@ -65,8 +65,8 @@ const POST_EDITOR_COPY: AdminEditorCopy = {
       [parent]="{ label: 'Articles', route: '/admin/blog' }"
     >
       <p>
-        Un article publié part en ligne au prochain déploiement, quelques minutes après
-        l'enregistrement.
+        Un article publié est visible sur le site au plus une seconde après l'enregistrement, au
+        rechargement de la page.
       </p>
       <div adminPageAside class="flex flex-wrap gap-2.5 lg:justify-end">
         <a

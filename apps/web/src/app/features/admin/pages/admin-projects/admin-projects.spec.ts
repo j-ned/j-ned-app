@@ -161,7 +161,7 @@ describe('AdminProjects: suppression confirmée', () => {
         open: true,
         heading: 'Supprimer le projet DashFlow\u202f?',
         description:
-          "Le projet disparaît des Réalisations et de l'accueil au prochain déploiement, avec ses captures. Cette action est définitive.",
+          "Le projet disparaît des Réalisations et de l'accueil dans la seconde, avec ses captures. Cette action est définitive.",
         confirm: 'Supprimer DashFlow',
         cancel: 'Annuler',
       },

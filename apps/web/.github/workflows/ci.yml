@@ -55,34 +55,38 @@ jobs:
         run: pnpm test
 
       # Même commande que le Dockerfile, puis les mêmes garanties que le déploiement attend.
-      - name: Build production (sitemap + rss + prerender)
+      - name: Build production (SSR + prérendu des pages statiques, sans lire l'API)
         run: pnpm run build --configuration production
 
       - name: Verify prerendered output
         run: |
           set -euo pipefail
-          test -f dist/angular-portfolio-app/browser/index.html
-          routes=$(find dist/angular-portfolio-app/browser -name index.html | wc -l)
+          browser=dist/angular-portfolio-app/browser
+          # Seules les pages statiques sont prérendues ; les pages de contenu sont rendues à la requête.
+          test -f dist/angular-portfolio-app/server/server.mjs
+          test ! -f $browser/index.html
+          # Sitemap et RSS sont rendus à la requête par Node : aucun fichier figé au build
+          test ! -f $browser/sitemap.xml && test ! -f $browser/rss.xml
+          routes=$(find $browser -name index.html | wc -l)
           echo "Routes prérendues : $routes"
-          # 5 routes statiques minimum (/, /about, /projects, /blog, 404 client) ; les slugs
-          # (projets, articles) viennent de l'API de prod et peuvent manquer si elle est injoignable.
-          test "$routes" -ge 5
-          # postbuild : la CSP de prod est hachée par page, plus d'unsafe-inline pour les scripts.
-          ! grep -l -E "(script|style)-src [^;]*'unsafe-inline'" $(find dist/angular-portfolio-app/browser -name index.html -o -name index.csr.html)
+          test "$routes" -ge 4
+          # postbuild : la CSP des pages prérendues est hachée par page, plus d'unsafe-inline.
+          ! grep -l -E "(script|style)-src [^;]*'unsafe-inline'" $(find $browser -name index.html -o -name index.csr.html)
+          # Manifeste appliqué par Node aux pages rendues à la requête : scripts constants et feuilles de styles
+          node -e 'const m = require("./dist/angular-portfolio-app/server/csp-manifest.json"); if (m.scriptHashes.length < 3 || m.styleElementHashes.length === 0) process.exit(1)'
           # La coquille CSR est servie aux routes client et aux 404 : hachée elle aussi, sans état d'hydratation
-          test -f dist/angular-portfolio-app/browser/index.csr.html
-          ! grep -q 'ng-state' dist/angular-portfolio-app/browser/index.csr.html
+          test -f $browser/index.csr.html
+          ! grep -q 'ng-state' $browser/index.csr.html
           # Gestionnaire inline (`on…="…"`) présent => haché dans `script-src-attr`. beasties >= 0.5
           # n'en émet plus (bascule du CSS par un `<script>` haché dans `script-src`) : directive absente.
-          if grep -qE '\son[a-z]+="' dist/angular-portfolio-app/browser/index.html; then
-            grep -q "script-src-attr 'unsafe-hashes'" dist/angular-portfolio-app/browser/index.html
+          if grep -qE '\son[a-z]+="' $browser/offres/index.html; then
+            grep -q "script-src-attr 'unsafe-hashes'" $browser/offres/index.html
           fi
-          grep -q "style-src-attr 'unsafe-hashes'" dist/angular-portfolio-app/browser/index.html
           # Un preload vers un nom de police périmé télécharge un fichier absent et retarde la vraie police.
-          preloads=$(tr '\n' ' ' < dist/angular-portfolio-app/browser/index.html | grep -o '<link[^>]*rel="preload"[^>]*>' | grep -o 'href="/[^"]*"' | sed -E 's/^href="\/(.*)"$/\1/')
+          preloads=$(tr '\n' ' ' < $browser/offres/index.html | grep -o '<link[^>]*rel="preload"[^>]*>' | grep -o 'href="/[^"]*"' | sed -E 's/^href="\/(.*)"$/\1/')
           test -n "$preloads"
           for f in $preloads; do
-            test -f "dist/angular-portfolio-app/browser/$f" || { echo "preload sans fichier : $f"; exit 1; }
+            test -f "$browser/$f" || { echo "preload sans fichier : $f"; exit 1; }
           done
           # Les démos sont dans le HTML servi, et chaque visuel cité existe : un nom périmé casse la CI, pas la prod.
           for page in site-atelier site-vitrine; do
@@ -120,16 +124,81 @@ jobs:
       - name: Smoke test the image
         run: |
           set -euo pipefail
-          docker run -d --rm --name portfolio -p 3000:3000 ng-portfolio-app:ci
-          for i in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:3000/ -o /tmp/index.html; then break; fi
+          # Doublure de l'API sur un réseau commun : les pages de contenu sont rendues à la requête.
+          docker network create portfolio-ci
+          docker run -d --rm --name api-stub --network portfolio-ci -v "$PWD/ci/api-stub:/stub:ro" node:22-alpine node /stub/server.mjs
+          docker run -d --rm --name portfolio --network portfolio-ci -p 3000:3000 -e API_UPSTREAM=http://api-stub:3000 ng-portfolio-app:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/healthz -o /dev/null; then break; fi
             sleep 1
           done
+          test "$(curl -fsS http://127.0.0.1:3000/healthz)" = "ok"
+          curl -fsS http://127.0.0.1:3000/ -o /tmp/index.html
           grep -q '<app-root' /tmp/index.html
           # Corps écrit dans un fichier avant grep : `curl | grep -q` casse sous pipefail
           # (grep sort au premier match, curl échoue en écrivant dans le tube fermé : code 23)
           curl -fsS http://127.0.0.1:3000/about/ -o /tmp/about.html
           grep -q '<app-about' /tmp/about.html
+          # Chaque route rendue à la requête lit la doublure et embarque l'état de transfert
+          for path in / /projects /projects/projet-temoin /blog /blog/article-temoin; do
+            curl -fsS "http://127.0.0.1:3000$path" -o /tmp/ssr.html
+            grep -q 'témoin A' /tmp/ssr.html || { echo "contenu de l'API absent : $path"; exit 1; }
+            grep -q 'id="ng-state"' /tmp/ssr.html || { echo "état de transfert absent : $path"; exit 1; }
+          done
+          # CSP des pages rendues à la requête : une seule meta, hachée, sans unsafe-inline ; HTML revalidé
+          for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin; do
+            curl -fsS -D /tmp/ssr-headers.txt "http://127.0.0.1:3000$path" -o /tmp/ssr.html
+            test "$(grep -o 'http-equiv="Content-Security-Policy"' /tmp/ssr.html | wc -l)" = "1" || { echo "meta CSP absente ou dupliquée : $path"; exit 1; }
+            ! grep -qE "(script|style)-src [^;]*'unsafe-inline'" /tmp/ssr.html || { echo "unsafe-inline : $path"; exit 1; }
+            grep -qi '^cache-control: no-cache' /tmp/ssr-headers.txt || { echo "HTML sans revalidation : $path"; exit 1; }
+          done
+          # Attributs style rendus au serveur (portrait, délais d'animation) : hachés dans style-src-attr
+          curl -fsS http://127.0.0.1:3000/about -o /tmp/about-csp.html
+          grep -q "style-src-attr 'unsafe-hashes'" /tmp/about-csp.html
+          # Le rendu Node ne tourne pas en root
+          node_user=$(docker exec portfolio ps -o user= -o args= | awk '$2 == "node" {print $1}')
+          test "$node_user" = "ssr" || { echo "Node lancé par : $node_user"; exit 1; }
+          # Slug inconnu : vraie 404 rendue par le serveur, puis servie par le micro-cache
+          for path in /projects/inexistant /blog/inexistant; do
+            test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$path")" = "404" || { echo "pas de 404 : $path"; exit 1; }
+          done
+          # Micro-cache d'une seconde : HIT dans la seconde, rendu neuf ensuite ; /healthz jamais en cache
+          curl -fsS -D /tmp/c1.txt -o /dev/null http://127.0.0.1:3000/projects
+          curl -fsS -D /tmp/c2.txt -o /dev/null http://127.0.0.1:3000/projects
+          grep -qi '^x-cache-status: HIT' /tmp/c2.txt || { echo "pas de HIT"; cat /tmp/c2.txt; exit 1; }
+          sleep 2
+          curl -fsS -D /tmp/c3.txt -o /dev/null http://127.0.0.1:3000/projects
+          grep -qiE '^x-cache-status: (MISS|EXPIRED)' /tmp/c3.txt || { echo "entrée non renouvelée"; cat /tmp/c3.txt; exit 1; }
+          curl -fsS -D /tmp/healthz-headers.txt -o /dev/null http://127.0.0.1:3000/healthz
+          ! grep -qi '^x-cache-status' /tmp/healthz-headers.txt
+          # Routes rendues : lecture seule (une écriture ne déclenche aucun rendu)
+          for method in POST DELETE; do
+            test "$(curl -s -o /dev/null -w '%{http_code}' -X "$method" http://127.0.0.1:3000/blog)" = "403" || { echo "$method /blog accepté"; exit 1; }
+          done
+          # Sitemap et RSS rendus à la requête depuis l'API, XML bien formé
+          curl -fsS -D /tmp/sitemap-headers.txt http://127.0.0.1:3000/sitemap.xml -o /tmp/sitemap.xml
+          grep -qi '^content-type: application/xml' /tmp/sitemap-headers.txt
+          grep -q '<loc>https://nedellec-julien.fr/blog/article-temoin</loc>' /tmp/sitemap.xml
+          grep -q '<loc>https://nedellec-julien.fr/projects/projet-temoin</loc>' /tmp/sitemap.xml
+          curl -fsS -D /tmp/rss-headers.txt http://127.0.0.1:3000/rss.xml -o /tmp/rss.xml
+          grep -qi '^content-type: application/rss+xml' /tmp/rss-headers.txt
+          grep -q '<title>Article témoin A</title>' /tmp/rss.xml
+          python3 -c 'import sys, xml.dom.minidom; [xml.dom.minidom.parse(f) for f in sys.argv[1:]]' /tmp/sitemap.xml /tmp/rss.xml
+          # API en panne : copie périmée servie (STALE), /healthz toujours vivant
+          docker stop api-stub
+          sleep 2
+          curl -fsS -D /tmp/stale.txt -o /tmp/stale.html http://127.0.0.1:3000/blog
+          grep -qi '^x-cache-status: STALE' /tmp/stale.txt || { echo "pas de copie périmée"; cat /tmp/stale.txt; exit 1; }
+          grep -q 'Article témoin A' /tmp/stale.html
+          test "$(curl -fsS http://127.0.0.1:3000/healthz)" = "ok"
+          # À froid, sans copie ni API : 503, jamais une page vide en 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/blog/jamais-lu)" = "503"
+          docker run -d --rm --name api-stub --network portfolio-ci -v "$PWD/ci/api-stub:/stub:ro" node:22-alpine node /stub/server.mjs
+          # Host forcé par nginx : un hôte arbitraire ne change ni le rendu ni le canonical
+          curl -fsS -H 'Host: evil.test' http://127.0.0.1:3000/blog -o /tmp/evil.html
+          grep -q 'href="https://nedellec-julien.fr/blog"' /tmp/evil.html
+          # Une URL inconnue ne réveille pas Node : 404 nginx sur la coquille CSR
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/wp-login.php)" = "404"
           # Routes client → coquille CSR en 200 ; URL inconnue → coquille CSR en 404 (pas la home)
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login)" = "200"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/admin/analytics)" = "200"
@@ -179,4 +248,5 @@ jobs:
             grep -qi 'cache-control: .*must-revalidate' <<<"$mutable_headers" || { echo "fichier non empreinté sans revalidation : $path"; echo "$mutable_headers"; exit 1; }
             grep -qi 'x-frame-options: deny' <<<"$mutable_headers" || { echo "en-têtes de sécurité absents : $path"; echo "$mutable_headers"; exit 1; }
           done
-          docker stop portfolio
+          docker stop portfolio api-stub
+          docker network rm portfolio-ci

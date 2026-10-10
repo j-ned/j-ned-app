@@ -1,32 +1,18 @@
-// Post-build : remplace `'unsafe-inline'` de `script-src` et `style-src` par des hachages SHA-256.
-// La source `src/index.html` garde `'unsafe-inline'` pour le dev server ; la CI vérifie que la
-// sortie de prod n'en contient plus.
+// Post-build : durcit la CSP des pages prérendues (`'unsafe-inline'` remplacé par des hachages) et
+// écrit le manifeste que le serveur Node applique aux pages rendues à la requête. La source
+// `src/index.html` garde `'unsafe-inline'` pour le dev server ; la CI vérifie la sortie de prod.
 //
-// Scripts : le prérendu émet trois scripts inline par page (contrat d'event replay, bootstrap
-// jsaction dont la liste d'événements varie par page, bascule `media` du CSS non bloquant posée par
-// beasties >= 0.5) → hachés page par page. Un gestionnaire inline (`onload`, beasties < 0.5) serait
-// haché dans `script-src-attr`.
-//
-// Styles : les feuilles de composants (`<style ng-app-id>`) et le CSS critique varient par page,
-// mais en navigation SPA Angular réinjecte à la volée les mêmes feuilles que celles d'une page
-// prérendue ; l'union des hachages de toutes les pages couvre donc aussi les routes rendues côté
-// client. Les attributs `style="…"` viennent des bindings SSR (`NgOptimizedImage fill`,
-// animation-delay) : hachés eux aussi (`'unsafe-hashes'`), le client les réapplique ensuite via le
-// CSSOM, hors CSP.
-import { createHash } from 'node:crypto';
+// Manifeste : scripts inline constants (pré-peinture du thème, contrat d'event replay, bascule
+// `media` de beasties), feuilles `<style>` et attributs `style` de toutes les pages prérendues. En
+// navigation SPA, Angular réinjecte les mêmes feuilles de composants : l'union couvre aussi les
+// routes rendues côté client.
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { buildCspManifest, hardenCsp } from '../src/server/csp/harden-csp.ts';
+import { nodeSha256 } from '../src/server/csp/node-sha256.ts';
 
-const DIST = 'dist/angular-portfolio-app/browser';
-const INLINE_SCRIPT = /<script(?![^>]*\bsrc=)([^>]*)>([\s\S]*?)<\/script>/g;
-const INLINE_HANDLER = /\son[a-z]+="([^"]*)"/g;
-const INLINE_STYLE_ELEMENT = /<style[^>]*>([\s\S]*?)<\/style>/g;
-const INLINE_STYLE_ATTR = /\sstyle="([^"]*)"/g;
-const CSP_META = /(<meta\s+http-equiv="Content-Security-Policy"\s+content=")([^"]*)(")/;
-
-const sha256 = (s) => `'sha256-${createHash('sha256').update(s).digest('base64')}'`;
-const hashesOf = (html, regex, pick) =>
-  new Set([...html.matchAll(regex)].map((m) => sha256(pick(m))));
+const DIST = 'dist/angular-portfolio-app';
+const BROWSER = join(DIST, 'browser');
 
 function* htmlFiles(dir) {
   for (const entry of readdirSync(dir)) {
@@ -37,63 +23,19 @@ function* htmlFiles(dir) {
   }
 }
 
-function collectStyleHashes(pages) {
-  const elements = new Set();
-  const attrs = new Set();
-  for (const html of pages) {
-    for (const h of hashesOf(html, INLINE_STYLE_ELEMENT, (m) => m[1])) elements.add(h);
-    for (const h of hashesOf(html, INLINE_STYLE_ATTR, (m) => m[1])) attrs.add(h);
-  }
-  return { elements, attrs };
-}
+const pages = new Map([...htmlFiles(BROWSER)].map((file) => [file, readFileSync(file, 'utf8')]));
+const manifest = buildCspManifest(pages.values(), nodeSha256);
 
-function withoutUnsafeInline(directive, name, hashes) {
-  const sources = directive
-    .split(/\s+/)
-    .slice(1)
-    .filter((s) => s !== "'unsafe-inline'");
-  return [name, ...sources, ...hashes].join(' ');
-}
-
-function harden(html, styleHashes) {
-  const scriptHashes = new Set();
-  for (const [, attrs, body] of html.matchAll(INLINE_SCRIPT)) {
-    if (/type="application\/(ld\+)?json"/.test(attrs)) continue; // données, jamais exécutées
-    scriptHashes.add(sha256(body));
-  }
-  const handlerHashes = hashesOf(html, INLINE_HANDLER, (m) => m[1]);
-
-  return html.replace(CSP_META, (_, open, csp, close) => {
-    const directives = csp
-      .split(';')
-      .map((d) => d.trim())
-      .filter(Boolean)
-      .map((d) => {
-        if (d.startsWith('script-src ')) return withoutUnsafeInline(d, 'script-src', scriptHashes);
-        if (d.startsWith('style-src '))
-          return withoutUnsafeInline(d, 'style-src', styleHashes.elements);
-        return d;
-      });
-    if (handlerHashes.size > 0) {
-      directives.push(`script-src-attr 'unsafe-hashes' ${[...handlerHashes].join(' ')}`);
-    }
-    if (styleHashes.attrs.size > 0) {
-      directives.push(`style-src-attr 'unsafe-hashes' ${[...styleHashes.attrs].join(' ')}`);
-    }
-    return `${open}${directives.join('; ')};${close}`;
+for (const [file, html] of pages) {
+  const hardened = hardenCsp(html, manifest, nodeSha256, (script) => {
+    throw new Error(`Inline script outside the CSP allowlist in ${file}: ${script.slice(0, 120)}`);
   });
-}
-
-const sources = new Map([...htmlFiles(DIST)].map((file) => [file, readFileSync(file, 'utf8')]));
-const styleHashes = collectStyleHashes(sources.values());
-for (const [file, html] of sources) {
-  const hardened = harden(html, styleHashes);
-  if (hardened === html) throw new Error(`No CSP meta found in ${file}`);
   if (/(script|style)-src [^;]*'unsafe-inline'/.test(hardened)) {
     throw new Error(`unsafe-inline still in ${file}`);
   }
   writeFileSync(file, hardened);
 }
+writeFileSync(join(DIST, 'server', 'csp-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(
-  `CSP hardened on ${sources.size} page(s): ${styleHashes.elements.size} style element hash(es), ${styleHashes.attrs.size} style attribute hash(es).`,
+  `CSP hardened on ${pages.size} page(s); manifest: ${manifest.scriptHashes.length} script, ${manifest.styleElementHashes.length} style element, ${manifest.styleAttrHashes.length} style attribute hash(es).`,
 );

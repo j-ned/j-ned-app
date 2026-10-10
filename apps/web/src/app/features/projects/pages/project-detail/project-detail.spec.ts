@@ -12,7 +12,7 @@ import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics
 import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import type { OfferSlug } from '@features/offer/domain/models/offer.model';
-import { Component } from '@angular/core';
+import { Component, PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
 
 function project(overrides: Partial<Project> = {}): Project {
   return makeProject({
@@ -22,7 +22,10 @@ function project(overrides: Partial<Project> = {}): Project {
   });
 }
 
-function setup(projects: Project[]): ComponentFixture<ProjectDetail> {
+function setup(
+  projects: Project[],
+  extraProviders: Provider[] = [],
+): ComponentFixture<ProjectDetail> {
   const gateway = {
     getAllProjects: () => of(projects as readonly Project[]),
   } as unknown as ProjectsGateway;
@@ -31,6 +34,7 @@ function setup(projects: Project[]): ComponentFixture<ProjectDetail> {
       provideRouter([]),
       { provide: ProjectsGateway, useValue: gateway },
       { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
+      ...extraProviders,
     ],
   });
   return TestBed.createComponent(ProjectDetail);
@@ -83,6 +87,32 @@ describe('ProjectDetail', () => {
     await fixture.whenStable();
     expect(navigate).toHaveBeenCalledWith(['/projects']);
   });
+
+  it.each([
+    ['inexistant', 404],
+    ['mon-site', 200],
+  ])(
+    'Given a server render of the slug %s When the list is loaded Then the response status is %s and no redirection happens',
+    async (slug, status) => {
+      const responseInit: ResponseInit = { status: 200, headers: new Headers() };
+      const fixture = setup(
+        [project()],
+        [
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: RESPONSE_INIT, useValue: responseInit },
+        ],
+      );
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+      fixture.componentRef.setInput('slug', slug);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect({ status: responseInit.status, navigations: navigate.mock.calls }).toEqual({
+        status,
+        navigations: [],
+      });
+    },
+  );
 
   it('expose les liens démo et code source quand ils sont fournis', async () => {
     const fixture = setup([

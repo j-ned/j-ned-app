@@ -1,10 +1,19 @@
-import { Component, computed, effect, inject, input, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  ChangeDetectionStrategy,
+  PLATFORM_ID,
+} from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { Seo } from '@core/seo/seo';
+import { injectMarkNotFound } from '@core/ssr/response-status';
 import { truncateAtWord } from '@shared/seo/truncate-at-word';
 import { toShareImageUrl } from '@shared/seo/share-image';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
@@ -107,6 +116,8 @@ export class ProjectDetail {
   private readonly _analytics = inject(AnalyticsGateway);
   private readonly _router = inject(Router);
   private readonly _seo = inject(Seo);
+  private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly _markNotFound = injectMarkNotFound();
 
   readonly slug = input.required<string>();
 
@@ -161,7 +172,8 @@ export class ProjectDetail {
   private readonly _redirectIfMissing = effect(() => {
     const list = this._allProjects();
     if (list.length > 0 && !list.some((p) => p.slug === this.slug())) {
-      void this._router.navigate(['/projects']);
+      if (this._isBrowser) void this._router.navigate(['/projects']);
+      else this._markNotFound();
     }
   });
 

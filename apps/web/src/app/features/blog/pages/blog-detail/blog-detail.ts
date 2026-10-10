@@ -8,14 +8,17 @@ import {
   viewChild,
   ChangeDetectionStrategy,
   resource,
+  PLATFORM_ID,
 } from '@angular/core';
-import { DatePipe, NgOptimizedImage } from '@angular/common';
+import { DatePipe, NgOptimizedImage, isPlatformBrowser } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { Seo } from '@core/seo/seo';
+import { injectMarkNotFound } from '@core/ssr/response-status';
 import { truncateAtWord } from '@shared/seo/truncate-at-word';
 import { toShareImageUrl } from '@shared/seo/share-image';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
@@ -214,6 +217,8 @@ export class BlogDetail {
   private readonly analytics = inject(AnalyticsGateway);
   private readonly seo = inject(Seo);
   private readonly router = inject(Router);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly markNotFound = injectMarkNotFound();
 
   private readonly _readSentinel = viewChild<ElementRef<HTMLElement>>('readSentinel');
 
@@ -230,11 +235,12 @@ export class BlogDetail {
     loader: async ({ params: slug }) => {
       try {
         return await firstValueFrom(this.gateway.getPostBySlug(slug));
-      } catch {
-        // 404 (slug inconnu ou dépublié) → redirection silencieuse vers /blog
-        // plutôt qu'une page vide, même pattern que `_redirectIfMissing` dans
-        // ProjectDetail.
-        void this.router.navigate(['/blog']);
+      } catch (error: unknown) {
+        // Navigateur : redirection silencieuse vers /blog plutôt qu'une page vide. Serveur : vraie
+        // 404 pour un slug inconnu ; une panne d'amont reste en 503 (posé par l'intercepteur),
+        // sinon nginx ne servirait pas sa copie périmée.
+        if (this.isBrowser) void this.router.navigate(['/blog']);
+        else if (error instanceof HttpErrorResponse && error.status === 404) this.markNotFound();
         return undefined;
       }
     },

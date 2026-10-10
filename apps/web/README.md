@@ -49,7 +49,7 @@ Un portfolio de développeur est rarement « juste une vitrine ». Il doit :
 
 Une application full-stack auto-hébergée, construite et exploitée comme un vrai produit :
 
-- **Front Angular 22** zoneless, signals, rendu serveur avec prérendu de toutes les pages publiques, clean architecture en trois couches par feature.
+- **Front Angular 22** zoneless, signals, rendu serveur à la requête des pages de contenu (une écriture admin est visible au rechargement, sans rebuild), prérendu des pages statiques, clean architecture en trois couches par feature.
 - **Back-office** : projets, articles de blog, CV, messages de contact, analytics, sécurité du compte.
 - **API NestJS** dédiée ([`nest-portfolio-app`](https://github.com/j-ned/nest-portfolio-app)) : auth JWT + 2FA, PostgreSQL via Drizzle, stockage S3, mails, analytics.
 - **Analytics maison** : aucun cookie, aucun tracker tiers, données brutes purgées au bout de 30 jours.
@@ -67,7 +67,7 @@ Ce dépôt ne contient que le front. L'API vit dans son propre dépôt et est ap
 |---|---|
 | **Accueil** | Hero, points forts, aperçu des projets mis en avant, section contact. Prérendu, hydratation incrémentale des sections sous la ligne de flottaison. |
 | **À propos** | Parcours, diplômes, stack, expertises. |
-| **Projets** | Liste filtrable par catégorie et paginée ; fiche par projet avec choix techniques, décisions d'architecture, liens démo et dépôts, navigation précédent / suivant. Toutes les fiches sont prérendues. |
+| **Projets** | Liste filtrable par catégorie et paginée ; fiche par projet avec choix techniques, décisions d'architecture, liens démo et dépôts, navigation précédent / suivant. Toutes les fiches sont rendues côté serveur à la requête. |
 | **Blog** | Articles en Markdown assainis par DOMPurify (ADR-0002), tags colorés par catégorie et filtre par tag, commentaires Giscus, compteur de « j'aime », flux RSS. |
 | **Contact** | Formulaire Signal Forms, validation au bord, envoi par l'API (mail à l'admin et confirmation au visiteur). |
 | **CV** | Téléchargement du PDF servi par l'API, comptabilisé dans les analytics. |
@@ -138,9 +138,9 @@ providers: [
 
 ### Rendu
 
-- `outputMode: server` : les pages publiques (`/`, `/about`, `/projects`, `/projects/:slug`, `/blog`, `/blog/:slug`) sont **prérendues au build**, les slugs étant lus sur l'API de production. Le transfer cache du prérendu évite de refaire les appels après hydratation (spec 004).
+- `outputMode: server` : les pages de contenu (`/`, `/about`, `/projects`, `/projects/:slug`, `/blog`, `/blog/:slug`) sont **rendues à chaque requête** par le serveur Node (`src/server.ts`, ADR-0024) depuis l'API interne ; les pages statiques (offres, mentions, confidentialité) restent **prérendues au build**, qui ne lit plus l'API. Le transfer cache évite de refaire les appels après hydratation (spec 004, origin map vers l'URL publique).
 - `login`, `two-factor` et `admin/**` sont rendus côté client depuis `index.csr.html`.
-- En production, **nginx** sert le dossier `browser/` : une page prérendue par route, la coquille CSR pour les routes client, et un **404 réel** pour toute URL inconnue.
+- En production, **nginx** sert le dossier `browser/` (chunks, pages prérendues, coquille CSR pour les routes client, **404 réel** pour toute URL inconnue) et relaie la liste fermée des routes de contenu, `sitemap.xml` et `rss.xml` au serveur Node du même conteneur, avec un micro-cache d'une seconde servi périmé si l'API ou Node échoue.
 - Les sections sous la ligne de flottaison de la home et de l'à-propos utilisent `@defer` avec hydratation incrémentale (ADR-0001).
 
 ### Décisions documentées
@@ -154,7 +154,7 @@ providers: [
 
 ### Front
 
-- **CSP par hachages** : après le build, `scripts/apply-csp-hashes.mjs` remplace `'unsafe-inline'` par les SHA-256 des scripts et styles inline de chaque page prérendue et de la coquille CSR. La CI vérifie qu'aucun `unsafe-inline` ne subsiste.
+- **CSP par hachages** : après le build, `scripts/apply-csp-hashes.mjs` remplace `'unsafe-inline'` par les SHA-256 des scripts et styles inline de chaque page prérendue et écrit un manifeste ; le serveur Node applique la même fonction (`src/server/csp/harden-csp.ts`) à chaque page rendue, en n'autorisant que les scripts inline connus. La CI vérifie qu'aucun `unsafe-inline` ne subsiste.
 - **En-têtes** posés par nginx sur toutes les réponses, assets compris : HSTS, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP.
 - **Markdown** des articles assaini par DOMPurify côté serveur et côté client avant injection.
 - **Auth** : cookie httpOnly `SameSite=Lax`, logout qui révoque toutes les sessions, 2FA TOTP, formulaire de connexion limité côté API.
@@ -190,7 +190,7 @@ providers: [
 - Images stockées en **AVIF ≤ 1600 px** par l'API à l'upload, clés dérivées du contenu et cache immuable d'un an.
 - Assets hachés servis avec `Cache-Control: immutable`, gzip, préchargement sélectif des routes.
 - `<title>`, meta, Open Graph et format de carte (`twitter:card`) par route ; JSON-LD `Person`, `BreadcrumbList`, `BlogPosting` et `CreativeWork` ; canonical par page.
-- `sitemap.xml` et `rss.xml` générés au build depuis l'API (`scripts/generate-sitemap.mjs`, `scripts/generate-rss.mjs`), non versionnés : le build échoue si l'API est injoignable, une copie versionnée ne servirait jamais de repli.
+- `sitemap.xml` et `rss.xml` rendus à la requête par le serveur Node (`src/server/feeds/`) depuis l'API : une écriture admin y apparaît au rechargement ; API en panne, nginx sert la dernière copie.
 
 ---
 
@@ -211,7 +211,7 @@ providers: [
 
 ### Exploitation
 
-- **Docker** multi-stage : build Angular puis image nginx alpine.
+- **Docker** multi-stage : build Angular, dépendances d'exécution, puis image nginx alpine qui exécute aussi Node (utilisateur non root).
 - **Traefik** pour le TLS, **Dokploy** pour l'orchestration, sur un serveur auto-hébergé.
 - **GitHub Actions** : lint, tests, build de production avec vérification du prérendu et de la CSP, build de l'image Docker et tests de fumée HTTP.
 
@@ -264,7 +264,7 @@ Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discus
 | Commande | Action |
 |---|---|
 | `pnpm start` | Serveur de développement avec proxy `/api` |
-| `pnpm build` | Sitemap + RSS + build SSR ; `--configuration production` ajoute le prérendu et le hachage CSP |
+| `pnpm build` | Build SSR ; `--configuration production` ajoute le prérendu des pages statiques et le hachage CSP |
 | `pnpm test` | Vitest (happy-dom) |
 | `pnpm lint` | ESLint, zéro warning toléré |
 | `pnpm check` | Prettier + lint |
@@ -274,7 +274,7 @@ Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discus
 
 ```bash
 docker build -t ng-portfolio-app:local .
-docker run --rm -p 3000:3000 ng-portfolio-app:local   # nginx, pages prérendues + coquille CSR
+docker run --rm -p 3000:3000 -e API_UPSTREAM=http://<api>:3000 ng-portfolio-app:local   # nginx + Node
 ```
 
 ---
@@ -285,7 +285,7 @@ Les gates sont ceux du Dockerfile, rejoués en local avant chaque PR et dans la 
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm run build --configuration production   # sitemap + rss + build SSR + prérendu + CSP
+pnpm run build --configuration production   # build SSR + prérendu des pages statiques + CSP
 docker build -t ng-portfolio-app:local .    # exactement ce que Dokploy exécute
 ```
 

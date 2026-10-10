@@ -257,6 +257,19 @@ describe('AdminProjectEditor: ouverture', () => {
   });
 });
 
+describe('AdminProjectEditor: introduction', () => {
+  it.each(['/admin/projects/new', '/admin/projects/p-1'])(
+    'Given %s When the header renders Then the introduction says the changes show on the site within a second, on reload',
+    async (url) => {
+      const editor = await openEditor(url);
+
+      expect(normalized(byTestId(editor.host, 'admin-page-title')?.nextElementSibling)).toBe(
+        "Les changements sont visibles sur le site au plus une seconde après l'enregistrement, au rechargement de la page.",
+      );
+    },
+  );
+});
+
 describe('AdminProjectEditor: chargement, erreur et introuvable', () => {
   it('Given the project is loading When the page renders Then a status placeholder stands instead of the form', async () => {
     const editor = await openEditor('/admin/projects/p-1', {

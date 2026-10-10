@@ -273,6 +273,19 @@ describe('AdminPostEditor: ouverture', () => {
   });
 });
 
+describe('AdminPostEditor: introduction', () => {
+  it.each(['/admin/blog/new', '/admin/blog/b-1'])(
+    'Given %s When the header renders Then the introduction says a published article shows on the site within a second, on reload',
+    async (url) => {
+      const editor = await openEditor(url);
+
+      expect(normalized(byTestId(editor.host, 'admin-page-title')?.nextElementSibling)).toBe(
+        "Un article publié est visible sur le site au plus une seconde après l'enregistrement, au rechargement de la page.",
+      );
+    },
+  );
+});
+
 describe('AdminPostEditor: chargement, erreur et introuvable', () => {
   it('Given the list is loading When the page renders Then a status placeholder stands instead of the form', async () => {
     const editor = await openEditor('/admin/blog/b-1', {

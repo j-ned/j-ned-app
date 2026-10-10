@@ -10,8 +10,10 @@ import { renderCodeBlock } from './render-code-block';
 // chaîne telle quelle (`isSupported === false`), ce qui figerait un payload dans le HTML statique.
 const SANITIZE_OPTIONS = {
   USE_PROFILES: { html: true },
-  // `style` inline peut recouvrir la page (position:fixed) : rien dans le blog n'en a besoin.
+  // `style` inline peut recouvrir la page (position:fixed) : rien dans le blog n'en a besoin. Un
+  // élément `<style>` restylerait toute la page, et la CSP du rendu serveur hache ceux du `<head>`.
   FORBID_ATTR: ['style'],
+  FORBID_TAGS: ['style'],
 };
 
 // Un <button> sans type soumet le <form> qui l'entoure (l'aperçu de l'éditeur en est un).

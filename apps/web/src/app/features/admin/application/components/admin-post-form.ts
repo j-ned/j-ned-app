@@ -211,7 +211,8 @@ import { toPostInput, type PostDraft } from '../post-draft';
         </div>
         @if (form.status().value() === 'published') {
           <p data-testid="admin-post-redeploy-note" class="field-hint">
-            Publier l'article redéploie le site&nbsp;: il est en ligne quelques minutes plus tard.
+            Un article publié est visible sur le site au plus une seconde après l'enregistrement, au
+            rechargement de la page.
           </p>
         }
       </fieldset>

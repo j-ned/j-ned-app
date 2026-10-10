@@ -45,12 +45,11 @@ indépendantes. Deux casses de prod après merge :
   garder **les deux** ajouts : relire le diff du commit de merge, pas seulement les marqueurs.
 - Deux PR qui touchent le même fichier ne sont pas indépendantes, même sans hunk commun
   (cf. leçon du 2026-09-08) : ici la seconde PR aurait dû être rebasée sur `master` avant merge.
-- Quand le front dépend d'une évolution de l'API, la dépendance porte aussi sur le **build**
-  front : `generate-sitemap.mjs`, `generate-rss.mjs` et le prérendu interrogent l'API **prod**.
-  Ordre : merger l'API, attendre le nouveau conteneur (`docker ps` sur `homeserver`, ou tester
-  l'endpoint), puis merger le front. Front mergé trop tôt = artefact statique figé sur l'ancienne
-  réponse, à redéployer à la main (la CI GitHub ne déclenche pas Dokploy, seul le push ou
-  « Redeploy » le fait).
+- Quand le front dépend d'une évolution de l'API, la dépendance porte sur l'**exécution** du front
+  (depuis la spec 022, le build ne lit plus l'API : pages de contenu, sitemap et RSS sont rendus à
+  la requête). Ordre inchangé : merger l'API, attendre le nouveau conteneur (`docker ps` sur
+  `homeserver`, ou tester l'endpoint), puis merger le front ; front mergé trop tôt = pages en 503
+  (copie périmée servie tant qu'elle existe) jusqu'au déploiement de l'API.
 - Ce qui est régénéré au build (sitemap, RSS, HTML prérendu) se vérifie **en prod après
   déploiement**, pas seulement dans `dist/` : un `lastBuildDate` antérieur au déploiement de
   l'API suffit à expliquer un écart.
@@ -74,3 +73,9 @@ masquait le problème.
   : un `HttpTestingController` sans intercepteur ne voit pas les erreurs de DI.
 - Diagnostic utile : zéro requête côté API + indice absent ⇒ tracer `Storage.prototype.removeItem`
   et `new Error('NG0…')` dans un Chromium headless (`playwright-core` + `addInitScript`).
+
+## 2026-10-10 — rendu à la requête (spec 022)
+
+- Une liste d'autorisation CSP qui hache les `<style>` du `<head>` doit
+  ignorer le texte des `<script>` (JSON-LD), et tout appel d'amont au rendu serveur a besoin d'un
+  délai explicite (`timeout`), sinon une API muette bloque 60 s puis 504.

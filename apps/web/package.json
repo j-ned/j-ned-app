@@ -6,9 +6,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "tsx scripts/generate-sitemap.mjs && tsx scripts/generate-rss.mjs && ng build",
-    "sitemap:build": "tsx scripts/generate-sitemap.mjs",
-    "rss:build": "tsx scripts/generate-rss.mjs",
+    "build": "ng build",
     "icons:build": "tsx scripts/build-icons.mjs",
     "icons:check": "tsx scripts/build-icons.mjs --check",
     "watch": "ng build --watch --configuration development",
@@ -20,7 +18,7 @@
     "check": "pnpm run format:check && pnpm run lint",
     "sentry:sourcemaps": "tsx scripts/upload-sentry-sourcemaps.mjs",
     "prepare": "husky",
-    "postbuild": "node scripts/apply-csp-hashes.mjs"
+    "postbuild": "tsx scripts/apply-csp-hashes.mjs"
   },
   "lint-staged": {
     "*.ts": [
@@ -71,6 +69,7 @@
     "@sentry/cli": "^3.5.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/typography": "^0.5.20",
+    "@types/node": "^22.20.5",
     "angular-eslint": "22.5.0",
     "chart.js": "^4.5.1",
     "eslint": "^10.4.1",

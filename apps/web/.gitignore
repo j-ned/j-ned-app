@@ -66,6 +66,3 @@ Thumbs.db
 # Git worktrees (scratch, per-branch)
 .worktrees/
 
-# Générés au build depuis l'API prod (scripts/generate-sitemap.mjs, scripts/generate-rss.mjs)
-public/sitemap.xml
-public/rss.xml

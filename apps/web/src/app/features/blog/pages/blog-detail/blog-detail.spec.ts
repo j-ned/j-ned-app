@@ -4,6 +4,8 @@ import {
   TestBed,
   type ComponentFixture,
 } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
+import { PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -74,6 +76,7 @@ function setup(
     getPublishedPosts?: () => ReturnType<BlogGateway['getPublishedPosts']>;
   },
   deferBlockBehavior: DeferBlockBehavior = DeferBlockBehavior.Playthrough,
+  extraProviders: Provider[] = [],
 ): Setup {
   const seoMock = { applySeoData: vi.fn() };
   const analyticsMock = { trackArticleView: vi.fn(), trackArticleRead: vi.fn() };
@@ -89,6 +92,7 @@ function setup(
       },
       { provide: Seo, useValue: seoMock },
       { provide: AnalyticsGateway, useValue: analyticsMock },
+      ...extraProviders,
     ],
     deferBlockBehavior,
   });
@@ -143,6 +147,36 @@ describe('BlogDetail', () => {
     await fixture.whenStable();
     expect(navigateSpy).toHaveBeenCalledWith(['/blog']);
   });
+
+  it.each([
+    [404, 404],
+    [503, 200],
+  ])(
+    'Given a server render When the API answers %s for the slug Then the response status is %s and no redirection happens',
+    async (apiStatus, status) => {
+      const responseInit: ResponseInit = { status: 200, headers: new Headers() };
+      const { fixture } = setup(
+        {
+          getPostBySlug: () =>
+            throwError(() => new HttpErrorResponse({ status: apiStatus, statusText: 'API' })),
+        },
+        DeferBlockBehavior.Playthrough,
+        [
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: RESPONSE_INIT, useValue: responseInit },
+        ],
+      );
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+      fixture.componentRef.setInput('slug', 'inconnu');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect({ status: responseInit.status, navigations: navigate.mock.calls }).toEqual({
+        status,
+        navigations: [],
+      });
+    },
+  );
 
   it("applique le SEO avec les données de l'article (title, description, image, JSON-LD BlogPosting)", async () => {
     const { fixture, seoMock } = setup({ getPostBySlug: () => of(post()) });

@@ -40,7 +40,7 @@ import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.
 import { HttpAnalyticsGateway } from '@features/analytics/infra/gateways/http-analytics.gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { HttpCvGateway } from '@features/cv/infra/gateways/http-cv.gateway';
-import { API_BASE_URL } from '@shared/api/api-config';
+import { API_BASE_URL, PUBLIC_API_BASE_URL } from '@shared/api/api-config';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import { HttpBlogGateway } from '@features/blog/infra/http-blog.gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
@@ -136,12 +136,7 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: API_BASE_URL,
-      useFactory: (): string => {
-        if (!isPlatformBrowser(inject(PLATFORM_ID))) {
-          return 'https://api.nedellec-julien.fr/api';
-        }
-        return isDevMode() ? '/api' : 'https://api.nedellec-julien.fr/api';
-      },
+      useFactory: (): string => (isDevMode() ? '/api' : PUBLIC_API_BASE_URL),
     },
     { provide: ProjectsGateway, useClass: HttpProjectsGateway },
     { provide: BlogGateway, useClass: HttpBlogGateway },

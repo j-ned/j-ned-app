@@ -1,0 +1,15 @@
+[
+  {
+    "id": "b-temoin",
+    "title": "Article témoin A",
+    "slug": "article-temoin",
+    "excerpt": "Résumé de l'article témoin servi par la doublure de l'API.",
+    "contentMarkdown": "## Section témoin\n\nParagraphe de l'article témoin A.\n\n```ts\nconst answer = 42;\n```\n",
+    "coverImage": "",
+    "tags": ["Angular"],
+    "status": "published",
+    "likesCount": 3,
+    "publishedAt": "2026-10-01T08:00:00.000Z",
+    "updatedAt": "2026-10-02T08:00:00.000Z"
+  }
+]

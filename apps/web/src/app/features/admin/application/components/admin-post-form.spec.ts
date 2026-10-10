@@ -857,10 +857,10 @@ describe('AdminPostForm: publication', () => {
     { status: 'draft', note: null },
     {
       status: 'published',
-      note: "Publier l'article redéploie le site\u00a0: il est en ligne quelques minutes plus tard.",
+      note: "Un article publié est visible sur le site au plus une seconde après l'enregistrement, au rechargement de la page.",
     },
   ] as const)(
-    'Given an article with status $status When the publication section renders Then the redeploy note is $note',
+    'Given an article with status $status When the publication section renders Then the publication note is $note',
     async ({ status, note }) => {
       const { host } = await renderForm({ post: makeBlogPost({ status }) });
       const element = byTestId(host, 'admin-post-redeploy-note');

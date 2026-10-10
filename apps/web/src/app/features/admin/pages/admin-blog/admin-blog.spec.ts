@@ -144,6 +144,7 @@ describe('AdminBlog: suppression confirmée', () => {
       dialog: expect.objectContaining({
         open: true,
         heading: "Supprimer l'article Chiffrer côté client\u202f?",
+        description: "L'article disparaît du blog dans la seconde. Cette action est définitive.",
         confirm: 'Supprimer Chiffrer côté client',
         cancel: 'Annuler',
       }),
@@ -439,6 +440,15 @@ describe('AdminBlog: en-tête de page', () => {
       title: testIdText(host, 'admin-page-title'),
       headings: host.querySelectorAll('h1').length,
     }).toEqual({ overline: '2 articles · 1 publié · 1 brouillon', title: 'Articles', headings: 1 });
+  });
+
+  it('Given the list When the page renders Then its introduction says a published article shows on the site within a second, on reload', async () => {
+    const { fixture } = await setup(withPosts([makeBlogPost({ id: 'b-1' })]));
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(normalized(byTestId(host, 'admin-page-title')?.nextElementSibling)).toBe(
+      "Les articles du blog. Un article publié est visible sur le site au plus une seconde après l'enregistrement, au rechargement de la page.",
+    );
   });
 });
 

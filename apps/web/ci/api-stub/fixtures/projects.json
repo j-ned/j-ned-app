@@ -1,0 +1,24 @@
+[
+  {
+    "id": "p-temoin",
+    "title": "Projet témoin A",
+    "slug": "projet-temoin",
+    "category": "Application web",
+    "tags": ["Angular", "NestJS"],
+    "description": "Description du projet témoin servi par la doublure de l'API.",
+    "image": "",
+    "techChoices": [{ "techno": "Angular", "why": "Rendu serveur et hydratation." }],
+    "architectureDecisions": [
+      { "decision": "Rendu à la requête", "rationale": "Contenu instantané." }
+    ],
+    "liveUrl": null,
+    "repoUrl": null,
+    "featured": true,
+    "order": 1,
+    "kind": "production",
+    "gallery": [],
+    "pitch": "Pitch du projet témoin.",
+    "highlight": null,
+    "scope": null
+  }
+]

@@ -36,8 +36,8 @@ import {
   host: { class: 'block' },
   template: `
     <app-admin-page-header [overline]="overline()" heading="Articles">
-      Les articles du blog. Publier un article redéploie le site&nbsp;: il est en ligne quelques
-      minutes plus tard.
+      Les articles du blog. Un article publié est visible sur le site au plus une seconde après
+      l'enregistrement, au rechargement de la page.
       <div adminPageAside class="flex lg:justify-end">
         <a appButton data-testid="admin-post-new" routerLink="/admin/blog/new">
           <app-icon name="plus" [size]="16" />Nouvel article
@@ -122,7 +122,7 @@ import {
       (confirmed)="confirmDeletion()"
       (cancelled)="pendingDeletion.set(null)"
     >
-      <p>L'article disparaît du blog au prochain déploiement. Cette action est définitive.</p>
+      <p>L'article disparaît du blog dans la seconde. Cette action est définitive.</p>
     </app-confirm-dialog>
   `,
 })
