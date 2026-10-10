@@ -180,7 +180,7 @@ describe('OFFER_PAGES', () => {
       expect(page.request).toEqual({
         subject: 'Site pro pour mon atelier',
         intro:
-          'Dites-moi le nom de votre atelier et ce que vous usinez. Je vous rappelle sous 24 heures ouvrées.',
+          'Dites-moi le nom de votre atelier et ce que vous usinez. Je vous rappelle sous 48 heures ouvrées.',
       });
     });
   });
@@ -407,7 +407,7 @@ describe('OFFER_PAGES', () => {
 
   describe('commitments of the new offers', () => {
     it('answers showcase site requests within 24 working hours', () => {
-      expect(OFFER_PAGES['site-vitrine'].request.intro).toContain('sous 24 heures ouvrées');
+      expect(OFFER_PAGES['site-vitrine'].request.intro).toContain('sous 48 heures ouvrées');
     });
 
     it('delivers the showcase site on day 7', () => {

@@ -167,7 +167,7 @@ export const OFFER_PAGES: OfferPages = {
     },
     request: {
       subject: 'Site vitrine pour mon entreprise',
-      intro: 'Indiquez votre activité et votre ville. Je vous réponds sous 24 heures ouvrées.',
+      intro: 'Indiquez votre activité et votre ville. Je vous réponds sous 48 heures ouvrées.',
     },
   },
   'site-atelier': {
@@ -317,7 +317,7 @@ export const OFFER_PAGES: OfferPages = {
     request: {
       subject: 'Site pro pour mon atelier',
       intro:
-        'Dites-moi le nom de votre atelier et ce que vous usinez. Je vous rappelle sous 24 heures ouvrées.',
+        'Dites-moi le nom de votre atelier et ce que vous usinez. Je vous rappelle sous 48 heures ouvrées.',
     },
   },
   'application-metier': {

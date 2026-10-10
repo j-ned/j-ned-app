@@ -15,7 +15,7 @@ describe('home hero copy', () => {
       rows: [
         { label: 'Prix', value: 'Fixe, annoncé avant de commencer' },
         { label: 'Site vitrine', value: 'En ligne en 7 jours' },
-        { label: 'Réponse', value: 'Sous 24\u00a0h ouvrées' },
+        { label: 'Réponse', value: 'Sous 48\u00a0h ouvrées' },
         { label: 'Propriété', value: 'Le site, le code et le nom de domaine sont à vous' },
         { label: 'Zone', value: 'Yvelines et Île-de-France, rendez-vous possible' },
       ],

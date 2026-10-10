@@ -18,7 +18,7 @@ describe('STATIC_HERO', () => {
     const showcasePrice = formatEur(OFFER_PRICES['site-vitrine'].creationEur);
 
     expect(STATIC_HERO.lead).toBe(
-      `Pour les TPE, les artisans et les ateliers des Yvelines et d'Île-de-France\u00a0: site vitrine à ${showcasePrice} prix final, en ligne en 7 jours, réponse sous 24\u00a0h ouvrées. ${SITE_IDENTITY.journey}`,
+      `Pour les TPE, les artisans et les ateliers des Yvelines et d'Île-de-France\u00a0: site vitrine à ${showcasePrice} prix final, en ligne en 7 jours, réponse sous 48\u00a0h ouvrées. ${SITE_IDENTITY.journey}`,
     );
   });
 });

@@ -48,7 +48,7 @@ describe('ProjectFollowUp', () => {
 
   it('Given the block When it is rendered Then it promises an answer within 24 working hours', () => {
     expect(text(byTestId('project-follow-up-text'))).toBe(
-      'Décrivez-le, je vous réponds sous 24\u00a0h ouvrées.',
+      'Décrivez-le, je vous réponds sous 48\u00a0h ouvrées.',
     );
   });
 
