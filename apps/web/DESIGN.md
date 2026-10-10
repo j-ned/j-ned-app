@@ -243,7 +243,7 @@ Contrastes calculés (composition sRGB, WCAG 2.x) : `line` 1,22:1 (Console, fond
 
 **The Single-Display Rule.** Un seul `<h1>` par page, en Display, jamais réutilisé pour décorer une autre section. La hiérarchie `<h1>` → `<h2>` → `<h3>` ne saute jamais un niveau.
 
-**The Indigo Accent Rule.** Le `<h1>` du hero porte un seul accent, un segment de la promesse (« livrés en production ») en `em` `not-italic text-primary`. Le segment est une donnée (`HeroData.headlineAccent`), jamais un littéral de template : `HomeHero` découpe le titre autour de lui.
+**The Indigo Accent Rule.** Le `<h1>` du hero porte un seul accent, un segment de la promesse (« à prix annoncé ») en `em` `not-italic text-primary`. Le segment est une donnée (`HeroData.headlineAccent`), jamais un littéral de template : `HomeHero` découpe le titre autour de lui.
 
 ## 4. Elevation
 
@@ -381,7 +381,7 @@ Un filtre local à une liste, une seule valeur active : les natures des Réalisa
 - **API:** `label` (requis, nom du groupe), `options: readonly FilterOption<T>[]` (`{ value, label, count?, disabled? }`), `active = model.required<T>()` lié en `[(active)]` au `linkedSignal` de la page. Générique sur la valeur.
 - **Structure:** hôte `block overflow-x-auto` (défile horizontalement en mobile plutôt que de passer à la ligne) ; `div role="group"` nommé par `label` ; un `button type="button"` par option, libellé puis compte en mono `text-xs tabular-nums`, rendu seulement s'il est défini (0 compris) : la période d'Audience n'a pas de compte. Pas de `nav` : le filtre ne navigue pas, l'URL ne change pas.
 - **États:** au repos `text-muted`, trait bas transparent ; survol `text-foreground` ; pressé (`aria-pressed="true"`, une seule option à la fois) trait bas `primary` 2px, `font-semibold`, `text-foreground` ; focus `outline-primary` 2px rentré (`-outline-offset-2`), sur `:focus-visible` seulement. Trait de base du groupe en `line` (ombre interne de 1px). Cible `min-h-11` (44 px).
-- **Option inactive** (`disabled: true`, thème sans article) : `aria-disabled="true"`, **jamais** l'attribut `disabled` natif, pour qu'elle reste dans l'ordre de tabulation, garde son focus visible et soit annoncée « indisponible » avec son compte 0. Le clic ne change rien et le focus reste sur le bouton. Apparence de l'état désactivé des boutons : `opacity-50` posé sur le libellé et le compte seulement (`aria-disabled:*:opacity-50`), pour que le contour de focus garde son contraste, `cursor-not-allowed`, survol neutralisé (`aria-disabled:hover:text-muted`). L'opacité n'est pas le seul porteur : le compte « 0 » le dit aussi. « Tous » n'est jamais inactif.
+- **Option inactive** (`disabled: true`, option sans élément dans les filtres de l'admin ; le blog n'en produit plus, ADR-0020) : `aria-disabled="true"`, **jamais** l'attribut `disabled` natif, pour qu'elle reste dans l'ordre de tabulation, garde son focus visible et soit annoncée « indisponible » avec son compte 0. Le clic ne change rien et le focus reste sur le bouton. Apparence de l'état désactivé des boutons : `opacity-50` posé sur le libellé et le compte seulement (`aria-disabled:*:opacity-50`), pour que le contour de focus garde son contraste, `cursor-not-allowed`, survol neutralisé (`aria-disabled:hover:text-muted`). L'opacité n'est pas le seul porteur : le compte « 0 » le dit aussi. « Tous » n'est jamais inactif.
 - **Statut:** la page annonce le résultat d'un choix par un `p role="status"` `sr-only` (« N article(s) affiché(s) », « N réalisation(s) affichée(s) »), hors du groupe ; le focus ne bouge pas.
 
 ### Liste de repères (`shared/ui/fact-list.ts`)
@@ -396,8 +396,8 @@ Les repères d'un plan : un libellé court, une valeur. Étude de cas (Stack, Po
 La page `/blog` reprend le gabarit des Réalisations : en-tête à cartouche, filtre local, liste.
 
 - **En-tête:** même grille que `/projects` (texte à gauche, cartouche à droite à partir de `lg`, empilé dessous en mobile). Sur-titre mono `text-primary` « N article(s) », `h1` « Blog » sans animation, introduction fixe, lien RSS `min-h-11`.
-- **Cartouche « Thèmes »:** `Cartouche` titré « Thèmes », référence « Articles par thème », `rows` = les cinq thèmes dans l'ordre du catalogue (Stack, Sécurité, Ingénierie, Parcours, Projets), valeur « N article(s) » avec son unité en clair. Les comptes portent sur tous les articles, quel que soit le filtre. Cartouche de données, hors de la limite d'un cartouche décoratif par écran.
-- **Filtre:** sous l'en-tête, hors du `header`, un seul des deux : le groupe « Filtrer par thème » (« Tous » puis les cinq thèmes, un thème vide en option inactive), ou, quand la page article a envoyé `?tag=`, le bandeau « Filtré par X » avec son lien de retrait. Absent pendant le chargement, en erreur et sans article. Un thème actif est toujours un thème non vide.
+- **Cartouche « Thèmes »:** `Cartouche` titré « Thèmes », référence « Articles par thème », `rows` = les seuls thèmes qui ont au moins un article, dans l'ordre du catalogue (Stack, Sécurité, Ingénierie, Parcours, Projets), valeur « N article(s) » avec son unité en clair ; jamais une ligne « 0 article » (ADR-0020). Sans aucune ligne, le cartouche n'est pas rendu. Les comptes portent sur tous les articles, quel que soit le filtre. Cartouche de données, hors de la limite d'un cartouche décoratif par écran.
+- **Filtre:** sous l'en-tête, hors du `header`, un seul des deux : le groupe « Filtrer par thème » (« Tous » puis les seuls thèmes couverts, dans l'ordre du catalogue, aucune option inactive), ou, quand la page article a envoyé `?tag=`, le bandeau « Filtré par X » avec son lien de retrait. Absent pendant le chargement, en erreur et sans article. Un thème actif est toujours un thème non vide.
 - **États:** erreur en `role="alert"` avec « Réessayer » (comme `/projects`) ; « Aucun article pour le moment. » sans article ; « Aucun article avec ce tag. » sous un tag sans résultat.
 - **Liste:** `ul role="list"` sous un trait, une ligne d'article par `li`, tous les articles sur une seule page (pas de pagination). Une seule couverture `priority` : celle du premier article de la liste complète, sous tout filtre.
 
@@ -471,6 +471,33 @@ Arguments courts, un intitulé puis son développement : « Pourquoi moi » de l
 - **API:** `points: readonly { id, lead, detail }[]`.
 - **Structure:** `ul role="list"`, une ligne par point : intitulé `font-semibold`, développement `text-muted` ; deux colonnes (11 rem puis le reste) à partir de `sm`, empilés en dessous.
 - **Traits:** lignes séparées et encadrées par un trait `line` (décoratif). Le titre de la section appartient au consommateur (`SplitSection` sur les pages d'offre, section « Pourquoi moi » sur la home).
+
+### Bandeau recruteur (`features/home/application/home-recruiter-band.ts`)
+
+L'entrée d'un recruteur sur l'accueil, sous la ligne de disponibilité, dans la colonne du hero. Dans le premier écran en desktop ; en mobile (375×667), le titre et l'accroche occupent le premier écran et le bandeau suit immédiatement les boutons d'appel (deuxième écran) : l'entrée recruteur du premier écran mobile est le menu (« Parcours »).
+
+- **Entrée:** `cvUrl: string | null` (lu au prérendu par la facade `CvDownload`, fournie par la page) ; sorties `hiringOpened`, `cvDownloaded`, `linkedinOpened`, `githubOpened` (mesure par la page).
+- **Structure:** un `p` en mono `text-xs text-muted` : « Vous recrutez ? » (lien `/about#recrutement`, `text-foreground` souligné en `foreground/25`), puis, après un espacement `gap-x-4`, un groupe insécable (`whitespace-nowrap`) « CV (PDF) · LinkedIn · GitHub ». Le CV n'est rendu que si `cvUrl` existe (jamais un lien 404). Chaque point médian (`aria-hidden`) vit dans le même élément que le lien qu'il introduit : une ligne ne commence ni ne finit jamais sur un séparateur. Une seule ligne dès 375 px ; plus étroit, le groupe passe entier à la ligne sous « Vous recrutez ? ». Cibles `min-h-11`.
+- **Nouvel onglet:** CV, LinkedIn et GitHub (`target="_blank"`, `rel="noopener noreferrer"`) portent un nom accessible « <libellé> (nouvel onglet) » en `aria-label` (`newTabLabel`, `shared/ui/new-tab-notice.ts`), le libellé visible en tête. Même annonce sur les liens CV et LinkedIn de `/about`.
+- **Discrétion:** ni bouton, ni indigo au repos, ni titre ; ce n'est pas un landmark (`p`, pas d'`aside` ni de `section` nommée) : l'appel principal du premier écran reste « Décrire mon projet ».
+- **Mesure:** le CV émet `cv_download` et rien d'autre ; les trois autres liens émettent `cta_click` (`home_recruiter_about`, `home_recruiter_linkedin`, `home_recruiter_github`).
+
+### Bloc de fin de fiche (`features/projects/application/components/project-follow-up.ts`)
+
+La sortie d'une fiche projet, entre les choix techniques et la navigation vers les autres projets (ADR-0019).
+
+- **Entrée:** `offer: { label, path }` (résolu par la page depuis la nature du projet : application métier pour un projet en production, site vitrine pour une démo, catalogue `/offres` sinon) ; sorties `offerOpened`, `hiringOpened`.
+- **Structure:** hôte `block` à trait haut `foreground/8` ; `section` nommée par son `h2` « Un besoin similaire ? » (Archivo gras, `clamp(1.75rem,3.4vw,2.75rem)`), promesse de réponse `text-muted`, lien vers l'offre en `appButton` (primaire, seul indigo du bloc), puis une ligne mono `text-muted` « Vous recrutez ? » suivie du lien souligné « Parcours et CV » (`/about#recrutement`).
+- **Mesure:** `cta_click` `project_similar_need` (libellé = texte du lien d'offre) et `project_hiring`.
+
+### Avis clients (`features/home/application/home-reviews.ts`)
+
+La section d'avis de l'accueil. **Rien n'est rendu** tant que `HOME_REVIEWS` est vide (`@if` autour du `@defer`, sans placeholder) ; aucun avis d'exemple dans les données de production.
+
+- **Entrée:** `reviews: readonly Review[]` (citation, nom, contexte « métier · entreprise · ville », date réelle), publiés avec l'accord de leur auteur.
+- **Structure:** `section` nommée par son `h2` « Avis clients » ; `ul role="list"`, une colonne puis deux à partir de `md` ; chaque avis en `figure` à filet gauche `primary/40` : `blockquote` en texte courant, `figcaption` nom `font-semibold` puis contexte mono `text-muted`. Se termine par le lien « Laisser un avis sur Google » (nouvel onglet, « (nouvel onglet) » en `sr-only`).
+- **Données structurées:** un `Review` par avis dans le nœud `ProfessionalService` de l'accueil, aucun sans avis réel ; pas d'`aggregateRating`.
+- **Appel à avis sans avis:** seulement dans la colonne « Contact » du pied de page (« Vous avez travaillé avec moi ? » puis le même lien, mesuré `cta_click` `review_google`), jamais sur l'accueil près du formulaire ; aucun titre « Avis clients » tant qu'il n'y a pas d'avis. Le lien de rédaction Google n'entre pas dans le `sameAs`.
 
 ### Inputs / Forms (utility `form-input`)
 

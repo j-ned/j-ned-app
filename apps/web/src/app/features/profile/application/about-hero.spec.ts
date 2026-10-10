@@ -121,4 +121,26 @@ describe('AboutHero', () => {
       expect(host().querySelector('img')).toBeNull();
     },
   );
+
+  describe('Given l’URL du CV', () => {
+    beforeEach(async () => {
+      fixture = TestBed.createComponent(AboutHero);
+      fixture.componentRef.setInput('profile', PROFILE);
+      fixture.componentRef.setInput('biography', STATIC_BIOGRAPHY);
+      fixture.componentRef.setInput('socials', STATIC_SOCIAL_BUTTONS);
+      fixture.componentRef.setInput('cvUrl', '/api/cv/download');
+      fixture.detectChanges();
+      await fixture.whenStable();
+    });
+
+    it('When le hero est rendu Then le lien CV s’ouvre dans un nouvel onglet et l’annonce dans son nom accessible', () => {
+      const link = host().querySelector<HTMLAnchorElement>('[data-testid="about-hero-cv"]');
+
+      expect([
+        link?.getAttribute('href'),
+        link?.getAttribute('target'),
+        link?.getAttribute('aria-label'),
+      ]).toEqual(['/api/cv/download', '_blank', 'Télécharger mon CV (PDF) (nouvel onglet)']);
+    });
+  });
 });

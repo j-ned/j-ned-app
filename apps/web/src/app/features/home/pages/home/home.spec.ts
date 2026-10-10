@@ -17,6 +17,8 @@ import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { SectionVisibility } from '@core/navigation/section-visibility';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
+import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
+import { STUB_CV_DOWNLOAD_URL, stubCvGateway } from '@features/cv/testing/stub-cv-gateway';
 import type { HomeBundle } from '@features/home/domain/models/home-bundle.model';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
@@ -59,15 +61,18 @@ type AnalyticsStub = {
   readonly gateway: AnalyticsGateway;
   readonly trackCtaClick: Mock<AnalyticsGateway['trackCtaClick']>;
   readonly trackProjectClick: Mock<AnalyticsGateway['trackProjectClick']>;
+  readonly trackCvDownload: Mock<AnalyticsGateway['trackCvDownload']>;
 };
 
 function makeAnalytics(): AnalyticsStub {
   const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
   const trackProjectClick = vi.fn<AnalyticsGateway['trackProjectClick']>();
+  const trackCvDownload = vi.fn<AnalyticsGateway['trackCvDownload']>();
   return {
-    gateway: stubAnalyticsGateway({ trackCtaClick, trackProjectClick }),
+    gateway: stubAnalyticsGateway({ trackCtaClick, trackProjectClick, trackCvDownload }),
     trackCtaClick,
     trackProjectClick,
+    trackCvDownload,
   };
 }
 
@@ -91,6 +96,7 @@ async function setup(
       { provide: HomeGateway, useValue: gateway },
       { provide: SectionScroller, useValue: scroller },
       { provide: AnalyticsGateway, useValue: makeAnalytics().gateway },
+      { provide: CvGateway, useValue: stubCvGateway() },
     ],
     schemas: [NO_ERRORS_SCHEMA],
   });
@@ -121,6 +127,7 @@ type DeferHarness = {
 async function renderHomeTemplate(
   featuredProjects: readonly Project[] = [],
   overrides: Partial<HomeBundle> = {},
+  cvGateway: CvGateway = stubCvGateway(),
 ): Promise<DeferHarness> {
   const analytics = makeAnalytics();
   const scroller = makeScroller();
@@ -139,6 +146,7 @@ async function renderHomeTemplate(
       { provide: SectionScroller, useValue: scroller },
       { provide: ContactGateway, useValue: makeContactGateway() },
       { provide: AnalyticsGateway, useValue: analytics.gateway },
+      { provide: CvGateway, useValue: cvGateway },
     ],
     deferBlockBehavior: DeferBlockBehavior.Manual,
   });
@@ -284,6 +292,84 @@ describe('Home', () => {
         HOME_HERO_CTA_LABELS.offers,
       );
       expect(scroller.scrollTo).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('bandeau recruteur du premier écran', () => {
+    const clickWithoutLeaving = (fixture: ComponentFixture<Home>, testId: string): void => {
+      const link = byTestId(fixture, testId);
+      link?.addEventListener('click', (event) => event.preventDefault());
+      link?.click();
+    };
+
+    it('Given le template réel When la page est rendue Then le bandeau vit dans le premier écran', async () => {
+      const { fixture } = await renderHomeTemplate([], { hero: STATIC_HERO });
+
+      expect(
+        byTestId(fixture, 'home-recruiter-about')?.closest('app-home-hero-section'),
+      ).not.toBeNull();
+    });
+
+    it('Given un CV publié When la page est rendue Then le bandeau propose son téléchargement', async () => {
+      const { fixture } = await renderHomeTemplate([], { hero: STATIC_HERO });
+
+      expect(byTestId(fixture, 'home-recruiter-cv')?.getAttribute('href')).toBe(
+        STUB_CV_DOWNLOAD_URL,
+      );
+    });
+
+    it('Given aucun CV publié When la page est rendue Then le bandeau garde l’entrée recruteur, sans lien CV', async () => {
+      const { fixture } = await renderHomeTemplate(
+        [],
+        { hero: STATIC_HERO },
+        stubCvGateway({ getCurrent: () => of(null) }),
+      );
+
+      expect(byTestId(fixture, 'home-recruiter-about')).not.toBeNull();
+      expect(byTestId(fixture, 'home-recruiter-cv')).toBeNull();
+    });
+
+    it('Given le bandeau When le visiteur clique le CV Then seul le téléchargement du CV est mesuré, une fois', async () => {
+      const { fixture, analytics } = await renderHomeTemplate([], { hero: STATIC_HERO });
+
+      clickWithoutLeaving(fixture, 'home-recruiter-cv');
+
+      expect(analytics.trackCvDownload).toHaveBeenCalledOnce();
+      expect(analytics.trackCtaClick).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      {
+        testId: 'home-recruiter-about',
+        ctaId: 'home_recruiter_about',
+        label: 'Vous recrutez\u202f?',
+      },
+      { testId: 'home-recruiter-linkedin', ctaId: 'home_recruiter_linkedin', label: 'LinkedIn' },
+      { testId: 'home-recruiter-github', ctaId: 'home_recruiter_github', label: 'GitHub' },
+    ])(
+      'Given le bandeau When le visiteur clique $testId Then la page mesure $ctaId une fois, sans téléchargement de CV',
+      async ({ testId, ctaId, label }) => {
+        const { fixture, analytics } = await renderHomeTemplate([], { hero: STATIC_HERO });
+
+        clickWithoutLeaving(fixture, testId);
+        await fixture.whenStable();
+
+        expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith(ctaId, label);
+        expect(analytics.trackCvDownload).not.toHaveBeenCalled();
+      },
+    );
+  });
+
+  describe('avis clients', () => {
+    it('Given aucun avis réel When toutes les sections sont rendues Then ni section d’avis ni place réservée n’existent', async () => {
+      const harness = await renderHomeTemplate([], { hero: STATIC_HERO });
+      await renderAllDeferred(harness);
+
+      expect(byTestId(harness.fixture, 'home-faq-placeholder')).toBeNull();
+      expect([
+        byTestId(harness.fixture, 'home-reviews'),
+        byTestId(harness.fixture, 'home-reviews-placeholder'),
+      ]).toEqual([null, null]);
     });
   });
 

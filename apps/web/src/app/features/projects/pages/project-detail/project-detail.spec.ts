@@ -8,6 +8,11 @@ import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gat
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject, makeProjectImage } from '@features/projects/testing/project-builders';
+import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
+import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
+import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
+import type { OfferSlug } from '@features/offer/domain/models/offer.model';
+import { Component } from '@angular/core';
 
 function project(overrides: Partial<Project> = {}): Project {
   return makeProject({
@@ -534,5 +539,123 @@ describe('ProjectDetail: agrandissement d’une capture', () => {
     await enlarge(gallery, 0);
 
     expect(gallery.dialog?.open).toBe(true);
+  });
+});
+
+@Component({ template: '' })
+class BlankPage {}
+
+describe('ProjectDetail: suite éditoriale de la fiche', () => {
+  const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
+
+  const text = (el: Element | null | undefined): string =>
+    (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
+
+  const offerName = (slug: OfferSlug): string =>
+    OFFERS.find((offer) => offer.slug === slug)?.name ?? `missing offer ${slug}`;
+
+  const renderProject = async (overrides: Partial<Project>): Promise<HTMLElement> => {
+    const current = project(overrides);
+    trackCtaClick.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: '**', component: BlankPage }]),
+        {
+          provide: ProjectsGateway,
+          useValue: stubProjectsGateway({ getAllProjects: () => of([current]) }),
+        },
+        { provide: AnalyticsGateway, useValue: stubAnalyticsGateway({ trackCtaClick }) },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProjectDetail);
+    fixture.componentRef.setInput('slug', current.slug);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return fixture.nativeElement as HTMLElement;
+  };
+
+  const byTestId = (host: HTMLElement, testId: string): HTMLElement | null =>
+    host.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+
+  const follows = (first: Element | null, second: Element | null): boolean =>
+    Boolean(
+      first && second && first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  describe('phrase « problème → résultat »', () => {
+    it('Given DashFlow When the detail renders Then the need it solves and its personal use come before the technical description', async () => {
+      const host = await renderProject({ slug: 'dashflow', title: 'DashFlow' });
+      const outcome = byTestId(host, 'project-outcome');
+      const usage = byTestId(host, 'project-usage');
+      const description = byTestId(host, 'project-detail-description');
+
+      expect(text(outcome)).toBe(
+        'Suivre le budget du foyer et la santé de chacun sans confier ces données en clair à un serveur\u00a0: une seule application, chiffrée dans le navigateur avant tout envoi.',
+      );
+      expect(text(usage)).toBe('Usage personnel, pour ma famille et moi.');
+      expect([follows(outcome, description), follows(usage, description)]).toEqual([true, true]);
+    });
+
+    it('Given a project without validated outcome When the detail renders Then neither sentence nor usage is shown, the description stays', async () => {
+      const host = await renderProject({ slug: 'le-vieux-comptoir', kind: 'demo' });
+
+      expect([byTestId(host, 'project-outcome'), byTestId(host, 'project-usage')]).toEqual([
+        null,
+        null,
+      ]);
+      expect(text(byTestId(host, 'project-detail-description'))).toBe('desc');
+    });
+  });
+
+  describe('bloc de fin', () => {
+    it.each<{ kind: Project['kind']; label: string; path: string }>([
+      {
+        kind: 'production',
+        label: `Voir l'offre «\u00a0${offerName('application-metier')}\u00a0»`,
+        path: '/offres/application-metier',
+      },
+      {
+        kind: 'demo',
+        label: `Voir l'offre «\u00a0${offerName('site-vitrine')}\u00a0»`,
+        path: '/offres/site-vitrine',
+      },
+      { kind: 'script', label: 'Voir les offres et les prix', path: '/offres' },
+      { kind: null, label: 'Voir les offres et les prix', path: '/offres' },
+    ])(
+      'Given a project of kind $kind When the detail renders Then the block leads to $path',
+      async ({ kind, label, path }) => {
+        const offer = byTestId(await renderProject({ kind }), 'project-follow-up-offer');
+
+        expect([offer?.getAttribute('href'), text(offer)]).toEqual([path, label]);
+      },
+    );
+
+    it('Given the detail When it renders Then the end block comes before the navigation to the other projects', async () => {
+      const host = await renderProject({ kind: 'production' });
+
+      expect(
+        follows(byTestId(host, 'project-follow-up'), host.querySelector('app-project-detail-nav')),
+      ).toBe(true);
+    });
+
+    it.each([
+      {
+        testId: 'project-follow-up-offer',
+        ctaId: 'project_similar_need',
+        label: `Voir l'offre «\u00a0${offerName('application-metier')}\u00a0»`,
+      },
+      { testId: 'project-follow-up-hiring', ctaId: 'project_hiring', label: 'Parcours et CV' },
+    ])(
+      'Given the end block When $testId is clicked Then the page measures $ctaId once',
+      async ({ testId, ctaId, label }) => {
+        const host = await renderProject({ kind: 'production' });
+
+        byTestId(host, testId)?.click();
+
+        expect(trackCtaClick).toHaveBeenCalledExactlyOnceWith(ctaId, label);
+      },
+    );
   });
 });

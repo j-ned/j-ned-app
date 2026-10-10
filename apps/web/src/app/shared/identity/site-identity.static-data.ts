@@ -11,6 +11,9 @@ export const SITE_IDENTITY = {
   availability: 'Disponible pour de nouveaux projets, démarrage sous 2 semaines',
   hiringAvailability:
     'Ouvert à un CDI en Île-de-France, dans une équipe produit en fintech, greentech ou industrial tech.',
+  journey:
+    "Chaudronnier puis tourneur CN de haute précision dans l'aéronautique, je suis aussi développeur web full-stack, issu d'une reconversion.",
+  googleReviewUrl: 'https://g.page/r/Cdi5TzDRplmKECE/review',
   siteUrl: 'https://nedellec-julien.fr',
   business: {
     status: 'entrepreneur individuel',

@@ -1,7 +1,8 @@
 import type { Routes } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { OFFERS } from './domain/offer-catalog.static-data';
-import { offerPath } from './domain/offer-path';
+import { REQUEST_ANCHOR_DATA_KEY } from '@core/navigation/section-scroller';
+import { OFFER_REQUEST_FRAGMENT, offerPath } from './domain/offer-path';
 import { OFFER_PAGES } from './domain/offer-pages.static-data';
 import { toOfferCatalogueSeo, toOfferSeo } from './offer-seo';
 
@@ -24,6 +25,7 @@ export const OFFER_ROUTES: Routes = [
       data: {
         summary,
         content,
+        [REQUEST_ANCHOR_DATA_KEY]: OFFER_REQUEST_FRAGMENT,
         seo: toOfferSeo(summary, content, `${SITE_IDENTITY.siteUrl}${offerPath(summary.slug)}`),
       },
     };

@@ -30,38 +30,21 @@ describe('toBlogListView', () => {
   });
 
   describe('themes', () => {
-    it('Given the two production posts When the view is built Then the cartouche rows are the five themes in order, with their article count', () => {
+    it('Given the two production posts When the view is built Then the cartouche rows are the covered themes in order, with their article count, the empty one left out', () => {
       expect(toBlogListView(productionPosts(), ALL).themes).toEqual([
         { label: 'Stack', value: '2\u00a0articles' },
         { label: 'Sécurité', value: '1\u00a0article' },
-        { label: 'Ingénierie', value: '0\u00a0article' },
         { label: 'Parcours', value: '1\u00a0article' },
         { label: 'Projets', value: '1\u00a0article' },
       ] satisfies readonly CartoucheRow[]);
     });
 
     it.each([
-      {
-        label: 'no post',
-        tags: [],
-        expected: [
-          '0\u00a0article',
-          '0\u00a0article',
-          '0\u00a0article',
-          '0\u00a0article',
-          '0\u00a0article',
-        ],
-      },
+      { label: 'no post', tags: [], expected: [] },
       {
         label: 'three journey posts and a free tag',
         tags: [['Parcours'], ['Carrière', 'Industrie'], ['Autodidacte'], ['Inconnu']],
-        expected: [
-          '0\u00a0article',
-          '0\u00a0article',
-          '0\u00a0article',
-          '3\u00a0articles',
-          '0\u00a0article',
-        ],
+        expected: [{ label: 'Parcours', value: '3\u00a0articles' }],
       },
       {
         label: 'posts tagged in reverse category order',
@@ -70,30 +53,20 @@ describe('toBlogListView', () => {
           ['SEO', 'XSS', 'Docker'],
         ],
         expected: [
-          '1\u00a0article',
-          '1\u00a0article',
-          '2\u00a0articles',
-          '0\u00a0article',
-          '1\u00a0article',
+          { label: 'Stack', value: '1\u00a0article' },
+          { label: 'Sécurité', value: '1\u00a0article' },
+          { label: 'Ingénierie', value: '2\u00a0articles' },
+          { label: 'Projets', value: '1\u00a0article' },
         ],
       },
     ] satisfies readonly {
       label: string;
       tags: readonly (readonly string[])[];
-      expected: readonly string[];
+      expected: readonly CartoucheRow[];
     }[])(
-      'Given $label When the view is built Then the five themes keep their order and count their posts',
+      'Given $label When the view is built Then only the covered themes are listed, in catalogue order, with their count',
       ({ tags, expected }) => {
-        const { themes } = toBlogListView(postsTagged(tags), ALL);
-
-        expect(themes.map((row) => row.label)).toEqual([
-          'Stack',
-          'Sécurité',
-          'Ingénierie',
-          'Parcours',
-          'Projets',
-        ]);
-        expect(themes.map((row) => row.value)).toEqual(expected);
+        expect(toBlogListView(postsTagged(tags), ALL).themes).toEqual(expected);
       },
     );
 
@@ -101,13 +74,7 @@ describe('toBlogListView', () => {
       const view = toBlogListView(productionPosts(), { by: 'tag', tag: 'Reconversion' });
 
       expect(view.total).toBe(2);
-      expect(view.themes.map((row) => row.value)).toEqual([
-        '2\u00a0articles',
-        '1\u00a0article',
-        '0\u00a0article',
-        '1\u00a0article',
-        '1\u00a0article',
-      ]);
+      expect(view.themes).toEqual(toBlogListView(productionPosts(), ALL).themes);
     });
   });
 
@@ -260,26 +227,18 @@ describe('toBlogListView', () => {
         option.disabled === true,
       ]);
 
-    it('Given the two production posts When the view is built Then « Tous » and the five themes are offered in order with their count, the empty one inactive', () => {
+    it('Given the two production posts When the view is built Then « Tous » and the covered themes are offered in order with their count, none inactive', () => {
       expect(optionsOf(toBlogListView(productionPosts(), ALL))).toEqual([
         ['all', 'Tous', 2, false],
         ['stack', 'Stack', 2, false],
         ['security', 'Sécurité', 1, false],
-        ['engineering', 'Ingénierie', 0, true],
         ['journey', 'Parcours', 1, false],
         ['projects', 'Projets', 1, false],
       ]);
     });
 
-    it('Given no post When the view is built Then the six options stay, « Tous » active at zero and every theme inactive', () => {
-      expect(optionsOf(toBlogListView([], ALL))).toEqual([
-        ['all', 'Tous', 0, false],
-        ['stack', 'Stack', 0, true],
-        ['security', 'Sécurité', 0, true],
-        ['engineering', 'Ingénierie', 0, true],
-        ['journey', 'Parcours', 0, true],
-        ['projects', 'Projets', 0, true],
-      ]);
+    it('Given no post When the view is built Then « Tous » at zero is the only option', () => {
+      expect(optionsOf(toBlogListView([], ALL))).toEqual([['all', 'Tous', 0, false]]);
     });
 
     it.each<{ label: string; filter: BlogListFilter }>([

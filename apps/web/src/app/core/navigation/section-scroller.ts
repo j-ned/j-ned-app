@@ -2,6 +2,8 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+export const REQUEST_ANCHOR_DATA_KEY = 'requestAnchor';
+
 /** Hauteur du header fixe (`h-20` = 5rem). Réserve sous lequel rien ne se cale. */
 const HEADER_OFFSET_PX = 80;
 
@@ -32,10 +34,28 @@ export class SectionScroller {
     void this._router.navigateByUrl('/').then(() => this._scrollWhenStable(sectionId));
   }
 
+  scrollToRequestForm(): void {
+    const anchor = this._deepestRouteData()[REQUEST_ANCHOR_DATA_KEY];
+    if (typeof anchor !== 'string') {
+      this.scrollTo('contact');
+      return;
+    }
+    if (!this._isBrowser) return;
+    this._scrollWhenStable(anchor);
+  }
+
   // Pour le logo quand on est déjà sur la home (où `routerLink="/"` serait un no-op).
   scrollToTop(): void {
     if (!this._isBrowser || !this._onHome()) return;
     this._document.defaultView?.scrollTo?.({ top: 0, behavior: this._scrollBehavior() });
+  }
+
+  private _deepestRouteData(): Readonly<Record<string, unknown>> {
+    let route = this._router.routerState.snapshot.root;
+    while (route.firstChild) {
+      route = route.firstChild;
+    }
+    return route.data;
   }
 
   private _onHome(): boolean {

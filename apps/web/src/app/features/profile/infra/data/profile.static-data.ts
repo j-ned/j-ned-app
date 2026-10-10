@@ -18,11 +18,11 @@ export const STATIC_BIOGRAPHY: Biography = {
   id: '9acfdedb-c00d-4370-858e-7215e30f5a41',
   title: 'Mon parcours',
   summary:
-    "De la métallurgie à l'usinage aéronautique, puis au développement web\u00a0: la même exigence.",
-  lead: "20 ans d'industrie, aujourd'hui tourneur CN en aéronautique de haute précision.",
-  leadEmphasis: 'Je livre du logiciel avec la même exigence.',
+    "De la chaudronnerie au tournage CN dans l'aéronautique, et au développement web en parallèle\u00a0: la même exigence.",
+  lead: SITE_IDENTITY.journey,
+  leadEmphasis: "Angular et NestJS d'abord, PHP et Java aussi, en méthode agile.",
   paragraphs: [
-    "Je ne suis pas venu au développement web par hasard. De la métallurgie à l'usinage aéronautique de haute précision, où je travaille aujourd'hui comme tourneur CN, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
+    "Je ne suis pas venu au développement web par hasard. De la chaudronnerie au tournage CN de haute précision dans l'aéronautique, mon métier aujourd'hui, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
     "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence que j'applique à chaque ligne de code\u00a0: pensée pour durer, comprise de bout en bout, de la requête SQL au déploiement en production. Je ne me contente jamais de faire fonctionner, je comprends pourquoi ça fonctionne.",
     "Cette expérience m'a donné une vision systémique rare\u00a0: je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier.",
   ],
@@ -119,7 +119,7 @@ export const STATIC_ABOUT_HIGHLIGHTS: readonly Highlight[] = [
     id: '65665431-8b96-4957-bec3-8403689adfcf',
     title: "Vision d'ensemble",
     description:
-      "Je ne code pas dans le vide. Je comprends le métier, l'architecture, les contraintes. Vingt ans à optimiser des systèmes complexes, ça laisse des traces.",
+      "Je ne code pas dans le vide. Je comprends le métier, l'architecture, les contraintes.",
   },
 ];
 

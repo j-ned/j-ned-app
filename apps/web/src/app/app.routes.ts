@@ -1,5 +1,7 @@
 import type { Routes } from '@angular/router';
 import { authGuard } from '@features/auth/infra/auth-guard';
+import { HOME_REVIEWS } from '@features/home/domain/home-reviews.static-data';
+import { reviewsJsonLd } from '@features/home/domain/reviews-json-ld';
 import { Home } from '@features/home/pages/home/home';
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { OFFERS_BASE_PATH, offerPath } from '@features/offer/domain/offer-path';
@@ -7,6 +9,9 @@ import { toOfferCatalogJsonLd } from '@features/offer/offer-seo';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 const HOME_TITLE = 'Julien Nédellec | Sites et applications web, Yvelines';
+const ABOUT_TITLE = 'Développeur full-stack Angular / NestJS, parcours et CV | Julien Nédellec';
+const PROJECTS_TITLE = 'Réalisations Angular et NestJS en production | Julien Nédellec';
+const BLOG_TITLE = 'Blog Angular, NestJS et auto-hébergement | Julien Nédellec';
 const PERSON_ID = `${SITE_IDENTITY.siteUrl}/#person`;
 
 export const routes: Routes = [
@@ -65,6 +70,7 @@ export const routes: Routes = [
                 { '@type': 'Country', name: 'France' },
               ],
               hasOfferCatalog: toOfferCatalogJsonLd(OFFERS),
+              ...reviewsJsonLd(HOME_REVIEWS),
             },
           ],
         },
@@ -73,14 +79,13 @@ export const routes: Routes = [
   },
   {
     path: 'about',
-    title: 'Parcours | Julien Nédellec',
+    title: ABOUT_TITLE,
     loadComponent: () => import('./features/profile/pages/about/about').then((m) => m.About),
     data: {
       preload: true,
       seo: {
-        title: 'Parcours | Julien Nédellec',
-        description:
-          "Parcours de Julien Nédellec, développeur Full-Stack Angular / NestJS\u00a0: 20 ans d'industrie, aujourd'hui tourneur CN en aéronautique, ouvert à un CDI en Île-de-France.",
+        title: ABOUT_TITLE,
+        description: `${SITE_IDENTITY.journey} Parcours, stack et CV.`,
         keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
@@ -102,15 +107,15 @@ export const routes: Routes = [
   },
   {
     path: 'projects',
-    title: 'Réalisations | Julien Nédellec',
+    title: PROJECTS_TITLE,
     loadChildren: () =>
       import('./features/projects/projects.routes').then((m) => m.PROJECTS_ROUTES),
     data: {
       preload: true,
       seo: {
-        title: 'Réalisations | Julien Nédellec',
+        title: PROJECTS_TITLE,
         description:
-          'Découvrez mes projets Angular, NestJS et TypeScript\u00a0: applications web modernes, APIs REST, déploiements Docker, code production-ready.',
+          'Applications Angular et NestJS en production, sites de démonstration et scripts\u00a0: le besoin réglé et les choix techniques de chaque projet.',
         keywords:
           'Portfolio Angular, Projets NestJS, Applications TypeScript, Développeur Full-Stack, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/projects`,
@@ -133,12 +138,12 @@ export const routes: Routes = [
   },
   {
     path: 'blog',
-    title: 'Blog | Julien Nédellec',
+    title: BLOG_TITLE,
     loadChildren: () => import('./features/blog/blog.routes').then((m) => m.BLOG_ROUTES),
     data: {
       preload: true,
       seo: {
-        title: 'Blog | Julien Nédellec',
+        title: BLOG_TITLE,
         description:
           "Retours d'expérience réels sur Angular, NestJS, PostgreSQL et le déploiement self-hosted.",
         keywords: "Blog Angular, Blog NestJS, Développeur Full-Stack, Retour d'expérience",

@@ -163,7 +163,7 @@ describe('BlogList', () => {
       );
     });
 
-    it('Given les deux articles de production When la page est rendue Then le cartouche liste les cinq thèmes dans l’ordre avec leur nombre d’articles', async () => {
+    it('Given les deux articles de production When la page est rendue Then le cartouche liste les seuls thèmes couverts, dans l’ordre, avec leur nombre d’articles', async () => {
       const host = await render(setup(productionPosts()));
       const textsOf = (testId: string): (string | undefined)[] =>
         Array.from(
@@ -171,17 +171,10 @@ describe('BlogList', () => {
           (cell) => cell.textContent?.trim(),
         );
 
-      expect(textsOf('cartouche-label')).toEqual([
-        'Stack',
-        'Sécurité',
-        'Ingénierie',
-        'Parcours',
-        'Projets',
-      ]);
+      expect(textsOf('cartouche-label')).toEqual(['Stack', 'Sécurité', 'Parcours', 'Projets']);
       expect(textsOf('cartouche-value')).toEqual([
         '2\u00a0articles',
         '1\u00a0article',
-        '0\u00a0article',
         '1\u00a0article',
         '1\u00a0article',
       ]);
@@ -200,13 +193,14 @@ describe('BlogList', () => {
         (cell) => cell.textContent?.trim(),
       );
 
-      expect(values).toEqual([
-        '1\u00a0article',
-        '0\u00a0article',
-        '0\u00a0article',
-        '3\u00a0articles',
-        '0\u00a0article',
-      ]);
+      expect(values).toEqual(['1\u00a0article', '3\u00a0articles']);
+    });
+
+    it('Given aucun article publié When la page est rendue Then aucun cartouche « Thèmes » n’est rendu', async () => {
+      const host = await render(setup([]));
+
+      expect(byTestId(host, 'blog-title')).not.toBeNull();
+      expect(byTestId(host, 'blog-themes')).toBeNull();
     });
   });
 
@@ -419,7 +413,7 @@ describe('BlogList', () => {
     const visibleCount = (host: HTMLElement): string | undefined =>
       byTestId(host, 'blog-visible-count')?.textContent?.trim();
 
-    it('Given the production posts When the page is rendered Then a group « Filtrer par thème » offers « Tous » and the five themes with their count, « Tous » pressed, the empty theme inactive', async () => {
+    it('Given the production posts When the page is rendered Then a group « Filtrer par thème » offers « Tous » and the covered themes with their count, « Tous » pressed, none inactive', async () => {
       const host = await render(setup(productionPosts()));
       const group = byTestId(host, 'filter-group');
 
@@ -437,7 +431,6 @@ describe('BlogList', () => {
         ['Tous', '2', 'true', null, false],
         ['Stack', '2', 'false', null, false],
         ['Sécurité', '1', 'false', null, false],
-        ['Ingénierie', '0', 'false', 'true', false],
         ['Parcours', '1', 'false', null, false],
         ['Projets', '1', 'false', null, false],
       ]);
@@ -482,21 +475,8 @@ describe('BlogList', () => {
       await choose(fixture, 'Tous');
 
       expect(titles(host)).toEqual([ENCRYPTION, CAREER_CHANGE]);
-      expect(pressed(host)).toEqual(['true', 'false', 'false', 'false', 'false', 'false']);
+      expect(pressed(host)).toEqual(['true', 'false', 'false', 'false', 'false']);
       expect(visibleCount(host)).toBe('2\u00a0articles affichés');
-    });
-
-    it('Given « Parcours » chosen When the visitor presses the empty « Ingénierie » Then nothing changes and the focus stays on it', async () => {
-      const fixture = setup(productionPosts());
-      const host = await render(fixture);
-      await choose(fixture, 'Parcours');
-
-      const inactive = await choose(fixture, 'Ingénierie');
-
-      expect(titles(host)).toEqual([CAREER_CHANGE]);
-      expect(pressed(host)).toEqual(['false', 'false', 'false', 'false', 'true', 'false']);
-      expect(visibleCount(host)).toBe('1\u00a0article affiché');
-      expect(document.activeElement).toBe(inactive);
     });
 
     it('Given a theme chosen When the page updates Then the article count, the cartouche and the filter counts still cover every post', async () => {
@@ -522,7 +502,7 @@ describe('BlogList', () => {
       await choose(fixture, 'Sécurité');
 
       expect(counts()).toEqual(before);
-      expect(before.filters).toEqual(['2', '2', '1', '0', '1', '1']);
+      expect(before.filters).toEqual(['2', '2', '1', '1', '1']);
     });
 
     it('Given the page When it is rendered Then the status is a polite live region, visually hidden, announcing every post before any choice', async () => {
@@ -644,7 +624,7 @@ describe('BlogList', () => {
 
         expect(whileTagged).toBeNull();
         expect(byTestId(host, 'tag-filter-banner')).toBeNull();
-        expect(pressed(host)).toEqual(['true', 'false', 'false', 'false', 'false', 'false']);
+        expect(pressed(host)).toEqual(['true', 'false', 'false', 'false', 'false']);
         expect(titles(host)).toEqual([ENCRYPTION, CAREER_CHANGE]);
       });
     });

@@ -83,19 +83,19 @@ export function toBlogListView(posts: readonly BlogPost[], filter: BlogListFilte
   const counts = countPostsByCategory(posts);
   const [lcpPost] = posts;
   const visible = visiblePosts(posts, filter, counts);
+  const coveredCategories = BLOG_TAG_CATEGORIES.filter((category) => counts[category] > 0);
   return {
     total: posts.length,
-    themes: BLOG_TAG_CATEGORIES.map((category) => ({
+    themes: coveredCategories.map((category) => ({
       label: BLOG_CATEGORY_FILTER_LABELS[category],
       value: articleCountLabel(counts[category]),
     })),
     filters: [
       { value: 'all', label: BLOG_CATEGORY_FILTER_LABELS.all, count: posts.length },
-      ...BLOG_TAG_CATEGORIES.map((category) => ({
+      ...coveredCategories.map((category) => ({
         value: category,
         label: BLOG_CATEGORY_FILTER_LABELS[category],
         count: counts[category],
-        disabled: counts[category] === 0,
       })),
     ],
     visibleCount: visible.length,

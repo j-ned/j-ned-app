@@ -62,7 +62,7 @@ describe('home pitch copy', () => {
         heading: 'Pourquoi travailler avec moi.',
         quote: {
           text: "En usinage aéronautique, une pièce hors tolérance ne part pas. J'applique la même règle au logiciel.",
-          attribution: 'Julien Nédellec · tourneur CN, puis développeur full-stack',
+          attribution: 'Julien Nédellec · tourneur CN et développeur full-stack',
         },
       });
     });
@@ -72,7 +72,7 @@ describe('home pitch copy', () => {
         {
           lead: 'Je connais le terrain',
           detail:
-            'Vingt ans en métallurgie et en usinage. Je comprends un atelier, une PME, des délais qui ne glissent pas.',
+            'En chaudronnerie et en usinage aéronautique. Je comprends un atelier, une PME, des délais qui ne glissent pas.',
         },
         {
           lead: 'Je livre seul, de bout en bout',

@@ -173,7 +173,7 @@ export class Header {
 
   protected describeProject(): void {
     this.analytics.trackCtaClick('header_contact', this.ctaLabel);
-    this.scroller.scrollTo('contact');
+    this.scroller.scrollToRequestForm();
   }
 
   protected toggleTheme(): void {

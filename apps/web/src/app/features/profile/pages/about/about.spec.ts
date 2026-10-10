@@ -170,27 +170,78 @@ describe('About', () => {
       await render(PUBLISHED_CV);
     });
 
-    it('When la page est rendue Then le bloc recrutement propose le téléchargement du CV', () => {
-      expect(byTestId('about-hiring-cv')?.getAttribute('href')).toBe(`${API}/cv/download`);
+    it('When la page est rendue Then le haut de page et le bloc recrutement proposent le CV en PDF', () => {
+      expect(
+        ['about-hero-cv', 'about-hiring-cv'].map((testId) => ({
+          href: byTestId(testId)?.getAttribute('href'),
+          label: byTestId(testId)?.textContent?.replace(/\s+/g, ' ').trim(),
+        })),
+      ).toEqual([
+        { href: `${API}/cv/download`, label: 'Télécharger mon CV (PDF)' },
+        { href: `${API}/cv/download`, label: 'Télécharger mon CV (PDF)' },
+      ]);
     });
 
-    it('When le visiteur clique le lien CV Then le téléchargement est mesuré une fois', () => {
-      const link = byTestId<HTMLAnchorElement>('about-hiring-cv');
-      link?.addEventListener('click', (event) => event.preventDefault());
+    it('When la page est rendue Then le lien CV du haut de page vit dans le hero, avant le bloc recrutement', () => {
+      const heroCv = byTestId('about-hero-cv');
 
-      link?.click();
+      expect(heroCv?.closest('app-about-hero')).not.toBeNull();
+      expect(
+        (heroCv?.compareDocumentPosition(byTestId('about-hiring') as Node) ?? 0) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
 
-      expect(trackCvDownload).toHaveBeenCalledOnce();
+    it.each(['about-hero-cv', 'about-hiring-cv'])(
+      'When le visiteur clique %s Then le téléchargement est mesuré une fois',
+      (testId) => {
+        const link = byTestId<HTMLAnchorElement>(testId);
+        link?.addEventListener('click', (event) => event.preventDefault());
+
+        link?.click();
+
+        expect(link).not.toBeNull();
+        expect(trackCvDownload).toHaveBeenCalledOnce();
+      },
+    );
+  });
+
+  describe('Given le prérendu, où aucun rendu navigateur n’a lieu', () => {
+    const serverGlobals = globalThis as { ngServerMode?: boolean };
+
+    beforeEach(() => {
+      serverGlobals.ngServerMode = true;
+    });
+
+    afterEach(() => {
+      delete serverGlobals.ngServerMode;
+    });
+
+    it('When la page est prérendue avec un CV publié Then le CV est lu sans attendre le navigateur et le lien du haut de page est dans le HTML', async () => {
+      fixture = TestBed.createComponent(About);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const requests = http.match(`${API}/cv`);
+
+      expect(requests).toHaveLength(1);
+      requests[0]?.flush(makeCvInfo());
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(byTestId('about-hero-cv')?.getAttribute('href')).toBe(`${API}/cv/download`);
     });
   });
 
-  it('Given le chargement du CV en échec When la page est rendue Then le lien CV reste absent, LinkedIn reste proposé et l’échec est signalé', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  it.each<{ label: string; answer: CvAnswer }>([
+    { label: 'aucun CV publié', answer: NO_CV },
+    { label: 'le chargement du CV en échec', answer: CV_FAILURE },
+  ])(
+    'Given $label When la page est rendue Then aucun lien CV n’est proposé et LinkedIn reste proposé',
+    async ({ answer }) => {
+      await render(answer);
 
-    await render(CV_FAILURE);
-
-    expect(byTestId('about-hiring-cv')).toBeNull();
-    expect(byTestId('about-hiring-linkedin')).not.toBeNull();
-    expect(warn).toHaveBeenCalledOnce();
-  });
+      expect([byTestId('about-hero-cv'), byTestId('about-hiring-cv')]).toEqual([null, null]);
+      expect(byTestId('about-hiring-linkedin')).not.toBeNull();
+    },
+  );
 });

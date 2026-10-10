@@ -73,6 +73,12 @@ describe('AboutHiring', () => {
       expect(link?.getAttribute('target')).toBe('_blank');
     });
 
+    it('When le bloc est rendu Then le lien CV annonce un PDF', () => {
+      expect(byTestId('about-hiring-cv')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'Télécharger mon CV (PDF)',
+      );
+    });
+
     it('When le visiteur clique le lien CV Then le bloc signale le téléchargement une fois', () => {
       const cvDownloaded = vi.fn();
       fixture.componentInstance.cvDownloaded.subscribe(cvDownloaded);
@@ -83,5 +89,15 @@ describe('AboutHiring', () => {
 
       expect(cvDownloaded).toHaveBeenCalledOnce();
     });
+
+    it.each([
+      { testId: 'about-hiring-linkedin', name: 'Profil LinkedIn (nouvel onglet)' },
+      { testId: 'about-hiring-cv', name: 'Télécharger mon CV (PDF) (nouvel onglet)' },
+    ])(
+      'When le bloc est rendu Then $testId annonce le nouvel onglet dans son nom accessible',
+      ({ testId, name }) => {
+        expect(byTestId(testId)?.getAttribute('aria-label')).toBe(name);
+      },
+    );
   });
 });

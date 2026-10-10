@@ -4,6 +4,8 @@ import { OfferCatalogue } from './pages/offer-catalogue/offer-catalogue';
 import { OfferPage } from './pages/offer-page/offer-page';
 import { OFFERS } from './domain/offer-catalog.static-data';
 import { OFFER_PAGES } from './domain/offer-pages.static-data';
+import { OFFER_REQUEST_FRAGMENT } from './domain/offer-path';
+import { REQUEST_ANCHOR_DATA_KEY } from '@core/navigation/section-scroller';
 import { OFFER_ROUTES } from './offer.routes';
 import { toOfferCatalogueSeo, toOfferSeo } from './offer-seo';
 
@@ -43,9 +45,15 @@ describe('OFFER_ROUTES', () => {
         expect(await route?.loadComponent?.()).toBe(OfferPage);
       });
 
-      it('binds its summary and page content, and nothing else', () => {
+      it('binds its summary, its page content and its request anchor, and nothing else', () => {
         const data = routeOf(slug)?.data;
-        expect(Object.keys(data ?? {}).sort()).toEqual(['content', 'seo', 'summary']);
+        expect(Object.keys(data ?? {}).sort()).toEqual([
+          'content',
+          REQUEST_ANCHOR_DATA_KEY,
+          'seo',
+          'summary',
+        ]);
+        expect(data?.[REQUEST_ANCHOR_DATA_KEY]).toBe(OFFER_REQUEST_FRAGMENT);
         expect(data?.['summary']).toBe(summary);
         expect(data?.['content']).toBe(OFFER_PAGES[slug]);
       });

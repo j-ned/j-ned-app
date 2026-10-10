@@ -3,7 +3,8 @@ import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { vi, type Mock } from 'vitest';
-import { SectionScroller } from './section-scroller';
+import { OFFER_REQUEST_FRAGMENT } from '@features/offer/domain/offer-path';
+import { REQUEST_ANCHOR_DATA_KEY, SectionScroller } from './section-scroller';
 
 type FakeElement = {
   offsetHeight: number;
@@ -59,13 +60,34 @@ function makeDocument(opts: {
   };
 }
 
-function makeRouter(url: string): { url: string; navigateByUrl: Mock } {
-  return { url, navigateByUrl: vi.fn().mockResolvedValue(true) };
+type FakeRouteSnapshot = {
+  readonly data: Readonly<Record<string, unknown>>;
+  readonly firstChild: FakeRouteSnapshot | null;
+};
+
+type FakeRouter = {
+  url: string;
+  navigateByUrl: Mock;
+  routerState: { snapshot: { root: FakeRouteSnapshot } };
+};
+
+const routeChain = (...levels: readonly Readonly<Record<string, unknown>>[]): FakeRouteSnapshot =>
+  levels.reduceRight<FakeRouteSnapshot | null>(
+    (child, data) => ({ data, firstChild: child }),
+    null,
+  ) ?? { data: {}, firstChild: null };
+
+function makeRouter(url: string, root: FakeRouteSnapshot = routeChain({})): FakeRouter {
+  return {
+    url,
+    navigateByUrl: vi.fn().mockResolvedValue(true),
+    routerState: { snapshot: { root } },
+  };
 }
 
 function setup(opts: {
   platform?: 'browser' | 'server';
-  router: { url: string; navigateByUrl: Mock };
+  router: FakeRouter;
   document: FakeDocument;
 }): SectionScroller {
   TestBed.configureTestingModule({
@@ -174,6 +196,66 @@ describe('SectionScroller', () => {
       const scroller = setup({ router, document });
 
       expect(() => scroller.scrollTo('contact')).not.toThrow();
+    });
+  });
+
+  describe('scrollToRequestForm', () => {
+    it('Given an offer page whose deepest route declares the request anchor, When called, Then it stays on the page and scrolls to the local form', () => {
+      const element = makeElement({ offsetHeight: 400, top: 1000 });
+      const router = makeRouter(
+        '/offres/site-vitrine',
+        routeChain({}, { preload: true }, { [REQUEST_ANCHOR_DATA_KEY]: OFFER_REQUEST_FRAGMENT }),
+      );
+      const document = makeDocument({ element });
+      const scroller = setup({ router, document });
+
+      scroller.scrollToRequestForm();
+
+      expect(router.navigateByUrl).not.toHaveBeenCalled();
+      expect(document.getElementById).toHaveBeenCalledWith(OFFER_REQUEST_FRAGMENT);
+      expect(document.defaultView.scrollTo).toHaveBeenCalledWith({ top: 760, behavior: 'smooth' });
+    });
+
+    it('Given an offer page with its request anchor, When called, Then it moves the focus to the local form', () => {
+      const element = makeElement();
+      const router = makeRouter(
+        '/offres/site-vitrine',
+        routeChain({}, { [REQUEST_ANCHOR_DATA_KEY]: OFFER_REQUEST_FRAGMENT }),
+      );
+      const document = makeDocument({ element });
+      const scroller = setup({ router, document });
+
+      scroller.scrollToRequestForm();
+
+      expect(element.focus).toHaveBeenCalledWith({ preventScroll: true });
+    });
+
+    it('Given a page without request anchor, When called, Then it navigates home then scrolls to the contact section', async () => {
+      const element = makeElement();
+      const router = makeRouter('/projects', routeChain({}, { preload: true }));
+      const document = makeDocument({ element });
+      const scroller = setup({ router, document });
+
+      scroller.scrollToRequestForm();
+
+      expect(router.navigateByUrl).toHaveBeenCalledExactlyOnceWith('/');
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(document.getElementById).toHaveBeenCalledWith('contact');
+      expect(document.defaultView.scrollTo).toHaveBeenCalled();
+    });
+
+    it('Given the home page, When called, Then it scrolls to the contact section without navigating', () => {
+      const element = makeElement();
+      const router = makeRouter('/');
+      const document = makeDocument({ element });
+      const scroller = setup({ router, document });
+
+      scroller.scrollToRequestForm();
+
+      expect(router.navigateByUrl).not.toHaveBeenCalled();
+      expect(document.getElementById).toHaveBeenCalledWith('contact');
+      expect(element.focus).toHaveBeenCalledWith({ preventScroll: true });
     });
   });
 

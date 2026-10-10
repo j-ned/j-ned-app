@@ -44,10 +44,11 @@ function makeCvGateway(overrides: Partial<CvGateway> = {}): CvGateway {
 type SectionScrollerStub = {
   scrollTo: ReturnType<typeof vi.fn>;
   scrollToTop: ReturnType<typeof vi.fn>;
+  scrollToRequestForm: ReturnType<typeof vi.fn>;
 };
 
 function makeScroller(): SectionScrollerStub {
-  return { scrollTo: vi.fn(), scrollToTop: vi.fn() };
+  return { scrollTo: vi.fn(), scrollToTop: vi.fn(), scrollToRequestForm: vi.fn() };
 }
 
 async function setup(
@@ -222,13 +223,14 @@ describe('Header', () => {
       expect(hidingTokens).toEqual([]);
     });
 
-    it('Given le bouton d’appel When on le clique Then le SectionScroller défile vers le formulaire de contact', async () => {
+    it('Given le bouton d’appel When on le clique Then le SectionScroller mène au formulaire de la page, ou à défaut au contact de l’accueil', async () => {
       const { fixture, scroller } = await setup();
       const button = nativeButtonOf(ctasIn(fixture.nativeElement as HTMLElement)[0]);
 
       expect(button).toBeInstanceOf(HTMLButtonElement);
       button?.click();
-      expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith('contact');
+      expect(scroller.scrollToRequestForm).toHaveBeenCalledOnce();
+      expect(scroller.scrollTo).not.toHaveBeenCalled();
     });
 
     it('Given le bouton d’appel When on le clique Then le clic est mesuré sous l’identifiant header_contact', async () => {

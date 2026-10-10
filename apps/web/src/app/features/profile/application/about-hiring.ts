@@ -2,6 +2,10 @@ import { Component, input, output } from '@angular/core';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
+import { newTabLabel } from '@shared/identity/new-tab-notice';
+
+const LINKEDIN_LINK_LABEL = 'Profil LinkedIn';
+const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
 
 @Component({
   selector: 'app-about-hiring',
@@ -30,10 +34,11 @@ import { Button } from '@shared/ui/button';
           [href]="linkedinUrl"
           target="_blank"
           rel="noopener noreferrer"
+          [attr.aria-label]="linkedinLinkName"
           data-testid="about-hiring-linkedin"
         >
           <app-icon name="linkedin" />
-          Profil LinkedIn
+          {{ linkedinLinkLabel }}
         </a>
         @if (cvUrl(); as url) {
           <a
@@ -42,11 +47,12 @@ import { Button } from '@shared/ui/button';
             [href]="url"
             target="_blank"
             rel="noopener noreferrer"
+            [attr.aria-label]="cvLinkName"
             (click)="cvDownloaded.emit()"
             data-testid="about-hiring-cv"
           >
             <app-icon name="download" />
-            Télécharger mon CV
+            {{ cvLinkLabel }}
           </a>
         }
       </div>
@@ -60,4 +66,8 @@ export class AboutHiring {
 
   protected readonly hiringAvailability = SITE_IDENTITY.hiringAvailability;
   protected readonly linkedinUrl = SITE_IDENTITY.socials.linkedin;
+  protected readonly linkedinLinkLabel = LINKEDIN_LINK_LABEL;
+  protected readonly linkedinLinkName = newTabLabel(LINKEDIN_LINK_LABEL);
+  protected readonly cvLinkLabel = CV_LINK_LABEL;
+  protected readonly cvLinkName = newTabLabel(CV_LINK_LABEL);
 }

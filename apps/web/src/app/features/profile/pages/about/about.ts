@@ -1,9 +1,8 @@
-import { Component, afterNextRender, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom, forkJoin } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { SectionScroller } from '@core/navigation/section-scroller';
-import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
+import { CvDownload } from '@features/cv/application/cv-download';
 import { ProfileGateway } from '../../domain/gateways/profile.gateway';
 import { AboutHero } from '../../application/about-hero';
 import { AboutDiploma } from '../../application/about-diploma';
@@ -17,6 +16,7 @@ import { AboutHiring } from '../../application/about-hiring';
 @Component({
   selector: 'app-about',
   host: { class: 'block min-h-svh pt-20' },
+  providers: [CvDownload],
   imports: [
     AboutHero,
     AboutJourney,
@@ -32,6 +32,8 @@ import { AboutHiring } from '../../application/about-hiring';
       [profile]="about?.profile"
       [biography]="about?.biography"
       [socials]="about?.socials ?? []"
+      [cvUrl]="cvUrl()"
+      (cvDownloaded)="trackCvDownload()"
     />
 
     @defer (hydrate on viewport) {
@@ -82,8 +84,7 @@ import { AboutHiring } from '../../application/about-hiring';
 })
 export class About {
   private readonly _profileGateway = inject(ProfileGateway);
-  private readonly _cvGateway = inject(CvGateway);
-  private readonly _analytics = inject(AnalyticsGateway);
+  private readonly _cvDownload = inject(CvDownload);
   private readonly _scroller = inject(SectionScroller);
 
   private readonly _contentResource = rxResource({
@@ -103,28 +104,13 @@ export class About {
   protected readonly content = computed(() =>
     this._contentResource.hasValue() ? this._contentResource.value() : undefined,
   );
-  protected readonly cvUrl = signal<string | null>(null);
-
-  constructor() {
-    afterNextRender(() => this.loadCvUrl());
-  }
+  protected readonly cvUrl = this._cvDownload.url;
 
   protected goToContact(): void {
     this._scroller.scrollTo('contact');
   }
 
   protected trackCvDownload(): void {
-    this._analytics.trackCvDownload();
-  }
-
-  private async loadCvUrl(): Promise<void> {
-    try {
-      const cv = await firstValueFrom(this._cvGateway.getCurrent());
-      if (cv) {
-        this.cvUrl.set(this._cvGateway.getDownloadUrl());
-      }
-    } catch (err) {
-      console.warn('About: chargement du CV échoué, lien masqué.', err);
-    }
+    this._cvDownload.track();
   }
 }

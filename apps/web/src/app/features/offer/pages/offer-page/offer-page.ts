@@ -1,6 +1,7 @@
 import { Component, input } from '@angular/core';
 import { ContactForm } from '@features/contact/application/contact-form';
 import type { OfferPageContent, OfferSummary } from '@features/offer/domain/models/offer.model';
+import { OFFER_REQUEST_FRAGMENT } from '@features/offer/domain/offer-path';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { FaqList } from '@shared/ui/faq-list';
 import { KeyPointList } from '@shared/ui/key-point-list';
@@ -55,7 +56,7 @@ import { OfferTimeline } from '../../application/components/offer-timeline';
         [items]="faq.items"
       />
     }
-    <div id="demande" class="scroll-mt-20" data-testid="offer-request">
+    <div [id]="requestFragment" class="scroll-mt-20" data-testid="offer-request">
       <app-contact-form [initialSubject]="page.request.subject" [intro]="page.request.intro" />
     </div>
   `,
@@ -63,6 +64,7 @@ import { OfferTimeline } from '../../application/components/offer-timeline';
 export class OfferPage {
   readonly summary = input.required<OfferSummary>();
   readonly content = input.required<OfferPageContent>();
+  protected readonly requestFragment = OFFER_REQUEST_FRAGMENT;
   protected readonly vatMention = SITE_IDENTITY.business.vatMention;
   protected readonly maltUrl = SITE_IDENTITY.socials.malt;
 }

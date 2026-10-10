@@ -60,13 +60,15 @@ import { toBlogListView, type BlogListFilter } from '../../application/blog-list
             S'abonner au flux RSS
           </a>
         </div>
-        <app-cartouche
-          data-testid="blog-themes"
-          class="animate-fade-up [animation-delay:200ms]"
-          title="Thèmes"
-          reference="Articles par thème"
-          [rows]="v.themes"
-        />
+        @if (v.themes.length) {
+          <app-cartouche
+            data-testid="blog-themes"
+            class="animate-fade-up [animation-delay:200ms]"
+            title="Thèmes"
+            reference="Articles par thème"
+            [rows]="v.themes"
+          />
+        }
       </header>
 
       @if (failed()) {

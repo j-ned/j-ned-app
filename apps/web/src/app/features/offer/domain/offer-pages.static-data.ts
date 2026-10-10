@@ -1,3 +1,4 @@
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { formatEur } from './format-eur';
 import type { OfferPages } from './models/offer.model';
 import { OFFER_PRICES } from './offer-prices.static-data';
@@ -172,8 +173,7 @@ export const OFFER_PAGES: OfferPages = {
   'site-atelier': {
     hero: {
       title: 'Le site de votre atelier, en ligne en 7 jours.',
-      subtitle:
-        "Je suis tourneur CN dans l'aéronautique. Je crée des sites qui montrent à un acheteur ce que vous savez usiner, en trente secondes.",
+      subtitle: `${SITE_IDENTITY.journey} Je crée des sites qui montrent à un acheteur ce que vous savez usiner, en trente secondes.`,
       ctaLabel: 'Demander mon site',
     },
     reasons: {

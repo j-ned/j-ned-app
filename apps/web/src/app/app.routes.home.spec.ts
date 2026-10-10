@@ -68,4 +68,12 @@ describe('home route SEO', () => {
       toOfferCatalogJsonLd(OFFERS),
     );
   });
+
+  it('never lists the Google review form among the identities of the structured data', () => {
+    expect(JSON.stringify(structuredData())).not.toContain('g.page');
+  });
+
+  it('claims no review on the professional service while no real review exists', () => {
+    expect(Object.keys(nodeOfType('ProfessionalService') ?? {})).not.toContain('review');
+  });
 });

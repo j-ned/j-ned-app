@@ -1,15 +1,18 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import type { Biography } from '@features/profile/domain/models/biography.model';
 import type { ProfileInfo, SocialButton } from '@features/profile/domain/models/profile.model';
 import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
+import { newTabLabel } from '@shared/identity/new-tab-notice';
 
 const ROLE = 'développeur full-stack';
 const STACK = 'Angular · NestJS · TypeScript';
+const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
 
 @Component({
   selector: 'app-about-hero',
-  imports: [NgOptimizedImage, AppIcon],
+  imports: [NgOptimizedImage, AppIcon, Button],
   host: { class: 'block' },
   template: `
     <section class="page-container pt-18 pb-22 md:pt-26 md:pb-30" aria-labelledby="about-heading">
@@ -62,6 +65,23 @@ const STACK = 'Angular · NestJS · TypeScript';
                 </li>
               }
             </ul>
+            @if (cvUrl(); as url) {
+              <p class="animate-fade-up [animation-delay:240ms] mt-8">
+                <a
+                  appButton
+                  variant="outlined"
+                  [href]="url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [attr.aria-label]="cvLinkName"
+                  (click)="cvDownloaded.emit()"
+                  data-testid="about-hero-cv"
+                >
+                  <app-icon name="download" />
+                  {{ cvLinkLabel }}
+                </a>
+              </p>
+            }
           </div>
           <figure class="w-full max-w-80" data-testid="about-portrait">
             <div
@@ -95,9 +115,14 @@ export class AboutHero {
   readonly profile = input.required<ProfileInfo | undefined>();
   readonly biography = input.required<Biography | undefined>();
   readonly socials = input.required<readonly SocialButton[]>();
+  readonly cvUrl = input<string | null>(null);
+
+  readonly cvDownloaded = output<void>();
 
   protected readonly role = ROLE;
   protected readonly stack = STACK;
+  protected readonly cvLinkLabel = CV_LINK_LABEL;
+  protected readonly cvLinkName = newTabLabel(CV_LINK_LABEL);
 
   // `mailto:` ne s'ouvre pas dans un nouvel onglet : seuls les liens web sont externes.
   protected readonly socialLinks = computed(() =>

@@ -1,7 +1,10 @@
 import { Component } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import type { Mock } from 'vitest';
 import { SectionScroller } from '@core/navigation/section-scroller';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { offerPath } from '@features/offer/domain/offer-path';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
@@ -15,18 +18,32 @@ async function setup(): Promise<{
   fixture: ComponentFixture<Footer>;
   host: HTMLElement;
   scrollTo: ReturnType<typeof vi.fn>;
+  scrollToRequestForm: ReturnType<typeof vi.fn>;
+  trackCtaClick: Mock<AnalyticsGateway['trackCtaClick']>;
 }> {
   const scrollTo = vi.fn();
+  const scrollToRequestForm = vi.fn();
+  const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
   TestBed.configureTestingModule({
     providers: [
       provideRouter([{ path: '**', component: BlankPage }]),
-      { provide: SectionScroller, useValue: { scrollTo, scrollToTop: vi.fn() } },
+      {
+        provide: SectionScroller,
+        useValue: { scrollTo, scrollToTop: vi.fn(), scrollToRequestForm },
+      },
+      { provide: AnalyticsGateway, useValue: stubAnalyticsGateway({ trackCtaClick }) },
     ],
   });
   const fixture = TestBed.createComponent(Footer);
   fixture.detectChanges();
   await fixture.whenStable();
-  return { fixture, host: fixture.nativeElement as HTMLElement, scrollTo };
+  return {
+    fixture,
+    host: fixture.nativeElement as HTMLElement,
+    scrollTo,
+    scrollToRequestForm,
+    trackCtaClick,
+  };
 }
 
 const byTestId = <T extends HTMLElement = HTMLElement>(root: HTMLElement, id: string): T[] =>
@@ -62,6 +79,11 @@ describe('Footer', () => {
         hiringLink: 'Vous recrutez\u202f?',
         contactCta: 'Décrire mon projet',
         socials: { malt: 'Malt', linkedin: 'LinkedIn', github: 'GitHub' },
+        review: {
+          prompt: 'Vous avez travaillé avec moi\u202f?',
+          link: 'Laisser un avis sur Google',
+          newTab: '(nouvel onglet)',
+        },
         legal: {
           owner: 'Julien Nédellec',
           status: 'EI',
@@ -205,14 +227,15 @@ describe('Footer', () => {
       expect(navNameOf(ctas[0])).toBe(FOOTER_COPY.headings.contact);
     });
 
-    it('Given the call to action When it is clicked Then the SectionScroller scrolls to the contact form', async () => {
-      const { host, scrollTo } = await setup();
+    it('Given the call to action When it is clicked Then the SectionScroller leads to the form of the page, or else to the home contact', async () => {
+      const { host, scrollTo, scrollToRequestForm } = await setup();
       const [cta] = byTestId(host, 'footer-contact-cta');
       const button = cta instanceof HTMLButtonElement ? cta : cta?.querySelector('button');
 
       expect(button).toBeInstanceOf(HTMLButtonElement);
       button?.click();
-      expect(scrollTo).toHaveBeenCalledExactlyOnceWith('contact');
+      expect(scrollToRequestForm).toHaveBeenCalledOnce();
+      expect(scrollTo).not.toHaveBeenCalled();
     });
 
     it('Given the footer When it is rendered Then Malt, LinkedIn and GitHub open in a new tab from the Contact navigation', async () => {
@@ -242,6 +265,56 @@ describe('Footer', () => {
         FOOTER_COPY.headings.contact,
         FOOTER_COPY.headings.contact,
       ]);
+    });
+  });
+
+  describe('review invitation', () => {
+    const reviewLink = (host: HTMLElement): HTMLAnchorElement | undefined =>
+      byTestId<HTMLAnchorElement>(host, 'footer-review-link')[0];
+
+    it('Given the footer When it is rendered Then the Contact column asks former clients, after the networks, without claiming any review', async () => {
+      const { host } = await setup();
+      const [prompt] = byTestId(host, 'footer-review-prompt');
+      const socials = byTestId(host, 'footer-social-link');
+
+      expect(prompt?.textContent?.replace(/[ \t\n\r]+/g, ' ').trim()).toBe(
+        'Vous avez travaillé avec moi\u202f?',
+      );
+      expect(navNameOf(prompt)).toBe(FOOTER_COPY.headings.contact);
+      expect(
+        (socials[socials.length - 1]?.compareDocumentPosition(prompt as Node) ?? 0) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it('Given the footer When it is rendered Then the review link opens the Google review form in a new tab, without opener', async () => {
+      const link = reviewLink((await setup()).host);
+
+      expect(link?.getAttribute('href')).toBe(SITE_IDENTITY.googleReviewUrl);
+      expect(link?.getAttribute('target')).toBe('_blank');
+      expect((link?.getAttribute('rel') ?? '').split(/\s+/)).toContain('noopener');
+      expect(navNameOf(link)).toBe(FOOTER_COPY.headings.contact);
+    });
+
+    it('Given the review link When it is read by assistive technologies Then its name announces the new tab', async () => {
+      const link = reviewLink((await setup()).host);
+
+      expect(link?.textContent?.replace(/[ \t\n\r]+/g, ' ').trim()).toBe(
+        'Laisser un avis sur Google (nouvel onglet)',
+      );
+    });
+
+    it('Given the review link When it is clicked Then the click is measured once under review_google', async () => {
+      const { host, trackCtaClick } = await setup();
+      const link = reviewLink(host);
+      link?.addEventListener('click', (event) => event.preventDefault());
+
+      link?.click();
+
+      expect(trackCtaClick).toHaveBeenCalledExactlyOnceWith(
+        'review_google',
+        'Laisser un avis sur Google',
+      );
     });
   });
 

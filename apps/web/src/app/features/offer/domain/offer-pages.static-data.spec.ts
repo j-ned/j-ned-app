@@ -2,6 +2,7 @@ import { formatEur } from './format-eur';
 import { OFFERS } from './offer-catalog.static-data';
 import { OFFER_PAGES } from './offer-pages.static-data';
 import { OFFER_PRICES } from './offer-prices.static-data';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 const NBSP = '\u00a0';
 
@@ -21,8 +22,7 @@ describe('OFFER_PAGES', () => {
     it('states the hero copy word for word', () => {
       expect(page.hero).toEqual({
         title: 'Le site de votre atelier, en ligne en 7 jours.',
-        subtitle:
-          "Je suis tourneur CN dans l'aéronautique. Je crée des sites qui montrent à un acheteur ce que vous savez usiner, en trente secondes.",
+        subtitle: `${SITE_IDENTITY.journey} Je crée des sites qui montrent à un acheteur ce que vous savez usiner, en trente secondes.`,
         ctaLabel: 'Demander mon site',
       });
     });
