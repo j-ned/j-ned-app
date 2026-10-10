@@ -4,14 +4,14 @@ import { map, Observable, ReplaySubject, retry, share, startWith, Subject, switc
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
 import type { ContentImage } from '../domain/models/content-image.model';
-import { API_BASE_URL } from '@shared/api/api-config';
+import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 
-const resolveApiUrl = (apiUrl: string, url: string): string =>
-  url.startsWith('http') ? url : `${apiUrl}${url}`;
+const resolveStorageUrl = (storageBase: string, url: string): string =>
+  url.startsWith('http') ? url : `${storageBase}${url}`;
 
-function resolvePost(apiUrl: string, p: BlogPost): BlogPost {
-  return p.coverImage ? { ...p, coverImage: resolveApiUrl(apiUrl, p.coverImage) } : p;
+function resolvePost(storageBase: string, p: BlogPost): BlogPost {
+  return p.coverImage ? { ...p, coverImage: resolveStorageUrl(storageBase, p.coverImage) } : p;
 }
 
 @Injectable()
@@ -27,7 +27,7 @@ export class HttpBlogGateway extends BlogGateway {
     switchMap(() =>
       this.http.get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`).pipe(
         retry(1),
-        map((rows) => rows.map((p) => resolvePost(this.apiUrl, p))),
+        map((rows) => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))),
       ),
     ),
     share({
@@ -41,7 +41,7 @@ export class HttpBlogGateway extends BlogGateway {
   getPublishedPosts(): Observable<readonly BlogPost[]> {
     return this.http
       .get<BlogPost[]>(`${this.apiUrl}/blog/posts`)
-      .pipe(map((rows) => rows.map((p) => resolvePost(this.apiUrl, p))));
+      .pipe(map((rows) => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))));
   }
 
   getAllPostsForAdmin(): Observable<readonly BlogPost[]> {
@@ -55,7 +55,7 @@ export class HttpBlogGateway extends BlogGateway {
   getPostBySlug(slug: string): Observable<BlogPost> {
     return this.http
       .get<BlogPost>(`${this.apiUrl}/blog/posts/${slug}`)
-      .pipe(map((p) => resolvePost(this.apiUrl, p)));
+      .pipe(map((p) => resolvePost(STORAGE_BASE_PATH, p)));
   }
 
   // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même.
@@ -97,7 +97,11 @@ export class HttpBlogGateway extends BlogGateway {
         height: number;
       }>(`${this.apiUrl}/blog/content-images`, formData, { context: silentErrors() })
       .pipe(
-        map(({ url, width, height }) => ({ url: resolveApiUrl(this.apiUrl, url), width, height })),
+        map(({ url, width, height }) => ({
+          url: resolveStorageUrl(STORAGE_BASE_PATH, url),
+          width,
+          height,
+        })),
       );
   }
 

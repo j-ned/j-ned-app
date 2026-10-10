@@ -11,7 +11,7 @@ import { HttpProjectsGateway } from './http-projects.gateway';
 import type { Project } from '../../domain/models/project.model';
 import { makeProject, makeProjectImage, makeProjectInput } from '../../testing/project-builders';
 
-const BASE = '/api';
+const BASE = 'https://api.test/api';
 
 function configure(): { gateway: HttpProjectsGateway; httpController: HttpTestingController } {
   TestBed.configureTestingModule({
@@ -166,7 +166,7 @@ describe('HttpProjectsGateway', () => {
       image: '/storage/portfolio-storage/projects/uuid-1-fb6c30aa.avif',
     });
     const adapted = makeProject({
-      image: `${BASE}/storage/portfolio-storage/projects/uuid-1-fb6c30aa.avif`,
+      image: '/api/storage/portfolio-storage/projects/uuid-1-fb6c30aa.avif',
       kind: null,
       gallery: [],
     });
@@ -219,6 +219,73 @@ describe('HttpProjectsGateway', () => {
         httpController.verify();
       },
     );
+
+    it('Given a cover and captures stored by the API When the list is read Then they are served from the site, never from the API origin', async () => {
+      const { gateway, httpController } = configure();
+
+      const promise = firstValueFrom(gateway.getAllProjects());
+      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush([
+        {
+          ...makeProject({ image: '/storage/portfolio-storage/projects/uuid-1-fb6c30aa.avif' }),
+          gallery: [
+            {
+              id: 'img-2',
+              url: '/storage/portfolio-storage/project-images/img-2-ab12cd34.avif',
+              alt: 'Liste des transactions',
+              width: 1280,
+              height: 800,
+              order: 1,
+            },
+            {
+              id: 'img-1',
+              url: '/storage/portfolio-storage/project-images/img-1-ab12cd34.avif',
+              alt: 'Tableau de bord',
+              width: 1280,
+              height: 800,
+              order: 0,
+            },
+          ],
+        },
+      ]);
+
+      const [project] = await promise;
+      expect({ image: project.image, gallery: project.gallery.map((image) => image.src) }).toEqual({
+        image: '/api/storage/portfolio-storage/projects/uuid-1-fb6c30aa.avif',
+        gallery: [
+          '/api/storage/portfolio-storage/project-images/img-1-ab12cd34.avif',
+          '/api/storage/portfolio-storage/project-images/img-2-ab12cd34.avif',
+        ],
+      });
+      httpController.verify();
+    });
+
+    it('Given a cover and a capture already absolute When the list is read Then they are left as is', async () => {
+      const { gateway, httpController } = configure();
+
+      const promise = firstValueFrom(gateway.getAllProjects());
+      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush([
+        {
+          ...makeProject({ image: 'https://cdn.test/projects/cover.avif' }),
+          gallery: [
+            {
+              id: 'img-1',
+              url: 'https://cdn.test/project-images/img-1.avif',
+              alt: 'Tableau de bord',
+              width: 1280,
+              height: 800,
+              order: 0,
+            },
+          ],
+        },
+      ]);
+
+      const [project] = await promise;
+      expect({ image: project.image, gallery: project.gallery.map((image) => image.src) }).toEqual({
+        image: 'https://cdn.test/projects/cover.avif',
+        gallery: ['https://cdn.test/project-images/img-1.avif'],
+      });
+      httpController.verify();
+    });
 
     it('Given an unknown kind in the list When it is read Then the project has no kind', async () => {
       const { gateway, httpController } = configure();
@@ -375,7 +442,7 @@ describe('HttpProjectsGateway', () => {
     const adaptedImage = (id: string, alt = `Capture ${id}`): ReturnType<typeof makeProjectImage> =>
       makeProjectImage({
         id,
-        src: `${BASE}/storage/portfolio-storage/project-images/${id}-ab12cd34.avif`,
+        src: `/api/storage/portfolio-storage/project-images/${id}-ab12cd34.avif`,
         alt,
         width: 1280,
         height: 800,

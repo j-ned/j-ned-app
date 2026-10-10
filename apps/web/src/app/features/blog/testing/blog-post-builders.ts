@@ -20,7 +20,7 @@ export function makeBlogPost(overrides: Partial<BlogPost> = {}): BlogPost {
 
 export function makeContentImage(overrides: Partial<ContentImage> = {}): ContentImage {
   return {
-    url: 'https://api.nedellec-julien.fr/api/storage/portfolio-storage/blog-content/3f2c1a9e-8b7d-4c6e-9f10-2a3b4c5d6e7f-a1b2c3d4-1600x900.avif',
+    url: '/api/storage/portfolio-storage/blog-content/3f2c1a9e-8b7d-4c6e-9f10-2a3b4c5d6e7f-a1b2c3d4-1600x900.avif',
     width: 1600,
     height: 900,
     ...overrides,

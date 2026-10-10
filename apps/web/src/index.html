@@ -65,7 +65,7 @@
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
-    <!-- Preconnect API NestJS : handshake TCP+TLS anticipé, ~50-100ms gagnés vs dns-prefetch seul -->
+    <!-- Preconnect API NestJS pour les appels XHR (CORS) ; les images, elles, sont servies par le site -->
     <link rel="preconnect" href="https://api.nedellec-julien.fr" crossorigin />
     <link rel="dns-prefetch" href="https://api.nedellec-julien.fr" />
 

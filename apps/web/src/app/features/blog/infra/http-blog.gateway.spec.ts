@@ -49,17 +49,59 @@ describe('HttpBlogGateway', () => {
     TestBed.resetTestingModule();
   });
 
-  it('getPublishedPosts résout les URLs de coverImage relatives', async () => {
-    const { gateway, httpMock } = configure();
+  describe.each<{
+    reader: string;
+    url: string;
+    list: boolean;
+    read: (gateway: HttpBlogGateway) => Observable<BlogPost | readonly BlogPost[]>;
+  }>([
+    {
+      reader: 'the published list',
+      url: `${BASE}/blog/posts`,
+      list: true,
+      read: (g): Observable<BlogPost | readonly BlogPost[]> => g.getPublishedPosts(),
+    },
+    {
+      reader: 'the article',
+      url: `${BASE}/blog/posts/mon-article`,
+      list: false,
+      read: (g): Observable<BlogPost | readonly BlogPost[]> => g.getPostBySlug('mon-article'),
+    },
+    {
+      reader: 'the admin list',
+      url: `${BASE}/blog/posts/admin`,
+      list: true,
+      read: (g): Observable<BlogPost | readonly BlogPost[]> => g.getAllPostsForAdmin(),
+    },
+  ])('couverture lue par $reader', ({ url, list, read }) => {
+    it.each([
+      {
+        case: 'a key stored by the API',
+        cover: '/storage/portfolio-storage/blog/id-1-0a1b2c3d.avif',
+        expected: '/api/storage/portfolio-storage/blog/id-1-0a1b2c3d.avif',
+      },
+      {
+        case: 'an absolute address',
+        cover: 'https://cdn.test/blog/id-1.avif',
+        expected: 'https://cdn.test/blog/id-1.avif',
+      },
+      { case: 'no cover', cover: '', expected: '' },
+    ])(
+      'Given $case When the post is read Then its cover is $expected',
+      async ({ cover, expected }) => {
+        const { gateway, httpMock } = configure();
+        const row = makeBlogPost({ coverImage: cover });
 
-    const promise = firstValueFrom(gateway.getPublishedPosts());
+        const promise = firstValueFrom(read(gateway));
+        httpMock.expectOne(url).flush(list ? [row] : row);
 
-    const req = httpMock.expectOne(`${BASE}/blog/posts`);
-    req.flush([post({ coverImage: '/blog/a.webp' })]);
-
-    const posts = await promise;
-    expect(posts[0].coverImage).toBe('https://api.test/blog/a.webp');
-    httpMock.verify();
+        const result = await promise;
+        expect((Array.isArray(result) ? result : [result]).map((p) => p.coverImage)).toEqual([
+          expected,
+        ]);
+        httpMock.verify();
+      },
+    );
   });
 
   it('getPostBySlug appelle /blog/posts/:slug', async () => {
@@ -123,7 +165,7 @@ describe('HttpBlogGateway: images du corps', () => {
     {
       case: 'a relative address',
       url: `/storage/portfolio-storage/blog-content/${KEY}`,
-      resolved: `${BASE}/storage/portfolio-storage/blog-content/${KEY}`,
+      resolved: `/api/storage/portfolio-storage/blog-content/${KEY}`,
     },
     {
       case: 'an absolute address',
@@ -131,7 +173,7 @@ describe('HttpBlogGateway: images du corps', () => {
       resolved: `https://cdn.test/blog-content/${KEY}`,
     },
   ])(
-    'Given the API answers 201 with $case When the image is uploaded Then the caller receives the absolute address and the size',
+    'Given the API answers 201 with $case When the image is uploaded Then the caller receives the address served from the site and the size',
     async ({ url, resolved }) => {
       const { gateway, httpMock } = configure();
 
@@ -227,13 +269,19 @@ describe('HttpBlogGateway: liste admin partagée', () => {
     const outcome = await failed;
 
     const recovered = firstValueFrom(gateway.getAllPostsForAdmin());
-    httpMock.expectOne(ADMIN_URL).flush([makeBlogPost({ id: 'a-1', coverImage: '/blog/a.webp' })]);
+    httpMock
+      .expectOne(ADMIN_URL)
+      .flush([makeBlogPost({ id: 'a-1', coverImage: '/storage/portfolio-storage/blog/a.avif' })]);
 
     expect({
       retries: retries.length,
       outcome,
       recovered: (await recovered).map((post) => post.coverImage),
-    }).toEqual({ retries: 1, outcome: 'error', recovered: ['https://api.test/blog/a.webp'] });
+    }).toEqual({
+      retries: 1,
+      outcome: 'error',
+      recovered: ['/api/storage/portfolio-storage/blog/a.avif'],
+    });
     httpMock.verify();
   });
 });

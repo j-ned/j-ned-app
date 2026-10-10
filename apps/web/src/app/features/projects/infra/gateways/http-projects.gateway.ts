@@ -16,7 +16,7 @@ import {
 import { ProjectsGateway } from '../../domain/gateways/projects.gateway';
 import type { Project, ProjectImage, ProjectInput } from '../../domain/models/project.model';
 import { isShowcaseProject } from '../../domain/is-showcase-project';
-import { API_BASE_URL } from '@shared/api/api-config';
+import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { toProject, toProjectImage } from '../project.adapter';
 import type { ProjectDto, ProjectImageDto } from '../project.types';
@@ -41,7 +41,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
     switchMap(() =>
       this.http.get<ProjectDto[]>(`${this.apiUrl}/projects?_sort=order&limit=100`).pipe(
         retry(1),
-        map((rows) => rows.map((row) => toProject(row, this.apiUrl))),
+        map((rows) => rows.map((row) => toProject(row, STORAGE_BASE_PATH))),
       ),
     ),
     share({
@@ -71,7 +71,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
 
   getProjectById(id: string): Observable<Project | null> {
     return this.http.get<ProjectDto>(`${this.apiUrl}/projects/${id}`).pipe(
-      map((row) => toProject(row, this.apiUrl)),
+      map((row) => toProject(row, STORAGE_BASE_PATH)),
       catchError((error: unknown) =>
         error instanceof HttpErrorResponse && error.status === 404
           ? of(null)
@@ -84,13 +84,13 @@ export class HttpProjectsGateway extends ProjectsGateway {
   createProject(project: ProjectInput): Observable<Project> {
     return this.http
       .post<ProjectDto>(`${this.apiUrl}/projects`, project, { context: silentErrors() })
-      .pipe(map((row) => toProject(row, this.apiUrl)));
+      .pipe(map((row) => toProject(row, STORAGE_BASE_PATH)));
   }
 
   updateProject(id: string, project: Partial<ProjectInput>): Observable<Project> {
     return this.http
       .patch<ProjectDto>(`${this.apiUrl}/projects/${id}`, project, { context: silentErrors() })
-      .pipe(map((row) => toProject(row, this.apiUrl)));
+      .pipe(map((row) => toProject(row, STORAGE_BASE_PATH)));
   }
 
   deleteProject(id: string): Observable<void> {
@@ -115,7 +115,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
       .post<ProjectImageDto>(`${this.apiUrl}/projects/${projectId}/images`, formData, {
         context: silentErrors(),
       })
-      .pipe(map((dto) => toProjectImage(dto, this.apiUrl)));
+      .pipe(map((dto) => toProjectImage(dto, STORAGE_BASE_PATH)));
   }
 
   updateGalleryImageAlt(projectId: string, imageId: string, alt: string): Observable<ProjectImage> {
@@ -125,7 +125,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
         { alt },
         { context: silentErrors() },
       )
-      .pipe(map((dto) => toProjectImage(dto, this.apiUrl)));
+      .pipe(map((dto) => toProjectImage(dto, STORAGE_BASE_PATH)));
   }
 
   reorderGallery(
@@ -135,7 +135,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
     const url = `${this.apiUrl}/projects/${projectId}/images/order`;
     return this.http
       .put<ProjectImageDto[]>(url, { imageIds }, { context: silentErrors() })
-      .pipe(map((dtos) => dtos.map((dto) => toProjectImage(dto, this.apiUrl))));
+      .pipe(map((dtos) => dtos.map((dto) => toProjectImage(dto, STORAGE_BASE_PATH))));
   }
 
   deleteGalleryImage(projectId: string, imageId: string): Observable<void> {

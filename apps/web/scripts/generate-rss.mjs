@@ -41,29 +41,35 @@ function cdata(html) {
   return html.replaceAll(']]>', ']]]]><![CDATA[>');
 }
 
-// Même résolution que `HttpBlogGateway.resolvePost` (clé relative à la racine de l'API), puis la
-// carte de partage JPEG (`toShareImageUrl`) : les agrégateurs affichent l'enclosure en vignette
-// et ne décodent pas tous l'AVIF.
-function resolveCoverUrl(coverImage) {
+// Enclosure en JPEG sur l'origine du site ; HEAD vers l'API pour ne pas dépendre du front déployé.
+function resolveCover(coverImage) {
   if (!coverImage) return null;
-  const url = coverImage.startsWith('http') ? coverImage : `${PROD_API_URL}${coverImage}`;
-  return toShareImageUrl(url);
+  if (coverImage.startsWith('http')) {
+    const url = toShareImageUrl(coverImage);
+    return { publishedUrl: url, probeUrl: url };
+  }
+  return {
+    publishedUrl: toShareImageUrl(`/api${coverImage}`),
+    probeUrl: toShareImageUrl(`${PROD_API_URL}${coverImage}`),
+  };
 }
 
 // RSS 2.0 exige `length` et `type` sur <enclosure> : une réponse HEAD les donne sans télécharger.
-async function fetchEnclosure(url) {
-  const res = await fetch(url, { method: 'HEAD' });
-  if (!res.ok) throw new Error(`Build: ${url} answered HTTP ${res.status}, build aborted`);
+async function fetchEnclosure({ publishedUrl, probeUrl }) {
+  const res = await fetch(probeUrl, { method: 'HEAD' });
+  if (!res.ok) throw new Error(`Build: ${probeUrl} answered HTTP ${res.status}, build aborted`);
   const type = res.headers.get('content-type');
   const length = res.headers.get('content-length');
-  if (!type || !length) throw new Error(`Build: ${url} has no content-type/length, build aborted`);
-  return { url, type, length };
+  if (!type || !length) {
+    throw new Error(`Build: ${probeUrl} has no content-type/length, build aborted`);
+  }
+  return { url: publishedUrl, type, length };
 }
 
 async function toItem(p) {
   const link = `${SITE_URL}/blog/${p.slug}`;
-  const coverUrl = resolveCoverUrl(p.coverImage);
-  const enclosure = coverUrl ? await fetchEnclosure(coverUrl) : null;
+  const cover = resolveCover(p.coverImage);
+  const enclosure = cover ? await fetchEnclosure(cover) : null;
   const categories = p.tags.map((t) => `      <category>${escapeXml(t)}</category>`);
   return [
     '    <item>',
@@ -74,7 +80,7 @@ async function toItem(p) {
     `      <dc:creator>${escapeXml(AUTHOR)}</dc:creator>`,
     ...categories,
     `      <description>${escapeXml(p.excerpt)}</description>`,
-    `      <content:encoded><![CDATA[${cdata(parseMarkdown(p.contentMarkdown))}]]></content:encoded>`,
+    `      <content:encoded><![CDATA[${cdata(parseMarkdown(p.contentMarkdown, { imageOrigin: SITE_URL }))}]]></content:encoded>`,
     ...(enclosure
       ? [
           `      <enclosure url="${enclosure.url}" length="${enclosure.length}" type="${enclosure.type}" />`,

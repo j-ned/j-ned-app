@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { accessibleName } from '@shared/testing/accessible-name';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { parseMarkdown } from './parse-markdown';
 
 describe('parseMarkdown', () => {
@@ -339,6 +340,70 @@ describe('parseMarkdown', () => {
         });
       },
     );
+
+    describe("avec l'origine des images du flux RSS", () => {
+      const RELATIVE = `/api/storage/portfolio-storage/blog-content/${KEY}-1600x900.avif`;
+
+      const withImageOrigin = (
+        imageOrigin: string,
+      ): NonNullable<Parameters<typeof parseMarkdown>[1]> & { readonly imageOrigin: string } => ({
+        imageOrigin,
+      });
+
+      const feedImageOf = (markdown: string): HTMLImageElement | null => {
+        const root = document.createElement('div');
+        root.innerHTML = parseMarkdown(markdown, withImageOrigin(SITE_IDENTITY.siteUrl));
+        return root.querySelector('img');
+      };
+
+      it.each([
+        {
+          case: 'an image served from the site',
+          href: RELATIVE,
+          src: `${SITE_IDENTITY.siteUrl}${RELATIVE}`,
+          width: '1600',
+          height: '900',
+        },
+        {
+          case: 'an absolute image of the API',
+          href: CONTENT_IMAGE,
+          src: CONTENT_IMAGE,
+          width: '1600',
+          height: '900',
+        },
+        {
+          case: 'an image of another host',
+          href: 'https://example.com/schema.png',
+          src: 'https://example.com/schema.png',
+          width: null,
+          height: null,
+        },
+        {
+          case: 'a protocol-relative image',
+          href: '//cdn.test/schema.png',
+          src: '//cdn.test/schema.png',
+          width: null,
+          height: null,
+        },
+      ])(
+        'Given $case When it is rendered for the feed Then its src is $src with width $width and height $height',
+        ({ href, src, width, height }) => {
+          const image = feedImageOf(`![Schéma](${href})`);
+
+          expect({
+            src: image?.getAttribute('src'),
+            width: image?.getAttribute('width'),
+            height: image?.getAttribute('height'),
+          }).toEqual({ src, width, height });
+        },
+      );
+
+      it('Given a feed rendering When the article page is rendered next Then its image stays served from the site', () => {
+        feedImageOf(`![Schéma](${RELATIVE})`);
+
+        expect(imageOf(`![Schéma](${RELATIVE})`)?.getAttribute('src')).toBe(RELATIVE);
+      });
+    });
 
     it('Given an image with a title When it is rendered Then the title stays', () => {
       expect(imageOf(`![Schéma](${CONTENT_IMAGE} "Vue d’ensemble")`)?.getAttribute('title')).toBe(

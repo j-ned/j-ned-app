@@ -28,6 +28,7 @@ let topHeadingLevel = 1;
 let highestHeadingDepth = 6;
 let codeCopyButton = false;
 let codeBlockCount = 0;
+let imageOrigin: string | null = null;
 
 function uniqueHeadingId(text: string): string {
   const base = slugifyHeading(text) || 'section';
@@ -65,11 +66,13 @@ const marked = new Marked({
         codeCopyButton ? ++codeBlockCount : null,
       );
     },
-    // Dimensions lues dans la clé : la place de l'image est réservée avant son arrivée.
+    // Dimensions lues sur le `href` d'origine, avant préfixage : la regex refuse l'hôte du site.
     image(token: Tokens.Image): string {
-      const html = Renderer.prototype.image.call(this, token);
-      if (!html.startsWith('<img')) return html;
       const size = contentImageSize(token.href);
+      const isSitePath = token.href.startsWith('/') && !token.href.startsWith('//');
+      const href = imageOrigin && isSitePath ? `${imageOrigin}${token.href}` : token.href;
+      const html = Renderer.prototype.image.call(this, { ...token, href });
+      if (!html.startsWith('<img')) return html;
       const dimensions = size ? ` width="${size.width}" height="${size.height}"` : '';
       return `${html.slice(0, -1)}${dimensions} loading="lazy" decoding="async">`;
     },
@@ -83,10 +86,11 @@ const marked = new Marked({
  */
 export function parseMarkdown(
   markdown: string,
-  options: { topHeadingLevel?: number; codeCopyButton?: boolean } = {},
+  options: { topHeadingLevel?: number; codeCopyButton?: boolean; imageOrigin?: string } = {},
 ): string {
   topHeadingLevel = options.topHeadingLevel ?? 1;
   codeCopyButton = options.codeCopyButton ?? false;
+  imageOrigin = options.imageOrigin ?? null;
   const html = marked.parse(markdown, { async: false }) as string;
   return DOMPurify.sanitize(html, SANITIZE_OPTIONS);
 }
