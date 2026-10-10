@@ -1,7 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { SectionScroller } from '@core/navigation/section-scroller';
 import { Button } from '@shared/ui/button';
 import { Cartouche } from '@shared/ui/cartouche';
 import { DimensionLine } from '@shared/ui/dimension-line';
@@ -28,7 +26,7 @@ import { HomeHero } from './home-hero';
             appButton
             type="button"
             data-testid="hero-cta-contact"
-            (click)="describeProject()"
+            (click)="contactRequested.emit()"
           >
             {{ ctaLabels.contact }}
           </button>
@@ -37,7 +35,7 @@ import { HomeHero } from './home-hero';
             variant="outlined"
             routerLink="/offres"
             data-testid="hero-cta-offers"
-            (click)="trackOffersClick()"
+            (click)="offersOpened.emit()"
             >{{ ctaLabels.offers }}</a
           >
         </div>
@@ -70,21 +68,11 @@ import { HomeHero } from './home-hero';
   `,
 })
 export class HomeHeroSection {
-  private readonly _scroller = inject(SectionScroller);
-  private readonly _analytics = inject(AnalyticsGateway);
-
   readonly hero = input<HeroData | null>(null);
+  readonly contactRequested = output<void>();
+  readonly offersOpened = output<void>();
 
   protected readonly ctaLabels = HOME_HERO_CTA_LABELS;
   protected readonly availability = SITE_IDENTITY.availability;
   protected readonly workFrame = HOME_WORK_FRAME;
-
-  protected describeProject(): void {
-    this._analytics.trackCtaClick('home_hero_contact', HOME_HERO_CTA_LABELS.contact);
-    this._scroller.scrollTo('contact');
-  }
-
-  protected trackOffersClick(): void {
-    this._analytics.trackCtaClick('home_hero_offers', HOME_HERO_CTA_LABELS.offers);
-  }
 }

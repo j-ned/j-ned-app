@@ -1,6 +1,5 @@
-import { Component, ChangeDetectionStrategy, computed, inject, input } from '@angular/core';
-import { Router } from '@angular/router';
-import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FeaturedProjectCard } from '@features/projects/application/components/featured-project-card';
 import {
   toFeaturedProjectView,
@@ -18,7 +17,7 @@ const PROJECTS_SECTION = {
 
 @Component({
   selector: 'app-home-projects',
-  imports: [FeaturedProjectCard, Button, AppIcon],
+  imports: [FeaturedProjectCard, Button, AppIcon, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block animate-fade-up' },
   template: `
@@ -37,33 +36,24 @@ const PROJECTS_SECTION = {
           <li>
             <app-featured-project-card
               [card]="project"
-              (liveLinkClicked)="trackLiveLink(project)"
+              (liveLinkClicked)="liveLinkClicked.emit(project)"
             />
           </li>
         }
       </ul>
 
       <nav class="mt-10" aria-label="Voir tous les projets">
-        <button appButton type="button" (click)="goToProjects()">
+        <a appButton routerLink="/projects" data-testid="home-projects-all">
           Voir tous les projets
           <app-icon name="arrow-right" [size]="20" />
-        </button>
+        </a>
       </nav>
     </section>
   `,
 })
 export class HomeProjects {
-  private readonly _router = inject(Router);
-  private readonly _analytics = inject(AnalyticsGateway);
   readonly projects = input<readonly Project[]>([]);
+  readonly liveLinkClicked = output<FeaturedProjectView>();
   protected readonly featuredProjects = computed(() => this.projects().map(toFeaturedProjectView));
   protected readonly projectsSection = PROJECTS_SECTION;
-
-  protected goToProjects(): void {
-    void this._router.navigate(['/projects']);
-  }
-
-  protected trackLiveLink({ id, title }: FeaturedProjectView): void {
-    this._analytics.trackProjectClick(id, title);
-  }
 }

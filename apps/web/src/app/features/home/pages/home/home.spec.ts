@@ -9,15 +9,18 @@ import { Component, NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import type { Mock } from 'vitest';
 import { Home } from './home';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { SectionVisibility } from '@core/navigation/section-visibility';
+import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import type { HomeBundle } from '@features/home/domain/models/home-bundle.model';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
+import { HOME_HERO_CTA_LABELS } from '../../domain/home-hero.static-data';
 import { HOME_OFFERS_HEADING } from '../../domain/home-offers.static-data';
 import { HOME_FAQ, HOME_METHOD, HOME_WHY } from '../../domain/home-pitch.static-data';
 import { STATIC_HERO } from '../../infra/data/home.static-data';
@@ -52,14 +55,29 @@ function makeContactGateway(): ContactGateway {
   } as unknown as ContactGateway;
 }
 
-function makeAnalyticsGateway(): AnalyticsGateway {
-  return { trackProjectClick: vi.fn() } as unknown as AnalyticsGateway;
+type AnalyticsStub = {
+  readonly gateway: AnalyticsGateway;
+  readonly trackCtaClick: Mock<AnalyticsGateway['trackCtaClick']>;
+  readonly trackProjectClick: Mock<AnalyticsGateway['trackProjectClick']>;
+};
+
+function makeAnalytics(): AnalyticsStub {
+  const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
+  const trackProjectClick = vi.fn<AnalyticsGateway['trackProjectClick']>();
+  return {
+    gateway: stubAnalyticsGateway({ trackCtaClick, trackProjectClick }),
+    trackCtaClick,
+    trackProjectClick,
+  };
 }
 
-type SectionScrollerStub = { eager: ReturnType<typeof signal<boolean>> };
+type SectionScrollerStub = {
+  eager: ReturnType<typeof signal<boolean>>;
+  scrollTo: Mock<(sectionId: string) => void>;
+};
 
 function makeScroller(eager = false): SectionScrollerStub {
-  return { eager: signal(eager) };
+  return { eager: signal(eager), scrollTo: vi.fn<(sectionId: string) => void>() };
 }
 
 async function setup(
@@ -72,6 +90,7 @@ async function setup(
     providers: [
       { provide: HomeGateway, useValue: gateway },
       { provide: SectionScroller, useValue: scroller },
+      { provide: AnalyticsGateway, useValue: makeAnalytics().gateway },
     ],
     schemas: [NO_ERRORS_SCHEMA],
   });
@@ -95,24 +114,31 @@ type DeferHarness = {
   blocks: readonly DeferBlockFixture[];
   projectsBlock: DeferBlockFixture;
   contactBlock: DeferBlockFixture;
+  analytics: AnalyticsStub;
+  scroller: SectionScrollerStub;
 };
 
 async function renderHomeTemplate(
   featuredProjects: readonly Project[] = [],
   overrides: Partial<HomeBundle> = {},
 ): Promise<DeferHarness> {
+  const analytics = makeAnalytics();
+  const scroller = makeScroller();
   TestBed.configureTestingModule({
     providers: [
-      provideRouter([{ path: 'about', component: BlankPage }]),
+      provideRouter([
+        { path: 'about', component: BlankPage },
+        { path: 'offres', component: BlankPage },
+      ]),
       {
         provide: HomeGateway,
         useValue: makeHomeGateway({
           getHomeBundle: () => of(bundle({ featuredProjects, ...overrides })),
         }),
       },
-      { provide: SectionScroller, useValue: makeScroller() },
+      { provide: SectionScroller, useValue: scroller },
       { provide: ContactGateway, useValue: makeContactGateway() },
-      { provide: AnalyticsGateway, useValue: makeAnalyticsGateway() },
+      { provide: AnalyticsGateway, useValue: analytics.gateway },
     ],
     deferBlockBehavior: DeferBlockBehavior.Manual,
   });
@@ -129,6 +155,8 @@ async function renderHomeTemplate(
     blocks,
     projectsBlock: blocks[0],
     contactBlock: blocks[blocks.length - 1],
+    analytics,
+    scroller,
   };
 }
 
@@ -226,6 +254,52 @@ describe('Home', () => {
       await fixture.whenStable();
 
       expect(allByTestId(fixture, 'featured-project-card-link')).toHaveLength(2);
+    });
+  });
+
+  describe('appels du premier écran', () => {
+    it('Given le hero rendu When le visiteur demande à décrire son projet Then la page mesure home_hero_contact puis fait défiler jusqu’au contact', async () => {
+      const { fixture, analytics, scroller } = await renderHomeTemplate([], { hero: STATIC_HERO });
+
+      byTestId(fixture, 'hero-cta-contact')?.click();
+
+      expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith(
+        'home_hero_contact',
+        HOME_HERO_CTA_LABELS.contact,
+      );
+      expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith('contact');
+      expect(analytics.trackCtaClick.mock.invocationCallOrder[0]).toBeLessThan(
+        scroller.scrollTo.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('Given le hero rendu When le visiteur ouvre les offres Then la page mesure home_hero_offers sans faire défiler', async () => {
+      const { fixture, analytics, scroller } = await renderHomeTemplate([], { hero: STATIC_HERO });
+
+      byTestId(fixture, 'hero-cta-offers')?.click();
+      await fixture.whenStable();
+
+      expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith(
+        'home_hero_offers',
+        HOME_HERO_CTA_LABELS.offers,
+      );
+      expect(scroller.scrollTo).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('mesure des projets mis en avant', () => {
+    it('Given le bloc projets Complete When le visiteur ouvre l’application d’un projet Then la page mesure ce projet une fois', async () => {
+      const projects = [
+        makeProject({ id: 'p1', slug: 'alpha', title: 'Alpha' }),
+        makeProject({ id: 'p2', slug: 'beta', title: 'Beta', liveUrl: 'https://beta.test/' }),
+      ];
+      const { fixture, projectsBlock, analytics } = await renderHomeTemplate(projects);
+      await projectsBlock.render(DeferBlockState.Complete);
+      await fixture.whenStable();
+
+      byTestId(fixture, 'featured-project-card-live-link')?.click();
+
+      expect(analytics.trackProjectClick).toHaveBeenCalledExactlyOnceWith('p2', 'Beta');
     });
   });
 

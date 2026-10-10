@@ -6,8 +6,11 @@ import { HomeMethod } from '../../application/home-method';
 import { HomeOffers } from '../../application/home-offers';
 import { HomeProjects } from '../../application/home-projects';
 import { HomeWhy } from '../../application/home-why';
+import { HOME_HERO_CTA_LABELS } from '../../domain/home-hero.static-data';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { ContactForm } from '@features/contact/application/contact-form';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
+import type { FeaturedProjectView } from '@features/projects/application/featured-project-view';
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { SectionVisibility } from '@core/navigation/section-visibility';
 import { SectionScroller } from '@core/navigation/section-scroller';
@@ -28,7 +31,12 @@ import { SectionScroller } from '@core/navigation/section-scroller';
   host: { class: 'flex flex-col w-full' },
   template: `
     <!-- Premier écran : le hero occupe tout l'espace sous le header (h-20). -->
-    <app-home-hero-section class="mt-20" [hero]="bundle()?.hero ?? null" />
+    <app-home-hero-section
+      class="mt-20"
+      [hero]="bundle()?.hero ?? null"
+      (contactRequested)="goToContact()"
+      (offersOpened)="trackOffersClick()"
+    />
 
     <app-home-offers />
 
@@ -36,7 +44,10 @@ import { SectionScroller } from '@core/navigation/section-scroller';
     @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
       <section class="w-full pb-24 md:pb-32" data-testid="home-projects-section">
         <div class="page-container">
-          <app-home-projects [projects]="bundle()?.featuredProjects ?? []" />
+          <app-home-projects
+            [projects]="bundle()?.featuredProjects ?? []"
+            (liveLinkClicked)="trackLiveLink($event)"
+          />
         </div>
       </section>
     } @placeholder {
@@ -114,9 +125,11 @@ import { SectionScroller } from '@core/navigation/section-scroller';
 })
 export class Home {
   private readonly _gateway = inject(HomeGateway);
+  private readonly _analytics = inject(AnalyticsGateway);
+  private readonly _scroller = inject(SectionScroller);
 
   // Force le rendu des @defer avant un scroll vers une section (cf. SectionScroller).
-  protected readonly eagerSections = inject(SectionScroller).eager;
+  protected readonly eagerSections = this._scroller.eager;
 
   private readonly bundleResource = rxResource({
     stream: () => this._gateway.getHomeBundle(),
@@ -124,4 +137,17 @@ export class Home {
   protected readonly bundle = computed(() => this.bundleResource.value());
 
   protected readonly projectTypes = [...OFFERS.map((offer) => offer.shortName), 'Autre'];
+
+  protected goToContact(): void {
+    this._analytics.trackCtaClick('home_hero_contact', HOME_HERO_CTA_LABELS.contact);
+    this._scroller.scrollTo('contact');
+  }
+
+  protected trackOffersClick(): void {
+    this._analytics.trackCtaClick('home_hero_offers', HOME_HERO_CTA_LABELS.offers);
+  }
+
+  protected trackLiveLink({ id, title }: FeaturedProjectView): void {
+    this._analytics.trackProjectClick(id, title);
+  }
 }

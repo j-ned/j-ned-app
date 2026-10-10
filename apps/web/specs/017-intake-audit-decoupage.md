@@ -3495,6 +3495,87 @@ RED confirmé via `pnpm test` le 2026-10-09 21:27 : 7 failed / 3173 total pour c
 Récapitulatif : 10 + 5 + 2 + 7 = 24 failed / 3173 total ; 3173 = 3156 + 3 (hero) + 1
 (motivation) − 1 (hiring) + 14 (page). Les 3149 autres tests passent.
 
+### Lot L13 — RED de L13.5 et L13.6 (accueil)
+
+Branche `refactor/home-sections-dumb-l13b` depuis `211cb5e` (L13.1-L13.4 mergés). Référence :
+journal de L13.1-L13.4, 189 fichiers, `3173 passed (3173)`, `exit=0`.
+
+**Squelettes (à remplacer en GREEN)** : `HomeHeroSection.contactRequested = output<void>()`,
+`HomeHeroSection.offersOpened = output<void>()`, `HomeProjects.liveLinkClicked =
+output<FeaturedProjectView>()`, déclarées, jamais émises. Aucune autre ligne de code applicatif.
+
+**Adaptation mécanique (`home.spec.ts`)** : `setup()` fournit désormais un `AnalyticsGateway`
+(`stubAnalyticsGateway` partagé) — sans lui, les 3 tests du harnais minimal lèvent `NG0201` dès que
+`Home` injecte la mesure (constaté sur une implémentation jetable). `renderHomeTemplate()` rend
+ses doublures (`analytics`, `scroller` avec `scrollTo`) et déclare la route `offres`. Aucune valeur
+attendue modifiée, aucune assertion ajoutée ni retirée dans les tests existants.
+
+Sanity du harnais (hors livrable, annulé) : une implémentation dumb jetable des deux sections et de
+`Home` (sorties émises, lien `routerLink`, trois méthodes de page) fait passer les 9 fichiers de
+`features/home` au vert (96 / 96 après l'adaptation de `setup()`). Fichiers restaurés depuis
+sauvegarde, `git diff` des composants réduit aux trois squelettes.
+
+**Nature des rouges** : `NG0201` (`No provider found for AnalyticsGateway`) à `createComponent`
+dans les deux specs de section, délibérés comme pour L13.1-L13.4 (la section injecte encore le
+service que le spec ne fournit plus). Effet de bord constaté : le builder lance Vitest sans
+isolation ; avec `--include` restreint aux 3 fichiers (deux sections + `home.spec.ts`), le premier
+`compileComponents` de `home.spec.ts` ne rend plus la main (timeout 5 s puis 31 échecs en cascade),
+alors que la suite complète et chaque paire passent. Disparaît au GREEN ; d'ici là, jouer la suite
+complète ou chaque spec seul.
+
+### Tranche L13.5 — le premier écran de l'accueil confie ses appels à la page
+
+**`home-hero-section.spec.ts`** (sans `AnalyticsGateway` ni `SectionScroller` ; providers =
+`provideRouter([{ path: 'offres', … }])` ; `render(hero)` sans défaut ; sorties abonnées avant le
+premier rendu ; 11 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| les 9 existants hors mesure | `STATIC_HERO` | libellé contact ; offres = `A` `href` `/offres`, clic → `Router.url` `/offres` ; disponibilité hors lien ; cadre de travail (groupe, titre, lignes, `dl` unique, cote `aria-hidden`) |
+| demande de contact | clic `hero-cta-contact` | `contactRequested` une fois, `offersOpened` jamais |
+| ouverture des offres | clic `hero-cta-offers` | `offersOpened` une fois, `contactRequested` jamais |
+
+Retirés : « scrolls to the contact form » et les deux « tracks the click » (mesure et défilement
+passent à la page, couverts ci-dessous).
+
+**`home.spec.ts`**, describe « appels du premier écran » (hero `STATIC_HERO`, 2 tests, filets verts dès le RED)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| contact | clic `hero-cta-contact` | `trackCtaClick` une fois avec (`home_hero_contact`, `HOME_HERO_CTA_LABELS.contact`) ; `scrollTo` une fois avec `contact` ; mesure **avant** défilement (`invocationCallOrder`) |
+| offres | clic `hero-cta-offers` | `trackCtaClick` une fois avec (`home_hero_offers`, `HOME_HERO_CTA_LABELS.offers`) ; `scrollTo` jamais |
+
+RED confirmé via `pnpm test` (après `ng cache clean`) le 2026-10-10 10:20 : 11 failed / 3177 total
+pour cette tranche (`NG0201` sur `AnalyticsGateway`, tout le fichier) ; les 2 filets de page sont
+verts. Aucune erreur TS ni de format.
+
+### Tranche L13.6 — « Voir tous les projets » devient un lien, la mesure passe par la page
+
+**`home-projects.spec.ts`** (sans `AnalyticsGateway`, `provideRouter` inchangé ; `mount(projects)`
+et `render(projects)` sans défaut ; 9 tests)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| les 6 existants hors mesure | DashFlow, CandiDash | liste à deux colonnes ordonnée ; titres `h2` puis `h3` ; images sans priorité ; aucun `line-clamp` ; accroche et décision clé ; « Voir la fiche » → `/projects/candidash` |
+| lien en ligne | deux cartes avec lien en ligne, clic sur la 2ᵉ | `liveLinkClicked` une fois, avec `toFeaturedProjectView(CandiDash)` |
+| « Voir tous les projets » | rendu | `home-projects-all` : `A`, `href` `/projects`, texte « Voir tous les projets », classes triées = celles du bouton `appButton` par défaut |
+| navigation | clic `home-projects-all` | `Router.url` = `/projects` |
+
+Retiré : « the click is tracked for that project » (mesure passée à la page).
+
+**`home.spec.ts`**, describe « mesure des projets mis en avant » (1 test, filet vert dès le RED)
+
+| Test | Scénario | Assertions clés |
+| --- | --- | --- |
+| lien en ligne | bloc projets `Complete`, Alpha sans lien, Beta avec ; clic du lien en ligne | `trackProjectClick` une fois avec (`p2`, `Beta`) |
+
+RED confirmé via `pnpm test` (après `ng cache clean`) le 2026-10-10 10:20 : 9 failed / 3177 total
+pour cette tranche (`NG0201` sur `AnalyticsGateway`, tout le fichier) ; le filet de page est vert.
+
+Récapitulatif : 11 + 9 = 20 failed / 3177 total, `exit=1`, 2 fichiers sur 189 ; 3177 = 3173 − 1
+(hero : 3 tests de mesure/défilement remplacés par 2 de sortie) + 2 (projets : lien en ligne
+remplacé, 2 ajoutés pour le lien) + 3 (page). Les 3157 autres tests passent.
+
 ## Journal des tranches
 
 - **Tranche L5.1 — l'erreur d'un champ d'article est annoncée et reliée** : GREEN 3059 passed / 3060 total (seul rouge : « sans testId » de `field-error.spec.ts`, défaut du test, cf. ## Verify) · refactor : aucun
@@ -3537,6 +3618,8 @@ Récapitulatif : 10 + 5 + 2 + 7 = 24 failed / 3173 total ; 3173 = 3156 + 3 (hero
 - **Tranche L13.3 — la conclusion confie le contact à la page, « Voir les projets » devient un lien** : GREEN 3173 passed / 3173 total (passage commun) · refactor : `goToProjects()`/`goToContact()` de la section supprimés, `(click)="contactRequested.emit()"` directement dans le gabarit
 - **Tranche L13.4 — le bloc recrutement reçoit l'URL du CV et signale son téléchargement** : GREEN 3173 passed / 3173 total (passage commun) · refactor : `trackCvDownload()` de la section remplacé par `(click)="cvDownloaded.emit()"`
 - **Tranche L13.7 — sans RED** : `.claude/CLAUDE.md:233` patché à l'identique du plan ; GREEN inchangé · refactor : aucun
+- **Tranche L13.5 — le premier écran de l'accueil confie ses appels à la page** : GREEN joué d'un seul passage avec L13.6 (même `home.ts`) ; suite complète 3177 passed / 3177 total (189 fichiers, `exit=0`) · refactor : `describeProject()`/`trackOffersClick()` de la section supprimés, `(click)="contactRequested.emit()"` et `(click)="offersOpened.emit()"` directement dans le gabarit ; côté page, `goToContact()` (mesure puis défilement) et `trackOffersClick()` ; `eagerSections` lu sur le `SectionScroller` injecté une seule fois
+- **Tranche L13.6 — « Voir tous les projets » devient un lien, la mesure passe par la page** : GREEN 3177 passed / 3177 total (passage commun) · refactor : `goToProjects()`/`trackLiveLink()` de la section supprimés, `(liveLinkClicked)="liveLinkClicked.emit(project)"` dans le gabarit ; `trackLiveLink()` dans `Home`
 
 ## Verify
 
@@ -3801,6 +3884,36 @@ Preuves de fin de lot :
    - Navigation client `/` → menu « Parcours » : `/about`, même document, sections rendues (3 paragraphes, 2 formations, énoncé).
    - Console : aucun `NG0` ; seule erreur, 404 de `/api/config` sur le serveur statique local (absent hors serveur Node, préexistant).
    - Captures : `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/about-top.png`, `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/about-bottom.png` (conclusion, lien et bouton identiques à l'œil), `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/replay-contact.png`.
+
+**PASS**.
+
+### Lot L13 (accueil, L13.5 et L13.6)
+
+2026-10-10, branche `refactor/home-sections-dumb-l13b` depuis `211cb5e` (non commitée).
+
+Gates (codes de sortie lus) :
+
+- `pnpm install --frozen-lockfile` : exit 0 ;
+- `pnpm test; echo exit=$?` : 189 fichiers sur 189, 3177 tests sur 3177, `exit=0` (RED de `qa` : 20 rouges `NG0201`, 3157 verts) ;
+- `pnpm lint` : « All files pass linting. » ;
+- `pnpm run format:check` : « All matched files use Prettier code style! » ;
+- `pnpm run build --configuration production` : exit 0, CSP sur 21 pages, puis `git checkout -- public/sitemap.xml public/rss.xml`.
+
+Preuves :
+
+1. Plus d'injection dans les sections de l'accueil : `grep -rl "inject(" src/app/features/*/application` (specs exclues) → les 9 fichiers (a), (b), (d) de l'inventaire, plus aucun fichier de `home/application`. Aucun U+202F/U+00A0 littéral dans les lignes ajoutées (`git diff -U0 | grep '^+' | grep -cP '\x{202F}|\x{00A0}'` → 0).
+2. Prerender de l'accueil comparé à `master` : build prod de `master` dans un worktree temporaire du scratchpad (`pnpm install --frozen-lockfile`, supprimé ensuite), même jour. Normalisation : hachages de fichiers, hachages CSP, `ng-c<n>`, une balise par ligne.
+   - **Écart toléré** : `<button appbutton="" type="button" …> Voir tous les projets` devient `<a appbutton="" routerlink="/projects" data-testid="home-projects-all" … href="/projects">`, mêmes classes, même `jsaction="click:;" ngb="d0"`.
+   - `ng-state` : `__nghDeferData__` identique ; toutes les autres clés identiques ; `__nghData__` identique au seul identifiant de composant près (`c958200416` → `c3338429065`, hachage du gabarit de `Home`, modifié par les deux liaisons de sortie).
+   - `jsaction=` 42 / 42, `ngb="d0"` 5 / 5, `ngb="d5"` 12 / 12.
+3. Navigateur : build prod de la branche servi en statique (serveur Node du script, 127.0.0.1:4310), Chromium headless (playwright-core, `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/verify/run.mjs`). Toute requête hors `127.0.0.1` est interceptée : `POST /analytics/track` enregistré puis répondu localement (204), tout le reste avorté (`GET api.nedellec-julien.fr`, onglet ouvert par le lien en ligne vers `dashflow.nedellec-julien.fr`). **Aucune requête n'a atteint la prod.**
+   - CTA contact du hero, après hydratation : une mesure `{"type":"cta_click","entityId":"home_hero_contact","entityTitle":"Décrire mon projet"}`, puis défilement (`scrollY` 4801, `#contact` à 80 px du haut, sous le header).
+   - **Rejeu avant hydratation** : `main-*.js` retenu par le script, clic du CTA contact (`scrollY` 0, `main` demandé non servi), puis libération : même mesure unique et `#contact` à 80 px.
+   - CTA offres : une mesure `home_hero_offers` (« Voir les offres et les prix »), URL `/offres`.
+   - Lien en ligne d'une carte (2 cartes) : une mesure `{"type":"project_click","entityId":"81239d51-…","entityTitle":"DashFlow"}`.
+   - « Voir tous les projets » : `A` `href="/projects"`, clic → `/projects`. JavaScript désactivé : même lien, clic → `/projects` servi statiquement, `h1` « Réalisations ».
+   - Console : aucun `NG0` sur les quatre parcours avec JavaScript.
+   - Captures : `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/verify/home-after-contact.png`, `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/verify/home-projects.png`, `/tmp/claude-1000/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/scratchpad/verify/home-nojs-projects.png`.
 
 **PASS**.
 
@@ -4123,3 +4236,31 @@ Pré-vol `OPTIONS /api/analytics/track` envoyé à la prod par l'implémenteur (
 - réversibilité : profil muet sur la livraison (Dokploy continu d'après `CLAUDE.md`) · monitoring : Sentry ; aucun état persistant touché.
 - `forkJoin` échoue en bloc : si `ProfileGateway` passe un jour en HTTP, une erreur rendra le skeleton du hero sans `h1` et des sections vides (consigné au plan, inatteignable aujourd'hui).
 - non couvert par les gates : Ctrl/Cmd+clic sur « Voir les projets » dans la fenêtre entre l'apparition du bloc et son hydratation (le contrat d'événements préempte les clics sur `<a jsaction>`, `primitives-event-dispatch.mjs:491`) ; non rejoué. Le clic simple, lui, est prouvé avant et après hydratation.
+
+---
+
+Lot L13 (accueil, L13.5 et L13.6), 2026-10-10, diff de travail `git diff master` (base `211cb5e`, non commité, 7 fichiers suivis, aucun non suivi).
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm test; echo exit=$?` : 189/189 fichiers, 3177/3177, `exit=0`) / lint ✅ (`pnpm lint`, exit 0, « All files pass linting. ») / format ✅ (`pnpm run format:check`, exit 0) / build ✅ (`pnpm run build --configuration production`, exit 0, CSP sur 21 pages, puis `git checkout -- public/sitemap.xml public/rss.xml`, arbre revenu aux 7 fichiers du lot)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/aak-checks.sh` absent) : auto-checks joués à la main. `grep -n "inject(" home-hero-section.ts home-projects.ts` : vide ; `grep -rln "inject(" features/*/application` (specs exclues) : exactement les 9 fichiers (a)/(b)/(d) de l'inventaire. U+202F/U+00A0 : 0 dans les lignes ajoutées et 0 dans les 6 fichiers touchés. Export default, `effect(`, helpers zone, `console.`, `innerHTML`, `.only`/`.skip`, snapshot, boucle générant des `it`, commentaire ajouté : 0 (les 2 hits `//` sont des URL de fixture). Specs de `qa` non retouchées après le RED (mtime 10:18-10:20, implémentation 10:23).
+**Warnings de gate** : aucun (sorties test, lint, build lues en entier)
+**Rendu compilé** : N/A (aucun composant à sélecteur attribut modifié ; `appButton` consommé tel quel, classes du lien égales à celles du bouton par défaut, testé et vu au prérendu)
+**Preuve de verify runtime** : ✅ (preuve de `## Verify` rejouée par moi sur mon build : script dérivé de `verify/run.mjs`, Chromium headless, 127.0.0.1:4310, toute requête externe interceptée — 33 requêtes vers `api.nedellec-julien.fr`/`dashflow.…` avortées ou `POST /analytics/track` répondu localement en 204, aucune n'est sortie. Contact après hydratation : 1 mesure `home_hero_contact` puis `#contact` à 80 px ; **rejeu avant hydratation** (`main-*.js` retenu, clic à `scrollY` 0) : même mesure unique, même défilement ; offres : 1 mesure `home_hero_offers`, `/offres` ; lien en ligne : 1 `project_click` ; « Voir tous les projets » `A href="/projects"` avec et sans JavaScript. Console : aucun `NG0`, aucune `pageerror`, aucun warning ; seuls messages = `Failed to load resource: net::ERR_FAILED` des requêtes avortées par le harnais. Hydratation non destructive vérifiée en plus : nœuds `hero-cta-contact` et `h1` capturés avant `main.js` sont les mêmes après)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+**Écart de prerender `__nghData__` (identifiant de composant `c958200416` → `c3338429065`)** : acceptable. L'identifiant vient de `getComponentId` (`@angular/core` 22.2.1, `_debug_node-chunk.mjs:10478`) : hachage, calculé à l'exécution des deux côtés, des `consts`/`vars`/`decls`, des entrées/sorties et des noms de méthodes du prototype de `Home`. Les deux liaisons de sortie et les trois méthodes le changent donc forcément, et le serveur comme le client le recalculent depuis le même build : il n'existe pas d'état où HTML et JS divergent, sauf HTML d'un déploiement servi avec le JS d'un autre, ce que l'artefact statique unique exclut. Preuves : `c3338429065` est le seul identifiant du `ng-state` de `dist/…/browser/index.html`, hydratation sans `NG05xx` et avec réemploi des nœuds. L'écart relève de l'écart toléré (1) (« contenu de `__nghData__` ») ; sa cause écrite (« si l'ajout de `@let` décale les index ») est plus étroite que la réalité, à élargir au plan si le gabarit sert encore de référence (non bloquant).
+
+**Tests notables** :
+- ✨ `home.spec.ts:261-275` — mesure **avant** défilement épinglée par `invocationCallOrder` : un ordre inversé (défilement qui casserait la mesure) rougit.
+- ✨ `home-projects.spec.ts:174-187` — classes du lien comparées à celles d'un `appButton` par défaut rendu à côté : résiste à un changement de la directive, attrape une variante oubliée.
+- ⚠️ `home-hero-section.spec.ts:29` — `render(hero: HeroData | null)` n'a qu'un appelant, avec `STATIC_HERO` : le `| null` n'est exercé par aucun test de ce fichier (comme avant le diff : le hero `null` n'y était déjà pas testé). Paramètre élargissable sans coût ou à resserrer en `HeroData` ; mineur, informatif.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil muet sur la livraison (Dokploy continu d'après `CLAUDE.md`) · monitoring : profil muet ; aucun état persistant touché.
+- non couvert par les gates : Ctrl/Cmd+clic sur « Voir tous les projets » entre l'apparition du bloc différé et son hydratation (même réserve qu'en L13.1-L13.4, non rejoué) ; clic simple prouvé avec et sans JavaScript.

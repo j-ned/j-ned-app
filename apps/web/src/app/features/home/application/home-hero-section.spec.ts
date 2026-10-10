@@ -1,11 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
-import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { SectionScroller } from '@core/navigation/section-scroller';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '../domain/home-hero.static-data';
+import type { HeroData } from '../domain/models/hero.model';
 import { STATIC_HERO } from '../infra/data/home.static-data';
 import { HomeHeroSection } from './home-hero-section';
 
@@ -14,8 +13,8 @@ class BlankPage {}
 
 describe('HomeHeroSection', () => {
   let fixture: ComponentFixture<HomeHeroSection>;
-  const trackCtaClick = vi.fn();
-  const scrollTo = vi.fn();
+  const contactRequested = vi.fn();
+  const offersOpened = vi.fn();
 
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const byTestId = (id: string, root: ParentNode = host()): HTMLElement | null =>
@@ -26,25 +25,23 @@ describe('HomeHeroSection', () => {
     (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
 
   const contactCta = (): HTMLElement | null => byTestId('hero-cta-contact');
-  const clickContactCta = (): void => {
-    const cta = contactCta();
-    (cta?.querySelector('button') ?? cta)?.click();
+
+  const render = async (hero: HeroData | null): Promise<void> => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([{ path: 'offres', component: BlankPage }])],
+    });
+    fixture = TestBed.createComponent(HomeHeroSection);
+    fixture.componentRef.setInput('hero', hero);
+    fixture.componentInstance.contactRequested.subscribe(contactRequested);
+    fixture.componentInstance.offersOpened.subscribe(offersOpened);
+    fixture.detectChanges();
+    await fixture.whenStable();
   };
 
   beforeEach(async () => {
-    trackCtaClick.mockClear();
-    scrollTo.mockClear();
-    TestBed.configureTestingModule({
-      providers: [
-        provideRouter([{ path: 'offres', component: BlankPage }]),
-        { provide: AnalyticsGateway, useValue: { trackCtaClick } },
-        { provide: SectionScroller, useValue: { scrollTo, eager: signal(false) } },
-      ],
-    });
-    fixture = TestBed.createComponent(HomeHeroSection);
-    fixture.componentRef.setInput('hero', STATIC_HERO);
-    fixture.detectChanges();
-    await fixture.whenStable();
+    contactRequested.mockClear();
+    offersOpened.mockClear();
+    await render(STATIC_HERO);
   });
 
   describe('contact call to action', () => {
@@ -53,16 +50,10 @@ describe('HomeHeroSection', () => {
       expect(text(contactCta())).toBe(HOME_HERO_CTA_LABELS.contact);
     });
 
-    it('scrolls to the contact form of the home page', () => {
-      clickContactCta();
-      expect(scrollTo).toHaveBeenCalledTimes(1);
-      expect(scrollTo).toHaveBeenCalledWith('contact');
-    });
-
-    it('tracks the click under the home_hero_contact id', () => {
-      clickContactCta();
-      expect(trackCtaClick).toHaveBeenCalledTimes(1);
-      expect(trackCtaClick).toHaveBeenCalledWith('home_hero_contact', HOME_HERO_CTA_LABELS.contact);
+    it('asks the page for the contact once, without opening the offers', () => {
+      contactCta()?.click();
+      expect(contactRequested).toHaveBeenCalledOnce();
+      expect(offersOpened).not.toHaveBeenCalled();
     });
   });
 
@@ -80,9 +71,10 @@ describe('HomeHeroSection', () => {
       expect(TestBed.inject(Router).url).toBe('/offres');
     });
 
-    it('tracks the click under the home_hero_offers id', () => {
+    it('tells the page the offers were opened, once, without asking for the contact', () => {
       byTestId('hero-cta-offers')?.click();
-      expect(trackCtaClick).toHaveBeenCalledWith('home_hero_offers', HOME_HERO_CTA_LABELS.offers);
+      expect(offersOpened).toHaveBeenCalledOnce();
+      expect(contactRequested).not.toHaveBeenCalled();
     });
   });
 
