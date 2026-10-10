@@ -422,6 +422,8 @@ describe('BlogDetail', () => {
       await block?.render(DeferBlockState.Error);
       fixture.detectChanges();
       const link = testId(fixture, 'blog-content-error')?.querySelector('a');
+      // L'action par défaut déplacerait la `location` de la fenêtre happy-dom partagée par le worker.
+      link?.addEventListener('click', (event) => event.preventDefault());
       link?.click();
       await fixture.whenStable();
 

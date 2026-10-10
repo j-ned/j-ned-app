@@ -41,6 +41,10 @@ function link(href: string | null, label = 'Lien'): HTMLAnchorElement {
   const anchor = document.createElement('a');
   if (href !== null) anchor.setAttribute('href', href);
   anchor.dataset['testid'] = 'outbound-probe';
+  // Sans navigation réelle, happy-dom recopie quand même l'href dans `location` : un `tel:` y
+  // resterait pour les fichiers suivants du worker (fenêtre partagée, `isolate: false`) et toute
+  // URL relative résolue contre lui lèverait `Invalid URL` (NgOptimizedImage d'AboutHero).
+  anchor.addEventListener('click', (event) => event.preventDefault());
   const text = document.createElement('span');
   text.textContent = label;
   anchor.append(text);
