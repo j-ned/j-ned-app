@@ -22,7 +22,7 @@ RUN pnpm run build --configuration production \
 # Angular 22 (outputMode server) emits a request handler but no Node listener; every public
 # route is prerendered at build (index.html per route) and the rest is client-rendered from
 # index.csr.html, the shell without hydration state. NestJS lives on api.nedellec-julien.fr
-# and is reached directly from the client.
+# and is reached directly from the client, except /api/storage/ (images) relayed below.
 # ==============================================================================
 FROM nginx:alpine AS production
 
@@ -42,12 +42,25 @@ add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment
 add_header Cross-Origin-Opener-Policy "same-origin" always;
 HEADERS
 
-RUN cat > /etc/nginx/conf.d/default.conf <<'NGINX'
+# Images servies depuis l'origine du site (pas de connexion TLS de plus vers api.) : nginx relaie
+# /api/storage/ au service API par le réseau Docker. Le nom du service Dokploy est propre à
+# l'environnement, d'où la variable surchargeable dans Dokploy ; seules les variables STORAGE_
+# sont substituées dans le gabarit (les $variables nginx restent intactes).
+ENV STORAGE_UPSTREAM=http://portfolio-jned-backend-oklc7p:3000 \
+    NGINX_ENVSUBST_FILTER=STORAGE_
+
+RUN mkdir -p /etc/nginx/templates /var/cache/nginx/storage \
+ && cat > /etc/nginx/templates/default.conf.template <<'NGINX'
 # `location` ignore la query string : c'est `?v=` qui distingue le sprite empreinté du nu.
 map $arg_v $sprite_cache_control {
     ""      "public, max-age=0, must-revalidate";
     default "public, max-age=31536000, immutable";
 }
+
+# Images de l'API : clés empreintées (`<id>-<sha8>.avif`), donc cachables longtemps. La clé de
+# cache ignore les paramètres sauf `variant` : une query string arbitraire ne peut ni remplir le
+# cache ni contourner le relais.
+proxy_cache_path /var/cache/nginx/storage levels=1:2 keys_zone=storage:10m max_size=1g inactive=30d use_temp_path=off;
 
 server {
     listen 3000;
@@ -100,6 +113,49 @@ server {
         include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=0, must-revalidate" always;
         try_files $uri =404;
+    }
+
+    # `^~` : sans lui, la regex d'extensions ci-dessus capterait les `.avif` et chercherait un fichier.
+    location ^~ /api/storage/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header X-Cache-Status $upstream_cache_status always;
+
+        limit_except GET { deny all; }
+
+        # Résolveur DNS de Docker, et upstream en variable : nginx démarre même si l'API est absente.
+        resolver 127.0.0.11 valid=30s ipv6=off;
+        set $storage_upstream ${STORAGE_UPSTREAM};
+        proxy_pass $storage_upstream$uri$is_args$args;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+
+        proxy_cache storage;
+        proxy_cache_key "$uri|$arg_variant";
+        proxy_cache_valid 200 365d;
+        proxy_cache_valid 404 1m;
+        proxy_cache_lock on;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        proxy_ignore_headers Set-Cookie Vary;
+
+        # En-têtes de l'API (helmet, CORS) remplacés par ceux du site ; Cache-Control, Content-Type
+        # et Content-Length de l'API sont conservés.
+        proxy_hide_header Vary;
+        proxy_hide_header Set-Cookie;
+        proxy_hide_header X-Powered-By;
+        proxy_hide_header Access-Control-Allow-Origin;
+        proxy_hide_header Access-Control-Allow-Credentials;
+        proxy_hide_header Content-Security-Policy;
+        proxy_hide_header Cross-Origin-Opener-Policy;
+        proxy_hide_header Cross-Origin-Resource-Policy;
+        proxy_hide_header Origin-Agent-Cluster;
+        proxy_hide_header Referrer-Policy;
+        proxy_hide_header Strict-Transport-Security;
+        proxy_hide_header X-Content-Type-Options;
+        proxy_hide_header X-DNS-Prefetch-Control;
+        proxy_hide_header X-Download-Options;
+        proxy_hide_header X-Frame-Options;
+        proxy_hide_header X-Permitted-Cross-Domain-Policies;
+        proxy_hide_header X-XSS-Protection;
     }
 
     # Flux RSS : le type déclaré par les agrégateurs, pas le `text/xml` générique de l'extension
