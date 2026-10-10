@@ -855,6 +855,98 @@ Verdict : **PASS**.
 Captures (scratchpad de session, `t2/shots/`) :
 `site-vitrine-{1440,375}-{light,dark}-examples.png`. Mesures runtime : `t2/verify.json`.
 
+### Tranche 2 — Lighthouse /offres/site-vitrine/ (mesure différée, 2026-10-10)
+
+Steps : base = `3fb51a2` (`d72e554^`, T1 incluse, sans les démos vitrine), après = `d72e554`
+(#168), chacun dans un worktree détaché du scratchpad (retirés ensuite). Lockfiles identiques
+entre les deux commits mais différents de `master` : `pnpm install --frozen-lockfile` dans chaque
+worktree, puis `pnpm run build --configuration production` (exit 0 des deux côtés ; `Initial
+total` 582,94 kB bruts des deux côtés, 144,71 → 144,74 kB estimés). Contrôle du HTML prérendu :
+`offer-examples` absent de la base, présent après avec 8 chemins `/demos/`. `python3 -m
+http.server` sur chaque `browser/` (`:4381` base, `:4382` après) → Lighthouse 12.8.2
+(`npx lighthouse@12`, Chromium 1208 de Playwright, `--headless=new --no-sandbox`, catégories
+performance + accessibilité), base et après alternés passe par passe, requêtes vers
+`*api.nedellec-julien.fr*`, `*analytics*` et `*sentry.io*` bloquées (`--blocked-url-patterns` ;
+vérifié dans chaque rapport : seules requêtes externes tentées, toutes en statut −1). Serveurs
+arrêtés par `fuser -k`.
+
+Élément LCP **identique avant et après dans chaque profil** : `p.mt-7` du hero (le chapeau « Un
+site clair, rapide sur téléphone… ») en mobile simulé et devtools, `h1#offer-heading` en desktop.
+Le LCP est textuel, entièrement en « render delay » (aucune phase de chargement de ressource).
+
+| Profil | Image | Perf (passes) | LCP médian (passes) | CLS médian (passes) | TBT médian (passes) |
+|---|---|---|---|---|---|
+| mobile, simulé, 5 passes | base | 64 (64/66/64/66/64) | 6 193 ms (6 193/5 893/6 193/5 890/6 196) | 0 (0/0,002/0/0,002/0) | 60 ms (51/84/60/80/52) |
+| mobile, simulé, 5 passes | après | 62 (62/62/66/64/62) | 6 306 ms (6 327/6 306/6 029/6 389/6 306) | 0 (0/0/0,002/0/0) | 113 ms (114/113/95/63/121) |
+| desktop, simulé, 5 passes | base | 96 (97/96/97/96/95) | 1 133 ms (1 094/1 133/1 094/1 135/1 166) | 0 (0,002/0/0,002/0/0) | 0 ms (0/0/2/0/0) |
+| desktop, simulé, 5 passes | après | 96 (95/96/95/96/96) | 1 191 ms (1 192/1 191/1 225/1 190/1 191) | 0 (0/0/0/0/0) | 0 ms (0/0/0/0/0) |
+| mobile, devtools, 3 passes | base | 87 (87/87/87) | 1 027 ms (1 023/1 027/1 035) | 0,002 (×3) | 499 ms (488/499/499) |
+| mobile, devtools, 3 passes | après | 84 (84/85/84) | 1 034 ms (1 034/1 036/1 027) | 0,002 (×3) | 583 ms (583/555/589) |
+
+Accessibilité 100 sur toutes les passes.
+
+Écarts de médiane LCP rapportés à la dispersion (étendue max − min des passes) :
+
+| Profil | Δ LCP médian | Étendue base | Étendue après | Recouvrement des passes |
+|---|---|---|---|---|
+| mobile, simulé | +113 ms (+1,8 %) | 306 ms | 360 ms | oui |
+| desktop, simulé | +58 ms (+5,1 %) | 72 ms | 35 ms | **non** (5 passes après > 5 passes base) |
+| mobile, devtools | +7 ms (+0,7 %) | 12 ms | 9 ms | oui |
+
+Mécanisme observé : au viewport Lighthouse mobile (412 × 823) comme en desktop, les **deux**
+visuels sont dans le seuil de chargement anticipé du `loading="lazy"` de Chromium et sont
+demandés dès la première mise en page (~130 ms, priorité basse ; 800w AVIF = 36,5 ko en mobile,
+1600w AVIF = 97 ko en desktop), sans préchargement ni `fetchpriority="high"`. Poids total de la
+page : 937 774 → 984 205 o (mobile), → 1 044 840 o (desktop). DOM : 335 → 381 nœuds. Le modèle
+simulé (Lantern) place ces octets et le travail de rendu supplémentaire dans le chemin du LCP
+(render delay desktop 1 012 → 1 069 ms) ; sous throttling réel (devtools) les images partent à
+~1 020 ms, après le LCP, et le LCP ne bouge pas.
+
+Verdict critère 7 : **PASS, avec réserve sur le desktop**.
+
+- CLS : aucune régression dans aucun profil (0 / 0, 0,002 / 0,002 ; les 0,002 isolés existent
+  des deux côtés).
+- LCP mobile simulé et devtools : écart de médiane inférieur à la dispersion des passes, passes
+  qui se recouvrent → non mesurable.
+- LCP desktop : l'écart (+58 ms) reste sous l'étendue de la base (72 ms), donc sous la règle
+  « au-delà de la dispersion » si on prend la dispersion de la base comme référence ; mais il
+  dépasse l'étendue de l'après (35 ms) et les deux séries sont **disjointes**, ce qui indique un
+  décalage systématique réel, faible en absolu (≈ 1,2 s des deux côtés, score 96 inchangé). À
+  trancher par la session principale : c'est le même mécanisme que la réserve LCP mobile de la
+  T1 (visuel lazy dans le seuil de chargement anticipé, compté par le modèle simulé), doublé ici
+  par deux visuels 1600w.
+
+Réserves :
+
+1. **TBT** (hors critère 7) : +53 ms en mobile simulé (60 → 113, séries qui se recouvrent en
+   partie) et **+84 ms en devtools** (499 → 583, séries disjointes, écart très au-delà des
+   étendues de 11 et 34 ms) ; perf devtools 87 → 84. Le détail du thread principal montre plus de
+   style/mise en page et de peinture (+37 ms et +27 ms sur la passe 2) et des tâches longues
+   supplémentaires (rendu et hydratation de la section, 46 nœuds de plus). Régression mesurable,
+   mais sur une métrique que le critère 7 ne couvre pas.
+2. Valeurs absolues locales non représentatives de la prod : `http.server` ne compresse pas
+   (LCP mobile simulé ≈ 6,2 s en local contre ≈ 2,6 s en prod) ; seuls les écarts base/après sont
+   interprétables, les deux côtés étant servis à l'identique.
+3. Le desktop de la T2 compte 5 passes (3 en T1) ; le devtools 3 passes, comme en T1.
+4. `*sentry.io*` a été bloqué en plus des deux motifs demandés, pour ne rien envoyer à un tiers
+   de production pendant les passes ; aucune requête Sentry n'apparaît dans les rapports.
+
+Contexte (hors critère) — prod actuelle (`master` déployé), mobile simulé, 3 passes, mêmes URL
+bloquées (requêtes `api/config` et `analytics/track` tentées et bloquées, GET uniquement pour le
+reste) :
+
+| Page | Perf (passes) | LCP médian (passes) | CLS médian (passes) | Élément LCP |
+|---|---|---|---|---|
+| `/offres/site-vitrine` | 93 (93/93/94) | 2 557 ms (2 778/2 557/2 557) | 0,004 (0/0,004/0,004) | `p.mt-7` du hero |
+| `/offres/site-atelier` | 93 (93/93/93) | 2 558 ms (2 555/2 781/2 558) | 0,035 (0,035/0/0,035) | `h1#offer-heading` |
+
+En prod, seul le premier visuel de la vitrine (`coaching-life-…-800.avif`) est demandé avant
+défilement, et celui de l'atelier (`site-industrie-…-800.avif`) l'est aussi, en priorité basse.
+
+Rapports Lighthouse (scratchpad de session, `lh010/lh/`) : `{mobile,desktop}-{base,after}-{1..5}.json`,
+`devtools-{base,after}-{1..3}.json`, `prod-{vitrine,atelier}-{1..3}.json` ; synthèse
+`lh010/summarize.js`, journal `lh010/run.log`, builds `lh010/build-{base,after}.log`.
+
 ## Review code
 
 ### Tranche 1
