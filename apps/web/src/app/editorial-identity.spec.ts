@@ -2,6 +2,7 @@ import { OFFER_PAGES } from '@features/offer/domain/offer-pages.static-data';
 import { OFFER_PRICES } from '@features/offer/domain/offer-prices.static-data';
 import { formatEur } from '@features/offer/domain/format-eur';
 import { STATIC_HERO } from '@features/home/infra/data/home.static-data';
+import { FORBIDDEN_WORDINGS } from '@shared/identity/forbidden-wordings';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { routes } from './app.routes';
 import { EDITORIAL_SOURCES, editorialTexts } from './testing/editorial-sources';
@@ -12,12 +13,11 @@ const aboutDescription = (): string =>
 const occurrencesOf = (text: string, part: string): number => text.split(part).length - 1;
 
 const FORBIDDEN_IDENTITIES: readonly (readonly [string, RegExp])[] = [
+  ...FORBIDDEN_WORDINGS.map(({ label, pattern }) => [`« ${label} »`, pattern] as const),
   ["« aujourd'hui développeur »", /aujourd'hui développeur/iu],
   ["« aujourd'hui tourneur CN en »", /aujourd'hui tourneur CN en/iu],
   ['« Je suis tourneur CN »', /Je suis tourneur CN/iu],
   ['« puis développeur »', /puis développeur/iu],
-  ['« métallurgie »', /métallurgie/iu],
-  ['a career length', /(vingt|20)[\s\u00a0\u202f]ans/iu],
 ];
 
 describe('one identity across the site', () => {

@@ -21,6 +21,7 @@ describe('adminNavGroups', () => {
         items: [
           { key: 'projects', route: '/admin/projects', label: 'Projets', exact: false },
           { key: 'posts', route: '/admin/blog', label: 'Articles', exact: false },
+          { key: 'profile', route: '/admin/profile', label: 'Parcours', exact: false },
           { key: 'cv', route: '/admin/cv', label: 'CV', exact: false },
         ],
       },
@@ -47,6 +48,7 @@ describe('adminNavGroups', () => {
       { key: 'overview', count: null, countSuffix: '' },
       { key: 'projects', count: 6, countSuffix: '' },
       { key: 'posts', count: 2, countSuffix: '' },
+      { key: 'profile', count: null, countSuffix: '' },
       { key: 'cv', count: null, countSuffix: '' },
       { key: 'audience', count: null, countSuffix: '' },
       { key: 'messages', count: 3, countSuffix: 'non lus' },
@@ -90,6 +92,7 @@ describe('adminNavGroups', () => {
         overview: null,
         projects: 6,
         posts: 2,
+        profile: null,
         cv: null,
         audience: null,
         messages: 3,
@@ -100,11 +103,22 @@ describe('adminNavGroups', () => {
   );
 });
 
+describe('adminNavGroups: Parcours', () => {
+  it('Given counts When the groups are built Then « Parcours » is drawn with the user icon', () => {
+    const profile = adminNavGroups(COUNTS)
+      .flatMap((group) => group.items)
+      .find((item) => item.route === '/admin/profile');
+
+    expect(profile?.icon).toBe('user');
+  });
+});
+
 describe('activeNavLabel', () => {
   it.each([
     { url: '/admin', label: "Vue d'ensemble" },
     { url: '/admin/projects', label: 'Projets' },
     { url: '/admin/blog', label: 'Articles' },
+    { url: '/admin/profile', label: 'Parcours' },
     { url: '/admin/cv', label: 'CV' },
     { url: '/admin/audience', label: 'Audience' },
     { url: '/admin/messages?filter=unread', label: 'Messages' },

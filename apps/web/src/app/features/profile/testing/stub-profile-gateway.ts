@@ -7,6 +7,18 @@ class StubProfileGateway extends ProfileGateway {
   getProfile(): Observable<ProfileDocument> {
     return defer(() => of(aProfileDocument()));
   }
+
+  saveProfile(): Observable<ProfileDocument> {
+    return defer(() => of(aProfileDocument()));
+  }
+
+  uploadPortrait(): Observable<ProfileDocument> {
+    return defer(() => of(aProfileDocument()));
+  }
+
+  removePortrait(): Observable<void> {
+    return defer(() => of(undefined));
+  }
 }
 
 export function stubProfileGateway(overrides: Partial<ProfileGateway> = {}): ProfileGateway {

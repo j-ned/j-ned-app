@@ -1,45 +1,15 @@
 import { EDITORIAL_SOURCES, editorialTexts } from './testing/editorial-sources';
+import { frenchTypographyViolations } from './testing/french-typography-violations';
 
 const NBSP = '\u00a0';
 const NARROW_NBSP = '\u202f';
 
-type Rule = { readonly pattern: RegExp; readonly expected: string; readonly sign: string };
-
-const RULES: readonly Rule[] = [
-  { pattern: /(\s)(:)/gu, expected: NBSP, sign: ':' },
-  { pattern: /(\s)([;?!])/gu, expected: NARROW_NBSP, sign: ';?!' },
-  { pattern: /(«)(\s)/gu, expected: NBSP, sign: '«' },
-  { pattern: /(\s)(»)/gu, expected: NBSP, sign: '»' },
-  { pattern: /(\s)([%€])/gu, expected: NBSP, sign: '%€' },
-];
-
 // Technical strings (links, paths, addresses) are not prose: a colon or "?" there is syntax.
 const TECHNICAL_VALUE = /^(https?:\/\/|mailto:|tel:|\/)\S*$/u;
 
-const codePoint = (char: string): string =>
-  `U+${(char.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`;
-
-const excerptAround = (text: string, index: number): string =>
-  text
-    .slice(Math.max(0, index - 20), index + 20)
-    .replaceAll(' ', '␠')
-    .replaceAll(NBSP, '⍽')
-    .replaceAll(NARROW_NBSP, '⌴');
-
-const violationsIn = (text: string, path: string): string[] =>
-  RULES.flatMap(({ pattern, expected, sign }) =>
-    [...text.matchAll(pattern)].flatMap((match) => {
-      const space = sign === '«' ? match[2] : match[1];
-      if (space === expected) return [];
-      return [
-        `${path}: ${codePoint(space)} next to "${sign}", expected ${codePoint(expected)} in "${excerptAround(text, match.index)}"`,
-      ];
-    }),
-  );
-
 const collectViolations = (value: unknown, path: string): string[] =>
   editorialTexts(value, path).flatMap(({ path: textPath, text }) =>
-    TECHNICAL_VALUE.test(text) ? [] : violationsIn(text, textPath),
+    TECHNICAL_VALUE.test(text) ? [] : frenchTypographyViolations(text, textPath),
   );
 
 describe('French typography of editorial content', () => {

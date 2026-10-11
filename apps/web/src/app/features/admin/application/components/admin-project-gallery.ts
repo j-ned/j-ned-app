@@ -16,7 +16,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defer, finalize, type Observable } from 'rxjs';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
-import { moveGalleryImage } from '@features/projects/domain/move-gallery-image';
+import { moveItem } from '@shared/collections/move-item';
 import type { ProjectImage } from '@features/projects/domain/models/project.model';
 import { ToastStore } from '@core/notifications/toast-store';
 import { AdminGalleryImageItem } from './admin-gallery-image-item';
@@ -126,7 +126,7 @@ export class AdminProjectGallery {
     this.write(
       this.pendingWrite(
         movedId,
-        this.gateway.reorderGallery(this.projectId(), moveGalleryImage(ids, index, delta)),
+        this.gateway.reorderGallery(this.projectId(), moveItem(ids, index, delta)),
       ),
       (images) => {
         this.commit(images);

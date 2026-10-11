@@ -57,6 +57,13 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./pages/admin-blog/admin-blog').then((m) => m.AdminBlog),
       },
       {
+        path: 'profile',
+        title: 'Parcours | Admin',
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () =>
+          import('./pages/admin-profile/admin-profile').then((m) => m.AdminProfile),
+      },
+      {
         path: 'cv',
         title: 'CV | Admin',
         loadComponent: () => import('./pages/admin-cv/admin-cv').then((m) => m.AdminCv),
@@ -93,7 +100,7 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'inbox', redirectTo: 'messages', pathMatch: 'full' },
       { path: 'inbox/messages', redirectTo: 'messages', pathMatch: 'full' },
       { path: 'home', redirectTo: '', pathMatch: 'full' },
-      { path: 'about', redirectTo: '', pathMatch: 'full' },
+      { path: 'about', redirectTo: 'profile', pathMatch: 'full' },
       { path: 'about/cv', redirectTo: 'cv', pathMatch: 'full' },
       { path: 'analytics', redirectTo: 'audience', pathMatch: 'full' },
       { path: 'analytics/visits', redirectTo: 'audience', pathMatch: 'full' },

@@ -5,6 +5,7 @@ import { ADMIN_ROUTES } from './admin.routes';
 import { AdminAudience } from './pages/admin-audience/admin-audience';
 import { AdminOverview } from './pages/admin-overview/admin-overview';
 import { AdminPostEditor } from './pages/admin-post-editor/admin-post-editor';
+import { AdminProfile } from './pages/admin-profile/admin-profile';
 import { AdminProjectEditor } from './pages/admin-project-editor/admin-project-editor';
 import { unsavedChangesGuard } from './application/unsaved-changes-guard';
 
@@ -26,6 +27,7 @@ describe('ADMIN_ROUTES: titres des pages', () => {
       blog: 'Articles | Admin',
       'blog/new': 'Nouvel article | Admin',
       'blog/:id': 'Modifier un article | Admin',
+      profile: 'Parcours | Admin',
       cv: 'CV | Admin',
       messages: 'Messages | Admin',
       audience: 'Audience | Admin',
@@ -164,4 +166,30 @@ describe('ADMIN_ROUTES: édition des articles', () => {
       expect(route?.canDeactivate).toEqual([unsavedChangesGuard]);
     },
   );
+});
+
+describe('ADMIN_ROUTES: édition du parcours', () => {
+  it.each(['/admin/profile', '/admin/about'])(
+    'Given the address %s When it is opened Then the profile editor answers at /admin/profile',
+    async (url) => {
+      expect(await open(url)).toEqual({
+        url: '/admin/profile',
+        title: 'Parcours | Admin',
+        path: 'profile',
+        id: null,
+      });
+    },
+  );
+
+  it('Given the route profile When its page is loaded Then it is the profile editor', async () => {
+    const route = ADMIN_ROUTES[0]?.children?.find((candidate) => candidate.path === 'profile');
+
+    expect(await route?.loadComponent?.()).toBe(AdminProfile);
+  });
+
+  it('Given the route profile When the admin leaves it Then the unsaved changes guard is asked first', () => {
+    const route = ADMIN_ROUTES[0]?.children?.find((candidate) => candidate.path === 'profile');
+
+    expect(route?.canDeactivate).toEqual([unsavedChangesGuard]);
+  });
 });
