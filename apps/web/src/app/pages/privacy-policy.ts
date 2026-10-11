@@ -10,7 +10,7 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
     <article class="page-container max-w-3xl pt-8 prose dark:prose-invert">
       <h1>Politique de confidentialité</h1>
       <p class="text-muted" data-testid="privacy-last-update">
-        Dernière mise à jour&nbsp;: 10 octobre 2026
+        Dernière mise à jour&nbsp;: 11 octobre 2026
       </p>
 
       <p>
@@ -73,10 +73,12 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
       </p>
 
       <h2>Suivi des erreurs techniques</h2>
-      <p>
+      <p data-testid="privacy-error-tracking">
         En cas d'erreur d'affichage, un rapport technique (message d'erreur, page concernée,
         navigateur) est transmis à Sentry, hébergé dans l'Union européenne, pour corriger le
-        problème. Aucune donnée d'identification n'y est envoyée volontairement. Ces rapports sont
+        problème, ainsi que des mesures de performance anonymes (temps de chargement) pour une
+        visite sur dix. Aucune donnée d'identification n'y est envoyée volontairement&#8239;; pour
+        l'éditeur connecté uniquement, son identifiant technique est joint. Ces rapports sont
         conservés 90 jours.
       </p>
 

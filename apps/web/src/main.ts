@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
 import { Monitoring } from './app/core/monitoring/monitoring';
+import { scrubBreadcrumb, scrubEvent } from './app/core/monitoring/scrub-event';
 
 type RuntimeConfig = {
   sentry: {
@@ -40,10 +41,21 @@ async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<v
     dsn,
     environment,
     release,
-    sendDefaultPii: false,
+    // Un champ omis vaut « tout collecter » depuis la v11 : chaque catégorie est fermée explicitement.
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: { request: { allow: ['User-Agent'] }, response: false },
+      httpBodies: [],
+      urlQueryParams: false,
+      graphQL: { document: false, variables: false },
+      genAI: { inputs: false, outputs: false },
+      databaseQueryData: false,
+      queues: false,
+      stackFrameVariables: false,
+    },
     integrations: [
       sentry.browserTracingIntegration({
-        enableInp: true,
         enableLongAnimationFrame: true,
       }),
       sentry.httpClientIntegration({
@@ -53,27 +65,8 @@ async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<v
     tracesSampleRate: isProduction ? 0.1 : 1.0,
     tracePropagationTargets: [/^\//, /^https:\/\/api\.nedellec-julien\.fr/],
     ignoreErrors: ['ChunkLoadError', /ResizeObserver loop/, 'NG0911'],
-    beforeSend(event) {
-      const data = event.request?.data as Record<string, unknown> | undefined;
-      if (data) {
-        for (const key of [
-          'password',
-          'newPassword',
-          'currentPassword',
-          'code',
-          'token',
-          'email',
-        ]) {
-          if (key in data) data[key] = '[Filtered]';
-        }
-      }
-      if (event.request?.cookies) delete event.request.cookies;
-      if (event.request?.headers) {
-        delete event.request.headers['authorization'];
-        delete event.request.headers['cookie'];
-      }
-      return event;
-    },
+    beforeSend: scrubEvent,
+    beforeBreadcrumb: scrubBreadcrumb,
   });
 
   // Un échec du bootstrap est déjà journalisé par son propre catch : rien à rattacher.

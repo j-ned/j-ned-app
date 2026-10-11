@@ -99,6 +99,10 @@ describe('Pages légales', () => {
         'privacy-audience-retention',
         "Base légale\u00a0: l'intérêt légitime à connaître l'usage du site. Les données brutes sont supprimées après 30 jours\u202f; seuls des totaux journaliers anonymes (visites, pages vues, visites engagées, rebonds, durée d'affichage cumulée, nombre d'actions par type) sont conservés au-delà.",
       ],
+      [
+        'privacy-error-tracking',
+        "En cas d'erreur d'affichage, un rapport technique (message d'erreur, page concernée, navigateur) est transmis à Sentry, hébergé dans l'Union européenne, pour corriger le problème, ainsi que des mesures de performance anonymes (temps de chargement) pour une visite sur dix. Aucune donnée d'identification n'y est envoyée volontairement\u202f; pour l'éditeur connecté uniquement, son identifiant technique est joint. Ces rapports sont conservés 90 jours.",
+      ],
     ])('le paragraphe %s décrit la mesure réelle', (testId, expected) => {
       expect(paragraph(renderPrivacy(), testId)).toBe(expected);
     });
@@ -108,7 +112,7 @@ describe('Pages légales', () => {
         privacy: paragraph(renderPrivacy(), 'privacy-last-update'),
         legal: LEGAL_LAST_UPDATE,
       }).toEqual({
-        privacy: 'Dernière mise à jour\u00a0: 10 octobre 2026',
+        privacy: 'Dernière mise à jour\u00a0: 11 octobre 2026',
         legal: '3 octobre 2026',
       });
     });

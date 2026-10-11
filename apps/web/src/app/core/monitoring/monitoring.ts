@@ -1,19 +1,23 @@
 import { ErrorHandler, Injectable, inject } from '@angular/core';
 import type { ActivatedRouteSnapshot, Router } from '@angular/router';
 
-export type MonitoringSdk = Pick<
-  typeof import('@sentry/angular'),
-  | 'createErrorHandler'
-  | 'setUser'
-  | 'TraceService'
-  | 'getActiveSpan'
-  | 'getRootSpan'
-  | 'spanToJSON'
-  | 'updateSpanName'
-  | 'getCurrentScope'
->;
-
 type MonitoredUser = { readonly id: string };
+
+type MonitoredSpan = object;
+
+// Port structurel : `main.ts` y passe le vrai module, le compilateur signale toute dérive du SDK.
+export type MonitoringSdk = {
+  createErrorHandler(options: { showDialog: boolean; logErrors?: boolean }): {
+    handleError(error: unknown): void;
+  };
+  setUser(user: MonitoredUser | null): void;
+  TraceService: new (router: Router) => unknown;
+  getActiveSpan(): MonitoredSpan | undefined;
+  getRootSpan(span: MonitoredSpan): MonitoredSpan;
+  spanToJSON(span: MonitoredSpan): { readonly attributes: Readonly<Record<string, unknown>> };
+  updateSpanName(span: MonitoredSpan, name: string): void;
+  getCurrentScope(): { setTransactionName(name: string): void };
+};
 
 const MAX_PENDING_ERRORS = 20;
 
@@ -65,7 +69,7 @@ export class Monitoring {
     const activeSpan = sdk.getActiveSpan();
     if (!activeSpan) return;
     const rootSpan = sdk.getRootSpan(activeSpan);
-    if (sdk.spanToJSON(rootSpan).op !== 'pageload') return;
+    if (sdk.spanToJSON(rootSpan).attributes['sentry.op'] !== 'pageload') return;
     const route = toParameterizedRoute(router.routerState.snapshot.root);
     sdk.updateSpanName(rootSpan, route);
     sdk.getCurrentScope().setTransactionName(route);

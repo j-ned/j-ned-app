@@ -33,11 +33,11 @@ function fakeSdk(activeSpanOp: string | null = null): FakeSdk {
       }
     },
     getActiveSpan: () => (activeSpanOp === null ? undefined : span),
-    getRootSpan: (s: unknown) => s,
-    spanToJSON: (s: { op: string | null }) => ({ op: s.op }),
+    getRootSpan: (s: object) => s,
+    spanToJSON: (s: { op: string | null }) => ({ attributes: { 'sentry.op': s.op } }),
     updateSpanName: (_: unknown, name: string) => renamed.push(name),
     getCurrentScope: () => ({ setTransactionName: (name: string) => transactionNames.push(name) }),
-  } as unknown as FakeSdk;
+  };
 }
 
 describe('Monitoring', () => {
