@@ -11,5 +11,18 @@
     "likesCount": 3,
     "publishedAt": "2026-10-01T08:00:00.000Z",
     "updatedAt": "2026-10-02T08:00:00.000Z"
+  },
+  {
+    "id": "b-brouillon",
+    "title": "Article brouillon B",
+    "slug": "article-brouillon",
+    "excerpt": "Brouillon servi par la doublure : visible dans l'admin seulement.",
+    "contentMarkdown": "## Brouillon\n\nParagraphe en cours d'écriture.\n",
+    "coverImage": "",
+    "tags": ["NestJS"],
+    "status": "draft",
+    "likesCount": 0,
+    "publishedAt": null,
+    "updatedAt": "2026-10-09T10:00:00.000Z"
   }
 ]

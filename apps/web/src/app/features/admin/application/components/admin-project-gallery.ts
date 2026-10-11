@@ -42,25 +42,27 @@ const uploadErrorDetail = (error: unknown): string =>
     'data-testid': 'admin-project-gallery',
   },
   template: `
-    <ul
-      data-testid="admin-gallery-list"
-      role="list"
-      class="grid grid-cols-1 gap-4.5 @min-[26rem]:grid-cols-2 @min-[36rem]:grid-cols-3"
-    >
-      @for (image of gallery(); track image.id; let index = $index, count = $count) {
-        <li class="min-w-0">
-          <app-admin-gallery-image-item
-            [image]="image"
-            [rank]="index + 1"
-            [total]="count"
-            [busy]="pendingImageIds().has(image.id)"
-            (altSaved)="saveAlt(image.id, $event)"
-            (moveRequested)="move(index, $event)"
-            (removeRequested)="remove(image.id)"
-          />
-        </li>
-      }
-    </ul>
+    @if (gallery().length > 0) {
+      <ul
+        data-testid="admin-gallery-list"
+        role="list"
+        class="grid grid-cols-1 gap-4.5 @min-[26rem]:grid-cols-2 @min-[36rem]:grid-cols-3"
+      >
+        @for (image of gallery(); track image.id; let index = $index, count = $count) {
+          <li class="min-w-0">
+            <app-admin-gallery-image-item
+              [image]="image"
+              [rank]="index + 1"
+              [total]="count"
+              [busy]="pendingImageIds().has(image.id)"
+              (altSaved)="saveAlt(image.id, $event)"
+              (moveRequested)="move(index, $event)"
+              (removeRequested)="remove(image.id)"
+            />
+          </li>
+        }
+      </ul>
+    }
     @if (isFull()) {
       <p data-testid="admin-gallery-full" class="text-sm text-muted">{{ fullNotice }}</p>
     } @else {

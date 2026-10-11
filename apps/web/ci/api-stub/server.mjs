@@ -78,7 +78,26 @@ async function removePortrait() {
   return [204, null];
 }
 
-async function route(req, pathname) {
+// Lectures de l'admin, testées avant l'expression du slug d'article (`/blog/posts/admin` n'en est pas un).
+async function readAdmin(pathname, searchParams) {
+  if (pathname === '/api/blog/posts/admin') return [200, await readFixture('blog-posts')];
+  if (pathname === '/api/contact/messages') {
+    return [200, { data: await readFixture('contact-messages') }];
+  }
+  if (pathname === '/api/contact/messages/unread-count') {
+    const messages = await readFixture('contact-messages');
+    return [200, { count: messages.filter((message) => !message.read).length }];
+  }
+  const stats = pathname.match(/^\/api\/analytics\/stats\/([a-z-]+)$/);
+  if (!stats) return null;
+  const segment = (await readFixture('analytics-stats'))[stats[1]];
+  // `metrics` et `events` sont indexés par le paramètre `type` de la requête.
+  const type = searchParams.get('type');
+  const body = type === null ? segment : segment?.[type];
+  return body === undefined ? [404, { message: 'Not Found' }] : [200, body];
+}
+
+async function route(req, pathname, searchParams) {
   const { method } = req;
   if (method === 'POST' && pathname === '/api/analytics/track') return [204, null];
   if (method === 'PUT' && pathname === '/api/profile') return replaceProfile(await readJson(req));
@@ -86,6 +105,11 @@ async function route(req, pathname) {
   if (method === 'DELETE' && pathname === '/api/profile/portrait') return removePortrait();
   if (ADMIN_SESSION && method === 'GET' && pathname === '/api/auth/me') return [200, STUB_ADMIN];
   if (method !== 'GET' && method !== 'HEAD') return [405, { message: 'Method Not Allowed' }];
+
+  if (ADMIN_SESSION) {
+    const adminRead = await readAdmin(pathname, searchParams);
+    if (adminRead) return adminRead;
+  }
 
   if (pathname === '/api/projects') return [200, await readFixture('projects')];
   if (pathname === '/api/blog/posts') {
@@ -111,10 +135,10 @@ async function route(req, pathname) {
 }
 
 createServer(async (req, res) => {
-  const { pathname } = new URL(req.url ?? '/', 'http://stub');
+  const { pathname, searchParams } = new URL(req.url ?? '/', 'http://stub');
   console.log(`${req.method} ${req.url} xff=${req.headers['x-forwarded-for'] ?? '-'}`);
   try {
-    const [status, body] = await route(req, pathname);
+    const [status, body] = await route(req, pathname, searchParams);
     if (body === null) {
       res.writeHead(status).end();
       return;

@@ -1,0 +1,29 @@
+[
+  {
+    "id": 3,
+    "name": "Claire Martin",
+    "email": "claire.martin@atelier-exemple.test",
+    "subject": "Site vitrine pour un atelier de menuiserie",
+    "message": "Bonjour, nous cherchons un site vitrine simple pour présenter nos réalisations et recevoir des demandes de devis. Pouvez-vous nous indiquer un délai ?",
+    "createdAt": "2026-10-10T09:42:00.000Z",
+    "read": false
+  },
+  {
+    "id": 2,
+    "name": "Karim Benali",
+    "email": "karim.benali@exemple.test",
+    "subject": "Maintenance d'une application Angular",
+    "message": "Notre application interne tourne en Angular 15. Nous aimerions la mettre à jour et confier la maintenance à un prestataire.",
+    "createdAt": "2026-10-08T15:10:00.000Z",
+    "read": false
+  },
+  {
+    "id": 1,
+    "name": "Sophie Durand",
+    "email": "sophie.durand@exemple.test",
+    "subject": "Question sur votre article",
+    "message": "Merci pour l'article sur le rendu à la requête, très clair.",
+    "createdAt": "2026-10-02T18:05:00.000Z",
+    "read": true
+  }
+]

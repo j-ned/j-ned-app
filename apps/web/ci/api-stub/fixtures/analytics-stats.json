@@ -1,0 +1,262 @@
+{
+  "overview": {
+    "visitors": 73,
+    "pageviews": 118,
+    "sessions": 81,
+    "bounces": 38,
+    "bounceRate": 46.91,
+    "avgDuration": 74,
+    "projectClicks": 12,
+    "articleViews": 19,
+    "cvDownloads": 4,
+    "ctaClicks": 9,
+    "durationCoverage": 62.5,
+    "detailSince": "2026-04-26",
+    "engagement": {
+      "measuredSince": "2026-04-26",
+      "measuredSessions": 64,
+      "engagedSessions": 38,
+      "realBounces": 26,
+      "realBounceRate": 40.63,
+      "engagementRate": 59.38,
+      "thresholdSeconds": 30
+    },
+    "conversions": {
+      "measuredSince": "2026-04-26",
+      "contactSubmits": 3,
+      "contactClicks": 7,
+      "profileClicks": 5,
+      "demoClicks": 2,
+      "contactSectionViews": 21
+    }
+  },
+  "chart": [
+    {
+      "date": "2026-09-28",
+      "visitors": 3,
+      "pageviews": 5
+    },
+    {
+      "date": "2026-09-29",
+      "visitors": 5,
+      "pageviews": 8
+    },
+    {
+      "date": "2026-09-30",
+      "visitors": 4,
+      "pageviews": 7
+    },
+    {
+      "date": "2026-10-01",
+      "visitors": 7,
+      "pageviews": 11
+    },
+    {
+      "date": "2026-10-02",
+      "visitors": 6,
+      "pageviews": 10
+    },
+    {
+      "date": "2026-10-03",
+      "visitors": 2,
+      "pageviews": 4
+    },
+    {
+      "date": "2026-10-04",
+      "visitors": 1,
+      "pageviews": 2
+    },
+    {
+      "date": "2026-10-05",
+      "visitors": 8,
+      "pageviews": 13
+    },
+    {
+      "date": "2026-10-06",
+      "visitors": 9,
+      "pageviews": 14
+    },
+    {
+      "date": "2026-10-07",
+      "visitors": 6,
+      "pageviews": 10
+    },
+    {
+      "date": "2026-10-08",
+      "visitors": 5,
+      "pageviews": 8
+    },
+    {
+      "date": "2026-10-09",
+      "visitors": 7,
+      "pageviews": 11
+    },
+    {
+      "date": "2026-10-10",
+      "visitors": 4,
+      "pageviews": 7
+    },
+    {
+      "date": "2026-10-11",
+      "visitors": 6,
+      "pageviews": 10
+    }
+  ],
+  "active": {
+    "count": 2
+  },
+  "projects": [
+    {
+      "entityId": "p-temoin",
+      "entityTitle": "Projet témoin A",
+      "count": 12
+    }
+  ],
+  "articles": [
+    {
+      "entityId": "b-temoin",
+      "entityTitle": "Article témoin A",
+      "count": 19
+    }
+  ],
+  "articles-read": [
+    {
+      "entityId": "b-temoin",
+      "entityTitle": "Article témoin A",
+      "count": 8
+    }
+  ],
+  "cta": [
+    {
+      "entityId": "home_hero_contact",
+      "entityTitle": "Me contacter",
+      "count": 6
+    },
+    {
+      "entityId": "header_contact",
+      "entityTitle": "Décrire mon projet",
+      "count": 3
+    }
+  ],
+  "cv-downloads": {
+    "count": 4
+  },
+  "metrics": {
+    "url": [
+      {
+        "name": "/",
+        "count": 54
+      },
+      {
+        "name": "/projects",
+        "count": 21
+      },
+      {
+        "name": "/blog/article-temoin",
+        "count": 19
+      },
+      {
+        "name": "/offres",
+        "count": 14
+      },
+      {
+        "name": "/about",
+        "count": 10
+      }
+    ],
+    "referrer": [
+      {
+        "name": "google.com",
+        "count": 18
+      },
+      {
+        "name": "linkedin.com",
+        "count": 9
+      },
+      {
+        "name": "malt.fr",
+        "count": 4
+      }
+    ],
+    "browser": [
+      {
+        "name": "Chrome",
+        "count": 41
+      },
+      {
+        "name": "Firefox",
+        "count": 17
+      },
+      {
+        "name": "Safari",
+        "count": 15
+      }
+    ],
+    "os": [
+      {
+        "name": "Windows",
+        "count": 29
+      },
+      {
+        "name": "Android",
+        "count": 21
+      },
+      {
+        "name": "macOS",
+        "count": 13
+      },
+      {
+        "name": "Linux",
+        "count": 10
+      }
+    ],
+    "country": [
+      {
+        "name": "FR",
+        "count": 64
+      },
+      {
+        "name": "BE",
+        "count": 5
+      },
+      {
+        "name": "CH",
+        "count": 4
+      }
+    ]
+  },
+  "events": {
+    "contact_submit": [
+      {
+        "entityId": "home",
+        "count": 2
+      },
+      {
+        "entityId": "offer_site-atelier",
+        "count": 1
+      }
+    ],
+    "outbound_click": [
+      {
+        "entityId": "email",
+        "count": 3
+      },
+      {
+        "entityId": "malt",
+        "count": 2
+      },
+      {
+        "entityId": "linkedin",
+        "count": 4
+      },
+      {
+        "entityId": "github",
+        "count": 1
+      },
+      {
+        "entityId": "demo",
+        "count": 2
+      }
+    ]
+  }
+}

@@ -35,6 +35,7 @@ const FOCUSABLE_SELECTOR =
       <div
         #panel
         role="dialog"
+        data-testid="drawer-panel"
         aria-modal="true"
         [attr.aria-label]="ariaLabel()"
         tabindex="-1"

@@ -255,3 +255,72 @@ jobs:
           done
           docker stop portfolio api-stub
           docker network rm portfolio-ci
+
+  a11y:
+    name: Accessibilité (axe, Chromium, image Docker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      # Playwright transpile les tests sans les typer : le typage est une gate à part.
+      - name: Typecheck e2e
+        run: pnpm a11y:typecheck
+
+      # Pas de cache du navigateur : la restauration coûte autant que le téléchargement.
+      - name: Install Chromium headless shell
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Lecture seule du cache GHA : le job docker en est le seul écrivain.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ng-portfolio-app:a11y
+          cache-from: type=gha
+
+      - name: Start stack (image + API stub)
+        run: ci/a11y-stack.sh up ng-portfolio-app:a11y
+
+      - name: Audit axe (WCAG 2.0/2.1/2.2 A et AA)
+        run: pnpm a11y
+
+      - name: Container logs
+        if: failure()
+        run: |
+          docker logs a11y-api-stub || true
+          docker logs a11y-portfolio || true
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: a11y-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      - name: Stop stack
+        if: always()
+        run: ci/a11y-stack.sh down

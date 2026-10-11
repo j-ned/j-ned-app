@@ -88,6 +88,7 @@ import { ThemeStore } from '@core/theme/theme-store';
             class="lg:hidden"
             size="icon"
             [rounded]="true"
+            data-testid="header-menu-toggle"
             [attr.aria-label]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
             (click)="toggleMobileMenu()"
           >
@@ -104,7 +105,7 @@ import { ThemeStore } from '@core/theme/theme-store';
       heading="Menu"
       ariaLabel="Menu de navigation"
     >
-      <nav class="flex flex-col gap-1" aria-label="Navigation mobile">
+      <nav class="flex flex-col gap-1" aria-label="Navigation mobile" data-testid="mobile-nav">
         @for (item of navItems; track item.label) {
           @if (item.kind === 'route') {
             <a

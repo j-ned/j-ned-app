@@ -38,7 +38,7 @@ import { FieldError } from '@shared/ui/field-error';
             </div>
           }
 
-          <form [formRoot]="form">
+          <form [formRoot]="form" data-testid="login-form">
             <fieldset class="border-0 p-0 m-0">
               <legend class="sr-only">Identifiants de connexion</legend>
 

@@ -240,6 +240,24 @@ describe('AdminProjectGallery', () => {
   });
 
   describe('grille de vignettes', () => {
+    it.each([
+      { captures: 0, list: false },
+      { captures: 1, list: true },
+    ])(
+      'Given $captures capture(s) When the gallery renders Then the list exists only with items ($list), the upload form stays',
+      async ({ captures, list }) => {
+        const { host } = await render(gallery(captures));
+
+        expect({
+          list: byTestId(host, 'admin-gallery-list') !== null,
+          emptyLists: [...host.querySelectorAll('[role="list"]')].filter(
+            (element) => element.querySelector(':scope > li') === null,
+          ).length,
+          uploadForm: host.querySelector('app-admin-gallery-upload-form') !== null,
+        }).toEqual({ list, emptyLists: 0, uploadForm: true });
+      },
+    );
+
     it('Given three captures When the gallery renders Then they form a list of three columns, one item per capture', async () => {
       const { host } = await render();
       const list = byTestId(host, 'admin-gallery-list');

@@ -449,6 +449,12 @@ pnpm install --frozen-lockfile                 # echoue si le lockfile est incoh
 pnpm run build --configuration production      # sitemap + rss + build SSR + prerender
 docker build -t ng-portfolio-app:local .       # exactement ce que Dokploy execute
 
+# Audit axe (job CI `a11y`, requis : WCAG 2.0/2.1/2.2 A et AA, zero violation, ADR-0025)
+pnpm exec playwright install --only-shell chromium   # une fois
+docker build -t ng-portfolio-app:a11y . && ci/a11y-stack.sh up
+pnpm a11y                                           # rapport : pnpm exec playwright show-report
+ci/a11y-stack.sh down
+
 # MCP officiel Angular (get_best_practices, search_documentation, onpush_zoneless_migration)
 claude mcp add angular-cli -- pnpm exec ng mcp
 ```

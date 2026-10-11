@@ -18,7 +18,8 @@
   `@angular/build:unit-test` → Vitest 4 + happy-dom, environnement fixé dans `vitest.config.mts`). `tsconfig.spec.json` inclut
   bien `src/**/*.spec.ts` ⇒ les specs sont type-checkées.
 - **lint** : `pnpm lint` (`ng lint`, `@angular-eslint/builder` + flat config
-  `eslint.config.js`) — zéro warning, zéro erreur.
+  `eslint.config.js`) — zéro warning, zéro erreur. Les règles a11y d'angular-eslint
+  (`templateAccessibility`) y sont actives, templates inline compris (`processInlineTemplates`).
 - **build** : `pnpm build` (`ng build`, `@angular/build:application`, SSR activé).
   N'est pas la source de vérité des types (l'app-tsconfig exclut les specs).
 - **invalidation cache** (à lancer **avant** de rejouer un gate ou une preuve RED
@@ -138,7 +139,13 @@
 - **Structure** : `describe` > `it` en Given/When/Then ; `it.each` pour la
   triangulation TDD ; `fixture.componentRef.setInput()` pour les inputs ;
   `TestBed.overrideComponent` > `configureTestingModule`.
-- **Projet de test visuel** (DOM réel, navigateur) : `aucun`.
+- **Projet de test visuel** (DOM réel, navigateur) : `e2e/a11y` — Playwright 1.63 + `@axe-core/playwright`
+  4.13 (versions exactes), Chromium *headless shell*, contre l'image Docker servie devant la doublure
+  `ci/api-stub` (ADR-0025). Audit WCAG 2.0/2.1/2.2 A et AA, zéro violation, sans exception ; pages
+  publiques, états interactifs et pages admin avec données, clair et sombre. Commandes :
+  `docker build -t ng-portfolio-app:a11y . && ci/a11y-stack.sh up`, puis `pnpm a11y` (typage :
+  `pnpm a11y:typecheck`), `ci/a11y-stack.sh down`. Repères de page en `data-testid` uniquement ; pas
+  d'axe dans Vitest (happy-dom ne calcule ni contraste ni mise en page).
 - **Glossaire domaine / builders** : convention **Builder + PageModel** pour la
   lisibilité ; agrégats récurrents candidats (`User`, `SiteStats`,
   `StatsOverview`, `Project`) — à doter d'un builder dès qu'ils sont construits
@@ -196,6 +203,8 @@
   (depuis le 2026-09-08), déclenché sur `push` master et `pull_request`. Job `verify` :
   `pnpm install --frozen-lockfile` → `lint` → `test` → `build --configuration production`
   → vérification du prerender (≥ 5 `index.html`). Job `docker` : build de l'image via le
-  Dockerfile du repo (réplique exacte de Dokploy) + smoke test HTTP. Déploiement : Dokploy
-  rejoue le Dockerfile sur `master` ; nginx sert le dossier `browser` prérendu (pas de
-  serveur SSR à la requête).
+  Dockerfile du repo (réplique exacte de Dokploy) + smoke test HTTP. Job `a11y` (bloquant
+  dans le workflow ; à rendre requis par le propriétaire dans les réglages de branche de `master`) :
+  même image, pile `ci/a11y-stack.sh`, audit axe `pnpm a11y`, rapport en artefact en cas d'échec.
+  Déploiement : Dokploy rejoue le Dockerfile sur `master` ; nginx sert les fichiers et les pages
+  prérendues, et relaie à Node les pages de contenu rendues à la requête (ADR-0024).
