@@ -2,14 +2,12 @@ import { Component, input } from '@angular/core';
 import type { Diploma } from '@features/profile/domain/models/diploma.model';
 import { SplitSection } from '@shared/ui/split-section';
 
-const DIPLOMA_SUMMARY = 'Deux titres professionnels de niveau 5 (Bac+2).';
-
 @Component({
   selector: 'app-about-diploma',
   imports: [SplitSection],
   host: { class: 'block border-t border-foreground/8' },
   template: `
-    <app-split-section headingId="diploma-heading" heading="Formations" [summary]="summary">
+    <app-split-section headingId="diploma-heading" heading="Formations" [summary]="summary()">
       <ul class="border-t border-foreground/8" role="list">
         @for (diploma of diplomas(); track diploma.id) {
           <li
@@ -17,10 +15,15 @@ const DIPLOMA_SUMMARY = 'Deux titres professionnels de niveau 5 (Bac+2).';
             data-testid="about-diploma"
           >
             <div>
-              <p class="font-mono text-[0.8125rem] font-medium text-primary">
+              <p
+                class="font-mono text-[0.8125rem] font-medium text-primary"
+                data-testid="about-diploma-provider"
+              >
                 {{ diploma.provider }}
               </p>
-              <p class="mt-1 font-mono text-xs text-muted">{{ diploma.level }}</p>
+              <p class="mt-1 font-mono text-xs text-muted" data-testid="about-diploma-level">
+                {{ diploma.level }}
+              </p>
             </div>
             <div>
               <h3 class="text-[1.1875rem] font-semibold tracking-tight">{{ diploma.title }}</h3>
@@ -49,6 +52,5 @@ const DIPLOMA_SUMMARY = 'Deux titres professionnels de niveau 5 (Bac+2).';
 })
 export class AboutDiploma {
   readonly diplomas = input.required<readonly Diploma[]>();
-
-  protected readonly summary = DIPLOMA_SUMMARY;
+  readonly summary = input<string>('');
 }

@@ -1,5 +1,5 @@
-import { Component, signal } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { Component, RESPONSE_INIT, signal } from '@angular/core';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
   provideHttpClientTesting,
@@ -19,16 +19,18 @@ import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { HttpCvGateway } from '@features/cv/infra/gateways/http-cv.gateway';
 import { makeCvInfo } from '@features/cv/testing/cv-builders';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
+import { defer, of, throwError } from 'rxjs';
 import { ProfileGateway } from '../../domain/gateways/profile.gateway';
+import type { ProfileDocument } from '../../domain/models/profile-content.model';
 import {
-  STATIC_ABOUT_HIGHLIGHTS,
-  STATIC_BIOGRAPHY,
-  STATIC_DIPLOMAS,
-  STATIC_MOTIVATION,
-  STATIC_PROFILE_BASE,
-  STATIC_TECHNOLOGIES,
-} from '../../infra/data/profile.static-data';
-import { fakeProfileGateway } from '../../testing/fake-profile-gateway';
+  aDiploma,
+  aHighlight,
+  aProfileContent,
+  aProfileDocument,
+  aTechnology,
+} from '../../testing/profile-builders';
+import { stubProfileGateway } from '../../testing/stub-profile-gateway';
 import { About } from './about';
 
 const API = '/api';
@@ -43,20 +45,28 @@ const PUBLISHED_CV: CvAnswer = (request) => request.flush(makeCvInfo());
 const CV_FAILURE: CvAnswer = (request) =>
   request.flush(null, { status: 500, statusText: 'Server Error' });
 
-const PROFILE_READS = [
-  'getProfileInfo',
-  'getBiography',
-  'getSocialButtons',
-  'getDiplomas',
-  'getTechnologies',
-  'getHighlights',
-  'getWhatIDo',
-  'getMotivation',
-] as const satisfies readonly (keyof ProfileGateway)[];
+const PORTRAIT_URL = '/api/storage/portfolio-storage/profile/portrait-1a2b3c4d.avif';
+
+const DOCUMENT: ProfileDocument = aProfileDocument({
+  content: aProfileContent({
+    biography: {
+      title: 'Parcours témoin',
+      summary: 'Résumé du parcours témoin.',
+      leadEmphasis: 'Suite de l’accroche témoin.',
+      paragraphs: ['Paragraphe A.', 'Paragraphe B.', 'Paragraphe C.'],
+    },
+    highlights: [aHighlight({ id: 'h1' }), aHighlight({ id: 'h2' })],
+    technologies: [aTechnology({ id: 't1' }), aTechnology({ id: 't2' }), aTechnology({ id: 't3' })],
+    diplomas: [aDiploma({ id: 'd1' })],
+    workSummary: 'Résumé des activités témoin.',
+    diplomasSummary: 'Résumé des formations témoin.',
+  }),
+});
 
 describe('About', () => {
   let http: HttpTestingController;
   let fixture: ComponentFixture<About>;
+  let responseInit: ResponseInit;
   const scrollTo = vi.fn();
   const trackCvDownload = vi.fn();
 
@@ -86,8 +96,10 @@ describe('About', () => {
   beforeEach(() => {
     scrollTo.mockClear();
     trackCvDownload.mockClear();
+    responseInit = { status: 200 };
     TestBed.configureTestingModule({
       providers: [
+        { provide: RESPONSE_INIT, useValue: responseInit },
         provideRouter([{ path: 'projects', component: BlankPage }]),
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -95,7 +107,10 @@ describe('About', () => {
         { provide: CvGateway, useClass: HttpCvGateway },
         { provide: AnalyticsGateway, useValue: stubAnalyticsGateway({ trackCvDownload }) },
         { provide: SectionScroller, useValue: { scrollTo, eager: signal(false) } },
-        { provide: ProfileGateway, useFactory: fakeProfileGateway },
+        {
+          provide: ProfileGateway,
+          useValue: stubProfileGateway({ getProfile: () => defer(() => of(DOCUMENT)) }),
+        },
       ],
       deferBlockBehavior: DeferBlockBehavior.Manual,
     });
@@ -107,10 +122,24 @@ describe('About', () => {
     vi.restoreAllMocks();
   });
 
-  it('Given le profil livré When la page est rendue Then elle n’émet aucun main et porte la mise en page sur l’host', async () => {
+  const serveDocument = (document: ProfileDocument): void => {
+    vi.spyOn(TestBed.inject(ProfileGateway), 'getProfile').mockReturnValue(
+      defer(() => of(document)),
+    );
+  };
+  const textOf = (element: Element | null | undefined): string | undefined =>
+    element?.textContent?.replace(/\s+/g, ' ').trim();
+  const summaryOf = (headingId: string): string | undefined =>
+    textOf(
+      host().querySelector(
+        `section[aria-labelledby="${headingId}"] [data-testid="split-section-summary"]`,
+      ),
+    );
+
+  it('Given le parcours livré When la page est rendue Then elle n’émet aucun main et porte la mise en page sur l’host', async () => {
     await render(NO_CV);
 
-    expect(host().querySelector('h1')?.textContent?.trim()).toBe(STATIC_PROFILE_BASE.displayName);
+    expect(host().querySelector('h1')?.textContent?.trim()).toBe('Julien Nédellec');
     expect(host().querySelectorAll('main')).toHaveLength(0);
     expect([...host().classList].sort()).toEqual(['block', 'min-h-svh', 'pt-20']);
   });
@@ -122,27 +151,134 @@ describe('About', () => {
     expect(host().querySelectorAll('h1')).toHaveLength(1);
   });
 
-  it.each(PROFILE_READS)(
-    'Given la page rendue et ses sections différées affichées Then %s est lu une seule fois',
-    async (method) => {
-      const read = vi.spyOn(TestBed.inject(ProfileGateway), method);
+  it('Given la page rendue et ses sections différées affichées Then le parcours est lu une seule fois', async () => {
+    const read = vi.spyOn(TestBed.inject(ProfileGateway), 'getProfile');
 
-      await render(NO_CV);
-      await completeDeferredSections();
-
-      expect(read).toHaveBeenCalledTimes(1);
-    },
-  );
-
-  it('Given les sections différées affichées When la page est rendue Then chaque section montre la donnée du profil', async () => {
     await render(NO_CV);
     await completeDeferredSections();
 
-    expect(countOf('journey-paragraph')).toBe(STATIC_BIOGRAPHY.paragraphs.length);
-    expect(countOf('about-trait')).toBe(STATIC_ABOUT_HIGHLIGHTS.length);
-    expect(countOf('about-tech')).toBe(STATIC_TECHNOLOGIES.length);
-    expect(countOf('about-diploma')).toBe(STATIC_DIPLOMAS.length);
-    expect(byTestId('motivation-statement')?.textContent?.trim()).toBe(STATIC_MOTIVATION.statement);
+    expect(read).toHaveBeenCalledTimes(1);
+  });
+
+  it('Given les sections différées affichées When la page est rendue Then chaque section montre le contenu du document', async () => {
+    await render(NO_CV);
+    await completeDeferredSections();
+
+    expect(summaryOf('journey-heading')).toBe('Résumé du parcours témoin.');
+    expect(
+      Array.from(host().querySelectorAll('[data-testid="journey-paragraph"]'), textOf),
+    ).toEqual(['Paragraphe A.', 'Paragraphe B.', 'Paragraphe C.']);
+    expect(countOf('about-trait')).toBe(2);
+    expect(countOf('about-tech')).toBe(3);
+    expect(countOf('about-diploma')).toBe(1);
+    expect(byTestId('motivation-statement')?.textContent?.trim()).toBe(
+      DOCUMENT.content.motivation.statement,
+    );
+  });
+
+  it('Given les sections différées affichées When la page est rendue Then les résumés des activités et des formations viennent du document', async () => {
+    await render(NO_CV);
+    await completeDeferredSections();
+
+    expect([summaryOf('work-heading'), summaryOf('diploma-heading')]).toEqual([
+      'Résumé des activités témoin.',
+      'Résumé des formations témoin.',
+    ]);
+  });
+
+  it('Given le parcours livré When la page est rendue Then l’accroche dit la phrase d’identité une seule fois, suivie de la suite du document', async () => {
+    await render(NO_CV);
+    const lead = textOf(byTestId('about-lead')) ?? '';
+
+    expect(lead).toBe(`${SITE_IDENTITY.journey} Suite de l’accroche témoin.`);
+    expect(lead.split(SITE_IDENTITY.journey)).toHaveLength(2);
+  });
+
+  it('Given le parcours livré When la page est rendue Then rôle, stack et ville du premier écran restent ceux du site', async () => {
+    await render(NO_CV);
+
+    expect(Array.from(host().querySelectorAll('[data-testid="about-hero-fact"]'), textOf)).toEqual([
+      'développeur full-stack',
+      'Angular · NestJS · TypeScript',
+      SITE_IDENTITY.location,
+    ]);
+  });
+
+  it('Given le parcours livré When la page est rendue Then les réseaux du site suivent GitHub, LinkedIn, Malt, Mail puis Discord', async () => {
+    await render(NO_CV);
+
+    expect(
+      Array.from(
+        host().querySelectorAll<HTMLAnchorElement>('[data-testid="about-social-link"]'),
+        (link) => ({ label: textOf(link), href: link.getAttribute('href') }),
+      ),
+    ).toEqual([
+      { label: 'GitHub', href: SITE_IDENTITY.socials.github },
+      { label: 'LinkedIn', href: SITE_IDENTITY.socials.linkedin },
+      { label: 'Malt', href: SITE_IDENTITY.socials.malt },
+      { label: 'Mail', href: `mailto:${SITE_IDENTITY.email}` },
+      { label: 'Discord', href: SITE_IDENTITY.socials.discord },
+    ]);
+  });
+
+  it.each([
+    { cas: 'un portrait défini', portraitUrl: PORTRAIT_URL, src: PORTRAIT_URL },
+    { cas: 'aucun portrait', portraitUrl: null, src: '/avatar.avif' },
+  ])(
+    'Given $cas When la page est rendue Then le portrait affiché est $src, au texte alternatif fixe',
+    async ({ portraitUrl, src }) => {
+      serveDocument({ ...DOCUMENT, portraitUrl });
+
+      await render(NO_CV);
+      const portrait = host().querySelector('[data-testid="about-portrait"] img');
+
+      expect([portrait?.getAttribute('src'), portrait?.getAttribute('alt')]).toEqual([
+        src,
+        'Portrait de Julien Nédellec',
+      ]);
+    },
+  );
+
+  it('Given la lecture du parcours en échec When la page est rendue Then aucun contenu de repli n’est affiché', async () => {
+    const read = vi
+      .spyOn(TestBed.inject(ProfileGateway), 'getProfile')
+      .mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 503, statusText: 'Service Unavailable' })),
+      );
+
+    await render(NO_CV);
+    await completeDeferredSections();
+
+    expect(read).toHaveBeenCalledOnce();
+    expect([
+      host().querySelectorAll('h1').length,
+      countOf('about-lead'),
+      countOf('journey-paragraph'),
+      countOf('about-trait'),
+      countOf('motivation-statement'),
+    ]).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it.each([
+    { status: 404, statusText: 'Not Found' },
+    { status: 503, statusText: 'Service Unavailable' },
+  ])(
+    'Given le rendu serveur et la lecture du parcours en $status When la page est rendue Then la réponse est 503, jamais une page vide en 200 ni un 404',
+    async ({ status, statusText }) => {
+      vi.spyOn(TestBed.inject(ProfileGateway), 'getProfile').mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status, statusText })),
+      );
+
+      await render(NO_CV);
+
+      expect(responseInit.status).toBe(503);
+    },
+  );
+
+  it('Given le rendu serveur et le parcours lu When la page est rendue Then le statut de la réponse reste 200', async () => {
+    await render(NO_CV);
+
+    expect(responseInit.status).toBe(200);
   });
 
   describe('Given la conclusion affichée', () => {

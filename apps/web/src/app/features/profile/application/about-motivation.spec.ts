@@ -3,8 +3,8 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 import { Button } from '@shared/ui/button';
-import type { Motivation } from '../domain/models/what-i-do.model';
-import { STATIC_MOTIVATION } from '../infra/data/profile.static-data';
+import type { ProfileContent } from '../domain/models/profile-content.model';
+import { aProfileContent } from '../testing/profile-builders';
 import { AboutMotivation } from './about-motivation';
 
 @Component({
@@ -12,6 +12,8 @@ import { AboutMotivation } from './about-motivation';
   template: `<button appButton type="button">Référence</button>`,
 })
 class DefaultButtonHost {}
+
+const MOTIVATION = aProfileContent().motivation;
 
 const sortedClasses = (element: Element | null | undefined): readonly string[] =>
   [...(element?.classList ?? [])].sort();
@@ -22,7 +24,7 @@ describe('AboutMotivation', () => {
   const click = (testId: string): void =>
     host().querySelector<HTMLButtonElement>(`[data-testid="${testId}"]`)?.click();
 
-  const render = async (motivation: Motivation | undefined): Promise<void> => {
+  const render = async (motivation: ProfileContent['motivation'] | undefined): Promise<void> => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     fixture = TestBed.createComponent(AboutMotivation);
     fixture.componentRef.setInput('motivation', motivation);
@@ -33,10 +35,10 @@ describe('AboutMotivation', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('Given la motivation livrée When la section est rendue Then l’énoncé est affiché', async () => {
-    await render(STATIC_MOTIVATION);
+    await render(MOTIVATION);
 
     expect(host().querySelector('[data-testid="motivation-statement"]')?.textContent?.trim()).toBe(
-      STATIC_MOTIVATION.statement,
+      MOTIVATION.statement,
     );
   });
 
@@ -53,7 +55,7 @@ describe('AboutMotivation', () => {
 
     beforeEach(async () => {
       contactRequested.mockClear();
-      await render(STATIC_MOTIVATION);
+      await render(MOTIVATION);
       fixture.componentInstance.contactRequested.subscribe(contactRequested);
     });
 

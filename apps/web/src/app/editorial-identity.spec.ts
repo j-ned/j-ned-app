@@ -2,7 +2,6 @@ import { OFFER_PAGES } from '@features/offer/domain/offer-pages.static-data';
 import { OFFER_PRICES } from '@features/offer/domain/offer-prices.static-data';
 import { formatEur } from '@features/offer/domain/format-eur';
 import { STATIC_HERO } from '@features/home/infra/data/home.static-data';
-import { STATIC_BIOGRAPHY } from '@features/profile/infra/data/profile.static-data';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { routes } from './app.routes';
 import { EDITORIAL_SOURCES, editorialTexts } from './testing/editorial-sources';
@@ -24,7 +23,6 @@ const FORBIDDEN_IDENTITIES: readonly (readonly [string, RegExp])[] = [
 describe('one identity across the site', () => {
   it.each([
     ['the home lead', (): string => STATIC_HERO.lead],
-    ['the about lead', (): string => STATIC_BIOGRAPHY.lead],
     ['the workshop offer subtitle', (): string => OFFER_PAGES['site-atelier'].hero.subtitle],
     ['the about meta description', aboutDescription],
   ])('%s tells the journey exactly once, in its single wording', (_place, textOf) => {

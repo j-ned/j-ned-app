@@ -119,10 +119,12 @@
   (`vi.useFakeTimers`) + `await fixture.whenStable()`, cf. skill
   `angular-async-testing`.
 - **Statut des adapters in-memory / fakes de persistance** : `implémentation
-  runtime`. `InMemoryProfileGateway` et `InMemoryHomeGateway` sont câblés en
-  **production** (`app.config.ts`) — l'app tourne réellement dessus (pas de
-  backend pour Profile/Home). ⇒ code applicatif livrable, légitimement doté de
-  specs dédiés (`in-memory-*.gateway.spec.ts` non rejeté).
+  runtime` pour `InMemoryHomeGateway`, seul in-memory encore câblé en
+  **production** (`app.config.ts`, pas de backend pour Home) ⇒ code applicatif
+  livrable, légitimement doté de specs dédiés (`in-memory-*.gateway.spec.ts` non
+  rejeté). Profile lit l'API (`HttpProfileGateway`, `GET /api/profile`, spec 021) :
+  plus d'in-memory ni de données statiques ; ses tests passent par
+  `features/profile/testing/stub-profile-gateway.ts` (sous-classe du port).
 - **Frontières d'I/O** (seuls fakes légitimes — liste **fermée**) : réseau (HTTP,
   backend REST), horloge/timers (`Date`, `setTimeout`/`setInterval`), storage
   navigateur (`localStorage`/`sessionStorage` : thème, token auth), source d'aléa

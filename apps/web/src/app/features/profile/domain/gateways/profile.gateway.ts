@@ -1,18 +1,6 @@
 import type { Observable } from 'rxjs';
-import type { ProfileInfo, SocialButton } from '../models/profile.model';
-import type { Biography } from '@features/profile/domain/models/biography.model';
-import type { Diploma } from '../models/diploma.model';
-import type { Technology } from '@features/profile/domain/models/technology.model';
-import type { Highlight } from '@features/profile/domain/models/highlight.model';
-import type { WhatIDo, Motivation } from '@features/profile/domain/models/what-i-do.model';
+import type { ProfileDocument } from '../models/profile-content.model';
 
 export abstract class ProfileGateway {
-  abstract getProfileInfo(): Observable<ProfileInfo>;
-  abstract getBiography(): Observable<Biography>;
-  abstract getSocialButtons(): Observable<readonly SocialButton[]>;
-  abstract getDiplomas(): Observable<readonly Diploma[]>;
-  abstract getTechnologies(): Observable<readonly Technology[]>;
-  abstract getHighlights(): Observable<readonly Highlight[]>;
-  abstract getWhatIDo(): Observable<readonly WhatIDo[]>;
-  abstract getMotivation(): Observable<Motivation>;
+  abstract getProfile(): Observable<ProfileDocument>;
 }

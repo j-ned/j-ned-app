@@ -9,16 +9,7 @@ import { HOME_FAQ, HOME_METHOD, HOME_WHY } from '@features/home/domain/home-pitc
 import { HOME_RECRUITER_BAND_COPY } from '@features/home/domain/home-recruiter-band.static-data';
 import { HOME_REVIEWS, HOME_REVIEWS_COPY } from '@features/home/domain/home-reviews.static-data';
 import { STATIC_HERO } from '@features/home/infra/data/home.static-data';
-import {
-  STATIC_ABOUT_HIGHLIGHTS,
-  STATIC_BIOGRAPHY,
-  STATIC_DIPLOMAS,
-  STATIC_MOTIVATION,
-  STATIC_PROFILE_BASE,
-  STATIC_SOCIAL_BUTTONS,
-  STATIC_TECHNOLOGIES,
-  STATIC_WHAT_I_DO,
-} from '@features/profile/infra/data/profile.static-data';
+import { ABOUT_IDENTITY } from '@features/profile/pages/about/about-identity';
 import { PROJECT_FOLLOW_UP_COPY } from '@features/projects/application/project-follow-up-copy';
 import {
   PROJECT_OUTCOMES,
@@ -34,6 +25,7 @@ import { FOOTER_COPY } from '../layout/components/footer/footer.static-data';
 import { NAV_LINKS } from '../layout/components/header/nav-items';
 import { LEGAL_LAST_UPDATE } from '../pages/legal-notice';
 import { routes } from '../app.routes';
+import PROFILE_FIXTURE from '../../../ci/api-stub/fixtures/profile.json';
 
 export type EditorialText = { readonly path: string; readonly text: string };
 
@@ -68,14 +60,8 @@ export const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['HOME_RECRUITER_BAND_COPY', HOME_RECRUITER_BAND_COPY],
   ['HOME_REVIEWS', HOME_REVIEWS],
   ['HOME_REVIEWS_COPY', HOME_REVIEWS_COPY],
-  ['STATIC_PROFILE_BASE', STATIC_PROFILE_BASE],
-  ['STATIC_BIOGRAPHY', STATIC_BIOGRAPHY],
-  ['STATIC_DIPLOMAS', STATIC_DIPLOMAS],
-  ['STATIC_TECHNOLOGIES', STATIC_TECHNOLOGIES],
-  ['STATIC_ABOUT_HIGHLIGHTS', STATIC_ABOUT_HIGHLIGHTS],
-  ['STATIC_WHAT_I_DO', STATIC_WHAT_I_DO],
-  ['STATIC_MOTIVATION', STATIC_MOTIVATION],
-  ['STATIC_SOCIAL_BUTTONS', STATIC_SOCIAL_BUTTONS],
+  ['ABOUT_IDENTITY', ABOUT_IDENTITY],
+  ['ci/api-stub/fixtures/profile.json', PROFILE_FIXTURE],
   ['STATIC_CONTACT_INFO', STATIC_CONTACT_INFO],
   ['STATIC_SOCIAL_LINKS', STATIC_SOCIAL_LINKS],
   ['CONTACT_TIMELINES', CONTACT_TIMELINES],

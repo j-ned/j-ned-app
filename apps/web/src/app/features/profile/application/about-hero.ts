@@ -24,9 +24,9 @@ const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
             <p
               class="animate-fade-up flex flex-wrap gap-x-3.5 gap-y-1.5 font-mono text-[0.8125rem] text-muted"
             >
-              <span class="text-primary">{{ role }}</span>
-              <span>{{ stack }}</span>
-              <span>{{ info.location }}</span>
+              <span class="text-primary" data-testid="about-hero-fact">{{ role }}</span>
+              <span data-testid="about-hero-fact">{{ stack }}</span>
+              <span data-testid="about-hero-fact">{{ info.location }}</span>
             </p>
             <h1
               id="about-heading"
@@ -39,7 +39,7 @@ const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
               class="animate-fade-up [animation-delay:120ms] mt-7 max-w-[32ch] text-[clamp(1.25rem,2.1vw,1.75rem)] font-medium leading-snug tracking-tight text-balance"
               data-testid="about-lead"
             >
-              {{ bio.lead }} <span class="text-primary">{{ bio.leadEmphasis }}</span>
+              {{ lead() }} <span class="text-primary">{{ bio.leadEmphasis }}</span>
             </p>
             <ul
               class="animate-fade-up [animation-delay:180ms] mt-8 flex flex-wrap gap-x-6 gap-y-2"
@@ -113,6 +113,7 @@ const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
 })
 export class AboutHero {
   readonly profile = input.required<ProfileInfo | undefined>();
+  readonly lead = input<string>('');
   readonly biography = input.required<Biography | undefined>();
   readonly socials = input.required<readonly SocialButton[]>();
   readonly cvUrl = input<string | null>(null);

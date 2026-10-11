@@ -15,7 +15,12 @@ import { Component, input } from '@angular/core';
       <header class="lg:sticky lg:top-26 lg:self-start">
         <h2 [id]="headingId()" class="section-title">{{ heading() }}</h2>
         @if (summary()) {
-          <p class="mt-3 max-w-[30ch] text-[0.9375rem] text-muted">{{ summary() }}</p>
+          <p
+            class="mt-3 max-w-[30ch] text-[0.9375rem] text-muted"
+            data-testid="split-section-summary"
+          >
+            {{ summary() }}
+          </p>
         }
       </header>
       <div>

@@ -1,8 +1,10 @@
 import { Component, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { tap } from 'rxjs';
+import { injectMarkUnavailable } from '@core/ssr/response-status';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { CvDownload } from '@features/cv/application/cv-download';
+import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { ProfileGateway } from '../../domain/gateways/profile.gateway';
 import { AboutHero } from '../../application/about-hero';
 import { AboutDiploma } from '../../application/about-diploma';
@@ -11,6 +13,7 @@ import { AboutWhatIDo } from '../../application/about-what-i-do';
 import { AboutHighlights } from '../../application/about-highlights';
 import { AboutMotivation } from '../../application/about-motivation';
 import { AboutHiring } from '../../application/about-hiring';
+import { ABOUT_IDENTITY, DEFAULT_PORTRAIT_URL } from './about-identity';
 
 // Le bloc recrutement reste hors @defer : l'ancre #recrutement doit exister au premier rendu.
 @Component({
@@ -29,9 +32,10 @@ import { AboutHiring } from '../../application/about-hiring';
   template: `
     @let about = content();
     <app-about-hero
-      [profile]="about?.profile"
+      [profile]="profile()"
+      [lead]="journey"
       [biography]="about?.biography"
-      [socials]="about?.socials ?? []"
+      [socials]="socials"
       [cvUrl]="cvUrl()"
       (cvDownloaded)="trackCvDownload()"
     />
@@ -56,6 +60,7 @@ import { AboutHiring } from '../../application/about-hiring';
       <app-about-what-i-do
         [whatIDo]="about?.whatIDo ?? []"
         [technologies]="about?.technologies ?? []"
+        [summary]="about?.workSummary ?? ''"
       />
     } @placeholder {
       <div class="h-[36rem] border-t border-foreground/8" aria-hidden="true"></div>
@@ -64,7 +69,10 @@ import { AboutHiring } from '../../application/about-hiring';
     }
 
     @defer (hydrate on viewport) {
-      <app-about-diploma [diplomas]="about?.diplomas ?? []" />
+      <app-about-diploma
+        [diplomas]="about?.diplomas ?? []"
+        [summary]="about?.diplomasSummary ?? ''"
+      />
     } @placeholder {
       <div class="h-[36rem] border-t border-foreground/8" aria-hidden="true"></div>
     } @error {
@@ -86,24 +94,26 @@ export class About {
   private readonly _profileGateway = inject(ProfileGateway);
   private readonly _cvDownload = inject(CvDownload);
   private readonly _scroller = inject(SectionScroller);
+  private readonly _markUnavailable = injectMarkUnavailable();
 
-  private readonly _contentResource = rxResource({
+  private readonly _profileResource = rxResource({
+    // La page existe toujours : une lecture en échec, 404 compris, ne doit être ni un 200 vide ni un 404.
     stream: () =>
-      forkJoin({
-        profile: this._profileGateway.getProfileInfo(),
-        biography: this._profileGateway.getBiography(),
-        socials: this._profileGateway.getSocialButtons(),
-        diplomas: this._profileGateway.getDiplomas(),
-        technologies: this._profileGateway.getTechnologies(),
-        highlights: this._profileGateway.getHighlights(),
-        whatIDo: this._profileGateway.getWhatIDo(),
-        motivation: this._profileGateway.getMotivation(),
-      }),
+      this._profileGateway.getProfile().pipe(tap({ error: () => this._markUnavailable() })),
   });
   // `value()` lève sur une ressource en erreur ; `hasValue()` non.
-  protected readonly content = computed(() =>
-    this._contentResource.hasValue() ? this._contentResource.value() : undefined,
+  private readonly _document = computed(() =>
+    this._profileResource.hasValue() ? this._profileResource.value() : undefined,
   );
+  protected readonly content = computed(() => this._document()?.content);
+  protected readonly profile = computed(() => {
+    const document = this._document();
+    return document
+      ? { ...ABOUT_IDENTITY.profile, avatarUrl: document.portraitUrl ?? DEFAULT_PORTRAIT_URL }
+      : undefined;
+  });
+  protected readonly journey = SITE_IDENTITY.journey;
+  protected readonly socials = ABOUT_IDENTITY.socials;
   protected readonly cvUrl = this._cvDownload.url;
 
   protected goToContact(): void {

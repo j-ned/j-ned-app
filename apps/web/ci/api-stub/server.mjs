@@ -25,6 +25,7 @@ async function route(method, pathname) {
     return [200, posts.filter((post) => post.status === 'published')];
   }
   if (pathname === '/api/cv') return [200, await readFixture('cv')];
+  if (pathname === '/api/profile') return [200, await readFixture('profile')];
   if (pathname.startsWith('/api/storage/')) return [200, STORAGE_FILE];
 
   const project = pathname.match(/^\/api\/projects\/([^/]+)$/);

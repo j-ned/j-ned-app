@@ -48,7 +48,7 @@ import { ProfileGateway } from '@features/profile/domain/gateways/profile.gatewa
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { HttpProjectsGateway } from '@features/projects/infra/gateways/http-projects.gateway';
-import { InMemoryProfileGateway } from '@features/profile/infra/gateways/in-memory-profile.gateway';
+import { HttpProfileGateway } from '@features/profile/infra/gateways/http-profile.gateway';
 import { HttpContactGateway } from '@features/contact/infra/gateways/http-contact.gateway';
 import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-home.gateway';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
@@ -92,7 +92,7 @@ function initializeSeo(): () => void {
 
 registerLocaleData(localeFr);
 
-const PUBLIC_READ_PATHS = ['/projects', '/blog/posts', '/config', '/cv'] as const;
+const PUBLIC_READ_PATHS = ['/projects', '/blog/posts', '/config', '/cv', '/profile'] as const;
 
 const isPublicReadUrl = (url: string): boolean =>
   PUBLIC_READ_PATHS.some((path) => url.includes(`/api${path}`));
@@ -140,7 +140,7 @@ export const appConfig: ApplicationConfig = {
     },
     { provide: ProjectsGateway, useClass: HttpProjectsGateway },
     { provide: BlogGateway, useClass: HttpBlogGateway },
-    { provide: ProfileGateway, useClass: InMemoryProfileGateway },
+    { provide: ProfileGateway, useClass: HttpProfileGateway },
     { provide: ContactGateway, useClass: HttpContactGateway },
     { provide: HomeGateway, useClass: InMemoryHomeGateway },
     { provide: AnalyticsGateway, useClass: HttpAnalyticsGateway },

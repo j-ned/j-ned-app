@@ -699,6 +699,197 @@ Front (`pnpm test`, Vitest) :
   colonne admin (viewport − 15,75 rem de barre latérale) la bascule `lg` survient sur une largeur
   utile plus étroite que sur le site. Assumé (D7), pas de conversion en requêtes de conteneur.
 
+## Plan de test
+
+### Tranche F1 — `/about` lit le document de l'API
+
+Signatures neutres posées pour que le rouge tombe sur une valeur : `ProfileContent` /
+`ProfileDocument` (`profile-content.model.ts`, biographie et motivation en `Omit` de `id`/`lead`
+tant que les modèles ne sont pas réduits), `abstract getProfile()` au port (anciennes méthodes
+gardées, `InMemoryProfileGateway.getProfile` = `EMPTY`), `ProfileDto` (`profile.types.ts`),
+`toProfileDocument` rendant un document vide, `HttpProfileGateway.getProfile` = `EMPTY` (classe non
+encore `extends ProfileGateway`), `ABOUT_IDENTITY` vide (`about-identity.ts`), `AboutHero.lead`,
+`AboutWhatIDo.summary`, `AboutDiploma.summary` en `input('')` non branchés (le gabarit lit encore
+les constantes, renommées `staticSummary`). Supprimés, comme le prescrit le plan :
+`profile.static-data.spec.ts` (formulations verrouillées côté API par `profile-seed.spec`, A2) et
+`testing/fake-profile-gateway.ts`. Restent à supprimer en GREEN : `profile.static-data.ts`,
+`in-memory-profile.gateway.ts`, les 8 anciennes méthodes du port, `WORK_SUMMARY`,
+`DIPLOMA_SUMMARY`, `lead`/`id` de `Biography` et `id` de `Motivation`.
+
+Doublures : `testing/profile-builders.ts` (`aProfileContent`, `aProfileDocument`, `aProfileInfo`,
+`aSocialButton`, `aHighlight`, `aWhatIDo`, `aTechnology`, `aDiploma` ; contenu « témoin », jamais la
+copie réelle), `testing/stub-profile-gateway.ts` (`stubProfileGateway(overrides)`).
+
+| Test | Scénario | Assertions clés |
+|---|---|---|
+| `profile.adapter.spec` — document | DTO = contenu builder + `version` 4, `updatedAt`, `portrait: null` | `toEqual` du document : version, date, 8 sections, `portraitUrl: null`, pas de clé `portrait` dans `content` |
+| `profile.adapter.spec` — `it.each` portrait | `null` ; `/storage/…/portrait-1a2b3c4d.avif` | `null` conservé ; `'/api' + chemin` (`STORAGE_BASE_PATH`) |
+| `http-profile.gateway.spec` — lecture | `getProfile()` | un `GET https://api.test/api/profile`, émission = document adapté, portrait en `/api/storage/…` |
+| `http-profile.gateway.spec` — échec | réponse 503 | aucune émission, l'erreur (503) atteint l'abonné : pas de repli |
+| `about.spec` — host, h1 | parcours livré | h1 `Julien Nédellec`, aucun `main`, classes d'host |
+| `about.spec` — recrutement | sections différées non rendues | ancre `#recrutement`, un seul h1 |
+| `about.spec` — lecture unique | sections rendues | `getProfile` appelé une fois |
+| `about.spec` — contenu | document à 3 paragraphes, 2 traits, 3 technos, 1 formation | résumé du parcours, textes des paragraphes, comptes, énoncé de motivation |
+| `about.spec` — résumés | document | résumés « activités » et « formations » lus dans le document |
+| `about.spec` — accroche | document | `about-lead` = `SITE_IDENTITY.journey` + suite du document, la phrase une seule fois |
+| `about.spec` — premier écran | document | les trois `span` de la ligne d'en-tête, un par un : `développeur full-stack`, `Angular · NestJS · TypeScript`, `SITE_IDENTITY.location` (Angular retire les blancs entre eux, l'espacement vient de `gap-x-3.5`) |
+| `about.spec` — réseaux | identité de page | GitHub, LinkedIn, Malt, Mail, Discord avec les `href` de `SITE_IDENTITY` (déplacé depuis `about-hero.spec`) |
+| `about.spec` — `it.each` portrait | `portraitUrl` défini ; `null` | `src` = URL ; `/avatar.avif` ; alt `Portrait de Julien Nédellec` |
+| `about.spec` — échec | `getProfile` en 503 | lecture tentée, aucun h1, accroche, paragraphe, trait ni motivation |
+| `about.spec` — CTA, CV, prérendu | inchangés (stub au lieu du fake) | navigation, scroll contact, liens CV, CV lu au prérendu |
+| `about-hero.spec` — accroche | `lead` en `input` | texte = `lead` + emphase, emphase dans le `span` |
+| `about-hero.spec` — autres | builders | h1, liens web seuls en nouvel onglet, portrait sans animation, alt, squelette, lien CV |
+| `about-what-i-do.spec` / `about-diploma.spec` — résumé | `summary` en `input` | en-tête de section = la valeur reçue |
+| `about-diploma.spec` / `about-motivation.spec` | builders au lieu du statique | lignes, compétences, énoncé, CTA |
+| `app.config.spec` — câblage | port résolu depuis `appConfig` | instance de `HttpProfileGateway` |
+| `editorial-identity.spec` / `editorial-typography.spec` | `EDITORIAL_SOURCES` | entrée « about lead » retirée ; constantes du profil remplacées par `ABOUT_IDENTITY` ; verts |
+
+Retraits assumés : le test « le titre ne contient pas le niveau » d'`about-diploma.spec` portait sur
+le contenu statique (désormais en base) ; les invariants de `profile.static-data.spec` vivent dans
+`profile-seed.spec` (API). Adaptation mécanique : `about-motivation.spec` — 3 sites repointés du
+statique vers le builder, aucune valeur attendue modifiée (l'attendu est l'énoncé de l'entrée).
+
+RED confirmé via la commande test du profil (`pnpm test`, après `ng cache clean`) le 2026-10-11
+10:57, 25 failed / 3689 total, `exit=1`. Les 25 échecs sont dans les 7 fichiers F1 et sont tous des
+assertions (dont 2 `HttpTestingController.expectOne` « found none ») ; aucune erreur de type, de
+harnais ni de rejet non géré ; les 3 664 autres tests, éditoriaux compris, sont verts. Les tests CV
+et CTA d'`about.spec` tombent pour la même raison (le stub ne sert que `getProfile`, la page
+lit encore les 8 anciennes méthodes : premier écran en squelette).
+
+Correction du contrat après GREEN (2026-10-11) : le test « premier écran » comparait le `textContent`
+du `<p>` entier, qui colle les trois `span` faute de blancs entre eux (`preserveWhitespaces: false`,
+espacement visuel par `gap-x-3.5`, balisage de production inchangé). Il compare maintenant chaque
+`span`, avec les trois mêmes valeurs exactes. `pnpm test` le 2026-10-11 11:19 : 3696 passed / 3696,
+`exit=0`.
+
+Preuve runtime attendue (GREEN / Verify) : `ci/api-stub/fixtures/profile.json` = réponse de
+`GET /api/profile` en production du 2026-10-11 (seed, `portrait: null`, insécables échappées),
+servie par la route `/api/profile` ajoutée à `ci/api-stub/server.mjs` ; la smoke CI exige sur
+`/about` `data-testid="about-lead"`, `data-testid="journey-paragraph"` et `"leadEmphasis"` (document
+dans l'état de transfert : `'/profile'` dans `PUBLIC_READ_PATHS`). En local : conteneur + doublure ⇒
+texte visible de `/about` identique à `master` ; modifier un paragraphe de la fixture puis recharger
+`/about` ⇒ nouveau texte, sans build ; doublure arrêtée ⇒ 503 à froid (ou `STALE`), jamais une page
+vide en 200.
+
+## Journal des tranches
+
+- **Tranche F1 — `/about` lit le document de l'API** : GREEN 3695 passed / 3696 total (1 rouge
+  hors implémentation, cf. Verify F1 « Écart ») · refactor : aucun (passe manuelle sur le diff :
+  ni nom cryptique, ni wrapper, ni dérivation à extraire ; `simplify` non invocable en sous-agent).
+  Fichiers : port réduit à `getProfile` ; `HttpProfileGateway extends ProfileGateway` (sans
+  `retry` : un échec atteint la page, qui répond 503 au rendu serveur) ; `toProfileDocument`
+  (copie des 8 sections, `portrait` ⇒ `STORAGE_BASE_PATH` + chemin, `null` conservé) ;
+  `ABOUT_IDENTITY` + `DEFAULT_PORTRAIT_URL` ; `About` en une lecture (`rxResource` sur
+  `getProfile`, identité de page, `SITE_IDENTITY.journey` en `lead`, résumés en `input`) ;
+  `Biography` sans `id`/`lead`, `Motivation` sans `id` ; `WORK_SUMMARY`/`DIPLOMA_SUMMARY`
+  supprimés ; `app.config.ts` (`HttpProfileGateway`, `'/profile'` dans `PUBLIC_READ_PATHS`) ;
+  `profile.static-data.ts` et `in-memory-profile.gateway.ts` supprimés ;
+  `ci/api-stub/fixtures/profile.json` ajoutée à `EDITORIAL_SOURCES` (import JSON, aucun test
+  ajouté : les `it.each(EDITORIAL_SOURCES)` existants la couvrent).
+- **Tranche F1 — suites de la revue (R1, M1-M4)** : RED 9 failed / 3701 · GREEN 3701 passed /
+  3701 total · refactor : aucun (M3 est lui-même la reprise de l'adapter, demandée par la revue).
+
+## Verify (F1)
+
+Gates (2026-10-11, codes de sortie lus) :
+
+| Commande | Résultat |
+|---|---|
+| `pnpm install --frozen-lockfile` | « Done », exit 0 |
+| `pnpm test; echo exit=$?` | 217 fichiers, **3695 passed / 3696**, exit=1 (le seul rouge : cf. Écart) |
+| `pnpm lint` | « All files pass linting. » |
+| `pnpm run format:check` | conforme |
+| `pnpm run build --configuration production` | exit 0, 8 routes prérendues, CSP durcie sur 9 pages |
+| `docker build -t ng-portfolio-app:local .` | exit 0 |
+| Smoke CI rejouée (script extrait de `ci.yml`, port 3300, image locale) | exit 0 (dont `/about` : `about-lead`, `journey-paragraph`, `"leadEmphasis"` dans l'état de transfert) |
+
+Garde-fous éditoriaux sur la fixture : fixture modifiée temporairement (« vingt ans de
+métallurgie : » dans un trait) ⇒ `editorial-identity.spec` et `editorial-typography.spec` rouges
+sur `ci/api-stub/fixtures/profile.json` (3 échecs : métallurgie, durée de carrière, espace avant
+« : ») ; fixture restaurée (`cmp` identique).
+
+Preuve runtime — **PASS** (doublure `node:22-alpine` + conteneur `ng-portfolio-app:local`,
+réseau `portfolio-ci`, `-p 3300:3000`, `API_UPSTREAM=http://api-stub:3000`, copie de
+`ci/api-stub` dans le scratchpad) :
+
+1. **Fixture = production** : `GET https://api.nedellec-julien.fr/api/profile` (lecture seule)
+   comparé à `ci/api-stub/fixtures/profile.json` ⇒ égalité JSON `True`.
+2. **Aucune différence visible** : texte visible de `GET https://nedellec-julien.fr/about`
+   (prod, `X-Cache-Status: EXPIRED`) et de `GET http://127.0.0.1:3300/about` (balises,
+   `script`/`style` retirés, espaces normalisées) ⇒ seul écart : les deux liens « Télécharger mon
+   CV (PDF) », absents en local parce que `fixtures/cv.json` vaut `null`. Avec la réponse prod de
+   `GET /api/cv` dans la copie de la doublure ⇒ **identique**. Portrait : même
+   `<link rel="preload" href="/avatar.avif" fetchpriority="high">` et même `<img … priority
+   alt="Portrait de Julien Nédellec" src="/avatar.avif">` des deux côtés.
+3. **Instantané** : premier paragraphe modifié dans la copie de la fixture, sans redémarrage,
+   `/about` rechargée après 1,5 s ⇒ nouveau texte présent (HTML + état de transfert,
+   `X-Cache-Status: EXPIRED`) ; fixture restaurée ⇒ texte d'origine au rechargement suivant.
+4. **Navigateur** (`http://127.0.0.1:3300/about`) : requêtes `/api/` au chargement =
+   `GET /api/config` (404, la doublure n'a pas cette route : sans lien avec F1) et
+   `POST /api/analytics/track` ; **aucun `GET /api/profile`**. Console : aucune violation CSP
+   (seule erreur : la 404 de `/api/config`).
+5. **Hydratation** : marqueur posé sur `window`, clic réel sur « Voir les projets » (section
+   motivation, `@defer (hydrate on viewport)`) ⇒ `/projects`, h1 « Réalisations », marqueur
+   conservé, une seule navigation document (`/about`) : navigation client, page hydratée.
+6. **Panne d'API** : doublure arrêtée ⇒ `/about` 200 `X-Cache-Status: STALE` avec le parcours ;
+   conteneur relancé (cache vide), doublure absente ⇒ `/about` **503** (`MISS`), jamais une page
+   vide en 200.
+
+Capture : premier écran de `/about` servi par le conteneur local (nom, accroche
+`SITE_IDENTITY.journey` + suite du document, réseaux, lien CV, portrait par défaut) —
+`~/.claude/projects/-home-j-ned-Projects-Portfolio-ng-portfolio-app/d6e00462-295b-4b2c-ad3e-98224ecb112d/tool-results/mcp-Claude_Browser-blob-1791710029332-40j12i.jpg`.
+
+Nettoyage : conteneurs `api-stub`/`portfolio` arrêtés, réseau `portfolio-ci` supprimé, image
+`ng-portfolio-app:local` supprimée. Aucune requête non-GET vers la production.
+
+**Écart initial (résolu)** : le test « rôle, stack et ville » lisait le `textContent` du `<p>` (blancs
+entre `span` retirés par Angular) ; recalibré par `qa` (un texte par `span`), puis sélecteur passé
+en `data-testid="about-hero-fact"` (M4 ci-dessous).
+
+### Suites de la revue (F1) — R1, M1-M4
+
+TDD : RED prouvé (`ng cache clean` puis `pnpm test`, exit=1, **9 en échec / 3701**, tous des
+assertions : `expected 200 to be 503` ×2 pour `/about` en 404/503, `injectMarkUnavailable` 200 ≠
+503, et 6 lectures `undefined`/`[]` des nouveaux `data-testid` ; aucune erreur de type ni de
+harnais), signature `injectMarkUnavailable` posée d'abord en no-op. GREEN : 3701 / 3701, exit=0.
+
+- **R1** : `injectMarkUnavailable()` (`core/ssr/response-status.ts`, jumeau de
+  `injectMarkNotFound`) ; `About` le déclenche sur toute erreur de `getProfile()` (`tap({ error })`
+  dans le flux du `rxResource`) ⇒ au rendu serveur, `/about` répond 503 quel que soit le statut
+  amont, 404 compris ; dans le navigateur, sans effet. L'intercepteur est inchangé : les 404 de slug
+  projet/article restent des 404. Tests : `response-status.spec` (503 au serveur, no-op au
+  navigateur) ; `about.spec` (`it.each` 404/503 ⇒ `RESPONSE_INIT.status` 503 ; lecture réussie ⇒
+  200).
+- **M1** : `stubProfileGateway` instancie une sous-classe de `ProfileGateway` (plus de cast) : une
+  méthode abstraite ajoutée au port sans implémentation dans le stub ne compile plus.
+- **M2** : `.claude/project-profile.md` (statut des in-memory) : seul `InMemoryHomeGateway` reste
+  câblé ; Profile lit l'API.
+- **M3** : `ProfileDto` décrit la forme API sans dépendre du domaine ; `toProfileDocument` recopie
+  chaque section champ par champ (listes recopiées).
+- **M4** : `data-testid` `split-section-summary` (`SplitSection`, `shared/ui`, attribut statique,
+  autres usages inchangés), `about-hero-fact`, `about-diploma-provider`, `about-diploma-level` ;
+  `about.spec`, `about-diploma.spec`, `about-what-i-do.spec` repointés, valeurs attendues
+  inchangées.
+
+Gates (2026-10-11) : `pnpm install --frozen-lockfile` exit 0 ; `pnpm test; echo exit=$?` 217
+fichiers, **3701 passed / 3701**, exit=0 ; `pnpm lint` « All files pass linting. » ;
+`pnpm run format:check` conforme ; `pnpm run build --configuration production` exit 0 ;
+`docker build` exit 0 ; smoke CI rejouée exit 0.
+
+Preuve runtime R1 — **PASS** (copie de la doublure dont `/api/profile` répond 404 tant qu'un
+fichier `profile-404` existe, bascule sans redémarrage) :
+
+1. Conteneur à froid, profil en 404 ⇒ `/about` **503** `X-Cache-Status: MISS`, second appel
+   (1,2 s plus tard) encore **503 MISS** : rien n'est mis en cache.
+2. `/projects/inexistant` et `/blog/inexistant` ⇒ **404** (inchangé).
+3. Profil rétabli ⇒ `/about` 200 `MISS` ; profil de nouveau en 404 ⇒ `/about` **200 `STALE`**, la
+   copie porte les 3 paragraphes du parcours.
+4. Texte visible de `/about` (doublure avec le `cv.json` de prod) toujours **identique** à
+   `GET https://nedellec-julien.fr/about` après l'ajout des `data-testid`.
+
+Nettoyage : conteneurs et réseau supprimés, image `ng-portfolio-app:local` supprimée. Aucune
+requête non-GET vers la production.
+
 ## Journal des tranches (API)
 
 > Historique tel qu'exécuté. **A1 et A4 ont ensuite été retirés** de la branche (amendement du

@@ -8,3 +8,10 @@ export function injectMarkNotFound(): () => void {
     if (responseInit) responseInit.status = 404;
   };
 }
+
+export function injectMarkUnavailable(): () => void {
+  const responseInit = inject(RESPONSE_INIT, { optional: true });
+  return () => {
+    if (responseInit) responseInit.status = 503;
+  };
+}

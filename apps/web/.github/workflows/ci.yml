@@ -145,6 +145,11 @@ jobs:
             grep -q 'témoin A' /tmp/ssr.html || { echo "contenu de l'API absent : $path"; exit 1; }
             grep -q 'id="ng-state"' /tmp/ssr.html || { echo "état de transfert absent : $path"; exit 1; }
           done
+          # /about lit le parcours dans la doublure et l'embarque dans l'état de transfert
+          curl -fsS http://127.0.0.1:3000/about -o /tmp/about-ssr.html
+          grep -q 'data-testid="about-lead"' /tmp/about-ssr.html || { echo "accroche absente : /about"; exit 1; }
+          grep -q 'data-testid="journey-paragraph"' /tmp/about-ssr.html || { echo "parcours absent : /about"; exit 1; }
+          grep -q '"leadEmphasis"' /tmp/about-ssr.html || { echo "document /api/profile absent de l'état de transfert"; exit 1; }
           # CSP des pages rendues à la requête : une seule meta, hachée, sans unsafe-inline ; HTML revalidé
           for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin; do
             curl -fsS -D /tmp/ssr-headers.txt "http://127.0.0.1:3000$path" -o /tmp/ssr.html
