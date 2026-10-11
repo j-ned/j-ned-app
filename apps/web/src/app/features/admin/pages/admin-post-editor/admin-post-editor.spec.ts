@@ -302,8 +302,8 @@ describe('AdminPostEditor: chargement, erreur et introuvable', () => {
 
   it('Given the list failed to load When the page renders Then the error offers a retry and a way back, without form', async () => {
     const editor = await openEditor('/admin/blog/b-1', {
-      getAllPostsForAdmin: vi.fn(
-        (): Observable<readonly BlogPost[]> => throwError(() => new Error('down')),
+      getAllPostsForAdmin: vi.fn((): Observable<readonly BlogPost[]> =>
+        throwError(() => new Error('down')),
       ),
     });
     const back = byTestId(editor.host, 'admin-post-editor-back');
@@ -476,8 +476,8 @@ describe('AdminPostEditor: création', () => {
 describe('AdminPostEditor: mise à jour', () => {
   it('Given an edited title When the article is saved Then it is updated, success is told, the list invalidated without being requested again, and the title follows', async () => {
     const editor = await openEditor('/admin/blog/b-1', {
-      updatePost: vi.fn(
-        (): Observable<BlogPost> => of(makeBlogPost({ ...CHIFFREMENT, title: 'Après' })),
+      updatePost: vi.fn((): Observable<BlogPost> =>
+        of(makeBlogPost({ ...CHIFFREMENT, title: 'Après' })),
       ),
     });
 
@@ -625,8 +625,8 @@ describe('AdminPostEditor: détail du refus de l’API', () => {
       given: 'the creation refused with a 400',
       url: '/admin/blog/new',
       overrides: {
-        createPost: vi.fn(
-          (): Observable<BlogPost> => throwError(() => apiRejection(400, VALIDATION)),
+        createPost: vi.fn((): Observable<BlogPost> =>
+          throwError(() => apiRejection(400, VALIDATION)),
         ),
       },
       expected: `${LABEL}\u00a0: excerpt should not be empty; title should not be empty`,
@@ -635,8 +635,8 @@ describe('AdminPostEditor: détail du refus de l’API', () => {
       given: 'the update refused with a 422',
       url: '/admin/blog/b-1',
       overrides: {
-        updatePost: vi.fn(
-          (): Observable<BlogPost> => throwError(() => apiRejection(422, 'slug already exists')),
+        updatePost: vi.fn((): Observable<BlogPost> =>
+          throwError(() => apiRejection(422, 'slug already exists')),
         ),
       },
       expected: `${LABEL}\u00a0: slug already exists`,
@@ -645,8 +645,8 @@ describe('AdminPostEditor: détail du refus de l’API', () => {
       given: 'the creation failing with a 500',
       url: '/admin/blog/new',
       overrides: {
-        createPost: vi.fn(
-          (): Observable<BlogPost> => throwError(() => apiRejection(500, 'Internal server error')),
+        createPost: vi.fn((): Observable<BlogPost> =>
+          throwError(() => apiRejection(500, 'Internal server error')),
         ),
       },
       expected: LABEL,
@@ -655,8 +655,8 @@ describe('AdminPostEditor: détail du refus de l’API', () => {
       given: 'the update failing with a 500',
       url: '/admin/blog/b-1',
       overrides: {
-        updatePost: vi.fn(
-          (): Observable<BlogPost> => throwError(() => apiRejection(500, 'Internal server error')),
+        updatePost: vi.fn((): Observable<BlogPost> =>
+          throwError(() => apiRejection(500, 'Internal server error')),
         ),
       },
       expected: LABEL,
@@ -676,8 +676,8 @@ describe('AdminPostEditor: détail du refus de l’API', () => {
 
   it('Given the cover refused with a 400 When the article is saved Then the warning names the refusal', async () => {
     const editor = await openEditor('/admin/blog/new', {
-      uploadCoverImage: vi.fn(
-        (): Observable<string> => throwError(() => apiRejection(400, 'file must be an image')),
+      uploadCoverImage: vi.fn((): Observable<string> =>
+        throwError(() => apiRejection(400, 'file must be an image')),
       ),
     });
 
@@ -694,8 +694,8 @@ describe('AdminPostEditor: détail du refus de l’API', () => {
 
   it('Given the cover failing with a 500 When the article is saved Then the warning stays the fixed one', async () => {
     const editor = await openEditor('/admin/blog/new', {
-      uploadCoverImage: vi.fn(
-        (): Observable<string> => throwError(() => apiRejection(500, 'Internal server error')),
+      uploadCoverImage: vi.fn((): Observable<string> =>
+        throwError(() => apiRejection(500, 'Internal server error')),
       ),
     });
 
@@ -1021,8 +1021,8 @@ describe('AdminPostEditor: modifications non enregistrées', () => {
 
   it('Given an edited article saved When the answer comes back Then nothing is reported as changed and leaving asks nothing', async () => {
     const editor = await openEditor('/admin/blog/b-1', {
-      updatePost: vi.fn(
-        (): Observable<BlogPost> => of(makeBlogPost({ ...CHIFFREMENT, title: 'Après' })),
+      updatePost: vi.fn((): Observable<BlogPost> =>
+        of(makeBlogPost({ ...CHIFFREMENT, title: 'Après' })),
       ),
     });
 

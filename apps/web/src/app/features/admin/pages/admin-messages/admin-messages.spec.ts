@@ -183,8 +183,8 @@ describe('AdminMessages: lecture au clavier', () => {
     host: HTMLElement;
     markMessageAsRead: ReturnType<typeof vi.fn>;
   }> {
-    const markMessageAsRead = vi.fn(
-      (): Observable<ContactMessage> => of({ ...CLAIRE, read: true }),
+    const markMessageAsRead = vi.fn((): Observable<ContactMessage> =>
+      of({ ...CLAIRE, read: true }),
     );
     const { fixture, host } = await setup(
       makeGateway({ getAllMessages: () => of([CLAIRE, PAUL]), markMessageAsRead }),

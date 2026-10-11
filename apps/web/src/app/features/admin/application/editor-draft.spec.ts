@@ -225,8 +225,8 @@ describe('EditorDraft: enregistrer', () => {
     const { draft } = makeDraft(null);
     draft.value.update((value) => ({ ...value, title: 'Nouveau' }));
     draft.selectCover(COVER);
-    const write = vi.fn(
-      async (): Promise<Note> => aNote({ id: 'n-9', title: 'Nouveau', tags: [] }),
+    const write = vi.fn(async (): Promise<Note> =>
+      aNote({ id: 'n-9', title: 'Nouveau', tags: [] }),
     );
     const uploadCover = vi.fn(async (): Promise<unknown> => 'key');
 

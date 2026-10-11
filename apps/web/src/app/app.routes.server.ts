@@ -17,12 +17,10 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },
   { path: 'confidentialite', renderMode: RenderMode.Prerender },
   { path: OFFERS_BASE_PATH, renderMode: RenderMode.Prerender },
-  ...OFFERS.map(
-    ({ slug }): ServerRoute => ({
-      path: `${OFFERS_BASE_PATH}/${slug}`,
-      renderMode: RenderMode.Prerender,
-    }),
-  ),
+  ...OFFERS.map(({ slug }): ServerRoute => ({
+    path: `${OFFERS_BASE_PATH}/${slug}`,
+    renderMode: RenderMode.Prerender,
+  })),
 
   // Auth + admin : jamais côté serveur (authentifié, pas d'intérêt SEO)
   { path: 'login', renderMode: RenderMode.Client },

@@ -1,12 +1,5 @@
 type AdminNavKey =
-  | 'overview'
-  | 'projects'
-  | 'posts'
-  | 'profile'
-  | 'cv'
-  | 'audience'
-  | 'messages'
-  | 'settings';
+  'overview' | 'projects' | 'posts' | 'profile' | 'cv' | 'audience' | 'messages' | 'settings';
 
 type AdminNavItem = {
   readonly key: AdminNavKey;

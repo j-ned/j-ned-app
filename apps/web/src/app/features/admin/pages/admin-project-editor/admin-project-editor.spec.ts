@@ -485,8 +485,8 @@ describe('AdminProjectEditor: création', () => {
 describe('AdminProjectEditor: mise à jour', () => {
   it('Given an edited title When the project is saved Then it is patched, success is told, the caches invalidated and the title follows', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
-      updateProject: vi.fn(
-        (): Observable<Project> => of(makeProject({ ...DASHFLOW, title: 'Après' })),
+      updateProject: vi.fn((): Observable<Project> =>
+        of(makeProject({ ...DASHFLOW, title: 'Après' })),
       ),
     });
 
@@ -579,8 +579,8 @@ describe('AdminProjectEditor: mise à jour', () => {
 
   it('Given the cover upload fails after the update When the project is saved Then a warning then the update are told, the new title stays and nothing is left to save', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
-      updateProject: vi.fn(
-        (): Observable<Project> => of(makeProject({ ...DASHFLOW, title: 'Après' })),
+      updateProject: vi.fn((): Observable<Project> =>
+        of(makeProject({ ...DASHFLOW, title: 'Après' })),
       ),
       uploadImage: vi.fn((): Observable<string> => throwError(() => new Error('upload'))),
     });
@@ -641,8 +641,8 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
       given: 'the creation refused with a 400',
       url: '/admin/projects/new',
       overrides: {
-        createProject: vi.fn(
-          (): Observable<Project> => throwError(() => apiRejection(400, VALIDATION)),
+        createProject: vi.fn((): Observable<Project> =>
+          throwError(() => apiRejection(400, VALIDATION)),
         ),
       },
       expected: {
@@ -654,8 +654,8 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
       given: 'the update refused with a 400',
       url: '/admin/projects/p-1',
       overrides: {
-        updateProject: vi.fn(
-          (): Observable<Project> => throwError(() => apiRejection(400, VALIDATION)),
+        updateProject: vi.fn((): Observable<Project> =>
+          throwError(() => apiRejection(400, VALIDATION)),
         ),
       },
       expected: {
@@ -667,8 +667,8 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
       given: 'the update refused with a 422',
       url: '/admin/projects/p-1',
       overrides: {
-        updateProject: vi.fn(
-          (): Observable<Project> => throwError(() => apiRejection(422, 'slug already exists')),
+        updateProject: vi.fn((): Observable<Project> =>
+          throwError(() => apiRejection(422, 'slug already exists')),
         ),
       },
       expected: {
@@ -680,8 +680,8 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
       given: 'the creation failing with a 500',
       url: '/admin/projects/new',
       overrides: {
-        createProject: vi.fn(
-          (): Observable<Project> => throwError(() => apiRejection(500, 'Internal server error')),
+        createProject: vi.fn((): Observable<Project> =>
+          throwError(() => apiRejection(500, 'Internal server error')),
         ),
       },
       expected: { severity: 'error', detail: 'Erreur lors de la création du projet' },
@@ -690,8 +690,8 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
       given: 'the update failing with a 500',
       url: '/admin/projects/p-1',
       overrides: {
-        updateProject: vi.fn(
-          (): Observable<Project> => throwError(() => apiRejection(500, 'Internal server error')),
+        updateProject: vi.fn((): Observable<Project> =>
+          throwError(() => apiRejection(500, 'Internal server error')),
         ),
       },
       expected: { severity: 'error', detail: 'Erreur lors de la mise à jour du projet' },
@@ -711,8 +711,8 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
 
   it('Given the cover of a new project refused with a 400 When the project is saved Then the warning names the refusal', async () => {
     const editor = await openEditor('/admin/projects/new', {
-      uploadImage: vi.fn(
-        (): Observable<string> => throwError(() => apiRejection(400, 'file must be an image')),
+      uploadImage: vi.fn((): Observable<string> =>
+        throwError(() => apiRejection(400, 'file must be an image')),
       ),
     });
 
@@ -729,8 +729,8 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
 
   it('Given the cover of a new project failing with a 500 When the project is saved Then the warning stays the fixed one', async () => {
     const editor = await openEditor('/admin/projects/new', {
-      uploadImage: vi.fn(
-        (): Observable<string> => throwError(() => apiRejection(500, 'Internal server error')),
+      uploadImage: vi.fn((): Observable<string> =>
+        throwError(() => apiRejection(500, 'Internal server error')),
       ),
     });
 
@@ -807,8 +807,7 @@ describe('AdminProjectEditor: couverture retirée ou refusée', () => {
 describe('AdminProjectEditor: galerie', () => {
   const formComponentHost = (editor: Editor): HTMLElement | null =>
     (editor.fixture.debugElement.query(By.directive(AdminProjectForm))?.nativeElement as
-      | HTMLElement
-      | undefined) ?? null;
+      HTMLElement | undefined) ?? null;
 
   const gallerySection = (editor: Editor): HTMLElement | null =>
     [...editor.host.querySelectorAll<HTMLElement>('[data-testid="form-section"]')].find(
@@ -1163,9 +1162,8 @@ describe('AdminProjectEditor: modifications non enregistrées', () => {
 
   it('Given a project tagged Angular and TypeScript When Angular is unpicked then picked again Then nothing is reported as changed', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
-      getProjectById: vi.fn(
-        (): Observable<Project> =>
-          of(makeProject({ id: 'p-1', kind: 'production', tags: ['Angular', 'TypeScript'] })),
+      getProjectById: vi.fn((): Observable<Project> =>
+        of(makeProject({ id: 'p-1', kind: 'production', tags: ['Angular', 'TypeScript'] })),
       ),
     });
 
@@ -1249,8 +1247,8 @@ describe('AdminProjectEditor: modifications non enregistrées', () => {
 
   it('Given an edited project saved When the answer comes back Then nothing is reported as changed and leaving asks nothing', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
-      updateProject: vi.fn(
-        (): Observable<Project> => of(makeProject({ ...DASHFLOW, title: 'Après' })),
+      updateProject: vi.fn((): Observable<Project> =>
+        of(makeProject({ ...DASHFLOW, title: 'Après' })),
       ),
     });
 

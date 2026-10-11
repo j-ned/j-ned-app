@@ -392,8 +392,7 @@ describe('BlogDetail', () => {
 
     const bodyOf = (fixture: ComponentFixture<BlogDetail>): HTMLElement | null =>
       (fixture.debugElement.query(By.directive(BlogArticleBody))?.nativeElement as
-        | HTMLElement
-        | undefined) ?? null;
+        HTMLElement | undefined) ?? null;
 
     const testId = (fixture: ComponentFixture<BlogDetail>, id: string): HTMLElement | null =>
       (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(`[data-testid="${id}"]`);

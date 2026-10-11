@@ -443,8 +443,7 @@ describe('AdminPostForm: contenu et aperçu Markdown', () => {
       post: makeBlogPost({ contentMarkdown: '## Exemple\n\n```ts\ntype Id = string;\n```' }),
     });
     const body = fixture.debugElement.query(By.directive(BlogArticleBody))?.nativeElement as
-      | HTMLElement
-      | undefined;
+      HTMLElement | undefined;
 
     expect({
       inPreview: preview(host)?.contains(body ?? null) ?? false,

@@ -20,13 +20,12 @@ export class BlogArticleBody {
   readonly topHeadingLevel = input(1);
 
   // Sortie déjà assainie : `parseMarkdown` est le seul point d'assainissement du Markdown.
-  protected readonly html = computed(
-    (): SafeHtml =>
-      this.sanitizer.bypassSecurityTrustHtml(
-        parseMarkdown(this.markdown(), {
-          topHeadingLevel: this.topHeadingLevel(),
-          codeCopyButton: true,
-        }),
-      ),
+  protected readonly html = computed((): SafeHtml =>
+    this.sanitizer.bypassSecurityTrustHtml(
+      parseMarkdown(this.markdown(), {
+        topHeadingLevel: this.topHeadingLevel(),
+        codeCopyButton: true,
+      }),
+    ),
   );
 }

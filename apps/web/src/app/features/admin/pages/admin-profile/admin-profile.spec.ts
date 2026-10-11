@@ -58,12 +58,11 @@ type Editor = Spies & {
 async function openEditor(overrides: Partial<Omit<Spies, 'toast'>> = {}): Promise<Editor> {
   const spies: Spies = {
     getProfile: vi.fn((): Observable<ProfileDocument> => of(LOADED)),
-    saveProfile: vi.fn(
-      (content: ProfileContent): Observable<ProfileDocument> =>
-        of(aProfileDocument({ version: 8, content })),
+    saveProfile: vi.fn((content: ProfileContent): Observable<ProfileDocument> =>
+      of(aProfileDocument({ version: 8, content })),
     ),
-    uploadPortrait: vi.fn(
-      (): Observable<ProfileDocument> => of(aProfileDocument({ version: 7, portraitUrl: SENT })),
+    uploadPortrait: vi.fn((): Observable<ProfileDocument> =>
+      of(aProfileDocument({ version: 7, portraitUrl: SENT })),
     ),
     removePortrait: vi.fn((): Observable<void> => of(undefined)),
     toast: vi.fn(),
@@ -269,9 +268,8 @@ describe('AdminProfile: enregistrer', () => {
 
   it('Given the API returning a normalized document When the save ends Then the form shows the returned text, with nothing left to save', async () => {
     const editor = await openEditor({
-      saveProfile: vi.fn(
-        (): Observable<ProfileDocument> =>
-          of(aProfileDocument({ version: 8, content: retitled('Parcours normalisé') })),
+      saveProfile: vi.fn((): Observable<ProfileDocument> =>
+        of(aProfileDocument({ version: 8, content: retitled('Parcours normalisé') })),
       ),
     });
 
@@ -297,9 +295,8 @@ describe('AdminProfile: enregistrer', () => {
 
   it('Given a version changed elsewhere When the save is refused with a 409 Then the conflict is told and the draft is kept', async () => {
     const editor = await openEditor({
-      saveProfile: vi.fn(
-        (): Observable<ProfileDocument> =>
-          throwError(() => apiRejection(409, 'Le parcours a changé : version périmée')),
+      saveProfile: vi.fn((): Observable<ProfileDocument> =>
+        throwError(() => apiRejection(409, 'Le parcours a changé : version périmée')),
       ),
     });
 
@@ -581,9 +578,7 @@ describe('AdminProfile: réordonner', () => {
 describe('AdminProfile: formulations à relire', () => {
   async function typeInSecondParagraph(editor: Editor, text: string): Promise<void> {
     const control = byTestId(editor.host, 'admin-profile-paragraph-text', 1) as
-      | HTMLTextAreaElement
-      | HTMLInputElement
-      | null;
+      HTMLTextAreaElement | HTMLInputElement | null;
     if (!control) return;
     control.value = text;
     control.dispatchEvent(new Event('input'));

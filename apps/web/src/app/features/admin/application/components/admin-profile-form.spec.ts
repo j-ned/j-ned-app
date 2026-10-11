@@ -338,10 +338,7 @@ const rowField = (
   index: number,
 ): HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null =>
   byTestId(host, `admin-profile-${testId}`, index) as
-    | HTMLInputElement
-    | HTMLTextAreaElement
-    | HTMLSelectElement
-    | null;
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
 
 async function typeInRow(
   rendered: RenderedForm,

@@ -27,13 +27,11 @@ const STATIC_URLS: readonly SitemapUrl[] = [
   { path: '/mentions-legales', changefreq: 'yearly', priority: '0.2' },
   { path: '/confidentialite', changefreq: 'yearly', priority: '0.2' },
   { path: `/${OFFERS_BASE_PATH}`, changefreq: 'monthly', priority: '0.8' },
-  ...OFFERS.map(
-    ({ slug }): SitemapUrl => ({
-      path: offerPath(slug),
-      changefreq: 'monthly',
-      priority: '0.7',
-    }),
-  ),
+  ...OFFERS.map(({ slug }): SitemapUrl => ({
+    path: offerPath(slug),
+    changefreq: 'monthly',
+    priority: '0.7',
+  })),
 ];
 
 const toDay = (iso: string): string => iso.slice(0, 10);
@@ -46,21 +44,17 @@ export function buildSitemap({ projectSlugs, posts, staticLastmod }: SitemapInpu
   const defaultLastmod = toDay(staticLastmod.toISOString());
   const urls: readonly SitemapUrl[] = [
     ...STATIC_URLS,
-    ...projectSlugs.map(
-      (slug): SitemapUrl => ({
-        path: `/projects/${slug}`,
-        changefreq: 'monthly',
-        priority: '0.7',
-      }),
-    ),
-    ...posts.map(
-      (post): SitemapUrl => ({
-        path: `/blog/${post.slug}`,
-        changefreq: 'monthly',
-        priority: '0.8',
-        lastmod: postLastmod(post),
-      }),
-    ),
+    ...projectSlugs.map((slug): SitemapUrl => ({
+      path: `/projects/${slug}`,
+      changefreq: 'monthly',
+      priority: '0.7',
+    })),
+    ...posts.map((post): SitemapUrl => ({
+      path: `/blog/${post.slug}`,
+      changefreq: 'monthly',
+      priority: '0.8',
+      lastmod: postLastmod(post),
+    })),
   ];
   const entries = urls.map(
     (url) => `  <url>
