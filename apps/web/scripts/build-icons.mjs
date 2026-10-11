@@ -44,11 +44,7 @@ for (const ref of icons) {
     continue;
   }
   const raw = readFileSync(sourcePath, 'utf-8');
-  const optimized = optimize(raw, {
-    plugins: [
-      { name: 'preset-default', params: { overrides: { removeViewBox: false } } },
-    ],
-  }).data;
+  const optimized = optimize(raw, { plugins: ['preset-default'] }).data;
   spriter.add(`${ref.style}-${ref.id}.svg`, null, optimized);
 }
 

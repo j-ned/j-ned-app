@@ -85,13 +85,13 @@
     "prettier": "^3.9.9",
     "rxjs": "~7.8.0",
     "svg-sprite": "^2.0.4",
-    "svgo": "^3.3.5",
+    "svgo": "^4.1.0",
     "tailwindcss": "^4.3.3",
     "tslib": "^2.3.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.70.1",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.2"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
