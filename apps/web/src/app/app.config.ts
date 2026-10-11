@@ -109,7 +109,8 @@ export const appConfig: ApplicationConfig = {
         anchorScrolling: 'enabled',
       }),
       withPreloading(SelectivePreload),
-      withViewTransitions(),
+      // La première navigation retrouve le DOM déjà rendu par le serveur : rien à faire transiter.
+      withViewTransitions({ skipInitialTransition: true }),
       withRouterConfig({ canceledNavigationResolution: 'computed' }),
     ),
     provideClientHydration(
