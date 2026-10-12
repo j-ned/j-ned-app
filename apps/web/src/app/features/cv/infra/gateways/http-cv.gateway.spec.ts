@@ -4,13 +4,14 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { firstValueFrom, type Observable } from 'rxjs';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
-import { API_BASE_URL } from '@shared/api/api-config';
+import { API_BASE_URL, API_LINK_BASE_URL } from '@shared/api/api-config';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
 import { ToastStore } from '@core/notifications/toast-store';
 import { HttpCvGateway } from './http-cv.gateway';
 import type { CvInfo } from '../../domain/models/cv.model';
 
 const BASE = '/api';
+const LINK_BASE = 'https://api.example.test/api';
 
 function configure(): { gateway: HttpCvGateway; httpController: HttpTestingController } {
   TestBed.configureTestingModule({
@@ -19,6 +20,7 @@ function configure(): { gateway: HttpCvGateway; httpController: HttpTestingContr
       provideHttpClient(),
       provideHttpClientTesting(),
       { provide: API_BASE_URL, useValue: BASE },
+      { provide: API_LINK_BASE_URL, useValue: LINK_BASE },
     ],
   });
   return {
@@ -114,12 +116,12 @@ describe('HttpCvGateway', () => {
   });
 
   describe('getDownloadUrl', () => {
-    it('getDownloadUrl() retourne `${baseUrl}/cv/download` (sync, no HTTP request)', () => {
+    it('getDownloadUrl() retourne `${linkBaseUrl}/cv/download`, pas la base des requêtes (sync, no HTTP request)', () => {
       const { gateway, httpController } = configure();
 
       const url = gateway.getDownloadUrl();
 
-      expect(url).toBe(`${BASE}/cv/download`);
+      expect(url).toBe(`${LINK_BASE}/cv/download`);
       httpController.verify();
     });
   });
