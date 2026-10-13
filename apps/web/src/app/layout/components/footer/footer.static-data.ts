@@ -6,6 +6,7 @@ export const FOOTER_COPY = {
   resources: { projects: 'Réalisations', blog: 'Blog', about: 'Parcours' },
   hiringLink: 'Vous recrutez\u202f?',
   contactCta: 'Décrire mon projet',
+  bookingLink: 'Réserver un appel de 30\u00a0min',
   socials: { malt: 'Malt', linkedin: 'LinkedIn', github: 'GitHub' },
   review: REVIEW_INVITATION_COPY,
   legal: {

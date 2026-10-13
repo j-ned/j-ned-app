@@ -1,6 +1,8 @@
-import type { Breadcrumb, ErrorEvent } from '@sentry/angular';
+import type { BrowserOptions, Breadcrumb, ErrorEvent } from '@sentry/angular';
 import { describe, it, expect } from 'vitest';
-import { scrubBreadcrumb, scrubEvent } from './scrub-event';
+import { scrubBreadcrumb, scrubEvent, scrubSpan } from './scrub-event';
+
+type StreamedSpan = Parameters<NonNullable<BrowserOptions['beforeSendSpan']>>[0];
 
 const anEvent = (request?: ErrorEvent['request']): ErrorEvent => ({ type: undefined, request });
 
@@ -87,6 +89,49 @@ describe('scrubEvent', () => {
   });
 });
 
+describe('scrubEvent stack frames', () => {
+  const TOKEN_URL =
+    'https://nedellec-julien.fr/rendez-vous/annulation#AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-abcde';
+  const PAGE_URL = 'https://nedellec-julien.fr/rendez-vous/annulation';
+
+  it('given a global error whose frame filename is the page URL with the cancel token, when scrubbed, then filename and abs_path lose the fragment', () => {
+    const event: ErrorEvent = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: 'Error',
+            value: 'Script error',
+            stacktrace: {
+              frames: [
+                { filename: TOKEN_URL, abs_path: TOKEN_URL, lineno: 1 },
+                { filename: 'https://nedellec-julien.fr/main-ABCDEFGH.js', lineno: 2 },
+              ],
+            },
+          },
+        ],
+      },
+    };
+
+    const frames = scrubEvent(event).exception?.values?.[0]?.stacktrace?.frames;
+
+    expect(frames).toEqual([
+      { filename: PAGE_URL, abs_path: PAGE_URL, lineno: 1 },
+      { filename: 'https://nedellec-julien.fr/main-ABCDEFGH.js', lineno: 2 },
+    ]);
+    expect(JSON.stringify(scrubEvent(event))).not.toContain('AbCdEf');
+  });
+
+  it('given an exception without stack trace, when scrubbed, then it is kept as is', () => {
+    const event: ErrorEvent = {
+      type: undefined,
+      exception: { values: [{ type: 'Error', value: 'boom' }] },
+    };
+
+    expect(scrubEvent(event)).toEqual(event);
+  });
+});
+
 describe('scrubBreadcrumb', () => {
   it.each([
     { category: 'fetch', url: '/api/fail?email=x@y.z', expected: '/api/fail' },
@@ -146,4 +191,89 @@ describe('scrubBreadcrumb', () => {
       expect(scrubBreadcrumb({ category })).toEqual({ category });
     },
   );
+});
+
+const CANCELLATION_TOKEN = 'aB3_dE6-gH9iJ2kL5mN8oP1qR4sT7uV0wX3yZ6aB9cD';
+const CANCELLATION_URL = `https://nedellec-julien.fr/rendez-vous/annulation#${CANCELLATION_TOKEN}`;
+
+const aSpan = (attributes: StreamedSpan['attributes'], isSegment = true): StreamedSpan => ({
+  trace_id: 't'.repeat(32),
+  span_id: 's'.repeat(16),
+  name: '/rendez-vous/annulation',
+  start_timestamp: 1,
+  status: 'ok',
+  is_segment: isSegment,
+  attributes,
+});
+
+describe('scrubSpan', () => {
+  it.each(['url.full', 'http.url'])(
+    'given a page span whose %s carries the cancellation token in its fragment, when scrubbed, then the token is gone and other attributes are kept',
+    (key) => {
+      const span = aSpan({ [key]: CANCELLATION_URL, 'url.path': '/rendez-vous/annulation' });
+
+      const scrubbed = scrubSpan(span);
+
+      expect(scrubbed.attributes).toEqual({
+        [key]: 'https://nedellec-julien.fr/rendez-vous/annulation',
+        'url.path': '/rendez-vous/annulation',
+      });
+      expect(JSON.stringify(scrubbed)).not.toContain(CANCELLATION_TOKEN);
+    },
+  );
+
+  it('given a request span with a query string, when scrubbed, then url.full loses it and url.query / url.fragment are dropped', () => {
+    const scrubbed = scrubSpan(
+      aSpan(
+        {
+          'url.full': 'https://api.nedellec-julien.fr/api/x?email=a@b.c#y',
+          'url.query': '?email=a@b.c',
+          'url.fragment': 'y',
+          'http.request.method': 'GET',
+        },
+        false,
+      ),
+    );
+
+    expect(scrubbed.attributes).toEqual({
+      'url.full': 'https://api.nedellec-julien.fr/api/x',
+      'http.request.method': 'GET',
+    });
+  });
+
+  it.each([
+    {
+      label: 'an URL without query nor fragment',
+      attributes: { 'url.full': 'https://nedellec-julien.fr/rendez-vous' },
+    },
+    { label: 'no URL attribute', attributes: { 'sentry.op': 'ui.click' } },
+  ])('given a span with $label, when scrubbed, then it is equal to the input', ({ attributes }) => {
+    const span = aSpan(attributes);
+    const copy = structuredClone(span);
+
+    expect(scrubSpan(span)).toEqual(copy);
+  });
+
+  it('given a span carrying the token, when scrubbed, then the input span is not modified in place', () => {
+    const span = aSpan({ 'url.full': CANCELLATION_URL });
+
+    scrubSpan(span);
+
+    expect(span.attributes['url.full']).toBe(CANCELLATION_URL);
+  });
+
+  it('given several spans of the same trace, when each is scrubbed, then none carries the token', () => {
+    const spans = [
+      aSpan({ 'url.full': CANCELLATION_URL }),
+      aSpan({ 'http.url': CANCELLATION_URL }, false),
+      aSpan({ 'url.full': 'https://api.nedellec-julien.fr/api/booking/cancel/preview' }, false),
+    ];
+
+    const scrubbed = spans.map(scrubSpan);
+
+    expect(JSON.stringify(scrubbed)).not.toContain(CANCELLATION_TOKEN);
+    expect(scrubbed[2].attributes['url.full']).toBe(
+      'https://api.nedellec-julien.fr/api/booking/cancel/preview',
+    );
+  });
 });

@@ -8,6 +8,7 @@ type WorkFrame = {
 export const HOME_HERO_CTA_LABELS = {
   contact: 'Décrire mon projet',
   offers: 'Voir les offres et les prix',
+  booking: 'ou réserver un appel de 30\u00a0min',
 } as const;
 
 export const HOME_WORK_FRAME: WorkFrame = {

@@ -82,6 +82,7 @@ describe('conversionsNote', () => {
 describe('placementLabel', () => {
   it.each([
     ['home', 'Accueil'],
+    ['booking', 'Prise de rendez-vous'],
     ['offer_site-vitrine', 'Offre Site vitrine'],
     ['offer_site-atelier', 'Offre Site atelier'],
     ['offer_renfort-freelance', 'Offre Renfort Angular / NestJS'],

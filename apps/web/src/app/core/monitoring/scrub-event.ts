@@ -1,6 +1,7 @@
-import type { Breadcrumb, ErrorEvent } from '@sentry/angular';
+import type { Breadcrumb, BrowserOptions, ErrorEvent } from '@sentry/angular';
 
 type EventRequest = NonNullable<ErrorEvent['request']>;
+type StreamedSpan = Parameters<NonNullable<BrowserOptions['beforeSendSpan']>>[0];
 
 const FILTERED = '[Filtered]';
 const FILTERED_BODY_KEYS = ['password', 'newPassword', 'currentPassword', 'code', 'token', 'email'];
@@ -27,11 +28,41 @@ const withFilteredBody = (data: unknown): unknown =>
       )
     : data;
 
+type EventException = NonNullable<ErrorEvent['exception']>;
+type StackFrame = NonNullable<
+  NonNullable<NonNullable<EventException['values']>[number]['stacktrace']>['frames']
+>[number];
+
+// Une erreur globale sans script (« Script error ») prend location.href comme fichier de frame.
+const withScrubbedFrame = ({ filename, abs_path, ...frame }: StackFrame): StackFrame => ({
+  ...frame,
+  ...(filename !== undefined && { filename: withoutQueryAndFragment(filename) }),
+  ...(abs_path !== undefined && { abs_path: withoutQueryAndFragment(abs_path) }),
+});
+
+const withScrubbedFrames = (exception: EventException): EventException => ({
+  ...exception,
+  values: exception.values?.map((value) =>
+    value.stacktrace?.frames
+      ? {
+          ...value,
+          stacktrace: {
+            ...value.stacktrace,
+            frames: value.stacktrace.frames.map(withScrubbedFrame),
+          },
+        }
+      : value,
+  ),
+});
+
 export function scrubEvent(event: ErrorEvent): ErrorEvent {
-  if (!event.request) return event;
-  const { cookies: _cookies, url, headers, data, ...request } = event.request;
+  const scrubbed = event.exception
+    ? { ...event, exception: withScrubbedFrames(event.exception) }
+    : event;
+  if (!scrubbed.request) return scrubbed;
+  const { cookies: _cookies, url, headers, data, ...request } = scrubbed.request;
   return {
-    ...event,
+    ...scrubbed,
     request: {
       ...request,
       ...(url !== undefined && { url: withoutQueryAndFragment(url) }),
@@ -58,6 +89,25 @@ export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb {
         key,
         urlKeys.includes(key) && typeof value === 'string' ? withoutQueryAndFragment(value) : value,
       ]),
+    ),
+  };
+}
+
+const SPAN_URL_KEYS = ['url.full', 'http.url'];
+const DROPPED_SPAN_KEYS = ['url.query', 'url.fragment'];
+
+export function scrubSpan(span: StreamedSpan): StreamedSpan {
+  return {
+    ...span,
+    attributes: Object.fromEntries(
+      Object.entries(span.attributes)
+        .filter(([key]) => !DROPPED_SPAN_KEYS.includes(key))
+        .map(([key, value]) => [
+          key,
+          SPAN_URL_KEYS.includes(key) && typeof value === 'string'
+            ? withoutQueryAndFragment(value)
+            : value,
+        ]),
     ),
   };
 }

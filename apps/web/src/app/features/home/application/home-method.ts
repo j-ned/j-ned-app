@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AppIcon } from '@shared/icons/app-icon';
 import { HOME_METHOD } from '../domain/home-pitch.static-data';
 
 @Component({
   selector: 'app-home-method',
-  imports: [AppIcon],
+  imports: [AppIcon, RouterLink],
   host: { class: 'block' },
   template: `
     <section
@@ -36,6 +37,14 @@ import { HOME_METHOD } from '../domain/home-pitch.static-data';
             <p class="text-[0.9375rem] text-muted" data-testid="home-method-step-detail">
               {{ step.detail }}
             </p>
+            @if (step.link; as link) {
+              <a
+                [routerLink]="link.href"
+                class="inline-flex min-h-11 items-center gap-1.5 text-[0.9375rem] font-semibold text-primary hover:underline"
+                data-testid="home-method-step-link"
+                >{{ link.label }}<app-icon name="arrow-right" [size]="14"
+              /></a>
+            }
           </li>
         }
       </ol>

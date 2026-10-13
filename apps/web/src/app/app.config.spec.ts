@@ -5,6 +5,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { AuthStore } from '@core/auth/auth-store';
 import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
 import { HttpProfileGateway } from '@features/profile/infra/gateways/http-profile.gateway';
+import { BookingGateway } from '@features/booking/domain/gateways/booking.gateway';
+import { HttpBookingGateway } from '@features/booking/infra/http-booking.gateway';
 import { appConfig } from './app.config';
 
 describe('appConfig: routeur', () => {
@@ -27,6 +29,16 @@ describe('appConfig: parcours', () => {
     );
 
     expect(injector.get(ProfileGateway)).toBeInstanceOf(HttpProfileGateway);
+    injector.destroy();
+  });
+
+  it('Given the application config When the booking port is resolved Then the booking pages talk to the API', () => {
+    const injector = createEnvironmentInjector(
+      [...appConfig.providers],
+      TestBed.inject(EnvironmentInjector),
+    );
+
+    expect(injector.get(BookingGateway, null)).toBeInstanceOf(HttpBookingGateway);
     injector.destroy();
   });
 });

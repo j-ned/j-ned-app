@@ -1,5 +1,6 @@
+import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { ToastStore } from '@core/notifications/toast-store';
 import { NEVER, of, throwError } from 'rxjs';
 import type { Mock } from 'vitest';
@@ -8,9 +9,13 @@ import { ContactGateway } from '@features/contact/domain/gateways/contact.gatewa
 import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
 import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
+import { CONTACT_BOOKING_INVITE } from '@features/contact/domain/contact-booking-invite.static-data';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { ContactPlacement } from '@features/analytics/domain/models/analytics.types';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
+
+@Component({ template: '' })
+class BlankPage {}
 
 // Builder du domaine : jamais un littéral comme entrée sous test.
 function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormData {
@@ -31,7 +36,7 @@ describe('ContactForm (Signal Forms)', () => {
   ): Promise<ComponentFixture<ContactForm>> {
     TestBed.configureTestingModule({
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: 'rendez-vous', component: BlankPage }]),
         ToastStore,
         { provide: ContactGateway, useValue: gateway },
         { provide: AnalyticsGateway, useValue: analytics },
@@ -629,6 +634,73 @@ describe('ContactForm (Signal Forms)', () => {
         expect(fixture.nativeElement.querySelector('#contact-message-error')).not.toBeNull();
       });
     });
+  });
+
+  describe('Booking invite', () => {
+    const host = (fixture: ComponentFixture<ContactForm>): HTMLElement =>
+      fixture.nativeElement as HTMLElement;
+    const byTestId = (fixture: ComponentFixture<ContactForm>, id: string): HTMLElement[] =>
+      Array.from(host(fixture).querySelectorAll<HTMLElement>(`[data-testid="${id}"]`));
+    const collapsed = (el: Element | undefined): string =>
+      (el?.textContent ?? '').replace(/[ \t\r\n]+/g, ' ').trim();
+    const follows = (first: Element | undefined, second: Element | undefined): boolean =>
+      first !== undefined &&
+      second !== undefined &&
+      Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+    it('asks whether the visitor would rather talk, with a link to the booking page', async () => {
+      const fixture = await setup();
+      const [invite] = byTestId(fixture, 'contact-booking');
+      const links = byTestId(fixture, 'contact-booking-link');
+
+      expect(collapsed(invite)).toBe(
+        `${CONTACT_BOOKING_INVITE.prompt} ${CONTACT_BOOKING_INVITE.link}`,
+      );
+      expect(
+        links.map((link) => [link.tagName, link.getAttribute('href'), collapsed(link)]),
+      ).toEqual([['A', '/rendez-vous', CONTACT_BOOKING_INVITE.link]]);
+      expect(invite?.contains(links[0] ?? null)).toBe(true);
+    });
+
+    it('sits under the contact details, before the message form', async () => {
+      const fixture = await setup();
+      const channels = byTestId(fixture, 'contact-channel');
+      const [invite] = byTestId(fixture, 'contact-booking');
+
+      expect([
+        follows(channels[channels.length - 1], invite),
+        follows(invite, host(fixture).querySelector('form') ?? undefined),
+        invite?.closest('form') ?? null,
+      ]).toEqual([true, true, null]);
+    });
+
+    it('leads to the booking page when the link is clicked', async () => {
+      const fixture = await setup();
+
+      byTestId(fixture, 'contact-booking-link')[0]?.click();
+      await fixture.whenStable();
+
+      expect(TestBed.inject(Router).url).toBe('/rendez-vous');
+    });
+
+    it.each<ContactPlacement>(['home', 'offer_site-vitrine'])(
+      'measures one click on the link under its %s placement',
+      async (placement) => {
+        const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
+        const fixture = await setup(
+          stubContactGateway(),
+          { placement },
+          stubAnalyticsGateway({ trackCtaClick }),
+        );
+
+        byTestId(fixture, 'contact-booking-link')[0]?.click();
+        await fixture.whenStable();
+
+        expect(trackCtaClick.mock.calls).toEqual([
+          [`contact_booking_${placement}`, CONTACT_BOOKING_INVITE.link],
+        ]);
+      },
+    );
   });
 
   describe('Intro', () => {

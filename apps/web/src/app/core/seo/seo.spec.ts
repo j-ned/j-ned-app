@@ -84,4 +84,25 @@ describe('Seo', () => {
       expect(metaContent(doc, 'meta[property="og:image:alt"]')).toBe('alt B');
     });
   });
+
+  describe('robots', () => {
+    it('tells robots not to index a page that asks for it, with a single robots tag', () => {
+      seo.applySeoData({ title: 'Annuler', description: 'Résumé', robots: 'noindex, nofollow' });
+
+      expect({
+        content: metaContent(doc, 'meta[name="robots"]'),
+        tags: doc.head.querySelectorAll('meta[name="robots"]').length,
+      }).toEqual({ content: 'noindex, nofollow', tags: 1 });
+    });
+
+    it('lets robots index the next page again when it does not ask otherwise', () => {
+      seo.applySeoData({ title: 'Annuler', description: 'Résumé', robots: 'noindex, nofollow' });
+      seo.applySeoData({ title: 'Blog', description: 'Résumé' });
+
+      expect({
+        content: metaContent(doc, 'meta[name="robots"]'),
+        tags: doc.head.querySelectorAll('meta[name="robots"]').length,
+      }).toEqual({ content: 'index, follow', tags: 1 });
+    });
+  });
 });

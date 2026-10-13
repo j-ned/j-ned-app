@@ -2,7 +2,7 @@ import type { ContactMessage } from '@features/contact/domain/models/contact-mes
 import { filterMessagesByReadStatus } from '@features/contact/domain/use-cases/filter-messages-by-read-status.use-case';
 import { counted } from '@shared/format/counted';
 import type { FilterOption } from '@shared/ui/filter-group';
-import { withFirstOfMonth } from './with-first-of-month';
+import { withFirstOfMonth } from '@shared/format/with-first-of-month';
 
 export type AdminMessagesFilter = 'all' | 'unread' | 'read';
 

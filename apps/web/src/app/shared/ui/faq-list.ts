@@ -1,9 +1,17 @@
 import { Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { AppIcon } from '@shared/icons/app-icon';
 
-type FaqItem = { readonly id: string; readonly question: string; readonly answer: string };
+type FaqItem = {
+  readonly id: string;
+  readonly question: string;
+  readonly answer: string;
+  readonly link?: { readonly label: string; readonly href: string };
+};
 
 @Component({
   selector: 'app-faq-list',
+  imports: [AppIcon, RouterLink],
   host: { class: 'block' },
   template: `
     <section class="page-container py-24 md:py-32" [attr.aria-labelledby]="headingId()">
@@ -27,6 +35,14 @@ type FaqItem = { readonly id: string; readonly question: string; readonly answer
                 <p class="max-w-[34rem] pb-4.5 leading-relaxed text-muted" data-testid="faq-answer">
                   {{ item.answer }}
                 </p>
+                @if (item.link; as link) {
+                  <a
+                    [routerLink]="link.href"
+                    class="-mt-2 mb-3 inline-flex min-h-11 items-center gap-1.5 font-semibold text-primary hover:underline"
+                    data-testid="faq-answer-link"
+                    >{{ link.label }}<app-icon name="arrow-right" [size]="14"
+                  /></a>
+                }
               </details>
             }
           </div>

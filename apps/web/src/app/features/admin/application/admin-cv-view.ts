@@ -2,7 +2,7 @@ import type { CvInfo } from '@features/cv/domain/models/cv.model';
 import { formatFileSize } from '@shared/format/format-file-size';
 import { groupedNumber } from '@shared/format/grouped-number';
 import type { CartoucheRow } from '@shared/ui/cartouche';
-import { withFirstOfMonth } from './with-first-of-month';
+import { withFirstOfMonth } from '@shared/format/with-first-of-month';
 
 const DAY_MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', {
   day: 'numeric',

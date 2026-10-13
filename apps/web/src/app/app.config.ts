@@ -50,6 +50,8 @@ import { HttpProjectsGateway } from '@features/projects/infra/gateways/http-proj
 import { HttpProfileGateway } from '@features/profile/infra/gateways/http-profile.gateway';
 import { HttpContactGateway } from '@features/contact/infra/gateways/http-contact.gateway';
 import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-home.gateway';
+import { BookingGateway } from '@features/booking/domain/gateways/booking.gateway';
+import { HttpBookingGateway } from '@features/booking/infra/http-booking.gateway';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 import { AuthStore } from '@core/auth/auth-store';
@@ -143,6 +145,7 @@ export const appConfig: ApplicationConfig = {
     { provide: AnalyticsGateway, useClass: HttpAnalyticsGateway },
     { provide: CvGateway, useClass: HttpCvGateway },
     { provide: AuthGateway, useClass: HttpAuthGateway },
+    { provide: BookingGateway, useClass: HttpBookingGateway },
     { provide: ErrorHandler, useClass: MonitoringErrorHandler },
   ],
 };

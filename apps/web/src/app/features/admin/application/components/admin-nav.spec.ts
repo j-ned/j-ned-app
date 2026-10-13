@@ -9,7 +9,7 @@ import { settle } from '@shared/testing/settle';
 @Component({ template: '' })
 class BlankPage {}
 
-const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3 };
+const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3, upcoming: 2 };
 
 const NAV_KEYS = [
   'overview',
@@ -19,6 +19,8 @@ const NAV_KEYS = [
   'cv',
   'audience',
   'messages',
+  'bookings',
+  'availability',
   'settings',
 ] as const;
 
@@ -56,7 +58,7 @@ async function renderNav(
 }
 
 describe('AdminNav: structure', () => {
-  it('Given the groups When the navigation renders Then a single nav named Administration holds the overview and three labelled groups', async () => {
+  it('Given the groups When the navigation renders Then a single nav named Administration holds the overview and four labelled groups', async () => {
     const { host } = await renderNav();
     const navs = [...host.querySelectorAll('nav')];
     const groups = [...host.querySelectorAll('[role="group"]')].map((group) => ({
@@ -83,6 +85,7 @@ describe('AdminNav: structure', () => {
           links: ['nav-link-projects', 'nav-link-posts', 'nav-link-profile', 'nav-link-cv'],
         },
         { label: 'Audience', links: ['nav-link-audience', 'nav-link-messages'] },
+        { label: 'Rendez-vous', links: ['nav-link-bookings', 'nav-link-availability'] },
         { label: 'Compte', links: ['nav-link-settings'] },
       ],
       headings: 0,
@@ -90,7 +93,9 @@ describe('AdminNav: structure', () => {
   });
 
   it('Given the groups When the navigation renders Then each link leads to its page under its French label', async () => {
-    const { host } = await renderNav({ counts: { projects: null, posts: null, unread: null } });
+    const { host } = await renderNav({
+      counts: { projects: null, posts: null, unread: null, upcoming: null },
+    });
 
     expect(
       Object.fromEntries(
@@ -107,6 +112,8 @@ describe('AdminNav: structure', () => {
       cv: { href: '/admin/cv', text: 'CV' },
       audience: { href: '/admin/audience', text: 'Audience' },
       messages: { href: '/admin/messages', text: 'Messages' },
+      bookings: { href: '/admin/rendez-vous', text: 'Rendez-vous' },
+      availability: { href: '/admin/disponibilites', text: 'Disponibilités' },
       settings: { href: '/admin/settings', text: 'Paramètres' },
     });
   });
@@ -120,6 +127,8 @@ describe('AdminNav: page courante', () => {
     { url: '/admin/profile', current: 'profile' },
     { url: '/admin/audience', current: 'audience' },
     { url: '/admin/messages', current: 'messages' },
+    { url: '/admin/rendez-vous', current: 'bookings' },
+    { url: '/admin/disponibilites', current: 'availability' },
     { url: '/admin/settings/security', current: 'settings' },
   ])(
     'Given the page $url When the navigation renders Then only the $current link is the current page',
@@ -154,7 +163,7 @@ describe('AdminNav: page courante', () => {
 });
 
 describe('AdminNav: comptes', () => {
-  it('Given counts When the navigation renders Then projects, articles and unread messages show their number, the unread one spoken with its noun', async () => {
+  it('Given counts When the navigation renders Then projects, articles, unread messages and upcoming bookings show their number, the last two spoken with their noun', async () => {
     const { host } = await renderNav();
     const unread = byTestId(host, 'nav-count-messages');
 
@@ -165,13 +174,19 @@ describe('AdminNav: comptes', () => {
       messages: normalized(unread),
       spokenOnly: normalized(unread?.querySelector('.sr-only')),
       insideLink: byTestId(host, 'nav-link-messages')?.contains(unread) ?? false,
+      bookings: normalized(byTestId(host, 'nav-count-bookings')),
+      bookingsSpokenOnly: normalized(
+        byTestId(host, 'nav-count-bookings')?.querySelector('.sr-only'),
+      ),
     }).toEqual({
-      present: ['projects', 'posts', 'messages'],
+      present: ['projects', 'posts', 'messages', 'bookings'],
       projects: '6',
       posts: '2',
       messages: '3 non lus',
       spokenOnly: 'non lus',
       insideLink: true,
+      bookings: '2 à venir',
+      bookingsSpokenOnly: 'à venir',
     });
   });
 
@@ -188,7 +203,9 @@ describe('AdminNav: comptes', () => {
   );
 
   it('Given unknown counts When the navigation renders Then no count is shown', async () => {
-    const { host } = await renderNav({ counts: { projects: null, posts: null, unread: null } });
+    const { host } = await renderNav({
+      counts: { projects: null, posts: null, unread: null, upcoming: null },
+    });
 
     expect(NAV_KEYS.filter((key) => byTestId(host, `nav-count-${key}`) !== null)).toEqual([]);
   });

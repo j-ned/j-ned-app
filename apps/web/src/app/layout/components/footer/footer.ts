@@ -99,6 +99,15 @@ const SOCIAL_LINKS = [
                 {{ copy.contactCta }}
               </button>
             </li>
+            <li>
+              <a
+                data-testid="footer-booking-link"
+                routerLink="/rendez-vous"
+                class="footer-link"
+                (click)="trackBookingClick()"
+                >{{ copy.bookingLink }}</a
+              >
+            </li>
             @for (social of socialLinks; track social.href) {
               <li>
                 <a
@@ -167,6 +176,10 @@ export class Footer {
   protected scrollToContact(): void {
     this.analytics.trackCtaClick('footer_contact', FOOTER_COPY.contactCta);
     this.scroller.scrollToRequestForm();
+  }
+
+  protected trackBookingClick(): void {
+    this.analytics.trackCtaClick('footer_booking', FOOTER_COPY.bookingLink);
   }
 
   protected trackReviewClick(): void {

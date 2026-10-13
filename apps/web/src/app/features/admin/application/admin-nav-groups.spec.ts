@@ -1,9 +1,9 @@
 import { activeNavLabel, adminNavGroups, type AdminNavCounts } from './admin-nav-groups';
 
-const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3 };
+const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3, upcoming: 2 };
 
 describe('adminNavGroups', () => {
-  it('Given counts When the groups are built Then the overview stands alone, followed by Contenu, Audience and Compte in order', () => {
+  it('Given counts When the groups are built Then the overview stands alone, followed by Contenu, Audience, Rendez-vous and Compte in order', () => {
     const groups = adminNavGroups(COUNTS);
 
     expect(
@@ -33,13 +33,25 @@ describe('adminNavGroups', () => {
         ],
       },
       {
+        label: 'Rendez-vous',
+        items: [
+          { key: 'bookings', route: '/admin/rendez-vous', label: 'Rendez-vous', exact: false },
+          {
+            key: 'availability',
+            route: '/admin/disponibilites',
+            label: 'Disponibilités',
+            exact: false,
+          },
+        ],
+      },
+      {
         label: 'Compte',
         items: [{ key: 'settings', route: '/admin/settings', label: 'Paramètres', exact: false }],
       },
     ]);
   });
 
-  it('Given counts When the groups are built Then only projects, articles and messages carry a count', () => {
+  it('Given counts When the groups are built Then only projects, articles, messages and bookings carry a count', () => {
     const counts = adminNavGroups(COUNTS)
       .flatMap((group) => group.items)
       .map(({ key, count, countSuffix }) => ({ key, count, countSuffix }));
@@ -52,6 +64,8 @@ describe('adminNavGroups', () => {
       { key: 'cv', count: null, countSuffix: '' },
       { key: 'audience', count: null, countSuffix: '' },
       { key: 'messages', count: 3, countSuffix: 'non lus' },
+      { key: 'bookings', count: 2, countSuffix: 'à venir' },
+      { key: 'availability', count: null, countSuffix: '' },
       { key: 'settings', count: null, countSuffix: '' },
     ]);
   });
@@ -76,9 +90,22 @@ describe('adminNavGroups', () => {
   );
 
   it.each([
-    { source: 'projects', counts: { projects: null, posts: 2, unread: 3 }, key: 'projects' },
-    { source: 'posts', counts: { projects: 6, posts: null, unread: 3 }, key: 'posts' },
-    { source: 'unread', counts: { projects: 6, posts: 2, unread: null }, key: 'messages' },
+    {
+      source: 'projects',
+      counts: { projects: null, posts: 2, unread: 3, upcoming: 2 },
+      key: 'projects',
+    },
+    { source: 'posts', counts: { projects: 6, posts: null, unread: 3, upcoming: 2 }, key: 'posts' },
+    {
+      source: 'unread',
+      counts: { projects: 6, posts: 2, unread: null, upcoming: 2 },
+      key: 'messages',
+    },
+    {
+      source: 'upcoming',
+      counts: { projects: 6, posts: 2, unread: 3, upcoming: null },
+      key: 'bookings',
+    },
   ] as const)(
     'Given an unknown $source count When the groups are built Then $key has no count and the others keep theirs',
     ({ counts, key }) => {
@@ -96,11 +123,56 @@ describe('adminNavGroups', () => {
         cv: null,
         audience: null,
         messages: 3,
+        bookings: 2,
+        availability: null,
         settings: null,
         [key]: null,
       });
     },
   );
+});
+
+describe('adminNavGroups: Rendez-vous', () => {
+  it.each([0, 1, 5])(
+    'Given %i upcoming booking(s) When the groups are built Then the bookings count reads « à venir »',
+    (upcoming) => {
+      const bookings = adminNavGroups({ ...COUNTS, upcoming })
+        .flatMap((group) => group.items)
+        .find((item) => item.key === 'bookings');
+
+      expect({ count: bookings?.count, countSuffix: bookings?.countSuffix }).toEqual({
+        count: upcoming,
+        countSuffix: 'à venir',
+      });
+    },
+  );
+
+  it('Given an unknown upcoming count When the groups are built Then the bookings link has neither count nor suffix', () => {
+    const bookings = adminNavGroups({ ...COUNTS, upcoming: null })
+      .flatMap((group) => group.items)
+      .find((item) => item.key === 'bookings');
+
+    expect({ count: bookings?.count, countSuffix: bookings?.countSuffix }).toEqual({
+      count: null,
+      countSuffix: '',
+    });
+  });
+
+  it('Given counts When the groups are built Then « Rendez-vous » is drawn with the calendar icon', () => {
+    const bookings = adminNavGroups(COUNTS)
+      .flatMap((group) => group.items)
+      .find((item) => item.route === '/admin/rendez-vous');
+
+    expect(bookings?.icon).toBe('calendar');
+  });
+
+  it('Given counts When the groups are built Then « Disponibilités » is drawn with the clock icon', () => {
+    const availability = adminNavGroups(COUNTS)
+      .flatMap((group) => group.items)
+      .find((item) => item.route === '/admin/disponibilites');
+
+    expect(availability?.icon).toBe('clock');
+  });
 });
 
 describe('adminNavGroups: Parcours', () => {
@@ -123,6 +195,9 @@ describe('activeNavLabel', () => {
     { url: '/admin/audience', label: 'Audience' },
     { url: '/admin/messages?filter=unread', label: 'Messages' },
     { url: '/admin/settings/security', label: 'Paramètres' },
+    { url: '/admin/rendez-vous', label: 'Rendez-vous' },
+    { url: '/admin/rendez-vous?scope=past', label: 'Rendez-vous' },
+    { url: '/admin/disponibilites', label: 'Disponibilités' },
     { url: '/admin/projects/new', label: 'Projets' },
     { url: '/admin#top', label: "Vue d'ensemble" },
     { url: '/admin/blogroll', label: 'Administration' },

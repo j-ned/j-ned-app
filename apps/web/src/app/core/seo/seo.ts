@@ -14,6 +14,7 @@ export type SeoData = {
   /** Texte alternatif du visuel partagé (`og:image:alt`). Défaut : le titre. */
   imageAlt?: string;
   type?: string;
+  robots?: string;
   structuredData?: Record<string, unknown>;
 };
 
@@ -26,6 +27,7 @@ const AVATAR_IMAGE = {
   type: 'image/png',
 } as const;
 const AVATAR_ALT = 'Photo de profil de Julien Nédellec';
+const DEFAULT_ROBOTS = 'index, follow';
 
 @Injectable({ providedIn: 'root' })
 export class Seo {
@@ -40,6 +42,8 @@ export class Seo {
     if (data.keywords) {
       this.meta.updateTag({ name: 'keywords', content: data.keywords });
     }
+    // Rétabli à chaque page : sinon une navigation client depuis une page `noindex` la propage.
+    this.meta.updateTag({ name: 'robots', content: data.robots || DEFAULT_ROBOTS });
 
     this.meta.updateTag({ property: 'og:title', content: data.title });
     this.meta.updateTag({ property: 'og:description', content: data.description });

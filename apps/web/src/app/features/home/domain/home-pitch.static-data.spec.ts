@@ -51,6 +51,15 @@ describe('home pitch copy', () => {
       ]);
     });
 
+    it('offers the booking page from the framing step only', () => {
+      expect(HOME_METHOD.steps.map(({ id, link }) => [id, link ?? null])).toEqual([
+        ['frame', { label: "Réserver l'appel de cadrage", href: '/rendez-vous' }],
+        ['build', null],
+        ['launch', null],
+        ['maintain', null],
+      ]);
+    });
+
     it('identifies each step uniquely', () => {
       expect(new Set(idsOf(HOME_METHOD.steps)).size).toBe(HOME_METHOD.steps.length);
     });
@@ -122,7 +131,7 @@ describe('home pitch copy', () => {
         {
           question: `Comment est fixé le prix d'une application${NARROW_NBSP}?`,
           answer:
-            "Après un cadrage gratuit de 30 minutes, je vous envoie un devis ferme. Ce qui n'y figure pas fait l'objet d'un avenant que vous validez avant.",
+            "Après un cadrage gratuit de 30 minutes, réservable en ligne, je vous envoie un devis ferme. Ce qui n'y figure pas fait l'objet d'un avenant que vous validez avant.",
         },
         {
           question: `Vous travaillez hors des Yvelines${NARROW_NBSP}?`,
@@ -133,6 +142,14 @@ describe('home pitch copy', () => {
           answer:
             'Non. Je suis entrepreneur individuel en franchise de TVA, art. 293 B du CGI. Le prix affiché est le prix payé.',
         },
+      ]);
+    });
+
+    it('links the booking page from the answer about the free framing call only', () => {
+      expect(
+        HOME_FAQ.items.filter(({ link }) => link !== undefined).map(({ id, link }) => [id, link]),
+      ).toEqual([
+        ['application-price', { label: 'Réserver le cadrage gratuit', href: '/rendez-vous' }],
       ]);
     });
 

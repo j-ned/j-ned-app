@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, ElementRef, input, viewChild } from '@angular/core';
 
 @Component({
   selector: 'app-admin-section-head',
@@ -8,6 +8,8 @@ import { Component, input } from '@angular/core';
   },
   template: `
     <h2
+      #headingElement
+      tabindex="-1"
       [id]="headingId()"
       [attr.data-testid]="headingId()"
       class="font-display text-[1.375rem] font-bold tracking-[-0.02em] font-stretch-106%"
@@ -20,4 +22,10 @@ import { Component, input } from '@angular/core';
 export class AdminSectionHead {
   readonly heading = input.required<string>();
   readonly headingId = input.required<string>();
+
+  private readonly _heading = viewChild.required<ElementRef<HTMLHeadingElement>>('headingElement');
+
+  focusHeading(): void {
+    this._heading().nativeElement.focus();
+  }
 }

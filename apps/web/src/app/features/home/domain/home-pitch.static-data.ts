@@ -9,6 +9,7 @@ export const HOME_METHOD: HomeMethod = {
       verb: 'Cadrer',
       when: 'jour 1 · 30 min',
       detail: 'On parle de votre besoin. Vous recevez un devis ferme : périmètre, délai, prix.',
+      link: { label: "Réserver l'appel de cadrage", href: '/rendez-vous' },
     },
     {
       id: 'build',
@@ -92,7 +93,8 @@ export const HOME_FAQ: HomeFaq = {
       id: 'application-price',
       question: "Comment est fixé le prix d'une application ?",
       answer:
-        "Après un cadrage gratuit de 30 minutes, je vous envoie un devis ferme. Ce qui n'y figure pas fait l'objet d'un avenant que vous validez avant.",
+        "Après un cadrage gratuit de 30 minutes, réservable en ligne, je vous envoie un devis ferme. Ce qui n'y figure pas fait l'objet d'un avenant que vous validez avant.",
+      link: { label: 'Réserver le cadrage gratuit', href: '/rendez-vous' },
     },
     {
       id: 'outside-yvelines',

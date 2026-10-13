@@ -5,6 +5,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
 import { ThemeStore } from '@core/theme/theme-store';
+import { BookingGateway } from '@features/booking/domain/gateways/booking.gateway';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
@@ -104,6 +105,7 @@ export class AdminLayout {
   private readonly _projectsGateway = inject(ProjectsGateway);
   private readonly _blogGateway = inject(BlogGateway);
   private readonly _contactGateway = inject(ContactGateway);
+  private readonly _bookingGateway = inject(BookingGateway);
   private readonly _viewportScroller = inject(ViewportScroller);
 
   protected readonly menuOpen = signal(false);
@@ -111,6 +113,9 @@ export class AdminLayout {
   private readonly _projects = rxResource({ stream: () => this._projectsGateway.getAllProjects() });
   private readonly _posts = rxResource({ stream: () => this._blogGateway.getAllPostsForAdmin() });
   private readonly _unread = rxResource({ stream: () => this._contactGateway.getUnreadCount() });
+  private readonly _upcoming = rxResource({
+    stream: () => this._bookingGateway.getUpcomingCount(),
+  });
 
   private readonly _url = toSignal(
     this._router.events.pipe(
@@ -125,6 +130,7 @@ export class AdminLayout {
       projects: this._projects.hasValue() ? this._projects.value().length : null,
       posts: this._posts.hasValue() ? this._posts.value().length : null,
       unread: this._unread.hasValue() ? this._unread.value() : null,
+      upcoming: this._upcoming.hasValue() ? this._upcoming.value() : null,
     }),
   );
 

@@ -19,6 +19,7 @@ const CHANNEL_LABELS: Readonly<Record<OutboundChannel, string>> = {
 
 const PLACEMENT_LABELS: ReadonlyMap<string, string> = new Map([
   ['home', 'Accueil'],
+  ['booking', 'Prise de rendez-vous'],
   ...OFFERS.map((offer): [string, string] => [`offer_${offer.slug}`, `Offre ${offer.shortName}`]),
 ]);
 

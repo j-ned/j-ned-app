@@ -33,6 +33,7 @@ describe('buildSitemap', () => {
       `${SITE}/about`,
       `${SITE}/projects`,
       `${SITE}/blog`,
+      `${SITE}/rendez-vous`,
       `${SITE}/mentions-legales`,
       `${SITE}/confidentialite`,
       `${SITE}/${OFFERS_BASE_PATH}`,
@@ -57,10 +58,20 @@ describe('buildSitemap', () => {
     }).toEqual({ head: true, project: true, end: true });
   });
 
+  it('Given the booking page When the sitemap is built Then it is listed monthly with priority 0.6', () => {
+    const xml = buildSitemap(aSitemapInput());
+
+    expect(
+      xml.includes(
+        `  <url>\n    <loc>${SITE}/rendez-vous</loc>\n    <lastmod>2026-10-10</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>`,
+      ),
+    ).toBe(true);
+  });
+
   it('Given no content When the sitemap is built Then every static page is dated by the server start', () => {
     const lastmods = entriesOf(buildSitemap(aSitemapInput())).map((entry) => entry.lastmod);
 
-    expect(lastmods).toEqual(Array.from({ length: 7 + OFFERS.length }, () => '2026-10-10'));
+    expect(lastmods).toEqual(Array.from({ length: 8 + OFFERS.length }, () => '2026-10-10'));
   });
 
   it.each([

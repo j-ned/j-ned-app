@@ -207,6 +207,12 @@ jobs:
           # Routes client → coquille CSR en 200 ; URL inconnue → coquille CSR en 404 (pas la home)
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login)" = "200"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/admin/analytics)" = "200"
+          # Prise de rendez-vous : page prérendue ; annulation en coquille CSR, hors index, en-têtes de sécurité gardés
+          curl -fsS http://127.0.0.1:3000/rendez-vous -o /tmp/booking.html
+          grep -q '<app-booking' /tmp/booking.html
+          cancel_headers=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/rendez-vous/annulation)
+          grep -qi '^x-robots-tag: noindex, nofollow' <<<"$cancel_headers"
+          grep -qi '^strict-transport-security:' <<<"$cancel_headers"
           test "$(curl -s -o /tmp/404.html -w '%{http_code}' http://127.0.0.1:3000/does-not-exist)" = "404"
           grep -q '<app-root' /tmp/404.html && ! grep -q 'ng-state' /tmp/404.html
           # Offre à son URL de catalogue ; slug inconnu → 404 ; ancienne URL → 301 relatif, query conservée

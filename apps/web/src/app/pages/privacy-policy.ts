@@ -10,7 +10,7 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
     <article class="page-container max-w-3xl pt-8 prose dark:prose-invert">
       <h1>Politique de confidentialité</h1>
       <p class="text-muted" data-testid="privacy-last-update">
-        Dernière mise à jour&nbsp;: 11 octobre 2026
+        Dernière mise à jour&nbsp;: 13 octobre 2026
       </p>
 
       <p>
@@ -30,6 +30,26 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
         temps du traitement de la demande, puis supprimées par l'éditeur.
       </p>
 
+      <h2>Prise de rendez-vous</h2>
+      <p data-testid="privacy-booking-data">
+        Pour réserver un appel de cadrage, vous indiquez votre nom, votre adresse e-mail, votre
+        numéro de téléphone si vous choisissez d'être appelé, le nom de votre entreprise si vous le
+        souhaitez et votre besoin. Ces informations servent uniquement à organiser l'appel&nbsp;:
+        confirmation, invitation d'agenda, lien de visio, rappel la veille et annulation. Base
+        légale&nbsp;: les mesures précontractuelles prises à votre demande.
+      </p>
+      <p data-testid="privacy-booking-recipients">
+        Elles sont enregistrées sur le serveur de l'éditeur, seul à les consulter, et transmises par
+        e-mail à l'éditeur et à vous-même par son prestataire d'envoi d'e-mails&#8239;; la liste
+        publique des créneaux n'en contient aucune. L'appel en visio a lieu sur Jitsi Meet, sans
+        compte de votre côté.
+      </p>
+      <p data-testid="privacy-booking-retention">
+        Chaque rendez-vous et ses informations sont supprimés automatiquement 6 mois après sa date,
+        qu'il ait eu lieu ou ait été annulé. Vous pouvez l'annuler jusqu'à son début par le lien
+        reçu dans l'e-mail de confirmation.
+      </p>
+
       <h2>Mesure d'audience</h2>
       <p data-testid="privacy-audience-pages">
         La fréquentation est mesurée par un outil développé pour ce site, sans cookie ni identifiant
@@ -44,10 +64,10 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
       <p data-testid="privacy-audience-actions">
         Certaines actions sont aussi comptées&nbsp;: le clic sur un bouton d'appel, sur un lien de
         contact (e-mail, téléphone, Malt, Discord), de profil (LinkedIn, GitHub) ou de
-        démonstration, l'arrivée sur le formulaire de l'accueil, l'envoi réussi du formulaire, le
-        téléchargement du CV, l'ouverture et la lecture complète d'un article. Seuls le type
-        d'action, son emplacement et la page sont enregistrés, jamais le contenu du formulaire ni
-        l'adresse du lien.
+        démonstration, l'arrivée sur le formulaire de l'accueil, l'envoi réussi du formulaire de
+        contact ou de la réservation d'un appel, le téléchargement du CV, l'ouverture et la lecture
+        complète d'un article. Seuls le type d'action, son emplacement et la page sont enregistrés,
+        jamais le contenu du formulaire ni l'adresse du lien.
       </p>
       <p data-testid="privacy-audience-retention">
         Base légale&nbsp;: l'intérêt légitime à connaître l'usage du site. Les données brutes sont

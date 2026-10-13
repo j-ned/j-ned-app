@@ -11,6 +11,8 @@ describe('toFontAwesome', () => {
       { token: 'lucide-github', expected: { id: 'github', style: 'brands' } },
       { token: 'spider-web', expected: { id: 'sitemap', style: 'solid' } },
       { token: 'valid', expected: { id: 'circle-check', style: 'solid' } },
+      { token: 'calendar', expected: { id: 'calendar-days', style: 'solid' } },
+      { token: 'video', expected: { id: 'video', style: 'solid' } },
     ])('returns the right IconRef for "$token"', ({ token, expected }) => {
       expect(toFontAwesome(token)).toEqual(expected);
     });

@@ -1,10 +1,11 @@
 import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from './home-hero.static-data';
 
 describe('home hero copy', () => {
-  it('labels the contact and offers calls to action with the validated copy', () => {
+  it('labels the contact and offers calls to action, then the booking link, with the validated copy', () => {
     expect(HOME_HERO_CTA_LABELS).toEqual({
       contact: 'Décrire mon projet',
       offers: 'Voir les offres et les prix',
+      booking: 'ou réserver un appel de 30\u00a0min',
     });
   });
 

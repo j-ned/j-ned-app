@@ -156,6 +156,7 @@ async function renderHomeTemplate(
       provideRouter([
         { path: 'about', component: BlankPage },
         { path: 'offres', component: BlankPage },
+        { path: 'rendez-vous', component: BlankPage },
       ]),
       {
         provide: HomeGateway,
@@ -313,6 +314,18 @@ describe('Home', () => {
       );
       expect(scroller.scrollTo).not.toHaveBeenCalled();
     });
+
+    it('Given le hero rendu When le visiteur ouvre la réservation Then la page mesure home_hero_booking sans faire défiler', async () => {
+      const { fixture, analytics, scroller } = await renderHomeTemplate([], { hero: STATIC_HERO });
+
+      byTestId(fixture, 'hero-booking-link')?.click();
+      await fixture.whenStable();
+
+      expect(analytics.trackCtaClick.mock.calls).toEqual([
+        ['home_hero_booking', HOME_HERO_CTA_LABELS.booking],
+      ]);
+      expect(scroller.scrollTo).not.toHaveBeenCalled();
+    });
   });
 
   describe('bandeau recruteur du premier écran', () => {
@@ -445,6 +458,17 @@ describe('Home', () => {
 
       const root = fixture.nativeElement as HTMLElement;
       expect(root.querySelector('form')).not.toBeNull();
+    });
+
+    it('Given le bloc contact rendu When la section est lue Then elle propose de réserver un appel, dans l’ancre contact', async () => {
+      const { fixture, contactBlock } = await renderHomeTemplate();
+
+      await contactBlock.render(DeferBlockState.Complete);
+      await fixture.whenStable();
+
+      const links = allByTestId(fixture, 'contact-booking-link');
+      expect(links.map((link) => link.getAttribute('href'))).toEqual(['/rendez-vous']);
+      expect(links[0]?.closest('[id="contact"]') ?? null).not.toBeNull();
     });
 
     it('Given le bloc contact rendu When le formulaire est lu Then le type de projet propose les noms courts des offres, dans l’ordre du catalogue, puis Autre', async () => {
@@ -657,6 +681,21 @@ describe('Home', () => {
         );
       });
 
+      it('offers the booking page from the framing step, as its single link', () => {
+        const [frame] = allByTestId(fixture, 'home-method-step');
+        const links = allByTestId(fixture, 'home-method-step-link');
+        expect(links.map((link) => [link.tagName, link.getAttribute('href'), text(link)])).toEqual([
+          ['A', '/rendez-vous', HOME_METHOD.steps[0].link?.label],
+        ]);
+        expect(frame?.contains(links[0] ?? null)).toBe(true);
+      });
+
+      it('leads to the booking page when the framing step link is clicked', async () => {
+        byTestId(fixture, 'home-method-step-link')?.click();
+        await fixture.whenStable();
+        expect(TestBed.inject(Router).url).toBe('/rendez-vous');
+      });
+
       it('lists the commitments, in order, within the method section', () => {
         const commitments = allByTestId(fixture, 'home-method-commitment');
         expect(commitments.map((item) => item.tagName)).toEqual(
@@ -753,6 +792,25 @@ describe('Home', () => {
         ).toEqual(
           HOME_FAQ.items.map(({ question, answer }) => ({ summary: true, question, answer })),
         );
+      });
+
+      it('links the booking page from the answer about the free framing call, inside its disclosure', () => {
+        const price = HOME_FAQ.items.find(({ id }) => id === 'application-price');
+        const links = allByTestId(fixture, 'faq-answer-link');
+        expect(
+          links.map((link) => [
+            link.tagName,
+            link.getAttribute('href'),
+            text(link),
+            text(link.closest('details')?.querySelector('[data-testid="faq-question"]')),
+          ]),
+        ).toEqual([['A', '/rendez-vous', price?.link?.label, price?.question]]);
+      });
+
+      it('leads to the booking page when the answer link is clicked', async () => {
+        byTestId(fixture, 'faq-answer-link')?.click();
+        await fixture.whenStable();
+        expect(TestBed.inject(Router).url).toBe('/rendez-vous');
       });
 
       it('needs no script to open an answer', () => {

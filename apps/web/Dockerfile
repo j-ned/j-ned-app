@@ -274,6 +274,14 @@ server {
         try_files /index.csr.html =404;
     }
 
+    # Annulation de rendez-vous (RenderMode.Client) : le jeton vit dans le fragment, la page ne doit
+    # jamais être indexée, et l'en-tête précède l'exécution du JavaScript.
+    location ~ ^/rendez-vous/annulation/?$ {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        try_files /index.csr.html =404;
+    }
+
     # Routes rendues à chaque requête (RenderMode.Server dans app.routes.server.ts), liste fermée :
     # une URL inconnue (scanners, /wp-login.php) ne réveille pas Node et garde le 404 ci-dessus.
     location ~ ^/(about|projects(/[^/]+)?|blog(/[^/]+)?)?/?$ {

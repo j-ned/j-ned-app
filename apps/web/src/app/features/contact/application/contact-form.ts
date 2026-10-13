@@ -30,6 +30,7 @@ import { ContactGateway } from '@features/contact/domain/gateways/contact.gatewa
 import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
 import { composeContactMessage } from '@features/contact/domain/compose-contact-message';
 import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
+import { CONTACT_BOOKING_INVITE } from '@features/contact/domain/contact-booking-invite.static-data';
 import { ToastStore } from '@core/notifications/toast-store';
 import { FieldError } from '@shared/ui/field-error';
 import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
@@ -82,6 +83,20 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               [contactInfo]="contactInfo"
               [socialLinks]="socialLinks"
             />
+            <p
+              class="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.96875rem]"
+              data-testid="contact-booking"
+            >
+              <app-icon name="calendar" [size]="16" class="text-primary" />
+              {{ bookingInvite.prompt }}
+              <a
+                routerLink="/rendez-vous"
+                class="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-3 hover:text-foreground"
+                data-testid="contact-booking-link"
+                (click)="trackBookingClick()"
+                >{{ bookingInvite.link }}</a
+              >
+            </p>
           </div>
           <div class="rounded-xl border border-foreground/8 bg-surface p-7 md:p-9">
             <h3 class="mb-6 text-lg font-semibold tracking-tight">Envoyer un message</h3>
@@ -244,6 +259,7 @@ export class ContactForm {
   protected readonly contactInfo = STATIC_CONTACT_INFO;
   protected readonly socialLinks = STATIC_SOCIAL_LINKS;
   protected readonly timelines = CONTACT_TIMELINES;
+  protected readonly bookingInvite = CONTACT_BOOKING_INVITE;
 
   private readonly _blankContact = computed<ContactFormModel>(() => ({
     ...EMPTY_CONTACT,
@@ -289,6 +305,13 @@ export class ContactForm {
       },
     },
   );
+
+  protected trackBookingClick(): void {
+    this.analytics.trackCtaClick(
+      `contact_booking_${this.placement()}`,
+      CONTACT_BOOKING_INVITE.link,
+    );
+  }
 
   // Point d'entrée unique, partagé par `FormRoot` (événement submit) et les tests.
   async submitContact(): Promise<void> {

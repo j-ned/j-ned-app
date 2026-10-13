@@ -24,6 +24,7 @@ const STATIC_URLS: readonly SitemapUrl[] = [
   { path: '/about', changefreq: 'monthly', priority: '0.8' },
   { path: '/projects', changefreq: 'weekly', priority: '0.9' },
   { path: '/blog', changefreq: 'weekly', priority: '0.9' },
+  { path: '/rendez-vous', changefreq: 'monthly', priority: '0.6' },
   { path: '/mentions-legales', changefreq: 'yearly', priority: '0.2' },
   { path: '/confidentialite', changefreq: 'yearly', priority: '0.2' },
   { path: `/${OFFERS_BASE_PATH}`, changefreq: 'monthly', priority: '0.8' },

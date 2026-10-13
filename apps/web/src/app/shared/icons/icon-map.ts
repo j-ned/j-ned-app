@@ -41,6 +41,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   mail: { id: 'envelope', style: 'solid' },
   'lucide-mail': { id: 'envelope', style: 'solid' },
   phone: { id: 'phone', style: 'solid' },
+  video: { id: 'video', style: 'solid' },
   'lucide-phone': { id: 'phone', style: 'solid' },
   send: { id: 'paper-plane', style: 'solid' },
   'paper-plane': { id: 'paper-plane', style: 'solid' },
@@ -161,6 +162,7 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'lucide-users': { id: 'users', style: 'solid' },
 
   // Time & calendar
+  calendar: { id: 'calendar-days', style: 'solid' },
   clock: { id: 'clock', style: 'solid' },
   'lucide-clock': { id: 'clock', style: 'solid' },
 

@@ -15,6 +15,7 @@ describe('HomeHeroSection', () => {
   let fixture: ComponentFixture<HomeHeroSection>;
   const contactRequested = vi.fn();
   const offersOpened = vi.fn();
+  const bookingOpened = vi.fn();
 
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const byTestId = (id: string, root: ParentNode = host()): HTMLElement | null =>
@@ -28,12 +29,18 @@ describe('HomeHeroSection', () => {
 
   const render = async (hero: HeroData | null): Promise<void> => {
     TestBed.configureTestingModule({
-      providers: [provideRouter([{ path: 'offres', component: BlankPage }])],
+      providers: [
+        provideRouter([
+          { path: 'offres', component: BlankPage },
+          { path: 'rendez-vous', component: BlankPage },
+        ]),
+      ],
     });
     fixture = TestBed.createComponent(HomeHeroSection);
     fixture.componentRef.setInput('hero', hero);
     fixture.componentInstance.contactRequested.subscribe(contactRequested);
     fixture.componentInstance.offersOpened.subscribe(offersOpened);
+    fixture.componentInstance.bookingOpened.subscribe(bookingOpened);
     fixture.detectChanges();
     await fixture.whenStable();
   };
@@ -41,6 +48,7 @@ describe('HomeHeroSection', () => {
   beforeEach(async () => {
     contactRequested.mockClear();
     offersOpened.mockClear();
+    bookingOpened.mockClear();
     await render(STATIC_HERO);
   });
 
@@ -75,6 +83,46 @@ describe('HomeHeroSection', () => {
       byTestId('hero-cta-offers')?.click();
       expect(offersOpened).toHaveBeenCalledOnce();
       expect(contactRequested).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('booking link', () => {
+    const bookingLink = (): HTMLElement | null => byTestId('hero-booking-link');
+
+    it('is a plain text link to the booking page, not a button', () => {
+      const link = bookingLink();
+      expect([link?.tagName, link?.getAttribute('href'), text(link)]).toEqual([
+        'A',
+        '/rendez-vous',
+        HOME_HERO_CTA_LABELS.booking,
+      ]);
+      expect(link?.hasAttribute('appbutton')).toBe(false);
+    });
+
+    it('comes after both calls to action, which stay the only buttons-styled links', () => {
+      const offers = byTestId('hero-cta-offers');
+      const link = bookingLink();
+      expect(link).not.toBeNull();
+      expect(
+        link ? (offers?.compareDocumentPosition(link) ?? 0) & Node.DOCUMENT_POSITION_FOLLOWING : 0,
+      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      expect(
+        Array.from(host().querySelectorAll('[appbutton]')).map((el) =>
+          el.getAttribute('data-testid'),
+        ),
+      ).toEqual(['hero-cta-contact', 'hero-cta-offers']);
+    });
+
+    it('leads to the booking page when clicked', async () => {
+      bookingLink()?.click();
+      await fixture.whenStable();
+      expect(TestBed.inject(Router).url).toBe('/rendez-vous');
+    });
+
+    it('tells the page the booking was opened, once, without the other calls to action', () => {
+      bookingLink()?.click();
+      expect(bookingOpened).toHaveBeenCalledOnce();
+      expect([contactRequested.mock.calls.length, offersOpened.mock.calls.length]).toEqual([0, 0]);
     });
   });
 

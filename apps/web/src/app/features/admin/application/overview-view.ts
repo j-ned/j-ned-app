@@ -21,7 +21,7 @@ import { groupedNumber } from '@shared/format/grouped-number';
 import type { CartoucheRow } from '@shared/ui/cartouche';
 import type { ReadoutItem } from './components/admin-readout';
 import { calendarDay } from './calendar-day';
-import { withFirstOfMonth } from './with-first-of-month';
+import { withFirstOfMonth } from '@shared/format/with-first-of-month';
 
 export type ContentRow = {
   readonly key: string;

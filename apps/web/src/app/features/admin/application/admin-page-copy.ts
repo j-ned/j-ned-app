@@ -11,7 +11,7 @@ import { formatFileSize } from '@shared/format/format-file-size';
 import { groupedNumber } from '@shared/format/grouped-number';
 import { formatUploadDay } from './admin-cv-view';
 import { capitalize } from './capitalize';
-import { withFirstOfMonth } from './with-first-of-month';
+import { withFirstOfMonth } from '@shared/format/with-first-of-month';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

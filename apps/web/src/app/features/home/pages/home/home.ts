@@ -51,6 +51,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
       [cvUrl]="cvUrl()"
       (contactRequested)="goToContact()"
       (offersOpened)="trackOffersClick()"
+      (bookingOpened)="trackBookingClick()"
       (hiringOpened)="trackRecruiterClick('home_recruiter_about', recruiterCopy.hiring)"
       (cvDownloaded)="trackCvDownload()"
       (linkedinOpened)="trackRecruiterClick('home_recruiter_linkedin', recruiterCopy.linkedin)"
@@ -86,7 +87,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
         <app-home-method class="border-t border-line" />
       } @placeholder {
         <div
-          class="h-[92rem] border-t border-line sm:h-[62rem] md:h-[63.25rem] lg:h-[46.75rem] xl:h-[45.375rem]"
+          class="h-[95.25rem] border-t border-line sm:h-[64rem] md:h-[65.125rem] lg:h-[48.75rem] xl:h-[47.3125rem]"
           data-testid="home-method-placeholder"
         ></div>
       } @error {
@@ -192,6 +193,10 @@ export class Home {
 
   protected trackOffersClick(): void {
     this._analytics.trackCtaClick('home_hero_offers', HOME_HERO_CTA_LABELS.offers);
+  }
+
+  protected trackBookingClick(): void {
+    this._analytics.trackCtaClick('home_hero_booking', HOME_HERO_CTA_LABELS.booking);
   }
 
   protected trackRecruiterClick(ctaId: string, label: string): void {

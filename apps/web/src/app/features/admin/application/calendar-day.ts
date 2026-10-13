@@ -1,4 +1,4 @@
-import { withFirstOfMonth } from './with-first-of-month';
+import { withFirstOfMonth } from '@shared/format/with-first-of-month';
 
 const LONG_DAY = new Intl.DateTimeFormat('fr-FR', {
   day: 'numeric',

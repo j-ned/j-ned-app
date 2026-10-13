@@ -6,6 +6,7 @@ export type HomeMethod = {
     readonly verb: string;
     readonly when: string;
     readonly detail: string;
+    readonly link?: { readonly label: string; readonly href: string };
   }[];
   readonly commitments: readonly string[];
 };
@@ -28,5 +29,6 @@ export type HomeFaq = {
     readonly id: string;
     readonly question: string;
     readonly answer: string;
+    readonly link?: { readonly label: string; readonly href: string };
   }[];
 };

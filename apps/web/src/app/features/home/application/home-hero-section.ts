@@ -40,8 +40,15 @@ import { HomeRecruiterBand } from './home-recruiter-band';
             >{{ ctaLabels.offers }}</a
           >
         </div>
+        <a
+          routerLink="/rendez-vous"
+          class="animate-fade-up [animation-delay:190ms] mt-2 inline-flex min-h-11 items-center text-sm font-medium text-muted underline underline-offset-3 transition-colors hover:text-primary"
+          data-testid="hero-booking-link"
+          (click)="bookingOpened.emit()"
+          >{{ ctaLabels.booking }}</a
+        >
         <p
-          class="animate-fade-up [animation-delay:200ms] mt-5 flex items-center gap-2.5 text-sm text-muted"
+          class="animate-fade-up [animation-delay:200ms] mt-3 flex items-center gap-2.5 text-sm text-muted"
           data-testid="hero-availability"
         >
           <span
@@ -81,6 +88,7 @@ export class HomeHeroSection {
   readonly cvUrl = input<string | null>(null);
   readonly contactRequested = output<void>();
   readonly offersOpened = output<void>();
+  readonly bookingOpened = output<void>();
   readonly hiringOpened = output<void>();
   readonly cvDownloaded = output<void>();
   readonly linkedinOpened = output<void>();

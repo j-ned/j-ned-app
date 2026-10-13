@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
 import { Monitoring } from './app/core/monitoring/monitoring';
-import { scrubBreadcrumb, scrubEvent } from './app/core/monitoring/scrub-event';
+import { scrubBreadcrumb, scrubEvent, scrubSpan } from './app/core/monitoring/scrub-event';
 
 type RuntimeConfig = {
   sentry: {
@@ -67,6 +67,8 @@ async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<v
     ignoreErrors: ['ChunkLoadError', /ResizeObserver loop/, 'NG0911'],
     beforeSend: scrubEvent,
     beforeBreadcrumb: scrubBreadcrumb,
+    // En `traceLifecycle: 'stream'` (défaut v11), aucune transaction n'est émise : `beforeSendTransaction` serait ignoré.
+    beforeSendSpan: scrubSpan,
   });
 
   // Un échec du bootstrap est déjà journalisé par son propre catch : rien à rattacher.

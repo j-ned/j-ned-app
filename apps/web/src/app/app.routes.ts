@@ -153,6 +153,10 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'rendez-vous',
+    loadChildren: () => import('./features/booking/booking.routes').then((m) => m.BOOKING_ROUTES),
+  },
+  {
     path: OFFERS_BASE_PATH,
     loadChildren: () => import('./features/offer/offer.routes').then((m) => m.OFFER_ROUTES),
     data: { preload: true },
