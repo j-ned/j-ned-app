@@ -35,6 +35,12 @@ const DAY_SHORT_LABEL = new Intl.DateTimeFormat('fr-FR', {
   day: 'numeric',
 });
 
+const MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: PARIS_TIME_ZONE,
+  month: 'long',
+  year: 'numeric',
+});
+
 const DAY_MONTH = new Intl.DateTimeFormat('fr-FR', {
   timeZone: PARIS_TIME_ZONE,
   day: 'numeric',
@@ -74,4 +80,8 @@ export function formatWeekLabel(mondayKey: string): string {
 
 export function formatLongDate(dateKey: string): string {
   return withFirstOfMonth(LONG_DATE, fromDateKey(dateKey));
+}
+
+export function formatMonthLabel(month: string): string {
+  return MONTH_YEAR.format(fromDateKey(`${month}-15`));
 }

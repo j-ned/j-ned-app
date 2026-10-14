@@ -42,7 +42,7 @@ export const ADMIN_PAGES: readonly PageScenario[] = [
   { path: '/admin/audience', ready: 'tally-row' },
   { path: '/admin/settings', ready: 'settings-session' },
   { path: '/admin/rendez-vous', ready: 'admin-bookings-list' },
-  { path: '/admin/disponibilites', ready: 'admin-availability-rules' },
+  { path: '/admin/disponibilites', ready: 'admin-calendar-grid' },
 ];
 
 // Un écran d'administration audité en squelette, en erreur ou sous un toast ne prouve rien.

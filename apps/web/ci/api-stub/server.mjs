@@ -205,6 +205,105 @@ const closures = () => [
   },
 ];
 
+// Calendrier d'admin : mois réels, états fixés par jour du mois pour couvrir les six à toute date.
+const PARIS_DATE = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Paris',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+const CALENDAR_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const CALENDAR_MONTHS_AHEAD = 12;
+const STUB_TODAY = 5;
+const STUB_HOLIDAYS = { 8: 'Armistice 1918', 9: 'Victoire 1945' };
+const STUB_CLOSED_HOLIDAY = 8;
+const STUB_PERIOD = { from: 12, to: 14, reason: 'Congés' };
+const STUB_CLOSED_DAY = 16;
+const STUB_SLOT_COUNT = 4;
+
+const parisDate = (instant) => PARIS_DATE.format(instant);
+const addMonths = (month, count) => {
+  const [year, monthIndex] = month.split('-').map(Number);
+  return new Date(Date.UTC(year, monthIndex - 1 + count, 1)).toISOString().slice(0, 7);
+};
+const daysOfMonth = (month) => {
+  const [year, monthIndex] = month.split('-').map(Number);
+  const length = new Date(Date.UTC(year, monthIndex, 0)).getUTCDate();
+  return Array.from({ length }, (_, index) => `${month}-${String(index + 1).padStart(2, '0')}`);
+};
+const isWeekend = (date) => [0, 6].includes(new Date(`${date}T12:00:00Z`).getUTCDay());
+const weekdaySlots = (date) => (isWeekend(date) ? 0 : STUB_SLOT_COUNT);
+
+function bookedDates() {
+  return new Set(
+    adminBookings('upcoming')
+      .filter((row) => row.status === 'confirmed')
+      .map((row) => parisDate(new Date(row.startsAt))),
+  );
+}
+
+function calendarDay(date, current, booked) {
+  const dayOfMonth = Number(date.slice(8));
+  const holiday = STUB_HOLIDAYS[dayOfMonth] ?? null;
+  const base = { date, holiday, slotCount: weekdaySlots(date), closure: null };
+  const past = current && dayOfMonth < STUB_TODAY;
+  const inPeriod = dayOfMonth >= STUB_PERIOD.from && dayOfMonth <= STUB_PERIOD.to;
+  if (booked.has(date) && (past || inPeriod)) {
+    return { ...base, state: 'open', slotCount: STUB_SLOT_COUNT };
+  }
+  if (past) return { ...base, state: 'past' };
+  if (inPeriod) {
+    const month = date.slice(0, 7);
+    const bound = (day) => `${month}-${String(day).padStart(2, '0')}`;
+    return {
+      ...base,
+      state: 'closed-period',
+      closure: {
+        startsOn: bound(STUB_PERIOD.from),
+        endsOn: bound(STUB_PERIOD.to),
+        reason: STUB_PERIOD.reason,
+      },
+    };
+  }
+  if (dayOfMonth === STUB_CLOSED_DAY) return { ...base, state: 'closed' };
+  if (dayOfMonth === STUB_CLOSED_HOLIDAY) return { ...base, state: 'holiday' };
+  return { ...base, state: base.slotCount > 0 ? 'open' : 'empty' };
+}
+
+function calendarMonth(requested) {
+  const current = parisDate(new Date()).slice(0, 7);
+  const last = addMonths(current, CALENDAR_MONTHS_AHEAD);
+  if (requested !== null && !CALENDAR_MONTH.test(requested)) {
+    return [400, { statusCode: 400, error: 'Bad Request', message: ['month must match'] }];
+  }
+  const month = requested ?? current;
+  if (month < current || month > last) {
+    return [400, { statusCode: 400, error: 'month_out_of_range', message: 'Mois hors fenêtre' }];
+  }
+  const booked = bookedDates();
+  return [
+    200,
+    {
+      month,
+      today: `${current}-${String(STUB_TODAY).padStart(2, '0')}`,
+      previousMonth: month === current ? null : addMonths(month, -1),
+      nextMonth: month === last ? null : addMonths(month, 1),
+      closePublicHolidays: true,
+      days: daysOfMonth(month).map((date) => calendarDay(date, month === current, booked)),
+    },
+  ];
+}
+
+// Jour résolu comme le serveur : rouvert selon la semaine type, refermé en férié les 8 et 9.
+function toggledDay(date, open) {
+  const holiday = STUB_HOLIDAYS[Number(date.slice(8))] ?? null;
+  const slotCount = weekdaySlots(date);
+  const reopened = slotCount > 0 ? 'open' : 'empty';
+  const closed = holiday === null ? 'closed' : 'holiday';
+  return { date, state: open ? reopened : closed, holiday, slotCount, closure: null };
+}
+
 async function routeBookingPublic(req, method, pathname) {
   if (method === 'GET' && pathname === '/api/booking/slots') {
     return [200, { timeZone: 'Europe/Paris', slots: freeSlots() }];
@@ -251,6 +350,24 @@ async function routeBookingAdmin(req, method, pathname, searchParams) {
   }
   if (method === 'PUT' && pathname === '/api/booking/availability/rules') {
     return [200, { data: (await readJson(req)).rules }];
+  }
+  if (method === 'GET' && pathname === '/api/booking/availability/calendar') {
+    return calendarMonth(searchParams.get('month'));
+  }
+  const day = pathname.match(/^\/api\/booking\/availability\/days\/([^/]+)$/);
+  if (method === 'PUT' && day) {
+    const { open } = await readJson(req);
+    if (!CALENDAR_DATE.test(day[1]) || typeof open !== 'boolean') {
+      return [400, { statusCode: 400, error: 'Bad Request', message: ['open must be a boolean'] }];
+    }
+    return [200, toggledDay(day[1], open)];
+  }
+  if (method === 'PUT' && pathname === '/api/booking/availability/settings') {
+    const { closePublicHolidays } = await readJson(req);
+    if (typeof closePublicHolidays !== 'boolean') {
+      return [400, { statusCode: 400, error: 'Bad Request', message: ['must be a boolean'] }];
+    }
+    return [200, { closePublicHolidays }];
   }
   if (method === 'GET' && pathname === '/api/booking/availability/closures') {
     return [200, { data: closures() }];

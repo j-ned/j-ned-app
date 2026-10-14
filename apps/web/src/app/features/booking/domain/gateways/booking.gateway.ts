@@ -5,6 +5,8 @@ import type {
   AvailabilityRule,
   BookingAdminResult,
   BookingScope,
+  CalendarDay,
+  CalendarMonth,
   NewAvailabilityClosure,
 } from '../models/booking-admin.model';
 import type {
@@ -37,4 +39,7 @@ export abstract class BookingGateway {
     closure: NewAvailabilityClosure,
   ): Observable<BookingAdminResult<AvailabilityClosure>>;
   abstract deleteClosure(id: string): Observable<BookingAdminResult<null>>;
+  abstract getAvailabilityCalendar(month: string | null): Observable<CalendarMonth>;
+  abstract setDayOpen(date: string, open: boolean): Observable<BookingAdminResult<CalendarDay>>;
+  abstract setClosePublicHolidays(value: boolean): Observable<BookingAdminResult<boolean>>;
 }

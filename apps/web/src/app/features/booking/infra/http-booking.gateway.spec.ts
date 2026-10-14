@@ -14,6 +14,8 @@ import {
   aBookingConfirmationDto,
   aBookingRequest,
   aBookingSlotDto,
+  aCalendarDayDto,
+  aCalendarMonthDto,
   anAdminBookingDto,
   anApiErrorBody,
   anAvailabilityClosure,
@@ -709,6 +711,252 @@ describe('HttpBookingGateway', () => {
       },
     ])(
       'Given the API answers $case When the admin writes ($write) Then the failure reason is $reason',
+      async ({ call, url, reply: answer, reason }) => {
+        const result = firstValueFrom(call(gateway));
+
+        reply(http.expectOne(url), answer);
+
+        expect(await result).toEqual({ success: false, reason });
+      },
+    );
+  });
+
+  describe('availability calendar', () => {
+    const CALENDAR_URL = `${BOOKING}/availability/calendar`;
+    const DAY_URL = `${BOOKING}/availability/days/2026-11-12`;
+    const SETTINGS_URL = `${BOOKING}/availability/settings`;
+
+    it('Given no month is asked When the admin reads the calendar Then a silent GET without query yields the resolved current month', async () => {
+      const result = firstValueFrom(gateway.getAvailabilityCalendar(null));
+
+      const request = http.expectOne(CALENDAR_URL);
+      request.flush(
+        aCalendarMonthDto({
+          month: '2026-11',
+          today: '2026-11-10',
+          previousMonth: null,
+          nextMonth: '2026-12',
+          closePublicHolidays: true,
+          days: [
+            aCalendarDayDto({ date: '2026-11-09', state: 'past', slotCount: 4 }),
+            aCalendarDayDto({
+              date: '2026-11-11',
+              state: 'holiday',
+              holiday: 'Armistice 1918',
+              slotCount: 4,
+            }),
+          ],
+        }),
+      );
+
+      expect({
+        method: request.request.method,
+        params: request.request.params.keys(),
+        silent: request.request.context.get(SKIP_ERROR_TOAST),
+        month: await result,
+      }).toEqual({
+        method: 'GET',
+        params: [],
+        silent: true,
+        month: {
+          month: '2026-11',
+          today: '2026-11-10',
+          previousMonth: null,
+          nextMonth: '2026-12',
+          closePublicHolidays: true,
+          days: [
+            { date: '2026-11-09', state: 'past', holiday: null, slotCount: 4, closure: null },
+            {
+              date: '2026-11-11',
+              state: 'holiday',
+              holiday: 'Armistice 1918',
+              slotCount: 4,
+              closure: null,
+            },
+          ],
+        },
+      });
+    });
+
+    it('Given a month is asked When the admin reads the calendar Then the month travels as the only query parameter', async () => {
+      const result = firstValueFrom(gateway.getAvailabilityCalendar('2027-02'));
+
+      const request = http.expectOne(`${CALENDAR_URL}?month=2027-02`);
+      request.flush(
+        aCalendarMonthDto({
+          month: '2027-02',
+          previousMonth: '2027-01',
+          nextMonth: '2027-03',
+          closePublicHolidays: false,
+          days: [aCalendarDayDto({ date: '2027-02-01', state: 'open', slotCount: 2 })],
+        }),
+      );
+
+      expect({
+        method: request.request.method,
+        params: request.request.params.keys(),
+        silent: request.request.context.get(SKIP_ERROR_TOAST),
+        month: await result,
+      }).toEqual({
+        method: 'GET',
+        params: ['month'],
+        silent: true,
+        month: {
+          month: '2027-02',
+          today: '2026-11-10',
+          previousMonth: '2027-01',
+          nextMonth: '2027-03',
+          closePublicHolidays: false,
+          days: [{ date: '2027-02-01', state: 'open', holiday: null, slotCount: 2, closure: null }],
+        },
+      });
+    });
+
+    it.each([
+      { case: '500', reply: coded(500, 'Internal Server Error') },
+      { case: '400 month_out_of_range', reply: coded(400, 'month_out_of_range') },
+      { case: 'network down', reply: NETWORK_DOWN },
+    ])(
+      'Given the API answers $case When the admin reads the calendar Then the error reaches the caller',
+      async ({ reply: answer }) => {
+        const outcome = settled(gateway.getAvailabilityCalendar('2027-12'));
+
+        reply(http.expectOne(`${CALENDAR_URL}?month=2027-12`), answer);
+
+        expect(await outcome).toBe('error');
+      },
+    );
+
+    it.each([
+      { open: false, state: 'closed' as const, holiday: null },
+      { open: true, state: 'open' as const, holiday: 'Armistice 1918' },
+    ])(
+      'Given a wished open state $open When the admin writes the day Then a silent PUT carries it and the resolved day comes back',
+      async ({ open, state, holiday }) => {
+        const result = firstValueFrom(gateway.setDayOpen('2026-11-12', open));
+
+        const sent = http.expectOne(DAY_URL);
+        sent.flush(aCalendarDayDto({ date: '2026-11-12', state, holiday, slotCount: 4 }));
+
+        expect({
+          method: sent.request.method,
+          body: sent.request.body,
+          silent: sent.request.context.get(SKIP_ERROR_TOAST),
+          result: await result,
+        }).toEqual({
+          method: 'PUT',
+          body: { open },
+          silent: true,
+          result: {
+            success: true,
+            data: { date: '2026-11-12', state, holiday, slotCount: 4, closure: null },
+          },
+        });
+      },
+    );
+
+    it.each([{ value: false }, { value: true }])(
+      'Given the holiday setting $value When the admin saves it Then a silent PUT carries it and the stored value comes back',
+      async ({ value }) => {
+        const result = firstValueFrom(gateway.setClosePublicHolidays(value));
+
+        const sent = http.expectOne(SETTINGS_URL);
+        sent.flush({ closePublicHolidays: value });
+
+        expect({
+          method: sent.request.method,
+          body: sent.request.body,
+          silent: sent.request.context.get(SKIP_ERROR_TOAST),
+          result: await result,
+        }).toEqual({
+          method: 'PUT',
+          body: { closePublicHolidays: value },
+          silent: true,
+          result: { success: true, data: value },
+        });
+      },
+    );
+
+    const setDay = (target: HttpBookingGateway): Observable<unknown> =>
+      target.setDayOpen('2026-11-12', false);
+    const setHolidays = (target: HttpBookingGateway): Observable<unknown> =>
+      target.setClosePublicHolidays(false);
+
+    it.each([
+      {
+        write: 'day',
+        case: '422 day_in_past',
+        call: setDay,
+        url: DAY_URL,
+        reply: coded(422, 'day_in_past'),
+        reason: 'day-past',
+      },
+      {
+        write: 'day',
+        case: '409 day_in_closure',
+        call: setDay,
+        url: DAY_URL,
+        reply: coded(409, 'day_in_closure'),
+        reason: 'day-in-closure',
+      },
+      {
+        write: 'day',
+        case: '422 day_out_of_range',
+        call: setDay,
+        url: DAY_URL,
+        reply: coded(422, 'day_out_of_range'),
+        reason: 'invalid',
+      },
+      {
+        write: 'day',
+        case: '400 validation',
+        call: setDay,
+        url: DAY_URL,
+        reply: coded(400, 'Bad Request'),
+        reason: 'invalid',
+      },
+      {
+        write: 'day',
+        case: 'network down',
+        call: setDay,
+        url: DAY_URL,
+        reply: NETWORK_DOWN,
+        reason: 'network',
+      },
+      {
+        write: 'day',
+        case: '500',
+        call: setDay,
+        url: DAY_URL,
+        reply: coded(500, 'Internal Server Error'),
+        reason: 'server',
+      },
+      {
+        write: 'holiday setting',
+        case: '400 validation',
+        call: setHolidays,
+        url: SETTINGS_URL,
+        reply: coded(400, 'Bad Request'),
+        reason: 'invalid',
+      },
+      {
+        write: 'holiday setting',
+        case: 'network down',
+        call: setHolidays,
+        url: SETTINGS_URL,
+        reply: NETWORK_DOWN,
+        reason: 'network',
+      },
+      {
+        write: 'holiday setting',
+        case: '503',
+        call: setHolidays,
+        url: SETTINGS_URL,
+        reply: coded(503, 'Service Unavailable'),
+        reason: 'server',
+      },
+    ])(
+      'Given the API answers $case When the admin writes the calendar ($write) Then the failure reason is $reason',
       async ({ call, url, reply: answer, reason }) => {
         const result = firstValueFrom(call(gateway));
 

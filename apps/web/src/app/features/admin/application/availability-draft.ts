@@ -3,12 +3,10 @@ import type {
   IsoWeekday,
 } from '@features/booking/domain/models/booking-admin.model';
 
-export type AvailabilityRangeRow = { start: string; end: string };
-
-type AvailabilityWeekdayKey =
+export type AvailabilityWeekdayKey =
   'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
-export type AvailabilityDraft = Record<AvailabilityWeekdayKey, AvailabilityRangeRow[]>;
+export type WeeklySlotsDraft = Record<AvailabilityWeekdayKey, readonly number[]>;
 
 export type AvailabilityWeekday = {
   readonly key: AvailabilityWeekdayKey;
@@ -27,6 +25,14 @@ export const AVAILABILITY_WEEKDAYS: readonly AvailabilityWeekday[] = [
 ];
 
 const MINUTES_PER_HOUR = 60;
+const SLOT_MINUTES = 30;
+const FIRST_GRID_SLOT = 16;
+const LAST_GRID_SLOT = 41;
+
+export const SLOT_GRID: readonly number[] = Array.from(
+  { length: LAST_GRID_SLOT - FIRST_GRID_SLOT + 1 },
+  (_, offset) => FIRST_GRID_SLOT + offset,
+);
 
 const twoDigits = (value: number): string => String(value).padStart(2, '0');
 
@@ -34,53 +40,67 @@ export function toTimeOfDay(minute: number): string {
   return `${twoDigits(Math.floor(minute / MINUTES_PER_HOUR))}:${twoDigits(minute % MINUTES_PER_HOUR)}`;
 }
 
-export function toMinuteOfDay(time: string): number {
-  const match = /^(\d{2}):(\d{2})$/.exec(time);
-  return match ? Number(match[1]) * MINUTES_PER_HOUR + Number(match[2]) : Number.NaN;
+export const toSlotTime = (halfHour: number): string => toTimeOfDay(halfHour * SLOT_MINUTES);
+
+const isInGrid = (slot: number): boolean => slot >= FIRST_GRID_SLOT && slot <= LAST_GRID_SLOT;
+
+const byNumber = (a: number, b: number): number => a - b;
+
+type SlotRun = { readonly start: number; readonly end: number };
+
+function contiguousRuns(slots: readonly number[]): readonly SlotRun[] {
+  return slots.reduce<readonly SlotRun[]>((runs, slot) => {
+    const last = runs.at(-1);
+    return last?.end === slot
+      ? [...runs.slice(0, -1), { start: last.start, end: slot + 1 }]
+      : [...runs, { start: slot, end: slot + 1 }];
+  }, []);
 }
 
-export function toAvailabilityDraft(rules: readonly AvailabilityRule[] | null): AvailabilityDraft {
-  const rangesOf = (weekday: IsoWeekday): AvailabilityRangeRow[] =>
-    (rules ?? [])
+export function toWeeklySlotsDraft(rules: readonly AvailabilityRule[] | null): WeeklySlotsDraft {
+  const slotsOf = (weekday: IsoWeekday): readonly number[] => {
+    const covered = (rules ?? [])
       .filter((rule) => rule.weekday === weekday)
-      .sort((a, b) => a.startMinute - b.startMinute)
-      .map((rule) => ({ start: toTimeOfDay(rule.startMinute), end: toTimeOfDay(rule.endMinute) }));
+      .flatMap((rule) => {
+        const first = Math.ceil(rule.startMinute / SLOT_MINUTES);
+        const end = Math.floor(rule.endMinute / SLOT_MINUTES);
+        return Array.from({ length: Math.max(end - first, 0) }, (_, offset) => first + offset);
+      });
+    return [...new Set(covered)].sort(byNumber);
+  };
 
   return Object.fromEntries(
-    AVAILABILITY_WEEKDAYS.map(({ key, weekday }) => [key, rangesOf(weekday)]),
-  ) as AvailabilityDraft;
+    AVAILABILITY_WEEKDAYS.map(({ key, weekday }) => [key, slotsOf(weekday)]),
+  ) as WeeklySlotsDraft;
 }
 
-export function toAvailabilityRules(draft: AvailabilityDraft): AvailabilityRule[] {
+export function toAvailabilityRules(draft: WeeklySlotsDraft): AvailabilityRule[] {
   return AVAILABILITY_WEEKDAYS.flatMap(({ key, weekday }) =>
-    draft[key].map((row) => ({
+    contiguousRuns(draft[key]).map(({ start, end }) => ({
       weekday,
-      startMinute: toMinuteOfDay(row.start),
-      endMinute: toMinuteOfDay(row.end),
+      startMinute: start * SLOT_MINUTES,
+      endMinute: end * SLOT_MINUTES,
     })),
   );
 }
 
-// Seule la plage qui commence le plus tard est signalée : le message ne se répète pas sur les deux.
-export function findOverlappedRange(
-  rows: readonly AvailabilityRangeRow[],
-  index: number,
-): number | null {
-  const spans = rows.map((row) => ({
-    start: toMinuteOfDay(row.start),
-    end: toMinuteOfDay(row.end),
-  }));
-  const isRange = (span: { start: number; end: number }): boolean => span.end > span.start;
-  const current = spans[index];
-  if (!current || !isRange(current)) return null;
+export function toggleSlot(slots: readonly number[], index: number): readonly number[] {
+  return slots.includes(index)
+    ? slots.filter((slot) => slot !== index)
+    : [...slots, index].sort(byNumber);
+}
 
-  const overlapped = spans.findIndex(
-    (other, otherIndex) =>
-      otherIndex !== index &&
-      isRange(other) &&
-      (other.start < current.start || (other.start === current.start && otherIndex < index)) &&
-      other.start < current.end &&
-      current.start < other.end,
-  );
-  return overlapped === -1 ? null : overlapped;
+export function summarizeSlots(slots: readonly number[]): string {
+  return contiguousRuns(slots)
+    .map(({ start, end }) => `${toSlotTime(start)}–${toSlotTime(end)}`)
+    .join(', ');
+}
+
+export function hiddenRanges(
+  draft: WeeklySlotsDraft,
+): readonly { readonly label: string; readonly ranges: string }[] {
+  return AVAILABILITY_WEEKDAYS.map(({ key, label }) => ({
+    label,
+    ranges: summarizeSlots(draft[key].filter((slot) => !isInGrid(slot))),
+  })).filter(({ ranges }) => ranges !== '');
 }

@@ -2,6 +2,8 @@ import type {
   AdminBooking,
   AvailabilityClosure,
   AvailabilityRule,
+  CalendarDay,
+  CalendarMonth,
   IsoWeekday,
 } from '../domain/models/booking-admin.model';
 import type {
@@ -16,6 +18,8 @@ import type {
   BookingCancelPreviewDto,
   BookingConfirmationDto,
   BookingSlotDto,
+  CalendarDayDto,
+  CalendarMonthResponseDto,
 } from './booking-api.types';
 
 export function toBookingSlot(raw: BookingSlotDto): BookingSlot {
@@ -74,4 +78,32 @@ export function toAvailabilityRule(raw: AvailabilityRuleDto): AvailabilityRule {
 
 export function toAvailabilityClosure(raw: AvailabilityClosureDto): AvailabilityClosure {
   return { id: raw.id, startsOn: raw.startsOn, endsOn: raw.endsOn, reason: raw.reason };
+}
+
+export function toCalendarDay(raw: CalendarDayDto): CalendarDay {
+  return {
+    date: raw.date,
+    state: raw.state,
+    holiday: raw.holiday,
+    slotCount: raw.slotCount,
+    closure:
+      raw.closure === null
+        ? null
+        : {
+            startsOn: raw.closure.startsOn,
+            endsOn: raw.closure.endsOn,
+            reason: raw.closure.reason,
+          },
+  };
+}
+
+export function toCalendarMonth(raw: CalendarMonthResponseDto): CalendarMonth {
+  return {
+    month: raw.month,
+    today: raw.today,
+    previousMonth: raw.previousMonth,
+    nextMonth: raw.nextMonth,
+    closePublicHolidays: raw.closePublicHolidays,
+    days: raw.days.map(toCalendarDay),
+  };
 }

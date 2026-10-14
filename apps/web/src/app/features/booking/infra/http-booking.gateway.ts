@@ -21,6 +21,8 @@ import type {
   BookingAdminFailure,
   BookingAdminResult,
   BookingScope,
+  CalendarDay,
+  CalendarMonth,
   NewAvailabilityClosure,
 } from '../domain/models/booking-admin.model';
 import type {
@@ -39,7 +41,10 @@ import type {
   AvailabilityRuleDto,
   BookingCancelPreviewDto,
   BookingConfirmationDto,
+  BookingSettingsDto,
   BookingSlotsResponseDto,
+  CalendarDayDto,
+  CalendarMonthResponseDto,
 } from './booking-api.types';
 import {
   toAdminBooking,
@@ -47,6 +52,8 @@ import {
   toAvailabilityRule,
   toBookingConfirmation,
   toBookingSlot,
+  toCalendarDay,
+  toCalendarMonth,
   toCancelPreview,
 } from './booking.adapter';
 
@@ -106,7 +113,9 @@ function toAdminFailure(err: unknown): BookingAdminFailure {
     case 404:
       return 'not-found';
     case 409:
-      return 'too-late';
+      return apiErrorCode(err) === 'day_in_closure' ? 'day-in-closure' : 'too-late';
+    case 422:
+      return apiErrorCode(err) === 'day_in_past' ? 'day-past' : 'invalid';
     default:
       return 'server';
   }
@@ -254,6 +263,38 @@ export class HttpBookingGateway extends BookingGateway {
       .delete(`${this.bookingUrl}/availability/closures/${id}`, { context: silentErrors() })
       .pipe(
         map(() => null),
+        toResult(toAdminFailure),
+      );
+  }
+
+  getAvailabilityCalendar(month: string | null): Observable<CalendarMonth> {
+    return this.http
+      .get<CalendarMonthResponseDto>(`${this.bookingUrl}/availability/calendar`, {
+        params: month === null ? {} : { month },
+        context: silentErrors(),
+      })
+      .pipe(map(toCalendarMonth));
+  }
+
+  setDayOpen(date: string, open: boolean): Observable<BookingAdminResult<CalendarDay>> {
+    return this.http
+      .put<CalendarDayDto>(
+        `${this.bookingUrl}/availability/days/${date}`,
+        { open },
+        { context: silentErrors() },
+      )
+      .pipe(map(toCalendarDay), toResult(toAdminFailure));
+  }
+
+  setClosePublicHolidays(value: boolean): Observable<BookingAdminResult<boolean>> {
+    return this.http
+      .put<BookingSettingsDto>(
+        `${this.bookingUrl}/availability/settings`,
+        { closePublicHolidays: value },
+        { context: silentErrors() },
+      )
+      .pipe(
+        map((res) => res.closePublicHolidays),
         toResult(toAdminFailure),
       );
   }

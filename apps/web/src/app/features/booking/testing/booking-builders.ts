@@ -2,6 +2,8 @@ import type {
   AdminBooking,
   AvailabilityClosure,
   AvailabilityRule,
+  CalendarDay,
+  CalendarMonth,
 } from '../domain/models/booking-admin.model';
 import type {
   BookingCancelPreview,
@@ -18,6 +20,8 @@ import type {
   BookingCancelPreviewDto,
   BookingConfirmationDto,
   BookingSlotDto,
+  CalendarDayDto,
+  CalendarMonthResponseDto,
 } from '../infra/booking-api.types';
 
 export function aBookingSlot(overrides: Partial<BookingSlot> = {}): BookingSlot {
@@ -116,6 +120,29 @@ export function anAvailabilityClosure(
   };
 }
 
+export function aCalendarDay(overrides: Partial<CalendarDay> = {}): CalendarDay {
+  return {
+    date: '2026-11-12',
+    state: 'open',
+    holiday: null,
+    slotCount: 4,
+    closure: null,
+    ...overrides,
+  };
+}
+
+export function aCalendarMonth(overrides: Partial<CalendarMonth> = {}): CalendarMonth {
+  return {
+    month: '2026-11',
+    today: '2026-11-10',
+    previousMonth: null,
+    nextMonth: '2026-12',
+    closePublicHolidays: true,
+    days: [aCalendarDay()],
+    ...overrides,
+  };
+}
+
 export function aBookingSlotDto(overrides: Partial<BookingSlotDto> = {}): BookingSlotDto {
   return {
     startsAt: '2026-10-19T07:00:00.000Z',
@@ -186,6 +213,31 @@ export function anAvailabilityClosureDto(
     startsOn: '2026-12-24',
     endsOn: '2027-01-01',
     reason: 'Congés',
+    ...overrides,
+  };
+}
+
+export function aCalendarDayDto(overrides: Partial<CalendarDayDto> = {}): CalendarDayDto {
+  return {
+    date: '2026-11-12',
+    state: 'open',
+    holiday: null,
+    slotCount: 4,
+    closure: null,
+    ...overrides,
+  };
+}
+
+export function aCalendarMonthDto(
+  overrides: Partial<CalendarMonthResponseDto> = {},
+): CalendarMonthResponseDto {
+  return {
+    month: '2026-11',
+    today: '2026-11-10',
+    previousMonth: null,
+    nextMonth: '2026-12',
+    closePublicHolidays: true,
+    days: [aCalendarDayDto()],
     ...overrides,
   };
 }

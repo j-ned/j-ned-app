@@ -46,6 +46,25 @@ export type AvailabilityClosureDto = {
   reason: string | null;
 };
 
+export type CalendarDayDto = {
+  date: string;
+  state: 'past' | 'closed-period' | 'closed' | 'holiday' | 'open' | 'empty';
+  holiday: string | null;
+  slotCount: number;
+  closure: { startsOn: string; endsOn: string; reason: string | null } | null;
+};
+
+export type CalendarMonthResponseDto = {
+  month: string;
+  today: string;
+  previousMonth: string | null;
+  nextMonth: string | null;
+  closePublicHolidays: boolean;
+  days: CalendarDayDto[];
+};
+
+export type BookingSettingsDto = { closePublicHolidays: boolean };
+
 export type ApiErrorBodyDto = {
   statusCode: number;
   error: string;

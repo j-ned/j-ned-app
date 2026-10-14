@@ -38,7 +38,37 @@ export type AdminBooking = {
   readonly createdAt: string;
 };
 
+export type CalendarDayState = 'past' | 'closed-period' | 'closed' | 'holiday' | 'open' | 'empty';
+
+export type CalendarDay = {
+  readonly date: string;
+  readonly state: CalendarDayState;
+  readonly holiday: string | null;
+  readonly slotCount: number;
+  readonly closure: {
+    readonly startsOn: string;
+    readonly endsOn: string;
+    readonly reason: string | null;
+  } | null;
+};
+
+export type CalendarMonth = {
+  readonly month: string;
+  readonly today: string;
+  readonly previousMonth: string | null;
+  readonly nextMonth: string | null;
+  readonly closePublicHolidays: boolean;
+  readonly days: readonly CalendarDay[];
+};
+
 export type BookingAdminFailure =
-  'overlap' | 'invalid' | 'not-found' | 'too-late' | 'network' | 'server';
+  | 'overlap'
+  | 'invalid'
+  | 'not-found'
+  | 'too-late'
+  | 'day-past'
+  | 'day-in-closure'
+  | 'network'
+  | 'server';
 
 export type BookingAdminResult<TData> = BookingResult<TData, BookingAdminFailure>;

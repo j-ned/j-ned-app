@@ -3,6 +3,8 @@ import {
   aBookingCancelPreviewDto,
   aBookingConfirmationDto,
   aBookingSlotDto,
+  aCalendarDayDto,
+  aCalendarMonthDto,
   anAdminBookingDto,
   anAvailabilityClosureDto,
   anAvailabilityRuleDto,
@@ -13,6 +15,8 @@ import {
   toAvailabilityRule,
   toBookingConfirmation,
   toBookingSlot,
+  toCalendarDay,
+  toCalendarMonth,
   toCancelPreview,
 } from './booking.adapter';
 
@@ -142,6 +146,112 @@ describe('booking adapters', () => {
         startsOn: '2026-12-24',
         endsOn: '2027-01-01',
         reason,
+      });
+    },
+  );
+
+  it.each([
+    { state: 'past' as const, holiday: null, slotCount: 4 },
+    { state: 'closed' as const, holiday: null, slotCount: 4 },
+    { state: 'holiday' as const, holiday: 'Armistice 1918', slotCount: 4 },
+    { state: 'open' as const, holiday: 'Armistice 1918', slotCount: 4 },
+    { state: 'open' as const, holiday: null, slotCount: 46 },
+    { state: 'empty' as const, holiday: null, slotCount: 0 },
+  ])(
+    'Given a $state day DTO with holiday $holiday and $slotCount slots When adapted Then state, holiday and slot count are kept as sent',
+    ({ state, holiday, slotCount }) => {
+      const raw = aCalendarDayDto({ date: '2026-11-11', state, holiday, slotCount, closure: null });
+
+      expect(toCalendarDay(raw)).toEqual({
+        date: '2026-11-11',
+        state,
+        holiday,
+        slotCount,
+        closure: null,
+      });
+    },
+  );
+
+  it('Given a closed-period day DTO whose closure carries an extra id When adapted Then the closure keeps only its dates and reason', () => {
+    const raw = aCalendarDayDto({
+      date: '2026-12-24',
+      state: 'closed-period',
+      holiday: null,
+      slotCount: 4,
+      closure: Object.assign(
+        { startsOn: '2026-12-24', endsOn: '2027-01-01', reason: 'Congés' },
+        { id: '3c2b1a09-8f7e-4d6c-9b5a-4e3d2c1b0a9f' },
+      ),
+    });
+
+    expect(toCalendarDay(raw)).toEqual({
+      date: '2026-12-24',
+      state: 'closed-period',
+      holiday: null,
+      slotCount: 4,
+      closure: { startsOn: '2026-12-24', endsOn: '2027-01-01', reason: 'Congés' },
+    });
+  });
+
+  it('Given a day DTO with an unexpected field When adapted Then only the five contract fields are kept', () => {
+    const raw = Object.assign(aCalendarDayDto({ date: '2026-11-12', state: 'open' }), {
+      overrideKind: 'open',
+    });
+
+    expect(toCalendarDay(raw)).toEqual({
+      date: '2026-11-12',
+      state: 'open',
+      holiday: null,
+      slotCount: 4,
+      closure: null,
+    });
+  });
+
+  it.each([
+    { month: '2026-11', previousMonth: null, nextMonth: '2026-12', closePublicHolidays: true },
+    { month: '2027-11', previousMonth: '2027-10', nextMonth: null, closePublicHolidays: false },
+  ])(
+    'Given the month DTO $month When adapted Then bounds, holiday setting and days are kept and extra fields dropped',
+    ({ month, previousMonth, nextMonth, closePublicHolidays }) => {
+      const raw = Object.assign(
+        aCalendarMonthDto({
+          month,
+          today: '2026-11-10',
+          previousMonth,
+          nextMonth,
+          closePublicHolidays,
+          days: [
+            aCalendarDayDto({ date: `${month}-01`, state: 'empty', slotCount: 0 }),
+            Object.assign(
+              aCalendarDayDto({
+                date: `${month}-11`,
+                state: 'holiday',
+                holiday: 'Armistice 1918',
+                slotCount: 4,
+              }),
+              { weekday: 3 },
+            ),
+          ],
+        }),
+        { timeZone: 'Europe/Paris' },
+      );
+
+      expect(toCalendarMonth(raw)).toEqual({
+        month,
+        today: '2026-11-10',
+        previousMonth,
+        nextMonth,
+        closePublicHolidays,
+        days: [
+          { date: `${month}-01`, state: 'empty', holiday: null, slotCount: 0, closure: null },
+          {
+            date: `${month}-11`,
+            state: 'holiday',
+            holiday: 'Armistice 1918',
+            slotCount: 4,
+            closure: null,
+          },
+        ],
       });
     },
   );

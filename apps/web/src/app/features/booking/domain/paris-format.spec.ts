@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatDayLabel,
   formatDayShortLabel,
+  formatMonthLabel,
   formatParisDateTime,
   formatParisTime,
   toParisDateKey,
@@ -94,5 +95,16 @@ describe('formatDayShortLabel', () => {
     { date: '2027-03-28', expected: 'dim. 28' },
   ])('Given Paris date $date When labelled Then it reads « $expected »', ({ date, expected }) => {
     expect(formatDayShortLabel(date)).toBe(expected);
+  });
+});
+
+describe('formatMonthLabel', () => {
+  it.each([
+    { month: '2026-11', expected: 'novembre 2026' },
+    { month: '2026-12', expected: 'décembre 2026' },
+    { month: '2027-01', expected: 'janvier 2027' },
+    { month: '2027-08', expected: 'août 2027' },
+  ])('Given month $month When labelled Then it reads « $expected »', ({ month, expected }) => {
+    expect(formatMonthLabel(month)).toBe(expected);
   });
 });
