@@ -4,14 +4,16 @@ import {
   provideHttpClientTesting,
   type TestRequest,
 } from '@angular/common/http/testing';
+import { DOCUMENT } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
-import { API_BASE_URL } from '@shared/api/api-config';
+import { API_BASE_URL, API_LINK_BASE_URL } from '@shared/api/api-config';
 import {
   aBookingCancelPreviewDto,
   aBookingConfirmationDto,
+  aBookingFeedSubscriptionDto,
   aBookingRequest,
   aBookingSlotDto,
   aCalendarDayDto,
@@ -966,4 +968,139 @@ describe('HttpBookingGateway', () => {
       },
     );
   });
+});
+
+describe('HttpBookingGateway calendar subscription', () => {
+  const SUBSCRIPTION_URL = `${BOOKING}/feed-subscription`;
+  const LINK_BASE = 'https://api.example.test/api';
+  const FEED_TOKEN = 'a'.repeat(43);
+  const FEED_URL = `${LINK_BASE}/booking/feed/${FEED_TOKEN}.ics`;
+  let http: HttpTestingController;
+
+  function gatewayLinkedTo(linkBase: string): HttpBookingGateway {
+    TestBed.configureTestingModule({
+      providers: [
+        HttpBookingGateway,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: BASE },
+        { provide: API_LINK_BASE_URL, useValue: linkBase },
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    return TestBed.inject(HttpBookingGateway);
+  }
+
+  afterEach(() => {
+    http.verify();
+  });
+
+  it.each([
+    {
+      status: 'unconfigured',
+      body: { status: 'unconfigured' },
+      expected: { kind: 'unconfigured' },
+    },
+    { status: 'none', body: { status: 'none' }, expected: { kind: 'none' } },
+    {
+      status: 'active',
+      body: aBookingFeedSubscriptionDto({
+        token: FEED_TOKEN,
+        createdAt: '2026-10-15T08:32:00.000Z',
+      }),
+      expected: { kind: 'active', url: FEED_URL, createdAt: '2026-10-15T08:32:00.000Z' },
+    },
+  ])(
+    'Given the API answers $status When the admin reads the subscription Then a silent GET yields it with an absolute feed URL',
+    async ({ body, expected }) => {
+      const gateway = gatewayLinkedTo(LINK_BASE);
+      const result = firstValueFrom(gateway.getFeedSubscription());
+
+      const request = http.expectOne(SUBSCRIPTION_URL);
+      request.flush(body);
+
+      expect({
+        method: request.request.method,
+        silent: request.request.context.get(SKIP_ERROR_TOAST),
+        subscription: await result,
+      }).toEqual({ method: 'GET', silent: true, subscription: expected });
+    },
+  );
+
+  it('Given a relative link base When an active subscription is read Then its feed URL is absolute on the document origin', async () => {
+    const gateway = gatewayLinkedTo('/api');
+    const origin = TestBed.inject(DOCUMENT).location.origin;
+    const result = firstValueFrom(gateway.getFeedSubscription());
+
+    http.expectOne(SUBSCRIPTION_URL).flush(aBookingFeedSubscriptionDto({ token: FEED_TOKEN }));
+
+    expect(await result).toEqual({
+      kind: 'active',
+      url: `${origin}/api/booking/feed/${FEED_TOKEN}.ics`,
+      createdAt: '2026-10-15T08:32:00.000Z',
+    });
+  });
+
+  it.each([
+    { case: '500', reply: coded(500, 'Internal Server Error') },
+    { case: '401', reply: coded(401, 'Unauthorized') },
+    { case: 'network down', reply: NETWORK_DOWN },
+  ])(
+    'Given the API answers $case When the admin reads the subscription Then the error reaches the caller',
+    async ({ reply: answer }) => {
+      const gateway = gatewayLinkedTo(LINK_BASE);
+      const outcome = settled(gateway.getFeedSubscription());
+
+      reply(http.expectOne(SUBSCRIPTION_URL), answer);
+
+      expect(await outcome).toBe('error');
+    },
+  );
+
+  it('Given a configured API When the admin creates the link Then a silent bodiless POST yields the new active subscription', async () => {
+    const gateway = gatewayLinkedTo(LINK_BASE);
+    const result = firstValueFrom(gateway.regenerateFeedSubscription());
+
+    const sent = http.expectOne(SUBSCRIPTION_URL);
+    sent.flush(
+      aBookingFeedSubscriptionDto({ token: FEED_TOKEN, createdAt: '2026-11-02T14:00:00.000Z' }),
+      { status: 201, statusText: 'Created' },
+    );
+
+    expect({
+      method: sent.request.method,
+      body: sent.request.body,
+      silent: sent.request.context.get(SKIP_ERROR_TOAST),
+      result: await result,
+    }).toEqual({
+      method: 'POST',
+      body: null,
+      silent: true,
+      result: {
+        success: true,
+        data: { kind: 'active', url: FEED_URL, createdAt: '2026-11-02T14:00:00.000Z' },
+      },
+    });
+  });
+
+  it.each([
+    { case: 'network down', reply: NETWORK_DOWN, reason: 'network' },
+    {
+      case: '409 feed_not_configured',
+      reply: coded(409, 'feed_not_configured'),
+      reason: 'not-configured',
+    },
+    { case: '500', reply: coded(500, 'Internal Server Error'), reason: 'server' },
+    { case: '502 from nginx', reply: { status: 502, body: '<html>' }, reason: 'server' },
+  ])(
+    'Given the API answers $case When the admin creates the link Then the failure reason is $reason',
+    async ({ reply: answer, reason }) => {
+      const gateway = gatewayLinkedTo(LINK_BASE);
+      const result = firstValueFrom(gateway.regenerateFeedSubscription());
+
+      reply(http.expectOne(SUBSCRIPTION_URL), answer);
+
+      expect(await result).toEqual({ success: false, reason });
+    },
+  );
 });

@@ -41,7 +41,7 @@ export const ADMIN_PAGES: readonly PageScenario[] = [
   { path: '/admin/messages', ready: 'admin-messages-list' },
   { path: '/admin/audience', ready: 'tally-row' },
   { path: '/admin/settings', ready: 'settings-session' },
-  { path: '/admin/rendez-vous', ready: 'admin-bookings-list' },
+  { path: '/admin/rendez-vous', ready: 'admin-booking-feed-url' },
   { path: '/admin/disponibilites', ready: 'admin-calendar-grid' },
 ];
 

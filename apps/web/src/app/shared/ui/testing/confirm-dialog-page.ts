@@ -30,22 +30,24 @@ export function readConfirmDialog(root: HTMLElement): ConfirmDialogView {
   };
 }
 
-async function escapeConfirmDialog(fixture: ComponentFixture<unknown>): Promise<void> {
-  confirmDialogElement(fixture.nativeElement as HTMLElement)?.dispatchEvent(
-    new Event('cancel', { cancelable: true }),
-  );
+async function escapeConfirmDialog(
+  fixture: ComponentFixture<unknown>,
+  root: ParentNode,
+): Promise<void> {
+  confirmDialogElement(root)?.dispatchEvent(new Event('cancel', { cancelable: true }));
   await settleBounded(fixture);
 }
 
 export async function answerConfirmDialog(
   fixture: ComponentFixture<unknown>,
   answer: 'confirm' | 'cancel' | 'escape',
+  root: ParentNode = fixture.nativeElement as HTMLElement,
 ): Promise<void> {
   if (answer === 'escape') {
-    await escapeConfirmDialog(fixture);
+    await escapeConfirmDialog(fixture, root);
     return;
   }
-  const dialog = confirmDialogElement(fixture.nativeElement as HTMLElement);
+  const dialog = confirmDialogElement(root);
   const element = dialog && byTestId(dialog, `confirm-dialog-${answer}`);
   const button = element?.tagName === 'BUTTON' ? element : element?.querySelector('button');
   button?.click();

@@ -2,6 +2,7 @@ import type {
   AdminBooking,
   AvailabilityClosure,
   AvailabilityRule,
+  BookingFeedSubscription,
   CalendarDay,
   CalendarMonth,
   IsoWeekday,
@@ -17,6 +18,7 @@ import type {
   AvailabilityRuleDto,
   BookingCancelPreviewDto,
   BookingConfirmationDto,
+  BookingFeedSubscriptionDto,
   BookingSlotDto,
   CalendarDayDto,
   CalendarMonthResponseDto,
@@ -106,4 +108,21 @@ export function toCalendarMonth(raw: CalendarMonthResponseDto): CalendarMonth {
     closePublicHolidays: raw.closePublicHolidays,
     days: raw.days.map(toCalendarDay),
   };
+}
+
+export function toBookingFeedSubscription(
+  raw: BookingFeedSubscriptionDto,
+  feedBaseUrl: string,
+): BookingFeedSubscription {
+  switch (raw.status) {
+    case 'unconfigured':
+    case 'none':
+      return { kind: raw.status };
+    case 'active':
+      return {
+        kind: 'active',
+        url: `${feedBaseUrl}${encodeURIComponent(raw.token)}.ics`,
+        createdAt: raw.createdAt,
+      };
+  }
 }

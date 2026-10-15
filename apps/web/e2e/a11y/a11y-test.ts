@@ -11,7 +11,7 @@ const SESSION_HINT_KEY = 'auth:session';
 
 type A11yOptions = { readonly theme: Theme; readonly adminSession: boolean };
 
-type A11yAudit = { readonly results: AxeResults; readonly message: string };
+export type A11yAudit = { readonly results: AxeResults; readonly message: string };
 
 type A11yFixtures = {
   readonly visit: (path: string) => Promise<void>;

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   aBookingCancelPreviewDto,
   aBookingConfirmationDto,
+  aBookingFeedSubscriptionDto,
   aBookingSlotDto,
   aCalendarDayDto,
   aCalendarMonthDto,
@@ -14,6 +15,7 @@ import {
   toAvailabilityClosure,
   toAvailabilityRule,
   toBookingConfirmation,
+  toBookingFeedSubscription,
   toBookingSlot,
   toCalendarDay,
   toCalendarMonth,
@@ -255,4 +257,43 @@ describe('booking adapters', () => {
       });
     },
   );
+
+  describe('calendar subscription', () => {
+    const FEED_BASE = 'https://api.example.test/api/booking/feed/';
+
+    it.each([{ status: 'unconfigured' as const }, { status: 'none' as const }])(
+      'Given a $status subscription DTO with an extra field When adapted Then only its kind is kept',
+      ({ status }) => {
+        const raw = Object.assign({ status }, { feedSalt: 'AAAAAAAAAAAAAAAAAAAAAA' });
+
+        expect(toBookingFeedSubscription(raw, FEED_BASE)).toEqual({ kind: status });
+      },
+    );
+
+    it('Given an active subscription DTO When adapted Then the token becomes the feed URL and nothing else is copied', () => {
+      const raw = Object.assign(
+        aBookingFeedSubscriptionDto({
+          token: 'XYJXH9MoGdppkZYT0jI3g2rP-qFcqKBWL0budyMj488',
+          createdAt: '2026-11-01T09:05:00.000Z',
+        }),
+        { feedSalt: 'AAAAAAAAAAAAAAAAAAAAAA' },
+      );
+
+      expect(toBookingFeedSubscription(raw, FEED_BASE)).toEqual({
+        kind: 'active',
+        url: 'https://api.example.test/api/booking/feed/XYJXH9MoGdppkZYT0jI3g2rP-qFcqKBWL0budyMj488.ics',
+        createdAt: '2026-11-01T09:05:00.000Z',
+      });
+    });
+
+    it('Given a token holding reserved characters When adapted Then it stays inside a single path segment', () => {
+      const raw = aBookingFeedSubscriptionDto({ token: 'a/b?c#d' });
+
+      expect(toBookingFeedSubscription(raw, FEED_BASE)).toEqual({
+        kind: 'active',
+        url: 'https://api.example.test/api/booking/feed/a%2Fb%3Fc%23d.ics',
+        createdAt: '2026-10-15T08:32:00.000Z',
+      });
+    });
+  });
 });

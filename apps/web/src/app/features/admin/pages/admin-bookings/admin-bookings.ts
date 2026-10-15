@@ -18,9 +18,11 @@ import {
   toAdminBookingRows,
   type AdminBookingRowView,
 } from '../../application/admin-bookings-view';
+import { AdminBookingFeed } from '../../application/components/admin-booking-feed';
 import { AdminBookingRow } from '../../application/components/admin-booking-row';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
+import { FeedSubscriptionPanel } from './feed-subscription-panel';
 
 const REASON_MAX_LENGTH = 500;
 
@@ -42,10 +44,12 @@ const CANCEL_FAILURES: Partial<Record<BookingAdminFailure, string>> = {
     FormField,
     LoadError,
     AppSkeleton,
+    AdminBookingFeed,
     AdminBookingRow,
     AdminEmptyState,
     AdminPageHeader,
   ],
+  providers: [FeedSubscriptionPanel],
   host: { class: 'block' },
   template: `
     <app-admin-page-header [overline]="overline()" heading="Rendez-vous">
@@ -92,6 +96,17 @@ const CANCEL_FAILURES: Partial<Record<BookingAdminFailure, string>> = {
       }
     }
 
+    <section
+      app-admin-booking-feed
+      class="mt-14"
+      [view]="feed.view()"
+      [state]="feed.state()"
+      [regenerating]="feed.regenerating()"
+      (copyRequested)="feed.copyLink()"
+      (regenerateRequested)="feed.regenerate()"
+      (retry)="feed.reload()"
+    ></section>
+
     <app-confirm-dialog
       [open]="pendingCancellation() !== null"
       [heading]="cancellationHeading()"
@@ -119,6 +134,7 @@ export class AdminBookings {
   private readonly bookingGateway = inject(BookingGateway);
   private readonly toast = inject(ToastStore);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly feed = inject(FeedSubscriptionPanel);
   private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
   protected readonly filters = ADMIN_BOOKINGS_FILTERS;

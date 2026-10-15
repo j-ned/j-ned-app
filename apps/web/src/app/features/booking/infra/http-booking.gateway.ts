@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { DOCUMENT, inject, Injectable } from '@angular/core';
 import {
   catchError,
   map,
@@ -12,7 +12,7 @@ import {
   type Observable,
 } from 'rxjs';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
-import { API_BASE_URL } from '@shared/api/api-config';
+import { API_BASE_URL, API_LINK_BASE_URL } from '@shared/api/api-config';
 import { BookingGateway } from '../domain/gateways/booking.gateway';
 import type {
   AdminBooking,
@@ -20,6 +20,7 @@ import type {
   AvailabilityRule,
   BookingAdminFailure,
   BookingAdminResult,
+  BookingFeedSubscription,
   BookingScope,
   CalendarDay,
   CalendarMonth,
@@ -41,6 +42,7 @@ import type {
   AvailabilityRuleDto,
   BookingCancelPreviewDto,
   BookingConfirmationDto,
+  BookingFeedSubscriptionDto,
   BookingSettingsDto,
   BookingSlotsResponseDto,
   CalendarDayDto,
@@ -51,6 +53,7 @@ import {
   toAvailabilityClosure,
   toAvailabilityRule,
   toBookingConfirmation,
+  toBookingFeedSubscription,
   toBookingSlot,
   toCalendarDay,
   toCalendarMonth,
@@ -105,17 +108,20 @@ function toCancelFailure(err: unknown): BookingCancelFailure {
 }
 
 function toAdminFailure(err: unknown): BookingAdminFailure {
+  const code = apiErrorCode(err);
   switch (statusOf(err)) {
     case 0:
       return 'network';
     case 400:
-      return apiErrorCode(err) === 'rules_overlap' ? 'overlap' : 'invalid';
+      return code === 'rules_overlap' ? 'overlap' : 'invalid';
     case 404:
       return 'not-found';
     case 409:
-      return apiErrorCode(err) === 'day_in_closure' ? 'day-in-closure' : 'too-late';
+      if (code === 'day_in_closure') return 'day-in-closure';
+      if (code === 'feed_not_configured') return 'not-configured';
+      return 'too-late';
     case 422:
-      return apiErrorCode(err) === 'day_in_past' ? 'day-past' : 'invalid';
+      return code === 'day_in_past' ? 'day-past' : 'invalid';
     default:
       return 'server';
   }
@@ -134,7 +140,9 @@ function toResult<TData, TReason>(
 @Injectable()
 export class HttpBookingGateway extends BookingGateway {
   private readonly http = inject(HttpClient);
+  private readonly document = inject(DOCUMENT);
   private readonly bookingUrl = `${inject(API_BASE_URL)}/booking`;
+  private readonly feedLinkBase = `${inject(API_LINK_BASE_URL)}/booking/feed/`;
 
   private readonly _upcomingRefresh$ = new Subject<void>();
   private readonly upcomingCount$ = this._upcomingRefresh$.pipe(
@@ -297,5 +305,30 @@ export class HttpBookingGateway extends BookingGateway {
         map((res) => res.closePublicHolidays),
         toResult(toAdminFailure),
       );
+  }
+
+  getFeedSubscription(): Observable<BookingFeedSubscription> {
+    return this.http
+      .get<BookingFeedSubscriptionDto>(`${this.bookingUrl}/feed-subscription`, {
+        context: silentErrors(),
+      })
+      .pipe(map((raw) => this.toFeedSubscription(raw)));
+  }
+
+  regenerateFeedSubscription(): Observable<BookingAdminResult<BookingFeedSubscription>> {
+    return this.http
+      .post<BookingFeedSubscriptionDto>(`${this.bookingUrl}/feed-subscription`, null, {
+        context: silentErrors(),
+      })
+      .pipe(
+        map((raw) => this.toFeedSubscription(raw)),
+        toResult(toAdminFailure),
+      );
+  }
+
+  // L'agenda tiers exige une URL absolue, or la base vaut `/api` en développement.
+  private toFeedSubscription(raw: BookingFeedSubscriptionDto): BookingFeedSubscription {
+    const feedBaseUrl = new URL(this.feedLinkBase, this.document.location.href).href;
+    return toBookingFeedSubscription(raw, feedBaseUrl);
   }
 }

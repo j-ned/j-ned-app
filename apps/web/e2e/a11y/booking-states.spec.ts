@@ -1,4 +1,4 @@
-import { expect, test } from './a11y-test';
+import { expect, test, type A11yAudit } from './a11y-test';
 import { ADMIN_PENDING_OR_FAILED, FOOTER_READY, THEMES } from './scenarios';
 import type { Locator, Page } from '@playwright/test';
 
@@ -21,6 +21,39 @@ const CALENDAR_DAY_STATES = [
 type UpcomingBookings = {
   readonly data: readonly { readonly startsAt: string; readonly status: string }[];
 };
+
+const FEED_TOKEN = 'stubFeedToken000000000000000000000000000000';
+const REGENERATED_FEED_TOKEN = 'stubFeedRegenerated000000000000000000000000';
+const REGENERATED_TOAST = "Nouveau lien créé\u00a0: l'ancien ne fonctionne plus.";
+const COPIED_TOAST = 'Lien copié dans le presse-papiers';
+
+async function openFeedSection(
+  page: Page,
+  visit: (path: string) => Promise<void>,
+): Promise<Locator> {
+  await visit('/admin/rendez-vous');
+  const feed = page.getByTestId('admin-booking-feed');
+  await expect(feed.getByTestId('admin-booking-feed-url')).toBeVisible();
+  await expect(page.locator(ADMIN_PENDING_OR_FAILED)).toHaveCount(0);
+  return feed;
+}
+
+// Un toast se retire après 3 s : encore visible après l'analyse, il a bien été audité.
+async function expectToastAnalyzed(
+  page: Page,
+  analyzeA11y: (ready: string, state?: string) => Promise<A11yAudit>,
+  detail: string,
+  state: string,
+): Promise<void> {
+  const toast = page.getByTestId('toast').filter({ hasText: detail });
+  await expect(toast).toHaveCount(1);
+  const { results, message } = await analyzeA11y('toast', state);
+  expect(await toast.isVisible(), "toast encore affiché à la fin de l'analyse").toBe(true);
+  expect(
+    results.violations.map((violation) => violation.id),
+    message,
+  ).toEqual([]);
+}
 
 async function openAvailability(page: Page, visit: (path: string) => Promise<void>): Promise<void> {
   await visit('/admin/disponibilites');
@@ -105,7 +138,96 @@ for (const theme of THEMES) {
         await page.getByTestId('admin-booking-cancel').first().click();
         await expect(page.locator('dialog[open]')).toHaveCount(1);
         await expect(page.getByTestId('admin-booking-reason')).toBeVisible();
-        await expectNoA11yViolations('confirm-dialog', 'dialogue-annulation-ouvert');
+        await expectNoA11yViolations('admin-booking-reason', 'dialogue-annulation-ouvert');
+      });
+
+      test.describe("abonnement d'agenda", () => {
+        test('open link regeneration dialog has no WCAG A/AA violation', async ({
+          page,
+          visit,
+          expectNoA11yViolations,
+        }) => {
+          const feed = await openFeedSection(page, visit);
+          await feed.getByTestId('admin-booking-feed-action').click();
+          await expect(page.locator('dialog[open]')).toHaveCount(1);
+          await expect(feed.locator('dialog[open]')).toBeVisible();
+          await expect(feed.getByTestId('confirm-dialog-heading')).toHaveText(
+            "Régénérer le lien d'abonnement\u202f?",
+          );
+          await expectNoA11yViolations('admin-booking-feed', 'abonnement-dialogue-regeneration');
+        });
+
+        test('regenerated link with its toast has no WCAG A/AA violation', async ({
+          page,
+          visit,
+          analyzeA11y,
+        }) => {
+          const feed = await openFeedSection(page, visit);
+          await feed.getByTestId('admin-booking-feed-action').click();
+          await feed.getByTestId('confirm-dialog-confirm').click();
+          await expect(page.locator('dialog[open]')).toHaveCount(0);
+          await expect(feed.getByTestId('admin-booking-feed-url')).toHaveValue(
+            new RegExp(`/booking/feed/${REGENERATED_FEED_TOKEN}\\.ics$`),
+          );
+          await expectToastAnalyzed(
+            page,
+            analyzeA11y,
+            REGENERATED_TOAST,
+            'abonnement-lien-regenere',
+          );
+        });
+
+        test('copied link toast has no WCAG A/AA violation', async ({
+          page,
+          context,
+          baseURL,
+          visit,
+          analyzeA11y,
+        }) => {
+          await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
+            origin: new URL(baseURL ?? 'http://127.0.0.1:3000').origin,
+          });
+          const feed = await openFeedSection(page, visit);
+          const url = await feed.getByTestId('admin-booking-feed-url').inputValue();
+          expect(url).toMatch(new RegExp(`/booking/feed/${FEED_TOKEN}\\.ics$`));
+          await feed.getByTestId('admin-booking-feed-copy').click();
+          await expect(page.getByTestId('toast').filter({ hasText: COPIED_TOAST })).toBeVisible();
+          expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(url);
+          await expectToastAnalyzed(page, analyzeA11y, COPIED_TOAST, 'abonnement-lien-copie');
+        });
+
+        test('unconfigured subscription has no WCAG A/AA violation', async ({
+          page,
+          baseURL,
+          visit,
+          expectNoA11yViolations,
+        }) => {
+          const origin = new URL(baseURL ?? 'http://127.0.0.1:3000').origin;
+          await page.route('**/api/booking/feed-subscription', async (route) => {
+            if (route.request().method() !== 'GET') {
+              await route.fallback();
+              return;
+            }
+            await route.fulfill({
+              status: 200,
+              contentType: 'application/json',
+              headers: {
+                'access-control-allow-origin': origin,
+                'access-control-allow-credentials': 'true',
+              },
+              body: JSON.stringify({ status: 'unconfigured' }),
+            });
+          });
+          await visit('/admin/rendez-vous');
+          const feed = page.getByTestId('admin-booking-feed');
+          await expect(feed.getByTestId('admin-booking-feed-unconfigured')).toBeVisible();
+          await expect(feed.getByRole('button')).toHaveCount(0);
+          await expect(page.locator(ADMIN_PENDING_OR_FAILED)).toHaveCount(0);
+          await expectNoA11yViolations(
+            'admin-booking-feed-unconfigured',
+            'abonnement-non-configure',
+          );
+        });
       });
 
       test.describe('disponibilités', () => {

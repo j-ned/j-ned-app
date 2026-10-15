@@ -65,6 +65,11 @@ export type CalendarMonthResponseDto = {
 
 export type BookingSettingsDto = { closePublicHolidays: boolean };
 
+export type BookingFeedSubscriptionDto =
+  | { status: 'unconfigured' }
+  | { status: 'none' }
+  | { status: 'active'; token: string; createdAt: string };
+
 export type ApiErrorBodyDto = {
   statusCode: number;
   error: string;

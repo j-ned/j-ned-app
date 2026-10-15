@@ -2,6 +2,7 @@ import type {
   AdminBooking,
   AvailabilityClosure,
   AvailabilityRule,
+  BookingFeedSubscription,
   CalendarDay,
   CalendarMonth,
 } from '../domain/models/booking-admin.model';
@@ -19,10 +20,14 @@ import type {
   AvailabilityRuleDto,
   BookingCancelPreviewDto,
   BookingConfirmationDto,
+  BookingFeedSubscriptionDto,
   BookingSlotDto,
   CalendarDayDto,
   CalendarMonthResponseDto,
 } from '../infra/booking-api.types';
+
+type ActiveFeedSubscription = Extract<BookingFeedSubscription, { kind: 'active' }>;
+type ActiveFeedSubscriptionDto = Extract<BookingFeedSubscriptionDto, { status: 'active' }>;
 
 export function aBookingSlot(overrides: Partial<BookingSlot> = {}): BookingSlot {
   return {
@@ -143,6 +148,17 @@ export function aCalendarMonth(overrides: Partial<CalendarMonth> = {}): Calendar
   };
 }
 
+export function aBookingFeedSubscription(
+  overrides: Partial<ActiveFeedSubscription> = {},
+): ActiveFeedSubscription {
+  return {
+    kind: 'active',
+    url: 'https://api.example.test/api/booking/feed/stubFeedToken000000000000000000000000000000.ics',
+    createdAt: '2026-10-15T08:32:00.000Z',
+    ...overrides,
+  };
+}
+
 export function aBookingSlotDto(overrides: Partial<BookingSlotDto> = {}): BookingSlotDto {
   return {
     startsAt: '2026-10-19T07:00:00.000Z',
@@ -238,6 +254,17 @@ export function aCalendarMonthDto(
     nextMonth: '2026-12',
     closePublicHolidays: true,
     days: [aCalendarDayDto()],
+    ...overrides,
+  };
+}
+
+export function aBookingFeedSubscriptionDto(
+  overrides: Partial<ActiveFeedSubscriptionDto> = {},
+): ActiveFeedSubscriptionDto {
+  return {
+    status: 'active',
+    token: 'stubFeedToken000000000000000000000000000000',
+    createdAt: '2026-10-15T08:32:00.000Z',
     ...overrides,
   };
 }

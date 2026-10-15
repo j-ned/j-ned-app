@@ -1,5 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { NEVER, Observable, of, throwError } from 'rxjs';
+import { NEVER, Observable, Subject, defer, of, throwError } from 'rxjs';
 import type { Mock } from 'vitest';
 import { ToastStore } from '@core/notifications/toast-store';
 import { BookingGateway } from '@features/booking/domain/gateways/booking.gateway';
@@ -7,9 +7,13 @@ import type {
   AdminBooking,
   BookingAdminFailure,
   BookingAdminResult,
+  BookingFeedSubscription,
   BookingScope,
 } from '@features/booking/domain/models/booking-admin.model';
-import { anAdminBooking } from '@features/booking/testing/booking-builders';
+import {
+  aBookingFeedSubscription,
+  anAdminBooking,
+} from '@features/booking/testing/booking-builders';
 import { stubBookingGateway } from '@features/booking/testing/stub-booking-gateway';
 import { accessibleName } from '@shared/testing/accessible-name';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
@@ -95,12 +99,28 @@ type Spies = {
     (id: string, reason: string | null) => Observable<BookingAdminResult<AdminBooking>>
   >;
   readonly invalidateUpcomingCount: Mock<() => void>;
+  readonly getFeedSubscription: Mock<() => Observable<BookingFeedSubscription>>;
+  readonly regenerateFeedSubscription: Mock<
+    () => Observable<BookingAdminResult<BookingFeedSubscription>>
+  >;
 };
+
+const FEED_URL =
+  'https://api.example.test/api/booking/feed/stubFeedToken000000000000000000000000000000.ics';
+const NEW_FEED_URL =
+  'https://api.example.test/api/booking/feed/newFeedToken0000000000000000000000000000000.ics';
+const FEED = aBookingFeedSubscription({ url: FEED_URL, createdAt: '2026-10-15T08:32:00.000Z' });
+const NEW_FEED = aBookingFeedSubscription({
+  url: NEW_FEED_URL,
+  createdAt: '2026-10-15T10:05:00.000Z',
+});
 
 function spies(
   options: {
     readonly lists?: Partial<Record<BookingScope, Observable<readonly AdminBooking[]>>>;
     readonly cancel?: (id: string, reason: string | null) => BookingAdminResult<AdminBooking>;
+    readonly feed?: () => Observable<BookingFeedSubscription>;
+    readonly regenerate?: () => Observable<BookingAdminResult<BookingFeedSubscription>>;
   } = {},
 ): Spies {
   return {
@@ -124,6 +144,13 @@ function spies(
         ),
     ),
     invalidateUpcomingCount: vi.fn<() => void>(),
+    getFeedSubscription: vi.fn(
+      (): Observable<BookingFeedSubscription> => options.feed?.() ?? defer(() => of(FEED)),
+    ),
+    regenerateFeedSubscription: vi.fn(
+      (): Observable<BookingAdminResult<BookingFeedSubscription>> =>
+        options.regenerate?.() ?? defer(() => of({ success: true, data: NEW_FEED } as const)),
+    ),
   };
 }
 
@@ -174,6 +201,12 @@ async function requestCancellation(rendered: Rendered, name: string): Promise<vo
     ?.click();
   await settleBounded(rendered.fixture);
 }
+
+// La page porte deux confirmations : celle de l'annulation est celle hors de la section d'abonnement.
+const cancellationDialog = (host: HTMLElement): HTMLElement =>
+  allByTestId(host, 'confirm-dialog').find(
+    (dialog) => dialog.closest('[data-testid="admin-booking-feed"]') === null,
+  )?.parentElement ?? host;
 
 const reasonField = (host: HTMLElement): HTMLTextAreaElement | null => {
   const field = byTestId(host, 'admin-booking-reason');
@@ -508,9 +541,9 @@ describe('AdminBookings: annulation par le propriétaire', () => {
     const field = reasonField(rendered.host);
 
     expect({
-      dialog: readConfirmDialog(rendered.host),
+      dialog: readConfirmDialog(cancellationDialog(rendered.host)),
       field: {
-        inDialog: confirmDialogElement(rendered.host)?.contains(field) ?? false,
+        inDialog: confirmDialogElement(cancellationDialog(rendered.host))?.contains(field) ?? false,
         value: field?.value,
         maxLength: field?.maxLength,
         label: labelOf(field),
@@ -551,13 +584,13 @@ describe('AdminBookings: annulation par le propriétaire', () => {
       const rendered = await render(gateway);
       await requestCancellation(rendered, 'Camille Martin');
       if (typed !== null) await typeReason(rendered, typed);
-      const opened = readConfirmDialog(rendered.host).open;
+      const opened = readConfirmDialog(cancellationDialog(rendered.host)).open;
 
-      await answerConfirmDialog(rendered.fixture, answer);
+      await answerConfirmDialog(rendered.fixture, answer, cancellationDialog(rendered.host));
 
       expect({
         opened,
-        open: readConfirmDialog(rendered.host).open,
+        open: readConfirmDialog(cancellationDialog(rendered.host)).open,
         calls: gateway.cancelBookingAsOwner.mock.calls,
       }).toEqual({ opened: true, open: false, calls });
     },
@@ -569,7 +602,7 @@ describe('AdminBookings: annulation par le propriétaire', () => {
     await requestCancellation(rendered, 'Camille Martin');
     await typeReason(rendered, 'Imprévu de mon côté.');
 
-    await answerConfirmDialog(rendered.fixture, 'confirm');
+    await answerConfirmDialog(rendered.fixture, 'confirm', cancellationDialog(rendered.host));
     const row = rowOf(rendered.host, 'Camille Martin');
     const title = byTestId(rendered.host, 'admin-page-title');
 
@@ -600,12 +633,12 @@ describe('AdminBookings: annulation par le propriétaire', () => {
     const rendered = await render();
     await requestCancellation(rendered, 'Camille Martin');
     await typeReason(rendered, 'Brouillon de motif');
-    await answerConfirmDialog(rendered.fixture, 'cancel');
+    await answerConfirmDialog(rendered.fixture, 'cancel', cancellationDialog(rendered.host));
 
     await requestCancellation(rendered, 'Léo Petit');
 
     expect({
-      heading: readConfirmDialog(rendered.host).heading,
+      heading: readConfirmDialog(cancellationDialog(rendered.host)).heading,
       reason: reasonField(rendered.host)?.value,
     }).toEqual({ heading: 'Annuler le rendez-vous de Léo Petit ?', reason: '' });
   });
@@ -632,7 +665,7 @@ describe('AdminBookings: annulation par le propriétaire', () => {
       const rendered = await render(gateway);
       await requestCancellation(rendered, 'Camille Martin');
 
-      await answerConfirmDialog(rendered.fixture, 'confirm');
+      await answerConfirmDialog(rendered.fixture, 'confirm', cancellationDialog(rendered.host));
       const row = rowOf(rendered.host, 'Camille Martin');
 
       expect({
@@ -646,4 +679,550 @@ describe('AdminBookings: annulation par le propriétaire', () => {
       });
     },
   );
+});
+
+const feedSection = (host: HTMLElement): HTMLElement | null => byTestId(host, 'admin-booking-feed');
+
+const inFeed = (host: HTMLElement, testId: string): HTMLElement | null => {
+  const section = feedSection(host);
+  return section && byTestId(section, testId);
+};
+
+const collapsed = (element: Element | null | undefined): string =>
+  (element?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+const feedAction = (host: HTMLElement): HTMLElement | null =>
+  inFeed(host, 'admin-booking-feed-action');
+
+const feedDialog = (host: HTMLElement): HTMLElement => feedSection(host) ?? host;
+
+async function pressFeedAction(rendered: Rendered): Promise<void> {
+  const action = feedAction(rendered.host);
+  action?.focus();
+  action?.click();
+  await settleBounded(rendered.fixture);
+}
+
+const feedUrlField = (host: HTMLElement): HTMLInputElement | null => {
+  const field = inFeed(host, 'admin-booking-feed-url');
+  return field instanceof HTMLInputElement ? field : null;
+};
+
+const storedValues = (): readonly string[] =>
+  [localStorage, sessionStorage].flatMap((storage) =>
+    Array.from({ length: storage.length }, (_, index) => {
+      const key = storage.key(index);
+      return key === null ? '' : `${key}=${storage.getItem(key) ?? ''}`;
+    }),
+  );
+
+const FEED_HELP = [
+  "iPhone : touchez « Ouvrir dans Calendrier » puis « S'abonner », ou, dans Calendrier, Calendriers › Ajouter un calendrier › Ajouter un calendrier avec abonnement, et collez le lien. Le rythme de mise à jour suit le réglage de l'iPhone (Calendrier › Comptes › Récupérer).",
+  "Google Agenda (ordinateur) : Autres agendas › + › À partir de l'URL, collez le lien. Google met l'agenda à jour toutes les quelques heures : une annulation peut y rester visible jusqu'à un jour.",
+  'Ce lien donne accès aux coordonnées de vos visiteurs : ne le partagez pas. En cas de doute, régénérez-le.',
+  "Une fois abonné, n'ajoutez plus les rendez-vous à la main depuis l'email : ces copies ne suivent pas les annulations.",
+];
+
+const FEED_CREATED = "Lien d'abonnement créé : ajoutez-le à vos agendas.";
+const FEED_REGENERATED =
+  "Nouveau lien créé : l'ancien ne fonctionne plus. Remplacez-le dans vos agendas.";
+
+describe("AdminBookings: section « Abonnement d'agenda »", () => {
+  it('Given the page When it renders Then the section follows the list, is labelled by its h2 under the single h1, and adds no landmark', async () => {
+    const { host } = await render();
+    const section = feedSection(host);
+    const heading = inFeed(host, 'admin-booking-feed-heading');
+    const list = byTestId(host, 'admin-bookings-list');
+    const following =
+      list !== null &&
+      section !== null &&
+      (list.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+    expect({
+      tag: section?.tagName,
+      labelledBy: section?.getAttribute('aria-labelledby'),
+      heading: { tag: heading?.tagName, id: heading?.id, text: collapsed(heading) },
+      following,
+      h1: host.querySelectorAll('h1').length,
+      landmarks:
+        section?.querySelectorAll(
+          'header, main, footer, nav, aside, [role="banner"], [role="main"], [role="contentinfo"], [role="navigation"], [role="complementary"], [role="region"]',
+        ).length ?? null,
+    }).toEqual({
+      tag: 'SECTION',
+      labelledBy: heading?.id,
+      heading: { tag: 'H2', id: expect.stringMatching(/.+/), text: "Abonnement d'agenda" },
+      following: true,
+      h1: 1,
+      landmarks: 0,
+    });
+  });
+
+  it('Given an active link on the server When the page loads Then the link is shown read-only and selectable, with its webcal twin, its creation date, the help and the regenerate button', async () => {
+    const gateway = spies();
+    const { host } = await render(gateway);
+    const field = feedUrlField(host);
+    const webcal = inFeed(host, 'admin-booking-feed-webcal');
+    const help = inFeed(host, 'admin-booking-feed-help');
+    const action = feedAction(host);
+
+    expect({
+      reads: gateway.getFeedSubscription.mock.calls.length,
+      field: {
+        type: field?.type,
+        readOnly: field?.readOnly,
+        disabled: field?.disabled,
+        value: field?.value,
+        label: collapsed(
+          field && field.id !== '' ? host.querySelector(`label[for="${field.id}"]`) : null,
+        ),
+      },
+      webcal: {
+        tag: webcal?.tagName,
+        href: webcal?.getAttribute('href'),
+        name: webcal ? accessibleName(webcal, host) : null,
+      },
+      since: collapsed(inFeed(host, 'admin-booking-feed-since')),
+      help: {
+        tag: help?.tagName,
+        role: help?.getAttribute('role'),
+        items: [...(help?.querySelectorAll('li') ?? [])].map((item) => collapsed(item)),
+      },
+      action: { tag: action?.tagName, type: action?.getAttribute('type'), text: collapsed(action) },
+      none: inFeed(host, 'admin-booking-feed-none'),
+      unconfigured: inFeed(host, 'admin-booking-feed-unconfigured'),
+    }).toEqual({
+      reads: 1,
+      field: {
+        type: 'text',
+        readOnly: true,
+        disabled: false,
+        value: FEED_URL,
+        label: "Lien d'abonnement",
+      },
+      webcal: {
+        tag: 'A',
+        href: 'webcal://api.example.test/api/booking/feed/stubFeedToken000000000000000000000000000000.ics',
+        name: 'Ouvrir dans Calendrier',
+      },
+      since: 'Lien créé le jeudi 15 octobre 2026 à 10:32.',
+      help: { tag: 'UL', role: 'list', items: FEED_HELP },
+      action: { tag: 'BUTTON', type: 'button', text: 'Régénérer le lien' },
+      none: null,
+      unconfigured: null,
+    });
+  });
+
+  it('Given no link yet When the page loads Then it says so and offers to create one, without link nor help', async () => {
+    const { host } = await render(spies({ feed: () => of({ kind: 'none' }) }));
+
+    expect({
+      none: collapsed(inFeed(host, 'admin-booking-feed-none')),
+      action: collapsed(feedAction(host)),
+      url: inFeed(host, 'admin-booking-feed-url'),
+      webcal: inFeed(host, 'admin-booking-feed-webcal'),
+      since: inFeed(host, 'admin-booking-feed-since'),
+      help: inFeed(host, 'admin-booking-feed-help'),
+    }).toEqual({
+      none: "Aucun lien d'abonnement pour l'instant.",
+      action: "Créer le lien d'abonnement",
+      url: null,
+      webcal: null,
+      since: null,
+      help: null,
+    });
+  });
+
+  it('Given the API without its secret When the page loads Then the section names the variable to set, with no button, link nor help', async () => {
+    const { host } = await render(spies({ feed: () => of({ kind: 'unconfigured' }) }));
+
+    expect({
+      section: feedSection(host) !== null,
+      message: collapsed(inFeed(host, 'admin-booking-feed-unconfigured')),
+      buttons: feedSection(host)?.querySelectorAll('button').length ?? null,
+      url: inFeed(host, 'admin-booking-feed-url'),
+      webcal: inFeed(host, 'admin-booking-feed-webcal'),
+      help: inFeed(host, 'admin-booking-feed-help'),
+    }).toEqual({
+      section: true,
+      message:
+        "Abonnement non configuré : ajoutez la variable BOOKING_FEED_SECRET (32 caractères au moins, par exemple la sortie de openssl rand -base64 48) à l'environnement de l'API dans Dokploy, puis redéployez l'API.",
+      buttons: 0,
+      url: null,
+      webcal: null,
+      help: null,
+    });
+  });
+
+  it('Given the subscription still on its way When the page renders Then the section announces its loading as a status, without action', async () => {
+    const { host } = await render(spies({ feed: () => NEVER }));
+    const loading = inFeed(host, 'admin-booking-feed-loading');
+
+    expect({
+      role: loading?.getAttribute('role'),
+      text: collapsed(loading),
+      action: feedAction(host),
+    }).toEqual({ role: 'status', text: "Chargement de l'abonnement…", action: null });
+  });
+
+  it('Given the read fails When Réessayer is pressed in the section Then the subscription is read again and the link shown', async () => {
+    let attempts = 0;
+    const gateway = spies({
+      feed: () =>
+        defer(() => {
+          attempts += 1;
+          return attempts === 1 ? throwError(() => new Error('down')) : of(FEED);
+        }),
+    });
+    const rendered = await render(gateway);
+    const failed = {
+      message: collapsed(inFeed(rendered.host, 'load-error-message')),
+      action: feedAction(rendered.host),
+    };
+
+    inFeed(rendered.host, 'load-error-retry')?.click();
+    await settleBounded(rendered.fixture);
+
+    expect({
+      failed,
+      reads: gateway.getFeedSubscription.mock.calls.length,
+      value: feedUrlField(rendered.host)?.value,
+      list: names(rendered.host),
+    }).toEqual({
+      failed: {
+        message:
+          "L'abonnement d'agenda n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.",
+        action: null,
+      },
+      reads: 2,
+      value: FEED_URL,
+      list: ['Camille Martin', 'Léo Petit', 'Inès Roux'],
+    });
+  });
+});
+
+describe("AdminBookings: création et régénération du lien d'abonnement", () => {
+  it('Given no link yet When « Créer le lien d’abonnement » is pressed Then the link is created without confirmation, shown, told, and the focus stays on the same button now offering to regenerate', async () => {
+    const gateway = spies({ feed: () => of({ kind: 'none' }) });
+    const rendered = await render(gateway);
+    const before = feedAction(rendered.host);
+
+    await pressFeedAction(rendered);
+    const after = feedAction(rendered.host);
+
+    expect({
+      dialog: readConfirmDialog(feedDialog(rendered.host)).open,
+      requests: gateway.regenerateFeedSubscription.mock.calls.length,
+      value: feedUrlField(rendered.host)?.value,
+      since: collapsed(inFeed(rendered.host, 'admin-booking-feed-since')),
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+      same: before !== null && before === after,
+      focused: after !== null && rendered.host.ownerDocument.activeElement === after,
+      label: collapsed(after),
+    }).toEqual({
+      dialog: false,
+      requests: 1,
+      value: NEW_FEED_URL,
+      since: 'Lien créé le jeudi 15 octobre 2026 à 12:05.',
+      toasts: [{ severity: 'success', detail: FEED_CREATED }],
+      same: true,
+      focused: true,
+      label: 'Régénérer le lien',
+    });
+  });
+
+  it('Given an active link When « Régénérer le lien » is pressed Then a confirmation explains the old link stops working everywhere, and nothing is sent yet', async () => {
+    const gateway = spies();
+    const rendered = await render(gateway);
+
+    await pressFeedAction(rendered);
+    const dialog = readConfirmDialog(feedDialog(rendered.host));
+
+    expect({
+      dialog: {
+        open: dialog.open,
+        heading: dialog.heading.replace(/\s+/g, ' '),
+        description: dialog.description.replace(/\s+/g, ' '),
+        confirm: dialog.confirm,
+        cancel: dialog.cancel,
+      },
+      requests: gateway.regenerateFeedSubscription.mock.calls.length,
+    }).toEqual({
+      dialog: {
+        open: true,
+        heading: "Régénérer le lien d'abonnement ?",
+        description:
+          "L'ancien lien cessera aussitôt de fonctionner sur tous vos appareils : les agendas qui y sont abonnés ne recevront plus vos rendez-vous tant que vous ne les aurez pas abonnés au nouveau.",
+        confirm: 'Régénérer le lien',
+        cancel: 'Garder le lien actuel',
+      },
+      requests: 0,
+    });
+  });
+
+  it('Given the confirmation When it is accepted Then one request is sent, the new link replaces the old one, the owner is told and the focus is back on the same button', async () => {
+    const gateway = spies();
+    const rendered = await render(gateway);
+    const before = feedAction(rendered.host);
+    await pressFeedAction(rendered);
+
+    await answerConfirmDialog(rendered.fixture, 'confirm', feedDialog(rendered.host));
+    const after = feedAction(rendered.host);
+
+    expect({
+      open: readConfirmDialog(feedDialog(rendered.host)).open,
+      requests: gateway.regenerateFeedSubscription.mock.calls.length,
+      value: feedUrlField(rendered.host)?.value,
+      webcal: inFeed(rendered.host, 'admin-booking-feed-webcal')?.getAttribute('href'),
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+      same: before !== null && before === after,
+      focused: after !== null && rendered.host.ownerDocument.activeElement === after,
+      cancellations: gateway.cancelBookingAsOwner.mock.calls.length,
+    }).toEqual({
+      open: false,
+      requests: 1,
+      value: NEW_FEED_URL,
+      webcal:
+        'webcal://api.example.test/api/booking/feed/newFeedToken0000000000000000000000000000000.ics',
+      toasts: [{ severity: 'success', detail: FEED_REGENERATED }],
+      same: true,
+      focused: true,
+      cancellations: 0,
+    });
+  });
+
+  it.each(['cancel', 'escape'] as const)(
+    'Given the confirmation When the owner answers %s Then nothing is sent and the current link stays',
+    async (answer) => {
+      const gateway = spies();
+      const rendered = await render(gateway);
+      await pressFeedAction(rendered);
+      const opened = readConfirmDialog(feedDialog(rendered.host)).open;
+
+      await answerConfirmDialog(rendered.fixture, answer, feedDialog(rendered.host));
+
+      expect({
+        opened,
+        open: readConfirmDialog(feedDialog(rendered.host)).open,
+        requests: gateway.regenerateFeedSubscription.mock.calls.length,
+        value: feedUrlField(rendered.host)?.value,
+        toasts: rendered.toast.add.mock.calls.length,
+      }).toEqual({ opened: true, open: false, requests: 0, value: FEED_URL, toasts: 0 });
+    },
+  );
+
+  it('Given a creation in flight When the button is pressed again Then it is marked unavailable, a single request is sent, and it is available again after the answer', async () => {
+    const answer = new Subject<BookingAdminResult<BookingFeedSubscription>>();
+    const gateway = spies({ feed: () => of({ kind: 'none' }), regenerate: () => answer });
+    const rendered = await render(gateway);
+
+    await pressFeedAction(rendered);
+    await pressFeedAction(rendered);
+    const meanwhile = {
+      requests: gateway.regenerateFeedSubscription.mock.calls.length,
+      unavailable: feedAction(rendered.host)?.getAttribute('aria-disabled'),
+      disabled: feedAction(rendered.host)?.hasAttribute('disabled'),
+    };
+    answer.next({ success: true, data: NEW_FEED });
+    answer.complete();
+    await settleBounded(rendered.fixture);
+
+    expect({
+      meanwhile,
+      unavailable: feedAction(rendered.host)?.getAttribute('aria-disabled') ?? null,
+      value: feedUrlField(rendered.host)?.value,
+    }).toEqual({
+      meanwhile: { requests: 1, unavailable: 'true', disabled: false },
+      unavailable: null,
+      value: NEW_FEED_URL,
+    });
+  });
+
+  it('Given a regeneration in flight When the button is pressed again Then no new confirmation opens and no second request is sent', async () => {
+    const answer = new Subject<BookingAdminResult<BookingFeedSubscription>>();
+    const gateway = spies({ regenerate: () => answer });
+    const rendered = await render(gateway);
+    await pressFeedAction(rendered);
+    await answerConfirmDialog(rendered.fixture, 'confirm', feedDialog(rendered.host));
+
+    await pressFeedAction(rendered);
+
+    expect({
+      open: readConfirmDialog(feedDialog(rendered.host)).open,
+      requests: gateway.regenerateFeedSubscription.mock.calls.length,
+      unavailable: feedAction(rendered.host)?.getAttribute('aria-disabled'),
+    }).toEqual({ open: false, requests: 1, unavailable: 'true' });
+  });
+
+  it('Given the API cannot be reached When the regeneration is confirmed Then the failure is told and the previous link stays', async () => {
+    const gateway = spies({
+      regenerate: () => defer(() => of({ success: false, reason: 'network' } as const)),
+    });
+    const rendered = await render(gateway);
+    await pressFeedAction(rendered);
+
+    await answerConfirmDialog(rendered.fixture, 'confirm', feedDialog(rendered.host));
+
+    expect({
+      value: feedUrlField(rendered.host)?.value,
+      since: collapsed(inFeed(rendered.host, 'admin-booking-feed-since')),
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+      unavailable: feedAction(rendered.host)?.getAttribute('aria-disabled') ?? null,
+    }).toEqual({
+      value: FEED_URL,
+      since: 'Lien créé le jeudi 15 octobre 2026 à 10:32.',
+      toasts: [
+        {
+          severity: 'error',
+          detail: 'Création impossible : vérifiez votre connexion, puis réessayez.',
+        },
+      ],
+      unavailable: null,
+    });
+  });
+
+  it('Given the secret removed from the API When a link is created Then the owner is told, the section switches to the unconfigured message without button and the focus lands on its heading', async () => {
+    let reads = 0;
+    const gateway = spies({
+      feed: () =>
+        defer(() => {
+          reads += 1;
+          return of<BookingFeedSubscription>(
+            reads === 1 ? { kind: 'none' } : { kind: 'unconfigured' },
+          );
+        }),
+      regenerate: () => defer(() => of({ success: false, reason: 'not-configured' } as const)),
+    });
+    const rendered = await render(gateway);
+
+    await pressFeedAction(rendered);
+
+    const heading = inFeed(rendered.host, 'admin-booking-feed-heading');
+
+    expect({
+      reads: gateway.getFeedSubscription.mock.calls.length,
+      unconfigured: inFeed(rendered.host, 'admin-booking-feed-unconfigured') !== null,
+      action: feedAction(rendered.host),
+      focused: heading !== null && rendered.host.ownerDocument.activeElement === heading,
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+    }).toEqual({
+      reads: 2,
+      unconfigured: true,
+      action: null,
+      focused: true,
+      toasts: [
+        {
+          severity: 'error',
+          detail: "Abonnement non configuré : ajoutez BOOKING_FEED_SECRET à l'API.",
+        },
+      ],
+    });
+  });
+
+  it('Given a link read then created When the storages are inspected Then neither link was written there', async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    const rendered = await render(spies({ feed: () => of({ kind: 'none' }) }));
+    const afterRead = storedValues();
+
+    await pressFeedAction(rendered);
+    const afterCreation = storedValues();
+
+    expect({
+      shown: feedUrlField(rendered.host)?.value,
+      leaked: [...afterRead, ...afterCreation].filter(
+        (entry) => entry.includes('FeedToken') || entry.includes('/booking/feed/'),
+      ),
+    }).toEqual({ shown: NEW_FEED_URL, leaked: [] });
+  });
+});
+
+const FEED_COPIED = 'Lien copié dans le presse-papiers';
+const FEED_COPY_FAILED = 'Copie impossible\u00a0: sélectionnez le lien et copiez-le à la main.';
+
+const feedCopy = (host: HTMLElement): HTMLElement | null => inFeed(host, 'admin-booking-feed-copy');
+
+async function pressFeedCopy(rendered: Rendered): Promise<void> {
+  const copy = feedCopy(rendered.host);
+  copy?.focus();
+  copy?.click();
+  await settleBounded(rendered.fixture);
+}
+
+describe("AdminBookings: copie du lien d'abonnement", () => {
+  beforeEach(async () => {
+    await navigator.clipboard.writeText('avant');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('Given an active link When « Copier le lien » is pressed Then its https address reaches the clipboard, the copy is told and the focus stays on the button', async () => {
+    const gateway = spies();
+    const rendered = await render(gateway);
+    const before = feedCopy(rendered.host);
+    const button = {
+      tag: before?.tagName,
+      type: before?.getAttribute('type'),
+      name: before ? accessibleName(before, rendered.host) : null,
+    };
+
+    await pressFeedCopy(rendered);
+    const after = feedCopy(rendered.host);
+
+    expect({
+      button,
+      clipboard: await navigator.clipboard.readText(),
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+      same: before !== null && before === after,
+      focused: after !== null && rendered.host.ownerDocument.activeElement === after,
+      requests: gateway.regenerateFeedSubscription.mock.calls.length,
+    }).toEqual({
+      button: { tag: 'BUTTON', type: 'button', name: 'Copier le lien' },
+      clipboard: FEED_URL,
+      toasts: [{ severity: 'success', detail: FEED_COPIED }],
+      same: true,
+      focused: true,
+      requests: 0,
+    });
+  });
+
+  it('Given a clipboard that refuses the text When « Copier le lien » is pressed Then the owner is told to select the link, which stays shown', async () => {
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(
+      new DOMException('The request is not allowed', 'NotAllowedError'),
+    );
+    const rendered = await render();
+
+    await pressFeedCopy(rendered);
+
+    expect({
+      clipboard: await navigator.clipboard.readText(),
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+      value: feedUrlField(rendered.host)?.value,
+    }).toEqual({
+      clipboard: 'avant',
+      toasts: [{ severity: 'error', detail: FEED_COPY_FAILED }],
+      value: FEED_URL,
+    });
+  });
+
+  it('Given no link yet When the page loads Then nothing offers a copy, until the link is created and its copy copies the new address', async () => {
+    const rendered = await render(spies({ feed: () => of({ kind: 'none' }) }));
+    const beforeCreation = feedCopy(rendered.host);
+
+    await pressFeedAction(rendered);
+    rendered.toast.add.mockClear();
+    await pressFeedCopy(rendered);
+
+    expect({
+      beforeCreation,
+      clipboard: await navigator.clipboard.readText(),
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+    }).toEqual({
+      beforeCreation: null,
+      clipboard: NEW_FEED_URL,
+      toasts: [{ severity: 'success', detail: FEED_COPIED }],
+    });
+  });
 });

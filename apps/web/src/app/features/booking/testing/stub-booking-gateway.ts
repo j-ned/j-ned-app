@@ -5,6 +5,7 @@ import type {
   AvailabilityClosure,
   AvailabilityRule,
   BookingAdminResult,
+  BookingFeedSubscription,
   CalendarDay,
   CalendarMonth,
 } from '../domain/models/booking-admin.model';
@@ -17,6 +18,7 @@ import type {
 import {
   aBookingCancelPreview,
   aBookingConfirmation,
+  aBookingFeedSubscription,
   aCalendarDay,
   aCalendarMonth,
   anAdminBooking,
@@ -95,6 +97,14 @@ class StubBookingGateway extends BookingGateway {
 
   setClosePublicHolidays(value: boolean): Observable<BookingAdminResult<boolean>> {
     return defer(() => of({ success: true, data: value } as const));
+  }
+
+  getFeedSubscription(): Observable<BookingFeedSubscription> {
+    return defer(() => of(aBookingFeedSubscription()));
+  }
+
+  regenerateFeedSubscription(): Observable<BookingAdminResult<BookingFeedSubscription>> {
+    return defer(() => of({ success: true, data: aBookingFeedSubscription() } as const));
   }
 }
 

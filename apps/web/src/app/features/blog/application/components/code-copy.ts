@@ -1,20 +1,10 @@
 import { DestroyRef, Directive, PendingTasks, inject, signal } from '@angular/core';
+import { writeToClipboard } from '@shared/clipboard/write-to-clipboard';
 
 const COPIED = 'Code copié dans le presse-papiers';
 const FAILED = 'Copie impossible\u00a0: sélectionnez le code.';
 const RESET_DELAY_MS = 2000;
 const REANNOUNCE_DELAY_MS = 100;
-
-async function writeToClipboard(text: string): Promise<boolean> {
-  const clipboard: Clipboard | undefined = navigator.clipboard;
-  if (!clipboard) return false;
-  try {
-    await clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 // HTML injecté, jamais hydraté : clic délégué, libellé écrit dans le DOM.
 @Directive({

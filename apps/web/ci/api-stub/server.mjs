@@ -343,8 +343,26 @@ async function routeBookingPublic(req, method, pathname) {
   return null;
 }
 
+// Abonnement d'agenda : la lecture rend toujours le même lien, la régénération un autre, sans état.
+const FEED_TOKEN = 'stubFeedToken000000000000000000000000000000';
+const REGENERATED_FEED_TOKEN = 'stubFeedRegenerated000000000000000000000000';
+
+function feedSubscription(method) {
+  if (method === 'GET') {
+    return [200, { status: 'active', token: FEED_TOKEN, createdAt: '2026-10-15T08:32:00.000Z' }];
+  }
+  if (method === 'POST') {
+    return [
+      201,
+      { status: 'active', token: REGENERATED_FEED_TOKEN, createdAt: new Date().toISOString() },
+    ];
+  }
+  return null;
+}
+
 async function routeBookingAdmin(req, method, pathname, searchParams) {
   if (!pathname.startsWith('/api/booking/')) return null;
+  if (pathname === '/api/booking/feed-subscription') return feedSubscription(method);
   if (method === 'GET' && pathname === '/api/booking/availability/rules') {
     return [200, { data: await readFixture('booking-availability-rules') }];
   }

@@ -4,6 +4,7 @@ import type {
   AvailabilityClosure,
   AvailabilityRule,
   BookingAdminResult,
+  BookingFeedSubscription,
   BookingScope,
   CalendarDay,
   CalendarMonth,
@@ -42,4 +43,6 @@ export abstract class BookingGateway {
   abstract getAvailabilityCalendar(month: string | null): Observable<CalendarMonth>;
   abstract setDayOpen(date: string, open: boolean): Observable<BookingAdminResult<CalendarDay>>;
   abstract setClosePublicHolidays(value: boolean): Observable<BookingAdminResult<boolean>>;
+  abstract getFeedSubscription(): Observable<BookingFeedSubscription>;
+  abstract regenerateFeedSubscription(): Observable<BookingAdminResult<BookingFeedSubscription>>;
 }

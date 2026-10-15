@@ -61,6 +61,11 @@ export type CalendarMonth = {
   readonly days: readonly CalendarDay[];
 };
 
+export type BookingFeedSubscription =
+  | { readonly kind: 'unconfigured' }
+  | { readonly kind: 'none' }
+  | { readonly kind: 'active'; readonly url: string; readonly createdAt: string };
+
 export type BookingAdminFailure =
   | 'overlap'
   | 'invalid'
@@ -68,6 +73,7 @@ export type BookingAdminFailure =
   | 'too-late'
   | 'day-past'
   | 'day-in-closure'
+  | 'not-configured'
   | 'network'
   | 'server';
 
