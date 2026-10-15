@@ -29,12 +29,12 @@ import { formatParisDateTime } from '../domain/paris-format';
       <dt class="text-muted">Format</dt>
       <dd data-testid="booking-confirmation-format" class="font-semibold">{{ formatLabel() }}</dd>
     </dl>
-    <p class="mt-6 max-w-[60ch] text-muted">
+    <p data-testid="booking-confirmation-note" class="mt-6 max-w-[60ch] text-muted">
       Une invitation part à
       <strong data-testid="booking-confirmation-email" class="font-semibold text-foreground">{{
         email()
       }}</strong
-      >. Elle s’ajoute à votre agenda et contient le lien pour annuler si besoin.
+      >. Elle permet de l’ajouter à votre agenda et contient le lien pour annuler si besoin.
     </p>
     @if (confirmation().videoUrl; as videoUrl) {
       <a

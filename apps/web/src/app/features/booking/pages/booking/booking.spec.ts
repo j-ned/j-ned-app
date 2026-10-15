@@ -733,6 +733,16 @@ describe('Booking', () => {
       });
     });
 
+    it('Given a booking When the API confirms it Then the note says the invitation lets the visitor add it to their calendar, without promising an automatic addition', async () => {
+      const rendered = await renderBookable(answering(CONFIRMED));
+
+      await bookMonday9(rendered, aBookingRequest());
+
+      const note = testIdText(rendered.host, 'booking-confirmation-note');
+      expect(note).toContain('Elle permet de l’ajouter à votre agenda');
+      expect(note).not.toContain('s’ajoute à votre agenda');
+    });
+
     it('Given a phone booking When the API confirms it Then the confirmation names the phone format and offers no video link', async () => {
       const rendered = await renderBookable(
         answering({
