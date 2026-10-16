@@ -150,6 +150,31 @@ function adminBooking(id, offsetDays, minute, fields) {
 }
 
 function adminBookings(scope) {
+  if (scope === 'archived') {
+    return [
+      adminBooking('7c1f4d2e-0000-4000-8000-000000000003', 5, 810, {
+        name: 'Sophie Durand',
+        email: 'sophie.durand@exemple.test',
+        message: 'Audit de performance de notre boutique.',
+        format: 'video',
+        status: 'cancelled',
+        cancelledAt: isoAt(-1, 600),
+        cancelledBy: 'owner',
+        cancelReason:
+          'Déplacement imprévu ce jour-là, je vous propose un autre créneau par e-mail.',
+      }),
+      adminBooking('7c1f4d2e-0000-4000-8000-000000000005', -4, 780, {
+        name: 'Nadia Morel',
+        email: 'nadia.morel@exemple.test',
+        phone: '+33 6 98 76 54 32',
+        message: 'Reprise d’une application Ionic vieillissante.',
+        format: 'phone',
+        status: 'cancelled',
+        cancelledAt: isoAt(-6, 600),
+        cancelledBy: 'visitor',
+      }),
+    ];
+  }
   if (scope === 'past') {
     return [
       adminBooking('7c1f4d2e-0000-4000-8000-000000000004', -9, 540, {
@@ -176,16 +201,6 @@ function adminBookings(scope) {
       phone: '+33 6 12 34 56 78',
       message: 'Maintenance d’une application Angular interne.',
       format: 'phone',
-    }),
-    adminBooking('7c1f4d2e-0000-4000-8000-000000000003', 5, 810, {
-      name: 'Sophie Durand',
-      email: 'sophie.durand@exemple.test',
-      message: 'Audit de performance de notre boutique.',
-      format: 'video',
-      status: 'cancelled',
-      cancelledAt: isoAt(-1, 600),
-      cancelledBy: 'owner',
-      cancelReason: 'Déplacement imprévu ce jour-là, je vous propose un autre créneau par e-mail.',
     }),
   ];
 }
@@ -236,11 +251,7 @@ const isWeekend = (date) => [0, 6].includes(new Date(`${date}T12:00:00Z`).getUTC
 const weekdaySlots = (date) => (isWeekend(date) ? 0 : STUB_SLOT_COUNT);
 
 function bookedDates() {
-  return new Set(
-    adminBookings('upcoming')
-      .filter((row) => row.status === 'confirmed')
-      .map((row) => parisDate(new Date(row.startsAt))),
-  );
+  return new Set(adminBookings('upcoming').map((row) => parisDate(new Date(row.startsAt))));
 }
 
 function calendarDay(date, current, booked) {
@@ -404,12 +415,12 @@ async function routeBookingAdmin(req, method, pathname, searchParams) {
       : [404, { message: 'Not Found' }];
   }
   if (method === 'GET' && pathname === '/api/booking/bookings/upcoming-count') {
-    const count = adminBookings('upcoming').filter((row) => row.status === 'confirmed').length;
+    const count = adminBookings('upcoming').length;
     return [200, { count }];
   }
   if (method === 'GET' && pathname === '/api/booking/bookings') {
     const scope = searchParams.get('scope');
-    if (scope !== 'upcoming' && scope !== 'past')
+    if (scope !== 'upcoming' && scope !== 'past' && scope !== 'archived')
       return [400, { statusCode: 400, message: 'scope' }];
     return [200, { data: adminBookings(scope) }];
   }

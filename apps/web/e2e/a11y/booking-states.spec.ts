@@ -1,5 +1,5 @@
 import { expect, test, type A11yAudit } from './a11y-test';
-import { ADMIN_PENDING_OR_FAILED, FOOTER_READY, THEMES } from './scenarios';
+import { ADMIN_BOOKING_FILTERS, ADMIN_PENDING_OR_FAILED, FOOTER_READY, THEMES } from './scenarios';
 import type { Locator, Page } from '@playwright/test';
 
 const PARIS_DATE = new Intl.DateTimeFormat('en-CA', {
@@ -133,13 +133,31 @@ for (const theme of THEMES) {
         expectNoA11yViolations,
       }) => {
         await visit('/admin/rendez-vous');
-        await expect(page.getByTestId('admin-booking-row')).toHaveCount(3);
+        await expect(page.getByTestId('admin-booking-row')).toHaveCount(2);
         await expect(page.locator(ADMIN_PENDING_OR_FAILED)).toHaveCount(0);
         await page.getByTestId('admin-booking-cancel').first().click();
         await expect(page.locator('dialog[open]')).toHaveCount(1);
         await expect(page.getByTestId('admin-booking-reason')).toBeVisible();
         await expectNoA11yViolations('admin-booking-reason', 'dialogue-annulation-ouvert');
       });
+
+      for (const filter of ADMIN_BOOKING_FILTERS) {
+        test(`« ${filter.label} » bookings list has no WCAG A/AA violation`, async ({
+          page,
+          visit,
+          expectNoA11yViolations,
+        }) => {
+          await visit('/admin/rendez-vous');
+          await expect(page.getByTestId('admin-booking-row')).toHaveCount(2);
+          await expect(page.locator(ADMIN_PENDING_OR_FAILED)).toHaveCount(0);
+          const option = page.getByTestId('filter-option').filter({ hasText: filter.label });
+          await option.click();
+          await expect(option).toHaveAttribute('aria-pressed', 'true');
+          await expect(page.getByTestId('admin-booking-row')).toHaveCount(filter.rows);
+          await expect(page.locator(ADMIN_PENDING_OR_FAILED)).toHaveCount(0);
+          await expectNoA11yViolations('admin-bookings-list', filter.state);
+        });
+      }
 
       test.describe("abonnement d'agenda", () => {
         test('open link regeneration dialog has no WCAG A/AA violation', async ({

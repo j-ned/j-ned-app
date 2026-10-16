@@ -17,7 +17,7 @@ export type AvailabilityClosure = {
 
 export type NewAvailabilityClosure = Omit<AvailabilityClosure, 'id'>;
 
-export type BookingScope = 'upcoming' | 'past';
+export type BookingScope = 'upcoming' | 'past' | 'archived';
 
 export type AdminBooking = {
   readonly id: string;

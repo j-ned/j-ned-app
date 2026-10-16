@@ -32,7 +32,27 @@ export type AdminBookingRowView = {
 export const ADMIN_BOOKINGS_FILTERS: readonly FilterOption<BookingScope>[] = [
   { value: 'upcoming', label: 'À venir' },
   { value: 'past', label: 'Passés' },
+  { value: 'archived', label: 'Archivés' },
 ];
+
+type BookingSortOrder = 'asc' | 'desc';
+
+export const ADMIN_BOOKINGS_ORDERS: readonly FilterOption<BookingSortOrder>[] = [
+  { value: 'asc', label: 'Date croissante' },
+  { value: 'desc', label: 'Date décroissante' },
+];
+
+export const defaultBookingOrder = (scope: BookingScope): BookingSortOrder =>
+  scope === 'upcoming' ? 'asc' : 'desc';
+
+// `Array.prototype.sort` est stable (ES2019) : deux rendez-vous au même instant gardent leur ordre d'arrivée.
+export function sortBookingRows(
+  rows: readonly AdminBookingRowView[],
+  order: BookingSortOrder,
+): readonly AdminBookingRowView[] {
+  const direction = order === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => direction * (Date.parse(a.startsAt) - Date.parse(b.startsAt)));
+}
 
 const toContact = (booking: AdminBooking, now: Date): AdminBookingContact | null => {
   if (booking.format === 'video') {
@@ -86,7 +106,14 @@ export function toAdminBookingRows(
 }
 
 export function bookingsOverline(count: number, scope: BookingScope): string {
-  return scope === 'upcoming'
-    ? `${groupedNumber(count)} rendez-vous à venir`
-    : counted(count, 'rendez-vous passé', 'rendez-vous passés');
+  switch (scope) {
+    case 'upcoming':
+      return `${groupedNumber(count)} rendez-vous à venir`;
+    case 'past':
+      return counted(count, 'rendez-vous passé', 'rendez-vous passés');
+    case 'archived':
+      return count === 0
+        ? 'Aucun rendez-vous archivé'
+        : counted(count, 'rendez-vous archivé', 'rendez-vous archivés');
+  }
 }

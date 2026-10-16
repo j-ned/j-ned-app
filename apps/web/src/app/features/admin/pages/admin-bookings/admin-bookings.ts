@@ -1,4 +1,12 @@
-import { Component, DestroyRef, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField, form, maxLength } from '@angular/forms/signals';
 import { ToastStore } from '@core/notifications/toast-store';
@@ -14,7 +22,10 @@ import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import {
   ADMIN_BOOKINGS_FILTERS,
+  ADMIN_BOOKINGS_ORDERS,
   bookingsOverline,
+  defaultBookingOrder,
+  sortBookingRows,
   toAdminBookingRows,
   type AdminBookingRowView,
 } from '../../application/admin-bookings-view';
@@ -28,6 +39,12 @@ const REASON_MAX_LENGTH = 500;
 
 const SERVER_FAILURE =
   "Annulation impossible\u00a0: le serveur n'a pas répondu. Réessayez dans un instant.";
+
+const EMPTY_STAMPS: Readonly<Record<BookingScope, string>> = {
+  upcoming: 'Agenda libre',
+  past: 'Historique vide',
+  archived: 'Archives vides',
+};
 
 const CANCEL_FAILURES: Partial<Record<BookingAdminFailure, string>> = {
   'too-late': 'Ce rendez-vous a commencé\u00a0: il ne peut plus être annulé.',
@@ -57,6 +74,12 @@ const CANCEL_FAILURES: Partial<Record<BookingAdminFailure, string>> = {
     </app-admin-page-header>
 
     <app-filter-group label="Filtrer les rendez-vous" [options]="filters" [(active)]="scope" />
+    <app-filter-group
+      label="Ordre des rendez-vous"
+      class="mt-2"
+      [options]="orders"
+      [(active)]="order"
+    />
 
     @switch (listState()) {
       @case ('loading') {
@@ -75,15 +98,22 @@ const CANCEL_FAILURES: Partial<Record<BookingAdminFailure, string>> = {
       }
       @case ('empty') {
         <app-admin-empty-state
-          [stamp]="scope() === 'upcoming' ? 'Agenda libre' : 'Historique vide'"
+          [stamp]="emptyStamp()"
           class="mt-5 justify-items-center! py-14! text-center [&_p]:mx-auto"
         >
-          @if (scope() === 'upcoming') {
-            <p>
-              Aucun rendez-vous à venir pour le moment. Chaque réservation arrive ici et par e-mail.
-            </p>
-          } @else {
-            <p>Aucun rendez-vous passé pour le moment.</p>
+          @switch (scope()) {
+            @case ('upcoming') {
+              <p>
+                Aucun rendez-vous à venir pour le moment. Chaque réservation arrive ici et par
+                e-mail.
+              </p>
+            }
+            @case ('past') {
+              <p>Aucun rendez-vous passé pour le moment.</p>
+            }
+            @case ('archived') {
+              <p>Aucun rendez-vous annulé pour le moment.</p>
+            }
           }
         </app-admin-empty-state>
       }
@@ -139,6 +169,8 @@ export class AdminBookings {
 
   protected readonly filters = ADMIN_BOOKINGS_FILTERS;
   protected readonly scope = signal<BookingScope>('upcoming');
+  protected readonly orders = ADMIN_BOOKINGS_ORDERS;
+  protected readonly order = linkedSignal(() => defaultBookingOrder(this.scope()));
 
   protected readonly bookingsRes = rxResource({
     params: () => this.scope(),
@@ -149,7 +181,7 @@ export class AdminBookings {
     this.bookingsRes.hasValue() ? this.bookingsRes.value() : [],
   );
   protected readonly rows = computed(() =>
-    toAdminBookingRows(this._bookings(), this.scope(), new Date()),
+    sortBookingRows(toAdminBookingRows(this._bookings(), this.scope(), new Date()), this.order()),
   );
   protected readonly overline = computed(() =>
     this.bookingsRes.hasValue() ? bookingsOverline(this._bookings().length, this.scope()) : '',
@@ -157,6 +189,7 @@ export class AdminBookings {
   protected readonly listState = computed(() =>
     loadState(this.bookingsRes, () => this._bookings().length === 0),
   );
+  protected readonly emptyStamp = computed(() => EMPTY_STAMPS[this.scope()]);
 
   protected readonly pendingCancellation = signal<AdminBookingRowView | null>(null);
   protected readonly cancellationHeading = computed(
@@ -192,9 +225,7 @@ export class AdminBookings {
           });
           return;
         }
-        this.bookingsRes.update((list) =>
-          (list ?? []).map((booking) => (booking.id === row.id ? result.data : booking)),
-        );
+        this.bookingsRes.reload();
         this.bookingGateway.invalidateUpcomingCount();
         this.toast.add({
           severity: 'success',

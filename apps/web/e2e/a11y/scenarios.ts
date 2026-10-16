@@ -45,6 +45,18 @@ export const ADMIN_PAGES: readonly PageScenario[] = [
   { path: '/admin/disponibilites', ready: 'admin-calendar-grid' },
 ];
 
+export type BookingFilterScenario = {
+  readonly label: string;
+  readonly rows: number;
+  readonly state: string;
+};
+
+// « À venir » est la liste ouverte par défaut, déjà auditée avec les pages admin.
+export const ADMIN_BOOKING_FILTERS: readonly BookingFilterScenario[] = [
+  { label: 'Passés', rows: 1, state: 'rendez-vous-passes' },
+  { label: 'Archivés', rows: 2, state: 'rendez-vous-archives' },
+];
+
 // Un écran d'administration audité en squelette, en erreur ou sous un toast ne prouve rien.
 export const ADMIN_PENDING_OR_FAILED =
   '[data-testid$="-loading"], [data-testid="load-error"], [data-testid="toast"]';

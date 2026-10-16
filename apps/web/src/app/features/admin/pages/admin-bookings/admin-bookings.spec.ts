@@ -79,10 +79,30 @@ const STARTED = anAdminBooking({
   email: 'sacha@example.com',
 });
 
-const LISTS: Record<BookingScope, readonly AdminBooking[]> = {
-  upcoming: [CAMILLE, LEO, INES],
+const ROSE = anAdminBooking({
+  id: 'b-rose',
+  startsAt: '2026-09-22T12:00:00.000Z',
+  endsAt: '2026-09-22T12:30:00.000Z',
+  name: 'Rose Fabre',
+  email: 'rose@example.com',
+});
+const MAEL = anAdminBooking({
+  id: 'b-mael',
+  startsAt: '2026-10-02T13:00:00.000Z',
+  endsAt: '2026-10-02T13:30:00.000Z',
+  name: 'Maël Laurent',
+  email: 'mael@example.com',
+  status: 'cancelled',
+  cancelledAt: '2026-10-01T09:00:00.000Z',
+  cancelledBy: 'owner',
+  cancelReason: null,
+});
+
+const LISTS = {
+  upcoming: [CAMILLE, LEO],
   past: [NOE],
-};
+  archived: [MAEL, INES],
+} satisfies Record<string, readonly AdminBooking[]>;
 
 type Toasts = { readonly add: Mock<(message: ToastMessage) => void> };
 
@@ -117,7 +137,7 @@ const NEW_FEED = aBookingFeedSubscription({
 
 function spies(
   options: {
-    readonly lists?: Partial<Record<BookingScope, Observable<readonly AdminBooking[]>>>;
+    readonly lists?: Partial<Record<keyof typeof LISTS, Observable<readonly AdminBooking[]>>>;
     readonly cancel?: (id: string, reason: string | null) => BookingAdminResult<AdminBooking>;
     readonly feed?: () => Observable<BookingFeedSubscription>;
     readonly regenerate?: () => Observable<BookingAdminResult<BookingFeedSubscription>>;
@@ -185,6 +205,29 @@ const rowOf = (host: HTMLElement, name: string): HTMLElement | null =>
 const cancelButtonNames = (host: HTMLElement): readonly string[] =>
   allByTestId(host, 'admin-booking-cancel').map((button) => accessibleName(button, host));
 
+const filterGroups = (host: HTMLElement): readonly HTMLElement[] =>
+  allByTestId(host, 'filter-group');
+
+const orderGroup = (host: HTMLElement): HTMLElement | null =>
+  filterGroups(host).find(
+    (group) => group.getAttribute('aria-label') === 'Ordre des rendez-vous',
+  ) ?? null;
+
+const optionsOf = (
+  group: HTMLElement | null | undefined,
+): readonly { readonly label: string; readonly pressed: string | null }[] =>
+  group
+    ? allByTestId(group, 'filter-option').map((option) => ({
+        label: testIdText(option, 'filter-option-label'),
+        pressed: option.getAttribute('aria-pressed'),
+      }))
+    : [];
+
+const pressedOrder = (host: HTMLElement): readonly string[] =>
+  optionsOf(orderGroup(host))
+    .filter((option) => option.pressed === 'true')
+    .map((option) => option.label);
+
 const filterOption = (host: HTMLElement, label: string): HTMLElement | null =>
   allByTestId(host, 'filter-option').find(
     (option) => testIdText(option, 'filter-option-label') === label,
@@ -239,7 +282,7 @@ afterEach(() => {
 });
 
 describe('AdminBookings: liste', () => {
-  it('Given three upcoming bookings When the page renders Then they are listed in the order of the API, one list item each', async () => {
+  it('Given two upcoming bookings When the page renders Then they are listed by date, one list item each', async () => {
     const { host, crash } = await render();
     const list = byTestId(host, 'admin-bookings-list');
 
@@ -253,8 +296,8 @@ describe('AdminBookings: liste', () => {
       crash: null,
       tag: 'UL',
       role: 'list',
-      items: ['LI', 'LI', 'LI'],
-      names: ['Camille Martin', 'Léo Petit', 'Inès Roux'],
+      items: ['LI', 'LI'],
+      names: ['Camille Martin', 'Léo Petit'],
     });
   });
 
@@ -325,38 +368,54 @@ describe('AdminBookings: liste', () => {
       video: null,
     });
   });
-
-  it('Given a booking cancelled by the visitor When its row renders Then it says who cancelled and why, without a cancel button', async () => {
-    const { host } = await render();
-    const row = rowOf(host, 'Inès Roux');
-
-    expect({
-      status: normalized(row && byTestId(row, 'admin-booking-status')),
-      reason: normalized(row && byTestId(row, 'admin-booking-cancel-reason')),
-      cancel: row && byTestId(row, 'admin-booking-cancel'),
-    }).toEqual({ status: 'Annulé par le visiteur', reason: 'Projet reporté.', cancel: null });
-  });
 });
 
-describe('AdminBookings: À venir et Passés', () => {
-  it('Given the page opens When it renders Then « À venir » is pressed and only the upcoming bookings are requested', async () => {
+describe('AdminBookings: À venir, Passés et Archivés', () => {
+  it('Given the page opens When it renders Then « À venir » is pressed among the three filters and only the upcoming bookings are requested', async () => {
     const gateway = spies();
     const { host } = await render(gateway);
+    const scopes = filterGroups(host)[0];
 
     expect({
-      group: byTestId(host, 'filter-group')?.getAttribute('aria-label'),
-      options: allByTestId(host, 'filter-option').map((option) => ({
-        label: testIdText(option, 'filter-option-label'),
-        pressed: option.getAttribute('aria-pressed'),
-      })),
+      group: scopes?.getAttribute('aria-label'),
+      options: optionsOf(scopes),
       requested: gateway.getBookings.mock.calls,
     }).toEqual({
       group: 'Filtrer les rendez-vous',
       options: [
         { label: 'À venir', pressed: 'true' },
         { label: 'Passés', pressed: 'false' },
+        { label: 'Archivés', pressed: 'false' },
       ],
       requested: [['upcoming']],
+    });
+  });
+
+  it('Given the upcoming list When « Archivés » is pressed Then the cancelled bookings are requested and listed latest first, saying who cancelled and why, none cancellable', async () => {
+    const gateway = spies();
+    const rendered = await render(gateway);
+
+    await pressFilter(rendered, 'Archivés');
+
+    expect({
+      pressed: filterOption(rendered.host, 'Archivés')?.getAttribute('aria-pressed'),
+      requested: gateway.getBookings.mock.calls,
+      rows: rows(rendered.host).map((row) => ({
+        name: testIdText(row, 'admin-booking-name'),
+        status: normalized(byTestId(row, 'admin-booking-status')),
+        reason: byTestId(row, 'admin-booking-cancel-reason')?.textContent?.trim() ?? null,
+      })),
+      cancel: allByTestId(rendered.host, 'admin-booking-cancel').length,
+      overline: testIdText(rendered.host, 'admin-page-overline'),
+    }).toEqual({
+      pressed: 'true',
+      requested: [['upcoming'], ['archived']],
+      rows: [
+        { name: 'Inès Roux', status: 'Annulé par le visiteur', reason: 'Projet reporté.' },
+        { name: 'Maël Laurent', status: 'Annulé par vous', reason: null },
+      ],
+      cancel: 0,
+      overline: '2 rendez-vous archivés',
     });
   });
 
@@ -393,20 +452,20 @@ describe('AdminBookings: À venir et Passés', () => {
       names: names(rendered.host),
     }).toEqual({
       requested: [['upcoming'], ['past'], ['upcoming']],
-      names: ['Camille Martin', 'Léo Petit', 'Inès Roux'],
+      names: ['Camille Martin', 'Léo Petit'],
     });
   });
 });
 
 describe('AdminBookings: en-tête de page', () => {
-  it('Given three upcoming bookings When the page renders Then its single h1 is « Rendez-vous » under the overline « 3 rendez-vous à venir »', async () => {
+  it('Given two upcoming bookings When the page renders Then its single h1 is « Rendez-vous » under the overline « 2 rendez-vous à venir »', async () => {
     const { host } = await render();
 
     expect({
       overline: testIdText(host, 'admin-page-overline'),
       title: testIdText(host, 'admin-page-title'),
       headings: host.querySelectorAll('h1').length,
-    }).toEqual({ overline: '3 rendez-vous à venir', title: 'Rendez-vous', headings: 1 });
+    }).toEqual({ overline: '2 rendez-vous à venir', title: 'Rendez-vous', headings: 1 });
   });
 });
 
@@ -505,6 +564,106 @@ describe('AdminBookings: chargement, erreur et vide', () => {
       text: 'Aucun rendez-vous passé pour le moment.',
     });
   });
+
+  it('Given no cancelled booking When « Archivés » is pressed Then the empty state says none was cancelled yet, under « Aucun rendez-vous archivé »', async () => {
+    const rendered = await render(spies({ lists: { archived: of([]) } }));
+
+    await pressFilter(rendered, 'Archivés');
+
+    expect({
+      stamp: testIdText(rendered.host, 'empty-state-stamp'),
+      text: normalized(byTestId(rendered.host, 'empty-state')?.querySelector('p')),
+      overline: testIdText(rendered.host, 'admin-page-overline'),
+    }).toEqual({
+      stamp: 'Archives vides',
+      text: 'Aucun rendez-vous annulé pour le moment.',
+      overline: 'Aucun rendez-vous archivé',
+    });
+  });
+});
+
+describe('AdminBookings: ordre des rendez-vous', () => {
+  it('Given the page opens When it renders Then a second group « Ordre des rendez-vous » follows the filters with « Date croissante » pressed', async () => {
+    const { host } = await render();
+
+    expect({
+      groups: filterGroups(host).map((group) => group.getAttribute('aria-label')),
+      options: optionsOf(orderGroup(host)),
+    }).toEqual({
+      groups: ['Filtrer les rendez-vous', 'Ordre des rendez-vous'],
+      options: [
+        { label: 'Date croissante', pressed: 'true' },
+        { label: 'Date décroissante', pressed: 'false' },
+      ],
+    });
+  });
+
+  it('Given upcoming bookings sent latest first When the page renders Then they are listed soonest first', async () => {
+    const { host } = await render(spies({ lists: { upcoming: of([LEO, CAMILLE]) } }));
+
+    expect(names(host)).toEqual(['Camille Martin', 'Léo Petit']);
+  });
+
+  it('Given the upcoming list When « Date décroissante » is pressed Then the same bookings are listed latest first, without a new request', async () => {
+    const gateway = spies();
+    const rendered = await render(gateway);
+
+    await pressFilter(rendered, 'Date décroissante');
+
+    expect({
+      pressed: pressedOrder(rendered.host),
+      names: names(rendered.host),
+      requested: gateway.getBookings.mock.calls,
+    }).toEqual({
+      pressed: ['Date décroissante'],
+      names: ['Léo Petit', 'Camille Martin'],
+      requested: [['upcoming']],
+    });
+  });
+
+  it.each([
+    { filter: 'Passés', listed: ['Noé Garnier', 'Rose Fabre'] },
+    { filter: 'Archivés', listed: ['Inès Roux', 'Maël Laurent'] },
+  ])(
+    'Given bookings sent soonest first When « $filter » is pressed Then « Date décroissante » is pressed and they are listed latest first',
+    async ({ filter, listed }) => {
+      const rendered = await render(spies({ lists: { past: of([ROSE, NOE]) } }));
+
+      await pressFilter(rendered, filter);
+
+      expect({ pressed: pressedOrder(rendered.host), names: names(rendered.host) }).toEqual({
+        pressed: ['Date décroissante'],
+        names: listed,
+      });
+    },
+  );
+
+  it.each([
+    {
+      path: 'Date décroissante › Passés › À venir',
+      steps: ['Date décroissante', 'Passés', 'À venir'],
+      pressed: ['Date croissante'],
+      listed: ['Camille Martin', 'Léo Petit'],
+    },
+    {
+      path: 'Passés › Date croissante › Archivés',
+      steps: ['Passés', 'Date croissante', 'Archivés'],
+      pressed: ['Date décroissante'],
+      listed: ['Inès Roux', 'Maël Laurent'],
+    },
+  ])(
+    'Given an order chosen by hand When the owner goes « $path » Then the last list falls back to its own default order',
+    async ({ steps, pressed, listed }) => {
+      const rendered = await render();
+
+      for (const step of steps) await pressFilter(rendered, step);
+
+      expect({ pressed: pressedOrder(rendered.host), names: names(rendered.host) }).toEqual({
+        pressed,
+        names: listed,
+      });
+    },
+  );
 });
 
 describe('AdminBookings: annulation par le propriétaire', () => {
@@ -596,30 +755,35 @@ describe('AdminBookings: annulation par le propriétaire', () => {
     },
   );
 
-  it('Given a confirmed cancellation When the API accepts it Then the row says it was cancelled by the owner with the reason, the count is refreshed, success is told and the focus lands on the title', async () => {
-    const gateway = spies();
+  it('Given a confirmed cancellation When the API accepts it Then the upcoming list is read again without the cancelled booking, the count is refreshed, success is told and the focus lands on the title', async () => {
+    let reads = 0;
+    const gateway = spies({
+      lists: {
+        upcoming: defer(() => {
+          reads += 1;
+          return of(reads === 1 ? [CAMILLE, LEO] : [LEO]);
+        }),
+      },
+    });
     const rendered = await render(gateway);
     await requestCancellation(rendered, 'Camille Martin');
     await typeReason(rendered, 'Imprévu de mon côté.');
 
     await answerConfirmDialog(rendered.fixture, 'confirm', cancellationDialog(rendered.host));
-    const row = rowOf(rendered.host, 'Camille Martin');
     const title = byTestId(rendered.host, 'admin-page-title');
 
     expect({
+      requested: gateway.getBookings.mock.calls,
       names: names(rendered.host),
-      status: normalized(row && byTestId(row, 'admin-booking-status')),
-      reason: normalized(row && byTestId(row, 'admin-booking-cancel-reason')),
-      cancelInRow: row && byTestId(row, 'admin-booking-cancel'),
+      overline: testIdText(rendered.host, 'admin-page-overline'),
       cancelButtons: cancelButtonNames(rendered.host),
       invalidated: gateway.invalidateUpcomingCount.mock.calls.length,
       toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
       focused: title !== null && rendered.host.ownerDocument.activeElement === title,
     }).toEqual({
-      names: ['Camille Martin', 'Léo Petit', 'Inès Roux'],
-      status: 'Annulé par vous',
-      reason: 'Imprévu de mon côté.',
-      cancelInRow: null,
+      requested: [['upcoming'], ['upcoming']],
+      names: ['Léo Petit'],
+      overline: '1 rendez-vous à venir',
       cancelButtons: ['Annuler le rendez-vous de Léo Petit le mardi 20 octobre 2026 à 14:30'],
       invalidated: 1,
       toasts: [
@@ -659,7 +823,7 @@ describe('AdminBookings: annulation par le propriétaire', () => {
       detail: "Annulation impossible : le serveur n'a pas répondu. Réessayez dans un instant.",
     },
   ])(
-    'Given the API answers $reason When the cancellation is confirmed Then the row stays confirmed, the count is left alone and « $detail » is told',
+    'Given the API answers $reason When the cancellation is confirmed Then the row stays confirmed, the list is not reloaded, the count is left alone and « $detail » is told',
     async ({ reason, detail }) => {
       const gateway = spies({ cancel: () => ({ success: false, reason }) });
       const rendered = await render(gateway);
@@ -670,10 +834,12 @@ describe('AdminBookings: annulation par le propriétaire', () => {
 
       expect({
         status: normalized(row && byTestId(row, 'admin-booking-status')),
+        requested: gateway.getBookings.mock.calls,
         invalidated: gateway.invalidateUpcomingCount.mock.calls.length,
         toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
       }).toEqual({
         status: 'Confirmé',
+        requested: [['upcoming']],
         invalidated: 0,
         toasts: [{ severity: 'error', detail }],
       });
@@ -896,7 +1062,7 @@ describe("AdminBookings: section « Abonnement d'agenda »", () => {
       },
       reads: 2,
       value: FEED_URL,
-      list: ['Camille Martin', 'Léo Petit', 'Inès Roux'],
+      list: ['Camille Martin', 'Léo Petit'],
     });
   });
 });

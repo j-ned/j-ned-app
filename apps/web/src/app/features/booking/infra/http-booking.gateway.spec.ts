@@ -315,7 +315,11 @@ describe('HttpBookingGateway', () => {
   });
 
   describe('admin reads', () => {
-    it.each([{ scope: 'upcoming' as const }, { scope: 'past' as const }])(
+    it.each([
+      { scope: 'upcoming' as const },
+      { scope: 'past' as const },
+      { scope: 'archived' as const },
+    ])(
       'Given the $scope scope When the admin lists bookings Then a silent GET carries the scope and yields the adapted bookings',
       async ({ scope }) => {
         const result = firstValueFrom(gateway.getBookings(scope));

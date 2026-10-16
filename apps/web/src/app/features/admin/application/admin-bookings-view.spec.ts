@@ -5,7 +5,10 @@ import type {
 import { anAdminBooking } from '@features/booking/testing/booking-builders';
 import {
   ADMIN_BOOKINGS_FILTERS,
+  ADMIN_BOOKINGS_ORDERS,
   bookingsOverline,
+  defaultBookingOrder,
+  sortBookingRows,
   toAdminBookingRows,
   type AdminBookingRowView,
 } from './admin-bookings-view';
@@ -18,11 +21,95 @@ const rowOf = (
 ): AdminBookingRowView | undefined => toAdminBookingRows([booking], scope, NOW)[0];
 
 describe('ADMIN_BOOKINGS_FILTERS', () => {
-  it('Given the bookings page When its filters are read Then « À venir » comes before « Passés », without counts', () => {
+  it('Given the bookings page When its filters are read Then « À venir », « Passés » and « Archivés » follow each other, without counts', () => {
     expect(ADMIN_BOOKINGS_FILTERS).toEqual([
       { value: 'upcoming', label: 'À venir' },
       { value: 'past', label: 'Passés' },
+      { value: 'archived', label: 'Archivés' },
     ]);
+  });
+});
+
+describe('ADMIN_BOOKINGS_ORDERS', () => {
+  it('Given the bookings page When its orders are read Then « Date croissante » comes before « Date décroissante », without counts', () => {
+    expect(ADMIN_BOOKINGS_ORDERS).toEqual([
+      { value: 'asc', label: 'Date croissante' },
+      { value: 'desc', label: 'Date décroissante' },
+    ]);
+  });
+});
+
+describe('defaultBookingOrder', () => {
+  it.each([
+    { scope: 'upcoming' as const, order: 'asc' },
+    { scope: 'past' as const, order: 'desc' },
+    { scope: 'archived' as const, order: 'desc' },
+  ])(
+    'Given the $scope list When its default order is read Then it is $order',
+    ({ scope, order }) => {
+      expect(defaultBookingOrder(scope)).toBe(order);
+    },
+  );
+});
+
+describe('sortBookingRows', () => {
+  const rowsAt = (
+    bookings: readonly { readonly id: string; readonly startsAt: string }[],
+  ): readonly AdminBookingRowView[] =>
+    toAdminBookingRows(
+      bookings.map((booking) => anAdminBooking(booking)),
+      'past',
+      NOW,
+    );
+
+  const ids = (rows: readonly AdminBookingRowView[]): readonly string[] =>
+    rows.map((row) => row.id);
+
+  const ACROSS_THE_YEAR = [
+    { id: 'new-year', startsAt: '2027-01-01T07:00:00.000Z' },
+    { id: 'october', startsAt: '2026-10-19T07:00:00.000Z' },
+    { id: 'new-year-eve', startsAt: '2026-12-31T23:30:00.000Z' },
+  ];
+
+  it.each([
+    { order: 'asc' as const, sorted: ['october', 'new-year-eve', 'new-year'] },
+    { order: 'desc' as const, sorted: ['new-year', 'new-year-eve', 'october'] },
+  ])(
+    'Given rows in no particular order When they are sorted $order Then they follow their start instant: $sorted',
+    ({ order, sorted }) => {
+      expect(ids(sortBookingRows(rowsAt(ACROSS_THE_YEAR), order))).toEqual(sorted);
+    },
+  );
+
+  it.each([
+    { order: 'asc' as const, sorted: ['earlier', 'twin-first', 'twin-second'] },
+    { order: 'desc' as const, sorted: ['twin-first', 'twin-second', 'earlier'] },
+  ])(
+    'Given two rows starting at the same instant When they are sorted $order Then they keep the order they came in',
+    ({ order, sorted }) => {
+      const rows = rowsAt([
+        { id: 'twin-first', startsAt: '2026-10-20T08:00:00.000Z' },
+        { id: 'earlier', startsAt: '2026-10-19T08:00:00.000Z' },
+        { id: 'twin-second', startsAt: '2026-10-20T08:00:00.000Z' },
+      ]);
+
+      expect(ids(sortBookingRows(rows, order))).toEqual(sorted);
+    },
+  );
+
+  it('Given rows When they are sorted Then the rows given are left in their order', () => {
+    const rows = rowsAt(ACROSS_THE_YEAR);
+
+    const sorted = sortBookingRows(rows, 'asc');
+
+    expect({ given: ids(rows), sorted: ids(sorted) }).toEqual({
+      given: ['new-year', 'october', 'new-year-eve'],
+      sorted: ['october', 'new-year-eve', 'new-year'],
+    });
+  });
+
+  it('Given no row When they are sorted Then the list stays empty', () => {
+    expect(sortBookingRows([], 'desc')).toEqual([]);
   });
 });
 
@@ -233,6 +320,10 @@ describe('bookingsOverline', () => {
     { count: 1, scope: 'past' as const, overline: '1 rendez-vous passé' },
     { count: 3, scope: 'past' as const, overline: '3 rendez-vous passés' },
     { count: 1200, scope: 'past' as const, overline: '1 200 rendez-vous passés' },
+    { count: 0, scope: 'archived' as const, overline: 'Aucun rendez-vous archivé' },
+    { count: 1, scope: 'archived' as const, overline: '1 rendez-vous archivé' },
+    { count: 3, scope: 'archived' as const, overline: '3 rendez-vous archivés' },
+    { count: 1200, scope: 'archived' as const, overline: '1 200 rendez-vous archivés' },
   ])(
     'Given $count booking(s) in the $scope list When the overline is written Then it reads « $overline »',
     ({ count, scope, overline }) => {
