@@ -5,7 +5,7 @@ describe('OFFER_PRICES', () => {
     expect(OFFER_PRICES).toEqual({
       'site-vitrine': { creationEur: 890, maintenanceMonthlyEur: 29 },
       'site-atelier': { creationEur: 690, maintenanceMonthlyEur: 29 },
-      'application-metier': { projectFromEur: 4500, maintenanceMonthlyFromEur: 190 },
+      'evolution-application': { projectFromEur: 390 },
       'refonte-maintenance': { auditEur: 450, maintenanceMonthlyFromEur: 190 },
       'renfort-freelance': {},
     });

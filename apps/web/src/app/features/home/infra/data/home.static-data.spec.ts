@@ -6,7 +6,7 @@ import { STATIC_HERO } from './home.static-data';
 describe('STATIC_HERO', () => {
   it('states the validated client promise as headline', () => {
     expect(STATIC_HERO.headline).toBe(
-      'Votre site ou votre application web, à prix annoncé, en ligne vite.',
+      'Votre site ou votre application web, à prix annoncé, sur un délai tenu.',
     );
   });
 
@@ -14,11 +14,11 @@ describe('STATIC_HERO', () => {
     expect(STATIC_HERO.headlineAccent).toBe('à prix annoncé');
   });
 
-  it('supports the promise with the validated lead: audience, showcase price, delays, then the journey', () => {
+  it('supports the promise with the validated lead: the journey, the evening and weekend frame, then the showcase price', () => {
     const showcasePrice = formatEur(OFFER_PRICES['site-vitrine'].creationEur);
 
     expect(STATIC_HERO.lead).toBe(
-      `Pour les TPE, les artisans et les ateliers des Yvelines et d'Île-de-France\u00a0: site vitrine à ${showcasePrice} prix final, en ligne en 7 jours, réponse sous 48\u00a0h ouvrées. ${SITE_IDENTITY.journey}`,
+      `${SITE_IDENTITY.journey} Je prends des missions freelance ponctuelles, le soir et le week-end, avec une charge limitée. Pour les TPE, les artisans et les ateliers\u00a0: site vitrine à ${showcasePrice} prix final, périmètre, délai et prix fixés au devis avant de commencer.`,
     );
   });
 });

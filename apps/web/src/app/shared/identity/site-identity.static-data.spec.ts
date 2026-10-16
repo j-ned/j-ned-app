@@ -10,19 +10,27 @@ describe('SITE_IDENTITY', () => {
     });
   });
 
-  it('states the availability for new client projects', () => {
-    expect(SITE_IDENTITY.availability).toBe(
-      'Disponible pour de nouveaux projets, démarrage sous 2 semaines',
-    );
+  it('states the availability as occasional missions, in the evening and at the weekend', () => {
+    expect(SITE_IDENTITY.availability).toBe('Missions ponctuelles, le soir et le week-end');
   });
 
-  it('states the CDI opening for recruiters in its own availability', () => {
-    expect(SITE_IDENTITY.hiringAvailability).toMatch(/\bCDI\b/);
+  it('exposes one availability only, for clients', () => {
+    expect(Object.keys(SITE_IDENTITY)).toEqual([
+      'email',
+      'phone',
+      'location',
+      'socials',
+      'availability',
+      'journey',
+      'googleReviewUrl',
+      'siteUrl',
+      'business',
+    ]);
   });
 
   it('states the career journey in one validated sentence, reused everywhere it is told', () => {
     expect(SITE_IDENTITY.journey).toBe(
-      "Chaudronnier puis tourneur CN de haute précision dans l'aéronautique, je suis aussi développeur web full-stack, issu d'une reconversion.",
+      "Chaudronnier puis tourneur CN de haute précision dans l'aéronautique, mon métier aujourd'hui, je suis aussi développeur web full-stack depuis 2025.",
     );
   });
 

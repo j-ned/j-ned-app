@@ -269,6 +269,11 @@ server {
         return 301 /offres/site-atelier$is_args$args;
     }
 
+    location ~ ^/offres/application-metier/?$ {
+        absolute_redirect off;
+        return 301 /offres/evolution-application$is_args$args;
+    }
+
     # Routes rendues côté client (RenderMode.Client dans app.routes.server.ts) : coquille CSR, 200
     location ~ ^/(login|two-factor|admin)(/|$) {
         try_files /index.csr.html =404;

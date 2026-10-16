@@ -222,6 +222,9 @@ jobs:
           legacy=$(curl -s -D - -o /dev/null 'http://127.0.0.1:3000/offre-site-industrie?utm_source=x')
           grep -q ' 301' <<<"${legacy%%$'\n'*}"
           grep -qi '^location: /offres/site-atelier?utm_source=x' <<<"$legacy"
+          legacy_offer=$(curl -s -D - -o /dev/null 'http://127.0.0.1:3000/offres/application-metier?utm_source=x')
+          grep -q ' 301' <<<"${legacy_offer%%$'\n'*}"
+          grep -qi '^location: /offres/evolution-application?utm_source=x' <<<"$legacy_offer"
           # Les en-têtes de sécurité tiennent aussi sur les assets (snippet inclus dans la location)
           # -o sort toutes les occurrences de la ligne (HTML minifié) : on garde la première
           asset=$(grep -o 'main-[A-Za-z0-9_-]*\.js' /tmp/index.html)

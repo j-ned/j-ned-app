@@ -8,11 +8,9 @@ export const SITE_IDENTITY = {
     discord: 'https://discord.gg/nedellec_julien',
     malt: 'https://www.malt.fr/profile/juliennedellec',
   },
-  availability: 'Disponible pour de nouveaux projets, démarrage sous 2 semaines',
-  hiringAvailability:
-    'Ouvert à un CDI en Île-de-France, dans une équipe produit en fintech, greentech ou industrial tech.',
+  availability: 'Missions ponctuelles, le soir et le week-end',
   journey:
-    "Chaudronnier puis tourneur CN de haute précision dans l'aéronautique, je suis aussi développeur web full-stack, issu d'une reconversion.",
+    "Chaudronnier puis tourneur CN de haute précision dans l'aéronautique, mon métier aujourd'hui, je suis aussi développeur web full-stack depuis 2025.",
   googleReviewUrl: 'https://g.page/r/Cdi5TzDRplmKECE/review',
   siteUrl: 'https://nedellec-julien.fr',
   business: {

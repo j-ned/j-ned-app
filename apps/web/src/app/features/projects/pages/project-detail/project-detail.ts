@@ -82,11 +82,7 @@ import { Button } from '@shared/ui/button';
         <app-project-detail-arch-decisions [architectureDecisions]="architectureDecisions()" />
       }
 
-      <app-project-follow-up
-        [offer]="relatedOffer()"
-        (offerOpened)="trackSimilarNeed()"
-        (hiringOpened)="trackHiring()"
-      />
+      <app-project-follow-up [offer]="relatedOffer()" (offerOpened)="trackSimilarNeed()" />
 
       <app-project-detail-nav [previousProject]="previousProject()" [nextProject]="nextProject()" />
     } @else if (failed()) {
@@ -203,10 +199,6 @@ export class ProjectDetail {
 
   protected trackSimilarNeed(): void {
     this._analytics.trackCtaClick('project_similar_need', this.relatedOffer().label);
-  }
-
-  protected trackHiring(): void {
-    this._analytics.trackCtaClick('project_hiring', PROJECT_FOLLOW_UP_COPY.hiringLink);
   }
 
   protected trackClick(): void {

@@ -7,7 +7,7 @@ export const HOME_METHOD: HomeMethod = {
     {
       id: 'frame',
       verb: 'Cadrer',
-      when: 'jour 1 · 30 min',
+      when: '30 min, le soir ou le samedi',
       detail: 'On parle de votre besoin. Vous recevez un devis ferme : périmètre, délai, prix.',
       link: { label: "Réserver l'appel de cadrage", href: '/rendez-vous' },
     },
@@ -35,7 +35,7 @@ export const HOME_METHOD: HomeMethod = {
   commitments: [
     'Prix annoncé avant de commencer, sans dépassement',
     'Code, contenus et nom de domaine à votre nom',
-    'Un seul interlocuteur, joignable directement',
+    'Un seul interlocuteur, joignable le soir et le samedi',
     'Vous partez quand vous voulez, avec vos fichiers',
   ],
 };
@@ -77,7 +77,13 @@ export const HOME_FAQ: HomeFaq = {
       id: 'showcase-delay',
       question: 'Combien de temps pour un site vitrine ?',
       answer:
-        'Sept jours entre notre premier échange et la mise en ligne, si vous me transmettez textes et photos dans les deux premiers jours.',
+        "Le délai figure dans le devis. Il dépend des contenus à produire et du nombre de missions en cours : je n'en prends pas plus que je ne peux en tenir.",
+    },
+    {
+      id: 'evening-weekend',
+      question: 'Pourquoi le soir et le week-end ?',
+      answer:
+        "En journée, je travaille à l'atelier comme tourneur CNC. Je développe le soir et le week-end, et je limite le nombre de missions en cours pour tenir chaque délai annoncé.",
     },
     {
       id: 'domain-ownership',
@@ -91,7 +97,7 @@ export const HOME_FAQ: HomeFaq = {
     },
     {
       id: 'application-price',
-      question: "Comment est fixé le prix d'une application ?",
+      question: "Comment est fixé le prix d'une évolution d'application ?",
       answer:
         "Après un cadrage gratuit de 30 minutes, réservable en ligne, je vous envoie un devis ferme. Ce qui n'y figure pas fait l'objet d'un avenant que vous validez avant.",
       link: { label: 'Réserver le cadrage gratuit', href: '/rendez-vous' },
@@ -99,7 +105,8 @@ export const HOME_FAQ: HomeFaq = {
     {
       id: 'outside-yvelines',
       question: 'Vous travaillez hors des Yvelines ?',
-      answer: 'Oui, à distance partout en France. Je me déplace en Île-de-France.',
+      answer:
+        'Oui, à distance partout en France. En Île-de-France, un rendez-vous sur place est possible le samedi.',
     },
     {
       id: 'vat',

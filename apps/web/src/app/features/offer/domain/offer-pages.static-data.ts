@@ -5,13 +5,13 @@ import { OFFER_PRICES } from './offer-prices.static-data';
 
 const SHOWCASE_PRICES = OFFER_PRICES['site-vitrine'];
 const WORKSHOP_PRICES = OFFER_PRICES['site-atelier'];
-const APPLICATION_PRICES = OFFER_PRICES['application-metier'];
+const EVOLUTION_PRICES = OFFER_PRICES['evolution-application'];
 const REWORK_PRICES = OFFER_PRICES['refonte-maintenance'];
 
 export const OFFER_PAGES: OfferPages = {
   'site-vitrine': {
     hero: {
-      title: 'Votre site vitrine, en ligne en 7 jours.',
+      title: 'Votre site vitrine, à prix fixe et délai annoncé.',
       subtitle:
         'Un site clair, rapide sur téléphone, qui donne envie de vous appeler. Un prix fixe, un seul interlocuteur.',
       ctaLabel: 'Demander mon site',
@@ -81,25 +81,31 @@ export const OFFER_PAGES: OfferPages = {
       ],
     },
     steps: {
-      heading: 'Le déroulé en 7 jours',
+      heading: 'Le déroulé',
       items: [
         {
           id: 'exchange',
           verb: 'Échanger',
-          when: 'jour 1',
-          detail: "20 minutes au téléphone. Vous m'envoyez textes, logo et photos.",
+          when: 'au départ',
+          detail:
+            "20 minutes au téléphone, le soir ou le samedi. Vous m'envoyez textes, logo et photos.",
         },
         {
           id: 'build',
           verb: 'Construire',
-          when: 'jours 2 à 5',
+          when: 'selon le devis',
           detail: 'Je monte le site et vous envoie un lien de prévisualisation.',
         },
-        { id: 'adjust', verb: 'Ajuster', when: 'jour 6', detail: 'Vos corrections.' },
+        {
+          id: 'adjust',
+          verb: 'Ajuster',
+          when: 'après la prévisualisation',
+          detail: 'Vos corrections.',
+        },
         {
           id: 'publish',
           verb: 'Mettre en ligne',
-          when: 'jour 7',
+          when: 'après validation',
           detail: 'Sur votre nom de domaine.',
         },
       ],
@@ -167,12 +173,12 @@ export const OFFER_PAGES: OfferPages = {
     },
     request: {
       subject: 'Site vitrine pour mon entreprise',
-      intro: 'Indiquez votre activité et votre ville. Je vous réponds sous 48 heures ouvrées.',
+      intro: 'Indiquez votre activité et votre ville. Je vous réponds sous 48 heures, le soir.',
     },
   },
   'site-atelier': {
     hero: {
-      title: 'Le site de votre atelier, en ligne en 7 jours.',
+      title: 'Le site de votre atelier, à prix fixe et délai annoncé.',
       subtitle: `${SITE_IDENTITY.journey} Je crée des sites qui montrent à un acheteur ce que vous savez usiner, en trente secondes.`,
       ctaLabel: 'Demander mon site',
     },
@@ -229,26 +235,31 @@ export const OFFER_PAGES: OfferPages = {
       ],
     },
     steps: {
-      heading: 'Le déroulé en 7 jours',
+      heading: 'Le déroulé',
       items: [
         {
           id: 'exchange',
           verb: 'Échanger',
-          when: 'jour 1',
+          when: 'au départ',
           detail:
-            "20 minutes au téléphone ou à l'atelier, vous me donnez photos et liste des machines.",
+            "20 minutes au téléphone le soir, ou à l'atelier le samedi, vous me donnez photos et liste des machines.",
         },
         {
           id: 'build',
           verb: 'Construire',
-          when: 'jours 2 à 5',
+          when: 'selon le devis',
           detail: 'Je monte le site et je vous envoie un lien de prévisualisation.',
         },
-        { id: 'adjust', verb: 'Ajuster', when: 'jour 6', detail: 'Vos corrections.' },
+        {
+          id: 'adjust',
+          verb: 'Ajuster',
+          when: 'après la prévisualisation',
+          detail: 'Vos corrections.',
+        },
         {
           id: 'publish',
           verb: 'Mettre en ligne',
-          when: 'jour 7',
+          when: 'après validation',
           detail: 'Sur votre nom de domaine.',
         },
       ],
@@ -317,47 +328,44 @@ export const OFFER_PAGES: OfferPages = {
     request: {
       subject: 'Site pro pour mon atelier',
       intro:
-        'Dites-moi le nom de votre atelier et ce que vous usinez. Je vous rappelle sous 48 heures ouvrées.',
+        'Dites-moi le nom de votre atelier et ce que vous usinez. Je vous rappelle sous 48 heures, le soir.',
     },
   },
-  'application-metier': {
+  'evolution-application': {
     hero: {
-      title: 'Une application taillée pour votre façon de travailler.',
+      title: 'Ajouter ce qui manque à votre application, sans tout refaire.',
       subtitle:
-        'Outil interne, back-office, portail client. Je cadre le besoin avec vous, je livre en production et je maintiens.',
+        'Une fonctionnalité, un écran, un export, une correction. Je cadre la demande avec vous et je livre en production, par étapes courtes.',
       ctaLabel: 'Décrire mon besoin',
     },
     reasons: {
-      heading: 'Ce qui change avec une application sur mesure',
+      heading: 'Quand faire appel à moi',
       items: [
         {
-          id: 'no-rekeying',
-          lead: 'Fini les ressaisies',
-          detail: 'une donnée saisie une fois, disponible partout où elle sert.',
+          id: 'pending-feature',
+          lead: 'Une fonctionnalité attend',
+          detail: "votre équipe n'a pas le temps de la développer.",
         },
         {
-          id: 'fits-your-trade',
-          lead: 'Adaptée à votre métier',
-          detail: "vos étapes, vos statuts, vos documents, pas ceux d'un logiciel générique.",
+          id: 'rekeying',
+          lead: 'Une ressaisie vous coûte',
+          detail: 'un export, un import ou un écran supprimerait la double saisie.',
         },
         {
-          id: 'ownership',
-          lead: 'Elle vous appartient',
-          detail: 'code source, données et hébergement à votre nom.',
+          id: 'precise-request',
+          lead: 'La demande est précise',
+          detail: 'elle se chiffre ferme et se livre sans dérive.',
         },
       ],
     },
     deliverables: {
       heading: 'Ce qui est livré',
       items: [
-        'Cadrage écrit (écrans, règles métier, priorités)',
-        'Application web utilisable sur ordinateur et téléphone',
-        "Comptes utilisateurs et droits d'accès",
-        'Base de données sauvegardée',
-        'Exports CSV ou PDF selon le besoin',
-        'Mise en production',
-        'Code source et documentation',
-        'Tests automatisés sur les règles métier',
+        'Cadrage écrit (comportement attendu, critères de validation)',
+        'Code intégré à votre dépôt, revu et testé',
+        'Tests automatisés sur la règle ajoutée',
+        'Mise en production ou livraison à votre équipe',
+        'Note de livraison',
       ],
     },
     steps: {
@@ -366,27 +374,22 @@ export const OFFER_PAGES: OfferPages = {
         {
           id: 'scope',
           verb: 'Cadrer',
-          when: 'semaine 1',
+          when: 'appel de 30 min',
           detail:
-            'Ateliers avec les futurs utilisateurs. Vous recevez un devis ferme\u00a0: périmètre, planning, prix.',
+            'Vous décrivez le besoin. Je lis le code concerné, puis vous recevez un devis ferme\u00a0: périmètre, délai, prix.',
         },
         {
           id: 'build',
-          verb: 'Construire',
-          when: 'itérations de 2 semaines',
-          detail: 'Une version utilisable à chaque itération, sur un lien de test.',
+          verb: 'Développer',
+          when: 'selon le devis',
+          detail:
+            "Le soir et le week-end, sur une branche dédiée, avec un lien de test quand c'est possible.",
         },
         {
           id: 'release',
-          verb: 'Mettre en production',
-          when: 'fin du planning',
-          detail: 'Reprise des données existantes, prise en main par les utilisateurs.',
-        },
-        {
-          id: 'maintain',
-          verb: 'Maintenir',
-          when: 'au mois, sans engagement',
-          detail: 'Corrections, mises à jour de sécurité, évolutions sur devis.',
+          verb: 'Livrer',
+          when: 'après validation',
+          detail: 'Mise en production, ou demande de fusion à votre équipe.',
         },
       ],
     },
@@ -394,21 +397,13 @@ export const OFFER_PAGES: OfferPages = {
       heading: 'Tarif',
       lines: [
         {
-          id: 'project',
-          name: 'Projet',
-          amount: { kind: 'from', eur: APPLICATION_PRICES.projectFromEur },
+          id: 'evolution',
+          name: 'Évolution',
+          amount: { kind: 'from', eur: EVOLUTION_PRICES.projectFromEur },
           period: 'once',
-          label: `À partir de ${formatEur(APPLICATION_PRICES.projectFromEur)}`,
+          label: `À partir de ${formatEur(EVOLUTION_PRICES.projectFromEur)}`,
           terms:
             "Devis ferme après le cadrage. Ce qui n'y figure pas fait l'objet d'un avenant que vous validez avant.",
-        },
-        {
-          id: 'maintenance',
-          name: 'Maintenance',
-          amount: { kind: 'from', eur: APPLICATION_PRICES.maintenanceMonthlyFromEur },
-          period: 'month',
-          label: `Dès ${formatEur(APPLICATION_PRICES.maintenanceMonthlyFromEur)}/mois`,
-          terms: "Sans engagement, montant fixé selon la taille de l'application.",
         },
       ],
     },
@@ -416,41 +411,34 @@ export const OFFER_PAGES: OfferPages = {
       heading: 'Questions fréquentes',
       items: [
         {
-          id: 'first-version',
-          question: 'Combien de temps pour une première version\u202f?',
+          id: 'technologies',
+          question: 'Sur quelles technologies intervenez-vous\u202f?',
           answer:
-            'Pour un outil de taille moyenne, 4 à 8 semaines. Le planning exact figure dans le devis.',
+            'Angular, NestJS, TypeScript et PostgreSQL. Pour une autre technologie, je vous le dis avant de commencer.',
         },
         {
-          id: 'off-the-shelf',
-          question: 'Pourquoi pas un logiciel du marché\u202f?',
+          id: 'scope-growth',
+          question: 'Et si la demande grossit en cours de route\u202f?',
           answer:
-            "S'il couvre votre besoin, je vous le dirai au cadrage. Le sur mesure se justifie quand vous adaptez votre travail à l'outil au lieu de l'inverse.",
+            "Ce qui n'est pas dans le devis fait l'objet d'un avenant que vous validez avant.",
         },
         {
           id: 'scoping-cost',
           question: 'Le cadrage est payant\u202f?',
-          answer:
-            'Le premier échange de 30 minutes est gratuit. Le cadrage détaillé est compris dans le projet.',
+          answer: 'Non, le premier échange de 30 minutes est gratuit.',
         },
         {
-          id: 'data-protection',
-          question: 'Mes données sont-elles protégées\u202f?',
+          id: 'legacy-code',
+          question: 'Et si le code existant est en mauvais état\u202f?',
           answer:
-            'Hébergement en France, connexions chiffrées, sauvegardes quotidiennes, double authentification possible.',
-        },
-        {
-          id: 'evolution',
-          question: "Je pourrai faire évoluer l'application\u202f?",
-          answer:
-            'Oui. Le code vous appartient\u00a0: vous pouvez aussi confier la suite à un autre prestataire.',
+            "Je vous le dis au cadrage et je vous propose d'abord un audit (offre «\u00a0Refonte et maintenance\u00a0»).",
         },
       ],
     },
     request: {
-      subject: 'Application métier sur mesure',
+      subject: 'Évolution de mon application',
       intro:
-        "Décrivez ce que vous utilisez aujourd'hui (tableur, logiciel, papier) et ce qui vous fait perdre du temps.",
+        "Décrivez ce que vous voulez ajouter ou corriger, et la technologie de l'application si vous la connaissez.",
     },
   },
   'refonte-maintenance': {
@@ -497,9 +485,9 @@ export const OFFER_PAGES: OfferPages = {
         {
           id: 'inspect',
           verb: 'Auditer',
-          when: 'semaine 1',
+          when: 'selon le devis',
           detail:
-            "Accès en lecture au code et à l'hébergement. Vous recevez un rapport écrit et une restitution d'une heure.",
+            "Accès en lecture au code et à l'hébergement. Vous recevez un rapport écrit et une restitution d'une heure en visio, le soir ou le samedi.",
         },
         {
           id: 'decide',
@@ -591,9 +579,9 @@ export const OFFER_PAGES: OfferPages = {
   },
   'renfort-freelance': {
     hero: {
-      title: 'Un développeur Angular et NestJS dans votre équipe.',
+      title: 'Une tâche Angular ou NestJS, confiée et livrée.',
       subtitle:
-        "En régie à temps partiel, à distance ou sur site en Île-de-France. Je m'intègre à vos outils et à vos rituels, et je livre en production.",
+        'À distance, le soir et le week-end. Je prends une tâche bien délimitée, je travaille dans votre dépôt et je livre une demande de fusion revue et testée.',
       ctaLabel: 'Proposer une mission',
     },
     reasons: {
@@ -608,7 +596,8 @@ export const OFFER_PAGES: OfferPages = {
         {
           id: 'autonomous',
           lead: 'Autonome',
-          detail: 'je lis la documentation et le code existant avant de poser des questions.',
+          detail:
+            'je lis la documentation et le code existant avant de poser des questions, et je travaille sans réunion quotidienne.',
         },
         {
           id: 'rigorous',
@@ -633,11 +622,12 @@ export const OFFER_PAGES: OfferPages = {
       lines: [
         {
           id: 'staffing',
-          name: 'Régie',
+          name: 'Mission',
           amount: { kind: 'on-request' },
           period: 'day',
           label: 'TJM sur demande',
-          terms: 'Temps partiel, contrat direct ou via Malt. Démarrage sous 2 semaines.',
+          terms:
+            'Missions ponctuelles, à distance, le soir et le week-end. Contrat direct ou via Malt.',
           link: 'malt',
         },
       ],
@@ -646,15 +636,21 @@ export const OFFER_PAGES: OfferPages = {
       heading: 'Questions fréquentes',
       items: [
         {
-          id: 'part-time',
-          question: 'Temps plein ou temps partiel\u202f?',
+          id: 'tasks',
+          question: 'Quelles tâches\u202f?',
           answer:
-            'Temps partiel pour le moment. Pour une mission à temps plein, décrivez-la dans votre message\u00a0: on en parle.',
+            'Une fonctionnalité, des tests, une montée de version, une revue de code. Ce qui se décrit dans un ticket et se livre en demande de fusion.',
+        },
+        {
+          id: 'pace',
+          question: 'Quel rythme\u202f?',
+          answer:
+            "Le soir en semaine et le week-end, avec un volume d'heures fixé ensemble au départ. Pas de temps plein ni de présence quotidienne.",
         },
         {
           id: 'remote',
           question: 'À distance ou sur site\u202f?',
-          answer: 'À distance partout en France, sur site en Île-de-France.',
+          answer: 'À distance uniquement. Les échanges se font par écrit, ou en visio le soir.',
         },
         {
           id: 'contract',
@@ -666,7 +662,7 @@ export const OFFER_PAGES: OfferPages = {
     },
     request: {
       subject: 'Proposition de mission Angular / NestJS',
-      intro: 'Indiquez la stack, la durée, le rythme et le mode (distance ou sur site).',
+      intro: "Indiquez la stack, la tâche, le volume estimé et l'échéance.",
     },
   },
 };

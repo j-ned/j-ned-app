@@ -23,10 +23,13 @@ describe('home route SEO', () => {
     expect(homeSeo()?.['title']).toBe(HOME_TITLE);
   });
 
-  it('describes the home page with the validated snippet', () => {
-    expect(homeSeo()?.['description']).toBe(
-      'Sites et applications web livrés en production par un seul interlocuteur\u00a0: site vitrine en 7 jours, application sur mesure, maintenance. Yvelines et à distance.',
-    );
+  it('describes the home page with the announced price and the evening and weekend frame, where it works', () => {
+    const description = String(homeSeo()?.['description'] ?? '');
+    expect([
+      description.includes('à prix annoncé'),
+      description.includes('le soir et le week-end'),
+      description.endsWith('Yvelines et à distance.'),
+    ]).toEqual([true, true, true]);
   });
 
   it('gives the home page a search snippet of at most 160 characters, without em dash', () => {

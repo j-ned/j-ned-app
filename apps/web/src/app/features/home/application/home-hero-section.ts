@@ -7,11 +7,10 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '../domain/home-hero.static-data';
 import type { HeroData } from '../domain/models/hero.model';
 import { HomeHero } from './home-hero';
-import { HomeRecruiterBand } from './home-recruiter-band';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [HomeHero, HomeRecruiterBand, Button, Cartouche, DimensionLine, RouterLink],
+  imports: [HomeHero, Button, Cartouche, DimensionLine, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Le hero occupe tout le premier écran sous le header (h-20) : les offres commencent sous le pli.
   host: {
@@ -57,14 +56,6 @@ import { HomeRecruiterBand } from './home-recruiter-band';
           ></span>
           {{ availability }}
         </p>
-        <app-home-recruiter-band
-          class="animate-fade-up [animation-delay:220ms] mt-4"
-          [cvUrl]="cvUrl()"
-          (hiringOpened)="hiringOpened.emit()"
-          (cvDownloaded)="cvDownloaded.emit()"
-          (linkedinOpened)="linkedinOpened.emit()"
-          (githubOpened)="githubOpened.emit()"
-        />
       </app-home-hero>
 
       <div>
@@ -85,14 +76,9 @@ import { HomeRecruiterBand } from './home-recruiter-band';
 })
 export class HomeHeroSection {
   readonly hero = input<HeroData | null>(null);
-  readonly cvUrl = input<string | null>(null);
   readonly contactRequested = output<void>();
   readonly offersOpened = output<void>();
   readonly bookingOpened = output<void>();
-  readonly hiringOpened = output<void>();
-  readonly cvDownloaded = output<void>();
-  readonly linkedinOpened = output<void>();
-  readonly githubOpened = output<void>();
 
   protected readonly ctaLabels = HOME_HERO_CTA_LABELS;
   protected readonly availability = SITE_IDENTITY.availability;

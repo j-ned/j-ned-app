@@ -5,7 +5,7 @@ import { OFFERS } from './domain/offer-catalog.static-data';
 import { offerPath } from './domain/offer-path';
 import { OFFER_PAGES } from './domain/offer-pages.static-data';
 import { OFFER_PRICES } from './domain/offer-prices.static-data';
-import type { OfferSlug } from './domain/models/offer.model';
+import type { OfferPageContent, OfferSlug, OfferSummary } from './domain/models/offer.model';
 import { toOfferCatalogJsonLd, toOfferCatalogueSeo, toOfferSeo } from './offer-seo';
 import {
   makeOfferPageContent,
@@ -18,6 +18,12 @@ type JsonLdNode = Readonly<Record<string, unknown>>;
 
 const CATALOGUE_URL = `${SITE_IDENTITY.siteUrl}/offres`;
 const OFFER_URL = `${SITE_IDENTITY.siteUrl}/offres/site-atelier`;
+const EVOLUTION = 'evolution-application';
+
+const summaryOf = (slug: string): OfferSummary | undefined =>
+  OFFERS.find((summary) => summary.slug === slug);
+const pageOf = (slug: string): OfferPageContent | undefined =>
+  new Map<string, OfferPageContent>(Object.entries(OFFER_PAGES)).get(slug);
 
 const graphOf = (structuredData: Record<string, unknown> | undefined): readonly JsonLdNode[] =>
   (structuredData?.['@graph'] as readonly JsonLdNode[] | undefined) ?? [];
@@ -26,11 +32,13 @@ describe('toOfferSeo', () => {
   it('describes the workshop offer with the same title, snippet and schema.org graph as before', () => {
     const prices = OFFER_PRICES['site-atelier'];
 
-    const seo = toOfferSeo(offerSummaryOf('site-atelier'), OFFER_PAGES['site-atelier'], OFFER_URL);
+    const summary = offerSummaryOf('site-atelier');
+
+    const seo = toOfferSeo(summary, OFFER_PAGES['site-atelier'], OFFER_URL);
 
     expect(seo).toEqual({
       title: 'Site pro pour ateliers de mécanique | Julien Nédellec',
-      description: `Site vitrine pour ateliers d'usinage et de décolletage des Yvelines, en ligne en 7 jours. ${formatEur(prices.creationEur)} prix final, par un tourneur CN.`,
+      description: summary.seo.description,
       url: OFFER_URL,
       type: 'website',
       structuredData: {
@@ -40,8 +48,7 @@ describe('toOfferSeo', () => {
             '@type': 'Service',
             name: 'Site pro pour ateliers de mécanique',
             serviceType: 'Création de site vitrine',
-            description:
-              "Site vitrine pour ateliers d'usinage et de décolletage, en ligne en 7 jours, avec maintenance mensuelle.",
+            description: summary.seo.serviceDescription,
             url: OFFER_URL,
             provider: { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl },
             areaServed: [
@@ -191,7 +198,7 @@ describe('toOfferSeo', () => {
           }),
           makeOfferPriceLine({
             id: 'c',
-            name: 'Régie',
+            name: 'Mission',
             amount: { kind: 'on-request' },
             period: 'day',
           }),
@@ -222,7 +229,7 @@ describe('toOfferSeo', () => {
           unitCode: 'MON',
         },
       },
-      { '@type': 'Offer', name: 'Régie' },
+      { '@type': 'Offer', name: 'Mission' },
     ]);
   });
 
@@ -277,26 +284,24 @@ describe('toOfferSeo', () => {
       ]);
     });
 
-    it('gives the business application and its maintenance their minimum price', () => {
-      const prices = OFFER_PRICES['application-metier'];
-      expect(offersOf('application-metier')).toEqual([
+    it('gives the application evolution its minimum price, without a maintenance of its own', () => {
+      const summary = summaryOf(EVOLUTION);
+      const page = pageOf(EVOLUTION);
+      const offers =
+        summary && page
+          ? graphOf(toOfferSeo(summary, page, OFFER_URL).structuredData).find(
+              (node) => node['@type'] === 'Service',
+            )?.['offers']
+          : undefined;
+
+      expect(offers).toEqual([
         {
           '@type': 'Offer',
-          name: 'Projet',
+          name: 'Évolution',
           priceSpecification: {
             '@type': 'PriceSpecification',
-            minPrice: String(prices.projectFromEur),
+            minPrice: '390',
             priceCurrency: 'EUR',
-          },
-        },
-        {
-          '@type': 'Offer',
-          name: 'Maintenance',
-          priceSpecification: {
-            '@type': 'UnitPriceSpecification',
-            minPrice: String(prices.maintenanceMonthlyFromEur),
-            priceCurrency: 'EUR',
-            unitCode: 'MON',
           },
         },
       ]);
@@ -321,7 +326,7 @@ describe('toOfferSeo', () => {
     });
 
     it('offers the reinforcement without any price', () => {
-      expect(offersOf('renfort-freelance')).toEqual([{ '@type': 'Offer', name: 'Régie' }]);
+      expect(offersOf('renfort-freelance')).toEqual([{ '@type': 'Offer', name: 'Mission' }]);
     });
   });
 
@@ -349,7 +354,7 @@ describe('toOfferCatalogueSeo', () => {
     expect(seo.type).toBe('website');
     expect(seo.title).toBe('Offres et tarifs, sites et applications web | Julien Nédellec');
     expect(seo.description).toBe(
-      `Sites en 7 jours dès ${formatEur(OFFER_PRICES['site-atelier'].creationEur)}, application métier dès ${formatEur(OFFER_PRICES['application-metier'].projectFromEur)}, refonte, maintenance et renfort Angular. Prix annoncé avant de commencer.`,
+      `Sites vitrines dès ${formatEur(OFFER_PRICES['site-atelier'].creationEur)}, évolution d'application, refonte, maintenance et renfort Angular. Prix annoncé avant de commencer, missions le soir et le week-end.`,
     );
     expect(graphOf(seo.structuredData).map((node) => node['@type'])).toEqual([
       'CollectionPage',
@@ -438,7 +443,7 @@ describe('toOfferCatalogJsonLd', () => {
 
   it('lists only the offers it is given', () => {
     const offers = [
-      makeOfferSummary({ slug: 'application-metier', name: 'Application de test' }),
+      makeOfferSummary({ slug: 'refonte-maintenance', name: 'Application de test' }),
       makeOfferSummary({ slug: 'site-atelier', name: 'Atelier de test' }),
     ];
 
@@ -448,7 +453,7 @@ describe('toOfferCatalogJsonLd', () => {
         itemOffered: {
           '@type': 'Service',
           name: 'Application de test',
-          url: `${SITE_IDENTITY.siteUrl}/offres/application-metier`,
+          url: `${SITE_IDENTITY.siteUrl}/offres/refonte-maintenance`,
         },
       },
       {

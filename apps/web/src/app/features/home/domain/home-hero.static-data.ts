@@ -16,10 +16,11 @@ export const HOME_WORK_FRAME: WorkFrame = {
   reference: 'réf. JN-2026',
   rows: [
     { label: 'Prix', value: 'Fixe, annoncé avant de commencer' },
-    { label: 'Site vitrine', value: 'En ligne en 7 jours' },
-    { label: 'Réponse', value: 'Sous 48\u00a0h ouvrées' },
+    { label: 'Délai', value: 'Fixé au devis, selon la demande' },
+    { label: 'Réponse', value: 'Sous 48\u00a0h, le soir' },
+    { label: 'Disponibilité', value: 'Le soir et le week-end' },
     { label: 'Propriété', value: 'Le site, le code et le nom de domaine sont à vous' },
-    { label: 'Zone', value: 'Yvelines et Île-de-France, rendez-vous possible' },
+    { label: 'Zone', value: 'Yvelines et Île-de-France, rendez-vous possible le samedi' },
   ],
   dimension: 'de la demande à la mise en ligne',
 };

@@ -1,10 +1,9 @@
-import type { OfferSlug } from '@features/offer/domain/models/offer.model';
 import type { ProjectKind } from './models/project.model';
 import { relatedOfferSlug } from './related-offer';
 
 describe('relatedOfferSlug', () => {
-  it.each<{ kind: ProjectKind | null; expected: OfferSlug | null }>([
-    { kind: 'production', expected: 'application-metier' },
+  it.each<{ kind: ProjectKind | null; expected: string | null }>([
+    { kind: 'production', expected: 'evolution-application' },
     { kind: 'demo', expected: 'site-vitrine' },
     { kind: 'script', expected: null },
     { kind: null, expected: null },

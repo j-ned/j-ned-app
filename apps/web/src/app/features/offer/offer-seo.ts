@@ -83,7 +83,7 @@ export function toOfferSeo(summary: OfferSummary, content: OfferPageContent, url
 export function toOfferCatalogueSeo(offers: readonly OfferSummary[]): SeoData {
   return {
     title: 'Offres et tarifs, sites et applications web | Julien Nédellec',
-    description: `Sites en 7 jours dès ${formatEur(OFFER_PRICES['site-atelier'].creationEur)}, application métier dès ${formatEur(OFFER_PRICES['application-metier'].projectFromEur)}, refonte, maintenance et renfort Angular. Prix annoncé avant de commencer.`,
+    description: `Sites vitrines dès ${formatEur(OFFER_PRICES['site-atelier'].creationEur)}, évolution d'application, refonte, maintenance et renfort Angular. Prix annoncé avant de commencer, missions le soir et le week-end.`,
     url: CATALOGUE_URL,
     type: 'website',
     structuredData: {

@@ -24,7 +24,7 @@ export const routes: Routes = [
       seo: {
         title: HOME_TITLE,
         description:
-          'Sites et applications web livrés en production par un seul interlocuteur\u00a0: site vitrine en 7 jours, application sur mesure, maintenance. Yvelines et à distance.',
+          "Sites web et évolutions d'applications Angular et NestJS, à prix annoncé. Missions ponctuelles le soir et le week-end, Yvelines et à distance.",
         keywords:
           'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France, Île-de-France, Industrie, Self-hosted',
         url: SITE_IDENTITY.siteUrl,
@@ -85,7 +85,7 @@ export const routes: Routes = [
       preload: true,
       seo: {
         title: ABOUT_TITLE,
-        description: `${SITE_IDENTITY.journey} Parcours, stack et CV.`,
+        description: `${SITE_IDENTITY.journey} Stack et CV.`,
         keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
@@ -155,6 +155,10 @@ export const routes: Routes = [
   {
     path: 'rendez-vous',
     loadChildren: () => import('./features/booking/booking.routes').then((m) => m.BOOKING_ROUTES),
+  },
+  {
+    path: `${OFFERS_BASE_PATH}/application-metier`,
+    redirectTo: offerPath('evolution-application'),
   },
   {
     path: OFFERS_BASE_PATH,

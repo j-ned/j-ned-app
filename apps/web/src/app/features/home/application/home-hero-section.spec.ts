@@ -126,6 +126,12 @@ describe('HomeHeroSection', () => {
     });
   });
 
+  it('offers the two calls to action and the booking link, and nothing else to follow', () => {
+    expect(
+      Array.from(host().querySelectorAll('a, button'), (el) => el.getAttribute('data-testid')),
+    ).toEqual(['hero-cta-contact', 'hero-cta-offers', 'hero-booking-link']);
+  });
+
   it('states the availability for clients as plain text, not as a link', () => {
     const availability = byTestId('hero-availability');
     expect(text(availability)).toBe(SITE_IDENTITY.availability);

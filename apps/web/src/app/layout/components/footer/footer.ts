@@ -68,15 +68,6 @@ const SOCIAL_LINKS = [
                 >
               </li>
             }
-            <li>
-              <a
-                data-testid="footer-hiring-link"
-                routerLink="/about"
-                fragment="recrutement"
-                class="footer-link"
-                >{{ copy.hiringLink }}</a
-              >
-            </li>
           </ul>
         </nav>
 

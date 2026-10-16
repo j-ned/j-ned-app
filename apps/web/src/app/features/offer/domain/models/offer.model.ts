@@ -1,7 +1,7 @@
 export type OfferSlug =
   | 'site-vitrine'
   | 'site-atelier'
-  | 'application-metier'
+  | 'evolution-application'
   | 'refonte-maintenance'
   | 'renfort-freelance';
 

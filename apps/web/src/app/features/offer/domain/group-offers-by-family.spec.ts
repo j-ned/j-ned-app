@@ -1,6 +1,10 @@
+import type { OfferSummary } from './models/offer.model';
 import { makeOfferSummary, offerSummaryOf } from '../testing/offer-builders';
 import { groupOffersByFamily } from './group-offers-by-family';
 import { OFFERS } from './offer-catalog.static-data';
+
+const summaryOf = (slug: string): OfferSummary | undefined =>
+  OFFERS.find((offer) => offer.slug === slug);
 
 describe('groupOffersByFamily', () => {
   it('groups the catalogue into sites then applications, keeping the catalogue order', () => {
@@ -12,7 +16,7 @@ describe('groupOffersByFamily', () => {
       {
         family: 'applications',
         offers: [
-          offerSummaryOf('application-metier'),
+          summaryOf('evolution-application'),
           offerSummaryOf('refonte-maintenance'),
           offerSummaryOf('renfort-freelance'),
         ],

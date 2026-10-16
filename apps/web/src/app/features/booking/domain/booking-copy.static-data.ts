@@ -27,7 +27,8 @@ export const BOOKING_PAGE_COPY = {
   slotsLead: 'Les horaires affichés sont à l’heure de Paris.',
   loadError: 'Les créneaux n’ont pas pu être chargés.',
   emptyTitle: 'Aucun créneau libre pour le moment.',
-  emptyDetail: 'Écrivez-moi via le formulaire de contact\u00a0: je vous réponds sous 48 h ouvrées.',
+  emptyDetail:
+    'Écrivez-moi via le formulaire de contact\u00a0: je vous réponds sous 48\u00a0h, le soir.',
   emptyAction: 'Écrire un message',
   timeHeading: 'Heure du rendez-vous',
   timeHint: 'Choisissez d’abord un jour pour voir ses horaires.',

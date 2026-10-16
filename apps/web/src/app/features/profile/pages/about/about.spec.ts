@@ -144,10 +144,17 @@ describe('About', () => {
     expect([...host().classList].sort()).toEqual(['block', 'min-h-svh', 'pt-20']);
   });
 
-  it('Given les sections différées non déclenchées When la page est rendue Then le bloc recrutement est déjà présent sous un h1 unique', async () => {
+  it('Given les sections différées non déclenchées When la page est rendue Then seul le haut de page est rendu, sous un h1 unique, les autres sections attendant derrière leur place réservée', async () => {
     await render(NO_CV);
 
-    expect(byTestId('about-hiring')?.id).toBe('recrutement');
+    expect(Array.from(host().children, (child) => child.tagName.toLowerCase())).toEqual([
+      'app-about-hero',
+      'div',
+      'div',
+      'div',
+      'div',
+      'div',
+    ]);
     expect(host().querySelectorAll('h1')).toHaveLength(1);
   });
 
@@ -306,40 +313,30 @@ describe('About', () => {
       await render(PUBLISHED_CV);
     });
 
-    it('When la page est rendue Then le haut de page et le bloc recrutement proposent le CV en PDF', () => {
-      expect(
-        ['about-hero-cv', 'about-hiring-cv'].map((testId) => ({
-          href: byTestId(testId)?.getAttribute('href'),
-          label: byTestId(testId)?.textContent?.replace(/\s+/g, ' ').trim(),
-        })),
-      ).toEqual([
-        { href: `${API}/cv/download`, label: 'Télécharger mon CV (PDF)' },
-        { href: `${API}/cv/download`, label: 'Télécharger mon CV (PDF)' },
-      ]);
-    });
-
-    it('When la page est rendue Then le lien CV du haut de page vit dans le hero, avant le bloc recrutement', () => {
+    it('When la page est rendue Then le haut de page propose le CV en PDF', () => {
       const heroCv = byTestId('about-hero-cv');
 
-      expect(heroCv?.closest('app-about-hero')).not.toBeNull();
-      expect(
-        (heroCv?.compareDocumentPosition(byTestId('about-hiring') as Node) ?? 0) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      expect({
+        href: heroCv?.getAttribute('href'),
+        label: heroCv?.textContent?.replace(/\s+/g, ' ').trim(),
+      }).toEqual({ href: `${API}/cv/download`, label: 'Télécharger mon CV (PDF)' });
     });
 
-    it.each(['about-hero-cv', 'about-hiring-cv'])(
-      'When le visiteur clique %s Then le téléchargement est mesuré une fois',
-      (testId) => {
-        const link = byTestId<HTMLAnchorElement>(testId);
-        link?.addEventListener('click', (event) => event.preventDefault());
+    it('When la page est rendue Then le seul lien CV de la page vit dans le haut de page', () => {
+      const cvLinks = Array.from(host().querySelectorAll(`a[href="${API}/cv/download"]`));
 
-        link?.click();
+      expect(cvLinks.map((link) => link.closest('app-about-hero') !== null)).toEqual([true]);
+    });
 
-        expect(link).not.toBeNull();
-        expect(trackCvDownload).toHaveBeenCalledOnce();
-      },
-    );
+    it('When le visiteur clique le CV du haut de page Then le téléchargement est mesuré une fois', () => {
+      const link = byTestId<HTMLAnchorElement>('about-hero-cv');
+      link?.addEventListener('click', (event) => event.preventDefault());
+
+      link?.click();
+
+      expect(link).not.toBeNull();
+      expect(trackCvDownload).toHaveBeenCalledOnce();
+    });
   });
 
   describe('Given le prérendu, où aucun rendu navigateur n’a lieu', () => {
@@ -376,8 +373,13 @@ describe('About', () => {
     async ({ answer }) => {
       await render(answer);
 
-      expect([byTestId('about-hero-cv'), byTestId('about-hiring-cv')]).toEqual([null, null]);
-      expect(byTestId('about-hiring-linkedin')).not.toBeNull();
+      expect(host().querySelectorAll(`a[href="${API}/cv/download"]`)).toHaveLength(0);
+      expect(
+        Array.from(
+          host().querySelectorAll<HTMLAnchorElement>('[data-testid="about-social-link"]'),
+          (link) => link.getAttribute('href'),
+        ),
+      ).toContain(SITE_IDENTITY.socials.linkedin);
     },
   );
 });

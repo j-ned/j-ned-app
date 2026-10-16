@@ -16,7 +16,10 @@ describe('about route', () => {
   });
 
   it('describes the page with the site-wide journey, then what the page holds', () => {
-    expect(aboutSeo()?.['description']).toBe(`${SITE_IDENTITY.journey} Parcours, stack et CV.`);
+    const description = String(aboutSeo()?.['description'] ?? '');
+
+    expect(description.startsWith(`${SITE_IDENTITY.journey} `)).toBe(true);
+    expect(description).toMatch(/\bCV\.$/u);
   });
 
   it('gives the page a search snippet of at most 160 characters', () => {

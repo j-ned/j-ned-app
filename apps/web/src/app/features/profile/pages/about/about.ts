@@ -12,23 +12,13 @@ import { AboutJourney } from '../../application/about-journey';
 import { AboutWhatIDo } from '../../application/about-what-i-do';
 import { AboutHighlights } from '../../application/about-highlights';
 import { AboutMotivation } from '../../application/about-motivation';
-import { AboutHiring } from '../../application/about-hiring';
 import { ABOUT_IDENTITY, DEFAULT_PORTRAIT_URL } from './about-identity';
 
-// Le bloc recrutement reste hors @defer : l'ancre #recrutement doit exister au premier rendu.
 @Component({
   selector: 'app-about',
   host: { class: 'block min-h-svh pt-20' },
   providers: [CvDownload],
-  imports: [
-    AboutHero,
-    AboutJourney,
-    AboutHighlights,
-    AboutWhatIDo,
-    AboutDiploma,
-    AboutHiring,
-    AboutMotivation,
-  ],
+  imports: [AboutHero, AboutJourney, AboutHighlights, AboutWhatIDo, AboutDiploma, AboutMotivation],
   template: `
     @let about = content();
     <app-about-hero
@@ -78,8 +68,6 @@ import { ABOUT_IDENTITY, DEFAULT_PORTRAIT_URL } from './about-identity';
     } @error {
       <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
     }
-
-    <app-about-hiring [cvUrl]="cvUrl()" (cvDownloaded)="trackCvDownload()" />
 
     @defer (hydrate on viewport) {
       <app-about-motivation [motivation]="about?.motivation" (contactRequested)="goToContact()" />

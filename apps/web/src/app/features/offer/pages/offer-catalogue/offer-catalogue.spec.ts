@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import type { OfferSlug } from '../../domain/models/offer.model';
 import {
   OFFERS,
   OFFER_FAMILY_LABELS,
@@ -34,8 +33,8 @@ describe('OfferCatalogue', () => {
     allByTestId('offer-card').find((card) => text(byTestId('cartouche-title', card)) === name);
   const rowOf = (name: string): HTMLElement | undefined =>
     allByTestId('offer-row').find((row) => text(byTestId('offer-row-name', row)) === name);
-  const namesOf = (...slugs: readonly OfferSlug[]): string[] =>
-    slugs.map((slug) => offerSummaryOf(slug).name);
+  const namesOf = (...slugs: readonly string[]): (string | undefined)[] =>
+    slugs.map((slug) => OFFERS.find((offer) => offer.slug === slug)?.name);
   const entriesOf = (section: HTMLElement): { cards: string[]; rows: string[] } => ({
     cards: allByTestId('offer-card', section).map((card) =>
       text(byTestId('cartouche-title', card)),
@@ -44,9 +43,7 @@ describe('OfferCatalogue', () => {
   });
 
   const SITES = (['site-vitrine', 'site-atelier'] as const).map(offerSummaryOf);
-  const APPLICATIONS = (
-    ['application-metier', 'refonte-maintenance', 'renfort-freelance'] as const
-  ).map(offerSummaryOf);
+  const APPLICATIONS = OFFERS.filter(({ family }) => family === 'applications');
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
@@ -75,7 +72,7 @@ describe('OfferCatalogue', () => {
         ?.compareDocumentPosition(lead ?? host()) ?? 0;
     expect(follows & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(text(lead)).toBe(
-      'Un site pour être trouvé, ou une application pour travailler mieux. Chaque offre précise ce qui est livré, en combien de temps et à quel prix.',
+      'Un site pour être trouvé, ou une application pour travailler mieux. Chaque offre précise ce qui est livré, comment ça se passe et à quel prix. Le délai est fixé au devis.',
     );
   });
 
@@ -111,7 +108,7 @@ describe('OfferCatalogue', () => {
       { cards: namesOf('site-vitrine', 'site-atelier'), rows: [] },
       {
         cards: [],
-        rows: namesOf('application-metier', 'refonte-maintenance', 'renfort-freelance'),
+        rows: namesOf('evolution-application', 'refonte-maintenance', 'renfort-freelance'),
       },
     ]);
   });

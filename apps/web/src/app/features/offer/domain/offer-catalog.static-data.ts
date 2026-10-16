@@ -5,7 +5,7 @@ import { OFFER_PRICES } from './offer-prices.static-data';
 const SHOWCASE_CREATION = formatEur(OFFER_PRICES['site-vitrine'].creationEur);
 const SHOWCASE_MAINTENANCE = formatEur(OFFER_PRICES['site-vitrine'].maintenanceMonthlyEur);
 const WORKSHOP_CREATION = formatEur(OFFER_PRICES['site-atelier'].creationEur);
-const APPLICATION_FROM = formatEur(OFFER_PRICES['application-metier'].projectFromEur);
+const EVOLUTION_FROM = formatEur(OFFER_PRICES['evolution-application'].projectFromEur);
 const AUDIT = formatEur(OFFER_PRICES['refonte-maintenance'].auditEur);
 const REWORK_MAINTENANCE_FROM = formatEur(
   OFFER_PRICES['refonte-maintenance'].maintenanceMonthlyFromEur,
@@ -14,11 +14,11 @@ const REWORK_MAINTENANCE_FROM = formatEur(
 export const OFFER_CATALOGUE_HEADING = 'Cinq offres, un tarif annoncé avant de commencer.';
 
 export const OFFER_CATALOGUE_LEAD =
-  'Un site pour être trouvé, ou une application pour travailler mieux. Chaque offre précise ce qui est livré, en combien de temps et à quel prix.';
+  'Un site pour être trouvé, ou une application pour travailler mieux. Chaque offre précise ce qui est livré, comment ça se passe et à quel prix. Le délai est fixé au devis.';
 
 export const OFFER_FAMILY_LEADS: Readonly<Record<OfferFamily, string>> = {
   sites: 'Pour être trouvé sur Google et convaincre en trente secondes.',
-  applications: 'Pour remplacer un tableur, outiller une équipe ou reprendre un existant.',
+  applications: 'Pour faire évoluer, reprendre ou renforcer une application existante.',
 };
 
 export const OFFER_FAMILY_LABELS: Readonly<Record<OfferFamily, string>> = {
@@ -33,15 +33,14 @@ export const OFFERS: readonly OfferSummary[] = [
     name: 'Site vitrine pour TPE, PME et artisans',
     shortName: 'Site vitrine',
     audience: 'TPE, PME, artisans et professions libérales',
-    promise: 'Votre site, en ligne en 7 jours.',
+    promise: 'Votre site, à prix fixe et délai annoncé.',
     priceTeaser: `${SHOWCASE_CREATION}, prix final`,
     featuredOnHome: true,
     seo: {
-      title: 'Création de site vitrine en 7 jours | Julien Nédellec',
-      description: `Site vitrine pour TPE, PME et artisans des Yvelines et d'Île-de-France, en ligne en 7 jours. ${SHOWCASE_CREATION} prix final, maintenance ${SHOWCASE_MAINTENANCE}/mois sans engagement.`,
+      title: 'Création de site vitrine à prix fixe | Julien Nédellec',
+      description: `Site vitrine pour TPE, PME et artisans des Yvelines et d'Île-de-France, délai fixé au devis. ${SHOWCASE_CREATION} prix final, maintenance ${SHOWCASE_MAINTENANCE}/mois sans engagement.`,
       serviceType: 'Création de site vitrine',
-      serviceDescription:
-        'Site vitrine pour TPE, PME et artisans, en ligne en 7 jours, avec maintenance mensuelle.',
+      serviceDescription: 'Site vitrine pour TPE, PME et artisans, avec maintenance mensuelle.',
       breadcrumbName: 'Site vitrine',
     },
   },
@@ -51,34 +50,34 @@ export const OFFERS: readonly OfferSummary[] = [
     name: 'Site pro pour ateliers de mécanique',
     shortName: 'Site atelier',
     audience: "Ateliers d'usinage, de décolletage et de mécanique de précision",
-    promise: 'Le site de votre atelier, en ligne en 7 jours.',
+    promise: 'Le site de votre atelier, à prix fixe et délai annoncé.',
     priceTeaser: `${WORKSHOP_CREATION}, prix final`,
     featuredOnHome: false,
     seo: {
       title: 'Site pro pour ateliers de mécanique | Julien Nédellec',
-      description: `Site vitrine pour ateliers d'usinage et de décolletage des Yvelines, en ligne en 7 jours. ${WORKSHOP_CREATION} prix final, par un tourneur CN.`,
+      description: `Site vitrine pour ateliers d'usinage et de décolletage des Yvelines, délai fixé au devis. ${WORKSHOP_CREATION} prix final, par un tourneur CN.`,
       serviceType: 'Création de site vitrine',
       serviceDescription:
-        "Site vitrine pour ateliers d'usinage et de décolletage, en ligne en 7 jours, avec maintenance mensuelle.",
+        "Site vitrine pour ateliers d'usinage et de décolletage, avec maintenance mensuelle.",
       breadcrumbName: 'Sites pour ateliers',
     },
   },
   {
-    slug: 'application-metier',
+    slug: 'evolution-application',
     family: 'applications',
-    name: 'Application métier sur mesure',
-    shortName: 'Application métier',
-    audience: 'PME, équipes métier et fondateurs',
-    promise: "L'outil qui remplace vos tableurs et vos ressaisies.",
-    priceTeaser: `À partir de ${APPLICATION_FROM}`,
+    name: "Évolution d'application existante",
+    shortName: "Évolution d'application",
+    audience: 'PME et équipes qui ont déjà une application web',
+    promise:
+      'Une fonctionnalité, un écran ou une correction ajoutés à votre application, à prix ferme.',
+    priceTeaser: `À partir de ${EVOLUTION_FROM}`,
     featuredOnHome: true,
     seo: {
-      title: 'Application métier sur mesure, Angular et NestJS | Julien Nédellec',
-      description: `Outil interne, back-office ou portail client développé sur mesure en Angular et NestJS. Devis ferme après cadrage, à partir de ${APPLICATION_FROM}.`,
-      serviceType: "Développement d'application web sur mesure",
-      serviceDescription:
-        'Outil interne, back-office ou portail client sur mesure, du cadrage à la mise en production et à la maintenance.',
-      breadcrumbName: 'Application métier',
+      title: "Évolution d'application Angular et NestJS | Julien Nédellec",
+      description:
+        'Ajout de fonctionnalité ou correction sur une application Angular ou NestJS existante. Devis ferme après un cadrage gratuit. Le soir et le week-end.',
+      serviceType: "Développement de fonctionnalités d'application web",
+      breadcrumbName: "Évolution d'application",
     },
   },
   {
@@ -92,7 +91,7 @@ export const OFFERS: readonly OfferSummary[] = [
     featuredOnHome: true,
     seo: {
       title: "Audit, refonte et maintenance d'application web | Julien Nédellec",
-      description: `Audit d'application web à ${AUDIT}, refonte et maintenance dès ${REWORK_MAINTENANCE_FROM}/mois. Reprise de projets Angular et NestJS existants, en Île-de-France et à distance.`,
+      description: `Audit d'application web à ${AUDIT}, refonte et maintenance dès ${REWORK_MAINTENANCE_FROM}/mois. Reprise de projets Angular et NestJS existants, à distance, le soir et le week-end.`,
       serviceType: "Audit et maintenance d'application web",
       serviceDescription:
         "Audit, modernisation et maintenance d'applications web existantes, en priorité Angular et NestJS.",
@@ -102,19 +101,19 @@ export const OFFERS: readonly OfferSummary[] = [
   {
     slug: 'renfort-freelance',
     family: 'applications',
-    name: 'Renfort Angular / NestJS',
+    name: 'Renfort ponctuel Angular / NestJS',
     shortName: 'Renfort Angular / NestJS',
     audience: 'Équipes produit, CTO et ESN',
-    promise: 'Un développeur full-stack Angular et NestJS pour renforcer votre équipe.',
+    promise: 'Une tâche Angular ou NestJS confiée et livrée, le soir et le week-end.',
     priceTeaser: 'TJM sur demande',
     featuredOnHome: true,
     seo: {
-      title: 'Développeur Angular / NestJS freelance en régie | Julien Nédellec',
+      title: 'Développeur Angular / NestJS freelance, missions ponctuelles | Julien Nédellec',
       description:
-        'Développeur full-stack Angular et NestJS en freelance, en régie à distance ou sur site en Île-de-France. TJM sur demande, contrat direct ou via Malt.',
-      serviceType: 'Développement logiciel en régie',
+        'Développeur Angular et NestJS freelance, à distance, pour des tâches ponctuelles livrées le soir et le week-end. TJM sur demande, en direct ou via Malt.',
+      serviceType: 'Développement Angular et NestJS à distance',
       serviceDescription:
-        'Renfort développeur full-stack Angular et NestJS en régie, à distance ou sur site en Île-de-France.',
+        'Renfort développeur full-stack Angular et NestJS, à distance, pour des tâches ponctuelles.',
       breadcrumbName: 'Renfort freelance',
     },
   },

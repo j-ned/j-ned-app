@@ -33,20 +33,6 @@ import { PROJECT_FOLLOW_UP_COPY } from '../project-follow-up-copy';
         (click)="offerOpened.emit()"
         >{{ offer().label }}</a
       >
-      <p
-        class="mt-10 flex flex-wrap items-center gap-x-3 font-mono text-[0.8125rem] text-muted"
-        data-testid="project-follow-up-hiring-line"
-      >
-        {{ copy.hiringPrompt }}
-        <a
-          routerLink="/about"
-          fragment="recrutement"
-          class="inline-flex min-h-11 items-center font-medium text-foreground underline decoration-foreground/25 underline-offset-4 transition-colors hover:text-primary hover:decoration-primary"
-          data-testid="project-follow-up-hiring"
-          (click)="hiringOpened.emit()"
-          >{{ copy.hiringLink }}</a
-        >
-      </p>
     </section>
   `,
 })
@@ -54,7 +40,6 @@ export class ProjectFollowUp {
   readonly offer = input.required<{ readonly label: string; readonly path: string }>();
 
   readonly offerOpened = output<void>();
-  readonly hiringOpened = output<void>();
 
   protected readonly copy = PROJECT_FOLLOW_UP_COPY;
 }

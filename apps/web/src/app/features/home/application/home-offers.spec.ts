@@ -83,8 +83,8 @@ describe('HomeOffers', () => {
     expect(cardNames(sites)).toEqual([offerSummaryOf('site-vitrine').name]);
     expect(rowNames(sites)).toEqual([]);
     expect(rowNames(applications)).toEqual(
-      (['application-metier', 'refonte-maintenance', 'renfort-freelance'] as const).map(
-        (slug) => offerSummaryOf(slug).name,
+      ['evolution-application', 'refonte-maintenance', 'renfort-freelance'].map(
+        (slug) => OFFERS.find((offer) => offer.slug === slug)?.name,
       ),
     );
     expect(cardNames(applications)).toEqual([]);

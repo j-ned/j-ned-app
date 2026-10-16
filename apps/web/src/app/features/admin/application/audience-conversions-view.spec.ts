@@ -85,7 +85,9 @@ describe('placementLabel', () => {
     ['booking', 'Prise de rendez-vous'],
     ['offer_site-vitrine', 'Offre Site vitrine'],
     ['offer_site-atelier', 'Offre Site atelier'],
+    ['offer_evolution-application', "Offre Évolution d'application"],
     ['offer_renfort-freelance', 'Offre Renfort Angular / NestJS'],
+    ['offer_application-metier', 'Emplacement inconnu (offer_application-metier)'],
     ['offer_ancienne-offre', 'Emplacement inconnu (offer_ancienne-offre)'],
     ['footer', 'Emplacement inconnu (footer)'],
   ])('Given the placement %s When it is named Then it reads « %s »', (entityId, label) => {

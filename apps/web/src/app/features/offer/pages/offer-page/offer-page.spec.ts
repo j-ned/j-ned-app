@@ -21,12 +21,9 @@ import { OfferPage } from './offer-page';
 
 const ATELIER: OfferPageContent = OFFER_PAGES['site-atelier'];
 const VITRINE: OfferPageContent = OFFER_PAGES['site-vitrine'];
-const DEMO_COUNT: Record<OfferSlug, number> = {
+const DEMO_COUNT: Readonly<Record<string, number>> = {
   'site-vitrine': 2,
   'site-atelier': 1,
-  'application-metier': 0,
-  'refonte-maintenance': 0,
-  'renfort-freelance': 0,
 };
 const NBSP = '\u00a0';
 const DEMO_IMAGE_SIZES =
@@ -367,7 +364,7 @@ describe('OfferPage', () => {
       },
     );
 
-    it.each<OfferSlug>(['site-vitrine', 'application-metier'])(
+    it.each<OfferSlug>(['site-vitrine', 'renfort-freelance'])(
       'Given the %s offer When its call to action is clicked Then the click is measured under the offer, with its label',
       async (slug) => {
         const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
@@ -412,7 +409,7 @@ describe('OfferPage', () => {
       });
 
       it('shows a demo card only on the sites offers', () => {
-        expect(allByTestId('offer-demo')).toHaveLength(DEMO_COUNT[slug]);
+        expect(allByTestId('offer-demo')).toHaveLength(DEMO_COUNT[slug] ?? 0);
       });
 
       it('asks the request form for a timeline but not for a project type', () => {

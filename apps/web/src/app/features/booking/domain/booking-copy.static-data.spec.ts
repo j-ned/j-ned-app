@@ -5,6 +5,7 @@ import {
   BOOKING_FAILURE_MESSAGES,
   BOOKING_FICHE,
   BOOKING_FORMAT_LABELS,
+  BOOKING_PAGE_COPY,
 } from './booking-copy.static-data';
 
 describe('BOOKING_FICHE', () => {
@@ -18,6 +19,14 @@ describe('BOOKING_FICHE', () => {
         { label: 'Fuseau', value: 'Heure de Paris' },
       ],
     });
+  });
+});
+
+describe('BOOKING_PAGE_COPY', () => {
+  it('sends the visitor to the contact form when no slot is free, with an answer within 48 hours, in the evening', () => {
+    expect(BOOKING_PAGE_COPY.emptyDetail).toBe(
+      'Écrivez-moi via le formulaire de contact\u00a0: je vous réponds sous 48\u00a0h, le soir.',
+    );
   });
 });
 

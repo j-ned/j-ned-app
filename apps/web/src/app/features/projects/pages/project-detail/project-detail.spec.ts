@@ -11,7 +11,6 @@ import { makeProject, makeProjectImage } from '@features/projects/testing/projec
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import type { OfferSlug } from '@features/offer/domain/models/offer.model';
 import { Component, PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
 
 function project(overrides: Partial<Project> = {}): Project {
@@ -581,7 +580,7 @@ describe('ProjectDetail: suite éditoriale de la fiche', () => {
   const text = (el: Element | null | undefined): string =>
     (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
 
-  const offerName = (slug: OfferSlug): string =>
+  const offerName = (slug: string): string =>
     OFFERS.find((offer) => offer.slug === slug)?.name ?? `missing offer ${slug}`;
 
   const renderProject = async (overrides: Partial<Project>): Promise<HTMLElement> => {
@@ -643,8 +642,8 @@ describe('ProjectDetail: suite éditoriale de la fiche', () => {
     it.each<{ kind: Project['kind']; label: string; path: string }>([
       {
         kind: 'production',
-        label: `Voir l'offre «\u00a0${offerName('application-metier')}\u00a0»`,
-        path: '/offres/application-metier',
+        label: `Voir l'offre «\u00a0${offerName('evolution-application')}\u00a0»`,
+        path: '/offres/evolution-application',
       },
       {
         kind: 'demo',
@@ -674,9 +673,8 @@ describe('ProjectDetail: suite éditoriale de la fiche', () => {
       {
         testId: 'project-follow-up-offer',
         ctaId: 'project_similar_need',
-        label: `Voir l'offre «\u00a0${offerName('application-metier')}\u00a0»`,
+        label: `Voir l'offre «\u00a0${offerName('evolution-application')}\u00a0»`,
       },
-      { testId: 'project-follow-up-hiring', ctaId: 'project_hiring', label: 'Parcours et CV' },
     ])(
       'Given the end block When $testId is clicked Then the page measures $ctaId once',
       async ({ testId, ctaId, label }) => {

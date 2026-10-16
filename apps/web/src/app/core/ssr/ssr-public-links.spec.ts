@@ -10,7 +10,9 @@ import { CvDownload } from '@features/cv/application/cv-download';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { HttpCvGateway } from '@features/cv/infra/gateways/http-cv.gateway';
 import { makeCvInfo } from '@features/cv/testing/cv-builders';
-import { HomeRecruiterBand } from '@features/home/application/home-recruiter-band';
+import { AboutHero } from '@features/profile/application/about-hero';
+import type { SocialButton } from '@features/profile/domain/models/profile.model';
+import { aProfileContent, aProfileInfo } from '@features/profile/testing/profile-builders';
 import type { SsrRequestContext } from './ssr-request-context';
 import { provideSsrApiBaseUrl } from './ssr-api-base-url';
 
@@ -18,12 +20,20 @@ const UPSTREAM_ORIGIN = 'http://portfolio-api:3000';
 const SITE_ORIGIN = 'https://nedellec-julien.fr';
 
 @Component({
-  imports: [HomeRecruiterBand],
+  imports: [AboutHero],
   providers: [CvDownload],
-  template: `<app-home-recruiter-band [cvUrl]="download.url()" />`,
+  template: `<app-about-hero
+    [profile]="profile"
+    [biography]="biography"
+    [socials]="socials"
+    [cvUrl]="download.url()"
+  />`,
 })
 class CvLinkHost {
   protected readonly download = inject(CvDownload);
+  protected readonly profile = aProfileInfo();
+  protected readonly biography = aProfileContent().biography;
+  protected readonly socials: readonly SocialButton[] = [];
 }
 
 async function renderOnServer(): Promise<HTMLElement> {
@@ -55,7 +65,7 @@ describe('Public links rendered on the server', () => {
     const element = await renderOnServer();
 
     const hrefs = [...element.querySelectorAll('a[href]')].map((a) => a.getAttribute('href') ?? '');
-    const cvHref = element.querySelector('[data-testid="home-recruiter-cv"]')?.getAttribute('href');
+    const cvHref = element.querySelector('[data-testid="about-hero-cv"]')?.getAttribute('href');
 
     expect(cvHref).toBe('/api/cv/download');
     expect(hrefs.filter((href) => new URL(href, SITE_ORIGIN).origin === UPSTREAM_ORIGIN)).toEqual(

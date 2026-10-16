@@ -8,7 +8,7 @@
     {
       "id": "dffce031-2162-4f1b-97d9-ef2c9790734d",
       "title": "Infrastructure",
-      "description": "Je gère l'intégralité de mon infrastructure\u00a0: auto-hébergement (VPS) et déploiement continu (CI/CD) via Dokploy, jusqu'aux services en production. Ce contrôle opérationnel total garantit la fiabilité et fait de moi un développeur plus complet."
+      "description": "Je gère mon infrastructure\u00a0: auto-hébergement (VPS) et déploiement continu (CI/CD) via Dokploy. Je déploie et je surveille moi-même ce que je livre."
     }
   ],
   "diplomas": [
@@ -47,9 +47,9 @@
     "title": "Mon parcours",
     "summary": "De la chaudronnerie au tournage CN dans l'aéronautique, et au développement web en parallèle\u00a0: la même exigence.",
     "paragraphs": [
-      "Je ne suis pas venu au développement web par hasard. De la chaudronnerie au tournage CN de haute précision dans l'aéronautique, mon métier aujourd'hui, j'ai vu les outils numériques transformer un secteur entier. J'ai compris que je pouvais avoir plus d'impact en créant ces outils plutôt qu'en les utilisant.",
-      "Formé dans un environnement où l'erreur coûte cher, j'ai développé une exigence que j'applique à chaque ligne de code\u00a0: pensée pour durer, comprise de bout en bout, de la requête SQL au déploiement en production. Je ne me contente jamais de faire fonctionner, je comprends pourquoi ça fonctionne.",
-      "Cette expérience m'a donné une vision systémique rare\u00a0: je ne code pas des features isolées, je conçois des solutions complètes qui résolvent de vrais problèmes métier."
+      "De la chaudronnerie au tournage CN de haute précision dans l'aéronautique, mon métier aujourd'hui, j'ai appris à lire un plan, à respecter une tolérance et à contrôler avant de livrer. Je garde ce métier.",
+      "En parallèle, je me suis formé au développement web. J'ai obtenu le titre de Développeur Web et Web Mobile en 2025. Je développe avec Angular, NestJS, TypeScript et PostgreSQL, et j'héberge moi-même mes applications.",
+      "Je prends des missions freelance ponctuelles, le soir et le week-end, avec une charge limitée. J'y applique la règle de l'atelier\u00a0: une pièce hors tolérance ne part pas, un code non testé non plus."
     ],
     "leadEmphasis": "Angular et NestJS d'abord, PHP et Java aussi, en méthode agile."
   },
@@ -72,8 +72,8 @@
   ],
   "motivation": {
     "title": "Ce qui me motive",
-    "statement": "La tech au service d'un impact positif\u00a0: GreenTech, industrie durable, projets qui ont du sens.",
-    "description": "Disponible en freelance sur Malt pour vos projets Angular et NestJS, et ouvert au CDI en Île-de-France dans une équipe produit fintech, greentech ou industrial tech."
+    "statement": "Des outils utiles aux petites entreprises et aux ateliers, livrés propres et maintenus.",
+    "description": "Missions freelance ponctuelles sur Angular et NestJS, le soir et le week-end, en direct ou via Malt."
   },
   "workSummary": "Du composant au serveur qui le sert.",
   "technologies": [

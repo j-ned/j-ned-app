@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { type ActivatedRouteSnapshot, type Route, Router, provideRouter } from '@angular/router';
 import { OfferCatalogue } from '@features/offer/pages/offer-catalogue/offer-catalogue';
 import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
+import type { OfferSummary } from '@features/offer/domain/models/offer.model';
+import { OFFERS_BASE_PATH } from '@features/offer/domain/offer-path';
 import { OFFER_ROUTES } from '@features/offer/offer.routes';
 import { toOfferCatalogueSeo } from '@features/offer/offer-seo';
 import { offerSummaryOf } from '@features/offer/testing/offer-builders';
@@ -43,6 +45,24 @@ describe('routes', () => {
       const { url, leaf } = await navigate('/offres/site-atelier');
       expect(url).toBe('/offres/site-atelier');
       expect(leaf.data['summary']).toBe(offerSummaryOf('site-atelier'));
+    });
+  });
+
+  describe('legacy business application offer url', () => {
+    const EVOLUTION_URL = `/${OFFERS_BASE_PATH}/evolution-application`;
+
+    it('redirects to the application evolution offer instead of rendering a page', () => {
+      const route = findRoute(`${OFFERS_BASE_PATH}/application-metier`);
+      expect(route?.redirectTo).toBe(EVOLUTION_URL);
+      expect(route?.loadComponent).toBeUndefined();
+    });
+
+    it('lands on the application evolution offer when navigated to', async () => {
+      const { url, leaf } = await navigate(`/${OFFERS_BASE_PATH}/application-metier`);
+      expect(url).toBe(EVOLUTION_URL);
+      expect((leaf.data['summary'] as OfferSummary | undefined)?.slug).toBe(
+        'evolution-application',
+      );
     });
   });
 

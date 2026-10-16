@@ -73,10 +73,10 @@ describe('Footer', () => {
   describe('copy', () => {
     it('pins every label of the footer', () => {
       expect(FOOTER_COPY).toEqual({
-        tagline: 'Sites et applications web pour TPE, PME et ateliers. Yvelines et à distance.',
+        tagline:
+          'Sites et applications web pour TPE, PME et ateliers. Missions le soir et le week-end, Yvelines et à distance.',
         headings: { offers: 'Offres', resources: 'Ressources', contact: 'Contact' },
         resources: { projects: 'Réalisations', blog: 'Blog', about: 'Parcours' },
-        hiringLink: 'Vous recrutez\u202f?',
         contactCta: 'Décrire mon projet',
         bookingLink: 'Réserver un appel de 30\u00a0min',
         socials: { malt: 'Malt', linkedin: 'LinkedIn', github: 'GitHub' },
@@ -153,31 +153,8 @@ describe('Footer', () => {
     );
   });
 
-  describe('hiring entry', () => {
-    it('Given the footer When it is rendered Then « Vous recrutez ? » points to the hiring block of the Parcours page', async () => {
-      const { host } = await setup();
-      const links = byTestId<HTMLAnchorElement>(host, 'footer-hiring-link');
-
-      expect(links).toHaveLength(1);
-      expect(links[0]?.tagName).toBe('A');
-      expect(links[0]?.getAttribute('href')).toBe('/about#recrutement');
-      expect(links[0]?.textContent?.trim()).toBe(FOOTER_COPY.hiringLink);
-      expect(navNameOf(links[0])).toBe(FOOTER_COPY.headings.resources);
-    });
-
-    it('Given « Vous recrutez ? » When it is clicked Then the router lands on the hiring anchor', async () => {
-      const { fixture, host } = await setup();
-      const [link] = byTestId<HTMLAnchorElement>(host, 'footer-hiring-link');
-
-      expect(link).toBeInstanceOf(HTMLAnchorElement);
-      link?.click();
-      await fixture.whenStable();
-      expect(TestBed.inject(Router).url).toBe('/about#recrutement');
-    });
-  });
-
   describe('resources column', () => {
-    it('Given the footer When it is rendered Then Ressources lists Réalisations, Blog, Parcours then the hiring entry', async () => {
+    it('Given the footer When it is rendered Then Ressources lists Réalisations, Blog then Parcours, and nothing else', async () => {
       const { host } = await setup();
       const nav = Array.from(host.querySelectorAll('nav')).find(
         (candidate) => accessibleNameOf(candidate) === FOOTER_COPY.headings.resources,
@@ -188,13 +165,11 @@ describe('Footer', () => {
         '/projects',
         '/blog',
         '/about',
-        '/about#recrutement',
       ]);
       expect(links.map((link) => link.textContent?.trim())).toEqual([
         FOOTER_COPY.resources.projects,
         FOOTER_COPY.resources.blog,
         FOOTER_COPY.resources.about,
-        FOOTER_COPY.hiringLink,
       ]);
     });
 

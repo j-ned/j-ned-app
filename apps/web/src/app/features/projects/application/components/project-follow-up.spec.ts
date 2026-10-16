@@ -6,12 +6,12 @@ import { ProjectFollowUp } from './project-follow-up';
 @Component({ template: '' })
 class BlankPage {}
 
-const BUSINESS_APP_OFFER = {
-  label: "Voir l'offre «\u00a0Application métier sur mesure\u00a0»",
-  path: '/offres/application-metier',
+const EVOLUTION_OFFER = {
+  label: "Voir l'offre «\u00a0Évolution d'application existante\u00a0»",
+  path: '/offres/evolution-application',
 } as const;
 
-type FollowUpOutput = 'offerOpened' | 'hiringOpened';
+type FollowUpOutput = 'offerOpened';
 
 describe('ProjectFollowUp', () => {
   let fixture: ComponentFixture<ProjectFollowUp>;
@@ -29,9 +29,8 @@ describe('ProjectFollowUp', () => {
       providers: [provideRouter([{ path: '**', component: BlankPage }])],
     });
     fixture = TestBed.createComponent(ProjectFollowUp);
-    fixture.componentRef.setInput('offer', BUSINESS_APP_OFFER);
+    fixture.componentRef.setInput('offer', EVOLUTION_OFFER);
     fixture.componentInstance.offerOpened.subscribe(() => emitted.push('offerOpened'));
-    fixture.componentInstance.hiringOpened.subscribe(() => emitted.push('hiringOpened'));
     fixture.detectChanges();
     await fixture.whenStable();
   });
@@ -46,9 +45,9 @@ describe('ProjectFollowUp', () => {
     expect(section?.getAttribute('aria-labelledby')).toBe(heading?.id);
   });
 
-  it('Given the block When it is rendered Then it promises an answer within 24 working hours', () => {
+  it('Given the block When it is rendered Then it promises an answer within 48 hours, in the evening', () => {
     expect(text(byTestId('project-follow-up-text'))).toBe(
-      'Décrivez-le, je vous réponds sous 48\u00a0h ouvrées.',
+      'Décrivez-le, je vous réponds sous 48\u00a0h, le soir.',
     );
   });
 
@@ -57,27 +56,19 @@ describe('ProjectFollowUp', () => {
 
     expect([link?.tagName, link?.getAttribute('href'), text(link)]).toEqual([
       'A',
-      BUSINESS_APP_OFFER.path,
-      BUSINESS_APP_OFFER.label,
+      EVOLUTION_OFFER.path,
+      EVOLUTION_OFFER.label,
     ]);
   });
 
-  it('Given the block When it is rendered Then the recruiter line leads to the hiring block of the Parcours page', () => {
-    const link = byTestId('project-follow-up-hiring');
-
-    expect(text(byTestId('project-follow-up-hiring-line'))).toBe(
-      'Vous recrutez\u202f? Parcours et CV',
-    );
-    expect([link?.tagName, link?.getAttribute('href'), text(link)]).toEqual([
-      'A',
-      '/about#recrutement',
-      'Parcours et CV',
+  it('Given the block When it is rendered Then its only link leads to the related offer', () => {
+    expect(Array.from(host().querySelectorAll('a'), (link) => link.getAttribute('href'))).toEqual([
+      EVOLUTION_OFFER.path,
     ]);
   });
 
   it.each<{ testId: string; url: string; output: FollowUpOutput }>([
-    { testId: 'project-follow-up-offer', url: BUSINESS_APP_OFFER.path, output: 'offerOpened' },
-    { testId: 'project-follow-up-hiring', url: '/about#recrutement', output: 'hiringOpened' },
+    { testId: 'project-follow-up-offer', url: EVOLUTION_OFFER.path, output: 'offerOpened' },
   ])(
     'Given the block When $testId is clicked Then the router lands on $url and the block reports $output once',
     async ({ testId, url, output }) => {
