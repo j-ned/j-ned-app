@@ -2,7 +2,10 @@ import { Component, computed, input, model, output } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { FormField, FormRoot, form, required } from '@angular/forms/signals';
 import type { BlogPostInput } from '@features/blog/domain/models/blog-post.model';
-import { AVAILABLE_BLOG_TAGS } from '@features/blog/domain/models/blog-tag.model';
+import {
+  AVAILABLE_BLOG_TAGS,
+  BLOG_TAGS_MAX_COUNT,
+} from '@features/blog/domain/models/blog-tag.model';
 import { CODE_LANGUAGES } from '@features/blog/domain/code-language';
 import { BlogArticleBody } from '@features/blog/application/components/blog-article-body';
 import { CodeCopy } from '@features/blog/application/components/code-copy';
@@ -15,6 +18,7 @@ import { AdminMarkdownToolbar } from './admin-markdown-toolbar';
 import { MarkdownEditor } from './markdown-editor';
 import { RequiredMark } from './required-mark';
 import { REQUIRED_MESSAGE } from './required-message';
+import { knownTags } from '../tag-suggestions';
 import { toPostInput, type PostDraft } from '../post-draft';
 
 @Component({
@@ -88,7 +92,9 @@ import { toPostInput, type PostDraft } from '../post-draft';
           </div>
           <app-admin-tags-selector
             data-testid="admin-post-tags"
-            [availableTags]="availableTags"
+            fieldId="post-tags"
+            [suggestions]="tagSuggestions()"
+            [maxCount]="BLOG_TAGS_MAX_COUNT"
             [formField]="form.tags"
           />
         </div>
@@ -223,12 +229,14 @@ export class AdminPostForm {
   readonly value = model.required<PostDraft>();
   readonly persistedCover = input('');
   readonly coverResetToken = input<number>();
+  /** Tags proposés à la saisie ; la page y ajoute ceux des autres articles. */
+  readonly tagSuggestions = input<readonly string[]>(knownTags(AVAILABLE_BLOG_TAGS, []));
   readonly submitted = output<BlogPostInput>();
   readonly coverSelected = output<File>();
   readonly coverCleared = output<void>();
   readonly coverRejected = output<void>();
 
-  protected readonly availableTags = AVAILABLE_BLOG_TAGS;
+  protected readonly BLOG_TAGS_MAX_COUNT = BLOG_TAGS_MAX_COUNT;
   protected readonly codeLanguages = CODE_LANGUAGES.map(({ aliases }) => aliases[0]);
   protected readonly statuses = [
     { value: 'draft', label: 'Brouillon' },

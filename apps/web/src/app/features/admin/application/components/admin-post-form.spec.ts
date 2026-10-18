@@ -22,6 +22,7 @@ import { AdminPostForm } from './admin-post-form';
 type FormOptions = {
   readonly post?: BlogPost;
   readonly persistedCover?: string;
+  readonly tagSuggestions?: readonly string[];
 };
 
 type RenderedForm = {
@@ -52,6 +53,9 @@ async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
     bindings: [
       twoWayBinding('value', value),
       inputBinding('persistedCover', () => options.persistedCover ?? ''),
+      ...(options.tagSuggestions
+        ? [inputBinding('tagSuggestions', () => options.tagSuggestions)]
+        : []),
     ],
   });
   const submitted: BlogPostInput[] = [];
@@ -227,34 +231,55 @@ describe('AdminPostForm: brouillon possédé par la page', () => {
     }).toEqual({ title: 'Remplacé', published: true });
   });
 
-  it('Given an edited post When the form renders Then its tags are pressed', async () => {
+  it('Given an edited post When the form renders Then only its tags are shown', async () => {
     const rendered = await renderForm({
-      post: makeBlogPost({ id: 'b-2', tags: ['Chiffrement', 'Angular'] }),
+      post: makeBlogPost({ id: 'b-2', tags: ['Chiffrement', 'Playwright'] }),
     });
-    const chips = all(byTestId(rendered.host, 'admin-post-tags') ?? rendered.host, 'tag-chip');
 
     expect(
-      chips.filter((chip) => chip.getAttribute('aria-pressed') === 'true').map(normalized),
-    ).toEqual(['Angular', 'Chiffrement']);
+      all(byTestId(rendered.host, 'admin-post-tags') ?? rendered.host, 'tag-chip').map(normalized),
+    ).toEqual(['Chiffrement', 'Playwright']);
   });
 
-  it('Given the subject chips When the admin selects RxJS Then the draft subjects and the payload hold it', async () => {
+  it('Given the tags field When the admin types a free tag and Enter Then the draft and the payload hold it', async () => {
     const rendered = await renderForm({ post: EDITABLE });
-    const chip = all(rendered.host, 'tag-chip').find((element) => normalized(element) === 'RxJS');
 
-    chip?.click();
+    await typeIn(rendered, 'tags-input', 'Freelance');
+    byTestId(rendered.host, 'tags-input')?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
     await settle(rendered.fixture);
     await submitForm(rendered);
 
     expect({
       tags: rendered.value().tags,
       sent: rendered.submitted.map((payload) => payload.tags),
-      chipInSubjects: byTestId(rendered.host, 'admin-post-tags')?.contains(chip ?? null) ?? false,
-    }).toEqual({
-      tags: ['Chiffrement', 'RxJS'],
-      sent: [['Chiffrement', 'RxJS']],
-      chipInSubjects: true,
+    }).toEqual({ tags: ['Chiffrement', 'Freelance'], sent: [['Chiffrement', 'Freelance']] });
+  });
+
+  it('Given suggestions passed by the page When "pla" is typed Then they are offered, and the hint states the 15 tags of the API', async () => {
+    const rendered = await renderForm({
+      post: EDITABLE,
+      tagSuggestions: ['Angular', 'Playwright'],
     });
+
+    await typeIn(rendered, 'tags-input', 'pla');
+
+    expect({
+      options: all(rendered.host, 'tag-option').map(normalized),
+      hint: normalized(byTestId(rendered.host, 'tags-hint')),
+    }).toEqual({
+      options: ['Playwright'],
+      hint: 'Entrée ou virgule pour ajouter un tag. 15 tags au plus, 50 caractères chacun.',
+    });
+  });
+
+  it('Given no suggestions passed When "rx" is typed Then the blog catalogue is offered', async () => {
+    const rendered = await renderForm({ post: EDITABLE });
+
+    await typeIn(rendered, 'tags-input', 'rx');
+
+    expect(all(rendered.host, 'tag-option').map(normalized)).toEqual(['RxJS']);
   });
 
   it('Given an edited article When it is submitted unchanged Then the payload is the draft converted', async () => {

@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPostInput } from '@features/blog/domain/models/blog-post.model';
+import { AVAILABLE_BLOG_TAGS } from '@features/blog/domain/models/blog-tag.model';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
@@ -26,6 +27,7 @@ import {
   toPreviewPost,
   type PostDraft,
 } from '../../application/post-draft';
+import { knownTags } from '../../application/tag-suggestions';
 import type { LeaveConfirmable } from '../../application/unsaved-changes-guard';
 
 const FORM_SECTIONS: readonly FormTocSection<EditedDraft<PostDraft>>[] = [
@@ -93,6 +95,7 @@ const POST_EDITOR_COPY: AdminEditorCopy = {
         <app-admin-post-form
           [(value)]="draft.value"
           [persistedCover]="draft.saved()?.coverImage ?? ''"
+          [tagSuggestions]="tagSuggestions()"
           (submitted)="save($event)"
           [coverResetToken]="draft.coverResetToken()"
           (coverSelected)="draft.selectCover($event)"
@@ -123,8 +126,9 @@ export class AdminPostEditor implements LeaveConfirmable {
 
   protected readonly POST_EDITOR_COPY = POST_EDITOR_COPY;
 
+  // Lue aussi pour un nouvel article : ses tags alimentent les suggestions du champ Tags.
   protected readonly postsResource = rxResource({
-    params: () => this.id(),
+    params: () => ({ id: this.id() }),
     stream: () => this.gateway.getAllPostsForAdmin(),
   });
 
@@ -143,6 +147,13 @@ export class AdminPostEditor implements LeaveConfirmable {
     toDraft: toPostDraft,
     sections: FORM_SECTIONS,
   });
+
+  protected readonly tagSuggestions = computed(() =>
+    knownTags(
+      AVAILABLE_BLOG_TAGS,
+      this.postsResource.hasValue() ? this.postsResource.value().map((post) => post.tags) : [],
+    ),
+  );
 
   protected readonly heading = computed(
     () => this.draft.saved()?.title ?? (this.id() ? 'Modifier un article' : 'Nouvel article'),

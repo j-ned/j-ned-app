@@ -252,35 +252,37 @@ describe('AdminProjectForm: brouillon possédé par la page', () => {
     }).toEqual({ title: 'Remplacé', demo: true });
   });
 
-  it('Given an edited project When the form renders Then its tags are pressed', async () => {
+  it('Given an edited project When the form renders Then only its tags are shown', async () => {
     const rendered = await renderForm({
       project: editableProject({ tags: ['Angular', 'NestJS'] }),
     });
-    const chips = all(byTestId(rendered.host, 'admin-project-tags') ?? rendered.host, 'tag-chip');
 
     expect(
-      chips.filter((chip) => chip.getAttribute('aria-pressed') === 'true').map(normalized),
+      all(byTestId(rendered.host, 'admin-project-tags') ?? rendered.host, 'tag-chip').map(
+        normalized,
+      ),
     ).toEqual(['Angular', 'NestJS']);
   });
 
-  it('Given the tag chips When the admin selects TypeScript Then the draft tags and the payload hold it', async () => {
+  it('Given the tags field When the admin picks TypeScript among the suggestions Then the draft tags and the payload hold it, under the 20 tags of the API', async () => {
     const rendered = await renderForm({ project: editableProject({ kind: 'demo' }) });
-    const chip = all(rendered.host, 'tag-chip').find(
-      (element) => normalized(element) === 'TypeScript',
-    );
 
-    chip?.click();
+    await typeIn(rendered, 'tags-input', 'typesc');
+    const options = all(rendered.host, 'tag-option').map(normalized);
+    all(rendered.host, 'tag-option')[0]?.click();
     await settle(rendered.fixture);
     await submitForm(rendered);
 
     expect({
+      options,
       tags: rendered.value().tags,
       sent: rendered.submitted.map((payload) => payload.tags),
-      chipsInTags: byTestId(rendered.host, 'admin-project-tags')?.contains(chip ?? null) ?? false,
+      hint: normalized(byTestId(rendered.host, 'tags-hint')),
     }).toEqual({
+      options: ['TypeScript'],
       tags: ['Angular', 'TypeScript'],
       sent: [['Angular', 'TypeScript']],
-      chipsInTags: true,
+      hint: 'Entrée ou virgule pour ajouter un tag. 20 tags au plus, 50 caractères chacun.',
     });
   });
 

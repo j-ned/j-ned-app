@@ -53,6 +53,26 @@ for (const theme of THEMES) {
         await expect(page.locator('dialog[open]')).toHaveCount(1);
         await expectNoA11yViolations('confirm-dialog', 'dialogue-confirmation-ouvert');
       });
+
+      test('tags field with a free tag, a refusal and open suggestions has no WCAG A/AA violation', async ({
+        page,
+        visit,
+        expectNoA11yViolations,
+      }) => {
+        await visit('/admin/blog/b-temoin');
+        const field = page.getByRole('combobox', { name: 'Tags' });
+        await expect(field).toBeVisible();
+        await field.fill('Playwright');
+        await field.press('Enter');
+        await expect(page.getByRole('button', { name: 'Retirer le tag Playwright' })).toBeVisible();
+        await field.fill('angular');
+        await field.press('Enter');
+        await expect(page.getByTestId('tags-error')).toBeVisible();
+        await field.fill('secu');
+        await field.press('ArrowDown');
+        await expect(page.getByRole('listbox', { name: 'Tags suggérés' })).toBeVisible();
+        await expectNoA11yViolations('admin-post-tags', 'champ-tags-ouvert');
+      });
     });
   });
 }

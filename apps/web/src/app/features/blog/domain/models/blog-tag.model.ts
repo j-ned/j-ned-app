@@ -49,6 +49,9 @@ export const BLOG_TAGS_BY_CATEGORY: Record<BlogTagCategory, readonly string[]> =
 
 export const AVAILABLE_BLOG_TAGS: readonly string[] = Object.values(BLOG_TAGS_BY_CATEGORY).flat();
 
+/** `@ArrayMaxSize(15)` du DTO d'article de l'API. */
+export const BLOG_TAGS_MAX_COUNT = 15;
+
 const CATEGORY_BY_TAG: ReadonlyMap<string, BlogTagCategory> = new Map(
   (Object.entries(BLOG_TAGS_BY_CATEGORY) as [BlogTagCategory, readonly string[]][]).flatMap(
     ([category, tags]) => tags.map((tag): [string, BlogTagCategory] => [tag, category]),

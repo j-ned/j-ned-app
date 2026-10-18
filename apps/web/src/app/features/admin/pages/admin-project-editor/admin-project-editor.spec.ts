@@ -1065,9 +1065,20 @@ const tocStates = (editor: Editor): readonly string[] =>
     normalized(byTestId(link, 'form-toc-state')),
   );
 
-async function pickTag(editor: Editor, name: string): Promise<void> {
+async function addTag(editor: Editor, name: string): Promise<void> {
+  const input = byTestId(editor.host, 'tags-input') as HTMLInputElement;
+  input.value = name;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+  );
+  await settle(editor.fixture);
+}
+
+async function removeTag(editor: Editor, name: string): Promise<void> {
   [...editor.host.querySelectorAll<HTMLElement>('[data-testid="tag-chip"]')]
     .find((chip) => normalized(chip) === name)
+    ?.querySelector<HTMLButtonElement>('[data-testid="tag-remove"]')
     ?.click();
   await settle(editor.fixture);
 }
@@ -1117,7 +1128,7 @@ describe('AdminProjectEditor: modifications non enregistrées', () => {
     },
     {
       edit: 'a tag',
-      act: (editor: Editor): Promise<void> => pickTag(editor, 'TypeScript'),
+      act: (editor: Editor): Promise<void> => addTag(editor, 'TypeScript'),
       toc: ['', '', '', 'modifié', ''],
     },
     {
@@ -1160,15 +1171,15 @@ describe('AdminProjectEditor: modifications non enregistrées', () => {
     });
   });
 
-  it('Given a project tagged Angular and TypeScript When Angular is unpicked then picked again Then nothing is reported as changed', async () => {
+  it('Given a project tagged Angular and TypeScript When Angular is removed then added again Then nothing is reported as changed', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
       getProjectById: vi.fn((): Observable<Project> =>
         of(makeProject({ id: 'p-1', kind: 'production', tags: ['Angular', 'TypeScript'] })),
       ),
     });
 
-    await pickTag(editor, 'Angular');
-    await pickTag(editor, 'Angular');
+    await removeTag(editor, 'Angular');
+    await addTag(editor, 'Angular');
 
     expect({ state: saveBarState(editor), toc: tocStates(editor) }).toEqual({
       state: 'Aucune modification',

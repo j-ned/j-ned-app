@@ -162,12 +162,24 @@ async function choosePublished(editor: Editor): Promise<void> {
   await settle(editor.fixture);
 }
 
-async function pickSubject(editor: Editor, name: string): Promise<void> {
-  [...editor.host.querySelectorAll<HTMLElement>('[data-testid="tag-chip"]')]
-    .find((chip) => normalized(chip) === name)
-    ?.click();
+async function typeTag(editor: Editor, text: string): Promise<void> {
+  const input = byTestId(editor.host, 'tags-input') as HTMLInputElement;
+  input.focus();
+  input.value = text;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
   await settle(editor.fixture);
 }
+
+async function addSubject(editor: Editor, name: string): Promise<void> {
+  await typeTag(editor, name);
+  byTestId(editor.host, 'tags-input')?.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+  );
+  await settle(editor.fixture);
+}
+
+const tagOptions = (editor: Editor): readonly string[] =>
+  [...editor.host.querySelectorAll('[data-testid="tag-option"]')].map(normalized);
 
 async function save(editor: Editor): Promise<void> {
   await pressTestId(editor.fixture, 'savebar-submit');
@@ -221,7 +233,7 @@ describe('AdminPostEditor: ouverture', () => {
     },
   );
 
-  it('Given /admin/blog/new When it is opened Then nothing is loaded, the title reads « Nouvel article » and the form is an empty draft', async () => {
+  it('Given /admin/blog/new When it is opened Then only the list is read for its tags, the title reads « Nouvel article » and the form is an empty draft', async () => {
     const editor = await openEditor('/admin/blog/new');
 
     expect({
@@ -232,7 +244,7 @@ describe('AdminPostEditor: ouverture', () => {
       draft: (byTestId(editor.host, 'admin-post-status-draft') as HTMLInputElement | null)?.checked,
     }).toEqual({
       crash: null,
-      requested: 0,
+      requested: 1,
       title: 'Nouvel article',
       field: '',
       draft: true,
@@ -379,12 +391,47 @@ describe('AdminPostEditor: enregistrer', () => {
   });
 });
 
+describe('AdminPostEditor: tags suggérés', () => {
+  const TAGGED = [
+    makeBlogPost({ id: 'b-1', tags: ['Chiffrement'] }),
+    makeBlogPost({ id: 'b-3', tags: ['Playwright', 'Freelance'] }),
+  ];
+
+  it.each(['/admin/blog/b-1', '/admin/blog/new'])(
+    'Given articles tagged outside the catalogue When %s is opened and "pl" typed Then their tags are suggested next to the catalogue',
+    async (url) => {
+      const editor = await openEditor(url, {
+        getAllPostsForAdmin: vi.fn((): Observable<readonly BlogPost[]> => of(TAGGED)),
+      });
+
+      await typeTag(editor, 'pl');
+
+      expect(tagOptions(editor)).toEqual(['Playwright']);
+    },
+  );
+
+  it('Given the list fails to load When a new article is written Then the catalogue is still suggested', async () => {
+    const editor = await openEditor('/admin/blog/new', {
+      getAllPostsForAdmin: vi.fn((): Observable<readonly BlogPost[]> =>
+        throwError(() => new Error('réseau')),
+      ),
+    });
+
+    await typeTag(editor, 'angu');
+
+    expect({ crash: editor.crash, options: tagOptions(editor) }).toEqual({
+      crash: null,
+      options: ['Angular'],
+    });
+  });
+});
+
 describe('AdminPostEditor: création', () => {
   it('Given a filled new article When it is saved Then the article is created with the typed payload', async () => {
     const editor = await openEditor('/admin/blog/new');
 
     await fillNewPost(editor);
-    await pickSubject(editor, 'Angular');
+    await addSubject(editor, 'Angular');
     await save(editor);
 
     expect(editor.createPost.mock.calls).toEqual([
@@ -894,7 +941,7 @@ describe('AdminPostEditor: modifications non enregistrées', () => {
     },
     {
       edit: 'a subject',
-      act: (editor: Editor): Promise<void> => pickSubject(editor, 'Angular'),
+      act: (editor: Editor): Promise<void> => addSubject(editor, 'Angular'),
       toc: ['modifié', '', '', ''],
     },
     {

@@ -12,9 +12,15 @@ import { AdminFormSection } from './admin-form-section';
 import { AdminPairRows } from './admin-pair-rows';
 import { AdminProjectIdentityFields } from './admin-project-identity-fields';
 import { AdminProjectPresentationFields } from './admin-project-presentation-fields';
-import { AVAILABLE_PROJECT_TAGS, DECISION_ROWS, TECH_CHOICE_ROWS } from './admin-project-form-data';
+import {
+  AVAILABLE_PROJECT_TAGS,
+  DECISION_ROWS,
+  PROJECT_TAGS_MAX_COUNT,
+  TECH_CHOICE_ROWS,
+} from './admin-project-form-data';
 import { REQUIRED_MESSAGE } from './required-message';
 import { toProjectInput, type ProjectDraft } from '../project-draft';
+import { knownTags } from '../tag-suggestions';
 
 @Component({
   selector: 'app-admin-project-form',
@@ -97,7 +103,9 @@ import { toProjectInput, type ProjectDraft } from '../project-draft';
       >
         <app-admin-tags-selector
           data-testid="admin-project-tags"
-          [availableTags]="availableTags"
+          fieldId="project-tags"
+          [suggestions]="tagSuggestions"
+          [maxCount]="PROJECT_TAGS_MAX_COUNT"
           [formField]="form.tags"
         />
         <app-admin-pair-rows [rows]="form.techChoices" [config]="techChoiceRows" />
@@ -115,7 +123,8 @@ export class AdminProjectForm {
   readonly coverCleared = output<void>();
   readonly coverRejected = output<void>();
 
-  protected readonly availableTags = AVAILABLE_PROJECT_TAGS;
+  protected readonly tagSuggestions = knownTags(AVAILABLE_PROJECT_TAGS, []);
+  protected readonly PROJECT_TAGS_MAX_COUNT = PROJECT_TAGS_MAX_COUNT;
   protected readonly techChoiceRows = TECH_CHOICE_ROWS;
   protected readonly decisionRows = DECISION_ROWS;
   protected readonly links = [
