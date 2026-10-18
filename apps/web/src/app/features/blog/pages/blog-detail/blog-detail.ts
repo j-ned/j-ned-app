@@ -57,7 +57,7 @@ function laterOf(a: string, b: string): string {
     @let p = post();
     @if (p) {
       <article>
-        <header class="mx-auto max-w-[46rem] px-4 pt-12 pb-10 sm:px-6 md:pt-18 md:pb-12">
+        <header class="mx-auto max-w-5xl px-4 pt-12 pb-10 sm:px-6 md:pt-18 md:pb-12">
           <a
             routerLink="/blog"
             class="group inline-flex min-h-11 items-center gap-2 text-sm text-muted transition-colors hover:text-primary"
@@ -123,7 +123,7 @@ function laterOf(a: string, b: string): string {
           </figure>
         }
 
-        <div class="mx-auto max-w-[46rem] px-4 sm:px-6">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6">
           <div appCodeCopy #codeCopy="appCodeCopy">
             <!-- Un bloc « hydrate never » ne reçoit plus ses entrées : il est recréé à chaque article. -->
             @for (current of [p]; track current.id) {
@@ -162,7 +162,7 @@ function laterOf(a: string, b: string): string {
         </div>
       </article>
 
-      <div class="mx-auto max-w-[46rem] px-4 sm:px-6">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6">
         <div
           class="flex flex-wrap items-center justify-between gap-4 border-t border-foreground/8 py-7"
         >
