@@ -18,6 +18,7 @@ import { AdminMarkdownToolbar } from './admin-markdown-toolbar';
 import { MarkdownEditor } from './markdown-editor';
 import { RequiredMark } from './required-mark';
 import { REQUIRED_MESSAGE } from './required-message';
+import { contentTagHints } from '../content-tag-hints';
 import { knownTags } from '../tag-suggestions';
 import { toPostInput, type PostDraft } from '../post-draft';
 
@@ -95,6 +96,7 @@ import { toPostInput, type PostDraft } from '../post-draft';
             fieldId="post-tags"
             [suggestions]="tagSuggestions()"
             [maxCount]="BLOG_TAGS_MAX_COUNT"
+            [hints]="tagHints()"
             [formField]="form.tags"
           />
         </div>
@@ -242,6 +244,10 @@ export class AdminPostForm {
     { value: 'draft', label: 'Brouillon' },
     { value: 'published', label: 'Publié' },
   ] as const;
+  protected readonly tagHints = computed(() => {
+    const { title, excerpt, contentMarkdown, tags } = this.value();
+    return contentTagHints(this.tagSuggestions(), tags, { title, excerpt, body: contentMarkdown });
+  });
   protected readonly currentCoverAlt = computed(
     () => `Couverture actuelle de ${this.value().title}`,
   );

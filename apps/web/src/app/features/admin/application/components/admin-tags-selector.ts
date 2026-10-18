@@ -13,7 +13,7 @@ import type { FormValueControl } from '@angular/forms/signals';
 import { blogTagPalette } from '@features/blog/application/blog-tag-palette';
 import { AppIcon } from '@shared/icons/app-icon';
 import { addTag, TAG_MAX_LENGTH, type TagRefusal } from '../add-tag';
-import { normalizeTag } from '../tag-key';
+import { normalizeTag, tagKey } from '../tag-key';
 import { matchingTags } from '../tag-suggestions';
 
 type TagChip = { readonly tag: string; readonly classes: string };
@@ -100,6 +100,29 @@ type TagChip = { readonly tag: string; readonly classes: string };
         {{ message }}
       </p>
     }
+    @if (hintTags().length > 0) {
+      <div
+        role="group"
+        data-testid="tag-hints"
+        [attr.aria-labelledby]="id + '-hints-label'"
+        class="mt-3 flex flex-wrap items-center gap-2"
+      >
+        <span [id]="id + '-hints-label'" class="text-[0.78125rem] text-muted"
+          >Suggérés d'après l'article</span
+        >
+        @for (tag of hintTags(); track tag) {
+          <button
+            type="button"
+            data-testid="tag-hint"
+            (click)="addHint(tag)"
+            class="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-foreground/30 px-2.5 text-sm text-foreground hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <app-icon name="plus" [size]="10" /><span class="sr-only">Ajouter le tag </span
+            >{{ tag }}
+          </button>
+        }
+      </div>
+    }
     <p data-testid="tags-status" role="status" class="sr-only">{{ announcement() }}</p>
   `,
 })
@@ -111,6 +134,8 @@ export class AdminTagsSelector implements FormValueControl<readonly string[]> {
   /** `@ArrayMaxSize` du DTO de l'API. */
   readonly maxCount = input.required<number>();
   readonly fieldId = input('tags');
+  /** Tags que la page déduit du contenu ; ceux déjà posés ne sont pas proposés. */
+  readonly hints = input<readonly string[]>([]);
   readonly value = model<readonly string[]>([]);
 
   private readonly _field = viewChild.required<ElementRef<HTMLInputElement>>('field');
@@ -131,6 +156,10 @@ export class AdminTagsSelector implements FormValueControl<readonly string[]> {
   protected readonly activeId = computed(() => {
     const index = this.activeIndex();
     return index >= 0 && index < this.options().length ? `${this.fieldId()}-option-${index}` : null;
+  });
+  protected readonly hintTags = computed(() => {
+    const taken = new Set(this.value().map(tagKey));
+    return this.hints().filter((tag) => !taken.has(tagKey(tag)));
   });
   protected readonly hint = computed(
     () =>
@@ -196,6 +225,12 @@ export class AdminTagsSelector implements FormValueControl<readonly string[]> {
   protected pickOption(tag: string, field: HTMLInputElement): void {
     this.addAndClear(tag, field);
     field.focus();
+  }
+
+  protected addHint(tag: string): void {
+    this.commit(tag);
+    // Le bouton pressé disparaît : le focus revient au champ plutôt qu'au document.
+    this._field().nativeElement.focus();
   }
 
   protected removeTag(tag: string): void {

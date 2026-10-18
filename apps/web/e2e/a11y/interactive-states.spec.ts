@@ -73,6 +73,18 @@ for (const theme of THEMES) {
         await expect(page.getByRole('listbox', { name: 'Tags suggérés' })).toBeVisible();
         await expectNoA11yViolations('admin-post-tags', 'champ-tags-ouvert');
       });
+
+      test('tags suggested from the article content have no WCAG A/AA violation', async ({
+        page,
+        visit,
+        expectNoA11yViolations,
+      }) => {
+        await visit('/admin/blog/b-temoin');
+        await page.getByTestId('admin-post-content').fill('Un module NestJS en TypeScript.');
+        const hints = page.getByRole('group', { name: "Suggérés d'après l'article" });
+        await expect(hints.getByRole('button', { name: 'Ajouter le tag NestJS' })).toBeVisible();
+        await expectNoA11yViolations('admin-post-tags', 'tags-suggeres-article');
+      });
     });
   });
 }

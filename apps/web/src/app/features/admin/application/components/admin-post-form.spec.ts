@@ -291,6 +291,42 @@ describe('AdminPostForm: brouillon possédé par la page', () => {
   });
 });
 
+describe("AdminPostForm: tags suggérés d'après l'article", () => {
+  const hints = (host: HTMLElement): readonly string[] =>
+    all(host, 'tag-hint').map((button) => normalized(button).replace('Ajouter le tag ', ''));
+
+  it('Given an article naming catalogue tags When the form renders Then the unselected ones are suggested, title first', async () => {
+    const rendered = await renderForm({
+      post: makeBlogPost({
+        title: 'Tester un store RxJS',
+        excerpt: 'Avec Angular.',
+        contentMarkdown: 'Du Chiffrement et de la sécurité web.',
+        tags: ['Chiffrement'],
+      }),
+    });
+
+    expect(hints(rendered.host)).toEqual(['RxJS', 'Angular', 'Sécurité', 'Sécurité web']);
+  });
+
+  it('Given the body When the admin writes a new tag name Then it joins the suggestions, and leaves them once added', async () => {
+    const rendered = await renderForm({
+      post: EDITABLE,
+      tagSuggestions: ['Angular', 'Playwright'],
+    });
+
+    await typeIn(rendered, 'admin-post-content', 'Des tests Playwright.');
+    const before = hints(rendered.host);
+    all(rendered.host, 'tag-hint')[0]?.click();
+    await settle(rendered.fixture);
+
+    expect({ before, after: hints(rendered.host), tags: rendered.value().tags }).toEqual({
+      before: ['Playwright'],
+      after: [],
+      tags: ['Chiffrement', 'Playwright'],
+    });
+  });
+});
+
 describe('AdminPostForm: champs obligatoires', () => {
   it('Given a new article left empty When it is submitted Then nothing is emitted and the title, excerpt and content each show a required error', async () => {
     const rendered = await renderForm();

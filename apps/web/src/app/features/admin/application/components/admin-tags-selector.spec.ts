@@ -81,11 +81,13 @@ describe('AdminTagsSelector', () => {
 
   async function render(
     value: readonly string[] = [],
+    hints?: readonly string[],
   ): Promise<{ fixture: ComponentFixture<AdminTagsSelector>; page: TagsFieldPage }> {
     const fixture = TestBed.createComponent(AdminTagsSelector);
     fixture.componentRef.setInput('suggestions', [...SUGGESTIONS]);
     fixture.componentRef.setInput('maxCount', 15);
     fixture.componentRef.setInput('value', [...value]);
+    if (hints) fixture.componentRef.setInput('hints', [...hints]);
     await settle(fixture);
     return { fixture, page: new TagsFieldPage(fixture) };
   }
@@ -362,6 +364,69 @@ describe('AdminTagsSelector', () => {
         focusKept,
         focused: document.activeElement === page.input,
       }).toEqual({ value: ['PBKDF2'], focusKept: true, focused: true });
+    });
+  });
+
+  describe("suggestions d'après l'article", () => {
+    const hintButtons = (page: TagsFieldPage): HTMLButtonElement[] =>
+      all(page.host, 'tag-hint') as HTMLButtonElement[];
+
+    it('Given hints When the field renders Then each unselected one is a button named « Ajouter le tag X » in a labelled group', async () => {
+      const { page } = await render(['Angular'], ['RxJS', 'angular', 'Freelance']);
+      const group = byTestId(page.host, 'tag-hints');
+      const label = page.host.querySelector(`[id="${group?.getAttribute('aria-labelledby')}"]`);
+
+      expect({
+        role: group?.getAttribute('role'),
+        label: text(label),
+        names: hintButtons(page).map((button) => text(button)),
+        types: hintButtons(page).map((button) => button.type),
+      }).toEqual({
+        role: 'group',
+        label: "Suggérés d'après l'article",
+        names: ['Ajouter le tag RxJS', 'Ajouter le tag Freelance'],
+        types: ['button', 'button'],
+      });
+    });
+
+    it.each([{ hints: undefined }, { hints: [] }, { hints: ['ANGULAR'] }])(
+      'Given the hints $hints When every one is absent or selected Then no group shows',
+      async ({ hints }) => {
+        const { page } = await render(['Angular'], hints);
+
+        expect(byTestId(page.host, 'tag-hints')).toBeNull();
+      },
+    );
+
+    it('Given a hint When it is pressed Then it is added, announced, leaves the hints and the focus goes to the input', async () => {
+      const { fixture, page } = await render(['Angular'], ['RxJS', 'Freelance']);
+
+      hintButtons(page)[0].click();
+      await settle(fixture);
+
+      expect({
+        value: fixture.componentInstance.value(),
+        status: page.status(),
+        hints: hintButtons(page).map((button) => text(button)),
+        focused: document.activeElement === page.input,
+      }).toEqual({
+        value: ['Angular', 'RxJS'],
+        status: 'Tag RxJS ajouté.',
+        hints: ['Ajouter le tag Freelance'],
+        focused: true,
+      });
+    });
+
+    it('Given the maximum reached When a hint is pressed Then it is refused like a typed tag', async () => {
+      const { fixture, page } = await render(FIFTEEN_TAGS, ['RxJS']);
+
+      hintButtons(page)[0].click();
+      await settle(fixture);
+
+      expect({ value: fixture.componentInstance.value(), error: page.error() }).toEqual({
+        value: FIFTEEN_TAGS,
+        error: '15 tags au plus : retirez-en un avant d’en ajouter.',
+      });
     });
   });
 
