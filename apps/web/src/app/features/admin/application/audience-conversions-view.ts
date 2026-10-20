@@ -4,7 +4,6 @@ import type {
   OutboundChannel,
   StatsOverview,
 } from '@features/analytics/domain/models/analytics.types';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { calendarDay } from './calendar-day';
 
 const CHANNEL_LABELS: Readonly<Record<OutboundChannel, string>> = {
@@ -20,7 +19,6 @@ const CHANNEL_LABELS: Readonly<Record<OutboundChannel, string>> = {
 const PLACEMENT_LABELS: ReadonlyMap<string, string> = new Map([
   ['home', 'Accueil'],
   ['booking', 'Prise de rendez-vous'],
-  ...OFFERS.map((offer): [string, string] => [`offer_${offer.slug}`, `Offre ${offer.shortName}`]),
 ]);
 
 const isChannel = (entityId: string): entityId is OutboundChannel =>
@@ -48,8 +46,15 @@ export function conversionsNote(overview: StatsOverview | null, periodStart: str
     : '';
 }
 
+// Pages d'offre retirées (spec 029) : leurs envois passés restent comptés sous un libellé honnête.
+const RETIRED_OFFER_PREFIX = 'offer_';
+
 export function placementLabel(entityId: string): string {
-  return PLACEMENT_LABELS.get(entityId) ?? `Emplacement inconnu (${entityId})`;
+  const known = PLACEMENT_LABELS.get(entityId);
+  if (known) return known;
+  return entityId.startsWith(RETIRED_OFFER_PREFIX)
+    ? `Page d'offre retirée (${entityId.slice(RETIRED_OFFER_PREFIX.length)})`
+    : `Emplacement inconnu (${entityId})`;
 }
 
 export function channelLabel(entityId: string): string {

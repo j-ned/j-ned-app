@@ -5,8 +5,6 @@ import type { Mock } from 'vitest';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { offerPath } from '@features/offer/domain/offer-path';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { Footer } from './footer';
 import { FOOTER_COPY } from './footer.static-data';
@@ -18,18 +16,16 @@ async function setup(): Promise<{
   fixture: ComponentFixture<Footer>;
   host: HTMLElement;
   scrollTo: ReturnType<typeof vi.fn>;
-  scrollToRequestForm: ReturnType<typeof vi.fn>;
   trackCtaClick: Mock<AnalyticsGateway['trackCtaClick']>;
 }> {
   const scrollTo = vi.fn();
-  const scrollToRequestForm = vi.fn();
   const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
   TestBed.configureTestingModule({
     providers: [
       provideRouter([{ path: '**', component: BlankPage }]),
       {
         provide: SectionScroller,
-        useValue: { scrollTo, scrollToTop: vi.fn(), scrollToRequestForm },
+        useValue: { scrollTo, scrollToTop: vi.fn() },
       },
       { provide: AnalyticsGateway, useValue: stubAnalyticsGateway({ trackCtaClick }) },
     ],
@@ -41,7 +37,6 @@ async function setup(): Promise<{
     fixture,
     host: fixture.nativeElement as HTMLElement,
     scrollTo,
-    scrollToRequestForm,
     trackCtaClick,
   };
 }
@@ -74,17 +69,12 @@ describe('Footer', () => {
     it('pins every label of the footer', () => {
       expect(FOOTER_COPY).toEqual({
         tagline:
-          'Sites et applications web pour TPE, PME et ateliers. Missions le soir et le week-end, Yvelines et à distance.',
-        headings: { offers: 'Offres', resources: 'Ressources', contact: 'Contact' },
+          'Tourneur CN le jour, développeur web le reste du temps. Angular, NestJS et auto-hébergement.',
+        headings: { resources: 'Ressources', contact: 'Contact' },
         resources: { projects: 'Réalisations', blog: 'Blog', about: 'Parcours' },
-        contactCta: 'Décrire mon projet',
+        contactCta: 'Me contacter',
         bookingLink: 'Réserver un appel de 30\u00a0min',
         socials: { malt: 'Malt', linkedin: 'LinkedIn', github: 'GitHub' },
-        review: {
-          prompt: 'Vous avez travaillé avec moi\u202f?',
-          link: 'Laisser un avis sur Google',
-          newTab: '(nouvel onglet)',
-        },
         legal: {
           owner: 'Julien Nédellec',
           status: 'EI',
@@ -102,55 +92,20 @@ describe('Footer', () => {
       expect(tagline?.textContent?.trim()).toBe(FOOTER_COPY.tagline);
     });
 
-    it('Given the footer When it is rendered Then the columns are Offres, Ressources, Contact in that order', async () => {
+    it('Given the footer When it is rendered Then the columns are Ressources then Contact, with no offer column', async () => {
       const { host } = await setup();
       const headings = byTestId(host, 'footer-column-heading').map((h) => h.textContent?.trim());
 
-      expect(headings).toEqual([
-        FOOTER_COPY.headings.offers,
-        FOOTER_COPY.headings.resources,
-        FOOTER_COPY.headings.contact,
-      ]);
+      expect(headings).toEqual([FOOTER_COPY.headings.resources, FOOTER_COPY.headings.contact]);
     });
   });
 
-  describe('offer links', () => {
-    it('Given the footer When it is rendered Then it links every offer of the catalogue by its short name, in catalogue order', async () => {
+  describe('retired offers', () => {
+    it('Given the footer When it is rendered Then no link leads to a retired offer page', async () => {
       const { host } = await setup();
-      const links = byTestId<HTMLAnchorElement>(host, 'footer-offer-link');
 
-      expect(links.map((link) => link.tagName)).toEqual(OFFERS.map(() => 'A'));
-      expect(links.map((link) => link.getAttribute('href'))).toEqual(
-        OFFERS.map((offer) => offerPath(offer.slug)),
-      );
-      expect(links.map((link) => link.textContent?.trim())).toEqual(
-        OFFERS.map((offer) => offer.shortName),
-      );
+      expect(host.querySelectorAll('a[href^="/offres"]')).toHaveLength(0);
     });
-
-    it('Given the offer links When they are rendered Then they live in the navigation named after the Offres column', async () => {
-      const { host } = await setup();
-      const links = byTestId(host, 'footer-offer-link');
-
-      expect(links.map((link) => navNameOf(link))).toEqual(
-        OFFERS.map(() => FOOTER_COPY.headings.offers),
-      );
-    });
-
-    it.each(OFFERS.map((offer) => [offer.slug, offerPath(offer.slug)] as const))(
-      'Given the %s link When it is clicked Then the router lands on %s',
-      async (slug, path) => {
-        const { fixture, host } = await setup();
-        const link = byTestId<HTMLAnchorElement>(host, 'footer-offer-link').find(
-          (candidate) => candidate.getAttribute('href') === offerPath(slug),
-        );
-
-        expect(link).toBeInstanceOf(HTMLAnchorElement);
-        link?.click();
-        await fixture.whenStable();
-        expect(TestBed.inject(Router).url).toBe(path);
-      },
-    );
   });
 
   describe('resources column', () => {
@@ -203,25 +158,24 @@ describe('Footer', () => {
       expect(navNameOf(ctas[0])).toBe(FOOTER_COPY.headings.contact);
     });
 
-    it('Given the call to action When it is clicked Then the SectionScroller leads to the form of the page, or else to the home contact', async () => {
-      const { host, scrollTo, scrollToRequestForm } = await setup();
+    it('Given the call to action When it is clicked Then the SectionScroller leads to the home contact', async () => {
+      const { host, scrollTo } = await setup();
       const [cta] = byTestId(host, 'footer-contact-cta');
       const button = cta instanceof HTMLButtonElement ? cta : cta?.querySelector('button');
 
       expect(button).toBeInstanceOf(HTMLButtonElement);
       button?.click();
-      expect(scrollToRequestForm).toHaveBeenCalledOnce();
-      expect(scrollTo).not.toHaveBeenCalled();
+      expect(scrollTo).toHaveBeenCalledExactlyOnceWith('contact');
     });
 
     it('Given the call to action When it is clicked Then the click is measured once under footer_contact, before scrolling', async () => {
-      const { host, scrollToRequestForm, trackCtaClick } = await setup();
+      const { host, scrollTo, trackCtaClick } = await setup();
 
       byTestId<HTMLButtonElement>(host, 'footer-contact-cta')[0]?.click();
 
-      expect(trackCtaClick.mock.calls).toEqual([['footer_contact', 'Décrire mon projet']]);
+      expect(trackCtaClick.mock.calls).toEqual([['footer_contact', 'Me contacter']]);
       expect(trackCtaClick.mock.invocationCallOrder[0]).toBeLessThan(
-        scrollToRequestForm.mock.invocationCallOrder[0],
+        scrollTo.mock.invocationCallOrder[0],
       );
     });
 
@@ -251,14 +205,14 @@ describe('Footer', () => {
     });
 
     it('Given the booking link When it is clicked Then the router lands on the booking page and the click is measured once under footer_booking', async () => {
-      const { fixture, host, trackCtaClick, scrollToRequestForm } = await setup();
+      const { fixture, host, trackCtaClick, scrollTo } = await setup();
 
       byTestId<HTMLAnchorElement>(host, 'footer-booking-link')[0]?.click();
       await fixture.whenStable();
 
       expect(TestBed.inject(Router).url).toBe('/rendez-vous');
       expect(trackCtaClick.mock.calls).toEqual([['footer_booking', FOOTER_COPY.bookingLink]]);
-      expect(scrollToRequestForm).not.toHaveBeenCalled();
+      expect(scrollTo).not.toHaveBeenCalled();
     });
 
     it('Given the footer When it is rendered Then Malt, LinkedIn and GitHub open in a new tab from the Contact navigation', async () => {
@@ -292,52 +246,13 @@ describe('Footer', () => {
   });
 
   describe('review invitation', () => {
-    const reviewLink = (host: HTMLElement): HTMLAnchorElement | undefined =>
-      byTestId<HTMLAnchorElement>(host, 'footer-review-link')[0];
-
-    it('Given the footer When it is rendered Then the Contact column asks former clients, after the networks, without claiming any review', async () => {
+    it('Given the footer When it is rendered Then it no longer asks for a Google review (no client, no business, spec 029)', async () => {
       const { host } = await setup();
-      const [prompt] = byTestId(host, 'footer-review-prompt');
-      const socials = byTestId(host, 'footer-social-link');
 
-      expect(prompt?.textContent?.replace(/[ \t\n\r]+/g, ' ').trim()).toBe(
-        'Vous avez travaillé avec moi\u202f?',
-      );
-      expect(navNameOf(prompt)).toBe(FOOTER_COPY.headings.contact);
-      expect(
-        (socials[socials.length - 1]?.compareDocumentPosition(prompt as Node) ?? 0) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    });
-
-    it('Given the footer When it is rendered Then the review link opens the Google review form in a new tab, without opener', async () => {
-      const link = reviewLink((await setup()).host);
-
-      expect(link?.getAttribute('href')).toBe(SITE_IDENTITY.googleReviewUrl);
-      expect(link?.getAttribute('target')).toBe('_blank');
-      expect((link?.getAttribute('rel') ?? '').split(/\s+/)).toContain('noopener');
-      expect(navNameOf(link)).toBe(FOOTER_COPY.headings.contact);
-    });
-
-    it('Given the review link When it is read by assistive technologies Then its name announces the new tab', async () => {
-      const link = reviewLink((await setup()).host);
-
-      expect(link?.textContent?.replace(/[ \t\n\r]+/g, ' ').trim()).toBe(
-        'Laisser un avis sur Google (nouvel onglet)',
-      );
-    });
-
-    it('Given the review link When it is clicked Then the click is measured once under review_google', async () => {
-      const { host, trackCtaClick } = await setup();
-      const link = reviewLink(host);
-      link?.addEventListener('click', (event) => event.preventDefault());
-
-      link?.click();
-
-      expect(trackCtaClick).toHaveBeenCalledExactlyOnceWith(
-        'review_google',
-        'Laisser un avis sur Google',
-      );
+      expect([
+        byTestId(host, 'footer-review-prompt').length,
+        host.querySelectorAll('a[href*="g.page"]').length,
+      ]).toEqual([0, 0]);
     });
   });
 

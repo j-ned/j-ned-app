@@ -1,17 +1,9 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { OFFER_PAGES } from '@features/offer/domain/offer-pages.static-data';
-import { OFFER_PRICES } from '@features/offer/domain/offer-prices.static-data';
-import { formatEur } from '@features/offer/domain/format-eur';
-import type { OfferSummary } from '@features/offer/domain/models/offer.model';
-import { toOfferCatalogueSeo } from '@features/offer/offer-seo';
 import { HOME_WORK_FRAME } from '@features/home/domain/home-hero.static-data';
-import { HOME_FAQ } from '@features/home/domain/home-pitch.static-data';
 import { STATIC_HERO } from '@features/home/infra/data/home.static-data';
 import { FORBIDDEN_WORDINGS } from '@shared/identity/forbidden-wordings';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import PROFILE_FIXTURE from '../../ci/api-stub/fixtures/profile.json';
 import { FOOTER_COPY } from './layout/components/footer/footer.static-data';
 import { routes } from './app.routes';
 import { EDITORIAL_SOURCES, editorialTexts } from './testing/editorial-sources';
@@ -53,17 +45,9 @@ const FORBIDDEN_IDENTITIES: readonly (readonly [string, RegExp])[] = [
 
 const EVENING_AND_WEEKEND = /le soir et le week-end/iu;
 
-const EVOLUTION = 'evolution-application';
-
-const summaryOf = (slug: string): OfferSummary | undefined =>
-  OFFERS.find((summary) => summary.slug === slug);
-
-const evolutionSeoDescription = (): string => summaryOf(EVOLUTION)?.seo.description ?? '';
-
 describe('one identity across the site', () => {
   it.each([
     ['the home lead', (): string => STATIC_HERO.lead],
-    ['the workshop offer subtitle', (): string => OFFER_PAGES['site-atelier'].hero.subtitle],
     ['the about meta description', aboutDescription],
   ])('%s tells the journey exactly once, in its single wording', (_place, textOf) => {
     expect(occurrencesOf(textOf(), SITE_IDENTITY.journey)).toBe(1);
@@ -88,7 +72,6 @@ describe('one identity across the site', () => {
   });
 
   it.each([
-    ['the Google review link', SITE_IDENTITY.googleReviewUrl],
     ['a word that only contains the letters', 'Cdi5TzDRplmKECE'],
     ['the CNC machining trade', 'Tourneur CNC en journée.'],
   ])('does not mistake %s for the CDI', (_label, text) => {
@@ -96,30 +79,17 @@ describe('one identity across the site', () => {
     expect(cdi?.test(text)).toBe(false);
   });
 
-  it('announces on the home lead the showcase site price read from the offer prices', () => {
-    expect(
-      occurrencesOf(STATIC_HERO.lead, formatEur(OFFER_PRICES['site-vitrine'].creationEur)),
-    ).toBe(1);
-  });
-
+  // Spec 029 : plus d'activité commerciale. Le cadre « le soir et le week-end » vendait une
+  // disponibilité ; il ne doit plus apparaître sur la home ni dans le pied de page.
   it.each([
-    ['the availability', (): string => SITE_IDENTITY.availability],
     ['the home lead', (): string => STATIC_HERO.lead],
     ['the home meta description', homeDescription],
     [
       'the work frame of the home',
       (): string => HOME_WORK_FRAME.rows.map(({ value }) => value).join(' '),
     ],
-    ['the home FAQ', (): string => HOME_FAQ.items.map(({ question }) => question).join(' ')],
     ['the footer tagline', (): string => FOOTER_COPY.tagline],
-    ['the catalogue meta description', (): string => toOfferCatalogueSeo(OFFERS).description],
-    ['the reinforcement subtitle', (): string => OFFER_PAGES['renfort-freelance'].hero.subtitle],
-    ['the application evolution meta description', evolutionSeoDescription],
-    [
-      'the motivation served on the Parcours page',
-      (): string => PROFILE_FIXTURE.motivation.description,
-    ],
-  ])('%s states the evening and weekend frame', (_place, textOf) => {
-    expect(textOf()).toMatch(EVENING_AND_WEEKEND);
+  ])('%s no longer sells an evening and weekend availability', (_place, textOf) => {
+    expect(textOf()).not.toMatch(EVENING_AND_WEEKEND);
   });
 });

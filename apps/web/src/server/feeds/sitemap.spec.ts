@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { OFFERS_BASE_PATH, offerPath } from '@features/offer/domain/offer-path';
 import { buildSitemap, type SitemapInput } from './sitemap';
 
 const SITE = 'https://nedellec-julien.fr';
@@ -20,7 +18,7 @@ function aSitemapInput(overrides: Partial<SitemapInput> = {}): SitemapInput {
 }
 
 describe('buildSitemap', () => {
-  it('Given projects and articles When the sitemap is built Then it lists the static pages, the offers, the projects and the articles in that order', () => {
+  it('Given projects and articles When the sitemap is built Then it lists the static pages, the projects and the articles in that order, without the retired offers', () => {
     const xml = buildSitemap(
       aSitemapInput({
         projectSlugs: ['dashflow', 'candidash'],
@@ -36,8 +34,6 @@ describe('buildSitemap', () => {
       `${SITE}/rendez-vous`,
       `${SITE}/mentions-legales`,
       `${SITE}/confidentialite`,
-      `${SITE}/${OFFERS_BASE_PATH}`,
-      ...OFFERS.map(({ slug }) => `${SITE}${offerPath(slug)}`),
       `${SITE}/projects/dashflow`,
       `${SITE}/projects/candidash`,
       `${SITE}/blog/article-temoin`,
@@ -71,7 +67,7 @@ describe('buildSitemap', () => {
   it('Given no content When the sitemap is built Then every static page is dated by the server start', () => {
     const lastmods = entriesOf(buildSitemap(aSitemapInput())).map((entry) => entry.lastmod);
 
-    expect(lastmods).toEqual(Array.from({ length: 8 + OFFERS.length }, () => '2026-10-10'));
+    expect(lastmods).toEqual(Array.from({ length: 7 }, () => '2026-10-10'));
   });
 
   it.each([

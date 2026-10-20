@@ -7,7 +7,7 @@ import {
 } from '@angular/core/testing';
 import { Component, NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import type { Mock } from 'vitest';
 import { Home } from './home';
@@ -23,10 +23,9 @@ import type { HomeBundle } from '@features/home/domain/models/home-bundle.model'
 import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
 import { HOME_HERO_CTA_LABELS } from '../../domain/home-hero.static-data';
-import { HOME_OFFERS_HEADING } from '../../domain/home-offers.static-data';
-import { HOME_FAQ, HOME_METHOD, HOME_WHY } from '../../domain/home-pitch.static-data';
 import { STATIC_HERO } from '../../infra/data/home.static-data';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
+import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 
 @Component({ template: '' })
 class BlankPage {}
@@ -34,6 +33,7 @@ class BlankPage {}
 const bundle = (overrides: Partial<HomeBundle> = {}): HomeBundle => ({
   hero: { id: 'hero', headline: 'Je livre', lead: 'Preuve' },
   featuredProjects: [],
+  latestPosts: [],
   ...overrides,
 });
 
@@ -131,6 +131,8 @@ async function setup(
 type DeferHarness = {
   fixture: ComponentFixture<Home>;
   blocks: readonly DeferBlockFixture[];
+  /** Absent quand aucun article n'est publié : la section n'est pas rendue du tout. */
+  postsBlock: DeferBlockFixture | null;
   projectsBlock: DeferBlockFixture;
   contactBlock: DeferBlockFixture;
   analytics: AnalyticsStub;
@@ -147,7 +149,9 @@ async function renderHomeTemplate(
     providers: [
       provideRouter([
         { path: 'about', component: BlankPage },
-        { path: 'offres', component: BlankPage },
+        { path: 'blog', component: BlankPage },
+        { path: 'blog/:slug', component: BlankPage },
+        { path: 'projects', component: BlankPage },
         { path: 'rendez-vous', component: BlankPage },
       ]),
       {
@@ -169,11 +173,13 @@ async function renderHomeTemplate(
   await fixture.whenStable();
   fixture.detectChanges();
 
+  // Ordre du template : articles (si publiés), projets, contact.
   const blocks = await fixture.getDeferBlocks();
   return {
     fixture,
     blocks,
-    projectsBlock: blocks[0],
+    postsBlock: blocks.length === 3 ? blocks[0] : null,
+    projectsBlock: blocks[blocks.length - 2],
     contactBlock: blocks[blocks.length - 1],
     analytics,
     scroller,
@@ -196,15 +202,6 @@ function byTestId(fixture: ComponentFixture<Home>, id: string): HTMLElement | nu
 function allByTestId(fixture: ComponentFixture<Home>, id: string): readonly HTMLElement[] {
   const root = fixture.nativeElement as HTMLElement;
   return Array.from(root.querySelectorAll<HTMLElement>(`[data-testid="${id}"]`));
-}
-
-const text = (el: Element | null | undefined): string =>
-  (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
-
-function labelOf(fixture: ComponentFixture<Home>, section: Element | null): HTMLElement | null {
-  const labelledBy = section?.getAttribute('aria-labelledby') ?? '';
-  const root = fixture.nativeElement as HTMLElement;
-  return labelledBy ? root.querySelector<HTMLElement>(`[id="${labelledBy}"]`) : null;
 }
 
 function followEachOther(sequence: readonly (HTMLElement | null)[]): readonly boolean[] {
@@ -278,53 +275,68 @@ describe('Home', () => {
   });
 
   describe('appels du premier écran', () => {
-    it('Given le hero rendu When le visiteur demande à décrire son projet Then la page mesure home_hero_contact puis fait défiler jusqu’au contact', async () => {
-      const { fixture, analytics, scroller } = await renderHomeTemplate([], { hero: STATIC_HERO });
+    it.each([
+      { testId: 'hero-cta-blog', ctaId: 'home_hero_blog', label: HOME_HERO_CTA_LABELS.blog },
+      {
+        testId: 'hero-cta-projects',
+        ctaId: 'home_hero_projects',
+        label: HOME_HERO_CTA_LABELS.projects,
+      },
+    ])(
+      'Given le hero rendu When le visiteur suit $testId Then la page mesure $ctaId une fois, sans faire défiler',
+      async ({ testId, ctaId, label }) => {
+        const { fixture, analytics, scroller } = await renderHomeTemplate([], {
+          hero: STATIC_HERO,
+        });
 
-      byTestId(fixture, 'hero-cta-contact')?.click();
+        byTestId(fixture, testId)?.click();
+        await fixture.whenStable();
 
-      expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith(
-        'home_hero_contact',
-        HOME_HERO_CTA_LABELS.contact,
-      );
-      expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith('contact');
-      expect(analytics.trackCtaClick.mock.invocationCallOrder[0]).toBeLessThan(
-        scroller.scrollTo.mock.invocationCallOrder[0],
-      );
+        expect(analytics.trackCtaClick.mock.calls).toEqual([[ctaId, label]]);
+        expect(scroller.scrollTo).not.toHaveBeenCalled();
+      },
+    );
+  });
+
+  describe('derniers articles', () => {
+    const posts: readonly BlogPost[] = [
+      makeBlogPost({ slug: 'a', title: 'Article A', publishedAt: '2026-09-01T08:00:00Z' }),
+      makeBlogPost({ slug: 'b', title: 'Article B', publishedAt: '2026-08-01T08:00:00Z' }),
+    ];
+
+    it('Given aucun article publié When la page est rendue Then ni section ni place réservée n’existent', async () => {
+      const harness = await renderHomeTemplate([], { latestPosts: [] });
+
+      expect([
+        harness.postsBlock,
+        byTestId(harness.fixture, 'home-latest-posts-placeholder'),
+      ]).toEqual([null, null]);
     });
 
-    it('Given le hero rendu When le visiteur ouvre les offres Then la page mesure home_hero_offers sans faire défiler', async () => {
-      const { fixture, analytics, scroller } = await renderHomeTemplate([], { hero: STATIC_HERO });
+    it('Given des articles publiés When le bloc reste à son état initial Then le placeholder réserve la place', async () => {
+      const { fixture } = await renderHomeTemplate([], { latestPosts: posts });
 
-      byTestId(fixture, 'hero-cta-offers')?.click();
-      await fixture.whenStable();
-
-      expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith(
-        'home_hero_offers',
-        HOME_HERO_CTA_LABELS.offers,
-      );
-      expect(scroller.scrollTo).not.toHaveBeenCalled();
+      expect(byTestId(fixture, 'home-latest-posts-placeholder')).not.toBeNull();
+      expect(byTestId(fixture, 'home-latest-posts')).toBeNull();
     });
 
-    it('Given le hero rendu When le visiteur ouvre la réservation Then la page mesure home_hero_booking sans faire défiler', async () => {
-      const { fixture, analytics, scroller } = await renderHomeTemplate([], { hero: STATIC_HERO });
+    it('Given des articles publiés When le bloc passe à Complete Then chaque article mène à sa page, dans l’ordre du bundle', async () => {
+      const { fixture, postsBlock } = await renderHomeTemplate([], { latestPosts: posts });
 
-      byTestId(fixture, 'hero-booking-link')?.click();
+      await postsBlock?.render(DeferBlockState.Complete);
       await fixture.whenStable();
 
-      expect(analytics.trackCtaClick.mock.calls).toEqual([
-        ['home_hero_booking', HOME_HERO_CTA_LABELS.booking],
-      ]);
-      expect(scroller.scrollTo).not.toHaveBeenCalled();
+      expect(
+        allByTestId(fixture, 'home-latest-post-link').map((link) => link.getAttribute('href')),
+      ).toEqual(['/blog/a', '/blog/b']);
     });
   });
 
   describe('avis clients', () => {
-    it('Given aucun avis réel When toutes les sections sont rendues Then ni section d’avis ni place réservée n’existent', async () => {
+    it('Given toutes les sections rendues When la page est lue Then aucune section d’avis n’existe', async () => {
       const harness = await renderHomeTemplate([], { hero: STATIC_HERO });
       await renderAllDeferred(harness);
 
-      expect(byTestId(harness.fixture, 'home-faq-placeholder')).toBeNull();
       expect([
         byTestId(harness.fixture, 'home-reviews'),
         byTestId(harness.fixture, 'home-reviews-placeholder'),
@@ -397,20 +409,17 @@ describe('Home', () => {
       expect(links[0]?.closest('[id="contact"]') ?? null).not.toBeNull();
     });
 
-    it('Given le bloc contact rendu When le formulaire est lu Then le type de projet propose les noms courts des offres, dans l’ordre du catalogue, puis Autre', async () => {
+    it('Given le bloc contact rendu When le formulaire est lu Then il ne demande plus de type de projet tiré des offres', async () => {
       const { fixture, contactBlock } = await renderHomeTemplate();
 
       await contactBlock.render(DeferBlockState.Complete);
       await fixture.whenStable();
 
-      const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
-        'select[data-testid="contact-project-type"]',
-      );
-      expect([...(select?.options ?? [])].map((option) => option.value)).toEqual([
-        '',
-        ...OFFERS.map((offer) => offer.shortName),
-        'Autre',
-      ]);
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector(
+          '[data-testid="contact-project-type"]',
+        ),
+      ).toBeNull();
     });
   });
 
@@ -440,7 +449,7 @@ describe('Home', () => {
 
       active.set('contact');
       await fixture.whenStable();
-      active.set('methode');
+      active.set('other');
       await fixture.whenStable();
       active.set('contact');
       await fixture.whenStable();
@@ -448,311 +457,79 @@ describe('Home', () => {
       expect(analytics.trackSectionView.mock.calls).toEqual([['home_contact', '/']]);
     });
 
-    it('Given the home When only the method section becomes active Then no arrival on the form is reported', async () => {
+    it('Given the home When only another section becomes active Then no arrival on the form is reported', async () => {
       const { fixture, analytics } = await setup();
 
-      TestBed.inject(ActiveSection).set('methode');
+      TestBed.inject(ActiveSection).set('other');
       await fixture.whenStable();
 
       expect(analytics.trackSectionView).not.toHaveBeenCalled();
     });
   });
 
-  describe('home commerciale', () => {
-    it('Given le template réel When aucun bloc différé n’est déclenché Then les offres sont déjà rendues, sous l’unique h1', async () => {
-      const { fixture } = await renderHomeTemplate();
-      const root = fixture.nativeElement as HTMLElement;
-
-      const offers = byTestId(fixture, 'home-offers');
-      expect(offers?.tagName).toBe('SECTION');
-      expect(text(offers?.querySelector('h2'))).toBe(HOME_OFFERS_HEADING);
-      expect(root.querySelectorAll('h1')).toHaveLength(1);
-    });
-
-    it('Given le template réel When la page est rendue Then hero, offres, réalisations, méthode, pourquoi moi, FAQ puis contact se suivent dans le DOM', async () => {
-      const { fixture } = await renderHomeTemplate();
+  describe('composition de la home', () => {
+    it('Given le template réel When la page est rendue Then hero, derniers articles, réalisations puis contact se suivent dans le DOM', async () => {
+      const { fixture } = await renderHomeTemplate([], {
+        latestPosts: [makeBlogPost({ publishedAt: '2026-09-01T08:00:00Z' })],
+      });
 
       const sequence = [
         'hero-headline',
-        'home-offers',
+        'home-latest-posts-placeholder',
         'home-projects-placeholder',
-        'home-method-placeholder',
-        'home-why-placeholder',
-        'home-faq-placeholder',
         'home-contact-placeholder',
       ].map((id) => byTestId(fixture, id));
-      expect(sequence.map((el) => el !== null)).toEqual(Array(7).fill(true));
-      expect(followEachOther(sequence)).toEqual(Array(6).fill(true));
+      expect(sequence.map((el) => el !== null)).toEqual(Array(4).fill(true));
+      expect(followEachOther(sequence)).toEqual(Array(3).fill(true));
     });
 
-    it('Given le hero livré et toutes les sections rendues When la page est lue Then aucun texte ne mentionne le CDI', async () => {
-      const harness = await renderHomeTemplate([], { hero: STATIC_HERO });
-      await renderAllDeferred(harness);
-      const { fixture } = harness;
-      const root = fixture.nativeElement as HTMLElement;
+    it.each([
+      'home-offers',
+      'home-method-placeholder',
+      'home-why-placeholder',
+      'home-faq-placeholder',
+      'hero-booking-link',
+    ])(
+      'Given toutes les sections rendues When la page est lue Then la section commerciale %s a disparu',
+      async (testId) => {
+        const harness = await renderHomeTemplate([], { hero: STATIC_HERO });
+        await renderAllDeferred(harness);
 
-      expect(byTestId(fixture, 'home-contact-form')).not.toBeNull();
-      expect(root.textContent).not.toMatch(/\bCDI\b/);
-    });
-  });
+        expect(byTestId(harness.fixture, testId)).toBeNull();
+      },
+    );
 
-  describe('méthode, pourquoi moi et FAQ', () => {
-    const faqSection = (fixture: ComponentFixture<Home>): HTMLElement | null =>
-      byTestId(fixture, 'faq-item')?.closest('section') ?? null;
-
-    it('Given le template réel When aucun bloc différé n’est déclenché Then les trois sections attendent derrière leur placeholder', async () => {
-      const { fixture, blocks } = await renderHomeTemplate();
-
-      expect(blocks).toHaveLength(5);
-      expect(
-        ['home-method-placeholder', 'home-why-placeholder', 'home-faq-placeholder'].map(
-          (id) => byTestId(fixture, id) !== null,
-        ),
-      ).toEqual([true, true, true]);
-      expect([byTestId(fixture, 'home-method'), byTestId(fixture, 'home-why')]).toEqual([
-        null,
-        null,
-      ]);
-      expect(allByTestId(fixture, 'faq-item')).toHaveLength(0);
-    });
-
-    it('Given le template réel When les blocs différés passent à Complete Then les sections remplacent leurs placeholders', async () => {
+    it('Given toutes les sections rendues When la page est lue Then l’ancre methode n’existe plus et seul le contact est observé', async () => {
       const harness = await renderHomeTemplate();
       await renderAllDeferred(harness);
       const { fixture } = harness;
 
+      expect((fixture.nativeElement as HTMLElement).querySelector('[id="methode"]')).toBeNull();
       expect(
-        ['home-method-placeholder', 'home-why-placeholder', 'home-faq-placeholder'].map((id) =>
-          byTestId(fixture, id),
-        ),
-      ).toEqual([null, null, null]);
-      expect(
-        [byTestId(fixture, 'home-method'), byTestId(fixture, 'home-why'), faqSection(fixture)].map(
-          (el) => el?.tagName,
-        ),
-      ).toEqual(['SECTION', 'SECTION', 'SECTION']);
-    });
-
-    describe('ancre de la méthode', () => {
-      it('Given le template réel When aucun bloc différé n’est déclenché Then l’ancre methode existe déjà, compense le header et enveloppe le placeholder', async () => {
-        const { fixture } = await renderHomeTemplate();
-
-        const anchor = byTestId(fixture, 'home-method-placeholder')?.closest('[id="methode"]');
-        expect(anchor ?? null).not.toBeNull();
-        expect(anchor?.classList.contains('scroll-mt-20')).toBe(true);
-      });
-
-      it('Given les blocs différés rendus When la méthode est lue Then elle est dans l’ancre methode', async () => {
-        const harness = await renderHomeTemplate();
-        await renderAllDeferred(harness);
-
-        const method = byTestId(harness.fixture, 'home-method');
-        expect(method?.closest('[id="methode"]') ?? null).not.toBeNull();
-      });
-
-      it('Given le template réel When on relève le scroll-spy Then la méthode puis le contact sont observés sur leur ancre', async () => {
-        const { fixture } = await renderHomeTemplate();
-
-        const observed = fixture.debugElement
+        fixture.debugElement
           .queryAll(By.directive(SectionVisibility))
-          .map((el) => ({
-            id: (el.nativeElement as HTMLElement).id,
-            section: el.injector.get(SectionVisibility).sectionId(),
-          }));
-        expect(observed).toEqual([
-          { id: 'methode', section: 'methode' },
-          { id: 'contact', section: 'contact' },
-        ]);
-      });
+          .map((el) => el.injector.get(SectionVisibility).sectionId()),
+      ).toEqual(['contact']);
     });
 
-    describe('méthode', () => {
-      let fixture: ComponentFixture<Home>;
-      const method = (): HTMLElement | null => byTestId(fixture, 'home-method');
+    it('Given le hero livré et toutes les sections rendues When la page est lue Then aucun texte ne vend ni ne parle d’emploi', async () => {
+      const harness = await renderHomeTemplate([], { hero: STATIC_HERO });
+      await renderAllDeferred(harness);
+      const root = harness.fixture.nativeElement as HTMLElement;
 
-      beforeEach(async () => {
-        const harness = await renderHomeTemplate();
-        await renderAllDeferred(harness);
-        fixture = harness.fixture;
-      });
-
-      it('is a section labelled by its h2, with its lead', () => {
-        const heading = labelOf(fixture, method());
-        expect([heading?.tagName, text(heading)]).toEqual(['H2', HOME_METHOD.heading]);
-        expect(text(byTestId(fixture, 'home-method-lead'))).toBe(HOME_METHOD.lead);
-      });
-
-      it('sequences the steps as an ordered list, each titled by an h3, in order', () => {
-        const steps = allByTestId(fixture, 'home-method-step');
-        expect(steps.map((step) => [step.tagName, step.parentElement?.tagName])).toEqual(
-          Array(HOME_METHOD.steps.length).fill(['LI', 'OL']),
-        );
-        expect(
-          steps.map((step) => {
-            const verb = step.querySelector('[data-testid="home-method-step-verb"]');
-            return {
-              heading: verb?.tagName,
-              verb: text(verb),
-              when: text(step.querySelector('[data-testid="home-method-step-when"]')),
-              detail: text(step.querySelector('[data-testid="home-method-step-detail"]')),
-            };
-          }),
-        ).toEqual(
-          HOME_METHOD.steps.map(({ verb, when, detail }) => ({
-            heading: 'H3',
-            verb,
-            when,
-            detail,
-          })),
-        );
-      });
-
-      it('offers the booking page from the framing step, as its single link', () => {
-        const [frame] = allByTestId(fixture, 'home-method-step');
-        const links = allByTestId(fixture, 'home-method-step-link');
-        expect(links.map((link) => [link.tagName, link.getAttribute('href'), text(link)])).toEqual([
-          ['A', '/rendez-vous', HOME_METHOD.steps[0].link?.label],
-        ]);
-        expect(frame?.contains(links[0] ?? null)).toBe(true);
-      });
-
-      it('leads to the booking page when the framing step link is clicked', async () => {
-        byTestId(fixture, 'home-method-step-link')?.click();
-        await fixture.whenStable();
-        expect(TestBed.inject(Router).url).toBe('/rendez-vous');
-      });
-
-      it('lists the commitments, in order, within the method section', () => {
-        const commitments = allByTestId(fixture, 'home-method-commitment');
-        expect(commitments.map((item) => item.tagName)).toEqual(
-          Array(HOME_METHOD.commitments.length).fill('LI'),
-        );
-        expect(commitments.map(text)).toEqual(HOME_METHOD.commitments);
-        expect(commitments.every((item) => method()?.contains(item))).toBe(true);
-      });
-    });
-
-    describe('pourquoi moi', () => {
-      let fixture: ComponentFixture<Home>;
-      const why = (): HTMLElement | null => byTestId(fixture, 'home-why');
-
-      beforeEach(async () => {
-        const harness = await renderHomeTemplate();
-        await renderAllDeferred(harness);
-        fixture = harness.fixture;
-      });
-
-      it('is a section labelled by its h2', () => {
-        const heading = labelOf(fixture, why());
-        expect([heading?.tagName, text(heading)]).toEqual(['H2', HOME_WHY.heading]);
-      });
-
-      it('quotes the workshop rule with its attribution', () => {
-        const quote = byTestId(fixture, 'home-why-quote');
-        expect(quote?.tagName).toBe('BLOCKQUOTE');
-        expect(why()?.contains(quote ?? null)).toBe(true);
-        expect({
-          text: text(byTestId(fixture, 'home-why-quote-text')),
-          attribution: text(byTestId(fixture, 'home-why-quote-attribution')),
-        }).toEqual(HOME_WHY.quote);
-      });
-
-      it('argues with the three key points, lead then detail, in order', () => {
-        const points = allByTestId(fixture, 'key-point');
-        expect(points.every((point) => why()?.contains(point))).toBe(true);
-        expect(
-          points.map((point) => ({
-            lead: text(point.querySelector('[data-testid="key-point-lead"]')),
-            detail: text(point.querySelector('[data-testid="key-point-detail"]')),
-          })),
-        ).toEqual(HOME_WHY.points.map(({ lead, detail }) => ({ lead, detail })));
-      });
-
-      it('links to the career page', () => {
-        const link = byTestId(fixture, 'home-why-about-link');
-        expect([link?.tagName, link?.getAttribute('href'), text(link)]).toEqual([
-          'A',
-          '/about',
-          HOME_WHY.aboutLinkLabel,
-        ]);
-      });
-
-      it('navigates to the career page when the link is clicked', async () => {
-        const router = TestBed.inject(Router);
-        byTestId(fixture, 'home-why-about-link')?.click();
-        await fixture.whenStable();
-        expect(router.url).toBe('/about');
-      });
-    });
-
-    describe('FAQ', () => {
-      let fixture: ComponentFixture<Home>;
-
-      beforeEach(async () => {
-        const harness = await renderHomeTemplate();
-        await renderAllDeferred(harness);
-        fixture = harness.fixture;
-      });
-
-      it('is a section labelled by its h2, with its lead', () => {
-        const section = faqSection(fixture);
-        const heading = labelOf(fixture, section);
-        expect([heading?.tagName, text(heading)]).toEqual(['H2', HOME_FAQ.heading]);
-        expect(text(section?.querySelector('[data-testid="faq-lead"]'))).toBe(HOME_FAQ.lead);
-      });
-
-      it('renders every question as a closed native disclosure, in order', () => {
-        const items = allByTestId(fixture, 'faq-item');
-        expect(items.map((item) => [item.tagName, (item as HTMLDetailsElement).open])).toEqual(
-          Array(HOME_FAQ.items.length).fill(['DETAILS', false]),
-        );
-        expect(
-          items.map((item) => {
-            const question = item.querySelector('[data-testid="faq-question"]');
-            return {
-              summary: question?.tagName === 'SUMMARY' && question.parentElement === item,
-              question: text(question),
-              answer: text(item.querySelector('[data-testid="faq-answer"]')),
-            };
-          }),
-        ).toEqual(
-          HOME_FAQ.items.map(({ question, answer }) => ({ summary: true, question, answer })),
-        );
-      });
-
-      it('links the booking page from the answer about the free framing call, inside its disclosure', () => {
-        const price = HOME_FAQ.items.find(({ id }) => id === 'application-price');
-        const links = allByTestId(fixture, 'faq-answer-link');
-        expect(
-          links.map((link) => [
-            link.tagName,
-            link.getAttribute('href'),
-            text(link),
-            text(link.closest('details')?.querySelector('[data-testid="faq-question"]')),
-          ]),
-        ).toEqual([['A', '/rendez-vous', price?.link?.label, price?.question]]);
-      });
-
-      it('leads to the booking page when the answer link is clicked', async () => {
-        byTestId(fixture, 'faq-answer-link')?.click();
-        await fixture.whenStable();
-        expect(TestBed.inject(Router).url).toBe('/rendez-vous');
-      });
-
-      it('needs no script to open an answer', () => {
-        expect(faqSection(fixture)?.querySelectorAll('button')).toHaveLength(0);
-      });
+      expect(byTestId(harness.fixture, 'home-contact-form')).not.toBeNull();
+      expect(root.textContent).not.toMatch(/\bCDI\b|devis|freelance|à prix annoncé/i);
     });
 
     describe('page entière', () => {
-      let fixture: ComponentFixture<Home>;
       let root: HTMLElement;
 
       beforeEach(async () => {
-        const harness = await renderHomeTemplate();
+        const harness = await renderHomeTemplate([makeProject()], {
+          latestPosts: [makeBlogPost({ publishedAt: '2026-09-01T08:00:00Z' })],
+        });
         await renderAllDeferred(harness);
-        fixture = harness.fixture;
-        root = fixture.nativeElement as HTMLElement;
+        root = harness.fixture.nativeElement as HTMLElement;
       });
 
       it('keeps a single h1 once every section is rendered', () => {
@@ -766,6 +543,14 @@ describe('Home', () => {
           (section) => root.querySelectorAll(`[id="${section.getAttribute('aria-labelledby')}"]`),
         );
         expect(labels.map((found) => found.length)).toEqual(Array(labels.length).fill(1));
+      });
+
+      it('never skips a heading level: h1, then h2 sections, then h3 entries', () => {
+        const levels = Array.from(root.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((h) =>
+          Number(h.tagName.slice(1)),
+        );
+        expect(levels[0]).toBe(1);
+        expect(levels.slice(1).every((level, i) => level - levels[i] <= 1)).toBe(true);
       });
 
       it('emits no main, and no header nor footer outside a section', () => {

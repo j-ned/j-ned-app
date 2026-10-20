@@ -1,9 +1,7 @@
-import type { OfferSlug } from '@features/offer/domain/models/offer.model';
-
 export type OutboundChannel =
   'email' | 'phone' | 'malt' | 'discord' | 'linkedin' | 'github' | 'demo';
 
-export type ContactPlacement = 'home' | 'booking' | `offer_${OfferSlug}`;
+export type ContactPlacement = 'home' | 'booking';
 
 export type SectionId = 'home_contact';
 

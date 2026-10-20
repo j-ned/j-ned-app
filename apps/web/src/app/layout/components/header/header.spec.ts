@@ -7,7 +7,6 @@ import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
-import { ActiveSection } from '@core/navigation/active-section';
 import type { CvInfo } from '@features/cv/domain/models/cv.model';
 import { ThemeStore } from '@core/theme/theme-store';
 import { installSystemColorScheme } from '@core/theme/testing/system-color-scheme';
@@ -44,11 +43,10 @@ function makeCvGateway(overrides: Partial<CvGateway> = {}): CvGateway {
 type SectionScrollerStub = {
   scrollTo: ReturnType<typeof vi.fn>;
   scrollToTop: ReturnType<typeof vi.fn>;
-  scrollToRequestForm: ReturnType<typeof vi.fn>;
 };
 
 function makeScroller(): SectionScrollerStub {
-  return { scrollTo: vi.fn(), scrollToTop: vi.fn(), scrollToRequestForm: vi.fn() };
+  return { scrollTo: vi.fn(), scrollToTop: vi.fn() };
 }
 
 async function setup(
@@ -56,7 +54,6 @@ async function setup(
     analytics?: AnalyticsGateway;
     cv?: CvGateway;
     scroller?: SectionScrollerStub;
-    activeKey?: string | null;
   } = {},
 ): Promise<{
   component: Header;
@@ -67,8 +64,6 @@ async function setup(
   const analytics = options.analytics ?? makeAnalyticsGateway();
   const cv = options.cv ?? makeCvGateway();
   const scroller = options.scroller ?? makeScroller();
-  const active = new ActiveSection();
-  if (options.activeKey) active.set(options.activeKey);
 
   TestBed.configureTestingModule({
     providers: [
@@ -76,7 +71,6 @@ async function setup(
       { provide: AnalyticsGateway, useValue: analytics },
       { provide: CvGateway, useValue: cv },
       { provide: SectionScroller, useValue: scroller },
-      { provide: ActiveSection, useValue: active },
     ],
     schemas: [NO_ERRORS_SCHEMA],
   });
@@ -100,56 +94,30 @@ describe('Header', () => {
   });
 
   describe('liens de navigation', () => {
-    it('ordonne le menu principal : Offres, Réalisations, Méthode, Blog, Parcours', () => {
-      expect(
-        NAV_LINKS.map((item) => ({
-          kind: item.kind,
-          label: item.label,
-          target: item.kind === 'route' ? item.href : item.sectionId,
-        })),
-      ).toEqual([
-        { kind: 'route', label: 'Offres', target: '/offres' },
-        { kind: 'route', label: 'Réalisations', target: '/projects' },
-        { kind: 'section', label: 'Méthode', target: 'methode' },
-        { kind: 'route', label: 'Blog', target: '/blog' },
-        { kind: 'route', label: 'Parcours', target: '/about' },
+    it('ordonne le menu principal : Blog, Réalisations, Parcours, sans offre ni section', () => {
+      expect(NAV_LINKS.map(({ label, href }) => ({ label, href }))).toEqual([
+        { label: 'Blog', href: '/blog' },
+        { label: 'Réalisations', href: '/projects' },
+        { label: 'Parcours', href: '/about' },
       ]);
     });
 
-    it('rend un lien route (<a routerLink>) et un bouton de section', async () => {
+    it('dessert chaque destination de NAV_LINKS par un lien routé, sans bouton de section', async () => {
       const { fixture } = await setup();
-      const anchors = fixture.nativeElement.querySelectorAll('nav a[href]');
-      const sectionButtons = fixture.nativeElement.querySelectorAll('nav button[type="button"]');
+      const nav = fixture.nativeElement.querySelector(
+        'nav[aria-label="Navigation principale"]',
+      ) as HTMLElement;
 
-      const labels = Array.from(anchors).map((a) => (a as HTMLElement).textContent?.trim());
-      expect(labels.some((l) => l?.includes('Réalisations'))).toBe(true);
-      expect(labels.some((l) => l?.includes('Parcours'))).toBe(true);
-      expect(sectionButtons.length).toBeGreaterThan(0);
-    });
-
-    it('dessert toutes les destinations de NAV_LINKS', async () => {
-      const { fixture } = await setup();
-      const nav = fixture.nativeElement.querySelector('nav') as HTMLElement;
-      const anchors = Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href]'));
-      const buttons = Array.from(nav.querySelectorAll<HTMLButtonElement>('button[type="button"]'));
-
-      for (const item of NAV_LINKS) {
-        const target =
-          item.kind === 'route'
-            ? anchors.find((a) => a.getAttribute('href') === item.href)
-            : buttons.find((b) => b.textContent?.includes(item.label));
-        expect(target, `destination manquante dans la nav : ${item.label}`).toBeTruthy();
-        expect(target?.textContent).toContain(item.label);
-      }
-    });
-
-    it('délègue le scroll vers la section méthode au SectionScroller au clic du bouton', async () => {
-      const { fixture, scroller } = await setup();
-      const button = fixture.nativeElement.querySelector(
-        'nav button[type="button"]',
-      ) as HTMLButtonElement;
-      button.click();
-      expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith('methode');
+      expect({
+        links: Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href]')).map((a) => [
+          a.getAttribute('href'),
+          a.textContent?.trim(),
+        ]),
+        buttons: nav.querySelectorAll('button').length,
+      }).toEqual({
+        links: NAV_LINKS.map((item) => [item.href, item.label]),
+        buttons: 0,
+      });
     });
 
     it('délègue scrollToTop au clic sur le logo', async () => {
@@ -157,14 +125,9 @@ describe('Header', () => {
       component['scrollToTop']();
       expect(scroller.scrollToTop).toHaveBeenCalledOnce();
     });
-
-    it('reflète la section active fournie par ActiveSection', async () => {
-      const { component } = await setup({ activeKey: 'contact' });
-      expect(component['activeKey']()).toBe('contact');
-    });
   });
 
-  describe('bouton d’appel « Décrire mon projet »', () => {
+  describe('bouton d’appel « Me contacter »', () => {
     const ctasIn = (root: HTMLElement): HTMLElement[] =>
       Array.from(root.querySelectorAll<HTMLElement>('[data-testid="header-cta"]'));
 
@@ -191,7 +154,7 @@ describe('Header', () => {
       expect(ctas).toHaveLength(1);
       expect(button).toBeInstanceOf(HTMLButtonElement);
       expect(button?.getAttribute('type')).toBe('button');
-      expect(button?.textContent?.trim()).toBe('Décrire mon projet');
+      expect(button?.textContent?.trim()).toBe('Me contacter');
       expect(header.contains(ctas[0] ?? null)).toBe(true);
       expect(ctas[0]?.closest('nav')).toBeNull();
     });
@@ -223,14 +186,13 @@ describe('Header', () => {
       expect(hidingTokens).toEqual([]);
     });
 
-    it('Given le bouton d’appel When on le clique Then le SectionScroller mène au formulaire de la page, ou à défaut au contact de l’accueil', async () => {
+    it('Given le bouton d’appel When on le clique Then le SectionScroller mène au contact de l’accueil', async () => {
       const { fixture, scroller } = await setup();
       const button = nativeButtonOf(ctasIn(fixture.nativeElement as HTMLElement)[0]);
 
       expect(button).toBeInstanceOf(HTMLButtonElement);
       button?.click();
-      expect(scroller.scrollToRequestForm).toHaveBeenCalledOnce();
-      expect(scroller.scrollTo).not.toHaveBeenCalled();
+      expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith('contact');
     });
 
     it('Given le bouton d’appel When on le clique Then le clic est mesuré sous l’identifiant header_contact', async () => {
@@ -241,7 +203,7 @@ describe('Header', () => {
       button?.click();
       expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith(
         'header_contact',
-        'Décrire mon projet',
+        'Me contacter',
       );
     });
   });
@@ -385,24 +347,6 @@ describe('Header', () => {
       component['toggleMobileMenu']();
       expect(component['isMobileMenuOpen']()).toBe(true);
       component['toggleMobileMenu']();
-      expect(component['isMobileMenuOpen']()).toBe(false);
-    });
-
-    it('Given le menu mobile ouvert When on choisit Méthode Then il défile vers la section et se ferme', async () => {
-      const { component, fixture, scroller } = await setup();
-      component['toggleMobileMenu']();
-      fixture.detectChanges();
-      await fixture.whenStable();
-      const mobileNav = (fixture.nativeElement as HTMLElement).querySelector(
-        'nav[aria-label="Navigation mobile"]',
-      ) as HTMLElement;
-      const methode = Array.from(
-        mobileNav.querySelectorAll<HTMLButtonElement>('button[type="button"]'),
-      ).find((button) => button.textContent?.trim() === 'Méthode');
-
-      expect(methode).toBeInstanceOf(HTMLButtonElement);
-      methode?.click();
-      expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith('methode');
       expect(component['isMobileMenuOpen']()).toBe(false);
     });
 

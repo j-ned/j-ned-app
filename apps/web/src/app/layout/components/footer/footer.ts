@@ -2,8 +2,6 @@ import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { offerPath } from '@features/offer/domain/offer-path';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { FOOTER_COPY } from './footer.static-data';
 
@@ -27,27 +25,12 @@ const SOCIAL_LINKS = [
   template: `
     <footer class="page-container pt-14 pb-8 text-sm">
       <div
-        class="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]"
+        class="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-[minmax(0,1.4fr)_repeat(2,minmax(0,1fr))]"
       >
         <div class="grid content-start gap-2.5 sm:col-span-2 md:col-span-1">
           <p class="font-display text-lg font-bold text-foreground">{{ copy.legal.owner }}</p>
           <p data-testid="footer-tagline" class="max-w-88 text-muted">{{ copy.tagline }}</p>
         </div>
-
-        <nav aria-labelledby="footer-offers-heading">
-          <h2 id="footer-offers-heading" data-testid="footer-column-heading" class="footer-heading">
-            {{ copy.headings.offers }}
-          </h2>
-          <ul class="grid md:gap-2" role="list">
-            @for (offer of offers; track offer.slug) {
-              <li>
-                <a data-testid="footer-offer-link" [routerLink]="offer.path" class="footer-link">{{
-                  offer.label
-                }}</a>
-              </li>
-            }
-          </ul>
-        </nav>
 
         <nav aria-labelledby="footer-resources-heading">
           <h2
@@ -111,18 +94,6 @@ const SOCIAL_LINKS = [
                 >
               </li>
             }
-            <li class="mt-3 grid gap-1">
-              <p data-testid="footer-review-prompt" class="text-muted">{{ copy.review.prompt }}</p>
-              <a
-                data-testid="footer-review-link"
-                [href]="googleReviewUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="footer-link"
-                (click)="trackReviewClick()"
-                >{{ copy.review.link }}<span class="sr-only"> {{ copy.review.newTab }}</span></a
-              >
-            </li>
           </ul>
         </nav>
       </div>
@@ -154,26 +125,16 @@ export class Footer {
 
   protected readonly copy = FOOTER_COPY;
   protected readonly business = SITE_IDENTITY.business;
-  protected readonly offers = OFFERS.map((offer) => ({
-    slug: offer.slug,
-    path: offerPath(offer.slug),
-    label: offer.shortName,
-  }));
   protected readonly resourceLinks = RESOURCE_LINKS;
   protected readonly socialLinks = SOCIAL_LINKS;
-  protected readonly googleReviewUrl = SITE_IDENTITY.googleReviewUrl;
   protected readonly currentYear = new Date().getFullYear();
 
   protected scrollToContact(): void {
     this.analytics.trackCtaClick('footer_contact', FOOTER_COPY.contactCta);
-    this.scroller.scrollToRequestForm();
+    this.scroller.scrollTo('contact');
   }
 
   protected trackBookingClick(): void {
     this.analytics.trackCtaClick('footer_booking', FOOTER_COPY.bookingLink);
-  }
-
-  protected trackReviewClick(): void {
-    this.analytics.trackCtaClick('review_google', FOOTER_COPY.review.link);
   }
 }

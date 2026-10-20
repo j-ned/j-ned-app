@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
-import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '../domain/home-hero.static-data';
 import type { HeroData } from '../domain/models/hero.model';
 import { STATIC_HERO } from '../infra/data/home.static-data';
@@ -13,9 +12,8 @@ class BlankPage {}
 
 describe('HomeHeroSection', () => {
   let fixture: ComponentFixture<HomeHeroSection>;
-  const contactRequested = vi.fn();
-  const offersOpened = vi.fn();
-  const bookingOpened = vi.fn();
+  const blogOpened = vi.fn();
+  const projectsOpened = vi.fn();
 
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const byTestId = (id: string, root: ParentNode = host()): HTMLElement | null =>
@@ -25,118 +23,82 @@ describe('HomeHeroSection', () => {
   const text = (el: Element | null | undefined): string =>
     (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
 
-  const contactCta = (): HTMLElement | null => byTestId('hero-cta-contact');
-
   const render = async (hero: HeroData | null): Promise<void> => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
-          { path: 'offres', component: BlankPage },
-          { path: 'rendez-vous', component: BlankPage },
+          { path: 'blog', component: BlankPage },
+          { path: 'projects', component: BlankPage },
         ]),
       ],
     });
     fixture = TestBed.createComponent(HomeHeroSection);
     fixture.componentRef.setInput('hero', hero);
-    fixture.componentInstance.contactRequested.subscribe(contactRequested);
-    fixture.componentInstance.offersOpened.subscribe(offersOpened);
-    fixture.componentInstance.bookingOpened.subscribe(bookingOpened);
+    fixture.componentInstance.blogOpened.subscribe(blogOpened);
+    fixture.componentInstance.projectsOpened.subscribe(projectsOpened);
     fixture.detectChanges();
     await fixture.whenStable();
   };
 
   beforeEach(async () => {
-    contactRequested.mockClear();
-    offersOpened.mockClear();
-    bookingOpened.mockClear();
+    blogOpened.mockClear();
+    projectsOpened.mockClear();
     await render(STATIC_HERO);
   });
 
-  describe('contact call to action', () => {
-    it('invites the visitor to describe the project', () => {
-      expect(contactCta()).not.toBeNull();
-      expect(text(contactCta())).toBe(HOME_HERO_CTA_LABELS.contact);
+  describe.each([
+    {
+      testId: 'hero-cta-blog',
+      path: '/blog',
+      label: HOME_HERO_CTA_LABELS.blog,
+      emitted: blogOpened,
+    },
+    {
+      testId: 'hero-cta-projects',
+      path: '/projects',
+      label: HOME_HERO_CTA_LABELS.projects,
+      emitted: projectsOpened,
+    },
+  ])('$testId call to action', ({ testId, path, label, emitted }) => {
+    it(`is a link to ${path}, usable without JavaScript`, () => {
+      const link = byTestId(testId);
+      expect([link?.tagName, link?.getAttribute('href'), text(link)]).toEqual(['A', path, label]);
     });
 
-    it('asks the page for the contact once, without opening the offers', () => {
-      contactCta()?.click();
-      expect(contactRequested).toHaveBeenCalledOnce();
-      expect(offersOpened).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('offers call to action', () => {
-    it('is a link to the offer catalogue, usable without JavaScript', () => {
-      const link = byTestId('hero-cta-offers');
-      expect(link?.tagName).toBe('A');
-      expect(link?.getAttribute('href')).toBe('/offres');
-      expect(text(link)).toBe(HOME_HERO_CTA_LABELS.offers);
-    });
-
-    it('leads to the offer catalogue when clicked', async () => {
-      byTestId('hero-cta-offers')?.click();
+    it(`leads to ${path} when clicked`, async () => {
+      byTestId(testId)?.click();
       await fixture.whenStable();
-      expect(TestBed.inject(Router).url).toBe('/offres');
+      expect(TestBed.inject(Router).url).toBe(path);
     });
 
-    it('tells the page the offers were opened, once, without asking for the contact', () => {
-      byTestId('hero-cta-offers')?.click();
-      expect(offersOpened).toHaveBeenCalledOnce();
-      expect(contactRequested).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('booking link', () => {
-    const bookingLink = (): HTMLElement | null => byTestId('hero-booking-link');
-
-    it('is a plain text link to the booking page, not a button', () => {
-      const link = bookingLink();
-      expect([link?.tagName, link?.getAttribute('href'), text(link)]).toEqual([
-        'A',
-        '/rendez-vous',
-        HOME_HERO_CTA_LABELS.booking,
-      ]);
-      expect(link?.hasAttribute('appbutton')).toBe(false);
-    });
-
-    it('comes after both calls to action, which stay the only buttons-styled links', () => {
-      const offers = byTestId('hero-cta-offers');
-      const link = bookingLink();
-      expect(link).not.toBeNull();
-      expect(
-        link ? (offers?.compareDocumentPosition(link) ?? 0) & Node.DOCUMENT_POSITION_FOLLOWING : 0,
-      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-      expect(
-        Array.from(host().querySelectorAll('[appbutton]')).map((el) =>
-          el.getAttribute('data-testid'),
-        ),
-      ).toEqual(['hero-cta-contact', 'hero-cta-offers']);
-    });
-
-    it('leads to the booking page when clicked', async () => {
-      bookingLink()?.click();
-      await fixture.whenStable();
-      expect(TestBed.inject(Router).url).toBe('/rendez-vous');
-    });
-
-    it('tells the page the booking was opened, once, without the other calls to action', () => {
-      bookingLink()?.click();
-      expect(bookingOpened).toHaveBeenCalledOnce();
-      expect([contactRequested.mock.calls.length, offersOpened.mock.calls.length]).toEqual([0, 0]);
+    it('tells the page it was opened, once, without the other call to action', () => {
+      byTestId(testId)?.click();
+      expect([blogOpened.mock.calls.length, projectsOpened.mock.calls.length]).toEqual(
+        emitted === blogOpened ? [1, 0] : [0, 1],
+      );
     });
   });
 
-  it('offers the two calls to action and the booking link, and nothing else to follow', () => {
+  it('offers the blog then the projects, and nothing else to follow: no contact, offer nor booking', () => {
     expect(
       Array.from(host().querySelectorAll('a, button'), (el) => el.getAttribute('data-testid')),
-    ).toEqual(['hero-cta-contact', 'hero-cta-offers', 'hero-booking-link']);
+    ).toEqual(['hero-cta-blog', 'hero-cta-projects']);
   });
 
-  it('states the availability for clients as plain text, not as a link', () => {
-    const availability = byTestId('hero-availability');
-    expect(text(availability)).toBe(SITE_IDENTITY.availability);
-    expect(availability?.closest('a')).toBeNull();
-    expect(availability?.querySelector('a')).toBeNull();
+  it('styles the blog as the primary call to action and the projects as the secondary one', () => {
+    expect(
+      Array.from(host().querySelectorAll('[appbutton]'), (el) => [
+        el.getAttribute('data-testid'),
+        el.getAttribute('variant'),
+      ]),
+    ).toEqual([
+      ['hero-cta-blog', null],
+      ['hero-cta-projects', 'outlined'],
+    ]);
+  });
+
+  it('states no availability any more (spec 029)', () => {
+    expect(byTestId('hero-availability')).toBeNull();
   });
 
   describe('work frame', () => {

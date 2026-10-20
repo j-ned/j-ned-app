@@ -67,9 +67,9 @@ jobs:
           test ! -f $browser/index.html
           # Sitemap et RSS sont rendus à la requête par Node : aucun fichier figé au build
           test ! -f $browser/sitemap.xml && test ! -f $browser/rss.xml
-          routes=$(find $browser -name index.html | wc -l)
-          echo "Routes prérendues : $routes"
-          test "$routes" -ge 4
+          # Pages statiques prérendues (les offres sont retirées, spec 029 : aucun fichier ne doit rester)
+          test -f $browser/mentions-legales/index.html && test -f $browser/confidentialite/index.html
+          test ! -e $browser/offres
           # postbuild : la CSP des pages prérendues est hachée par page, plus d'unsafe-inline.
           ! grep -l -E "(script|style)-src [^;]*'unsafe-inline'" $(find $browser -name index.html -o -name index.csr.html)
           # Manifeste appliqué par Node aux pages rendues à la requête : scripts constants et feuilles de styles
@@ -79,24 +79,14 @@ jobs:
           ! grep -q 'ng-state' $browser/index.csr.html
           # Gestionnaire inline (`on…="…"`) présent => haché dans `script-src-attr`. beasties >= 0.5
           # n'en émet plus (bascule du CSS par un `<script>` haché dans `script-src`) : directive absente.
-          if grep -qE '\son[a-z]+="' $browser/offres/index.html; then
-            grep -q "script-src-attr 'unsafe-hashes'" $browser/offres/index.html
+          if grep -qE '\son[a-z]+="' $browser/mentions-legales/index.html; then
+            grep -q "script-src-attr 'unsafe-hashes'" $browser/mentions-legales/index.html
           fi
           # Un preload vers un nom de police périmé télécharge un fichier absent et retarde la vraie police.
-          preloads=$(tr '\n' ' ' < $browser/offres/index.html | grep -o '<link[^>]*rel="preload"[^>]*>' | grep -o 'href="/[^"]*"' | sed -E 's/^href="\/(.*)"$/\1/')
+          preloads=$(tr '\n' ' ' < $browser/mentions-legales/index.html | grep -o '<link[^>]*rel="preload"[^>]*>' | grep -o 'href="/[^"]*"' | sed -E 's/^href="\/(.*)"$/\1/')
           test -n "$preloads"
           for f in $preloads; do
             test -f "$browser/$f" || { echo "preload sans fichier : $f"; exit 1; }
-          done
-          # Les démos sont dans le HTML servi, et chaque visuel cité existe : un nom périmé casse la CI, pas la prod.
-          for page in site-atelier site-vitrine; do
-            html="dist/angular-portfolio-app/browser/offres/$page/index.html"
-            grep -q 'data-testid="offer-examples"' "$html" || { echo "section Exemples absente : $page"; exit 1; }
-            demos=$(grep -o '/demos/[a-z0-9.-]*' "$html" | sort -u)
-            test -n "$demos"
-            for f in $demos; do
-              test -f "dist/angular-portfolio-app/browser$f" || { echo "visuel de démo sans fichier : $f"; exit 1; }
-            done
           done
 
   docker:
@@ -167,6 +157,12 @@ jobs:
           for path in /projects/inexistant /blog/inexistant; do
             test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$path")" = "404" || { echo "pas de 404 : $path"; exit 1; }
           done
+          # Offres retirées (spec 029) : 410 Gone, corps = shell client
+          for path in /offres /offres/site-vitrine /offre-site-industrie; do
+            test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$path")" = "410" || { echo "pas de 410 : $path"; exit 1; }
+          done
+          curl -s http://127.0.0.1:3000/offres -o /tmp/gone.html
+          grep -q '<app-root' /tmp/gone.html || { echo "corps du 410 sans shell client"; exit 1; }
           # Micro-cache d'une seconde : HIT dans la seconde, rendu neuf ensuite ; /healthz jamais en cache
           curl -fsS -D /tmp/c1.txt -o /dev/null http://127.0.0.1:3000/projects
           curl -fsS -D /tmp/c2.txt -o /dev/null http://127.0.0.1:3000/projects
@@ -215,16 +211,12 @@ jobs:
           grep -qi '^strict-transport-security:' <<<"$cancel_headers"
           test "$(curl -s -o /tmp/404.html -w '%{http_code}' http://127.0.0.1:3000/does-not-exist)" = "404"
           grep -q '<app-root' /tmp/404.html && ! grep -q 'ng-state' /tmp/404.html
-          # Offre à son URL de catalogue ; slug inconnu → 404 ; ancienne URL → 301 relatif, query conservée
-          curl -fsS http://127.0.0.1:3000/offres/site-atelier/ -o /tmp/offer.html
-          grep -q '<app-offer-page' /tmp/offer.html
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/offres/inexistant)" = "404"
-          legacy=$(curl -s -D - -o /dev/null 'http://127.0.0.1:3000/offre-site-industrie?utm_source=x')
-          grep -q ' 301' <<<"${legacy%%$'\n'*}"
-          grep -qi '^location: /offres/site-atelier?utm_source=x' <<<"$legacy"
-          legacy_offer=$(curl -s -D - -o /dev/null 'http://127.0.0.1:3000/offres/application-metier?utm_source=x')
-          grep -q ' 301' <<<"${legacy_offer%%$'\n'*}"
-          grep -qi '^location: /offres/evolution-application?utm_source=x' <<<"$legacy_offer"
+          # Anciennes URL d'offre, query comprise : 410 sans redirection (spec 029)
+          for url in '/offre-site-industrie?utm_source=x' '/offres/application-metier?utm_source=x' '/offres/inexistant'; do
+            gone=$(curl -s -D - -o /dev/null "http://127.0.0.1:3000$url")
+            grep -q ' 410' <<<"${gone%%$'\n'*}" || { echo "pas de 410 : $url"; exit 1; }
+            ! grep -qi '^location:' <<<"$gone" || { echo "redirection résiduelle : $url"; exit 1; }
+          done
           # Les en-têtes de sécurité tiennent aussi sur les assets (snippet inclus dans la location)
           # -o sort toutes les occurrences de la ligne (HTML minifié) : on garde la première
           asset=$(grep -o 'main-[A-Za-z0-9_-]*\.js' /tmp/index.html)
@@ -240,13 +232,8 @@ jobs:
           # Polices auto-hébergées servies par nginx avec le bon type (sinon rejetées par le navigateur)
           font=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2)
           grep -qi 'content-type: font/woff2' <<<"$font" || { echo "police mal servie"; echo "$font"; exit 1; }
-          # Visuel de démo : AVIF reconnu par le navigateur, cache immuable (le nom porte la date de capture)
-          demo=$(grep -o '/demos/[a-z0-9-]*\.avif' /tmp/offer.html)
-          demo=${demo%%$'\n'*}
-          test -n "$demo"
-          demo_headers=$(curl -fsS -D - -o /dev/null "http://127.0.0.1:3000$demo")
-          grep -qi 'content-type: image/avif' <<<"$demo_headers" || { echo "visuel de démo mal servi"; echo "$demo_headers"; exit 1; }
-          grep -qi 'cache-control: .*immutable' <<<"$demo_headers" || { echo "visuel de démo sans cache immuable"; echo "$demo_headers"; exit 1; }
+          # Polices : nom versionné, cache immuable (seule location ^/fonts/ depuis le retrait des démos)
+          grep -qi 'cache-control: .*immutable' <<<"$font" || { echo "police sans cache immuable"; echo "$font"; exit 1; }
           # Cache immuable réservé aux URL empreintées : un fichier dont l'URL ne change pas avec le
           # contenu reste figé un an chez le visiteur (sprite d'icônes resté périmé après un ajout)
           grep -qi 'cache-control: .*immutable' <<<"$asset_headers" || { echo "chunk haché sans cache immuable"; echo "$asset_headers"; exit 1; }

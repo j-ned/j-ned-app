@@ -1,15 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { type ActivatedRouteSnapshot, type Route, Router, provideRouter } from '@angular/router';
-import { OfferCatalogue } from '@features/offer/pages/offer-catalogue/offer-catalogue';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import type { OfferSummary } from '@features/offer/domain/models/offer.model';
-import { OFFERS_BASE_PATH } from '@features/offer/domain/offer-path';
-import { OFFER_ROUTES } from '@features/offer/offer.routes';
-import { toOfferCatalogueSeo } from '@features/offer/offer-seo';
-import { offerSummaryOf } from '@features/offer/testing/offer-builders';
+import { type ActivatedRouteSnapshot, Router, provideRouter } from '@angular/router';
 import { routes } from './app.routes';
-
-const findRoute = (path: string): Route | undefined => routes.find((route) => route.path === path);
 
 const leafOf = (snapshot: ActivatedRouteSnapshot): ActivatedRouteSnapshot =>
   snapshot.firstChild ? leafOf(snapshot.firstChild) : snapshot;
@@ -22,61 +13,26 @@ async function navigate(url: string): Promise<{ url: string; leaf: ActivatedRout
 }
 
 describe('routes', () => {
-  describe('offer catalogue', () => {
-    it('lazy loads the offer routes under /offres', async () => {
-      const route = findRoute('offres');
-      expect(route?.component).toBeUndefined();
-      expect(route?.children).toBeUndefined();
-      expect(await route?.loadChildren?.()).toBe(OFFER_ROUTES);
-    });
+  // Offres retirées (spec 029) : nginx répond 410 ; côté client, aucune route ne les sert plus.
+  describe('retired offer urls', () => {
+    it.each([
+      '/offres',
+      '/offres/site-vitrine',
+      '/offres/application-metier',
+      '/offre-site-industrie',
+    ])(
+      'Given %s When navigated to Then no route matches it but the not-found page, and no redirect happens',
+      async (path) => {
+        const { url, leaf } = await navigate(path);
 
-    it('preloads the offer routes, reachable from the main menu', () => {
-      expect(findRoute('offres')?.data?.['preload']).toBe(true);
-    });
+        expect([url, leaf.routeConfig?.path]).toEqual([path, '**']);
+      },
+    );
 
-    it('serves the catalogue page at /offres', async () => {
-      const { url, leaf } = await navigate('/offres');
-      expect(url).toBe('/offres');
-      expect(leaf.component).toBe(OfferCatalogue);
-      expect(leaf.data['seo']).toEqual(toOfferCatalogueSeo(OFFERS));
-    });
-
-    it('serves the workshop offer at /offres/site-atelier', async () => {
-      const { url, leaf } = await navigate('/offres/site-atelier');
-      expect(url).toBe('/offres/site-atelier');
-      expect(leaf.data['summary']).toBe(offerSummaryOf('site-atelier'));
-    });
-  });
-
-  describe('legacy business application offer url', () => {
-    const EVOLUTION_URL = `/${OFFERS_BASE_PATH}/evolution-application`;
-
-    it('redirects to the application evolution offer instead of rendering a page', () => {
-      const route = findRoute(`${OFFERS_BASE_PATH}/application-metier`);
-      expect(route?.redirectTo).toBe(EVOLUTION_URL);
-      expect(route?.loadComponent).toBeUndefined();
-    });
-
-    it('lands on the application evolution offer when navigated to', async () => {
-      const { url, leaf } = await navigate(`/${OFFERS_BASE_PATH}/application-metier`);
-      expect(url).toBe(EVOLUTION_URL);
-      expect((leaf.data['summary'] as OfferSummary | undefined)?.slug).toBe(
-        'evolution-application',
-      );
-    });
-  });
-
-  describe('legacy workshop offer url', () => {
-    it('redirects to the catalogue url instead of rendering a page', () => {
-      const route = findRoute('offre-site-industrie');
-      expect(route?.redirectTo).toBe('/offres/site-atelier');
-      expect(route?.loadComponent).toBeUndefined();
-    });
-
-    it('lands on the workshop offer when navigated to', async () => {
-      const { url, leaf } = await navigate('/offre-site-industrie');
-      expect(url).toBe('/offres/site-atelier');
-      expect(leaf.data['summary']).toBe(offerSummaryOf('site-atelier'));
+    it('declares no route under /offres nor the former workshop url', () => {
+      expect(
+        routes.filter(({ path }) => path?.startsWith('offre')).map(({ path }) => path),
+      ).toEqual([]);
     });
   });
 });

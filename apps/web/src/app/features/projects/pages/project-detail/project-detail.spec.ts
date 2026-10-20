@@ -10,7 +10,6 @@ import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject, makeProjectImage } from '@features/projects/testing/project-builders';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { Component, PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
 
 function project(overrides: Partial<Project> = {}): Project {
@@ -226,7 +225,7 @@ describe('ProjectDetail', () => {
 });
 
 describe('ProjectDetail: nature du projet dans l’en-tête', () => {
-  const NBSP = ' ';
+  const NBSP = '\u00a0';
   const text = (el: Element | null | undefined): string =>
     (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
 
@@ -580,9 +579,6 @@ describe('ProjectDetail: suite éditoriale de la fiche', () => {
   const text = (el: Element | null | undefined): string =>
     (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
 
-  const offerName = (slug: string): string =>
-    OFFERS.find((offer) => offer.slug === slug)?.name ?? `missing offer ${slug}`;
-
   const renderProject = async (overrides: Partial<Project>): Promise<HTMLElement> => {
     const current = project(overrides);
     trackCtaClick.mockClear();
@@ -638,51 +634,16 @@ describe('ProjectDetail: suite éditoriale de la fiche', () => {
     });
   });
 
-  describe('bloc de fin', () => {
-    it.each<{ kind: Project['kind']; label: string; path: string }>([
-      {
-        kind: 'production',
-        label: `Voir l'offre «\u00a0${offerName('evolution-application')}\u00a0»`,
-        path: '/offres/evolution-application',
-      },
-      {
-        kind: 'demo',
-        label: `Voir l'offre «\u00a0${offerName('site-vitrine')}\u00a0»`,
-        path: '/offres/site-vitrine',
-      },
-      { kind: 'script', label: 'Voir les offres et les prix', path: '/offres' },
-      { kind: null, label: 'Voir les offres et les prix', path: '/offres' },
-    ])(
-      'Given a project of kind $kind When the detail renders Then the block leads to $path',
-      async ({ kind, label, path }) => {
-        const offer = byTestId(await renderProject({ kind }), 'project-follow-up-offer');
+  describe('fin de fiche', () => {
+    it.each<Project['kind']>(['production', 'demo', 'script', null])(
+      'Given a project of kind %s When the detail renders Then no commercial follow-up nor link to the retired offers remains',
+      async (kind) => {
+        const host = await renderProject({ kind });
 
-        expect([offer?.getAttribute('href'), text(offer)]).toEqual([path, label]);
-      },
-    );
-
-    it('Given the detail When it renders Then the end block comes before the navigation to the other projects', async () => {
-      const host = await renderProject({ kind: 'production' });
-
-      expect(
-        follows(byTestId(host, 'project-follow-up'), host.querySelector('app-project-detail-nav')),
-      ).toBe(true);
-    });
-
-    it.each([
-      {
-        testId: 'project-follow-up-offer',
-        ctaId: 'project_similar_need',
-        label: `Voir l'offre «\u00a0${offerName('evolution-application')}\u00a0»`,
-      },
-    ])(
-      'Given the end block When $testId is clicked Then the page measures $ctaId once',
-      async ({ testId, ctaId, label }) => {
-        const host = await renderProject({ kind: 'production' });
-
-        byTestId(host, testId)?.click();
-
-        expect(trackCtaClick).toHaveBeenCalledExactlyOnceWith(ctaId, label);
+        expect([
+          byTestId(host, 'project-follow-up'),
+          host.querySelector('a[href^="/offres"]'),
+        ]).toEqual([null, null]);
       },
     );
   });

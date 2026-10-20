@@ -1,14 +1,9 @@
 import type { Routes } from '@angular/router';
 import { authGuard } from '@features/auth/infra/auth-guard';
-import { HOME_REVIEWS } from '@features/home/domain/home-reviews.static-data';
-import { reviewsJsonLd } from '@features/home/domain/reviews-json-ld';
 import { Home } from '@features/home/pages/home/home';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { OFFERS_BASE_PATH, offerPath } from '@features/offer/domain/offer-path';
-import { toOfferCatalogJsonLd } from '@features/offer/offer-seo';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
-const HOME_TITLE = 'Julien Nédellec | Sites et applications web, Yvelines';
+const HOME_TITLE = 'Julien Nédellec | Tourneur CN et développeur web Angular / NestJS';
 const ABOUT_TITLE = 'Développeur full-stack Angular / NestJS, parcours et CV | Julien Nédellec';
 const PROJECTS_TITLE = 'Réalisations Angular et NestJS en production | Julien Nédellec';
 const BLOG_TITLE = 'Blog Angular, NestJS et auto-hébergement | Julien Nédellec';
@@ -24,9 +19,9 @@ export const routes: Routes = [
       seo: {
         title: HOME_TITLE,
         description:
-          "Sites web et évolutions d'applications Angular et NestJS, à prix annoncé. Missions ponctuelles le soir et le week-end, Yvelines et à distance.",
+          "Tourneur CN dans l'aéronautique et développeur web full-stack Angular / NestJS. Articles techniques, projets en production et code auto-hébergé.",
         keywords:
-          'Développeur Angular, Développeur NestJS, TypeScript, Full-Stack, PostgreSQL, Docker, Développeur Web, France, Île-de-France, Industrie, Self-hosted',
+          'Angular, NestJS, TypeScript, PostgreSQL, Drizzle ORM, Docker, auto-hébergement, développeur full-stack, blog technique',
         url: SITE_IDENTITY.siteUrl,
         type: 'website',
         structuredData: {
@@ -37,11 +32,8 @@ export const routes: Routes = [
               '@id': PERSON_ID,
               name: 'Julien Nédellec',
               url: SITE_IDENTITY.siteUrl,
-              sameAs: [
-                SITE_IDENTITY.socials.linkedin,
-                SITE_IDENTITY.socials.github,
-                SITE_IDENTITY.socials.malt,
-              ],
+              jobTitle: 'Tourneur CN',
+              sameAs: [SITE_IDENTITY.socials.linkedin, SITE_IDENTITY.socials.github],
               knowsAbout: [
                 'Angular',
                 'NestJS',
@@ -55,22 +47,12 @@ export const routes: Routes = [
               email: SITE_IDENTITY.email,
             },
             {
-              '@type': 'ProfessionalService',
+              '@type': 'WebSite',
+              '@id': `${SITE_IDENTITY.siteUrl}/#website`,
               name: 'Julien Nédellec',
               url: SITE_IDENTITY.siteUrl,
-              founder: { '@id': PERSON_ID },
-              address: {
-                '@type': 'PostalAddress',
-                addressLocality: SITE_IDENTITY.location,
-                addressCountry: 'FR',
-              },
-              areaServed: [
-                { '@type': 'AdministrativeArea', name: 'Yvelines' },
-                { '@type': 'AdministrativeArea', name: 'Île-de-France' },
-                { '@type': 'Country', name: 'France' },
-              ],
-              hasOfferCatalog: toOfferCatalogJsonLd(OFFERS),
-              ...reviewsJsonLd(HOME_REVIEWS),
+              inLanguage: 'fr-FR',
+              author: { '@id': PERSON_ID },
             },
           ],
         },
@@ -155,19 +137,6 @@ export const routes: Routes = [
   {
     path: 'rendez-vous',
     loadChildren: () => import('./features/booking/booking.routes').then((m) => m.BOOKING_ROUTES),
-  },
-  {
-    path: `${OFFERS_BASE_PATH}/application-metier`,
-    redirectTo: offerPath('evolution-application'),
-  },
-  {
-    path: OFFERS_BASE_PATH,
-    loadChildren: () => import('./features/offer/offer.routes').then((m) => m.OFFER_ROUTES),
-    data: { preload: true },
-  },
-  {
-    path: 'offre-site-industrie',
-    redirectTo: offerPath('site-atelier'),
   },
   {
     path: 'mentions-legales',

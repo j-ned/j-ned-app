@@ -76,3 +76,37 @@ positionnement : public principal développeur (par le blog), public secondaire 
 - Choix d'architecture (monorepo Nx, rendu statique, maintien de l'admin) : décidés après la PR 7.
 - Phase SEO active (`ProfilePage`, maillage interne, transformation des ADR en articles) : spec dédiée.
 - CI de l'API (absente aujourd'hui) : spec dédiée côté API, prioritaire avant la PR 4.
+
+## Plan technique — PR 2 (offres et nouvel accueil)
+
+### Retiré
+- `features/offer/` entier, ses routes (`/offres`, `/offres/*`, redirections `application-metier` et
+  `offre-site-industrie`), son prérendu et ses entrées du `sitemap.xml`.
+- Home : sections Offres, Méthode, Pourquoi moi, FAQ, Avis (et leur JSON-LD `Review`), lien de
+  réservation et mention de disponibilité du hero. `SITE_IDENTITY.availability` et
+  `SITE_IDENTITY.googleReviewUrl` (invitation à un avis Google dans le pied de page) disparaissent.
+- Fiche projet : bloc de fin « Un besoin similaire ? » et sa correspondance nature → offre.
+- `public/demos/` : visuels des démos, servis uniquement par les pages d'offre.
+- Code devenu mort : `shared/ui/faq-list`, `shared/ui/key-point-list`, l'entrée de menu de type
+  « section » (seule « Méthode » l'utilisait) et l'ancre de formulaire local du `SectionScroller`
+  (`REQUEST_ANCHOR_DATA_KEY`, seules les pages d'offre la déclaraient).
+
+### Ajouté ou modifié
+- **Hero** : accroche de l'arbitrage 5, cartouche « Fiche technique » (métier, code, stack,
+  hébergement, règle), appels « Lire le blog » (primaire) et « Voir les réalisations ».
+- **Derniers articles** (`HomeLatestPosts`) : les trois derniers articles publiés
+  (`latestPosts`, domaine blog), avant les réalisations ; section absente sans article. Le bundle de la
+  home les compose avec `combineLatest` et non `forkJoin` : `allProjects$` ne se termine jamais
+  (`ReplaySubject` partagé, réémis après invalidation), un `forkJoin` n'émettrait pas.
+- **Menu** : Blog, Réalisations, Parcours (le blog d'abord, `PRODUCT.md`). Appel « Me contacter ».
+- **SEO de la home** : graphe `Person` (`jobTitle`, `sameAs` LinkedIn et GitHub) + `WebSite`.
+- **nginx** : `location ~ ^/(offres|offre-site-industrie)(/|$)` → `return 410`, corps = shell client
+  (`error_page 410 /index.csr.html`), en-têtes de sécurité du `server` conservés.
+- **CI** : les contrôles du HTML prérendu (gestionnaire inline, preload de police) lisent
+  `/mentions-legales` au lieu de `/offres` ; le smoke Docker vérifie le 410.
+- **Analytics** : un emplacement `offer_<slug>` encore présent dans l'historique s'affiche « Page
+  d'offre retirée (<slug>) » au lieu d'« Emplacement inconnu ».
+
+### Laissé aux PR suivantes
+Formulaire de contact (délai souhaité, invitation à réserver), SIRET et lien Malt (PR 5), rendez-vous
+(PR 3), `DESIGN.md` et ADR (PR 7).

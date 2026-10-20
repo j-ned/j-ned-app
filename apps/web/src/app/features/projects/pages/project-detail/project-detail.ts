@@ -19,19 +19,11 @@ import { toShareImageUrl } from '@shared/seo/share-image';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { projectOutcome } from '@features/projects/domain/project-outcome';
-import { relatedOfferSlug } from '@features/projects/domain/related-offer';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { OFFERS_BASE_PATH, offerPath } from '@features/offer/domain/offer-path';
 import { ProjectDetailHeader } from '../../application/components/project-detail-header';
 import { ProjectDetailTechChoices } from '../../application/components/project-detail-tech-choices';
 import { ProjectDetailArchDecisions } from '../../application/components/project-detail-arch-decisions';
 import { ProjectDetailNav } from '../../application/components/project-detail-nav';
 import { ProjectGallery } from '../../application/components/project-gallery';
-import { ProjectFollowUp } from '../../application/components/project-follow-up';
-import {
-  PROJECT_FOLLOW_UP_COPY,
-  relatedOfferLinkLabel,
-} from '../../application/project-follow-up-copy';
 import { Button } from '@shared/ui/button';
 
 @Component({
@@ -43,7 +35,6 @@ import { Button } from '@shared/ui/button';
     ProjectDetailArchDecisions,
     ProjectDetailNav,
     ProjectGallery,
-    ProjectFollowUp,
     Button,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -81,8 +72,6 @@ import { Button } from '@shared/ui/button';
       @if (architectureDecisions().length > 0) {
         <app-project-detail-arch-decisions [architectureDecisions]="architectureDecisions()" />
       }
-
-      <app-project-follow-up [offer]="relatedOffer()" (offerOpened)="trackSimilarNeed()" />
 
       <app-project-detail-nav [previousProject]="previousProject()" [nextProject]="nextProject()" />
     } @else if (failed()) {
@@ -143,13 +132,6 @@ export class ProjectDetail {
   );
 
   protected readonly outcome = computed(() => projectOutcome(this.project()?.slug));
-  protected readonly relatedOffer = computed(() => {
-    const slug = relatedOfferSlug(this.project()?.kind ?? null);
-    const offer = OFFERS.find((candidate) => candidate.slug === slug);
-    return offer
-      ? { label: relatedOfferLinkLabel(offer.name), path: offerPath(offer.slug) }
-      : { label: PROJECT_FOLLOW_UP_COPY.catalogueLink, path: `/${OFFERS_BASE_PATH}` };
-  });
 
   protected readonly previousProject = computed(() => {
     const index = this._currentIndex();
@@ -196,10 +178,6 @@ export class ProjectDetail {
       },
     });
   });
-
-  protected trackSimilarNeed(): void {
-    this._analytics.trackCtaClick('project_similar_need', this.relatedOffer().label);
-  }
 
   protected trackClick(): void {
     const p = this.project();

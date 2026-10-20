@@ -1,6 +1,4 @@
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { OFFERS_BASE_PATH, offerPath } from '@features/offer/domain/offer-path';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { escapeXml } from './xml-escape';
 
@@ -27,12 +25,6 @@ const STATIC_URLS: readonly SitemapUrl[] = [
   { path: '/rendez-vous', changefreq: 'monthly', priority: '0.6' },
   { path: '/mentions-legales', changefreq: 'yearly', priority: '0.2' },
   { path: '/confidentialite', changefreq: 'yearly', priority: '0.2' },
-  { path: `/${OFFERS_BASE_PATH}`, changefreq: 'monthly', priority: '0.8' },
-  ...OFFERS.map(({ slug }): SitemapUrl => ({
-    path: offerPath(slug),
-    changefreq: 'monthly',
-    priority: '0.7',
-  })),
 ];
 
 const toDay = (iso: string): string => iso.slice(0, 10);

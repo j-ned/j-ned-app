@@ -1,5 +1,4 @@
 import { RenderMode, type ServerRoute } from '@angular/ssr';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { describe, expect, it } from 'vitest';
 import { serverRoutes } from './app.routes.server';
 
@@ -22,15 +21,16 @@ describe('serverRoutes', () => {
     expect([...serverRendered].sort()).toEqual([...CONTENT_ROUTES].sort());
   });
 
-  it.each(['mentions-legales', 'confidentialite', 'offres', 'rendez-vous'])(
+  it.each(['mentions-legales', 'confidentialite', 'rendez-vous'])(
     'prerenders the static page %s',
     (path) => {
       expect(findRoute(path)?.renderMode).toBe(RenderMode.Prerender);
     },
   );
 
-  it.each(OFFERS.map(({ slug }) => slug))('prerenders the offer page offres/%s', (slug) => {
-    expect(findRoute(`offres/${slug}`)?.renderMode).toBe(RenderMode.Prerender);
+  // Offres retirées (spec 029) : nginx répond 410, rien ne doit plus être prérendu sous /offres.
+  it('prerenders nothing under the retired offers', () => {
+    expect(serverRoutes.filter(({ path }) => path.startsWith('offre'))).toEqual([]);
   });
 
   it.each(['login', 'two-factor', 'admin/**', 'rendez-vous/annulation', '**'])(
@@ -46,10 +46,5 @@ describe('serverRoutes', () => {
       .map((route) => route.path);
 
     expect(withPrerenderParams).toEqual([]);
-  });
-
-  // Un redirect prérendu ne donne qu'une page meta refresh, pas un 301 : nginx s'en charge.
-  it('leaves the legacy offer url to the client fallback instead of prerendering it', () => {
-    expect(findRoute('offre-site-industrie')).toBeUndefined();
   });
 });

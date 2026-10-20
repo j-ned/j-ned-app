@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 import { Button } from '@shared/ui/button';
 import { Cartouche } from '@shared/ui/cartouche';
 import { DimensionLine } from '@shared/ui/dimension-line';
-import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '../domain/home-hero.static-data';
 import type { HeroData } from '../domain/models/hero.model';
 import { HomeHero } from './home-hero';
@@ -12,7 +11,7 @@ import { HomeHero } from './home-hero';
   selector: 'app-home-hero-section',
   imports: [HomeHero, Button, Cartouche, DimensionLine, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // Le hero occupe tout le premier écran sous le header (h-20) : les offres commencent sous le pli.
+  // Le hero occupe tout le premier écran sous le header (h-20) : les articles commencent sous le pli.
   host: {
     class: 'flex flex-col justify-center min-h-[calc(100svh-5rem)] py-12 md:py-16',
   },
@@ -22,40 +21,18 @@ import { HomeHero } from './home-hero';
     >
       <app-home-hero [hero]="hero()">
         <div class="animate-fade-up [animation-delay:180ms] mt-9 flex flex-wrap items-center gap-3">
-          <button
-            appButton
-            type="button"
-            data-testid="hero-cta-contact"
-            (click)="contactRequested.emit()"
-          >
-            {{ ctaLabels.contact }}
-          </button>
+          <a appButton routerLink="/blog" data-testid="hero-cta-blog" (click)="blogOpened.emit()">{{
+            ctaLabels.blog
+          }}</a>
           <a
             appButton
             variant="outlined"
-            routerLink="/offres"
-            data-testid="hero-cta-offers"
-            (click)="offersOpened.emit()"
-            >{{ ctaLabels.offers }}</a
+            routerLink="/projects"
+            data-testid="hero-cta-projects"
+            (click)="projectsOpened.emit()"
+            >{{ ctaLabels.projects }}</a
           >
         </div>
-        <a
-          routerLink="/rendez-vous"
-          class="animate-fade-up [animation-delay:190ms] mt-2 inline-flex min-h-11 items-center text-sm font-medium text-muted underline underline-offset-3 transition-colors hover:text-primary"
-          data-testid="hero-booking-link"
-          (click)="bookingOpened.emit()"
-          >{{ ctaLabels.booking }}</a
-        >
-        <p
-          class="animate-fade-up [animation-delay:200ms] mt-3 flex items-center gap-2.5 text-sm text-muted"
-          data-testid="hero-availability"
-        >
-          <span
-            class="size-2 shrink-0 rounded-full bg-status-success ring-4 ring-status-success/20"
-            aria-hidden="true"
-          ></span>
-          {{ availability }}
-        </p>
       </app-home-hero>
 
       <div>
@@ -76,11 +53,9 @@ import { HomeHero } from './home-hero';
 })
 export class HomeHeroSection {
   readonly hero = input<HeroData | null>(null);
-  readonly contactRequested = output<void>();
-  readonly offersOpened = output<void>();
-  readonly bookingOpened = output<void>();
+  readonly blogOpened = output<void>();
+  readonly projectsOpened = output<void>();
 
   protected readonly ctaLabels = HOME_HERO_CTA_LABELS;
-  protected readonly availability = SITE_IDENTITY.availability;
   protected readonly workFrame = HOME_WORK_FRAME;
 }

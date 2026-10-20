@@ -7,37 +7,21 @@ import {
   type EffectRef,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { HomeFaq } from '../../application/home-faq';
 import { HomeHeroSection } from '../../application/home-hero-section';
-import { HomeMethod } from '../../application/home-method';
-import { HomeOffers } from '../../application/home-offers';
+import { HomeLatestPosts } from '../../application/home-latest-posts';
 import { HomeProjects } from '../../application/home-projects';
-import { HomeReviews } from '../../application/home-reviews';
-import { HomeWhy } from '../../application/home-why';
 import { HOME_HERO_CTA_LABELS } from '../../domain/home-hero.static-data';
-import { HOME_REVIEWS } from '../../domain/home-reviews.static-data';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { ContactForm } from '@features/contact/application/contact-form';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import type { FeaturedProjectView } from '@features/projects/application/featured-project-view';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
 import { ActiveSection } from '@core/navigation/active-section';
 import { SectionVisibility } from '@core/navigation/section-visibility';
 import { SectionScroller } from '@core/navigation/section-scroller';
 
 @Component({
   selector: 'app-home',
-  imports: [
-    HomeHeroSection,
-    HomeOffers,
-    HomeProjects,
-    HomeMethod,
-    HomeWhy,
-    HomeFaq,
-    HomeReviews,
-    ContactForm,
-    SectionVisibility,
-  ],
+  imports: [HomeHeroSection, HomeLatestPosts, HomeProjects, ContactForm, SectionVisibility],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col w-full' },
   template: `
@@ -45,16 +29,31 @@ import { SectionScroller } from '@core/navigation/section-scroller';
     <app-home-hero-section
       class="mt-20"
       [hero]="bundle()?.hero ?? null"
-      (contactRequested)="goToContact()"
-      (offersOpened)="trackOffersClick()"
-      (bookingOpened)="trackBookingClick()"
+      (blogOpened)="trackBlogClick()"
+      (projectsOpened)="trackProjectsClick()"
     />
 
-    <app-home-offers />
+    <!-- Derniers articles : le blog est le moteur du site (PRODUCT.md). Absente sans article publié. -->
+    @if (latestPosts().length) {
+      @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
+        <div class="page-container w-full pb-24 md:pb-32">
+          <app-home-latest-posts [posts]="latestPosts()" />
+        </div>
+      } @placeholder {
+        <div class="block h-[38rem]" data-testid="home-latest-posts-placeholder"></div>
+      } @error {
+        <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
+          Impossible de charger cette section.
+        </div>
+      }
+    }
 
     <!-- Projects Section -->
     @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-      <section class="w-full pb-24 md:pb-32" data-testid="home-projects-section">
+      <section
+        class="w-full border-t border-line pt-24 pb-24 md:pt-32 md:pb-32"
+        data-testid="home-projects-section"
+      >
         <div class="page-container">
           <app-home-projects
             [projects]="bundle()?.featuredProjects ?? []"
@@ -73,71 +72,13 @@ import { SectionScroller } from '@core/navigation/section-scroller';
       </div>
     }
 
-    <!-- Ancre de l'entrée de menu « Méthode » : hors @defer pour exister avant le rendu de la section. -->
-    <div id="methode" class="scroll-mt-20" appSectionVisibility="methode">
-      @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-        <app-home-method class="border-t border-line" />
-      } @placeholder {
-        <div
-          class="h-[95.25rem] border-t border-line sm:h-[64rem] md:h-[65.125rem] lg:h-[48.75rem] xl:h-[47.3125rem]"
-          data-testid="home-method-placeholder"
-        ></div>
-      } @error {
-        <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
-          Impossible de charger cette section.
-        </div>
-      }
-    </div>
-
-    @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-      <app-home-why class="border-t border-line" />
-    } @placeholder {
-      <div
-        class="h-[60rem] border-t border-line sm:h-[45.25rem] md:h-[49.25rem] lg:h-[39.5rem] xl:h-[36.875rem]"
-        data-testid="home-why-placeholder"
-      ></div>
-    } @error {
-      <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
-        Impossible de charger cette section.
-      </div>
-    }
-
-    @if (reviews.length) {
-      @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-        <app-home-reviews class="border-t border-line" [reviews]="reviews" />
-      } @placeholder {
-        <div class="h-[36rem] border-t border-line" data-testid="home-reviews-placeholder"></div>
-      } @error {
-        <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
-          Impossible de charger cette section.
-        </div>
-      }
-    }
-
-    @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-      <app-home-faq class="border-t border-line" />
-    } @placeholder {
-      <div
-        class="h-[44rem] border-t border-line sm:h-[41rem] md:h-[45rem] lg:h-[32rem] xl:h-[32.5rem]"
-        data-testid="home-faq-placeholder"
-      ></div>
-    } @error {
-      <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
-        Impossible de charger cette section.
-      </div>
-    }
-
     <!-- Contact (section de la landing) ; id pour le scroll programmatique unifié
          (SectionScroller), JAMAIS exposé comme ancre #contact dans l'URL.
          scroll-mt-20 compense le header fixe ; appSectionVisibility pilote
          l'indicateur d'état actif du header (scroll-spy). -->
     <div id="contact" class="scroll-mt-20" appSectionVisibility="contact">
       @defer (hydrate on viewport; on viewport; prefetch on idle; when eagerSections()) {
-        <app-contact-form
-          data-testid="home-contact-form"
-          placement="home"
-          [projectTypes]="projectTypes"
-        />
+        <app-contact-form data-testid="home-contact-form" placement="home" />
       } @placeholder {
         <div
           class="block py-16 md:py-20 px-4 sm:px-6 h-96"
@@ -165,9 +106,7 @@ export class Home {
   });
   protected readonly bundle = computed(() => this.bundleResource.value());
 
-  protected readonly reviews = HOME_REVIEWS;
-
-  protected readonly projectTypes = [...OFFERS.map((offer) => offer.shortName), 'Autre'];
+  protected readonly latestPosts = computed(() => this.bundle()?.latestPosts ?? []);
 
   private readonly _contactArrivalEffect: EffectRef = effect(() => {
     if (this._activeSection.key() !== 'contact') return;
@@ -175,17 +114,12 @@ export class Home {
     this._contactArrivalEffect.destroy();
   });
 
-  protected goToContact(): void {
-    this._analytics.trackCtaClick('home_hero_contact', HOME_HERO_CTA_LABELS.contact);
-    this._scroller.scrollTo('contact');
+  protected trackBlogClick(): void {
+    this._analytics.trackCtaClick('home_hero_blog', HOME_HERO_CTA_LABELS.blog);
   }
 
-  protected trackOffersClick(): void {
-    this._analytics.trackCtaClick('home_hero_offers', HOME_HERO_CTA_LABELS.offers);
-  }
-
-  protected trackBookingClick(): void {
-    this._analytics.trackCtaClick('home_hero_booking', HOME_HERO_CTA_LABELS.booking);
+  protected trackProjectsClick(): void {
+    this._analytics.trackCtaClick('home_hero_projects', HOME_HERO_CTA_LABELS.projects);
   }
 
   protected trackLiveLink({ id, title }: FeaturedProjectView): void {

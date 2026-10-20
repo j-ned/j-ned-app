@@ -6,21 +6,19 @@ type WorkFrame = {
 };
 
 export const HOME_HERO_CTA_LABELS = {
-  contact: 'Décrire mon projet',
-  offers: 'Voir les offres et les prix',
-  booking: 'ou réserver un appel de 30\u00a0min',
+  blog: 'Lire le blog',
+  projects: 'Voir les réalisations',
 } as const;
 
 export const HOME_WORK_FRAME: WorkFrame = {
-  title: 'Cadre de travail',
+  title: 'Fiche technique',
   reference: 'réf. JN-2026',
   rows: [
-    { label: 'Prix', value: 'Fixe, annoncé avant de commencer' },
-    { label: 'Délai', value: 'Fixé au devis, selon la demande' },
-    { label: 'Réponse', value: 'Sous 48\u00a0h, le soir' },
-    { label: 'Disponibilité', value: 'Le soir et le week-end' },
-    { label: 'Propriété', value: 'Le site, le code et le nom de domaine sont à vous' },
-    { label: 'Zone', value: 'Yvelines et Île-de-France, rendez-vous possible le samedi' },
+    { label: 'Métier', value: "Tourneur CN de haute précision, dans l'aéronautique" },
+    { label: 'Code', value: 'Depuis 2025, titre Développeur Web et Web Mobile' },
+    { label: 'Stack', value: 'Angular, NestJS, TypeScript, PostgreSQL' },
+    { label: 'Hébergement', value: 'Auto-hébergé, Docker et Traefik' },
+    { label: 'Règle', value: 'Une pièce hors tolérance ne part pas, un code non testé non plus' },
   ],
-  dimension: 'de la demande à la mise en ligne',
+  dimension: "de l'atelier au code",
 };

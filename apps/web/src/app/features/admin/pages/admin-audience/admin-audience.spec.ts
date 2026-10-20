@@ -598,7 +598,7 @@ describe('AdminAudience', () => {
             heading: 'Formulaires par emplacement',
             rows: [
               ['Accueil', '1'],
-              ['Offre Site vitrine', '1'],
+              ["Page d'offre retirée (site-vitrine)", '1'],
             ],
           },
           {

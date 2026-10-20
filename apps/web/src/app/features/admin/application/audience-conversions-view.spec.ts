@@ -83,12 +83,8 @@ describe('placementLabel', () => {
   it.each([
     ['home', 'Accueil'],
     ['booking', 'Prise de rendez-vous'],
-    ['offer_site-vitrine', 'Offre Site vitrine'],
-    ['offer_site-atelier', 'Offre Site atelier'],
-    ['offer_evolution-application', "Offre Évolution d'application"],
-    ['offer_renfort-freelance', 'Offre Renfort Angular / NestJS'],
-    ['offer_application-metier', 'Emplacement inconnu (offer_application-metier)'],
-    ['offer_ancienne-offre', 'Emplacement inconnu (offer_ancienne-offre)'],
+    ['offer_site-vitrine', "Page d'offre retirée (site-vitrine)"],
+    ['offer_renfort-freelance', "Page d'offre retirée (renfort-freelance)"],
     ['footer', 'Emplacement inconnu (footer)'],
   ])('Given the placement %s When it is named Then it reads « %s »', (entityId, label) => {
     expect(placementLabel(entityId)).toBe(label);
@@ -118,7 +114,7 @@ describe('detail entries', () => {
         makeEventCount({ entityId: 'home', count: 1 }),
       ]),
     ).toEqual([
-      { name: 'Offre Site vitrine', count: 3 },
+      { name: "Page d'offre retirée (site-vitrine)", count: 3 },
       { name: 'Accueil', count: 1 },
     ]);
   });

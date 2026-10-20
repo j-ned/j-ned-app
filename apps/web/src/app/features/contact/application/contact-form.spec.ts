@@ -225,7 +225,7 @@ describe('ContactForm (Signal Forms)', () => {
       return { analytics: stubAnalyticsGateway({ trackContactSubmit }), trackContactSubmit };
     };
 
-    it.each<ContactPlacement>(['home', 'offer_site-vitrine'])(
+    it.each<ContactPlacement>(['home', 'booking'])(
       'counts one submission under %s once the API accepts the message',
       async (placement) => {
         const { analytics, trackContactSubmit } = measured();
@@ -683,7 +683,7 @@ describe('ContactForm (Signal Forms)', () => {
       expect(TestBed.inject(Router).url).toBe('/rendez-vous');
     });
 
-    it.each<ContactPlacement>(['home', 'offer_site-vitrine'])(
+    it.each<ContactPlacement>(['home', 'booking'])(
       'measures one click on the link under its %s placement',
       async (placement) => {
         const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();

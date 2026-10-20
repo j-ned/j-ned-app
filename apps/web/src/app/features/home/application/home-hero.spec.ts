@@ -35,12 +35,12 @@ describe('HomeHero', () => {
     expect(headline?.className).not.toMatch(/\banimate-/);
   });
 
-  it('Given le hero livré When il est rendu Then « à prix annoncé » est l’unique accent du titre', () => {
+  it('Given le hero livré When il est rendu Then « développeur web » est l’unique accent du titre', () => {
     renderWith(STATIC_HERO);
     const accents = Array.from(
       host().querySelectorAll<HTMLElement>('[data-testid="hero-headline"] em'),
     ).map((em) => (em.textContent ?? '').trim());
-    expect(accents).toEqual(['à prix annoncé']);
+    expect(accents).toEqual(['développeur web']);
   });
 
   it('Given le hero livré When il est rendu Then le paragraphe d’appui suit le titre', () => {

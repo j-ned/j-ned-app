@@ -1,6 +1,4 @@
 import type { Route } from '@angular/router';
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { toOfferCatalogJsonLd } from '@features/offer/offer-seo';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { routes } from './app.routes';
 
@@ -15,21 +13,18 @@ const graph = (): readonly JsonLdNode[] =>
 const nodeOfType = (type: string): JsonLdNode | undefined =>
   graph().find((node) => node['@type'] === type);
 
-const HOME_TITLE = 'Julien Nédellec | Sites et applications web, Yvelines';
+const HOME_TITLE = 'Julien Nédellec | Tourneur CN et développeur web Angular / NestJS';
 
 describe('home route SEO', () => {
-  it('titles the home page for clients, in the tab and in the SEO data', () => {
+  it('titles the home page after the person, in the tab and in the SEO data', () => {
     expect(homeRoute()?.title).toBe(HOME_TITLE);
     expect(homeSeo()?.['title']).toBe(HOME_TITLE);
   });
 
-  it('describes the home page with the announced price and the evening and weekend frame, where it works', () => {
-    const description = String(homeSeo()?.['description'] ?? '');
-    expect([
-      description.includes('à prix annoncé'),
-      description.includes('le soir et le week-end'),
-      description.endsWith('Yvelines et à distance.'),
-    ]).toEqual([true, true, true]);
+  it('describes the home page by the trade, the stack and what the site holds', () => {
+    expect(homeSeo()?.['description']).toBe(
+      "Tourneur CN dans l'aéronautique et développeur web full-stack Angular / NestJS. Articles techniques, projets en production et code auto-hébergé.",
+    );
   });
 
   it('gives the home page a search snippet of at most 160 characters, without em dash', () => {
@@ -39,44 +34,59 @@ describe('home route SEO', () => {
     expect(description).not.toContain('—');
   });
 
-  it('never mentions the CDI, neither in the snippet nor in the structured data', () => {
-    expect(JSON.stringify(homeSeo())).not.toMatch(/\bCDI\b/);
-  });
+  // Spec 029 : plus d'activité commerciale ni de recherche d'emploi.
+  it.each([/\bCDI\b/, /prix/i, /devis/i, /mission/i, /freelance/i, /Yvelines/, /Île-de-France/])(
+    'never mentions %s, neither in the snippet nor in the structured data',
+    (pattern) => {
+      expect(JSON.stringify(homeSeo())).not.toMatch(pattern);
+    },
+  );
 
-  it('describes the home page as one schema.org graph of a person and a professional service', () => {
+  it('describes the home page as one schema.org graph of a person and the website they write', () => {
     expect(structuredData()?.['@context']).toBe('https://schema.org');
-    expect(graph().map((node) => node['@type'])).toEqual(['Person', 'ProfessionalService']);
+    expect(graph().map((node) => node['@type'])).toEqual(['Person', 'WebSite']);
   });
 
-  it('keeps the person behind the service identified by name and site', () => {
+  it('identifies the person by name, site and trade, and links their public profiles only', () => {
     const person = nodeOfType('Person');
-    expect(person?.['name']).toBe('Julien Nédellec');
-    expect(person?.['url']).toBe(SITE_IDENTITY.siteUrl);
+    expect({
+      name: person?.['name'],
+      url: person?.['url'],
+      jobTitle: person?.['jobTitle'],
+      sameAs: person?.['sameAs'],
+    }).toEqual({
+      name: 'Julien Nédellec',
+      url: SITE_IDENTITY.siteUrl,
+      jobTitle: 'Tourneur CN',
+      sameAs: [SITE_IDENTITY.socials.linkedin, SITE_IDENTITY.socials.github],
+    });
   });
 
-  it('serves the Yvelines, Île-de-France and France from the professional service', () => {
-    const areas = (nodeOfType('ProfessionalService')?.['areaServed'] ??
-      []) as readonly JsonLdNode[];
-    expect(areas.map((area) => area['name'])).toEqual(['Yvelines', 'Île-de-France', 'France']);
+  it('declares the website in French, authored by the person', () => {
+    const website = nodeOfType('WebSite');
+    expect({
+      url: website?.['url'],
+      inLanguage: website?.['inLanguage'],
+      author: website?.['author'],
+    }).toEqual({
+      url: SITE_IDENTITY.siteUrl,
+      inLanguage: 'fr-FR',
+      author: { '@id': nodeOfType('Person')?.['@id'] },
+    });
   });
 
-  it('locates the professional service where the publisher is established', () => {
-    const address = nodeOfType('ProfessionalService')?.['address'] as JsonLdNode | undefined;
-    expect(address?.['addressLocality']).toBe(SITE_IDENTITY.location);
-    expect(address?.['addressCountry']).toBe('FR');
+  it.each([
+    'ProfessionalService',
+    'OfferCatalog',
+    'Offer',
+    'Review',
+    'AdministrativeArea',
+    'PriceSpecification',
+  ])('carries no commercial node of type %s anywhere in the graph', (type) => {
+    expect(JSON.stringify(structuredData())).not.toContain(`"@type":"${type}"`);
   });
 
-  it('attaches the offer catalogue to the professional service', () => {
-    expect(nodeOfType('ProfessionalService')?.['hasOfferCatalog']).toEqual(
-      toOfferCatalogJsonLd(OFFERS),
-    );
-  });
-
-  it('never lists the Google review form among the identities of the structured data', () => {
-    expect(JSON.stringify(structuredData())).not.toContain('g.page');
-  });
-
-  it('claims no review on the professional service while no real review exists', () => {
-    expect(Object.keys(nodeOfType('ProfessionalService') ?? {})).not.toContain('review');
+  it('never lists Malt nor the Google review form among the identities', () => {
+    expect(JSON.stringify(structuredData())).not.toMatch(/malt\.fr|g\.page/);
   });
 });

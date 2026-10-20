@@ -10,19 +10,13 @@ describe('SITE_IDENTITY', () => {
     });
   });
 
-  it('states the availability as occasional missions, in the evening and at the weekend', () => {
-    expect(SITE_IDENTITY.availability).toBe('Missions ponctuelles, le soir et le week-end');
-  });
-
-  it('exposes one availability only, for clients', () => {
+  it('exposes no availability nor review form any more (spec 029)', () => {
     expect(Object.keys(SITE_IDENTITY)).toEqual([
       'email',
       'phone',
       'location',
       'socials',
-      'availability',
       'journey',
-      'googleReviewUrl',
       'siteUrl',
       'business',
     ]);
@@ -32,9 +26,5 @@ describe('SITE_IDENTITY', () => {
     expect(SITE_IDENTITY.journey).toBe(
       "Chaudronnier puis tourneur CN de haute précision dans l'aéronautique, mon métier aujourd'hui, je suis aussi développeur web full-stack depuis 2025.",
     );
-  });
-
-  it('points to the Google review form, the only place a client is invited to leave a review', () => {
-    expect(SITE_IDENTITY.googleReviewUrl).toBe('https://g.page/r/Cdi5TzDRplmKECE/review');
   });
 });

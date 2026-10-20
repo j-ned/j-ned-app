@@ -198,7 +198,7 @@ server {
     }
 
     # Polices (version dans le nom) et visuels de démo (date de capture dans le nom)
-    location ~ ^/(fonts|demos)/ {
+    location ~ ^/fonts/ {
         include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
         try_files $uri =404;
@@ -263,15 +263,11 @@ server {
         include /etc/nginx/snippets/api-response-headers.conf;
     }
 
-    location ~ ^/offre-site-industrie/?$ {
-        # Traefik termine le TLS devant : un Location absolu pointerait sur http://<host>:3000.
-        absolute_redirect off;
-        return 301 /offres/site-atelier$is_args$args;
-    }
-
-    location ~ ^/offres/application-metier/?$ {
-        absolute_redirect off;
-        return 301 /offres/evolution-application$is_args$args;
+    # Offres retirées (spec 029) : 410 Gone, qui désindexe plus vite qu'un 404 et dit que la page ne
+    # reviendra pas. Le corps est le shell client (page introuvable), servi avec ce même statut.
+    location ~ ^/(offres|offre-site-industrie)(/|$) {
+        error_page 410 /index.csr.html;
+        return 410;
     }
 
     # Routes rendues côté client (RenderMode.Client dans app.routes.server.ts) : coquille CSR, 200

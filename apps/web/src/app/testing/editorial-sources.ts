@@ -1,15 +1,6 @@
-import { OFFERS } from '@features/offer/domain/offer-catalog.static-data';
-import { OFFER_PAGES } from '@features/offer/domain/offer-pages.static-data';
 import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '@features/home/domain/home-hero.static-data';
-import {
-  HOME_OFFERS_CATALOGUE_LINK,
-  HOME_OFFERS_HEADING,
-} from '@features/home/domain/home-offers.static-data';
-import { HOME_FAQ, HOME_METHOD, HOME_WHY } from '@features/home/domain/home-pitch.static-data';
-import { HOME_REVIEWS, HOME_REVIEWS_COPY } from '@features/home/domain/home-reviews.static-data';
 import { STATIC_HERO } from '@features/home/infra/data/home.static-data';
 import { ABOUT_IDENTITY } from '@features/profile/pages/about/about-identity';
-import { PROJECT_FOLLOW_UP_COPY } from '@features/projects/application/project-follow-up-copy';
 import {
   PROJECT_OUTCOMES,
   PROJECT_USAGE_LABELS,
@@ -48,18 +39,9 @@ export const ROUTE_TEXTS = Object.fromEntries(
 );
 
 export const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
-  ['OFFERS', OFFERS],
-  ['OFFER_PAGES', OFFER_PAGES],
   ['STATIC_HERO', STATIC_HERO],
   ['HOME_HERO_CTA_LABELS', HOME_HERO_CTA_LABELS],
   ['HOME_WORK_FRAME', HOME_WORK_FRAME],
-  ['HOME_OFFERS_HEADING', HOME_OFFERS_HEADING],
-  ['HOME_OFFERS_CATALOGUE_LINK', HOME_OFFERS_CATALOGUE_LINK],
-  ['HOME_METHOD', HOME_METHOD],
-  ['HOME_WHY', HOME_WHY],
-  ['HOME_FAQ', HOME_FAQ],
-  ['HOME_REVIEWS', HOME_REVIEWS],
-  ['HOME_REVIEWS_COPY', HOME_REVIEWS_COPY],
   ['ABOUT_IDENTITY', ABOUT_IDENTITY],
   ['ci/api-stub/fixtures/profile.json', PROFILE_FIXTURE],
   ['STATIC_CONTACT_INFO', STATIC_CONTACT_INFO],
@@ -69,7 +51,6 @@ export const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['BOOKING_PAGE_COPY', BOOKING_PAGE_COPY],
   ['PROJECT_OUTCOMES', PROJECT_OUTCOMES],
   ['PROJECT_USAGE_LABELS', PROJECT_USAGE_LABELS],
-  ['PROJECT_FOLLOW_UP_COPY', PROJECT_FOLLOW_UP_COPY],
   ['SITE_IDENTITY', SITE_IDENTITY],
   ['NAV_LINKS', NAV_LINKS],
   ['FOOTER_COPY', FOOTER_COPY],

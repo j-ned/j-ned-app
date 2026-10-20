@@ -3,7 +3,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
-import { ActiveSection } from '@core/navigation/active-section';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { Drawer } from '@shared/ui/drawer';
@@ -39,27 +38,14 @@ import { ThemeStore } from '@core/theme/theme-store';
 
         <nav class="hidden lg:flex items-center gap-6" aria-label="Navigation principale">
           @for (item of navItems; track item.label) {
-            @if (item.kind === 'route') {
-              <a
-                [routerLink]="item.href"
-                routerLinkActive="is-link-active text-primary"
-                class="group relative text-[0.9375rem] font-medium text-muted hover:text-primary transition-colors"
-              >
-                {{ item.label }}
-                <span class="nav-underline" aria-hidden="true"></span>
-              </a>
-            } @else {
-              <button
-                type="button"
-                (click)="scrollToSection(item.sectionId)"
-                [class.is-link-active]="activeKey() === item.sectionId"
-                [class.text-primary]="activeKey() === item.sectionId"
-                class="group relative cursor-pointer text-[0.9375rem] font-medium text-muted hover:text-primary transition-colors"
-              >
-                {{ item.label }}
-                <span class="nav-underline" aria-hidden="true"></span>
-              </button>
-            }
+            <a
+              [routerLink]="item.href"
+              routerLinkActive="is-link-active text-primary"
+              class="group relative text-[0.9375rem] font-medium text-muted hover:text-primary transition-colors"
+            >
+              {{ item.label }}
+              <span class="nav-underline" aria-hidden="true"></span>
+            </a>
           }
         </nav>
 
@@ -77,7 +63,7 @@ import { ThemeStore } from '@core/theme/theme-store';
             <app-icon [name]="isDarkTheme() ? 'moon' : 'sun'" [size]="16" />
           </button>
 
-          <button appButton type="button" data-testid="header-cta" (click)="describeProject()">
+          <button appButton type="button" data-testid="header-cta" (click)="goToContact()">
             {{ ctaLabel }}
           </button>
 
@@ -107,27 +93,15 @@ import { ThemeStore } from '@core/theme/theme-store';
     >
       <nav class="flex flex-col gap-1" aria-label="Navigation mobile" data-testid="mobile-nav">
         @for (item of navItems; track item.label) {
-          @if (item.kind === 'route') {
-            <a
-              [routerLink]="item.href"
-              routerLinkActive="text-primary bg-foreground/5"
-              (click)="closeMobileMenu()"
-              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-lg font-medium text-muted hover:text-primary hover:bg-foreground/5 transition-colors"
-            >
-              <app-icon [name]="item.icons" [size]="20" />
-              {{ item.label }}
-            </a>
-          } @else {
-            <button
-              type="button"
-              (click)="scrollToSection(item.sectionId); closeMobileMenu()"
-              [class]="activeKey() === item.sectionId ? 'text-primary bg-foreground/5' : ''"
-              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-lg font-medium text-muted hover:text-primary hover:bg-foreground/5 transition-colors"
-            >
-              <app-icon [name]="item.icons" [size]="20" />
-              {{ item.label }}
-            </button>
-          }
+          <a
+            [routerLink]="item.href"
+            routerLinkActive="text-primary bg-foreground/5"
+            (click)="closeMobileMenu()"
+            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-lg font-medium text-muted hover:text-primary hover:bg-foreground/5 transition-colors"
+          >
+            <app-icon [name]="item.icons" [size]="20" />
+            {{ item.label }}
+          </a>
         }
       </nav>
       <button
@@ -148,17 +122,12 @@ export class Header {
   private readonly theme = inject(ThemeStore);
 
   protected readonly navItems = NAV_LINKS;
-  protected readonly activeKey = inject(ActiveSection).key;
   protected readonly isMobileMenuOpen = signal(false);
   protected readonly isDarkTheme = this.theme.isDark;
   protected readonly themeToggleLabel = computed(() =>
     this.isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre',
   );
-  protected readonly ctaLabel = 'Décrire mon projet';
-
-  protected scrollToSection(sectionId: string): void {
-    this.scroller.scrollTo(sectionId);
-  }
+  protected readonly ctaLabel = 'Me contacter';
 
   protected scrollToTop(): void {
     this.scroller.scrollToTop();
@@ -172,9 +141,9 @@ export class Header {
     this.isMobileMenuOpen.set(false);
   }
 
-  protected describeProject(): void {
+  protected goToContact(): void {
     this.analytics.trackCtaClick('header_contact', this.ctaLabel);
-    this.scroller.scrollToRequestForm();
+    this.scroller.scrollTo('contact');
   }
 
   protected toggleTheme(): void {
