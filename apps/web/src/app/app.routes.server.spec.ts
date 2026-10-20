@@ -21,24 +21,20 @@ describe('serverRoutes', () => {
     expect([...serverRendered].sort()).toEqual([...CONTENT_ROUTES].sort());
   });
 
-  it.each(['mentions-legales', 'confidentialite', 'rendez-vous'])(
-    'prerenders the static page %s',
-    (path) => {
-      expect(findRoute(path)?.renderMode).toBe(RenderMode.Prerender);
-    },
-  );
-
-  // Offres retirées (spec 029) : nginx répond 410, rien ne doit plus être prérendu sous /offres.
-  it('prerenders nothing under the retired offers', () => {
-    expect(serverRoutes.filter(({ path }) => path.startsWith('offre'))).toEqual([]);
+  it.each(['mentions-legales', 'confidentialite'])('prerenders the static page %s', (path) => {
+    expect(findRoute(path)?.renderMode).toBe(RenderMode.Prerender);
   });
 
-  it.each(['login', 'two-factor', 'admin/**', 'rendez-vous/annulation', '**'])(
-    'renders %s in the browser only',
-    (path) => {
-      expect(findRoute(path)?.renderMode).toBe(RenderMode.Client);
-    },
-  );
+  // Offres retirées (spec 029) : nginx répond 410, rien ne doit plus être prérendu sous /offres.
+  it('prerenders nothing under the retired offers and booking pages', () => {
+    expect(
+      serverRoutes.filter(({ path }) => path.startsWith('offre') || path.startsWith('rendez-vous')),
+    ).toEqual([]);
+  });
+
+  it.each(['login', 'two-factor', 'admin/**', '**'])('renders %s in the browser only', (path) => {
+    expect(findRoute(path)?.renderMode).toBe(RenderMode.Client);
+  });
 
   it('never asks the API for route params at build time', () => {
     const withPrerenderParams = serverRoutes

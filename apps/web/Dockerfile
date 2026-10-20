@@ -263,23 +263,16 @@ server {
         include /etc/nginx/snippets/api-response-headers.conf;
     }
 
-    # Offres retirées (spec 029) : 410 Gone, qui désindexe plus vite qu'un 404 et dit que la page ne
-    # reviendra pas. Le corps est le shell client (page introuvable), servi avec ce même statut.
-    location ~ ^/(offres|offre-site-industrie)(/|$) {
+    # Offres et prise de rendez-vous retirées (spec 029) : 410 Gone, qui désindexe plus vite qu'un
+    # 404 et dit que la page ne reviendra pas. Le corps est le shell client (page introuvable), servi
+    # avec ce même statut.
+    location ~ ^/(offres|offre-site-industrie|rendez-vous)(/|$) {
         error_page 410 /index.csr.html;
         return 410;
     }
 
     # Routes rendues côté client (RenderMode.Client dans app.routes.server.ts) : coquille CSR, 200
     location ~ ^/(login|two-factor|admin)(/|$) {
-        try_files /index.csr.html =404;
-    }
-
-    # Annulation de rendez-vous (RenderMode.Client) : le jeton vit dans le fragment, la page ne doit
-    # jamais être indexée, et l'en-tête précède l'exécution du JavaScript.
-    location ~ ^/rendez-vous/annulation/?$ {
-        include /etc/nginx/snippets/security-headers.conf;
-        add_header X-Robots-Tag "noindex, nofollow" always;
         try_files /index.csr.html =404;
     }
 

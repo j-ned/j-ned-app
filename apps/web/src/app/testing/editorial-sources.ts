@@ -10,8 +10,6 @@ import {
   STATIC_SOCIAL_LINKS,
 } from '@shared/identity/contact-info.static-data';
 import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
-import { CONTACT_BOOKING_INVITE } from '@features/contact/domain/contact-booking-invite.static-data';
-import { BOOKING_PAGE_COPY } from '@features/booking/domain/booking-copy.static-data';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { FOOTER_COPY } from '../layout/components/footer/footer.static-data';
 import { NAV_LINKS } from '../layout/components/header/nav-items';
@@ -47,8 +45,6 @@ export const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['STATIC_CONTACT_INFO', STATIC_CONTACT_INFO],
   ['STATIC_SOCIAL_LINKS', STATIC_SOCIAL_LINKS],
   ['CONTACT_TIMELINES', CONTACT_TIMELINES],
-  ['CONTACT_BOOKING_INVITE', CONTACT_BOOKING_INVITE],
-  ['BOOKING_PAGE_COPY', BOOKING_PAGE_COPY],
   ['PROJECT_OUTCOMES', PROJECT_OUTCOMES],
   ['PROJECT_USAGE_LABELS', PROJECT_USAGE_LABELS],
   ['SITE_IDENTITY', SITE_IDENTITY],

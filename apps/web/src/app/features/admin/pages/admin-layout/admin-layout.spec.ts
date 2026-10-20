@@ -5,8 +5,6 @@ import { Router, provideRouter } from '@angular/router';
 import { BehaviorSubject, of, throwError, type Observable } from 'rxjs';
 import { AdminLayout } from './admin-layout';
 import { AuthStore } from '@core/auth/auth-store';
-import { BookingGateway } from '@features/booking/domain/gateways/booking.gateway';
-import { stubBookingGateway } from '@features/booking/testing/stub-booking-gateway';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
@@ -28,7 +26,6 @@ type ShellSources = {
   readonly projects?: Observable<readonly Project[]>;
   readonly posts?: Observable<readonly BlogPost[]>;
   readonly unread?: Observable<number>;
-  readonly upcoming?: Observable<number>;
 };
 
 type Shell = {
@@ -56,10 +53,6 @@ async function renderShell(url: string, sources: ShellSources = {}): Promise<She
       {
         provide: ContactGateway,
         useValue: stubContactGateway({ getUnreadCount: () => sources.unread ?? of(0) }),
-      },
-      {
-        provide: BookingGateway,
-        useValue: stubBookingGateway({ getUpcomingCount: () => sources.upcoming ?? of(0) }),
       },
       {
         provide: ProjectsGateway,
@@ -127,39 +120,15 @@ describe('AdminLayout: comptes de la navigation', () => {
     }).toEqual({ crash: null, projects: '6', posts: '2', messages: '3 non lus' });
   });
 
-  it('Given 2 upcoming bookings When the shell renders Then the bookings link shows « 2 à venir »', async () => {
-    const { host, crash } = await renderShell('/admin', { upcoming: of(2) });
-
-    expect({ crash, bookings: normalized(byTestId(host, 'nav-count-bookings')) }).toEqual({
-      crash: null,
-      bookings: '2 à venir',
-    });
-  });
-
-  it('Given the upcoming count fails When the shell renders Then the bookings link stays, without count', async () => {
-    const { host, crash } = await renderShell('/admin', {
-      upcoming: throwError(() => new Error('down')),
-    });
+  it('Given the shell When it renders Then the navigation offers no booking link any more (spec 029)', async () => {
+    const { host, crash } = await renderShell('/admin');
 
     expect({
       crash,
-      link: byTestId(host, 'nav-link-bookings') !== null,
-      count: byTestId(host, 'nav-count-bookings'),
-    }).toEqual({ crash: null, link: true, count: null });
-  });
-
-  it('Given a shared upcoming count When the gateway pushes a new count Then the bookings count follows without reload', async () => {
-    const upcoming = new BehaviorSubject<number>(2);
-    const { fixture, host } = await renderShell('/admin', { upcoming });
-    const before = normalized(byTestId(host, 'nav-count-bookings'));
-
-    upcoming.next(1);
-    await settle(fixture);
-
-    expect({ before, after: normalized(byTestId(host, 'nav-count-bookings')) }).toEqual({
-      before: '2 à venir',
-      after: '1 à venir',
-    });
+      links: host.querySelectorAll(
+        'a[href^="/admin/rendez-vous"], a[href^="/admin/disponibilites"]',
+      ).length,
+    }).toEqual({ crash: null, links: 0 });
   });
 
   it('Given a shared project list When the gateway pushes a new list Then the count follows without reload', async () => {
@@ -210,8 +179,6 @@ describe('AdminLayout: barre mobile et tiroir', () => {
   it.each([
     { url: '/admin', title: "Vue d'ensemble" },
     { url: '/admin/messages', title: 'Messages' },
-    { url: '/admin/rendez-vous', title: 'Rendez-vous' },
-    { url: '/admin/disponibilites', title: 'Disponibilités' },
     { url: '/admin/settings/security', title: 'Paramètres' },
   ])(
     'Given the page $url When the mobile bar renders Then it names the current page « $title »',

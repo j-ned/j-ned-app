@@ -1,8 +1,0 @@
-[
-  { "weekday": 1, "startMinute": 540, "endMinute": 720 },
-  { "weekday": 1, "startMinute": 840, "endMinute": 1080 },
-  { "weekday": 2, "startMinute": 540, "endMinute": 720 },
-  { "weekday": 3, "startMinute": 540, "endMinute": 720 },
-  { "weekday": 4, "startMinute": 840, "endMinute": 1080 },
-  { "weekday": 5, "startMinute": 540, "endMinute": 690 }
-]

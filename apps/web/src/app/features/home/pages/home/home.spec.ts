@@ -152,7 +152,6 @@ async function renderHomeTemplate(
         { path: 'blog', component: BlankPage },
         { path: 'blog/:slug', component: BlankPage },
         { path: 'projects', component: BlankPage },
-        { path: 'rendez-vous', component: BlankPage },
       ]),
       {
         provide: HomeGateway,
@@ -396,17 +395,6 @@ describe('Home', () => {
 
       const root = fixture.nativeElement as HTMLElement;
       expect(root.querySelector('form')).not.toBeNull();
-    });
-
-    it('Given le bloc contact rendu When la section est lue Then elle propose de réserver un appel, dans l’ancre contact', async () => {
-      const { fixture, contactBlock } = await renderHomeTemplate();
-
-      await contactBlock.render(DeferBlockState.Complete);
-      await fixture.whenStable();
-
-      const links = allByTestId(fixture, 'contact-booking-link');
-      expect(links.map((link) => link.getAttribute('href'))).toEqual(['/rendez-vous']);
-      expect(links[0]?.closest('[id="contact"]') ?? null).not.toBeNull();
     });
 
     it('Given le bloc contact rendu When le formulaire est lu Then il ne demande plus de type de projet tiré des offres', async () => {

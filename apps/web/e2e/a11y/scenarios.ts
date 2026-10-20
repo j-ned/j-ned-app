@@ -7,9 +7,6 @@ export const FOOTER_READY = 'footer-legal';
 
 export const THEMES: readonly Theme[] = ['light', 'dark'];
 
-// Jeton au format de l'API : la doublure en sert l'aperçu d'un rendez-vous annulable.
-export const BOOKING_CANCEL_TOKEN = 'a11yStubCancelToken_0123456789-abcdefghijkl';
-
 export const PUBLIC_PAGES: readonly PageScenario[] = [
   { path: '/', ready: 'home-contact-form' },
   { path: '/about', ready: 'about-lead' },
@@ -21,9 +18,6 @@ export const PUBLIC_PAGES: readonly PageScenario[] = [
   { path: '/confidentialite', ready: 'privacy-last-update' },
   { path: '/does-not-exist', ready: 'not-found-title' },
   { path: '/login', ready: 'login-form' },
-  { path: '/rendez-vous', ready: 'booking-day-picker' },
-  { path: `/rendez-vous/annulation#${BOOKING_CANCEL_TOKEN}`, ready: 'booking-cancel-preview' },
-  { path: '/rendez-vous/annulation', ready: 'booking-cancel-invalid' },
 ];
 
 export const ADMIN_PAGES: readonly PageScenario[] = [
@@ -38,20 +32,6 @@ export const ADMIN_PAGES: readonly PageScenario[] = [
   { path: '/admin/messages', ready: 'admin-messages-list' },
   { path: '/admin/audience', ready: 'tally-row' },
   { path: '/admin/settings', ready: 'settings-session' },
-  { path: '/admin/rendez-vous', ready: 'admin-booking-feed-url' },
-  { path: '/admin/disponibilites', ready: 'admin-calendar-grid' },
-];
-
-export type BookingFilterScenario = {
-  readonly label: string;
-  readonly rows: number;
-  readonly state: string;
-};
-
-// « À venir » est la liste ouverte par défaut, déjà auditée avec les pages admin.
-export const ADMIN_BOOKING_FILTERS: readonly BookingFilterScenario[] = [
-  { label: 'Passés', rows: 1, state: 'rendez-vous-passes' },
-  { label: 'Archivés', rows: 2, state: 'rendez-vous-archives' },
 ];
 
 // Un écran d'administration audité en squelette, en erreur ou sous un toast ne prouve rien.

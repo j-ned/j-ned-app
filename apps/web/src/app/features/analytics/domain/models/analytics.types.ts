@@ -1,7 +1,7 @@
 export type OutboundChannel =
   'email' | 'phone' | 'malt' | 'discord' | 'linkedin' | 'github' | 'demo';
 
-export type ContactPlacement = 'home' | 'booking';
+export type ContactPlacement = 'home';
 
 export type SectionId = 'home_contact';
 

@@ -14,14 +14,11 @@ export const serverRoutes: ServerRoute[] = [
   // Contenu écrit dans le code : prérendu au build
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },
   { path: 'confidentialite', renderMode: RenderMode.Prerender },
-  { path: 'rendez-vous', renderMode: RenderMode.Prerender },
 
   // Auth + admin : jamais côté serveur (authentifié, pas d'intérêt SEO)
   { path: 'login', renderMode: RenderMode.Client },
   { path: 'two-factor', renderMode: RenderMode.Client },
   { path: 'admin/**', renderMode: RenderMode.Client },
-  // Jeton d'annulation dans le fragment, invisible au serveur ; location nginx dédiée (noindex)
-  { path: 'rendez-vous/annulation', renderMode: RenderMode.Client },
 
   // Fallback : CSR pour tout le reste
   { path: '**', renderMode: RenderMode.Client },

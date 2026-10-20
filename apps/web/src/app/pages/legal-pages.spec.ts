@@ -112,58 +112,25 @@ describe('Pages légales', () => {
         privacy: paragraph(renderPrivacy(), 'privacy-last-update'),
         legal: LEGAL_LAST_UPDATE,
       }).toEqual({
-        privacy: 'Dernière mise à jour\u00a0: 13 octobre 2026',
+        privacy: 'Dernière mise à jour\u00a0: 20 octobre 2026',
         legal: '3 octobre 2026',
       });
     });
   });
 
-  describe('prise de rendez-vous', () => {
-    const renderPrivacy = (): HTMLElement => {
-      TestBed.configureTestingModule({ providers: [provideRouter([])] });
-      const fixture = TestBed.createComponent(PrivacyPolicy);
-      fixture.detectChanges();
-      return fixture.nativeElement as HTMLElement;
-    };
-    const paragraph = (host: HTMLElement, testId: string): string =>
-      (host.querySelector(`[data-testid="${testId}"]`)?.textContent ?? '')
-        .replace(/[ \t\n\r]+/g, ' ')
-        .trim();
+  it('ne décrit plus aucune prise de rendez-vous, retirée du site (spec 029)', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(PrivacyPolicy);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
 
-    it.each([
-      [
-        'privacy-booking-data',
-        "Pour réserver un appel de cadrage, vous indiquez votre nom, votre adresse e-mail, votre numéro de téléphone si vous choisissez d'être appelé, le nom de votre entreprise si vous le souhaitez et votre besoin. Ces informations servent uniquement à organiser l'appel\u00a0: confirmation, invitation d'agenda, lien de visio, rappel la veille et annulation. Base légale\u00a0: les mesures précontractuelles prises à votre demande.",
-      ],
-      [
-        'privacy-booking-recipients',
-        "Elles sont enregistrées sur le serveur de l'éditeur, seul à les consulter, et transmises par e-mail à l'éditeur et à vous-même par son prestataire d'envoi d'e-mails\u202f; la liste publique des créneaux n'en contient aucune. L'appel en visio a lieu sur Jitsi Meet, sans compte de votre côté.",
-      ],
-      [
-        'privacy-booking-retention',
-        "Chaque rendez-vous et ses informations sont supprimés automatiquement 6 mois après sa date, qu'il ait eu lieu ou ait été annulé. Vous pouvez l'annuler jusqu'à son début par le lien reçu dans l'e-mail de confirmation.",
-      ],
-    ])('le paragraphe %s décrit le traitement réel', (testId, expected) => {
-      expect(paragraph(renderPrivacy(), testId)).toBe(expected);
-    });
-
-    it('place les trois paragraphes sous le titre de la section, avant la mesure d’audience', () => {
-      const host = renderPrivacy();
-      const sectionOf = (testId: string): string | undefined => {
-        let node = host.querySelector(`[data-testid="${testId}"]`)?.previousElementSibling;
-        while (node && node.tagName !== 'H2') node = node.previousElementSibling;
-        return node?.textContent?.trim();
-      };
-
-      expect(
-        ['privacy-booking-data', 'privacy-booking-recipients', 'privacy-booking-retention'].map(
-          sectionOf,
-        ),
-      ).toEqual(['Prise de rendez-vous', 'Prise de rendez-vous', 'Prise de rendez-vous']);
-    });
+    expect([
+      host.querySelectorAll('[data-testid^="privacy-booking"]').length,
+      /rendez-vous|Jitsi/i.test(host.textContent ?? ''),
+    ]).toEqual([0, false]);
   });
 
-  it('la politique de confidentialité couvre contact, rendez-vous, audience, commentaires, erreurs et droits', () => {
+  it('la politique de confidentialité couvre contact, audience, commentaires, erreurs et droits', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(PrivacyPolicy);
     fixture.detectChanges();
@@ -172,7 +139,6 @@ describe('Pages légales', () => {
     ).map((h) => h.textContent?.trim());
     expect(headings).toEqual([
       'Formulaire de contact',
-      'Prise de rendez-vous',
       "Mesure d'audience",
       'Commentaires des articles',
       'Suivi des erreurs techniques',

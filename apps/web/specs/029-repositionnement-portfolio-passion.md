@@ -110,3 +110,30 @@ positionnement : public principal développeur (par le blog), public secondaire 
 ### Laissé aux PR suivantes
 Formulaire de contact (délai souhaité, invitation à réserver), SIRET et lien Malt (PR 5), rendez-vous
 (PR 3), `DESIGN.md` et ADR (PR 7).
+
+## Plan technique — PR 3 (rendez-vous, front)
+
+### Retiré
+- `features/booking/` entier : page `/rendez-vous`, page d'annulation `/rendez-vous/annulation`,
+  gateway HTTP et son provider.
+- Admin : pages `/admin/rendez-vous` et `/admin/disponibilites`, groupe « Rendez-vous » du menu et
+  compte « à venir » du layout (plus d'appel à `GET /api/booking/bookings/upcoming-count`), vues et
+  composants qui ne servaient qu'à elles (calendrier, semaine type, fermetures, flux d'agenda).
+- Invitation « Réservez un appel » du formulaire de contact et lien du pied de page ;
+  `ContactPlacement` se réduit à `'home'`.
+- Politique de confidentialité : section « Prise de rendez-vous » ; date de mise à jour au
+  20 octobre 2026.
+- Doublure d'API de la CI : routes `/api/booking/*` et fixture des règles de disponibilité ;
+  scénarios axe des pages de rendez-vous.
+
+### Modifié
+- **nginx** : la location 410 couvre `^/(offres|offre-site-industrie|rendez-vous)(/|$)`. La location
+  dédiée à l'annulation (coquille CSR + `X-Robots-Tag`) disparaît : un ancien lien d'annulation
+  reçu par e-mail répond 410, en-têtes de sécurité conservés.
+- **Prérendu et sitemap** : `/rendez-vous` n'est plus prérendue ni listée ; la CI vérifie qu'aucun
+  dossier `rendez-vous` ne reste dans `dist/`.
+- **Analytics** : l'emplacement historique `booking` se lit « Prise de rendez-vous (retirée) ».
+
+### Ordre de déploiement
+Cette PR précède la PR 4 (API) : le front ne lit plus aucune route `/api/booking/*`, l'API peut ensuite
+les retirer sans casser une page. Les données de rendez-vous restent en base jusqu'à la PR 4.

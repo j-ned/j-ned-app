@@ -82,7 +82,7 @@ describe('conversionsNote', () => {
 describe('placementLabel', () => {
   it.each([
     ['home', 'Accueil'],
-    ['booking', 'Prise de rendez-vous'],
+    ['booking', 'Prise de rendez-vous (retirée)'],
     ['offer_site-vitrine', "Page d'offre retirée (site-vitrine)"],
     ['offer_renfort-freelance', "Page d'offre retirée (renfort-freelance)"],
     ['footer', 'Emplacement inconnu (footer)'],

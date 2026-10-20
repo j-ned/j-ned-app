@@ -67,9 +67,9 @@ jobs:
           test ! -f $browser/index.html
           # Sitemap et RSS sont rendus à la requête par Node : aucun fichier figé au build
           test ! -f $browser/sitemap.xml && test ! -f $browser/rss.xml
-          # Pages statiques prérendues (les offres sont retirées, spec 029 : aucun fichier ne doit rester)
+          # Pages statiques prérendues (offres et rendez-vous retirés, spec 029 : aucun fichier ne doit rester)
           test -f $browser/mentions-legales/index.html && test -f $browser/confidentialite/index.html
-          test ! -e $browser/offres
+          test ! -e $browser/offres && test ! -e $browser/rendez-vous
           # postbuild : la CSP des pages prérendues est hachée par page, plus d'unsafe-inline.
           ! grep -l -E "(script|style)-src [^;]*'unsafe-inline'" $(find $browser -name index.html -o -name index.csr.html)
           # Manifeste appliqué par Node aux pages rendues à la requête : scripts constants et feuilles de styles
@@ -157,8 +157,8 @@ jobs:
           for path in /projects/inexistant /blog/inexistant; do
             test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$path")" = "404" || { echo "pas de 404 : $path"; exit 1; }
           done
-          # Offres retirées (spec 029) : 410 Gone, corps = shell client
-          for path in /offres /offres/site-vitrine /offre-site-industrie; do
+          # Offres et prise de rendez-vous retirées (spec 029) : 410 Gone, corps = shell client
+          for path in /offres /offres/site-vitrine /offre-site-industrie /rendez-vous /rendez-vous/ /rendez-vous/annulation; do
             test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$path")" = "410" || { echo "pas de 410 : $path"; exit 1; }
           done
           curl -s http://127.0.0.1:3000/offres -o /tmp/gone.html
@@ -203,11 +203,9 @@ jobs:
           # Routes client → coquille CSR en 200 ; URL inconnue → coquille CSR en 404 (pas la home)
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login)" = "200"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/admin/analytics)" = "200"
-          # Prise de rendez-vous : page prérendue ; annulation en coquille CSR, hors index, en-têtes de sécurité gardés
-          curl -fsS http://127.0.0.1:3000/rendez-vous -o /tmp/booking.html
-          grep -q '<app-booking' /tmp/booking.html
-          cancel_headers=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/rendez-vous/annulation)
-          grep -qi '^x-robots-tag: noindex, nofollow' <<<"$cancel_headers"
+          # Ancien lien d'annulation de rendez-vous (e-mails déjà envoyés) : 410, en-têtes de sécurité gardés
+          cancel_headers=$(curl -s -D - -o /dev/null http://127.0.0.1:3000/rendez-vous/annulation)
+          grep -q ' 410' <<<"${cancel_headers%%$'\n'*}" || { echo "pas de 410 : annulation"; exit 1; }
           grep -qi '^strict-transport-security:' <<<"$cancel_headers"
           test "$(curl -s -o /tmp/404.html -w '%{http_code}' http://127.0.0.1:3000/does-not-exist)" = "404"
           grep -q '<app-root' /tmp/404.html && ! grep -q 'ng-state' /tmp/404.html

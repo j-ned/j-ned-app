@@ -18,7 +18,7 @@ const CHANNEL_LABELS: Readonly<Record<OutboundChannel, string>> = {
 
 const PLACEMENT_LABELS: ReadonlyMap<string, string> = new Map([
   ['home', 'Accueil'],
-  ['booking', 'Prise de rendez-vous'],
+  ['booking', 'Prise de rendez-vous (retirée)'],
 ]);
 
 const isChannel = (entityId: string): entityId is OutboundChannel =>

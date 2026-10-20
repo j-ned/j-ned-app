@@ -135,10 +135,6 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'rendez-vous',
-    loadChildren: () => import('./features/booking/booking.routes').then((m) => m.BOOKING_ROUTES),
-  },
-  {
     path: 'mentions-legales',
     title: 'Mentions légales | Julien Nédellec',
     loadComponent: () => import('./pages/legal-notice').then((m) => m.LegalNotice),

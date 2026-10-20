@@ -75,19 +75,6 @@ export const ADMIN_ROUTES: Routes = [
           import('./pages/admin-messages/admin-messages').then((m) => m.AdminMessages),
       },
       {
-        path: 'rendez-vous',
-        title: 'Rendez-vous | Admin',
-        loadComponent: () =>
-          import('./pages/admin-bookings/admin-bookings').then((m) => m.AdminBookings),
-      },
-      {
-        path: 'disponibilites',
-        title: 'Disponibilités | Admin',
-        canDeactivate: [unsavedChangesGuard],
-        loadComponent: () =>
-          import('./pages/admin-availability/admin-availability').then((m) => m.AdminAvailability),
-      },
-      {
         path: 'audience',
         title: 'Audience | Admin',
         loadComponent: () =>

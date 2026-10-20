@@ -73,7 +73,6 @@ describe('Footer', () => {
         headings: { resources: 'Ressources', contact: 'Contact' },
         resources: { projects: 'Réalisations', blog: 'Blog', about: 'Parcours' },
         contactCta: 'Me contacter',
-        bookingLink: 'Réserver un appel de 30\u00a0min',
         socials: { malt: 'Malt', linkedin: 'LinkedIn', github: 'GitHub' },
         legal: {
           owner: 'Julien Nédellec',
@@ -179,40 +178,13 @@ describe('Footer', () => {
       );
     });
 
-    it('Given the footer When it is rendered Then the booking link follows the call to action and precedes the networks, inside the Contact navigation', async () => {
+    it('Given the footer When it is rendered Then it no longer links the retired booking page', async () => {
       const { host } = await setup();
-      const links = byTestId<HTMLAnchorElement>(host, 'footer-booking-link');
-      const [cta] = byTestId(host, 'footer-contact-cta');
-      const [firstSocial] = byTestId(host, 'footer-social-link');
 
-      expect(
-        links.map((link) => [
-          link.tagName,
-          link.getAttribute('href'),
-          link.textContent?.trim(),
-          navNameOf(link),
-        ]),
-      ).toEqual([['A', '/rendez-vous', FOOTER_COPY.bookingLink, FOOTER_COPY.headings.contact]]);
-      const [link] = links;
-      expect(
-        link && cta && firstSocial
-          ? [
-              cta.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING,
-              link.compareDocumentPosition(firstSocial) & Node.DOCUMENT_POSITION_FOLLOWING,
-            ]
-          : [],
-      ).toEqual([Node.DOCUMENT_POSITION_FOLLOWING, Node.DOCUMENT_POSITION_FOLLOWING]);
-    });
-
-    it('Given the booking link When it is clicked Then the router lands on the booking page and the click is measured once under footer_booking', async () => {
-      const { fixture, host, trackCtaClick, scrollTo } = await setup();
-
-      byTestId<HTMLAnchorElement>(host, 'footer-booking-link')[0]?.click();
-      await fixture.whenStable();
-
-      expect(TestBed.inject(Router).url).toBe('/rendez-vous');
-      expect(trackCtaClick.mock.calls).toEqual([['footer_booking', FOOTER_COPY.bookingLink]]);
-      expect(scrollTo).not.toHaveBeenCalled();
+      expect([
+        byTestId(host, 'footer-booking-link').length,
+        host.querySelectorAll('a[href^="/rendez-vous"]').length,
+      ]).toEqual([0, 0]);
     });
 
     it('Given the footer When it is rendered Then Malt, LinkedIn and GitHub open in a new tab from the Contact navigation', async () => {

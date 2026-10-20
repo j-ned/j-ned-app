@@ -3,8 +3,6 @@ import { Title } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 import { ADMIN_ROUTES } from './admin.routes';
 import { AdminAudience } from './pages/admin-audience/admin-audience';
-import { AdminAvailability } from './pages/admin-availability/admin-availability';
-import { AdminBookings } from './pages/admin-bookings/admin-bookings';
 import { AdminOverview } from './pages/admin-overview/admin-overview';
 import { AdminPostEditor } from './pages/admin-post-editor/admin-post-editor';
 import { AdminProfile } from './pages/admin-profile/admin-profile';
@@ -32,8 +30,6 @@ describe('ADMIN_ROUTES: titres des pages', () => {
       profile: 'Parcours | Admin',
       cv: 'CV | Admin',
       messages: 'Messages | Admin',
-      'rendez-vous': 'Rendez-vous | Admin',
-      disponibilites: 'Disponibilités | Admin',
       audience: 'Audience | Admin',
       settings: 'Paramètres | Admin',
       'settings/security': 'Sécurité | Admin',
@@ -71,41 +67,13 @@ describe('ADMIN_ROUTES: Audience', () => {
   });
 });
 
-describe('ADMIN_ROUTES: Rendez-vous', () => {
-  it('Given /admin/rendez-vous When it is opened Then it answers at that address with its title', async () => {
-    expect(await navigate('/admin/rendez-vous')).toEqual({
-      url: '/admin/rendez-vous',
-      title: 'Rendez-vous | Admin',
-    });
-  });
-
-  it('Given /admin/rendez-vous When its page is loaded Then it is the bookings page', async () => {
-    const bookings = ADMIN_ROUTES[0]?.children?.find((route) => route.path === 'rendez-vous');
-
-    expect({
-      page: await bookings?.loadComponent?.(),
-      guarded: bookings?.canDeactivate ?? null,
-    }).toEqual({ page: AdminBookings, guarded: null });
-  });
-});
-
-describe('ADMIN_ROUTES: Disponibilités', () => {
-  it('Given /admin/disponibilites When it is opened Then it answers at that address with its title', async () => {
-    expect(await navigate('/admin/disponibilites')).toEqual({
-      url: '/admin/disponibilites',
-      title: 'Disponibilités | Admin',
-    });
-  });
-
-  it('Given /admin/disponibilites When its page is loaded Then it is the availability page, guarded against unsaved changes', async () => {
-    const availability = ADMIN_ROUTES[0]?.children?.find(
-      (route) => route.path === 'disponibilites',
-    );
-
-    expect({
-      page: await availability?.loadComponent?.(),
-      guarded: availability?.canDeactivate ?? null,
-    }).toEqual({ page: AdminAvailability, guarded: [unsavedChangesGuard] });
+describe('ADMIN_ROUTES: rendez-vous retirés (spec 029)', () => {
+  it('declares neither the bookings page nor the availability page any more', () => {
+    expect(
+      (ADMIN_ROUTES[0]?.children ?? [])
+        .map((route) => route.path)
+        .filter((path) => path === 'rendez-vous' || path === 'disponibilites'),
+    ).toEqual([]);
   });
 });
 

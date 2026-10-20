@@ -10,7 +10,7 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
     <article class="page-container max-w-3xl pt-8 prose dark:prose-invert">
       <h1>Politique de confidentialité</h1>
       <p class="text-muted" data-testid="privacy-last-update">
-        Dernière mise à jour&nbsp;: 13 octobre 2026
+        Dernière mise à jour&nbsp;: 20 octobre 2026
       </p>
 
       <p>
@@ -28,26 +28,6 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
         e-mail à l'éditeur&#8239;; une confirmation vous est envoyée à l'adresse indiquée. Base
         légale&nbsp;: l'intérêt légitime à répondre à une sollicitation. Elles sont conservées le
         temps du traitement de la demande, puis supprimées par l'éditeur.
-      </p>
-
-      <h2>Prise de rendez-vous</h2>
-      <p data-testid="privacy-booking-data">
-        Pour réserver un appel de cadrage, vous indiquez votre nom, votre adresse e-mail, votre
-        numéro de téléphone si vous choisissez d'être appelé, le nom de votre entreprise si vous le
-        souhaitez et votre besoin. Ces informations servent uniquement à organiser l'appel&nbsp;:
-        confirmation, invitation d'agenda, lien de visio, rappel la veille et annulation. Base
-        légale&nbsp;: les mesures précontractuelles prises à votre demande.
-      </p>
-      <p data-testid="privacy-booking-recipients">
-        Elles sont enregistrées sur le serveur de l'éditeur, seul à les consulter, et transmises par
-        e-mail à l'éditeur et à vous-même par son prestataire d'envoi d'e-mails&#8239;; la liste
-        publique des créneaux n'en contient aucune. L'appel en visio a lieu sur Jitsi Meet, sans
-        compte de votre côté.
-      </p>
-      <p data-testid="privacy-booking-retention">
-        Chaque rendez-vous et ses informations sont supprimés automatiquement 6 mois après sa date,
-        qu'il ait eu lieu ou ait été annulé. Vous pouvez l'annuler jusqu'à son début par le lien
-        reçu dans l'e-mail de confirmation.
       </p>
 
       <h2>Mesure d'audience</h2>

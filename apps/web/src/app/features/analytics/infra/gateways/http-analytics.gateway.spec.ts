@@ -293,7 +293,7 @@ describe('HttpAnalyticsGateway', () => {
   });
 
   describe('conversions', () => {
-    it.each([['home'], ['booking']] as const)(
+    it.each([['home']] as const)(
       'Given a visitor When the form sent from %s succeeds Then POST /api/analytics/track carries only the placement',
       (placement) => {
         const { gateway, httpController } = configureBrowser();
