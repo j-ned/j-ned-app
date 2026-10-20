@@ -6,77 +6,65 @@ brand
 
 ## Users
 
-Le site est la plateforme d'acquisition client de Julien Nédellec, entrepreneur individuel (SIRET dans `SITE_IDENTITY.business`). Il sert quatre publics. Les trois premiers sont des clients et partagent la home, la navigation et le ton. Le quatrième est secondaire et a sa propre entrée.
+Le site est le portfolio personnel de Julien Nédellec, tourneur CN de haute précision dans l'aéronautique et développeur web full-stack par passion. Ce n'est plus une activité commerciale : aucune offre, aucun tarif, aucune prise de rendez-vous (repositionnement du 2026-10-20, spec 029). Il sert deux publics, dans cet ordre.
 
-**1. Dirigeant de TPE, PME ou artisan (offre site vitrine)** : peu technique, lit souvent sur téléphone. Il veut un prix fixe, un délai et un interlocuteur unique. Ses questions : combien, quand, qu'est-ce que j'obtiens, est-ce sérieux ?
+**1. Développeur (public principal)** : un pair qui arrive presque toujours par une recherche Google sur un problème technique précis (Angular, NestJS, PostgreSQL, auto-hébergement), et atterrit directement sur un article. Il veut une réponse exacte, du code qui tourne en production, les compromis assumés. Ses questions : est-ce que ça règle mon problème, est-ce que l'auteur sait de quoi il parle, qu'est-ce qu'il a écrit d'autre ?
 
-**2. Gérant d'atelier mécanique (offre site atelier)** : sous-cas du public 1. Gérant ou responsable commercial d'un atelier d'usinage, de décolletage ou de mécanique de précision des Yvelines, 5 à 50 salariés. Il arrive par la prospection directe (visite, téléphone, email, LinkedIn), pas par la home. Il attend le vocabulaire de son métier (tolérances, parc machines, EN 9100), pas celui du web.
+**2. Recruteur ou tech lead (public secondaire)** : arrive par le nom, LinkedIn ou GitHub. Il veut vérifier en quelques minutes le niveau réel : projets en production, choix techniques argumentés, parcours, CV. Ses questions : qu'est-ce qu'il a construit, comment il raisonne, d'où il vient ? Julien n'est pas en recherche : le site ne porte **aucun signal de disponibilité** (ni bloc « Vous recrutez ? », ni « disponible en CDI », ni bouton d'embauche). Le CV reste téléchargeable comme pièce du parcours, pas comme candidature.
 
-**3. Responsable métier, fondateur ou CTO (application sur mesure, refonte et maintenance, renfort en régie)** : technique ou semi-technique. Il veut des preuves de livraison en production, une méthode, un cadre clair (devis ferme ou TJM). Il arrive par recommandation, Malt, LinkedIn ou recherche.
-
-**Lecteur associé** : pair tech qui audite le code GitHub pour le compte du public 3.
-
-**4. Recruteur tech (secondaire)** : trouve le parcours, la stack, le CV et la disponibilité CDI sur la page Parcours (bloc « Vous recrutez ? »), accessible depuis le pied de page. Aucun signal de recrutement sur la home ni dans le tunnel de vente.
-
-Le site n'est ni un blog ni un lab. Le blog existe comme preuve de compétence, pas comme produit.
+Le blog est le moteur du site : c'est par lui qu'arrive le trafic organique. Les réalisations et le parcours en sont la preuve.
 
 ## Product Purpose
 
-Transformer une visite en **demande de devis envoyée**. Le site présente un catalogue de cinq offres à prix ou cadre tarifaire publics, prouve la capacité à livrer en production, et recueille la demande par le formulaire de contact (sujet prérempli depuis chaque page d'offre). Détail : `specs/009-plateforme-acquisition.md`.
+Partager ce que Julien construit et apprend, et le rendre **trouvable**. Le site réussit quand :
 
-| Offre | Public | Tarif |
-|---|---|---|
-| Site vitrine (TPE, PME, artisans), en ligne en 7 jours | 1 | 890 €, maintenance 29 €/mois |
-| Site atelier (mécanique de précision), en ligne en 7 jours | 2 | 690 €, maintenance 29 €/mois |
-| Application métier sur mesure | 3 | À partir de 4 500 €, devis ferme après cadrage |
-| Refonte, audit et maintenance | 3 | Audit 450 €, maintenance dès 190 €/mois |
-| Renfort Angular / NestJS en régie | 3 | TJM sur demande, possible via Malt |
+1. un développeur trouve un article par une recherche, obtient sa réponse, puis lit un deuxième article ou ouvre une réalisation ;
+2. un recruteur ou un pair qui cherche le nom trouve projets, parcours et CV en un clic depuis n'importe quelle page.
 
-Prix nets, TVA non applicable (art. 293 B du CGI). Les montants vivent dans une source unique du code, jamais en dur dans deux templates.
+Le formulaire de contact reste ouvert à tous (question sur un article, échange entre pairs, prise de contact), sans qualification commerciale.
 
-Succès = un visiteur qui passe d'une page (home, catalogue, offre) au formulaire envoyé, sans appel de qualification préalable. Succès secondaire = un recruteur qui trouve CV et disponibilité en un clic depuis le pied de page.
-
-**Séparation des publics** : l'offre atelier n'apparaît pas sur la home (son public arrive par la prospection) mais figure au catalogue et au pied de page. Le recruteur n'a qu'une entrée, la page Parcours. La voix reste la même partout. Le site ne cite jamais l'employeur de Julien.
+**SEO, priorité du site** : chaque page publique est rendue côté serveur avec son titre, sa description, son canonical et ses données structurées (`Person`, `ProfilePage`, `BlogPosting`, `BreadcrumbList`). La cible est la longue traîne technique (une question précise, un article qui y répond), pas les requêtes génériques du type « développeur Angular », que les plateformes et les sites d'emploi occupent. Pas de ciblage local : la zone géographique n'a plus d'objet.
 
 ## Brand Personality
 
-**Marque** : nom propre, « Julien Nédellec ». Pas de nom de studio.
+**Marque** : nom propre, « Julien Nédellec ».
 
-**Trois mots** : *Rigoureux · Fiable · Soigné*.
+**Trois mots** : *Rigoureux · Curieux · Soigné*.
 
-- **Rigoureux** : chaque détail est intentionnel (typo, espacement, copy, a11y). Le site est lui-même un échantillon du travail livré.
-- **Fiable** : prix annoncé avant de commencer, délai tenu, code et nom de domaine au nom du client, un seul interlocuteur. La confiance vient de faits vérifiables, pas de promesses.
-- **Soigné** : éditorial dans la respiration et la typographie, premium dans le rendu (clair et sombre maîtrisés). Le motif visuel vient du dessin technique (cartouche, cotes) : la rigueur d'atelier appliquée au logiciel.
+- **Rigoureux** : la règle de l'atelier appliquée au logiciel, « une pièce hors tolérance ne part pas ». Chaque détail est intentionnel (typo, espacement, a11y, tests). Le site est lui-même un échantillon du travail.
+- **Curieux** : autodidacte, il lit la doc et les sources jusqu'à comprendre. Les articles racontent le chemin réel, erreurs comprises.
+- **Soigné** : éditorial dans la respiration et la typographie, clair et sombre maîtrisés. Le motif visuel vient du dessin technique (cartouche, cotes) : le métier d'origine, pas un décor.
 
-**Voix** : directe, en français, phrases courtes. Vocabulaire du client, pas du développeur : « mis en ligne », pas « déployé » ; « rapide sur téléphone », pas « Lighthouse 98 ». Les termes techniques restent bienvenus pour le public 3, sur ses pages. Aucun superlatif marketing. Aucun em-dash. Le ton dit « je sais ce que je fais, voici ce que vous obtenez ».
+**Voix** : directe, en français, phrases courtes. Le vocabulaire technique est le bienvenu partout : le lecteur principal est développeur. Aucun superlatif. Aucun em-dash. Le ton dit « voici ce que j'ai construit, pourquoi, et ce que ça m'a appris ».
 
-**Émotions cibles** : confiance immédiate, sentiment de transparence, envie d'envoyer sa demande maintenant.
+**Émotions cibles** : « enfin une réponse précise », envie de lire l'article suivant, confiance dans le sérieux de l'auteur.
 
 ## Anti-references
 
-- **Template Bootstrap junior 2018** : hero centré générique, cards alignées avec icône stock, bleu marine + orange. Disqualifie en 2 secondes.
-- **Agence web creuse** : « Big hero gradient », faux mockup d'écran, sections « Features », « Get Started », « Solutions innovantes », prix « à partir de » sans détail. Ici on vend par des faits : prix, délai, livrables, déroulé jour par jour.
-- **Preuves inventées** : faux témoignages, logos clients sans client, chiffres non vérifiables. Une démo est libellée « Démo ». Un emplacement témoignage n'existe qu'avec un vrai témoignage.
-- **Awwwards over-design** : cursor custom, scroll-jacking, intro animée. Le client veut une réponse, pas un spectacle.
-- **Jargon développeur sur le chemin client** : commandes shell, noms de frameworks en hero, badges de stack. La stack se montre dans les réalisations et sur la page Parcours.
+- **Vitrine commerciale** : prix, offres, « Décrire mon projet », « Réservez un appel », argumentaire « Pourquoi moi ». Le site ne vend rien.
+- **Signal de recherche d'emploi** : « disponible », « open to work », bloc « Vous recrutez ? ». Julien n'est pas en recherche.
+- **Template portfolio générique** : hero centré « Hi, I'm a passionate developer », barres de compétences en pourcentage, nuage de logos de technologies.
+- **Preuves inventées** : faux témoignages, chiffres non vérifiables, projets gonflés. Une démo est libellée « Démo ».
+- **Awwwards over-design** : cursor custom, scroll-jacking, intro animée. Le lecteur veut lire.
+- **Article SEO creux** : contenu étiré pour placer des mots-clés, réponse noyée sous une introduction. Un article répond tôt et prouve par le code.
 - **Glassmorphism décoratif partout** : toléré ponctuellement si justifié, jamais comme signature.
 
 ## Design Principles
 
-1. **Practice what you preach** : le site doit tenir ce qu'il vend. Lighthouse > 95 partout, a11y WCAG AA strict, SSR et prérendu sans régression, bundle initial minimal. Un prestataire web dont le site est lent perd la vente.
+1. **Practice what you preach** : le site tient ce qu'il montre. Lighthouse > 95 partout, a11y WCAG AA strict, SSR et prérendu sans régression, bundle initial minimal.
 
-2. **Chaque section répond à une question du client** : dans cet ordre, « qu'est-ce que vous faites ? », « combien et en combien de temps ? », « vous l'avez déjà fait ? », « comment ça se passe ? », « pourquoi vous ? », « comment je vous contacte ? ». Une zone qui n'aide pas à la décision disparaît.
+2. **Chaque section répond à une question du lecteur** : « qui es-tu ? », « qu'est-ce que tu as construit ? », « qu'est-ce que tu as écrit ? », « comment te joindre ? ». Une zone qui n'y répond pas disparaît.
 
-3. **Identité visuelle stable, choix visuels frais** : l'identité indigo + clair/sombre + Tailwind v4 reste le socle. Le motif du dessin technique (cartouche pour les prix et engagements, cotes pour les délais) est la seule signature ajoutée, utilisée avec retenue.
+3. **Identité visuelle stable** : l'identité indigo + clair/sombre + Tailwind v4 reste le socle. Le motif du dessin technique (cartouche pour les fiches, cotes pour les mesures) est la seule signature, utilisée avec retenue.
 
-4. **Les faits sont visibles** : prix, délais, livrables, mention TVA, propriété du code et du domaine sont écrits en clair sur chaque offre, jamais cachés derrière « Contactez-nous ».
+4. **Le contenu d'abord** : la typographie de lecture (articles, fiches projet) prime sur la décoration. Le code est lisible, coloré, copiable.
 
-5. **Zéro friction sur la conversion** : le formulaire est atteignable depuis n'importe quelle page en un clic (bouton d'appel permanent dans le header), sans modal piégeux ni champ superflu. La qualification (type de projet, délai) reste optionnelle.
+5. **Trouvable par construction** : une page publique sans titre, description, canonical et données structurées rendus côté serveur est une régression, au même titre qu'une violation a11y.
 
 ## Accessibility & Inclusion
 
 - **Cible** : WCAG 2.2 niveau **AA strict**, vérifié en CI via **axe-core** (zéro violation tolérée sur les pages publiques).
-- **Lighthouse** : score a11y minimum 95 sur home, catalogue `/offres`, pages d'offre, réalisations, parcours.
+- **Lighthouse** : score a11y minimum 95 sur la home, le blog (liste et article), les réalisations (liste et fiche) et le parcours.
 - **Navigation clavier** : tous les éléments interactifs atteignables au `Tab`, ordre logique, focus visible non ambigu (`:focus-visible` avec contraste suffisant).
 - **Contraste** : 4.5:1 minimum sur texte courant, 3:1 sur composants UI et texte large.
 - **Reduced motion** : `prefers-reduced-motion: reduce` respecté — toutes les transitions de route et animations décoratives désactivées.
