@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
-export const LEGAL_LAST_UPDATE = '3 octobre 2026';
+export const LEGAL_LAST_UPDATE = '20 octobre 2026';
 
 @Component({
   selector: 'app-legal-notice',
@@ -14,36 +14,22 @@ export const LEGAL_LAST_UPDATE = '3 octobre 2026';
       <p class="text-muted">Dernière mise à jour&nbsp;: {{ lastUpdate }}</p>
 
       <h2>Éditeur du site</h2>
-      <p>
-        Ce site est édité par <strong>Julien Nédellec</strong>,
-        <span data-testid="legal-status">{{ identity.business.status }}</span
-        >, développeur Full-Stack, domicilié à {{ identity.location }} (78960), France.
+      <p data-testid="legal-publisher">
+        Ce site personnel, sans activité commerciale, est édité par
+        <strong>Julien Nédellec</strong>, particulier, résidant à {{ identity.location }}, France.
       </p>
       <ul>
         <li>
-          SIRET&nbsp;: <span data-testid="legal-siret">{{ identity.business.siret }}</span>
-        </li>
-        <li>
-          Code APE&nbsp;: <span data-testid="legal-ape">{{ identity.business.ape }}</span>
-        </li>
-        <li>
-          <span data-testid="legal-vat">{{ identity.business.vatMention }}</span>
-        </li>
-        <li>
           Courriel&nbsp;:
           <a [href]="'mailto:' + identity.email" data-testid="legal-email">{{ identity.email }}</a>
-        </li>
-        <li>
-          Téléphone&nbsp;:
-          <a [href]="'tel:' + identity.phone.tel">{{ identity.phone.display }}</a>
         </li>
       </ul>
       <p>Directeur de la publication&nbsp;: Julien Nédellec.</p>
 
       <h2>Hébergement</h2>
-      <p>
+      <p data-testid="legal-hosting">
         Le site et son API sont hébergés par l'éditeur lui-même, sur un serveur personnel situé en
-        France. Les adresses de contact ci-dessus valent pour l'hébergeur.
+        France. L'adresse de contact ci-dessus vaut pour l'hébergeur.
       </p>
 
       <h2>Propriété intellectuelle</h2>

@@ -14,7 +14,7 @@ export const PUBLIC_PAGES: readonly PageScenario[] = [
   { path: '/projects/projet-temoin', ready: 'project-detail-title' },
   { path: '/blog', ready: 'blog-posts' },
   { path: '/blog/article-temoin', ready: 'blog-content' },
-  { path: '/mentions-legales', ready: 'legal-siret' },
+  { path: '/mentions-legales', ready: 'legal-publisher' },
   { path: '/confidentialite', ready: 'privacy-last-update' },
   { path: '/does-not-exist', ready: 'not-found-title' },
   { path: '/login', ready: 'login-form' },

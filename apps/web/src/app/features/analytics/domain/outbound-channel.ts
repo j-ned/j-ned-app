@@ -8,7 +8,6 @@ function hostAndPath(url: URL): string {
 }
 
 const PROFILE_CHANNELS: ReadonlyMap<string, OutboundChannel> = new Map([
-  [hostAndPath(new URL(SITE_IDENTITY.socials.malt)), 'malt'],
   [hostAndPath(new URL(SITE_IDENTITY.socials.discord)), 'discord'],
   [hostAndPath(new URL(SITE_IDENTITY.socials.linkedin)), 'linkedin'],
   [hostAndPath(new URL(SITE_IDENTITY.socials.github)), 'github'],

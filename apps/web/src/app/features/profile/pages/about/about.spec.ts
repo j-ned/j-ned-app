@@ -222,7 +222,6 @@ describe('About', () => {
     ).toEqual([
       { label: 'GitHub', href: SITE_IDENTITY.socials.github },
       { label: 'LinkedIn', href: SITE_IDENTITY.socials.linkedin },
-      { label: 'Malt', href: SITE_IDENTITY.socials.malt },
       { label: 'Mail', href: `mailto:${SITE_IDENTITY.email}` },
       { label: 'Discord', href: SITE_IDENTITY.socials.discord },
     ]);

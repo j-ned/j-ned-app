@@ -7,7 +7,5 @@ type SocialLink = {
 export type SocialLinks = {
   readonly linkedin: SocialLink;
   readonly github: SocialLink;
-  readonly malt: SocialLink;
   readonly email: SocialLink;
-  readonly phone: SocialLink;
 };

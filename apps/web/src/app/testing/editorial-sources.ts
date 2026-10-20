@@ -9,7 +9,6 @@ import {
   STATIC_CONTACT_INFO,
   STATIC_SOCIAL_LINKS,
 } from '@shared/identity/contact-info.static-data';
-import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { FOOTER_COPY } from '../layout/components/footer/footer.static-data';
 import { NAV_LINKS } from '../layout/components/header/nav-items';
@@ -44,7 +43,6 @@ export const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['ci/api-stub/fixtures/profile.json', PROFILE_FIXTURE],
   ['STATIC_CONTACT_INFO', STATIC_CONTACT_INFO],
   ['STATIC_SOCIAL_LINKS', STATIC_SOCIAL_LINKS],
-  ['CONTACT_TIMELINES', CONTACT_TIMELINES],
   ['PROJECT_OUTCOMES', PROJECT_OUTCOMES],
   ['PROJECT_USAGE_LABELS', PROJECT_USAGE_LABELS],
   ['SITE_IDENTITY', SITE_IDENTITY],

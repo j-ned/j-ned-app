@@ -12,7 +12,6 @@ const RESOURCE_LINKS = [
 ] as const;
 
 const SOCIAL_LINKS = [
-  { href: SITE_IDENTITY.socials.malt, label: FOOTER_COPY.socials.malt },
   { href: SITE_IDENTITY.socials.linkedin, label: FOOTER_COPY.socials.linkedin },
   { href: SITE_IDENTITY.socials.github, label: FOOTER_COPY.socials.github },
 ] as const;
@@ -93,11 +92,7 @@ const SOCIAL_LINKS = [
         data-testid="footer-legal"
         class="mt-14 flex flex-wrap justify-between gap-x-6 gap-y-3 border-t border-line pt-6 font-mono text-xs leading-relaxed text-muted"
       >
-        <p data-testid="footer-legal-mention">
-          &copy; {{ currentYear }} {{ copy.legal.owner }} · {{ copy.legal.status }} ·
-          <span class="whitespace-nowrap">{{ copy.legal.siretLabel }} {{ business.siret }}</span> ·
-          {{ business.vatMention }}
-        </p>
+        <p data-testid="footer-legal-mention">&copy; {{ currentYear }} {{ copy.legal.owner }}</p>
         <p class="flex flex-wrap gap-x-4 md:gap-y-1">
           <a data-testid="footer-legal-link" routerLink="/mentions-legales" class="footer-link">{{
             copy.legal.legalNotice
@@ -115,7 +110,6 @@ export class Footer {
   private readonly analytics = inject(AnalyticsGateway);
 
   protected readonly copy = FOOTER_COPY;
-  protected readonly business = SITE_IDENTITY.business;
   protected readonly resourceLinks = RESOURCE_LINKS;
   protected readonly socialLinks = SOCIAL_LINKS;
   protected readonly currentYear = new Date().getFullYear();

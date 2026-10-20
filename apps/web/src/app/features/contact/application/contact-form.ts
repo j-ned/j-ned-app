@@ -21,15 +21,12 @@ import {
   pattern,
   required,
   submit,
-  validate,
   type FieldTree,
 } from '@angular/forms/signals';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { ContactPlacement } from '@features/analytics/domain/models/analytics.types';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import type { ContactFormData } from '@features/contact/domain/models/contact-form.model';
-import { composeContactMessage } from '@features/contact/domain/compose-contact-message';
-import { CONTACT_TIMELINES } from '@features/contact/domain/contact-timelines.static-data';
 import { ToastStore } from '@core/notifications/toast-store';
 import { FieldError } from '@shared/ui/field-error';
 import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
@@ -37,23 +34,14 @@ import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ContactInfoPanel } from './components/contact-info-panel';
 
-type ContactFormModel = ContactFormData & {
-  readonly projectType: string;
-  readonly timeline: string;
-};
-
-const EMPTY_CONTACT: ContactFormModel = {
+const EMPTY_CONTACT: ContactFormData = {
   name: '',
   email: '',
   subject: '',
   message: '',
-  projectType: '',
-  timeline: '',
 };
 const SUBJECT_MAX_LENGTH = 200;
 const MESSAGE_MAX_LENGTH = 5000;
-const MESSAGE_TOO_LONG =
-  'Le message ne doit pas dépasser 5\u202f000 caractères, précisions sur le projet comprises';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
@@ -127,44 +115,6 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   <app-field-error [field]="contactForm.email" errorId="contact-email-error" />
                 </div>
               </fieldset>
-              <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-0 p-0 m-0">
-                <legend class="sr-only">Votre projet</legend>
-                @if (projectTypes().length) {
-                  <div>
-                    <label for="project-type" class="form-label"
-                      >Type de projet
-                      <span class="font-normal text-muted">(facultatif)</span></label
-                    >
-                    <select
-                      id="project-type"
-                      data-testid="contact-project-type"
-                      [formField]="contactForm.projectType"
-                      class="form-input"
-                    >
-                      <option value="">Non précisé</option>
-                      @for (projectType of projectTypes(); track projectType) {
-                        <option [value]="projectType">{{ projectType }}</option>
-                      }
-                    </select>
-                  </div>
-                }
-                <div>
-                  <label for="timeline" class="form-label"
-                    >Délai souhaité <span class="font-normal text-muted">(facultatif)</span></label
-                  >
-                  <select
-                    id="timeline"
-                    data-testid="contact-timeline"
-                    [formField]="contactForm.timeline"
-                    class="form-input"
-                  >
-                    <option value="">Non précisé</option>
-                    @for (timeline of timelines; track timeline) {
-                      <option [value]="timeline">{{ timeline }}</option>
-                    }
-                  </select>
-                </div>
-              </fieldset>
               <div>
                 @let subjectInError =
                   contactForm.subject().touched() && contactForm.subject().invalid();
@@ -195,7 +145,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   [formField]="contactForm.message"
                   aria-required="true"
                   rows="6"
-                  placeholder="Décrivez votre projet ou votre question..."
+                  placeholder="Votre message, votre question ou votre remarque…"
                   [attr.aria-invalid]="messageInError"
                   [attr.aria-describedby]="messageInError ? 'contact-message-error' : null"
                   class="form-textarea"
@@ -236,16 +186,14 @@ export class ContactForm {
 
   readonly placement = input.required<ContactPlacement>();
   readonly initialSubject = input('');
-  readonly projectTypes = input<readonly string[]>([]);
   readonly intro = input(
     'Une question sur un projet, sur le code de ce site ou sur mon parcours\u00a0: je lis et je réponds personnellement.',
   );
 
   protected readonly contactInfo = STATIC_CONTACT_INFO;
   protected readonly socialLinks = STATIC_SOCIAL_LINKS;
-  protected readonly timelines = CONTACT_TIMELINES;
 
-  private readonly _blankContact = computed<ContactFormModel>(() => ({
+  private readonly _blankContact = computed<ContactFormData>(() => ({
     ...EMPTY_CONTACT,
     subject: this.initialSubject(),
   }));
@@ -269,16 +217,10 @@ export class ContactForm {
       minLength(path.message, 10, {
         message: 'Le message doit contenir au moins 10 caractères',
       });
-      // Borne de l'API appliquée au message réellement envoyé, préfixe de qualification compris.
-      validate(path.message, ({ value, valueOf }) =>
-        composeContactMessage({
-          message: value(),
-          projectType: valueOf(path.projectType),
-          timeline: valueOf(path.timeline),
-        }).length > MESSAGE_MAX_LENGTH
-          ? { kind: 'composedMaxLength', message: MESSAGE_TOO_LONG }
-          : null,
-      );
+      // Borne de l'API (CreateContactMessageDto) : le message est envoyé tel quel.
+      maxLength(path.message, MESSAGE_MAX_LENGTH, {
+        message: 'Le message ne doit pas dépasser 5\u202f000 caractères',
+      });
     },
     {
       submission: {
@@ -295,14 +237,9 @@ export class ContactForm {
     await submit(this.contactForm);
   }
 
-  private async send(field: FieldTree<ContactFormModel>): Promise<void> {
-    const { name, email, subject, message, projectType, timeline } = field().value();
-    const payload: ContactFormData = {
-      name,
-      email,
-      subject,
-      message: composeContactMessage({ message, projectType, timeline }),
-    };
+  private async send(field: FieldTree<ContactFormData>): Promise<void> {
+    const { name, email, subject, message } = field().value();
+    const payload: ContactFormData = { name, email, subject, message };
     try {
       const result = await firstValueFrom(this.contactGateway.submitContactForm(payload));
       if (result.success) {

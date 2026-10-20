@@ -73,11 +73,9 @@ describe('Footer', () => {
         headings: { resources: 'Ressources', contact: 'Contact' },
         resources: { projects: 'Réalisations', blog: 'Blog', about: 'Parcours' },
         contactCta: 'Me contacter',
-        socials: { malt: 'Malt', linkedin: 'LinkedIn', github: 'GitHub' },
+        socials: { linkedin: 'LinkedIn', github: 'GitHub' },
         legal: {
           owner: 'Julien Nédellec',
-          status: 'EI',
-          siretLabel: 'SIRET',
           legalNotice: 'Mentions légales',
           privacy: 'Confidentialité',
         },
@@ -187,30 +185,23 @@ describe('Footer', () => {
       ]).toEqual([0, 0]);
     });
 
-    it('Given the footer When it is rendered Then Malt, LinkedIn and GitHub open in a new tab from the Contact navigation', async () => {
+    it('Given the footer When it is rendered Then LinkedIn and GitHub open in a new tab from the Contact navigation, without Malt', async () => {
       const { host } = await setup();
       const links = byTestId<HTMLAnchorElement>(host, 'footer-social-link');
 
       expect(links.map((link) => link.getAttribute('href'))).toEqual([
-        SITE_IDENTITY.socials.malt,
         SITE_IDENTITY.socials.linkedin,
         SITE_IDENTITY.socials.github,
       ]);
       expect(links.map((link) => link.textContent?.trim())).toEqual([
-        FOOTER_COPY.socials.malt,
         FOOTER_COPY.socials.linkedin,
         FOOTER_COPY.socials.github,
       ]);
-      expect(links.map((link) => link.getAttribute('target'))).toEqual([
-        '_blank',
-        '_blank',
-        '_blank',
-      ]);
+      expect(links.map((link) => link.getAttribute('target'))).toEqual(['_blank', '_blank']);
       expect(
         links.map((link) => (link.getAttribute('rel') ?? '').split(/\s+/).sort().join(' ')),
-      ).toEqual(['noopener noreferrer', 'noopener noreferrer', 'noopener noreferrer']);
+      ).toEqual(['noopener noreferrer', 'noopener noreferrer']);
       expect(links.map((link) => navNameOf(link))).toEqual([
-        FOOTER_COPY.headings.contact,
         FOOTER_COPY.headings.contact,
         FOOTER_COPY.headings.contact,
       ]);
@@ -231,13 +222,13 @@ describe('Footer', () => {
   describe('legal line', () => {
     afterEach(() => vi.useRealTimers());
 
-    it('Given the date When the footer is rendered Then the legal line states year, owner, status, SIRET and VAT mention', async () => {
+    it('Given the date When the footer is rendered Then the legal line states year and owner only, no business identity (spec 029)', async () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date('2026-10-04T12:00:00Z'));
       const { host } = await setup();
 
       expect(collapsedText(byTestId(host, 'footer-legal-mention')[0])).toBe(
-        `© 2026 Julien Nédellec · EI · SIRET ${SITE_IDENTITY.business.siret} · ${SITE_IDENTITY.business.vatMention}`,
+        '© 2026 Julien Nédellec',
       );
     });
 

@@ -49,7 +49,7 @@
     "paragraphs": [
       "De la chaudronnerie au tournage CN de haute précision dans l'aéronautique, mon métier aujourd'hui, j'ai appris à lire un plan, à respecter une tolérance et à contrôler avant de livrer. Je garde ce métier.",
       "En parallèle, je me suis formé au développement web. J'ai obtenu le titre de Développeur Web et Web Mobile en 2025. Je développe avec Angular, NestJS, TypeScript et PostgreSQL, et j'héberge moi-même mes applications.",
-      "Je prends des missions freelance ponctuelles, le soir et le week-end, avec une charge limitée. J'y applique la règle de l'atelier\u00a0: une pièce hors tolérance ne part pas, un code non testé non plus."
+      "Je code par passion, en dehors de l'atelier. J'y applique la même règle\u00a0: une pièce hors tolérance ne part pas, un code non testé non plus."
     ],
     "leadEmphasis": "Angular et NestJS d'abord, PHP et Java aussi, en méthode agile."
   },
@@ -72,8 +72,8 @@
   ],
   "motivation": {
     "title": "Ce qui me motive",
-    "statement": "Des outils utiles aux petites entreprises et aux ateliers, livrés propres et maintenus.",
-    "description": "Missions freelance ponctuelles sur Angular et NestJS, le soir et le week-end, en direct ou via Malt."
+    "statement": "Comprendre comment les choses fonctionnent, du composant au serveur, et le partager.",
+    "description": "J'écris sur ce que je construis\u00a0: les choix, les erreurs et ce qu'elles m'ont appris."
   },
   "workSummary": "Du composant au serveur qui le sert.",
   "technologies": [

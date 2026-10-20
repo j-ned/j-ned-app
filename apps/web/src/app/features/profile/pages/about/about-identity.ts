@@ -20,7 +20,6 @@ export const ABOUT_IDENTITY: {
       label: 'LinkedIn',
       href: SITE_IDENTITY.socials.linkedin,
     },
-    { id: 'malt', icon: 'briefcase', label: 'Malt', href: SITE_IDENTITY.socials.malt },
     { id: 'mail', icon: 'lucide-mail', label: 'Mail', href: `mailto:${SITE_IDENTITY.email}` },
     { id: 'discord', icon: 'bi-discord', label: 'Discord', href: SITE_IDENTITY.socials.discord },
   ],

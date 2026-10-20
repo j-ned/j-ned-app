@@ -9,7 +9,6 @@ describe('outboundChannel', () => {
     ['mailto:contact@nedellec-julien.fr', 'email'],
     ['mailto:contact@nedellec-julien.fr?subject=Projet', 'email'],
     ['tel:+33622869279', 'phone'],
-    [SITE_IDENTITY.socials.malt, 'malt'],
     [SITE_IDENTITY.socials.discord, 'discord'],
     [SITE_IDENTITY.socials.linkedin, 'linkedin'],
     [SITE_IDENTITY.socials.github, 'github'],
@@ -43,6 +42,7 @@ describe('outboundChannel', () => {
     ['a relative path', '/offres/site-vitrine'],
     ['a fragment', '#demande'],
     ['an unrelated site', 'https://www.cnil.fr'],
+    ['the retired Malt profile', 'https://www.malt.fr/profile/juliennedellec'],
     ['a look-alike host ending with the site name', 'https://faux-nedellec-julien.fr/'],
     ['a host starting with the site name', 'https://nedellec-julien.fr.example.com/'],
   ])('Given %s When it is classified Then it is not an outbound channel', (_label, href) => {

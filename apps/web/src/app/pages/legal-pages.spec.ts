@@ -6,7 +6,7 @@ import { PrivacyPolicy } from './privacy-policy';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 describe('Pages légales', () => {
-  it("les mentions légales nomment l'éditeur, sa ville et ses contacts", () => {
+  it("les mentions légales nomment l'éditeur, sa ville et son adresse de contact", () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(LegalNotice);
     fixture.detectChanges();
@@ -14,43 +14,45 @@ describe('Pages légales', () => {
     expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain('Mentions légales');
     expect(text).toContain('Julien Nédellec');
     expect(text).toContain(SITE_IDENTITY.location);
-    expect(text).toContain(SITE_IDENTITY.phone.display);
     expect(
       (fixture.nativeElement.querySelector('[data-testid="legal-email"]') as HTMLAnchorElement)
         .href,
     ).toBe(`mailto:${SITE_IDENTITY.email}`);
   });
 
-  describe('éditeur professionnel', () => {
+  describe('éditeur particulier (spec 029)', () => {
     const renderLegalNotice = (): HTMLElement => {
       TestBed.configureTestingModule({ providers: [provideRouter([])] });
       const fixture = TestBed.createComponent(LegalNotice);
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
     };
+    const collapsed = (el: Element | null | undefined): string =>
+      (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 
-    it.each([
-      ['legal-status', SITE_IDENTITY.business.status],
-      ['legal-siret', SITE_IDENTITY.business.siret],
-      ['legal-ape', SITE_IDENTITY.business.ape],
-      ['legal-vat', SITE_IDENTITY.business.vatMention],
-    ])('%s affiche la valeur de SITE_IDENTITY.business', (testId, expected) => {
-      const element = renderLegalNotice().querySelector(`[data-testid="${testId}"]`);
-      expect(element?.textContent?.trim()).toBe(expected);
-    });
-
-    it('présente Julien Nédellec comme entrepreneur individuel', () => {
-      const editor = renderLegalNotice()
-        .querySelector('[data-testid="legal-status"]')
-        ?.closest('p');
-      const sentence = editor?.textContent?.replace(/\s+/g, ' ').trim();
-      expect(sentence).toContain(
-        `Ce site est édité par Julien Nédellec, ${SITE_IDENTITY.business.status}`,
+    it('présente Julien Nédellec comme particulier, éditeur d’un site sans activité commerciale', () => {
+      expect(collapsed(renderLegalNotice().querySelector('[data-testid="legal-publisher"]'))).toBe(
+        `Ce site personnel, sans activité commerciale, est édité par Julien Nédellec, particulier, résidant à ${SITE_IDENTITY.location}, France.`,
       );
     });
 
-    it('date la dernière mise à jour du passage en version professionnelle', () => {
-      expect(LEGAL_LAST_UPDATE).toBe('3 octobre 2026');
+    it('déclare un hébergement par l’éditeur, joignable par l’adresse de contact', () => {
+      expect(collapsed(renderLegalNotice().querySelector('[data-testid="legal-hosting"]'))).toBe(
+        "Le site et son API sont hébergés par l'éditeur lui-même, sur un serveur personnel situé en France. L'adresse de contact ci-dessus vaut pour l'hébergeur.",
+      );
+    });
+
+    it.each([/SIRET/, /APE/, /TVA/, /entrepreneur individuel/i, /Téléphone/, /\btel:/])(
+      'ne publie plus %s',
+      (pattern) => {
+        const host = renderLegalNotice();
+        expect(host.textContent ?? '').not.toMatch(pattern);
+        expect(host.innerHTML).not.toMatch(/href="tel:/);
+      },
+    );
+
+    it('date la dernière mise à jour du passage en éditeur particulier', () => {
+      expect(LEGAL_LAST_UPDATE).toBe('20 octobre 2026');
       expect(renderLegalNotice().textContent).toContain(
         `Dernière mise à jour\u00A0: ${LEGAL_LAST_UPDATE}`,
       );
@@ -93,7 +95,7 @@ describe('Pages légales', () => {
       ],
       [
         'privacy-audience-actions',
-        "Certaines actions sont aussi comptées\u00a0: le clic sur un bouton d'appel, sur un lien de contact (e-mail, téléphone, Malt, Discord), de profil (LinkedIn, GitHub) ou de démonstration, l'arrivée sur le formulaire de l'accueil, l'envoi réussi du formulaire de contact ou de la réservation d'un appel, le téléchargement du CV, l'ouverture et la lecture complète d'un article. Seuls le type d'action, son emplacement et la page sont enregistrés, jamais le contenu du formulaire ni l'adresse du lien.",
+        "Certaines actions sont aussi comptées\u00a0: le clic sur un bouton d'appel, sur un lien de contact (e-mail, Discord), de profil (LinkedIn, GitHub) ou de démonstration, l'arrivée sur le formulaire de l'accueil, l'envoi réussi du formulaire de contact, le téléchargement du CV, l'ouverture et la lecture complète d'un article. Seuls le type d'action, son emplacement et la page sont enregistrés, jamais le contenu du formulaire ni l'adresse du lien.",
       ],
       [
         'privacy-audience-retention',
@@ -107,13 +109,13 @@ describe('Pages légales', () => {
       expect(paragraph(renderPrivacy(), testId)).toBe(expected);
     });
 
-    it('date sa propre mise à jour, sans changer celle des mentions légales', () => {
+    it('date sa propre mise à jour, comme les mentions légales', () => {
       expect({
         privacy: paragraph(renderPrivacy(), 'privacy-last-update'),
         legal: LEGAL_LAST_UPDATE,
       }).toEqual({
         privacy: 'Dernière mise à jour\u00a0: 20 octobre 2026',
-        legal: '3 octobre 2026',
+        legal: '20 octobre 2026',
       });
     });
   });

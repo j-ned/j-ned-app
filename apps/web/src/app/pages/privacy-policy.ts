@@ -43,11 +43,10 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
       </p>
       <p data-testid="privacy-audience-actions">
         Certaines actions sont aussi comptées&nbsp;: le clic sur un bouton d'appel, sur un lien de
-        contact (e-mail, téléphone, Malt, Discord), de profil (LinkedIn, GitHub) ou de
-        démonstration, l'arrivée sur le formulaire de l'accueil, l'envoi réussi du formulaire de
-        contact ou de la réservation d'un appel, le téléchargement du CV, l'ouverture et la lecture
-        complète d'un article. Seuls le type d'action, son emplacement et la page sont enregistrés,
-        jamais le contenu du formulaire ni l'adresse du lien.
+        contact (e-mail, Discord), de profil (LinkedIn, GitHub) ou de démonstration, l'arrivée sur
+        le formulaire de l'accueil, l'envoi réussi du formulaire de contact, le téléchargement du
+        CV, l'ouverture et la lecture complète d'un article. Seuls le type d'action, son emplacement
+        et la page sont enregistrés, jamais le contenu du formulaire ni l'adresse du lien.
       </p>
       <p data-testid="privacy-audience-retention">
         Base légale&nbsp;: l'intérêt légitime à connaître l'usage du site. Les données brutes sont

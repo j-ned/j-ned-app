@@ -4,11 +4,9 @@ export const FOOTER_COPY = {
   headings: { resources: 'Ressources', contact: 'Contact' },
   resources: { projects: 'Réalisations', blog: 'Blog', about: 'Parcours' },
   contactCta: 'Me contacter',
-  socials: { malt: 'Malt', linkedin: 'LinkedIn', github: 'GitHub' },
+  socials: { linkedin: 'LinkedIn', github: 'GitHub' },
   legal: {
     owner: 'Julien Nédellec',
-    status: 'EI',
-    siretLabel: 'SIRET',
     legalNotice: 'Mentions légales',
     privacy: 'Confidentialité',
   },

@@ -137,3 +137,36 @@ Formulaire de contact (délai souhaité, invitation à réserver), SIRET et lien
 ### Ordre de déploiement
 Cette PR précède la PR 4 (API) : le front ne lit plus aucune route `/api/booking/*`, l'API peut ensuite
 les retirer sans casser une page. Les données de rendez-vous restent en base jusqu'à la PR 4.
+
+## Plan technique — PR 5 (identité de particulier, contact)
+
+### Arbitrages (2026-10-20)
+1. **Téléphone** : retiré du site (mentions légales, panneau de contact, liens).
+2. **Mentions légales** : nom de l'éditeur + hébergeur. Le site est hébergé **à domicile** : l'éditeur
+   est aussi l'hébergeur.
+
+### Retiré
+- `SITE_IDENTITY.business` (statut EI, SIRET, APE, mention TVA), `SITE_IDENTITY.phone` et
+  `SITE_IDENTITY.socials.malt` ; leurs usages : pied de page (ligne légale réduite à « © année nom »),
+  mentions légales, panneau de contact, page Parcours, détection du canal sortant Malt.
+- Formulaire de contact : champs « Type de projet » et « Délai souhaité », et la composition du
+  message qui les préfixait (`compose-contact-message`, `CONTACT_TIMELINES`). Le message part tel que
+  saisi ; la borne de 5 000 caractères de l'API devient un simple `maxLength`.
+- Politique de confidentialité : téléphone, Malt et « réservation d'un appel » retirés de la liste
+  des actions mesurées (ce dernier, oubli de la PR 3).
+
+### Mentions légales
+- Éditeur : « Ce site personnel, sans activité commerciale, est édité par Julien Nédellec,
+  particulier, résidant à <commune>, France », courriel, directeur de la publication.
+- Hébergement : inchangé sur le fond (« hébergé par l'éditeur lui-même, sur un serveur personnel
+  situé en France »), l'adresse de contact valant pour l'hébergeur.
+- **Point ouvert, à trancher par le propriétaire** : l'article 1-1 de la LCEN (rédaction issue de la
+  loi SREN du 21 mai 2024) permet à un éditeur non professionnel de ne publier que l'identité et
+  l'adresse de l'hébergeur (II). Quand l'éditeur s'héberge lui-même, cette adresse est la sienne.
+  Cette PR ne publie aucune donnée nouvelle et ne retire que des mentions professionnelles devenues
+  fausses ; la conformité stricte se règle soit par la migration vers un hébergeur tiers (VPS), soit
+  par un avis juridique. Texte à vérifier sur Légifrance au moment de trancher.
+
+### Laissé aux PR suivantes
+Libellés d'historique analytics `malt` / `phone` (PR 6). Texte du parcours en base : se corrige dans
+l'admin ; la fixture de la doublure d'API est neutralisée ici.
