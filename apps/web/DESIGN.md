@@ -243,7 +243,7 @@ Contrastes calculés (composition sRGB, WCAG 2.x) : `line` 1,22:1 (Console, fond
 
 **The Single-Display Rule.** Un seul `<h1>` par page, en Display, jamais réutilisé pour décorer une autre section. La hiérarchie `<h1>` → `<h2>` → `<h3>` ne saute jamais un niveau.
 
-**The Indigo Accent Rule.** Le `<h1>` du hero porte un seul accent, un segment de la promesse (« à prix annoncé ») en `em` `not-italic text-primary`. Le segment est une donnée (`HeroData.headlineAccent`), jamais un littéral de template : `HomeHero` découpe le titre autour de lui.
+**The Indigo Accent Rule.** Le `<h1>` du hero porte un seul accent, un segment de la promesse (« développeur web ») en `em` `not-italic text-primary`. Le segment est une donnée (`HeroData.headlineAccent`), jamais un littéral de template : `HomeHero` découpe le titre autour de lui.
 
 ## 4. Elevation
 
@@ -301,37 +301,16 @@ Le bloc-titre d'un plan technique, repris comme cadre de données.
 - **Structure:** hôte `role="group"` nommé par le titre ; barre de titre empilée (titre en `p` Archivo gras élargi 110 %, puis référence en mono `text-muted` sous le titre, à toutes les largeurs, sans troncature) ; lignes en `dl > div > dt + dd` (libellé mono majuscule `text-muted`, valeur `font-medium tabular-nums`). Aucun `dl` sans ligne.
 - **Traits:** cadre et barre en `line-strong` 1,5px, séparateurs en `line` (décoratifs, Decorative Line Rule). Rayon `rounded-sm`.
 - **Titre:** jamais un `h*` : son niveau dépend du contexte, un consommateur qui a besoin d'un titre le projette.
-- **Usage:** au plus un cartouche **décoratif** par écran (cadre de travail, fiche technique). Il sert aussi de carte de données : la carte d'offre et la carte de démo (ci-dessous) en sont, répétées par élément, et ne comptent pas dans cette limite.
-
-### Carte d'offre (`features/offer/application/components/offer-card.ts`)
-
-L'offre d'une famille présentée en cartouche : réservée aux **Sites** du catalogue (`/offres`), où deux ou trois offres se comparent côte à côte.
-
-- **Entrée:** `summary: OfferSummary`.
-- **Structure:** `Cartouche` titré du nom de l'offre, référence = public visé ; corps projeté : la promesse (texte courant `font-medium`), puis un pied séparé par un trait `line` avec le `priceTeaser` (Archivo gras 105 %, `tabular-nums`) et le lien « Détail de l'offre → » (`text-primary`, nom de l'offre en `sr-only` pour que chaque lien reste distinct à la lecture d'écran, flèche `aria-hidden`).
-- **Cible:** le lien est étiré sur toute la carte (`after:absolute after:inset-0`, cartouche en `relative`) : toute la carte est cliquable, sans lien imbriqué ni second lien. Lien `min-h-11` (44 px).
-- **Survol:** cadre en `accent` (`hover:` est déjà sous `@media (hover: hover)` en Tailwind 4).
-- **Grille:** une colonne en mobile, deux à partir de `sm` ; cartes à hauteur égale (cartouche `flex flex-col h-full`, corps `flex-1`) pour aligner les pieds.
-
-### Carte de démo (`features/offer/application/components/offer-demo-card.ts`)
-
-Un site de démonstration présenté sur une page d'offre, dans la section « Exemples » (`offer-examples.ts`), pour montrer le résultat livré. Une démo n'est jamais une référence client.
-
-- **Entrée:** `demo: OfferDemo` (nom fictif, secteur, phrase « ce que la démo illustre », URL HTTPS, visuel).
-- **Section:** `SplitSection` dont le résumé (`lead`) dit que les entreprises sont fictives ; cartes en une colonne à toutes les largeurs (deux colonnes rendraient les captures illisibles).
-- **Structure:** `Cartouche` titré du nom fictif, référence = secteur ; corps projeté : le visuel (`<picture>` AVIF puis WebP autour de `NgOptimizedImage`, chargement différé, jamais `priority`, ADR-0007), puis un pied séparé par un trait `line` avec la phrase (texte courant) et le lien.
-- **Badge « Démo »:** dans le gabarit, jamais dans la donnée. Posé sur le coin haut gauche du visuel, comme un tampon de plan : mono majuscule `text-xs`, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`. Pas d'indigo : c'est une mention, pas un accent (One Indigo Rule).
-- **Lien:** « Voir la démo » en `appButton variant="outlined"` (44 px), icône `external-link` `aria-hidden`, nouvel onglet avec `rel="noopener"` ; nom de la démo et « nouvel onglet » en `sr-only` après le libellé visible. Seul interactif de la carte : ni le visuel ni la carte ne sont cliquables.
-- **Honnêteté:** une démo n'apparaît dans les Réalisations qu'avec le tampon « Démo » (ADR-0008) ; jamais sur la home ni dans des données structurées d'avis ou de référence client ; aucun chiffre, avis ou logo inventé autour.
+- **Usage:** au plus un cartouche **décoratif** par écran (cadre de travail, fiche technique). Il sert aussi de carte de données (légende des natures, thèmes du blog, CV de l'admin) : ces cartouches-là ne comptent pas dans cette limite.
 
 ### Tampon (`shared/ui/stamp.ts`)
 
-La mention portée sur un plan, reprise pour dire la nature d'une chose : « Démo » sur la carte de démo, « En production », « Démo » ou « Script » sur un projet (`ProjectKindStamp`, ADR-0008).
+La mention portée sur un plan, reprise pour dire la nature d'une chose : « En production », « Démo » ou « Script » sur un projet (`ProjectKindStamp`, ADR-0008).
 
 - **API:** `dashed` (défaut `false`) ; le texte est projeté.
 - **Pointillé:** `dashed` ajoute `border-dashed` à l'hôte et rien d'autre : un état provisoire (« Brouillon » de la liste des articles admin), jamais une nature.
 - **Apparence unique:** classes sur l'hôte, sans élément enveloppant : mono majuscule `text-xs`, interlettrage 0,06 em, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`, `rounded-sm`, marges `px-2 py-1`. Une seule apparence pour toutes les natures : c'est le **texte** qui les distingue, jamais une couleur.
-- **Placement:** le consommateur le positionne : coin haut gauche du visuel sur la carte de démo, sur la carte de projet de la home et sur la couverture de projet (`ProjectCover`, ci-dessous), au-dessus du `h1` dans l'en-tête du détail. Posé sur un visuel couvert par un lien étiré, il laisse passer le clic (`pointer-events-none`).
+- **Placement:** le consommateur le positionne : coin haut gauche du visuel sur la couverture de projet (`ProjectCover`, ci-dessous), au-dessus du `h1` dans l'en-tête du détail. Posé sur un visuel couvert par un lien étiré, il laisse passer le clic (`pointer-events-none`).
 - **Accessibilité:** texte lu tel quel, sans rôle ni `aria-*` ; la nature est dite par le texte, pas par une couleur ni par la seule position.
 - **Don't:** pas d'indigo ni de couleur de statut (One Indigo Rule : c'est une mention, pas un accent) ; jamais un `h*` ni à l'intérieur d'un titre ; jamais interactif ; pas de variante par nature.
 
@@ -436,16 +415,6 @@ Le Markdown d'un article, rendu par `parseMarkdown` (seul assainissement, ADR-00
 - **Images du corps:** `loading="lazy"`, `decoding="async"` ; `width`/`height` lus dans la clé `blog-content/<uuid>-<empreinte>-<l>x<h>.avif` (ADR-0015) réservent la place avant l'arrivée de l'image, `h-auto max-w-full` garde le ratio.
 - **Don't:** pas d'italique sur les commentaires (JN Mono n'a ni italique ni autre graisse que 500 : on obtiendrait un oblique synthétique) ; jamais de `style` inline (DOMPurify le retire, la CSP le refuserait) ; aucune de ces six teintes hors d'un bloc de code.
 
-### Ligne d'offre (`features/offer/application/components/offer-row.ts`)
-
-L'offre d'une famille présentée en ligne de nomenclature : réservée aux **Applications** du catalogue, dont les prix ne se comparent pas (projet, audit, régie) et se lisent mieux en liste.
-
-- **Entrée:** `summary: OfferSummary`.
-- **Structure:** un **unique** lien couvre toute la ligne : nom (Archivo gras 104 %), promesse (`text-muted`), `priceTeaser` (Archivo gras 105 %, `tabular-nums`) et flèche `text-primary` `aria-hidden`. Aucun autre élément interactif dans la ligne.
-- **Liste:** `ul role="list"` encadrée en haut et en bas d'un trait `line-strong` 1,5px, lignes séparées par un trait `line` (Decorative Line Rule).
-- **Mise en page:** en mobile, nom et promesse puis prix sur deux rangs, flèche à droite sur toute la hauteur ; à partir de `md`, trois colonnes (texte 1,5 fr, prix 1 fr, flèche).
-- **Survol:** nom en `text-primary`, flèche décalée de 4 px (`motion-reduce:transition-none`).
-
 ### Cote (`shared/ui/dimension-line.ts`)
 
 La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne interrompue autour d'un libellé.
@@ -454,50 +423,6 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 - **Rendu:** traits en bordures `currentColor` = `text-primary` (visibles en `forced-colors`), libellé mono `text-xs`. La ligne s'interrompt autour du libellé au lieu d'être masquée par un fond : la cote se pose sur toute surface.
 - **Accessibilité:** hôte `aria-hidden="true"`, aucun élément focalisable ni rôle à l'intérieur.
 - **Règle d'usage:** la cote est **décorative** : son libellé répète une information écrite ailleurs dans le texte lisible. Cotes réservées aux délais et durées.
-
-### FAQ (`shared/ui/faq-list.ts`)
-
-Questions fréquentes de la home et des pages d'offre : un seul gabarit, des divulgations natives.
-
-- **API:** `heading`, `headingId` (requis, unique dans la page), `items: readonly { id, question, answer }[]`, `lead` (optionnel, défaut `''`, non rendu vide).
-- **Structure:** `section` nommée par son `h2` ; en-tête titre puis accroche (deux colonnes alignées en bas à partir de `lg`, comme les autres en-têtes de section de la home) ; chaque entrée est un `details` fermé au rendu, `summary` enfant direct, réponse en `text-muted` (34 rem max).
-- **Aucun script:** ni `button` ni état Angular, la réponse s'ouvre sans JavaScript (prérendu compris). Marqueur natif masqué, remplacé par un `+` mono `text-primary` en pseudo-élément au texte alternatif vide, tourné de 45° à l'ouverture (`motion-reduce` : sans transition).
-- **Mise en page:** une colonne, deux à partir de `lg`. Les deux colonnes sont **indépendantes** (moitié des entrées chacune, ordre de lecture conservé) : une réponse ouverte n'étire pas la ligne voisine. Entrées séparées par un trait `line` (décoratif).
-
-### Points clés (`shared/ui/key-point-list.ts`)
-
-Arguments courts, un intitulé puis son développement : « Pourquoi moi » de la home, raisons d'une page d'offre.
-
-- **API:** `points: readonly { id, lead, detail }[]`.
-- **Structure:** `ul role="list"`, une ligne par point : intitulé `font-semibold`, développement `text-muted` ; deux colonnes (11 rem puis le reste) à partir de `sm`, empilés en dessous.
-- **Traits:** lignes séparées et encadrées par un trait `line` (décoratif). Le titre de la section appartient au consommateur (`SplitSection` sur les pages d'offre, section « Pourquoi moi » sur la home).
-
-### Bandeau recruteur (`features/home/application/home-recruiter-band.ts`)
-
-L'entrée d'un recruteur sur l'accueil, sous la ligne de disponibilité, dans la colonne du hero. Dans le premier écran en desktop ; en mobile (375×667), le titre et l'accroche occupent le premier écran et le bandeau suit immédiatement les boutons d'appel (deuxième écran) : l'entrée recruteur du premier écran mobile est le menu (« Parcours »).
-
-- **Entrée:** `cvUrl: string | null` (lu au prérendu par la facade `CvDownload`, fournie par la page) ; sorties `hiringOpened`, `cvDownloaded`, `linkedinOpened`, `githubOpened` (mesure par la page).
-- **Structure:** un `p` en mono `text-xs text-muted` : « Vous recrutez ? » (lien `/about#recrutement`, `text-foreground` souligné en `foreground/25`), puis, après un espacement `gap-x-4`, un groupe insécable (`whitespace-nowrap`) « CV (PDF) · LinkedIn · GitHub ». Le CV n'est rendu que si `cvUrl` existe (jamais un lien 404). Chaque point médian (`aria-hidden`) vit dans le même élément que le lien qu'il introduit : une ligne ne commence ni ne finit jamais sur un séparateur. Une seule ligne dès 375 px ; plus étroit, le groupe passe entier à la ligne sous « Vous recrutez ? ». Cibles `min-h-11`.
-- **Nouvel onglet:** CV, LinkedIn et GitHub (`target="_blank"`, `rel="noopener noreferrer"`) portent un nom accessible « <libellé> (nouvel onglet) » en `aria-label` (`newTabLabel`, `shared/ui/new-tab-notice.ts`), le libellé visible en tête. Même annonce sur les liens CV et LinkedIn de `/about`.
-- **Discrétion:** ni bouton, ni indigo au repos, ni titre ; ce n'est pas un landmark (`p`, pas d'`aside` ni de `section` nommée) : l'appel principal du premier écran reste « Décrire mon projet ».
-- **Mesure:** le CV émet `cv_download` et rien d'autre ; les trois autres liens émettent `cta_click` (`home_recruiter_about`, `home_recruiter_linkedin`, `home_recruiter_github`).
-
-### Bloc de fin de fiche (`features/projects/application/components/project-follow-up.ts`)
-
-La sortie d'une fiche projet, entre les choix techniques et la navigation vers les autres projets (ADR-0019).
-
-- **Entrée:** `offer: { label, path }` (résolu par la page depuis la nature du projet : application métier pour un projet en production, site vitrine pour une démo, catalogue `/offres` sinon) ; sorties `offerOpened`, `hiringOpened`.
-- **Structure:** hôte `block` à trait haut `foreground/8` ; `section` nommée par son `h2` « Un besoin similaire ? » (Archivo gras, `clamp(1.75rem,3.4vw,2.75rem)`), promesse de réponse `text-muted`, lien vers l'offre en `appButton` (primaire, seul indigo du bloc), puis une ligne mono `text-muted` « Vous recrutez ? » suivie du lien souligné « Parcours et CV » (`/about#recrutement`).
-- **Mesure:** `cta_click` `project_similar_need` (libellé = texte du lien d'offre) et `project_hiring`.
-
-### Avis clients (`features/home/application/home-reviews.ts`)
-
-La section d'avis de l'accueil. **Rien n'est rendu** tant que `HOME_REVIEWS` est vide (`@if` autour du `@defer`, sans placeholder) ; aucun avis d'exemple dans les données de production.
-
-- **Entrée:** `reviews: readonly Review[]` (citation, nom, contexte « métier · entreprise · ville », date réelle), publiés avec l'accord de leur auteur.
-- **Structure:** `section` nommée par son `h2` « Avis clients » ; `ul role="list"`, une colonne puis deux à partir de `md` ; chaque avis en `figure` à filet gauche `primary/40` : `blockquote` en texte courant, `figcaption` nom `font-semibold` puis contexte mono `text-muted`. Se termine par le lien « Laisser un avis sur Google » (nouvel onglet, « (nouvel onglet) » en `sr-only`).
-- **Données structurées:** un `Review` par avis dans le nœud `ProfessionalService` de l'accueil, aucun sans avis réel ; pas d'`aggregateRating`.
-- **Appel à avis sans avis:** seulement dans la colonne « Contact » du pied de page (« Vous avez travaillé avec moi ? » puis le même lien, mesuré `cta_click` `review_google`), jamais sur l'accueil près du formulaire ; aucun titre « Avis clients » tant qu'il n'y a pas d'avis. Le lien de rédaction Google n'entre pas dans le `sameAs`.
 
 ### Inputs / Forms (utility `form-input`)
 
@@ -623,7 +548,7 @@ Même grammaire que l'éditeur d'article (colonnes, sections, barre, sommaire, g
 
 - **En-tête:** pas de fil d'Ariane (lien « Parcours » de la navigation, icône `user`, entre Articles et CV) ; `h1` « Parcours », introduction « Les changements sont visibles sur le site au plus une seconde après l'enregistrement, au rechargement de la page. » `/admin/about` redirige ici.
 - **États:** squelette `role="status"` « Chargement du parcours… » ; `LoadError` avec « Réessayer », suivi du lien « Retour à la vue d'ensemble ».
-- **Sections:** `01 · Parcours` (titre, résumé, puis le début de l'accroche affiché en texte, jamais en champ, avec la mention `field-hint` « Commune à l'accueil et aux offres : se modifie dans le code. », puis « Suite de l'accroche »), `02 · Traits`, `03 · Ce que je fais` (résumé), `04 · Formations` (résumé), `05 · Motivation` (titre, énoncé, description). Ids préfixés `profile-`. Champ texte partagé (`components/admin-profile-text-field.ts`) : `field-label` avec « obligatoire », `form-input` (titres) ou `form-textarea` (prose), `aria-required`, erreur `form-error` `role="alert"` liée par `aria-describedby`. Un texte de blancs seuls est vide ; la borne (`PROFILE_LIMITS`, recopiée de l'API) se compte sur le texte coupé : « Le titre ne doit pas dépasser 80 caractères ».
+- **Sections:** `01 · Parcours` (titre, résumé, puis le début de l'accroche affiché en texte, jamais en champ, avec la mention `field-hint` « Commune à l'accueil et au parcours : se modifie dans le code. », puis « Suite de l'accroche »), `02 · Traits`, `03 · Ce que je fais` (résumé), `04 · Formations` (résumé), `05 · Motivation` (titre, énoncé, description). Ids préfixés `profile-`. Champ texte partagé (`components/admin-profile-text-field.ts`) : `field-label` avec « obligatoire », `form-input` (titres) ou `form-textarea` (prose), `aria-required`, erreur `form-error` `role="alert"` liée par `aria-describedby`. Un texte de blancs seuls est vide ; la borne (`PROFILE_LIMITS`, recopiée de l'API) se compte sur le texte coupé : « Le titre ne doit pas dépasser 80 caractères ».
 - **Listes ordonnables (`components/admin-ordered-list.ts`):** paragraphes (01), traits (02), activités et stack (03), formations (04). `ol` de cartes (bord `line`, `rounded-md`, `p-4`), champs de la ligne à gauche, actions icônes de 44 px à droite : « Monter », « Descendre » (absents aux bords), « Supprimer » (`text-danger`), nommées « Monter le trait 2 » (mêmes verbes que la galerie). Champs de ligne libellés par leur rang (« Titre du trait 2 »), sans la mention « obligatoire ». « Ajouter un trait » (`appButton variant="text"`, icône `plus`) sous la liste, `aria-disabled` au maximum (8 paragraphes, 6 traits, 6 activités, 18 technologies, 8 formations), focusable, clic sans effet. Région `role="status"` `sr-only` : « Trait déplacé en position 1 », « … ajouté en position N », « … supprimé ». Focus : bouton du même sens sur la ligne déplacée (l'opposé au bord), premier champ d'une ligne ajoutée, « Supprimer » de la ligne qui prend la place ou le bouton d'ajout. Liste vidée : « Ajoutez au moins un trait. » en `form-error` `role="alert"`. Icône de techno : `select` (`app-select`) sur la liste fermée des six fichiers `public/icons/`, invite désactivée « Choisir une icône » ; une icône stockée hors liste est à rechoisir. Compétences : une par ligne (indication `field-hint`), lignes vides ignorées, 80 caractères et 12 compétences au plus.
 - **Portrait (`components/admin-profile-portrait.ts`):** `fieldset` « 06 · Portrait » après le formulaire, hors de lui (au sommaire, jamais marqué) : vignette 4:5 de 10rem (`NgOptimizedImage` `fill`, sans `priority`), alt « Portrait de Julien Nédellec », `/avatar.avif` et la mention « Portrait par défaut » sans portrait ; zone de dépôt (AVIF, WebP, PNG ou JPEG, 5 Mo au plus) qui envoie dès le dépôt, remise à zéro ensuite, statut `role="status"` « Envoi du portrait… » ; « Revenir au portrait par défaut » (`text-danger`) derrière `ConfirmDialog`. Hors du brouillon : un envoi ne compte jamais comme modification. Toasts « Portrait remplacé », « Portrait par défaut rétabli », refus de type, échecs avec détail sur 422 et « Réessayez dans quelques secondes. » sur 503.
 - **Barre:** « Annuler » mène à `/admin`. Succès : toast « Parcours enregistré », compte à zéro, champs repartis du document renvoyé. Version périmée (409) : toast « Le parcours a été modifié depuis une autre fenêtre. Rechargez la page… », saisie conservée. 400/422 : « Le parcours n'a pas pu être enregistré. Détail : … ».
@@ -650,7 +575,7 @@ Même grammaire que l'éditeur d'article (colonnes, sections, barre, sommaire, g
 ### Zone de dépôt (`shared/ui/file-dropzone.ts`)
 
 - **API:** `accept`, `label`, `helperText`, `previewUrl`, `resetToken` (tout changement efface le fichier affiché, sans émettre `cleared`) ; sorties `fileSelected`, `cleared`. Le parent incrémente `resetToken` après un envoi réussi et au refus d'un fichier (CV, couvertures des éditeurs), et relaie `cleared` jusqu'à l'état qu'il envoie : un fichier retiré ou refusé n'est jamais envoyé.
-- **Fichier choisi:** nom, puis taille par `formatFileSize` (`shared/ui/format-file-size.ts`, « 1,2 Mo », la même que le cartouche du CV). Après le choix, le focus va sur « Remplacer », ou sur le bouton de la zone si le parent l'a remise à zéro ; après un retrait, sur le bouton de la zone.
+- **Fichier choisi:** nom, puis taille par `formatFileSize` (`shared/format/format-file-size.ts`, « 1,2 Mo », la même que le cartouche du CV). Après le choix, le focus va sur « Remplacer », ou sur le bouton de la zone si le parent l'a remise à zéro ; après un retrait, sur le bouton de la zone.
 
 ### Toast (`shared/ui/toast.ts`)
 
@@ -694,4 +619,4 @@ Courbe des visiteurs (`buildVisitorsChartData`) : une seule teinte, « Visiteurs
 - **Don't** réutiliser le Display (800, clamp size) pour un autre élément que le `<h1>` du hero.
 - **Don't** introduire une 4e famille "pour donner du caractère". La hiérarchie vient de la famille (display / texte / données), du weight, de la size et de la largeur.
 - **Don't** confier une information à un trait `line` / `line-strong` seul (Decorative Line Rule).
-- **Don't** présenter un site de démonstration comme une référence client : badge « Démo » dans le gabarit sur toute démo des Réalisations, aucune démo sur la home (qui ne montre que des projets en production) ni dans les données structurées d'avis ou de référence client.
+- **Don't** présenter un site de démonstration comme une référence client : badge « Démo » dans le gabarit sur toute démo des Réalisations, aucune démo sur la home (qui ne montre que des projets en production) ni dans des données structurées de référence client.

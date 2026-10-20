@@ -3,8 +3,8 @@
     "id": 3,
     "name": "Claire Martin",
     "email": "claire.martin@atelier-exemple.test",
-    "subject": "Site vitrine pour un atelier de menuiserie",
-    "message": "Bonjour, nous cherchons un site vitrine simple pour présenter nos réalisations et recevoir des demandes de devis. Pouvez-vous nous indiquer un délai ?",
+    "subject": "Votre parcours de reconversion",
+    "message": "Bonjour, j'ai lu votre article sur la reconversion depuis l'usinage. Je suis en train de faire le même chemin : avez-vous des conseils pour choisir sa formation ?",
     "createdAt": "2026-10-10T09:42:00.000Z",
     "read": false
   },
@@ -12,8 +12,8 @@
     "id": 2,
     "name": "Karim Benali",
     "email": "karim.benali@exemple.test",
-    "subject": "Maintenance d'une application Angular",
-    "message": "Notre application interne tourne en Angular 15. Nous aimerions la mettre à jour et confier la maintenance à un prestataire.",
+    "subject": "Question sur l'auto-hébergement",
+    "message": "Vous parlez de Dokploy et de votre serveur maison. Comment gérez-vous les sauvegardes de PostgreSQL ?",
     "createdAt": "2026-10-08T15:10:00.000Z",
     "read": false
   },

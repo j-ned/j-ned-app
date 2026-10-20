@@ -2,7 +2,7 @@
 id: 029
 title: Repositionnement en portfolio personnel, retrait de l'activité freelance
 type: refactor
-status: draft
+status: done
 created: 2026-10-20
 related: [specs/archive/009-plateforme-acquisition.md, specs/archive/024-prise-de-rendez-vous.md, PRODUCT.md]
 ---
@@ -208,3 +208,25 @@ purement lexical.
   retirés restent comptés dans le groupe « contact » pour le rattrapage des agrégats anciens.
 - Migration 0028 : le texte « Ce qui me motive » versé par 0021 (freelance sur Malt, CDI) est remplacé
   s'il est encore mot pour mot celui d'origine, version incrémentée.
+
+## Plan technique — PR 7 (documentation)
+
+### Specs et ADR
+
+- Specs 007, 009 (deux fichiers), 010 et 024 à 028 déplacées dans `specs/archive/` au statut
+  `obsolete`, avec un `README` d'archive ; références mises à jour.
+- ADR 0005, 0026, 0027 et 0028 au statut « obsolète » ; note datée sur les ADR 0004, 0007, 0023
+  et 0024 ; amendement de la 0019 (la fiche projet ne renvoie plus vers une offre).
+
+### `DESIGN.md`
+
+- Fiches retirées avec leur composant : carte d'offre, carte de démo, ligne d'offre, FAQ, points
+  clés (« Pourquoi moi »), bandeau recruteur, bloc de fin de fiche (« Un besoin similaire ? »),
+  avis clients.
+- Références alignées sur le code : accent du hero (« développeur web »), tampon et cartouche sans
+  carte de démo, note de l'accroche de l'admin, chemin de `formatFileSize` (`shared/format/`).
+
+### Stub d'API de la CI
+
+- `ci/api-stub/fixtures/contact-messages.json` : les deux demandes de prestation deviennent des
+  questions de lecteur ; forme inchangée (trois messages, deux non lus, mêmes identifiants et dates).
