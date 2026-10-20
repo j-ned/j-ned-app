@@ -133,7 +133,10 @@ const PERIODS: readonly FilterOption<DateRangeKey>[] = [
       </section>
 
       <section class="mt-12" aria-labelledby="audience-conversions-heading">
-        <app-admin-section-head heading="Conversions" headingId="audience-conversions-heading" />
+        <app-admin-section-head
+          heading="Actions des visiteurs"
+          headingId="audience-conversions-heading"
+        />
         @if (report.conversionsNote(); as note) {
           <p data-testid="audience-conversions-note" class="mt-3 text-sm text-muted">{{ note }}</p>
         }

@@ -71,7 +71,7 @@ export function audienceLead(overview: StatsOverview | null, referrer: MetricEnt
 
 export function detailNote(overview: StatsOverview | null, periodStart: string): string {
   if (overview === null || overview.detailSince <= periodStart) return '';
-  return `Pages, provenances, actions et conversions par emplacement${NBSP}: 30 derniers jours au plus, depuis le ${calendarDay(overview.detailSince, true)}.`;
+  return `Pages, provenances, actions par emplacement et par canal${NBSP}: 30 derniers jours au plus, depuis le ${calendarDay(overview.detailSince, true)}.`;
 }
 
 export function toTallyRows(

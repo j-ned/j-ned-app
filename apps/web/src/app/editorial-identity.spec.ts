@@ -41,6 +41,13 @@ const FORBIDDEN_IDENTITIES: readonly (readonly [string, RegExp])[] = [
   ['« sur site en »', /sur\s+site\s+en/iu],
   ['« régie »', /(?<!\p{L})r[ée]gie(?!\p{L})/iu],
   ['« temps partiel »', /temps\s+partiel/iu],
+  // Spec 029 : fin de l'activité freelance, plus aucune trace commerciale dans les textes du site.
+  ['« freelance »', /free-?lance/iu],
+  ['« Malt »', /(?<!\p{L})malt(?!\p{L})/iu],
+  ['« SIRET »', /(?<!\p{L})sir[ée]n|(?<!\p{L})siret(?!\p{L})/iu],
+  ['« devis »', /(?<!\p{L})devis(?!\p{L})/iu],
+  ['« missions »', /(?<!\p{L})missions?(?!\p{L})/iu],
+  ['« prix annoncé »', /prix\s+annonc/iu],
 ];
 
 const EVENING_AND_WEEKEND = /le soir et le week-end/iu;

@@ -33,7 +33,6 @@ export function outboundChannel(href: string, siteUrl: string): OutboundChannel 
   const url = parseAbsolute(href);
   if (!url) return null;
   if (url.protocol === 'mailto:') return 'email';
-  if (url.protocol === 'tel:') return 'phone';
 
   const target = hostAndPath(url);
   const profile = PROFILE_CHANNELS.get(target);

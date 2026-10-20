@@ -363,7 +363,7 @@ describe('HttpAnalyticsGateway', () => {
         const { gateway } = configureBrowser(ctx);
         const beacon = beaconSpy();
 
-        gateway.trackOutboundClick('phone', '/offres/site-vitrine');
+        gateway.trackOutboundClick('email', '/about');
 
         expect(beacon).toHaveBeenCalledTimes(beacons);
       },
@@ -717,7 +717,7 @@ describe('HttpAnalyticsGateway', () => {
         const { gateway } = configureBrowser(ctx);
         const beacon = beaconSpy();
 
-        gateway.trackPageDuration('/offres/site-vitrine', 40);
+        gateway.trackPageDuration('/projects/vieux-comptoir', 40);
 
         expect(beacon).toHaveBeenCalledTimes(beacons);
       },

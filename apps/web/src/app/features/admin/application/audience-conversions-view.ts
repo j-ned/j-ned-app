@@ -2,14 +2,16 @@ import type {
   EventCount,
   MetricEntry,
   OutboundChannel,
+  RetiredOutboundChannel,
   StatsOverview,
 } from '@features/analytics/domain/models/analytics.types';
 import { calendarDay } from './calendar-day';
 
-const CHANNEL_LABELS: Readonly<Record<OutboundChannel, string>> = {
+// Téléphone et Malt retirés du site (spec 029) : leurs clics passés restent lisibles.
+const CHANNEL_LABELS: Readonly<Record<OutboundChannel | RetiredOutboundChannel, string>> = {
   email: 'E-mail',
-  phone: 'Téléphone',
-  malt: 'Malt',
+  phone: 'Téléphone (retiré)',
+  malt: 'Malt (retiré)',
   discord: 'Discord',
   linkedin: 'LinkedIn',
   github: 'GitHub',
@@ -21,7 +23,7 @@ const PLACEMENT_LABELS: ReadonlyMap<string, string> = new Map([
   ['booking', 'Prise de rendez-vous (retirée)'],
 ]);
 
-const isChannel = (entityId: string): entityId is OutboundChannel =>
+const isChannel = (entityId: string): entityId is keyof typeof CHANNEL_LABELS =>
   Object.hasOwn(CHANNEL_LABELS, entityId);
 
 export function conversionTotals(overview: StatsOverview): readonly MetricEntry[] {
@@ -40,7 +42,7 @@ export function conversionTotals(overview: StatsOverview): readonly MetricEntry[
 export function conversionsNote(overview: StatsOverview | null, periodStart: string): string {
   if (overview === null) return '';
   const { measuredSince } = overview.conversions;
-  if (measuredSince === null) return 'Conversions non mesurées sur la période.';
+  if (measuredSince === null) return 'Actions non mesurées sur la période.';
   return measuredSince > periodStart
     ? `Mesurées depuis le ${calendarDay(measuredSince, true)}.`
     : '';

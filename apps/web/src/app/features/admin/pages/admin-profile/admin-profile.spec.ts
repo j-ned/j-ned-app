@@ -186,7 +186,7 @@ describe('AdminProfile: ouverture', () => {
       text: SITE_IDENTITY.journey,
       tag: false,
       section: 'profile-biography',
-      note: "Commune à l'accueil et aux offres\u00a0: se modifie dans le code.",
+      note: "Commune à l'accueil et au parcours\u00a0: se modifie dans le code.",
       inAField: false,
     });
   });

@@ -14,7 +14,7 @@ class Blank {}
 
 const ROUTES: Routes = [
   { path: '', component: Blank },
-  { path: 'offres/:slug', component: Blank },
+  { path: 'projects/:slug', component: Blank },
   { path: '**', component: Blank },
 ];
 
@@ -22,7 +22,7 @@ type TrackOutboundClick = Mock<(channel: OutboundChannel, path: string) => void>
 
 async function startTracking(
   platform: 'browser' | 'server' = 'browser',
-  url = '/offres/site-vitrine#demande',
+  url = '/projects/vieux-comptoir#demande',
 ): Promise<TrackOutboundClick> {
   const trackOutboundClick: TrackOutboundClick = vi.fn();
   TestBed.configureTestingModule({
@@ -41,7 +41,7 @@ function link(href: string | null, label = 'Lien'): HTMLAnchorElement {
   const anchor = document.createElement('a');
   if (href !== null) anchor.setAttribute('href', href);
   anchor.dataset['testid'] = 'outbound-probe';
-  // Sans navigation réelle, happy-dom recopie quand même l'href dans `location` : un `tel:` y
+  // Sans navigation réelle, happy-dom recopie quand même l'href dans `location` : un `mailto:` y
   // resterait pour les fichiers suivants du worker (fenêtre partagée, `isolate: false`) et toute
   // URL relative résolue contre lui lèverait `Invalid URL` (NgOptimizedImage d'AboutHero).
   anchor.addEventListener('click', (event) => event.preventDefault());
@@ -68,7 +68,7 @@ describe('initializeOutboundClickTracking', () => {
 
       link('mailto:contact@nedellec-julien.fr').click();
 
-      expect(track).toHaveBeenCalledExactlyOnceWith('email', '/offres/site-vitrine');
+      expect(track).toHaveBeenCalledExactlyOnceWith('email', '/projects/vieux-comptoir');
     });
 
     it('Given a LinkedIn link When the text inside it is clicked Then the linkedin channel is reported once', async () => {
@@ -76,15 +76,15 @@ describe('initializeOutboundClickTracking', () => {
 
       link(SITE_IDENTITY.socials.linkedin).querySelector('span')?.click();
 
-      expect(track).toHaveBeenCalledExactlyOnceWith('linkedin', '/offres/site-vitrine');
+      expect(track).toHaveBeenCalledExactlyOnceWith('linkedin', '/projects/vieux-comptoir');
     });
 
-    it('Given a phone link on the home page When it is clicked Then the phone channel is reported with the home path', async () => {
+    it('Given a mailto link on the home page When it is clicked Then the email channel is reported with the home path', async () => {
       const track = await startTracking('browser', '/#contact');
 
-      link('tel:+33622869279').click();
+      link('mailto:contact@nedellec-julien.fr').click();
 
-      expect(track).toHaveBeenCalledExactlyOnceWith('phone', '/');
+      expect(track).toHaveBeenCalledExactlyOnceWith('email', '/');
     });
 
     it('Given a demo link When it is opened with the middle button Then the demo channel is reported once', async () => {
@@ -92,7 +92,7 @@ describe('initializeOutboundClickTracking', () => {
 
       middleClick(link('https://vieux-comptoir.nedellec-julien.fr/'));
 
-      expect(track).toHaveBeenCalledExactlyOnceWith('demo', '/offres/site-vitrine');
+      expect(track).toHaveBeenCalledExactlyOnceWith('demo', '/projects/vieux-comptoir');
     });
 
     it('Given a GitHub link When the secondary button raises auxclick Then nothing is reported', async () => {
@@ -108,7 +108,7 @@ describe('initializeOutboundClickTracking', () => {
     it.each([
       ['an internal link', '/blog'],
       ['an unrelated outbound link', 'https://www.cnil.fr'],
-      ['a link to the site itself', 'https://nedellec-julien.fr/offres'],
+      ['a link to the site itself', 'https://nedellec-julien.fr/blog'],
       ['an anchor without href', null],
     ])('Given %s When it is clicked Then nothing is reported', async (_label, href) => {
       const track = await startTracking();
@@ -144,9 +144,9 @@ describe('initializeOutboundClickTracking', () => {
       link('mailto:contact@nedellec-julien.fr').click();
 
       TestBed.resetTestingModule();
-      link('tel:+33622869279').click();
+      link(SITE_IDENTITY.socials.linkedin).click();
 
-      expect(track.mock.calls).toEqual([['email', '/offres/site-vitrine']]);
+      expect(track.mock.calls).toEqual([['email', '/projects/vieux-comptoir']]);
     });
   });
 });

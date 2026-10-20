@@ -40,7 +40,7 @@ const PARAGRAPHS: OrderedListConfig<ProfileDraft['paragraphs'][number]> = {
       <p class="field-label">Début de l'accroche</p>
       <p data-testid="admin-profile-journey" class="text-[0.90625rem]">{{ journey }}</p>
       <p data-testid="admin-profile-journey-note" class="field-hint">
-        Commune à l'accueil et aux offres&nbsp;: se modifie dans le code.
+        Commune à l'accueil et au parcours&nbsp;: se modifie dans le code.
       </p>
     </div>
     <app-admin-profile-text-field

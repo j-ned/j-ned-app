@@ -31,7 +31,7 @@ type TallyGroup = { readonly heading: string; readonly rows: readonly TallyRow[]
 
 const SHARE_LIMIT = 5;
 const TALLY_LIMIT = 5;
-// Conversions : peu de lignes possibles (emplacements, canaux), toutes comptent.
+// Actions des visiteurs : peu de lignes possibles (emplacements, canaux), toutes comptent.
 const ALL_ROWS = Number.POSITIVE_INFINITY;
 
 // `value()` lève en état d'erreur : toute lecture de ressource passe par `hasValue()`.

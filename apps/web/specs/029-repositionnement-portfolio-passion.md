@@ -61,15 +61,15 @@ positionnement : public principal développeur (par le blog), public secondaire 
 
 ### Découpage en PR
 
-| # | Dépôt | Périmètre | Dépend de |
-|---|---|---|---|
-| 1 | front | `PRODUCT.md` et cette spec | — |
-| 2 | front | retrait des offres et nouvel accueil, 410 nginx, sitemap, JSON-LD | 1 |
-| 3 | front | retrait des rendez-vous (pages publiques et admin, flux ICS) | 2 |
-| 4 | API | retrait du module `booking`, migration de suppression des tables, `BOOKING_FEED_SECRET` | 3 déployée |
-| 5 | front + API | identité (SIRET, Malt), mentions légales, confidentialité, contact sans qualification, parcours | 3 |
-| 6 | front + API | analytics : retrait des conversions et des événements d'offre | 2 |
-| 7 | front | ADR obsolètes, `DESIGN.md`, archivage des specs 007, 009, 010, 024 à 028 | 2 à 6 |
+| #   | Dépôt       | Périmètre                                                                                       | Dépend de  |
+| --- | ----------- | ----------------------------------------------------------------------------------------------- | ---------- |
+| 1   | front       | `PRODUCT.md` et cette spec                                                                      | —          |
+| 2   | front       | retrait des offres et nouvel accueil, 410 nginx, sitemap, JSON-LD                               | 1          |
+| 3   | front       | retrait des rendez-vous (pages publiques et admin, flux ICS)                                    | 2          |
+| 4   | API         | retrait du module `booking`, migration de suppression des tables, `BOOKING_FEED_SECRET`         | 3 déployée |
+| 5   | front + API | identité (SIRET, Malt), mentions légales, confidentialité, contact sans qualification, parcours | 3          |
+| 6   | front + API | analytics : retrait des conversions et des événements d'offre                                   | 2          |
+| 7   | front       | ADR obsolètes, `DESIGN.md`, archivage des specs 007, 009, 010, 024 à 028                        | 2 à 6      |
 
 ### Hors périmètre
 
@@ -80,6 +80,7 @@ positionnement : public principal développeur (par le blog), public secondaire 
 ## Plan technique — PR 2 (offres et nouvel accueil)
 
 ### Retiré
+
 - `features/offer/` entier, ses routes (`/offres`, `/offres/*`, redirections `application-metier` et
   `offre-site-industrie`), son prérendu et ses entrées du `sitemap.xml`.
 - Home : sections Offres, Méthode, Pourquoi moi, FAQ, Avis (et leur JSON-LD `Review`), lien de
@@ -92,6 +93,7 @@ positionnement : public principal développeur (par le blog), public secondaire 
   (`REQUEST_ANCHOR_DATA_KEY`, seules les pages d'offre la déclaraient).
 
 ### Ajouté ou modifié
+
 - **Hero** : accroche de l'arbitrage 5, cartouche « Fiche technique » (métier, code, stack,
   hébergement, règle), appels « Lire le blog » (primaire) et « Voir les réalisations ».
 - **Derniers articles** (`HomeLatestPosts`) : les trois derniers articles publiés
@@ -108,12 +110,14 @@ positionnement : public principal développeur (par le blog), public secondaire 
   d'offre retirée (<slug>) » au lieu d'« Emplacement inconnu ».
 
 ### Laissé aux PR suivantes
+
 Formulaire de contact (délai souhaité, invitation à réserver), SIRET et lien Malt (PR 5), rendez-vous
 (PR 3), `DESIGN.md` et ADR (PR 7).
 
 ## Plan technique — PR 3 (rendez-vous, front)
 
 ### Retiré
+
 - `features/booking/` entier : page `/rendez-vous`, page d'annulation `/rendez-vous/annulation`,
   gateway HTTP et son provider.
 - Admin : pages `/admin/rendez-vous` et `/admin/disponibilites`, groupe « Rendez-vous » du menu et
@@ -127,6 +131,7 @@ Formulaire de contact (délai souhaité, invitation à réserver), SIRET et lien
   scénarios axe des pages de rendez-vous.
 
 ### Modifié
+
 - **nginx** : la location 410 couvre `^/(offres|offre-site-industrie|rendez-vous)(/|$)`. La location
   dédiée à l'annulation (coquille CSR + `X-Robots-Tag`) disparaît : un ancien lien d'annulation
   reçu par e-mail répond 410, en-têtes de sécurité conservés.
@@ -135,17 +140,20 @@ Formulaire de contact (délai souhaité, invitation à réserver), SIRET et lien
 - **Analytics** : l'emplacement historique `booking` se lit « Prise de rendez-vous (retirée) ».
 
 ### Ordre de déploiement
+
 Cette PR précède la PR 4 (API) : le front ne lit plus aucune route `/api/booking/*`, l'API peut ensuite
 les retirer sans casser une page. Les données de rendez-vous restent en base jusqu'à la PR 4.
 
 ## Plan technique — PR 5 (identité de particulier, contact)
 
 ### Arbitrages (2026-10-20)
+
 1. **Téléphone** : retiré du site (mentions légales, panneau de contact, liens).
 2. **Mentions légales** : nom de l'éditeur + hébergeur. Le site est hébergé **à domicile** : l'éditeur
    est aussi l'hébergeur.
 
 ### Retiré
+
 - `SITE_IDENTITY.business` (statut EI, SIRET, APE, mention TVA), `SITE_IDENTITY.phone` et
   `SITE_IDENTITY.socials.malt` ; leurs usages : pied de page (ligne légale réduite à « © année nom »),
   mentions légales, panneau de contact, page Parcours, détection du canal sortant Malt.
@@ -156,6 +164,7 @@ les retirer sans casser une page. Les données de rendez-vous restent en base ju
   des actions mesurées (ce dernier, oubli de la PR 3).
 
 ### Mentions légales
+
 - Éditeur : « Ce site personnel, sans activité commerciale, est édité par Julien Nédellec,
   particulier, résidant à <commune>, France », courriel, directeur de la publication.
 - Hébergement : inchangé sur le fond (« hébergé par l'éditeur lui-même, sur un serveur personnel
@@ -168,5 +177,34 @@ les retirer sans casser une page. Les données de rendez-vous restent en base ju
   par un avis juridique. Texte à vérifier sur Légifrance au moment de trancher.
 
 ### Laissé aux PR suivantes
+
 Libellés d'historique analytics `malt` / `phone` (PR 6). Texte du parcours en base : se corrige dans
 l'admin ; la fixture de la doublure d'API est neutralisée ici.
+
+## Plan technique — PR 6 (analytics, restes freelance)
+
+### Arbitrage
+
+La section « Conversions » de l'audience n'est pas supprimée mais renommée « Actions des visiteurs » :
+après la PR 2, elle ne mesure plus aucun tunnel vers un devis, seulement des gestes utiles à un
+portfolio personnel (formulaire envoyé, liens de contact, profils GitHub ou LinkedIn, CV, démos).
+La supprimer effacerait de l'information sans retirer de sens commercial. Le champ `conversions` du
+contrat de l'API garde son nom : le renommer obligerait à un déploiement synchronisé pour un gain
+purement lexical.
+
+### Front
+
+- Canaux sortants : `OutboundChannel` perd `phone` et `malt` (le lien `tel:` n'est plus classé) ;
+  leurs clics passés s'affichent « Téléphone (retiré) » et « Malt (retiré) ».
+- `index.html` : titre et descriptions par défaut (coquille client servie aux pages 410, 404 et de
+  connexion) alignés sur la home, sans « prix annoncé » ni « missions ».
+- Admin : la note de l'accroche ne cite plus les offres.
+- Verrou `editorial-identity.spec` : freelance, Malt, SIRET, devis, missions, prix annoncé interdits
+  dans les sources éditoriales et `index.html`.
+
+### API (PR séparée, indépendante)
+
+- `outbound_click` refuse `phone` et `malt`, `contact_submit` n'accepte plus que `home`. Les canaux
+  retirés restent comptés dans le groupe « contact » pour le rattrapage des agrégats anciens.
+- Migration 0028 : le texte « Ce qui me motive » versé par 0021 (freelance sur Malt, CDI) est remplacé
+  s'il est encore mot pour mot celui d'origine, version incrémentée.

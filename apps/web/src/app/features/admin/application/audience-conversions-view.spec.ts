@@ -72,7 +72,7 @@ describe('conversionsNote', () => {
     {
       case: 'conversions never measured over the period',
       overview: makeStatsOverview({ conversions: makeConversions({ measuredSince: null }) }),
-      note: 'Conversions non mesurées sur la période.',
+      note: 'Actions non mesurées sur la période.',
     },
   ])('Given $case When the note is written Then it reads « $note »', ({ overview, note }) => {
     expect(conversionsNote(overview, '2026-09-07')).toBe(note);
@@ -94,8 +94,8 @@ describe('placementLabel', () => {
 describe('channelLabel', () => {
   it.each([
     ['email', 'E-mail'],
-    ['phone', 'Téléphone'],
-    ['malt', 'Malt'],
+    ['phone', 'Téléphone (retiré)'],
+    ['malt', 'Malt (retiré)'],
     ['discord', 'Discord'],
     ['linkedin', 'LinkedIn'],
     ['github', 'GitHub'],

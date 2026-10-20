@@ -193,13 +193,13 @@ describe('detailNote', () => {
       case: 'details starting after the period on 90 days',
       overview: makeStatsOverview({ detailSince: '2026-09-10' }),
       periodStart: '2026-07-12',
-      note: 'Pages, provenances, actions et conversions par emplacement\u00a0: 30 derniers jours au plus, depuis le 10 septembre 2026.',
+      note: 'Pages, provenances, actions par emplacement et par canal\u00a0: 30 derniers jours au plus, depuis le 10 septembre 2026.',
     },
     {
       case: 'details starting on the first of a month',
       overview: makeStatsOverview({ detailSince: '2026-09-01' }),
       periodStart: '2026-04-26',
-      note: 'Pages, provenances, actions et conversions par emplacement\u00a0: 30 derniers jours au plus, depuis le 1er septembre 2026.',
+      note: 'Pages, provenances, actions par emplacement et par canal\u00a0: 30 derniers jours au plus, depuis le 1er septembre 2026.',
     },
   ])(
     'Given $case When the detail note is written Then it reads « $note »',

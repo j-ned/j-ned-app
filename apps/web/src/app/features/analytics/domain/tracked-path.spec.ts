@@ -3,8 +3,8 @@ import { trackedPath } from './tracked-path';
 
 describe('trackedPath', () => {
   it.each<[string, string]>([
-    ['/offres/site-vitrine', '/offres/site-vitrine'],
-    ['/offres/site-vitrine#demande', '/offres/site-vitrine'],
+    ['/projects/vieux-comptoir', '/projects/vieux-comptoir'],
+    ['/projects/vieux-comptoir#demande', '/projects/vieux-comptoir'],
     ['/#contact', '/'],
     ['/', '/'],
     ['/blog?tag=angular', '/blog?tag=angular'],

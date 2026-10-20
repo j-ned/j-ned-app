@@ -399,7 +399,7 @@ describe('AdminAudience', () => {
 
       expect([...host.querySelectorAll('h2')].map((heading) => normalized(heading))).toEqual([
         'Visites par jour',
-        'Conversions',
+        'Actions des visiteurs',
         'Pages les plus vues',
         'Provenance',
         'Détail des visites',
@@ -546,7 +546,7 @@ describe('AdminAudience', () => {
       host: HTMLElement,
     ): readonly { heading: string; rows: readonly (readonly string[])[] }[] =>
       [
-        ...(sectionNamed(host, 'Conversions')?.querySelectorAll<HTMLElement>(
+        ...(sectionNamed(host, 'Actions des visiteurs')?.querySelectorAll<HTMLElement>(
           '[data-testid="audience-tally"]',
         ) ?? []),
       ].map((tally) => ({
@@ -623,7 +623,7 @@ describe('AdminAudience', () => {
       expect({
         note: testIdText(host, 'audience-conversions-note'),
         tallies: tallies(host).length,
-      }).toEqual({ note: 'Conversions non mesurées sur la période.', tallies: 0 });
+      }).toEqual({ note: 'Actions non mesurées sur la période.', tallies: 0 });
     });
 
     it('Given the page on 30 days When « 90 jours » is pressed Then a note says the details cover the last 30 days at most', async () => {
@@ -639,7 +639,7 @@ describe('AdminAudience', () => {
       expect({ before, after: testIdText(host, 'audience-detail-note') }).toEqual({
         before: null,
         after:
-          'Pages, provenances, actions et conversions par emplacement\u00a0: 30 derniers jours au plus, depuis le 7 septembre 2026.',
+          'Pages, provenances, actions par emplacement et par canal\u00a0: 30 derniers jours au plus, depuis le 7 septembre 2026.',
       });
     });
   });
