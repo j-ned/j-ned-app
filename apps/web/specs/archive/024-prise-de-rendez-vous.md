@@ -2,7 +2,7 @@
 id: 024
 title: Prise de rendez-vous (appel de cadrage de 30 min réservé en ligne)
 type: feature
-status: draft
+status: obsolete
 created: 2026-10-12
 related: [docs/adr/0026-rendez-vous-instants-utc-et-contrainte-d-exclusion.md, docs/adr/0024-rendu-a-la-requete-des-pages-de-contenu.md, docs/adr/0025-audit-axe-en-navigateur-reel-contre-l-image-de-ci.md, specs/022-contenu-instantane.md, specs/023-axe-automatise.md]
 ---

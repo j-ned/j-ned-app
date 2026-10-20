@@ -1,8 +1,9 @@
 # ADR-0005 — Catalogue d'offres : contenu scindé, routes statiques générées, URL héritée redirigée par nginx
 
-- **Statut** : accepté
+- **Statut** : obsolète (2026-10-20, catalogue d'offres retiré par `specs/029-repositionnement-portfolio-passion.md`) ;
+  historique : accepté
 - **Date** : 2026-10-04
-- **Contexte spec** : `specs/009-plateforme-acquisition.md`
+- **Contexte spec** : `specs/archive/009-plateforme-acquisition.md`
 - **Prolonge** : ADR-0004 (contenu statique de feature = constante de domaine), ADR-0001
   (`@defer` des routes publiques avec trigger `hydrate`)
 

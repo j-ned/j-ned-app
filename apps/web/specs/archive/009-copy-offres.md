@@ -1,6 +1,6 @@
 # 009 — Copy des quatre nouvelles offres (validée le 2026-10-04)
 
-Annexe de `specs/009-plateforme-acquisition.md`, prérequis du GREEN de la tranche 3. Structure
+Annexe de `specs/archive/009-plateforme-acquisition.md`, prérequis du GREEN de la tranche 3. Structure
 alignée sur le modèle `OfferSummary` / `OfferPageContent` (§ 3 du Plan technique). Voix
 `PRODUCT.md` : phrases courtes, aucun superlatif, aucun em-dash, faits vérifiables.
 

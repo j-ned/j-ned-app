@@ -2,9 +2,9 @@
 id: 010
 title: Montrer les sites de démonstration sur les pages d'offre Sites (site vitrine, site atelier)
 type: feat
-status: draft
+status: obsolete
 created: 2026-10-05
-related: [specs/009-plateforme-acquisition.md, specs/009-copy-offres.md, PRODUCT.md, DESIGN.md, docs/adr/0004-contenu-statique-de-feature-sans-gateway.md, docs/adr/0007-images-statiques-versionnees-et-picture.md]
+related: [specs/archive/009-plateforme-acquisition.md, specs/archive/009-copy-offres.md, PRODUCT.md, DESIGN.md, docs/adr/0004-contenu-statique-de-feature-sans-gateway.md, docs/adr/0007-images-statiques-versionnees-et-picture.md]
 ---
 
 # 010 — Les démos sur les pages d'offre

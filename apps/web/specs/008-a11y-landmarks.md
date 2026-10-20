@@ -4,7 +4,7 @@ title: Landmarks uniques — un seul `<main>` (celui du shell) et en-tête dans 
 type: fix
 status: draft
 created: 2026-10-03
-related: [specs/007-offre-site-industrie.md, src/app/app.ts, src/app/layout/components/header/header.ts]
+related: [specs/archive/007-offre-site-industrie.md, src/app/app.ts, src/app/layout/components/header/header.ts]
 ---
 
 # 008 — Landmarks uniques (main imbriqué, contenu de l'en-tête hors landmark)

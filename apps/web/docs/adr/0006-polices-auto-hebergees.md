@@ -2,7 +2,7 @@
 
 - **Statut** : accepté (2026-10-04, avec la Tranche V)
 - **Date** : 2026-10-04
-- **Contexte spec** : `specs/009-plateforme-acquisition.md`, « Tranche V — plan détaillé »
+- **Contexte spec** : `specs/archive/009-plateforme-acquisition.md`, « Tranche V — plan détaillé »
 - **Remplace** : la règle « System-Stack » de `DESIGN.md` § 3 (et son miroir dans `DESIGN.json`)
 
 ## Context

@@ -2,9 +2,9 @@
 id: 026
 title: Abonnement d'agenda des rendez-vous (webcal secret) et mention d'annulation manuelle
 type: feature
-status: draft
+status: obsolete
 created: 2026-10-15
-related: [specs/024-prise-de-rendez-vous.md, specs/025-calendrier-des-disponibilites.md, docs/adr/0026-rendez-vous-instants-utc-et-contrainte-d-exclusion.md]
+related: [specs/archive/024-prise-de-rendez-vous.md, specs/archive/025-calendrier-des-disponibilites.md, docs/adr/0026-rendez-vous-instants-utc-et-contrainte-d-exclusion.md]
 ---
 
 # 026 — Abonnement d'agenda des rendez-vous

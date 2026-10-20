@@ -1,8 +1,10 @@
 # ADR-0007 — Images statiques de `public/` : nom versionné, `<picture>` AVIF/WebP autour de `NgOptimizedImage`
 
 - **Statut** : accepté (2026-10-05, avec la Tranche 1 de la spec 010)
+- **Note** (2026-10-20) : les visuels des démos (`public/demos/`) sont retirés avec les pages d'offre
+  (`specs/029-repositionnement-portfolio-passion.md`) ; la règle vaut pour toute future image statique de `public/`.
 - **Date** : 2026-10-05
-- **Contexte spec** : `specs/010-demos-offres.md`
+- **Contexte spec** : `specs/archive/010-demos-offres.md`
 - **Prolonge** : ADR-0006 (version dans le nom des polices de `public/fonts/`)
 
 ## Context

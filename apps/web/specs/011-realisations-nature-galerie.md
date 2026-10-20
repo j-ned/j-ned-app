@@ -4,7 +4,7 @@ title: Réalisations — badge de nature (production, démo, script) et galerie 
 type: feat
 status: draft
 created: 2026-10-06
-related: [specs/010-demos-offres.md, docs/adr/0007-images-statiques-versionnees-et-picture.md, PRODUCT.md, DESIGN.md]
+related: [specs/archive/010-demos-offres.md, docs/adr/0007-images-statiques-versionnees-et-picture.md, PRODUCT.md, DESIGN.md]
 ---
 
 # 011 — Nature des réalisations et galerie

@@ -2,9 +2,9 @@
 id: 027
 title: Cadre soir et week-end — textes, offres et retrait du bloc recrutement
 type: feature
-status: draft
+status: obsolete
 created: 2026-10-16
-related: [specs/024-prise-de-rendez-vous.md, specs/025-calendrier-des-disponibilites.md]
+related: [specs/archive/024-prise-de-rendez-vous.md, specs/archive/025-calendrier-des-disponibilites.md]
 ---
 
 # 027 — Cadre soir et week-end

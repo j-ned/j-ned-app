@@ -4,7 +4,7 @@ title: Textes et parcours (identité unique, entrée recruteur, culs-de-sac, pre
 type: content
 status: draft
 created: 2026-10-10
-related: [docs/adr/0019-suite-editoriale-d-une-fiche-projet-cote-front.md, docs/adr/0020-theme-de-blog-vide-masque.md, docs/adr/0010-champs-editoriaux-et-presentation-par-nature.md, docs/adr/0011-themes-du-blog-derives-du-catalogue-de-tags.md, specs/009-copy-offres.md, specs/017-intake-audit-decoupage.md]
+related: [docs/adr/0019-suite-editoriale-d-une-fiche-projet-cote-front.md, docs/adr/0020-theme-de-blog-vide-masque.md, docs/adr/0010-champs-editoriaux-et-presentation-par-nature.md, docs/adr/0011-themes-du-blog-derives-du-catalogue-de-tags.md, specs/archive/009-copy-offres.md, specs/017-intake-audit-decoupage.md]
 ---
 
 # 019 — Textes et parcours

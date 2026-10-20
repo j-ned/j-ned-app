@@ -1,6 +1,8 @@
 # ADR-0023 — Contenu du Parcours : un document unique versionné côté API, identité verrouillée dans le code
 
 - **Statut** : accepté (décisions du propriétaire du 2026-10-10), à appliquer par la spec 021
+- **Note** (2026-10-20) : l'offre atelier et la disponibilité recrutement citées ci-dessous sont retirées
+  (`specs/029-repositionnement-portfolio-passion.md`) ; la décision sur le document du parcours reste.
 - **Date** : 2026-10-10
 - **Contexte spec** : `specs/021-parcours-administrable.md`
 - **Exécute** : ADR-0004 §4 (« le jour où une source distante apparaît, la constante migre derrière un gateway »)

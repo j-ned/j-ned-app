@@ -1,8 +1,10 @@
 # ADR-0004 — Contenu statique de feature : constante de domaine, sans gateway
 
 - **Statut** : accepté
+- **Note** (2026-10-20) : l'offre `/offre-site-industrie` qui a motivé cette décision est retirée
+  (`specs/029-repositionnement-portfolio-passion.md`) ; la règle reste celle de tout contenu statique de feature.
 - **Date** : 2026-10-03
-- **Contexte spec** : `specs/007-offre-site-industrie.md`
+- **Contexte spec** : `specs/archive/007-offre-site-industrie.md`
 
 ## Context
 

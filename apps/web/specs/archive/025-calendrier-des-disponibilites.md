@@ -2,9 +2,9 @@
 id: 025
 title: Calendrier des disponibilités (semaine type en créneaux, exceptions par date, jours fériés)
 type: feature
-status: draft
+status: obsolete
 created: 2026-10-14
-related: [specs/024-prise-de-rendez-vous.md, docs/adr/0026-rendez-vous-instants-utc-et-contrainte-d-exclusion.md, docs/adr/0027-calendrier-des-disponibilites-resolu-par-le-serveur.md]
+related: [specs/archive/024-prise-de-rendez-vous.md, docs/adr/0026-rendez-vous-instants-utc-et-contrainte-d-exclusion.md, docs/adr/0027-calendrier-des-disponibilites-resolu-par-le-serveur.md]
 ---
 
 # 025 — Calendrier des disponibilités

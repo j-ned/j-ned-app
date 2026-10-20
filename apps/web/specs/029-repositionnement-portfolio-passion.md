@@ -4,7 +4,7 @@ title: Repositionnement en portfolio personnel, retrait de l'activité freelance
 type: refactor
 status: draft
 created: 2026-10-20
-related: [specs/009-plateforme-acquisition.md, specs/024-prise-de-rendez-vous.md, PRODUCT.md]
+related: [specs/archive/009-plateforme-acquisition.md, specs/archive/024-prise-de-rendez-vous.md, PRODUCT.md]
 ---
 
 # 029 — Repositionnement en portfolio personnel

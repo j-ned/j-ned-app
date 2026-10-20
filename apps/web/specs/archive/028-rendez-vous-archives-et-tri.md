@@ -2,9 +2,9 @@
 id: 028
 title: Rendez-vous annulés archivés et tri par date dans l'admin
 type: feature
-status: draft
+status: obsolete
 created: 2026-10-16
-related: [specs/024-prise-de-rendez-vous.md, specs/026-abonnement-agenda.md]
+related: [specs/archive/024-prise-de-rendez-vous.md, specs/archive/026-abonnement-agenda.md]
 ---
 
 # 028 — Rendez-vous archivés et tri par date

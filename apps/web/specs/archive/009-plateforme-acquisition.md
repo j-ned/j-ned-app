@@ -2,9 +2,9 @@
 id: 009
 title: Transformer le portfolio en plateforme d'acquisition client (catalogue d'offres, home commerciale, profil CDI en secondaire)
 type: feat
-status: done
+status: obsolete
 created: 2026-10-04
-related: [PRODUCT.md, DESIGN.md, specs/007-offre-site-industrie.md, docs/adr/0004-contenu-statique-de-feature-sans-gateway.md, docs/adr/0005-catalogue-offres-routes-statiques.md, docs/adr/0006-polices-auto-hebergees.md]
+related: [PRODUCT.md, DESIGN.md, specs/archive/007-offre-site-industrie.md, docs/adr/0004-contenu-statique-de-feature-sans-gateway.md, docs/adr/0005-catalogue-offres-routes-statiques.md, docs/adr/0006-polices-auto-hebergees.md]
 ---
 
 # 009 — Plateforme d'acquisition
@@ -502,7 +502,7 @@ après la saisie.
 2. **Vitrine 890 € à côté de l'atelier 690 €** dans le catalogue : **voulu**, affiché tel quel.
 3. **« Démarrage sous 2 semaines »** : **confirmé**. `SITE_IDENTITY.availability` =
    « Disponible pour de nouveaux projets, démarrage sous 2 semaines » (T6).
-4. Copy des quatre nouvelles offres : **validée le 2026-10-04**, voir `specs/009-copy-offres.md`
+4. Copy des quatre nouvelles offres : **validée le 2026-10-04**, voir `specs/archive/009-copy-offres.md`
    (renfort à temps partiel uniquement). Atelier validé le 2026-10-04 : `audience` = « Ateliers d'usinage, de
    décolletage et de mécanique de précision », `promise` inchangée.
 5. Numérotation : spec renumérotée **009** (`008-a11y-landmarks.md` existe sur `master`).
@@ -1117,7 +1117,7 @@ app.routes 4, server routes 2, footer 3). Non-régression : les 696 autres tests
 
 ### Tranche 3 — les quatre nouvelles offres
 
-Source des attendus : l'annexe validée `specs/009-copy-offres.md`. La copy n'est pas recopiée en
+Source des attendus : l'annexe validée `specs/archive/009-copy-offres.md`. La copy n'est pas recopiée en
 entier : les tests épinglent ce qui engage (prix via `formatEur(OFFER_PRICES…)`, sujet prérempli,
 titre du hero, titres et effectifs de section, sections absentes, 24 heures ouvrées, 7 jours,
 4 à 8 semaines, échange gratuit, hébergement en France, restitution d'une heure, temps partiel).
@@ -2661,7 +2661,7 @@ HTML prérendu `offre-site-industrie/index.html` (1re revue) : textes et testids
 4. `OFFER_PAGES` dans le bundle initial : **acceptable en T1** (prescrit par le plan pour cette tranche, aucun budget dépassé). La revue T2 doit vérifier que `main-*.js` ne contient plus la copy de la FAQ.
 5. `audience` / `promise` : **levé** (copy validée par Julien).
 
-Re-revue : point bloquant 1 (ADR) soldé ; `offer-seo.spec.ts` épingle le repli du fil d'Ariane (`toEqual` sur `itemListElement`) et l'absence de clé `description` (`'description' in service === false`, qui discrimine bien une clé `undefined`). `specs/009-copy-offres.md` : annexe de copy hors code, non consommée en T1, sans effet sur les gates.
+Re-revue : point bloquant 1 (ADR) soldé ; `offer-seo.spec.ts` épingle le repli du fil d'Ariane (`toEqual` sur `itemListElement`) et l'absence de clé `description` (`'description' in service === false`, qui discrimine bien une clé `undefined`). `specs/archive/009-copy-offres.md` : annexe de copy hors code, non consommée en T1, sans effet sur les gates.
 
 **Tests notables** :
 - ✨ `src/app/features/offer/offer-seo.spec.ts` (replis) : assertion d'absence de clé par `in` plutôt que `toEqual`, seule forme qui tue le mutant « `description: undefined` ».

@@ -1,8 +1,9 @@
 # ADR-0026 — Rendez-vous : instants UTC, règles à l'heure de Paris, contrainte d'exclusion et créations sérialisées
 
-- **Statut** : proposé (2026-10-12), appliqué par la spec 024
+- **Statut** : obsolète (2026-10-20, prise de rendez-vous retirée par `specs/029-repositionnement-portfolio-passion.md`) ;
+  historique : proposé (2026-10-12), appliqué par la spec 024
 - **Date** : 2026-10-12
-- **Contexte spec** : `specs/024-prise-de-rendez-vous.md`
+- **Contexte spec** : `specs/archive/024-prise-de-rendez-vous.md`
 - **Portée** : API `nest-portfolio-app` (module `src/booking/`) et front (feature `features/booking/`)
 - **Préserve** : ADR-0024 (pages de contenu rendues à la requête, `/rendez-vous` reste un prérendu),
   ADR-0025 (audit axe des nouvelles pages)

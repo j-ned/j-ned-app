@@ -1,6 +1,8 @@
 # ADR-0024 — Pages de contenu rendues à la requête, nginx et Node dans la même image, plus aucun rebuild sur écriture
 
 - **Statut** : accepté (2026-10-10), appliqué par la spec 022 ; arbitrages du propriétaire listés en fin de spec
+- **Note** (2026-10-20) : les pages d'offre citées ci-dessous sont retirées et répondent 410
+  (`specs/029-repositionnement-portfolio-passion.md`) ; le mode de rendu des autres pages est inchangé.
 - **Date** : 2026-10-10
 - **Contexte spec** : `specs/022-contenu-instantane.md`
 - **Amende** : ADR-0023 §5 (publication par `SiteRebuild`) et §6 (build intransigeant)

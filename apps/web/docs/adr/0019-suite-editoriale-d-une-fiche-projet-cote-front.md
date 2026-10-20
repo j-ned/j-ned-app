@@ -1,6 +1,8 @@
 # ADR-0019 — Suite éditoriale d'une fiche projet portée par le front
 
 - **Statut** : proposé (2026-10-10, spec 019)
+- **Amendé** (2026-10-20, `specs/029-repositionnement-portfolio-passion.md`) : la décision 4 (offre liée
+  dérivée de la nature) et l'entrée recruteur de fin de fiche sont retirées ; les décisions 1 à 3 restent.
 - **Date** : 2026-10-10
 - **Contexte spec** : `specs/019-textes-et-parcours.md`
 - **Nuance** : ADR-0010 (champs éditoriaux d'un projet servis par l'API)

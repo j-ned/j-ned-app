@@ -1,9 +1,10 @@
 # ADR-0028 — Abonnement d'agenda : jeton dérivé par HMAC dans le chemin, sel en base, URL masquée partout
 
-- **Statut** : proposé (2026-10-15), appliqué par la spec 026 ; révisé le 2026-10-15 après arbitrage du
+- **Statut** : obsolète (2026-10-20, abonnement d'agenda retiré par `specs/029-repositionnement-portfolio-passion.md`) ;
+  historique : proposé (2026-10-15), appliqué par la spec 026 ; révisé le 2026-10-15 après arbitrage du
   propriétaire (lien relisible, six mois d'historique)
 - **Date** : 2026-10-15
-- **Contexte spec** : `specs/026-abonnement-agenda.md`
+- **Contexte spec** : `specs/archive/026-abonnement-agenda.md`
 - **Portée** : API `nest-portfolio-app` (module `src/booking/`, `src/common/`, `src/config/`,
   `src/instrument.ts`) et front (`features/booking`, `features/admin`)
 - **Amende** : ADR-0026 §6 (« les URL sont journalisées : aucun secret dans l'URL ») pour la seule

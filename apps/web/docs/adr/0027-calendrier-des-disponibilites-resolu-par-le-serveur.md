@@ -1,8 +1,9 @@
 # ADR-0027 — Calendrier des disponibilités : jour résolu par le serveur, exceptions en état souhaité, fériés calculés
 
-- **Statut** : proposé (2026-10-14), appliqué par la spec 025
+- **Statut** : obsolète (2026-10-20, calendrier des disponibilités retiré par `specs/029-repositionnement-portfolio-passion.md`) ;
+  historique : proposé (2026-10-14), appliqué par la spec 025
 - **Date** : 2026-10-14
-- **Contexte spec** : `specs/025-calendrier-des-disponibilites.md`
+- **Contexte spec** : `specs/archive/025-calendrier-des-disponibilites.md`
 - **Portée** : API `nest-portfolio-app` (module `src/booking/`) et front (`features/admin`, `features/booking`)
 - **Étend** : ADR-0026 (§2 règles à l'heure de Paris, §3 le serveur seul calcule les créneaux)
 

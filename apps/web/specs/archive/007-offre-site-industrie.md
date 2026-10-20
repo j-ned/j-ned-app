@@ -2,7 +2,7 @@
 id: 007
 title: Page d'offre « Site pro en 7 jours » pour ateliers et sous-traitants mécaniques, et passage des mentions légales en version professionnelle
 type: feat
-status: draft
+status: obsolete
 created: 2026-10-03
 related: [PRODUCT.md, src/app/pages/legal-notice.ts]
 ---
