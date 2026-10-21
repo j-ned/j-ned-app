@@ -6,11 +6,12 @@
 /tmp
 /out-tsc
 /bazel-out
-# Doc générée ignorée, SAUF les ADR : ce sont des décisions d'architecture, elles
-# se versionnent avec le code. `/docs/*` et non `/docs` : git ne redescend jamais
+# Doc générée ignorée, SAUF les ADR et les brouillons d'articles (spec 030) : ce sont des
+# décisions d'architecture et des textes relus en PR, ils se versionnent avec le code. `/docs/*` et non `/docs` : git ne redescend jamais
 # dans un répertoire exclu, une négation sous `/docs` serait sans effet.
 /docs/*
 !/docs/adr/
+!/docs/articles/
 
 # Node
 /node_modules
