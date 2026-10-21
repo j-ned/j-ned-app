@@ -200,6 +200,9 @@ describe('ProjectDetail', () => {
       '[data-testid="project-error"]',
     ) as HTMLElement;
     expect(error).not.toBeNull();
+    expect(error.querySelector('p')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      "Le projet n'a pas pu être chargé. Vérifie ta connexion, puis réessaie.",
+    );
     expect(navigate).not.toHaveBeenCalled();
 
     (error.querySelector('button') as HTMLButtonElement).click();

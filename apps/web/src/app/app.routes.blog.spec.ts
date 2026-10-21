@@ -16,7 +16,7 @@ describe('blog route', () => {
 
   it('keeps the validated snippet', () => {
     expect(blogSeo()?.['description']).toBe(
-      "Retours d'expérience réels sur Angular, NestJS, PostgreSQL et le déploiement self-hosted.",
+      "Ce que j'apprends en construisant mes projets\u00a0: Angular, NestJS, PostgreSQL et l'auto-hébergement, erreurs comprises.",
     );
   });
 });

@@ -55,10 +55,10 @@ export function buildRss(items: readonly RssItem[], builtAt: Date): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>${AUTHOR} — Blog</title>
+    <title>Le blog de ${AUTHOR}</title>
     <link>${SITE_URL}/blog</link>
     <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml" />
-    <description>Retours d'expérience Angular, NestJS, PostgreSQL et self-hosting.</description>
+    <description>Ce que j'apprends en construisant mes projets\u00a0: Angular, NestJS, PostgreSQL et l'auto-hébergement, erreurs comprises.</description>
     <language>fr</language>
     <lastBuildDate>${builtAt.toUTCString()}</lastBuildDate>
 ${items.map(toItem).join('\n')}

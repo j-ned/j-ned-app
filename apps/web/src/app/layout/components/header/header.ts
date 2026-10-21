@@ -127,7 +127,7 @@ export class Header {
   protected readonly themeToggleLabel = computed(() =>
     this.isDarkTheme() ? 'Passer en mode clair' : 'Passer en mode sombre',
   );
-  protected readonly ctaLabel = 'Me contacter';
+  protected readonly ctaLabel = "M'écrire";
 
   protected scrollToTop(): void {
     this.scroller.scrollToTop();

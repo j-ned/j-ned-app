@@ -2,7 +2,7 @@ import type { Route } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { routes } from './app.routes';
 
-const PROJECTS_TITLE = 'Réalisations Angular et NestJS en production | Julien Nédellec';
+const PROJECTS_TITLE = 'Mes projets Angular et NestJS | Julien Nédellec';
 const PROJECTS_URL = `${SITE_IDENTITY.siteUrl}/projects`;
 
 const projectsRoute = (): Route | undefined => routes.find((route) => route.path === 'projects');
@@ -18,7 +18,7 @@ describe('projects route', () => {
 
   it('describes the page with the validated snippet', () => {
     expect(projectsSeo()?.['description']).toBe(
-      'Applications Angular et NestJS en production, sites de démonstration et scripts\u00a0: le besoin réglé et les choix techniques de chaque projet.',
+      "Les applications Angular et NestJS que j'utilise vraiment, des démos et quelques scripts\u00a0: pour chacun, le problème de départ et les choix techniques.",
     );
   });
 

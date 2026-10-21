@@ -300,7 +300,11 @@ describe('About', () => {
       expect(TestBed.inject(Router).url).toBe('/projects');
     });
 
-    it('When le visiteur clique « Me contacter » Then la page cible la section contact', () => {
+    it('When la conclusion est rendue Then la sortie vers le contact s’intitule « M’écrire »', () => {
+      expect(byTestId('about-cta-contact')?.textContent?.trim()).toBe("M'écrire");
+    });
+
+    it('When le visiteur clique « M’écrire » Then la page cible la section contact', () => {
       byTestId<HTMLButtonElement>('about-cta-contact')?.click();
 
       expect(scrollTo).toHaveBeenCalledExactlyOnceWith('contact');

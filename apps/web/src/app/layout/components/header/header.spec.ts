@@ -127,7 +127,7 @@ describe('Header', () => {
     });
   });
 
-  describe('bouton d’appel « Me contacter »', () => {
+  describe('bouton d’appel « M’écrire »', () => {
     const ctasIn = (root: HTMLElement): HTMLElement[] =>
       Array.from(root.querySelectorAll<HTMLElement>('[data-testid="header-cta"]'));
 
@@ -154,7 +154,7 @@ describe('Header', () => {
       expect(ctas).toHaveLength(1);
       expect(button).toBeInstanceOf(HTMLButtonElement);
       expect(button?.getAttribute('type')).toBe('button');
-      expect(button?.textContent?.trim()).toBe('Me contacter');
+      expect(button?.textContent?.trim()).toBe("M'écrire");
       expect(header.contains(ctas[0] ?? null)).toBe(true);
       expect(ctas[0]?.closest('nav')).toBeNull();
     });
@@ -201,10 +201,7 @@ describe('Header', () => {
 
       expect(button).toBeInstanceOf(HTMLButtonElement);
       button?.click();
-      expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith(
-        'header_contact',
-        'Me contacter',
-      );
+      expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith('header_contact', "M'écrire");
     });
   });
 
@@ -358,7 +355,7 @@ describe('Header', () => {
     });
   });
 
-  describe('public recruteur', () => {
+  describe('lien CV', () => {
     it('Given un CV disponible When l’en-tête et son menu mobile sont rendus Then aucun lien CV n’y figure et le CV n’est pas consulté', async () => {
       const getCurrent = vi.fn(() => of(cvInfo()));
       const { component, fixture } = await setup({

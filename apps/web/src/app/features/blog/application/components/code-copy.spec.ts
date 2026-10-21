@@ -28,7 +28,7 @@ class CopyHost {
 }
 
 const COPIED = 'Code copié dans le presse-papiers';
-const FAILED = 'Copie impossible\u00a0: sélectionnez le code.';
+const FAILED = 'Copie impossible\u00a0: sélectionne le code.';
 
 type Rendered = {
   readonly fixture: ComponentFixture<CopyHost>;

@@ -53,7 +53,7 @@ import type { Project, ProjectKindFilter } from '../../domain/models/project.mod
       @if (failed()) {
         <div class="text-center py-12" role="alert" data-testid="projects-error">
           <p class="text-muted text-lg mb-4">
-            Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez.
+            Les projets n'ont pas pu être chargés. Vérifie ta connexion, puis réessaie.
           </p>
           <button appButton type="button" variant="outlined" (click)="retry()">Réessayer</button>
         </div>

@@ -88,7 +88,7 @@ import { Button } from '@shared/ui/button';
     } @else if (failed()) {
       <div class="page-container pt-10 text-center" role="alert" data-testid="project-error">
         <p class="text-muted text-lg mb-4">
-          Le projet n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.
+          Le projet n'a pas pu être chargé. Vérifie ta connexion, puis réessaie.
         </p>
         <button appButton type="button" variant="outlined" (click)="retry()">Réessayer</button>
       </div>

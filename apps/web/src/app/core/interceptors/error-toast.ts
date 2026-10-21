@@ -42,10 +42,10 @@ function getErrorMessage(error: HttpErrorResponse): string {
     case 404:
       return 'Ressource introuvable';
     case 429:
-      return 'Trop de requêtes, veuillez patienter';
+      return 'Trop de requêtes en peu de temps, réessaie dans une minute';
     default:
       if (error.status >= 500) {
-        return 'Erreur serveur, veuillez réessayer';
+        return 'Le serveur a un souci passager, réessaie dans un instant';
       }
       return 'Une erreur est survenue';
   }

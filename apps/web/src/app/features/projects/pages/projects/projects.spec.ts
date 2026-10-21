@@ -49,6 +49,9 @@ describe('Projects', () => {
       '[data-testid="projects-error"]',
     ) as HTMLElement;
     expect(error).not.toBeNull();
+    expect(error.querySelector('p')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      "Les projets n'ont pas pu être chargés. Vérifie ta connexion, puis réessaie.",
+    );
     expect(fixture.nativeElement.querySelector('[data-testid="projects-empty"]')).toBeNull();
 
     (error.querySelector('button') as HTMLButtonElement).click();

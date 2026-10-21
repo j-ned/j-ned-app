@@ -2,7 +2,7 @@ import { DestroyRef, Directive, PendingTasks, inject, signal } from '@angular/co
 import { writeToClipboard } from '@shared/clipboard/write-to-clipboard';
 
 const COPIED = 'Code copié dans le presse-papiers';
-const FAILED = 'Copie impossible\u00a0: sélectionnez le code.';
+const FAILED = 'Copie impossible\u00a0: sélectionne le code.';
 const RESET_DELAY_MS = 2000;
 const REANNOUNCE_DELAY_MS = 100;
 

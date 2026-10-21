@@ -145,7 +145,7 @@ describe('BlogList', () => {
       const host = await render(setup(productionPosts()));
 
       expect(normalized(byTestId(host, 'blog-intro'))).toBe(
-        "Retours d'expérience concrets sur mes projets, mon parcours et la façon dont je les construis.",
+        "Ce que j'apprends en construisant mes projets, mon parcours, et la façon dont je m'y prends.",
       );
     });
 
@@ -296,7 +296,7 @@ describe('BlogList', () => {
 
       expect(error?.getAttribute('role')).toBe('alert');
       expect(normalized(error?.querySelector('p') ?? null)).toBe(
-        "Les articles n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez.",
+        "Les articles n'ont pas pu être chargés. Vérifie ta connexion, puis réessaie.",
       );
       expect(normalized(error?.querySelector('button') ?? null)).toBe('Réessayer');
       expect(byTestId(host, 'blog-empty')).toBeNull();

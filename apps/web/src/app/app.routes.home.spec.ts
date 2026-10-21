@@ -1,3 +1,5 @@
+/// <reference types="node" />
+import { readFileSync } from 'node:fs';
 import type { Route } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { routes } from './app.routes';
@@ -14,6 +16,15 @@ const nodeOfType = (type: string): JsonLdNode | undefined =>
   graph().find((node) => node['@type'] === type);
 
 const HOME_TITLE = 'Julien Nédellec | Tourneur CN et développeur web Angular / NestJS';
+const HOME_DESCRIPTION =
+  "Tourneur CN dans l'aéronautique et développeur web par passion\u00a0: Angular, NestJS, auto-hébergement, et des projets qui tournent vraiment.";
+
+const indexHtmlDescriptions = (): readonly (string | null)[] => {
+  const html = new DOMParser().parseFromString(readFileSync('src/index.html', 'utf8'), 'text/html');
+  return ['meta[name="description"]', 'meta[property="og:description"]'].map(
+    (selector) => html.querySelector(selector)?.getAttribute('content') ?? null,
+  );
+};
 
 describe('home route SEO', () => {
   it('titles the home page after the person, in the tab and in the SEO data', () => {
@@ -22,9 +33,11 @@ describe('home route SEO', () => {
   });
 
   it('describes the home page by the trade, the stack and what the site holds', () => {
-    expect(homeSeo()?.['description']).toBe(
-      "Tourneur CN dans l'aéronautique et développeur web full-stack Angular / NestJS. Articles techniques, projets en production et code auto-hébergé.",
-    );
+    expect(homeSeo()?.['description']).toBe(HOME_DESCRIPTION);
+  });
+
+  it('serves the same description in the static index.html, for search engines and link previews', () => {
+    expect(indexHtmlDescriptions()).toEqual([HOME_DESCRIPTION, HOME_DESCRIPTION]);
   });
 
   it('gives the home page a search snippet of at most 160 characters, without em dash', () => {

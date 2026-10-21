@@ -24,10 +24,10 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
       <h2>Formulaire de contact</h2>
       <p>
         Les informations saisies (nom, adresse e-mail, sujet, message) servent uniquement à répondre
-        à votre demande. Elles sont enregistrées sur le serveur de l'éditeur et transmises par
-        e-mail à l'éditeur&#8239;; une confirmation vous est envoyée à l'adresse indiquée. Base
-        légale&nbsp;: l'intérêt légitime à répondre à une sollicitation. Elles sont conservées le
-        temps du traitement de la demande, puis supprimées par l'éditeur.
+        à ta demande. Elles sont enregistrées sur le serveur de l'éditeur et transmises par e-mail à
+        l'éditeur&#8239;; une confirmation t'est envoyée à l'adresse indiquée. Base légale&nbsp;:
+        l'intérêt légitime à répondre à une sollicitation. Elles sont conservées le temps du
+        traitement de la demande, puis supprimées par l'éditeur.
       </p>
 
       <h2>Mesure d'audience</h2>
@@ -60,8 +60,8 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
         Les commentaires du blog reposent sur
         <a href="https://giscus.app" rel="noopener noreferrer" target="_blank">Giscus</a>, qui les
         stocke dans les discussions GitHub du dépôt du site. Rien n'est chargé depuis GitHub tant
-        que vous n'interagissez pas avec la zone de commentaires&#8239;; commenter suppose de vous
-        connecter avec votre compte GitHub, dont le traitement relève de la
+        que tu n'interagis pas avec la zone de commentaires&#8239;; commenter suppose de te
+        connecter avec ton compte GitHub, dont le traitement relève de la
         <a
           href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement"
           rel="noopener noreferrer"
@@ -83,19 +83,18 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
       <h2>Stockage local du navigateur</h2>
       <p>
-        Le site mémorise dans votre navigateur, sans les transmettre, votre préférence de thème
-        (clair ou sombre), les articles que vous avez aimés et, pour l'éditeur uniquement, un indice
-        de session et une option d'exclusion des statistiques. Un cookie de session, strictement
-        nécessaire, n'est déposé que lors de la connexion à l'espace d'administration, réservé à
-        l'éditeur.
+        Le site mémorise dans ton navigateur, sans les transmettre, ta préférence de thème (clair ou
+        sombre), les articles que tu as aimés et, pour l'éditeur uniquement, un indice de session et
+        une option d'exclusion des statistiques. Un cookie de session, strictement nécessaire, n'est
+        déposé que lors de la connexion à l'espace d'administration, réservé à l'éditeur.
       </p>
 
-      <h2>Vos droits</h2>
+      <h2>Tes droits</h2>
       <p>
-        Vous disposez d'un droit d'accès, de rectification, d'effacement et d'opposition sur les
-        données qui vous concernent. Pour l'exercer, écrivez à
+        Tu disposes d'un droit d'accès, de rectification, d'effacement et d'opposition sur les
+        données qui te concernent. Pour l'exercer, écris à
         <a [href]="'mailto:' + identity.email">{{ identity.email }}</a
-        >. Vous pouvez également saisir la
+        >. Tu peux également saisir la
         <a href="https://www.cnil.fr" rel="noopener noreferrer" target="_blank">CNIL</a>.
       </p>
 

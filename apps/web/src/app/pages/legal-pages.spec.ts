@@ -145,7 +145,7 @@ describe('Pages légales', () => {
       'Commentaires des articles',
       'Suivi des erreurs techniques',
       'Stockage local du navigateur',
-      'Vos droits',
+      'Tes droits',
     ]);
     expect(fixture.nativeElement.textContent).toContain('30 jours');
   });

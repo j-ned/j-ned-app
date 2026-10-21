@@ -44,6 +44,15 @@ describe('errorToastInterceptor', () => {
     expect(add).toHaveBeenCalledOnce();
   });
 
+  it.each([
+    [429, 'Trop de requêtes en peu de temps, réessaie dans une minute'],
+    [500, 'Le serveur a un souci passager, réessaie dans un instant'],
+    [503, 'Le serveur a un souci passager, réessaie dans un instant'],
+  ])('tells the visitor what to do after a %i', (status, detail) => {
+    failWith(status);
+    expect(add).toHaveBeenCalledExactlyOnceWith({ severity: 'error', detail });
+  });
+
   // Le tracking analytics est fire-and-forget : une erreur y est un problème
   // d'exploitation, jamais un message destiné au visiteur d'une page publique.
   it('stays silent when the caller opted out', () => {

@@ -60,7 +60,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               id="contact-heading"
               class="text-[clamp(2.25rem,4.6vw,3.75rem)] font-extrabold leading-[1.02] tracking-[-0.035em]"
             >
-              Écrivez-moi.
+              Écris-moi.
             </h2>
             <p class="mt-5 max-w-[42ch] text-[1.0625rem] text-muted" data-testid="contact-intro">
               {{ intro() }}
@@ -76,18 +76,18 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
             <form [formRoot]="contactForm" class="flex flex-col gap-6">
               <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-0 p-0 m-0">
-                <legend class="sr-only">Informations personnelles</legend>
+                <legend class="sr-only">Tes coordonnées</legend>
                 <div>
                   @let nameInError = contactForm.name().touched() && contactForm.name().invalid();
                   <label for="name" class="form-label"
-                    >Nom complet <span class="font-normal text-muted">(requis)</span></label
+                    >Ton nom <span class="font-normal text-muted">(requis)</span></label
                   >
                   <input
                     id="name"
                     type="text"
                     [formField]="contactForm.name"
                     aria-required="true"
-                    placeholder="Votre nom"
+                    placeholder="Ton nom"
                     autocomplete="name"
                     [attr.aria-invalid]="nameInError"
                     [attr.aria-describedby]="nameInError ? 'contact-name-error' : null"
@@ -106,7 +106,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     type="email"
                     [formField]="contactForm.email"
                     aria-required="true"
-                    placeholder="votre@email.com"
+                    placeholder="toi@exemple.fr"
                     autocomplete="email"
                     [attr.aria-invalid]="emailInError"
                     [attr.aria-describedby]="emailInError ? 'contact-email-error' : null"
@@ -127,7 +127,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   data-testid="contact-subject"
                   [formField]="contactForm.subject"
                   aria-required="true"
-                  placeholder="Objet de votre message"
+                  placeholder="De quoi veux-tu parler&#8239;?"
                   [attr.aria-invalid]="subjectInError"
                   [attr.aria-describedby]="subjectInError ? 'contact-subject-error' : null"
                   class="form-input"
@@ -145,7 +145,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   [formField]="contactForm.message"
                   aria-required="true"
                   rows="6"
-                  placeholder="Votre message, votre question ou votre remarque…"
+                  placeholder="Ta question, ta remarque, ou juste un bonjour…"
                   [attr.aria-invalid]="messageInError"
                   [attr.aria-describedby]="messageInError ? 'contact-message-error' : null"
                   class="form-textarea"
@@ -153,8 +153,11 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 <app-field-error [field]="contactForm.message" errorId="contact-message-error" />
               </div>
               <div class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 pt-1">
-                <p class="max-w-[34ch] text-[0.8125rem] text-muted">
-                  Vos nom, e-mail et message servent uniquement à vous répondre.
+                <p
+                  class="max-w-[34ch] text-[0.8125rem] text-muted"
+                  data-testid="contact-privacy-note"
+                >
+                  Ton nom, ton e-mail et ton message servent seulement à te répondre.
                   <a
                     routerLink="/confidentialite"
                     class="underline underline-offset-3 hover:text-primary"
@@ -253,7 +256,7 @@ export class ContactForm {
       this.toast.add({
         severity: 'error',
         summary: 'Envoi impossible',
-        detail: 'Une erreur inattendue est survenue. Réessayez ou contactez-moi par email.',
+        detail: "Quelque chose a coincé pendant l'envoi. Réessaie, ou écris-moi par e-mail.",
       });
     }
   }

@@ -69,10 +69,10 @@ describe('Footer', () => {
     it('pins every label of the footer', () => {
       expect(FOOTER_COPY).toEqual({
         tagline:
-          'Tourneur CN le jour, développeur web le reste du temps. Angular, NestJS et auto-hébergement.',
+          'Tourneur CN le jour, développeur web le reste du temps. Angular, NestJS et auto-hébergement, pour le plaisir.',
         headings: { resources: 'Ressources', contact: 'Contact' },
         resources: { projects: 'Réalisations', blog: 'Blog', about: 'Parcours' },
-        contactCta: 'Me contacter',
+        contactCta: "M'écrire",
         socials: { linkedin: 'LinkedIn', github: 'GitHub' },
         legal: {
           owner: 'Julien Nédellec',
@@ -170,7 +170,7 @@ describe('Footer', () => {
 
       byTestId<HTMLButtonElement>(host, 'footer-contact-cta')[0]?.click();
 
-      expect(trackCtaClick.mock.calls).toEqual([['footer_contact', 'Me contacter']]);
+      expect(trackCtaClick.mock.calls).toEqual([['footer_contact', "M'écrire"]]);
       expect(trackCtaClick.mock.invocationCallOrder[0]).toBeLessThan(
         scrollTo.mock.invocationCallOrder[0],
       );

@@ -17,7 +17,7 @@ describe('SITE_IDENTITY', () => {
 
   it('states the career journey in one validated sentence, reused everywhere it is told', () => {
     expect(SITE_IDENTITY.journey).toBe(
-      "Chaudronnier puis tourneur CN de haute précision dans l'aéronautique, mon métier aujourd'hui, je suis aussi développeur web full-stack depuis 2025.",
+      "Chaudronnier, puis tourneur CN dans l'aéronautique (toujours mon métier), je code aussi en full-stack, par passion, depuis 2025.",
     );
   });
 });

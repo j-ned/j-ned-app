@@ -2,24 +2,21 @@ import type { Route } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { routes } from './app.routes';
 
-const ABOUT_TITLE = 'Développeur full-stack Angular / NestJS, parcours et CV | Julien Nédellec';
+const ABOUT_TITLE = "Parcours\u00a0: de l'atelier au code | Julien Nédellec";
 const ABOUT_URL = `${SITE_IDENTITY.siteUrl}/about`;
 
 const aboutRoute = (): Route | undefined => routes.find((route) => route.path === 'about');
 const aboutSeo = (): Readonly<Record<string, unknown>> | undefined => aboutRoute()?.data?.['seo'];
 
 describe('about route', () => {
-  it('titles the page for a recruiter, in the tab and in the SEO data', () => {
+  it('titles the page after the journey, in the tab and in the SEO data', () => {
     expect(aboutRoute()?.title).toBe(ABOUT_TITLE);
     expect(aboutSeo()?.['title']).toBe(ABOUT_TITLE);
     expect(aboutSeo()?.['url']).toBe(ABOUT_URL);
   });
 
   it('describes the page with the site-wide journey, then what the page holds', () => {
-    const description = String(aboutSeo()?.['description'] ?? '');
-
-    expect(description.startsWith(`${SITE_IDENTITY.journey} `)).toBe(true);
-    expect(description).toMatch(/\bCV\.$/u);
+    expect(aboutSeo()?.['description']).toBe(`${SITE_IDENTITY.journey} Ma stack et mon CV.`);
   });
 
   it('gives the page a search snippet of at most 160 characters', () => {

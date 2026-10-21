@@ -49,8 +49,8 @@ import { toBlogListView, type BlogListFilter } from '../../application/blog-list
             data-testid="blog-intro"
             class="animate-fade-up [animation-delay:120ms] mt-5.5 max-w-[56ch] text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted"
           >
-            Retours d'expérience concrets sur mes projets, mon parcours et la façon dont je les
-            construis.
+            Ce que j'apprends en construisant mes projets, mon parcours, et la façon dont je m'y
+            prends.
           </p>
           <a
             href="/rss.xml"
@@ -74,7 +74,7 @@ import { toBlogListView, type BlogListFilter } from '../../application/blog-list
       @if (failed()) {
         <div class="py-12 text-center" role="alert" data-testid="blog-error">
           <p class="mb-4 text-lg text-muted">
-            Les articles n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez.
+            Les articles n'ont pas pu être chargés. Vérifie ta connexion, puis réessaie.
           </p>
           <button appButton type="button" variant="outlined" (click)="retry()">Réessayer</button>
         </div>

@@ -17,9 +17,9 @@ import { RouterLink } from '@angular/router';
         404
       </h1>
       <h2 class="text-2xl md:text-3xl font-bold mb-2">Page non trouvée</h2>
-      <p class="text-muted mb-8 max-w-md text-center">
-        Oups&#8239;! La page que vous cherchez n'existe pas ou a été déplacée.<br />
-        Retournez à l'accueil ou explorez d'autres sections du site.
+      <p class="text-muted mb-8 max-w-md text-center" data-testid="not-found-message">
+        Oups&#8239;! La page que tu cherches n'existe pas ou a été déplacée.<br />
+        Retourne à l'accueil ou fais un tour dans les autres sections du site.
       </p>
       <a
         routerLink="/"

@@ -4,7 +4,7 @@ import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle } from '@shared/testing/settle';
 
-const MESSAGE = "Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez.";
+const MESSAGE = "Les projets n'ont pas pu être chargés. Vérifie ta connexion, puis réessaie.";
 
 async function renderError(): Promise<{
   fixture: ComponentFixture<LoadError>;

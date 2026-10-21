@@ -35,7 +35,7 @@ import { AppIcon } from '@shared/icons/app-icon';
             data-testid="about-cta-contact"
             (click)="contactRequested.emit()"
           >
-            Me contacter
+            M'écrire
           </button>
         </div>
       </section>

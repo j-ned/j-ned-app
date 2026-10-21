@@ -199,6 +199,9 @@ describe('ContactForm (Signal Forms)', () => {
       await fixture.whenStable();
 
       expect(toast.messages().at(-1)?.severity).toBe('error');
+      expect(toast.messages().at(-1)?.detail).toBe(
+        "Quelque chose a coincé pendant l'envoi. Réessaie, ou écris-moi par e-mail.",
+      );
       expect(fixture.componentInstance.contactForm().value()).toEqual(makeContactData());
       expect(fixture.componentInstance.contactForm().submitting()).toBe(false);
     });
@@ -465,6 +468,58 @@ describe('ContactForm (Signal Forms)', () => {
         host.querySelectorAll('[data-testid^="contact-booking"]').length,
         host.querySelectorAll('a[href^="/rendez-vous"]').length,
       ]).toEqual([0, 0]);
+    });
+  });
+
+  describe('Wording', () => {
+    const collapsed = (element: Element | null | undefined): string =>
+      (element?.textContent ?? '').replace(/[ \t\r\n]+/g, ' ').trim();
+
+    it('Given the form When it renders Then the contact section is named « Écris-moi. »', async () => {
+      const host = (await setup()).nativeElement as HTMLElement;
+      const headingId = host.querySelector('section')?.getAttribute('aria-labelledby');
+
+      expect(collapsed(host.querySelector(`#${headingId}`))).toBe('Écris-moi.');
+    });
+
+    it('Given the form When it renders Then the identity fields are grouped under « Tes coordonnées »', async () => {
+      const host = (await setup()).nativeElement as HTMLElement;
+
+      expect(collapsed(host.querySelector('fieldset legend'))).toBe('Tes coordonnées');
+    });
+
+    it('Given the form When it renders Then every field carries its own distinct label', async () => {
+      const host = (await setup()).nativeElement as HTMLElement;
+
+      expect([...host.querySelectorAll('form label')].map(collapsed)).toEqual([
+        'Ton nom (requis)',
+        'Email (requis)',
+        'Sujet (requis)',
+        'Message (requis)',
+      ]);
+    });
+
+    it('Given the form When it renders Then each field suggests what to type, addressed with tu', async () => {
+      const host = (await setup()).nativeElement as HTMLElement;
+
+      expect(
+        [...host.querySelectorAll('form input, form textarea')].map((field) =>
+          field.getAttribute('placeholder'),
+        ),
+      ).toEqual([
+        'Ton nom',
+        'toi@exemple.fr',
+        'De quoi veux-tu parler\u202f?',
+        'Ta question, ta remarque, ou juste un bonjour…',
+      ]);
+    });
+
+    it('Given the form When it renders Then the privacy note says the data only serves to answer', async () => {
+      const host = (await setup()).nativeElement as HTMLElement;
+
+      expect(collapsed(host.querySelector('[data-testid="contact-privacy-note"]'))).toBe(
+        'Ton nom, ton e-mail et ton message servent seulement à te répondre. Politique de confidentialité',
+      );
     });
   });
 

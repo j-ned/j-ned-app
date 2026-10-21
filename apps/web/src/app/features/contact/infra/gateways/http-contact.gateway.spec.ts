@@ -66,7 +66,7 @@ describe('HttpContactGateway', () => {
       const result = await promise;
       expect(result).toEqual({
         success: true,
-        message: 'Votre message a bien été envoyé. Je reviens vers vous rapidement.',
+        message: 'Message bien reçu, merci\u202f! Je te réponds dès que je peux.',
       });
       httpController.verify();
     });
@@ -74,32 +74,31 @@ describe('HttpContactGateway', () => {
     it.each([
       {
         status: 400,
-        expected: 'Certains champs sont invalides. Vérifiez votre saisie et réessayez.',
+        expected: 'Certains champs ne vont pas. Vérifie ta saisie et réessaie.',
       },
       {
         status: 429,
-        expected: 'Trop de tentatives en peu de temps. Patientez une minute avant de réessayer.',
+        expected: "Trop d'essais en peu de temps. Attends une minute avant de réessayer.",
       },
       {
         status: 500,
-        expected: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        expected: 'Le serveur a un souci passager. Réessaie dans quelques minutes.',
       },
       {
         status: 502,
-        expected: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        expected: 'Le serveur a un souci passager. Réessaie dans quelques minutes.',
       },
       {
         status: 503,
-        expected: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        expected: 'Le serveur a un souci passager. Réessaie dans quelques minutes.',
       },
       {
         status: 504,
-        expected: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        expected: 'Le serveur a un souci passager. Réessaie dans quelques minutes.',
       },
       {
         status: 418,
-        expected:
-          "Une erreur inattendue est survenue lors de l'envoi. Réessayez ou contactez-moi par email.",
+        expected: "Quelque chose a coincé pendant l'envoi. Réessaie, ou écris-moi par e-mail.",
       },
     ])(
       'submitContactForm() retourne erreur explicite pour HTTP $status',
@@ -140,7 +139,7 @@ describe('HttpContactGateway', () => {
       const result = await promise;
       expect(result).toEqual({
         success: false,
-        message: 'Connexion impossible. Vérifiez votre réseau, puis réessayez dans un instant.',
+        message: 'Connexion impossible. Vérifie ton réseau, puis réessaie dans un instant.',
       });
       httpController.verify();
     });

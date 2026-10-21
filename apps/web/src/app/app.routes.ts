@@ -4,8 +4,8 @@ import { Home } from '@features/home/pages/home/home';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
 const HOME_TITLE = 'Julien Nédellec | Tourneur CN et développeur web Angular / NestJS';
-const ABOUT_TITLE = 'Développeur full-stack Angular / NestJS, parcours et CV | Julien Nédellec';
-const PROJECTS_TITLE = 'Réalisations Angular et NestJS en production | Julien Nédellec';
+const ABOUT_TITLE = "Parcours\u00a0: de l'atelier au code | Julien Nédellec";
+const PROJECTS_TITLE = 'Mes projets Angular et NestJS | Julien Nédellec';
 const BLOG_TITLE = 'Blog Angular, NestJS et auto-hébergement | Julien Nédellec';
 const PERSON_ID = `${SITE_IDENTITY.siteUrl}/#person`;
 
@@ -19,7 +19,7 @@ export const routes: Routes = [
       seo: {
         title: HOME_TITLE,
         description:
-          "Tourneur CN dans l'aéronautique et développeur web full-stack Angular / NestJS. Articles techniques, projets en production et code auto-hébergé.",
+          "Tourneur CN dans l'aéronautique et développeur web par passion\u00a0: Angular, NestJS, auto-hébergement, et des projets qui tournent vraiment.",
         keywords:
           'Angular, NestJS, TypeScript, PostgreSQL, Drizzle ORM, Docker, auto-hébergement, développeur full-stack, blog technique',
         url: SITE_IDENTITY.siteUrl,
@@ -67,7 +67,7 @@ export const routes: Routes = [
       preload: true,
       seo: {
         title: ABOUT_TITLE,
-        description: `${SITE_IDENTITY.journey} Stack et CV.`,
+        description: `${SITE_IDENTITY.journey} Ma stack et mon CV.`,
         keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
@@ -97,7 +97,7 @@ export const routes: Routes = [
       seo: {
         title: PROJECTS_TITLE,
         description:
-          'Applications Angular et NestJS en production, sites de démonstration et scripts\u00a0: le besoin réglé et les choix techniques de chaque projet.',
+          "Les applications Angular et NestJS que j'utilise vraiment, des démos et quelques scripts\u00a0: pour chacun, le problème de départ et les choix techniques.",
         keywords:
           'Portfolio Angular, Projets NestJS, Applications TypeScript, Développeur Full-Stack, PostgreSQL, Docker',
         url: `${SITE_IDENTITY.siteUrl}/projects`,
@@ -127,7 +127,7 @@ export const routes: Routes = [
       seo: {
         title: BLOG_TITLE,
         description:
-          "Retours d'expérience réels sur Angular, NestJS, PostgreSQL et le déploiement self-hosted.",
+          "Ce que j'apprends en construisant mes projets\u00a0: Angular, NestJS, PostgreSQL et l'auto-hébergement, erreurs comprises.",
         keywords: "Blog Angular, Blog NestJS, Développeur Full-Stack, Retour d'expérience",
         url: `${SITE_IDENTITY.siteUrl}/blog`,
         type: 'website',
@@ -155,7 +155,7 @@ export const routes: Routes = [
       seo: {
         title: 'Politique de confidentialité | Julien Nédellec',
         description:
-          "Ce que le site collecte et pourquoi\u00a0: formulaire de contact, mesure d'audience sans cookie, commentaires, suivi des erreurs, vos droits.",
+          "Ce que le site collecte et pourquoi\u00a0: formulaire de contact, mesure d'audience sans cookie, commentaires, suivi des erreurs, et tes droits.",
         url: `${SITE_IDENTITY.siteUrl}/confidentialite`,
         type: 'website',
       },

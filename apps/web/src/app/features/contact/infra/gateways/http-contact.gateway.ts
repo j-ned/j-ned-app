@@ -25,17 +25,17 @@ function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
     case 0:
       return {
         success: false,
-        message: 'Connexion impossible. Vérifiez votre réseau, puis réessayez dans un instant.',
+        message: 'Connexion impossible. Vérifie ton réseau, puis réessaie dans un instant.',
       };
     case 400:
       return {
         success: false,
-        message: 'Certains champs sont invalides. Vérifiez votre saisie et réessayez.',
+        message: 'Certains champs ne vont pas. Vérifie ta saisie et réessaie.',
       };
     case 429:
       return {
         success: false,
-        message: 'Trop de tentatives en peu de temps. Patientez une minute avant de réessayer.',
+        message: "Trop d'essais en peu de temps. Attends une minute avant de réessayer.",
       };
     case 500:
     case 502:
@@ -43,13 +43,12 @@ function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
     case 504:
       return {
         success: false,
-        message: 'Le serveur rencontre un souci temporaire. Réessayez dans quelques minutes.',
+        message: 'Le serveur a un souci passager. Réessaie dans quelques minutes.',
       };
     default:
       return {
         success: false,
-        message:
-          "Une erreur inattendue est survenue lors de l'envoi. Réessayez ou contactez-moi par email.",
+        message: "Quelque chose a coincé pendant l'envoi. Réessaie, ou écris-moi par e-mail.",
       };
   }
 }
@@ -78,7 +77,7 @@ export class HttpContactGateway extends ContactGateway {
     return this.http.post(`${this.apiUrl}/contact/messages`, data).pipe(
       map<unknown, ContactFormSubmission>(() => ({
         success: true,
-        message: 'Votre message a bien été envoyé. Je reviens vers vous rapidement.',
+        message: 'Message bien reçu, merci\u202f! Je te réponds dès que je peux.',
       })),
       catchError((err: HttpErrorResponse) => of(toSubmissionError(err))),
     );

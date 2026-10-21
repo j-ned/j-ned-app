@@ -7,6 +7,6 @@ export const SITE_IDENTITY = {
     discord: 'https://discord.gg/nedellec_julien',
   },
   journey:
-    "Chaudronnier puis tourneur CN de haute précision dans l'aéronautique, mon métier aujourd'hui, je suis aussi développeur web full-stack depuis 2025.",
+    "Chaudronnier, puis tourneur CN dans l'aéronautique (toujours mon métier), je code aussi en full-stack, par passion, depuis 2025.",
   siteUrl: 'https://nedellec-julien.fr',
 } as const;

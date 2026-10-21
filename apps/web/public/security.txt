@@ -5,6 +5,5 @@ Canonical: https://nedellec-julien.fr/security.txt
 Expires: 2027-01-07T23:59:59Z
 Acknowledgments: https://nedellec-julien.fr/
 
-# Si vous découvrez une vulnérabilité de sécurité, merci de nous en informer
-# de manière responsable en utilisant les coordonnées ci-dessus.
-# Nous nous engageons à répondre rapidement aux rapports de sécurité.
+# Tu as trouvé une faille de sécurité ? Écris-moi à l'adresse ci-dessus, sans la
+# rendre publique avant ma réponse. Je réponds dès que je peux.
