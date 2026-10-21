@@ -623,14 +623,12 @@ Les PR se suivent (mêmes fichiers) ; chaque tranche est verte sans les suivante
 - L'œil optique fixé à 48 n'a été jugé que sur mesures, pas sur rendu ; un `h1` à 70 px peut paraître
   moins expressif qu'en maquette (si la maquette chargeait l'axe complet). À valider à l'œil en PR 5.
 
-### Décisions à arbitrer par le propriétaire (goût)
+### Décisions de goût (propriétaire, 2026-10-21)
 
-1. **Œil optique** : 48 (proposé, compromis titres moyens / grands) ou 96 (dessin le plus expressif, défaut
-   de la police, même poids) ?
-2. **Autocollant de l'accueil** : libellé (4 mots au plus ; proposé « Fait main »), ton (sauge proposé),
-   inclinaison (à gauche proposé).
-3. **Tampon** : neutre à contour (proposé, pour éviter « des autocollants partout » sur la grille des
-   réalisations) ou en couleur d'autocollant ?
-4. **Carte de partage** : texte seul (proposé) ou avec le portrait ; sous-titre « Tourneur CN et
-   développeur web » à confirmer contre les textes de la spec 031.
-5. **Boutons `outlined`** : contour 2 px `foreground` (proposé, assorti aux cartes) ou contour fin ?
+1. **Autocollant de l'accueil** : « Fait main », sauge, incliné à gauche.
+2. **Tampon** : neutre à contour, aucune couleur d'autocollant.
+3. **Carte de partage** : texte seul, sans portrait. Le sous-titre (« Tourneur CN et développeur web »
+   proposé) est calé sur les textes de la spec 031 dans la PR 6a.
+4. **Boutons `outlined`** : contour 2 px `foreground`, assorti aux cartes.
+5. **Œil optique** : 48 retenu par défaut ; validé à l'œil par le propriétaire sur le rendu réel dans la
+   PR 5 (alternative : 96, même poids, dessin plus expressif).
