@@ -1,3 +1,5 @@
+import { PROJECT_TAGS } from './project-tag.model';
+
 export const BLOG_TAG_CATEGORIES = [
   'stack',
   'security',
@@ -22,6 +24,8 @@ export const BLOG_TAGS_BY_CATEGORY: Record<BlogTagCategory, readonly string[]> =
     'Zod',
     'RxJS',
     'Full-Stack',
+    'SSR',
+    'Tailwind CSS',
   ],
   security: [
     'Sécurité',
@@ -41,10 +45,20 @@ export const BLOG_TAGS_BY_CATEGORY: Record<BlogTagCategory, readonly string[]> =
     'Données de santé',
     'RGPD',
     'Privacy by design',
+    'CSP',
   ],
-  engineering: ['Architecture', 'Tests', 'SEO', 'Audit de sécurité', "Retour d'expérience"],
+  engineering: [
+    'Architecture',
+    'Tests',
+    'SEO',
+    'Audit de sécurité',
+    "Retour d'expérience",
+    'Performance',
+    'Accessibilité',
+    'Design system',
+  ],
   journey: ['Parcours', 'Reconversion', 'Carrière', 'Industrie', 'Métallurgie', 'Autodidacte'],
-  projects: ['DashFlow', 'Auto-hébergement', 'CI/CD', 'GreenTech'],
+  projects: [...PROJECT_TAGS.map((entry) => entry.tag), 'Auto-hébergement', 'CI/CD', 'GreenTech'],
 };
 
 export const AVAILABLE_BLOG_TAGS: readonly string[] = Object.values(BLOG_TAGS_BY_CATEGORY).flat();

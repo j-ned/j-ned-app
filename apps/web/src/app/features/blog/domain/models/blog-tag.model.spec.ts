@@ -17,13 +17,22 @@ describe('blogTagCategory', () => {
     ['Reconversion', 'journey'],
     ['Full-Stack', 'stack'],
     ['DashFlow', 'projects'],
+    ['Performance', 'engineering'],
+    ['Accessibilité', 'engineering'],
+    ['Design system', 'engineering'],
+    ['CSP', 'security'],
+    ['SSR', 'stack'],
+    ['Tailwind CSS', 'stack'],
   ])('given the catalogue tag "%s", returns "%s"', (tag, expected) => {
     expect(blogTagCategory(tag)).toBe(expected);
   });
 
-  it.each(['Inconnu', 'angular', ''])('given the free tag "%s", returns null', (tag) => {
-    expect(blogTagCategory(tag)).toBeNull();
-  });
+  it.each(['Inconnu', 'angular', 'Candidash', ''])(
+    'given the free tag "%s", returns null',
+    (tag) => {
+      expect(blogTagCategory(tag)).toBeNull();
+    },
+  );
 });
 
 describe('BLOG_TAG_CATEGORIES', () => {

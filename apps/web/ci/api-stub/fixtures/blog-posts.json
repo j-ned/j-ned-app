@@ -6,11 +6,24 @@
     "excerpt": "Résumé de l'article témoin servi par la doublure de l'API.",
     "contentMarkdown": "## Section témoin\n\nParagraphe de l'article témoin A.\n\n```ts\nconst answer = 42;\n```\n",
     "coverImage": "",
-    "tags": ["Angular"],
+    "tags": ["Angular", "DashFlow"],
     "status": "published",
     "likesCount": 3,
     "publishedAt": "2026-10-01T08:00:00.000Z",
     "updatedAt": "2026-10-02T08:00:00.000Z"
+  },
+  {
+    "id": "b-voisin",
+    "title": "Article voisin",
+    "slug": "article-voisin",
+    "excerpt": "Second article publié servi par la doublure, proche de l'article témoin.",
+    "contentMarkdown": "## Section voisine\n\nParagraphe de l'article voisin.\n",
+    "coverImage": "",
+    "tags": ["Angular"],
+    "status": "published",
+    "likesCount": 0,
+    "publishedAt": "2026-09-03T08:00:00.000Z",
+    "updatedAt": "2026-09-03T08:00:00.000Z"
   },
   {
     "id": "b-brouillon",

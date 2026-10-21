@@ -1,0 +1,22 @@
+import { Component, input } from '@angular/core';
+
+@Component({
+  selector: 'a[app-link-card]',
+  host: {
+    class:
+      'group grid gap-1 rounded-xl border border-foreground/8 bg-surface p-6 transition-colors hover:border-primary/35',
+    '[class.text-right]': "align() === 'end'",
+  },
+  template: `
+    <span class="font-mono text-xs text-muted">{{ overline() }}</span>
+    <span
+      class="text-[1.1875rem] font-semibold tracking-tight transition-colors group-hover:text-primary"
+      >{{ heading() }}</span
+    >
+  `,
+})
+export class LinkCard {
+  readonly overline = input.required<string>();
+  readonly heading = input.required<string>();
+  readonly align = input<'start' | 'end'>('start');
+}

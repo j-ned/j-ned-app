@@ -27,9 +27,14 @@ import { BlogComments } from '../../application/components/blog-comments';
 import { BlogArticleBody } from '../../application/components/blog-article-body';
 import { CodeCopy } from '../../application/components/code-copy';
 import { BlogTagLink } from '../../application/components/blog-tag-link';
+import { BlogFurtherReading } from '../../application/components/blog-further-reading';
+import { FURTHER_READING_COPY } from '../../application/further-reading-copy';
+import { LinkCard } from '@shared/ui/link-card';
 import { AppIcon } from '@shared/icons/app-icon';
 import { readingTimeMinutes } from '../../domain/reading-time';
 import { adjacentPosts } from '../../domain/adjacent-posts';
+import { relatedPosts } from '../../domain/related-posts';
+import { linkedProjects } from '../../domain/linked-projects';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 
 // `updatedAt` peut précéder `publishedAt` (brouillon retouché puis publié) : `dateModified`
@@ -46,6 +51,8 @@ function laterOf(a: string, b: string): string {
     BlogLikeButton,
     BlogComments,
     BlogTagLink,
+    BlogFurtherReading,
+    LinkCard,
     DatePipe,
     NgOptimizedImage,
     RouterLink,
@@ -175,34 +182,39 @@ function laterOf(a: string, b: string): string {
           </a>
         </div>
 
+        @let further = related();
+        @let projects = linked();
+        @if (projects.length || further.length) {
+          <app-blog-further-reading
+            [projects]="projects"
+            [posts]="further"
+            (projectFollowed)="trackProjectLink()"
+            (postFollowed)="trackRelatedPost()"
+          />
+        }
+
         @let around = neighbours();
         @if (around.older || around.newer) {
           <nav class="grid gap-3 sm:grid-cols-2" aria-label="Autres articles">
             @if (around.older; as older) {
               <a
-                [routerLink]="['/blog', older.slug]"
-                class="group grid gap-1 rounded-xl border border-foreground/8 bg-surface p-6 transition-colors hover:border-primary/35"
+                app-link-card
                 data-testid="older-post"
-              >
-                <span class="font-mono text-xs text-muted">article précédent</span>
-                <span
-                  class="text-[1.1875rem] font-semibold tracking-tight transition-colors group-hover:text-primary"
-                  >{{ older.title }}</span
-                >
-              </a>
+                [routerLink]="['/blog', older.slug]"
+                overline="article précédent"
+                [heading]="older.title"
+              ></a>
             }
             @if (around.newer; as newer) {
               <a
-                [routerLink]="['/blog', newer.slug]"
-                class="group grid gap-1 rounded-xl border border-foreground/8 bg-surface p-6 text-right transition-colors hover:border-primary/35 sm:col-start-2"
+                app-link-card
+                class="sm:col-start-2"
                 data-testid="newer-post"
-              >
-                <span class="font-mono text-xs text-muted">article suivant</span>
-                <span
-                  class="text-[1.1875rem] font-semibold tracking-tight transition-colors group-hover:text-primary"
-                  >{{ newer.title }}</span
-                >
-              </a>
+                [routerLink]="['/blog', newer.slug]"
+                overline="article suivant"
+                [heading]="newer.title"
+                align="end"
+              ></a>
             }
           </nav>
         }
@@ -260,6 +272,8 @@ export class BlogDetail {
   protected readonly neighbours = computed(() =>
     adjacentPosts(this._publishedPosts(), this.slug()),
   );
+  protected readonly related = computed(() => relatedPosts(this._publishedPosts(), this.slug()));
+  protected readonly linked = computed(() => linkedProjects(this.post()));
 
   protected readonly coverImageAlt = computed(
     () => `Illustration de l’article ${this.post()?.title ?? ''}`,
@@ -279,6 +293,11 @@ export class BlogDetail {
     const url = `${SITE_IDENTITY.siteUrl}/blog/${p.slug}`;
     const shareImage = toShareImageUrl(p.coverImage);
     const author = { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl };
+    const about = this.linked().map(({ tag, projectSlug }) => ({
+      '@type': 'CreativeWork',
+      name: tag,
+      url: `${SITE_IDENTITY.siteUrl}/projects/${projectSlug}`,
+    }));
     this.seo.applySeoData({
       title: `${p.title} | Julien Nédellec`,
       description: truncateAtWord(p.excerpt, 155),
@@ -298,6 +317,7 @@ export class BlogDetail {
         keywords: p.tags.join(', '),
         author,
         publisher: author,
+        ...(about.length > 0 ? { about } : {}),
         ...(shareImage ? { image: shareImage } : {}),
         ...(p.publishedAt
           ? { datePublished: p.publishedAt, dateModified: laterOf(p.updatedAt, p.publishedAt) }
@@ -334,4 +354,12 @@ export class BlogDetail {
     observer.observe(sentinel.nativeElement);
     onCleanup(() => observer.disconnect());
   });
+
+  protected trackRelatedPost(): void {
+    this.analytics.trackCtaClick('blog_related_post', FURTHER_READING_COPY.relatedPostCtaLabel);
+  }
+
+  protected trackProjectLink(): void {
+    this.analytics.trackCtaClick('blog_project_link', FURTHER_READING_COPY.projectLinkCtaLabel);
+  }
 }

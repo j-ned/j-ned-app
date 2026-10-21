@@ -20,5 +20,25 @@
     "pitch": "Pitch du projet témoin.",
     "highlight": null,
     "scope": null
+  },
+  {
+    "id": "p-dashflow",
+    "title": "DashFlow",
+    "slug": "dashflow",
+    "category": "Application web",
+    "tags": ["Angular"],
+    "description": "Fiche servie par la doublure de l'API sous le slug réel d'un tag de projet du blog.",
+    "image": "",
+    "techChoices": [],
+    "architectureDecisions": [],
+    "liveUrl": null,
+    "repoUrl": null,
+    "featured": false,
+    "order": 2,
+    "kind": "production",
+    "gallery": [],
+    "pitch": null,
+    "highlight": null,
+    "scope": null
   }
 ]

@@ -1,6 +1,6 @@
 # ADR-0029 — Maillage du blog calculé côté front, un article déclare son projet par un tag du catalogue
 
-- **Statut** : proposé (2026-10-21, spec 030)
+- **Statut** : accepté (2026-10-21, appliqué par la PR 3 de la spec 030)
 - **Date** : 2026-10-21
 - **Contexte spec** : `specs/030-adr-en-articles.md`
 - **Prolonge** : ADR-0011 (thèmes dérivés du catalogue de tags), ADR-0019 (donnée éditoriale statique

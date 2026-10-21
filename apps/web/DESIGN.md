@@ -293,6 +293,17 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 - **Shadow:** aucune au repos. Hover = changement de surface, pas d'ajout de shadow.
 - **Internal padding:** `p-6` (24px) standard, `p-8` (32px) pour cards principales du hero.
 
+### Carte de lien (`shared/ui/link-card.ts`)
+
+Un lien de navigation interne présenté en carte : « article précédent / suivant » et « Pour aller plus loin » (fiche du projet, articles proches) sur la page article, « Articles sur ce projet » sur la fiche projet.
+
+- **API:** composant à sélecteur d'attribut `a[app-link-card]`, posé sur le lien de l'appelant ; entrées `overline` et `heading` (requises), `align` (`'start'` par défaut, `'end'` aligne le texte à droite). `routerLink`, `data-testid` et le placement dans la grille (`sm:col-start-2`) restent sur l'`<a>`.
+- **Apparence:** carte « Cards / Containers » portée par l'hôte (`rounded-xl border border-foreground/8 bg-surface p-6`), sans élément enveloppant ; sur-titre mono `text-xs text-muted`, puis titre `text-[1.1875rem] font-semibold tracking-tight`.
+- **Survol:** la bordure passe en `primary/35` et le titre en `primary` (`group-hover`) ; pas d'ombre.
+- **Focus:** anneau global `:focus-visible` de `styles.css` (2 px `primary`).
+- **Cible:** une seule par carte, toute la carte ; le nom du lien est le sur-titre suivi du titre.
+- **Don't:** pas de second interactif dans la carte ; pas de lien externe (la carte n'annonce pas de nouvel onglet).
+
 ### Cartouche (`shared/ui/cartouche.ts`)
 
 Le bloc-titre d'un plan technique, repris comme cadre de données.
@@ -324,6 +335,15 @@ Les captures d'écran d'une réalisation, sur sa page détail, quand le projet e
 - **Miniature:** un `button` natif par capture, qui porte l'image (`NgOptimizedImage`, `width`/`height` intrinsèques, `h-auto w-full`, chargement différé, **jamais** `priority`, ni `fill` ni `ngSrcset`) ; nom accessible « Agrandir : » en `sr-only` suivi de l'`alt`. Curseur `zoom-in`.
 - **Agrandissement:** `dialog` natif ouvert par `showModal()` (fond inerte, Échap natif), nommé « Capture agrandie : <alt> » ; bouton « Fermer » en premier, focus posé dessus à l'ouverture ; à la fermeture (bouton ou Échap), le focus revient à la miniature d'origine. `::backdrop` en `background/90`, dialog cerné de `line-strong`, image contenue dans le viewport (`object-contain`).
 - **Don't:** pas de carrousel ni de défilement automatique ; pas de lien ni de `div` cliquable à la place du `button` ; pas de dialog maison ni de bibliothèque de lightbox ; pas d'`alt` vide (une capture est un contenu, jamais une décoration).
+
+### Articles d'un projet (`features/projects/application/components/project-articles.ts`)
+
+Les articles du blog qui parlent d'un projet, sur sa fiche, calculés par `postsAboutProject` (articles publiés portant le tag du projet dans `PROJECT_TAGS`, ADR-0029).
+
+- **Entrée:** `posts` (déjà filtrés et triés du plus récent au plus ancien) ; sortie `articleFollowed`, la page mesure le clic (`trackCtaClick('project_article', …)`, libellé constant).
+- **Section:** `SplitSection` `headingId="project-articles-title"`, titre « Articles sur ce projet », résumé court, comme « Choix techniques » et « Décisions d'architecture » ; placée après les décisions d'architecture et avant la navigation entre projets. Non rendue sans article (`@if` côté page). Jamais sous `@defer` : les liens sont dans le HTML servi.
+- **Chargement:** la liste du blog n'est lue que pour un projet présent dans `PROJECT_TAGS` ; une lecture en échec retire la section sans état d'erreur (la fiche reste lisible).
+- **Liste:** `ul role="list"` en grille, une colonne en mobile, deux à partir de `sm` ; une carte de lien par article (vers `/blog/<slug>`, sur-titre = date de publication `d MMM y`, titre = titre de l'article).
 
 ### Étude de cas (`features/projects/application/components/project-case-study.ts`)
 
@@ -389,6 +409,15 @@ Un article de la liste du blog, lu comme une étude de cas.
 - **Couverture:** `figure` à ratio `aspect-[1200/630]`, `rounded-md`, trait `line-strong`, `bg-surface`, image `NgOptimizedImage` en `fill` + `object-cover`, `alt=""` (décorative : le titre et le lien nomment l'article), qui laisse passer le clic (`pointer-events-none`). Pas de zoom au survol.
 - **Cible:** un seul interactif, le lien « Lire l'article » `text-primary` `min-h-11`, titre de l'article en `sr-only` pour un nom distinct par ligne, étiré sur toute la ligne (`after:absolute after:inset-0`). Pas de pastille ni de lien par tag.
 - **Survol:** le titre passe en `primary` (`group-hover`).
+
+### Pour aller plus loin (`features/blog/application/components/blog-further-reading.ts`)
+
+La fiche du projet dont parle l'article, puis jusqu'à trois articles proches de l'article lu, calculés par `relatedPosts` sur la liste publiée déjà chargée par la page (ADR-0029).
+
+- **Entrées:** `projects` (projets déclarés par un tag de `PROJECT_TAGS`, `linkedProjects`, sans appel à l'API des projets) et `posts` (déjà triés et limités) ; sorties `projectFollowed` et `postFollowed`, la page mesure le clic (`trackCtaClick('blog_project_link', …)` ou `trackCtaClick('blog_related_post', …)`, libellés constants).
+- **Section:** `section` nommée par son `h2` « Pour aller plus loin », hors de l'`article`, sous la barre « J'aime / Flux RSS » et avant la navigation « Autres articles ». Aucun `nav` ajouté. Non rendue sans projet ni article proche (`@if` côté page). Jamais sous `@defer` : les liens sont dans le HTML servi.
+- **Liste:** `ul role="list"` en grille, une colonne en mobile, deux à partir de `sm` ; d'abord une carte de lien par projet (vers `/projects/<slug>`, sur-titre « Fiche du projet », titre = tag du projet), puis une par article (sur-titre = date de publication `d MMM y`, comme la ligne d'article, titre = titre de l'article).
+- **Doublons:** un article proche peut aussi être le voisin chronologique ; il apparaît alors dans les deux blocs.
 
 ### Corps d'article et blocs de code (`features/blog/application/components/blog-article-body.ts`, `infra/render-code-block.ts`)
 

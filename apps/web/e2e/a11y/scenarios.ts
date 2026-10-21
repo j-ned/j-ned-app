@@ -12,6 +12,7 @@ export const PUBLIC_PAGES: readonly PageScenario[] = [
   { path: '/about', ready: 'about-lead' },
   { path: '/projects', ready: 'projects-case-studies' },
   { path: '/projects/projet-temoin', ready: 'project-detail-title' },
+  { path: '/projects/dashflow', ready: 'project-articles' },
   { path: '/blog', ready: 'blog-posts' },
   { path: '/blog/article-temoin', ready: 'blog-content' },
   { path: '/mentions-legales', ready: 'legal-publisher' },

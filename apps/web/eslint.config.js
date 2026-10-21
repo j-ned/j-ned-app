@@ -72,6 +72,8 @@ module.exports = [
     files: ['**/*.html'],
     rules: {
       '@angular-eslint/template/button-has-type': 'error',
+      // `a[app-link-card]` reçoit son texte du gabarit de LinkCard, invisible pour la règle.
+      '@angular-eslint/template/elements-content': ['error', { allowList: ['app-link-card'] }],
     },
   },
   // Prettier en dernier : désactive les règles stylistiques gérées par Prettier.

@@ -10,6 +10,12 @@ import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject, makeProjectImage } from '@features/projects/testing/project-builders';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
+import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
+import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
+import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
+import { PROJECT_ARTICLES_COPY } from '@features/projects/application/project-articles-copy';
+import { Seo } from '@core/seo/seo';
 import { Component, PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
 
 function project(overrides: Partial<Project> = {}): Project {
@@ -32,6 +38,7 @@ function setup(
       provideRouter([]),
       { provide: ProjectsGateway, useValue: gateway },
       { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
+      { provide: BlogGateway, useValue: stubBlogGateway() },
       ...extraProviders,
     ],
   });
@@ -136,6 +143,7 @@ describe('ProjectDetail', () => {
         provideRouter([]),
         { provide: ProjectsGateway, useValue: gateway },
         { provide: AnalyticsGateway, useValue: { trackProjectClick: track } },
+        { provide: BlogGateway, useValue: stubBlogGateway() },
       ],
     });
     const fixture = TestBed.createComponent(ProjectDetail);
@@ -178,6 +186,7 @@ describe('ProjectDetail', () => {
         provideRouter([]),
         { provide: ProjectsGateway, useValue: gateway },
         { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
+        { provide: BlogGateway, useValue: stubBlogGateway() },
       ],
     });
     const router = TestBed.inject(Router);
@@ -590,6 +599,7 @@ describe('ProjectDetail: suite éditoriale de la fiche', () => {
           useValue: stubProjectsGateway({ getAllProjects: () => of([current]) }),
         },
         { provide: AnalyticsGateway, useValue: stubAnalyticsGateway({ trackCtaClick }) },
+        { provide: BlogGateway, useValue: stubBlogGateway() },
       ],
     });
     const fixture = TestBed.createComponent(ProjectDetail);
@@ -646,5 +656,312 @@ describe('ProjectDetail: suite éditoriale de la fiche', () => {
         ]).toEqual([null, null]);
       },
     );
+  });
+});
+
+describe('ProjectDetail: articles sur ce projet', () => {
+  const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
+  const applySeoData = vi.fn<Seo['applySeoData']>();
+
+  const DASHFLOW = project({ id: 'dashflow', slug: 'dashflow', title: 'DashFlow' });
+  const CANDIDASH = project({ id: 'candidash', slug: 'candidash', title: 'CandiDash' });
+  const WITHOUT_TAG = project();
+
+  const article = (slug: string, tags: readonly string[], publishedAt: string): BlogPost =>
+    makeBlogPost({ id: slug, slug, title: `Titre ${slug}`, tags, publishedAt });
+
+  const renderProject = async (
+    slug: string,
+    getPublishedPosts: BlogGateway['getPublishedPosts'],
+  ): Promise<ComponentFixture<ProjectDetail>> => {
+    trackCtaClick.mockClear();
+    applySeoData.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: '**', component: BlankPage }]),
+        {
+          provide: ProjectsGateway,
+          useValue: stubProjectsGateway({
+            getAllProjects: () => of([DASHFLOW, CANDIDASH, WITHOUT_TAG]),
+          }),
+        },
+        { provide: BlogGateway, useValue: stubBlogGateway({ getPublishedPosts }) },
+        { provide: AnalyticsGateway, useValue: stubAnalyticsGateway({ trackCtaClick }) },
+        { provide: Seo, useValue: { applySeoData } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProjectDetail);
+    fixture.componentRef.setInput('slug', slug);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture;
+  };
+
+  const rootOf = (fixture: ComponentFixture<ProjectDetail>): HTMLElement =>
+    fixture.nativeElement as HTMLElement;
+
+  const sectionOf = (fixture: ComponentFixture<ProjectDetail>): HTMLElement | null =>
+    rootOf(fixture).querySelector<HTMLElement>('[data-testid="project-articles"]');
+
+  const articleLinks = (fixture: ComponentFixture<ProjectDetail>): HTMLAnchorElement[] => [
+    ...(sectionOf(fixture)?.querySelectorAll<HTMLAnchorElement>(
+      '[data-testid="project-article"]',
+    ) ?? []),
+  ];
+
+  const follows = (first: Element | null, second: Element | null): boolean =>
+    Boolean(
+      first && second && first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    TestBed.resetTestingModule();
+  });
+
+  it('Given DashFlow and published posts about it When the detail renders Then a section titled « Articles sur ce projet » links to each of them, newest first, dated', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([
+        article('ancien', ['Angular', 'DashFlow'], '2026-07-21T12:00:00Z'),
+        article('sans-rapport', ['Angular'], '2026-09-20T12:00:00Z'),
+        article('recent', ['DashFlow'], '2026-09-14T12:00:00Z'),
+      ]),
+    );
+    const heading = rootOf(fixture).querySelector(
+      'section[aria-labelledby="project-articles-title"] h2#project-articles-title',
+    );
+    const links = articleLinks(fixture);
+
+    expect({
+      heading: heading?.textContent?.trim(),
+      headingInSection: sectionOf(fixture)?.contains(heading) ?? false,
+      hrefs: links.map((link) => link.getAttribute('href')),
+      titles: links.map((link) => link.lastElementChild?.textContent?.trim()),
+      overlines: links.map((link) => link.firstElementChild?.textContent ?? ''),
+    }).toEqual({
+      heading: 'Articles sur ce projet',
+      headingInSection: true,
+      hrefs: ['/blog/recent', '/blog/ancien'],
+      titles: ['Titre recent', 'Titre ancien'],
+      overlines: [expect.stringMatching(/\b14\b.*2026/su), expect.stringMatching(/\b21\b.*2026/su)],
+    });
+  });
+
+  it('Given DashFlow with a post about it When the detail renders Then the section sits after the architecture decisions and before the navigation between projects', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([article('recent', ['DashFlow'], '2026-09-14T12:00:00Z')]),
+    );
+    const root = rootOf(fixture);
+
+    expect({
+      afterDecisions: follows(
+        root.querySelector('[data-testid="architecture-decisions"]'),
+        sectionOf(fixture),
+      ),
+      beforeNav: follows(
+        sectionOf(fixture),
+        root.querySelector('nav[aria-label="Navigation entre projets"]'),
+      ),
+    }).toEqual({ afterDecisions: true, beforeNav: true });
+  });
+
+  it('Given DashFlow and no published post about it When the detail renders Then no section is rendered', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([article('sans-rapport', ['Angular'], '2026-09-20T12:00:00Z')]),
+    );
+
+    expect({
+      title: rootOf(fixture).querySelector('h1')?.textContent?.trim(),
+      section: sectionOf(fixture),
+      heading: rootOf(fixture).querySelector('#project-articles-title'),
+    }).toEqual({ title: 'DashFlow', section: null, heading: null });
+  });
+
+  it('Given a project that no blog tag designates When the detail renders Then the blog is never read and no section is rendered', async () => {
+    const getPublishedPosts = vi.fn(() =>
+      of([article('sur-dashflow', ['DashFlow'], '2026-09-14T12:00:00Z')]),
+    );
+    const fixture = await renderProject('mon-site', getPublishedPosts);
+
+    expect({
+      title: rootOf(fixture).querySelector('h1')?.textContent?.trim(),
+      reads: getPublishedPosts.mock.calls.length,
+      section: sectionOf(fixture),
+    }).toEqual({ title: 'Mon site', reads: 0, section: null });
+  });
+
+  it('Given DashFlow When the blog cannot be read Then the detail still renders, without the section nor an error state', async () => {
+    const fixture = await renderProject('dashflow', () => throwError(() => new Error('down')));
+
+    expect({
+      title: rootOf(fixture).querySelector('h1')?.textContent?.trim(),
+      section: sectionOf(fixture),
+      error: rootOf(fixture).querySelector('[data-testid="project-error"]'),
+    }).toEqual({ title: 'DashFlow', section: null, error: null });
+  });
+
+  it('Given the same page moves from DashFlow to CandiDash When it renders again Then the section follows the new project', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([
+        article('sur-dashflow', ['DashFlow'], '2026-09-14T12:00:00Z'),
+        article('sur-candidash', ['CandiDash'], '2026-08-14T12:00:00Z'),
+      ]),
+    );
+    const before = articleLinks(fixture).map((link) => link.getAttribute('href'));
+
+    fixture.componentRef.setInput('slug', 'candidash');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect({
+      before,
+      after: articleLinks(fixture).map((link) => link.getAttribute('href')),
+    }).toEqual({ before: ['/blog/sur-dashflow'], after: ['/blog/sur-candidash'] });
+  });
+
+  it('Given two posts about DashFlow When the reader follows each of them Then each click is measured as a project article with the same constant label, and the router goes to the post', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([
+        article('recent', ['DashFlow'], '2026-09-14T12:00:00Z'),
+        article('ancien', ['DashFlow'], '2026-07-21T12:00:00Z'),
+      ]),
+    );
+    const navigateByUrl = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+    for (const link of articleLinks(fixture)) link.click();
+    await fixture.whenStable();
+
+    expect({
+      tracked: trackCtaClick.mock.calls,
+      label: PROJECT_ARTICLES_COPY.articleCtaLabel,
+      routed: navigateByUrl.mock.calls.map(([url]) => String(url)),
+    }).toEqual({
+      tracked: [
+        ['project_article', PROJECT_ARTICLES_COPY.articleCtaLabel],
+        ['project_article', PROJECT_ARTICLES_COPY.articleCtaLabel],
+      ],
+      label: expect.stringMatching(/\S/u),
+      routed: ['/blog/recent', '/blog/ancien'],
+    });
+  });
+
+  describe('données structurées', () => {
+    const lastStructuredData = (): Record<string, unknown> | undefined =>
+      applySeoData.mock.calls.at(-1)?.[0].structuredData;
+
+    it('Given DashFlow and published posts about it When its structured data is applied Then the CreativeWork keeps its fields and is the subject of each post, newest first', async () => {
+      await renderProject('dashflow', () =>
+        of([
+          article('ancien', ['Angular', 'DashFlow'], '2026-07-21T12:00:00Z'),
+          article('sans-rapport', ['Angular'], '2026-09-20T12:00:00Z'),
+          article('recent', ['DashFlow'], '2026-09-14T12:00:00Z'),
+        ]),
+      );
+
+      expect(lastStructuredData()).toEqual({
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        name: 'DashFlow',
+        description: 'desc',
+        creator: {
+          '@type': 'Person',
+          name: 'Julien Nédellec',
+          url: 'https://nedellec-julien.fr',
+        },
+        keywords: '',
+        subjectOf: [
+          {
+            '@type': 'BlogPosting',
+            headline: 'Titre recent',
+            url: 'https://nedellec-julien.fr/blog/recent',
+          },
+          {
+            '@type': 'BlogPosting',
+            headline: 'Titre ancien',
+            url: 'https://nedellec-julien.fr/blog/ancien',
+          },
+        ],
+      });
+    });
+
+    it.each<{
+      readonly scenario: string;
+      readonly slug: string;
+      readonly posts$: ReturnType<BlogGateway['getPublishedPosts']>;
+      readonly subjectOf: readonly unknown[] | undefined;
+    }>([
+      {
+        scenario: 'DashFlow with one post about it',
+        slug: 'dashflow',
+        posts$: of([article('recent', ['DashFlow'], '2026-09-14T12:00:00Z')]),
+        subjectOf: [
+          {
+            '@type': 'BlogPosting',
+            headline: 'Titre recent',
+            url: 'https://nedellec-julien.fr/blog/recent',
+          },
+        ],
+      },
+      {
+        scenario: 'DashFlow and no post about it',
+        slug: 'dashflow',
+        posts$: of([article('sans-rapport', ['Angular'], '2026-09-20T12:00:00Z')]),
+        subjectOf: undefined,
+      },
+      {
+        scenario: 'a project that no blog tag designates',
+        slug: 'mon-site',
+        posts$: of([article('sur-dashflow', ['DashFlow'], '2026-09-14T12:00:00Z')]),
+        subjectOf: undefined,
+      },
+      {
+        scenario: 'DashFlow and an unreadable blog',
+        slug: 'dashflow',
+        posts$: throwError(() => new Error('down')),
+        subjectOf: undefined,
+      },
+    ])(
+      'Given $scenario When its structured data is applied Then the CreativeWork carries subjectOf only when posts are about the project',
+      async ({ slug, posts$, subjectOf }) => {
+        await renderProject(slug, () => posts$);
+        const structuredData = lastStructuredData();
+
+        expect({
+          type: structuredData?.['@type'],
+          hasSubjectOf: 'subjectOf' in (structuredData ?? {}),
+          subjectOf: structuredData?.['subjectOf'],
+        }).toEqual({ type: 'CreativeWork', hasSubjectOf: subjectOf !== undefined, subjectOf });
+      },
+    );
+
+    it('Given the same page moves from DashFlow to CandiDash When its structured data is applied again Then subjectOf follows the new project', async () => {
+      const fixture = await renderProject('dashflow', () =>
+        of([
+          article('sur-dashflow', ['DashFlow'], '2026-09-14T12:00:00Z'),
+          article('sur-candidash', ['CandiDash'], '2026-08-14T12:00:00Z'),
+        ]),
+      );
+
+      fixture.componentRef.setInput('slug', 'candidash');
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect({
+        name: lastStructuredData()?.['name'],
+        subjectOf: lastStructuredData()?.['subjectOf'],
+      }).toEqual({
+        name: 'CandiDash',
+        subjectOf: [
+          {
+            '@type': 'BlogPosting',
+            headline: 'Titre sur-candidash',
+            url: 'https://nedellec-julien.fr/blog/sur-candidash',
+          },
+        ],
+      });
+    });
   });
 });

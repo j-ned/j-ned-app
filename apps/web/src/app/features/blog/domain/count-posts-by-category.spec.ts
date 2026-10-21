@@ -19,6 +19,11 @@ describe('countPostsByCategory', () => {
       expected: { ...ZERO, engineering: 1 },
     },
     {
+      label: 'a post tagged Accessibilité',
+      tags: [['Accessibilité']],
+      expected: { ...ZERO, engineering: 1 },
+    },
+    {
       label: 'a post spanning three categories',
       tags: [['Angular', 'RGPD', 'DashFlow']],
       expected: { ...ZERO, stack: 1, security: 1, projects: 1 },
