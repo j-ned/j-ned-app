@@ -1,6 +1,6 @@
 # ADR-0018 — Images uploadées servies depuis l'origine du site
 
-- **Statut** : proposé (2026-10-10)
+- **Statut** : accepté (proposé le 2026-10-10 ; constaté appliqué le 2026-10-21, relais `location ^~ /api/storage/` en production, spec 030)
 - **Date** : 2026-10-10
 - **Contexte spec** : `specs/018-images-meme-origine.md`
 - **Amende** : ADR-0015 §4 (le Markdown stockait l'URL absolue `api.`)

@@ -1,6 +1,6 @@
 # ADR-0016 — Erreur de champ partagée et convention ARIA des champs de formulaire
 
-- **Statut** : proposé (2026-10-08)
+- **Statut** : accepté (proposé le 2026-10-08 ; constaté appliqué le 2026-10-21, `shared/ui/field-error.ts` utilisé dans 17 fichiers, spec 030)
 - **Date** : 2026-10-08
 - **Contexte spec** : `specs/017-intake-audit-decoupage.md` (constats F006, F007, F008 ; propositions P3, P4 ; lots L5 et L6)
 
