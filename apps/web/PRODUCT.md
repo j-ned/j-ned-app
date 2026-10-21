@@ -6,11 +6,11 @@ brand
 
 ## Users
 
-Le site est le portfolio personnel de Julien Nédellec, tourneur CN de haute précision dans l'aéronautique et développeur web full-stack par passion. Ce n'est plus une activité commerciale : aucune offre, aucun tarif, aucune prise de rendez-vous (repositionnement du 2026-10-20, spec 029). Il sert deux publics, dans cet ordre.
+Le site est le coin personnel de Julien Nédellec, tourneur CN de haute précision dans l'aéronautique, qui code pour le plaisir. Le développement web est un loisir : aucune activité commerciale (spec 029), aucune recherche d'emploi, et depuis le 2026-10-21 un ton amical au tutoiement (spec 031). Il sert deux publics, dans cet ordre.
 
-**1. Développeur (public principal)** : un pair qui arrive presque toujours par une recherche Google sur un problème technique précis (Angular, NestJS, PostgreSQL, auto-hébergement), et atterrit directement sur un article. Il veut une réponse exacte, du code qui tourne en production, les compromis assumés. Ses questions : est-ce que ça règle mon problème, est-ce que l'auteur sait de quoi il parle, qu'est-ce qu'il a écrit d'autre ?
+**1. Développeur (public principal)** : un pair qui arrive presque toujours par une recherche Google sur un problème technique précis (Angular, NestJS, PostgreSQL, auto-hébergement), et atterrit directement sur un article. Il veut une réponse exacte, du code qui tourne pour de vrai, les compromis assumés. Ses questions : est-ce que ça règle mon problème, est-ce que l'auteur sait de quoi il parle, qu'est-ce qu'il a écrit d'autre ?
 
-**2. Recruteur ou tech lead (public secondaire)** : arrive par le nom, LinkedIn ou GitHub. Il veut vérifier en quelques minutes le niveau réel : projets en production, choix techniques argumentés, parcours, CV. Ses questions : qu'est-ce qu'il a construit, comment il raisonne, d'où il vient ? Julien n'est pas en recherche : le site ne porte **aucun signal de disponibilité** (ni bloc « Vous recrutez ? », ni « disponible en CDI », ni bouton d'embauche). Le CV reste téléchargeable comme pièce du parcours, pas comme candidature.
+**2. Curieux (public secondaire)** : quelqu'un qui découvre le parcours de l'atelier au code, ou le métier de tourneur CN (spec 032). Il veut comprendre sans jargon inutile. Le site ne vise pas les recruteurs : le CV reste téléchargeable comme pièce du parcours, sans aucun signal de disponibilité.
 
 Le blog est le moteur du site : c'est par lui qu'arrive le trafic organique. Les réalisations et le parcours en sont la preuve.
 
@@ -19,7 +19,7 @@ Le blog est le moteur du site : c'est par lui qu'arrive le trafic organique. Les
 Partager ce que Julien construit et apprend, et le rendre **trouvable**. Le site réussit quand :
 
 1. un développeur trouve un article par une recherche, obtient sa réponse, puis lit un deuxième article ou ouvre une réalisation ;
-2. un recruteur ou un pair qui cherche le nom trouve projets, parcours et CV en un clic depuis n'importe quelle page.
+2. un curieux qui cherche le nom trouve le parcours, les projets et l'atelier en un clic depuis n'importe quelle page.
 
 Le formulaire de contact reste ouvert à tous (question sur un article, échange entre pairs, prise de contact), sans qualification commerciale.
 
@@ -35,13 +35,14 @@ Le formulaire de contact reste ouvert à tous (question sur un article, échange
 - **Curieux** : autodidacte, il lit la doc et les sources jusqu'à comprendre. Les articles racontent le chemin réel, erreurs comprises.
 - **Soigné** : éditorial dans la respiration et la typographie, clair et sombre maîtrisés. Le motif visuel vient du dessin technique (cartouche, cotes) : le métier d'origine, pas un décor.
 
-**Voix** : directe, en français, phrases courtes. Le vocabulaire technique est le bienvenu partout : le lecteur principal est développeur. Aucun superlatif. Aucun em-dash. Le ton dit « voici ce que j'ai construit, pourquoi, et ce que ça m'a appris ».
+**Voix** : amicale et directe, en français, au tutoiement. Julien parle en « je » de ce qu'il construit et tutoie le lecteur comme un collègue d'atelier. Phrases courtes, humour léger bienvenu, jamais au détriment de la précision : chaque fait reste vérifiable. Le vocabulaire technique est le bienvenu. Aucun superlatif. Aucun em-dash. Le ton dit « voilà ce que j'ai construit, pourquoi, et ce que j'en ai appris, erreurs comprises ».
 
-**Émotions cibles** : « enfin une réponse précise », envie de lire l'article suivant, confiance dans le sérieux de l'auteur.
+**Émotions cibles** : « enfin une réponse précise », envie de lire l'article suivant, l'impression d'échanger avec un passionné qui sait de quoi il parle.
 
 ## Anti-references
 
 - **Vitrine commerciale** : prix, offres, « Décrire mon projet », « Réservez un appel », argumentaire « Pourquoi moi ». Le site ne vend rien.
+- **Ton corporate** : « nous », formules de plaquette, vouvoiement distant. Le site est tenu par une personne qui tutoie son lecteur.
 - **Signal de recherche d'emploi** : « disponible », « open to work », bloc « Vous recrutez ? ». Julien n'est pas en recherche.
 - **Template portfolio générique** : hero centré « Hi, I'm a passionate developer », barres de compétences en pourcentage, nuage de logos de technologies.
 - **Preuves inventées** : faux témoignages, chiffres non vérifiables, projets gonflés. Une démo est libellée « Démo ».
@@ -53,7 +54,7 @@ Le formulaire de contact reste ouvert à tous (question sur un article, échange
 
 1. **Practice what you preach** : le site tient ce qu'il montre. Lighthouse > 95 partout, a11y WCAG AA strict, SSR et prérendu sans régression, bundle initial minimal.
 
-2. **Chaque section répond à une question du lecteur** : « qui es-tu ? », « qu'est-ce que tu as construit ? », « qu'est-ce que tu as écrit ? », « comment te joindre ? ». Une zone qui n'y répond pas disparaît.
+2. **Chaque section répond à une question du lecteur** : « qui es-tu ? », « qu'est-ce que tu as construit ? », « qu'est-ce que tu as écrit ? », « c'est quoi ton métier ? », « comment te joindre ? ». Une zone qui n'y répond pas disparaît.
 
 3. **Identité visuelle stable** : l'identité indigo + clair/sombre + Tailwind v4 reste le socle. Le motif du dessin technique (cartouche pour les fiches, cotes pour les mesures) est la seule signature, utilisée avec retenue.
 
