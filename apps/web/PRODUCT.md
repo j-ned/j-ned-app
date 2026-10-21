@@ -33,7 +33,7 @@ Le formulaire de contact reste ouvert à tous (question sur un article, échange
 
 - **Rigoureux** : la règle de l'atelier appliquée au logiciel, « une pièce hors tolérance ne part pas ». Chaque détail est intentionnel (typo, espacement, a11y, tests). Le site est lui-même un échantillon du travail.
 - **Curieux** : autodidacte, il lit la doc et les sources jusqu'à comprendre. Les articles racontent le chemin réel, erreurs comprises.
-- **Soigné** : éditorial dans la respiration et la typographie, clair et sombre maîtrisés. Le motif visuel vient du dessin technique (cartouche, cotes) : le métier d'origine, pas un décor.
+- **Soigné** : chaleureux sans être brouillon. Couleurs franches et formes rondes (« Copeaux vifs », spec 033), clair et sombre maîtrisés, typographie de lecture d'abord. Le dessin technique (cartouche, cotes, tampon) reste en clin d'œil : le métier d'origine, pas un décor.
 
 **Voix** : amicale et directe, en français, au tutoiement. Julien parle en « je » de ce qu'il construit et tutoie le lecteur comme un collègue d'atelier. Phrases courtes, humour léger bienvenu, jamais au détriment de la précision : chaque fait reste vérifiable. Le vocabulaire technique est le bienvenu. Aucun superlatif. Aucun em-dash. Le ton dit « voilà ce que j'ai construit, pourquoi, et ce que j'en ai appris, erreurs comprises ».
 
@@ -56,7 +56,7 @@ Le formulaire de contact reste ouvert à tous (question sur un article, échange
 
 2. **Chaque section répond à une question du lecteur** : « qui es-tu ? », « qu'est-ce que tu as construit ? », « qu'est-ce que tu as écrit ? », « c'est quoi ton métier ? », « comment te joindre ? ». Une zone qui n'y répond pas disparaît.
 
-3. **Identité visuelle stable** : l'identité indigo + clair/sombre + Tailwind v4 reste le socle. Le motif du dessin technique (cartouche pour les fiches, cotes pour les mesures) est la seule signature, utilisée avec retenue.
+3. **Un atelier coloré, pas une console** : un seul accent orange, deux registres égaux (Sable clair, Nuit sombre), formes rondes, Tailwind v4 comme socle (`DESIGN.md`, ADR-0030). La fantaisie reste retenue : un autocollant décoratif par écran, le dessin technique (cartouche pour les fiches, cotes pour les mesures) en clin d'œil.
 
 4. **Le contenu d'abord** : la typographie de lecture (articles, fiches projet) prime sur la décoration. Le code est lisible, coloré, copiable.
 

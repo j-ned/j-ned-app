@@ -1,61 +1,67 @@
 ---
 name: J-Ned Portfolio
-description: Production-console aesthetic for a senior full-stack TypeScript portfolio.
+description: Copeaux vifs, l'atelier coloré et accueillant d'un tourneur CN qui code pour le plaisir.
 colors:
-  signal-indigo: "#4f46e5"
-  signal-indigo-lifted: "#818cf8"
-  signal-indigo-deep: "#4338ca"
-  signal-violet-accent: "#a78bfa"
-  signal-violet-deep: "#6d28d9"
-  console-black: "#0a0a0a"
-  console-text: "#fafafa"
-  console-surface-1: "rgba(255,255,255,0.03)"
-  console-surface-2: "rgba(255,255,255,0.06)"
-  console-divider: "rgba(255,255,255,0.06)"
-  console-muted: "#a1a1aa"
-  ivoire-paper: "#faf7f2"
-  ivoire-card: "#ffffff"
-  ivoire-card-elevated: "#fefdfb"
-  ivoire-ink: "#292524"
-  ivoire-muted: "#57534e"
-  ivoire-divider: "rgba(41,37,36,0.08)"
-  console-line: "color-mix(in srgb, #fafafa 9%, transparent)"
-  console-line-strong: "color-mix(in srgb, #fafafa 22%, transparent)"
-  ivoire-line: "color-mix(in srgb, #292524 12%, transparent)"
-  ivoire-line-strong: "color-mix(in srgb, #292524 28%, transparent)"
-  status-success: "#007531"
-  status-warn: "#a94000"
-  status-error: "#c10007"
-  console-code-keyword: "#94a0ff"
-  console-code-function: "#ae8dfb"
-  console-code-string: "#44c352"
-  console-code-number: "#f29e1c"
-  console-code-tag: "#ff6c6e"
-  console-code-comment: "#9f9fa6"
-  ivoire-code-keyword: "#4030bf"
-  ivoire-code-function: "#6c08ca"
-  ivoire-code-string: "#007531"
-  ivoire-code-number: "#a94000"
-  ivoire-code-tag: "#c10007"
-  ivoire-code-comment: "#58504b"
+  copeau-orange-text-sable: "#bc3700"
+  copeau-orange-fill-sable: "#ed6e12"
+  copeau-orange-nuit: "#f99549"
+  sable-background: "#fcf4eb"
+  sable-surface: "#ffffff"
+  sable-surface-elevated: "#fff9f3"
+  sable-foreground: "#181f2e"
+  sable-muted: "#4d5566"
+  nuit-background: "#141a29"
+  nuit-surface: "#1e2638"
+  nuit-surface-elevated: "#263045"
+  nuit-foreground: "#f6f1eb"
+  nuit-muted: "#b1b7c5"
+  sable-line: "color-mix(in srgb, #181f2e 12%, transparent)"
+  sable-line-strong: "color-mix(in srgb, #181f2e 28%, transparent)"
+  sable-field: "color-mix(in srgb, #181f2e 50%, transparent)"
+  nuit-line: "color-mix(in srgb, #f6f1eb 12%, transparent)"
+  nuit-line-strong: "color-mix(in srgb, #f6f1eb 28%, transparent)"
+  nuit-field: "color-mix(in srgb, #f6f1eb 38%, transparent)"
+  sticker-sage-sable: "#b9eec2"
+  on-sticker-sage-sable: "#174825"
+  sticker-lavender-sable: "#d1e2ff"
+  on-sticker-lavender-sable: "#233971"
+  sticker-sage-nuit: "#235430"
+  on-sticker-sage-nuit: "#d5f5da"
+  sticker-lavender-nuit: "#2d416d"
+  on-sticker-lavender-nuit: "#d8e5ff"
+  status-success-sable: "#067132"
+  status-warn-sable: "#974e02"
+  status-error-sable: "#b71824"
+  status-success-nuit: "#67d283"
+  status-warn-nuit: "#eec05b"
+  status-error-nuit: "#f97676"
+  sable-code-keyword: "#af3c03"
+  sable-code-function: "#5857b9"
+  sable-code-string: "#1b7138"
+  sable-code-number: "#825d0d"
+  sable-code-tag: "#b32c70"
+  sable-code-comment: "#4d5566"
+  nuit-code-keyword: "#f99549"
+  nuit-code-function: "#a2a8f4"
+  nuit-code-string: "#67c07d"
+  nuit-code-number: "#cbaa4b"
+  nuit-code-tag: "#f78bb7"
+  nuit-code-comment: "#b1b7c5"
 typography:
   display:
-    fontFamily: "'Archivo', 'Archivo Fallback', system-ui, sans-serif"
-    fontStretch: "108%"
+    fontFamily: "'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif"
     fontSize: "clamp(2.75rem, 7vw, 5.5rem)"
     fontWeight: 800
     lineHeight: 1.05
     letterSpacing: "-0.02em"
   headline:
-    fontFamily: "'Archivo', 'Archivo Fallback', system-ui, sans-serif"
-    fontStretch: "106%"
+    fontFamily: "'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif"
     fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)"
     fontWeight: 700
     lineHeight: 1.15
     letterSpacing: "-0.01em"
   title:
-    fontFamily: "'Archivo', 'Archivo Fallback', system-ui, sans-serif"
-    fontStretch: "104%"
+    fontFamily: "'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif"
     fontSize: "1.25rem"
     fontWeight: 600
     lineHeight: 1.3
@@ -77,7 +83,7 @@ typography:
     fontSize: "0.75rem"
     fontWeight: 600
     lineHeight: 1.4
-    letterSpacing: "0.06em"
+    letterSpacing: "normal"
   mono:
     fontFamily: "'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
     fontSize: "0.875rem"
@@ -86,10 +92,10 @@ typography:
     letterSpacing: "normal"
 rounded:
   none: "0"
-  sm: "4px"
-  md: "8px"
-  lg: "12px"
-  xl: "16px"
+  part: "8px"
+  field: "12px"
+  card: "16px"
+  block: "22px"
   pill: "9999px"
 spacing:
   xs: "4px"
@@ -101,35 +107,41 @@ spacing:
   3xl: "80px"
 components:
   button-primary:
-    backgroundColor: "{colors.signal-indigo}"
-    textColor: "#ffffff"
-    rounded: "6px"
+    backgroundColor: "{colors.copeau-orange-fill-sable}"
+    textColor: "{colors.sable-foreground}"
+    rounded: "{rounded.pill}"
     padding: "10px 20px"
-  button-primary-hover:
-    backgroundColor: "{colors.signal-indigo-deep}"
-    textColor: "#ffffff"
-  button-outline:
+  button-outlined:
     backgroundColor: "transparent"
-    textColor: "{colors.console-text}"
-    rounded: "6px"
+    textColor: "{colors.sable-foreground}"
+    borderColor: "{colors.sable-foreground}"
+    borderWidth: "2px"
+    rounded: "{rounded.pill}"
     padding: "10px 20px"
-  button-outline-hover:
-    backgroundColor: "{colors.console-surface-2}"
-    textColor: "{colors.console-text}"
-  tag-info:
-    backgroundColor: "{colors.signal-indigo}"
-    textColor: "{colors.signal-indigo-lifted}"
-    rounded: "{rounded.sm}"
-    padding: "4px 8px"
+  sticker-sage:
+    backgroundColor: "{colors.sticker-sage-sable}"
+    textColor: "{colors.on-sticker-sage-sable}"
+    rounded: "{rounded.pill}"
+    padding: "4px 12px"
+  stamp:
+    backgroundColor: "{colors.sable-surface}"
+    textColor: "{colors.sable-foreground}"
+    borderColor: "{colors.sable-foreground}"
+    borderWidth: "2px"
+    rounded: "{rounded.part}"
+    padding: "4px 10px"
   input-default:
-    backgroundColor: "{colors.console-surface-1}"
-    textColor: "{colors.console-text}"
-    rounded: "{rounded.md}"
+    backgroundColor: "{colors.sable-surface}"
+    textColor: "{colors.sable-foreground}"
+    borderColor: "{colors.sable-field}"
+    rounded: "{rounded.field}"
     padding: "10px 14px"
   card-surface:
-    backgroundColor: "{colors.console-surface-1}"
-    textColor: "{colors.console-text}"
-    rounded: "{rounded.lg}"
+    backgroundColor: "{colors.sable-surface}"
+    textColor: "{colors.sable-foreground}"
+    borderColor: "{colors.sable-foreground}"
+    borderWidth: "2px"
+    rounded: "{rounded.card}"
     padding: "24px"
 ---
 
@@ -137,136 +149,175 @@ components:
 
 ## 1. Overview
 
-**Creative North Star: "The Production Console"**
+**Creative North Star: "Copeaux vifs"**
 
-Ce système visuel se comporte comme un panneau d'instrumentation de production : dark par défaut comme un terminal d'observabilité à 2h du matin, indigo comme accent de status, hiérarchie typographique nette comme un dashboard SRE. Le portfolio ne se présente pas, il s'inspecte. Le recruteur senior y lit la même précision instrumentale qu'il attend du code en production.
+Le site est l'atelier de Julien : un tourneur CN de l'aéronautique qui code pour le plaisir et tutoie son lecteur. Le visuel en a l'humeur : des couleurs franches comme un copeau d'acier qui sort chaud du tour, des formes rondes et accueillantes, quelques autocollants posés sur l'établi. Ce n'est plus une salle de supervision qu'on inspecte, c'est un atelier où l'on entre, où l'on lit un article, où l'on regarde ce qui a été fabriqué.
 
-Le mode clair ivoire n'est pas un mode "alternatif accessibilité" — c'est l'équivalent du briefing du matin sur papier mat : même information, même hiérarchie, même indigo de signature, juste sur un support différent. Les deux modes sont des registres égaux, pas un théme et son fallback. La cohérence vient de Signal Indigo qui traverse les deux comme une encre signature, pas d'un mimétisme de tons.
+L'envie de jouer ne passe jamais devant la lecture. Le lecteur arrive le plus souvent par une recherche, sur un article : le texte, le code et la hiérarchie des titres restent prioritaires, la couleur et les autocollants accompagnent. Le dessin technique reste présent par clin d'œil (cartouche, cotes, tampon) : c'est le métier d'origine, pas un décor.
 
-Ce que ce système refuse explicitement : le gradient violet/bleu de SaaS marketing, les glassmorphisms décoratifs partout (ils existent ponctuellement, jamais en signature), le portfolio designer où la typo éditoriale étouffe le code, et le template Bootstrap junior à hero centré + cards icône-titre-paragraphe répétées.
+Deux registres égaux : **Sable** (clair, papier chaud) et **Nuit** (sombre, bleu nuit). Le site suit la préférence du système au premier chargement, le visiteur choisit ensuite (ADR-0012). L'orange copeau traverse les deux.
+
+Ce que ce système refuse : le template portfolio générique (hero centré « Hi, I'm », barres de compétences, nuage de logos de technologies, même déguisé en autocollants), l'over-design (curseur custom, scroll-jacking, intro animée, autocollants partout), le dégradé décoratif, le glassmorphism, l'ombre qui « fait ressortir ».
+
+> **État (2026-10-21) :** ce document décrit la **cible** de la spec 033 (`specs/033-nouveau-visuel.md`, ADR-0030, ADR-0031). Les tokens arrivent dans la PR 4, Bricolage Grotesque dans la PR 5, les composants dans les PR 6a et 6b. D'ici là, `src/styles.css` porte encore l'ancien système (Console sombre / Ivoire clair, indigo, Archivo), et le § 5, qui décrit les classes exactes du code en place, est mis à jour par chaque PR qui change un composant.
 
 **Key Characteristics:**
-- Dark par défaut, ivoire chaud en alternative — jamais un "thème" et son inverse, deux registres équivalents.
-- Signal Indigo unique : un seul indigo signature traverse les deux modes (#4f46e5 base), décliné en variantes lifted/deep selon le contexte.
-- Densité d'instrumentation : la hiérarchie typographique est nette comme un dashboard, jamais aérée comme un poster.
-- Focus visible non négociable : `:focus-visible` à 2px outline indigo sur tout interactif, qui suit le rayon de l'élément. C'est un signal de séniorité technique.
-- Zéro motion gratuite : `prefers-reduced-motion` respecté, animations utilitaires (fade-up) plutôt que choréographies.
+- Deux registres égaux, Sable et Nuit, qui suivent le système au premier chargement.
+- Un seul accent, l'orange copeau (One Orange Rule), avec deux exceptions bornées : la coloration du code et les deux couleurs d'autocollant.
+- Formes rondes : boutons et autocollants en pilule, cartes à 16 px, grands blocs à 22 px ; la pièce technique (cartouche, tampon) garde 8 px.
+- Bords francs : cartes et boutons secondaires à trait plein de 2 px couleur du texte, plutôt que des surfaces translucides.
+- Un autocollant décoratif par écran, au plus (Sticker Rule).
+- Focus visible non négociable : anneau 2 px `primary` sur `:focus-visible`, qui suit le rayon de l'élément.
+- Zéro motion gratuite : `prefers-reduced-motion` respecté, aucune animation d'intro, inclinaison des autocollants statique.
 
-## 2. Colors: The Signal Indigo Palette
+## 2. Colors: The Copeaux Palette
 
-Palette à deux registres (Console / Ivoire), unifiés par un seul indigo signature décliné en trois intensités. Aucun gradient utilisé comme décoration, titres compris : le `<h1>` du hero est en texte plein, son accent unique en Signal Indigo.
+Deux registres (Sable / Nuit), un accent orange, deux couleurs d'autocollant, des statuts et six teintes de code. Toutes les valeurs sont dans le gamut sRGB (ADR-0030) ; les hex sont le rendu 8 bits. Aucun dégradé, titres compris : l'accent du `<h1>` du hero est en texte plein.
 
-### Primary
+### Primary : l'orange copeau
 
-- **Signal Indigo** (`#4f46e5`, canonical `oklch(54% 0.22 277)`): l'encre signature. Boutons primaires, liens, rings de focus, accent du `<h1>` du hero, bordures actives. Présent dans les deux registres exactement à la même valeur. C'est l'élément qui dit "ce portfolio appartient à J-Ned".
+- **Orange texte Sable** (`#bc3700`, `oklch(53.2% 0.178 37)`) : `--theme-primary-text` en clair. Liens, anneau de focus, accent du `<h1>`, cotes, bordures actives. 5,21:1 sur le fond, 5,69:1 sur une carte.
+- **Orange aplat Sable** (`#ed6e12`, `oklch(68% 0.18 48)`) : `--theme-primary-bg` en clair. Fond du bouton primaire et du tag sélectionné, **toujours avec un texte sombre** (`on-primary` = `foreground`, 5,36:1). Jamais un texte orange sur cet aplat, jamais un texte blanc.
+- **Orange Nuit** (`#f99549`, `oklch(76% 0.15 55)`) : `--theme-primary-text` **et** `--theme-primary-bg` en sombre. 7,74:1 sur le fond, 6,74:1 sur une carte ; sur l'aplat, le texte prend la couleur du fond (`on-primary` = `background`, 7,74:1).
 
-- **Signal Indigo Lifted** (`#818cf8`, canonical `oklch(72% 0.16 277)`): le statut "actif" en dark, le texte indigo cliquable sur fond Console-Black. Utilisé pour `--theme-primary-text` en dark mode (la couleur du texte du nom, de l'accent du `<h1>` du hero, des liens).
+### Stickers : sauge et lavande
 
-- **Signal Indigo Deep** (`#4338ca`, canonical `oklch(45% 0.21 278)`): le statut "actif" en ivoire, le texte indigo lisible sur fond Ivoire-Paper. `--theme-primary-text` en light mode. Plus dense, moins flash, lisible sur paper.
+Deux couleurs, pas une de plus (arbitrage 2026-10-21). Réservées aux autocollants (`shared/ui/sticker.ts`) : ni lien, ni bouton, ni état, ni catégorie de contenu.
 
-### Secondary
+| Token | Sable (fond / texte) | Nuit (fond / texte) | Contraste du texte |
+|---|---|---|---|
+| `sticker-sage` / `on-sticker-sage` | `#b9eec2` / `#174825` | `#235430` / `#d5f5da` | 8,08 (Sable) · 7,51 (Nuit) |
+| `sticker-lavender` / `on-sticker-lavender` | `#d1e2ff` / `#233971` | `#2d416d` / `#d8e5ff` | 8,44 (Sable) · 7,93 (Nuit) |
 
-- **Signal Violet Accent** (`#a78bfa`, canonical `oklch(72% 0.16 295)`): accent secondaire en dark. Utilisé sparingement pour différencier une action complémentaire d'une action primaire indigo. Jamais en gradient avec indigo (anti-pattern SaaS).
+Le fond d'un autocollant contre la page reste décoratif (1,20 à 1,95:1) : c'est son texte qui porte l'information, et en `forced-colors` son bord transparent devient `CanvasText`.
 
-- **Signal Violet Deep** (`#6d28d9`, canonical `oklch(46% 0.24 295)`): version ivoire du violet accent. Mêmes règles : usage rare, jamais associé en gradient.
+### Neutral : Sable (clair)
 
-### Neutral — Console Register (dark)
+- **Fond** (`#fcf4eb`, `oklch(97% 0.015 70)`) : sable chaud, jamais un blanc clinique ni un gris bleuté.
+- **Surface** (`#ffffff`) : cartes, champs, tampon. **Surface elevated** (`#fff9f3`, `oklch(98.5% 0.01 70)`) : survol et état ouvert.
+- **Texte** (`#181f2e`, `oklch(24% 0.03 265)`) : bleu nuit très sombre. 15,08:1 sur le fond, 16,47:1 sur une carte.
+- **Texte secondaire** (`#4d5566`, `oklch(45% 0.03 265)`) : 6,82:1 sur le fond, 7,45:1 sur une carte, 7,13:1 sur `surface-elevated`.
 
-- **Console Black** (`#0a0a0a`, canonical `oklch(15% 0.003 286)`): fond principal en dark. Neutre tinté de zinc, pas bleu pur. Évite l'effet "ChatGPT navy" et l'effet "noir absolu fatiguant".
-- **Console Text** (`#fafafa`, canonical `oklch(98% 0.003 286)`): texte principal en dark. Crémeux pour réduire le contraste agressif d'un blanc pur sur noir pur.
-- **Console Muted** (`#a1a1aa`, canonical `oklch(70% 0.005 286)`): texte secondaire, labels, hints. Contraste 4.5:1+ vérifié sur Console Black.
-- **Console Surface 1** (`rgba(255,255,255,0.03)`): cards et conteneurs en dark. Translucide léger pour suggérer la profondeur sans alourdir.
-- **Console Surface 2** (`rgba(255,255,255,0.06)`): hover/elevated state des surfaces. Différentiel de 3% qui suffit en dark.
-- **Console Divider** (`rgba(255,255,255,0.06)`): séparateurs, bordures nav. Discret.
+### Neutral : Nuit (sombre)
 
-### Neutral — Ivoire Register (light)
+- **Fond** (`#141a29`, `oklch(22% 0.03 265)`) : bleu nuit, jamais un noir pur.
+- **Surface** (`#1e2638`, `oklch(27% 0.035 265)`) : opaque, plus de `rgba` translucide. **Surface elevated** (`#263045`, `oklch(31% 0.04 265)`).
+- **Texte** (`#f6f1eb`, `oklch(96% 0.01 70)`) : crème. 15,42:1 sur le fond, 13,43:1 sur une carte.
+- **Texte secondaire** (`#b1b7c5`, `oklch(78% 0.02 265)`) : 8,64:1 sur le fond, 7,52:1 sur une carte, 6,57:1 sur `surface-elevated`.
 
-- **Ivoire Paper** (`#faf7f2`, canonical `oklch(97% 0.008 75)`): fond principal en light. Chaud (stone), pas bleu-gris. Évite le clinique "white-paper SaaS".
-- **Ivoire Card** (`#ffffff`): cards en light. Blanc pur comme le papier propre par-dessus le paper texturé.
-- **Ivoire Card Elevated** (`#fefdfb`): hover/elevated des cards en light. Subtilement crème.
-- **Ivoire Ink** (`#292524`, canonical `oklch(25% 0.008 50)`): texte principal en light. Stone-800 chaud, jamais slate-900 (qui serait froid et tirerait vers le SaaS).
-- **Ivoire Muted** (`#57534e`, canonical `oklch(45% 0.012 75)`): texte secondaire en light. Stone-600.
-- **Ivoire Divider** (`rgba(41,37,36,0.08)`): séparateurs et bordures en light.
+### Lines : traits
 
-### Lines — traits du dessin technique
+Mélanges `foreground` / transparent en `color-mix(in srgb, …)`, mêmes proportions dans les deux registres sauf le champ.
 
-- **Line** (`--color-line` : Console `foreground` à 9 %, Ivoire `foreground` à 12 %) : séparateurs internes du cartouche.
-- **Line Strong** (`--color-line-strong` : Console 22 %, Ivoire 28 %) : cadre et barre de titre du cartouche.
-- **Field** (`--color-field` : Console `foreground` à 38 %, Ivoire à 50 %) : bord des champs (`form-input`, `app-select`). Trait **porteur d'information** (il délimite un contrôle) : 3,41:1 fond / 3,47:1 surface en Console, 3,04:1 / 3,11:1 en Ivoire (WCAG 1.4.11).
-
-Contrastes calculés (composition sRGB, WCAG 2.x) : `line` 1,22:1 (Console, fond) à 1,26:1 (Ivoire) ; `line-strong` 1,77:1 (Ivoire, fond) à 1,94:1 (Console, carte). Ces deux traits sont **décoratifs** : sous 3:1, ils ne portent jamais seuls une information et ne délimitent jamais un composant interactif (WCAG 1.4.11). Le trait de cote est dessiné en `currentColor` = `text-primary` (6,33:1 à 7,90:1 selon registre et surface).
+- **Line** (`--color-line`, 12 %) : séparateurs internes. 1,27:1 (Sable), 1,39:1 (Nuit). Décoratif.
+- **Line Strong** (`--color-line-strong`, 28 %) : séparateurs du cartouche, cadres secondaires. 1,80:1 (Sable), 2,37:1 (Nuit). Décoratif.
+- **Field** (`--color-field`, 50 % Sable, 38 % Nuit) : bord des champs, **porteur d'information** (WCAG 1.4.11) : 3,17:1 fond / 3,24:1 surface (Sable), 3,30:1 / 3,19:1 (Nuit).
+- **Bord franc** (`foreground` plein, 2 px) : cartes, boutons `outlined`, tampon, cadre du cartouche. Très au-delà de 3:1.
 
 ### Status
 
-- **Status Success** (`#016630`, green-800 en Ivoire): badges success, états validés.
-- **Status Warn** (`#973c00`, amber-800 en Ivoire): badges avertissement.
-- **Status Error** (`#c10007`, red-700 en Ivoire ; red-400 en Console): erreurs de form, messages destructifs. En Ivoire, le texte d'erreur reste ≥ 4,5:1 sur le fond et sur une carte blanche.
+| Token | Sable | Nuit | Ratios fond / surface |
+|---|---|---|---|
+| `status-success` | `#067132` | `#67d283` | 5,64 / 6,15 · 9,17 / 7,99 |
+| `status-warn` | `#974e02` | `#eec05b` | 5,66 / 6,16 · 10,19 / 8,87 |
+| `status-error` | `#b71824` | `#f97676` | 6,07 / 6,63 · 6,51 / 5,67 |
+
+Texte sur aplat de statut : `on-status-success` (blanc en Sable, 6,15:1 ; fond en Nuit, 9,17:1) et `on-status-error` (blanc en Sable, 6,63:1 ; fond en Nuit, 6,51:1). L'orange et le rouge d'erreur sont proches en teinte : une erreur est toujours dite par une icône et un texte, jamais par la seule couleur, et l'orange ne sert jamais à un état.
+
+### Code
+
+Six teintes `--color-code-*`, réservées aux blocs de code (`code.code-syntax`). Fond réel du bloc : `foreground` à 4 %, posé sur la page ou sur une carte ; chaque teinte vise ≥ 5,0:1 en Sable et ≥ 6,0:1 en Nuit sur le pire des deux.
+
+| Rôle | Sable | Ratios bloc page · bloc carte | Nuit | Ratios bloc page · bloc carte |
+|---|---|---|---|---|
+| `keyword` (orange) | `#af3c03` | 5,13 · 5,60 | `#f99549` | 7,03 · 6,05 |
+| `function` (lavande) | `#5857b9` | 5,11 · 5,58 | `#a2a8f4` | 7,05 · 6,07 |
+| `string` (sauge) | `#1b7138` | 5,13 · 5,60 | `#67c07d` | 7,05 · 6,07 |
+| `number` (ocre) | `#825d0d` | 5,05 · 5,51 | `#cbaa4b` | 7,03 · 6,06 |
+| `tag` (rose) | `#b32c70` | 5,06 · 5,52 | `#f78bb7` | 6,99 · 6,01 |
+| `comment` (= `muted`) | `#4d5566` | 6,32 · 6,89 | `#b1b7c5` | 7,83 · 6,75 |
 
 ### Named Rules
 
-**The One Indigo Rule.** Il n'y a qu'un Signal Indigo. Pas de teal qui s'invite, pas de blue-500 Tailwind par accident, pas de "second accent pour différencier". Si tu veux différencier, tu changes l'intensité (lifted / deep) ou le style (outline vs solid), jamais la teinte.
+**The One Orange Rule.** Un seul accent : l'orange copeau (`primary-text` pour le texte et les traits, `primary-bg` pour les aplats). Pas de bleu qui s'invite, pas de « second accent pour différencier ». Pour différencier, change le style (aplat, contour, texte) ou l'intensité de la teinte, jamais la couleur. Deux exceptions bornées, et seulement elles : la coloration syntaxique (dans un bloc de code, nulle part ailleurs) et les deux couleurs d'autocollant (dans `app-sticker`, nulle part ailleurs). Ni l'une ni l'autre ne sert de lien, de bouton, d'état ou de catégorie.
 
-*Exception bornée : la coloration syntaxique.* Dans un bloc de code (`code.code-syntax`, et nulle part ailleurs), six teintes `--color-code-*` distinguent les rôles des jetons, dans l'esprit d'Obsidian ; l'indigo garde les mots-clés. Elles ne servent à rien d'autre (ni badge, ni lien, ni état) et ne reprennent pas les tokens de statut : le code ne change pas de couleur si un statut change (spec 016, arbitrage B ; « Corps d'article et blocs de code », § 5).
+**The Accent Tint Rule.** Une teinte d'orange posée **sous un texte orange** reste à **8 % au plus** (`bg-primary/5`, survol `bg-primary/8`) : à 10 % le texte orange Sable tombe à 4,50:1, à 20 % à 3,86:1. Un aplat orange plein porte un texte `on-primary`, jamais un texte orange ni blanc. Aucune vérification automatique ne tient cette règle (axe ne teste pas les survols) : elle se relit.
 
-**The Two Registers Rule.** Console (dark) et Ivoire (light) sont **égaux**. Ils ne sont pas "thème par défaut et alternative". Toute décision de design doit fonctionner aussi bien dans les deux registres ou n'est pas valide. Tester chaque composant en `.app-dark` ET sans `.app-dark` est non négociable. La classe a un seul écrivain à l'exécution, `ThemeStore` (`core/theme/`), partagé par le site et l'admin ; le script en tête d'`index.html` la pose avant la première peinture selon la même règle (choix enregistré, sinon préférence système).
+**The Two Registers Rule.** Sable et Nuit sont **égaux**. Toute décision de design fonctionne dans les deux ou n'est pas valide : chaque composant se teste en `.app-dark` et sans. La classe a un seul écrivain à l'exécution, `ThemeStore` (`core/theme/`), partagé par le site et l'admin ; le script en tête d'`index.html` la pose avant la première peinture (choix enregistré, sinon préférence système).
 
-**The Decorative Line Rule.** `line` et `line-strong` sont des traits d'ornement : le texte qu'ils encadrent porte l'information. Un trait **porteur d'information** (état, séparation d'un contrôle, graphique) utilise `text-primary` ou `foreground` à **≥ 50 % en Ivoire** (3,04:1 sur fond) et **≥ 35 % en Console** (3,05:1 sur fond) : seuils calculés pour atteindre 3:1.
+**The Decorative Line Rule.** `line` et `line-strong` sont des traits d'ornement : le texte qu'ils encadrent porte l'information. Un trait **porteur d'information** (bord de champ, état, séparation d'un contrôle, graphique) utilise `field`, `foreground` plein ou `primary-text`, jamais `line` ni `line-strong` : seuils calculés pour 3:1, 50 % en Sable, 38 % en Nuit.
 
-**The Glassmorphism Containment Rule.** Les `rgba` sur Console Surfaces sont des dividers de profondeur subtils, **pas** un effet glassmorphic. Aucun `backdrop-filter: blur` n'est légitime en dehors du nav fixe (s'il est ajouté plus tard, justifier). Si tu ajoutes du blur à une card, c'est un anti-pattern.
+**The Selected State Rule.** L'aplat orange Sable n'a que 2,81:1 contre le fond : un état sélectionné (tag, filtre) porte en plus un contour `foreground`, et `aria-pressed` ou `aria-selected` le dit aux technologies d'assistance. Un bouton primaire qui ne porte qu'une icône est interdit sans trait ≥ 3:1. Les cases à cocher prennent `accent-primary` (5,21:1), jamais `accent-primary-bg`.
 
 ## 3. Typography
 
-**Display Font:** Archivo (variable, `wdth` 100–110, `wght` 600–800 : les seules largeurs et graisses employées) — `--font-display` : `'Archivo', 'Archivo Fallback', system-ui, sans-serif`  
-**Body Font:** JN Sans (IBM Plex Sans 3.201 modifiée : sous-ensemble latin, axes réduits, famille renommée car « Plex » est un *Reserved Font Name* de l'OFL ; variable, `wght` 400–700, romain et vraie italique) — `--font-sans`, appliquée à tout le site par le preflight (pages publiques, blog, admin)  
-**Label/Mono Font:** JN Mono 500 (IBM Plex Mono 2.3 renommée, même raison ; statique) — `--font-mono` : `'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace`
+**Display Font:** Bricolage Grotesque 1.001 (variable, OFL 1.1 sans Reserved Font Name ; instance `opsz` 48, `wdth` 100, `wght` 600–800, ADR-0031) : `--font-display` : `'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif`
+**Body Font:** JN Sans (IBM Plex Sans 3.201 modifiée et renommée, « Plex » étant un *Reserved Font Name* ; variable, `wght` 400–700, romain et vraie italique) : `--font-sans`, appliquée à tout le site par le preflight
+**Data Font:** JN Mono 500 (IBM Plex Mono 2.3 renommée, même raison ; statique) : `--font-mono` : `'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace`
 
-**Character:** la voix « plan d'atelier » du dessin technique. Archivo élargi donne aux titres la carrure d'un cartouche, JN Sans tient le texte courant sans fatigue, JN Mono pose les données (cotes, références, montants). Les trois familles sont **auto-hébergées** (`public/fonts/`, ADR-0006) : aucune requête tierce, CSP `font-src 'self'` inchangée, `font-display: swap` et faces de repli métriquement ajustées sur Arial pour ne pas décaler la mise en page. Seule Archivo (police du `<h1>`, élément LCP) est préchargée ; l'italique n'est téléchargée que sur les pages qui en affichent.
+**Character:** Bricolage Grotesque donne aux titres une voix ronde, un peu bricolée, chaleureuse sans être enfantine ; JN Sans tient le texte courant sans fatigue ; JN Mono pose les données (cotes, références, code). Les trois familles sont **auto-hébergées** (`public/fonts/`, ADR-0006) : aucune requête tierce, CSP `font-src 'self'` inchangée, `font-display: swap`, faces de repli métriquement ajustées sur Arial pour ne pas décaler la mise en page (Bricolage : `size-adjust` 97,56 %, `ascent-override` 95,32 %, `descent-override` 27,67 %, `line-gap-override` 0 %, sur Arial Bold). Seule la police du `<h1>` (élément LCP) est préchargée : 37 460 octets, 5,2 % de moins qu'Archivo ; l'italique n'est téléchargée que sur les pages qui en affichent.
 
-- **Titres `h1` à `h3`** : Archivo, élargis par la base (`h1` 108 %, `h2` 106 %, `h3` 104 %). Tailles, graisses et interlettrages viennent des classes du template.
-- **Graisses** : Archivo 600–800 (largeurs 100–110 % : marque du header à 100 %, titres 104–108 %, titre du cartouche 110 %), JN Sans 400–700, JN Mono 500 seulement. `font-synthesis-weight: none` sur `html` : une graisse hors plage prend la plus proche disponible, jamais un faux gras (un `font-mono font-semibold` s'affiche en 500).
-- **Données chiffrées** : `font-mono tabular-nums` dans le template (deux classes, pas d'abstraction).
+- **Titres `h1` à `h3`** : Bricolage Grotesque, sans `font-stretch` (largeur fixée dans l'instance). Tailles, graisses et interlettrages viennent des classes du template.
+- **Graisses** : Bricolage 600–800, JN Sans 400–700, JN Mono 500 seulement. `font-synthesis-weight: none` sur `html` : une graisse hors plage prend la plus proche disponible, jamais un faux gras.
+- **Données chiffrées** : `font-mono tabular-nums` dans le template.
+- **Moins de majuscules mono** : dans les pages publiques, libellés et sur-titres passent en JN Sans `text-xs font-semibold`, sans capitales ; le mono reste aux données, aux cotes, aux références et au code.
 - **Glyphes hors sous-ensemble latin** : U+202F (séparateur de milliers fr-FR) et `→` sont pris dans la police de repli.
 
 ### Hierarchy
 
-- **Display** (800, `clamp(2.75rem, 7vw, 5.5rem)`, line-height 1.05, tracking -0.02em): nom du hero (`<h1>` sur la home). Un seul par page, jamais réutilisé.
-- **Headline** (700, `clamp(1.75rem, 3.5vw, 2.5rem)`, line-height 1.15, tracking -0.01em): titres de section (`<h2>` About, Projects, Contact).
-- **Title** (600, `1.25rem`, line-height 1.3): titres de card, titres de projet dans la grille.
-- **Body Large** (400, `1.125rem`, line-height 1.65): tagline du hero, intros de section. Max 65–75ch.
-- **Body** (400, `1rem`, line-height 1.6): paragraphes courants. Max 65–75ch.
-- **Label** (600, `0.75rem`, tracking 0.06em, **UPPERCASE**): admin table headers (`admin-th`), metadata, badges status.
-- **Mono** (500, `0.875rem`, line-height 1.5): code inline, chiffres techniques (KPI admin), labels Sentry/observability.
+- **Display** (800, `clamp(2.75rem, 7vw, 5.5rem)`, line-height 1.05, tracking -0.02em) : `<h1>` du hero de l'accueil. Un seul par page, jamais réutilisé.
+- **Headline** (700, `clamp(1.75rem, 3.5vw, 2.5rem)`, line-height 1.15, tracking -0.01em) : titres de section (`<h2>`).
+- **Title** (600, `1.25rem`, line-height 1.3) : titres de carte, titres de projet dans la grille.
+- **Body Large** (400, `1.125rem`, line-height 1.65) : accroche du hero, intros de section. 65–75ch au plus.
+- **Body** (400, `1rem`, line-height 1.6) : paragraphes courants. 65–75ch au plus.
+- **Label** (600, `0.75rem`, line-height 1.4) : métadonnées, en-têtes de tableau de l'admin, autocollants (`text-sm`).
+- **Mono** (500, `0.875rem`, line-height 1.5) : code en ligne, cotes, références, chiffres techniques.
 
 ### Named Rules
 
-**The Three Families Rule.** Trois familles, pas une de plus : Archivo pour les titres, JN Sans (IBM Plex Sans renommée) pour le texte, JN Mono (IBM Plex Mono renommée) pour les données. Une version modifiée d'IBM Plex ne porte jamais le nom « Plex » (*Reserved Font Name*, ADR-0006). Toutes auto-hébergées depuis l'origine du site (ADR-0006) : jamais de Google Fonts ni d'autre CDN de polices. Tout changement de binaire change le nom de fichier versionné (cache nginx `immutable`), dans `styles.css` **et** dans le `preload` d'`index.html`.
+**The Three Families Rule.** Trois familles, pas une de plus : Bricolage Grotesque pour les titres, JN Sans pour le texte, JN Mono pour les données. Pas de police manuscrite, même pour un autocollant. Toutes auto-hébergées depuis l'origine du site (ADR-0006) : jamais de Google Fonts ni d'autre CDN de polices. Tout changement de binaire change le nom de fichier versionné (cache nginx `immutable`), dans `styles.css` **et** dans le `preload` d'`index.html`.
 
 **The Single-Display Rule.** Un seul `<h1>` par page, en Display, jamais réutilisé pour décorer une autre section. La hiérarchie `<h1>` → `<h2>` → `<h3>` ne saute jamais un niveau.
 
-**The Indigo Accent Rule.** Le `<h1>` du hero porte un seul accent, un segment de la promesse (« développeur web ») en `em` `not-italic text-primary`. Le segment est une donnée (`HeroData.headlineAccent`), jamais un littéral de template : `HomeHero` découpe le titre autour de lui.
+**The Orange Accent Rule.** Le `<h1>` du hero porte un seul accent, un segment de la promesse (« développeur web ») en `em` `not-italic text-primary`. Le segment est une donnée (`HeroData.headlineAccent`), jamais un littéral de template : `HomeHero` découpe le titre autour de lui.
 
-## 4. Elevation
+## 4. Elevation & Shapes
 
-Système **plat par défaut, layered par exception**. Pas de shadow décorative, pas d'effet flottant gratuit. La profondeur vient :
+Système **plat**. La profondeur vient des bords francs et des aplats, pas des ombres ni de la transparence.
 
-- En **Console (dark)**, par la translucidité des surfaces (`rgba(255,255,255,0.03)` puis `0.06` au hover). Aucune shadow.
-- En **Ivoire (light)**, par les surfaces opaques blanches sur Paper crème + une shadow légère sur la nav fixe uniquement.
+- Une carte se détache par son **bord de 2 px** `foreground` et sa surface opaque (blanche en Sable, `#1e2638` en Nuit).
+- Le survol change le bord (`hover:border-primary`) ou la surface (`surface-elevated`), jamais une ombre.
 
-Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un composant a besoin de "ressortir", on travaille la taille, la couleur ou le contraste typographique avant d'ajouter une shadow.
+### Shapes
+
+| Rayon | Token (`@theme`, PR 6a) | Usage |
+|---|---|---|
+| 8 px | `rounded-part` | cartouche, tampon : la pièce technique reste nette |
+| 12 px | `rounded-field` | champs de formulaire |
+| 16 px | `rounded-card` | cartes, cartes de lien |
+| 22 px | `rounded-block` | grands blocs (hero, carte de partage) |
+| pilule | `rounded-full` | boutons, entrées de navigation actives, autocollants |
+
+Cibles tactiles : 44 × 44 px au moins malgré la pilule (`min-h-11`, `size-11`).
 
 ### Shadow Vocabulary
 
-- **Nav shadow (Ivoire)** (`box-shadow: 0 1px 2px rgba(41,37,36,0.04), 0 4px 12px rgba(41,37,36,0.04)`): nav fixe en light, signale la séparation avec le contenu qui scrolle dessous.
-- **Nav shadow (Console)** (`box-shadow: 0 1px 0 rgba(255,255,255,0.04)`): hairline lumineux en dark, équivalent fonctionnel de la shadow ivoire sans alourdir le terminal.
-- **Button shadow primary** (`shadow-sm` Tailwind, ~`0 1px 2px rgba(0,0,0,0.05)`): subtil rappel d'élévation sur les CTA primaires uniquement.
+- **Nav shadow (Sable)** (formule à deux couches, teinte `foreground` à 4 %) : nav fixe, sépare du contenu qui défile dessous.
+- **Nav shadow (Nuit)** (`0 1px 0`, `foreground` à 6 %) : filet lumineux, équivalent sans alourdir.
+
+Aucune autre ombre, boutons compris.
 
 ### Named Rules
 
-**The Flat-By-Default Rule.** Toute card, tout container, toute section commence sans shadow. Une shadow ne peut être ajoutée qu'avec une justification fonctionnelle (sticky nav, modal/drawer, dropdown flottant). Décorer = refuser.
+**The Flat-By-Default Rule.** Toute carte, tout conteneur, toute section commence sans ombre. Une ombre ne s'ajoute qu'avec une justification fonctionnelle (nav fixe, modale, menu flottant). Décorer = refuser : pour faire ressortir, travaille le bord, la taille ou le contraste typographique.
 
-**The No-Glass Rule.** Aucun `backdrop-filter: blur()` n'est légitime dans ce système. La translucidité des Console Surfaces est purement compositionnelle (rgba alpha), pas un effet glass.
+**The No-Glass Rule.** Aucun `backdrop-filter: blur()` et aucune surface translucide comme effet : les surfaces Nuit sont opaques, le toast aussi.
+
+**The Sticker Rule.** Un autocollant (`app-sticker`) est une pastille pilule, sauge ou lavande, de **4 mots au plus**, éventuellement inclinée de **2°** (statique, sans transition). **Un autocollant décoratif par écran, au plus** : celui de l'accueil (« Fait main », sauge, incliné à gauche). Jamais un lien, un bouton, un titre, ni le parent d'un élément interactif ; jamais un logo de technologie. Le tampon (« En production », « Démo », « Script ») a la forme d'un autocollant mais reste **neutre** (surface, bord `foreground` 2 px, rayon 8 px) : il y en a un par carte de réalisation.
 
 ## 5. Components
+
+> **Code en place.** Ce § décrit les classes **exactes** des composants tels qu'ils sont dans le code aujourd'hui : il est mis à jour par chaque PR de la spec 033 qui change un composant (PR 4 tokens, PR 5 police, PR 6a composants partagés, PR 6b gabarits), pour ne jamais décrire des classes absentes du code. Jusque-là, « Console » y désigne le registre sombre, « Ivoire » le clair, « Archivo » la police des titres, et les ratios cités sont ceux des tokens en place.
 
 ### Buttons (`shared/ui/button.ts`)
 
@@ -276,14 +327,14 @@ Aucun composant ne porte de shadow autre que les valeurs ci-dessous. Si un compo
 - **`ghost-icon`:** lien icône des listes de l'admin, chaîne propre (`size-11`, centré, `text-foreground`, hover `bg-surface-elevated`) ; `size`, `rounded` et `block` sans effet.
 - **Tailles:** `default` (`px-5`) / `icon` (`min-w-11`, centré, carré de 44 px). `[rounded]="true"` : `rounded-full` (pill). `[block]="true"` : pleine largeur, libellé centré.
 - **États propres à un site** (`aria-pressed:border-primary`, `aria-disabled:*`, `disabled:cursor-wait disabled:opacity-60`) : en classes sur l'élément, à côté de la directive.
-- **Focus:** anneau global 2px Signal Indigo, offset 2px, sur `:focus-visible` uniquement (pas au clic souris) ; il suit le rayon de l'élément (un bouton rond reste rond).
+- **Focus:** anneau global 2px couleur `primary`, offset 2px, sur `:focus-visible` uniquement (pas au clic souris) ; il suit le rayon de l'élément (un bouton rond reste rond).
 - **Disabled:** opacity 0.5, cursor not-allowed.
 - **Loading state:** non implémenté actuellement → à ajouter (voir Do's and Don'ts).
 
 ### Tags / Badges
 
 - **Pas de composant de pastille générique** (`shared/ui/tag.ts` retiré avec la page Audience, son dernier consommateur). Un statut (« Publié », « Brouillon », « Mis en avant ») n'est pas une pastille colorée : c'est un tampon (`app-stamp`), `status-*` sur `status-*/15` restant sous 4,5:1 en Ivoire.
-- **Tags du blog** (`blog-tag-palette.ts`) : tout le catalogue en `bg-primary/10 text-primary`, quelle que soit la catégorie ; tags libres neutres (`text-muted`) ; sélection en `bg-primary-bg`. Pas de couleur par catégorie (One Indigo Rule). Les pastilles de tags ne vivent que sur la page article (`BlogTagLink`, lien vers `/blog?tag=`) et dans le sélecteur de l'admin : la liste du blog n'en affiche plus, ses lignes disent leurs sujets en repère (« Ligne d'article », ci-dessous).
+- **Tags du blog** (`blog-tag-palette.ts`) : tout le catalogue en `bg-primary/10 text-primary`, quelle que soit la catégorie ; tags libres neutres (`text-muted`) ; sélection en `bg-primary-bg`. Pas de couleur par catégorie (One Orange Rule). Les pastilles de tags ne vivent que sur la page article (`BlogTagLink`, lien vers `/blog?tag=`) et dans le sélecteur de l'admin : la liste du blog n'en affiche plus, ses lignes disent leurs sujets en repère (« Ligne d'article », ci-dessous).
 
 ### Cards / Containers
 
@@ -323,7 +374,7 @@ La mention portée sur un plan, reprise pour dire la nature d'une chose : « En 
 - **Apparence unique:** classes sur l'hôte, sans élément enveloppant : mono majuscule `text-xs`, interlettrage 0,06 em, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`, `rounded-sm`, marges `px-2 py-1`. Une seule apparence pour toutes les natures : c'est le **texte** qui les distingue, jamais une couleur.
 - **Placement:** le consommateur le positionne : coin haut gauche du visuel sur la couverture de projet (`ProjectCover`, ci-dessous), au-dessus du `h1` dans l'en-tête du détail. Posé sur un visuel couvert par un lien étiré, il laisse passer le clic (`pointer-events-none`).
 - **Accessibilité:** texte lu tel quel, sans rôle ni `aria-*` ; la nature est dite par le texte, pas par une couleur ni par la seule position.
-- **Don't:** pas d'indigo ni de couleur de statut (One Indigo Rule : c'est une mention, pas un accent) ; jamais un `h*` ni à l'intérieur d'un titre ; jamais interactif ; pas de variante par nature.
+- **Don't:** pas d'indigo ni de couleur de statut (One Orange Rule : c'est une mention, pas un accent) ; jamais un `h*` ni à l'intérieur d'un titre ; jamais interactif ; pas de variante par nature.
 
 ### Galerie de projet (`features/projects/application/components/project-gallery.ts`)
 
@@ -475,7 +526,7 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 - **Header layout:** sticky en haut, background `var(--theme-background)`, border-bottom `var(--theme-nav-border)`, shadow `var(--theme-nav-shadow)`.
 - **Liens:** sans soulignement par défaut, hover = `text-primary`, active = `text-primary` + indicateur (à clarifier dans Layout).
 - **Mobile:** drawer (`shared/ui/drawer.ts`) via icon hamburger.
-- **Focus visible:** outline 2px Signal Indigo cohérent avec les boutons.
+- **Focus visible:** outline 2px `primary`, cohérent avec les boutons.
 
 ### Coque admin (`features/admin/pages/admin-layout/admin-layout.ts`, `application/components/admin-nav.ts`)
 
@@ -616,7 +667,7 @@ Overlay, verrouillage du défilement, piège de focus (Tab et Maj+Tab restent da
 
 ### Chart (`shared/ui/chart.ts`)
 
-Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionnelles (au-delà de Signal Indigo + status) sont tolérées pour différencier les séries — mais elles doivent rester dans la famille des dérivées indigo/violet (pas de teal/coral aléatoire).
+Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionnelles (au-delà de l'accent `primary` + status) sont tolérées pour différencier les séries — mais elles doivent rester dans la famille des dérivées indigo/violet (pas de teal/coral aléatoire).
 
 Courbe des visiteurs (`buildVisitorsChartData`) : une seule teinte, « Visiteurs » trait `primary` plein, « Pages vues » `foreground` 55 % tireté (4/4), traits droits (`tension: 0`). Couleurs lues sur les jetons du registre courant (`readChartPalette`) et relues à chaque bascule de thème ; repli couleur système `CanvasText`, jamais une couleur en dur.
 
@@ -624,28 +675,31 @@ Courbe des visiteurs (`buildVisitorsChartData`) : une seule teinte, « Visiteurs
 
 ### Do:
 
-- **Do** utiliser `var(--color-primary)` ou `bg-primary` partout où on a besoin de Signal Indigo. Jamais `#4f46e5` ou `indigo-600` en dur (sauf dans le frontmatter et styles.css).
-- **Do** tester chaque composant en `.app-dark` ET sans `.app-dark` avant de merger. La règle Two Registers est non négociable.
-- **Do** utiliser `:focus-visible` sur tout interactif avec un ring 2px Signal Indigo. C'est un signal de séniorité (a11y AA strict).
-- **Do** respecter `prefers-reduced-motion: reduce` — désactiver fade-up, view-transitions, scroll animations.
-- **Do** réserver le mono à du contenu vraiment technique (code, chiffres, status).
-- **Do** garder body line-length à 65–75ch maximum (`max-w-prose` ou équivalent).
-- **Do** utiliser les utilities `form-*`, `field-*`, `table-head` plutôt que de redéclarer les classes Tailwind, et la directive `appButton` pour tout bouton ou lien stylé en bouton (ADR-0017), jamais une utility. Si tu dupliques 10+ classes sur un élément natif, crée une utility.
-- **Do** documenter toute exception aux Named Rules dans un commentaire au point d'usage (`/* exception: ... */`).
+- **Do** passer par les tokens (`text-primary`, `bg-primary-bg`, `text-on-primary`, `bg-sticker-sage`…), jamais un hex ni une couleur de palette Tailwind en dur (sauf dans le front matter et `styles.css`).
+- **Do** tester chaque composant en `.app-dark` ET sans `.app-dark` avant de merger (Two Registers Rule).
+- **Do** poser un texte `on-primary` sur tout aplat orange, et un contour `foreground` sur un état sélectionné (Selected State Rule).
+- **Do** utiliser `:focus-visible` sur tout interactif, anneau 2 px `primary` qui suit le rayon de l'élément.
+- **Do** respecter `prefers-reduced-motion: reduce` : désactiver fade-up, view-transitions, animations au défilement.
+- **Do** réserver le mono aux données (code, cotes, références, chiffres) ; libellés et sur-titres des pages publiques en JN Sans, sans capitales.
+- **Do** garder la longueur de ligne du texte courant à 65–75ch (`max-w-prose` ou équivalent).
+- **Do** utiliser les utilities `form-*`, `field-*`, `table-head` plutôt que de redéclarer les classes Tailwind, la directive `appButton` pour tout bouton ou lien stylé en bouton (ADR-0017) et `app-sticker` pour tout autocollant. Si tu dupliques 10+ classes sur un élément natif, crée une utility.
+- **Do** documenter toute exception aux Named Rules au point d'usage (`/* exception: ... */`).
+- **Do** recalculer et noter le contraste de toute nouvelle paire de couleurs, dans les deux registres, sur le fond et sur la surface.
 
 ### Don't:
 
-- **Don't** introduire un second accent color. Pas de teal, pas de coral, pas de "blue-500 par accident". One Indigo Rule.
-- **Don't** utiliser `background-clip: text` + gradient comme style décoratif. Privilégier l'accent unique en Signal Indigo solide (`em` `not-italic text-primary`, The Indigo Accent Rule) ou un weight contrast.
-- **Don't** ajouter `backdrop-filter: blur()` à une card "pour faire glass". No-Glass Rule.
-- **Don't** ajouter de shadow à une card "pour qu'elle ressorte". Flat-By-Default Rule — travaille la hiérarchie typographique ou la taille avant.
-- **Don't** charger une Google Font ni une police depuis un CDN. Three Families Rule : les polices sont auto-hébergées (ADR-0006).
-- **Don't** utiliser `border-left` ou `border-right` > 1px comme accent coloré (callout, alerte). Banned absolu impeccable.
-- **Don't** utiliser `*ngIf` / `*ngFor` — control flow `@if` / `@for` uniquement (rappel CLAUDE.md).
-- **Don't** styliser un input avec `outline: none` sans `:focus-visible` de remplacement. C'est la violation a11y la plus rapide à repérer dans un audit.
-- **Don't** mettre une animation décorative au-dessus de 400ms ou avec un easing bouncy/elastic. Ease-out exponential uniquement (`cubic-bezier(0.16, 1, 0.3, 1)` ou équivalent).
-- **Don't** utiliser le slate Tailwind (slate-50 → slate-900) dans le portfolio. Le système est tinté zinc/neutral (Console) ou stone (Ivoire) — jamais slate (froid bleuté).
-- **Don't** réutiliser le Display (800, clamp size) pour un autre élément que le `<h1>` du hero.
-- **Don't** introduire une 4e famille "pour donner du caractère". La hiérarchie vient de la famille (display / texte / données), du weight, de la size et de la largeur.
-- **Don't** confier une information à un trait `line` / `line-strong` seul (Decorative Line Rule).
-- **Don't** présenter un site de démonstration comme une référence client : badge « Démo » dans le gabarit sur toute démo des Réalisations, aucune démo sur la home (qui ne montre que des projets en production) ni dans des données structurées de référence client.
+- **Don't** introduire un second accent. Pas de bleu, de vert ou de rose hors du code et des autocollants (One Orange Rule).
+- **Don't** poser un texte orange sur une teinte d'orange au-delà de 8 %, ni un texte blanc ou orange sur l'aplat orange (Accent Tint Rule).
+- **Don't** ajouter un deuxième autocollant décoratif à un écran, un autocollant cliquable, un autocollant de plus de 4 mots, ni un « nuage » d'autocollants de technologies (Sticker Rule).
+- **Don't** incliner un lien, un bouton, un titre ou un paragraphe ; seule une pastille courte peut l'être, de 2° au plus, sans animation.
+- **Don't** utiliser `background-clip: text` + dégradé, ni aucun dégradé décoratif (favicon compris).
+- **Don't** ajouter `backdrop-filter: blur()` ni une surface translucide « pour faire glass » (No-Glass Rule).
+- **Don't** ajouter d'ombre à une carte « pour qu'elle ressorte » (Flat-By-Default Rule) : travaille le bord, la taille ou la typographie.
+- **Don't** charger une police depuis Google Fonts ou un CDN, ni introduire une 4e famille, manuscrite comprise (Three Families Rule).
+- **Don't** utiliser `border-left` ou `border-right` > 1px comme accent coloré (callout, alerte), sauf la barre de statut du toast.
+- **Don't** utiliser `*ngIf` / `*ngFor` : control flow `@if` / `@for` uniquement (rappel CLAUDE.md).
+- **Don't** styliser un champ avec `outline: none` sans `:focus-visible` de remplacement.
+- **Don't** mettre une animation décorative au-dessus de 400ms ou avec un easing bouncy/elastic. Ease-out uniquement (`cubic-bezier(0.16, 1, 0.3, 1)` ou équivalent).
+- **Don't** réutiliser le Display (800, taille `clamp`) pour un autre élément que le `<h1>` du hero.
+- **Don't** confier une information à un trait `line` / `line-strong` seul, ni à la seule couleur (Decorative Line Rule).
+- **Don't** présenter un site de démonstration comme une référence : tampon « Démo » dans le gabarit sur toute démo des Réalisations, aucune démo sur la home (qui ne montre que des projets en production) ni dans des données structurées de référence.
