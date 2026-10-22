@@ -15,6 +15,7 @@ import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import { makeUser } from '@features/auth/testing/user-builders';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { accentTints } from '@shared/testing/accent-tints';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle } from '@shared/testing/settle';
@@ -265,6 +266,16 @@ describe('AdminLayout: pied de la barre latérale', () => {
       email: 'contact@nedellec-julien.fr',
       logout: 1,
     });
+  });
+});
+
+describe('AdminLayout: monogramme', () => {
+  it('Given the shell When it renders Then each « JN » monogram sets the accent text over a 5 % accent tint', async () => {
+    const { host } = await renderShell('/admin');
+
+    expect(
+      [...host.querySelectorAll('[data-testid="admin-monogram"]')].map((tile) => accentTints(tile)),
+    ).toEqual([['bg-primary/5'], ['bg-primary/5']]);
   });
 });
 

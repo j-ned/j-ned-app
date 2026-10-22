@@ -419,10 +419,10 @@ describe('AdminOverview: relevé « Audience »', () => {
     }).toEqual({ crash: null, loading: true, cv: false });
   });
 
-  it('Given the registers colours When the theme switches Then the curve is redrawn with the new indigo', async () => {
+  it('Given the registers colours When the theme switches Then the curve is redrawn with the new accent', async () => {
     const root = document.documentElement.style;
-    root.setProperty('--theme-primary-text', 'oklch(54% 0.225 277)');
-    root.setProperty('--theme-foreground', 'oklch(20% 0.01 286)');
+    root.setProperty('--theme-primary-text', 'oklch(53.2% 0.178 37)');
+    root.setProperty('--theme-foreground', 'oklch(24% 0.03 265)');
     try {
       const overview = await renderOverview();
       const firstColor = (): unknown =>
@@ -430,13 +430,13 @@ describe('AdminOverview: relevé « Audience »', () => {
           ?.data?.datasets[0]?.borderColor;
       const light = firstColor();
 
-      root.setProperty('--theme-primary-text', 'oklch(74.5% 0.16 277)');
+      root.setProperty('--theme-primary-text', 'oklch(76% 0.15 55)');
       overview.isDark.set(true);
       await settleBounded(overview.fixture);
 
       expect({ light, dark: firstColor() }).toEqual({
-        light: 'oklch(54% 0.225 277)',
-        dark: 'oklch(74.5% 0.16 277)',
+        light: 'oklch(53.2% 0.178 37)',
+        dark: 'oklch(76% 0.15 55)',
       });
     } finally {
       root.removeProperty('--theme-primary-text');

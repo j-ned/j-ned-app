@@ -6,6 +6,7 @@ import { BlogList } from './blog-list';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 import { makeBlogPost, productionPosts } from '../../testing/blog-post-builders';
+import { accentTints } from '@shared/testing/accent-tints';
 
 function setupWith(
   getPublishedPosts: () => Observable<readonly BlogPost[]>,
@@ -86,6 +87,17 @@ describe('BlogList', () => {
     expect(banner?.textContent).toContain('Angular');
     const clearLink = fixture.nativeElement.querySelector('[data-testid="tag-filter-clear"]');
     expect(clearLink).toBeTruthy();
+  });
+
+  it('Given un tag actif When la liste est rendue Then la puce du filtre pose le texte d’accent sur une teinte de 5 %, 8 % au survol', async () => {
+    const fixture = setup([makeBlogPost({ tags: ['Angular'] })]);
+    fixture.componentRef.setInput('tag', 'Angular');
+    const host = await render(fixture);
+
+    expect(accentTints(byTestId(host, 'tag-filter-clear'))).toEqual([
+      'bg-primary/5',
+      'hover:bg-primary/8',
+    ]);
   });
 
   it("n'affiche pas le bandeau de filtre sans tag actif", async () => {

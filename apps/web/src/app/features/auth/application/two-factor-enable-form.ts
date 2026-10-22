@@ -88,8 +88,9 @@ const TOTP_PATTERN = /^\d{6}$/;
             </div>
             <button
               type="submit"
+              data-testid="twofa-submit"
               [disabled]="loading()"
-              class="w-full min-h-11 py-2.5 px-4 rounded-lg bg-status-success hover:bg-status-success/90 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+              class="w-full min-h-11 py-2.5 px-4 rounded-lg bg-status-success hover:bg-status-success/90 text-on-status-success font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
             >
               @if (loading()) {
                 Activation...

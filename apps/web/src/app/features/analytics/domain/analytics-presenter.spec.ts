@@ -148,7 +148,7 @@ describe('analytics-presenter', () => {
       expect(data.datasets.map((dataset) => dataset.borderDash)).toEqual([undefined, [4, 4]]);
     });
 
-    it("ne tire chaque couleur que de l'indigo ou du texte du registre", () => {
+    it("ne tire chaque couleur que de l'accent ou du texte du registre", () => {
       const colors = buildVisitorsChartData(rows, palette).datasets.flatMap((dataset) =>
         Object.entries(dataset)
           .filter(([key]) => key.endsWith('Color'))

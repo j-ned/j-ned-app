@@ -11,10 +11,10 @@ describe('readChartPalette', () => {
     {
       label: 'both tokens resolved',
       tokens: {
-        '--theme-primary-text': 'oklch(54% 0.225 277)',
-        '--theme-foreground': 'oklch(20% 0.01 286)',
+        '--theme-primary-text': 'oklch(53.2% 0.178 37)',
+        '--theme-foreground': 'oklch(24% 0.03 265)',
       },
-      expected: { primary: 'oklch(54% 0.225 277)', foreground: 'oklch(20% 0.01 286)' },
+      expected: { primary: 'oklch(53.2% 0.178 37)', foreground: 'oklch(24% 0.03 265)' },
     },
     {
       label: 'no token resolved',
@@ -23,8 +23,8 @@ describe('readChartPalette', () => {
     },
     {
       label: 'only the primary token resolved',
-      tokens: { '--theme-primary-text': 'oklch(74.5% 0.16 277)' },
-      expected: { primary: 'oklch(74.5% 0.16 277)', foreground: 'CanvasText' },
+      tokens: { '--theme-primary-text': 'oklch(76% 0.15 55)' },
+      expected: { primary: 'oklch(76% 0.15 55)', foreground: 'CanvasText' },
     },
   ] satisfies readonly {
     label: string;

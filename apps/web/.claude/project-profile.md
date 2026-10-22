@@ -106,7 +106,7 @@
 - **Nom du DS / palette** : `<aucun nom formel>` — système de tokens sémantiques
   avec thème commutable (`--color-*` résolus depuis `--theme-*`).
 - **Tokens-clés** : `--color-primary`, `--color-surface`, `--color-surface-elevated`,
-  `--color-background`, `--color-foreground`, `--color-accent`, `--color-muted`,
+  `--color-background`, `--color-foreground`, `--color-muted`, `--color-on-primary`,
   `--color-status-{success,warn,error}`, `--theme-*` (couche de thème).
 - **Cible & viewport de référence** : mobile-first responsive, 375×667.
 - **Tokens cross-platform** (safe-area, gestes) : `aucun`.

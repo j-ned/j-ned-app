@@ -26,7 +26,8 @@ import { ThemeStore } from '@core/theme/theme-store';
         >
           <app-icon-tile
             aria-hidden="true"
-            class="bg-primary/15 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/20 group-hover:border-primary/40 transition-colors"
+            data-testid="header-monogram"
+            class="bg-primary/5 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/8 group-hover:border-primary/40 transition-colors"
           >
             JN
           </app-icon-tile>

@@ -9,6 +9,7 @@ import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import type { CvInfo } from '@features/cv/domain/models/cv.model';
 import { ThemeStore } from '@core/theme/theme-store';
+import { accentTints } from '@shared/testing/accent-tints';
 import { installSystemColorScheme } from '@core/theme/testing/system-color-scheme';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
@@ -202,6 +203,17 @@ describe('Header', () => {
       expect(button).toBeInstanceOf(HTMLButtonElement);
       button?.click();
       expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith('header_contact', "M'écrire");
+    });
+  });
+
+  describe('monogramme', () => {
+    it('Given the header When it renders Then the « JN » monogram sets the accent text over a 5 % accent tint, 8 % on hover', async () => {
+      const { fixture } = await setup();
+      const tile = (fixture.nativeElement as HTMLElement).querySelector(
+        '[data-testid="header-monogram"]',
+      );
+
+      expect(accentTints(tile)).toEqual(['bg-primary/5', 'group-hover:bg-primary/8']);
     });
   });
 

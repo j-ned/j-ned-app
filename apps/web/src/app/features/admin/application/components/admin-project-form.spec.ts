@@ -756,13 +756,13 @@ describe('AdminProjectForm: étiquettes des champs', () => {
 
     expect({
       orderIsFormInput: order?.classList.contains('form-input') ?? false,
-      featuredAccent: ['accent-primary-bg', 'size-5'].filter((token) =>
+      featuredAccent: ['accent-primary', 'size-5'].filter((token) =>
         featured?.classList.contains(token),
       ),
       localFocus: [...localFocusClasses(order), ...localFocusClasses(featured)],
     }).toEqual({
       orderIsFormInput: true,
-      featuredAccent: ['accent-primary-bg', 'size-5'],
+      featuredAccent: ['accent-primary', 'size-5'],
       localFocus: [],
     });
   });

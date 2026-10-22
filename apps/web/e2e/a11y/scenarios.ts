@@ -14,6 +14,7 @@ export const PUBLIC_PAGES: readonly PageScenario[] = [
   { path: '/projects/projet-temoin', ready: 'project-detail-title' },
   { path: '/projects/dashflow', ready: 'project-articles' },
   { path: '/blog', ready: 'blog-posts' },
+  { path: '/blog?tag=Angular', ready: 'tag-filter-banner' },
   { path: '/blog/article-temoin', ready: 'blog-content' },
   { path: '/mentions-legales', ready: 'legal-publisher' },
   { path: '/confidentialite', ready: 'privacy-last-update' },

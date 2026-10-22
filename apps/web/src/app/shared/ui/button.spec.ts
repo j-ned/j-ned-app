@@ -16,7 +16,7 @@ const BASE = [
   'disabled:opacity-50',
 ];
 
-const PRIMARY = ['bg-primary-bg', 'text-white', 'hover:bg-primary-bg/90'];
+const PRIMARY = ['bg-primary-bg', 'text-on-primary', 'hover:bg-primary-bg/90'];
 
 const OUTLINED = [
   'border',
@@ -160,7 +160,7 @@ describe('Button', () => {
         'hover:bg-status-error/10',
       ],
     ],
-    ['text', ['text-primary', 'hover:bg-primary/10']],
+    ['text', ['text-primary', 'hover:bg-primary/8']],
     ['text-muted', ['text-muted', 'hover:bg-foreground/5', 'hover:text-foreground']],
     ['text-danger', ['text-status-error', 'hover:bg-status-error/10']],
   ])(

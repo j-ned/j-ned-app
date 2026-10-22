@@ -82,6 +82,13 @@ jobs:
           if grep -qE '\son[a-z]+="' $browser/mentions-legales/index.html; then
             grep -q "script-src-attr 'unsafe-hashes'" $browser/mentions-legales/index.html
           fi
+          # theme-color suit la préférence système : une couleur par thème, chacune bornée par `media`.
+          for page in $browser/mentions-legales/index.html $browser/index.csr.html; do
+            metas=$(tr '\n' ' ' < "$page" | grep -oE '<meta [^>]*name="theme-color"[^>]*>')
+            test "$(echo "$metas" | wc -l)" -eq 2
+            echo "$metas" | grep -q 'media="(prefers-color-scheme: light)"'
+            echo "$metas" | grep -q 'media="(prefers-color-scheme: dark)"'
+          done
           # Un preload vers un nom de police périmé télécharge un fichier absent et retarde la vraie police.
           preloads=$(tr '\n' ' ' < $browser/mentions-legales/index.html | grep -o '<link[^>]*rel="preload"[^>]*>' | grep -o 'href="/[^"]*"' | sed -E 's/^href="\/(.*)"$/\1/')
           test -n "$preloads"

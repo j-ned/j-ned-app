@@ -65,7 +65,7 @@
   /* Mappe les couleurs Tailwind aux variables de thème */
   --color-primary: var(--theme-primary-text);
   --color-primary-bg: var(--theme-primary-bg);
-  --color-accent: var(--theme-accent);
+  --color-on-primary: var(--theme-on-primary);
   --color-muted: var(--theme-muted);
   --color-background: var(--theme-background);
   --color-foreground: var(--theme-foreground);
@@ -76,10 +76,15 @@
   --color-status-success: var(--theme-status-success);
   --color-status-warn: var(--theme-status-warn);
   --color-status-error: var(--theme-status-error);
+  --color-on-status-success: var(--theme-on-status-success);
   --color-on-status-error: var(--theme-on-status-error);
   --color-field: var(--theme-field);
   --color-line: var(--theme-line);
   --color-line-strong: var(--theme-line-strong);
+  --color-sticker-sage: var(--theme-sticker-sage);
+  --color-on-sticker-sage: var(--theme-on-sticker-sage);
+  --color-sticker-lavender: var(--theme-sticker-lavender);
+  --color-on-sticker-lavender: var(--theme-on-sticker-lavender);
   --color-code-keyword: var(--theme-code-keyword);
   --color-code-function: var(--theme-code-function);
   --color-code-string: var(--theme-code-string);
@@ -93,77 +98,79 @@
   --font-mono: 'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
 
-/* Mode sombre par défaut (noir neutre + accents indigo) */
+/* Mode sombre par défaut « Nuit » (bleu nuit + orange copeau). Ratios WCAG : fond / surface. */
 :root {
   color-scheme: dark;
-  --theme-primary-text: oklch(74.5% 0.16 277); /* indigo-400 (#818cf8) */
-  --theme-primary-bg: oklch(54% 0.225 277); /* indigo-600 (#4f46e5) */
-  --theme-accent: oklch(72% 0.157 296); /* violet-400 (#a78bfa) */
-  --theme-muted: oklch(70.4% 0.011 286); /* zinc-400 (#a1a1aa) */
-  --theme-background: oklch(14.5% 0.003 286); /* neutral-950 (#0a0a0a) — noir profond */
-  --theme-foreground: oklch(98.5% 0.003 286); /* neutral-50 (#fafafa) */
-  --theme-surface: color-mix(in srgb, #fff 3%, transparent); /* cards translucides */
-  --theme-surface-elevated: color-mix(in srgb, #fff 6%, transparent); /* hover/elevated */
-  --theme-nav-border: color-mix(in srgb, #fff 6%, transparent);
-  --theme-nav-shadow: 0 1px 0 color-mix(in srgb, #fff 4%, transparent);
-  --theme-status-success: oklch(
-    72.3% 0.19 145
-  ); /* green-500 (#22c55e) — lisible sur Console Black */
-  --theme-status-warn: oklch(76.6% 0.16 70); /* amber-500 (#f59e0b) */
-  --theme-status-error: oklch(
-    71.5% 0.18 22
-  ); /* red-400 (#f87171) — moins agressif que red-500 sur fond sombre */
-  --theme-on-status-error: var(--theme-background); /* blanc sur red-400 = 2,75:1 */
-  /* Bord de champ ≥ 3:1 sur le fond comme sur la surface (WCAG 1.4.11) */
+  --theme-background: oklch(22% 0.03 265); /* #141a29 */
+  --theme-surface: oklch(27% 0.035 265); /* #1e2638, opaque (No-Glass Rule) */
+  --theme-surface-elevated: oklch(31% 0.04 265); /* #263045 */
+  --theme-foreground: oklch(96% 0.01 70); /* #f6f1eb, 15,42 / 13,43 */
+  --theme-muted: oklch(78% 0.02 265); /* #b1b7c5, 8,64 / 7,52 */
+  --theme-primary-text: oklch(76% 0.15 55); /* #f99549, 7,74 / 6,74 */
+  --theme-primary-bg: oklch(76% 0.15 55); /* #f99549 */
+  --theme-on-primary: var(--theme-background); /* 7,74 ; 6,48 au survol /90 */
+  --theme-status-success: oklch(78% 0.15 150); /* #67d283, 9,17 / 7,99 */
+  --theme-status-warn: oklch(83% 0.13 85); /* #eec05b, 10,19 / 8,87 */
+  --theme-status-error: oklch(72% 0.161 22); /* #f97676, 6,51 / 5,67 */
+  --theme-on-status-success: var(--theme-background); /* 9,17 ; 7,62 au survol /90 */
+  --theme-on-status-error: var(--theme-background); /* 6,51 */
+  /* Bord de champ ≥ 3:1 sur le fond comme sur la surface (WCAG 1.4.11) : 3,30 / 3,19 */
   --theme-field: color-mix(in srgb, var(--theme-foreground) 38%, transparent);
   /* Traits décoratifs (< 3:1) : jamais seuls porteurs d'information */
-  --theme-line: color-mix(in srgb, var(--theme-foreground) 9%, transparent);
-  --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 22%, transparent);
-  /* Coloration syntaxique (blocs de code seuls) : ratios sur foreground 4 % sur le fond */
-  --theme-code-keyword: oklch(74.5% 0.16 277); /* 7,71:1 */
-  --theme-code-function: oklch(72% 0.157 296); /* 7,07:1 */
-  --theme-code-string: oklch(72.3% 0.19 145); /* 8,08:1 */
-  --theme-code-number: oklch(76.6% 0.16 70); /* 8,54:1 */
-  --theme-code-tag: oklch(71.5% 0.18 22); /* 6,73:1 */
-  --theme-code-comment: oklch(70.4% 0.011 286); /* 7,01:1 */
+  --theme-line: color-mix(in srgb, var(--theme-foreground) 12%, transparent); /* 1,39 */
+  --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 28%, transparent); /* 2,37 */
+  --theme-nav-border: var(--theme-line);
+  --theme-nav-shadow: 0 1px 0 color-mix(in srgb, var(--theme-foreground) 6%, transparent);
+  /* Autocollants (décoratifs) : fond / texte, texte à 7,51 (sauge) et 7,93 (lavande) */
+  --theme-sticker-sage: oklch(40% 0.08 150); /* #235430 */
+  --theme-on-sticker-sage: oklch(94% 0.049 150); /* #d5f5da */
+  --theme-sticker-lavender: oklch(38.1% 0.079 264); /* #2d416d */
+  --theme-on-sticker-lavender: oklch(92% 0.038 264); /* #d8e5ff */
+  /* Coloration syntaxique (blocs de code seuls) : foreground 4 % sur le fond / sur la surface */
+  --theme-code-keyword: oklch(76% 0.15 55); /* #f99549, 7,03 / 6,05 */
+  --theme-code-function: oklch(75.5% 0.11 280); /* #a2a8f4, 7,05 / 6,07 */
+  --theme-code-string: oklch(73.5% 0.13 150); /* #67c07d, 7,05 / 6,07 */
+  --theme-code-number: oklch(75% 0.12 90); /* #cbaa4b, 7,03 / 6,06 */
+  --theme-code-tag: oklch(76.5% 0.14 355); /* #f78bb7, 6,99 / 6,01 */
+  --theme-code-comment: oklch(78% 0.02 265); /* #b1b7c5, 7,83 / 6,75 */
 }
 
-/* Mode clair crémeux — sous-tons chauds (stone) + indigo désaturé */
+/* Mode clair « Sable » (sable chaud + orange copeau). Ratios WCAG : fond / surface. */
 :root:not(.app-dark) {
   color-scheme: light;
-  --theme-primary-text: oklch(43.3% 0.21 278); /* indigo-700 (#4338ca, moins flash que 800) */
-  --theme-primary-bg: oklch(54% 0.225 277); /* indigo-600 (#4f46e5) — boutons */
-  --theme-accent: oklch(45.7% 0.244 297); /* violet-700 (#6d28d9, plus feutré) */
-  --theme-muted: oklch(43.8% 0.013 56); /* stone-600 (#57534e) — gris chaud, pas slate */
-  --theme-background: oklch(97% 0.008 87); /* ivoire chaud (#faf7f2) — évite le bleu-gris */
-  --theme-foreground: oklch(26.6% 0.011 56); /* stone-800 (#292524) — chaud, pas slate-900 */
-  --theme-surface: oklch(100% 0 0); /* cards blanches (#ffffff) */
-  --theme-surface-elevated: oklch(99.5% 0.005 87); /* hover warm-white (#fefdfb) */
-  --theme-nav-border: color-mix(
-    in srgb,
-    oklch(26.6% 0.011 56) 8%,
-    transparent
-  ); /* stone-800 à 8% */
+  --theme-background: oklch(97% 0.015 70); /* #fcf4eb */
+  --theme-surface: oklch(100% 0 0); /* #ffffff */
+  --theme-surface-elevated: oklch(98.5% 0.01 70); /* #fff9f3 */
+  --theme-foreground: oklch(24% 0.03 265); /* #181f2e, 15,08 / 16,47 */
+  --theme-muted: oklch(45% 0.03 265); /* #4d5566, 6,82 / 7,45 */
+  --theme-primary-text: oklch(53.2% 0.178 37); /* #bc3700, 5,21 / 5,69 */
+  /* Aplat à 2,81:1 contre le sable : identifié par son texte, jamais icône seule sans trait ≥ 3:1 */
+  --theme-primary-bg: oklch(68% 0.18 48); /* #ed6e12 */
+  --theme-on-primary: var(--theme-foreground); /* 5,36 ; 5,90 au survol /90 */
+  --theme-status-success: oklch(48% 0.13 150); /* #067132, 5,64 / 6,15 */
+  --theme-status-warn: oklch(50.2% 0.122 56); /* #974e02, 5,66 / 6,16 */
+  --theme-status-error: oklch(50% 0.19 25); /* #b71824, 6,07 / 6,63 */
+  --theme-on-status-success: oklch(100% 0 0); /* 6,15 ; 5,09 au survol /90 */
+  --theme-on-status-error: oklch(100% 0 0); /* 6,63 */
+  --theme-field: color-mix(in srgb, var(--theme-foreground) 50%, transparent); /* 3,17 / 3,24 */
+  --theme-line: color-mix(in srgb, var(--theme-foreground) 12%, transparent); /* 1,27 */
+  --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 28%, transparent); /* 1,80 */
+  --theme-nav-border: var(--theme-line);
   --theme-nav-shadow:
-    0 1px 2px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent),
-    0 4px 12px color-mix(in srgb, oklch(26.6% 0.011 56) 4%, transparent);
-  /* Texte ≥ 4,5:1 jusque sur la teinte à 10 % posée sur le paper (4,75 et 4,97) : mêmes teintes que code-string et code-number */
-  --theme-status-success: oklch(49% 0.14 150); /* #007531 */
-  --theme-status-warn: oklch(51% 0.155 47); /* #a94000 */
-  --theme-status-error: oklch(
-    50.5% 0.213 27.5
-  ); /* red-700 (#c10007) — texte d'erreur ≥ 4,5:1 sur paper */
-  --theme-on-status-error: oklch(100% 0 0);
-  --theme-field: color-mix(in srgb, var(--theme-foreground) 50%, transparent);
-  --theme-line: color-mix(in srgb, var(--theme-foreground) 12%, transparent);
-  --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 28%, transparent);
-  /* Vert et ambre des statuts (3,08 et 3,10:1) assombris pour le code */
-  --theme-code-keyword: oklch(43.3% 0.21 278); /* 7,47:1 */
-  --theme-code-function: oklch(45.7% 0.244 297); /* 7,08:1 */
-  --theme-code-string: oklch(49% 0.14 150); /* 4,98:1 */
-  --theme-code-number: oklch(51% 0.155 47); /* 5,20:1 */
-  --theme-code-tag: oklch(50.5% 0.213 27.5); /* 5,47:1 */
-  --theme-code-comment: oklch(43.8% 0.013 56); /* 6,69:1 */
+    0 1px 2px color-mix(in srgb, var(--theme-foreground) 4%, transparent),
+    0 4px 12px color-mix(in srgb, var(--theme-foreground) 4%, transparent);
+  /* Autocollants (décoratifs) : fond / texte, texte à 8,08 (sauge) et 8,44 (lavande) */
+  --theme-sticker-sage: oklch(90.1% 0.081 150); /* #b9eec2 */
+  --theme-on-sticker-sage: oklch(35.8% 0.079 150); /* #174825 */
+  --theme-sticker-lavender: oklch(91% 0.043 261); /* #d1e2ff */
+  --theme-on-sticker-lavender: oklch(36% 0.1 265); /* #233971 */
+  /* Coloration syntaxique (blocs de code seuls) : foreground 4 % sur le fond / sur la surface */
+  --theme-code-keyword: oklch(51.5% 0.16 40); /* #af3c03, 5,13 / 5,60 */
+  --theme-code-function: oklch(51% 0.15 280); /* #5857b9, 5,11 / 5,58 */
+  --theme-code-string: oklch(48.5% 0.12 150); /* #1b7138, 5,13 / 5,60 */
+  --theme-code-number: oklch(50.5% 0.1 80); /* #825d0d, 5,05 / 5,51 */
+  --theme-code-tag: oklch(52.5% 0.18 355); /* #b32c70, 5,06 / 5,52 */
+  --theme-code-comment: oklch(45% 0.03 265); /* #4d5566, 6,32 / 6,89 */
 }
 
 /* View Transitions — instant swap */
@@ -295,7 +302,7 @@ input:-webkit-autofill:focus {
 
 /* ---------------------------------------------------------------- *
  * Nav underline — indicateur d'état actif sous un lien/bouton de nav.
- * Le parent doit être `group relative`. La barre indigo se révèle au hover
+ * Le parent doit être `group relative`. La barre d'accent se révèle au hover
  * et quand le parent porte `.is-link-active` (routerLinkActive ou scroll-spy).
  * Anime uniquement transform (scaleX), jamais une propriété de layout.
  * ---------------------------------------------------------------- */
@@ -362,7 +369,7 @@ input:-webkit-autofill:focus {
  * Coloration syntaxique des blocs de code (`code` émis par parseMarkdown).
  * Les `span.hljs-*` de highlight.js arrivent par innerHTML et ne peuvent pas
  * porter d'utilitaires : d'où les sélecteurs descendants.
- * Seule exception à la One Indigo Rule (DESIGN.md).
+ * Exception bornée à la One Orange Rule (DESIGN.md).
  * ---------------------------------------------------------------- */
 
 @utility code-syntax {

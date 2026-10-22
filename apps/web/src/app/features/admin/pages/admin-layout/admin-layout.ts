@@ -25,7 +25,8 @@ const ANCHOR_OFFSET: [number, number] = [0, 24];
       <div class="flex items-center gap-3 border-b border-line px-2 pb-[1.125rem]">
         <span
           aria-hidden="true"
-          class="inline-grid size-10 shrink-0 place-items-center rounded-[0.625rem] border border-primary/30 bg-primary/12 font-display text-[0.9375rem] font-bold text-primary"
+          data-testid="admin-monogram"
+          class="inline-grid size-10 shrink-0 place-items-center rounded-[0.625rem] border border-primary/30 bg-primary/5 font-display text-[0.9375rem] font-bold text-primary"
           >JN</span
         >
         <div>
@@ -51,7 +52,8 @@ const ANCHOR_OFFSET: [number, number] = [0, 24];
       <div class="flex min-w-0 items-center gap-2.5">
         <span
           aria-hidden="true"
-          class="inline-grid size-[2.125rem] shrink-0 place-items-center rounded-[0.625rem] border border-primary/30 bg-primary/12 font-display text-[0.8125rem] font-bold text-primary"
+          data-testid="admin-monogram"
+          class="inline-grid size-[2.125rem] shrink-0 place-items-center rounded-[0.625rem] border border-primary/30 bg-primary/5 font-display text-[0.8125rem] font-bold text-primary"
           >JN</span
         >
         <span

@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { FormField, form } from '@angular/forms/signals';
 import { describe, it, expect, beforeEach } from 'vitest';
+import { accentTints } from '@shared/testing/accent-tints';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import { AdminTagsSelector } from './admin-tags-selector';
@@ -300,6 +301,18 @@ describe('AdminTagsSelector', () => {
         selected: ['true', 'false', 'false', 'false'],
         prevented: true,
       });
+    });
+
+    it('Given an open list When a suggestion is active Then it sets the accent text over an 8 % accent tint', async () => {
+      const { page } = await render(['Angular']);
+
+      await page.press('ArrowDown');
+
+      expect(
+        all(page.host, 'tag-option')
+          .filter((option) => option.getAttribute('aria-selected') === 'true')
+          .map((option) => accentTints(option)),
+      ).toEqual([['aria-selected:bg-primary/8']]);
     });
 
     it('Given an open list When ArrowDown, ArrowDown, ArrowUp, ArrowDown then Enter are pressed Then the second suggestion is added', async () => {

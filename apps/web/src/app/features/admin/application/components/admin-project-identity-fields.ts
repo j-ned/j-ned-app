@@ -122,7 +122,7 @@ import type { ProjectDraft } from '../project-draft';
           type="checkbox"
           data-testid="admin-project-featured-input"
           [formField]="project.featured"
-          class="accent-primary-bg size-5"
+          class="accent-primary size-5"
         />
         Mettre en avant sur l'accueil
       </label>

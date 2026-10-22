@@ -209,7 +209,7 @@ import { toPostInput, type PostDraft } from '../post-draft';
             >
               <input
                 type="radio"
-                class="accent-primary-bg size-4.5"
+                class="accent-primary size-4.5"
                 [value]="option.value"
                 [attr.data-testid]="'admin-post-status-' + option.value"
                 [formField]="form.status"

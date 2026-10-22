@@ -87,7 +87,7 @@ type TagChip = { readonly tag: string; readonly classes: string };
             [attr.aria-selected]="index === activeIndex()"
             (mousedown)="$event.preventDefault()"
             (click)="pickOption(option, field)"
-            class="cursor-pointer px-3.5 py-2 text-sm text-foreground hover:bg-foreground/5 aria-selected:bg-primary/10 aria-selected:text-primary"
+            class="cursor-pointer px-3.5 py-2 text-sm text-foreground hover:bg-foreground/5 aria-selected:bg-primary/8 aria-selected:text-primary"
           >
             {{ option }}
           </li>

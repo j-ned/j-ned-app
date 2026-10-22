@@ -888,6 +888,16 @@ describe('AdminPostForm: publication', () => {
     }).toEqual({ types: ['radio', 'radio'], labels: ['Brouillon', 'Publié'], sameGroup: true });
   });
 
+  it('Given the form When it renders Then each radio is drawn in the accent text colour, readable against the page', async () => {
+    const { host } = await renderForm();
+
+    expect(
+      [radio(host, 'draft'), radio(host, 'published')].map((input) =>
+        [...(input?.classList ?? [])].filter((token) => token.startsWith('accent-')),
+      ),
+    ).toEqual([['accent-primary'], ['accent-primary']]);
+  });
+
   it.each([
     { status: 'draft', checked: [true, false] },
     { status: 'published', checked: [false, true] },

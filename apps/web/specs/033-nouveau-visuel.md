@@ -632,3 +632,186 @@ Les PR se suivent (mêmes fichiers) ; chaque tranche est verte sans les suivante
 4. **Boutons `outlined`** : contour 2 px `foreground`, assorti aux cartes.
 5. **Œil optique** : 48 retenu par défaut ; validé à l'œil par le propriétaire sur le rendu réel dans la
    PR 5 (alternative : 96, même poids, dessin plus expressif).
+
+## Plan de test
+
+Commande : `pnpm test` (typecheck des specs + Vitest), précédée de `pnpm exec ng cache clean` et de la
+purge de `node_modules/.vite` ; code de sortie lu (`1`). `pnpm run format:check` et `eslint` sur les
+fichiers de test : verts. Tous les échecs sont des assertions (`AssertionError` sur `toEqual`), aucun
+échec de harnais ni de typage. Le reste de la suite est vert.
+
+Sweep de contrat (anciennes valeurs `text-white`, `accent-primary-bg`, `bg-primary/10` à `/20` sous texte
+d'accent, `--color-accent`, `--theme-accent`, « indigo », `oklch(… 277)`, `theme-color` `#000000`) sur
+`src/**/*.spec.ts`, `e2e/` et `ci/` : aucun autre test n'encode l'ancien contrat.
+`blog-tag-link.spec.ts` ne portait que le libellé « Signal Indigo » (renommé, reste vert).
+
+Helper partagé ajouté : `src/app/shared/testing/accent-tints.ts` (`accentTints(element)` : jetons
+`bg-primary/N`, préfixes de variante compris, triés ; `null` si l'élément manque).
+
+### Tranche 4.1 — le texte reste lisible sur l'accent
+
+- `shared/ui/button.spec.ts` (adapté) : `PRIMARY` = `bg-primary-bg text-on-primary hover:bg-primary-bg/90` ;
+  variante `text` = `text-primary hover:bg-primary/8`. Les 8 cas qui composent `PRIMARY` ou `text` tombent.
+- `features/blog/application/blog-tag-palette.spec.ts` (réécrit) : pastille catalogue avec `text-primary`
+  et teintes exactement `bg-primary/5`, `hover:bg-primary/8` (5 catégories) ; `solid` exactement
+  `bg-primary-bg border-foreground text-on-primary` (catalogue et tag libre, 6 cas) ; aucune couleur
+  Tailwind par défaut ni `*-white` (6 cas) ; parité des catégories et tag libre neutre (verts).
+- `admin-project-form.spec.ts` (adapté) : la case « Mettre en avant » porte `accent-primary` et `size-5`.
+- `admin-post-form.spec.ts` (ajout) : les deux radios de publication portent `accent-primary`, seule
+  classe `accent-*`.
+- `pages/page-not-found.spec.ts` (ajout) : le lien `not-found-home-link` mène à `/` ; ses couleurs
+  (`bg-*`/`text-*` hors tailles) sont exactement `bg-primary-bg`, `text-on-primary`.
+- `two-factor-enable-form.spec.ts` (ajout) : le bouton `twofa-submit` a pour couleurs exactement
+  `bg-status-success`, `text-on-status-success`.
+- `header.spec.ts` (ajout) : `header-monogram` a pour teintes `bg-primary/5`, `group-hover:bg-primary/8`.
+- `admin-layout.spec.ts` (ajout) : les deux `admin-monogram` (barre latérale, barre mobile) ont pour
+  teinte `bg-primary/5`.
+- `admin-tags-selector.spec.ts` (ajout) : l'option active (`aria-selected="true"`) a pour teinte
+  `aria-selected:bg-primary/8`.
+- `blog-list.spec.ts` (ajout) : la puce `tag-filter-clear` a pour teintes `bg-primary/5`,
+  `hover:bg-primary/8`.
+- `src/app/theme-tokens.spec.ts` (nouveau, lit `src/styles.css` comme `editorial-identity.spec.ts` lit les
+  sources) : valeurs des 21 tokens du tableau « Tokens des deux thèmes », clair et sombre (golden) ;
+  ensemble exact des `--theme-*` déclarés par thème (ajout de `on-primary`, `on-status-success`,
+  `sticker-*`, `on-sticker-*`, plus d'`accent`) ; carte complète des `--color-*` de `@theme`, chacun en
+  `var(--theme-…)` (`primary` → `primary-text`).
+- Renommages sans changement de comportement (verts, attendu) : `analytics-presenter.spec.ts`,
+  `admin-overview.spec.ts`, `chart-palette.spec.ts` (valeurs d'exemple orange et texte du nouveau thème),
+  `blog-tag-link.spec.ts`.
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil le
+2026-10-22 20:58, 38 failed / 4368 total), par assertion : classes actuelles `text-white`,
+`accent-primary-bg`, `bg-primary/10`–`/20`, testids `not-found-home-link`, `twofa-submit`,
+`header-monogram`, `admin-monogram` absents, tokens absents ou à l'ancienne valeur.
+
+### Tranche 4.2 — le code se lit dans les deux thèmes
+
+- `src/app/theme-tokens.spec.ts`, `describe('syntax highlighting tokens')` : `it.each` clair / sombre, les
+  six `--theme-code-*` valent exactement les teintes du tableau « Coloration syntaxique » (le mot-clé
+  sombre = `primary-text`, le commentaire = `muted`).
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil le
+2026-10-22 20:58, 2 failed / 4368 total), par assertion : teintes indigo / violet actuelles.
+
+### Tranche 4.3 — l'identité hors CSS
+
+- `src/app/browser-identity.spec.ts` (nouveau) : `src/index.html` déclare exactement deux
+  `meta[name="theme-color"]`, `(prefers-color-scheme: light)` `#fcf4eb` puis `(prefers-color-scheme: dark)`
+  `#141a29` ; `public/favicon.svg` n'a ni dégradé ni `<style>`, sa pastille `rect` a `rx="16"` et
+  `fill="#ed6e12"`, son texte « JN » `fill="#181f2e"`.
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil le
+2026-10-22 20:58, 2 failed / 4368 total), par assertion : une seule `theme-color` sans `media`, favicon
+à dégradé.
+
+Laissé au GREEN, hors Vitest : `favicon.ico` 16/32/48 (régénéré hors repo), garde `ci.yml` « deux
+`theme-color` avec `media` dans le HTML prérendu », scénario axe `/blog?tag=Angular` dans
+`e2e/a11y/scenarios.ts`, et la règle « teinte ≤ 8 % » hors des gabarits ci-dessus (revue). Les contrastes
+eux-mêmes restent prouvés par le job `a11y` (happy-dom ne les calcule pas).
+
+## Journal des tranches
+
+- **Tranche 4.1 — le texte reste lisible sur l'accent** : GREEN 4368 passed / 4368 total · refactor : classes de l'état sélectionné des tags factorisées dans une constante (deux palettes, un seul jeu)
+- **Tranche 4.2 — le code se lit dans les deux thèmes** : GREEN 4368 passed / 4368 total · refactor : aucun
+- **Tranche 4.3 — l'identité hors CSS** : GREEN 4368 passed / 4368 total · refactor : aucun
+
+## Verify
+
+Exécuté par `angular-expert` le 2026-10-22 sur la branche `feat/033-tokens` : `pnpm start` (port 4200,
+SSR de dev) devant la doublure `ci/api-stub` (`PORT=3000 STUB_ADMIN_SESSION=1 node ci/api-stub/server.mjs`,
+cible du proxy `/api`), navigateur intégré, `prefers-color-scheme` émulé.
+
+Steps :
+
+1. Clair, `/blog?tag=Angular` : fond `oklch(0.97 0.015 70)` (sable) ; puce `tag-filter-clear` sur
+   `primary` à 5 %, texte `oklch(0.532 0.178 37)` ; bouton « M'écrire » aplat `oklch(0.68 0.18 48)`,
+   texte `oklch(0.24 0.03 265)` (`on-primary` = `foreground`) ; monogramme de l'en-tête à 5 % ; deux
+   `meta[name="theme-color"]` (`light #fcf4eb`, `dark #141a29`).
+2. Clair, `/blog/article-temoin` : bloc de code, `const` en `oklch(0.515 0.16 40)`, `42` en
+   `oklch(0.505 0.1 80)` (teintes `code-keyword` / `code-number` du plan).
+3. Sombre, `/blog/article-temoin` : classe `app-dark` posée par la préférence système, fond bleu nuit,
+   bloc de code lisible.
+4. Sombre, `/does-not-exist` : fond `oklch(0.22 0.03 265)` ; lien `not-found-home-link` aplat
+   `oklch(0.76 0.15 55)`, texte `oklch(0.22 0.03 265)` (`on-primary` = `background`).
+5. Build de production : garde `ci.yml` « deux `theme-color` avec `media` » jouée sur
+   `dist/…/mentions-legales/index.html` et `index.csr.html` : code 0.
+6. `public/favicon.ico` : capture Playwright du nouveau SVG (pastille orange, « JN » bleu nuit) en 16,
+   32 et 48 px, vérifiée à l'œil sur le 48 px.
+
+Captures : `/blog?tag=Angular` clair, `/blog/article-temoin` clair et sombre, `/does-not-exist` sombre
+(navigateur intégré de la session).
+
+Console : aucune erreur JS ni d'hydratation (« Angular hydrated 16 component(s) ») ; seules erreurs,
+réseau et environnementales : `GET /api/config` 404 (route absente de la doublure) et le 404 attendu du
+document `/does-not-exist` ; avertissement de dev sur le préchargement d'Archivo (inchangé, PR 5).
+
+Verdict : **PASS**.
+
+## Review code
+
+PR 4 (`feat/033-tokens`, `e37e6c1` RED + `8f4de5e` GREEN), revue le 2026-10-22 contre `origin/master`.
+
+**Verdict** : APPROVED
+**Gates CI locaux** : tests ✅ (`pnpm test` après `pnpm exec ng cache clean` + purge `node_modules/.vite` : 225 fichiers, 4368/4368, exit 0) / lint ✅ (`pnpm lint`, exit 0) / format ✅ (`pnpm run format:check`, exit 0) / build ✅ (`pnpm run build --configuration production`, exit 0, postbuild CSP sur 3 pages)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main (archéologie, `text-white`, `accent-primary-bg`, `bg-primary/≥9`, couleurs Tailwind par défaut, `--color-accent`, balayage de recalibration sur `src`, `e2e`, `ci`, `.github`)
+**Warnings de gate** : aucun (test, lint, format, build)
+**Rendu compilé** : ✅ (CSS de prod : `text-on-primary`, `accent-primary`, `bg-primary/8` et les deux `--theme-on-primary` présents ; garde `ci.yml` rejouée sur `dist/` : code 0)
+**Preuve de verify runtime** : ✅ (preuve `## Verify` cohérente, rejouée : `pnpm start` + doublure, `/blog?tag=Angular` en clair, `/blog/article-temoin` en sombre, valeurs calculées conformes, console sans erreur JS ni d'hydratation)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+Contrastes recalculés indépendamment (OKLCH → sRGB, minimum flottant / 8 bits) : tous conformes au plan à ± 0,01 ; tous les `--theme-*` OKLCH dans le gamut sRGB.
+
+**Tests notables** :
+- ⚠️ `src/app/features/blog/application/blog-tag-palette.spec.ts:15` — `accentTints` local qui duplique la regex de `@shared/testing/accent-tints`. Suggestion : un seul helper.
+- ⚠️ `src/app/pages/page-not-found.spec.ts:27` et `src/app/features/auth/application/two-factor-enable-form.spec.ts:60` — même filtre de couleurs recopié à 2 sites.
+- ✨ `src/app/theme-tokens.spec.ts` — golden `toEqual` sur les tokens et carte exacte de `@theme` : la dérive d'un token ou un `--color-*` orphelin casse la suite.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil absent · monitoring : Sentry (profil)
+- non couvert par les gates : la règle « teinte ≤ 8 % sous texte orange » (survols) ne tient que par la revue ; les contrastes réels restent prouvés par le job `a11y` en CI.
+
+**Points non bloquants (à statuer par la session principale)** :
+1. `src/app/features/blog/application/blog-tag-palette.ts:9-19` — `solid` n'a aucun consommateur (seul `tint` est lu, par `blog-tag-link.ts:25` et `admin-tags-selector.ts:150`, et ce depuis #228). La PR y ajoute `SELECTED_TAG_CLASSES` et 6 cas de test, et `DESIGN.md:337` le décrit comme un état rendu. À remonter à `architect` : supprimer `solid` (et ses tests), ou dire dans `DESIGN.md` que l'état n'est rendu nulle part.
+2. `src/app/shared/ui/toast.ts:20,23`, `src/app/features/auth/pages/login/login.ts:24`, `src/app/features/auth/pages/two-factor-verify/two-factor-verify.ts:24` restent à `bg-primary/10`. Acceptable : sous ces teintes, l'orange ne colore que des icônes (contenu non textuel : 4,50:1 ≥ 3:1) ; le texte du toast est `foreground`. Le toast est restylé en PR 6a.
+3. `docs/adr/0030-*.md:3` — statut « proposé », passe à « accepté » au merge de cette PR.
+4. `.claude/project-profile.md:109` cite encore `--color-accent` (supprimé) parmi les tokens-clés.
+
+**Suites (2026-10-22, commit `81d02ab`)** : point 1, `solid` supprimé avec ses tests (aucun état sélectionné
+de tag n'est affiché ; `DESIGN.md` le dit) ; point 2 laissé tel quel (icônes, PR 6a pour le toast) ; points 3
+et 4 appliqués.
+
+## Mesure Lighthouse (PR 4)
+
+2026-10-22. Base `origin/master` `4c54e0b`, branche `8f4de5e` ; images Docker servies tour à tour derrière la
+doublure, Lighthouse 12.8.2 (`chrome-headless-shell` de Playwright), mobile simulé et desktop, 5 passes
+alternées, requêtes tierces bloquées ; 120 rapports.
+
+| Page | Profil | Perf (base → branche) | A11y / BP / SEO | LCP ms | CLS | Élément LCP |
+|---|---|---|---|---|---|---|
+| `/` | mobile | 87 → 88 | 100 / 96 / 100 | 3251 → 3145 | 0,0029 = | `p` 5/5 → `p` 3/5, `h1` 2/5 |
+| `/` | desktop | 99 → 99 | 100 / 96 / 100 | 562 → 562 | 0,0718 = | `h1`, identique |
+| `/blog` | mobile | 91 → 92 | 100 / 96 / 100 | 3276 → 3271 | 0,0027 = | `p` majoritaire, identique |
+| `/blog` | desktop | 100 → 100 | 100 / 96 / 100 | 735 → 731 | 0,0015 = | identique |
+| `/blog/article-temoin` | mobile | 90 → 91 | 100 / 96 / 100 | 2757 → 2854 | 0,0013 = | identique |
+| `/blog/article-temoin` | desktop | 100 → 100 | 100 / 96 / 100 | 642 → 643 | 0,0009 = | identique |
+| `/projects` | mobile | 91 → 90 | 100 / 96 / 100 | 3282 → 3424 | 0,0053 = | identique |
+| `/projects` | desktop | 100 → 100 | 100 / 96 / 100 | 644 → 643 | 0,0095 = | identique |
+| `/projects/projet-temoin` | mobile | 92 → 92 | 100 / 96 / 100 | 2855 → 2854 | 0,0050 = | `h1` majoritaire, identique |
+| `/projects/projet-temoin` | desktop | 100 → 100 | 100 / 96 / 100 | 644 → 645 | 0,0052 = | identique |
+| `/about` | mobile | 91 → 92 | 100 / 96 / 100 | 3163 → 3164 | 0,0220 = | identique |
+| `/about` | desktop | 100 → 100 | 100 / 96 / 100 | 730 → 733 | 0,0006 = | identique |
+
+Octets de police transférés sur `/` : 92 187 en base comme en branche.
+
+- **Non-dégradation > 2 points** : PASS (pire écart −1, Perf mobile `/projects`).
+- **CLS** : identique à la base sur les 12 combinaisons, mais **jamais 0, base comprise** (max 0,0718 sur `/`
+  desktop, décalage de `app-home-hero-section > div.page-container`, présent sur `master`). Le critère « CLS
+  médian 0 » n'est donc pas tenable tel quel : pour les PR 4 à 6b, le critère appliqué est **CLS médian ≤ base**,
+  et le décalage du hero est un suivi à part (hors spec 033).
+- **Élément LCP** : identique sur 11 combinaisons ; sur `/` mobile, 2 passes retiennent le `h1` au lieu du `p`
+  en fondu retardé (mêmes dimensions qu'en base) : variance liée à l'animation, pas un changement de rendu.

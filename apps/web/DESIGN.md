@@ -159,7 +159,7 @@ Deux registres égaux : **Sable** (clair, papier chaud) et **Nuit** (sombre, ble
 
 Ce que ce système refuse : le template portfolio générique (hero centré « Hi, I'm », barres de compétences, nuage de logos de technologies, même déguisé en autocollants), l'over-design (curseur custom, scroll-jacking, intro animée, autocollants partout), le dégradé décoratif, le glassmorphism, l'ombre qui « fait ressortir ».
 
-> **État (2026-10-21) :** ce document décrit la **cible** de la spec 033 (`specs/033-nouveau-visuel.md`, ADR-0030, ADR-0031). Les tokens arrivent dans la PR 4, Bricolage Grotesque dans la PR 5, les composants dans les PR 6a et 6b. D'ici là, `src/styles.css` porte encore l'ancien système (Console sombre / Ivoire clair, indigo, Archivo), et le § 5, qui décrit les classes exactes du code en place, est mis à jour par chaque PR qui change un composant.
+> **État (2026-10-22) :** ce document décrit la **cible** de la spec 033 (`specs/033-nouveau-visuel.md`, ADR-0030, ADR-0031). Les couleurs des deux registres sont en place depuis la PR 4 ; Bricolage Grotesque arrive dans la PR 5 (d'ici là, les titres restent en Archivo), les composants dans les PR 6a et 6b. Le § 5, qui décrit les classes exactes du code en place, est mis à jour par chaque PR qui change un composant.
 
 **Key Characteristics:**
 - Deux registres égaux, Sable et Nuit, qui suivent le système au premier chargement.
@@ -177,7 +177,7 @@ Deux registres (Sable / Nuit), un accent orange, deux couleurs d'autocollant, de
 ### Primary : l'orange copeau
 
 - **Orange texte Sable** (`#bc3700`, `oklch(53.2% 0.178 37)`) : `--theme-primary-text` en clair. Liens, anneau de focus, accent du `<h1>`, cotes, bordures actives. 5,21:1 sur le fond, 5,69:1 sur une carte.
-- **Orange aplat Sable** (`#ed6e12`, `oklch(68% 0.18 48)`) : `--theme-primary-bg` en clair. Fond du bouton primaire et du tag sélectionné, **toujours avec un texte sombre** (`on-primary` = `foreground`, 5,36:1). Jamais un texte orange sur cet aplat, jamais un texte blanc.
+- **Orange aplat Sable** (`#ed6e12`, `oklch(68% 0.18 48)`) : `--theme-primary-bg` en clair. Fond du bouton primaire, **toujours avec un texte sombre** (`on-primary` = `foreground`, 5,36:1). Jamais un texte orange sur cet aplat, jamais un texte blanc.
 - **Orange Nuit** (`#f99549`, `oklch(76% 0.15 55)`) : `--theme-primary-text` **et** `--theme-primary-bg` en sombre. 7,74:1 sur le fond, 6,74:1 sur une carte ; sur l'aplat, le texte prend la couleur du fond (`on-primary` = `background`, 7,74:1).
 
 ### Stickers : sauge et lavande
@@ -317,30 +317,30 @@ Aucune autre ombre, boutons compris.
 
 ## 5. Components
 
-> **Code en place.** Ce § décrit les classes **exactes** des composants tels qu'ils sont dans le code aujourd'hui : il est mis à jour par chaque PR de la spec 033 qui change un composant (PR 4 tokens, PR 5 police, PR 6a composants partagés, PR 6b gabarits), pour ne jamais décrire des classes absentes du code. Jusque-là, « Console » y désigne le registre sombre, « Ivoire » le clair, « Archivo » la police des titres, et les ratios cités sont ceux des tokens en place.
+> **Code en place.** Ce § décrit les classes **exactes** des composants tels qu'ils sont dans le code aujourd'hui : il est mis à jour par chaque PR de la spec 033 qui change un composant (PR 4 tokens, PR 5 police, PR 6a composants partagés, PR 6b gabarits), pour ne jamais décrire des classes absentes du code. « Nuit » y désigne le registre sombre, « Sable » le clair ; « Archivo » reste la police des titres jusqu'à la PR 5 ; les ratios cités sont ceux des tokens en place.
 
 ### Buttons (`shared/ui/button.ts`)
 
 - **Directive d'attribut `appButton`** sur un `<button>` ou un `<a>` natif (`button[appButton], a[appButton]`, ADR-0017) : aucun élément enveloppant, `type`, `disabled`, `aria-*`, `routerLink` et `href` restent natifs. Un `<button appButton>` écrit toujours son `type` (`@angular-eslint/template/button-has-type`). Jamais de `@utility` pour un bouton.
 - **Gabarit unique (appel):** `inline-flex min-h-11 items-center gap-2`, 15 px (`text-[0.9375rem]`), graisse 600, `transition-colors`, `rounded-md` (6px). Hauteur 44 px garantie par `min-h-11` (WCAG 2.5.5).
-- **Variantes:** `primary` (défaut) `bg-primary-bg text-white` → hover `bg-primary-bg/90` ; `outlined` `border-foreground/15 text-foreground` → hover `border-primary/40 text-primary` ; `danger` `bg-status-error text-on-status-error` → hover `bg-status-error/90` ; `outlined-danger` `border-status-error/40 text-status-error` → hover `border-status-error/60 bg-status-error/10` ; `text` `text-primary` → hover `bg-primary/10` ; `text-muted` `text-muted` → hover `bg-foreground/5 text-foreground` ; `text-danger` `text-status-error` → hover `bg-status-error/10`. Pleins sans bordure ni ombre.
+- **Variantes:** `primary` (défaut) `bg-primary-bg text-on-primary` → hover `bg-primary-bg/90` (5,36:1 Sable, 7,74:1 Nuit ; jamais `text-white`) ; `outlined` `border-foreground/15 text-foreground` → hover `border-primary/40 text-primary` ; `danger` `bg-status-error text-on-status-error` → hover `bg-status-error/90` ; `outlined-danger` `border-status-error/40 text-status-error` → hover `border-status-error/60 bg-status-error/10` ; `text` `text-primary` → hover `bg-primary/8` (Accent Tint Rule) ; `text-muted` `text-muted` → hover `bg-foreground/5 text-foreground` ; `text-danger` `text-status-error` → hover `bg-status-error/10`. Pleins sans bordure ni ombre.
 - **`ghost-icon`:** lien icône des listes de l'admin, chaîne propre (`size-11`, centré, `text-foreground`, hover `bg-surface-elevated`) ; `size`, `rounded` et `block` sans effet.
 - **Tailles:** `default` (`px-5`) / `icon` (`min-w-11`, centré, carré de 44 px). `[rounded]="true"` : `rounded-full` (pill). `[block]="true"` : pleine largeur, libellé centré.
 - **États propres à un site** (`aria-pressed:border-primary`, `aria-disabled:*`, `disabled:cursor-wait disabled:opacity-60`) : en classes sur l'élément, à côté de la directive.
-- **Focus:** anneau global 2px couleur `primary`, offset 2px, sur `:focus-visible` uniquement (pas au clic souris) ; il suit le rayon de l'élément (un bouton rond reste rond).
+- **Focus:** anneau global 2px couleur `primary` (orange texte : 5,21:1 Sable, 7,74:1 Nuit), offset 2px, sur `:focus-visible` uniquement (pas au clic souris) ; il suit le rayon de l'élément (un bouton rond reste rond).
 - **Disabled:** opacity 0.5, cursor not-allowed.
 - **Loading state:** non implémenté actuellement → à ajouter (voir Do's and Don'ts).
 
 ### Tags / Badges
 
-- **Pas de composant de pastille générique** (`shared/ui/tag.ts` retiré avec la page Audience, son dernier consommateur). Un statut (« Publié », « Brouillon », « Mis en avant ») n'est pas une pastille colorée : c'est un tampon (`app-stamp`), `status-*` sur `status-*/15` restant sous 4,5:1 en Ivoire.
-- **Tags du blog** (`blog-tag-palette.ts`) : tout le catalogue en `bg-primary/10 text-primary`, quelle que soit la catégorie ; tags libres neutres (`text-muted`) ; sélection en `bg-primary-bg`. Pas de couleur par catégorie (One Orange Rule). Les pastilles de tags ne vivent que sur la page article (`BlogTagLink`, lien vers `/blog?tag=`) et dans le sélecteur de l'admin : la liste du blog n'en affiche plus, ses lignes disent leurs sujets en repère (« Ligne d'article », ci-dessous).
+- **Pas de composant de pastille générique** (`shared/ui/tag.ts` retiré avec la page Audience, son dernier consommateur). Un statut (« Publié », « Brouillon », « Mis en avant ») n'est pas une pastille colorée : c'est un tampon (`app-stamp`), `status-*` sur `status-*/15` frôlant 4,5:1 en Sable (4,52:1 pour le succès).
+- **Tags du blog** (`blog-tag-palette.ts`) : tout le catalogue en `bg-primary/5 text-primary border-primary/30`, survol `bg-primary/8`, quelle que soit la catégorie ; tags libres neutres (`bg-foreground/8 text-muted border-foreground/20`, survol `bg-foreground/15`) ; aucun état sélectionné affiché (le filtre actif se dit par la puce ci-après). Puce du filtre actif de la liste du blog (`tag-filter-clear`) : mêmes teintes, `bg-primary/5`, survol `bg-primary/8`. Pas de couleur par catégorie (One Orange Rule). Les pastilles de tags ne vivent que sur la page article (`BlogTagLink`, lien vers `/blog?tag=`) et dans le sélecteur de l'admin : la liste du blog n'en affiche plus, ses lignes disent leurs sujets en repère (« Ligne d'article », ci-dessous).
 
 ### Cards / Containers
 
-- **Console (dark):** background `bg-foreground/2` ou `bg-surface` (`rgba(255,255,255,0.03)`), border `border-foreground/8`, rounded `rounded-xl` (12px), padding `p-6` (24px).
-- **Ivoire (light):** background `bg-surface` (white), border `border-foreground/8` (stone-800 à 8%), même radius et padding.
-- **Hover:** background switch vers `surface-elevated` (`rgba(255,255,255,0.06)` ou `#fefdfb`).
+- **Nuit (dark):** background `bg-foreground/2` ou `bg-surface` (`#1e2638`, opaque), border `border-foreground/8`, rounded `rounded-xl` (12px), padding `p-6` (24px).
+- **Sable (light):** background `bg-surface` (`#ffffff`), border `border-foreground/8`, même radius et padding.
+- **Hover:** background switch vers `surface-elevated` (`#263045` Nuit, `#fff9f3` Sable).
 - **Shadow:** aucune au repos. Hover = changement de surface, pas d'ajout de shadow.
 - **Internal padding:** `p-6` (24px) standard, `p-8` (32px) pour cards principales du hero.
 
@@ -374,7 +374,7 @@ La mention portée sur un plan, reprise pour dire la nature d'une chose : « En 
 - **Apparence unique:** classes sur l'hôte, sans élément enveloppant : mono majuscule `text-xs`, interlettrage 0,06 em, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`, `rounded-sm`, marges `px-2 py-1`. Une seule apparence pour toutes les natures : c'est le **texte** qui les distingue, jamais une couleur.
 - **Placement:** le consommateur le positionne : coin haut gauche du visuel sur la couverture de projet (`ProjectCover`, ci-dessous), au-dessus du `h1` dans l'en-tête du détail. Posé sur un visuel couvert par un lien étiré, il laisse passer le clic (`pointer-events-none`).
 - **Accessibilité:** texte lu tel quel, sans rôle ni `aria-*` ; la nature est dite par le texte, pas par une couleur ni par la seule position.
-- **Don't:** pas d'indigo ni de couleur de statut (One Orange Rule : c'est une mention, pas un accent) ; jamais un `h*` ni à l'intérieur d'un titre ; jamais interactif ; pas de variante par nature.
+- **Don't:** pas d'orange ni de couleur de statut (One Orange Rule : c'est une mention, pas un accent) ; jamais un `h*` ni à l'intérieur d'un titre ; jamais interactif ; pas de variante par nature.
 
 ### Galerie de projet (`features/projects/application/components/project-gallery.ts`)
 
@@ -475,22 +475,22 @@ La fiche du projet dont parle l'article, puis jusqu'à trois articles proches de
 Le Markdown d'un article, rendu par `parseMarkdown` (seul assainissement, ADR-0002) et posé en `innerHTML`. Même composant sur la page article et dans l'aperçu de l'éditeur (ADR-0013, ADR-0014).
 
 - **Corps:** `prose prose-lg` du plugin typographique, `dark:prose-invert`, titres `foreground`, paragraphes et listes `foreground/85`, liens `text-primary`, tableaux défilants. Sur la page article, le corps est sous `@defer (on immediate; hydrate never)` : servi dans le HTML prérendu, jamais hydraté ; en navigation interne, un squelette (trois barres `foreground/6`) le précède et un chunk introuvable affiche « Le texte de l'article n'a pas pu être chargé. » avec un lien de rechargement complet.
-- **Bloc de code:** `div[data-code-block]` `not-prose`, `rounded-lg`, trait `foreground/8`, fond `foreground/4` (`#141415` Console, `#efece7` Ivoire), `my-8`. Si le langage est connu, une barre d'étiquette (hauteur 40 px, mono `text-xs text-muted`, filet bas `foreground/8`) porte son libellé (« TypeScript », « Dockerfile »…). Puis `pre tabindex="0"` (défilement horizontal au clavier, anneau `primary` en `focus-visible`), mono 14 px, `leading-relaxed`, `p-4`. Langage inconnu ou absent : texte échappé, sans barre ni couleur.
-- **Couleurs du code:** `@utility code-syntax` sur le `code` : texte `foreground`, puis une couleur par rôle. Ratios sur le fond du bloc (composition sRGB, WCAG 2.x) :
+- **Bloc de code:** `div[data-code-block]` `not-prose`, `rounded-lg`, trait `foreground/8`, fond `foreground/4` (sur la page : `#1d2330` Nuit, `#f3ebe3` Sable ; sur une carte, aperçu de l'éditeur : `#272e3f`, `#f6f6f7`), `my-8`. Si le langage est connu, une barre d'étiquette (hauteur 40 px, mono `text-xs text-muted`, filet bas `foreground/8`) porte son libellé (« TypeScript », « Dockerfile »…). Puis `pre tabindex="0"` (défilement horizontal au clavier, anneau `primary` en `focus-visible`), mono 14 px, `leading-relaxed`, `p-4`. Langage inconnu ou absent : texte échappé, sans barre ni couleur.
+- **Couleurs du code:** `@utility code-syntax` sur le `code` : texte `foreground`, puis une couleur par rôle. Ratios sur le fond du bloc, posé sur la page · sur une carte (composition sRGB, WCAG 2.x ; ≥ 5,0:1 en Sable, ≥ 6,0:1 en Nuit sur le pire des deux) :
 
-  | Rôle (`--color-code-*`) | Jetons `hljs-*` | Console | Ivoire |
+  | Rôle (`--color-code-*`) | Jetons `hljs-*` | Nuit | Sable |
   |---|---|---|---|
-  | `keyword` | `keyword`, `literal`, `doctag`, `meta` | `oklch(74.5% 0.16 277)` 7,71 | `oklch(43.3% 0.21 278)` 7,47 |
-  | `function` | `title`, `section`, `built_in`, `type` | `oklch(72% 0.157 296)` 7,07 | `oklch(45.7% 0.244 297)` 7,08 |
-  | `string` | `string`, `regexp`, `addition`, `template-tag` | `oklch(72.3% 0.19 145)` 8,08 | `oklch(49% 0.14 150)` 4,98 |
-  | `number` | `number`, `symbol`, `bullet`, `variable`, `template-variable`, `attr` | `oklch(76.6% 0.16 70)` 8,54 | `oklch(51% 0.155 47)` 5,20 |
-  | `tag` | `name`, `selector-*`, `attribute`, `deletion` | `oklch(71.5% 0.18 22)` 6,73 | `oklch(50.5% 0.213 27.5)` 5,47 |
-  | `comment` | `comment`, `quote` | `oklch(70.4% 0.011 286)` 7,01 | `oklch(43.8% 0.013 56)` 6,69 |
-  | texte | le reste (`property`, `params`, `punctuation`…) | `foreground` 17,70 | `foreground` 13,02 |
+  | `keyword` (orange) | `keyword`, `literal`, `doctag`, `meta` | `oklch(76% 0.15 55)` 7,03 · 6,05 | `oklch(51.5% 0.16 40)` 5,13 · 5,60 |
+  | `function` (lavande) | `title`, `section`, `built_in`, `type` | `oklch(75.5% 0.11 280)` 7,05 · 6,07 | `oklch(51% 0.15 280)` 5,11 · 5,58 |
+  | `string` (sauge) | `string`, `regexp`, `addition`, `template-tag` | `oklch(73.5% 0.13 150)` 7,05 · 6,07 | `oklch(48.5% 0.12 150)` 5,13 · 5,60 |
+  | `number` (ocre) | `number`, `symbol`, `bullet`, `variable`, `template-variable`, `attr` | `oklch(75% 0.12 90)` 7,03 · 6,06 | `oklch(50.5% 0.1 80)` 5,05 · 5,51 |
+  | `tag` (rose) | `name`, `selector-*`, `attribute`, `deletion` | `oklch(76.5% 0.14 355)` 6,99 · 6,01 | `oklch(52.5% 0.18 355)` 5,06 · 5,52 |
+  | `comment` (= `muted`) | `comment`, `quote` | `oklch(78% 0.02 265)` 7,83 · 6,75 | `oklch(45% 0.03 265)` 6,32 · 6,89 |
+  | texte | le reste (`property`, `params`, `punctuation`…) | `foreground` 14,00 · 12,04 | `foreground` 13,97 · 15,25 |
 
-  Étiquette `text-muted` : 7,01 (Console), 6,69 (Ivoire).
+  Étiquette `text-muted` : 7,83 · 6,75 (Nuit), 6,32 · 6,89 (Sable).
 - **Copier:** sur le site et dans l'aperçu, chaque bloc porte un `button[data-code-copy]` à droite de la barre (barre présente même sans langage connu) : mono `text-xs text-muted`, survol `foreground`, 32 px de haut dans la barre de 40 px pour que l'anneau `focus-visible` global (2 px, décalé de 2 px) ne soit pas rogné. Cet anneau vient de la règle globale `:where(a, button, …):focus-visible` de `styles.css`, non stratifiée : elle l'emporte sur les classes `focus-visible:outline-*` du bouton, qui restent inertes (même anneau, doublon assumé et figé par un test de `parse-markdown`). Libellé visible « Copier », nom « Copier le bloc de code N » (texte `sr-only`), « Copié » pendant 2 s après le dernier clic, « Échec » pendant 2 s si le presse-papiers refuse. Deux copies rapprochées sont annoncées toutes les deux (la région est vidée puis réécrite au rendu suivant). La directive `appCodeCopy` écoute le clic sur un ancêtre hydraté (rejoué avant hydratation par `withEventReplay`) et une région `role="status"` `sr-only`, hors du `@defer`, annonce « Code copié dans le presse-papiers » ou « Copie impossible : sélectionnez le code. ». Absent du flux RSS.
-- **Code en ligne:** `text-primary` sur fond `foreground/6`, `rounded-sm`, `px-1.5 py-0.5`, graisse 500 (la seule de JN Mono), sans les accents graves du plugin typographique. Le fond, la chasse fixe et l'absence de soulignement le distinguent d'un lien, qui partage l'indigo.
+- **Code en ligne:** `text-primary` sur fond `foreground/6`, `rounded-sm`, `px-1.5 py-0.5`, graisse 500 (la seule de JN Mono), sans les accents graves du plugin typographique. Le fond, la chasse fixe et l'absence de soulignement le distinguent d'un lien, qui partage l'orange (4,64:1 Sable, 6,66:1 Nuit sur le fond `foreground/6` posé sur la page).
 - **Souligné (`<u>`):** couleur du texte, trait `foreground/40` de 2 px décalé de `0.3em` ; jamais en `primary`, pour ne pas passer pour un lien.
 - **Images du corps:** `loading="lazy"`, `decoding="async"` ; `width`/`height` lus dans la clé `blog-content/<uuid>-<empreinte>-<l>x<h>.avif` (ADR-0015) réservent la place avant l'arrivée de l'image, `h-auto max-w-full` garde le ratio.
 - **Don't:** pas d'italique sur les commentaires (JN Mono n'a ni italique ni autre graisse que 500 : on obtiendrait un oblique synthétique) ; jamais de `style` inline (DOMPurify le retire, la CSP le refuserait) ; aucune de ces six teintes hors d'un bloc de code.
@@ -507,10 +507,10 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 ### Inputs / Forms (utility `form-input`)
 
 - **Shape:** `rounded-lg` (8px), padding `px-3.5 py-2.5` (~14px / 10px).
-- **Background:** `bg-surface` (Console Surface 1 en dark, white en light).
+- **Background:** `bg-surface` (`#1e2638` en Nuit, `#ffffff` en Sable).
 - **Border:** `border border-field` au repos (token Field, ≥ 3:1 dans les deux registres), commun à `form-input` et `app-select`.
-- **Placeholder:** `placeholder:text-muted` (7,86:1 Ivoire, 7,14:1 Console). Jamais atténué : un texte de substitution reste du texte.
-- **Contrôles natifs:** `color-scheme: dark` sur `:root`, `light` sur `:root:not(.app-dark)` : case à cocher, liste d'un `select` et barres de défilement suivent le registre. Case à cocher en `accent-primary-bg size-5`, focus par le `:focus-visible` global.
+- **Placeholder:** `placeholder:text-muted` (7,45:1 Sable, 7,52:1 Nuit). Jamais atténué : un texte de substitution reste du texte.
+- **Contrôles natifs:** `color-scheme: dark` sur `:root`, `light` sur `:root:not(.app-dark)` : case à cocher, liste d'un `select` et barres de défilement suivent le registre. Cases à cocher et boutons radio en `accent-primary` (5,21:1 Sable), jamais `accent-primary-bg` (2,81:1) ; `size-5` sur la case « Mettre en avant », focus par le `:focus-visible` global.
 - **Focus:** `focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`. Pas d'outline supplémentaire.
 - **Invalid:** `aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-red-500/30`.
 - **Disabled:** opacity 0.5, cursor not-allowed.
@@ -531,7 +531,7 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 ### Coque admin (`features/admin/pages/admin-layout/admin-layout.ts`, `application/components/admin-nav.ts`)
 
 - **Landmarks:** `App` garde le seul `<main>` ; la coque n'émet ni `main`, ni `aside`, ni titre. Header et Footer publics absents sous `/admin` dès le premier rendu (l'adresse demandée suffit, sans attendre la navigation).
-- **Barre latérale (à partir de `lg`, 1 024 px):** colonne de `15.75rem`, `sticky top-0 h-svh`, filet droit `line`. En tête, monogramme « JN » (carré 40 px, `rounded-[0.625rem]`, `border-primary/30`, `bg-primary/12`, `text-primary`) et « Julien Nédellec / Administration » (mono 12 px). Contenu de page : `max-w-[72.5rem]`, `px-14 pt-11`, corps 15 px.
+- **Barre latérale (à partir de `lg`, 1 024 px):** colonne de `15.75rem`, `sticky top-0 h-svh`, filet droit `line`. En tête, monogramme « JN » (carré 40 px, `rounded-[0.625rem]`, `border-primary/30`, `bg-primary/5`, `text-primary`) et « Julien Nédellec / Administration » (mono 12 px). Contenu de page : `max-w-[72.5rem]`, `px-14 pt-11`, corps 15 px.
 - **Navigation:** un seul `<nav aria-label="Administration">`. « Vue d'ensemble » hors groupe, puis trois groupes `role="group"` nommés par `aria-labelledby` : Contenu (Projets, Articles, Parcours, CV), Audience (Audience, Messages), Compte (Paramètres). Libellé de groupe en mono 12 px capitales, `tracking-[0.06em]`, `text-muted`. Lien de 44 px, `text-muted`, survol `bg-surface-elevated`. Page courante : `aria-current="page"` (via `routerLinkActive`), texte `foreground` semi-gras, libellé souligné d'un trait intérieur de 2 px `primary` (même grammaire que le groupe de filtres), icône `primary`. Comptes en mono 12 px à droite (projets, articles, non-lus, ce dernier en `primary` dès qu'il y en a un), suffixe « non lu(s) » en `sr-only`.
 - **Pied:** « Voir le site » (nouvel onglet, annoncé en `sr-only`), bascule de thème (« Passer en mode clair / sombre »), « Se déconnecter », e-mail du compte en mono 12 px.
 - **Mobile (sous `lg`):** barre `sticky` (monogramme 34 px, libellé de la page courante en display 16 px, bouton menu 44 px `aria-expanded` + `aria-controls="admin-drawer"`), tiroir `Drawer` à gauche avec la même navigation ; un lien ou « Se déconnecter » le ferme.
@@ -667,7 +667,7 @@ Overlay, verrouillage du défilement, piège de focus (Tab et Maj+Tab restent da
 
 ### Chart (`shared/ui/chart.ts`)
 
-Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionnelles (au-delà de l'accent `primary` + status) sont tolérées pour différencier les séries — mais elles doivent rester dans la famille des dérivées indigo/violet (pas de teal/coral aléatoire).
+Wrapper Chart.js pour les KPI admin. Le seul endroit où des couleurs additionnelles (au-delà de l'accent `primary` + status) sont tolérées pour différencier les séries — mais elles doivent rester des dérivées de l'accent orange ou du texte du registre (pas de teal/coral aléatoire).
 
 Courbe des visiteurs (`buildVisitorsChartData`) : une seule teinte, « Visiteurs » trait `primary` plein, « Pages vues » `foreground` 55 % tireté (4/4), traits droits (`tension: 0`). Couleurs lues sur les jetons du registre courant (`readChartPalette`) et relues à chaque bascule de thème ; repli couleur système `CanvasText`, jamais une couleur en dur.
 

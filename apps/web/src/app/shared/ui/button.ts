@@ -23,13 +23,13 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 };
 
 const VARIANT_CLASSES: Record<Exclude<ButtonVariant, 'ghost-icon'>, string> = {
-  primary: 'bg-primary-bg text-white hover:bg-primary-bg/90',
+  primary: 'bg-primary-bg text-on-primary hover:bg-primary-bg/90',
   outlined:
     'border border-foreground/15 text-foreground hover:border-primary/40 hover:text-primary',
   danger: 'bg-status-error text-on-status-error hover:bg-status-error/90',
   'outlined-danger':
     'border border-status-error/40 text-status-error hover:border-status-error/60 hover:bg-status-error/10',
-  text: 'text-primary hover:bg-primary/10',
+  text: 'text-primary hover:bg-primary/8',
   'text-muted': 'text-muted hover:bg-foreground/5 hover:text-foreground',
   'text-danger': 'text-status-error hover:bg-status-error/10',
 };

@@ -51,6 +51,18 @@ describe('TwoFactorEnableForm: initial state (no QR yet)', () => {
 });
 
 describe('TwoFactorEnableForm: QR generated state', () => {
+  it('Given a QR code When the activation button renders Then its label is drawn in the on-success colour over the success fill', () => {
+    const fixture = withQr();
+    const submit = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="twofa-submit"]',
+    );
+    const colours = [...(submit?.classList ?? [])].filter((token) =>
+      /^(?:bg|text)-(?!(?:xs|sm|base|lg|\d*xl|left|center|right)$)/.test(token),
+    );
+
+    expect(colours.sort()).toEqual(['bg-status-success', 'text-on-status-success']);
+  });
+
   it('renders the QR image with the accessible alt text and the secret', () => {
     const fixture = withQr();
 
