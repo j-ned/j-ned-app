@@ -2,7 +2,7 @@
 id: 031
 title: Un ton plus amical, au tutoiement
 type: refactor
-status: draft
+status: done
 created: 2026-10-21
 related: [PRODUCT.md, specs/029-repositionnement-portfolio-passion.md, specs/030-adr-en-articles.md, src/app/editorial-identity.spec.ts]
 ---
@@ -408,3 +408,19 @@ Défaut trouvé par `qa` pendant le RED (hors périmètre du ton, corrigé dans 
 (e-mail, page de contact, `Canonical`, `Acknowledgments`), qui ne répond plus (vérifié le
 2026-10-21). Il reprend les champs de `public/security.txt`, avec
 `Canonical: https://nedellec-julien.fr/.well-known/security.txt`.
+
+## Clôture (2026-10-22)
+
+- **PR 1** : #246 (spec), #250 (`PRODUCT.md`). **PR 2** : #253 (textes publics, verrou anti-vouvoiement,
+  `security.txt`), vérifiée en production le 2026-10-22 : aucun vouvoiement hors citation d'un titre
+  de la CNIL et du nom commun « rendez-vous ».
+- **PR 3, contenu en base**, fait dans l'admin avec l'accord du propriétaire, texte par texte, et
+  vérifié par l'API et en production : phrase de l'article DashFlow au tutoiement ; parcours
+  (accroche, trois traits, deux « Ce que je fais ») ; accroche et description des six fiches projet,
+  les démos dites fictives jusque dans leurs avis.
+- **PR 4, API** : `nest-portfolio-app#66` (e-mail de confirmation du contact au tutoiement). La graine
+  `profile.seed.ts` n'est pas réécrite : copie figée de la migration 0021, dont la migration 0028
+  dépend mot pour mot ; le contenu réel vit en base.
+- **PR 5** : #248 (brouillons A1 à A4 au tutoiement).
+- Hors périmètre, constaté : les articles déjà publiés sont relus au cas par cas ; aucun ne vouvoie
+  plus le lecteur au 2026-10-22.
