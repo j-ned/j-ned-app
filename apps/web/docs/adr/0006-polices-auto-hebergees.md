@@ -1,6 +1,6 @@
 # ADR-0006 — Polices de marque auto-hébergées (Archivo, IBM Plex Sans et Mono renommées JN Sans et JN Mono)
 
-- **Statut** : accepté (2026-10-04, avec la Tranche V)
+- **Statut** : accepté (2026-10-04, avec la Tranche V) ; amendé par ADR-0031 (2026-10-22, Archivo remplacée par Bricolage Grotesque)
 - **Date** : 2026-10-04
 - **Contexte spec** : `specs/archive/009-plateforme-acquisition.md`, « Tranche V — plan détaillé »
 - **Remplace** : la règle « System-Stack » de `DESIGN.md` § 3 (et son miroir dans `DESIGN.json`)

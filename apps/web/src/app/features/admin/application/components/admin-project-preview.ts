@@ -22,7 +22,7 @@ import { toCaseStudyView, toProjectCardView } from '@features/projects/applicati
           <h2
             id="admin-project-preview-title"
             data-testid="admin-project-preview-title"
-            class="font-display font-bold font-stretch-110%"
+            class="font-display font-bold"
           >
             Aperçu public
           </h2>

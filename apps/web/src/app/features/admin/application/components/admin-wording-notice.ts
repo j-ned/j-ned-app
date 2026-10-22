@@ -17,7 +17,7 @@ import type { WordingWarning } from '../profile-wording-warnings';
         <h2
           id="admin-wording-notice-title"
           data-testid="admin-wording-notice-title"
-          class="font-display text-base font-bold font-stretch-104%"
+          class="font-display text-base font-bold"
         >
           À relire avant de publier
         </h2>

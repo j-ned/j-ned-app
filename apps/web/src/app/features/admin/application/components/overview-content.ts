@@ -35,7 +35,7 @@ import { AdminSectionHead } from './admin-section-head';
                   }
                 </div>
                 <div class="min-w-0">
-                  <h3 class="text-[0.96875rem] font-bold tracking-[-0.01em] font-stretch-104%">
+                  <h3 class="text-[0.96875rem] font-bold tracking-[-0.01em]">
                     <a
                       data-testid="overview-content-link"
                       [routerLink]="row.href"

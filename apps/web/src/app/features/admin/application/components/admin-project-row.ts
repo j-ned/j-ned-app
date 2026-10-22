@@ -25,7 +25,7 @@ import type { AdminProjectRowView } from '../admin-projects-view';
       </p>
       <h2
         data-testid="admin-project-row-title"
-        class="mt-1.5 text-[1.375rem] leading-[1.1] font-extrabold tracking-[-0.03em] font-stretch-106%"
+        class="mt-1.5 text-[1.375rem] leading-[1.1] font-extrabold tracking-[-0.03em]"
       >
         {{ row().title }}
       </h2>

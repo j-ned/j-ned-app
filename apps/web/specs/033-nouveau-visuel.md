@@ -630,8 +630,8 @@ Les PR se suivent (mêmes fichiers) ; chaque tranche est verte sans les suivante
 3. **Carte de partage** : texte seul, sans portrait. Le sous-titre (« Tourneur CN et développeur web »
    proposé) est calé sur les textes de la spec 031 dans la PR 6a.
 4. **Boutons `outlined`** : contour 2 px `foreground`, assorti aux cartes.
-5. **Œil optique** : 48 retenu par défaut ; validé à l'œil par le propriétaire sur le rendu réel dans la
-   PR 5 (alternative : 96, même poids, dessin plus expressif).
+5. **Œil optique** : **48**, confirmé par le propriétaire le 2026-10-22 sur une comparaison visuelle 48 / 96
+   des titres de l'accueil (96 : même poids, dessin plus serré).
 
 ## Plan de test
 
@@ -709,11 +709,51 @@ Laissé au GREEN, hors Vitest : `favicon.ico` 16/32/48 (régénéré hors repo),
 `e2e/a11y/scenarios.ts`, et la règle « teinte ≤ 8 % » hors des gabarits ci-dessus (revue). Les contrastes
 eux-mêmes restent prouvés par le job `a11y` (happy-dom ne les calcule pas).
 
+### Tranche 5 — les titres en Bricolage Grotesque
+
+Sweep de contrat (`archivo`, `Archivo`, `font-stretch`, `fonts/`, `woff2` sur `src/**/*.spec.ts`, `e2e/`,
+`ci/`) : aucun test existant ne fige Archivo ni une largeur, rien à adapter. Hors tests, l'ancien contrat
+reste dans `.github/workflows/ci.yml:238` (nom du fichier de police du job `docker`), à changer au GREEN.
+
+`src/app/display-font.spec.ts` (nouveau, lit `src/styles.css`, `src/index.html` et `public/fonts/` comme
+`theme-tokens.spec.ts` et `browser-identity.spec.ts`) :
+
+- face `'Bricolage Grotesque'` : déclarations exactement `src: url('/fonts/bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2') format('woff2')`,
+  `font-weight: 600 800`, `font-display: swap` (golden : aucun `font-stretch`) ;
+- face `'Bricolage Grotesque Fallback'` : exactement les quatre `local()` (Arial Bold, Arial-BoldMT,
+  Liberation Sans Bold, LiberationSans-Bold), `font-weight: 600 800`, `size-adjust: 97.56%`,
+  `ascent-override: 95.32%`, `descent-override: 27.67%`, `line-gap-override: 0%` ;
+- familles déclarées : exactement Bricolage Grotesque, JN Sans (×2), JN Mono et les deux replis ;
+- `--font-display` = `'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif` ;
+- `styles.css` : aucun `font-stretch` (face et règles `h1`–`h3`) ;
+- `it.each` sur `styles.css` et `index.html` : plus aucune mention d'Archivo (commentaires compris) ;
+- `index.html` : les `link[rel=preload][as=font]` sont exactement un, vers le nouveau fichier,
+  `type="font/woff2"`, `crossorigin` ;
+- `public/fonts/` contient exactement les six fichiers attendus (Bricolage Grotesque et
+  `OFL-bricolage-grotesque.txt` à la place des deux fichiers Archivo) ;
+- le fichier de police commence par la signature `wOF2` ;
+- `OFL-bricolage-grotesque.txt` contient « SIL OPEN FONT LICENSE Version 1.1 » et « The Bricolage Grotesque
+  Project Authors » ;
+- balayage des `.ts` non-spec de `src/app` : aucune ligne avec `font-stretch-` ou `[font-stretch:`
+  (liste `fichier:ligne` attendue vide).
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil le
+2026-10-22 22:04, 12 failed / 4374 total), après `pnpm exec ng cache clean` et purge de
+`node_modules/.vite`, code de sortie `1` ; `pnpm run format:check` et `eslint` du fichier : verts ; aucune
+erreur de typage. Les 12 échecs sont des `AssertionError` : faces Bricolage absentes (`undefined`), familles
+et `--font-display` à Archivo, 4 `font-stretch` dans `styles.css`, mentions d'Archivo (6 dans `styles.css`,
+1 dans `index.html`), preload vers le fichier Archivo, dossier `public/fonts/` à l'ancienne, fichier et
+licence absents (`null`), 12 lignes de largeur dans 11 gabarits. Les 4362 autres tests restent verts.
+
+Laissé au GREEN, hors Vitest : `ci.yml` (job `docker`), statut d'ADR-0006, `DESIGN.md` § 3 et `DESIGN.json`,
+et la vérification « police bloquée puis débloquée, `h1` immobile » (DevTools, plus Lighthouse).
+
 ## Journal des tranches
 
 - **Tranche 4.1 — le texte reste lisible sur l'accent** : GREEN 4368 passed / 4368 total · refactor : classes de l'état sélectionné des tags factorisées dans une constante (deux palettes, un seul jeu)
 - **Tranche 4.2 — le code se lit dans les deux thèmes** : GREEN 4368 passed / 4368 total · refactor : aucun
 - **Tranche 4.3 — l'identité hors CSS** : GREEN 4368 passed / 4368 total · refactor : aucun
+- **Tranche unique PR 5 — les titres en Bricolage Grotesque** : GREEN 4374 passed / 4374 total · refactor : aucun
 
 ## Verify
 
@@ -744,6 +784,60 @@ Captures : `/blog?tag=Angular` clair, `/blog/article-temoin` clair et sombre, `/
 Console : aucune erreur JS ni d'hydratation (« Angular hydrated 16 component(s) ») ; seules erreurs,
 réseau et environnementales : `GET /api/config` 404 (route absente de la doublure) et le 404 attendu du
 document `/does-not-exist` ; avertissement de dev sur le préchargement d'Archivo (inchangé, PR 5).
+
+Verdict : **PASS**.
+
+### PR 5 (police)
+
+Exécuté par `angular-expert` le 2026-10-22 sur la branche `feat/033-police` : `pnpm start` (port 4200,
+SSR de dev) devant la doublure `ci/api-stub` (`PORT=3000 STUB_ADMIN_SESSION=1 node ci/api-stub/server.mjs`),
+navigateur intégré.
+
+Fichier de police produit hors repo (dossier vide du scratchpad), binaire identique sur deux exécutions
+(SHA-256 `10dd73b15fe8917443b93d9ddf0aa1cf5d66c2e665920af37b5b9a50c192b5dd`, 37 460 octets, la valeur
+d'ADR-0031) :
+
+```sh
+npm pack @fontsource-variable/bricolage-grotesque@5.3.0 --registry https://registry.npmjs.org
+tar xzf fontsource-variable-bricolage-grotesque-5.3.0.tgz
+python3 -m pip install --target .ft fonttools==4.67.0 brotli==1.2.0
+PYTHONPATH=.ft python3 -m fontTools.varLib.instancer \
+  package/files/bricolage-grotesque-latin-standard-normal.woff2 \
+  opsz=48 wdth=100 wght=600:800 --no-recalc-timestamp \
+  -o bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2
+```
+
+Source : 131 548 octets, 226 points de code, `head.fontRevision` 1.001, nom ID 5 « Version 1.001 » ;
+sortie : seul l'axe `wght` 600–800 reste, 226 points de code, métriques `OS/2` typo 930 / −270 / 0 sur
+1 000. Licence : `LICENSE` du paquet (« Copyright 2022 The Bricolage Grotesque Project Authors », SIL OFL
+1.1), copiée en `public/fonts/OFL-bricolage-grotesque.txt`.
+
+Steps :
+
+1. `/` à 1 024 px : `h1` en `"Bricolage Grotesque", "Bricolage Grotesque Fallback", system-ui, sans-serif`,
+   graisse 800, `font-stretch` 100 %, face `Bricolage Grotesque 600 800` chargée
+   (`document.fonts.check` vrai) ; ressource `/fonts/bricolage-grotesque-1.001-…woff2` lancée par le
+   `link` de préchargement ; `curl` : `200`, `Content-Type: font/woff2`, `Content-Length: 37460` ; aucune
+   ressource hors origine (`performance.getEntriesByType('resource')`).
+2. Repli seul contre police chargée (famille du `h1` forcée sur `'Bricolage Grotesque Fallback'`, face
+   `local()` chargée, puis rétablie) : boîte du `h1` **identique** au pixel près. 1 024 px : `y` 186,25,
+   `w` 521,41, `h` 172,5, 3 lignes, élément suivant à `y` 402,75 dans les deux cas (largeur du texte
+   470,4 contre 475,7). 375 px : `y` 128, `w` 343, `h` 112,31, 3 lignes, suivant à 280,31 dans les deux
+   cas (306,3 contre 309,7). Trois premiers `h2` : hauteurs et positions identiques.
+3. `/` à 375 px, rechargé : aucune entrée `layout-shift` (`PerformanceObserver`, `buffered`).
+4. Build de production : `dist/…/browser/fonts/` porte les six fichiers attendus, aucun fichier Archivo ;
+   le HTML prérendu précharge le nouveau fichier.
+
+Capture : `/` à 375 px, `h1` « Tourneur CN le jour, développeur web le reste du temps. » en Bricolage
+Grotesque (navigateur intégré de la session).
+
+Console : aucune erreur JS ni d'hydratation (« Angular hydrated 12 component(s) ») ; seule erreur, réseau
+et environnementale : `GET /api/config` 404 (route absente de la doublure, comme en PR 4). Plus
+d'avertissement de préchargement non utilisé.
+
+Gates : `pnpm test` (après `ng cache clean` et purge de `node_modules/.vite`) 226 fichiers, 4374/4374,
+code 0 ; `pnpm lint` 0 ; `pnpm run format:check` 0 ; `pnpm run build --configuration production` 0, sans
+avertissement.
 
 Verdict : **PASS**.
 
@@ -815,3 +909,69 @@ Octets de police transférés sur `/` : 92 187 en base comme en branche.
   et le décalage du hero est un suivi à part (hors spec 033).
 - **Élément LCP** : identique sur 11 combinaisons ; sur `/` mobile, 2 passes retiennent le `h1` au lieu du `p`
   en fondu retardé (mêmes dimensions qu'en base) : variance liée à l'animation, pas un changement de rendu.
+
+## Review code (PR 5)
+
+PR 5 (`feat/033-police`, `a6b9519` RED + `2276f2a` GREEN), revue le 2026-10-22 contre `origin/master`.
+
+**Verdict** : REJECTED
+**Gates CI locaux** : tests ✅ (`pnpm test` après `pnpm install --frozen-lockfile`, `pnpm exec ng cache clean` et purge de `node_modules/.vite` : 226 fichiers, 4374/4374, exit 0) / lint ✅ (`pnpm lint`, exit 0) / format ✅ (`pnpm run format:check`, exit 0) / build ✅ (`pnpm run build --configuration production` sur `dist/` vidé, exit 0, postbuild CSP sur 3 pages)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main (`archivo` insensible à la casse sur `src`, `public`, `ci`, `.github`, `e2e`, `dist` : 0 hors docs historiques et ADR ; `font-stretch` sur `src`, `public`, `ci`, `.github`, `e2e` hors specs et CSS compilé : 0 ; archéologie des commentaires ajoutés : 0 ; `font-src` : ligne CSP d'`index.html` hors diff)
+**Warnings de gate** : aucun (test, lint, format, build)
+**Rendu compilé** : ✅ (CSS de prod : face `Bricolage Grotesque` et son repli avec les valeurs du plan, aucun `font-stretch` ; `index.csr.html` et `mentions-legales/index.html` préchargent le seul nouveau fichier ; `dist/…/browser/fonts/` = six fichiers, aucun Archivo)
+**Preuve de verify runtime** : ✅ (preuve `## Verify` › « PR 5 (police) » complète et cohérente avec le diff ; rejouée : `pnpm start` + doublure, `/` : `h1` en `"Bricolage Grotesque", "Bricolage Grotesque Fallback", system-ui, sans-serif`, 800, `font-stretch` 100 %, face `600 800` chargée, ressource lancée par le `link` de préchargement, `200 font/woff2 37460`, aucune ressource hors origine ; console : hydratation OK (12 composants), seuls des 404 `/api/*` de la doublure, sans rapport avec le diff)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ❌ (mesure Lighthouse de la PR 5 absente, `DESIGN.md` § 3 incohérent)
+
+Reproductibilité : commande de la preuve rejouée dans un dossier vide (`npm pack @fontsource-variable/bricolage-grotesque@5.3.0`, fontTools 4.67.0 + brotli 1.2.0, instancer `opsz=48 wdth=100 wght=600:800 --no-recalc-timestamp`) : SHA-256 `10dd73b15fe8917443b93d9ddf0aa1cf5d66c2e665920af37b5b9a50c192b5dd`, 37 460 octets, **identique** au fichier commité ; seul axe restant `wght` 600–800, `fontRevision` 1.001, 226 points de code, `OS/2` typo 930 / −270 / 0. Licence : `public/fonts/OFL-bricolage-grotesque.txt` identique octet pour octet au `LICENSE` du paquet (OFL 1.1, copyright sans *Reserved Font Name*). Retrait des largeurs : 12 lignes dans 11 gabarits, seul `font-stretch-*` / `[font-stretch:104%]` retiré (le reste est un reformatage Prettier d'`admin-layout.ts`). ADR-0006 (statut amendé) et ADR-0031 (accepté) à jour ; `DESIGN.json` déjà à Bricolage Grotesque depuis la PR 3. Rien des PR 6a/6b. Aucun test existant modifié.
+
+**Tests notables** :
+- ✨ `src/app/display-font.spec.ts:52-71` — golden `toEqual` sur les déclarations exactes des deux faces : un `font-stretch` réintroduit ou une métrique de repli dérivée casse la suite.
+- ✨ `src/app/display-font.spec.ts:143-151` — balayage `fichier:ligne` des gabarits : la régression se lit directement dans l'échec.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil absent · monitoring : Sentry (profil)
+- non couvert par les gates : le job `a11y` (contrastes, clair et sombre) ne tourne qu'en CI ; l'œil optique 48 reste à valider à l'œil par le propriétaire (décision de goût 5).
+
+**Points à corriger** :
+1. `DESIGN.md:258` — « 37 460 octets, 5,2 % de moins qu'Bricolage Grotesque » : remplacement mécanique qui compare la police à elle-même. Attendu : « 5,2 % de moins qu'Archivo » (ou « que l'ancienne police de titres, Archivo »).
+2. `specs/033-nouveau-visuel.md` (§ Vérifications, l. 602-608, et l. 749 « Laissé au GREEN … plus Lighthouse ») — la mesure Lighthouse avant / après de la PR 5 n'est pas faite : aucune section « Mesure Lighthouse (PR 5) ». Critères à rapporter comme pour la PR 4 : médianes non dégradées de plus de 2 points, CLS médian ≤ base, élément LCP identique, **octets de police transférés sur `/` ≤ base** (attendu : − 2 052).
+
+
+**Suites (2026-10-22)** : point 1 corrigé (`DESIGN.md` : « 5,2 % de moins qu'Archivo ») ; point 2, mesure
+ci-dessous.
+
+## Mesure Lighthouse (PR 5)
+
+2026-10-22. Base : image de la PR 4 (rendu de `master` `e094f84`), branche `2276f2a` ; même protocole que la
+PR 4 (doublure, Lighthouse 12.8.2, mobile et desktop, 5 passes alternées, tiers bloqués), 120 rapports.
+
+| Page | Profil | Perf (base → branche) | A11y / BP / SEO | LCP ms | CLS | Élément LCP |
+|---|---|---|---|---|---|---|
+| `/` | mobile | 88 → 91 | 100 / 96 / 100 | 3223 → 2703 | 0,0029 → 0,0028 | `p` / `h1` en fondu, même mélange |
+| `/` | desktop | 99 → 100 | 100 / 96 / 100 | 562 → 562 | **0,0718 → 0,0018** | `h1`, identique |
+| `/blog` | mobile | 94 → 94 | 100 / 96 / 100 | 2853 → 2852 | 0,0027 = | `p` de ligne 5/5 → 4/5 |
+| `/blog` | desktop | 100 → 100 | 100 / 96 / 100 | 657 → 733 | 0,0015 → 0,0013 | `h1` / `p` en fondu, même mélange |
+| `/blog/article-temoin` | mobile | 92 → 92 | 100 / 96 / 100 | 2853 → 2751 | 0,0013 → 0,0005 | identique |
+| `/blog/article-temoin` | desktop | 100 → 100 | 100 / 96 / 100 | 618 → 643 | 0,0009 → 0,0008 | identique |
+| `/projects` | mobile | 90 → 90 | 100 / 96 / 100 | 3427 → 3427 | 0,0053 → 0,0050 | identique |
+| `/projects` | desktop | 100 → 100 | 100 / 96 / 100 | 643 → 643 | 0,0095 → 0,0078 | identique |
+| `/projects/projet-temoin` | mobile | 92 → 92 | 100 / 96 / 100 | 2855 → 2855 | 0,0050 → 0,0048 | identique |
+| `/projects/projet-temoin` | desktop | 100 → 100 | 100 / 96 / 100 | 644 → 645 | 0,0052 → 0,0037 | identique |
+| `/about` | mobile | 92 → 91 | 100 / 96 / 100 | 3163 → 3158 | 0,0220 → 0,0222 | identique |
+| `/about` | desktop | 100 → 100 | 100 / 96 / 100 | 731 → 726 | 0,0006 = | identique |
+
+- **Non-dégradation > 2 points** : PASS (pire écart −1, Perf mobile `/about`).
+- **CLS ≤ base** : PASS sur 11 combinaisons ; `/about` mobile 0,0220 → 0,0222 (bruit, sans titre en jeu sur
+  l'élément qui bouge, une image). Le décalage du hero en desktop, relevé en PR 4, venait d'Archivo : il
+  disparaît (0,0718 → 0,0018).
+- **Élément LCP** : mêmes candidats ; sur `/`, `/blog`, `/projects`, alternance `h1` / `p` en fondu déjà
+  présente en base.
+- **Octets de police transférés sur `/`** : 92 187 → 90 135 (− 2 052, la différence Archivo / Bricolage de
+  l'ADR-0031), à chaque passe.
+- **Police de titres bloquée** (repli seul, `/`, 1 passe) : CLS 0,0082 en desktop, 0,0028 en mobile, sous la
+  base dans les deux cas.

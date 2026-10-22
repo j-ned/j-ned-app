@@ -7,7 +7,7 @@ import { Component, input } from '@angular/core';
     <legend class="float-left mb-5.5 block w-full border-b-[1.5px] border-line-strong pb-3 *:block">
       <span
         data-testid="form-section-title"
-        class="font-display text-[1.3125rem] font-bold tracking-[-0.02em] font-stretch-106%"
+        class="font-display text-[1.3125rem] font-bold tracking-[-0.02em]"
       >
         <span class="font-mono text-[0.8125rem] font-normal tracking-normal text-primary"
           >{{ number() }} ·</span

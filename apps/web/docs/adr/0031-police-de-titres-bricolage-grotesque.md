@@ -1,6 +1,6 @@
 # ADR-0031 : Police de titres Bricolage Grotesque, œil optique et largeur fixés
 
-- **Statut** : proposé (2026-10-21, plan technique de la spec 033) ; accepté au merge de la PR 5 de la spec
+- **Statut** : accepté (2026-10-22, PR 5 de la spec 033)
 - **Date** : 2026-10-21
 - **Contexte spec** : `specs/033-nouveau-visuel.md` (arbitrage 4, exigences 8 et 12)
 - **Amende** : ADR-0006 (Archivo remplacée par Bricolage Grotesque ; JN Sans et JN Mono, la procédure,

@@ -12,7 +12,7 @@ import { Component, ElementRef, input, viewChild } from '@angular/core';
       tabindex="-1"
       [id]="headingId()"
       [attr.data-testid]="headingId()"
-      class="font-display text-[1.375rem] font-bold tracking-[-0.02em] font-stretch-106%"
+      class="font-display text-[1.375rem] font-bold tracking-[-0.02em]"
     >
       {{ heading() }}
     </h2>

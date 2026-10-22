@@ -29,7 +29,7 @@ export type PairRowsConfig<A extends string, B extends string> = {
   host: { class: 'block' },
   template: `
     @let settings = config();
-    <h2 class="mt-6.5 mb-1 font-display text-base font-bold font-stretch-104%">
+    <h2 class="mt-6.5 mb-1 font-display text-base font-bold">
       {{ settings.heading }}
     </h2>
     <div class="border-t border-line">

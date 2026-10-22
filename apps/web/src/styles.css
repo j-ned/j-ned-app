@@ -10,10 +10,10 @@
 
 /* Noms versionnés : nginx sert les woff2 en immutable, un binaire modifié doit changer de nom. */
 @font-face {
-  font-family: 'Archivo';
-  src: url('/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2') format('woff2');
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2')
+    format('woff2');
   font-weight: 600 800;
-  font-stretch: 100% 110%;
   font-display: swap;
 }
 
@@ -39,16 +39,16 @@
   font-display: swap;
 }
 
-/* Replis métriquement ajustés (Archivo contre Arial Bold : sans faux gras, les titres en ont besoin) */
+/* Replis métriquement ajustés (Bricolage Grotesque contre Arial Bold : sans faux gras, les titres en ont besoin) */
 @font-face {
-  font-family: 'Archivo Fallback';
+  font-family: 'Bricolage Grotesque Fallback';
   src:
     local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold'),
     local('LiberationSans-Bold');
   font-weight: 600 800;
-  size-adjust: 109.59%;
-  ascent-override: 80.11%;
-  descent-override: 19.16%;
+  size-adjust: 97.56%;
+  ascent-override: 95.32%;
+  descent-override: 27.67%;
   line-gap-override: 0%;
 }
 
@@ -92,7 +92,7 @@
   --color-code-tag: var(--theme-code-tag);
   --color-code-comment: var(--theme-code-comment);
 
-  --font-display: 'Archivo', 'Archivo Fallback', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif;
   --font-sans:
     'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -195,18 +195,6 @@ body {
   h2,
   h3 {
     font-family: var(--font-display);
-  }
-
-  h1 {
-    font-stretch: 108%;
-  }
-
-  h2 {
-    font-stretch: 106%;
-  }
-
-  h3 {
-    font-stretch: 104%;
   }
 
   /* En couche : un rayon posé par une classe rounded-* l'emporte, l'anneau suit alors la forme de l'élément. */

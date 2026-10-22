@@ -17,9 +17,7 @@ import { toBlogPostRowView } from '@features/blog/application/blog-list-view';
         class="flex items-center justify-between gap-3 border-b-[1.5px] border-line-strong bg-surface p-3.5 text-sm"
       >
         <div class="grid gap-0.5">
-          <h2 id="admin-post-preview-title" class="font-display font-bold font-stretch-110%">
-            Aperçu public
-          </h2>
+          <h2 id="admin-post-preview-title" class="font-display font-bold">Aperçu public</h2>
           <p data-testid="admin-post-preview-reference" class="font-mono text-xs text-muted">
             Blog · Liste des articles
           </p>

@@ -235,7 +235,7 @@ jobs:
           done
           ! grep -qi '^server: nginx/' <<<"$headers"
           # Polices auto-hébergées servies par nginx avec le bon type (sinon rejetées par le navigateur)
-          font=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/fonts/archivo-2.001-latin-wdth100-110-wght600-800.woff2)
+          font=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/fonts/bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2)
           grep -qi 'content-type: font/woff2' <<<"$font" || { echo "police mal servie"; echo "$font"; exit 1; }
           # Polices : nom versionné, cache immuable (seule location ^/fonts/ depuis le retrait des démos)
           grep -qi 'cache-control: .*immutable' <<<"$font" || { echo "police sans cache immuable"; echo "$font"; exit 1; }

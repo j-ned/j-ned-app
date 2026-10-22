@@ -30,9 +30,7 @@ const ANCHOR_OFFSET: [number, number] = [0, 24];
           >JN</span
         >
         <div>
-          <p class="font-display text-[0.9375rem] leading-tight font-bold [font-stretch:104%]">
-            Julien Nédellec
-          </p>
+          <p class="font-display text-[0.9375rem] leading-tight font-bold">Julien Nédellec</p>
           <p class="font-mono text-xs text-muted">Administration</p>
         </div>
       </div>
@@ -56,11 +54,9 @@ const ANCHOR_OFFSET: [number, number] = [0, 24];
           class="inline-grid size-[2.125rem] shrink-0 place-items-center rounded-[0.625rem] border border-primary/30 bg-primary/5 font-display text-[0.8125rem] font-bold text-primary"
           >JN</span
         >
-        <span
-          data-testid="admin-topbar-title"
-          class="truncate font-display text-base font-bold [font-stretch:104%]"
-          >{{ topbarTitle() }}</span
-        >
+        <span data-testid="admin-topbar-title" class="truncate font-display text-base font-bold">{{
+          topbarTitle()
+        }}</span>
       </div>
       <button
         type="button"
