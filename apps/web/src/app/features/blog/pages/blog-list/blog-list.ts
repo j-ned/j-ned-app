@@ -88,7 +88,7 @@ import { toBlogListView, type BlogListFilter } from '../../application/blog-list
             <a
               data-testid="tag-filter-clear"
               routerLink="/blog"
-              class="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 text-[0.8125rem] font-medium text-primary transition-colors hover:bg-primary/8"
+              class="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-2.5 text-[0.8125rem] font-medium text-primary transition-colors hover:bg-primary/8"
               [attr.aria-label]="'Retirer le filtre ' + activeTag"
             >
               {{ activeTag }}

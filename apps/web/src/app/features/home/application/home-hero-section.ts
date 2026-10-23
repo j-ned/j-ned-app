@@ -3,13 +3,18 @@ import { RouterLink } from '@angular/router';
 import { Button } from '@shared/ui/button';
 import { Cartouche } from '@shared/ui/cartouche';
 import { DimensionLine } from '@shared/ui/dimension-line';
-import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '../domain/home-hero.static-data';
+import { Sticker } from '@shared/ui/sticker';
+import {
+  HOME_HERO_CTA_LABELS,
+  HOME_HERO_STICKER_LABEL,
+  HOME_WORK_FRAME,
+} from '../domain/home-hero.static-data';
 import type { HeroData } from '../domain/models/hero.model';
 import { HomeHero } from './home-hero';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [HomeHero, Button, Cartouche, DimensionLine, RouterLink],
+  imports: [HomeHero, Button, Cartouche, DimensionLine, RouterLink, Sticker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Le hero occupe tout le premier écran sous le header (h-20) : les articles commencent sous le pli.
   host: {
@@ -35,7 +40,15 @@ import { HomeHero } from './home-hero';
         </div>
       </app-home-hero>
 
-      <div>
+      <!-- Autocollant hors du flux, place réservée par pt-10 : son placement ne déplace pas la fiche -->
+      <div class="relative pt-10">
+        <app-sticker
+          class="absolute top-0 right-0"
+          data-testid="hero-sticker"
+          tone="sage"
+          tilt="left"
+          >{{ stickerLabel }}</app-sticker
+        >
         <app-cartouche
           data-testid="hero-work-frame"
           [title]="workFrame.title"
@@ -57,5 +70,6 @@ export class HomeHeroSection {
   readonly projectsOpened = output<void>();
 
   protected readonly ctaLabels = HOME_HERO_CTA_LABELS;
+  protected readonly stickerLabel = HOME_HERO_STICKER_LABEL;
   protected readonly workFrame = HOME_WORK_FRAME;
 }

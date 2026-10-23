@@ -33,9 +33,9 @@ type HeadlineSegment = { readonly text: string; readonly accent: boolean };
       <ng-content />
     } @else {
       <div class="space-y-6 animate-pulse" aria-hidden="true">
-        <div class="h-28 md:h-40 lg:h-48 bg-foreground/5 rounded-lg max-w-4xl"></div>
-        <div class="h-16 md:h-20 bg-foreground/5 rounded-lg max-w-2xl"></div>
-        <div class="h-12 bg-foreground/5 rounded-lg w-48"></div>
+        <div class="h-28 md:h-40 lg:h-48 bg-foreground/5 rounded-part max-w-4xl"></div>
+        <div class="h-16 md:h-20 bg-foreground/5 rounded-part max-w-2xl"></div>
+        <div class="h-12 bg-foreground/5 rounded-part w-48"></div>
       </div>
     }
   `,

@@ -71,7 +71,10 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               [socialLinks]="socialLinks"
             />
           </div>
-          <div class="rounded-xl border border-foreground/8 bg-surface p-7 md:p-9">
+          <div
+            data-testid="contact-form-card"
+            class="rounded-card border-2 border-foreground bg-surface p-7 md:p-9"
+          >
             <h3 class="mb-6 text-lg font-semibold tracking-tight">Envoyer un message</h3>
 
             <form [formRoot]="contactForm" class="flex flex-col gap-6">

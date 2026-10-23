@@ -272,9 +272,9 @@
       "name": "Navigation Link",
       "kind": "link",
       "refersTo": "nav-link",
-      "description": "Entrée de navigation ; l'entrée active est une pilule pleine couleur du texte.",
+      "description": "Entrée de navigation en pilule, cible de 44 px ; l'entrée active (aria-current=\"page\") prend une teinte d'orange à 8 % et le texte orange.",
       "html": "<a class=\"ds-nav-link\" aria-current=\"page\">L'atelier</a>",
-      "css": ".ds-nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9999px; color: #181f2e; text-decoration: none; } .ds-nav-link:hover { color: #bc3700; } .ds-nav-link[aria-current=page] { background: #181f2e; color: #fcf4eb; } .ds-nav-link:focus-visible { outline: 2px solid #bc3700; outline-offset: 2px; }"
+      "css": ".ds-nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 9999px; color: #4d5566; font-weight: 500; text-decoration: none; transition: color 150ms; } .ds-nav-link:hover { color: #bc3700; } .ds-nav-link[aria-current=page] { background: color-mix(in srgb, #bc3700 8%, transparent); color: #bc3700; } .ds-nav-link:focus-visible { outline: 2px solid #bc3700; outline-offset: 2px; }"
     }
   ],
   "narrative": {

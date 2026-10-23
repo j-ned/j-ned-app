@@ -16,6 +16,6 @@ export class AppIconTile {
   protected readonly classes = computed(() => {
     const dims =
       this.size() === 'sm' ? 'h-9 w-9' : this.size() === 'lg' ? 'h-14 w-14' : 'h-11 w-11';
-    return `inline-flex ${dims} shrink-0 items-center justify-center rounded-xl`;
+    return `inline-flex ${dims} shrink-0 items-center justify-center rounded-full`;
   });
 }

@@ -1,9 +1,10 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Button } from '@shared/ui/button';
 
 @Component({
   selector: 'app-page-not-found',
-  imports: [RouterLink],
+  imports: [RouterLink, Button],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -21,13 +22,7 @@ import { RouterLink } from '@angular/router';
         Oups&#8239;! La page que tu cherches n'existe pas ou a été déplacée.<br />
         Retourne à l'accueil ou fais un tour dans les autres sections du site.
       </p>
-      <a
-        routerLink="/"
-        data-testid="not-found-home-link"
-        class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-bg px-5 py-2.5 text-sm font-medium text-on-primary shadow-sm hover:opacity-90 transition-all"
-      >
-        Retour à l'accueil
-      </a>
+      <a appButton routerLink="/" data-testid="not-found-home-link">Retour à l'accueil</a>
     </div>
   `,
 })

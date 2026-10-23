@@ -34,17 +34,17 @@ import { formatFileSize } from '@shared/format/format-file-size';
 
     @if (currentFile() || previewUrl()) {
       <div
-        class="relative bg-surface border border-foreground/10 rounded-xl p-4 flex items-center gap-4"
+        class="relative bg-surface border border-foreground/10 rounded-card p-4 flex items-center gap-4"
       >
         @if (isImage()) {
           <img
             [src]="previewSrc()"
             [alt]="currentFile()?.name ?? 'Aperçu'"
-            class="w-20 h-20 rounded-lg object-cover border border-foreground/10"
+            class="w-20 h-20 rounded-part object-cover border border-foreground/10"
           />
         } @else {
           <div
-            class="w-20 h-20 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center"
+            class="w-20 h-20 rounded-part bg-foreground/5 border border-foreground/10 flex items-center justify-center"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -110,7 +110,7 @@ import { formatFileSize } from '@shared/format/format-file-size';
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave($event)"
         (drop)="onDrop($event)"
-        class="block w-full border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
+        class="block w-full border-2 border-dashed rounded-card p-8 text-center cursor-pointer transition-all
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
                flex flex-col items-center justify-center gap-2"
         [class]="
@@ -138,7 +138,7 @@ import { formatFileSize } from '@shared/format/format-file-size';
         </p>
         <p class="text-xs text-muted">Glisse un fichier ici ou clique pour parcourir</p>
         @if (helperText()) {
-          <p class="text-xs text-muted/80">{{ helperText() }}</p>
+          <p class="text-xs text-muted">{{ helperText() }}</p>
         }
       </button>
     }

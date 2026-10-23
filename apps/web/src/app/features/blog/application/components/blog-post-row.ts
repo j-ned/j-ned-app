@@ -46,7 +46,7 @@ import type { BlogPostRowView } from '../blog-list-view';
       @if (p.coverImage) {
         <figure
           data-testid="post-cover"
-          class="pointer-events-none relative -order-1 aspect-[1200/630] w-full overflow-hidden rounded-md border border-line-strong bg-surface @min-[60rem]:order-none"
+          class="pointer-events-none relative -order-1 aspect-[1200/630] w-full overflow-hidden rounded-part border border-line-strong bg-surface @min-[60rem]:order-none"
         >
           <img [ngSrc]="p.coverImage" alt="" fill [priority]="p.priority" class="object-cover" />
         </figure>

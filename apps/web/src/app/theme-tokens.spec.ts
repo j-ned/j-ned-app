@@ -188,3 +188,17 @@ describe('radius tokens', () => {
     },
   );
 });
+
+describe('footer heading', () => {
+  it('Given the footer-heading utility When its classes are read Then the column title is set in the text face, semibold, without capitals nor mono', () => {
+    const body = utilityBody('footer-heading');
+    const applied = body
+      .slice(body.indexOf('{') + 1, body.indexOf('}'))
+      .replace(/@apply|;/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean)
+      .sort();
+
+    expect(applied).toEqual(['font-semibold', 'mb-3', 'text-muted', 'text-xs']);
+  });
+});

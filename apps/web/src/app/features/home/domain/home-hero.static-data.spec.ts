@@ -1,4 +1,8 @@
-import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from './home-hero.static-data';
+import {
+  HOME_HERO_CTA_LABELS,
+  HOME_HERO_STICKER_LABEL,
+  HOME_WORK_FRAME,
+} from './home-hero.static-data';
 
 describe('home hero copy', () => {
   it('labels the blog then the projects calls to action, with no commercial wording', () => {
@@ -6,6 +10,10 @@ describe('home hero copy', () => {
       blog: 'Lire le blog',
       projects: 'Voir les réalisations',
     });
+  });
+
+  it('labels the hero sticker in two words, « Fait main »', () => {
+    expect(HOME_HERO_STICKER_LABEL).toBe('Fait main');
   });
 
   it('describes the profile in a technical sheet: trade, code, stack, hosting and rule', () => {

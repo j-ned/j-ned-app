@@ -159,7 +159,7 @@ Deux registres égaux : **Sable** (clair, papier chaud) et **Nuit** (sombre, ble
 
 Ce que ce système refuse : le template portfolio générique (hero centré « Hi, I'm », barres de compétences, nuage de logos de technologies, même déguisé en autocollants), l'over-design (curseur custom, scroll-jacking, intro animée, autocollants partout), le dégradé décoratif, le glassmorphism, l'ombre qui « fait ressortir ».
 
-> **État (2026-10-22) :** ce document décrit la **cible** de la spec 033 (`specs/033-nouveau-visuel.md`, ADR-0030, ADR-0031). Les couleurs des deux registres sont en place depuis la PR 4, Bricolage Grotesque depuis la PR 5 ; les composants arrivent dans les PR 6a et 6b. Le § 5, qui décrit les classes exactes du code en place, est mis à jour par chaque PR qui change un composant.
+> **État (2026-10-23) :** la direction de la spec 033 (`specs/033-nouveau-visuel.md`, ADR-0030, ADR-0031) est entièrement en place : couleurs des deux registres, Bricolage Grotesque, composants partagés et gabarits publics. Le § 5 décrit les classes exactes du code en place et suit chaque changement de composant.
 
 **Key Characteristics:**
 - Deux registres égaux, Sable et Nuit, qui suivent le système au premier chargement.
@@ -292,10 +292,10 @@ Système **plat**. La profondeur vient des bords francs et des aplats, pas des o
 
 | Rayon | Token (`@theme`, PR 6a) | Usage |
 |---|---|---|
-| 8 px | `rounded-part` | cartouche, tampon : la pièce technique reste nette |
+| 8 px | `rounded-part` | cartouche, tampon, vignettes de couverture, anneaux de focus des liens : la pièce technique reste nette |
 | 12 px | `rounded-field` | champs de formulaire |
 | 16 px | `rounded-card` | cartes, cartes de lien |
-| 22 px | `rounded-block` | grands blocs (hero, carte de partage) |
+| 22 px | `rounded-block` | grands blocs (couvertures et portrait, bloc de code, galerie, carte de partage) |
 | pilule | `rounded-full` | boutons, entrées de navigation actives, autocollants |
 
 Cibles tactiles : 44 × 44 px au moins malgré la pilule (`min-h-11`, `size-11`).
@@ -338,11 +338,10 @@ Aucune autre ombre, boutons compris.
 
 ### Cards / Containers
 
-- **Nuit (dark):** background `bg-foreground/2` ou `bg-surface` (`#1e2638`, opaque), border `border-foreground/8`, rounded `rounded-xl` (12px), padding `p-6` (24px).
-- **Sable (light):** background `bg-surface` (`#ffffff`), border `border-foreground/8`, même radius et padding.
-- **Hover:** background switch vers `surface-elevated` (`#263045` Nuit, `#fff9f3` Sable).
-- **Shadow:** aucune au repos. Hover = changement de surface, pas d'ajout de shadow.
-- **Internal padding:** `p-6` (24px) standard, `p-8` (32px) pour cards principales du hero.
+- **Carte publique** (activité du parcours `what-i-do-card`, panneau du formulaire de contact `contact-form-card`) : `rounded-card border-2 border-foreground bg-surface`, padding `p-7` (`md:p-9` pour le formulaire). Surface opaque (`#ffffff` Sable, `#1e2638` Nuit).
+- **Grille de stack du parcours** : `rounded-card`, filets `foreground/8` entre les cases (traits décoratifs, Decorative Line Rule).
+- **Dialogues et toasts** (`confirm-dialog`, `toast`) : `rounded-card`, bouton secondaire ou de fermeture en `rounded-full`.
+- **Hover:** changement de bord (`hover:border-primary`) ou de surface (`surface-elevated`), jamais une ombre.
 
 ### Carte de lien (`shared/ui/link-card.ts`)
 
@@ -392,8 +391,8 @@ Les captures d'écran d'une réalisation, sur sa page détail, quand le projet e
 - **Entrée:** `images: readonly ProjectImage[]`, déjà triées par l'adapter ; rien n'est rendu pour une galerie vide (`@if` côté page).
 - **Section:** `SplitSection` `headingId="gallery-title"`, titre « Captures », résumé court ; placée après la couverture et avant les choix techniques. Jamais sous `@defer` : la galerie est dans le HTML prérendu.
 - **Grille:** `ul role="list"`, une colonne en mobile, deux à partir de `md`, `items-start` (une capture portrait garde son ratio sans étirer sa voisine).
-- **Miniature:** un `button` natif par capture, qui porte l'image (`NgOptimizedImage`, `width`/`height` intrinsèques, `h-auto w-full`, chargement différé, **jamais** `priority`, ni `fill` ni `ngSrcset`) ; nom accessible « Agrandir : » en `sr-only` suivi de l'`alt`. Curseur `zoom-in`.
-- **Agrandissement:** `dialog` natif ouvert par `showModal()` (fond inerte, Échap natif), nommé « Capture agrandie : <alt> » ; bouton « Fermer » en premier, focus posé dessus à l'ouverture ; à la fermeture (bouton ou Échap), le focus revient à la miniature d'origine. `::backdrop` en `background/90`, dialog cerné de `line-strong`, image contenue dans le viewport (`object-contain`).
+- **Miniature:** un `button` natif par capture, `rounded-block`, qui porte l'image (`NgOptimizedImage`, `width`/`height` intrinsèques, `h-auto w-full`, chargement différé, **jamais** `priority`, ni `fill` ni `ngSrcset`) ; nom accessible « Agrandir : » en `sr-only` suivi de l'`alt`. Curseur `zoom-in`.
+- **Agrandissement:** `dialog` natif ouvert par `showModal()` (fond inerte, Échap natif), `rounded-block`, nommé « Capture agrandie : <alt> » ; bouton « Fermer » en premier, focus posé dessus à l'ouverture ; à la fermeture (bouton ou Échap), le focus revient à la miniature d'origine. `::backdrop` en `background/90`, dialog cerné de `line-strong`, image contenue dans le viewport (`object-contain`).
 - **Don't:** pas de carrousel ni de défilement automatique ; pas de lien ni de `div` cliquable à la place du `button` ; pas de dialog maison ni de bibliothèque de lightbox ; pas d'`alt` vide (une capture est un contenu, jamais une décoration).
 
 ### Articles d'un projet (`features/projects/application/components/project-articles.ts`)
@@ -410,7 +409,7 @@ Les articles du blog qui parlent d'un projet, sur sa fiche, calculés par `posts
 Un projet en production présenté en détail dans les Réalisations (`/projects`, section « En production », ADR-0010).
 
 - **Entrée:** `caseStudy: CaseStudyView`, `priority` (défaut `false`), `reversed` (défaut `false`) ; sortie `liveLinkClicked` (suivi du lien externe par la page).
-- **Couverture (`ProjectCover`):** `figure` à ratio fixe `aspect-[16/10]` (zéro CLS), `rounded-md`, trait `line-strong`, `bg-surface` ; image `NgOptimizedImage` en `fill` + `object-cover`, sans `ngSrcset` ni `sizes` (aucun `IMAGE_LOADER` : une seule variante servie) ; repli `div aria-hidden` de même ratio sans image. Tampon de nature en haut à gauche, qui laisse passer le clic. Une seule couverture `priority` par page : la première étude de cas.
+- **Couverture (`ProjectCover`):** `figure` à ratio fixe `aspect-[16/10]` (zéro CLS), `rounded-part`, trait `line-strong`, `bg-surface` ; image `NgOptimizedImage` en `fill` + `object-cover`, sans `ngSrcset` ni `sizes` (aucun `IMAGE_LOADER` : une seule variante servie) ; repli `div aria-hidden` de même ratio sans image. Tampon de nature en haut à gauche, qui laisse passer le clic. Une seule couverture `priority` par page : la première étude de cas.
 - **Structure:** hôte `@container` (requête de conteneur, ADR-0013) ; `article` en grille `@min-[60rem]:grid-cols-12`, couverture `@min-[60rem]:col-span-7` puis texte `@min-[60rem]:col-span-5` ; empilés sous un conteneur de 60rem, couverture au-dessus. Sur `/projects`, la bascule tombe à 1 008 px de viewport (conteneur de 960 px) ; dans la colonne de 25rem de l'aperçu admin, l'étude de cas reste empilée. Aucune classe de point de rupture de viewport dans le composant. L'alternance gauche/droite passe par `@min-[60rem]:order-last` sur la couverture (`reversed`, la page passe `$even`, liée par `[class]` : un nom à crochets ne se lie pas en `[class.x]`) : seul l'ordre visuel change, jamais le DOM ni l'ordre du focus.
 - **Texte:** overline mono `text-muted` (« 01 · catégorie »), `h3` du nom, accroche `text-muted max-w-[46ch]`, puis les repères (Stack, Point fort, Périmètre) en `FactList` (« Liste de repères », ci-dessous).
 - **Actions:** « Voir la fiche » en `appButton`, nom du projet en `sr-only`, flèche `aria-hidden` ; « Ouvrir l'application » en `appButton variant="outlined"` si le projet a une URL, nouvel onglet `rel="noopener noreferrer"`, nom et « nouvel onglet » en `sr-only`, icône `external-link`.
@@ -466,7 +465,7 @@ Un article de la liste du blog, lu comme une étude de cas.
 
 - **Entrée:** `post: BlogPostRowView` (vue calculée par `toBlogPostRowView`, appliquée par `toBlogListView` à chaque article et par l'aperçu admin), aucun calcul dans le composant.
 - **Structure:** hôte `@container` (ADR-0013) ; `article relative` en grille, texte puis couverture à droite (`20rem`) à partir d'un conteneur de 60rem (`@min-[60rem]:`), couverture au-dessus en dessous ; aucune classe de point de rupture de viewport. Sur `/blog`, la bascule tombe à 1 008 px de viewport (conteneur de 960 px) ; dans la colonne de 25rem de l'aperçu admin, la ligne reste empilée ; séparée de la suivante par un trait `line`. Texte : surtitre mono `text-xs text-muted` (« 9 sept. 2026 · 13 min de lecture », date omise si absente), `h2` du titre (texte simple), extrait `text-muted max-w-[62ch]`, repère « Sujets » (trois premiers tags, `FactList`), lien « Lire l'article ».
-- **Couverture:** `figure` à ratio `aspect-[1200/630]`, `rounded-md`, trait `line-strong`, `bg-surface`, image `NgOptimizedImage` en `fill` + `object-cover`, `alt=""` (décorative : le titre et le lien nomment l'article), qui laisse passer le clic (`pointer-events-none`). Pas de zoom au survol.
+- **Couverture:** `figure` à ratio `aspect-[1200/630]`, `rounded-part`, trait `line-strong`, `bg-surface`, image `NgOptimizedImage` en `fill` + `object-cover`, `alt=""` (décorative : le titre et le lien nomment l'article), qui laisse passer le clic (`pointer-events-none`). Pas de zoom au survol.
 - **Cible:** un seul interactif, le lien « Lire l'article » `text-primary` `min-h-11`, titre de l'article en `sr-only` pour un nom distinct par ligne, étiré sur toute la ligne (`after:absolute after:inset-0`). Pas de pastille ni de lien par tag.
 - **Survol:** le titre passe en `primary` (`group-hover`).
 
@@ -484,7 +483,7 @@ La fiche du projet dont parle l'article, puis jusqu'à trois articles proches de
 Le Markdown d'un article, rendu par `parseMarkdown` (seul assainissement, ADR-0002) et posé en `innerHTML`. Même composant sur la page article et dans l'aperçu de l'éditeur (ADR-0013, ADR-0014).
 
 - **Corps:** `prose prose-lg` du plugin typographique, `dark:prose-invert`, titres `foreground`, paragraphes et listes `foreground/85`, liens `text-primary`, tableaux défilants. Sur la page article, le corps est sous `@defer (on immediate; hydrate never)` : servi dans le HTML prérendu, jamais hydraté ; en navigation interne, un squelette (trois barres `foreground/6`) le précède et un chunk introuvable affiche « Le texte de l'article n'a pas pu être chargé. » avec un lien de rechargement complet.
-- **Bloc de code:** `div[data-code-block]` `not-prose`, `rounded-lg`, trait `foreground/8`, fond `foreground/4` (sur la page : `#1d2330` Nuit, `#f3ebe3` Sable ; sur une carte, aperçu de l'éditeur : `#272e3f`, `#f6f6f7`), `my-8`. Si le langage est connu, une barre d'étiquette (hauteur 40 px, mono `text-xs text-muted`, filet bas `foreground/8`) porte son libellé (« TypeScript », « Dockerfile »…). Puis `pre tabindex="0"` (défilement horizontal au clavier, anneau `primary` en `focus-visible`), mono 14 px, `leading-relaxed`, `p-4`. Langage inconnu ou absent : texte échappé, sans barre ni couleur.
+- **Bloc de code:** `div[data-code-block]` `not-prose`, `rounded-block`, trait `foreground/8`, fond `foreground/4` (sur la page : `#1d2330` Nuit, `#f3ebe3` Sable ; sur une carte, aperçu de l'éditeur : `#272e3f`, `#f6f6f7`), `my-8`. Si le langage est connu, une barre d'étiquette (hauteur 40 px, mono `text-xs text-muted`, filet bas `foreground/8`) porte son libellé (« TypeScript », « Dockerfile »…). Puis `pre tabindex="0"` (défilement horizontal au clavier, anneau `primary` en `focus-visible`), mono 14 px, `leading-relaxed`, `p-4`. Langage inconnu ou absent : texte échappé, sans barre ni couleur.
 - **Couleurs du code:** `@utility code-syntax` sur le `code` : texte `foreground`, puis une couleur par rôle. Ratios sur le fond du bloc, posé sur la page · sur une carte (composition sRGB, WCAG 2.x ; ≥ 5,0:1 en Sable, ≥ 6,0:1 en Nuit sur le pire des deux) :
 
   | Rôle (`--color-code-*`) | Jetons `hljs-*` | Nuit | Sable |
@@ -533,9 +532,22 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 ### Navigation
 
 - **Header layout:** sticky en haut, background `var(--theme-background)`, border-bottom `var(--theme-nav-border)`, shadow `var(--theme-nav-shadow)`.
-- **Liens:** sans soulignement par défaut, hover = `text-primary`, active = `text-primary` + indicateur (à clarifier dans Layout).
-- **Mobile:** drawer (`shared/ui/drawer.ts`) via icon hamburger.
+- **Monogramme « JN »** (`app-icon-tile`, `header-monogram`) : disque en aplat `rounded-full bg-primary-bg text-on-primary`, sans bord ni teinte (5,36 Sable / 7,74 Nuit). `app-icon-tile` est rond pour tous ses usages (connexion, double authentification).
+- **Liens:** pilules `inline-flex min-h-11 items-center rounded-full px-3.5` (cible de 44 px, § 4), 15 px, `text-muted`, survol `text-primary` ; entrée active `bg-primary/8 text-primary` avec `aria-current="page"` (`ariaCurrentWhenActive`). Pas de barre soulignée.
+- **Mobile:** drawer (`shared/ui/drawer.ts`) via icon hamburger ; entrées en pilule, active `bg-primary/8 text-primary` et `aria-current="page"` ; bascule de thème en pilule bordée.
 - **Focus visible:** outline 2px `primary`, cohérent avec les boutons.
+
+### Pied de page (`layout/components/footer/footer.ts`)
+
+- **Titre de colonne** (`@utility footer-heading`) : `mb-3 text-xs font-semibold text-muted`, en JN Sans, sans capitales ni mono.
+
+### Accueil : autocollant du premier écran (`features/home/application/home-hero-section.ts`)
+
+- Le seul `app-sticker` du site (Sticker Rule) : « Fait main » (`HOME_HERO_STICKER_LABEL`), ton `sage`, `tilt="left"`, `data-testid="hero-sticker"`. Dans la colonne du cartouche, au-dessus de lui, aligné à droite, hors du flux (`absolute top-0 right-0` dans une colonne `relative pt-10` qui lui réserve sa place : posé dans le flux, il déplaçait la fiche au chargement, CLS 0,165 en mobile) : après le `h1` dans l'ordre du DOM, dans le flux (il ne recouvre aucun texte, à 375 px comme en large), hors de tout titre, lien ou bouton.
+
+### Page 404 (`pages/page-not-found.ts`)
+
+- Le retour à l'accueil est un `<a appButton routerLink="/">` primaire, sans classe propre.
 
 ### Coque admin (`features/admin/pages/admin-layout/admin-layout.ts`, `application/components/admin-nav.ts`)
 
@@ -668,7 +680,7 @@ Même grammaire que l'éditeur d'article (colonnes, sections, barre, sommaire, g
 
 ### Toast (`shared/ui/toast.ts`)
 
-Variantes info/success/warn/error, position haut droite, dismiss par le bouton fermer. Fond opaque `bg-surface` (No-Glass Rule : ni teinte translucide, ni `backdrop-blur`), `rounded-lg`, ombre `shadow-lg`. Couleur : le titre est en `foreground` quelle que soit la sévérité ; la sévérité est portée par l'icône, la barre gauche `border-l-4` et le texte du bouton fermer, au token plein. Survol du bouton fermer neutre, `bg-foreground/5`. Sous `prefers-reduced-motion: reduce`, il apparaît sans glisser ni fondu.
+Variantes info/success/warn/error, position haut droite, dismiss par le bouton fermer. Fond opaque `bg-surface` (No-Glass Rule : ni teinte translucide, ni `backdrop-blur`), `rounded-card`, ombre `shadow-lg`. Couleur : le titre est en `foreground` quelle que soit la sévérité ; la sévérité est portée par l'icône, la barre gauche `border-l-4` et le texte du bouton fermer, au token plein. Survol du bouton fermer neutre, `bg-foreground/5`. Sous `prefers-reduced-motion: reduce`, il apparaît sans glisser ni fondu.
 
 ### Drawer (`shared/ui/drawer.ts`)
 

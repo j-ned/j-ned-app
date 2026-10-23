@@ -12,7 +12,10 @@ import { AboutStack } from './about-stack';
     <app-split-section headingId="work-heading" heading="Ce que je fais" [summary]="summary()">
       <div class="grid gap-4 md:grid-cols-2">
         @for (item of whatIDo(); track item.id) {
-          <article class="rounded-xl border border-foreground/8 bg-surface p-7">
+          <article
+            data-testid="what-i-do-card"
+            class="rounded-card border-2 border-foreground bg-surface p-7"
+          >
             <h3 class="text-xl font-semibold tracking-tight">{{ item.title }}</h3>
             <p class="mt-2.5 text-[0.96875rem] leading-relaxed text-muted">
               {{ item.description }}

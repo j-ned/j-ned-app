@@ -33,7 +33,7 @@ export function renderCodeBlock(
   const body = language ? highlightCode(code, language.id) : escapeHtml(code);
   const codeClass = language ? `code-syntax language-${language.id}` : 'code-syntax';
   return (
-    `<div data-code-block class="not-prose my-8 overflow-hidden rounded-lg border border-foreground/8 bg-foreground/4">` +
+    `<div data-code-block class="not-prose my-8 overflow-hidden rounded-block border border-foreground/8 bg-foreground/4">` +
     bar +
     `<pre tabindex="0" class="overflow-x-auto p-4 font-mono text-sm leading-relaxed focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"><code class="${codeClass}">${body}</code></pre>` +
     `</div>\n`

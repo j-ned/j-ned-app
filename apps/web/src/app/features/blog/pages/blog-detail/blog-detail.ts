@@ -116,7 +116,7 @@ function laterOf(a: string, b: string): string {
         @if (p.coverImage) {
           <figure class="mx-auto max-w-5xl px-4 sm:px-6">
             <div
-              class="relative aspect-[1200/630] w-full overflow-hidden rounded-xl border border-foreground/8"
+              class="relative aspect-[1200/630] w-full overflow-hidden rounded-block border border-foreground/8"
             >
               <img
                 [ngSrc]="p.coverImage"

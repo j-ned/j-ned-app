@@ -2,7 +2,11 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
-import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '../domain/home-hero.static-data';
+import {
+  HOME_HERO_CTA_LABELS,
+  HOME_HERO_STICKER_LABEL,
+  HOME_WORK_FRAME,
+} from '../domain/home-hero.static-data';
 import type { HeroData } from '../domain/models/hero.model';
 import { STATIC_HERO } from '../infra/data/home.static-data';
 import { HomeHeroSection } from './home-hero-section';
@@ -97,7 +101,7 @@ describe('HomeHeroSection', () => {
     ]);
   });
 
-  it('states no availability any more (spec 029)', () => {
+  it('states no availability any more', () => {
     expect(byTestId('hero-availability')).toBeNull();
   });
 
@@ -138,6 +142,44 @@ describe('HomeHeroSection', () => {
       expect(text(byTestId('dimension-line-label', dimension ?? host()))).toBe(
         HOME_WORK_FRAME.dimension,
       );
+    });
+  });
+
+  describe('sticker', () => {
+    const sticker = (): HTMLElement | null => byTestId('hero-sticker');
+
+    it('is the only sticker of the first screen and reads the hero sticker label', () => {
+      expect({
+        stickers: host().querySelectorAll('app-sticker').length,
+        tag: sticker()?.tagName,
+        label: text(sticker()),
+      }).toEqual({ stickers: 1, tag: 'APP-STICKER', label: HOME_HERO_STICKER_LABEL });
+    });
+
+    it('is sage and tilted to the left', () => {
+      expect(
+        [...(sticker()?.classList ?? [])]
+          .filter((token) => /^(?:bg-sticker|text-on-sticker|-?rotate)-/.test(token))
+          .sort(),
+      ).toEqual(['-rotate-2', 'bg-sticker-sage', 'text-on-sticker-sage']);
+    });
+
+    it('comes after the headline in reading order, outside any heading, link or button', () => {
+      const headline = byTestId('hero-headline');
+      const found = sticker();
+
+      expect({
+        afterHeadline:
+          headline && found
+            ? headline.compareDocumentPosition(found) & Node.DOCUMENT_POSITION_FOLLOWING
+            : 0,
+        enclosedBy: found?.parentElement?.closest('h1, h2, h3, a, button')?.tagName ?? null,
+        interactiveInside: found?.querySelectorAll('a, button, [tabindex]').length ?? null,
+      }).toEqual({
+        afterHeadline: Node.DOCUMENT_POSITION_FOLLOWING,
+        enclosedBy: null,
+        interactiveInside: 0,
+      });
     });
   });
 });

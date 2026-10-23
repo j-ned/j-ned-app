@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Component, NO_ERRORS_SCHEMA } from '@angular/core';
+import { Router, provideRouter } from '@angular/router';
 import { EMPTY, of } from 'rxjs';
 import { Header } from './header';
 import { NAV_LINKS } from './nav-items';
@@ -9,10 +9,12 @@ import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import type { CvInfo } from '@features/cv/domain/models/cv.model';
 import { ThemeStore } from '@core/theme/theme-store';
-import { accentTints } from '@shared/testing/accent-tints';
 import { installSystemColorScheme } from '@core/theme/testing/system-color-scheme';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
+
+@Component({ template: '' })
+class BlankPage {}
 
 const cvInfo = (overrides: Partial<CvInfo> = {}): CvInfo => ({
   id: 'cv-1',
@@ -121,6 +123,32 @@ describe('Header', () => {
       });
     });
 
+    it('Given the router on the blog When the header renders Then only the blog entry is the current page, drawn as an accent-tinted pill', async () => {
+      const { fixture } = await setup();
+      const router = TestBed.inject(Router);
+      router.resetConfig(
+        NAV_LINKS.map((item) => ({ path: item.href.slice(1), component: BlankPage })),
+      );
+      await router.navigateByUrl('/blog');
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const nav = (fixture.nativeElement as HTMLElement).querySelector(
+        'nav[aria-label="Navigation principale"]',
+      ) as HTMLElement;
+
+      expect(
+        Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href]')).map((a) => ({
+          href: a.getAttribute('href'),
+          current: a.getAttribute('aria-current'),
+          pill: a.classList.contains('rounded-full') && a.classList.contains('bg-primary/8'),
+        })),
+      ).toEqual([
+        { href: '/blog', current: 'page', pill: true },
+        { href: '/projects', current: null, pill: false },
+        { href: '/about', current: null, pill: false },
+      ]);
+    });
+
     it('délègue scrollToTop au clic sur le logo', async () => {
       const { component, scroller } = await setup();
       component['scrollToTop']();
@@ -207,13 +235,20 @@ describe('Header', () => {
   });
 
   describe('monogramme', () => {
-    it('Given the header When it renders Then the « JN » monogram sets the accent text over a 5 % accent tint, 8 % on hover', async () => {
+    it('Given the header When it renders Then the « JN » monogram is a flat accent disc, on-accent text, with no tint nor border', async () => {
       const { fixture } = await setup();
       const tile = (fixture.nativeElement as HTMLElement).querySelector(
         '[data-testid="header-monogram"]',
       );
+      const paint = [...(tile?.classList ?? [])]
+        .filter(
+          (token) =>
+            /^(?:[\w-]+:)*(?:bg|text|border|rounded)(?:-|$)/.test(token) &&
+            !/^text-(?:xs|sm|base|lg|\d*xl)$/.test(token),
+        )
+        .sort();
 
-      expect(accentTints(tile)).toEqual(['bg-primary/5', 'group-hover:bg-primary/8']);
+      expect(paint).toEqual(['bg-primary-bg', 'rounded-full', 'text-on-primary']);
     });
   });
 

@@ -53,7 +53,7 @@ import { Button } from '@shared/ui/button';
       @if (p.image) {
         <figure class="page-container mt-12 mb-22 md:mt-14 md:mb-30">
           <div
-            class="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] overflow-hidden rounded-xl border border-foreground/8"
+            class="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] overflow-hidden rounded-block border border-foreground/8"
           >
             <img
               [ngSrc]="p.image"
@@ -96,11 +96,11 @@ import { Button } from '@shared/ui/button';
       <div class="page-container pt-6 md:pt-10" aria-hidden="true">
         <div class="h-4 w-32 rounded bg-surface-elevated mb-10"></div>
         <div class="h-3 w-24 rounded bg-surface-elevated mb-4"></div>
-        <div class="h-12 w-3/4 max-w-2xl rounded-lg bg-surface-elevated mb-6"></div>
+        <div class="h-12 w-3/4 max-w-2xl rounded-part bg-surface-elevated mb-6"></div>
         <div class="h-4 w-full max-w-xl rounded bg-surface-elevated mb-2"></div>
         <div class="h-4 w-2/3 max-w-md rounded bg-surface-elevated"></div>
         <div
-          class="mt-10 w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] rounded-xl border border-foreground/8 bg-surface-elevated"
+          class="mt-10 w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[21/9] rounded-block border border-foreground/8 bg-surface-elevated"
         ></div>
       </div>
       <span class="sr-only" role="status">Chargement du projet…</span>

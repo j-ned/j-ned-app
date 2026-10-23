@@ -10,7 +10,7 @@ import { ProjectKindStamp } from './project-kind-stamp';
   template: `
     <figure
       data-testid="project-cover"
-      class="relative aspect-[16/10] overflow-hidden rounded-md border border-line-strong bg-surface"
+      class="relative aspect-[16/10] overflow-hidden rounded-part border border-line-strong bg-surface"
     >
       @if (image()) {
         <img

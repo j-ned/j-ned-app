@@ -12,7 +12,7 @@ let nextDialogId = 0;
       data-testid="confirm-dialog"
       [attr.aria-labelledby]="headingId"
       [attr.aria-describedby]="descriptionId"
-      class="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-line-strong bg-background p-6 text-foreground shadow-xl backdrop:bg-black/60"
+      class="m-auto w-[calc(100%-2rem)] max-w-md rounded-card border border-line-strong bg-background p-6 text-foreground shadow-xl backdrop:bg-black/60"
       (cancel)="dismiss($event)"
     >
       <h2
@@ -30,7 +30,7 @@ let nextDialogId = 0;
           type="button"
           autofocus
           data-testid="confirm-dialog-cancel"
-          class="inline-flex min-h-11 items-center justify-center rounded-md border border-foreground/15 bg-foreground/10 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/15"
+          class="inline-flex min-h-11 items-center justify-center rounded-full border border-foreground/15 bg-foreground/10 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/15"
           (click)="dismiss()"
         >
           {{ cancelLabel() }}

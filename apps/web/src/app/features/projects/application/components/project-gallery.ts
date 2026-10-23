@@ -29,7 +29,7 @@ const DIALOG_LABEL_PREFIX = `Capture agrandie${NBSP}: `;
               #trigger
               type="button"
               data-testid="project-gallery-open"
-              class="block w-full cursor-zoom-in overflow-hidden rounded-xl border border-foreground/8 bg-surface"
+              class="block w-full cursor-zoom-in overflow-hidden rounded-block border border-foreground/8 bg-surface"
               (click)="enlarge(image, trigger)"
             >
               <span class="sr-only">{{ enlargeLabel }}</span>
@@ -49,14 +49,14 @@ const DIALOG_LABEL_PREFIX = `Capture agrandie${NBSP}: `;
     <dialog
       #dialog
       data-testid="project-gallery-dialog"
-      class="m-auto max-h-[calc(100svh-2rem)] max-w-[calc(100vw-2rem)] rounded-xl border border-line-strong bg-background p-3 text-foreground backdrop:bg-background/90 open:flex open:flex-col open:items-end open:gap-3"
+      class="m-auto max-h-[calc(100svh-2rem)] max-w-[calc(100vw-2rem)] rounded-block border border-line-strong bg-background p-3 text-foreground backdrop:bg-background/90 open:flex open:flex-col open:items-end open:gap-3"
       [attr.aria-label]="dialogLabel()"
       (close)="returnToThumbnail()"
     >
       <button
         type="button"
         data-testid="project-gallery-close"
-        class="inline-flex min-h-11 items-center rounded-md border border-foreground/15 bg-foreground/10 px-5 text-sm font-medium hover:bg-foreground/15"
+        class="inline-flex min-h-11 items-center rounded-full border border-foreground/15 bg-foreground/10 px-5 text-sm font-medium hover:bg-foreground/15"
         (click)="dialog.close()"
       >
         Fermer

@@ -186,6 +186,14 @@ describe('parseMarkdown', () => {
       },
     );
 
+    it('Given a block When it is rendered Then it takes the large block radius only', () => {
+      const block = render(fence('ts', 'const x = 1;')).querySelector('[data-code-block]');
+
+      expect(
+        [...(block?.classList ?? [])].filter((token) => /^rounded(?:-|$)/.test(token)),
+      ).toEqual(['rounded-block']);
+    });
+
     it('Given an article mixing coloured code and hostile inline HTML When it is rendered Then the hljs classes stay and no style nor handler survives', () => {
       const root = render(
         [

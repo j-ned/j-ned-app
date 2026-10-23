@@ -1,6 +1,17 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { Button } from '@shared/ui/button';
 import { PageNotFound } from './page-not-found';
+
+@Component({
+  imports: [Button],
+  template: '<a appButton data-testid="reference-button" href="/">Accueil</a>',
+})
+class PrimaryButtonReference {}
+
+const sortedClasses = (element: Element | null): readonly string[] =>
+  [...(element?.classList ?? [])].sort();
 
 describe('PageNotFound', () => {
   it('Given an unknown address When the page renders Then it tells the visitor, with tu, where to go next', async () => {
@@ -16,20 +27,22 @@ describe('PageNotFound', () => {
     );
   });
 
-  it('Given an unknown address When the page renders Then the way home is drawn in the on-accent colour over the accent fill', async () => {
+  it('Given an unknown address When the page renders Then the way home is the primary button, leading to the home page', async () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(PageNotFound);
+    const reference = TestBed.createComponent(PrimaryButtonReference);
     await fixture.whenStable();
+    await reference.whenStable();
     const link = (fixture.nativeElement as HTMLElement).querySelector(
       '[data-testid="not-found-home-link"]',
     );
-    const colours = [...(link?.classList ?? [])].filter((token) =>
-      /^(?:bg|text)-(?!(?:xs|sm|base|lg|\d*xl|left|center|right)$)/.test(token),
+    const primary = (reference.nativeElement as HTMLElement).querySelector(
+      '[data-testid="reference-button"]',
     );
 
-    expect({ href: link?.getAttribute('href'), colours: colours.sort() }).toEqual({
+    expect({ href: link?.getAttribute('href'), classes: sortedClasses(link) }).toEqual({
       href: '/',
-      colours: ['bg-primary-bg', 'text-on-primary'],
+      classes: sortedClasses(primary),
     });
   });
 });

@@ -16,4 +16,24 @@ describe('AboutWhatIDo', () => {
       'Résumé des activités témoin.',
     );
   });
+
+  it('Given two activities When the section is rendered Then each activity is a card: card radius, 2 px foreground edge, surface fill', async () => {
+    const fixture = TestBed.createComponent(AboutWhatIDo);
+    fixture.componentRef.setInput('whatIDo', [aWhatIDo({ id: 'a' }), aWhatIDo({ id: 'b' })]);
+    fixture.componentRef.setInput('technologies', [aTechnology()]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const cards = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="what-i-do-card"]'),
+    ];
+    expect(
+      cards.map((card) =>
+        [...card.classList].filter((token) => /^(?:rounded|border|bg)(?:-|$)/.test(token)).sort(),
+      ),
+    ).toEqual([
+      ['bg-surface', 'border-2', 'border-foreground', 'rounded-card'],
+      ['bg-surface', 'border-2', 'border-foreground', 'rounded-card'],
+    ]);
+  });
 });

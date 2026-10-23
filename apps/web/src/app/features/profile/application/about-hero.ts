@@ -85,7 +85,7 @@ const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
           </div>
           <figure class="w-full max-w-80" data-testid="about-portrait">
             <div
-              class="relative aspect-[4/5] overflow-hidden rounded-xl border border-foreground/8 bg-surface"
+              class="relative aspect-[4/5] overflow-hidden rounded-block border border-foreground/8 bg-surface"
             >
               <img
                 [ngSrc]="info.avatarUrl"
@@ -102,10 +102,12 @@ const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
         <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]" aria-hidden="true">
           <div class="space-y-6 animate-pulse">
             <div class="h-4 w-80 max-w-full rounded bg-foreground/5"></div>
-            <div class="h-16 md:h-20 max-w-xl rounded-lg bg-foreground/5"></div>
-            <div class="h-24 max-w-lg rounded-lg bg-foreground/5"></div>
+            <div class="h-16 md:h-20 max-w-xl rounded-part bg-foreground/5"></div>
+            <div class="h-24 max-w-lg rounded-part bg-foreground/5"></div>
           </div>
-          <div class="aspect-[4/5] w-full max-w-80 rounded-xl bg-foreground/5 animate-pulse"></div>
+          <div
+            class="aspect-[4/5] w-full max-w-80 rounded-block bg-foreground/5 animate-pulse"
+          ></div>
         </div>
       }
     </section>

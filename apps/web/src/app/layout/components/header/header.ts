@@ -22,12 +22,12 @@ import { ThemeStore } from '@core/theme/theme-store';
           routerLink="/"
           (click)="scrollToTop()"
           title="Retour à l'accueil"
-          class="group flex items-center gap-3 sm:gap-4 min-w-0 hover:opacity-90 transition-opacity"
+          class="flex items-center gap-3 sm:gap-4 min-w-0 hover:opacity-90 transition-opacity"
         >
           <app-icon-tile
             aria-hidden="true"
             data-testid="header-monogram"
-            class="bg-primary/5 border border-primary/25 text-primary text-base font-bold group-hover:bg-primary/8 group-hover:border-primary/40 transition-colors"
+            class="bg-primary-bg text-on-primary text-base font-bold"
           >
             JN
           </app-icon-tile>
@@ -37,15 +37,15 @@ import { ThemeStore } from '@core/theme/theme-store';
           >
         </a>
 
-        <nav class="hidden lg:flex items-center gap-6" aria-label="Navigation principale">
+        <nav class="hidden lg:flex items-center gap-2" aria-label="Navigation principale">
           @for (item of navItems; track item.label) {
             <a
               [routerLink]="item.href"
-              routerLinkActive="is-link-active text-primary"
-              class="group relative text-[0.9375rem] font-medium text-muted hover:text-primary transition-colors"
+              routerLinkActive="bg-primary/8 text-primary"
+              ariaCurrentWhenActive="page"
+              class="inline-flex min-h-11 items-center rounded-full px-3.5 text-[0.9375rem] font-medium text-muted hover:text-primary transition-colors"
             >
               {{ item.label }}
-              <span class="nav-underline" aria-hidden="true"></span>
             </a>
           }
         </nav>
@@ -94,9 +94,10 @@ import { ThemeStore } from '@core/theme/theme-store';
         @for (item of navItems; track item.label) {
           <a
             [routerLink]="item.href"
-            routerLinkActive="text-primary bg-foreground/5"
+            routerLinkActive="text-primary bg-primary/8"
+            ariaCurrentWhenActive="page"
             (click)="closeMobileMenu()"
-            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-lg font-medium text-muted hover:text-primary hover:bg-foreground/5 transition-colors"
+            class="flex items-center gap-3 rounded-full px-3 py-2.5 text-lg font-medium text-muted hover:text-primary hover:bg-foreground/5 transition-colors"
           >
             <app-icon [name]="item.icons" [size]="20" />
             {{ item.label }}
@@ -107,7 +108,7 @@ import { ThemeStore } from '@core/theme/theme-store';
         type="button"
         data-testid="drawer-theme-toggle"
         (click)="toggleTheme()"
-        class="mt-4 flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-lg border border-foreground/15 px-3 py-2.5 text-left text-base font-medium text-foreground hover:bg-foreground/5 transition-colors"
+        class="mt-4 flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-full border border-foreground/15 px-3 py-2.5 text-left text-base font-medium text-foreground hover:bg-foreground/5 transition-colors"
       >
         <app-icon [name]="isDarkTheme() ? 'moon' : 'sun'" [size]="20" />
         {{ themeToggleLabel() }}

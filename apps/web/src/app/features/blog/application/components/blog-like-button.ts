@@ -32,7 +32,7 @@ function likedSlugs(): string[] {
       data-testid="blog-like-button"
       [disabled]="liked()"
       (click)="like()"
-      class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-foreground/10 hover:border-primary/40 disabled:opacity-70 disabled:cursor-default transition-colors"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-foreground/10 hover:border-primary/40 disabled:opacity-70 disabled:cursor-default transition-colors"
     >
       <app-icon name="lucide-heart" [size]="18" />
       <span>{{ label() }} ({{ count() }})</span>

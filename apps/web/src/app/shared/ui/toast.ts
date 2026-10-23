@@ -45,7 +45,7 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
       @for (msg of messages(); track msg.id) {
         @let style = SEVERITY_STYLES[msg.severity];
         <div
-          class="pointer-events-auto flex items-start gap-3 p-4 rounded-lg border-l-4 bg-surface shadow-lg animate-slide-in-right"
+          class="pointer-events-auto flex items-start gap-3 p-4 rounded-card border-l-4 bg-surface shadow-lg animate-slide-in-right"
           [class]="style.container"
           role="alert"
           data-testid="toast"
@@ -72,7 +72,7 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
           </div>
           <button
             type="button"
-            class="shrink-0 w-11 h-11 -m-2 inline-flex items-center justify-center rounded-md transition-colors hover:bg-foreground/5"
+            class="shrink-0 w-11 h-11 -m-2 inline-flex items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
             [class]="style.colour"
             aria-label="Fermer"
             data-testid="toast-close"

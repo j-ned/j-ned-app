@@ -10,6 +10,8 @@ export const HOME_HERO_CTA_LABELS = {
   projects: 'Voir les réalisations',
 } as const;
 
+export const HOME_HERO_STICKER_LABEL = 'Fait main';
+
 export const HOME_WORK_FRAME: WorkFrame = {
   title: 'Fiche technique',
   reference: 'réf. JN-2026',

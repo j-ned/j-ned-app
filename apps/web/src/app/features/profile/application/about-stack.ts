@@ -10,7 +10,7 @@ import type { Technology } from '@features/profile/domain/models/technology.mode
   host: { class: 'block' },
   template: `
     <ul
-      class="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-foreground/8 bg-foreground/8 sm:grid-cols-3 xl:grid-cols-6"
+      class="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-foreground/8 bg-foreground/8 sm:grid-cols-3 xl:grid-cols-6"
       aria-label="Stack technique"
       role="list"
     >
