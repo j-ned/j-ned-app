@@ -1444,3 +1444,70 @@ CLS 0,0089 / 0,0053 / 0,0120. Les autres pages ne contiennent pas l'autocollant.
 - **CLS médian < 0,02** (critère fixé à la PR 6a) : PASS sur toutes les pages après correctif.
 - **Élément LCP** : mêmes candidats partout.
 - **Octets de police sur `/`** : 90 135 des deux côtés.
+
+## Suivi CLS de la PR 6a (traits de 2 px)
+
+2026-10-23. Suivi demandé par le propriétaire à l'arbitrage de la PR 6a.
+
+**Cause trouvée (trace, puis reproduction)** : le décalage ne vient pas des composants. Angular SSR insère à
+chaque requête un CSS critique (`beasties/runtime`, plans compilés au build par `beasties/compiler`) et charge la
+feuille complète en différé (`media="print"`). `beasties@0.5.4` sérialise chaque at-rule suivie d'un `;`, y compris
+les règles à bloc (`compiler.mjs:520`) : le HTML servi contient `@property --tw-font-weight{…};@property
+--tw-border-style{…};…`. Le navigateur lit `;@property …{…}` comme une règle qualifiée invalide et la jette : toutes
+les `@property` de Tailwind sauf la première, et le bloc `@layer properties`, disparaissent. `--tw-border-style`
+n'a plus de valeur, `border-style: var(--tw-border-style)` vaut `none` : **au premier rendu, aucune bordure
+Tailwind n'existe**. Elles apparaissent à l'arrivée de la feuille complète et décalent tout ce qui suit.
+
+- Trace Lighthouse de `/projects` desktop sur `master` : un seul décalage (t = 216 ms, avant les polices), colonne
+  de gauche de l'en-tête 187 → 207, filtres 456 → 476, `section.mt-12` 547 → 568. Reproduit au pixel en ne
+  servant que le CSS critique : légende 200 px de haut au lieu de 220 (cadre `border-2`, filet de tête, trois
+  tampons `border-2`), en-tête 376 au lieu de 396 ; la grille `lg:items-end` aligne la colonne de gauche sur le bas.
+- Le défaut existait avant la PR 6a (traits de 1 et 1,5 px) ; les traits de 2 px l'ont doublé. Même mécanisme pour
+  `app-cartouche > dl` sur `/`, les lignes du blog et les choix techniques de la fiche projet.
+- Production touchée de la même façon (58 `};@` dans le HTML de `/projects`, 2026-10-23).
+
+**Correctif** : `beasties@0.5.5` (correctif amont : le `;` n'est plus ajouté qu'aux at-rules sans bloc), imposée par
+`pnpm.overrides` (`beasties@<0.5.5` → `0.5.5`) puisque la dépendance vient d'`@angular/build` et `@angular/ssr`.
+Aucun changement de code ni de rendu. **Exception à la règle des 14 jours**, décidée par le propriétaire le
+2026-10-23 : la 0.5.5 est publiée depuis le 12/10 (11 jours) ; ce n'est pas un correctif de sécurité, mais c'est le
+correctif amont exact d'un défaut visible en production. L'override se retire quand `@angular/build` et
+`@angular/ssr` exigeront `beasties >= 0.5.5`.
+
+**Garde** : `e2e/a11y/critical-css.spec.ts` (job `a11y`, contre l'image) bloque la feuille complète sur
+`/projects` et exige des bordures déjà tracées sur le cartouche et un tampon : `0px none` sur l'image de `master`
+(RED), `2px solid` avec la 0.5.5 (GREEN).
+
+### Mesure Lighthouse
+
+Trois images : avant la PR 6a (`lh6a-base`, rendu de la PR 5), `master` `8fefb13`, branche (0.5.5). Lighthouse
+12.8.2, doublure, tiers bloqués, mobile et desktop, 5 passes à ordre tournant, machine sans autre charge ; 120
+rapports, plus un recontrôle de `/blog` et `/projects` mobile en 10 passes alternées `master` / branche (40 rapports).
+
+| Page | Profil | CLS avant 6a | CLS `master` | CLS branche | Perf `master` → branche | LCP ms `master` → branche |
+|---|---|---|---|---|---|---|
+| `/` | mobile | 0,0028 | 0,0121 | 0,0107 | 90 → 90 | 3220 → 3232 |
+| `/` | desktop | 0,0018 | 0,0089 | 0,0040 | 100 → 100 | 562 → 563 |
+| `/blog` | mobile | 0,0027 | 0,0032 | **0,0008** | 94 → 95 (recontrôle) | 2855 → 2854 (recontrôle) |
+| `/blog` | desktop | 0,0013 | 0,0013 | **0,0007** | 100 → 100 | 733 → 603 |
+| `/projects` | mobile | 0,0050 | 0,0084 | **0,0010** | 95 → 91 (recontrôle) | 2855 → 3279 (recontrôle) |
+| `/projects` | desktop | 0,0078 | 0,0120 | **0,0007** | 100 → 100 | 645 → 645 |
+| `/projects/projet-temoin` | mobile | 0,0048 | 0,0052 | **0,0008** | 92 → 92 | 2854 → 2854 |
+| `/projects/projet-temoin` | desktop | 0,0037 | 0,0042 | **0,0007** | 100 → 100 | 644 → 645 |
+
+A11y / BP / SEO : 100 / 96 / 100 partout, sur les trois images.
+
+- **CLS** : en dessous du niveau d'avant la PR 6a sur `/blog`, `/projects` et la fiche projet (décalages restants :
+  `h1` et en-tête fixe au chargement des polices). Sur `/`, le décalage du cartouche a disparu ; il reste celui de
+  l'autocollant (`app-sticker.absolute`, 9 passes sur 10), apporté par la PR 6b et déjà mesuré après son correctif
+  (0,0029 à 0,0121) : hors de ce suivi, sous le critère de 0,02.
+- **Perf `/projects` mobile 95 → 91** : pas un effet du correctif. L'élément LCP alterne entre le `h1` (≈ 2 855 ms,
+  Perf 95) et le paragraphe d'intro en fondu retardé (≈ 3 300 ms, Perf 90-91), mélange déjà relevé aux PR 4 à 6b ;
+  le paragraphe gagne 12 fois sur 15 sur la branche contre 3 sur 15 sur `master`, mais l'inverse sur `/blog`
+  (1 sur 10 contre 4 sur 10, Perf 94 → 95). Géométrie des deux candidats identique sur les deux images, avec ou sans
+  la feuille complète (`h1` 380 × 44, `p` 380 × 51) ; FCP identique (≈ 1 729 ms). Course de timing sur l'animation,
+  pas une dégradation : la question de l'élément LCP en fondu reste le suivi « perf en pause ».
+- **Élément LCP** : mêmes candidats partout.
+
+Gates locaux : `pnpm install --frozen-lockfile`, `pnpm test` (228 fichiers, 4408 tests, exit 0), `pnpm lint`,
+`pnpm run format:check`, `pnpm a11y:typecheck`, `pnpm run build --configuration production` : exit 0 ; `pnpm a11y`
+contre l'image de la branche : 59 tests verts (dont la garde du CSS critique), exit 0.
