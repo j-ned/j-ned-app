@@ -96,6 +96,11 @@
   --font-sans:
     'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --radius-part: 0.5rem;
+  --radius-field: 0.75rem;
+  --radius-card: 1rem;
+  --radius-block: 1.375rem;
 }
 
 /* Mode sombre par défaut « Nuit » (bleu nuit + orange copeau). Ratios WCAG : fond / surface. */
@@ -308,7 +313,7 @@ input:-webkit-autofill:focus {
 
 @utility form-input {
   /* text-base sur mobile : < 16px déclenche le zoom auto de Safari iOS au focus ; min-h-11 = cible 44px */
-  @apply block w-full min-h-11 rounded-lg border border-field bg-surface px-3.5 py-2.5 text-base sm:text-sm text-foreground;
+  @apply block w-full min-h-11 rounded-field border border-field bg-surface px-3.5 py-2.5 text-base sm:text-sm text-foreground;
   @apply placeholder:text-muted;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary;
   @apply transition-colors;
@@ -317,7 +322,7 @@ input:-webkit-autofill:focus {
 }
 
 @utility app-select {
-  @apply min-h-11 rounded-lg border border-field bg-surface px-3 py-2 text-base sm:text-sm text-foreground;
+  @apply min-h-11 rounded-field border border-field bg-surface px-3 py-2 text-base sm:text-sm text-foreground;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary;
   @apply transition-colors;
   @apply aria-[invalid=true]:border-status-error aria-[invalid=true]:ring-status-error/30;

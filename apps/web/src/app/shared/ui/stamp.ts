@@ -4,7 +4,7 @@ import { Component, input } from '@angular/core';
   selector: 'app-stamp',
   host: {
     class:
-      'inline-block rounded-sm border border-line-strong bg-background px-2 py-1 font-mono text-xs uppercase tracking-[0.06em] text-foreground',
+      'inline-block rounded-part border-2 border-foreground bg-surface px-2.5 py-1 text-xs font-semibold text-foreground',
     '[class.border-dashed]': 'dashed()',
   },
   template: `<ng-content />`,

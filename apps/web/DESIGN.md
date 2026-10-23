@@ -322,10 +322,10 @@ Aucune autre ombre, boutons compris.
 ### Buttons (`shared/ui/button.ts`)
 
 - **Directive d'attribut `appButton`** sur un `<button>` ou un `<a>` natif (`button[appButton], a[appButton]`, ADR-0017) : aucun élément enveloppant, `type`, `disabled`, `aria-*`, `routerLink` et `href` restent natifs. Un `<button appButton>` écrit toujours son `type` (`@angular-eslint/template/button-has-type`). Jamais de `@utility` pour un bouton.
-- **Gabarit unique (appel):** `inline-flex min-h-11 items-center gap-2`, 15 px (`text-[0.9375rem]`), graisse 600, `transition-colors`, `rounded-md` (6px). Hauteur 44 px garantie par `min-h-11` (WCAG 2.5.5).
-- **Variantes:** `primary` (défaut) `bg-primary-bg text-on-primary` → hover `bg-primary-bg/90` (5,36:1 Sable, 7,74:1 Nuit ; jamais `text-white`) ; `outlined` `border-foreground/15 text-foreground` → hover `border-primary/40 text-primary` ; `danger` `bg-status-error text-on-status-error` → hover `bg-status-error/90` ; `outlined-danger` `border-status-error/40 text-status-error` → hover `border-status-error/60 bg-status-error/10` ; `text` `text-primary` → hover `bg-primary/8` (Accent Tint Rule) ; `text-muted` `text-muted` → hover `bg-foreground/5 text-foreground` ; `text-danger` `text-status-error` → hover `bg-status-error/10`. Pleins sans bordure ni ombre.
-- **`ghost-icon`:** lien icône des listes de l'admin, chaîne propre (`size-11`, centré, `text-foreground`, hover `bg-surface-elevated`) ; `size`, `rounded` et `block` sans effet.
-- **Tailles:** `default` (`px-5`) / `icon` (`min-w-11`, centré, carré de 44 px). `[rounded]="true"` : `rounded-full` (pill). `[block]="true"` : pleine largeur, libellé centré.
+- **Gabarit unique (appel):** `inline-flex min-h-11 items-center gap-2`, 15 px (`text-[0.9375rem]`), graisse 600, `transition-colors`, `rounded-full` (pilule, pour toutes les variantes). Hauteur 44 px garantie par `min-h-11` (WCAG 2.5.5).
+- **Variantes:** `primary` (défaut) `bg-primary-bg text-on-primary` → hover `bg-primary-bg/90` (5,36:1 Sable, 7,74:1 Nuit ; jamais `text-white`) ; `outlined` `border-2 border-foreground text-foreground` → hover `border-primary text-primary` (bord franc, assorti aux cartes) ; `danger` `bg-status-error text-on-status-error` → hover `bg-status-error/90` ; `outlined-danger` `border-2 border-status-error/40 text-status-error` → hover `border-status-error/60 bg-status-error/10` ; `text` `text-primary` → hover `bg-primary/8` (Accent Tint Rule) ; `text-muted` `text-muted` → hover `bg-foreground/5 text-foreground` ; `text-danger` `text-status-error` → hover `bg-status-error/10`. Pleins sans bordure ni ombre.
+- **`ghost-icon`:** lien icône des listes de l'admin, chaîne propre (`size-11`, centré, `rounded-full`, `text-foreground`, hover `bg-surface-elevated`) ; `size` et `block` sans effet.
+- **Tailles:** `default` (`px-5`) / `icon` (`min-w-11`, centré, cercle de 44 px). `[block]="true"` : pleine largeur, libellé centré.
 - **États propres à un site** (`aria-pressed:border-primary`, `aria-disabled:*`, `disabled:cursor-wait disabled:opacity-60`) : en classes sur l'élément, à côté de la directive.
 - **Focus:** anneau global 2px couleur `primary` (orange texte : 5,21:1 Sable, 7,74:1 Nuit), offset 2px, sur `:focus-visible` uniquement (pas au clic souris) ; il suit le rayon de l'élément (un bouton rond reste rond).
 - **Disabled:** opacity 0.5, cursor not-allowed.
@@ -349,8 +349,8 @@ Aucune autre ombre, boutons compris.
 Un lien de navigation interne présenté en carte : « article précédent / suivant » et « Pour aller plus loin » (fiche du projet, articles proches) sur la page article, « Articles sur ce projet » sur la fiche projet.
 
 - **API:** composant à sélecteur d'attribut `a[app-link-card]`, posé sur le lien de l'appelant ; entrées `overline` et `heading` (requises), `align` (`'start'` par défaut, `'end'` aligne le texte à droite). `routerLink`, `data-testid` et le placement dans la grille (`sm:col-start-2`) restent sur l'`<a>`.
-- **Apparence:** carte « Cards / Containers » portée par l'hôte (`rounded-xl border border-foreground/8 bg-surface p-6`), sans élément enveloppant ; sur-titre mono `text-xs text-muted`, puis titre `text-[1.1875rem] font-semibold tracking-tight`.
-- **Survol:** la bordure passe en `primary/35` et le titre en `primary` (`group-hover`) ; pas d'ombre.
+- **Apparence:** carte portée par l'hôte (`rounded-card border-2 border-foreground bg-surface p-6`, bord franc 2 px, rayon 16 px), sans élément enveloppant ; sur-titre mono `text-xs text-muted`, puis titre `text-[1.1875rem] font-semibold tracking-tight`.
+- **Survol:** la bordure passe en `primary` (5,21:1 Sable, au-delà de 3:1 dans les deux registres) et le titre en `primary` (`group-hover`) ; pas d'ombre.
 - **Focus:** anneau global `:focus-visible` de `styles.css` (2 px `primary`).
 - **Cible:** une seule par carte, toute la carte ; le nom du lien est le sur-titre suivi du titre.
 - **Don't:** pas de second interactif dans la carte ; pas de lien externe (la carte n'annonce pas de nouvel onglet).
@@ -360,10 +360,19 @@ Un lien de navigation interne présenté en carte : « article précédent / sui
 Le bloc-titre d'un plan technique, repris comme cadre de données.
 
 - **API:** `title` (requis), `reference` (optionnelle, défaut `''`), `rows: readonly CartoucheRow[]` (`{ label, value }`), contenu projeté après les lignes.
-- **Structure:** hôte `role="group"` nommé par le titre ; barre de titre empilée (titre en `p` Bricolage Grotesque gras, puis référence en mono `text-muted` sous le titre, à toutes les largeurs, sans troncature) ; lignes en `dl > div > dt + dd` (libellé mono majuscule `text-muted`, valeur `font-medium tabular-nums`). Aucun `dl` sans ligne.
-- **Traits:** cadre et barre en `line-strong` 1,5px, séparateurs en `line` (décoratifs, Decorative Line Rule). Rayon `rounded-sm`.
+- **Structure:** hôte `role="group"` nommé par le titre ; barre de titre empilée (titre en `p` Bricolage Grotesque gras, puis référence en mono `text-muted` sous le titre, à toutes les largeurs, sans troncature) ; lignes en `dl > div > dt + dd` (libellé JN Sans `text-xs font-semibold text-muted`, sans majuscules ; valeur `font-medium tabular-nums`). Aucun `dl` sans ligne.
+- **Traits:** cadre et barre de titre (`data-testid="cartouche-head"`) en bord franc `border-2 border-foreground`, séparateurs internes en `line-strong` 1 px (décoratifs, Decorative Line Rule). Rayon `rounded-part` (8 px), `overflow-hidden` pour que les séparateurs suivent le coin. La référence reste en mono (donnée).
 - **Titre:** jamais un `h*` : son niveau dépend du contexte, un consommateur qui a besoin d'un titre le projette.
 - **Usage:** au plus un cartouche **décoratif** par écran (cadre de travail, fiche technique). Il sert aussi de carte de données (légende des natures, thèmes du blog, CV de l'admin) : ces cartouches-là ne comptent pas dans cette limite.
+
+### Autocollant (`shared/ui/sticker.ts`)
+
+La pastille décorative de la Sticker Rule.
+
+- **API:** `tone: StickerTone` (`'sage'` par défaut, ou `'lavender'`), `tilt: StickerTilt` (`'none'` par défaut, `'left'`, `'right'`) ; unions fermées, aucune couleur ni angle libre. Texte projeté.
+- **Apparence:** classes sur l'hôte (même mécanique que `appButton`) : `inline-flex w-fit items-center rounded-full border-2 border-transparent px-3 py-1 font-display text-sm font-bold leading-tight forced-colors:border-[CanvasText]`, ton `bg-sticker-sage text-on-sticker-sage` ou `bg-sticker-lavender text-on-sticker-lavender`, inclinaison `-rotate-2` / `rotate-2` (statique, sans transition).
+- **Couleurs forcées:** le fond est neutralisé par le navigateur, le bord transparent devient `CanvasText` : la pastille garde son contour.
+- **Accessibilité:** ni rôle, ni `tabindex`, ni `aria-*` : texte lu tel quel. Jamais un lien, un bouton, un titre, ni le parent d'un interactif.
 
 ### Tampon (`shared/ui/stamp.ts`)
 
@@ -371,7 +380,7 @@ La mention portée sur un plan, reprise pour dire la nature d'une chose : « En 
 
 - **API:** `dashed` (défaut `false`) ; le texte est projeté.
 - **Pointillé:** `dashed` ajoute `border-dashed` à l'hôte et rien d'autre : un état provisoire (« Brouillon » de la liste des articles admin), jamais une nature.
-- **Apparence unique:** classes sur l'hôte, sans élément enveloppant : mono majuscule `text-xs`, interlettrage 0,06 em, `bg-background text-foreground` (opaque dans les deux registres, contraste du texte courant), trait `line-strong`, `rounded-sm`, marges `px-2 py-1`. Une seule apparence pour toutes les natures : c'est le **texte** qui les distingue, jamais une couleur.
+- **Apparence unique:** classes sur l'hôte, sans élément enveloppant : forme d'autocollant neutre, `rounded-part border-2 border-foreground bg-surface px-2.5 py-1 text-xs font-semibold text-foreground` (JN Sans, sans majuscules ; 16,47:1 Sable, 13,43:1 Nuit). Une seule apparence pour toutes les natures : c'est le **texte** qui les distingue, jamais une couleur.
 - **Placement:** le consommateur le positionne : coin haut gauche du visuel sur la couverture de projet (`ProjectCover`, ci-dessous), au-dessus du `h1` dans l'en-tête du détail. Posé sur un visuel couvert par un lien étiré, il laisse passer le clic (`pointer-events-none`).
 - **Accessibilité:** texte lu tel quel, sans rôle ni `aria-*` ; la nature est dite par le texte, pas par une couleur ni par la seule position.
 - **Don't:** pas d'orange ni de couleur de statut (One Orange Rule : c'est une mention, pas un accent) ; jamais un `h*` ni à l'intérieur d'un titre ; jamais interactif ; pas de variante par nature.
@@ -500,13 +509,13 @@ Le Markdown d'un article, rendu par `parseMarkdown` (seul assainissement, ADR-00
 La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne interrompue autour d'un libellé.
 
 - **API:** `label` (requis).
-- **Rendu:** traits en bordures `currentColor` = `text-primary` (visibles en `forced-colors`), libellé mono `text-xs`. La ligne s'interrompt autour du libellé au lieu d'être masquée par un fond : la cote se pose sur toute surface.
+- **Rendu:** traits de 2 px (`border-l-2` pour les rappels, `border-t-2` pour la ligne) et pointes proportionnelles (`border-y-[5px]`, `border-r-10` / `border-l-10`), en bordures `currentColor` = `text-primary` (visibles en `forced-colors`), libellé mono `text-xs`. La ligne s'interrompt autour du libellé au lieu d'être masquée par un fond : la cote se pose sur toute surface.
 - **Accessibilité:** hôte `aria-hidden="true"`, aucun élément focalisable ni rôle à l'intérieur.
 - **Règle d'usage:** la cote est **décorative** : son libellé répète une information écrite ailleurs dans le texte lisible. Cotes réservées aux délais et durées.
 
 ### Inputs / Forms (utility `form-input`)
 
-- **Shape:** `rounded-lg` (8px), padding `px-3.5 py-2.5` (~14px / 10px).
+- **Shape:** `rounded-field` (12 px, commun à `form-input` et `app-select`), padding `px-3.5 py-2.5` (~14px / 10px).
 - **Background:** `bg-surface` (`#1e2638` en Nuit, `#ffffff` en Sable).
 - **Border:** `border border-field` au repos (token Field, ≥ 3:1 dans les deux registres), commun à `form-input` et `app-select`.
 - **Placeholder:** `placeholder:text-muted` (7,45:1 Sable, 7,52:1 Nuit). Jamais atténué : un texte de substitution reste du texte.
@@ -659,7 +668,7 @@ Même grammaire que l'éditeur d'article (colonnes, sections, barre, sommaire, g
 
 ### Toast (`shared/ui/toast.ts`)
 
-À documenter — variantes info/success/warn/error, position, durée, dismiss. Couleur : le titre est en `foreground` quelle que soit la sévérité ; la sévérité reste portée par l'icône, la bordure gauche, la teinte et le bouton fermer, au token plein (≥ 3:1 sur la teinte à 10 %, dans les deux registres). Sous `prefers-reduced-motion: reduce`, il apparaît sans glisser ni fondu.
+Variantes info/success/warn/error, position haut droite, dismiss par le bouton fermer. Fond opaque `bg-surface` (No-Glass Rule : ni teinte translucide, ni `backdrop-blur`), `rounded-lg`, ombre `shadow-lg`. Couleur : le titre est en `foreground` quelle que soit la sévérité ; la sévérité est portée par l'icône, la barre gauche `border-l-4` et le texte du bouton fermer, au token plein. Survol du bouton fermer neutre, `bg-foreground/5`. Sous `prefers-reduced-motion: reduce`, il apparaît sans glisser ni fondu.
 
 ### Drawer (`shared/ui/drawer.ts`)
 

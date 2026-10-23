@@ -40,6 +40,28 @@ describe('DimensionLine', () => {
     expect(labelOf(host)).toEqual(['10 jours']);
   });
 
+  it('Given une cote rendue When on lit ses traits Then attaches et ligne font 2 px, les pointes sont proportionnelles et tout suit la couleur primaire', async () => {
+    const { host } = await render('7 jours');
+    const extension = ['border-current', 'border-l-2', 'h-3.5'];
+    const line = ['border-current', 'border-t-2', 'flex-1'];
+
+    expect({
+      host: [...host.classList].sort(),
+      pieces: Array.from(host.children, (piece) => [...piece.classList].sort()),
+    }).toEqual({
+      host: ['flex', 'items-center', 'max-w-120', 'text-primary'],
+      pieces: [
+        extension,
+        ['border-r-10', 'border-r-current', 'border-y-[5px]', 'border-y-transparent', 'size-0'],
+        line,
+        ['font-medium', 'font-mono', 'px-2', 'shrink-0', 'text-xs'],
+        line,
+        ['border-l-10', 'border-l-current', 'border-y-[5px]', 'border-y-transparent', 'size-0'],
+        extension,
+      ],
+    });
+  });
+
   it('Given une cote rendue When on parcourt son arbre Then aucun élément focalisable ni rôle ARIA n’échappe au masquage', async () => {
     const { host } = await render('7 jours');
 

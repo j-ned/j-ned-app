@@ -89,6 +89,10 @@ jobs:
             echo "$metas" | grep -q 'media="(prefers-color-scheme: light)"'
             echo "$metas" | grep -q 'media="(prefers-color-scheme: dark)"'
           done
+          # Carte de partage par défaut : nom daté, un renommage oublié annoncerait une image absente.
+          og_image=$(tr '\n' ' ' < $browser/mentions-legales/index.html | grep -oE '<meta[[:space:]]+property="og:image"[[:space:]]+content="[^"]*"' | sed -E 's|.*content="https://nedellec-julien\.fr/(.*)"|\1|')
+          test -n "$og_image"
+          test -f "$browser/$og_image" || { echo "og:image sans fichier : $og_image"; exit 1; }
           # Un preload vers un nom de police périmé télécharge un fichier absent et retarde la vraie police.
           preloads=$(tr '\n' ' ' < $browser/mentions-legales/index.html | grep -o '<link[^>]*rel="preload"[^>]*>' | grep -o 'href="/[^"]*"' | sed -E 's/^href="\/(.*)"$/\1/')
           test -n "$preloads"
@@ -209,6 +213,11 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/wp-login.php)" = "404"
           # Routes client → coquille CSR en 200 ; URL inconnue → coquille CSR en 404 (pas la home)
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login)" = "200"
+          # La coquille CSR annonce la carte par défaut : elle doit être servie, en PNG.
+          curl -fsS http://127.0.0.1:3000/login -o /tmp/login.html
+          login_og=$(tr '\n' ' ' < /tmp/login.html | grep -oE '<meta[[:space:]]+property="og:image"[[:space:]]+content="[^"]*"' | sed -E 's|.*content="https://nedellec-julien\.fr(/.*)"|\1|')
+          test -n "$login_og"
+          test "$(curl -s -o /dev/null -w '%{http_code} %{content_type}' "http://127.0.0.1:3000$login_og")" = "200 image/png"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/admin/analytics)" = "200"
           # Ancien lien d'annulation de rendez-vous (e-mails déjà envoyés) : 410, en-têtes de sécurité gardés
           cancel_headers=$(curl -s -D - -o /dev/null http://127.0.0.1:3000/rendez-vous/annulation)

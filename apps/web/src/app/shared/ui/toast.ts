@@ -5,34 +5,29 @@ import type { ToastEntry, ToastSeverity } from './toast.types';
 type SeverityStyle = {
   container: string;
   icon: string;
-  iconClass: string;
-  close: string;
+  colour: string;
 };
 
 const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
   success: {
-    container: 'bg-status-success/10 border-status-success/40',
+    container: 'border-status-success',
     icon: 'check-circle',
-    iconClass: 'text-status-success',
-    close: 'text-status-success hover:bg-status-success/10',
+    colour: 'text-status-success',
   },
   info: {
-    container: 'bg-primary/10 border-primary/40',
+    container: 'border-primary',
     icon: 'info-circle',
-    iconClass: 'text-primary',
-    close: 'text-primary hover:bg-primary/10',
+    colour: 'text-primary',
   },
   warn: {
-    container: 'bg-status-warn/10 border-status-warn/40',
+    container: 'border-status-warn',
     icon: 'exclamation-triangle',
-    iconClass: 'text-status-warn',
-    close: 'text-status-warn hover:bg-status-warn/10',
+    colour: 'text-status-warn',
   },
   error: {
-    container: 'bg-status-error/10 border-status-error/40',
+    container: 'border-status-error',
     icon: 'times-circle',
-    iconClass: 'text-status-error',
-    close: 'text-status-error hover:bg-status-error/10',
+    colour: 'text-status-error',
   },
 };
 
@@ -50,14 +45,14 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
       @for (msg of messages(); track msg.id) {
         @let style = SEVERITY_STYLES[msg.severity];
         <div
-          class="pointer-events-auto flex items-start gap-3 p-4 rounded-lg border-l-4 shadow-lg backdrop-blur-sm animate-slide-in-right"
+          class="pointer-events-auto flex items-start gap-3 p-4 rounded-lg border-l-4 bg-surface shadow-lg animate-slide-in-right"
           [class]="style.container"
           role="alert"
           data-testid="toast"
         >
           <app-icon
             class="shrink-0 mt-0.5"
-            [class]="style.iconClass"
+            [class]="style.colour"
             [name]="style.icon"
             [size]="20"
             data-testid="toast-icon"
@@ -77,8 +72,8 @@ const SEVERITY_STYLES: Record<ToastSeverity, SeverityStyle> = {
           </div>
           <button
             type="button"
-            class="shrink-0 w-11 h-11 -m-2 inline-flex items-center justify-center rounded-md transition-colors"
-            [class]="style.close"
+            class="shrink-0 w-11 h-11 -m-2 inline-flex items-center justify-center rounded-md transition-colors hover:bg-foreground/5"
+            [class]="style.colour"
             aria-label="Fermer"
             data-testid="toast-close"
             (click)="dismiss.emit(msg.id)"

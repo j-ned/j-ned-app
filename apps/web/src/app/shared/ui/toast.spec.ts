@@ -29,9 +29,7 @@ describe('Toast', () => {
     return el;
   }
 
-  // WCAG 1.4.3 : en thème Ivoire, `status-success` et `status-warn` pleins tombent sous 4,5:1 sur
-  // la teinte à 10 % du conteneur (axe : 2,94 et 2,99). Le titre, qui nomme déjà la sévérité,
-  // est écrit en `foreground` ; la couleur de sévérité reste portée par l'icône et la bordure.
+  // Le titre nomme déjà la sévérité : sa couleur reste portée par l'icône et la barre.
   it.each(Object.keys(TOKEN_BY_SEVERITY) as ToastSeverity[])(
     'Given severity="%s" When the toast renders Then the summary uses the foreground token',
     (severity) => {
@@ -61,11 +59,25 @@ describe('Toast', () => {
   );
 
   it.each(Object.entries(TOKEN_BY_SEVERITY) as [ToastSeverity, string][])(
-    'Given severity="%s" When the toast renders Then the container is tinted with "%s" at 10%%',
+    'Given severity="%s" When the toast renders Then the container is an opaque surface with a "%s" bar, without blur',
     (severity, token) => {
-      const root = renderToast(severity);
+      const classes = byTestId(renderToast(severity), 'toast').className.split(/\s+/);
 
-      expect(byTestId(root, 'toast').className.split(/\s+/)).toContain(`bg-${token}/10`);
+      expect({
+        backgrounds: classes.filter((c) => c.startsWith('bg-')),
+        blurs: classes.filter((c) => c.includes('blur')),
+        bar: classes.includes('border-l-4'),
+        barColours: classes.filter((c) => c.startsWith(`border-${token}`)).length,
+      }).toEqual({ backgrounds: ['bg-surface'], blurs: [], bar: true, barColours: 1 });
+    },
+  );
+
+  it.each(Object.keys(TOKEN_BY_SEVERITY) as ToastSeverity[])(
+    'Given severity="%s" When the close button is hovered Then it gets the neutral foreground wash only',
+    (severity) => {
+      const classes = byTestId(renderToast(severity), 'toast-close').className.split(/\s+/);
+
+      expect(classes.filter((c) => c.startsWith('hover:bg-'))).toEqual(['hover:bg-foreground/5']);
     },
   );
 });

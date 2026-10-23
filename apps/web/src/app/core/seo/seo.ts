@@ -2,14 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
-import { SHARE_IMAGE } from '@shared/seo/share-image';
+import { DEFAULT_SHARE_IMAGE, SHARE_IMAGE } from '@shared/seo/share-image';
 
 export type SeoData = {
   title: string;
   description: string;
   keywords?: string;
   url?: string;
-  /** Carte de partage JPEG 1200×630 (`toShareImageUrl`). Sans visuel : l'avatar PNG. */
+  /** Carte de partage JPEG 1200×630 (`toShareImageUrl`). Sans visuel : la carte PNG par défaut. */
   image?: string;
   /** Texte alternatif du visuel partagé (`og:image:alt`). Défaut : le titre. */
   imageAlt?: string;
@@ -18,15 +18,6 @@ export type SeoData = {
   structuredData?: Record<string, unknown>;
 };
 
-// Mêmes valeurs que les balises statiques de index.html, que ce service remplace page par page.
-// L'avatar est servi en PNG : les crawlers sociaux ne décodent pas l'AVIF affiché sur la page.
-const AVATAR_IMAGE = {
-  url: `${SITE_IDENTITY.siteUrl}/avatar.png`,
-  width: 400,
-  height: 400,
-  type: 'image/png',
-} as const;
-const AVATAR_ALT = 'Photo de profil de Julien Nédellec';
 const DEFAULT_ROBOTS = 'index, follow';
 
 @Injectable({ providedIn: 'root' })
@@ -52,21 +43,16 @@ export class Seo {
       property: 'og:url',
       content: data.url || SITE_IDENTITY.siteUrl,
     });
-    // Sans visuel dédié (couverture d'article, image de projet), on retombe sur l'avatar 400×400 :
-    // une carte `summary` l'affiche en vignette, une `summary_large_image` l'étirerait.
     const image = data.image
       ? { url: data.image, ...SHARE_IMAGE, alt: data.imageAlt || data.title }
-      : { ...AVATAR_IMAGE, alt: AVATAR_ALT };
+      : DEFAULT_SHARE_IMAGE;
     this.meta.updateTag({ property: 'og:image', content: image.url });
     this.meta.updateTag({ property: 'og:image:alt', content: image.alt });
     this.meta.updateTag({ property: 'og:image:width', content: String(image.width) });
     this.meta.updateTag({ property: 'og:image:height', content: String(image.height) });
     this.meta.updateTag({ property: 'og:image:type', content: image.type });
 
-    this.meta.updateTag({
-      name: 'twitter:card',
-      content: data.image ? 'summary_large_image' : 'summary',
-    });
+    this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
 
     if (data.url) {
       this.updateCanonicalUrl(data.url);

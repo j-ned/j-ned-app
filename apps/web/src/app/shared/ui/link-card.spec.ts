@@ -7,13 +7,13 @@ const CARD = [
   'group',
   'grid',
   'gap-1',
-  'rounded-xl',
-  'border',
-  'border-foreground/8',
+  'rounded-card',
+  'border-2',
+  'border-foreground',
   'bg-surface',
   'p-6',
   'transition-colors',
-  'hover:border-primary/35',
+  'hover:border-primary',
 ];
 
 @Component({
@@ -79,19 +79,13 @@ describe('LinkCard', () => {
   it('Given no alignment When the card renders Then the host carries the card look, aligned to the start', async () => {
     const card = cardOf(await render(DefaultHost));
 
-    expect({
-      card: [...card.classList],
-      endAligned: card.classList.contains('text-right'),
-    }).toEqual({ card: expect.arrayContaining(CARD), endAligned: false });
+    expect([...card.classList].sort()).toEqual([...CARD].sort());
   });
 
   it('Given the end alignment When the card renders Then the host keeps the card look and aligns its text to the right', async () => {
     const card = cardOf(await render(AlignedHost));
 
-    expect({
-      card: [...card.classList],
-      endAligned: card.classList.contains('text-right'),
-    }).toEqual({ card: expect.arrayContaining(CARD), endAligned: true });
+    expect([...card.classList].sort()).toEqual([...CARD, 'text-right'].sort());
   });
 
   it('Given a rendered card When its inputs change Then the card follows them', async () => {

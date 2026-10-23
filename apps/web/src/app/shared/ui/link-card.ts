@@ -4,7 +4,7 @@ import { Component, input } from '@angular/core';
   selector: 'a[app-link-card]',
   host: {
     class:
-      'group grid gap-1 rounded-xl border border-foreground/8 bg-surface p-6 transition-colors hover:border-primary/35',
+      'group grid gap-1 rounded-card border-2 border-foreground bg-surface p-6 transition-colors hover:border-primary',
     '[class.text-right]': "align() === 'end'",
   },
   template: `

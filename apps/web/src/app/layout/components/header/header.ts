@@ -57,7 +57,6 @@ import { ThemeStore } from '@core/theme/theme-store';
             variant="outlined"
             class="max-sm:hidden"
             size="icon"
-            [rounded]="true"
             [attr.aria-label]="themeToggleLabel()"
             (click)="toggleTheme()"
           >
@@ -74,7 +73,6 @@ import { ThemeStore } from '@core/theme/theme-store';
             variant="text-muted"
             class="lg:hidden"
             size="icon"
-            [rounded]="true"
             data-testid="header-menu-toggle"
             [attr.aria-label]="isMobileMenuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
             (click)="toggleMobileMenu()"

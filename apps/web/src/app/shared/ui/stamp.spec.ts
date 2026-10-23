@@ -3,18 +3,16 @@ import { TestBed } from '@angular/core/testing';
 import { Stamp } from './stamp';
 
 const STAMP_CLASSES = [
-  'bg-background',
-  'border',
-  'border-line-strong',
-  'font-mono',
+  'bg-surface',
+  'border-2',
+  'border-foreground',
+  'font-semibold',
   'inline-block',
-  'px-2',
+  'px-2.5',
   'py-1',
-  'rounded-sm',
+  'rounded-part',
   'text-foreground',
   'text-xs',
-  'tracking-[0.06em]',
-  'uppercase',
 ];
 
 @Component({

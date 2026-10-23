@@ -14,15 +14,16 @@ const BASE = [
   'cursor-pointer',
   'disabled:cursor-not-allowed',
   'disabled:opacity-50',
+  'rounded-full',
 ];
 
 const PRIMARY = ['bg-primary-bg', 'text-on-primary', 'hover:bg-primary-bg/90'];
 
 const OUTLINED = [
-  'border',
-  'border-foreground/15',
+  'border-2',
+  'border-foreground',
   'text-foreground',
-  'hover:border-primary/40',
+  'hover:border-primary',
   'hover:text-primary',
 ];
 
@@ -31,7 +32,7 @@ const GHOST_ICON = [
   'size-11',
   'items-center',
   'justify-center',
-  'rounded-md',
+  'rounded-full',
   'text-foreground',
   'transition-colors',
   'hover:bg-surface-elevated',
@@ -61,12 +62,6 @@ class IconHost {}
 
 @Component({
   imports: [Button],
-  template: `<button appButton type="button" data-testid="b" [rounded]="true">Envoyer</button>`,
-})
-class RoundedHost {}
-
-@Component({
-  imports: [Button],
   template: `<button appButton type="button" data-testid="b" [block]="true">Envoyer</button>`,
 })
 class BlockHost {}
@@ -91,15 +86,7 @@ class GhostIconHost {}
 
 @Component({
   imports: [Button],
-  template: `<a
-    appButton
-    variant="ghost-icon"
-    size="icon"
-    [rounded]="true"
-    href="/admin"
-    data-testid="b"
-    >x</a
-  >`,
+  template: `<a appButton variant="ghost-icon" size="icon" href="/admin" data-testid="b">x</a>`,
 })
 class ShapedGhostIconHost {}
 
@@ -143,7 +130,7 @@ describe('Button', () => {
     const button = await render(UnboundHost);
 
     expect(button).toBeInstanceOf(HTMLButtonElement);
-    expect(sorted(button)).toEqual([...BASE, 'rounded-md', 'px-5', ...PRIMARY].sort());
+    expect(sorted(button)).toEqual([...BASE, 'px-5', ...PRIMARY].sort());
   });
 
   it.each<[ButtonVariant, readonly string[]]>([
@@ -153,7 +140,7 @@ describe('Button', () => {
     [
       'outlined-danger',
       [
-        'border',
+        'border-2',
         'border-status-error/40',
         'text-status-error',
         'hover:border-status-error/60',
@@ -168,30 +155,22 @@ describe('Button', () => {
     async (variant, colours) => {
       const button = await render(VariantHost, { variant });
 
-      expect(sorted(button)).toEqual([...BASE, 'rounded-md', 'px-5', ...colours].sort());
+      expect(sorted(button)).toEqual([...BASE, 'px-5', ...colours].sort());
     },
   );
 
   it('Given size icon When rendered Then the button is a centred 44 px square without text padding', async () => {
     const button = await render(IconHost);
 
-    expect(sorted(button)).toEqual(
-      [...BASE, 'rounded-md', 'min-w-11', 'justify-center', ...PRIMARY].sort(),
-    );
+    expect(sorted(button)).toEqual([...BASE, 'min-w-11', 'justify-center', ...PRIMARY].sort());
     expect(sorted(button).filter((token) => /^(\w+:)?(px|pl|pr)-/.test(token))).toEqual([]);
-  });
-
-  it('Given rounded When rendered Then the button is fully rounded', async () => {
-    const button = await render(RoundedHost);
-
-    expect(sorted(button)).toEqual([...BASE, 'rounded-full', 'px-5', ...PRIMARY].sort());
   });
 
   it('Given block When rendered Then the button spans the full width with a centred label', async () => {
     const button = await render(BlockHost);
 
     expect(sorted(button)).toEqual(
-      [...BASE, 'rounded-md', 'px-5', 'w-full', 'justify-center', ...PRIMARY].sort(),
+      [...BASE, 'px-5', 'w-full', 'justify-center', ...PRIMARY].sort(),
     );
   });
 
@@ -199,7 +178,7 @@ describe('Button', () => {
     const button = await render(SubmitHost);
 
     expect(button.getAttribute('type')).toBe('submit');
-    expect(sorted(button)).toEqual([...BASE, 'rounded-md', 'px-5', ...PRIMARY, 'mt-5'].sort());
+    expect(sorted(button)).toEqual([...BASE, 'px-5', ...PRIMARY, 'mt-5'].sort());
   });
 
   it('Given a router link When rendered Then the anchor keeps its href and carries the call template', async () => {
@@ -207,12 +186,12 @@ describe('Button', () => {
 
     expect(link).toBeInstanceOf(HTMLAnchorElement);
     expect(link.getAttribute('href')).toBe('/projects');
-    expect(sorted(link)).toEqual([...BASE, 'rounded-md', 'px-5', ...PRIMARY].sort());
+    expect(sorted(link)).toEqual([...BASE, 'px-5', ...PRIMARY].sort());
   });
 
   it.each<[string, Type<unknown>]>([
     ['alone', GhostIconHost],
-    ['with size icon and rounded', ShapedGhostIconHost],
+    ['with size icon', ShapedGhostIconHost],
   ])(
     'Given a ghost-icon link %s When rendered Then it carries its own chain and nothing of the call template',
     async (_label, host) => {
@@ -227,7 +206,7 @@ describe('Button', () => {
     const link = await render(OutlinedLinkHost);
 
     expect(link).toBeInstanceOf(HTMLAnchorElement);
-    expect(sorted(link)).toEqual([...BASE, 'rounded-md', 'px-5', ...OUTLINED].sort());
+    expect(sorted(link)).toEqual([...BASE, 'px-5', ...OUTLINED].sort());
   });
 
   it('Given a pressed toggle with its own state class When rendered Then aria-pressed and the class survive next to the template', async () => {
@@ -235,7 +214,7 @@ describe('Button', () => {
 
     expect(button.getAttribute('aria-pressed')).toBe('true');
     expect(sorted(button)).toEqual(
-      [...BASE, 'rounded-md', 'px-5', ...OUTLINED, 'aria-pressed:border-primary'].sort(),
+      [...BASE, 'px-5', ...OUTLINED, 'aria-pressed:border-primary'].sort(),
     );
   });
 });

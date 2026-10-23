@@ -7,6 +7,15 @@ import { SITE_IDENTITY } from '../identity/site-identity.static-data';
  */
 export const SHARE_IMAGE = { width: 1200, height: 630, type: 'image/jpeg' } as const;
 
+// Nom daté : un réseau social garde la carte en cache par URL, on la renomme à chaque refonte.
+export const DEFAULT_SHARE_IMAGE = {
+  url: `${SITE_IDENTITY.siteUrl}/og/julien-nedellec-20261022.png`,
+  width: 1200,
+  height: 630,
+  type: 'image/png',
+  alt: 'Julien Nédellec. Tourneur CN le jour, développeur web le reste du temps.',
+} as const;
+
 // Un crawler social ne résout pas un chemin relatif ; `//hôte` désigne déjà un autre hôte.
 export function toShareImageUrl(imageUrl: string): string {
   if (!imageUrl) return '';

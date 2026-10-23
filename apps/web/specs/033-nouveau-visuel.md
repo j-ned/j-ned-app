@@ -436,14 +436,15 @@ conservée, bouton de fermeture survol `bg-foreground/5`.
 - **Carte Open Graph par défaut** (PR 6a) : `public/og/julien-nedellec-AAAAMMJJ.png` (date de production,
   ADR-0007 décision 1 ; nouveau nom à chaque changement), 1200 × 630, PNG (aplats : poids visé
   ≤ 150 Ko, mesuré et noté). Thème clair : fond sable, carte `surface` à bord `foreground` 2 px et rayon
-  22 px, « Julien Nédellec » en Bricolage 800, « Tourneur CN et développeur web » en JN Sans 600, un
+  22 px, « Julien Nédellec » en Bricolage 800, l'accroche de l'accueil en JN Sans 600 (décision de goût 3), un
   autocollant sauge incliné, une cote orange, l'adresse du site. Aucune photo, aucun dégradé.
   Source : `docs/og/og-default.html` (hors sources Tailwind, `@source not '../docs'`), qui charge les
   woff2 de `public/fonts/` ; rendu par `pnpm exec playwright screenshot --viewport-size "1200, 630"
   file://$PWD/docs/og/og-default.html public/og/julien-nedellec-AAAAMMJJ.png` (Playwright est déjà une
   dépendance de dev, aucune nouvelle dépendance).
 - **Câblage** : `shared/seo/share-image.ts` gagne `DEFAULT_SHARE_IMAGE = { url, width: 1200, height: 630,
-  type: 'image/png', alt: 'Julien Nédellec, tourneur CN et développeur web' } as const`. `seo.ts`
+  type: 'image/png', alt: 'Julien Nédellec. Tourneur CN le jour, développeur web le reste du temps.' } as const`
+  (décision de goût 3). `seo.ts`
   remplace `AVATAR_IMAGE` / `AVATAR_ALT` par cette constante ; `twitter:card` vaut toujours
   `summary_large_image` (la carte par défaut est grande). `index.html` : `og:image`, `og:image:alt`, et
   ajout de `og:image:width`, `og:image:height`, `og:image:type` (parité avec `seo.ts`, pour les coquilles
@@ -627,8 +628,11 @@ Les PR se suivent (mêmes fichiers) ; chaque tranche est verte sans les suivante
 
 1. **Autocollant de l'accueil** : « Fait main », sauge, incliné à gauche.
 2. **Tampon** : neutre à contour, aucune couleur d'autocollant.
-3. **Carte de partage** : texte seul, sans portrait. Le sous-titre (« Tourneur CN et développeur web »
-   proposé) est calé sur les textes de la spec 031 dans la PR 6a.
+3. **Carte de partage** : texte seul, sans portrait. Sous le nom, l'**accroche de l'accueil**, « Tourneur
+   CN le jour, développeur web le reste du temps. » (`STATIC_HERO.headline` de
+   `features/home/infra/data/home.static-data.ts`), décision du propriétaire du 2026-10-22 ; elle remplace
+   le sous-titre « Tourneur CN et développeur web » proposé. Texte alternatif cohérent : « Julien Nédellec.
+   Tourneur CN le jour, développeur web le reste du temps. » (le nom, puis l'accroche telle quelle).
 4. **Boutons `outlined`** : contour 2 px `foreground`, assorti aux cartes.
 5. **Œil optique** : **48**, confirmé par le propriétaire le 2026-10-22 sur une comparaison visuelle 48 / 96
    des titres de l'accueil (96 : même poids, dessin plus serré).
@@ -748,12 +752,119 @@ licence absents (`null`), 12 lignes de largeur dans 11 gabarits. Les 4362 autres
 Laissé au GREEN, hors Vitest : `ci.yml` (job `docker`), statut d'ADR-0006, `DESIGN.md` § 3 et `DESIGN.json`,
 et la vérification « police bloquée puis débloquée, `h1` immobile » (DevTools, plus Lighthouse).
 
+### PR 6a — balayage et mesure communs
+
+Sweep de contrat (`[rounded]`, `rounded-md`, `rounded-sm`, `rounded-xl`, `rounded-lg`, `border-foreground/8`,
+`border-foreground/15`, `hover:border-primary/35`, `border-[1.5px]`, `tracking-[0.06em]`, `backdrop-blur`,
+`bg-*/10`, `avatar.png`, « Photo de profil », `og:image`, `twitter:card`) sur `src/**/*.spec.ts`, `e2e/` et
+`ci/` : seuls les specs ci-dessous figeaient l'ancien contrat (`admin-save-bar.spec.ts` ne lit
+`border-line-strong` que sur sa propre barre, hors périmètre). Hors tests, `header.ts` lie encore
+`[rounded]="true"` deux fois (à retirer au GREEN avec l'entrée).
+
+Mesure : les quatre tranches touchent des fichiers disjoints et chaque bloc ci-dessous ne tombe que sur
+son composant ; elles ont été mesurées ensemble (un seul `pnpm test`), sous un squelette jetable posé le
+temps de la mesure puis retiré (précédent : spec 011) : `sticker.ts` exportant `StickerTone`,
+`StickerTilt` et un composant `Sticker` aux deux entrées, sans classe, et un `DEFAULT_SHARE_IMAGE` aux
+valeurs de l'avatar actuel. Sur l'arbre commité, la compilation s'arrête sur `TS2307` `./sticker` et
+`TS2305` `DEFAULT_SHARE_IMAGE` (trois specs) : **symboles dus au GREEN** (`src/app/shared/ui/sticker.ts`,
+`src/app/shared/seo/share-image.ts`), aucune autre erreur de typage. `prettier --check` et `eslint` des
+11 specs : verts.
+
+Mesure commune : `pnpm test` le 2026-10-22 22:49, après `pnpm exec ng cache clean` et purge de
+`node_modules/.vite`, code de sortie `1`, 48 failed / 4396 total ; les 48 échecs sont des
+`AssertionError`, aucun échec de harnais ; les 4348 autres tests sont verts (tranches 4.1 à 5
+comprises).
+
+### Tranche 6a.1 — les boutons sont des pilules
+
+- `shared/ui/button.spec.ts` (adapté) : `rounded-full` entre dans la base, `rounded-md` disparaît de tous
+  les attendus ; `OUTLINED` = `border-2 border-foreground text-foreground hover:border-primary
+  hover:text-primary` ; `outlined-danger` en `border-2` ; `GHOST_ICON` en `rounded-full` ; le cas
+  « Given rounded » et l'hôte `[rounded]="true"` supprimés (l'entrée disparaît). 16 cas, tous rouges.
+- `src/app/theme-tokens.spec.ts`, `describe('radius tokens')` (ajout) : `@theme` déclare exactement
+  `--radius-part: 0.5rem`, `--radius-field: 0.75rem`, `--radius-card: 1rem`, `--radius-block: 1.375rem` ;
+  `it.each` `form-input` / `app-select` : le seul jeton `rounded*` de l'`@utility` est `rounded-field`
+  (lecture par découpe sur `@utility `, sans capture d'accolades). 3 rouges.
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil le
+2026-10-22 22:49, 19 failed / 4396 total), par assertion : `rounded-md`, `border border-foreground/15`,
+`hover:border-primary/40`, aucun `--radius-*`, `rounded-lg` dans les deux utilitaires.
+
+### Tranche 6a.2 — l'autocollant existe
+
+- `shared/ui/sticker.spec.ts` (nouveau, TestBed, hôtes à `input()` + `setInput`, `data-testid="sticker"`) :
+  sans liaison, pastille sauge droite et texte projeté « Fait main » ; `it.each` sur `StickerTone`
+  (`bg-sticker-*` + `text-on-sticker-*`) et sur `StickerTilt` (`none` sans rotation, `left` `-rotate-2`,
+  `right` `rotate-2`), listes exactes avec la base `inline-flex w-fit items-center rounded-full border-2
+  border-transparent px-3 py-1 font-display text-sm font-bold leading-tight
+  forced-colors:border-[CanvasText]` ; réactivité (ton et inclinaison changés après rendu) ; ni `role`, ni
+  `tabindex`, ni `aria-*` sur l'hôte, aucun interactif ni titre dedans (vert sous le squelette, par
+  nature : il garde le contrat).
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil le
+2026-10-22 22:49, 7 failed / 4396 total), par assertion : l'hôte n'a aucune classe.
+
+`e2e/a11y/forced-colors.spec.ts` est **reporté à la tranche 6b.2** : il vise `/`, et l'autocollant n'y est
+posé qu'en 6b ; écrit ici, il serait rouge jusqu'à la PR suivante (une tranche doit être verte sans les
+suivantes), et l'y injecter à la main testerait une copie des classes, pas le composant. En 6a, le
+contour en couleurs forcées est tenu par la classe `forced-colors:border-[CanvasText]` (spec ci-dessus).
+
+### Tranche 6a.3 — tampon, cartouche, cote, carte de lien, toast restylés
+
+- `shared/ui/stamp.spec.ts` (adapté) : liste exacte `inline-block rounded-part border-2 border-foreground
+  bg-surface px-2.5 py-1 text-xs font-semibold text-foreground` (plus de mono majuscule) ; placement et
+  `border-dashed` inchangés. 4 rouges.
+- `shared/ui/cartouche.spec.ts` (ajout) : cadre `block rounded-part border-2 border-foreground bg-surface
+  text-sm overflow-hidden` ; barre de titre `cartouche-head` (testid **à poser au GREEN**) `grid gap-1
+  border-b-2 border-foreground p-3.5` ; lignes `border-t border-line-strong first:border-t-0` ; libellés
+  `dt` `border-r border-line-strong px-3.5 py-2.5 text-xs font-semibold text-muted`. 1 rouge.
+- `shared/ui/dimension-line.spec.ts` (ajout) : les sept pièces de l'hôte, dans l'ordre : attaches
+  `h-3.5 border-l-2`, pointes `size-0 border-y-[5px] border-y-transparent border-r-10` / `border-l-10`
+  (`*-current`), lignes `flex-1 border-t-2`, libellé mono inchangé ; hôte `text-primary`. 1 rouge.
+- `shared/ui/link-card.spec.ts` (adapté, renforcé) : liste **exacte** (était `arrayContaining`)
+  `group grid gap-1 rounded-card border-2 border-foreground bg-surface p-6 transition-colors
+  hover:border-primary`, plus `text-right` en alignement de fin. 2 rouges.
+- `shared/ui/toast.spec.ts` (adapté) : le cas « teinté à 10 % » devient, par sévérité, fond exactement
+  `bg-surface`, aucun `*blur*`, `border-l-4` et une couleur de bord de la sévérité ; ajout : survol du
+  bouton de fermeture exactement `hover:bg-foreground/5`. 8 rouges.
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil le
+2026-10-22 22:49, 16 failed / 4396 total), par assertion : `rounded-sm`/`rounded-xl`, traits de 1 ou 1,5 px,
+`border-line`, mono majuscule, `bg-*/10`, `backdrop-blur-sm`, survols teintés de la sévérité.
+
+### Tranche 6a.4 — la carte de partage par défaut
+
+- `shared/seo/share-image.spec.ts` (ajout) : golden `DEFAULT_SHARE_IMAGE` = `{ url:
+  https://nedellec-julien.fr/og/julien-nedellec-AAAAMMJJ.png, width: 1200, height: 630, type: 'image/png',
+  alt }`, l'alt valant « Julien Nédellec. » suivi de `STATIC_HERO.headline` (il suit l'accroche de l'accueil) ; `public/og/`
+  contient exactement une carte datée et c'est celle annoncée ; son en-tête est un PNG de 1200 × 630 ;
+  `docs/og/og-default.html` écrit le nom et l'accroche, sans `<img>` ni dégradé. 4 rouges.
+- `core/seo/seo.spec.ts` (adapté) : sans visuel, `og:image` contient `/og/julien-nedellec-` et vaut
+  `DEFAULT_SHARE_IMAGE.url`, alt = `DEFAULT_SHARE_IMAGE.alt`, `1200` × `630`, `image/png`, `twitter:card`
+  `summary_large_image` ; avec visuel, inchangé (vert). 1 rouge.
+- `src/app/browser-identity.spec.ts` (ajout) : `src/index.html` annonce la même carte que `seo.ts`
+  (`og:image`, `og:image:alt`, `og:image:width` `1200`, `og:image:height` `630`, `og:image:type`
+  `image/png`, `twitter:card` `summary_large_image`). 1 rouge.
+
+Tous les tests de cette tranche échouent à ce stade (RED confirmé via la commande test du profil le
+2026-10-22 22:49, 6 failed / 4396 total), par assertion : avatar 400 × 400 et « Photo de profil »,
+`public/og/` et `docs/og/` absents (`null`, 0 fichier), `index.html` sans dimensions ni type.
+
+Laissé au GREEN, hors Vitest : le PNG lui-même (rendu Playwright de `docs/og/og-default.html`, poids
+mesuré et noté), les deux gardes `ci.yml` (`og:image` du HTML prérendu présente dans `dist/`, `og:image` de
+la coquille `/login` en 200 `image/png`), `header.ts` (`[rounded]` retiré), `DESIGN.md` § 5 et
+`DESIGN.json`. Le validateur Open Graph se passe en production.
+
 ## Journal des tranches
 
 - **Tranche 4.1 — le texte reste lisible sur l'accent** : GREEN 4368 passed / 4368 total · refactor : classes de l'état sélectionné des tags factorisées dans une constante (deux palettes, un seul jeu)
 - **Tranche 4.2 — le code se lit dans les deux thèmes** : GREEN 4368 passed / 4368 total · refactor : aucun
 - **Tranche 4.3 — l'identité hors CSS** : GREEN 4368 passed / 4368 total · refactor : aucun
 - **Tranche unique PR 5 — les titres en Bricolage Grotesque** : GREEN 4374 passed / 4374 total · refactor : aucun
+- **Tranche 6a.1 — les boutons sont des pilules** : GREEN 4396 passed / 4396 total · refactor : aucun
+- **Tranche 6a.2 — l'autocollant existe** : GREEN 4396 passed / 4396 total · refactor : aucun
+- **Tranche 6a.3 — tampon, cartouche, cote, carte de lien, toast restylés** : GREEN 4396 passed / 4396 total · refactor : `iconClass` et `close` du toast fusionnés en un seul champ `colour` (devenus identiques une fois le survol teinté retiré)
+- **Tranche 6a.4 — la carte de partage par défaut** : GREEN 4396 passed / 4396 total · refactor : aucun
 
 ## Verify
 
@@ -838,6 +949,47 @@ d'avertissement de préchargement non utilisé.
 Gates : `pnpm test` (après `ng cache clean` et purge de `node_modules/.vite`) 226 fichiers, 4374/4374,
 code 0 ; `pnpm lint` 0 ; `pnpm run format:check` 0 ; `pnpm run build --configuration production` 0, sans
 avertissement.
+
+Verdict : **PASS**.
+
+### PR 6a (composants signature, carte de partage)
+
+Exécuté par `angular-expert` le 2026-10-22 sur la branche `feat/033-composants` : `pnpm start` (port 4200,
+SSR de dev) devant la doublure `ci/api-stub` (`PORT=3000 STUB_ADMIN_SESSION=1 node ci/api-stub/server.mjs`),
+navigateur intégré, `prefers-color-scheme` émulé.
+
+Carte de partage : `docs/og/og-default.html` rendu par `pnpm exec playwright screenshot --viewport-size
+"1200, 630" --wait-for-timeout 500 file://$PWD/docs/og/og-default.html
+public/og/julien-nedellec-20261022.png` : PNG 1200 × 630, **35 246 octets** (≤ 150 Ko), vérifié à l'œil
+(fond sable, carte blanche à bord 2 px rayon 22 px, nom en Bricolage 800, accroche en JN Sans 600 sur
+deux lignes équilibrées, autocollant sauge « Fait main » incliné, cote orange, adresse du site).
+
+Steps :
+
+1. Clair, `/projects` : boutons de l'en-tête en pilule (`border-radius` 3,36e7 px), bascule de thème
+   `outlined` à 2 px `oklch(0.24 0.03 265)` ; tampons et cartouche de légende : rayon 8 px, bord 2 px
+   `foreground`, fond `surface` blanc.
+2. Sombre, `/blog/article-temoin` : trois cartes de lien, rayon 16 px, bord 2 px `oklch(0.96 0.01 70)`,
+   fond `oklch(0.27 0.035 265)` ; bouton « J'ai trouvé ça utile » en pilule ; `og:image` =
+   `…/og/julien-nedellec-20261022.png`, `twitter:card` `summary_large_image`.
+3. Sombre, même page, deux toasts déclenchés par `ToastStore.add` (succès, erreur) : fond opaque
+   `oklch(0.27 0.035 265)`, `backdrop-filter: none`, barre gauche 4 px de la couleur de sévérité.
+4. Clair, `/` : cartouche et cote, traits de la cote à 2 px, pointes 5 / 10 px, couleur
+   `oklch(0.532 0.178 37)`.
+5. HTML SSR de `/` (`curl`) : `og:image`, `og:image:alt`, `og:image:width` 1200, `og:image:height` 630,
+   `og:image:type` `image/png` ; `GET /og/julien-nedellec-20261022.png` : `200 image/png`.
+6. Build de production : garde `ci.yml` (job `verify`) rejouée sur `dist/…/mentions-legales/index.html` et
+   `index.csr.html` : l'`og:image` annoncée existe dans `dist/…/browser/`. La garde du job `docker`
+   (coquille `/login`, 200 `image/png` par nginx) n'est pas rejouée en local (image Docker non construite) :
+   le fichier est servi par la `location` des images de l'nginx du `Dockerfile`.
+
+Captures : `/projects` clair, `/blog/article-temoin` sombre, `/` clair (navigateur intégré de la session).
+
+Console : aucune erreur JS ni d'hydratation (« Angular hydrated 29 component(s) ») ; seules erreurs,
+réseau et environnementales : `GET /api/config` 404 (route absente de la doublure).
+
+Gates : `pnpm test` 227 fichiers, 4396/4396, code 0 ; `pnpm lint` 0 ; `pnpm run format:check` 0 ;
+`pnpm run build --configuration production` 0.
 
 Verdict : **PASS**.
 
@@ -975,3 +1127,95 @@ PR 4 (doublure, Lighthouse 12.8.2, mobile et desktop, 5 passes alternées, tiers
   l'ADR-0031), à chaque passe.
 - **Police de titres bloquée** (repli seul, `/`, 1 passe) : CLS 0,0082 en desktop, 0,0028 en mobile, sous la
   base dans les deux cas.
+
+## Review code (PR 6a)
+
+PR 6a (`feat/033-composants`, `af50ec8` RED + `0a83e5f` GREEN), revue le 2026-10-23 contre `origin/master` (`86f54ba`).
+
+**Verdict** : REJECTED
+**Gates CI locaux** : tests ✅ (`pnpm test` : 227 fichiers, 4396/4396, exit 0) / lint ✅ (`pnpm lint`, exit 0) / format ✅ (`pnpm run format:check`, exit 0) / build ✅ (`pnpm run build --configuration production`, exit 0, postbuild CSP sur 3 pages)
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main sur les lignes ajoutées (motif d'archéologie du profil : 5 hits, 4 retenus ; `export default`, `effect(`, `innerHTML`/`bypassSecurity`, `console.`, `fakeAsync`/`waitForAsync`, `@capacitor`, snapshots, `.only`/`.skip`, `fireEvent` : 0 hit ; balayage `[rounded]`, `rounded()`, `avatar.png`, « Photo de profil » sur `src`, `e2e`, `ci`, `.github` : 0 hit)
+**Warnings de gate** : aucun (test, lint, format, build)
+**Rendu compilé** : ✅ (CSS de prod : `--radius-part`, `.rounded-part`/`-field`/`-card`, `.bg-sticker-sage`, `forced-colors:border-[CanvasText]` → `border-color:CanvasText` présents ; garde `ci.yml` du job `verify` rejouée sur `mentions-legales/index.html` et `index.csr.html` : `og/julien-nedellec-20261022.png` existe dans `dist/…/browser/`)
+**Preuve de verify runtime** : ✅ (`## Verify` › PR 6a : steps, PASS, captures, console sans erreur JS ni d'hydratation ; surfaces cohérentes avec le diff)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ❌ (archéologie, point 1 ; le reste conforme)
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+Plan tenu : bouton en pilule dans la base, entrée `rounded` retirée (directive, `header.ts` ×2, spec), `outlined` et `outlined-danger` en `border-2`, `ghost-icon` `rounded-full`, `min-h-11`/`size-11`/`min-w-11` intacts ; `Sticker` à API fermée (`StickerTone`, `StickerTilt`), classes exactes du plan, `forced-colors`, ni rôle, ni `tabindex`, ni `aria-*` ; tampon neutre, cartouche (`cartouche-head`, `overflow-hidden`), cote 2 px et pointes 5/10 px, carte de lien `rounded-card border-2`, toast opaque sans flou ; quatre rayons `@theme`, `form-input`/`app-select` en `rounded-field` ; `DEFAULT_SHARE_IMAGE`, `seo.ts` (`summary_large_image` constant), `index.html` (+ width/height/type), PNG 1200 × 630 de 35 246 octets, une seule carte datée ; deux gardes `ci.yml`. Rien de la PR 6b (aucun consommateur de `app-sticker`, `HOME_HERO_STICKER_LABEL` absent). Aucun spec modifié entre RED et GREEN ; les specs adaptés renforcent (`link-card` passe d'`arrayContaining` à liste exacte), aucun n'affaiblit.
+
+Écarts déclarés, jugés :
+- alt écrit en dur dans `shared/seo/share-image.ts` : accepté. Le plan prescrit déjà un littéral, et `share-image.spec.ts` épingle `alt` = « Julien Nédellec. » + `STATIC_HERO.headline` : une dérive de l'accroche casse la suite.
+- `.gitignore` `!/docs/og/` : accepté, nécessaire (`/docs/*` exclu, sinon la source du PNG n'est pas versionnée).
+- fusion `iconClass`/`close` en `colour` (`toast.ts`) : acceptée, les deux valeurs étaient identiques après retrait du survol teinté.
+- garde du job `docker` non rejouée en local : acceptée, la CI la joue. Script relu : `curl -fsS` de `/login`, extraction de l'`og:image`, test `200 image/png`.
+- `e2e/a11y/forced-colors.spec.ts` reporté en 6b.2 : accepté (motif écrit au plan de test ; le contour reste porté par la classe testée).
+- `DESIGN.json` non modifié : déjà à l'état cible depuis la PR 3 (`.ds-sticker`, `.ds-btn-outlined` 2 px, `.ds-card` 16 px, `.ds-input` 12 px).
+
+Contrastes recalculés indépendamment (OKLCH → sRGB, WCAG), Sable / Nuit :
+- bord `foreground` 2 px : 16,47 / 13,43 sur `surface`, 15,08 / 15,42 sur `background` ;
+- bord de survol `primary` de la carte de lien : 5,69 / 6,74 sur `surface`, 5,21 / 7,74 sur `background` ;
+- autocollant : sauge 8,10 / 7,57, lavande 8,44 / 7,93 ;
+- toast sur `surface` (icône et bouton fermer, survol `foreground/5` entre parenthèses) : succès 6,16 (5,59) / 7,99 (6,96), alerte 6,20 (5,63) / 8,88 (7,74), erreur 6,63 (6,02) / 5,67 (4,94), info 5,69 (5,17) / 6,74 (5,87) ; titre `foreground` 16,47 / 13,43. Tout ≥ 4,5:1, au-delà de 3:1 pour les icônes.
+
+Carte `public/og/julien-nedellec-20261022.png` regardée : conforme au plan (fond sable, carte blanche à bord sombre et grand rayon, nom en Bricolage, accroche sur deux lignes, autocollant sauge incliné, cote orange « depuis 2025 », information déjà dans `SITE_IDENTITY`, adresse du site ; ni photo ni dégradé).
+
+`DESIGN.md` § 5 décrit les classes en place : bouton, carte de lien, cartouche, autocollant (nouveau), tampon, cote, champs, toast.
+
+**Tests notables** :
+- ✨ `src/app/shared/seo/share-image.spec.ts` : relie l'alt à l'accroche, le nom du fichier au dossier `public/og/` et l'en-tête PNG aux dimensions annoncées. Une carte renommée sans mise à jour de la constante casse la suite.
+- ✨ `src/app/browser-identity.spec.ts` : parité `index.html` ↔ `DEFAULT_SHARE_IMAGE`, filet des coquilles CSR.
+- ✨ `src/app/shared/ui/link-card.spec.ts:82` : passage d'`arrayContaining` à la liste exacte, une classe parasite ne passe plus.
+
+**Risque résiduel** (advisory, § 8) :
+- réversibilité : profil absent · monitoring : Sentry (profil)
+- non couvert par les gates : la garde `docker` (coquille `/login` → PNG servi par nginx) n'est prouvée qu'en CI ; la carte lue par un validateur Open Graph se vérifie en production ; le contour en couleurs forcées n'est éprouvé en navigateur qu'en 6b.2.
+
+**Points à corriger** :
+1. Archéologie (§ 2bis, motif du profil `ADR-[0-9]|spec [0-9]{3}`) : retirer la référence et garder le WHY d'une ligne, sur les 4 sites du diff :
+   - `src/app/shared/seo/share-image.ts:10` : « Nom daté (ADR-0007) : … » ; écrire « Nom daté : un réseau social garde la carte en cache par URL, on la renomme à chaque refonte. »
+   - `.github/workflows/ci.yml:92` : « nom daté (ADR-0007) » ; retirer `(ADR-0007)`.
+   - `docs/og/og-default.html:3` : « …julien-nedellec-AAAAMMJJ.png, ADR-0007) » ; retirer `, ADR-0007`. La procédure de rendu (l. 4-6) peut rester : c'est le mode d'emploi du fichier source.
+   - `.gitignore:9` : la ligne est réécrite par le diff et porte `(spec 030)` ; retirer la référence (« les brouillons d'articles »).
+
+**Suites (2026-10-23)** : les quatre références d'archéologie retirées des commentaires (`share-image.ts`,
+`ci.yml`, `og-default.html`, `.gitignore`). Décision du propriétaire du 2026-10-23 : la cote de la carte de
+partage porte une durée, « depuis 2025 » (règle des cotes de `DESIGN.md`), au lieu de « Angular · NestJS » ;
+carte re-rendue (`8425fa5`, 34 543 octets).
+
+## Mesure Lighthouse (PR 6a)
+
+2026-10-23. Base : image de la PR 5 (`2276f2a`, rendu identique à `master` `86f54ba`), branche `0a83e5f`
+(`8425fa5` et `d78e2c4` ne touchent ni le rendu ni le code chargé). Même protocole (doublure, Lighthouse 12.8.2,
+mobile et desktop, 5 passes alternées, tiers bloqués), 120 rapports ; recontrôle de `/` et `/about` mobile sur
+machine calme (20 rapports), la première série ayant tourné pendant des builds parallèles.
+
+| Page | Profil | Perf (base → branche) | A11y / BP / SEO | LCP ms | CLS | Élément LCP |
+|---|---|---|---|---|---|---|
+| `/` | mobile (recontrôle) | 87 → 86 | 100 / 96 / 100 | 3263 → 3194 | 0,0028 → 0,0033 | `p` / `h1` en fondu, même mélange |
+| `/` | desktop | 100 → 100 | 100 / 96 / 100 | 562 → 562 | 0,0018 → 0,0021 | `h1`, identique |
+| `/blog` | mobile | 91 → 91 | 100 / 96 / 100 | 3278 → 3275 | 0,0027 → 0,0032 | même mélange |
+| `/blog` | desktop | 98 → 100 | 100 / 96 / 100 | 747 → 717 | 0,0013 = | même mélange |
+| `/blog/article-temoin` | mobile | 67 → 91 (bruit base) | 100 / 96 / 100 | 2897 → 2856 | 0,0003 → 0,0005 | identique |
+| `/blog/article-temoin` | desktop | 88 → 92 | 100 / 96 / 100 | 619 → 628 | 0,0008 = | identique |
+| `/projects` | mobile | 65 → 66 | 100 / 96 / 100 | 3666 → 3656 | 0,0049 → 0,0084 | même mélange |
+| `/projects` | desktop | 98 → 100 | 100 / 96 / 100 | 692 → 643 | 0,0078 → 0,0119 | identique |
+| `/projects/projet-temoin` | mobile | 81 → 87 | 100 / 96 / 100 | 2865 → 2854 | 0,0048 → 0,0052 | `h1` majoritaire |
+| `/projects/projet-temoin` | desktop | 92 → 100 | 100 / 96 / 100 | 646 → 649 | 0,0037 → 0,0042 | identique |
+| `/about` | mobile (recontrôle) | 91 → 91 | 100 / 96 / 100 | 3157 → 3160 | 0,0222 = | identique |
+| `/about` | desktop | 100 → 100 | 100 / 96 / 100 | 725 → 699 | 0,0006 = | identique |
+
+- **Non-dégradation > 2 points** : PASS après recontrôle (la série brute donnait `/` mobile 88 → 68 : TBT
+  multiplié sur le même chunk, base touchée de la même façon ailleurs, signature d'un CPU chargé).
+- **CLS ≤ base** : **non tenu**, petites hausses réelles et reproductibles sur 7 combinaisons : nouveau décalage
+  `app-cartouche > dl` sur `/` (0,0032, à la place de `h1 > span` 0,0027), `section.mt-12` de `/projects`
+  (0,0078 → 0,0119 desktop), lignes du blog, choix techniques de la fiche projet. Maximum 0,0119, très loin du
+  seuil « bon » de 0,1. **Arbitrage du propriétaire (2026-10-23)** : accepté et noté ; correction en suivi à
+  part (réserver la hauteur du cartouche et des sections à traits de 2 px avant hydratation). Pour la PR 6b, le
+  critère devient **CLS médian < 0,02** par page et profil.
+- **Élément LCP** : mêmes candidats (alternance `h1` / `p` d'en-tête déjà présente en base) ; aucun nouveau
+  composant ni image ne devient élément LCP.
+- **Octets de police sur `/`** : 90 135 des deux côtés.

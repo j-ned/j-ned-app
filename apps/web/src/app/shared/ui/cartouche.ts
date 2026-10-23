@@ -5,12 +5,12 @@ export type CartoucheRow = { readonly label: string; readonly value: string };
 @Component({
   selector: 'app-cartouche',
   host: {
-    class: 'block rounded-sm border-[1.5px] border-line-strong bg-surface text-sm',
+    class: 'block overflow-hidden rounded-part border-2 border-foreground bg-surface text-sm',
     role: 'group',
     '[attr.aria-label]': 'title()',
   },
   template: `
-    <div class="grid gap-1 border-b-[1.5px] border-line-strong p-3.5">
+    <div data-testid="cartouche-head" class="grid gap-1 border-b-2 border-foreground p-3.5">
       <p data-testid="cartouche-title" class="font-display font-bold">
         {{ title() }}
       </p>
@@ -25,11 +25,11 @@ export type CartoucheRow = { readonly label: string; readonly value: string };
         @for (row of rows(); track $index) {
           <div
             data-testid="cartouche-row"
-            class="grid grid-cols-[8.5rem_minmax(0,1fr)] border-t border-line first:border-t-0"
+            class="grid grid-cols-[8.5rem_minmax(0,1fr)] border-t border-line-strong first:border-t-0"
           >
             <dt
               data-testid="cartouche-label"
-              class="border-r border-line px-3.5 py-2.5 font-mono text-xs uppercase tracking-[0.06em] text-muted"
+              class="border-r border-line-strong px-3.5 py-2.5 text-xs font-semibold text-muted"
             >
               {{ row.label }}
             </dt>

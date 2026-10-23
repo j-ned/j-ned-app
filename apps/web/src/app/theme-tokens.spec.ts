@@ -167,3 +167,24 @@ describe('syntax highlighting tokens', () => {
     },
   );
 });
+
+const utilityBody = (name: string): string =>
+  STYLES.split('@utility ').find((chunk) => chunk.startsWith(`${name} {`)) ?? '';
+
+describe('radius tokens', () => {
+  it('Given the Tailwind theme When its radii are read Then there is one per kind of shape, from the technical part to the large block', () => {
+    expect(declarationsOf(STYLES, '--radius-')).toEqual({
+      '--radius-part': '0.5rem',
+      '--radius-field': '0.75rem',
+      '--radius-card': '1rem',
+      '--radius-block': '1.375rem',
+    });
+  });
+
+  it.each(['form-input', 'app-select'])(
+    'Given the %s utility When its corners are read Then it takes the field radius only',
+    (utility) => {
+      expect(utilityBody(utility).match(/\brounded(-[\w-]+)?/g)).toEqual(['rounded-field']);
+    },
+  );
+});

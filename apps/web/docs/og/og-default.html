@@ -1,0 +1,153 @@
+<!doctype html>
+<!--
+  Source de la carte de partage par défaut (public/og/julien-nedellec-AAAAMMJJ.png).
+  Rendu : pnpm exec playwright screenshot --viewport-size "1200, 630" \
+    file://$PWD/docs/og/og-default.html public/og/julien-nedellec-AAAAMMJJ.png
+  Nouveau nom daté à chaque changement, puis DEFAULT_SHARE_IMAGE et src/index.html.
+-->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Carte de partage par défaut</title>
+    <style>
+      @font-face {
+        font-family: 'Bricolage Grotesque';
+        src: url('../../public/fonts/bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2')
+          format('woff2');
+        font-weight: 600 800;
+      }
+      @font-face {
+        font-family: 'JN Sans';
+        src: url('../../public/fonts/jn-sans-3.201-latin-wght.woff2') format('woff2');
+        font-weight: 400 700;
+      }
+      @font-face {
+        font-family: 'JN Mono';
+        src: url('../../public/fonts/jn-mono-2.3-latin-500.woff2') format('woff2');
+        font-weight: 500;
+      }
+      :root {
+        --background: #fcf4eb;
+        --surface: #ffffff;
+        --foreground: #181f2e;
+        --muted: #4d5566;
+        --primary: #bc3700;
+        --sticker-sage: #b9eec2;
+        --on-sticker-sage: #174825;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: var(--background);
+      }
+      body {
+        padding: 48px;
+        font-family: 'JN Sans', sans-serif;
+        color: var(--foreground);
+      }
+      .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 28px;
+        height: 100%;
+        padding: 64px 72px;
+        background: var(--surface);
+        border: 2px solid var(--foreground);
+        border-radius: 22px;
+      }
+      .sticker {
+        position: absolute;
+        top: 52px;
+        right: 64px;
+        padding: 8px 20px;
+        border-radius: 999px;
+        background: var(--sticker-sage);
+        color: var(--on-sticker-sage);
+        font-family: 'Bricolage Grotesque', sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        transform: rotate(-2deg);
+      }
+      h1 {
+        font-family: 'Bricolage Grotesque', sans-serif;
+        font-size: 96px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+      p {
+        max-width: 880px;
+        text-wrap: balance;
+        font-size: 40px;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      .dimension {
+        display: flex;
+        align-items: center;
+        max-width: 560px;
+        color: var(--primary);
+      }
+      .dimension .extension {
+        height: 22px;
+        border-left: 3px solid currentColor;
+      }
+      .dimension .line {
+        flex: 1;
+        border-top: 3px solid currentColor;
+      }
+      .dimension .tip-start,
+      .dimension .tip-end {
+        width: 0;
+        height: 0;
+        border-block: 7px solid transparent;
+      }
+      .dimension .tip-start {
+        border-right: 14px solid currentColor;
+      }
+      .dimension .tip-end {
+        border-left: 14px solid currentColor;
+      }
+      .dimension .label {
+        padding: 0 14px;
+        font-family: 'JN Mono', monospace;
+        font-size: 22px;
+        font-weight: 500;
+      }
+      .site {
+        position: absolute;
+        right: 72px;
+        bottom: 52px;
+        font-family: 'JN Mono', monospace;
+        font-size: 24px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <span class="sticker">Fait main</span>
+      <h1>Julien Nédellec</h1>
+      <p>Tourneur CN le jour, développeur web le reste du temps.</p>
+      <div class="dimension" aria-hidden="true">
+        <span class="extension"></span>
+        <span class="tip-start"></span>
+        <span class="line"></span>
+        <span class="label">depuis 2025</span>
+        <span class="line"></span>
+        <span class="tip-end"></span>
+        <span class="extension"></span>
+      </div>
+      <span class="site">nedellec-julien.fr</span>
+    </main>
+  </body>
+</html>

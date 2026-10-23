@@ -127,6 +127,50 @@ describe('Cartouche', () => {
     expect(list!.contains(projected)).toBe(false);
   });
 
+  it('Given un cartouche à deux lignes When il est rendu Then son cadre et sa barre de titre ont un trait plein de 2 px et ses séparateurs internes un trait décoratif', async () => {
+    const { cartouche } = await render({ reference: 'RÉF. 009', rows: rowsOf(2) });
+    const classesOf = (element: Element | undefined): string[] =>
+      [...(element?.classList ?? [])].sort();
+
+    expect({
+      frame: classesOf(cartouche),
+      head: classesOf(byTestId(cartouche, 'cartouche-head')[0]),
+      rows: byTestId(cartouche, 'cartouche-row').map(classesOf),
+      labels: byTestId(cartouche, 'cartouche-label').map(classesOf),
+    }).toEqual({
+      frame: [
+        'bg-surface',
+        'block',
+        'border-2',
+        'border-foreground',
+        'overflow-hidden',
+        'rounded-part',
+        'text-sm',
+      ],
+      head: ['border-b-2', 'border-foreground', 'gap-1', 'grid', 'p-3.5'],
+      rows: Array.from({ length: 2 }, () =>
+        [
+          'grid',
+          'grid-cols-[8.5rem_minmax(0,1fr)]',
+          'border-t',
+          'border-line-strong',
+          'first:border-t-0',
+        ].sort(),
+      ),
+      labels: Array.from({ length: 2 }, () =>
+        [
+          'border-r',
+          'border-line-strong',
+          'px-3.5',
+          'py-2.5',
+          'text-xs',
+          'font-semibold',
+          'text-muted',
+        ].sort(),
+      ),
+    });
+  });
+
   it('Given 0 ligne et du contenu projeté When le cartouche est rendu Then le contenu reste rendu dans le cartouche', async () => {
     const { cartouche } = await render({ rows: [] });
 

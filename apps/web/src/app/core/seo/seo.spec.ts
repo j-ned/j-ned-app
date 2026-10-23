@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
 import { describe, it, expect, beforeEach } from 'vitest';
+import { DEFAULT_SHARE_IMAGE } from '@shared/seo/share-image';
 import { Seo } from './seo';
 
 function metaContent(doc: Document, selector: string): string | null {
@@ -41,16 +42,25 @@ describe('Seo', () => {
       expect(metaContent(doc, 'meta[property="og:image:alt"]')).toBe('Mon article');
     });
 
-    it("décrit l'avatar quand aucun visuel n'est fourni (image de repli)", () => {
+    it("annonce la carte de partage par défaut quand aucun visuel n'est fourni", () => {
       seo.applySeoData({ title: 'Blog', description: 'Résumé' });
 
-      expect(metaContent(doc, 'meta[property="og:image"]')).toContain('/avatar.png');
-      expect(metaContent(doc, 'meta[property="og:image:alt"]')).toBe(
-        'Photo de profil de Julien Nédellec',
-      );
-      expect(metaContent(doc, 'meta[property="og:image:width"]')).toBe('400');
-      expect(metaContent(doc, 'meta[property="og:image:type"]')).toBe('image/png');
-      expect(metaContent(doc, 'meta[name="twitter:card"]')).toBe('summary');
+      expect(metaContent(doc, 'meta[property="og:image"]')).toContain('/og/julien-nedellec-');
+      expect({
+        image: metaContent(doc, 'meta[property="og:image"]'),
+        alt: metaContent(doc, 'meta[property="og:image:alt"]'),
+        width: metaContent(doc, 'meta[property="og:image:width"]'),
+        height: metaContent(doc, 'meta[property="og:image:height"]'),
+        type: metaContent(doc, 'meta[property="og:image:type"]'),
+        card: metaContent(doc, 'meta[name="twitter:card"]'),
+      }).toEqual({
+        image: DEFAULT_SHARE_IMAGE.url,
+        alt: DEFAULT_SHARE_IMAGE.alt,
+        width: '1200',
+        height: '630',
+        type: 'image/png',
+        card: 'summary_large_image',
+      });
     });
 
     it('annonce la carte de partage 1200×630 JPEG quand un visuel est fourni', () => {
