@@ -4,7 +4,7 @@ title: L'atelier, le métier de tourneur CN sur le site
 type: feature
 status: draft
 created: 2026-10-21
-related: [PRODUCT.md, DESIGN.md, specs/031-ton-amical.md, specs/033-nouveau-visuel.md, specs/030-adr-en-articles.md, docs/adr/0011-themes-du-blog-derives-du-catalogue-de-tags.md, docs/adr/0007-images-statiques-versionnees-et-picture.md, docs/adr/0024-rendu-a-la-requete-des-pages-de-contenu.md, docs/adr/0032-confidentialite-verifiable-du-contenu-d-atelier.md]
+related: [PRODUCT.md, specs/034-guide-plaquettes.md, DESIGN.md, specs/031-ton-amical.md, specs/033-nouveau-visuel.md, specs/030-adr-en-articles.md, docs/adr/0011-themes-du-blog-derives-du-catalogue-de-tags.md, docs/adr/0007-images-statiques-versionnees-et-picture.md, docs/adr/0024-rendu-a-la-requete-des-pages-de-contenu.md, docs/adr/0032-confidentialite-verifiable-du-contenu-d-atelier.md]
 ---
 
 # 032 — L'atelier
@@ -107,6 +107,45 @@ volets ont besoin ; V4 se fait au fil de l'eau une fois les trois premiers en li
 1. **Ordre** : V1 (page), V2 (rubrique du blog), V3 (calculateur), V4 (pont usinage ↔ code).
 2. **Nom dans le menu** : « L'atelier ».
 
+### Arbitrages (2026-10-25) : « L'atelier » devient un espace
+
+Précision du propriétaire : « L'atelier » n'est pas une page de récit, c'est un **espace** où
+s'ajoutent des éléments de métier, en plus de ce qui se raconte sur le blog. Cela remplace la
+définition de V1 ci-dessus.
+
+1. **V1 devient l'accueil de l'espace** (`/atelier`) : une **intro courte** (quelques lignes sur le
+   métier), puis les **cartes des éléments** de l'atelier, puis les **derniers articles** de la
+   rubrique « Atelier » du blog (V2) quand elle en a. Le récit détaillé prévu en sections (le tour,
+   la cote, l'aéronautique, une journée type) n'est plus une page : chacun de ces sujets peut devenir
+   une fiche (V5) ou un article (V2).
+2. **Deux sortes d'éléments** :
+   - les **outils interactifs**, développés dans le code, une spec ou un volet par outil : le guide
+     des plaquettes (spec 034) est le premier, le calculateur de conditions de coupe (V3) suit ;
+   - les **fiches métier**, du texte saisi par Julien dans l'admin, sans PR (nouveau volet V5).
+3. **Ordre** : l'accueil de l'espace est livré avec le premier outil (spec 034), puisqu'il faut un
+   endroit où le poser. V2, V3, V4 et V5 suivent, dans un ordre à revoir à chaque volet.
+
+**V5 — Fiches métier saisies dans l'admin**
+
+13. Julien crée, modifie, publie et dépublie des fiches depuis l'admin : un titre, un résumé et un
+    corps de texte, sur le modèle de l'éditeur d'articles. Chaque fiche publiée a sa page sous
+    `/atelier` et sa carte sur l'accueil de l'espace.
+14. Les fiches ne contiennent **que du texte** dans ce volet. Une image de fiche demanderait une garde
+    côté API équivalente à ADR-0032 §2 et §3 (sujet typé, date de vérification, métadonnées retirées) :
+    à décider dans un volet à part.
+15. Confidentialité : ADR-0032 §5 s'étend aux fiches. L'éditeur avertit avec
+    `findConfidentialReferences` comme pour les articles, et c'est la publication par Julien qui fait
+    office de case « confidentialité » (pas de PR pour une fiche).
+16. Le volet demande une évolution de l'**API** (dépôt séparé : entité, routes d'admin et publiques),
+    à livrer et déployer avant la PR front (CLAUDE.md, ordre de déploiement).
+
+17. **Fiche ou article** (tranché par Julien le 2026-10-25) : une fiche est une **page de référence
+    sans date**, que Julien met à jour au fil du temps (un lexique, l'explication du tour) ; un
+    article est **daté et raconte**. Une fiche n'a donc ni date de publication affichée, ni place dans
+    le flux RSS ni dans la liste du blog ; elle a sa place dans le sitemap. Les deux se renvoient l'un
+    à l'autre quand le sujet s'y prête (V4). La différence justifie une entité distincte côté API
+    (exigence 16) plutôt qu'un article mis en avant.
+
 ### Questions ouvertes
 
 1. **Photos** : as-tu des photos que tu peux publier sans risque (outillage, poste sans pièce, atelier
@@ -116,6 +155,14 @@ volets ont besoin ; V4 se fait au fil de l'eau une fois les trois premiers en li
    avant V3)
 
 ## Plan technique — V1 (page « L'atelier »)
+
+> **À réviser (2026-10-25)** : ce plan décrit la page de récit d'avant les arbitrages du 2026-10-25.
+> Il reste valable pour la route `/atelier`, l'entrée de menu et de pied de page, le sitemap,
+> `findConfidentialReferences` (tranche 3) et les vérifications. Sont caducs : les sections de récit
+> (`WORKSHOP_PAGE.sections`, tranches 2 et 5, questions 3 à 6 et 8) et la décision 3 « pas d'admin
+> ni d'API », remplacée par le volet V5. Le mode de rendu est à revoir : un accueil qui liste des fiches
+> et des articles lus dans l'API relève du rendu à la requête (ADR-0024), pas du prérendu. Le plan
+> révisé de l'accueil de l'espace est rédigé avec celui de la spec 034.
 
 Rédigé le 2026-10-22 sur `master` `4c54e0b` (spec 031 et `DESIGN.md` « Copeaux vifs » mergés, tokens
 de la spec 033 pas encore implémentés). Profil lu : `.claude/project-profile.md`.
