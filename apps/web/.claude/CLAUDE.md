@@ -387,6 +387,9 @@ Chaque agent a un rôle **borné** ; on ne mélange jamais les rôles. Tous s'ap
 ### Règles d'usage
 - **Un rôle = un agent** : l'`architect` ne code pas, le `qa` n'implémente pas, l'`angular-expert`
   n'invente rien hors du test à faire passer, le `code-reviewer`/`intake-auditor` ne corrigent pas.
+  Exception (2026-10-25) : pour aller plus vite, un seul agent peut enchaîner RED prouvé puis GREEN
+  sur une tranche ; les petites tranches se font en session. Le `code-reviewer` reste la gate finale
+  de toute PR.
 - **PR vs existant** : `code-reviewer` pour un **diff de PR** ; `intake-auditor` pour **auditer
   l'existant** (via `/aak-audit`).
 - **Profil d'abord** : sans `project-profile.md`, les agents perdent le contexte conventions —
