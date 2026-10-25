@@ -71,12 +71,12 @@ jobs:
           test -f $browser/mentions-legales/index.html && test -f $browser/confidentialite/index.html
           test ! -e $browser/offres && test ! -e $browser/rendez-vous
           # postbuild : la CSP des pages prérendues est hachée par page, plus d'unsafe-inline.
-          ! grep -l -E "(script|style)-src [^;]*'unsafe-inline'" $(find $browser -name index.html -o -name index.csr.html)
+          ! grep -l -E "(script|style)-src [^;]*'unsafe-inline'" $(find $browser -name index.html -o -name index.csr.html) || { echo "unsafe-inline dans une page prérendue"; exit 1; }
           # Manifeste appliqué par Node aux pages rendues à la requête : scripts constants et feuilles de styles
           node -e 'const m = require("./dist/angular-portfolio-app/server/csp-manifest.json"); if (m.scriptHashes.length < 3 || m.styleElementHashes.length === 0) process.exit(1)'
           # La coquille CSR est servie aux routes client et aux 404 : hachée elle aussi, sans état d'hydratation
           test -f $browser/index.csr.html
-          ! grep -q 'ng-state' $browser/index.csr.html
+          ! grep -q 'ng-state' $browser/index.csr.html || { echo "état d'hydratation dans la coquille CSR"; exit 1; }
           # Gestionnaire inline (`on…="…"`) présent => haché dans `script-src-attr`. beasties >= 0.5
           # n'en émet plus (bascule du CSS par un `<script>` haché dans `script-src`) : directive absente.
           if grep -qE '\son[a-z]+="' $browser/mentions-legales/index.html; then
@@ -182,7 +182,7 @@ jobs:
           curl -fsS -D /tmp/c3.txt -o /dev/null http://127.0.0.1:3000/projects
           grep -qiE '^x-cache-status: (MISS|EXPIRED)' /tmp/c3.txt || { echo "entrée non renouvelée"; cat /tmp/c3.txt; exit 1; }
           curl -fsS -D /tmp/healthz-headers.txt -o /dev/null http://127.0.0.1:3000/healthz
-          ! grep -qi '^x-cache-status' /tmp/healthz-headers.txt
+          ! grep -qi '^x-cache-status' /tmp/healthz-headers.txt || { echo "/healthz mis en cache"; cat /tmp/healthz-headers.txt; exit 1; }
           # Routes rendues : lecture seule (une écriture ne déclenche aucun rendu)
           for method in POST DELETE; do
             test "$(curl -s -o /dev/null -w '%{http_code}' -X "$method" http://127.0.0.1:3000/blog)" = "403" || { echo "$method /blog accepté"; exit 1; }
@@ -242,7 +242,7 @@ jobs:
           for h in 'strict-transport-security' 'x-content-type-options: nosniff' 'x-frame-options: deny' "content-security-policy: frame-ancestors 'none'" 'referrer-policy' 'permissions-policy'; do
             grep -qi "$h" <<<"$headers" || { echo "en-tête manquant : $h"; exit 1; }
           done
-          ! grep -qi '^server: nginx/' <<<"$headers"
+          ! grep -qi '^server: nginx/' <<<"$headers" || { echo "version nginx exposée"; echo "$headers"; exit 1; }
           # Polices auto-hébergées servies par nginx avec le bon type (sinon rejetées par le navigateur)
           font=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/fonts/bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2)
           grep -qi 'content-type: font/woff2' <<<"$font" || { echo "police mal servie"; echo "$font"; exit 1; }
