@@ -163,6 +163,11 @@ définition de V1 ci-dessus.
 > ni d'API », remplacée par le volet V5. Le mode de rendu est à revoir : un accueil qui liste des fiches
 > et des articles lus dans l'API relève du rendu à la requête (ADR-0024), pas du prérendu. Le plan
 > révisé de l'accueil de l'espace est rédigé avec celui de la spec 034.
+>
+> **Remplacé (2026-10-25)** : l'accueil de l'espace est planifié dans le `## Plan technique` de
+> `specs/034-guide-plaquettes.md` (prérendu tant qu'il ne lit pas l'API, rendu à la requête à
+> l'arrivée de V2 ou V5). Il reprend d'ici la route, le menu, le pied de page, le sitemap et
+> `findConfidentialReferences` ; le reste de ce plan n'est plus à implémenter.
 
 Rédigé le 2026-10-22 sur `master` `4c54e0b` (spec 031 et `DESIGN.md` « Copeaux vifs » mergés, tokens
 de la spec 033 pas encore implémentés). Profil lu : `.claude/project-profile.md`.
