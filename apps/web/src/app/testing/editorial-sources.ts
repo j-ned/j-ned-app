@@ -2,6 +2,9 @@ import { FURTHER_READING_COPY } from '@features/blog/application/further-reading
 import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '@features/home/domain/home-hero.static-data';
 import { STATIC_HERO } from '@features/home/infra/data/home.static-data';
 import { ABOUT_IDENTITY } from '@features/profile/pages/about/about-identity';
+import { MATERIALS } from '@features/workshop/domain/materials.static-data';
+import { OPERATION_FAMILIES } from '@features/workshop/domain/operations.static-data';
+import { RECOMMENDATIONS } from '@features/workshop/domain/recommendations.static-data';
 import { PROJECT_ARTICLES_COPY } from '@features/projects/application/project-articles-copy';
 import {
   PROJECT_OUTCOMES,
@@ -53,5 +56,8 @@ export const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['NAV_LINKS', NAV_LINKS],
   ['FOOTER_COPY', FOOTER_COPY],
   ['LEGAL_LAST_UPDATE', LEGAL_LAST_UPDATE],
+  ['MATERIALS', MATERIALS],
+  ['OPERATION_FAMILIES', OPERATION_FAMILIES],
+  ['RECOMMENDATIONS', RECOMMENDATIONS],
   ['routes', ROUTE_TEXTS],
 ];

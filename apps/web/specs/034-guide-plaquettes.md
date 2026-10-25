@@ -665,10 +665,14 @@ PR 4 (référentiel et recherche, domaine pur)
   matières.
 - **Tranche 5 — une donnée sans source ne compile pas** : `SOURCES`, `ISO_513_GROUPS`,
   `reference-types.spec.ts` (partie source et matière), garde « aucune source IA ».
+  `ISO_513_GROUPS` reporté à la première PR de données (première source Sandvik Coromant), avec
+  sa garantie de type, l'invariant « chaque groupe ISO cité par une matière a son entrée » et son
+  ajout à `EDITORIAL_SOURCES`.
 - **Tranche 6 — une combinaison sans recommandation le dit** : modèles opération et recommandation,
   `OPERATION_FAMILIES`, `RECOMMENDATIONS` vide, `parseGuideSelection`, `findRecommendation`,
   `resolveGuideState`, garanties de compilation de `InsertFor<O>`, intégrité des recommandations,
-  garde des noms commerciaux, extension de la garde de confidentialité au texte libre.
+  garde des noms commerciaux. L'extension de la garde de confidentialité au texte libre du
+  référentiel est renvoyée à la tranche 3, qui crée `findConfidentialReferences`.
 
 PR 5 (interface)
 - **Tranche 7 — le guide existe et se trouve** : token, copie, page `InsertGuide` (`h1`, chapô,
@@ -754,3 +758,244 @@ Chaque tranche passe sans les suivantes : les PR 5 et 6+ ne cassent rien des pr�
     profondeur), laquelle affiche-t-on, et faut-il dire la condition à côté ?
 11. **Matières de la PR 5** : la PR 5 part-elle avec les matières déjà vérifiées (même peu), ou
     attend-elle la liste complète du référentiel ?
+
+## Plan de test
+
+Domaine pur, sans TestBed, fixtures manifestement fictives (`ZZ-FICTIF-1`, `TEST-002`, « Alliage
+essai Alpha », source fictive, `locator: 'fixture'`). `fast-check` absent du dépôt : pas de test par
+propriétés, idempotence en `it.each`.
+
+### Tranche 4 — une désignation tapée n'importe comment retrouve sa matière
+
+Builders : `src/app/features/workshop/testing/insert-guide-builders.ts` — `aCitation()`,
+`aSourced(value)`, `aDesignation(value, system)`, `aMaterial(overrides)`. `aRecommendation()` et
+`aReference()` viendront avec leurs modèles (tranche 6), pas avant.
+
+`domain/normalize-designation.spec.ts` (16 tests)
+- `it.each` « Given <cas> When the designation is normalized Then it gives <attendu> » : majuscules,
+  accents (`Éprouvette fîctive ç` → `eprouvettefictivec`), espaces, espace insécable U+00A0, espace
+  fine insécable U+202F, tiret `-`, trait d'union U+2010, demi-cadratin U+2013, points conservés
+  (`9.99.01`), tout combiné (`zzfictif1.0`), texte blanc → `''`. Égalité stricte `toBe`.
+- `it.each` idempotence sur 5 entrées : `f(f(x)) === f(x)`.
+
+`domain/search-materials.spec.ts` (15 tests)
+- Un système de désignation par cas (`common-name`, `en-symbol`, `material-number`, `aisi`, `uns`,
+  `afnor-legacy`), saisie volontairement salie (casse, insécable, tiret, espaces) → exactement
+  `[{ material, matched }]`, la désignation trouvée étant celle du système.
+- Plusieurs désignations correspondent → une seule suggestion, la première qui a trouvé.
+- Classement : préfixe avant contenu, chaque groupe dans l'ordre du référentiel (ordre choisi pour
+  différer de l'ordre alphabétique) ; une matière dont une désignation contient et une autre commence
+  est classée en préfixe, avec la désignation préfixe ; deux désignations qui contiennent → la
+  première.
+- Saisie accentuée, en majuscules et avec tiret (`BLÔC-D`) → mêmes résultats que la saisie nue.
+- Requête vide ou blanche (`''`, espaces, insécable, ` - `) → toutes les matières, ordre du
+  référentiel, `matched` = première désignation (nom affiché).
+- Aucune correspondance → `[]` ; référentiel vide → `[]`.
+
+`domain/reference-integrity.spec.ts`, bloc `MATERIALS` (3 tests, sur les données réelles, vides à ce
+stade donc verts dès que le module existe)
+- Slugs uniques et au format `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
+- Aucune désignation normalisée partagée par deux matières.
+- Aucun texte blanc (valeurs de désignation et de comportement, `locator` de chaque citation).
+
+Non couverts dans cette tranche, à trancher : le format propre à chaque système de désignation
+(motifs non fixés par le plan, à valider par Julien avant d'écrire une regex) ; « chaque groupe ISO
+cité a son entrée » (dépend de `ISO_513_GROUPS`, tranche 5) ; l'ajout de `MATERIALS` à
+`EDITORIAL_SOURCES` (même tranche que la garde de texte libre).
+
+Scaffold dû au GREEN (code applicatif, hors mandat `qa`) : `domain/models/source.model.ts`
+(`SourceId`, `SourceCitation`, `Sourced<T>`), `domain/models/material.model.ts` (`IsoGroupLetter`,
+`DesignationSystem`, `Designation`, `Material`, `MaterialSuggestion`), `domain/materials.static-data.ts`
+(`MATERIALS: readonly Material[]`), `domain/normalize-designation.ts`, `domain/search-materials.ts`.
+
+RED, commande du profil `pnpm test`, cache invalidé (`ng cache clean`, `node_modules/.vite`) :
+- état livré (modules absents) : le build échoue sur `TS2307 Cannot find module` pour les cinq
+  fichiers ci-dessus, et seulement sur eux (plus les `any` implicites qui en découlent), code de
+  sortie 1 ;
+- mesure des assertions, avec des stubs temporaires typés selon le plan (identité, `[]`, `MATERIALS`
+  vide), retirés ensuite : RED confirmé via la commande test du profil le 2026-10-25 21:12,
+  23 failed / 4447 total (Test Files 2 failed | 229 passed), code de sortie 1. Les 23 échecs sont
+  des `AssertionError` (`toBe` / `toEqual`), aucune erreur de harnais. Les 11 autres tests de la
+  tranche passent face aux stubs par construction (idempotence de l'identité, intégrité d'un
+  référentiel vide, référentiel vide → `[]`) ; les 4413 tests des suites existantes restent verts.
+
+### Tranche 5 — une donnée sans source ne compile pas
+
+Builders étendus (`testing/insert-guide-builders.ts`) : `aSource(overrides)` (titre, éditeur,
+URL `https://exemple.invalid/…`, date `2001-01-01`, tous fictifs) et `anIsoGroup(letter, overrides)`
+(nom et couleur sourcés, couleur fictive convertie comme l'identifiant de source fictif).
+
+`domain/reference-types.spec.ts` (18 tests, garanties de compilation, `// @ts-expect-error: <raison>`)
+- Catalogue : `SOURCES` a exactement le type `Readonly<Record<SourceId, Source>>`
+  (`expectTypeOf`), donc un identifiant sans entrée ne compile pas. **RED** (module absent).
+- Source : URL `http://` refusée, date de consultation absente refusée, éditeur absent refusé.
+  **RED** (`Source` absent).
+- Groupe ISO : lettre hors des six, nom non sourcé, couleur hors de l'union fermée, couleur non
+  sourcée : refusés. **RED** (`IsoGroup`, `IsoGroupColor` absents).
+- Verts d'emblée, ne comptent pas comme RED (types de la tranche 4 qui refusent déjà) : valeur sans
+  citation, source hors catalogue (vrai tant que `SourceId` vaut `never`, et après la saisie pour
+  tout identifiant non catalogué), citation sans `locator`, matière sans désignation, sans
+  comportement, groupe hors des six lettres, groupe non sourcé, désignation non sourcée, système de
+  désignation inconnu, ligne de comportement non sourcée.
+
+`domain/reference-integrity.spec.ts`, bloc `SOURCES` (17 tests)
+- Données réelles : aucune source du catalogue n'a de défaut (vrai sur le catalogue vide, il protège
+  la saisie).
+- Contrôle sur fixtures, pour prouver que la garde mord : une source fictive bien formée n'a aucun
+  défaut ; `it.each` de 9 sources fictives qui citent une IA (titre Gemini, ChatGPT, Claude,
+  Copilot, « Référentiel des alliages » ; éditeur « Intelligence artificielle », « … IA … »,
+  OpenAI ; URL `gemini.google.com`) → exactement `['ai']` ; `it.each` de 6 défauts de format
+  (titre blanc, éditeur insécable seul, URL sans hôte, URL qui ne se lit pas, date `01/01/2001`,
+  date inexistante `2001-02-30`) → exactement le défaut attendu. Ces 16 tests passent par
+  construction dès que `Source` existe : le contrôle vit dans la spec, il n'y a pas de code
+  applicatif à juger.
+
+Non couvert, **bloqué** : `ISO_513_GROUPS` réel et l'invariant « chaque groupe ISO cité par une
+matière a son entrée ». Le nom et la couleur d'un groupe sont des `Sourced<…>` et `SourceId` vaut
+`never` : aucune entrée ne se construit sans inventer une source ni sans conversion de type, et
+`IsoGroupColor` (union remplie à la saisie) est vide aussi. Aucun test n'importe donc
+`ISO_513_GROUPS` dans cette tranche ; décision demandée à la session principale.
+
+Scaffold dû au GREEN (code applicatif) : `Source` dans `domain/models/source.model.ts` ;
+`IsoGroupColor` et `IsoGroup` dans `domain/models/material.model.ts` ;
+`domain/sources.static-data.ts` (`SOURCES`).
+
+RED, commande du profil `pnpm test`, cache invalidé (`ng cache clean`, `node_modules/.vite`) :
+- état livré : RED confirmé via la commande test du profil le 2026-10-25 21:33, 8 failed / 18 total
+  sur les garanties de compilation de la tranche (7 directives `@ts-expect-error` inutilisées,
+  TS2578, et l'`expectTypeOf` du catalogue, TS2307), code de sortie 1. Les seules autres erreurs du
+  build sont les symboles du scaffold (TS2305, TS2724, TS2307) ; aucune erreur de format ni de
+  lint (`prettier --check`, `eslint` verts sur `features/workshop`).
+- discriminance, avec des stubs plus lâches que le plan (`url: string`, `publisher` et
+  `consultedOn` optionnels, `letter: string`, nom et couleur `string` acceptés,
+  `Record<string, Source>`), retirés ensuite : les mêmes 8 garanties tombent, une par contrainte.
+- non-régression, avec des stubs typés selon le plan (`IsoGroupColor = never`, `SOURCES = {}`),
+  retirés ensuite : 4483 passed / 4483 total, code de sortie 0. Les 10 garanties vertes d'emblée et
+  les 17 tests d'intégrité passent, les tests de la tranche 4 restent verts.
+
+### Tranche 6 — une combinaison sans recommandation le dit
+
+Builders étendus (`testing/insert-guide-builders.ts`) : `anOperation(id, overrides)`,
+`anOperationFamily(overrides)`, `anIsoInsert()`, `aDescribedInsert()`,
+`aRecommendation(operation, overrides)` (type `RecommendationFor<O>` : l'opération garde son type
+littéral, donc la forme de plaquette qu'impose `InsertFor<O>`), `aReference(overrides)` (six groupes
+fictifs, une famille, une matière, aucune entrée).
+
+Proposés dans les tests, à valider par Julien : slugs d'opération `ebauche-exterieure`,
+`semi-finition-exterieure`, `finition-exterieure`, `ebauche-interieure`, `finition-interieure`,
+`gorge`, `tronconnage`, `filetage`, `percage` ; libellés d'opération de la spec avec une majuscule
+initiale (« Ébauche », « Perçage au foret à plaquettes »), puisqu'ils s'affichent seuls à côté d'un
+bouton radio.
+
+`domain/operations.static-data.spec.ts` (2 tests)
+- Type exact `readonly OperationFamily[]` (`expectTypeOf`).
+- Golden `toEqual` : cinq familles et neuf opérations dans l'ordre du tableau du Parcours, avec
+  identifiant, slug et libellé. **RED**.
+
+`domain/guide-selection.spec.ts` (17 tests, fixture de deux matières et trois opérations fictives)
+- `it.each` de 3 couples connus → les deux slugs retenus tels quels. **RED**.
+- `it.each` de 6 matières non retenues (absente, vide, inconnue, autre casse, entourée d'espaces,
+  slug d'opération) → `material: ''`, l'opération connue gardée. **RED**.
+- `it.each` de 7 opérations non retenues (mêmes cas, plus un slug de matière et l'identifiant
+  `external-roughing` au lieu du slug) → `operation: ''`, la matière gardée. **RED**.
+- Référentiel vide → les deux à `''`. Passe face au stub par construction.
+
+`domain/find-recommendation.spec.ts` (20 tests ; Alpha et Beta du groupe P, Gamma du groupe S ;
+entrées Alpha × finition, Alpha + Gamma × gorge, Gamma × finition)
+- `findRecommendation`, `it.each` de 4 couples couverts → l'entrée exacte (`toBe`), y compris les
+  deux matières d'une entrée multi-matières. **RED**.
+- `findRecommendation`, `it.each` de 4 couples non couverts (opération sans entrée, matière
+  inconnue, Beta du même groupe P qu'Alpha, matière vide) et la liste vide → `undefined`. Passent
+  face au stub par construction.
+- `resolveGuideState`, `it.each` de 5 cas `incomplete` (rien, matière seule, opération seule, matière
+  ou opération hors du référentiel) → exactement `{ status: 'incomplete' }`. Passent face au stub par
+  construction.
+- `unavailable` : Beta × gorge ; référentiel sans entrée ; Beta × finition, voisine d'Alpha dans le
+  groupe P, sans rien lui emprunter → `{ status: 'unavailable', material, operation }` exact. **RED**.
+- `available`, `it.each` de 3 couples → `{ status: 'available', material, operation, entry }` exact.
+  **RED**.
+
+`domain/reference-types.spec.ts` (13 garanties ajoutées, `// @ts-expect-error: <raison>` ou
+`expectTypeOf`) : opération d'identifiant inconnu, famille sans opération, famille d'identifiant
+inconnu ; `RECOMMENDATIONS` de type exact `readonly RecommendationEntry[]` ; `InsertFor<…>` des cinq
+opérations de tournage = `IsoInsertDesignation`, des quatre autres = `DescribedInsert` ; désignation
+ISO refusée pour une gorge ; description refusée pour une finition extérieure ; entrée sans matière ;
+entrée d'opération inconnue ; géométrie non sourcée ; vitesse dans une autre unité que `m/min` ; état
+`available` sans entrée. **RED** à la compilation (types absents).
+
+`domain/reference-integrity.spec.ts`
+- Bloc `RECOMMENDATIONS` (19 tests). Données réelles : aucune entrée n'a de défaut (matière inconnue,
+  couple couvert deux fois, vitesse hors de `0 < min ≤ max` ou non finie, texte blanc, `locator`
+  compris). Contrôles sur fixtures : 4 jeux sains (aucune entrée, entrée sans vitesse, plage d'une
+  seule valeur, une matière dans deux opérations et deux matières dans une) → `[]` ; 14 jeux fautifs
+  → exactement le défaut attendu.
+- Bloc `commercial names` (9 tests) : `/sandvik/iu` et `/\bCoro\p{Lu}/u` sur tout le texte de
+  `MATERIALS`, `OPERATION_FAMILIES` et `RECOMMENDATIONS`, identifiants de source cités (`cite.source`)
+  exceptés ; contrôles : signalé dans une valeur, en capitales, sur un nom de produit, dans un
+  `locator` ; non signalé : « Corrosion », « Coromandel », un identifiant de source.
+- Ces 28 tests passent dès que les modules existent : le contrôle vit dans la spec, il n'y a pas de
+  code applicatif à juger.
+
+`src/app/testing/editorial-sources.ts` : `MATERIALS`, `OPERATION_FAMILIES`, `RECOMMENDATIONS`
+ajoutés à `EDITORIAL_SOURCES`, soit 75 lignes de plus dans les verrous (typographie 3, identité et
+vouvoiement 72), vertes face aux données de la spec. `editorial-identity.spec.ts` lit en plus chaque
+fichier applicatif non-spec de `features/workshop` : 7 lignes de plus pour les 7 fichiers du scaffold.
+
+Non couvert, **en attente de décision** : la garde de confidentialité sur le texte libre du
+référentiel. `findConfidentialReferences` n'existe pas dans le dépôt (tranche 3, PR 3, non
+commencée).
+
+Scaffold dû au GREEN (code applicatif) : `domain/models/operation.model.ts` (`OperationFamilyId`,
+`OperationId`, `Operation`, `OperationFamily`) ; `domain/models/recommendation.model.ts`
+(`IsoInsertDesignation`, `DescribedInsert`, `InsertFor`, `CuttingSpeedRange`,
+`RecommendationEntry`, `GuideState`) ; `domain/models/insert-guide-reference.model.ts`
+(`InsertGuideReference`) ; `domain/operations.static-data.ts` ; `domain/recommendations.static-data.ts`
+(vide) ; `domain/guide-selection.ts` ; `domain/find-recommendation.ts`.
+
+RED, commande du profil `pnpm test`, cache invalidé (`ng cache clean`, `node_modules/.vite`) :
+- état livré : le build échoue sur `TS2307 Cannot find module` pour les sept fichiers du scaffold, et
+  seulement sur eux (plus les `TS2578` et `TS7006` qui en découlent), code de sortie 1 ;
+  `prettier --check` et `eslint` verts sur `features/workshop` et `editorial-sources.ts`.
+- mesure des assertions, avec des stubs temporaires typés selon le plan (`{ material: '',
+  operation: '' }`, `undefined`, `{ status: 'incomplete' }`, `OPERATION_FAMILIES` et
+  `RECOMMENDATIONS` vides), retirés ensuite : RED confirmé via la commande test du profil le
+  2026-10-25 21:47, 27 failed / 4645 total (Test Files 3 failed | 232 passed), code de sortie 1.
+  Les 27 échecs sont des `AssertionError` (`toEqual` / `toBe`), aucune erreur de harnais. Les 13
+  garanties de compilation passent face à ces stubs ; les 4483 tests des tranches 4 et 5 et des
+  suites existantes restent verts.
+- discriminance des garanties de compilation : dix relâchements des types stubés, un à la fois
+  (`InsertFor` non conditionnel, matières en tableau simple, opération ou identifiants ouverts à
+  `string`, géométrie non sourcée, unité libre, `entry` optionnelle, famille vide permise,
+  `RECOMMENDATIONS` typé `unknown[]`) : chaque garantie tombe sous le sien (`TS2578`, `TS2344`).
+
+## Journal des tranches
+
+- **Tranche 4 — une désignation tapée n'importe comment retrouve sa matière** : GREEN 4447 passed / 4447 total (au premier cycle), code de sortie 0 · refactor : retrait d'un échappement redondant dans `normalizeDesignation` (`\s` couvre déjà U+00A0 et U+202F en JavaScript) ; diff relu, aucune autre simplification trouvée. Verify reportée : domaine pur, aucune surface atteignable restructurée. Écart : `SourceId` vaut `never` (union fermée sans membre tant qu'aucune source n'est saisie), `Source` non créé (aucun test ne l'exige, il arrive avec `SOURCES` en tranche 5).
+- **Tranche 5 — une donnée sans source ne compile pas** : GREEN 4483 passed / 4483 total (au premier cycle), code de sortie 0 · refactor : aucun (diff de trois types et d'un catalogue vide relu, rien à simplifier). Verify reportée : domaine pur, aucune surface atteignable restructurée. Décision : `ISO_513_GROUPS` n'est pas créé ; avec `SourceId` à `never`, il n'existerait qu'avec une source inventée ou un type affaibli. Reporté à la première PR de données (première source Sandvik Coromant), avec sa garantie de type, le test « chaque groupe ISO cité par une matière a son entrée » et son ajout à `EDITORIAL_SOURCES`. `IsoGroupColor` vaut `never` et `SOURCES` est vide tant qu'aucune source n'est saisie.
+- **Tranche 6 — une combinaison sans recommandation le dit** : GREEN 4645 passed / 4645 total (au premier cycle), code de sortie 0 · refactor : aucun (diff de la PR 4 relu en entier, rien à simplifier sans toucher aux tests). Verify reportée : domaine pur, aucune surface atteignable restructurée. Écarts : `InsertGuideReference` garde `isoGroups` (typé `Readonly<Record<IsoGroupLetter, IsoGroup>>`), parce que le builder `aReference` le remplit ; `IsoDesignationField` et `InsertAspect` restent privés au modèle (aucun consommateur hors du fichier) ; le type de la sélection, `GuideSelection`, est déclaré dans `guide-selection.ts` et repris par `resolveGuideState`. Décision : l'extension de `findConfidentialReferences` au texte libre du référentiel n'est pas faite dans la PR 4, parce que le référentiel est vide. Elle arrive avec la PR 3 (tranche 3), qui crée la fonction, et doit être en place avant la première donnée ; la PR 5 dépend donc de la PR 3.
+
+## Review code
+
+PR 4 (tranches 4 à 6), `git diff origin/master...HEAD` (`35ef862`, `294b178`, `ed89943`), revue du 2026-10-25.
+
+**Verdict** : REJECTED
+**Gates CI locaux** : `pnpm install --frozen-lockfile` 0 / `pnpm run build --configuration production` 0 / `pnpm test` 0 (235 fichiers, 4645 passed / 4645) / `pnpm lint` 0 / `pnpm run format:check` 0
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main. Archéologie 0 hit ; import Angular/RxJS dans `features/workshop/domain` 0 ; `fakeAsync`/`.only`/`.skip`/snapshot/`getByTestId`/`innerHTML`/`console` 0 ; Gemini, Sandvik, `Coro[A-Z]` hors `reference-integrity.spec.ts` 0 ; données réelles (désignations du Constat) 0.
+**Warnings de gate** : (b) pré-existant hors diff : `pnpm install`, « Ignored build scripts: @parcel/watcher, @sentry/cli, lmdb, msgpackr-extract » (lockfile non touché). Build, test, lint : aucun.
+**Rendu compilé** : N/A
+**Preuve de verify runtime** : N/A (exception : code non atteint par le bundle ; aucune route, aucun `app.routes*`, aucun `package.json` modifié ; `dist/angular-portfolio-app` ne contient aucune chaîne du référentiel ; seul consommateur hors domaine : `src/app/testing/editorial-sources.ts`, test-only)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ❌
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ✅
+**Alignement spec** : ✅
+
+**Tests notables** :
+- ✨ `reference-integrity.spec.ts:74-103`, `:204-338`, `:363-396` : chaque garde sur les données réelles (vides) est doublée de contrôles sur fixtures qui prouvent qu'elle mord ; sans eux, ces tests seraient verts par construction.
+- ✨ `find-recommendation.spec.ts:158-165` : l'absence de repli par groupe ISO est épinglée par un voisin du même groupe.
+
+**Points à corriger** :
+1. `src/app/features/workshop/testing/insert-guide-builders.ts:97` : `export type RecommendationFor<O>` n'a aucun consommateur hors du fichier (seul usage : type de retour de `aRecommendation`, l. 107) et le projet n'émet pas de déclarations. Retirer l'`export`.
+
+**Suite (2026-10-25)** : point 1 corrigé (`export` retiré, session principale) ; gates rejouées avant la PR.
