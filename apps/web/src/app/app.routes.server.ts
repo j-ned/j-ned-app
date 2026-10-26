@@ -14,6 +14,7 @@ export const serverRoutes: ServerRoute[] = [
   // Contenu écrit dans le code : prérendu au build
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },
   { path: 'confidentialite', renderMode: RenderMode.Prerender },
+  { path: 'atelier', renderMode: RenderMode.Prerender },
 
   // Auth + admin : jamais côté serveur (authentifié, pas d'intérêt SEO)
   { path: 'login', renderMode: RenderMode.Client },

@@ -10,6 +10,7 @@ export const THEMES: readonly Theme[] = ['light', 'dark'];
 export const PUBLIC_PAGES: readonly PageScenario[] = [
   { path: '/', ready: 'home-contact-form' },
   { path: '/about', ready: 'about-lead' },
+  { path: '/atelier', ready: 'workshop-title' },
   { path: '/projects', ready: 'projects-case-studies' },
   { path: '/projects/projet-temoin', ready: 'project-detail-title' },
   { path: '/projects/dashflow', ready: 'project-articles' },

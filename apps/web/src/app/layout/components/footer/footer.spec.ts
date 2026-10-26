@@ -71,7 +71,12 @@ describe('Footer', () => {
         tagline:
           'Tourneur CN le jour, développeur web le reste du temps. Angular, NestJS et auto-hébergement, pour le plaisir.',
         headings: { resources: 'Ressources', contact: 'Contact' },
-        resources: { projects: 'Réalisations', blog: 'Blog', about: 'Parcours' },
+        resources: {
+          projects: 'Réalisations',
+          blog: 'Blog',
+          about: 'Parcours',
+          workshop: "L'atelier",
+        },
         contactCta: "M'écrire",
         socials: { linkedin: 'LinkedIn', github: 'GitHub' },
         legal: {
@@ -106,7 +111,7 @@ describe('Footer', () => {
   });
 
   describe('resources column', () => {
-    it('Given the footer When it is rendered Then Ressources lists Réalisations, Blog then Parcours, and nothing else', async () => {
+    it("Given the footer When it is rendered Then Ressources lists Réalisations, Blog, Parcours then L'atelier, and nothing else", async () => {
       const { host } = await setup();
       const nav = Array.from(host.querySelectorAll('nav')).find(
         (candidate) => accessibleNameOf(candidate) === FOOTER_COPY.headings.resources,
@@ -117,15 +122,17 @@ describe('Footer', () => {
         '/projects',
         '/blog',
         '/about',
+        '/atelier',
       ]);
       expect(links.map((link) => link.textContent?.trim())).toEqual([
-        FOOTER_COPY.resources.projects,
-        FOOTER_COPY.resources.blog,
-        FOOTER_COPY.resources.about,
+        'Réalisations',
+        'Blog',
+        'Parcours',
+        "L'atelier",
       ]);
     });
 
-    it.each(['/projects', '/blog', '/about'])(
+    it.each(['/projects', '/blog', '/about', '/atelier'])(
       'Given the %s resource link When it is clicked Then the router lands on it',
       async (path) => {
         const { fixture, host } = await setup();

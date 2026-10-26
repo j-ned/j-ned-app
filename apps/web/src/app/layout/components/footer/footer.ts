@@ -9,6 +9,7 @@ const RESOURCE_LINKS = [
   { href: '/projects', label: FOOTER_COPY.resources.projects },
   { href: '/blog', label: FOOTER_COPY.resources.blog },
   { href: '/about', label: FOOTER_COPY.resources.about },
+  { href: '/atelier', label: FOOTER_COPY.resources.workshop },
 ] as const;
 
 const SOCIAL_LINKS = [

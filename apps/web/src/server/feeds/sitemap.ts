@@ -20,6 +20,7 @@ type SitemapUrl = {
 const STATIC_URLS: readonly SitemapUrl[] = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/about', changefreq: 'monthly', priority: '0.8' },
+  { path: '/atelier', changefreq: 'monthly', priority: '0.8' },
   { path: '/projects', changefreq: 'weekly', priority: '0.9' },
   { path: '/blog', changefreq: 'weekly', priority: '0.9' },
   { path: '/mentions-legales', changefreq: 'yearly', priority: '0.2' },

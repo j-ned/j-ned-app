@@ -545,6 +545,10 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 
 - Le seul `app-sticker` du site (Sticker Rule) : « Fait main » (`HOME_HERO_STICKER_LABEL`), ton `sage`, `tilt="left"`, `data-testid="hero-sticker"`. Dans la colonne du cartouche, au-dessus de lui, aligné à droite, hors du flux (`absolute top-0 right-0` dans une colonne `relative pt-10` qui lui réserve sa place : posé dans le flux, il déplaçait la fiche au chargement, CLS 0,165 en mobile) : après le `h1` dans l'ordre du DOM, dans le flux (il ne recouvre aucun texte, à 375 px comme en large), hors de tout titre, lien ou bouton.
 
+### Accueil de l'atelier (`features/workshop/pages/workshop/workshop.ts`)
+
+- Même tête que la liste du blog : `h1` en `font-extrabold` (`clamp(2.75rem, 6vw, 5.25rem)`, `tracking-[-0.04em]`), puis l'intro en `text-muted`, `max-w-[56ch]`, un `<p>` par paragraphe, entrée en `animate-fade-up`. Aucun autocollant, aucun cartouche : la page reste sobre tant qu'elle ne porte que l'intro. Les cartes des outils (`app-link-card`) arrivent avec le premier outil, jamais une section vide avant.
+
 ### Page 404 (`pages/page-not-found.ts`)
 
 - Le retour à l'accueil est un `<a appButton routerLink="/">` primaire, sans classe propre.

@@ -7,6 +7,7 @@ const HOME_TITLE = 'Julien Nédellec | Tourneur CN et développeur web Angular /
 const ABOUT_TITLE = "Parcours\u00a0: de l'atelier au code | Julien Nédellec";
 const PROJECTS_TITLE = 'Mes projets Angular et NestJS | Julien Nédellec';
 const BLOG_TITLE = 'Blog Angular, NestJS et auto-hébergement | Julien Nédellec';
+const WORKSHOP_TITLE = "L'atelier\u00a0: outils de tourneur CN | Julien Nédellec";
 const PERSON_ID = `${SITE_IDENTITY.siteUrl}/#person`;
 
 export const routes: Routes = [
@@ -81,6 +82,35 @@ export const routes: Routes = [
               position: 2,
               name: 'Parcours',
               item: `${SITE_IDENTITY.siteUrl}/about`,
+            },
+          ],
+        },
+      },
+    },
+  },
+  {
+    path: 'atelier',
+    title: WORKSHOP_TITLE,
+    loadComponent: () =>
+      import('./features/workshop/pages/workshop/workshop').then((m) => m.Workshop),
+    data: {
+      preload: true,
+      seo: {
+        title: WORKSHOP_TITLE,
+        description:
+          "Mon coin de tourneur CN\u00a0: des outils d'usinage, à commencer par un guide pour choisir le type de plaquette selon la matière et l'opération.",
+        url: `${SITE_IDENTITY.siteUrl}/atelier`,
+        type: 'website',
+        structuredData: {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: "L'atelier",
+              item: `${SITE_IDENTITY.siteUrl}/atelier`,
             },
           ],
         },

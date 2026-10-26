@@ -21,9 +21,12 @@ describe('serverRoutes', () => {
     expect([...serverRendered].sort()).toEqual([...CONTENT_ROUTES].sort());
   });
 
-  it.each(['mentions-legales', 'confidentialite'])('prerenders the static page %s', (path) => {
-    expect(findRoute(path)?.renderMode).toBe(RenderMode.Prerender);
-  });
+  it.each(['mentions-legales', 'confidentialite', 'atelier'])(
+    'prerenders the static page %s',
+    (path) => {
+      expect(findRoute(path)?.renderMode).toBe(RenderMode.Prerender);
+    },
+  );
 
   // Offres retirées (spec 029) : nginx répond 410, rien ne doit plus être prérendu sous /offres.
   it('prerenders nothing under the retired offers and booking pages', () => {

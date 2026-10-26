@@ -69,6 +69,7 @@ jobs:
           test ! -f $browser/sitemap.xml && test ! -f $browser/rss.xml
           # Pages statiques prérendues (offres et rendez-vous retirés, spec 029 : aucun fichier ne doit rester)
           test -f $browser/mentions-legales/index.html && test -f $browser/confidentialite/index.html
+          test -f $browser/atelier/index.html
           test ! -e $browser/offres && test ! -e $browser/rendez-vous
           # postbuild : la CSP des pages prérendues est hachée par page, plus d'unsafe-inline.
           ! grep -l -E "(script|style)-src [^;]*'unsafe-inline'" $(find $browser -name index.html -o -name index.csr.html) || { echo "unsafe-inline dans une page prérendue"; exit 1; }
@@ -140,6 +141,10 @@ jobs:
           # (grep sort au premier match, curl échoue en écrivant dans le tube fermé : code 23)
           curl -fsS http://127.0.0.1:3000/about/ -o /tmp/about.html
           grep -q '<app-about' /tmp/about.html
+          # Accueil de l'atelier prérendu : servi en fichier par nginx, sans passer par le micro-cache
+          curl -fsS -D /tmp/atelier-headers.txt http://127.0.0.1:3000/atelier/ -o /tmp/atelier.html
+          grep -q 'data-testid="workshop-title"' /tmp/atelier.html || { echo "titre absent : /atelier/"; exit 1; }
+          ! grep -qi '^x-cache-status' /tmp/atelier-headers.txt || { echo "/atelier/ rendu par Node"; exit 1; }
           # Chaque route rendue à la requête lit la doublure et embarque l'état de transfert
           for path in / /projects /projects/projet-temoin /blog /blog/article-temoin; do
             curl -fsS "http://127.0.0.1:3000$path" -o /tmp/ssr.html

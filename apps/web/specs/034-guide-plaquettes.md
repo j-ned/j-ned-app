@@ -759,11 +759,219 @@ Chaque tranche passe sans les suivantes : les PR 5 et 6+ ne cassent rien des pr�
 11. **Matières de la PR 5** : la PR 5 part-elle avec les matières déjà vérifiées (même peu), ou
     attend-elle la liste complète du référentiel ?
 
+### Réponses de Julien (2026-10-25)
+
+1. **Intro de l'accueil** (question 1), texte retenu mot pour mot (la typographie du site, espaces
+   fines et apostrophes, s'applique) :
+   > À l'atelier comme dans le code, une règle tient tout : une pièce hors tolérance ne part pas.
+   > Cet espace rassemble ce que j'apprends derrière mon tour CN, mis en forme en outils et en fiches
+   > que tu peux utiliser. Que tu sois dev curieux ou usineur qui débute, prends ce qui te sert.
+2. **Ordre de merge** (question 3) : la PR 3 reste ouverte en brouillon jusqu'à ce que la PR 5 soit
+   prête ; l'atelier apparaît en ligne avec son guide. Au merge, la PR 3 passe d'abord, la PR 5 est
+   re-ciblée sur `master` avant le sien (jamais de PR empilée au moment du merge).
+3. **SEO de l'accueil** (question 4, partie accueil) : titre, description et « L'atelier » en dernier
+   dans le menu validés tels quels.
+4. **Slugs d'URL des opérations** (arbitré pour Julien, à sa demande) : ceux de `OPERATION_FAMILIES`
+   sont retenus, sauf `percage`, qui devient **`percage-plaquettes`** pour laisser la place à un
+   perçage au foret monobloc sans changer une URL déjà partagée. À appliquer en PR 5 (constante et
+   test golden), avant toute mise en ligne du guide.
+5. **Couleurs ISO 513** (question 7, arbitré pour Julien) : **lettre et nom seuls, sans couleur**.
+   La couleur du groupe S se confondrait avec l'accent orange (ADR-0030), une couleur ne porte
+   jamais seule l'information, et chaque couleur demanderait une source. En PR 5 : `IsoGroupColor`
+   et le champ `color` d'`IsoGroup` sont retirés, aucun token `--color-iso-*`, aucune exception à la
+   One Orange Rule. `IsoGroupBadge` affiche la lettre en pastille neutre et le nom.
+6. **Carte du guide** (question 2, arbitré pour Julien) : sur-titre « Outil », titre « Guide des
+   plaquettes », et un résumé : « Choisis ta matière et ton opération : le guide t'indique le type
+   de plaquette à prendre. » (typographie du site appliquée). `LinkCard` gagne une entrée `summary`
+   optionnelle (`text-muted`, sous le titre), documentée dans `DESIGN.md` § 5 ; sans `summary`, la
+   carte reste inchangée pour ses usages actuels.
+
 ## Plan de test
 
 Domaine pur, sans TestBed, fixtures manifestement fictives (`ZZ-FICTIF-1`, `TEST-002`, « Alliage
 essai Alpha », source fictive, `locator: 'fixture'`). `fast-check` absent du dépôt : pas de test par
 propriétés, idempotence en `it.each`.
+
+### Tranche 1 — l'accueil de l'atelier existe et se trouve
+
+Le texte de l'intro n'est réécrit dans aucun test : la page est comparée à `WORKSHOP_SPACE.intro`,
+et la constante est jugée par les verrous éditoriaux (typographie, formulations interdites,
+vouvoiement) via `EDITORIAL_SOURCES`. Seuls le titre et la description SEO, validés par Julien,
+sont épinglés mot pour mot.
+
+`features/workshop/domain/workshop-space.static-data.spec.ts` (3 tests)
+- Type exact `WorkshopSpace` (`expectTypeOf`). Vert d'emblée dès que le module existe.
+- `heading` vaut « L'atelier » (apostrophe droite, norme du site). **RED**.
+- Aucun paragraphe d'intro vide ni entouré d'espaces. Vert d'emblée dès que le module existe.
+
+`features/workshop/pages/workshop/workshop.spec.ts` (3 tests, TestBed, `provideRouter([])`,
+`await fixture.whenStable()`)
+- Un seul `h1`, porteur de `data-testid="workshop-title"`, de texte `WORKSHOP_SPACE.heading`. **RED**.
+- Chaque `[data-testid="workshop-intro"]` est un `<p>` ; leurs textes valent `WORKSHOP_SPACE.intro`,
+  dans l'ordre. **RED**.
+- Aucun `main`, `header` ni `footer` dans la page ; classes de l'hôte exactement `block min-h-svh
+  pt-20`. **RED**.
+
+`src/app/app.routes.workshop.spec.ts` (6 tests)
+- Navigation vers `/atelier` avec les routes réelles → URL `/atelier`, feuille `atelier`, composant
+  `Workshop` (pas la 404). **RED**.
+- Route de premier niveau chargée à la demande : ni `component` ni `loadChildren`,
+  `loadComponent()` rend `Workshop`. **RED**.
+- Titre d'onglet `L'atelier : outils de tourneur CN | Julien Nédellec`. **RED**.
+- `data` exacte (`toEqual`) : `preload: true` et `seo` = titre, description validée, `url`
+  canonique `${siteUrl}/atelier`, `type: 'website'`, `BreadcrumbList` Accueil → L'atelier ; donc
+  ni `keywords` ni image propre. **RED**.
+- Description de 1 à 160 caractères. **RED**.
+- `ROUTE_TEXTS['/atelier']` porte le titre et le SEO : les verrous éditoriaux lisent la route.
+  **RED**.
+
+Suites existantes adaptées (même RED)
+- `app.routes.server.spec.ts` : `atelier` ajouté au `it.each` des pages prérendues. **RED**. Le test
+  « exactly the content routes » reste tel quel : `atelier` n'est pas en `Server`.
+- `src/server/feeds/sitemap.spec.ts` : `/atelier` inséré après `/about` dans l'ordre attendu, sept
+  pages statiques au lieu de six, et un test neuf pour son entrée (`monthly`, `0.8`, datée du
+  démarrage). **RED** (3 tests).
+- `src/app/testing/editorial-sources.ts` : `['WORKSHOP_SPACE', WORKSHOP_SPACE]`, soit 25 lignes de
+  plus dans les verrous (typographie 1, formulations interdites 23, vouvoiement 1), plus 3 lignes du
+  verrou de vouvoiement sur fichiers, qui lit d'office les trois fichiers du scaffold. Elles jugent
+  le texte de Julien au GREEN ; face à un stub, elles passent par construction.
+- `e2e/a11y/scenarios.ts` : `{ path: '/atelier', ready: 'workshop-title' }` dans `PUBLIC_PAGES`
+  (clair et sombre, Playwright, hors `pnpm test` ; `pnpm a11y:typecheck` vert).
+
+Sweep : `confidentialite`, `mentions-legales`, `sitemap`, `Prerender`, `atelier`, `workshop`
+cherchés dans `src/`, `e2e/`, `ci/` ; seuls `sitemap.spec.ts` et `app.routes.server.spec.ts`
+encodent la liste des pages statiques. `feed-handler.spec.ts` ne vérifie que des URL de contenu, il
+reste vert.
+
+Non couvert, à trancher : la section « Les outils » (`toolsHeading`, grille de cartes). Avec
+`tools` vide, une section titrée sans contenu n'a pas de sens ; aucun test ne l'exige ni ne
+l'interdit dans cette tranche. Proposition : ne pas la rendre avant la tranche 7, qui l'ajoute avec
+la carte du guide et ses tests (autant de cartes que `tools`, chaque `path` déclaré dans `routes`).
+
+Scaffold dû au GREEN (code applicatif) : `domain/models/workshop-space.model.ts` (`WorkshopSpace`,
+`WorkshopTool`, `WorkshopToolId`) ; `domain/workshop-space.static-data.ts` (`WORKSHOP_SPACE`, intro
+de Julien, `tools: []`) ; `pages/workshop/workshop.ts` (`Workshop`, `app-workshop`) ; route
+`atelier` dans `app.routes.ts` ; `atelier` en `Prerender` dans `app.routes.server.ts` ; `/atelier`
+dans `STATIC_URLS` de `sitemap.ts`. Hors tests, au GREEN : job `verify` de `ci.yml`, `test -f
+$browser/atelier/index.html` ; job `docker`, `/atelier/` en 200 avec `data-testid="workshop-title"`
+dans le corps et sans `X-Cache-Status`.
+
+RED, commande du profil `pnpm test`, cache invalidé (`ng cache clean`, `node_modules/.vite`) :
+- état livré : le build échoue sur `TS2307 Cannot find module` pour les trois modules du scaffold,
+  et seulement sur eux (plus les `TS7006` qui en découlent), code de sortie 1 ; `prettier --check`
+  et `eslint` verts sur les fichiers touchés.
+- mesure des assertions, avec des stubs temporaires typés selon le plan (`heading: ''`, une intro
+  provisoire, `tools: []`, composant au gabarit vide, routes et sitemap inchangés), retirés ensuite :
+  RED confirmé via la commande test du profil le 2026-10-25 22:30, 14 failed / 4687 total (Test
+  Files 5 failed | 233 passed), code de sortie 1. Les 14 échecs sont des `AssertionError`, aucune
+  erreur de harnais. Verts d'emblée face aux stubs : le type exact, l'intro non vide et les 28
+  lignes des verrous ; les 4645 tests des suites existantes et des tranches 4 à 6 restent verts.
+
+### Tranche 2 — on y arrive depuis le menu et le pied de page
+
+Icône vérifiée : `lucide-wrench` → `{ id: 'wrench', style: 'solid' }` dans `icon-map.ts`, symbole
+`solid-wrench` présent dans `public/icons/sprite.svg` ; pas de `pnpm icons:build`.
+
+`src/app/layout/components/header/header.spec.ts` (suite existante adaptée, 2 tests recalibrés, 3
+neufs)
+- Ordre du menu : `NAV_LINKS` vaut exactement (`toEqual`, icônes comprises) Blog, Réalisations,
+  Parcours, puis `{ label: "L'atelier", href: '/atelier', icons: 'lucide-wrench' }`. Recalibré
+  (l'ancien n'épinglait que libellé et lien de trois entrées). **RED**.
+- État actif en `it.each` sur `/blog` et `/atelier` : la nav desktop rend quatre liens, seul celui
+  de l'URL courante porte `aria-current="page"` et la pilule `rounded-full bg-primary/8`. Le cas
+  `/blog` est le test existant recalibré à quatre lignes ; le cas `/atelier` est neuf. **RED** (2).
+- Drawer ouvert : la nav mobile compte quatre liens, le dernier pointe vers `/atelier`, libellé
+  « L'atelier », icône dont le `use` vise `#solid-wrench`. **RED**.
+- Drawer ouvert, clic sur « L'atelier » : le routeur atterrit sur `/atelier` et le drawer se ferme.
+  **RED**.
+- Le harnais de routes des tests d'état actif et de clic déclare ses destinations
+  (`blog`, `projects`, `about`, `atelier`) au lieu de les dériver de `NAV_LINKS` : dérivées, la
+  route `/atelier` manquait et l'échec était un `NG04002` du routeur, pas une assertion.
+- Inchangé et vert : « dessert chaque destination de NAV_LINKS par un lien routé », dérivé de la
+  constante.
+
+`src/app/layout/components/footer/footer.spec.ts` (suite existante adaptée, 2 tests recalibrés, 1
+cas neuf)
+- Golden de `FOOTER_COPY` : `resources` gagne `workshop: "L'atelier"`. **RED**.
+- Colonne Ressources : liens `/projects`, `/blog`, `/about`, `/atelier`, libellés Réalisations,
+  Blog, Parcours, « L'atelier », rien d'autre. Libellés attendus écrits en clair : la constante est
+  déjà épinglée par le golden, et `FOOTER_COPY.resources.workshop` n'existe pas avant le GREEN.
+  **RED**.
+- `it.each` d'atterrissage du routeur : cas `/atelier` ajouté. **RED**.
+
+Sweep : `NAV_LINKS`, `FOOTER_COPY`, `nav-items`, `footer-resource-link`, `Navigation principale`
+cherchés dans `src/`, `e2e/`, `ci/`. `editorial-sources.ts` porte déjà `NAV_LINKS` et `FOOTER_COPY` :
+les verrous éditoriaux jugeront « L'atelier » au GREEN sans ajout. `editorial-identity.spec.ts` ne
+lit que la tagline. `project-detail.spec.ts` (`navLinks`) parle d'une autre nav. Le scénario axe
+`open mobile menu` couvre la nouvelle entrée du drawer sans changement.
+
+Scaffold dû au GREEN : entrée `{ label: "L'atelier", href: '/atelier', icons: 'lucide-wrench' }` en
+fin de `NAV_LINKS` ; `FOOTER_COPY.resources.workshop = "L'atelier"` ; lien `/atelier` après
+`/about` dans `RESOURCE_LINKS` de `footer.ts`. À l'œil en Verify : menu desktop sur une ligne à
+1 024 px.
+
+RED confirmé via la commande test du profil le 2026-10-25 22:46, 8 failed / 4691 total (Test Files
+2 failed | 236 passed), code de sortie 1, cache invalidé (`ng cache clean`, `node_modules/.vite`).
+Les 8 échecs sont des `AssertionError` (5 dans `header.spec.ts`, 3 dans `footer.spec.ts`), aucune
+erreur de harnais ni de type ; `eslint` et `prettier --check` verts sur les deux specs. Les 4683
+autres tests restent verts, tranche 1 comprise. Un premier passage avait aussi fait tomber
+`admin-post-editor.spec.ts` sur un délai de 5 s ; il passe au second, sans rapport avec ce diff.
+
+### Tranche 3 — une référence de pièce ne peut pas partir
+
+Exemples d'ADR-0032 §3 et du plan V1 de la spec 032 repris tels quels ; les ajouts sont fictifs.
+Aucun nom d'employeur ni de client, dans aucun fichier.
+
+`features/workshop/domain/confidential-references.spec.ts` (27 tests, sans TestBed)
+- `it.each` de 13 textes signalés → exactement un fragment, non blanc, contenu dans le texte :
+  `P/N 4521-07`, `PN: 88-123`, `réf. pièce`, `réf. plan`, `réf. client`, `plan n° 12`, `n° de plan`,
+  `OF n° 3`, `indice C`, `indice 3`, `D23456789`, `12345` (borne des cinq chiffres), et une phrase
+  qui contient `plan n° 12`. **RED** (13).
+- `it.each` de 13 textes non signalés → `[]` : `AS9100`, `EN 9100`, `ISO 2768`, `Inconel 718`,
+  `Ti-6Al-4V`, `7075-T6`, `Ø20 ±0,02`, `G71`, `M30`, `10 000 tr/min` avec U+202F, `1234` (borne),
+  « L'indice de rugosité… » (« indice » suivi d'un mot, pas d'une lettre seule : proposé, l'ADR ne
+  le tranche pas), texte vide. Verts face au stub par construction.
+- Deux références dans un texte → deux fragments, non blancs, contenus, dans l'ordre du texte.
+  **RED**.
+
+`src/app/workshop-confidentiality.spec.ts` (16 tests). La garde lit chaque chaîne par
+`editorialTexts` (même parcours que la garde des noms commerciaux) et n'exclut qu'un chemin :
+`.designations[n].value`, contrôlée par son format (un UNS compte cinq chiffres). Tout le reste est
+lu, `locator` des désignations compris : un champ de texte ajouté plus tard est gardé d'office.
+- Données réelles, `it.each` sur `WORKSHOP_SPACE`, `MATERIALS`, `OPERATION_FAMILIES` (libellés de
+  famille et d'opération), `RECOMMENDATIONS` → aucun chemin signalé. Verts par construction
+  (référentiel vide, intro sans référence) ; ils jugeront la première donnée de la PR 5.
+- Preuve que la garde mord, `it.each` de 11 fixtures fictives (builders du guide) → exactement le
+  chemin attendu : paragraphe d'intro, comportement de matière, `locator` d'une désignation,
+  géométrie, nuance, piège (le second d'une liste), aspect décrit, signification d'un champ ISO,
+  `locator` d'une citation, libellé de famille, libellé d'opération. **RED** (11).
+- Désignation UNS fictive à cinq chiffres (`X99999`) → non signalée. Vert face au stub par
+  construction ; prouvé discriminant avec l'implémentation de contrôle ci-dessous.
+
+Conséquence à connaître : un slug de matière ou un identifiant de source qui porterait cinq chiffres
+consécutifs serait signalé ; il s'écrit avec un tiret.
+
+Sweep : `findConfidentialReferences`, `confidential`, `EDITORIAL_SOURCES`, `editorialTexts` cherchés
+dans `src/` ; aucune suite existante n'encode la garde, rien à adapter. `EDITORIAL_SOURCES` porte déjà
+les quatre constantes ; aucun builder étendu.
+
+Scaffold dû au GREEN (code applicatif) : `domain/confidential-references.ts`,
+`findConfidentialReferences(text: string): readonly string[]`.
+
+RED, commande du profil `pnpm test`, cache invalidé (`ng cache clean`, `node_modules/.vite`) :
+- état livré : le build échoue sur `TS2307 Cannot find module` pour `confidential-references`
+  (deux imports), plus un `TS7006` qui en découle, code de sortie 1 ; `prettier --check` et `eslint`
+  verts sur les deux specs ; grep d'archéologie sans résultat.
+- mesure des assertions, avec un stub temporaire typé selon le plan (retourne toujours `[]`), retiré
+  ensuite : RED confirmé via la commande test du profil le 2026-10-25 22:56, 25 failed / 4735 total
+  (Test Files 2 failed | 238 passed), code de sortie 1. Les 25 échecs sont des `AssertionError`
+  (`toHaveLength`, `toEqual`), aucune erreur de harnais ni de type. Verts d'emblée face au stub : les
+  13 textes non signalés, les 4 gardes sur données réelles et la désignation à cinq chiffres ; les
+  4692 tests des suites existantes et des tranches 1, 2, 4 à 6 restent verts.
+- contrôle de cohérence des fixtures : avec une implémentation jetable d'une seule expression
+  régulière (cinq chiffres ou plus et les motifs de l'ADR), retirée ensuite, les 43 tests de la
+  tranche passent au runner ciblé : le contrat est tenable et chaque fixture ne signale que son
+  chemin.
 
 ### Tranche 4 — une désignation tapée n'importe comment retrouve sa matière
 
@@ -970,9 +1178,55 @@ RED, commande du profil `pnpm test`, cache invalidé (`ng cache clean`, `node_mo
 
 ## Journal des tranches
 
+- **Tranche 1 — l'accueil de l'atelier existe et se trouve** : GREEN 4687 passed / 4687 total (au premier cycle), code de sortie 0 · refactor : aucun (diff relu : un modèle à deux champs, une constante, une page sans état, une route ; rien à simplifier). Verify faite (§ Verify) : la route `/atelier` devient atteignable. Décision : `WorkshopSpace` se limite à `heading` et `intro` ; `tools`, `toolsHeading` et `WorkshopTool` arrivent en tranche 7 avec la carte du guide, et la page ne rend aucune section « Les outils » vide d'ici là. Intro de Julien découpée en deux paragraphes (la règle, puis l'espace et à qui il s'adresse), texte inchangé, seule l'espace avant le deux-points devient insécable. Gardes CI : job `verify`, `atelier/index.html` présent ; job `docker`, `/atelier/` en 200 avec `data-testid="workshop-title"` et sans `X-Cache-Status`.
+- **Tranche 2 — on y arrive depuis le menu et le pied de page** : GREEN 4691 passed / 4691 total (au premier cycle), code de sortie 0 · refactor : aucun (diff de trois lignes de données relu, rien à simplifier). Verify faite (§ Verify) : le menu et le pied de page, déjà atteignables sur tout le site, changent. `admin-post-editor.spec.ts` n'a pas dépassé son délai sur ce passage.
+- **Tranche 3 — une référence de pièce ne peut pas partir** : GREEN 4735 passed / 4735 total (au premier cycle), code de sortie 0 · GREEN fait en session (règle du 2026-10-25 : petites tranches en session) · refactor : l'expression régulière unique est découpée en motifs nommés (`REFERENCE_PATTERNS`), tests inchangés et verts. Verify reportée : fonction pure et garde de test, aucune surface atteignable modifiée. Décisions retenues du RED : « L'indice de rugosité » n'est pas signalé (« indice » suivi d'un mot) ; la garde lit tout le texte du référentiel sauf les valeurs de désignation, donc un slug ou un identifiant à cinq chiffres consécutifs serait signalé (l'écrire avec un tiret) ; `SOURCES` n'est pas lu (une URL peut porter un long numéro de document). L'extension au référentiel, renvoyée ici par la tranche 6, est faite.
 - **Tranche 4 — une désignation tapée n'importe comment retrouve sa matière** : GREEN 4447 passed / 4447 total (au premier cycle), code de sortie 0 · refactor : retrait d'un échappement redondant dans `normalizeDesignation` (`\s` couvre déjà U+00A0 et U+202F en JavaScript) ; diff relu, aucune autre simplification trouvée. Verify reportée : domaine pur, aucune surface atteignable restructurée. Écart : `SourceId` vaut `never` (union fermée sans membre tant qu'aucune source n'est saisie), `Source` non créé (aucun test ne l'exige, il arrive avec `SOURCES` en tranche 5).
 - **Tranche 5 — une donnée sans source ne compile pas** : GREEN 4483 passed / 4483 total (au premier cycle), code de sortie 0 · refactor : aucun (diff de trois types et d'un catalogue vide relu, rien à simplifier). Verify reportée : domaine pur, aucune surface atteignable restructurée. Décision : `ISO_513_GROUPS` n'est pas créé ; avec `SourceId` à `never`, il n'existerait qu'avec une source inventée ou un type affaibli. Reporté à la première PR de données (première source Sandvik Coromant), avec sa garantie de type, le test « chaque groupe ISO cité par une matière a son entrée » et son ajout à `EDITORIAL_SOURCES`. `IsoGroupColor` vaut `never` et `SOURCES` est vide tant qu'aucune source n'est saisie.
 - **Tranche 6 — une combinaison sans recommandation le dit** : GREEN 4645 passed / 4645 total (au premier cycle), code de sortie 0 · refactor : aucun (diff de la PR 4 relu en entier, rien à simplifier sans toucher aux tests). Verify reportée : domaine pur, aucune surface atteignable restructurée. Écarts : `InsertGuideReference` garde `isoGroups` (typé `Readonly<Record<IsoGroupLetter, IsoGroup>>`), parce que le builder `aReference` le remplit ; `IsoDesignationField` et `InsertAspect` restent privés au modèle (aucun consommateur hors du fichier) ; le type de la sélection, `GuideSelection`, est déclaré dans `guide-selection.ts` et repris par `resolveGuideState`. Décision : l'extension de `findConfidentialReferences` au texte libre du référentiel n'est pas faite dans la PR 4, parce que le référentiel est vide. Elle arrive avec la PR 3 (tranche 3), qui crée la fonction, et doit être en place avant la première donnée ; la PR 5 dépend donc de la PR 3.
+
+## Verify
+
+Tranche 1, 2026-10-25, worktree `034-pr3`.
+
+- Steps : `pnpm run build --configuration production` (code de sortie 0, « Prerendered 3 static routes »),
+  puis lecture de `dist/angular-portfolio-app/browser/atelier/index.html` ; ce dossier servi en statique
+  (`python3 -m http.server`), `/atelier/` ouvert dans le navigateur, en thème sombre.
+- Extrait du HTML prérendu :
+  ```html
+  <title>L'atelier&nbsp;: outils de tourneur CN | Julien Nédellec</title>
+  <meta name="description" content="Mon coin de tourneur CN&nbsp;: des outils d'usinage, à commencer par un guide pour choisir le type de plaquette selon la matière et l'opération.">
+  <link rel="canonical" href="https://nedellec-julien.fr/atelier">
+  <meta name="robots" content="index, follow">
+  <app-workshop class="block min-h-svh pt-20" ngh="3">
+  <h1 data-testid="workshop-title" class="…"> L'atelier </h1>
+  <p data-testid="workshop-intro">À l'atelier comme dans le code, une règle tient tout&nbsp;: une pièce hors tolérance ne part pas.</p>
+  <p data-testid="workshop-intro">Cet espace rassemble ce que j'apprends derrière mon tour CN, mis en forme en outils et en fiches que tu peux utiliser. Que tu sois dev curieux ou usineur qui débute, prends ce qui te sert.</p>
+  "@type":"BreadcrumbList","itemListElement":[{…"name":"Accueil"…},{…"name":"L'atelier","item":"https://nedellec-julien.fr/atelier"}]
+  ```
+  Aucune CSP `unsafe-inline` dans le fichier.
+- Capture : rendu après hydratation, en-tête du site, `h1` « L'atelier », deux paragraphes d'intro
+  en `text-muted` (capture prise dans la session, non versionnée).
+- Console : aucune erreur de l'application ni d'hydratation. Deux erreurs réseau propres au serveur
+  statique de la vérification, sans API : `GET /api/config` 404 et `POST /api/analytics/track` 501.
+- Verdict : **PASS**.
+
+Tranche 2, 2026-10-25, worktree `034-pr3`.
+
+- Steps : `pnpm run build --configuration production` (code de sortie 0), dossier
+  `dist/angular-portfolio-app/browser` servi en statique (`python3 -m http.server`), `/atelier/`
+  ouvert dans le navigateur, thème clair.
+- Menu desktop à 1 024 × 768 : les quatre liens Blog, Réalisations, Parcours, « L'atelier » sont
+  sur **une ligne** (même `top` 18 px, hauteur 44 px, de 352 à 718 px en abscisse), en-tête de
+  81 px, aucun défilement horizontal (`scrollWidth` 1 009 px, barre de défilement déduite).
+  « L'atelier » porte `aria-current="page"` et la pilule.
+- Menu mobile à 375 × 812, drawer ouvert : quatre liens de 48 px de haut, le dernier est
+  `/atelier`, « L'atelier », icône `#solid-wrench`, pilule active ; `scrollWidth` 375 px.
+- Pied de page : colonne Ressources `/projects`, `/blog`, `/about`, `/atelier` dans cet ordre.
+- Captures : en-tête à 1 024 px et drawer ouvert à 375 px (prises dans la session, non versionnées).
+- Console : aucune erreur de l'application ni d'hydratation. Erreurs réseau propres au serveur
+  statique sans API : `GET /api/config` 404 et `POST /api/analytics/track` 501.
+- Verdict : **PASS**.
 
 ## Review code
 
@@ -999,3 +1253,35 @@ PR 4 (tranches 4 à 6), `git diff origin/master...HEAD` (`35ef862`, `294b178`, `
 1. `src/app/features/workshop/testing/insert-guide-builders.ts:97` : `export type RecommendationFor<O>` n'a aucun consommateur hors du fichier (seul usage : type de retour de `aRecommendation`, l. 107) et le projet n'émet pas de déclarations. Retirer l'`export`.
 
 **Suite (2026-10-25)** : point 1 corrigé (`export` retiré, session principale) ; gates rejouées avant la PR.
+
+PR 3 (tranches 1 à 3), `git diff origin/master...HEAD` (`7ac26d2`, `42ee751`, `63898df`, `4ab7035`), revue du 2026-10-25.
+
+**Verdict** : REJECTED
+**Gates CI locaux** : cache invalidé (`ng cache clean`, `node_modules/.vite`) ; `pnpm install --frozen-lockfile` 0 / `pnpm run build --configuration production` 0 (« Prerendered 3 static routes ») / `pnpm test` 0 (240 fichiers, 4735 passed / 4735) / `pnpm lint` 0 / `pnpm run format:check` 0
+**Checks mécaniques** : checker non vendoré (`.claude/checks/` absent) : auto-checks joués à la main. Archéologie (`ADR-`, `spec N`, `§`) 0 hit dans `src/`, `e2e/`, `.github/` ; `fakeAsync`/`.only`/`.skip`/`innerHTML`/`console.`/`export default` 0 ; noms d'employeur ou de client 0 dans le diff et dans tout le dépôt.
+**Warnings de gate** : (b) pré-existant hors diff : `pnpm install`, « Ignored build scripts » (lockfile non touché). Build, test, lint, format : aucun. (c) pré-existant, à trancher par la session principale : `.github/workflows/ci.yml:75`, `:80`, `:190` et `:250`, `! grep …` isolés sous `set -e` et suivis d'autres commandes : bash n'arrête jamais le script sur une commande niée, ces quatre gardes (CSP `unsafe-inline` des pages prérendues, `ng-state` dans `index.csr.html`, `X-Cache-Status` de `/healthz`, version de nginx) ne peuvent pas échouer. Les gardes ajoutées par la PR (l. 72, 146-147) échouent bien.
+**Rendu compilé** : N/A (aucun composant à sélecteur attribut ni `shared/ui` touché)
+**Preuve de verify runtime** : ✅ (preuve tranches 1-2 complète ; rejouée sur le build de cette revue : `dist/…/browser` servi en statique, `/atelier/` hydraté (bascule de thème active), à 1 024 × 768 quatre liens sur une ligne (top 18 px, 352 à 718 px, `scrollWidth` 1 009), `aria-current="page"` sur « L'atelier » seul ; navigation client `/projects` → `/atelier` : titre, canonical et état actif suivent ; console : seules les erreurs réseau du serveur statique sans API, `/api/config` 404 et `/api/analytics/track` 501)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ✅
+**Cross-platform** : ✅
+**Tests** : ✅
+**Sécurité** : ❌
+**Alignement spec** : ❌
+
+Contrôles demandés : (1) intro identique mot pour mot à la réponse de Julien (54 mots, comparés après normalisation des espaces ; seule l'espace avant le deux-points devient U+00A0) ; (3) `atelier/index.html` prérendu avec `h1`, deux paragraphes d'intro, titre, description, canonical, `BreadcrumbList`, meta CSP hachée, aucune page prérendue avec `unsafe-inline`, `Dockerfile` non modifié (`/atelier/` servi par `location /`) ; (4) gardes ajoutées correctes (`test -f` arrête le script ; `! grep … || { …; exit 1; }` échoue bien) ; (5) menu contrôlé, cf. ligne verify.
+
+**Tests notables** :
+- ✨ `src/app/workshop-confidentiality.spec.ts:38-127` : chaque champ gardé est doublé d'une fixture fictive qui prouve que la garde mord sur son chemin exact.
+- ⚠️ `src/app/features/workshop/pages/workshop/workshop.spec.ts:42` : épingle la liste de classes de l'hôte, détail de style qui casse au moindre ajustement visuel ; prescrit par le plan de test, à garder en tête.
+
+**Risque résiduel** :
+- réversibilité : profil muet · monitoring : Sentry (profil)
+- non couvert par les gates : la confidentialité de fond (un détail qui fait reconnaître un client) reste humaine ; ADR-0032 §4 exige la liste « confidentialité » cochée par Julien dans la description de la PR.
+
+**Points à corriger** :
+1. `src/app/features/workshop/domain/confidential-references.ts:7-8` : « plan n° » et « n° de plan » ne sont reconnus qu'en minuscules. « Plan n° 12 repris. » et « N° de plan à part. », soit les deux motifs en début de phrase, ne sont pas signalés (vérifié en exécutant l'expression), alors que `réf.` (l. 6) et `indice` (l. 10) acceptent la majuscule initiale. Accepter la majuscule initiale sur ces deux motifs, et ajouter les deux cas au `it.each` des textes signalés de `confidential-references.spec.ts:5-23` (RED d'abord).
+2. `src/app/workshop-confidentiality.spec.ts:29-34` : ADR-0032 §3 applique la garde à tout le contenu publié de l'atelier, mais le titre, la description et le fil d'Ariane de la route `atelier` (`src/app/app.routes.ts:91-119`) ne sont pas lus. Ajouter `ROUTE_TEXTS['/atelier']` à la liste des données réelles gardées.
+3. `DESIGN.md` § 5 : le plan technique prévoit une entrée « Accueil de l'atelier » dans la PR 3 (Fichiers à modifier) ; elle est absente, et le journal ne trace pas son report. L'ajouter, ou consigner le report dans `## Journal des tranches`.
+
+**Suite (2026-10-25, session principale)** : point 1 corrigé (majuscule initiale acceptée sur « Plan n° » et « N° de plan », deux cas ajoutés en RED d'abord) ; point 2 corrigé (`ROUTE_TEXTS['/atelier']` gardé) ; point 3 corrigé (entrée « Accueil de l'atelier » dans `DESIGN.md` § 5). Les gardes `! grep` isolées de `ci.yml` sont corrigées sur `master` par la PR #267. Gates rejouées : `pnpm test` 4738/4738, `pnpm lint` et `pnpm run format:check` en code 0.

@@ -16,6 +16,8 @@ const THEME_STORAGE_KEY = 'j-ned:theme';
 @Component({ template: '' })
 class BlankPage {}
 
+const DESTINATIONS = ['blog', 'projects', 'about', 'atelier'] as const;
+
 const cvInfo = (overrides: Partial<CvInfo> = {}): CvInfo => ({
   id: 'cv-1',
   fileName: 'cv.pdf',
@@ -97,11 +99,12 @@ describe('Header', () => {
   });
 
   describe('liens de navigation', () => {
-    it('ordonne le menu principal : Blog, Réalisations, Parcours, sans offre ni section', () => {
-      expect(NAV_LINKS.map(({ label, href }) => ({ label, href }))).toEqual([
-        { label: 'Blog', href: '/blog' },
-        { label: 'Réalisations', href: '/projects' },
-        { label: 'Parcours', href: '/about' },
+    it("ordonne le menu principal : Blog, Réalisations, Parcours puis L'atelier, sans offre ni section", () => {
+      expect(NAV_LINKS).toEqual([
+        { label: 'Blog', href: '/blog', icons: 'lucide-book-open' },
+        { label: 'Réalisations', href: '/projects', icons: 'lucide-laptop' },
+        { label: 'Parcours', href: '/about', icons: 'lucide-user' },
+        { label: "L'atelier", href: '/atelier', icons: 'lucide-wrench' },
       ]);
     });
 
@@ -123,30 +126,89 @@ describe('Header', () => {
       });
     });
 
-    it('Given the router on the blog When the header renders Then only the blog entry is the current page, drawn as an accent-tinted pill', async () => {
-      const { fixture } = await setup();
-      const router = TestBed.inject(Router);
-      router.resetConfig(
-        NAV_LINKS.map((item) => ({ path: item.href.slice(1), component: BlankPage })),
-      );
-      await router.navigateByUrl('/blog');
+    it.each([
+      {
+        url: '/blog',
+        expected: [
+          { href: '/blog', current: 'page', pill: true },
+          { href: '/projects', current: null, pill: false },
+          { href: '/about', current: null, pill: false },
+          { href: '/atelier', current: null, pill: false },
+        ],
+      },
+      {
+        url: '/atelier',
+        expected: [
+          { href: '/blog', current: null, pill: false },
+          { href: '/projects', current: null, pill: false },
+          { href: '/about', current: null, pill: false },
+          { href: '/atelier', current: 'page', pill: true },
+        ],
+      },
+    ])(
+      'Given the router on $url When the header renders Then only that entry is the current page, drawn as an accent-tinted pill',
+      async ({ url, expected }) => {
+        const { fixture } = await setup();
+        const router = TestBed.inject(Router);
+        router.resetConfig(DESTINATIONS.map((path) => ({ path, component: BlankPage })));
+        await router.navigateByUrl(url);
+        fixture.detectChanges();
+        await fixture.whenStable();
+        const nav = (fixture.nativeElement as HTMLElement).querySelector(
+          'nav[aria-label="Navigation principale"]',
+        ) as HTMLElement;
+
+        expect(
+          Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href]')).map((a) => ({
+            href: a.getAttribute('href'),
+            current: a.getAttribute('aria-current'),
+            pill: a.classList.contains('rounded-full') && a.classList.contains('bg-primary/8'),
+          })),
+        ).toEqual(expected);
+      },
+    );
+
+    it("Given the mobile menu open When it renders Then L'atelier closes the list, with the wrench icon", async () => {
+      const { component, fixture } = await setup();
+      component['toggleMobileMenu']();
       fixture.detectChanges();
       await fixture.whenStable();
-      const nav = (fixture.nativeElement as HTMLElement).querySelector(
-        'nav[aria-label="Navigation principale"]',
-      ) as HTMLElement;
+      const links = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
+          '[data-testid="mobile-nav"] a[href]',
+        ),
+      );
+      const last = links.at(-1);
 
-      expect(
-        Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href]')).map((a) => ({
-          href: a.getAttribute('href'),
-          current: a.getAttribute('aria-current'),
-          pill: a.classList.contains('rounded-full') && a.classList.contains('bg-primary/8'),
-        })),
-      ).toEqual([
-        { href: '/blog', current: 'page', pill: true },
-        { href: '/projects', current: null, pill: false },
-        { href: '/about', current: null, pill: false },
-      ]);
+      expect({
+        count: links.length,
+        href: last?.getAttribute('href'),
+        label: last?.textContent?.trim(),
+        icon: last?.querySelector('use')?.getAttribute('href')?.split('#')[1],
+      }).toEqual({ count: 4, href: '/atelier', label: "L'atelier", icon: 'solid-wrench' });
+    });
+
+    it("Given the mobile menu open When L'atelier is clicked Then the router lands on /atelier and the menu closes", async () => {
+      const { component, fixture } = await setup();
+      const router = TestBed.inject(Router);
+      router.resetConfig(DESTINATIONS.map((path) => ({ path, component: BlankPage })));
+      component['toggleMobileMenu']();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const link = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
+          '[data-testid="mobile-nav"] a[href]',
+        ),
+      ).find((candidate) => candidate.getAttribute('href') === '/atelier');
+
+      expect(link).toBeInstanceOf(HTMLAnchorElement);
+      link?.click();
+      await fixture.whenStable();
+
+      expect({ url: router.url, open: component['isMobileMenuOpen']() }).toEqual({
+        url: '/atelier',
+        open: false,
+      });
     });
 
     it('délègue scrollToTop au clic sur le logo', async () => {
