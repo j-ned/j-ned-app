@@ -3,6 +3,8 @@ export type ContactFormData = {
   readonly email: string;
   readonly subject: string;
   readonly message: string;
+  /** Champ piège : vide pour un humain. Rempli, l'API répond comme d'habitude sans rien garder. */
+  readonly website: string;
 };
 
 export type ContactFormSubmission = {

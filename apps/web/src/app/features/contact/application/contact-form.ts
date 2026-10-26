@@ -39,6 +39,7 @@ const EMPTY_CONTACT: ContactFormData = {
   email: '',
   subject: '',
   message: '',
+  website: '',
 };
 const SUBJECT_MAX_LENGTH = 200;
 const MESSAGE_MAX_LENGTH = 5000;
@@ -155,6 +156,18 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 ></textarea>
                 <app-field-error [field]="contactForm.message" errorId="contact-message-error" />
               </div>
+              <!-- Champ piège : hors écran, hors tabulation et hors arbre d'accessibilité ; un robot le remplit. -->
+              <div class="sr-only" aria-hidden="true">
+                <label for="contact-website">Ne pas remplir</label>
+                <input
+                  id="contact-website"
+                  type="text"
+                  data-testid="contact-website"
+                  [formField]="contactForm.website"
+                  tabindex="-1"
+                  autocomplete="off"
+                />
+              </div>
               <div class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 pt-1">
                 <p
                   class="max-w-[34ch] text-[0.8125rem] text-muted"
@@ -244,8 +257,8 @@ export class ContactForm {
   }
 
   private async send(field: FieldTree<ContactFormData>): Promise<void> {
-    const { name, email, subject, message } = field().value();
-    const payload: ContactFormData = { name, email, subject, message };
+    const { name, email, subject, message, website } = field().value();
+    const payload: ContactFormData = { name, email, subject, message, website };
     try {
       const result = await firstValueFrom(this.contactGateway.submitContactForm(payload));
       if (result.success) {

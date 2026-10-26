@@ -18,6 +18,7 @@ function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormD
     email: 'alice@example.com',
     subject: 'Projet Angular',
     message: 'Bonjour, j’aimerais discuter d’un projet.',
+    website: '',
     ...overrides,
   };
 }
@@ -173,6 +174,7 @@ describe('ContactForm (Signal Forms)', () => {
         email: '',
         subject: '',
         message: '',
+        website: '',
       });
       expect(alerts(fixture)).toEqual([]);
     });
@@ -370,6 +372,7 @@ describe('ContactForm (Signal Forms)', () => {
         email: '',
         subject: OFFER_SUBJECT,
         message: '',
+        website: '',
       });
       expect(subjectInput(fixture)?.value).toBe(OFFER_SUBJECT);
     });
@@ -459,6 +462,56 @@ describe('ContactForm (Signal Forms)', () => {
     });
   });
 
+  describe('Honeypot', () => {
+    const honeypot = (fixture: ComponentFixture<ContactForm>): HTMLInputElement =>
+      fixture.nativeElement.querySelector('[data-testid="contact-website"]');
+
+    it('Given the form When it renders Then a website trap field exists, out of the tab order, without autofill, inside an aria-hidden container', async () => {
+      const field = honeypot(await setup());
+
+      expect(field).not.toBeNull();
+      expect(field.tabIndex).toBe(-1);
+      expect(field.getAttribute('autocomplete')).toBe('off');
+      expect(field.required).toBe(false);
+      expect(field.closest('[aria-hidden="true"]')).not.toBeNull();
+    });
+
+    it('Given a human leaves the trap empty When the form is sent Then the payload carries an empty website', async () => {
+      const submit = vi.fn(() => of({ success: true, message: 'ok' }));
+      const fixture = await setup(stubContactGateway({ submitContactForm: submit }));
+      await fill(fixture, makeContactData());
+
+      await fixture.componentInstance.submitContact();
+
+      expect(submit).toHaveBeenCalledWith(makeContactData({ website: '' }));
+    });
+
+    it('Given a bot fills the trap When the form is sent Then the form stays valid and the trap value reaches the API, which drops it', async () => {
+      const submit = vi.fn(() => of({ success: true, message: 'ok' }));
+      const fixture = await setup(stubContactGateway({ submitContactForm: submit }));
+      await fill(fixture, makeContactData());
+      honeypot(fixture).value = 'https://spam.test';
+      honeypot(fixture).dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.contactForm().valid()).toBe(true);
+      await fixture.componentInstance.submitContact();
+
+      expect(submit).toHaveBeenCalledWith(makeContactData({ website: 'https://spam.test' }));
+    });
+
+    it('Given a sent message When the form resets Then the trap is empty again', async () => {
+      const fixture = await setup();
+      await fill(fixture, makeContactData());
+      fixture.componentInstance.contactForm.website().value.set('x');
+
+      await fixture.componentInstance.submitContact();
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.contactForm.website().value()).toBe('');
+    });
+  });
+
   describe('Booking invite', () => {
     it('no longer invites the visitor to book a call, the booking is retired', async () => {
       const fixture = await setup();
@@ -472,6 +525,9 @@ describe('ContactForm (Signal Forms)', () => {
   });
 
   describe('Wording', () => {
+    // Le champ piège est hors arbre d'accessibilité : seuls les champs présentés au visiteur comptent.
+    const presented = (host: HTMLElement, selector: string): Element[] =>
+      [...host.querySelectorAll(selector)].filter((el) => !el.closest('[aria-hidden="true"]'));
     const collapsed = (element: Element | null | undefined): string =>
       (element?.textContent ?? '').replace(/[ \t\r\n]+/g, ' ').trim();
 
@@ -491,7 +547,7 @@ describe('ContactForm (Signal Forms)', () => {
     it('Given the form When it renders Then every field carries its own distinct label', async () => {
       const host = (await setup()).nativeElement as HTMLElement;
 
-      expect([...host.querySelectorAll('form label')].map(collapsed)).toEqual([
+      expect(presented(host, 'form label').map(collapsed)).toEqual([
         'Ton nom (requis)',
         'Email (requis)',
         'Sujet (requis)',
@@ -503,7 +559,7 @@ describe('ContactForm (Signal Forms)', () => {
       const host = (await setup()).nativeElement as HTMLElement;
 
       expect(
-        [...host.querySelectorAll('form input, form textarea')].map((field) =>
+        presented(host, 'form input, form textarea').map((field) =>
           field.getAttribute('placeholder'),
         ),
       ).toEqual([

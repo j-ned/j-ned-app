@@ -35,7 +35,9 @@ function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
     case 429:
       return {
         success: false,
-        message: "Trop d'essais en peu de temps. Attends une minute avant de réessayer.",
+        // Fenêtre de l'API : 3 messages par heure et par IP.
+        message:
+          "Trop d'envois en peu de temps. Réessaie dans une heure, ou écris-moi directement par e-mail.",
       };
     case 500:
     case 502:

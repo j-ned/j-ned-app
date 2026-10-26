@@ -41,6 +41,7 @@ describe('HttpContactGateway', () => {
         email: 'test@example.com',
         subject: 'Hello',
         message: 'Hi there',
+        website: '',
       };
 
       const promise = firstValueFrom(gateway.submitContactForm(data));
@@ -78,7 +79,8 @@ describe('HttpContactGateway', () => {
       },
       {
         status: 429,
-        expected: "Trop d'essais en peu de temps. Attends une minute avant de réessayer.",
+        expected:
+          "Trop d'envois en peu de temps. Réessaie dans une heure, ou écris-moi directement par e-mail.",
       },
       {
         status: 500,
@@ -109,6 +111,7 @@ describe('HttpContactGateway', () => {
           email: 'test@example.com',
           subject: 'Hello',
           message: 'Hi there',
+          website: '',
         };
 
         const promise = firstValueFrom(gateway.submitContactForm(data));
@@ -129,6 +132,7 @@ describe('HttpContactGateway', () => {
         email: 'test@example.com',
         subject: 'Hello',
         message: 'Hi there',
+        website: '',
       };
 
       const promise = firstValueFrom(gateway.submitContactForm(data));
