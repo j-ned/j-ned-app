@@ -1,0 +1,82 @@
+name: Accessibilité
+
+# Audit axe hors des pull requests : chaque lundi sur master, et à la demande (bouton « Run
+# workflow »). En local avant une PR qui touche l'interface : voir CLAUDE.md, « Audit axe ».
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  a11y:
+    name: Axe (WCAG 2.0/2.1/2.2 A et AA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Les tests Playwright lisent leurs dépendances dans node_modules, monté dans le conteneur.
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      # Navigateur et bibliothèques système déjà dans l'image officielle, à la version du paquet.
+      - name: Pull Playwright image (background)
+        run: |
+          version=$(node -p "require('./node_modules/@playwright/test/package.json').version")
+          echo "PLAYWRIGHT_IMAGE=mcr.microsoft.com/playwright:v${version}-noble" >> "$GITHUB_ENV"
+          nohup docker pull "mcr.microsoft.com/playwright:v${version}-noble" > /tmp/playwright-pull.log 2>&1 &
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ng-portfolio-app:a11y
+          cache-from: type=gha
+
+      - name: Start stack (image + API stub)
+        run: ci/a11y-stack.sh up ng-portfolio-app:a11y
+
+      - name: Audit axe
+        run: |
+          docker pull -q "$PLAYWRIGHT_IMAGE"
+          docker run --rm --network host --ipc host -e CI=1 \
+            -v "$PWD:/work" -w /work "$PLAYWRIGHT_IMAGE" \
+            node_modules/.bin/playwright test -c e2e/playwright.config.ts
+
+      - name: Container logs
+        if: failure()
+        run: |
+          docker logs a11y-api-stub || true
+          docker logs a11y-portfolio || true
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: a11y-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      - name: Stop stack
+        if: always()
+        run: ci/a11y-stack.sh down

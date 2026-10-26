@@ -451,8 +451,10 @@ pnpm ng generate            # Schematics
 pnpm install --frozen-lockfile                 # echoue si le lockfile est incoherent
 pnpm run build --configuration production      # sitemap + rss + build SSR + prerender
 docker build -t ng-portfolio-app:local .       # exactement ce que Dokploy execute
+docker buildx bake ci                          # replique exacte de la CI : etage test + image, en parallele
 
-# Audit axe (job CI `a11y`, requis : WCAG 2.0/2.1/2.2 A et AA, zero violation, ADR-0025)
+# Audit axe (WCAG 2.0/2.1/2.2 A et AA, zero violation, ADR-0025) : hors PR depuis le 2026-10-26,
+# workflow `a11y.yml` chaque lundi + a la demande ; en local avant une PR qui touche l'interface
 pnpm exec playwright install --only-shell chromium   # une fois
 docker build -t ng-portfolio-app:a11y . && ci/a11y-stack.sh up
 pnpm a11y                                           # rapport : pnpm exec playwright show-report

@@ -103,3 +103,14 @@ Faits vérifiés le 2026-10-11 :
 - **Cache du navigateur en CI** : déconseillé par la doc Playwright ; l'image officielle
   `mcr.microsoft.com/playwright` en conteneur de job éviterait le téléchargement mais ne peut pas
   lancer `docker run` pour la pile sans Docker-in-Docker. Rejeté.
+
+## Amendement (2026-10-26) : l'audit sort des pull requests
+
+Décision du propriétaire, pour une CI minimale à l'échelle du projet : l'audit axe (zéro violation,
+WCAG 2.0/2.1/2.2 A et AA, navigateur réel contre l'image) n'est plus un check de pull request. Il
+tourne dans le workflow `a11y.yml`, **chaque lundi sur master et à la demande**, dans l'image
+officielle Playwright (ni `apt-get` ni téléchargement de Chromium). Avant une PR qui touche
+l'interface, il se lance en local (`CLAUDE.md`, « Audit axe »). Le seuil et la politique d'audit
+ne changent pas ; seul le moment change. Contrepartie acceptée : une régression d'accessibilité
+peut atteindre la production avant le run hebdomadaire.
+

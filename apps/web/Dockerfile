@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
 # ==============================================================================
-# Stage 1 — Build : Angular (rendu serveur à la requête, prérendu des pages statiques, CSR)
+# Stage 1 — Sources et dépendances, partagées par le build et les tests
 # ==============================================================================
-FROM node:22-alpine AS build
+FROM node:22-alpine AS source
 
 RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
 
@@ -14,13 +14,32 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
 COPY . .
+
+# ==============================================================================
+# Stage 2 — Build : Angular (rendu serveur à la requête, prérendu des pages statiques, CSR)
+# ==============================================================================
+FROM source AS build
+
 RUN pnpm run build --configuration production \
  && test -f dist/angular-portfolio-app/browser/index.csr.html \
  && test -f dist/angular-portfolio-app/server/server.mjs \
  && test -f dist/angular-portfolio-app/server/csp-manifest.json
 
 # ==============================================================================
-# Stage 2 — Dépendances d'exécution du bundle serveur : `jsdom` est externe
+# Étage de tests, construit par la CI seulement (`--target test`) : l'image de production n'en
+# dépend pas, BuildKit ne le construit donc pas au déploiement. Même Node que la production.
+# ==============================================================================
+FROM source AS test
+
+ENV CI=1
+RUN pnpm lint \
+ && pnpm run format:check \
+ && pnpm icons:check \
+ && pnpm a11y:typecheck \
+ && pnpm test
+
+# ==============================================================================
+# Stage 3 — Dépendances d'exécution du bundle serveur : `jsdom` est externe
 # (`externalDependencies` d'angular.json), importé par le rendu des articles.
 # ==============================================================================
 FROM node:22-alpine AS deps
@@ -34,7 +53,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --prod --frozen-lockfile --ignore-scripts
 
 # ==============================================================================
-# Stage 3 — Runtime : nginx devant Node, dans la même image (HTML rendu et chunks hachés sortent
+# Stage 4 — Runtime : nginx devant Node, dans la même image (HTML rendu et chunks hachés sortent
 # du même build). nginx sert les fichiers (chunks, prérendu des pages statiques, coquille CSR),
 # relaie /api/storage/ et /api/analytics/track à l'API, et ne transmet à Node (127.0.0.1:4000)
 # que la liste fermée des routes de contenu, rendues à chaque requête depuis l'API.
@@ -48,6 +67,8 @@ RUN apk add --no-cache libstdc++ su-exec \
  && adduser -S -D -H -s /sbin/nologin ssr \
  && node --version
 
+# L'image nginx livre sa page d'accueil et une page 50x : retirées, seul le build est servi.
+RUN rm -rf /usr/share/nginx/html/*
 COPY --from=build /app/dist/angular-portfolio-app/browser /usr/share/nginx/html
 COPY --from=build /app/dist/angular-portfolio-app/server /app/server
 COPY --from=deps /app/node_modules /app/node_modules

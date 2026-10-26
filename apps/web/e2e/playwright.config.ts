@@ -7,7 +7,7 @@ export default defineConfig({
   outputDir: '../test-results',
   forbidOnly: CI,
   retries: 0,
-  workers: CI ? 2 : undefined,
+  workers: CI ? 4 : undefined,
   reporter: [['list'], ['html', { open: 'never', outputFolder: '../playwright-report' }]],
   use: {
     baseURL: process.env['A11Y_BASE_URL'] ?? 'http://127.0.0.1:3000',
