@@ -41,4 +41,35 @@ describe('Workshop', () => {
     expect(host.querySelectorAll('main, header, footer')).toHaveLength(0);
     expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pt-20']);
   });
+
+  it('Given the workshop tools When the page is rendered Then a section is named by its h2, the tools heading', async () => {
+    const host = await renderWorkshop();
+    const section = host.querySelector('[data-testid="workshop-tools"]');
+    const labelId = section?.getAttribute('aria-labelledby') ?? '';
+    const label = labelId === '' ? null : host.querySelector(`[id="${labelId}"]`);
+
+    expect([section?.tagName, label?.tagName, collapsed(label)]).toEqual([
+      'SECTION',
+      'H2',
+      WORKSHOP_SPACE.toolsHeading,
+    ]);
+  });
+
+  it('Given the workshop tools When the page is rendered Then each tool is a card link to its path, with its overline, title and summary', async () => {
+    const host = await renderWorkshop();
+
+    expect(
+      [...host.querySelectorAll('[data-testid="workshop-tool-card"]')].map((card) => [
+        card.tagName,
+        card.getAttribute('href'),
+        [...card.children].map(collapsed),
+      ]),
+    ).toEqual(
+      WORKSHOP_SPACE.tools.map((tool) => [
+        'A',
+        tool.path,
+        [tool.overline, tool.title, tool.summary],
+      ]),
+    );
+  });
 });

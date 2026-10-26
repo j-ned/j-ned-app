@@ -45,6 +45,19 @@ class AlignedHost {
 })
 class DefaultHost {}
 
+@Component({
+  imports: [LinkCard, RouterLink],
+  template: `<a
+    app-link-card
+    data-testid="card"
+    routerLink="/atelier/plaquettes"
+    overline="Outil"
+    heading="Guide des plaquettes"
+    summary="Choisis ta matière et ton opération."
+  ></a>`,
+})
+class SummaryHost {}
+
 const render = async <T>(host: new () => T): Promise<ComponentFixture<T>> => {
   TestBed.configureTestingModule({ providers: [provideRouter([])] });
   const fixture = TestBed.createComponent(host);
@@ -73,6 +86,18 @@ describe('LinkCard', () => {
       tag: 'A',
       href: '/projects/dashflow',
       lines: ['Fiche du projet', 'DashFlow'],
+    });
+  });
+
+  it('Given a summary When the card renders Then the link reads the overline, the heading, then the summary in muted text', async () => {
+    const card = cardOf(await render(SummaryHost));
+
+    expect({
+      lines: linesOf(card),
+      summaryMuted: card.children[2]?.classList.contains('text-muted'),
+    }).toEqual({
+      lines: ['Outil', 'Guide des plaquettes', 'Choisis ta matière et ton opération.'],
+      summaryMuted: true,
     });
   });
 

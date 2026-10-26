@@ -13,10 +13,14 @@ import { Component, input } from '@angular/core';
       class="text-[1.1875rem] font-semibold tracking-tight transition-colors group-hover:text-primary"
       >{{ heading() }}</span
     >
+    @if (summary(); as summary) {
+      <span class="text-muted">{{ summary }}</span>
+    }
   `,
 })
 export class LinkCard {
   readonly overline = input.required<string>();
   readonly heading = input.required<string>();
+  readonly summary = input<string>();
   readonly align = input<'start' | 'end'>('start');
 }

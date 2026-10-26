@@ -1,8 +1,6 @@
 import type { Material } from './material.model';
 import type { Operation, OperationId } from './operation.model';
-import type { Sourced } from './source.model';
-
-type IsoDesignatedOperation = Extract<OperationId, `external-${string}` | `internal-${string}`>;
+import type { SourceCitation, Sourced } from './source.model';
 
 type IsoDesignationField = Sourced<{
   readonly field: string;
@@ -10,9 +8,27 @@ type IsoDesignationField = Sourced<{
   readonly meaning: string;
 }>;
 
-export type IsoInsertDesignation = {
-  readonly kind: 'iso-1832';
+export type ExternalSituation =
+  | 'external-shoulder'
+  | 'external-no-shoulder'
+  | 'external-profiling'
+  | 'external-steep-profiling'
+  | 'external-facing';
+
+export type InternalSituation =
+  'internal-shoulder' | 'internal-stronger-edge' | 'internal-no-shoulder' | 'internal-profiling';
+
+export type InsertSituation = ExternalSituation | InternalSituation;
+
+export type IsoInsertProposal<S extends InsertSituation = InsertSituation> = {
+  readonly situation: S;
+  readonly choice: readonly [SourceCitation, ...SourceCitation[]];
   readonly fields: readonly [IsoDesignationField, ...IsoDesignationField[]];
+};
+
+export type IsoInsertDesignation<S extends InsertSituation = InsertSituation> = {
+  readonly kind: 'iso-1832';
+  readonly proposals: readonly [IsoInsertProposal<S>, ...IsoInsertProposal<S>[]];
 };
 
 type InsertAspect = 'width' | 'profile' | 'edge-count' | 'clamping';
@@ -24,9 +40,11 @@ export type DescribedInsert = {
   readonly aspects: readonly [DescribedAspect, ...DescribedAspect[]];
 };
 
-export type InsertFor<O extends OperationId> = O extends IsoDesignatedOperation
-  ? IsoInsertDesignation
-  : DescribedInsert;
+export type InsertFor<O extends OperationId> = O extends `external-${string}`
+  ? IsoInsertDesignation<ExternalSituation>
+  : O extends `internal-${string}`
+    ? IsoInsertDesignation<InternalSituation>
+    : DescribedInsert;
 
 export type CuttingSpeedRange = {
   readonly min: number;
@@ -39,7 +57,7 @@ export type RecommendationEntry = {
     readonly operation: O;
     readonly materials: readonly [string, ...string[]];
     readonly insert: InsertFor<O>;
-    readonly geometry: Sourced<string>;
+    readonly geometry: readonly [Sourced<string>, ...Sourced<string>[]];
     readonly grade: Sourced<string>;
     readonly cuttingSpeed?: Sourced<CuttingSpeedRange>;
     readonly pitfalls: readonly Sourced<string>[];

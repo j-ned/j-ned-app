@@ -38,4 +38,33 @@ describe('nginx configuration', () => {
       expect(DOCKERFILE).not.toMatch(/location ~ "?\^\/rendez-vous\/annulation/);
     });
   });
+
+  describe('routes rendered on request', () => {
+    const SSR_LOCATION = /location ~ "?(\^\/\(about[^\s"]*)"? \{/;
+    const relayed = (path: string): boolean => {
+      const pattern = SSR_LOCATION.exec(DOCKERFILE)?.[1];
+      return pattern !== undefined && new RegExp(pattern).test(path);
+    };
+
+    it.each([
+      '/',
+      '/about',
+      '/projects/dashflow',
+      '/blog/article',
+      '/atelier/plaquettes',
+      '/atelier/plaquettes/',
+    ])('relays %s to Node', (path) => {
+      expect(relayed(path)).toBe(true);
+    });
+
+    it.each([
+      '/atelier',
+      '/atelier/',
+      '/atelier/autre',
+      '/atelier/plaquettes/autre',
+      '/wp-login.php',
+    ])('keeps %s away from Node', (path) => {
+      expect(relayed(path)).toBe(false);
+    });
+  });
 });

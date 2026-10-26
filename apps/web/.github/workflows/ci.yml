@@ -70,6 +70,8 @@ jobs:
           # Pages statiques prérendues (offres et rendez-vous retirés, spec 029 : aucun fichier ne doit rester)
           test -f $browser/mentions-legales/index.html && test -f $browser/confidentialite/index.html
           test -f $browser/atelier/index.html
+          # Guide des plaquettes rendu à la requête : son affichage dépend de la query string
+          test ! -f $browser/atelier/plaquettes/index.html
           test ! -e $browser/offres && test ! -e $browser/rendez-vous
           # postbuild : la CSP des pages prérendues est hachée par page, plus d'unsafe-inline.
           ! grep -l -E "(script|style)-src [^;]*'unsafe-inline'" $(find $browser -name index.html -o -name index.csr.html) || { echo "unsafe-inline dans une page prérendue"; exit 1; }
@@ -145,6 +147,10 @@ jobs:
           curl -fsS -D /tmp/atelier-headers.txt http://127.0.0.1:3000/atelier/ -o /tmp/atelier.html
           grep -q 'data-testid="workshop-title"' /tmp/atelier.html || { echo "titre absent : /atelier/"; exit 1; }
           ! grep -qi '^x-cache-status' /tmp/atelier-headers.txt || { echo "/atelier/ rendu par Node"; exit 1; }
+          # Guide des plaquettes : relayé à Node par nginx, avec le micro-cache
+          curl -fsS -D /tmp/guide-headers.txt 'http://127.0.0.1:3000/atelier/plaquettes?matiere=inconnue' -o /tmp/guide.html
+          grep -q 'data-testid="insert-guide-title"' /tmp/guide.html || { echo "titre absent : /atelier/plaquettes"; exit 1; }
+          grep -qi '^x-cache-status' /tmp/guide-headers.txt || { echo "/atelier/plaquettes non rendu par Node"; exit 1; }
           # Chaque route rendue à la requête lit la doublure et embarque l'état de transfert
           for path in / /projects /projects/projet-temoin /blog /blog/article-temoin; do
             curl -fsS "http://127.0.0.1:3000$path" -o /tmp/ssr.html
@@ -157,7 +163,7 @@ jobs:
           grep -q 'data-testid="journey-paragraph"' /tmp/about-ssr.html || { echo "parcours absent : /about"; exit 1; }
           grep -q '"leadEmphasis"' /tmp/about-ssr.html || { echo "document /api/profile absent de l'état de transfert"; exit 1; }
           # CSP des pages rendues à la requête : une seule meta, hachée, sans unsafe-inline ; HTML revalidé
-          for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin; do
+          for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin /atelier/plaquettes; do
             curl -fsS -D /tmp/ssr-headers.txt "http://127.0.0.1:3000$path" -o /tmp/ssr.html
             test "$(grep -o 'http-equiv="Content-Security-Policy"' /tmp/ssr.html | wc -l)" = "1" || { echo "meta CSP absente ou dupliquée : $path"; exit 1; }
             ! grep -qE "(script|style)-src [^;]*'unsafe-inline'" /tmp/ssr.html || { echo "unsafe-inline : $path"; exit 1; }

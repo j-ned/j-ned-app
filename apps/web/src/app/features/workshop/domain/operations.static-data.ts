@@ -35,7 +35,7 @@ export const OPERATION_FAMILIES: readonly OperationFamily[] = [
     id: 'drilling',
     label: 'Perçage',
     operations: [
-      { id: 'insert-drilling', slug: 'percage', label: 'Perçage au foret à plaquettes' },
+      { id: 'insert-drilling', slug: 'percage-plaquettes', label: 'Perçage au foret à plaquettes' },
     ],
   },
 ];

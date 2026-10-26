@@ -11,6 +11,9 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'blog', renderMode: RenderMode.Server },
   { path: 'blog/:slug', renderMode: RenderMode.Server },
 
+  // Contenu écrit dans le code dont l'affichage dépend de la query string : rendu à chaque requête
+  { path: 'atelier/plaquettes', renderMode: RenderMode.Server },
+
   // Contenu écrit dans le code : prérendu au build
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },
   { path: 'confidentialite', renderMode: RenderMode.Prerender },

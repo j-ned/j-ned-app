@@ -31,14 +31,14 @@ const GROOVING = anOperation('grooving', { slug: 'operation-fictive-b' });
 
 const ALPHA_FINISHING = aRecommendation('external-finishing', {
   materials: ['alliage-essai-alpha'],
-  geometry: aSourced('Géométrie fictive Alpha.'),
+  geometry: [aSourced('Géométrie fictive Alpha.')],
 });
 const ALPHA_GAMMA_GROOVING = aRecommendation('grooving', {
   materials: ['alliage-essai-alpha', 'alliage-essai-gamma'],
 });
 const GAMMA_FINISHING = aRecommendation('external-finishing', {
   materials: ['alliage-essai-gamma'],
-  geometry: aSourced('Géométrie fictive Gamma.'),
+  geometry: [aSourced('Géométrie fictive Gamma.')],
 });
 const RECOMMENDATIONS = [ALPHA_FINISHING, ALPHA_GAMMA_GROOVING, GAMMA_FINISHING];
 

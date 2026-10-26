@@ -6,4 +6,15 @@ export const WORKSHOP_SPACE: WorkshopSpace = {
     "À l'atelier comme dans le code, une règle tient tout : une pièce hors tolérance ne part pas.",
     "Cet espace rassemble ce que j'apprends derrière mon tour CN, mis en forme en outils et en fiches que tu peux utiliser. Que tu sois dev curieux ou usineur qui débute, prends ce qui te sert.",
   ],
+  toolsHeading: 'Les outils',
+  tools: [
+    {
+      id: 'insert-guide',
+      overline: 'Outil',
+      title: 'Guide des plaquettes',
+      summary:
+        "Choisis ta matière et ton opération\u00a0: le guide t'indique le type de plaquette à prendre.",
+      path: '/atelier/plaquettes',
+    },
+  ],
 };

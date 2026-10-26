@@ -18,4 +18,21 @@ describe('WORKSHOP_SPACE', () => {
       ),
     ).toEqual([]);
   });
+
+  it('Given the workshop space When its tools section is read Then it is titled « Les outils »', () => {
+    expect(WORKSHOP_SPACE.toolsHeading).toBe('Les outils');
+  });
+
+  it('Given the workshop space When its tools are read Then the insert guide card carries the validated overline, title and summary', () => {
+    expect(WORKSHOP_SPACE.tools).toEqual([
+      {
+        id: 'insert-guide',
+        overline: 'Outil',
+        title: 'Guide des plaquettes',
+        summary:
+          "Choisis ta matière et ton opération\u00a0: le guide t'indique le type de plaquette à prendre.",
+        path: '/atelier/plaquettes',
+      },
+    ]);
+  });
 });

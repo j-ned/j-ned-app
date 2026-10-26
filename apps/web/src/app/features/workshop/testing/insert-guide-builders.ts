@@ -2,7 +2,6 @@ import type {
   Designation,
   DesignationSystem,
   IsoGroup,
-  IsoGroupColor,
   IsoGroupLetter,
   Material,
 } from '../domain/models/material.model';
@@ -11,14 +10,15 @@ import type { Operation, OperationFamily, OperationId } from '../domain/models/o
 import type {
   DescribedInsert,
   InsertFor,
+  InsertSituation,
   IsoInsertDesignation,
+  IsoInsertProposal,
   RecommendationEntry,
 } from '../domain/models/recommendation.model';
 import type { Source, SourceCitation, SourceId, Sourced } from '../domain/models/source.model';
 
-// Fictional ids stay assignable whatever the real closed unions list.
+// A fictional id stays assignable whatever the real closed union lists.
 const FICTIONAL_SOURCE_ID = 'source-fictive' as string as SourceId;
-const FICTIONAL_COLOR = 'couleur-fictive' as string as IsoGroupColor;
 
 export function aSource(overrides: Partial<Source> = {}): Source {
   return {
@@ -34,6 +34,7 @@ export function aCitation(overrides: Partial<SourceCitation> = {}): SourceCitati
   return {
     source: FICTIONAL_SOURCE_ID,
     locator: 'fixture',
+    basis: 'stated',
     ...overrides,
   };
 }
@@ -54,6 +55,7 @@ export function aMaterial(overrides: Partial<Material> = {}): Material {
     slug: 'matiere-fictive',
     designations: [aDesignation('Matière fictive'), aDesignation('ZZ-FICTIF-0', 'en-symbol')],
     isoGroup: aSourced('P'),
+    subgroup: 'non-alloyed-steel',
     behaviour: [aSourced('Comportement fictif à la coupe.')],
     ...overrides,
   };
@@ -63,8 +65,18 @@ export function anIsoGroup(letter: IsoGroupLetter, overrides: Partial<IsoGroup> 
   return {
     letter,
     name: aSourced(`Groupe fictif ${letter}`),
-    color: aSourced(FICTIONAL_COLOR),
     ...overrides,
+  };
+}
+
+export function anIsoGroupCatalogue(): InsertGuideReference['isoGroups'] {
+  return {
+    P: anIsoGroup('P'),
+    M: anIsoGroup('M'),
+    K: anIsoGroup('K'),
+    N: anIsoGroup('N'),
+    S: anIsoGroup('S'),
+    H: anIsoGroup('H'),
   };
 }
 
@@ -81,11 +93,31 @@ export function anOperationFamily(overrides: Partial<OperationFamily> = {}): Ope
   };
 }
 
-export function anIsoInsert(): IsoInsertDesignation {
+export function anIsoInsertField(
+  field: string,
+  code: string,
+  meaning: string,
+  cite: SourceCitation = aCitation(),
+): IsoInsertProposal['fields'][number] {
+  return { value: { field, code, meaning }, cite };
+}
+
+export function anIsoInsertProposal<S extends InsertSituation = 'external-shoulder'>(
+  overrides: Partial<IsoInsertProposal<S>> = {},
+): IsoInsertProposal<S> {
   return {
-    kind: 'iso-1832',
+    situation: 'external-shoulder' as S,
+    choice: [aCitation()],
     fields: [aSourced({ field: 'Champ fictif', code: 'Z', meaning: 'Signification fictive' })],
+    ...overrides,
   };
+}
+
+export function anIsoInsert<S extends InsertSituation = 'external-shoulder'>(
+  ...proposals: readonly IsoInsertProposal<S>[]
+): IsoInsertDesignation<S> {
+  const [first = anIsoInsertProposal<S>(), ...others] = proposals;
+  return { kind: 'iso-1832', proposals: [first, ...others] };
 }
 
 export function aDescribedInsert(): DescribedInsert {
@@ -105,12 +137,16 @@ export function aRecommendation<O extends OperationId>(
   operation: O,
   overrides: Partial<EntryCommon & { readonly insert: InsertFor<O> }> = {},
 ): RecommendationFor<O> {
-  const insert = ISO_DESIGNATED_OPERATION.test(operation) ? anIsoInsert() : aDescribedInsert();
+  const insert = operation.startsWith('internal-')
+    ? anIsoInsert(anIsoInsertProposal({ situation: 'internal-shoulder' }))
+    : ISO_DESIGNATED_OPERATION.test(operation)
+      ? anIsoInsert()
+      : aDescribedInsert();
   return {
     operation,
     materials: ['matiere-fictive'],
     insert: insert as InsertFor<O>,
-    geometry: aSourced('Géométrie fictive.'),
+    geometry: [aSourced('Géométrie fictive.')],
     grade: aSourced('Nuance fictive.'),
     pitfalls: [aSourced('Piège fictif.')],
     ...overrides,
@@ -119,18 +155,41 @@ export function aRecommendation<O extends OperationId>(
 
 export function aReference(overrides: Partial<InsertGuideReference> = {}): InsertGuideReference {
   return {
-    sources: {} as InsertGuideReference['sources'],
-    isoGroups: {
-      P: anIsoGroup('P'),
-      M: anIsoGroup('M'),
-      K: anIsoGroup('K'),
-      N: anIsoGroup('N'),
-      S: anIsoGroup('S'),
-      H: anIsoGroup('H'),
-    },
+    sources: { [FICTIONAL_SOURCE_ID]: aSource() } as InsertGuideReference['sources'],
+    isoGroups: anIsoGroupCatalogue(),
     families: [anOperationFamily()],
     materials: [aMaterial()],
     recommendations: [],
     ...overrides,
   };
+}
+
+export function aMaterialCatalogue(): readonly [Material, Material, Material] {
+  return [
+    aMaterial({
+      slug: 'alliage-essai-alpha',
+      designations: [
+        aDesignation('Alliage essai Alpha'),
+        aDesignation('ZZ-FICTIF-1', 'en-symbol'),
+        aDesignation('TEST-001', 'aisi'),
+      ],
+      isoGroup: aSourced('P'),
+      behaviour: [aSourced('Comportement fictif Alpha.'), aSourced('Second trait fictif Alpha.')],
+    }),
+    aMaterial({
+      slug: 'alliage-essai-beta',
+      designations: [aDesignation('Alliage essai Bêta'), aDesignation('ZZ-FICTIF-2', 'en-symbol')],
+      isoGroup: aSourced('M'),
+      behaviour: [aSourced('Comportement fictif Bêta.')],
+    }),
+    aMaterial({
+      slug: 'alliage-essai-gamma',
+      designations: [
+        aDesignation('Alliage essai Gamma'),
+        aDesignation('TEST-002', 'material-number'),
+      ],
+      isoGroup: aSourced('K'),
+      behaviour: [aSourced('Comportement fictif Gamma.')],
+    }),
+  ];
 }

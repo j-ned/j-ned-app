@@ -12,13 +12,17 @@ describe('serverRoutes', () => {
     expect(findRoute(path)?.renderMode).toBe(RenderMode.Server);
   });
 
+  it('renders the insert guide on each request, so that the served HTML shows the requested choice', () => {
+    expect(findRoute('atelier/plaquettes')?.renderMode).toBe(RenderMode.Server);
+  });
+
   // nginx ne relaie à Node qu'une liste fermée de chemins : toute autre route serveur répondrait 404.
-  it('renders on request exactly the content routes and nothing else', () => {
+  it('renders on request exactly the routes nginx relays to Node', () => {
     const serverRendered = serverRoutes
       .filter((route) => route.renderMode === RenderMode.Server)
       .map((route) => route.path);
 
-    expect([...serverRendered].sort()).toEqual([...CONTENT_ROUTES].sort());
+    expect([...serverRendered].sort()).toEqual([...CONTENT_ROUTES, 'atelier/plaquettes'].sort());
   });
 
   it.each(['mentions-legales', 'confidentialite', 'atelier'])(
