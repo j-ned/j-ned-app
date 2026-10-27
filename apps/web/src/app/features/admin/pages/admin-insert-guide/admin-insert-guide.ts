@@ -57,7 +57,11 @@ const CONFLICT_MESSAGE =
       (leaveAnswered)="draft.leave.answer($event)"
     >
       <ng-template #editorForm>
-        <app-admin-insert-guide-form [(value)]="draft.value" (submitted)="save($event)" />
+        <app-admin-insert-guide-form
+          [(value)]="draft.value"
+          [savedEntries]="draft.saved()?.entries ?? []"
+          (submitted)="save($event)"
+        />
         <app-admin-save-bar
           class="mt-10"
           formId="insert-guide-form"

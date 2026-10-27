@@ -38,6 +38,19 @@ for (const theme of THEMES) {
       });
     });
 
+    test('atelier: guide-plaquettes material field with open suggestions has no WCAG A/AA violation', async ({
+      page,
+      visit,
+      expectNoA11yViolations,
+    }) => {
+      await visit('/atelier/plaquettes');
+      const field = page.getByRole('combobox', { name: 'Matière' });
+      await field.fill('tém');
+      await expect(page.getByRole('listbox', { name: 'Matières du guide' })).toBeVisible();
+      await field.press('ArrowDown');
+      await expectNoA11yViolations('suggest-listbox', 'matieres-suggerees');
+    });
+
     test.describe('admin', () => {
       test.use({ adminSession: true });
 

@@ -2,6 +2,7 @@ export const INSERT_DECODER_COPY = {
   heading: 'Décodeur de plaquette',
   lead: "Tape le code ISO d'une plaquette de tournage\u00a0: je t'explique chaque lettre et chaque chiffre, position par position.",
   codeLabel: 'Code de plaquette',
+  codeListLabel: 'Codes du guide',
   codeHint:
     'Majuscules, espaces et tirets au choix\u00a0: CNMG 120408, cnmg120408, CNMG 120408-PM.',
   submit: 'Décoder',

@@ -5,6 +5,7 @@ import {
   afterNextRender,
   computed,
   inject,
+  input,
   model,
   output,
   viewChild,
@@ -18,8 +19,12 @@ import {
   validate,
   type FieldContext,
 } from '@angular/forms/signals';
-import type { InsertGuide } from '@features/workshop/domain/models/insert-guide.model';
+import type {
+  InsertGuide,
+  InsertGuideEntry,
+} from '@features/workshop/domain/models/insert-guide.model';
 import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
+import { distinctSuggestions } from '@shared/search/suggestion-search';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
@@ -132,6 +137,8 @@ function radiusError({ value }: FieldContext<number | null>): TextError {
             app-admin-insert-guide-row
             [entry]="line.field"
             [rank]="index + 1"
+            [materialSuggestions]="materialSuggestions()"
+            [insertSuggestions]="insertSuggestions()"
             (removed)="removeRow(index)"
           ></fieldset>
         }
@@ -160,6 +167,8 @@ export class AdminInsertGuideForm {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly value = model.required<InsertGuideDraft>();
+  /** Lignes lues dans l'API : leurs valeurs restent proposées même modifiées dans le brouillon. */
+  readonly savedEntries = input<readonly InsertGuideEntry[]>([]);
   readonly submitted = output<InsertGuide>();
 
   private readonly addButton = viewChild.required<ElementRef<HTMLButtonElement>>('addButton');
@@ -188,6 +197,19 @@ export class AdminInsertGuideForm {
         onInvalid: (field) => focusFirstInvalid(field),
       },
     },
+  );
+
+  protected readonly materialSuggestions = computed(() =>
+    distinctSuggestions([
+      ...this.savedEntries().map(({ material }) => material),
+      ...this.value().entries.map(({ material }) => material),
+    ]),
+  );
+  protected readonly insertSuggestions = computed(() =>
+    distinctSuggestions([
+      ...this.savedEntries().map(({ insert }) => insert),
+      ...this.value().entries.map(({ insert }) => insert),
+    ]),
   );
 
   protected readonly lines = computed(() =>

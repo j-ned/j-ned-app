@@ -1,10 +1,12 @@
 import { Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { FormField, FormRoot, form } from '@angular/forms/signals';
+import { FormField, FormRoot, form, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 import { injectMarkNotFound, injectMarkUnavailable } from '@core/ssr/response-status';
+import { distinctSuggestions } from '@shared/search/suggestion-search';
 import { Button } from '@shared/ui/button';
+import { SuggestInput } from '@shared/ui/suggest-input';
 import { PageNotFound } from '../../../../pages/page-not-found';
 import { insertCodeErrorMessage } from '../../application/insert-code-error-message';
 import { INSERT_DECODER_COPY } from '../../application/insert-decoder-copy';
@@ -16,7 +18,7 @@ const HINT_ID = 'insert-decoder-hint';
 
 @Component({
   selector: 'app-insert-decoder',
-  imports: [PageNotFound, FormRoot, FormField, Button],
+  imports: [PageNotFound, FormRoot, FormField, Button, SuggestInput],
   host: { class: 'block', '[class.min-h-svh]': '!notFound()', '[class.pt-20]': '!notFound()' },
   template: `
     @if (notFound()) {
@@ -44,17 +46,17 @@ const HINT_ID = 'insert-decoder-hint';
         >
           <div class="min-w-0">
             <label for="insert-decoder-code" class="form-label">{{ copy.codeLabel }}</label>
-            <input
-              id="insert-decoder-code"
-              data-testid="insert-decoder-code"
-              type="text"
-              [formField]="codeForm"
-              autocomplete="off"
+            <app-suggest-input
+              inputId="insert-decoder-code"
+              inputTestId="insert-decoder-code"
+              inputClass="font-mono"
               autocapitalize="characters"
-              spellcheck="false"
-              [attr.aria-invalid]="error() ? 'true' : null"
-              [attr.aria-describedby]="describedBy()"
-              class="form-input font-mono"
+              [formField]="codeForm"
+              [suggestions]="codes()"
+              [listLabel]="copy.codeListLabel"
+              [markedInvalid]="error() !== undefined"
+              [describedBy]="describedBy()"
+              (picked)="decodePicked()"
             />
             <p [id]="hintId" class="mt-1.5 text-sm text-muted">{{ copy.codeHint }}</p>
           </div>
@@ -159,6 +161,11 @@ export class InsertDecoder {
   protected readonly notFound = computed(
     () => this._guideResource.hasValue() && !this._guideResource.value().decoderEnabled,
   );
+  protected readonly codes = computed(() =>
+    this._guideResource.hasValue()
+      ? distinctSuggestions(this._guideResource.value().entries.map(({ insert }) => insert))
+      : [],
+  );
 
   private readonly _decoding = computed(() => {
     const code = this.code();
@@ -186,6 +193,10 @@ export class InsertDecoder {
     name: 'code',
     submission: { action: async (field) => this.showDecoding(field().value()) },
   });
+
+  protected decodePicked(): void {
+    void submit(this.codeForm);
+  }
 
   private async showDecoding(raw: string): Promise<void> {
     const code = normalizeInsertCode(raw);

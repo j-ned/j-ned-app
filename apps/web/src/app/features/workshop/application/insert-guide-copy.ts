@@ -4,7 +4,9 @@ export const INSERT_GUIDE_COPY = {
   disclaimer:
     "Ce sont mes choix à l'atelier, sur ma machine\u00a0: adapte-les à ta machine, à ta pièce et au catalogue de ton fournisseur.",
   materialLabel: 'Matière',
-  materialPlaceholder: 'Choisis une matière',
+  materialHint: 'Tape quelques lettres de ta matière, puis choisis-la dans la liste.',
+  materialListLabel: 'Matières du guide',
+  noMaterial: 'Aucune matière',
   empty: 'Guide en cours de remplissage.',
   columns: {
     operation: 'Opération',

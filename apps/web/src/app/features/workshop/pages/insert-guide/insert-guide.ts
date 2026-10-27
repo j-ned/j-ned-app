@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { tap } from 'rxjs';
 import { injectMarkNotFound, injectMarkUnavailable } from '@core/ssr/response-status';
+import { SuggestInput } from '@shared/ui/suggest-input';
 import { PageNotFound } from '../../../../pages/page-not-found';
 import { INSERT_GUIDE_COPY } from '../../application/insert-guide-copy';
 import { noseRadiusLabel } from '../../application/nose-radius-label';
@@ -12,7 +13,7 @@ import { HttpInsertGuideGateway } from '../../infra/gateways/http-insert-guide.g
 
 @Component({
   selector: 'app-insert-guide',
-  imports: [PageNotFound, RouterLink],
+  imports: [PageNotFound, RouterLink, SuggestInput],
   host: { class: 'block', '[class.min-h-svh]': '!notFound()', '[class.pt-20]': '!notFound()' },
   template: `
     @if (notFound()) {
@@ -42,31 +43,18 @@ import { HttpInsertGuideGateway } from '../../infra/gateways/http-insert-guide.g
               <label for="insert-guide-material" class="field-label">{{
                 copy.materialLabel
               }}</label>
-              <select
-                #materialSelect
-                id="insert-guide-material"
-                data-testid="insert-guide-material"
-                class="app-select w-full"
-                (change)="chooseMaterial(materialSelect.value)"
-              >
-                <!-- [selected] sélectionne dans le navigateur, [attr.selected] dans le HTML rendu par le serveur -->
-                <option
-                  value=""
-                  [selected]="material() === ''"
-                  [attr.selected]="material() === '' ? '' : null"
-                >
-                  {{ copy.materialPlaceholder }}
-                </option>
-                @for (name of materials(); track name) {
-                  <option
-                    [value]="name"
-                    [selected]="name === material()"
-                    [attr.selected]="name === material() ? '' : null"
-                  >
-                    {{ name }}
-                  </option>
-                }
-              </select>
+              <app-suggest-input
+                inputId="insert-guide-material"
+                inputTestId="insert-guide-material"
+                mode="restricted"
+                describedBy="insert-guide-material-hint"
+                [suggestions]="materials()"
+                [listLabel]="copy.materialListLabel"
+                [noMatchLabel]="copy.noMaterial"
+                [value]="material()"
+                (valueChange)="chooseMaterial($event)"
+              />
+              <p id="insert-guide-material-hint" class="field-hint">{{ copy.materialHint }}</p>
             </div>
             @if (material() !== '') {
               <div

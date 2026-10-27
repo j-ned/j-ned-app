@@ -101,10 +101,29 @@ PR empilée).
 2. **Opérations** : la liste fermée ci-dessus, en attendant un ajout de Julien.
 3. **Rayon** : saisi et affiché en mm (0,4 / 0,8 / 1,2).
 
+### Recherche avec suggestions (2026-10-27)
+
+Demande de Julien : « quand je tape une lettre, avoir des propositions de ce que j'ai renseigné
+depuis l'admin ». Un seul composant `shared/ui/suggest-input.ts` (combobox ARIA 1.2 en liste,
+`FormValueControl<string>`), recherche dans `shared/search/suggestion-search.ts` : casse, accents,
+espaces et tirets ignorés, celles qui commencent par la saisie avant celles qui la contiennent.
+
+1. **Guide** : la liste déroulante des matières devient un champ en liste fermée ; un choix met à
+   jour `?matiere=` (`replaceUrl`), une saisie sans correspondance dit « Aucune matière », le HTML
+   serveur porte la matière de l'URL dans `value`.
+2. **Décodeur** : le champ code propose les codes du guide, une fois chacun ; le texte reste libre,
+   choisir une suggestion décode.
+3. **Admin** : Matière et Plaquette de chaque ligne proposent les valeurs du document lu et du
+   brouillon, une fois chacune ; le texte reste libre, la saisie complète ne se propose pas à elle-même.
+
+Suite possible, hors de cette PR : faire reposer `admin-tags-selector` (multi-sélection) sur la
+même recherche.
+
 ## Journal des tranches
 
 - **PR front 3 — retrait du référentiel 034, guide public lu dans l'API, interrupteur** : RED 42 failed / 4642 total (code de sortie 1), puis 2 RED ajoutés au fil de la vérification (option choisie absente du HTML serveur, tableau qui élargissait la page à 375 px) ; GREEN 4643 passed / 4643 total (code de sortie 0) · refactor : lecture des lignes du guide factorisée dans `_entries`, `InsertGuideEntryDto` et le builder inutilisé `anInsertGuide` retirés de l'export
 - **PR front 4 — page d'admin `/admin/guide-plaquettes` (interrupteur et lignes)** : RED `pnpm test` code de sortie 1, 19 erreurs de compilation (page, brouillon, `getDocument`/`saveGuide`, `InsertGuideDocument`, `toInsertGuideDocument` absents), puis 4 échecs d'assertion au premier GREEN (menu admin : 3 tests à mettre à jour, test des 301 lignes trop lent) ; GREEN 4686 passed / 4686 total (code de sortie 0) · refactor : aucun
+- **PR front — recherche avec suggestions** : RED 1 (fonction de recherche et composant) 40 failed / 4907 total (code de sortie 1), échecs d'assertion sur des bouchons ; GREEN 43 passed sur les deux fichiers, après correction d'un hôte de test (`name` généré par un formulaire non nommé). RED 2 (guide, décodeur, admin) 14 failed / 4919 total (code de sortie 1) ; GREEN 4919 passed / 4919 total (code de sortie 0) · refactor : aucun
 
 ## Verify
 
@@ -132,6 +151,18 @@ Image `ng-portfolio-app:ci` devant la doublure (`ci/a11y-stack.sh up ng-portfoli
 6. 375 px : `scrollWidth` 375 pour une fenêtre de 375, sans défilement horizontal (capture `06-admin-375.png`).
 7. Console : seules erreurs, le 404 attendu du guide éteint, le 409 provoqué, et `GET /api/config` en 404 (route absente de la doublure, antérieur).
 8. `pnpm a11y -g admin` : 32 passed, dont `/admin/guide-plaquettes` en clair et en sombre (nouveau scénario).
+
+### PR front — recherche avec suggestions
+
+Image `ng-portfolio-app:ci` (`docker buildx bake ci`) devant la doublure (`ci/a11y-stack.sh up ng-portfolio-app:ci`). Verdict : **PASS**.
+
+1. `/atelier/plaquettes`, volet navigateur, clavier : « tém » propose « Acier témoin » et « Laiton témoin » (statut « 2 propositions »), deux flèches bas puis Entrée : URL `?matiere=Laiton%20t%C3%A9moin`, tableau « Plaquettes pour Laiton témoin », historique non allongé.
+2. 375 px, souris : « ac » propose « Acier témoin », le clic le choisit, le focus reste dans le champ, URL `?matiere=Acier%20t%C3%A9moin` ; `scrollWidth` 375. « titane » puis Entrée : « Aucune matière » affiché et annoncé, URL inchangée ; Échap rend « Acier témoin ».
+3. URL partagée en rendu serveur (`curl`) : `<input … role="combobox" … value="Acier témoin">` ; décodeur `?code=CNMG120408PM` : `value="CNMG120408PM"` et `name="code"` (repli sans JavaScript tenu).
+4. `/atelier/decodeur`, 375 px : « cc » propose « CCGT 09T304-PM », flèche bas puis Entrée : `?code=CCGT09T304PM` et « Décodage de CCGT 09T304-PM » ; code libre « vbmt 160404 » puis clic sur Décoder : `?code=VBMT160404`, « Décodage de VBMT 160404 ».
+5. `/admin/guide-plaquettes`, 375 px, joué par Playwright (session admin et API réécrite vers la doublure, comme l'audit axe ; le volet navigateur appelle l'API de production) : ligne 5 ajoutée, « lai » propose « Laiton témoin », flèche bas puis Entrée ; « ccgt » propose « CCGT 09T304-PM », choisi à la souris, focus conservé ; corps du `PUT` : `…{"material":"Laiton témoin","operation":"parting-off","insert":"CCGT 09T304-PM","noseRadius":0.4}],"version":1}`, toast « Guide des plaquettes enregistré » ; `scrollWidth` 375 (captures `admin-material-375.png`, `admin-insert-375.png`).
+6. Console : seule erreur, `GET /api/config` en 404 (route absente de la doublure, antérieur).
+7. `pnpm a11y -g "atelier|decodeur|guide-plaquettes"` : 16 passed, dont le nouvel état « liste des matières ouverte » en clair et en sombre.
 
 ## Review code
 
@@ -200,3 +231,34 @@ Image `ng-portfolio-app:ci` devant la doublure (`ci/a11y-stack.sh up ng-portfoli
 1. `DESIGN.md` (diff entier, 150+/137−) : reformatage seul (guillemets YAML, alignement de tableaux, une ligne vide), sans lien avec la page d'admin et hors du `format:check`. Il élargit la surface de conflit avec les autres PR (CLAUDE.md, workflow item 7). Retirer du commit (`git checkout origin/master -- DESIGN.md`), ou l'isoler dans une PR `chore` dédiée.
 
 **Suite (2026-10-27, session principale)** : point bloquant corrigé, `DESIGN.md` ramené à la seule entrée « Éditeur du guide des plaquettes » (reformatage retiré) ; reformatage de l'en-tête et du tableau de découpage de cette spec retiré aussi ; remarque `step` appliquée (`0.01`, deux décimales), test ajusté.
+
+### PR front — recherche avec suggestions (revue du 2026-10-27, commit `57fa05c`)
+
+**Verdict** : REJECTED
+**Gates CI locaux** : tests ✅ (`pnpm test` exit 0, 4919/4919 ; `tsc --noEmit -p tsconfig.spec.json` exit 0) / lint ✅ (`pnpm lint` exit 0) / build ✅ (`pnpm run build --configuration production` exit 0) ; `pnpm install --frozen-lockfile` exit 0, `pnpm run format:check` exit 0, `docker buildx bake ci` exit 0 (étage test 4919/4919)
+**Checks mécaniques** : checker non vendoré : auto-checks joués à la main sur le diff (archéologie au motif du profil, export default, effect, zone, snapshot, fireEvent, only/skip, innerHTML/console/any, boucles générant des `it`) : 5 hits archéologie (`/**` × 4, dont 2 levés comme WHY d'une ligne ; 2 blocs de 2 lignes), 0 autre
+**Warnings de gate** : aucun induit par le diff ; (b) pré-existant : `pnpm install` « Ignored build scripts » (@parcel/watcher, @sentry/cli, lmdb…)
+**Rendu compilé** : N/A (`app-suggest-input` à sélecteur élément, pas d'hôte attribut)
+**Preuve de verify runtime** : ✅ (section Verify complète ; rejouée par la revue sur `ng-portfolio-app:ci` + doublure : HTML serveur `value="Acier témoin"` sur `/atelier/plaquettes?matiere=…`, `value="CNMG120408PM"` et `name="code"` sur le décodeur dans un `form method="get"` ; « tém » → 2 options, statut « 2 propositions » ; « titane » → « Aucune matière » affiché et annoncé, Entrée sans effet, blur rend « Acier témoin », URL inchangée ; décodeur « cc » → flèche bas → Entrée : `?code=CCGT09T304PM`, « Décodage de CCGT 09T304-PM », focus conservé ; console : seuls les 404/CORS de l'environnement local déjà notés)
+**Score de mutation** : N/A (profil sans outil)
+**Conventions Angular 20+** : ❌ (politique commentaires du profil, point 2)
+**Cross-platform** : ✅
+**Tests** : ❌ (builder non utilisé, point 1)
+**Sécurité** : ✅
+**Alignement spec** : ✅ (guide, décodeur et admin conformes à « Recherche avec suggestions » ; les trois écarts au motif APG sont tenus et justifiés)
+
+**Tests notables** :
+
+- ✨ `src/app/shared/search/suggestion-search.spec.ts:24` : ordre « commence par » puis « contient » triangulé par `it.each` (casse, tirets, accents, sans résultat), requêtes vides comprises.
+- ✨ `src/app/features/admin/pages/admin-insert-guide/admin-insert-guide.spec.ts` : payload du `PUT` vérifié de bout en bout après choix clavier, copie champ par champ comprise.
+
+**Remarques non bloquantes** :
+
+- `src/app/shared/ui/suggest-input.ts:115` : en mode libre l'exclusion se fait par clé, donc « inox 316l » saisi masque « Inox 316L » déjà enregistré ; l'admin ne peut pas reprendre la graphie de référence par la liste, et deux graphies d'une même matière donnent deux entrées dans le guide public (`materialsOf` dédoublonne au texte exact). Exclure au texte exact (`option !== query.trim()`) garde l'intention de l'écart 1 sans ce masquage.
+
+**Points à corriger** :
+
+1. `src/app/features/workshop/pages/insert-decoder/insert-decoder.spec.ts:121-141` : trois lignes du guide écrites en littéraux comme entrée de test alors que `anEntry` existe (`@features/workshop/testing/insert-guide-builders`, déjà utilisé par `admin-insert-guide.spec.ts`). Remplacer par `anEntry({ material, insert, … })`.
+2. Politique commentaires du profil (une ligne de WHY, pas de QUOI) : `src/app/shared/ui/suggest-input.ts:20-21` et `:193-194` (blocs de deux lignes qui décrivent le comportement : réduire chacun à une ligne de WHY ou retirer) ; `src/app/shared/search/suggestion-search.ts:10` et `:23` (JSDoc qui redit le code : retirer). `suggestion-search.ts:1`, `suggest-input.ts:113` et `admin-insert-guide-form.ts:170` sont levés (WHY d'une ligne).
+
+**Suite** : les deux points et la remarque sont corrigés en session. Les trois lignes du décodeur passent par `anEntry`, les quatre commentaires sont retirés, et le mode libre exclut maintenant au texte exact. Nouveau test RED, 1 failed / 4920 (code de sortie 1) : « inox 316l » propose « Inox 316L ». Le test admin qui figeait l'ancienne exclusion par clé saisit maintenant la graphie exacte. GREEN : 4920 passed / 4920 (code de sortie 0), lint et format verts.

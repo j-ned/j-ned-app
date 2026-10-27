@@ -82,6 +82,18 @@ describe('InsertGuide', () => {
     await fixture.whenStable();
     fixture.detectChanges();
   };
+  const materialField = (): HTMLInputElement => one('insert-guide-material') as HTMLInputElement;
+  const type = async (text: string): Promise<void> => {
+    materialField().value = text;
+    materialField().dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+  const press = async (key: string): Promise<void> => {
+    materialField().dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
   const serving =
     (guide: InsertGuideDto): GuideAnswer =>
     (request) =>
@@ -114,42 +126,69 @@ describe('InsertGuide', () => {
       );
     });
 
-    it('When the page is rendered Then a labelled list offers each material once, in alphabetical order, after an empty choice', async () => {
+    it('When the page is rendered Then the material is a labelled, described search field whose list offers each material once, in alphabetical order', async () => {
       await render(serving(ENABLED_GUIDE));
-      const select = one('insert-guide-material') as HTMLSelectElement;
-      const label = host().querySelector(`label[for="${select.id}"]`);
+      const field = materialField();
+      const listbox = host().querySelector(`[id="${field.getAttribute('aria-controls')}"]`);
+      await press('ArrowDown');
 
       expect({
-        tag: select.tagName,
-        label: collapsed(label),
-        options: [...select.options].map((option) => [option.value, collapsed(option)]),
+        tag: field.tagName,
+        role: field.getAttribute('role'),
+        label: collapsed(host().querySelector(`label[for="${field.id}"]`)),
+        hint: collapsed(host().querySelector(`[id="${field.getAttribute('aria-describedby')}"]`)),
+        listLabel: listbox?.getAttribute('aria-label'),
+        options: all('suggest-option').map(collapsed),
       }).toEqual({
-        tag: 'SELECT',
+        tag: 'INPUT',
+        role: 'combobox',
         label: 'Matière',
-        options: [
-          ['', 'Choisis une matière'],
-          ['Acier fictif', 'Acier fictif'],
-          ['Laiton fictif', 'Laiton fictif'],
-        ],
+        hint: INSERT_GUIDE_COPY.materialHint,
+        listLabel: INSERT_GUIDE_COPY.materialListLabel,
+        options: ['Acier fictif', 'Laiton fictif'],
       });
     });
 
-    it('When no material is asked in the url Then the empty choice is selected and no table is shown', async () => {
-      await render(serving(ENABLED_GUIDE));
-      const select = one('insert-guide-material') as HTMLSelectElement;
+    it.each([
+      ['a part of a name', 'lai', ['Laiton fictif']],
+      ['letters inside names', 'fic', ['Acier fictif', 'Laiton fictif']],
+    ])(
+      'When %s is typed Then the materials of the guide holding it are proposed',
+      async (_case, typed, options) => {
+        await render(serving(ENABLED_GUIDE));
 
-      expect([select.value, one('insert-guide-table')]).toEqual(['', null]);
+        await type(typed);
+
+        expect(all('suggest-option').map(collapsed)).toEqual(options);
+      },
+    );
+
+    it('When a text matching no material is typed Then the field says there is no such material, and nothing is chosen', async () => {
+      await render(serving(ENABLED_GUIDE));
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+      await type('titane');
+      await press('Enter');
+
+      expect([collapsed(one('suggest-no-match')), navigate.mock.calls]).toEqual([
+        INSERT_GUIDE_COPY.noMaterial,
+        [],
+      ]);
+    });
+
+    it('When no material is asked in the url Then the field is empty and no table is shown', async () => {
+      await render(serving(ENABLED_GUIDE));
+
+      expect([materialField().value, one('insert-guide-table')]).toEqual(['', null]);
     });
 
     it('When a known material is asked in the url Then it is selected and its table lists operation, insert, radius in mm and note, in the order of the operations', async () => {
       await render(serving(ENABLED_GUIDE), 'Acier fictif');
-      const select = one('insert-guide-material') as HTMLSelectElement;
       const table = one('insert-guide-table');
 
       expect({
-        selected: select.value,
-        selectedOptions: [...select.options].filter((option) => option.selected).length,
-        serverSelected: [...select.querySelectorAll('option[selected]')].map(collapsed),
+        selected: materialField().value,
+        serverSelected: materialField().getAttribute('value'),
         tag: table?.tagName,
         caption: collapsed(table?.querySelector('caption')),
         headers: [...(table?.querySelectorAll('thead th') ?? [])].map((th) => [
@@ -161,8 +200,7 @@ describe('InsertGuide', () => {
         ),
       }).toEqual({
         selected: 'Acier fictif',
-        selectedOptions: 1,
-        serverSelected: ['Acier fictif'],
+        serverSelected: 'Acier fictif',
         tag: 'TABLE',
         caption: 'Plaquettes pour Acier fictif',
         headers: [
@@ -216,10 +254,9 @@ describe('InsertGuide', () => {
 
     it('When an unknown material is asked in the url Then nothing selects it, no table is shown and its text is never displayed', async () => {
       await render(serving(ENABLED_GUIDE), 'Matière piégée <b>');
-      const select = one('insert-guide-material') as HTMLSelectElement;
 
       expect({
-        selected: select.value,
+        selected: materialField().value,
         table: one('insert-guide-table'),
         echoed: host().textContent?.includes('Matière piégée'),
       }).toEqual({ selected: '', table: null, echoed: false });
@@ -298,22 +335,44 @@ describe('InsertGuide', () => {
       ]);
     });
 
-    it.each([
-      ['a material', 'Laiton fictif', 'Laiton fictif'],
-      ['the empty choice', '', null],
-    ])(
-      'When %s is chosen in the list Then the url keeps it in place of the current address',
-      async (_label, value, matiere) => {
-        await render(serving(ENABLED_GUIDE), 'Acier fictif');
-        const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-        const select = one('insert-guide-material') as HTMLSelectElement;
+    it('When a material is chosen at the keyboard Then the url keeps it in place of the current address', async () => {
+      await render(serving(ENABLED_GUIDE), 'Acier fictif');
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
-        select.value = value;
-        select.dispatchEvent(new Event('change'));
+      await type('lai');
+      await press('ArrowDown');
+      await press('Enter');
 
-        expect(navigate.mock.calls).toEqual([[[], { queryParams: { matiere }, replaceUrl: true }]]);
-      },
-    );
+      expect(navigate.mock.calls).toEqual([
+        [[], { queryParams: { matiere: 'Laiton fictif' }, replaceUrl: true }],
+      ]);
+    });
+
+    it('When a material is clicked in the list Then the url keeps it in place of the current address', async () => {
+      await render(serving(ENABLED_GUIDE));
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+      await type('ac');
+      all('suggest-option')[0].click();
+      await fixture.whenStable();
+
+      expect(navigate.mock.calls).toEqual([
+        [[], { queryParams: { matiere: 'Acier fictif' }, replaceUrl: true }],
+      ]);
+    });
+
+    it('When the chosen material is erased and the field left Then the url drops it in place of the current address', async () => {
+      await render(serving(ENABLED_GUIDE), 'Acier fictif');
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+      await type('');
+      materialField().dispatchEvent(new FocusEvent('blur'));
+      await fixture.whenStable();
+
+      expect(navigate.mock.calls).toEqual([
+        [[], { queryParams: { matiere: null }, replaceUrl: true }],
+      ]);
+    });
   });
 
   it('Given the guide switched on without any entry When the page is rendered Then it says the guide is being filled, without list nor table', async () => {

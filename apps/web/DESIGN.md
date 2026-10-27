@@ -529,6 +529,12 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 - **Libellé d'éditeur:** utility `field-label` → `flex justify-between items-baseline gap-3 text-sm font-semibold mb-1.5` ; mention à droite (« obligatoire ») en mono 12 px `text-muted`, dans le `label`.
 - **Indication d'éditeur:** utility `field-hint` → `flex justify-between gap-3 mt-1.5 text-[0.78125rem] text-muted` ; à gauche le texte lié par `aria-describedby`, à droite un compteur mono 12 px `tabular-nums` « 137 / 160 » hors de la description accessible.
 
+### Champ à suggestions (`shared/ui/suggest-input.ts`)
+
+- Combobox ARIA 1.2 en liste (`role="combobox"`, `aria-autocomplete="list"`, option active par `aria-activedescendant`), sur un `form-input` ; le libellé reste chez l'appelant (`label for`).
+- **Liste :** `absolute` sous le champ, `mt-1 max-h-60 overflow-y-auto rounded-field border border-line-strong bg-background shadow-lg` ; option `px-3.5 py-2 text-sm`, survol `bg-foreground/5`, active `bg-primary/8 text-primary`.
+- **Modes :** `restricted`, seule une suggestion devient la valeur, « Aucune … » visible et annoncé sans correspondance ; `free`, le texte est la valeur. Nombre de propositions annoncé par un `role="status"` `sr-only`.
+
 ### Navigation
 
 - **Header layout:** sticky en haut, background `var(--theme-background)`, border-bottom `var(--theme-nav-border)`, shadow `var(--theme-nav-shadow)`.
@@ -553,7 +559,7 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 ### Guide des plaquettes (`features/workshop/pages/insert-guide/insert-guide.ts`)
 
 - Même tête que l'accueil de l'atelier : `h1` en `font-extrabold`, chapô en `text-muted`, `max-w-[56ch]`, puis l'avertissement en `text-sm text-muted`, `max-w-prose`, toujours visible (les choix de Julien, à adapter).
-- **Liste des matières :** `label` en `field-label` (« Matière ») lié au `select` natif `app-select`, `max-w-sm`, `mt-12` sous l'avertissement. Première option vide « Choisis une matière », puis les matières saisies, sans doublon, par ordre alphabétique. Un choix remplace l'adresse (`?matiere=`) sans déplacer le focus.
+- **Champ des matières :** `label` en `field-label` (« Matière ») lié au champ à suggestions (`app-suggest-input`, liste fermée), `max-w-sm`, `mt-12` sous l'avertissement, indication en `field-hint`. Il propose les matières saisies, sans doublon. Un choix remplace l'adresse (`?matiere=`) sans déplacer le focus.
 - **Tableau :** sous la liste (`mt-10`), seulement quand une matière connue est choisie, dans une région `role="region"` nommée par le `caption`, focalisable (`tabindex="0"`, contour `primary` au focus clavier) qui défile horizontalement sur un écran étroit : la page, elle, ne défile jamais de côté. `caption` visible « Plaquettes pour <matière> » en `text-xl font-bold`, aligné à gauche ; en-têtes de colonne `table-head` (Opération, Plaquette, Rayon de bec, Remarque), filet bas `line-strong` de 1,5 px ; une ligne par entrée, filet `line`, dans l'ordre de la liste fermée des opérations. L'opération est l'en-tête de ligne (`th scope="row"`, `font-semibold`), la plaquette en `font-mono`, le rayon en mm (« 0,8 mm », insécable, `tabular-nums`), la remarque en `text-muted`.
 - **Guide en cours de remplissage :** activé sans aucune ligne, une phrase en `font-medium` à la place de la liste.
 - **Guide éteint :** la page rend la page 404 (`app-page-not-found`), en vraie 404 serveur ; la carte disparaît de l'accueil de l'atelier, la section « Les outils » aussi quand elle n'a plus de carte.

@@ -6,11 +6,12 @@ import { textAfterInsertCode } from '@features/workshop/domain/decode-insert-cod
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
+import { SuggestInput } from '@shared/ui/suggest-input';
 import type { InsertGuideRowDraft } from '../insert-guide-draft';
 
 @Component({
   selector: 'fieldset[app-admin-insert-guide-row]',
-  imports: [FormField, AppIcon, Button, FieldError],
+  imports: [FormField, AppIcon, Button, FieldError, SuggestInput],
   host: {
     'data-testid': 'admin-insert-guide-row',
     class:
@@ -24,15 +25,15 @@ import type { InsertGuideRowDraft } from '../insert-guide-draft';
     <div class="min-w-0">
       @let materialError = row.material().touched() && row.material().invalid();
       <label [for]="id + '-material'" class="field-label">Matière</label>
-      <input
-        type="text"
-        [id]="id + '-material'"
-        data-testid="admin-insert-guide-material"
+      <app-suggest-input
+        [inputId]="id + '-material'"
+        inputTestId="admin-insert-guide-material"
         [formField]="row.material"
-        aria-required="true"
-        [attr.aria-invalid]="materialError"
-        [attr.aria-describedby]="materialError ? id + '-material-error' : null"
-        class="form-input"
+        [suggestions]="materialSuggestions()"
+        listLabel="Matières déjà saisies"
+        [mandatory]="true"
+        [markedInvalid]="materialError"
+        [describedBy]="materialError ? id + '-material-error' : null"
       />
       <app-field-error
         [field]="row.material"
@@ -68,15 +69,15 @@ import type { InsertGuideRowDraft } from '../insert-guide-draft';
     <div class="min-w-0">
       @let insertError = row.insert().touched() && row.insert().invalid();
       <label [for]="id + '-insert'" class="field-label">Plaquette</label>
-      <input
-        type="text"
-        [id]="id + '-insert'"
-        data-testid="admin-insert-guide-insert"
+      <app-suggest-input
+        [inputId]="id + '-insert'"
+        inputTestId="admin-insert-guide-insert"
         [formField]="row.insert"
-        aria-required="true"
-        [attr.aria-invalid]="insertError"
-        [attr.aria-describedby]="insertError ? id + '-insert-error' : null"
-        class="form-input"
+        [suggestions]="insertSuggestions()"
+        listLabel="Plaquettes déjà saisies"
+        [mandatory]="true"
+        [markedInvalid]="insertError"
+        [describedBy]="insertError ? id + '-insert-error' : null"
       />
       <app-field-error
         [field]="row.insert"
@@ -153,6 +154,8 @@ import type { InsertGuideRowDraft } from '../insert-guide-draft';
 export class AdminInsertGuideRow {
   readonly entry = input.required<FieldTree<InsertGuideRowDraft>>();
   readonly rank = input.required<number>();
+  readonly materialSuggestions = input.required<readonly string[]>();
+  readonly insertSuggestions = input.required<readonly string[]>();
   readonly removed = output<void>();
 
   protected readonly operations = MACHINING_OPERATIONS;

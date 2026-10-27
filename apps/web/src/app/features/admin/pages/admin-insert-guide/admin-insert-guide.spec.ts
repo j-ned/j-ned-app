@@ -677,3 +677,122 @@ describe('AdminInsertGuide: confidentialité', () => {
     ]);
   });
 });
+
+describe('AdminInsertGuide: suggestions des lignes', () => {
+  const WITH_VALUES: InsertGuideDocument = {
+    enabled: true,
+    decoderEnabled: true,
+    entries: [
+      anEntry({ material: 'Inox fictif', insert: 'CNMG 120408' }),
+      anEntry({ material: 'Acier fictif', insert: 'DNMG 150604', operation: 'threading' }),
+      anEntry({ material: 'inox  fictif', insert: 'cnmg120408', operation: 'drilling' }),
+    ],
+    version: 3,
+  };
+
+  const openWithValues = (): Promise<Editor> =>
+    openEditor({ getDocument: vi.fn(() => of(WITH_VALUES)) });
+
+  const options = (editor: Editor): readonly string[] =>
+    [...editor.host.querySelectorAll('[data-testid="suggest-option"]')].map(normalized);
+
+  async function press(editor: Editor, testId: string, key: string, index: number): Promise<void> {
+    control(editor, testId, index)?.dispatchEvent(
+      new KeyboardEvent('keydown', { key, cancelable: true }),
+    );
+    await settle(editor.fixture);
+  }
+
+  it('Given the lines read When the material of a new line is typed Then the field is a combobox proposing the materials of the other lines, once each', async () => {
+    const editor = await openWithValues();
+    await addRow(editor);
+    const field = control(editor, 'admin-insert-guide-material', 3) as HTMLInputElement;
+    const listbox = editor.host.querySelector(`[id="${field.getAttribute('aria-controls')}"]`);
+
+    await fill(editor, 'admin-insert-guide-material', 'fic', 3);
+
+    expect({
+      role: field.getAttribute('role'),
+      listLabel: listbox?.getAttribute('aria-label'),
+      options: options(editor),
+    }).toEqual({
+      role: 'combobox',
+      listLabel: 'Matières déjà saisies',
+      options: ['Acier fictif', 'Inox fictif'],
+    });
+  });
+
+  it('Given the lines read When the insert of a new line is typed Then the field proposes the inserts of the other lines, once each', async () => {
+    const editor = await openWithValues();
+    await addRow(editor);
+    const field = control(editor, 'admin-insert-guide-insert', 3) as HTMLInputElement;
+    const listbox = editor.host.querySelector(`[id="${field.getAttribute('aria-controls')}"]`);
+
+    await fill(editor, 'admin-insert-guide-insert', 'nmg', 3);
+
+    expect([listbox?.getAttribute('aria-label'), options(editor)]).toEqual([
+      'Plaquettes déjà saisies',
+      ['CNMG 120408', 'DNMG 150604'],
+    ]);
+  });
+
+  it('Given a material typed in a new line When another line is typed Then the draft value is proposed too, and the read one stays proposed after its line is edited', async () => {
+    const editor = await openWithValues();
+    await fill(editor, 'admin-insert-guide-material', 'Titane fictif', 0);
+    await addRow(editor);
+    await fill(editor, 'admin-insert-guide-material', 'Laiton fictif', 3);
+    await addRow(editor);
+
+    await fill(editor, 'admin-insert-guide-material', 'i', 4);
+
+    expect(options(editor)).toEqual([
+      'Inox fictif',
+      'Acier fictif',
+      'Laiton fictif',
+      'Titane fictif',
+    ]);
+  });
+
+  it('Given a new line When its text matches a value exactly Then that value is not proposed to itself', async () => {
+    const editor = await openWithValues();
+    await addRow(editor);
+
+    await fill(editor, 'admin-insert-guide-material', 'Acier fictif', 3);
+
+    expect(options(editor)).toEqual([]);
+  });
+
+  it('Given a new line filled from the suggestions at the keyboard When the guide is saved Then the chosen texts are sent', async () => {
+    const editor = await openWithValues();
+    await addRow(editor);
+
+    await fill(editor, 'admin-insert-guide-material', 'aci', 3);
+    await press(editor, 'admin-insert-guide-material', 'ArrowDown', 3);
+    await press(editor, 'admin-insert-guide-material', 'Enter', 3);
+    await fill(editor, 'admin-insert-guide-operation', 'parting-off', 3);
+    await fill(editor, 'admin-insert-guide-insert', 'dn', 3);
+    await press(editor, 'admin-insert-guide-insert', 'ArrowDown', 3);
+    await press(editor, 'admin-insert-guide-insert', 'Enter', 3);
+    await fill(editor, 'admin-insert-guide-radius', '0.4', 3);
+    await save(editor);
+
+    expect(editor.saveGuide.mock.calls).toEqual([
+      [
+        {
+          enabled: true,
+          decoderEnabled: true,
+          entries: [
+            ...WITH_VALUES.entries,
+            {
+              material: 'Acier fictif',
+              operation: 'parting-off',
+              insert: 'DNMG 150604',
+              noseRadius: 0.4,
+            },
+          ],
+        },
+        3,
+      ],
+    ]);
+  });
+});
