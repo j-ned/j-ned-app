@@ -299,7 +299,7 @@ server {
 
     # Routes rendues à chaque requête (RenderMode.Server dans app.routes.server.ts), liste fermée :
     # une URL inconnue (scanners, /wp-login.php) ne réveille pas Node et garde le 404 ci-dessus.
-    location ~ ^/(about|projects(/[^/]+)?|blog(/[^/]+)?|atelier(/plaquettes)?)?/?$ {
+    location ~ ^/(about|projects(/[^/]+)?|blog(/[^/]+)?|atelier(/(plaquettes|decodeur))?)?/?$ {
         limit_except GET { deny all; }
         include /etc/nginx/snippets/security-headers.conf;
         include /etc/nginx/snippets/ssr-proxy.conf;

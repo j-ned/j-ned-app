@@ -37,6 +37,7 @@ describe('buildSitemap', () => {
       `${SITE}/about`,
       `${SITE}/atelier`,
       `${SITE}/atelier/plaquettes`,
+      `${SITE}/atelier/decodeur`,
       `${SITE}/projects`,
       `${SITE}/blog`,
       `${SITE}/mentions-legales`,
@@ -64,7 +65,7 @@ describe('buildSitemap', () => {
   it('Given no content When the sitemap is built Then every static page is dated by the server start', () => {
     const lastmods = entriesOf(buildSitemap(aSitemapInput())).map((entry) => entry.lastmod);
 
-    expect(lastmods).toEqual(Array.from({ length: 8 }, () => '2026-10-10'));
+    expect(lastmods).toEqual(Array.from({ length: 9 }, () => '2026-10-10'));
   });
 
   it('Given the workshop When the sitemap is built Then its entry is dated by the server start, monthly, priority 0.8', () => {
@@ -104,14 +105,26 @@ describe('buildSitemap', () => {
     },
   );
 
-  it('Given the insert guide switched off When the sitemap is built Then the guide page is left out, the workshop home stays', () => {
+  it('Given the insert decoder When the sitemap is built Then its entry is dated by the server start, monthly, priority 0.7, without query string', () => {
+    const xml = buildSitemap(aSitemapInput());
+
+    expect(
+      xml.includes(
+        `  <url>\n    <loc>${SITE}/atelier/decodeur</loc>\n    <lastmod>2026-10-10</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
+      ),
+    ).toBe(true);
+  });
+
+  it('Given the insert guide switched off When the sitemap is built Then the guide and the decoder pages are left out, the workshop home stays', () => {
     const locs = entriesOf(buildSitemap(aSitemapInput({ insertGuideEnabled: false }))).map(
       (entry) => entry.loc,
     );
 
-    expect([locs.includes(`${SITE}/atelier/plaquettes`), locs.includes(`${SITE}/atelier`)]).toEqual(
-      [false, true],
-    );
+    expect([
+      locs.includes(`${SITE}/atelier/plaquettes`),
+      locs.includes(`${SITE}/atelier/decodeur`),
+      locs.includes(`${SITE}/atelier`),
+    ]).toEqual([false, false, true]);
   });
 
   it('Given a slug with XML special characters When the sitemap is built Then its url is escaped', () => {

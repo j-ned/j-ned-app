@@ -11,9 +11,10 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'blog', renderMode: RenderMode.Server },
   { path: 'blog/:slug', renderMode: RenderMode.Server },
 
-  // Guide des plaquettes lu dans l'API, et son interrupteur qui fait paraître la carte de l'accueil
+  // Guide des plaquettes lu dans l'API : son interrupteur ouvre le guide, le décodeur et leurs cartes
   { path: 'atelier', renderMode: RenderMode.Server },
   { path: 'atelier/plaquettes', renderMode: RenderMode.Server },
+  { path: 'atelier/decodeur', renderMode: RenderMode.Server },
 
   // Contenu écrit dans le code : prérendu au build
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },

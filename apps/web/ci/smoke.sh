@@ -22,6 +22,7 @@ grep -q '<app-about' /tmp/about.html
 curl -fsS -D /tmp/atelier-headers.txt http://127.0.0.1:3000/atelier/ -o /tmp/atelier.html
 grep -q 'data-testid="workshop-title"' /tmp/atelier.html || { echo "titre absent : /atelier/"; exit 1; }
 grep -q 'data-testid="workshop-tool-card"' /tmp/atelier.html || { echo "carte du guide absente : /atelier/"; exit 1; }
+grep -q 'href="/atelier/decodeur"' /tmp/atelier.html || { echo "carte du décodeur absente : /atelier/"; exit 1; }
 grep -qi '^x-cache-status' /tmp/atelier-headers.txt || { echo "/atelier/ non rendu par Node"; exit 1; }
 # Guide des plaquettes : relayé à Node, la matière de l'URL partagée affiche son tableau dès le HTML serveur
 curl -fsS -D /tmp/guide-headers.txt 'http://127.0.0.1:3000/atelier/plaquettes?matiere=Acier%20t%C3%A9moin' -o /tmp/guide.html
@@ -29,6 +30,21 @@ grep -q 'data-testid="insert-guide-title"' /tmp/guide.html || { echo "titre abse
 grep -q 'PLAQUETTE-TEMOIN-1' /tmp/guide.html || { echo "tableau absent : /atelier/plaquettes"; exit 1; }
 grep -q '"noseRadius"' /tmp/guide.html || { echo "document /api/workshop-guide absent de l'état de transfert"; exit 1; }
 grep -qi '^x-cache-status' /tmp/guide-headers.txt || { echo "/atelier/plaquettes non rendu par Node"; exit 1; }
+# Un code décodable du guide mène à son décodage ; un code non décodable reste du texte
+grep -q 'href="/atelier/decodeur?code=CCGT09T304PM"' /tmp/guide.html || { echo "lien vers le décodeur absent : /atelier/plaquettes"; exit 1; }
+! grep -q 'href="/atelier/decodeur?code=PLAQUETTE' /tmp/guide.html || { echo "code non décodable lié : /atelier/plaquettes"; exit 1; }
+# Décodeur : relayé à Node, le code de l'URL partagée est décodé dès le HTML serveur (guide activé dans la doublure)
+curl -fsS -D /tmp/decoder-headers.txt 'http://127.0.0.1:3000/atelier/decodeur?code=CNMG120408' -o /tmp/decoder.html
+grep -q 'data-testid="insert-decoder-result"' /tmp/decoder.html || { echo "décodage absent : /atelier/decodeur"; exit 1; }
+grep -q 'Losange 80°' /tmp/decoder.html || { echo "forme non décodée : /atelier/decodeur"; exit 1; }
+grep -q 'name="code"' /tmp/decoder.html || { echo "champ sans nom : /atelier/decodeur"; exit 1; }
+grep -q '"noseRadius"' /tmp/decoder.html || { echo "document /api/workshop-guide absent de l'état de transfert : /atelier/decodeur"; exit 1; }
+grep -qi '^x-cache-status' /tmp/decoder-headers.txt || { echo "/atelier/decodeur non rendu par Node"; exit 1; }
+grep -q 'rel="canonical" href="https://nedellec-julien.fr/atelier/decodeur"' /tmp/decoder.html || { echo "canonical avec query : /atelier/decodeur"; exit 1; }
+# Code en pouces : refusé avec son motif, jamais décodé
+curl -fsS 'http://127.0.0.1:3000/atelier/decodeur?code=CNMG%20432' -o /tmp/decoder-ansi.html
+grep -q 'role="alert"' /tmp/decoder-ansi.html || { echo "erreur ANSI absente : /atelier/decodeur"; exit 1; }
+! grep -q 'data-testid="insert-decoder-result"' /tmp/decoder-ansi.html || { echo "code ANSI décodé : /atelier/decodeur"; exit 1; }
 # Matière inconnue : jamais réaffichée
 curl -fsS 'http://127.0.0.1:3000/atelier/plaquettes?matiere=mati%C3%A8re-pi%C3%A9g%C3%A9e' -o /tmp/guide-unknown.html
 ! grep -q 'matière-piégée' /tmp/guide-unknown.html || { echo "matière inconnue réaffichée"; exit 1; }
@@ -44,7 +60,7 @@ grep -q 'data-testid="about-lead"' /tmp/about-ssr.html || { echo "accroche absen
 grep -q 'data-testid="journey-paragraph"' /tmp/about-ssr.html || { echo "parcours absent : /about"; exit 1; }
 grep -q '"leadEmphasis"' /tmp/about-ssr.html || { echo "document /api/profile absent de l'état de transfert"; exit 1; }
 # CSP des pages rendues à la requête : une seule meta, hachée, sans unsafe-inline ; HTML revalidé
-for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin /atelier /atelier/plaquettes; do
+for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin /atelier /atelier/plaquettes /atelier/decodeur; do
   curl -fsS -D /tmp/ssr-headers.txt "http://127.0.0.1:3000$path" -o /tmp/ssr.html
   test "$(grep -o 'http-equiv="Content-Security-Policy"' /tmp/ssr.html | wc -l)" = "1" || { echo "meta CSP absente ou dupliquée : $path"; exit 1; }
   ! grep -qE "(script|style)-src [^;]*'unsafe-inline'" /tmp/ssr.html || { echo "unsafe-inline : $path"; exit 1; }
@@ -85,6 +101,7 @@ grep -qi '^content-type: application/xml' /tmp/sitemap-headers.txt
 grep -q '<loc>https://nedellec-julien.fr/blog/article-temoin</loc>' /tmp/sitemap.xml
 grep -q '<loc>https://nedellec-julien.fr/projects/projet-temoin</loc>' /tmp/sitemap.xml
 grep -q '<loc>https://nedellec-julien.fr/atelier/plaquettes</loc>' /tmp/sitemap.xml
+grep -q '<loc>https://nedellec-julien.fr/atelier/decodeur</loc>' /tmp/sitemap.xml
 curl -fsS -D /tmp/rss-headers.txt http://127.0.0.1:3000/rss.xml -o /tmp/rss.xml
 grep -qi '^content-type: application/rss+xml' /tmp/rss-headers.txt
 grep -q '<title>Article témoin A</title>' /tmp/rss.xml

@@ -13,4 +13,5 @@ export const INSERT_GUIDE_COPY = {
     note: 'Remarque',
   },
   tableCaption: 'Plaquettes pour',
+  decodeLinkSuffix: ', décoder ce code',
 } as const;

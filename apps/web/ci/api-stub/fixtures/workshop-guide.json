@@ -10,6 +10,12 @@
     },
     {
       "material": "Acier témoin",
+      "operation": "external-finishing",
+      "insert": "CCGT 09T304-PM",
+      "noseRadius": 0.4
+    },
+    {
+      "material": "Acier témoin",
       "operation": "threading",
       "insert": "PLAQUETTE-TEMOIN-2",
       "noseRadius": 0.2

@@ -538,6 +538,63 @@ describe('AdminInsertGuide: confidentialité', () => {
     ]);
   });
 
+  it.each<[string, string]>([
+    ['a decodable ISO insert code', 'CNMG 120408'],
+    ['a decodable ISO insert code with a maker suffix', 'CCGT 09T304-PM'],
+  ])(
+    'Given %s in the insert field When it renders Then no reference is reported',
+    async (_, code) => {
+      const editor = await openEditor();
+
+      await fill(editor, 'admin-insert-guide-insert', code);
+
+      expect(
+        normalized(
+          byTestId(
+            editor.host.querySelector('[data-testid="admin-insert-guide-row"]')!,
+            'admin-insert-guide-confidential',
+          ),
+        ),
+      ).toBe('');
+    },
+  );
+
+  it.each<[string, string, string]>([
+    ['a long number', 'CNMG 120408 12345', '12345'],
+    ['a work order', 'CNMG 120408 OF n° 4521', 'OF n° 4521'],
+  ])(
+    'Given a decodable ISO insert code followed by %s When it renders Then what follows the code is still reported',
+    async (_, insert, reference) => {
+      const editor = await openEditor();
+
+      await fill(editor, 'admin-insert-guide-insert', insert);
+
+      expect(
+        normalized(
+          byTestId(
+            editor.host.querySelector('[data-testid="admin-insert-guide-row"]')!,
+            'admin-insert-guide-confidential',
+          ),
+        ),
+      ).toContain(reference);
+    },
+  );
+
+  it('Given a non-decodable insert code with a long number When it renders Then it is still reported', async () => {
+    const editor = await openEditor();
+
+    await fill(editor, 'admin-insert-guide-insert', 'CODE 123456');
+
+    expect(
+      normalized(
+        byTestId(
+          editor.host.querySelector('[data-testid="admin-insert-guide-row"]')!,
+          'admin-insert-guide-confidential',
+        ),
+      ),
+    ).toContain('123456');
+  });
+
   it('Given a line holding a reference When the guide is saved Then the warning does not block it', async () => {
     const editor = await openEditor();
 

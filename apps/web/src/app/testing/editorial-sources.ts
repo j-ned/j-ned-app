@@ -2,6 +2,7 @@ import { FURTHER_READING_COPY } from '@features/blog/application/further-reading
 import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '@features/home/domain/home-hero.static-data';
 import { STATIC_HERO } from '@features/home/infra/data/home.static-data';
 import { ABOUT_IDENTITY } from '@features/profile/pages/about/about-identity';
+import { INSERT_DECODER_COPY } from '@features/workshop/application/insert-decoder-copy';
 import { INSERT_GUIDE_COPY } from '@features/workshop/application/insert-guide-copy';
 import { MACHINING_OPERATIONS } from '@features/workshop/domain/machining-operations.static-data';
 import { WORKSHOP_SPACE } from '@features/workshop/domain/workshop-space.static-data';
@@ -59,6 +60,7 @@ export const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['LEGAL_LAST_UPDATE', LEGAL_LAST_UPDATE],
   ['WORKSHOP_SPACE', WORKSHOP_SPACE],
   ['INSERT_GUIDE_COPY', INSERT_GUIDE_COPY],
+  ['INSERT_DECODER_COPY', INSERT_DECODER_COPY],
   ['MACHINING_OPERATIONS', MACHINING_OPERATIONS],
   ['ci/api-stub/fixtures/workshop-guide.json', WORKSHOP_GUIDE_FIXTURE],
   ['routes', ROUTE_TEXTS],

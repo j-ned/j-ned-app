@@ -111,7 +111,17 @@ describe('Workshop', () => {
     );
   });
 
-  it('Given the insert guide switched off When the page is rendered Then no tool card nor tools section is shown, and the page still answers', async () => {
+  it('Given the insert guide switched on When the page is rendered Then both the guide and the decoder cards are shown', async () => {
+    const host = await renderWorkshop();
+
+    expect(
+      [...host.querySelectorAll('[data-testid="workshop-tool-card"]')].map((card) =>
+        card.getAttribute('href'),
+      ),
+    ).toEqual(['/atelier/plaquettes', '/atelier/decodeur']);
+  });
+
+  it('Given the insert guide switched off When the page is rendered Then neither the guide nor the decoder card, nor the tools section, is shown, and the page still answers', async () => {
     const host = await renderWorkshop((request) => request.flush(GUIDE(false)));
 
     expect({

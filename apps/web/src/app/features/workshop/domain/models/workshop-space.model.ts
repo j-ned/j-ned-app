@@ -1,4 +1,4 @@
-export type WorkshopToolId = 'insert-guide';
+export type WorkshopToolId = 'insert-guide' | 'insert-decoder';
 
 export type WorkshopTool = {
   readonly id: WorkshopToolId;

@@ -12,7 +12,7 @@ describe('serverRoutes', () => {
     expect(findRoute(path)?.renderMode).toBe(RenderMode.Server);
   });
 
-  it.each(['atelier', 'atelier/plaquettes'])(
+  it.each(['atelier', 'atelier/plaquettes', 'atelier/decodeur'])(
     'renders the workshop page "%s" on each request, since the insert guide switch is read in the API',
     (path) => {
       expect(findRoute(path)?.renderMode).toBe(RenderMode.Server);
@@ -26,7 +26,7 @@ describe('serverRoutes', () => {
       .map((route) => route.path);
 
     expect([...serverRendered].sort()).toEqual(
-      [...CONTENT_ROUTES, 'atelier', 'atelier/plaquettes'].sort(),
+      [...CONTENT_ROUTES, 'atelier', 'atelier/plaquettes', 'atelier/decodeur'].sort(),
     );
   });
 

@@ -18,18 +18,17 @@ type SitemapUrl = {
   readonly lastmod?: string;
 };
 
-// Guide éteint : la page répond 404, elle sort donc du sitemap.
-const INSERT_GUIDE_URL: SitemapUrl = {
-  path: '/atelier/plaquettes',
-  changefreq: 'monthly',
-  priority: '0.7',
-};
+// Guide éteint : le guide et le décodeur répondent 404, ils sortent donc du sitemap.
+const INSERT_GUIDE_URLS: readonly SitemapUrl[] = [
+  { path: '/atelier/plaquettes', changefreq: 'monthly', priority: '0.7' },
+  { path: '/atelier/decodeur', changefreq: 'monthly', priority: '0.7' },
+];
 
 const STATIC_URLS: readonly SitemapUrl[] = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/about', changefreq: 'monthly', priority: '0.8' },
   { path: '/atelier', changefreq: 'monthly', priority: '0.8' },
-  INSERT_GUIDE_URL,
+  ...INSERT_GUIDE_URLS,
   { path: '/projects', changefreq: 'weekly', priority: '0.9' },
   { path: '/blog', changefreq: 'weekly', priority: '0.9' },
   { path: '/mentions-legales', changefreq: 'yearly', priority: '0.2' },
@@ -50,7 +49,7 @@ export function buildSitemap({
 }: SitemapInput): string {
   const defaultLastmod = toDay(staticLastmod.toISOString());
   const urls: readonly SitemapUrl[] = [
-    ...STATIC_URLS.filter((url) => insertGuideEnabled || url !== INSERT_GUIDE_URL),
+    ...STATIC_URLS.filter((url) => insertGuideEnabled || !INSERT_GUIDE_URLS.includes(url)),
     ...projectSlugs.map((slug): SitemapUrl => ({
       path: `/projects/${slug}`,
       changefreq: 'monthly',

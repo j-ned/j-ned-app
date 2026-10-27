@@ -224,6 +224,50 @@ describe('InsertGuide', () => {
       }).toEqual({ selected: '', table: null, echoed: false });
     });
 
+    it('When an insert code decodes Then it links to its decoding, its visible code first in the link name, and an undecodable code stays plain text', async () => {
+      await render(
+        serving({
+          ...ENABLED_GUIDE,
+          entries: [
+            {
+              material: 'Inox fictif',
+              operation: 'external-roughing',
+              insert: 'cnmg 120408-pm',
+              noseRadius: 0.8,
+            },
+            {
+              material: 'Inox fictif',
+              operation: 'external-finishing',
+              insert: 'CNMG 432',
+              noseRadius: 0.4,
+            },
+            { material: 'Inox fictif', operation: 'threading', insert: 'FIL-1', noseRadius: 0.2 },
+          ],
+        }),
+        'Inox fictif',
+      );
+
+      expect(
+        all('insert-guide-row').map((row) => {
+          const cell = row.querySelectorAll('td')[0];
+          const link = cell.querySelector('a');
+          return {
+            text: collapsed(cell),
+            href: link?.getAttribute('href') ?? null,
+            visible: collapsed(link?.querySelector(':not(.sr-only)')),
+          };
+        }),
+      ).toEqual([
+        {
+          text: `cnmg 120408-pm${INSERT_GUIDE_COPY.decodeLinkSuffix}`,
+          href: '/atelier/decodeur?code=CNMG120408PM',
+          visible: 'cnmg 120408-pm',
+        },
+        { text: 'CNMG 432', href: null, visible: '' },
+        { text: 'FIL-1', href: null, visible: '' },
+      ]);
+    });
+
     it.each([
       ['a material', 'Laiton fictif', 'Laiton fictif'],
       ['the empty choice', '', null],

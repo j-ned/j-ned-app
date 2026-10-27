@@ -55,15 +55,20 @@ describe('nginx configuration', () => {
       '/atelier/',
       '/atelier/plaquettes',
       '/atelier/plaquettes/',
+      '/atelier/decodeur',
+      '/atelier/decodeur/',
     ])('relays %s to Node', (path) => {
       expect(relayed(path)).toBe(true);
     });
 
-    it.each(['/atelier/autre', '/atelier/plaquettes/autre', '/wp-login.php'])(
-      'keeps %s away from Node',
-      (path) => {
-        expect(relayed(path)).toBe(false);
-      },
-    );
+    it.each([
+      '/atelier/autre',
+      '/atelier/plaquettes/autre',
+      '/atelier/decodeur/autre',
+      '/atelier/plaquettesdecodeur',
+      '/wp-login.php',
+    ])('keeps %s away from Node', (path) => {
+      expect(relayed(path)).toBe(false);
+    });
   });
 });

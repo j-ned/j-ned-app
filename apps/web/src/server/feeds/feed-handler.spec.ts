@@ -93,7 +93,7 @@ describe('createFeedHandler', () => {
     [true, true],
     [false, false],
   ])(
-    'Given the insert guide switch read as %s When the sitemap is requested Then the guide page is listed: %s',
+    'Given the insert guide switch read as %s When the sitemap is requested Then the guide and decoder pages are listed: %s',
     async (enabled, listed) => {
       const api = anApi({
         [GUIDE_URL]: () => json({ enabled, entries: [], version: 1, updatedAt: null }),
@@ -104,7 +104,8 @@ describe('createFeedHandler', () => {
       expect([
         served.status,
         served.body.includes(`<loc>${SITE}/atelier/plaquettes</loc>`),
-      ]).toEqual([200, listed]);
+        served.body.includes(`<loc>${SITE}/atelier/decodeur</loc>`),
+      ]).toEqual([200, listed, listed]);
     },
   );
 

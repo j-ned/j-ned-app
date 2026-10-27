@@ -23,7 +23,7 @@ describe('WORKSHOP_SPACE', () => {
     expect(WORKSHOP_SPACE.toolsHeading).toBe('Les outils');
   });
 
-  it('Given the workshop space When its tools are read Then the insert guide card carries the validated overline, title and summary', () => {
+  it('Given the workshop space When its tools are read Then the insert guide card comes first, then the decoder card, each with its overline, title and summary', () => {
     expect(WORKSHOP_SPACE.tools).toEqual([
       {
         id: 'insert-guide',
@@ -32,6 +32,14 @@ describe('WORKSHOP_SPACE', () => {
         summary:
           "Choisis ta matière\u00a0: le guide te donne les plaquettes que j'utilise, opération par opération.",
         path: '/atelier/plaquettes',
+      },
+      {
+        id: 'insert-decoder',
+        overline: 'Outil',
+        title: 'Décodeur de plaquette',
+        summary:
+          "Tape le code ISO d'une plaquette\u00a0: je t'explique ce que veut dire chaque lettre et chaque chiffre.",
+        path: '/atelier/decodeur',
       },
     ]);
   });

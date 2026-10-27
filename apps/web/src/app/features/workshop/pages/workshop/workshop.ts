@@ -61,7 +61,6 @@ export class Workshop {
   private readonly _insertGuideEnabled = computed(
     () => this._insertGuideResource.hasValue() && this._insertGuideResource.value().enabled,
   );
-  protected readonly tools = computed(() =>
-    this.space.tools.filter(({ id }) => id !== 'insert-guide' || this._insertGuideEnabled()),
-  );
+  // Le guide et le décodeur suivent tous deux l'interrupteur du guide.
+  protected readonly tools = computed(() => (this._insertGuideEnabled() ? this.space.tools : []));
 }

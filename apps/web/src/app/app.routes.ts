@@ -9,6 +9,7 @@ const PROJECTS_TITLE = 'Mes projets Angular et NestJS | Julien Nédellec';
 const BLOG_TITLE = 'Blog Angular, NestJS et auto-hébergement | Julien Nédellec';
 const WORKSHOP_TITLE = "L'atelier\u00a0: outils de tourneur CN | Julien Nédellec";
 const INSERT_GUIDE_TITLE = 'Guide des plaquettes de tournage | Julien Nédellec';
+const INSERT_DECODER_TITLE = 'Décodeur de code plaquette ISO | Julien Nédellec';
 const PERSON_ID = `${SITE_IDENTITY.siteUrl}/#person`;
 
 export const routes: Routes = [
@@ -146,6 +147,42 @@ export const routes: Routes = [
               position: 3,
               name: 'Guide des plaquettes',
               item: `${SITE_IDENTITY.siteUrl}/atelier/plaquettes`,
+            },
+          ],
+        },
+      },
+    },
+  },
+  {
+    path: 'atelier/decodeur',
+    title: INSERT_DECODER_TITLE,
+    loadComponent: () =>
+      import('./features/workshop/pages/insert-decoder/insert-decoder').then(
+        (m) => m.InsertDecoder,
+      ),
+    data: {
+      seo: {
+        title: INSERT_DECODER_TITLE,
+        description:
+          "Tape le code ISO d'une plaquette de tournage, comme CNMG 120408\u00a0: le décodeur explique chaque lettre et chaque chiffre, sources fabricants à l'appui.",
+        url: `${SITE_IDENTITY.siteUrl}/atelier/decodeur`,
+        type: 'website',
+        structuredData: {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: "L'atelier",
+              item: `${SITE_IDENTITY.siteUrl}/atelier`,
+            },
+            {
+              '@type': 'ListItem',
+              position: 3,
+              name: 'Décodeur de plaquette',
+              item: `${SITE_IDENTITY.siteUrl}/atelier/decodeur`,
             },
           ],
         },

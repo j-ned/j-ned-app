@@ -16,5 +16,13 @@ export const WORKSHOP_SPACE: WorkshopSpace = {
         "Choisis ta matière\u00a0: le guide te donne les plaquettes que j'utilise, opération par opération.",
       path: '/atelier/plaquettes',
     },
+    {
+      id: 'insert-decoder',
+      overline: 'Outil',
+      title: 'Décodeur de plaquette',
+      summary:
+        "Tape le code ISO d'une plaquette\u00a0: je t'explique ce que veut dire chaque lettre et chaque chiffre.",
+      path: '/atelier/decodeur',
+    },
   ],
 };

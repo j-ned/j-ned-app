@@ -1,17 +1,18 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { tap } from 'rxjs';
 import { injectMarkNotFound, injectMarkUnavailable } from '@core/ssr/response-status';
 import { PageNotFound } from '../../../../pages/page-not-found';
 import { INSERT_GUIDE_COPY } from '../../application/insert-guide-copy';
 import { noseRadiusLabel } from '../../application/nose-radius-label';
+import { decodeInsertCode, normalizeInsertCode } from '../../domain/decode-insert-code';
 import { materialsOf, rowsFor } from '../../domain/insert-guide-rows';
 import { HttpInsertGuideGateway } from '../../infra/gateways/http-insert-guide.gateway';
 
 @Component({
   selector: 'app-insert-guide',
-  imports: [PageNotFound],
+  imports: [PageNotFound, RouterLink],
   host: { class: 'block', '[class.min-h-svh]': '!notFound()', '[class.pt-20]': '!notFound()' },
   template: `
     @if (notFound()) {
@@ -103,7 +104,19 @@ import { HttpInsertGuideGateway } from '../../infra/gateways/http-insert-guide.g
                     @for (row of rows(); track row.operation + row.insert + row.noseRadius) {
                       <tr data-testid="insert-guide-row" class="border-b border-line align-top">
                         <th scope="row" class="py-3 pr-3 font-semibold">{{ row.operation }}</th>
-                        <td class="px-3 py-3 font-mono">{{ row.insert }}</td>
+                        <td class="px-3 py-3 font-mono">
+                          @if (row.decoderCode; as code) {
+                            <a
+                              routerLink="/atelier/decodeur"
+                              [queryParams]="{ code }"
+                              class="underline underline-offset-3 hover:text-primary"
+                              ><span>{{ row.insert }}</span
+                              ><span class="sr-only">{{ copy.decodeLinkSuffix }}</span></a
+                            >
+                          } @else {
+                            {{ row.insert }}
+                          }
+                        </td>
                         <td class="px-3 py-3 whitespace-nowrap tabular-nums">
                           {{ row.noseRadius }}
                         </td>
@@ -158,6 +171,7 @@ export class InsertGuide {
     rowsFor(this._entries(), this.material()).map((row) => ({
       ...row,
       noseRadius: noseRadiusLabel(row.noseRadius),
+      decoderCode: decodeInsertCode(row.insert).ok ? normalizeInsertCode(row.insert) : undefined,
     })),
   );
 
