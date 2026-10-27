@@ -292,8 +292,12 @@ server {
         return 410;
     }
 
-    # Routes rendues côté client (RenderMode.Client dans app.routes.server.ts) : coquille CSR, 200
+    # Routes rendues côté client (RenderMode.Client dans app.routes.server.ts) : coquille CSR, 200.
+    # `no-cache` : sans lui, le navigateur garde l'ancienne coquille (cache heuristique sur
+    # Last-Modified) et charge l'ancien bundle après un déploiement.
     location ~ ^/(login|two-factor|admin)(/|$) {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
         try_files /index.csr.html =404;
     }
 
@@ -319,8 +323,11 @@ server {
         include /etc/nginx/snippets/ssr-proxy.conf;
     }
 
-    # Routes prérendues : leur propre index.html ; sinon 404
+    # Routes prérendues : leur propre index.html ; sinon 404 (corps : la coquille CSR). Même
+    # revalidation que la coquille : une page ou une 404 en cache chargerait un bundle périmé.
     location / {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
         try_files $uri $uri/index.html =404;
     }
 }

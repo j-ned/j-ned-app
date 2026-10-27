@@ -123,6 +123,13 @@ grep -q 'href="https://nedellec-julien.fr/blog"' /tmp/evil.html
 # Page d'accueil par défaut de l'image nginx : absente de l'image
 curl -s http://127.0.0.1:3000/index.html -o /tmp/default-index.html
 ! grep -q 'Welcome to nginx' /tmp/default-index.html || { echo "page par défaut de nginx servie"; exit 1; }
+# HTML servi par nginx (coquille CSR, pages prérendues, 404) : revalidé à chaque visite, sinon le
+# navigateur garde une coquille périmée qui charge l'ancien bundle après un déploiement.
+for path in /login /admin/guide-plaquettes /mentions-legales/ /does-not-exist; do
+  html_headers=$(curl -s -D - -o /dev/null "http://127.0.0.1:3000$path")
+  grep -qi '^cache-control: no-cache' <<<"$html_headers" || { echo "HTML sans revalidation : $path"; echo "$html_headers"; exit 1; }
+  grep -qi '^x-frame-options: deny' <<<"$html_headers" || { echo "en-têtes de sécurité absents : $path"; exit 1; }
+done
 # Une URL inconnue ne réveille pas Node : 404 nginx sur la coquille CSR
 test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/wp-login.php)" = "404"
 # Routes client → coquille CSR en 200 ; URL inconnue → coquille CSR en 404 (pas la home)

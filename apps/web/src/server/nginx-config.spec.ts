@@ -17,7 +17,28 @@ const directivesOf = (pattern: RegExp): readonly string[] | null => {
 const RETIRED_LOCATION =
   /location ~ "?\^\/\(offres\|offre-site-industrie\|rendez-vous\)\(\/\|\$\)"? \{([^}]*)\}/;
 
+const CLIENT_SHELL_LOCATION =
+  /location ~ "?\^\/\(login\|two-factor\|admin\)\(\/\|\$\)"? \{([^}]*)\}/;
+const FILE_LOCATION = /location \/ \{([^}]*)\}/;
+
 describe('nginx configuration', () => {
+  describe('HTML that Node does not render', () => {
+    it.each<[string, RegExp]>([
+      ['the client shell of login and admin', CLIENT_SHELL_LOCATION],
+      ['the prerendered pages, 404 and 410 bodies', FILE_LOCATION],
+    ])(
+      'Given %s When it is served Then the browser revalidates it and keeps the security headers',
+      (_, location) => {
+        const directives = directivesOf(location) ?? [];
+
+        expect({
+          noCache: directives.includes('add_header Cache-Control "no-cache" always'),
+          securityHeaders: directives.includes('include /etc/nginx/snippets/security-headers.conf'),
+        }).toEqual({ noCache: true, securityHeaders: true });
+      },
+    );
+  });
+
   // Spec 029 : offres et prise de rendez-vous retirées.
   describe('retired pages (offers and booking)', () => {
     it('answers 410 Gone so that search engines drop them for good', () => {
