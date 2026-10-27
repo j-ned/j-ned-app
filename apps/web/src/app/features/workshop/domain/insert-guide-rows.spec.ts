@@ -60,19 +60,26 @@ describe('rowsFor', () => {
         noseRadius: 1.2,
         note: 'Remarque fictive.',
         allMaterials: false,
+        key: 2,
       },
-      { operation: 'Ébauche extérieure', insert: 'EBA-2', noseRadius: 0.8, allMaterials: false },
-      { operation: 'Gorge', insert: 'GOR-1', noseRadius: 0.4, allMaterials: false },
-      { operation: 'Filetage', insert: 'FIL-1', noseRadius: 0.2, allMaterials: false },
+      {
+        operation: 'Ébauche extérieure',
+        insert: 'EBA-2',
+        noseRadius: 0.8,
+        allMaterials: false,
+        key: 4,
+      },
+      { operation: 'Gorge', insert: 'GOR-1', noseRadius: 0.4, allMaterials: false, key: 3 },
+      { operation: 'Filetage', insert: 'FIL-1', noseRadius: 0.2, allMaterials: false, key: 0 },
     ]);
   });
 
   it.each([
-    ['Acier fictif', 'EBA-1', 'FIL-1'],
-    ['Laiton fictif', 'EBA-2', 'FIL-2'],
+    ['Acier fictif', 'EBA-1', 'FIL-1', 3, 0],
+    ['Laiton fictif', 'EBA-2', 'FIL-2', 4, 1],
   ])(
     'Given a line for all materials When the rows of « %s » are read Then it comes among its own, at the rank of its operation, without a radius',
-    (material, roughing, threading) => {
+    (material, roughing, threading, roughingKey, threadingKey) => {
       const withGeneric = [
         anEntry({ material: 'Acier fictif', operation: 'threading', insert: 'FIL-1' }),
         anEntry({ material: 'Laiton fictif', operation: 'threading', insert: 'FIL-2' }),
@@ -82,17 +89,44 @@ describe('rowsFor', () => {
       ];
 
       expect(rowsFor(withGeneric, material)).toEqual([
-        { operation: 'Ébauche extérieure', insert: roughing, noseRadius: 0.8, allMaterials: false },
+        {
+          operation: 'Ébauche extérieure',
+          insert: roughing,
+          noseRadius: 0.8,
+          allMaterials: false,
+          key: roughingKey,
+        },
         {
           operation: 'Alésage (ébauche et finition)',
           insert: 'BARRE-FICTIVE-01',
           note: 'Diamètre au besoin.',
           allMaterials: true,
+          key: 2,
         },
-        { operation: 'Filetage', insert: threading, noseRadius: 0.8, allMaterials: false },
+        {
+          operation: 'Filetage',
+          insert: threading,
+          noseRadius: 0.8,
+          allMaterials: false,
+          key: threadingKey,
+        },
       ]);
     },
   );
+
+  it('Given two lines for all materials alike but for their note When the rows are read Then each keeps its own place in the guide as key, in the guide order', () => {
+    const twins = [
+      anEntry({ material: 'Acier fictif', insert: 'EBA-1' }),
+      aGenericEntry({ note: 'Petit diamètre.' }),
+      aGenericEntry({ note: 'Grand diamètre.' }),
+    ];
+
+    expect(rowsFor(twins, 'Acier fictif').map(({ key, note }) => ({ key, note }))).toEqual([
+      { key: 0, note: undefined },
+      { key: 1, note: 'Petit diamètre.' },
+      { key: 2, note: 'Grand diamètre.' },
+    ]);
+  });
 
   it.each(['', 'Matière inconnue', 'acier fictif'])(
     'Given the material « %s » absent from the guide When its rows are read Then there is none',

@@ -16,5 +16,6 @@ export const INSERT_GUIDE_COPY = {
     note: 'Remarque',
   },
   tableCaption: 'Plaquettes pour',
+  allMaterialsCaption: 'Plaquettes pour toutes les matières',
   decodeLinkSuffix: ', décoder ce code',
 } as const;

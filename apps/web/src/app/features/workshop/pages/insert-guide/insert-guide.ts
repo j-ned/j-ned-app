@@ -89,10 +89,7 @@ import { HttpInsertGuideGateway } from '../../infra/gateways/http-insert-guide.g
                     </tr>
                   </thead>
                   <tbody>
-                    @for (
-                      row of rows();
-                      track row.operation + row.insert + row.noseRadius + row.allMaterials
-                    ) {
+                    @for (row of rows(); track row.key) {
                       <tr data-testid="insert-guide-row" class="border-b border-line align-top">
                         <th scope="row" class="py-3 pr-3 font-semibold">
                           {{ row.operation }}
@@ -170,7 +167,11 @@ export class InsertGuide {
     const asked = this.materialParam() ?? '';
     return this.materials().includes(asked) ? asked : '';
   });
-  protected readonly caption = computed(() => `${this.copy.tableCaption} ${this.material()}`);
+  protected readonly caption = computed(() =>
+    this.material() === this.copy.allMaterials
+      ? this.copy.allMaterialsCaption
+      : `${this.copy.tableCaption} ${this.material()}`,
+  );
   // Décodeur éteint : aucun lien, pour ne jamais mener à sa 404.
   private readonly _decoderEnabled = computed(() => this.guide()?.decoderEnabled === true);
   protected readonly rows = computed(() =>

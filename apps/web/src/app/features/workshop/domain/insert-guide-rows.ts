@@ -19,13 +19,15 @@ export function rowsFor(
   material: string,
 ): readonly InsertGuideRow[] {
   return entries
-    .filter((entry) => entry.allMaterials || entry.material === material)
-    .sort((a, b) => operationRank(a) - operationRank(b))
-    .map((entry) => ({
+    .map((entry, key) => ({ entry, key }))
+    .filter(({ entry }) => entry.allMaterials || entry.material === material)
+    .sort((a, b) => operationRank(a.entry) - operationRank(b.entry))
+    .map(({ entry, key }) => ({
       operation: operationLabel(entry),
       insert: entry.insert,
       ...(entry.noseRadius === undefined ? {} : { noseRadius: entry.noseRadius }),
       ...(entry.note === undefined ? {} : { note: entry.note }),
       allMaterials: entry.allMaterials === true,
+      key,
     }));
 }

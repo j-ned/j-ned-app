@@ -32,4 +32,5 @@ export type InsertGuideRow = {
   readonly noseRadius?: number;
   readonly note?: string;
   readonly allMaterials: boolean;
+  readonly key: number;
 };

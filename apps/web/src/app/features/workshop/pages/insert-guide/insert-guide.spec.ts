@@ -439,6 +439,29 @@ describe('InsertGuide', () => {
       expect(all('suggest-option').map(collapsed)).toEqual(['Acier fictif', 'Laiton fictif']);
     });
 
+    it('When the material changes while two lines for all materials differ only by their note Then both show, in the guide order, without a duplicate key warning', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const twins: InsertGuideDto = {
+        ...ENABLED_GUIDE,
+        entries: [
+          ...ENABLED_GUIDE.entries,
+          { allMaterials: true, operation: 'boring', insert: 'BARRE-FICTIVE-01', note: 'Petit.' },
+          { allMaterials: true, operation: 'boring', insert: 'BARRE-FICTIVE-01', note: 'Grand.' },
+        ],
+      };
+      await render(serving(twins), 'Acier fictif');
+      fixture.componentRef.setInput('matiere', 'Laiton fictif');
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect({
+        notes: cells()
+          .filter(([, insert]) => insert === 'BARRE-FICTIVE-01')
+          .map((row) => row[3]),
+        duplicateKeys: warn.mock.calls.some((call) => String(call[0]).includes('NG0955')),
+      }).toEqual({ notes: ['Petit.', 'Grand.'], duplicateKeys: false });
+    });
+
     it('When the guide holds only lines for all materials Then the single choice « Toutes matières » shows them', async () => {
       const onlyGeneric: InsertGuideDto = {
         ...ENABLED_GUIDE,
@@ -451,9 +474,15 @@ describe('InsertGuide', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect({ options, empty: one('insert-guide-empty'), rows: cells() }).toEqual({
+      expect({
+        options,
+        empty: one('insert-guide-empty'),
+        caption: collapsed(one('insert-guide-table')?.querySelector('caption')),
+        rows: cells(),
+      }).toEqual({
         options: ['Toutes matières'],
         empty: null,
+        caption: 'Plaquettes pour toutes les matières',
         rows: [
           [
             `Alésage (ébauche et finition) ${INSERT_GUIDE_COPY.allMaterials}`,
