@@ -23,23 +23,36 @@ import type { InsertGuideRowDraft } from '../insert-guide-draft';
     <legend class="px-1 font-display text-sm font-bold">Ligne {{ rank() }}</legend>
 
     <div class="min-w-0">
-      @let materialError = row.material().touched() && row.material().invalid();
-      <label [for]="id + '-material'" class="field-label">Matière</label>
-      <app-suggest-input
-        [inputId]="id + '-material'"
-        inputTestId="admin-insert-guide-material"
-        [formField]="row.material"
-        [suggestions]="materialSuggestions()"
-        listLabel="Matières déjà saisies"
-        [mandatory]="true"
-        [markedInvalid]="materialError"
-        [describedBy]="materialError ? id + '-material-error' : null"
-      />
-      <app-field-error
-        [field]="row.material"
-        [errorId]="id + '-material-error'"
-        testId="admin-insert-guide-material-error"
-      />
+      @if (!row.allMaterials().value()) {
+        @let materialError = row.material().touched() && row.material().invalid();
+        <label [for]="id + '-material'" class="field-label">Matière</label>
+        <app-suggest-input
+          [inputId]="id + '-material'"
+          inputTestId="admin-insert-guide-material"
+          [formField]="row.material"
+          [suggestions]="materialSuggestions()"
+          listLabel="Matières déjà saisies"
+          [mandatory]="true"
+          [markedInvalid]="materialError"
+          [describedBy]="materialError ? id + '-material-error' : null"
+        />
+        <app-field-error
+          [field]="row.material"
+          [errorId]="id + '-material-error'"
+          testId="admin-insert-guide-material-error"
+        />
+      }
+      <label [for]="id + '-all-materials'" class="flex min-h-11 items-center gap-3 font-medium">
+        <input
+          type="checkbox"
+          [id]="id + '-all-materials'"
+          data-testid="admin-insert-guide-all-materials"
+          [formField]="row.allMaterials"
+          (change)="clearMaterial($event)"
+          class="size-5 accent-primary"
+        />
+        Toutes matières
+      </label>
     </div>
 
     <div class="min-w-0">
@@ -96,11 +109,15 @@ import type { InsertGuideRowDraft } from '../insert-guide-draft';
         [id]="id + '-radius'"
         data-testid="admin-insert-guide-radius"
         [formField]="row.noseRadius"
-        aria-required="true"
         [attr.aria-invalid]="radiusError"
-        [attr.aria-describedby]="radiusError ? id + '-radius-error' : null"
+        [attr.aria-describedby]="
+          radiusError ? id + '-radius-hint ' + id + '-radius-error' : id + '-radius-hint'
+        "
         class="form-input"
       />
+      <p [id]="id + '-radius-hint'" class="field-hint">
+        Facultatif : laissez vide quand la ligne n'a pas de rayon unique.
+      </p>
       <app-field-error
         [field]="row.noseRadius"
         [errorId]="id + '-radius-error'"
@@ -166,4 +183,8 @@ export class AdminInsertGuideRow {
     const checkedInsert = textAfterInsertCode(insert) ?? insert;
     return findConfidentialReferences([material, checkedInsert, note].join('\n')).join(', ');
   });
+
+  protected clearMaterial(event: Event): void {
+    if ((event.target as HTMLInputElement).checked) this.entry().material().value.set('');
+  }
 }

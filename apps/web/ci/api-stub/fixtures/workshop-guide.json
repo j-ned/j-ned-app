@@ -26,6 +26,12 @@
       "operation": "external-finishing",
       "insert": "PLAQUETTE-TEMOIN-3",
       "noseRadius": 0.4
+    },
+    {
+      "allMaterials": true,
+      "operation": "boring",
+      "insert": "BARRE-TEMOIN-1",
+      "note": "Ligne fictive de la doublure, pour toutes les matières."
     }
   ],
   "version": 1,

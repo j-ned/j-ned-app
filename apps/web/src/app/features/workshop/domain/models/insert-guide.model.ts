@@ -3,16 +3,18 @@ export type MachiningOperation =
   | 'external-finishing'
   | 'internal-roughing'
   | 'internal-finishing'
+  | 'boring'
   | 'drilling'
   | 'grooving'
   | 'parting-off'
   | 'threading';
 
 export type InsertGuideEntry = {
-  readonly material: string;
+  readonly material?: string;
+  readonly allMaterials?: true;
   readonly operation: MachiningOperation;
   readonly insert: string;
-  readonly noseRadius: number;
+  readonly noseRadius?: number;
   readonly note?: string;
 };
 
@@ -27,6 +29,7 @@ export type InsertGuideDocument = InsertGuide & { readonly version: number };
 export type InsertGuideRow = {
   readonly operation: string;
   readonly insert: string;
-  readonly noseRadius: number;
+  readonly noseRadius?: number;
   readonly note?: string;
+  readonly allMaterials: boolean;
 };

@@ -8,6 +8,7 @@ import type {
 export type InsertGuideRowDraft = {
   key: string;
   material: string;
+  allMaterials: boolean;
   operation: MachiningOperation | '';
   insert: string;
   noseRadius: number | null;
@@ -24,6 +25,7 @@ export function newInsertGuideRow(): InsertGuideRowDraft {
   return {
     key: `entry-${crypto.randomUUID()}`,
     material: '',
+    allMaterials: false,
     operation: '',
     insert: '',
     noseRadius: null,
@@ -41,30 +43,34 @@ export function toInsertGuideDraft(
     decoderEnabled: guide?.decoderEnabled ?? false,
     entries: (guide?.entries ?? []).map((entry, index) => ({
       key: previous?.entries[index]?.key ?? `entry-${index + 1}`,
-      material: entry.material,
+      material: entry.material ?? '',
+      allMaterials: entry.allMaterials === true,
       operation: entry.operation,
       insert: entry.insert,
-      noseRadius: entry.noseRadius,
+      noseRadius: entry.noseRadius ?? null,
       note: entry.note ?? '',
     })),
   };
 }
 
-// Les lignes sans opération ni rayon n'atteignent jamais l'envoi : le schéma les refuse avant.
+// Les lignes sans opération n'atteignent jamais l'envoi : le schéma les refuse avant.
 export function toInsertGuidePayload(draft: InsertGuideDraft): InsertGuide {
   return {
     enabled: draft.enabled,
     decoderEnabled: draft.decoderEnabled,
-    entries: draft.entries.flatMap(({ material, operation, insert, noseRadius, note }) => {
-      if (operation === '' || noseRadius === null) return [];
-      const entry: InsertGuideEntry = {
-        material: material.trim(),
-        operation,
-        insert: insert.trim(),
-        noseRadius,
-      };
-      const remark = note.trim();
-      return [remark ? { ...entry, note: remark } : entry];
-    }),
+    entries: draft.entries.flatMap(
+      ({ material, allMaterials, operation, insert, noseRadius, note }) => {
+        if (operation === '') return [];
+        const remark = note.trim();
+        const entry: InsertGuideEntry = {
+          ...(allMaterials ? { allMaterials } : { material: material.trim() }),
+          operation,
+          insert: insert.trim(),
+          ...(noseRadius === null || Number.isNaN(noseRadius) ? {} : { noseRadius }),
+          ...(remark ? { note: remark } : {}),
+        };
+        return [entry];
+      },
+    ),
   };
 }

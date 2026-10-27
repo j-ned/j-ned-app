@@ -7,6 +7,7 @@ export const INSERT_GUIDE_COPY = {
   materialHint: 'Tape quelques lettres de ta matière, puis choisis-la dans la liste.',
   materialListLabel: 'Matières du guide',
   noMaterial: 'Aucune matière',
+  allMaterials: 'Toutes matières',
   empty: 'Guide en cours de remplissage.',
   columns: {
     operation: 'Opération',

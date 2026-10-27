@@ -56,11 +56,10 @@ const boundedText =
     return null;
   };
 
+// Rayon vide : la ligne n'a pas de rayon unique (outil d'alésage, par exemple).
 function radiusError({ value }: FieldContext<number | null>): TextError {
   const radius = value();
-  if (radius === null || Number.isNaN(radius)) {
-    return { kind: 'required', message: REQUIRED_MESSAGE };
-  }
+  if (radius === null || Number.isNaN(radius)) return null;
   if (radius <= 0) return { kind: 'min', message: 'Le rayon doit être supérieur à 0' };
   if (radius > MAX_RADIUS) {
     return { kind: 'max', message: `Le rayon ne doit pas dépasser ${MAX_RADIUS}\u00a0mm` };
@@ -182,7 +181,9 @@ export class AdminInsertGuideForm {
           : null,
       );
       applyEach(path.entries, (row) => {
-        validate(row.material, boundedText(80, 'La matière', true));
+        validate(row.material, (context) =>
+          boundedText(80, 'La matière', !context.valueOf(row.allMaterials))(context),
+        );
         required(row.operation, { message: 'Choisissez une opération' });
         validate(row.insert, boundedText(40, 'La plaquette', true));
         validate(row.noseRadius, radiusError);
@@ -201,7 +202,7 @@ export class AdminInsertGuideForm {
 
   protected readonly materialSuggestions = computed(() =>
     distinctSuggestions([
-      ...this.savedEntries().map(({ material }) => material),
+      ...this.savedEntries().flatMap(({ material }) => material ?? []),
       ...this.value().entries.map(({ material }) => material),
     ]),
   );

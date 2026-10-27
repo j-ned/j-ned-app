@@ -89,9 +89,21 @@ import { HttpInsertGuideGateway } from '../../infra/gateways/http-insert-guide.g
                     </tr>
                   </thead>
                   <tbody>
-                    @for (row of rows(); track row.operation + row.insert + row.noseRadius) {
+                    @for (
+                      row of rows();
+                      track row.operation + row.insert + row.noseRadius + row.allMaterials
+                    ) {
                       <tr data-testid="insert-guide-row" class="border-b border-line align-top">
-                        <th scope="row" class="py-3 pr-3 font-semibold">{{ row.operation }}</th>
+                        <th scope="row" class="py-3 pr-3 font-semibold">
+                          {{ row.operation }}
+                          @if (row.allMaterials) {
+                            <span
+                              data-testid="insert-guide-all-materials"
+                              class="block text-sm font-normal text-muted"
+                              >{{ copy.allMaterials }}</span
+                            >
+                          }
+                        </th>
                         <td class="px-3 py-3 font-mono">
                           @if (row.decoderCode; as code) {
                             <a
@@ -149,7 +161,11 @@ export class InsertGuide {
   );
   protected readonly notFound = computed(() => this.guide()?.enabled === false);
   private readonly _entries = computed(() => this.guide()?.entries ?? []);
-  protected readonly materials = computed(() => materialsOf(this._entries()));
+  protected readonly materials = computed(() => {
+    const materials = materialsOf(this._entries());
+    const generic = this._entries().some(({ allMaterials }) => allMaterials);
+    return materials.length === 0 && generic ? [this.copy.allMaterials] : materials;
+  });
   protected readonly material = computed(() => {
     const asked = this.materialParam() ?? '';
     return this.materials().includes(asked) ? asked : '';

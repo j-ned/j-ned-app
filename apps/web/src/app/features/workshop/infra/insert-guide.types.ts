@@ -1,10 +1,11 @@
 import type { MachiningOperation } from '../domain/models/insert-guide.model';
 
 type InsertGuideEntryDto = {
-  readonly material: string;
+  readonly material?: string;
+  readonly allMaterials?: boolean;
   readonly operation: MachiningOperation;
   readonly insert: string;
-  readonly noseRadius: number;
+  readonly noseRadius?: number | null;
   readonly note?: string;
 };
 

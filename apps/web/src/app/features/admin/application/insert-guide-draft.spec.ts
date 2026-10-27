@@ -1,5 +1,5 @@
 import type { InsertGuide } from '@features/workshop/domain/models/insert-guide.model';
-import { anEntry } from '@features/workshop/testing/insert-guide-builders';
+import { aGenericEntry, anEntry } from '@features/workshop/testing/insert-guide-builders';
 import {
   newInsertGuideRow,
   toInsertGuideDraft,
@@ -33,6 +33,7 @@ describe('toInsertGuideDraft', () => {
         {
           key: 'entry-1',
           material: 'Matière fictive',
+          allMaterials: false,
           operation: 'threading',
           insert: 'CODE-FICTIF-01',
           noseRadius: 0.2,
@@ -41,6 +42,7 @@ describe('toInsertGuideDraft', () => {
         {
           key: 'entry-2',
           material: 'Autre matière',
+          allMaterials: false,
           operation: 'external-roughing',
           insert: 'CODE-FICTIF-02',
           noseRadius: 0.8,
@@ -48,6 +50,23 @@ describe('toInsertGuideDraft', () => {
         },
       ],
     });
+  });
+
+  it('Given a line for all materials without radius When the draft is built Then its box is checked, its material and radius blank', () => {
+    expect(
+      toInsertGuideDraft({ ...GUIDE, entries: [aGenericEntry({ note: 'Remarque fictive.' })] })
+        .entries,
+    ).toEqual([
+      {
+        key: 'entry-1',
+        material: '',
+        allMaterials: true,
+        operation: 'boring',
+        insert: 'BARRE-FICTIVE-01',
+        noseRadius: null,
+        note: 'Remarque fictive.',
+      },
+    ]);
   });
 
   it('Given a previous draft When the saved guide is turned back into a draft Then each line keeps the key of its position', () => {
@@ -79,6 +98,7 @@ describe('newInsertGuideRow', () => {
       fields: {
         key: undefined,
         material: '',
+        allMaterials: false,
         operation: '',
         insert: '',
         noseRadius: null,
@@ -99,6 +119,7 @@ describe('toInsertGuidePayload', () => {
         {
           key: 'entry-1',
           material: '  Matière fictive ',
+          allMaterials: false,
           operation: 'grooving',
           insert: ' CODE-FICTIF-01 ',
           noseRadius: 0.4,
@@ -107,6 +128,7 @@ describe('toInsertGuidePayload', () => {
         {
           key: 'entry-2',
           material: 'Autre matière',
+          allMaterials: false,
           operation: 'drilling',
           insert: 'CODE-FICTIF-02',
           noseRadius: 1.2,
@@ -134,6 +156,53 @@ describe('toInsertGuidePayload', () => {
         },
       ],
     });
+  });
+
+  it('Given a line for all materials without radius When the payload is built Then it is sent flagged, without material nor radius, even if a material was typed before the box was checked', () => {
+    expect(
+      toInsertGuidePayload({
+        enabled: true,
+        decoderEnabled: true,
+        entries: [
+          {
+            key: 'entry-1',
+            material: 'Matière oubliée',
+            allMaterials: true,
+            operation: 'boring',
+            insert: ' BARRE-FICTIVE-01 ',
+            noseRadius: null,
+            note: ' Diamètre au besoin. ',
+          },
+        ],
+      }).entries,
+    ).toEqual([
+      {
+        allMaterials: true,
+        operation: 'boring',
+        insert: 'BARRE-FICTIVE-01',
+        note: 'Diamètre au besoin.',
+      },
+    ]);
+  });
+
+  it('Given a line of one material without radius When the payload is built Then it is kept, without radius nor flag', () => {
+    expect(
+      toInsertGuidePayload({
+        enabled: true,
+        decoderEnabled: true,
+        entries: [
+          {
+            key: 'entry-1',
+            material: 'Matière fictive',
+            allMaterials: false,
+            operation: 'boring',
+            insert: 'BARRE-FICTIVE-01',
+            noseRadius: null,
+            note: '',
+          },
+        ],
+      }).entries,
+    ).toEqual([{ material: 'Matière fictive', operation: 'boring', insert: 'BARRE-FICTIVE-01' }]);
   });
 
   it('Given the guide switched off without lines When the payload is built Then it says so', () => {

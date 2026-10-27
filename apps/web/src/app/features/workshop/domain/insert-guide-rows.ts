@@ -8,9 +8,10 @@ const operationLabel = (entry: InsertGuideEntry): string =>
   MACHINING_OPERATIONS.find(({ id }) => id === entry.operation)?.label ?? entry.operation;
 
 export function materialsOf(entries: readonly InsertGuideEntry[]): readonly string[] {
-  return [...new Set(entries.map(({ material }) => material))].sort((a, b) =>
-    a.localeCompare(b, 'fr'),
+  const materials = entries.flatMap(({ material, allMaterials }) =>
+    allMaterials || material === undefined ? [] : [material],
   );
+  return [...new Set(materials)].sort((a, b) => a.localeCompare(b, 'fr'));
 }
 
 export function rowsFor(
@@ -18,12 +19,13 @@ export function rowsFor(
   material: string,
 ): readonly InsertGuideRow[] {
   return entries
-    .filter((entry) => entry.material === material)
+    .filter((entry) => entry.allMaterials || entry.material === material)
     .sort((a, b) => operationRank(a) - operationRank(b))
     .map((entry) => ({
       operation: operationLabel(entry),
       insert: entry.insert,
-      noseRadius: entry.noseRadius,
+      ...(entry.noseRadius === undefined ? {} : { noseRadius: entry.noseRadius }),
       ...(entry.note === undefined ? {} : { note: entry.note }),
+      allMaterials: entry.allMaterials === true,
     }));
 }

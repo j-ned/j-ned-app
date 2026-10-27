@@ -11,4 +11,8 @@ describe('noseRadiusLabel', () => {
   ])('Given a nose radius of %d mm When it is labelled Then it reads « %s »', (radius, label) => {
     expect(noseRadiusLabel(radius)).toBe(label);
   });
+
+  it('Given no single nose radius When it is labelled Then it reads a dash', () => {
+    expect(noseRadiusLabel(undefined)).toBe('—');
+  });
 });

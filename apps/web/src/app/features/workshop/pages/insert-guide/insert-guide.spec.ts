@@ -375,6 +375,97 @@ describe('InsertGuide', () => {
     });
   });
 
+  describe('Given a boring line for all materials, without radius', () => {
+    const WITH_GENERIC: InsertGuideDto = {
+      ...ENABLED_GUIDE,
+      entries: [
+        ...ENABLED_GUIDE.entries,
+        {
+          allMaterials: true,
+          operation: 'boring',
+          insert: 'BARRE-FICTIVE-01',
+          note: 'Diamètre au besoin.',
+        },
+      ],
+    };
+    const cells = (): string[][] =>
+      all('insert-guide-row').map((row) => [...row.querySelectorAll('th, td')].map(collapsed));
+
+    it.each([
+      [
+        'Acier fictif',
+        [
+          ['Ébauche extérieure', 'EBA-1', '0,8\u00a0mm', 'Remarque fictive.'],
+          [
+            `Alésage (ébauche et finition) ${INSERT_GUIDE_COPY.allMaterials}`,
+            'BARRE-FICTIVE-01',
+            '—',
+            'Diamètre au besoin.',
+          ],
+          ['Filetage', 'FIL-1', '0,2\u00a0mm', ''],
+        ],
+      ],
+      [
+        'Laiton fictif',
+        [
+          ['Finition extérieure', 'LAI-1', '0,4\u00a0mm', ''],
+          [
+            `Alésage (ébauche et finition) ${INSERT_GUIDE_COPY.allMaterials}`,
+            'BARRE-FICTIVE-01',
+            '—',
+            'Diamètre au besoin.',
+          ],
+        ],
+      ],
+    ])(
+      'When « %s » is asked Then the line comes among its rows at the rank of its operation, marked for all materials, a dash for its radius',
+      async (material, rows) => {
+        await render(serving(WITH_GENERIC), material);
+
+        expect(cells()).toEqual(rows);
+      },
+    );
+
+    it('When a material is asked Then only the line for all materials carries the mention, as text', async () => {
+      await render(serving(WITH_GENERIC), 'Acier fictif');
+
+      expect(all('insert-guide-all-materials').map(collapsed)).toEqual(['Toutes matières']);
+    });
+
+    it('When the list of materials opens Then the line for all materials adds no choice', async () => {
+      await render(serving(WITH_GENERIC));
+      await press('ArrowDown');
+
+      expect(all('suggest-option').map(collapsed)).toEqual(['Acier fictif', 'Laiton fictif']);
+    });
+
+    it('When the guide holds only lines for all materials Then the single choice « Toutes matières » shows them', async () => {
+      const onlyGeneric: InsertGuideDto = {
+        ...ENABLED_GUIDE,
+        entries: [WITH_GENERIC.entries[3]],
+      };
+      await render(serving(onlyGeneric));
+      await press('ArrowDown');
+      const options = all('suggest-option').map(collapsed);
+      fixture.componentRef.setInput('matiere', INSERT_GUIDE_COPY.allMaterials);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect({ options, empty: one('insert-guide-empty'), rows: cells() }).toEqual({
+        options: ['Toutes matières'],
+        empty: null,
+        rows: [
+          [
+            `Alésage (ébauche et finition) ${INSERT_GUIDE_COPY.allMaterials}`,
+            'BARRE-FICTIVE-01',
+            '—',
+            'Diamètre au besoin.',
+          ],
+        ],
+      });
+    });
+  });
+
   it('Given the guide switched on without any entry When the page is rendered Then it says the guide is being filled, without list nor table', async () => {
     await render(serving({ ...ENABLED_GUIDE, entries: [] }));
 

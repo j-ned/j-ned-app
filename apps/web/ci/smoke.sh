@@ -30,6 +30,9 @@ grep -q 'data-testid="insert-guide-title"' /tmp/guide.html || { echo "titre abse
 grep -q 'PLAQUETTE-TEMOIN-1' /tmp/guide.html || { echo "tableau absent : /atelier/plaquettes"; exit 1; }
 grep -q '"noseRadius"' /tmp/guide.html || { echo "document /api/workshop-guide absent de l'état de transfert"; exit 1; }
 grep -qi '^x-cache-status' /tmp/guide-headers.txt || { echo "/atelier/plaquettes non rendu par Node"; exit 1; }
+# Une ligne « toutes matières » sans rayon s'affiche sous la matière demandée, avec sa mention
+grep -q 'data-testid="insert-guide-all-materials"' /tmp/guide.html || { echo "ligne toutes matières absente : /atelier/plaquettes"; exit 1; }
+grep -q 'Alésage (ébauche et finition)' /tmp/guide.html || { echo "opération alésage absente : /atelier/plaquettes"; exit 1; }
 # Un code décodable du guide mène à son décodage ; un code non décodable reste du texte
 grep -q 'href="/atelier/decodeur?code=CCGT09T304PM"' /tmp/guide.html || { echo "lien vers le décodeur absent : /atelier/plaquettes"; exit 1; }
 ! grep -q 'href="/atelier/decodeur?code=PLAQUETTE' /tmp/guide.html || { echo "code non décodable lié : /atelier/plaquettes"; exit 1; }

@@ -10,7 +10,7 @@ import type {
   InsertGuideDocument,
 } from '@features/workshop/domain/models/insert-guide.model';
 import { HttpInsertGuideGateway } from '@features/workshop/infra/gateways/http-insert-guide.gateway';
-import { anEntry } from '@features/workshop/testing/insert-guide-builders';
+import { aGenericEntry, anEntry } from '@features/workshop/testing/insert-guide-builders';
 import { ToastStore } from '@core/notifications/toast-store';
 import { apiRejection } from '@shared/testing/api-rejection';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
@@ -283,7 +283,7 @@ describe('AdminInsertGuide: accessibilité des lignes', () => {
     ]);
   });
 
-  it('Given a line When it renders Then every field has its own label, the required ones say so and the radius steps by 0.01, its two allowed decimals', async () => {
+  it('Given a line When it renders Then every field has its own label, the required ones say so, the radius is optional and steps by 0.01, its two allowed decimals', async () => {
     const editor = await openEditor();
     const row = byTestId(editor.host, 'admin-insert-guide-row');
     const fields = [...(row?.querySelectorAll<Control>('input, select') ?? [])];
@@ -300,9 +300,10 @@ describe('AdminInsertGuide: accessibilité des lignes', () => {
     }).toEqual({
       fields: [
         { label: 'Matière', required: 'true' },
+        { label: 'Toutes matières', required: null },
         { label: 'Opération', required: 'true' },
         { label: 'Plaquette', required: 'true' },
-        { label: 'Rayon de bec (mm)', required: 'true' },
+        { label: 'Rayon de bec (mm)', required: null },
         { label: 'Remarque (facultative)', required: null },
       ],
       radius: { type: 'number', step: '0.01' },
@@ -503,7 +504,7 @@ describe('AdminInsertGuide: enregistrer', () => {
 });
 
 describe('AdminInsertGuide: validation', () => {
-  it('Given a blank line When « Enregistrer » is pressed Then nothing is sent and each required field shows its alert', async () => {
+  it('Given a blank line When « Enregistrer » is pressed Then nothing is sent and each required field shows its alert, the radius none', async () => {
     const editor = await openEditor();
 
     await addRow(editor);
@@ -518,14 +519,14 @@ describe('AdminInsertGuide: validation', () => {
       material: error('material'),
       operation: error('operation'),
       insert: error('insert'),
-      radius: error('radius'),
+      radius: byTestId(editor.host, 'admin-insert-guide-radius-error'),
       note: byTestId(editor.host, 'admin-insert-guide-note-error'),
     }).toEqual({
       calls: 0,
       material: { text: 'Ce champ est obligatoire', role: 'alert' },
       operation: { text: 'Choisissez une opération', role: 'alert' },
       insert: { text: 'Ce champ est obligatoire', role: 'alert' },
-      radius: { text: 'Ce champ est obligatoire', role: 'alert' },
+      radius: null,
       note: null,
     });
   });
@@ -592,6 +593,140 @@ describe('AdminInsertGuide: validation', () => {
       error: testIdText(editor.host, 'admin-insert-guide-entries-error'),
     }).toEqual({ calls: 0, error: '300\u00a0lignes au plus' });
   }, 15_000);
+});
+
+describe('AdminInsertGuide: rayon facultatif', () => {
+  it('Given a line When its radius renders Then it is described as optional', async () => {
+    const editor = await openEditor();
+    const describedBy =
+      control(editor, 'admin-insert-guide-radius')?.getAttribute('aria-describedby') ?? '';
+
+    expect(
+      describedBy === '' ? null : normalized(editor.host.querySelector(`[id="${describedBy}"]`)),
+    ).toBe("Facultatif : laissez vide quand la ligne n'a pas de rayon unique.");
+  });
+
+  it('Given the radius of a line erased When the guide is saved Then the line is sent without radius', async () => {
+    const editor = await openEditor();
+
+    await fill(editor, 'admin-insert-guide-radius', '');
+    await save(editor);
+
+    expect(editor.saveGuide.mock.calls.map(([guide]) => guide.entries[0])).toEqual([
+      {
+        material: 'Matière fictive',
+        operation: 'external-roughing',
+        insert: 'CODE-FICTIF-01',
+        note: 'Remarque fictive.',
+      },
+    ]);
+  });
+});
+
+describe('AdminInsertGuide: toutes matières', () => {
+  const allMaterials = (editor: Editor, index = 0): HTMLInputElement | null =>
+    control(editor, 'admin-insert-guide-all-materials', index) as HTMLInputElement | null;
+  const materialsOfRow = (editor: Editor, index: number): number =>
+    byTestId(editor.host, 'admin-insert-guide-row', index)?.querySelectorAll(
+      '[data-testid="admin-insert-guide-material"]',
+    ).length ?? -1;
+  async function tick(editor: Editor, index = 0): Promise<void> {
+    allMaterials(editor, index)?.click();
+    await settle(editor.fixture);
+  }
+
+  it('Given a line of one material When it renders Then « Toutes matières » is an unchecked checkbox with its label, beside a shown material field', async () => {
+    const editor = await openEditor();
+    const box = allMaterials(editor);
+
+    expect({
+      type: box?.getAttribute('type'),
+      label: normalized(editor.host.querySelector(`label[for="${box?.id}"]`)),
+      checked: box?.checked,
+      materials: materialsOfRow(editor, 0),
+    }).toEqual({ type: 'checkbox', label: 'Toutes matières', checked: false, materials: 1 });
+  });
+
+  it('Given « Toutes matières » checked When the line renders Then its material field is gone, and comes back blank once unchecked', async () => {
+    const editor = await openEditor();
+
+    await tick(editor);
+    const hidden = materialsOfRow(editor, 0);
+    await tick(editor);
+
+    expect({
+      hidden,
+      shown: materialsOfRow(editor, 0),
+      value: (
+        byTestId(editor.host, 'admin-insert-guide-row', 0)?.querySelector(
+          '[data-testid="admin-insert-guide-material"]',
+        ) as HTMLInputElement | null
+      )?.value,
+      checked: allMaterials(editor)?.checked,
+    }).toEqual({ hidden: 0, shown: 1, value: '', checked: false });
+  });
+
+  it('Given a read line switched to all materials When the guide is saved Then it is sent flagged, without material', async () => {
+    const editor = await openEditor();
+
+    await tick(editor);
+    await save(editor);
+
+    expect(editor.saveGuide.mock.calls.map(([guide]) => guide.entries[0])).toEqual([
+      {
+        allMaterials: true,
+        operation: 'external-roughing',
+        insert: 'CODE-FICTIF-01',
+        noseRadius: 0.8,
+        note: 'Remarque fictive.',
+      },
+    ]);
+  });
+
+  it('Given a new boring line for all materials, without radius When the guide is saved Then it is accepted and sent without material nor radius', async () => {
+    const editor = await openEditor();
+
+    await addRow(editor);
+    await tick(editor, 2);
+    await fill(editor, 'admin-insert-guide-operation', 'boring', 2);
+    await fill(editor, 'admin-insert-guide-insert', 'BARRE-FICTIVE-01', 2);
+    await fill(editor, 'admin-insert-guide-note', 'Diamètre au besoin.', 2);
+    await save(editor);
+
+    expect(editor.saveGuide.mock.calls.map(([guide]) => guide.entries[2])).toEqual([
+      {
+        allMaterials: true,
+        operation: 'boring',
+        insert: 'BARRE-FICTIVE-01',
+        note: 'Diamètre au besoin.',
+      },
+    ]);
+  });
+
+  it('Given a line for all materials read When it renders Then its box is checked, without material field, and its radius blank', async () => {
+    const editor = await openEditor({
+      getDocument: vi.fn((): Observable<InsertGuideDocument> =>
+        of({ ...LOADED, entries: [aGenericEntry(), ...LOADED.entries] }),
+      ),
+    });
+
+    expect({
+      checked: [0, 1, 2].map((index) => allMaterials(editor, index)?.checked),
+      materials: [0, 1, 2].map((index) => materialsOfRow(editor, index)),
+      radius: control(editor, 'admin-insert-guide-radius')?.value,
+    }).toEqual({ checked: [true, false, false], materials: [0, 1, 1], radius: '' });
+  });
+
+  it('Given a line for all materials holding a plan reference When it renders Then it warns too', async () => {
+    const editor = await openEditor();
+
+    await tick(editor);
+    await fill(editor, 'admin-insert-guide-note', 'Voir plan n° 12');
+
+    expect(normalized(byTestId(editor.host, 'admin-insert-guide-confidential'))).toContain(
+      'plan n° 12',
+    );
+  });
 });
 
 describe('AdminInsertGuide: confidentialité', () => {
@@ -751,6 +886,34 @@ describe('AdminInsertGuide: suggestions des lignes', () => {
       'Laiton fictif',
       'Titane fictif',
     ]);
+  });
+
+  it('Given a line for all materials read When a new line is typed Then it proposes no material, and its insert is proposed', async () => {
+    const editor = await openEditor({
+      getDocument: vi.fn((): Observable<InsertGuideDocument> =>
+        of({
+          ...WITH_VALUES,
+          entries: [aGenericEntry({ insert: 'BARRE-FICTIVE-01' }), ...WITH_VALUES.entries],
+        }),
+      ),
+    });
+    await addRow(editor);
+    const listed = (testId: string, index: number): readonly string[] => {
+      const listbox = editor.host.querySelector(
+        `[id="${control(editor, testId, index)?.getAttribute('aria-controls')}"]`,
+      );
+      return [...(listbox?.querySelectorAll('[data-testid="suggest-option"]') ?? [])].map(
+        normalized,
+      );
+    };
+
+    await fill(editor, 'admin-insert-guide-material', 'i', 3);
+    await fill(editor, 'admin-insert-guide-insert', 'barre', 4);
+
+    expect([
+      listed('admin-insert-guide-material', 3),
+      listed('admin-insert-guide-insert', 4),
+    ]).toEqual([['Inox fictif', 'Acier fictif'], ['BARRE-FICTIVE-01']]);
   });
 
   it('Given a new line When its text matches a value exactly Then that value is not proposed to itself', async () => {

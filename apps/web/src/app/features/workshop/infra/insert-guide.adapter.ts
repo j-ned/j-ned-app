@@ -5,11 +5,11 @@ export function toInsertGuide({ enabled, decoderEnabled, entries }: InsertGuideD
   return {
     enabled,
     decoderEnabled,
-    entries: entries.map(({ material, operation, insert, noseRadius, note }) => ({
-      material,
+    entries: entries.map(({ material, allMaterials, operation, insert, noseRadius, note }) => ({
+      ...(allMaterials === true ? { allMaterials } : { material }),
       operation,
       insert,
-      noseRadius,
+      ...(noseRadius == null ? {} : { noseRadius }),
       ...(note === undefined ? {} : { note }),
     })),
   };

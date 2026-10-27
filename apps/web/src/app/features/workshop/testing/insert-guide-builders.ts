@@ -7,3 +7,10 @@ export const anEntry = (overrides: Partial<InsertGuideEntry> = {}): InsertGuideE
   noseRadius: 0.8,
   ...overrides,
 });
+
+export const aGenericEntry = (overrides: Partial<InsertGuideEntry> = {}): InsertGuideEntry => ({
+  allMaterials: true,
+  operation: 'boring',
+  insert: 'BARRE-FICTIVE-01',
+  ...overrides,
+});

@@ -76,6 +76,59 @@ describe('toInsertGuide', () => {
   );
 });
 
+describe('toInsertGuide, lines for all materials', () => {
+  it.each<[string, InsertGuideDto['entries'][number]]>([
+    [
+      'without material nor radius',
+      {
+        allMaterials: true,
+        operation: 'boring',
+        insert: 'BARRE-FICTIVE-01',
+        note: 'Remarque fictive.',
+      },
+    ],
+    [
+      'with a blank material and a null radius',
+      {
+        allMaterials: true,
+        material: '',
+        operation: 'boring',
+        insert: 'BARRE-FICTIVE-01',
+        noseRadius: null,
+        note: 'Remarque fictive.',
+      },
+    ],
+  ])(
+    'Given a line for all materials %s When it is adapted Then it is flagged, without material nor radius',
+    (_case, entry) => {
+      expect(toInsertGuide({ ...A_DTO, entries: [entry] }).entries).toEqual([
+        {
+          allMaterials: true,
+          operation: 'boring',
+          insert: 'BARRE-FICTIVE-01',
+          note: 'Remarque fictive.',
+        },
+      ]);
+    },
+  );
+
+  it('Given a line of one material without radius When it is adapted Then it keeps its material, without radius nor flag', () => {
+    expect(
+      toInsertGuide({
+        ...A_DTO,
+        entries: [
+          {
+            material: 'Matière fictive',
+            operation: 'boring',
+            insert: 'BARRE-FICTIVE-01',
+            noseRadius: null,
+          },
+        ],
+      }).entries,
+    ).toEqual([{ material: 'Matière fictive', operation: 'boring', insert: 'BARRE-FICTIVE-01' }]);
+  });
+});
+
 describe('toInsertGuideDocument', () => {
   it('Given the API document When it is adapted for the admin Then the guide keeps its version, without the date', () => {
     expect(toInsertGuideDocument(A_DTO)).toEqual({ ...toInsertGuide(A_DTO), version: 3 });
