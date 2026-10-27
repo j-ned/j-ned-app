@@ -16,6 +16,7 @@ const NAV_KEYS = [
   'projects',
   'posts',
   'profile',
+  'insert-guide',
   'cv',
   'audience',
   'messages',
@@ -80,7 +81,13 @@ describe('AdminNav: structure', () => {
       groups: [
         {
           label: 'Contenu',
-          links: ['nav-link-projects', 'nav-link-posts', 'nav-link-profile', 'nav-link-cv'],
+          links: [
+            'nav-link-projects',
+            'nav-link-posts',
+            'nav-link-profile',
+            'nav-link-cv',
+            'nav-link-insert-guide',
+          ],
         },
         { label: 'Audience', links: ['nav-link-audience', 'nav-link-messages'] },
         { label: 'Compte', links: ['nav-link-settings'] },
@@ -107,6 +114,7 @@ describe('AdminNav: structure', () => {
       posts: { href: '/admin/blog', text: 'Articles' },
       profile: { href: '/admin/profile', text: 'Parcours' },
       cv: { href: '/admin/cv', text: 'CV' },
+      'insert-guide': { href: '/admin/guide-plaquettes', text: 'Guide des plaquettes' },
       audience: { href: '/admin/audience', text: 'Audience' },
       messages: { href: '/admin/messages', text: 'Messages' },
       settings: { href: '/admin/settings', text: 'Paramètres' },
@@ -120,6 +128,7 @@ describe('AdminNav: page courante', () => {
     { url: '/admin/projects', current: 'projects' },
     { url: '/admin/blog', current: 'posts' },
     { url: '/admin/profile', current: 'profile' },
+    { url: '/admin/guide-plaquettes', current: 'insert-guide' },
     { url: '/admin/audience', current: 'audience' },
     { url: '/admin/messages', current: 'messages' },
     { url: '/admin/settings/security', current: 'settings' },

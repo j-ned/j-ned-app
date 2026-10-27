@@ -7,7 +7,7 @@ import type { LoadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
 
 export type AdminEditorCopy = {
-  readonly testIdPrefix: 'admin-project' | 'admin-post' | 'admin-profile';
+  readonly testIdPrefix: 'admin-project' | 'admin-post' | 'admin-profile' | 'admin-insert-guide';
   readonly loading: string;
   readonly loadError: string;
   readonly missing: string;

@@ -21,6 +21,8 @@ export type InsertGuide = {
   readonly entries: readonly InsertGuideEntry[];
 };
 
+export type InsertGuideDocument = InsertGuide & { readonly version: number };
+
 export type InsertGuideRow = {
   readonly operation: string;
   readonly insert: string;

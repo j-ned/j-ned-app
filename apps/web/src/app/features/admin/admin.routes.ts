@@ -64,6 +64,13 @@ export const ADMIN_ROUTES: Routes = [
           import('./pages/admin-profile/admin-profile').then((m) => m.AdminProfile),
       },
       {
+        path: 'guide-plaquettes',
+        title: 'Guide des plaquettes | Admin',
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () =>
+          import('./pages/admin-insert-guide/admin-insert-guide').then((m) => m.AdminInsertGuide),
+      },
+      {
         path: 'cv',
         title: 'CV | Admin',
         loadComponent: () => import('./pages/admin-cv/admin-cv').then((m) => m.AdminCv),

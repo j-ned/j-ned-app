@@ -668,6 +668,17 @@ Même grammaire que l'éditeur d'article (colonnes, sections, barre, sommaire, g
 - **Barre:** « Annuler » mène à `/admin`. Succès : toast « Parcours enregistré », compte à zéro, champs repartis du document renvoyé. Version périmée (409) : toast « Le parcours a été modifié depuis une autre fenêtre. Rechargez la page… », saisie conservée. 400/422 : « Le parcours n'a pas pu être enregistré. Détail : … ».
 - **Garde:** dialogue « Les modifications non enregistrées du parcours seront perdues. ».
 
+### Éditeur du guide des plaquettes (`features/admin/pages/admin-insert-guide/admin-insert-guide.ts`, `application/components/admin-insert-guide-form.ts`, `admin-insert-guide-row.ts`)
+
+Même cadre que l'éditeur de parcours (document unique, version, garde), sans sommaire : la colonne de droite porte un encadré « Avant d'enregistrer » (bord `line`, rappel de confidentialité, lien « Voir la page publique »).
+
+- **En-tête:** lien « Guide des plaquettes » de la navigation (icône `wrench`, après CV) ; `h1` « Guide des plaquettes ».
+- **Interrupteur:** case à cocher (`size-5 accent-primary`) dans son `label`, « Guide des plaquettes visible sur le site ».
+- **Lignes:** motif nouveau, la ligne est un `fieldset` (sélecteur d'attribut `fieldset[app-admin-insert-guide-row]`, bord `line`, `rounded-md`, `p-4`) dont la `legend` dit « Ligne N » ; champs libellés sans rang (le groupe le porte) : Matière, Opération (`app-select`, invite désactivée « Choisir une opération »), Plaquette, Rayon de bec (mm) (`type="number"`, pas de 0,01), Remarque (facultative, seule sans `aria-required`). Grille une colonne, deux dès `sm`, quatre dès `lg`. « Retirer » (`text-danger`, icône `trash`, nom « Retirer la ligne N ») ; « Ajouter une ligne » (`variant="text"`, icône `plus`) sous les lignes. Focus : premier champ de la ligne ajoutée, bouton d'ajout après un retrait. Pas de réordonnancement : le site trie par matière puis opération.
+- **Confidentialité:** une référence repérée par `findConfidentialReferences` dans la ligne ajoute sous elle un encadré `border-status-warn/40 bg-status-warn/10` « Référence repérée : « … ». Vérifiez qu'elle ne désigne ni une pièce, ni un plan, ni un ordre de fabrication. », sans bloquer l'enregistrement.
+- **Validation:** bornes de l'API (matière 80, plaquette 40, remarque 200 caractères ; rayon supérieur à 0, au plus 10 mm, deux décimales ; 300 lignes au plus), première erreur sous le champ touché, `role="alert"`.
+- **Barre:** toast « Guide des plaquettes enregistré » ; 409 : « Le guide des plaquettes a été modifié depuis une autre fenêtre. Rechargez la page… », saisie conservée.
+
 ### CV (`features/admin/pages/admin-cv/admin-cv.ts`, `application/admin-cv-view.ts`)
 
 - **En-tête:** sur-titre « PDF · 76 Ko · mis en ligne le 19 sept. 2026 » (taille par `formatFileSize`, source unique avec le cartouche et la zone de dépôt), `h1` « CV », phrase sur le bouton du site ; aside : `Cartouche` « CV en ligne », référence = nom du fichier, lignes Mis en ligne / Taille / Téléchargé (« 0 fois en 30 j », espace insécable, « indisponible » si le compte échoue, sans alerte ni toast). Aucun cartouche sans CV.

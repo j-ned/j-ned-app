@@ -1,5 +1,13 @@
 type AdminNavKey =
-  'overview' | 'projects' | 'posts' | 'profile' | 'cv' | 'audience' | 'messages' | 'settings';
+  | 'overview'
+  | 'projects'
+  | 'posts'
+  | 'profile'
+  | 'cv'
+  | 'insert-guide'
+  | 'audience'
+  | 'messages'
+  | 'settings';
 
 type AdminNavItem = {
   readonly key: AdminNavKey;
@@ -44,6 +52,7 @@ export function adminNavGroups(counts: AdminNavCounts): readonly AdminNavGroup[]
         link('posts', '/admin/blog', 'book', 'Articles', counts.posts),
         link('profile', '/admin/profile', 'user', 'Parcours'),
         link('cv', '/admin/cv', 'file-pdf', 'CV'),
+        link('insert-guide', '/admin/guide-plaquettes', 'wrench', 'Guide des plaquettes'),
       ],
     },
     {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toInsertGuide } from './insert-guide.adapter';
+import { toInsertGuide, toInsertGuideDocument } from './insert-guide.adapter';
 import type { InsertGuideDto } from './insert-guide.types';
 
 const A_DTO: InsertGuideDto = {
@@ -50,5 +50,11 @@ describe('toInsertGuide', () => {
       enabled: false,
       entries: [],
     });
+  });
+});
+
+describe('toInsertGuideDocument', () => {
+  it('Given the API document When it is adapted for the admin Then the guide keeps its version, without the date', () => {
+    expect(toInsertGuideDocument(A_DTO)).toEqual({ ...toInsertGuide(A_DTO), version: 3 });
   });
 });

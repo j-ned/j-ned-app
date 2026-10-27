@@ -1,8 +1,9 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL } from '@shared/api/api-config';
-import type { InsertGuide } from '../../domain/models/insert-guide.model';
+import type { InsertGuide, InsertGuideDocument } from '../../domain/models/insert-guide.model';
 import type { InsertGuideDto } from '../insert-guide.types';
 import { HttpInsertGuideGateway } from './http-insert-guide.gateway';
 
@@ -82,5 +83,50 @@ describe('HttpInsertGuideGateway', () => {
       [],
       [503],
     ]);
+  });
+  it('Given the admin reading When getDocument is read Then one GET on /workshop-guide is answered by the guide with its version', () => {
+    const received: InsertGuideDocument[] = [];
+    gateway.getDocument().subscribe((document) => received.push(document));
+
+    http.expectOne(`${BASE}/workshop-guide`).flush({
+      enabled: false,
+      entries: [],
+      version: 4,
+      updatedAt: '2026-10-26T10:00:00.000Z',
+    } satisfies InsertGuideDto);
+
+    expect(received).toEqual([{ enabled: false, entries: [], version: 4 }]);
+  });
+
+  it('Given an edited guide and the version read When saveGuide is called Then one silent PUT on /workshop-guide carries the switch, the entries and the version, and the answer is the adapted document', () => {
+    const received: InsertGuideDocument[] = [];
+    const guide: InsertGuide = {
+      enabled: true,
+      entries: [
+        {
+          material: 'Matière fictive',
+          operation: 'grooving',
+          insert: 'CODE-FICTIF-01',
+          noseRadius: 0.4,
+          note: 'Remarque fictive.',
+        },
+      ],
+    };
+    gateway.saveGuide(guide, 4).subscribe((document) => received.push(document));
+
+    const request = http.expectOne(`${BASE}/workshop-guide`);
+    request.flush({ ...guide, version: 5, updatedAt: '2026-10-27T10:00:00.000Z' });
+
+    expect({
+      method: request.request.method,
+      body: request.request.body,
+      silent: request.request.context.get(SKIP_ERROR_TOAST),
+      received,
+    }).toEqual({
+      method: 'PUT',
+      body: { ...guide, version: 4 },
+      silent: true,
+      received: [{ ...guide, version: 5 }],
+    });
   });
 });

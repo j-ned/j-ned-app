@@ -38,6 +38,24 @@ async function replaceProfile({ version, ...content }) {
   return [200, savedProfile];
 }
 
+// Un `PUT /api/workshop-guide` est gardé en mémoire, comme le parcours.
+let savedGuide = null;
+const readGuide = async () => savedGuide ?? readFixture('workshop-guide');
+
+async function replaceGuide({ version, enabled, entries }) {
+  const current = await readGuide();
+  if (version !== current.version) {
+    return [409, { statusCode: 409, message: 'Le guide a changé : version périmée' }];
+  }
+  savedGuide = {
+    enabled,
+    entries,
+    version: current.version + 1,
+    updatedAt: new Date().toISOString(),
+  };
+  return [200, savedGuide];
+}
+
 async function readBody(req) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
@@ -101,6 +119,8 @@ async function route(req, pathname, searchParams) {
   const { method } = req;
   if (method === 'POST' && pathname === '/api/analytics/track') return [204, null];
   if (method === 'PUT' && pathname === '/api/profile') return replaceProfile(await readJson(req));
+  if (method === 'PUT' && pathname === '/api/workshop-guide')
+    return replaceGuide(await readJson(req));
   if (method === 'POST' && pathname === '/api/profile/portrait') return replacePortrait(req);
   if (method === 'DELETE' && pathname === '/api/profile/portrait') return removePortrait();
   if (ADMIN_SESSION && method === 'GET' && pathname === '/api/auth/me') return [200, STUB_ADMIN];
@@ -118,7 +138,7 @@ async function route(req, pathname, searchParams) {
   }
   if (pathname === '/api/cv') return [200, await readFixture('cv')];
   if (pathname === '/api/profile') return [200, await readProfile()];
-  if (pathname === '/api/workshop-guide') return [200, await readFixture('workshop-guide')];
+  if (pathname === '/api/workshop-guide') return [200, await readGuide()];
   if (portraitFile && pathname === `/api${portraitFile.key}`) return [200, portraitFile];
   if (pathname.startsWith('/api/storage/')) return [200, STORAGE_FILE];
 
