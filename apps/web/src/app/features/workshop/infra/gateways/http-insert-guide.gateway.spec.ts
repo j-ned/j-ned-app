@@ -34,6 +34,7 @@ describe('HttpInsertGuideGateway', () => {
     gateway.getGuide().subscribe((guide) => received.push(guide));
     const body: InsertGuideDto = {
       enabled: true,
+      decoderEnabled: true,
       entries: [
         {
           material: 'Matière fictive',
@@ -54,6 +55,7 @@ describe('HttpInsertGuideGateway', () => {
       [
         {
           enabled: true,
+          decoderEnabled: true,
           entries: [
             {
               material: 'Matière fictive',
@@ -90,18 +92,20 @@ describe('HttpInsertGuideGateway', () => {
 
     http.expectOne(`${BASE}/workshop-guide`).flush({
       enabled: false,
+      decoderEnabled: true,
       entries: [],
       version: 4,
       updatedAt: '2026-10-26T10:00:00.000Z',
     } satisfies InsertGuideDto);
 
-    expect(received).toEqual([{ enabled: false, entries: [], version: 4 }]);
+    expect(received).toEqual([{ enabled: false, decoderEnabled: true, entries: [], version: 4 }]);
   });
 
-  it('Given an edited guide and the version read When saveGuide is called Then one silent PUT on /workshop-guide carries the switch, the entries and the version, and the answer is the adapted document', () => {
+  it('Given an edited guide and the version read When saveGuide is called Then one silent PUT on /workshop-guide carries both switches, the decoder one even when off, the entries and the version, and the answer is the adapted document', () => {
     const received: InsertGuideDocument[] = [];
     const guide: InsertGuide = {
       enabled: true,
+      decoderEnabled: false,
       entries: [
         {
           material: 'Matière fictive',
@@ -124,7 +128,7 @@ describe('HttpInsertGuideGateway', () => {
       received,
     }).toEqual({
       method: 'PUT',
-      body: { ...guide, version: 4 },
+      body: { ...guide, decoderEnabled: false, version: 4 },
       silent: true,
       received: [{ ...guide, version: 5 }],
     });

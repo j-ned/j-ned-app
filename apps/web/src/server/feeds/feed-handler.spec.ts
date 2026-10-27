@@ -21,7 +21,8 @@ const json = (body: unknown): Promise<Response> =>
 const HEALTHY_ROUTES: Readonly<Record<string, Route>> = {
   [PROJECTS_URL]: () => json([{ slug: 'dashflow' }]),
   [POSTS_URL]: () => json([makeBlogPost({ slug: 'article-temoin', coverImage: COVER_PATH })]),
-  [GUIDE_URL]: () => json({ enabled: true, entries: [], version: 1, updatedAt: null }),
+  [GUIDE_URL]: () =>
+    json({ enabled: true, decoderEnabled: true, entries: [], version: 1, updatedAt: null }),
   [COVER_PROBE_URL]: () =>
     Promise.resolve(
       new Response(null, { headers: { 'Content-Type': 'image/jpeg', 'Content-Length': '48213' } }),
@@ -91,12 +92,15 @@ describe('createFeedHandler', () => {
 
   it.each([
     [true, true],
+    [true, false],
+    [false, true],
     [false, false],
   ])(
-    'Given the insert guide switch read as %s When the sitemap is requested Then the guide and decoder pages are listed: %s',
-    async (enabled, listed) => {
+    'Given the guide switch read as %s and the decoder switch as %s When the sitemap is requested Then each page is listed by its own switch',
+    async (enabled, decoderEnabled) => {
       const api = anApi({
-        [GUIDE_URL]: () => json({ enabled, entries: [], version: 1, updatedAt: null }),
+        [GUIDE_URL]: () =>
+          json({ enabled, decoderEnabled, entries: [], version: 1, updatedAt: null }),
       });
 
       const served = await serve(aHandler(api), 'sitemap');
@@ -105,7 +109,7 @@ describe('createFeedHandler', () => {
         served.status,
         served.body.includes(`<loc>${SITE}/atelier/plaquettes</loc>`),
         served.body.includes(`<loc>${SITE}/atelier/decodeur</loc>`),
-      ]).toEqual([200, listed, listed]);
+      ]).toEqual([200, enabled, decoderEnabled]);
     },
   );
 

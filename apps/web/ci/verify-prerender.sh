@@ -14,7 +14,7 @@ test ! -e $browser/50x.html
 test ! -f $browser/sitemap.xml && test ! -f $browser/rss.xml
 # Pages statiques prérendues (offres et rendez-vous retirés, spec 029 : aucun fichier ne doit rester)
 test -f $browser/mentions-legales/index.html && test -f $browser/confidentialite/index.html
-# Atelier, guide des plaquettes et décodeur rendus à la requête : l'interrupteur du guide est lu dans l'API
+# Atelier, guide des plaquettes et décodeur rendus à la requête : leurs interrupteurs sont lus dans l'API
 test ! -f $browser/atelier/index.html
 test ! -f $browser/atelier/plaquettes/index.html
 test ! -f $browser/atelier/decodeur/index.html

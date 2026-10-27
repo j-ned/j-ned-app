@@ -18,7 +18,7 @@ grep -q '<app-root' /tmp/index.html
 # (grep sort au premier match, curl échoue en écrivant dans le tube fermé : code 23)
 curl -fsS http://127.0.0.1:3000/about/ -o /tmp/about.html
 grep -q '<app-about' /tmp/about.html
-# Accueil de l'atelier : relayé à Node, la carte du guide suit l'interrupteur lu dans la doublure (activé)
+# Accueil de l'atelier : relayé à Node, chaque carte suit son interrupteur lu dans la doublure (activés)
 curl -fsS -D /tmp/atelier-headers.txt http://127.0.0.1:3000/atelier/ -o /tmp/atelier.html
 grep -q 'data-testid="workshop-title"' /tmp/atelier.html || { echo "titre absent : /atelier/"; exit 1; }
 grep -q 'data-testid="workshop-tool-card"' /tmp/atelier.html || { echo "carte du guide absente : /atelier/"; exit 1; }

@@ -16,6 +16,7 @@ const API = '/api';
 
 const ENABLED_GUIDE: InsertGuideDto = {
   enabled: true,
+  decoderEnabled: true,
   entries: [
     {
       material: 'Laiton fictif',
@@ -265,6 +266,35 @@ describe('InsertGuide', () => {
         },
         { text: 'CNMG 432', href: null, visible: '' },
         { text: 'FIL-1', href: null, visible: '' },
+      ]);
+    });
+
+    it('When the decoder is switched off Then no insert code is a link, a decodable one stays plain text without the decoding hint', async () => {
+      await render(
+        serving({
+          ...ENABLED_GUIDE,
+          decoderEnabled: false,
+          entries: [
+            {
+              material: 'Inox fictif',
+              operation: 'external-roughing',
+              insert: 'cnmg 120408-pm',
+              noseRadius: 0.8,
+            },
+            { material: 'Inox fictif', operation: 'threading', insert: 'FIL-1', noseRadius: 0.2 },
+          ],
+        }),
+        'Inox fictif',
+      );
+
+      expect(
+        all('insert-guide-row').map((row) => {
+          const cell = row.querySelectorAll('td')[0];
+          return { text: collapsed(cell), links: cell.querySelectorAll('a').length };
+        }),
+      ).toEqual([
+        { text: 'cnmg 120408-pm', links: 0 },
+        { text: 'FIL-1', links: 0 },
       ]);
     });
 

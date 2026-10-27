@@ -18,6 +18,7 @@ function aSitemapInput(overrides: Partial<SitemapInput> = {}): SitemapInput {
     projectSlugs: [],
     posts: [],
     insertGuideEnabled: true,
+    insertDecoderEnabled: true,
     staticLastmod: STARTED_AT,
     ...overrides,
   };
@@ -115,17 +116,24 @@ describe('buildSitemap', () => {
     ).toBe(true);
   });
 
-  it('Given the insert guide switched off When the sitemap is built Then the guide and the decoder pages are left out, the workshop home stays', () => {
-    const locs = entriesOf(buildSitemap(aSitemapInput({ insertGuideEnabled: false }))).map(
-      (entry) => entry.loc,
-    );
+  it.each([
+    [false, false],
+    [true, false],
+    [false, true],
+  ])(
+    'Given the guide switch at %s and the decoder switch at %s When the sitemap is built Then each page is listed by its own switch, the workshop home stays',
+    (insertGuideEnabled, insertDecoderEnabled) => {
+      const locs = entriesOf(
+        buildSitemap(aSitemapInput({ insertGuideEnabled, insertDecoderEnabled })),
+      ).map((entry) => entry.loc);
 
-    expect([
-      locs.includes(`${SITE}/atelier/plaquettes`),
-      locs.includes(`${SITE}/atelier/decodeur`),
-      locs.includes(`${SITE}/atelier`),
-    ]).toEqual([false, false, true]);
-  });
+      expect([
+        locs.includes(`${SITE}/atelier/plaquettes`),
+        locs.includes(`${SITE}/atelier/decodeur`),
+        locs.includes(`${SITE}/atelier`),
+      ]).toEqual([insertGuideEnabled, insertDecoderEnabled, true]);
+    },
+  );
 
   it('Given a slug with XML special characters When the sitemap is built Then its url is escaped', () => {
     const xml = buildSitemap(aSitemapInput({ posts: [makeBlogPost({ slug: 'r&d<2026>' })] }));

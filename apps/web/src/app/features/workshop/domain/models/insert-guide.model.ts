@@ -18,6 +18,7 @@ export type InsertGuideEntry = {
 
 export type InsertGuide = {
   readonly enabled: boolean;
+  readonly decoderEnabled: boolean;
   readonly entries: readonly InsertGuideEntry[];
 };
 

@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { tap } from 'rxjs';
 import { injectMarkUnavailable } from '@core/ssr/response-status';
 import { LinkCard } from '@shared/ui/link-card';
+import type { WorkshopToolId } from '../../domain/models/workshop-space.model';
 import { WORKSHOP_SPACE } from '../../domain/workshop-space.static-data';
 import { HttpInsertGuideGateway } from '../../infra/gateways/http-insert-guide.gateway';
 
@@ -58,9 +59,13 @@ export class Workshop {
     stream: () =>
       this._insertGuideGateway.getGuide().pipe(tap({ error: () => this._markUnavailable() })),
   });
-  private readonly _insertGuideEnabled = computed(
-    () => this._insertGuideResource.hasValue() && this._insertGuideResource.value().enabled,
-  );
-  // Le guide et le décodeur suivent tous deux l'interrupteur du guide.
-  protected readonly tools = computed(() => (this._insertGuideEnabled() ? this.space.tools : []));
+  protected readonly tools = computed(() => {
+    if (!this._insertGuideResource.hasValue()) return [];
+    const { enabled, decoderEnabled } = this._insertGuideResource.value();
+    const switches: Readonly<Record<WorkshopToolId, boolean>> = {
+      'insert-guide': enabled,
+      'insert-decoder': decoderEnabled,
+    };
+    return this.space.tools.filter((tool) => switches[tool.id]);
+  });
 }

@@ -16,8 +16,9 @@ const API = '/api';
 const KYOCERA_B1 =
   'https://asia.kyocera.com/products/cuttingtools/wp-content/uploads/2015/02/B-Turning-Indexable.pdf';
 
-const GUIDE = (enabled: boolean): InsertGuideDto => ({
+const GUIDE = (decoderEnabled: boolean, enabled = true): InsertGuideDto => ({
   enabled,
+  decoderEnabled,
   entries: [],
   version: 1,
   updatedAt: '2026-10-26T10:00:00.000Z',
@@ -69,7 +70,7 @@ describe('InsertDecoder', () => {
     fixture.detectChanges();
   };
 
-  describe('Given the insert guide switched on', () => {
+  describe('Given the decoder switched on', () => {
     it('When the page is rendered without code Then its single h1 names the decoder, the lead speaks familiarly, and no result nor error is shown', async () => {
       await render();
 
@@ -255,8 +256,8 @@ describe('InsertDecoder', () => {
     );
   });
 
-  it('Given the insert guide switched off When the page is rendered on the server Then it answers 404 with the not-found page, and nothing of the decoder', async () => {
-    await render('CNMG120408', (request) => request.flush(GUIDE(false)));
+  it('Given the decoder switched off, the guide switched on When the page is rendered on the server Then it answers 404 with the not-found page, and nothing of the decoder', async () => {
+    await render('CNMG120408', (request) => request.flush(GUIDE(false, true)));
 
     expect({
       status: responseInit.status,
@@ -264,6 +265,17 @@ describe('InsertDecoder', () => {
       title: one('insert-decoder-title'),
       result: one('insert-decoder-result'),
     }).toEqual({ status: 404, notFound: true, title: null, result: null });
+  });
+
+  it('Given the decoder switched on, the guide switched off When the page is rendered on the server Then it answers 200 with the decoding, and no not-found page', async () => {
+    await render('CNMG120408', (request) => request.flush(GUIDE(true, false)));
+
+    expect({
+      status: responseInit.status,
+      notFound: one('not-found-title'),
+      title: one('insert-decoder-title') !== null,
+      result: one('insert-decoder-result') !== null,
+    }).toEqual({ status: 200, notFound: null, title: true, result: true });
   });
 
   it.each([404, 503])(

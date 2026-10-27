@@ -16,6 +16,7 @@ export type InsertGuideRowDraft = {
 
 export type InsertGuideDraft = {
   enabled: boolean;
+  decoderEnabled: boolean;
   entries: InsertGuideRowDraft[];
 };
 
@@ -37,6 +38,7 @@ export function toInsertGuideDraft(
 ): InsertGuideDraft {
   return {
     enabled: guide?.enabled ?? false,
+    decoderEnabled: guide?.decoderEnabled ?? false,
     entries: (guide?.entries ?? []).map((entry, index) => ({
       key: previous?.entries[index]?.key ?? `entry-${index + 1}`,
       material: entry.material,
@@ -52,6 +54,7 @@ export function toInsertGuideDraft(
 export function toInsertGuidePayload(draft: InsertGuideDraft): InsertGuide {
   return {
     enabled: draft.enabled,
+    decoderEnabled: draft.decoderEnabled,
     entries: draft.entries.flatMap(({ material, operation, insert, noseRadius, note }) => {
       if (operation === '' || noseRadius === null) return [];
       const entry: InsertGuideEntry = {

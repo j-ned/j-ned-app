@@ -21,13 +21,16 @@ dire** son code.
 
 ### Arbitrages (2026-10-27)
 
-1. **Outil lié au guide, qui suit son interrupteur** (décision de Julien, 2026-10-27) : sa propre
-   page `/atelier/decodeur`, deuxième carte de l'accueil de l'atelier. Guide activé : les deux cartes
-   et les deux pages ; guide désactivé : `/atelier/decodeur` répond une vraie 404, sa carte disparaît
-   (et la section « Les outils » avec elle s'il ne reste aucune carte), la page sort du sitemap ; lecture
-   de l'API en échec : 503, comme le guide. Dans le guide, chaque code de plaquette **décodable** devient
-   un lien vers son décodage. *(Remplace l'arbitrage initial « toujours en ligne, indépendant de
-   l'interrupteur ».)*
+1. **Outil lié au guide, avec son propre interrupteur** (décision de Julien, 2026-10-27) : sa propre
+   page `/atelier/decodeur`, deuxième carte de l'accueil de l'atelier, ouverte par l'interrupteur
+   `decoderEnabled` du document du guide (`GET /api/workshop-guide`, PR API #69), réglé dans l'admin
+   (`/admin/guide-plaquettes`) par une deuxième case sous celle du guide. Décodeur activé : sa carte et
+   sa page, quel que soit l'interrupteur du guide ; décodeur désactivé : `/atelier/decodeur` répond une
+   vraie 404, sa carte disparaît (et la section « Les outils » avec elle s'il ne reste aucune carte), la
+   page sort du sitemap ; lecture de l'API en échec : 503, comme le guide. Dans le guide, chaque code de
+   plaquette **décodable** devient un lien vers son décodage, seulement si le décodeur est activé.
+   *(Remplace « le décodeur suit l'interrupteur du guide », lui-même venu remplacer l'arbitrage initial
+   « toujours en ligne, indépendant de l'interrupteur ».)*
 
 ### Parcours
 
@@ -57,10 +60,12 @@ dire** son code.
 4. **Accessibilité et SEO** : champ étiqueté, résultat dans une liste de définitions (`dl`)
    annoncée quand elle change, erreurs en `role="alert"`, page lisible à 375 px ; titre, description
    et canonical sans query string ; tutoiement.
-5. **Lien depuis le guide, interrupteur commun** : un code du guide n'est un lien que s'il se décode
-   (positions 1 à 7 reconnues) ; sinon il reste du texte. Le décodeur suit l'interrupteur du guide :
-   éteint, `/atelier/decodeur` répond 404, sa carte quitte l'accueil et la page sort du sitemap ;
-   allumé, les deux pages et les deux cartes sont en ligne.
+5. **Lien depuis le guide, interrupteur propre** (décision de Julien du 2026-10-27) : un code du guide
+   n'est un lien que s'il se décode (positions 1 à 7 reconnues) **et** que le décodeur est activé ;
+   sinon il reste du texte, pour ne jamais mener à une 404. Chaque outil suit son propre interrupteur
+   (`enabled` pour le guide, `decoderEnabled` pour le décodeur) : éteint, sa page répond 404, sa carte
+   quitte l'accueil et la page sort du sitemap ; allumé, sa page et sa carte sont en ligne. Le gateway
+   lit `decoderEnabled` et l'envoie toujours à l'enregistrement.
 6. **Domaine pur** : le décodage est une fonction pure (`parse` → résultat typé ou erreur
    localisée), testée sans TestBed, avec une propriété « décoder puis recomposer redonne le code
    normalisé ».
@@ -110,6 +115,8 @@ comme `32.51`) : refusé avec ce motif, à la position où commence la taille.
 ### Écarts
 
 - PR 2 et 3 du découpage **regroupées en une seule PR** (demande de Julien, 2026-10-27).
+- Arbitrage 1 et exigence 5 changés une seconde fois (décision de Julien du 2026-10-27) : le décodeur
+  a son propre interrupteur `decoderEnabled`, réglé dans l'admin (API #69).
 - Arbitrage 1 changé en cours de PR (le décodeur suit l'interrupteur du guide) : la page lit le
   document du guide, comme `/atelier/plaquettes`.
 - La garde de confidentialité (`findConfidentialReferences`) signale toute suite de 5 chiffres ou
@@ -137,6 +144,11 @@ comme `32.51`) : refusé avec ce motif, à la position où commence la taille.
   « interrupteur allumé → toutes les cartes »
 - Les PR 2 et 3 du découpage sont livrées ensemble, en une seule PR (demande de Julien).
 - **Correctif hors tranche (session principale)** : l'éditeur admin du guide (spec 035) signalait tout code ISO à six chiffres (`CNMG 120408`) comme référence de pièce ; le champ plaquette n'est plus analysé quand il se décode. RED sur `CNMG 120408`, puis GREEN 4837/4837, lint et format en code 0.
+- **Tranche 4 — interrupteur propre au décodeur** (décision de Julien du 2026-10-27, API #69) : RED
+  `pnpm test` code de sortie 1, 20 tests en échec sur assertions (types posés d'abord, valeurs fausses :
+  adapter, gateway, 404 du décodeur selon `decoderEnabled`, cartes indépendantes, sitemap et flux, liens
+  du guide, deuxième case et aide dans l'admin, payload) ; GREEN au premier cycle, 4862 passed / 4862
+  total (code de sortie 0) · refactor : aucun
 
 ## Verify
 
@@ -171,6 +183,34 @@ vers la doublure comme l'audit axe. Verdict : **PASS**.
    antérieur) et les 404 attendues du guide éteint.
 8. `pnpm a11y -g "atelier|decodeur"` : 12 passed (clair et sombre ; `/atelier`, guide, guide avec
    matière, décodeur vide, décodé avec suffixe, en erreur ANSI).
+
+### Tranche 4 — interrupteur propre au décodeur
+
+Image `ng-portfolio-app:ci` (`docker buildx bake ci`) devant la doublure (`ci/a11y-stack.sh up
+ng-portfolio-app:ci`), interrupteurs basculés par le `PUT` en mémoire de la doublure (rien de commité),
+parcours joués par Playwright (Chromium headless), API de production réécrite vers la doublure.
+Verdict : **PASS**.
+
+1. Guide activé, décodeur coupé : `/atelier` en 200 avec la seule carte `/atelier/plaquettes` ;
+   `/atelier/decodeur?code=CNMG120408` → **404** avec la page introuvable ;
+   `/atelier/plaquettes?matiere=Acier%20t%C3%A9moin` en 200, aucun lien dans le tableau,
+   `CCGT 09T304-PM` en texte (captures `A-atelier.png`, `A-decodeur.png`, `A-guide.png`).
+2. Guide coupé, décodeur activé : `/atelier` en 200 avec la seule carte `/atelier/decodeur` ; le
+   décodeur en 200 avec son décodage ; `/atelier/plaquettes` → **404** (captures `B-*.png`).
+3. Admin, décodeur coupé au départ : la case « Décodeur de plaquette visible sur le site » est décochée,
+   son aide se lit ; cochée puis « Enregistrer » : un seul `PUT /api/workshop-guide` de corps
+   `{ enabled: true, decoderEnabled: true, version: 4, entries: 4 lignes }`, toast « Guide des plaquettes
+   enregistré », barre « Aucune modification », doublure à `decoderEnabled: true` (version 5) (captures
+   `C-admin-coche.png`, `C-admin-enregistre.png`). Ensuite `/atelier` montre les deux cartes, le décodeur
+   répond 200 et `CCGT 09T304-PM` redevient un lien (`/atelier/decodeur?code=CCGT09T304PM`).
+4. `sitemap.xml`, lu 2,5 s après chaque bascule (cache nginx d'une seconde) : guide seul →
+   `/atelier /atelier/plaquettes` ; décodeur seul → `/atelier /atelier/decodeur` ; aucun → `/atelier` ;
+   les deux → les trois.
+5. Doublure : un `PUT` sans `decoderEnabled` garde la valeur stockée (`true` conservé).
+6. Console : seules erreurs, `GET /api/config` en 404 (route absente de la doublure, antérieur) et les
+   404 attendues des pages éteintes.
+7. `pnpm a11y -g "atelier|decodeur|guide-plaquettes"` : 14 passed (dont `/admin/guide-plaquettes`
+   avec les deux cases).
 
 ## Review code
 

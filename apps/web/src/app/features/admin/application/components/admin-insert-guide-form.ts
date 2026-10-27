@@ -79,16 +79,44 @@ function radiusError({ value }: FieldContext<number | null>): TextError {
       novalidate
       class="grid gap-8"
     >
-      <label for="insert-guide-enabled" class="flex min-h-11 items-center gap-3 font-medium">
-        <input
-          id="insert-guide-enabled"
-          type="checkbox"
-          data-testid="admin-insert-guide-enabled"
-          [formField]="form.enabled"
-          class="size-5 accent-primary"
-        />
-        Guide des plaquettes visible sur le site
-      </label>
+      <div class="grid gap-4">
+        <div>
+          <label for="insert-guide-enabled" class="flex min-h-11 items-center gap-3 font-medium">
+            <input
+              id="insert-guide-enabled"
+              type="checkbox"
+              data-testid="admin-insert-guide-enabled"
+              aria-describedby="insert-guide-enabled-hint"
+              [formField]="form.enabled"
+              class="size-5 accent-primary"
+            />
+            Guide des plaquettes visible sur le site
+          </label>
+          <p id="insert-guide-enabled-hint" class="field-hint">
+            Cochée : la page du guide et sa carte sur l'accueil de l'atelier sont en ligne.
+          </p>
+        </div>
+        <div>
+          <label
+            for="insert-guide-decoder-enabled"
+            class="flex min-h-11 items-center gap-3 font-medium"
+          >
+            <input
+              id="insert-guide-decoder-enabled"
+              type="checkbox"
+              data-testid="admin-insert-guide-decoder-enabled"
+              aria-describedby="insert-guide-decoder-enabled-hint"
+              [formField]="form.decoderEnabled"
+              class="size-5 accent-primary"
+            />
+            Décodeur de plaquette visible sur le site
+          </label>
+          <p id="insert-guide-decoder-enabled-hint" class="field-hint">
+            Cochée : la page du décodeur et sa carte sur l'accueil de l'atelier sont en ligne, et
+            les codes du guide mènent à leur décodage.
+          </p>
+        </div>
+      </div>
 
       <section aria-labelledby="insert-guide-entries-title" class="grid gap-4">
         <div>

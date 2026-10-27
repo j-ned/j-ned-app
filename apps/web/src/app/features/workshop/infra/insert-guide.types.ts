@@ -10,6 +10,7 @@ type InsertGuideEntryDto = {
 
 export type InsertGuideDto = {
   readonly enabled: boolean;
+  readonly decoderEnabled: boolean;
   readonly entries: readonly InsertGuideEntryDto[];
   readonly version: number;
   readonly updatedAt: string | null;

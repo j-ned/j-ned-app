@@ -9,6 +9,7 @@ import {
 
 const GUIDE: InsertGuide = {
   enabled: true,
+  decoderEnabled: true,
   entries: [
     anEntry({ operation: 'threading', noseRadius: 0.2, note: 'Remarque fictive.' }),
     anEntry({ material: 'Autre matière', insert: 'CODE-FICTIF-02' }),
@@ -16,13 +17,18 @@ const GUIDE: InsertGuide = {
 };
 
 describe('toInsertGuideDraft', () => {
-  it('Given no guide yet When the draft is built Then the guide is off, without any line', () => {
-    expect(toInsertGuideDraft(null)).toEqual({ enabled: false, entries: [] });
+  it('Given no guide yet When the draft is built Then the guide and the decoder are off, without any line', () => {
+    expect(toInsertGuideDraft(null)).toEqual({
+      enabled: false,
+      decoderEnabled: false,
+      entries: [],
+    });
   });
 
   it('Given a guide When the draft is built Then each line is editable text, the note blank when absent, and keyed by its position', () => {
     expect(toInsertGuideDraft(GUIDE)).toEqual({
       enabled: true,
+      decoderEnabled: true,
       entries: [
         {
           key: 'entry-1',
@@ -47,6 +53,7 @@ describe('toInsertGuideDraft', () => {
   it('Given a previous draft When the saved guide is turned back into a draft Then each line keeps the key of its position', () => {
     const previous: InsertGuideDraft = {
       enabled: true,
+      decoderEnabled: false,
       entries: [
         { ...newInsertGuideRow(), key: 'entry-a' },
         { ...newInsertGuideRow(), key: 'entry-b' },
@@ -87,6 +94,7 @@ describe('toInsertGuidePayload', () => {
   it('Given a filled draft When the payload is built Then each line is copied field by field, trimmed, without its key nor a blank note', () => {
     const draft: InsertGuideDraft = {
       enabled: true,
+      decoderEnabled: true,
       entries: [
         {
           key: 'entry-1',
@@ -109,6 +117,7 @@ describe('toInsertGuidePayload', () => {
 
     expect(toInsertGuidePayload(draft)).toEqual({
       enabled: true,
+      decoderEnabled: true,
       entries: [
         {
           material: 'Matière fictive',
@@ -128,9 +137,26 @@ describe('toInsertGuidePayload', () => {
   });
 
   it('Given the guide switched off without lines When the payload is built Then it says so', () => {
-    expect(toInsertGuidePayload({ enabled: false, entries: [] })).toEqual({
+    expect(toInsertGuidePayload({ enabled: false, decoderEnabled: false, entries: [] })).toEqual({
       enabled: false,
+      decoderEnabled: false,
       entries: [],
     });
   });
+
+  it.each([
+    [true, false],
+    [false, true],
+  ])(
+    'Given the guide switch at %s and the decoder switch at %s When the payload is built Then each switch is copied on its own',
+    (enabled, decoderEnabled) => {
+      const { enabled: guide, decoderEnabled: decoder } = toInsertGuidePayload({
+        enabled,
+        decoderEnabled,
+        entries: [],
+      });
+
+      expect([guide, decoder]).toEqual([enabled, decoderEnabled]);
+    },
+  );
 });

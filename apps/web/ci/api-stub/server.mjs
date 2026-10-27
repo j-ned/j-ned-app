@@ -38,17 +38,19 @@ async function replaceProfile({ version, ...content }) {
   return [200, savedProfile];
 }
 
-// Un `PUT /api/workshop-guide` est gardé en mémoire, comme le parcours.
+// Un `PUT /api/workshop-guide` est gardé en mémoire, comme le parcours ; sans `decoderEnabled`,
+// l'interrupteur du décodeur garde sa valeur, comme l'API.
 let savedGuide = null;
 const readGuide = async () => savedGuide ?? readFixture('workshop-guide');
 
-async function replaceGuide({ version, enabled, entries }) {
+async function replaceGuide({ version, enabled, decoderEnabled, entries }) {
   const current = await readGuide();
   if (version !== current.version) {
     return [409, { statusCode: 409, message: 'Le guide a changé : version périmée' }];
   }
   savedGuide = {
     enabled,
+    decoderEnabled: decoderEnabled ?? current.decoderEnabled,
     entries,
     version: current.version + 1,
     updatedAt: new Date().toISOString(),

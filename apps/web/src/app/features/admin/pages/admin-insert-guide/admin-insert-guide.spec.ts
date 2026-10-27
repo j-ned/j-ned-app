@@ -26,6 +26,7 @@ class BlankPage {}
 
 const LOADED: InsertGuideDocument = {
   enabled: false,
+  decoderEnabled: false,
   entries: [
     anEntry({ note: 'Remarque fictive.' }),
     anEntry({ operation: 'threading', insert: 'CODE-FICTIF-02', noseRadius: 0.2 }),
@@ -123,10 +124,13 @@ async function fillRow(
   await fill(editor, 'admin-insert-guide-note', row.note ?? '', index);
 }
 
-async function toggleSwitch(editor: Editor): Promise<void> {
-  control(editor, 'admin-insert-guide-enabled')?.click();
+async function toggleSwitch(editor: Editor, testId = 'admin-insert-guide-enabled'): Promise<void> {
+  control(editor, testId)?.click();
   await settle(editor.fixture);
 }
+
+const checked = (editor: Editor, testId: string): boolean | undefined =>
+  (control(editor, testId) as HTMLInputElement | null)?.checked;
 
 const addRow = (editor: Editor): Promise<void> =>
   pressTestId(editor.fixture, 'admin-insert-guide-add');
@@ -187,6 +191,54 @@ describe('AdminInsertGuide: ouverture', () => {
       label: normalized(editor.host.querySelector(`label[for="${checkbox?.id}"]`)),
     }).toEqual({ type: 'checkbox', label: 'Guide des plaquettes visible sur le site' });
   });
+
+  it('Given the decoder switch When it renders Then it is a checkbox labelled « Décodeur de plaquette visible sur le site », after the guide one, checked as read', async () => {
+    const editor = await openEditor({
+      getDocument: vi.fn((): Observable<InsertGuideDocument> =>
+        of({ ...LOADED, decoderEnabled: true }),
+      ),
+    });
+    const checkbox = control(editor, 'admin-insert-guide-decoder-enabled');
+    const guide = control(editor, 'admin-insert-guide-enabled');
+
+    expect({
+      type: checkbox?.getAttribute('type'),
+      label: normalized(editor.host.querySelector(`label[for="${checkbox?.id}"]`)),
+      afterGuide:
+        guide !== null &&
+        checkbox !== null &&
+        (guide.compareDocumentPosition(checkbox) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+      checked: checked(editor, 'admin-insert-guide-decoder-enabled'),
+      guideChecked: checked(editor, 'admin-insert-guide-enabled'),
+    }).toEqual({
+      type: 'checkbox',
+      label: 'Décodeur de plaquette visible sur le site',
+      afterGuide: true,
+      checked: true,
+      guideChecked: false,
+    });
+  });
+
+  it.each([
+    [
+      'admin-insert-guide-enabled',
+      "Cochée : la page du guide et sa carte sur l'accueil de l'atelier sont en ligne.",
+    ],
+    [
+      'admin-insert-guide-decoder-enabled',
+      "Cochée : la page du décodeur et sa carte sur l'accueil de l'atelier sont en ligne, et les codes du guide mènent à leur décodage.",
+    ],
+  ])(
+    'Given the switch %s When it renders Then it is described by a help sentence saying what it shows on the site',
+    async (testId, help) => {
+      const editor = await openEditor();
+      const describedBy = control(editor, testId)?.getAttribute('aria-describedby') ?? '';
+
+      expect(
+        describedBy === '' ? null : normalized(editor.host.querySelector(`[id="${describedBy}"]`)),
+      ).toBe(help);
+    },
+  );
 
   it('Given the document is loading When the page renders Then a status placeholder stands instead of the form', async () => {
     const editor = await openEditor({
@@ -348,6 +400,7 @@ describe('AdminInsertGuide: enregistrer', () => {
         [
           {
             enabled: true,
+            decoderEnabled: false,
             entries: [
               ...LOADED.entries,
               {
@@ -365,6 +418,24 @@ describe('AdminInsertGuide: enregistrer', () => {
       toasts: [{ severity: 'success', detail: 'Guide des plaquettes enregistré' }],
       state: 'Aucune modification',
     });
+  });
+
+  it('Given the decoder switch checked When the guide is saved Then the decoder is sent switched on, the guide switch untouched, and nothing is left to save', async () => {
+    const editor = await openEditor();
+
+    await toggleSwitch(editor, 'admin-insert-guide-decoder-enabled');
+    await save(editor);
+
+    expect({
+      sent: editor.saveGuide.mock.calls.map(([guide, version]) => [
+        guide.enabled,
+        guide.decoderEnabled,
+        guide.entries.length,
+        version,
+      ]),
+      state: saveBarState(editor),
+      checked: checked(editor, 'admin-insert-guide-decoder-enabled'),
+    }).toEqual({ sent: [[false, true, 2, 7]], state: 'Aucune modification', checked: true });
   });
 
   it('Given a first save answered with version 8 When the admin edits again and saves Then the second write carries version 8', async () => {

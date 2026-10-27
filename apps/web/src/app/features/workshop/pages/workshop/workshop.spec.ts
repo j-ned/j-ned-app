@@ -14,8 +14,9 @@ import { Workshop } from './workshop';
 
 const API = '/api';
 
-const GUIDE = (enabled: boolean): InsertGuideDto => ({
+const GUIDE = (enabled: boolean, decoderEnabled: boolean): InsertGuideDto => ({
   enabled,
+  decoderEnabled,
   entries: [],
   version: 1,
   updatedAt: '2026-10-26T10:00:00.000Z',
@@ -23,7 +24,7 @@ const GUIDE = (enabled: boolean): InsertGuideDto => ({
 
 type GuideAnswer = (request: TestRequest) => void;
 
-const SWITCHED_ON: GuideAnswer = (request) => request.flush(GUIDE(true));
+const SWITCHED_ON: GuideAnswer = (request) => request.flush(GUIDE(true, true));
 
 const collapsed = (element: Element | null): string =>
   (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
@@ -111,18 +112,26 @@ describe('Workshop', () => {
     );
   });
 
-  it('Given the insert guide switched on When the page is rendered Then both the guide and the decoder cards are shown', async () => {
-    const host = await renderWorkshop();
+  it.each([
+    [true, true, ['/atelier/plaquettes', '/atelier/decodeur']],
+    [true, false, ['/atelier/plaquettes']],
+    [false, true, ['/atelier/decodeur']],
+  ])(
+    'Given the guide switch read as %s and the decoder switch as %s When the page is rendered Then each card follows its own switch: %j',
+    async (enabled, decoderEnabled, cards) => {
+      const host = await renderWorkshop((request) => request.flush(GUIDE(enabled, decoderEnabled)));
 
-    expect(
-      [...host.querySelectorAll('[data-testid="workshop-tool-card"]')].map((card) =>
-        card.getAttribute('href'),
-      ),
-    ).toEqual(['/atelier/plaquettes', '/atelier/decodeur']);
-  });
+      expect({
+        section: host.querySelector('[data-testid="workshop-tools"]') !== null,
+        cards: [...host.querySelectorAll('[data-testid="workshop-tool-card"]')].map((card) =>
+          card.getAttribute('href'),
+        ),
+      }).toEqual({ section: true, cards });
+    },
+  );
 
-  it('Given the insert guide switched off When the page is rendered Then neither the guide nor the decoder card, nor the tools section, is shown, and the page still answers', async () => {
-    const host = await renderWorkshop((request) => request.flush(GUIDE(false)));
+  it('Given the guide and the decoder both switched off When the page is rendered Then no card, nor the tools section, is shown, and the page still answers', async () => {
+    const host = await renderWorkshop((request) => request.flush(GUIDE(false, false)));
 
     expect({
       cards: host.querySelectorAll('[data-testid="workshop-tool-card"]').length,

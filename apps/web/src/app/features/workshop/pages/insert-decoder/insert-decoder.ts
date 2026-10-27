@@ -144,20 +144,20 @@ export class InsertDecoder {
   protected readonly errorId = ERROR_ID;
   protected readonly hintId = HINT_ID;
 
-  // Le décodeur suit l'interrupteur du guide : éteint, vraie 404 ; lecture en échec, 503.
+  // Interrupteur du décodeur éteint : vraie 404 ; lecture en échec, 503.
   private readonly _guideResource = rxResource({
     stream: () =>
       this._gateway.getGuide().pipe(
         tap({
-          next: ({ enabled }) => {
-            if (!enabled) this._markNotFound();
+          next: ({ decoderEnabled }) => {
+            if (!decoderEnabled) this._markNotFound();
           },
           error: () => this._markUnavailable(),
         }),
       ),
   });
   protected readonly notFound = computed(
-    () => this._guideResource.hasValue() && !this._guideResource.value().enabled,
+    () => this._guideResource.hasValue() && !this._guideResource.value().decoderEnabled,
   );
 
   private readonly _decoding = computed(() => {

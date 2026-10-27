@@ -4,6 +4,7 @@ import type { InsertGuideDto } from './insert-guide.types';
 
 const A_DTO: InsertGuideDto = {
   enabled: true,
+  decoderEnabled: true,
   entries: [
     {
       material: 'Matière fictive',
@@ -24,9 +25,10 @@ const A_DTO: InsertGuideDto = {
 };
 
 describe('toInsertGuide', () => {
-  it('Given the API document When it is adapted Then the guide keeps the switch and the entries, without the storage fields', () => {
+  it('Given the API document When it is adapted Then the guide keeps both switches and the entries, without the storage fields', () => {
     expect(toInsertGuide(A_DTO)).toEqual({
       enabled: true,
+      decoderEnabled: true,
       entries: [
         {
           material: 'Matière fictive',
@@ -45,12 +47,33 @@ describe('toInsertGuide', () => {
     });
   });
 
-  it('Given no document yet When it is adapted Then the guide is off and empty', () => {
-    expect(toInsertGuide({ enabled: false, entries: [], version: 0, updatedAt: null })).toEqual({
-      enabled: false,
-      entries: [],
-    });
+  it('Given no document yet When it is adapted Then the guide and the decoder are off, the guide empty', () => {
+    expect(
+      toInsertGuide({
+        enabled: false,
+        decoderEnabled: false,
+        entries: [],
+        version: 0,
+        updatedAt: null,
+      }),
+    ).toEqual({ enabled: false, decoderEnabled: false, entries: [] });
   });
+
+  it.each([
+    [true, false],
+    [false, true],
+  ])(
+    'Given the guide switch read as %s and the decoder switch as %s When it is adapted Then each switch keeps its own value',
+    (enabled, decoderEnabled) => {
+      const { enabled: guide, decoderEnabled: decoder } = toInsertGuide({
+        ...A_DTO,
+        enabled,
+        decoderEnabled,
+      });
+
+      expect([guide, decoder]).toEqual([enabled, decoderEnabled]);
+    },
+  );
 });
 
 describe('toInsertGuideDocument', () => {

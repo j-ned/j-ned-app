@@ -167,11 +167,16 @@ export class InsertGuide {
     return this.materials().includes(asked) ? asked : '';
   });
   protected readonly caption = computed(() => `${this.copy.tableCaption} ${this.material()}`);
+  // Décodeur éteint : aucun lien, pour ne jamais mener à sa 404.
+  private readonly _decoderEnabled = computed(() => this.guide()?.decoderEnabled === true);
   protected readonly rows = computed(() =>
     rowsFor(this._entries(), this.material()).map((row) => ({
       ...row,
       noseRadius: noseRadiusLabel(row.noseRadius),
-      decoderCode: decodeInsertCode(row.insert).ok ? normalizeInsertCode(row.insert) : undefined,
+      decoderCode:
+        this._decoderEnabled() && decodeInsertCode(row.insert).ok
+          ? normalizeInsertCode(row.insert)
+          : undefined,
     })),
   );
 

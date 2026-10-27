@@ -1,5 +1,6 @@
 {
   "enabled": true,
+  "decoderEnabled": true,
   "entries": [
     {
       "material": "Acier témoin",
