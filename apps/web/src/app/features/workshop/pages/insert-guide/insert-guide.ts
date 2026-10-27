@@ -100,7 +100,7 @@ import { HttpInsertGuideGateway } from '../../infra/gateways/http-insert-guide.g
                     </tr>
                   </thead>
                   <tbody>
-                    @for (row of rows(); track row) {
+                    @for (row of rows(); track row.operation + row.insert + row.noseRadius) {
                       <tr data-testid="insert-guide-row" class="border-b border-line align-top">
                         <th scope="row" class="py-3 pr-3 font-semibold">{{ row.operation }}</th>
                         <td class="px-3 py-3 font-mono">{{ row.insert }}</td>
