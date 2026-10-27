@@ -8,7 +8,7 @@ import {
   input,
   model,
   output,
-  viewChild,
+  signal,
 } from '@angular/core';
 import {
   FormField,
@@ -18,6 +18,7 @@ import {
   required,
   validate,
   type FieldContext,
+  type ReadonlyFieldTree,
 } from '@angular/forms/signals';
 import type {
   InsertGuide,
@@ -28,15 +29,17 @@ import { distinctSuggestions } from '@shared/search/suggestion-search';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
-import { AdminInsertGuideRow } from './admin-insert-guide-row';
+import { AdminInsertGuideGroup } from './admin-insert-guide-group';
 import { REQUIRED_MESSAGE } from './required-message';
 import {
-  newInsertGuideRow,
+  newInsertGuideGroup,
+  newInsertGuideTool,
   toInsertGuidePayload,
   type InsertGuideDraft,
+  type InsertGuideGroupDraft,
 } from '../insert-guide-draft';
 
-const MAX_ENTRIES = 300;
+const MAX_TOOLS = 300;
 const MAX_RADIUS = 10;
 
 type TextError = { readonly kind: string; readonly message: string } | null;
@@ -56,7 +59,7 @@ const boundedText =
     return null;
   };
 
-// Rayon vide : la ligne n'a pas de rayon unique (outil d'alésage, par exemple).
+// Rayon vide : l'outil n'a pas de rayon unique (outil d'alésage, par exemple).
 function radiusError({ value }: FieldContext<number | null>): TextError {
   const radius = value();
   if (radius === null || Number.isNaN(radius)) return null;
@@ -71,9 +74,23 @@ function radiusError({ value }: FieldContext<number | null>): TextError {
   return null;
 }
 
+// Deux blocs du même nom se fondraient en un à la relecture du document : le second est refusé.
+function duplicateError(
+  name: string,
+  key: string,
+  groups: readonly InsertGuideGroupDraft[],
+): TextError {
+  const first = groups.find((group) => !group.allMaterials && group.material.trim() === name);
+  if (!first || first.key === key) return null;
+  return {
+    kind: 'duplicate',
+    message: `Le bloc «\u00a0${name}\u00a0» existe déjà\u00a0: ajoutez-y ces outils, puis retirez ce bloc`,
+  };
+}
+
 @Component({
   selector: 'app-admin-insert-guide-form',
-  imports: [FormField, FormRoot, AppIcon, Button, FieldError, AdminInsertGuideRow],
+  imports: [FormField, FormRoot, AppIcon, Button, FieldError, AdminInsertGuideGroup],
   host: { class: 'block' },
   template: `
     <form
@@ -122,41 +139,61 @@ function radiusError({ value }: FieldContext<number | null>): TextError {
         </div>
       </div>
 
-      <section aria-labelledby="insert-guide-entries-title" class="grid gap-4">
+      <section aria-labelledby="insert-guide-groups-title" class="grid gap-4">
         <div>
-          <h2 id="insert-guide-entries-title" class="font-display text-base font-bold">
-            Lignes du guide
+          <h2 id="insert-guide-groups-title" class="font-display text-base font-bold">
+            Outils par matière
           </h2>
           <p class="field-hint">
-            Sur le site, les lignes sont classées par matière, puis dans l'ordre des opérations.
+            Sur le site, les outils sont classés par matière, puis dans l'ordre des opérations.
+          </p>
+          <p id="insert-guide-radius-hint" class="field-hint mt-0">
+            Rayon de bec facultatif : laissez-le vide quand l'outil n'a pas de rayon unique.
           </p>
         </div>
-        @for (line of lines(); track line.key; let index = $index) {
-          <fieldset
-            app-admin-insert-guide-row
-            [entry]="line.field"
+        @for (block of blocks(); track block.key; let index = $index) {
+          <details
+            app-admin-insert-guide-group
+            [group]="block.field"
             [rank]="index + 1"
+            [open]="block.open"
+            (openChange)="setOpen(block.key, $event)"
+            radiusHintId="insert-guide-radius-hint"
             [materialSuggestions]="materialSuggestions()"
             [insertSuggestions]="insertSuggestions()"
-            (removed)="removeRow(index)"
-          ></fieldset>
+            (toolAdded)="addTool(index)"
+            (toolRemoved)="removeTool(index, $event)"
+            (removed)="removeGroup(index)"
+          ></details>
         }
         <app-field-error
-          [field]="form.entries"
-          errorId="insert-guide-entries-error"
-          testId="admin-insert-guide-entries-error"
+          [field]="form.groups"
+          errorId="insert-guide-groups-error"
+          testId="admin-insert-guide-groups-error"
         />
-        <button
-          #addButton
-          appButton
-          type="button"
-          variant="text"
-          data-testid="admin-insert-guide-add"
-          class="justify-self-start"
-          (click)="addRow()"
-        >
-          <app-icon name="plus" [size]="16" />Ajouter une ligne
-        </button>
+        <div class="flex flex-wrap gap-x-6">
+          <button
+            id="insert-guide-add-group"
+            appButton
+            type="button"
+            variant="text"
+            data-testid="admin-insert-guide-add-group"
+            (click)="addGroup()"
+          >
+            <app-icon name="plus" [size]="16" />Ajouter une matière
+          </button>
+          @if (!hasGeneric()) {
+            <button
+              appButton
+              type="button"
+              variant="text"
+              data-testid="admin-insert-guide-add-generic"
+              (click)="addGeneric()"
+            >
+              <app-icon name="plus" [size]="16" />Ajouter le bloc Toutes matières
+            </button>
+          }
+        </div>
       </section>
     </form>
   `,
@@ -170,24 +207,37 @@ export class AdminInsertGuideForm {
   readonly savedEntries = input<readonly InsertGuideEntry[]>([]);
   readonly submitted = output<InsertGuide>();
 
-  private readonly addButton = viewChild.required<ElementRef<HTMLButtonElement>>('addButton');
+  private readonly openKeys = signal<ReadonlySet<string>>(new Set());
 
   readonly form = form(
     this.value,
     (path) => {
-      validate(path.entries, ({ value }) =>
-        value().length > MAX_ENTRIES
-          ? { kind: 'maxItems', message: `${MAX_ENTRIES}\u00a0lignes au plus` }
+      validate(path.groups, ({ value }) =>
+        value().reduce((total, group) => total + group.tools.length, 0) > MAX_TOOLS
+          ? {
+              kind: 'maxItems',
+              message: `${MAX_TOOLS}\u00a0outils au plus, toutes matières confondues`,
+            }
           : null,
       );
-      applyEach(path.entries, (row) => {
-        validate(row.material, (context) =>
-          boundedText(80, 'La matière', !context.valueOf(row.allMaterials))(context),
-        );
-        required(row.operation, { message: 'Choisissez une opération' });
-        validate(row.insert, boundedText(40, 'La plaquette', true));
-        validate(row.noseRadius, radiusError);
-        validate(row.note, boundedText(200, 'La remarque', false));
+      applyEach(path.groups, (group) => {
+        validate(group.material, (context) => {
+          if (context.valueOf(group.allMaterials)) return null;
+          return (
+            boundedText(80, 'La matière', true)(context) ??
+            duplicateError(
+              context.value().trim(),
+              context.valueOf(group.key),
+              context.valueOf(path.groups),
+            )
+          );
+        });
+        applyEach(group.tools, (tool) => {
+          required(tool.operation, { message: 'Choisissez une opération' });
+          validate(tool.insert, boundedText(40, 'La plaquette', true));
+          validate(tool.noseRadius, radiusError);
+          validate(tool.note, boundedText(200, 'La remarque', false));
+        });
       });
     },
     {
@@ -195,7 +245,7 @@ export class AdminInsertGuideForm {
         action: async () => {
           this.submitted.emit(toInsertGuidePayload(this.value()));
         },
-        onInvalid: (field) => focusFirstInvalid(field),
+        onInvalid: (field) => this.revealInvalid(field),
       },
     },
   );
@@ -203,34 +253,94 @@ export class AdminInsertGuideForm {
   protected readonly materialSuggestions = computed(() =>
     distinctSuggestions([
       ...this.savedEntries().flatMap(({ material }) => material ?? []),
-      ...this.value().entries.map(({ material }) => material),
+      ...this.value().groups.map(({ material }) => material),
     ]),
   );
   protected readonly insertSuggestions = computed(() =>
     distinctSuggestions([
       ...this.savedEntries().map(({ insert }) => insert),
-      ...this.value().entries.map(({ insert }) => insert),
+      ...this.value().groups.flatMap(({ tools }) => tools.map(({ insert }) => insert)),
     ]),
   );
 
-  protected readonly lines = computed(() =>
-    Array.from(this.form.entries, (field) => ({ field, key: field().value().key })),
+  protected readonly blocks = computed(() => {
+    const open = this.openKeys();
+    return Array.from(this.form.groups, (field) => {
+      const key = field().value().key;
+      return { field, key, open: open.has(key) };
+    });
+  });
+  protected readonly hasGeneric = computed(() =>
+    this.value().groups.some(({ allMaterials }) => allMaterials),
   );
 
-  protected addRow(): void {
-    const rank = this.value().entries.length + 1;
-    this.form.entries().value.update((rows) => [...rows, newInsertGuideRow()]);
-    this.focusAfterRender(() =>
-      this.host.nativeElement.querySelector<HTMLElement>(`#insert-guide-${rank}-material`),
+  protected setOpen(key: string, open: boolean): void {
+    this.openKeys.update((keys) => {
+      const next = new Set(keys);
+      if (open) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }
+
+  protected addTool(groupIndex: number): void {
+    const block = this.form.groups[groupIndex];
+    if (!block) return;
+    const toolRank = block.tools().value().length + 1;
+    block.tools().value.update((tools) => [...tools, newInsertGuideTool()]);
+    this.setOpen(block().value().key, true);
+    this.focusAfterRender(`#insert-guide-g${groupIndex + 1}-t${toolRank}-operation`);
+  }
+
+  protected removeTool(groupIndex: number, toolIndex: number): void {
+    const block = this.form.groups[groupIndex];
+    if (!block) return;
+    if (block.tools().value().length === 1) {
+      this.removeGroup(groupIndex);
+      return;
+    }
+    block.tools().value.update((tools) => tools.filter((_, index) => index !== toolIndex));
+    this.focusAfterRender(`#insert-guide-g${groupIndex + 1}-add-tool`);
+  }
+
+  protected addGroup(): void {
+    const groups = this.value().groups;
+    const generic = groups.findIndex(({ allMaterials }) => allMaterials);
+    const at = generic === -1 ? groups.length : generic;
+    this.insertGroup(newInsertGuideGroup(false), at);
+    this.focusAfterRender(`#insert-guide-g${at + 1}-material`);
+  }
+
+  protected addGeneric(): void {
+    const at = this.value().groups.length;
+    this.insertGroup(newInsertGuideGroup(true), at);
+    this.focusAfterRender(`#insert-guide-g${at + 1}-t1-operation`);
+  }
+
+  protected removeGroup(groupIndex: number): void {
+    this.form.groups().value.update((groups) => groups.filter((_, index) => index !== groupIndex));
+    this.focusAfterRender('#insert-guide-add-group');
+  }
+
+  private insertGroup(group: InsertGuideGroupDraft, at: number): void {
+    this.form
+      .groups()
+      .value.update((groups) => [...groups.slice(0, at), group, ...groups.slice(at)]);
+    this.setOpen(group.key, true);
+  }
+
+  // Un champ d'un bloc replié n'est pas focusable : le bloc s'ouvre, le focus suit le rendu.
+  private revealInvalid(field: ReadonlyFieldTree<unknown>): void {
+    for (const block of this.form.groups) {
+      if (block().invalid()) this.setOpen(block().value().key, true);
+    }
+    afterNextRender({ write: () => focusFirstInvalid(field) }, { injector: this.injector });
+  }
+
+  private focusAfterRender(selector: string): void {
+    afterNextRender(
+      { write: () => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus() },
+      { injector: this.injector },
     );
-  }
-
-  protected removeRow(index: number): void {
-    this.form.entries().value.update((rows) => rows.filter((_, i) => i !== index));
-    this.focusAfterRender(() => this.addButton().nativeElement);
-  }
-
-  private focusAfterRender(target: () => HTMLElement | null): void {
-    afterNextRender({ write: () => target()?.focus() }, { injector: this.injector });
   }
 }

@@ -345,6 +345,15 @@ input:-webkit-autofill:focus {
 }
 
 /* ---------------------------------------------------------------- *
+ * Colonnes des lignes d'outil du guide (admin) : partagées par l'en-tête
+ * et chaque ligne. Deux rangées sous `lg`, une au-delà.
+ * ---------------------------------------------------------------- */
+
+@utility tool-row-grid {
+  @apply grid grid-cols-4 gap-x-3 lg:gap-x-2 lg:grid-cols-[minmax(0,15rem)_minmax(0,1.6fr)_4.75rem_minmax(0,1fr)_2.75rem];
+}
+
+/* ---------------------------------------------------------------- *
  * Coloration syntaxique des blocs de code (`code` émis par parseMarkdown).
  * Les `span.hljs-*` de highlight.js arrivent par innerHTML et ne peuvent pas
  * porter d'utilitaires : d'où les sélecteurs descendants.

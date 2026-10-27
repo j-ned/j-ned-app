@@ -36,7 +36,7 @@ export const ADMIN_PAGES: readonly PageScenario[] = [
   { path: '/admin/blog', ready: 'admin-posts-list' },
   { path: '/admin/blog/b-temoin', ready: 'admin-post-preview-link' },
   { path: '/admin/profile', ready: 'admin-profile-paragraph-row' },
-  { path: '/admin/guide-plaquettes', ready: 'admin-insert-guide-row' },
+  { path: '/admin/guide-plaquettes', ready: 'admin-insert-guide-group' },
   { path: '/admin/cv', ready: 'admin-cv-current' },
   { path: '/admin/messages', ready: 'admin-messages-list' },
   { path: '/admin/audience', ready: 'tally-row' },

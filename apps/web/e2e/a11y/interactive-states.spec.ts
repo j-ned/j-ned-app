@@ -87,6 +87,20 @@ for (const theme of THEMES) {
         await expectNoA11yViolations('admin-post-tags', 'champ-tags-ouvert');
       });
 
+      test('insert guide editor with an open material block has no WCAG A/AA violation', async ({
+        page,
+        visit,
+        expectNoA11yViolations,
+      }) => {
+        await visit('/admin/guide-plaquettes');
+        const block = page.getByTestId('admin-insert-guide-group').first();
+        await expect(block).toBeVisible();
+        await expect(page.locator(ADMIN_PENDING_OR_FAILED)).toHaveCount(0);
+        await block.locator('summary').click();
+        await expect(page.getByTestId('admin-insert-guide-tool').first()).toBeVisible();
+        await expectNoA11yViolations('admin-insert-guide-form', 'bloc-matiere-ouvert');
+      });
+
       test('tags suggested from the article content have no WCAG A/AA violation', async ({
         page,
         visit,
