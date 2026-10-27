@@ -99,7 +99,7 @@ export const routes: Routes = [
       seo: {
         title: WORKSHOP_TITLE,
         description:
-          "Mon coin de tourneur CN\u00a0: des outils d'usinage, à commencer par un guide pour choisir le type de plaquette selon la matière et l'opération.",
+          "Mon coin de tourneur CN\u00a0: des outils d'usinage, à commencer par le guide des plaquettes que j'utilise à l'atelier, matière par matière.",
         url: `${SITE_IDENTITY.siteUrl}/atelier`,
         type: 'website',
         structuredData: {
@@ -127,7 +127,7 @@ export const routes: Routes = [
       seo: {
         title: INSERT_GUIDE_TITLE,
         description:
-          'Choisis ta matière et ton opération de tournage\u00a0: le guide indique le type de plaquette, sa géométrie et les pièges à éviter, avec la source de chaque donnée.',
+          "Les plaquettes de tournage que j'utilise à l'atelier, matière par matière\u00a0: opération, plaquette, rayon de bec et remarque, à adapter à ta machine.",
         url: `${SITE_IDENTITY.siteUrl}/atelier/plaquettes`,
         type: 'website',
         structuredData: {

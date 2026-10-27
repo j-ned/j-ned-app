@@ -18,14 +18,20 @@ grep -q '<app-root' /tmp/index.html
 # (grep sort au premier match, curl échoue en écrivant dans le tube fermé : code 23)
 curl -fsS http://127.0.0.1:3000/about/ -o /tmp/about.html
 grep -q '<app-about' /tmp/about.html
-# Accueil de l'atelier prérendu : servi en fichier par nginx, sans passer par le micro-cache
+# Accueil de l'atelier : relayé à Node, la carte du guide suit l'interrupteur lu dans la doublure (activé)
 curl -fsS -D /tmp/atelier-headers.txt http://127.0.0.1:3000/atelier/ -o /tmp/atelier.html
 grep -q 'data-testid="workshop-title"' /tmp/atelier.html || { echo "titre absent : /atelier/"; exit 1; }
-! grep -qi '^x-cache-status' /tmp/atelier-headers.txt || { echo "/atelier/ rendu par Node"; exit 1; }
-# Guide des plaquettes : relayé à Node par nginx, avec le micro-cache
-curl -fsS -D /tmp/guide-headers.txt 'http://127.0.0.1:3000/atelier/plaquettes?matiere=inconnue' -o /tmp/guide.html
+grep -q 'data-testid="workshop-tool-card"' /tmp/atelier.html || { echo "carte du guide absente : /atelier/"; exit 1; }
+grep -qi '^x-cache-status' /tmp/atelier-headers.txt || { echo "/atelier/ non rendu par Node"; exit 1; }
+# Guide des plaquettes : relayé à Node, la matière de l'URL partagée affiche son tableau dès le HTML serveur
+curl -fsS -D /tmp/guide-headers.txt 'http://127.0.0.1:3000/atelier/plaquettes?matiere=Acier%20t%C3%A9moin' -o /tmp/guide.html
 grep -q 'data-testid="insert-guide-title"' /tmp/guide.html || { echo "titre absent : /atelier/plaquettes"; exit 1; }
+grep -q 'PLAQUETTE-TEMOIN-1' /tmp/guide.html || { echo "tableau absent : /atelier/plaquettes"; exit 1; }
+grep -q '"noseRadius"' /tmp/guide.html || { echo "document /api/workshop-guide absent de l'état de transfert"; exit 1; }
 grep -qi '^x-cache-status' /tmp/guide-headers.txt || { echo "/atelier/plaquettes non rendu par Node"; exit 1; }
+# Matière inconnue : jamais réaffichée
+curl -fsS 'http://127.0.0.1:3000/atelier/plaquettes?matiere=mati%C3%A8re-pi%C3%A9g%C3%A9e' -o /tmp/guide-unknown.html
+! grep -q 'matière-piégée' /tmp/guide-unknown.html || { echo "matière inconnue réaffichée"; exit 1; }
 # Chaque route rendue à la requête lit la doublure et embarque l'état de transfert
 for path in / /projects /projects/projet-temoin /blog /blog/article-temoin; do
   curl -fsS "http://127.0.0.1:3000$path" -o /tmp/ssr.html
@@ -38,7 +44,7 @@ grep -q 'data-testid="about-lead"' /tmp/about-ssr.html || { echo "accroche absen
 grep -q 'data-testid="journey-paragraph"' /tmp/about-ssr.html || { echo "parcours absent : /about"; exit 1; }
 grep -q '"leadEmphasis"' /tmp/about-ssr.html || { echo "document /api/profile absent de l'état de transfert"; exit 1; }
 # CSP des pages rendues à la requête : une seule meta, hachée, sans unsafe-inline ; HTML revalidé
-for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin /atelier/plaquettes; do
+for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin /atelier /atelier/plaquettes; do
   curl -fsS -D /tmp/ssr-headers.txt "http://127.0.0.1:3000$path" -o /tmp/ssr.html
   test "$(grep -o 'http-equiv="Content-Security-Policy"' /tmp/ssr.html | wc -l)" = "1" || { echo "meta CSP absente ou dupliquée : $path"; exit 1; }
   ! grep -qE "(script|style)-src [^;]*'unsafe-inline'" /tmp/ssr.html || { echo "unsafe-inline : $path"; exit 1; }
@@ -78,6 +84,7 @@ curl -fsS -D /tmp/sitemap-headers.txt http://127.0.0.1:3000/sitemap.xml -o /tmp/
 grep -qi '^content-type: application/xml' /tmp/sitemap-headers.txt
 grep -q '<loc>https://nedellec-julien.fr/blog/article-temoin</loc>' /tmp/sitemap.xml
 grep -q '<loc>https://nedellec-julien.fr/projects/projet-temoin</loc>' /tmp/sitemap.xml
+grep -q '<loc>https://nedellec-julien.fr/atelier/plaquettes</loc>' /tmp/sitemap.xml
 curl -fsS -D /tmp/rss-headers.txt http://127.0.0.1:3000/rss.xml -o /tmp/rss.xml
 grep -qi '^content-type: application/rss+xml' /tmp/rss-headers.txt
 grep -q '<title>Article témoin A</title>' /tmp/rss.xml

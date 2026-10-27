@@ -7,6 +7,7 @@ export type SitemapPost = Pick<BlogPost, 'slug' | 'publishedAt' | 'updatedAt'>;
 export type SitemapInput = {
   readonly projectSlugs: readonly string[];
   readonly posts: readonly SitemapPost[];
+  readonly insertGuideEnabled: boolean;
   readonly staticLastmod: Date;
 };
 
@@ -17,11 +18,18 @@ type SitemapUrl = {
   readonly lastmod?: string;
 };
 
+// Guide éteint : la page répond 404, elle sort donc du sitemap.
+const INSERT_GUIDE_URL: SitemapUrl = {
+  path: '/atelier/plaquettes',
+  changefreq: 'monthly',
+  priority: '0.7',
+};
+
 const STATIC_URLS: readonly SitemapUrl[] = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/about', changefreq: 'monthly', priority: '0.8' },
   { path: '/atelier', changefreq: 'monthly', priority: '0.8' },
-  { path: '/atelier/plaquettes', changefreq: 'monthly', priority: '0.7' },
+  INSERT_GUIDE_URL,
   { path: '/projects', changefreq: 'weekly', priority: '0.9' },
   { path: '/blog', changefreq: 'weekly', priority: '0.9' },
   { path: '/mentions-legales', changefreq: 'yearly', priority: '0.2' },
@@ -34,10 +42,15 @@ const toDay = (iso: string): string => iso.slice(0, 10);
 const postLastmod = ({ publishedAt, updatedAt }: SitemapPost): string =>
   toDay([updatedAt, publishedAt ?? ''].sort().at(-1) ?? updatedAt);
 
-export function buildSitemap({ projectSlugs, posts, staticLastmod }: SitemapInput): string {
+export function buildSitemap({
+  projectSlugs,
+  posts,
+  insertGuideEnabled,
+  staticLastmod,
+}: SitemapInput): string {
   const defaultLastmod = toDay(staticLastmod.toISOString());
   const urls: readonly SitemapUrl[] = [
-    ...STATIC_URLS,
+    ...STATIC_URLS.filter((url) => insertGuideEnabled || url !== INSERT_GUIDE_URL),
     ...projectSlugs.map((slug): SitemapUrl => ({
       path: `/projects/${slug}`,
       changefreq: 'monthly',

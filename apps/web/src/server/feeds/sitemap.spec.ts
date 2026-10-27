@@ -14,7 +14,13 @@ function entriesOf(xml: string): readonly Entry[] {
 }
 
 function aSitemapInput(overrides: Partial<SitemapInput> = {}): SitemapInput {
-  return { projectSlugs: [], posts: [], staticLastmod: STARTED_AT, ...overrides };
+  return {
+    projectSlugs: [],
+    posts: [],
+    insertGuideEnabled: true,
+    staticLastmod: STARTED_AT,
+    ...overrides,
+  };
 }
 
 describe('buildSitemap', () => {
@@ -97,6 +103,16 @@ describe('buildSitemap', () => {
       expect(entriesOf(xml).at(-1)).toEqual({ loc: `${SITE}/blog/article-temoin`, lastmod });
     },
   );
+
+  it('Given the insert guide switched off When the sitemap is built Then the guide page is left out, the workshop home stays', () => {
+    const locs = entriesOf(buildSitemap(aSitemapInput({ insertGuideEnabled: false }))).map(
+      (entry) => entry.loc,
+    );
+
+    expect([locs.includes(`${SITE}/atelier/plaquettes`), locs.includes(`${SITE}/atelier`)]).toEqual(
+      [false, true],
+    );
+  });
 
   it('Given a slug with XML special characters When the sitemap is built Then its url is escaped', () => {
     const xml = buildSitemap(aSitemapInput({ posts: [makeBlogPost({ slug: 'r&d<2026>' })] }));

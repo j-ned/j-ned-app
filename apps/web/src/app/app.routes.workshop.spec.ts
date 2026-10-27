@@ -1,13 +1,16 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { type ActivatedRouteSnapshot, type Route, Router, provideRouter } from '@angular/router';
 import { WORKSHOP_SPACE } from '@features/workshop/domain/workshop-space.static-data';
 import { InsertGuide } from '@features/workshop/pages/insert-guide/insert-guide';
 import { Workshop } from '@features/workshop/pages/workshop/workshop';
+import { API_BASE_URL } from '@shared/api/api-config';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { routes } from './app.routes';
 import { ROUTE_TEXTS } from './testing/editorial-sources';
 
-const WORKSHOP_TITLE = "L'atelier : outils de tourneur CN | Julien Nédellec";
+const WORKSHOP_TITLE = "L'atelier\u00a0: outils de tourneur CN | Julien Nédellec";
 const WORKSHOP_URL = `${SITE_IDENTITY.siteUrl}/atelier`;
 
 const INSERT_GUIDE_TITLE = 'Guide des plaquettes de tournage | Julien Nédellec';
@@ -17,13 +20,25 @@ const workshopRoute = (): Route | undefined => routes.find((route) => route.path
 const insertGuideRoute = (): Route | undefined =>
   routes.find((route) => route.path === 'atelier/plaquettes');
 
+// Les deux pages lisent le guide dans l'API : la lecture reste en attente, seule la route compte ici.
+const configureRouter = (): Router => {
+  TestBed.configureTestingModule({
+    providers: [
+      provideRouter(routes),
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: API_BASE_URL, useValue: '/api' },
+    ],
+  });
+  return TestBed.inject(Router);
+};
+
 const leafOf = (snapshot: ActivatedRouteSnapshot): ActivatedRouteSnapshot =>
   snapshot.firstChild ? leafOf(snapshot.firstChild) : snapshot;
 
 describe('workshop route', () => {
   it('Given the workshop url When navigated to Then the workshop page answers, not the not-found page', async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
-    const router = TestBed.inject(Router);
+    const router = configureRouter();
 
     await router.navigateByUrl('/atelier');
     const leaf = leafOf(router.routerState.snapshot.root);
@@ -53,7 +68,7 @@ describe('workshop route', () => {
       seo: {
         title: WORKSHOP_TITLE,
         description:
-          "Mon coin de tourneur CN : des outils d'usinage, à commencer par un guide pour choisir le type de plaquette selon la matière et l'opération.",
+          "Mon coin de tourneur CN\u00a0: des outils d'usinage, à commencer par le guide des plaquettes que j'utilise à l'atelier, matière par matière.",
         url: WORKSHOP_URL,
         type: 'website',
         structuredData: {
@@ -85,8 +100,7 @@ describe('workshop route', () => {
 
 describe('insert guide route', () => {
   it('Given the guide url with a query string When navigated to Then the guide page answers, not the not-found page', async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
-    const router = TestBed.inject(Router);
+    const router = configureRouter();
 
     await router.navigateByUrl('/atelier/plaquettes?matiere=inconnue');
     const leaf = leafOf(router.routerState.snapshot.root);
@@ -111,7 +125,7 @@ describe('insert guide route', () => {
       seo: {
         title: INSERT_GUIDE_TITLE,
         description:
-          'Choisis ta matière et ton opération de tournage\u00a0: le guide indique le type de plaquette, sa géométrie et les pièges à éviter, avec la source de chaque donnée.',
+          "Les plaquettes de tournage que j'utilise à l'atelier, matière par matière\u00a0: opération, plaquette, rayon de bec et remarque, à adapter à ta machine.",
         url: INSERT_GUIDE_URL,
         type: 'website',
         structuredData: {
@@ -149,8 +163,7 @@ describe('insert guide route', () => {
 
 describe('workshop tools', () => {
   it('Given each tool path of the workshop When navigated to Then a declared route answers, not the not-found page', async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
-    const router = TestBed.inject(Router);
+    const router = configureRouter();
     const reached: (readonly [string, string | undefined])[] = [];
 
     for (const { path } of WORKSHOP_SPACE.tools) {

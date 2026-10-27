@@ -10,12 +10,9 @@ export const THEMES: readonly Theme[] = ['light', 'dark'];
 export const PUBLIC_PAGES: readonly PageScenario[] = [
   { path: '/', ready: 'home-contact-form' },
   { path: '/about', ready: 'about-lead' },
-  { path: '/atelier', ready: 'workshop-title' },
-  { path: '/atelier/plaquettes', ready: 'insert-guide-title' },
-  {
-    path: '/atelier/plaquettes?matiere=42crmo4&operation=ebauche-exterieure',
-    ready: 'iso-insert-code',
-  },
+  { path: '/atelier', ready: 'workshop-tool-card' },
+  { path: '/atelier/plaquettes', ready: 'insert-guide-material' },
+  { path: '/atelier/plaquettes?matiere=Acier%20t%C3%A9moin', ready: 'insert-guide-table' },
   { path: '/projects', ready: 'projects-case-studies' },
   { path: '/projects/projet-temoin', ready: 'project-detail-title' },
   { path: '/projects/dashflow', ready: 'project-articles' },

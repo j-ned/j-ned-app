@@ -100,3 +100,21 @@ PR empilée).
    métier du volet V5 de la spec 032.
 2. **Opérations** : la liste fermée ci-dessus, en attendant un ajout de Julien.
 3. **Rayon** : saisi et affiché en mm (0,4 / 0,8 / 1,2).
+
+## Journal des tranches
+
+- **PR front 3 — retrait du référentiel 034, guide public lu dans l'API, interrupteur** : RED 42 failed / 4642 total (code de sortie 1), puis 2 RED ajoutés au fil de la vérification (option choisie absente du HTML serveur, tableau qui élargissait la page à 375 px) ; GREEN 4643 passed / 4643 total (code de sortie 0) · refactor : lecture des lignes du guide factorisée dans `_entries`, `InsertGuideEntryDto` et le builder inutilisé `anInsertGuide` retirés de l'export
+
+## Verify
+
+Image `ng-portfolio-app:ci` (`docker buildx bake ci`) servie devant la doublure (`ci/a11y-stack.sh up ng-portfolio-app:ci`), parcours joués par Playwright (Chromium headless). Verdict : **PASS**.
+
+1. `/atelier` : carte « Guide des plaquettes » présente (capture `01-atelier.png`).
+2. `/atelier/plaquettes`, choix « Acier témoin » dans la liste : l'URL devient `?matiere=Acier%20t%C3%A9moin` (remplacée), le tableau liste « Ébauche extérieure / PLAQUETTE-TEMOIN-1 / 0,8 mm / Ligne fictive de la doublure. » puis « Filetage / PLAQUETTE-TEMOIN-2 / 0,2 mm » ; le choix vide retire `?matiere` et le tableau (capture `02-choix-matiere.png`).
+3. URL partagée `?matiere=Laiton%20t%C3%A9moin` en rendu serveur, JavaScript coupé, 375 px : 200, option « Laiton témoin » marquée `selected`, `caption` « Plaquettes pour Laiton témoin », largeur de page 375 px sans défilement horizontal (captures `03-url-partagee-ssr-sans-js-375.png`, `06-mobile-375.png`).
+4. Matière inconnue : 200, texte jamais réaffiché, aucun tableau.
+5. Doublure passée temporairement à `enabled: false` (non commitée) : `/atelier/plaquettes` (avec ou sans `/`, avec `?matiere`) répond **404** avec la page introuvable ; `/atelier` en 200 sans carte ni section « Les outils » ; `sitemap.xml` sans `/atelier/plaquettes`, avec `/atelier` (captures `04-guide-eteint-404.png`, `05-atelier-sans-carte.png`).
+6. Console : aucune erreur venant de l'atelier. Seule erreur : `GET /api/config` en 404, sur toutes les pages, parce que la doublure ne sert pas cette route (antérieur à cette PR).
+7. `pnpm a11y -g atelier` : 6 passed (clair et sombre, `/atelier`, `/atelier/plaquettes`, `?matiere=Acier%20t%C3%A9moin`).
+
+Limite constatée : dans le volet navigateur de l'application (masqué), `requestAnimationFrame` ne se déclenche pas et les transitions de vue du routeur restent bloquées. La navigation côté client y semblait cassée sur toutes les pages, `/mentions-legales` compris. Le parcours a donc été rejoué dans Playwright.

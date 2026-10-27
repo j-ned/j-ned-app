@@ -13,7 +13,7 @@ export const WORKSHOP_SPACE: WorkshopSpace = {
       overline: 'Outil',
       title: 'Guide des plaquettes',
       summary:
-        "Choisis ta matière et ton opération\u00a0: le guide t'indique le type de plaquette à prendre.",
+        "Choisis ta matière\u00a0: le guide te donne les plaquettes que j'utilise, opération par opération.",
       path: '/atelier/plaquettes',
     },
   ],

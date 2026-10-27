@@ -11,13 +11,13 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'blog', renderMode: RenderMode.Server },
   { path: 'blog/:slug', renderMode: RenderMode.Server },
 
-  // Contenu écrit dans le code dont l'affichage dépend de la query string : rendu à chaque requête
+  // Guide des plaquettes lu dans l'API, et son interrupteur qui fait paraître la carte de l'accueil
+  { path: 'atelier', renderMode: RenderMode.Server },
   { path: 'atelier/plaquettes', renderMode: RenderMode.Server },
 
   // Contenu écrit dans le code : prérendu au build
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },
   { path: 'confidentialite', renderMode: RenderMode.Prerender },
-  { path: 'atelier', renderMode: RenderMode.Prerender },
 
   // Auth + admin : jamais côté serveur (authentifié, pas d'intérêt SEO)
   { path: 'login', renderMode: RenderMode.Client },

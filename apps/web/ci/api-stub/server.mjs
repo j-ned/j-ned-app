@@ -118,6 +118,7 @@ async function route(req, pathname, searchParams) {
   }
   if (pathname === '/api/cv') return [200, await readFixture('cv')];
   if (pathname === '/api/profile') return [200, await readProfile()];
+  if (pathname === '/api/workshop-guide') return [200, await readFixture('workshop-guide')];
   if (portraitFile && pathname === `/api${portraitFile.key}`) return [200, portraitFile];
   if (pathname.startsWith('/api/storage/')) return [200, STORAGE_FILE];
 

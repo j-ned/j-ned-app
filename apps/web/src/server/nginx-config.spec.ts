@@ -51,20 +51,19 @@ describe('nginx configuration', () => {
       '/about',
       '/projects/dashflow',
       '/blog/article',
+      '/atelier',
+      '/atelier/',
       '/atelier/plaquettes',
       '/atelier/plaquettes/',
     ])('relays %s to Node', (path) => {
       expect(relayed(path)).toBe(true);
     });
 
-    it.each([
-      '/atelier',
-      '/atelier/',
-      '/atelier/autre',
-      '/atelier/plaquettes/autre',
-      '/wp-login.php',
-    ])('keeps %s away from Node', (path) => {
-      expect(relayed(path)).toBe(false);
-    });
+    it.each(['/atelier/autre', '/atelier/plaquettes/autre', '/wp-login.php'])(
+      'keeps %s away from Node',
+      (path) => {
+        expect(relayed(path)).toBe(false);
+      },
+    );
   });
 });

@@ -12,9 +12,12 @@ describe('serverRoutes', () => {
     expect(findRoute(path)?.renderMode).toBe(RenderMode.Server);
   });
 
-  it('renders the insert guide on each request, so that the served HTML shows the requested choice', () => {
-    expect(findRoute('atelier/plaquettes')?.renderMode).toBe(RenderMode.Server);
-  });
+  it.each(['atelier', 'atelier/plaquettes'])(
+    'renders the workshop page "%s" on each request, since the insert guide switch is read in the API',
+    (path) => {
+      expect(findRoute(path)?.renderMode).toBe(RenderMode.Server);
+    },
+  );
 
   // nginx ne relaie à Node qu'une liste fermée de chemins : toute autre route serveur répondrait 404.
   it('renders on request exactly the routes nginx relays to Node', () => {
@@ -22,15 +25,14 @@ describe('serverRoutes', () => {
       .filter((route) => route.renderMode === RenderMode.Server)
       .map((route) => route.path);
 
-    expect([...serverRendered].sort()).toEqual([...CONTENT_ROUTES, 'atelier/plaquettes'].sort());
+    expect([...serverRendered].sort()).toEqual(
+      [...CONTENT_ROUTES, 'atelier', 'atelier/plaquettes'].sort(),
+    );
   });
 
-  it.each(['mentions-legales', 'confidentialite', 'atelier'])(
-    'prerenders the static page %s',
-    (path) => {
-      expect(findRoute(path)?.renderMode).toBe(RenderMode.Prerender);
-    },
-  );
+  it.each(['mentions-legales', 'confidentialite'])('prerenders the static page %s', (path) => {
+    expect(findRoute(path)?.renderMode).toBe(RenderMode.Prerender);
+  });
 
   // Offres retirées (spec 029) : nginx répond 410, rien ne doit plus être prérendu sous /offres.
   it('prerenders nothing under the retired offers and booking pages', () => {

@@ -3,10 +3,7 @@ import { HOME_HERO_CTA_LABELS, HOME_WORK_FRAME } from '@features/home/domain/hom
 import { STATIC_HERO } from '@features/home/infra/data/home.static-data';
 import { ABOUT_IDENTITY } from '@features/profile/pages/about/about-identity';
 import { INSERT_GUIDE_COPY } from '@features/workshop/application/insert-guide-copy';
-import { ISO_513_GROUPS } from '@features/workshop/domain/iso-groups.static-data';
-import { MATERIALS } from '@features/workshop/domain/materials.static-data';
-import { OPERATION_FAMILIES } from '@features/workshop/domain/operations.static-data';
-import { RECOMMENDATIONS } from '@features/workshop/domain/recommendations.static-data';
+import { MACHINING_OPERATIONS } from '@features/workshop/domain/machining-operations.static-data';
 import { WORKSHOP_SPACE } from '@features/workshop/domain/workshop-space.static-data';
 import { PROJECT_ARTICLES_COPY } from '@features/projects/application/project-articles-copy';
 import {
@@ -23,6 +20,7 @@ import { NAV_LINKS } from '../layout/components/header/nav-items';
 import { LEGAL_LAST_UPDATE } from '../pages/legal-notice';
 import { routes } from '../app.routes';
 import PROFILE_FIXTURE from '../../../ci/api-stub/fixtures/profile.json';
+import WORKSHOP_GUIDE_FIXTURE from '../../../ci/api-stub/fixtures/workshop-guide.json';
 
 export type EditorialText = { readonly path: string; readonly text: string };
 
@@ -59,11 +57,9 @@ export const EDITORIAL_SOURCES: readonly (readonly [string, unknown])[] = [
   ['NAV_LINKS', NAV_LINKS],
   ['FOOTER_COPY', FOOTER_COPY],
   ['LEGAL_LAST_UPDATE', LEGAL_LAST_UPDATE],
-  ['ISO_513_GROUPS', ISO_513_GROUPS],
-  ['MATERIALS', MATERIALS],
-  ['OPERATION_FAMILIES', OPERATION_FAMILIES],
-  ['RECOMMENDATIONS', RECOMMENDATIONS],
   ['WORKSHOP_SPACE', WORKSHOP_SPACE],
   ['INSERT_GUIDE_COPY', INSERT_GUIDE_COPY],
+  ['MACHINING_OPERATIONS', MACHINING_OPERATIONS],
+  ['ci/api-stub/fixtures/workshop-guide.json', WORKSHOP_GUIDE_FIXTURE],
   ['routes', ROUTE_TEXTS],
 ];

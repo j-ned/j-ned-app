@@ -1,0 +1,26 @@
+{
+  "enabled": true,
+  "entries": [
+    {
+      "material": "Acier témoin",
+      "operation": "external-roughing",
+      "insert": "PLAQUETTE-TEMOIN-1",
+      "noseRadius": 0.8,
+      "note": "Ligne fictive de la doublure."
+    },
+    {
+      "material": "Acier témoin",
+      "operation": "threading",
+      "insert": "PLAQUETTE-TEMOIN-2",
+      "noseRadius": 0.2
+    },
+    {
+      "material": "Laiton témoin",
+      "operation": "external-finishing",
+      "insert": "PLAQUETTE-TEMOIN-3",
+      "noseRadius": 0.4
+    }
+  ],
+  "version": 1,
+  "updatedAt": "2026-10-26T10:00:00.000Z"
+}
