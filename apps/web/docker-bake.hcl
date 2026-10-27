@@ -15,4 +15,8 @@ target "production" {
   target = "production"
   tags   = ["ng-portfolio-app:ci"]
   output = ["type=docker"]
+  # Relie le paquet GHCR au dépôt (visibilité et page du paquet).
+  labels = {
+    "org.opencontainers.image.source" = "https://github.com/j-ned/ng-portfolio-app"
+  }
 }

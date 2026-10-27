@@ -1,7 +1,8 @@
 name: CI
 
-# Sur master, le run ne bloque personne : il écrit le cache Docker que les PR lisent (GitHub
-# cloisonne le cache, une PR ne lit jamais celui d'une autre PR).
+# Sur une PR : construire, tester, juger l'image. Sur master : la même chose, puis publier l'image
+# jugée sur GHCR et demander à Dokploy de la déployer (il ne construit plus rien). Le run sur master
+# écrit aussi le cache Docker que les PR lisent (GitHub cloisonne le cache entre PR).
 on:
   pull_request:
   push:
@@ -21,6 +22,9 @@ jobs:
     name: Build · Test · Smoke
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write # publication de l'image sur GHCR, utilisée seulement sur master
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -54,3 +58,36 @@ jobs:
 
       - name: Smoke test the image
         run: ci/smoke.sh ng-portfolio-app:ci
+
+      # Seule l'image qui vient de passer les tests et le test de fumée est publiée : celle que
+      # Dokploy déploie est octet pour octet celle-ci.
+      - name: Publish image (master)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          image=ghcr.io/${{ github.repository }}
+          docker tag ng-portfolio-app:ci "$image:sha-${GITHUB_SHA::7}"
+          docker tag ng-portfolio-app:ci "$image:latest"
+          docker push -q "$image:sha-${GITHUB_SHA::7}"
+          docker push -q "$image:latest"
+
+      # Dokploy tire `latest` et redémarre le conteneur (API `application.deploy` : le webhook
+      # d'une application « image » attend la charge utile de Docker Hub). Sans les secrets,
+      # l'étape ne fait rien et le déploiement reste celui configuré dans Dokploy.
+      - name: Deploy (Dokploy API)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+        run: |
+          if [ -z "$DOKPLOY_URL" ] || [ -z "$DOKPLOY_API_KEY" ] || [ -z "$DOKPLOY_APPLICATION_ID" ]; then
+            echo "Secrets Dokploy absents : pas de déclenchement."
+            exit 0
+          fi
+          curl -fsS -X POST "$DOKPLOY_URL/api/application.deploy" \
+            -H "x-api-key: $DOKPLOY_API_KEY" -H 'Content-Type: application/json' \
+            -d "{\"applicationId\": \"$DOKPLOY_APPLICATION_ID\"}" -o /dev/null

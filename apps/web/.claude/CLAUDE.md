@@ -450,7 +450,7 @@ pnpm ng generate            # Schematics
 # Replique locale des gates Dokploy / CI (.github/workflows/ci.yml)
 pnpm install --frozen-lockfile                 # echoue si le lockfile est incoherent
 pnpm run build --configuration production      # sitemap + rss + build SSR + prerender
-docker build -t ng-portfolio-app:local .       # exactement ce que Dokploy execute
+docker build -t ng-portfolio-app:local .       # l'image que la CI publie sur GHCR (ghcr.io/j-ned/ng-portfolio-app) et que Dokploy tire
 docker buildx bake ci                          # replique exacte de la CI : etage test + image, en parallele
 
 # Audit axe (WCAG 2.0/2.1/2.2 A et AA, zero violation, ADR-0025) : hors PR depuis le 2026-10-26,
