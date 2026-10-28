@@ -1,8 +1,9 @@
 name: CI
 
 # Sur une PR : construire, tester, juger l'image. Sur master : la même chose, puis publier l'image
-# jugée sur GHCR et demander à Dokploy de la déployer (il ne construit plus rien). Le run sur master
-# écrit aussi le cache Docker que les PR lisent (GitHub cloisonne le cache entre PR).
+# jugée sur GHCR et demander à Dokploy de la déployer (il ne construit plus rien) ; lancé à la main
+# sur master, il redéploie. Le run sur master écrit aussi le cache Docker que les PR lisent (GitHub
+# cloisonne le cache entre PR).
 on:
   pull_request:
   push:
@@ -62,7 +63,7 @@ jobs:
       # Seule l'image qui vient de passer les tests et le test de fumée est publiée : celle que
       # Dokploy déploie est octet pour octet celle-ci.
       - name: Publish image (master)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -78,7 +79,7 @@ jobs:
       # d'une application « image » attend la charge utile de Docker Hub). Sans les secrets,
       # l'étape ne fait rien et le déploiement reste celui configuré dans Dokploy.
       - name: Deploy (Dokploy API)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         env:
           DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
           DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
