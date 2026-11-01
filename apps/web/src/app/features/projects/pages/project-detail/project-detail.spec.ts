@@ -1,0 +1,970 @@
+import { DeferBlockBehavior, TestBed, type ComponentFixture } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+
+import { ProjectDetail } from './project-detail';
+import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
+import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
+import type { Project } from '@features/projects/domain/models/project.model';
+import { makeProject, makeProjectImage } from '@features/projects/testing/project-builders';
+import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
+import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
+import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
+import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
+import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
+import { PROJECT_ARTICLES_COPY } from '@features/projects/application/project-articles-copy';
+import { Seo } from '@core/seo/seo';
+import { Component, PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
+
+function project(overrides: Partial<Project> = {}): Project {
+  return makeProject({
+    techChoices: [{ techno: 'NestJS', why: 'modulaire' }],
+    architectureDecisions: [{ decision: 'hexagonale', rationale: 'testable' }],
+    ...overrides,
+  });
+}
+
+function setup(
+  projects: Project[],
+  extraProviders: Provider[] = [],
+): ComponentFixture<ProjectDetail> {
+  const gateway = {
+    getAllProjects: () => of(projects as readonly Project[]),
+  } as unknown as ProjectsGateway;
+  TestBed.configureTestingModule({
+    providers: [
+      provideRouter([]),
+      { provide: ProjectsGateway, useValue: gateway },
+      { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
+      { provide: BlogGateway, useValue: stubBlogGateway() },
+      ...extraProviders,
+    ],
+  });
+  return TestBed.createComponent(ProjectDetail);
+}
+
+describe('ProjectDetail', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('affiche le titre et les deux sections du projet correspondant au slug', async () => {
+    const fixture = setup([project()]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Mon site');
+    expect(text).toContain('NestJS');
+    expect(text).toContain('modulaire');
+    expect(text).toContain('hexagonale');
+    expect(text).toContain('testable');
+  });
+
+  it('Given le projet du slug When le détail est rendu Then il n’émet aucun main et porte la mise en page sur l’host', async () => {
+    const fixture = setup([project()]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('h1')?.textContent).toContain('Mon site');
+    expect(host.querySelectorAll('main')).toHaveLength(0);
+    expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-16', 'pt-20']);
+  });
+
+  it("rend l'image d'en-tête avec un sizes responsive (sans pixel): NG02952", () => {
+    const fixture = setup([project({ image: 'https://cdn.test/cover.avif' })]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    const img = fixture.nativeElement.querySelector('img') as HTMLImageElement | null;
+    expect(img).toBeTruthy();
+    // NgOptimizedImage lève NG02952 et n'applique pas le src si `sizes` contient
+    // une valeur en pixels → image cassée. Le sizes doit rester 100% responsive.
+    expect(img?.getAttribute('sizes') ?? '').not.toContain('px');
+  });
+
+  it('redirige vers /projects si le slug est introuvable', async () => {
+    const fixture = setup([project({ slug: 'autre' })]);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+    fixture.componentRef.setInput('slug', 'inexistant');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(navigate).toHaveBeenCalledWith(['/projects']);
+  });
+
+  it.each([
+    ['inexistant', 404],
+    ['mon-site', 200],
+  ])(
+    'Given a server render of the slug %s When the list is loaded Then the response status is %s and no redirection happens',
+    async (slug, status) => {
+      const responseInit: ResponseInit = { status: 200, headers: new Headers() };
+      const fixture = setup(
+        [project()],
+        [
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: RESPONSE_INIT, useValue: responseInit },
+        ],
+      );
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+      fixture.componentRef.setInput('slug', slug);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect({ status: responseInit.status, navigations: navigate.mock.calls }).toEqual({
+        status,
+        navigations: [],
+      });
+    },
+  );
+
+  it('expose les liens démo et code source quand ils sont fournis', async () => {
+    const fixture = setup([
+      project({ liveUrl: 'https://demo.test', repoUrlFront: 'https://github.com/x/front' }),
+    ]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const hrefs = Array.from(
+      fixture.nativeElement.querySelectorAll('a[target="_blank"]') as NodeListOf<HTMLAnchorElement>,
+    ).map((a) => a.getAttribute('href'));
+    expect(hrefs).toContain('https://demo.test');
+    expect(hrefs).toContain('https://github.com/x/front');
+  });
+
+  it('suit le clic sur un lien projet via AnalyticsGateway', async () => {
+    const track = vi.fn();
+    const gateway = {
+      getAllProjects: () => of([project({ liveUrl: 'https://demo.test' })] as readonly Project[]),
+    } as unknown as ProjectsGateway;
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: ProjectsGateway, useValue: gateway },
+        { provide: AnalyticsGateway, useValue: { trackProjectClick: track } },
+        { provide: BlogGateway, useValue: stubBlogGateway() },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProjectDetail);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const liveLink = fixture.nativeElement.querySelector(
+      'a[href="https://demo.test"]',
+    ) as HTMLAnchorElement;
+    liveLink.click();
+    expect(track).toHaveBeenCalledWith('id-1', 'Mon site');
+  });
+
+  it('propose la navigation vers le projet suivant dans la liste ordonnée', async () => {
+    const fixture = setup([
+      project({ slug: 'mon-site', title: 'Mon site' }),
+      project({ id: 'id-2', slug: 'autre-projet', title: 'Autre projet' }),
+    ]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const navLinks = Array.from(
+      fixture.nativeElement.querySelectorAll('a[href="/projects/autre-projet"]'),
+    );
+    expect(navLinks.length).toBeGreaterThan(0);
+  });
+
+  it("affiche un état d'erreur avec relance quand la liste ne charge pas, sans rediriger", async () => {
+    let calls = 0;
+    const gateway = {
+      getAllProjects: () => {
+        calls += 1;
+        return calls === 1
+          ? throwError(() => new Error('down'))
+          : of([project()] as readonly Project[]);
+      },
+    } as unknown as ProjectsGateway;
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: ProjectsGateway, useValue: gateway },
+        { provide: AnalyticsGateway, useValue: { trackProjectClick: vi.fn() } },
+        { provide: BlogGateway, useValue: stubBlogGateway() },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(ProjectDetail);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const error = fixture.nativeElement.querySelector(
+      '[data-testid="project-error"]',
+    ) as HTMLElement;
+    expect(error).not.toBeNull();
+    expect(error.querySelector('p')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      "Le projet n'a pas pu être chargé. Vérifie ta connexion, puis réessaie.",
+    );
+    expect(navigate).not.toHaveBeenCalled();
+
+    (error.querySelector('button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="project-error"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Mon site');
+  });
+
+  it('Given une stack When le détail est rendu Then chaque outil est un élément de liste', async () => {
+    const fixture = setup([project({ tags: ['Angular', 'NestJS', 'PostgreSQL'] })]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const items = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="project-stack"] li'),
+    ).map((li) => li.textContent?.trim());
+    expect(items).toEqual(['Angular', 'NestJS', 'PostgreSQL']);
+  });
+
+  it('Given des choix techniques When le détail est rendu Then les sections sont nommées par leur h2, sans numérotation', async () => {
+    const fixture = setup([project()]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    for (const id of ['tech-choices-title', 'architecture-decisions-title']) {
+      expect(root.querySelector(`section[aria-labelledby="${id}"] h2#${id}`)).not.toBeNull();
+    }
+    expect(root.querySelector('[data-testid="tech-choices"]')?.textContent).not.toMatch(/\b01\b/);
+  });
+});
+
+describe('ProjectDetail: nature du projet dans l’en-tête', () => {
+  const NBSP = '\u00a0';
+  const text = (el: Element | null | undefined): string =>
+    (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
+
+  const render = async (overrides: Partial<Project>): Promise<HTMLElement> => {
+    const fixture = setup([project(overrides)]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return fixture.nativeElement as HTMLElement;
+  };
+  const kindStamp = (host: HTMLElement): HTMLElement | null =>
+    host.querySelector<HTMLElement>('[data-testid="project-detail-kind"]');
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  it.each([
+    { kind: 'production', label: 'En production' },
+    { kind: 'demo', label: 'Démo' },
+    { kind: 'script', label: 'Script' },
+  ] as const)(
+    'Given the kind $kind When the detail renders Then its header is stamped « $label »',
+    async ({ kind, label }) => {
+      expect(text(kindStamp(await render({ kind })))).toBe(label);
+    },
+  );
+
+  it('Given no kind When the detail renders Then its header shows no stamp', async () => {
+    expect(kindStamp(await render({ kind: null }))).toBeNull();
+  });
+
+  it('Given a stamped detail When it renders Then the stamp comes before the title and is not a heading', async () => {
+    const host = await render({ kind: 'production' });
+    const stamp = kindStamp(host);
+    const title = host.querySelector('[data-testid="project-detail-title"]');
+
+    expect(stamp?.closest('h1, h2, h3, h4, h5, h6')).toBeNull();
+    expect(
+      title && stamp ? stamp.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING : 0,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it.each([
+    { kind: 'production', label: "Ouvrir l'application" },
+    { kind: 'demo', label: 'Voir la démo' },
+    { kind: 'script', label: 'Voir le site' },
+    { kind: null, label: 'Voir le site' },
+  ] as const)(
+    'Given the kind $kind When the detail renders Then its live link reads « $label », with the project and the new tab spelled out',
+    async ({ kind, label }) => {
+      const link = (await render({ kind, liveUrl: 'https://dashflow.test/' })).querySelector(
+        'a[href="https://dashflow.test/"]',
+      );
+
+      expect({ ariaLabel: link?.getAttribute('aria-label') ?? null, name: text(link) }).toEqual({
+        ariaLabel: null,
+        name: `${label}${NBSP}: Mon site, nouvel onglet`,
+      });
+    },
+  );
+});
+
+const normalized = (value: string | null | undefined): string =>
+  (value ?? '').replace(/\s+/g, ' ').trim();
+
+const accessibleName = (element: Element | null | undefined): string => {
+  if (!element) return '';
+  const label = element.getAttribute('aria-label');
+  if (label !== null) return normalized(label);
+  const walk = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? '';
+    if (!(node instanceof Element) || node.getAttribute('aria-hidden') === 'true') return '';
+    if (node.tagName === 'IMG') return ` ${node.getAttribute('alt') ?? ''} `;
+    return [...node.childNodes].map(walk).join('');
+  };
+  return normalized(walk(element));
+};
+
+const CAPTURES = [
+  makeProjectImage({
+    id: 'dashboard',
+    src: 'https://cdn.test/dashboard.avif',
+    alt: 'Tableau de bord du mois en cours',
+    width: 1600,
+    height: 1000,
+  }),
+  makeProjectImage({
+    id: 'mobile',
+    src: 'https://cdn.test/mobile.avif',
+    alt: 'Trois écrans mobiles : budget, santé, réglages',
+    width: 1200,
+    height: 900,
+  }),
+];
+
+const renderDetail = async (overrides: Partial<Project>): Promise<HTMLElement> => {
+  const fixture = setup([project(overrides)]);
+  fixture.componentRef.setInput('slug', 'mon-site');
+  fixture.detectChanges();
+  await fixture.whenStable();
+  return fixture.nativeElement as HTMLElement;
+};
+
+const galleryOf = (host: HTMLElement): HTMLElement | null =>
+  host.querySelector<HTMLElement>('[data-testid="project-gallery"]');
+
+describe('ProjectDetail: galerie de captures', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('Given a project without captures When the detail renders Then no gallery section exists', async () => {
+    const host = await renderDetail({ gallery: [] });
+
+    expect({
+      gallery: galleryOf(host),
+      heading: host.querySelector('#gallery-title'),
+    }).toEqual({ gallery: null, heading: null });
+  });
+
+  it('Given captures When the detail renders Then the gallery is a section named by its « Captures » h2', async () => {
+    const gallery = galleryOf(await renderDetail({ gallery: CAPTURES }));
+    const heading = gallery?.querySelector(
+      'section[aria-labelledby="gallery-title"] h2#gallery-title',
+    );
+
+    expect(normalized(heading?.textContent)).toBe('Captures');
+  });
+
+  it('Given captures When the detail renders Then each capture is a list item holding one enlarge button, in the gallery order', async () => {
+    const gallery = galleryOf(await renderDetail({ gallery: CAPTURES }));
+    const items = [...(gallery?.querySelectorAll('ul > li') ?? [])];
+
+    expect(
+      items.map((item) => ({
+        buttons: item.querySelectorAll('[data-testid="project-gallery-open"]').length,
+        alt: item.querySelector('img')?.getAttribute('alt'),
+      })),
+    ).toEqual([
+      { buttons: 1, alt: 'Tableau de bord du mois en cours' },
+      { buttons: 1, alt: 'Trois écrans mobiles : budget, santé, réglages' },
+    ]);
+  });
+
+  it.each(CAPTURES.map((capture, index) => ({ index, capture })))(
+    'Given the capture #$index When the gallery renders Then its thumbnail is a lazy optimized image with its intrinsic size and alt',
+    async ({ index, capture }) => {
+      const gallery = galleryOf(await renderDetail({ gallery: CAPTURES }));
+      const image = gallery?.querySelectorAll('[data-testid="project-gallery-open"] img')[index];
+
+      expect({
+        src: image?.getAttribute('src'),
+        alt: image?.getAttribute('alt'),
+        width: image?.getAttribute('width'),
+        height: image?.getAttribute('height'),
+        loading: image?.getAttribute('loading'),
+        fetchpriority: image?.getAttribute('fetchpriority'),
+      }).toEqual({
+        src: capture.src,
+        alt: capture.alt,
+        width: String(capture.width),
+        height: String(capture.height),
+        loading: 'lazy',
+        fetchpriority: 'auto',
+      });
+    },
+  );
+
+  it('Given captures and technical choices When the detail renders Then the gallery sits between the cover and the technical choices', async () => {
+    const host = await renderDetail({ image: 'https://cdn.test/cover.avif', gallery: CAPTURES });
+    const cover = host.querySelector('figure');
+    const gallery = galleryOf(host);
+    const techChoices = host.querySelector('[data-testid="tech-choices"]');
+    const follows = (a: Node | null, b: Node | null): boolean =>
+      !!a && !!b && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+    expect({
+      afterCover: follows(cover, gallery),
+      beforeTechChoices: follows(gallery, techChoices),
+    }).toEqual({ afterCover: true, beforeTechChoices: true });
+  });
+
+  it('Given deferred blocks never resolve When the detail first renders Then the gallery is already in the HTML, as the prerender serves it', async () => {
+    TestBed.configureTestingModule({ deferBlockBehavior: DeferBlockBehavior.Manual });
+    const host = await renderDetail({ gallery: CAPTURES });
+
+    expect(
+      galleryOf(host)?.querySelectorAll('[data-testid="project-gallery-open"] img').length,
+    ).toBe(2);
+  });
+});
+
+describe('ProjectDetail: agrandissement d’une capture', () => {
+  type Gallery = {
+    readonly host: HTMLElement;
+    readonly fixture: ComponentFixture<ProjectDetail>;
+    readonly openButtons: HTMLButtonElement[];
+    readonly dialog: HTMLDialogElement | null;
+  };
+
+  const renderGallery = async (): Promise<Gallery> => {
+    const fixture = setup([project({ gallery: CAPTURES })]);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+    return {
+      host,
+      fixture,
+      openButtons: [
+        ...host.querySelectorAll<HTMLButtonElement>('[data-testid="project-gallery-open"]'),
+      ],
+      dialog: host.querySelector<HTMLDialogElement>('[data-testid="project-gallery-dialog"]'),
+    };
+  };
+
+  const closeButtonOf = (gallery: Gallery): HTMLButtonElement | null =>
+    gallery.host.querySelector<HTMLButtonElement>('[data-testid="project-gallery-close"]');
+
+  const enlarge = async (
+    gallery: Gallery,
+    index: number,
+  ): Promise<HTMLButtonElement | undefined> => {
+    const trigger = gallery.openButtons.at(index);
+    trigger?.click();
+    await gallery.fixture.whenStable();
+    closeButtonOf(gallery)?.focus();
+    return trigger;
+  };
+
+  // happy-dom does not run the browser's Escape handling of a modal dialog: replay it (cancel, then close).
+  const pressEscape = (dialog: HTMLDialogElement): void => {
+    dialog.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+    );
+    if (dialog.dispatchEvent(new Event('cancel', { cancelable: true }))) dialog.close();
+  };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    TestBed.resetTestingModule();
+  });
+
+  it('Given a gallery When it renders Then a single native dialog exists, closed', async () => {
+    const { host, dialog } = await renderGallery();
+
+    expect({
+      dialogs: host.querySelectorAll('[data-testid="project-gallery-dialog"]').length,
+      tag: dialog?.tagName,
+      open: dialog?.open,
+    }).toEqual({ dialogs: 1, tag: 'DIALOG', open: false });
+  });
+
+  it.each(CAPTURES.map((capture, index) => ({ index, capture })))(
+    'Given the capture #$index When its thumbnail renders Then it is a button named « Agrandir : <alt> »',
+    async ({ index, capture }) => {
+      const button = (await renderGallery()).openButtons[index];
+
+      expect({
+        tag: button?.tagName,
+        type: button?.getAttribute('type'),
+        name: accessibleName(button),
+      }).toEqual({ tag: 'BUTTON', type: 'button', name: `Agrandir : ${capture.alt}` });
+    },
+  );
+
+  it.each(CAPTURES.map((capture, index) => ({ index, capture })))(
+    'Given the capture #$index When its button is activated Then the dialog opens as a modal on that capture, enlarged',
+    async ({ index, capture }) => {
+      const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal');
+      const gallery = await renderGallery();
+
+      await enlarge(gallery, index);
+      const enlarged = gallery.dialog?.querySelector('[data-testid="project-gallery-enlarged"]');
+
+      expect({
+        showModal: showModal.mock.calls.length,
+        open: gallery.dialog?.open,
+        name: normalized(gallery.dialog?.getAttribute('aria-label')),
+        src: enlarged?.getAttribute('src'),
+        alt: enlarged?.getAttribute('alt'),
+        width: enlarged?.getAttribute('width'),
+        height: enlarged?.getAttribute('height'),
+      }).toEqual({
+        showModal: 1,
+        open: true,
+        name: `Capture agrandie : ${capture.alt}`,
+        src: capture.src,
+        alt: capture.alt,
+        width: String(capture.width),
+        height: String(capture.height),
+      });
+    },
+  );
+
+  it('Given an open dialog When it renders Then « Fermer » is its first focusable control', async () => {
+    const gallery = await renderGallery();
+    await enlarge(gallery, 0);
+    const firstFocusable = gallery.dialog?.querySelector(
+      'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+
+    expect({
+      isClose: firstFocusable === closeButtonOf(gallery),
+      name: accessibleName(firstFocusable),
+    }).toEqual({ isClose: true, name: 'Fermer' });
+  });
+
+  it.each([
+    {
+      label: 'the « Fermer » button',
+      close: (gallery: Gallery): void => closeButtonOf(gallery)?.click(),
+    },
+    {
+      label: 'the Escape key',
+      close: (gallery: Gallery): void => {
+        if (gallery.dialog) pressEscape(gallery.dialog);
+      },
+    },
+  ])(
+    'Given an enlarged capture When the dialog is closed with $label Then it closes and the focus returns to the thumbnail that opened it',
+    async ({ close }) => {
+      const gallery = await renderGallery();
+      const trigger = await enlarge(gallery, 1);
+
+      close(gallery);
+      await gallery.fixture.whenStable();
+
+      expect({
+        open: gallery.dialog?.open,
+        focusOnTrigger: document.activeElement === trigger,
+      }).toEqual({ open: false, focusOnTrigger: true });
+    },
+  );
+
+  it('Given a capture enlarged then closed with Escape When the same thumbnail is activated again Then the dialog reopens', async () => {
+    const gallery = await renderGallery();
+    await enlarge(gallery, 0);
+    if (gallery.dialog) pressEscape(gallery.dialog);
+    await gallery.fixture.whenStable();
+
+    await enlarge(gallery, 0);
+
+    expect(gallery.dialog?.open).toBe(true);
+  });
+});
+
+@Component({ template: '' })
+class BlankPage {}
+
+describe('ProjectDetail: suite éditoriale de la fiche', () => {
+  const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
+
+  const text = (el: Element | null | undefined): string =>
+    (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
+
+  const renderProject = async (overrides: Partial<Project>): Promise<HTMLElement> => {
+    const current = project(overrides);
+    trackCtaClick.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: '**', component: BlankPage }]),
+        {
+          provide: ProjectsGateway,
+          useValue: stubProjectsGateway({ getAllProjects: () => of([current]) }),
+        },
+        { provide: AnalyticsGateway, useValue: stubAnalyticsGateway({ trackCtaClick }) },
+        { provide: BlogGateway, useValue: stubBlogGateway() },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProjectDetail);
+    fixture.componentRef.setInput('slug', current.slug);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return fixture.nativeElement as HTMLElement;
+  };
+
+  const byTestId = (host: HTMLElement, testId: string): HTMLElement | null =>
+    host.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+
+  const follows = (first: Element | null, second: Element | null): boolean =>
+    Boolean(
+      first && second && first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  describe('phrase « problème → résultat »', () => {
+    it('Given DashFlow When the detail renders Then the need it solves and its personal use come before the technical description', async () => {
+      const host = await renderProject({ slug: 'dashflow', title: 'DashFlow' });
+      const outcome = byTestId(host, 'project-outcome');
+      const usage = byTestId(host, 'project-usage');
+      const description = byTestId(host, 'project-detail-description');
+
+      expect(text(outcome)).toBe(
+        'Suivre le budget du foyer et la santé de chacun sans confier ces données en clair à un serveur\u00a0: une seule application, chiffrée dans le navigateur avant tout envoi.',
+      );
+      expect(text(usage)).toBe('Usage personnel, pour ma famille et moi.');
+      expect([follows(outcome, description), follows(usage, description)]).toEqual([true, true]);
+    });
+
+    it('Given a project without validated outcome When the detail renders Then neither sentence nor usage is shown, the description stays', async () => {
+      const host = await renderProject({ slug: 'le-vieux-comptoir', kind: 'demo' });
+
+      expect([byTestId(host, 'project-outcome'), byTestId(host, 'project-usage')]).toEqual([
+        null,
+        null,
+      ]);
+      expect(text(byTestId(host, 'project-detail-description'))).toBe('desc');
+    });
+  });
+
+  describe('fin de fiche', () => {
+    it.each<Project['kind']>(['production', 'demo', 'script', null])(
+      'Given a project of kind %s When the detail renders Then no commercial follow-up nor link to the retired offers remains',
+      async (kind) => {
+        const host = await renderProject({ kind });
+
+        expect([
+          byTestId(host, 'project-follow-up'),
+          host.querySelector('a[href^="/offres"]'),
+        ]).toEqual([null, null]);
+      },
+    );
+  });
+});
+
+describe('ProjectDetail: articles sur ce projet', () => {
+  const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();
+  const applySeoData = vi.fn<Seo['applySeoData']>();
+
+  const DASHFLOW = project({ id: 'dashflow', slug: 'dashflow', title: 'DashFlow' });
+  const CANDIDASH = project({ id: 'candidash', slug: 'candidash', title: 'CandiDash' });
+  const WITHOUT_TAG = project();
+
+  const article = (slug: string, tags: readonly string[], publishedAt: string): BlogPost =>
+    makeBlogPost({ id: slug, slug, title: `Titre ${slug}`, tags, publishedAt });
+
+  const renderProject = async (
+    slug: string,
+    getPublishedPosts: BlogGateway['getPublishedPosts'],
+  ): Promise<ComponentFixture<ProjectDetail>> => {
+    trackCtaClick.mockClear();
+    applySeoData.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: '**', component: BlankPage }]),
+        {
+          provide: ProjectsGateway,
+          useValue: stubProjectsGateway({
+            getAllProjects: () => of([DASHFLOW, CANDIDASH, WITHOUT_TAG]),
+          }),
+        },
+        { provide: BlogGateway, useValue: stubBlogGateway({ getPublishedPosts }) },
+        { provide: AnalyticsGateway, useValue: stubAnalyticsGateway({ trackCtaClick }) },
+        { provide: Seo, useValue: { applySeoData } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProjectDetail);
+    fixture.componentRef.setInput('slug', slug);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture;
+  };
+
+  const rootOf = (fixture: ComponentFixture<ProjectDetail>): HTMLElement =>
+    fixture.nativeElement as HTMLElement;
+
+  const sectionOf = (fixture: ComponentFixture<ProjectDetail>): HTMLElement | null =>
+    rootOf(fixture).querySelector<HTMLElement>('[data-testid="project-articles"]');
+
+  const articleLinks = (fixture: ComponentFixture<ProjectDetail>): HTMLAnchorElement[] => [
+    ...(sectionOf(fixture)?.querySelectorAll<HTMLAnchorElement>(
+      '[data-testid="project-article"]',
+    ) ?? []),
+  ];
+
+  const follows = (first: Element | null, second: Element | null): boolean =>
+    Boolean(
+      first && second && first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    TestBed.resetTestingModule();
+  });
+
+  it('Given DashFlow and published posts about it When the detail renders Then a section titled « Articles sur ce projet » links to each of them, newest first, dated', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([
+        article('ancien', ['Angular', 'DashFlow'], '2026-07-21T12:00:00Z'),
+        article('sans-rapport', ['Angular'], '2026-09-20T12:00:00Z'),
+        article('recent', ['DashFlow'], '2026-09-14T12:00:00Z'),
+      ]),
+    );
+    const heading = rootOf(fixture).querySelector(
+      'section[aria-labelledby="project-articles-title"] h2#project-articles-title',
+    );
+    const links = articleLinks(fixture);
+
+    expect({
+      heading: heading?.textContent?.trim(),
+      headingInSection: sectionOf(fixture)?.contains(heading) ?? false,
+      hrefs: links.map((link) => link.getAttribute('href')),
+      titles: links.map((link) => link.lastElementChild?.textContent?.trim()),
+      overlines: links.map((link) => link.firstElementChild?.textContent ?? ''),
+    }).toEqual({
+      heading: 'Articles sur ce projet',
+      headingInSection: true,
+      hrefs: ['/blog/recent', '/blog/ancien'],
+      titles: ['Titre recent', 'Titre ancien'],
+      overlines: [expect.stringMatching(/\b14\b.*2026/su), expect.stringMatching(/\b21\b.*2026/su)],
+    });
+  });
+
+  it('Given DashFlow with a post about it When the detail renders Then the section sits after the architecture decisions and before the navigation between projects', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([article('recent', ['DashFlow'], '2026-09-14T12:00:00Z')]),
+    );
+    const root = rootOf(fixture);
+
+    expect({
+      afterDecisions: follows(
+        root.querySelector('[data-testid="architecture-decisions"]'),
+        sectionOf(fixture),
+      ),
+      beforeNav: follows(
+        sectionOf(fixture),
+        root.querySelector('nav[aria-label="Navigation entre projets"]'),
+      ),
+    }).toEqual({ afterDecisions: true, beforeNav: true });
+  });
+
+  it('Given DashFlow and no published post about it When the detail renders Then no section is rendered', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([article('sans-rapport', ['Angular'], '2026-09-20T12:00:00Z')]),
+    );
+
+    expect({
+      title: rootOf(fixture).querySelector('h1')?.textContent?.trim(),
+      section: sectionOf(fixture),
+      heading: rootOf(fixture).querySelector('#project-articles-title'),
+    }).toEqual({ title: 'DashFlow', section: null, heading: null });
+  });
+
+  it('Given a project that no blog tag designates When the detail renders Then the blog is never read and no section is rendered', async () => {
+    const getPublishedPosts = vi.fn(() =>
+      of([article('sur-dashflow', ['DashFlow'], '2026-09-14T12:00:00Z')]),
+    );
+    const fixture = await renderProject('mon-site', getPublishedPosts);
+
+    expect({
+      title: rootOf(fixture).querySelector('h1')?.textContent?.trim(),
+      reads: getPublishedPosts.mock.calls.length,
+      section: sectionOf(fixture),
+    }).toEqual({ title: 'Mon site', reads: 0, section: null });
+  });
+
+  it('Given DashFlow When the blog cannot be read Then the detail still renders, without the section nor an error state', async () => {
+    const fixture = await renderProject('dashflow', () => throwError(() => new Error('down')));
+
+    expect({
+      title: rootOf(fixture).querySelector('h1')?.textContent?.trim(),
+      section: sectionOf(fixture),
+      error: rootOf(fixture).querySelector('[data-testid="project-error"]'),
+    }).toEqual({ title: 'DashFlow', section: null, error: null });
+  });
+
+  it('Given the same page moves from DashFlow to CandiDash When it renders again Then the section follows the new project', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([
+        article('sur-dashflow', ['DashFlow'], '2026-09-14T12:00:00Z'),
+        article('sur-candidash', ['CandiDash'], '2026-08-14T12:00:00Z'),
+      ]),
+    );
+    const before = articleLinks(fixture).map((link) => link.getAttribute('href'));
+
+    fixture.componentRef.setInput('slug', 'candidash');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect({
+      before,
+      after: articleLinks(fixture).map((link) => link.getAttribute('href')),
+    }).toEqual({ before: ['/blog/sur-dashflow'], after: ['/blog/sur-candidash'] });
+  });
+
+  it('Given two posts about DashFlow When the reader follows each of them Then each click is measured as a project article with the same constant label, and the router goes to the post', async () => {
+    const fixture = await renderProject('dashflow', () =>
+      of([
+        article('recent', ['DashFlow'], '2026-09-14T12:00:00Z'),
+        article('ancien', ['DashFlow'], '2026-07-21T12:00:00Z'),
+      ]),
+    );
+    const navigateByUrl = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+    for (const link of articleLinks(fixture)) link.click();
+    await fixture.whenStable();
+
+    expect({
+      tracked: trackCtaClick.mock.calls,
+      label: PROJECT_ARTICLES_COPY.articleCtaLabel,
+      routed: navigateByUrl.mock.calls.map(([url]) => String(url)),
+    }).toEqual({
+      tracked: [
+        ['project_article', PROJECT_ARTICLES_COPY.articleCtaLabel],
+        ['project_article', PROJECT_ARTICLES_COPY.articleCtaLabel],
+      ],
+      label: expect.stringMatching(/\S/u),
+      routed: ['/blog/recent', '/blog/ancien'],
+    });
+  });
+
+  describe('données structurées', () => {
+    const lastStructuredData = (): Record<string, unknown> | undefined =>
+      applySeoData.mock.calls.at(-1)?.[0].structuredData;
+
+    it('Given DashFlow and published posts about it When its structured data is applied Then the CreativeWork keeps its fields and is the subject of each post, newest first', async () => {
+      await renderProject('dashflow', () =>
+        of([
+          article('ancien', ['Angular', 'DashFlow'], '2026-07-21T12:00:00Z'),
+          article('sans-rapport', ['Angular'], '2026-09-20T12:00:00Z'),
+          article('recent', ['DashFlow'], '2026-09-14T12:00:00Z'),
+        ]),
+      );
+
+      expect(lastStructuredData()).toEqual({
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        name: 'DashFlow',
+        description: 'desc',
+        creator: {
+          '@type': 'Person',
+          name: 'Julien Nédellec',
+          url: 'https://nedellec-julien.fr',
+        },
+        keywords: '',
+        subjectOf: [
+          {
+            '@type': 'BlogPosting',
+            headline: 'Titre recent',
+            url: 'https://nedellec-julien.fr/blog/recent',
+          },
+          {
+            '@type': 'BlogPosting',
+            headline: 'Titre ancien',
+            url: 'https://nedellec-julien.fr/blog/ancien',
+          },
+        ],
+      });
+    });
+
+    it.each<{
+      readonly scenario: string;
+      readonly slug: string;
+      readonly posts$: ReturnType<BlogGateway['getPublishedPosts']>;
+      readonly subjectOf: readonly unknown[] | undefined;
+    }>([
+      {
+        scenario: 'DashFlow with one post about it',
+        slug: 'dashflow',
+        posts$: of([article('recent', ['DashFlow'], '2026-09-14T12:00:00Z')]),
+        subjectOf: [
+          {
+            '@type': 'BlogPosting',
+            headline: 'Titre recent',
+            url: 'https://nedellec-julien.fr/blog/recent',
+          },
+        ],
+      },
+      {
+        scenario: 'DashFlow and no post about it',
+        slug: 'dashflow',
+        posts$: of([article('sans-rapport', ['Angular'], '2026-09-20T12:00:00Z')]),
+        subjectOf: undefined,
+      },
+      {
+        scenario: 'a project that no blog tag designates',
+        slug: 'mon-site',
+        posts$: of([article('sur-dashflow', ['DashFlow'], '2026-09-14T12:00:00Z')]),
+        subjectOf: undefined,
+      },
+      {
+        scenario: 'DashFlow and an unreadable blog',
+        slug: 'dashflow',
+        posts$: throwError(() => new Error('down')),
+        subjectOf: undefined,
+      },
+    ])(
+      'Given $scenario When its structured data is applied Then the CreativeWork carries subjectOf only when posts are about the project',
+      async ({ slug, posts$, subjectOf }) => {
+        await renderProject(slug, () => posts$);
+        const structuredData = lastStructuredData();
+
+        expect({
+          type: structuredData?.['@type'],
+          hasSubjectOf: 'subjectOf' in (structuredData ?? {}),
+          subjectOf: structuredData?.['subjectOf'],
+        }).toEqual({ type: 'CreativeWork', hasSubjectOf: subjectOf !== undefined, subjectOf });
+      },
+    );
+
+    it('Given the same page moves from DashFlow to CandiDash When its structured data is applied again Then subjectOf follows the new project', async () => {
+      const fixture = await renderProject('dashflow', () =>
+        of([
+          article('sur-dashflow', ['DashFlow'], '2026-09-14T12:00:00Z'),
+          article('sur-candidash', ['CandiDash'], '2026-08-14T12:00:00Z'),
+        ]),
+      );
+
+      fixture.componentRef.setInput('slug', 'candidash');
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect({
+        name: lastStructuredData()?.['name'],
+        subjectOf: lastStructuredData()?.['subjectOf'],
+      }).toEqual({
+        name: 'CandiDash',
+        subjectOf: [
+          {
+            '@type': 'BlogPosting',
+            headline: 'Titre sur-candidash',
+            url: 'https://nedellec-julien.fr/blog/sur-candidash',
+          },
+        ],
+      });
+    });
+  });
+});

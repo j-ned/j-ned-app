@@ -1,0 +1,12 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://nedellec-julien.fr/sitemap.xml
+
+# Disallow specific files/folders if needed
+Disallow: /api/
+Disallow: /admin/
+Disallow: /login
+Disallow: /two-factor

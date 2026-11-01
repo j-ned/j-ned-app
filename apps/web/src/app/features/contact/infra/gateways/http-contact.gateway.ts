@@ -1,0 +1,133 @@
+import { inject, Injectable } from '@angular/core';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import {
+  catchError,
+  map,
+  Observable,
+  of,
+  ReplaySubject,
+  share,
+  startWith,
+  Subject,
+  switchMap,
+} from 'rxjs';
+import { ContactGateway } from '../../domain/gateways/contact.gateway';
+import type {
+  ContactFormData,
+  ContactFormSubmission,
+} from '../../domain/models/contact-form.model';
+import type { ContactMessage } from '../../domain/models/contact-message.model';
+import { API_BASE_URL } from '@shared/api/api-config';
+import { silentErrors } from '@core/interceptors/skip-error-toast';
+
+function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
+  switch (err.status) {
+    case 0:
+      return {
+        success: false,
+        message: 'Connexion impossible. Vérifie ton réseau, puis réessaie dans un instant.',
+      };
+    case 400:
+      return {
+        success: false,
+        message: 'Certains champs ne vont pas. Vérifie ta saisie et réessaie.',
+      };
+    case 429:
+      return {
+        success: false,
+        // Fenêtre de l'API : 3 messages par heure et par IP.
+        message:
+          "Trop d'envois en peu de temps. Réessaie dans une heure, ou écris-moi directement par e-mail.",
+      };
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return {
+        success: false,
+        message: 'Le serveur a un souci passager. Réessaie dans quelques minutes.',
+      };
+    default:
+      return {
+        success: false,
+        message: "Quelque chose a coincé pendant l'envoi. Réessaie, ou écris-moi par e-mail.",
+      };
+  }
+}
+
+@Injectable()
+export class HttpContactGateway extends ContactGateway {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = inject(API_BASE_URL);
+
+  private readonly _unreadRefresh$ = new Subject<void>();
+  // Seule la relance peut afficher un toast : un échec suivi d'une relance réussie reste muet.
+  private readonly unreadCount$ = this._unreadRefresh$.pipe(
+    startWith(undefined),
+    switchMap(() =>
+      this.fetchUnreadCount(silentErrors()).pipe(catchError(() => this.fetchUnreadCount())),
+    ),
+    share({
+      connector: () => new ReplaySubject<number>(1),
+      resetOnError: true,
+      resetOnComplete: false,
+      resetOnRefCountZero: false,
+    }),
+  );
+
+  submitContactForm(data: ContactFormData): Observable<ContactFormSubmission> {
+    return this.http.post(`${this.apiUrl}/contact/messages`, data).pipe(
+      map<unknown, ContactFormSubmission>(() => ({
+        success: true,
+        message: 'Message bien reçu, merci\u202f! Je te réponds dès que je peux.',
+      })),
+      catchError((err: HttpErrorResponse) => of(toSubmissionError(err))),
+    );
+  }
+
+  // Lue par l'admin seul, qui affiche son propre état d'erreur.
+  getAllMessages(): Observable<readonly ContactMessage[]> {
+    return this.http
+      .get<{ data: ContactMessage[] }>(`${this.apiUrl}/contact/messages`, {
+        context: silentErrors(),
+      })
+      .pipe(map((res) => res.data));
+  }
+
+  // Les écritures de l'admin : la page restaure son état et nomme l'échec elle-même.
+  markMessageAsRead(id: number): Observable<ContactMessage> {
+    return this.http.patch<ContactMessage>(
+      `${this.apiUrl}/contact/messages/${id}/read`,
+      {},
+      { context: silentErrors() },
+    );
+  }
+
+  deleteMessage(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/contact/messages/${id}`, {
+      context: silentErrors(),
+    });
+  }
+
+  private fetchUnreadCount(context?: HttpContext): Observable<number> {
+    return this.http
+      .get<{ count: number }>(`${this.apiUrl}/contact/messages/unread-count`, { context })
+      .pipe(map((res) => res.count));
+  }
+
+  getUnreadCount(): Observable<number> {
+    return this.unreadCount$;
+  }
+
+  invalidateUnreadCount(): void {
+    this._unreadRefresh$.next();
+  }
+
+  markAllRead(): Observable<{ readonly count: number }> {
+    return this.http.patch<{ count: number }>(
+      `${this.apiUrl}/contact/messages/mark-all-read`,
+      {},
+      { context: silentErrors() },
+    );
+  }
+}

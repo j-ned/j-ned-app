@@ -1,0 +1,232 @@
+---
+id: 029
+title: Repositionnement en portfolio personnel, retrait de l'activité freelance
+type: refactor
+status: done
+created: 2026-10-20
+related: [specs/archive/009-plateforme-acquisition.md, specs/archive/024-prise-de-rendez-vous.md, PRODUCT.md]
+---
+
+# 029 — Repositionnement en portfolio personnel
+
+## Description
+
+### Objectif
+
+Julien arrête son statut d'entrepreneur individuel et ferme son compte Malt (décision du propriétaire du
+2026-10-20). Aucun client n'a été servi : aucun contrat, aucune maintenance ni aucun rendez-vous à
+honorer. Le site cesse d'être une plateforme d'acquisition client (spec 009) et redevient un portfolio
+personnel orienté « passion du code », avec le SEO comme priorité. `PRODUCT.md` porte le nouveau
+positionnement : public principal développeur (par le blog), public secondaire recruteur ou tech lead.
+
+### Arbitrages (2026-10-20)
+
+1. **Publics** : développeurs via le blog d'abord, recruteurs et tech leads ensuite.
+2. **Formulaire de contact** : conservé, sans qualification commerciale (plus de « type de projet »
+   dérivé du catalogue d'offres).
+3. **Réalisations** : toutes conservées.
+4. **Disponibilité** : Julien n'est pas ouvert aux opportunités. Aucun signal de recherche d'emploi
+   (bloc « Vous recrutez ? », mention CDI, lien `project_hiring` de la fiche projet). Le CV reste
+   téléchargeable depuis le parcours.
+5. **Accroche de la home** : « Tourneur CN le jour, développeur web le reste du temps. », accent
+   (`HeroData.headlineAccent`) sur « développeur web ».
+6. **Avis** : aucun avis n'a jamais été publié (`HOME_REVIEWS` vide). La section et son JSON-LD `Review`
+   disparaissent.
+7. **Ordre de retrait** : front avant API. Une route d'API retirée avant son appelant casserait les
+   pages rendues à la requête (miroir de la règle « API puis front » des ajouts, `.claude/CLAUDE.md`).
+8. **Méthode** : soustraction d'abord, une PR par périmètre, chacune verte sur les gates du Dockerfile.
+   Aucune refonte d'architecture (monorepo, mode de rendu) dans ces PR : elle se décide une fois le
+   périmètre réduit.
+
+### Exigences
+
+1. **URL retirées** : `/offres`, `/offres/*`, `/offre-site-industrie` et `/rendez-vous` (hors
+   `/rendez-vous/annulation`, retiré avec l'API) répondent **410 Gone** par nginx, sortent du
+   `sitemap.xml` et du prérendu. Un 410 désindexe plus vite qu'un 404 et dit la vérité : la ressource
+   n'existe plus et ne reviendra pas.
+2. **Aucun lien mort** : header, footer, home, fiche projet, page Parcours ne pointent plus vers une URL
+   retirée.
+3. **Données structurées** : plus aucun `OfferCatalog`, `Offer`, `Service`, `ProfessionalService`,
+   `PriceSpecification`, `Review`, ni zone `AdministrativeArea` de chalandise. `Person` reste.
+4. **Identité** : plus de SIRET (`SITE_IDENTITY.business`), plus de lien Malt, mentions légales et
+   politique de confidentialité réécrites pour un éditeur particulier non professionnel (contenu à
+   valider par le propriétaire, obligations LCEN art. 6 à vérifier sur Légifrance au moment de la PR).
+5. **Contenu en base** : le parcours (`/about`) est un document administrable (ADR-0023). Le paragraphe
+   « Je prends des missions freelance… » se corrige dans l'admin ou par une migration de l'API, pas
+   dans le code du front.
+6. **Analytics** : la vue « conversions » (tunnel vers la demande de devis) disparaît. Les événements
+   qui nomment une offre (`offer_*`) ne sont plus émis.
+7. **Documentation** : ADR 0005, 0026, 0027, 0028 passent au statut « Obsolète » avec un renvoi vers
+   cette spec (une ADR n'est pas supprimée). `DESIGN.md` perd les composants retirés.
+
+### Découpage en PR
+
+| #   | Dépôt       | Périmètre                                                                                       | Dépend de  |
+| --- | ----------- | ----------------------------------------------------------------------------------------------- | ---------- |
+| 1   | front       | `PRODUCT.md` et cette spec                                                                      | —          |
+| 2   | front       | retrait des offres et nouvel accueil, 410 nginx, sitemap, JSON-LD                               | 1          |
+| 3   | front       | retrait des rendez-vous (pages publiques et admin, flux ICS)                                    | 2          |
+| 4   | API         | retrait du module `booking`, migration de suppression des tables, `BOOKING_FEED_SECRET`         | 3 déployée |
+| 5   | front + API | identité (SIRET, Malt), mentions légales, confidentialité, contact sans qualification, parcours | 3          |
+| 6   | front + API | analytics : retrait des conversions et des événements d'offre                                   | 2          |
+| 7   | front       | ADR obsolètes, `DESIGN.md`, archivage des specs 007, 009, 010, 024 à 028                        | 2 à 6      |
+
+### Hors périmètre
+
+- Choix d'architecture (monorepo Nx, rendu statique, maintien de l'admin) : décidés après la PR 7.
+- Phase SEO active (`ProfilePage`, maillage interne, transformation des ADR en articles) : spec dédiée.
+- CI de l'API (absente aujourd'hui) : spec dédiée côté API, prioritaire avant la PR 4.
+
+## Plan technique — PR 2 (offres et nouvel accueil)
+
+### Retiré
+
+- `features/offer/` entier, ses routes (`/offres`, `/offres/*`, redirections `application-metier` et
+  `offre-site-industrie`), son prérendu et ses entrées du `sitemap.xml`.
+- Home : sections Offres, Méthode, Pourquoi moi, FAQ, Avis (et leur JSON-LD `Review`), lien de
+  réservation et mention de disponibilité du hero. `SITE_IDENTITY.availability` et
+  `SITE_IDENTITY.googleReviewUrl` (invitation à un avis Google dans le pied de page) disparaissent.
+- Fiche projet : bloc de fin « Un besoin similaire ? » et sa correspondance nature → offre.
+- `public/demos/` : visuels des démos, servis uniquement par les pages d'offre.
+- Code devenu mort : `shared/ui/faq-list`, `shared/ui/key-point-list`, l'entrée de menu de type
+  « section » (seule « Méthode » l'utilisait) et l'ancre de formulaire local du `SectionScroller`
+  (`REQUEST_ANCHOR_DATA_KEY`, seules les pages d'offre la déclaraient).
+
+### Ajouté ou modifié
+
+- **Hero** : accroche de l'arbitrage 5, cartouche « Fiche technique » (métier, code, stack,
+  hébergement, règle), appels « Lire le blog » (primaire) et « Voir les réalisations ».
+- **Derniers articles** (`HomeLatestPosts`) : les trois derniers articles publiés
+  (`latestPosts`, domaine blog), avant les réalisations ; section absente sans article. Le bundle de la
+  home les compose avec `combineLatest` et non `forkJoin` : `allProjects$` ne se termine jamais
+  (`ReplaySubject` partagé, réémis après invalidation), un `forkJoin` n'émettrait pas.
+- **Menu** : Blog, Réalisations, Parcours (le blog d'abord, `PRODUCT.md`). Appel « Me contacter ».
+- **SEO de la home** : graphe `Person` (`jobTitle`, `sameAs` LinkedIn et GitHub) + `WebSite`.
+- **nginx** : `location ~ ^/(offres|offre-site-industrie)(/|$)` → `return 410`, corps = shell client
+  (`error_page 410 /index.csr.html`), en-têtes de sécurité du `server` conservés.
+- **CI** : les contrôles du HTML prérendu (gestionnaire inline, preload de police) lisent
+  `/mentions-legales` au lieu de `/offres` ; le smoke Docker vérifie le 410.
+- **Analytics** : un emplacement `offer_<slug>` encore présent dans l'historique s'affiche « Page
+  d'offre retirée (<slug>) » au lieu d'« Emplacement inconnu ».
+
+### Laissé aux PR suivantes
+
+Formulaire de contact (délai souhaité, invitation à réserver), SIRET et lien Malt (PR 5), rendez-vous
+(PR 3), `DESIGN.md` et ADR (PR 7).
+
+## Plan technique — PR 3 (rendez-vous, front)
+
+### Retiré
+
+- `features/booking/` entier : page `/rendez-vous`, page d'annulation `/rendez-vous/annulation`,
+  gateway HTTP et son provider.
+- Admin : pages `/admin/rendez-vous` et `/admin/disponibilites`, groupe « Rendez-vous » du menu et
+  compte « à venir » du layout (plus d'appel à `GET /api/booking/bookings/upcoming-count`), vues et
+  composants qui ne servaient qu'à elles (calendrier, semaine type, fermetures, flux d'agenda).
+- Invitation « Réservez un appel » du formulaire de contact et lien du pied de page ;
+  `ContactPlacement` se réduit à `'home'`.
+- Politique de confidentialité : section « Prise de rendez-vous » ; date de mise à jour au
+  20 octobre 2026.
+- Doublure d'API de la CI : routes `/api/booking/*` et fixture des règles de disponibilité ;
+  scénarios axe des pages de rendez-vous.
+
+### Modifié
+
+- **nginx** : la location 410 couvre `^/(offres|offre-site-industrie|rendez-vous)(/|$)`. La location
+  dédiée à l'annulation (coquille CSR + `X-Robots-Tag`) disparaît : un ancien lien d'annulation
+  reçu par e-mail répond 410, en-têtes de sécurité conservés.
+- **Prérendu et sitemap** : `/rendez-vous` n'est plus prérendue ni listée ; la CI vérifie qu'aucun
+  dossier `rendez-vous` ne reste dans `dist/`.
+- **Analytics** : l'emplacement historique `booking` se lit « Prise de rendez-vous (retirée) ».
+
+### Ordre de déploiement
+
+Cette PR précède la PR 4 (API) : le front ne lit plus aucune route `/api/booking/*`, l'API peut ensuite
+les retirer sans casser une page. Les données de rendez-vous restent en base jusqu'à la PR 4.
+
+## Plan technique — PR 5 (identité de particulier, contact)
+
+### Arbitrages (2026-10-20)
+
+1. **Téléphone** : retiré du site (mentions légales, panneau de contact, liens).
+2. **Mentions légales** : nom de l'éditeur + hébergeur. Le site est hébergé **à domicile** : l'éditeur
+   est aussi l'hébergeur.
+
+### Retiré
+
+- `SITE_IDENTITY.business` (statut EI, SIRET, APE, mention TVA), `SITE_IDENTITY.phone` et
+  `SITE_IDENTITY.socials.malt` ; leurs usages : pied de page (ligne légale réduite à « © année nom »),
+  mentions légales, panneau de contact, page Parcours, détection du canal sortant Malt.
+- Formulaire de contact : champs « Type de projet » et « Délai souhaité », et la composition du
+  message qui les préfixait (`compose-contact-message`, `CONTACT_TIMELINES`). Le message part tel que
+  saisi ; la borne de 5 000 caractères de l'API devient un simple `maxLength`.
+- Politique de confidentialité : téléphone, Malt et « réservation d'un appel » retirés de la liste
+  des actions mesurées (ce dernier, oubli de la PR 3).
+
+### Mentions légales
+
+- Éditeur : « Ce site personnel, sans activité commerciale, est édité par Julien Nédellec,
+  particulier, résidant à <commune>, France », courriel, directeur de la publication.
+- Hébergement : inchangé sur le fond (« hébergé par l'éditeur lui-même, sur un serveur personnel
+  situé en France »), l'adresse de contact valant pour l'hébergeur.
+- **Point ouvert, à trancher par le propriétaire** : l'article 1-1 de la LCEN (rédaction issue de la
+  loi SREN du 21 mai 2024) permet à un éditeur non professionnel de ne publier que l'identité et
+  l'adresse de l'hébergeur (II). Quand l'éditeur s'héberge lui-même, cette adresse est la sienne.
+  Cette PR ne publie aucune donnée nouvelle et ne retire que des mentions professionnelles devenues
+  fausses ; la conformité stricte se règle soit par la migration vers un hébergeur tiers (VPS), soit
+  par un avis juridique. Texte à vérifier sur Légifrance au moment de trancher.
+
+### Laissé aux PR suivantes
+
+Libellés d'historique analytics `malt` / `phone` (PR 6). Texte du parcours en base : se corrige dans
+l'admin ; la fixture de la doublure d'API est neutralisée ici.
+
+## Plan technique — PR 6 (analytics, restes freelance)
+
+### Arbitrage
+
+La section « Conversions » de l'audience n'est pas supprimée mais renommée « Actions des visiteurs » :
+après la PR 2, elle ne mesure plus aucun tunnel vers un devis, seulement des gestes utiles à un
+portfolio personnel (formulaire envoyé, liens de contact, profils GitHub ou LinkedIn, CV, démos).
+La supprimer effacerait de l'information sans retirer de sens commercial. Le champ `conversions` du
+contrat de l'API garde son nom : le renommer obligerait à un déploiement synchronisé pour un gain
+purement lexical.
+
+### Front
+
+- Canaux sortants : `OutboundChannel` perd `phone` et `malt` (le lien `tel:` n'est plus classé) ;
+  leurs clics passés s'affichent « Téléphone (retiré) » et « Malt (retiré) ».
+- `index.html` : titre et descriptions par défaut (coquille client servie aux pages 410, 404 et de
+  connexion) alignés sur la home, sans « prix annoncé » ni « missions ».
+- Admin : la note de l'accroche ne cite plus les offres.
+- Verrou `editorial-identity.spec` : freelance, Malt, SIRET, devis, missions, prix annoncé interdits
+  dans les sources éditoriales et `index.html`.
+
+### API (PR séparée, indépendante)
+
+- `outbound_click` refuse `phone` et `malt`, `contact_submit` n'accepte plus que `home`. Les canaux
+  retirés restent comptés dans le groupe « contact » pour le rattrapage des agrégats anciens.
+- Migration 0028 : le texte « Ce qui me motive » versé par 0021 (freelance sur Malt, CDI) est remplacé
+  s'il est encore mot pour mot celui d'origine, version incrémentée.
+
+## Plan technique — PR 7 (documentation)
+
+### Specs et ADR
+
+- Specs 007, 009 (deux fichiers), 010 et 024 à 028 déplacées dans `specs/archive/` au statut
+  `obsolete`, avec un `README` d'archive ; références mises à jour.
+- ADR 0005, 0026, 0027 et 0028 au statut « obsolète » ; note datée sur les ADR 0004, 0007, 0023
+  et 0024 ; amendement de la 0019 (la fiche projet ne renvoie plus vers une offre).
+
+### `DESIGN.md`
+
+- Fiches retirées avec leur composant : carte d'offre, carte de démo, ligne d'offre, FAQ, points
+  clés (« Pourquoi moi »), bandeau recruteur, bloc de fin de fiche (« Un besoin similaire ? »),
+  avis clients.
+- Références alignées sur le code : accent du hero (« développeur web »), tampon et cartouche sans
+  carte de démo, note de l'accroche de l'admin, chemin de `formatFileSize` (`shared/format/`).
+
+### Stub d'API de la CI
+
+- `ci/api-stub/fixtures/contact-messages.json` : les deux demandes de prestation deviennent des
+  questions de lecteur ; forme inchangée (trois messages, deux non lus, mêmes identifiants et dates).

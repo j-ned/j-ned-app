@@ -1,0 +1,379 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T00:00:00.000Z",
+  "title": "Design System: J-Ned Portfolio",
+  "extensions": {
+    "colorMeta": {
+      "copeau-orange-text-sable": {
+        "role": "primary",
+        "displayName": "Orange texte Sable",
+        "canonical": "oklch(53.2% 0.178 37)",
+        "tonalRamp": [
+          "oklch(20% 0.089 37)",
+          "oklch(30% 0.125 37)",
+          "oklch(40% 0.16 37)",
+          "oklch(50% 0.178 37)",
+          "oklch(60% 0.178 37)",
+          "oklch(70% 0.16 37)",
+          "oklch(82% 0.107 37)",
+          "oklch(95% 0.044 37)"
+        ]
+      },
+      "copeau-orange-fill-sable": {
+        "role": "primary",
+        "displayName": "Orange aplat Sable",
+        "canonical": "oklch(68% 0.18 48)",
+        "tonalRamp": [
+          "oklch(20% 0.09 48)",
+          "oklch(30% 0.126 48)",
+          "oklch(40% 0.162 48)",
+          "oklch(50% 0.18 48)",
+          "oklch(60% 0.18 48)",
+          "oklch(70% 0.162 48)",
+          "oklch(82% 0.108 48)",
+          "oklch(95% 0.045 48)"
+        ]
+      },
+      "copeau-orange-nuit": {
+        "role": "primary",
+        "displayName": "Orange Nuit",
+        "canonical": "oklch(76% 0.15 55)",
+        "tonalRamp": [
+          "oklch(20% 0.075 55)",
+          "oklch(30% 0.105 55)",
+          "oklch(40% 0.135 55)",
+          "oklch(50% 0.15 55)",
+          "oklch(60% 0.15 55)",
+          "oklch(70% 0.135 55)",
+          "oklch(82% 0.09 55)",
+          "oklch(95% 0.037 55)"
+        ]
+      },
+      "sticker-sage": {
+        "role": "sticker",
+        "displayName": "Autocollant sauge",
+        "canonical": "oklch(90.1% 0.081 150)",
+        "tonalRamp": [
+          "oklch(20% 0.041 150)",
+          "oklch(30% 0.057 150)",
+          "oklch(40% 0.073 150)",
+          "oklch(50% 0.081 150)",
+          "oklch(60% 0.081 150)",
+          "oklch(70% 0.073 150)",
+          "oklch(82% 0.049 150)",
+          "oklch(95% 0.02 150)"
+        ]
+      },
+      "sticker-lavender": {
+        "role": "sticker",
+        "displayName": "Autocollant lavande",
+        "canonical": "oklch(91% 0.043 261)",
+        "tonalRamp": [
+          "oklch(20% 0.021 261)",
+          "oklch(30% 0.03 261)",
+          "oklch(40% 0.039 261)",
+          "oklch(50% 0.043 261)",
+          "oklch(60% 0.043 261)",
+          "oklch(70% 0.039 261)",
+          "oklch(82% 0.026 261)",
+          "oklch(95% 0.011 261)"
+        ]
+      },
+      "sable-background": {
+        "role": "neutral",
+        "displayName": "Sable fond",
+        "canonical": "oklch(97% 0.015 70)",
+        "tonalRamp": [
+          "oklch(20% 0.007 70)",
+          "oklch(30% 0.01 70)",
+          "oklch(40% 0.013 70)",
+          "oklch(50% 0.015 70)",
+          "oklch(60% 0.015 70)",
+          "oklch(70% 0.013 70)",
+          "oklch(82% 0.009 70)",
+          "oklch(95% 0.004 70)"
+        ]
+      },
+      "sable-foreground": {
+        "role": "neutral",
+        "displayName": "Sable texte",
+        "canonical": "oklch(24% 0.03 265)",
+        "tonalRamp": [
+          "oklch(20% 0.015 265)",
+          "oklch(30% 0.021 265)",
+          "oklch(40% 0.027 265)",
+          "oklch(50% 0.03 265)",
+          "oklch(60% 0.03 265)",
+          "oklch(70% 0.027 265)",
+          "oklch(82% 0.018 265)",
+          "oklch(95% 0.007 265)"
+        ]
+      },
+      "nuit-background": {
+        "role": "neutral",
+        "displayName": "Nuit fond",
+        "canonical": "oklch(22% 0.03 265)",
+        "tonalRamp": [
+          "oklch(20% 0.015 265)",
+          "oklch(30% 0.021 265)",
+          "oklch(40% 0.027 265)",
+          "oklch(50% 0.03 265)",
+          "oklch(60% 0.03 265)",
+          "oklch(70% 0.027 265)",
+          "oklch(82% 0.018 265)",
+          "oklch(95% 0.007 265)"
+        ]
+      },
+      "nuit-foreground": {
+        "role": "neutral",
+        "displayName": "Nuit texte",
+        "canonical": "oklch(96% 0.01 70)",
+        "tonalRamp": [
+          "oklch(20% 0.005 70)",
+          "oklch(30% 0.007 70)",
+          "oklch(40% 0.009 70)",
+          "oklch(50% 0.01 70)",
+          "oklch(60% 0.01 70)",
+          "oklch(70% 0.009 70)",
+          "oklch(82% 0.006 70)",
+          "oklch(95% 0.003 70)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display (Hero name)",
+        "purpose": "Réservé au <h1> du hero. Bricolage Grotesque 800. Un par page, jamais réutilisé."
+      },
+      "headline": {
+        "displayName": "Headline (Section titles)",
+        "purpose": "Titres <h2> de section. Bricolage Grotesque 700."
+      },
+      "title": {
+        "displayName": "Title (Card titles)",
+        "purpose": "Titres de cartes, titres de projet dans la grille. Bricolage Grotesque 600."
+      },
+      "body-large": {
+        "displayName": "Body Large (Intros)",
+        "purpose": "Tagline du hero et intros de section. Max 65-75ch."
+      },
+      "body": {
+        "displayName": "Body (Default paragraph)",
+        "purpose": "Paragraphes courants. Max 65-75ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Métadonnées, en-têtes de tableau de l'admin, autocollants. JN Sans 600, sans capitales dans les pages publiques."
+      },
+      "mono": {
+        "displayName": "Mono (Technical content)",
+        "purpose": "JN Mono 500 (IBM Plex Mono renommée, Reserved Font Name). Code inline, chiffres techniques KPI, références et cotes ; données chiffrées en font-mono tabular-nums."
+      }
+    },
+    "shadows": [
+      {
+        "name": "nav-shadow-sable",
+        "value": "0 1px 2px color-mix(in srgb, #181f2e 4%, transparent), 0 4px 12px color-mix(in srgb, #181f2e 4%, transparent)",
+        "purpose": "Nav fixe en Sable, sépare du contenu qui défile."
+      },
+      {
+        "name": "nav-shadow-nuit",
+        "value": "0 1px 0 color-mix(in srgb, #f6f1eb 6%, transparent)",
+        "purpose": "Filet lumineux en Nuit, équivalent sans alourdir."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Ease-out quart pour state transitions (default impeccable)."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Color, opacity, border state changes (hover, focus)."
+      },
+      {
+        "name": "duration-medium",
+        "value": "300ms",
+        "purpose": "Entrées/sorties de composants (fade-up, drawer, toast)."
+      },
+      {
+        "name": "fade-up-keyframe",
+        "value": "@keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }",
+        "purpose": "Entrée des éléments du hero (h1, accroche), désactivée sous prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1536px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (solid)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Action principale : aplat orange, texte on-primary sombre, pilule, survol à 90 %.",
+      "html": "<button class=\"ds-btn-primary\">Lire le blog</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; padding: 10px 20px; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-weight: 600; font-size: 0.9375rem; border-radius: 9999px; border: 0; background: #ed6e12; color: #181f2e; cursor: pointer; transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-primary:hover { background: color-mix(in srgb, #ed6e12 90%, transparent); } .ds-btn-primary:focus-visible { outline: 2px solid #bc3700; outline-offset: 2px; }"
+    },
+    {
+      "name": "Outlined Button",
+      "kind": "button",
+      "refersTo": "button-outlined",
+      "description": "Action secondaire : contour 2 px couleur du texte, pilule ; survol contour et texte orange.",
+      "html": "<button class=\"ds-btn-outlined\">Voir le projet</button>",
+      "css": ".ds-btn-outlined { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; padding: 10px 20px; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-weight: 600; font-size: 0.9375rem; border-radius: 9999px; border: 2px solid #181f2e; background: transparent; color: #181f2e; cursor: pointer; transition: color 150ms, border-color 150ms; } .ds-btn-outlined:hover { border-color: #bc3700; color: #bc3700; } .ds-btn-outlined:focus-visible { outline: 2px solid #bc3700; outline-offset: 2px; }"
+    },
+    {
+      "name": "Form Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Champ : surface, bord field (≥ 3:1), rayon 12 px.",
+      "html": "<input class=\"ds-input\" placeholder=\"ton@adresse.fr\">",
+      "css": ".ds-input { min-height: 44px; padding: 10px 14px; font-family: 'JN Sans', 'JN Sans Fallback', system-ui, sans-serif; font-size: 1rem; border-radius: 12px; border: 1px solid color-mix(in srgb, #181f2e 50%, transparent); background: #ffffff; color: #181f2e; } .ds-input::placeholder { color: #4d5566; } .ds-input:focus-visible { outline: 2px solid #bc3700; outline-offset: 2px; }"
+    },
+    {
+      "name": "Sticker",
+      "kind": "badge",
+      "refersTo": "sticker-sage",
+      "description": "Autocollant décoratif : pastille sauge ou lavande, 4 mots au plus, inclinaison statique de 2° au plus, un par écran, jamais interactif.",
+      "html": "<span class=\"ds-sticker\">Fait main</span>",
+      "css": ".ds-sticker { display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 9999px; border: 2px solid transparent; background: #b9eec2; color: #174825; font-family: 'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif; font-weight: 700; font-size: 0.875rem; line-height: 1.25; transform: rotate(-2deg); } @media (forced-colors: active) { .ds-sticker { border-color: CanvasText; } }"
+    },
+    {
+      "name": "Card Surface",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Carte : surface opaque, bord franc 2 px couleur du texte, rayon 16 px, sans ombre ; survol bord orange.",
+      "html": "<article class=\"ds-card\">…</article>",
+      "css": ".ds-card { padding: 24px; border-radius: 16px; border: 2px solid #181f2e; background: #ffffff; color: #181f2e; transition: border-color 150ms; } .ds-card:hover { border-color: #bc3700; }"
+    },
+    {
+      "name": "Navigation Link",
+      "kind": "link",
+      "refersTo": "nav-link",
+      "description": "Entrée de navigation en pilule, cible de 44 px ; l'entrée active (aria-current=\"page\") prend une teinte d'orange à 8 % et le texte orange.",
+      "html": "<a class=\"ds-nav-link\" aria-current=\"page\">L'atelier</a>",
+      "css": ".ds-nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 9999px; color: #4d5566; font-weight: 500; text-decoration: none; transition: color 150ms; } .ds-nav-link:hover { color: #bc3700; } .ds-nav-link[aria-current=page] { background: color-mix(in srgb, #bc3700 8%, transparent); color: #bc3700; } .ds-nav-link:focus-visible { outline: 2px solid #bc3700; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Copeaux vifs",
+    "overview": "Le site est l'atelier de Julien : un tourneur CN de l'aéronautique qui code pour le plaisir et tutoie son lecteur. Le visuel en a l'humeur : des couleurs franches comme un copeau d'acier qui sort chaud du tour, des formes rondes et accueillantes, quelques autocollants posés sur l'établi. Ce n'est plus une salle de supervision qu'on inspecte, c'est un atelier où l'on entre, où l'on lit un article, où l'on regarde ce qui a été fabriqué. L'envie de jouer ne passe jamais devant la lecture. Le lecteur arrive le plus souvent par une recherche, sur un article : le texte, le code et la hiérarchie des titres restent prioritaires, la couleur et les autocollants accompagnent. Le dessin technique reste présent par clin d'œil (cartouche, cotes, tampon) : c'est le métier d'origine, pas un décor. Deux registres égaux : Sable (clair, papier chaud) et Nuit (sombre, bleu nuit). Le site suit la préférence du système au premier chargement, le visiteur choisit ensuite (ADR-0012). L'orange copeau traverse les deux. Ce que ce système refuse : le template portfolio générique (hero centré « Hi, I'm », barres de compétences, nuage de logos de technologies, même déguisé en autocollants), l'over-design (curseur custom, scroll-jacking, intro animée, autocollants partout), le dégradé décoratif, le glassmorphism, l'ombre qui « fait ressortir ».",
+    "keyCharacteristics": [
+      "Deux registres égaux, Sable et Nuit, qui suivent le système au premier chargement.",
+      "Un seul accent, l'orange copeau (One Orange Rule), avec deux exceptions bornées : la coloration du code et les deux couleurs d'autocollant.",
+      "Formes rondes : boutons et autocollants en pilule, cartes à 16 px, grands blocs à 22 px ; la pièce technique (cartouche, tampon) garde 8 px.",
+      "Bords francs : cartes et boutons secondaires à trait plein de 2 px couleur du texte, plutôt que des surfaces translucides.",
+      "Un autocollant décoratif par écran, au plus (Sticker Rule).",
+      "Focus visible non négociable : anneau 2 px `primary` sur `:focus-visible`, qui suit le rayon de l'élément.",
+      "Zéro motion gratuite : `prefers-reduced-motion` respecté, aucune animation d'intro, inclinaison des autocollants statique."
+    ],
+    "rules": [
+      {
+        "name": "The One Orange Rule",
+        "body": "Un seul accent : l'orange copeau (`primary-text` pour le texte et les traits, `primary-bg` pour les aplats). Pas de bleu qui s'invite, pas de « second accent pour différencier ». Pour différencier, change le style (aplat, contour, texte) ou l'intensité de la teinte, jamais la couleur. Deux exceptions bornées, et seulement elles : la coloration syntaxique (dans un bloc de code, nulle part ailleurs) et les deux couleurs d'autocollant (dans `app-sticker`, nulle part ailleurs). Ni l'une ni l'autre ne sert de lien, de bouton, d'état ou de catégorie.",
+        "section": "colors"
+      },
+      {
+        "name": "The Accent Tint Rule",
+        "body": "Une teinte d'orange posée **sous un texte orange** reste à **8 % au plus** (`bg-primary/5`, survol `bg-primary/8`) : à 10 % le texte orange Sable tombe à 4,50:1, à 20 % à 3,86:1. Un aplat orange plein porte un texte `on-primary`, jamais un texte orange ni blanc. Aucune vérification automatique ne tient cette règle (axe ne teste pas les survols) : elle se relit.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Registers Rule",
+        "body": "Sable et Nuit sont **égaux**. Toute décision de design fonctionne dans les deux ou n'est pas valide : chaque composant se teste en `.app-dark` et sans. La classe a un seul écrivain à l'exécution, `ThemeStore` (`core/theme/`), partagé par le site et l'admin ; le script en tête d'`index.html` la pose avant la première peinture (choix enregistré, sinon préférence système).",
+        "section": "colors"
+      },
+      {
+        "name": "The Decorative Line Rule",
+        "body": "`line` et `line-strong` sont des traits d'ornement : le texte qu'ils encadrent porte l'information. Un trait **porteur d'information** (bord de champ, état, séparation d'un contrôle, graphique) utilise `field`, `foreground` plein ou `primary-text`, jamais `line` ni `line-strong` : seuils calculés pour 3:1, 50 % en Sable, 38 % en Nuit.",
+        "section": "colors"
+      },
+      {
+        "name": "The Selected State Rule",
+        "body": "L'aplat orange Sable n'a que 2,81:1 contre le fond : un état sélectionné (tag, filtre) porte en plus un contour `foreground`, et `aria-pressed` ou `aria-selected` le dit aux technologies d'assistance. Un bouton primaire qui ne porte qu'une icône est interdit sans trait ≥ 3:1. Les cases à cocher prennent `accent-primary` (5,21:1), jamais `accent-primary-bg`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Families Rule",
+        "body": "Trois familles, pas une de plus : Bricolage Grotesque pour les titres, JN Sans pour le texte, JN Mono pour les données. Pas de police manuscrite, même pour un autocollant. Toutes auto-hébergées depuis l'origine du site (ADR-0006) : jamais de Google Fonts ni d'autre CDN de polices. Tout changement de binaire change le nom de fichier versionné (cache nginx `immutable`), dans `styles.css` **et** dans le `preload` d'`index.html`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Single-Display Rule",
+        "body": "Un seul `<h1>` par page, en Display, jamais réutilisé pour décorer une autre section. La hiérarchie `<h1>` → `<h2>` → `<h3>` ne saute jamais un niveau.",
+        "section": "typography"
+      },
+      {
+        "name": "The Orange Accent Rule",
+        "body": "Le `<h1>` du hero porte un seul accent, un segment de la promesse (« développeur web ») en `em` `not-italic text-primary`. Le segment est une donnée (`HeroData.headlineAccent`), jamais un littéral de template : `HomeHero` découpe le titre autour de lui.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Toute carte, tout conteneur, toute section commence sans ombre. Une ombre ne s'ajoute qu'avec une justification fonctionnelle (nav fixe, modale, menu flottant). Décorer = refuser : pour faire ressortir, travaille le bord, la taille ou le contraste typographique.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No-Glass Rule",
+        "body": "Aucun `backdrop-filter: blur()` et aucune surface translucide comme effet : les surfaces Nuit sont opaques, le toast aussi.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Sticker Rule",
+        "body": "Un autocollant (`app-sticker`) est une pastille pilule, sauge ou lavande, de **4 mots au plus**, éventuellement inclinée de **2°** (statique, sans transition). **Un autocollant décoratif par écran, au plus** : celui de l'accueil (« Fait main », sauge, incliné à gauche). Jamais un lien, un bouton, un titre, ni le parent d'un élément interactif ; jamais un logo de technologie. Le tampon (« En production », « Démo », « Script ») a la forme d'un autocollant mais reste **neutre** (surface, bord `foreground` 2 px, rayon 8 px) : il y en a un par carte de réalisation.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "passer par les tokens (`text-primary`, `bg-primary-bg`, `text-on-primary`, `bg-sticker-sage`…), jamais un hex ni une couleur de palette Tailwind en dur (sauf dans le front matter et `styles.css`).",
+      "tester chaque composant en `.app-dark` ET sans `.app-dark` avant de merger (Two Registers Rule).",
+      "poser un texte `on-primary` sur tout aplat orange, et un contour `foreground` sur un état sélectionné (Selected State Rule).",
+      "utiliser `:focus-visible` sur tout interactif, anneau 2 px `primary` qui suit le rayon de l'élément.",
+      "respecter `prefers-reduced-motion: reduce` : désactiver fade-up, view-transitions, animations au défilement.",
+      "réserver le mono aux données (code, cotes, références, chiffres) ; libellés et sur-titres des pages publiques en JN Sans, sans capitales.",
+      "garder la longueur de ligne du texte courant à 65–75ch (`max-w-prose` ou équivalent).",
+      "utiliser les utilities `form-*`, `field-*`, `table-head` plutôt que de redéclarer les classes Tailwind, la directive `appButton` pour tout bouton ou lien stylé en bouton (ADR-0017) et `app-sticker` pour tout autocollant. Si tu dupliques 10+ classes sur un élément natif, crée une utility.",
+      "documenter toute exception aux Named Rules au point d'usage (`/* exception: ... */`).",
+      "recalculer et noter le contraste de toute nouvelle paire de couleurs, dans les deux registres, sur le fond et sur la surface."
+    ],
+    "donts": [
+      "introduire un second accent. Pas de bleu, de vert ou de rose hors du code et des autocollants (One Orange Rule).",
+      "poser un texte orange sur une teinte d'orange au-delà de 8 %, ni un texte blanc ou orange sur l'aplat orange (Accent Tint Rule).",
+      "ajouter un deuxième autocollant décoratif à un écran, un autocollant cliquable, un autocollant de plus de 4 mots, ni un « nuage » d'autocollants de technologies (Sticker Rule).",
+      "incliner un lien, un bouton, un titre ou un paragraphe ; seule une pastille courte peut l'être, de 2° au plus, sans animation.",
+      "utiliser `background-clip: text` + dégradé, ni aucun dégradé décoratif (favicon compris).",
+      "ajouter `backdrop-filter: blur()` ni une surface translucide « pour faire glass » (No-Glass Rule).",
+      "ajouter d'ombre à une carte « pour qu'elle ressorte » (Flat-By-Default Rule) : travaille le bord, la taille ou la typographie.",
+      "charger une police depuis Google Fonts ou un CDN, ni introduire une 4e famille, manuscrite comprise (Three Families Rule).",
+      "utiliser `border-left` ou `border-right` > 1px comme accent coloré (callout, alerte), sauf la barre de statut du toast.",
+      "utiliser `*ngIf` / `*ngFor` : control flow `@if` / `@for` uniquement (rappel CLAUDE.md).",
+      "styliser un champ avec `outline: none` sans `:focus-visible` de remplacement.",
+      "mettre une animation décorative au-dessus de 400ms ou avec un easing bouncy/elastic. Ease-out uniquement (`cubic-bezier(0.16, 1, 0.3, 1)` ou équivalent).",
+      "réutiliser le Display (800, taille `clamp`) pour un autre élément que le `<h1>` du hero.",
+      "confier une information à un trait `line` / `line-strong` seul, ni à la seule couleur (Decorative Line Rule).",
+      "présenter un site de démonstration comme une référence : tampon « Démo » dans le gabarit sur toute démo des Réalisations, aucune démo sur la home (qui ne montre que des projets en production) ni dans des données structurées de référence."
+    ]
+  }
+}

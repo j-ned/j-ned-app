@@ -1,0 +1,137 @@
+import { Component, computed, input, output } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
+import type { Biography } from '@features/profile/domain/models/biography.model';
+import type { ProfileInfo, SocialButton } from '@features/profile/domain/models/profile.model';
+import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
+import { newTabLabel } from '@shared/identity/new-tab-notice';
+
+const ROLE = 'développeur full-stack';
+const STACK = 'Angular · NestJS · TypeScript';
+const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
+
+@Component({
+  selector: 'app-about-hero',
+  imports: [NgOptimizedImage, AppIcon, Button],
+  host: { class: 'block' },
+  template: `
+    <section class="page-container pt-18 pb-22 md:pt-26 md:pb-30" aria-labelledby="about-heading">
+      @let info = profile();
+      @let bio = biography();
+      @if (info && bio) {
+        <div class="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
+          <div>
+            <p
+              class="animate-fade-up flex flex-wrap gap-x-3.5 gap-y-1.5 font-mono text-[0.8125rem] text-muted"
+            >
+              <span class="text-primary" data-testid="about-hero-fact">{{ role }}</span>
+              <span data-testid="about-hero-fact">{{ stack }}</span>
+              <span data-testid="about-hero-fact">{{ info.location }}</span>
+            </p>
+            <h1
+              id="about-heading"
+              data-testid="about-title"
+              class="mt-5 text-[clamp(2.5rem,5.6vw,5rem)] font-extrabold leading-[1.02] tracking-[-0.035em]"
+            >
+              {{ info.displayName }}
+            </h1>
+            <p
+              class="animate-fade-up [animation-delay:120ms] mt-7 max-w-[32ch] text-[clamp(1.25rem,2.1vw,1.75rem)] font-medium leading-snug tracking-tight text-balance"
+              data-testid="about-lead"
+            >
+              {{ lead() }} <span class="text-primary">{{ bio.leadEmphasis }}</span>
+            </p>
+            <ul
+              class="animate-fade-up [animation-delay:180ms] mt-8 flex flex-wrap gap-x-6 gap-y-2"
+              aria-label="Réseaux et contact"
+              role="list"
+            >
+              @for (social of socialLinks(); track social.id) {
+                <li>
+                  <a
+                    [href]="social.href"
+                    [attr.target]="social.external ? '_blank' : null"
+                    [attr.rel]="social.external ? 'noopener noreferrer' : null"
+                    class="group inline-flex min-h-11 items-center gap-2 text-[0.9375rem] font-semibold transition-colors hover:text-primary"
+                    data-testid="about-social-link"
+                  >
+                    <app-icon
+                      [name]="social.icon"
+                      [size]="18"
+                      class="text-muted transition-colors group-hover:text-primary"
+                    />
+                    {{ social.label }}
+                  </a>
+                </li>
+              }
+            </ul>
+            @if (cvUrl(); as url) {
+              <p class="animate-fade-up [animation-delay:240ms] mt-8">
+                <a
+                  appButton
+                  variant="outlined"
+                  [href]="url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [attr.aria-label]="cvLinkName"
+                  (click)="cvDownloaded.emit()"
+                  data-testid="about-hero-cv"
+                >
+                  <app-icon name="download" />
+                  {{ cvLinkLabel }}
+                </a>
+              </p>
+            }
+          </div>
+          <figure class="w-full max-w-80" data-testid="about-portrait">
+            <div
+              class="relative aspect-[4/5] overflow-hidden rounded-block border border-foreground/8 bg-surface"
+            >
+              <img
+                [ngSrc]="info.avatarUrl"
+                [alt]="'Portrait de ' + info.displayName"
+                fill
+                priority
+                sizes="20rem"
+                class="object-cover"
+              />
+            </div>
+          </figure>
+        </div>
+      } @else {
+        <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]" aria-hidden="true">
+          <div class="space-y-6 animate-pulse">
+            <div class="h-4 w-80 max-w-full rounded bg-foreground/5"></div>
+            <div class="h-16 md:h-20 max-w-xl rounded-part bg-foreground/5"></div>
+            <div class="h-24 max-w-lg rounded-part bg-foreground/5"></div>
+          </div>
+          <div
+            class="aspect-[4/5] w-full max-w-80 rounded-block bg-foreground/5 animate-pulse"
+          ></div>
+        </div>
+      }
+    </section>
+  `,
+})
+export class AboutHero {
+  readonly profile = input.required<ProfileInfo | undefined>();
+  readonly lead = input<string>('');
+  readonly biography = input.required<Biography | undefined>();
+  readonly socials = input.required<readonly SocialButton[]>();
+  readonly cvUrl = input<string | null>(null);
+
+  readonly cvDownloaded = output<void>();
+
+  protected readonly role = ROLE;
+  protected readonly stack = STACK;
+  protected readonly cvLinkLabel = CV_LINK_LABEL;
+  protected readonly cvLinkName = newTabLabel(CV_LINK_LABEL);
+
+  // `mailto:` ne s'ouvre pas dans un nouvel onglet : seuls les liens web sont externes.
+  protected readonly socialLinks = computed(() =>
+    this.socials().map((social) => ({
+      ...social,
+      external: social.href.startsWith('http'),
+    })),
+  );
+}

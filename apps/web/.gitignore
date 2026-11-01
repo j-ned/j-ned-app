@@ -1,0 +1,73 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Compiled output
+/dist
+/browser
+/tmp
+/out-tsc
+/bazel-out
+# Doc générée ignorée, SAUF les ADR, les brouillons d'articles et la source de la carte de partage : ce sont des
+# décisions d'architecture et des textes relus en PR, ils se versionnent avec le code. `/docs/*` et non `/docs` : git ne redescend jamais
+# dans un répertoire exclu, une négation sous `/docs` serait sans effet.
+/docs/*
+!/docs/adr/
+!/docs/articles/
+!/docs/og/
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+__screenshots__/
+/public/screen/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/*
+!.claude/project-profile.md
+!.claude/settings.json
+!.claude/CLAUDE.md
+# Base de connaissances perso (les skills AAK, sous licence, restent ignorés)
+!.claude/skills/
+.claude/skills/angular-async-testing/
+.claude/skills/angular-routing-patterns/
+.claude/skills/angular-signal-forms/
+.claude/skills/tutor/
+.remember/*
+.superpowers/
+
+# Git worktrees (scratch, per-branch)
+.worktrees/
+
+# Audit d'accessibilité (Playwright)
+/playwright-report
+/test-results

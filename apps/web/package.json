@@ -1,0 +1,113 @@
+{
+  "name": "angular-portfolio-app",
+  "version": "0.0.0",
+  "description": "Portfolio de Julien Nédellec : Angular 22 zoneless en SSR et prérendu, clean architecture, Signal Forms, Tailwind v4",
+  "author": "Julien Nédellec <contact@nedellec-julien.fr> (https://nedellec-julien.fr)",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "icons:build": "tsx scripts/build-icons.mjs",
+    "icons:check": "tsx scripts/build-icons.mjs --check",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "a11y": "playwright test -c e2e/playwright.config.ts",
+    "a11y:typecheck": "tsc -p e2e/tsconfig.json",
+    "lint": "ng lint",
+    "lint:fix": "ng lint --fix",
+    "format": "prettier --write \"src/**/*.{ts,html,css,scss,json}\" \"e2e/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css,scss,json}\" \"e2e/**/*.ts\"",
+    "check": "pnpm run format:check && pnpm run lint",
+    "sentry:sourcemaps": "tsx scripts/upload-sentry-sourcemaps.mjs",
+    "prepare": "husky",
+    "postbuild": "tsx scripts/apply-csp-hashes.mjs"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.html": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{css,scss,json}": [
+      "prettier --write"
+    ]
+  },
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": "*.html",
+        "options": {
+          "parser": "angular"
+        }
+      }
+    ]
+  },
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "devDependencies": {
+    "@angular-eslint/builder": "22.6.0",
+    "@angular/build": "^22.2.2",
+    "@angular/cli": "^22.2.2",
+    "@angular/common": "^22.2.2",
+    "@angular/compiler": "^22.2.2",
+    "@angular/compiler-cli": "^22.2.2",
+    "@angular/core": "^22.2.2",
+    "@angular/forms": "^22.2.2",
+    "@angular/platform-browser": "^22.2.2",
+    "@angular/platform-server": "^22.2.2",
+    "@angular/router": "^22.2.2",
+    "@angular/ssr": "^22.2.2",
+    "@axe-core/playwright": "4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@playwright/test": "1.64.0",
+    "@sentry/cli": "^3.8.0",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/node": "^22.20.5",
+    "angular-eslint": "22.6.0",
+    "chart.js": "^4.5.1",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "happy-dom": "20.14.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "postcss": "8.5.29",
+    "prettier": "^3.9.9",
+    "rxjs": "~7.8.0",
+    "svg-sprite": "^2.0.4",
+    "svgo": "^4.1.0",
+    "tailwindcss": "^4.3.3",
+    "tslib": "^2.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "8.71.1",
+    "vitest": "^5.0.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ],
+    "overrides": {
+      "@tailwindcss/typography>postcss-selector-parser": "^7.1.6",
+      "source-map-js@<1.2.2": "^1.2.2",
+      "beasties@<0.5.5": "0.5.5"
+    }
+  },
+  "dependencies": {
+    "@sentry/angular": "^11.6.0",
+    "highlight.js": "11.12.0",
+    "isomorphic-dompurify": "4.5.0",
+    "jsdom": "^30.1.2",
+    "marked": "^18.1.0"
+  }
+}

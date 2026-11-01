@@ -1,0 +1,29 @@
+[
+  {
+    "id": 3,
+    "name": "Claire Martin",
+    "email": "claire.martin@atelier-exemple.test",
+    "subject": "Votre parcours de reconversion",
+    "message": "Bonjour, j'ai lu votre article sur la reconversion depuis l'usinage. Je suis en train de faire le même chemin : avez-vous des conseils pour choisir sa formation ?",
+    "createdAt": "2026-10-10T09:42:00.000Z",
+    "read": false
+  },
+  {
+    "id": 2,
+    "name": "Karim Benali",
+    "email": "karim.benali@exemple.test",
+    "subject": "Question sur l'auto-hébergement",
+    "message": "Vous parlez de Dokploy et de votre serveur maison. Comment gérez-vous les sauvegardes de PostgreSQL ?",
+    "createdAt": "2026-10-08T15:10:00.000Z",
+    "read": false
+  },
+  {
+    "id": 1,
+    "name": "Sophie Durand",
+    "email": "sophie.durand@exemple.test",
+    "subject": "Question sur votre article",
+    "message": "Merci pour l'article sur le rendu à la requête, très clair.",
+    "createdAt": "2026-10-02T18:05:00.000Z",
+    "read": true
+  }
+]

@@ -1,0 +1,118 @@
+import { TestBed } from '@angular/core/testing';
+import { DOCUMENT } from '@angular/common';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { DEFAULT_SHARE_IMAGE } from '@shared/seo/share-image';
+import { Seo } from './seo';
+
+function metaContent(doc: Document, selector: string): string | null {
+  return doc.head.querySelector<HTMLMetaElement>(selector)?.content ?? null;
+}
+
+describe('Seo', () => {
+  let seo: Seo;
+  let doc: Document;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    seo = TestBed.inject(Seo);
+    doc = TestBed.inject(DOCUMENT);
+  });
+
+  describe('og:image:alt', () => {
+    it("décrit le visuel fourni avec l'alt fourni", () => {
+      seo.applySeoData({
+        title: 'Mon article',
+        description: 'Résumé',
+        image: 'https://x.test/cover.avif',
+        imageAlt: "Illustration de l'article Mon article",
+      });
+
+      expect(metaContent(doc, 'meta[property="og:image:alt"]')).toBe(
+        "Illustration de l'article Mon article",
+      );
+    });
+
+    it('retombe sur le titre quand un visuel est fourni sans alt', () => {
+      seo.applySeoData({
+        title: 'Mon article',
+        description: 'Résumé',
+        image: 'https://x.test/c.avif',
+      });
+
+      expect(metaContent(doc, 'meta[property="og:image:alt"]')).toBe('Mon article');
+    });
+
+    it("annonce la carte de partage par défaut quand aucun visuel n'est fourni", () => {
+      seo.applySeoData({ title: 'Blog', description: 'Résumé' });
+
+      expect(metaContent(doc, 'meta[property="og:image"]')).toContain('/og/julien-nedellec-');
+      expect({
+        image: metaContent(doc, 'meta[property="og:image"]'),
+        alt: metaContent(doc, 'meta[property="og:image:alt"]'),
+        width: metaContent(doc, 'meta[property="og:image:width"]'),
+        height: metaContent(doc, 'meta[property="og:image:height"]'),
+        type: metaContent(doc, 'meta[property="og:image:type"]'),
+        card: metaContent(doc, 'meta[name="twitter:card"]'),
+      }).toEqual({
+        image: DEFAULT_SHARE_IMAGE.url,
+        alt: DEFAULT_SHARE_IMAGE.alt,
+        width: '1200',
+        height: '630',
+        type: 'image/png',
+        card: 'summary_large_image',
+      });
+    });
+
+    it('annonce la carte de partage 1200×630 JPEG quand un visuel est fourni', () => {
+      seo.applySeoData({
+        title: 'Mon article',
+        description: 'Résumé',
+        image: 'https://x.test/c.avif?variant=share',
+      });
+
+      expect(metaContent(doc, 'meta[property="og:image:width"]')).toBe('1200');
+      expect(metaContent(doc, 'meta[property="og:image:height"]')).toBe('630');
+      expect(metaContent(doc, 'meta[property="og:image:type"]')).toBe('image/jpeg');
+      expect(metaContent(doc, 'meta[name="twitter:card"]')).toBe('summary_large_image');
+    });
+
+    it("remplace l'alt d'une page précédente au lieu de l'empiler", () => {
+      seo.applySeoData({
+        title: 'A',
+        description: 'a',
+        image: 'https://x.test/a.avif',
+        imageAlt: 'alt A',
+      });
+      seo.applySeoData({
+        title: 'B',
+        description: 'b',
+        image: 'https://x.test/b.avif',
+        imageAlt: 'alt B',
+      });
+
+      expect(doc.head.querySelectorAll('meta[property="og:image:alt"]')).toHaveLength(1);
+      expect(metaContent(doc, 'meta[property="og:image:alt"]')).toBe('alt B');
+    });
+  });
+
+  describe('robots', () => {
+    it('tells robots not to index a page that asks for it, with a single robots tag', () => {
+      seo.applySeoData({ title: 'Annuler', description: 'Résumé', robots: 'noindex, nofollow' });
+
+      expect({
+        content: metaContent(doc, 'meta[name="robots"]'),
+        tags: doc.head.querySelectorAll('meta[name="robots"]').length,
+      }).toEqual({ content: 'noindex, nofollow', tags: 1 });
+    });
+
+    it('lets robots index the next page again when it does not ask otherwise', () => {
+      seo.applySeoData({ title: 'Annuler', description: 'Résumé', robots: 'noindex, nofollow' });
+      seo.applySeoData({ title: 'Blog', description: 'Résumé' });
+
+      expect({
+        content: metaContent(doc, 'meta[name="robots"]'),
+        tags: doc.head.querySelectorAll('meta[name="robots"]').length,
+      }).toEqual({ content: 'index, follow', tags: 1 });
+    });
+  });
+});

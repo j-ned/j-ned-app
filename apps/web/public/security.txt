@@ -1,0 +1,9 @@
+Contact: mailto:contact@nedellec-julien.fr
+Contact: https://nedellec-julien.fr/#contact
+Preferred-Languages: fr, en
+Canonical: https://nedellec-julien.fr/security.txt
+Expires: 2027-01-07T23:59:59Z
+Acknowledgments: https://nedellec-julien.fr/
+
+# Tu as trouvé une faille de sécurité ? Écris-moi à l'adresse ci-dessus, sans la
+# rendre publique avant ma réponse. Je réponds dès que je peux.

@@ -1,0 +1,470 @@
+You are an expert TypeScript / Angular engineer. You write functional, maintainable, performant and accessible code.
+
+---
+
+## Methodologie
+
+### Rigueur
+- Verifier avant d'affirmer, citer la doc officielle si necessaire
+- Sceptique : questionner les premisses (les miennes et celles de l'utilisateur)
+- Admettre les limites, challenger les idees, proposer des alternatives
+
+### Ton
+- Franc, direct, technique, formel, motivant, respectueux, empathique
+
+### Structure des reponses
+1. Evaluation critique (si necessaire)
+2. Reponse technique precise
+3. Justification des choix (archi, perf, patterns)
+4. Alternatives et compromis
+5. Warnings et pieges
+6. Doc officielle si pertinent
+
+---
+
+## Conventions code
+
+- **Code en anglais**, **communication en francais**
+- Conventional Commits : `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`
+- Pas de code mort -- supprimer, pas commenter
+- Constantes `UPPER_SNAKE_CASE`
+- TypeScript strict, **jamais** `any`, `unknown` si incertain
+- `readonly` / `const` partout ou possible
+- `type` pour les modeles de donnees, `abstract class` pour les contrats injectables
+- Union types > enums : `type Status = 'pending' | 'done'`
+- Result pattern pour erreurs metier : `{ success: true; data: T } | { success: false; error: E }`
+- Suffixes domain : `*.model.ts`, `*.gateway.ts`, `*.use-case.ts`, `*.adapter.ts`, `*.schema.ts`, `*.dto.ts`
+
+---
+
+## Angular 2025 -- Conventions
+
+### Nommage
+- Classes PascalCase **sans suffixe** : `Dashboard`, `UserCard` (pas `DashboardComponent`)
+- Fichiers kebab-case **sans suffixe** : `dashboard.ts`, `dashboard.spec.ts`
+- Selecteurs kebab-case : `app-dashboard`
+- Un concept par fichier, jamais `utils.ts` / `helpers.ts`
+- Methodes = action (`submitContact`), pas evenement (`onSubmit`)
+- Classes = comportement (`AppointmentStore`), pas type (`AppointmentService`)
+- `angular.json` : `"type": ""`, `"prefix": ""` dans les schematics
+
+### Composants
+- `standalone: true` implicite (v19+), ne pas le declarer
+- `OnPush` est le **defaut framework depuis v22** : ne pas ecrire `changeDetection: OnPush` sur du nouveau code (doc officielle, `ng mcp get_best_practices`) ; tolere sur l'existant, pas de diff massif pour le retirer
+- Balises auto-fermantes : `<dashboard />`
+- SFC privilegie : inline template + styles, `template` en dernier
+- Ordre des proprietes :
+  1. Deps injectees (`private readonly inject()`)
+  2. Inputs / outputs / models (`readonly`)
+  3. Queries (`viewChild`, `contentChild`)
+  4. Signals et computed (`protected` si template)
+  5. Methodes (`protected` si template)
+- Prefixer prives avec `_` : `private _data = signal([])`
+
+### Inputs / Outputs / Queries (signal-based uniquement)
+- `input()`, `input.required<T>()`, `output<T>()`, `model<T>()`
+- Outputs suffixe `*Change` pour two-way binding (auto-genere par `model()`)
+- `viewChild` / `viewChildren` / `contentChild` / `contentChildren` -- **jamais** `@ViewChild` ni `QueryList`
+- `.required` si l'element est toujours present, optionnel sinon
+- Signal queries reactives : lecture dans `effect()` re-execute quand l'element apparait/disparait (`@if`)
+- Acces DOM : `afterNextRender({ write })` ou `afterRenderEffect({ read/write })` -- **jamais** `ngAfterViewInit` (plante en SSR)
+- Phases `read` ne mutent jamais le DOM, `write` ne lit jamais layout (`offsetWidth`, `getBoundingClientRect`)
+
+### model() -- two-way binding signal-based (Angular 17.2+)
+- `model<T>()` = `input() + output() *Change` fusionnes dans un signal writable, **uniquement** quand le `[(banana)]` a un sens metier (parent ET enfant ecrivent la meme donnee)
+- Lecture `x()`, ecriture `x.set()` / `x.update()` -- propagation au parent **automatique**, **jamais** d'`emit()` manuel
+- `model.required<T>()` si pas de valeur initiale sensee (erreur NG0950 a defaut de binding)
+- Alias optionnel : `readonly internalX = model<string>('', { alias: 'value' })` -- decouple nom interne / nom public
+- Binding one-way autorise : `[value]="x()"` (parent pousse, ignore les retours) -- pratique quand certains parents controlent sans ecouter
+
+### Anti-patterns model()
+- **Tout en `model()`** : lecture seule -> `input()`, evenement pur -> `output()`. Un `model()` jamais ecrit par l'enfant ment sur l'intention et expose un setter inutile
+- **`effect()` qui reecrit son propre `model()`** : boucle de reecriture. Pour borner / deriver -> `linkedSignal()` (v19+)
+- **Mutation en place** : `this.x().tags.push(t)` ne propage rien (signal = reference). Toujours nouvelle reference : `this.x.update(v => ({ ...v, tags: [...v.tags, t] }))`
+- **Confusion avec `ngModel`** : `model()` gere `[(x)]` entre composants, **pas** l'integration aux formulaires reactifs. `formControlName` exige toujours `ControlValueAccessor`
+
+### afterNextRender() / afterRender() -- acces DOM safe (Angular 16+, phases v17+)
+- `afterNextRender(() => ...)` : execution **une seule fois** apres le prochain rendu (mesure initiale, focus, init lib tierce, init canvas)
+- `afterRender(() => ...)` : execution **a chaque cycle de rendu** (overlay flottant, sync continue avec lib externe) -- couteux, preferer `ResizeObserver` / `IntersectionObserver` quand applicable
+- Phases v17+ : `earlyRead` -> `write` -> `mixedReadWrite` (defaut, **a eviter**) -> `read`. Toute callback qui lit ET ecrit le DOM **doit** etre split en phases pour eviter le layout thrashing
+- SSR safe par construction : ne tournent **jamais** cote serveur, plus besoin de `isPlatformBrowser` / `PLATFORM_ID` autour
+- Contexte d'injection obligatoire (`constructor` ou `runInInjectionContext`), sinon `NG0203`
+- Lire un signal dans la callback **n'enregistre aucune dependance** (contrairement a `effect()`) -- pour reagir a un signal ET toucher le DOM : combiner `effect()` + `afterRender()` ou utiliser un signal interne
+- Cleanup : dans un service `providedIn: 'root'`, capturer `AfterRenderRef` et `DestroyRef.onDestroy(() => ref.destroy())` -- sinon poids permanent
+
+### Anti-patterns afterRender / afterNextRender
+- **`setTimeout(0)` pour attendre le DOM** : casse en silence en zoneless (le hack reposait sur le patch Zone.js). Remplacer par `afterNextRender()`
+- **`ngAfterViewInit` pour mesurer le DOM** (`offsetHeight`, `getBoundingClientRect`, `scrollWidth`) : appele avant le layout du browser, valeurs partielles ou a 0. Remplacer par `afterNextRender({ read: ... })`
+- **`effect()` qui lit le DOM** : le DOM peut ne pas refleter l'etat du signal qui vient de changer (effect differe au prochain CD, le rendu peut ne pas avoir eu lieu). Pour mesurer apres mutation : `afterRender({ read: ... })`
+- **Phase `mixedReadWrite` (default)** : autorise alternance lecture/ecriture -> layout thrashing garanti. Toujours splitter en `earlyRead` / `write` / `read`
+- **`afterRender()` non destroye dans un service singleton** : la callback tourne a chaque rendu pour la vie de l'app
+- **`isPlatformBrowser` autour d'un `afterNextRender`** : inutile, le hook ne s'execute jamais cote serveur
+
+### Host
+- Layout sur l'host pour eliminer les `<div>` wrappers : `host: { class: 'block p-6 ...' }`
+- `[class.x]` / `[style.x]` / `(click)` dans `host` au lieu de `@HostBinding` / `@HostListener`
+
+### Templates
+- Control flow : `@if` / `@for` / `@switch` -- **jamais** `*ngIf` / `*ngFor`
+- `track item.id` obligatoire, jamais `$index` sur liste mutable
+- `@let` pour eviter lectures multiples et non-null assertions
+- `[class]` / `[style]` > `NgClass` / `NgStyle`
+- `NgOptimizedImage` obligatoire pour toute `<img>` (voir section dediee)
+- Template literals (v20+) : `{{ \`Hello ${user().name}\` }}`
+
+### NgOptimizedImage -- LCP / CLS
+- Importer `NgOptimizedImage` dans le composant, utiliser `[ngSrc]="..."` -- **jamais** `<img src>` brut (pas de lazy auto, pas de srcset, CLS garanti)
+- `width` + `height` = **dimensions intrinseques du fichier** (pas d'affichage). Reservent le ratio dans le HTML, suppriment le CLS
+- CSS responsive : `width: 100%; height: auto;` -- le `height: auto` est **indispensable** pour conserver le ratio (sinon image etiree)
+- `fill` quand le ratio est inconnu (CMS, conteneur variable) : parent **doit** avoir `position: relative` + `aspect-ratio` + `object-fit`, l'image se cale en absolu
+- `priority` sur **l'unique image LCP par page** (hero, visuel above-the-fold). Pose `fetchpriority="high"` + `<link rel="preload">` + desactive lazy. Warning NG02955 en dev si oublie
+- `ngSrcset="400w, 800w, 1200w, 1600w"` + `sizes="(max-width: 768px) 100vw, 50vw"` sur images responsive : le browser pioche la bonne variante selon viewport / densite
+- `IMAGE_LOADER` token (ou loader CDN fourni : `provideImgixLoader`, `provideCloudinaryLoader`, etc.) configure dans `app.config.ts` : seul moyen d'obtenir resize + WebP/AVIF. Sans loader, `ngSrcset` ne sert a rien
+- `alt=""` valide **uniquement** pour image purement decorative. Vignette / produit / banniere -> vrai texte alt (la directive ne le verifie pas, mais a11y et SEO si)
+
+### Anti-patterns NgOptimizedImage
+- **Plusieurs `priority` sur la meme page** : priorite diluee, sursollicitation bande passante. Une seule image LCP = un seul `priority`
+- **`width`/`height` sans `height: auto` CSS** : image etiree, ratio perdu, CLS revient
+- **`fill` sans parent positionne** : image echappe au flux (`position: relative` obligatoire)
+- **`ngSrcset` sans `IMAGE_LOADER` configure** : Angular ne sait pas generer les variantes d'URL, le srcset reste mort
+- **Ignorer les warnings dev NG029xx** : la directive est la premiere ligne d'audit avant Lighthouse -- console propre = score propre
+
+### @defer
+- **Utiliser pour** : sections under-the-fold, widgets non critiques, composants lourds derriere interaction
+- **Jamais pour** : above-the-fold, contenu principal d'une route, SEO critique sans hydrate
+  — sauf `@defer (on immediate; hydrate never)` sur un contenu prérendu statique, dont le JS ne sert qu'au rendu client (corps d'article, ADR-0014)
+- Toujours fournir `@placeholder` (skeleton CSS pur, dimensions identiques au composant final)
+- `prefetch on idle` sur composants `on interaction` (chargement avance, affichage a la demande)
+- `@error` obligatoire avec retry pour la resilience
+
+### Zoneless (Angular 22, defaut)
+- Zoneless et `OnPush` par defaut, plus rien a declarer
+- Pas de `setTimeout` ni `ChangeDetectorRef.detectChanges()` pour trigger CD
+- Signals pour tout etat reactif
+
+### Formulaires : Signal Forms (v22, `@angular/forms/signals`)
+- **Tout formulaire** = Signal Forms : modele `signal()` a defauts non-`null` (ou `linkedSignal()` sur l'`input()` a editer), `form(model, schema, { submission })`, `<form [formRoot]>` + `[formField]` (qui possede l'element : pas de `required`/`disabled`/`[value]`/`maxlength`/`pattern` en parallele), etat lu par appel du champ (`f.email().touched()`), messages dans le schema, premiere erreur du champ touche affichee sous lui, `submit()` revele les erreurs et ne lance l'action que si valide (skill `angular-signal-forms`)
+- Validation croisee : `validate(path.confirm, ({ value, valueOf }) => …)` sur le champ que l'utilisateur corrige. Tableaux : `applyEach(path.items, (item) => …)`, ajout/retrait par `model.update()`, et **copier les lignes champ par champ** dans le payload emis (Signal Forms marque les elements d'un symbole interne)
+- Bouton submit desactive **uniquement** sur `form().submitting()` (ou un `loading()` parent), jamais sur `invalid()` : un controle desactive n'est ni focusable ni annonce
+- Composant dumb : l'action de `submission` emet l'`output()`, un `input()` `resetToken` + `effect()` remet le modele a vide
+- `ReactiveFormsModule`, `FormsModule` et `ngModel` : **plus aucun usage dans le repo** (migration achevee le 2026-09-08). Un `<select>` de filtre se lie en `(change)` ; la selection se pose par `[value]` sur le `<select>` seulement si ses options sont statiques. Options generees par `@for` : `[selected]` sur chaque `<option>` (sinon `[value]` est applique avant que les options existent et le navigateur affiche la premiere). Reactive Forms tolere uniquement pour une lib tierce qui n'expose qu'un `ControlValueAccessor`
+- References : `features/contact/application/contact-form.ts` (page), `features/auth/application/password-change-form.ts` (croisee), `features/admin/application/components/admin-project-form.ts` (tableaux `applyEach`), `features/admin/application/components/admin-pair-rows.ts` (ajout/retrait de lignes par `value.update`), `features/admin/application/editor-draft.ts` (`linkedSignal` sur l'entite editee)
+- `<fieldset>` + `<legend>` pour grouper, `<label for>` toujours, `aria-required="true"`, `role="alert"` sur les erreurs
+
+### Routing
+- Lazy load partout (`loadComponent`, `loadChildren`), **sauf** la route par defaut
+- Constantes routes en `SCREAMING_CASE` (`ME_ROUTES`)
+- `routerLink` relatif dans les features
+- Params via `input.required<string>()` (`withComponentInputBinding()`)
+- Guards / resolvers fonctionnels (`CanMatchFn`, `ResolveFn`, `CanDeactivateFn`)
+- Intercepteurs fonctionnels (`HttpInterceptorFn`)
+
+---
+
+## Signals et RxJS
+
+### Quand utiliser quoi
+| Besoin | Outil |
+|--------|-------|
+| Etat local UI | `signal()` + `computed()` |
+| Valeur derivee | `computed()` |
+| Etat derive modifiable | `linkedSignal()` |
+| Effet de bord (DOM, localStorage, analytics) | `effect()` |
+| GET HTTP simple | `httpResource()` ou `rxResource()` |
+| Flux async (debounce, retry, websocket) | RxJS + `toSignal()` |
+| Pattern sandwich | Signal -> `toObservable` -> ops -> `toSignal` |
+
+### Regles signals
+- `.set()` / `.update()`, **jamais** `mutate`
+- Toujours nouvelles references : `[...arr]`, `{...obj}`, `new Map(old)`
+- Encapsuler : `private _x = signal(); x = this._x.asReadonly()`
+- Dans les templates : `computed()` uniquement, **jamais** methodes ni getters
+
+### Pieges `effect()` (tres restrictif)
+- Si `effect()` lit puis `set()` un autre signal -> c'est un `computed()` deguise
+- `effect()` dans service `providedIn: 'root'` -> capturer `EffectRef` + `DestroyRef.onDestroy(() => ref.destroy())`
+- `untracked()` chirurgical OK ; repete = mauvais decoupage
+- `effect()` differe au prochain CD -> jamais pour logique imperative sequentielle
+
+### RxJS
+- Imports depuis `'rxjs'` (pas `'rxjs/operators'`, deprecie v7+)
+- Suffixe `$` pour Observables
+- `takeUntilDestroyed()` sur tout subscribe manuel
+- Preferer `async` pipe ou `toSignal()` a `subscribe`
+- Ordre de filtrage : `debounceTime` -> `map(trim)` -> `filter` -> `distinctUntilChanged` -> `switchMap`
+
+---
+
+## CSS / TailwindCSS v4 (full Tailwind)
+
+- **Tout en utility classes par defaut** dans les templates et `host: { class }`
+- **Structure reutilisee de plus d'un element = composant Angular `shared/ui/`** (doc officielle Tailwind v4 : "for anything more complicated than a single HTML element, use template partials so the styles and structure can be encapsulated in one place"). Jamais une classe CSS ni un `@utility` multi-elements
+- **Liste de classes reutilisee sur un element natif unique qu'on ne peut pas envelopper** (`input`/`textarea`/`select` possedes par `[formField]`, `th`/`td`/`tr`, conteneur de layout) = **`@utility` dans `src/styles.css`**, nomme par role, compose avec `@apply`, compatible variantes (ADR-0003 ; doc v4 : "writing some custom CSS is totally fine when a template partial feels heavy-handed")
+- **Bouton et lien style en bouton = directive a selecteur d'attribut** (`button[appButton], a[appButton]`, ADR-0017) : classes posees par `host` via `computed()` depuis des entrees (variante), etats en variantes Tailwind (`disabled:`, `aria-disabled:`, `aria-pressed:`), ni `@apply` ni `styles:`. `type`, `routerLink`, `aria-*` restent natifs sur l'element ; jamais `role: 'button'` sur un hote (note Obsidian « Tailwind v4 — Setup & @theme » §4)
+- **`@apply` uniquement dans un bloc `@utility` de `src/styles.css`** : jamais dans un `styles:` de composant, jamais dans une `.classe { }` ad hoc, pas de `@layer components`. Un `@utility` utilise par un seul composant est un candidat a l'inlining (sauf composition d'une autre utility ou etat multi-selecteur)
+- **Pas de fichier `.css` / `.scss` separe** pour les composants (sauf `styles.css` global et tokens `@theme`)
+- **Pas de `styles: ` inline** sauf exceptions ci-dessous
+- **CSS-first config v4** : `@theme`, `@utility`, `@custom-variant` dans `styles.css`. Pas de `tailwind.config.ts` sauf besoin specifique (plugin JS, extension complexe)
+- Couleurs en OKLCH dans `@theme`, alpha via `color-mix(in srgb, var(--x) <alpha>%, transparent)`
+
+### Exceptions ou le CSS inline est legitime
+1. `@keyframes` custom (animations avec timing ou iterations non supportes par Tailwind)
+2. Pseudo-elements complexes (`::before` / `::after` avec `radial-gradient`, `color-mix`, blur)
+3. `background-clip: text` + `-webkit-text-fill-color` (gradient text)
+4. `:autofill`, `::selection`, `::placeholder` avec styles avances
+
+Hors exceptions : si tu hesites a creer un bloc `styles: `, **fais un composant `shared/ui/`**.
+
+---
+
+## Clean Architecture EAK (3 couches par feature)
+
+```
+src/app/features/<feature>/
+├── domain/        # TS pur, zero dep framework
+│   ├── models/    # type (pas interface)
+│   ├── gateways/  # abstract class
+│   └── use-cases/ # 1 methode execute()
+├── infra/         # services Angular, HTTP, adapters
+│   ├── http-*.gateway.ts
+│   ├── *.adapter.ts        # fonctions pures
+│   └── *.types.ts          # types API
+├── pages/         # composants routes (smart) : pages/<nom>/<nom>.ts, nom de classe sans suffixe -page
+└── application/   # composants non routes : dumb (input/output), bloc autonome reutilise par plusieurs pages (ex. ContactForm), ou widget qui porte sa propre mutation quand le rendre dumb ferait relayer sur plusieurs niveaux (ex. AdminContentImageUpload)
+```
+
+Dossiers transverses : `core/` (singletons, interceptors, guards), `pages/` (pages hors feature : mentions legales, 404), `layout/` (shell `<router-outlet />`), `shared/` (UI reutilisable, **pas de services**).
+
+### Regle de dependance
+- `application` -> `domain`
+- `infra` -> `domain`
+- `domain` -> **rien** (zero import Angular)
+- `application` ne depend **jamais** directement de `infra` -- cablage dans `app.config.ts`
+
+### Conventions
+- Domain : pas de `@Injectable`, pas de `signal()`, pas de `inject()`. 1 use case = 1 `execute()` (SRP)
+- Use case `@Injectable({ providedIn: 'root' })` accepte (pragmatisme)
+- Adapter = fonction pure (`toAppointment(raw)`)
+- Types API isoles dans `infra/` (jamais dans `domain`)
+- Smart components injectent les use cases (ou directement le gateway si pas de use case), dumb components = `input()` + `output()` uniquement
+- Chemins absolus : `@env/*`, `@core/*`, `@shared/*`, `@features/*`
+
+### Quand creer un `abstract class` gateway ? (YAGNI)
+- Abstract uniquement si **2+ implementations reelles** existent ou sont planifiees (in-memory + HTTP, mock + prod, multi-tenant)
+- Une seule implementation HTTP -> **classe concrete `@Injectable({ providedIn: 'root' })` directe**, pas d'abstract
+- La testabilite passe par `provideHttpClientTesting()`, pas par swap de gateway
+
+### Quand creer un use case ? (anti-trivial)
+- Un use case doit contenir de la **logique metier** : validation, orchestration, transformation, gestion d'erreur Result pattern, composition de gateways
+- **Anti-pattern** : `execute() { return this._gateway.getX(); }` (passthrough trivial). Le composant smart consomme directement le gateway via `inject()`
+- **Regle pratique** : si le use case n'ajoute pas de sens metier, supprime-le et appelle le gateway directement
+
+### Cablage
+```ts
+providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
+```
+
+---
+
+## API (backend séparé — repo distinct)
+
+> **Ce repo est FRONT-ONLY.** Aucun backend dans l'arbre (`apps/api/**` n'existe pas ici, ce
+> n'est pas un monorepo). L'API (NestJS) vit dans un **dépôt séparé** avec ses propres
+> conventions (NestJS/Drizzle/Zod). Ici on ne documente que la **consommation** de l'API côté
+> Angular.
+
+### Gateway Angular ↔ API
+- `HttpClient` typé sur les DTOs de réponse de l'API
+- Adapter côté front (`infra/*.adapter.ts`) : DTO API → modèle `domain` (fonction pure)
+- Types API isolés dans `infra/` (jamais dans `domain`)
+- Intercepteur fonctionnel pour l'`Authorization` (cf. `core/` / `auth/infra`)
+- Erreurs HTTP → Result pattern dans le use case (ou gestion locale dans le smart component)
+
+---
+
+## Tests Vitest
+
+- Environnement DOM : **happy-dom**, declare en devDependency et fixe dans `vitest.config.mts` (charge par `runnerConfig` d'`angular.json`). jsdom n'est present que comme dependance d'`isomorphic-dompurify` (prerender), jamais pour les tests
+- Fichier `.spec.ts`, pattern `describe` > `it` Given/When/Then
+- 3 niveaux : unitaire (tout mocke), composant (TestBed + mocks), integration (chaine complete)
+- Domain teste **sans TestBed** (TypeScript pur)
+- `it.each` pour la triangulation TDD (anti faux-positifs)
+- `defer(() => of(data))` pour simuler async dans les fakes
+- Composant : `TestBed.overrideComponent` > `configureTestingModule`
+- Inputs : `fixture.componentRef.setInput('name', value)`
+- Selecteurs : `data-testid="x"`, **jamais** id / class / texte
+- HTTP : `provideHttpClientTesting()` + `HttpTestingController` + `verify()` en afterEach
+- Builder + PageModel pour la lisibilite
+
+---
+
+## A11y / SEO / Performance
+
+- WCAG AA, doit passer AXE
+- HTML semantique : `<button>` actions, `<a routerLink>` nav, `<section aria-labelledby>`, `<nav aria-label>`, `<fieldset>` + `<legend>`
+- Un seul `<h1>` par page, jamais sauter de niveau
+- `focus-visible` > `focus`
+- `Title` + `Meta` pour SEO ; preconnect aux origins critiques
+- SSR pour le pre-rendu des pages publiques (`provideClientHydration()`)
+- Lazy loading via `loadComponent` / `loadChildren` partout (sauf route par defaut)
+- `NgOptimizedImage` + `priority` sur LCP, `width` + `height` explicites
+- Eviter barrel imports (`index.ts`) -- empechent le tree-shaking
+- Virtual scrolling (`CdkVirtualScrollViewport`) pour listes > 100 elements
+
+---
+
+## Workflow Claude (methode Boris Cherny)
+
+1. **Plan mode** pour toute tache non triviale (3+ etapes ou decision archi). Si derive -> STOP et replanifier.
+2. **Subagents liberalement** pour recherche, exploration, analyse parallele. Garde le contexte principal propre.
+3. **Self-improvement loop** : apres chaque correction utilisateur, mise a jour `tasks/lessons.md` ET du CLAUDE.md (cf. Auto-revision).
+4. **Verification before done** : prouver que ca marche (tests, logs, comportement diff). Ne jamais marquer "done" sans preuve. Un HTML SSR present **n'est pas** une preuve d'hydratation : tester une reaction fonctionnelle (saisie + blur -> `aria-invalid`), cf. `tasks/lessons.md`.
+5. **Demand elegance** sur les changements non triviaux ("y a-t-il plus elegant ?").
+6. **Autonomous bug fixing** : un rapport de bug = je fixe, je n'attends pas qu'on me tienne la main.
+7. **PR paralleles** : une branche mergee est morte (tout complement = nouvelle branche depuis `master`) ; "independantes" se prouve par intersection vide de `git diff --name-only master...<branche>` entre PR (`package.json`, lockfile et fichiers reformates comptent) ; sinon annoncer l'ordre de merge et le rebase.
+8. **Gates = ceux du Dockerfile** : `pnpm install --frozen-lockfile` puis `pnpm run build --configuration production`, en local avant chaque PR et dans la CI. `pnpm test` seul ne couvre ni le lockfile ni le prerender.
+9. **Conflits de merge = en local, jamais dans l'editeur GitHub** : `git merge origin/master` sur la branche, resolution en gardant **les deux** ajouts quand les branches ecrivent au meme endroit (fin de fichier, meme liste de providers, meme `enum`), relecture du diff du commit de merge (`git diff HEAD~1 HEAD` : il ne doit rien retirer de `master`), gates de l'item 8, push, et merge seulement une fois la CI verte **sur ce commit de merge**. Une resolution faite dans l'UI n'est verifiee par personne : la CI a valide la branche d'avant, le build Docker de `master` decouvre la casse (API #38 → #39, `contentHash` perdu).
+10. **Ordre de deploiement API puis front** : le build front ne lit plus l'API (spec 022 : pages de contenu, `sitemap.xml` et `rss.xml` rendus a la requete par le serveur Node du conteneur, ADR-0024) ; le front lit l'API **a l'execution** (`API_UPSTREAM`, reseau Docker). Une PR front qui depend d'une evolution de l'API se merge **apres** que le nouveau conteneur API repond (tester l'endpoint en prod, ou `docker ps` sur `homeserver`) : sinon les pages rendues a la requete appellent un endpoint absent (503, nginx sert la copie perimee tant qu'elle existe). Verifier en prod apres deploiement les routes rendues (`X-Cache-Status`, CSP sans `'unsafe-inline'`, `sitemap.xml`/`rss.xml` valides), pas seulement `dist/`.
+
+### Task management
+1. Plan dans `tasks/todo.md` (cases a cocher)
+2. Validation du plan avant impl
+3. Suivi de progression au fil de l'eau
+4. Resume haut-niveau a chaque etape majeure
+5. Section review en fin
+6. Lessons capturees dans `tasks/lessons.md`
+
+### Principes fondamentaux
+- **Simplicite d'abord** -- impact minimal
+- **Pas de laxisme** -- root cause, jamais de fix temporaire
+- **YAGNI**, **SRP**, **Screaming Architecture**, **Immutabilite**, **Pragmatisme > purete**
+- Framework agnosticism dans le domain (RxJS OK, decorators Angular non)
+
+---
+
+## Agents AAK (plugin `angular-team`)
+
+Pipeline d'agents spécialisés Angular 20+ qui orchestrent le cycle de dev en **TDD strict**.
+Chaque agent a un rôle **borné** ; on ne mélange jamais les rôles. Tous s'appuient sur
+`.claude/project-profile.md` pour connaître les conventions du repo.
+
+### Cycle TDD d'une feature (avec spec)
+1. **`architect`** — rédige la section `## Plan technique` d'une spec (après sa `## Description`).
+   Décide archi, fichiers à toucher, modèles de données, réactivité, abstractions cross-platform,
+   choix de libs, risques. Crée les **ADRs au format MADR** pour les décisions structurantes.
+   *Jamais downgradé.*
+2. **`qa`** — phase **RED**. Lit la spec, écrit les tests, lance la commande de test et **prouve
+   par le output que tous les nouveaux tests échouent** avant de rendre la main. N'écrit **JAMAIS**
+   de code applicatif. *Jamais downgradé.*
+3. **`angular-expert`** — phase **GREEN**. Implémente (standalone, **signals d'abord**, control
+   flow moderne `@if`/`@for`, `inject()`, naming Angular v20 **sans suffixe** `.component.`) pour
+   faire passer les tests au vert, **sans rien ajouter d'autre**. *Downgradable vers `sonnet`*
+   pour de l'exécution purement mécanique.
+4. **`code-reviewer`** — **gate finale de PR**, spécialisée Angular + écosystème (pnpm,
+   Vite/Vitest, Angular CLI, Capacitor). Lit la spec entière + le diff de branche
+   (`git diff main...HEAD`), lance tests/lint/build + vérif runtime, contrôle conventions
+   Angular 20+ et plan technique tenu. Rend **APPROVED** ou **REJECTED** avec des points concrets.
+   **Ne corrige pas lui-même.** *Jamais downgradé.*
+
+### Audit d'une codebase existante (hors cycle PR)
+- **`intake-auditor`** — audit d'entrée d'une feature ou du **repo entier**, lancé par
+  **`/aak-audit`** (et **non** le `code-reviewer`, qui ne traite que les PR/diff). Lit manifests +
+  arbre + churn + workflows CI, audite **10 dimensions**, écrit la section `## Intake audit` dans
+  une spec dédiée. Refuse les scopes hors écosystème Angular. **Ne corrige pas.** *Jamais downgradé.*
+
+### Commandes
+- **`/aak-init-profile`** — génère `.claude/project-profile.md` par interview + auto-détection
+  depuis le repo. **À faire en premier** sur un repo neuf : c'est le socle des agents ci-dessus.
+- **`/aak-audit`** — lance l'`intake-auditor` sur une feature (`scope=features/x`) ou tout le
+  repo (`scope=repo`).
+
+### Skill
+- **`angular-routing-patterns`** — patterns de routing 20+ : récupérer l'URL complète demandée
+  dans un guard fonctionnel (`CanMatchFn`/`CanActivateFn`), pattern `returnUrl`
+  (guard refuse → page de remédiation → retour vers l'intention initiale), et leurs footguns
+  (open redirect, reload-en-place qui piège l'utilisateur, `getCurrentNavigation()` null).
+
+### Règles d'usage
+- **Un rôle = un agent** : l'`architect` ne code pas, le `qa` n'implémente pas, l'`angular-expert`
+  n'invente rien hors du test à faire passer, le `code-reviewer`/`intake-auditor` ne corrigent pas.
+  Exception (2026-10-25) : pour aller plus vite, un seul agent peut enchaîner RED prouvé puis GREEN
+  sur une tranche ; les petites tranches se font en session. Le `code-reviewer` reste la gate finale
+  de toute PR.
+- **PR vs existant** : `code-reviewer` pour un **diff de PR** ; `intake-auditor` pour **auditer
+  l'existant** (via `/aak-audit`).
+- **Profil d'abord** : sans `project-profile.md`, les agents perdent le contexte conventions —
+  lancer `/aak-init-profile` avant tout sur un nouveau repo.
+
+---
+
+## Auto-revision de CLAUDE.md
+
+**Regle** : a chaque correction utilisateur sur une convention, un pattern, une preference ou une decision d'architecture, proposer immediatement un patch CLAUDE.md avant de continuer la tache en cours.
+
+### Declencheurs (mots-cles)
+"non, pas comme ca", "plutot", "prefere", "toujours", "jamais", "a partir de maintenant", "desormais", "corrige ca", "ne fais plus", "on utilise X maintenant".
+
+### Protocole
+1. **Detecter** la correction
+2. **Localiser** la section CLAUDE.md concernee (ou identifier qu'il faut une nouvelle section)
+3. **Consulter la doc officielle** correspondante via `WebFetch` / `WebSearch` pour valider la coherence (voir Sources)
+4. **Cas A -- la correction est coherente avec la doc** :
+   - Proposer le diff precis : `Mise a jour CLAUDE.md (section X) : <diff>`
+   - Sur accord utilisateur -> edition + commit `docs(claude): update <section>`
+5. **Cas B -- la correction contredit la doc officielle** :
+   - Challenger respectueusement avec citation et lien
+   - Demander confirmation explicite avant patch
+6. **Cas C -- refus utilisateur du patch** :
+   - Entree datee dans `tasks/lessons.md` (retention session)
+
+### Sources officielles a consulter
+| Domaine | URL canonique |
+|---------|---------------|
+| Angular | https://angular.dev |
+| Angular AI | https://angular.dev/ai |
+| Angular RFC style guide 2025 | https://github.com/angular/angular/discussions/59522 |
+| TypeScript | https://www.typescriptlang.org/docs/handbook |
+| RxJS | https://rxjs.dev |
+| TailwindCSS v4 | https://tailwindcss.com/docs |
+| Vitest | https://vitest.dev |
+
+### Garde-fous
+- Une seule regle modifiee par patch (atomique, reviewable)
+- Pas de reecriture massive sans demande explicite
+- Si la meme correction revient 2x -> patch urgent
+- Mise a jour des memories (`~/.claude/projects/.../memory/`) en parallele si pertinent
+- Ne jamais inventer une regle qui contredit la doc officielle sans justification ecrite dans CLAUDE.md
+
+---
+
+## Commandes
+
+```bash
+# Frontend Angular (repo front-only)
+pnpm start                  # Dev server
+pnpm build                  # Build production (SSR)
+pnpm test                   # Vitest
+pnpm lint                   # ng lint (gate)
+pnpm ng generate            # Schematics
+
+# Replique locale des gates Dokploy / CI (.github/workflows/ci.yml)
+pnpm install --frozen-lockfile                 # echoue si le lockfile est incoherent
+pnpm run build --configuration production      # sitemap + rss + build SSR + prerender
+docker build -t ng-portfolio-app:local .       # l'image que la CI publie sur GHCR (ghcr.io/j-ned/ng-portfolio-app) et que Dokploy tire
+docker buildx bake ci                          # replique exacte de la CI : etage test + image, en parallele
+
+# Audit axe (WCAG 2.0/2.1/2.2 A et AA, zero violation, ADR-0025) : hors PR depuis le 2026-10-26,
+# workflow `a11y.yml` chaque lundi + a la demande ; en local avant une PR qui touche l'interface
+pnpm exec playwright install --only-shell chromium   # une fois
+docker build -t ng-portfolio-app:a11y . && ci/a11y-stack.sh up
+pnpm a11y                                           # rapport : pnpm exec playwright show-report
+ci/a11y-stack.sh down
+
+# MCP officiel Angular (get_best_practices, search_documentation, onpush_zoneless_migration)
+claude mcp add angular-cli -- pnpm exec ng mcp
+```
+
+## Ressources
+- [Angular](https://angular.dev) · [RxJS](https://rxjs.dev) · [TailwindCSS v4](https://tailwindcss.com/docs) · [Vitest](https://vitest.dev)
+- Skills locales : `~/.claude/skills/`
+- Conventions EAK : `~/Documents/Obsidian Vault/EAK - Easy Angular Kit/`

@@ -1,0 +1,412 @@
+@import 'tailwindcss';
+
+/* Specs, ADR et notes de travail citent des classes : elles n'ont pas à finir dans la feuille de prod. */
+@source not '../specs';
+@source not '../docs';
+@source not '../tasks';
+@plugin '@tailwindcss/typography';
+
+@custom-variant dark (&:where(.app-dark, .app-dark *));
+
+/* Noms versionnés : nginx sert les woff2 en immutable, un binaire modifié doit changer de nom. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2')
+    format('woff2');
+  font-weight: 600 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JN Sans';
+  src: url('/fonts/jn-sans-3.201-latin-wght.woff2') format('woff2');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JN Sans';
+  src: url('/fonts/jn-sans-3.201-latin-wght-italic.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JN Mono';
+  src: url('/fonts/jn-mono-2.3-latin-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+/* Replis métriquement ajustés (Bricolage Grotesque contre Arial Bold : sans faux gras, les titres en ont besoin) */
+@font-face {
+  font-family: 'Bricolage Grotesque Fallback';
+  src:
+    local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold'),
+    local('LiberationSans-Bold');
+  font-weight: 600 800;
+  size-adjust: 97.56%;
+  ascent-override: 95.32%;
+  descent-override: 27.67%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'JN Sans Fallback';
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('LiberationSans');
+  size-adjust: 101.88%;
+  ascent-override: 100.6%;
+  descent-override: 26.99%;
+  line-gap-override: 0%;
+}
+
+@theme {
+  /* Mappe les couleurs Tailwind aux variables de thème */
+  --color-primary: var(--theme-primary-text);
+  --color-primary-bg: var(--theme-primary-bg);
+  --color-on-primary: var(--theme-on-primary);
+  --color-muted: var(--theme-muted);
+  --color-background: var(--theme-background);
+  --color-foreground: var(--theme-foreground);
+  --color-surface: var(--theme-surface);
+  --color-surface-elevated: var(--theme-surface-elevated);
+  --color-nav-border: var(--theme-nav-border);
+  --shadow-nav: var(--theme-nav-shadow);
+  --color-status-success: var(--theme-status-success);
+  --color-status-warn: var(--theme-status-warn);
+  --color-status-error: var(--theme-status-error);
+  --color-on-status-success: var(--theme-on-status-success);
+  --color-on-status-error: var(--theme-on-status-error);
+  --color-field: var(--theme-field);
+  --color-line: var(--theme-line);
+  --color-line-strong: var(--theme-line-strong);
+  --color-sticker-sage: var(--theme-sticker-sage);
+  --color-on-sticker-sage: var(--theme-on-sticker-sage);
+  --color-sticker-lavender: var(--theme-sticker-lavender);
+  --color-on-sticker-lavender: var(--theme-on-sticker-lavender);
+  --color-code-keyword: var(--theme-code-keyword);
+  --color-code-function: var(--theme-code-function);
+  --color-code-string: var(--theme-code-string);
+  --color-code-number: var(--theme-code-number);
+  --color-code-tag: var(--theme-code-tag);
+  --color-code-comment: var(--theme-code-comment);
+
+  --font-display: 'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif;
+  --font-sans:
+    'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --radius-part: 0.5rem;
+  --radius-field: 0.75rem;
+  --radius-card: 1rem;
+  --radius-block: 1.375rem;
+}
+
+/* Mode sombre par défaut « Nuit » (bleu nuit + orange copeau). Ratios WCAG : fond / surface. */
+:root {
+  color-scheme: dark;
+  --theme-background: oklch(22% 0.03 265); /* #141a29 */
+  --theme-surface: oklch(27% 0.035 265); /* #1e2638, opaque (No-Glass Rule) */
+  --theme-surface-elevated: oklch(31% 0.04 265); /* #263045 */
+  --theme-foreground: oklch(96% 0.01 70); /* #f6f1eb, 15,42 / 13,43 */
+  --theme-muted: oklch(78% 0.02 265); /* #b1b7c5, 8,64 / 7,52 */
+  --theme-primary-text: oklch(76% 0.15 55); /* #f99549, 7,74 / 6,74 */
+  --theme-primary-bg: oklch(76% 0.15 55); /* #f99549 */
+  --theme-on-primary: var(--theme-background); /* 7,74 ; 6,48 au survol /90 */
+  --theme-status-success: oklch(78% 0.15 150); /* #67d283, 9,17 / 7,99 */
+  --theme-status-warn: oklch(83% 0.13 85); /* #eec05b, 10,19 / 8,87 */
+  --theme-status-error: oklch(72% 0.161 22); /* #f97676, 6,51 / 5,67 */
+  --theme-on-status-success: var(--theme-background); /* 9,17 ; 7,62 au survol /90 */
+  --theme-on-status-error: var(--theme-background); /* 6,51 */
+  /* Bord de champ ≥ 3:1 sur le fond comme sur la surface (WCAG 1.4.11) : 3,30 / 3,19 */
+  --theme-field: color-mix(in srgb, var(--theme-foreground) 38%, transparent);
+  /* Traits décoratifs (< 3:1) : jamais seuls porteurs d'information */
+  --theme-line: color-mix(in srgb, var(--theme-foreground) 12%, transparent); /* 1,39 */
+  --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 28%, transparent); /* 2,37 */
+  --theme-nav-border: var(--theme-line);
+  --theme-nav-shadow: 0 1px 0 color-mix(in srgb, var(--theme-foreground) 6%, transparent);
+  /* Autocollants (décoratifs) : fond / texte, texte à 7,51 (sauge) et 7,93 (lavande) */
+  --theme-sticker-sage: oklch(40% 0.08 150); /* #235430 */
+  --theme-on-sticker-sage: oklch(94% 0.049 150); /* #d5f5da */
+  --theme-sticker-lavender: oklch(38.1% 0.079 264); /* #2d416d */
+  --theme-on-sticker-lavender: oklch(92% 0.038 264); /* #d8e5ff */
+  /* Coloration syntaxique (blocs de code seuls) : foreground 4 % sur le fond / sur la surface */
+  --theme-code-keyword: oklch(76% 0.15 55); /* #f99549, 7,03 / 6,05 */
+  --theme-code-function: oklch(75.5% 0.11 280); /* #a2a8f4, 7,05 / 6,07 */
+  --theme-code-string: oklch(73.5% 0.13 150); /* #67c07d, 7,05 / 6,07 */
+  --theme-code-number: oklch(75% 0.12 90); /* #cbaa4b, 7,03 / 6,06 */
+  --theme-code-tag: oklch(76.5% 0.14 355); /* #f78bb7, 6,99 / 6,01 */
+  --theme-code-comment: oklch(78% 0.02 265); /* #b1b7c5, 7,83 / 6,75 */
+}
+
+/* Mode clair « Sable » (sable chaud + orange copeau). Ratios WCAG : fond / surface. */
+:root:not(.app-dark) {
+  color-scheme: light;
+  --theme-background: oklch(97% 0.015 70); /* #fcf4eb */
+  --theme-surface: oklch(100% 0 0); /* #ffffff */
+  --theme-surface-elevated: oklch(98.5% 0.01 70); /* #fff9f3 */
+  --theme-foreground: oklch(24% 0.03 265); /* #181f2e, 15,08 / 16,47 */
+  --theme-muted: oklch(45% 0.03 265); /* #4d5566, 6,82 / 7,45 */
+  --theme-primary-text: oklch(53.2% 0.178 37); /* #bc3700, 5,21 / 5,69 */
+  /* Aplat à 2,81:1 contre le sable : identifié par son texte, jamais icône seule sans trait ≥ 3:1 */
+  --theme-primary-bg: oklch(68% 0.18 48); /* #ed6e12 */
+  --theme-on-primary: var(--theme-foreground); /* 5,36 ; 5,90 au survol /90 */
+  --theme-status-success: oklch(48% 0.13 150); /* #067132, 5,64 / 6,15 */
+  --theme-status-warn: oklch(50.2% 0.122 56); /* #974e02, 5,66 / 6,16 */
+  --theme-status-error: oklch(50% 0.19 25); /* #b71824, 6,07 / 6,63 */
+  --theme-on-status-success: oklch(100% 0 0); /* 6,15 ; 5,09 au survol /90 */
+  --theme-on-status-error: oklch(100% 0 0); /* 6,63 */
+  --theme-field: color-mix(in srgb, var(--theme-foreground) 50%, transparent); /* 3,17 / 3,24 */
+  --theme-line: color-mix(in srgb, var(--theme-foreground) 12%, transparent); /* 1,27 */
+  --theme-line-strong: color-mix(in srgb, var(--theme-foreground) 28%, transparent); /* 1,80 */
+  --theme-nav-border: var(--theme-line);
+  --theme-nav-shadow:
+    0 1px 2px color-mix(in srgb, var(--theme-foreground) 4%, transparent),
+    0 4px 12px color-mix(in srgb, var(--theme-foreground) 4%, transparent);
+  /* Autocollants (décoratifs) : fond / texte, texte à 8,08 (sauge) et 8,44 (lavande) */
+  --theme-sticker-sage: oklch(90.1% 0.081 150); /* #b9eec2 */
+  --theme-on-sticker-sage: oklch(35.8% 0.079 150); /* #174825 */
+  --theme-sticker-lavender: oklch(91% 0.043 261); /* #d1e2ff */
+  --theme-on-sticker-lavender: oklch(36% 0.1 265); /* #233971 */
+  /* Coloration syntaxique (blocs de code seuls) : foreground 4 % sur le fond / sur la surface */
+  --theme-code-keyword: oklch(51.5% 0.16 40); /* #af3c03, 5,13 / 5,60 */
+  --theme-code-function: oklch(51% 0.15 280); /* #5857b9, 5,11 / 5,58 */
+  --theme-code-string: oklch(48.5% 0.12 150); /* #1b7138, 5,13 / 5,60 */
+  --theme-code-number: oklch(50.5% 0.1 80); /* #825d0d, 5,05 / 5,51 */
+  --theme-code-tag: oklch(52.5% 0.18 355); /* #b32c70, 5,06 / 5,52 */
+  --theme-code-comment: oklch(45% 0.03 265); /* #4d5566, 6,32 / 6,89 */
+}
+
+/* View Transitions — instant swap */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none !important;
+}
+
+/* Arrière-plan et texte globaux basés sur le thème actif */
+body {
+  background-color: var(--theme-background);
+  color: var(--theme-foreground);
+}
+
+@layer base {
+  /* Graisse hors plage : la plus proche disponible, jamais un faux gras */
+  html {
+    font-synthesis-weight: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+  }
+
+  /* En couche : un rayon posé par une classe rounded-* l'emporte, l'anneau suit alors la forme de l'élément. */
+  :where(a, button, [role='button'], summary):focus-visible {
+    border-radius: 4px;
+  }
+}
+
+/* Focus ring global cohérent pour navigation clavier (pas au clic souris) */
+:where(a, button, [role='button'], summary):focus-visible {
+  outline: 2px solid var(--theme-primary-text);
+  outline-offset: 2px;
+}
+
+/* Focus au-dessus de la barre collante (WCAG 2.4.11) : sa hauteur mesurée par largeur + 1rem. */
+:root:has(app-admin-save-bar) {
+  scroll-padding-bottom: 7.625rem;
+
+  @media (width >= 40rem) {
+    scroll-padding-bottom: 5.625rem;
+  }
+}
+
+/* Override autofill du navigateur pour garder le thème */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--theme-background) inset;
+  -webkit-text-fill-color: var(--theme-foreground);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ---------------------------------------------------------------- *
+ * Page container — unifie max-width et padding horizontal des sections.
+ * Utiliser sur tout block large qui doit s'aligner avec le header/footer.
+ * ---------------------------------------------------------------- */
+
+@utility page-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* ---------------------------------------------------------------- *
+ * Titre de section (h2) des pages éditoriales : accueil et Parcours.
+ * ---------------------------------------------------------------- */
+
+@utility section-title {
+  @apply text-[clamp(1.75rem,3.2vw,2.5rem)] font-bold leading-[1.12] tracking-tight text-balance;
+}
+
+/* ---------------------------------------------------------------- *
+ * Footer : titre de colonne (h2) et lien (cible tactile de 44 px sous md).
+ * ---------------------------------------------------------------- */
+
+@utility footer-heading {
+  @apply mb-3 text-xs font-semibold text-muted;
+}
+
+@utility footer-link {
+  @apply inline-flex items-center text-muted transition-colors hover:text-foreground max-md:min-h-11;
+}
+
+/* ---------------------------------------------------------------- *
+ * Reveal animation — fade-up sobre pour cards/sections au mount.
+ * Couplée avec @defer (on viewport), elle déclenche un reveal au scroll.
+ * Respecte prefers-reduced-motion (no-op si l'utilisateur le demande).
+ * ---------------------------------------------------------------- */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+/* Boucles décoratives Tailwind (indicateur « live », squelettes) coupées aussi : seul
+   animate-spin reste, car il signale une action en cours. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-ping,
+  .animate-pulse {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------- *
+ * Form utilities (admin) — pour ne pas dupliquer 10+ classes par input
+ * ---------------------------------------------------------------- */
+
+@utility form-input {
+  /* text-base sur mobile : < 16px déclenche le zoom auto de Safari iOS au focus ; min-h-11 = cible 44px */
+  @apply block w-full min-h-11 rounded-field border border-field bg-surface px-3.5 py-2.5 text-base sm:text-sm text-foreground;
+  @apply placeholder:text-muted;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary;
+  @apply transition-colors;
+  @apply aria-[invalid=true]:border-status-error aria-[invalid=true]:ring-status-error/30;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility app-select {
+  @apply min-h-11 rounded-field border border-field bg-surface px-3 py-2 text-base sm:text-sm text-foreground;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary;
+  @apply transition-colors;
+  @apply aria-[invalid=true]:border-status-error aria-[invalid=true]:ring-status-error/30;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility form-textarea {
+  @apply form-input;
+  @apply min-h-[8rem] resize-y leading-relaxed;
+}
+
+@utility form-label {
+  @apply block text-sm font-medium text-foreground mb-1.5;
+}
+
+@utility form-error {
+  @apply block text-xs text-status-error mt-1;
+}
+
+@utility field-label {
+  @apply mb-1.5 flex items-baseline justify-between gap-3 text-sm font-semibold text-foreground;
+}
+
+@utility field-hint {
+  @apply mt-1.5 flex justify-between gap-3 text-[0.78125rem] text-muted;
+}
+
+/* ---------------------------------------------------------------- *
+ * En-tête de colonne des tableaux de l'admin (Audience).
+ * ---------------------------------------------------------------- */
+
+@utility table-head {
+  @apply py-2.5 font-mono text-xs font-medium whitespace-nowrap uppercase tracking-[0.06em] text-muted;
+}
+
+/* ---------------------------------------------------------------- *
+ * Colonnes des lignes d'outil du guide (admin) : partagées par l'en-tête
+ * et chaque ligne. Deux rangées sous `lg`, une au-delà.
+ * ---------------------------------------------------------------- */
+
+@utility tool-row-grid {
+  @apply grid grid-cols-4 gap-x-3 lg:gap-x-2 lg:grid-cols-[minmax(0,15rem)_minmax(0,1.6fr)_4.75rem_minmax(0,1fr)_2.75rem];
+}
+
+/* ---------------------------------------------------------------- *
+ * Coloration syntaxique des blocs de code (`code` émis par parseMarkdown).
+ * Les `span.hljs-*` de highlight.js arrivent par innerHTML et ne peuvent pas
+ * porter d'utilitaires : d'où les sélecteurs descendants.
+ * Exception bornée à la One Orange Rule (DESIGN.md).
+ * ---------------------------------------------------------------- */
+
+@utility code-syntax {
+  color: var(--color-foreground);
+
+  & :is(.hljs-keyword, .hljs-literal, .hljs-doctag, .hljs-meta) {
+    color: var(--color-code-keyword);
+  }
+
+  & :is(.hljs-title, .hljs-section, .hljs-built_in, .hljs-type) {
+    color: var(--color-code-function);
+  }
+
+  & :is(.hljs-string, .hljs-regexp, .hljs-addition, .hljs-template-tag) {
+    color: var(--color-code-string);
+  }
+
+  &
+    :is(
+      .hljs-number,
+      .hljs-symbol,
+      .hljs-bullet,
+      .hljs-variable,
+      .hljs-template-variable,
+      .hljs-attr
+    ) {
+    color: var(--color-code-number);
+  }
+
+  &
+    :is(
+      .hljs-name,
+      .hljs-selector-tag,
+      .hljs-selector-id,
+      .hljs-selector-class,
+      .hljs-selector-attr,
+      .hljs-selector-pseudo,
+      .hljs-attribute,
+      .hljs-deletion
+    ) {
+    color: var(--color-code-tag);
+  }
+
+  & :is(.hljs-comment, .hljs-quote) {
+    color: var(--color-code-comment);
+  }
+
+  /* Interpolation dans une chaîne : le code interpolé reprend la couleur du texte */
+  & .hljs-subst {
+    color: var(--color-foreground);
+  }
+}

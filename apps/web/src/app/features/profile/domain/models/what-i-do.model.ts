@@ -1,0 +1,11 @@
+export type WhatIDo = {
+  readonly id: string;
+  readonly title: string;
+  readonly description: string;
+};
+
+export type Motivation = {
+  readonly title: string;
+  readonly statement: string;
+  readonly description: string;
+};

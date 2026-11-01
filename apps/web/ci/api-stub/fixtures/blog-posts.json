@@ -1,0 +1,41 @@
+[
+  {
+    "id": "b-temoin",
+    "title": "Article témoin A",
+    "slug": "article-temoin",
+    "excerpt": "Résumé de l'article témoin servi par la doublure de l'API.",
+    "contentMarkdown": "## Section témoin\n\nParagraphe de l'article témoin A.\n\n```ts\nconst answer = 42;\n```\n",
+    "coverImage": "",
+    "tags": ["Angular", "DashFlow"],
+    "status": "published",
+    "likesCount": 3,
+    "publishedAt": "2026-10-01T08:00:00.000Z",
+    "updatedAt": "2026-10-02T08:00:00.000Z"
+  },
+  {
+    "id": "b-voisin",
+    "title": "Article voisin",
+    "slug": "article-voisin",
+    "excerpt": "Second article publié servi par la doublure, proche de l'article témoin.",
+    "contentMarkdown": "## Section voisine\n\nParagraphe de l'article voisin.\n",
+    "coverImage": "",
+    "tags": ["Angular"],
+    "status": "published",
+    "likesCount": 0,
+    "publishedAt": "2026-09-03T08:00:00.000Z",
+    "updatedAt": "2026-09-03T08:00:00.000Z"
+  },
+  {
+    "id": "b-brouillon",
+    "title": "Article brouillon B",
+    "slug": "article-brouillon",
+    "excerpt": "Brouillon servi par la doublure : visible dans l'admin seulement.",
+    "contentMarkdown": "## Brouillon\n\nParagraphe en cours d'écriture.\n",
+    "coverImage": "",
+    "tags": ["NestJS"],
+    "status": "draft",
+    "likesCount": 0,
+    "publishedAt": null,
+    "updatedAt": "2026-10-09T10:00:00.000Z"
+  }
+]
