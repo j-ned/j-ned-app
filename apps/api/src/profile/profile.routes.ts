@@ -1,14 +1,20 @@
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
-import { jsonBody, reply, uploadedFile, type AppEnv } from '../common/http';
+import {
+  jsonBody,
+  reply,
+  uploadedFile,
+  type AppEnv,
+  UPLOAD_MAX_BYTES,
+} from '../common/http';
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import type { ProfilePortraitService } from './profile-portrait.service';
 import type { ProfileService } from './profile.service';
 
-/** Portrait : 5 Mo au plus (au-delà, 413 avant tout stockage), image WebP, JPEG, PNG ou AVIF. */
+/** Portrait : 4 Mo au plus (au-delà, 413 avant tout stockage), image WebP, JPEG, PNG ou AVIF. */
 export const PORTRAIT_UPLOAD = {
-  maxBytes: 5 * 1024 * 1024,
+  maxBytes: UPLOAD_MAX_BYTES,
   fileType: /^image\/(webp|jpeg|png|avif)$/,
 } as const;
 

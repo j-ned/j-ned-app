@@ -1,32 +1,11 @@
 import './instrument';
 import 'reflect-metadata';
 import { serve } from '@hono/node-server';
-import { createTransport } from 'nodemailer';
-import { createApp } from './app';
 import { scheduleDailyRollup } from './analytics/analytics.schedule';
-import { createRootLogger, rootLogger, setRootLogger } from './common/logger';
-import { AppConfigService } from './config/app-config.service';
-import { validateEnv } from './config/env.validation';
-import { connectDatabase } from './database/database';
-import { createS3Client } from './storage/s3-client';
-import { createServices } from './services';
+import { bootstrap } from './bootstrap';
+import { rootLogger } from './common/logger';
 
-// Variables invalides ou manquantes : l'API s'arrête au démarrage avec un message lisible.
-const config = new AppConfigService(validateEnv(process.env));
-setRootLogger(
-  createRootLogger({ level: config.logLevel, pretty: config.isDevelopment }),
-);
-
-const database = connectDatabase(config);
-const s3 = createS3Client(config);
-const transporter = createTransport({
-  host: config.smtpHost,
-  port: config.smtpPort,
-  secure: config.smtpSecure,
-  auth: { user: config.smtpUser, pass: config.smtpPass },
-});
-const services = createServices({ config, db: database.db, s3, transporter });
-const app = createApp(config, database.db, services);
+const { config, database, s3, transporter, services, app } = bootstrap();
 const rollup = scheduleDailyRollup(services.analyticsAggregator);
 
 const server = serve({ fetch: app.fetch, port: config.port }, () => {

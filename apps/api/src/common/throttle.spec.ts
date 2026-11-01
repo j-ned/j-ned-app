@@ -6,6 +6,8 @@ import {
   CONTACT_THROTTLE,
   DEFAULT_THROTTLE,
   PUBLIC_READ_THROTTLE,
+  MemoryThrottleStore,
+  setThrottleStore,
   throttle,
   type ThrottleConfig,
 } from './throttle';
@@ -81,6 +83,19 @@ describe('throttle', () => {
 
     expect((await app.request('/a', { headers })).status).toBe(429);
     expect((await app.request('/b', { headers })).status).toBe(200);
+  });
+
+  it('Given a broken counter store, When a request comes, Then it is let through rather than blocked', async () => {
+    setThrottleStore({ hit: () => Promise.reject(new Error('db down')) });
+    try {
+      const { hit } = throttledApp({ limit: 1, ttlMs: 60_000 });
+
+      expect(await statuses(3, () => hit('203.0.113.9'))).toEqual([
+        200, 200, 200,
+      ]);
+    } finally {
+      setThrottleStore(new MemoryThrottleStore());
+    }
   });
 
   it.each<[string, ThrottleConfig, number, number]>([

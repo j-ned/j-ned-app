@@ -11,3 +11,6 @@ Thumbs.db
 .worktrees/
 .husky/_/
 .parity-env
+.vercel/
+.vercel
+.env*

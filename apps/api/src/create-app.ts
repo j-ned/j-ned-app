@@ -6,8 +6,9 @@ import { authRoutes } from './auth/auth.routes';
 import { requireAuth } from './auth/require-auth';
 import { blogRoutes } from './blog/blog.routes';
 import { crossOriginProtection } from './common/cross-origin';
+import { cronRoutes } from './cron/cron.routes';
 import { handleError, handleNotFound } from './common/error-handler';
-import type { AppEnv } from './common/http';
+import { forwardedVisitorIp, type AppEnv } from './common/http';
 import { requestLogger } from './common/request-logger';
 import type { AppConfigService } from './config/app-config.service';
 import { contactRoutes } from './contact/contact.routes';
@@ -26,16 +27,23 @@ import { workshopGuideRoutes } from './workshop-guide/workshop-guide.routes';
  * écritures, puis les routes de chaque module sous `/api`. Toute erreur et toute route inconnue
  * répondent au même format JSON.
  */
+export type AppOptions = {
+  /** Purge des compteurs de quotas en base (Vercel), lancée par le cron quotidien. */
+  readonly purgeRateLimits?: () => Promise<void>;
+};
+
 export function createApp(
   config: AppConfigService,
   db: Database,
   services: Services,
+  { purgeRateLimits }: AppOptions = {},
 ): Hono<AppEnv> {
   const session = requireAuth(services.jwt, services.users);
 
   return (
     // `strict: false` : `/api/cv/` vaut `/api/cv`, comme le routage d'Express.
     new Hono<AppEnv>({ strict: false })
+      .use(forwardedVisitorIp(config.ssrForwardSecret))
       .use(requestLogger)
       // CSP inutile (l'API ne sert que du JSON et des images) ; CORP `cross-origin` : les images de
       // /api/storage sont chargées depuis le site.
@@ -77,6 +85,14 @@ export function createApp(
           services.analyticsStats,
           session,
         ),
+      )
+      .route(
+        '/api/cron',
+        cronRoutes({
+          secret: config.cronSecret,
+          aggregator: services.analyticsAggregator,
+          purgeRateLimits,
+        }),
       )
       .notFound(handleNotFound)
       .onError(handleError)

@@ -241,9 +241,9 @@ describe('projects routes (HTTP)', () => {
       expect(projects.uploadImage).not.toHaveBeenCalled();
     });
 
-    it('Given a file over 5 MB, When uploaded, Then 413', async () => {
+    it('Given a file over 4 MB, When uploaded, Then 413', async () => {
       const res = await upload(
-        fileForm(Buffer.alloc(5 * 1024 * 1024 + 1), 'image/png'),
+        fileForm(Buffer.alloc(4 * 1024 * 1024 + 1), 'image/png'),
       );
       expect(res.status).toBe(413);
       expect(projects.uploadImage).not.toHaveBeenCalled();

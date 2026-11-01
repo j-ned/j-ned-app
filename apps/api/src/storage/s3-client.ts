@@ -17,7 +17,7 @@ export type S3Timeouts = {
 /**
  * Sans borne (défaut du SDK : `requestTimeout` 0, et un dépassement n'est qu'un warning sans
  * `throwOnRequestTimeout`), un stockage bloqué tiendrait la requête, et le verrou du portrait qui
- * l'entoure, indéfiniment. 30 s couvrent le plus gros envoi (CV, 10 Mo) dès ~3 Mbit/s montants ; le
+ * l'entoure, indéfiniment. 30 s couvrent le plus gros envoi (4 Mo) dès ~3 Mbit/s montants ; le
  * SDK retente 3 fois au plus, la durée totale reste bornée.
  */
 export const S3_TIMEOUTS: S3Timeouts = {

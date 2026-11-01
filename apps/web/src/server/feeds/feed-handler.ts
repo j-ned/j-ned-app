@@ -1,3 +1,4 @@
+import { visitorHeaders } from '@core/ssr/visitor-headers';
 import { toShareImageUrl } from '@shared/seo/share-image';
 import { buildRss, type RssEnclosure, type RssPost } from './rss';
 import { buildSitemap, type SitemapPost } from './sitemap';
@@ -8,6 +9,8 @@ type FeedHandlerOptions = {
   readonly apiBaseUrl: string;
   readonly fetch: typeof fetch;
   readonly startedAt: Date;
+  /** Secret partagé avec l'API (Vercel, ADR-0036) ; absent derrière nginx. */
+  readonly ssrForwardSecret?: string | null;
 };
 
 export type FeedHandler = (
@@ -28,6 +31,7 @@ export function createFeedHandler({
   apiBaseUrl,
   fetch,
   startedAt,
+  ssrForwardSecret = null,
 }: FeedHandlerOptions): FeedHandler {
   // Clés de stockage empreintées (`<id>-<sha8>`) : une couverture mesurée ne change plus.
   const enclosures = new Map<string, RssEnclosure>();
@@ -41,7 +45,7 @@ export function createFeedHandler({
   ): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
-    const headers: Record<string, string> = visitor ? { 'X-Forwarded-For': visitor } : {};
+    const headers = visitorHeaders(visitor, ssrForwardSecret);
     try {
       return await fetch(url, { method, headers, signal: controller.signal });
     } finally {
@@ -115,7 +119,7 @@ export function createFeedHandler({
         headers: { 'Content-Type': CONTENT_TYPES[target], 'Cache-Control': 'no-cache' },
       });
     } catch (error) {
-      // 503 : nginx sert alors la dernière copie du flux plutôt qu'un flux vide.
+      // 503 : le cache (nginx, ou CDN Vercel par stale-if-error) sert alors la dernière copie du flux.
       console.error('Feed unavailable:', error);
       return new Response(null, { status: 503, headers: { 'Cache-Control': 'no-store' } });
     }

@@ -8,6 +8,7 @@ import * as analytics from './analytics';
 import * as blogPosts from './blog-posts';
 import * as profileContent from './profile-content';
 import * as workshopGuide from './workshop-guide';
+import * as rateLimits from './rate-limits';
 
 export * from './users';
 export * from './projects';
@@ -18,6 +19,7 @@ export * from './analytics';
 export * from './blog-posts';
 export * from './profile-content';
 export * from './workshop-guide';
+export * from './rate-limits';
 
 export const schema = {
   ...users,
@@ -29,4 +31,5 @@ export const schema = {
   ...blogPosts,
   ...profileContent,
   ...workshopGuide,
+  ...rateLimits,
 } as const;

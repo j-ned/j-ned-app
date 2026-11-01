@@ -1,12 +1,17 @@
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
-import { reply, uploadedFile, type AppEnv } from '../common/http';
+import {
+  reply,
+  uploadedFile,
+  type AppEnv,
+  UPLOAD_MAX_BYTES,
+} from '../common/http';
 import { ADMIN_WRITE_THROTTLE, throttle } from '../common/throttle';
 import type { BlogContentImagesService } from './blog-content-images.service';
 
-/** Images d'article : 5 Mo au plus, WebP, JPEG, PNG ou AVIF (vérifié sur les octets). */
+/** Images d'article : 4 Mo au plus, WebP, JPEG, PNG ou AVIF (vérifié sur les octets). */
 export const BLOG_IMAGE_UPLOAD = {
-  maxBytes: 5 * 1024 * 1024,
+  maxBytes: UPLOAD_MAX_BYTES,
   fileType: /^image\/(webp|jpeg|png|avif)$/,
 } as const;
 

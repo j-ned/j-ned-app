@@ -14,11 +14,19 @@ import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import { extractErrorMessage } from '@shared/api/extract-error-message';
+import { MAX_UPLOAD_BYTES } from '@shared/upload/upload-limit';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
 import { AdminSectionHead } from '../../application/components/admin-section-head';
 import { cvOverline } from '../../application/admin-page-copy';
 import { toCvRows } from '../../application/admin-cv-view';
+
+// L'API refuse tout fichier au-delà de 4 Mio : un CV trop lourd ne part pas.
+function cvFileRefusal(file: File): string | null {
+  if (file.type !== 'application/pdf') return 'Seuls les fichiers PDF sont acceptés.';
+  if (file.size > MAX_UPLOAD_BYTES) return 'Le CV dépasse 4\u00a0Mo.';
+  return null;
+}
 
 @Component({
   selector: 'app-admin-cv',
@@ -104,7 +112,7 @@ import { toCvRows } from '../../application/admin-cv-view';
           class="mt-5"
           accept="application/pdf"
           label="Fichier PDF"
-          helperText="PDF uniquement, versionné à chaque envoi"
+          helperText="PDF uniquement, 4 Mo au plus, versionné à chaque envoi"
           [resetToken]="dropzoneResetToken()"
           (fileSelected)="selectCvFile($event)"
           (cleared)="clearSelection()"
@@ -177,12 +185,13 @@ export class AdminCv {
   protected readonly downloadUrl = this._cvService.getDownloadUrl();
 
   protected selectCvFile(file: File): void {
-    if (file.type === 'application/pdf') {
+    const refusal = cvFileRefusal(file);
+    if (refusal === null) {
       this.selectedFile.set(file);
     } else {
       this.clearSelection();
       this.dropzoneResetToken.update((token) => token + 1);
-      this._toast.add({ severity: 'error', detail: 'Seuls les fichiers PDF sont acceptés.' });
+      this._toast.add({ severity: 'error', detail: refusal });
     }
   }
 

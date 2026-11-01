@@ -41,6 +41,12 @@ export class AppConfigService {
   get totpAppName() {
     return this.env.TOTP_APP_NAME;
   }
+  get cronSecret() {
+    return this.env.CRON_SECRET;
+  }
+  get ssrForwardSecret() {
+    return this.env.SSR_FORWARD_SECRET;
+  }
   get corsOrigins() {
     return this.env.CORS_ORIGINS;
   }

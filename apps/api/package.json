@@ -31,7 +31,8 @@
     "test": "node --experimental-vm-modules --no-warnings=ExperimentalWarning ./node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules --no-warnings=ExperimentalWarning ./node_modules/jest/bin/jest.js --watch",
     "test:cov": "node --experimental-vm-modules --no-warnings=ExperimentalWarning ./node_modules/jest/bin/jest.js --coverage",
-    "build:watch": "tsc -p tsconfig.build.json --watch --preserveWatchOutput"
+    "build:watch": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "build:vercel": "pnpm build && node scripts/build-vercel.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1141.0",
@@ -45,7 +46,6 @@
     "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.45.3",
     "file-type": "^22.2.0",
-    "geoip-lite": "^2.0.3",
     "hono": "^4.13.16",
     "isbot": "^5.2.2",
     "jsonwebtoken": "^9.0.3",
@@ -63,7 +63,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@smithy/util-stream": "^4.8.2",
-    "@types/geoip-lite": "^1.4.4",
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.0",
@@ -71,6 +70,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/ua-parser-js": "^0.7.39",
     "aws-sdk-client-mock": "^4.1.0",
+    "esbuild": "0.28.2",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.5.6",

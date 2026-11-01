@@ -1,4 +1,4 @@
-import { createApp } from './app';
+import { createApp } from './create-app';
 import type { AppConfigService } from './config/app-config.service';
 import type { Database } from './database/drizzle.types';
 import type { Services } from './services';

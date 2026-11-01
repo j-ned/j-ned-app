@@ -10,6 +10,7 @@ import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settleBounded } from '@shared/testing/settle';
+import { MAX_UPLOAD_BYTES } from '@shared/upload/upload-limit';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 
 function makeCvGateway(overrides: Partial<CvGateway> = {}): CvGateway {
@@ -46,6 +47,9 @@ async function render(
 
 const normalized = (element: Element | null | undefined): string =>
   (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
+
+const sizedPdf = (bytes: number): File =>
+  new File([new Uint8Array(bytes)], 'cv.pdf', { type: 'application/pdf' });
 
 const pdf = (): File => new File(['%PDF'], 'cv.pdf', { type: 'application/pdf' });
 
@@ -403,6 +407,42 @@ describe('AdminCv: fichier refusé', () => {
     await chooseFile(fixture, new File(['PK'], 'lettre.docx', { type: 'application/msword' }));
 
     expect(byTestId(host, 'admin-cv-upload')).toBeNull();
+  });
+
+  it('Given a PDF over 4 MiB When it is chosen Then the page refuses it before any upload and says why', async () => {
+    const upload = vi.fn(() => of(makeCvInfo()));
+    const { fixture, host, toast } = await render(makeCvGateway({ upload }));
+
+    await chooseFile(fixture, sizedPdf(MAX_UPLOAD_BYTES + 1));
+
+    expect({
+      toasts: toast.add.mock.calls.map(([message]) => message),
+      uploadButton: byTestId(host, 'admin-cv-upload'),
+      trigger: byTestId(host, 'file-dropzone-trigger') !== null,
+      uploads: upload.mock.calls.length,
+    }).toEqual({
+      toasts: [{ severity: 'error', detail: 'Le CV dépasse 4\u00a0Mo.' }],
+      uploadButton: null,
+      trigger: true,
+      uploads: 0,
+    });
+  });
+
+  it('Given a PDF of exactly 4 MiB When it is chosen Then it can be uploaded', async () => {
+    const { fixture, host, toast } = await render(makeCvGateway());
+
+    await chooseFile(fixture, sizedPdf(MAX_UPLOAD_BYTES));
+
+    expect({
+      toasts: toast.add.mock.calls.length,
+      uploadButton: byTestId(host, 'admin-cv-upload') !== null,
+    }).toEqual({ toasts: 0, uploadButton: true });
+  });
+
+  it('Given the upload zone When the page renders Then its helper text gives the 4 Mo limit', async () => {
+    const { host } = await render(makeCvGateway());
+
+    expect(normalized(host)).toContain('PDF uniquement, 4 Mo au plus, versionné à chaque envoi');
   });
 });
 

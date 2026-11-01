@@ -11,6 +11,7 @@ function multipart(bytes: number, type: string, filename: string): FormData {
   return form;
 }
 
+// 4 Mo partout : une fonction Vercel refuse les corps de plus de 4,5 Mo (ADR-0036).
 describe('upload size limits', () => {
   let session = '';
 
@@ -19,9 +20,9 @@ describe('upload size limits', () => {
   });
 
   it.each<[string, string, number, string, string]>([
-    ['the CV', '/api/cv/upload', 10, 'application/pdf', 'cv.pdf'],
-    ['a blog body image', '/api/blog/content-images', 5, 'image/png', 'image.png'],
-    ['the portrait', '/api/profile/portrait', 5, 'image/png', 'portrait.png'],
+    ['the CV', '/api/cv/upload', 4, 'application/pdf', 'cv.pdf'],
+    ['a blog body image', '/api/blog/content-images', 4, 'image/png', 'image.png'],
+    ['the portrait', '/api/profile/portrait', 4, 'image/png', 'portrait.png'],
   ])(
     'Given a file just over the limit of %s, When it is uploaded, Then the API answers 413 before storing anything',
     async (_, path, limitMb, type, filename) => {

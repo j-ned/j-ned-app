@@ -48,7 +48,7 @@ const REMOVE_LABEL = 'Revenir au portrait par défaut';
         data-testid="admin-profile-portrait-dropzone"
         accept="image/avif,image/webp,image/png,image/jpeg"
         label="Remplacer le portrait"
-        helperText="AVIF, WebP, PNG ou JPEG, 5 Mo au plus"
+        helperText="AVIF, WebP, PNG ou JPEG, 4 Mo au plus"
         [resetToken]="resetToken()"
         (fileSelected)="select($event)"
       />

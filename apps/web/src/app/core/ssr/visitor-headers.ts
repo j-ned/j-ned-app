@@ -1,0 +1,16 @@
+/**
+ * En-têtes d'un appel serveur → API pour un visiteur donné, qui garde chaque lecture dans le quota de ce
+ * visiteur. `X-Forwarded-For` suffit derrière nginx (l'API en lit la dernière entrée) ; sur Vercel,
+ * l'appel arrive avec l'IP de la fonction, et l'API ne croit `x-ssr-visitor-ip` qu'accompagné du secret
+ * partagé (`SSR_FORWARD_SECRET`, ADR-0036).
+ */
+export function visitorHeaders(
+  visitor: string | null,
+  forwardSecret: string | null,
+): Record<string, string> {
+  if (!visitor) return {};
+  return {
+    'X-Forwarded-For': visitor,
+    ...(forwardSecret ? { 'x-ssr-visitor-ip': visitor, 'x-ssr-secret': forwardSecret } : {}),
+  };
+}

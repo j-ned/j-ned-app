@@ -114,7 +114,7 @@ describe('AdminProfilePortrait: dépôt', () => {
 
     expect({
       accept: zone?.querySelector('input[type="file"]')?.getAttribute('accept'),
-      helper: (zone?.textContent ?? '').includes('AVIF, WebP, PNG ou JPEG, 5 Mo au plus'),
+      helper: (zone?.textContent ?? '').includes('AVIF, WebP, PNG ou JPEG, 4 Mo au plus'),
     }).toEqual({ accept: 'image/avif,image/webp,image/png,image/jpeg', helper: true });
   });
 

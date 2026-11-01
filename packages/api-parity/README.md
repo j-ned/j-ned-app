@@ -28,7 +28,7 @@ rejoue la suite sur l'image qu'elle vient de construire.
 | `auth.spec.ts`     | Cookie `__Host-token` (attributs exacts), pas d'énumération des comptes, JWT forgés refusés (`alg: none`, autre secret, signature retirée), déconnexion qui révoque toutes les sessions, 2FA complète. |
 | `csrf.spec.ts`     | Toute écriture venue d'un autre site refusée en 403 ; même origine, origine de confiance et client hors navigateur acceptés ; lectures jamais refusées.                                                |
 | `throttle.spec.ts` | Quotas par visiteur (connexion et 2FA 5/min, contact 3/h, défaut 10/min, lectures publiques 120/min) ; le visiteur est la **dernière** entrée de `X-Forwarded-For`.                                    |
-| `limits.spec.ts`   | 413 au-delà de la taille d'envoi (CV 10 Mo, images 5 Mo), avant tout stockage.                                                                                                                         |
+| `limits.spec.ts`   | 413 au-delà de la taille d'envoi (4 Mo partout, limite des fonctions Vercel), avant tout stockage.                                                                                                     |
 | `errors.spec.ts`   | 400 sur JSON invalide, champ inconnu, champ mal typé ; 413 au-delà de 100 ko de JSON ; format d'erreur unique.                                                                                         |
 | `headers.spec.ts`  | Ni `X-Powered-By` ni sniffing MIME ; CORP `cross-origin` sur les images ; CORS ouvert au seul site (transition, ADR-0034).                                                                             |
 

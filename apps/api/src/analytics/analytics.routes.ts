@@ -6,6 +6,7 @@ import {
   queryParams,
   reply,
   type AppEnv,
+  visitorCountry,
 } from '../common/http';
 import { TRACK_THROTTLE, throttle } from '../common/throttle';
 import type { AnalyticsStatsService } from './analytics-stats.service';
@@ -31,7 +32,12 @@ export function analyticsRoutes(
       // Page vue ou événement, envoyé en fire-and-forget : 204 même si le hit est écarté (bot…).
       .post('/track', throttle(TRACK_THROTTLE), async (c) => {
         const dto = await jsonBody(c, TrackEventDto);
-        await tracker.track(dto, clientIp(c), c.req.header('user-agent') ?? '');
+        await tracker.track(
+          dto,
+          clientIp(c),
+          c.req.header('user-agent') ?? '',
+          visitorCountry(c),
+        );
         return c.body(null, 204);
       })
 

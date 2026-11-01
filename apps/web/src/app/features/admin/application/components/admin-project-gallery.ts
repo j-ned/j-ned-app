@@ -19,6 +19,7 @@ import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gat
 import { moveItem } from '@shared/collections/move-item';
 import type { ProjectImage } from '@features/projects/domain/models/project.model';
 import { ToastStore } from '@core/notifications/toast-store';
+import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
 import { AdminGalleryImageItem } from './admin-gallery-image-item';
 import { AdminGalleryUploadForm } from './admin-gallery-upload-form';
 
@@ -26,11 +27,12 @@ const GALLERY_MAX = 12;
 const GALLERY_FULL_NOTICE = `${GALLERY_MAX} captures au plus\u00a0: supprimez-en une pour en ajouter une autre.`;
 
 const UPLOAD_ERRORS: Readonly<Record<number, string>> = {
-  413: "L'image dépasse 5 Mo.",
+  413: "L'image dépasse 4 Mo.",
   422: 'Image refusée\u00a0: format non pris en charge, ou galerie déjà complète.',
 };
 
 const uploadErrorDetail = (error: unknown): string =>
+  (error instanceof UploadRejectedError && error.message) ||
   (error instanceof HttpErrorResponse && UPLOAD_ERRORS[error.status]) ||
   "Erreur lors de l'ajout de la capture";
 

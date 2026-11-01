@@ -91,11 +91,11 @@ describe('cv routes (HTTP)', () => {
       expect(cv.upsert).not.toHaveBeenCalled();
     });
 
-    it('Given a file over 10 MB, When uploaded, Then 413', async () => {
+    it('Given a file over 4 MB, When uploaded, Then 413', async () => {
       const res = await call('/upload', {
         method: 'POST',
         body: form(
-          Buffer.alloc(10 * 1024 * 1024 + 1),
+          Buffer.alloc(4 * 1024 * 1024 + 1),
           'big.pdf',
           'application/pdf',
         ),

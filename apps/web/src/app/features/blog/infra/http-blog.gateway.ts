@@ -6,6 +6,7 @@ import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
 import type { ContentImage } from '../domain/models/content-image.model';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
+import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
 
 const resolveStorageUrl = (storageBase: string, url: string): string =>
   url.startsWith('http') ? url : `${storageBase}${url}`;
@@ -18,6 +19,7 @@ function resolvePost(storageBase: string, p: BlogPost): BlogPost {
 export class HttpBlogGateway extends BlogGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
+  private readonly prepareImage = inject(IMAGE_UPLOAD_PREPARER);
 
   private readonly _adminRefresh$ = new Subject<void>();
 
@@ -78,31 +80,33 @@ export class HttpBlogGateway extends BlogGateway {
   }
 
   uploadCoverImage(file: File, id: string): Observable<string> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.http
-      .post<{ key: string }>(`${this.apiUrl}/blog/posts/${id}/image`, formData, {
-        context: silentErrors(),
-      })
-      .pipe(map((res) => res.key));
+    return this.postImage<{ key: string }>(`${this.apiUrl}/blog/posts/${id}/image`, file).pipe(
+      map((res) => res.key),
+    );
   }
 
   uploadContentImage(file: File): Observable<ContentImage> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.http
-      .post<{
-        url: string;
-        width: number;
-        height: number;
-      }>(`${this.apiUrl}/blog/content-images`, formData, { context: silentErrors() })
-      .pipe(
-        map(({ url, width, height }) => ({
-          url: resolveStorageUrl(STORAGE_BASE_PATH, url),
-          width,
-          height,
-        })),
-      );
+    return this.postImage<{
+      url: string;
+      width: number;
+      height: number;
+    }>(`${this.apiUrl}/blog/content-images`, file).pipe(
+      map(({ url, width, height }) => ({
+        url: resolveStorageUrl(STORAGE_BASE_PATH, url),
+        width,
+        height,
+      })),
+    );
+  }
+
+  private postImage<T>(url: string, file: File): Observable<T> {
+    return this.prepareImage(file).pipe(
+      switchMap((prepared) => {
+        const formData = new FormData();
+        formData.append('file', prepared);
+        return this.http.post<T>(url, formData, { context: silentErrors() });
+      }),
+    );
   }
 
   likePost(slug: string): Observable<{ likesCount: number }> {

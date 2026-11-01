@@ -18,6 +18,7 @@ import type { Project, ProjectImage, ProjectInput } from '../../domain/models/pr
 import { isShowcaseProject } from '../../domain/is-showcase-project';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
+import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
 import { toProject, toProjectImage } from '../project.adapter';
 import type { ProjectDto, ProjectImageDto } from '../project.types';
 
@@ -25,6 +26,7 @@ import type { ProjectDto, ProjectImageDto } from '../project.types';
 export class HttpProjectsGateway extends ProjectsGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
+  private readonly prepareImage = inject(IMAGE_UPLOAD_PREPARER);
 
   private readonly _refresh$ = new Subject<void>();
 
@@ -98,24 +100,32 @@ export class HttpProjectsGateway extends ProjectsGateway {
   }
 
   uploadImage(file: File, id: string): Observable<string> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.http
-      .post<{ key: string }>(`${this.apiUrl}/projects/${id}/image`, formData, {
-        context: silentErrors(),
-      })
-      .pipe(map((res) => res.key));
+    return this.prepareImage(file).pipe(
+      switchMap((prepared) => {
+        const formData = new FormData();
+        formData.append('file', prepared);
+        return this.http.post<{ key: string }>(`${this.apiUrl}/projects/${id}/image`, formData, {
+          context: silentErrors(),
+        });
+      }),
+      map((res) => res.key),
+    );
   }
 
   uploadGalleryImage(projectId: string, file: File, alt: string): Observable<ProjectImage> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('alt', alt);
-    return this.http
-      .post<ProjectImageDto>(`${this.apiUrl}/projects/${projectId}/images`, formData, {
-        context: silentErrors(),
-      })
-      .pipe(map((dto) => toProjectImage(dto, STORAGE_BASE_PATH)));
+    return this.prepareImage(file).pipe(
+      switchMap((prepared) => {
+        const formData = new FormData();
+        formData.append('file', prepared);
+        formData.append('alt', alt);
+        return this.http.post<ProjectImageDto>(
+          `${this.apiUrl}/projects/${projectId}/images`,
+          formData,
+          { context: silentErrors() },
+        );
+      }),
+      map((dto) => toProjectImage(dto, STORAGE_BASE_PATH)),
+    );
   }
 
   updateGalleryImageAlt(projectId: string, imageId: string, alt: string): Observable<ProjectImage> {

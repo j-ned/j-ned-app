@@ -1,10 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { firstValueFrom, type Observable } from 'rxjs';
+import { firstValueFrom, of, throwError, type Observable } from 'rxjs';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { HttpBlogGateway } from './http-blog.gateway';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { provideImageUploadPreparer } from '@shared/testing/image-upload-preparer';
+import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
+import type { ImageUploadPreparer } from '@shared/upload/image-upload-preparer';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
 import { ToastStore } from '@core/notifications/toast-store';
 import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
@@ -12,13 +15,17 @@ import { makeBlogPost } from '../testing/blog-post-builders';
 
 const BASE = 'https://api.test';
 
-function configure(): { gateway: HttpBlogGateway; httpMock: HttpTestingController } {
+function configure(preparer?: ImageUploadPreparer): {
+  gateway: HttpBlogGateway;
+  httpMock: HttpTestingController;
+} {
   TestBed.configureTestingModule({
     providers: [
       HttpBlogGateway,
       provideHttpClient(),
       provideHttpClientTesting(),
       { provide: API_BASE_URL, useValue: BASE },
+      provideImageUploadPreparer(preparer),
     ],
   });
   return {
@@ -301,6 +308,7 @@ describe('HttpBlogGateway: écritures de l’admin derrière l’intercepteur de
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: BASE },
         { provide: ToastStore, useValue: { add } },
+        provideImageUploadPreparer(),
       ],
     });
     return {
@@ -401,4 +409,56 @@ describe('HttpBlogGateway: écritures de l’admin derrière l’intercepteur de
     ).toEqual({ status: 500, toasts: 1 });
     httpController.verify();
   });
+});
+
+describe('HttpBlogGateway: image preparation before upload', () => {
+  const original = new File(['huge'], 'photo.png', { type: 'image/png' });
+  const prepared = new File(['small'], 'photo.webp', { type: 'image/webp' });
+  const uploads: readonly {
+    readonly write: string;
+    readonly url: string;
+    readonly call: (gateway: HttpBlogGateway, file: File) => Observable<unknown>;
+  }[] = [
+    {
+      write: 'uploadCoverImage',
+      url: `${BASE}/blog/posts/b-1/image`,
+      call: (gateway, file) => gateway.uploadCoverImage(file, 'b-1'),
+    },
+    {
+      write: 'uploadContentImage',
+      url: `${BASE}/blog/content-images`,
+      call: (gateway, file) => gateway.uploadContentImage(file),
+    },
+  ];
+
+  it.each(uploads)(
+    'Given the preparer shrinks the image When $write is called Then the prepared file is the one posted',
+    async ({ url, call }) => {
+      const { gateway, httpMock } = configure((file) => of(file === original ? prepared : file));
+
+      const outcome = firstValueFrom(call(gateway, original)).catch(() => null);
+      const request = httpMock.expectOne(url);
+      const body = request.request.body as FormData;
+      request.flush({}, { status: 500, statusText: 'Ignored' });
+      await outcome;
+
+      expect(body.get('file')).toBe(prepared);
+      httpMock.verify();
+    },
+  );
+
+  it.each(uploads)(
+    'Given the preparer refuses the image When $write is called Then the refusal reaches the caller and nothing is sent',
+    async ({ call }) => {
+      const refusal = new UploadRejectedError("L'image dépasse 4\u00a0Mo, même compressée.");
+      const { gateway, httpMock } = configure(() => throwError(() => refusal));
+
+      const failure = await firstValueFrom(call(gateway, original)).catch(
+        (error: unknown) => error,
+      );
+
+      expect(failure).toBe(refusal);
+      httpMock.verify();
+    },
+  );
 });

@@ -152,8 +152,8 @@ describe('profile routes', () => {
     const post = (data?: FormData) =>
       app.request('/api/profile/portrait', { method: 'POST', body: data });
 
-    it('accepts up to 5 MB of WebP, JPEG, PNG or AVIF', () => {
-      expect(PORTRAIT_UPLOAD.maxBytes).toBe(5 * 1024 * 1024);
+    it('accepts up to 4 MB of WebP, JPEG, PNG or AVIF', () => {
+      expect(PORTRAIT_UPLOAD.maxBytes).toBe(4 * 1024 * 1024);
       expect(PORTRAIT_UPLOAD.fileType.source).toBe(
         '^image\\/(webp|jpeg|png|avif)$',
       );
@@ -199,7 +199,7 @@ describe('profile routes', () => {
       expect(portrait.replace).not.toHaveBeenCalled();
     });
 
-    it('Given a file just over 5 MB, When sent, Then 413 and the service is not called', async () => {
+    it('Given a file just over 4 MB, When sent, Then 413 and the service is not called', async () => {
       const big = Buffer.concat([
         PNG,
         Buffer.alloc(PORTRAIT_UPLOAD.maxBytes + 1024 - PNG.length),

@@ -8,6 +8,7 @@ import {
   uuidParam,
   type AppEnv,
   type UploadedFile,
+  UPLOAD_MAX_BYTES,
 } from '../common/http';
 import { PayloadTooLargeException } from '../common/http-errors';
 import {
@@ -23,9 +24,9 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import type { ProjectImagesService } from './project-images.service';
 import type { ProjectsService } from './projects.service';
 
-/** Image de couverture ou de galerie : 5 Mo au plus, WebP/JPEG/PNG/AVIF (vérifié sur les octets). */
+/** Image de couverture ou de galerie : 4 Mo au plus, WebP/JPEG/PNG/AVIF (vérifié sur les octets). */
 export const PROJECT_IMAGE_UPLOAD = {
-  maxBytes: 5 * 1024 * 1024,
+  maxBytes: UPLOAD_MAX_BYTES,
   fileType: /^image\/(webp|jpeg|png|avif)$/,
 } as const;
 
