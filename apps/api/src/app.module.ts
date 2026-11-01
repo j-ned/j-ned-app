@@ -1,0 +1,116 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { LoggerModule } from 'nestjs-pino';
+import { AppConfigModule } from './config/app-config.module';
+import { AppConfigService } from './config/app-config.service';
+import { validateEnv } from './config/env.validation';
+import { LOGGER_ROUTES } from './config/logger-routes';
+import {
+  LOG_REDACT_PATHS,
+  redactLogArguments,
+  serializeError,
+  serializeRequest,
+} from './common/log-redact';
+import { DatabaseModule } from './database/database.module';
+import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
+import { StorageModule } from './storage/storage.module';
+import { ProjectsModule } from './projects/projects.module';
+import { BlogModule } from './blog/blog.module';
+import { ProfileModule } from './profile/profile.module';
+import { WorkshopGuideModule } from './workshop-guide/workshop-guide.module';
+import { MailerModule } from './mailer/mailer.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { SentryModule, SentryGlobalFilter } from '@sentry/nestjs/setup';
+import * as Sentry from '@sentry/nestjs';
+import { ContactModule } from './contact/contact.module';
+import { CvModule } from './cv/cv.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { RuntimeConfigModule } from './runtime-config/runtime-config.module';
+
+@Module({
+  imports: [
+    SentryModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnv,
+      envFilePath: ['.env'],
+    }),
+    AppConfigModule,
+    LoggerModule.forRootAsync({
+      imports: [AppConfigModule],
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService) => ({
+        forRoutes: LOGGER_ROUTES,
+        pinoHttp: {
+          level: config.logLevel,
+          transport: config.isDevelopment
+            ? {
+                target: 'pino-pretty',
+                options: { singleLine: true, colorize: true },
+              }
+            : undefined,
+          redact: [...LOG_REDACT_PATHS],
+          autoLogging: {
+            ignore: (req: { url?: string }) => req.url === '/api/health',
+          },
+          customProps: () => ({ context: 'HTTP' }),
+          serializers: { req: serializeRequest, err: serializeError },
+          hooks: {
+            logMethod(rawArgs, method, level) {
+              const args = redactLogArguments(rawArgs) as typeof rawArgs;
+              if (level >= 50) {
+                const [first, second] = args as [unknown, string?];
+                const ctx =
+                  typeof first === 'object' && first !== null
+                    ? (first as Record<string, unknown>)
+                    : undefined;
+                // Skip if an exception is attached: SentryGlobalFilter +
+                // @SentryExceptionCaptured already capture it with stack trace.
+                const alreadyCapturedAsException =
+                  ctx !== undefined && 'err' in ctx;
+                if (!alreadyCapturedAsException) {
+                  const msg =
+                    typeof first === 'string' ? first : (second ?? 'pino-log');
+                  Sentry.captureMessage(msg, {
+                    level: level >= 50 ? 'error' : 'warning',
+                    extra: ctx ? { context: ctx } : undefined,
+                  });
+                }
+              }
+              method.apply(this, args);
+            },
+          },
+        },
+      }),
+    }),
+    DatabaseModule,
+    HealthModule,
+    AuthModule,
+    StorageModule,
+    ProjectsModule,
+    BlogModule,
+    ProfileModule,
+    WorkshopGuideModule,
+    MailerModule,
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 10 }]),
+    ContactModule,
+    CvModule,
+    ScheduleModule.forRoot(),
+    AnalyticsModule,
+    RuntimeConfigModule,
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
+})
+export class AppModule {}

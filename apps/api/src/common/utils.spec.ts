@@ -1,0 +1,183 @@
+import { Logger } from '@nestjs/common';
+import {
+  isUniqueViolation,
+  slugify,
+  fireAndForget,
+  parseDurationMs,
+  subDays,
+  subMinutes,
+  formatUtcDate,
+  startOfUtcDay,
+  endOfUtcDay,
+} from './utils';
+
+describe('slugify', () => {
+  it('convertit en kebab-case lowercase', () => {
+    expect(slugify('Mon site')).toBe('mon-site');
+  });
+
+  it('strippe les accents français', () => {
+    expect(slugify('Mon Été 2026')).toBe('mon-ete-2026');
+  });
+
+  it('compresse les séparateurs multiples', () => {
+    expect(slugify('  hello---world  ')).toBe('hello-world');
+  });
+
+  it('retourne chaîne vide si aucun caractère valide', () => {
+    expect(slugify('!!@@##')).toBe('');
+  });
+});
+
+describe('isUniqueViolation', () => {
+  it('détecte un conflit Postgres avec column hint', () => {
+    const err = { code: '23505', constraint_name: 'project_slug_unique' };
+    expect(isUniqueViolation(err, 'slug')).toBe(true);
+  });
+
+  it('rejette si constraint ne contient pas le hint', () => {
+    const err = { code: '23505', constraint_name: 'other_constraint' };
+    expect(isUniqueViolation(err, 'slug')).toBe(false);
+  });
+
+  it('rejette si code Postgres différent', () => {
+    expect(isUniqueViolation({ code: '99999' })).toBe(false);
+  });
+
+  it('rejette si entrée non-objet', () => {
+    expect(isUniqueViolation(null)).toBe(false);
+  });
+
+  it('détecte un conflit imbriqué dans DrizzleQueryError.cause (sans hint)', () => {
+    // Drizzle wraps the raw PostgresError in a DrizzleQueryError whose
+    // `.cause` carries the original error (with code + constraint_name).
+    const drizzleErr = new Error('Failed query: ...');
+    (drizzleErr as unknown as Record<string, unknown>).cause = {
+      code: '23505',
+      constraint_name: 'disabled_date_date_unique',
+    };
+    expect(isUniqueViolation(drizzleErr)).toBe(true);
+  });
+
+  it('détecte un conflit imbriqué avec column hint', () => {
+    const drizzleErr = new Error('Failed query: ...');
+    (drizzleErr as unknown as Record<string, unknown>).cause = {
+      code: '23505',
+      constraint_name: 'project_slug_unique',
+    };
+    expect(isUniqueViolation(drizzleErr, 'slug')).toBe(true);
+  });
+
+  it('rejette si le hint ne correspond pas dans la cause imbriquée', () => {
+    const drizzleErr = new Error('Failed query: ...');
+    (drizzleErr as unknown as Record<string, unknown>).cause = {
+      code: '23505',
+      constraint_name: 'other_unique_constraint',
+    };
+    expect(isUniqueViolation(drizzleErr, 'slug')).toBe(false);
+  });
+});
+
+describe('fireAndForget', () => {
+  it('logs the error context when the promise rejects', async () => {
+    const logger = new Logger('test');
+    const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
+    const err = new Error('boom');
+
+    fireAndForget(Promise.reject(err), logger, 'context-X');
+    await new Promise((r) => setImmediate(r));
+
+    expect(errorSpy).toHaveBeenCalledWith('context-X', err.stack);
+  });
+
+  it('does not log when the promise resolves', async () => {
+    const logger = new Logger('test');
+    const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
+
+    fireAndForget(Promise.resolve(42), logger, 'context-Y');
+    await new Promise((r) => setImmediate(r));
+
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('stringifies non-Error rejections', async () => {
+    const logger = new Logger('test');
+    const errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
+
+    // Rejet volontairement non-Error : on teste ici le fallback String(err) de fireAndForget.
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+    fireAndForget(Promise.reject('plain-string'), logger, 'context-Z');
+    await new Promise((r) => setImmediate(r));
+
+    expect(errorSpy).toHaveBeenCalledWith('context-Z', 'plain-string');
+  });
+});
+
+describe('parseDurationMs', () => {
+  it.each([
+    ['500ms', 500],
+    ['10s', 10_000],
+    ['2m', 120_000],
+    ['3h', 10_800_000],
+    ['1d', 86_400_000],
+  ])('parses "%s" as %d ms', (input, expected) => {
+    expect(parseDurationMs(input)).toBe(expected);
+  });
+
+  it('throws on invalid input', () => {
+    expect(() => parseDurationMs('abc')).toThrow(/Invalid duration/);
+    expect(() => parseDurationMs('10 weeks')).toThrow(/Invalid duration/);
+  });
+
+  it('is case-insensitive on the unit', () => {
+    expect(parseDurationMs('5S')).toBe(5_000);
+  });
+});
+
+describe('subDays / subMinutes', () => {
+  it('subDays subtracts N days from the given date', () => {
+    const ref = new Date('2026-05-06T12:00:00Z');
+    expect(subDays(ref, 1).toISOString()).toBe('2026-05-05T12:00:00.000Z');
+    expect(subDays(ref, 30).toISOString()).toBe('2026-04-06T12:00:00.000Z');
+  });
+
+  it('subMinutes subtracts N minutes from the given date', () => {
+    const ref = new Date('2026-05-06T12:00:00Z');
+    expect(subMinutes(ref, 5).toISOString()).toBe('2026-05-06T11:55:00.000Z');
+    expect(subMinutes(ref, 60).toISOString()).toBe('2026-05-06T11:00:00.000Z');
+  });
+});
+
+// Jours UTC : `daily_stat.date` et l'empreinte de session sont des jours UTC, quel que soit le
+// fuseau du processus. Instants choisis près de minuit pour différer de toute date locale.
+describe('formatUtcDate', () => {
+  it.each([
+    ['2026-05-06T23:30:00.000Z', '2026-05-06'],
+    ['2026-05-06T00:15:00.000Z', '2026-05-06'],
+    ['2026-01-09T12:00:00.000Z', '2026-01-09'],
+  ])('formats %s as the UTC day %s', (instant, day) => {
+    expect(formatUtcDate(new Date(instant))).toBe(day);
+  });
+});
+
+describe('startOfUtcDay / endOfUtcDay', () => {
+  it.each([['2026-05-06T23:30:45.123Z'], ['2026-05-06T00:15:00.000Z']])(
+    'bounds the UTC day of %s',
+    (instant) => {
+      expect(startOfUtcDay(new Date(instant)).toISOString()).toBe(
+        '2026-05-06T00:00:00.000Z',
+      );
+      expect(endOfUtcDay(new Date(instant)).toISOString()).toBe(
+        '2026-05-06T23:59:59.999Z',
+      );
+    },
+  );
+
+  it('does not mutate the input date', () => {
+    const d = new Date('2026-05-06T15:30:45.123Z');
+    const before = d.toISOString();
+    startOfUtcDay(d);
+    endOfUtcDay(d);
+    expect(d.toISOString()).toBe(before);
+  });
+});

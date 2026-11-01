@@ -1,0 +1,198 @@
+import { createHash, createHmac } from 'node:crypto';
+import { isIPv4, isIPv6 } from 'node:net';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { and, eq, gte, sql } from 'drizzle-orm';
+import { isbot } from 'isbot';
+import geoip from 'geoip-lite';
+import { UAParser } from 'ua-parser-js';
+import { AppConfigService } from '../config/app-config.service';
+import { DRIZZLE } from '../database/drizzle.constants';
+import type { Database } from '../database/drizzle.types';
+import { pageView, analyticsEvent } from '../database/schema';
+import { TrackEventDto } from './dto/track-event.dto';
+import { normalizeReferrer } from './referrer';
+
+// RFC1918 + loopback + link-local + IPv6 ULA. Strips ::ffff: IPv4-mapped prefix.
+export function isPrivateIp(raw: string): boolean {
+  if (!raw) return false;
+
+  const lower = raw.toLowerCase();
+  const ip = lower.startsWith('::ffff:') ? lower.slice(7) : lower;
+
+  if (isIPv4(ip)) {
+    const [a, b] = ip.split('.').map(Number);
+    return (
+      a === 127 ||
+      a === 10 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 169 && b === 254)
+    );
+  }
+
+  if (isIPv6(ip)) {
+    return (
+      ip === '::1' ||
+      /^fe[89ab][0-9a-f]/.test(ip) || // fe80::/10 link-local
+      /^f[cd]/.test(ip) // fc00::/7 ULA
+    );
+  }
+
+  return false;
+}
+
+/** Une ancre (`#demande`) n'est pas une page : `/offres/x#demande` est `/offres/x`. */
+function withoutFragment(url: string): string {
+  return url.split('#', 1)[0];
+}
+
+function isExcludedUrl(url: string): boolean {
+  return url === '/login' || url === '/admin' || url.startsWith('/admin/');
+}
+
+@Injectable()
+export class AnalyticsTrackerService {
+  private readonly logger = new Logger(AnalyticsTrackerService.name);
+
+  /**
+   * Clé de l'empreinte de session, dérivée du secret JWT : rien de plus à configurer, et distincte
+   * de la clé qui signe les sessions. Sans elle, l'empreinte ne se recalcule pas depuis une IP.
+   */
+  private readonly hashKey: Buffer;
+
+  constructor(
+    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly cfg: AppConfigService,
+  ) {
+    this.hashKey = createHash('sha256')
+      .update(`analytics|${cfg.jwtSecret}`)
+      .digest();
+  }
+
+  /**
+   * Track une page-view ou un custom event. Ne throw JAMAIS - toute erreur
+   * interne est loggée et avalée pour ne pas bloquer le client.
+   */
+  async track(event: TrackEventDto, ip: string, ua: string): Promise<void> {
+    try {
+      const dto =
+        event.url === undefined
+          ? event
+          : { ...event, url: withoutFragment(event.url) };
+
+      if (isbot(ua)) {
+        return;
+      }
+
+      if (isPrivateIp(ip)) {
+        return;
+      }
+
+      if (
+        (dto.type === 'page_view' || dto.type === 'page_duration') &&
+        dto.url &&
+        isExcludedUrl(dto.url)
+      ) {
+        return;
+      }
+
+      const day = new Date().toISOString().slice(0, 10);
+      // HMAC et non SHA-256 brut : avec ~4 milliards d'IPv4, une empreinte non clée se renverse
+      // en quelques minutes pour un user-agent donné. Le jour la renouvelle chaque jour.
+      const sessionHash = createHmac('sha256', this.hashKey)
+        .update(`${ip}|${ua}|${day}`)
+        .digest('hex');
+
+      const parsed = new UAParser(ua).getResult();
+      const browser =
+        parsed.browser.name && parsed.browser.version
+          ? `${parsed.browser.name} ${parsed.browser.version}`
+          : null;
+      const os =
+        parsed.os.name && parsed.os.version
+          ? `${parsed.os.name} ${parsed.os.version}`
+          : null;
+
+      const country = geoip.lookup(ip)?.country ?? null;
+
+      if (dto.type === 'page_view' || dto.type === 'page_duration') {
+        await this.upsertPageView(dto, sessionHash, browser, os, country);
+      } else {
+        await this.insertCustomEvent(dto, sessionHash);
+      }
+    } catch (err) {
+      const e = err as Error & { cause?: Error };
+      const causeMsg = e.cause?.message ? ` | cause: ${e.cause.message}` : '';
+      this.logger.error(`track failed: ${e.message}${causeMsg}`, e.stack);
+    }
+  }
+
+  private async upsertPageView(
+    dto: TrackEventDto,
+    sessionHash: string,
+    browser: string | null,
+    os: string | null,
+    country: string | null,
+  ): Promise<void> {
+    const todayStart = new Date(
+      `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`,
+    );
+    const [existing] = await this.db
+      .select()
+      .from(pageView)
+      .where(
+        and(
+          eq(pageView.sessionHash, sessionHash),
+          eq(pageView.url, dto.url!),
+          gte(pageView.createdAt, todayStart),
+        ),
+      )
+      .limit(1);
+
+    // Une durée s'ajoute à la page vue du jour ; sans elle (envoyée après minuit UTC, nouvelle
+    // empreinte), elle ne crée pas de visite : ce serait un rebond « accès direct » fabriqué.
+    if (dto.type === 'page_duration') {
+      if (existing) {
+        // Incrément calculé par Postgres : deux beacons simultanés (`visibilitychange` puis
+        // `pagehide`) s'additionnent, alors qu'une lecture suivie d'une réécriture en perdrait un.
+        await this.db
+          .update(pageView)
+          .set({
+            duration: sql`COALESCE(${pageView.duration}, 0) + ${dto.duration ?? 0}`,
+          })
+          .where(eq(pageView.id, existing.id));
+      }
+      return;
+    }
+
+    // Page déjà vue aujourd'hui : une seule ligne, et une durée inconnue ne devient pas 0 s.
+    if (existing) {
+      return;
+    }
+
+    await this.db.insert(pageView).values({
+      sessionHash,
+      url: dto.url!,
+      // Les origines CORS sont exactement les hôtes du site : un referrer qui en vient est une
+      // navigation interne, pas une provenance.
+      referrer: normalizeReferrer(dto.referrer, this.cfg.corsOrigins),
+      browser,
+      os,
+      country,
+      duration: dto.duration ?? null,
+    });
+  }
+
+  private async insertCustomEvent(
+    dto: TrackEventDto,
+    sessionHash: string,
+  ): Promise<void> {
+    await this.db.insert(analyticsEvent).values({
+      sessionHash,
+      eventType: dto.type,
+      entityId: dto.entityId ?? null,
+      entityTitle: dto.entityTitle ?? null,
+      metadata: dto.metadata ?? null,
+    });
+  }
+}
