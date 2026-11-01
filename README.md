@@ -30,8 +30,9 @@ docker buildx bake web-ci       # site : étage de tests + image de production (
 docker buildx bake api --load   # API (nest-portfolio-app:ci)
 ```
 
-La CI publie sous les noms d'images d'avant le monorepo (`ghcr.io/j-ned/ng-portfolio-app`,
-`ghcr.io/j-ned/nest-portfolio-app`) : Dokploy n'a rien à changer.
+La CI publie `ghcr.io/j-ned/j-ned-app-web` et `ghcr.io/j-ned/j-ned-app-api` (tags `latest` et
+`sha-…`), que Dokploy tire. Les anciens paquets (`ng-portfolio-app`, `nest-portfolio-app`) restent liés
+aux anciens dépôts et gardent les images d'avant le monorepo, pour revenir en arrière.
 
 ## CI
 

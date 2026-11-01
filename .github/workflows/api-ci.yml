@@ -181,7 +181,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Nom d'image d'avant le monorepo : Dokploy tire toujours celle-ci.
+      # Paquet créé et publié par ce dépôt (les anciens paquets restent liés aux anciens dépôts).
       # Même Dockerfile et même cache que le job `docker` : toutes les couches viennent du cache.
       - name: Push image
         uses: docker/build-push-action@v6
@@ -190,8 +190,11 @@ jobs:
           file: apps/api/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/nest-portfolio-app:latest
-            ghcr.io/${{ github.repository_owner }}/nest-portfolio-app:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/j-ned-app-api:latest
+            ghcr.io/${{ github.repository_owner }}/j-ned-app-api:sha-${{ github.sha }}
+          # Relie le paquet GHCR à ce dépôt (page et visibilité du paquet).
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
           cache-from: type=gha
 
       # Dokploy tire `latest` et redémarre le conteneur (le webhook d'une application « image »

@@ -449,7 +449,7 @@ pnpm ng generate            # Schematics
 # Replique locale des gates Dokploy / CI (.github/workflows/web-ci.yml, à la racine du monorepo)
 pnpm install --frozen-lockfile                 # echoue si le lockfile est incoherent
 pnpm run build --configuration production      # sitemap + rss + build SSR + prerender
-docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..   # contexte = racine du monorepo ; l'image que la CI publie sur GHCR (ghcr.io/j-ned/ng-portfolio-app) et que Dokploy tire
+docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..   # contexte = racine du monorepo ; l'image que la CI publie sur GHCR (ghcr.io/j-ned/j-ned-app-web) et que Dokploy tire
 (cd ../.. && docker buildx bake web-ci)         # replique exacte de la CI : etage test + image, en parallele
 
 # Audit axe (WCAG 2.0/2.1/2.2 A et AA, zero violation, ADR-0025) : hors PR depuis le 2026-10-26,
