@@ -323,7 +323,7 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 7. **PR paralleles** : une branche mergee est morte (tout complement = nouvelle branche depuis `master`) ; "independantes" se prouve par intersection vide de `git diff --name-only master...<branche>` entre PR (`package.json`, lockfile et fichiers reformates comptent) ; sinon annoncer l'ordre de merge et le rebase.
 8. **Gates = ceux du Dockerfile** : `pnpm install --frozen-lockfile` puis `pnpm run build --configuration production`, en local avant chaque PR et dans la CI. `pnpm test` seul ne couvre ni le lockfile ni le prerender.
 9. **Conflits de merge = en local, jamais dans l'editeur GitHub** : `git merge origin/master` sur la branche, resolution en gardant **les deux** ajouts quand les branches ecrivent au meme endroit (fin de fichier, meme liste de providers, meme `enum`), relecture du diff du commit de merge (`git diff HEAD~1 HEAD` : il ne doit rien retirer de `master`), gates de l'item 8, push, et merge seulement une fois la CI verte **sur ce commit de merge**. Une resolution faite dans l'UI n'est verifiee par personne : la CI a valide la branche d'avant, le build Docker de `master` decouvre la casse (API #38 → #39, `contentHash` perdu).
-10. **Ordre de deploiement API puis front** : le build front ne lit plus l'API (spec 022 : pages de contenu, `sitemap.xml` et `rss.xml` rendus a la requete par le serveur Node du conteneur, ADR-0024) ; le front lit l'API **a l'execution** (`API_UPSTREAM`, reseau Docker). Une PR front qui depend d'une evolution de l'API se merge **apres** que le nouveau conteneur API repond (tester l'endpoint en prod, ou `docker ps` sur `homeserver`) : sinon les pages rendues a la requete appellent un endpoint absent (503, nginx sert la copie perimee tant qu'elle existe). Verifier en prod apres deploiement les routes rendues (`X-Cache-Status`, CSP sans `'unsafe-inline'`, `sitemap.xml`/`rss.xml` valides), pas seulement `dist/`.
+10. **Deploiement Vercel atomique (ADR-0036)** : un merge sur `master` deploie les services `api` et `web` ensemble (Vercel depuis Git, preview par PR) ; la CI ne publie ni ne deploie rien. Le rendu lit l'API **a l'execution** (`API_UPSTREAM`, binding de service). Verifier en prod apres deploiement les routes rendues (`X-Vercel-Cache`, CSP sans `'unsafe-inline'`, `sitemap.xml`/`rss.xml` valides), pas seulement `dist/`.
 
 ### Task management
 1. Plan dans `tasks/todo.md` (cases a cocher)
@@ -446,10 +446,10 @@ pnpm test                   # Vitest
 pnpm lint                   # ng lint (gate)
 pnpm ng generate            # Schematics
 
-# Replique locale des gates Dokploy / CI (.github/workflows/web-ci.yml, à la racine du monorepo)
+# Replique locale des gates de la CI (.github/workflows/web-ci.yml, à la racine du monorepo)
 pnpm install --frozen-lockfile                 # echoue si le lockfile est incoherent
 pnpm run build --configuration production      # sitemap + rss + build SSR + prerender
-docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..   # contexte = racine du monorepo ; l'image que la CI publie sur GHCR (ghcr.io/j-ned/j-ned-app-web) et que Dokploy tire
+docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..   # contexte = racine du monorepo ; harnais de test de la CI (smoke, axe), plus deploye (Vercel, ADR-0036)
 (cd ../.. && docker buildx bake web-ci)         # replique exacte de la CI : etage test + image, en parallele
 
 # Audit axe (WCAG 2.0/2.1/2.2 A et AA, zero violation, ADR-0025) : hors PR depuis le 2026-10-26,
