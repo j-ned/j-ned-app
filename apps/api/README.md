@@ -217,7 +217,7 @@ Liste réelle (`package.json`) - pas de script `s3:*` (démarrer MinIO à la mai
 
 Module d'infrastructure S3-compatible, consommé par Projects, Blog, Profile et CV.
 
-**Délais** (`src/storage/s3-client.ts`, `S3_TIMEOUTS`) : connexion 5 s, requête 30 s avec `throwOnRequestTimeout` (le SDK n'impose aucune borne par défaut et ne ferait qu'un warning), 3 tentatives au plus. 30 s couvrent le plus gros envoi (CV, 10 Mo) dès ~3 Mbit/s montants ; un stockage bloqué donne une erreur au lieu de tenir la requête, et le verrou du portrait, indéfiniment.
+**Délais** (`src/storage/s3-client.ts`, `S3_TIMEOUTS`) : connexion 5 s, requête 30 s avec `throwOnRequestTimeout` (le SDK n'impose aucune borne par défaut et ne ferait qu'un warning), 3 tentatives au plus. 30 s couvrent le plus gros envoi (4 Mo) dès ~3 Mbit/s montants ; un stockage bloqué donne une erreur au lieu de tenir la requête, et le verrou du portrait, indéfiniment.
 
 **Stack** : `@aws-sdk/client-s3` v3. Dev local : container MinIO (`compose.yaml`, ports 9000 API / 9001 console, bucket `portfolio-storage` initialisé en anonymous-read par le service `minio-init`). Prod : Cloudflare R2 (visé, non figé dans le code - juste un endpoint S3-compatible).
 
@@ -240,14 +240,14 @@ CRUD admin des projets affichés sur le portfolio.
 
 **6 endpoints sous `/api/projects`** :
 
-| Méthode | Chemin                | Auth | Rôle                                                                                                                                                                                                      |
-| ------- | --------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET     | `/projects`           | ❌   | Liste publique. Filtres `?category=`, `?featured=true`. Tri `order ASC, createdAt DESC`.                                                                                                                  |
-| GET     | `/projects/:id`       | ❌   | 404 si absent.                                                                                                                                                                                            |
-| POST    | `/projects`           | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                                          |
-| PATCH   | `/projects/:id`       | ✅   | Met à jour. Re-slugifie si `title` change. `image: null` supprime l'image S3 (via `@Equals(null)` - pas de valeur arbitraire acceptée).                                                                   |
-| DELETE  | `/projects/:id`       | ✅   | Supprime le projet + son image S3 si présente.                                                                                                                                                            |
-| POST    | `/projects/:id/image` | ✅   | Upload multipart (`file`, max 5MB, MIME whitelist `image/webp\|jpeg\|png\|avif`, 422 si invalide). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an). |
+| Méthode | Chemin                | Auth | Rôle                                                                                                                                                                                                       |
+| ------- | --------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/projects`           | ❌   | Liste publique. Filtres `?category=`, `?featured=true`. Tri `order ASC, createdAt DESC`.                                                                                                                   |
+| GET     | `/projects/:id`       | ❌   | 404 si absent.                                                                                                                                                                                             |
+| POST    | `/projects`           | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                                           |
+| PATCH   | `/projects/:id`       | ✅   | Met à jour. Re-slugifie si `title` change. `image: null` supprime l'image S3 (via `@Equals(null)` - pas de valeur arbitraire acceptée).                                                                    |
+| DELETE  | `/projects/:id`       | ✅   | Supprime le projet + son image S3 si présente.                                                                                                                                                             |
+| POST    | `/projects/:id/image` | ✅   | Upload multipart (`file`, max 4 Mo, MIME whitelist `image/webp\|jpeg\|png\|avif`, 422 si invalide). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an). |
 
 **Lifecycle S3** : key = `projects/<id>.<ext>`. Ordre upload → update DB → cleanup ancienne clé (jamais l'inverse, pour ne jamais laisser une référence DB cassée). Les réponses API exposent une URL proxy (`getPublicUrl`), jamais la key S3 brute.
 
@@ -259,16 +259,16 @@ CRUD admin des articles de blog + endpoints publics de consultation/like. Le fro
 
 **8 endpoints sous `/api/blog/posts`** :
 
-| Méthode | Chemin                   | Auth | Rôle                                                                                                                                                                                     |
-| ------- | ------------------------ | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET     | `/blog/posts`            | ❌   | Liste publique des articles publiés, triés par `publishedAt DESC`.                                                                                                                       |
-| GET     | `/blog/posts/admin`      | ✅   | Liste complète (drafts inclus), triée par `createdAt DESC`.                                                                                                                              |
-| GET     | `/blog/posts/:slug`      | ❌   | Détail public d'un article **publié**. 404 sur un slug draft/dépublié/inconnu (pas de fuite de contenu non publié).                                                                      |
-| POST    | `/blog/posts`            | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                         |
-| PATCH   | `/blog/posts/:id`        | ✅   | Met à jour. Slug **figé** une fois l'article publié (ne se re-génère plus au changement de titre - casserait l'URL publique/le thread Giscus). `coverImage: null` supprime l'image S3.   |
-| DELETE  | `/blog/posts/:id`        | ✅   | Supprime l'article + son image S3.                                                                                                                                                       |
-| POST    | `/blog/posts/:id/image`  | ✅   | Upload multipart (`file`, max 5MB, MIME whitelist `image/webp\|jpeg\|png\|avif`). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an). |
-| POST    | `/blog/posts/:slug/like` | ❌   | Incrémente le compteur de likes d'un article **publié** (public, pas d'auth). 404 sur un slug draft/dépublié/inconnu.                                                                    |
+| Méthode | Chemin                   | Auth | Rôle                                                                                                                                                                                      |
+| ------- | ------------------------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/blog/posts`            | ❌   | Liste publique des articles publiés, triés par `publishedAt DESC`.                                                                                                                        |
+| GET     | `/blog/posts/admin`      | ✅   | Liste complète (drafts inclus), triée par `createdAt DESC`.                                                                                                                               |
+| GET     | `/blog/posts/:slug`      | ❌   | Détail public d'un article **publié**. 404 sur un slug draft/dépublié/inconnu (pas de fuite de contenu non publié).                                                                       |
+| POST    | `/blog/posts`            | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                          |
+| PATCH   | `/blog/posts/:id`        | ✅   | Met à jour. Slug **figé** une fois l'article publié (ne se re-génère plus au changement de titre - casserait l'URL publique/le thread Giscus). `coverImage: null` supprime l'image S3.    |
+| DELETE  | `/blog/posts/:id`        | ✅   | Supprime l'article + son image S3.                                                                                                                                                        |
+| POST    | `/blog/posts/:id/image`  | ✅   | Upload multipart (`file`, max 4 Mo, MIME whitelist `image/webp\|jpeg\|png\|avif`). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an). |
+| POST    | `/blog/posts/:slug/like` | ❌   | Incrémente le compteur de likes d'un article **publié** (public, pas d'auth). 404 sur un slug draft/dépublié/inconnu.                                                                     |
 
 **Lifecycle S3** : identique à Projects (key `blog/<id>.<ext>`, ordre upload → update DB → cleanup ancienne clé).
 
@@ -282,7 +282,7 @@ Contenu de `/about` édité depuis l'admin (spec front 021, ADR-0023 du front) :
 | ------- | ------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET     | `/profile`          | ❌   | Document à plat + `version`, `updatedAt`, `portrait` (URL proxy ou `null` = portrait par défaut du front). 120 req/min.                                                                                                                                                                                                          |
 | PUT     | `/profile`          | ✅   | Remplace le document entier (`UpdateProfileDto` + `version` lue). Document identique à la `version` courante ⇒ 200 sans écriture ; version périmée ⇒ **409** ; 400 sur clé inconnue, borne (`PROFILE_LIMITS`), liste vide, `id` non UUID ou dupliqué, icône hors `^[a-z0-9-]{1,40}$`, texte blanc ou contenant du balisage HTML. |
-| POST    | `/profile/portrait` | ✅   | Multipart `file` (max 5 Mo, `image/webp\|jpeg\|png\|avif`, 422 sinon). Recadré en **AVIF 640×800** (`ImageOptimizer.toPortrait`, `position: attention`), clé `profile/portrait-<sha8>.avif`. 200 + document. Envois simultanés sérialisés (verrou de ligne).                                                                     |
+| POST    | `/profile/portrait` | ✅   | Multipart `file` (max 4 Mo, `image/webp\|jpeg\|png\|avif`, 422 sinon). Recadré en **AVIF 640×800** (`ImageOptimizer.toPortrait`, `position: attention`), clé `profile/portrait-<sha8>.avif`. 200 + document. Envois simultanés sérialisés (verrou de ligne).                                                                     |
 | DELETE  | `/profile/portrait` | ✅   | Retour au portrait par défaut. 204 (sans portrait : 204 sans écriture).                                                                                                                                                                                                                                                          |
 
 **Lifecycle S3 du portrait** : une page `/about` déjà servie (onglet ouvert, cache HTTP) cite encore l'ancienne clé ; la supprimer à l'envoi casserait son image LCP. Chaque changement (envoi ou retrait) fait donc glisser les clés - courante → `previous_portrait_key` - et ne supprime que l'**avant-dernière** clé : au plus un fichier en trop dans le bucket, jamais une image citée absente.

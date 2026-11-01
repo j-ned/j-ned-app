@@ -129,6 +129,13 @@ export type UploadedFile = {
   readonly size: number;
 };
 
+/**
+ * Taille maximale d'un fichier envoyé (images et CV) : 4 Mo. Une fonction Vercel refuse tout corps de
+ * requête au-delà de 4,5 Mo (ADR-0036) ; l'enveloppe multipart tient dans la marge. L'admin réduit les
+ * images dans le navigateur avant de les envoyer.
+ */
+export const UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
+
 export type UploadRule = {
   readonly maxBytes: number;
   /** Type MIME attendu, vérifié sur les octets du fichier (magic number), pas sur l'en-tête. */
@@ -204,7 +211,8 @@ async function readLimited(
     if (done) break;
     total += value.byteLength;
     if (total > limit) {
-      await reader.cancel();
+      // Un flux déjà entièrement reçu est fermé : l'annuler lève, sans conséquence ici.
+      await reader.cancel().catch(() => undefined);
       onOverflow();
     }
     chunks.push(value);

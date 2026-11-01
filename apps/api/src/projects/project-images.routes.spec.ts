@@ -155,11 +155,11 @@ describe('project images routes (HTTP)', () => {
       expect(images.upload).not.toHaveBeenCalled();
     });
 
-    it('Given a file over 5 MB, When posted, Then 413 without calling the service', async () => {
+    it('Given a file over 4 MB, When posted, Then 413 without calling the service', async () => {
       const res = await post(
         form(
           alt('Alt'),
-          file(Buffer.alloc(5 * 1024 * 1024 + 1), 'image/png', 'big.png'),
+          file(Buffer.alloc(4 * 1024 * 1024 + 1), 'image/png', 'big.png'),
         ),
       );
       expect(res.status).toBe(413);

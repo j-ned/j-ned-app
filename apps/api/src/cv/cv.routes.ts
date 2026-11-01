@@ -1,13 +1,18 @@
 import { Hono } from 'hono';
 import { Readable } from 'node:stream';
 import type { RequireAuth } from '../auth/require-auth';
-import { reply, uploadedFile, type AppEnv } from '../common/http';
+import {
+  reply,
+  uploadedFile,
+  type AppEnv,
+  UPLOAD_MAX_BYTES,
+} from '../common/http';
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
 import type { CvService } from './cv.service';
 
-/** CV : 10 Mo au plus, PDF uniquement (vérifié sur les octets). */
+/** CV : 4 Mo au plus, PDF uniquement (vérifié sur les octets). */
 const CV_UPLOAD = {
-  maxBytes: 10 * 1024 * 1024,
+  maxBytes: UPLOAD_MAX_BYTES,
   fileType: /^application\/pdf$/,
 } as const;
 

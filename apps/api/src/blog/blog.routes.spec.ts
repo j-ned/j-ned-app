@@ -256,13 +256,13 @@ describe('blog routes (HTTP)', () => {
       expect(blog.uploadCoverImage).not.toHaveBeenCalled();
     });
 
-    it('Given a file over 5 MB, When posted, Then 413, even before the id check', async () => {
-      const big = form(Buffer.alloc(5 * 1024 * 1024 + 1));
+    it('Given a file over 4 MB, When posted, Then 413, even before the id check', async () => {
+      const big = form(Buffer.alloc(4 * 1024 * 1024 + 1));
       expect(
         (await call(`/posts/${ID}/image`, { method: 'POST', body: big }))
           .status,
       ).toBe(413);
-      const bigAgain = form(Buffer.alloc(5 * 1024 * 1024 + 1));
+      const bigAgain = form(Buffer.alloc(4 * 1024 * 1024 + 1));
       expect(
         (await call('/posts/bad/image', { method: 'POST', body: bigAgain }))
           .status,
