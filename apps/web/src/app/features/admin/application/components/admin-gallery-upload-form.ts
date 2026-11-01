@@ -27,7 +27,7 @@ import { imageAltSchema } from './admin-image-alt-schema';
           <app-file-dropzone
             accept="image/avif,image/webp,image/png,image/jpeg"
             label="Image de la capture"
-            helperText="AVIF, WebP, PNG ou JPEG, 5 Mo au plus"
+            helperText="AVIF, WebP, PNG ou JPEG, 4 Mo au plus"
             (fileSelected)="selectFile($event)"
             (cleared)="file.set(null)"
           />

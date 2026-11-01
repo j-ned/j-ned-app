@@ -10,6 +10,7 @@ import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
 import { accessibleName } from '@shared/testing/accessible-name';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settleBounded } from '@shared/testing/settle';
+import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
 import {
   BODY_IMAGE_FILE,
   imagePanel,
@@ -318,7 +319,7 @@ describe('AdminContentImageUpload: envoi', () => {
     }).toEqual({
       focusedDuring: true,
       focusedAfter: true,
-      error: "L'image dépasse 5\u00a0Mo.",
+      error: "L'image dépasse 4\u00a0Mo.",
       after: { ariaDisabled: 'false', disabled: false },
     });
   });
@@ -326,7 +327,7 @@ describe('AdminContentImageUpload: envoi', () => {
 
 describe('AdminContentImageUpload: échec de l’envoi', () => {
   it.each([
-    { status: 413, message: "L'image dépasse 5\u00a0Mo." },
+    { status: 413, message: "L'image dépasse 4\u00a0Mo." },
     {
       status: 422,
       message: 'Image refusée\u00a0: format non pris en charge ou fichier illisible.',
@@ -357,6 +358,22 @@ describe('AdminContentImageUpload: échec de l’envoi', () => {
       });
     },
   );
+
+  it('Given the browser cannot bring the image under 4 Mo When the image is sent Then the panel gives that reason and inserts nothing', async () => {
+    const reason = "L'image dépasse 4\u00a0Mo, même compressée.";
+    const rendered = await renderPanel(
+      vi.fn(() => throwError(() => new UploadRejectedError(reason))),
+    );
+    await pickImageFile(rendered.fixture);
+    await typeImageAlt(rendered.fixture, 'Schéma');
+
+    await pressImagePanel(rendered.fixture, 'markdown-image-submit');
+
+    expect({
+      error: alert(rendered.root, 'markdown-image-error'),
+      inserted: rendered.inserted,
+    }).toEqual({ error: { role: 'alert', text: reason }, inserted: [] });
+  });
 
   it('Given a refused upload When the image is sent again and accepted Then the same file is sent twice, the error is gone and the image is handed over', async () => {
     const upload: Upload = vi

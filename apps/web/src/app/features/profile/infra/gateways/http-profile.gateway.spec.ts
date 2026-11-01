@@ -1,9 +1,12 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import type { Observable } from 'rxjs';
+import { of, throwError, type Observable } from 'rxjs';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { provideImageUploadPreparer } from '@shared/testing/image-upload-preparer';
+import type { ImageUploadPreparer } from '@shared/upload/image-upload-preparer';
+import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
 import type { ProfileDocument } from '../../domain/models/profile-content.model';
 import { aProfileContent, aProfileDocument } from '../../testing/profile-builders';
 import type { ProfileDto } from '../profile.types';
@@ -16,18 +19,22 @@ describe('HttpProfileGateway', () => {
   let gateway: HttpProfileGateway;
   let http: HttpTestingController;
 
-  beforeEach(() => {
+  function configure(preparer?: ImageUploadPreparer): void {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         HttpProfileGateway,
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: BASE },
+        provideImageUploadPreparer(preparer),
       ],
     });
     gateway = TestBed.inject(HttpProfileGateway);
     http = TestBed.inject(HttpTestingController);
-  });
+  }
+
+  beforeEach(() => configure());
 
   afterEach(() => {
     http.verify();
@@ -194,4 +201,29 @@ describe('HttpProfileGateway', () => {
       expect(errors.map((error) => (error as HttpErrorResponse).status)).toEqual([status]);
     },
   );
+
+  it('Given the preparer shrinks the portrait When uploadPortrait is called Then the prepared file is the one posted', () => {
+    const original = new File(['huge'], 'portrait.png', { type: 'image/png' });
+    const prepared = new File(['small'], 'portrait.webp', { type: 'image/webp' });
+    configure(() => of(prepared));
+    gateway.uploadPortrait(original).subscribe({ error: () => undefined });
+
+    const request = http.expectOne(`${BASE}/profile/portrait`);
+    const body = request.request.body as FormData;
+    request.flush(null, { status: 500, statusText: 'Ignored' });
+
+    expect(body.get('file')).toBe(prepared);
+  });
+
+  it('Given the preparer refuses the portrait When uploadPortrait is called Then the refusal reaches the page and nothing is sent', () => {
+    const refusal = new UploadRejectedError("L'image dépasse 4\u00a0Mo, même compressée.");
+    configure(() => throwError(() => refusal));
+    const errors: unknown[] = [];
+
+    gateway
+      .uploadPortrait(new File(['x'], 'p.png', { type: 'image/png' }))
+      .subscribe({ error: (error: unknown) => errors.push(error) });
+
+    expect(errors).toEqual([refusal]);
+  });
 });

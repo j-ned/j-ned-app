@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { apiRejection } from '@shared/testing/api-rejection';
+import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
 import { withValidationDetail } from './with-validation-detail';
 
 const LABEL = 'Erreur lors de la mise à jour du projet';
@@ -26,6 +27,15 @@ describe('withValidationDetail', () => {
       expect(withValidationDetail(LABEL, err)).toBe(expected);
     },
   );
+
+  it('Given a label that ends a sentence When a file refused by the browser completes it Then its reason starts a new sentence', () => {
+    const label = "Article enregistré, mais l'envoi de l'image a échoué. Réessayez.";
+    const reason = "L'image dépasse 4\u00a0Mo, même compressée.";
+
+    expect(withValidationDetail(label, new UploadRejectedError(reason))).toBe(
+      `${label} Détail\u00a0: ${reason}`,
+    );
+  });
 
   it('Given a label that ends a sentence When a 400 is completed Then the detail starts a new sentence', () => {
     const label = "Projet créé, mais l'envoi de l'image a échoué. Réessayez depuis sa page.";

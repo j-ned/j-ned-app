@@ -15,14 +15,16 @@ import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
 import { FileDropzone } from '@shared/ui/file-dropzone';
+import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
 import { imageAltSchema } from './admin-image-alt-schema';
 
 const UPLOAD_ERRORS: Readonly<Record<number, string>> = {
-  413: "L'image dépasse 5\u00a0Mo.",
+  413: "L'image dépasse 4\u00a0Mo.",
   422: 'Image refusée\u00a0: format non pris en charge ou fichier illisible.',
 };
 
 const uploadErrorDetail = (error: unknown): string =>
+  (error instanceof UploadRejectedError && error.message) ||
   (error instanceof HttpErrorResponse && UPLOAD_ERRORS[error.status]) ||
   "L'image n'a pas pu être envoyée. Réessayez.";
 
@@ -43,7 +45,7 @@ const uploadErrorDetail = (error: unknown): string =>
       <app-file-dropzone
         accept="image/avif,image/webp,image/png,image/jpeg"
         label="Image à insérer"
-        helperText="AVIF, WebP, PNG ou JPEG, 5&nbsp;Mo au plus"
+        helperText="AVIF, WebP, PNG ou JPEG, 4&nbsp;Mo au plus"
         (fileSelected)="selectFile($event)"
         (cleared)="file.set(null)"
       />

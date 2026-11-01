@@ -9,6 +9,7 @@ import type { ProjectImage } from '@features/projects/domain/models/project.mode
 import { makeProjectImage } from '@features/projects/testing/project-builders';
 import { ToastStore } from '@core/notifications/toast-store';
 import type { ToastMessage } from '@shared/ui/toast.types';
+import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
 
 const capture = (key: string, alt: string): ProjectImage =>
   makeProjectImage({
@@ -416,7 +417,7 @@ describe('AdminProjectGallery', () => {
     });
 
     it.each([
-      { status: 413, detail: "L'image dépasse 5 Mo." },
+      { status: 413, detail: "L'image dépasse 4 Mo." },
       {
         status: 422,
         detail: 'Image refusée\u00a0: format non pris en charge, ou galerie déjà complète.',
@@ -445,6 +446,22 @@ describe('AdminProjectGallery', () => {
         });
       },
     );
+
+    it('Given the browser cannot bring the image under 4 Mo When a capture is uploaded Then the error toast gives that reason and the gallery is kept', async () => {
+      const reason = "L'image dépasse 4\u00a0Mo, même compressée.";
+      const rendered = await render(CAPTURES, (gateway) =>
+        gateway.uploadGalleryImage.mockReturnValue(
+          throwError(() => new UploadRejectedError(reason)),
+        ),
+      );
+
+      await upload(rendered, 'Vue mobile');
+
+      expect({ toasts: toasts(rendered.toast), changes: rendered.changes }).toEqual({
+        toasts: [{ severity: 'error', detail: reason }],
+        changes: [],
+      });
+    });
   });
 
   describe('plafond de 12 captures', () => {

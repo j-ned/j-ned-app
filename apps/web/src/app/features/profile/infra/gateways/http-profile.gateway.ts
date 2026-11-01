@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { map, type Observable } from 'rxjs';
+import { map, switchMap, type Observable } from 'rxjs';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
+import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
 import { ProfileGateway } from '../../domain/gateways/profile.gateway';
 import type { ProfileContent, ProfileDocument } from '../../domain/models/profile-content.model';
 import { toProfileDocument } from '../profile.adapter';
@@ -12,6 +13,7 @@ import type { ProfileDto } from '../profile.types';
 export class HttpProfileGateway extends ProfileGateway {
   private readonly _http = inject(HttpClient);
   private readonly _apiUrl = inject(API_BASE_URL);
+  private readonly _prepareImage = inject(IMAGE_UPLOAD_PREPARER);
 
   getProfile(): Observable<ProfileDocument> {
     return this._http
@@ -30,11 +32,16 @@ export class HttpProfileGateway extends ProfileGateway {
   }
 
   uploadPortrait(file: File): Observable<ProfileDocument> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this._http
-      .post<ProfileDto>(`${this._apiUrl}/profile/portrait`, formData, { context: silentErrors() })
-      .pipe(map((dto) => toProfileDocument(dto, STORAGE_BASE_PATH)));
+    return this._prepareImage(file).pipe(
+      switchMap((prepared) => {
+        const formData = new FormData();
+        formData.append('file', prepared);
+        return this._http.post<ProfileDto>(`${this._apiUrl}/profile/portrait`, formData, {
+          context: silentErrors(),
+        });
+      }),
+      map((dto) => toProfileDocument(dto, STORAGE_BASE_PATH)),
+    );
   }
 
   removePortrait(): Observable<void> {
