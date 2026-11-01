@@ -86,8 +86,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-          # Nom d'image d'avant le monorepo : Dokploy tire toujours celle-ci.
-          image=ghcr.io/${{ github.repository_owner }}/ng-portfolio-app
+          # Paquet créé et publié par ce dépôt (les anciens paquets restent liés aux anciens dépôts).
+          image=ghcr.io/${{ github.repository_owner }}/j-ned-app-web
           docker tag ng-portfolio-app:ci "$image:sha-${GITHUB_SHA::7}"
           docker tag ng-portfolio-app:ci "$image:latest"
           docker push -q "$image:sha-${GITHUB_SHA::7}"
