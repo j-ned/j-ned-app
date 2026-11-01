@@ -1,0 +1,8 @@
+# Déploiements par la CLI (`vercel deploy`) : seul ce que Git versionne a sa place dans le build.
+apps/web/tasks
+**/node_modules
+**/dist
+**/.angular
+**/coverage
+.vercel
+.env*
