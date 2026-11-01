@@ -45,6 +45,7 @@ describe('analytics routes', () => {
         'content-type': 'application/json',
         'x-forwarded-for': ip,
         'user-agent': 'Mozilla/5.0 test',
+        'x-vercel-ip-country': 'fr',
       },
       body: JSON.stringify(body),
     });
@@ -129,7 +130,7 @@ describe('analytics routes', () => {
   });
 
   describe('POST track (allow-list)', () => {
-    it('Given an outbound_click on a known channel, When posted, Then 204 without body and tracked with the visitor IP and user agent', async () => {
+    it('Given an outbound_click on a known channel, When posted, Then 204 without body and tracked with the visitor IP, user agent and country', async () => {
       const res = await track({
         type: 'outbound_click',
         entityId: 'linkedin',
@@ -146,6 +147,7 @@ describe('analytics routes', () => {
         }),
         '203.0.113.10',
         'Mozilla/5.0 test',
+        'FR',
       );
     });
 

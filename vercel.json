@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "api": {
+      "root": "apps/api/",
+      "installCommand": "pnpm install --frozen-lockfile --filter @portfolio/api",
+      "buildCommand": "pnpm build:vercel",
+      "entrypoint": "server.js",
+      "runtime": "node"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    }
+  ]
+}

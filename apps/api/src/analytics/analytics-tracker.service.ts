@@ -3,7 +3,6 @@ import { isIPv4, isIPv6 } from 'node:net';
 import { Logger } from '../common/logger';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { isbot } from 'isbot';
-import geoip from 'geoip-lite';
 import { UAParser } from 'ua-parser-js';
 import { AppConfigService } from '../config/app-config.service';
 import type { Database } from '../database/drizzle.types';
@@ -71,7 +70,13 @@ export class AnalyticsTrackerService {
    * Track une page-view ou un custom event. Ne throw JAMAIS - toute erreur
    * interne est loggée et avalée pour ne pas bloquer le client.
    */
-  async track(event: TrackEventDto, ip: string, ua: string): Promise<void> {
+  async track(
+    event: TrackEventDto,
+    ip: string,
+    ua: string,
+    /** Pays du visiteur (code ISO à 2 lettres) fourni par l'hébergeur, `null` s'il est inconnu. */
+    country: string | null = null,
+  ): Promise<void> {
     try {
       const dto =
         event.url === undefined
@@ -110,8 +115,6 @@ export class AnalyticsTrackerService {
         parsed.os.name && parsed.os.version
           ? `${parsed.os.name} ${parsed.os.version}`
           : null;
-
-      const country = geoip.lookup(ip)?.country ?? null;
 
       if (dto.type === 'page_view' || dto.type === 'page_duration') {
         await this.upsertPageView(dto, sessionHash, browser, os, country);

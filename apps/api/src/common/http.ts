@@ -46,6 +46,17 @@ export function clientIp(c: Context): string {
   }
 }
 
+const COUNTRY_CODE = /^[A-Z]{2}$/;
+
+/**
+ * Pays du visiteur, posé par Vercel (`x-vercel-ip-country`, déduit de l'IP en bordure) ; `null` hors
+ * Vercel ou si l'en-tête n'est pas un code ISO à deux lettres.
+ */
+export function visitorCountry(c: Context): string | null {
+  const country = c.req.header('x-vercel-ip-country')?.toUpperCase();
+  return country && COUNTRY_CODE.test(country) ? country : null;
+}
+
 /** Chemin et query string de la requête, comme `req.originalUrl` d'Express. */
 export function originalUrl(c: Context): string {
   const url = new URL(c.req.url);

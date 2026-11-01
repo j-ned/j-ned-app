@@ -4,7 +4,6 @@ import { AnalyticsTrackerService } from './analytics-tracker.service';
 import { AppConfigService } from '../config/app-config.service';
 import { createMockDb } from '../database/test-utils';
 import * as isbotModule from 'isbot';
-import * as geoipModule from 'geoip-lite';
 import { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 
@@ -16,13 +15,11 @@ const renderSet = (set: unknown) => {
 };
 
 jest.mock('isbot');
-jest.mock('geoip-lite');
 
 describe('AnalyticsTrackerService', () => {
   let service: AnalyticsTrackerService;
   let db: ReturnType<typeof createMockDb>;
   const isbotMock = isbotModule.isbot as unknown as jest.Mock;
-  const geoipLookup = geoipModule.lookup as unknown as jest.Mock;
 
   const NORMAL_UA =
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -30,7 +27,6 @@ describe('AnalyticsTrackerService', () => {
   beforeEach(() => {
     db = createMockDb();
     isbotMock.mockReturnValue(false);
-    geoipLookup.mockReturnValue({ country: 'FR' });
 
     service = new AnalyticsTrackerService(
       db as never,
@@ -72,6 +68,7 @@ describe('AnalyticsTrackerService', () => {
         { type: 'page_view', url: '/projects' },
         '1.2.3.4',
         NORMAL_UA,
+        'FR',
       );
 
       expect(db.insert).toHaveBeenCalledTimes(1);
@@ -212,9 +209,8 @@ describe('AnalyticsTrackerService', () => {
     });
   });
 
-  describe('géoloc fallback', () => {
-    it('IP inconnue de geoip → country null (pas crash)', async () => {
-      geoipLookup.mockReturnValue(null);
+  describe('pays du visiteur', () => {
+    it('pays inconnu (pas d’en-tête de l’hébergeur) → country null', async () => {
       db.limit.mockResolvedValueOnce([]);
       db.returning.mockResolvedValueOnce([{ id: 'pv' }]);
 
