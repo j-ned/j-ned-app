@@ -20,12 +20,18 @@ const LISTEN_PORT = 4000;
 const engine = new AngularNodeAppEngine();
 
 // URL d'API fixée au démarrage, jamais dérivée de la requête (SSRF). Sans variable (`ng serve`),
-// pas de contexte : l'application lit l'URL publique.
-const apiUpstream = process.env['API_UPSTREAM'];
+// pas de contexte : l'application lit l'URL publique. Sur Vercel, le binding du service `api` la
+// fournit (ADR-0036), parfois avec un `/` final.
+const apiUpstream = process.env['API_UPSTREAM']?.replace(/\/+$/, '');
 const apiBaseUrl = apiUpstream ? `${apiUpstream}/api` : null;
 
+// Secret partagé avec l'API (Vercel) : sans lui, l'API ne croit pas l'IP du visiteur transmise.
+const ssrForwardSecret = process.env['SSR_FORWARD_SECRET'] || null;
+
 // `lastmod` des pages statiques du sitemap : le démarrage du serveur suit le déploiement du code.
-const feeds = apiBaseUrl ? createFeedHandler({ apiBaseUrl, fetch, startedAt: new Date() }) : null;
+const feeds = apiBaseUrl
+  ? createFeedHandler({ apiBaseUrl, fetch, startedAt: new Date(), ssrForwardSecret })
+  : null;
 
 // Écrit par le postbuild à côté de ce module ; absent sous `ng serve`, où la CSP de `src/index.html`
 // garde `'unsafe-inline'`.
@@ -52,20 +58,32 @@ async function hardenHtml(response: Response, manifest: CspBuildManifest): Promi
 
 // Seuls 200 et 404 vont au micro-cache nginx. Il compte la validité en secondes entières : « 1s »
 // y tient jusqu'à 2 s ; une échéance absolue à la seconde courante expire à la seconde suivante.
+// Sur Vercel, le CDN joue ce rôle (`CDN-Cache-Control`, ignoré par nginx et par le navigateur) : une
+// seconde de fraîcheur, puis la copie sert pendant le nouveau rendu, et pendant 7 jours si le rendu
+// échoue (5xx), comme `proxy_cache_use_stale`.
+const CDN_CACHE_CONTROL = 'max-age=1, stale-while-revalidate=59, stale-if-error=604800';
+
 async function send(response: Response, res: ServerResponse): Promise<void> {
   if (response.status === 200 || response.status === 404) {
     res.setHeader('X-Accel-Expires', `@${Math.floor(Date.now() / 1000)}`);
+    res.setHeader('CDN-Cache-Control', CDN_CACHE_CONTROL);
   }
   await writeResponseToNodeResponse(response, res);
 }
 
+// Derrière nginx, l'IP du visiteur arrive dans un en-tête dédié ; sur Vercel, dans `x-real-ip`, posé par
+// la plateforme (une valeur envoyée par le client y est remplacée).
 function visitorForwardedFor(req: IncomingMessage): string | null {
-  const header = req.headers['x-visitor-forwarded-for'];
+  const header =
+    req.headers['x-visitor-forwarded-for'] ??
+    (process.env['VERCEL'] ? req.headers['x-real-ip'] : undefined);
   return typeof header === 'string' && header !== '' ? header : null;
 }
 
 function requestContext(req: IncomingMessage): SsrRequestContext | undefined {
-  return apiBaseUrl ? { apiBaseUrl, visitorForwardedFor: visitorForwardedFor(req) } : undefined;
+  return apiBaseUrl
+    ? { apiBaseUrl, visitorForwardedFor: visitorForwardedFor(req), ssrForwardSecret }
+    : undefined;
 }
 
 // `false` : aucune route Angular ne correspond, l'appelant décide (404 en production, Vite en dev).

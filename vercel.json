@@ -7,6 +7,20 @@
       "buildCommand": "pnpm build:vercel",
       "entrypoint": "server.js",
       "runtime": "node"
+    },
+    "web": {
+      "root": "apps/web/",
+      "framework": "angular",
+      "installCommand": "pnpm install --frozen-lockfile --filter @portfolio/web",
+      "buildCommand": "pnpm run build --configuration production && node scripts/build-vercel.mjs",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "api",
+          "format": "url",
+          "env": "API_UPSTREAM"
+        }
+      ]
     }
   },
   "rewrites": [
@@ -15,6 +29,18 @@
       "destination": {
         "service": "api"
       }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "web"
+      }
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily",
+      "schedule": "0 0 * * *"
     }
   ]
 }

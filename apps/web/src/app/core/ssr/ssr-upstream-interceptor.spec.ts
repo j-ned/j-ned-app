@@ -46,6 +46,24 @@ describe('ssrUpstreamInterceptor', () => {
     vi.useRealTimers();
   });
 
+  it('Given a server render on Vercel (shared secret) When the page reads the internal API Then the API can trust the forwarded visitor IP', () => {
+    setUp('server', {
+      apiBaseUrl: INTERNAL_API_BASE_URL,
+      visitorForwardedFor: VISITOR,
+      ssrForwardSecret: 'shared-secret',
+    });
+    const url = `${INTERNAL_API_BASE_URL}/projects`;
+
+    TestBed.inject(HttpClient).get(url).subscribe();
+    const request = TestBed.inject(HttpTestingController).expectOne(url);
+    request.flush({});
+
+    expect({
+      visitorIp: request.request.headers.get('x-ssr-visitor-ip'),
+      secret: request.request.headers.get('x-ssr-secret'),
+    }).toEqual({ visitorIp: VISITOR, secret: 'shared-secret' });
+  });
+
   it.each([VISITOR, '198.51.100.4, 203.0.113.7'])(
     'Given a server render for the visitor %s When the page reads the internal API Then the request carries the visitor address',
     (visitorForwardedFor) => {

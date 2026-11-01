@@ -2,6 +2,7 @@ import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http'
 import { RESPONSE_INIT, inject } from '@angular/core';
 import { TimeoutError, catchError, throwError, timeout } from 'rxjs';
 import { injectSsrRequestContext } from './ssr-request-context';
+import { visitorHeaders } from './visitor-headers';
 
 // Au-delà, le rendu abandonne la lecture : nginx sert sa copie au lieu de faire attendre le visiteur
 // (la gateway projets réessaie une fois : 6 s au plus).
@@ -18,8 +19,8 @@ export const ssrUpstreamInterceptor: HttpInterceptorFn = (req, next) => {
   const context = injectSsrRequestContext();
   if (!context || !req.url.startsWith(`${context.apiBaseUrl}/`)) return next(req);
 
-  const visitor = context.visitorForwardedFor;
-  const upstream = next(visitor ? req.clone({ setHeaders: { 'X-Forwarded-For': visitor } }) : req);
+  const headers = visitorHeaders(context.visitorForwardedFor, context.ssrForwardSecret ?? null);
+  const upstream = next(Object.keys(headers).length > 0 ? req.clone({ setHeaders: headers }) : req);
   if (req.method !== 'GET') return upstream;
 
   const responseInit = inject(RESPONSE_INIT, { optional: true });
