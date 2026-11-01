@@ -48,6 +48,17 @@ export const envSchema = z.object({
         .filter(Boolean),
     ),
 
+  /**
+   * Secret du cron Vercel (en-tête `Authorization: Bearer …` posé par Vercel) : sans lui, la route
+   * `/api/cron/daily` n'existe pas.
+   */
+  CRON_SECRET: z.string().min(16).optional(),
+  /**
+   * Secret partagé avec le rendu serveur du site : seul un appel qui le porte fait croire l'IP du visiteur
+   * qu'il transmet (quotas par visiteur, ADR-0036). Sans lui, l'en-tête est ignoré.
+   */
+  SSR_FORWARD_SECRET: z.string().min(32).optional(),
+
   // S3 Storage
   S3_ENDPOINT: z.string().url(),
   S3_REGION: z.string().min(1),

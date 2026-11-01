@@ -1,4 +1,7 @@
 import { getConnInfo } from '@hono/node-server/conninfo';
+import { timingSafeEqual } from 'node:crypto';
+import { isIP } from 'node:net';
+import type { MiddlewareHandler } from 'hono';
 import type { ClassConstructor } from 'class-transformer';
 import type { Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
@@ -11,7 +14,7 @@ import {
 import { validateDto } from './validation';
 
 /** Variables de contexte posées par les middlewares (`requireAuth`). */
-export type AppEnv = { Variables: { user: User } };
+export type AppEnv = { Variables: { user: User; clientIp: string } };
 export type AppContext = Context<AppEnv>;
 
 /**
@@ -36,14 +39,41 @@ export const JSON_BODY_LIMIT_BYTES = 100 * 1024;
  * écrite par le proxy de confiance (les entrées antérieures viennent du client) ; sinon la socket.
  */
 export function clientIp(c: Context): string {
-  const forwarded = c.req.header('x-forwarded-for');
-  const last = forwarded?.split(',').at(-1)?.trim();
+  const forwarded = (c as AppContext).var.clientIp;
+  if (forwarded) return forwarded;
+  const last = c.req.header('x-forwarded-for')?.split(',').at(-1)?.trim();
   if (last) return last;
   try {
     return getConnInfo(c).remote.address ?? '';
   } catch {
     return '';
   }
+}
+
+/**
+ * IP du visiteur transmise par le rendu serveur du site (`x-ssr-visitor-ip`), crue seulement si l'appel
+ * porte le secret partagé (`x-ssr-secret`) : sur Vercel, l'appel du rendu arrive avec l'IP de la
+ * fonction, et tous les visiteurs partageraient un seul quota. Sans secret configuré, rien n'est cru.
+ */
+export function forwardedVisitorIp(
+  secret: string | undefined,
+): MiddlewareHandler<AppEnv> {
+  const expected = secret ? Buffer.from(secret) : undefined;
+  return async (c, next) => {
+    const given = c.req.header('x-ssr-secret');
+    const ip = c.req.header('x-ssr-visitor-ip')?.trim();
+    if (
+      expected &&
+      given !== undefined &&
+      ip &&
+      isIP(ip) !== 0 &&
+      given.length === expected.length &&
+      timingSafeEqual(Buffer.from(given), expected)
+    ) {
+      c.set('clientIp', ip);
+    }
+    await next();
+  };
 }
 
 const COUNTRY_CODE = /^[A-Z]{2}$/;

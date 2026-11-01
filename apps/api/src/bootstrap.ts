@@ -1,6 +1,8 @@
 import { createTransport } from 'nodemailer';
 import { createApp } from './create-app';
 import { createRootLogger, setRootLogger } from './common/logger';
+import { PostgresThrottleStore } from './common/postgres-throttle-store';
+import { setThrottleStore } from './common/throttle';
 import { AppConfigService } from './config/app-config.service';
 import { validateEnv } from './config/env.validation';
 import { connectDatabase } from './database/database';
@@ -27,6 +29,15 @@ export function bootstrap(env: Record<string, unknown> = process.env) {
     auth: { user: config.smtpUser, pass: config.smtpPass },
   });
   const services = createServices({ config, db: database.db, s3, transporter });
-  const app = createApp(config, database.db, services);
+
+  // Sur Vercel (`VERCEL=1`), plusieurs instances sans mémoire partagée : quotas comptés en base.
+  const throttleStore = env['VERCEL']
+    ? new PostgresThrottleStore(database.db)
+    : undefined;
+  if (throttleStore) setThrottleStore(throttleStore);
+
+  const app = createApp(config, database.db, services, {
+    purgeRateLimits: throttleStore && (() => throttleStore.purgeExpired()),
+  });
   return { config, database, s3, transporter, services, app };
 }
