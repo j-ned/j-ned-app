@@ -13,9 +13,10 @@
     "dev:web": "pnpm --filter @portfolio/web start",
     "dev:api": "pnpm --filter @portfolio/api dev",
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "test": "pnpm -r --filter \"!@portfolio/api-parity\" test",
     "lint": "pnpm --filter @portfolio/web lint && pnpm --filter @portfolio/api lint:check",
-    "format:check": "pnpm -r format:check"
+    "format:check": "pnpm -r format:check",
+    "test:parity": "pnpm --filter @portfolio/api-parity stack:up && pnpm --filter @portfolio/api-parity test; status=$?; pnpm --filter @portfolio/api-parity stack:down; exit $status"
   },
   "devDependencies": {
     "husky": "^9.1.7",

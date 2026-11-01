@@ -1,12 +1,13 @@
 name: API CI
 
-# Sur une PR : lint, types, tests sur Postgres, build, et construction de l'image. Sur master (push ou
-# lancement manuel), une fois les deux jobs verts : l'image est publiée sur GHCR et Dokploy la déploie
+# Sur une PR : lint, types, tests sur Postgres, build, puis l'image construite passe la suite de parité
+# HTTP (packages/api-parity). Sur master (push ou lancement manuel), une fois les deux jobs verts : l'image est publiée sur GHCR et Dokploy la déploie
 # par son API, sans rien reconstruire.
 on:
   pull_request:
     paths: &paths
       - apps/api/**
+      - packages/api-parity/**
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - package.json
@@ -94,7 +95,7 @@ jobs:
         run: pnpm build
 
   docker:
-    name: Docker build (réplique Dokploy)
+    name: Docker build · Parité HTTP
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -112,8 +113,43 @@ jobs:
           file: apps/api/Dockerfile
           push: false
           tags: nest-portfolio-app:ci
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # La suite de parité vise l'image elle-même (mode production, migrations au démarrage), pas les
+      # sources : c'est le contrat que l'implémentation Hono devra tenir à l'identique.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # L'API pour le seed de l'admin, la suite pour elle-même.
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile --filter @portfolio/api --filter @portfolio/api-parity
+
+      - name: Typecheck · Format parity suite
+        run: |
+          pnpm --filter @portfolio/api-parity typecheck
+          pnpm --filter @portfolio/api-parity format:check
+
+      - name: Start parity stack (image + Postgres)
+        run: packages/api-parity/scripts/stack.sh up nest-portfolio-app:ci
+
+      - name: Parity suite
+        run: pnpm --filter @portfolio/api-parity test
+
+      - name: API logs
+        if: failure()
+        run: docker logs api-parity-api || true
+
+      - name: Stop parity stack
+        if: always()
+        run: packages/api-parity/scripts/stack.sh down
 
   publish:
     name: Publish · Deploy

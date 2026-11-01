@@ -10,3 +10,4 @@ Thumbs.db
 !.env.example
 .worktrees/
 .husky/_/
+.parity-env
