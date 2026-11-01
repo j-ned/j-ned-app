@@ -30,9 +30,8 @@ docker buildx bake web-ci       # site : étage de tests + image de production (
 docker buildx bake api --load   # API (nest-portfolio-app:ci)
 ```
 
-La CI publie `ghcr.io/j-ned/j-ned-app-web` et `ghcr.io/j-ned/j-ned-app-api` (tags `latest` et
-`sha-…`), que Dokploy tire. Les anciens paquets (`ng-portfolio-app`, `nest-portfolio-app`) restent liés
-aux anciens dépôts et gardent les images d'avant le monorepo, pour revenir en arrière.
+Les images ne sont plus déployées : elles servent de harnais de test à la CI (tests de fumée, parité
+HTTP, audit axe). La production tourne sur Vercel, déployée depuis Git (ADR-0036, `vercel.json`).
 
 ## CI
 

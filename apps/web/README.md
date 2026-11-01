@@ -53,7 +53,7 @@ Une application full-stack auto-hébergée, construite et exploitée comme un vr
 - **Back-office** : projets, articles de blog, CV, messages de contact, analytics, sécurité du compte.
 - **API NestJS** dédiée ([`nest-portfolio-app`](https://github.com/j-ned/nest-portfolio-app)) : auth JWT + 2FA, PostgreSQL via Drizzle, stockage S3, mails, analytics.
 - **Analytics maison** : aucun cookie, aucun tracker tiers, données brutes purgées au bout de 30 jours.
-- **Auto-hébergement** : Docker multi-stage, Traefik, Dokploy, CI GitHub Actions qui rejoue exactement le build de production.
+- **Hébergement** : Vercel (services `web` et `api`, même origine), Neon, Cloudflare R2 ; CI GitHub Actions qui rejoue exactement le build de production.
 
 Ce dépôt ne contient que le front. L'API vit dans son propre dépôt et est appelée directement depuis le navigateur.
 
@@ -212,7 +212,7 @@ providers: [
 ### Exploitation
 
 - **Docker** multi-stage : build Angular, dépendances d'exécution, puis image nginx alpine qui exécute aussi Node (utilisateur non root).
-- **Traefik** pour le TLS, **Dokploy** pour l'orchestration, sur un serveur auto-hébergé.
+- **Vercel** (Services, Build Output API) déployé depuis Git, **Neon** pour Postgres, **Cloudflare R2** pour les fichiers (ADR-0036).
 - **GitHub Actions** : lint, tests, build de production avec vérification du prérendu et de la CSP, build de l'image Docker et tests de fumée HTTP.
 
 ---
@@ -286,7 +286,7 @@ Les gates sont ceux du Dockerfile, rejoués en local avant chaque PR et dans la 
 ```bash
 pnpm install --frozen-lockfile
 pnpm run build --configuration production   # build SSR + prérendu des pages statiques + CSP
-docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..    # exactement ce que Dokploy exécute
+docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..    # harnais de test de la CI (smoke)
 ```
 
 - Une PR par changement, squash-merge sur `master`, branche protégée par les deux jobs de CI.

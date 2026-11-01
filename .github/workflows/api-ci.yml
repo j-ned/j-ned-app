@@ -1,8 +1,8 @@
 name: API CI
 
 # Sur une PR : lint, types, tests sur Postgres, build, puis l'image construite passe la suite de parité
-# HTTP (packages/api-parity). Sur master (push ou lancement manuel), une fois les deux jobs verts : l'image est publiée sur GHCR et Dokploy la déploie
-# par son API, sans rien reconstruire.
+# HTTP (packages/api-parity). Le déploiement est celui de Vercel depuis Git (ADR-0036) : rien n'est
+# publié ici.
 on:
   pull_request:
     paths:
@@ -75,7 +75,7 @@ jobs:
           node-version-file: .nvmrc # même majeure que le Dockerfile (node:24-alpine)
           cache: pnpm
 
-      # Même commande que le Dockerfile : un lockfile incohérent échoue ici, pas chez Dokploy.
+      # Même commande que Vercel : un lockfile incohérent échoue ici, pas au déploiement.
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile --filter @portfolio/api
 
@@ -112,7 +112,7 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Le Dockerfile du repo, sans push : l'image que `publish` pousse est reconstruite depuis ce cache.
+      # Le Dockerfile du repo, sans push : l'image sert de cible à la suite de parité.
       - name: Build image
         uses: docker/build-push-action@v6
         with:
@@ -157,58 +157,3 @@ jobs:
       - name: Stop parity stack
         if: always()
         run: packages/api-parity/scripts/stack.sh down
-
-  publish:
-    name: Publish · Deploy
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
-    needs: [verify, docker]
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Paquet créé et publié par ce dépôt (les anciens paquets restent liés aux anciens dépôts).
-      # Même Dockerfile et même cache que le job `docker` : toutes les couches viennent du cache.
-      - name: Push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/api/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/j-ned-app-api:latest
-            ghcr.io/${{ github.repository_owner }}/j-ned-app-api:sha-${{ github.sha }}
-          # Relie le paquet GHCR à ce dépôt (page et visibilité du paquet).
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          cache-from: type=gha
-
-      # Dokploy tire `latest` et redémarre le conteneur (le webhook d'une application « image »
-      # attend la charge utile de Docker Hub). Sans les secrets, l'étape ne fait rien.
-      - name: Deploy (Dokploy API)
-        env:
-          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
-          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
-          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_API_APPLICATION_ID }}
-        run: |
-          if [ -z "$DOKPLOY_URL" ] || [ -z "$DOKPLOY_API_KEY" ] || [ -z "$DOKPLOY_APPLICATION_ID" ]; then
-            echo "Secrets Dokploy absents : pas de déclenchement."
-            exit 0
-          fi
-          curl -fsS -X POST "$DOKPLOY_URL/api/application.deploy" \
-            -H "x-api-key: $DOKPLOY_API_KEY" -H 'Content-Type: application/json' \
-            -d "{\"applicationId\": \"$DOKPLOY_APPLICATION_ID\"}" -o /dev/null
