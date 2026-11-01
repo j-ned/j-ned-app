@@ -1,12 +1,9 @@
-import { Logger } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { DRIZZLE } from '../database/drizzle.constants';
+import type { UploadedFile } from '../common/http';
+import { Logger } from '../common/logger';
 import { createMockDb } from '../database/test-utils';
-import { ImageOptimizer } from '../storage/image-optimizer.service';
 import { contentHash } from '../storage/s3-utils';
-import { StorageService } from '../storage/storage.service';
 import { BlogContentImagesService } from './blog-content-images.service';
 
 const BUCKET = 'portfolio-storage';
@@ -29,7 +26,7 @@ describe('BlogContentImagesService', () => {
   const avif = Buffer.from('avif-bytes');
   const optimize = jest.fn();
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.clearAllMocks();
     db = createMockDb();
     storage = {
@@ -46,19 +43,15 @@ describe('BlogContentImagesService', () => {
       width: 1600,
       height: 900,
     });
-    const module = await Test.createTestingModule({
-      providers: [
-        BlogContentImagesService,
-        { provide: DRIZZLE, useValue: db },
-        { provide: StorageService, useValue: storage },
-        { provide: ImageOptimizer, useValue: { optimize } },
-      ],
-    }).compile();
-    service = module.get(BlogContentImagesService);
+    service = new BlogContentImagesService(
+      db as never,
+      storage as never,
+      { optimize } as never,
+    );
   });
 
   describe('upload', () => {
-    const file = { buffer: Buffer.from('png-bytes') } as Express.Multer.File;
+    const file = { buffer: Buffer.from('png-bytes') } as UploadedFile;
 
     it('Given an image, When uploaded, Then the AVIF is stored under a blog-content key carrying its dimensions', async () => {
       await service.upload(file);

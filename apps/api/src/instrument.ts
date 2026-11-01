@@ -1,7 +1,7 @@
-// Loaded BEFORE NestFactory.create - preload .env manually since @nestjs/config
-// hasn't run yet at this point.
+// Premier import de main.ts : `.env` chargé, puis Sentry initialisé avant que `http` et les autres
+// modules instrumentés ne soient chargés (sinon les requêtes entrantes ne sont pas tracées).
 import 'dotenv/config';
-import * as Sentry from '@sentry/nestjs';
+import * as Sentry from '@sentry/node';
 import {
   isUntracedIncomingRequest,
   sentryBeforeSend,

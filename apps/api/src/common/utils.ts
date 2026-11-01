@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger } from './logger';
 import { timestamp } from 'drizzle-orm/pg-core';
 
 export function fireAndForget(

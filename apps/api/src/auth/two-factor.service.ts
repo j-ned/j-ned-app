@@ -1,11 +1,9 @@
-import { Injectable } from '@nestjs/common';
 import { generateSecret, generateURI, verifySync } from 'otplib';
 import * as QRCode from 'qrcode';
 import { randomBytes } from 'node:crypto';
 import argon2 from 'argon2';
 import { AppConfigService } from '../config/app-config.service';
 
-@Injectable()
 export class TwoFactorService {
   constructor(private readonly cfg: AppConfigService) {}
 

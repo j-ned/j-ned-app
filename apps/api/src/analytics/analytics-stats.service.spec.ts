@@ -1,8 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { type SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { AnalyticsStatsService } from './analytics-stats.service';
-import { DRIZZLE } from '../database/drizzle.constants';
 import { createMockDb } from '../database/test-utils';
 import * as aggregates from './analytics-aggregates';
 import type { DayAggregates } from './analytics-aggregates';
@@ -60,12 +58,9 @@ describe('AnalyticsStatsService', () => {
   let service: AnalyticsStatsService;
   let db: ReturnType<typeof createMockDb>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     db = createMockDb();
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [AnalyticsStatsService, { provide: DRIZZLE, useValue: db }],
-    }).compile();
-    service = module.get(AnalyticsStatsService);
+    service = new AnalyticsStatsService(db as never);
     jest.useFakeTimers().setSystemTime(new Date('2026-04-26T12:00:00Z'));
   });
 

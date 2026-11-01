@@ -1,12 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import { users, type User } from '../database/schema';
 
-@Injectable()
 export class UsersService {
-  constructor(@Inject(DRIZZLE) private readonly db: Database) {}
+  constructor(private readonly db: Database) {}
 
   async findById(id: string): Promise<User | null> {
     const rows = await this.db

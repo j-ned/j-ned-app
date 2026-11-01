@@ -268,8 +268,8 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 
 ## API (`apps/api` du monorepo)
 
-> Ce dossier est `apps/web` d'un **monorepo pnpm** : l'API (NestJS, migration vers Hono prévue)
-> vit dans `apps/api` avec ses propres conventions (Drizzle/Zod) et son propre README. Un seul
+> Ce dossier est `apps/web` d'un **monorepo pnpm** : l'API (Hono, ADR-0035)
+> vit dans `apps/api` avec ses propres conventions (Drizzle, class-validator, Zod pour l'environnement) et son propre README. Un seul
 > lockfile, à la racine. Ici on ne documente que la **consommation** de l'API côté Angular.
 
 ### Gateway Angular ↔ API

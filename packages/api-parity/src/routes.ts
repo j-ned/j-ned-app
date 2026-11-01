@@ -1,6 +1,6 @@
 /**
- * Inventaire des routes de l'API (relevé sur les contrôleurs NestJS, 2026-11-01). Toute route ajoutée,
- * retirée ou dont l'accès change doit l'être ici : c'est la carte que Hono reprend à l'identique.
+ * Inventaire des routes de l'API (relevé sur les contrôleurs NestJS, 2026-11-01, repris tel quel par
+ * Hono). Toute route ajoutée, retirée ou dont l'accès change doit l'être ici d'abord.
  * Les paramètres sont remplis par des valeurs qui n'existent pas : seul l'accès est éprouvé ici.
  */
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';

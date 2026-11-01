@@ -1,5 +1,3 @@
-import { applyDecorators } from '@nestjs/common';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -25,6 +23,7 @@ import {
   PROJECT_PITCH_MAX,
   toNullableText,
 } from '../project-editorial';
+import { composeDecorators } from '../../common/compose-decorators';
 import { ArchitectureDecisionDto } from './architecture-decision.dto';
 import { TechChoiceDto } from './tech-choice.dto';
 
@@ -34,7 +33,7 @@ import { TechChoiceDto } from './tech-choice.dto';
  * ne change pas `42` en `'42'` avant `@IsString` (un type `string` seul le ferait).
  */
 function EditorialText(max: number): PropertyDecorator {
-  return applyDecorators(
+  return composeDecorators(
     Transform(({ value }: { value: unknown }) => toNullableText(value)),
     IsOptional(),
     ValidateIf((_, v) => v !== null),
@@ -44,19 +43,16 @@ function EditorialText(max: number): PropertyDecorator {
 }
 
 export class CreateProjectDto {
-  @ApiProperty({ maxLength: 200 })
   @IsString()
   @IsNotEmpty()
   @MaxLength(200)
   title!: string;
 
-  @ApiProperty({ maxLength: 100 })
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
   category!: string;
 
-  @ApiPropertyOptional({ type: [String], example: ['Angular', 'NestJS'] })
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(20)
@@ -64,61 +60,40 @@ export class CreateProjectDto {
   @MaxLength(50, { each: true })
   tags?: string[];
 
-  @ApiProperty({ maxLength: 5000 })
   @IsString()
   @IsNotEmpty()
   @MaxLength(5000)
   description!: string;
 
-  @ApiPropertyOptional({
-    type: String,
-    maxLength: PROJECT_PITCH_MAX,
-    nullable: true,
-  })
   @EditorialText(PROJECT_PITCH_MAX)
   pitch?: string | null;
 
-  @ApiPropertyOptional({
-    type: String,
-    maxLength: PROJECT_FACT_MAX,
-    nullable: true,
-  })
   @EditorialText(PROJECT_FACT_MAX)
   highlight?: string | null;
 
-  @ApiPropertyOptional({
-    type: String,
-    maxLength: PROJECT_FACT_MAX,
-    nullable: true,
-  })
   @EditorialText(PROJECT_FACT_MAX)
   scope?: string | null;
 
-  @ApiPropertyOptional({ format: 'uri', nullable: true })
   @IsOptional()
   @ValidateIf((_, v) => v !== null)
   @IsUrl()
   liveUrl?: string | null;
 
-  @ApiPropertyOptional({ format: 'uri', nullable: true })
   @IsOptional()
   @ValidateIf((_, v) => v !== null)
   @IsUrl()
   repoUrl?: string | null;
 
-  @ApiPropertyOptional({ format: 'uri', nullable: true })
   @IsOptional()
   @ValidateIf((_, v) => v !== null)
   @IsUrl()
   repoUrlFront?: string | null;
 
-  @ApiPropertyOptional({ format: 'uri', nullable: true })
   @IsOptional()
   @ValidateIf((_, v) => v !== null)
   @IsUrl()
   repoUrlBack?: string | null;
 
-  @ApiPropertyOptional({ type: [TechChoiceDto] })
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(30)
@@ -126,7 +101,6 @@ export class CreateProjectDto {
   @Type(() => TechChoiceDto)
   techChoices?: TechChoiceDto[];
 
-  @ApiPropertyOptional({ type: [ArchitectureDecisionDto] })
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(30)
@@ -134,19 +108,16 @@ export class CreateProjectDto {
   @Type(() => ArchitectureDecisionDto)
   architectureDecisions?: ArchitectureDecisionDto[];
 
-  @ApiPropertyOptional({ enum: PROJECT_KINDS, default: 'demo' })
   // Optionnel mais jamais null : la colonne est NOT NULL (ADR-0008 §4). Pas de @IsOptional,
   // qui laisserait passer null jusqu'à une erreur 500 en base.
   @ValidateIf((_, v) => v !== undefined)
   @IsIn([...PROJECT_KINDS])
   kind?: ProjectKind;
 
-  @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
   featured?: boolean;
 
-  @ApiPropertyOptional({ default: 0 })
   @IsOptional()
   @IsInt()
   @Min(0)

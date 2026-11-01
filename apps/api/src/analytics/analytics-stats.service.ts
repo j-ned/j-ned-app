@@ -1,4 +1,3 @@
-import { Inject, Injectable } from '@nestjs/common';
 import {
   and,
   asc,
@@ -12,7 +11,6 @@ import {
   lte,
   sql,
 } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import { pageView, analyticsEvent, dailyStat } from '../database/schema';
 import {
@@ -41,9 +39,8 @@ type DateBounds = {
 /** Profondeur des tables brutes (purge du cron) : au-delà, seuls les totaux journaliers existent. */
 const RAW_RETENTION_DAYS = 30;
 
-@Injectable()
 export class AnalyticsStatsService {
-  constructor(@Inject(DRIZZLE) private readonly db: Database) {}
+  constructor(private readonly db: Database) {}
 
   /**
    * Jours complets lus dans `daily_stat` (qui couvre toute l'histoire, contrairement aux tables

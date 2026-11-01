@@ -1,6 +1,8 @@
 import { resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { Logger, ServiceUnavailableException } from '@nestjs/common';
+import { ServiceUnavailableException } from '../common/http-errors';
+import type { UploadedFile } from '../common/http';
+import { Logger } from '../common/logger';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -111,9 +113,9 @@ type Delays = {
       expect([...bucket].sort()).toEqual((await committedKeys()).sort());
     };
     const aFile = (bytes: string) =>
-      ({ buffer: Buffer.from(bytes) }) as Express.Multer.File;
+      ({ buffer: Buffer.from(bytes) }) as UploadedFile;
     /** Clé du faux recadrage (identité) : celle que le service calcule. */
-    const keyOf = (file: Express.Multer.File) =>
+    const keyOf = (file: UploadedFile) =>
       `profile/portrait-${contentHash(file.buffer)}.avif`;
     /** État initial : la ligne cite ces clés, le bucket les contient. */
     const givenKeys = async (

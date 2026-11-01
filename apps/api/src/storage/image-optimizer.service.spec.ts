@@ -1,4 +1,4 @@
-import { UnprocessableEntityException } from '@nestjs/common';
+import { UnprocessableEntityException } from '../common/http-errors';
 import sharp from 'sharp';
 import {
   IMAGE_MAX_WIDTH,

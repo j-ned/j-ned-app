@@ -1,7 +1,7 @@
+import type { UploadedFile } from '../common/http';
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Logger } from '../common/logger';
 import { and, ne, or, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import { blogPosts } from '../database/schema/blog-posts';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
@@ -16,19 +16,18 @@ export type ContentImageResponse = {
 };
 
 /** Images du corps des articles : téléversement sans rattachement, nettoyage à la suppression d'un article. */
-@Injectable()
 export class BlogContentImagesService {
   private static readonly BUCKET = 'portfolio-storage';
   private readonly logger = new Logger(BlogContentImagesService.name);
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly db: Database,
     private readonly storage: StorageService,
     private readonly images: ImageOptimizer,
   ) {}
 
   /** AVIF ≤ 1 600 px sur S3, rien en base : utilisable avant le premier enregistrement de l'article. */
-  async upload(file: Express.Multer.File): Promise<ContentImageResponse> {
+  async upload(file: UploadedFile): Promise<ContentImageResponse> {
     const image = await this.images.optimize(file.buffer);
     const key = contentImageKey(
       randomUUID(),
@@ -89,7 +88,9 @@ export class BlogContentImagesService {
       if (result.status === 'rejected') {
         this.logger.error(
           `Échec de suppression de l'image du corps ${orphans[i]}`,
-          result.reason,
+          result.reason instanceof Error
+            ? result.reason.stack
+            : String(result.reason),
         );
       }
     });

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '../common/http-errors';
 import type { Readable } from 'node:stream';
 import { ImageOptimizer } from './image-optimizer.service';
 import { shareCardKey } from './s3-utils';
@@ -24,7 +24,6 @@ async function readAll(stream: Readable): Promise<Buffer> {
  * sous `<key>.share.jpg`. `StorageService` supprime cette dérivée dès que l'original est remplacé
  * ou effacé : pas de backfill, pas de colonne en base, les images déjà en ligne en profitent.
  */
-@Injectable()
 export class ShareCardService {
   constructor(
     private readonly storage: StorageService,

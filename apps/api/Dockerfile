@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # =============================================================================
-# Stage 1 - builder : install full deps + compile NestJS
+# Stage 1 - builder : install full deps + compile the API (tsc)
 # =============================================================================
 FROM node:24-alpine AS builder
 RUN corepack enable \
@@ -15,7 +15,7 @@ COPY apps/api/package.json apps/api/
 RUN pnpm install --frozen-lockfile --filter @portfolio/api
 
 WORKDIR /repo/apps/api
-COPY apps/api/tsconfig.json apps/api/tsconfig.build.json apps/api/nest-cli.json ./
+COPY apps/api/tsconfig.json apps/api/tsconfig.build.json ./
 COPY apps/api/src ./src
 RUN pnpm build
 
@@ -62,7 +62,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 EXPOSE 3000
 USER node
 
-# tini en PID 1 pour gérer SIGTERM proprement (graceful shutdown NestJS)
+# tini en PID 1 pour gérer SIGTERM proprement (arrêt propre de l'API)
 ENTRYPOINT ["/sbin/tini", "--"]
-# Migrations Drizzle idempotentes, puis bootstrap NestJS
+# Migrations Drizzle idempotentes, puis démarrage de l'API
 CMD ["sh", "-c", "pnpm db:migrate && node dist/main.js"]

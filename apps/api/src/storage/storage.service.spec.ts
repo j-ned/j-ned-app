@@ -1,5 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '../common/http-errors';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
   S3Client,
@@ -11,19 +10,15 @@ import {
 import { sdkStreamMixin } from '@smithy/util-stream';
 import { Readable } from 'node:stream';
 import { StorageService } from './storage.service';
-import { S3_CLIENT } from './s3.constants';
 
 describe('StorageService', () => {
   let service: StorageService;
   const s3Mock = mockClient(S3Client);
   const realClient = new S3Client({ region: 'us-east-1' });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     s3Mock.reset();
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [StorageService, { provide: S3_CLIENT, useValue: realClient }],
-    }).compile();
-    service = module.get(StorageService);
+    service = new StorageService(realClient);
   });
 
   describe('upload', () => {

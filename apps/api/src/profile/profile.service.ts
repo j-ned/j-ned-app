@@ -1,7 +1,6 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { ConflictException } from '../common/http-errors';
 import { and, eq, sql } from 'drizzle-orm';
 import { isDeepStrictEqual } from 'node:util';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import {
   PROFILE_ROW_ID,
@@ -20,10 +19,9 @@ import {
 } from './profile-document';
 
 /** Contenu de la page Parcours (ADR-0023) : un document unique, lu à la requête par le front. */
-@Injectable()
 export class ProfileService {
   constructor(
-    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly db: Database,
     private readonly storage: StorageService,
   ) {}
 

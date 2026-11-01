@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException } from './http-errors';
 import { eq, type Column, type Table } from 'drizzle-orm';
 import type { Database } from '../database/drizzle.types';
 

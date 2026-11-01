@@ -2,8 +2,8 @@
 
 Tests **boîte noire** de l'API : ils ne connaissent que son URL et parlent HTTP comme le ferait le
 navigateur derrière le relais nginx (`X-Forwarded-For`, `Sec-Fetch-Site`, `Origin`, cookie de session).
-Ils ne savent rien de NestJS. C'est le contrat que l'implémentation actuelle tient et que la version
-Hono devra tenir à l'identique avant la bascule.
+Ils ne savent rien du framework : la même suite a validé l'API NestJS, puis son portage en Hono
+(ADR-0035), à l'identique.
 
 Ils visent **l'image Docker** en mode production (migrations au démarrage, Swagger fermé), pas les
 sources, devant un Postgres jetable.
@@ -35,23 +35,23 @@ rejoue la suite sur l'image qu'elle vient de construire.
 Le format d'erreur (`api-error.ts`) fige ce que le front lit : le statut et `message` (texte ou liste),
 plus les cinq clés `statusCode`, `error`, `message`, `path`, `timestamp` et l'absence de toute pile.
 
-## Écarts connus de NestJS, volontairement non figés
+## Points volontairement non figés
 
-À normaliser au portage plutôt qu'à reproduire ; la suite les laisse libres.
+La suite les laisse libres : ils variaient sous NestJS ou doivent pouvoir évoluer.
 
-- **`error`** vaut l'intitulé HTTP (`"Forbidden"`) ou le nom d'énumération Nest (`"UNAUTHORIZED"`,
-  `"TOO_MANY_REQUESTS"`) selon l'origine de l'exception. Cible : toujours l'intitulé HTTP.
-- **Message du 429** : `"ThrottlerException: Too Many Requests"`, qui nomme la bibliothèque. Cible :
-  `"Too Many Requests"`.
-- **Conversion implicite** (`enableImplicitConversion`) : un mot de passe numérique est converti en
-  texte au lieu d'être refusé. Cible : 400 (Zod strict).
+- **`error`** : sous NestJS, l'intitulé HTTP (`"Forbidden"`) ou le nom d'énumération Nest
+  (`"UNAUTHORIZED"`) selon l'origine de l'exception ; depuis Hono, toujours l'intitulé HTTP.
+- **Message du 429** : `"ThrottlerException: Too Many Requests"` sous NestJS, `"Too Many Requests"`
+  depuis Hono.
+- **Conversion implicite** (`enableImplicitConversion`, gardée au portage) : un mot de passe numérique
+  est converti en texte au lieu d'être refusé. Cible : 400, au passage des DTO à Zod.
 - **`path`** reprend la query string de la requête ; seul le chemin est figé.
 - **Rejeu TOTP** : un code déjà utilisé dans sa fenêtre de 30 s est accepté ; la suite attend la fenêtre
   suivante pour rester neutre.
 
 ## Écarts connus, figés (à trancher avant de les changer)
 
-- Le JWT est aussi accepté en `Authorization: Bearer` (extracteur passport). Aucun client ne s'en sert ;
+- Le JWT est aussi accepté en `Authorization: Bearer` (hérité de l'extracteur passport). Aucun client ne s'en sert ;
   le retirer est un changement de contrat, à faire en connaissance de cause dans cette suite.
 
 ## Règles

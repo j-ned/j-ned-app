@@ -1,4 +1,4 @@
-import type { ErrorEvent } from '@sentry/nestjs';
+import type { ErrorEvent } from '@sentry/node';
 import { SENSITIVE_BODY_FIELDS } from './log-redact';
 import {
   isUntracedIncomingRequest,
@@ -303,7 +303,7 @@ type TransactionEvent = Parameters<typeof sentryBeforeSendTransaction>[0];
 const API_HOST = 'http://127.0.0.1:3911';
 
 /**
- * Transaction de la forme reçue par un collecteur local (`@sentry/nestjs` 10.73) : racine
+ * Transaction de la forme reçue par un collecteur local (`@sentry/node` 10.73) : racine
  * `request_context.nestjs` nommée par la route, URL concrète dans `request.url` et `contexts.trace.data`.
  */
 const routeTransaction = (

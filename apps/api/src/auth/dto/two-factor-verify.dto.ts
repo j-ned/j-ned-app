@@ -1,4 +1,3 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -39,26 +38,16 @@ function IsExactlyOneOf(fields: string[], options?: ValidationOptions) {
 }
 
 export class TwoFactorVerifyDto {
-  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   challengeToken!: string;
 
-  @ApiPropertyOptional({
-    example: '123456',
-    description: 'TOTP 6-digit code (mutually exclusive with backupCode)',
-  })
   @IsOptional()
   @IsString()
   @Length(6, 6)
   @IsExactlyOneOf(['code', 'backupCode'])
   code?: string;
 
-  @ApiPropertyOptional({
-    example: 'a1b2-c3d4',
-    description:
-      'Backup code in xxxx-xxxx format (mutually exclusive with code)',
-  })
   @IsOptional()
   @IsString()
   @Matches(/^[a-z0-9]{4}-[a-z0-9]{4}$/)

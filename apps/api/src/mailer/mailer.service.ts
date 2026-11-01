@@ -1,7 +1,6 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Logger } from '../common/logger';
 import type { Transporter } from 'nodemailer';
 import { AppConfigService } from '../config/app-config.service';
-import { MAIL_TRANSPORTER } from './mailer.constants';
 import { maskEmail } from './mailer.utils';
 
 const MAX_RETRIES = 3;
@@ -35,12 +34,11 @@ const maskRecipientsIn = (text: string, recipients: string): string =>
       text,
     );
 
-@Injectable()
 export class MailerService {
   private readonly logger = new Logger(MailerService.name);
 
   constructor(
-    @Inject(MAIL_TRANSPORTER) private readonly transporter: Transporter,
+    private readonly transporter: Transporter,
     private readonly cfg: AppConfigService,
   ) {}
 

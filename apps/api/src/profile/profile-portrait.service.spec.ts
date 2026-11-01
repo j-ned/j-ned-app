@@ -1,16 +1,16 @@
 import { createHash } from 'node:crypto';
 import {
-  Logger,
   NotFoundException,
   ServiceUnavailableException,
   UnprocessableEntityException,
-} from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import { DRIZZLE } from '../database/drizzle.constants';
+} from '../common/http-errors';
+import type { UploadedFile } from '../common/http';
+import { Logger } from '../common/logger';
+import type { Database } from '../database/drizzle.types';
 import type { ProfileContentRow } from '../database/schema/profile-content';
 import { createMockDb } from '../database/test-utils';
-import { ImageOptimizer } from '../storage/image-optimizer.service';
-import { StorageService } from '../storage/storage.service';
+import type { ImageOptimizer } from '../storage/image-optimizer.service';
+import type { StorageService } from '../storage/storage.service';
 import { ProfilePortraitService } from './profile-portrait.service';
 import { aProfileContent } from './profile-test-builders';
 
@@ -18,13 +18,13 @@ const BUCKET = 'portfolio-storage';
 /** Le faux recadrage préfixe les octets reçus : deux fichiers différents ⇒ deux clés différentes. */
 const toAvif = (buffer: Buffer) =>
   Buffer.concat([Buffer.from('avif:'), buffer]);
-const keyOf = (file: Express.Multer.File) =>
+const keyOf = (file: UploadedFile) =>
   `profile/portrait-${createHash('sha256').update(toAvif(file.buffer)).digest('hex').slice(0, 8)}.avif`;
 const aFile = (bytes: string) =>
   ({
     buffer: Buffer.from(bytes),
     mimetype: 'image/jpeg',
-  }) as Express.Multer.File;
+  }) as UploadedFile;
 
 const file = aFile('jpeg-bytes');
 const NEW_KEY = keyOf(file);
@@ -59,7 +59,7 @@ describe('ProfilePortraitService (spec 021, A5)', () => {
   /** Les clés présentes dans le faux bucket. */
   let bucket: Set<string>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     effects = [];
     stored = undefined;
     bucket = new Set();
@@ -125,15 +125,11 @@ describe('ProfilePortraitService (spec 021, A5)', () => {
         }),
       ),
     };
-    const module = await Test.createTestingModule({
-      providers: [
-        ProfilePortraitService,
-        { provide: DRIZZLE, useValue: db },
-        { provide: StorageService, useValue: storage },
-        { provide: ImageOptimizer, useValue: images },
-      ],
-    }).compile();
-    service = module.get(ProfilePortraitService);
+    service = new ProfilePortraitService(
+      db as unknown as Database,
+      storage as unknown as StorageService,
+      images as unknown as ImageOptimizer,
+    );
   });
   afterEach(() => jest.restoreAllMocks());
 

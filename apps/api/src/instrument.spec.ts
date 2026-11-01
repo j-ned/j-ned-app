@@ -1,9 +1,9 @@
 import type { IncomingMessage } from 'node:http';
-import type * as SentryModule from '@sentry/nestjs';
+import type * as SentryModule from '@sentry/node';
 import type * as BeforeSendModule from './common/sentry-before-send';
 
 jest.mock('dotenv/config', () => ({}));
-jest.mock('@sentry/nestjs', () => ({
+jest.mock('@sentry/node', () => ({
   init: jest.fn(),
   httpIntegration: jest.fn(() => ({ name: 'Http' })),
 }));
@@ -21,7 +21,7 @@ describe('instrument', () => {
     let sentry: typeof SentryModule | undefined;
     let hooks: typeof BeforeSendModule | undefined;
     jest.isolateModules(() => {
-      sentry = jest.requireMock<typeof SentryModule>('@sentry/nestjs');
+      sentry = jest.requireMock<typeof SentryModule>('@sentry/node');
       jest.requireActual('./instrument');
       hooks = jest.requireActual<typeof BeforeSendModule>(
         './common/sentry-before-send',

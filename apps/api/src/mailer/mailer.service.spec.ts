@@ -1,8 +1,6 @@
-import { Logger } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { createTransport } from 'nodemailer';
+import { Logger } from '../common/logger';
+import { createTransport, type Transporter } from 'nodemailer';
 import { MailerService } from './mailer.service';
-import { MAIL_TRANSPORTER } from './mailer.constants';
 import { AppConfigService } from '../config/app-config.service';
 
 describe('MailerService', () => {
@@ -10,24 +8,14 @@ describe('MailerService', () => {
   let transporter: { sendMail: jest.Mock };
   let cfg: { smtpFrom: string };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     transporter = { sendMail: jest.fn() };
     cfg = { smtpFrom: 'noreply@test.local' };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        MailerService,
-        {
-          provide: MAIL_TRANSPORTER,
-          useValue: transporter,
-        },
-        {
-          provide: AppConfigService,
-          useValue: cfg,
-        },
-      ],
-    }).compile();
-    service = module.get(MailerService);
+    service = new MailerService(
+      transporter as unknown as Transporter,
+      cfg as unknown as AppConfigService,
+    );
   });
 
   it('envoie le mail avec les bons paramètres', async () => {
@@ -205,15 +193,10 @@ describe('MailerService', () => {
     ): Promise<MimePart[]> => {
       const stream = createTransport({ streamTransport: true, buffer: true });
       const sendMail = jest.spyOn(stream, 'sendMail');
-      const module = await Test.createTestingModule({
-        providers: [
-          MailerService,
-          { provide: MAIL_TRANSPORTER, useValue: stream },
-          { provide: AppConfigService, useValue: cfg },
-        ],
-      }).compile();
-
-      await module.get(MailerService).sendMail({
+      await new MailerService(
+        stream,
+        cfg as unknown as AppConfigService,
+      ).sendMail({
         to: 'visitor@example.com',
         subject: 'Rendez-vous',
         html: '<p>rdv</p>',

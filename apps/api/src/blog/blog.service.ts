@@ -1,12 +1,7 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, NotFoundException } from '../common/http-errors';
+import { Logger } from '../common/logger';
+import type { UploadedFile } from '../common/http';
 import { and, desc, eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import {
   blogPosts,
@@ -23,13 +18,12 @@ import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { findByIdOrFail } from '../common/crud-helpers';
 import { isUniqueViolation, slugify } from '../common/utils';
 
-@Injectable()
 export class BlogService {
   private static readonly BUCKET = 'portfolio-storage';
   private readonly logger = new Logger(BlogService.name);
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly db: Database,
     private readonly storage: StorageService,
     private readonly images: ImageOptimizer,
     private readonly contentImages: BlogContentImagesService,
@@ -144,7 +138,7 @@ export class BlogService {
     ).catch((err: unknown) =>
       this.logger.error(
         `Suppression de la couverture ${current.coverImage} de l'article ${id} en échec`,
-        err,
+        err instanceof Error ? err.stack : String(err),
       ),
     );
     // Images du corps que nul autre article ne cite.
@@ -153,15 +147,12 @@ export class BlogService {
       .catch((err: unknown) =>
         this.logger.error(
           `Nettoyage des images du corps de l'article ${id} en échec`,
-          err,
+          err instanceof Error ? err.stack : String(err),
         ),
       );
   }
 
-  async uploadCoverImage(
-    id: string,
-    file: Express.Multer.File,
-  ): Promise<BlogPost> {
+  async uploadCoverImage(id: string, file: UploadedFile): Promise<BlogPost> {
     const current = await this.findByIdRaw(id);
     // Quel que soit le format reçu, on stocke un AVIF ≤ 1600 px : le poids servi ne dépend
     // plus de l'export de l'admin (un JPEG photo de 2,8 Mo tombait en l'état sur la page).

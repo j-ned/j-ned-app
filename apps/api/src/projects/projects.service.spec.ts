@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { createHash } from 'node:crypto';
-import { Test, TestingModule } from '@nestjs/testing';
 import {
   ConflictException,
-  Logger,
   NotFoundException,
   UnprocessableEntityException,
-} from '@nestjs/common';
+} from '../common/http-errors';
+import { Logger } from '../common/logger';
 import { ProjectsService } from './projects.service';
-import { DRIZZLE } from '../database/drizzle.constants';
+import type { UploadedFile } from '../common/http';
 import { createMockDb } from '../database/test-utils';
 import { StorageService } from '../storage/storage.service';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
@@ -18,10 +17,10 @@ import type { ProjectImageResponse } from './project-gallery';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
-  let module: TestingModule;
   let db: ReturnType<typeof createMockDb>;
   let storage: jest.Mocked<StorageService>;
   let gallery: jest.Mocked<Pick<ProjectImagesService, 'galleryOf' | 'keysOf'>>;
+  let optimizer: jest.Mocked<Pick<ImageOptimizer, 'optimize'>>;
 
   const mkImage = (id: string): ProjectImageResponse => ({
     id,
@@ -57,7 +56,7 @@ describe('ProjectsService', () => {
     ...overrides,
   });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     db = createMockDb();
     storage = {
       upload: jest.fn().mockResolvedValue(undefined),
@@ -72,27 +71,21 @@ describe('ProjectsService', () => {
       keysOf: jest.fn().mockResolvedValue([]),
     };
 
-    module = await Test.createTestingModule({
-      providers: [
-        ProjectsService,
-        { provide: DRIZZLE, useValue: db },
-        { provide: StorageService, useValue: storage },
-        { provide: ProjectImagesService, useValue: gallery },
-        {
-          provide: ImageOptimizer,
-          useValue: {
-            optimize: jest.fn().mockResolvedValue({
-              buffer: Buffer.from('avif-bytes'),
-              mimetype: 'image/avif',
-              ext: 'avif',
-              width: 1600,
-              height: 900,
-            }),
-          },
-        },
-      ],
-    }).compile();
-    service = module.get(ProjectsService);
+    optimizer = {
+      optimize: jest.fn().mockResolvedValue({
+        buffer: Buffer.from('avif-bytes'),
+        mimetype: 'image/avif',
+        ext: 'avif',
+        width: 1600,
+        height: 900,
+      }),
+    };
+    service = new ProjectsService(
+      db as never,
+      storage,
+      optimizer as unknown as ImageOptimizer,
+      gallery as unknown as ProjectImagesService,
+    );
   });
 
   describe('findAll', () => {
@@ -290,7 +283,7 @@ describe('ProjectsService', () => {
       );
       const result = await service.uploadImage(row.id, {
         buffer: Buffer.from('f'),
-      } as Express.Multer.File);
+      } as UploadedFile);
       expect(result.gallery).toEqual([mkImage('x')]);
     });
   });
@@ -519,7 +512,7 @@ describe('ProjectsService', () => {
       buffer: Buffer.from('fake'),
       mimetype: 'image/webp',
       size: 100,
-    } as Express.Multer.File;
+    } as UploadedFile;
 
     it('throw NotFoundException si projet absent', async () => {
       db.limit.mockResolvedValueOnce([]);
@@ -590,7 +583,6 @@ describe('ProjectsService', () => {
     it("image illisible → 422 de l'optimiseur, rien n'est envoyé en S3", async () => {
       const current = mkProject({ image: '' });
       db.limit.mockResolvedValueOnce([current]);
-      const optimizer = module.get<jest.Mocked<ImageOptimizer>>(ImageOptimizer);
       optimizer.optimize.mockRejectedValueOnce(
         new UnprocessableEntityException('Image illisible'),
       );
@@ -687,7 +679,7 @@ describe('ProjectsService', () => {
       db.returning.mockResolvedValueOnce([{ ...mkProject(), ...EDITORIAL }]);
       const result = await service.uploadImage(mkProject().id, {
         buffer: Buffer.from('f'),
-      } as Express.Multer.File);
+      } as UploadedFile);
       expect(result).toMatchObject(EDITORIAL);
     });
   });

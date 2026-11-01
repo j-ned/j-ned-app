@@ -1,9 +1,8 @@
 import 'reflect-metadata';
-import { ConflictException } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { ConflictException } from '../common/http-errors';
 import { plainToInstance } from 'class-transformer';
 import { and, eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
+import type { Database } from '../database/drizzle.types';
 import {
   workshopGuide,
   type WorkshopGuideRow,
@@ -40,12 +39,9 @@ describe('WorkshopGuideService', () => {
   let service: WorkshopGuideService;
   let db: ReturnType<typeof createMockDb>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     db = createMockDb();
-    const module = await Test.createTestingModule({
-      providers: [WorkshopGuideService, { provide: DRIZZLE, useValue: db }],
-    }).compile();
-    service = module.get(WorkshopGuideService);
+    service = new WorkshopGuideService(db as unknown as Database);
   });
 
   describe('findCurrent', () => {

@@ -3,11 +3,11 @@
 Monorepo pnpm du portfolio : le site Angular et son API, avec l'historique Git des deux dépôts
 d'origine (`ng-portfolio-app`, `nest-portfolio-app`).
 
-| Dossier               | Paquet                  | Rôle                                                              | README                                                         |
-| --------------------- | ----------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------- |
-| `apps/web`            | `@portfolio/web`        | Angular 22 zoneless, SSR + prérendu, nginx devant Node            | [apps/web/README.md](apps/web/README.md)                       |
-| `apps/api`            | `@portfolio/api`        | API NestJS (migration vers Hono prévue), Drizzle, Postgres        | [apps/api/README.md](apps/api/README.md)                       |
-| `packages/api-parity` | `@portfolio/api-parity` | Suite HTTP boîte noire de l'API : le contrat que Hono devra tenir | [packages/api-parity/README.md](packages/api-parity/README.md) |
+| Dossier               | Paquet                  | Rôle                                                       | README                                                         |
+| --------------------- | ----------------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| `apps/web`            | `@portfolio/web`        | Angular 22 zoneless, SSR + prérendu, nginx devant Node     | [apps/web/README.md](apps/web/README.md)                       |
+| `apps/api`            | `@portfolio/api`        | API Hono, Drizzle, Postgres                                | [apps/api/README.md](apps/api/README.md)                       |
+| `packages/api-parity` | `@portfolio/api-parity` | Suite HTTP boîte noire de l'API : le contrat qu'elle tient | [packages/api-parity/README.md](packages/api-parity/README.md) |
 
 ## Démarrage
 

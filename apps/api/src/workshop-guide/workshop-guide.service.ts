@@ -1,7 +1,6 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { ConflictException } from '../common/http-errors';
 import { and, eq, sql } from 'drizzle-orm';
 import { isDeepStrictEqual } from 'node:util';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import {
   WORKSHOP_GUIDE_ROW_ID,
@@ -18,9 +17,8 @@ import {
 } from './workshop-guide-document';
 
 /** Guide des plaquettes (spec 035 du front) : un document unique, lu à la requête par le front. */
-@Injectable()
 export class WorkshopGuideService {
-  constructor(@Inject(DRIZZLE) private readonly db: Database) {}
+  constructor(private readonly db: Database) {}
 
   /** Sans ligne en base : le document par défaut (désactivé, vide), jamais un 404. */
   async findCurrent(): Promise<WorkshopGuideDocument> {
