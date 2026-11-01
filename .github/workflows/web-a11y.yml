@@ -1,10 +1,10 @@
-name: Accessibilité
+name: Web · Accessibilité
 
 # Audit axe hors des pull requests : chaque lundi sur master, et à la demande (bouton « Run
 # workflow »). En local avant une PR qui touche l'interface : voir CLAUDE.md, « Audit axe ».
 on:
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -15,6 +15,9 @@ jobs:
     name: Axe (WCAG 2.0/2.1/2.2 A et AA)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -28,9 +31,10 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # Les tests Playwright lisent leurs dépendances dans node_modules, monté dans le conteneur.
+      # Les tests Playwright lisent leurs dépendances dans node_modules, monté dans le conteneur. Tout
+      # le dépôt est monté : les liens de apps/web/node_modules pointent vers le store pnpm de la racine.
       - name: Install (frozen lockfile)
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --filter @portfolio/web
 
       # Navigateur et bibliothèques système déjà dans l'image officielle, à la version du paquet.
       - name: Pull Playwright image (background)
@@ -46,6 +50,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: apps/web/Dockerfile
           push: false
           load: true
           tags: ng-portfolio-app:a11y
@@ -58,7 +63,7 @@ jobs:
         run: |
           docker pull -q "$PLAYWRIGHT_IMAGE"
           docker run --rm --network host --ipc host -e CI=1 \
-            -v "$PWD:/work" -w /work "$PLAYWRIGHT_IMAGE" \
+            -v "$GITHUB_WORKSPACE:/work" -w /work/apps/web "$PLAYWRIGHT_IMAGE" \
             node_modules/.bin/playwright test -c e2e/playwright.config.ts
 
       - name: Container logs
@@ -73,8 +78,8 @@ jobs:
         with:
           name: a11y-report
           path: |
-            playwright-report/
-            test-results/
+            apps/web/playwright-report/
+            apps/web/test-results/
           retention-days: 14
 
       - name: Stop stack

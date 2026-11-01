@@ -1,4 +1,4 @@
-name: CI
+name: Web CI
 
 # Sur une PR : construire, tester, juger l'image. Sur master : la même chose, puis publier l'image
 # jugée sur GHCR et demander à Dokploy de la déployer (il ne construit plus rien) ; lancé à la main
@@ -6,8 +6,17 @@ name: CI
 # cloisonne le cache entre PR).
 on:
   pull_request:
+    paths: &paths
+      - apps/web/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - .npmrc
+      - docker-bake.hcl
+      - .github/workflows/web-ci.yml
   push:
     branches: [master]
+    paths: *paths
   workflow_dispatch:
 
 permissions:
@@ -15,7 +24,7 @@ permissions:
 
 # Un run par branche/PR : le nouveau push annule le précédent.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: web-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -42,7 +51,7 @@ jobs:
         uses: docker/bake-action@v6
         with:
           source: .
-          targets: ci
+          targets: web-ci
           set: |
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
@@ -55,9 +64,10 @@ jobs:
           docker cp -q "$id:/usr/share/nginx/html" /tmp/browser
           docker cp -q "$id:/app/server" /tmp/server
           docker rm -f "$id" > /dev/null
-          ci/verify-prerender.sh /tmp/browser /tmp/server
+          apps/web/ci/verify-prerender.sh /tmp/browser /tmp/server
 
       - name: Smoke test the image
+        working-directory: apps/web
         run: ci/smoke.sh ng-portfolio-app:ci
 
       # Seule l'image qui vient de passer les tests et le test de fumée est publiée : celle que
@@ -69,7 +79,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-          image=ghcr.io/${{ github.repository }}
+          # Nom d'image d'avant le monorepo : Dokploy tire toujours celle-ci.
+          image=ghcr.io/${{ github.repository_owner }}/ng-portfolio-app
           docker tag ng-portfolio-app:ci "$image:sha-${GITHUB_SHA::7}"
           docker tag ng-portfolio-app:ci "$image:latest"
           docker push -q "$image:sha-${GITHUB_SHA::7}"
@@ -83,7 +94,7 @@ jobs:
         env:
           DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
           DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
-          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_WEB_APPLICATION_ID }}
         run: |
           if [ -z "$DOKPLOY_URL" ] || [ -z "$DOKPLOY_API_KEY" ] || [ -z "$DOKPLOY_APPLICATION_ID" ]; then
             echo "Secrets Dokploy absents : pas de déclenchement."

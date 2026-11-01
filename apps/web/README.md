@@ -273,7 +273,7 @@ Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discus
 ### Docker
 
 ```bash
-docker build -t ng-portfolio-app:local .
+docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..
 docker run --rm -p 3000:3000 -e API_UPSTREAM=http://<api>:3000 ng-portfolio-app:local   # nginx + Node
 ```
 
@@ -286,7 +286,7 @@ Les gates sont ceux du Dockerfile, rejoués en local avant chaque PR et dans la 
 ```bash
 pnpm install --frozen-lockfile
 pnpm run build --configuration production   # build SSR + prérendu des pages statiques + CSP
-docker build -t ng-portfolio-app:local .    # exactement ce que Dokploy exécute
+docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..    # exactement ce que Dokploy exécute
 ```
 
 - Une PR par changement, squash-merge sur `master`, branche protégée par les deux jobs de CI.

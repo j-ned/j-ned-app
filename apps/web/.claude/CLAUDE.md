@@ -266,12 +266,11 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 
 ---
 
-## API (backend séparé — repo distinct)
+## API (`apps/api` du monorepo)
 
-> **Ce repo est FRONT-ONLY.** Aucun backend dans l'arbre (`apps/api/**` n'existe pas ici, ce
-> n'est pas un monorepo). L'API (NestJS) vit dans un **dépôt séparé** avec ses propres
-> conventions (NestJS/Drizzle/Zod). Ici on ne documente que la **consommation** de l'API côté
-> Angular.
+> Ce dossier est `apps/web` d'un **monorepo pnpm** : l'API (NestJS, migration vers Hono prévue)
+> vit dans `apps/api` avec ses propres conventions (Drizzle/Zod) et son propre README. Un seul
+> lockfile, à la racine. Ici on ne documente que la **consommation** de l'API côté Angular.
 
 ### Gateway Angular ↔ API
 - `HttpClient` typé sur les DTOs de réponse de l'API
@@ -447,16 +446,16 @@ pnpm test                   # Vitest
 pnpm lint                   # ng lint (gate)
 pnpm ng generate            # Schematics
 
-# Replique locale des gates Dokploy / CI (.github/workflows/ci.yml)
+# Replique locale des gates Dokploy / CI (.github/workflows/web-ci.yml, à la racine du monorepo)
 pnpm install --frozen-lockfile                 # echoue si le lockfile est incoherent
 pnpm run build --configuration production      # sitemap + rss + build SSR + prerender
-docker build -t ng-portfolio-app:local .       # l'image que la CI publie sur GHCR (ghcr.io/j-ned/ng-portfolio-app) et que Dokploy tire
-docker buildx bake ci                          # replique exacte de la CI : etage test + image, en parallele
+docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..   # contexte = racine du monorepo ; l'image que la CI publie sur GHCR (ghcr.io/j-ned/ng-portfolio-app) et que Dokploy tire
+(cd ../.. && docker buildx bake web-ci)         # replique exacte de la CI : etage test + image, en parallele
 
 # Audit axe (WCAG 2.0/2.1/2.2 A et AA, zero violation, ADR-0025) : hors PR depuis le 2026-10-26,
 # workflow `a11y.yml` chaque lundi + a la demande ; en local avant une PR qui touche l'interface
 pnpm exec playwright install --only-shell chromium   # une fois
-docker build -t ng-portfolio-app:a11y . && ci/a11y-stack.sh up
+docker build -f apps/web/Dockerfile -t ng-portfolio-app:a11y ../.. && ci/a11y-stack.sh up
 pnpm a11y                                           # rapport : pnpm exec playwright show-report
 ci/a11y-stack.sh down
 

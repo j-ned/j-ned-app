@@ -5,15 +5,20 @@
 # ==============================================================================
 FROM node:22-alpine AS source
 
-RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 
-WORKDIR /app
+# Contexte de build : la racine du monorepo (lockfile commun). Seuls les manifestes du workspace et
+# de cette application entrent avant l'installation, pour garder la couche en cache.
+WORKDIR /repo
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/web/package.json apps/web/
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --filter @portfolio/web
 
-COPY . .
+COPY apps/web apps/web
+
+WORKDIR /repo/apps/web
 
 # ==============================================================================
 # Stage 2 — Build : Angular (rendu serveur à la requête, prérendu des pages statiques, CSR)
@@ -44,13 +49,15 @@ RUN pnpm lint \
 # ==============================================================================
 FROM node:22-alpine AS deps
 
-RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 
-WORKDIR /app
+WORKDIR /repo
 
-COPY package.json pnpm-lock.yaml ./
+# `pnpm deploy` : node_modules autonome de cette seule application, depuis le lockfile commun.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/web/package.json apps/web/
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --prod --frozen-lockfile --ignore-scripts
+    pnpm --filter @portfolio/web deploy --prod --frozen-lockfile --ignore-scripts /app
 
 # ==============================================================================
 # Stage 4 — Runtime : nginx devant Node, dans la même image (HTML rendu et chunks hachés sortent
@@ -69,8 +76,8 @@ RUN apk add --no-cache libstdc++ su-exec \
 
 # L'image nginx livre sa page d'accueil et une page 50x : retirées, seul le build est servi.
 RUN rm -rf /usr/share/nginx/html/*
-COPY --from=build /app/dist/angular-portfolio-app/browser /usr/share/nginx/html
-COPY --from=build /app/dist/angular-portfolio-app/server /app/server
+COPY --from=build /repo/apps/web/dist/angular-portfolio-app/browser /usr/share/nginx/html
+COPY --from=build /repo/apps/web/dist/angular-portfolio-app/server /app/server
 COPY --from=deps /app/node_modules /app/node_modules
 
 # En-têtes de sécurité : Traefik ne pose que le TLS, le reste vient d'ici. La CSP complète

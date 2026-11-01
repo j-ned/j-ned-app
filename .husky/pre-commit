@@ -1,0 +1,7 @@
+# lint-staged prend la config du package.json le plus proche de chaque fichier indexé.
+pnpm exec lint-staged
+
+# Tests des seules applications touchées par le commit.
+staged=$(git diff --cached --name-only)
+if echo "$staged" | grep -q '^apps/web/'; then pnpm --filter @portfolio/web test; fi
+if echo "$staged" | grep -q '^apps/api/'; then pnpm --filter @portfolio/api test; fi
