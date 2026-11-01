@@ -21,7 +21,7 @@ target "web-production" {
   output     = ["type=docker"]
   # Relie le paquet GHCR au dépôt (visibilité et page du paquet).
   labels = {
-    "org.opencontainers.image.source" = "https://github.com/j-ned/portfolio"
+    "org.opencontainers.image.source" = "https://github.com/j-ned/j-ned-app"
   }
 }
 
@@ -30,6 +30,6 @@ target "api" {
   dockerfile = "apps/api/Dockerfile"
   tags       = ["nest-portfolio-app:ci"]
   labels = {
-    "org.opencontainers.image.source" = "https://github.com/j-ned/portfolio"
+    "org.opencontainers.image.source" = "https://github.com/j-ned/j-ned-app"
   }
 }
