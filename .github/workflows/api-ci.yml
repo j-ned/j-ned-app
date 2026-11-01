@@ -5,7 +5,7 @@ name: API CI
 # par son API, sans rien reconstruire.
 on:
   pull_request:
-    paths: &paths
+    paths:
       - apps/api/**
       - packages/api-parity/**
       - pnpm-lock.yaml
@@ -15,7 +15,14 @@ on:
       - .github/workflows/api-ci.yml
   push:
     branches: [master]
-    paths: *paths
+    paths:
+      - apps/api/**
+      - packages/api-parity/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - .npmrc
+      - .github/workflows/api-ci.yml
   workflow_dispatch:
 
 permissions:

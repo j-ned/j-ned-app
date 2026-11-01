@@ -6,7 +6,7 @@ name: Web CI
 # cloisonne le cache entre PR).
 on:
   pull_request:
-    paths: &paths
+    paths:
       - apps/web/**
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
@@ -16,7 +16,14 @@ on:
       - .github/workflows/web-ci.yml
   push:
     branches: [master]
-    paths: *paths
+    paths:
+      - apps/web/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - .npmrc
+      - docker-bake.hcl
+      - .github/workflows/web-ci.yml
   workflow_dispatch:
 
 permissions:
