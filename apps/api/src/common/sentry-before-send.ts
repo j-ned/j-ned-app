@@ -1,4 +1,4 @@
-import type { ErrorEvent, Event } from '@sentry/nestjs';
+import type { ErrorEvent, Event } from '@sentry/node';
 import {
   SENSITIVE_BODY_FIELDS,
   redactQueryParams,

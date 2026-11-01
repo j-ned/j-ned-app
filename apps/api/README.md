@@ -1,6 +1,6 @@
-# Portfolio NestJS Backend
+# Portfolio API (Hono)
 
-Backend NestJS du portfolio J-Ned. Toutes les routes sont montées sous le préfixe global **`/api`** (`app.setGlobalPrefix('api')` dans `src/app.setup.ts`) - le Swagger UI fait exception, il reste à la racine (`/docs`, non préfixé). Toute route inconnue, sous `/api` ou hors préfixe, répond par la même erreur JSON (`HttpExceptionFilter`, repli `src/common/filters/out-of-prefix-fallback.ts` depuis NestJS 12).
+API du portfolio J-Ned, en [Hono](https://hono.dev) sur Node (`@hono/node-server`). Toutes les routes sont montées sous **`/api`** (`src/app.ts`) ; toute route inconnue, sous `/api` ou non, répond par la même erreur JSON (`src/common/error-handler.ts`). Le contrat HTTP (statuts, en-têtes, cookies, quotas, CSRF, format d'erreur) est figé par la suite boîte noire [`packages/api-parity`](../../packages/api-parity/README.md), qui tourne contre l'image Docker en CI.
 
 ## Quickstart
 
@@ -23,65 +23,51 @@ Endpoints disponibles une fois démarré :
 | ---------------------------------- | ---------------------------------------------------------------------------------- |
 | `http://localhost:3000/api/health` | Healthcheck (200 avec `status: "ok"` ou `"degraded"` selon l'état DB - jamais 503) |
 | `http://localhost:3000/api/config` | Config publique pour le frontend (Sentry DSN/env/release)                          |
-| `http://localhost:3000/docs`       | Swagger UI (**pas** sous `/api`)                                                   |
-| `http://localhost:3000/docs-json`  | OpenAPI JSON                                                                       |
 
 ## Architecture
 
-Modules importés dans `AppModule` (`src/app.module.ts`), dans l'ordre :
+Pas de framework d'injection : `src/main.ts` lit la configuration, ouvre les connexions et assemble l'application à la main.
 
-1. **`SentryModule`** (`@sentry/nestjs`) - init au tout début de `main.ts` via `src/instrument.ts` (avant `NestFactory.create`, car `@nestjs/config` n'a pas encore tourné). `SentryGlobalFilter` capture toutes les exceptions non gérées via `APP_FILTER`.
-2. **`ConfigModule`** (`@nestjs/config`, global) - charge `.env` et invoque `validateEnv()` (Zod).
-3. **`AppConfigModule`** - expose `AppConfigService`, wrapper typé sur `ConfigService`.
-4. **`LoggerModule`** (`nestjs-pino`, global) - Pino structuré ; en plus du logging, un hook `logMethod` renvoie tout log `level >= 50` (error) vers `Sentry.captureMessage` (sauf s'il s'agit déjà d'une exception capturée par `SentryGlobalFilter`, pour éviter le doublon).
-5. **`DatabaseModule`** (`@Global`) - expose le token `DRIZZLE` (instance Drizzle connectée à Postgres).
-6. **`HealthModule`** - `GET /api/health` avec ping DB.
-7. **`AuthModule`** - users, JWT, 2FA TOTP.
-8. **`StorageModule`** (`@Global`) - `StorageService` (S3) + `StorageController` (proxy public).
-9. **`ProjectsModule`** - CRUD projets + upload image.
-10. **`BlogModule`** - CRUD admin des articles de blog + endpoints publics (liste/détail/like), lus à la requête par le front (aucune écriture ne déclenche de rebuild).
-11. **`ProfileModule`** - contenu de la page Parcours (`/about`) : document unique versionné + portrait, lu à la requête par le front (aucune écriture ne déclenche de rebuild).
-12. **`MailerModule`** (`@Global`) - `MailerService` (SMTP).
-13. **`ThrottlerModule`** (global, `APP_GUARD`) - 10 req/60s par défaut, overridable par endpoint via `@Throttle()`.
-14. **`ContactModule`** - formulaire de contact public + gestion admin.
-15. **`ScheduleModule`** (`@nestjs/schedule`) - support des `@Cron()`.
-16. **`CvModule`** - upload/download du CV.
-17. **`AnalyticsModule`** - tracking + stats + rollup cron.
-18. **`RuntimeConfigModule`** - `GET /api/config`.
+- **`src/instrument.ts`** - premier import de `main.ts` : charge `.env` puis initialise Sentry (`@sentry/node`) avant tout module instrumenté.
+- **`src/config/`** - `validateEnv()` (Zod) puis `AppConfigService`, getters typés sur l'environnement validé.
+- **`src/database/database.ts`** - `connectDatabase(config)` : pool `postgres-js` + Drizzle, `close()` à l'arrêt.
+- **`src/services.ts`** - `createServices()` : racine de composition, chaque service reçoit ses dépendances par son constructeur (une instance chacun).
+- **`src/app.ts`** - `createApp()` : middlewares globaux (log des requêtes, en-têtes de sécurité, CORS, contrôle d'origine), puis les routes de chaque module (`<module>/<module>.routes.ts`, une fabrique `xxxRoutes(services…, requireAuth)` par module), erreur et 404 au format JSON.
+- **`src/common/`** - briques HTTP partagées : `http.ts` (corps JSON validé, query, UUID, fichiers envoyés, IP du visiteur), `validation.ts` (DTO class-validator), `throttle.ts` (quotas), `cross-origin.ts` (CSRF), `error-handler.ts`, `logger.ts`, `http-errors.ts`.
+- **Tâche planifiée** - `src/analytics/analytics.schedule.ts` : rollup quotidien à 00:00 UTC (`croner`), arrêté avec le serveur.
 
-Les modules `@Global` (`DatabaseModule`, `StorageModule`, `MailerModule`, `LoggerModule`) sont injectables partout sans import explicite.
+Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis la tâche planifiée, le pool Postgres, SMTP et S3 sont fermés.
 
 ## Configuration
 
 Toute la config passe par les variables d'env, validées au boot par Zod (`src/config/env.schema.ts`). **L'app crash immédiatement avec un message lisible** si une variable requise est manquante ou invalide.
 
-| Variable                    | Type                                               | Défaut                       | Rôle                                                                                                                                                                                                                                                                                          |
-| --------------------------- | -------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NODE_ENV`                  | `development` \| `production` \| `test`            | `development`                | Pilote le format des logs, le sample rate Sentry                                                                                                                                                                                                                                              |
-| `PORT`                      | int 1-65535                                        | `3000`                       | Port HTTP                                                                                                                                                                                                                                                                                     |
-| `DATABASE_URL`              | URL `postgres://...`                               | _(requis)_                   | Connexion Drizzle                                                                                                                                                                                                                                                                             |
-| `LOG_LEVEL`                 | `fatal`\|`error`\|`warn`\|`info`\|`debug`\|`trace` | `debug` en dev, `info` sinon | Niveau Pino                                                                                                                                                                                                                                                                                   |
-| `JWT_SECRET`                | string, 32+ chars                                  | _(requis)_                   | Signature JWT                                                                                                                                                                                                                                                                                 |
-| `JWT_EXPIRES_IN`            | string                                             | `7d`                         | Durée de vie du JWT                                                                                                                                                                                                                                                                           |
-| `COOKIE_DOMAIN`             | string                                             | _(vide → `localhost`)_       | Domaine du cookie httpOnly (`.example.fr` pour partager entre sous-domaines)                                                                                                                                                                                                                  |
-| `ADMIN_EMAIL`               | email                                              | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                                                                                                                                                                                                                         |
-| `ADMIN_INITIAL_PASSWORD`    | string, 12+ chars                                  | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                                                                                                                                                                                                                         |
-| `TOTP_APP_NAME`             | string                                             | `J-Ned Portfolio`            | Nom affiché dans l'app authenticator                                                                                                                                                                                                                                                          |
-| `CORS_ORIGINS`              | CSV                                                | `http://localhost:4200`      | Origines autorisées (credentials)                                                                                                                                                                                                                                                             |
-| `S3_ENDPOINT`               | URL                                                | _(requis)_                   | Endpoint S3-compatible (MinIO/R2)                                                                                                                                                                                                                                                             |
-| `S3_REGION`                 | string                                             | _(requis)_                   | Région S3                                                                                                                                                                                                                                                                                     |
-| `S3_ACCESS_KEY`             | string, 4+ chars                                   | _(requis)_                   | Access key S3                                                                                                                                                                                                                                                                                 |
-| `S3_SECRET_KEY`             | string, 8+ chars                                   | _(requis)_                   | Secret key S3                                                                                                                                                                                                                                                                                 |
-| `SMTP_HOST`                 | string                                             | _(requis)_                   | Hôte SMTP                                                                                                                                                                                                                                                                                     |
-| `SMTP_PORT`                 | int 1-65535                                        | `587`                        | Port SMTP                                                                                                                                                                                                                                                                                     |
-| `SMTP_SECURE`               | `"true"`\|`"1"` → bool                             | `false`                      | TLS direct (port 465)                                                                                                                                                                                                                                                                         |
-| `SMTP_USER`                 | string                                             | _(requis)_                   | User SMTP                                                                                                                                                                                                                                                                                     |
-| `SMTP_PASS`                 | string                                             | _(requis)_                   | Password SMTP                                                                                                                                                                                                                                                                                 |
-| `SMTP_FROM`                 | email                                              | _(requis)_                   | Expéditeur des mails                                                                                                                                                                                                                                                                          |
-| `SENTRY_DSN`                | URL                                                | _(optionnel)_                | DSN backend ; vide = Sentry désactivé                                                                                                                                                                                                                                                         |
-| `SENTRY_RELEASE`            | string                                             | _(optionnel)_                | Tag de release Sentry                                                                                                                                                                                                                                                                         |
-| `SENTRY_TRACES_SAMPLE_RATE` | float 0-1                                          | `0.2` prod / `1.0` dev       | Sample rate tracing                                                                                                                                                                                                                                                                           |
-| `SENTRY_FRONTEND_DSN`       | URL                                                | _(optionnel)_                | DSN d'un **projet Sentry distinct** pour le frontend, exposé publiquement via `GET /api/config`                                                                                                                                                                                               |
+| Variable                    | Type                                               | Défaut                       | Rôle                                                                                              |
+| --------------------------- | -------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                  | `development` \| `production` \| `test`            | `development`                | Pilote le format des logs, le sample rate Sentry                                                  |
+| `PORT`                      | int 1-65535                                        | `3000`                       | Port HTTP                                                                                         |
+| `DATABASE_URL`              | URL `postgres://...`                               | _(requis)_                   | Connexion Drizzle                                                                                 |
+| `LOG_LEVEL`                 | `fatal`\|`error`\|`warn`\|`info`\|`debug`\|`trace` | `debug` en dev, `info` sinon | Niveau Pino                                                                                       |
+| `JWT_SECRET`                | string, 32+ chars                                  | _(requis)_                   | Signature JWT                                                                                     |
+| `JWT_EXPIRES_IN`            | string                                             | `7d`                         | Durée de vie du JWT                                                                               |
+| `ADMIN_EMAIL`               | email                                              | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                             |
+| `ADMIN_INITIAL_PASSWORD`    | string, 12+ chars                                  | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                             |
+| `TOTP_APP_NAME`             | string                                             | `J-Ned Portfolio`            | Nom affiché dans l'app authenticator                                                              |
+| `CORS_ORIGINS`              | CSV                                                | `http://localhost:4200`      | Origines du site : CORS (credentials), CSRF (`CrossOriginGuard`), référents internes de la mesure |
+| `S3_ENDPOINT`               | URL                                                | _(requis)_                   | Endpoint S3-compatible (MinIO/R2)                                                                 |
+| `S3_REGION`                 | string                                             | _(requis)_                   | Région S3                                                                                         |
+| `S3_ACCESS_KEY`             | string, 4+ chars                                   | _(requis)_                   | Access key S3                                                                                     |
+| `S3_SECRET_KEY`             | string, 8+ chars                                   | _(requis)_                   | Secret key S3                                                                                     |
+| `SMTP_HOST`                 | string                                             | _(requis)_                   | Hôte SMTP                                                                                         |
+| `SMTP_PORT`                 | int 1-65535                                        | `587`                        | Port SMTP                                                                                         |
+| `SMTP_SECURE`               | `"true"`\|`"1"` → bool                             | `false`                      | TLS direct (port 465)                                                                             |
+| `SMTP_USER`                 | string                                             | _(requis)_                   | User SMTP                                                                                         |
+| `SMTP_PASS`                 | string                                             | _(requis)_                   | Password SMTP                                                                                     |
+| `SMTP_FROM`                 | email                                              | _(requis)_                   | Expéditeur des mails                                                                              |
+| `SENTRY_DSN`                | URL                                                | _(optionnel)_                | DSN backend ; vide = Sentry désactivé                                                             |
+| `SENTRY_RELEASE`            | string                                             | _(optionnel)_                | Tag de release Sentry                                                                             |
+| `SENTRY_TRACES_SAMPLE_RATE` | float 0-1                                          | `0.2` prod / `1.0` dev       | Sample rate tracing                                                                               |
+| `SENTRY_FRONTEND_DSN`       | URL                                                | _(optionnel)_                | DSN d'un **projet Sentry distinct** pour le frontend, exposé publiquement via `GET /api/config`   |
 
 `S3_*` et `SMTP_*` sont **requis sans défaut** - impossible de démarrer l'app sans Storage et Mailer configurés, même si on ne les utilise pas en dev.
 
@@ -112,12 +98,12 @@ pnpm db:down            # Stoppe le container
 
 ## Logging
 
-[`nestjs-pino`](https://github.com/iamolegga/nestjs-pino).
+[Pino](https://getpino.io), une ligne par requête (`src/common/request-logger.ts`) et `Logger` nommé par module (`src/common/logger.ts`, même usage que celui de NestJS auparavant). Tout log `error` qui ne porte pas déjà une exception part aussi à Sentry.
 
 - **Dev** : sortie `pino-pretty`.
 - **Prod/test** : JSON structuré.
 - **Redaction** automatique (liste unique `LOG_REDACT_PATHS`, `src/common/log-redact.ts`) : `authorization`, `cookie`, `set-cookie`, et dans le body `password`, `newPassword`, `currentPassword`, `code`, `token`, `refreshToken`, `phone`, `email`.
-- **Jeton du flux d'agenda** (abonnement retiré avec la prise de rendez-vous, spec 029 du front : les agendas déjà abonnés continuent d'appeler l'URL, jeton compris, et reçoivent un 404) : le sérialiseur `req` (`serializeRequest`) ne garde que `id`, `method` et l'URL passée à `redactUrl`, qui remplace tout ce qui suit `/api/booking/feed/` par `[Filtered]` (insensible à la casse, comme le routage Express) et, en renfort, tout segment à la forme du jeton (43 caractères base64url puis `.ics`) : `//`, segment encodé (`%66eed`) ou route mal formée ne le laissent pas passer. Le `path` des corps d'erreur et le log des 5xx de `HttpExceptionFilter` passent par la même fonction.
+- **Jeton du flux d'agenda** (abonnement retiré avec la prise de rendez-vous, spec 029 du front : les agendas déjà abonnés continuent d'appeler l'URL, jeton compris, et reçoivent un 404) : le sérialiseur `req` (`serializeRequest`) ne garde que `id`, `method` et l'URL passée à `redactUrl`, qui remplace tout ce qui suit `/api/booking/feed/` par `[Filtered]` (insensible à la casse, comme le routage Express) et, en renfort, tout segment à la forme du jeton (43 caractères base64url puis `.ics`) : `//`, segment encodé (`%66eed`) ou route mal formée ne le laissent pas passer. Le `path` des corps d'erreur et le log des 5xx de `handleError` passent par la même fonction.
 - **`/api/health`** est ignoré par le logger HTTP (évite de polluer les logs au rythme du pinger/healthcheck Docker).
 - Tout log `error` (level ≥ 50) est aussi envoyé à Sentry via `Sentry.captureMessage`, sauf s'il s'agit déjà d'une exception capturée par le filter global (anti-doublon).
 
@@ -163,64 +149,67 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
 
 **Décisions clés** :
 
-- JWT unique (7j par défaut), un seul cookie httpOnly `token`, pas de refresh token (compromis assumé pour un backend mono-admin - un vrai couple access/refresh roté serait overkill ici).
+- JWT unique (7j par défaut), un seul cookie `__Host-token` (`HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/`, sans `Domain` : attaché à l'hôte exact, aucun sous-domaine ne peut le lire ni l'écraser), pas de refresh token (compromis assumé pour un backend mono-admin - un vrai couple access/refresh roté serait overkill ici).
+- **CSRF** : `crossOriginProtection` (middleware global, `src/common/cross-origin.ts`) rejette en 403 toute écriture (`POST`/`PUT`/`PATCH`/`DELETE`) dont `Sec-Fetch-Site` n'est ni `same-origin` ni `none`, sauf si `Origin` figure dans `CORS_ORIGINS`. Une requête sans `Origin` ni `Sec-Fetch-Site` (curl, scripts) n'est pas un navigateur et passe. Même algorithme que `CrossOriginProtection` de Go.
 - Algorithme JWT épinglé explicitement (`HS256`) au sign comme au verify - anti confusion d'algorithme.
-- **Révocation via `tokenVersion`** : colonne `users.token_version` (int), embarquée dans le payload JWT à l'émission. Incrémentée par `UsersService` sur `updatePassword`/`enableTwoFactor`/`disableTwoFactor`. `JwtStrategy.validate` rejette tout JWT dont le `tokenVersion` ne correspond pas à celui en DB - un changement de mot de passe (ou `pnpm db:change-password`) invalide immédiatement tous les tokens déjà émis, sans avoir besoin d'un vrai refresh token.
+- **Révocation via `tokenVersion`** : colonne `users.token_version` (int), embarquée dans le payload JWT à l'émission. Incrémentée par `UsersService` sur `updatePassword`/`enableTwoFactor`/`disableTwoFactor`. `requireAuth` (`src/auth/require-auth.ts`) rejette tout JWT dont le `tokenVersion` ne correspond pas à celui en DB - un changement de mot de passe (ou `pnpm db:change-password`) invalide immédiatement tous les tokens déjà émis, sans avoir besoin d'un vrai refresh token.
 - Argon2id pour le hash password et les backup codes.
-- `JwtStrategy` rejette tout JWT avec `scope === '2fa-challenge'` - un challenge token ne peut jamais servir de session (défense en profondeur).
-- Pas de rate limiting dédié sur `/auth/login` au-delà du throttle global (10/60s).
+- `requireAuth` rejette tout JWT avec `scope === '2fa-challenge'` - un challenge token ne peut jamais servir de session (défense en profondeur).
+- Connexion et vérification 2FA : 5 tentatives par minute et par IP (`AUTH_ATTEMPT_THROTTLE`).
+- JWT signés et vérifiés par `jsonwebtoken` (`src/auth/jwt.service.ts`), la bibliothèque de `@nestjs/jwt` : les sessions ouvertes avant le passage à Hono restent valides.
 
 **Consommer l'auth dans un module** :
 
 ```typescript
-@UseGuards(JwtAuthGuard)
-@Post('something')
-create(@CurrentUser() user: User, @Body() dto: CreateSomethingDto) { /* ... */ }
+.post('/something', throttle(), requireAuth, async (c) => {
+  const dto = await jsonBody(c, CreateSomethingDto);
+  return reply(c, await service.create(c.var.user, dto), 201);
+})
 ```
 
 ## Validation HTTP
 
-`ValidationPipe` global (`src/app.setup.ts`) :
+`validateDto()` (`src/common/validation.ts`), appelé par `jsonBody`/`queryParams`, reprend le `ValidationPipe` de l'ancienne API NestJS :
 
-- `whitelist: true` - strippe les champs non déclarés dans le DTO.
-- `forbidNonWhitelisted: true` - **400 si le client envoie un champ inattendu** (détection précoce de bugs frontend).
-- `transform: true` + `enableImplicitConversion: true` - `@Param('id')` typé `number` est auto-converti depuis l'URL.
+- liste blanche stricte : **400 si le client envoie un champ inattendu** (détection précoce de bugs frontend) ;
+- conversion implicite des types (`enableImplicitConversion`) ;
+- messages des contraintes aplatis, préfixés du chemin du parent pour les objets imbriqués.
+
+Corps JSON : `application/json` seul, 100 ko au plus (413), JSON invalide → 400. Fichiers : `uploadedFile()` → 413 au-delà de la taille permise, 422 si absent ou si ses octets ne sont pas du type attendu (`file-type`, pas l'en-tête du client).
 
 ## Tests
 
-- **Unitaires** : `*.spec.ts` à côté du code source, runner Jest (config inline dans `package.json`, `rootDir: src`). NestJS 12 est publié en ESM pur : comme le template officiel Nest 12 CommonJS, Jest tourne sous `node --experimental-vm-modules` (support `require(esm)` de Jest, Node ≥ 24.9), avertissement `ExperimentalWarning` masqué.
-- **Intégration HTTP** : `src/app.setup.spec.ts` monte la configuration HTTP réelle (`setupApp`) et vérifie les erreurs JSON, Swagger et les replis.
-- **E2E** : harnais `test/jest-e2e.json` présent mais aucun test e2e écrit : `pnpm test:e2e` sort en 1 (« No tests found »).
+- **Unitaires** : `*.spec.ts` à côté du code source, runner Jest (config inline dans `package.json`, `rootDir: src`, `reflect-metadata` chargé par `setupFiles`). Certaines dépendances sont publiées en ESM pur : Jest tourne sous `node --experimental-vm-modules` (support `require(esm)`, Node ≥ 24.9), avertissement `ExperimentalWarning` masqué.
+- **Routes** : `<module>.routes.spec.ts` passent par HTTP (`testApp(prefix, routes).request(...)`, `src/common/test-app.ts`) ; `src/app.spec.ts` vérifie l'application complète (erreurs JSON, CSRF, CORS, en-têtes).
+- **Parité HTTP** : `packages/api-parity`, contre l'image Docker (`pnpm test:parity` depuis la racine).
 
 ```bash
 pnpm test           # Tous les tests unitaires
 pnpm test:watch     # Mode watch
 pnpm test:cov       # Avec coverage
-pnpm test:e2e       # E2E (harnais vide, sort en 1)
 ```
 
 ## Scripts pnpm - récap
 
 Liste réelle (`package.json`) - pas de script `s3:*` (démarrer MinIO à la main via `podman compose up -d minio minio-init`) :
 
-| Script                                                              | Description                                                                                                              |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm start`                                                        | `nest start` (une fois)                                                                                                  |
-| `pnpm start:dev` / `pnpm dev`                                       | `nest start --watch` (`dev` déclenche le hook `predev`, voir Quickstart)                                                 |
-| `pnpm start:debug`                                                  | Watch + `--debug` (inspector Node)                                                                                       |
-| `pnpm start:prod`                                                   | `node dist/main` (nécessite `pnpm build` avant)                                                                          |
-| `pnpm build`                                                        | `nest build` → `dist/`                                                                                                   |
-| `pnpm lint` / `pnpm format`                                         | ESLint (`--fix`) / Prettier                                                                                              |
-| `pnpm lint:check` / `format:check` / `typecheck`                    | Vérifications sans écriture : ESLint, Prettier, `tsc --noEmit` (specs comprises). Ce que joue la CI                      |
-| `pnpm test` / `test:watch` / `test:cov` / `test:e2e` / `test:debug` | Jest (sous `--experimental-vm-modules`, cf. Tests)                                                                       |
-| `pnpm db:up` / `db:down` / `db:wait`                                | Cycle container Postgres (`podman compose`)                                                                              |
-| `pnpm db:generate` / `db:migrate` / `db:studio`                     | Drizzle Kit                                                                                                              |
-| `pnpm db:seed`                                                      | Crée l'admin (idempotent, `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`)                                                        |
-| `pnpm db:change-password <email> <newPassword>`                     | Change le mot de passe d'un user directement en DB (newPassword 12+ chars) - utile en cas de perte d'accès, bypass l'API |
-| `pnpm db:reset`                                                     | Wipe volume + recrée + migrate + seed (dev only)                                                                         |
-| `pnpm mail:up`                                                      | Démarre le container Mailpit                                                                                             |
-| `pnpm sentry:sourcemaps`                                            | Upload des sourcemaps vers Sentry (`scripts/upload-sentry-sourcemaps.mjs`)                                               |
-| `pnpm sentry:check-instrumentation`                                | Vérifie que Sentry trace `@Injectable`, `@Catch`, `@Cron` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`) |
+| Script                                           | Description                                                                                                                |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm start`                                     | `node dist/main.js` (nécessite `pnpm build`)                                                                               |
+| `pnpm start:dev` / `pnpm dev`                    | `tsc --watch` + `node --watch` sur `dist/` (`dev` déclenche le hook `predev`, voir Quickstart)                             |
+| `pnpm start:prod`                                | `node dist/main` (nécessite `pnpm build` avant)                                                                            |
+| `pnpm build`                                     | `tsc` → `dist/`, puis copie des gabarits d'e-mail (`src/copy-assets.ts`)                                                   |
+| `pnpm lint` / `pnpm format`                      | ESLint (`--fix`) / Prettier                                                                                                |
+| `pnpm lint:check` / `format:check` / `typecheck` | Vérifications sans écriture : ESLint, Prettier, `tsc --noEmit` (specs comprises). Ce que joue la CI                        |
+| `pnpm test` / `test:watch` / `test:cov`          | Jest (sous `--experimental-vm-modules`, cf. Tests)                                                                         |
+| `pnpm db:up` / `db:down` / `db:wait`             | Cycle container Postgres (`podman compose`)                                                                                |
+| `pnpm db:generate` / `db:migrate` / `db:studio`  | Drizzle Kit                                                                                                                |
+| `pnpm db:seed`                                   | Crée l'admin (idempotent, `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`)                                                          |
+| `pnpm db:change-password <email> <newPassword>`  | Change le mot de passe d'un user directement en DB (newPassword 12+ chars) - utile en cas de perte d'accès, bypass l'API   |
+| `pnpm db:reset`                                  | Wipe volume + recrée + migrate + seed (dev only)                                                                           |
+| `pnpm mail:up`                                   | Démarre le container Mailpit                                                                                               |
+| `pnpm sentry:sourcemaps`                         | Upload des sourcemaps vers Sentry (`scripts/upload-sentry-sourcemaps.mjs`)                                                 |
+| `pnpm sentry:check-instrumentation`              | Vérifie que Sentry trace `@Injectable`, `@Catch`, `@Cron` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`) |
 
 **CI** (`.github/workflows/ci.yml`, à chaque PR et sur `master`) : `install --frozen-lockfile`, `lint:check`, `format:check`, `typecheck`, `pnpm test` **avec** les tests d'intégration (service `postgres:17-alpine`, base jetable `PROFILE_IT_DATABASE_URL`), `build`, puis le build de l'image Docker tel que Dokploy l'exécute (sans push).
 
@@ -234,16 +223,14 @@ Module d'infrastructure S3-compatible, consommé par Projects, Blog, Profile et 
 
 **API (`StorageService`)** :
 
-| Méthode        | Signature                                                                                                                                                  |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `upload`       | `(bucket, key, body: Buffer, contentType): Promise<void>`                                                                                                  |
-| `get`          | `(bucket, key): Promise<S3ObjectStream>` (stream + contentType + contentLength ; 404 si absent)                                                            |
-| `delete`       | `(bucket, key): Promise<void>` (idempotent)                                                                                                                |
-| `getPublicUrl` | `(bucket, key): string` - retourne **`/storage/{bucket}/{key}`**, un chemin relatif servi par `StorageController` (proxy NestJS), _pas_ une URL S3 directe |
+| Méthode        | Signature                                                                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `upload`       | `(bucket, key, body: Buffer, contentType): Promise<void>`                                                                                         |
+| `get`          | `(bucket, key): Promise<S3ObjectStream>` (stream + contentType + contentLength ; 404 si absent)                                                   |
+| `delete`       | `(bucket, key): Promise<void>` (idempotent)                                                                                                       |
+| `getPublicUrl` | `(bucket, key): string` - retourne **`/storage/{bucket}/{key}`**, un chemin relatif servi par le relais `storageRoutes`, _pas_ une URL S3 directe |
 
-**`StorageController`** : `GET /storage/:bucket/*splat` - **hors du préfixe `/api`** (comme `/docs`), stream l'objet S3 avec ses `Content-Type`/`Content-Length` d'origine. Le proxy existe car R2 nécessite soit un Custom Domain (DNS géré par Cloudflare, pas encore le cas), soit ce détour applicatif - le proxy détient les credentials et sert les objets publics sans exposer le bucket directement.
-
-**`StorageModule` est `@Global`**.
+**`storageRoutes`** (`src/storage/storage.routes.ts`) : `GET /api/storage/:bucket/<clé>`, stream l'objet S3 avec ses `Content-Type`/`Content-Length` d'origine. Le proxy existe car R2 nécessite soit un Custom Domain (DNS géré par Cloudflare, pas encore le cas), soit ce détour applicatif - le proxy détient les credentials et sert les objets publics sans exposer le bucket directement.
 
 ## Projects
 
@@ -312,8 +299,6 @@ Module d'infrastructure SMTP (`nodemailer`), consommé par Contact.
 **API (`MailerService`)** : `sendMail({ to, subject, html }): Promise<void>` - 3 tentatives, backoff linéaire 1s/2s/3s, throw l'erreur finale après épuisement (loggée avec stack).
 
 **Helpers** (`src/mailer/mailer.utils.ts`) : `loadTemplate(absolutePath)` (lecture fichier), `renderTemplate(html, vars)` (remplacement `{{var}}` naïf, pas d'échappement HTML - les templates sont internes, pas de contenu utilisateur non filtré injecté tel quel).
-
-**`MailerModule` est `@Global`**.
 
 ## Contact
 
@@ -386,12 +371,12 @@ Collecte de page-views/events custom du portfolio public + agrégation quotidien
 
 ## Observabilité (Sentry)
 
-`@sentry/nestjs` (error tracking uniquement, pas de profiling CPU - overkill pour le trafic d'un portfolio), initialisé dans `src/instrument.ts` (importé en tout premier dans `main.ts`, avant même `NestFactory.create`, car `@nestjs/config` n'a pas encore chargé `.env`).
+`@sentry/node` (error tracking uniquement, pas de profiling CPU - overkill pour le trafic d'un portfolio), initialisé dans `src/instrument.ts`, importé en tout premier dans `main.ts` : `.env` chargé, puis Sentry avant le module `http`. Les exceptions non gérées sont envoyées par `handleError` ; le rollup quotidien est suivi en cron monitor (`Sentry.withMonitor`).
 
 - **Désactivé si `SENTRY_DSN` est vide** - pas de crash, juste no-op.
-- **`@sentry/nestjs` 11.6.0** (épinglée) : la v11 supprime `sendDefaultPii` et collecte tout par défaut. `dataCollection` ferme donc chaque catégorie : `userInfo` (IP comprise), `cookies`, `httpHeaders` (requête : `User-Agent` seul, réponse : rien), `httpBodies: []`, `urlQueryParams`, `graphQL`, `genAI`, `databaseQueryData`, `queues`, `stackFrameVariables`. Seul `frameContextLines` (lignes de notre code autour des frames) garde son défaut. `traceLifecycle: 'static'` : en `stream` (défaut v11), `beforeSendTransaction` serait ignoré.
+- **`@sentry/node` 11.6.0** (épinglée) : la v11 supprime `sendDefaultPii` et collecte tout par défaut. `dataCollection` ferme donc chaque catégorie : `userInfo` (IP comprise), `cookies`, `httpHeaders` (requête : `User-Agent` seul, réponse : rien), `httpBodies: []`, `urlQueryParams`, `graphQL`, `genAI`, `databaseQueryData`, `queues`, `stackFrameVariables`. Seul `frameContextLines` (lignes de notre code autour des frames) garde son défaut. `traceLifecycle: 'static'` : en `stream` (défaut v11), `beforeSendTransaction` serait ignoré.
 - `beforeSend` sert de filet : retire `user.ip_address`, les cookies, les en-têtes `authorization`/`proxy-authorization`/`cookie`/`set-cookie` en toute casse, la query string et le fragment de `request.url` (et `query_string`), et filtre les champs sensibles du body (liste `SENSITIVE_BODY_FIELDS` de `src/common/log-redact.ts`).
-- **Jeton du flux d'agenda** (`src/common/sentry-before-send.ts`) : les requêtes du flux sont exclues du span `http.server` (`ignoreIncomingRequests`), mais Nest ouvre quand même une transaction racine (`request_context.nestjs`, ou celle du filtre d'exceptions) qui porte l'URL concrète. `beforeSendTransaction` **écarte** donc toute transaction dont le nom, `request.url` ou une URL de `contexts.trace.data` désigne le flux, et masque par `redactUrl` toute URL du flux restante dans les autres (requête, données de trace, spans). `beforeSend` masque aussi le jeton dans `request.url` et `transaction`. Toute nouvelle route portant un secret dans son chemin doit être ajoutée à `redactUrl`.
+- **Jeton du flux d'agenda** (`src/common/sentry-before-send.ts`) : les requêtes du flux sont exclues du span `http.server` (`ignoreIncomingRequests`), mais une transaction racine peut encore porter l'URL concrète. `beforeSendTransaction` **écarte** donc toute transaction dont le nom, `request.url` ou une URL de `contexts.trace.data` désigne le flux, et masque par `redactUrl` toute URL du flux restante dans les autres (requête, données de trace, spans). `beforeSend` masque aussi le jeton dans `request.url` et `transaction`. Toute nouvelle route portant un secret dans son chemin doit être ajoutée à `redactUrl`.
 - `tracesSampleRate` : 20% en prod, 100% en dev (ou override via `SENTRY_TRACES_SAMPLE_RATE`).
 - `ThrottlerException` est ignorée (pas de bruit Sentry sur un simple rate-limit).
 - **`GET /api/config`** expose un DSN Sentry **distinct** (`SENTRY_FRONTEND_DSN`) pour le frontend Angular - projet Sentry séparé du backend, volontairement public (il ship dans le bundle browser une fois fetché).
@@ -402,7 +387,7 @@ Collecte de page-views/events custom du portfolio public + agrégation quotidien
 
 `Dockerfile` en 3 stages (builder → prod-deps → runner), base `node:24-alpine`, `pnpm@10.33.2` via corepack.
 
-- Image finale : non-root (`USER node`), PID 1 géré par `tini` (graceful shutdown NestJS sur `SIGTERM`).
+- Image finale : non-root (`USER node`), PID 1 géré par `tini` (arrêt propre sur `SIGTERM`, voir Architecture).
 - `HEALTHCHECK` sur `http://localhost:3000/api/health`.
 - `CMD` : `pnpm db:migrate && node dist/main.js` - migrations Drizzle idempotentes appliquées à chaque démarrage du container, puis boot de l'app.
 - `docker-compose.yaml` / `compose.yaml` local sert uniquement au dev (Postgres + MinIO + Mailpit) - pas d'image applicative buildée par ce compose.

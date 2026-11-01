@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '../common/http-errors';
 import {
   S3Client,
   PutObjectCommand,
@@ -8,7 +8,6 @@ import {
   NoSuchKey,
 } from '@aws-sdk/client-s3';
 import type { Readable } from 'node:stream';
-import { S3_CLIENT } from './s3.constants';
 import { isShareCardKey, shareCardKey } from './s3-utils';
 
 export type S3ObjectStream = {
@@ -17,9 +16,8 @@ export type S3ObjectStream = {
   contentLength: number;
 };
 
-@Injectable()
 export class StorageService {
-  constructor(@Inject(S3_CLIENT) private readonly s3: S3Client) {}
+  constructor(private readonly s3: S3Client) {}
 
   /** Écrit l'objet et jette sa carte de partage dérivée (`<key>.share.jpg`), devenue obsolète. */
   async upload(

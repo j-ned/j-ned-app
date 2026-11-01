@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { Test, TestingModule } from '@nestjs/testing';
-import { UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import {
+  UnauthorizedException,
+  BadRequestException,
+} from '../common/http-errors';
+import type { JwtService } from './jwt.service';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { PasswordService } from './password.service';
@@ -28,57 +30,35 @@ describe('AuthService', () => {
     ...overrides,
   });
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        {
-          provide: UsersService,
-          useValue: {
-            findById: jest.fn(),
-            findByEmail: jest.fn(),
-            updatePassword: jest.fn(),
-            updateTwoFactorSecret: jest.fn(),
-            enableTwoFactor: jest.fn(),
-            disableTwoFactor: jest.fn(),
-            replaceBackupCodes: jest.fn(),
-            consumeBackupCode: jest.fn(),
-            revokeSessions: jest.fn(),
-          },
-        },
-        {
-          provide: PasswordService,
-          useValue: {
-            hash: jest.fn(),
-            verify: jest.fn(),
-          },
-        },
-        {
-          provide: TwoFactorService,
-          useValue: {
-            generateSecret: jest.fn(),
-            generateQrCodeDataUrl: jest.fn(),
-            verifyTotpCode: jest.fn(),
-            generateBackupCodes: jest.fn(),
-            hashBackupCodes: jest.fn(),
-            findMatchingBackupCode: jest.fn(),
-          },
-        },
-        {
-          provide: JwtService,
-          useValue: {
-            sign: jest.fn(),
-            verify: jest.fn(),
-          },
-        },
-      ],
-    }).compile();
-
-    service = module.get(AuthService);
-    users = module.get(UsersService);
-    password = module.get(PasswordService);
-    twoFactor = module.get(TwoFactorService);
-    jwt = module.get(JwtService);
+  beforeEach(() => {
+    users = {
+      findById: jest.fn(),
+      findByEmail: jest.fn(),
+      updatePassword: jest.fn(),
+      updateTwoFactorSecret: jest.fn(),
+      enableTwoFactor: jest.fn(),
+      disableTwoFactor: jest.fn(),
+      replaceBackupCodes: jest.fn(),
+      consumeBackupCode: jest.fn(),
+      revokeSessions: jest.fn(),
+    } as unknown as jest.Mocked<UsersService>;
+    password = {
+      hash: jest.fn(),
+      verify: jest.fn(),
+    };
+    twoFactor = {
+      generateSecret: jest.fn(),
+      generateQrCodeDataUrl: jest.fn(),
+      verifyTotpCode: jest.fn(),
+      generateBackupCodes: jest.fn(),
+      hashBackupCodes: jest.fn(),
+      findMatchingBackupCode: jest.fn(),
+    } as unknown as jest.Mocked<TwoFactorService>;
+    jwt = {
+      sign: jest.fn(),
+      verify: jest.fn(),
+    } as unknown as jest.Mocked<JwtService>;
+    service = new AuthService(users, password, twoFactor, jwt);
   });
 
   describe('login', () => {

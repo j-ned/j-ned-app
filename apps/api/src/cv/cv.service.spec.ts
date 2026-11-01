@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import type { UploadedFile } from '../common/http';
+import { NotFoundException } from '../common/http-errors';
 import { CvService } from './cv.service';
-import { DRIZZLE } from '../database/drizzle.constants';
 import { createMockDb } from '../database/test-utils';
 import { StorageService } from '../storage/storage.service';
 import type { CvFile } from '../database/schema';
@@ -23,18 +22,15 @@ describe('CvService', () => {
     ...overrides,
   });
 
-  const mkFile = (
-    overrides: Partial<Express.Multer.File> = {},
-  ): Express.Multer.File =>
-    ({
-      buffer: Buffer.from('fake-pdf-content'),
-      mimetype: 'application/pdf',
-      originalname: 'Julien-CV.pdf',
-      size: 524288,
-      ...overrides,
-    }) as Express.Multer.File;
+  const mkFile = (overrides: Partial<UploadedFile> = {}): UploadedFile => ({
+    buffer: Buffer.from('fake-pdf-content'),
+    mimetype: 'application/pdf',
+    originalname: 'Julien-CV.pdf',
+    size: 524288,
+    ...overrides,
+  });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     db = createMockDb();
     storage = {
       upload: jest.fn().mockResolvedValue(undefined),
@@ -44,14 +40,7 @@ describe('CvService', () => {
       getPublicUrl: jest.fn(),
     } as unknown as jest.Mocked<StorageService>;
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CvService,
-        { provide: DRIZZLE, useValue: db },
-        { provide: StorageService, useValue: storage },
-      ],
-    }).compile();
-    service = module.get(CvService);
+    service = new CvService(db as never, storage);
   });
 
   describe('upsert', () => {

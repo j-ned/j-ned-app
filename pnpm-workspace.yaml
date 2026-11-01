@@ -1,0 +1,24 @@
+packages:
+  - apps/*
+  - packages/*
+
+# `pnpm deploy` (images Docker) produit un node_modules autonome par application.
+injectWorkspacePackages: true
+
+# Paquets autorisés à lancer leurs scripts d'installation : esbuild (Angular), argon2 (API).
+onlyBuiltDependencies:
+  - argon2
+  - esbuild
+
+# Correctifs de sécurité des dépendances transitives, repris des deux dépôts d'origine : ils
+# s'appliquent désormais à tout le workspace.
+overrides:
+  # web
+  "@tailwindcss/typography>postcss-selector-parser": ^7.1.6
+  source-map-js@<1.2.2: ^1.2.2
+  beasties@<0.5.5: 0.5.5
+  # api
+  js-yaml: ">=4.3.1"
+  qs: ">=6.16.0"
+  "@esbuild-kit/core-utils>esbuild": ^0.25.0
+  handlebars@<4.7.10: ^4.7.10

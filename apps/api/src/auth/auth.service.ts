@@ -1,9 +1,8 @@
 import {
-  Injectable,
   UnauthorizedException,
   BadRequestException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+} from '../common/http-errors';
+import type { JwtService } from './jwt.service';
 import { UsersService } from '../users/users.service';
 import { PasswordService } from './password.service';
 import { TwoFactorService } from './two-factor.service';
@@ -24,7 +23,6 @@ function publicUser(u: User): PublicUser {
   return { id: u.id, email: u.email, isTwoFactorEnabled: u.isTwoFactorEnabled };
 }
 
-@Injectable()
 export class AuthService {
   constructor(
     private readonly users: UsersService,

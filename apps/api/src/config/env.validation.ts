@@ -1,5 +1,7 @@
 import { envSchema } from './env.schema';
 
+export type ValidatedEnv = ReturnType<typeof validateEnv>;
+
 export function validateEnv(raw: Record<string, unknown>) {
   const result = envSchema.safeParse(raw);
   if (!result.success) {

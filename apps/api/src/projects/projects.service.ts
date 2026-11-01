@@ -1,6 +1,7 @@
-import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
+import { ConflictException } from '../common/http-errors';
+import { Logger } from '../common/logger';
 import { and, asc, desc, eq, type SQL } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
+import type { UploadedFile } from '../common/http';
 import type { Database } from '../database/drizzle.types';
 import {
   projects,
@@ -17,13 +18,12 @@ import { ProjectImagesService } from './project-images.service';
 import { findByIdOrFail } from '../common/crud-helpers';
 import { isUniqueViolation, slugify } from '../common/utils';
 
-@Injectable()
 export class ProjectsService {
   private static readonly BUCKET = 'portfolio-storage';
   private readonly logger = new Logger(ProjectsService.name);
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly db: Database,
     private readonly storage: StorageService,
     private readonly images: ImageOptimizer,
     private readonly gallery: ProjectImagesService,
@@ -135,10 +135,7 @@ export class ProjectsService {
     });
   }
 
-  async uploadImage(
-    id: string,
-    file: Express.Multer.File,
-  ): Promise<ProjectResponse> {
+  async uploadImage(id: string, file: UploadedFile): Promise<ProjectResponse> {
     const current = await this.findByIdRaw(id);
     // Quel que soit le format reçu, on stocke un AVIF ≤ 1600 px : le poids servi ne dépend
     // plus de l'export de l'admin (un JPEG photo de 2,8 Mo tombait en l'état sur la page).

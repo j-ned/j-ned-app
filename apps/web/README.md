@@ -255,7 +255,7 @@ pnpm install --frozen-lockfile
 pnpm start          # http://localhost:4200, /api proxifié vers :3000 (proxy.conf.cjs)
 ```
 
-Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production directement à `https://api.nedellec-julien.fr/api`.
+Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production à `https://nedellec-julien.fr/api`, même origine que le site, relayée par nginx (ADR-0034).
 
 Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discussions de ce dépôt (catégorie « General », identifiants dans `src/app/shared/api/giscus-config.ts`). Le widget n'apparaît que si l'app [Giscus](https://github.com/apps/giscus) est installée sur le dépôt : sans elle, Giscus ignore le dépôt sans erreur.
 
@@ -273,7 +273,7 @@ Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discus
 ### Docker
 
 ```bash
-docker build -t ng-portfolio-app:local .
+docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..
 docker run --rm -p 3000:3000 -e API_UPSTREAM=http://<api>:3000 ng-portfolio-app:local   # nginx + Node
 ```
 
@@ -286,7 +286,7 @@ Les gates sont ceux du Dockerfile, rejoués en local avant chaque PR et dans la 
 ```bash
 pnpm install --frozen-lockfile
 pnpm run build --configuration production   # build SSR + prérendu des pages statiques + CSP
-docker build -t ng-portfolio-app:local .    # exactement ce que Dokploy exécute
+docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..    # exactement ce que Dokploy exécute
 ```
 
 - Une PR par changement, squash-merge sur `master`, branche protégée par les deux jobs de CI.

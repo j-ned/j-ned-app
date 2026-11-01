@@ -1,12 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '../common/http-errors';
+import { Logger } from '../common/logger';
 import { and, eq } from 'drizzle-orm';
 import { BlogService } from './blog.service';
-import { DRIZZLE } from '../database/drizzle.constants';
 import { createMockDb } from '../database/test-utils';
 import { StorageService } from '../storage/storage.service';
-import { ImageOptimizer } from '../storage/image-optimizer.service';
-import { BlogContentImagesService } from './blog-content-images.service';
 import {
   blogPosts,
   type BlogPost,
@@ -35,7 +32,7 @@ describe('BlogService', () => {
     ...overrides,
   });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     db = createMockDb();
     storage = {
       upload: jest.fn().mockResolvedValue(undefined),
@@ -48,27 +45,21 @@ describe('BlogService', () => {
       removeUnreferenced: jest.fn().mockResolvedValue(undefined),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        BlogService,
-        { provide: DRIZZLE, useValue: db },
-        { provide: StorageService, useValue: storage },
-        { provide: BlogContentImagesService, useValue: contentImages },
-        {
-          provide: ImageOptimizer,
-          useValue: {
-            optimize: jest.fn().mockResolvedValue({
-              buffer: Buffer.from('avif-bytes'),
-              mimetype: 'image/avif',
-              ext: 'avif',
-              width: 1600,
-              height: 900,
-            }),
-          },
-        },
-      ],
-    }).compile();
-    service = module.get(BlogService);
+    const images = {
+      optimize: jest.fn().mockResolvedValue({
+        buffer: Buffer.from('avif-bytes'),
+        mimetype: 'image/avif',
+        ext: 'avif',
+        width: 1600,
+        height: 900,
+      }),
+    };
+    service = new BlogService(
+      db as never,
+      storage,
+      images as never,
+      contentImages as never,
+    );
   });
 
   describe('findAllPublished', () => {

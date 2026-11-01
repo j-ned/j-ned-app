@@ -1,6 +1,7 @@
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { BadRequestException } from '../../common/http-errors';
+import { validateDto } from '../../common/validation';
 import { CreateProjectDto } from './create-project.dto';
 import { UpdateProjectDto } from './update-project.dto';
 import { PROJECT_FACT_MAX, PROJECT_PITCH_MAX } from '../project-editorial';
@@ -100,22 +101,15 @@ describe('UpdateProjectDto - kind (ADR-0008)', () => {
   });
 });
 
-/** Même ValidationPipe que main.ts : conversion implicite, @Transform et liste blanche compris. */
-const pipe = new ValidationPipe({
-  whitelist: true,
-  forbidNonWhitelisted: true,
-  transform: true,
-  transformOptions: { enableImplicitConversion: true },
-});
-
-const throughPipe = <T>(
+/** Même validation que les routes (`jsonBody`) : conversion implicite, @Transform et liste blanche compris. */
+const throughPipe = <T extends object>(
   metatype: new () => T,
   body: Record<string, unknown>,
-): Promise<T> => pipe.transform(body, { type: 'body', metatype }) as Promise<T>;
+): Promise<T> => validateDto(metatype, body);
 
 /** Contraintes class-validator remontées par le 400, à plat (`isString`, `maxLength`, ...). */
 const rejectionOf = async (
-  metatype: new () => unknown,
+  metatype: new () => object,
   body: Record<string, unknown>,
 ): Promise<string> => {
   const error: unknown = await throughPipe(metatype, body).then(
@@ -123,7 +117,7 @@ const rejectionOf = async (
     (e: unknown) => e,
   );
   expect(error).toBeInstanceOf(BadRequestException);
-  return JSON.stringify((error as BadRequestException).getResponse());
+  return JSON.stringify((error as BadRequestException).messages);
 };
 
 const EDITORIAL_FIELDS = [

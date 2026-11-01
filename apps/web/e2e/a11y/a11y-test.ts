@@ -4,7 +4,10 @@ import { WCAG_TAGS } from './axe-policy';
 import { formatViolations, type AxeResults } from './format-violations';
 import type { Theme } from './scenarios';
 
-const PRODUCTION_API_HOST = 'api.nedellec-julien.fr';
+// Le build de production appelle l'API sur l'origine publique du site : rejouée sur la doublure.
+const PRODUCTION_SITE_HOST = 'nedellec-julien.fr';
+const isProductionApi = (url: URL): boolean =>
+  url.hostname === PRODUCTION_SITE_HOST && url.pathname.startsWith('/api/');
 const STUB_URL = process.env['A11Y_STUB_URL'] ?? 'http://127.0.0.1:3001';
 const THEME_STORAGE_KEY = 'j-ned:theme';
 const SESSION_HINT_KEY = 'auth:session';
@@ -65,7 +68,7 @@ export const test = base.extend<A11yOptions & A11yFixtures>({
         await route.continue();
         return;
       }
-      if (url.hostname === PRODUCTION_API_HOST) {
+      if (isProductionApi(url)) {
         network.rerouted.push(`${route.request().method()} ${url.pathname}${url.search}`);
         await replayOnStub(route, url, origin);
         return;

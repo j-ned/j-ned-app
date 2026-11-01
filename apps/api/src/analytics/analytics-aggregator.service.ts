@@ -1,8 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import * as Sentry from '@sentry/nestjs';
+import { Logger } from '../common/logger';
 import { and, eq, gte, isNotNull, lt, lte } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import {
   analyticsEvent,
@@ -12,7 +9,6 @@ import {
 import { subDays } from '../common/utils';
 import { type DayAggregates, computeAggregates } from './analytics-aggregates';
 
-@Injectable()
 export class AnalyticsAggregatorService {
   private readonly logger = new Logger(AnalyticsAggregatorService.name);
   private static readonly RETENTION_DAYS = 30;
@@ -20,15 +16,9 @@ export class AnalyticsAggregatorService {
   private static readonly BACKFILL_OLDEST_DAY = 29;
   private static readonly BACKFILL_NEWEST_DAY = 2;
 
-  constructor(@Inject(DRIZZLE) private readonly db: Database) {}
+  constructor(private readonly db: Database) {}
 
-  @Sentry.SentryCron('analytics-aggregate-yesterday', {
-    schedule: { type: 'crontab', value: '0 0 * * *' },
-    timezone: 'UTC',
-    checkinMargin: 5,
-    maxRuntime: 30,
-  })
-  @Cron('0 0 * * *', { timeZone: 'UTC' })
+  /** Rollup quotidien, planifié par `scheduleDailyRollup` (00:00 UTC). */
   async aggregateYesterday(): Promise<void> {
     const now = new Date();
     await this.runAggregation(subDays(now, 1));

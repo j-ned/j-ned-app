@@ -1,12 +1,11 @@
 import { createHash, createHmac } from 'node:crypto';
 import { isIPv4, isIPv6 } from 'node:net';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Logger } from '../common/logger';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { isbot } from 'isbot';
 import geoip from 'geoip-lite';
 import { UAParser } from 'ua-parser-js';
 import { AppConfigService } from '../config/app-config.service';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import { pageView, analyticsEvent } from '../database/schema';
 import { TrackEventDto } from './dto/track-event.dto';
@@ -50,7 +49,6 @@ function isExcludedUrl(url: string): boolean {
   return url === '/login' || url === '/admin' || url.startsWith('/admin/');
 }
 
-@Injectable()
 export class AnalyticsTrackerService {
   private readonly logger = new Logger(AnalyticsTrackerService.name);
 
@@ -61,7 +59,7 @@ export class AnalyticsTrackerService {
   private readonly hashKey: Buffer;
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly db: Database,
     private readonly cfg: AppConfigService,
   ) {
     this.hashKey = createHash('sha256')

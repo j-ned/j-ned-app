@@ -3,17 +3,16 @@ import {
   ConflictException,
   NotFoundException,
   ServiceUnavailableException,
-} from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+} from '../common/http-errors';
 import { plainToInstance } from 'class-transformer';
 import { and, eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
 import {
   profileContent,
   type ProfileContentRow,
 } from '../database/schema/profile-content';
+import type { Database } from '../database/drizzle.types';
 import { createMockDb } from '../database/test-utils';
-import { StorageService } from '../storage/storage.service';
+import type { StorageService } from '../storage/storage.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileService } from './profile.service';
 import type { ProfileContent } from './profile-content';
@@ -37,23 +36,17 @@ describe('ProfileService', () => {
   let service: ProfileService;
   let db: ReturnType<typeof createMockDb>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     db = createMockDb();
-    const module = await Test.createTestingModule({
-      providers: [
-        ProfileService,
-        { provide: DRIZZLE, useValue: db },
-        {
-          provide: StorageService,
-          useValue: {
-            getPublicUrl: jest.fn(
-              (bucket: string, key: string) => `/storage/${bucket}/${key}`,
-            ),
-          },
-        },
-      ],
-    }).compile();
-    service = module.get(ProfileService);
+    const storage = {
+      getPublicUrl: jest.fn(
+        (bucket: string, key: string) => `/storage/${bucket}/${key}`,
+      ),
+    };
+    service = new ProfileService(
+      db as unknown as Database,
+      storage as unknown as StorageService,
+    );
   });
 
   describe('findCurrent', () => {

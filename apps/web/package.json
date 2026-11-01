@@ -1,5 +1,5 @@
 {
-  "name": "angular-portfolio-app",
+  "name": "@portfolio/web",
   "version": "0.0.0",
   "description": "Portfolio de Julien Nédellec : Angular 22 zoneless en SSR et prérendu, clean architecture, Signal Forms, Tailwind v4",
   "author": "Julien Nédellec <contact@nedellec-julien.fr> (https://nedellec-julien.fr)",
@@ -19,20 +19,19 @@
     "format:check": "prettier --check \"src/**/*.{ts,html,css,scss,json}\" \"e2e/**/*.ts\"",
     "check": "pnpm run format:check && pnpm run lint",
     "sentry:sourcemaps": "tsx scripts/upload-sentry-sourcemaps.mjs",
-    "prepare": "husky",
     "postbuild": "tsx scripts/apply-csp-hashes.mjs"
   },
   "lint-staged": {
     "*.ts": [
-      "prettier --write",
-      "eslint --fix"
+      "pnpm exec prettier --write",
+      "pnpm exec eslint --fix"
     ],
     "*.html": [
-      "prettier --write",
-      "eslint --fix"
+      "pnpm exec prettier --write",
+      "pnpm exec eslint --fix"
     ],
     "*.{css,scss,json}": [
-      "prettier --write"
+      "pnpm exec prettier --write"
     ]
   },
   "prettier": {
@@ -52,7 +51,6 @@
   "engines": {
     "node": ">=20.19.0"
   },
-  "packageManager": "pnpm@10.22.0",
   "devDependencies": {
     "@angular-eslint/builder": "22.6.0",
     "@angular/build": "^22.2.2",
@@ -79,8 +77,6 @@
     "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
     "happy-dom": "20.14.6",
-    "husky": "^9.1.7",
-    "lint-staged": "^17.6.0",
     "postcss": "8.5.29",
     "prettier": "^3.9.9",
     "rxjs": "~7.8.0",
@@ -92,16 +88,6 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "8.71.1",
     "vitest": "^5.0.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ],
-    "overrides": {
-      "@tailwindcss/typography>postcss-selector-parser": "^7.1.6",
-      "source-map-js@<1.2.2": "^1.2.2",
-      "beasties@<0.5.5": "0.5.5"
-    }
   },
   "dependencies": {
     "@sentry/angular": "^11.6.0",

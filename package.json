@@ -1,0 +1,29 @@
+{
+  "name": "portfolio",
+  "private": true,
+  "description": "Monorepo du portfolio nedellec-julien.fr : site Angular (apps/web) et API (apps/api)",
+  "author": "Julien Nédellec <contact@nedellec-julien.fr> (https://nedellec-julien.fr)",
+  "license": "MIT",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "dev:web": "pnpm --filter @portfolio/web start",
+    "dev:api": "pnpm --filter @portfolio/api dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r --filter \"!@portfolio/api-parity\" test",
+    "lint": "pnpm --filter @portfolio/web lint && pnpm --filter @portfolio/api lint:check",
+    "format:check": "pnpm -r format:check",
+    "test:parity": "pnpm --filter @portfolio/api-parity stack:up && pnpm --filter @portfolio/api-parity test; status=$?; pnpm --filter @portfolio/api-parity stack:down; exit $status"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "3.9.9"
+  },
+  "lint-staged": {
+    "*.{json,yml,yaml,md}": "prettier --write"
+  }
+}

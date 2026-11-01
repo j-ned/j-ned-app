@@ -1,5 +1,5 @@
-import { applyDecorators } from '@nestjs/common';
 import { IsString, MaxLength, ValidateBy } from 'class-validator';
+import { composeDecorators } from '../../common/compose-decorators';
 
 /** Balise ou commentaire HTML : `<` suivi d'une lettre, de `/`, `!` ou `?`. « a < b » reste du texte. */
 const MARKUP = /<[a-zA-Z/!?]/;
@@ -15,7 +15,7 @@ export function ProfileText(
   max: number,
   { each = false }: EachOption = {},
 ): PropertyDecorator {
-  return applyDecorators(
+  return composeDecorators(
     IsString({ each }),
     ValidateBy(
       {

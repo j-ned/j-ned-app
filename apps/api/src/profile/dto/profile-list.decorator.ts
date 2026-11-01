@@ -1,4 +1,3 @@
-import { applyDecorators } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -8,13 +7,14 @@ import {
   IsObject,
   ValidateNested,
 } from 'class-validator';
+import { composeDecorators } from '../../common/compose-decorators';
 
 /** Liste ordonnée d'éléments à `id` : 1 à `max` éléments, `id` uniques, chacun validé. */
 export function ProfileItemList(
   max: number,
   item: () => new () => { id: string },
 ): PropertyDecorator {
-  return applyDecorators(
+  return composeDecorators(
     IsArray(),
     ArrayMinSize(1),
     ArrayMaxSize(max),
@@ -28,5 +28,5 @@ export function ProfileItemList(
 export function ProfileSection(
   section: () => new () => object,
 ): PropertyDecorator {
-  return applyDecorators(IsObject(), ValidateNested(), Type(section));
+  return composeDecorators(IsObject(), ValidateNested(), Type(section));
 }

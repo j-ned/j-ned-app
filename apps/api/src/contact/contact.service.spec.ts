@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '../common/http-errors';
 import { ContactService } from './contact.service';
-import { DRIZZLE } from '../database/drizzle.constants';
 import { createMockDb } from '../database/test-utils';
 import { MailerService } from '../mailer/mailer.service';
 import { AppConfigService } from '../config/app-config.service';
@@ -28,24 +26,15 @@ describe('ContactService', () => {
     ...overrides,
   });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     db = createMockDb();
     mailer = {
       sendMail: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<MailerService>;
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ContactService,
-        { provide: DRIZZLE, useValue: db },
-        { provide: MailerService, useValue: mailer },
-        {
-          provide: AppConfigService,
-          useValue: { jwtSecret: 'test-jwt-secret' },
-        },
-      ],
-    }).compile();
-    service = module.get(ContactService);
+    service = new ContactService(db as never, mailer, {
+      jwtSecret: 'test-jwt-secret',
+    } as unknown as AppConfigService);
   });
 
   describe('create', () => {
@@ -91,18 +80,10 @@ describe('ContactService', () => {
     it('Given un secret différent, When l’empreinte est calculée, Then elle change (clé, pas un SHA-256 brut)', async () => {
       db.returning.mockResolvedValue([mkMessage()]);
       await service.create(DTO, SENDER);
-      const other = await Test.createTestingModule({
-        providers: [
-          ContactService,
-          { provide: DRIZZLE, useValue: db },
-          { provide: MailerService, useValue: mailer },
-          {
-            provide: AppConfigService,
-            useValue: { jwtSecret: 'un-autre-secret' },
-          },
-        ],
-      }).compile();
-      await other.get(ContactService).create(DTO, SENDER);
+      const other = new ContactService(db as never, mailer, {
+        jwtSecret: 'un-autre-secret',
+      } as unknown as AppConfigService);
+      await other.create(DTO, SENDER);
       const [a, b] = insertedRows().map((values) => values.senderHash);
       expect(a).not.toBe(b);
     });

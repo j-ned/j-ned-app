@@ -1,0 +1,13 @@
+# Chaque application garde son propre .gitignore (apps/web, apps/api) ; ici, ce qui vaut partout.
+node_modules/
+.pnpm-store/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*
+!.env.example
+.worktrees/
+.husky/_/
+.parity-env

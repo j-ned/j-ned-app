@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '../common/http-errors';
 import { Readable } from 'node:stream';
 import { ImageOptimizer } from './image-optimizer.service';
 import { ShareCardService } from './share-card.service';

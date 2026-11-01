@@ -3,11 +3,10 @@ import { createHash } from 'node:crypto';
 import {
   NotFoundException,
   UnprocessableEntityException,
-} from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+} from '../common/http-errors';
 import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { DRIZZLE } from '../database/drizzle.constants';
+import type { UploadedFile } from '../common/http';
 import { createMockDb } from '../database/test-utils';
 import type { ProjectImage } from '../database/schema/project-images';
 import { StorageService } from '../storage/storage.service';
@@ -37,7 +36,7 @@ describe('ProjectImagesService', () => {
   let storage: jest.Mocked<StorageService>;
   let optimizer: jest.Mocked<ImageOptimizer>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     db = createMockDb();
     storage = {
       upload: jest.fn().mockResolvedValue(undefined),
@@ -56,15 +55,7 @@ describe('ProjectImagesService', () => {
       }),
     } as unknown as jest.Mocked<ImageOptimizer>;
 
-    const module = await Test.createTestingModule({
-      providers: [
-        ProjectImagesService,
-        { provide: DRIZZLE, useValue: db },
-        { provide: StorageService, useValue: storage },
-        { provide: ImageOptimizer, useValue: optimizer },
-      ],
-    }).compile();
-    service = module.get(ProjectImagesService);
+    service = new ProjectImagesService(db as never, storage, optimizer);
   });
 
   describe('galleryOf', () => {
@@ -95,7 +86,7 @@ describe('ProjectImagesService', () => {
     const file = {
       buffer: Buffer.from('png-bytes'),
       mimetype: 'image/png',
-    } as Express.Multer.File;
+    } as UploadedFile;
     const project = { id: PROJECT_ID } as Project;
 
     // findByIdOrFail se termine sur limit(), la lecture de la galerie sur where().

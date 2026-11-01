@@ -1,13 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import type { Env } from './env.schema';
+import type { ValidatedEnv } from './env.validation';
 
-@Injectable()
+/** Configuration typée de l'application, lue une fois au démarrage (`validateEnv`). */
 export class AppConfigService {
-  constructor(private readonly config: ConfigService<Env, true>) {}
+  constructor(private readonly env: ValidatedEnv) {}
 
   get nodeEnv() {
-    return this.config.get('NODE_ENV', { infer: true });
+    return this.env.NODE_ENV;
   }
   get isProduction() {
     return this.nodeEnv === 'production';
@@ -19,73 +17,70 @@ export class AppConfigService {
     return this.nodeEnv === 'test';
   }
   get port() {
-    return this.config.get('PORT', { infer: true });
+    return this.env.PORT;
   }
   get databaseUrl() {
-    return this.config.get('DATABASE_URL', { infer: true });
+    return this.env.DATABASE_URL;
   }
   get logLevel() {
-    return this.config.get('LOG_LEVEL', { infer: true });
+    return this.env.LOG_LEVEL;
   }
 
   get jwtSecret() {
-    return this.config.get('JWT_SECRET', { infer: true });
+    return this.env.JWT_SECRET;
   }
   get jwtExpiresIn() {
-    return this.config.get('JWT_EXPIRES_IN', { infer: true });
-  }
-  get cookieDomain() {
-    return this.config.get('COOKIE_DOMAIN', { infer: true });
+    return this.env.JWT_EXPIRES_IN;
   }
   get adminEmail() {
-    return this.config.get('ADMIN_EMAIL', { infer: true });
+    return this.env.ADMIN_EMAIL;
   }
   get adminInitialPassword() {
-    return this.config.get('ADMIN_INITIAL_PASSWORD', { infer: true });
+    return this.env.ADMIN_INITIAL_PASSWORD;
   }
   get totpAppName() {
-    return this.config.get('TOTP_APP_NAME', { infer: true });
+    return this.env.TOTP_APP_NAME;
   }
   get corsOrigins() {
-    return this.config.get('CORS_ORIGINS', { infer: true });
+    return this.env.CORS_ORIGINS;
   }
 
   get s3Endpoint() {
-    return this.config.get('S3_ENDPOINT', { infer: true });
+    return this.env.S3_ENDPOINT;
   }
   get s3Region() {
-    return this.config.get('S3_REGION', { infer: true });
+    return this.env.S3_REGION;
   }
   get s3AccessKey() {
-    return this.config.get('S3_ACCESS_KEY', { infer: true });
+    return this.env.S3_ACCESS_KEY;
   }
   get s3SecretKey() {
-    return this.config.get('S3_SECRET_KEY', { infer: true });
+    return this.env.S3_SECRET_KEY;
   }
 
   get smtpHost() {
-    return this.config.get('SMTP_HOST', { infer: true });
+    return this.env.SMTP_HOST;
   }
   get smtpPort() {
-    return this.config.get('SMTP_PORT', { infer: true });
+    return this.env.SMTP_PORT;
   }
   get smtpSecure() {
-    return this.config.get('SMTP_SECURE', { infer: true });
+    return this.env.SMTP_SECURE;
   }
   get smtpUser() {
-    return this.config.get('SMTP_USER', { infer: true });
+    return this.env.SMTP_USER;
   }
   get smtpPass() {
-    return this.config.get('SMTP_PASS', { infer: true });
+    return this.env.SMTP_PASS;
   }
   get smtpFrom() {
-    return this.config.get('SMTP_FROM', { infer: true });
+    return this.env.SMTP_FROM;
   }
 
   get sentryRelease() {
-    return this.config.get('SENTRY_RELEASE', { infer: true });
+    return this.env.SENTRY_RELEASE;
   }
   get sentryFrontendDsn() {
-    return this.config.get('SENTRY_FRONTEND_DSN', { infer: true });
+    return this.env.SENTRY_FRONTEND_DSN;
   }
 }

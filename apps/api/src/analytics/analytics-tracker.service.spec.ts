@@ -1,9 +1,7 @@
 import { createHash } from 'node:crypto';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Test, TestingModule } from '@nestjs/testing';
 import { AnalyticsTrackerService } from './analytics-tracker.service';
 import { AppConfigService } from '../config/app-config.service';
-import { DRIZZLE } from '../database/drizzle.constants';
 import { createMockDb } from '../database/test-utils';
 import * as isbotModule from 'isbot';
 import * as geoipModule from 'geoip-lite';
@@ -29,25 +27,18 @@ describe('AnalyticsTrackerService', () => {
   const NORMAL_UA =
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-  beforeEach(async () => {
+  beforeEach(() => {
     db = createMockDb();
     isbotMock.mockReturnValue(false);
     geoipLookup.mockReturnValue({ country: 'FR' });
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AnalyticsTrackerService,
-        { provide: DRIZZLE, useValue: db },
-        {
-          provide: AppConfigService,
-          useValue: {
-            corsOrigins: ['https://nedellec-julien.fr'],
-            jwtSecret: 'test-jwt-secret',
-          },
-        },
-      ],
-    }).compile();
-    service = module.get(AnalyticsTrackerService);
+    service = new AnalyticsTrackerService(
+      db as never,
+      {
+        corsOrigins: ['https://nedellec-julien.fr'],
+        jwtSecret: 'test-jwt-secret',
+      } as unknown as AppConfigService,
+    );
 
     // Date fixe pour tester le hash
     jest.useFakeTimers().setSystemTime(new Date('2026-04-26T10:30:00Z'));

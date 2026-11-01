@@ -1,6 +1,6 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { UploadedFile } from '../common/http';
+import { Logger } from '../common/logger';
 import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import {
   PROFILE_ROW_ID,
@@ -34,18 +34,17 @@ import {
  * ne peut donc jamais retirer un objet cité. L'attente du verrou est bornée (`inProfileTransaction`,
  * 503 au-delà), sa détention aussi (envoi S3 borné, `S3_TIMEOUTS`).
  */
-@Injectable()
 export class ProfilePortraitService {
   private readonly logger = new Logger(ProfilePortraitService.name);
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly db: Database,
     private readonly storage: StorageService,
     private readonly images: ImageOptimizer,
   ) {}
 
   /** Recadre en AVIF 640×800 (hors verrou), puis, verrou tenu : envoi sous une clé hachée et écriture. */
-  async replace(file: Express.Multer.File): Promise<ProfileDocument> {
+  async replace(file: UploadedFile): Promise<ProfileDocument> {
     const image = await this.images.toPortrait(file.buffer);
     // Clé dérivée du contenu : une nouvelle image = une nouvelle URL, servie en cache immuable.
     const key = `profile/portrait-${contentHash(image.buffer)}.${image.ext}`;

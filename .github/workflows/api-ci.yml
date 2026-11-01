@@ -1,0 +1,211 @@
+name: API CI
+
+# Sur une PR : lint, types, tests sur Postgres, build, puis l'image construite passe la suite de parité
+# HTTP (packages/api-parity). Sur master (push ou lancement manuel), une fois les deux jobs verts : l'image est publiée sur GHCR et Dokploy la déploie
+# par son API, sans rien reconstruire.
+on:
+  pull_request:
+    paths:
+      - apps/api/**
+      - packages/api-parity/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - .npmrc
+      - .github/workflows/api-ci.yml
+  push:
+    branches: [master]
+    paths:
+      - apps/api/**
+      - packages/api-parity/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - .npmrc
+      - .github/workflows/api-ci.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un run par branche/PR : le nouveau push annule le précédent.
+concurrency:
+  group: api-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint · Typecheck · Test · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Même image que le README et compose.yaml. Les tests d'intégration appliquent eux-mêmes les
+    # migrations Drizzle sur une base jetable dédiée.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: it
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: apps/api
+
+    env:
+      PROFILE_IT_DATABASE_URL: postgres://postgres:it@127.0.0.1:5432/profile_it
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # pnpm avant setup-node : la version vient du champ `packageManager` de package.json.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc # même majeure que le Dockerfile (node:24-alpine)
+          cache: pnpm
+
+      # Même commande que le Dockerfile : un lockfile incohérent échoue ici, pas chez Dokploy.
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile --filter @portfolio/api
+
+      # `pnpm lint` corrige (--fix) : en CI on vérifie seulement.
+      - name: Lint
+        run: pnpm lint:check
+
+      - name: Format
+        run: pnpm format:check
+
+      # Jest (ts-jest) ne vérifie pas les types des specs : tsc couvre code et tests.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Create integration database
+        run: psql "postgres://postgres:it@127.0.0.1:5432/postgres" -c "CREATE DATABASE profile_it"
+
+      # Unitaires et intégration ensemble : sans les variables *_IT_DATABASE_URL, les suites
+      # d'intégration seraient ignorées (describe.skip) et le job resterait vert sans les jouer.
+      - name: Test (unit + integration on Postgres)
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  docker:
+    name: Docker build · Parité HTTP
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Le Dockerfile du repo, sans push : l'image que `publish` pousse est reconstruite depuis ce cache.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: nest-portfolio-app:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # La suite de parité vise l'image elle-même (mode production, migrations au démarrage), pas les
+      # sources : c'est le contrat que l'implémentation Hono devra tenir à l'identique.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # L'API pour le seed de l'admin, la suite pour elle-même.
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile --filter @portfolio/api --filter @portfolio/api-parity
+
+      - name: Typecheck · Format parity suite
+        run: |
+          pnpm --filter @portfolio/api-parity typecheck
+          pnpm --filter @portfolio/api-parity format:check
+
+      - name: Start parity stack (image + Postgres)
+        run: packages/api-parity/scripts/stack.sh up nest-portfolio-app:ci
+
+      - name: Parity suite
+        run: pnpm --filter @portfolio/api-parity test
+
+      - name: API logs
+        if: failure()
+        run: docker logs api-parity-api || true
+
+      - name: Stop parity stack
+        if: always()
+        run: packages/api-parity/scripts/stack.sh down
+
+  publish:
+    name: Publish · Deploy
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: [verify, docker]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Nom d'image d'avant le monorepo : Dokploy tire toujours celle-ci.
+      # Même Dockerfile et même cache que le job `docker` : toutes les couches viennent du cache.
+      - name: Push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/nest-portfolio-app:latest
+            ghcr.io/${{ github.repository_owner }}/nest-portfolio-app:sha-${{ github.sha }}
+          cache-from: type=gha
+
+      # Dokploy tire `latest` et redémarre le conteneur (le webhook d'une application « image »
+      # attend la charge utile de Docker Hub). Sans les secrets, l'étape ne fait rien.
+      - name: Deploy (Dokploy API)
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_API_APPLICATION_ID }}
+        run: |
+          if [ -z "$DOKPLOY_URL" ] || [ -z "$DOKPLOY_API_KEY" ] || [ -z "$DOKPLOY_APPLICATION_ID" ]; then
+            echo "Secrets Dokploy absents : pas de déclenchement."
+            exit 0
+          fi
+          curl -fsS -X POST "$DOKPLOY_URL/api/application.deploy" \
+            -H "x-api-key: $DOKPLOY_API_KEY" -H 'Content-Type: application/json' \
+            -d "{\"applicationId\": \"$DOKPLOY_APPLICATION_ID\"}" -o /dev/null

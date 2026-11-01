@@ -1,4 +1,4 @@
-import { ServiceUnavailableException } from '@nestjs/common';
+import { ServiceUnavailableException } from '../common/http-errors';
 import { sql } from 'drizzle-orm';
 import type { Database } from '../database/drizzle.types';
 import type { ProfileTransaction } from './profile-document';

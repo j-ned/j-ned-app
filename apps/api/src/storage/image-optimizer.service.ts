@@ -1,4 +1,4 @@
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import { UnprocessableEntityException } from '../common/http-errors';
 import sharp from 'sharp';
 
 /** Largeur max stockée : les visuels s'affichent au plus en ~800 px CSS, 1600 couvre le retina 2×. */
@@ -26,7 +26,6 @@ export type OptimizedImage = {
  * Normalise toute image uploadée (JPEG, PNG, WebP, AVIF) en AVIF ≤ 1600 px, orientation EXIF
  * appliquée. Un JPEG d'appareil photo de 2,8 Mo devient ~70 Ko sans que l'admin ait à y penser.
  */
-@Injectable()
 export class ImageOptimizer {
   async optimize(input: Buffer): Promise<OptimizedImage> {
     try {

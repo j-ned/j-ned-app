@@ -13,7 +13,6 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { V2_EVENT_TYPES } from '../engagement';
 
@@ -117,17 +116,9 @@ class NoMetadataForV2Events implements ValidatorConstraintInterface {
 }
 
 export class TrackEventDto {
-  @ApiProperty({
-    description: "Type d'événement tracké (page event ou custom event)",
-    enum: ANALYTICS_TYPES,
-  })
   @IsIn([...ANALYTICS_TYPES])
   type!: AnalyticsType;
 
-  @ApiPropertyOptional({
-    description: 'Path de la page (requis pour page_view et page_duration)',
-    maxLength: 2048,
-  })
   @ValidateIf(
     (o: TrackEventDto) => o.type === 'page_view' || o.type === 'page_duration',
   )
@@ -135,15 +126,11 @@ export class TrackEventDto {
   @MaxLength(2048)
   url?: string;
 
-  @ApiPropertyOptional({ maxLength: 2048 })
   @IsOptional()
   @IsString()
   @MaxLength(2048)
   referrer?: string;
 
-  @ApiPropertyOptional({
-    description: 'Durée en secondes (0-86400), requise pour page_duration',
-  })
   @ValidateIf(
     (o: TrackEventDto) => o.type === 'page_duration' || o.duration != null,
   )
@@ -152,11 +139,6 @@ export class TrackEventDto {
   @Max(86400)
   duration?: number;
 
-  @ApiPropertyOptional({
-    maxLength: 255,
-    description:
-      'Requis pour contact_submit (emplacement), outbound_click (canal) et section_view (section)',
-  })
   @ValidateIf(
     (o: TrackEventDto) =>
       entityIdRule(o.type) !== undefined || o.entityId != null,
@@ -166,11 +148,6 @@ export class TrackEventDto {
   @Validate(EntityIdForType)
   entityId?: string;
 
-  @ApiPropertyOptional({
-    maxLength: 500,
-    description:
-      'Libre pour les événements historiques ; chemin de la page (≤ 200, sans requête) pour contact_submit, outbound_click et section_view',
-  })
   @Transform(toPathForV2)
   @IsOptional()
   @IsString()
@@ -178,9 +155,6 @@ export class TrackEventDto {
   @Validate(PathForV2Events)
   entityTitle?: string;
 
-  @ApiPropertyOptional({
-    description: 'Refusé pour contact_submit, outbound_click et section_view',
-  })
   @IsOptional()
   @IsObject()
   @Validate(NoMetadataForV2Events)

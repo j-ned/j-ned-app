@@ -1,14 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import {
-  Inject,
-  Injectable,
   NotFoundException,
   UnprocessableEntityException,
-} from '@nestjs/common';
+} from '../common/http-errors';
 import { and, eq, inArray } from 'drizzle-orm';
 import { findByIdOrFail } from '../common/crud-helpers';
 import { projects, type Project } from '../database/schema/projects';
-import { DRIZZLE } from '../database/drizzle.constants';
+import type { UploadedFile } from '../common/http';
 import type { Database } from '../database/drizzle.types';
 import {
   projectImages,
@@ -27,12 +25,11 @@ import {
 } from './project-gallery';
 
 /** Galerie des projets (ADR-0009) : une capture = une ligne `project_image` + un objet S3. */
-@Injectable()
 export class ProjectImagesService {
   private static readonly BUCKET = 'portfolio-storage';
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly db: Database,
     private readonly storage: StorageService,
     private readonly images: ImageOptimizer,
   ) {}
@@ -55,7 +52,7 @@ export class ProjectImagesService {
    */
   async upload(
     projectId: string,
-    file: Express.Multer.File,
+    file: UploadedFile,
     alt: string,
   ): Promise<ProjectImageResponse> {
     await findByIdOrFail<Project>(this.db, projects, projectId, 'Project');

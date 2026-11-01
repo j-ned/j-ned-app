@@ -7,7 +7,6 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
 export const METRIC_TYPES = [
   'url',
@@ -19,23 +18,14 @@ export const METRIC_TYPES = [
 export type MetricType = (typeof METRIC_TYPES)[number];
 
 export class DateRangeQueryDto {
-  @ApiPropertyOptional({
-    format: 'date',
-    description: 'Default = il y a 30 jours (UTC)',
-  })
   @IsOptional()
   @IsDateString()
   startDate?: string;
 
-  @ApiPropertyOptional({
-    format: 'date',
-    description: "Default = aujourd'hui (UTC)",
-  })
   @IsOptional()
   @IsDateString()
   endDate?: string;
 
-  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -45,7 +35,6 @@ export class DateRangeQueryDto {
 }
 
 export class MetricsQueryDto extends DateRangeQueryDto {
-  @ApiProperty({ enum: METRIC_TYPES })
   @IsIn([...METRIC_TYPES])
   type!: MetricType;
 }
@@ -55,7 +44,6 @@ export const EVENT_COUNT_TYPES = ['contact_submit', 'outbound_click'] as const;
 export type EventCountType = (typeof EVENT_COUNT_TYPES)[number];
 
 export class EventsQueryDto extends DateRangeQueryDto {
-  @ApiProperty({ enum: EVENT_COUNT_TYPES })
   @IsIn([...EVENT_COUNT_TYPES])
   type!: EventCountType;
 }

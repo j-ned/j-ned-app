@@ -1,9 +1,9 @@
 import { createHash, createHmac } from 'node:crypto';
 import { resolve } from 'node:path';
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '../common/http-errors';
+import { Logger } from '../common/logger';
 import { desc, eq, sql } from 'drizzle-orm';
 import { AppConfigService } from '../config/app-config.service';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import { contactMessages, type ContactMessage } from '../database/schema';
 import { OWNER_EMAIL } from '../mailer/mailer.constants';
@@ -20,7 +20,6 @@ const USER_AGENT_MAX_LENGTH = 300;
 
 export type ContactSender = { ip: string; userAgent: string };
 
-@Injectable()
 export class ContactService {
   private readonly logger = new Logger(ContactService.name);
   private static readonly TEMPLATES_DIR = resolve(__dirname, 'mail-templates');
@@ -32,7 +31,7 @@ export class ContactService {
   private readonly senderHashKey: Buffer;
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly db: Database,
     private readonly mailer: MailerService,
     cfg: AppConfigService,
   ) {

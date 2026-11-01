@@ -1,22 +1,21 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '../common/http-errors';
+import type { UploadedFile } from '../common/http';
 import type { Readable } from 'node:stream';
 import { desc, eq } from 'drizzle-orm';
-import { DRIZZLE } from '../database/drizzle.constants';
 import type { Database } from '../database/drizzle.types';
 import { cvFiles, type CvFile } from '../database/schema';
 import { StorageService } from '../storage/storage.service';
 
-@Injectable()
 export class CvService {
   private static readonly BUCKET = 'portfolio-storage';
   private static readonly KEY = 'cv/cv.pdf';
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly db: Database,
     private readonly storage: StorageService,
   ) {}
 
-  async upsert(file: Express.Multer.File): Promise<CvFile> {
+  async upsert(file: UploadedFile): Promise<CvFile> {
     // Ordre : S3 upload → DB upsert.
     // PutObject est idempotent : écrase systématiquement la key.
     await this.storage.upload(

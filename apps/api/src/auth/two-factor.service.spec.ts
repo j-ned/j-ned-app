@@ -1,19 +1,14 @@
 import { generateSync } from 'otplib';
-import { Test, TestingModule } from '@nestjs/testing';
 import { TwoFactorService } from './two-factor.service';
 import { AppConfigService } from '../config/app-config.service';
 
 describe('TwoFactorService', () => {
   let service: TwoFactorService;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        TwoFactorService,
-        { provide: AppConfigService, useValue: { totpAppName: 'Test App' } },
-      ],
-    }).compile();
-    service = module.get<TwoFactorService>(TwoFactorService);
+  beforeEach(() => {
+    service = new TwoFactorService({
+      totpAppName: 'Test App',
+    } as unknown as AppConfigService);
   });
 
   it('generateSecret retourne un secret base32 valide', () => {
