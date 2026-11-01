@@ -56,7 +56,7 @@ describe('ssrUpstreamInterceptor', () => {
   );
 
   it.each([
-    ['the public API', 'https://api.nedellec-julien.fr/api/blog/posts'],
+    ['the public API', 'https://nedellec-julien.fr/api/blog/posts'],
     ['a third-party origin', 'https://giscus.app/api/discussions'],
     ['a relative asset', '/assets/manifest.json'],
   ])(
@@ -80,13 +80,13 @@ describe('ssrUpstreamInterceptor', () => {
   it('Given a server render without request context When the page reads the API Then no forwarded address is sent', () => {
     setUp('server');
 
-    expect(forwardedForSentTo('https://api.nedellec-julien.fr/api/blog/posts')).toBeNull();
+    expect(forwardedForSentTo('https://nedellec-julien.fr/api/blog/posts')).toBeNull();
   });
 
   it('Given the browser When the page reads the API Then no forwarded address is sent', () => {
     setUp('browser');
 
-    expect(forwardedForSentTo('https://api.nedellec-julien.fr/api/blog/posts')).toBeNull();
+    expect(forwardedForSentTo('https://nedellec-julien.fr/api/blog/posts')).toBeNull();
   });
 
   describe('upstream failures during a server render', () => {

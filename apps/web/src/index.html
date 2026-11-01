@@ -55,10 +55,12 @@
     <!-- CSP via meta tag, complétée par les headers HTTP Traefik/Dokploy pour frame-ancestors et HSTS.
          Giscus (commentaires du blog) : client.js dans script-src, widget dans frame-src, et
          default.css dans style-src (client.js l'injecte dans la page hôte pour dimensionner l'iframe).
-         Avatars et API vivent dans l'iframe et relèvent de la CSP de giscus.app. -->
+         Avatars et API vivent dans l'iframe et relèvent de la CSP de giscus.app.
+         L'API est en même origine ('self') ; img-src garde l'ancien sous-domaine de l'API pour les
+         images d'articles enregistrées avec son URL absolue. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://giscus.app; style-src 'self' 'unsafe-inline' https://giscus.app; font-src 'self'; img-src 'self' data: blob: https://api.nedellec-julien.fr; connect-src 'self' https://api.nedellec-julien.fr https://o4511049353723904.ingest.de.sentry.io; worker-src 'self' blob:; object-src 'none'; frame-src https://giscus.app; base-uri 'self'; form-action 'self';"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://giscus.app; style-src 'self' 'unsafe-inline' https://giscus.app; font-src 'self'; img-src 'self' data: blob: https://api.nedellec-julien.fr; connect-src 'self' https://o4511049353723904.ingest.de.sentry.io; worker-src 'self' blob:; object-src 'none'; frame-src https://giscus.app; base-uri 'self'; form-action 'self';"
     />
     <!-- Pré-peinture du thème : clé et règle de ThemeStore dupliquées ; après la CSP, car une CSP en <meta> ne régit que ce qui la suit -->
     <script>
@@ -77,10 +79,6 @@
       crossorigin
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-
-    <!-- Preconnect API NestJS pour les appels XHR (CORS) ; les images, elles, sont servies par le site -->
-    <link rel="preconnect" href="https://api.nedellec-julien.fr" crossorigin />
-    <link rel="dns-prefetch" href="https://api.nedellec-julien.fr" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x48" />

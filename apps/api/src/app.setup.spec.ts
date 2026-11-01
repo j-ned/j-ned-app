@@ -1,4 +1,10 @@
-import { Controller, Get, type INestApplication } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  type INestApplication,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types';
@@ -10,6 +16,10 @@ class ThingsController {
   list(): string[] {
     return [];
   }
+
+  @Post('actions')
+  @HttpCode(204)
+  act(): void {}
 }
 
 const ERROR_KEYS = ['error', 'message', 'path', 'statusCode', 'timestamp'];
@@ -101,6 +111,38 @@ describe('setupApp', () => {
       path: '/api/things',
     });
   });
+
+  it('Given a cross-site write, When posted, Then the 403 is the API JSON error body', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/things/actions')
+      .set('sec-fetch-site', 'cross-site')
+      .set('origin', 'https://evil.example');
+
+    expect(res.status).toBe(403);
+    expect(Object.keys(res.body as object).sort()).toEqual(ERROR_KEYS);
+    expect(res.body).toMatchObject({
+      statusCode: 403,
+      error: 'Forbidden',
+      path: '/api/things/actions',
+    });
+  });
+
+  it.each<[string, Record<string, string>]>([
+    ['same-origin', { 'sec-fetch-site': 'same-origin' }],
+    [
+      'from the trusted site origin',
+      { 'sec-fetch-site': 'same-site', origin: 'http://localhost:4200' },
+    ],
+  ])(
+    'Given a %s write, When posted, Then it reaches the handler',
+    async (_, headers) => {
+      const res = await request(app.getHttpServer())
+        .post('/api/things/actions')
+        .set(headers);
+
+      expect(res.status).toBe(204);
+    },
+  );
 
   it('Given a non-production app, When /docs is requested, Then Swagger UI is served', async () => {
     const res = await request(app.getHttpServer()).get('/docs');

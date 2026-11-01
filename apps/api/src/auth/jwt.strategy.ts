@@ -6,6 +6,7 @@ import { AppConfigService } from '../config/app-config.service';
 import { UsersService } from '../users/users.service';
 import type { User } from '../database/schema';
 import type { JwtPayload } from './jwt-payload.interface';
+import { AUTH_COOKIE_NAME } from './auth-cookie';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -16,7 +17,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) =>
-          (req?.cookies as Record<string, string> | undefined)?.token ?? null,
+          (req?.cookies as Record<string, string> | undefined)?.[
+            AUTH_COOKIE_NAME
+          ] ?? null,
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,

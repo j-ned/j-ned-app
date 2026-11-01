@@ -62,7 +62,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 # ==============================================================================
 # Stage 4 — Runtime : nginx devant Node, dans la même image (HTML rendu et chunks hachés sortent
 # du même build). nginx sert les fichiers (chunks, prérendu des pages statiques, coquille CSR),
-# relaie /api/storage/ et /api/analytics/track à l'API, et ne transmet à Node (127.0.0.1:4000)
+# relaie /api/ à l'API (images en cache, mesure sans cookie, le reste tel quel), et ne transmet à Node (127.0.0.1:4000)
 # que la liste fermée des routes de contenu, rendues à chaque requête depuis l'API.
 # ==============================================================================
 FROM nginx:alpine AS production
@@ -94,10 +94,10 @@ add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment
 add_header Cross-Origin-Opener-Policy "same-origin" always;
 HEADERS
 
-# En-têtes helmet/CORS de l'API masqués sur chaque relais (Cache-Control, Content-Type, Content-Length gardés).
+# En-têtes helmet/CORS de l'API masqués sur chaque relais (Cache-Control, Content-Type, Content-Length,
+# Set-Cookie gardés : seuls les relais des images et de la mesure retirent les cookies).
 RUN cat > /etc/nginx/snippets/api-response-headers.conf <<'HEADERS'
 proxy_hide_header Vary;
-proxy_hide_header Set-Cookie;
 proxy_hide_header X-Powered-By;
 proxy_hide_header Access-Control-Allow-Origin;
 proxy_hide_header Access-Control-Allow-Credentials;
@@ -266,6 +266,7 @@ server {
         proxy_cache_lock on;
         proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
         proxy_ignore_headers Set-Cookie Vary;
+        proxy_hide_header Set-Cookie;
 
         include /etc/nginx/snippets/api-response-headers.conf;
     }
@@ -287,6 +288,30 @@ server {
         proxy_set_header X-Forwarded-For $http_x_forwarded_for;
         proxy_set_header Cookie "";
         proxy_set_header Authorization "";
+        proxy_hide_header Set-Cookie;
+
+        include /etc/nginx/snippets/api-response-headers.conf;
+    }
+
+    # Reste de l'API, relayé par l'origine du site (ADR-0034) : pour le navigateur, site et API sont
+    # une seule origine, donc ni CORS ni cookie partagé entre sous-domaines (cookie `__Host-`,
+    # `SameSite=Strict`). `^~` : la regex d'extensions ne capte pas une URL d'API. Les relais plus
+    # précis ci-dessus (images, mesure) gardent leur cache et leurs restrictions.
+    location ^~ /api/ {
+        include /etc/nginx/snippets/security-headers.conf;
+
+        # Plus gros envoi accepté par l'API : le CV (10 Mo), plus l'enveloppe multipart.
+        client_max_body_size 11m;
+
+        resolver 127.0.0.11 valid=30s ipv6=off;
+        set $api_upstream ${API_UPSTREAM};
+        proxy_pass $api_upstream$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_read_timeout 60s;
+
+        # XFF de Traefik tel quel : l'API (`trust proxy 1`) retient sa dernière entrée, le visiteur.
+        proxy_set_header X-Forwarded-For $http_x_forwarded_for;
 
         include /etc/nginx/snippets/api-response-headers.conf;
     }

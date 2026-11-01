@@ -3,6 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import type { Application } from 'express';
+import { CrossOriginGuard } from './common/cross-origin.guard';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { registerOutOfPrefixFallback } from './common/filters/out-of-prefix-fallback';
 
@@ -42,6 +43,7 @@ export async function setupApp(
   );
   const exceptionFilter = new HttpExceptionFilter();
   app.useGlobalFilters(exceptionFilter);
+  app.useGlobalGuards(new CrossOriginGuard(corsOrigins));
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Portfolio API')

@@ -28,6 +28,7 @@ import { TwoFactorEnableDto } from './dto/two-factor-enable.dto';
 import { TwoFactorDisableDto } from './dto/two-factor-disable.dto';
 import type { User } from '../database/schema';
 import { AuthAttemptThrottle, PublicReadThrottle } from '../common/throttle';
+import { AUTH_COOKIE_NAME, authCookieOptions } from './auth-cookie';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -90,14 +91,9 @@ export class AuthController {
   })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     await this.auth.revokeSessionFromToken(
-      (req.cookies as Record<string, string> | undefined)?.token,
+      (req.cookies as Record<string, string> | undefined)?.[AUTH_COOKIE_NAME],
     );
-    res.clearCookie('token', {
-      httpOnly: true,
-      sameSite: 'lax',
-      domain: this.cfg.cookieDomain,
-      path: '/',
-    });
+    res.clearCookie(AUTH_COOKIE_NAME, authCookieOptions());
     return { ok: true };
   }
 
@@ -181,13 +177,10 @@ export class AuthController {
   }
 
   private setAuthCookie(res: Response, token: string): void {
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: this.cfg.isProduction,
-      sameSite: 'lax',
-      domain: this.cfg.cookieDomain,
-      maxAge: parseDurationMs(this.cfg.jwtExpiresIn),
-      path: '/',
-    });
+    res.cookie(
+      AUTH_COOKIE_NAME,
+      token,
+      authCookieOptions(parseDurationMs(this.cfg.jwtExpiresIn)),
+    );
   }
 }

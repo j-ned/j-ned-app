@@ -34,9 +34,6 @@ export class AppConfigService {
   get jwtExpiresIn() {
     return this.config.get('JWT_EXPIRES_IN', { infer: true });
   }
-  get cookieDomain() {
-    return this.config.get('COOKIE_DOMAIN', { infer: true });
-  }
   get adminEmail() {
     return this.config.get('ADMIN_EMAIL', { infer: true });
   }

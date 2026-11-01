@@ -34,13 +34,13 @@ describe('provideSsrApiBaseUrl', () => {
 
       expect(resolved).toEqual({
         apiBaseUrl: internalApiBaseUrl,
-        originMap: { [internalOrigin]: 'https://api.nedellec-julien.fr' },
+        originMap: { [internalOrigin]: 'https://nedellec-julien.fr' },
       });
     },
   );
 
   it('Given no request context When the API url is resolved Then the public url is used without any origin mapping', () => {
-    expect(resolve()).toEqual({ apiBaseUrl: 'https://api.nedellec-julien.fr/api', originMap: {} });
+    expect(resolve()).toEqual({ apiBaseUrl: 'https://nedellec-julien.fr/api', originMap: {} });
   });
 
   it.each<[string, unknown]>([
@@ -51,7 +51,7 @@ describe('provideSsrApiBaseUrl', () => {
     'Given %s When the API url is resolved Then it falls back to the public url without any origin mapping',
     (_label, requestContext) => {
       expect(resolve(requestContext)).toEqual({
-        apiBaseUrl: 'https://api.nedellec-julien.fr/api',
+        apiBaseUrl: 'https://nedellec-julien.fr/api',
         originMap: {},
       });
     },

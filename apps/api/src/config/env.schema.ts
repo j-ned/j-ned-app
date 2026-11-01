@@ -21,14 +21,6 @@ export const envSchema = z.object({
     .string()
     .min(32, { message: 'JWT_SECRET must be at least 32 characters' }),
   JWT_EXPIRES_IN: z.string().default('7d'),
-  /**
-   * Domaine du cookie d'auth. Utiliser un point devant pour partager entre subdomains
-   * (ex: `.nedellec-julien.fr` couvre `nedellec-julien.fr` ET `api.nedellec-julien.fr`). Sans cette valeur le cookie
-   * n'est valide que pour l'origine exacte de l'API, ce qui peut être bloqué par les
-   * browsers en mode strict (Firefox Total Cookie Protection, Chrome 3rd-party isolation).
-   * En dev local laisser vide → cookie attaché à `localhost`.
-   */
-  COOKIE_DOMAIN: z.string().optional(),
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_INITIAL_PASSWORD: z
     .string()
@@ -40,7 +32,9 @@ export const envSchema = z.object({
   TOTP_APP_NAME: z.string().default('J-Ned Portfolio'),
 
   /**
-   * Origines autorisées par CORS (requêtes credentials), séparées par des virgules.
+   * Origines du site, séparées par des virgules : autorisées par CORS (requêtes credentials) et
+   * par la protection CSRF (`CrossOriginGuard`) tant que le site appelle l'API sur son sous-domaine,
+   * et reconnues comme référents internes par la mesure d'audience.
    * Prod: `https://nedellec-julien.fr` (le domaine `www` redirige vers l'apex côté Traefik, il n'a plus besoin d'être listé ici).
    * Dev local: `http://localhost:4200` (défaut).
    */

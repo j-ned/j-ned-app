@@ -14,17 +14,13 @@ type RuntimeConfig = {
   };
 };
 
-const PROD_API_BASE = 'https://api.nedellec-julien.fr/api';
-
-function apiBase(): string {
-  const host = location.hostname;
-  return host === 'localhost' || host === '127.0.0.1' ? '/api' : PROD_API_BASE;
-}
+// Même origine partout : relais nginx en production, `proxy.conf.cjs` sous `ng serve`.
+const API_BASE = '/api';
 
 async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<void> {
   let config: RuntimeConfig;
   try {
-    const res = await fetch(`${apiBase()}/config`, { credentials: 'omit' });
+    const res = await fetch(`${API_BASE}/config`, { credentials: 'omit' });
     if (!res.ok) return;
     config = (await res.json()) as RuntimeConfig;
   } catch {
@@ -63,7 +59,7 @@ async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<v
       }),
     ],
     tracesSampleRate: isProduction ? 0.1 : 1.0,
-    tracePropagationTargets: [/^\//, /^https:\/\/api\.nedellec-julien\.fr/],
+    tracePropagationTargets: [/^\//, /^https:\/\/nedellec-julien\.fr\/api\//],
     ignoreErrors: ['ChunkLoadError', /ResizeObserver loop/, 'NG0911'],
     beforeSend: scrubEvent,
     beforeBreadcrumb: scrubBreadcrumb,

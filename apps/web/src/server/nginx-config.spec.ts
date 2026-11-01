@@ -92,4 +92,74 @@ describe('nginx configuration', () => {
       expect(relayed(path)).toBe(false);
     });
   });
+
+  // ADR-0034 : l'API est servie par l'origine du site.
+  describe('API relayed on the site origin', () => {
+    // Bloc complet d'une `location`, commentaires retirés : les accolades s'équilibrent
+    // (`limit_except { … }`) et celles des variables du gabarit (`${API_UPSTREAM}`) ne comptent pas.
+    const blockDirectives = (header: RegExp): readonly string[] => {
+      const match = header.exec(DOCKERFILE);
+      if (!match) return [];
+      const start = match.index + match[0].length;
+      let depth = 1;
+      let index = start;
+      while (index < DOCKERFILE.length && depth > 0) {
+        if (DOCKERFILE.startsWith('${', index)) {
+          index = DOCKERFILE.indexOf('}', index) + 1;
+          continue;
+        }
+        if (DOCKERFILE[index] === '{') depth += 1;
+        if (DOCKERFILE[index] === '}') depth -= 1;
+        index += 1;
+      }
+      return DOCKERFILE.slice(start, index - 1)
+        .replace(/#[^\n]*/g, '')
+        .split(';')
+        .map((directive) => directive.replace(/\s+/g, ' ').trim())
+        .filter((directive) => directive !== '');
+    };
+    const API_LOCATION = /location \^~ \/api\/ \{/;
+    const STORAGE_LOCATION = /location \^~ \/api\/storage\/ \{/;
+    const TRACK_LOCATION = /location = \/api\/analytics\/track \{/;
+    const API_RESPONSE_HEADERS = /api-response-headers\.conf <<'HEADERS'\n([\s\S]*?)\nHEADERS/;
+    const api = (): readonly string[] => blockDirectives(API_LOCATION);
+
+    it('relays every API path ahead of the file extension regex, with the security headers', () => {
+      expect(api()).toEqual(
+        expect.arrayContaining([
+          'proxy_pass $api_upstream$request_uri',
+          'include /etc/nginx/snippets/security-headers.conf',
+        ]),
+      );
+    });
+
+    it('accepts the largest upload of the API (10 MB CV plus multipart envelope)', () => {
+      expect(api()).toContain('client_max_body_size 11m');
+    });
+
+    it("hands the API Traefik's X-Forwarded-For untouched, so that it keeps the visitor address", () => {
+      expect(api()).toContain('proxy_set_header X-Forwarded-For $http_x_forwarded_for');
+    });
+
+    it('lets the session cookie through both ways', () => {
+      expect({
+        requestCookieStripped: api().some((d) => d.startsWith('proxy_set_header Cookie')),
+        responseCookieHidden: api().includes('proxy_hide_header Set-Cookie'),
+        sharedSnippetHidesCookie: (API_RESPONSE_HEADERS.exec(DOCKERFILE)?.[1] ?? '').includes(
+          'Set-Cookie',
+        ),
+      }).toEqual({
+        requestCookieStripped: false,
+        responseCookieHidden: false,
+        sharedSnippetHidesCookie: false,
+      });
+    });
+
+    it.each<[string, RegExp]>([
+      ['the cached images', STORAGE_LOCATION],
+      ['the audience beacon', TRACK_LOCATION],
+    ])('still hides any cookie set through %s', (_, location) => {
+      expect(blockDirectives(location)).toContain('proxy_hide_header Set-Cookie');
+    });
+  });
 });
