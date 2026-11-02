@@ -8,10 +8,8 @@ describe('validateEnv', () => {
     S3_REGION: 'us-east-1',
     S3_ACCESS_KEY: 'access-key',
     S3_SECRET_KEY: 'secret-key-12345',
-    SMTP_HOST: 'localhost',
-    SMTP_USER: 'mailpit',
-    SMTP_PASS: 'mailpit',
-    SMTP_FROM: 'noreply@test.local',
+    RESEND_API_KEY: 're_test_key',
+    MAIL_FROM: 'noreply@test.local',
   };
 
   it('parse une env valide minimaliste avec défauts', () => {
@@ -121,31 +119,6 @@ describe('validateEnv', () => {
     );
   });
 
-  it('défaut SMTP_PORT à 587', () => {
-    const result = validateEnv(baseValid);
-    expect(result.SMTP_PORT).toBe(587);
-  });
-
-  it('défaut SMTP_SECURE à false', () => {
-    const result = validateEnv(baseValid);
-    expect(result.SMTP_SECURE).toBe(false);
-  });
-
-  it("parse SMTP_SECURE='true' comme true", () => {
-    const result = validateEnv({ ...baseValid, SMTP_SECURE: 'true' });
-    expect(result.SMTP_SECURE).toBe(true);
-  });
-
-  it("parse SMTP_SECURE='1' comme true", () => {
-    const result = validateEnv({ ...baseValid, SMTP_SECURE: '1' });
-    expect(result.SMTP_SECURE).toBe(true);
-  });
-
-  it('coerce SMTP_PORT depuis une string', () => {
-    const result = validateEnv({ ...baseValid, SMTP_PORT: '1025' });
-    expect(result.SMTP_PORT).toBe(1025);
-  });
-
   it('ignore une variable inconnue résiduelle (ex. DOKPLOY_DEPLOY_WEBHOOK_URL retirée du schéma) sans bloquer le démarrage', () => {
     const result = validateEnv({
       ...baseValid,
@@ -155,10 +128,27 @@ describe('validateEnv', () => {
     expect(result).not.toHaveProperty('DOKPLOY_DEPLOY_WEBHOOK_URL');
   });
 
-  it('rejette SMTP_FROM si pas un email valide', () => {
+  it('rejette MAIL_FROM si pas un email valide', () => {
     expect(() =>
-      validateEnv({ ...baseValid, SMTP_FROM: 'not-an-email' }),
-    ).toThrow(/SMTP_FROM/);
+      validateEnv({ ...baseValid, MAIL_FROM: 'not-an-email' }),
+    ).toThrow(/MAIL_FROM/);
+  });
+
+  it('rejette une env sans RESEND_API_KEY', () => {
+    expect(() =>
+      validateEnv({ ...baseValid, RESEND_API_KEY: undefined }),
+    ).toThrow(/RESEND_API_KEY/);
+  });
+
+  // Passage de SMTP à Resend : les anciennes variables encore définies sur Vercel ne bloquent pas le démarrage.
+  it('ignore les anciennes variables SMTP_* résiduelles', () => {
+    const result = validateEnv({
+      ...baseValid,
+      SMTP_HOST: 'mail.gandi.net',
+      SMTP_PASS: 'old-password',
+    });
+    expect(result).not.toHaveProperty('SMTP_HOST');
+    expect(result).not.toHaveProperty('SMTP_PASS');
   });
 
   // Retrait de la prise de rendez-vous (spec 029) : des variables encore définies dans Dokploy ne

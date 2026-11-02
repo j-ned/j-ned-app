@@ -1,32 +1,41 @@
 import { Logger } from '../common/logger';
-import { createTransport, type Transporter } from 'nodemailer';
 import { MailerService } from './mailer.service';
 import { AppConfigService } from '../config/app-config.service';
 
 describe('MailerService', () => {
   let service: MailerService;
-  let transporter: { sendMail: jest.Mock };
-  let cfg: { smtpFrom: string };
+  let fetchFn: jest.Mock;
+  let cfg: { resendApiKey: string; mailFrom: string };
+
+  const ok = () => new Response('{"id":"email-id"}', { status: 200 });
+  const failure = (status: number, body: string) =>
+    new Response(body, { status });
+  const requestAt = (index: number) =>
+    fetchFn.mock.calls[index] as [string, RequestInit];
+  const bodyAt = (index: number) =>
+    JSON.parse(requestAt(index)[1].body as string) as Record<string, unknown>;
+  const headersAt = (index: number) =>
+    requestAt(index)[1].headers as Record<string, string>;
 
   beforeEach(() => {
-    transporter = { sendMail: jest.fn() };
-    cfg = { smtpFrom: 'noreply@test.local' };
+    fetchFn = jest.fn();
+    cfg = { resendApiKey: 're_test_key', mailFrom: 'noreply@test.local' };
 
-    service = new MailerService(
-      transporter as unknown as Transporter,
-      cfg as unknown as AppConfigService,
-    );
+    service = new MailerService(cfg as unknown as AppConfigService, fetchFn);
   });
 
-  it('envoie le mail avec les bons paramètres', async () => {
-    transporter.sendMail.mockResolvedValueOnce({});
+  it('envoie le mail à l’API Resend avec les bons paramètres', async () => {
+    fetchFn.mockResolvedValueOnce(ok());
     await service.sendMail({
       to: 'visitor@example.com',
       subject: 'Hello',
       html: '<p>hi</p>',
     });
-    expect(transporter.sendMail).toHaveBeenCalledTimes(1);
-    expect(transporter.sendMail).toHaveBeenCalledWith({
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    const [url, init] = requestAt(0);
+    expect(url).toBe('https://api.resend.com/emails');
+    expect(init.method).toBe('POST');
+    expect(bodyAt(0)).toEqual({
       from: 'noreply@test.local',
       to: 'visitor@example.com',
       subject: 'Hello',
@@ -34,18 +43,17 @@ describe('MailerService', () => {
     });
   });
 
-  it('utilise cfg.smtpFrom comme expéditeur', async () => {
-    transporter.sendMail.mockResolvedValueOnce({});
+  it('s’authentifie avec la clé API en Bearer', async () => {
+    fetchFn.mockResolvedValueOnce(ok());
     await service.sendMail({ to: 'x@y.com', subject: 's', html: 'h' });
-    expect(transporter.sendMail).toHaveBeenCalledWith(
-      expect.objectContaining({ from: 'noreply@test.local' }),
-    );
+    expect(headersAt(0).Authorization).toBe('Bearer re_test_key');
+    expect(headersAt(0)['Content-Type']).toBe('application/json');
   });
 
   it('retry une fois si la première tentative échoue, puis succès', async () => {
-    transporter.sendMail
+    fetchFn
       .mockRejectedValueOnce(new Error('transient'))
-      .mockResolvedValueOnce({});
+      .mockResolvedValueOnce(ok());
     jest.useFakeTimers();
     const promise = service.sendMail({
       to: 'x@y.com',
@@ -56,12 +64,40 @@ describe('MailerService', () => {
     await jest.advanceTimersByTimeAsync(1000);
     await promise;
     jest.useRealTimers();
-    expect(transporter.sendMail).toHaveBeenCalledTimes(2);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('Given un retry, When la requête repart, Then la même clé d’idempotence évite un doublon', async () => {
+    fetchFn
+      .mockResolvedValueOnce(failure(500, 'oops'))
+      .mockResolvedValueOnce(ok());
+    jest.useFakeTimers();
+    const promise = service.sendMail({
+      to: 'x@y.com',
+      subject: 's',
+      html: 'h',
+    });
+    await jest.advanceTimersByTimeAsync(1000);
+    await promise;
+    jest.useRealTimers();
+    expect(headersAt(0)['Idempotency-Key']).toBeTruthy();
+    expect(headersAt(1)['Idempotency-Key']).toBe(
+      headersAt(0)['Idempotency-Key'],
+    );
+  });
+
+  it('Given deux mails distincts, Then leurs clés d’idempotence diffèrent', async () => {
+    fetchFn.mockResolvedValue(ok());
+    await service.sendMail({ to: 'x@y.com', subject: 's', html: 'h' });
+    await service.sendMail({ to: 'x@y.com', subject: 's', html: 'h' });
+    expect(headersAt(1)['Idempotency-Key']).not.toBe(
+      headersAt(0)['Idempotency-Key'],
+    );
   });
 
   it('throw après 3 tentatives échouées', async () => {
     const err = new Error('persistent');
-    transporter.sendMail.mockRejectedValue(err);
+    fetchFn.mockRejectedValue(err);
     jest.useFakeTimers();
     const promise = service.sendMail({
       to: 'x@y.com',
@@ -78,24 +114,40 @@ describe('MailerService', () => {
     const result = await caught;
     jest.useRealTimers();
     expect(result).toBe(err);
-    expect(transporter.sendMail).toHaveBeenCalledTimes(3);
+    expect(fetchFn).toHaveBeenCalledTimes(3);
+  });
+
+  it('Given une réponse HTTP non 2xx, When les tentatives s’épuisent, Then l’erreur cite le statut', async () => {
+    fetchFn.mockImplementation(() =>
+      Promise.resolve(failure(422, '{"message":"Invalid `from` field"}')),
+    );
+    jest.useFakeTimers();
+    const caught = service
+      .sendMail({ to: 'x@y.com', subject: 's', html: 'h' })
+      .catch((e: unknown) => e);
+    await jest.advanceTimersByTimeAsync(3000);
+    const result = await caught;
+    jest.useRealTimers();
+    expect(result).toBeInstanceOf(Error);
+    expect((result as Error).message).toContain('422');
+    expect(fetchFn).toHaveBeenCalledTimes(3);
   });
 
   it('ne retry pas si la première tentative réussit', async () => {
-    transporter.sendMail.mockResolvedValueOnce({});
+    fetchFn.mockResolvedValueOnce(ok());
     await service.sendMail({ to: 'x@y.com', subject: 's', html: 'h' });
-    expect(transporter.sendMail).toHaveBeenCalledTimes(1);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 
   it('passe le sujet et le HTML tels quels (pas de transformation)', async () => {
-    transporter.sendMail.mockResolvedValueOnce({});
+    fetchFn.mockResolvedValueOnce(ok());
     const html = '<html><body><h1>Hello {{name}}</h1></body></html>';
     await service.sendMail({
       to: 'x@y.com',
       subject: 'Sujet avec accents éàç',
       html,
     });
-    expect(transporter.sendMail).toHaveBeenCalledWith(
+    expect(bodyAt(0)).toEqual(
       expect.objectContaining({
         subject: 'Sujet avec accents éàç',
         html,
@@ -107,8 +159,13 @@ describe('MailerService', () => {
     const errorLog = jest
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => {});
-    transporter.sendMail.mockRejectedValue(
-      new Error('550 5.1.1 <camille@example.com>: Recipient address rejected'),
+    fetchFn.mockImplementation(() =>
+      Promise.resolve(
+        failure(
+          422,
+          '{"message":"Invalid `to` field: camille@example.com is not valid"}',
+        ),
+      ),
     );
     jest.useFakeTimers();
     const caught = service
@@ -122,139 +179,5 @@ describe('MailerService', () => {
     expect(logged).not.toContain('camille@example.com');
     expect(logged).toContain('c***@example.com');
     errorLog.mockRestore();
-  });
-
-  describe('message MIME réellement composé', () => {
-    type MimePart = { headers: Record<string, string>; body: string };
-
-    const parseEntity = (entity: string): MimePart[] => {
-      const separator = entity.indexOf('\r\n\r\n');
-      const head = entity.slice(0, separator).replace(/\r\n[ \t]+/g, ' ');
-      const body = entity.slice(separator + 4);
-      const headers = Object.fromEntries(
-        head.split('\r\n').map((line) => {
-          const colon = line.indexOf(':');
-          return [
-            line.slice(0, colon).trim().toLowerCase(),
-            line.slice(colon + 1).trim(),
-          ];
-        }),
-      );
-      const contentType = headers['content-type'] ?? 'text/plain';
-      const boundary = /boundary="?([^";]+)"?/i.exec(contentType)?.[1];
-      if (!/^multipart\//i.test(contentType) || !boundary) {
-        return [{ headers, body }];
-      }
-      return body
-        .split(`--${boundary}`)
-        .slice(1, -1)
-        .map((chunk) => chunk.replace(/^\r\n/, '').replace(/\r\n$/, ''))
-        .flatMap(parseEntity);
-    };
-
-    const decode = ({ headers, body }: MimePart): string => {
-      const encoding = (
-        headers['content-transfer-encoding'] ?? '7bit'
-      ).toLowerCase();
-      if (encoding === 'base64') {
-        return Buffer.from(body.replace(/\s/g, ''), 'base64').toString('utf8');
-      }
-      if (encoding === 'quoted-printable') {
-        const bytes = body
-          .replace(/=\r\n/g, '')
-          .replace(/=([0-9A-F]{2})/gi, (_match, hex: string) =>
-            String.fromCharCode(parseInt(hex, 16)),
-          );
-        return Buffer.from(bytes, 'latin1').toString('utf8');
-      }
-      return body;
-    };
-
-    const isCalendar = (part: MimePart): boolean =>
-      /^(text\/calendar|application\/ics)\b/i.test(
-        part.headers['content-type'] ?? '',
-      );
-
-    const icsOf = (method: string): string =>
-      [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        `METHOD:${method}`,
-        'BEGIN:VEVENT',
-        'UID:dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-        'SUMMARY:Appel de cadrage · 30 min',
-        'END:VEVENT',
-        'END:VCALENDAR',
-        '',
-      ].join('\r\n');
-
-    const composedParts = async (
-      icalEvent?: Parameters<MailerService['sendMail']>[0]['icalEvent'],
-    ): Promise<MimePart[]> => {
-      const stream = createTransport({ streamTransport: true, buffer: true });
-      const sendMail = jest.spyOn(stream, 'sendMail');
-      await new MailerService(
-        stream,
-        cfg as unknown as AppConfigService,
-      ).sendMail({
-        to: 'visitor@example.com',
-        subject: 'Rendez-vous',
-        html: '<p>rdv</p>',
-        ...(icalEvent && { icalEvent }),
-      });
-
-      const info = (await sendMail.mock.results[0].value) as {
-        message: Buffer;
-      };
-      return parseEntity(info.message.toString('utf8'));
-    };
-
-    it.each(['REQUEST', 'PUBLISH', 'CANCEL'] as const)(
-      'Given une invitation %s, When le mail part, Then le message ne contient qu’une seule partie calendrier',
-      async (method) => {
-        const parts = await composedParts({ method, content: icsOf(method) });
-
-        expect(parts.filter(isCalendar)).toHaveLength(1);
-      },
-    );
-
-    it.each(['REQUEST', 'PUBLISH', 'CANCEL'] as const)(
-      'Given une invitation %s, When le mail part, Then la partie calendrier est text/calendar en UTF-8 avec la méthode et le contenu intact',
-      async (method) => {
-        const content = icsOf(method);
-
-        const [calendar] = (await composedParts({ method, content })).filter(
-          isCalendar,
-        );
-
-        const contentType = calendar.headers['content-type'];
-        expect(contentType).toMatch(/^text\/calendar\s*;/i);
-        expect(contentType).toMatch(/;\s*method="?([A-Z]+)"?/i);
-        expect(/;\s*method="?([A-Z]+)"?/i.exec(contentType)?.[1]).toBe(method);
-        expect(contentType).toMatch(/;\s*charset="?utf-8"?/i);
-        expect(decode(calendar).replace(/\r\n/g, '\n')).toBe(
-          content.replace(/\r\n/g, '\n'),
-        );
-      },
-    );
-
-    it('Given une invitation, When le mail part, Then le corps HTML reste une seule partie text/html', async () => {
-      const parts = await composedParts({
-        method: 'REQUEST',
-        content: icsOf('REQUEST'),
-      });
-
-      const html = parts.filter((part) =>
-        /^text\/html\b/i.test(part.headers['content-type'] ?? ''),
-      );
-      expect(html).toHaveLength(1);
-      expect(decode(html[0])).toBe('<p>rdv</p>');
-    });
-
-    it('Given un mail sans invitation, When il part, Then aucune partie calendrier', async () => {
-      const parts = await composedParts();
-
-      expect(parts.filter(isCalendar)).toEqual([]);
-    });
   });
 });

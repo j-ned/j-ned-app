@@ -65,16 +65,9 @@ export const envSchema = z.object({
   S3_ACCESS_KEY: z.string().min(4),
   S3_SECRET_KEY: z.string().min(8),
 
-  // Mailer (SMTP)
-  SMTP_HOST: z.string().min(1),
-  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
-  SMTP_SECURE: z
-    .string()
-    .default('false')
-    .transform((v) => v === 'true' || v === '1'),
-  SMTP_USER: z.string().min(1),
-  SMTP_PASS: z.string().min(1),
-  SMTP_FROM: z.string().email(),
+  // Mailer (Resend) - MAIL_FROM sur un domaine vérifié dans Resend
+  RESEND_API_KEY: z.string().min(1),
+  MAIL_FROM: z.string().email(),
 
   // Observability (Sentry) - all optional, empty DSN keeps Sentry disabled
   SENTRY_DSN: z.string().url().optional(),

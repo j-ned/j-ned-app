@@ -64,23 +64,11 @@ export class AppConfigService {
     return this.env.S3_SECRET_KEY;
   }
 
-  get smtpHost() {
-    return this.env.SMTP_HOST;
+  get resendApiKey() {
+    return this.env.RESEND_API_KEY;
   }
-  get smtpPort() {
-    return this.env.SMTP_PORT;
-  }
-  get smtpSecure() {
-    return this.env.SMTP_SECURE;
-  }
-  get smtpUser() {
-    return this.env.SMTP_USER;
-  }
-  get smtpPass() {
-    return this.env.SMTP_PASS;
-  }
-  get smtpFrom() {
-    return this.env.SMTP_FROM;
+  get mailFrom() {
+    return this.env.MAIL_FROM;
   }
 
   get sentryRelease() {

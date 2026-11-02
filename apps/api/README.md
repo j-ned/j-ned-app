@@ -15,7 +15,7 @@ pnpm db:seed                          # crée l'admin (idempotent, no-op si un u
 pnpm start:dev                        # démarre l'app en watch
 ```
 
-> `pnpm dev` (= alias de `start:dev`) a un hook `predev` qui démarre Postgres + Mailpit (`pnpm db:up && pnpm db:wait && pnpm mail:up`). Le container MinIO n'est **pas** démarré par ce hook - le démarrer manuellement (`podman compose up -d minio minio-init`, cf. `compose.yaml`) si les features S3 (Projects/CV) sont testées en local.
+> `pnpm dev` (= alias de `start:dev`) a un hook `predev` qui démarre Postgres (`pnpm db:up && pnpm db:wait`). Le container MinIO n'est **pas** démarré par ce hook - le démarrer manuellement (`podman compose up -d minio minio-init`, cf. `compose.yaml`) si les features S3 (Projects/CV) sont testées en local.
 
 Endpoints disponibles une fois démarré :
 
@@ -36,7 +36,7 @@ Pas de framework d'injection : `src/main.ts` lit la configuration, ouvre les con
 - **`src/common/`** - briques HTTP partagées : `http.ts` (corps JSON validé, query, UUID, fichiers envoyés, IP du visiteur), `validation.ts` (DTO class-validator), `throttle.ts` (quotas), `cross-origin.ts` (CSRF), `error-handler.ts`, `logger.ts`, `http-errors.ts`.
 - **Tâche planifiée** - `src/analytics/analytics.schedule.ts` : rollup quotidien à 00:00 UTC (`croner`), arrêté avec le serveur.
 
-Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis la tâche planifiée, le pool Postgres, SMTP et S3 sont fermés.
+Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis la tâche planifiée, le pool Postgres et S3 sont fermés.
 
 ## Configuration
 
@@ -58,18 +58,14 @@ Toute la config passe par les variables d'env, validées au boot par Zod (`src/c
 | `S3_REGION`                 | string                                             | _(requis)_                   | Région S3                                                                                         |
 | `S3_ACCESS_KEY`             | string, 4+ chars                                   | _(requis)_                   | Access key S3                                                                                     |
 | `S3_SECRET_KEY`             | string, 8+ chars                                   | _(requis)_                   | Secret key S3                                                                                     |
-| `SMTP_HOST`                 | string                                             | _(requis)_                   | Hôte SMTP                                                                                         |
-| `SMTP_PORT`                 | int 1-65535                                        | `587`                        | Port SMTP                                                                                         |
-| `SMTP_SECURE`               | `"true"`\|`"1"` → bool                             | `false`                      | TLS direct (port 465)                                                                             |
-| `SMTP_USER`                 | string                                             | _(requis)_                   | User SMTP                                                                                         |
-| `SMTP_PASS`                 | string                                             | _(requis)_                   | Password SMTP                                                                                     |
-| `SMTP_FROM`                 | email                                              | _(requis)_                   | Expéditeur des mails                                                                              |
+| `RESEND_API_KEY`            | string                                             | _(requis)_                   | Clé API Resend (envoi seul)                                                                       |
+| `MAIL_FROM`                 | email                                              | _(requis)_                   | Expéditeur des mails, sur un domaine vérifié dans Resend                                          |
 | `SENTRY_DSN`                | URL                                                | _(optionnel)_                | DSN backend ; vide = Sentry désactivé                                                             |
 | `SENTRY_RELEASE`            | string                                             | _(optionnel)_                | Tag de release Sentry                                                                             |
 | `SENTRY_TRACES_SAMPLE_RATE` | float 0-1                                          | `0.2` prod / `1.0` dev       | Sample rate tracing                                                                               |
 | `SENTRY_FRONTEND_DSN`       | URL                                                | _(optionnel)_                | DSN d'un **projet Sentry distinct** pour le frontend, exposé publiquement via `GET /api/config`   |
 
-`S3_*` et `SMTP_*` sont **requis sans défaut** - impossible de démarrer l'app sans Storage et Mailer configurés, même si on ne les utilise pas en dev.
+`S3_*`, `RESEND_API_KEY` et `MAIL_FROM` sont **requis sans défaut** - impossible de démarrer l'app sans Storage et Mailer configurés, même si on ne les utilise pas en dev.
 
 ## Base de données
 
@@ -207,7 +203,6 @@ Liste réelle (`package.json`) - pas de script `s3:*` (démarrer MinIO à la mai
 | `pnpm db:seed`                                   | Crée l'admin (idempotent, `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`)                                                          |
 | `pnpm db:change-password <email> <newPassword>`  | Change le mot de passe d'un user directement en DB (newPassword 12+ chars) - utile en cas de perte d'accès, bypass l'API   |
 | `pnpm db:reset`                                  | Wipe volume + recrée + migrate + seed (dev only)                                                                           |
-| `pnpm mail:up`                                   | Démarre le container Mailpit                                                                                               |
 | `pnpm sentry:sourcemaps`                         | Upload des sourcemaps vers Sentry (`scripts/upload-sentry-sourcemaps.mjs`)                                                 |
 | `pnpm sentry:check-instrumentation`              | Vérifie que Sentry trace `@Injectable`, `@Catch`, `@Cron` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`) |
 
@@ -291,12 +286,12 @@ Contenu de `/about` édité depuis l'admin (spec front 021, ADR-0023 du front) :
 
 ## Mailer
 
-Module d'infrastructure SMTP (`nodemailer`), consommé par Contact.
+Envoi par l'API HTTP de [Resend](https://resend.com) (`fetch`, sans SDK ni SMTP), consommé par Contact. Domaine `nedellec-julien.fr` vérifié dans Resend (DKIM + SPF via le sous-domaine `send`).
 
-**Dev local** : container Mailpit (`compose.yaml`, SMTP catch-all port 1025, UI web port 8025) - à démarrer manuellement (`podman compose up -d mailpit`, cf. avertissement Quickstart).
-**Prod** : SMTP utilisateur classique (`SMTP_*`).
+**Dev local** : une clé Resend dans `.env.local` ; les mails partent réellement (vers `OWNER_EMAIL`).
+**Prod** : `RESEND_API_KEY` et `MAIL_FROM` dans les variables d'env Vercel.
 
-**API (`MailerService`)** : `sendMail({ to, subject, html }): Promise<void>` - 3 tentatives, backoff linéaire 1s/2s/3s, throw l'erreur finale après épuisement (loggée avec stack).
+**API (`MailerService`)** : `sendMail({ to, subject, html }): Promise<void>` - 3 tentatives, backoff linéaire 1s/2s, même `Idempotency-Key` d'une tentative à l'autre (pas de doublon), throw l'erreur finale après épuisement (loggée avec stack).
 
 **Helpers** (`src/mailer/mailer.utils.ts`) : `loadTemplate(absolutePath)` (lecture fichier), `renderTemplate(html, vars)` (remplacement `{{var}}` naïf, pas d'échappement HTML - les templates sont internes, pas de contenu utilisateur non filtré injecté tel quel).
 
@@ -317,9 +312,9 @@ Formulaire de contact public + gestion admin des messages.
 | PATCH   | `/contact/messages/:id/read`      | ✅   | Marque un message comme lu.                                                                                                                                                             |
 | DELETE  | `/contact/messages/:id`           | ✅   | Suppression hard.                                                                                                                                                                       |
 
-**Stratégie mails** : fire-and-forget après le `db.insert` (helper `fireAndForget` dans `src/common/utils.ts`) - le visiteur reçoit 201 dès la persistance garantie ; un échec SMTP (3 retries épuisés) est loggé mais invisible côté visiteur, le message reste consultable côté admin.
+**Stratégie mails** : fire-and-forget après le `db.insert` (helper `fireAndForget` dans `src/common/utils.ts`) - le visiteur reçoit 201 dès la persistance garantie ; un échec d'envoi (3 tentatives épuisées) est loggé mais invisible côté visiteur, le message reste consultable côté admin.
 
-**Destinataire admin codé en dur** : `OWNER_EMAIL = 'contact@nedellec-julien.fr'` dans `src/mailer/mailer.constants.ts` (utilisé par le contact) - pas de variable d'env dédiée. `SMTP_FROM` reste l'expéditeur (rôle distinct).
+**Destinataire admin codé en dur** : `OWNER_EMAIL = 'contact@nedellec-julien.fr'` dans `src/mailer/mailer.constants.ts` (utilisé par le contact) - pas de variable d'env dédiée. `MAIL_FROM` reste l'expéditeur (rôle distinct).
 
 **Templates** : `src/contact/mail-templates/contact-notification.html` (admin) et `contact-confirmation.html` (visiteur). Variables : `{{name}}`, `{{email}}`, `{{subject}}`, `{{message}}`.
 
@@ -390,7 +385,7 @@ Collecte de page-views/events custom du portfolio public + agrégation quotidien
 - Image finale : non-root (`USER node`), PID 1 géré par `tini` (arrêt propre sur `SIGTERM`, voir Architecture).
 - `HEALTHCHECK` sur `http://localhost:3000/api/health`.
 - `CMD` : `pnpm db:migrate && node dist/main.js` - migrations Drizzle idempotentes appliquées à chaque démarrage du container, puis boot de l'app.
-- `docker-compose.yaml` / `compose.yaml` local sert uniquement au dev (Postgres + MinIO + Mailpit) - pas d'image applicative buildée par ce compose.
+- `docker-compose.yaml` / `compose.yaml` local sert uniquement au dev (Postgres + MinIO) - pas d'image applicative buildée par ce compose.
 
 ## État réel
 

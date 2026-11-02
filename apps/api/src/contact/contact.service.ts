@@ -64,7 +64,7 @@ export class ContactService {
         userAgent: sender.userAgent.slice(0, USER_AGENT_MAX_LENGTH) || null,
       })
       .returning();
-    // Fire-and-forget : DB write garanti, mail best-effort (SMTP down → admin panel).
+    // Fire-and-forget : DB write garanti, mail best-effort (Resend down → admin panel).
     fireAndForget(
       this.sendNotificationMail(row),
       this.logger,
