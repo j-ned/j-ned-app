@@ -1,6 +1,8 @@
-import 'reflect-metadata';
-import { plainToInstance } from 'class-transformer';
-import { validate, type ValidationError } from 'class-validator';
+import {
+  hasViolation,
+  violationsOf as violationsIn,
+  type Violation,
+} from '../../common/dto-testing';
 import { WORKSHOP_GUIDE_OPERATIONS } from '../workshop-guide-content';
 import { WORKSHOP_GUIDE_LIMITS } from '../workshop-guide-limits';
 import { WORKSHOP_GUIDE_SEED } from '../workshop-guide.seed';
@@ -9,7 +11,7 @@ import {
   anEntry,
   aWorkshopGuideContent,
 } from '../workshop-guide-test-builders';
-import { UpdateWorkshopGuideDto } from './update-workshop-guide.dto';
+import { updateWorkshopGuideSchema } from './update-workshop-guide.dto';
 
 /** Corps modifiable : copie profonde du builder neutre + version. */
 const aBody = (): Record<string, unknown> & {
@@ -33,25 +35,32 @@ const withEntryField = (field: string, value: unknown) => {
   return body;
 };
 
-/** `chemin:contrainte` de chaque erreur, chemins imbriqués compris (`entries.0.material:maxLength`). */
-function violations(errors: ValidationError[], parent = ''): string[] {
-  return errors.flatMap((e) => {
-    const path = parent ? `${parent}.${e.property}` : e.property;
-    return [
-      ...Object.keys(e.constraints ?? {}).map((c) => `${path}:${c}`),
-      ...violations(e.children ?? [], path),
-    ];
-  });
+/** Issues `{ path, message }` du corps, avec la liste blanche des routes. */
+function violationsOf(body: object): Promise<Violation[]> {
+  return Promise.resolve(violationsIn(updateWorkshopGuideSchema, body));
 }
 
-/** Mêmes options que la ValidationPipe globale (app.setup.ts). */
-async function violationsOf(body: object): Promise<string[]> {
-  const dto = plainToInstance(UpdateWorkshopGuideDto, body, {
-    enableImplicitConversion: true,
+/** Messages propres à l'API ; pour les autres contraintes, seul le champ en cause est vérifié. */
+const OWN_MESSAGES: Readonly<Record<string, string>> = {
+  isNotBlank: 'must not be blank',
+  noMarkup: 'must not contain HTML markup',
+  arrayUnique: 'Les identifiants doivent être uniques',
+};
+
+/**
+ * `chemin:contrainte` attendu (forme des specs d'origine) : le champ est refusé, avec le message
+ * propre à l'API quand la contrainte en a un.
+ */
+function expectViolation(violations: readonly Violation[], expected: string) {
+  const at = expected.lastIndexOf(':');
+  const path = expected.slice(0, at);
+  const message = OWN_MESSAGES[expected.slice(at + 1)];
+  expect({
+    violations,
+    refused: hasViolation(violations, path, message),
+  }).toMatchObject({
+    refused: true,
   });
-  return violations(
-    await validate(dto, { whitelist: true, forbidNonWhitelisted: true }),
-  );
 }
 
 const L = WORKSHOP_GUIDE_LIMITS;
@@ -82,7 +91,7 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
       entries: Array.from({ length: L.entries + 1 }, () => ({ ...anEntry() })),
     };
 
-    expect(await violationsOf(body)).toContain('entries:arrayMaxSize');
+    expectViolation(await violationsOf(body), 'entries:arrayMaxSize');
   });
 
   it.each([
@@ -95,7 +104,7 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
       if (entries === undefined) delete body.entries;
       else body.entries = entries;
 
-      expect(await violationsOf(body)).toContain(v);
+      expectViolation(await violationsOf(body), v);
     },
   );
 
@@ -116,7 +125,8 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
     ])(
       'Given %s, When validated, Then it is refused',
       async (_l, value, constraint) => {
-        expect(await violationsOf(withEntryField(field, value))).toContain(
+        expectViolation(
+          await violationsOf(withEntryField(field, value)),
           `entries.0.${field}:${constraint}`,
         );
       },
@@ -141,7 +151,8 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
     ])(
       'Given %s, When validated, Then it is refused',
       async (_l, value, constraint) => {
-        expect(await violationsOf(withEntryField('note', value))).toContain(
+        expectViolation(
+          await violationsOf(withEntryField('note', value)),
           `entries.0.note:${constraint}`,
         );
       },
@@ -161,9 +172,10 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
     it.each([['milling'], ['External-Roughing'], [''], [undefined]])(
       'Given %p, When validated, Then it is refused',
       async (operation) => {
-        expect(
+        expectViolation(
           await violationsOf(withEntryField('operation', operation)),
-        ).toContain('entries.0.operation:isIn');
+          'entries.0.operation:isIn',
+        );
       },
     );
   });
@@ -188,9 +200,10 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
     ])(
       'Given %p, When validated, Then %s fails',
       async (radius, constraint) => {
-        expect(
+        expectViolation(
           await violationsOf(withEntryField('noseRadius', radius)),
-        ).toContain(`entries.0.noseRadius:${constraint}`);
+          `entries.0.noseRadius:${constraint}`,
+        );
       },
     );
   });
@@ -244,11 +257,12 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
     );
 
     it('Given an all-materials entry with a radius at 0, When validated, Then it is refused', async () => {
-      expect(
+      expectViolation(
         await violationsOf(
           withFirstEntry({ ...anAllMaterialsEntry(), noseRadius: 0 }),
         ),
-      ).toContain('entries.0.noseRadius:isPositive');
+        'entries.0.noseRadius:isPositive',
+      );
     });
 
     it.each([
@@ -260,7 +274,8 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
         const body = withEntryField('material', undefined);
         body.entries[0].allMaterials = allMaterials;
 
-        expect(await violationsOf(body)).toContain(
+        expectViolation(
+          await violationsOf(body),
           'entries.0.material:isString',
         );
       },
@@ -272,9 +287,10 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
     ])(
       'Given allMaterials as %s, When validated, Then it is refused (never coerced)',
       async (_l, allMaterials) => {
-        expect(
+        expectViolation(
           await violationsOf(withEntryField('allMaterials', allMaterials)),
-        ).toContain('entries.0.allMaterials:isBoolean');
+          'entries.0.allMaterials:isBoolean',
+        );
       },
     );
 
@@ -294,7 +310,8 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
   });
 
   it('Given an unknown key on an entry, When validated, Then it is refused', async () => {
-    expect(await violationsOf(withEntryField('id', 'x'))).toContain(
+    expectViolation(
+      await violationsOf(withEntryField('id', 'x')),
       'entries.0.id:whitelistValidation',
     );
   });
@@ -311,7 +328,7 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
       if (enabled === undefined) delete body.enabled;
       else body.enabled = enabled;
 
-      expect(await violationsOf(body)).toContain('enabled:isBoolean');
+      expectViolation(await violationsOf(body), 'enabled:isBoolean');
     },
   );
 
@@ -338,7 +355,8 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
   ])(
     'Given decoderEnabled as %s, When validated, Then it is refused (never coerced)',
     async (_l, decoderEnabled) => {
-      expect(await violationsOf({ ...aBody(), decoderEnabled })).toContain(
+      expectViolation(
+        await violationsOf({ ...aBody(), decoderEnabled }),
         'decoderEnabled:isBoolean',
       );
     },
@@ -355,7 +373,7 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
       if (version === undefined) delete body.version;
       else body.version = version;
 
-      expect(await violationsOf(body)).toContain(v);
+      expectViolation(await violationsOf(body), v);
     },
   );
 });

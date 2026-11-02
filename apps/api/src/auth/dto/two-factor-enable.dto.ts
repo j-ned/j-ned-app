@@ -1,7 +1,6 @@
-import { IsString, Length } from 'class-validator';
+import { z } from 'zod';
 
-export class TwoFactorEnableDto {
-  @IsString()
-  @Length(6, 6)
-  code!: string;
-}
+export const twoFactorEnableSchema = z.strictObject({
+  code: z.string().length(6),
+});
+export type TwoFactorEnableDto = z.infer<typeof twoFactorEnableSchema>;

@@ -1,14 +1,9 @@
-import { PartialType } from '../../common/partial-type';
-import { Equals, IsOptional } from 'class-validator';
-import { CreateProjectDto } from './create-project.dto';
+import { z } from 'zod';
+import { createProjectSchema } from './create-project.dto';
 
-// skipNullProperties: false : PartialType pose sinon un @IsOptional qui laisse passer null sur
-// tous les champs, dont `kind` (NOT NULL) et les champs requis. Les champs qui acceptent null
-// (liens, image) le déclarent eux-mêmes.
-export class UpdateProjectDto extends PartialType(CreateProjectDto, {
-  skipNullProperties: false,
-}) {
-  @IsOptional()
-  @Equals(null)
-  image?: null;
-}
+// `.partial()` : un champ peut être omis, jamais mis à null, sauf ceux qui l'acceptent déjà (liens,
+// champs éditoriaux) et `image: null`, qui retire la couverture.
+export const updateProjectSchema = createProjectSchema.partial().extend({
+  image: z.null().optional(),
+});
+export type UpdateProjectDto = z.infer<typeof updateProjectSchema>;

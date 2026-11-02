@@ -1,11 +1,13 @@
-import 'reflect-metadata';
-import { plainToInstance } from 'class-transformer';
-import { validate, type ValidationError } from 'class-validator';
+import {
+  hasViolation,
+  violationsOf as violationsIn,
+  type Violation,
+} from '../../common/dto-testing';
 import type { ProfileContent } from '../profile-content';
 import { PROFILE_LIMITS } from '../profile-limits';
 import { PROFILE_SEED } from '../profile.seed';
 import { aProfileContent } from '../profile-test-builders';
-import { UpdateProfileDto } from './update-profile.dto';
+import { updateProfileSchema } from './update-profile.dto';
 
 type DeepMutable<T> = T extends readonly (infer U)[]
   ? DeepMutable<U>[]
@@ -23,25 +25,32 @@ const aBody = (): Body => ({
   version: 1,
 });
 
-/** `chemin:contrainte` de chaque erreur, chemins imbriqués compris (`highlights.0.id:isUuid`). */
-function violations(errors: ValidationError[], parent = ''): string[] {
-  return errors.flatMap((e) => {
-    const path = parent ? `${parent}.${e.property}` : e.property;
-    return [
-      ...Object.keys(e.constraints ?? {}).map((c) => `${path}:${c}`),
-      ...violations(e.children ?? [], path),
-    ];
-  });
+/** Issues `{ path, message }` du corps, avec la liste blanche des routes. */
+function violationsOf(body: object): Promise<Violation[]> {
+  return Promise.resolve(violationsIn(updateProfileSchema, body));
 }
 
-/** Mêmes options que la ValidationPipe globale (main.ts). Tout payload, seed en lecture seule compris. */
-async function violationsOf(body: object): Promise<string[]> {
-  const dto = plainToInstance(UpdateProfileDto, body, {
-    enableImplicitConversion: true,
+/** Messages propres à l'API ; pour les autres contraintes, seul le champ en cause est vérifié. */
+const OWN_MESSAGES: Readonly<Record<string, string>> = {
+  isNotBlank: 'must not be blank',
+  noMarkup: 'must not contain HTML markup',
+  arrayUnique: 'Les identifiants doivent être uniques',
+};
+
+/**
+ * `chemin:contrainte` attendu (forme des specs d'origine) : le champ est refusé, avec le message
+ * propre à l'API quand la contrainte en a un.
+ */
+function expectViolation(violations: readonly Violation[], expected: string) {
+  const at = expected.lastIndexOf(':');
+  const path = expected.slice(0, at);
+  const message = OWN_MESSAGES[expected.slice(at + 1)];
+  expect({
+    violations,
+    refused: hasViolation(violations, path, message),
+  }).toMatchObject({
+    refused: true,
   });
-  return violations(
-    await validate(dto, { whitelist: true, forbidNonWhitelisted: true }),
-  );
 }
 
 const L = PROFILE_LIMITS;
@@ -163,7 +172,7 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
     ])('Given %s, Then it is rejected', async (_label, value, constraint) => {
       const body = aBody();
       write(body, value);
-      expect(await violationsOf(body)).toContain(`${path}:${constraint}`);
+      expectViolation(await violationsOf(body), `${path}:${constraint}`);
     });
   });
 
@@ -246,7 +255,7 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
     ])('Given %s, Then it is rejected', async (_label, n, constraint) => {
       const body = aBody();
       write(body, items(n));
-      expect(await violationsOf(body)).toContain(`${path}:${constraint}`);
+      expectViolation(await violationsOf(body), `${path}:${constraint}`);
     });
   });
 
@@ -302,6 +311,6 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
   ])('Given %s, Then it is rejected', async (_label, mutate, expected) => {
     const body = aBody();
     mutate(body);
-    expect(await violationsOf(body)).toContain(expected);
+    expectViolation(await violationsOf(body), expected);
   });
 });

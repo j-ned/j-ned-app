@@ -1,6 +1,5 @@
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
-import { CreateContactMessageDto } from './create-contact-message.dto';
+import { invalidProperties as invalidPropertiesOf } from '../../common/dto-testing';
+import { createContactMessageSchema } from './create-contact-message.dto';
 
 const MESSAGE = {
   name: 'Camille Martin',
@@ -9,13 +8,8 @@ const MESSAGE = {
   message: 'Bonjour, une question sur ton simulateur.',
 };
 
-const invalidProperties = async (payload: Record<string, unknown>) => {
-  const errors = await validate(
-    plainToInstance(CreateContactMessageDto, payload),
-    { whitelist: true, forbidNonWhitelisted: true },
-  );
-  return errors.map((error) => error.property);
-};
+const invalidProperties = (payload: Record<string, unknown>) =>
+  Promise.resolve(invalidPropertiesOf(createContactMessageSchema, payload));
 
 describe('CreateContactMessageDto', () => {
   it.each([
@@ -32,6 +26,7 @@ describe('CreateContactMessageDto', () => {
   it.each([
     ['champ piège de 201 caractères', { website: 'a'.repeat(201) }],
     ['champ piège non textuel', { website: 42 }],
+    ['champ piège en liste', { website: ['https://spam.test'] }],
   ])(
     'Given un %s, When il est validé, Then website est rejeté',
     async (_label, override) => {

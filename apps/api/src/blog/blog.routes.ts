@@ -16,8 +16,8 @@ import {
 } from './blog-content-images.routes';
 import type { BlogContentImagesService } from './blog-content-images.service';
 import type { BlogService } from './blog.service';
-import { CreateBlogPostDto } from './dto/create-blog-post.dto';
-import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
+import { createBlogPostSchema } from './dto/create-blog-post.dto';
+import { updateBlogPostSchema } from './dto/update-blog-post.dto';
 
 /**
  * `/api/blog` : articles (`/posts`, lecture publique, écriture admin, like public) et images du corps
@@ -57,14 +57,14 @@ export function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
 
       // 409 si le slug existe déjà.
       .post('/', throttle(), requireAuth, async (c) => {
-        const dto = await jsonBody(c, CreateBlogPostDto);
+        const dto = await jsonBody(c, createBlogPostSchema);
         return reply(c, await blog.create(dto), 201);
       })
 
       // `coverImage: null` retire la couverture.
       .patch('/:id', throttle(), requireAuth, async (c) => {
         const id = uuidParam(c, 'id');
-        const dto = await jsonBody(c, UpdateBlogPostDto);
+        const dto = await jsonBody(c, updateBlogPostSchema);
         return reply(c, await blog.update(id, dto));
       })
 

@@ -1,11 +1,15 @@
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
-import { TrackEventDto } from './track-event.dto';
+import { invalidProperties } from '../../common/dto-testing';
+import { validateDto } from '../../common/validation';
+import { trackEventSchema } from './track-event.dto';
 
 describe('TrackEventDto', () => {
-  async function check(payload: Record<string, unknown>) {
-    const dto = plainToInstance(TrackEventDto, payload);
-    return validate(dto);
+  /** Champs en erreur, sous la forme des erreurs de class-validator (`{ property }`). */
+  function check(payload: Record<string, unknown>) {
+    return Promise.resolve(
+      invalidProperties(trackEventSchema, payload).map((property) => ({
+        property,
+      })),
+    );
   }
 
   describe('type field', () => {
@@ -158,7 +162,7 @@ describe('TrackEventDto', () => {
     );
 
     it('Given a path with a query string, When transformed, Then only the path is kept', () => {
-      const dto = plainToInstance(TrackEventDto, {
+      const dto = validateDto(trackEventSchema, {
         type: 'outbound_click',
         entityId: 'email',
         entityTitle: '/offres/x?email=jean@exemple.fr#demande',

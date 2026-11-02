@@ -1,19 +1,4 @@
-import {
-  IsIn,
-  IsInt,
-  IsObject,
-  IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-  Validate,
-  ValidateIf,
-  ValidationArguments,
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
+import { z } from 'zod';
 import { V2_EVENT_TYPES } from '../engagement';
 
 export const ANALYTICS_TYPES = [
@@ -63,100 +48,86 @@ const ENTITY_ID_RULES: Partial<Record<AnalyticsType, (id: string) => boolean>> =
     section_view: (id) => (SECTION_IDS as readonly string[]).includes(id),
   };
 
-const entityIdRule = (type: AnalyticsType) =>
-  Object.hasOwn(ENTITY_ID_RULES, type) ? ENTITY_ID_RULES[type] : undefined;
-
-@ValidatorConstraint({ name: 'entityIdForType' })
-class EntityIdForType implements ValidatorConstraintInterface {
-  validate(entityId: unknown, args: ValidationArguments): boolean {
-    const rule = entityIdRule((args.object as TrackEventDto).type);
-    return !rule || (typeof entityId === 'string' && rule(entityId));
-  }
-
-  defaultMessage(args: ValidationArguments): string {
-    return `entityId is not valid for type ${(args.object as TrackEventDto).type}`;
-  }
-}
+const entityIdRule = (type: unknown) =>
+  typeof type === 'string' && Object.hasOwn(ENTITY_ID_RULES, type)
+    ? ENTITY_ID_RULES[type as AnalyticsType]
+    : undefined;
 
 /** Chemin d'une page du site, court, sans requête ni ancre ni texte libre. */
 const TRACKED_PATH = /^\/[A-Za-z0-9\-._~/%]{0,199}$/;
 
-const isV2Event = (type: AnalyticsType): boolean =>
-  (V2_EVENT_TYPES as readonly AnalyticsType[]).includes(type);
+const isV2Event = (type: unknown): boolean =>
+  (V2_EVENT_TYPES as readonly unknown[]).includes(type);
 
 /** Ne garde que le chemin : une requête (`?email=…`) ou une ancre n'entre jamais en base. */
-const toPathForV2 = ({ value, obj }: { value: unknown; obj: unknown }) =>
-  isV2Event((obj as TrackEventDto).type) && typeof value === 'string'
-    ? value.split(/[?#]/, 1)[0]
-    : value;
-
-@ValidatorConstraint({ name: 'pathForV2Events' })
-class PathForV2Events implements ValidatorConstraintInterface {
-  validate(entityTitle: unknown, args: ValidationArguments): boolean {
-    return (
-      !isV2Event((args.object as TrackEventDto).type) ||
-      (typeof entityTitle === 'string' && TRACKED_PATH.test(entityTitle))
-    );
+function keepPathOnlyForV2(input: unknown): unknown {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+    return input;
   }
-
-  defaultMessage(): string {
-    return 'entityTitle must be a site path for this event type';
-  }
+  const event = input as Record<string, unknown>;
+  return isV2Event(event.type) && typeof event.entityTitle === 'string'
+    ? { ...event, entityTitle: event.entityTitle.split(/[?#]/, 1)[0] }
+    : input;
 }
 
-@ValidatorConstraint({ name: 'noMetadataForV2Events' })
-class NoMetadataForV2Events implements ValidatorConstraintInterface {
-  validate(metadata: unknown, args: ValidationArguments): boolean {
-    return !isV2Event((args.object as TrackEventDto).type) || metadata == null;
-  }
+const eventSchema = z
+  .strictObject({
+    type: z.enum(ANALYTICS_TYPES),
+    url: z.string().max(2048).optional(),
+    referrer: z.string().max(2048).optional(),
+    duration: z.int().min(0).max(86400).optional(),
+    entityId: z.string().max(255).optional(),
+    entityTitle: z.string().max(500).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .superRefine((event, ctx) => {
+    const required = (path: 'url' | 'duration') =>
+      ctx.addIssue({
+        code: 'custom',
+        path: [path],
+        message: `${path} is required for type ${event.type}`,
+      });
+    if (
+      (event.type === 'page_view' || event.type === 'page_duration') &&
+      event.url === undefined
+    ) {
+      required('url');
+    }
+    if (event.type === 'page_duration' && event.duration === undefined) {
+      required('duration');
+    }
+    const rule = entityIdRule(event.type);
+    if (rule && !(event.entityId !== undefined && rule(event.entityId))) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['entityId'],
+        message: `entityId is not valid for type ${event.type}`,
+      });
+    }
+    if (!isV2Event(event.type)) return;
+    if (
+      event.entityTitle !== undefined &&
+      !TRACKED_PATH.test(event.entityTitle)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['entityTitle'],
+        message: 'entityTitle must be a site path for this event type',
+      });
+    }
+    if (event.metadata !== undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['metadata'],
+        message: 'metadata is not accepted for this event type',
+      });
+    }
+  });
 
-  defaultMessage(): string {
-    return 'metadata is not accepted for this event type';
-  }
-}
-
-export class TrackEventDto {
-  @IsIn([...ANALYTICS_TYPES])
-  type!: AnalyticsType;
-
-  @ValidateIf(
-    (o: TrackEventDto) => o.type === 'page_view' || o.type === 'page_duration',
-  )
-  @IsString()
-  @MaxLength(2048)
-  url?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(2048)
-  referrer?: string;
-
-  @ValidateIf(
-    (o: TrackEventDto) => o.type === 'page_duration' || o.duration != null,
-  )
-  @IsInt()
-  @Min(0)
-  @Max(86400)
-  duration?: number;
-
-  @ValidateIf(
-    (o: TrackEventDto) =>
-      entityIdRule(o.type) !== undefined || o.entityId != null,
-  )
-  @IsString()
-  @MaxLength(255)
-  @Validate(EntityIdForType)
-  entityId?: string;
-
-  @Transform(toPathForV2)
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  @Validate(PathForV2Events)
-  entityTitle?: string;
-
-  @IsOptional()
-  @IsObject()
-  @Validate(NoMetadataForV2Events)
-  metadata?: Record<string, unknown>;
-}
+/**
+ * Page vue ou événement du site. `url` est exigée pour `page_view`/`page_duration`, `duration` pour
+ * `page_duration` ; les événements v2 ont un `entityId` imposé par type, un `entityTitle` réduit à
+ * un chemin du site et jamais de `metadata` (RGPD).
+ */
+export const trackEventSchema = z.preprocess(keepPathOnlyForV2, eventSchema);
+export type TrackEventDto = z.infer<typeof trackEventSchema>;

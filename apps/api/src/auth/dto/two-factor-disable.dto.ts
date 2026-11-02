@@ -1,7 +1,6 @@
-import { IsString, MinLength } from 'class-validator';
+import { z } from 'zod';
 
-export class TwoFactorDisableDto {
-  @IsString()
-  @MinLength(12)
-  password!: string;
-}
+export const twoFactorDisableSchema = z.strictObject({
+  password: z.string().min(12),
+});
+export type TwoFactorDisableDto = z.infer<typeof twoFactorDisableSchema>;

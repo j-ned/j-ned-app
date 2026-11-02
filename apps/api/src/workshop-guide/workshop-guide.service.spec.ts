@@ -1,6 +1,4 @@
-import 'reflect-metadata';
 import { ConflictException } from '../common/http-errors';
-import { plainToInstance } from 'class-transformer';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Database } from '../database/drizzle.types';
 import {
@@ -8,7 +6,7 @@ import {
   type WorkshopGuideRow,
 } from '../database/schema/workshop-guide';
 import { createMockDb } from '../database/test-utils';
-import { UpdateWorkshopGuideDto } from './dto/update-workshop-guide.dto';
+import { updateWorkshopGuideSchema } from './dto/update-workshop-guide.dto';
 import type {
   StoredWorkshopGuideContent,
   WorkshopGuideContent,
@@ -33,7 +31,7 @@ const aRow = (overrides: Partial<WorkshopGuideRow> = {}): WorkshopGuideRow => ({
 
 /** Le corps tel que la ValidationPipe le livre : une instance du DTO. */
 const aDto = (content: StoredWorkshopGuideContent, version: number) =>
-  plainToInstance(UpdateWorkshopGuideDto, { ...content, version });
+  updateWorkshopGuideSchema.parse({ ...content, version });
 
 describe('WorkshopGuideService', () => {
   let service: WorkshopGuideService;
@@ -233,7 +231,7 @@ describe('WorkshopGuideService', () => {
         db.limit.mockResolvedValueOnce([aRow()]);
         db.returning.mockResolvedValueOnce([aRow({ version: 4 })]);
         await service.replace(
-          plainToInstance(UpdateWorkshopGuideDto, {
+          updateWorkshopGuideSchema.parse({
             enabled: true,
             decoderEnabled: true,
             entries,

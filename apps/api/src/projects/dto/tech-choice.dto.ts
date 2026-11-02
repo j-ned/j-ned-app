@@ -1,13 +1,7 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { z } from 'zod';
 
-export class TechChoiceDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  techno!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(500)
-  why!: string;
-}
+export const techChoiceSchema = z.strictObject({
+  techno: z.string().min(1).max(100),
+  why: z.string().min(1).max(500),
+});
+export type TechChoiceDto = z.infer<typeof techChoiceSchema>;

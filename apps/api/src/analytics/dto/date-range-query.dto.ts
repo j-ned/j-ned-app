@@ -1,12 +1,4 @@
-import {
-  IsDateString,
-  IsIn,
-  IsInt,
-  IsOptional,
-  Max,
-  Min,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+import { z } from 'zod';
 
 export const METRIC_TYPES = [
   'url',
@@ -17,33 +9,24 @@ export const METRIC_TYPES = [
 ] as const;
 export type MetricType = (typeof METRIC_TYPES)[number];
 
-export class DateRangeQueryDto {
-  @IsOptional()
-  @IsDateString()
-  startDate?: string;
+/** Période (jours `AAAA-MM-JJ`) et limite des statistiques, lues dans la query string. */
+export const dateRangeQuerySchema = z.strictObject({
+  startDate: z.iso.date().optional(),
+  endDate: z.iso.date().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+export type DateRangeQueryDto = z.infer<typeof dateRangeQuerySchema>;
 
-  @IsOptional()
-  @IsDateString()
-  endDate?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-}
-
-export class MetricsQueryDto extends DateRangeQueryDto {
-  @IsIn([...METRIC_TYPES])
-  type!: MetricType;
-}
+export const metricsQuerySchema = dateRangeQuerySchema.extend({
+  type: z.enum(METRIC_TYPES),
+});
+export type MetricsQueryDto = z.infer<typeof metricsQuerySchema>;
 
 /** Événements dont l'admin lit le détail par `entityId` (emplacement de formulaire, canal). */
 export const EVENT_COUNT_TYPES = ['contact_submit', 'outbound_click'] as const;
 export type EventCountType = (typeof EVENT_COUNT_TYPES)[number];
 
-export class EventsQueryDto extends DateRangeQueryDto {
-  @IsIn([...EVENT_COUNT_TYPES])
-  type!: EventCountType;
-}
+export const eventsQuerySchema = dateRangeQuerySchema.extend({
+  type: z.enum(EVENT_COUNT_TYPES),
+});
+export type EventsQueryDto = z.infer<typeof eventsQuerySchema>;
