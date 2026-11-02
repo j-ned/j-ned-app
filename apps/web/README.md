@@ -232,7 +232,7 @@ providers: [
   <tr>
     <td width="50%">
       <p align="center"><b>Projets</b></p>
-      <img src="docs/screenshots/projects.webp" alt="Liste des projets avec filtres par catégorie" width="100%" />
+      <img src="docs/screenshots/projects.webp" alt="Réalisations classées par nature : en production, démo, script" width="100%" />
     </td>
     <td width="50%">
       <p align="center"><b>Blog</b></p>
