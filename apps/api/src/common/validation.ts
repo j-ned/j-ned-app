@@ -1,8 +1,10 @@
 import { z } from 'zod';
+import { fr } from 'zod/locales';
 import { BadRequestException } from './http-errors';
 
 // Messages de zod en français, pour toute l'application (corps, query strings, variables d'env).
-z.config(z.locales.fr());
+// Import nommé : `z.locales` embarquerait toutes les langues dans le bundle.
+z.config(fr());
 
 /** Message d'un corps JSON qui n'est pas un objet (liste, valeur seule). */
 export const NOT_AN_OBJECT_MESSAGE =
