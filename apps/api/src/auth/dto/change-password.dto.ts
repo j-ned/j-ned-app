@@ -1,11 +1,7 @@
-import { IsString, MinLength } from 'class-validator';
+import { z } from 'zod';
 
-export class ChangePasswordDto {
-  @IsString()
-  @MinLength(12)
-  currentPassword!: string;
-
-  @IsString()
-  @MinLength(12)
-  newPassword!: string;
-}
+export const changePasswordSchema = z.strictObject({
+  currentPassword: z.string().min(12),
+  newPassword: z.string().min(12),
+});
+export type ChangePasswordDto = z.infer<typeof changePasswordSchema>;

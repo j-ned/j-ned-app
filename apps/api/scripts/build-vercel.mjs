@@ -1,7 +1,7 @@
 // Fonction Vercel du service « api » (ADR-0036), construite après `pnpm build` (tsc) :
-// - un seul fichier, `dist/index.js` (celui que Vercel exécute), bundlé par esbuild depuis la sortie de tsc : les métadonnées de
-//   décorateurs (class-validator) sont déjà émises par tsc, et les dépendances ESM (otplib → @scure/base,
-//   file-type…) sont intégrées, là où le chargeur de Vercel refuse un `require()` d'ESM ;
+// - un seul fichier, `dist/index.js` (celui que Vercel exécute), bundlé par esbuild depuis la sortie de tsc : les dépendances
+//   ESM (otplib → @scure/base, file-type…) sont intégrées, là où le chargeur de Vercel refuse un `require()` d'ESM
+//   (la validation, en zod, ne dépend plus de métadonnées de décorateurs émises par tsc) ;
 // - à côté, un `node_modules` réduit aux seuls modules natifs (argon2, sharp), aux versions du lockfile :
 //   Vercel ne déploie que `dist/`, sans les liens symboliques de pnpm.
 import { execFileSync } from 'node:child_process';

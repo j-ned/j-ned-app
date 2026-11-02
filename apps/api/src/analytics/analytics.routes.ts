@@ -12,11 +12,11 @@ import { TRACK_THROTTLE, throttle } from '../common/throttle';
 import type { AnalyticsStatsService } from './analytics-stats.service';
 import type { AnalyticsTrackerService } from './analytics-tracker.service';
 import {
-  DateRangeQueryDto,
-  EventsQueryDto,
-  MetricsQueryDto,
+  dateRangeQuerySchema,
+  eventsQuerySchema,
+  metricsQuerySchema,
 } from './dto/date-range-query.dto';
-import { TrackEventDto } from './dto/track-event.dto';
+import { trackEventSchema } from './dto/track-event.dto';
 
 /**
  * `/api/analytics` : collecte publique (seule route limitée en débit) et statistiques de l'admin,
@@ -31,7 +31,7 @@ export function analyticsRoutes(
     new Hono<AppEnv>()
       // Page vue ou événement, envoyé en fire-and-forget : 204 même si le hit est écarté (bot…).
       .post('/track', throttle(TRACK_THROTTLE), async (c) => {
-        const dto = await jsonBody(c, TrackEventDto);
+        const dto = await jsonBody(c, trackEventSchema);
         await tracker.track(
           dto,
           clientIp(c),
@@ -42,16 +42,16 @@ export function analyticsRoutes(
       })
 
       .get('/stats/overview', requireAuth, async (c) =>
-        reply(c, await stats.overview(await queryParams(c, DateRangeQueryDto))),
+        reply(c, await stats.overview(queryParams(c, dateRangeQuerySchema))),
       )
 
       .get('/stats/chart', requireAuth, async (c) =>
-        reply(c, await stats.chart(await queryParams(c, DateRangeQueryDto))),
+        reply(c, await stats.chart(queryParams(c, dateRangeQuerySchema))),
       )
 
       // Top N par url | referrer | browser | country | os.
       .get('/stats/metrics', requireAuth, async (c) =>
-        reply(c, await stats.metrics(await queryParams(c, MetricsQueryDto))),
+        reply(c, await stats.metrics(queryParams(c, metricsQuerySchema))),
       )
 
       // Visites actives sur les 5 dernières minutes.
@@ -60,34 +60,31 @@ export function analyticsRoutes(
       )
 
       .get('/stats/projects', requireAuth, async (c) =>
-        reply(c, await stats.projects(await queryParams(c, DateRangeQueryDto))),
+        reply(c, await stats.projects(queryParams(c, dateRangeQuerySchema))),
       )
 
       .get('/stats/articles', requireAuth, async (c) =>
-        reply(c, await stats.articles(await queryParams(c, DateRangeQueryDto))),
+        reply(c, await stats.articles(queryParams(c, dateRangeQuerySchema))),
       )
 
       .get('/stats/articles-read', requireAuth, async (c) =>
         reply(
           c,
-          await stats.articlesRead(await queryParams(c, DateRangeQueryDto)),
+          await stats.articlesRead(queryParams(c, dateRangeQuerySchema)),
         ),
       )
 
       .get('/stats/cta', requireAuth, async (c) =>
-        reply(c, await stats.cta(await queryParams(c, DateRangeQueryDto))),
+        reply(c, await stats.cta(queryParams(c, dateRangeQuerySchema))),
       )
 
       // Comptes par entityId : placement (contact_submit) ou canal (outbound_click).
       .get('/stats/events', requireAuth, async (c) =>
-        reply(c, await stats.events(await queryParams(c, EventsQueryDto))),
+        reply(c, await stats.events(queryParams(c, eventsQuerySchema))),
       )
 
       .get('/stats/cv-downloads', requireAuth, async (c) =>
-        reply(
-          c,
-          await stats.cvDownloads(await queryParams(c, DateRangeQueryDto)),
-        ),
+        reply(c, await stats.cvDownloads(queryParams(c, dateRangeQuerySchema))),
       )
   );
 }

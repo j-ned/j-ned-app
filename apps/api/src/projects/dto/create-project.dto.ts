@@ -1,125 +1,41 @@
-import { Transform, Type } from 'class-transformer';
-import {
-  ArrayMaxSize,
-  IsArray,
-  IsBoolean,
-  IsIn,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-  Min,
-  ValidateIf,
-  ValidateNested,
-} from 'class-validator';
-import {
-  PROJECT_KINDS,
-  type ProjectKind,
-} from '../../database/schema/projects';
-import {
-  PROJECT_FACT_MAX,
-  PROJECT_PITCH_MAX,
-  toNullableText,
-} from '../project-editorial';
-import { composeDecorators } from '../../common/compose-decorators';
-import { ArchitectureDecisionDto } from './architecture-decision.dto';
-import { TechChoiceDto } from './tech-choice.dto';
+import { z } from 'zod';
+import { PROJECT_KINDS } from '../../database/schema/projects';
+import { PROJECT_FACT_MAX, PROJECT_PITCH_MAX } from '../project-editorial';
+import { architectureDecisionSchema } from './architecture-decision.dto';
+import { techChoiceSchema } from './tech-choice.dto';
 
 /**
  * Champ éditorial facultatif (ADR-0010 §3) : trim, vide → null, null efface, borne après trim.
- * Garder le type `string | null` : il se reflète en `Object`, donc `enableImplicitConversion`
- * ne change pas `42` en `'42'` avant `@IsString` (un type `string` seul le ferait).
+ * Absent : reste `undefined` (colonne NULL à l'insert, clé hors du SET d'un UPDATE).
  */
-function EditorialText(max: number): PropertyDecorator {
-  return composeDecorators(
-    Transform(({ value }: { value: unknown }) => toNullableText(value)),
-    IsOptional(),
-    ValidateIf((_, v) => v !== null),
-    IsString(),
-    MaxLength(max),
-  );
-}
+const editorialText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((text) => text || null)
+    .nullish();
 
-export class CreateProjectDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  title!: string;
+/** Lien http(s) facultatif : `null` efface. */
+const optionalUrl = () => z.url({ protocol: /^https?$/ }).nullish();
 
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  category!: string;
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(20)
-  @IsString({ each: true })
-  @MaxLength(50, { each: true })
-  tags?: string[];
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(5000)
-  description!: string;
-
-  @EditorialText(PROJECT_PITCH_MAX)
-  pitch?: string | null;
-
-  @EditorialText(PROJECT_FACT_MAX)
-  highlight?: string | null;
-
-  @EditorialText(PROJECT_FACT_MAX)
-  scope?: string | null;
-
-  @IsOptional()
-  @ValidateIf((_, v) => v !== null)
-  @IsUrl()
-  liveUrl?: string | null;
-
-  @IsOptional()
-  @ValidateIf((_, v) => v !== null)
-  @IsUrl()
-  repoUrl?: string | null;
-
-  @IsOptional()
-  @ValidateIf((_, v) => v !== null)
-  @IsUrl()
-  repoUrlFront?: string | null;
-
-  @IsOptional()
-  @ValidateIf((_, v) => v !== null)
-  @IsUrl()
-  repoUrlBack?: string | null;
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(30)
-  @ValidateNested({ each: true })
-  @Type(() => TechChoiceDto)
-  techChoices?: TechChoiceDto[];
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(30)
-  @ValidateNested({ each: true })
-  @Type(() => ArchitectureDecisionDto)
-  architectureDecisions?: ArchitectureDecisionDto[];
-
-  // Optionnel mais jamais null : la colonne est NOT NULL (ADR-0008 §4). Pas de @IsOptional,
-  // qui laisserait passer null jusqu'à une erreur 500 en base.
-  @ValidateIf((_, v) => v !== undefined)
-  @IsIn([...PROJECT_KINDS])
-  kind?: ProjectKind;
-
-  @IsOptional()
-  @IsBoolean()
-  featured?: boolean;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  order?: number;
-}
+export const createProjectSchema = z.strictObject({
+  title: z.string().min(1).max(200),
+  category: z.string().min(1).max(100),
+  tags: z.array(z.string().max(50)).max(20).optional(),
+  description: z.string().min(1).max(5000),
+  pitch: editorialText(PROJECT_PITCH_MAX),
+  highlight: editorialText(PROJECT_FACT_MAX),
+  scope: editorialText(PROJECT_FACT_MAX),
+  liveUrl: optionalUrl(),
+  repoUrl: optionalUrl(),
+  repoUrlFront: optionalUrl(),
+  repoUrlBack: optionalUrl(),
+  techChoices: z.array(techChoiceSchema).max(30).optional(),
+  architectureDecisions: z.array(architectureDecisionSchema).max(30).optional(),
+  // Optionnel mais jamais null : la colonne est NOT NULL (ADR-0008 §4).
+  kind: z.enum(PROJECT_KINDS).optional(),
+  featured: z.boolean().optional(),
+  order: z.int().min(0).optional(),
+});
+export type CreateProjectDto = z.infer<typeof createProjectSchema>;

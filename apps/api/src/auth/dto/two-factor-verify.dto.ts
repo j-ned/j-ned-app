@@ -1,55 +1,20 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  Length,
-  Matches,
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
-} from 'class-validator';
+import { z } from 'zod';
 
-// Custom validator: exactement un des deux champs (code OU backupCode) doit être fourni
-function IsExactlyOneOf(fields: string[], options?: ValidationOptions) {
-  return (object: object, propertyName: string) => {
-    registerDecorator({
-      name: 'IsExactlyOneOf',
-      target: object.constructor,
-      propertyName,
-      options,
-      validator: {
-        validate(_value: unknown, args: ValidationArguments) {
-          const obj = args.object as Record<string, unknown>;
-          const provided = fields.filter(
-            (f) => obj[f] !== undefined && obj[f] !== null && obj[f] !== '',
-          );
-          return provided.length === 1;
-        },
-        defaultMessage(args: ValidationArguments) {
-          return `Exactly one of [${fields.join(', ')}] must be provided (got: ${
-            fields.filter(
-              (f) => (args.object as Record<string, unknown>)[f] !== undefined,
-            ).length
-          })`;
-        },
-      },
-    });
-  };
-}
-
-export class TwoFactorVerifyDto {
-  @IsString()
-  @IsNotEmpty()
-  challengeToken!: string;
-
-  @IsOptional()
-  @IsString()
-  @Length(6, 6)
-  @IsExactlyOneOf(['code', 'backupCode'])
-  code?: string;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^[a-z0-9]{4}-[a-z0-9]{4}$/)
-  backupCode?: string;
-}
+/**
+ * Second facteur : `code` (TOTP) ou `backupCode`, pas les deux. Aucun des deux : le service répond
+ * 401 (« Either code or backupCode is required »).
+ */
+export const twoFactorVerifySchema = z
+  .strictObject({
+    challengeToken: z.string().min(1),
+    code: z.string().length(6).optional(),
+    backupCode: z
+      .string()
+      .regex(/^[a-z0-9]{4}-[a-z0-9]{4}$/)
+      .optional(),
+  })
+  .refine((dto) => dto.code === undefined || dto.backupCode === undefined, {
+    path: ['code'],
+    error: 'Exactly one of [code, backupCode] must be provided (got: 2)',
+  });
+export type TwoFactorVerifyDto = z.infer<typeof twoFactorVerifySchema>;

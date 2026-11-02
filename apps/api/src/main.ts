@@ -1,5 +1,4 @@
 import './instrument';
-import 'reflect-metadata';
 import { serve } from '@hono/node-server';
 import { bootstrap } from './bootstrap';
 import { rootLogger } from './common/logger';

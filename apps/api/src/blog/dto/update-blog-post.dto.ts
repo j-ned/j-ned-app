@@ -1,9 +1,8 @@
-import { PartialType } from '../../common/partial-type';
-import { Equals, IsOptional } from 'class-validator';
-import { CreateBlogPostDto } from './create-blog-post.dto';
+import { z } from 'zod';
+import { createBlogPostSchema } from './create-blog-post.dto';
 
-export class UpdateBlogPostDto extends PartialType(CreateBlogPostDto) {
-  @IsOptional()
-  @Equals(null)
-  coverImage?: null;
-}
+/** Modification partielle ; `coverImage: null` retire la couverture (l'envoi passe par sa route). */
+export const updateBlogPostSchema = createBlogPostSchema.partial().extend({
+  coverImage: z.null().optional(),
+});
+export type UpdateBlogPostDto = z.infer<typeof updateBlogPostSchema>;

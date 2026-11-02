@@ -1,34 +1,13 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { z } from 'zod';
 
-export class CreateContactMessageDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  name!: string;
-
-  @IsEmail()
-  @MaxLength(320)
-  email!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  subject!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(5000)
-  message!: string;
-
+export const createContactMessageSchema = z.strictObject({
+  name: z.string().min(1).max(200),
+  email: z.email().max(320),
+  subject: z.string().min(1).max(200),
+  message: z.string().min(1).max(5000),
   /** Champ piège : invisible pour un humain, rempli par un robot. Déclaré pour passer la liste blanche. */
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  website?: string;
-}
+  website: z.string().max(200).optional(),
+});
+export type CreateContactMessageDto = z.infer<
+  typeof createContactMessageSchema
+>;

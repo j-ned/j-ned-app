@@ -17,10 +17,10 @@ import {
   throttle,
 } from '../common/throttle';
 import { validateDto } from '../common/validation';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { ProjectImageAltDto } from './dto/project-image-alt.dto';
-import { ReorderProjectImagesDto } from './dto/reorder-project-images.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+import { createProjectSchema } from './dto/create-project.dto';
+import { projectImageAltSchema } from './dto/project-image-alt.dto';
+import { reorderProjectImagesSchema } from './dto/reorder-project-images.dto';
+import { updateProjectSchema } from './dto/update-project.dto';
 import type { ProjectImagesService } from './project-images.service';
 import type { ProjectsService } from './projects.service';
 
@@ -58,14 +58,14 @@ export function projectsRoutes(
 
       // 409 si le slug existe déjà.
       .post('/', throttle(), requireAuth, async (c) => {
-        const dto = await jsonBody(c, CreateProjectDto);
+        const dto = await jsonBody(c, createProjectSchema);
         return reply(c, await projects.create(dto), 201);
       })
 
       // `image: null` retire la couverture (et l'objet S3).
       .patch('/:id', throttle(), requireAuth, async (c) => {
         const id = uuidParam(c, 'id');
-        const dto = await jsonBody(c, UpdateProjectDto);
+        const dto = await jsonBody(c, updateProjectSchema);
         return reply(c, await projects.update(id, dto));
       })
 
@@ -89,8 +89,8 @@ export function projectsRoutes(
         async (c) => {
           const fields = c.req.raw.clone();
           const { id, file } = await projectIdAndImage(c);
-          const dto = await validateDto(
-            ProjectImageAltDto,
+          const dto = validateDto(
+            projectImageAltSchema,
             await multipartFields(fields),
           );
           return reply(c, await images.upload(id, file, dto.alt), 201);
@@ -104,7 +104,7 @@ export function projectsRoutes(
         requireAuth,
         async (c) => {
           const id = uuidParam(c, 'id');
-          const dto = await jsonBody(c, ReorderProjectImagesDto);
+          const dto = await jsonBody(c, reorderProjectImagesSchema);
           return reply(c, await images.reorder(id, dto.imageIds));
         },
       )
@@ -116,7 +116,7 @@ export function projectsRoutes(
         async (c) => {
           const id = uuidParam(c, 'id');
           const imageId = uuidParam(c, 'imageId');
-          const dto = await jsonBody(c, ProjectImageAltDto);
+          const dto = await jsonBody(c, projectImageAltSchema);
           return reply(c, await images.updateAlt(id, imageId, dto.alt));
         },
       )

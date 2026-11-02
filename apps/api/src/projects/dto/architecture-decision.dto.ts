@@ -1,13 +1,9 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { z } from 'zod';
 
-export class ArchitectureDecisionDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(150)
-  decision!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(500)
-  rationale!: string;
-}
+export const architectureDecisionSchema = z.strictObject({
+  decision: z.string().min(1).max(150),
+  rationale: z.string().min(1).max(500),
+});
+export type ArchitectureDecisionDto = z.infer<
+  typeof architectureDecisionSchema
+>;

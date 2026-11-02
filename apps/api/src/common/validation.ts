@@ -1,33 +1,27 @@
-import { plainToInstance, type ClassConstructor } from 'class-transformer';
-import { validate, type ValidationError } from 'class-validator';
+import { z } from 'zod';
 import { BadRequestException } from './http-errors';
 
+// Messages de zod en français, pour toute l'application (corps, query strings, variables d'env).
+z.config(z.locales.fr());
+
+/** Message d'un corps JSON qui n'est pas un objet (liste, valeur seule). */
+export const NOT_AN_OBJECT_MESSAGE =
+  'Le corps de la requête doit être un objet JSON';
+
 /**
- * Même validation que le `ValidationPipe` global de l'API NestJS : conversion vers la classe du DTO
- * (conversion implicite des types), liste blanche stricte (un champ inconnu est refusé), et messages
- * des contraintes aplatis, préfixés du chemin du parent pour les objets imbriqués.
+ * Corps (ou query string) validé par le schéma zod du DTO. Les clés `__proto__` sont retirées avant
+ * validation ; un corps qui n'est pas un objet est refusé (validé comme `{}` pour lister aussi les
+ * champs manquants). Échec → 400, `message` = une ligne par issue zod (`formatIssues`).
  */
-export async function validateDto<T extends object>(
-  dto: ClassConstructor<T>,
-  value: unknown,
-): Promise<T> {
+export function validateDto<T>(schema: z.ZodType<T>, value: unknown): T {
   const plain = isPlainObject(value) ? stripProtoKeys(value) : {};
-  const instance = plainToInstance(dto, plain, {
-    enableImplicitConversion: true,
-  });
-  const errors = await validate(instance, {
-    whitelist: true,
-    forbidNonWhitelisted: true,
-  });
-  // Corps qui n'est pas un objet (liste, valeur seule) : refusé même si le DTO n'exige rien.
+  const result = schema.safeParse(plain);
+  const messages = result.success ? [] : formatIssues(result.error.issues);
   if (!isPlainObject(value) && value !== undefined && value !== null) {
-    throw new BadRequestException([
-      'Request body must be a JSON object',
-      ...flatten(errors),
-    ]);
+    throw new BadRequestException([NOT_AN_OBJECT_MESSAGE, ...messages]);
   }
-  if (errors.length > 0) throw new BadRequestException(flatten(errors));
-  return instance;
+  if (!result.success) throw new BadRequestException(messages);
+  return result.data;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -44,28 +38,14 @@ function stripProtoKeys<T>(value: T): T {
   return value;
 }
 
-function flatten(errors: readonly ValidationError[]): string[] {
-  return errors
-    .flatMap((error) => withChildren(error))
-    .flatMap((error) => Object.values(error.constraints ?? {}));
-}
-
-function withChildren(
-  error: ValidationError,
-  parentPath?: string,
-): ValidationError[] {
-  if (!error.children?.length) return [error];
-  const path = parentPath ? `${parentPath}.${error.property}` : error.property;
-  return error.children.flatMap((child) => [
-    ...(child.children?.length ? withChildren(child, path) : []),
-    {
-      ...child,
-      constraints: Object.fromEntries(
-        Object.entries(child.constraints ?? {}).map(([key, message]) => [
-          key,
-          `${path}.${message}`,
-        ]),
-      ),
-    },
-  ]);
+/**
+ * Une ligne par issue, dans l'ordre de zod : `<chemin.pointé>: <message>` (`biography.title: …`,
+ * `highlights.0.id: …`), le message seul pour une issue à la racine (clé inconnue du corps).
+ */
+export function formatIssues(
+  issues: readonly Pick<z.core.$ZodIssue, 'path' | 'message'>[],
+): string[] {
+  return issues.map(({ path, message }) =>
+    path.length > 0 ? `${path.map(String).join('.')}: ${message}` : message,
+  );
 }

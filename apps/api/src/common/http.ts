@@ -2,9 +2,9 @@ import { getConnInfo } from '@hono/node-server/conninfo';
 import { timingSafeEqual } from 'node:crypto';
 import { isIP } from 'node:net';
 import type { MiddlewareHandler } from 'hono';
-import type { ClassConstructor } from 'class-transformer';
 import type { Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import type { z } from 'zod';
 import type { User } from '../database/schema';
 import {
   BadRequestException,
@@ -94,14 +94,14 @@ export function originalUrl(c: Context): string {
 }
 
 /**
- * Corps JSON validé par le DTO. Comme body-parser : seul `application/json` est lu (sinon corps
- * vide), 100 ko au plus (413), JSON invalide → 400, corps vide → `{}`.
+ * Corps JSON validé par le schéma du DTO. Comme body-parser : seul `application/json` est lu (sinon
+ * corps vide), 100 ko au plus (413), JSON invalide → 400, corps vide → `{}`.
  */
-export async function jsonBody<T extends object>(
+export async function jsonBody<T>(
   c: Context,
-  dto: ClassConstructor<T>,
+  schema: z.ZodType<T>,
 ): Promise<T> {
-  return validateDto(dto, await readJson(c));
+  return validateDto(schema, await readJson(c));
 }
 
 export async function readJson(c: Context): Promise<unknown> {
@@ -125,11 +125,8 @@ export async function readJson(c: Context): Promise<unknown> {
   }
 }
 
-/** Query string validée par le DTO (une clé répétée donne une liste, comme Express). */
-export function queryParams<T extends object>(
-  c: Context,
-  dto: ClassConstructor<T>,
-): Promise<T> {
+/** Query string validée par le schéma du DTO (une clé répétée donne une liste, comme Express). */
+export function queryParams<T>(c: Context, schema: z.ZodType<T>): T {
   const raw = c.req.queries();
   const plain = Object.fromEntries(
     Object.entries(raw).map(([key, values]) => [
@@ -137,7 +134,7 @@ export function queryParams<T extends object>(
       values.length === 1 ? values[0] : values,
     ]),
   );
-  return validateDto(dto, plain);
+  return validateDto(schema, plain);
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

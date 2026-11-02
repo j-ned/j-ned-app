@@ -10,11 +10,11 @@ import {
 import { parseDurationMs } from '../common/utils';
 import { AUTH_COOKIE_NAME, authCookieOptions } from './auth-cookie';
 import type { AuthService } from './auth.service';
-import { ChangePasswordDto } from './dto/change-password.dto';
-import { LoginDto } from './dto/login.dto';
-import { TwoFactorDisableDto } from './dto/two-factor-disable.dto';
-import { TwoFactorEnableDto } from './dto/two-factor-enable.dto';
-import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto';
+import { changePasswordSchema } from './dto/change-password.dto';
+import { loginSchema } from './dto/login.dto';
+import { twoFactorDisableSchema } from './dto/two-factor-disable.dto';
+import { twoFactorEnableSchema } from './dto/two-factor-enable.dto';
+import { twoFactorVerifySchema } from './dto/two-factor-verify.dto';
 import type { RequireAuth } from './require-auth';
 
 export type AuthRoutesDeps = {
@@ -31,7 +31,7 @@ export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
     new Hono<AppEnv>()
       // Connexion : cookie posé si pas de 2FA, sinon un jeton de challenge (5 min).
       .post('/login', throttle(AUTH_ATTEMPT_THROTTLE), async (c) => {
-        const dto = await jsonBody(c, LoginDto);
+        const dto = await jsonBody(c, loginSchema);
         const result = await auth.login(dto.email, dto.password);
         if (result.kind === 'authenticated') {
           setCookie(
@@ -49,7 +49,7 @@ export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
       })
 
       .post('/2fa/verify', throttle(AUTH_ATTEMPT_THROTTLE), async (c) => {
-        const dto = await jsonBody(c, TwoFactorVerifyDto);
+        const dto = await jsonBody(c, twoFactorVerifySchema);
         const result = await auth.verifyTwoFactor(dto.challengeToken, {
           code: dto.code,
           backupCode: dto.backupCode,
@@ -80,7 +80,7 @@ export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
       })
 
       .post('/change-password', throttle(), requireAuth, async (c) => {
-        const dto = await jsonBody(c, ChangePasswordDto);
+        const dto = await jsonBody(c, changePasswordSchema);
         await auth.changePassword(
           c.var.user,
           dto.currentPassword,
@@ -96,12 +96,12 @@ export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
 
       // Active la 2FA sur un code valide ; rend les 10 codes de secours à usage unique.
       .post('/2fa/enable', throttle(), requireAuth, async (c) => {
-        const dto = await jsonBody(c, TwoFactorEnableDto);
+        const dto = await jsonBody(c, twoFactorEnableSchema);
         return c.json(await auth.enableTwoFactor(c.var.user, dto.code));
       })
 
       .post('/2fa/disable', throttle(), requireAuth, async (c) => {
-        const dto = await jsonBody(c, TwoFactorDisableDto);
+        const dto = await jsonBody(c, twoFactorDisableSchema);
         await auth.disableTwoFactor(c.var.user, dto.password);
         return c.json({ ok: true });
       })
@@ -111,7 +111,7 @@ export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
         throttle(),
         requireAuth,
         async (c) => {
-          const dto = await jsonBody(c, TwoFactorDisableDto);
+          const dto = await jsonBody(c, twoFactorDisableSchema);
           return c.json(
             await auth.regenerateBackupCodes(c.var.user, dto.password),
           );

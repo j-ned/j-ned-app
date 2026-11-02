@@ -1,37 +1,10 @@
-import {
-  ArrayMaxSize,
-  IsArray,
-  IsIn,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { z } from 'zod';
 
-export class CreateBlogPostDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  title!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(300)
-  excerpt!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(50000)
-  contentMarkdown!: string;
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(15)
-  @IsString({ each: true })
-  @MaxLength(50, { each: true })
-  tags?: string[];
-
-  @IsOptional()
-  @IsIn(['draft', 'published'])
-  status?: 'draft' | 'published';
-}
+export const createBlogPostSchema = z.strictObject({
+  title: z.string().min(1).max(200),
+  excerpt: z.string().min(1).max(300),
+  contentMarkdown: z.string().min(1).max(50000),
+  tags: z.array(z.string().max(50)).max(15).optional(),
+  status: z.enum(['draft', 'published']).optional(),
+});
+export type CreateBlogPostDto = z.infer<typeof createBlogPostSchema>;

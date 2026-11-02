@@ -101,7 +101,7 @@ describe('createApp', () => {
 
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({
-      message: ['property isAdmin should not exist'],
+      message: ['Clé non reconnue : "isAdmin"'],
     });
   });
 

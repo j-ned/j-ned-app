@@ -1,10 +1,8 @@
-import 'reflect-metadata';
 import {
   ConflictException,
   NotFoundException,
   ServiceUnavailableException,
 } from '../common/http-errors';
-import { plainToInstance } from 'class-transformer';
 import { and, eq, sql } from 'drizzle-orm';
 import {
   profileContent,
@@ -13,7 +11,7 @@ import {
 import type { Database } from '../database/drizzle.types';
 import { createMockDb } from '../database/test-utils';
 import type { StorageService } from '../storage/storage.service';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { updateProfileSchema } from './dto/update-profile.dto';
 import { ProfileService } from './profile.service';
 import type { ProfileContent } from './profile-content';
 import { aProfileContent } from './profile-test-builders';
@@ -98,7 +96,7 @@ describe('ProfileService', () => {
   describe('replace', () => {
     /** Le corps tel que la ValidationPipe le livre : une instance du DTO. */
     const aDto = (content: ProfileContent, version: number) =>
-      plainToInstance(UpdateProfileDto, { ...content, version });
+      updateProfileSchema.parse({ ...content, version });
 
     const changed = aProfileContent({ workSummary: 'Résumé corrigé' });
 

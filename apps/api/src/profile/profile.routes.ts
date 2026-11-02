@@ -8,7 +8,7 @@ import {
   UPLOAD_MAX_BYTES,
 } from '../common/http';
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { updateProfileSchema } from './dto/update-profile.dto';
 import type { ProfilePortraitService } from './profile-portrait.service';
 import type { ProfileService } from './profile.service';
 
@@ -33,7 +33,7 @@ export function profileRoutes(
 
       // Remplacement complet ; 409 si la version lue a changé.
       .put('/', throttle(), requireAuth, async (c) => {
-        const dto = await jsonBody(c, UpdateProfileDto);
+        const dto = await jsonBody(c, updateProfileSchema);
         return reply(c, await profile.replace(dto));
       })
 
