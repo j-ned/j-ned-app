@@ -6,13 +6,14 @@
 /tmp
 /out-tsc
 /bazel-out
-# Doc générée ignorée, SAUF les ADR, les brouillons d'articles et la source de la carte de partage : ce sont des
+# Doc générée ignorée, SAUF les ADR, les brouillons d'articles et la source de la carte de partage et les captures du README : ce sont des
 # décisions d'architecture et des textes relus en PR, ils se versionnent avec le code. `/docs/*` et non `/docs` : git ne redescend jamais
 # dans un répertoire exclu, une négation sous `/docs` serait sans effet.
 /docs/*
 !/docs/adr/
 !/docs/articles/
 !/docs/og/
+!/docs/screenshots/
 
 # Node
 /node_modules
