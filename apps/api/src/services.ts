@@ -1,5 +1,4 @@
 import type { S3Client } from '@aws-sdk/client-s3';
-import type { Transporter } from 'nodemailer';
 import { AnalyticsAggregatorService } from './analytics/analytics-aggregator.service';
 import { AnalyticsStatsService } from './analytics/analytics-stats.service';
 import { AnalyticsTrackerService } from './analytics/analytics-tracker.service';
@@ -28,11 +27,10 @@ export type ServiceDeps = {
   readonly config: AppConfigService;
   readonly db: Database;
   readonly s3: S3Client;
-  readonly transporter: Transporter;
 };
 
 /** Racine de composition : chaque service reçoit ses dépendances explicitement, une seule instance. */
-export function createServices({ config, db, s3, transporter }: ServiceDeps) {
+export function createServices({ config, db, s3 }: ServiceDeps) {
   const storage = new StorageService(s3);
   const images = new ImageOptimizer();
   const users = new UsersService(db);
@@ -52,11 +50,7 @@ export function createServices({ config, db, s3, transporter }: ServiceDeps) {
       new TwoFactorService(config),
       jwt,
     ),
-    contact: new ContactService(
-      db,
-      new MailerService(transporter, config),
-      config,
-    ),
+    contact: new ContactService(db, new MailerService(config), config),
     projects: new ProjectsService(db, storage, images, projectImages),
     projectImages,
     blog: new BlogService(db, storage, images, blogContentImages),

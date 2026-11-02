@@ -4,7 +4,7 @@ services:
     container_name: portfolio-nest-db
     restart: unless-stopped
     ports:
-      - "55432:5432"
+      - '55432:5432'
     environment:
       POSTGRES_USER: portfolio
       POSTGRES_PASSWORD: portfolio
@@ -12,7 +12,7 @@ services:
     volumes:
       - portfolio_nest_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U portfolio -d portfolio_nest"]
+      test: ['CMD-SHELL', 'pg_isready -U portfolio -d portfolio_nest']
       interval: 5s
       timeout: 3s
       retries: 5
@@ -23,15 +23,15 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     environment:
       MINIO_ROOT_USER: portfolio-admin
       MINIO_ROOT_PASSWORD: portfolio-admin-secret
     volumes:
       - portfolio_nest_minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:9000/minio/health/live']
       interval: 5s
       timeout: 3s
       retries: 5
@@ -49,23 +49,7 @@ services:
         mc anonymous set download local/portfolio-storage &&
         echo 'MinIO bucket portfolio-storage ready (public-read).'
       "
-    restart: "no"
-
-  mailpit:
-    image: docker.io/axllent/mailpit:latest
-    container_name: portfolio-nest-mail
-    restart: unless-stopped
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    environment:
-      MP_SMTP_AUTH_ACCEPT_ANY: 1
-      MP_SMTP_AUTH_ALLOW_INSECURE: 1
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8025"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+    restart: 'no'
 
 volumes:
   portfolio_nest_pgdata:

@@ -37,14 +37,14 @@ up() {
     sleep 1
   done
 
-  # S3 et SMTP ne sont joints qu'à l'usage : la suite n'envoie ni fichier valide ni message.
+  # S3 et Resend ne sont joints qu'à l'usage : la suite n'envoie ni fichier valide ni message.
   docker run -d --name "$API" --network "$NETWORK" -p "127.0.0.1:$API_PORT:3000" \
     -e DATABASE_URL="$db_url" \
     -e JWT_SECRET="$(openssl rand -hex 32)" \
     -e CORS_ORIGINS=https://nedellec-julien.fr \
     -e S3_ENDPOINT=http://s3.invalid:9000 -e S3_REGION=auto \
     -e S3_ACCESS_KEY=parity -e S3_SECRET_KEY=parity-secret \
-    -e SMTP_HOST=smtp.invalid -e SMTP_USER=parity -e SMTP_PASS=parity -e SMTP_FROM=parity@parity.test \
+    -e RESEND_API_KEY=re_parity -e MAIL_FROM=parity@parity.test \
     "$image" >/dev/null
 
   for _ in $(seq 1 60); do

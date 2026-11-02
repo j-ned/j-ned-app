@@ -1,4 +1,3 @@
-import { createTransport } from 'nodemailer';
 import { createApp } from './create-app';
 import { createRootLogger, setRootLogger } from './common/logger';
 import { PostgresThrottleStore } from './common/postgres-throttle-store';
@@ -11,7 +10,7 @@ import { createServices } from './services';
 
 /**
  * Assemble l'API depuis l'environnement : configuration validée (arrêt lisible si une variable manque),
- * logger, connexions (Postgres, S3, SMTP), services et application Hono. Partagé par le serveur Node
+ * logger, connexions (Postgres, S3), services et application Hono. Partagé par le serveur Node
  * (`main.ts`) et la fonction Vercel (`index.ts`).
  */
 export function bootstrap(env: Record<string, unknown> = process.env) {
@@ -22,13 +21,7 @@ export function bootstrap(env: Record<string, unknown> = process.env) {
 
   const database = connectDatabase(config);
   const s3 = createS3Client(config);
-  const transporter = createTransport({
-    host: config.smtpHost,
-    port: config.smtpPort,
-    secure: config.smtpSecure,
-    auth: { user: config.smtpUser, pass: config.smtpPass },
-  });
-  const services = createServices({ config, db: database.db, s3, transporter });
+  const services = createServices({ config, db: database.db, s3 });
 
   // Sur Vercel (`VERCEL=1`), plusieurs instances sans mémoire partagée : quotas comptés en base.
   const throttleStore = env['VERCEL']
@@ -39,5 +32,5 @@ export function bootstrap(env: Record<string, unknown> = process.env) {
   const app = createApp(config, database.db, services, {
     purgeRateLimits: throttleStore && (() => throttleStore.purgeExpired()),
   });
-  return { config, database, s3, transporter, services, app };
+  return { config, database, s3, services, app };
 }

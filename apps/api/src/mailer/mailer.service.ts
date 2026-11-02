@@ -1,27 +1,15 @@
+import { randomUUID } from 'node:crypto';
 import { Logger } from '../common/logger';
-import type { Transporter } from 'nodemailer';
 import { AppConfigService } from '../config/app-config.service';
 import { maskEmail } from './mailer.utils';
 
 const MAX_RETRIES = 3;
-
-/**
- * Méthode iTIP (RFC 5546) de la partie `text/calendar` : `REQUEST` invite un participant ; `PUBLISH`
- * publie sans réponse attendue (copie de l'organisateur, refusée comme invitation adressée à lui-même).
- */
-export type CalendarMethod = 'REQUEST' | 'PUBLISH' | 'CANCEL';
-
-/** Invitation calendrier, envoyée en une seule alternative `text/calendar` (iMIP, RFC 6047). */
-export type IcalEvent = {
-  method: CalendarMethod;
-  content: string;
-};
+const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
 
 export type SendMailOptions = {
   to: string;
   subject: string;
   html: string;
-  icalEvent?: IcalEvent;
 };
 
 const maskRecipientsIn = (text: string, recipients: string): string =>
@@ -34,39 +22,36 @@ const maskRecipientsIn = (text: string, recipients: string): string =>
       text,
     );
 
+/** Envoi par l'API HTTP de Resend : pas de connexion SMTP à ouvrir ni à fermer (fonction Vercel). */
 export class MailerService {
   private readonly logger = new Logger(MailerService.name);
 
   constructor(
-    private readonly transporter: Transporter,
     private readonly cfg: AppConfigService,
+    private readonly fetchFn: typeof fetch = fetch,
   ) {}
 
-  async sendMail({
-    to,
-    subject,
-    html,
-    icalEvent,
-  }: SendMailOptions): Promise<void> {
+  async sendMail({ to, subject, html }: SendMailOptions): Promise<void> {
+    // Même clé pour toutes les tentatives : une requête aboutie dont la réponse s'est perdue
+    // n'envoie pas un second mail au retry.
+    const idempotencyKey = randomUUID();
     let lastError: unknown;
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        await this.transporter.sendMail({
-          from: this.cfg.smtpFrom,
-          to,
-          subject,
-          html,
-          // Pas d'option `icalEvent` : nodemailer y ajoute une pièce `application/ics`, et les
-          // clients affichent alors deux invitations pour un même événement.
-          ...(icalEvent && {
-            alternatives: [
-              {
-                contentType: `text/calendar; charset=utf-8; method=${icalEvent.method}`,
-                content: icalEvent.content,
-              },
-            ],
-          }),
+        const response = await this.fetchFn(RESEND_EMAILS_URL, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.cfg.resendApiKey}`,
+            'Content-Type': 'application/json',
+            'Idempotency-Key': idempotencyKey,
+          },
+          body: JSON.stringify({ from: this.cfg.mailFrom, to, subject, html }),
         });
+        if (!response.ok) {
+          throw new Error(
+            `Resend responded ${response.status}: ${await response.text()}`,
+          );
+        }
         return;
       } catch (err) {
         lastError = err;
@@ -75,7 +60,7 @@ export class MailerService {
         }
       }
     }
-    // Le log d'erreur remonte à Sentry : ni l'adresse en clair, ni la réponse SMTP qui la cite.
+    // Le log d'erreur remonte à Sentry : ni l'adresse en clair, ni la réponse de Resend qui la cite.
     const trace =
       lastError instanceof Error ? lastError.stack : String(lastError);
     this.logger.error(
