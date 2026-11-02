@@ -11,6 +11,8 @@ Thumbs.db
 .worktrees/
 .husky/_/
 .parity-env
+.parity-api.pid
+.parity-api.log
 .vercel/
 .vercel
 .env*

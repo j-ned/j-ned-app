@@ -2,9 +2,6 @@ packages:
   - apps/*
   - packages/*
 
-# `pnpm deploy` (images Docker) produit un node_modules autonome par application.
-injectWorkspacePackages: true
-
 # Paquets autorisés à lancer leurs scripts d'installation : esbuild (Angular), argon2 (API).
 onlyBuiltDependencies:
   - argon2

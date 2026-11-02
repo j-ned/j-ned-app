@@ -1,8 +1,8 @@
 name: API CI
 
-# Sur une PR : lint, types, tests sur Postgres, build, puis l'image construite passe la suite de parité
-# HTTP (packages/api-parity). Le déploiement est celui de Vercel depuis Git (ADR-0036) : rien n'est
-# publié ici.
+# Sur une PR : lint, types, tests sur Postgres, build, puis l'API construite, lancée par Node en mode
+# production, passe la suite de parité HTTP (packages/api-parity). Le déploiement est celui de Vercel
+# depuis Git (ADR-0036) : rien n'est publié ici.
 on:
   pull_request:
     paths:
@@ -35,9 +35,9 @@ concurrency:
 
 jobs:
   verify:
-    name: Lint · Typecheck · Test · Build
+    name: Lint · Typecheck · Test · Build · Parité HTTP
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     # Même image que le README et compose.yaml. Les tests d'intégration appliquent eux-mêmes les
     # migrations Drizzle sur une base jetable dédiée.
@@ -72,12 +72,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc # même majeure que le Dockerfile (node:24-alpine)
+          node-version-file: .nvmrc
           cache: pnpm
 
-      # Même commande que Vercel : un lockfile incohérent échoue ici, pas au déploiement.
+      # Même commande que Vercel pour l'API, plus la suite de parité.
       - name: Install (frozen lockfile)
-        run: pnpm install --frozen-lockfile --filter @portfolio/api
+        run: pnpm install --frozen-lockfile --filter @portfolio/api --filter @portfolio/api-parity
 
       # `pnpm lint` corrige (--fix) : en CI on vérifie seulement.
       - name: Lint
@@ -101,59 +101,25 @@ jobs:
       - name: Build
         run: pnpm build
 
-  docker:
-    name: Docker build · Parité HTTP
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Le Dockerfile du repo, sans push : l'image sert de cible à la suite de parité.
-      - name: Build image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/api/Dockerfile
-          push: false
-          tags: nest-portfolio-app:ci
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # La suite de parité vise l'image elle-même (mode production, migrations au démarrage), pas les
-      # sources : c'est le contrat que l'implémentation Hono devra tenir à l'identique.
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      # L'API pour le seed de l'admin, la suite pour elle-même.
-      - name: Install (frozen lockfile)
-        run: pnpm install --frozen-lockfile --filter @portfolio/api --filter @portfolio/api-parity
-
       - name: Typecheck · Format parity suite
         run: |
           pnpm --filter @portfolio/api-parity typecheck
           pnpm --filter @portfolio/api-parity format:check
 
-      - name: Start parity stack (image + Postgres)
-        run: packages/api-parity/scripts/stack.sh up nest-portfolio-app:ci
+      # La suite vise l'API construite (mode production, migrations appliquées sur une base vide),
+      # pas les sources : c'est le contrat HTTP que l'API tient.
+      - name: Start parity stack (built API + Postgres)
+        run: |
+          psql "postgres://postgres:it@127.0.0.1:5432/postgres" -c "CREATE DATABASE parity"
+          PARITY_DATABASE_URL=postgres://postgres:it@127.0.0.1:5432/parity ../../packages/api-parity/scripts/stack.sh up
 
       - name: Parity suite
         run: pnpm --filter @portfolio/api-parity test
 
       - name: API logs
         if: failure()
-        run: docker logs api-parity-api || true
+        run: cat ../../packages/api-parity/.parity-api.log || true
 
       - name: Stop parity stack
         if: always()
-        run: packages/api-parity/scripts/stack.sh down
+        run: ../../packages/api-parity/scripts/stack.sh down

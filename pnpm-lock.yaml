@@ -3,7 +3,6 @@ lockfileVersion: '9.0'
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
-  injectWorkspacePackages: true
 
 overrides:
   '@tailwindcss/typography>postcss-selector-parser': ^7.1.6

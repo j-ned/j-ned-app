@@ -12,6 +12,10 @@ export default defineConfig({
   use: {
     baseURL: process.env['A11Y_BASE_URL'] ?? 'http://127.0.0.1:3000',
     reducedMotion: 'reduce',
+    // La CSP de production borne `connect-src` à 'self' (nedellec-julien.fr) : servie depuis 127.0.0.1,
+    // elle bloquerait les appels à l'API publique avant que le contexte les rejoue sur la doublure.
+    // La CSP reste vérifiée par `ci/verify-prerender.sh` et `ci/smoke.sh`.
+    bypassCSP: true,
     serviceWorkers: 'block',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',

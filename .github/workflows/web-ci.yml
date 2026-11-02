@@ -1,27 +1,34 @@
 name: Web CI
 
-# Construire, tester, juger le build servi (Dockerfile comme harnais de test). Le déploiement est
-# celui de Vercel depuis Git (ADR-0036) : rien n'est publié ici. Le run sur master écrit le cache
-# Docker que les PR lisent (GitHub cloisonne le cache entre PR).
+# Construire, tester, juger la sortie Vercel (`scripts/build-vercel.mjs`) rejouée en local devant la
+# doublure de l'API. Le déploiement est celui de Vercel depuis Git (ADR-0036) : rien n'est publié ici.
 on:
   pull_request:
     paths:
       - apps/web/**
+      - "!apps/web/specs/**"
+      - "!apps/web/tasks/**"
+      - "!apps/web/docs/**"
+      - "!apps/web/**/*.md"
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - package.json
       - .npmrc
-      - docker-bake.hcl
+      - .nvmrc
       - .github/workflows/web-ci.yml
   push:
     branches: [master]
     paths:
       - apps/web/**
+      - "!apps/web/specs/**"
+      - "!apps/web/tasks/**"
+      - "!apps/web/docs/**"
+      - "!apps/web/**/*.md"
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - package.json
       - .npmrc
-      - docker-bake.hcl
+      - .nvmrc
       - .github/workflows/web-ci.yml
   workflow_dispatch:
 
@@ -38,37 +45,61 @@ jobs:
     name: Build · Test · Smoke
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      CI: 1
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      # Runner jetable : pas de nettoyage du builder en fin de job.
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # pnpm avant setup-node : la version vient du champ `packageManager` de package.json.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
         with:
-          cleanup: false
+          node-version-file: .nvmrc
+          cache: pnpm
 
-      # Un seul passage BuildKit : étage `test` (lint, format, icônes, typage e2e, Vitest) et image
-      # de production, en parallèle sur les mêmes sources installées, avec le cache GHA.
-      - name: Build and test (Dockerfile)
-        uses: docker/bake-action@v6
-        with:
-          source: .
-          targets: web-ci
-          set: |
-            *.cache-from=type=gha
-            *.cache-to=type=gha,mode=max
+      # Même commande que Vercel : un lockfile incohérent échoue ici, pas au déploiement.
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile --filter @portfolio/web
 
-      # Les garanties du build de production, jugées sur les fichiers que l'image sert.
-      - name: Verify served build
-        run: |
-          set -euo pipefail
-          id=$(docker create ng-portfolio-app:ci)
-          docker cp -q "$id:/usr/share/nginx/html" /tmp/browser
-          docker cp -q "$id:/app/server" /tmp/server
-          docker rm -f "$id" > /dev/null
-          apps/web/ci/verify-prerender.sh /tmp/browser /tmp/server
+      - name: Lint
+        run: pnpm lint
 
-      - name: Smoke test the image
-        working-directory: apps/web
-        run: ci/smoke.sh ng-portfolio-app:ci
+      - name: Format
+        run: pnpm run format:check
+
+      - name: Icons
+        run: pnpm icons:check
+
+      - name: Typecheck e2e
+        run: pnpm a11y:typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # Même build que Vercel (`vercel.json`), sortie `.vercel/output` comprise.
+      - name: Build (production + Vercel output)
+        run: pnpm run build --configuration production && node scripts/build-vercel.mjs
+
+      - name: Verify prerender
+        run: ci/verify-prerender.sh dist/angular-portfolio-app/browser dist/angular-portfolio-app/server
+
+      - name: Start local stack (Vercel output + API stub)
+        run: ci/local-stack.sh up
+
+      - name: Smoke test
+        run: ci/smoke.sh
+
+      - name: Stack logs
+        if: failure()
+        run: cat "$RUNNER_TEMP"/portfolio-local-stack/*.log || true
+
+      - name: Stop local stack
+        if: always()
+        run: ci/local-stack.sh down

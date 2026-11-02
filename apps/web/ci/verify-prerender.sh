@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Garanties du build de production sur les fichiers servis (prérendu, CSP, coquille CSR, preloads).
-# Lancé par la CI sur le contenu extrait de l'image : exactement ce que Dokploy déploie.
+# Lancé par la CI sur la sortie de `ng build`, celle que `scripts/build-vercel.mjs` déploie.
 #   ci/verify-prerender.sh <dossier browser> <dossier server>
 set -euo pipefail
 browser="$1"
@@ -8,8 +8,6 @@ server="$2"
 # Seules les pages statiques sont prérendues ; les pages de contenu sont rendues à la requête.
 test -f "$server/server.mjs"
 test ! -f $browser/index.html
-# Pages par défaut de l'image nginx : jamais servies
-test ! -e $browser/50x.html
 # Sitemap et RSS sont rendus à la requête par Node : aucun fichier figé au build
 test ! -f $browser/sitemap.xml && test ! -f $browser/rss.xml
 # Pages statiques prérendues (offres et rendez-vous retirés, spec 029 : aucun fichier ne doit rester)

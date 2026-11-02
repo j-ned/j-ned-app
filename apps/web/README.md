@@ -63,27 +63,27 @@ Ce dépôt ne contient que le front. L'API vit dans son propre dépôt et est ap
 
 ### Site public
 
-| Section | Détails |
-|---|---|
-| **Accueil** | Hero, points forts, aperçu des projets mis en avant, section contact. Prérendu, hydratation incrémentale des sections sous la ligne de flottaison. |
-| **À propos** | Parcours, diplômes, stack, expertises. |
-| **Projets** | Liste filtrable par catégorie et paginée ; fiche par projet avec choix techniques, décisions d'architecture, liens démo et dépôts, navigation précédent / suivant. Toutes les fiches sont rendues côté serveur à la requête. |
-| **Blog** | Articles en Markdown assainis par DOMPurify (ADR-0002), tags colorés par catégorie et filtre par tag, commentaires Giscus, compteur de « j'aime », flux RSS. |
-| **Contact** | Formulaire Signal Forms, validation au bord, envoi par l'API (mail à l'admin et confirmation au visiteur). |
-| **CV** | Téléchargement du PDF servi par l'API, comptabilisé dans les analytics. |
-| **404** | Page dédiée, servie avec un vrai statut 404 par nginx. |
+| Section      | Détails                                                                                                                                                                                                                      |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Accueil**  | Hero, points forts, aperçu des projets mis en avant, section contact. Prérendu, hydratation incrémentale des sections sous la ligne de flottaison.                                                                           |
+| **À propos** | Parcours, diplômes, stack, expertises.                                                                                                                                                                                       |
+| **Projets**  | Liste filtrable par catégorie et paginée ; fiche par projet avec choix techniques, décisions d'architecture, liens démo et dépôts, navigation précédent / suivant. Toutes les fiches sont rendues côté serveur à la requête. |
+| **Blog**     | Articles en Markdown assainis par DOMPurify (ADR-0002), tags colorés par catégorie et filtre par tag, commentaires Giscus, compteur de « j'aime », flux RSS.                                                                 |
+| **Contact**  | Formulaire Signal Forms, validation au bord, envoi par l'API (mail à l'admin et confirmation au visiteur).                                                                                                                   |
+| **CV**       | Téléchargement du PDF servi par l'API, comptabilisé dans les analytics.                                                                                                                                                      |
+| **404**      | Page dédiée, servie avec un vrai statut 404 par nginx.                                                                                                                                                                       |
 
 ### Back-office (`/admin`)
 
-| Module | Fonction |
-|---|---|
-| **Tableau de bord** | Indicateurs de visite, sessions, téléchargements du CV, clics projets. |
-| **Projets** | CRUD, ordre, mise en avant, image convertie en AVIF ≤ 1600 px à l'upload par l'API. |
-| **Blog** | CRUD, brouillon / publié, couverture, catalogue de tags, aperçu Markdown en direct. |
-| **CV** | Remplacement du PDF. |
-| **Messages** | Boîte de réception du formulaire de contact. |
-| **Analytics** | Courbes de visites, pages, provenances, navigateurs, OS, pays, projets et articles les plus vus, export CSV, exclusion de l'appareil courant. |
-| **Sécurité** | Changement de mot de passe, activation et désactivation de la 2FA TOTP avec codes de secours. |
+| Module              | Fonction                                                                                                                                      |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Tableau de bord** | Indicateurs de visite, sessions, téléchargements du CV, clics projets.                                                                        |
+| **Projets**         | CRUD, ordre, mise en avant, image convertie en AVIF ≤ 1600 px à l'upload par l'API.                                                           |
+| **Blog**            | CRUD, brouillon / publié, couverture, catalogue de tags, aperçu Markdown en direct.                                                           |
+| **CV**              | Remplacement du PDF.                                                                                                                          |
+| **Messages**        | Boîte de réception du formulaire de contact.                                                                                                  |
+| **Analytics**       | Courbes de visites, pages, provenances, navigateurs, OS, pays, projets et articles les plus vus, export CSV, exclusion de l'appareil courant. |
+| **Sécurité**        | Changement de mot de passe, activation et désactivation de la 2FA TOTP avec codes de secours.                                                 |
 
 ### Transversal
 
@@ -175,14 +175,14 @@ providers: [
 
 ### Mesures Lighthouse mobile (10 septembre 2026, production)
 
-| Page | Performance | Accessibilité | Bonnes pratiques | SEO |
-|---|---|---|---|---|
-| `/` | 87 | 100 | 96 | 100 |
-| `/about` | 92 | 99 | 96 | 100 |
-| `/projects` | 89 | 100 | 96 | 100 |
-| `/projects/dashflow` | 95 | 96 | 96 | 100 |
-| `/blog` | 85 | 100 | 96 | 100 |
-| `/blog/:slug` | 93 | 96 | 96 | 100 |
+| Page                 | Performance | Accessibilité | Bonnes pratiques | SEO |
+| -------------------- | ----------- | ------------- | ---------------- | --- |
+| `/`                  | 87          | 100           | 96               | 100 |
+| `/about`             | 92          | 99            | 96               | 100 |
+| `/projects`          | 89          | 100           | 96               | 100 |
+| `/projects/dashflow` | 95          | 96            | 96               | 100 |
+| `/blog`              | 85          | 100           | 96               | 100 |
+| `/blog/:slug`        | 93          | 96            | 96               | 100 |
 
 ### Ce qui les tient
 
@@ -211,9 +211,8 @@ providers: [
 
 ### Exploitation
 
-- **Docker** multi-stage : build Angular, dépendances d'exécution, puis image nginx alpine qui exécute aussi Node (utilisateur non root).
 - **Vercel** (Services, Build Output API) déployé depuis Git, **Neon** pour Postgres, **Cloudflare R2** pour les fichiers (ADR-0036).
-- **GitHub Actions** : lint, tests, build de production avec vérification du prérendu et de la CSP, build de l'image Docker et tests de fumée HTTP.
+- **GitHub Actions** : lint, tests, build de production avec vérification du prérendu et de la CSP, sortie Vercel rejouée en local (`ci/vercel-local.mjs`) pour les tests de fumée HTTP et l'audit axe.
 
 ---
 
@@ -261,32 +260,35 @@ Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discus
 
 ### Scripts
 
-| Commande | Action |
-|---|---|
-| `pnpm start` | Serveur de développement avec proxy `/api` |
-| `pnpm build` | Build SSR ; `--configuration production` ajoute le prérendu des pages statiques et le hachage CSP |
-| `pnpm test` | Vitest (happy-dom) |
-| `pnpm lint` | ESLint, zéro warning toléré |
-| `pnpm check` | Prettier + lint |
-| `pnpm icons:build` | Régénère le sprite d'icônes |
+| Commande           | Action                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------- |
+| `pnpm start`       | Serveur de développement avec proxy `/api`                                                        |
+| `pnpm build`       | Build SSR ; `--configuration production` ajoute le prérendu des pages statiques et le hachage CSP |
+| `pnpm test`        | Vitest (happy-dom)                                                                                |
+| `pnpm lint`        | ESLint, zéro warning toléré                                                                       |
+| `pnpm check`       | Prettier + lint                                                                                   |
+| `pnpm icons:build` | Régénère le sprite d'icônes                                                                       |
 
-### Docker
+### Sortie Vercel en local
 
 ```bash
-docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..
-docker run --rm -p 3000:3000 -e API_UPSTREAM=http://<api>:3000 ng-portfolio-app:local   # nginx + Node
+pnpm run build --configuration production && node scripts/build-vercel.mjs
+ci/local-stack.sh up      # sortie Vercel sur :3000 devant la doublure de l'API sur :3001
+ci/smoke.sh               # tests de fumée HTTP
+ci/local-stack.sh down
 ```
 
 ---
 
 ## Qualité et livraison
 
-Les gates sont ceux du Dockerfile, rejoués en local avant chaque PR et dans la CI :
+Les gates de la CI (`.github/workflows/web-ci.yml`), rejoués en local avant chaque PR :
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm run build --configuration production   # build SSR + prérendu des pages statiques + CSP
-docker build -f apps/web/Dockerfile -t ng-portfolio-app:local ../..    # harnais de test de la CI (smoke)
+pnpm run build --configuration production && node scripts/build-vercel.mjs   # build SSR + prérendu + CSP, puis sortie Vercel
+ci/verify-prerender.sh dist/angular-portfolio-app/browser dist/angular-portfolio-app/server
+ci/local-stack.sh up && ci/smoke.sh; ci/local-stack.sh down
 ```
 
 - Une PR par changement, squash-merge sur `master`, branche protégée par les deux jobs de CI.
