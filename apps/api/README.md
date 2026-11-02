@@ -291,7 +291,7 @@ Envoi par l'API HTTP de [Resend](https://resend.com) (`fetch`, sans SDK ni SMTP)
 **Dev local** : une clé Resend dans `.env.local` ; les mails partent réellement (vers `OWNER_EMAIL`).
 **Prod** : `RESEND_API_KEY` et `MAIL_FROM` dans les variables d'env Vercel.
 
-**API (`MailerService`)** : `sendMail(...): Promise<void>` - 3 tentatives, backoff linéaire 1s/2s, même `Idempotency-Key` d'une tentative à l'autre (pas de doublon), throw l'erreur finale après épuisement (loggée avec stack).
+**API (`MailerService`)** : `sendMail(...): Promise<void>` - 3 tentatives, backoff linéaire 1s/2s, même `Idempotency-Key` d'une tentative à l'autre (pas de doublon), throw après épuisement une erreur dont le destinataire et le `replyTo` sont masqués (l'appelant la journalise).
 
 **Templates** : hébergés dans Resend (dashboard → Templates), désignés par leur alias. `sendMail({ to, subject, template: { id, variables }, replyTo? })` échappe chaque variable (`escapeHtml`, `src/mailer/mailer.utils.ts`) avant l'envoi : Resend insère les `{{{KEY}}}` telles quelles, et les valeurs viennent du formulaire public.
 

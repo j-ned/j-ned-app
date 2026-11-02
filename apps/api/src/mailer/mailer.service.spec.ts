@@ -1,4 +1,3 @@
-import { Logger } from '../common/logger';
 import { MailerService } from './mailer.service';
 import { AppConfigService } from '../config/app-config.service';
 
@@ -115,7 +114,9 @@ describe('MailerService', () => {
     await Promise.resolve();
     const result = await caught;
     jest.useRealTimers();
-    expect(result).toBe(err);
+    expect((result as Error).message).toBe(
+      'Failed to send email to x***@y.com after 3 attempts: persistent',
+    );
     expect(fetchFn).toHaveBeenCalledTimes(3);
   });
 
@@ -192,29 +193,35 @@ describe('MailerService', () => {
     expect(bodyAt(0)).not.toHaveProperty('reply_to');
   });
 
-  it('Given trois échecs, When l’erreur est journalisée, Then l’adresse du destinataire est masquée, message et trace compris', async () => {
-    const errorLog = jest
-      .spyOn(Logger.prototype, 'error')
-      .mockImplementation(() => {});
+  it('Given trois échecs, When l’erreur remonte, Then destinataire et replyTo y sont masqués, réponse de Resend comprise', async () => {
     fetchFn.mockImplementation(() =>
       Promise.resolve(
         failure(
           422,
-          '{"message":"Invalid `to` field: camille@example.com is not valid"}',
+          '{"message":"Invalid `reply_to` field: dominique@visiteur.fr (to: camille@example.com)"}',
         ),
       ),
     );
     jest.useFakeTimers();
     const caught = service
-      .sendMail({ to: 'camille@example.com', subject: 's', template: TEMPLATE })
+      .sendMail({
+        to: 'camille@example.com',
+        subject: 's',
+        template: TEMPLATE,
+        replyTo: 'dominique@visiteur.fr',
+      })
       .catch((e: unknown) => e);
     await jest.advanceTimersByTimeAsync(3000);
-    await caught;
+    const result = await caught;
     jest.useRealTimers();
 
-    const logged = JSON.stringify(errorLog.mock.calls);
-    expect(logged).not.toContain('camille@example.com');
-    expect(logged).toContain('c***@example.com');
-    errorLog.mockRestore();
+    const thrown = JSON.stringify({
+      message: (result as Error).message,
+      stack: (result as Error).stack,
+    });
+    expect(thrown).not.toContain('camille@example.com');
+    expect(thrown).not.toContain('dominique@visiteur.fr');
+    expect(thrown).toContain('c***@example.com');
+    expect(thrown).toContain('d***@visiteur.fr');
   });
 });

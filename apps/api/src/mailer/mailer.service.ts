@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { Logger } from '../common/logger';
 import { AppConfigService } from '../config/app-config.service';
 import { escapeHtml, maskEmail } from './mailer.utils';
 
@@ -19,20 +18,8 @@ export type SendMailOptions = {
   replyTo?: string;
 };
 
-const maskRecipientsIn = (text: string, recipients: string): string =>
-  recipients
-    .split(',')
-    .map((address) => address.trim())
-    .filter((address) => address !== '')
-    .reduce(
-      (masked, address) => masked.replaceAll(address, maskEmail(address)),
-      text,
-    );
-
 /** Envoi par l'API HTTP de Resend : pas de connexion SMTP à ouvrir ni à fermer (fonction Vercel). */
 export class MailerService {
-  private readonly logger = new Logger(MailerService.name);
-
   constructor(
     private readonly cfg: AppConfigService,
     private readonly fetchFn: typeof fetch = fetch,
@@ -86,13 +73,16 @@ export class MailerService {
         }
       }
     }
-    // Le log d'erreur remonte à Sentry : ni l'adresse en clair, ni la réponse de Resend qui la cite.
-    const trace =
-      lastError instanceof Error ? lastError.stack : String(lastError);
-    this.logger.error(
-      `Failed to send email to ${maskEmail(to)} after ${MAX_RETRIES} attempts`,
-      trace && maskRecipientsIn(trace, to),
-    );
-    throw lastError;
+    // L'appelant journalise l'erreur, qui remonte à Sentry : ni le destinataire ni l'adresse du
+    // visiteur (`replyTo`) en clair, y compris dans la réponse de Resend qui peut les citer.
+    const reason =
+      lastError instanceof Error ? lastError.message : String(lastError);
+    const message = [to, replyTo]
+      .filter((address): address is string => !!address)
+      .reduce(
+        (text, address) => text.replaceAll(address, maskEmail(address)),
+        `Failed to send email to ${to} after ${MAX_RETRIES} attempts: ${reason}`,
+      );
+    throw new Error(message);
   }
 }
