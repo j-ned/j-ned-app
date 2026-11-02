@@ -1,37 +1,44 @@
 import { randomUUID } from 'node:crypto';
-import { Logger } from '../common/logger';
 import { AppConfigService } from '../config/app-config.service';
-import { maskEmail } from './mailer.utils';
+import { escapeHtml, maskEmail } from './mailer.utils';
 
 const MAX_RETRIES = 3;
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
 
+/** Template publié dans Resend, désigné par son alias, et ses variables (`{{{KEY}}}` dans le HTML). */
+export type MailTemplate = {
+  id: string;
+  variables: Record<string, string>;
+};
+
 export type SendMailOptions = {
   to: string;
   subject: string;
-  html: string;
+  template: MailTemplate;
+  replyTo?: string;
 };
-
-const maskRecipientsIn = (text: string, recipients: string): string =>
-  recipients
-    .split(',')
-    .map((address) => address.trim())
-    .filter((address) => address !== '')
-    .reduce(
-      (masked, address) => masked.replaceAll(address, maskEmail(address)),
-      text,
-    );
 
 /** Envoi par l'API HTTP de Resend : pas de connexion SMTP à ouvrir ni à fermer (fonction Vercel). */
 export class MailerService {
-  private readonly logger = new Logger(MailerService.name);
-
   constructor(
     private readonly cfg: AppConfigService,
     private readonly fetchFn: typeof fetch = fetch,
   ) {}
 
-  async sendMail({ to, subject, html }: SendMailOptions): Promise<void> {
+  async sendMail({
+    to,
+    subject,
+    template,
+    replyTo,
+  }: SendMailOptions): Promise<void> {
+    // Resend insère les variables `{{{KEY}}}` telles quelles : elles viennent du formulaire public,
+    // sans échappement un visiteur injecte un lien de phishing ou un pixel de tracking dans le mail.
+    const variables = Object.fromEntries(
+      Object.entries(template.variables).map(([key, value]) => [
+        key,
+        escapeHtml(value),
+      ]),
+    );
     // Même clé pour toutes les tentatives : une requête aboutie dont la réponse s'est perdue
     // n'envoie pas un second mail au retry.
     const idempotencyKey = randomUUID();
@@ -45,7 +52,13 @@ export class MailerService {
             'Content-Type': 'application/json',
             'Idempotency-Key': idempotencyKey,
           },
-          body: JSON.stringify({ from: this.cfg.mailFrom, to, subject, html }),
+          body: JSON.stringify({
+            from: this.cfg.mailFrom,
+            to,
+            subject,
+            ...(replyTo && { reply_to: replyTo }),
+            template: { id: template.id, variables },
+          }),
         });
         if (!response.ok) {
           throw new Error(
@@ -60,13 +73,16 @@ export class MailerService {
         }
       }
     }
-    // Le log d'erreur remonte à Sentry : ni l'adresse en clair, ni la réponse de Resend qui la cite.
-    const trace =
-      lastError instanceof Error ? lastError.stack : String(lastError);
-    this.logger.error(
-      `Failed to send email to ${maskEmail(to)} after ${MAX_RETRIES} attempts`,
-      trace && maskRecipientsIn(trace, to),
-    );
-    throw lastError;
+    // L'appelant journalise l'erreur, qui remonte à Sentry : ni le destinataire ni l'adresse du
+    // visiteur (`replyTo`) en clair, y compris dans la réponse de Resend qui peut les citer.
+    const reason =
+      lastError instanceof Error ? lastError.message : String(lastError);
+    const message = [to, replyTo]
+      .filter((address): address is string => !!address)
+      .reduce(
+        (text, address) => text.replaceAll(address, maskEmail(address)),
+        `Failed to send email to ${to} after ${MAX_RETRIES} attempts: ${reason}`,
+      );
+    throw new Error(message);
   }
 }

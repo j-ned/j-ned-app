@@ -133,12 +133,14 @@ describe('ContactService', () => {
       const [mail] = mailer.sendMail.mock.calls[0];
       expect(mail.to).toBe('contact@nedellec-julien.fr');
       expect(mail.subject).toBe('Nouveau message de contact: Demande de devis');
-      expect(mail.html).toContain('Demande de devis');
+      expect(mail.replyTo).toBe('visitor@example.com');
+      expect(mail.template.id).toBe('contact-notification');
+      expect(mail.template.variables.SUBJECT).toBe('Demande de devis');
     });
 
     it('resolve quand même si MailerService.sendMail reject (fire-and-forget)', async () => {
       db.returning.mockResolvedValueOnce([mkMessage()]);
-      mailer.sendMail.mockRejectedValue(new Error('SMTP down'));
+      mailer.sendMail.mockRejectedValue(new Error('Resend down'));
       await expect(service.create(DTO, SENDER)).resolves.toBeUndefined();
     });
   });

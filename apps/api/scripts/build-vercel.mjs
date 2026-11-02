@@ -3,13 +3,11 @@
 //   décorateurs (class-validator) sont déjà émises par tsc, et les dépendances ESM (otplib → @scure/base,
 //   file-type…) sont intégrées, là où le chargeur de Vercel refuse un `require()` d'ESM ;
 // - à côté, un `node_modules` réduit aux seuls modules natifs (argon2, sharp), aux versions du lockfile :
-//   Vercel ne déploie que `dist/`, sans les liens symboliques de pnpm ;
-// - les gabarits d'e-mail, lus par `resolve(__dirname, 'mail-templates')` depuis le bundle.
+//   Vercel ne déploie que `dist/`, sans les liens symboliques de pnpm.
 import { execFileSync } from 'node:child_process';
 import {
   cpSync,
   mkdirSync,
-  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -67,14 +65,6 @@ cpSync(join(runtime, 'node_modules'), join(DIST, 'node_modules'), {
   recursive: true,
 });
 rmSync(runtime, { recursive: true, force: true });
-
-const templates = join(DIST, 'mail-templates');
-mkdirSync(templates, { recursive: true });
-for (const dir of ['contact']) {
-  const source = join(DIST, dir, 'mail-templates');
-  for (const file of readdirSync(source))
-    cpSync(join(source, file), join(templates, file));
-}
 
 console.log(
   `dist/index.js (bundle) + node_modules (${Object.entries(versions)

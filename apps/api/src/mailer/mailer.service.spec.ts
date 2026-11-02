@@ -1,6 +1,7 @@
-import { Logger } from '../common/logger';
 import { MailerService } from './mailer.service';
 import { AppConfigService } from '../config/app-config.service';
+
+const TEMPLATE = { id: 'tpl', variables: {} };
 
 describe('MailerService', () => {
   let service: MailerService;
@@ -29,7 +30,7 @@ describe('MailerService', () => {
     await service.sendMail({
       to: 'visitor@example.com',
       subject: 'Hello',
-      html: '<p>hi</p>',
+      template: { id: 'tpl', variables: { NAME: 'Camille' } },
     });
     expect(fetchFn).toHaveBeenCalledTimes(1);
     const [url, init] = requestAt(0);
@@ -39,13 +40,13 @@ describe('MailerService', () => {
       from: 'noreply@test.local',
       to: 'visitor@example.com',
       subject: 'Hello',
-      html: '<p>hi</p>',
+      template: { id: 'tpl', variables: { NAME: 'Camille' } },
     });
   });
 
   it('s’authentifie avec la clé API en Bearer', async () => {
     fetchFn.mockResolvedValueOnce(ok());
-    await service.sendMail({ to: 'x@y.com', subject: 's', html: 'h' });
+    await service.sendMail({ to: 'x@y.com', subject: 's', template: TEMPLATE });
     expect(headersAt(0).Authorization).toBe('Bearer re_test_key');
     expect(headersAt(0)['Content-Type']).toBe('application/json');
   });
@@ -58,7 +59,7 @@ describe('MailerService', () => {
     const promise = service.sendMail({
       to: 'x@y.com',
       subject: 's',
-      html: 'h',
+      template: TEMPLATE,
     });
     await Promise.resolve();
     await jest.advanceTimersByTimeAsync(1000);
@@ -75,7 +76,7 @@ describe('MailerService', () => {
     const promise = service.sendMail({
       to: 'x@y.com',
       subject: 's',
-      html: 'h',
+      template: TEMPLATE,
     });
     await jest.advanceTimersByTimeAsync(1000);
     await promise;
@@ -88,8 +89,8 @@ describe('MailerService', () => {
 
   it('Given deux mails distincts, Then leurs clés d’idempotence diffèrent', async () => {
     fetchFn.mockResolvedValue(ok());
-    await service.sendMail({ to: 'x@y.com', subject: 's', html: 'h' });
-    await service.sendMail({ to: 'x@y.com', subject: 's', html: 'h' });
+    await service.sendMail({ to: 'x@y.com', subject: 's', template: TEMPLATE });
+    await service.sendMail({ to: 'x@y.com', subject: 's', template: TEMPLATE });
     expect(headersAt(1)['Idempotency-Key']).not.toBe(
       headersAt(0)['Idempotency-Key'],
     );
@@ -102,7 +103,7 @@ describe('MailerService', () => {
     const promise = service.sendMail({
       to: 'x@y.com',
       subject: 's',
-      html: 'h',
+      template: TEMPLATE,
     });
     // Attach catch early to prevent unhandled rejection warnings in Node 24 / Jest 30
     const caught = promise.catch((e: unknown) => e);
@@ -113,7 +114,9 @@ describe('MailerService', () => {
     await Promise.resolve();
     const result = await caught;
     jest.useRealTimers();
-    expect(result).toBe(err);
+    expect((result as Error).message).toBe(
+      'Failed to send email to x***@y.com after 3 attempts: persistent',
+    );
     expect(fetchFn).toHaveBeenCalledTimes(3);
   });
 
@@ -123,7 +126,7 @@ describe('MailerService', () => {
     );
     jest.useFakeTimers();
     const caught = service
-      .sendMail({ to: 'x@y.com', subject: 's', html: 'h' })
+      .sendMail({ to: 'x@y.com', subject: 's', template: TEMPLATE })
       .catch((e: unknown) => e);
     await jest.advanceTimersByTimeAsync(3000);
     const result = await caught;
@@ -135,49 +138,90 @@ describe('MailerService', () => {
 
   it('ne retry pas si la première tentative réussit', async () => {
     fetchFn.mockResolvedValueOnce(ok());
-    await service.sendMail({ to: 'x@y.com', subject: 's', html: 'h' });
+    await service.sendMail({ to: 'x@y.com', subject: 's', template: TEMPLATE });
     expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 
-  it('passe le sujet et le HTML tels quels (pas de transformation)', async () => {
+  it('passe le sujet tel quel (pas de transformation)', async () => {
     fetchFn.mockResolvedValueOnce(ok());
-    const html = '<html><body><h1>Hello {{name}}</h1></body></html>';
     await service.sendMail({
       to: 'x@y.com',
       subject: 'Sujet avec accents éàç',
-      html,
+      template: TEMPLATE,
     });
     expect(bodyAt(0)).toEqual(
-      expect.objectContaining({
-        subject: 'Sujet avec accents éàç',
-        html,
-      }),
+      expect.objectContaining({ subject: 'Sujet avec accents éàç' }),
     );
   });
 
-  it('Given trois échecs, When l’erreur est journalisée, Then l’adresse du destinataire est masquée, message et trace compris', async () => {
-    const errorLog = jest
-      .spyOn(Logger.prototype, 'error')
-      .mockImplementation(() => {});
+  it('Given des variables issues du formulaire, When le mail part, Then elles sont échappées pour le HTML', async () => {
+    fetchFn.mockResolvedValueOnce(ok());
+    await service.sendMail({
+      to: 'x@y.com',
+      subject: 's',
+      template: {
+        id: 'tpl',
+        variables: {
+          NAME: '<a href="https://evil">Voir</a>',
+          MESSAGE: "it's & co",
+        },
+      },
+    });
+    expect(bodyAt(0).template).toEqual({
+      id: 'tpl',
+      variables: {
+        NAME: '&lt;a href=&quot;https://evil&quot;&gt;Voir&lt;/a&gt;',
+        MESSAGE: 'it&#39;s &amp; co',
+      },
+    });
+  });
+
+  it('Given un replyTo, When le mail part, Then il est transmis en reply_to', async () => {
+    fetchFn.mockResolvedValueOnce(ok());
+    await service.sendMail({
+      to: 'x@y.com',
+      subject: 's',
+      template: TEMPLATE,
+      replyTo: 'visitor@example.com',
+    });
+    expect(bodyAt(0).reply_to).toBe('visitor@example.com');
+  });
+
+  it('Given aucun replyTo, Then aucun champ reply_to n’est envoyé', async () => {
+    fetchFn.mockResolvedValueOnce(ok());
+    await service.sendMail({ to: 'x@y.com', subject: 's', template: TEMPLATE });
+    expect(bodyAt(0)).not.toHaveProperty('reply_to');
+  });
+
+  it('Given trois échecs, When l’erreur remonte, Then destinataire et replyTo y sont masqués, réponse de Resend comprise', async () => {
     fetchFn.mockImplementation(() =>
       Promise.resolve(
         failure(
           422,
-          '{"message":"Invalid `to` field: camille@example.com is not valid"}',
+          '{"message":"Invalid `reply_to` field: dominique@visiteur.fr (to: camille@example.com)"}',
         ),
       ),
     );
     jest.useFakeTimers();
     const caught = service
-      .sendMail({ to: 'camille@example.com', subject: 's', html: 'h' })
+      .sendMail({
+        to: 'camille@example.com',
+        subject: 's',
+        template: TEMPLATE,
+        replyTo: 'dominique@visiteur.fr',
+      })
       .catch((e: unknown) => e);
     await jest.advanceTimersByTimeAsync(3000);
-    await caught;
+    const result = await caught;
     jest.useRealTimers();
 
-    const logged = JSON.stringify(errorLog.mock.calls);
-    expect(logged).not.toContain('camille@example.com');
-    expect(logged).toContain('c***@example.com');
-    errorLog.mockRestore();
+    const thrown = JSON.stringify({
+      message: (result as Error).message,
+      stack: (result as Error).stack,
+    });
+    expect(thrown).not.toContain('camille@example.com');
+    expect(thrown).not.toContain('dominique@visiteur.fr');
+    expect(thrown).toContain('c***@example.com');
+    expect(thrown).toContain('d***@visiteur.fr');
   });
 });
