@@ -1,24 +1,26 @@
 # Suite de parité HTTP de l'API
 
 Tests **boîte noire** de l'API : ils ne connaissent que son URL et parlent HTTP comme le ferait le
-navigateur derrière le relais nginx (`X-Forwarded-For`, `Sec-Fetch-Site`, `Origin`, cookie de session).
+navigateur derrière un relais (`X-Forwarded-For`, `Sec-Fetch-Site`, `Origin`, cookie de session).
 Ils ne savent rien du framework : la même suite a validé l'API NestJS, puis son portage en Hono
 (ADR-0035), à l'identique.
 
-Ils visent **l'image Docker** en mode production (migrations au démarrage, Swagger fermé), pas les
-sources, devant un Postgres jetable.
+Ils visent **l'API construite** (`apps/api/dist`), lancée par Node en mode production (Swagger fermé),
+pas les sources, devant une base Postgres vide où les migrations viennent d'être appliquées.
 
 ## Lancer
 
 ```bash
-docker buildx bake api --load            # depuis la racine : image nest-portfolio-app:ci
-pnpm --filter @portfolio/api-parity stack:up    # Postgres + API sur :3100, admin créé, .parity-env écrit
+pnpm --filter @portfolio/api build
+# Base vide dédiée, par exemple sur le Postgres de `pnpm --filter @portfolio/api db:up` :
+export PARITY_DATABASE_URL=postgres://portfolio:portfolio@127.0.0.1:55432/parity
+pnpm --filter @portfolio/api-parity stack:up    # migrations, API sur :3100, admin créé, .parity-env écrit
 pnpm --filter @portfolio/api-parity test
 pnpm --filter @portfolio/api-parity stack:down
 ```
 
-Une autre image : `scripts/stack.sh up <image>`. La CI (`.github/workflows/api-ci.yml`, job `docker`)
-rejoue la suite sur l'image qu'elle vient de construire.
+La CI (`.github/workflows/api-ci.yml`) rejoue la suite sur l'API qu'elle vient de construire, devant le
+Postgres du job.
 
 ## Ce qui est couvert
 

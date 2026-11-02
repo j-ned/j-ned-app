@@ -1,6 +1,6 @@
 # Portfolio API (Hono)
 
-API du portfolio J-Ned, en [Hono](https://hono.dev) sur Node (`@hono/node-server`). Toutes les routes sont montées sous **`/api`** (`src/app.ts`) ; toute route inconnue, sous `/api` ou non, répond par la même erreur JSON (`src/common/error-handler.ts`). Le contrat HTTP (statuts, en-têtes, cookies, quotas, CSRF, format d'erreur) est figé par la suite boîte noire [`packages/api-parity`](../../packages/api-parity/README.md), qui tourne contre l'image Docker en CI.
+API du portfolio J-Ned, en [Hono](https://hono.dev) sur Node (`@hono/node-server`). Toutes les routes sont montées sous **`/api`** (`src/app.ts`) ; toute route inconnue, sous `/api` ou non, répond par la même erreur JSON (`src/common/error-handler.ts`). Le contrat HTTP (statuts, en-têtes, cookies, quotas, CSRF, format d'erreur) est figé par la suite boîte noire [`packages/api-parity`](../../packages/api-parity/README.md), qui tourne en CI contre l'API construite, lancée par Node.
 
 ## Quickstart
 
@@ -177,7 +177,7 @@ Corps JSON : `application/json` seul, 100 ko au plus (413), JSON invalide → 40
 
 - **Unitaires** : `*.spec.ts` à côté du code source, runner Jest (config inline dans `package.json`, `rootDir: src`, `reflect-metadata` chargé par `setupFiles`). Certaines dépendances sont publiées en ESM pur : Jest tourne sous `node --experimental-vm-modules` (support `require(esm)`, Node ≥ 24.9), avertissement `ExperimentalWarning` masqué.
 - **Routes** : `<module>.routes.spec.ts` passent par HTTP (`testApp(prefix, routes).request(...)`, `src/common/test-app.ts`) ; `src/app.spec.ts` vérifie l'application complète (erreurs JSON, CSRF, CORS, en-têtes).
-- **Parité HTTP** : `packages/api-parity`, contre l'image Docker (`pnpm test:parity` depuis la racine).
+- **Parité HTTP** : `packages/api-parity`, contre l'API construite (`dist/main.js`) ; mode d'emploi dans son README.
 
 ```bash
 pnpm test           # Tous les tests unitaires
@@ -205,7 +205,7 @@ Liste réelle (`package.json`) - pas de script `s3:*` (démarrer MinIO à la mai
 | `pnpm db:reset`                                  | Wipe volume + recrée + migrate + seed (dev only)                                                                           |
 | `pnpm sentry:check-instrumentation`              | Vérifie que Sentry trace `@Injectable`, `@Catch`, `@Cron` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`) |
 
-**CI** (`.github/workflows/ci.yml`, à chaque PR et sur `master`) : `install --frozen-lockfile`, `lint:check`, `format:check`, `typecheck`, `pnpm test` **avec** les tests d'intégration (service `postgres:17-alpine`, base jetable `PROFILE_IT_DATABASE_URL`), `build`, puis le build de l'image Docker (sans push), cible de la suite de parité HTTP. Le déploiement est celui de Vercel depuis Git (ADR-0036).
+**CI** (`.github/workflows/api-ci.yml`, à chaque PR et sur `master`) : `install --frozen-lockfile`, `lint:check`, `format:check`, `typecheck`, `pnpm test` **avec** les tests d'intégration (service `postgres:17-alpine`, base jetable `PROFILE_IT_DATABASE_URL`), `build`, puis la suite de parité HTTP contre l'API construite, lancée par Node devant une base jetable. Le déploiement est celui de Vercel depuis Git (ADR-0036).
 
 ## S3 Storage
 
@@ -376,14 +376,9 @@ Collecte de page-views/events custom du portfolio public + agrégation quotidien
 - **`GET /api/config`** expose un DSN Sentry **distinct** (`SENTRY_FRONTEND_DSN`) pour le frontend Angular - projet Sentry séparé du backend, volontairement public (il ship dans le bundle browser une fois fetché).
 - `pnpm sentry:check-instrumentation` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`) : décore des classes témoins avec les vrais `@Injectable`, `@Catch`, `@Cron` après `dist/instrument.js` et vérifie les marques posées par Sentry ; exit 1 si l'un n'est pas tracé.
 
-## Docker
+## Dev local
 
-`Dockerfile` en 3 stages (builder → prod-deps → runner), base `node:24-alpine`, `pnpm@10.33.2` via corepack.
-
-- Image finale : non-root (`USER node`), PID 1 géré par `tini` (arrêt propre sur `SIGTERM`, voir Architecture).
-- `HEALTHCHECK` sur `http://localhost:3000/api/health`.
-- `CMD` : `pnpm db:migrate && node dist/main.js` - migrations Drizzle idempotentes appliquées à chaque démarrage du container, puis boot de l'app.
-- `docker-compose.yaml` / `compose.yaml` local sert uniquement au dev (Postgres + MinIO) - pas d'image applicative buildée par ce compose.
+`compose.yaml` sert uniquement au dev (Postgres + MinIO, `pnpm db:up`) - aucune image applicative. En production, l'API est une fonction Vercel (`pnpm build:vercel`, ADR-0036) ; les migrations Drizzle s'appliquent avec `pnpm db:migrate`.
 
 ## État réel
 

@@ -55,8 +55,11 @@ Faits vérifiés dans la documentation Vercel (2026-11-01) :
 
 - Plus de serveur, de conteneur, de nginx ni de Postgres à maintenir ; facturation à l'usage.
 - La CI ne publie plus d'images GHCR et n'appelle plus Dokploy ; Vercel déploie depuis Git (preview par
-  PR, production sur `master`). Les Dockerfiles restent le temps de la bascule, pour le retour arrière.
+  PR, production sur `master`). Les Dockerfiles, gardés le temps de la bascule, sont retirés le
+  2026-11-02 avec tout le harnais Docker : la CI juge la sortie Vercel rejouée en local
+  (`apps/web/ci/vercel-local.mjs`) et l'API construite lancée par Node.
 - Le cache CDN remplace la copie périmée servie par nginx quand l'API tombe
   (`stale-while-revalidate` et `stale-if-error`).
 - Les quotas en base ajoutent une écriture par requête limitée ; acceptable au trafic d'un portfolio.
-- Le contrat HTTP reste vérifié par `packages/api-parity`, rejouée contre la preview Vercel.
+- Le contrat HTTP reste vérifié par `packages/api-parity`, rejouée en CI contre l'API construite
+  (`dist/main.js`), devant le Postgres du job.

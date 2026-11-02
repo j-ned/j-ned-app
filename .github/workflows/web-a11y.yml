@@ -18,6 +18,8 @@ jobs:
     defaults:
       run:
         working-directory: apps/web
+    env:
+      CI: 1
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -28,49 +30,28 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
 
-      # Les tests Playwright lisent leurs dépendances dans node_modules, monté dans le conteneur. Tout
-      # le dépôt est monté : les liens de apps/web/node_modules pointent vers le store pnpm de la racine.
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile --filter @portfolio/web
 
-      # Navigateur et bibliothèques système déjà dans l'image officielle, à la version du paquet.
-      - name: Pull Playwright image (background)
-        run: |
-          version=$(node -p "require('./node_modules/@playwright/test/package.json').version")
-          echo "PLAYWRIGHT_IMAGE=mcr.microsoft.com/playwright:v${version}-noble" >> "$GITHUB_ENV"
-          nohup docker pull "mcr.microsoft.com/playwright:v${version}-noble" > /tmp/playwright-pull.log 2>&1 &
+      # Chromium à la version du paquet, avec ses bibliothèques système.
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps --only-shell chromium
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build (production + Vercel output)
+        run: pnpm run build --configuration production && node scripts/build-vercel.mjs
 
-      - name: Build image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/web/Dockerfile
-          push: false
-          load: true
-          tags: ng-portfolio-app:a11y
-          cache-from: type=gha
-
-      - name: Start stack (image + API stub)
-        run: ci/a11y-stack.sh up ng-portfolio-app:a11y
+      - name: Start local stack (Vercel output + API stub)
+        run: ci/local-stack.sh up
 
       - name: Audit axe
-        run: |
-          docker pull -q "$PLAYWRIGHT_IMAGE"
-          docker run --rm --network host --ipc host -e CI=1 \
-            -v "$GITHUB_WORKSPACE:/work" -w /work/apps/web "$PLAYWRIGHT_IMAGE" \
-            node_modules/.bin/playwright test -c e2e/playwright.config.ts
+        run: pnpm a11y
 
-      - name: Container logs
+      - name: Stack logs
         if: failure()
-        run: |
-          docker logs a11y-api-stub || true
-          docker logs a11y-portfolio || true
+        run: cat "$RUNNER_TEMP"/portfolio-local-stack/*.log || true
 
       - name: Upload report
         if: failure()
@@ -82,6 +63,6 @@ jobs:
             apps/web/test-results/
           retention-days: 14
 
-      - name: Stop stack
+      - name: Stop local stack
         if: always()
-        run: ci/a11y-stack.sh down
+        run: ci/local-stack.sh down

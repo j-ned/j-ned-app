@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
-# Test de fumée de l'image : nginx devant Node, doublure de l'API, en-têtes, caches, codes HTTP.
-#   ci/smoke.sh [image]   (défaut : ng-portfolio-app:ci)
+# Test de fumée de la sortie Vercel (`.vercel/output`), rejouée par `ci/vercel-local.mjs` devant la
+# doublure de l'API : table de routes, en-têtes, codes HTTP, rendu serveur. Pile démarrée avant :
+#   ci/local-stack.sh up && ci/smoke.sh; ci/local-stack.sh down
 set -euo pipefail
-image="${1:-ng-portfolio-app:ci}"
-# Doublure de l'API sur un réseau commun : les pages de contenu sont rendues à la requête.
-docker network create portfolio-ci
-docker run -d --rm --name api-stub --network portfolio-ci -v "$PWD/ci/api-stub:/stub:ro" node:22-alpine node /stub/server.mjs
-docker run -d --rm --name portfolio --network portfolio-ci -p 3000:3000 -e API_UPSTREAM=http://api-stub:3000 "$image"
-for i in $(seq 1 30); do
-  if curl -fsS http://127.0.0.1:3000/healthz -o /dev/null; then break; fi
-  sleep 1
-done
+CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 test "$(curl -fsS http://127.0.0.1:3000/healthz)" = "ok"
 curl -fsS http://127.0.0.1:3000/ -o /tmp/index.html
 grep -q '<app-root' /tmp/index.html
@@ -23,13 +16,11 @@ curl -fsS -D /tmp/atelier-headers.txt http://127.0.0.1:3000/atelier/ -o /tmp/ate
 grep -q 'data-testid="workshop-title"' /tmp/atelier.html || { echo "titre absent : /atelier/"; exit 1; }
 grep -q 'data-testid="workshop-tool-card"' /tmp/atelier.html || { echo "carte du guide absente : /atelier/"; exit 1; }
 grep -q 'href="/atelier/decodeur"' /tmp/atelier.html || { echo "carte du décodeur absente : /atelier/"; exit 1; }
-grep -qi '^x-cache-status' /tmp/atelier-headers.txt || { echo "/atelier/ non rendu par Node"; exit 1; }
 # Guide des plaquettes : relayé à Node, la matière de l'URL partagée affiche son tableau dès le HTML serveur
 curl -fsS -D /tmp/guide-headers.txt 'http://127.0.0.1:3000/atelier/plaquettes?matiere=Acier%20t%C3%A9moin' -o /tmp/guide.html
 grep -q 'data-testid="insert-guide-title"' /tmp/guide.html || { echo "titre absent : /atelier/plaquettes"; exit 1; }
 grep -q 'PLAQUETTE-TEMOIN-1' /tmp/guide.html || { echo "tableau absent : /atelier/plaquettes"; exit 1; }
 grep -q '"noseRadius"' /tmp/guide.html || { echo "document /api/workshop-guide absent de l'état de transfert"; exit 1; }
-grep -qi '^x-cache-status' /tmp/guide-headers.txt || { echo "/atelier/plaquettes non rendu par Node"; exit 1; }
 # Une ligne « toutes matières » sans rayon s'affiche sous la matière demandée, avec sa mention
 grep -q 'data-testid="insert-guide-all-materials"' /tmp/guide.html || { echo "ligne toutes matières absente : /atelier/plaquettes"; exit 1; }
 grep -q 'Alésage (ébauche et finition)' /tmp/guide.html || { echo "opération alésage absente : /atelier/plaquettes"; exit 1; }
@@ -42,7 +33,6 @@ grep -q 'data-testid="insert-decoder-result"' /tmp/decoder.html || { echo "déco
 grep -q 'Losange 80°' /tmp/decoder.html || { echo "forme non décodée : /atelier/decodeur"; exit 1; }
 grep -q 'name="code"' /tmp/decoder.html || { echo "champ sans nom : /atelier/decodeur"; exit 1; }
 grep -q '"noseRadius"' /tmp/decoder.html || { echo "document /api/workshop-guide absent de l'état de transfert : /atelier/decodeur"; exit 1; }
-grep -qi '^x-cache-status' /tmp/decoder-headers.txt || { echo "/atelier/decodeur non rendu par Node"; exit 1; }
 grep -q 'rel="canonical" href="https://nedellec-julien.fr/atelier/decodeur"' /tmp/decoder.html || { echo "canonical avec query : /atelier/decodeur"; exit 1; }
 # Code en pouces : refusé avec son motif, jamais décodé
 curl -fsS 'http://127.0.0.1:3000/atelier/decodeur?code=CNMG%20432' -o /tmp/decoder-ansi.html
@@ -72,10 +62,7 @@ done
 # Attributs style rendus au serveur (portrait, délais d'animation) : hachés dans style-src-attr
 curl -fsS http://127.0.0.1:3000/about -o /tmp/about-csp.html
 grep -q "style-src-attr 'unsafe-hashes'" /tmp/about-csp.html
-# Le rendu Node ne tourne pas en root
-node_user=$(docker exec portfolio ps -o user= -o args= | awk '$2 == "node" {print $1}')
-test "$node_user" = "ssr" || { echo "Node lancé par : $node_user"; exit 1; }
-# Slug inconnu : vraie 404 rendue par le serveur, puis servie par le micro-cache
+# Slug inconnu : vraie 404 rendue par le serveur
 for path in /projects/inexistant /blog/inexistant; do
   test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$path")" = "404" || { echo "pas de 404 : $path"; exit 1; }
 done
@@ -85,18 +72,9 @@ for path in /offres /offres/site-vitrine /offre-site-industrie /rendez-vous /ren
 done
 curl -s http://127.0.0.1:3000/offres -o /tmp/gone.html
 grep -q '<app-root' /tmp/gone.html || { echo "corps du 410 sans shell client"; exit 1; }
-# Micro-cache d'une seconde : HIT dans la seconde, rendu neuf ensuite ; /healthz jamais en cache
-curl -fsS -D /tmp/c1.txt -o /dev/null http://127.0.0.1:3000/projects
-curl -fsS -D /tmp/c2.txt -o /dev/null http://127.0.0.1:3000/projects
-grep -qi '^x-cache-status: HIT' /tmp/c2.txt || { echo "pas de HIT"; cat /tmp/c2.txt; exit 1; }
-sleep 2
-curl -fsS -D /tmp/c3.txt -o /dev/null http://127.0.0.1:3000/projects
-grep -qiE '^x-cache-status: (MISS|EXPIRED)' /tmp/c3.txt || { echo "entrée non renouvelée"; cat /tmp/c3.txt; exit 1; }
-curl -fsS -D /tmp/healthz-headers.txt -o /dev/null http://127.0.0.1:3000/healthz
-! grep -qi '^x-cache-status' /tmp/healthz-headers.txt || { echo "/healthz mis en cache"; cat /tmp/healthz-headers.txt; exit 1; }
-# Routes rendues : lecture seule (une écriture ne déclenche aucun rendu)
+# Routes rendues : lecture seule (une écriture ne réveille pas la fonction, 404 comme en production)
 for method in POST DELETE; do
-  test "$(curl -s -o /dev/null -w '%{http_code}' -X "$method" http://127.0.0.1:3000/blog)" = "403" || { echo "$method /blog accepté"; exit 1; }
+  test "$(curl -s -o /dev/null -w '%{http_code}' -X "$method" http://127.0.0.1:3000/blog)" = "404" || { echo "$method /blog accepté"; exit 1; }
 done
 # Sitemap et RSS rendus à la requête depuis l'API, XML bien formé
 curl -fsS -D /tmp/sitemap-headers.txt http://127.0.0.1:3000/sitemap.xml -o /tmp/sitemap.xml
@@ -109,31 +87,23 @@ curl -fsS -D /tmp/rss-headers.txt http://127.0.0.1:3000/rss.xml -o /tmp/rss.xml
 grep -qi '^content-type: application/rss+xml' /tmp/rss-headers.txt
 grep -q '<title>Article témoin A</title>' /tmp/rss.xml
 python3 -c 'import sys, xml.dom.minidom; [xml.dom.minidom.parse(f) for f in sys.argv[1:]]' /tmp/sitemap.xml /tmp/rss.xml
-# API en panne : copie périmée servie (STALE), /healthz toujours vivant
-# rm -f tue tout de suite : docker stop attendrait 10 s que la doublure ignore SIGTERM
-docker rm -f api-stub > /dev/null
-sleep 2
-curl -fsS -D /tmp/stale.txt -o /tmp/stale.html http://127.0.0.1:3000/blog
-grep -qi '^x-cache-status: STALE' /tmp/stale.txt || { echo "pas de copie périmée"; cat /tmp/stale.txt; exit 1; }
-grep -q 'Article témoin A' /tmp/stale.html
+# API en panne : /healthz reste vivant (la copie périmée relève du CDN, `stale-if-error`, hors de portée ici)
+"$CI_DIR/local-stack.sh" stop-stub
 test "$(curl -fsS http://127.0.0.1:3000/healthz)" = "ok"
 # À froid, sans copie ni API : 503, jamais une page vide en 200
 test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/blog/jamais-lu)" = "503"
-docker run -d --rm --name api-stub --network portfolio-ci -v "$PWD/ci/api-stub:/stub:ro" node:22-alpine node /stub/server.mjs
-# Host forcé par nginx : un hôte arbitraire ne change ni le rendu ni le canonical
-curl -fsS -H 'Host: evil.test' http://127.0.0.1:3000/blog -o /tmp/evil.html
+"$CI_DIR/local-stack.sh" restart-stub
+# Hôte forcé par la fonction : un hôte arbitraire ne change ni le rendu ni le canonical
+curl -fsS -H 'Host: evil.test' -H 'X-Forwarded-Host: evil.test' http://127.0.0.1:3000/blog -o /tmp/evil.html
 grep -q 'href="https://nedellec-julien.fr/blog"' /tmp/evil.html
-# Page d'accueil par défaut de l'image nginx : absente de l'image
-curl -s http://127.0.0.1:3000/index.html -o /tmp/default-index.html
-! grep -q 'Welcome to nginx' /tmp/default-index.html || { echo "page par défaut de nginx servie"; exit 1; }
-# HTML servi par nginx (coquille CSR, pages prérendues, 404) : revalidé à chaque visite, sinon le
+# HTML statique (coquille CSR, pages prérendues, 404) : revalidé à chaque visite, sinon le
 # navigateur garde une coquille périmée qui charge l'ancien bundle après un déploiement.
 for path in /login /admin/guide-plaquettes /mentions-legales/ /does-not-exist; do
   html_headers=$(curl -s -D - -o /dev/null "http://127.0.0.1:3000$path")
   grep -qi '^cache-control: no-cache' <<<"$html_headers" || { echo "HTML sans revalidation : $path"; echo "$html_headers"; exit 1; }
   grep -qi '^x-frame-options: deny' <<<"$html_headers" || { echo "en-têtes de sécurité absents : $path"; exit 1; }
 done
-# Une URL inconnue ne réveille pas Node : 404 nginx sur la coquille CSR
+# Une URL inconnue ne réveille pas la fonction : 404 sur la coquille CSR
 test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/wp-login.php)" = "404"
 # Routes client → coquille CSR en 200 ; URL inconnue → coquille CSR en 404 (pas la home)
 test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login)" = "200"
@@ -155,19 +125,18 @@ for url in '/offre-site-industrie?utm_source=x' '/offres/application-metier?utm_
   grep -q ' 410' <<<"${gone%%$'\n'*}" || { echo "pas de 410 : $url"; exit 1; }
   ! grep -qi '^location:' <<<"$gone" || { echo "redirection résiduelle : $url"; exit 1; }
 done
-# Les en-têtes de sécurité tiennent aussi sur les assets (snippet inclus dans la location)
+# Les en-têtes de sécurité tiennent aussi sur les assets
 # -o sort toutes les occurrences de la ligne (HTML minifié) : on garde la première
 asset=$(grep -o 'main-[A-Za-z0-9_-]*\.js' /tmp/index.html)
 asset=${asset%%$'\n'*}
 asset_headers=$(curl -fsS -D - -o /dev/null "http://127.0.0.1:3000/$asset")
 grep -qi 'x-frame-options: deny' <<<"$asset_headers"
-# En-têtes de sécurité posés par nginx (Traefik ne fait que le TLS)
+# En-têtes de sécurité posés par la table de routes
 headers=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/)
 for h in 'strict-transport-security' 'x-content-type-options: nosniff' 'x-frame-options: deny' "content-security-policy: frame-ancestors 'none'" 'referrer-policy' 'permissions-policy'; do
   grep -qi "$h" <<<"$headers" || { echo "en-tête manquant : $h"; exit 1; }
 done
-! grep -qi '^server: nginx/' <<<"$headers" || { echo "version nginx exposée"; echo "$headers"; exit 1; }
-# Polices auto-hébergées servies par nginx avec le bon type (sinon rejetées par le navigateur)
+# Polices auto-hébergées servies avec le bon type (sinon rejetées par le navigateur)
 font=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/fonts/bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2)
 grep -qi 'content-type: font/woff2' <<<"$font" || { echo "police mal servie"; echo "$font"; exit 1; }
 # Polices : nom versionné, cache immuable (seule location ^/fonts/ depuis le retrait des démos)
@@ -187,5 +156,3 @@ for path in /favicon.svg /icons/sprite.svg; do
   grep -qi 'cache-control: .*must-revalidate' <<<"$mutable_headers" || { echo "fichier non empreinté sans revalidation : $path"; echo "$mutable_headers"; exit 1; }
   grep -qi 'x-frame-options: deny' <<<"$mutable_headers" || { echo "en-têtes de sécurité absents : $path"; echo "$mutable_headers"; exit 1; }
 done
-docker rm -f portfolio api-stub > /dev/null
-docker network rm portfolio-ci

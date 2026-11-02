@@ -140,11 +140,11 @@
   triangulation TDD ; `fixture.componentRef.setInput()` pour les inputs ;
   `TestBed.overrideComponent` > `configureTestingModule`.
 - **Projet de test visuel** (DOM réel, navigateur) : `e2e/a11y` — Playwright 1.63 + `@axe-core/playwright`
-  4.13 (versions exactes), Chromium *headless shell*, contre l'image Docker servie devant la doublure
-  `ci/api-stub` (ADR-0025). Audit WCAG 2.0/2.1/2.2 A et AA, zéro violation, sans exception ; pages
+  4.13 (versions exactes), Chromium *headless shell*, contre la sortie Vercel rejouée par
+  `ci/vercel-local.mjs` devant la doublure `ci/api-stub` (ADR-0025, ADR-0036). Audit WCAG 2.0/2.1/2.2 A et AA, zéro violation, sans exception ; pages
   publiques, états interactifs et pages admin avec données, clair et sombre. Commandes :
-  `docker build -t ng-portfolio-app:a11y . && ci/a11y-stack.sh up`, puis `pnpm a11y` (typage :
-  `pnpm a11y:typecheck`), `ci/a11y-stack.sh down`. Repères de page en `data-testid` uniquement ; pas
+  build puis `node scripts/build-vercel.mjs && ci/local-stack.sh up`, puis `pnpm a11y` (typage :
+  `pnpm a11y:typecheck`), `ci/local-stack.sh down`. Repères de page en `data-testid` uniquement ; pas
   d'axe dans Vitest (happy-dom ne calcule ni contraste ni mise en page).
 - **Glossaire domaine / builders** : convention **Builder + PageModel** pour la
   lisibilité ; agrégats récurrents candidats (`User`, `SiteStats`,
@@ -199,12 +199,11 @@
   `pnpm dlx knip` (dead code) ;
   `pnpm dlx depcheck` (deps inutilisées) ;
   `pnpm audit --prod` (CVEs). Dégradation propre si un outil échoue.
-- **CI/CD** (dimension 10, **GitHub Actions uniquement**) : `.github/workflows/ci.yml`
-  (depuis le 2026-09-08), déclenché sur `push` master et `pull_request`. Job `verify` :
-  `pnpm install --frozen-lockfile` → `lint` → `test` → `build --configuration production`
-  → vérification du prerender (≥ 5 `index.html`). Job `docker` : build de l'image via le
-  Dockerfile du repo (réplique exacte de Dokploy) + smoke test HTTP. Job `a11y` (bloquant
-  dans le workflow ; à rendre requis par le propriétaire dans les réglages de branche de `master`) :
-  même image, pile `ci/a11y-stack.sh`, audit axe `pnpm a11y`, rapport en artefact en cas d'échec.
-  Déploiement : Dokploy rejoue le Dockerfile sur `master` ; nginx sert les fichiers et les pages
-  prérendues, et relaie à Node les pages de contenu rendues à la requête (ADR-0024).
+- **CI/CD** (dimension 10, **GitHub Actions uniquement**, sans conteneur) : `.github/workflows/web-ci.yml`,
+  déclenché sur `push` master et `pull_request` (hors specs, tasks, docs et Markdown).
+  `pnpm install --frozen-lockfile` → `lint` → `format:check` → `icons:check` → `a11y:typecheck`
+  → `test` → `build --configuration production` + `scripts/build-vercel.mjs` → `ci/verify-prerender.sh`
+  → smoke test HTTP (`ci/smoke.sh`) sur la sortie Vercel rejouée par `ci/vercel-local.mjs`.
+  `web-a11y.yml` (chaque lundi et à la demande) : même pile, audit axe `pnpm a11y`, rapport en
+  artefact en cas d'échec. Déploiement : Vercel depuis Git, preview par PR, production sur `master`
+  (ADR-0036) ; la CI ne publie rien.
