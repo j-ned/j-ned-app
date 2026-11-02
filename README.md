@@ -17,7 +17,7 @@ Angular · Hono · PostgreSQL · Vercel · sans cookie ni tracker tiers
 
 <p align="center">
   <img src="apps/web/docs/screenshots/home.webp" alt="Page d'accueil du portfolio" width="49%" />
-  <img src="apps/web/docs/screenshots/projects.webp" alt="Liste des projets filtrable par catégorie" width="49%" />
+  <img src="apps/web/docs/screenshots/projects.webp" alt="Réalisations classées par nature : en production, démo, script" width="49%" />
   <img src="apps/web/docs/screenshots/blog.webp" alt="Liste des articles du blog avec leurs tags" width="49%" />
   <img src="apps/web/docs/screenshots/about.webp" alt="Page à propos : parcours et stack" width="49%" />
 </p>
