@@ -1,14 +1,15 @@
 import { createHash, createHmac } from 'node:crypto';
-import { resolve } from 'node:path';
 import { NotFoundException } from '../common/http-errors';
 import { Logger } from '../common/logger';
 import { desc, eq, sql } from 'drizzle-orm';
 import { AppConfigService } from '../config/app-config.service';
 import type { Database } from '../database/drizzle.types';
 import { contactMessages, type ContactMessage } from '../database/schema';
-import { OWNER_EMAIL } from '../mailer/mailer.constants';
+import {
+  CONTACT_NOTIFICATION_TEMPLATE,
+  OWNER_EMAIL,
+} from '../mailer/mailer.constants';
 import { MailerService } from '../mailer/mailer.service';
-import { loadTemplate, renderTemplate } from '../mailer/mailer.utils';
 import {
   type PaginatedResult,
   type PaginationParams,
@@ -22,7 +23,6 @@ export type ContactSender = { ip: string; userAgent: string };
 
 export class ContactService {
   private readonly logger = new Logger(ContactService.name);
-  private static readonly TEMPLATES_DIR = resolve(__dirname, 'mail-templates');
 
   /**
    * Clé de l'empreinte d'expéditeur, dérivée du secret JWT et distincte de celle de l'analytics.
@@ -136,19 +136,21 @@ export class ContactService {
    * reprenant un nom ou un sujet piégé (une URL en texte brut reste cliquable chez le client).
    */
   private async sendNotificationMail(msg: ContactMessage): Promise<void> {
-    const template = loadTemplate(
-      resolve(ContactService.TEMPLATES_DIR, 'contact-notification.html'),
-    );
     await this.mailer.sendMail({
       to: OWNER_EMAIL,
       subject: `Nouveau message de contact: ${msg.subject}`,
-      html: renderTemplate(template, {
-        name: msg.name,
-        email: msg.email,
-        subject: msg.subject,
-        message: msg.message,
-        year: String(new Date().getFullYear()),
-      }),
+      // « Répondre » écrit au visiteur ; aucun mail ne part vers l'adresse saisie.
+      replyTo: msg.email,
+      template: {
+        id: CONTACT_NOTIFICATION_TEMPLATE,
+        variables: {
+          NAME: msg.name,
+          SENDER_EMAIL: msg.email,
+          SUBJECT: msg.subject,
+          MESSAGE: msg.message,
+          YEAR: String(new Date().getFullYear()),
+        },
+      },
     });
   }
 }

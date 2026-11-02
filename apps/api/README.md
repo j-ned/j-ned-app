@@ -194,7 +194,7 @@ Liste réelle (`package.json`) - pas de script `s3:*` (démarrer MinIO à la mai
 | `pnpm start`                                     | `node dist/main.js` (nécessite `pnpm build`)                                                                               |
 | `pnpm start:dev` / `pnpm dev`                    | `tsc --watch` + `node --watch` sur `dist/` (`dev` déclenche le hook `predev`, voir Quickstart)                             |
 | `pnpm start:prod`                                | `node dist/main` (nécessite `pnpm build` avant)                                                                            |
-| `pnpm build`                                     | `tsc` → `dist/`, puis copie des gabarits d'e-mail (`src/copy-assets.ts`)                                                   |
+| `pnpm build`                                     | `tsc` → `dist/`                                                                                                            |
 | `pnpm lint` / `pnpm format`                      | ESLint (`--fix`) / Prettier                                                                                                |
 | `pnpm lint:check` / `format:check` / `typecheck` | Vérifications sans écriture : ESLint, Prettier, `tsc --noEmit` (specs comprises). Ce que joue la CI                        |
 | `pnpm test` / `test:watch` / `test:cov`          | Jest (sous `--experimental-vm-modules`, cf. Tests)                                                                         |
@@ -291,9 +291,9 @@ Envoi par l'API HTTP de [Resend](https://resend.com) (`fetch`, sans SDK ni SMTP)
 **Dev local** : une clé Resend dans `.env.local` ; les mails partent réellement (vers `OWNER_EMAIL`).
 **Prod** : `RESEND_API_KEY` et `MAIL_FROM` dans les variables d'env Vercel.
 
-**API (`MailerService`)** : `sendMail({ to, subject, html }): Promise<void>` - 3 tentatives, backoff linéaire 1s/2s, même `Idempotency-Key` d'une tentative à l'autre (pas de doublon), throw l'erreur finale après épuisement (loggée avec stack).
+**API (`MailerService`)** : `sendMail(...): Promise<void>` - 3 tentatives, backoff linéaire 1s/2s, même `Idempotency-Key` d'une tentative à l'autre (pas de doublon), throw l'erreur finale après épuisement (loggée avec stack).
 
-**Helpers** (`src/mailer/mailer.utils.ts`) : `loadTemplate(absolutePath)` (lecture fichier), `renderTemplate(html, vars)` (remplacement `{{var}}` naïf, pas d'échappement HTML - les templates sont internes, pas de contenu utilisateur non filtré injecté tel quel).
+**Templates** : hébergés dans Resend (dashboard → Templates), désignés par leur alias. `sendMail({ to, subject, template: { id, variables }, replyTo? })` échappe chaque variable (`escapeHtml`, `src/mailer/mailer.utils.ts`) avant l'envoi : Resend insère les `{{{KEY}}}` telles quelles, et les valeurs viennent du formulaire public.
 
 ## Contact
 
@@ -316,7 +316,7 @@ Formulaire de contact public + gestion admin des messages.
 
 **Destinataire admin codé en dur** : `OWNER_EMAIL = 'contact@nedellec-julien.fr'` dans `src/mailer/mailer.constants.ts` (utilisé par le contact) - pas de variable d'env dédiée. `MAIL_FROM` reste l'expéditeur (rôle distinct).
 
-**Templates** : `src/contact/mail-templates/contact-notification.html` (admin) et `contact-confirmation.html` (visiteur). Variables : `{{name}}`, `{{email}}`, `{{subject}}`, `{{message}}`.
+**Template** : `contact-notification` dans Resend (alias dans `CONTACT_NOTIFICATION_TEMPLATE`, `src/mailer/mailer.constants.ts`). Variables : `NAME`, `SENDER_EMAIL`, `SUBJECT`, `MESSAGE`, `YEAR` (`EMAIL` est réservé par Resend). `reply_to` = adresse du visiteur : « Répondre » lui écrit directement.
 
 ## CV
 

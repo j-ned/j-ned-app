@@ -1,15 +1,22 @@
 import { randomUUID } from 'node:crypto';
 import { Logger } from '../common/logger';
 import { AppConfigService } from '../config/app-config.service';
-import { maskEmail } from './mailer.utils';
+import { escapeHtml, maskEmail } from './mailer.utils';
 
 const MAX_RETRIES = 3;
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
 
+/** Template publié dans Resend, désigné par son alias, et ses variables (`{{{KEY}}}` dans le HTML). */
+export type MailTemplate = {
+  id: string;
+  variables: Record<string, string>;
+};
+
 export type SendMailOptions = {
   to: string;
   subject: string;
-  html: string;
+  template: MailTemplate;
+  replyTo?: string;
 };
 
 const maskRecipientsIn = (text: string, recipients: string): string =>
@@ -31,7 +38,20 @@ export class MailerService {
     private readonly fetchFn: typeof fetch = fetch,
   ) {}
 
-  async sendMail({ to, subject, html }: SendMailOptions): Promise<void> {
+  async sendMail({
+    to,
+    subject,
+    template,
+    replyTo,
+  }: SendMailOptions): Promise<void> {
+    // Resend insère les variables `{{{KEY}}}` telles quelles : elles viennent du formulaire public,
+    // sans échappement un visiteur injecte un lien de phishing ou un pixel de tracking dans le mail.
+    const variables = Object.fromEntries(
+      Object.entries(template.variables).map(([key, value]) => [
+        key,
+        escapeHtml(value),
+      ]),
+    );
     // Même clé pour toutes les tentatives : une requête aboutie dont la réponse s'est perdue
     // n'envoie pas un second mail au retry.
     const idempotencyKey = randomUUID();
@@ -45,7 +65,13 @@ export class MailerService {
             'Content-Type': 'application/json',
             'Idempotency-Key': idempotencyKey,
           },
-          body: JSON.stringify({ from: this.cfg.mailFrom, to, subject, html }),
+          body: JSON.stringify({
+            from: this.cfg.mailFrom,
+            to,
+            subject,
+            ...(replyTo && { reply_to: replyTo }),
+            template: { id: template.id, variables },
+          }),
         });
         if (!response.ok) {
           throw new Error(
