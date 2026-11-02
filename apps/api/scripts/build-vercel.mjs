@@ -1,7 +1,7 @@
-// Fonction Vercel du service « api » (ADR-0036), construite après `pnpm build` (tsc) :
-// - un seul fichier, `dist/index.js` (celui que Vercel exécute), bundlé par esbuild depuis la sortie de tsc : les dépendances
-//   ESM (otplib → @scure/base, file-type…) sont intégrées, là où le chargeur de Vercel refuse un `require()` d'ESM
-//   (la validation, en zod, ne dépend plus de métadonnées de décorateurs émises par tsc) ;
+// Fonction Vercel du service « api » (ADR-0036), construite après `pnpm build` (tsc, qui vérifie les types) :
+// - un seul fichier, `dist/index.js` (celui que Vercel exécute), bundlé par esbuild depuis les sources TypeScript :
+//   les imports ESM des sources et des dépendances sont élagués (une sortie CommonJS de tsc ne l'était pas), et
+//   le résultat reste en CommonJS, que le chargeur de Vercel `require()` sans souci d'ESM ;
 // - à côté, un `node_modules` réduit aux seuls modules natifs (argon2, sharp), aux versions du lockfile :
 //   Vercel ne déploie que `dist/`, sans les liens symboliques de pnpm.
 import { execFileSync } from 'node:child_process';
@@ -22,10 +22,15 @@ const DIST = join(ROOT, 'dist');
 const NATIVE = ['argon2', 'sharp'];
 
 await build({
-  entryPoints: [join(DIST, 'index.js')],
+  entryPoints: [join(ROOT, 'src', 'index.ts')],
   outfile: join(DIST, 'index.js'),
   allowOverwrite: true,
   bundle: true,
+  minify: true,
+  // Les journaux nomment leur contexte par `Classe.name` : la minification ne doit pas le renommer.
+  keepNames: true,
+  // Variantes ESM des dépendances (`module`, condition `import`) : seules elles s'élaguent.
+  mainFields: ['module', 'main'],
   platform: 'node',
   format: 'cjs',
   target: 'node22',
