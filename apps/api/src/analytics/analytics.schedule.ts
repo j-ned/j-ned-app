@@ -1,9 +1,11 @@
 import * as Sentry from '@sentry/node';
-import { Cron } from 'croner';
 import { Logger } from '../common/logger';
 import type { AnalyticsAggregatorService } from './analytics-aggregator.service';
 
-/** Tous les jours à minuit UTC : agrège la veille, rattrape les jours non mesurés, purge le brut. */
+/**
+ * Tous les jours à minuit UTC (cron `/api/cron/daily` de `vercel.json`) : agrège la veille, rattrape
+ * les jours non mesurés, purge le brut. En local, appeler la route avec `CRON_SECRET`.
+ */
 export const DAILY_ROLLUP_PATTERN = '0 0 * * *';
 export const DAILY_ROLLUP_MONITOR = 'analytics-aggregate-yesterday';
 
@@ -33,20 +35,4 @@ export async function runDailyRollup(
       error instanceof Error ? error.stack : undefined,
     );
   }
-}
-
-/** Démarre le rollup quotidien ; `stop()` l'arrête (à l'arrêt de l'API). */
-export function scheduleDailyRollup(aggregator: AnalyticsAggregatorService): {
-  stop(): void;
-  nextRun(): Date | null;
-} {
-  const job = new Cron(
-    DAILY_ROLLUP_PATTERN,
-    { name: DAILY_ROLLUP_MONITOR, timezone: 'UTC', protect: true },
-    () => runDailyRollup(aggregator),
-  );
-  return {
-    stop: () => job.stop(),
-    nextRun: () => job.nextRun(),
-  };
 }

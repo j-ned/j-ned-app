@@ -12,7 +12,7 @@ describe('STATIC_HERO', () => {
 
   it('supports the headline with the journey, then what the site is about', () => {
     expect(STATIC_HERO.lead).toBe(
-      `${SITE_IDENTITY.journey} Ici, je raconte ce que je construis avec Angular, NestJS et PostgreSQL, et comment je l'héberge chez moi\u00a0: le code, les choix, et les erreurs en chemin.`,
+      `${SITE_IDENTITY.journey} Ici, je raconte ce que je construis avec Angular, Hono et PostgreSQL, et comment je le mets en ligne\u00a0: le code, les choix, et les erreurs en chemin.`,
     );
   });
 

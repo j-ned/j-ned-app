@@ -1,9 +1,12 @@
-import 'dotenv/config';
+import { existsSync } from 'node:fs';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import argon2 from 'argon2';
 import { eq, sql } from 'drizzle-orm';
 import { users } from '../schema';
+
+// `.env` local facultatif (absent sur Vercel), lu par Node sans dépendance.
+if (existsSync('.env')) process.loadEnvFile();
 
 async function main() {
   const url = process.env.DATABASE_URL;

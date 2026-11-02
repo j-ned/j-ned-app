@@ -10,7 +10,6 @@ overrides:
   source-map-js@<1.2.2: ^1.2.2
   beasties@<0.5.5: 0.5.5
   js-yaml: '>=4.3.1'
-  qs: '>=6.16.0'
   '@esbuild-kit/core-utils>esbuild': ^0.25.0
   handlebars@<4.7.10: ^4.7.10
 
@@ -48,12 +47,6 @@ importers:
       class-validator:
         specifier: ^0.15.1
         version: 0.15.1
-      croner:
-        specifier: ^11.0.0
-        version: 11.0.0
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11
@@ -3938,10 +3931,6 @@ packages:
 
   create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
-
-  croner@11.0.0:
-    resolution: {integrity: sha512-T17ADjdttrVToyzLpLq9Xb9xzcMwpQ/M3Qs9szhh0MVNTbv6NWQ9OFYa2qlzPYXFMn+uoDlnW1IpIv6cAvFtyA==}
-    engines: {node: '>=18.0'}
 
   cross-env@10.1.0:
     resolution: {integrity: sha512-GsYosgnACZTADcmEyJctkJIoqAhHjttw7RsFrVoJNXbsWWqaq6Ym+7kZjq6mS45O0jij6vtiReppKQEtqWy6Dw==}
@@ -10143,8 +10132,6 @@ snapshots:
 
   create-require@1.1.1:
     optional: true
-
-  croner@11.0.0: {}
 
   cross-env@10.1.0:
     dependencies:

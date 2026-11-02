@@ -23,8 +23,8 @@ describe('home hero copy', () => {
       rows: [
         { label: 'Métier', value: "Tourneur CN de haute précision, dans l'aéronautique" },
         { label: 'Code', value: 'Depuis 2025, titre Développeur Web et Web Mobile' },
-        { label: 'Stack', value: 'Angular, NestJS, TypeScript, PostgreSQL' },
-        { label: 'Hébergement', value: 'Auto-hébergé, Docker et Traefik' },
+        { label: 'Stack', value: 'Angular, Hono, TypeScript, PostgreSQL' },
+        { label: 'Hébergement', value: 'Vercel, PostgreSQL sur Neon' },
         {
           label: 'Règle',
           value: 'Une pièce hors tolérance ne part pas, un code non testé non plus',

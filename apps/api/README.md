@@ -34,9 +34,9 @@ Pas de framework d'injection : `src/main.ts` lit la configuration, ouvre les con
 - **`src/services.ts`** - `createServices()` : racine de composition, chaque service reçoit ses dépendances par son constructeur (une instance chacun).
 - **`src/app.ts`** - `createApp()` : middlewares globaux (log des requêtes, en-têtes de sécurité, CORS, contrôle d'origine), puis les routes de chaque module (`<module>/<module>.routes.ts`, une fabrique `xxxRoutes(services…, requireAuth)` par module), erreur et 404 au format JSON.
 - **`src/common/`** - briques HTTP partagées : `http.ts` (corps JSON validé, query, UUID, fichiers envoyés, IP du visiteur), `validation.ts` (DTO class-validator), `throttle.ts` (quotas), `cross-origin.ts` (CSRF), `error-handler.ts`, `logger.ts`, `http-errors.ts`.
-- **Tâche planifiée** - `src/analytics/analytics.schedule.ts` : rollup quotidien à 00:00 UTC (`croner`), arrêté avec le serveur.
+- **Tâche quotidienne** - `GET /api/cron/daily` (Vercel Cron, `vercel.json`, 00:00 UTC) : rollup analytics (`src/analytics/analytics.schedule.ts`) puis purge des quotas. En local : `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/daily`.
 
-Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis la tâche planifiée, le pool Postgres et S3 sont fermés.
+Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis le pool Postgres et S3 sont fermés.
 
 ## Configuration
 

@@ -1,5 +1,8 @@
+import { existsSync } from 'node:fs';
 import { defineConfig } from 'drizzle-kit';
-import 'dotenv/config';
+
+// `.env` local facultatif (absent sur Vercel), lu par Node sans dépendance.
+if (existsSync('.env')) process.loadEnvFile();
 
 export default defineConfig({
   out: './drizzle',

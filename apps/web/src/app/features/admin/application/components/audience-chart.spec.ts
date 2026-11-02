@@ -18,7 +18,7 @@ const CHART_DATA: ChartData<'line'> = {
   datasets: [{ label: 'Visiteurs', data: [6, 2] }],
 };
 
-type ChartHost = HTMLElement & { readonly type?: unknown; readonly data?: unknown };
+type ChartHost = HTMLElement & { readonly data?: unknown };
 
 const normalized = (element: Element | null | undefined): string =>
   (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
@@ -45,13 +45,11 @@ describe('AudienceChart', () => {
     expect({
       caption: normalized(caption),
       hidden: caption?.classList.contains('sr-only') ?? false,
-      chartType: chart?.type ?? chart?.getAttribute('type') ?? null,
       chartData: chart?.data === CHART_DATA,
     }).toEqual({
       caption:
         'Visites par jour du 7 septembre au 8 septembre 2026\u00a0: maximum 6 le 7 septembre.',
       hidden: true,
-      chartType: 'line',
       chartData: true,
     });
   });

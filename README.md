@@ -13,7 +13,7 @@ d'origine (`ng-portfolio-app`, `nest-portfolio-app`).
 
 ```bash
 pnpm install          # un seul lockfile pour tout le workspace
-pnpm dev:api          # Postgres + Mailpit (podman compose), puis l'API en watch sur :3000
+pnpm dev:api          # Postgres (podman compose), puis l'API en watch sur :3000
 pnpm dev:web          # ng serve, /api relayé vers :3000 (apps/web/proxy.conf.cjs)
 ```
 

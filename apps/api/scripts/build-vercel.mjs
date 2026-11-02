@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 import {
   cpSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -65,6 +66,14 @@ cpSync(join(runtime, 'node_modules'), join(DIST, 'node_modules'), {
   recursive: true,
 });
 rmSync(runtime, { recursive: true, force: true });
+
+// Les fonctions Vercel tournent en linux-x64 : les binaires argon2 des autres plateformes (~750 Ko) partent.
+const prebuilds = join(DIST, 'node_modules', 'argon2', 'prebuilds');
+for (const platform of readdirSync(prebuilds)) {
+  if (platform !== 'linux-x64') {
+    rmSync(join(prebuilds, platform), { recursive: true, force: true });
+  }
+}
 
 console.log(
   `dist/index.js (bundle) + node_modules (${Object.entries(versions)

@@ -2,7 +2,11 @@ import type { IncomingMessage } from 'node:http';
 import type * as SentryModule from '@sentry/node';
 import type * as BeforeSendModule from './common/sentry-before-send';
 
-jest.mock('dotenv/config', () => ({}));
+// Un `.env` local ne doit pas fausser les variables posées par les tests.
+jest.mock('node:fs', () => ({
+  ...jest.requireActual<typeof import('node:fs')>('node:fs'),
+  existsSync: () => false,
+}));
 jest.mock('@sentry/node', () => ({
   init: jest.fn(),
   httpIntegration: jest.fn(() => ({ name: 'Http' })),

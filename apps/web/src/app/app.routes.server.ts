@@ -1,7 +1,7 @@
 import { RenderMode, type ServerRoute } from '@angular/ssr';
 
-// Toute route `Server` ou `Client` ajoutée ici doit l'être aussi dans une location nginx (Dockerfile) :
-// proxy vers Node ou coquille CSR. Sinon nginx répond 404 aux chemins qu'il ne connaît pas.
+// Toute route `Server` ou `Client` ajoutée ici doit l'être aussi dans la table de routes de
+// `scripts/build-vercel.mjs` (fonction de rendu ou coquille CSR), sinon Vercel répond 404.
 export const serverRoutes: ServerRoute[] = [
   // Contenu lu dans l'API : rendu à chaque requête, une écriture admin est visible au rechargement
   { path: '', renderMode: RenderMode.Server },

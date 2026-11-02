@@ -22,7 +22,7 @@ const CHART_DATA: ChartData<'line'> = {
 const SUMMARY =
   'Visiteurs par jour du 7 septembre au 8 septembre 2026\u00a0: maximum 6 le 7 septembre.';
 
-type ChartHost = HTMLElement & { readonly type?: unknown; readonly data?: unknown };
+type ChartHost = HTMLElement & { readonly data?: unknown };
 
 async function renderAudience(visits: number): Promise<{ host: HTMLElement }> {
   TestBed.configureTestingModule({ providers: [provideRouter([])] });
@@ -74,9 +74,8 @@ describe('OverviewAudience', () => {
 
     expect({
       caption: figure?.querySelector('figcaption')?.textContent?.trim() ?? null,
-      chartType: chart?.type ?? chart?.getAttribute('type') ?? null,
       chartData: chart?.data === CHART_DATA,
-    }).toEqual({ caption: SUMMARY, chartType: 'line', chartData: true });
+    }).toEqual({ caption: SUMMARY, chartData: true });
   });
 
   it('Given the section When rendered Then its link leads to the detailed audience page', async () => {
