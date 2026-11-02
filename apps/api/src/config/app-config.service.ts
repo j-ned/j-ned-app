@@ -13,9 +13,6 @@ export class AppConfigService {
   get isDevelopment() {
     return this.nodeEnv === 'development';
   }
-  get isTest() {
-    return this.nodeEnv === 'test';
-  }
   get port() {
     return this.env.PORT;
   }
@@ -31,12 +28,6 @@ export class AppConfigService {
   }
   get jwtExpiresIn() {
     return this.env.JWT_EXPIRES_IN;
-  }
-  get adminEmail() {
-    return this.env.ADMIN_EMAIL;
-  }
-  get adminInitialPassword() {
-    return this.env.ADMIN_INITIAL_PASSWORD;
   }
   get totpAppName() {
     return this.env.TOTP_APP_NAME;

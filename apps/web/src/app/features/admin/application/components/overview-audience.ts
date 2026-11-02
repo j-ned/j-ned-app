@@ -39,7 +39,7 @@ import { AdminSectionHead } from './admin-section-head';
           </div>
           @if (chartData(); as data) {
             <figure class="min-w-0">
-              <app-chart type="line" [data]="data" [options]="chartOptions()" height="7.5rem" />
+              <app-chart [data]="data" [options]="chartOptions()" height="7.5rem" />
               <figcaption class="sr-only">{{ chartSummary() }}</figcaption>
             </figure>
           }

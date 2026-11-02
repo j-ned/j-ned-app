@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Chart, type ChartData } from 'chart.js/auto';
+import { Chart, type ChartData } from 'chart.js';
 import { AppChart } from './chart';
 
 type Ctx2D = CanvasRenderingContext2D;
@@ -64,12 +64,10 @@ describe('AppChart', () => {
   });
 
   async function renderChart(props: {
-    type: 'line' | 'doughnut';
     data: ChartData;
     height?: string;
   }): Promise<ComponentFixture<AppChart>> {
     const fixture = TestBed.createComponent(AppChart);
-    fixture.componentRef.setInput('type', props.type);
     fixture.componentRef.setInput('data', props.data);
     if (props.height) fixture.componentRef.setInput('height', props.height);
     fixture.detectChanges();
@@ -77,8 +75,8 @@ describe('AppChart', () => {
     return fixture;
   }
 
-  it('creates a Chart with the given type and data', async () => {
-    const fixture = await renderChart({ type: 'line', data: lineData() });
+  it('creates a line Chart with the given data', async () => {
+    const fixture = await renderChart({ data: lineData() });
     const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
     const chart = Chart.getChart(canvas);
     expect(chart).toBeDefined();
@@ -87,7 +85,7 @@ describe('AppChart', () => {
   });
 
   it('destroys the previous Chart when data changes', async () => {
-    const fixture = await renderChart({ type: 'line', data: lineData() });
+    const fixture = await renderChart({ data: lineData() });
     const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
     const firstChart = Chart.getChart(canvas)!;
     const destroySpy = vi.spyOn(firstChart, 'destroy');
@@ -103,7 +101,7 @@ describe('AppChart', () => {
   });
 
   it('destroys the Chart on ngOnDestroy', async () => {
-    const fixture = await renderChart({ type: 'doughnut', data: lineData() });
+    const fixture = await renderChart({ data: lineData() });
     const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
     const chart = Chart.getChart(canvas)!;
     const destroySpy = vi.spyOn(chart, 'destroy');
@@ -117,7 +115,6 @@ describe('AppChart', () => {
     // responsive: false prevents Chart.js from overwriting canvas.style.height
     // (Chart._resize forcibly sets style.height to '0px' in jsdom where layout is unavailable)
     const fixture = TestBed.createComponent(AppChart);
-    fixture.componentRef.setInput('type', 'line');
     fixture.componentRef.setInput('data', lineData());
     fixture.componentRef.setInput('height', '15rem');
     fixture.componentRef.setInput('options', { responsive: false });

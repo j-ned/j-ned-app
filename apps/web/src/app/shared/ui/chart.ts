@@ -7,7 +7,31 @@ import {
   input,
   viewChild,
 } from '@angular/core';
-import { Chart, type ChartData, type ChartOptions, type ChartType } from 'chart.js/auto';
+import {
+  CategoryScale,
+  Chart,
+  Filler,
+  Legend,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
+  Tooltip,
+  type ChartData,
+  type ChartOptions,
+} from 'chart.js';
+
+// Courbes seules : `chart.js/auto` enregistrerait tous les types de graphique (environ 11 kB gzip de plus).
+Chart.register(
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Filler,
+  Tooltip,
+  Legend,
+);
 
 @Component({
   selector: 'app-chart',
@@ -16,7 +40,6 @@ import { Chart, type ChartData, type ChartOptions, type ChartType } from 'chart.
   template: `<canvas #canvas [style.height]="height()"></canvas>`,
 })
 export class AppChart implements OnDestroy {
-  readonly type = input.required<ChartType>();
   readonly data = input.required<ChartData>();
   readonly options = input<ChartOptions>();
   readonly height = input<string>('20rem');
@@ -27,13 +50,12 @@ export class AppChart implements OnDestroy {
   constructor() {
     afterRenderEffect({
       write: () => {
-        const type = this.type();
         const data = this.data();
         const options = this.options();
         const el = this.canvasRef().nativeElement;
 
         this.chart?.destroy();
-        this.chart = new Chart(el, { type, data, options });
+        this.chart = new Chart(el, { type: 'line', data, options });
       },
     });
   }

@@ -19,6 +19,5 @@ overrides:
   beasties@<0.5.5: 0.5.5
   # api
   js-yaml: ">=4.3.1"
-  qs: ">=6.16.0"
   "@esbuild-kit/core-utils>esbuild": ^0.25.0
   handlebars@<4.7.10: ^4.7.10

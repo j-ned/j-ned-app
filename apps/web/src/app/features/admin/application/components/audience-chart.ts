@@ -12,7 +12,7 @@ import { chartSummary } from '../overview-view';
   host: { class: 'block' },
   template: `
     <figure class="mt-5 min-w-0">
-      <app-chart type="line" [data]="data()" [options]="options()" height="15rem" />
+      <app-chart [data]="data()" [options]="options()" height="15rem" />
       <figcaption class="sr-only">{{ caption() }}</figcaption>
     </figure>
     <details data-testid="audience-chart-data" class="mt-2">

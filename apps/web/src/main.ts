@@ -14,7 +14,7 @@ type RuntimeConfig = {
   };
 };
 
-// Même origine partout : relais nginx en production, `proxy.conf.cjs` sous `ng serve`.
+// Même origine partout : réécriture `/api` de Vercel en production, `proxy.conf.cjs` sous `ng serve`.
 const API_BASE = '/api';
 
 async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<void> {
@@ -31,7 +31,7 @@ async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<v
   if (!dsn) return;
 
   const isProduction = environment === 'production';
-  const sentry = await import('@sentry/angular');
+  const sentry = await import('./app/core/monitoring/sentry-sdk');
 
   sentry.init({
     dsn,

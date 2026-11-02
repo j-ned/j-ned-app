@@ -35,7 +35,7 @@ export const envSchema = z.object({
    * Origines du site, séparées par des virgules : autorisées par CORS (requêtes credentials) et
    * par la protection CSRF (`CrossOriginGuard`) tant que le site appelle l'API sur son sous-domaine,
    * et reconnues comme référents internes par la mesure d'audience.
-   * Prod: `https://nedellec-julien.fr` (le domaine `www` redirige vers l'apex côté Traefik, il n'a plus besoin d'être listé ici).
+   * Prod: `https://nedellec-julien.fr` (le domaine `www` redirige en 308 vers l'apex côté Vercel, il n'a pas besoin d'être listé ici).
    * Dev local: `http://localhost:4200` (défaut).
    */
   CORS_ORIGINS: z

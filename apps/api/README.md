@@ -34,9 +34,9 @@ Pas de framework d'injection : `src/main.ts` lit la configuration, ouvre les con
 - **`src/services.ts`** - `createServices()` : racine de composition, chaque service reçoit ses dépendances par son constructeur (une instance chacun).
 - **`src/app.ts`** - `createApp()` : middlewares globaux (log des requêtes, en-têtes de sécurité, CORS, contrôle d'origine), puis les routes de chaque module (`<module>/<module>.routes.ts`, une fabrique `xxxRoutes(services…, requireAuth)` par module), erreur et 404 au format JSON.
 - **`src/common/`** - briques HTTP partagées : `http.ts` (corps JSON validé, query, UUID, fichiers envoyés, IP du visiteur), `validation.ts` (DTO class-validator), `throttle.ts` (quotas), `cross-origin.ts` (CSRF), `error-handler.ts`, `logger.ts`, `http-errors.ts`.
-- **Tâche planifiée** - `src/analytics/analytics.schedule.ts` : rollup quotidien à 00:00 UTC (`croner`), arrêté avec le serveur.
+- **Tâche quotidienne** - `GET /api/cron/daily` (Vercel Cron, `vercel.json`, 00:00 UTC) : rollup analytics (`src/analytics/analytics.schedule.ts`) puis purge des quotas. En local : `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/daily`.
 
-Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis la tâche planifiée, le pool Postgres et S3 sont fermés.
+Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis le pool Postgres et S3 sont fermés.
 
 ## Configuration
 
@@ -203,7 +203,6 @@ Liste réelle (`package.json`) - pas de script `s3:*` (démarrer MinIO à la mai
 | `pnpm db:seed`                                   | Crée l'admin (idempotent, `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`)                                                          |
 | `pnpm db:change-password <email> <newPassword>`  | Change le mot de passe d'un user directement en DB (newPassword 12+ chars) - utile en cas de perte d'accès, bypass l'API   |
 | `pnpm db:reset`                                  | Wipe volume + recrée + migrate + seed (dev only)                                                                           |
-| `pnpm sentry:sourcemaps`                         | Upload des sourcemaps vers Sentry (`scripts/upload-sentry-sourcemaps.mjs`)                                                 |
 | `pnpm sentry:check-instrumentation`              | Vérifie que Sentry trace `@Injectable`, `@Catch`, `@Cron` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`) |
 
 **CI** (`.github/workflows/ci.yml`, à chaque PR et sur `master`) : `install --frozen-lockfile`, `lint:check`, `format:check`, `typecheck`, `pnpm test` **avec** les tests d'intégration (service `postgres:17-alpine`, base jetable `PROFILE_IT_DATABASE_URL`), `build`, puis le build de l'image Docker (sans push), cible de la suite de parité HTTP. Le déploiement est celui de Vercel depuis Git (ADR-0036).
@@ -375,7 +374,6 @@ Collecte de page-views/events custom du portfolio public + agrégation quotidien
 - `tracesSampleRate` : 20% en prod, 100% en dev (ou override via `SENTRY_TRACES_SAMPLE_RATE`).
 - `ThrottlerException` est ignorée (pas de bruit Sentry sur un simple rate-limit).
 - **`GET /api/config`** expose un DSN Sentry **distinct** (`SENTRY_FRONTEND_DSN`) pour le frontend Angular - projet Sentry séparé du backend, volontairement public (il ship dans le bundle browser une fois fetché).
-- `pnpm sentry:sourcemaps` (`scripts/upload-sentry-sourcemaps.mjs`) : upload des sourcemaps vers Sentry en CI/CD.
 - `pnpm sentry:check-instrumentation` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`) : décore des classes témoins avec les vrais `@Injectable`, `@Catch`, `@Cron` après `dist/instrument.js` et vérifie les marques posées par Sentry ; exit 1 si l'un n'est pas tracé.
 
 ## Docker

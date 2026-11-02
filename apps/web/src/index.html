@@ -52,7 +52,7 @@
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141a29" />
     <meta name="format-detection" content="telephone=no" />
 
-    <!-- CSP via meta tag, complétée par les headers HTTP Traefik/Dokploy pour frame-ancestors et HSTS.
+    <!-- CSP via meta tag, complétée par les en-têtes HTTP de Vercel (scripts/build-vercel.mjs) pour frame-ancestors et HSTS.
          Giscus (commentaires du blog) : client.js dans script-src, widget dans frame-src, et
          default.css dans style-src (client.js l'injecte dans la page hôte pour dimensionner l'iframe).
          Avatars et API vivent dans l'iframe et relèvent de la CSP de giscus.app.

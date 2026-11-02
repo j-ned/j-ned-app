@@ -1,12 +1,15 @@
-// Premier import de main.ts : `.env` chargé, puis Sentry initialisé avant que `http` et les autres
+// Premier import de main.ts : `.env` local chargé, puis Sentry initialisé avant que `http` et les autres
 // modules instrumentés ne soient chargés (sinon les requêtes entrantes ne sont pas tracées).
-import 'dotenv/config';
+import { existsSync } from 'node:fs';
 import * as Sentry from '@sentry/node';
 import {
   isUntracedIncomingRequest,
   sentryBeforeSend,
   sentryBeforeSendTransaction,
 } from './common/sentry-before-send';
+
+// `.env` local facultatif (absent sur Vercel), lu par Node sans dépendance.
+if (existsSync('.env')) process.loadEnvFile();
 
 const dsn = process.env.SENTRY_DSN;
 
