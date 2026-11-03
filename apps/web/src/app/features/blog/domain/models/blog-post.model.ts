@@ -11,7 +11,12 @@ export type BlogPost = {
   readonly publishedAt: string | null;
   /** Dernière modification éditoriale (titre, contenu, couverture) ; un like ne la change pas. */
   readonly updatedAt: string;
+  /** Mots du corps, comptés par l'API : les listes n'ont pas le corps, mais affichent la lecture. */
+  readonly wordCount: number;
 };
+
+/** Article d'une liste publique : l'API n'y joint pas le corps, réservé à la page de l'article. */
+export type BlogPostSummary = Omit<BlogPost, 'contentMarkdown'>;
 
 // Payload d'écriture. `id`, `slug`, `likesCount`, `publishedAt`, `updatedAt` gérés serveur ;
 // `coverImage` transite par uploadCoverImage (POST /:id/image), jamais en string ici.

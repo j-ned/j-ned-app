@@ -13,6 +13,7 @@ const post = (slug: string, publishedAt: string | null): BlogPost => ({
   likesCount: 0,
   publishedAt,
   updatedAt: publishedAt ?? '2026-01-01T00:00:00Z',
+  wordCount: 0,
 });
 
 // Ordre d'arrivée volontairement mélangé : la fonction trie elle-même par date.

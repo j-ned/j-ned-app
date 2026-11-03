@@ -1,6 +1,6 @@
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
-import { readingTimeMinutes } from '@features/blog/domain/reading-time';
 import type { FilterOption } from '@shared/ui/filter-group';
+import { readingTimeMinutes } from '@features/blog/domain/reading-time';
 
 const SUBJECTS_SIZE = 3;
 
@@ -34,7 +34,7 @@ function toRow(post: BlogPost): AdminPostRowView {
     cover: post.coverImage,
     status: post.status,
     publishedAt: post.publishedAt,
-    readingTime: `${readingTimeMinutes(post.contentMarkdown)}\u00a0min`,
+    readingTime: `${readingTimeMinutes(post.wordCount)}\u00a0min`,
     likes: post.likesCount,
   };
 }

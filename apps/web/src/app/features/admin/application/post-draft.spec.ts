@@ -129,6 +129,7 @@ describe('toPreviewPost', () => {
       likesCount: 4,
       publishedAt: '2026-09-09T10:00:00Z',
       updatedAt: '2026-09-10T08:00:00Z',
+      wordCount: 7,
     } satisfies BlogPost);
   });
 
@@ -145,6 +146,7 @@ describe('toPreviewPost', () => {
       likesCount: 0,
       publishedAt: null,
       updatedAt: '',
+      wordCount: 5,
     } satisfies BlogPost);
   });
 

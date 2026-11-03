@@ -1,10 +1,10 @@
-import type { BlogPost } from './models/blog-post.model';
+import type { BlogPostSummary } from './models/blog-post.model';
 import { projectTagOf } from './models/project-tag.model';
 
 export function postsAboutProject(
-  posts: readonly BlogPost[],
+  posts: readonly BlogPostSummary[],
   projectSlug: string,
-): readonly BlogPost[] {
+): readonly BlogPostSummary[] {
   const tag = projectTagOf(projectSlug);
   if (!tag) return [];
 

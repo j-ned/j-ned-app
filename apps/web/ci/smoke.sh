@@ -6,6 +6,8 @@ set -euo pipefail
 CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 test "$(curl -fsS http://127.0.0.1:3000/healthz)" = "ok"
 curl -fsS http://127.0.0.1:3000/ -o /tmp/index.html
+# Accueil : la liste d'articles arrive sans leur corps (seuls les 3 derniers s'y affichent)
+! grep -q 'contentMarkdown' /tmp/index.html || { echo "corps d'article dans l'état de transfert : /"; exit 1; }
 grep -q '<app-root' /tmp/index.html
 # Corps écrit dans un fichier avant grep : `curl | grep -q` casse sous pipefail
 # (grep sort au premier match, curl échoue en écrivant dans le tube fermé : code 23)

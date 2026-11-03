@@ -15,7 +15,7 @@ import { Button } from '@shared/ui/button';
 import { Cartouche } from '@shared/ui/cartouche';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { filterPostsByCategory } from '../../domain/filter-posts-by-category';
-import type { BlogPost } from '../../domain/models/blog-post.model';
+import type { BlogPostSummary } from '../../domain/models/blog-post.model';
 import type { BlogCategoryFilter } from '../../domain/models/blog-tag.model';
 import { articleCountLabel, visibleArticleCountLabel } from '../../application/blog-list-copy';
 import { toBlogListView, type BlogListFilter } from '../../application/blog-list-view';
@@ -136,7 +136,7 @@ export class BlogList {
   );
   protected readonly failed = computed(() => this.postsResource.status() === 'error');
 
-  protected readonly category = linkedSignal<readonly BlogPost[], BlogCategoryFilter>({
+  protected readonly category = linkedSignal<readonly BlogPostSummary[], BlogCategoryFilter>({
     source: this._posts,
     computation: (posts, previous) =>
       previous && filterPostsByCategory(posts, previous.value).length > 0 ? previous.value : 'all',

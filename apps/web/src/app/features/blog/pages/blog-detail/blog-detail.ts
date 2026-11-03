@@ -31,11 +31,11 @@ import { BlogFurtherReading } from '../../application/components/blog-further-re
 import { FURTHER_READING_COPY } from '../../application/further-reading-copy';
 import { LinkCard } from '@shared/ui/link-card';
 import { AppIcon } from '@shared/icons/app-icon';
-import { readingTimeMinutes } from '../../domain/reading-time';
 import { adjacentPosts } from '../../domain/adjacent-posts';
 import { relatedPosts } from '../../domain/related-posts';
 import { linkedProjects } from '../../domain/linked-projects';
-import type { BlogPost } from '../../domain/models/blog-post.model';
+import type { BlogPostSummary } from '../../domain/models/blog-post.model';
+import { readingTimeMinutes } from '../../domain/reading-time';
 
 // `updatedAt` peut précéder `publishedAt` (brouillon retouché puis publié) : `dateModified`
 // ne doit jamais être antérieur à `datePublished`.
@@ -260,14 +260,12 @@ export class BlogDetail {
 
   protected readonly post = computed(() => this._postResource.value());
 
-  protected readonly readingTime = computed(() =>
-    readingTimeMinutes(this.post()?.contentMarkdown ?? ''),
-  );
+  protected readonly readingTime = computed(() => readingTimeMinutes(this.post()?.wordCount ?? 0));
 
   // Liste publiée chargée une fois (même instance réutilisée d'un slug à l'autre) ; les voisins
   // se recalculent sur le slug courant.
   private readonly _publishedPosts = toSignal(this.gateway.getPublishedPosts(), {
-    initialValue: [] as readonly BlogPost[],
+    initialValue: [] as readonly BlogPostSummary[],
   });
   protected readonly neighbours = computed(() =>
     adjacentPosts(this._publishedPosts(), this.slug()),

@@ -98,9 +98,19 @@ async function removePortrait() {
   return [204, null];
 }
 
+// Comme l'API (`apps/api/src/blog`) : chaque article porte le nombre de mots de son corps, et la liste
+// publique ne joint le corps que sur `?include=content` (flux RSS).
+const countWords = (markdown) => markdown.split(/\s+/).filter(Boolean).length;
+const readPosts = async () =>
+  (await readFixture('blog-posts')).map((post) => ({
+    ...post,
+    wordCount: countWords(post.contentMarkdown),
+  }));
+const withoutBody = ({ contentMarkdown: _body, ...summary }) => summary;
+
 // Lectures de l'admin, testées avant l'expression du slug d'article (`/blog/posts/admin` n'en est pas un).
 async function readAdmin(pathname, searchParams) {
-  if (pathname === '/api/blog/posts/admin') return [200, await readFixture('blog-posts')];
+  if (pathname === '/api/blog/posts/admin') return [200, await readPosts()];
   if (pathname === '/api/contact/messages') {
     return [200, { data: await readFixture('contact-messages') }];
   }
@@ -135,8 +145,11 @@ async function route(req, pathname, searchParams) {
 
   if (pathname === '/api/projects') return [200, await readFixture('projects')];
   if (pathname === '/api/blog/posts') {
-    const posts = await readFixture('blog-posts');
-    return [200, posts.filter((post) => post.status === 'published')];
+    const published = (await readPosts()).filter((post) => post.status === 'published');
+    return [
+      200,
+      searchParams.get('include') === 'content' ? published : published.map(withoutBody),
+    ];
   }
   if (pathname === '/api/cv') return [200, await readFixture('cv')];
   if (pathname === '/api/profile') return [200, await readProfile()];
@@ -151,7 +164,7 @@ async function route(req, pathname, searchParams) {
   }
   const post = pathname.match(/^\/api\/blog\/posts\/([^/]+)$/);
   if (post) {
-    const found = (await readFixture('blog-posts')).find(bySlugOrId(post[1]));
+    const found = (await readPosts()).find(bySlugOrId(post[1]));
     return found ? [200, found] : [404, { message: 'Not Found' }];
   }
   return [404, { message: 'Not Found' }];

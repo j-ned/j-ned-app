@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import type { BlogPostSummary } from '@features/blog/domain/models/blog-post.model';
 import { LinkCard } from '@shared/ui/link-card';
 import { SplitSection } from '@shared/ui/split-section';
 import { PROJECT_ARTICLES_COPY } from '../project-articles-copy';
@@ -34,7 +34,7 @@ import { PROJECT_ARTICLES_COPY } from '../project-articles-copy';
   `,
 })
 export class ProjectArticles {
-  readonly posts = input.required<readonly BlogPost[]>();
+  readonly posts = input.required<readonly BlogPostSummary[]>();
   readonly articleFollowed = output();
 
   protected readonly copy = PROJECT_ARTICLES_COPY;

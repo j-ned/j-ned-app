@@ -1,9 +1,9 @@
 import type { Observable } from 'rxjs';
-import type { BlogPost, BlogPostInput } from '../models/blog-post.model';
+import type { BlogPost, BlogPostInput, BlogPostSummary } from '../models/blog-post.model';
 import type { ContentImage } from '../models/content-image.model';
 
 export abstract class BlogGateway {
-  abstract getPublishedPosts(): Observable<readonly BlogPost[]>;
+  abstract getPublishedPosts(): Observable<readonly BlogPostSummary[]>;
   abstract getAllPostsForAdmin(): Observable<readonly BlogPost[]>;
   abstract invalidateAdminPosts(): void;
   abstract getPostBySlug(slug: string): Observable<BlogPost>;

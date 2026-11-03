@@ -18,6 +18,7 @@ import { Seo } from '@core/seo/seo';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 import { makeBlogPost } from '../../testing/blog-post-builders';
 import { FURTHER_READING_COPY } from '../../application/further-reading-copy';
+import { countWords } from '../../domain/reading-time';
 
 class MockIntersectionObserver {
   static instances: MockIntersectionObserver[] = [];
@@ -61,6 +62,7 @@ function post(overrides: Partial<BlogPost> = {}): BlogPost {
     likesCount: 2,
     publishedAt: '2026-08-31T00:00:00Z',
     updatedAt: '2026-08-31T00:00:00Z',
+    wordCount: countWords(overrides.contentMarkdown ?? '# Bonjour'),
     ...overrides,
   };
 }

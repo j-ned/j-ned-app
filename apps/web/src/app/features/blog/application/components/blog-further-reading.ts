@@ -2,7 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LinkCard } from '@shared/ui/link-card';
-import type { BlogPost } from '../../domain/models/blog-post.model';
+import type { BlogPostSummary } from '../../domain/models/blog-post.model';
 import type { ProjectTag } from '../../domain/models/project-tag.model';
 import { FURTHER_READING_COPY } from '../further-reading-copy';
 
@@ -46,7 +46,7 @@ import { FURTHER_READING_COPY } from '../further-reading-copy';
 })
 export class BlogFurtherReading {
   readonly projects = input.required<readonly ProjectTag[]>();
-  readonly posts = input.required<readonly BlogPost[]>();
+  readonly posts = input.required<readonly BlogPostSummary[]>();
   readonly projectFollowed = output();
   readonly postFollowed = output();
 
