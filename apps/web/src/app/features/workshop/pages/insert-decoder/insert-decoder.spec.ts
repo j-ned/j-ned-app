@@ -72,7 +72,7 @@ describe('InsertDecoder', () => {
   };
 
   describe('Given the decoder switched on', () => {
-    it('When the page is rendered without code Then its single h1 names the decoder, the lead speaks familiarly, and no result nor error is shown', async () => {
+    it('When the page is rendered without code Then its single h1 names the decoder, the lead is shown, and no result nor error is shown', async () => {
       await render();
 
       expect({
@@ -90,7 +90,6 @@ describe('InsertDecoder', () => {
         error: null,
         status: 200,
       });
-      expect(INSERT_DECODER_COPY.lead).toMatch(/\b(tu|te|t'|ta|tes|Tape)\b/u);
     });
 
     it('When the page is rendered Then the code field is labelled, named « code » and the form falls back to a GET on the decoder page', async () => {

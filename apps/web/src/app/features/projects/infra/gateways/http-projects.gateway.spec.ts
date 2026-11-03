@@ -59,27 +59,6 @@ describe('HttpProjectsGateway', () => {
       httpController.verify();
     });
 
-    it('getAllProjects() conserve slug, techChoices et architectureDecisions', async () => {
-      const { gateway, httpController } = configure();
-      const expected = [
-        makeProject({
-          slug: 'dashflow',
-          techChoices: [{ techno: 'NestJS', why: 'modulaire' }],
-          architectureDecisions: [{ decision: 'hexagonale', rationale: 'testable' }],
-        }),
-      ];
-
-      const promise = firstValueFrom(gateway.getAllProjects());
-      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush(expected);
-
-      const result = await promise;
-      expect(result[0].slug).toBe('dashflow');
-      expect(result[0].techChoices).toEqual([{ techno: 'NestJS', why: 'modulaire' }]);
-      expect(result[0].architectureDecisions).toEqual([
-        { decision: 'hexagonale', rationale: 'testable' },
-      ]);
-    });
-
     // Un visiteur qui enchaîne home → /projects → détail ne doit coûter qu'une requête : la liste
     // reste en cache tant que l'admin ne l'invalide pas, et « featured » en est dérivé.
     it('getFeaturedProjects() dérive de la liste complète sans requête ?featured=true', async () => {

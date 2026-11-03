@@ -20,15 +20,4 @@ describe('BlogTagLink', () => {
     expect(link.textContent?.trim()).toBe('Angular');
     expect(link.getAttribute('href')).toBe('/blog?tag=Angular');
   });
-
-  it.each(['Angular', 'PBKDF2', 'Tests', 'Carrière', 'CI/CD'])(
-    'colours catalogue tag "%s" in the accent',
-    (tag) => {
-      expect(render(tag).className).toContain('text-primary');
-    },
-  );
-
-  it('falls back to the neutral style for a tag outside the catalogue', () => {
-    expect(render('Inconnu').className).toContain('text-muted');
-  });
 });

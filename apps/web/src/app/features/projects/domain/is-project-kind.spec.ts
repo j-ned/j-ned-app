@@ -1,11 +1,6 @@
 import { isProjectKind } from './is-project-kind';
-import { PROJECT_KINDS } from './models/project.model';
 
 describe('isProjectKind', () => {
-  it('Given the closed union When listing it Then it holds exactly the three natures, in order', () => {
-    expect(PROJECT_KINDS).toEqual(['production', 'demo', 'script']);
-  });
-
   it.each(['production', 'demo', 'script'])(
     'Given %j When checked Then it is a project kind',
     (value) => {

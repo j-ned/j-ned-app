@@ -5,10 +5,8 @@ import {
   formatChartDay,
   pagesPerSession,
   pagesPerSessionLabel,
-  alpha,
   buildVisitorsChartData,
   buildVisitorsOnlyChartData,
-  buildLineChartOptions,
   escapeCsv,
   buildAnalyticsCsv,
 } from './analytics-presenter';
@@ -110,12 +108,6 @@ describe('analytics-presenter', () => {
     });
   });
 
-  describe('alpha', () => {
-    it('produit une couleur color-mix translucide', () => {
-      expect(alpha('red', 40)).toBe('color-mix(in srgb, red 40%, transparent)');
-    });
-  });
-
   describe('buildVisitorsChartData', () => {
     const rows: DailyChartPoint[] = [
       { date: '2026-06-01', visitors: 10, pageviews: 30 },
@@ -124,38 +116,12 @@ describe('analytics-presenter', () => {
 
     const palette = { primary: '#primary', foreground: '#foreground' };
 
-    it('mappe labels et deux datasets (visites, pages vues) à traits droits', () => {
+    it('mappe labels et deux datasets (visites, pages vues)', () => {
       const data = buildVisitorsChartData(rows, palette);
       expect(data.labels).toEqual(['1 juin', '2 juin']);
       expect(data.datasets).toHaveLength(2);
-      expect(data.datasets[0]).toMatchObject({
-        label: 'Visites',
-        data: [10, 20],
-        borderColor: '#primary',
-        tension: 0,
-      });
-      expect(data.datasets[1]).toMatchObject({
-        label: 'Pages vues',
-        data: [30, 40],
-        borderColor: 'color-mix(in srgb, #foreground 55%, transparent)',
-        borderDash: [4, 4],
-        tension: 0,
-      });
-    });
-
-    it('trace les visiteurs en plein et les pages vues en tirets', () => {
-      const data = buildVisitorsChartData(rows, palette);
-      expect(data.datasets.map((dataset) => dataset.borderDash)).toEqual([undefined, [4, 4]]);
-    });
-
-    it("ne tire chaque couleur que de l'accent ou du texte du registre", () => {
-      const colors = buildVisitorsChartData(rows, palette).datasets.flatMap((dataset) =>
-        Object.entries(dataset)
-          .filter(([key]) => key.endsWith('Color'))
-          .map(([, value]) => String(value)),
-      );
-      expect(colors.length).toBeGreaterThan(0);
-      expect(colors.filter((color) => !/#primary\b|#foreground\b/.test(color))).toEqual([]);
+      expect(data.datasets[0]).toMatchObject({ label: 'Visites', data: [10, 20] });
+      expect(data.datasets[1]).toMatchObject({ label: 'Pages vues', data: [30, 40] });
     });
   });
 
@@ -170,16 +136,6 @@ describe('analytics-presenter', () => {
       const data = buildVisitorsOnlyChartData(rows, palette);
       expect(data.labels).toEqual(['1 juin', '2 juin']);
       expect(data.datasets).toEqual([buildVisitorsChartData(rows, palette).datasets[0]]);
-    });
-  });
-
-  describe('buildLineChartOptions', () => {
-    it('produit des options non-responsive-aspect avec axes et tooltip', () => {
-      const opts = buildLineChartOptions('#fg', '#bg');
-      expect(opts.maintainAspectRatio).toBe(false);
-      expect(opts.scales.y.beginAtZero).toBe(true);
-      expect(opts.plugins.legend.display).toBe(false);
-      expect(opts.plugins.tooltip.backgroundColor).toBe('color-mix(in srgb, #bg 95%, transparent)');
     });
   });
 

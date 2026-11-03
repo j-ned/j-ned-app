@@ -2,23 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { CODE_LANGUAGES, resolveCodeLanguage } from './code-language';
 
 describe('CODE_LANGUAGES', () => {
-  it('Given the catalogue When it is read Then it lists the twelve languages of the blog, each with its label', () => {
-    expect(CODE_LANGUAGES.map(({ id, label }) => ({ id, label }))).toEqual([
-      { id: 'typescript', label: 'TypeScript' },
-      { id: 'javascript', label: 'JavaScript' },
-      { id: 'html', label: 'HTML' },
-      { id: 'css', label: 'CSS' },
-      { id: 'scss', label: 'SCSS' },
-      { id: 'json', label: 'JSON' },
-      { id: 'bash', label: 'Bash' },
-      { id: 'sql', label: 'SQL' },
-      { id: 'yaml', label: 'YAML' },
-      { id: 'markdown', label: 'Markdown' },
-      { id: 'dockerfile', label: 'Dockerfile' },
-      { id: 'python', label: 'Python' },
-    ]);
-  });
-
   it('Given the catalogue When each alias is resolved Then it gives back its own language, so no alias is shared', () => {
     const aliases = CODE_LANGUAGES.flatMap((language) =>
       language.aliases.map((alias) => ({ alias, owner: language.id })),

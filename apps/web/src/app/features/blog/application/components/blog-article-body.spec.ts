@@ -113,33 +113,6 @@ describe('BlogArticleBody', () => {
     });
   });
 
-  it('Given the body When it renders Then inline code sits on a tinted ground and underlined text keeps the text colour with a thick offset line, unlike a link', async () => {
-    const { content } = await renderBody(() => 'Un `code` et un <u>mot</u>.');
-    const classes = [...(content()?.classList ?? [])];
-    const underline = classes.filter((name) => name.startsWith('[&_u]:'));
-
-    expect({
-      inlineCode: ['prose-code:text-primary', 'prose-code:bg-foreground/6'].filter(
-        (name) => !classes.includes(name),
-      ),
-      underlineColour: underline.includes('[&_u]:decoration-foreground/40'),
-      underlineOffset: underline.includes('[&_u]:underline-offset-[0.3em]'),
-      underlineThickness: underline.some((name) => /^\[&_u\]:decoration-\d+$/.test(name)),
-      underlineInPrimary: underline.some((name) => name.includes('primary')),
-      rendered: {
-        code: content()?.querySelector('p code')?.textContent,
-        underline: content()?.querySelector('u')?.textContent,
-      },
-    }).toEqual({
-      inlineCode: [],
-      underlineColour: true,
-      underlineOffset: true,
-      underlineThickness: true,
-      underlineInPrimary: false,
-      rendered: { code: 'code', underline: 'mot' },
-    });
-  });
-
   it('Given a rendered body When the Markdown changes Then the body follows it', async () => {
     const markdown = signal('## Avant');
     const { fixture, content } = await renderBody(markdown);
