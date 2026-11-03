@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type * as z from 'zod';
 import './validation';
 
 export type Violation = { readonly path: string; readonly message: string };

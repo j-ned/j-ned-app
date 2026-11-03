@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { PROJECT_IMAGE_ALT_MAX } from '../project-gallery';
 
 /** Texte alternatif d'une capture : champ texte du multipart d'upload et corps du PATCH. */

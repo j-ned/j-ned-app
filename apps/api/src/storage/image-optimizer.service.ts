@@ -1,5 +1,4 @@
 import { UnprocessableEntityException } from '../common/http-errors';
-import sharp from 'sharp';
 
 /** Largeur max stockée : les visuels s'affichent au plus en ~800 px CSS, 1600 couvre le retina 2×. */
 export const IMAGE_MAX_WIDTH = 1600;
@@ -27,7 +26,16 @@ export type OptimizedImage = {
  * appliquée. Un JPEG d'appareil photo de 2,8 Mo devient ~70 Ko sans que l'admin ait à y penser.
  */
 export class ImageOptimizer {
+  /**
+   * sharp (binaire natif, ~40 ms de chargement) n'est requis qu'à l'envoi d'une image par l'admin : le
+   * démarrage à froid de la fonction, qui sert surtout des lectures, ne le paie pas.
+   */
+  private async loadSharp() {
+    return (await import('sharp')).default;
+  }
+
   async optimize(input: Buffer): Promise<OptimizedImage> {
+    const sharp = await this.loadSharp();
     try {
       const { data, info } = await sharp(input, { animated: false })
         .rotate()
@@ -53,6 +61,7 @@ export class ImageOptimizer {
    * crawlers sociaux ne lisent pas l'AVIF stocké, et exigent un ratio 1,91:1 pour la grande carte.
    */
   async toShareCard(input: Buffer): Promise<Buffer> {
+    const sharp = await this.loadSharp();
     try {
       return await sharp(input, { animated: false })
         .rotate()
@@ -68,6 +77,7 @@ export class ImageOptimizer {
 
   /** Portrait AVIF 640×800 recadré sur la zone saillante (visage), orientation EXIF appliquée. */
   async toPortrait(input: Buffer): Promise<OptimizedImage> {
+    const sharp = await this.loadSharp();
     try {
       const { data, info } = await sharp(input, { animated: false })
         .rotate()

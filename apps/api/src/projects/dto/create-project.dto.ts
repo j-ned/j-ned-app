@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { PROJECT_KINDS } from '../../database/schema/projects';
 import { PROJECT_FACT_MAX, PROJECT_PITCH_MAX } from '../project-editorial';
 import { architectureDecisionSchema } from './architecture-decision.dto';

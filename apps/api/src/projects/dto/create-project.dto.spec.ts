@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { invalidProperties } from '../../common/dto-testing';
 import { BadRequestException } from '../../common/http-errors';
 import { validateDto } from '../../common/validation';

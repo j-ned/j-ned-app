@@ -4,7 +4,7 @@ import { isIP } from 'node:net';
 import type { MiddlewareHandler } from 'hono';
 import type { Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import type { User } from '../database/schema';
 import {
   BadRequestException,

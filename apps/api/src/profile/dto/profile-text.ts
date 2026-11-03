@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 /** Balise ou commentaire HTML : `<` suivi d'une lettre, de `/`, `!` ou `?`. « a < b » reste du texte. */
 const MARKUP = /<[a-zA-Z/!?]/;

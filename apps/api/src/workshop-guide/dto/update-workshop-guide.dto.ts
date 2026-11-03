@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { profileText, withoutMarkup } from '../../profile/dto/profile-text';
 import { WORKSHOP_GUIDE_OPERATIONS } from '../workshop-guide-content';
 import { WORKSHOP_GUIDE_LIMITS } from '../workshop-guide-limits';
