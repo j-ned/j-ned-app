@@ -7,7 +7,7 @@ export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL', {
   },
 });
 
-// L'API est servie par l'origine du site (relais nginx `/api/`, ADR-0034) : même origine, donc ni
+// L'API est servie par l'origine du site (réécriture `/api/` de Vercel, ADR-0036) : même origine, donc ni
 // CORS ni cookie partagé entre sous-domaines.
 export const PUBLIC_API_ORIGIN = 'https://nedellec-julien.fr';
 export const PUBLIC_API_BASE_URL = `${PUBLIC_API_ORIGIN}/api`;
@@ -19,5 +19,5 @@ export const API_LINK_BASE_URL = new InjectionToken<string>('API_LINK_BASE_URL',
   factory: (): string => (isDevMode() ? '/api' : PUBLIC_API_BASE_URL),
 });
 
-// Images servies par l'origine du site (relais nginx en prod, `proxy.conf.cjs` en dev), pas par `api.`.
+// Images servies par l'origine du site (réécriture Vercel en prod, `proxy.conf.cjs` en dev), pas par `api.`.
 export const STORAGE_BASE_PATH = '/api';

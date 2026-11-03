@@ -6,7 +6,7 @@ describe('visitorHeaders', () => {
     expect(visitorHeaders(null, 'secret')).toEqual({});
   });
 
-  it('Given a visitor behind nginx (no shared secret) When headers are built Then only X-Forwarded-For is sent', () => {
+  it('Given a visitor without shared secret (ng serve) When headers are built Then only X-Forwarded-For is sent', () => {
     expect(visitorHeaders('203.0.113.7', null)).toEqual({ 'X-Forwarded-For': '203.0.113.7' });
   });
 

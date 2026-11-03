@@ -22,7 +22,7 @@ import type {
   TrackPayload,
 } from '../../domain/models/analytics.types';
 
-// Même origine : nginx relaie à l'API, un beacon n'y déclenche ni CORS ni pré-vol.
+// Même origine : Vercel réécrit `/api` vers l'API, un beacon n'y déclenche ni CORS ni pré-vol.
 const ANALYTICS_TRACK_URL = '/api/analytics/track';
 
 // Pages de connexion et d'administration : jamais mesurées (l'API ne filtre que les pages vues).

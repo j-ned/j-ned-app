@@ -30,7 +30,7 @@ export type ApiResponse = {
 };
 
 /**
- * Un visiteur = une adresse IP, transmise en `X-Forwarded-For` comme le fait le relais nginx.
+ * Un visiteur = une adresse IP, transmise en `X-Forwarded-For` comme le fait un proxy de confiance.
  * Chaque test prend ses propres visiteurs : les quotas par IP ne débordent pas d'un test à l'autre,
  * ni d'une exécution à la suivante (décalage aléatoire dans 198.18.0.0/16, réseau de test RFC 2544).
  */
