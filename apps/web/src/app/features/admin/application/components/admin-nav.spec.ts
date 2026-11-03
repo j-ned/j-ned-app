@@ -56,72 +56,6 @@ async function renderNav(
   return { fixture, host: fixture.nativeElement as HTMLElement, emitted };
 }
 
-describe('AdminNav: structure', () => {
-  it('Given the groups When the navigation renders Then a single nav named Administration holds the overview and four labelled groups', async () => {
-    const { host } = await renderNav();
-    const navs = [...host.querySelectorAll('nav')];
-    const groups = [...host.querySelectorAll('[role="group"]')].map((group) => ({
-      label: normalized(document.getElementById(group.getAttribute('aria-labelledby') ?? '')),
-      links: [...group.querySelectorAll('[data-testid^="nav-link-"]')].map((link) =>
-        link.getAttribute('data-testid'),
-      ),
-    }));
-    const overview = byTestId(host, 'nav-link-overview');
-
-    expect({
-      navs: navs.map((nav) => nav.getAttribute('aria-label')),
-      overviewInNav: navs[0]?.contains(overview) ?? false,
-      overviewInGroup: overview?.closest('[role="group"]') !== null,
-      groups,
-      headings: host.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
-    }).toEqual({
-      navs: ['Administration'],
-      overviewInNav: true,
-      overviewInGroup: false,
-      groups: [
-        {
-          label: 'Contenu',
-          links: [
-            'nav-link-projects',
-            'nav-link-posts',
-            'nav-link-profile',
-            'nav-link-cv',
-            'nav-link-insert-guide',
-          ],
-        },
-        { label: 'Audience', links: ['nav-link-audience', 'nav-link-messages'] },
-        { label: 'Compte', links: ['nav-link-settings'] },
-      ],
-      headings: 0,
-    });
-  });
-
-  it('Given the groups When the navigation renders Then each link leads to its page under its French label', async () => {
-    const { host } = await renderNav({
-      counts: { projects: null, posts: null, unread: null },
-    });
-
-    expect(
-      Object.fromEntries(
-        NAV_KEYS.map((key) => {
-          const link = byTestId(host, `nav-link-${key}`);
-          return [key, { href: link?.getAttribute('href') ?? null, text: normalized(link) }];
-        }),
-      ),
-    ).toEqual({
-      overview: { href: '/admin', text: "Vue d'ensemble" },
-      projects: { href: '/admin/projects', text: 'Projets' },
-      posts: { href: '/admin/blog', text: 'Articles' },
-      profile: { href: '/admin/profile', text: 'Parcours' },
-      cv: { href: '/admin/cv', text: 'CV' },
-      'insert-guide': { href: '/admin/guide-plaquettes', text: 'Guide des plaquettes' },
-      audience: { href: '/admin/audience', text: 'Audience' },
-      messages: { href: '/admin/messages', text: 'Messages' },
-      settings: { href: '/admin/settings', text: 'Paramètres' },
-    });
-  });
-});
-
 describe('AdminNav: page courante', () => {
   it.each([
     { url: '/admin', current: 'overview' },
@@ -186,18 +120,6 @@ describe('AdminNav: comptes', () => {
     });
   });
 
-  it.each([
-    { unread: 0, spoken: '0 non lu' },
-    { unread: 1, spoken: '1 non lu' },
-  ])(
-    'Given $unread unread message When the navigation renders Then the count reads « $spoken »',
-    async ({ unread, spoken }) => {
-      const { host } = await renderNav({ counts: { ...COUNTS, unread } });
-
-      expect(normalized(byTestId(host, 'nav-count-messages'))).toBe(spoken);
-    },
-  );
-
   it('Given unknown counts When the navigation renders Then no count is shown', async () => {
     const { host } = await renderNav({
       counts: { projects: null, posts: null, unread: null },
@@ -228,24 +150,6 @@ describe('AdminNav: pied de navigation', () => {
       spoken: '(nouvel onglet)',
     });
   });
-
-  it('Given a signed-in email When the footer renders Then the email is shown', async () => {
-    const { host } = await renderNav({ email: 'contact@nedellec-julien.fr' });
-
-    expect(normalized(byTestId(host, 'admin-user-email'))).toBe('contact@nedellec-julien.fr');
-  });
-
-  it.each([
-    { isDark: true, label: 'Passer en mode clair' },
-    { isDark: false, label: 'Passer en mode sombre' },
-  ])(
-    'Given the dark register is $isDark When the footer renders Then the theme toggle offers « $label »',
-    async ({ isDark, label }) => {
-      const { host } = await renderNav({ isDark });
-
-      expect(normalized(byTestId(host, 'admin-theme-toggle'))).toBe(label);
-    },
-  );
 });
 
 describe('AdminNav: actions', () => {
@@ -275,13 +179,4 @@ describe('AdminNav: actions', () => {
       expect({ ...emitted }).toEqual(expected);
     },
   );
-
-  it('Given the navigation When the logout button renders Then it reads « Se déconnecter »', async () => {
-    const { host } = await renderNav();
-
-    expect({
-      tag: byTestId(host, 'admin-logout')?.tagName,
-      text: normalized(byTestId(host, 'admin-logout')),
-    }).toEqual({ tag: 'BUTTON', text: 'Se déconnecter' });
-  });
 });

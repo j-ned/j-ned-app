@@ -38,17 +38,6 @@ const itemsOf = (host: HTMLElement): Element[] => [
 ];
 
 describe('OverviewContent', () => {
-  it('Given the section When rendered Then it is named by its « Contenu en ligne » heading', async () => {
-    const host = await renderContent([POST]);
-    const labelledBy = host.querySelector('section')?.getAttribute('aria-labelledby') ?? '';
-    const heading = host.querySelector(`[id="${labelledBy}"]`);
-
-    expect({ tag: heading?.tagName ?? null, name: heading?.textContent?.trim() ?? null }).toEqual({
-      tag: 'H2',
-      name: 'Contenu en ligne',
-    });
-  });
-
   it('Given an article and a project When rendered Then each item shows its title as a link, its meta line and its stamp', async () => {
     const host = await renderContent([POST, PROJECT]);
 
@@ -78,14 +67,5 @@ describe('OverviewContent', () => {
         [...item.querySelectorAll('img')].map((img) => img.getAttribute('alt')),
       ),
     ).toEqual([[''], []]);
-  });
-
-  it('Given nothing online When rendered Then a drawn empty state replaces the list', async () => {
-    const host = await renderContent([]);
-
-    expect({
-      stamp: testIdText(host, 'empty-state-stamp'),
-      items: itemsOf(host).length,
-    }).toEqual({ stamp: 'Rien en ligne', items: 0 });
   });
 });

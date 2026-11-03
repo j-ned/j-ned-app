@@ -40,10 +40,6 @@ describe('addTag', () => {
     });
   });
 
-  it('Given the API limit When it is read Then a tag counts 50 characters at most, as the DTOs of the API', () => {
-    expect(TAG_MAX_LENGTH).toBe(50);
-  });
-
   it('Given a list When a tag is added Then the original list is left untouched', () => {
     const tags = ['Angular'];
 

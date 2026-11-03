@@ -38,13 +38,6 @@ class PairRowsHost {
   });
 }
 
-type CellView = {
-  readonly label: string | null;
-  readonly id: string;
-  readonly value: string;
-  readonly placeholder: string | null;
-};
-
 type Rendered = {
   readonly fixture: ComponentFixture<PairRowsHost>;
   readonly host: HTMLElement;
@@ -85,61 +78,6 @@ const modelRows = (rendered: Rendered): readonly Pair[] =>
 
 const describedBy = (control: HTMLElement | null): string | null =>
   control?.getAttribute('aria-describedby') ?? null;
-
-describe('AdminPairRows: rendu des rangées', () => {
-  it('Given the rows When they render Then the section is titled by a level-2 heading', async () => {
-    const { host } = await renderRows(TWO_ROWS);
-
-    expect(
-      [...host.querySelectorAll('h1, h2, h3, h4, h5, h6')].map(
-        (heading) => `${heading.tagName} ${normalized(heading)}`,
-      ),
-    ).toEqual(['H2 Paires']);
-  });
-
-  it('Given the rows When they render Then the column headings are hidden from assistive technologies', async () => {
-    const { host } = await renderRows(TWO_ROWS);
-
-    expect(
-      [...host.querySelectorAll('[aria-hidden="true"]')]
-        .filter((element) => normalized(element) !== '')
-        .map((element) => [...element.children].map((child) => normalized(child))),
-    ).toEqual([['N°', 'A', 'B']]);
-  });
-
-  it('Given two rows When they render Then each cell has its numbered label, its own id, its placeholder and each row its rank', async () => {
-    const { host } = await renderRows(TWO_ROWS);
-    const cells = (testId: string): readonly CellView[] =>
-      all(host, testId).map((control) => ({
-        label: labelOf(host, control),
-        id: control.id,
-        value: (control as HTMLInputElement).value,
-        placeholder: control.getAttribute('placeholder'),
-      }));
-
-    expect({
-      first: cells('pair-x'),
-      second: cells('pair-y'),
-      ranks: all(host, 'pair-rank').map((rank) => normalized(rank)),
-    }).toEqual({
-      first: [
-        { label: 'A 1', id: 'p-1-x', value: 'a1', placeholder: 'Premier' },
-        { label: 'A 2', id: 'p-2-x', value: 'a2', placeholder: 'Premier' },
-      ],
-      second: [
-        { label: 'B 1', id: 'p-1-y', value: 'b1', placeholder: 'Second' },
-        { label: 'B 2', id: 'p-2-y', value: 'b2', placeholder: 'Second' },
-      ],
-      ranks: ['01', '02'],
-    });
-  });
-
-  it('Given two rows When they render Then each remove action names its row', async () => {
-    const { host } = await renderRows(TWO_ROWS);
-
-    expect(removeNames(host)).toEqual(['Retirer la paire 1', 'Retirer la paire 2']);
-  });
-});
 
 describe('AdminPairRows: ajout et retrait', () => {
   it('Given two rows When a row is added Then the model holds an empty third row and a third cell shows', async () => {

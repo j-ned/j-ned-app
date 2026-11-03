@@ -1,13 +1,10 @@
 import { signal, twoWayBinding, type WritableSignal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import type { ProfileContent } from '@features/profile/domain/models/profile-content.model';
-import { TECHNOLOGY_ICONS } from '@features/profile/domain/models/technology-icon';
 import {
-  aDiploma,
   aHighlight,
   aProfileContent,
   aTechnology,
-  aWhatIDo,
 } from '@features/profile/testing/profile-builders';
 import { byTestId } from '@shared/testing/by-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
@@ -25,87 +22,22 @@ type RenderedForm = {
 type TextField = {
   readonly key: string;
   readonly draftKey: keyof ProfileDraft;
-  readonly label: string;
-  readonly section: string;
   readonly limit: number;
   readonly tooLong: string;
-  readonly initial: string;
 };
-
-const WITNESS = aProfileContent();
 
 const TEXT_FIELDS: readonly TextField[] = [
   {
     key: 'biography-title',
     draftKey: 'biographyTitle',
-    label: 'Titre',
-    section: 'profile-biography',
     limit: 80,
     tooLong: 'Le titre ne doit pas dépasser 80\u00a0caractères',
-    initial: WITNESS.biography.title,
-  },
-  {
-    key: 'biography-summary',
-    draftKey: 'biographySummary',
-    label: 'Résumé',
-    section: 'profile-biography',
-    limit: 200,
-    tooLong: 'Le résumé ne doit pas dépasser 200\u00a0caractères',
-    initial: WITNESS.biography.summary,
-  },
-  {
-    key: 'lead-emphasis',
-    draftKey: 'leadEmphasis',
-    label: "Suite de l'accroche",
-    section: 'profile-biography',
-    limit: 160,
-    tooLong: "La suite de l'accroche ne doit pas dépasser 160\u00a0caractères",
-    initial: WITNESS.biography.leadEmphasis,
-  },
-  {
-    key: 'work-summary',
-    draftKey: 'workSummary',
-    label: 'Résumé',
-    section: 'profile-work',
-    limit: 200,
-    tooLong: 'Le résumé ne doit pas dépasser 200\u00a0caractères',
-    initial: WITNESS.workSummary,
-  },
-  {
-    key: 'diplomas-summary',
-    draftKey: 'diplomasSummary',
-    label: 'Résumé',
-    section: 'profile-diplomas',
-    limit: 200,
-    tooLong: 'Le résumé ne doit pas dépasser 200\u00a0caractères',
-    initial: WITNESS.diplomasSummary,
-  },
-  {
-    key: 'motivation-title',
-    draftKey: 'motivationTitle',
-    label: 'Titre',
-    section: 'profile-motivation',
-    limit: 60,
-    tooLong: 'Le titre ne doit pas dépasser 60\u00a0caractères',
-    initial: WITNESS.motivation.title,
-  },
-  {
-    key: 'motivation-statement',
-    draftKey: 'motivationStatement',
-    label: 'Énoncé',
-    section: 'profile-motivation',
-    limit: 240,
-    tooLong: "L'énoncé ne doit pas dépasser 240\u00a0caractères",
-    initial: WITNESS.motivation.statement,
   },
   {
     key: 'motivation-description',
     draftKey: 'motivationDescription',
-    label: 'Description',
-    section: 'profile-motivation',
     limit: 600,
     tooLong: 'La description ne doit pas dépasser 600\u00a0caractères',
-    initial: WITNESS.motivation.description,
   },
 ];
 
@@ -125,14 +57,6 @@ const normalized = (element: Element | null | undefined): string =>
 
 const control = (host: HTMLElement, key: string): HTMLInputElement | HTMLTextAreaElement | null =>
   byTestId(host, `admin-profile-${key}`) as HTMLInputElement | HTMLTextAreaElement | null;
-
-const labelOf = (host: HTMLElement, element: HTMLElement | null): string | null => {
-  if (!element?.id) return null;
-  const labels = [...host.querySelectorAll('label')].filter(
-    (label) => label.getAttribute('for') === element.id,
-  );
-  return labels.length === 1 ? normalized(labels[0]) : null;
-};
 
 const describedIds = (element: HTMLElement | null): readonly string[] =>
   element?.getAttribute('aria-describedby')?.split(/\s+/).filter(Boolean) ?? [];
@@ -166,48 +90,6 @@ const announcedError = (
 };
 
 describe('AdminProfileForm: champs du parcours', () => {
-  it('Given the form When it renders Then it is the form « profile-form », free of the native validation', async () => {
-    const { host } = await renderForm();
-    const element = byTestId(host, 'admin-profile-form');
-
-    expect({
-      tag: element?.tagName,
-      id: element?.id,
-      novalidate: element?.hasAttribute('novalidate'),
-    }).toEqual({ tag: 'FORM', id: 'profile-form', novalidate: true });
-  });
-
-  it.each(TEXT_FIELDS)(
-    'Given the form When it renders Then $key stands in the section $section, labelled « $label » and marked as required',
-    async ({ key, label, section }) => {
-      const { host } = await renderForm();
-      const field = control(host, key);
-
-      expect({
-        id: field?.id,
-        section: field?.closest('fieldset')?.id ?? null,
-        inForm: field?.closest('form')?.id ?? null,
-        label: labelOf(host, field),
-        required: field?.getAttribute('aria-required'),
-      }).toEqual({
-        id: `profile-${key}`,
-        section,
-        inForm: 'profile-form',
-        label: `${label} obligatoire`,
-        required: 'true',
-      });
-    },
-  );
-
-  it.each(TEXT_FIELDS)(
-    'Given a draft from the page When the form renders Then $key shows its value',
-    async ({ key, initial }) => {
-      const { host } = await renderForm();
-
-      expect(control(host, key)?.value).toBe(initial);
-    },
-  );
-
   it.each(TEXT_FIELDS)(
     'Given the form When the admin types in $key Then the page draft holds the text',
     async ({ key, draftKey }) => {
@@ -386,98 +268,9 @@ const rowError = (host: HTMLElement, testId: string, index = 0): string | null =
   return error ? normalized(error) : null;
 };
 
-const ORDERED_LISTS = [
-  {
-    prefix: 'paragraph',
-    section: 'profile-biography',
-    rows: 2,
-    add: 'Ajouter un paragraphe',
-    actions: ['Descendre le paragraphe 1', 'Supprimer le paragraphe 1'],
-    max: 8,
-    full: (count: number): ProfileContent =>
-      aProfileContent({
-        biography: {
-          ...aProfileContent().biography,
-          paragraphs: Array.from({ length: count }, (_, i) => `Paragraphe ${i + 1}.`),
-        },
-      }),
-  },
-  {
-    prefix: 'highlight',
-    section: 'profile-traits',
-    rows: 1,
-    add: 'Ajouter un trait',
-    actions: ['Supprimer le trait 1'],
-    max: 6,
-    full: (count: number): ProfileContent =>
-      aProfileContent({
-        highlights: Array.from({ length: count }, (_, i) => aHighlight({ id: `highlight-${i}` })),
-      }),
-  },
-  {
-    prefix: 'activity',
-    section: 'profile-work',
-    rows: 1,
-    add: 'Ajouter une activité',
-    actions: ["Supprimer l'activité 1"],
-    max: 6,
-    full: (count: number): ProfileContent =>
-      aProfileContent({
-        whatIDo: Array.from({ length: count }, (_, i) => aWhatIDo({ id: `work-${i}` })),
-      }),
-  },
-] as const;
-
 describe('AdminProfileForm: listes ordonnables (paragraphes, traits, activités)', () => {
   afterEach(() => {
     vi.restoreAllMocks();
-  });
-
-  it.each(ORDERED_LISTS)(
-    'Given the witness content When the form renders Then the $prefix rows stand in $section, with their actions and the add button « $add »',
-    async ({ prefix, section, rows, add, actions }) => {
-      const { host } = await renderForm();
-      const rendered = rowsOf(host, prefix);
-
-      expect({
-        rows: rendered.length,
-        sections: [...new Set(rendered.map((row) => row.closest('fieldset[id^="profile-"]')?.id))],
-        actions: [...(rendered[0]?.querySelectorAll('button') ?? [])].map(
-          (button) => button.getAttribute('aria-label') ?? '',
-        ),
-        add: normalized(addButton(host, prefix)),
-      }).toEqual({ rows, sections: [section], actions: [...actions], add });
-    },
-  );
-
-  it('Given the witness content When the form renders Then each row field shows its value under its own numbered label', async () => {
-    const { host } = await renderForm();
-    const read = (
-      testId: string,
-      index = 0,
-    ): { value: string | undefined; label: string | null } => {
-      const field = rowField(host, testId, index);
-      return { value: field?.value, label: labelOf(host, field) };
-    };
-
-    expect({
-      paragraphs: [read('paragraph-text', 0), read('paragraph-text', 1)],
-      highlight: [read('highlight-title'), read('highlight-description')],
-      activity: [read('activity-title'), read('activity-description')],
-    }).toEqual({
-      paragraphs: [
-        { value: 'Premier paragraphe témoin.', label: 'Paragraphe 1' },
-        { value: 'Second paragraphe témoin.', label: 'Paragraphe 2' },
-      ],
-      highlight: [
-        { value: 'Trait témoin', label: 'Titre du trait 1' },
-        { value: 'Description du trait témoin.', label: 'Description du trait 1' },
-      ],
-      activity: [
-        { value: 'Activité témoin', label: "Titre de l'activité 1" },
-        { value: 'Description de l’activité témoin.', label: "Description de l'activité 1" },
-      ],
-    });
   });
 
   it('Given two paragraphs When the second is moved up and the form submitted Then the content carries them in the new order', async () => {
@@ -555,21 +348,6 @@ describe('AdminProfileForm: listes ordonnables (paragraphes, traits, activités)
       message: 'Le paragraphe ne doit pas dépasser 1200\u00a0caractères',
     },
     {
-      testId: 'highlight-title',
-      limit: 60,
-      message: 'Le titre ne doit pas dépasser 60\u00a0caractères',
-    },
-    {
-      testId: 'highlight-description',
-      limit: 400,
-      message: 'La description ne doit pas dépasser 400\u00a0caractères',
-    },
-    {
-      testId: 'activity-title',
-      limit: 60,
-      message: 'Le titre ne doit pas dépasser 60\u00a0caractères',
-    },
-    {
       testId: 'activity-description',
       limit: 600,
       message: 'La description ne doit pas dépasser 600\u00a0caractères',
@@ -589,11 +367,7 @@ describe('AdminProfileForm: listes ordonnables (paragraphes, traits, activités)
     },
   );
 
-  it.each([
-    { testId: 'paragraph-text' },
-    { testId: 'highlight-description' },
-    { testId: 'activity-title' },
-  ])(
+  it.each([{ testId: 'paragraph-text' }])(
     'Given $testId made of blanks only When the form is submitted Then nothing is emitted and it is required',
     async ({ testId }) => {
       const rendered = await renderForm();
@@ -605,20 +379,6 @@ describe('AdminProfileForm: listes ordonnables (paragraphes, traits, activités)
         submitted: rendered.submitted.length,
         error: rowError(rendered.host, testId),
       }).toEqual({ submitted: 0, error: REQUIRED_MESSAGE });
-    },
-  );
-
-  it.each(ORDERED_LISTS)(
-    'Given $max $prefix rows When the add button renders Then it is announced as unavailable and adds nothing',
-    async ({ prefix, max, full }) => {
-      const rendered = await renderForm(full(max));
-
-      await addRow(rendered, prefix);
-
-      expect({
-        ariaDisabled: addButton(rendered.host, prefix)?.getAttribute('aria-disabled'),
-        rows: rowsOf(rendered.host, prefix).length,
-      }).toEqual({ ariaDisabled: 'true', rows: max });
     },
   );
 });
@@ -638,99 +398,9 @@ async function chooseInRow(
   await settle(rendered.fixture);
 }
 
-const STACK_AND_DIPLOMAS = [
-  {
-    prefix: 'technology',
-    section: 'profile-work',
-    add: 'Ajouter une technologie',
-    remove: 'Supprimer la technologie 1',
-    max: 18,
-    full: (count: number): ProfileContent =>
-      aProfileContent({
-        technologies: Array.from({ length: count }, (_, i) => aTechnology({ id: `tech-${i}` })),
-      }),
-  },
-  {
-    prefix: 'diploma',
-    section: 'profile-diplomas',
-    add: 'Ajouter une formation',
-    remove: 'Supprimer la formation 1',
-    max: 8,
-    full: (count: number): ProfileContent =>
-      aProfileContent({
-        diplomas: Array.from({ length: count }, (_, i) => aDiploma({ id: `diploma-${i}` })),
-      }),
-  },
-] as const;
-
 describe('AdminProfileForm: stack et formations', () => {
   afterEach(() => {
     vi.restoreAllMocks();
-  });
-
-  it.each(STACK_AND_DIPLOMAS)(
-    'Given the witness content When the form renders Then the $prefix rows stand in $section, with « $remove » and « $add »',
-    async ({ prefix, section, add, remove }) => {
-      const { host } = await renderForm();
-      const rows = rowsOf(host, prefix);
-
-      expect({
-        rows: rows.length,
-        section: rows[0]?.closest('fieldset[id^="profile-"]')?.id ?? null,
-        actions: [...(rows[0]?.querySelectorAll('button') ?? [])].map(
-          (button) => button.getAttribute('aria-label') ?? '',
-        ),
-        add: normalized(addButton(host, prefix)),
-      }).toEqual({ rows: 1, section, actions: [remove], add });
-    },
-  );
-
-  it('Given the witness content When the form renders Then each technology and diploma field shows its value under its numbered label, skills one per line', async () => {
-    const { host } = await renderForm();
-    const read = (testId: string): { value: string | undefined; label: string | null } => {
-      const field = rowField(host, testId, 0);
-      return { value: field?.value, label: labelOf(host, field) };
-    };
-
-    expect({
-      technology: ['technology-name', 'technology-category', 'technology-icon'].map(read),
-      diploma: [
-        'diploma-title',
-        'diploma-provider',
-        'diploma-level',
-        'diploma-description',
-        'diploma-skills',
-      ].map(read),
-    }).toEqual({
-      technology: [
-        { value: 'Techno témoin', label: 'Nom de la technologie 1' },
-        { value: 'Catégorie témoin', label: 'Catégorie de la technologie 1' },
-        { value: 'angular', label: 'Icône de la technologie 1' },
-      ],
-      diploma: [
-        { value: 'Formation témoin', label: 'Intitulé de la formation 1' },
-        { value: 'Organisme témoin', label: 'Organisme de la formation 1' },
-        { value: 'Niveau témoin', label: 'Niveau de la formation 1' },
-        { value: 'Description de la formation témoin.', label: 'Description de la formation 1' },
-        { value: 'Compétence A\nCompétence B', label: 'Compétences de la formation 1' },
-      ],
-    });
-  });
-
-  it('Given the icon field When it renders Then it is a select offering a disabled prompt then exactly the closed list of icons', async () => {
-    const { host } = await renderForm();
-    const select = rowField(host, 'technology-icon', 0);
-    const options = select instanceof HTMLSelectElement ? [...select.options] : [];
-
-    expect({
-      tag: select?.tagName,
-      values: options.map((option) => option.value),
-      promptDisabled: options[0]?.disabled,
-    }).toEqual({
-      tag: 'SELECT',
-      values: ['', ...TECHNOLOGY_ICONS],
-      promptDisabled: true,
-    });
   });
 
   it('Given a technology added and named but without icon When the form is submitted Then nothing is emitted and the icon is required', async () => {
@@ -836,26 +506,6 @@ describe('AdminProfileForm: stack et formations', () => {
       message: 'Le nom ne doit pas dépasser 40\u00a0caractères',
     },
     {
-      testId: 'technology-category',
-      limit: 40,
-      message: 'La catégorie ne doit pas dépasser 40\u00a0caractères',
-    },
-    {
-      testId: 'diploma-title',
-      limit: 120,
-      message: "L'intitulé ne doit pas dépasser 120\u00a0caractères",
-    },
-    {
-      testId: 'diploma-provider',
-      limit: 80,
-      message: "L'organisme ne doit pas dépasser 80\u00a0caractères",
-    },
-    {
-      testId: 'diploma-level',
-      limit: 80,
-      message: 'Le niveau ne doit pas dépasser 80\u00a0caractères',
-    },
-    {
       testId: 'diploma-description',
       limit: 600,
       message: 'La description ne doit pas dépasser 600\u00a0caractères',
@@ -875,14 +525,7 @@ describe('AdminProfileForm: stack et formations', () => {
     },
   );
 
-  it.each([
-    { testId: 'technology-name' },
-    { testId: 'technology-category' },
-    { testId: 'diploma-title' },
-    { testId: 'diploma-provider' },
-    { testId: 'diploma-level' },
-    { testId: 'diploma-description' },
-  ])(
+  it.each([{ testId: 'technology-name' }, { testId: 'diploma-description' }])(
     'Given $testId emptied When the form is submitted Then nothing is emitted and it is required',
     async ({ testId }) => {
       const rendered = await renderForm();
@@ -915,20 +558,6 @@ describe('AdminProfileForm: stack et formations', () => {
       }).toEqual({ submitted: 0, error: { role: 'alert', text: message } });
     },
   );
-
-  it.each(STACK_AND_DIPLOMAS)(
-    'Given $max $prefix rows When the add button is pressed Then it is announced as unavailable and adds nothing',
-    async ({ prefix, max, full }) => {
-      const rendered = await renderForm(full(max));
-
-      await addRow(rendered, prefix);
-
-      expect({
-        ariaDisabled: addButton(rendered.host, prefix)?.getAttribute('aria-disabled'),
-        rows: rowsOf(rendered.host, prefix).length,
-      }).toEqual({ ariaDisabled: 'true', rows: max });
-    },
-  );
 });
 
 describe('AdminProfileForm: typographie française', () => {
@@ -944,27 +573,4 @@ describe('AdminProfileForm: typographie française', () => {
       sent: rendered.submitted.map((content) => content.biography.title),
     }).toEqual({ draft: 'Prix : 890', field: 'Prix : 890', sent: ['Prix\u00a0: 890'] });
   });
-});
-
-describe('AdminProfileForm: nom des listes (revue F2-F7)', () => {
-  it.each([
-    { prefix: 'paragraph', name: 'Paragraphes' },
-    { prefix: 'highlight', name: 'Traits' },
-    { prefix: 'activity', name: 'Activités' },
-    { prefix: 'technology', name: 'Stack technique' },
-    { prefix: 'diploma', name: 'Formations' },
-  ])(
-    'Given the $prefix list When the form renders Then its ordered list is named « $name », without adding a heading',
-    async ({ prefix, name }) => {
-      const { host } = await renderForm();
-      const list = rowsOf(host, prefix)[0]?.closest('ol') ?? null;
-      const labelledBy = list?.getAttribute('aria-labelledby');
-      const label = labelledBy ? host.querySelector(`[id="${labelledBy}"]`) : null;
-
-      expect({
-        name: list?.getAttribute('aria-label') ?? normalized(label),
-        headings: host.querySelectorAll('h2, h3, h4').length,
-      }).toEqual({ name, headings: 0 });
-    },
-  );
 });

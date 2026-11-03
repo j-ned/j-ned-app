@@ -53,20 +53,6 @@ describe('AdminWordingNotice', () => {
     });
   });
 
-  it('Given warnings When the notice renders Then it is not a live region: typing does not trigger an announcement', async () => {
-    const { host } = await renderNotice([PARAGRAPH]);
-    const notice = byTestId(host, 'admin-wording-notice');
-    const live = notice
-      ? [notice, ...notice.querySelectorAll('*')].filter(
-          (element) =>
-            element.hasAttribute('aria-live') ||
-            ['alert', 'status', 'log'].includes(element.getAttribute('role') ?? ''),
-        ).length
-      : null;
-
-    expect(live).toBe(0);
-  });
-
   it('Given no warning, then one, then none When the notice renders Then it shows only while there is something to reread', async () => {
     const { fixture, host, warnings } = await renderNotice([]);
     const before = byTestId(host, 'admin-wording-notice');

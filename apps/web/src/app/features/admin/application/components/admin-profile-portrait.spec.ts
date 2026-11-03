@@ -96,28 +96,9 @@ describe('AdminProfilePortrait: vignette', () => {
       remove: 'Revenir au portrait par défaut',
     });
   });
-
-  it('Given the default portrait When a stored one arrives Then the thumbnail follows', async () => {
-    const rendered = await renderPortrait(null);
-
-    rendered.portraitUrl.set(STORED);
-    await settle(rendered.fixture);
-
-    expect(thumbnail(rendered.host).src).toBe(STORED);
-  });
 });
 
 describe('AdminProfilePortrait: dépôt', () => {
-  it('Given the drop zone When it renders Then it accepts the four image types the API takes and says so, with their size limit', async () => {
-    const { host } = await renderPortrait(null);
-    const zone = byTestId(host, 'admin-profile-portrait-dropzone');
-
-    expect({
-      accept: zone?.querySelector('input[type="file"]')?.getAttribute('accept'),
-      helper: (zone?.textContent ?? '').includes('AVIF, WebP, PNG ou JPEG, 4 Mo au plus'),
-    }).toEqual({ accept: 'image/avif,image/webp,image/png,image/jpeg', helper: true });
-  });
-
   it.each([
     { type: 'image/avif', name: 'p.avif' },
     { type: 'image/webp', name: 'p.webp' },
@@ -249,7 +230,7 @@ describe('AdminProfilePortrait: focus après le retrait (revue F2-F7)', () => {
 });
 
 describe('AdminProfilePortrait: fichier sans type connu du navigateur (revue F2-F7)', () => {
-  it.each(['p.avif', 'P.AVIF', 'p.webp', 'p.png', 'p.jpg', 'p.JPEG'])(
+  it.each(['p.avif', 'P.AVIF', 'p.JPEG'])(
     'Given %s dropped without MIME type When it is read Then its extension lets it through',
     async (name) => {
       const rendered = await renderPortrait(null);

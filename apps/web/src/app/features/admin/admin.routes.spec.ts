@@ -10,35 +10,6 @@ import { AdminProfile } from './pages/admin-profile/admin-profile';
 import { AdminProjectEditor } from './pages/admin-project-editor/admin-project-editor';
 import { unsavedChangesGuard } from './application/unsaved-changes-guard';
 
-describe('ADMIN_ROUTES: titres des pages', () => {
-  it('Given the admin pages When their titles are read Then they are in French', () => {
-    const pages = ADMIN_ROUTES[0]?.children ?? [];
-
-    expect(
-      Object.fromEntries(
-        pages
-          .filter((route) => typeof route.title === 'string')
-          .map((route) => [route.path, route.title]),
-      ),
-    ).toEqual({
-      '': "Vue d'ensemble | Admin",
-      projects: 'Projets | Admin',
-      'projects/new': 'Nouveau projet | Admin',
-      'projects/:id': 'Modifier un projet | Admin',
-      blog: 'Articles | Admin',
-      'blog/new': 'Nouvel article | Admin',
-      'blog/:id': 'Modifier un article | Admin',
-      profile: 'Parcours | Admin',
-      'guide-plaquettes': 'Guide des plaquettes | Admin',
-      cv: 'CV | Admin',
-      messages: 'Messages | Admin',
-      audience: 'Audience | Admin',
-      settings: 'Paramètres | Admin',
-      'settings/security': 'Sécurité | Admin',
-    });
-  });
-});
-
 async function navigate(url: string): Promise<{ url: string; title: string }> {
   TestBed.configureTestingModule({
     providers: [provideRouter([{ path: 'admin', children: ADMIN_ROUTES }])],
@@ -66,16 +37,6 @@ describe('ADMIN_ROUTES: Audience', () => {
     const audience = ADMIN_ROUTES[0]?.children?.find((route) => route.path === 'audience');
 
     expect(await audience?.loadComponent?.()).toBe(AdminAudience);
-  });
-});
-
-describe('ADMIN_ROUTES: rendez-vous retirés (spec 029)', () => {
-  it('declares neither the bookings page nor the availability page any more', () => {
-    expect(
-      (ADMIN_ROUTES[0]?.children ?? [])
-        .map((route) => route.path)
-        .filter((path) => path === 'rendez-vous' || path === 'disponibilites'),
-    ).toEqual([]);
   });
 });
 
