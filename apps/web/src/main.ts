@@ -73,6 +73,26 @@ async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<v
   ref.injector.get(Monitoring).attach(sentry, ref.injector.get(Router));
 }
 
+// Délai maximal avant le démarrage du suivi si le navigateur ne devient jamais inactif.
+const IDLE_TIMEOUT_MS = 4000;
+
+// Le suivi attend l'application hydratée puis un moment d'inactivité : sa configuration et son SDK
+// (~55 kB compressés) ne disputent plus le réseau ni le fil principal à l'hydratation et au LCP. Rien
+// n'est perdu : `Monitoring` rejoue les erreurs survenues avant, et les métriques de chargement sont
+// lues dans les entrées de performance déjà enregistrées.
+async function whenBootstrappedAndIdle(appRef: Promise<ApplicationRef>): Promise<void> {
+  await appRef.catch(() => null);
+  await new Promise<void>((resolve) => {
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => resolve(), { timeout: IDLE_TIMEOUT_MS });
+    } else {
+      setTimeout(resolve, 0);
+    }
+  });
+}
+
 const appRef = bootstrapApplication(App, appConfig);
 appRef.catch((err) => console.error(err));
-initSentryFromBackend(appRef).catch((err: unknown) => console.warn('Sentry indisponible', err));
+whenBootstrappedAndIdle(appRef)
+  .then(() => initSentryFromBackend(appRef))
+  .catch((err: unknown) => console.warn('Sentry indisponible', err));
