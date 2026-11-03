@@ -35,7 +35,7 @@ describe('buildRss', () => {
       '<title>Le blog de Julien Nédellec</title>',
       `<link>${SITE}/blog</link>`,
       `<atom:link href="${SITE}/rss.xml" rel="self" type="application/rss+xml" />`,
-      "<description>Ce que j'apprends en construisant mes projets\u00a0: Angular, NestJS, PostgreSQL et l'auto-hébergement, erreurs comprises.</description>",
+      "<description>Ce que j'apprends en construisant mes projets\u00a0: Angular, Hono, PostgreSQL et la mise en production, erreurs comprises.</description>",
       '<language>fr</language>',
       '<lastBuildDate>Sat, 10 Oct 2026 21:00:00 GMT</lastBuildDate>',
       '<item>',

@@ -58,7 +58,7 @@ export function buildRss(items: readonly RssItem[], builtAt: Date): string {
     <title>Le blog de ${AUTHOR}</title>
     <link>${SITE_URL}/blog</link>
     <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml" />
-    <description>Ce que j'apprends en construisant mes projets\u00a0: Angular, NestJS, PostgreSQL et l'auto-hébergement, erreurs comprises.</description>
+    <description>Ce que j'apprends en construisant mes projets\u00a0: Angular, Hono, PostgreSQL et la mise en production, erreurs comprises.</description>
     <language>fr</language>
     <lastBuildDate>${builtAt.toUTCString()}</lastBuildDate>
 ${items.map(toItem).join('\n')}
