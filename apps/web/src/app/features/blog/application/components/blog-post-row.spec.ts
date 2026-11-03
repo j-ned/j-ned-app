@@ -167,5 +167,15 @@ describe('BlogPostRow', () => {
       expect(byTestId(root, 'post-cover')).toBeNull();
       expect(root.querySelector('img')).toBeNull();
     });
+
+    it.each([true, false])(
+      'Given a cover (priority %s) When the row renders Then it is sized to its 20rem column on wide screens, full width below',
+      async (priority) => {
+        const root = await render({ ...rowOf(WITH_COVER), priority });
+        const sizes = byTestId(root, 'post-cover')?.querySelector('img')?.getAttribute('sizes');
+
+        expect(sizes?.replace(/^auto, /, '')).toBe('(min-width: 64rem) 20rem, 100vw');
+      },
+    );
   });
 });
