@@ -24,7 +24,7 @@ type HeadlineSegment = { readonly text: string; readonly accent: boolean };
       </h1>
 
       <p
-        class="animate-fade-up [animation-delay:120ms] mt-6 md:mt-7 max-w-[58ch] text-lg md:text-xl leading-relaxed text-muted"
+        class="mt-6 md:mt-7 max-w-[58ch] text-lg md:text-xl leading-relaxed text-muted"
         data-testid="hero-lead"
       >
         {{ h.lead }}

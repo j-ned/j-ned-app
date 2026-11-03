@@ -21,9 +21,7 @@ const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
       @if (info && bio) {
         <div class="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
           <div>
-            <p
-              class="animate-fade-up flex flex-wrap gap-x-3.5 gap-y-1.5 font-mono text-[0.8125rem] text-muted"
-            >
+            <p class="flex flex-wrap gap-x-3.5 gap-y-1.5 font-mono text-[0.8125rem] text-muted">
               <span class="text-primary" data-testid="about-hero-fact">{{ role }}</span>
               <span data-testid="about-hero-fact">{{ stack }}</span>
               <span data-testid="about-hero-fact">{{ info.location }}</span>
@@ -36,13 +34,13 @@ const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
               {{ info.displayName }}
             </h1>
             <p
-              class="animate-fade-up [animation-delay:120ms] mt-7 max-w-[32ch] text-[clamp(1.25rem,2.1vw,1.75rem)] font-medium leading-snug tracking-tight text-balance"
+              class="mt-7 max-w-[32ch] text-[clamp(1.25rem,2.1vw,1.75rem)] font-medium leading-snug tracking-tight text-balance"
               data-testid="about-lead"
             >
               {{ lead() }} <span class="text-primary">{{ bio.leadEmphasis }}</span>
             </p>
             <ul
-              class="animate-fade-up [animation-delay:180ms] mt-8 flex flex-wrap gap-x-6 gap-y-2"
+              class="mt-8 flex flex-wrap gap-x-6 gap-y-2"
               aria-label="Réseaux et contact"
               role="list"
             >
@@ -66,7 +64,7 @@ const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
               }
             </ul>
             @if (cvUrl(); as url) {
-              <p class="animate-fade-up [animation-delay:240ms] mt-8">
+              <p class="mt-8">
                 <a
                   appButton
                   variant="outlined"

@@ -25,7 +25,7 @@ import { HomeHero } from './home-hero';
       class="page-container grid w-full items-end gap-12 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-16"
     >
       <app-home-hero [hero]="hero()">
-        <div class="animate-fade-up [animation-delay:180ms] mt-9 flex flex-wrap items-center gap-3">
+        <div class="mt-9 flex flex-wrap items-center gap-3">
           <a appButton routerLink="/blog" data-testid="hero-cta-blog" (click)="blogOpened.emit()">{{
             ctaLabels.blog
           }}</a>

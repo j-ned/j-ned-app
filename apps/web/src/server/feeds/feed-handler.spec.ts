@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import { createFeedHandler, type FeedHandler, type FeedTarget } from './feed-handler';
 
@@ -71,6 +71,12 @@ const headCallsTo = (api: ReturnType<typeof vi.fn<typeof fetch>>, url: string): 
   api.mock.calls.filter(([input, init]) => String(input) === url && init?.method === 'HEAD').length;
 
 describe('createFeedHandler', () => {
+  // Le rendu RSS est chargé à la demande et tire jsdom (plusieurs secondes sous la charge de la suite
+  // complète) : chargé ici une fois, hors du chronomètre des tests, qui ne mesurent que le comportement.
+  beforeAll(async () => {
+    await import('./rss');
+  }, 30_000);
+
   afterEach(() => {
     vi.useRealTimers();
   });
