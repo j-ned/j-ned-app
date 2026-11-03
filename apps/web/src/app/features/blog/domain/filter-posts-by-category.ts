@@ -1,10 +1,10 @@
-import type { BlogPost } from './models/blog-post.model';
+import type { BlogPostSummary } from './models/blog-post.model';
 import type { BlogCategoryFilter } from './models/blog-tag.model';
 import { isPostInCategory } from './is-post-in-category';
 
 export function filterPostsByCategory(
-  posts: readonly BlogPost[],
+  posts: readonly BlogPostSummary[],
   category: BlogCategoryFilter,
-): readonly BlogPost[] {
+): readonly BlogPostSummary[] {
   return category === 'all' ? posts : posts.filter((post) => isPostInCategory(post, category));
 }

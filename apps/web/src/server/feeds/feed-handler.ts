@@ -105,7 +105,8 @@ export function createFeedHandler({
         staticLastmod: startedAt,
       });
     }
-    const posts = await readJson<readonly FeedPost[]>('/blog/posts', visitor);
+    // Le flux porte le texte complet : la liste publique ne le joint qu'à la demande.
+    const posts = await readJson<readonly FeedPost[]>('/blog/posts?include=content', visitor);
     const items = await Promise.all(
       posts.map(async (post) => ({ post, enclosure: await enclosureOf(post.coverImage, visitor) })),
     );

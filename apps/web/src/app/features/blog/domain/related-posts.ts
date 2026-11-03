@@ -1,9 +1,9 @@
-import type { BlogPost } from './models/blog-post.model';
+import type { BlogPostSummary } from './models/blog-post.model';
 import { blogTagCategory, type BlogTagCategory } from './models/blog-tag.model';
 
 export const RELATED_POSTS_LIMIT = 3;
 
-function categoriesOf(post: BlogPost): ReadonlySet<BlogTagCategory> {
+function categoriesOf(post: BlogPostSummary): ReadonlySet<BlogTagCategory> {
   return new Set(post.tags.map(blogTagCategory).filter((category) => category !== null));
 }
 
@@ -11,7 +11,10 @@ function sharedCount<T>(a: ReadonlySet<T>, b: Iterable<T>): number {
   return [...new Set(b)].filter((item) => a.has(item)).length;
 }
 
-export function relatedPosts(posts: readonly BlogPost[], slug: string): readonly BlogPost[] {
+export function relatedPosts(
+  posts: readonly BlogPostSummary[],
+  slug: string,
+): readonly BlogPostSummary[] {
   const current = posts.find((p) => p.slug === slug);
   if (!current) return [];
 

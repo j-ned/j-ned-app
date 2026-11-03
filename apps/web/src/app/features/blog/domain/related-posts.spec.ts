@@ -1,12 +1,12 @@
 import { makeBlogPost } from '../testing/blog-post-builders';
-import type { BlogPost } from './models/blog-post.model';
+import type { BlogPostSummary } from './models/blog-post.model';
 import { RELATED_POSTS_LIMIT, relatedPosts } from './related-posts';
 
 const post = (
   slug: string,
   tags: readonly string[],
   publishedAt: string | null = '2026-09-01T00:00:00Z',
-): BlogPost =>
+): BlogPostSummary =>
   makeBlogPost({
     id: slug,
     slug,
@@ -16,7 +16,7 @@ const post = (
     status: publishedAt === null ? 'draft' : 'published',
   });
 
-const slugsOf = (posts: readonly BlogPost[]): readonly string[] => posts.map((p) => p.slug);
+const slugsOf = (posts: readonly BlogPostSummary[]): readonly string[] => posts.map((p) => p.slug);
 
 describe('relatedPosts', () => {
   it('caps the proposals at three', () => {

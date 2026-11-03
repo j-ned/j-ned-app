@@ -11,8 +11,10 @@ import {
 import { StorageService } from '../storage/storage.service';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
 import { contentHash, deleteS3IfExists } from '../storage/s3-utils';
+import type { BlogPostResponse } from './blog-post-response';
 import { contentImageKeysIn } from './blog-content-image';
 import { BlogContentImagesService } from './blog-content-images.service';
+import { countWords } from './word-count';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { findByIdOrFail } from '../common/crud-helpers';
@@ -29,7 +31,7 @@ export class BlogService {
     private readonly contentImages: BlogContentImagesService,
   ) {}
 
-  async findAllPublished(): Promise<BlogPost[]> {
+  async findAllPublished(): Promise<BlogPostResponse[]> {
     const rows = await this.db
       .select()
       .from(blogPosts)
@@ -38,7 +40,7 @@ export class BlogService {
     return rows.map((r) => this.toResponse(r));
   }
 
-  async findAllForAdmin(): Promise<BlogPost[]> {
+  async findAllForAdmin(): Promise<BlogPostResponse[]> {
     const rows = await this.db
       .select()
       .from(blogPosts)
@@ -46,7 +48,7 @@ export class BlogService {
     return rows.map((r) => this.toResponse(r));
   }
 
-  async findBySlug(slug: string): Promise<BlogPost> {
+  async findBySlug(slug: string): Promise<BlogPostResponse> {
     const rows = await this.db
       .select()
       .from(blogPosts)
@@ -58,7 +60,7 @@ export class BlogService {
     return this.toResponse(rows[0]);
   }
 
-  async create(dto: CreateBlogPostDto): Promise<BlogPost> {
+  async create(dto: CreateBlogPostDto): Promise<BlogPostResponse> {
     const slug = slugify(dto.title);
     const publishedAt = dto.status === 'published' ? new Date() : null;
     try {
@@ -77,7 +79,7 @@ export class BlogService {
     }
   }
 
-  async update(id: string, dto: UpdateBlogPostDto): Promise<BlogPost> {
+  async update(id: string, dto: UpdateBlogPostDto): Promise<BlogPostResponse> {
     const current = await this.findByIdRaw(id);
 
     // coverImage extrait du spread : il ne peut être que null ou undefined
@@ -152,7 +154,10 @@ export class BlogService {
       );
   }
 
-  async uploadCoverImage(id: string, file: UploadedFile): Promise<BlogPost> {
+  async uploadCoverImage(
+    id: string,
+    file: UploadedFile,
+  ): Promise<BlogPostResponse> {
     const current = await this.findByIdRaw(id);
     // Quel que soit le format reçu, on stocke un AVIF ≤ 1600 px : le poids servi ne dépend
     // plus de l'export de l'admin (un JPEG photo de 2,8 Mo tombait en l'état sur la page).
@@ -216,12 +221,13 @@ export class BlogService {
   }
 
   // Transforme la key DB en URL publique pour la sortie API.
-  private toResponse(p: BlogPost): BlogPost {
+  private toResponse(p: BlogPost): BlogPostResponse {
     return {
       ...p,
       coverImage: p.coverImage
         ? this.storage.getPublicUrl(BlogService.BUCKET, p.coverImage)
         : '',
+      wordCount: countWords(p.contentMarkdown),
     };
   }
 }

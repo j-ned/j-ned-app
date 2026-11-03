@@ -1,12 +1,12 @@
 import { makeBlogPost } from '../testing/blog-post-builders';
-import type { BlogPost } from './models/blog-post.model';
+import type { BlogPostSummary } from './models/blog-post.model';
 import { postsAboutProject } from './posts-about-project';
 
 const post = (
   slug: string,
   tags: readonly string[],
   publishedAt: string | null = '2026-09-01T00:00:00Z',
-): BlogPost =>
+): BlogPostSummary =>
   makeBlogPost({
     id: slug,
     slug,
@@ -16,7 +16,7 @@ const post = (
     status: publishedAt === null ? 'draft' : 'published',
   });
 
-const slugsOf = (posts: readonly BlogPost[]): readonly string[] => posts.map((p) => p.slug);
+const slugsOf = (posts: readonly BlogPostSummary[]): readonly string[] => posts.map((p) => p.slug);
 
 describe('postsAboutProject', () => {
   it('Given posts on several projects When the posts about DashFlow are read Then only the published ones tagged DashFlow remain, newest first', () => {

@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable, ReplaySubject, retry, share, startWith, Subject, switchMap } from 'rxjs';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
-import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
+import type { BlogPost, BlogPostInput, BlogPostSummary } from '../domain/models/blog-post.model';
 import type { ContentImage } from '../domain/models/content-image.model';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
@@ -11,7 +11,7 @@ import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
 const resolveStorageUrl = (storageBase: string, url: string): string =>
   url.startsWith('http') ? url : `${storageBase}${url}`;
 
-function resolvePost(storageBase: string, p: BlogPost): BlogPost {
+function resolvePost<T extends BlogPostSummary>(storageBase: string, p: T): T {
   return p.coverImage ? { ...p, coverImage: resolveStorageUrl(storageBase, p.coverImage) } : p;
 }
 
@@ -40,9 +40,9 @@ export class HttpBlogGateway extends BlogGateway {
     }),
   );
 
-  getPublishedPosts(): Observable<readonly BlogPost[]> {
+  getPublishedPosts(): Observable<readonly BlogPostSummary[]> {
     return this.http
-      .get<BlogPost[]>(`${this.apiUrl}/blog/posts`)
+      .get<BlogPostSummary[]>(`${this.apiUrl}/blog/posts`)
       .pipe(map((rows) => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))));
   }
 

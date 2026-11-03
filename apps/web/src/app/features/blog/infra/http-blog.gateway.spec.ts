@@ -10,8 +10,9 @@ import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
 import type { ImageUploadPreparer } from '@shared/upload/image-upload-preparer';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
 import { ToastStore } from '@core/notifications/toast-store';
-import type { BlogPost, BlogPostInput } from '../domain/models/blog-post.model';
+import type { BlogPost, BlogPostInput, BlogPostSummary } from '../domain/models/blog-post.model';
 import { makeBlogPost } from '../testing/blog-post-builders';
+import { countWords } from '../domain/reading-time';
 
 const BASE = 'https://api.test';
 
@@ -47,6 +48,7 @@ function post(overrides: Partial<BlogPost> = {}): BlogPost {
     likesCount: 0,
     publishedAt: '2026-08-31T00:00:00Z',
     updatedAt: '2026-08-31T00:00:00Z',
+    wordCount: countWords(overrides.contentMarkdown ?? '# Titre'),
     ...overrides,
   };
 }
@@ -60,25 +62,27 @@ describe('HttpBlogGateway', () => {
     reader: string;
     url: string;
     list: boolean;
-    read: (gateway: HttpBlogGateway) => Observable<BlogPost | readonly BlogPost[]>;
+    read: (gateway: HttpBlogGateway) => Observable<BlogPostSummary | readonly BlogPostSummary[]>;
   }>([
     {
       reader: 'the published list',
       url: `${BASE}/blog/posts`,
       list: true,
-      read: (g): Observable<BlogPost | readonly BlogPost[]> => g.getPublishedPosts(),
+      read: (g): Observable<BlogPostSummary | readonly BlogPostSummary[]> => g.getPublishedPosts(),
     },
     {
       reader: 'the article',
       url: `${BASE}/blog/posts/mon-article`,
       list: false,
-      read: (g): Observable<BlogPost | readonly BlogPost[]> => g.getPostBySlug('mon-article'),
+      read: (g): Observable<BlogPostSummary | readonly BlogPostSummary[]> =>
+        g.getPostBySlug('mon-article'),
     },
     {
       reader: 'the admin list',
       url: `${BASE}/blog/posts/admin`,
       list: true,
-      read: (g): Observable<BlogPost | readonly BlogPost[]> => g.getAllPostsForAdmin(),
+      read: (g): Observable<BlogPostSummary | readonly BlogPostSummary[]> =>
+        g.getAllPostsForAdmin(),
     },
   ])('couverture lue par $reader', ({ url, list, read }) => {
     it.each([

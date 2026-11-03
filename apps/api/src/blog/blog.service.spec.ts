@@ -85,6 +85,13 @@ describe('BlogService', () => {
       expect(result.coverImage).toBe('https://example.test/url');
     });
 
+    it('compte les mots du corps Markdown', async () => {
+      const body = Array.from({ length: 221 }, () => 'mot').join(' ');
+      db.limit.mockResolvedValueOnce([mkPost({ contentMarkdown: body })]);
+      const result = await service.findBySlug('mon-article');
+      expect(result.wordCount).toBe(221);
+    });
+
     it('lève NotFoundException pour un slug draft - un brouillon 404 exactement comme un slug inconnu', async () => {
       // La requête filtre désormais status='published' : un draft ne remonte
       // aucune ligne, même si le slug existe bien en DB.

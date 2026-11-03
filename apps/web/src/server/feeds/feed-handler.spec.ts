@@ -6,6 +6,8 @@ const API = 'http://api:3000/api';
 const SITE = 'https://nedellec-julien.fr';
 const PROJECTS_URL = `${API}/projects?_sort=order&limit=100`;
 const POSTS_URL = `${API}/blog/posts`;
+// Le flux porte le texte complet : il le demande, la liste publique ne le joint pas par défaut.
+const FULL_POSTS_URL = `${API}/blog/posts?include=content`;
 const GUIDE_URL = `${API}/workshop-guide`;
 const COVER_PATH = '/storage/portfolio-storage/blog/c-1a2b3c4d.avif';
 const COVER_PROBE_URL = `${API}${COVER_PATH}?variant=share`;
@@ -21,6 +23,7 @@ const json = (body: unknown): Promise<Response> =>
 const HEALTHY_ROUTES: Readonly<Record<string, Route>> = {
   [PROJECTS_URL]: () => json([{ slug: 'dashflow' }]),
   [POSTS_URL]: () => json([makeBlogPost({ slug: 'article-temoin', coverImage: COVER_PATH })]),
+  [FULL_POSTS_URL]: () => json([makeBlogPost({ slug: 'article-temoin', coverImage: COVER_PATH })]),
   [GUIDE_URL]: () =>
     json({ enabled: true, decoderEnabled: true, entries: [], version: 1, updatedAt: null }),
   [COVER_PROBE_URL]: () =>
@@ -175,9 +178,9 @@ describe('createFeedHandler', () => {
     ['in error', 'sitemap', POSTS_URL, answering(500)],
     ['throttling', 'sitemap', PROJECTS_URL, answering(429)],
     ['in error on the insert guide', 'sitemap', GUIDE_URL, answering(404)],
-    ['unreachable', 'rss', POSTS_URL, unreachable],
-    ['in error', 'rss', POSTS_URL, answering(502)],
-    ['throttling', 'rss', POSTS_URL, answering(429)],
+    ['unreachable', 'rss', FULL_POSTS_URL, unreachable],
+    ['in error', 'rss', FULL_POSTS_URL, answering(502)],
+    ['throttling', 'rss', FULL_POSTS_URL, answering(429)],
   ])(
     'Given the API is %s When the %s is requested Then it answers 503 so that nginx serves its last copy',
     async (_label, target, failingUrl, failure) => {
@@ -195,7 +198,7 @@ describe('createFeedHandler', () => {
         new Promise((_resolve, reject) => {
           init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
         });
-      const pending = aHandler(anApi({ [POSTS_URL]: hanging }))(target);
+      const pending = aHandler(anApi({ [POSTS_URL]: hanging, [FULL_POSTS_URL]: hanging }))(target);
       let settled: number | null = null;
       void pending.then((response) => (settled = response.status));
 

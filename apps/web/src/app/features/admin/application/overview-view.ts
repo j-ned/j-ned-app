@@ -9,7 +9,6 @@ import {
   pagesPerSessionLabel,
 } from '@features/analytics/domain/analytics-presenter';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
-import { readingTimeMinutes } from '@features/blog/domain/reading-time';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 import {
   PROJECT_KIND_FILTER_LABELS,
@@ -22,6 +21,7 @@ import type { CartoucheRow } from '@shared/ui/cartouche';
 import type { ReadoutItem } from './components/admin-readout';
 import { calendarDay } from './calendar-day';
 import { withFirstOfMonth } from '@shared/format/with-first-of-month';
+import { readingTimeMinutes } from '@features/blog/domain/reading-time';
 
 export type ContentRow = {
   readonly key: string;
@@ -149,7 +149,7 @@ function toPostRow(post: BlogPost): ContentRow {
     title: post.title,
     href: '/admin/blog',
     image: post.coverImage,
-    meta: `Article · ${date} · ${readingTimeMinutes(post.contentMarkdown)}${NBSP}min`,
+    meta: `Article · ${date} · ${readingTimeMinutes(post.wordCount)}${NBSP}min`,
     stamp: 'Publié',
   };
 }

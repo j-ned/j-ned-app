@@ -1,5 +1,6 @@
 import type { BlogPost } from '../domain/models/blog-post.model';
 import type { ContentImage } from '../domain/models/content-image.model';
+import { countWords } from '../domain/reading-time';
 
 export function makeBlogPost(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
@@ -14,6 +15,7 @@ export function makeBlogPost(overrides: Partial<BlogPost> = {}): BlogPost {
     likesCount: 0,
     publishedAt: '2026-08-31T00:00:00Z',
     updatedAt: '2026-08-31T00:00:00Z',
+    wordCount: countWords(overrides.contentMarkdown ?? ''),
     ...overrides,
   };
 }

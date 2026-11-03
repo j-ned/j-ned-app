@@ -1,16 +1,16 @@
-import type { BlogPost } from './models/blog-post.model';
+import type { BlogPostSummary } from './models/blog-post.model';
 
 export type AdjacentPosts = {
   /** Article publié juste avant (plus ancien). */
-  readonly older: BlogPost | null;
+  readonly older: BlogPostSummary | null;
   /** Article publié juste après (plus récent). */
-  readonly newer: BlogPost | null;
+  readonly newer: BlogPostSummary | null;
 };
 
 const NONE: AdjacentPosts = { older: null, newer: null };
 
 /** Voisins d'un article dans l'ordre de publication ; les brouillons sans date sont ignorés. */
-export function adjacentPosts(posts: readonly BlogPost[], slug: string): AdjacentPosts {
+export function adjacentPosts(posts: readonly BlogPostSummary[], slug: string): AdjacentPosts {
   // `filter` rend un nouveau tableau : le `sort` ne mute pas l'entrée.
   const published = posts
     .filter((p) => p.publishedAt !== null)

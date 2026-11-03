@@ -2,7 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { toBlogPostRowView } from '@features/blog/application/blog-list-view';
-import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import type { BlogPostSummary } from '@features/blog/domain/models/blog-post.model';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 
@@ -63,7 +63,7 @@ const LATEST_POSTS_SECTION = {
   `,
 })
 export class HomeLatestPosts {
-  readonly posts = input<readonly BlogPost[]>([]);
+  readonly posts = input<readonly BlogPostSummary[]>([]);
 
   protected readonly rows = computed(() =>
     this.posts().map((post) => toBlogPostRowView(post, false)),

@@ -1,4 +1,5 @@
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
+import { countWords } from '@features/blog/domain/reading-time';
 
 export type PostDraft = {
   title: string;
@@ -37,6 +38,8 @@ export function toPreviewPost(draft: PostDraft, base: BlogPost | null): BlogPost
     likesCount: base?.likesCount ?? 0,
     publishedAt: base?.publishedAt ?? null,
     updatedAt: base?.updatedAt ?? '',
+    // Compté sur le brouillon : le temps de lecture de l'aperçu suit la frappe.
+    wordCount: countWords(draft.contentMarkdown),
   };
 }
 

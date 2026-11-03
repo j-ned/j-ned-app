@@ -88,6 +88,28 @@ describe('blog routes (HTTP)', () => {
       expect(await res.json()).toEqual([POST]);
     });
 
+    it('GET /posts leaves out the Markdown body but keeps its word count', async () => {
+      blog.findAllPublished.mockResolvedValueOnce([
+        { ...POST, contentMarkdown: '# Corps', wordCount: 900 },
+      ]);
+      const [post] = (await (await call('/posts')).json()) as Record<
+        string,
+        unknown
+      >[];
+      expect(post).not.toHaveProperty('contentMarkdown');
+      expect(post).toMatchObject({ slug: POST.slug, wordCount: 900 });
+    });
+
+    it('GET /posts?include=content keeps the Markdown body, for the RSS feed', async () => {
+      blog.findAllPublished.mockResolvedValueOnce([
+        { ...POST, contentMarkdown: '# Corps', wordCount: 900 },
+      ]);
+      const [post] = (await (
+        await call('/posts?include=content')
+      ).json()) as Record<string, unknown>[];
+      expect(post).toMatchObject({ contentMarkdown: '# Corps' });
+    });
+
     it('GET /posts/:slug returns the post, 404 when the service throws', async () => {
       blog.findBySlug.mockResolvedValueOnce(POST);
       const ok = await call('/posts/mon-article');

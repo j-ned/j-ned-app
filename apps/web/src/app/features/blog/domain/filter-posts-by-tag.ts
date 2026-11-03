@@ -1,5 +1,8 @@
-import type { BlogPost } from './models/blog-post.model';
+import type { BlogPostSummary } from './models/blog-post.model';
 
-export function filterPostsByTag(posts: readonly BlogPost[], tag: string): readonly BlogPost[] {
+export function filterPostsByTag(
+  posts: readonly BlogPostSummary[],
+  tag: string,
+): readonly BlogPostSummary[] {
   return posts.filter((post) => post.tags.includes(tag));
 }

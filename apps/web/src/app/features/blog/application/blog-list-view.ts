@@ -4,13 +4,12 @@ import type { FilterOption } from '@shared/ui/filter-group';
 import { countPostsByCategory } from '../domain/count-posts-by-category';
 import { filterPostsByCategory } from '../domain/filter-posts-by-category';
 import { filterPostsByTag } from '../domain/filter-posts-by-tag';
-import type { BlogPost } from '../domain/models/blog-post.model';
+import type { BlogPostSummary } from '../domain/models/blog-post.model';
 import {
   BLOG_TAG_CATEGORIES,
   type BlogCategoryCounts,
   type BlogCategoryFilter,
 } from '../domain/models/blog-tag.model';
-import { readingTimeMinutes } from '../domain/reading-time';
 import {
   articleCountLabel,
   BLOG_CATEGORY_FILTER_LABELS,
@@ -18,6 +17,7 @@ import {
   readLinkContext,
   SUBJECTS_FACT_LABEL,
 } from './blog-list-copy';
+import { readingTimeMinutes } from '../domain/reading-time';
 
 const SUBJECTS_SIZE = 3;
 
@@ -51,13 +51,13 @@ function subjectFacts(tags: readonly string[]): readonly Fact[] {
     : [];
 }
 
-export function toBlogPostRowView(post: BlogPost, priority: boolean): BlogPostRowView {
+export function toBlogPostRowView(post: BlogPostSummary, priority: boolean): BlogPostRowView {
   return {
     slug: post.slug,
     title: post.title,
     excerpt: post.excerpt,
     publishedAt: post.publishedAt,
-    readingTime: readingTimeLabel(readingTimeMinutes(post.contentMarkdown)),
+    readingTime: readingTimeLabel(readingTimeMinutes(post.wordCount)),
     facts: subjectFacts(post.tags),
     coverImage: post.coverImage,
     linkContext: readLinkContext(post.title),
@@ -66,10 +66,10 @@ export function toBlogPostRowView(post: BlogPost, priority: boolean): BlogPostRo
 }
 
 function visiblePosts(
-  posts: readonly BlogPost[],
+  posts: readonly BlogPostSummary[],
   filter: BlogListFilter,
   counts: BlogCategoryCounts,
-): readonly BlogPost[] {
+): readonly BlogPostSummary[] {
   if (filter.by === 'tag') {
     return filterPostsByTag(posts, filter.tag);
   }
@@ -79,7 +79,10 @@ function visiblePosts(
     : filterPostsByCategory(posts, category);
 }
 
-export function toBlogListView(posts: readonly BlogPost[], filter: BlogListFilter): BlogListView {
+export function toBlogListView(
+  posts: readonly BlogPostSummary[],
+  filter: BlogListFilter,
+): BlogListView {
   const counts = countPostsByCategory(posts);
   const [lcpPost] = posts;
   const visible = visiblePosts(posts, filter, counts);
