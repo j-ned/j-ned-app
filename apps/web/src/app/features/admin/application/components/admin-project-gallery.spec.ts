@@ -417,12 +417,21 @@ describe('AdminProjectGallery', () => {
     });
 
     it.each([
-      { status: 413, detail: "L'image dépasse 4 Mo." },
+      {
+        status: 413,
+        detail:
+          "La capture n'a pas été ajoutée. Le fichier dépasse 4\u00a0Mo, la taille maximale acceptée.",
+      },
       {
         status: 422,
-        detail: 'Image refusée\u00a0: format non pris en charge, ou galerie déjà complète.',
+        detail:
+          "La capture n'a pas été ajoutée. Le format n'est pas pris en charge ou le fichier est illisible\u00a0: choisissez une image JPEG, PNG, WebP ou AVIF.",
       },
-      { status: 500, detail: "Erreur lors de l'ajout de la capture" },
+      {
+        status: 500,
+        detail:
+          "La capture n'a pas été ajoutée. Le serveur a rencontré un problème\u00a0: réessayez dans un instant.",
+      },
     ])(
       'Given the API answers $status When a capture is uploaded Then an error toast explains it and the gallery and the alt are kept',
       async ({ status, detail }) => {
@@ -447,8 +456,8 @@ describe('AdminProjectGallery', () => {
       },
     );
 
-    it('Given the browser cannot bring the image under 4 Mo When a capture is uploaded Then the error toast gives that reason and the gallery is kept', async () => {
-      const reason = "L'image dépasse 4\u00a0Mo, même compressée.";
+    it('Given the browser cannot bring the image under 900 Ko When a capture is uploaded Then the error toast gives that reason and the gallery is kept', async () => {
+      const reason = "L'image dépasse 900\u00a0Ko, même compressée.";
       const rendered = await render(CAPTURES, (gateway) =>
         gateway.uploadGalleryImage.mockReturnValue(
           throwError(() => new UploadRejectedError(reason)),
@@ -458,7 +467,7 @@ describe('AdminProjectGallery', () => {
       await upload(rendered, 'Vue mobile');
 
       expect({ toasts: toasts(rendered.toast), changes: rendered.changes }).toEqual({
-        toasts: [{ severity: 'error', detail: reason }],
+        toasts: [{ severity: 'error', detail: `La capture n'a pas été ajoutée. ${reason}` }],
         changes: [],
       });
     });

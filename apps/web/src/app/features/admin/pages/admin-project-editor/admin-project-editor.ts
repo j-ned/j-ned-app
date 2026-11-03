@@ -6,6 +6,7 @@ import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gat
 import type { ProjectImage, ProjectInput } from '@features/projects/domain/models/project.model';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
+import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { loadState } from '@shared/ui/load-state';
@@ -241,9 +242,9 @@ export class AdminProjectEditor implements LeaveConfirmable {
     const { saved, cover } = result.data;
     if (cover.status === 'failed') {
       const warning = id
-        ? "Projet mis à jour, mais l'envoi de l'image a échoué. Réessayez."
-        : "Projet créé, mais l'envoi de l'image a échoué. Réessayez depuis sa page.";
-      this.toast.add({ severity: 'warn', detail: withValidationDetail(warning, cover.error) });
+        ? "Projet mis à jour, mais l'image de couverture n'a pas été envoyée."
+        : "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoyez-la depuis sa page.";
+      this.toast.add({ severity: 'warn', detail: uploadFailureMessage(warning, cover.error) });
     }
     this.invalidatePublicCaches();
     if (cover.status === 'sent' && id) this.projectResource.reload();

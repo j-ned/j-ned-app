@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -788,7 +789,7 @@ describe('AdminProfile: portrait', () => {
       given: 'a 422 naming the refusal',
       rejection: apiRejection(422, 'Validation failed (expected size is less than 5242880)'),
       expected:
-        "Le portrait n'a pas pu être remplacé. Détail\u00a0: Validation failed (expected size is less than 5242880)",
+        "Le portrait n'a pas pu être remplacé. Validation failed (expected size is less than 5242880).",
     },
     {
       given: 'a 503 of a busy profile',
@@ -796,12 +797,23 @@ describe('AdminProfile: portrait', () => {
         503,
         'Le parcours est en cours de modification : réessayez dans quelques secondes',
       ),
-      expected: "Le portrait n'a pas pu être remplacé. Réessayez dans quelques secondes.",
+      expected:
+        "Le portrait n'a pas pu être remplacé. Le parcours est en cours de modification : réessayez dans quelques secondes.",
+    },
+    {
+      given: 'a 503 of the hosting platform, before the API (file too heavy)',
+      rejection: new HttpErrorResponse({
+        status: 503,
+        error: 'The deployment is currently unavailable\n\nSERVICE_UNAVAILABLE\n',
+      }),
+      expected:
+        "Le portrait n'a pas pu être remplacé. L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduisez-le sous 900\u00a0Ko, puis réessayez.",
     },
     {
       given: 'a 500',
       rejection: apiRejection(500, 'Internal server error'),
-      expected: "Le portrait n'a pas pu être remplacé.",
+      expected:
+        "Le portrait n'a pas pu être remplacé. Le serveur a rencontré un problème\u00a0: réessayez dans un instant.",
     },
   ])(
     'Given $given When a portrait is dropped Then the toast says why and the thumbnail is unchanged',
@@ -863,12 +875,14 @@ describe('AdminProfile: portrait', () => {
         503,
         'Le parcours est en cours de modification : réessayez dans quelques secondes',
       ),
-      expected: "Le portrait par défaut n'a pas pu être rétabli. Réessayez dans quelques secondes.",
+      expected:
+        "Le portrait par défaut n'a pas pu être rétabli. Le parcours est en cours de modification : réessayez dans quelques secondes.",
     },
     {
       given: 'a 500',
       rejection: apiRejection(500, 'Internal server error'),
-      expected: "Le portrait par défaut n'a pas pu être rétabli.",
+      expected:
+        "Le portrait par défaut n'a pas pu être rétabli. Le serveur a rencontré un problème\u00a0: réessayez dans un instant.",
     },
   ])(
     'Given $given When the way back is confirmed Then the toast says why and the stored portrait stays',

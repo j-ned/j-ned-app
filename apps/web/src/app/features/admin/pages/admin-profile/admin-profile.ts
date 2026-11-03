@@ -16,6 +16,7 @@ import type {
   ProfileDocument,
 } from '@features/profile/domain/models/profile-content.model';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
+import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
 import { loadState } from '@shared/ui/load-state';
 import { ToastStore } from '@core/notifications/toast-store';
 import {
@@ -198,7 +199,7 @@ export class AdminProfile implements LeaveConfirmable {
     } catch (error: unknown) {
       this.toast.add({
         severity: 'error',
-        detail: portraitFailure("Le portrait n'a pas pu être remplacé.", error),
+        detail: uploadFailureMessage("Le portrait n'a pas pu être remplacé.", error),
       });
     } finally {
       this.portraitBusy.set(false);
@@ -221,20 +222,12 @@ export class AdminProfile implements LeaveConfirmable {
     } catch (error: unknown) {
       this.toast.add({
         severity: 'error',
-        detail: portraitFailure("Le portrait par défaut n'a pas pu être rétabli.", error),
+        detail: uploadFailureMessage("Le portrait par défaut n'a pas pu être rétabli.", error),
       });
     } finally {
       this.portraitBusy.set(false);
     }
   }
-}
-
-// 503 : le parcours est verrouillé par une autre écriture le temps de quelques secondes.
-function portraitFailure(label: string, error: unknown): string {
-  if (error instanceof HttpErrorResponse && error.status === 503) {
-    return `${label} Réessayez dans quelques secondes.`;
-  }
-  return withValidationDetail(label, error);
 }
 
 function saveFailure(error: unknown): string {
