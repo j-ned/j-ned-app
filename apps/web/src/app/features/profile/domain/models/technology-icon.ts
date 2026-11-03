@@ -1,6 +1,7 @@
 export const TECHNOLOGY_ICONS = [
   'angular',
   'docker',
+  'hono',
   'nestjs',
   'postgresql',
   'tailwindcss',
