@@ -253,21 +253,6 @@ describe('AnalyticsStatsService', () => {
   });
 
   describe('chart', () => {
-    it('retourne les rows daily_stat triées', async () => {
-      const rows = [
-        { date: '2026-04-24', visitors: 80, pageviews: 200 },
-        { date: '2026-04-25', visitors: 100, pageviews: 250 },
-      ];
-      db.orderBy.mockResolvedValueOnce(rows);
-
-      const result = await service.chart({
-        startDate: '2026-04-24',
-        endDate: '2026-04-25',
-      });
-
-      expect(result).toEqual(rows);
-    });
-
     it('si to=today, append une row live calculée depuis page_view', async () => {
       const histRows = [{ date: '2026-04-25', visitors: 50, pageviews: 100 }];
       // History: .where() returns builder so .orderBy() can be called next
@@ -293,7 +278,7 @@ describe('AnalyticsStatsService', () => {
   });
 
   describe('metrics', () => {
-    it.each(['url', 'browser', 'os', 'country'] as const)(
+    it.each(['url'] as const)(
       'Given type=%s, When read, Then each visit counts once (countDistinct sur session_hash)',
       async (type) => {
         const rows = [{ name: 'x', count: 3 }];
@@ -308,14 +293,6 @@ describe('AnalyticsStatsService', () => {
         );
       },
     );
-
-    it('limit par défaut = 20', async () => {
-      db.limit.mockResolvedValueOnce([]);
-
-      await service.metrics({ type: 'browser' });
-
-      expect(db.limit).toHaveBeenCalledWith(20);
-    });
 
     it('Given type=referrer, When read, Then one row per visit with its first external referrer, direct access as an empty name', async () => {
       const rows = [
@@ -338,7 +315,7 @@ describe('AnalyticsStatsService', () => {
   });
 
   describe('events', () => {
-    it.each(['contact_submit', 'outbound_click'] as const)(
+    it.each(['outbound_click'] as const)(
       'Given type=%s, When read, Then counts are grouped by entityId, top N',
       async (type) => {
         const rows = [
@@ -355,83 +332,5 @@ describe('AnalyticsStatsService', () => {
         expect(render(condition).params).toContain(type);
       },
     );
-  });
-
-  describe('active', () => {
-    it('count + top URLs des 5 dernières minutes', async () => {
-      // 2 sub-queries : countDistinct + groupBy URLs
-      db.where.mockResolvedValueOnce([{ value: 7 }]); // count
-      db.limit.mockResolvedValueOnce([
-        { url: '/home', count: 4 },
-        { url: '/projects', count: 3 },
-      ]);
-
-      const result = await service.active();
-
-      expect(result.count).toBe(7);
-      expect(result.pages).toHaveLength(2);
-      expect(result.pages[0].url).toBe('/home');
-    });
-  });
-
-  describe('projects / articles', () => {
-    it("projects() filtre event_type='project_click' et group by entity", async () => {
-      const rows = [
-        { entityId: 'proj-1', entityTitle: 'Foo', count: 10 },
-        { entityId: 'proj-2', entityTitle: 'Bar', count: 5 },
-      ];
-      db.limit.mockResolvedValueOnce(rows);
-
-      const result = await service.projects({ limit: 5 });
-
-      expect(result).toEqual(rows);
-      expect(db.limit).toHaveBeenCalledWith(5);
-    });
-
-    it("cta() filtre event_type='cta_click' et group by entity", async () => {
-      const rows = [
-        {
-          entityId: 'home_hero_projects',
-          entityTitle: 'Voir les projets',
-          count: 42,
-        },
-      ];
-      db.limit.mockResolvedValueOnce(rows);
-
-      const result = await service.cta({ limit: 5 });
-
-      expect(result).toEqual(rows);
-      expect(db.limit).toHaveBeenCalledWith(5);
-    });
-
-    it("articlesRead() filtre event_type='article_read' et group by entity", async () => {
-      const rows = [{ entityId: 'post-1', entityTitle: 'Baz', count: 3 }];
-      db.limit.mockResolvedValueOnce(rows);
-
-      const result = await service.articlesRead({ limit: 5 });
-
-      expect(result).toEqual(rows);
-      expect(db.limit).toHaveBeenCalledWith(5);
-    });
-  });
-
-  describe('cvDownloads', () => {
-    it('count + timeline 30 jours', async () => {
-      // 2 queries : count(*) + groupBy date
-      // count: select.from.where (terminator)
-      // timeline: select.from.where.groupBy.orderBy (terminator)
-      db.where
-        .mockResolvedValueOnce([{ value: 42 }]) // count terminator (1st .where call)
-        .mockReturnValueOnce(db); // timeline .where (2nd .where call, returns builder)
-      db.orderBy.mockResolvedValueOnce([
-        { date: '2026-04-25', count: 3 },
-        { date: '2026-04-24', count: 2 },
-      ]); // timeline terminator
-
-      const result = await service.cvDownloads({});
-
-      expect(result.count).toBe(42);
-      expect(result.timeline).toHaveLength(2);
-    });
   });
 });

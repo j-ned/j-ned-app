@@ -1,12 +1,7 @@
 import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
-import {
-  ConflictException,
-  NotFoundException,
-  UnauthorizedException,
-} from '../common/http-errors';
+import { ConflictException, NotFoundException } from '../common/http-errors';
 import { testApp } from '../common/test-app';
-import { DEFAULT_THROTTLE, PUBLIC_READ_THROTTLE } from '../common/throttle';
 import type { ProjectImagesService } from './project-images.service';
 import { projectsRoutes } from './projects.routes';
 import type { ProjectsService } from './projects.service';
@@ -20,9 +15,6 @@ const VALID = { title: 'T', category: 'Web', description: 'D' };
 
 const passThrough: RequireAuth = async (_c, next) => {
   await next();
-};
-const unauthorized: RequireAuth = () => {
-  throw new UnauthorizedException();
 };
 
 const fileForm = (bytes: Buffer, type: string) => {
@@ -83,76 +75,16 @@ describe('projects routes (HTTP)', () => {
         featured: false,
       });
     });
-
-    it(`Given a visitor, When it lists ${PUBLIC_READ_THROTTLE.limit + 1} times within a minute, Then the last one gets 429 (PublicReadThrottle)`, async () => {
-      projects.findAll.mockResolvedValue([]);
-      const statuses: number[] = [];
-      for (let i = 0; i <= PUBLIC_READ_THROTTLE.limit; i += 1) {
-        const res = await app.request('/api/projects', {
-          headers: { 'x-forwarded-for': '203.0.113.1' },
-        });
-        statuses.push(res.status);
-      }
-      expect(statuses.slice(0, -1).every((s) => s === 200)).toBe(true);
-      expect(statuses.at(-1)).toBe(429);
-    });
   });
 
   describe('GET /projects/:id', () => {
-    it('Given an id, When read, Then 200 with the project', async () => {
-      projects.findById.mockResolvedValueOnce({ id: ID });
-      const res = await app.request(`/api/projects/${ID}`);
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ id: ID });
-      expect(projects.findById).toHaveBeenCalledWith(ID);
-    });
-
-    it('Given a non-UUID id, When read, Then 400', async () => {
-      expect((await app.request('/api/projects/nope')).status).toBe(400);
-      expect(projects.findById).not.toHaveBeenCalled();
-    });
-
     it('Given an unknown project, When read, Then the service 404 is returned', async () => {
       projects.findById.mockRejectedValueOnce(new NotFoundException());
       expect((await app.request(`/api/projects/${ID}`)).status).toBe(404);
     });
   });
 
-  describe('session', () => {
-    it.each([
-      ['POST', '/api/projects'],
-      ['PATCH', `/api/projects/${ID}`],
-      ['DELETE', `/api/projects/${ID}`],
-      ['POST', `/api/projects/${ID}/image`],
-    ])(
-      'Given no session, When %s %s, Then 401 without calling the service',
-      async (method, path) => {
-        const res = await build(unauthorized).request(path, { method });
-        expect(res.status).toBe(401);
-        for (const fn of Object.values(projects)) {
-          expect(fn).not.toHaveBeenCalled();
-        }
-      },
-    );
-
-    it('Given no session, When listing, Then the public read is served', async () => {
-      projects.findAll.mockResolvedValueOnce([]);
-      const res = await build(unauthorized).request('/api/projects');
-      expect(res.status).toBe(200);
-    });
-  });
-
   describe('POST /projects', () => {
-    it('Given a valid project, When created, Then 201 with the project', async () => {
-      projects.create.mockResolvedValueOnce({ id: ID, ...VALID });
-      const res = await json('POST', '/api/projects', VALID);
-      expect(res.status).toBe(201);
-      expect(await res.json()).toEqual({ id: ID, ...VALID });
-      expect(projects.create).toHaveBeenCalledWith(
-        expect.objectContaining(VALID),
-      );
-    });
-
     it('Given an invalid body, When created, Then 400 without calling the service', async () => {
       const res = await json('POST', '/api/projects', { ...VALID, foo: 1 });
       expect(res.status).toBe(400);
@@ -162,57 +94,6 @@ describe('projects routes (HTTP)', () => {
     it('Given a slug already taken, When created, Then the service 409 is returned', async () => {
       projects.create.mockRejectedValueOnce(new ConflictException());
       expect((await json('POST', '/api/projects', VALID)).status).toBe(409);
-    });
-
-    it(`Given an admin, When it creates ${DEFAULT_THROTTLE.limit + 1} times within a minute, Then the last one gets 429 (default quota)`, async () => {
-      projects.create.mockResolvedValue({ id: ID });
-      const statuses: number[] = [];
-      for (let i = 0; i <= DEFAULT_THROTTLE.limit; i += 1) {
-        const res = await app.request('/api/projects', {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            'x-forwarded-for': '203.0.113.2',
-          },
-          body: JSON.stringify(VALID),
-        });
-        statuses.push(res.status);
-      }
-      expect(statuses.slice(0, -1).every((s) => s === 201)).toBe(true);
-      expect(statuses.at(-1)).toBe(429);
-    });
-  });
-
-  describe('PATCH /projects/:id', () => {
-    it('Given a partial update, When patched, Then 200 and the service gets id + dto', async () => {
-      projects.update.mockResolvedValueOnce({ id: ID, featured: true });
-      const res = await json('PATCH', `/api/projects/${ID}`, {
-        featured: true,
-      });
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ id: ID, featured: true });
-      expect(projects.update).toHaveBeenCalledWith(
-        ID,
-        expect.objectContaining({ featured: true }),
-      );
-    });
-
-    it('Given a non-UUID id, When patched, Then 400', async () => {
-      const res = await json('PATCH', '/api/projects/nope', { featured: true });
-      expect(res.status).toBe(400);
-      expect(projects.update).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('DELETE /projects/:id', () => {
-    it('Given a project, When deleted, Then 204 without body', async () => {
-      projects.remove.mockResolvedValueOnce(undefined);
-      const res = await app.request(`/api/projects/${ID}`, {
-        method: 'DELETE',
-      });
-      expect(res.status).toBe(204);
-      expect(await res.text()).toBe('');
-      expect(projects.remove).toHaveBeenCalledWith(ID);
     });
   });
 

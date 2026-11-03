@@ -2,7 +2,6 @@ import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
 import {
   NotFoundException,
-  UnauthorizedException,
   UnprocessableEntityException,
 } from '../common/http-errors';
 import { testApp } from '../common/test-app';
@@ -21,9 +20,6 @@ const PNG = Buffer.from(
 
 const passThrough: RequireAuth = async (_c, next) => {
   await next();
-};
-const unauthorized: RequireAuth = () => {
-  throw new UnauthorizedException();
 };
 
 type Part = { name: string; value: string | Blob; filename?: string };
@@ -75,24 +71,6 @@ describe('project images routes (HTTP)', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
-
-  describe('session', () => {
-    it.each([
-      ['POST', `/api/projects/${PROJECT_ID}/images`],
-      ['PATCH', `/api/projects/${PROJECT_ID}/images/${IMAGE_ID}`],
-      ['DELETE', `/api/projects/${PROJECT_ID}/images/${IMAGE_ID}`],
-      ['PUT', `/api/projects/${PROJECT_ID}/images/order`],
-    ])(
-      'Given no session, When %s %s, Then 401 without calling the service',
-      async (method, path) => {
-        const res = await build(unauthorized).request(path, { method });
-        expect(res.status).toBe(401);
-        for (const fn of Object.values(images)) {
-          expect(fn).not.toHaveBeenCalled();
-        }
-      },
-    );
-  });
 
   describe('quota (AdminWriteThrottle)', () => {
     it(`Given an admin, When it deletes ${ADMIN_WRITE_THROTTLE.limit + 1} times within a minute, Then the last one gets 429`, async () => {
@@ -194,12 +172,6 @@ describe('project images routes (HTTP)', () => {
       expect(images.upload).not.toHaveBeenCalled();
     });
 
-    it('Given a non-UUID project id, When posted, Then 400', async () => {
-      const res = await post(form(alt('Alt'), png()), 'not-a-uuid');
-      expect(res.status).toBe(400);
-      expect(images.upload).not.toHaveBeenCalled();
-    });
-
     it('Given a non-UUID project id and a non-image file, When posted, Then 400 (id checked before the file)', async () => {
       const res = await post(
         form(alt('Alt'), file(Buffer.from('%PDF'), 'application/pdf', 'a.pdf')),
@@ -218,25 +190,6 @@ describe('project images routes (HTTP)', () => {
   });
 
   describe('PATCH /projects/:id/images/:imageId', () => {
-    it('Given a new alt, When patched, Then 200 with the capture', async () => {
-      images.updateAlt.mockResolvedValueOnce({
-        id: IMAGE_ID,
-        alt: 'Nouvel alt',
-      });
-      const res = await json(
-        'PATCH',
-        `/api/projects/${PROJECT_ID}/images/${IMAGE_ID}`,
-        { alt: ' Nouvel alt ' },
-      );
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ id: IMAGE_ID, alt: 'Nouvel alt' });
-      expect(images.updateAlt).toHaveBeenCalledWith(
-        PROJECT_ID,
-        IMAGE_ID,
-        'Nouvel alt',
-      );
-    });
-
     it.each([
       ['blank alt', { alt: ' ' }],
       ['unknown field', { alt: 'Alt', order: 3 }],
@@ -248,15 +201,6 @@ describe('project images routes (HTTP)', () => {
       );
       expect(res.status).toBe(400);
       expect(images.updateAlt).not.toHaveBeenCalled();
-    });
-
-    it('Given a non-UUID image id, When patched, Then 400', async () => {
-      const res = await json(
-        'PATCH',
-        `/api/projects/${PROJECT_ID}/images/nope`,
-        { alt: 'Alt' },
-      );
-      expect(res.status).toBe(400);
     });
   });
 

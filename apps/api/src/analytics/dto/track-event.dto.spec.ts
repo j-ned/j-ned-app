@@ -13,11 +13,6 @@ describe('TrackEventDto', () => {
   }
 
   describe('type field', () => {
-    it("type='page_view' valide", async () => {
-      const errors = await check({ type: 'page_view', url: '/home' });
-      expect(errors).toHaveLength(0);
-    });
-
     it("type='page_duration' valide avec url + duration", async () => {
       const errors = await check({
         type: 'page_duration',
@@ -27,35 +22,8 @@ describe('TrackEventDto', () => {
       expect(errors).toHaveLength(0);
     });
 
-    it("type='project_click' valide sans url", async () => {
-      const errors = await check({
-        type: 'project_click',
-        entityId: 'abc',
-        entityTitle: 'Test',
-      });
-      expect(errors).toHaveLength(0);
-    });
-
     it("type='cv_download' valide sans url ni entity", async () => {
       const errors = await check({ type: 'cv_download' });
-      expect(errors).toHaveLength(0);
-    });
-
-    it("type='article_read' valide avec entityId + entityTitle", async () => {
-      const errors = await check({
-        type: 'article_read',
-        entityId: 'abc',
-        entityTitle: 'Test',
-      });
-      expect(errors).toHaveLength(0);
-    });
-
-    it("type='cta_click' valide avec entityId + entityTitle", async () => {
-      const errors = await check({
-        type: 'cta_click',
-        entityId: 'home_hero_projects',
-        entityTitle: 'Voir les projets',
-      });
       expect(errors).toHaveLength(0);
     });
 

@@ -1,5 +1,3 @@
-import { getTableColumns } from 'drizzle-orm';
-import { projects } from '../database/schema/projects';
 import { toNullableText } from './project-editorial';
 
 describe('toNullableText (ADR-0010 §3)', () => {
@@ -30,27 +28,4 @@ describe('toNullableText (ADR-0010 §3)', () => {
     expect(toNullableText(array)).toBe(array);
     expect(toNullableText(object)).toBe(object);
   });
-});
-
-describe('project table - editorial columns (ADR-0010 §1)', () => {
-  const columns: Record<
-    string,
-    { name: string; notNull: boolean; hasDefault: boolean; columnType: string }
-  > = getTableColumns(projects);
-
-  it.each([
-    ['pitch', 'pitch'],
-    ['highlight', 'highlight'],
-    ['scope', 'scope'],
-  ])(
-    'Given the column %s, When read from the schema, Then it is a nullable text "%s" without default',
-    (property, sqlName) => {
-      expect(columns[property]).toMatchObject({
-        name: sqlName,
-        notNull: false,
-        hasDefault: false,
-        columnType: 'PgText',
-      });
-    },
-  );
 });

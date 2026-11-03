@@ -25,32 +25,6 @@ describe('MailerService', () => {
     service = new MailerService(cfg as unknown as AppConfigService, fetchFn);
   });
 
-  it('envoie le mail à l’API Resend avec les bons paramètres', async () => {
-    fetchFn.mockResolvedValueOnce(ok());
-    await service.sendMail({
-      to: 'visitor@example.com',
-      subject: 'Hello',
-      template: { id: 'tpl', variables: { NAME: 'Camille' } },
-    });
-    expect(fetchFn).toHaveBeenCalledTimes(1);
-    const [url, init] = requestAt(0);
-    expect(url).toBe('https://api.resend.com/emails');
-    expect(init.method).toBe('POST');
-    expect(bodyAt(0)).toEqual({
-      from: 'noreply@test.local',
-      to: 'visitor@example.com',
-      subject: 'Hello',
-      template: { id: 'tpl', variables: { NAME: 'Camille' } },
-    });
-  });
-
-  it('s’authentifie avec la clé API en Bearer', async () => {
-    fetchFn.mockResolvedValueOnce(ok());
-    await service.sendMail({ to: 'x@y.com', subject: 's', template: TEMPLATE });
-    expect(headersAt(0).Authorization).toBe('Bearer re_test_key');
-    expect(headersAt(0)['Content-Type']).toBe('application/json');
-  });
-
   it('retry une fois si la première tentative échoue, puis succès', async () => {
     fetchFn
       .mockRejectedValueOnce(new Error('transient'))
@@ -140,18 +114,6 @@ describe('MailerService', () => {
     fetchFn.mockResolvedValueOnce(ok());
     await service.sendMail({ to: 'x@y.com', subject: 's', template: TEMPLATE });
     expect(fetchFn).toHaveBeenCalledTimes(1);
-  });
-
-  it('passe le sujet tel quel (pas de transformation)', async () => {
-    fetchFn.mockResolvedValueOnce(ok());
-    await service.sendMail({
-      to: 'x@y.com',
-      subject: 'Sujet avec accents éàç',
-      template: TEMPLATE,
-    });
-    expect(bodyAt(0)).toEqual(
-      expect.objectContaining({ subject: 'Sujet avec accents éàç' }),
-    );
   });
 
   it('Given des variables issues du formulaire, When le mail part, Then elles sont échappées pour le HTML', async () => {

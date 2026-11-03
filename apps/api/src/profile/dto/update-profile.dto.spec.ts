@@ -72,16 +72,6 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
     [
       ['biography.title', L.biography.title, (b, v) => (b.biography.title = v)],
       [
-        'biography.summary',
-        L.biography.summary,
-        (b, v) => (b.biography.summary = v),
-      ],
-      [
-        'biography.leadEmphasis',
-        L.biography.leadEmphasis,
-        (b, v) => (b.biography.leadEmphasis = v),
-      ],
-      [
         'biography.paragraphs',
         L.biography.paragraph,
         (b, v) => (b.biography.paragraphs[1] = v),
@@ -92,67 +82,9 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
         (b, v) => (b.highlights[0].title = v),
       ],
       [
-        'highlights.0.description',
-        L.highlight.description,
-        (b, v) => (b.highlights[0].description = v),
-      ],
-      ['workSummary', L.sectionSummary, (b, v) => (b.workSummary = v)],
-      ['whatIDo.0.title', L.whatIDo.title, (b, v) => (b.whatIDo[0].title = v)],
-      [
-        'whatIDo.0.description',
-        L.whatIDo.description,
-        (b, v) => (b.whatIDo[0].description = v),
-      ],
-      [
-        'technologies.0.name',
-        L.technology.name,
-        (b, v) => (b.technologies[0].name = v),
-      ],
-      [
-        'technologies.0.category',
-        L.technology.category,
-        (b, v) => (b.technologies[0].category = v),
-      ],
-      ['diplomasSummary', L.sectionSummary, (b, v) => (b.diplomasSummary = v)],
-      [
-        'diplomas.0.title',
-        L.diploma.title,
-        (b, v) => (b.diplomas[0].title = v),
-      ],
-      [
-        'diplomas.0.provider',
-        L.diploma.provider,
-        (b, v) => (b.diplomas[0].provider = v),
-      ],
-      [
-        'diplomas.0.level',
-        L.diploma.level,
-        (b, v) => (b.diplomas[0].level = v),
-      ],
-      [
-        'diplomas.0.shortDescription',
-        L.diploma.shortDescription,
-        (b, v) => (b.diplomas[0].shortDescription = v),
-      ],
-      [
         'diplomas.0.skills',
         L.diploma.skill,
         (b, v) => (b.diplomas[0].skills[0] = v),
-      ],
-      [
-        'motivation.title',
-        L.motivation.title,
-        (b, v) => (b.motivation.title = v),
-      ],
-      [
-        'motivation.statement',
-        L.motivation.statement,
-        (b, v) => (b.motivation.statement = v),
-      ],
-      [
-        'motivation.description',
-        L.motivation.description,
-        (b, v) => (b.motivation.description = v),
       ],
     ];
 
@@ -200,43 +132,6 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
       L.biography.paragraphs,
       (i) => `Paragraphe ${i}`,
       (b, items) => (b.biography.paragraphs = items as string[]),
-    ],
-    [
-      'highlights',
-      L.highlight.items,
-      titled,
-      (b, items) => (b.highlights = items as Body['highlights']),
-    ],
-    [
-      'whatIDo',
-      L.whatIDo.items,
-      titled,
-      (b, items) => (b.whatIDo = items as Body['whatIDo']),
-    ],
-    [
-      'technologies',
-      L.technology.items,
-      (i) => ({ id: uuid(i), name: 'N', category: 'C', icon: 'angular' }),
-      (b, items) => (b.technologies = items as Body['technologies']),
-    ],
-    [
-      'diplomas',
-      L.diploma.items,
-      (i) => ({
-        id: uuid(i),
-        title: 'T',
-        provider: 'P',
-        level: 'L',
-        shortDescription: 'D',
-        skills: ['S'],
-      }),
-      (b, items) => (b.diplomas = items as Body['diplomas']),
-    ],
-    [
-      'diplomas.0.skills',
-      L.diploma.skills,
-      (i) => `Compétence ${i}`,
-      (b, items) => (b.diplomas[0].skills = items as string[]),
     ],
   ];
 

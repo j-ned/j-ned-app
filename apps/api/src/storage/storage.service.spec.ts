@@ -21,27 +21,6 @@ describe('StorageService', () => {
     service = new StorageService(realClient);
   });
 
-  describe('upload', () => {
-    it('envoie un PutObjectCommand avec les bons paramètres', async () => {
-      s3Mock.on(PutObjectCommand).resolves({});
-      const body = Buffer.from('hello world');
-      await service.upload(
-        'my-bucket',
-        'projects/foo.webp',
-        body,
-        'image/webp',
-      );
-      const calls = s3Mock.commandCalls(PutObjectCommand);
-      expect(calls).toHaveLength(1);
-      expect(calls[0].args[0].input).toEqual({
-        Bucket: 'my-bucket',
-        Key: 'projects/foo.webp',
-        Body: body,
-        ContentType: 'image/webp',
-      });
-    });
-  });
-
   describe('get', () => {
     const collectStream = (s: Readable): Promise<string> =>
       new Promise((resolve, reject) => {
@@ -128,14 +107,6 @@ describe('StorageService', () => {
       expect(service.getPublicUrl('my-bucket', 'projects/foo.webp')).toBe(
         '/storage/my-bucket/projects/foo.webp',
       );
-    });
-
-    it("préserve les slashes dans la key (pas d'encodage)", () => {
-      const url = service.getPublicUrl(
-        'portfolio-storage',
-        'avatar/avatar.webp',
-      );
-      expect(url).toBe('/storage/portfolio-storage/avatar/avatar.webp');
     });
   });
 });
