@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { V2_EVENT_TYPES } from '../engagement';
 
 export const ANALYTICS_TYPES = [

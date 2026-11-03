@@ -1,9 +1,11 @@
-import { z } from 'zod';
-import { fr } from 'zod/locales';
+import * as z from 'zod';
+import fr from 'zod/v4/locales/fr.js';
 import { BadRequestException } from './http-errors';
 
 // Messages de zod en français, pour toute l'application (corps, query strings, variables d'env).
-// Import nommé : `z.locales` embarquerait toutes les langues dans le bundle.
+// Fichier de la seule locale : `zod/locales` (comme `import { z }`, dont l'objet expose `z.locales`)
+// embarque les 64 langues dans le bundle de la fonction (~260 Ko). Partout ailleurs, `import * as z`
+// laisse esbuild élaguer ce qui ne sert pas.
 z.config(fr());
 
 /** Message d'un corps JSON qui n'est pas un objet (liste, valeur seule). */

@@ -1,5 +1,4 @@
 import { generateSecret, generateURI, verifySync } from 'otplib';
-import * as QRCode from 'qrcode';
 import { randomBytes } from 'node:crypto';
 import argon2 from 'argon2';
 import { AppConfigService } from '../config/app-config.service';
@@ -17,7 +16,9 @@ export class TwoFactorService {
       label: email,
       secret,
     });
-    return QRCode.toDataURL(otpauthUrl);
+    // Chargé à la demande : seule l'activation de la 2FA dessine un QR code.
+    const { toDataURL } = await import('qrcode');
+    return toDataURL(otpauthUrl);
   }
 
   verifyTotpCode(secret: string, code: string): boolean {

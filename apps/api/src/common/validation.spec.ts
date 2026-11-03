@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { trackEventSchema } from '../analytics/dto/track-event.dto';
 import { createBlogPostSchema } from '../blog/dto/create-blog-post.dto';
 import { updateWorkshopGuideSchema } from '../workshop-guide/dto/update-workshop-guide.dto';

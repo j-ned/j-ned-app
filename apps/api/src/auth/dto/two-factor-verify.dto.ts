@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 /**
  * Second facteur : `code` (TOTP) ou `backupCode`, pas les deux. Aucun des deux : le service répond

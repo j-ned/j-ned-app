@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 /** `?page=&limit=` : entiers lus dans la query string. */
 export const paginationSchema = z.strictObject({

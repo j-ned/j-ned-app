@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { createProjectSchema } from './create-project.dto';
 
 // `.partial()` : un champ peut être omis, jamais mis à null, sauf ceux qui l'acceptent déjà (liens,

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import {
   PROFILE_LIMITS,
   PROFILE_TECHNOLOGY_ICON_PATTERN,

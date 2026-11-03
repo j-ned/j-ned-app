@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 export const architectureDecisionSchema = z.strictObject({
   decision: z.string().min(1).max(150),
