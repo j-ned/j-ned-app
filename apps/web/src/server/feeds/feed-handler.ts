@@ -1,6 +1,6 @@
 import { visitorHeaders } from '@core/ssr/visitor-headers';
 import { toShareImageUrl } from '@shared/seo/share-image';
-import { buildRss, type RssEnclosure, type RssPost } from './rss';
+import type { RssEnclosure, RssPost } from './rss';
 import { buildSitemap, type SitemapPost } from './sitemap';
 
 export type FeedTarget = 'sitemap' | 'rss';
@@ -110,6 +110,9 @@ export function createFeedHandler({
     const items = await Promise.all(
       posts.map(async (post) => ({ post, enclosure: await enclosureOf(post.coverImage, visitor) })),
     );
+    // Chargé à la demande : le rendu Markdown du flux tire jsdom (DOMPurify côté Node), ~360 ms
+    // d'import qu'un démarrage à froid de la fonction n'a pas à payer pour une autre page.
+    const { buildRss } = await import('./rss');
     return buildRss(items, new Date());
   }
 

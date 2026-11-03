@@ -8,6 +8,22 @@ server="$2"
 # Seules les pages statiques sont prérendues ; les pages de contenu sont rendues à la requête.
 test -f "$server/server.mjs"
 test ! -f $browser/index.html
+# Démarrage à froid de la fonction de rendu : jsdom (~360 ms d'import) n'est tiré que par le rendu d'un
+# article ou du flux RSS, chargés à la demande. Aucun import statique depuis server.mjs ne doit l'atteindre.
+node --input-type=module -e '
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+const dir = process.argv[1];
+const seen = new Set();
+const visit = (file) => {
+  if (seen.has(file)) return;
+  seen.add(file);
+  const code = readFileSync(join(dir, file), "utf8");
+  if (/from\s*"jsdom"/.test(code)) { console.error(`jsdom importé statiquement depuis server.mjs (${file})`); process.exit(1); }
+  for (const [, dep] of code.matchAll(/(?:import|export)\s*(?:[^"\x27;]*?from\s*)?"\.\/([^"]+)"/g)) visit(dep);
+};
+visit("server.mjs");
+' "$server"
 # Sitemap et RSS sont rendus à la requête par Node : aucun fichier figé au build
 test ! -f $browser/sitemap.xml && test ! -f $browser/rss.xml
 # Pages statiques prérendues (offres et rendez-vous retirés, spec 029 : aucun fichier ne doit rester)
