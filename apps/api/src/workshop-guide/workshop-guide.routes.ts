@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
+import { cdnCache } from '../common/cdn-cache';
 import { jsonBody, reply, type AppEnv } from '../common/http';
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
 import { updateWorkshopGuideSchema } from './dto/update-workshop-guide.dto';
@@ -13,7 +14,7 @@ export function workshopGuideRoutes(
   return (
     new Hono<AppEnv>()
       // Sans document enregistré : désactivé, décodeur éteint, aucune ligne, version 0.
-      .get('/', throttle(PUBLIC_READ_THROTTLE), async (c) =>
+      .get('/', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>
         reply(c, await guide.findCurrent()),
       )
 

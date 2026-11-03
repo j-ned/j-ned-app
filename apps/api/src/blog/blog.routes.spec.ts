@@ -100,6 +100,24 @@ describe('blog routes (HTTP)', () => {
     });
 
     it.each(['/posts', '/posts/mon-article'])(
+      'GET %s is cached by the CDN under the content tag',
+      async (path) => {
+        blog.findAllPublished.mockResolvedValueOnce([POST]);
+        blog.findBySlug.mockResolvedValueOnce(POST);
+        const res = await call(path);
+        expect(res.headers.get('vercel-cache-tag')).toBe('content');
+      },
+    );
+
+    it('GET /posts/admin, which lists drafts, is never cached by the CDN', async () => {
+      blog.findAllForAdmin.mockResolvedValueOnce([POST]);
+      const res = await call('/posts/admin');
+      expect(res.status).toBe(200);
+      expect(res.headers.get('cdn-cache-control')).toBeNull();
+      expect(res.headers.get('vercel-cache-tag')).toBeNull();
+    });
+
+    it.each(['/posts', '/posts/mon-article'])(
       'GET %s has the public read quota (120/min)',
       async (path) => {
         blog.findAllPublished.mockResolvedValue([]);

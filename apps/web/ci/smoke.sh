@@ -58,6 +58,7 @@ for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoi
   test "$(grep -o 'http-equiv="Content-Security-Policy"' /tmp/ssr.html | wc -l)" = "1" || { echo "meta CSP absente ou dupliquée : $path"; exit 1; }
   ! grep -qE "(script|style)-src [^;]*'unsafe-inline'" /tmp/ssr.html || { echo "unsafe-inline : $path"; exit 1; }
   grep -qi '^cache-control: no-cache' /tmp/ssr-headers.txt || { echo "HTML sans revalidation : $path"; exit 1; }
+  grep -qi '^vercel-cache-tag: content' /tmp/ssr-headers.txt || { echo "HTML hors du tag de purge : $path"; exit 1; }
 done
 # Attributs style rendus au serveur (portrait, délais d'animation) : hachés dans style-src-attr
 curl -fsS http://127.0.0.1:3000/about -o /tmp/about-csp.html
@@ -85,6 +86,9 @@ grep -q '<loc>https://nedellec-julien.fr/atelier/plaquettes</loc>' /tmp/sitemap.
 grep -q '<loc>https://nedellec-julien.fr/atelier/decodeur</loc>' /tmp/sitemap.xml
 curl -fsS -D /tmp/rss-headers.txt http://127.0.0.1:3000/rss.xml -o /tmp/rss.xml
 grep -qi '^content-type: application/rss+xml' /tmp/rss-headers.txt
+# Flux mis en cache par le CDN : vidés avec les pages à chaque écriture de contenu
+grep -qi '^vercel-cache-tag: content' /tmp/sitemap-headers.txt
+grep -qi '^vercel-cache-tag: content' /tmp/rss-headers.txt
 grep -q '<title>Article témoin A</title>' /tmp/rss.xml
 python3 -c 'import sys, xml.dom.minidom; [xml.dom.minidom.parse(f) for f in sys.argv[1:]]' /tmp/sitemap.xml /tmp/rss.xml
 # API en panne : /healthz reste vivant (la copie périmée relève du CDN, `stale-if-error`, hors de portée ici)

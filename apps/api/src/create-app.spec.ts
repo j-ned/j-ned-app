@@ -1,4 +1,4 @@
-import { createApp } from './create-app';
+import { createApp, type AppOptions } from './create-app';
 import type { AppConfigService } from './config/app-config.service';
 import type { Database } from './database/drizzle.types';
 import type { Services } from './services';
@@ -7,10 +7,12 @@ const ERROR_KEYS = ['error', 'message', 'path', 'statusCode', 'timestamp'];
 const SITE = 'http://localhost:4200';
 
 /** Application complète, services factices : seul le câblage HTTP commun est éprouvé ici. */
-function app() {
+function app(options: AppOptions = {}) {
   const contact = { create: jest.fn().mockResolvedValue(undefined) };
+  const blog = { like: jest.fn().mockResolvedValue({ likesCount: 1 }) };
   const services = {
     contact,
+    blog,
     jwt: { verify: jest.fn() },
     users: { findById: jest.fn() },
   } as unknown as Services;
@@ -21,7 +23,7 @@ function app() {
   const db = {
     execute: jest.fn().mockResolvedValue([]),
   } as unknown as Database;
-  return { app: createApp(config, db, services), contact };
+  return { app: createApp(config, db, services, options), contact, blog };
 }
 
 const MESSAGE = JSON.stringify({
@@ -168,4 +170,53 @@ describe('createApp', () => {
       expect(res.headers.get('access-control-allow-origin')).toBe(allowed);
     },
   );
+});
+
+describe('createApp: cache CDN du contenu', () => {
+  const sameOrigin = {
+    'content-type': 'application/json',
+    'sec-fetch-site': 'same-origin',
+  };
+
+  it('Given a like, When it is counted, Then the content cache is purged, since the post page shows the count', async () => {
+    const purgeContentCache = jest.fn().mockResolvedValue(undefined);
+    const { app: api, blog } = app({ purgeContentCache });
+
+    const res = await api.request('/api/blog/posts/mon-article/like', {
+      method: 'POST',
+      headers: sameOrigin,
+    });
+
+    expect(res.status).toBe(201);
+    expect(blog.like).toHaveBeenCalledWith('mon-article');
+    expect(purgeContentCache).toHaveBeenCalledTimes(1);
+  });
+
+  it('Given a contact message, When it is stored, Then the content cache is kept, since no page shows it', async () => {
+    const purgeContentCache = jest.fn().mockResolvedValue(undefined);
+    const { app: api } = app({ purgeContentCache });
+
+    const res = await api.request('/api/contact/messages', {
+      method: 'POST',
+      headers: sameOrigin,
+      body: MESSAGE,
+    });
+
+    expect(res.status).toBe(201);
+    expect(purgeContentCache).not.toHaveBeenCalled();
+  });
+
+  it('Given a write refused for lack of a session, When answered, Then the content cache is kept', async () => {
+    const purgeContentCache = jest.fn().mockResolvedValue(undefined);
+    const { app: api } = app({ purgeContentCache });
+
+    const res = await api.request('/api/profile', {
+      method: 'PUT',
+      headers: sameOrigin,
+      body: '{}',
+    });
+
+    expect(res.status).toBe(401);
+    expect(purgeContentCache).not.toHaveBeenCalled();
+  });
 });
