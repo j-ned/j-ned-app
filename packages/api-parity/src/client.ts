@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { parityEnv } from './env';
 
 export const AUTH_COOKIE = '__Host-token';
@@ -31,8 +31,9 @@ export type ApiResponse = {
 
 /**
  * Un visiteur = une adresse IP, transmise en `X-Forwarded-For` comme le fait un proxy de confiance.
- * Chaque test prend ses propres visiteurs : les quotas par IP ne débordent pas d'un test à l'autre,
- * ni d'une exécution à la suivante (décalage aléatoire dans 198.18.0.0/16, réseau de test RFC 2544).
+ * Chaque visiteur reçoit une IPv6 tirée au hasard dans 2001:db8::/32 (plage de documentation, RFC 3849) :
+ * 96 bits aléatoires, aucune collision possible entre tests, fichiers ou exécutions, donc aucun quota
+ * partagé par accident.
  */
 export type Visitor = {
   readonly ip: string;
@@ -43,13 +44,9 @@ export type Visitor = {
   ) => Promise<ApiResponse>;
 };
 
-const RUN_OFFSET = randomInt(0, 65_536);
-let visitorCount = 0;
-
 function nextIp(): string {
-  visitorCount += 1;
-  const n = (RUN_OFFSET + visitorCount) % 65_536;
-  return `198.18.${n >> 8}.${n & 255}`;
+  const groups = randomBytes(12).toString('hex').match(/.{4}/g) ?? [];
+  return `2001:db8:${groups.join(':')}`;
 }
 
 function browserHeaders(
