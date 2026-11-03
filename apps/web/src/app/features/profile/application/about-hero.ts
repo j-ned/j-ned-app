@@ -7,7 +7,7 @@ import { Button } from '@shared/ui/button';
 import { newTabLabel } from '@shared/identity/new-tab-notice';
 
 const ROLE = 'développeur full-stack';
-const STACK = 'Angular · NestJS · TypeScript';
+const STACK = 'Angular · Hono · TypeScript';
 const CV_LINK_LABEL = 'Télécharger mon CV (PDF)';
 
 @Component({

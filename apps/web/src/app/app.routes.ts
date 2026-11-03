@@ -3,10 +3,10 @@ import { authGuard } from '@features/auth/infra/auth-guard';
 import { Home } from '@features/home/pages/home/home';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
-const HOME_TITLE = 'Julien Nédellec | Tourneur CN et développeur web Angular / NestJS';
+const HOME_TITLE = 'Julien Nédellec | Tourneur CN et développeur web Angular / Hono';
 const ABOUT_TITLE = "Parcours\u00a0: de l'atelier au code | Julien Nédellec";
-const PROJECTS_TITLE = 'Mes projets Angular et NestJS | Julien Nédellec';
-const BLOG_TITLE = 'Blog Angular, NestJS et auto-hébergement | Julien Nédellec';
+const PROJECTS_TITLE = 'Mes projets Angular full-stack | Julien Nédellec';
+const BLOG_TITLE = 'Blog Angular, Hono et mise en production | Julien Nédellec';
 const WORKSHOP_TITLE = "L'atelier\u00a0: outils de tourneur CN | Julien Nédellec";
 const INSERT_GUIDE_TITLE = 'Guide des plaquettes de tournage | Julien Nédellec';
 const INSERT_DECODER_TITLE = 'Décodeur de code plaquette ISO | Julien Nédellec';
@@ -22,9 +22,9 @@ export const routes: Routes = [
       seo: {
         title: HOME_TITLE,
         description:
-          "Tourneur CN dans l'aéronautique et développeur web par passion\u00a0: Angular, NestJS, auto-hébergement, et des projets qui tournent vraiment.",
+          "Tourneur CN dans l'aéronautique et développeur web par passion\u00a0: Angular, Hono, PostgreSQL, et des projets qui tournent vraiment.",
         keywords:
-          'Angular, NestJS, TypeScript, PostgreSQL, Drizzle ORM, Docker, auto-hébergement, développeur full-stack, blog technique',
+          'Angular, Hono, TypeScript, PostgreSQL, Drizzle ORM, Vercel, développeur full-stack, blog technique',
         url: SITE_IDENTITY.siteUrl,
         type: 'website',
         structuredData: {
@@ -39,6 +39,7 @@ export const routes: Routes = [
               sameAs: [SITE_IDENTITY.socials.linkedin, SITE_IDENTITY.socials.github],
               knowsAbout: [
                 'Angular',
+                'Hono',
                 'NestJS',
                 'TypeScript',
                 'Node.js',
@@ -71,7 +72,7 @@ export const routes: Routes = [
       seo: {
         title: ABOUT_TITLE,
         description: `${SITE_IDENTITY.journey} Ma stack et mon CV.`,
-        keywords: 'Développeur Angular, Full-Stack, TypeScript, NestJS, PostgreSQL, Docker',
+        keywords: 'Développeur Angular, Full-Stack, TypeScript, Hono, PostgreSQL',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
         structuredData: {
@@ -199,9 +200,9 @@ export const routes: Routes = [
       seo: {
         title: PROJECTS_TITLE,
         description:
-          "Les applications Angular et NestJS que j'utilise vraiment, des démos et quelques scripts\u00a0: pour chacun, le problème de départ et les choix techniques.",
+          "Les applications Angular que j'utilise vraiment, des démos et quelques scripts\u00a0: pour chacun, le problème de départ et les choix techniques.",
         keywords:
-          'Portfolio Angular, Projets NestJS, Applications TypeScript, Développeur Full-Stack, PostgreSQL, Docker',
+          'Portfolio Angular, Projets Hono, Applications TypeScript, Développeur Full-Stack, PostgreSQL',
         url: `${SITE_IDENTITY.siteUrl}/projects`,
         type: 'website',
         structuredData: {
@@ -229,8 +230,8 @@ export const routes: Routes = [
       seo: {
         title: BLOG_TITLE,
         description:
-          "Ce que j'apprends en construisant mes projets\u00a0: Angular, NestJS, PostgreSQL et l'auto-hébergement, erreurs comprises.",
-        keywords: "Blog Angular, Blog NestJS, Développeur Full-Stack, Retour d'expérience",
+          "Ce que j'apprends en construisant mes projets\u00a0: Angular, Hono, PostgreSQL et la mise en production, erreurs comprises.",
+        keywords: "Blog Angular, Blog Hono, Développeur Full-Stack, Retour d'expérience",
         url: `${SITE_IDENTITY.siteUrl}/blog`,
         type: 'website',
       },
