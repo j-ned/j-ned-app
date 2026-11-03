@@ -22,8 +22,10 @@ import { FactList } from '@shared/ui/fact-list';
       data-testid="project-case-study"
       class="grid gap-8 @min-[60rem]:grid-cols-12 @min-[60rem]:items-center @min-[60rem]:gap-12"
     >
+      <!-- 7 colonnes sur 12 dès 60rem, plafonnées par page-container (max-w-7xl). -->
       <app-project-cover
         data-testid="project-case-study-cover"
+        sizes="(min-width: 80rem) 43rem, (min-width: 60rem) 58vw, 100vw"
         class="@min-[60rem]:col-span-7"
         [class]="coverOrder()"
         [image]="study.image"

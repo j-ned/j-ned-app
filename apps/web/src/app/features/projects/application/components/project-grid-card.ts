@@ -12,8 +12,10 @@ import { ProjectCover } from './project-cover';
   template: `
     @let project = card();
     <article data-testid="project-grid-card" class="group relative">
+      <!-- Grille à deux colonnes dès md, plafonnée par page-container (max-w-7xl). -->
       <app-project-cover
         data-testid="project-grid-card-cover"
+        sizes="(min-width: 80rem) 37rem, (min-width: 48rem) 50vw, 100vw"
         [image]="project.image"
         [alt]="coverAlt()"
         [kind]="project.kind"

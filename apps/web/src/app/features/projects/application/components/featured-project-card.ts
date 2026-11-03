@@ -13,8 +13,10 @@ import { FactList } from '@shared/ui/fact-list';
   template: `
     @let project = card();
     <article data-testid="featured-project-card" class="group relative flex h-full flex-col">
+      <!-- Grille à deux colonnes dès md, plafonnée par page-container (max-w-7xl). -->
       <app-project-cover
         data-testid="featured-project-card-cover"
+        sizes="(min-width: 80rem) 37rem, (min-width: 48rem) 50vw, 100vw"
         [image]="project.image"
         [alt]="coverAlt()"
         [kind]="project.kind"

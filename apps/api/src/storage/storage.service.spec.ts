@@ -69,25 +69,36 @@ describe('StorageService', () => {
   });
 
   describe('delete', () => {
-    it("efface l'objet et sa carte de partage dérivée (idempotent)", async () => {
+    it("efface l'objet et toutes ses dérivées (idempotent)", async () => {
       s3Mock.on(DeleteObjectCommand).resolves({});
       await service.delete('my-bucket', 'foo.txt');
       const keys = s3Mock
         .commandCalls(DeleteObjectCommand)
         .map((c) => c.args[0].input.Key);
-      expect(keys).toEqual(['foo.txt', 'foo.txt.share.jpg']);
+      expect(keys).toEqual([
+        'foo.txt',
+        'foo.txt.share.jpg',
+        'foo.txt.w480.avif',
+        'foo.txt.w800.avif',
+        'foo.txt.w1200.avif',
+      ]);
     });
   });
 
-  describe('carte de partage dérivée (<key>.share.jpg)', () => {
-    it("un nouvel upload de l'original jette la carte obsolète", async () => {
+  describe('dérivées (<key>.share.jpg, <key>.w<largeur>.avif)', () => {
+    it("un nouvel upload de l'original jette les dérivées obsolètes", async () => {
       s3Mock.on(PutObjectCommand).resolves({});
       s3Mock.on(DeleteObjectCommand).resolves({});
       await service.upload('b', 'blog/1.avif', Buffer.from('x'), 'image/avif');
       const deleted = s3Mock
         .commandCalls(DeleteObjectCommand)
         .map((c) => c.args[0].input.Key);
-      expect(deleted).toEqual(['blog/1.avif.share.jpg']);
+      expect(deleted).toEqual([
+        'blog/1.avif.share.jpg',
+        'blog/1.avif.w480.avif',
+        'blog/1.avif.w800.avif',
+        'blog/1.avif.w1200.avif',
+      ]);
     });
 
     it("l'upload de la carte elle-même ne cascade pas", async () => {
@@ -97,6 +108,17 @@ describe('StorageService', () => {
         'blog/1.avif.share.jpg',
         Buffer.from('x'),
         'image/jpeg',
+      );
+      expect(s3Mock.commandCalls(DeleteObjectCommand)).toHaveLength(0);
+    });
+
+    it("l'upload d'une variante de largeur ne cascade pas", async () => {
+      s3Mock.on(PutObjectCommand).resolves({});
+      await service.upload(
+        'b',
+        'blog/1.avif.w800.avif',
+        Buffer.from('x'),
+        'image/avif',
       );
       expect(s3Mock.commandCalls(DeleteObjectCommand)).toHaveLength(0);
     });

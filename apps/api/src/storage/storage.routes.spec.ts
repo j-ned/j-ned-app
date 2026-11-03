@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream';
 import { testApp } from '../common/test-app';
+import type { ResizedImageService } from './resized-image.service';
 import type { ShareCardService } from './share-card.service';
 import { storageRoutes } from './storage.routes';
 import type { StorageService } from './storage.service';
@@ -7,11 +8,13 @@ import type { StorageService } from './storage.service';
 describe('storage routes', () => {
   const storage = { get: jest.fn() };
   const shareCards = { get: jest.fn() };
+  const resizedImages = { get: jest.fn() };
   const app = testApp(
     '/api/storage',
     storageRoutes(
       storage as unknown as StorageService,
       shareCards as unknown as ShareCardService,
+      resizedImages as unknown as ResizedImageService,
     ),
   );
 
@@ -63,10 +66,53 @@ describe('storage routes', () => {
     });
   });
 
-  it('variante inconnue → 400', async () => {
-    expect((await call('thumb')).status).toBe(400);
+  it('variant=w800 : sert la variante AVIF de 800 px avec sa taille et le même cache', async () => {
+    const buffer = Buffer.from('avif-800');
+    resizedImages.get.mockResolvedValue({ buffer, contentType: 'image/avif' });
+
+    const res = await call('w800');
+
+    expect(resizedImages.get).toHaveBeenCalledWith(
+      'portfolio-storage',
+      'blog/1.avif',
+      800,
+    );
     expect(storage.get).not.toHaveBeenCalled();
+    expect({
+      type: res.headers.get('content-type'),
+      length: res.headers.get('content-length'),
+      cache: res.headers.get('cache-control'),
+    }).toEqual({
+      type: 'image/avif',
+      length: String(buffer.length),
+      cache: 'public, max-age=31536000, immutable',
+    });
   });
+
+  it.each(['thumb', 'w801', 'w1600', 'w0800', 'w'])(
+    'variante inconnue (%s) → 400, rien n’est dérivé',
+    async (variant) => {
+      expect((await call(variant)).status).toBe(400);
+      expect(storage.get).not.toHaveBeenCalled();
+      expect(resizedImages.get).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['blog/1.avif.w800.avif', 'w800'],
+    ['blog/1.avif.share.jpg', 'w800'],
+    ['blog/1.avif.w800.avif', 'share'],
+  ])(
+    'variante demandée sur une dérivée (%s?variant=%s) → 404, rien n’est dérivé',
+    async (key, variant) => {
+      const res = await app.request(
+        `/api/storage/portfolio-storage/${key}?variant=${variant}`,
+      );
+      expect(res.status).toBe(404);
+      expect(resizedImages.get).not.toHaveBeenCalled();
+      expect(shareCards.get).not.toHaveBeenCalled();
+    },
+  );
 
   it('bucket non public → 404, même avec variante', async () => {
     expect((await call('share', 'private')).status).toBe(404);

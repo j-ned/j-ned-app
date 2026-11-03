@@ -162,4 +162,12 @@ describe('ProjectCaseStudy', () => {
       'Aperçu du projet DashFlow',
     );
   });
+
+  it('Given a card When it renders Then its cover is sized to its seven-of-twelve column, so a narrower variant can be picked', async () => {
+    const sizes = byTestId(await render(), 'project-cover-image')?.getAttribute('sizes');
+
+    expect(sizes?.replace(/^auto, /, '')).toBe(
+      '(min-width: 80rem) 43rem, (min-width: 60rem) 58vw, 100vw',
+    );
+  });
 });

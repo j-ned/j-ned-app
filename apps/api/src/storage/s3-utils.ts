@@ -1,4 +1,9 @@
 import { createHash } from 'node:crypto';
+import type { Readable } from 'node:stream';
+import {
+  RESPONSIVE_IMAGE_WIDTHS,
+  type ResponsiveImageWidth,
+} from './image-optimizer.service';
 import type { StorageService } from './storage.service';
 
 /**
@@ -29,6 +34,35 @@ export function shareCardKey(key: string): string {
   return `${key}${SHARE_CARD_SUFFIX}`;
 }
 
-export function isShareCardKey(key: string): boolean {
-  return key.endsWith(SHARE_CARD_SUFFIX);
+/** Variante de largeur dérivée d'un objet image : `projects/<id>-<sha8>.avif.w800.avif`. */
+export function resizedImageKey(
+  key: string,
+  width: ResponsiveImageWidth,
+): string {
+  return `${key}.w${width}.avif`;
+}
+
+const DERIVED_KEY_PATTERN = /\.(share\.jpg|w\d+\.avif)$/;
+
+/** Clé d'une dérivée (carte de partage ou variante de largeur), jamais d'un original. */
+export function isDerivedKey(key: string): boolean {
+  return DERIVED_KEY_PATTERN.test(key);
+}
+
+/** Toutes les dérivées possibles d'un original, à jeter quand il change. */
+export function derivedKeysOf(key: string): readonly string[] {
+  return [
+    shareCardKey(key),
+    ...RESPONSIVE_IMAGE_WIDTHS.map((width) => resizedImageKey(key, width)),
+  ];
+}
+
+export async function readAll(stream: Readable): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(
+      Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array),
+    );
+  }
+  return Buffer.concat(chunks);
 }
