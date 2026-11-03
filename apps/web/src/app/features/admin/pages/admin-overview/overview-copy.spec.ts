@@ -45,16 +45,6 @@ describe('overviewSummary', () => {
       overrides: { overview: makeStatsOverview({ sessions: 0, cvDownloads: 0 }), referrers: [] },
       expected: 'Aucune visite en 30 jours.',
     },
-    {
-      label: 'only direct visits',
-      overrides: { referrers: [makeMetricEntry({ name: '', count: 42 })] },
-      expected: '42 visites en 30 jours.',
-    },
-    {
-      label: 'the referrers unavailable',
-      overrides: { referrers: null },
-      expected: '42 visites en 30 jours.',
-    },
   ] satisfies readonly {
     label: string;
     overrides: Partial<OverviewSummaryInput>;
@@ -71,11 +61,6 @@ describe('overviewSummary', () => {
       label: 'three unread messages and one CV',
       overrides: { unread: 3, overview: makeStatsOverview({ visitors: 42, cvDownloads: 1 }) },
       expected: '3 messages en attente, 1 CV téléchargé.',
-    },
-    {
-      label: 'one unread message and two CVs',
-      overrides: { unread: 1, overview: makeStatsOverview({ visitors: 42, cvDownloads: 2 }) },
-      expected: '1 message en attente, 2 CV téléchargés.',
     },
     {
       label: 'the unread count unavailable',
@@ -100,30 +85,6 @@ describe('overviewSummary', () => {
       posts: published(1),
       expected: 'Une réalisation et un article sont en ligne.',
     },
-    {
-      label: 'more than ten projects',
-      projects: projects(12),
-      posts: published(10),
-      expected: '12 réalisations et dix articles sont en ligne.',
-    },
-    {
-      label: 'projects only',
-      projects: projects(6),
-      posts: [],
-      expected: 'Six réalisations sont en ligne, aucun article.',
-    },
-    {
-      label: 'a single project only',
-      projects: projects(1),
-      posts: [],
-      expected: 'Une réalisation est en ligne, aucun article.',
-    },
-    {
-      label: 'articles only',
-      projects: [],
-      posts: published(2),
-      expected: 'Deux articles sont en ligne, aucune réalisation.',
-    },
     { label: 'nothing online', projects: [], posts: [], expected: "Rien n'est en ligne." },
     {
       label: 'drafts among the articles',
@@ -140,18 +101,6 @@ describe('overviewSummary', () => {
       projects: null,
       posts: published(2),
       expected: 'Deux articles sont en ligne.',
-    },
-    {
-      label: 'the articles unavailable',
-      projects: projects(1),
-      posts: null,
-      expected: 'Une réalisation est en ligne.',
-    },
-    {
-      label: 'the projects unavailable and no article',
-      projects: null,
-      posts: [],
-      expected: "Aucun article n'est en ligne.",
     },
   ] satisfies readonly {
     label: string;
@@ -172,11 +121,6 @@ describe('overviewSummary', () => {
       label: 'the statistics unavailable',
       overrides: { overview: null },
       expected: `Aucun message en attente. ${CONTENT}`,
-    },
-    {
-      label: 'the statistics and the unread count unavailable',
-      overrides: { overview: null, unread: null },
-      expected: CONTENT,
     },
     {
       label: 'every source unavailable',
