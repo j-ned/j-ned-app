@@ -319,7 +319,8 @@ describe('AdminContentImageUpload: envoi', () => {
     }).toEqual({
       focusedDuring: true,
       focusedAfter: true,
-      error: "L'image dépasse 4\u00a0Mo.",
+      error:
+        "L'image n'a pas été envoyée. Le fichier dépasse 4\u00a0Mo, la taille maximale acceptée.",
       after: { ariaDisabled: 'false', disabled: false },
     });
   });
@@ -327,13 +328,32 @@ describe('AdminContentImageUpload: envoi', () => {
 
 describe('AdminContentImageUpload: échec de l’envoi', () => {
   it.each([
-    { status: 413, message: "L'image dépasse 4\u00a0Mo." },
+    {
+      status: 413,
+      message:
+        "L'image n'a pas été envoyée. Le fichier dépasse 4\u00a0Mo, la taille maximale acceptée.",
+    },
     {
       status: 422,
-      message: 'Image refusée\u00a0: format non pris en charge ou fichier illisible.',
+      message:
+        "L'image n'a pas été envoyée. Le format n'est pas pris en charge ou le fichier est illisible\u00a0: choisissez une image JPEG, PNG, WebP ou AVIF.",
     },
-    { status: 429, message: "L'image n'a pas pu être envoyée. Réessayez." },
-    { status: 500, message: "L'image n'a pas pu être envoyée. Réessayez." },
+    {
+      status: 429,
+      message:
+        "L'image n'a pas été envoyée. Trop d'envois en peu de temps\u00a0: patientez une minute, puis réessayez.",
+    },
+    {
+      status: 500,
+      message:
+        "L'image n'a pas été envoyée. Le serveur a rencontré un problème\u00a0: réessayez dans un instant.",
+    },
+    // Refus de l'hébergeur avant l'API (envoi multipart trop lourd) : pas de corps JSON.
+    {
+      status: 503,
+      message:
+        "L'image n'a pas été envoyée. L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduisez-le sous 900\u00a0Ko, puis réessayez.",
+    },
   ])(
     'Given the API answers $status When the image is sent Then the panel says « $message », keeps the file and the alt text, and inserts nothing',
     async ({ status, message }) => {
@@ -359,8 +379,8 @@ describe('AdminContentImageUpload: échec de l’envoi', () => {
     },
   );
 
-  it('Given the browser cannot bring the image under 4 Mo When the image is sent Then the panel gives that reason and inserts nothing', async () => {
-    const reason = "L'image dépasse 4\u00a0Mo, même compressée.";
+  it('Given the browser cannot bring the image under 900 Ko When the image is sent Then the panel gives that reason and inserts nothing', async () => {
+    const reason = "L'image dépasse 900\u00a0Ko, même compressée.";
     const rendered = await renderPanel(
       vi.fn(() => throwError(() => new UploadRejectedError(reason))),
     );
@@ -372,7 +392,10 @@ describe('AdminContentImageUpload: échec de l’envoi', () => {
     expect({
       error: alert(rendered.root, 'markdown-image-error'),
       inserted: rendered.inserted,
-    }).toEqual({ error: { role: 'alert', text: reason }, inserted: [] });
+    }).toEqual({
+      error: { role: 'alert', text: `L'image n'a pas été envoyée. ${reason}` },
+      inserted: [],
+    });
   });
 
   it('Given a refused upload When the image is sent again and accepted Then the same file is sent twice, the error is gone and the image is handed over', async () => {

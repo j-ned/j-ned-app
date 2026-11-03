@@ -6,6 +6,7 @@ import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPostInput } from '@features/blog/domain/models/blog-post.model';
 import { AVAILABLE_BLOG_TAGS } from '@features/blog/domain/models/blog-tag.model';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
+import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { loadState } from '@shared/ui/load-state';
@@ -191,8 +192,8 @@ export class AdminPostEditor implements LeaveConfirmable {
     if (cover.status === 'failed') {
       this.toast.add({
         severity: 'warn',
-        detail: withValidationDetail(
-          "Article enregistré, mais l'envoi de l'image a échoué. Réessayez.",
+        detail: uploadFailureMessage(
+          "Article enregistré, mais l'image de couverture n'a pas été envoyée.",
           cover.error,
         ),
       });

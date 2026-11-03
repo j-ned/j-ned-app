@@ -599,7 +599,7 @@ describe('AdminProjectEditor: mise à jour', () => {
       toasts: [
         {
           severity: 'warn',
-          detail: "Projet mis à jour, mais l'envoi de l'image a échoué. Réessayez.",
+          detail: "Projet mis à jour, mais l'image de couverture n'a pas été envoyée. Réessayez.",
         },
         { severity: 'success', detail: 'Projet mis à jour' },
       ],
@@ -723,11 +723,11 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
     expect(toasts(editor.toast)[0]).toEqual({
       severity: 'warn',
       detail:
-        "Projet créé, mais l'envoi de l'image a échoué. Réessayez depuis sa page. Détail\u00a0: file must be an image",
+        "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoyez-la depuis sa page. file must be an image.",
     });
   });
 
-  it('Given the cover of a new project failing with a 500 When the project is saved Then the warning stays the fixed one', async () => {
+  it('Given the cover of a new project failing with a 500 When the project is saved Then the warning says the server failed', async () => {
     const editor = await openEditor('/admin/projects/new', {
       uploadImage: vi.fn((): Observable<string> =>
         throwError(() => apiRejection(500, 'Internal server error')),
@@ -740,7 +740,8 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
 
     expect(toasts(editor.toast)[0]).toEqual({
       severity: 'warn',
-      detail: "Projet créé, mais l'envoi de l'image a échoué. Réessayez depuis sa page.",
+      detail:
+        "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoyez-la depuis sa page. Le serveur a rencontré un problème\u00a0: réessayez dans un instant.",
     });
   });
 });

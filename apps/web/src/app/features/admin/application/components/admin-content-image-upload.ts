@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   ElementRef,
@@ -15,18 +14,11 @@ import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
 import { FileDropzone } from '@shared/ui/file-dropzone';
-import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
+import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
 import { imageAltSchema } from './admin-image-alt-schema';
 
-const UPLOAD_ERRORS: Readonly<Record<number, string>> = {
-  413: "L'image dépasse 4\u00a0Mo.",
-  422: 'Image refusée\u00a0: format non pris en charge ou fichier illisible.',
-};
-
 const uploadErrorDetail = (error: unknown): string =>
-  (error instanceof UploadRejectedError && error.message) ||
-  (error instanceof HttpErrorResponse && UPLOAD_ERRORS[error.status]) ||
-  "L'image n'a pas pu être envoyée. Réessayez.";
+  uploadFailureMessage("L'image n'a pas été envoyée.", error);
 
 // Vit dans le formulaire de l'article : pas de <form> imbriqué, Entrée ne doit pas l'enregistrer.
 @Component({
