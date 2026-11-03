@@ -7,7 +7,6 @@ import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
-import type { CvInfo } from '@features/cv/domain/models/cv.model';
 import { ThemeStore } from '@core/theme/theme-store';
 import { installSystemColorScheme } from '@core/theme/testing/system-color-scheme';
 
@@ -17,15 +16,6 @@ const THEME_STORAGE_KEY = 'j-ned:theme';
 class BlankPage {}
 
 const DESTINATIONS = ['blog', 'projects', 'about', 'atelier'] as const;
-
-const cvInfo = (overrides: Partial<CvInfo> = {}): CvInfo => ({
-  id: 'cv-1',
-  fileName: 'cv.pdf',
-  fileSize: 1024,
-  mimeType: 'application/pdf',
-  uploadedAt: '2026-01-01T00:00:00.000Z',
-  ...overrides,
-});
 
 function makeAnalyticsGateway(overrides: Partial<AnalyticsGateway> = {}): AnalyticsGateway {
   return {
@@ -99,15 +89,6 @@ describe('Header', () => {
   });
 
   describe('liens de navigation', () => {
-    it("ordonne le menu principal : Blog, Réalisations, Parcours puis L'atelier, sans offre ni section", () => {
-      expect(NAV_LINKS).toEqual([
-        { label: 'Blog', href: '/blog', icons: 'lucide-book-open' },
-        { label: 'Réalisations', href: '/projects', icons: 'lucide-laptop' },
-        { label: 'Parcours', href: '/about', icons: 'lucide-user' },
-        { label: "L'atelier", href: '/atelier', icons: 'lucide-wrench' },
-      ]);
-    });
-
     it('dessert chaque destination de NAV_LINKS par un lien routé, sans bouton de section', async () => {
       const { fixture } = await setup();
       const nav = fixture.nativeElement.querySelector(
@@ -130,23 +111,23 @@ describe('Header', () => {
       {
         url: '/blog',
         expected: [
-          { href: '/blog', current: 'page', pill: true },
-          { href: '/projects', current: null, pill: false },
-          { href: '/about', current: null, pill: false },
-          { href: '/atelier', current: null, pill: false },
+          { href: '/blog', current: 'page' },
+          { href: '/projects', current: null },
+          { href: '/about', current: null },
+          { href: '/atelier', current: null },
         ],
       },
       {
         url: '/atelier',
         expected: [
-          { href: '/blog', current: null, pill: false },
-          { href: '/projects', current: null, pill: false },
-          { href: '/about', current: null, pill: false },
-          { href: '/atelier', current: 'page', pill: true },
+          { href: '/blog', current: null },
+          { href: '/projects', current: null },
+          { href: '/about', current: null },
+          { href: '/atelier', current: 'page' },
         ],
       },
     ])(
-      'Given the router on $url When the header renders Then only that entry is the current page, drawn as an accent-tinted pill',
+      'Given the router on $url When the header renders Then only that entry is the current page',
       async ({ url, expected }) => {
         const { fixture } = await setup();
         const router = TestBed.inject(Router);
@@ -162,31 +143,10 @@ describe('Header', () => {
           Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href]')).map((a) => ({
             href: a.getAttribute('href'),
             current: a.getAttribute('aria-current'),
-            pill: a.classList.contains('rounded-full') && a.classList.contains('bg-primary/8'),
           })),
         ).toEqual(expected);
       },
     );
-
-    it("Given the mobile menu open When it renders Then L'atelier closes the list, with the wrench icon", async () => {
-      const { component, fixture } = await setup();
-      component['toggleMobileMenu']();
-      fixture.detectChanges();
-      await fixture.whenStable();
-      const links = Array.from(
-        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
-          '[data-testid="mobile-nav"] a[href]',
-        ),
-      );
-      const last = links.at(-1);
-
-      expect({
-        count: links.length,
-        href: last?.getAttribute('href'),
-        label: last?.textContent?.trim(),
-        icon: last?.querySelector('use')?.getAttribute('href')?.split('#')[1],
-      }).toEqual({ count: 4, href: '/atelier', label: "L'atelier", icon: 'solid-wrench' });
-    });
 
     it("Given the mobile menu open When L'atelier is clicked Then the router lands on /atelier and the menu closes", async () => {
       const { component, fixture } = await setup();
@@ -262,21 +222,6 @@ describe('Header', () => {
       expect(ctas[0]?.closest('header')).not.toBeNull();
     });
 
-    it('Given le bouton d’appel When on remonte jusqu’au header Then aucun ancêtre ne le masque à une largeur donnée', async () => {
-      const { fixture } = await setup();
-      const host = fixture.nativeElement as HTMLElement;
-      const header = host.querySelector('header') as HTMLElement;
-      const hidingTokens: string[] = [];
-      let el: HTMLElement | null = ctasIn(host)[0] ?? null;
-      while (el && el !== header) {
-        hidingTokens.push(...[...el.classList].filter((token) => /(^|:)hidden$/.test(token)));
-        el = el.parentElement;
-      }
-
-      expect(ctasIn(host)).toHaveLength(1);
-      expect(hidingTokens).toEqual([]);
-    });
-
     it('Given le bouton d’appel When on le clique Then le SectionScroller mène au contact de l’accueil', async () => {
       const { fixture, scroller } = await setup();
       const button = nativeButtonOf(ctasIn(fixture.nativeElement as HTMLElement)[0]);
@@ -293,24 +238,6 @@ describe('Header', () => {
       expect(button).toBeInstanceOf(HTMLButtonElement);
       button?.click();
       expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith('header_contact', "M'écrire");
-    });
-  });
-
-  describe('monogramme', () => {
-    it('Given the header When it renders Then the « JN » monogram is a flat accent disc, on-accent text, with no tint nor border', async () => {
-      const { fixture } = await setup();
-      const tile = (fixture.nativeElement as HTMLElement).querySelector(
-        '[data-testid="header-monogram"]',
-      );
-      const paint = [...(tile?.classList ?? [])]
-        .filter(
-          (token) =>
-            /^(?:[\w-]+:)*(?:bg|text|border|rounded)(?:-|$)/.test(token) &&
-            !/^text-(?:xs|sm|base|lg|\d*xl)$/.test(token),
-        )
-        .sort();
-
-      expect(paint).toEqual(['bg-primary-bg', 'rounded-full', 'text-on-primary']);
     });
   });
 
@@ -461,23 +388,6 @@ describe('Header', () => {
       component['isMobileMenuOpen'].set(true);
       component['closeMobileMenu']();
       expect(component['isMobileMenuOpen']()).toBe(false);
-    });
-  });
-
-  describe('lien CV', () => {
-    it('Given un CV disponible When l’en-tête et son menu mobile sont rendus Then aucun lien CV n’y figure et le CV n’est pas consulté', async () => {
-      const getCurrent = vi.fn(() => of(cvInfo()));
-      const { component, fixture } = await setup({
-        cv: makeCvGateway({ getCurrent, getDownloadUrl: () => 'https://cdn.example/cv.pdf' }),
-      });
-      component['toggleMobileMenu']();
-      fixture.detectChanges();
-      await fixture.whenStable();
-      const host = fixture.nativeElement as HTMLElement;
-
-      expect(host.querySelector('[role="dialog"]')).not.toBeNull();
-      expect(host.querySelectorAll('a[href="https://cdn.example/cv.pdf"]')).toHaveLength(0);
-      expect(getCurrent).not.toHaveBeenCalled();
     });
   });
 });

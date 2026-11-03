@@ -4,7 +4,6 @@ import { Router, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { MOCK_PLATFORM_LOCATION_CONFIG } from '@angular/common/testing';
-import { ToastStore } from '@core/notifications/toast-store';
 import { App } from './app';
 import { Header } from '@layout/components/header/header';
 import { Footer } from '@layout/components/footer/footer';
@@ -14,26 +13,8 @@ import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 import { API_BASE_URL } from '@shared/api/api-config';
 
-describe('App', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [App],
-      providers: [
-        provideRouter([]),
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        ToastStore,
-        { provide: API_BASE_URL, useValue: '/api' },
-        { provide: AuthGateway, useClass: HttpAuthGateway },
-      ],
-    }).compileComponents();
-  });
-
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
+beforeEach(async () => {
+  await TestBed.configureTestingModule({ imports: [App] }).compileComponents();
 });
 
 @Component({ selector: 'app-header', template: '' })

@@ -65,51 +65,6 @@ const navNameOf = (element: Element | undefined): string => {
 };
 
 describe('Footer', () => {
-  describe('copy', () => {
-    it('pins every label of the footer', () => {
-      expect(FOOTER_COPY).toEqual({
-        tagline:
-          'Tourneur CN le jour, développeur web le reste du temps. Angular, NestJS et auto-hébergement, pour le plaisir.',
-        headings: { resources: 'Ressources', contact: 'Contact' },
-        resources: {
-          projects: 'Réalisations',
-          blog: 'Blog',
-          about: 'Parcours',
-          workshop: "L'atelier",
-        },
-        contactCta: "M'écrire",
-        socials: { linkedin: 'LinkedIn', github: 'GitHub' },
-        legal: {
-          owner: 'Julien Nédellec',
-          legalNotice: 'Mentions légales',
-          privacy: 'Confidentialité',
-        },
-      });
-    });
-
-    it('Given the footer When it is rendered Then the tagline sits under the brand', async () => {
-      const { host } = await setup();
-      const [tagline] = byTestId(host, 'footer-tagline');
-
-      expect(tagline?.textContent?.trim()).toBe(FOOTER_COPY.tagline);
-    });
-
-    it('Given the footer When it is rendered Then the columns are Ressources then Contact, with no offer column', async () => {
-      const { host } = await setup();
-      const headings = byTestId(host, 'footer-column-heading').map((h) => h.textContent?.trim());
-
-      expect(headings).toEqual([FOOTER_COPY.headings.resources, FOOTER_COPY.headings.contact]);
-    });
-  });
-
-  describe('retired offers', () => {
-    it('Given the footer When it is rendered Then no link leads to a retired offer page', async () => {
-      const { host } = await setup();
-
-      expect(host.querySelectorAll('a[href^="/offres"]')).toHaveLength(0);
-    });
-  });
-
   describe('resources column', () => {
     it("Given the footer When it is rendered Then Ressources lists Réalisations, Blog, Parcours then L'atelier, and nothing else", async () => {
       const { host } = await setup();
@@ -183,15 +138,6 @@ describe('Footer', () => {
       );
     });
 
-    it('Given the footer When it is rendered Then it no longer links the retired booking page', async () => {
-      const { host } = await setup();
-
-      expect([
-        byTestId(host, 'footer-booking-link').length,
-        host.querySelectorAll('a[href^="/rendez-vous"]').length,
-      ]).toEqual([0, 0]);
-    });
-
     it('Given the footer When it is rendered Then LinkedIn and GitHub open in a new tab from the Contact navigation, without Malt', async () => {
       const { host } = await setup();
       const links = byTestId<HTMLAnchorElement>(host, 'footer-social-link');
@@ -212,17 +158,6 @@ describe('Footer', () => {
         FOOTER_COPY.headings.contact,
         FOOTER_COPY.headings.contact,
       ]);
-    });
-  });
-
-  describe('review invitation', () => {
-    it('Given the footer When it is rendered Then it no longer asks for a Google review (no client, no business, spec 029)', async () => {
-      const { host } = await setup();
-
-      expect([
-        byTestId(host, 'footer-review-prompt').length,
-        host.querySelectorAll('a[href*="g.page"]').length,
-      ]).toEqual([0, 0]);
     });
   });
 

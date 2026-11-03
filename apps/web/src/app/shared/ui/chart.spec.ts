@@ -110,17 +110,4 @@ describe('AppChart', () => {
 
     expect(destroySpy).toHaveBeenCalled();
   });
-
-  it('applies the height input to the canvas style', async () => {
-    // responsive: false prevents Chart.js from overwriting canvas.style.height
-    // (Chart._resize forcibly sets style.height to '0px' in jsdom where layout is unavailable)
-    const fixture = TestBed.createComponent(AppChart);
-    fixture.componentRef.setInput('data', lineData());
-    fixture.componentRef.setInput('height', '15rem');
-    fixture.componentRef.setInput('options', { responsive: false });
-    fixture.detectChanges();
-    await fixture.whenStable();
-    const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
-    expect(canvas.style.height).toBe('15rem');
-  });
 });

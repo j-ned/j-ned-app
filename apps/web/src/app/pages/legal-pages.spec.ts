@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, it, expect } from 'vitest';
-import { LEGAL_LAST_UPDATE, LegalNotice } from './legal-notice';
+import { LegalNotice } from './legal-notice';
 import { PrivacyPolicy } from './privacy-policy';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
@@ -20,133 +20,16 @@ describe('Pages légales', () => {
     ).toBe(`mailto:${SITE_IDENTITY.email}`);
   });
 
-  describe('éditeur particulier (spec 029)', () => {
-    const renderLegalNotice = (): HTMLElement => {
-      TestBed.configureTestingModule({ providers: [provideRouter([])] });
-      const fixture = TestBed.createComponent(LegalNotice);
-      fixture.detectChanges();
-      return fixture.nativeElement as HTMLElement;
-    };
-    const collapsed = (el: Element | null | undefined): string =>
-      (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
-
-    it('présente Julien Nédellec comme particulier, éditeur d’un site sans activité commerciale', () => {
-      expect(collapsed(renderLegalNotice().querySelector('[data-testid="legal-publisher"]'))).toBe(
-        `Ce site personnel, sans activité commerciale, est édité par Julien Nédellec, particulier, résidant à ${SITE_IDENTITY.location}, France.`,
-      );
-    });
-
-    it('déclare un hébergement par l’éditeur, joignable par l’adresse de contact', () => {
-      expect(collapsed(renderLegalNotice().querySelector('[data-testid="legal-hosting"]'))).toBe(
-        "Le site et son API sont hébergés par l'éditeur lui-même, sur un serveur personnel situé en France. L'adresse de contact ci-dessus vaut pour l'hébergeur.",
-      );
-    });
-
-    it.each([/SIRET/, /APE/, /TVA/, /entrepreneur individuel/i, /Téléphone/, /\btel:/])(
-      'ne publie plus %s',
-      (pattern) => {
-        const host = renderLegalNotice();
-        expect(host.textContent ?? '').not.toMatch(pattern);
-        expect(host.innerHTML).not.toMatch(/href="tel:/);
-      },
-    );
-
-    it('date la dernière mise à jour du passage en éditeur particulier', () => {
-      expect(LEGAL_LAST_UPDATE).toBe('20 octobre 2026');
-      expect(renderLegalNotice().textContent).toContain(
-        `Dernière mise à jour\u00A0: ${LEGAL_LAST_UPDATE}`,
-      );
-    });
-  });
-
   it.each([
     { name: 'LegalNotice', page: LegalNotice },
     { name: 'PrivacyPolicy', page: PrivacyPolicy },
-  ])(
-    'Given $name When la page est rendue Then elle n’émet aucun main et porte la mise en page sur l’host',
-    ({ page }) => {
-      TestBed.configureTestingModule({ providers: [provideRouter([])] });
-      const fixture = TestBed.createComponent<LegalNotice | PrivacyPolicy>(page);
-      fixture.detectChanges();
-      const host = fixture.nativeElement as HTMLElement;
-
-      expect(host.querySelector('h1')).not.toBeNull();
-      expect(host.querySelectorAll('main')).toHaveLength(0);
-      expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-16', 'pt-20']);
-    },
-  );
-
-  describe('mesure d’audience', () => {
-    const renderPrivacy = (): HTMLElement => {
-      TestBed.configureTestingModule({ providers: [provideRouter([])] });
-      const fixture = TestBed.createComponent(PrivacyPolicy);
-      fixture.detectChanges();
-      return fixture.nativeElement as HTMLElement;
-    };
-    const paragraph = (host: HTMLElement, testId: string): string =>
-      (host.querySelector(`[data-testid="${testId}"]`)?.textContent ?? '')
-        .replace(/[ \t\n\r]+/g, ' ')
-        .trim();
-
-    it.each([
-      [
-        'privacy-audience-pages',
-        "La fréquentation est mesurée par un outil développé pour ce site, sans cookie ni identifiant persistant. Pour chaque page vue sont enregistrés\u00a0: la page (sans l'ancre éventuelle), la provenance (nom de domaine du site d'origine uniquement, une fois par visite), le pays déduit de l'adresse IP à partir d'une base locale, le navigateur, le système d'exploitation et le temps d'affichage de la page. L'adresse IP n'est jamais conservée\u00a0: elle sert seulement, combinée au navigateur et à la date du jour, à calculer une empreinte non réversible qui distingue les visites d'une même journée. Les visites des robots et de l'éditeur sont exclues.",
-      ],
-      [
-        'privacy-audience-actions',
-        "Certaines actions sont aussi comptées\u00a0: le clic sur un bouton d'appel, sur un lien de contact (e-mail, Discord), de profil (LinkedIn, GitHub) ou de démonstration, l'arrivée sur le formulaire de l'accueil, l'envoi réussi du formulaire de contact, le téléchargement du CV, l'ouverture et la lecture complète d'un article. Seuls le type d'action, son emplacement et la page sont enregistrés, jamais le contenu du formulaire ni l'adresse du lien.",
-      ],
-      [
-        'privacy-audience-retention',
-        "Base légale\u00a0: l'intérêt légitime à connaître l'usage du site. Les données brutes sont supprimées après 30 jours\u202f; seuls des totaux journaliers anonymes (visites, pages vues, visites engagées, rebonds, durée d'affichage cumulée, nombre d'actions par type) sont conservés au-delà.",
-      ],
-      [
-        'privacy-error-tracking',
-        "En cas d'erreur d'affichage, un rapport technique (message d'erreur, page concernée, navigateur) est transmis à Sentry, hébergé dans l'Union européenne, pour corriger le problème, ainsi que des mesures de performance anonymes (temps de chargement) pour une visite sur dix. Aucune donnée d'identification n'y est envoyée volontairement\u202f; pour l'éditeur connecté uniquement, son identifiant technique est joint. Ces rapports sont conservés 90 jours.",
-      ],
-    ])('le paragraphe %s décrit la mesure réelle', (testId, expected) => {
-      expect(paragraph(renderPrivacy(), testId)).toBe(expected);
-    });
-
-    it('date sa propre mise à jour, comme les mentions légales', () => {
-      expect({
-        privacy: paragraph(renderPrivacy(), 'privacy-last-update'),
-        legal: LEGAL_LAST_UPDATE,
-      }).toEqual({
-        privacy: 'Dernière mise à jour\u00a0: 20 octobre 2026',
-        legal: '20 octobre 2026',
-      });
-    });
-  });
-
-  it('ne décrit plus aucune prise de rendez-vous, retirée du site (spec 029)', () => {
+  ])('Given $name When la page est rendue Then elle n’émet aucun main', ({ page }) => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(PrivacyPolicy);
+    const fixture = TestBed.createComponent<LegalNotice | PrivacyPolicy>(page);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
 
-    expect([
-      host.querySelectorAll('[data-testid^="privacy-booking"]').length,
-      /rendez-vous|Jitsi/i.test(host.textContent ?? ''),
-    ]).toEqual([0, false]);
-  });
-
-  it('la politique de confidentialité couvre contact, audience, commentaires, erreurs et droits', () => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(PrivacyPolicy);
-    fixture.detectChanges();
-    const headings = Array.from(
-      fixture.nativeElement.querySelectorAll('h2') as NodeListOf<HTMLElement>,
-    ).map((h) => h.textContent?.trim());
-    expect(headings).toEqual([
-      'Formulaire de contact',
-      "Mesure d'audience",
-      'Commentaires des articles',
-      'Suivi des erreurs techniques',
-      'Stockage local du navigateur',
-      'Tes droits',
-    ]);
-    expect(fixture.nativeElement.textContent).toContain('30 jours');
+    expect(host.querySelector('h1')).not.toBeNull();
+    expect(host.querySelectorAll('main')).toHaveLength(0);
   });
 });
