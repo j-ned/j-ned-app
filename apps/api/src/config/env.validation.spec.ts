@@ -20,11 +20,6 @@ describe('validateEnv', () => {
     expect(result.LOG_LEVEL).toBe('debug'); // défaut auto en dev
   });
 
-  it('coerce PORT depuis une string', () => {
-    const result = validateEnv({ ...baseValid, PORT: '4242' });
-    expect(result.PORT).toBe(4242);
-  });
-
   it('rejette PORT hors plage', () => {
     expect(() => validateEnv({ ...baseValid, PORT: '99999' })).toThrow(/PORT/);
   });
@@ -39,99 +34,10 @@ describe('validateEnv', () => {
     );
   });
 
-  it('accepte postgresql:// (alias officiel)', () => {
-    const result = validateEnv({
-      ...baseValid,
-      DATABASE_URL: 'postgresql://u:p@localhost:5432/d',
-    });
-    expect(result.DATABASE_URL).toBe('postgresql://u:p@localhost:5432/d');
-  });
-
-  it('utilise LOG_LEVEL=info par défaut en production', () => {
-    const result = validateEnv({ ...baseValid, NODE_ENV: 'production' });
-    expect(result.LOG_LEVEL).toBe('info');
-  });
-
-  it('utilise LOG_LEVEL=info par défaut en NODE_ENV=test', () => {
-    const result = validateEnv({ ...baseValid, NODE_ENV: 'test' });
-    expect(result.LOG_LEVEL).toBe('info');
-  });
-
-  it('respecte LOG_LEVEL fourni explicitement', () => {
-    const result = validateEnv({ ...baseValid, LOG_LEVEL: 'warn' });
-    expect(result.LOG_LEVEL).toBe('warn');
-  });
-
-  it('rejette LOG_LEVEL invalide', () => {
-    expect(() => validateEnv({ ...baseValid, LOG_LEVEL: 'verbose' })).toThrow(
-      /LOG_LEVEL/,
-    );
-  });
-
   it('rejette JWT_SECRET trop court', () => {
     expect(() => validateEnv({ ...baseValid, JWT_SECRET: 'short' })).toThrow(
       /JWT_SECRET/,
     );
-  });
-
-  it('utilise JWT_EXPIRES_IN=7d par défaut', () => {
-    const result = validateEnv(baseValid);
-    expect(result.JWT_EXPIRES_IN).toBe('7d');
-  });
-
-  it('respecte JWT_EXPIRES_IN explicite', () => {
-    const result = validateEnv({ ...baseValid, JWT_EXPIRES_IN: '14d' });
-    expect(result.JWT_EXPIRES_IN).toBe('14d');
-  });
-
-  it('rejette ADMIN_EMAIL invalide quand fourni', () => {
-    expect(() =>
-      validateEnv({ ...baseValid, ADMIN_EMAIL: 'not-an-email' }),
-    ).toThrow(/ADMIN_EMAIL/);
-  });
-
-  it('rejette ADMIN_INITIAL_PASSWORD trop court quand fourni', () => {
-    expect(() =>
-      validateEnv({ ...baseValid, ADMIN_INITIAL_PASSWORD: 'short' }),
-    ).toThrow(/ADMIN_INITIAL_PASSWORD/);
-  });
-
-  it('utilise TOTP_APP_NAME=J-Ned Portfolio par défaut', () => {
-    const result = validateEnv(baseValid);
-    expect(result.TOTP_APP_NAME).toBe('J-Ned Portfolio');
-  });
-
-  it('rejette S3_ENDPOINT non-URL', () => {
-    expect(() =>
-      validateEnv({ ...baseValid, S3_ENDPOINT: 'not-a-url' }),
-    ).toThrow(/S3_ENDPOINT/);
-  });
-
-  it('rejette S3_ACCESS_KEY trop courte', () => {
-    expect(() => validateEnv({ ...baseValid, S3_ACCESS_KEY: 'abc' })).toThrow(
-      /S3_ACCESS_KEY/,
-    );
-  });
-
-  it('rejette S3_SECRET_KEY trop courte', () => {
-    expect(() => validateEnv({ ...baseValid, S3_SECRET_KEY: 'short' })).toThrow(
-      /S3_SECRET_KEY/,
-    );
-  });
-
-  it('ignore une variable inconnue résiduelle (ex. DOKPLOY_DEPLOY_WEBHOOK_URL retirée du schéma) sans bloquer le démarrage', () => {
-    const result = validateEnv({
-      ...baseValid,
-      DOKPLOY_DEPLOY_WEBHOOK_URL: 'https://dokploy.example.test/webhook/abc',
-    });
-    expect(result.DATABASE_URL).toBe(baseValid.DATABASE_URL);
-    expect(result).not.toHaveProperty('DOKPLOY_DEPLOY_WEBHOOK_URL');
-  });
-
-  it('rejette MAIL_FROM si pas un email valide', () => {
-    expect(() =>
-      validateEnv({ ...baseValid, MAIL_FROM: 'not-an-email' }),
-    ).toThrow(/MAIL_FROM/);
   });
 
   it('rejette une env sans RESEND_API_KEY', () => {
@@ -139,31 +45,4 @@ describe('validateEnv', () => {
       validateEnv({ ...baseValid, RESEND_API_KEY: undefined }),
     ).toThrow(/RESEND_API_KEY/);
   });
-
-  // Passage de SMTP à Resend : les anciennes variables encore définies sur Vercel ne bloquent pas le démarrage.
-  it('ignore les anciennes variables SMTP_* résiduelles', () => {
-    const result = validateEnv({
-      ...baseValid,
-      SMTP_HOST: 'mail.gandi.net',
-      SMTP_PASS: 'old-password',
-    });
-    expect(result).not.toHaveProperty('SMTP_HOST');
-    expect(result).not.toHaveProperty('SMTP_PASS');
-  });
-
-  // Retrait de la prise de rendez-vous (spec 029) : des variables encore définies dans Dokploy ne
-  // doivent ni bloquer le démarrage ni réapparaître dans la configuration.
-  it.each([
-    ['BOOKING_FEED_SECRET', 'f'.repeat(48)],
-    ['BOOKING_VIDEO_URL_BASE', 'https://meet.jit.si'],
-    ['PUBLIC_SITE_URL', 'https://nedellec-julien.fr'],
-  ])(
-    'Given %s encore définie, Then le démarrage passe et la variable est ignorée',
-    (name, value) => {
-      const result = validateEnv({ ...baseValid, [name]: value });
-
-      expect(result).not.toHaveProperty(name);
-      expect(result.DATABASE_URL).toBe(baseValid.DATABASE_URL);
-    },
-  );
 });

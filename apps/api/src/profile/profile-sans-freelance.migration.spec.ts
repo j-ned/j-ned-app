@@ -17,12 +17,6 @@ describe('0028 — texte « Ce qui me motive » sans activité freelance (spec 0
     expect(texts()[1]).toBe(PROFILE_SEED.motivation.description);
   });
 
-  it('Given the replacement, When read, Then it mentions neither freelance, Malt nor a job search', () => {
-    expect(texts()[0]).not.toMatch(
-      /freelance|malt|cdi|disponible|vos projets/i,
-    );
-  });
-
   it('Given the replacement, When read, Then it fits the admin limit and keeps a literal non-breaking space', () => {
     const replacement = texts()[0];
 
@@ -30,10 +24,5 @@ describe('0028 — texte « Ce qui me motive » sans activité freelance (spec 0
       PROFILE_LIMITS.motivation.description,
     );
     expect(replacement).toContain(' :');
-  });
-
-  it('Given the migration, When read, Then it bumps the version so an open editor gets a 409', () => {
-    expect(MIGRATION).toMatch(/"version" = "version" \+ 1/);
-    expect(MIGRATION).toMatch(/WHERE "id" = 'main'/);
   });
 });

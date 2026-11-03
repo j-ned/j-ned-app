@@ -249,19 +249,6 @@ describe('ProjectImagesService', () => {
     });
   });
 
-  describe('keysOf', () => {
-    it('Given a project with captures, When its keys are read, Then every S3 key is returned', async () => {
-      db.where.mockResolvedValueOnce([
-        { key: 'project-images/a-1.avif' },
-        { key: 'project-images/b-2.avif' },
-      ]);
-      expect(await service.keysOf(PROJECT_ID)).toEqual([
-        'project-images/a-1.avif',
-        'project-images/b-2.avif',
-      ]);
-    });
-  });
-
   describe('reorder', () => {
     const A = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001';
     const B = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002';

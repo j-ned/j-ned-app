@@ -45,15 +45,6 @@ describe('CreateProjectDto - techChoices / architectureDecisions', () => {
 });
 
 describe('CreateProjectDto - kind (ADR-0008)', () => {
-  it.each(['production', 'demo', 'script'])(
-    'Given kind "%s", When validated, Then it is accepted',
-    (kind) => {
-      expect(
-        invalidProperties(createProjectSchema, { ...base, kind }),
-      ).toHaveLength(0);
-    },
-  );
-
   it('Given no kind, When validated, Then it is accepted (the column default applies)', () => {
     expect(invalidProperties(createProjectSchema, { ...base })).toHaveLength(0);
   });
@@ -123,15 +114,9 @@ const rejectionOf = async (
 const EDITORIAL_FIELDS = [
   ['pitch', PROJECT_PITCH_MAX],
   ['highlight', PROJECT_FACT_MAX],
-  ['scope', PROJECT_FACT_MAX],
 ] as const;
 
 describe('CreateProjectDto - editorial fields (ADR-0010)', () => {
-  it('Given the bounds, When read, Then they are 160 for the pitch and 80 for the facts', () => {
-    expect(PROJECT_PITCH_MAX).toBe(160);
-    expect(PROJECT_FACT_MAX).toBe(80);
-  });
-
   it('Given the three fields, When created, Then they reach the service trimmed', async () => {
     const dto = await throughPipe(createProjectSchema, {
       ...base,

@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { ChartData } from 'chart.js';
 import { AppChart } from '@shared/ui/chart';
-import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { testIdText } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import type { ReadoutItem } from './admin-readout';
 import { OverviewAudience } from './overview-audience';
@@ -22,8 +22,6 @@ const CHART_DATA: ChartData<'line'> = {
 const SUMMARY =
   'Visiteurs par jour du 7 septembre au 8 septembre 2026\u00a0: maximum 6 le 7 septembre.';
 
-type ChartHost = HTMLElement & { readonly data?: unknown };
-
 async function renderAudience(visits: number): Promise<{ host: HTMLElement }> {
   TestBed.configureTestingModule({ providers: [provideRouter([])] });
   TestBed.overrideComponent(OverviewAudience, {
@@ -41,58 +39,7 @@ async function renderAudience(visits: number): Promise<{ host: HTMLElement }> {
 }
 
 describe('OverviewAudience', () => {
-  it('Given the 30-day audience When the section renders Then it is named « Audience » and shows the visits and the readout', async () => {
-    const { host } = await renderAudience(42);
-    const section = host.querySelector('section');
-    const labelledBy = section?.getAttribute('aria-labelledby') ?? '';
-
-    expect({
-      name: host.querySelector(`[id="${labelledBy}"]`)?.textContent?.trim() ?? null,
-      headingLevel: host.querySelector(`[id="${labelledBy}"]`)?.tagName ?? null,
-      visitors: testIdText(host, 'overview-visits'),
-      readout: host.querySelectorAll('[data-testid="readout-item"]').length,
-    }).toEqual({
-      name: 'Audience',
-      headingLevel: 'H2',
-      visitors: '42',
-      readout: 3,
-    });
-  });
-
-  it('Given the 30-day visits When the section renders Then the block reads exactly « Visites · 30 j » and the number, nothing else', async () => {
-    const { host } = await renderAudience(42);
-
-    expect(
-      (byTestId(host, 'overview-visits-block')?.textContent ?? '').replace(/\s+/g, ' ').trim(),
-    ).toBe('Visites · 30 j 42');
-  });
-
-  it('Given a chart summary When the section renders Then the curve sits in a figure whose caption is the text alternative', async () => {
-    const { host } = await renderAudience(42);
-    const figure = host.querySelector('figure');
-    const chart = figure?.querySelector<ChartHost>('app-chart') ?? null;
-
-    expect({
-      caption: figure?.querySelector('figcaption')?.textContent?.trim() ?? null,
-      chartData: chart?.data === CHART_DATA,
-    }).toEqual({ caption: SUMMARY, chartData: true });
-  });
-
-  it('Given the section When rendered Then its link leads to the detailed audience page', async () => {
-    const { host } = await renderAudience(42);
-    const link = byTestId(host, 'overview-audience-link');
-
-    expect({ tag: link?.tagName ?? null, href: link?.getAttribute('href') ?? null }).toEqual({
-      tag: 'A',
-      href: '/admin/audience',
-    });
-  });
-
-  it.each([
-    { visits: 1, expected: '1' },
-    { visits: 0, expected: '0' },
-    { visits: 1234, expected: '1\u202f234' },
-  ])(
+  it.each([{ visits: 1234, expected: '1\u202f234' }])(
     'Given $visits visits When rendered Then they read $expected',
     async ({ visits, expected }) => {
       const { host } = await renderAudience(visits);

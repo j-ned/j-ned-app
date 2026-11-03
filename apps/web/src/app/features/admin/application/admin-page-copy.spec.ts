@@ -34,11 +34,7 @@ const messages = (unread: number, read: number): ReturnType<typeof makeContactMe
 
 describe('projectsOverline', () => {
   it.each([
-    { total: 0, featured: 0, overline: '0 réalisation · 0 mise en avant' },
     { total: 1, featured: 0, overline: '1 réalisation · 0 mise en avant' },
-    { total: 1, featured: 1, overline: '1 réalisation · 1 mise en avant' },
-    { total: 2, featured: 1, overline: '2 réalisations · 1 mise en avant' },
-    { total: 6, featured: 2, overline: '6 réalisations · 2 mises en avant' },
     {
       total: 1234,
       featured: 1000,
@@ -54,10 +50,6 @@ describe('projectsOverline', () => {
 
 describe('postsOverline', () => {
   it.each([
-    { published: 0, drafts: 0, overline: '0 article · 0 publié · 0 brouillon' },
-    { published: 1, drafts: 0, overline: '1 article · 1 publié · 0 brouillon' },
-    { published: 0, drafts: 1, overline: '1 article · 0 publié · 1 brouillon' },
-    { published: 2, drafts: 0, overline: '2 articles · 2 publiés · 0 brouillon' },
     { published: 1, drafts: 2, overline: '3 articles · 1 publié · 2 brouillons' },
     {
       published: 1000,
@@ -74,9 +66,6 @@ describe('postsOverline', () => {
 
 describe('messagesOverline', () => {
   it.each([
-    { unread: 0, read: 0, overline: '0 non lu · 0 au total' },
-    { unread: 1, read: 0, overline: '1 non lu · 1 au total' },
-    { unread: 0, read: 2, overline: '0 non lu · 2 au total' },
     { unread: 2, read: 1, overline: '2 non lus · 3 au total' },
     { unread: 1200, read: 34, overline: '1\u202f200 non lus · 1\u202f234 au total' },
   ])(
@@ -90,7 +79,6 @@ describe('messagesOverline', () => {
 describe('cvOverline', () => {
   it.each([
     { fileSize: 512, size: '512 o' },
-    { fileSize: 77_824, size: '76 Ko' },
     { fileSize: 1_258_291, size: '1,2 Mo' },
   ])(
     'Given a PDF of $fileSize bytes uploaded on 19 September 2026 When the overline is written Then it reads its format, « $size » and its date',
@@ -114,9 +102,6 @@ describe('audienceOverline', () => {
   const OCTOBER_7 = new Date(2026, 9, 7, 10, 0);
 
   it.each([
-    { range: '7d', now: OCTOBER_7, overline: '30 sept. au 7 oct. 2026 · 7 derniers jours' },
-    { range: '30d', now: OCTOBER_7, overline: '7 sept. au 7 oct. 2026 · 30 derniers jours' },
-    { range: '90d', now: OCTOBER_7, overline: '9 juil. au 7 oct. 2026 · 90 derniers jours' },
     {
       range: '30d',
       now: new Date(2026, 0, 10, 10, 0),

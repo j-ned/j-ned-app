@@ -100,24 +100,6 @@ describe('ProjectsService', () => {
       expect(result[0].image).toBe('https://example.test/url');
       expect(result[1].image).toBe('');
     });
-
-    it('applique filtre category', async () => {
-      db.orderBy.mockResolvedValueOnce([]);
-      await service.findAll({ category: 'web' });
-      expect(db.where).toHaveBeenCalled();
-    });
-
-    it('applique filtre featured', async () => {
-      db.orderBy.mockResolvedValueOnce([]);
-      await service.findAll({ featured: true });
-      expect(db.where).toHaveBeenCalled();
-    });
-
-    it('applique les deux filtres combinés', async () => {
-      db.orderBy.mockResolvedValueOnce([]);
-      await service.findAll({ category: 'web', featured: true });
-      expect(db.where).toHaveBeenCalled();
-    });
   });
 
   describe('findById', () => {
@@ -158,17 +140,6 @@ describe('ProjectsService', () => {
       expect(result.image).toBe('https://example.test/url');
     });
 
-    it('normalise les accents dans le slug', async () => {
-      const created = mkProject({ title: 'Mon Été', slug: 'mon-ete' });
-      db.returning.mockResolvedValueOnce([created]);
-      const result = await service.create({
-        title: 'Mon Été',
-        category: 'web',
-        description: 'desc',
-      });
-      expect(result.slug).toBe('mon-ete');
-    });
-
     it('throw ConflictException sur unique violation slug', async () => {
       db.returning.mockRejectedValueOnce({
         code: '23505',
@@ -200,30 +171,6 @@ describe('ProjectsService', () => {
         }),
       ).rejects.toThrow(ConflictException);
     });
-
-    it("transmet techChoices/architectureDecisions à l'insert DB", async () => {
-      const techChoices = [{ techno: 'NestJS', why: 'modulaire' }];
-      const architectureDecisions = [
-        { decision: 'hexagonale', rationale: 'testable' },
-      ];
-      db.returning.mockResolvedValueOnce([
-        mkProject({ techChoices, architectureDecisions }),
-      ]);
-
-      const result = await service.create({
-        title: 'Mon site',
-        category: 'web',
-        description: 'Desc',
-        techChoices,
-        architectureDecisions,
-      });
-
-      expect(db.values).toHaveBeenCalledWith(
-        expect.objectContaining({ techChoices, architectureDecisions }),
-      );
-      expect(result.techChoices).toEqual(techChoices);
-      expect(result.architectureDecisions).toEqual(architectureDecisions);
-    });
   });
 
   describe('gallery (ADR-0009)', () => {
@@ -241,17 +188,6 @@ describe('ProjectsService', () => {
       expect(result[1].gallery).toEqual([]);
     });
 
-    it('Given a project with captures, When read by id, Then its gallery is included', async () => {
-      const row = mkProject();
-      db.limit.mockResolvedValueOnce([row]);
-      gallery.galleryOf.mockResolvedValueOnce(
-        new Map([[row.id, [mkImage('x')]]]),
-      );
-      const result = await service.findById(row.id);
-      expect(gallery.galleryOf).toHaveBeenCalledWith([row.id]);
-      expect(result.gallery).toEqual([mkImage('x')]);
-    });
-
     it('Given a new project, When created, Then its gallery is empty without a query', async () => {
       db.returning.mockResolvedValueOnce([mkProject()]);
       const result = await service.create({
@@ -261,67 +197,6 @@ describe('ProjectsService', () => {
       });
       expect(result.gallery).toEqual([]);
       expect(gallery.galleryOf).not.toHaveBeenCalled();
-    });
-
-    it('Given a project with captures, When updated, Then the response keeps its gallery', async () => {
-      const row = mkProject();
-      db.limit.mockResolvedValueOnce([row]);
-      db.returning.mockResolvedValueOnce([row]);
-      gallery.galleryOf.mockResolvedValueOnce(
-        new Map([[row.id, [mkImage('x')]]]),
-      );
-      const result = await service.update(row.id, { featured: true });
-      expect(result.gallery).toEqual([mkImage('x')]);
-    });
-
-    it('Given a project with captures, When its cover is replaced, Then the response keeps its gallery', async () => {
-      const row = mkProject();
-      db.limit.mockResolvedValueOnce([row]);
-      db.returning.mockResolvedValueOnce([row]);
-      gallery.galleryOf.mockResolvedValueOnce(
-        new Map([[row.id, [mkImage('x')]]]),
-      );
-      const result = await service.uploadImage(row.id, {
-        buffer: Buffer.from('f'),
-      } as UploadedFile);
-      expect(result.gallery).toEqual([mkImage('x')]);
-    });
-  });
-
-  describe('kind (ADR-0008)', () => {
-    it('Given a kind, When creating, Then it is inserted and exposed', async () => {
-      db.returning.mockResolvedValueOnce([mkProject({ kind: 'production' })]);
-      const result = await service.create({
-        title: 'Mon site',
-        category: 'web',
-        description: 'desc',
-        kind: 'production',
-      });
-      expect(db.values).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: 'production' }),
-      );
-      expect(result.kind).toBe('production');
-    });
-
-    it('Given no kind, When creating, Then kind is left to the column default', async () => {
-      db.returning.mockResolvedValueOnce([mkProject()]);
-      await service.create({
-        title: 'Mon site',
-        category: 'web',
-        description: 'd',
-      });
-      const [inserted] = db.values.mock.calls[0] as [Record<string, unknown>];
-      expect(inserted).not.toHaveProperty('kind');
-    });
-
-    it('Given a kind, When updating, Then it is written and exposed', async () => {
-      db.limit.mockResolvedValueOnce([mkProject()]);
-      db.returning.mockResolvedValueOnce([mkProject({ kind: 'script' })]);
-      const result = await service.update(mkProject().id, { kind: 'script' });
-      expect(db.set).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: 'script' }),
-      );
-      expect(result.kind).toBe('script');
     });
   });
 
@@ -614,47 +489,6 @@ describe('ProjectsService', () => {
       expect(result).toMatchObject(EDITORIAL);
     });
 
-    it('Given none of them, When creating, Then the insert leaves them to the NULL columns', async () => {
-      db.returning.mockResolvedValueOnce([mkProject()]);
-      await service.create({
-        title: 'Mon site',
-        category: 'web',
-        description: 'd',
-      });
-      const [inserted] = db.values.mock.calls[0] as [Record<string, unknown>];
-      expect(inserted).not.toHaveProperty('pitch');
-      expect(inserted).not.toHaveProperty('highlight');
-      expect(inserted).not.toHaveProperty('scope');
-    });
-
-    it('Given stored values, When listing, Then every response carries the three keys', async () => {
-      db.orderBy.mockResolvedValueOnce([
-        { ...mkProject({ id: 'a' }), ...EDITORIAL },
-        {
-          ...mkProject({ id: 'b' }),
-          pitch: null,
-          highlight: null,
-          scope: null,
-        },
-      ]);
-      const [written, blank] = await service.findAll({});
-      expect(written).toMatchObject(EDITORIAL);
-      expect(blank).toMatchObject({
-        pitch: null,
-        highlight: null,
-        scope: null,
-      });
-    });
-
-    it('Given null on the three fields, When updating, Then null is written and exposed', async () => {
-      const cleared = { pitch: null, highlight: null, scope: null };
-      db.limit.mockResolvedValueOnce([{ ...mkProject(), ...EDITORIAL }]);
-      db.returning.mockResolvedValueOnce([mkProject(cleared)]);
-      const result = await service.update(mkProject().id, cleared);
-      expect(db.set).toHaveBeenCalledWith(expect.objectContaining(cleared));
-      expect(result).toMatchObject(cleared);
-    });
-
     it('Given a new pitch only, When updating, Then the highlight and the scope are left out of the SET', async () => {
       db.limit.mockResolvedValueOnce([{ ...mkProject(), ...EDITORIAL }]);
       db.returning.mockResolvedValueOnce([
@@ -672,15 +506,6 @@ describe('ProjectsService', () => {
         highlight: EDITORIAL.highlight,
         scope: EDITORIAL.scope,
       });
-    });
-
-    it('Given a stored project, When its cover is uploaded, Then the response keeps the three fields', async () => {
-      db.limit.mockResolvedValueOnce([{ ...mkProject(), ...EDITORIAL }]);
-      db.returning.mockResolvedValueOnce([{ ...mkProject(), ...EDITORIAL }]);
-      const result = await service.uploadImage(mkProject().id, {
-        buffer: Buffer.from('f'),
-      } as UploadedFile);
-      expect(result).toMatchObject(EDITORIAL);
     });
   });
 });

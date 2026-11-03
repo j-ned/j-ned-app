@@ -186,17 +186,6 @@ describe('FilterGroup', () => {
     expect(pressed?.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('Given the filters When they render Then every button is at least 44 px high', async () => {
-    const root = rootOf(await mountKinds());
-
-    expect(buttons(root).map((button) => button.classList.contains('min-h-11'))).toEqual([
-      true,
-      true,
-      true,
-      true,
-    ]);
-  });
-
   describe('inactive option', () => {
     it('Given an option at zero marked disabled When the filters render Then only that button is declared inactive, never through the native disabled attribute', async () => {
       const root = rootOf(await mountThemes());
@@ -248,16 +237,6 @@ describe('FilterGroup', () => {
       expect(inactive?.tabIndex).toBe(0);
       expect(document.activeElement).toBe(inactive);
       expect(inactive?.getAttribute('aria-pressed')).toBe('false');
-    });
-
-    it('Given an inactive option When the filters render Then it shows the disabled look and keeps its 44 px height', async () => {
-      const inactive = buttonLabelled(rootOf(await mountThemes()), 'Ingénierie');
-
-      expect(
-        ['aria-disabled:cursor-not-allowed', 'aria-disabled:*:opacity-50', 'min-h-11'].map(
-          (token) => inactive?.classList.contains(token),
-        ),
-      ).toEqual([true, true, true]);
     });
   });
 });

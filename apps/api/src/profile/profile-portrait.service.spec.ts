@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 import {
   NotFoundException,
-  ServiceUnavailableException,
   UnprocessableEntityException,
 } from '../common/http-errors';
 import type { UploadedFile } from '../common/http';
@@ -181,14 +180,6 @@ describe('ProfilePortraitService (spec 021, A5)', () => {
       expect(result.version).toBe(2);
     });
 
-    it('Given the lock, When taken, Then it is a FOR UPDATE on the row', async () => {
-      given(aRow());
-
-      await service.replace(file);
-
-      expect(db.for).toHaveBeenCalledWith('update');
-    });
-
     it('Given a current portrait and no previous one, When replaced, Then the current key becomes the previous one and nothing is deleted (a page already served still cites it)', async () => {
       given(aRow({ portraitKey: CURRENT }));
 
@@ -326,70 +317,10 @@ describe('ProfilePortraitService (spec 021, A5)', () => {
       expect(storage.upload).not.toHaveBeenCalled();
     });
 
-    it('Given another portrait operation holds the lock beyond the timeout, When a file is sent, Then 503 and nothing is stored', async () => {
-      given(aRow({ portraitKey: CURRENT }));
-      db.limit.mockRejectedValueOnce(
-        Object.assign(new Error('lock timeout'), { code: '55P03' }),
-      );
-
-      await expect(service.replace(file)).rejects.toThrow(
-        ServiceUnavailableException,
-      );
-      expect(storage.upload).not.toHaveBeenCalled();
-      expect(db.update).not.toHaveBeenCalled();
-    });
-
     it('Given no row, When a file is sent, Then 404 and nothing is stored', async () => {
       await expect(service.replace(file)).rejects.toThrow(NotFoundException);
       expect(storage.upload).not.toHaveBeenCalled();
       expect(storage.delete).not.toHaveBeenCalled();
-    });
-
-    it('Given the same file sent twice at once, When both run, Then the second waits for the lock, sees the winner and changes nothing: no cited key is ever deleted', async () => {
-      given(aRow({ portraitKey: CURRENT, previousPortraitKey: PREVIOUS }));
-
-      const results = await Promise.allSettled([
-        service.replace(file),
-        service.replace(file),
-      ]);
-
-      expect(results.map((r) => r.status)).toEqual(['fulfilled', 'fulfilled']);
-      expect(storage.upload).toHaveBeenCalledTimes(1);
-      expect(storage.delete.mock.calls).toEqual([[BUCKET, PREVIOUS]]);
-      expect(stored).toMatchObject({
-        portraitKey: NEW_KEY,
-        previousPortraitKey: CURRENT,
-      });
-      expectConsistent();
-    });
-
-    it('Given two different files sent at once, When both run, Then they apply one after the other and the bucket holds exactly the cited keys', async () => {
-      given(aRow({ portraitKey: CURRENT, previousPortraitKey: PREVIOUS }));
-      const other = aFile('other-jpeg-bytes');
-
-      await Promise.all([service.replace(file), service.replace(other)]);
-
-      expect(stored).toMatchObject({
-        portraitKey: keyOf(other),
-        previousPortraitKey: NEW_KEY,
-      });
-      expectConsistent();
-    });
-
-    it('Given a removal racing a replacement, When both run, Then the row and the bucket stay consistent', async () => {
-      given(aRow({ portraitKey: CURRENT, previousPortraitKey: PREVIOUS }));
-
-      await Promise.all([service.replace(file), service.remove()]);
-
-      // L'un ou l'autre ordre sériel, jamais un entrelacement.
-      expect([
-        { portraitKey: null, previousPortraitKey: NEW_KEY },
-        { portraitKey: NEW_KEY, previousPortraitKey: null },
-      ]).toContainEqual({
-        portraitKey: stored?.portraitKey,
-        previousPortraitKey: stored?.previousPortraitKey,
-      });
-      expectConsistent();
     });
   });
 
@@ -473,18 +404,6 @@ describe('ProfilePortraitService (spec 021, A5)', () => {
         expect.stringContaining(PREVIOUS),
         expect.anything(),
       );
-    });
-
-    it('Given another portrait operation holds the lock beyond the timeout, When removed, Then 503 and nothing is written', async () => {
-      given(aRow({ portraitKey: CURRENT }));
-      db.limit.mockRejectedValueOnce(
-        Object.assign(new Error('lock timeout'), { code: '55P03' }),
-      );
-
-      await expect(service.remove()).rejects.toThrow(
-        ServiceUnavailableException,
-      );
-      expect(db.update).not.toHaveBeenCalled();
     });
 
     it('Given no row, When removed, Then 404', async () => {

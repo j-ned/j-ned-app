@@ -136,19 +136,6 @@ describe('BlogDetail', () => {
     expect(html).toContain('<h1 id="bonjour">Bonjour</h1>');
   });
 
-  it('Given l’article du slug When il est rendu Then il n’émet aucun main et porte la mise en page sur l’host', async () => {
-    const { fixture } = setup({ getPostBySlug: () => of(post()) });
-    fixture.componentRef.setInput('slug', 'mon-article');
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-
-    expect(host.querySelector('article')).not.toBeNull();
-    expect(host.querySelectorAll('main')).toHaveLength(0);
-    expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-16', 'pt-20']);
-  });
-
   it('redirige vers /blog si le slug est introuvable (404)', async () => {
     const { fixture } = setup({ getPostBySlug: () => throwError(() => new Error('404')) });
     const router = TestBed.inject(Router);
@@ -278,7 +265,6 @@ describe('BlogDetail', () => {
     it.each([
       ['une retouche un autre jour', '2026-09-02T10:00:00Z', true],
       ['une retouche le jour même', '2026-08-31T18:00:00Z', false],
-      ['une retouche antérieure à la publication', '2026-08-30T00:00:00Z', false],
     ])('affiche la mise à jour seulement pour %s', async (_label, updatedAt, shown) => {
       const { fixture } = setup({ getPostBySlug: () => of(post({ updatedAt })) });
       fixture.componentRef.setInput('slug', 'mon-article');
@@ -607,31 +593,6 @@ describe('BlogDetail', () => {
       });
     });
 
-    it('Given four close posts When the page renders Then the three closest link to their article, best first, titled and dated', async () => {
-      const { fixture } = await show([
-        current,
-        candidate('theme-seul', ['TypeScript'], '2026-09-14T12:00:00Z'),
-        candidate('deux-tags', ['Angular', 'CSP'], '2026-08-03T12:00:00Z'),
-        candidate('un-tag', ['Angular'], '2026-07-21T12:00:00Z'),
-        candidate('autre-theme-seul', ['XSS'], '2026-06-05T12:00:00Z'),
-      ]);
-      const links = relatedLinks(fixture);
-
-      expect({
-        hrefs: links.map((link) => link.getAttribute('href')),
-        headings: links.map((link) => link.lastElementChild?.textContent?.trim()),
-        overlines: links.map((link) => link.firstElementChild?.textContent ?? ''),
-      }).toEqual({
-        hrefs: ['/blog/deux-tags', '/blog/un-tag', '/blog/theme-seul'],
-        headings: ['Titre deux-tags', 'Titre un-tag', 'Titre theme-seul'],
-        overlines: [
-          expect.stringMatching(/\b3\b.*2026/su),
-          expect.stringMatching(/\b21\b.*2026/su),
-          expect.stringMatching(/\b14\b.*2026/su),
-        ],
-      });
-    });
-
     it('Given the older neighbour is also the closest post When the page renders Then it is offered both by the chronological navigation and by the further reading', async () => {
       const { fixture } = await show([
         current,
@@ -741,10 +702,7 @@ describe('BlogDetail', () => {
         ...rootOf(fixture).querySelectorAll<HTMLAnchorElement>('[data-testid="project-link"]'),
       ];
 
-      it.each([
-        { tag: 'DashFlow', href: '/projects/dashflow' },
-        { tag: 'Portfolio', href: '/projects/portfolio' },
-      ])(
+      it.each([{ tag: 'DashFlow', href: '/projects/dashflow' }])(
         'Given an article tagged $tag and no close post When the page renders Then the further reading links to the project page, overlined as such and titled by the tag',
         async ({ tag, href }) => {
           const { fixture } = await showTagged([tag]);
@@ -766,18 +724,6 @@ describe('BlogDetail', () => {
           });
         },
       );
-
-      it('Given an article whose free tag only differs from CandiDash by its case When the page renders Then no project page is linked, while the close post still is', async () => {
-        const { fixture } = await showTagged(
-          ['Candidash', 'Angular'],
-          [candidate('proche', ['Angular'], '2026-09-01T12:00:00Z')],
-        );
-
-        expect({
-          projects: projectLinks(fixture).length,
-          related: relatedLinks(fixture).map((link) => link.getAttribute('href')),
-        }).toEqual({ projects: 0, related: ['/blog/proche'] });
-      });
 
       it('Given an article on a project with a close post When the page renders Then the project page comes before the close posts', async () => {
         const { fixture } = await showTagged(

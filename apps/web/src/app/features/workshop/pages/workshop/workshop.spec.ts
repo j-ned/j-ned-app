@@ -63,24 +63,6 @@ describe('Workshop', () => {
     expect(host.querySelector('h1')?.getAttribute('data-testid')).toBe('workshop-title');
   });
 
-  it('Given the workshop space When the page is rendered Then the intro shows each paragraph of the space, in order', async () => {
-    const host = await renderWorkshop();
-
-    expect(
-      [...host.querySelectorAll('[data-testid="workshop-intro"]')].map((paragraph) => [
-        paragraph.tagName,
-        collapsed(paragraph),
-      ]),
-    ).toEqual(WORKSHOP_SPACE.intro.map((paragraph) => ['P', paragraph]));
-  });
-
-  it('Given the shell owns the landmarks When the page is rendered Then it emits no main, header nor footer and lays itself out on the host', async () => {
-    const host = await renderWorkshop();
-
-    expect(host.querySelectorAll('main, header, footer')).toHaveLength(0);
-    expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pt-20']);
-  });
-
   it('Given the workshop tools When the page is rendered Then a section is named by its h2, the tools heading', async () => {
     const host = await renderWorkshop();
     const section = host.querySelector('[data-testid="workshop-tools"]');

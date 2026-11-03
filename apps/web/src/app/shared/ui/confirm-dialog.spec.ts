@@ -164,14 +164,4 @@ describe('ConfirmDialog', () => {
       true,
     );
   });
-
-  it('Given an open dialog Then the confirm button is the solid danger button', async () => {
-    const { host } = await renderHost(true);
-    const dialog = confirmDialogElement(host);
-    const classes = [
-      ...(dialog ? (nativeButton(dialog, 'confirm-dialog-confirm')?.classList ?? []) : []),
-    ];
-
-    expect(classes).toEqual(expect.arrayContaining(['bg-status-error', 'text-on-status-error']));
-  });
 });

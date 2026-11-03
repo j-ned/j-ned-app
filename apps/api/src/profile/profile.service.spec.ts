@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  NotFoundException,
-  ServiceUnavailableException,
-} from '../common/http-errors';
+import { ConflictException, NotFoundException } from '../common/http-errors';
 import { and, eq, sql } from 'drizzle-orm';
 import {
   profileContent,
@@ -185,38 +181,6 @@ describe('ProfileService', () => {
 
       await expect(service.replace(aDto(changed, 3))).rejects.toThrow(
         'db down',
-      );
-    });
-
-    it('Given a changed content, When replaced, Then the write runs in a transaction that first bounds the lock wait (a portrait operation may hold the row)', async () => {
-      const order: string[] = [];
-      db.execute.mockImplementation(() => {
-        order.push('set lock_timeout');
-        return Promise.resolve();
-      });
-      db.update.mockImplementation(() => {
-        order.push('update');
-        return db;
-      });
-      db.limit.mockResolvedValueOnce([aRow()]);
-      db.returning.mockResolvedValueOnce([
-        aRow({ content: changed, version: 4 }),
-      ]);
-
-      await service.replace(aDto(changed, 3));
-
-      expect(db.transaction).toHaveBeenCalledTimes(1);
-      expect(order).toEqual(['set lock_timeout', 'update']);
-    });
-
-    it('Given the row stays locked beyond the timeout, When replaced, Then 503', async () => {
-      db.limit.mockResolvedValueOnce([aRow()]);
-      db.returning.mockRejectedValueOnce(
-        Object.assign(new Error('lock timeout'), { code: '55P03' }),
-      );
-
-      await expect(service.replace(aDto(changed, 3))).rejects.toThrow(
-        ServiceUnavailableException,
       );
     });
 

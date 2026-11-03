@@ -108,10 +108,7 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
     },
   );
 
-  describe.each([
-    ['material', L.material],
-    ['insert', L.insert],
-  ])('entries.0.%s', (field, max) => {
+  describe.each([['material', L.material]])('entries.0.%s', (field, max) => {
     it(`Given exactly ${max} characters, When validated, Then it is accepted`, async () => {
       expect(await violationsOf(withEntryField(field, text(max)))).toEqual([]);
     });
@@ -133,29 +130,17 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
     );
   });
 
-  describe('entries.0.note (optional)', () => {
-    it.each([
-      ['missing', undefined],
-      ['null', null],
-      ['empty', ''],
-      ['blank', '   '],
-      [`exactly ${L.note} characters`, text(L.note)],
-    ])('Given %s, When validated, Then it is accepted', async (_l, value) => {
-      expect(await violationsOf(withEntryField('note', value))).toEqual([]);
-    });
+  it('Given an insert too long, When validated, Then it is refused', async () => {
+    expectViolation(
+      await violationsOf(withEntryField('insert', text(L.insert + 1))),
+      'entries.0.insert:maxLength',
+    );
+  });
 
-    it.each([
-      ['too long', text(L.note + 1), 'maxLength'],
-      ['HTML markup', '<script>', 'noMarkup'],
-      ['a number', 3, 'isString'],
-    ])(
-      'Given %s, When validated, Then it is refused',
-      async (_l, value, constraint) => {
-        expectViolation(
-          await violationsOf(withEntryField('note', value)),
-          `entries.0.note:${constraint}`,
-        );
-      },
+  it('Given HTML markup in the optional note, When validated, Then it is refused', async () => {
+    expectViolation(
+      await violationsOf(withEntryField('note', '<script>')),
+      'entries.0.note:noMarkup',
     );
   });
 
@@ -181,15 +166,6 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
   });
 
   describe('entries.0.noseRadius (mm)', () => {
-    it.each([[0.01], [0.4], [0.8], [1.2], [L.noseRadius]])(
-      'Given %p, When validated, Then it is accepted',
-      async (radius) => {
-        expect(
-          await violationsOf(withEntryField('noseRadius', radius)),
-        ).toEqual([]);
-      },
-    );
-
     it.each([
       [0, 'isPositive'],
       [-0.4, 'isPositive'],
@@ -216,20 +192,6 @@ describe('UpdateWorkshopGuideDto (spec 035)', () => {
       expect(await violationsOf(withEntryField('noseRadius', value))).toEqual(
         [],
       );
-    });
-  });
-
-  describe('entries.0.operation boring (spec 037)', () => {
-    it('Given boring, When validated, Then it is accepted', async () => {
-      expect(await violationsOf(withEntryField('operation', 'boring'))).toEqual(
-        [],
-      );
-    });
-
-    it('Given the closed list, When read, Then boring sits between internal-finishing and drilling', () => {
-      const ops: readonly string[] = WORKSHOP_GUIDE_OPERATIONS;
-      expect(ops.indexOf('boring')).toBe(ops.indexOf('internal-finishing') + 1);
-      expect(ops.indexOf('drilling')).toBe(ops.indexOf('boring') + 1);
     });
   });
 

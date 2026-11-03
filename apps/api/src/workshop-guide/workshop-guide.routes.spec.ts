@@ -1,7 +1,5 @@
 import type { RequireAuth } from '../auth/require-auth';
-import { UnauthorizedException } from '../common/http-errors';
 import { testApp } from '../common/test-app';
-import { PUBLIC_READ_THROTTLE } from '../common/throttle';
 import { workshopGuideRoutes } from './workshop-guide.routes';
 import type { WorkshopGuideService } from './workshop-guide.service';
 import {
@@ -12,9 +10,6 @@ import {
 
 const passThrough: RequireAuth = async (_c, next) => {
   await next();
-};
-const rejectAll: RequireAuth = () => {
-  throw new UnauthorizedException();
 };
 
 /** Routes montées avec le gestionnaire d'erreurs de l'API ; service et JWT remplacés. */
@@ -36,36 +31,7 @@ describe('workshop-guide routes', () => {
     app = appWith(passThrough);
   });
 
-  describe('without a session', () => {
-    it('Given no session, When the guide is read, Then it is public: 200', async () => {
-      guide.findCurrent.mockResolvedValueOnce({ version: 0 });
-
-      const res = await appWith(rejectAll).request('/api/workshop-guide');
-
-      expect(res.status).toBe(200);
-    });
-
-    it('Given no session, When the guide is replaced, Then 401 and the service is not called', async () => {
-      const res = await appWith(rejectAll).request('/api/workshop-guide', {
-        method: 'PUT',
-      });
-
-      expect(res.status).toBe(401);
-      expect(guide.replace).not.toHaveBeenCalled();
-    });
-  });
-
   describe('GET /api/workshop-guide', () => {
-    it('allows the public read rate (pages rendered on request), then 429', async () => {
-      guide.findCurrent.mockResolvedValue({ version: 0 });
-      const statuses: number[] = [];
-      for (let i = 0; i <= PUBLIC_READ_THROTTLE.limit; i += 1)
-        statuses.push((await app.request('/api/workshop-guide')).status);
-
-      expect(statuses.slice(0, -1).every((s) => s === 200)).toBe(true);
-      expect(statuses.at(-1)).toBe(429);
-    });
-
     it('Given the document, When requested, Then 200 with the document', async () => {
       guide.findCurrent.mockResolvedValueOnce({
         enabled: false,

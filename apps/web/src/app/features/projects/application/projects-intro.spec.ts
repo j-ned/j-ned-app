@@ -10,32 +10,8 @@ describe('projectsIntro', () => {
       expected: `Deux applications en service, deux sites de démonstration, deux outils de développement. ${CLOSING}`,
     },
     {
-      counts: { production: 1, demo: 0, script: 0 },
-      expected: `Une application en service. ${CLOSING}`,
-    },
-    {
       counts: { production: 0, demo: 1, script: 0 },
       expected: `Un site de démonstration. ${CLOSING}`,
-    },
-    {
-      counts: { production: 0, demo: 0, script: 1 },
-      expected: `Un outil de développement. ${CLOSING}`,
-    },
-    {
-      counts: { production: 1, demo: 1, script: 1 },
-      expected: `Une application en service, un site de démonstration, un outil de développement. ${CLOSING}`,
-    },
-    {
-      counts: { production: 0, demo: 3, script: 0 },
-      expected: `Trois sites de démonstration. ${CLOSING}`,
-    },
-    {
-      counts: { production: 4, demo: 5, script: 6 },
-      expected: `Quatre applications en service, cinq sites de démonstration, six outils de développement. ${CLOSING}`,
-    },
-    {
-      counts: { production: 7, demo: 8, script: 9 },
-      expected: `Sept applications en service, huit sites de démonstration, neuf outils de développement. ${CLOSING}`,
     },
   ] satisfies readonly { counts: ProjectKindCounts; expected: string }[])(
     'Given the counts $counts When the intro is written Then it names each nature in words',

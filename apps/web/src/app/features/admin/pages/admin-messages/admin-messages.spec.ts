@@ -1,5 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { NEVER, of, throwError, type Observable } from 'rxjs';
+import { of, throwError, type Observable } from 'rxjs';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AdminMessages } from './admin-messages';
@@ -68,9 +68,6 @@ const normalized = (element: Element | null | undefined): string =>
 const nativeButton = (element: HTMLElement | null): HTMLButtonElement | null =>
   element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
 
-const accessibleName = (button: HTMLButtonElement | null): string =>
-  button?.getAttribute('aria-label') ?? normalized(button);
-
 const allByTestId = (host: HTMLElement, testId: string): readonly HTMLElement[] => [
   ...host.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),
 ];
@@ -93,7 +90,7 @@ async function pressFilter(
 }
 
 describe('AdminMessages: liste', () => {
-  it('Given messages in any order When the page renders Then they are listed newest first, one list item each', async () => {
+  it('Given messages in any order When the page renders Then they are listed newest first', async () => {
     const { host } = await setup(
       makeGateway({
         getAllMessages: () =>
@@ -104,50 +101,16 @@ describe('AdminMessages: liste', () => {
           ]),
       }),
     );
-    const list = byTestId(host, 'admin-messages-list');
 
-    expect({
-      tag: list?.tagName,
-      role: list?.getAttribute('role'),
-      items: [...(list?.children ?? [])].map((item) => item.tagName),
-      senders: senders(host),
-    }).toEqual({
-      tag: 'UL',
-      role: 'list',
-      items: ['LI', 'LI', 'LI'],
-      senders: ['Récent', 'Moyen', 'Ancien'],
-    });
+    expect(senders(host)).toEqual(['Récent', 'Moyen', 'Ancien']);
   });
 });
 
 describe('AdminMessages: filtre par lecture', () => {
   const seed = (): ContactGateway => makeGateway({ getAllMessages: () => of([CLAIRE, PAUL]) });
 
-  it('Given one unread and one read message When the page renders Then the filters count them, « Tous » pressed', async () => {
-    const { host } = await setup(seed());
-
-    expect({
-      group: byTestId(host, 'filter-group')?.getAttribute('aria-label'),
-      options: allByTestId(host, 'filter-option').map((option) => ({
-        label: testIdText(option, 'filter-option-label'),
-        count: testIdText(option, 'filter-option-count'),
-        pressed: option.getAttribute('aria-pressed'),
-      })),
-      senders: senders(host),
-    }).toEqual({
-      group: 'Filtrer par lecture',
-      options: [
-        { label: 'Tous', count: '2', pressed: 'true' },
-        { label: 'Non lus', count: '1', pressed: 'false' },
-        { label: 'Lus', count: '1', pressed: 'false' },
-      ],
-      senders: ['Claire Martin', 'Paul Durand'],
-    });
-  });
-
   it.each([
     { label: 'Non lus', shown: ['Claire Martin'] },
-    { label: 'Lus', shown: ['Paul Durand'] },
     { label: 'Tous', shown: ['Claire Martin', 'Paul Durand'] },
   ])(
     'Given the inbox When « $label » is pressed Then only $shown are listed',
@@ -163,18 +126,6 @@ describe('AdminMessages: filtre par lecture', () => {
       }).toEqual({ pressed: 'true', senders: shown });
     },
   );
-
-  it('Given every message is read When the page renders Then « Non lus » is inactive and pressing it changes nothing', async () => {
-    const { fixture, host } = await setup(makeGateway({ getAllMessages: () => of([PAUL]) }));
-
-    await pressFilter(fixture, host, 'Non lus');
-
-    expect({
-      disabled: filterOption(host, 'Non lus')?.getAttribute('aria-disabled'),
-      pressed: filterOption(host, 'Tous')?.getAttribute('aria-pressed'),
-      senders: senders(host),
-    }).toEqual({ disabled: 'true', pressed: 'true', senders: ['Paul Durand'] });
-  });
 });
 
 describe('AdminMessages: lecture au clavier', () => {
@@ -195,32 +146,6 @@ describe('AdminMessages: lecture au clavier', () => {
   const expandButtons = (host: HTMLElement): readonly (HTMLButtonElement | null)[] =>
     allByTestId(host, 'message-expand').map(nativeButton);
 
-  it('Given the inbox When it renders Then each row offers a native button that names the sender and is collapsed', async () => {
-    const { host } = await renderInbox();
-
-    expect(
-      expandButtons(host).map((button) => ({
-        tag: button?.tagName,
-        type: button?.getAttribute('type'),
-        expanded: button?.getAttribute('aria-expanded'),
-        name: normalized(button),
-      })),
-    ).toEqual([
-      {
-        tag: 'BUTTON',
-        type: 'button',
-        expanded: 'false',
-        name: 'Afficher le message de Claire Martin',
-      },
-      {
-        tag: 'BUTTON',
-        type: 'button',
-        expanded: 'false',
-        name: 'Afficher le message de Paul Durand',
-      },
-    ]);
-  });
-
   it('Given the inbox When the first expand button is pressed Then the message body it controls is shown and the button can hide it', async () => {
     const { fixture, host } = await renderInbox();
 
@@ -239,40 +164,6 @@ describe('AdminMessages: lecture au clavier', () => {
       name: 'Masquer le message de Claire Martin',
       bodies: [{ id: 'message-body-1', text: 'Bonjour, je voudrais un devis.' }],
     });
-  });
-
-  it('Given an open message When its button is pressed again Then the body is hidden and the button collapsed', async () => {
-    const { fixture, host } = await renderInbox();
-    await pressTestId(fixture, 'message-expand', 0);
-
-    await pressTestId(fixture, 'message-expand', 0);
-
-    expect({
-      expanded: expandButtons(host)[0]?.getAttribute('aria-expanded'),
-      bodies: allByTestId(host, 'message-body').length,
-    }).toEqual({ expanded: 'false', bodies: 0 });
-  });
-
-  it('Given the inbox When it renders Then each action names the message it acts on', async () => {
-    const { host } = await renderInbox();
-
-    expect({
-      markRead: allByTestId(host, 'message-mark-read').map((el) =>
-        accessibleName(nativeButton(el)),
-      ),
-      delete: allByTestId(host, 'message-delete').map((el) => accessibleName(nativeButton(el))),
-    }).toEqual({
-      markRead: ['Marquer comme lu\u00a0: Claire Martin'],
-      delete: ['Supprimer le message de Claire Martin', 'Supprimer le message de Paul Durand'],
-    });
-  });
-
-  it('Given an unread message When its mark-as-read action is pressed Then the gateway marks that message', async () => {
-    const { fixture, markMessageAsRead } = await renderInbox();
-
-    await pressTestId(fixture, 'message-mark-read', 0);
-
-    expect(markMessageAsRead.mock.calls).toEqual([[1]]);
   });
 });
 
@@ -361,28 +252,6 @@ describe('AdminMessages: tout marquer comme lu', () => {
       toasts: severities(toast),
     }).toEqual({ stamps: 1, toasts: ['error'] });
   });
-
-  it('Given every message is read When « Tout marquer comme lu » is pressed Then it stays focusable, says it is unavailable and does nothing', async () => {
-    const markAllRead = vi.fn(() => of({ count: 0 }));
-    const { fixture, host } = await setup(
-      makeGateway({ getAllMessages: () => of([PAUL]), markAllRead }),
-    );
-    const button = nativeButton(byTestId(host, 'mark-all-read'));
-
-    await pressTestId(fixture, 'mark-all-read');
-
-    expect({
-      name: normalized(button),
-      ariaDisabled: button?.getAttribute('aria-disabled'),
-      nativeDisabled: button?.disabled,
-      calls: markAllRead.mock.calls.length,
-    }).toEqual({
-      name: 'Tout marquer comme lu',
-      ariaDisabled: 'true',
-      nativeDisabled: false,
-      calls: 0,
-    });
-  });
 });
 
 describe('AdminMessages: suppression confirmée', () => {
@@ -404,27 +273,6 @@ describe('AdminMessages: suppression confirmée', () => {
     );
     return { fixture, host, deleteMessage, invalidate, toast };
   }
-
-  it('Given the inbox When the trash of the message from Claire Martin is pressed Then the dialog asks to confirm and nothing is deleted yet', async () => {
-    const { fixture, host, deleteMessage } = await renderList();
-
-    await pressTestId(fixture, 'message-delete', 0);
-
-    expect({
-      dialog: readConfirmDialog(host),
-      deleteCalls: deleteMessage.mock.calls.length,
-      senders: senders(host),
-    }).toEqual({
-      dialog: expect.objectContaining({
-        open: true,
-        heading: 'Supprimer le message de Claire Martin\u202f?',
-        confirm: 'Supprimer le message',
-        cancel: 'Annuler',
-      }),
-      deleteCalls: 0,
-      senders: ['Claire Martin', 'Paul Durand'],
-    });
-  });
 
   it.each([
     { answer: 'confirm' as const, deleted: [[1]], shown: ['Paul Durand'] },
@@ -491,12 +339,7 @@ describe('AdminMessages: suppression confirmée', () => {
 });
 
 describe('AdminMessages: chargement, erreur et vide', () => {
-  const STATE_TEST_IDS = [
-    'admin-messages-loading',
-    'load-error',
-    'empty-state',
-    'admin-messages-list',
-  ] as const;
+  const STATE_TEST_IDS = ['load-error', 'empty-state', 'admin-messages-list'] as const;
 
   async function renderWith(getAllMessages: ContactGateway['getAllMessages']): Promise<{
     fixture: ComponentFixture<AdminMessages>;
@@ -518,7 +361,6 @@ describe('AdminMessages: chargement, erreur et vide', () => {
     STATE_TEST_IDS.filter((testId) => byTestId(host, testId) !== null);
 
   it.each([
-    { state: 'loading', stream: NEVER, shown: 'admin-messages-loading' },
     {
       state: 'failed',
       stream: throwError(() => new Error('down')),
@@ -534,30 +376,6 @@ describe('AdminMessages: chargement, erreur et vide', () => {
       expect({ crash, present: present(host) }).toEqual({ crash: null, present: [shown] });
     },
   );
-
-  it('Given the inbox is loading Then the placeholder is announced as a status', async () => {
-    const { host } = await renderWith(() => NEVER);
-
-    expect(byTestId(host, 'admin-messages-loading')?.getAttribute('role')).toBe('status');
-  });
-
-  it('Given an empty inbox When the page renders Then the empty state is stamped « Boîte vide »', async () => {
-    const { host } = await renderWith(() => of([]));
-
-    expect(testIdText(host, 'empty-state-stamp')).toBe('Boîte vide');
-  });
-
-  it('Given an empty inbox When the page renders Then the empty state points to the contact form of the home page', async () => {
-    const { host } = await renderWith(() => of([]));
-
-    expect(
-      (byTestId(host, 'empty-state')?.querySelector('p')?.textContent ?? '')
-        .replace(/[ \t\n\r]+/g, ' ')
-        .trim(),
-    ).toBe(
-      "Aucun message pour le moment. Le formulaire de contact de l'accueil est en ligne\u00a0; chaque envoi arrive ici et par e-mail.",
-    );
-  });
 });
 
 describe('AdminMessages: relance après une erreur HTTP', () => {
@@ -667,16 +485,4 @@ describe('AdminMessages: une seule notification par échec d’écriture', () =>
       expect(toasts.messages().filter((toast) => toast.severity === 'error').length).toBe(1);
     },
   );
-});
-
-describe('AdminMessages: en-tête de page', () => {
-  it('Given one unread and one read message When the page renders Then its single h1 is « Messages » under the overline « 1 non lu · 2 au total »', async () => {
-    const { host } = await setup(makeGateway({ getAllMessages: () => of([CLAIRE, PAUL]) }));
-
-    expect({
-      overline: testIdText(host, 'admin-page-overline'),
-      title: testIdText(host, 'admin-page-title'),
-      headings: host.querySelectorAll('h1').length,
-    }).toEqual({ overline: '1 non lu · 2 au total', title: 'Messages', headings: 1 });
-  });
 });

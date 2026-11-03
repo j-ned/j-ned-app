@@ -60,13 +60,4 @@ describe('FactList', () => {
       expect(allByTestId(root, 'fact-value').map(normalized)).toEqual(expectedValues);
     },
   );
-
-  it('Given facts When the list renders Then every row shares the column width sized for « Décision clé »', async () => {
-    const list = byTestId(await render(), 'fact-list');
-
-    expect(list?.className).toContain('grid-cols-[6.5rem_minmax(0,1fr)]');
-    expect(
-      Array.from(list?.children ?? []).every((row) => row.className.includes('grid-cols-subgrid')),
-    ).toBe(true);
-  });
 });

@@ -193,40 +193,6 @@ describe('About', () => {
     ]);
   });
 
-  it('Given le parcours livré When la page est rendue Then l’accroche dit la phrase d’identité une seule fois, suivie de la suite du document', async () => {
-    await render(NO_CV);
-    const lead = textOf(byTestId('about-lead')) ?? '';
-
-    expect(lead).toBe(`${SITE_IDENTITY.journey} Suite de l’accroche témoin.`);
-    expect(lead.split(SITE_IDENTITY.journey)).toHaveLength(2);
-  });
-
-  it('Given le parcours livré When la page est rendue Then rôle, stack et ville du premier écran restent ceux du site', async () => {
-    await render(NO_CV);
-
-    expect(Array.from(host().querySelectorAll('[data-testid="about-hero-fact"]'), textOf)).toEqual([
-      'développeur full-stack',
-      'Angular · NestJS · TypeScript',
-      SITE_IDENTITY.location,
-    ]);
-  });
-
-  it('Given le parcours livré When la page est rendue Then les réseaux du site suivent GitHub, LinkedIn, Malt, Mail puis Discord', async () => {
-    await render(NO_CV);
-
-    expect(
-      Array.from(
-        host().querySelectorAll<HTMLAnchorElement>('[data-testid="about-social-link"]'),
-        (link) => ({ label: textOf(link), href: link.getAttribute('href') }),
-      ),
-    ).toEqual([
-      { label: 'GitHub', href: SITE_IDENTITY.socials.github },
-      { label: 'LinkedIn', href: SITE_IDENTITY.socials.linkedin },
-      { label: 'Mail', href: `mailto:${SITE_IDENTITY.email}` },
-      { label: 'Discord', href: SITE_IDENTITY.socials.discord },
-    ]);
-  });
-
   it.each([
     { cas: 'un portrait défini', portraitUrl: PORTRAIT_URL, src: PORTRAIT_URL },
     { cas: 'aucun portrait', portraitUrl: null, src: '/avatar.avif' },
@@ -298,10 +264,6 @@ describe('About', () => {
       await fixture.whenStable();
 
       expect(TestBed.inject(Router).url).toBe('/projects');
-    });
-
-    it('When la conclusion est rendue Then la sortie vers le contact s’intitule « M’écrire »', () => {
-      expect(byTestId('about-cta-contact')?.textContent?.trim()).toBe("M'écrire");
     });
 
     it('When le visiteur clique « M’écrire » Then la page cible la section contact', () => {

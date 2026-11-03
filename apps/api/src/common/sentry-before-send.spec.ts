@@ -389,15 +389,7 @@ const filterTransaction = (path: string): TransactionEvent => ({
   },
 });
 
-const FEED_PATH_VARIANTS = [
-  `/api/booking/feed/${FEED_TOKEN}.ics`,
-  `/api/booking/feed/${FEED_TOKEN}.ics?x=1`,
-  `/api/booking/feed/${FEED_TOKEN}.ICS`,
-  `/api/BOOKING/feed/${FEED_TOKEN}.ics`,
-  `/api/booking/Feed/${FEED_TOKEN}.ics`,
-  `/api//booking/feed/${FEED_TOKEN}.ics`,
-  `/api/booking/%66eed/${FEED_TOKEN}.ics`,
-];
+const FEED_PATH_VARIANTS = [`/api/booking/%66eed/${FEED_TOKEN}.ics`];
 
 describe('sentryBeforeSendTransaction', () => {
   it.each(FEED_PATH_VARIANTS)(

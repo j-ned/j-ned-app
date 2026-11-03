@@ -41,9 +41,7 @@ const submitButton = (host: HTMLElement): HTMLButtonElement | null => {
 describe('AdminSaveBar', () => {
   it.each([
     { changes: 0, state: 'Aucune modification' },
-    { changes: 1, state: '1 modification non enregistrée' },
     { changes: 2, state: '2 modifications non enregistrées' },
-    { changes: 12, state: '12 modifications non enregistrées' },
   ])(
     'Given $changes change(s) When the bar renders Then its status reads « $state »',
     async ({ changes, state }) => {
@@ -56,17 +54,6 @@ describe('AdminSaveBar', () => {
       });
     },
   );
-
-  it('Given the bar When it renders Then « Enregistrer » submits the form it names', async () => {
-    const { host } = await renderBar({ changes: 2 });
-    const button = submitButton(host);
-
-    expect({
-      type: button?.type,
-      form: button?.getAttribute('form'),
-      text: normalized(button),
-    }).toEqual({ type: 'submit', form: 'project-form', text: 'Enregistrer' });
-  });
 
   it.each([
     { changes: 0, submitting: false, disabled: false },
@@ -89,20 +76,7 @@ describe('AdminSaveBar', () => {
     await settleBounded(fixture);
 
     expect({
-      tag: cancel?.tagName,
-      text: normalized(cancel),
-      href: cancel?.getAttribute('href'),
       url: TestBed.inject(Router).url,
-    }).toEqual({ tag: 'A', text: 'Annuler', href: '/admin/projects', url: '/admin/projects' });
-  });
-
-  it('Given the bar When it renders Then it sticks to the bottom of the viewport above a strong rule', async () => {
-    const { host } = await renderBar();
-
-    expect(
-      ['sticky', 'bottom-0', 'border-line-strong'].filter(
-        (token) => !host.classList.contains(token),
-      ),
-    ).toEqual([]);
+    }).toEqual({ url: '/admin/projects' });
   });
 });

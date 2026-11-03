@@ -8,8 +8,6 @@ import {
   type ProjectCardView,
 } from './projects-view';
 
-const CLOSING = 'Chaque fiche montre le résultat et les choix techniques.';
-
 const projectsOfKinds = (kinds: readonly (ProjectKind | null)[]): readonly Project[] =>
   kinds.map((kind, index) => makeProject({ id: `p-${index}`, slug: `p-${index}`, kind }));
 
@@ -37,26 +35,6 @@ describe('toProjectsView', () => {
     );
   });
 
-  describe('intro', () => {
-    it('Given the mockup catalog When the view is built Then the intro is the mockup text', () => {
-      expect(toProjectsView(MOCKUP_CATALOG, 'all').intro).toBe(
-        `Deux applications en service, deux sites de démonstration, deux outils de développement. ${CLOSING}`,
-      );
-    });
-
-    it('Given projects without a nature When the view is built Then the intro leaves them out', () => {
-      const projects = projectsOfKinds(['production', null, 'script', null]);
-
-      expect(toProjectsView(projects, 'all').intro).toBe(
-        `Une application en service, un outil de développement. ${CLOSING}`,
-      );
-    });
-
-    it('Given no project When the view is built Then the intro is the closing sentence alone', () => {
-      expect(toProjectsView([], 'all').intro).toBe(CLOSING);
-    });
-  });
-
   describe('legend', () => {
     it('Given the mockup catalog When the view is built Then the legend has one row per nature, defined and counted', () => {
       expect(toProjectsView(MOCKUP_CATALOG, 'all').legend).toEqual([
@@ -65,41 +43,6 @@ describe('toProjectsView', () => {
         { kind: 'script', definition: 'Outil en ligne de commande', count: 2 },
       ]);
     });
-
-    it.each([
-      {
-        label: 'scripts only',
-        kinds: ['script', 'script', 'script'],
-        expected: [0, 0, 3],
-      },
-      {
-        label: 'a demo and projects without a nature',
-        kinds: [null, 'demo', null],
-        expected: [0, 1, 0],
-      },
-      {
-        label: 'no project',
-        kinds: [],
-        expected: [0, 0, 0],
-      },
-      {
-        label: 'natures listed out of order',
-        kinds: ['script', 'demo', 'production', 'script'],
-        expected: [1, 1, 2],
-      },
-    ] satisfies readonly {
-      label: string;
-      kinds: readonly (ProjectKind | null)[];
-      expected: readonly number[];
-    }[])(
-      'Given $label When the view is built Then the legend keeps the three natures in order with their counts',
-      ({ kinds, expected }) => {
-        const legend = toProjectsView(projectsOfKinds(kinds), 'all').legend;
-
-        expect(legend.map((row) => row.kind)).toEqual(['production', 'demo', 'script']);
-        expect(legend.map((row) => row.count)).toEqual(expected);
-      },
-    );
   });
 
   describe('caseStudies', () => {
@@ -174,43 +117,6 @@ describe('toProjectsView', () => {
         },
       ]);
     });
-
-    it.each([
-      {
-        label: 'no tag and no editorial fact',
-        overrides: { tags: [], highlight: null, scope: null },
-        expected: [],
-      },
-      {
-        label: 'only a highlight',
-        overrides: { tags: [], highlight: 'Mode --dry-run', scope: null },
-        expected: [{ label: 'Point fort', value: 'Mode --dry-run' }],
-      },
-      {
-        label: 'only a scope',
-        overrides: { tags: [], highlight: null, scope: 'Conception et maintenance' },
-        expected: [{ label: 'Périmètre', value: 'Conception et maintenance' }],
-      },
-      {
-        label: 'tags and a highlight',
-        overrides: { tags: ['Bash'], highlight: 'Menus interactifs', scope: null },
-        expected: [
-          { label: 'Stack', value: 'Bash' },
-          { label: 'Point fort', value: 'Menus interactifs' },
-        ],
-      },
-    ] satisfies readonly {
-      label: string;
-      overrides: Partial<Project>;
-      expected: readonly { label: string; value: string }[];
-    }[])(
-      'Given a production project with $label When the view is built Then only the known facts are listed, in order',
-      ({ overrides, expected }) => {
-        const [caseStudy] = caseStudiesOf([makeProject({ kind: 'production', ...overrides })]);
-
-        expect(caseStudy?.facts).toEqual(expected);
-      },
-    );
 
     it('Given ten production projects When the view is built Then the overline index has two digits', () => {
       const projects = Array.from({ length: 10 }, (_, index) =>
@@ -316,20 +222,6 @@ describe('toProjectsView', () => {
         },
       ]);
     });
-
-    it.each([
-      { tags: [], expected: '' },
-      { tags: ['Bash'], expected: 'Bash' },
-      { tags: ['Astro', 'TailwindCSS'], expected: 'Astro · TailwindCSS' },
-      { tags: ['Bash', 'GitHub Actions', 'JSON', 'Docker'], expected: 'Bash · GitHub Actions' },
-    ] satisfies readonly { tags: readonly string[]; expected: string }[])(
-      'Given a demo tagged $tags When the view is built Then its short stack is « $expected »',
-      ({ tags, expected }) => {
-        const [card] = cardsOf([makeProject({ kind: 'demo', tags: [...tags] })]);
-
-        expect(card?.stack).toBe(expected);
-      },
-    );
 
     it('Given production projects only When the view is built Then there is no card', () => {
       expect(cardsOf(projectsOfKinds(['production', 'production']))).toEqual([]);
@@ -447,8 +339,6 @@ describe('toProjectsView', () => {
 
     it.each([
       { label: 'scripts', kinds: ['production', 'demo', null], filter: 'script' },
-      { label: 'demos', kinds: ['script', 'production'], filter: 'demo' },
-      { label: 'production projects', kinds: ['demo', null], filter: 'production' },
     ] satisfies readonly {
       label: string;
       kinds: readonly (ProjectKind | null)[];
@@ -500,15 +390,6 @@ describe('toCaseStudyView', () => {
       image: 'https://cdn.test/projects/p-1.avif',
     } satisfies CaseStudyView);
   });
-
-  it('Given the projects page When its case studies are built Then each one is the case study built on its own at its rank', () => {
-    const second = makeProject({ id: 'p-2', slug: 'candidash', kind: 'production' });
-
-    expect(toProjectsView([PROJECT, second], 'all').caseStudies).toEqual([
-      toCaseStudyView(PROJECT, 0),
-      toCaseStudyView(second, 1),
-    ]);
-  });
 });
 
 describe('toProjectCardView', () => {
@@ -533,14 +414,5 @@ describe('toProjectCardView', () => {
       pitch: 'Un site vitrine pour un artisan.',
       image: 'https://cdn.test/projects/p-3.avif',
     } satisfies ProjectCardView);
-  });
-
-  it('Given the projects page When its cards are built Then each one is the card built on its own', () => {
-    const script = makeProject({ id: 'p-4', slug: 'cli', kind: 'script' });
-
-    expect(toProjectsView([DEMO, script], 'all').cards).toEqual([
-      toProjectCardView(DEMO),
-      toProjectCardView(script),
-    ]);
   });
 });

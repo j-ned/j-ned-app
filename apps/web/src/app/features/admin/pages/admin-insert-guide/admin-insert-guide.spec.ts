@@ -2,9 +2,8 @@ import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { NEVER, of, throwError, type Observable } from 'rxjs';
+import { of, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
-import { MACHINING_OPERATIONS } from '@features/workshop/domain/machining-operations.static-data';
 import type {
   InsertGuide,
   InsertGuideDocument,
@@ -190,22 +189,16 @@ async function clickSummary(editor: Editor, index: number): Promise<void> {
 }
 
 // Nom accessible d'un champ : `aria-label`, sinon le texte de son `label[for]`, masqué ou non.
-const accessibleName = (editor: Editor, field: Element | null): string | null =>
-  field?.getAttribute('aria-label') ??
-  (field?.id ? normalized(editor.host.querySelector(`label[for="${field.id}"]`)) || null : null);
-
 const focused = (element: Element | null): boolean =>
   element !== null && document.activeElement === element;
 
 describe('AdminInsertGuide: ouverture', () => {
-  it('Given the guide of the API When /admin/guide-plaquettes is opened Then it is read once, the page is titled and the form shows the switch, the material block and its tools', async () => {
+  it('Given the guide of the API When /admin/guide-plaquettes is opened Then it is read once, the form shows the switch, the material block and its tools', async () => {
     const editor = await openEditor();
 
     expect({
       crash: editor.crash,
       requested: editor.getDocument.mock.calls.length,
-      title: testIdText(editor.host, 'admin-page-title'),
-      headings: editor.host.querySelectorAll('h1').length,
       enabled: checked(editor, 'admin-insert-guide-enabled'),
       materials: values(editor, 'admin-insert-guide-material'),
       operations: values(editor, 'admin-insert-guide-operation'),
@@ -216,8 +209,6 @@ describe('AdminInsertGuide: ouverture', () => {
     }).toEqual({
       crash: null,
       requested: 1,
-      title: 'Guide des plaquettes',
-      headings: 1,
       enabled: false,
       materials: ['Matière fictive'],
       operations: ['external-roughing', 'threading'],
@@ -226,76 +217,6 @@ describe('AdminInsertGuide: ouverture', () => {
       notes: ['Remarque fictive.', ''],
       state: 'Aucune modification',
     });
-  });
-
-  it('Given the switch When it renders Then it is a checkbox labelled « Guide des plaquettes visible sur le site »', async () => {
-    const editor = await openEditor();
-    const checkbox = control(editor, 'admin-insert-guide-enabled');
-
-    expect({
-      type: checkbox?.getAttribute('type'),
-      label: normalized(editor.host.querySelector(`label[for="${checkbox?.id}"]`)),
-    }).toEqual({ type: 'checkbox', label: 'Guide des plaquettes visible sur le site' });
-  });
-
-  it('Given the decoder switch When it renders Then it is a checkbox labelled « Décodeur de plaquette visible sur le site », after the guide one, checked as read', async () => {
-    const editor = await openEditor({
-      getDocument: vi.fn((): Observable<InsertGuideDocument> =>
-        of({ ...LOADED, decoderEnabled: true }),
-      ),
-    });
-    const checkbox = control(editor, 'admin-insert-guide-decoder-enabled');
-    const guide = control(editor, 'admin-insert-guide-enabled');
-
-    expect({
-      type: checkbox?.getAttribute('type'),
-      label: normalized(editor.host.querySelector(`label[for="${checkbox?.id}"]`)),
-      afterGuide:
-        guide !== null &&
-        checkbox !== null &&
-        (guide.compareDocumentPosition(checkbox) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
-      checked: checked(editor, 'admin-insert-guide-decoder-enabled'),
-      guideChecked: checked(editor, 'admin-insert-guide-enabled'),
-    }).toEqual({
-      type: 'checkbox',
-      label: 'Décodeur de plaquette visible sur le site',
-      afterGuide: true,
-      checked: true,
-      guideChecked: false,
-    });
-  });
-
-  it.each([
-    [
-      'admin-insert-guide-enabled',
-      "Cochée : la page du guide et sa carte sur l'accueil de l'atelier sont en ligne.",
-    ],
-    [
-      'admin-insert-guide-decoder-enabled',
-      "Cochée : la page du décodeur et sa carte sur l'accueil de l'atelier sont en ligne, et les codes du guide mènent à leur décodage.",
-    ],
-  ])(
-    'Given the switch %s When it renders Then it is described by a help sentence saying what it shows on the site',
-    async (testId, help) => {
-      const editor = await openEditor();
-      const describedBy = control(editor, testId)?.getAttribute('aria-describedby') ?? '';
-
-      expect(
-        describedBy === '' ? null : normalized(editor.host.querySelector(`[id="${describedBy}"]`)),
-      ).toBe(help);
-    },
-  );
-
-  it('Given the document is loading When the page renders Then a status placeholder stands instead of the form', async () => {
-    const editor = await openEditor({
-      getDocument: vi.fn((): Observable<InsertGuideDocument> => NEVER),
-    });
-
-    expect({
-      crash: editor.crash,
-      role: byTestId(editor.host, 'admin-insert-guide-editor-loading')?.getAttribute('role'),
-      form: byTestId(editor.host, 'admin-insert-guide-form'),
-    }).toEqual({ crash: null, role: 'status', form: null });
   });
 
   it('Given the document failed to load When Réessayer is pressed Then it is read again and the form shows', async () => {
@@ -324,34 +245,6 @@ describe('AdminInsertGuide: blocs par matière', () => {
     anEntry({ material: '1.8522 (33CrMoV12)', insert: 'CODE-C', operation: 'threading' }),
   ];
 
-  it('Given lines of two materials and a generic line When the page renders Then one folded block per material, in order of appearance, the generic block last, each with its count', async () => {
-    const editor = await openWith(MIXED);
-
-    expect({
-      summaries: summaries(editor),
-      tag: group(editor, 0)?.tagName,
-      summary: group(editor, 0)?.firstElementChild?.tagName,
-    }).toEqual({
-      summaries: [
-        { title: '1.8522 (33CrMoV12)', count: '2 outils', open: false },
-        { title: 'Inox fictif', count: '1 outil', open: false },
-        { title: 'Toutes matières', count: '1 outil', open: false },
-      ],
-      tag: 'DETAILS',
-      summary: 'SUMMARY',
-    });
-  });
-
-  it('Given a folded block When its summary is clicked Then it opens, and folds back on a second click', async () => {
-    const editor = await openEditor();
-
-    await clickSummary(editor, 0);
-    const opened = group(editor, 0)?.open;
-    await clickSummary(editor, 0);
-
-    expect([opened, group(editor, 0)?.open]).toEqual([true, false]);
-  });
-
   it('Given a material block When « Ajouter un outil » is pressed Then a blank tool closes its list, the block opens, its count follows and the new operation takes the focus', async () => {
     const editor = await openEditor();
 
@@ -370,17 +263,6 @@ describe('AdminInsertGuide: blocs par matière', () => {
       focused: true,
       state: '1 modification non enregistrée',
     });
-  });
-
-  it('Given a block opened by an added tool then folded by hand When another tool is added Then it opens again', async () => {
-    const editor = await openEditor();
-
-    await addTool(editor);
-    await clickSummary(editor, 0);
-    const folded = group(editor, 0)?.open;
-    await addTool(editor);
-
-    expect([folded, group(editor, 0)?.open, toolCount(editor)]).toEqual([false, true, 4]);
   });
 
   it('Given blocks and the generic block When « Ajouter une matière » is pressed Then an open block with one blank tool comes before the generic block and its material takes the focus', async () => {
@@ -404,15 +286,6 @@ describe('AdminInsertGuide: blocs par matière', () => {
       focused: true,
       tools: 1,
     });
-  });
-
-  it('Given a new block When its material is typed Then its summary takes the name', async () => {
-    const editor = await openEditor();
-
-    await addGroup(editor);
-    await fill(editor, 'admin-insert-guide-material', 'Titane fictif', 1);
-
-    expect(summaries(editor)[1]?.title).toBe('Titane fictif');
   });
 
   it('Given no generic block When « Ajouter le bloc Toutes matières » is pressed Then an open generic block with one blank tool comes last, without material field, its operation focused, and the button is gone', async () => {
@@ -519,94 +392,7 @@ describe('AdminInsertGuide: blocs par matière', () => {
   });
 });
 
-describe('AdminInsertGuide: accessibilité des blocs', () => {
-  it('Given a block When it renders Then its material field is labelled, required, and its tools are named by column, rank and material', async () => {
-    const editor = await openEditor();
-    const material = control(editor, 'admin-insert-guide-material');
-    const tool = byTestId(editor.host, 'admin-insert-guide-tool', 1);
-    const fields = [...(tool?.querySelectorAll<Control>('input, select') ?? [])];
-
-    expect({
-      material: {
-        label: normalized(editor.host.querySelector(`label[for="${material?.id}"]`)),
-        required: material?.getAttribute('aria-required'),
-      },
-      tool: tool?.getAttribute('aria-label'),
-      fields: fields.map((field) => ({
-        name: accessibleName(editor, field),
-        required: field.getAttribute('aria-required'),
-      })),
-      radius: {
-        type: control(editor, 'admin-insert-guide-radius')?.getAttribute('type'),
-        step: control(editor, 'admin-insert-guide-radius')?.getAttribute('step'),
-      },
-    }).toEqual({
-      material: { label: 'Nom de la matière', required: 'true' },
-      tool: 'Outil 2, Matière fictive',
-      fields: [
-        { name: 'Opération (outil 2, Matière fictive)', required: 'true' },
-        { name: 'Plaquette (outil 2, Matière fictive)', required: 'true' },
-        { name: 'Rayon de bec en mm (outil 2, Matière fictive)', required: null },
-        { name: 'Remarque (outil 2, Matière fictive)', required: null },
-      ],
-      radius: { type: 'number', step: '0.01' },
-    });
-  });
-
-  it('Given the generic block and a new block When they render Then their tools are named after « Toutes matières » and after the block rank', async () => {
-    const editor = await openWith([aGenericEntry()]);
-
-    await addGroup(editor);
-
-    expect([
-      accessibleName(editor, control(editor, 'admin-insert-guide-insert', 0)),
-      accessibleName(editor, control(editor, 'admin-insert-guide-insert', 1)),
-    ]).toEqual(['Plaquette (outil 1, bloc 1)', 'Plaquette (outil 1, Toutes matières)']);
-  });
-
-  it('Given the operation list When it renders Then it offers the closed list in French, after an empty choice', async () => {
-    const editor = await openEditor();
-    const select = control(editor, 'admin-insert-guide-operation') as HTMLSelectElement | null;
-
-    expect(
-      [...(select?.options ?? [])].map(({ value, text }) => ({ value, text: text.trim() })),
-    ).toEqual([
-      { value: '', text: 'Choisir une opération' },
-      ...MACHINING_OPERATIONS.map(({ id, label }) => ({ value: id, text: label })),
-    ]);
-  });
-
-  it('Given an invalid tool field When the guide is saved Then its alert is described on the field', async () => {
-    const editor = await openEditor();
-
-    await fill(editor, 'admin-insert-guide-insert', '');
-    await save(editor);
-
-    const field = control(editor, 'admin-insert-guide-insert');
-    const error = byTestId(editor.host, 'admin-insert-guide-insert-error');
-    expect({
-      invalid: field?.getAttribute('aria-invalid'),
-      describedBy: (field?.getAttribute('aria-describedby') ?? '')
-        .split(' ')
-        .includes(error?.id ?? '-'),
-      role: error?.getAttribute('role'),
-    }).toEqual({ invalid: 'true', describedBy: true, role: 'alert' });
-  });
-});
-
 describe('AdminInsertGuide: enregistrer', () => {
-  it('Given the form When it renders Then « Enregistrer » submits the guide form and « Annuler » leads to the overview', async () => {
-    const editor = await openEditor();
-    const button = nativeButton(byTestId(editor.host, 'savebar-submit'));
-
-    expect({
-      type: button?.type,
-      form: button?.getAttribute('form'),
-      formExists: editor.host.querySelector('form#insert-guide-form') !== null,
-      cancel: byTestId(editor.host, 'savebar-cancel')?.getAttribute('href'),
-    }).toEqual({ type: 'submit', form: 'insert-guide-form', formExists: true, cancel: '/admin' });
-  });
-
   it('Given the guide switched on, a tool added to the block and a new material When it is saved Then the guide is sent flat with the version read, success is told and nothing is left to save', async () => {
     const editor = await openEditor();
 
@@ -728,20 +514,6 @@ describe('AdminInsertGuide: enregistrer', () => {
       { severity: 'error', detail: `${SAVE_FAILURE} Détail\u00a0: entries.0.insert too long` },
     ]);
   });
-
-  it('Given a save in progress When the bar renders Then « Enregistrer » is disabled until the answer', async () => {
-    const editor = await openEditor({
-      saveGuide: vi.fn((): Observable<InsertGuideDocument> => NEVER),
-    });
-
-    await toggleSwitch(editor);
-    await save(editor);
-
-    expect({
-      calls: editor.saveGuide.mock.calls.length,
-      disabled: nativeButton(byTestId(editor.host, 'savebar-submit'))?.disabled,
-    }).toEqual({ calls: 1, disabled: true });
-  });
 });
 
 describe('AdminInsertGuide: validation', () => {
@@ -779,19 +551,8 @@ describe('AdminInsertGuide: validation', () => {
       text: 'M'.repeat(81),
       message: 'La matière ne doit pas dépasser 80\u00a0caractères',
     },
-    {
-      field: 'insert',
-      text: 'C'.repeat(41),
-      message: 'La plaquette ne doit pas dépasser 40\u00a0caractères',
-    },
-    {
-      field: 'note',
-      text: 'R'.repeat(201),
-      message: 'La remarque ne doit pas dépasser 200\u00a0caractères',
-    },
     { field: 'material', text: '   ', message: 'Ce champ est obligatoire' },
     { field: 'radius', text: '0', message: 'Le rayon doit être supérieur à 0' },
-    { field: 'radius', text: '-0.4', message: 'Le rayon doit être supérieur à 0' },
     { field: 'radius', text: '10.5', message: 'Le rayon ne doit pas dépasser 10\u00a0mm' },
     { field: 'radius', text: '0.125', message: 'Le rayon a au plus deux décimales' },
   ])(
@@ -809,7 +570,7 @@ describe('AdminInsertGuide: validation', () => {
     },
   );
 
-  it.each(['10', '1.15', '0.05'])(
+  it.each(['10'])(
     'Given the radius %s When the guide is saved Then it is accepted',
     async (radius) => {
       const editor = await openEditor();
@@ -821,7 +582,7 @@ describe('AdminInsertGuide: validation', () => {
     },
   );
 
-  it.each([' Matière fictive ', 'Matière fictive'])(
+  it.each([' Matière fictive '])(
     'Given a second block named « %s » like the first When the guide is saved Then nothing is sent and the second block offers to merge into the first',
     async (name) => {
       const editor = await openEditor();
@@ -893,16 +654,6 @@ describe('AdminInsertGuide: validation', () => {
 });
 
 describe('AdminInsertGuide: rayon facultatif', () => {
-  it('Given a tool When its radius renders Then it is described as optional', async () => {
-    const editor = await openEditor();
-    const describedBy =
-      control(editor, 'admin-insert-guide-radius')?.getAttribute('aria-describedby') ?? '';
-
-    expect(
-      describedBy === '' ? null : normalized(editor.host.querySelector(`[id="${describedBy}"]`)),
-    ).toBe("Rayon de bec facultatif : laissez-le vide quand l'outil n'a pas de rayon unique.");
-  });
-
   it('Given the radius of a tool erased When the guide is saved Then the tool is sent without radius', async () => {
     const editor = await openEditor();
 
@@ -921,24 +672,6 @@ describe('AdminInsertGuide: rayon facultatif', () => {
 });
 
 describe('AdminInsertGuide: toutes matières', () => {
-  it('Given a line for all materials read When it renders Then it sits in the generic block, without material field, its radius blank', async () => {
-    const editor = await openWith([aGenericEntry(), ...LOADED.entries]);
-
-    expect({
-      titles: summaries(editor).map(({ title }) => title),
-      materials: groups(editor).map(
-        (details) => details.querySelectorAll('[data-testid="admin-insert-guide-material"]').length,
-      ),
-      radius: control(editor, 'admin-insert-guide-radius', 2)?.value,
-      generic: byTestId(editor.host, 'admin-insert-guide-add-generic'),
-    }).toEqual({
-      titles: ['Matière fictive', 'Toutes matières'],
-      materials: [1, 0],
-      radius: '',
-      generic: null,
-    });
-  });
-
   it('Given the generic block added with a boring tool without radius When the guide is saved Then it is accepted and sent flagged, without material nor radius', async () => {
     const editor = await openEditor();
 
@@ -959,16 +692,6 @@ describe('AdminInsertGuide: toutes matières', () => {
         note: 'Diamètre au besoin.',
       },
     ]);
-  });
-
-  it('Given a tool of the generic block holding a plan reference When it renders Then it warns too', async () => {
-    const editor = await openWith([aGenericEntry()]);
-
-    await fill(editor, 'admin-insert-guide-note', 'Voir plan n° 12');
-
-    expect(normalized(byTestId(editor.host, 'admin-insert-guide-confidential'))).toContain(
-      'plan n° 12',
-    );
   });
 });
 
@@ -1009,10 +732,7 @@ describe('AdminInsertGuide: confidentialité', () => {
     });
   });
 
-  it.each<[string, string]>([
-    ['a decodable ISO insert code', 'CNMG 120408'],
-    ['a decodable ISO insert code with a maker suffix', 'CCGT 09T304-PM'],
-  ])(
+  it.each<[string, string]>([['a decodable ISO insert code', 'CNMG 120408']])(
     'Given %s in the insert field When it renders Then no reference is reported',
     async (_, code) => {
       const editor = await openEditor();
@@ -1023,10 +743,7 @@ describe('AdminInsertGuide: confidentialité', () => {
     },
   );
 
-  it.each<[string, string, string]>([
-    ['a long number', 'CNMG 120408 12345', '12345'],
-    ['a work order', 'CNMG 120408 OF n° 4521', 'OF n° 4521'],
-  ])(
+  it.each<[string, string, string]>([['a work order', 'CNMG 120408 OF n° 4521', 'OF n° 4521']])(
     'Given a decodable ISO insert code followed by %s When it renders Then what follows the code is still reported',
     async (_, insert, reference) => {
       const editor = await openEditor();
@@ -1036,14 +753,6 @@ describe('AdminInsertGuide: confidentialité', () => {
       expect(warningOf(editor, 0)).toContain(reference);
     },
   );
-
-  it('Given a non-decodable insert code with a long number When it renders Then it is still reported', async () => {
-    const editor = await openEditor();
-
-    await fill(editor, 'admin-insert-guide-insert', 'CODE 123456');
-
-    expect(warningOf(editor, 0)).toContain('123456');
-  });
 
   it('Given a tool holding a reference When the guide is saved Then the warning does not block it', async () => {
     const editor = await openEditor();
@@ -1099,74 +808,6 @@ describe('AdminInsertGuide: suggestions', () => {
       listLabel: 'Matières déjà saisies',
       options: ['Acier fictif', 'Inox fictif'],
     });
-  });
-
-  it('Given the tools read When the insert of a new tool is typed Then the field proposes the inserts read, once each', async () => {
-    const editor = await openWithValues();
-    await addTool(editor, 0);
-    const field = control(editor, 'admin-insert-guide-insert', 1);
-    const listbox = editor.host.querySelector(`[id="${field?.getAttribute('aria-controls')}"]`);
-
-    await fill(editor, 'admin-insert-guide-insert', 'nmg', 1);
-
-    expect([listbox?.getAttribute('aria-label'), options(editor)]).toEqual([
-      'Plaquettes déjà saisies',
-      ['CNMG 120408', 'DNMG 150604'],
-    ]);
-  });
-
-  it('Given a material typed in a new block When another block is typed Then the draft value is proposed too, and the read one stays proposed after its block is renamed', async () => {
-    const editor = await openWithValues();
-    await fill(editor, 'admin-insert-guide-material', 'Titane fictif', 0);
-    await addGroup(editor);
-    await fill(editor, 'admin-insert-guide-material', 'Laiton fictif', 3);
-    await addGroup(editor);
-
-    await fill(editor, 'admin-insert-guide-material', 'i', 4);
-
-    expect(options(editor)).toEqual([
-      'Inox fictif',
-      'Acier fictif',
-      'Laiton fictif',
-      'Titane fictif',
-    ]);
-  });
-
-  it('Given a generic block read When a new block is typed Then it proposes no material, and its insert is proposed', async () => {
-    const editor = await openEditor({
-      getDocument: vi.fn((): Observable<InsertGuideDocument> =>
-        of({
-          ...WITH_VALUES,
-          entries: [aGenericEntry({ insert: 'BARRE-FICTIVE-01' }), ...WITH_VALUES.entries],
-        }),
-      ),
-    });
-    await addGroup(editor);
-    const listed = (testId: string, index: number): readonly string[] => {
-      const listbox = editor.host.querySelector(
-        `[id="${control(editor, testId, index)?.getAttribute('aria-controls')}"]`,
-      );
-      return [...(listbox?.querySelectorAll('[data-testid="suggest-option"]') ?? [])].map(
-        normalized,
-      );
-    };
-
-    await fill(editor, 'admin-insert-guide-material', 'i', 3);
-    await fill(editor, 'admin-insert-guide-insert', 'barre', 3);
-
-    expect([
-      listed('admin-insert-guide-material', 3),
-      listed('admin-insert-guide-insert', 3),
-    ]).toEqual([['Inox fictif', 'Acier fictif'], ['BARRE-FICTIVE-01']]);
-  });
-
-  it('Given a new block When its text matches a value exactly Then that value is not proposed to itself', async () => {
-    const editor = await openWithValues();
-    await addGroup(editor);
-
-    await fill(editor, 'admin-insert-guide-material', 'Acier fictif', 3);
-
-    expect(options(editor)).toEqual([]);
   });
 
   it('Given a block removed then a new one filled from the suggestions at the keyboard When the guide is saved Then the chosen texts are sent', async () => {

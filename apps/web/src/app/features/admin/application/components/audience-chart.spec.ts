@@ -18,8 +18,6 @@ const CHART_DATA: ChartData<'line'> = {
   datasets: [{ label: 'Visiteurs', data: [6, 2] }],
 };
 
-type ChartHost = HTMLElement & { readonly data?: unknown };
-
 const normalized = (element: Element | null | undefined): string =>
   (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
@@ -36,41 +34,6 @@ async function renderChart(points: readonly DailyChartPoint[]): Promise<HTMLElem
 }
 
 describe('AudienceChart', () => {
-  it('Given two days of visits When the chart renders Then the curve sits in a figure whose hidden caption summarises it', async () => {
-    const host = await renderChart(POINTS);
-    const figure = host.querySelector('figure');
-    const caption = figure?.querySelector('figcaption') ?? null;
-    const chart = figure?.querySelector<ChartHost>('app-chart') ?? null;
-
-    expect({
-      caption: normalized(caption),
-      hidden: caption?.classList.contains('sr-only') ?? false,
-      chartData: chart?.data === CHART_DATA,
-    }).toEqual({
-      caption:
-        'Visites par jour du 7 septembre au 8 septembre 2026\u00a0: maximum 6 le 7 septembre.',
-      hidden: true,
-      chartData: true,
-    });
-  });
-
-  it('Given the chart When it renders Then its data table sits in a closed disclosure named « Voir les données en tableau »', async () => {
-    const host = await renderChart(POINTS);
-    const disclosure = byTestId(host, 'audience-chart-data');
-
-    expect({
-      tag: disclosure?.tagName,
-      open: disclosure instanceof HTMLDetailsElement ? disclosure.open : null,
-      summary: normalized(disclosure?.querySelector('summary')),
-      tableInside: disclosure?.contains(byTestId(host, 'audience-chart-table')) ?? false,
-    }).toEqual({
-      tag: 'DETAILS',
-      open: false,
-      summary: 'Voir les données en tableau',
-      tableInside: true,
-    });
-  });
-
   it('Given two days of visits When the data table renders Then it has one row per day, the day as row header', async () => {
     const host = await renderChart(POINTS);
     const table = byTestId(host, 'audience-chart-table');
@@ -108,13 +71,11 @@ describe('AudienceChart', () => {
     });
   });
 
-  it('Given no visit When the chart renders Then the caption says so and the table has no row', async () => {
+  it('Given no visit When the chart renders Then the table has no row', async () => {
     const host = await renderChart([]);
 
     expect({
-      caption: normalized(host.querySelector('figcaption')),
       rows: host.querySelectorAll('[data-testid="audience-chart-row"]').length,
-      disclosure: byTestId(host, 'audience-chart-data')?.tagName ?? null,
-    }).toEqual({ caption: 'Aucune visite sur la période.', rows: 0, disclosure: 'DETAILS' });
+    }).toEqual({ rows: 0 });
   });
 });

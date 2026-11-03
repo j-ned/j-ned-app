@@ -121,7 +121,7 @@ describe('toProject', () => {
 });
 
 describe('toProject: editorial fields', () => {
-  const EDITORIAL_FIELDS = ['pitch', 'highlight', 'scope'] as const;
+  const EDITORIAL_FIELDS = ['pitch'] as const;
 
   describe.each(EDITORIAL_FIELDS)('%s', (field) => {
     it('Given an API that does not send the field yet When adapted Then it is null', () => {

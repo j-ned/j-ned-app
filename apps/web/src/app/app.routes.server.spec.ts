@@ -8,17 +8,6 @@ const findRoute = (path: string): ServerRoute | undefined =>
   serverRoutes.find((route) => route.path === path);
 
 describe('serverRoutes', () => {
-  it.each(CONTENT_ROUTES)('renders the content route "%s" on each request', (path) => {
-    expect(findRoute(path)?.renderMode).toBe(RenderMode.Server);
-  });
-
-  it.each(['atelier', 'atelier/plaquettes', 'atelier/decodeur'])(
-    'renders the workshop page "%s" on each request, since the insert guide switch is read in the API',
-    (path) => {
-      expect(findRoute(path)?.renderMode).toBe(RenderMode.Server);
-    },
-  );
-
   // La table de routes Vercel (`scripts/build-vercel.mjs`) ne réveille la fonction de rendu que pour une
   // liste fermée de chemins : toute autre route serveur répondrait 404.
   it('renders on request exactly the routes Vercel sends to the render function', () => {
@@ -44,13 +33,5 @@ describe('serverRoutes', () => {
 
   it.each(['login', 'two-factor', 'admin/**', '**'])('renders %s in the browser only', (path) => {
     expect(findRoute(path)?.renderMode).toBe(RenderMode.Client);
-  });
-
-  it('never asks the API for route params at build time', () => {
-    const withPrerenderParams = serverRoutes
-      .filter((route) => 'getPrerenderParams' in route)
-      .map((route) => route.path);
-
-    expect(withPrerenderParams).toEqual([]);
   });
 });

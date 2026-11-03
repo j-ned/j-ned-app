@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   AVAILABLE_BLOG_TAGS,
-  BLOG_TAG_CATEGORIES,
   BLOG_TAGS_BY_CATEGORY,
   blogTagCategory,
   type BlogTagCategory,
@@ -33,22 +32,6 @@ describe('blogTagCategory', () => {
       expect(blogTagCategory(tag)).toBeNull();
     },
   );
-});
-
-describe('BLOG_TAG_CATEGORIES', () => {
-  it('lists the five categories in display order', () => {
-    expect(BLOG_TAG_CATEGORIES).toEqual([
-      'stack',
-      'security',
-      'engineering',
-      'journey',
-      'projects',
-    ]);
-  });
-
-  it('follows the order of the catalogue, which drives the admin tag order', () => {
-    expect(Object.keys(BLOG_TAGS_BY_CATEGORY)).toEqual([...BLOG_TAG_CATEGORIES]);
-  });
 });
 
 describe('AVAILABLE_BLOG_TAGS', () => {

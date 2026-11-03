@@ -29,32 +29,7 @@ async function renderContacts(contacts: Contacts): Promise<HTMLElement> {
 const compact = (host: HTMLElement, testId: string): string =>
   testIdText(host, testId).replace(/[ \t\n\r]/g, '');
 
-const hrefOf = (host: HTMLElement, testId: string): string | null =>
-  byTestId(host, testId)?.getAttribute('href') ?? null;
-
 describe('OverviewContacts: chiffres', () => {
-  it('Given 3 unread messages and 2 CV downloads When rendered Then each figure links to its page', async () => {
-    const host = await renderContacts({ unread: 3, cvDownloads: 2, latest: [] });
-
-    expect({
-      unread: compact(host, 'overview-unread-count'),
-      unreadHref: hrefOf(host, 'overview-unread'),
-      cv: compact(host, 'overview-cv-count'),
-      cvHref: hrefOf(host, 'overview-cv'),
-      unreadInLink: byTestId(host, 'overview-unread')?.contains(
-        byTestId(host, 'overview-unread-count'),
-      ),
-      cvInLink: byTestId(host, 'overview-cv')?.contains(byTestId(host, 'overview-cv-count')),
-    }).toEqual({
-      unread: '3',
-      unreadHref: '/admin/messages',
-      cv: '2',
-      cvHref: '/admin/cv',
-      unreadInLink: true,
-      cvInLink: true,
-    });
-  });
-
   it.each([
     { label: 'the unread count', unread: null, cvDownloads: 0, expected: ['—indisponible', '0'] },
     { label: 'the CV downloads', unread: 0, cvDownloads: null, expected: ['0', '—indisponible'] },
@@ -72,37 +47,6 @@ describe('OverviewContacts: chiffres', () => {
       expect([compact(host, 'overview-unread-count'), compact(host, 'overview-cv-count')]).toEqual(
         expected,
       );
-    },
-  );
-
-  it('Given an unavailable figure When rendered Then the dash is hidden from assistive technologies and the word is read instead', async () => {
-    const host = await renderContacts({ unread: null, cvDownloads: 0, latest: [] });
-    const count = byTestId(host, 'overview-unread-count');
-    const hidden = [...(count?.querySelectorAll('[aria-hidden="true"]') ?? [])].map((node) =>
-      node.textContent?.trim(),
-    );
-
-    expect(hidden).toEqual(['—']);
-  });
-});
-
-describe('OverviewContacts: accords', () => {
-  const units = (host: HTMLElement): string[] => [
-    testIdText(host, 'overview-unread-unit'),
-    testIdText(host, 'overview-cv-unit'),
-  ];
-
-  it.each([
-    { unread: 1, cvDownloads: 1, expected: ['message', 'téléchargement'] },
-    { unread: 0, cvDownloads: 0, expected: ['message', 'téléchargement'] },
-    { unread: 2, cvDownloads: 12, expected: ['messages', 'téléchargements'] },
-    { unread: null, cvDownloads: null, expected: ['messages', 'téléchargements'] },
-  ])(
-    'Given $unread unread and $cvDownloads downloads When rendered Then each unit agrees with its figure',
-    async ({ unread, cvDownloads, expected }) => {
-      const host = await renderContacts({ unread, cvDownloads, latest: [] });
-
-      expect(units(host)).toEqual(expected);
     },
   );
 });

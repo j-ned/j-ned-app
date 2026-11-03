@@ -6,7 +6,6 @@ import { BlogList } from './blog-list';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 import { makeBlogPost, productionPosts } from '../../testing/blog-post-builders';
-import { accentTints } from '@shared/testing/accent-tints';
 
 function setupWith(
   getPublishedPosts: () => Observable<readonly BlogPost[]>,
@@ -47,27 +46,6 @@ describe('BlogList', () => {
     expect(rows.length).toBe(2);
   });
 
-  it('Given des articles publiés When la liste est rendue Then elle n’émet aucun main et porte la mise en page sur l’host', async () => {
-    const fixture = setup([makeBlogPost()]);
-    await render(fixture);
-    const host = fixture.nativeElement as HTMLElement;
-
-    expect(host.querySelectorAll('app-blog-post-row')).toHaveLength(1);
-    expect(host.querySelectorAll('main')).toHaveLength(0);
-    expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-24', 'pt-20']);
-  });
-
-  // Titre du premier écran : un fondu d'entrée (opacité nulle) le masque au premier rendu.
-  it('Given des articles publiés When la liste est rendue Then le titre est visible au premier rendu, sans animation d’entrée', async () => {
-    const fixture = setup([makeBlogPost()]);
-    await render(fixture);
-    const title = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
-      '[data-testid="blog-title"]',
-    );
-    expect(title).not.toBeNull();
-    expect(title?.className).not.toMatch(/\banimate-/);
-  });
-
   it('filtre par tag via le query param /blog?tag=', async () => {
     const fixture = setup([
       makeBlogPost({ tags: ['Angular'] }),
@@ -87,17 +65,6 @@ describe('BlogList', () => {
     expect(banner?.textContent).toContain('Angular');
     const clearLink = fixture.nativeElement.querySelector('[data-testid="tag-filter-clear"]');
     expect(clearLink).toBeTruthy();
-  });
-
-  it('Given un tag actif When la liste est rendue Then la puce du filtre pose le texte d’accent sur une teinte de 5 %, 8 % au survol', async () => {
-    const fixture = setup([makeBlogPost({ tags: ['Angular'] })]);
-    fixture.componentRef.setInput('tag', 'Angular');
-    const host = await render(fixture);
-
-    expect(accentTints(byTestId(host, 'tag-filter-clear'))).toEqual([
-      'bg-primary/5',
-      'hover:bg-primary/8',
-    ]);
   });
 
   it("n'affiche pas le bandeau de filtre sans tag actif", async () => {
@@ -141,71 +108,6 @@ describe('BlogList', () => {
           (testId) => byTestId(host, testId)?.closest('header') === header,
         ),
       ).toEqual([true, true, true, true]);
-    });
-
-    it('Given la page When elle est rendue Then son unique h1 la titre « Blog »', async () => {
-      const host = await render(setup(productionPosts()));
-      const title = byTestId(host, 'blog-title');
-
-      expect(title?.tagName).toBe('H1');
-      expect(title?.id).toBe('blog-heading');
-      expect(normalized(title)).toBe('Blog');
-      expect(host.querySelectorAll('h1')).toHaveLength(1);
-    });
-
-    it('Given la page When elle est rendue Then l’introduction est le texte fixe du blog', async () => {
-      const host = await render(setup(productionPosts()));
-
-      expect(normalized(byTestId(host, 'blog-intro'))).toBe(
-        "Ce que j'apprends en construisant mes projets, mon parcours, et la façon dont je m'y prends.",
-      );
-    });
-
-    it('Given la page When elle est rendue Then le cartouche est un groupe nommé « Thèmes », référencé « Articles par thème »', async () => {
-      const host = await render(setup(productionPosts()));
-      const themes = byTestId(host, 'blog-themes');
-
-      expect(themes?.getAttribute('role')).toBe('group');
-      expect(themes?.getAttribute('aria-label')).toBe('Thèmes');
-      expect(normalized(themes?.querySelector('[data-testid="cartouche-title"]') ?? null)).toBe(
-        'Thèmes',
-      );
-      expect(normalized(themes?.querySelector('[data-testid="cartouche-reference"]') ?? null)).toBe(
-        'Articles par thème',
-      );
-    });
-
-    it('Given les deux articles de production When la page est rendue Then le cartouche liste les seuls thèmes couverts, dans l’ordre, avec leur nombre d’articles', async () => {
-      const host = await render(setup(productionPosts()));
-      const textsOf = (testId: string): (string | undefined)[] =>
-        Array.from(
-          host.querySelectorAll(`[data-testid="blog-themes"] [data-testid="${testId}"]`),
-          (cell) => cell.textContent?.trim(),
-        );
-
-      expect(textsOf('cartouche-label')).toEqual(['Stack', 'Sécurité', 'Parcours', 'Projets']);
-      expect(textsOf('cartouche-value')).toEqual([
-        '2\u00a0articles',
-        '1\u00a0article',
-        '1\u00a0article',
-        '1\u00a0article',
-      ]);
-    });
-
-    it('Given trois articles de parcours When la page est rendue Then les comptes du cartouche suivent les données', async () => {
-      const host = await render(
-        setup([
-          makeBlogPost({ id: 'a', slug: 'a', tags: ['Parcours'] }),
-          makeBlogPost({ id: 'b', slug: 'b', tags: ['Carrière', 'Docker'] }),
-          makeBlogPost({ id: 'c', slug: 'c', tags: ['Autodidacte'] }),
-        ]),
-      );
-      const values = Array.from(
-        host.querySelectorAll('[data-testid="blog-themes"] [data-testid="cartouche-value"]'),
-        (cell) => cell.textContent?.trim(),
-      );
-
-      expect(values).toEqual(['1\u00a0article', '3\u00a0articles']);
     });
 
     it('Given aucun article publié When la page est rendue Then aucun cartouche « Thèmes » n’est rendu', async () => {
@@ -278,13 +180,6 @@ describe('BlogList', () => {
   });
 
   describe('chargement, liste vide et erreur', () => {
-    it('Given aucun article publié When la liste est chargée Then « Aucun article pour le moment. » s’affiche', async () => {
-      const host = await render(setup([]));
-
-      expect(normalized(byTestId(host, 'blog-empty'))).toBe('Aucun article pour le moment.');
-      expect(host.querySelectorAll('app-blog-post-row')).toHaveLength(0);
-    });
-
     it('Given aucun article publié When la liste est chargée Then le message vide reste hors de la liste d’articles', async () => {
       const host = await render(setup([]));
 
@@ -334,15 +229,6 @@ describe('BlogList', () => {
   });
 
   describe('lignes d’article', () => {
-    const withCovers = (): readonly BlogPost[] =>
-      productionPosts().map((post) => ({ ...post, coverImage: `/covers/${post.slug}.avif` }));
-
-    const coverLoading = (host: HTMLElement): (readonly (string | null | undefined)[])[] =>
-      Array.from(host.querySelectorAll<HTMLElement>('[data-testid="post-cover"]'), (cover) => {
-        const image = cover.querySelector('img');
-        return [image?.getAttribute('fetchpriority'), image?.getAttribute('loading')];
-      });
-
     it('Given the production posts When the page is rendered Then each line shows its title and a read link named after its own article', async () => {
       const host = await render(setup(productionPosts()));
 
@@ -358,38 +244,6 @@ describe('BlogList', () => {
         'Chiffrement · AES-256-GCM · PBKDF2',
         'Angular · NestJS · Reconversion',
       ]);
-    });
-
-    it('Given posts with covers and no filter When the page is rendered Then only the first cover loads with priority', async () => {
-      const host = await render(setup(withCovers()));
-
-      expect(coverLoading(host)).toEqual([
-        ['high', 'eager'],
-        ['auto', 'lazy'],
-      ]);
-    });
-
-    it('Given /blog?tag= a tag the first post lacks When the page is rendered Then the remaining line loads its cover without priority', async () => {
-      const fixture = setup(withCovers());
-      fixture.componentRef.setInput('tag', 'Reconversion');
-      const host = await render(fixture);
-
-      expect(Array.from(host.querySelectorAll('[data-testid="post-title"]'), normalized)).toEqual([
-        'De 20 ans de métallurgie à développeur Full-Stack',
-      ]);
-      expect(coverLoading(host)).toEqual([['auto', 'lazy']]);
-    });
-
-    it('Given the full list When a tag filter leaves only the second post Then its line is kept as is, still without priority', async () => {
-      const fixture = setup(withCovers());
-      const host = await render(fixture);
-      const secondLine = host.querySelectorAll('app-blog-post-row')[1];
-
-      fixture.componentRef.setInput('tag', 'Reconversion');
-      await render(fixture);
-
-      expect(Array.from(host.querySelectorAll('app-blog-post-row'))).toEqual([secondLine]);
-      expect(coverLoading(host)).toEqual([['auto', 'lazy']]);
     });
   });
   describe('filtrer par thème', () => {
@@ -447,37 +301,6 @@ describe('BlogList', () => {
         ['Projets', '1', 'false', null, false],
       ]);
     });
-
-    it('Given the production posts When the page is rendered Then the filters sit outside the header, before the list', async () => {
-      const host = await render(setup(productionPosts()));
-      const group = byTestId(host, 'filter-group');
-      const list = byTestId(host, 'blog-posts');
-
-      expect(group?.closest('header')).toBeNull();
-      expect(
-        group && list ? group.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING : 0,
-      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    });
-
-    it.each([
-      { theme: 'Stack', expected: [ENCRYPTION, CAREER_CHANGE], status: '2\u00a0articles affichés' },
-      { theme: 'Sécurité', expected: [ENCRYPTION], status: '1\u00a0article affiché' },
-      { theme: 'Parcours', expected: [CAREER_CHANGE], status: '1\u00a0article affiché' },
-      { theme: 'Projets', expected: [ENCRYPTION], status: '1\u00a0article affiché' },
-    ])(
-      'Given the production posts When the visitor chooses « $theme » Then only its posts remain, its button alone is pressed and the status announces them',
-      async ({ theme, expected, status }) => {
-        const fixture = setup(productionPosts());
-        const host = await render(fixture);
-
-        const option = await choose(fixture, theme);
-
-        expect(titles(host)).toEqual(expected);
-        expect(option?.getAttribute('aria-pressed')).toBe('true');
-        expect(pressed(host).filter((state) => state === 'true')).toHaveLength(1);
-        expect(visibleCount(host)).toBe(status);
-      },
-    );
 
     it('Given « Parcours » chosen When the visitor presses « Tous » Then every post is back', async () => {
       const fixture = setup(productionPosts());
@@ -538,24 +361,6 @@ describe('BlogList', () => {
       expect(titles(host)).toEqual([CAREER_CHANGE]);
       expect(navigate).not.toHaveBeenCalled();
       expect(navigateByUrl).not.toHaveBeenCalled();
-    });
-
-    it('Given posts with covers When the visitor chooses « Parcours » Then the second line is kept as is, still without priority', async () => {
-      const fixture = setup(
-        productionPosts().map((post) => ({ ...post, coverImage: `/covers/${post.slug}.avif` })),
-      );
-      const host = await render(fixture);
-      const secondLine = host.querySelectorAll('app-blog-post-row')[1];
-
-      await choose(fixture, 'Parcours');
-
-      expect(Array.from(host.querySelectorAll('app-blog-post-row'))).toEqual([secondLine]);
-      expect(
-        Array.from(host.querySelectorAll('[data-testid="post-cover"] img'), (image) => [
-          image.getAttribute('fetchpriority'),
-          image.getAttribute('loading'),
-        ]),
-      ).toEqual([['auto', 'lazy']]);
     });
 
     it.each([

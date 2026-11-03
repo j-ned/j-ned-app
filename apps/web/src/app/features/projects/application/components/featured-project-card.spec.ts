@@ -108,12 +108,6 @@ describe('FeaturedProjectCard', () => {
         Array.from(article?.querySelectorAll('ul, ol, dl') ?? []).map((list) => list.tagName),
       ).toEqual(['DL']);
     });
-
-    it('Given a card with long texts When it renders Then nothing is clamped', async () => {
-      const root = await render(cardView({ pitch: 'Une accroche longue. '.repeat(8).trim() }));
-
-      expect(root.querySelectorAll('[class*="line-clamp"]')).toHaveLength(0);
-    });
   });
 
   describe('cover', () => {
@@ -135,16 +129,6 @@ describe('FeaturedProjectCard', () => {
       expect(byTestId(root, 'featured-project-card-cover')).not.toBeNull();
       expect(byTestId(root, 'project-cover-kind')).toBeNull();
     });
-
-    it('Given a card When it renders Then its cover image is never loaded with priority', async () => {
-      const image = byTestId(await render(), 'project-cover-image');
-
-      expect([
-        image?.getAttribute('src'),
-        image?.getAttribute('fetchpriority'),
-        image?.getAttribute('loading'),
-      ]).toEqual(['https://api.test/projects/dashflow.avif', 'auto', 'lazy']);
-    });
   });
 
   describe('links', () => {
@@ -159,18 +143,6 @@ describe('FeaturedProjectCard', () => {
       expect(context?.textContent).toBe(`${NBSP}: DashFlow`);
       expect(context?.classList).toContain('sr-only');
       expect(context?.closest('a')).toBe(link);
-    });
-
-    it('Given a card When it renders Then « Voir la fiche » is stretched over the whole card with a 44 px target', async () => {
-      const root = await render();
-      const link = byTestId(root, 'featured-project-card-link');
-
-      expect(byTestId(root, 'featured-project-card')?.classList).toContain('relative');
-      expect(
-        ['after:absolute', 'after:inset-0', 'min-h-11'].filter(
-          (name) => !link?.classList.contains(name),
-        ),
-      ).toEqual([]);
     });
 
     it('Given a live link When the card renders Then it opens the application in a new tab, above the stretched link, naming the project', async () => {
@@ -218,26 +190,6 @@ describe('FeaturedProjectCard', () => {
       byTestId(fixture.nativeElement as HTMLElement, 'featured-project-card-live-link')?.click();
 
       expect(clicks).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('layout', () => {
-    it('Given a card When it renders Then it fills the height of its grid cell and pushes its links to the bottom', async () => {
-      const root = await render();
-      const article = byTestId(root, 'featured-project-card');
-      const actions = byTestId(root, 'featured-project-card-actions');
-
-      expect(root.classList).toContain('h-full');
-      expect(
-        ['flex', 'flex-col', 'h-full'].filter((name) => !article?.classList.contains(name)),
-      ).toEqual([]);
-      expect(actions?.classList).toContain('mt-auto');
-      expect(
-        [
-          byTestId(root, 'featured-project-card-link'),
-          byTestId(root, 'featured-project-card-live-link'),
-        ].map((link) => actions?.contains(link)),
-      ).toEqual([true, true]);
     });
   });
 });

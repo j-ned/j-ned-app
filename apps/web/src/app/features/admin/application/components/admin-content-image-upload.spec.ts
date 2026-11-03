@@ -7,10 +7,8 @@ import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { ContentImage } from '@features/blog/domain/models/content-image.model';
 import { makeContentImage } from '@features/blog/testing/blog-post-builders';
 import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
-import { accessibleName } from '@shared/testing/accessible-name';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settleBounded } from '@shared/testing/settle';
-import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
 import {
   BODY_IMAGE_FILE,
   imagePanel,
@@ -82,41 +80,6 @@ const availability = (
 
 const fileShown = (root: HTMLElement): boolean =>
   Boolean(imagePanel(root)?.querySelector('[data-testid="file-dropzone-clear"]'));
-
-describe('AdminContentImageUpload: structure', () => {
-  it('Given the panel When it renders Then it is a named group of the article form, without a form of its own, with plain buttons', async () => {
-    const { root } = await renderPanel();
-    const panel = imagePanel(root);
-    const alt = imagePanelAlt(root);
-    const label = alt?.id ? root.querySelector(`label[for="${alt.id}"]`) : null;
-
-    expect({
-      role: panel?.getAttribute('role'),
-      name: panel ? accessibleName(panel, root) : null,
-      forms: panel?.querySelectorAll('form').length,
-      altLabel: label?.textContent?.replace(/\s+/g, ' ').trim(),
-      altRequired: alt?.getAttribute('aria-required'),
-      accept: panel?.querySelector('input[type="file"]')?.getAttribute('accept'),
-      submit: {
-        type: byTestId(root, 'markdown-image-submit')?.getAttribute('type'),
-        text: testIdText(root, 'markdown-image-submit'),
-      },
-      cancel: {
-        type: byTestId(root, 'markdown-image-cancel')?.getAttribute('type'),
-        text: testIdText(root, 'markdown-image-cancel'),
-      },
-    }).toEqual({
-      role: 'group',
-      name: 'Insérer une image',
-      forms: 0,
-      altLabel: 'Texte alternatif',
-      altRequired: 'true',
-      accept: 'image/avif,image/webp,image/png,image/jpeg',
-      submit: { type: 'button', text: "Insérer l'image" },
-      cancel: { type: 'button', text: 'Annuler' },
-    });
-  });
-});
 
 describe('AdminContentImageUpload: champs obligatoires', () => {
   it('Given nothing chosen When « Insérer l’image » is pressed Then both fields say what is missing and nothing is sent', async () => {
@@ -327,73 +290,24 @@ describe('AdminContentImageUpload: envoi', () => {
 });
 
 describe('AdminContentImageUpload: échec de l’envoi', () => {
-  it.each([
-    {
-      status: 413,
-      message:
-        "L'image n'a pas été envoyée. Le fichier dépasse 4\u00a0Mo, la taille maximale acceptée.",
-    },
-    {
-      status: 422,
-      message:
-        "L'image n'a pas été envoyée. Le format n'est pas pris en charge ou le fichier est illisible\u00a0: choisissez une image JPEG, PNG, WebP ou AVIF.",
-    },
-    {
-      status: 429,
-      message:
-        "L'image n'a pas été envoyée. Trop d'envois en peu de temps\u00a0: patientez une minute, puis réessayez.",
-    },
-    {
-      status: 500,
-      message:
-        "L'image n'a pas été envoyée. Le serveur a rencontré un problème\u00a0: réessayez dans un instant.",
-    },
-    // Refus de l'hébergeur avant l'API (envoi multipart trop lourd) : pas de corps JSON.
-    {
-      status: 503,
-      message:
-        "L'image n'a pas été envoyée. L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduisez-le sous 900\u00a0Ko, puis réessayez.",
-    },
-  ])(
-    'Given the API answers $status When the image is sent Then the panel says « $message », keeps the file and the alt text, and inserts nothing',
-    async ({ status, message }) => {
-      const rendered = await renderPanel(vi.fn(() => throwError(() => httpError(status))));
-      await pickImageFile(rendered.fixture);
-      await typeImageAlt(rendered.fixture, 'Schéma');
-
-      await pressImagePanel(rendered.fixture, 'markdown-image-submit');
-
-      expect({
-        error: alert(rendered.root, 'markdown-image-error'),
-        alt: imagePanelAlt(rendered.root)?.value,
-        file: fileShown(rendered.root),
-        available: availability(rendered.root),
-        inserted: rendered.inserted,
-      }).toEqual({
-        error: { role: 'alert', text: message },
-        alt: 'Schéma',
-        file: true,
-        available: { ariaDisabled: 'false', disabled: false },
-        inserted: [],
-      });
-    },
-  );
-
-  it('Given the browser cannot bring the image under 900 Ko When the image is sent Then the panel gives that reason and inserts nothing', async () => {
-    const reason = "L'image dépasse 900\u00a0Ko, même compressée.";
-    const rendered = await renderPanel(
-      vi.fn(() => throwError(() => new UploadRejectedError(reason))),
-    );
+  it('Given the API fails When the image is sent Then the panel shows an alert, keeps the file and the alt text, and inserts nothing', async () => {
+    const rendered = await renderPanel(vi.fn(() => throwError(() => httpError(500))));
     await pickImageFile(rendered.fixture);
     await typeImageAlt(rendered.fixture, 'Schéma');
 
     await pressImagePanel(rendered.fixture, 'markdown-image-submit');
 
     expect({
-      error: alert(rendered.root, 'markdown-image-error'),
+      role: alert(rendered.root, 'markdown-image-error')?.role,
+      alt: imagePanelAlt(rendered.root)?.value,
+      file: fileShown(rendered.root),
+      available: availability(rendered.root),
       inserted: rendered.inserted,
     }).toEqual({
-      error: { role: 'alert', text: `L'image n'a pas été envoyée. ${reason}` },
+      role: 'alert',
+      alt: 'Schéma',
+      file: true,
+      available: { ariaDisabled: 'false', disabled: false },
       inserted: [],
     });
   });

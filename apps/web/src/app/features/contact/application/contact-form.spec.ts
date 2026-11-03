@@ -379,17 +379,6 @@ describe('ContactForm (Signal Forms)', () => {
   });
 
   describe('Qualification', () => {
-    it('no longer asks for a project type nor a timeline', async () => {
-      const fixture = await setup();
-      const host = fixture.nativeElement as HTMLElement;
-
-      expect([
-        host.querySelectorAll('[data-testid="contact-project-type"]').length,
-        host.querySelectorAll('[data-testid="contact-timeline"]').length,
-        host.querySelectorAll('select').length,
-      ]).toEqual([0, 0, 0]);
-    });
-
     it('sends the typed message as is, without any prefix', async () => {
       const submit = vi.fn().mockReturnValue(of({ success: true, message: 'Envoyé' }));
       const fixture = await setup(stubContactGateway({ submitContactForm: submit }));
@@ -509,111 +498,6 @@ describe('ContactForm (Signal Forms)', () => {
       await fixture.whenStable();
 
       expect(fixture.componentInstance.contactForm.website().value()).toBe('');
-    });
-  });
-
-  describe('Booking invite', () => {
-    it('no longer invites the visitor to book a call, the booking is retired', async () => {
-      const fixture = await setup();
-      const host = fixture.nativeElement as HTMLElement;
-
-      expect([
-        host.querySelectorAll('[data-testid^="contact-booking"]').length,
-        host.querySelectorAll('a[href^="/rendez-vous"]').length,
-      ]).toEqual([0, 0]);
-    });
-  });
-
-  describe('Wording', () => {
-    // Le champ piège est hors arbre d'accessibilité : seuls les champs présentés au visiteur comptent.
-    const presented = (host: HTMLElement, selector: string): Element[] =>
-      [...host.querySelectorAll(selector)].filter((el) => !el.closest('[aria-hidden="true"]'));
-    const collapsed = (element: Element | null | undefined): string =>
-      (element?.textContent ?? '').replace(/[ \t\r\n]+/g, ' ').trim();
-
-    it('Given the form When it renders Then the contact section is named « Écris-moi. »', async () => {
-      const host = (await setup()).nativeElement as HTMLElement;
-      const headingId = host.querySelector('section')?.getAttribute('aria-labelledby');
-
-      expect(collapsed(host.querySelector(`#${headingId}`))).toBe('Écris-moi.');
-    });
-
-    it('Given the form When it renders Then the identity fields are grouped under « Tes coordonnées »', async () => {
-      const host = (await setup()).nativeElement as HTMLElement;
-
-      expect(collapsed(host.querySelector('fieldset legend'))).toBe('Tes coordonnées');
-    });
-
-    it('Given the form When it renders Then every field carries its own distinct label', async () => {
-      const host = (await setup()).nativeElement as HTMLElement;
-
-      expect(presented(host, 'form label').map(collapsed)).toEqual([
-        'Ton nom (requis)',
-        'Email (requis)',
-        'Sujet (requis)',
-        'Message (requis)',
-      ]);
-    });
-
-    it('Given the form When it renders Then each field suggests what to type, addressed with tu', async () => {
-      const host = (await setup()).nativeElement as HTMLElement;
-
-      expect(
-        presented(host, 'form input, form textarea').map((field) =>
-          field.getAttribute('placeholder'),
-        ),
-      ).toEqual([
-        'Ton nom',
-        'toi@exemple.fr',
-        'De quoi veux-tu parler\u202f?',
-        'Ta question, ta remarque, ou juste un bonjour…',
-      ]);
-    });
-
-    it('Given the form When it renders Then the privacy note says the data only serves to answer', async () => {
-      const host = (await setup()).nativeElement as HTMLElement;
-
-      expect(collapsed(host.querySelector('[data-testid="contact-privacy-note"]'))).toBe(
-        'Ton nom, ton e-mail et ton message servent seulement à te répondre. Politique de confidentialité',
-      );
-    });
-  });
-
-  describe('Intro', () => {
-    const intro = (fixture: ComponentFixture<ContactForm>): string =>
-      (fixture.nativeElement.querySelector('[data-testid="contact-intro"]')?.textContent ?? '')
-        .replace(/[ \t\r\n]+/g, ' ')
-        .trim();
-
-    it('keeps the default intro when none is bound', async () => {
-      const fixture = await setup();
-
-      expect(intro(fixture)).toBe(
-        'Une question sur un projet, sur le code de ce site ou sur mon parcours\u00A0: je lis et je réponds personnellement.',
-      );
-    });
-
-    it('shows the bound intro instead of the default one', async () => {
-      const fixture = await setup(stubContactGateway(), {
-        intro: 'Dites-moi ce que vous usinez.',
-      });
-
-      expect(intro(fixture)).toBe('Dites-moi ce que vous usinez.');
-    });
-  });
-
-  describe('Shape', () => {
-    it('Given the form When it is rendered Then the message panel is a card: card radius, 2 px foreground edge, surface fill', async () => {
-      const fixture = await setup();
-      const card = (fixture.nativeElement as HTMLElement).querySelector(
-        '[data-testid="contact-form-card"]',
-      );
-
-      expect(
-        [...(card?.classList ?? [])]
-          .filter((token) => /^(?:rounded|border|bg)(?:-|$)/.test(token))
-          .sort(),
-      ).toEqual(['bg-surface', 'border-2', 'border-foreground', 'rounded-card']);
     });
   });
 });

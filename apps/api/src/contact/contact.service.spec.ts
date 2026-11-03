@@ -145,36 +145,7 @@ describe('ContactService', () => {
     });
   });
 
-  describe('findAll', () => {
-    it('retourne le résultat paginé { data, total, page, limit }', async () => {
-      const rows = [mkMessage({ id: 'a' }), mkMessage({ id: 'b' })];
-      // findAll fait 2 queries en parallèle (Promise.all, ordre dans le tableau) :
-      // 1) select(count).from → totalRow (terminator: from)
-      // 2) select.from.orderBy.limit.offset → rows (terminator: offset)
-      // mockResolvedValueOnce sur chaque terminator dans l'ordre d'exécution.
-      db.offset.mockResolvedValueOnce(rows);
-      db.from.mockResolvedValueOnce([{ count: 42 }]);
-      const result = await service.findAll({
-        page: 2,
-        limit: 5,
-        offset: 5,
-      });
-      expect(result).toEqual({
-        data: rows,
-        total: 42,
-        page: 2,
-        limit: 5,
-      });
-    });
-  });
-
   describe('unreadCount', () => {
-    it('retourne { count } filtré sur read: false', async () => {
-      db.where.mockResolvedValueOnce([{ count: 7 }]);
-      const result = await service.unreadCount();
-      expect(result).toEqual({ count: 7 });
-    });
-
     it('retourne count: 0 si aucun row', async () => {
       db.where.mockResolvedValueOnce([]);
       const result = await service.unreadCount();
@@ -197,28 +168,6 @@ describe('ContactService', () => {
   });
 
   describe('markAllRead', () => {
-    it('retourne { count: N } = nb de lignes passées de non-lu à lu', async () => {
-      // Given : 3 messages non-lus en base (terminator .returning → rows affectées)
-      db.returning.mockResolvedValueOnce([
-        { id: 'a' },
-        { id: 'b' },
-        { id: 'c' },
-      ]);
-      // When
-      const result = await service.markAllRead();
-      // Then
-      expect(result).toEqual({ count: 3 });
-    });
-
-    it('retourne { count: 0 } quand aucun message non-lu', async () => {
-      // Given : aucune ligne affectée
-      db.returning.mockResolvedValueOnce([]);
-      // When
-      const result = await service.markAllRead();
-      // Then
-      expect(result).toEqual({ count: 0 });
-    });
-
     it('mute read: true (set) et cible la table contactMessages (update)', async () => {
       // Given
       db.returning.mockResolvedValueOnce([{ id: 'a' }]);

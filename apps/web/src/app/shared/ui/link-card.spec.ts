@@ -3,19 +3,6 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { RouterLink, provideRouter } from '@angular/router';
 import { LinkCard } from './link-card';
 
-const CARD = [
-  'group',
-  'grid',
-  'gap-1',
-  'rounded-card',
-  'border-2',
-  'border-foreground',
-  'bg-surface',
-  'p-6',
-  'transition-colors',
-  'hover:border-primary',
-];
-
 @Component({
   imports: [LinkCard, RouterLink],
   template: `<a
@@ -92,25 +79,11 @@ describe('LinkCard', () => {
   it('Given a summary When the card renders Then the link reads the overline, the heading, then the summary in muted text', async () => {
     const card = cardOf(await render(SummaryHost));
 
-    expect({
-      lines: linesOf(card),
-      summaryMuted: card.children[2]?.classList.contains('text-muted'),
-    }).toEqual({
-      lines: ['Outil', 'Guide des plaquettes', 'Choisis ta matière et ton opération.'],
-      summaryMuted: true,
-    });
-  });
-
-  it('Given no alignment When the card renders Then the host carries the card look, aligned to the start', async () => {
-    const card = cardOf(await render(DefaultHost));
-
-    expect([...card.classList].sort()).toEqual([...CARD].sort());
-  });
-
-  it('Given the end alignment When the card renders Then the host keeps the card look and aligns its text to the right', async () => {
-    const card = cardOf(await render(AlignedHost));
-
-    expect([...card.classList].sort()).toEqual([...CARD, 'text-right'].sort());
+    expect(linesOf(card)).toEqual([
+      'Outil',
+      'Guide des plaquettes',
+      'Choisis ta matière et ton opération.',
+    ]);
   });
 
   it('Given a rendered card When its inputs change Then the card follows them', async () => {

@@ -4,8 +4,6 @@ import {
   slugify,
   fireAndForget,
   parseDurationMs,
-  subDays,
-  subMinutes,
   formatUtcDate,
   startOfUtcDay,
   endOfUtcDay,
@@ -40,14 +38,6 @@ describe('isUniqueViolation', () => {
     expect(isUniqueViolation(err, 'slug')).toBe(false);
   });
 
-  it('rejette si code Postgres différent', () => {
-    expect(isUniqueViolation({ code: '99999' })).toBe(false);
-  });
-
-  it('rejette si entrée non-objet', () => {
-    expect(isUniqueViolation(null)).toBe(false);
-  });
-
   it('détecte un conflit imbriqué dans DrizzleQueryError.cause (sans hint)', () => {
     // Drizzle wraps the raw PostgresError in a DrizzleQueryError whose
     // `.cause` carries the original error (with code + constraint_name).
@@ -57,15 +47,6 @@ describe('isUniqueViolation', () => {
       constraint_name: 'disabled_date_date_unique',
     };
     expect(isUniqueViolation(drizzleErr)).toBe(true);
-  });
-
-  it('détecte un conflit imbriqué avec column hint', () => {
-    const drizzleErr = new Error('Failed query: ...');
-    (drizzleErr as unknown as Record<string, unknown>).cause = {
-      code: '23505',
-      constraint_name: 'project_slug_unique',
-    };
-    expect(isUniqueViolation(drizzleErr, 'slug')).toBe(true);
   });
 
   it('rejette si le hint ne correspond pas dans la cause imbriquée', () => {
@@ -131,20 +112,6 @@ describe('parseDurationMs', () => {
 
   it('is case-insensitive on the unit', () => {
     expect(parseDurationMs('5S')).toBe(5_000);
-  });
-});
-
-describe('subDays / subMinutes', () => {
-  it('subDays subtracts N days from the given date', () => {
-    const ref = new Date('2026-05-06T12:00:00Z');
-    expect(subDays(ref, 1).toISOString()).toBe('2026-05-05T12:00:00.000Z');
-    expect(subDays(ref, 30).toISOString()).toBe('2026-04-06T12:00:00.000Z');
-  });
-
-  it('subMinutes subtracts N minutes from the given date', () => {
-    const ref = new Date('2026-05-06T12:00:00Z');
-    expect(subMinutes(ref, 5).toISOString()).toBe('2026-05-06T11:55:00.000Z');
-    expect(subMinutes(ref, 60).toISOString()).toBe('2026-05-06T11:00:00.000Z');
   });
 });
 

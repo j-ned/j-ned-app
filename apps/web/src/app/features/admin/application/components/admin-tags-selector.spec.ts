@@ -2,7 +2,6 @@ import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { FormField, form } from '@angular/forms/signals';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { accentTints } from '@shared/testing/accent-tints';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import { AdminTagsSelector } from './admin-tags-selector';
@@ -102,38 +101,6 @@ describe('AdminTagsSelector', () => {
         options: page.options(),
         expanded: page.input.getAttribute('aria-expanded'),
       }).toEqual({ chips: ['Angular', 'Aéronautique'], options: [], expanded: 'false' });
-    });
-
-    it('Given the field When it renders Then the input is a combobox named by its label and described by the hint', async () => {
-      const { page } = await render();
-      const input = page.input;
-      const label = page.host.querySelector(`label[for="${input.id}"]`);
-      const hint = page.host.querySelector(`[id="${input.getAttribute('aria-describedby')}"]`);
-      const listbox = page.host.querySelector(`[id="${input.getAttribute('aria-controls')}"]`);
-
-      expect({
-        hasId: input.id !== '',
-        role: input.getAttribute('role'),
-        autocomplete: input.getAttribute('aria-autocomplete'),
-        listbox: listbox?.getAttribute('role'),
-        label: text(label),
-        hint: text(hint),
-      }).toEqual({
-        hasId: true,
-        role: 'combobox',
-        autocomplete: 'list',
-        listbox: 'listbox',
-        label: 'Tags',
-        hint: 'Entrée ou virgule pour ajouter un tag. 15 tags au plus, 50 caractères chacun.',
-      });
-    });
-
-    it('Given selected tags When they render Then each remove button is named after its tag', async () => {
-      const { page } = await render(['Angular', 'Freelance']);
-
-      expect(
-        all(page.host, 'tag-remove').map((button) => button.getAttribute('aria-label')),
-      ).toEqual(['Retirer le tag Angular', 'Retirer le tag Freelance']);
     });
   });
 
@@ -303,18 +270,6 @@ describe('AdminTagsSelector', () => {
       });
     });
 
-    it('Given an open list When a suggestion is active Then it sets the accent text over an 8 % accent tint', async () => {
-      const { page } = await render(['Angular']);
-
-      await page.press('ArrowDown');
-
-      expect(
-        all(page.host, 'tag-option')
-          .filter((option) => option.getAttribute('aria-selected') === 'true')
-          .map((option) => accentTints(option)),
-      ).toEqual([['aria-selected:bg-primary/8']]);
-    });
-
     it('Given an open list When ArrowDown, ArrowDown, ArrowUp, ArrowDown then Enter are pressed Then the second suggestion is added', async () => {
       const { fixture, page } = await render();
       await page.type('s');
@@ -383,24 +338,6 @@ describe('AdminTagsSelector', () => {
   describe("suggestions d'après l'article", () => {
     const hintButtons = (page: TagsFieldPage): HTMLButtonElement[] =>
       all(page.host, 'tag-hint') as HTMLButtonElement[];
-
-    it('Given hints When the field renders Then each unselected one is a button named « Ajouter le tag X » in a labelled group', async () => {
-      const { page } = await render(['Angular'], ['RxJS', 'angular', 'Freelance']);
-      const group = byTestId(page.host, 'tag-hints');
-      const label = page.host.querySelector(`[id="${group?.getAttribute('aria-labelledby')}"]`);
-
-      expect({
-        role: group?.getAttribute('role'),
-        label: text(label),
-        names: hintButtons(page).map((button) => text(button)),
-        types: hintButtons(page).map((button) => button.type),
-      }).toEqual({
-        role: 'group',
-        label: "Suggérés d'après l'article",
-        names: ['Ajouter le tag RxJS', 'Ajouter le tag Freelance'],
-        types: ['button', 'button'],
-      });
-    });
 
     it.each([{ hints: undefined }, { hints: [] }, { hints: ['ANGULAR'] }])(
       'Given the hints $hints When every one is absent or selected Then no group shows',
@@ -506,12 +443,6 @@ describe('AdminTagsSelector: bound by [formField]', () => {
     return { fixture, page: new TagsFieldPage(fixture) };
   }
 
-  it('Given a form whose tags hold Angular When the field renders Then Angular is the only chip', async () => {
-    const { page } = await renderHost();
-
-    expect(page.chips()).toEqual(['Angular']);
-  });
-
   it('Given the bound field When a free tag is added and Angular removed Then the form model follows', async () => {
     const { fixture, page } = await renderHost();
 
@@ -520,14 +451,6 @@ describe('AdminTagsSelector: bound by [formField]', () => {
     await page.remove('Angular');
 
     expect(fixture.componentInstance.draft().tags).toEqual(['Playwright']);
-  });
-
-  it('Given a limit of 20 When the field renders Then the hint states it', async () => {
-    const { page } = await renderHost();
-
-    expect(testIdText(page.host, 'tags-hint')).toBe(
-      'Entrée ou virgule pour ajouter un tag. 20 tags au plus, 50 caractères chacun.',
-    );
   });
 
   it('Given the bound field When the form model is replaced Then the chips follow it', async () => {

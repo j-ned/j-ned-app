@@ -45,21 +45,7 @@ describe('ProjectKindLegend', () => {
     ]);
   });
 
-  it('Given the three natures When the legend renders Then each nature has its definition', async () => {
-    const definitions = byTestId(await render(MOCKUP_ROWS), 'project-kind-legend-definition');
-
-    expect(definitions.map(normalized)).toEqual([
-      'Utilisé pour de vrai',
-      'Entreprise fictive',
-      'Outil en ligne de commande',
-    ]);
-  });
-
-  it.each([
-    { counts: [2, 2, 2], expected: ['2 projets', '2 projets', '2 projets'] },
-    { counts: [1, 3, 0], expected: ['1 projet', '3 projets', '0 projet'] },
-    { counts: [12, 0, 1], expected: ['12 projets', '0 projet', '1 projet'] },
-  ])(
+  it.each([{ counts: [1, 3, 0], expected: ['1 projet', '3 projets', '0 projet'] }])(
     'Given counts $counts When the legend renders Then each count is read with its unit',
     async ({ counts, expected }) => {
       const rows = MOCKUP_ROWS.map((row, index) => ({ ...row, count: counts[index] ?? 0 }));

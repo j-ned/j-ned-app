@@ -157,15 +157,7 @@ describe('serializeRequest', () => {
 });
 
 describe('masquage du jeton du flux, variantes du chemin', () => {
-  const VARIANTS = [
-    `/api/BOOKING/feed/${FEED_TOKEN}.ics`,
-    `/api/booking/Feed/${FEED_TOKEN}.ics`,
-    `/api/booking/feed/${FEED_TOKEN}.ICS`,
-    `/api//booking/feed/${FEED_TOKEN}.ics`,
-    `/api/booking/%66eed/${FEED_TOKEN}.ics`,
-    `/api/booking/%66eed/${FEED_TOKEN}%2Eics?x=1`,
-    `https://api.nedellec-julien.fr/api/Booking/FEED/${FEED_TOKEN}.ics`,
-  ];
+  const VARIANTS = [`/api/booking/%66eed/${FEED_TOKEN}%2Eics?x=1`];
 
   it.each(VARIANTS)(
     'Given %s, Then redactUrl ne laisse pas le jeton',

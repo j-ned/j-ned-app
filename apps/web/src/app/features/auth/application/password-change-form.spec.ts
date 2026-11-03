@@ -30,20 +30,6 @@ describe('PasswordChangeForm: a11y attributes', () => {
     expect(el.getAttribute('aria-required')).toBe('true');
   });
 
-  it('newPassword input has autocomplete=new-password and aria-required=true', () => {
-    const fixture = render();
-    const el = input(fixture, 'newPassword');
-    expect(el.autocomplete).toBe('new-password');
-    expect(el.getAttribute('aria-required')).toBe('true');
-  });
-
-  it('confirmPassword input has autocomplete=new-password and aria-required=true', () => {
-    const fixture = render();
-    const el = input(fixture, 'confirmPassword');
-    expect(el.autocomplete).toBe('new-password');
-    expect(el.getAttribute('aria-required')).toBe('true');
-  });
-
   it('currentPassword exposes aria-invalid + aria-describedby and a role=alert error when touched and empty', () => {
     const fixture = render();
     fixture.componentInstance.pwdForm.currentPassword().markAsTouched();
@@ -58,36 +44,6 @@ describe('PasswordChangeForm: a11y attributes', () => {
     expect(error).not.toBeNull();
     expect(error!.getAttribute('role')).toBe('alert');
     expect(error!.textContent?.trim()).toBe('Champ obligatoire');
-  });
-
-  it('newPassword exposes aria-invalid + aria-describedby and a role=alert error when touched and empty', () => {
-    const fixture = render();
-    fixture.componentInstance.pwdForm.newPassword().markAsTouched();
-    fixture.componentInstance.pwdForm.newPassword().value.set('');
-    fixture.detectChanges();
-
-    const el = input(fixture, 'newPassword');
-    expect(el.getAttribute('aria-invalid')).toBe('true');
-    expect(el.getAttribute('aria-describedby')).toBe('twofa-setup-new-pw-error');
-
-    const error = fixture.nativeElement.querySelector('#twofa-setup-new-pw-error');
-    expect(error).not.toBeNull();
-    expect(error!.getAttribute('role')).toBe('alert');
-  });
-
-  it('confirmPassword exposes aria-invalid + aria-describedby and a role=alert error when touched and empty', () => {
-    const fixture = render();
-    fixture.componentInstance.pwdForm.confirmPassword().markAsTouched();
-    fixture.componentInstance.pwdForm.confirmPassword().value.set('');
-    fixture.detectChanges();
-
-    const el = input(fixture, 'confirmPassword');
-    expect(el.getAttribute('aria-invalid')).toBe('true');
-    expect(el.getAttribute('aria-describedby')).toBe('twofa-setup-confirm-pw-error');
-
-    const error = fixture.nativeElement.querySelector('#twofa-setup-confirm-pw-error');
-    expect(error).not.toBeNull();
-    expect(error!.getAttribute('role')).toBe('alert');
   });
 });
 

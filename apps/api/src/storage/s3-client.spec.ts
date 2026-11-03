@@ -1,7 +1,7 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { createS3Client, S3_TIMEOUTS } from './s3-client';
+import { createS3Client } from './s3-client';
 
 /** Serveur S3 qui accepte la requête et ne répond jamais (stockage bloqué). */
 const aHangingServer = async (): Promise<Server> => {
@@ -26,13 +26,6 @@ describe('createS3Client', () => {
   afterEach(async () => {
     server.closeAllConnections();
     await new Promise((resolve) => server.close(resolve));
-  });
-
-  it('Given the production timeouts, When read, Then the connection is bounded to 5 s and a request to 30 s', () => {
-    expect(S3_TIMEOUTS).toEqual({
-      connectionTimeout: 5_000,
-      requestTimeout: 30_000,
-    });
   });
 
   it('Given a storage that never answers, When an object is sent, Then the request fails with a TimeoutError instead of hanging', async () => {

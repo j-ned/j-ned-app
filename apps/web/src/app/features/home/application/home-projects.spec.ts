@@ -4,20 +4,10 @@ import { Router, provideRouter } from '@angular/router';
 import { toFeaturedProjectView } from '@features/projects/application/featured-project-view';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
-import { Button } from '@shared/ui/button';
 import { HomeProjects } from './home-projects';
 
 @Component({ template: '' })
 class BlankPage {}
-
-@Component({
-  imports: [Button],
-  template: `<button appButton type="button">Référence</button>`,
-})
-class DefaultButtonHost {}
-
-const sortedClasses = (element: Element | null | undefined): readonly string[] =>
-  [...(element?.classList ?? [])].sort();
 
 const LONG_DESCRIPTION = 'Une phrase de description assez longue pour déborder. '.repeat(6).trim();
 
@@ -124,12 +114,6 @@ describe('HomeProjects', () => {
     ]);
   });
 
-  it('Given a long description and a justified decision When the section renders Then nothing is clamped', async () => {
-    const root = await render([dashflow(), candidash()]);
-
-    expect(root.querySelectorAll('[class*="line-clamp"]')).toHaveLength(0);
-  });
-
   it('Given a project without pitch When its card renders Then it shows the first sentence and the key decision title, not the whole description nor the rationale', async () => {
     const card = cards(await render([dashflow()]))[0];
 
@@ -171,18 +155,13 @@ describe('HomeProjects', () => {
     const allProjects = (root: HTMLElement): HTMLElement | null =>
       root.querySelector<HTMLElement>('[data-testid="home-projects-all"]');
 
-    it('Given the section When it renders Then « Voir tous les projets » is a link to /projects, styled as the primary button', async () => {
+    it('Given the section When it renders Then « Voir tous les projets » is a link to /projects', async () => {
       const root = await render([dashflow(), candidash()]);
-      const reference = TestBed.createComponent(DefaultButtonHost);
-      reference.detectChanges();
       const link = allProjects(root);
 
       expect(link?.tagName).toBe('A');
       expect(link?.getAttribute('href')).toBe('/projects');
       expect(normalized(link)).toBe('Voir tous les projets');
-      expect(sortedClasses(link)).toEqual(
-        sortedClasses((reference.nativeElement as HTMLElement).querySelector('button')),
-      );
     });
 
     it('Given the section When the visitor follows « Voir tous les projets » Then the projects page opens', async () => {

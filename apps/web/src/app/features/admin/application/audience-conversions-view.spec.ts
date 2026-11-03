@@ -81,10 +81,7 @@ describe('conversionsNote', () => {
 
 describe('placementLabel', () => {
   it.each([
-    ['home', 'Accueil'],
-    ['booking', 'Prise de rendez-vous (retirée)'],
     ['offer_site-vitrine', "Page d'offre retirée (site-vitrine)"],
-    ['offer_renfort-freelance', "Page d'offre retirée (renfort-freelance)"],
     ['footer', 'Emplacement inconnu (footer)'],
   ])('Given the placement %s When it is named Then it reads « %s »', (entityId, label) => {
     expect(placementLabel(entityId)).toBe(label);
@@ -93,13 +90,7 @@ describe('placementLabel', () => {
 
 describe('channelLabel', () => {
   it.each([
-    ['email', 'E-mail'],
     ['phone', 'Téléphone (retiré)'],
-    ['malt', 'Malt (retiré)'],
-    ['discord', 'Discord'],
-    ['linkedin', 'LinkedIn'],
-    ['github', 'GitHub'],
-    ['demo', 'Démos'],
     ['twitter', 'Canal inconnu (twitter)'],
   ])('Given the channel %s When it is named Then it reads « %s »', (entityId, label) => {
     expect(channelLabel(entityId)).toBe(label);

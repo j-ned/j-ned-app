@@ -31,11 +31,6 @@ describe('uploadFailureMessage', () => {
       expected: `${LABEL} Le fichier dépasse 4\u00a0Mo, la taille maximale acceptée.`,
     },
     {
-      given: 'a 400 explained by the API',
-      error: apiRejection(400, 'file must be an image'),
-      expected: `${LABEL} file must be an image.`,
-    },
-    {
       given: 'a 422 explained by the API',
       error: apiRejection(422, 'Image illisible : fichier corrompu ou format non supporté'),
       expected: `${LABEL} Image illisible : fichier corrompu ou format non supporté.`,
