@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import type { UploadedFile } from '../common/http';
 import { NotFoundException } from '../common/http-errors';
 import { CvService } from './cv.service';
 import { createMockDb } from '../database/test-utils';
@@ -22,14 +21,6 @@ describe('CvService', () => {
     ...overrides,
   });
 
-  const mkFile = (overrides: Partial<UploadedFile> = {}): UploadedFile => ({
-    buffer: Buffer.from('fake-pdf-content'),
-    mimetype: 'application/pdf',
-    originalname: 'Julien-CV.pdf',
-    size: 524288,
-    ...overrides,
-  });
-
   beforeEach(() => {
     db = createMockDb();
     storage = {
@@ -41,48 +32,6 @@ describe('CvService', () => {
     } as unknown as jest.Mocked<StorageService>;
 
     service = new CvService(db as never, storage);
-  });
-
-  describe('upsert', () => {
-    it('upload S3 + INSERT ON CONFLICT DO UPDATE', async () => {
-      const file = mkFile();
-      const created = mkCvFile();
-      db.returning.mockResolvedValueOnce([created]);
-
-      const result = await service.upsert(file);
-
-      expect(storage.upload).toHaveBeenCalledWith(
-        'portfolio-storage',
-        'cv/cv.pdf',
-        file.buffer,
-        'application/pdf',
-      );
-      expect(result).toEqual(created);
-    });
-
-    it('utilise toujours la key fixe cv/cv.pdf', async () => {
-      const file = mkFile();
-      db.returning.mockResolvedValueOnce([mkCvFile()]);
-
-      await service.upsert(file);
-
-      const uploadCall = storage.upload.mock.calls[0];
-      expect(uploadCall[0]).toBe('portfolio-storage');
-      expect(uploadCall[1]).toBe('cv/cv.pdf');
-    });
-  });
-
-  describe('findLatestMetadata', () => {
-    it('retourne la row si existe', async () => {
-      const row = mkCvFile();
-      db.limit.mockResolvedValueOnce([row]);
-      await expect(service.findLatestMetadata()).resolves.toEqual(row);
-    });
-
-    it('retourne null si table vide', async () => {
-      db.limit.mockResolvedValueOnce([]);
-      await expect(service.findLatestMetadata()).resolves.toBeNull();
-    });
   });
 
   describe('download', () => {

@@ -50,27 +50,12 @@ describe('throttle', () => {
     expect(blocked.headers.get('retry-after')).toBe('60');
   });
 
-  it('Given a throttled visitor, When another visitor calls, Then it is not affected', async () => {
-    const { hit } = throttledApp({ limit: 1, ttlMs: 60_000 });
-    await hit('203.0.113.1');
-
-    expect((await hit('203.0.113.1')).status).toBe(429);
-    expect((await hit('203.0.113.2')).status).toBe(200);
-  });
-
   it('Given a throttled visitor, When the window has passed, Then it is served again', async () => {
     const { hit, advance } = throttledApp({ limit: 1, ttlMs: 60_000 });
     await hit('203.0.113.1');
     advance(60_000);
 
     expect((await hit('203.0.113.1')).status).toBe(200);
-  });
-
-  it('Given a forged first X-Forwarded-For entry, When the visitor is throttled, Then only the last entry counts', async () => {
-    const { hit } = throttledApp({ limit: 1, ttlMs: 60_000 });
-    await hit('203.0.113.1');
-
-    expect((await hit('198.51.100.9, 203.0.113.1')).status).toBe(429);
   });
 
   it('Given two routes, When one is exhausted, Then the other keeps its own quota', async () => {

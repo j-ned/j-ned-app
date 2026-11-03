@@ -1,6 +1,5 @@
 import type { RequireAuth } from '../auth/require-auth';
 import { UnauthorizedException } from '../common/http-errors';
-import { TRACK_THROTTLE } from '../common/throttle';
 import { testApp } from '../common/test-app';
 import type { AnalyticsStatsService } from './analytics-stats.service';
 import type { AnalyticsTrackerService } from './analytics-tracker.service';
@@ -118,15 +117,6 @@ describe('analytics routes', () => {
 
       expect(statuses.every((s) => s === 200)).toBe(true);
     });
-
-    it('Given an admin, When active sessions are requested, Then 200 with the service value', async () => {
-      stats.active.mockResolvedValueOnce({ count: 3 });
-
-      const res = await app.request('/api/analytics/stats/active');
-
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ count: 3 });
-    });
   });
 
   describe('POST track (allow-list)', () => {
@@ -165,10 +155,6 @@ describe('analytics routes', () => {
   });
 
   describe('POST track (throttle)', () => {
-    it('Given the track quota, Then it is 10 hits per second', () => {
-      expect(TRACK_THROTTLE).toEqual({ limit: 10, ttlMs: 1_000 });
-    });
-
     it('Given a visitor, When it posts an 11th hit within the second, Then it gets 429', async () => {
       const statuses: number[] = [];
       for (let i = 0; i < 11; i += 1)

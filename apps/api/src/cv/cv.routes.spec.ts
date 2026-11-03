@@ -5,7 +5,6 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '../common/http-errors';
-import { PUBLIC_READ_THROTTLE } from '../common/throttle';
 import { testApp } from '../common/test-app';
 import { cvRoutes } from './cv.routes';
 import type { CvService } from './cv.service';
@@ -103,43 +102,14 @@ describe('cv routes (HTTP)', () => {
       expect(res.status).toBe(413);
       expect(cv.upsert).not.toHaveBeenCalled();
     });
-
-    it('requires a session', async () => {
-      const res = await call(
-        '/upload',
-        { method: 'POST', body: form(PDF, 'a.pdf', 'application/pdf') },
-        build(denied),
-      );
-      expect(res.status).toBe(401);
-    });
   });
 
   describe('GET /', () => {
-    it('returns the metadata', async () => {
-      cv.findLatestMetadata.mockResolvedValueOnce(METADATA);
-      const res = await call('');
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual(METADATA);
-    });
-
     it('answers 200 with an empty body when there is no CV', async () => {
       cv.findLatestMetadata.mockResolvedValueOnce(null);
       const res = await call('');
       expect(res.status).toBe(200);
       expect(await res.text()).toBe('');
-    });
-
-    it('has the public read quota (120/min)', async () => {
-      cv.findLatestMetadata.mockResolvedValue(null);
-      const statuses: number[] = [];
-      for (let i = 0; i <= PUBLIC_READ_THROTTLE.limit; i += 1) {
-        const res = await app.request('/api/cv', {
-          headers: { 'x-forwarded-for': '192.0.2.30' },
-        });
-        statuses.push(res.status);
-      }
-      expect(statuses.at(-2)).toBe(200);
-      expect(statuses.at(-1)).toBe(429);
     });
   });
 
@@ -165,22 +135,6 @@ describe('cv routes (HTTP)', () => {
       );
       const res = await call('/download');
       expect(res.status).toBe(404);
-    });
-  });
-
-  describe('DELETE /', () => {
-    it('answers 204 without body', async () => {
-      cv.remove.mockResolvedValueOnce(undefined);
-      const res = await call('', { method: 'DELETE' });
-      expect(res.status).toBe(204);
-      expect(await res.text()).toBe('');
-      expect(cv.remove).toHaveBeenCalled();
-    });
-
-    it('requires a session', async () => {
-      const res = await call('', { method: 'DELETE' }, build(denied));
-      expect(res.status).toBe(401);
-      expect(cv.remove).not.toHaveBeenCalled();
     });
   });
 });

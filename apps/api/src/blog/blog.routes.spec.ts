@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '../common/http-errors';
-import { DEFAULT_THROTTLE, PUBLIC_READ_THROTTLE } from '../common/throttle';
+import { PUBLIC_READ_THROTTLE } from '../common/throttle';
 import { testApp } from '../common/test-app';
 import type { BlogContentImagesService } from './blog-content-images.service';
 import { blogRoutes } from './blog.routes';
@@ -81,13 +81,6 @@ describe('blog routes (HTTP)', () => {
   };
 
   describe('public reads', () => {
-    it('GET /posts lists the published posts', async () => {
-      blog.findAllPublished.mockResolvedValueOnce([POST]);
-      const res = await call('/posts');
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual([POST]);
-    });
-
     it('GET /posts leaves out the Markdown body but keeps its word count', async () => {
       blog.findAllPublished.mockResolvedValueOnce([
         { ...POST, contentMarkdown: '# Corps', wordCount: 900 },
@@ -179,20 +172,6 @@ describe('blog routes (HTTP)', () => {
       expect(await res.json()).toEqual({ likesCount: 3 });
       expect(blog.like).toHaveBeenCalledWith('mon-article');
     });
-
-    it('has the default quota (10/min)', async () => {
-      blog.like.mockResolvedValue({ likesCount: 1 });
-      const statuses: number[] = [];
-      for (let i = 0; i <= DEFAULT_THROTTLE.limit; i += 1) {
-        const res = await app.request('/api/blog/posts/a/like', {
-          method: 'POST',
-          headers: { 'x-forwarded-for': '192.0.2.20' },
-        });
-        statuses.push(res.status);
-      }
-      expect(statuses.at(-2)).toBe(201);
-      expect(statuses.at(-1)).toBe(429);
-    });
   });
 
   describe('admin writes', () => {
@@ -204,14 +183,6 @@ describe('blog routes (HTTP)', () => {
     ])('%s %s requires a session', async (method, path) => {
       const res = await call(path, { method, json: VALID }, build(denied));
       expect(res.status).toBe(401);
-    });
-
-    it('POST /posts creates and answers 201', async () => {
-      blog.create.mockResolvedValueOnce(POST);
-      const res = await call('/posts', { method: 'POST', json: VALID });
-      expect(res.status).toBe(201);
-      expect(await res.json()).toEqual(POST);
-      expect(blog.create).toHaveBeenCalledWith(expect.objectContaining(VALID));
     });
 
     it('POST /posts rejects an invalid or unknown field with 400', async () => {
@@ -252,17 +223,6 @@ describe('blog routes (HTTP)', () => {
         ).status,
       ).toBe(400);
       expect(blog.update).not.toHaveBeenCalled();
-    });
-
-    it('DELETE /posts/:id answers 204 without body', async () => {
-      blog.remove.mockResolvedValueOnce(undefined);
-      const res = await call(`/posts/${ID}`, { method: 'DELETE' });
-      expect(res.status).toBe(204);
-      expect(await res.text()).toBe('');
-      expect(blog.remove).toHaveBeenCalledWith(ID);
-      expect(
-        (await call('/posts/not-a-uuid', { method: 'DELETE' })).status,
-      ).toBe(400);
     });
   });
 

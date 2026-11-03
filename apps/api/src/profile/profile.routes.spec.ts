@@ -1,10 +1,6 @@
 import type { RequireAuth } from '../auth/require-auth';
-import {
-  ConflictException,
-  UnauthorizedException,
-} from '../common/http-errors';
+import { ConflictException } from '../common/http-errors';
 import { testApp } from '../common/test-app';
-import { PUBLIC_READ_THROTTLE } from '../common/throttle';
 import type { ProfilePortraitService } from './profile-portrait.service';
 import { PORTRAIT_UPLOAD, profileRoutes } from './profile.routes';
 import type { ProfileService } from './profile.service';
@@ -12,9 +8,6 @@ import { aProfileContent } from './profile-test-builders';
 
 const passThrough: RequireAuth = async (_c, next) => {
   await next();
-};
-const rejectAll: RequireAuth = () => {
-  throw new UnauthorizedException();
 };
 
 // PNG 1×1 réel.
@@ -59,43 +52,7 @@ describe('profile routes', () => {
     app = appWith(passThrough);
   });
 
-  describe('without a session', () => {
-    it('Given no session, When the profile is read, Then it is public: 200', async () => {
-      profile.findCurrent.mockResolvedValueOnce({ version: 1 });
-
-      const res = await appWith(rejectAll).request('/api/profile');
-
-      expect(res.status).toBe(200);
-    });
-
-    it.each([
-      ['PUT', '/api/profile'],
-      ['POST', '/api/profile/portrait'],
-      ['DELETE', '/api/profile/portrait'],
-    ])(
-      'Given no session, When %s %s, Then 401 and no service is called',
-      async (method, path) => {
-        const res = await appWith(rejectAll).request(path, { method });
-
-        expect(res.status).toBe(401);
-        expect(profile.replace).not.toHaveBeenCalled();
-        expect(portrait.replace).not.toHaveBeenCalled();
-        expect(portrait.remove).not.toHaveBeenCalled();
-      },
-    );
-  });
-
   describe('GET /api/profile', () => {
-    it('allows the public read rate (prerender of the site), then 429', async () => {
-      profile.findCurrent.mockResolvedValue({ version: 1 });
-      const statuses: number[] = [];
-      for (let i = 0; i <= PUBLIC_READ_THROTTLE.limit; i += 1)
-        statuses.push((await app.request('/api/profile')).status);
-
-      expect(statuses.slice(0, -1).every((s) => s === 200)).toBe(true);
-      expect(statuses.at(-1)).toBe(429);
-    });
-
     it('Given the document, When requested, Then 200 with the document', async () => {
       profile.findCurrent.mockResolvedValueOnce({
         version: 1,

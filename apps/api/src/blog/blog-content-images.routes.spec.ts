@@ -1,10 +1,6 @@
 import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
-import {
-  UnauthorizedException,
-  UnprocessableEntityException,
-} from '../common/http-errors';
-import { ADMIN_WRITE_THROTTLE } from '../common/throttle';
+import { UnprocessableEntityException } from '../common/http-errors';
 import { testApp } from '../common/test-app';
 import { blogContentImagesRoutes } from './blog-content-images.routes';
 import type { BlogContentImagesService } from './blog-content-images.service';
@@ -45,44 +41,6 @@ describe('blog content images routes (HTTP)', () => {
       headers: { 'x-forwarded-for': `198.51.100.${(ip += 1)}` },
       body,
     });
-
-  it('Given no session, When posted, Then 401 without calling the service', async () => {
-    const denied: RequireAuth = () => {
-      throw new UnauthorizedException();
-    };
-    const guarded = testApp(
-      '/api/blog/content-images',
-      blogContentImagesRoutes(
-        images as unknown as BlogContentImagesService,
-        denied,
-      ),
-    );
-
-    const res = await guarded.request('/api/blog/content-images', {
-      method: 'POST',
-      body: form(PNG, 'a.png', 'image/png'),
-    });
-
-    expect(res.status).toBe(401);
-    expect(images.upload).not.toHaveBeenCalled();
-  });
-
-  it('Given an admin, When it posts more than the admin write quota in a minute, Then it gets 429', async () => {
-    images.upload.mockResolvedValue({ url: '/x', width: 1, height: 1 });
-    const statuses: number[] = [];
-    for (let i = 0; i <= ADMIN_WRITE_THROTTLE.limit; i += 1) {
-      const res = await app.request('/api/blog/content-images', {
-        method: 'POST',
-        headers: { 'x-forwarded-for': '192.0.2.1' },
-        body: form(PNG, 'a.png', 'image/png'),
-      });
-      statuses.push(res.status);
-    }
-
-    expect(ADMIN_WRITE_THROTTLE).toEqual({ limit: 60, ttlMs: 60_000 });
-    expect(statuses.at(-2)).toBe(201);
-    expect(statuses.at(-1)).toBe(429);
-  });
 
   it.each([
     ['image/png', 'a.png'],

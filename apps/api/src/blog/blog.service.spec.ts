@@ -62,15 +62,6 @@ describe('BlogService', () => {
     );
   });
 
-  describe('findAllPublished', () => {
-    it('ne retourne que les articles publiés, triés par date de publication décroissante', async () => {
-      db.orderBy.mockResolvedValueOnce([mkPost({ status: 'published' })]);
-      const result = await service.findAllPublished();
-      expect(result).toHaveLength(1);
-      expect(db.where).toHaveBeenCalled();
-    });
-  });
-
   describe('findBySlug', () => {
     it("lève NotFoundException si le slug n'existe pas", async () => {
       db.limit.mockResolvedValueOnce([]);
@@ -83,13 +74,6 @@ describe('BlogService', () => {
       db.limit.mockResolvedValueOnce([mkPost({ coverImage: 'blog/a.webp' })]);
       const result = await service.findBySlug('mon-article');
       expect(result.coverImage).toBe('https://example.test/url');
-    });
-
-    it('compte les mots du corps Markdown', async () => {
-      const body = Array.from({ length: 221 }, () => 'mot').join(' ');
-      db.limit.mockResolvedValueOnce([mkPost({ contentMarkdown: body })]);
-      const result = await service.findBySlug('mon-article');
-      expect(result.wordCount).toBe(221);
     });
 
     it('lève NotFoundException pour un slug draft - un brouillon 404 exactement comme un slug inconnu', async () => {

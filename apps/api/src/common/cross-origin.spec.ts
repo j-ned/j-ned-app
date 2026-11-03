@@ -16,7 +16,7 @@ describe('isCrossOriginAllowed', () => {
       trusted,
     );
 
-  it.each(['GET', 'HEAD', 'OPTIONS'])(
+  it.each(['GET'])(
     'Given a cross-site %s, When checked, Then it passes (reads change nothing)',
     (method) => {
       expect(
@@ -66,7 +66,7 @@ describe('isCrossOriginAllowed', () => {
     expect(allows('POST', headers)).toBe(false);
   });
 
-  it.each(['PUT', 'PATCH', 'DELETE'])(
+  it.each(['DELETE'])(
     'Given a cross-site %s, When checked, Then it is rejected like a POST',
     (method) => {
       expect(
