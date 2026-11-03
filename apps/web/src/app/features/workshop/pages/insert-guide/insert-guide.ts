@@ -141,7 +141,7 @@ export class InsertGuide {
 
   protected readonly copy = INSERT_GUIDE_COPY;
 
-  // Guide éteint : vraie 404. Lecture en échec, 404 compris : 503, nginx sert sa dernière copie.
+  // Guide éteint : vraie 404. Lecture en échec, 404 compris : 503, le CDN sert sa dernière copie.
   private readonly _guideResource = rxResource({
     stream: () =>
       this._gateway.getGuide().pipe(

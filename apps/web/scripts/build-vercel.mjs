@@ -1,5 +1,5 @@
 // Sortie Vercel du service « web » (ADR-0036), au format Build Output API, après le build de production
-// (`pnpm run build --configuration production`, CSP comprise). Elle reprend ce que faisait nginx :
+// (`pnpm run build --configuration production`, CSP comprise) :
 // - fichiers et pages prérendues en statique sur le CDN, cache immuable des fichiers empreintés ;
 // - une fonction `ssr` autour du `reqHandler` d'Angular pour la liste fermée des pages rendues à la
 //   requête, `sitemap.xml`, `rss.xml` et `/healthz` (cache CDN posé par le serveur) ;
@@ -40,7 +40,7 @@ cpSync(join(BUILD, 'server'), join(FUNCTION, 'server'), { recursive: true });
 writeFileSync(join(FUNCTION, 'package.json'), '{"type":"module"}\n');
 writeFileSync(
   join(FUNCTION, 'index.mjs'),
-  `// Fonction Vercel du rendu serveur. Comme le relais nginx qu'elle remplace : hôte forcé (Angular refuse
+  `// Fonction Vercel du rendu serveur : hôte forcé (Angular refuse
 // tout hôte hors \`allowedHosts\`, et l'URL d'API ne dérive jamais de la requête), en-têtes de proxy envoyés
 // par le client effacés ; l'IP du visiteur vient de \`x-real-ip\`, posé par Vercel.
 import { reqHandler } from './server/server.mjs';
@@ -52,7 +52,6 @@ const CLIENT_PROXY_HEADERS = [
   'x-forwarded-proto',
   'x-forwarded-port',
   'x-forwarded-prefix',
-  'x-visitor-forwarded-for',
 ];
 
 export default function handler(req, res) {

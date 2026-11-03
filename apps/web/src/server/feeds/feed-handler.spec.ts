@@ -182,7 +182,7 @@ describe('createFeedHandler', () => {
     ['in error', 'rss', FULL_POSTS_URL, answering(502)],
     ['throttling', 'rss', FULL_POSTS_URL, answering(429)],
   ])(
-    'Given the API is %s When the %s is requested Then it answers 503 so that nginx serves its last copy',
+    'Given the API is %s When the %s is requested Then it answers 503 so that the CDN serves its last copy',
     async (_label, target, failingUrl, failure) => {
       const served = await serve(aHandler(anApi({ [failingUrl]: failure })), target);
 

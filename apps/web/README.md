@@ -71,7 +71,7 @@ Ce dépôt ne contient que le front. L'API vit dans son propre dépôt et est ap
 | **Blog**     | Articles en Markdown assainis par DOMPurify (ADR-0002), tags colorés par catégorie et filtre par tag, commentaires Giscus, compteur de « j'aime », flux RSS.                                                                 |
 | **Contact**  | Formulaire Signal Forms, validation au bord, envoi par l'API (mail à l'admin et confirmation au visiteur).                                                                                                                   |
 | **CV**       | Téléchargement du PDF servi par l'API, comptabilisé dans les analytics.                                                                                                                                                      |
-| **404**      | Page dédiée, servie avec un vrai statut 404 par nginx.                                                                                                                                                                       |
+| **404**      | Page dédiée, servie avec un vrai statut 404 par Vercel.                                                                                                                                                                      |
 
 ### Back-office (`/admin`)
 
@@ -138,9 +138,9 @@ providers: [
 
 ### Rendu
 
-- `outputMode: server` : les pages de contenu (`/`, `/about`, `/projects`, `/projects/:slug`, `/blog`, `/blog/:slug`) sont **rendues à chaque requête** par le serveur Node (`src/server.ts`, ADR-0024) depuis l'API interne ; les pages statiques (offres, mentions, confidentialité) restent **prérendues au build**, qui ne lit plus l'API. Le transfer cache évite de refaire les appels après hydratation (spec 004, origin map vers l'URL publique).
+- `outputMode: server` : les pages de contenu (`/`, `/about`, `/projects`, `/projects/:slug`, `/blog`, `/blog/:slug`) sont **rendues à chaque requête** par le serveur Node (`src/server.ts`, ADR-0024) depuis l'API interne ; les pages statiques (mentions légales, confidentialité) restent **prérendues au build**, qui ne lit plus l'API. Le transfer cache évite de refaire les appels après hydratation (spec 004, origin map vers l'URL publique).
 - `login`, `two-factor` et `admin/**` sont rendus côté client depuis `index.csr.html`.
-- En production, **nginx** sert le dossier `browser/` (chunks, pages prérendues, coquille CSR pour les routes client, **404 réel** pour toute URL inconnue) et relaie la liste fermée des routes de contenu, `sitemap.xml` et `rss.xml` au serveur Node du même conteneur, avec un micro-cache d'une seconde servi périmé si l'API ou Node échoue.
+- En production, `scripts/build-vercel.mjs` traduit le build en sortie **Vercel** (Build Output API, ADR-0036) : le CDN sert `browser/` (chunks, pages prérendues, coquille CSR pour les routes client, **404 réel** pour toute URL inconnue) et une fonction `ssr` rend la liste fermée des routes de contenu, `sitemap.xml` et `rss.xml`. Le CDN garde ces réponses un jour, vidées par tag à chaque écriture de contenu, et sert la dernière copie si l'API ou le rendu échoue (ADR-0037).
 - Les sections sous la ligne de flottaison de la home et de l'à-propos utilisent `@defer` avec hydratation incrémentale (ADR-0001).
 
 ### Décisions documentées
@@ -155,7 +155,7 @@ providers: [
 ### Front
 
 - **CSP par hachages** : après le build, `scripts/apply-csp-hashes.mjs` remplace `'unsafe-inline'` par les SHA-256 des scripts et styles inline de chaque page prérendue et écrit un manifeste ; le serveur Node applique la même fonction (`src/server/csp/harden-csp.ts`) à chaque page rendue, en n'autorisant que les scripts inline connus. La CI vérifie qu'aucun `unsafe-inline` ne subsiste.
-- **En-têtes** posés par nginx sur toutes les réponses, assets compris : HSTS, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP.
+- **En-têtes** posés par la configuration de routes Vercel sur toutes les réponses, assets compris : HSTS, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP.
 - **Markdown** des articles assaini par DOMPurify côté serveur et côté client avant injection.
 - **Auth** : cookie httpOnly `SameSite=Lax`, logout qui révoque toutes les sessions, 2FA TOTP, formulaire de connexion limité côté API.
 - `security.txt` (RFC 9116) et `robots.txt` servis à la racine.
@@ -190,7 +190,7 @@ providers: [
 - Images stockées en **AVIF ≤ 1600 px** par l'API à l'upload, clés dérivées du contenu et cache immuable d'un an.
 - Assets hachés servis avec `Cache-Control: immutable`, gzip, préchargement sélectif des routes.
 - `<title>`, meta, Open Graph et format de carte (`twitter:card`) par route ; JSON-LD `Person`, `BreadcrumbList`, `BlogPosting` et `CreativeWork` ; canonical par page.
-- `sitemap.xml` et `rss.xml` rendus à la requête par le serveur Node (`src/server/feeds/`) depuis l'API : une écriture admin y apparaît au rechargement ; API en panne, nginx sert la dernière copie.
+- `sitemap.xml` et `rss.xml` rendus à la requête par le serveur Node (`src/server/feeds/`) depuis l'API : une écriture admin y apparaît au rechargement ; API en panne, le CDN sert la dernière copie.
 
 ---
 
@@ -254,7 +254,7 @@ pnpm install --frozen-lockfile
 pnpm start          # http://localhost:4200, /api proxifié vers :3000 (proxy.conf.cjs)
 ```
 
-Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production à `https://nedellec-julien.fr/api`, même origine que le site, relayée par nginx (ADR-0034).
+Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production à `https://nedellec-julien.fr/api`, même origine que le site, réécrite par Vercel vers le service `api` (ADR-0036).
 
 Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discussions de ce dépôt (catégorie « General », identifiants dans `src/app/shared/api/giscus-config.ts`). Le widget n'apparaît que si l'app [Giscus](https://github.com/apps/giscus) est installée sur le dépôt : sans elle, Giscus ignore le dépôt sans erreur.
 

@@ -250,7 +250,7 @@ export class BlogDetail {
       } catch (error: unknown) {
         // Navigateur : redirection silencieuse vers /blog plutôt qu'une page vide. Serveur : vraie
         // 404 pour un slug inconnu ; une panne d'amont reste en 503 (posé par l'intercepteur),
-        // sinon nginx ne servirait pas sa copie périmée.
+        // sinon le CDN ne servirait pas sa copie périmée (`stale-if-error`).
         if (this.isBrowser) void this.router.navigate(['/blog']);
         else if (error instanceof HttpErrorResponse && error.status === 404) this.markNotFound();
         return undefined;

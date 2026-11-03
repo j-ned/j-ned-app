@@ -19,8 +19,9 @@ describe('serverRoutes', () => {
     },
   );
 
-  // nginx ne relaie à Node qu'une liste fermée de chemins : toute autre route serveur répondrait 404.
-  it('renders on request exactly the routes nginx relays to Node', () => {
+  // La table de routes Vercel (`scripts/build-vercel.mjs`) ne réveille la fonction de rendu que pour une
+  // liste fermée de chemins : toute autre route serveur répondrait 404.
+  it('renders on request exactly the routes Vercel sends to the render function', () => {
     const serverRendered = serverRoutes
       .filter((route) => route.renderMode === RenderMode.Server)
       .map((route) => route.path);
@@ -34,7 +35,7 @@ describe('serverRoutes', () => {
     expect(findRoute(path)?.renderMode).toBe(RenderMode.Prerender);
   });
 
-  // Offres retirées (spec 029) : nginx répond 410, rien ne doit plus être prérendu sous /offres.
+  // Offres retirées (spec 029) : Vercel répond 410, rien ne doit plus être prérendu sous /offres.
   it('prerenders nothing under the retired offers and booking pages', () => {
     expect(
       serverRoutes.filter(({ path }) => path.startsWith('offre') || path.startsWith('rendez-vous')),

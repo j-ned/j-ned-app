@@ -4,11 +4,11 @@ import { TimeoutError, catchError, throwError, timeout } from 'rxjs';
 import { injectSsrRequestContext } from './ssr-request-context';
 import { visitorHeaders } from './visitor-headers';
 
-// Au-delà, le rendu abandonne la lecture : nginx sert sa copie au lieu de faire attendre le visiteur
+// Au-delà, le rendu abandonne la lecture : le CDN sert sa copie au lieu de faire attendre le visiteur
 // (la gateway projets réessaie une fois : 6 s au plus).
 const API_READ_TIMEOUT_MS = 3_000;
 
-// Toute lecture en échec sauf 404 (qui est une réponse) : la page répond 503 pour que nginx serve
+// Toute lecture en échec sauf 404 (qui est une réponse) : la page répond 503 pour que le CDN serve
 // sa dernière copie au lieu de mettre en cache une page sans contenu.
 const isUpstreamFailure = (error: unknown): boolean =>
   error instanceof TimeoutError || (error instanceof HttpErrorResponse && error.status !== 404);
