@@ -8,7 +8,7 @@ brand
 
 Le site est le coin personnel de Julien Nédellec, tourneur CN de haute précision dans l'aéronautique, qui code pour le plaisir. Le développement web est un loisir : aucune activité commerciale (spec 029), aucune recherche d'emploi, et depuis le 2026-10-21 un ton amical au tutoiement (spec 031). Il sert deux publics, dans cet ordre.
 
-**1. Développeur (public principal)** : un pair qui arrive presque toujours par une recherche Google sur un problème technique précis (Angular, NestJS, PostgreSQL, auto-hébergement), et atterrit directement sur un article. Il veut une réponse exacte, du code qui tourne pour de vrai, les compromis assumés. Ses questions : est-ce que ça règle mon problème, est-ce que l'auteur sait de quoi il parle, qu'est-ce qu'il a écrit d'autre ?
+**1. Développeur (public principal)** : un pair qui arrive presque toujours par une recherche Google sur un problème technique précis (Angular, Hono, PostgreSQL, mise en production), et atterrit directement sur un article. Il veut une réponse exacte, du code qui tourne pour de vrai, les compromis assumés. Ses questions : est-ce que ça règle mon problème, est-ce que l'auteur sait de quoi il parle, qu'est-ce qu'il a écrit d'autre ?
 
 **2. Curieux (public secondaire)** : quelqu'un qui découvre le parcours de l'atelier au code, ou le métier de tourneur CN (spec 032). Il veut comprendre sans jargon inutile. Le site ne vise pas les recruteurs : le CV reste téléchargeable comme pièce du parcours, sans aucun signal de disponibilité.
 
@@ -29,7 +29,7 @@ Le formulaire de contact reste ouvert à tous (question sur un article, échange
 
 **Marque** : nom propre, « Julien Nédellec ».
 
-**Trois mots** : *Rigoureux · Curieux · Soigné*.
+**Trois mots** : _Rigoureux · Curieux · Soigné_.
 
 - **Rigoureux** : la règle de l'atelier appliquée au logiciel, « une pièce hors tolérance ne part pas ». Chaque détail est intentionnel (typo, espacement, a11y, tests). Le site est lui-même un échantillon du travail.
 - **Curieux** : autodidacte, il lit la doc et les sources jusqu'à comprendre. Les articles racontent le chemin réel, erreurs comprises.

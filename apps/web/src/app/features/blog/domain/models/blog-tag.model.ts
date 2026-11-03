@@ -15,6 +15,7 @@ export const BLOG_TAGS_BY_CATEGORY: Record<BlogTagCategory, readonly string[]> =
   stack: [
     'Angular',
     'TypeScript',
+    'Hono',
     'NestJS',
     'PostgreSQL',
     'Docker',
