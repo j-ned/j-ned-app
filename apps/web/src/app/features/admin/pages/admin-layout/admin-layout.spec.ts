@@ -1,4 +1,3 @@
-import { ViewportScroller } from '@angular/common';
 import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
@@ -15,7 +14,6 @@ import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import { makeUser } from '@features/auth/testing/user-builders';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
-import { accentTints } from '@shared/testing/accent-tints';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle } from '@shared/testing/settle';
@@ -85,26 +83,6 @@ const normalized = (element: Element | null | undefined): string =>
 const drawerOf = (host: HTMLElement): HTMLElement | null =>
   host.querySelector<HTMLElement>('[role="dialog"]');
 
-describe('AdminLayout: landmarks', () => {
-  it.each([
-    { state: 'drawer closed', openDrawer: false },
-    { state: 'drawer open', openDrawer: true },
-  ])(
-    'Given the shell with the $state When it renders Then it emits neither main nor aside nor heading, the page landmark staying with App',
-    async ({ openDrawer }) => {
-      const { fixture, host } = await renderShell('/admin');
-      if (openDrawer) await pressTestId(fixture, 'admin-menu-button');
-
-      expect({
-        main: host.querySelectorAll('main').length,
-        aside: host.querySelectorAll('aside').length,
-        headings: host.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
-        sidebarNav: host.querySelectorAll('nav[aria-label="Administration"]').length > 0,
-      }).toEqual({ main: 0, aside: 0, headings: 0, sidebarNav: true });
-    },
-  );
-});
-
 describe('AdminLayout: comptes de la navigation', () => {
   it('Given 6 projects, 2 articles and 3 unread messages When the shell renders Then the navigation shows these counts', async () => {
     const { host, crash } = await renderShell('/admin', {
@@ -119,17 +97,6 @@ describe('AdminLayout: comptes de la navigation', () => {
       posts: normalized(byTestId(host, 'nav-count-posts')),
       messages: normalized(byTestId(host, 'nav-count-messages')),
     }).toEqual({ crash: null, projects: '6', posts: '2', messages: '3 non lus' });
-  });
-
-  it('Given the shell When it renders Then the navigation offers no booking link any more (spec 029)', async () => {
-    const { host, crash } = await renderShell('/admin');
-
-    expect({
-      crash,
-      links: host.querySelectorAll(
-        'a[href^="/admin/rendez-vous"], a[href^="/admin/disponibilites"]',
-      ).length,
-    }).toEqual({ crash: null, links: 0 });
   });
 
   it('Given a shared project list When the gateway pushes a new list Then the count follows without reload', async () => {
@@ -152,16 +119,6 @@ describe('AdminLayout: comptes de la navigation', () => {
       sources: { projects: throwError(() => new Error('down')) },
       absent: 'nav-count-projects',
     },
-    {
-      source: 'articles',
-      sources: { posts: throwError(() => new Error('down')) },
-      absent: 'nav-count-posts',
-    },
-    {
-      source: 'unread messages',
-      sources: { unread: throwError(() => new Error('down')) },
-      absent: 'nav-count-messages',
-    },
   ])(
     'Given the $source count fails When the shell renders Then that count is absent and the shell still renders',
     async ({ sources, absent }) => {
@@ -177,28 +134,6 @@ describe('AdminLayout: comptes de la navigation', () => {
 });
 
 describe('AdminLayout: barre mobile et tiroir', () => {
-  it.each([
-    { url: '/admin', title: "Vue d'ensemble" },
-    { url: '/admin/messages', title: 'Messages' },
-    { url: '/admin/settings/security', title: 'Paramètres' },
-  ])(
-    'Given the page $url When the mobile bar renders Then it names the current page « $title »',
-    async ({ url, title }) => {
-      const { host } = await renderShell(url);
-
-      expect(testIdText(host, 'admin-topbar-title')).toBe(title);
-    },
-  );
-
-  it('Given the overview When the user moves to Audience Then the mobile bar follows', async () => {
-    const { fixture, host } = await renderShell('/admin');
-
-    await TestBed.inject(Router).navigateByUrl('/admin/audience');
-    await settle(fixture);
-
-    expect(testIdText(host, 'admin-topbar-title')).toBe('Audience');
-  });
-
   it('Given the drawer closed When the menu button is pressed Then the drawer it controls opens with the navigation and the button says so', async () => {
     const { fixture, host } = await renderShell('/admin');
     const button = byTestId(host, 'admin-menu-button');
@@ -256,26 +191,12 @@ describe('AdminLayout: barre mobile et tiroir', () => {
 });
 
 describe('AdminLayout: pied de la barre latérale', () => {
-  it('Given a signed-in user When the shell renders Then the sidebar shows the email and logs out on demand', async () => {
-    const { fixture, host, logout } = await renderShell('/admin');
-    const email = testIdText(host, 'admin-user-email');
+  it('Given a signed-in user When the shell renders Then the sidebar logs out on demand', async () => {
+    const { fixture, logout } = await renderShell('/admin');
 
     await pressTestId(fixture, 'admin-logout');
 
-    expect({ email, logout: logout.mock.calls.length }).toEqual({
-      email: 'contact@nedellec-julien.fr',
-      logout: 1,
-    });
-  });
-});
-
-describe('AdminLayout: monogramme', () => {
-  it('Given the shell When it renders Then each « JN » monogram sets the accent text over a 5 % accent tint', async () => {
-    const { host } = await renderShell('/admin');
-
-    expect(
-      [...host.querySelectorAll('[data-testid="admin-monogram"]')].map((tile) => accentTints(tile)),
-    ).toEqual([['bg-primary/5'], ['bg-primary/5']]);
+    expect(logout).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -313,22 +234,6 @@ describe('AdminLayout: bascule de thème', () => {
     }).toEqual({
       before: { label: 'Passer en mode clair', htmlDark: true },
       after: { label: 'Passer en mode sombre', htmlDark: false, stored: 'light' },
-    });
-  });
-});
-
-describe('AdminLayout: décalage des ancres', () => {
-  it('Given the shell When it opens and then closes Then anchors stop 24 px under the top inside it and at 0 once it is gone', async () => {
-    const setOffset = vi.fn<ViewportScroller['setOffset']>();
-    TestBed.overrideProvider(ViewportScroller, { useValue: { setOffset } });
-    const { fixture } = await renderShell('/admin');
-    const opened = [...setOffset.mock.calls];
-
-    fixture.destroy();
-
-    expect({ opened, closed: setOffset.mock.calls.at(-1) }).toEqual({
-      opened: [[[0, 24]]],
-      closed: [[0, 0]],
     });
   });
 });

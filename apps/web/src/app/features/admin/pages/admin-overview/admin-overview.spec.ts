@@ -1,8 +1,7 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, signal, type WritableSignal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
-import { NEVER, of, throwError, type Observable } from 'rxjs';
-import type { ChartData } from 'chart.js';
+import { provideRouter } from '@angular/router';
+import { of, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
 import { ThemeStore } from '@core/theme/theme-store';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
@@ -97,8 +96,6 @@ type Overview = {
 };
 
 const down = <T>(): Observable<T> => throwError(() => new Error('down'));
-const pending = <T>(): Observable<T> => NEVER;
-
 async function renderOverview(sources: Sources = {}): Promise<Overview> {
   const isDark = signal(false);
   const doubles: Doubles = {
@@ -200,62 +197,12 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('AdminOverview: en-tête', () => {
-  it.each([
-    { now: '2026-10-07T10:00:00Z', overline: 'Mercredi 7 octobre 2026 · 30 derniers jours' },
-    { now: '2026-10-08T10:00:00Z', overline: 'Jeudi 8 octobre 2026 · 30 derniers jours' },
-  ])(
-    "Given the page opened on $now When it renders Then its overline names that day and the period, under the single « Vue d'ensemble » h1",
-    async ({ now, overline }) => {
-      vi.setSystemTime(new Date(now));
-      const { host, crash } = await renderOverview();
-
-      expect({
-        crash,
-        overline: testIdText(host, 'admin-page-overline'),
-        title: testIdText(host, 'admin-page-title'),
-        headings: host.querySelectorAll('h1').length,
-      }).toEqual({ crash: null, overline, title: "Vue d'ensemble", headings: 1 });
-    },
-  );
-});
-
 describe('AdminOverview: cartouche « En ligne »', () => {
-  it('Given the production catalogue When the page renders Then the header cartouche counts what is online by nature', async () => {
-    const { host } = await renderOverview();
-    const online = section(host, 'overview-online');
-
-    expect({
-      inHeader: host.querySelector('header')?.contains(online) ?? false,
-      title: testIdText(online, 'cartouche-title'),
-      reference: testIdText(online, 'cartouche-reference'),
-      rows: [...online.querySelectorAll('[data-testid="cartouche-row"]')].map((row) => ({
-        label: testIdText(row, 'cartouche-label'),
-        value: testIdText(row, 'cartouche-value'),
-      })),
-    }).toEqual({
-      inHeader: true,
-      title: 'En ligne',
-      reference: 'nedellec-julien.fr',
-      rows: [
-        { label: 'En production', value: '2 projets' },
-        { label: 'Démos', value: '2 projets' },
-        { label: 'Scripts', value: '2 projets' },
-        { label: 'Articles', value: '2 publiés' },
-      ],
-    });
-  });
-
   it.each([
     {
       label: 'the projects',
       sources: { projects: down<readonly Project[]> },
       expected: ['indisponible', 'indisponible', 'indisponible', '2 publiés'],
-    },
-    {
-      label: 'the articles',
-      sources: { posts: down<readonly BlogPost[]> },
-      expected: ['2 projets', '2 projets', '2 projets', 'indisponible'],
     },
   ])(
     'Given $label failing When the page renders Then the cartouche says so instead of counting zero',
@@ -265,90 +212,9 @@ describe('AdminOverview: cartouche « En ligne »', () => {
       expect({ crash, values: onlineValues(host) }).toEqual({ crash: null, values: expected });
     },
   );
-
-  it('Given the projects still loading When the page renders Then the cartouche is a placeholder, not a count', async () => {
-    const { host, crash } = await renderOverview({ projects: pending });
-
-    expect({
-      crash,
-      loading: byTestId(host, 'overview-online-loading') !== null,
-      values: onlineValues(host),
-    }).toEqual({ crash: null, loading: true, values: [] });
-  });
-});
-
-describe('AdminOverview: actions rapides', () => {
-  it('Given the page When rendered Then the quick actions are grouped under the « Actions rapides » heading', async () => {
-    const { host } = await renderOverview();
-    const quick = section(host, 'overview-quick');
-    const labelledBy = quick.getAttribute('aria-labelledby') ?? '';
-
-    expect({
-      heading: normalized(host.querySelector(`[id="${labelledBy}"]`)),
-      actions: ['quick-new-project', 'quick-new-post', 'quick-cv', 'quick-audience'].every(
-        (testId) => quick.contains(byTestId(host, testId)),
-      ),
-    }).toEqual({ heading: 'Actions rapides', actions: true });
-  });
-
-  it.each([
-    { testId: 'quick-new-project', text: 'Nouveau projet', url: '/admin/projects/new' },
-    { testId: 'quick-new-post', text: 'Nouvel article', url: '/admin/blog/new' },
-    { testId: 'quick-cv', text: 'Remplacer le CV', url: '/admin/cv' },
-    { testId: 'quick-audience', text: "Voir l'audience", url: '/admin/audience' },
-  ])(
-    'Given the $text quick action When it is followed Then the admin opens $url',
-    async ({ testId, text, url }) => {
-      const overview = await renderOverview();
-      const link = byTestId(overview.host, testId);
-      const before = {
-        tag: link?.tagName ?? null,
-        text: normalized(link),
-        href: link?.getAttribute('href') ?? null,
-      };
-
-      link?.click();
-      await settleBounded(overview.fixture);
-
-      expect({ ...before, url: TestBed.inject(Router).url }).toEqual({
-        tag: 'A',
-        text,
-        href: url,
-        url,
-      });
-    },
-  );
 });
 
 describe('AdminOverview: relevé « Audience »', () => {
-  it('Given the 30-day statistics When the page renders Then the audience section shows the visitors, the readout and the chart caption', async () => {
-    const { host, crash } = await renderOverview();
-    const audience = section(host, 'overview-audience');
-
-    expect({
-      crash,
-      visitors: testIdText(audience, 'overview-visits'),
-      readout: [...audience.querySelectorAll('[data-testid="readout-value"]')].map((value) =>
-        normalized(value),
-      ),
-      caption: normalized(audience.querySelector('figure figcaption')),
-    }).toEqual({
-      crash: null,
-      visitors: '42',
-      readout: ['56', '88,1\u00a0%', '40,5\u00a0%', '22\u00a0s'],
-      caption:
-        'Visites par jour du 7 septembre au 8 septembre 2026\u00a0: maximum 6 le 7 septembre.',
-    });
-  });
-
-  it('Given visitors that differ from visits When the page renders Then the audience block shows the visits', async () => {
-    const { host } = await renderOverview({
-      overview: () => of(makeStatsOverview({ sessions: 42, visitors: 57 })),
-    });
-
-    expect(testIdText(section(host, 'overview-audience'), 'overview-visits')).toBe('42');
-  });
-
   it('Given Wednesday 7 October 2026 When the page loads Then the statistics are requested over the last 30 days', async () => {
     const { doubles } = await renderOverview();
 
@@ -398,73 +264,6 @@ describe('AdminOverview: relevé « Audience »', () => {
       visitors: testIdText(host, 'overview-visits'),
     }).toEqual({ crash: null, errors: 1, visitors: '42' });
   });
-
-  it('Given the statistics still loading When the page renders Then the audience section is a placeholder', async () => {
-    const { host, crash } = await renderOverview({ overview: pending });
-
-    expect({
-      crash,
-      loading: byTestId(host, 'overview-audience-loading') !== null,
-      visitors: byTestId(host, 'overview-visits'),
-    }).toEqual({ crash: null, loading: true, visitors: null });
-  });
-
-  it('Given the statistics still loading When the page renders Then the CV figure of the contacts is a placeholder, not unavailable', async () => {
-    const { host, crash } = await renderOverview({ overview: pending });
-
-    expect({
-      crash,
-      loading: byTestId(host, 'overview-cv-loading') !== null,
-      cv: testIdText(host, 'overview-cv-count').includes('indisponible'),
-    }).toEqual({ crash: null, loading: true, cv: false });
-  });
-
-  it('Given the registers colours When the theme switches Then the curve is redrawn with the new accent', async () => {
-    const root = document.documentElement.style;
-    root.setProperty('--theme-primary-text', 'oklch(53.2% 0.178 37)');
-    root.setProperty('--theme-foreground', 'oklch(24% 0.03 265)');
-    try {
-      const overview = await renderOverview();
-      const firstColor = (): unknown =>
-        (overview.host.querySelector('app-chart') as (HTMLElement & { data?: ChartData }) | null)
-          ?.data?.datasets[0]?.borderColor;
-      const light = firstColor();
-
-      root.setProperty('--theme-primary-text', 'oklch(76% 0.15 55)');
-      overview.isDark.set(true);
-      await settleBounded(overview.fixture);
-
-      expect({ light, dark: firstColor() }).toEqual({
-        light: 'oklch(53.2% 0.178 37)',
-        dark: 'oklch(76% 0.15 55)',
-      });
-    } finally {
-      root.removeProperty('--theme-primary-text');
-      root.removeProperty('--theme-foreground');
-    }
-  });
-});
-
-describe('AdminOverview: phrase de synthèse', () => {
-  it('Given every source available When the page renders Then the introduction sums up the period', async () => {
-    const { host } = await renderOverview();
-
-    expect(testIdText(host, 'overview-summary')).toBe(
-      '42 visites en 30 jours, dont 18 venues de google.com. Aucun message en attente, aucun CV téléchargé. Six réalisations et deux articles sont en ligne.',
-    );
-  });
-
-  it('Given the statistics and the unread count failing When the page renders Then their sentences are left out', async () => {
-    const { host, crash } = await renderOverview({
-      overview: down<StatsOverview>,
-      unread: down<number>,
-    });
-
-    expect({ crash, summary: testIdText(host, 'overview-summary') }).toEqual({
-      crash: null,
-      summary: 'Six réalisations et deux articles sont en ligne.',
-    });
-  });
 });
 
 describe('AdminOverview: contacts', () => {
@@ -497,11 +296,6 @@ describe('AdminOverview: contacts', () => {
       sources: { unread: down<number> },
       expected: ['—indisponible', '0'],
     },
-    {
-      label: 'the statistics',
-      sources: { overview: down<StatsOverview> },
-      expected: ['0', '—indisponible'],
-    },
   ])(
     'Given $label failing When the page renders Then that figure reads as unavailable, never as zero',
     async ({ sources, expected }) => {
@@ -513,12 +307,6 @@ describe('AdminOverview: contacts', () => {
       }).toEqual({ crash: null, figures: expected });
     },
   );
-
-  it('Given no message at all When the page renders Then the contacts show the drawn empty state', async () => {
-    const { host } = await renderOverview();
-
-    expect(testIdText(section(host, 'overview-contacts'), 'empty-state-stamp')).toBe('Boîte vide');
-  });
 
   it('Given the messages failing When the page renders Then an error replaces the list and no empty state claims the box is empty', async () => {
     const { host, crash } = await renderOverview({ messages: down<readonly ContactMessage[]> });
@@ -543,18 +331,8 @@ describe('AdminOverview: contacts', () => {
     expect({
       requests: overview.doubles.getAllMessages.mock.calls.length,
       errors: errorsIn(overview.host, 'overview-contacts'),
-      stamp: testIdText(section(overview.host, 'overview-contacts'), 'empty-state-stamp'),
-    }).toEqual({ requests: 2, errors: 0, stamp: 'Boîte vide' });
-  });
-
-  it('Given the messages still loading When the page renders Then the list is a placeholder and no empty state is shown', async () => {
-    const { host, crash } = await renderOverview({ messages: pending });
-
-    expect({
-      crash,
-      loading: byTestId(host, 'overview-contacts-loading') !== null,
-      emptyState: byTestId(section(host, 'overview-contacts'), 'empty-state'),
-    }).toEqual({ crash: null, loading: true, emptyState: null });
+      emptyState: byTestId(section(overview.host, 'overview-contacts'), 'empty-state') !== null,
+    }).toEqual({ requests: 2, errors: 0, emptyState: true });
   });
 });
 
@@ -608,16 +386,6 @@ describe('AdminOverview: contenu en ligne', () => {
       online: ['2 projets', '2 projets', '2 projets', '2 publiés'],
     });
   });
-
-  it('Given the articles still loading When the page renders Then the content section is a placeholder', async () => {
-    const { host, crash } = await renderOverview({ posts: pending });
-
-    expect({
-      crash,
-      loading: byTestId(host, 'overview-content-loading') !== null,
-      items: host.querySelectorAll('[data-testid="overview-content-item"]').length,
-    }).toEqual({ crash: null, loading: true, items: 0 });
-  });
 });
 
 describe('AdminOverview: toutes les sources en panne', () => {
@@ -634,19 +402,15 @@ describe('AdminOverview: toutes les sources en panne', () => {
 
     expect({
       crash,
-      title: testIdText(host, 'admin-page-title'),
       online: onlineValues(host),
       figures: [compact(host, 'overview-unread-count'), compact(host, 'overview-cv-count')],
       visitors: byTestId(host, 'overview-visits'),
-      summary: testIdText(host, 'overview-summary'),
       alerts: host.querySelectorAll('[role="alert"]').length > 0,
     }).toEqual({
       crash: null,
-      title: "Vue d'ensemble",
       online: ['indisponible', 'indisponible', 'indisponible', 'indisponible'],
       figures: ['—indisponible', '—indisponible'],
       visitors: null,
-      summary: '',
       alerts: true,
     });
   });

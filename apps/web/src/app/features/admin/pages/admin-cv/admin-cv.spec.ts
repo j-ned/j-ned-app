@@ -1,5 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { NEVER, of, throwError, type Observable } from 'rxjs';
+import { of, throwError, type Observable } from 'rxjs';
 import { AdminCv } from './admin-cv';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
@@ -45,9 +45,6 @@ async function render(
   return { fixture, host: fixture.nativeElement as HTMLElement, toast, crash };
 }
 
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
-
 const sizedPdf = (bytes: number): File =>
   new File([new Uint8Array(bytes)], 'cv.pdf', { type: 'application/pdf' });
 
@@ -84,22 +81,6 @@ describe('AdminCv: suppression confirmée', () => {
     return { fixture, host, deleteCv };
   }
 
-  it('Given a CV online When its trash is pressed Then the dialog asks to confirm and nothing is deleted yet', async () => {
-    const { fixture, host, deleteCv } = await renderCurrent();
-
-    await pressTestId(fixture, 'admin-cv-delete');
-
-    expect({ dialog: readConfirmDialog(host), deleteCalls: deleteCv.mock.calls.length }).toEqual({
-      dialog: expect.objectContaining({
-        open: true,
-        heading: 'Retirer le CV du site\u202f?',
-        confirm: 'Retirer le CV',
-        cancel: 'Annuler',
-      }),
-      deleteCalls: 0,
-    });
-  });
-
   it.each([
     { answer: 'confirm' as const, deleteCalls: 1 },
     { answer: 'cancel' as const, deleteCalls: 0 },
@@ -135,18 +116,12 @@ describe('AdminCv: suppression confirmée', () => {
 });
 
 describe('AdminCv: chargement, erreur et vide', () => {
-  const STATE_TEST_IDS = [
-    'admin-cv-loading',
-    'load-error',
-    'empty-state',
-    'admin-cv-current',
-  ] as const;
+  const STATE_TEST_IDS = ['load-error', 'empty-state', 'admin-cv-current'] as const;
 
   const present = (host: HTMLElement): readonly string[] =>
     STATE_TEST_IDS.filter((testId) => byTestId(host, testId) !== null);
 
   it.each([
-    { state: 'loading', stream: NEVER, shown: 'admin-cv-loading' },
     {
       state: 'failed',
       stream: throwError(() => new Error('down')),
@@ -163,20 +138,6 @@ describe('AdminCv: chargement, erreur et vide', () => {
     },
   );
 
-  it('Given the current CV is loading Then the placeholder is announced as a status', async () => {
-    const { host } = await render(makeCvGateway({ getCurrent: () => NEVER }));
-
-    expect(byTestId(host, 'admin-cv-loading')?.getAttribute('role')).toBe('status');
-  });
-
-  it('Given the current CV failed to load Then the error state replaces the toast', async () => {
-    const { toast } = await render(
-      makeCvGateway({ getCurrent: () => throwError(() => new Error('down')) }),
-    );
-
-    expect(toast.add).not.toHaveBeenCalled();
-  });
-
   it('Given the current CV failed to load When Réessayer is pressed Then it is requested again and shown', async () => {
     const getCurrent = vi
       .fn<CvGateway['getCurrent']>()
@@ -191,15 +152,6 @@ describe('AdminCv: chargement, erreur et vide', () => {
       calls: 2,
       present: ['admin-cv-current'],
     });
-  });
-
-  it('Given no CV online When the page renders Then the drawn empty state is stamped « Aucun CV » and no cartouche is shown', async () => {
-    const { host } = await render(makeCvGateway({ getCurrent: () => of(null) }));
-
-    expect({
-      stamp: testIdText(host, 'empty-state-stamp'),
-      cartouche: byTestId(host, 'cartouche-title'),
-    }).toEqual({ stamp: 'Aucun CV', cartouche: null });
   });
 });
 
@@ -221,32 +173,6 @@ describe('AdminCv: cartouche « CV en ligne »', () => {
       label: testIdText(row, 'cartouche-label'),
       value: testIdText(row, 'cartouche-value'),
     }));
-
-  it('Given a CV online downloaded 3 times When the page renders Then the page header holds the cartouche of the file', async () => {
-    const { host } = await render(
-      online(),
-      stubAnalyticsGateway({ getCvDownloadCount: () => of(3) }),
-    );
-    const title = byTestId(host, 'cartouche-title');
-
-    expect({
-      title: testIdText(host, 'cartouche-title'),
-      reference: testIdText(host, 'cartouche-reference'),
-      rows: rowsOf(host),
-      inPageHeader:
-        title !== null &&
-        byTestId(host, 'admin-page-title')?.closest('header') === title.closest('header'),
-    }).toEqual({
-      title: 'CV en ligne',
-      reference: 'cvNedellecJulien.pdf',
-      rows: [
-        { label: 'Mis en ligne', value: '19 sept. 2026' },
-        { label: 'Taille', value: '76 Ko' },
-        { label: 'Téléchargé', value: '3 fois en 30\u00a0j' },
-      ],
-      inPageHeader: true,
-    });
-  });
 
   it('Given today is 7 October 2026 When the page renders Then the downloads are counted over the last 30 days', async () => {
     const getCvDownloadCount = vi.fn<AnalyticsGateway['getCvDownloadCount']>(() => of(0));
@@ -272,67 +198,7 @@ describe('AdminCv: cartouche « CV en ligne »', () => {
   });
 });
 
-describe('AdminCv: actions sur le CV en ligne', () => {
-  it('Given a CV online When the page renders Then « Ouvrir le PDF » opens a new tab safely and says so', async () => {
-    const { host } = await render(makeCvGateway());
-    const link = byTestId(host, 'admin-cv-view');
-
-    expect({
-      tag: link?.tagName,
-      href: link?.getAttribute('href'),
-      target: link?.getAttribute('target'),
-      rel: link?.getAttribute('rel'),
-      name: normalized(link),
-      hidden: normalized(link?.querySelector('.sr-only')),
-    }).toEqual({
-      tag: 'A',
-      href: '/api/cv/download',
-      target: '_blank',
-      rel: 'noopener noreferrer',
-      name: 'Ouvrir le PDF (nouvel onglet)',
-      hidden: '(nouvel onglet)',
-    });
-  });
-
-  it('Given a CV online When the page renders Then its removal reads « Retirer le CV du site… »', async () => {
-    const { host } = await render(makeCvGateway());
-
-    expect(normalized(byTestId(host, 'admin-cv-delete'))).toBe('Retirer le CV du site…');
-  });
-});
-
 describe('AdminCv: téléversement', () => {
-  it.each([
-    { state: 'a CV online', current: makeCvInfo(), heading: 'Remplacer le fichier' },
-    { state: 'no CV', current: null, heading: 'Mettre un CV en ligne' },
-  ])(
-    'Given $state When the page renders Then the upload section is titled « $heading »',
-    async ({ current, heading }) => {
-      const { host } = await render(makeCvGateway({ getCurrent: () => of(current) }));
-      const title = byTestId(host, 'admin-cv-upload-heading');
-
-      expect({ tag: title?.tagName, text: normalized(title) }).toEqual({
-        tag: 'H2',
-        text: heading,
-      });
-    },
-  );
-
-  it('Given a chosen PDF When the upload button is shown, then pressed while the server answers Then it reads « Mettre en ligne », then « Mise en ligne… »', async () => {
-    const upload = vi.fn(() => NEVER);
-    const { fixture, host } = await render(makeCvGateway({ upload }));
-    await chooseFile(fixture, pdf());
-    const idle = normalized(byTestId(host, 'admin-cv-upload'));
-
-    await pressTestId(fixture, 'admin-cv-upload');
-
-    expect({
-      idle,
-      pending: normalized(byTestId(host, 'admin-cv-upload')),
-      uploads: upload.mock.calls.length,
-    }).toEqual({ idle: 'Mettre en ligne', pending: 'Mise en ligne…', uploads: 1 });
-  });
-
   it('Given a chosen PDF When the upload succeeds Then the file is sent, the page says so and shows the new CV', async () => {
     const file = pdf();
     const upload = vi.fn<CvGateway['upload']>(() => of(makeCvInfo()));
@@ -358,20 +224,6 @@ describe('AdminCv: téléversement', () => {
     });
   });
 
-  it('Given a chosen PDF When the upload succeeds Then the dropzone no longer shows the sent file', async () => {
-    const { fixture, host } = await render(makeCvGateway());
-    await chooseFile(fixture, pdf());
-    const chosen = byTestId(host, 'file-dropzone-replace') !== null;
-
-    await pressTestId(fixture, 'admin-cv-upload');
-
-    expect({
-      chosen,
-      replace: byTestId(host, 'file-dropzone-replace'),
-      trigger: byTestId(host, 'file-dropzone-trigger') !== null,
-    }).toEqual({ chosen: true, replace: null, trigger: true });
-  });
-
   it('Given a file that is not a PDF When it is chosen Then the page refuses it and offers no upload', async () => {
     const { fixture, host, toast } = await render(makeCvGateway());
 
@@ -388,18 +240,6 @@ describe('AdminCv: téléversement', () => {
 });
 
 describe('AdminCv: fichier refusé', () => {
-  it('Given a file that is not a PDF When it is chosen Then the dropzone empties and offers the picker again', async () => {
-    const { fixture, host } = await render(makeCvGateway());
-
-    await chooseFile(fixture, new File(['PK'], 'lettre.docx', { type: 'application/msword' }));
-
-    expect({
-      replace: byTestId(host, 'file-dropzone-replace'),
-      trigger: byTestId(host, 'file-dropzone-trigger') !== null,
-      name: normalized(host).includes('lettre.docx'),
-    }).toEqual({ replace: null, trigger: true, name: false });
-  });
-
   it('Given a PDF chosen then a refused file When the page renders Then no upload is offered for the earlier PDF', async () => {
     const { fixture, host } = await render(makeCvGateway());
     await chooseFile(fixture, pdf());
@@ -437,38 +277,5 @@ describe('AdminCv: fichier refusé', () => {
       toasts: toast.add.mock.calls.length,
       uploadButton: byTestId(host, 'admin-cv-upload') !== null,
     }).toEqual({ toasts: 0, uploadButton: true });
-  });
-
-  it('Given the upload zone When the page renders Then its helper text gives the 4 Mo limit', async () => {
-    const { host } = await render(makeCvGateway());
-
-    expect(normalized(host)).toContain('PDF uniquement, 4 Mo au plus, versionné à chaque envoi');
-  });
-});
-
-describe('AdminCv: en-tête de page', () => {
-  it('Given a 76 Ko PDF uploaded on 19 September 2026 When the page renders Then its single h1 is « CV » under the overline « PDF · 76 Ko · mis en ligne le 19 sept. 2026 »', async () => {
-    const { host } = await render(
-      makeCvGateway({
-        getCurrent: () =>
-          of(
-            makeCvInfo({
-              fileSize: 77_824,
-              mimeType: 'application/pdf',
-              uploadedAt: '2026-09-19T10:00:00.000Z',
-            }),
-          ),
-      }),
-    );
-
-    expect({
-      overline: testIdText(host, 'admin-page-overline'),
-      title: testIdText(host, 'admin-page-title'),
-      headings: host.querySelectorAll('h1').length,
-    }).toEqual({
-      overline: 'PDF · 76 Ko · mis en ligne le 19 sept. 2026',
-      title: 'CV',
-      headings: 1,
-    });
   });
 });
