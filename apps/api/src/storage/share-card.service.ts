@@ -1,23 +1,12 @@
 import { NotFoundException } from '../common/http-errors';
-import type { Readable } from 'node:stream';
 import { ImageOptimizer } from './image-optimizer.service';
-import { shareCardKey } from './s3-utils';
+import { readAll, shareCardKey } from './s3-utils';
 import { StorageService } from './storage.service';
 
 export type ShareCard = {
   readonly buffer: Buffer;
   readonly contentType: 'image/jpeg';
 };
-
-async function readAll(stream: Readable): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(
-      Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array),
-    );
-  }
-  return Buffer.concat(chunks);
-}
 
 /**
  * Carte de partage d'une image du bucket, dérivée à la première demande puis conservée dans S3

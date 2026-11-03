@@ -23,7 +23,6 @@ import { SelectivePreload } from '@core/strategies/selective-preload';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from '@features/auth/infra/auth-interceptor';
 import { errorToastInterceptor } from '@core/interceptors/error-toast';
-import { IMAGE_CONFIG } from '@angular/common';
 import {
   provideClientHydration,
   withEventReplay,
@@ -40,6 +39,7 @@ import { HttpAnalyticsGateway } from '@features/analytics/infra/gateways/http-an
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { HttpCvGateway } from '@features/cv/infra/gateways/http-cv.gateway';
 import { API_BASE_URL, API_LINK_BASE_URL } from '@shared/api/api-config';
+import { provideStorageImages } from '@shared/images/storage-image-loader';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import { HttpBlogGateway } from '@features/blog/infra/http-blog.gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
@@ -135,12 +135,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(initializeSeo()),
     provideAppInitializer(initializePageTracking()),
     provideAppInitializer(initializeOutboundClickTracking()),
-    {
-      provide: IMAGE_CONFIG,
-      useValue: {
-        breakpoints: [640, 768, 1024, 1280, 1920],
-      },
-    },
+    provideStorageImages(),
     { provide: API_BASE_URL, useExisting: API_LINK_BASE_URL },
     { provide: ProjectsGateway, useClass: HttpProjectsGateway },
     { provide: BlogGateway, useClass: HttpBlogGateway },

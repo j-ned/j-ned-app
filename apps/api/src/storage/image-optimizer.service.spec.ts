@@ -4,6 +4,7 @@ import {
   IMAGE_MAX_WIDTH,
   ImageOptimizer,
   PORTRAIT,
+  RESPONSIVE_IMAGE_WIDTHS,
   SHARE_CARD,
 } from './image-optimizer.service';
 
@@ -102,6 +103,38 @@ describe('ImageOptimizer', () => {
     await expect(
       optimizer.optimize(Buffer.from('not an image')),
     ).rejects.toThrow(UnprocessableEntityException);
+  });
+
+  describe('toWidth (variantes du srcset)', () => {
+    it.each(RESPONSIVE_IMAGE_WIDTHS)(
+      'AVIF stocké 1600×1000 → AVIF de %d px de large, ratio conservé',
+      async (width) => {
+        const stored = (
+          await optimizer.optimize(await solidImage(1600, 1000, 'png'))
+        ).buffer;
+
+        const meta = await sharp(
+          await optimizer.toWidth(stored, width),
+        ).metadata();
+
+        expect(meta.format).toBe('heif');
+        expect(meta.width).toBe(width);
+        expect(meta.height).toBe(Math.round((width * 1000) / 1600));
+      },
+    );
+
+    it("n'agrandit pas un original plus étroit que la variante", async () => {
+      const meta = await sharp(
+        await optimizer.toWidth(await solidImage(400, 300, 'png'), 800),
+      ).metadata();
+      expect(meta.width).toBe(400);
+    });
+
+    it('fichier corrompu → 422', async () => {
+      await expect(
+        optimizer.toWidth(Buffer.from('not an image'), 800),
+      ).rejects.toThrow(UnprocessableEntityException);
+    });
   });
 
   describe('toShareCard', () => {

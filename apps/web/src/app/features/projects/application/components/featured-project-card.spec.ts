@@ -192,4 +192,12 @@ describe('FeaturedProjectCard', () => {
       expect(clicks).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('Given a card When it renders Then its cover is sized to one of the two grid columns, so a narrower variant can be picked', async () => {
+    const sizes = byTestId(await render(), 'project-cover-image')?.getAttribute('sizes');
+
+    expect(sizes?.replace(/^auto, /, '')).toBe(
+      '(min-width: 80rem) 37rem, (min-width: 48rem) 50vw, 100vw',
+    );
+  });
 });

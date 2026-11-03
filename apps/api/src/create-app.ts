@@ -76,7 +76,11 @@ export function createApp(
       )
       .route(
         '/api/storage',
-        storageRoutes(services.storage, services.shareCards),
+        storageRoutes(
+          services.storage,
+          services.shareCards,
+          services.resizedImages,
+        ),
       )
       .route('/api/contact', contactRoutes(services.contact, session))
       .route(

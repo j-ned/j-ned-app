@@ -18,6 +18,7 @@ import { ProjectKindStamp } from './project-kind-stamp';
           [ngSrc]="image()"
           [alt]="alt()"
           [priority]="priority()"
+          [sizes]="sizes()"
           fill
           class="object-cover"
         />
@@ -43,4 +44,6 @@ export class ProjectCover {
   readonly alt = input.required<string>();
   readonly kind = input.required<ProjectKind | null>();
   readonly priority = input(false);
+  /** Largeur affichée (attribut `sizes`) : sans elle, le navigateur choisit pour tout l'écran. */
+  readonly sizes = input('100vw');
 }

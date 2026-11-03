@@ -96,4 +96,12 @@ describe('ProjectGridCard', () => {
     expect(byTestId(root, 'project-grid-card-cover')).not.toBeNull();
     expect(byTestId(root, 'project-cover-kind')).toBeNull();
   });
+
+  it('Given a card When it renders Then its cover is sized to one of the two grid columns, so a narrower variant can be picked', async () => {
+    const sizes = byTestId(await render(), 'project-cover-image')?.getAttribute('sizes');
+
+    expect(sizes?.replace(/^auto, /, '')).toBe(
+      '(min-width: 80rem) 37rem, (min-width: 48rem) 50vw, 100vw',
+    );
+  });
 });

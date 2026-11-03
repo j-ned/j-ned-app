@@ -8,7 +8,7 @@ import {
   NoSuchKey,
 } from '@aws-sdk/client-s3';
 import type { Readable } from 'node:stream';
-import { isShareCardKey, shareCardKey } from './s3-utils';
+import { derivedKeysOf, isDerivedKey } from './s3-utils';
 
 export type S3ObjectStream = {
   stream: Readable;
@@ -19,7 +19,7 @@ export type S3ObjectStream = {
 export class StorageService {
   constructor(private readonly s3: S3Client) {}
 
-  /** Écrit l'objet et jette sa carte de partage dérivée (`<key>.share.jpg`), devenue obsolète. */
+  /** Écrit l'objet et jette ses dérivées (carte de partage, variantes de largeur), devenues obsolètes. */
   async upload(
     bucket: string,
     key: string,
@@ -34,7 +34,7 @@ export class StorageService {
         ContentType: contentType,
       }),
     );
-    await this.deleteShareCardOf(bucket, key);
+    await this.deleteDerivedOf(bucket, key);
   }
 
   async get(bucket: string, key: string): Promise<S3ObjectStream> {
@@ -59,18 +59,20 @@ export class StorageService {
     };
   }
 
-  /** Efface l'objet et sa carte de partage dérivée. */
+  /** Efface l'objet et ses dérivées. */
   async delete(bucket: string, key: string): Promise<void> {
     // S3 DeleteObject est idempotent : pas d'erreur si la clé n'existe pas.
     await this.s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
-    await this.deleteShareCardOf(bucket, key);
+    await this.deleteDerivedOf(bucket, key);
   }
 
-  private async deleteShareCardOf(bucket: string, key: string): Promise<void> {
-    if (isShareCardKey(key)) return;
-    await this.s3.send(
-      new DeleteObjectCommand({ Bucket: bucket, Key: shareCardKey(key) }),
-    );
+  private async deleteDerivedOf(bucket: string, key: string): Promise<void> {
+    if (isDerivedKey(key)) return;
+    for (const derived of derivedKeysOf(key)) {
+      await this.s3.send(
+        new DeleteObjectCommand({ Bucket: bucket, Key: derived }),
+      );
+    }
   }
 
   /**

@@ -18,6 +18,7 @@ import { ProfileService } from './profile/profile.service';
 import { ProjectImagesService } from './projects/project-images.service';
 import { ProjectsService } from './projects/projects.service';
 import { ImageOptimizer } from './storage/image-optimizer.service';
+import { ResizedImageService } from './storage/resized-image.service';
 import { ShareCardService } from './storage/share-card.service';
 import { StorageService } from './storage/storage.service';
 import { UsersService } from './users/users.service';
@@ -42,6 +43,7 @@ export function createServices({ config, db, s3 }: ServiceDeps) {
     storage,
     images,
     shareCards: new ShareCardService(storage, images),
+    resizedImages: new ResizedImageService(storage, images),
     users,
     jwt,
     auth: new AuthService(

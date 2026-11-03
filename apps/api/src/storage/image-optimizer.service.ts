@@ -2,6 +2,13 @@ import { UnprocessableEntityException } from '../common/http-errors';
 
 /** Largeur max stockée : les visuels s'affichent au plus en ~800 px CSS, 1600 couvre le retina 2×. */
 export const IMAGE_MAX_WIDTH = 1600;
+/**
+ * Largeurs dérivées à la demande pour le `srcset` (`?variant=w<largeur>`), l'original à 1600 px
+ * couvrant le haut de gamme. Liste fermée : une largeur libre laisserait n'importe qui remplir S3.
+ * Doit rester alignée sur `RESPONSIVE_IMAGE_WIDTHS` côté web (`storage-image-loader.ts`).
+ */
+export const RESPONSIVE_IMAGE_WIDTHS = [480, 800, 1200] as const;
+export type ResponsiveImageWidth = (typeof RESPONSIVE_IMAGE_WIDTHS)[number];
 const AVIF_QUALITY = 60;
 const AVIF_EFFORT = 4;
 /** Carte de partage Open Graph : le 1,91:1 attendu par Facebook, LinkedIn et X, en JPEG (l'AVIF n'y est pas décodé). */
@@ -49,6 +56,22 @@ export class ImageOptimizer {
         width: info.width,
         height: info.height,
       };
+    } catch {
+      throw new UnprocessableEntityException(
+        'Image illisible : fichier corrompu ou format non supporté',
+      );
+    }
+  }
+
+  /** Variante AVIF de l'image stockée à `width` px de large au plus, ratio conservé. */
+  async toWidth(input: Buffer, width: ResponsiveImageWidth): Promise<Buffer> {
+    const sharp = await this.loadSharp();
+    try {
+      return await sharp(input, { animated: false })
+        .rotate()
+        .resize({ width, withoutEnlargement: true })
+        .avif({ quality: AVIF_QUALITY, effort: AVIF_EFFORT })
+        .toBuffer();
     } catch {
       throw new UnprocessableEntityException(
         'Image illisible : fichier corrompu ou format non supporté',

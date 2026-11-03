@@ -2,6 +2,12 @@ import { Hono } from 'hono';
 import { Readable } from 'node:stream';
 import type { AppEnv } from '../common/http';
 import { BadRequestException, NotFoundException } from '../common/http-errors';
+import {
+  RESPONSIVE_IMAGE_WIDTHS,
+  type ResponsiveImageWidth,
+} from './image-optimizer.service';
+import type { ResizedImageService } from './resized-image.service';
+import { isDerivedKey } from './s3-utils';
 import type { ShareCardService } from './share-card.service';
 import type { StorageService } from './storage.service';
 
@@ -16,14 +22,23 @@ const CACHE_CONTROL = 'public, max-age=31536000, immutable';
  */
 const PUBLIC_BUCKETS = new Set<string>(['portfolio-storage']);
 
+/** `w800` → 800, seulement pour une largeur de la liste fermée. */
+function widthVariant(variant: string): ResponsiveImageWidth | null {
+  return (
+    RESPONSIVE_IMAGE_WIDTHS.find((width) => variant === `w${width}`) ?? null
+  );
+}
+
 /**
  * `/api/storage/:bucket/<clé>` : relais public des objets S3, `?variant=share` pour la carte de
- * partage JPEG 1200×630 (og:image) générée à la première demande. Sans quota : une page référence
- * N images, le cache HTTP (un an, immutable) absorbe les répétitions.
+ * partage JPEG 1200×630 (og:image) et `?variant=w<largeur>` pour les variantes AVIF du `srcset`,
+ * générées à la première demande. Sans quota : une page référence N images, le cache HTTP (un an,
+ * immutable) absorbe les répétitions, et la liste fermée des largeurs borne ce qu'on peut dériver.
  */
 export function storageRoutes(
   storage: StorageService,
   shareCards: ShareCardService,
+  resizedImages: ResizedImageService,
 ) {
   return new Hono<AppEnv>().get('/:bucket/*', async (c) => {
     const bucket = c.req.param('bucket');
@@ -36,8 +51,25 @@ export function storageRoutes(
     if (!key) throw new NotFoundException();
 
     const variant = c.req.query('variant');
+    // Une dérivée de dérivée ne serait jamais jetée avec l'original : elle s'accumulerait dans S3.
+    if (variant !== undefined && isDerivedKey(key)) {
+      throw new NotFoundException();
+    }
     if (variant === 'share') {
       const { buffer, contentType } = await shareCards.get(bucket, key);
+      return c.body(new Uint8Array(buffer), 200, {
+        'Content-Type': contentType,
+        'Content-Length': buffer.length.toString(),
+        'Cache-Control': CACHE_CONTROL,
+      });
+    }
+    const width = variant === undefined ? null : widthVariant(variant);
+    if (width !== null) {
+      const { buffer, contentType } = await resizedImages.get(
+        bucket,
+        key,
+        width,
+      );
       return c.body(new Uint8Array(buffer), 200, {
         'Content-Type': contentType,
         'Content-Length': buffer.length.toString(),

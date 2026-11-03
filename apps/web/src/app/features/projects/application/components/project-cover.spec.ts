@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideStorageImages } from '@shared/images/storage-image-loader';
 import type { ProjectKind } from '../../domain/models/project.model';
 import { ProjectCover } from './project-cover';
 
@@ -7,6 +8,7 @@ type CoverInputs = {
   readonly alt?: string;
   readonly kind?: ProjectKind | null;
   readonly priority?: boolean;
+  readonly sizes?: string;
 };
 
 const COVER_URL = 'https://api.test/projects/dashflow.avif';
@@ -19,12 +21,15 @@ describe('ProjectCover', () => {
     alt = 'Aperçu du projet DashFlow',
     kind = 'production',
     priority,
+    sizes,
   }: CoverInputs = {}): Promise<HTMLElement> => {
+    TestBed.configureTestingModule({ providers: [provideStorageImages()] });
     const fixture = TestBed.createComponent(ProjectCover);
     fixture.componentRef.setInput('image', image);
     fixture.componentRef.setInput('alt', alt);
     fixture.componentRef.setInput('kind', kind);
     if (priority !== undefined) fixture.componentRef.setInput('priority', priority);
+    if (sizes !== undefined) fixture.componentRef.setInput('sizes', sizes);
     fixture.detectChanges();
     await fixture.whenStable();
     return fixture.nativeElement as HTMLElement;
@@ -70,6 +75,30 @@ describe('ProjectCover', () => {
       }).toEqual({ fetchpriority, loading });
     },
   );
+
+  it('Given a stored cover and its layout width When the cover renders Then the browser can pick a narrower API variant', async () => {
+    const stored = '/api/storage/portfolio-storage/projects/dashflow-a1b2c3d4.avif';
+    const image = byTestId(
+      await render({ image: stored, sizes: '(min-width: 48rem) 50vw, 100vw', priority: true }),
+      'project-cover-image',
+    );
+
+    expect({
+      src: image?.getAttribute('src'),
+      srcset: image?.getAttribute('srcset'),
+      sizes: image?.getAttribute('sizes'),
+    }).toEqual({
+      src: stored,
+      srcset: `${stored}?variant=w480 480w, ${stored}?variant=w800 800w, ${stored}?variant=w1200 1200w, ${stored} 1600w`,
+      sizes: '(min-width: 48rem) 50vw, 100vw',
+    });
+  });
+
+  it('Given no layout width When the cover renders Then it is sized as full viewport width', async () => {
+    const image = byTestId(await render({ priority: true }), 'project-cover-image');
+
+    expect(image?.getAttribute('sizes')).toBe('100vw');
+  });
 
   it('Given no nature When the cover renders Then no stamp is shown', async () => {
     const root = await render({ kind: null });
