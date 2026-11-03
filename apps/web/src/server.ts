@@ -58,15 +58,18 @@ async function hardenHtml(response: Response, manifest: CspBuildManifest): Promi
 
 // Seuls 200 et 404 vont au micro-cache nginx. Il compte la validité en secondes entières : « 1s »
 // y tient jusqu'à 2 s ; une échéance absolue à la seconde courante expire à la seconde suivante.
-// Sur Vercel, le CDN joue ce rôle (`CDN-Cache-Control`, ignoré par nginx et par le navigateur) : une
-// seconde de fraîcheur, puis la copie sert pendant le nouveau rendu, et pendant 7 jours si le rendu
-// échoue (5xx), comme `proxy_cache_use_stale`.
-const CDN_CACHE_CONTROL = 'max-age=1, stale-while-revalidate=59, stale-if-error=604800';
+// Sur Vercel, le CDN joue ce rôle (`CDN-Cache-Control`, ignoré par nginx et par le navigateur) : un
+// jour de fraîcheur, puis la copie sert pendant le nouveau rendu, et pendant 7 jours si le rendu
+// échoue (5xx), comme `proxy_cache_use_stale`. La fraîcheur vient du tag : l'API le vide à chaque
+// écriture de contenu (`apps/api/src/common/cdn-cache.ts`, mêmes durée et tag).
+const CDN_CACHE_CONTROL = 'max-age=86400, stale-while-revalidate=604800, stale-if-error=604800';
+const CONTENT_CACHE_TAG = 'content';
 
 async function send(response: Response, res: ServerResponse): Promise<void> {
   if (response.status === 200 || response.status === 404) {
     res.setHeader('X-Accel-Expires', `@${Math.floor(Date.now() / 1000)}`);
     res.setHeader('CDN-Cache-Control', CDN_CACHE_CONTROL);
+    res.setHeader('Vercel-Cache-Tag', CONTENT_CACHE_TAG);
   }
   await writeResponseToNodeResponse(response, res);
 }

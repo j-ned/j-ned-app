@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
+import { cdnCache } from '../common/cdn-cache';
 import {
   jsonBody,
   reply,
@@ -42,7 +43,7 @@ export function projectsRoutes(
   return (
     new Hono<AppEnv>()
       // Liste publique, filtrable par catégorie et `featured=true`.
-      .get('/', throttle(PUBLIC_READ_THROTTLE), async (c) =>
+      .get('/', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>
         reply(
           c,
           await projects.findAll({
@@ -52,7 +53,7 @@ export function projectsRoutes(
         ),
       )
 
-      .get('/:id', throttle(PUBLIC_READ_THROTTLE), async (c) =>
+      .get('/:id', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>
         reply(c, await projects.findById(uuidParam(c, 'id'))),
       )
 

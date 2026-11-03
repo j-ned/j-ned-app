@@ -5,6 +5,7 @@ import { analyticsRoutes } from './analytics/analytics.routes';
 import { authRoutes } from './auth/auth.routes';
 import { requireAuth } from './auth/require-auth';
 import { blogRoutes } from './blog/blog.routes';
+import { purgeContentCacheOnWrite } from './common/cdn-cache';
 import { crossOriginProtection } from './common/cross-origin';
 import { cronRoutes } from './cron/cron.routes';
 import { handleError, handleNotFound } from './common/error-handler';
@@ -30,19 +31,36 @@ import { workshopGuideRoutes } from './workshop-guide/workshop-guide.routes';
 export type AppOptions = {
   /** Purge des compteurs de quotas en base (Vercel), lancée par le cron quotidien. */
   readonly purgeRateLimits?: () => Promise<void>;
+  /** Vidage du cache CDN du contenu (Vercel), après chaque écriture qui le change. */
+  readonly purgeContentCache?: () => Promise<void>;
 };
+
+/** Modules dont une écriture change une page publique (le like compris) : leur cache CDN est vidé. */
+const CONTENT_PATHS = [
+  '/api/blog',
+  '/api/projects',
+  '/api/profile',
+  '/api/workshop-guide',
+  '/api/cv',
+];
 
 export function createApp(
   config: AppConfigService,
   db: Database,
   services: Services,
-  { purgeRateLimits }: AppOptions = {},
+  { purgeRateLimits, purgeContentCache }: AppOptions = {},
 ): Hono<AppEnv> {
   const session = requireAuth(services.jwt, services.users);
+  // `strict: false` : `/api/cv/` vaut `/api/cv`, comme le routage d'Express.
+  const app = new Hono<AppEnv>({ strict: false });
+  if (purgeContentCache) {
+    const purge = purgeContentCacheOnWrite(purgeContentCache);
+    // `/api/cv/*` couvre aussi `/api/cv`.
+    for (const path of CONTENT_PATHS) app.use(`${path}/*`, purge);
+  }
 
   return (
-    // `strict: false` : `/api/cv/` vaut `/api/cv`, comme le routage d'Express.
-    new Hono<AppEnv>({ strict: false })
+    app
       .use(forwardedVisitorIp(config.ssrForwardSecret))
       .use(requestLogger)
       // CSP inutile (l'API ne sert que du JSON et des images) ; CORP `cross-origin` : les images de
