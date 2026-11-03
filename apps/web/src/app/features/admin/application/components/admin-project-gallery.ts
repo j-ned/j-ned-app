@@ -12,29 +12,21 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defer, finalize, type Observable } from 'rxjs';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { moveItem } from '@shared/collections/move-item';
 import type { ProjectImage } from '@features/projects/domain/models/project.model';
 import { ToastStore } from '@core/notifications/toast-store';
-import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
+import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
 import { AdminGalleryImageItem } from './admin-gallery-image-item';
 import { AdminGalleryUploadForm } from './admin-gallery-upload-form';
 
 const GALLERY_MAX = 12;
 const GALLERY_FULL_NOTICE = `${GALLERY_MAX} captures au plus\u00a0: supprimez-en une pour en ajouter une autre.`;
 
-const UPLOAD_ERRORS: Readonly<Record<number, string>> = {
-  413: "L'image dépasse 4 Mo.",
-  422: 'Image refusée\u00a0: format non pris en charge, ou galerie déjà complète.',
-};
-
 const uploadErrorDetail = (error: unknown): string =>
-  (error instanceof UploadRejectedError && error.message) ||
-  (error instanceof HttpErrorResponse && UPLOAD_ERRORS[error.status]) ||
-  "Erreur lors de l'ajout de la capture";
+  uploadFailureMessage("La capture n'a pas été ajoutée.", error);
 
 @Component({
   selector: 'app-admin-project-gallery',

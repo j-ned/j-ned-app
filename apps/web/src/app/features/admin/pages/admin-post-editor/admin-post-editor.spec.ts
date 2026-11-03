@@ -735,11 +735,11 @@ describe('AdminPostEditor: détail du refus de l’API', () => {
     expect(toasts(editor.toast)[0]).toEqual({
       severity: 'warn',
       detail:
-        "Article enregistré, mais l'envoi de l'image a échoué. Réessayez. Détail\u00a0: file must be an image",
+        "Article enregistré, mais l'image de couverture n'a pas été envoyée. file must be an image.",
     });
   });
 
-  it('Given the cover failing with a 500 When the article is saved Then the warning stays the fixed one', async () => {
+  it('Given the cover failing with a 500 When the article is saved Then the warning says the server failed', async () => {
     const editor = await openEditor('/admin/blog/new', {
       uploadCoverImage: vi.fn((): Observable<string> =>
         throwError(() => apiRejection(500, 'Internal server error')),
@@ -752,7 +752,8 @@ describe('AdminPostEditor: détail du refus de l’API', () => {
 
     expect(toasts(editor.toast)[0]).toEqual({
       severity: 'warn',
-      detail: "Article enregistré, mais l'envoi de l'image a échoué. Réessayez.",
+      detail:
+        "Article enregistré, mais l'image de couverture n'a pas été envoyée. Le serveur a rencontré un problème\u00a0: réessayez dans un instant.",
     });
   });
 });

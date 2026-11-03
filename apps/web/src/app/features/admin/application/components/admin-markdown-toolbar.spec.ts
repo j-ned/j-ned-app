@@ -806,7 +806,8 @@ describe('AdminMarkdownToolbar: image', () => {
       status: testIdText(rendered.host, 'markdown-toolbar-status'),
     }).toEqual({
       panel: true,
-      error: "L'image dépasse 4\u00a0Mo.",
+      error:
+        "L'image n'a pas été envoyée. Le fichier dépasse 4\u00a0Mo, la taille maximale acceptée.",
       alt: 'Schéma',
       value: 'Avant',
       inputs: 0,
