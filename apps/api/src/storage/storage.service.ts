@@ -74,14 +74,14 @@ export class StorageService {
   }
 
   /**
-   * Retourne une URL publique servie par NestJS (proxy S3 via StorageController).
+   * Retourne une URL publique servie par l'API (proxy S3, `storage.routes.ts`).
    * Format: `/storage/{bucket}/{key}` - chemin relatif au préfixe `/api` global.
    * Le frontend résout vers `${apiUrl}${path}` côté Angular.
    *
    * Pourquoi un proxy plutôt qu'une URL S3 directe ? R2 supporte l'accès anonyme
    * via Public Buckets ou Custom Domain, mais le Custom Domain exige que le DNS
    * soit géré par Cloudflare - ce n'est pas (encore) notre cas. En attendant,
-   * le proxy NestJS détient les credentials et stream l'objet.
+   * le proxy de l'API détient les credentials et stream l'objet.
    */
   getPublicUrl(bucket: string, key: string): string {
     return `/storage/${bucket}/${key}`;

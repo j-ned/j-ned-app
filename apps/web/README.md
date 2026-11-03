@@ -2,19 +2,19 @@
 
 # Portfolio — Julien Nédellec
 
-### Site personnel full-stack : vitrine, blog, back-office et analytics maison, auto-hébergés
+### Site personnel full-stack : vitrine, blog, back-office et analytics maison
 
-**Angular 22 zoneless · SSR + prérendu · API NestJS · PostgreSQL · zéro tracker tiers**
+**Angular 22 zoneless · SSR + prérendu · API Hono · PostgreSQL · zéro tracker tiers**
 
 [![Angular](https://img.shields.io/badge/Angular-22-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com)
+[![Hono](https://img.shields.io/badge/Hono-4-E36002?style=for-the-badge&logo=hono&logoColor=white)](https://hono.dev)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![CI](https://img.shields.io/github/actions/workflow/status/j-ned/ng-portfolio-app/ci.yml?branch=master&style=for-the-badge&label=CI)](https://github.com/j-ned/ng-portfolio-app/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/j-ned/j-ned-app/web-ci.yml?branch=master&style=for-the-badge&label=CI)](https://github.com/j-ned/j-ned-app/actions/workflows/web-ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge)](LICENSE)
 
-[**Site live**](https://nedellec-julien.fr) · [**API (dépôt séparé)**](https://github.com/j-ned/nest-portfolio-app) · [**Captures**](#captures-décran) · [**Architecture**](#architecture) · [**Installation**](#installation)
+[**Site live**](https://nedellec-julien.fr) · [**API (`apps/api`)**](../api) · [**Captures**](#captures-décran) · [**Architecture**](#architecture) · [**Installation**](#installation)
 
 </div>
 
@@ -47,15 +47,15 @@ Un portfolio de développeur est rarement « juste une vitrine ». Il doit :
 
 ## La réponse
 
-Une application full-stack auto-hébergée, construite et exploitée comme un vrai produit :
+Une application full-stack, construite et exploitée comme un vrai produit :
 
 - **Front Angular 22** zoneless, signals, rendu serveur à la requête des pages de contenu (une écriture admin est visible au rechargement, sans rebuild), prérendu des pages statiques, clean architecture en trois couches par feature.
 - **Back-office** : projets, articles de blog, CV, messages de contact, analytics, sécurité du compte.
-- **API NestJS** dédiée ([`nest-portfolio-app`](https://github.com/j-ned/nest-portfolio-app)) : auth JWT + 2FA, PostgreSQL via Drizzle, stockage S3, mails, analytics.
+- **API Hono** ([`apps/api`](../api), même monorepo) : auth JWT + 2FA, PostgreSQL via Drizzle, stockage S3, mails, analytics.
 - **Analytics maison** : aucun cookie, aucun tracker tiers, données brutes purgées au bout de 30 jours.
 - **Hébergement** : Vercel (services `web` et `api`, même origine), Neon, Cloudflare R2 ; CI GitHub Actions qui rejoue exactement le build de production.
 
-Ce dépôt ne contient que le front. L'API vit dans son propre dépôt et est appelée directement depuis le navigateur.
+Le front vit dans `apps/web` et l'API dans `apps/api`, dans le même dépôt : servis par la même origine, `/api` réécrit par Vercel vers le service `api`.
 
 ---
 
@@ -203,11 +203,11 @@ providers: [
 - **Chart.js** pour les graphiques du back-office, **marked** + **DOMPurify** pour le Markdown, **Sentry** pour les erreurs.
 - **Vitest 4** + happy-dom pour les tests, **ESLint** + angular-eslint + Prettier, Husky + lint-staged.
 
-### API ([`nest-portfolio-app`](https://github.com/j-ned/nest-portfolio-app))
+### API ([`apps/api`](../api))
 
-- **NestJS 11** sur Node 24, **Drizzle ORM** et **PostgreSQL 18**, migrations versionnées.
+- **Hono** en fonction Node sur Vercel, **Drizzle ORM** et **PostgreSQL** (Neon), migrations versionnées.
 - **Argon2id**, JWT HS256 avec `tokenVersion`, **otplib** pour la 2FA, throttling par route.
-- **S3** (compatible Garage / R2) derrière un proxy applicatif, **sharp** pour la conversion des images, **Nodemailer** pour les mails, **pino** pour les logs, **Sentry**.
+- **S3** (Cloudflare R2) derrière un proxy applicatif, **sharp** pour la conversion des images, **Resend** pour les mails, **pino** pour les logs, **Sentry**.
 
 ### Exploitation
 
@@ -245,13 +245,13 @@ providers: [
 
 ## Installation
 
-> Prérequis : Node.js 22, pnpm ≥ 10, et l'API [`nest-portfolio-app`](https://github.com/j-ned/nest-portfolio-app) lancée sur `http://localhost:3000` (elle embarque son propre `compose.yaml` pour PostgreSQL, MinIO et Mailpit).
+> Prérequis : Node.js 22, pnpm ≥ 10, et l'API du monorepo ([`apps/api`](../api)) lancée sur `http://localhost:3000` (`pnpm dev:api` à la racine, Postgres en conteneur).
 
 ```bash
-git clone https://github.com/j-ned/ng-portfolio-app.git
-cd ng-portfolio-app
+git clone https://github.com/j-ned/j-ned-app.git
+cd j-ned-app
 pnpm install --frozen-lockfile
-pnpm start          # http://localhost:4200, /api proxifié vers :3000 (proxy.conf.cjs)
+pnpm dev:web        # http://localhost:4200, /api proxifié vers :3000 (proxy.conf.cjs)
 ```
 
 Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production à `https://nedellec-julien.fr/api`, même origine que le site, réécrite par Vercel vers le service `api` (ADR-0036).
