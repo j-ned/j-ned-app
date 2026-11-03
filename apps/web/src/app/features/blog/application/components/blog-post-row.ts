@@ -48,7 +48,15 @@ import type { BlogPostRowView } from '../blog-list-view';
           data-testid="post-cover"
           class="pointer-events-none relative -order-1 aspect-[1200/630] w-full overflow-hidden rounded-part border border-line-strong bg-surface @min-[60rem]:order-none"
         >
-          <img [ngSrc]="p.coverImage" alt="" fill [priority]="p.priority" class="object-cover" />
+          <!-- Colonne de 20rem dès que la ligne atteint 60rem (fenêtre ≥ 64rem avec ses marges). -->
+          <img
+            [ngSrc]="p.coverImage"
+            alt=""
+            fill
+            [priority]="p.priority"
+            sizes="(min-width: 64rem) 20rem, 100vw"
+            class="object-cover"
+          />
         </figure>
       }
     </article>
