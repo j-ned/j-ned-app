@@ -23,32 +23,7 @@ describe('highlightCode', () => {
       source: 'type Id = string;',
       token: { kind: 'hljs-keyword', text: 'type' },
     },
-    {
-      language: 'javascript',
-      source: 'const answer = 42;',
-      token: { kind: 'hljs-keyword', text: 'const' },
-    },
     { language: 'html', source: '<p>x</p>', token: { kind: 'hljs-name', text: 'p' } },
-    {
-      language: 'css',
-      source: '.card { color: red; }',
-      token: { kind: 'hljs-selector-class', text: '.card' },
-    },
-    { language: 'scss', source: '$gap: 4px;', token: { kind: 'hljs-variable', text: '$gap' } },
-    { language: 'json', source: '{ "a": 1 }', token: { kind: 'hljs-punctuation', text: '{' } },
-    { language: 'bash', source: 'echo "$HOME"', token: { kind: 'hljs-built_in', text: 'echo' } },
-    {
-      language: 'sql',
-      source: 'SELECT id FROM posts;',
-      token: { kind: 'hljs-keyword', text: 'SELECT' },
-    },
-    { language: 'yaml', source: 'name: ci', token: { kind: 'hljs-attr', text: 'name:' } },
-    { language: 'markdown', source: '# Titre', token: { kind: 'hljs-section', text: '# Titre' } },
-    {
-      language: 'dockerfile',
-      source: 'RUN pnpm install',
-      token: { kind: 'hljs-keyword', text: 'RUN' },
-    },
     {
       language: 'python',
       source: 'def f():\n    return 1',

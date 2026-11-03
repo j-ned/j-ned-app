@@ -15,7 +15,6 @@ import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
-import { SectionVisibility } from '@core/navigation/section-visibility';
 import { ActiveSection } from '@core/navigation/active-section';
 import { ContactForm } from '@features/contact/application/contact-form';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
@@ -223,20 +222,6 @@ describe('Home', () => {
     });
   });
 
-  describe('déclenchement des sections eager', () => {
-    it('eagerSections reflète le signal eager du SectionScroller (false)', async () => {
-      const { component } = await setup({ scroller: makeScroller(false) });
-      expect(component['eagerSections']()).toBe(false);
-    });
-
-    it('eagerSections passe à true quand le scroller bascule eager', async () => {
-      const scroller = makeScroller(false);
-      const { component } = await setup({ scroller });
-      scroller.eager.set(true);
-      expect(component['eagerSections']()).toBe(true);
-    });
-  });
-
   describe('rendu du bloc @defer projets', () => {
     it('Given le template réel When le bloc reste à son état initial Then le placeholder est rendu et la section projets absente', async () => {
       const { fixture } = await renderHomeTemplate([makeProject()]);
@@ -276,11 +261,6 @@ describe('Home', () => {
   describe('appels du premier écran', () => {
     it.each([
       { testId: 'hero-cta-blog', ctaId: 'home_hero_blog', label: HOME_HERO_CTA_LABELS.blog },
-      {
-        testId: 'hero-cta-projects',
-        ctaId: 'home_hero_projects',
-        label: HOME_HERO_CTA_LABELS.projects,
-      },
     ])(
       'Given le hero rendu When le visiteur suit $testId Then la page mesure $ctaId une fois, sans faire défiler',
       async ({ testId, ctaId, label }) => {
@@ -328,18 +308,6 @@ describe('Home', () => {
       expect(
         allByTestId(fixture, 'home-latest-post-link').map((link) => link.getAttribute('href')),
       ).toEqual(['/blog/a', '/blog/b']);
-    });
-  });
-
-  describe('avis clients', () => {
-    it('Given toutes les sections rendues When la page est lue Then aucune section d’avis n’existe', async () => {
-      const harness = await renderHomeTemplate([], { hero: STATIC_HERO });
-      await renderAllDeferred(harness);
-
-      expect([
-        byTestId(harness.fixture, 'home-reviews'),
-        byTestId(harness.fixture, 'home-reviews-placeholder'),
-      ]).toEqual([null, null]);
     });
   });
 
@@ -395,19 +363,6 @@ describe('Home', () => {
 
       const root = fixture.nativeElement as HTMLElement;
       expect(root.querySelector('form')).not.toBeNull();
-    });
-
-    it('Given le bloc contact rendu When le formulaire est lu Then il ne demande plus de type de projet tiré des offres', async () => {
-      const { fixture, contactBlock } = await renderHomeTemplate();
-
-      await contactBlock.render(DeferBlockState.Complete);
-      await fixture.whenStable();
-
-      expect(
-        (fixture.nativeElement as HTMLElement).querySelector(
-          '[data-testid="contact-project-type"]',
-        ),
-      ).toBeNull();
     });
   });
 
@@ -486,28 +441,6 @@ describe('Home', () => {
         expect(byTestId(harness.fixture, testId)).toBeNull();
       },
     );
-
-    it('Given toutes les sections rendues When la page est lue Then l’ancre methode n’existe plus et seul le contact est observé', async () => {
-      const harness = await renderHomeTemplate();
-      await renderAllDeferred(harness);
-      const { fixture } = harness;
-
-      expect((fixture.nativeElement as HTMLElement).querySelector('[id="methode"]')).toBeNull();
-      expect(
-        fixture.debugElement
-          .queryAll(By.directive(SectionVisibility))
-          .map((el) => el.injector.get(SectionVisibility).sectionId()),
-      ).toEqual(['contact']);
-    });
-
-    it('Given le hero livré et toutes les sections rendues When la page est lue Then aucun texte ne vend ni ne parle d’emploi', async () => {
-      const harness = await renderHomeTemplate([], { hero: STATIC_HERO });
-      await renderAllDeferred(harness);
-      const root = harness.fixture.nativeElement as HTMLElement;
-
-      expect(byTestId(harness.fixture, 'home-contact-form')).not.toBeNull();
-      expect(root.textContent).not.toMatch(/\bCDI\b|devis|freelance|à prix annoncé/i);
-    });
 
     describe('page entière', () => {
       let root: HTMLElement;

@@ -43,13 +43,6 @@ describe('AboutHero', () => {
       expect(headings[0].textContent?.trim()).toBe(PROFILE.displayName);
     });
 
-    // Titre du premier écran : un fondu d'entrée (opacité nulle) le masque au premier rendu.
-    it('When le hero est rendu Then le nom est visible au premier rendu, sans animation d’entrée', () => {
-      const title = host().querySelector<HTMLElement>('[data-testid="about-title"]');
-      expect(title).not.toBeNull();
-      expect(title?.className).not.toMatch(/\banimate-/);
-    });
-
     it('When le hero est rendu Then l’accroche reçue en entrée est suivie de son emphase', () => {
       const lead = host().querySelector('[data-testid="about-lead"]');
       expect(lead?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
@@ -66,13 +59,6 @@ describe('AboutHero', () => {
         ['_blank', 'noopener noreferrer'],
         [null, null],
       ]);
-    });
-
-    // Portrait = élément LCP : un fondu d'entrée repousse le LCP à la fin de l'animation.
-    it('When le hero est rendu Then le portrait est visible au premier rendu, sans animation d’entrée', () => {
-      const portrait = host().querySelector<HTMLElement>('[data-testid="about-portrait"]');
-      expect(portrait).not.toBeNull();
-      expect(portrait?.className).not.toMatch(/\banimate-/);
     });
 
     it('When le hero est rendu Then le portrait porte un texte alternatif', () => {

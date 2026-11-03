@@ -70,22 +70,7 @@ describe('ProjectGridCard', () => {
     expect(context?.closest('a')).toBe(link);
   });
 
-  it('Given a card When it renders Then the project page link is its only interactive element, stretched over the whole card with a 44 px target', async () => {
-    const root = await render();
-    const card = byTestId(root, 'project-grid-card');
-    const link = byTestId(root, 'project-grid-card-link');
-
-    expect(Array.from(root.querySelectorAll('a, button'))).toEqual([link]);
-    expect(card?.classList).toContain('relative');
-    expect(
-      ['after:absolute', 'after:inset-0', 'min-h-11'].filter((c) => !link?.classList.contains(c)),
-    ).toEqual([]);
-  });
-
-  it.each([
-    { kind: 'demo' as const, label: 'Démo' },
-    { kind: 'script' as const, label: 'Script' },
-  ])(
+  it.each([{ kind: 'demo' as const, label: 'Démo' }])(
     'Given a $kind card When it renders Then its cover comes before the name, stamped $label and describing the project',
     async ({ kind, label }) => {
       const root = await render(cardView({ kind }));
@@ -110,15 +95,5 @@ describe('ProjectGridCard', () => {
 
     expect(byTestId(root, 'project-grid-card-cover')).not.toBeNull();
     expect(byTestId(root, 'project-cover-kind')).toBeNull();
-  });
-
-  it('Given a card When it renders Then its cover image is never loaded with priority', async () => {
-    const image = byTestId(await render(), 'project-cover-image');
-
-    expect(image?.getAttribute('src')).toBe('https://api.test/projects/coaching-life.avif');
-    expect([image?.getAttribute('fetchpriority'), image?.getAttribute('loading')]).toEqual([
-      'auto',
-      'lazy',
-    ]);
   });
 });

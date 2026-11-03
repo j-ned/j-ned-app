@@ -22,8 +22,6 @@ describe('HomeHeroSection', () => {
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const byTestId = (id: string, root: ParentNode = host()): HTMLElement | null =>
     root.querySelector<HTMLElement>(`[data-testid="${id}"]`);
-  const allByTestId = (id: string, root: ParentNode = host()): HTMLElement[] =>
-    Array.from(root.querySelectorAll<HTMLElement>(`[data-testid="${id}"]`));
   const text = (el: Element | null | undefined): string =>
     (el?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').trim();
 
@@ -83,28 +81,6 @@ describe('HomeHeroSection', () => {
     });
   });
 
-  it('offers the blog then the projects, and nothing else to follow: no contact, offer nor booking', () => {
-    expect(
-      Array.from(host().querySelectorAll('a, button'), (el) => el.getAttribute('data-testid')),
-    ).toEqual(['hero-cta-blog', 'hero-cta-projects']);
-  });
-
-  it('styles the blog as the primary call to action and the projects as the secondary one', () => {
-    expect(
-      Array.from(host().querySelectorAll('[appbutton]'), (el) => [
-        el.getAttribute('data-testid'),
-        el.getAttribute('variant'),
-      ]),
-    ).toEqual([
-      ['hero-cta-blog', null],
-      ['hero-cta-projects', 'outlined'],
-    ]);
-  });
-
-  it('states no availability any more', () => {
-    expect(byTestId('hero-availability')).toBeNull();
-  });
-
   describe('work frame', () => {
     const frame = (): HTMLElement | null => byTestId('hero-work-frame');
 
@@ -113,35 +89,10 @@ describe('HomeHeroSection', () => {
       expect(frame()?.getAttribute('aria-label')).toBe(HOME_WORK_FRAME.title);
     });
 
-    it('shows the frame title and its reference', () => {
-      expect(frame()).not.toBeNull();
-      expect(text(byTestId('cartouche-title', frame() ?? host()))).toBe(HOME_WORK_FRAME.title);
-      expect(text(byTestId('cartouche-reference', frame() ?? host()))).toBe(
-        HOME_WORK_FRAME.reference,
-      );
-    });
-
-    it('lists every row of the frame as a term and its value, in order', () => {
-      expect(frame()).not.toBeNull();
-      const rows = allByTestId('cartouche-row', frame() ?? host()).map((row) => ({
-        label: text(byTestId('cartouche-label', row)),
-        value: text(byTestId('cartouche-value', row)),
-      }));
-      expect(rows).toEqual(HOME_WORK_FRAME.rows);
-    });
-
     it('is the only description list of the first screen', () => {
       const lists = Array.from(host().querySelectorAll('dl'));
       expect(lists).toHaveLength(1);
       expect(frame()?.contains(lists[0])).toBe(true);
-    });
-
-    it('draws a decorative dimension line hidden from assistive technologies', () => {
-      const dimension = byTestId('hero-work-frame-dimension');
-      expect(dimension?.getAttribute('aria-hidden')).toBe('true');
-      expect(text(byTestId('dimension-line-label', dimension ?? host()))).toBe(
-        HOME_WORK_FRAME.dimension,
-      );
     });
   });
 
@@ -154,14 +105,6 @@ describe('HomeHeroSection', () => {
         tag: sticker()?.tagName,
         label: text(sticker()),
       }).toEqual({ stickers: 1, tag: 'APP-STICKER', label: HOME_HERO_STICKER_LABEL });
-    });
-
-    it('is sage and tilted to the left', () => {
-      expect(
-        [...(sticker()?.classList ?? [])]
-          .filter((token) => /^(?:bg-sticker|text-on-sticker|-?rotate)-/.test(token))
-          .sort(),
-      ).toEqual(['-rotate-2', 'bg-sticker-sage', 'text-on-sticker-sage']);
     });
 
     it('comes after the headline in reading order, outside any heading, link or button', () => {

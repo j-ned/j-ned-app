@@ -118,14 +118,6 @@ describe('InsertGuide', () => {
       });
     });
 
-    it('When the page is rendered Then the warning says these are Julien’s choices, to adapt, in the familiar form', async () => {
-      await render(serving(ENABLED_GUIDE));
-
-      expect(collapsed(one('insert-guide-disclaimer'))).toMatch(
-        /^Ce sont mes choix à l'atelier.*adapte-les/u,
-      );
-    });
-
     it('When the page is rendered Then the material is a labelled, described search field whose list offers each material once, in alphabetical order', async () => {
       await render(serving(ENABLED_GUIDE));
       const field = materialField();

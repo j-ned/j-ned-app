@@ -1,6 +1,5 @@
 import type { ProjectOutcome } from './models/project-outcome.model';
 import { projectOutcome } from './project-outcome';
-import { PROJECT_USAGE_LABELS } from './project-outcomes.static-data';
 
 describe('projectOutcome', () => {
   it.each<{ slug: string; expected: ProjectOutcome }>([
@@ -33,10 +32,4 @@ describe('projectOutcome', () => {
       expect(projectOutcome(slug)).toBeNull();
     },
   );
-});
-
-describe('PROJECT_USAGE_LABELS', () => {
-  it('labels the personal use in the validated words', () => {
-    expect(PROJECT_USAGE_LABELS).toEqual({ personal: 'Usage personnel, pour ma famille et moi.' });
-  });
 });

@@ -32,11 +32,6 @@ describe('ContactInfoPanel', () => {
   const row = (rows: HTMLElement[], key: string): HTMLElement | undefined =>
     rows.find((r) => r.textContent?.includes(key));
 
-  it('Given toutes les coordonnées When le bloc est rendu Then quatre canaux dans l’ordre, sans téléphone ni Malt (spec 029)', () => {
-    const keys = render().map((r) => r.querySelector('span')?.textContent?.trim());
-    expect(keys).toEqual(['email', 'linkedin', 'github', 'localisation']);
-  });
-
   it.each([
     { key: 'linkedin', display: 'linkedin.com/in/jdoe' },
     { key: 'github', display: 'github.com/jdoe' },

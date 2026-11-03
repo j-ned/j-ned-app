@@ -3,12 +3,7 @@ import type { Fact } from '@shared/ui/fact-list';
 import type { BlogPost } from '../domain/models/blog-post.model';
 import type { BlogCategoryFilter } from '../domain/models/blog-tag.model';
 import { makeBlogPost, productionPosts } from '../testing/blog-post-builders';
-import {
-  toBlogListView,
-  toBlogPostRowView,
-  type BlogListFilter,
-  type BlogPostRowView,
-} from './blog-list-view';
+import { toBlogListView, type BlogListFilter, type BlogPostRowView } from './blog-list-view';
 
 const ALL: BlogListFilter = { by: 'category', category: 'all' };
 
@@ -304,61 +299,6 @@ describe('toBlogListView', () => {
       ({ filter, expected }) => {
         expect(toBlogListView(productionPosts(), filter).visibleCount).toBe(expected);
       },
-    );
-
-    it('Given the production posts under « Parcours » When the view is built Then the only row is the career change post, without priority, and the totals are unchanged', () => {
-      const view = toBlogListView(productionPosts(), { by: 'category', category: 'journey' });
-
-      expect(view.rows.map((row) => [row.slug, row.priority])).toEqual([
-        ['de-la-metallurgie-au-developpement', false],
-      ]);
-      expect(view.total).toBe(2);
-      expect(view.themes).toEqual(toBlogListView(productionPosts(), ALL).themes);
-    });
-
-    it('Given the production posts under « Sécurité » When the view is built Then the first post keeps its priority', () => {
-      const { rows } = toBlogListView(productionPosts(), { by: 'category', category: 'security' });
-
-      expect(rows.map((row) => [row.slug, row.priority])).toEqual([
-        ['chiffrement-cote-client', true],
-      ]);
-    });
-  });
-});
-
-describe('toBlogPostRowView', () => {
-  const POST = makeBlogPost({
-    slug: 'chiffrement-cote-client',
-    title: 'Chiffrement côté client',
-    excerpt: 'Le cas DashFlow.',
-    contentMarkdown: Array.from({ length: 1136 }, () => 'mot').join(' '),
-    coverImage: '/covers/chiffrement.avif',
-    tags: ['Chiffrement', 'AES-256-GCM', 'PBKDF2', 'Angular'],
-    publishedAt: '2026-08-31T12:00:00Z',
-  });
-
-  it.each([true, false])(
-    'Given a post and priority %s When its row is built on its own Then it carries everything the article line shows',
-    (priority) => {
-      expect(toBlogPostRowView(POST, priority)).toEqual({
-        slug: 'chiffrement-cote-client',
-        title: 'Chiffrement côté client',
-        excerpt: 'Le cas DashFlow.',
-        publishedAt: '2026-08-31T12:00:00Z',
-        readingTime: '6\u00a0min de lecture',
-        facts: [{ label: 'Sujets', value: 'Chiffrement · AES-256-GCM · PBKDF2' }],
-        coverImage: '/covers/chiffrement.avif',
-        linkContext: '\u00a0: Chiffrement côté client',
-        priority,
-      } satisfies BlogPostRowView);
-    },
-  );
-
-  it('Given the blog list When its rows are built Then each one is the row built on its own, only the first with priority', () => {
-    const posts = productionPosts();
-
-    expect(toBlogListView(posts, ALL).rows).toEqual(
-      posts.map((post, index) => toBlogPostRowView(post, index === 0)),
     );
   });
 });

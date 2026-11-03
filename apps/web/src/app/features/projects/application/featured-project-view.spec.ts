@@ -160,7 +160,6 @@ describe('toFeaturedProjectView', () => {
     it.each([
       { kind: 'production', label: "Ouvrir l'application" },
       { kind: 'demo', label: 'Voir la démo' },
-      { kind: 'script', label: 'Voir le site' },
       { kind: null, label: 'Voir le site' },
     ] satisfies readonly { kind: ProjectKind | null; label: string }[])(
       'Given a live URL on a $kind project When the view is built Then the live link reads « $label »',

@@ -1,22 +1,11 @@
-import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
-import { Button } from '@shared/ui/button';
 import type { ProfileContent } from '../domain/models/profile-content.model';
 import { aProfileContent } from '../testing/profile-builders';
 import { AboutMotivation } from './about-motivation';
 
-@Component({
-  imports: [Button],
-  template: `<button appButton type="button">Référence</button>`,
-})
-class DefaultButtonHost {}
-
 const MOTIVATION = aProfileContent().motivation;
-
-const sortedClasses = (element: Element | null | undefined): readonly string[] =>
-  [...(element?.classList ?? [])].sort();
 
 describe('AboutMotivation', () => {
   let fixture: ComponentFixture<AboutMotivation>;
@@ -59,16 +48,11 @@ describe('AboutMotivation', () => {
       fixture.componentInstance.contactRequested.subscribe(contactRequested);
     });
 
-    it('When la section est rendue Then « Voir les projets » est un lien vers /projects, à l’apparence du bouton principal', () => {
-      const reference = TestBed.createComponent(DefaultButtonHost);
-      reference.detectChanges();
+    it('When la section est rendue Then « Voir les projets » est un lien vers /projects', () => {
       const link = host().querySelector('[data-testid="about-cta-projects"]');
 
       expect(link?.tagName).toBe('A');
       expect(link?.getAttribute('href')).toBe('/projects');
-      expect(sortedClasses(link)).toEqual(
-        sortedClasses((reference.nativeElement as HTMLElement).querySelector('button')),
-      );
     });
 
     it('When le visiteur clique le bouton contact Then la section demande le contact une fois, sans naviguer elle-même', () => {

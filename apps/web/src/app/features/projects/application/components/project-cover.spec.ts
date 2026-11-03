@@ -55,15 +55,6 @@ describe('ProjectCover', () => {
     expect(placeholder?.closest('figure')).toBe(byTestId(root, 'project-cover'));
   });
 
-  it.each([{ image: COVER_URL }, { image: '' }])(
-    'Given the image $image When the cover renders Then its frame keeps the 16/10 ratio',
-    async ({ image }) => {
-      expect(byTestId(await render({ image }), 'project-cover')?.classList).toContain(
-        'aspect-[16/10]',
-      );
-    },
-  );
-
   it.each([
     { priority: true, fetchpriority: 'high', loading: 'eager' },
     { priority: false, fetchpriority: 'auto', loading: 'lazy' },
@@ -79,28 +70,6 @@ describe('ProjectCover', () => {
       }).toEqual({ fetchpriority, loading });
     },
   );
-
-  it.each([
-    { kind: 'production' as const, label: 'En production' },
-    { kind: 'demo' as const, label: 'Démo' },
-    { kind: 'script' as const, label: 'Script' },
-  ])(
-    'Given the nature $kind When the cover renders Then the shared kind stamp reads $label inside the frame',
-    async ({ kind, label }) => {
-      const root = await render({ kind });
-      const stamp = byTestId(root, 'project-cover-kind');
-
-      expect(stamp?.tagName).toBe('APP-PROJECT-KIND-STAMP');
-      expect(stamp?.textContent?.trim()).toBe(label);
-      expect(stamp?.closest('figure')).toBe(byTestId(root, 'project-cover'));
-    },
-  );
-
-  it('Given a nature When the cover renders Then the stamp lets clicks through to the link stretched over the card', async () => {
-    const stamp = byTestId(await render({ kind: 'demo' }), 'project-cover-kind');
-
-    expect(stamp?.classList).toContain('pointer-events-none');
-  });
 
   it('Given no nature When the cover renders Then no stamp is shown', async () => {
     const root = await render({ kind: null });

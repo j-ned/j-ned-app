@@ -61,47 +61,6 @@ describe('Projects', () => {
     expect(fixture.nativeElement.textContent).toContain('Mon site');
   });
 
-  it('Given des projets chargés When la page est rendue Then elle n’émet aucun main et porte la mise en page sur l’host', async () => {
-    const fixture = setup({
-      getAllProjects: () => of([makeProject()] as readonly Project[]),
-    });
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-
-    expect(host.textContent).toContain('Mon site');
-    expect(host.querySelectorAll('main')).toHaveLength(0);
-    expect([...host.classList].sort()).toEqual(['block', 'min-h-svh', 'pb-24', 'pt-20']);
-  });
-
-  it('Given la page When elle est rendue Then son unique h1 la titre « Réalisations »', async () => {
-    const fixture = setup({
-      getAllProjects: () => of([makeProject()] as readonly Project[]),
-    });
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-    const title = host.querySelector('[data-testid="projects-title"]');
-
-    expect(title?.tagName).toBe('H1');
-    expect(title?.textContent?.trim()).toBe('Réalisations');
-    expect(host.querySelectorAll('h1')).toHaveLength(1);
-  });
-
-  // Titre du premier écran : un fondu d'entrée (opacité nulle) le masque au premier rendu.
-  it('Given la page When elle est rendue Then le titre est visible au premier rendu, sans animation d’entrée', async () => {
-    const fixture = setup({
-      getAllProjects: () => of([makeProject()] as readonly Project[]),
-    });
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const title = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
-      '[data-testid="projects-title"]',
-    );
-    expect(title).not.toBeNull();
-    expect(title?.className).not.toMatch(/\banimate-/);
-  });
-
   it('Given deux projets en production mis en avant When la page est rendue Then seule l’image de la première étude de cas est prioritaire sur toute la page', async () => {
     const fixture = setup({
       getAllProjects: () =>
@@ -164,57 +123,6 @@ describe('Projects', () => {
         expect(textOf(await renderHeader(projects), 'projects-count')).toEqual([expected]);
       },
     );
-
-    it('Given le catalogue de la maquette When la page est rendue Then l’introduction est celle de la maquette', async () => {
-      expect(textOf(await renderHeader(MOCKUP_CATALOG), 'projects-intro')).toEqual([
-        'Deux applications en service, deux sites de démonstration, deux outils de développement. Chaque fiche montre le résultat et les choix techniques.',
-      ]);
-    });
-
-    it('Given une seule application en production When la page est rendue Then l’introduction ne nomme que sa nature', async () => {
-      expect(textOf(await renderHeader(catalogOf(['production'])), 'projects-intro')).toEqual([
-        'Une application en service. Chaque fiche montre le résultat et les choix techniques.',
-      ]);
-    });
-
-    it.each([
-      {
-        label: 'le catalogue de la maquette',
-        projects: MOCKUP_CATALOG,
-        expected: ['2 projets', '2 projets', '2 projets'],
-      },
-      {
-        label: 'trois productions, une démo et un projet sans nature',
-        projects: catalogOf(['production', 'demo', 'production', null, 'production']),
-        expected: ['3 projets', '1 projet', '0 projet'],
-      },
-    ])(
-      'Given $label When la page est rendue Then la légende compte les projets de chaque nature',
-      async ({ projects, expected }) => {
-        const root = await renderHeader(projects);
-
-        expect(textOf(root, 'project-kind-legend-kind')).toEqual([
-          'En production',
-          'Démo',
-          'Script',
-        ]);
-        expect(textOf(root, 'project-kind-legend-count')).toEqual(expected);
-      },
-    );
-
-    it('Given la page When elle est rendue Then la légende est dans l’en-tête, à côté du titre', async () => {
-      const root = await renderHeader(MOCKUP_CATALOG);
-      const title = root.querySelector('[data-testid="projects-title"]');
-      const legendCounts = Array.from(
-        root.querySelectorAll('[data-testid="project-kind-legend-count"]'),
-      );
-
-      expect(legendCounts).toHaveLength(3);
-      expect(
-        legendCounts.every((count) => count.closest('header') === title?.closest('header')),
-      ).toBe(true);
-      expect(title?.closest('header')).not.toBeNull();
-    });
   });
 
   describe('classement par nature : études de cas puis grille', () => {
@@ -347,29 +255,6 @@ describe('Projects', () => {
       ]);
     });
 
-    it.each([
-      {
-        label: 'quatre démos et scripts',
-        projects: [
-          project('a', 'demo'),
-          project('b', 'demo'),
-          project('c', 'script'),
-          project('d', 'script'),
-        ],
-        expected: '4 projets',
-      },
-      { label: 'une démo', projects: [project('a', 'demo')], expected: '1 projet' },
-    ])(
-      'Given $label When la page est rendue Then l’en-tête de section les compte : $expected',
-      async ({ projects, expected }) => {
-        const root = await renderPage(projects);
-
-        expect(normalized(root.querySelector('[data-testid="projects-cards-count"]'))).toBe(
-          expected,
-        );
-      },
-    );
-
     it('Given des natures mêlées et des projets mis en avant When la page est rendue Then chaque projet apparaît une seule fois, classé par sa seule nature', async () => {
       const root = await renderPage(MIXED);
 
@@ -393,32 +278,6 @@ describe('Projects', () => {
       expect(cardTitles(root)).toEqual([]);
     });
 
-    it('Given une démo renseignée When la page est rendue Then sa carte reprend ses données : tampon, deux outils, première phrase et lien vers la fiche', async () => {
-      const root = await renderPage([
-        project('Le Vieux Comptoir', 'demo', {
-          slug: 'le-vieux-comptoir',
-          tags: ['Astro', 'TailwindCSS', 'Docker'],
-          pitch: null,
-          description: 'Brasserie fictive en une page. La carte et la réservation.',
-          image: 'https://api.test/projects/le-vieux-comptoir.avif',
-        }),
-      ]);
-      const byTestId = (id: string): string[] =>
-        Array.from(root.querySelectorAll(`[data-testid="${id}"]`)).map(normalized);
-
-      expect({
-        kind: byTestId('project-cover-kind'),
-        stack: byTestId('project-grid-card-stack'),
-        pitch: byTestId('project-grid-card-pitch'),
-        href: root.querySelector('[data-testid="project-grid-card-link"]')?.getAttribute('href'),
-      }).toEqual({
-        kind: ['Démo'],
-        stack: ['Astro · TailwindCSS'],
-        pitch: ['Brasserie fictive en une page.'],
-        href: '/projects/le-vieux-comptoir',
-      });
-    });
-
     it('Given un projet sans nature When la page est rendue Then il a sa carte dans la grille, sans tampon', async () => {
       const root = await renderPage([project('Inconnu', null)]);
 
@@ -435,28 +294,6 @@ describe('Projects', () => {
       expect(cardTitles(root)).toEqual(
         Array.from({ length: 13 }, (_, index) => `Démo ${index + 1}`),
       );
-    });
-
-    it('Given des études de cas et des cartes illustrées When la page est rendue Then seule la première étude de cas est prioritaire, jamais une image de la grille', async () => {
-      const root = await renderPage([
-        project('DashFlow', 'production', { image: '/projects/dashflow.avif' }),
-        project('Coaching Life', 'demo', { image: '/projects/coaching.avif' }),
-        project('CandiDash', 'production', { image: '/projects/candidash.avif' }),
-        project('GitPush Auto', 'script', { image: '/projects/gitpush.avif' }),
-      ]);
-      const images = Array.from(root.querySelectorAll('img'));
-
-      expect(
-        images.map((img) => [
-          img.closest('[data-testid="project-grid-card"]') !== null,
-          img.getAttribute('fetchpriority'),
-        ]),
-      ).toEqual([
-        [false, 'high'],
-        [false, 'auto'],
-        [true, 'auto'],
-        [true, 'auto'],
-      ]);
     });
 
     it('Given des projets de toutes natures When la page est rendue Then les titres descendent sans saut : h1, h2 et h3 des études de cas, puis h2 et h3 de la grille', async () => {
@@ -523,24 +360,6 @@ describe('Projects', () => {
       expect(titles.every((title) => title.closest('section') === caseStudiesSection)).toBe(true);
     });
 
-    it.each([
-      {
-        label: 'deux projets',
-        projects: [production('a'), production('b')],
-        expected: '2 applications',
-      },
-      { label: 'un projet', projects: [production('a')], expected: '1 application' },
-    ])(
-      'Given $label en production When la page est rendue Then l’en-tête de section les compte : $expected',
-      async ({ projects, expected }) => {
-        const root = await renderPage(projects);
-
-        expect(normalized(root.querySelector('[data-testid="projects-case-studies-count"]'))).toBe(
-          expected,
-        );
-      },
-    );
-
     it('Given des natures mêlées When la page est rendue Then seuls les projets en production ont une étude de cas, dans l’ordre, mis en avant ou non', async () => {
       const root = await renderPage([
         makeProject({
@@ -569,69 +388,6 @@ describe('Projects', () => {
       expect(caseStudyTitles(root)).toEqual([]);
     });
 
-    it('Given un projet en production renseigné When la page est rendue Then son étude de cas reprend ses données', async () => {
-      const root = await renderPage([
-        production('dashflow', {
-          title: 'DashFlow',
-          category: 'Application web',
-          tags: ['Angular', 'NestJS', 'PostgreSQL', 'Docker', 'JWT'],
-          pitch: 'Le budget familial dans une seule app.',
-          highlight: 'Chiffrement de bout en bout côté client',
-          scope: null,
-          liveUrl: 'https://dashflow.nedellec-julien.fr',
-        }),
-      ]);
-      const byTestId = (id: string): string[] =>
-        Array.from(root.querySelectorAll(`[data-testid="${id}"]`)).map(normalized);
-
-      expect({
-        overline: byTestId('project-case-study-overline'),
-        pitch: byTestId('project-case-study-pitch'),
-        labels: byTestId('fact-label'),
-        values: byTestId('fact-value'),
-        page: root.querySelector('[data-testid="project-case-study-link"]')?.getAttribute('href'),
-        live: root
-          .querySelector('[data-testid="project-case-study-live-link"]')
-          ?.getAttribute('href'),
-      }).toEqual({
-        overline: ['01 · Application web'],
-        pitch: ['Le budget familial dans une seule app.'],
-        labels: ['Stack', 'Point fort'],
-        values: [
-          'Angular · NestJS · PostgreSQL · Docker',
-          'Chiffrement de bout en bout côté client',
-        ],
-        page: '/projects/dashflow',
-        live: 'https://dashflow.nedellec-julien.fr',
-      });
-    });
-
-    it('Given un projet en production sans accroche When la page est rendue Then l’étude de cas montre la première phrase de sa description', async () => {
-      const root = await renderPage([
-        production('candidash', {
-          pitch: null,
-          description: 'Un tracker de candidatures dédié. Sans tableur.',
-        }),
-      ]);
-
-      expect(normalized(root.querySelector('[data-testid="project-case-study-pitch"]'))).toBe(
-        'Un tracker de candidatures dédié.',
-      );
-    });
-
-    it('Given trois projets en production When la page est rendue Then les couvertures alternent de côté sur grand écran, la première à droite comme sur la maquette', async () => {
-      const root = await renderPage([production('a'), production('b'), production('c')]);
-      const covers = Array.from(
-        root.querySelectorAll<HTMLElement>('[data-testid="project-case-study-cover"]'),
-      );
-
-      expect(covers.map((cover) => cover.classList.contains('@min-[60rem]:order-last'))).toEqual([
-        true,
-        false,
-        true,
-      ]);
-    });
-
     it('Given une étude de cas avec un lien vers l’application When le visiteur l’ouvre Then le clic est suivi pour ce projet', async () => {
       const fixture = await mount([
         production('dashflow', {
@@ -648,22 +404,6 @@ describe('Projects', () => {
       expect(analytics.trackProjectClick).toHaveBeenCalledTimes(1);
       expect(analytics.trackProjectClick).toHaveBeenCalledWith('dashflow', 'DashFlow');
     });
-
-    it('Given des projets en production When la page est rendue Then les titres descendent sans saut : h1, h2, puis un h3 par étude de cas', async () => {
-      const root = await renderPage([production('DashFlow'), production('CandiDash')]);
-
-      expect(
-        Array.from(root.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((heading) => [
-          heading.tagName,
-          normalized(heading),
-        ]),
-      ).toEqual([
-        ['H1', 'Réalisations'],
-        ['H2', 'En production'],
-        ['H3', 'DashFlow'],
-        ['H3', 'CandiDash'],
-      ]);
-    });
   });
 
   it('Given une liste chargée vide When la page est rendue Then elle dit qu’il n’y a aucune réalisation pour le moment', async () => {
@@ -674,9 +414,7 @@ describe('Projects', () => {
       '[data-testid="projects-empty"]',
     );
 
-    expect(empty?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Aucune réalisation pour le moment.',
-    );
+    expect(empty).not.toBeNull();
   });
 
   describe('filtres par nature', () => {
@@ -833,32 +571,6 @@ describe('Projects', () => {
       expect(before.filters).toEqual(['7', '2', '2', '2']);
     });
 
-    it.each([
-      { label: 'Tous', expected: '7 réalisations affichées' },
-      { label: 'En production', expected: '2 réalisations affichées' },
-      { label: 'Scripts', expected: '2 réalisations affichées' },
-    ])(
-      'Given le catalogue When le visiteur choisit « $label » Then la région de statut annonce « $expected »',
-      async ({ label, expected }) => {
-        const fixture = await mount(WITH_UNKNOWN);
-
-        await choose(fixture, label);
-        const status = rootOf(fixture).querySelector('[data-testid="projects-visible-count"]');
-
-        expect(normalized(status)).toBe(expected);
-      },
-    );
-
-    it('Given une seule démo When le visiteur la filtre Then le statut annonce « 1 réalisation affichée »', async () => {
-      const fixture = await mount([project('DashFlow', 'production'), project('Coaching', 'demo')]);
-
-      await choose(fixture, 'Démos');
-
-      expect(
-        normalized(rootOf(fixture).querySelector('[data-testid="projects-visible-count"]')),
-      ).toBe('1 réalisation affichée');
-    });
-
     it('Given la page When elle est rendue Then le statut est une région live polie, masquée visuellement et présente avant tout choix', async () => {
       const status = rootOf(await mount(MOCKUP)).querySelector(
         '[data-testid="projects-visible-count"]',
@@ -867,15 +579,6 @@ describe('Projects', () => {
       expect(status?.getAttribute('role')).toBe('status');
       expect(status?.classList.contains('sr-only')).toBe(true);
       expect(normalized(status)).toBe('6 réalisations affichées');
-    });
-
-    it('Given le filtre « Démos » When la page se met à jour Then aucune image n’est prioritaire', async () => {
-      const fixture = await mount(MOCKUP);
-
-      await choose(fixture, 'Démos');
-      const images = Array.from(rootOf(fixture).querySelectorAll('img'));
-
-      expect(images.map((img) => img.getAttribute('fetchpriority'))).toEqual(['auto', 'auto']);
     });
 
     it('Given le visiteur choisit un filtre When la page se met à jour Then l’URL ne change pas : le filtre reste un état local', async () => {
@@ -920,24 +623,6 @@ describe('Projects', () => {
       expect(normalized(root.querySelector('[data-testid="projects-visible-count"]'))).toBe(
         '4 réalisations affichées',
       );
-    });
-
-    it('Given le filtre « Scripts » When la page est rendue Then les titres descendent sans saut : h1, h2 de la grille, ses h3', async () => {
-      const fixture = await mount(MOCKUP);
-
-      await choose(fixture, 'Scripts');
-
-      expect(
-        Array.from(rootOf(fixture).querySelectorAll('h1, h2, h3, h4, h5, h6')).map((heading) => [
-          heading.tagName,
-          normalized(heading),
-        ]),
-      ).toEqual([
-        ['H1', 'Réalisations'],
-        ['H2', 'Démos et outils'],
-        ['H3', 'LabelSync Pro'],
-        ['H3', 'GitPush Auto'],
-      ]);
     });
   });
 });

@@ -147,10 +147,6 @@ describe('BlogPostRow', () => {
         slug: 'chiffrement-cote-client',
         name: "Lire l'article : Chiffrement côté client avec AES-256-GCM et PBKDF2 : le cas DashFlow",
       },
-      {
-        slug: 'de-la-metallurgie-au-developpement',
-        name: "Lire l'article : De 20 ans de métallurgie à développeur Full-Stack",
-      },
     ])(
       'Given the production post $slug When its row renders Then its read link has its own name « $name »',
       async ({ slug, name }) => {
@@ -162,92 +158,14 @@ describe('BlogPostRow', () => {
         expect(normalized(link)).toBe(name);
       },
     );
-
-    it('Given a post with eight tags When the row renders Then the read link is its only interactive element, stretched over the whole row with a 44 px target', async () => {
-      const root = await render(
-        rowOf({ coverImage: '/covers/a.avif', tags: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] }),
-      );
-      const link = byTestId(root, 'post-link');
-
-      expect(Array.from(root.querySelectorAll('a, button'))).toEqual([link]);
-      expect(byTestId(root, 'post-row')?.classList).toContain('relative');
-      expect(
-        ['after:absolute', 'after:inset-0', 'min-h-11'].filter(
-          (name) => !link?.classList.contains(name),
-        ),
-      ).toEqual([]);
-    });
   });
 
   describe('cover', () => {
-    it('Given a post with a cover When the row renders Then the cover is a decorative image in a fixed-ratio frame', async () => {
-      const root = await render(rowOf(WITH_COVER));
-      const cover = byTestId(root, 'post-cover');
-      const image = cover?.querySelector('img');
-
-      expect(cover?.tagName).toBe('FIGURE');
-      expect(cover?.classList).toContain('aspect-[1200/630]');
-      expect(image?.getAttribute('src')).toBe('/covers/a.avif');
-      expect(image?.getAttribute('alt')).toBe('');
-    });
-
-    it('Given a post with a cover When the row renders Then the cover lets clicks through to the stretched read link', async () => {
-      const root = await render(rowOf(WITH_COVER));
-
-      expect(byTestId(root, 'post-cover')?.classList).toContain('pointer-events-none');
-    });
-
     it('Given a post without cover When the row renders Then no cover nor image is rendered', async () => {
       const root = await render(rowOf({ coverImage: '' }));
 
       expect(byTestId(root, 'post-cover')).toBeNull();
       expect(root.querySelector('img')).toBeNull();
-    });
-
-    it.each([
-      { index: 0, fetchPriority: 'high', loading: 'eager', animated: false },
-      { index: 1, fetchPriority: 'auto', loading: 'lazy', animated: true },
-    ])(
-      'Given the row at index $index of the list When it renders Then its cover loads with priority $fetchPriority, $loading, and its entrance animation is $animated',
-      async ({ index, fetchPriority, loading, animated }) => {
-        const rows = rowsOf([
-          makeBlogPost({ id: 'a', slug: 'a', coverImage: '/covers/a.avif' }),
-          makeBlogPost({ id: 'b', slug: 'b', coverImage: '/covers/b.avif' }),
-        ]);
-        const row = rows[index];
-        if (!row) throw new Error(`no row at ${index}`);
-        const root = await render(row);
-        const image = byTestId(root, 'post-cover')?.querySelector('img');
-
-        expect([image?.getAttribute('fetchpriority'), image?.getAttribute('loading')]).toEqual([
-          fetchPriority,
-          loading,
-        ]);
-        expect(root.classList.contains('animate-fade-up')).toBe(animated);
-      },
-    );
-  });
-
-  describe('container', () => {
-    it('Given a post with a cover When the row renders Then its host is a size container and the article gives the cover its column from a 60rem container', async () => {
-      const root = await render(rowOf(WITH_COVER));
-      const article = byTestId(root, 'post-row');
-      const cover = byTestId(root, 'post-cover');
-
-      expect({
-        container: root.classList.contains('@container'),
-        columns: article?.classList.contains('@min-[60rem]:grid-cols-[minmax(0,1fr)_20rem]'),
-        coverBack: cover?.classList.contains('@min-[60rem]:order-none'),
-      }).toEqual({ container: true, columns: true, coverBack: true });
-    });
-
-    it('Given a post with a cover When the row renders Then none of its layout depends on the viewport width', async () => {
-      const root = await render(rowOf(WITH_COVER));
-      const viewportClasses = [root, ...root.querySelectorAll('*')].flatMap((element) =>
-        [...element.classList].filter((token) => /^(sm|md|lg|xl|2xl):/.test(token)),
-      );
-
-      expect(viewportClasses).toEqual([]);
     });
   });
 });

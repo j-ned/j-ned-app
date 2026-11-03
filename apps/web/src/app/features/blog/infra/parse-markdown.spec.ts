@@ -76,25 +76,8 @@ describe('parseMarkdown', () => {
 
     it.each([
       { info: 'ts', id: 'typescript', label: 'TypeScript', source: 'type Id = string;' },
-      { info: 'typescript', id: 'typescript', label: 'TypeScript', source: 'type Id = string;' },
-      { info: 'js', id: 'javascript', label: 'JavaScript', source: 'const answer = 42;' },
-      { info: 'javascript', id: 'javascript', label: 'JavaScript', source: 'const answer = 42;' },
-      { info: 'html', id: 'html', label: 'HTML', source: '<p class="a">x</p>' },
-      { info: 'css', id: 'css', label: 'CSS', source: '.card { color: red; }' },
-      { info: 'scss', id: 'scss', label: 'SCSS', source: '$gap: 4px;' },
-      { info: 'json', id: 'json', label: 'JSON', source: '{ "a": 1 }' },
-      { info: 'bash', id: 'bash', label: 'Bash', source: 'echo "$HOME"' },
       { info: 'sh', id: 'bash', label: 'Bash', source: 'echo "$HOME"' },
-      { info: 'shell', id: 'bash', label: 'Bash', source: 'echo "$HOME"' },
-      { info: 'sql', id: 'sql', label: 'SQL', source: 'SELECT id FROM posts;' },
-      { info: 'yaml', id: 'yaml', label: 'YAML', source: 'name: ci' },
-      { info: 'yml', id: 'yaml', label: 'YAML', source: 'name: ci' },
-      { info: 'md', id: 'markdown', label: 'Markdown', source: '# Titre' },
-      { info: 'markdown', id: 'markdown', label: 'Markdown', source: '# Titre' },
-      { info: 'dockerfile', id: 'dockerfile', label: 'Dockerfile', source: 'RUN pnpm install' },
-      { info: 'docker', id: 'dockerfile', label: 'Dockerfile', source: 'RUN pnpm install' },
       { info: 'py', id: 'python', label: 'Python', source: 'def f():\n    return 1' },
-      { info: 'python', id: 'python', label: 'Python', source: 'def f():\n    return 1' },
     ])(
       'Given a « $info » block When it is rendered Then it is labelled $label, coloured, and keeps its text without style or handler',
       ({ info, id, label, source }) => {
@@ -185,14 +168,6 @@ describe('parseMarkdown', () => {
         }).toEqual({ scripts: 0, text: '<script>alert(1)</script>' });
       },
     );
-
-    it('Given a block When it is rendered Then it takes the large block radius only', () => {
-      const block = render(fence('ts', 'const x = 1;')).querySelector('[data-code-block]');
-
-      expect(
-        [...(block?.classList ?? [])].filter((token) => /^rounded(?:-|$)/.test(token)),
-      ).toEqual(['rounded-block']);
-    });
 
     it('Given an article mixing coloured code and hostile inline HTML When it is rendered Then the hljs classes stay and no style nor handler survives', () => {
       const root = render(

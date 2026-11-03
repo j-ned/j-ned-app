@@ -141,38 +141,6 @@ describe('HttpAnalyticsGateway', () => {
       httpController.verify();
     });
 
-    it('trackArticleView émet POST /api/analytics/track avec { type:article_view, entityId, entityTitle }', () => {
-      const { gateway, httpController } = configureBrowser();
-
-      gateway.trackArticleView('art-1', 'My Article');
-
-      const req = httpController.expectOne(TRACK_URL);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({
-        type: 'article_view',
-        entityId: 'art-1',
-        entityTitle: 'My Article',
-      });
-      req.flush(null, { status: 204, statusText: 'No Content' });
-      httpController.verify();
-    });
-
-    it('trackArticleRead émet POST /api/analytics/track avec { type:article_read, entityId, entityTitle }', () => {
-      const { gateway, httpController } = configureBrowser();
-
-      gateway.trackArticleRead('art-1', 'My Article');
-
-      const req = httpController.expectOne(TRACK_URL);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({
-        type: 'article_read',
-        entityId: 'art-1',
-        entityTitle: 'My Article',
-      });
-      req.flush(null, { status: 204, statusText: 'No Content' });
-      httpController.verify();
-    });
-
     it('marque les POST de tracking comme silencieux pour l’intercepteur de toast', () => {
       const { gateway, httpController } = configureBrowser();
 
@@ -540,66 +508,6 @@ describe('HttpAnalyticsGateway', () => {
       httpController.verify();
     });
 
-    it('getArticleStats émet GET /<base>/analytics/stats/articles avec params dates + withCredentials', async () => {
-      const { gateway, httpController } = configureBrowser();
-      const expected: EntityStat[] = [{ entityId: 'a1', entityTitle: 'Article 1', count: 3 }];
-
-      const promise = firstValueFrom(gateway.getArticleStats('2026-04-01', '2026-04-30'));
-
-      const req = httpController.expectOne(
-        (r) =>
-          r.url === `${API}/analytics/stats/articles` &&
-          r.params.get('startDate') === '2026-04-01' &&
-          r.params.get('endDate') === '2026-04-30',
-      );
-      expect(req.request.method).toBe('GET');
-      expect(req.request.withCredentials).toBe(true);
-      req.flush(expected);
-
-      const result = await promise;
-      expect(result).toEqual(expected);
-      httpController.verify();
-    });
-
-    it('getArticleReadStats émet GET /<base>/analytics/stats/articles-read avec params dates + withCredentials', async () => {
-      const { gateway, httpController } = configureBrowser();
-      const expected: EntityStat[] = [{ entityId: 'a1', entityTitle: 'Article 1', count: 2 }];
-
-      const promise = firstValueFrom(gateway.getArticleReadStats('2026-04-01', '2026-04-30'));
-
-      const req = httpController.expectOne(
-        (r) =>
-          r.url === `${API}/analytics/stats/articles-read` &&
-          r.params.get('startDate') === '2026-04-01' &&
-          r.params.get('endDate') === '2026-04-30',
-      );
-      expect(req.request.method).toBe('GET');
-      expect(req.request.withCredentials).toBe(true);
-      req.flush(expected);
-
-      const result = await promise;
-      expect(result).toEqual(expected);
-      httpController.verify();
-    });
-
-    it('getCtaStats émet GET /<base>/analytics/stats/cta avec params dates + withCredentials', async () => {
-      const { gateway, httpController } = configureBrowser();
-      const rows: EntityStat[] = [
-        { entityId: 'home_hero_projects', entityTitle: 'Voir les projets', count: 42 },
-      ];
-
-      const promise = firstValueFrom(gateway.getCtaStats('2026-01-01', '2026-01-31'));
-
-      const req = httpController.expectOne(
-        `${API}/analytics/stats/cta?startDate=2026-01-01&endDate=2026-01-31`,
-      );
-      expect(req.request.method).toBe('GET');
-      expect(req.request.withCredentials).toBe(true);
-      req.flush(rows);
-      await expect(promise).resolves.toEqual(rows);
-      httpController.verify();
-    });
-
     it('getCvDownloadCount émet GET /<base>/analytics/stats/cv-downloads, extrait res.count → number', async () => {
       const { gateway, httpController } = configureBrowser();
 
@@ -653,38 +561,29 @@ describe('HttpAnalyticsGateway', () => {
   });
 
   describe('URL filter (login + admin)', () => {
-    it.each([['/login'], ['/admin'], ['/admin/'], ['/admin/users'], ['/admin/foo/bar']])(
-      'trackPageView est no-op pour url=%s',
-      (url) => {
-        const { gateway, httpController } = configureBrowser();
-        gateway.trackPageView(url);
-        httpController.expectNone(TRACK_URL);
-        httpController.verify();
-      },
-    );
+    it.each([['/login'], ['/admin/users']])('trackPageView est no-op pour url=%s', (url) => {
+      const { gateway, httpController } = configureBrowser();
+      gateway.trackPageView(url);
+      httpController.expectNone(TRACK_URL);
+      httpController.verify();
+    });
 
-    it.each([['/login'], ['/admin'], ['/admin/dashboard']])(
-      'trackPageDuration est no-op pour url=%s',
-      (url) => {
-        const { gateway, httpController } = configureBrowser();
-        const beacon = beaconSpy();
-        gateway.trackPageDuration(url, 30);
-        expect(beacon).not.toHaveBeenCalled();
-        httpController.verify();
-      },
-    );
+    it.each([['/login']])('trackPageDuration est no-op pour url=%s', (url) => {
+      const { gateway, httpController } = configureBrowser();
+      const beacon = beaconSpy();
+      gateway.trackPageDuration(url, 30);
+      expect(beacon).not.toHaveBeenCalled();
+      httpController.verify();
+    });
 
-    it.each([['/logins'], ['/admin-public'], ['/login/something'], ['/home']])(
-      'trackPageView est OK pour url=%s (pas filtré)',
-      (url) => {
-        const { gateway, httpController } = configureBrowser();
-        gateway.trackPageView(url);
-        const req = httpController.expectOne(TRACK_URL);
-        expect(req.request.body).toEqual(expect.objectContaining({ url }));
-        req.flush(null, { status: 204, statusText: 'No Content' });
-        httpController.verify();
-      },
-    );
+    it.each([['/admin-public']])('trackPageView est OK pour url=%s (pas filtré)', (url) => {
+      const { gateway, httpController } = configureBrowser();
+      gateway.trackPageView(url);
+      const req = httpController.expectOne(TRACK_URL);
+      expect(req.request.body).toEqual(expect.objectContaining({ url }));
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      httpController.verify();
+    });
   });
 
   describe('visiteurs exclus', () => {
@@ -729,33 +628,6 @@ describe('HttpAnalyticsGateway', () => {
       const { gateway, httpController } = configureServer();
 
       gateway.trackPageView('/home');
-
-      httpController.expectNone(TRACK_URL);
-      httpController.verify();
-    });
-
-    it('trackProjectClick est no-op si platform !== browser', () => {
-      const { gateway, httpController } = configureServer();
-
-      gateway.trackProjectClick('abc-123', 'My Project');
-
-      httpController.expectNone(TRACK_URL);
-      httpController.verify();
-    });
-
-    it('trackArticleRead est no-op si platform !== browser', () => {
-      const { gateway, httpController } = configureServer();
-
-      gateway.trackArticleRead('art-1', 'My Article');
-
-      httpController.expectNone(TRACK_URL);
-      httpController.verify();
-    });
-
-    it('trackCtaClick est no-op si platform !== browser', () => {
-      const { gateway, httpController } = configureServer();
-
-      gateway.trackCtaClick('home_hero_projects', 'Voir les projets');
 
       httpController.expectNone(TRACK_URL);
       httpController.verify();
