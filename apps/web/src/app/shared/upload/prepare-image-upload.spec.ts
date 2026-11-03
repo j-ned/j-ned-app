@@ -1,4 +1,4 @@
-import { MAX_UPLOAD_BYTES } from './upload-limit';
+import { IMAGE_UPLOAD_TARGET_BYTES as LIMIT } from './upload-limit';
 import { UploadRejectedError } from './upload-rejected-error';
 import {
   IMAGE_TOO_LARGE,
@@ -11,7 +11,8 @@ import {
   type ImageSize,
 } from './prepare-image-upload';
 
-const MIB = 1024 * 1024;
+const KIB = 1024;
+const MIB = 1024 * KIB;
 
 type FakeImage = DecodedImage & { readonly close: ReturnType<typeof vi.fn<() => void>> };
 
@@ -25,7 +26,7 @@ const blobOf = (bytes: number, type = 'image/webp'): Blob =>
 
 function fakeCodec(
   dimensions: ImageSize | 'undecodable',
-  encodedBytes: (quality: number) => number | null = () => MIB,
+  encodedBytes: (quality: number) => number | null = () => 500 * KIB,
 ): { codec: ImageCodec<FakeImage>; image: FakeImage | null; encodes: EncodeCall[] } {
   const encodes: EncodeCall[] = [];
   const image: FakeImage | null =
@@ -56,10 +57,24 @@ describe('scaleToFit', () => {
   );
 });
 
+describe('image upload target', () => {
+  // Au-delà d'environ 1 Mo, Vercel refuse un envoi multipart en 503 avant l'API (mesuré le 2026-11-03).
+  it('Given the Vercel multipart refusal around 1 MB When the target is read Then it stays well under it', () => {
+    expect(LIMIT).toBe(900 * KIB);
+  });
+
+  it.each([IMAGE_TOO_LARGE, IMAGE_UNREADABLE])(
+    'Given the refusal « %s » When it is shown Then it names the 900 Ko target',
+    (message) => {
+      expect(message).toContain('900\u00a0Ko');
+    },
+  );
+});
+
 describe('prepareImageUpload', () => {
   it.each([
-    { bytes: 3 * MIB, size: { width: 2400, height: 1600 } },
-    { bytes: MAX_UPLOAD_BYTES, size: { width: 800, height: 2400 } },
+    { bytes: 600 * KIB, size: { width: 2400, height: 1600 } },
+    { bytes: LIMIT, size: { width: 800, height: 2400 } },
   ])(
     'Given an image of $bytes bytes and $size.width×$size.height When it is prepared Then the very same file is sent, untouched',
     async ({ bytes, size }) => {
@@ -80,10 +95,22 @@ describe('prepareImageUpload', () => {
     },
   );
 
-  it('Given a small file wider than 2400 px When it is prepared Then it is scaled to 2400 px and re-encoded as WebP at quality 0.9', async () => {
-    const { codec, encodes } = fakeCodec({ width: 6000, height: 4000 }, () => 900_000);
+  it('Given a 3 MiB photo within 2400 px When it is prepared Then it is re-encoded as WebP under the target, not sent as is', async () => {
+    const { codec, encodes } = fakeCodec({ width: 2400, height: 1600 }, () => 700 * KIB);
 
-    const prepared = await prepareImageUpload(fileOf(2 * MIB, 'vue.png'), codec);
+    const prepared = await prepareImageUpload(fileOf(3 * MIB, 'photo.jpg', 'image/jpeg'), codec);
+
+    expect({ encodes: encodes.length, type: prepared.type, size: prepared.size }).toEqual({
+      encodes: 1,
+      type: 'image/webp',
+      size: 700 * KIB,
+    });
+  });
+
+  it('Given a small file wider than 2400 px When it is prepared Then it is scaled to 2400 px and re-encoded as WebP at quality 0.9', async () => {
+    const { codec, encodes } = fakeCodec({ width: 6000, height: 4000 }, () => 800 * KIB);
+
+    const prepared = await prepareImageUpload(fileOf(500 * KIB, 'vue.png'), codec);
 
     expect({
       encodes,
@@ -94,38 +121,38 @@ describe('prepareImageUpload', () => {
       encodes: [{ size: { width: 2400, height: 1600 }, quality: 0.9 }],
       name: 'vue.webp',
       type: 'image/webp',
-      size: 900_000,
+      size: 800 * KIB,
     });
   });
 
-  it('Given a file over 4 MiB but small in pixels When it is prepared Then it is re-encoded at its own size, never upscaled', async () => {
+  it('Given a file over the target but small in pixels When it is prepared Then it is re-encoded at its own size, never upscaled', async () => {
     const { codec, encodes } = fakeCodec({ width: 1600, height: 1000 });
 
-    await prepareImageUpload(fileOf(6 * MIB), codec);
+    await prepareImageUpload(fileOf(2 * MIB), codec);
 
     expect(encodes.map(({ size }) => size)).toEqual([{ width: 1600, height: 1000 }]);
   });
 
-  it('Given an encoding still over 4 MiB at high quality When it is prepared Then the quality is lowered step by step until it fits', async () => {
-    const sizes: Readonly<Record<number, number>> = { 0.9: 7 * MIB, 0.8: 5 * MIB, 0.7: 3 * MIB };
+  it('Given an encoding still over the target at high quality When it is prepared Then the quality is lowered step by step until it fits', async () => {
+    const sizes: Readonly<Record<number, number>> = { 0.9: 2 * MIB, 0.8: MIB, 0.7: 800 * KIB };
     const { codec, encodes } = fakeCodec({ width: 2400, height: 2400 }, (q) => sizes[q] ?? MIB);
 
     const prepared = await prepareImageUpload(fileOf(12 * MIB, 'scan.jpeg', 'image/jpeg'), codec);
 
     expect({ qualities: encodes.map(({ quality }) => quality), size: prepared.size }).toEqual({
       qualities: [0.9, 0.8, 0.7],
-      size: 3 * MIB,
+      size: 800 * KIB,
     });
   });
 
-  it('Given an encoding of exactly 4 MiB When it is prepared Then it is accepted', async () => {
-    const { codec, encodes } = fakeCodec({ width: 3000, height: 2000 }, () => MAX_UPLOAD_BYTES);
+  it('Given an encoding of exactly the target When it is prepared Then it is accepted', async () => {
+    const { codec, encodes } = fakeCodec({ width: 3000, height: 2000 }, () => LIMIT);
 
     const prepared = await prepareImageUpload(fileOf(5 * MIB), codec);
 
     expect({ encodes: encodes.length, size: prepared.size }).toEqual({
       encodes: 1,
-      size: MAX_UPLOAD_BYTES,
+      size: LIMIT,
     });
   });
 
@@ -144,8 +171,8 @@ describe('prepareImageUpload', () => {
     },
   );
 
-  it('Given a file over 4 MiB that no quality brings under 4 MiB When it is prepared Then it is refused with a French message', async () => {
-    const { codec, encodes, image } = fakeCodec({ width: 2400, height: 2400 }, () => 5 * MIB);
+  it('Given a file over the target that no quality brings under it When it is prepared Then it is refused with a French message', async () => {
+    const { codec, encodes, image } = fakeCodec({ width: 2400, height: 2400 }, () => MIB);
 
     const failure = await prepareImageUpload(fileOf(9 * MIB), codec).catch(
       (error: unknown) => error,
@@ -177,9 +204,9 @@ describe('prepareImageUpload', () => {
       }),
     },
   ])(
-    'Given a file over 4 MiB that $given When it is prepared Then it is refused with a French message',
+    'Given a file over the target that $given When it is prepared Then it is refused with a French message',
     async ({ codec }) => {
-      const failure = await prepareImageUpload(fileOf(5 * MIB), codec()).catch(
+      const failure = await prepareImageUpload(fileOf(2 * MIB), codec()).catch(
         (error: unknown) => error,
       );
 
@@ -201,9 +228,9 @@ describe('prepareImageUpload', () => {
         fakeCodec({ width: 3000, height: 3000 }, () => null).codec,
     },
   ])(
-    'Given a file under 4 MiB that $given When it is prepared Then it is sent untouched, for the API to judge',
+    'Given a file under the target that $given When it is prepared Then it is sent untouched, for the API to judge',
     async ({ codec }) => {
-      const file = fileOf(MIB);
+      const file = fileOf(500 * KIB);
 
       expect(await prepareImageUpload(file, codec())).toBe(file);
     },

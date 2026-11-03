@@ -1,13 +1,13 @@
-import { MAX_UPLOAD_BYTES } from './upload-limit';
+import { IMAGE_UPLOAD_TARGET_BYTES } from './upload-limit';
 import { UploadRejectedError } from './upload-rejected-error';
 
 // L'API ré-encode en AVIF de 1600 px au plus : 2400 px laissent de la marge sans rien perdre à l'affichage.
 export const MAX_IMAGE_SIDE = 2400;
 const WEBP_QUALITIES: readonly number[] = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4];
 
-export const IMAGE_TOO_LARGE = "L'image dépasse 4\u00a0Mo, même compressée.";
+export const IMAGE_TOO_LARGE = "L'image dépasse 900\u00a0Ko, même compressée.";
 export const IMAGE_UNREADABLE =
-  "L'image dépasse 4\u00a0Mo et le navigateur n'a pas pu la compresser.";
+  "L'image dépasse 900\u00a0Ko et le navigateur n'a pas pu la compresser.";
 
 export type ImageSize = { readonly width: number; readonly height: number };
 export type DecodedImage = ImageSize & { close(): void };
@@ -33,7 +33,7 @@ export async function prepareImageUpload<TImage extends DecodedImage>(
   file: File,
   codec: ImageCodec<TImage>,
 ): Promise<File> {
-  const fitsLimit = file.size <= MAX_UPLOAD_BYTES;
+  const fitsLimit = file.size <= IMAGE_UPLOAD_TARGET_BYTES;
   let image: TImage;
   try {
     image = await codec.decode(file);
@@ -65,7 +65,7 @@ async function encodeUnderLimit<TImage extends DecodedImage>(
   for (const quality of WEBP_QUALITIES) {
     const blob = await codec.encodeWebp(image, size, quality).catch(() => null);
     if (blob === null) return 'unsupported';
-    if (blob.size <= MAX_UPLOAD_BYTES) return blob;
+    if (blob.size <= IMAGE_UPLOAD_TARGET_BYTES) return blob;
   }
   return 'too-large';
 }
