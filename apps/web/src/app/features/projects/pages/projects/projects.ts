@@ -26,7 +26,7 @@ import type { Project, ProjectKindFilter } from '../../domain/models/project.mod
         <div>
           <p
             data-testid="projects-count"
-            class="animate-fade-up font-mono text-[0.8125rem] font-medium text-primary"
+            class="font-mono text-[0.8125rem] font-medium text-primary"
           >
             {{ projectCountLabel() }}
           </p>
@@ -39,15 +39,12 @@ import type { Project, ProjectKindFilter } from '../../domain/models/project.mod
           </h1>
           <p
             data-testid="projects-intro"
-            class="animate-fade-up [animation-delay:120ms] mt-5.5 max-w-[56ch] text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted"
+            class="mt-5.5 max-w-[56ch] text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted"
           >
             {{ v.intro }}
           </p>
         </div>
-        <app-project-kind-legend
-          class="animate-fade-up [animation-delay:200ms]"
-          [rows]="v.legend"
-        />
+        <app-project-kind-legend [rows]="v.legend" />
       </header>
 
       @if (failed()) {

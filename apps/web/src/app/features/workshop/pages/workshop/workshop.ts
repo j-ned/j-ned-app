@@ -20,9 +20,7 @@ import { HttpInsertGuideGateway } from '../../infra/gateways/http-insert-guide.g
       >
         {{ space.heading }}
       </h1>
-      <div
-        class="animate-fade-up [animation-delay:120ms] mt-5.5 grid max-w-[56ch] gap-4 text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted"
-      >
+      <div class="mt-5.5 grid max-w-[56ch] gap-4 text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted">
         @for (paragraph of space.intro; track paragraph) {
           <p data-testid="workshop-intro">{{ paragraph }}</p>
         }

@@ -32,10 +32,7 @@ import { toBlogListView, type BlogListFilter } from '../../application/blog-list
         class="grid gap-10 pt-18 pb-14 md:pt-26 md:pb-18 lg:grid-cols-[minmax(0,1fr)_23.75rem] lg:items-end lg:gap-16"
       >
         <div>
-          <p
-            data-testid="blog-count"
-            class="animate-fade-up font-mono text-[0.8125rem] font-medium text-primary"
-          >
+          <p data-testid="blog-count" class="font-mono text-[0.8125rem] font-medium text-primary">
             {{ postCountLabel() }}
           </p>
           <h1
@@ -47,7 +44,7 @@ import { toBlogListView, type BlogListFilter } from '../../application/blog-list
           </h1>
           <p
             data-testid="blog-intro"
-            class="animate-fade-up [animation-delay:120ms] mt-5.5 max-w-[56ch] text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted"
+            class="mt-5.5 max-w-[56ch] text-[clamp(1.0625rem,1.4vw,1.25rem)] text-muted"
           >
             Ce que j'apprends en construisant mes projets, mon parcours, et la façon dont je m'y
             prends.
@@ -63,7 +60,6 @@ import { toBlogListView, type BlogListFilter } from '../../application/blog-list
         @if (v.themes.length) {
           <app-cartouche
             data-testid="blog-themes"
-            class="animate-fade-up [animation-delay:200ms]"
             title="Thèmes"
             reference="Articles par thème"
             [rows]="v.themes"
