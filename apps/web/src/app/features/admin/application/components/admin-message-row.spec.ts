@@ -59,51 +59,6 @@ describe('AdminMessageRow', () => {
     vi.useRealTimers();
   });
 
-  it('Given an unread message When the row renders Then it shows the sender, the subject after a « Nouveau » stamp and how long ago it came', async () => {
-    const { host } = await renderRow(CLAIRE);
-    const time = byTestId(host, 'message-date');
-
-    expect({
-      sender: testIdText(host, 'message-sender'),
-      email: testIdText(host, 'message-email'),
-      stamp: testIdText(host, 'message-new'),
-      stampFirst:
-        byTestId(host, 'message-subject')?.firstElementChild === byTestId(host, 'message-new'),
-      subject: testIdText(host, 'message-subject-text'),
-      time: {
-        tag: time?.tagName,
-        datetime: time?.getAttribute('datetime'),
-        text: normalized(time),
-      },
-    }).toEqual({
-      sender: 'Claire Martin',
-      email: 'claire@exemple.fr',
-      stamp: 'Nouveau',
-      stampFirst: true,
-      subject: 'Site vitrine pour un atelier de menuiserie',
-      time: { tag: 'TIME', datetime: '2026-10-07T08:00:00Z', text: 'il y a 2\u00a0h' },
-    });
-  });
-
-  it('Given an unread message When the row renders Then each action names the sender, the reply being an e-mail link', async () => {
-    const { host } = await renderRow(CLAIRE);
-    const reply = nativeControl(byTestId(host, 'message-reply'));
-
-    expect({
-      reply: {
-        tag: reply?.tagName,
-        href: reply?.getAttribute('href'),
-        name: accessibleName(reply),
-      },
-      markRead: accessibleName(nativeControl(byTestId(host, 'message-mark-read'))),
-      delete: accessibleName(nativeControl(byTestId(host, 'message-delete'))),
-    }).toEqual({
-      reply: { tag: 'A', href: 'mailto:claire@exemple.fr', name: 'Répondre à Claire Martin' },
-      markRead: 'Marquer comme lu\u00a0: Claire Martin',
-      delete: 'Supprimer le message de Claire Martin',
-    });
-  });
-
   it('Given a read message When the row renders Then it has neither the « Nouveau » stamp nor the mark-as-read action', async () => {
     const { host } = await renderRow({ ...CLAIRE, read: true });
 

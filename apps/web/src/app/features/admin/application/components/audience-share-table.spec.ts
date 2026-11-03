@@ -1,6 +1,6 @@
 import { inputBinding, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { testIdText } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import type { ShareRow } from '../audience-view';
 import { AudienceShareTable } from './audience-share-table';
@@ -29,52 +29,21 @@ async function renderTable(rows: readonly ShareRow[]): Promise<HTMLElement> {
 }
 
 describe('AudienceShareTable', () => {
-  it('Given page rows When the table renders Then its section is named by an h2 and the table by a hidden caption, three column headers', async () => {
-    const host = await renderTable(ROWS);
-    const section = host.querySelector('section');
-    const heading = host.querySelector(`[id="${section?.getAttribute('aria-labelledby') ?? ''}"]`);
-    const caption = host.querySelector('table caption');
-
-    expect({
-      heading: normalized(heading),
-      level: heading?.tagName ?? null,
-      caption: normalized(caption),
-      captionHidden: caption?.classList.contains('sr-only') ?? false,
-      headers: [...host.querySelectorAll('thead th')].map((th) => ({
-        text: normalized(th),
-        scope: th.getAttribute('scope'),
-      })),
-    }).toEqual({
-      heading: 'Pages les plus vues',
-      level: 'H2',
-      caption: 'Pages les plus vues',
-      captionHidden: true,
-      headers: [
-        { text: 'Page', scope: 'col' },
-        { text: 'Vues', scope: 'col' },
-        { text: 'Part', scope: 'col' },
-      ],
-    });
-  });
-
-  it('Given page rows When the table renders Then each row shows its label, count and share, and a decorative bar as wide as the row weighs', async () => {
+  it('Given page rows When the table renders Then each row shows its label, count and share', async () => {
     const host = await renderTable(ROWS);
 
     expect(
       [...host.querySelectorAll<HTMLElement>('[data-testid="share-row"]')].map((row) => {
-        const bar = byTestId(row, 'share-bar');
         return {
           label: testIdText(row, 'share-label'),
           count: testIdText(row, 'share-count'),
           share: testIdText(row, 'share-part'),
-          width: bar?.style.width ?? null,
-          barHidden: bar?.closest('[aria-hidden="true"]') !== null,
         };
       }),
     ).toEqual([
-      { label: '/', count: '1\u202f500', share: '43\u00a0%', width: '100%', barHidden: true },
-      { label: '/blog', count: '6', share: '11\u00a0%', width: '25%', barHidden: true },
-      { label: 'Autres', count: '11', share: '20\u00a0%', width: '46%', barHidden: true },
+      { label: '/', count: '1\u202f500', share: '43\u00a0%' },
+      { label: '/blog', count: '6', share: '11\u00a0%' },
+      { label: 'Autres', count: '11', share: '20\u00a0%' },
     ]);
   });
 

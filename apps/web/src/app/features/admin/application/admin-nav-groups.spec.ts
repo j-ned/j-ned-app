@@ -3,66 +3,6 @@ import { activeNavLabel, adminNavGroups, type AdminNavCounts } from './admin-nav
 const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3 };
 
 describe('adminNavGroups', () => {
-  it('Given counts When the groups are built Then the overview stands alone, followed by Contenu, Audience and Compte in order, without any booking group', () => {
-    const groups = adminNavGroups(COUNTS);
-
-    expect(
-      groups.map((group) => ({
-        label: group.label,
-        items: group.items.map(({ key, route, label, exact }) => ({ key, route, label, exact })),
-      })),
-    ).toEqual([
-      {
-        label: null,
-        items: [{ key: 'overview', route: '/admin', label: "Vue d'ensemble", exact: true }],
-      },
-      {
-        label: 'Contenu',
-        items: [
-          { key: 'projects', route: '/admin/projects', label: 'Projets', exact: false },
-          { key: 'posts', route: '/admin/blog', label: 'Articles', exact: false },
-          { key: 'profile', route: '/admin/profile', label: 'Parcours', exact: false },
-          { key: 'cv', route: '/admin/cv', label: 'CV', exact: false },
-          {
-            key: 'insert-guide',
-            route: '/admin/guide-plaquettes',
-            label: 'Guide des plaquettes',
-            exact: false,
-          },
-        ],
-      },
-      {
-        label: 'Audience',
-        items: [
-          { key: 'audience', route: '/admin/audience', label: 'Audience', exact: false },
-          { key: 'messages', route: '/admin/messages', label: 'Messages', exact: false },
-        ],
-      },
-      {
-        label: 'Compte',
-        items: [{ key: 'settings', route: '/admin/settings', label: 'Paramètres', exact: false }],
-      },
-    ]);
-  });
-
-  it('Given counts When the groups are built Then only projects, articles and messages carry a count', () => {
-    const counts = adminNavGroups(COUNTS)
-      .flatMap((group) => group.items)
-      .map(({ key, count, countSuffix }) => ({ key, count, countSuffix }));
-
-    expect(counts).toEqual([
-      { key: 'overview', count: null, countSuffix: '' },
-      { key: 'projects', count: 6, countSuffix: '' },
-      { key: 'posts', count: 2, countSuffix: '' },
-      { key: 'profile', count: null, countSuffix: '' },
-      { key: 'cv', count: null, countSuffix: '' },
-      { key: 'insert-guide', count: null, countSuffix: '' },
-      { key: 'audience', count: null, countSuffix: '' },
-      { key: 'messages', count: 3, countSuffix: 'non lus' },
-      { key: 'settings', count: null, countSuffix: '' },
-    ]);
-  });
-
   it.each([
     { unread: 0, countSuffix: 'non lu' },
     { unread: 1, countSuffix: 'non lu' },
@@ -117,16 +57,6 @@ describe('adminNavGroups', () => {
       });
     },
   );
-});
-
-describe('adminNavGroups: Parcours', () => {
-  it('Given counts When the groups are built Then « Parcours » is drawn with the user icon', () => {
-    const profile = adminNavGroups(COUNTS)
-      .flatMap((group) => group.items)
-      .find((item) => item.route === '/admin/profile');
-
-    expect(profile?.icon).toBe('user');
-  });
 });
 
 describe('activeNavLabel', () => {

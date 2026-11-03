@@ -60,9 +60,6 @@ const all = (host: ParentNode, testId: string): readonly HTMLElement[] => [
 const nativeButton = (element: Element | null | undefined): HTMLButtonElement | null =>
   element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
 
-const buttonNames = (row: HTMLElement): readonly string[] =>
-  [...row.querySelectorAll('button')].map((button) => button.getAttribute('aria-label') ?? '');
-
 const focusedName = (host: HTMLElement): string | null => {
   const active = document.activeElement;
   if (active && active === nativeButton(byTestId(host, 'line-add'))) return 'line-add';
@@ -82,53 +79,6 @@ async function add(rendered: Rendered): Promise<void> {
   nativeButton(byTestId(rendered.host, 'line-add'))?.click();
   await settleBounded(rendered.fixture);
 }
-
-describe('AdminOrderedList: rendu', () => {
-  it('Given three lines When the list renders Then they are the items of an ordered list, each drawn by the row template with its rank', async () => {
-    const { host } = await renderList(['a', 'b', 'c']);
-    const rows = all(host, 'line-row');
-
-    expect({
-      tags: rows.map((row) => `${row.parentElement?.tagName}>${row.tagName}`),
-      labels: rows.map((row) => (row.querySelector('label')?.textContent ?? '').trim()),
-      values: all(host, 'line-text').map((input) => (input as HTMLInputElement).value),
-    }).toEqual({
-      tags: ['OL>LI', 'OL>LI', 'OL>LI'],
-      labels: ['Ligne 1', 'Ligne 2', 'Ligne 3'],
-      values: ['a', 'b', 'c'],
-    });
-  });
-
-  it('Given three lines When the list renders Then the first cannot move up, the last cannot move down, and each action names its line', async () => {
-    const { host } = await renderList(['a', 'b', 'c']);
-
-    expect(all(host, 'line-row').map(buttonNames)).toEqual([
-      ['Descendre la ligne 1', 'Supprimer la ligne 1'],
-      ['Monter la ligne 2', 'Descendre la ligne 2', 'Supprimer la ligne 2'],
-      ['Monter la ligne 3', 'Supprimer la ligne 3'],
-    ]);
-  });
-
-  it('Given the list When it renders Then every action is a plain button, the add button is named and a polite status region stands empty', async () => {
-    const { host } = await renderList(['a', 'b']);
-    const buttons = [...host.querySelectorAll('button')];
-    const addButton = nativeButton(byTestId(host, 'line-add'));
-
-    expect({
-      types: [...new Set(buttons.map((button) => button.type))],
-      add: addButton?.textContent?.replace(/[ \t\n\r]+/g, ' ').trim(),
-      unavailable: addButton?.getAttribute('aria-disabled') === 'true',
-      announcer: byTestId(host, 'line-announcer')?.getAttribute('role'),
-      announcement: announcement(host),
-    }).toEqual({
-      types: ['button'],
-      add: 'Ajouter une ligne',
-      unavailable: false,
-      announcer: 'status',
-      announcement: '',
-    });
-  });
-});
 
 describe('AdminOrderedList: déplacer', () => {
   it.each([

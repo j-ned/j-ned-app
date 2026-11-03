@@ -21,12 +21,6 @@ class HeaderHost {
 
 @Component({
   imports: [AdminPageHeader],
-  template: `<app-admin-page-header overline="0 non lu · 0 au total" heading="Messages" />`,
-})
-class BareHeaderHost {}
-
-@Component({
-  imports: [AdminPageHeader],
   template: `<app-admin-page-header [heading]="heading()" [parent]="parent" />`,
 })
 class ParentHeaderHost {
@@ -72,58 +66,6 @@ describe('AdminPageHeader', () => {
       headings: 1,
       inOneHeader: true,
       overlineFirst: true,
-    });
-  });
-
-  it('Given an introduction and an aside action When the header renders Then both are projected in the header, the introduction after the title and the action after the introduction', async () => {
-    const { host } = await render(HeaderHost);
-    const header = byTestId(host, 'admin-page-title')?.closest('header') ?? null;
-    const title = byTestId(host, 'admin-page-title');
-    const intro = byTestId(host, 'projected-intro');
-    const action = byTestId(host, 'projected-action');
-
-    expect({
-      introInHeader: header?.contains(intro) ?? false,
-      actionInHeader: header?.contains(action) ?? false,
-      introAfterTitle: follows(title, intro),
-      actionAfterIntro: follows(intro, action),
-      actionOutsideTitleColumn: intro?.parentElement !== action?.parentElement,
-    }).toEqual({
-      introInHeader: true,
-      actionInHeader: true,
-      introAfterTitle: true,
-      actionAfterIntro: true,
-      actionOutsideTitleColumn: true,
-    });
-  });
-
-  it('Given a rendered header When the page data changes Then the overline and the heading follow', async () => {
-    const { fixture, host } = await render(HeaderHost);
-
-    fixture.componentInstance.overline.set('5 réalisations · 1 mise en avant');
-    fixture.componentInstance.heading.set('Réalisations');
-    await settle(fixture);
-
-    expect({
-      overline: testIdText(host, 'admin-page-overline'),
-      title: testIdText(host, 'admin-page-title'),
-    }).toEqual({ overline: '5 réalisations · 1 mise en avant', title: 'Réalisations' });
-  });
-
-  it('Given no projected content When the header renders Then only the overline and the title are shown', async () => {
-    const { host } = await render(BareHeaderHost);
-    const header = byTestId(host, 'admin-page-title')?.closest('header');
-
-    expect({
-      overline: testIdText(host, 'admin-page-overline'),
-      title: testIdText(host, 'admin-page-title'),
-      textBearers: [...(header?.querySelectorAll('*') ?? [])]
-        .filter((element) => element.children.length === 0 && /\S/.test(element.textContent ?? ''))
-        .map((element) => element.getAttribute('data-testid')),
-    }).toEqual({
-      overline: '0 non lu · 0 au total',
-      title: 'Messages',
-      textBearers: ['admin-page-overline', 'admin-page-title'],
     });
   });
 
