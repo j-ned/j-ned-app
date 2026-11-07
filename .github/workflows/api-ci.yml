@@ -12,6 +12,7 @@ on:
       - pnpm-workspace.yaml
       - package.json
       - .npmrc
+      - .nvmrc
       - .github/workflows/api-ci.yml
   push:
     branches: [master]
@@ -22,6 +23,7 @@ on:
       - pnpm-workspace.yaml
       - package.json
       - .npmrc
+      - .nvmrc
       - .github/workflows/api-ci.yml
   workflow_dispatch:
 
