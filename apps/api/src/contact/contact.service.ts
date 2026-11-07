@@ -9,7 +9,7 @@ import {
   CONTACT_NOTIFICATION_TEMPLATE,
   OWNER_EMAIL,
 } from '../mailer/mailer.constants';
-import { MailerService } from '../mailer/mailer.service';
+import type { MailSender } from '../mailer/mail-transport';
 import {
   type PaginatedResult,
   type PaginationParams,
@@ -32,7 +32,7 @@ export class ContactService {
 
   constructor(
     private readonly db: Database,
-    private readonly mailer: MailerService,
+    private readonly mailer: MailSender,
     cfg: AppConfigService,
   ) {
     this.senderHashKey = createHash('sha256')

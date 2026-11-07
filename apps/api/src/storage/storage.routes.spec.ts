@@ -1,9 +1,10 @@
 import { Readable } from 'node:stream';
 import { testApp } from '../common/test-app';
-import type { ResizedImageService } from './resized-image.service';
-import type { ShareCardService } from './share-card.service';
+import type { ImageOptimizer } from './image-optimizer.service';
+import { ResizedImageService } from './resized-image.service';
+import { ShareCardService } from './share-card.service';
 import { storageRoutes } from './storage.routes';
-import type { StorageService } from './storage.service';
+import { StorageService } from './storage.service';
 
 describe('storage routes', () => {
   const storage = { get: jest.fn() };
@@ -133,4 +134,33 @@ describe('storage routes', () => {
       'blog/a b.avif',
     );
   });
+});
+
+describe('storage routes, stockage désactivé (preview sans S3)', () => {
+  const images = {} as ImageOptimizer;
+  const storage = new StorageService(null);
+  const app = testApp(
+    '/api/storage',
+    storageRoutes(
+      storage,
+      new ShareCardService(storage, images),
+      new ResizedImageService(storage, images),
+    ),
+  );
+
+  it.each(['', '?variant=share', '?variant=w800'])(
+    'Given an image request%s, Then it answers a clear 503, never cached for a year',
+    async (query) => {
+      const res = await app.request(
+        `/api/storage/portfolio-storage/projects/1-abcd1234.avif${query}`,
+      );
+
+      expect(res.status).toBe(503);
+      expect(res.headers.get('cache-control') ?? '').not.toContain('immutable');
+      expect(await res.json()).toMatchObject({
+        statusCode: 503,
+        message: 'File storage is disabled on this environment',
+      });
+    },
+  );
 });

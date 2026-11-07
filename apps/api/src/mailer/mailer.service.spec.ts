@@ -1,12 +1,10 @@
 import { MailerService } from './mailer.service';
-import { AppConfigService } from '../config/app-config.service';
 
 const TEMPLATE = { id: 'tpl', variables: {} };
 
 describe('MailerService', () => {
   let service: MailerService;
   let fetchFn: jest.Mock;
-  let cfg: { resendApiKey: string; mailFrom: string };
 
   const ok = () => new Response('{"id":"email-id"}', { status: 200 });
   const failure = (status: number, body: string) =>
@@ -20,9 +18,17 @@ describe('MailerService', () => {
 
   beforeEach(() => {
     fetchFn = jest.fn();
-    cfg = { resendApiKey: 're_test_key', mailFrom: 'noreply@test.local' };
+    service = new MailerService(
+      { apiKey: 're_test_key', from: 'noreply@test.local' },
+      fetchFn,
+    );
+  });
 
-    service = new MailerService(cfg as unknown as AppConfigService, fetchFn);
+  it('Given its settings, When a mail is sent, Then the key authenticates and the sender is used', async () => {
+    fetchFn.mockResolvedValueOnce(ok());
+    await service.sendMail({ to: 'x@y.com', subject: 's', template: TEMPLATE });
+    expect(headersAt(0).Authorization).toBe('Bearer re_test_key');
+    expect(bodyAt(0).from).toBe('noreply@test.local');
   });
 
   it('retry une fois si la première tentative échoue, puis succès', async () => {

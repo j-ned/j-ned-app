@@ -40,9 +40,67 @@ describe('validateEnv', () => {
     );
   });
 
-  it('rejette une env sans RESEND_API_KEY', () => {
-    expect(() =>
-      validateEnv({ ...baseValid, RESEND_API_KEY: undefined }),
-    ).toThrow(/RESEND_API_KEY/);
+  it('rejette un VERCEL_ENV inconnu', () => {
+    expect(() => validateEnv({ ...baseValid, VERCEL_ENV: 'staging' })).toThrow(
+      /VERCEL_ENV/,
+    );
+  });
+
+  describe('en production (VERCEL_ENV=production)', () => {
+    const production = { ...baseValid, VERCEL_ENV: 'production' };
+
+    it('accepte une env complète', () => {
+      expect(validateEnv(production).VERCEL_ENV).toBe('production');
+    });
+
+    it.each([
+      'RESEND_API_KEY',
+      'MAIL_FROM',
+      'S3_ENDPOINT',
+      'S3_REGION',
+      'S3_ACCESS_KEY',
+      'S3_SECRET_KEY',
+    ])('rejette une env sans %s', (name) => {
+      expect(() => validateEnv({ ...production, [name]: undefined })).toThrow(
+        new RegExp(`${name}: required in production`),
+      );
+    });
+
+    it('Given NODE_ENV=development, Then la production reste détectée par VERCEL_ENV', () => {
+      expect(() =>
+        validateEnv({
+          ...production,
+          NODE_ENV: 'development',
+          RESEND_API_KEY: undefined,
+        }),
+      ).toThrow(/RESEND_API_KEY/);
+    });
+  });
+
+  describe('hors production', () => {
+    const withoutMailNorStorage = {
+      DATABASE_URL: baseValid.DATABASE_URL,
+      JWT_SECRET: baseValid.JWT_SECRET,
+    };
+
+    it.each([
+      ['preview', { VERCEL_ENV: 'preview' }],
+      ['vercel dev', { VERCEL_ENV: 'development' }],
+      ['local', {}],
+      [
+        'preview avec NODE_ENV=production',
+        { VERCEL_ENV: 'preview', NODE_ENV: 'production' },
+      ],
+    ])('Given %s, Then mail et stockage sont facultatifs', (_, env) => {
+      expect(() =>
+        validateEnv({ ...withoutMailNorStorage, ...env }),
+      ).not.toThrow();
+    });
+
+    it('Given une valeur fournie, Then elle reste validée', () => {
+      expect(() =>
+        validateEnv({ ...withoutMailNorStorage, MAIL_FROM: 'pas-un-email' }),
+      ).toThrow(/MAIL_FROM/);
+    });
   });
 });

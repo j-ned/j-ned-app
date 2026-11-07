@@ -20,7 +20,7 @@ function shutdown(signal: string): void {
   stopping = true;
   rootLogger().info({ context: 'Bootstrap' }, `${signal}: shutting down`);
   server.close(() => {
-    s3.destroy();
+    s3?.destroy();
     void database.close().finally(() => process.exit(0));
   });
 }
