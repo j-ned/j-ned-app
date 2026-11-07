@@ -4,7 +4,7 @@ API du portfolio J-Ned, en [Hono](https://hono.dev) sur Node (`@hono/node-server
 
 ## Quickstart
 
-**Prérequis :** Node 24 (cf. `.nvmrc`), pnpm, Podman (ou Docker - `compose.yaml` est compatible).
+**Prérequis :** Node 26 (cf. `.nvmrc`), pnpm, Podman (ou Docker - `compose.yaml` est compatible).
 
 ```bash
 pnpm install

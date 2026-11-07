@@ -4,13 +4,13 @@
 // - une fonction `ssr` autour du `reqHandler` d'Angular pour la liste fermée des pages rendues à la
 //   requête, `sitemap.xml`, `rss.xml` et `/healthz` (cache CDN posé par le serveur) ;
 // - en-têtes de sécurité partout, 410 des pages retirées, coquille cliente de l'admin, vraie 404.
-import { execFileSync } from 'node:child_process';
 import {
   cpSync,
   existsSync,
   mkdirSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -85,33 +85,16 @@ writeFileSync(
 );
 
 // jsdom reste externe au bundle serveur (`externalDependencies`), importé par le rendu des articles.
-const jsdomVersion = JSON.parse(
-  readFileSync(join(ROOT, 'node_modules', 'jsdom', 'package.json'), 'utf8'),
-).version;
-writeFileSync(
-  join(FUNCTION, 'deps.json'),
-  `${JSON.stringify({ private: true, dependencies: { jsdom: jsdomVersion } })}\n`,
-);
-execFileSync(
-  'npm',
-  [
-    'install',
-    '--omit=dev',
-    '--no-audit',
-    '--no-fund',
-    '--no-package-lock',
-    '--prefix',
-    FUNCTION,
-    `jsdom@${jsdomVersion}`,
-  ],
-  { stdio: 'inherit' },
-);
-rmSync(join(FUNCTION, 'deps.json'));
-writeFileSync(join(FUNCTION, 'package.json'), '{"type":"module"}\n');
+// Il est pris dans le `node_modules` du workspace, aux versions du lockfile (dépendances comprises),
+// sans installation depuis le registre : le chemin réel du lien pnpm a ses dépendances pour voisines.
+const workspaceModules = join(ROOT, 'node_modules');
+const jsdomDir = realpathSync(join(workspaceModules, 'jsdom'));
+const jsdomVersion = JSON.parse(readFileSync(join(jsdomDir, 'package.json'), 'utf8')).version;
 
 // Le chargeur de Vercel refuse un `require()` d'ESM, que font des dépendances de jsdom
-// (html-encoding-sniffer → @exodus/bytes) : jsdom est regroupé en un seul module ESM, à sa place, qui
-// exporte ses noms publics (`import { JSDOM } from 'jsdom'` dans le bundle serveur).
+// (html-encoding-sniffer → @exodus/bytes) : jsdom est regroupé en un seul module ESM, dans le
+// `node_modules` de la fonction, qui exporte ses noms publics (`import { JSDOM } from 'jsdom'` dans le
+// bundle serveur).
 const installed = join(FUNCTION, 'node_modules');
 const bundled = join(OUTPUT, 'jsdom-bundle');
 mkdirSync(bundled, { recursive: true });
@@ -139,24 +122,23 @@ await build({
   },
   target: 'node22',
   external: ['canvas'],
-  nodePaths: [installed],
+  nodePaths: [workspaceModules],
   logLevel: 'error',
 });
 mkdirSync(join(bundled, 'jsdom', 'lib', 'jsdom', 'browser'), { recursive: true });
 cpSync(
-  join(installed, 'jsdom', 'lib', 'jsdom', 'browser', 'default-stylesheet.css'),
+  join(jsdomDir, 'lib', 'jsdom', 'browser', 'default-stylesheet.css'),
   join(bundled, 'jsdom', 'lib', 'jsdom', 'browser', 'default-stylesheet.css'),
 );
 // Chargé par `require.resolve('./xhr-sync-worker.js')` à l'import, relativement au fichier regroupé.
 cpSync(
-  join(installed, 'jsdom', 'lib', 'jsdom', 'living', 'xhr', 'xhr-sync-worker.js'),
+  join(jsdomDir, 'lib', 'jsdom', 'living', 'xhr', 'xhr-sync-worker.js'),
   join(bundled, 'jsdom', 'xhr-sync-worker.js'),
 );
 writeFileSync(
   join(bundled, 'jsdom', 'package.json'),
   `${JSON.stringify({ name: 'jsdom', version: jsdomVersion, type: 'module', main: 'index.mjs' })}\n`,
 );
-rmSync(installed, { recursive: true, force: true });
 mkdirSync(installed);
 cpSync(join(bundled, 'jsdom'), join(installed, 'jsdom'), { recursive: true });
 rmSync(bundled, { recursive: true, force: true });

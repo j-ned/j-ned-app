@@ -1,4 +1,5 @@
-// Fonction Vercel du service « api » (ADR-0036), construite après `pnpm build` (tsc, qui vérifie les types) :
+// Fonction Vercel du service « api » (ADR-0036), construite après `tsc --noEmit` (vérification des types
+// seule : rien de ce que tsc émettrait n'est lu ici, tout part des sources) :
 // - un seul fichier, `dist/index.js` (celui que Vercel exécute), bundlé par esbuild depuis les sources TypeScript :
 //   les imports ESM des sources et des dépendances sont élagués (une sortie CommonJS de tsc ne l'était pas), et
 //   le résultat reste en CommonJS, que le chargeur de Vercel `require()` sans souci d'ESM ;

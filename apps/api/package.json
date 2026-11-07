@@ -30,7 +30,7 @@
     "test:watch": "node --experimental-vm-modules --no-warnings=ExperimentalWarning ./node_modules/jest/bin/jest.js --watch",
     "test:cov": "node --experimental-vm-modules --no-warnings=ExperimentalWarning ./node_modules/jest/bin/jest.js --coverage",
     "build:watch": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "build:vercel": "pnpm build && node scripts/build-vercel.mjs"
+    "build:vercel": "rm -rf dist && tsc --noEmit -p tsconfig.build.json && node scripts/build-vercel.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1141.0",
