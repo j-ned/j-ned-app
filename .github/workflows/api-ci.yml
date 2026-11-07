@@ -62,6 +62,7 @@ jobs:
 
     env:
       PROFILE_IT_DATABASE_URL: postgres://postgres:it@127.0.0.1:5432/profile_it
+      DEMO_IT_DATABASE_URL: postgres://postgres:it@127.0.0.1:5432/demo_it
 
     steps:
       - name: Checkout
@@ -92,8 +93,8 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Create integration database
-        run: psql "postgres://postgres:it@127.0.0.1:5432/postgres" -c "CREATE DATABASE profile_it"
+      - name: Create integration databases
+        run: psql "postgres://postgres:it@127.0.0.1:5432/postgres" -c "CREATE DATABASE profile_it" -c "CREATE DATABASE demo_it"
 
       # Unitaires et intégration ensemble : sans les variables *_IT_DATABASE_URL, les suites
       # d'intégration seraient ignorées (describe.skip) et le job resterait vert sans les jouer.
