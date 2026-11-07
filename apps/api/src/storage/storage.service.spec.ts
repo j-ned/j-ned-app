@@ -1,4 +1,7 @@
-import { NotFoundException } from '../common/http-errors';
+import {
+  NotFoundException,
+  ServiceUnavailableException,
+} from '../common/http-errors';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
   S3Client,
@@ -129,6 +132,30 @@ describe('StorageService', () => {
       expect(service.getPublicUrl('my-bucket', 'projects/foo.webp')).toBe(
         '/storage/my-bucket/projects/foo.webp',
       );
+    });
+  });
+
+  describe('sans client S3 (stockage désactivé hors production)', () => {
+    const disabled = new StorageService(null);
+
+    it.each([
+      [
+        'upload',
+        () => disabled.upload('b', 'k', Buffer.from('x'), 'image/avif'),
+      ],
+      ['get', () => disabled.get('b', 'k')],
+      ['delete', () => disabled.delete('b', 'k')],
+    ])('Given %s, Then it answers 503 without touching S3', async (_, act) => {
+      await expect(act()).rejects.toBeInstanceOf(ServiceUnavailableException);
+      await expect(act()).rejects.toMatchObject({
+        status: 503,
+        message: 'File storage is disabled on this environment',
+      });
+      expect(s3Mock.calls()).toHaveLength(0);
+    });
+
+    it('Given a public URL, Then it is still computed (the image is simply missing)', () => {
+      expect(disabled.getPublicUrl('b', 'k')).toBe('/storage/b/k');
     });
   });
 });

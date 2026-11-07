@@ -62,6 +62,7 @@ jobs:
 
     env:
       PROFILE_IT_DATABASE_URL: postgres://postgres:it@127.0.0.1:5432/profile_it
+      DEMO_IT_DATABASE_URL: postgres://postgres:it@127.0.0.1:5432/demo_it
 
     steps:
       - name: Checkout
@@ -92,8 +93,8 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Create integration database
-        run: psql "postgres://postgres:it@127.0.0.1:5432/postgres" -c "CREATE DATABASE profile_it"
+      - name: Create integration databases
+        run: psql "postgres://postgres:it@127.0.0.1:5432/postgres" -c "CREATE DATABASE profile_it" -c "CREATE DATABASE demo_it"
 
       # Unitaires et intégration ensemble : sans les variables *_IT_DATABASE_URL, les suites
       # d'intégration seraient ignorées (describe.skip) et le job resterait vert sans les jouer.
@@ -125,3 +126,51 @@ jobs:
       - name: Stop parity stack
         if: always()
         run: ../../packages/api-parity/scripts/stack.sh down
+
+  # Base des previews Vercel = branche Neon `preview` (schéma + seed de démo, jamais de copie de prod,
+  # docs/preview-env.md). Les migrations de la PR y sont appliquées une fois validées par le job
+  # verify sur Postgres jetable. Sans le secret (forks, Dependabot, secret pas encore créé), le job ne
+  # fait rien.
+  preview-db:
+    name: Preview · Migrations Neon
+    if: github.event_name == 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Une seule migration à la fois sur la base partagée, sans en interrompre une en cours.
+    concurrency:
+      group: preview-db
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: apps/api
+    env:
+      DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL_UNPOOLED }}
+    steps:
+      - name: Secret absent, migrations de preview ignorées
+        if: env.DATABASE_URL == ''
+        working-directory: .
+        run: echo "::notice::PREVIEW_DATABASE_URL_UNPOOLED absent, migrations de preview ignorées"
+
+      - name: Checkout
+        if: env.DATABASE_URL != ''
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        if: env.DATABASE_URL != ''
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        if: env.DATABASE_URL != ''
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        if: env.DATABASE_URL != ''
+        run: pnpm install --frozen-lockfile --filter @portfolio/api
+
+      - name: Migrations (branche Neon preview)
+        if: env.DATABASE_URL != ''
+        run: pnpm db:migrate

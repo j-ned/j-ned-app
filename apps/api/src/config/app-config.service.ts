@@ -1,9 +1,26 @@
+import type { S3Settings } from '../storage/s3-client';
 import type { ValidatedEnv } from './env.validation';
+
+/**
+ * Où tourne l'API, d'après `VERCEL_ENV` seul (jamais `NODE_ENV`, qui peut valoir `production` sur
+ * une preview) : `preview` couvre toute exécution Vercel hors production, `local` tout le reste.
+ */
+export type Deployment = 'production' | 'preview' | 'local';
+
+/** Resend en production ; journal seul en preview (quoi que contiennent ses variables) ou sans clé. */
+export type MailTransport =
+  | { readonly kind: 'resend'; readonly apiKey: string; readonly from: string }
+  | { readonly kind: 'log' };
 
 /** Configuration typée de l'application, lue une fois au démarrage (`validateEnv`). */
 export class AppConfigService {
   constructor(private readonly env: ValidatedEnv) {}
 
+  get deployment(): Deployment {
+    const vercelEnv = this.env.VERCEL_ENV;
+    if (vercelEnv === undefined) return 'local';
+    return vercelEnv === 'production' ? 'production' : 'preview';
+  }
   get nodeEnv() {
     return this.env.NODE_ENV;
   }
@@ -42,24 +59,26 @@ export class AppConfigService {
     return this.env.CORS_ORIGINS;
   }
 
-  get s3Endpoint() {
-    return this.env.S3_ENDPOINT;
-  }
-  get s3Region() {
-    return this.env.S3_REGION;
-  }
-  get s3AccessKey() {
-    return this.env.S3_ACCESS_KEY;
-  }
-  get s3SecretKey() {
-    return this.env.S3_SECRET_KEY;
+  /** `null` : configuration incomplète hors production, stockage de fichiers désactivé (503). */
+  get s3Settings(): S3Settings | null {
+    const { S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY } = this.env;
+    if (!S3_ENDPOINT || !S3_REGION || !S3_ACCESS_KEY || !S3_SECRET_KEY) {
+      return null;
+    }
+    return {
+      s3Endpoint: S3_ENDPOINT,
+      s3Region: S3_REGION,
+      s3AccessKey: S3_ACCESS_KEY,
+      s3SecretKey: S3_SECRET_KEY,
+    };
   }
 
-  get resendApiKey() {
-    return this.env.RESEND_API_KEY;
-  }
-  get mailFrom() {
-    return this.env.MAIL_FROM;
+  get mailTransport(): MailTransport {
+    const { RESEND_API_KEY, MAIL_FROM } = this.env;
+    if (this.deployment === 'preview' || !RESEND_API_KEY || !MAIL_FROM) {
+      return { kind: 'log' };
+    }
+    return { kind: 'resend', apiKey: RESEND_API_KEY, from: MAIL_FROM };
   }
 
   get sentryRelease() {

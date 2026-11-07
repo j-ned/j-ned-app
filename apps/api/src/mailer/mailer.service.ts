@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { AppConfigService } from '../config/app-config.service';
 import { escapeHtml, maskEmail } from './mailer.utils';
 
 const MAX_RETRIES = 3;
@@ -18,10 +17,16 @@ export type SendMailOptions = {
   replyTo?: string;
 };
 
+/** Clé d'API Resend et expéditeur (`MAIL_FROM`). */
+export type ResendSettings = {
+  readonly apiKey: string;
+  readonly from: string;
+};
+
 /** Envoi par l'API HTTP de Resend : pas de connexion SMTP à ouvrir ni à fermer (fonction Vercel). */
 export class MailerService {
   constructor(
-    private readonly cfg: AppConfigService,
+    private readonly settings: ResendSettings,
     private readonly fetchFn: typeof fetch = fetch,
   ) {}
 
@@ -48,12 +53,12 @@ export class MailerService {
         const response = await this.fetchFn(RESEND_EMAILS_URL, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${this.cfg.resendApiKey}`,
+            Authorization: `Bearer ${this.settings.apiKey}`,
             'Content-Type': 'application/json',
             'Idempotency-Key': idempotencyKey,
           },
           body: JSON.stringify({
-            from: this.cfg.mailFrom,
+            from: this.settings.from,
             to,
             subject,
             ...(replyTo && { reply_to: replyTo }),

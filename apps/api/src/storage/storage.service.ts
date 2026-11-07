@@ -1,4 +1,7 @@
-import { NotFoundException } from '../common/http-errors';
+import {
+  NotFoundException,
+  ServiceUnavailableException,
+} from '../common/http-errors';
 import {
   S3Client,
   PutObjectCommand,
@@ -16,8 +19,21 @@ export type S3ObjectStream = {
   contentLength: number;
 };
 
+/**
+ * Accès au stockage S3. Sans client (configuration S3 incomplète, hors production seulement), chaque
+ * lecture ou écriture répond 503 : l'API démarre, une image publique est simplement absente.
+ */
 export class StorageService {
-  constructor(private readonly s3: S3Client) {}
+  constructor(private readonly s3: S3Client | null) {}
+
+  private client(): S3Client {
+    if (!this.s3) {
+      throw new ServiceUnavailableException(
+        'File storage is disabled on this environment',
+      );
+    }
+    return this.s3;
+  }
 
   /** Écrit l'objet et jette ses dérivées (carte de partage, variantes de largeur), devenues obsolètes. */
   async upload(
@@ -26,7 +42,7 @@ export class StorageService {
     body: Buffer,
     contentType: string,
   ): Promise<void> {
-    await this.s3.send(
+    await this.client().send(
       new PutObjectCommand({
         Bucket: bucket,
         Key: key,
@@ -40,7 +56,7 @@ export class StorageService {
   async get(bucket: string, key: string): Promise<S3ObjectStream> {
     let res: GetObjectCommandOutput;
     try {
-      res = await this.s3.send(
+      res = await this.client().send(
         new GetObjectCommand({ Bucket: bucket, Key: key }),
       );
     } catch (err: unknown) {
@@ -62,14 +78,16 @@ export class StorageService {
   /** Efface l'objet et ses dérivées. */
   async delete(bucket: string, key: string): Promise<void> {
     // S3 DeleteObject est idempotent : pas d'erreur si la clé n'existe pas.
-    await this.s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+    await this.client().send(
+      new DeleteObjectCommand({ Bucket: bucket, Key: key }),
+    );
     await this.deleteDerivedOf(bucket, key);
   }
 
   private async deleteDerivedOf(bucket: string, key: string): Promise<void> {
     if (isDerivedKey(key)) return;
     for (const derived of derivedKeysOf(key)) {
-      await this.s3.send(
+      await this.client().send(
         new DeleteObjectCommand({ Bucket: bucket, Key: derived }),
       );
     }

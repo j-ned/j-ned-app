@@ -1,6 +1,19 @@
 import * as z from 'zod';
 
-export const envSchema = z.object({
+/**
+ * Variables sans lesquelles la production ne démarre pas, facultatives ailleurs : hors production,
+ * sans elles, les mails sont journalisés et le stockage de fichiers répond 503.
+ */
+const REQUIRED_IN_PRODUCTION = [
+  'S3_ENDPOINT',
+  'S3_REGION',
+  'S3_ACCESS_KEY',
+  'S3_SECRET_KEY',
+  'RESEND_API_KEY',
+  'MAIL_FROM',
+] as const;
+
+const baseEnvSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
@@ -12,6 +25,12 @@ export const envSchema = z.object({
       (u) => u.startsWith('postgres://') || u.startsWith('postgresql://'),
       { message: 'DATABASE_URL must be a postgres:// URL' },
     ),
+  /**
+   * Posé par Vercel lui-même (`production`, `preview`, `development` sous `vercel dev`), absent
+   * ailleurs. Seule source de la distinction production / preview : `NODE_ENV` peut valoir
+   * `production` sur une preview.
+   */
+  VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
     .optional(),
@@ -59,15 +78,15 @@ export const envSchema = z.object({
    */
   SSR_FORWARD_SECRET: z.string().min(32).optional(),
 
-  // S3 Storage
-  S3_ENDPOINT: z.string().url(),
-  S3_REGION: z.string().min(1),
-  S3_ACCESS_KEY: z.string().min(4),
-  S3_SECRET_KEY: z.string().min(8),
+  // S3 Storage : obligatoire en production (REQUIRED_IN_PRODUCTION)
+  S3_ENDPOINT: z.string().url().optional(),
+  S3_REGION: z.string().min(1).optional(),
+  S3_ACCESS_KEY: z.string().min(4).optional(),
+  S3_SECRET_KEY: z.string().min(8).optional(),
 
-  // Mailer (Resend) - MAIL_FROM sur un domaine vérifié dans Resend
-  RESEND_API_KEY: z.string().min(1),
-  MAIL_FROM: z.string().email(),
+  // Mailer (Resend) - MAIL_FROM sur un domaine vérifié dans Resend ; obligatoire en production
+  RESEND_API_KEY: z.string().min(1).optional(),
+  MAIL_FROM: z.string().email().optional(),
 
   // Observability (Sentry) - all optional, empty DSN keeps Sentry disabled
   SENTRY_DSN: z.string().url().optional(),
@@ -76,6 +95,19 @@ export const envSchema = z.object({
   // Browser DSN exposed via GET /api/config (separate Sentry project from backend).
   // Public by design (ships in the browser bundle once fetched).
   SENTRY_FRONTEND_DSN: z.string().url().optional(),
+});
+
+export const envSchema = baseEnvSchema.superRefine((env, ctx) => {
+  if (env.VERCEL_ENV !== 'production') return;
+  for (const name of REQUIRED_IN_PRODUCTION) {
+    if (env[name] === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: [name],
+        message: 'required in production',
+      });
+    }
+  }
 });
 
 export type Env = z.infer<typeof envSchema>;

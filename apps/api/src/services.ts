@@ -12,7 +12,7 @@ import type { AppConfigService } from './config/app-config.service';
 import { ContactService } from './contact/contact.service';
 import { CvService } from './cv/cv.service';
 import type { Database } from './database/drizzle.types';
-import { MailerService } from './mailer/mailer.service';
+import { createMailer } from './mailer/mail-transport';
 import { ProfilePortraitService } from './profile/profile-portrait.service';
 import { ProfileService } from './profile/profile.service';
 import { ProjectImagesService } from './projects/project-images.service';
@@ -27,7 +27,8 @@ import { WorkshopGuideService } from './workshop-guide/workshop-guide.service';
 export type ServiceDeps = {
   readonly config: AppConfigService;
   readonly db: Database;
-  readonly s3: S3Client;
+  /** `null` : stockage de fichiers désactivé (503), hors production seulement. */
+  readonly s3: S3Client | null;
 };
 
 /** Racine de composition : chaque service reçoit ses dépendances explicitement, une seule instance. */
@@ -52,7 +53,7 @@ export function createServices({ config, db, s3 }: ServiceDeps) {
       new TwoFactorService(config),
       jwt,
     ),
-    contact: new ContactService(db, new MailerService(config), config),
+    contact: new ContactService(db, createMailer(config.mailTransport), config),
     projects: new ProjectsService(db, storage, images, projectImages),
     projectImages,
     blog: new BlogService(db, storage, images, blogContentImages),

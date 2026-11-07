@@ -24,6 +24,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/database/seeds/admin.seed.ts",
+    "db:init-demo": "tsx src/database/seeds/init-demo.ts",
     "db:change-password": "tsx src/database/scripts/change-password.ts",
     "db:studio": "drizzle-kit studio",
     "test": "node --experimental-vm-modules --no-warnings=ExperimentalWarning ./node_modules/jest/bin/jest.js",

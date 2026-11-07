@@ -22,7 +22,9 @@ export function bootstrap(env: Record<string, unknown> = process.env) {
   );
 
   const database = connectDatabase(config);
-  const s3 = createS3Client(config);
+  // `null` hors production sans configuration S3 complète : stockage de fichiers en 503.
+  const s3Settings = config.s3Settings;
+  const s3 = s3Settings ? createS3Client(s3Settings) : null;
   const services = createServices({ config, db: database.db, s3 });
 
   // Sur Vercel (`VERCEL=1`), plusieurs instances sans mémoire partagée : quotas comptés en base.
