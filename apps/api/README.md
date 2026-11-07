@@ -42,30 +42,31 @@ Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cour
 
 Toute la config passe par les variables d'env, validées au boot par Zod (`src/config/env.schema.ts`). **L'app crash immédiatement avec un message lisible** si une variable requise est manquante ou invalide.
 
-| Variable                    | Type                                               | Défaut                       | Rôle                                                                                              |
-| --------------------------- | -------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
-| `NODE_ENV`                  | `development` \| `production` \| `test`            | `development`                | Pilote le format des logs, le sample rate Sentry                                                  |
-| `PORT`                      | int 1-65535                                        | `3000`                       | Port HTTP                                                                                         |
-| `DATABASE_URL`              | URL `postgres://...`                               | _(requis)_                   | Connexion Drizzle                                                                                 |
-| `LOG_LEVEL`                 | `fatal`\|`error`\|`warn`\|`info`\|`debug`\|`trace` | `debug` en dev, `info` sinon | Niveau Pino                                                                                       |
-| `JWT_SECRET`                | string, 32+ chars                                  | _(requis)_                   | Signature JWT                                                                                     |
-| `JWT_EXPIRES_IN`            | string                                             | `7d`                         | Durée de vie du JWT                                                                               |
-| `ADMIN_EMAIL`               | email                                              | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                             |
-| `ADMIN_INITIAL_PASSWORD`    | string, 12+ chars                                  | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                             |
-| `TOTP_APP_NAME`             | string                                             | `J-Ned Portfolio`            | Nom affiché dans l'app authenticator                                                              |
-| `CORS_ORIGINS`              | CSV                                                | `http://localhost:4200`      | Origines du site : CORS (credentials), CSRF (`CrossOriginGuard`), référents internes de la mesure |
-| `S3_ENDPOINT`               | URL                                                | _(requis)_                   | Endpoint S3-compatible (MinIO/R2)                                                                 |
-| `S3_REGION`                 | string                                             | _(requis)_                   | Région S3                                                                                         |
-| `S3_ACCESS_KEY`             | string, 4+ chars                                   | _(requis)_                   | Access key S3                                                                                     |
-| `S3_SECRET_KEY`             | string, 8+ chars                                   | _(requis)_                   | Secret key S3                                                                                     |
-| `RESEND_API_KEY`            | string                                             | _(requis)_                   | Clé API Resend (envoi seul)                                                                       |
-| `MAIL_FROM`                 | email                                              | _(requis)_                   | Expéditeur des mails, sur un domaine vérifié dans Resend                                          |
-| `SENTRY_DSN`                | URL                                                | _(optionnel)_                | DSN backend ; vide = Sentry désactivé                                                             |
-| `SENTRY_RELEASE`            | string                                             | _(optionnel)_                | Tag de release Sentry                                                                             |
-| `SENTRY_TRACES_SAMPLE_RATE` | float 0-1                                          | `0.2` prod / `1.0` dev       | Sample rate tracing                                                                               |
-| `SENTRY_FRONTEND_DSN`       | URL                                                | _(optionnel)_                | DSN d'un **projet Sentry distinct** pour le frontend, exposé publiquement via `GET /api/config`   |
+| Variable                    | Type                                               | Défaut                       | Rôle                                                                                                   |
+| --------------------------- | -------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `NODE_ENV`                  | `development` \| `production` \| `test`            | `development`                | Pilote le format des logs, le sample rate Sentry                                                       |
+| `VERCEL_ENV`                | `production` \| `preview` \| `development`         | _(posé par Vercel)_          | Seule source de la distinction production / preview ([docs/preview-env.md](../../docs/preview-env.md)) |
+| `PORT`                      | int 1-65535                                        | `3000`                       | Port HTTP                                                                                              |
+| `DATABASE_URL`              | URL `postgres://...`                               | _(requis)_                   | Connexion Drizzle                                                                                      |
+| `LOG_LEVEL`                 | `fatal`\|`error`\|`warn`\|`info`\|`debug`\|`trace` | `debug` en dev, `info` sinon | Niveau Pino                                                                                            |
+| `JWT_SECRET`                | string, 32+ chars                                  | _(requis)_                   | Signature JWT                                                                                          |
+| `JWT_EXPIRES_IN`            | string                                             | `7d`                         | Durée de vie du JWT                                                                                    |
+| `ADMIN_EMAIL`               | email                                              | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                                  |
+| `ADMIN_INITIAL_PASSWORD`    | string, 12+ chars                                  | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                                  |
+| `TOTP_APP_NAME`             | string                                             | `J-Ned Portfolio`            | Nom affiché dans l'app authenticator                                                                   |
+| `CORS_ORIGINS`              | CSV                                                | `http://localhost:4200`      | Origines du site : CORS (credentials), CSRF (`CrossOriginGuard`), référents internes de la mesure      |
+| `S3_ENDPOINT`               | URL                                                | _(requis en production)_     | Endpoint S3-compatible (MinIO/R2)                                                                      |
+| `S3_REGION`                 | string                                             | _(requis en production)_     | Région S3                                                                                              |
+| `S3_ACCESS_KEY`             | string, 4+ chars                                   | _(requis en production)_     | Access key S3                                                                                          |
+| `S3_SECRET_KEY`             | string, 8+ chars                                   | _(requis en production)_     | Secret key S3                                                                                          |
+| `RESEND_API_KEY`            | string                                             | _(requis en production)_     | Clé API Resend (envoi seul)                                                                            |
+| `MAIL_FROM`                 | email                                              | _(requis en production)_     | Expéditeur des mails, sur un domaine vérifié dans Resend                                               |
+| `SENTRY_DSN`                | URL                                                | _(optionnel)_                | DSN backend ; vide = Sentry désactivé                                                                  |
+| `SENTRY_RELEASE`            | string                                             | _(optionnel)_                | Tag de release Sentry                                                                                  |
+| `SENTRY_TRACES_SAMPLE_RATE` | float 0-1                                          | `0.2` prod / `1.0` dev       | Sample rate tracing                                                                                    |
+| `SENTRY_FRONTEND_DSN`       | URL                                                | _(optionnel)_                | DSN d'un **projet Sentry distinct** pour le frontend, exposé publiquement via `GET /api/config`        |
 
-`S3_*`, `RESEND_API_KEY` et `MAIL_FROM` sont **requis sans défaut** - impossible de démarrer l'app sans Storage et Mailer configurés, même si on ne les utilise pas en dev.
+`S3_*`, `RESEND_API_KEY` et `MAIL_FROM` sont **requis en production** (`VERCEL_ENV=production`) : l'app refuse d'y démarrer sans eux. Ailleurs (preview, poste local, CI), ils sont facultatifs : sans configuration S3 complète, le stockage répond 503 ; sans clé Resend, et **toujours en preview**, les mails sont seulement journalisés (destinataire masqué et sujet). Détail et variables de preview : [`docs/preview-env.md`](../../docs/preview-env.md).
 
 ## Base de données
 
@@ -189,23 +190,24 @@ pnpm test:cov       # Avec coverage
 
 Liste réelle (`package.json`) - pas de script `s3:*` (démarrer MinIO à la main via `podman compose up -d minio minio-init`) :
 
-| Script                                           | Description                                                                                                                |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm start`                                     | `node dist/main.js` (nécessite `pnpm build`)                                                                               |
-| `pnpm start:dev` / `pnpm dev`                    | `tsc --watch` + `node --watch` sur `dist/` (`dev` déclenche le hook `predev`, voir Quickstart)                             |
-| `pnpm start:prod`                                | `node dist/main` (nécessite `pnpm build` avant)                                                                            |
-| `pnpm build`                                     | `tsc` → `dist/`                                                                                                            |
-| `pnpm lint` / `pnpm format`                      | ESLint (`--fix`) / Prettier                                                                                                |
-| `pnpm lint:check` / `format:check` / `typecheck` | Vérifications sans écriture : ESLint, Prettier, `tsc --noEmit` (specs comprises). Ce que joue la CI                        |
-| `pnpm test` / `test:watch` / `test:cov`          | Jest (sous `--experimental-vm-modules`, cf. Tests)                                                                         |
-| `pnpm db:up` / `db:down` / `db:wait`             | Cycle container Postgres (`podman compose`)                                                                                |
-| `pnpm db:generate` / `db:migrate` / `db:studio`  | Drizzle Kit                                                                                                                |
-| `pnpm db:seed`                                   | Crée l'admin (idempotent, `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`)                                                          |
-| `pnpm db:change-password <email> <newPassword>`  | Change le mot de passe d'un user directement en DB (newPassword 12+ chars) - utile en cas de perte d'accès, bypass l'API   |
-| `pnpm db:reset`                                  | Wipe volume + recrée + migrate + seed (dev only)                                                                           |
-| `pnpm sentry:check-instrumentation`              | Vérifie que Sentry trace `@Injectable`, `@Catch`, `@Cron` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`) |
+| Script                                           | Description                                                                                                                                   |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm start`                                     | `node dist/main.js` (nécessite `pnpm build`)                                                                                                  |
+| `pnpm start:dev` / `pnpm dev`                    | `tsc --watch` + `node --watch` sur `dist/` (`dev` déclenche le hook `predev`, voir Quickstart)                                                |
+| `pnpm start:prod`                                | `node dist/main` (nécessite `pnpm build` avant)                                                                                               |
+| `pnpm build`                                     | `tsc` → `dist/`                                                                                                                               |
+| `pnpm lint` / `pnpm format`                      | ESLint (`--fix`) / Prettier                                                                                                                   |
+| `pnpm lint:check` / `format:check` / `typecheck` | Vérifications sans écriture : ESLint, Prettier, `tsc --noEmit` (specs comprises). Ce que joue la CI                                           |
+| `pnpm test` / `test:watch` / `test:cov`          | Jest (sous `--experimental-vm-modules`, cf. Tests)                                                                                            |
+| `pnpm db:up` / `db:down` / `db:wait`             | Cycle container Postgres (`podman compose`)                                                                                                   |
+| `pnpm db:generate` / `db:migrate` / `db:studio`  | Drizzle Kit                                                                                                                                   |
+| `pnpm db:seed`                                   | Crée l'admin (idempotent, `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`)                                                                             |
+| `pnpm db:init-demo`                              | Base de preview : migrations puis admin de démo (`DEMO_ADMIN_PASSWORD`) et contenu fictif ; refuse la prod et toute base avec un autre compte |
+| `pnpm db:change-password <email> <newPassword>`  | Change le mot de passe d'un user directement en DB (newPassword 12+ chars) - utile en cas de perte d'accès, bypass l'API                      |
+| `pnpm db:reset`                                  | Wipe volume + recrée + migrate + seed (dev only)                                                                                              |
+| `pnpm sentry:check-instrumentation`              | Vérifie que Sentry trace `@Injectable`, `@Catch`, `@Cron` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`)                    |
 
-**CI** (`.github/workflows/api-ci.yml`, à chaque PR et sur `master`) : `install --frozen-lockfile`, `lint:check`, `format:check`, `typecheck`, `pnpm test` **avec** les tests d'intégration (service `postgres:17-alpine`, base jetable `PROFILE_IT_DATABASE_URL`), `build`, puis la suite de parité HTTP contre l'API construite, lancée par Node devant une base jetable. Le déploiement est celui de Vercel depuis Git (ADR-0036).
+**CI** (`.github/workflows/api-ci.yml`, à chaque PR et sur `master`) : `install --frozen-lockfile`, `lint:check`, `format:check`, `typecheck`, `pnpm test` **avec** les tests d'intégration (service `postgres:17-alpine`, bases jetables `PROFILE_IT_DATABASE_URL` et `DEMO_IT_DATABASE_URL`), `build`, puis la suite de parité HTTP contre l'API construite, lancée par Node devant une base jetable. Sur une PR, le job `preview-db` applique ensuite les migrations sur la branche Neon `preview` (secret `PREVIEW_DATABASE_URL_UNPOOLED`, ignoré s'il est absent). Le déploiement est celui de Vercel depuis Git (ADR-0036).
 
 ## S3 Storage
 
@@ -287,7 +289,8 @@ Contenu de `/about` édité depuis l'admin (spec front 021, ADR-0023 du front) :
 
 Envoi par l'API HTTP de [Resend](https://resend.com) (`fetch`, sans SDK ni SMTP), consommé par Contact. Domaine `nedellec-julien.fr` vérifié dans Resend (DKIM + SPF via le sous-domaine `send`).
 
-**Dev local** : une clé Resend dans `.env.local` ; les mails partent réellement (vers `OWNER_EMAIL`).
+**Dev local** : une clé Resend dans `.env.local` ; les mails partent réellement (vers `OWNER_EMAIL`). Sans clé, ils sont seulement journalisés.
+**Preview Vercel** : aucun envoi, quelles que soient les variables (`LogMailer`, choisi d'après `VERCEL_ENV`).
 **Prod** : `RESEND_API_KEY` et `MAIL_FROM` dans les variables d'env Vercel.
 
 **API (`MailerService`)** : `sendMail(...): Promise<void>` - 3 tentatives, backoff linéaire 1s/2s, même `Idempotency-Key` d'une tentative à l'autre (pas de doublon), throw après épuisement une erreur dont le destinataire et le `replyTo` sont masqués (l'appelant la journalise).
