@@ -33,8 +33,9 @@ Faits vérifiés dans la documentation Vercel (2026-11-03) :
 2. **Un jour de fraîcheur** (`max-age=86400`), puis `stale-while-revalidate` et `stale-if-error` d'une
    semaine. La durée ne borne que ce qu'aucune écriture ne change.
 3. **L'API vide le tag** après toute écriture réussie (hors GET/HEAD, statut < 400) sous `/api/blog`,
-   `/api/projects`, `/api/profile`, `/api/workshop-guide` et `/api/cv`, like compris (la page d'un
-   article en affiche le compteur), avant de répondre. Suppression (`dangerouslyDeleteByTag`) et non
+   `/api/projects`, `/api/profile`, `/api/workshop-guide` et `/api/cv`, avant de répondre. Le like
+   fait exception (amendement du 2026-11-11) : seule écriture ouverte à tout visiteur, il laissait un
+   anonyme vider le cache à volonté. Le compteur affiché suit donc la durée du cache. Suppression (`dangerouslyDeleteByTag`) et non
    invalidation : le rechargement de l'admin doit montrer la nouvelle version, pas une dernière fois
    l'ancienne. Le trafic d'un portfolio rend la ruée vers l'origine négligeable.
 4. Un échec de purge est journalisé sans faire échouer l'écriture, déjà faite.
