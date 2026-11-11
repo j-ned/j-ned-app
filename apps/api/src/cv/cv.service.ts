@@ -9,6 +9,8 @@ import { StorageService } from '../storage/storage.service';
 export class CvService {
   private static readonly BUCKET = 'portfolio-storage';
   private static readonly KEY = 'cv/cv.pdf';
+  // Jamais le type déclaré par le client : le fichier est resservi en ligne depuis l'origine du site.
+  private static readonly MIME_TYPE = 'application/pdf';
 
   constructor(
     private readonly db: Database,
@@ -22,7 +24,7 @@ export class CvService {
       CvService.BUCKET,
       CvService.KEY,
       file.buffer,
-      file.mimetype,
+      CvService.MIME_TYPE,
     );
 
     const [row] = await this.db
@@ -31,14 +33,14 @@ export class CvService {
         fileName: file.originalname,
         fileKey: CvService.KEY,
         fileSize: file.size,
-        mimeType: file.mimetype,
+        mimeType: CvService.MIME_TYPE,
       })
       .onConflictDoUpdate({
         target: cvFiles.fileKey,
         set: {
           fileName: file.originalname,
           fileSize: file.size,
-          mimeType: file.mimetype,
+          mimeType: CvService.MIME_TYPE,
           updatedAt: new Date(),
         },
       })

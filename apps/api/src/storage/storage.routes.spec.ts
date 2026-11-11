@@ -45,6 +45,13 @@ describe('storage routes', () => {
     expect(await res.text()).toBe('x');
   });
 
+  it('clé au pourcent-encodage invalide : 404, jamais une erreur serveur', async () => {
+    const res = await app.request('/api/storage/portfolio-storage/%E0');
+
+    expect(res.status).toBe(404);
+    expect(storage.get).not.toHaveBeenCalled();
+  });
+
   it('variant=share : sert la carte JPEG avec sa taille et le même cache', async () => {
     const buffer = Buffer.from('jpeg-card');
     shareCards.get.mockResolvedValue({ buffer, contentType: 'image/jpeg' });

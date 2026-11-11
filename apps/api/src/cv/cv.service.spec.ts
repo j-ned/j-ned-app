@@ -34,6 +34,30 @@ describe('CvService', () => {
     service = new CvService(db as never, storage);
   });
 
+  describe('upsert', () => {
+    it('stocke le CV en application/pdf, quel que soit le type déclaré par le client', async () => {
+      db.returning.mockResolvedValueOnce([mkCvFile()]);
+      const buffer = Buffer.from('%PDF-1.7');
+
+      await service.upsert({
+        buffer,
+        originalname: 'cv.pdf',
+        mimetype: 'text/html',
+        size: buffer.length,
+      });
+
+      expect(storage.upload).toHaveBeenCalledWith(
+        'portfolio-storage',
+        'cv/cv.pdf',
+        buffer,
+        'application/pdf',
+      );
+      expect(db.values).toHaveBeenCalledWith(
+        expect.objectContaining({ mimeType: 'application/pdf' }),
+      );
+    });
+  });
+
   describe('download', () => {
     it('retourne { stream, metadata } si CV existe', async () => {
       const metadata = mkCvFile();

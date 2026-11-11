@@ -70,6 +70,18 @@ function keepPathOnlyForV2(input: unknown): unknown {
     : input;
 }
 
+const METADATA_MAX_KEYS = 10;
+
+/** Quelques étiquettes courtes : la route est anonyme, un JSON libre gonflerait la base. */
+const metadataSchema = z
+  .record(
+    z.string().max(64),
+    z.union([z.string().max(255), z.number(), z.boolean(), z.null()]),
+  )
+  .refine((value) => Object.keys(value).length <= METADATA_MAX_KEYS, {
+    message: `metadata accepts at most ${METADATA_MAX_KEYS} keys`,
+  });
+
 const eventSchema = z
   .strictObject({
     type: z.enum(ANALYTICS_TYPES),
@@ -78,7 +90,7 @@ const eventSchema = z
     duration: z.int().min(0).max(86400).optional(),
     entityId: z.string().max(255).optional(),
     entityTitle: z.string().max(500).optional(),
-    metadata: z.record(z.string(), z.unknown()).optional(),
+    metadata: metadataSchema.optional(),
   })
   .superRefine((event, ctx) => {
     const required = (path: 'url' | 'duration') =>

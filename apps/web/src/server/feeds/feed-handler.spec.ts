@@ -218,4 +218,23 @@ describe('createFeedHandler', () => {
       });
     },
   );
+
+  it('Given an old cover stored as an absolute URL When the RSS feed probes it Then neither the SSR secret nor the visitor address leaves for that host', async () => {
+    const external = 'https://cdn.example/cover.jpg';
+    const posts = (): Promise<Response> =>
+      json([makeBlogPost({ slug: 'article-temoin', coverImage: external })]);
+    const api = anApi({ [POSTS_URL]: posts, [FULL_POSTS_URL]: posts });
+    const handler = createFeedHandler({
+      apiBaseUrl: API,
+      fetch: api,
+      startedAt: new Date('2026-10-10T06:30:00Z'),
+      ssrForwardSecret: 'shared-secret',
+    });
+
+    await handler('rss', '203.0.113.7');
+
+    const probes = api.mock.calls.filter(([input]) => String(input).startsWith(external));
+    expect(probes).toHaveLength(1);
+    expect([...new Headers(probes[0]?.[1]?.headers).keys()]).toEqual([]);
+  });
 });

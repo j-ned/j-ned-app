@@ -45,7 +45,8 @@ export function createFeedHandler({
   ): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
-    const headers = visitorHeaders(visitor, ssrForwardSecret);
+    // Secret et adresse du visiteur ne partent que vers l'API, jamais vers l'hôte d'une couverture absolue.
+    const headers = url.startsWith(apiBaseUrl) ? visitorHeaders(visitor, ssrForwardSecret) : {};
     try {
       return await fetch(url, { method, headers, signal: controller.signal });
     } finally {
