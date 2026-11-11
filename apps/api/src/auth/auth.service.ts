@@ -4,7 +4,11 @@ import {
   BadRequestException,
   TooManyRequestsException,
 } from '../common/http-errors';
-import { countHit, TWO_FACTOR_ACCOUNT_THROTTLE } from '../common/throttle';
+import {
+  countHit,
+  resetHits,
+  TWO_FACTOR_ACCOUNT_THROTTLE,
+} from '../common/throttle';
 import type { JwtService } from './jwt.service';
 import { UsersService } from '../users/users.service';
 import { PasswordService } from './password.service';
@@ -96,8 +100,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid challenge token');
     }
 
+    // Compté avant de vérifier : des essais simultanés ne passent pas sous la limite.
+    const attemptsKey = `2fa|${user.id}`;
     const attempts = await countHit(
-      `2fa|${user.id}`,
+      attemptsKey,
       TWO_FACTOR_ACCOUNT_THROTTLE.ttlMs,
     );
     if (attempts && attempts.count > TWO_FACTOR_ACCOUNT_THROTTLE.limit) {
@@ -121,6 +127,7 @@ export class AuthService {
     } else {
       throw new UnauthorizedException('Either code or backupCode is required');
     }
+    await resetHits(attemptsKey);
 
     const token = this.jwt.sign({
       sub: user.id,

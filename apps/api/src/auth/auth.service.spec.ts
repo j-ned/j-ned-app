@@ -227,6 +227,22 @@ describe('AuthService', () => {
       ).rejects.toThrow(TooManyRequestsException);
     });
 
+    it('ne compte que les échecs : une vérification réussie remet le compteur du compte à zéro', async () => {
+      aChallengedUser();
+      jwt.sign.mockReturnValue('final-token');
+      const fail = async () => {
+        twoFactor.verifyTotpCode.mockReturnValue(false);
+        await expect(
+          service.verifyTwoFactor('challenge', { code: '000000' }),
+        ).rejects.toThrow(UnauthorizedException);
+      };
+      for (let attempt = 0; attempt < 4; attempt += 1) await fail();
+      twoFactor.verifyTotpCode.mockReturnValue(true);
+      await service.verifyTwoFactor('challenge', { code: '123456' });
+
+      for (let attempt = 0; attempt < 4; attempt += 1) await fail();
+    });
+
     it('throw UnauthorizedException si backup code ne matche aucun hash', async () => {
       const user = mkUser({
         isTwoFactorEnabled: true,

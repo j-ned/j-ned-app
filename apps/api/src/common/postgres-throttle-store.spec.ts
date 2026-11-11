@@ -32,6 +32,16 @@ describe('PostgresThrottleStore', () => {
     expect((await store.hit('k', 1_000, 0)).count).toBe(0);
   });
 
+  it('Given a counter, When reset, Then its row is deleted', async () => {
+    execute.mockResolvedValue([]);
+
+    await store.reset('2fa|user-1');
+
+    const { sql, params } = render((execute.mock.calls as unknown[][])[0]?.[0]);
+    expect(sql).toMatch(/DELETE FROM rate_limit WHERE key = /);
+    expect(params).toEqual(['2fa|user-1']);
+  });
+
   it('Given expired counters, When purged, Then rows whose window closed over a day ago are deleted', async () => {
     execute.mockResolvedValue([]);
 

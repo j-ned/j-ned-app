@@ -27,8 +27,9 @@ export const AUTH_ATTEMPT_THROTTLE: ThrottleConfig = {
 };
 
 /**
- * Second facteur, par compte : 5 essais par quart d'heure, d'où qu'ils viennent. Le quota par IP ne
- * freine pas un attaquant qui a le mot de passe et répartit ses essais sur plusieurs adresses.
+ * Second facteur, par compte : 5 échecs d'affilée par quart d'heure, d'où qu'ils viennent (un succès
+ * remet le compteur à zéro). Le quota par IP ne freine pas un attaquant qui a le mot de passe et
+ * répartit ses essais sur plusieurs adresses.
  */
 export const TWO_FACTOR_ACCOUNT_THROTTLE: ThrottleConfig = {
   limit: 5,
@@ -53,6 +54,8 @@ export type ThrottleHit = { readonly count: number; readonly resetAt: number };
 /** Où les compteurs vivent : en mémoire (un seul process) ou en base (fonctions Vercel, ADR-0036). */
 export interface ThrottleStore {
   hit(key: string, ttlMs: number, now: number): Promise<ThrottleHit>;
+  /** Oublie le compteur de `key`. */
+  reset(key: string): Promise<void>;
 }
 
 // Au-delà, les fenêtres expirées sont purgées avant d'en ouvrir une nouvelle.
@@ -77,6 +80,11 @@ export class MemoryThrottleStore implements ThrottleStore {
     }
     window.count += 1;
     return Promise.resolve({ count: window.count, resetAt: window.resetAt });
+  }
+
+  reset(key: string): Promise<void> {
+    this.windows.delete(key);
+    return Promise.resolve();
   }
 }
 
@@ -107,6 +115,18 @@ export async function countHit(
       'Throttle store unavailable: request let through',
     );
     return undefined;
+  }
+}
+
+/** Remet à zéro le compteur de `key` ; un échec du stockage est journalisé, jamais propagé. */
+export async function resetHits(key: string): Promise<void> {
+  try {
+    await store.reset(key);
+  } catch (error: unknown) {
+    logger.warn(
+      { err: error as Error },
+      'Throttle store unavailable: counter not reset',
+    );
   }
 }
 

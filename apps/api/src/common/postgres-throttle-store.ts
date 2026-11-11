@@ -23,6 +23,10 @@ export class PostgresThrottleStore implements ThrottleStore {
     return { count: Number(rows[0]?.count ?? 0), resetAt: windowStart + ttlMs };
   }
 
+  async reset(key: string): Promise<void> {
+    await this.db.execute(sql`DELETE FROM rate_limit WHERE key = ${key}`);
+  }
+
   /** Supprime les compteurs dont la fenêtre est close depuis plus d'un jour. */
   async purgeExpired(now: number = Date.now()): Promise<void> {
     const before = new Date(now - 86_400_000).toISOString();

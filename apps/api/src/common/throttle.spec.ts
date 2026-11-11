@@ -71,7 +71,10 @@ describe('throttle', () => {
   });
 
   it('Given a broken counter store, When a request comes, Then it is let through rather than blocked', async () => {
-    setThrottleStore({ hit: () => Promise.reject(new Error('db down')) });
+    setThrottleStore({
+      hit: () => Promise.reject(new Error('db down')),
+      reset: () => Promise.resolve(),
+    });
     try {
       const { hit } = throttledApp({ limit: 1, ttlMs: 60_000 });
 
