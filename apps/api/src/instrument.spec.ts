@@ -1,3 +1,5 @@
+import { IncomingMessage } from 'node:http';
+import { Socket } from 'node:net';
 import type * as SentryModule from '@sentry/node';
 
 // Un `.env` local ne doit pas fausser les variables posées par les tests.
@@ -29,23 +31,15 @@ describe('instrument', () => {
     return { sentry };
   };
 
-  it('Given Sentry initialisé, Then une transaction du flux d’agenda est écartée avant envoi', () => {
+  it('Given Sentry initialisé, Then la sonde de santé n’est jamais tracée', () => {
     const { sentry } = loadInstrument();
-    const hook = jest.mocked(sentry.init).mock.calls[0]?.[0]
-      ?.beforeSendTransaction;
-    if (!hook) throw new Error('beforeSendTransaction absent');
+    const options = jest.mocked(sentry.httpIntegration).mock.calls[0]?.[0];
+    if (!options?.ignoreIncomingRequests) {
+      throw new Error('ignoreIncomingRequests absent');
+    }
 
-    expect(
-      hook(
-        {
-          type: 'transaction',
-          transaction: 'GET /api/booking/feed/:file',
-          request: {
-            url: 'https://api.nedellec-julien.fr/api/booking/feed/XYJXH9MoGdppkZYT0jI3g2rP-qFcqKBWL0budyMj488.ics',
-          },
-        },
-        {},
-      ),
-    ).toBeNull();
+    const request = new IncomingMessage(new Socket());
+
+    expect(options.ignoreIncomingRequests('/api/health', request)).toBe(true);
   });
 });

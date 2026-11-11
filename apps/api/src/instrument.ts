@@ -5,7 +5,6 @@ import * as Sentry from '@sentry/node';
 import {
   isUntracedIncomingRequest,
   sentryBeforeSend,
-  sentryBeforeSendTransaction,
 } from './common/sentry-before-send';
 
 // `.env` local facultatif (absent sur Vercel), lu par Node sans dépendance.
@@ -45,9 +44,7 @@ if (dsn) {
         ? 0.2
         : 1.0,
     beforeSend: sentryBeforeSend,
-    beforeSendTransaction: sentryBeforeSendTransaction,
-    // v11 diffuse les spans par défaut (`stream`) et ignore alors `beforeSendTransaction` :
-    // le cycle `static` garde les transactions entières, donc passées à ce hook.
+    // v11 diffuse les spans par défaut (`stream`) : le cycle `static` garde des transactions entières.
     traceLifecycle: 'static',
   });
 }

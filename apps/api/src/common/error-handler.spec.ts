@@ -3,10 +3,6 @@ import { handleError, handleNotFound } from './error-handler';
 import { NotFoundException, TooManyRequestsException } from './http-errors';
 import { Logger } from './logger';
 
-const FEED_TOKEN = 'XYJXH9MoGdppkZYT0jI3g2rP-qFcqKBWL0budyMj488';
-const FEED_URL = `/api/booking/feed/${FEED_TOKEN}.ics?x=1`;
-const REDACTED_FEED_URL = '/api/booking/feed/[Filtered]';
-
 /** Application dont toute route lève l'erreur donnée. */
 const throwing = (error: unknown) =>
   new Hono()
@@ -28,9 +24,9 @@ describe('handleError', () => {
     logError.mockRestore();
   });
 
-  it('Given un 404 sur le flux, Then le corps porte le chemin masqué', async () => {
+  it('Given un 404, Then le corps suit le format unique des erreurs', async () => {
     const res = await throwing(new NotFoundException('Not Found')).request(
-      FEED_URL,
+      '/api/projects/absent',
     );
 
     expect(res.status).toBe(404);
@@ -38,22 +34,9 @@ describe('handleError', () => {
       statusCode: 404,
       error: 'Not Found',
       message: 'Not Found',
-      path: REDACTED_FEED_URL,
+      path: '/api/projects/absent',
       timestamp: expect.any(String) as string,
     });
-  });
-
-  it('Given une erreur 500 sur le flux, Then le log porte le chemin masqué, dans l’objet comme dans le message', async () => {
-    const boom = new Error('boom');
-
-    const res = await throwing(boom).request(FEED_URL);
-
-    expect(res.status).toBe(500);
-    expect(logError).toHaveBeenCalledWith(
-      { err: boom, path: REDACTED_FEED_URL, method: 'GET' },
-      `Unhandled 500 on GET ${REDACTED_FEED_URL}`,
-    );
-    expect(JSON.stringify(logError.mock.calls)).not.toContain(FEED_TOKEN);
   });
 
   it('Given un 500, Then le corps ne dit rien de l’erreur', async () => {
@@ -78,13 +61,13 @@ describe('handleError', () => {
     expect(JSON.stringify(logError.mock.calls)).not.toMatch(/a@b\.c|xyz/);
   });
 
-  it('Given une autre route, Then le chemin reste lisible dans le corps', async () => {
+  it('Given une route à query string, Then le chemin reste lisible dans le corps', async () => {
     const res = await throwing(new NotFoundException('Not Found')).request(
-      '/api/booking/slots?from=2026-10-01',
+      '/api/projects?from=2026-10-01',
     );
 
     expect(await res.json()).toMatchObject({
-      path: '/api/booking/slots?from=2026-10-01',
+      path: '/api/projects?from=2026-10-01',
     });
   });
 
@@ -100,25 +83,6 @@ describe('handleError', () => {
     });
     expect(logError).not.toHaveBeenCalled();
   });
-
-  it.each([
-    `/api/BOOKING/feed/${FEED_TOKEN}.ics`,
-    `/api/booking/Feed/${FEED_TOKEN}.ics`,
-    `/api/booking/feed/${FEED_TOKEN}.ICS`,
-    `/api//booking/feed/${FEED_TOKEN}.ics`,
-    `/api/booking/%66eed/${FEED_TOKEN}.ics`,
-  ])(
-    'Given %s, Then ni le corps 404 ni le log 500 ne portent le jeton',
-    async (url) => {
-      const notFound = await throwing(
-        new NotFoundException('Not Found'),
-      ).request(url);
-      await throwing(new Error('boom')).request(url);
-
-      expect(await notFound.text()).not.toContain(FEED_TOKEN);
-      expect(JSON.stringify(logError.mock.calls)).not.toContain(FEED_TOKEN);
-    },
-  );
 });
 
 describe('handleNotFound', () => {

@@ -2,7 +2,6 @@ import type { ErrorEvent, Event } from '@sentry/node';
 import {
   SENSITIVE_BODY_FIELDS,
   redactQueryParams,
-  redactUrl,
   stripQueryAndFragment,
 } from './log-redact';
 
@@ -61,14 +60,12 @@ const scrubExceptionValues = (
 /**
  * Filet après `dataCollection` (fermé dans `instrument.ts`) : retire l'IP de l'utilisateur, les cookies,
  * les en-têtes d'authentification et de cookies (toute casse), la query string et le fragment de l'URL,
- * les champs sensibles du corps, les paramètres liés des erreurs de requête SQL, et masque le jeton du flux d'agenda (URL, transaction), sans muter
- * l'événement.
+ * les champs sensibles du corps, et les paramètres liés des erreurs de requête SQL, sans muter l'événement.
  */
 export function sentryBeforeSend(event: ErrorEvent): ErrorEvent {
-  const { exception, request, transaction, user } = event;
+  const { exception, request, user } = event;
   const named: ErrorEvent = { ...event };
   if (exception?.values) named.exception = scrubExceptionValues(exception);
-  if (transaction !== undefined) named.transaction = redactUrl(transaction);
   if (user && 'ip_address' in user) {
     const anonymous = { ...user };
     delete anonymous.ip_address;
@@ -88,78 +85,12 @@ export function sentryBeforeSend(event: ErrorEvent): ErrorEvent {
   }
   if (request.data !== undefined) scrubbed.data = scrubBody(request.data);
   if (request.url !== undefined) {
-    scrubbed.url = redactUrl(stripQueryAndFragment(request.url));
+    scrubbed.url = stripQueryAndFragment(request.url);
   }
   return { ...named, request: scrubbed };
 }
 
-type TransactionEvent = Event & { type: 'transaction' };
-
-/** Vrai si l'URL désigne le flux d'agenda (ou en porte le jeton) : `redactUrl` la modifierait. */
-const isFeedUrl = (url: unknown): boolean =>
-  typeof url === 'string' && redactUrl(url) !== url;
-
-/** Clés de `contexts.trace.data` où l'instrumentation HTTP et Nest écrit l'URL de la requête. */
-const TRACE_URL_KEYS = [
-  'http.url',
-  'url',
-  'url.full',
-  'url.path',
-  'http.target',
-] as const;
-
-/** Passe chaque valeur chaîne de premier niveau (requête, données de span) à `redactUrl`. */
-const redactData = <D extends object>(data: D): D =>
-  Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [
-      key,
-      typeof value === 'string' ? redactUrl(value) : value,
-    ]),
-  ) as D;
-
-/**
- * Écarte toute transaction du flux d'agenda : selon le chemin, Sentry l'ouvre sur le span de Nest
- * (`request_context.nestjs`), sur `http.server` ou sur le filtre d'exceptions, et chacune porte l'URL
- * concrète, donc le jeton. Les autres transactions passent, toute URL du flux restante masquée dans les
- * champs sérialisés (nom, requête, données de trace, spans). Le parcours est borné à ces champs :
- * `sdkProcessingMetadata` porte les scopes, circulaires, et n'est pas envoyé.
- */
-export function sentryBeforeSendTransaction(
-  event: TransactionEvent,
-): TransactionEvent | null {
-  const { request, contexts, spans, transaction } = event;
-  const trace = contexts?.trace;
-  const traceData = trace?.data ?? {};
-  const designatesFeed =
-    isFeedUrl(transaction) ||
-    isFeedUrl(request?.url) ||
-    TRACE_URL_KEYS.some((key) => isFeedUrl(traceData[key]));
-  if (designatesFeed) return null;
-
-  return {
-    ...event,
-    ...(transaction !== undefined && { transaction: redactUrl(transaction) }),
-    ...(request && { request: redactData(request) }),
-    ...(trace?.data && {
-      contexts: {
-        ...contexts,
-        trace: { ...trace, data: redactData(trace.data) },
-      },
-    }),
-    ...(spans && {
-      spans: spans.map((span) => ({
-        ...span,
-        description: redactUrl(span.description),
-        data: redactData(span.data),
-      })),
-    }),
-  };
-}
-
-/**
- * Requêtes entrantes jamais tracées : la sonde de santé et le flux d'agenda (le jeton est dans le chemin),
- * quelle que soit la casse du chemin.
- */
+/** Requêtes entrantes jamais tracées : la sonde de santé. */
 export function isUntracedIncomingRequest(url: string): boolean {
-  return url.startsWith('/api/health') || isFeedUrl(url);
+  return url.startsWith('/api/health');
 }
