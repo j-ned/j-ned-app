@@ -17,10 +17,6 @@ export class HttpException extends Error {
     this.name = new.target.name;
     this.messages = messages;
   }
-
-  getStatus(): number {
-    return this.status;
-  }
 }
 
 const httpException = (status: number) =>

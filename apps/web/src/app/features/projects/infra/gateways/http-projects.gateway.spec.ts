@@ -41,7 +41,7 @@ describe('HttpProjectsGateway', () => {
   });
 
   describe('Public (NestJS): 5 tests', () => {
-    it('getAllProjects() émet GET /<base>/projects?_sort=order&limit=100, retourne Project[] (NestJS array direct)', async () => {
+    it('getAllProjects() émet GET /<base>/projects, retourne Project[] (NestJS array direct)', async () => {
       const { gateway, httpController } = configure();
       const expected = [
         makeProject({ id: 'uuid-1' }),
@@ -50,7 +50,7 @@ describe('HttpProjectsGateway', () => {
 
       const promise = firstValueFrom(gateway.getAllProjects());
 
-      const req = httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`);
+      const req = httpController.expectOne(`${BASE}/projects`);
       expect(req.request.method).toBe('GET');
       req.flush(expected);
 
@@ -69,7 +69,7 @@ describe('HttpProjectsGateway', () => {
 
       httpController.expectNone(`${BASE}/projects?featured=true&_sort=order`);
       httpController
-        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
+        .expectOne(`${BASE}/projects`)
         .flush([makeProject({ id: 'uuid-1', featured: false }), featured]);
 
       expect(await promise).toEqual([featured]);
@@ -85,7 +85,7 @@ describe('HttpProjectsGateway', () => {
 
       const promise = firstValueFrom(gateway.getFeaturedProjects());
       httpController
-        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
+        .expectOne(`${BASE}/projects`)
         .flush([
           makeProject({ id: 'featured-demo', featured: true, kind: 'demo' }),
           makeProject({ id: 'featured-production', featured: true, kind: 'production' }),
@@ -102,12 +102,12 @@ describe('HttpProjectsGateway', () => {
       const expected = [makeProject()];
 
       const first = firstValueFrom(gateway.getAllProjects());
-      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush(expected);
+      httpController.expectOne(`${BASE}/projects`).flush(expected);
       await first;
 
       // firstValueFrom s'est désabonné : une page suivante (détail projet) ressouscrit.
       expect(await firstValueFrom(gateway.getAllProjects())).toEqual(expected);
-      httpController.expectNone(`${BASE}/projects?_sort=order&limit=100`);
+      httpController.expectNone(`${BASE}/projects`);
       httpController.verify();
     });
 
@@ -115,12 +115,10 @@ describe('HttpProjectsGateway', () => {
       const { gateway, httpController } = configure();
       const seen: number[] = [];
       const sub = gateway.getFeaturedProjects().subscribe((list) => seen.push(list.length));
-      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush([makeProject()]);
+      httpController.expectOne(`${BASE}/projects`).flush([makeProject()]);
 
       gateway.invalidateAllProjects();
-      httpController
-        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
-        .flush([makeProject({ featured: true })]);
+      httpController.expectOne(`${BASE}/projects`).flush([makeProject({ featured: true })]);
 
       expect(seen).toEqual([0, 1]);
       sub.unsubscribe();
@@ -166,7 +164,7 @@ describe('HttpProjectsGateway', () => {
     }>([
       {
         label: 'getAllProjects()',
-        url: `${BASE}/projects?_sort=order&limit=100`,
+        url: `${BASE}/projects`,
         list: true,
         call: (g: HttpProjectsGateway): Observable<Project | readonly Project[] | null> =>
           g.getAllProjects(),
@@ -210,7 +208,7 @@ describe('HttpProjectsGateway', () => {
       const { gateway, httpController } = configure();
 
       const promise = firstValueFrom(gateway.getAllProjects());
-      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush([
+      httpController.expectOne(`${BASE}/projects`).flush([
         {
           ...makeProject({ image: '/storage/portfolio-storage/projects/uuid-1-fb6c30aa.avif' }),
           gallery: [
@@ -249,7 +247,7 @@ describe('HttpProjectsGateway', () => {
       const { gateway, httpController } = configure();
 
       const promise = firstValueFrom(gateway.getAllProjects());
-      httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`).flush([
+      httpController.expectOne(`${BASE}/projects`).flush([
         {
           ...makeProject({ image: 'https://cdn.test/projects/cover.avif' }),
           gallery: [
@@ -278,7 +276,7 @@ describe('HttpProjectsGateway', () => {
 
       const promise = firstValueFrom(gateway.getAllProjects());
       httpController
-        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
+        .expectOne(`${BASE}/projects`)
         .flush([
           { ...makeProject({ id: 'uuid-1' }), kind: 'client' },
           makeProject({ id: 'uuid-2', kind: 'demo' }),
@@ -315,7 +313,7 @@ describe('HttpProjectsGateway', () => {
   });
 
   describe('Échec de chargement', () => {
-    const URL = `${BASE}/projects?_sort=order&limit=100`;
+    const URL = `${BASE}/projects`;
 
     it("relance la requête une fois avant de propager l'erreur", async () => {
       const { gateway, httpController } = configure();
@@ -535,12 +533,12 @@ describe('HttpProjectsGateway', () => {
       const seen: string[] = [];
       const sub = gateway.getFeaturedProjects().subscribe((list) => seen.push(list[0]?.id ?? ''));
       httpController
-        .expectOne(`${BASE}/projects?_sort=order&limit=100`)
+        .expectOne(`${BASE}/projects`)
         .flush([makeProject({ id: 'uuid-1', featured: true })]);
 
       gateway.invalidateFeatured();
 
-      const refetch = httpController.expectOne(`${BASE}/projects?_sort=order&limit=100`);
+      const refetch = httpController.expectOne(`${BASE}/projects`);
       expect(refetch.request.method).toBe('GET');
       refetch.flush([makeProject({ id: 'uuid-2', featured: true })]);
 

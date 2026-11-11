@@ -97,6 +97,21 @@ describe('purgeContentCacheOnWrite', () => {
     expect(purge).not.toHaveBeenCalled();
   });
 
+  it('never purges on an anonymous OPTIONS preflight', async () => {
+    const purge = jest.fn().mockResolvedValue(undefined);
+    const app = testApp(
+      '/api',
+      new Hono<AppEnv>()
+        .use(purgeContentCacheOnWrite(purge))
+        .options('/item', (c) => c.body(null, 204)),
+    );
+
+    const res = await app.request('/api/item', { method: 'OPTIONS' });
+
+    expect(res.status).toBe(204);
+    expect(purge).not.toHaveBeenCalled();
+  });
+
   it('never purges when the write failed', async () => {
     const purge = jest.fn().mockResolvedValue(undefined);
 

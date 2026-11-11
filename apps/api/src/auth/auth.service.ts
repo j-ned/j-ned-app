@@ -1,7 +1,14 @@
+import { createHash, randomUUID } from 'node:crypto';
 import {
   UnauthorizedException,
   BadRequestException,
+  TooManyRequestsException,
 } from '../common/http-errors';
+import {
+  countHit,
+  resetHits,
+  TWO_FACTOR_ACCOUNT_THROTTLE,
+} from '../common/throttle';
 import type { JwtService } from './jwt.service';
 import { UsersService } from '../users/users.service';
 import { PasswordService } from './password.service';
@@ -23,7 +30,12 @@ function publicUser(u: User): PublicUser {
   return { id: u.id, email: u.email, isTwoFactorEnabled: u.isTwoFactorEnabled };
 }
 
+// Un code TOTP vaut 30 s ; 90 s couvrent sa fenêtre et un décalage d'horloge.
+const TOTP_REPLAY_WINDOW_MS = 90_000;
+
 export class AuthService {
+  private decoyHash?: Promise<string>;
+
   constructor(
     private readonly users: UsersService,
     private readonly password: PasswordService,
@@ -50,9 +62,10 @@ export class AuthService {
 
   async login(email: string, plainPassword: string): Promise<LoginResult> {
     const user = await this.users.findByEmail(email);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-    const ok = await this.password.verify(plainPassword, user.passwordHash);
-    if (!ok) throw new UnauthorizedException('Invalid credentials');
+    // Compte inconnu : même travail argon2 qu'un mauvais mot de passe, la durée ne trahit pas le compte.
+    const hash = user?.passwordHash ?? (await this.decoyPasswordHash());
+    const ok = await this.password.verify(plainPassword, hash);
+    if (!user || !ok) throw new UnauthorizedException('Invalid credentials');
 
     if (user.isTwoFactorEnabled) {
       const challengeToken = this.jwt.sign(
@@ -87,8 +100,21 @@ export class AuthService {
       throw new UnauthorizedException('Invalid challenge token');
     }
 
+    // Compté avant de vérifier : des essais simultanés ne passent pas sous la limite.
+    const attemptsKey = `2fa|${user.id}`;
+    const attempts = await countHit(
+      attemptsKey,
+      TWO_FACTOR_ACCOUNT_THROTTLE.ttlMs,
+    );
+    if (attempts && attempts.count > TWO_FACTOR_ACCOUNT_THROTTLE.limit) {
+      throw new TooManyRequestsException();
+    }
+
     if (creds.code) {
-      if (!this.twoFactor.verifyTotpCode(user.twoFactorSecret, creds.code)) {
+      if (
+        !this.twoFactor.verifyTotpCode(user.twoFactorSecret, creds.code) ||
+        (await this.isReplayedTotpCode(user.id, creds.code))
+      ) {
         throw new UnauthorizedException('Invalid 2FA code');
       }
     } else if (creds.backupCode) {
@@ -101,12 +127,30 @@ export class AuthService {
     } else {
       throw new UnauthorizedException('Either code or backupCode is required');
     }
+    await resetHits(attemptsKey);
 
     const token = this.jwt.sign({
       sub: user.id,
       tokenVersion: user.tokenVersion,
     });
     return { token, user: publicUser(user) };
+  }
+
+  /** Un code TOTP ne sert qu'une fois par compte : intercepté, il ne se rejoue pas dans sa fenêtre. */
+  private async isReplayedTotpCode(
+    userId: string,
+    code: string,
+  ): Promise<boolean> {
+    const digest = createHash('sha256')
+      .update(`${userId}|${code}`)
+      .digest('hex');
+    const uses = await countHit(`2fa-used|${digest}`, TOTP_REPLAY_WINDOW_MS);
+    return uses !== undefined && uses.count > 1;
+  }
+
+  private decoyPasswordHash(): Promise<string> {
+    this.decoyHash ??= this.password.hash(randomUUID());
+    return this.decoyHash;
   }
 
   async changePassword(
@@ -160,20 +204,5 @@ export class AuthService {
     const ok = await this.password.verify(password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid password');
     await this.users.disableTwoFactor(user.id);
-  }
-
-  async regenerateBackupCodes(
-    user: User,
-    password: string,
-  ): Promise<{ backupCodes: string[] }> {
-    if (!user.isTwoFactorEnabled) {
-      throw new BadRequestException('2FA is not enabled');
-    }
-    const ok = await this.password.verify(password, user.passwordHash);
-    if (!ok) throw new UnauthorizedException('Invalid password');
-    const backupCodes = this.twoFactor.generateBackupCodes();
-    const hashes = await this.twoFactor.hashBackupCodes(backupCodes);
-    await this.users.replaceBackupCodes(user.id, hashes);
-    return { backupCodes };
   }
 }

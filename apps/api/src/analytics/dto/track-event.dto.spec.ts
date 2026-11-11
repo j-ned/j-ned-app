@@ -180,5 +180,20 @@ describe('TrackEventDto', () => {
       });
       expect(errors).toHaveLength(0);
     });
+
+    it.each([
+      ['une valeur longue', { note: 'x'.repeat(256) }],
+      ['une valeur imbriquée', { nested: { deep: 'x' } }],
+      [
+        'plus de dix clés',
+        Object.fromEntries(Array.from({ length: 11 }, (_, i) => [`k${i}`, i])),
+      ],
+    ])(
+      'Given a v1 event whose metadata carries %s, When validated, Then an error on metadata',
+      async (_label, metadata) => {
+        const errors = await check({ type: 'project_click', metadata });
+        expect(errors.map((e) => e.property)).toContain('metadata');
+      },
+    );
   });
 });

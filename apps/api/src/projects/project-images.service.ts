@@ -13,7 +13,7 @@ import {
   type ProjectImage,
 } from '../database/schema/project-images';
 import { contentHash, deleteS3IfExists } from '../storage/s3-utils';
-import { StorageService } from '../storage/storage.service';
+import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
 import {
   groupGalleryByProject,
@@ -26,8 +26,6 @@ import {
 
 /** Galerie des projets (ADR-0009) : une capture = une ligne `project_image` + un objet S3. */
 export class ProjectImagesService {
-  private static readonly BUCKET = 'portfolio-storage';
-
   constructor(
     private readonly db: Database,
     private readonly storage: StorageService,
@@ -67,7 +65,7 @@ export class ProjectImagesService {
     const id = randomUUID();
     const key = `project-images/${id}-${contentHash(image.buffer)}.${image.ext}`;
     await this.storage.upload(
-      ProjectImagesService.BUCKET,
+      STORAGE_BUCKET,
       key,
       image.buffer,
       image.mimetype,
@@ -109,7 +107,7 @@ export class ProjectImagesService {
       .where(this.imageOf(projectId, imageId))
       .returning();
     if (!row) throw this.imageNotFound(projectId, imageId);
-    await deleteS3IfExists(this.storage, ProjectImagesService.BUCKET, row.key);
+    await deleteS3IfExists(this.storage, STORAGE_BUCKET, row.key);
   }
 
   /** Réécrit `order = index` en une transaction ; 422 si la liste n'est pas exactement la galerie. */
@@ -181,5 +179,5 @@ export class ProjectImagesService {
   }
 
   private readonly toUrl = (key: string): string =>
-    this.storage.getPublicUrl(ProjectImagesService.BUCKET, key);
+    this.storage.getPublicUrl(STORAGE_BUCKET, key);
 }

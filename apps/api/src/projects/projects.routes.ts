@@ -42,15 +42,8 @@ export function projectsRoutes(
 ): Hono<AppEnv> {
   return (
     new Hono<AppEnv>()
-      // Liste publique, filtrable par catégorie et `featured=true`.
       .get('/', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>
-        reply(
-          c,
-          await projects.findAll({
-            category: c.req.query('category'),
-            featured: c.req.query('featured') === 'true',
-          }),
-        ),
+        reply(c, await projects.findAll()),
       )
 
       .get('/:id', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>

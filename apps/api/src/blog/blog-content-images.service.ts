@@ -6,7 +6,7 @@ import type { Database } from '../database/drizzle.types';
 import { blogPosts } from '../database/schema/blog-posts';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
 import { contentHash } from '../storage/s3-utils';
-import { StorageService } from '../storage/storage.service';
+import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
 import { contentImageKey, isContentImageKey } from './blog-content-image';
 
 export type ContentImageResponse = {
@@ -17,7 +17,6 @@ export type ContentImageResponse = {
 
 /** Images du corps des articles : téléversement sans rattachement, nettoyage à la suppression d'un article. */
 export class BlogContentImagesService {
-  private static readonly BUCKET = 'portfolio-storage';
   private readonly logger = new Logger(BlogContentImagesService.name);
 
   constructor(
@@ -36,13 +35,13 @@ export class BlogContentImagesService {
       image.height,
     );
     await this.storage.upload(
-      BlogContentImagesService.BUCKET,
+      STORAGE_BUCKET,
       key,
       image.buffer,
       image.mimetype,
     );
     return {
-      url: this.storage.getPublicUrl(BlogContentImagesService.BUCKET, key),
+      url: this.storage.getPublicUrl(STORAGE_BUCKET, key),
       width: image.width,
       height: image.height,
     };
@@ -80,9 +79,7 @@ export class BlogContentImagesService {
       (key) => !others.some((p) => p.contentMarkdown.includes(key)),
     );
     const results = await Promise.allSettled(
-      orphans.map((key) =>
-        this.storage.delete(BlogContentImagesService.BUCKET, key),
-      ),
+      orphans.map((key) => this.storage.delete(STORAGE_BUCKET, key)),
     );
     results.forEach((result, i) => {
       if (result.status === 'rejected') {

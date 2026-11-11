@@ -240,6 +240,7 @@ Dossiers transverses : `core/` (singletons, interceptors, guards), `pages/` (pag
 - `infra` -> `domain`
 - `domain` -> **rien** (zero import Angular)
 - `application` ne depend **jamais** directement de `infra` -- cablage dans `app.config.ts`
+- Deux exceptions, et seulement celles-ci : (1) une page (smart) injecte la **classe concrete** d'un gateway a implementation unique (`HttpInsertGuideGateway`, regle « Contrats injectables » du profil : pas de port abstrait sans seconde implementation) ; (2) une **fonction pure** d'infra imposee par un ADR (`parseMarkdown`, ADR-0002). Tout autre import `infra` depuis `application/` ou `pages/` est un defaut
 
 ### Conventions
 - Domain : pas de `@Injectable`, pas de `signal()`, pas de `inject()`. 1 use case = 1 `execute()` (SRP)

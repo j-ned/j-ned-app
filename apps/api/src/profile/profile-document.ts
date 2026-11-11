@@ -45,9 +45,6 @@ function foundOr404(row: ProfileContentRow | undefined): ProfileContentRow {
   return row;
 }
 
-/** Bucket des médias du site (même bucket que projets et articles). */
-export const PROFILE_BUCKET = 'portfolio-storage';
-
 /**
  * Ligne ⇒ réponse publique : contenu à plat, version, date, URL du portrait courant (`null` =
  * portrait par défaut du front). La clé précédente, gardée pour les pages déjà servies, n'est jamais exposée.

@@ -27,10 +27,18 @@ export const cdnCache: MiddlewareHandler = async (c, next) => {
 
 const logger = new Logger('CdnCache');
 
+const WRITE_METHODS: ReadonlySet<string> = new Set([
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+]);
+
 /**
- * Après une écriture réussie (hors GET/HEAD), vide le cache du contenu avant de répondre : le
+ * Après une écriture réussie (POST, PUT, PATCH, DELETE), vide le cache du contenu avant de répondre : le
  * rechargement suivant de l'admin lit déjà la nouvelle version. Un échec de purge est journalisé sans
- * faire échouer l'écriture, déjà faite. Les chemins de `publicWrites` sont laissés de côté.
+ * faire échouer l'écriture, déjà faite. Les chemins de `publicWrites` sont laissés de côté. Liste
+ * fermée de méthodes : un `OPTIONS` anonyme, auquel CORS répond 204, ne doit jamais vider le cache.
  */
 export function purgeContentCacheOnWrite(
   purge: () => Promise<void>,
@@ -38,7 +46,7 @@ export function purgeContentCacheOnWrite(
 ): MiddlewareHandler {
   return async (c, next) => {
     await next();
-    if (c.req.method === 'GET' || c.req.method === 'HEAD') return;
+    if (!WRITE_METHODS.has(c.req.method)) return;
     if (publicWrites?.test(c.req.path)) return;
     if (c.res.status >= 400) return;
     try {

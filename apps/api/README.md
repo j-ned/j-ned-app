@@ -33,7 +33,7 @@ Pas de framework d'injection : `src/main.ts` lit la configuration, ouvre les con
 - **`src/database/database.ts`** - `connectDatabase(config)` : pool `postgres-js` + Drizzle, `close()` à l'arrêt.
 - **`src/services.ts`** - `createServices()` : racine de composition, chaque service reçoit ses dépendances par son constructeur (une instance chacun).
 - **`src/app.ts`** - `createApp()` : middlewares globaux (log des requêtes, en-têtes de sécurité, CORS, contrôle d'origine), puis les routes de chaque module (`<module>/<module>.routes.ts`, une fabrique `xxxRoutes(services…, requireAuth)` par module), erreur et 404 au format JSON.
-- **`src/common/`** - briques HTTP partagées : `http.ts` (corps JSON validé, query, UUID, fichiers envoyés, IP du visiteur), `validation.ts` (DTO class-validator), `throttle.ts` (quotas), `cross-origin.ts` (CSRF), `error-handler.ts`, `logger.ts`, `http-errors.ts`.
+- **`src/common/`** - briques HTTP partagées : `http.ts` (corps JSON validé, query, UUID, fichiers envoyés, IP du visiteur), `validation.ts` (DTO zod), `throttle.ts` (quotas), `cross-origin.ts` (CSRF), `error-handler.ts`, `logger.ts`, `http-errors.ts`.
 - **Tâche quotidienne** - `GET /api/cron/daily` (Vercel Cron, `vercel.json`, 00:00 UTC) : rollup analytics (`src/analytics/analytics.schedule.ts`) puis purge des quotas. En local : `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/daily`.
 
 Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis le pool Postgres et S3 sont fermés.
@@ -70,7 +70,7 @@ Toute la config passe par les variables d'env, validées au boot par Zod (`src/c
 
 ## Base de données
 
-PostgreSQL 17-alpine dans un container Podman/Docker dédié (`portfolio-nest-db`, `compose.yaml`), exposé sur le **port 55432** (isolation vs d'autres backends locaux).
+PostgreSQL 17-alpine dans un container Podman/Docker dédié (`portfolio-db`, `compose.yaml`), exposé sur le **port 55432** (isolation vs d'autres backends locaux).
 
 ### Choix techniques
 
@@ -95,13 +95,13 @@ pnpm db:down            # Stoppe le container
 
 ## Logging
 
-[Pino](https://getpino.io), une ligne par requête (`src/common/request-logger.ts`) et `Logger` nommé par module (`src/common/logger.ts`, même usage que celui de NestJS auparavant). Tout log `error` qui ne porte pas déjà une exception part aussi à Sentry.
+[Pino](https://getpino.io), une ligne par requête (`src/common/request-logger.ts`) et `Logger` nommé par module (`src/common/logger.ts`). Tout log `error` qui ne porte pas déjà une exception part aussi à Sentry.
 
 - **Dev** : sortie `pino-pretty`.
 - **Prod/test** : JSON structuré.
 - **Redaction** automatique (liste unique `LOG_REDACT_PATHS`, `src/common/log-redact.ts`) : `authorization`, `cookie`, `set-cookie`, et dans le body `password`, `newPassword`, `currentPassword`, `code`, `token`, `refreshToken`, `phone`, `email`.
-- **Jeton du flux d'agenda** (abonnement retiré avec la prise de rendez-vous, spec 029 du front : les agendas déjà abonnés continuent d'appeler l'URL, jeton compris, et reçoivent un 404) : le sérialiseur `req` (`serializeRequest`) ne garde que `id`, `method` et l'URL passée à `redactUrl`, qui remplace tout ce qui suit `/api/booking/feed/` par `[Filtered]` (insensible à la casse, comme le routage Express) et, en renfort, tout segment à la forme du jeton (43 caractères base64url puis `.ics`) : `//`, segment encodé (`%66eed`) ou route mal formée ne le laissent pas passer. Le `path` des corps d'erreur et le log des 5xx de `handleError` passent par la même fonction.
-- **`/api/health`** est ignoré par le logger HTTP (évite de polluer les logs au rythme du pinger/healthcheck Docker).
+- Le sérialiseur `req` (`serializeRequest`) ne garde que `id`, `method` et le chemin de l'URL, sans query string.
+- **`/api/health`** est ignoré par le logger HTTP (évite de polluer les logs au rythme des sondes).
 - Tout log `error` (level ≥ 50) est aussi envoyé à Sentry via `Sentry.captureMessage`, sauf s'il s'agit déjà d'une exception capturée par le filter global (anti-doublon).
 
 ## Erreurs
@@ -132,17 +132,16 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
 
 **9 endpoints sous `/api/auth`** :
 
-| Méthode | Chemin                              | Auth | Rôle                                                                                             |
-| ------- | ----------------------------------- | ---- | ------------------------------------------------------------------------------------------------ |
-| POST    | `/auth/login`                       | ❌   | Login email + password. Renvoie un JWT (cookie) si pas de 2FA, sinon un `challengeToken` (5 min) |
-| POST    | `/auth/2fa/verify`                  | ❌   | Complète le login 2FA (`challengeToken` + `code` TOTP ou `backupCode`)                           |
-| POST    | `/auth/logout`                      | ✅   | Clear cookie                                                                                     |
-| GET     | `/auth/me`                          | ✅   | Infos user courant                                                                               |
-| POST    | `/auth/change-password`             | ✅   | Change le mot de passe                                                                           |
-| POST    | `/auth/2fa/generate`                | ✅   | Génère secret + QR code (n'active pas encore)                                                    |
-| POST    | `/auth/2fa/enable`                  | ✅   | Active 2FA après vérif code, renvoie 10 backup codes one-time                                    |
-| POST    | `/auth/2fa/disable`                 | ✅   | Désactive 2FA (requiert password courant)                                                        |
-| POST    | `/auth/2fa/regenerate-backup-codes` | ✅   | Régénère les 10 backup codes (requiert password courant)                                         |
+| Méthode | Chemin                  | Auth | Rôle                                                                                             |
+| ------- | ----------------------- | ---- | ------------------------------------------------------------------------------------------------ |
+| POST    | `/auth/login`           | ❌   | Login email + password. Renvoie un JWT (cookie) si pas de 2FA, sinon un `challengeToken` (5 min) |
+| POST    | `/auth/2fa/verify`      | ❌   | Complète le login 2FA (`challengeToken` + `code` TOTP ou `backupCode`)                           |
+| POST    | `/auth/logout`          | ✅   | Clear cookie                                                                                     |
+| GET     | `/auth/me`              | ✅   | Infos user courant                                                                               |
+| POST    | `/auth/change-password` | ✅   | Change le mot de passe                                                                           |
+| POST    | `/auth/2fa/generate`    | ✅   | Génère secret + QR code (n'active pas encore)                                                    |
+| POST    | `/auth/2fa/enable`      | ✅   | Active 2FA après vérif code, renvoie 10 backup codes one-time                                    |
+| POST    | `/auth/2fa/disable`     | ✅   | Désactive 2FA (requiert password courant)                                                        |
 
 **Décisions clés** :
 
@@ -153,7 +152,7 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
 - Argon2id pour le hash password et les backup codes.
 - `requireAuth` rejette tout JWT avec `scope === '2fa-challenge'` - un challenge token ne peut jamais servir de session (défense en profondeur).
 - Connexion et vérification 2FA : 5 tentatives par minute et par IP (`AUTH_ATTEMPT_THROTTLE`).
-- JWT signés et vérifiés par `jsonwebtoken` (`src/auth/jwt.service.ts`), la bibliothèque de `@nestjs/jwt` : les sessions ouvertes avant le passage à Hono restent valides.
+- JWT signés et vérifiés par `jsonwebtoken` (`src/auth/jwt.service.ts`).
 
 **Consommer l'auth dans un module** :
 
@@ -166,10 +165,9 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
 
 ## Validation HTTP
 
-`validateDto()` (`src/common/validation.ts`), appelé par `jsonBody`/`queryParams`, reprend le `ValidationPipe` de l'ancienne API NestJS :
+`validateDto()` (`src/common/validation.ts`), appelé par `jsonBody`/`queryParams`, valide chaque entrée par son schéma zod :
 
-- liste blanche stricte : **400 si le client envoie un champ inattendu** (détection précoce de bugs frontend) ;
-- conversion implicite des types (`enableImplicitConversion`) ;
+- objets stricts (`z.strictObject`) : **400 si le client envoie un champ inattendu** (détection précoce de bugs frontend) ;
 - messages des contraintes aplatis, préfixés du chemin du parent pour les objets imbriqués.
 
 Corps JSON : `application/json` seul, 100 ko au plus (413), JSON invalide → 400. Fichiers : `uploadedFile()` → 413 au-delà de la taille permise, 422 si absent ou si ses octets ne sont pas du type attendu (`file-type`, pas l'en-tête du client).
@@ -305,14 +303,14 @@ Formulaire de contact public + gestion admin des messages.
 
 **6 endpoints sous `/api/contact`** :
 
-| Méthode | Chemin                            | Auth | Rôle                                                                                                                                                                                    |
-| ------- | --------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST    | `/contact/messages`               | ❌   | Soumission publique. **Throttle 5/60s** (override du throttle global 10/60s). Insère en DB, puis 2 mails fire-and-forget (notification admin + confirmation visiteur). 201 avec la row. |
-| GET     | `/contact/messages`               | ✅   | Liste paginée (`?page&limit`), tri `createdAt DESC`.                                                                                                                                    |
-| GET     | `/contact/messages/unread-count`  | ✅   | Compteur de messages non lus.                                                                                                                                                           |
-| PATCH   | `/contact/messages/mark-all-read` | ✅   | Marque tous les messages non lus comme lus, renvoie `{ count }`.                                                                                                                        |
-| PATCH   | `/contact/messages/:id/read`      | ✅   | Marque un message comme lu.                                                                                                                                                             |
-| DELETE  | `/contact/messages/:id`           | ✅   | Suppression hard.                                                                                                                                                                       |
+| Méthode | Chemin                            | Auth | Rôle                                                                                                                                       |
+| ------- | --------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| POST    | `/contact/messages`               | ❌   | Soumission publique. **Quota : 3 par heure et par IP** (`CONTACT_THROTTLE`). Insère en DB, puis notifie l'admin par mail. 201 avec la row. |
+| GET     | `/contact/messages`               | ✅   | Liste paginée (`?page&limit`), tri `createdAt DESC`.                                                                                       |
+| GET     | `/contact/messages/unread-count`  | ✅   | Compteur de messages non lus.                                                                                                              |
+| PATCH   | `/contact/messages/mark-all-read` | ✅   | Marque tous les messages non lus comme lus, renvoie `{ count }`.                                                                           |
+| PATCH   | `/contact/messages/:id/read`      | ✅   | Marque un message comme lu.                                                                                                                |
+| DELETE  | `/contact/messages/:id`           | ✅   | Suppression hard.                                                                                                                          |
 
 **Stratégie mails** : fire-and-forget après le `db.insert` (helper `fireAndForget` dans `src/common/utils.ts`) - le visiteur reçoit 201 dès la persistance garantie ; un échec d'envoi (3 tentatives épuisées) est loggé mais invisible côté visiteur, le message reste consultable côté admin.
 
@@ -371,11 +369,10 @@ Collecte de page-views/events custom du portfolio public + agrégation quotidien
 `@sentry/node` (error tracking uniquement, pas de profiling CPU - overkill pour le trafic d'un portfolio), initialisé dans `src/instrument.ts`, importé en tout premier dans `main.ts` : `.env` chargé, puis Sentry avant le module `http`. Les exceptions non gérées sont envoyées par `handleError` ; le rollup quotidien est suivi en cron monitor (`Sentry.withMonitor`).
 
 - **Désactivé si `SENTRY_DSN` est vide** - pas de crash, juste no-op.
-- **`@sentry/node` 11.6.0** (épinglée) : la v11 supprime `sendDefaultPii` et collecte tout par défaut. `dataCollection` ferme donc chaque catégorie : `userInfo` (IP comprise), `cookies`, `httpHeaders` (requête : `User-Agent` seul, réponse : rien), `httpBodies: []`, `urlQueryParams`, `graphQL`, `genAI`, `databaseQueryData`, `queues`, `stackFrameVariables`. Seul `frameContextLines` (lignes de notre code autour des frames) garde son défaut. `traceLifecycle: 'static'` : en `stream` (défaut v11), `beforeSendTransaction` serait ignoré.
+- **`@sentry/node` 11.6.0** (épinglée) : la v11 supprime `sendDefaultPii` et collecte tout par défaut. `dataCollection` ferme donc chaque catégorie : `userInfo` (IP comprise), `cookies`, `httpHeaders` (requête : `User-Agent` seul, réponse : rien), `httpBodies: []`, `urlQueryParams`, `graphQL`, `genAI`, `databaseQueryData`, `queues`, `stackFrameVariables`. Seul `frameContextLines` (lignes de notre code autour des frames) garde son défaut. `traceLifecycle: 'static'` : des transactions entières plutôt que les spans diffusés un à un (`stream`, défaut v11).
 - `beforeSend` sert de filet : retire `user.ip_address`, les cookies, les en-têtes `authorization`/`proxy-authorization`/`cookie`/`set-cookie` en toute casse, la query string et le fragment de `request.url` (et `query_string`), et filtre les champs sensibles du body (liste `SENSITIVE_BODY_FIELDS` de `src/common/log-redact.ts`).
-- **Jeton du flux d'agenda** (`src/common/sentry-before-send.ts`) : les requêtes du flux sont exclues du span `http.server` (`ignoreIncomingRequests`), mais une transaction racine peut encore porter l'URL concrète. `beforeSendTransaction` **écarte** donc toute transaction dont le nom, `request.url` ou une URL de `contexts.trace.data` désigne le flux, et masque par `redactUrl` toute URL du flux restante dans les autres (requête, données de trace, spans). `beforeSend` masque aussi le jeton dans `request.url` et `transaction`. Toute nouvelle route portant un secret dans son chemin doit être ajoutée à `redactUrl`.
 - `tracesSampleRate` : 20% en prod, 100% en dev (ou override via `SENTRY_TRACES_SAMPLE_RATE`).
-- `ThrottlerException` est ignorée (pas de bruit Sentry sur un simple rate-limit).
+- Les erreurs HTTP (4xx, 429 compris) ne partent jamais à Sentry : seules les exceptions non gérées (500) y vont.
 - **`GET /api/config`** expose un DSN Sentry **distinct** (`SENTRY_FRONTEND_DSN`) pour le frontend Angular - projet Sentry séparé du backend, volontairement public (il ship dans le bundle browser une fois fetché).
 - `pnpm sentry:check-instrumentation` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`) : décore des classes témoins avec les vrais `@Injectable`, `@Catch`, `@Cron` après `dist/instrument.js` et vérifie les marques posées par Sentry ; exit 1 si l'un n'est pas tracé.
 

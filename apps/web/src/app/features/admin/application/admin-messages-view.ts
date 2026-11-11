@@ -1,5 +1,4 @@
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
-import { filterMessagesByReadStatus } from '@features/contact/domain/use-cases/filter-messages-by-read-status.use-case';
 import { counted } from '@shared/format/counted';
 import type { FilterOption } from '@shared/ui/filter-group';
 import { withFirstOfMonth } from '@shared/format/with-first-of-month';
@@ -12,10 +11,10 @@ type AdminMessagesView = {
   readonly unread: number;
 };
 
-const READ_STATUS: Record<AdminMessagesFilter, boolean | 'all'> = {
-  all: 'all',
-  unread: false,
-  read: true,
+const MATCHES: Record<AdminMessagesFilter, (message: ContactMessage) => boolean> = {
+  all: () => true,
+  unread: (message) => !message.read,
+  read: (message) => message.read,
 };
 
 const MINUTE_MS = 60_000;
@@ -52,9 +51,7 @@ export function toAdminMessagesView(
   });
   return {
     filters: [option('all', 'Tous'), option('unread', 'Non lus'), option('read', 'Lus')],
-    rows: [...filterMessagesByReadStatus(messages, READ_STATUS[filter])].sort(
-      (a, b) => receivedAt(b) - receivedAt(a),
-    ),
+    rows: messages.filter(MATCHES[filter]).sort((a, b) => receivedAt(b) - receivedAt(a)),
     unread,
   };
 }

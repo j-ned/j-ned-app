@@ -9,7 +9,7 @@ import {
   NotFoundException,
   type ErrorMessage,
 } from './http-errors';
-import { redactUrl, stripQueryAndFragment } from './log-redact';
+import { stripQueryAndFragment } from './log-redact';
 import { Logger } from './logger';
 
 type ErrorPayload = {
@@ -32,7 +32,7 @@ function errorResponse(
     // Toujours l'intitulé HTTP du statut (« Unauthorized », « Too Many Requests »).
     error: STATUS_CODES[status] ?? 'Error',
     message,
-    path: redactUrl(originalUrl(c)),
+    path: originalUrl(c),
     timestamp: new Date().toISOString(),
   };
   return c.json(payload, status as ContentfulStatusCode);
@@ -54,7 +54,7 @@ export const handleError: ErrorHandler = (error, c) => {
     );
   }
 
-  const path = stripQueryAndFragment(redactUrl(originalUrl(c)));
+  const path = stripQueryAndFragment(originalUrl(c));
   Sentry.captureException(error);
   logger.error(
     { err: error, path, method: c.req.method },

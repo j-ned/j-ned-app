@@ -95,7 +95,7 @@ describe('ProjectsService', () => {
         mkProject({ id: 'b', image: '' }),
       ];
       db.orderBy.mockResolvedValueOnce(rows);
-      const result = await service.findAll({});
+      const result = await service.findAll();
       expect(result).toHaveLength(2);
       expect(result[0].image).toBe('https://example.test/url');
       expect(result[1].image).toBe('');
@@ -182,7 +182,7 @@ describe('ProjectsService', () => {
       gallery.galleryOf.mockResolvedValueOnce(
         new Map([['a', [mkImage('x'), mkImage('y')]]]),
       );
-      const result = await service.findAll({});
+      const result = await service.findAll();
       expect(gallery.galleryOf).toHaveBeenCalledWith(['a', 'b']);
       expect(result[0].gallery.map((i) => i.id)).toEqual(['x', 'y']);
       expect(result[1].gallery).toEqual([]);

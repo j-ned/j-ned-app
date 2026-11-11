@@ -9,12 +9,11 @@ import {
 } from '../database/schema/profile-content';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
 import { contentHash } from '../storage/s3-utils';
-import { StorageService } from '../storage/storage.service';
+import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
 import type { ProfileDocument } from './profile-content';
 import { inProfileTransaction } from './profile-lock';
 import {
   lockProfileRow,
-  PROFILE_BUCKET,
   type ProfileTransaction,
   toProfileDocument,
 } from './profile-document';
@@ -57,7 +56,7 @@ export class ProfilePortraitService {
         if (key === current.portraitKey) return { row: current, older: null };
         uploading = true;
         await this.storage.upload(
-          PROFILE_BUCKET,
+          STORAGE_BUCKET,
           key,
           image.buffer,
           image.mimetype,
@@ -122,11 +121,11 @@ export class ProfilePortraitService {
       await inProfileTransaction(this.db, async (tx) => {
         const row = await lockProfileRow(tx);
         if (key === row.portraitKey || key === row.previousPortraitKey) return;
-        await this.storage.delete(PROFILE_BUCKET, key);
+        await this.storage.delete(STORAGE_BUCKET, key);
       });
     } catch (err) {
       this.logger.error(
-        `S3 orphan (${reason}) : ${PROFILE_BUCKET}/${key}`,
+        `S3 orphan (${reason}) : ${STORAGE_BUCKET}/${key}`,
         err instanceof Error ? err.stack : String(err),
       );
     }
@@ -134,7 +133,7 @@ export class ProfilePortraitService {
 
   private toDocument(row: ProfileContentRow): ProfileDocument {
     return toProfileDocument(row, (key) =>
-      this.storage.getPublicUrl(PROFILE_BUCKET, key),
+      this.storage.getPublicUrl(STORAGE_BUCKET, key),
     );
   }
 }

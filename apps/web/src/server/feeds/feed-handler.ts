@@ -45,7 +45,8 @@ export function createFeedHandler({
   ): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
-    const headers = visitorHeaders(visitor, ssrForwardSecret);
+    // Secret et adresse du visiteur ne partent que vers l'API, jamais vers l'hôte d'une couverture absolue.
+    const headers = url.startsWith(apiBaseUrl) ? visitorHeaders(visitor, ssrForwardSecret) : {};
     try {
       return await fetch(url, { method, headers, signal: controller.signal });
     } finally {
@@ -90,7 +91,7 @@ export function createFeedHandler({
   async function render(target: FeedTarget, visitor: string | null): Promise<string> {
     if (target === 'sitemap') {
       const [projects, posts, insertGuide] = await Promise.all([
-        readJson<readonly { readonly slug: string }[]>('/projects?_sort=order&limit=100', visitor),
+        readJson<readonly { readonly slug: string }[]>('/projects', visitor),
         readJson<readonly FeedPost[]>('/blog/posts', visitor),
         readJson<{ readonly enabled: boolean; readonly decoderEnabled: boolean }>(
           '/workshop-guide',

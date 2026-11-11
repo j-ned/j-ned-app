@@ -4,7 +4,8 @@ import {
   RESPONSIVE_IMAGE_WIDTHS,
   type ResponsiveImageWidth,
 } from './image-optimizer.service';
-import type { StorageService } from './storage.service';
+import type { ImageOptimizer } from './image-optimizer.service';
+import { STORAGE_BUCKET, type StorageService } from './storage.service';
 
 /**
  * Deletes an S3 object only if `key` is a non-empty string.
@@ -25,6 +26,23 @@ export async function deleteS3IfExists(
 /** 8 hexa du SHA-256 : suffisant pour distinguer deux versions d'une même image. */
 export function contentHash(buffer: Buffer): string {
   return createHash('sha256').update(buffer).digest('hex').slice(0, 8);
+}
+
+/**
+ * Stocke une image envoyée sous une clé dérivée de son contenu et rend cette clé. Quel que soit le format
+ * reçu, c'est un AVIF ≤ 1600 px : le poids servi ne dépend plus de l'export de l'admin. Chaque nouvelle
+ * image a une nouvelle URL, l'ancienne peut donc être servie avec un cache immuable d'un an.
+ */
+export async function storeOptimizedImage(
+  storage: StorageService,
+  images: ImageOptimizer,
+  keyPrefix: string,
+  source: Buffer,
+): Promise<string> {
+  const image = await images.optimize(source);
+  const key = `${keyPrefix}-${contentHash(image.buffer)}.${image.ext}`;
+  await storage.upload(STORAGE_BUCKET, key, image.buffer, image.mimetype);
+  return key;
 }
 
 /** Suffixe de la carte de partage (JPEG 1200×630) dérivée d'un objet image : `blog/<id>-<sha8>.avif.share.jpg`. */

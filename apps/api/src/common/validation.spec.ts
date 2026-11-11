@@ -116,13 +116,22 @@ describe('validateDto', () => {
     },
   );
 
-  it('Given a constructor key nested in a free object, When validated, Then it is accepted as data (was a 500)', () => {
+  it('Given a constructor key in a free object, When validated, Then it is accepted as data (was a 500)', () => {
     const body = {
       type: 'project_click',
-      metadata: { a: { constructor: 'x' } },
+      metadata: { constructor: 'x' },
     };
 
     expect(validateDto(trackEventSchema, body)).toEqual(body);
+  });
+
+  it('Given a constructor key nested in a free object, When validated, Then it is a 400, metadata being flat (was a 500)', () => {
+    expect(
+      messagesOf(trackEventSchema, {
+        type: 'project_click',
+        metadata: { a: { constructor: 'x' } },
+      }),
+    ).toEqual([expect.stringMatching(/^metadata/) as string]);
   });
 
   it('Given an object with a non-callable toString for a text field, When validated, Then it is a 400 (was a 500)', () => {

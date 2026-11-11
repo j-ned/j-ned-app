@@ -41,7 +41,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
   private readonly allProjects$ = this._refresh$.pipe(
     startWith(undefined),
     switchMap(() =>
-      this.http.get<ProjectDto[]>(`${this.apiUrl}/projects?_sort=order&limit=100`).pipe(
+      this.http.get<ProjectDto[]>(`${this.apiUrl}/projects`).pipe(
         retry(1),
         map((rows) => rows.map((row) => toProject(row, STORAGE_BASE_PATH))),
       ),
@@ -62,7 +62,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
     this._refresh$.next();
   }
 
-  // Dérivé de la liste : zéro requête supplémentaire, même ordre (`_sort=order`).
+  // Dérivé de la liste : zéro requête supplémentaire, même ordre.
   getFeaturedProjects(): Observable<readonly Project[]> {
     return this.allProjects$.pipe(map((projects) => projects.filter(isShowcaseProject)));
   }

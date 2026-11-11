@@ -46,7 +46,7 @@
   Les stores (source de vérité partagée) portent le suffixe `-store`
   (`toast-store.ts`, `auth-store.ts`).
 - **Validation aux frontières** : `<aucune lib de validation runtime>` côté front
-  (Zod réservé au backend NestJS). La frontière est tenue par des **adapters =
+  (Zod réservé à l'API Hono). La frontière est tenue par des **adapters =
   fonctions pures** `toX(raw)` (infra → domaine) + **types API isolés** dans
   `infra/*.types.ts` (jamais dans `domain`). Pas de validation runtime des
   réponses HTTP ⇒ les agents tracent « validation runtime aux frontières non
@@ -67,7 +67,10 @@
 - **Contrats injectables** : `abstract class` **seulement si 2+ implémentations**
   réelles/planifiées (in-memory + HTTP, mock + prod) ; sinon **classe concrète**
   `@Injectable({ providedIn: 'root' })` directe (YAGNI). La testabilité passe par
-  `provideHttpClientTesting()`, pas par swap de gateway.
+  `provideHttpClientTesting()`, pas par swap de gateway. Les ports abstraits des
+  features historiques (blog, projets, profil, contact, analytics, cv, auth) restent :
+  leurs specs s'en servent comme point de substitution ; une nouvelle feature suit la
+  règle ci-dessus (référence : `features/workshop`).
 - **Suffixes domaine** : `*.model.ts`, `*.gateway.ts`, `*.use-case.ts`,
   `*.adapter.ts` (1 use-case = 1 `execute()` ; supprimer les passthroughs
   triviaux).
@@ -113,7 +116,7 @@
 
 ## Tests
 
-- **Framework** : Vitest 4 (builder `@angular/build:unit-test`) + happy-dom, fixé dans `vitest.config.mts`. jsdom ^30 n’est là que pour DOMPurify au prérendu (`isomorphic-dompurify`).
+- **Framework** : Vitest 5 (builder `@angular/build:unit-test`) + happy-dom, fixé dans `vitest.config.mts`. jsdom ^30 n’est là que pour DOMPurify au prérendu (`isomorphic-dompurify`).
 - **Régime zone** : `zoneless` (pas de `zone.js` en dépendance ; aucun
   `provideZoneChangeDetection`). ⇒ **jamais** `fakeAsync`/`tick`/`flush`/
   `waitForAsync` (plantent sans patches `zone-testing`) : fake timers du runner
