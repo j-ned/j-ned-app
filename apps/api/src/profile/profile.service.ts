@@ -7,13 +7,12 @@ import {
   profileContent,
   type ProfileContentRow,
 } from '../database/schema/profile-content';
-import { StorageService } from '../storage/storage.service';
+import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import type { ProfileDocument } from './profile-content';
 import { inProfileTransaction } from './profile-lock';
 import {
   findProfileRow,
-  PROFILE_BUCKET,
   toProfileContent,
   toProfileDocument,
 } from './profile-document';
@@ -73,7 +72,7 @@ export class ProfileService {
 
   private toDocument(row: ProfileContentRow): ProfileDocument {
     return toProfileDocument(row, (key) =>
-      this.storage.getPublicUrl(PROFILE_BUCKET, key),
+      this.storage.getPublicUrl(STORAGE_BUCKET, key),
     );
   }
 }

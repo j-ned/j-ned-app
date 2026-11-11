@@ -23,6 +23,9 @@ export type S3ObjectStream = {
  * Accès au stockage S3. Sans client (configuration S3 incomplète, hors production seulement), chaque
  * lecture ou écriture répond 503 : l'API démarre, une image publique est simplement absente.
  */
+/** Seul bucket de l'application : images, CV, portrait. */
+export const STORAGE_BUCKET = 'portfolio-storage';
+
 export class StorageService {
   constructor(private readonly s3: S3Client | null) {}
 

@@ -9,7 +9,7 @@ import {
 import type { ResizedImageService } from './resized-image.service';
 import { isDerivedKey } from './s3-utils';
 import type { ShareCardService } from './share-card.service';
-import type { StorageService } from './storage.service';
+import { STORAGE_BUCKET, type StorageService } from './storage.service';
 
 // Les clés portent un hachage du contenu (`<id>-<sha8>.avif`, et sa carte `.share.jpg` en dérive) :
 // une image remplacée change d'URL, celle-ci peut donc être gardée un an sans revalidation.
@@ -20,7 +20,7 @@ const CACHE_CONTROL = 'public, max-age=31536000, immutable';
  * Évite qu'un éventuel bucket privé soit exposé par mégarde si quelqu'un
  * connaît son nom.
  */
-const PUBLIC_BUCKETS = new Set<string>(['portfolio-storage']);
+const PUBLIC_BUCKETS = new Set<string>([STORAGE_BUCKET]);
 
 /** `w800` → 800, seulement pour une largeur de la liste fermée. */
 function widthVariant(variant: string): ResponsiveImageWidth | null {

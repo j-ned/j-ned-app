@@ -28,7 +28,6 @@ export const contactMessages = pgTable(
       .defaultNow(),
   },
   (t) => ({
-    readIdx: index('contact_message_read_idx').on(t.read),
     createdAtIdx: index('contact_message_created_at_idx').on(t.createdAt),
     readCreatedIdx: index('contact_message_read_created_idx').on(
       t.read,

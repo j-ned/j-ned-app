@@ -8,9 +8,9 @@ import {
   type NewBlogPost,
   type BlogPost,
 } from '../database/schema/blog-posts';
-import { StorageService } from '../storage/storage.service';
+import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
-import { contentHash, deleteS3IfExists } from '../storage/s3-utils';
+import { deleteS3IfExists, storeOptimizedImage } from '../storage/s3-utils';
 import type { BlogPostResponse } from './blog-post-response';
 import { contentImageKeysIn } from './blog-content-image';
 import { BlogContentImagesService } from './blog-content-images.service';
@@ -21,7 +21,6 @@ import { findByIdOrFail } from '../common/crud-helpers';
 import { isUniqueViolation, slugify } from '../common/utils';
 
 export class BlogService {
-  private static readonly BUCKET = 'portfolio-storage';
   private readonly logger = new Logger(BlogService.name);
 
   constructor(
@@ -118,11 +117,7 @@ export class BlogService {
     // S3 cleanup APRÈS le write DB réussi : si le write échoue, on préfère
     // garder l'objet S3 (orphelin DB-cohérent) plutôt qu'une DB cassée.
     if (coverImage === null) {
-      await deleteS3IfExists(
-        this.storage,
-        BlogService.BUCKET,
-        current.coverImage,
-      );
+      await deleteS3IfExists(this.storage, STORAGE_BUCKET, current.coverImage);
     }
 
     return this.toResponse(row);
@@ -135,7 +130,7 @@ export class BlogService {
     // faire échouer la suppression ni sauter le nettoyage suivant.
     await deleteS3IfExists(
       this.storage,
-      BlogService.BUCKET,
+      STORAGE_BUCKET,
       current.coverImage,
     ).catch((err: unknown) =>
       this.logger.error(
@@ -159,21 +154,13 @@ export class BlogService {
     file: UploadedFile,
   ): Promise<BlogPostResponse> {
     const current = await this.findByIdRaw(id);
-    // Quel que soit le format reçu, on stocke un AVIF ≤ 1600 px : le poids servi ne dépend
-    // plus de l'export de l'admin (un JPEG photo de 2,8 Mo tombait en l'état sur la page).
-    const image = await this.images.optimize(file.buffer);
-    // Clé dérivée du contenu : chaque nouvelle image a une nouvelle URL, l'ancienne peut donc être
-    // servie avec un cache immuable d'un an sans jamais afficher une image remplacée.
-    const newKey = `blog/${id}-${contentHash(image.buffer)}.${image.ext}`;
-
-    // Ordre : upload → update DB → cleanup ancienne clé.
-    // Si une étape échoue, on préfère un orphelin S3 (cleanup manuel possible)
-    // à une DB qui référence une clé supprimée (image cassée côté front).
-    await this.storage.upload(
-      BlogService.BUCKET,
-      newKey,
-      image.buffer,
-      image.mimetype,
+    // Ordre : upload → update DB → cleanup ancienne clé. Si une étape échoue, on préfère un orphelin S3
+    // (cleanup manuel possible) à une DB qui référence une clé supprimée (image cassée côté front).
+    const newKey = await storeOptimizedImage(
+      this.storage,
+      this.images,
+      `blog/${id}`,
+      file.buffer,
     );
 
     const [row] = await this.db
@@ -183,11 +170,7 @@ export class BlogService {
       .returning();
 
     if (current.coverImage !== newKey) {
-      await deleteS3IfExists(
-        this.storage,
-        BlogService.BUCKET,
-        current.coverImage,
-      );
+      await deleteS3IfExists(this.storage, STORAGE_BUCKET, current.coverImage);
     }
 
     return this.toResponse(row);
@@ -225,7 +208,7 @@ export class BlogService {
     return {
       ...p,
       coverImage: p.coverImage
-        ? this.storage.getPublicUrl(BlogService.BUCKET, p.coverImage)
+        ? this.storage.getPublicUrl(STORAGE_BUCKET, p.coverImage)
         : '',
       wordCount: countWords(p.contentMarkdown),
     };

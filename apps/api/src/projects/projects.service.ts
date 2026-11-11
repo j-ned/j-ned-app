@@ -1,6 +1,6 @@
 import { ConflictException } from '../common/http-errors';
 import { Logger } from '../common/logger';
-import { and, asc, desc, eq, type SQL } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 import type { UploadedFile } from '../common/http';
 import type { Database } from '../database/drizzle.types';
 import {
@@ -8,9 +8,9 @@ import {
   type NewProject,
   type Project,
 } from '../database/schema/projects';
-import { StorageService } from '../storage/storage.service';
+import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
-import { contentHash, deleteS3IfExists } from '../storage/s3-utils';
+import { deleteS3IfExists, storeOptimizedImage } from '../storage/s3-utils';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import type { ProjectImageResponse, ProjectResponse } from './project-gallery';
@@ -19,7 +19,6 @@ import { findByIdOrFail } from '../common/crud-helpers';
 import { isUniqueViolation, slugify } from '../common/utils';
 
 export class ProjectsService {
-  private static readonly BUCKET = 'portfolio-storage';
   private readonly logger = new Logger(ProjectsService.name);
 
   constructor(
@@ -29,19 +28,10 @@ export class ProjectsService {
     private readonly gallery: ProjectImagesService,
   ) {}
 
-  async findAll(filters: {
-    category?: string;
-    featured?: boolean;
-  }): Promise<ProjectResponse[]> {
-    const conditions: SQL[] = [];
-    if (filters.category)
-      conditions.push(eq(projects.category, filters.category));
-    if (filters.featured) conditions.push(eq(projects.featured, true));
-
+  async findAll(): Promise<ProjectResponse[]> {
     const rows = await this.db
       .select()
       .from(projects)
-      .where(conditions.length ? and(...conditions) : undefined)
       .orderBy(asc(projects.order), desc(projects.createdAt));
     const galleries = await this.gallery.galleryOf(rows.map((r) => r.id));
     return rows.map((r) => this.toResponse(r, galleries.get(r.id) ?? []));
@@ -100,11 +90,7 @@ export class ProjectsService {
     // S3 cleanup APRÈS le write DB réussi : si le write échoue, on préfère
     // garder l'objet S3 (orphelin DB-cohérent) plutôt qu'une DB cassée.
     if (image === null) {
-      await deleteS3IfExists(
-        this.storage,
-        ProjectsService.BUCKET,
-        current.image,
-      );
+      await deleteS3IfExists(this.storage, STORAGE_BUCKET, current.image);
     }
 
     return this.toResponse(row, await this.galleryOfOne(id));
@@ -119,9 +105,7 @@ export class ProjectsService {
     // La ligne est partie : un échec S3 ne laisse qu'un orphelin, logué, jamais une erreur 500.
     const keys = [current.image, ...galleryKeys];
     const results = await Promise.allSettled(
-      keys.map((key) =>
-        deleteS3IfExists(this.storage, ProjectsService.BUCKET, key),
-      ),
+      keys.map((key) => deleteS3IfExists(this.storage, STORAGE_BUCKET, key)),
     );
     results.forEach((result, i) => {
       if (result.status === 'rejected') {
@@ -137,21 +121,13 @@ export class ProjectsService {
 
   async uploadImage(id: string, file: UploadedFile): Promise<ProjectResponse> {
     const current = await this.findByIdRaw(id);
-    // Quel que soit le format reçu, on stocke un AVIF ≤ 1600 px : le poids servi ne dépend
-    // plus de l'export de l'admin (un JPEG photo de 2,8 Mo tombait en l'état sur la page).
-    const image = await this.images.optimize(file.buffer);
-    // Clé dérivée du contenu : chaque nouvelle image a une nouvelle URL, l'ancienne peut donc être
-    // servie avec un cache immuable d'un an sans jamais afficher une image remplacée.
-    const newKey = `projects/${id}-${contentHash(image.buffer)}.${image.ext}`;
-
-    // Ordre : upload → update DB → cleanup ancienne clé.
-    // Si une étape échoue, on préfère un orphelin S3 (cleanup manuel possible)
-    // à une DB qui référence une clé supprimée (image cassée côté front).
-    await this.storage.upload(
-      ProjectsService.BUCKET,
-      newKey,
-      image.buffer,
-      image.mimetype,
+    // Ordre : upload → update DB → cleanup ancienne clé. Si une étape échoue, on préfère un orphelin S3
+    // (cleanup manuel possible) à une DB qui référence une clé supprimée (image cassée côté front).
+    const newKey = await storeOptimizedImage(
+      this.storage,
+      this.images,
+      `projects/${id}`,
+      file.buffer,
     );
 
     const [row] = await this.db
@@ -161,11 +137,7 @@ export class ProjectsService {
       .returning();
 
     if (current.image !== newKey) {
-      await deleteS3IfExists(
-        this.storage,
-        ProjectsService.BUCKET,
-        current.image,
-      );
+      await deleteS3IfExists(this.storage, STORAGE_BUCKET, current.image);
     }
 
     return this.toResponse(row, await this.galleryOfOne(id));
@@ -191,9 +163,7 @@ export class ProjectsService {
     return {
       ...p,
       gallery,
-      image: p.image
-        ? this.storage.getPublicUrl(ProjectsService.BUCKET, p.image)
-        : '',
+      image: p.image ? this.storage.getPublicUrl(STORAGE_BUCKET, p.image) : '',
     };
   }
 }

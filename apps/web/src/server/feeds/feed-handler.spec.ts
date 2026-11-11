@@ -4,7 +4,7 @@ import { createFeedHandler, type FeedHandler, type FeedTarget } from './feed-han
 
 const API = 'http://api:3000/api';
 const SITE = 'https://nedellec-julien.fr';
-const PROJECTS_URL = `${API}/projects?_sort=order&limit=100`;
+const PROJECTS_URL = `${API}/projects`;
 const POSTS_URL = `${API}/blog/posts`;
 // Le flux porte le texte complet : il le demande, la liste publique ne le joint pas par défaut.
 const FULL_POSTS_URL = `${API}/blog/posts?include=content`;

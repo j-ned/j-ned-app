@@ -56,24 +56,13 @@ describe('projects routes (HTTP)', () => {
     });
 
   describe('GET /projects', () => {
-    it('Given filters, When listed, Then the service gets the category and featured=true as a boolean', async () => {
+    it('When listed, Then the projects are returned', async () => {
       projects.findAll.mockResolvedValueOnce([{ id: ID }]);
-      const res = await app.request('/api/projects?category=web&featured=true');
+
+      const res = await app.request('/api/projects');
+
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual([{ id: ID }]);
-      expect(projects.findAll).toHaveBeenCalledWith({
-        category: 'web',
-        featured: true,
-      });
-    });
-
-    it('Given no filter, When listed, Then featured is false and category undefined', async () => {
-      projects.findAll.mockResolvedValueOnce([]);
-      await app.request('/api/projects?featured=1');
-      expect(projects.findAll).toHaveBeenCalledWith({
-        category: undefined,
-        featured: false,
-      });
     });
   });
 
