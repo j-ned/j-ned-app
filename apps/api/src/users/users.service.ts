@@ -77,16 +77,6 @@ export class UsersService {
       .where(eq(users.id, id));
   }
 
-  async replaceBackupCodes(
-    id: string,
-    backupCodesHash: string[],
-  ): Promise<void> {
-    await this.db
-      .update(users)
-      .set({ twoFactorBackupCodesHash: backupCodesHash, updatedAt: new Date() })
-      .where(eq(users.id, id));
-  }
-
   async consumeBackupCode(id: string, hashToRemove: string): Promise<void> {
     // Postgres array_remove() retire toutes les occurrences ; comme les hashes Argon2 incluent
     // un sel aléatoire, chaque hash est unique → array_remove est safe.

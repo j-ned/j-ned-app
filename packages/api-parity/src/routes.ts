@@ -36,7 +36,6 @@ export const ADMIN_ROUTES: readonly Route[] = [
   { method: 'POST', path: '/api/auth/2fa/generate' },
   { method: 'POST', path: '/api/auth/2fa/enable' },
   { method: 'POST', path: '/api/auth/2fa/disable' },
-  { method: 'POST', path: '/api/auth/2fa/regenerate-backup-codes' },
   { method: 'POST', path: '/api/blog/content-images' },
   { method: 'GET', path: '/api/blog/posts/admin' },
   { method: 'POST', path: '/api/blog/posts' },

@@ -132,17 +132,16 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
 
 **9 endpoints sous `/api/auth`** :
 
-| Méthode | Chemin                              | Auth | Rôle                                                                                             |
-| ------- | ----------------------------------- | ---- | ------------------------------------------------------------------------------------------------ |
-| POST    | `/auth/login`                       | ❌   | Login email + password. Renvoie un JWT (cookie) si pas de 2FA, sinon un `challengeToken` (5 min) |
-| POST    | `/auth/2fa/verify`                  | ❌   | Complète le login 2FA (`challengeToken` + `code` TOTP ou `backupCode`)                           |
-| POST    | `/auth/logout`                      | ✅   | Clear cookie                                                                                     |
-| GET     | `/auth/me`                          | ✅   | Infos user courant                                                                               |
-| POST    | `/auth/change-password`             | ✅   | Change le mot de passe                                                                           |
-| POST    | `/auth/2fa/generate`                | ✅   | Génère secret + QR code (n'active pas encore)                                                    |
-| POST    | `/auth/2fa/enable`                  | ✅   | Active 2FA après vérif code, renvoie 10 backup codes one-time                                    |
-| POST    | `/auth/2fa/disable`                 | ✅   | Désactive 2FA (requiert password courant)                                                        |
-| POST    | `/auth/2fa/regenerate-backup-codes` | ✅   | Régénère les 10 backup codes (requiert password courant)                                         |
+| Méthode | Chemin                  | Auth | Rôle                                                                                             |
+| ------- | ----------------------- | ---- | ------------------------------------------------------------------------------------------------ |
+| POST    | `/auth/login`           | ❌   | Login email + password. Renvoie un JWT (cookie) si pas de 2FA, sinon un `challengeToken` (5 min) |
+| POST    | `/auth/2fa/verify`      | ❌   | Complète le login 2FA (`challengeToken` + `code` TOTP ou `backupCode`)                           |
+| POST    | `/auth/logout`          | ✅   | Clear cookie                                                                                     |
+| GET     | `/auth/me`              | ✅   | Infos user courant                                                                               |
+| POST    | `/auth/change-password` | ✅   | Change le mot de passe                                                                           |
+| POST    | `/auth/2fa/generate`    | ✅   | Génère secret + QR code (n'active pas encore)                                                    |
+| POST    | `/auth/2fa/enable`      | ✅   | Active 2FA après vérif code, renvoie 10 backup codes one-time                                    |
+| POST    | `/auth/2fa/disable`     | ✅   | Désactive 2FA (requiert password courant)                                                        |
 
 **Décisions clés** :
 

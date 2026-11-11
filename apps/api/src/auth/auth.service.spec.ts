@@ -2,7 +2,9 @@
 import {
   UnauthorizedException,
   BadRequestException,
+  TooManyRequestsException,
 } from '../common/http-errors';
+import { MemoryThrottleStore, setThrottleStore } from '../common/throttle';
 import type { JwtService } from './jwt.service';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -31,6 +33,7 @@ describe('AuthService', () => {
   });
 
   beforeEach(() => {
+    setThrottleStore(new MemoryThrottleStore());
     users = {
       findById: jest.fn(),
       findByEmail: jest.fn(),
@@ -38,7 +41,6 @@ describe('AuthService', () => {
       updateTwoFactorSecret: jest.fn(),
       enableTwoFactor: jest.fn(),
       disableTwoFactor: jest.fn(),
-      replaceBackupCodes: jest.fn(),
       consumeBackupCode: jest.fn(),
       revokeSessions: jest.fn(),
     } as unknown as jest.Mocked<UsersService>;
@@ -105,6 +107,18 @@ describe('AuthService', () => {
       await expect(service.login('nope@example.com', 'pw')).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+
+    it("vérifie quand même un mot de passe si l'utilisateur est inconnu : la durée ne trahit pas le compte", async () => {
+      users.findByEmail.mockResolvedValue(null);
+      password.hash.mockResolvedValue('$argon2id$decoy');
+      password.verify.mockResolvedValue(false);
+
+      await expect(service.login('nope@example.com', 'pw')).rejects.toThrow(
+        UnauthorizedException,
+      );
+
+      expect(password.verify).toHaveBeenCalledWith('pw', '$argon2id$decoy');
     });
 
     it('throw UnauthorizedException si password incorrect', async () => {
@@ -175,6 +189,42 @@ describe('AuthService', () => {
       await expect(
         service.verifyTwoFactor('challenge', { code: '000000' }),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    const aChallengedUser = (): User => {
+      const user = mkUser({
+        isTwoFactorEnabled: true,
+        twoFactorSecret: 'SECRET',
+      });
+      jwt.verify.mockReturnValue({ sub: user.id, scope: '2fa-challenge' });
+      users.findById.mockResolvedValue(user);
+      return user;
+    };
+
+    it('refuse un code TOTP déjà accepté pour ce compte (rejeu)', async () => {
+      aChallengedUser();
+      twoFactor.verifyTotpCode.mockReturnValue(true);
+      jwt.sign.mockReturnValue('final-token');
+      await service.verifyTwoFactor('challenge', { code: '123456' });
+
+      await expect(
+        service.verifyTwoFactor('challenge', { code: '123456' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('verrouille le compte après 5 essais, quelle que soit leur adresse IP', async () => {
+      aChallengedUser();
+      twoFactor.verifyTotpCode.mockReturnValue(false);
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        await expect(
+          service.verifyTwoFactor('challenge', { code: '000000' }),
+        ).rejects.toThrow(UnauthorizedException);
+      }
+
+      twoFactor.verifyTotpCode.mockReturnValue(true);
+      await expect(
+        service.verifyTwoFactor('challenge', { code: '123456' }),
+      ).rejects.toThrow(TooManyRequestsException);
     });
 
     it('throw UnauthorizedException si backup code ne matche aucun hash', async () => {
@@ -289,36 +339,6 @@ describe('AuthService', () => {
       password.verify.mockResolvedValue(true);
       await service.disableTwoFactor(user, 'good');
       expect(users.disableTwoFactor).toHaveBeenCalledWith(user.id);
-    });
-  });
-
-  describe('regenerateBackupCodes', () => {
-    it('throw BadRequestException si 2FA pas enabled', async () => {
-      const user = mkUser({ isTwoFactorEnabled: false });
-      await expect(service.regenerateBackupCodes(user, 'pw')).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('throw UnauthorizedException si password invalide', async () => {
-      const user = mkUser({ isTwoFactorEnabled: true });
-      password.verify.mockResolvedValue(false);
-      await expect(service.regenerateBackupCodes(user, 'bad')).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-
-    it('regénère et persiste les nouveaux codes', async () => {
-      const user = mkUser({ isTwoFactorEnabled: true });
-      password.verify.mockResolvedValue(true);
-      twoFactor.generateBackupCodes.mockReturnValue(['new1', 'new2']);
-      twoFactor.hashBackupCodes.mockResolvedValue(['hashN1', 'hashN2']);
-      const result = await service.regenerateBackupCodes(user, 'good');
-      expect(result).toEqual({ backupCodes: ['new1', 'new2'] });
-      expect(users.replaceBackupCodes).toHaveBeenCalledWith(user.id, [
-        'hashN1',
-        'hashN2',
-      ]);
     });
   });
 

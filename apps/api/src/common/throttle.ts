@@ -26,6 +26,15 @@ export const AUTH_ATTEMPT_THROTTLE: ThrottleConfig = {
   ttlMs: 60_000,
 };
 
+/**
+ * Second facteur, par compte : 5 essais par quart d'heure, d'où qu'ils viennent. Le quota par IP ne
+ * freine pas un attaquant qui a le mot de passe et répartit ses essais sur plusieurs adresses.
+ */
+export const TWO_FACTOR_ACCOUNT_THROTTLE: ThrottleConfig = {
+  limit: 5,
+  ttlMs: 900_000,
+};
+
 /** Écritures admin de galerie : 60 req/min, car ajouter cinq captures puis leur `alt` dépasse 10 (ADR-0009). */
 export const ADMIN_WRITE_THROTTLE: ThrottleConfig = {
   limit: 60,
@@ -82,10 +91,29 @@ const logger = new Logger('Throttle');
 let routeCount = 0;
 
 /**
+ * Compte un passage sous `key`. Si le stockage des compteurs échoue, rend `undefined` (journalisé) et
+ * l'appelant laisse passer : une panne de base ne doit pas fermer toute l'API.
+ */
+export async function countHit(
+  key: string,
+  ttlMs: number,
+  at: number = Date.now(),
+): Promise<ThrottleHit | undefined> {
+  try {
+    return await store.hit(key, ttlMs, at);
+  } catch (error: unknown) {
+    logger.warn(
+      { err: error as Error },
+      'Throttle store unavailable: request let through',
+    );
+    return undefined;
+  }
+}
+
+/**
  * Quota d'une route, compté par IP (`clientIp`) sur une fenêtre fixe : chaque appel à `throttle()` a sa
  * propre clé (dans l'ordre de déclaration des routes, identique d'une instance à l'autre), donc chaque
- * route son quota. La requête au-delà de la limite reçoit 429. Si le stockage des compteurs échoue, la
- * requête passe (journalisé) : une panne de base ne doit pas fermer toute l'API.
+ * route son quota. La requête au-delà de la limite reçoit 429.
  */
 export function throttle(
   config: ThrottleConfig = DEFAULT_THROTTLE,
@@ -95,15 +123,7 @@ export function throttle(
   const route = `route${routeCount}`;
   return async (c, next) => {
     const at = now();
-    let hit: ThrottleHit | undefined;
-    try {
-      hit = await store.hit(`${route}|${clientIp(c)}`, config.ttlMs, at);
-    } catch (error: unknown) {
-      logger.warn(
-        { err: error as Error },
-        'Throttle store unavailable: request let through',
-      );
-    }
+    const hit = await countHit(`${route}|${clientIp(c)}`, config.ttlMs, at);
     if (hit && hit.count > config.limit) {
       c.header(
         'Retry-After',

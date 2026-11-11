@@ -105,17 +105,5 @@ export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
         await auth.disableTwoFactor(c.var.user, dto.password);
         return c.json({ ok: true });
       })
-
-      .post(
-        '/2fa/regenerate-backup-codes',
-        throttle(),
-        requireAuth,
-        async (c) => {
-          const dto = await jsonBody(c, twoFactorDisableSchema);
-          return c.json(
-            await auth.regenerateBackupCodes(c.var.user, dto.password),
-          );
-        },
-      )
   );
 }
