@@ -33,7 +33,7 @@ export function bootstrap(env: Record<string, unknown> = process.env) {
     : undefined;
   if (throttleStore) setThrottleStore(throttleStore);
 
-  // Sur Vercel, chaque écriture de contenu vide le cache CDN du tag, pages du site comprises. Suppression
+  // Sur Vercel, chaque écriture d'éditeur vide le cache CDN du tag, pages du site comprises. Suppression
   // plutôt qu'invalidation : la requête suivante attend la nouvelle version au lieu de servir l'ancienne.
   const purgeContentCache = env['VERCEL']
     ? () => dangerouslyDeleteByTag(CONTENT_CACHE_TAG)

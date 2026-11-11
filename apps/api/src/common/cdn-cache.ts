@@ -30,14 +30,16 @@ const logger = new Logger('CdnCache');
 /**
  * Après une écriture réussie (hors GET/HEAD), vide le cache du contenu avant de répondre : le
  * rechargement suivant de l'admin lit déjà la nouvelle version. Un échec de purge est journalisé sans
- * faire échouer l'écriture, déjà faite.
+ * faire échouer l'écriture, déjà faite. Les chemins de `publicWrites` sont laissés de côté.
  */
 export function purgeContentCacheOnWrite(
   purge: () => Promise<void>,
+  publicWrites?: RegExp,
 ): MiddlewareHandler {
   return async (c, next) => {
     await next();
     if (c.req.method === 'GET' || c.req.method === 'HEAD') return;
+    if (publicWrites?.test(c.req.path)) return;
     if (c.res.status >= 400) return;
     try {
       await purge();
