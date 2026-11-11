@@ -44,7 +44,6 @@ if (dsn) {
       : isProduction
         ? 0.2
         : 1.0,
-    ignoreErrors: ['ThrottlerException'],
     beforeSend: sentryBeforeSend,
     beforeSendTransaction: sentryBeforeSendTransaction,
     // v11 diffuse les spans par défaut (`stream`) et ignore alors `beforeSendTransaction` :

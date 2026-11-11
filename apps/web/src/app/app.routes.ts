@@ -12,6 +12,23 @@ const INSERT_GUIDE_TITLE = 'Guide des plaquettes de tournage | Julien Nédellec'
 const INSERT_DECODER_TITLE = 'Décodeur de code plaquette ISO | Julien Nédellec';
 const PERSON_ID = `${SITE_IDENTITY.siteUrl}/#person`;
 
+type Crumb = readonly [name: string, path: string];
+
+/** Fil d'Ariane JSON-LD d'une page, toujours ancré sur l'accueil. */
+function breadcrumb(...crumbs: readonly Crumb[]): Record<string, unknown> {
+  const trail: readonly Crumb[] = [['Accueil', ''], ...crumbs];
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: trail.map(([name, path], index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name,
+      item: `${SITE_IDENTITY.siteUrl}${path}`,
+    })),
+  };
+}
+
 export const routes: Routes = [
   {
     path: '',
@@ -75,19 +92,7 @@ export const routes: Routes = [
         keywords: 'Développeur Angular, Full-Stack, TypeScript, Hono, PostgreSQL',
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
-        structuredData: {
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: 'Parcours',
-              item: `${SITE_IDENTITY.siteUrl}/about`,
-            },
-          ],
-        },
+        structuredData: breadcrumb(['Parcours', '/about']),
       },
     },
   },
@@ -104,19 +109,7 @@ export const routes: Routes = [
           "Mon coin de tourneur CN\u00a0: des outils d'usinage, à commencer par le guide des plaquettes que j'utilise à l'atelier, matière par matière.",
         url: `${SITE_IDENTITY.siteUrl}/atelier`,
         type: 'website',
-        structuredData: {
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: "L'atelier",
-              item: `${SITE_IDENTITY.siteUrl}/atelier`,
-            },
-          ],
-        },
+        structuredData: breadcrumb(["L'atelier", '/atelier']),
       },
     },
   },
@@ -132,25 +125,10 @@ export const routes: Routes = [
           "Les plaquettes de tournage que j'utilise à l'atelier, matière par matière\u00a0: opération, plaquette, rayon de bec et remarque, à adapter à ta machine.",
         url: `${SITE_IDENTITY.siteUrl}/atelier/plaquettes`,
         type: 'website',
-        structuredData: {
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: "L'atelier",
-              item: `${SITE_IDENTITY.siteUrl}/atelier`,
-            },
-            {
-              '@type': 'ListItem',
-              position: 3,
-              name: 'Guide des plaquettes',
-              item: `${SITE_IDENTITY.siteUrl}/atelier/plaquettes`,
-            },
-          ],
-        },
+        structuredData: breadcrumb(
+          ["L'atelier", '/atelier'],
+          ['Guide des plaquettes', '/atelier/plaquettes'],
+        ),
       },
     },
   },
@@ -168,25 +146,10 @@ export const routes: Routes = [
           "Tape le code ISO d'une plaquette de tournage, comme CNMG 120408\u00a0: le décodeur explique chaque lettre et chaque chiffre, sources fabricants à l'appui.",
         url: `${SITE_IDENTITY.siteUrl}/atelier/decodeur`,
         type: 'website',
-        structuredData: {
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: "L'atelier",
-              item: `${SITE_IDENTITY.siteUrl}/atelier`,
-            },
-            {
-              '@type': 'ListItem',
-              position: 3,
-              name: 'Décodeur de plaquette',
-              item: `${SITE_IDENTITY.siteUrl}/atelier/decodeur`,
-            },
-          ],
-        },
+        structuredData: breadcrumb(
+          ["L'atelier", '/atelier'],
+          ['Décodeur de plaquette', '/atelier/decodeur'],
+        ),
       },
     },
   },
@@ -205,19 +168,7 @@ export const routes: Routes = [
           'Portfolio Angular, Projets Hono, Applications TypeScript, Développeur Full-Stack, PostgreSQL',
         url: `${SITE_IDENTITY.siteUrl}/projects`,
         type: 'website',
-        structuredData: {
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_IDENTITY.siteUrl },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: 'Réalisations',
-              item: `${SITE_IDENTITY.siteUrl}/projects`,
-            },
-          ],
-        },
+        structuredData: breadcrumb(['Réalisations', '/projects']),
       },
     },
   },

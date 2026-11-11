@@ -8,18 +8,12 @@ que Claude peut consulter pour fournir des réponses contextualisées.
 ```
 skills/
 ├── angular/            # Docs Angular, patterns, snippets, signals, standalone
-├── primeng/            # PrimeNG v19+ composants, theming, PrimeFlex, patterns Angular
 ├── typescript/         # Tips TS, utility types, patterns avancés, strict mode
 ├── tailwind/           # Config v4, plugins, patterns UI
-├── docker/             # Dockerfiles, compose, multi-stage builds
 ├── vitest/             # Config, mocking, testing patterns
 ├── css/                # Tips CSS, layouts, animations
 ├── html/               # HTML sémantique, ARIA, formulaires
 ```
-
-> Les skills backend (`nestjs`, `drizzle`, `postgresql`) ont été déplacés vers
-> `nest-portfolio-app/.claude/skills/`. Les skills `hono` et `prisma` ont été
-> supprimés (Hono retiré du projet, Prisma jamais utilisé).
 
 ## Comment alimenter ce dossier
 

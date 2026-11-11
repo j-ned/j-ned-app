@@ -46,7 +46,7 @@
   Les stores (source de vérité partagée) portent le suffixe `-store`
   (`toast-store.ts`, `auth-store.ts`).
 - **Validation aux frontières** : `<aucune lib de validation runtime>` côté front
-  (Zod réservé au backend NestJS). La frontière est tenue par des **adapters =
+  (Zod réservé à l'API Hono). La frontière est tenue par des **adapters =
   fonctions pures** `toX(raw)` (infra → domaine) + **types API isolés** dans
   `infra/*.types.ts` (jamais dans `domain`). Pas de validation runtime des
   réponses HTTP ⇒ les agents tracent « validation runtime aux frontières non
@@ -113,7 +113,7 @@
 
 ## Tests
 
-- **Framework** : Vitest 4 (builder `@angular/build:unit-test`) + happy-dom, fixé dans `vitest.config.mts`. jsdom ^30 n’est là que pour DOMPurify au prérendu (`isomorphic-dompurify`).
+- **Framework** : Vitest 5 (builder `@angular/build:unit-test`) + happy-dom, fixé dans `vitest.config.mts`. jsdom ^30 n’est là que pour DOMPurify au prérendu (`isomorphic-dompurify`).
 - **Régime zone** : `zoneless` (pas de `zone.js` en dépendance ; aucun
   `provideZoneChangeDetection`). ⇒ **jamais** `fakeAsync`/`tick`/`flush`/
   `waitForAsync` (plantent sans patches `zone-testing`) : fake timers du runner

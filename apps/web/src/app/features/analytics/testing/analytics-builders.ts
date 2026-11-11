@@ -2,7 +2,6 @@ import type {
   ConversionsOverview,
   DailyChartPoint,
   EngagementOverview,
-  EntityStat,
   EventCount,
   MetricEntry,
   StatsOverview,
@@ -61,10 +60,6 @@ export function makeChartPoint(overrides: Partial<DailyChartPoint> = {}): DailyC
 
 export function makeMetricEntry(overrides: Partial<MetricEntry> = {}): MetricEntry {
   return { name: 'google.com', count: 18, ...overrides };
-}
-
-export function makeEntityStat(overrides: Partial<EntityStat> = {}): EntityStat {
-  return { entityId: 'portfolio', entityTitle: 'Portfolio', count: 7, ...overrides };
 }
 
 export function makeEventCount(overrides: Partial<EventCount> = {}): EventCount {

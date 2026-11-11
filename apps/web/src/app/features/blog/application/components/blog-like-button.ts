@@ -1,11 +1,13 @@
 import {
   Component,
   computed,
+  DestroyRef,
   inject,
   input,
   linkedSignal,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
 
@@ -18,6 +20,14 @@ function likedSlugs(): string[] {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as string[];
   } catch {
     return [];
+  }
+}
+
+function rememberLiked(slug: string): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...likedSlugs(), slug]));
+  } catch {
+    // Stockage indisponible (navigation privée, quota) : le like est compté, seule sa mémoire locale manque.
   }
 }
 
@@ -41,6 +51,7 @@ function likedSlugs(): string[] {
 })
 export class BlogLikeButton {
   private readonly _gateway = inject(BlogGateway);
+  private readonly _destroyRef = inject(DestroyRef);
 
   readonly slug = input.required<string>();
   readonly likesCount = input.required<number>();
@@ -51,17 +62,19 @@ export class BlogLikeButton {
 
   protected like(): void {
     if (this.liked()) return;
-    this._gateway.likePost(this.slug()).subscribe({
-      next: (res) => {
-        this.count.set(res.likesCount);
-        this.liked.set(true);
-        const slugs = likedSlugs();
-        slugs.push(this.slug());
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(slugs));
-      },
-      error: () => {
-        // No UI state change on failure; the button stays enabled so the user can retry.
-      },
-    });
+    const slug = this.slug();
+    this._gateway
+      .likePost(slug)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.count.set(res.likesCount);
+          this.liked.set(true);
+          rememberLiked(slug);
+        },
+        error: () => {
+          // No UI state change on failure; the button stays enabled so the user can retry.
+        },
+      });
   }
 }
