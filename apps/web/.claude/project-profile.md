@@ -67,7 +67,10 @@
 - **Contrats injectables** : `abstract class` **seulement si 2+ implémentations**
   réelles/planifiées (in-memory + HTTP, mock + prod) ; sinon **classe concrète**
   `@Injectable({ providedIn: 'root' })` directe (YAGNI). La testabilité passe par
-  `provideHttpClientTesting()`, pas par swap de gateway.
+  `provideHttpClientTesting()`, pas par swap de gateway. Les ports abstraits des
+  features historiques (blog, projets, profil, contact, analytics, cv, auth) restent :
+  leurs specs s'en servent comme point de substitution ; une nouvelle feature suit la
+  règle ci-dessus (référence : `features/workshop`).
 - **Suffixes domaine** : `*.model.ts`, `*.gateway.ts`, `*.use-case.ts`,
   `*.adapter.ts` (1 use-case = 1 `execute()` ; supprimer les passthroughs
   triviaux).

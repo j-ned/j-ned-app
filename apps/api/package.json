@@ -20,7 +20,7 @@
     "db:up": "podman compose up -d postgres",
     "db:down": "podman compose down postgres",
     "db:reset": "podman compose down -v postgres && pnpm db:up && pnpm db:wait && pnpm db:migrate && pnpm db:seed",
-    "db:wait": "until podman exec portfolio-nest-db pg_isready -U portfolio -d portfolio_nest > /dev/null 2>&1; do sleep 0.5; done",
+    "db:wait": "until podman exec portfolio-db pg_isready -U portfolio -d portfolio_nest > /dev/null 2>&1; do sleep 0.5; done",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/database/seeds/admin.seed.ts",
