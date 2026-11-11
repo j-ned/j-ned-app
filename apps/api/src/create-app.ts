@@ -35,7 +35,7 @@ export type AppOptions = {
   readonly purgeContentCache?: () => Promise<void>;
 };
 
-/** Modules dont une écriture change une page publique (le like compris) : leur cache CDN est vidé. */
+/** Modules dont une écriture d'éditeur change une page publique : leur cache CDN est vidé. */
 const CONTENT_PATHS = [
   '/api/blog',
   '/api/projects',
@@ -43,6 +43,13 @@ const CONTENT_PATHS = [
   '/api/workshop-guide',
   '/api/cv',
 ];
+
+/**
+ * Seule écriture ouverte à tout visiteur sous ces modules. Elle ne vide pas le cache : sinon un
+ * anonyme pourrait le purger à volonté et renvoyer tout le trafic vers le rendu et la base. Le
+ * compteur affiché suit donc la durée du cache ; l'auteur du like lit le sien dans la réponse.
+ */
+const PUBLIC_LIKE = /^\/api\/blog\/posts\/[^/]+\/like\/?$/;
 
 export function createApp(
   config: AppConfigService,
@@ -54,7 +61,7 @@ export function createApp(
   // `strict: false` : `/api/cv/` vaut `/api/cv`, comme le routage d'Express.
   const app = new Hono<AppEnv>({ strict: false });
   if (purgeContentCache) {
-    const purge = purgeContentCacheOnWrite(purgeContentCache);
+    const purge = purgeContentCacheOnWrite(purgeContentCache, PUBLIC_LIKE);
     // `/api/cv/*` couvre aussi `/api/cv`.
     for (const path of CONTENT_PATHS) app.use(`${path}/*`, purge);
   }

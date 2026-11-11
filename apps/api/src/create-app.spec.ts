@@ -5,17 +5,22 @@ import type { Services } from './services';
 
 const ERROR_KEYS = ['error', 'message', 'path', 'statusCode', 'timestamp'];
 const SITE = 'http://localhost:4200';
+const POST_ID = '00000000-0000-4000-8000-000000000001';
 
 /** Application complète, services factices : seul le câblage HTTP commun est éprouvé ici. */
 function app(options: AppOptions = {}) {
   const contact = { create: jest.fn().mockResolvedValue(undefined) };
-  const blog = { like: jest.fn().mockResolvedValue({ likesCount: 1 }) };
-  const services = {
-    contact,
-    blog,
-    jwt: { verify: jest.fn() },
-    users: { findById: jest.fn() },
-  } as unknown as Services;
+  const blog = {
+    like: jest.fn().mockResolvedValue({ likesCount: 1 }),
+    remove: jest.fn().mockResolvedValue(undefined),
+  };
+  const jwt = { verify: jest.fn() };
+  const users = { findById: jest.fn() };
+  const services = { contact, blog, jwt, users } as unknown as Services;
+  const signIn = () => {
+    jwt.verify.mockReturnValue({ sub: 'u1', tokenVersion: 0 });
+    users.findById.mockResolvedValue({ id: 'u1', tokenVersion: 0 });
+  };
   const config = {
     corsOrigins: [SITE],
     jwtExpiresIn: '7d',
@@ -23,7 +28,12 @@ function app(options: AppOptions = {}) {
   const db = {
     execute: jest.fn().mockResolvedValue([]),
   } as unknown as Database;
-  return { app: createApp(config, db, services, options), contact, blog };
+  return {
+    app: createApp(config, db, services, options),
+    contact,
+    blog,
+    signIn,
+  };
 }
 
 const MESSAGE = JSON.stringify({
@@ -65,7 +75,7 @@ describe('createApp: cache CDN du contenu', () => {
     'sec-fetch-site': 'same-origin',
   };
 
-  it('Given a like, When it is counted, Then the content cache is purged, since the post page shows the count', async () => {
+  it('Given a like, When it is counted, Then the content cache is kept, since any visitor can trigger it', async () => {
     const purgeContentCache = jest.fn().mockResolvedValue(undefined);
     const { app: api, blog } = app({ purgeContentCache });
 
@@ -76,6 +86,21 @@ describe('createApp: cache CDN du contenu', () => {
 
     expect(res.status).toBe(201);
     expect(blog.like).toHaveBeenCalledWith('mon-article');
+    expect(purgeContentCache).not.toHaveBeenCalled();
+  });
+
+  it('Given an editor deleting a post, When it is removed, Then the content cache is purged', async () => {
+    const purgeContentCache = jest.fn().mockResolvedValue(undefined);
+    const { app: api, blog, signIn } = app({ purgeContentCache });
+    signIn();
+
+    const res = await api.request(`/api/blog/posts/${POST_ID}`, {
+      method: 'DELETE',
+      headers: { ...sameOrigin, authorization: 'Bearer jeton' },
+    });
+
+    expect(res.status).toBe(204);
+    expect(blog.remove).toHaveBeenCalledWith(POST_ID);
     expect(purgeContentCache).toHaveBeenCalledTimes(1);
   });
 
