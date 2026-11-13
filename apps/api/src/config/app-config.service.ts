@@ -1,11 +1,6 @@
 import type { S3Settings } from '../storage/s3-client';
+import { resolveDeployment, type Deployment } from './deployment';
 import type { ValidatedEnv } from './env.validation';
-
-/**
- * Où tourne l'API, d'après `VERCEL_ENV` seul (jamais `NODE_ENV`, qui peut valoir `production` sur
- * une preview) : `preview` couvre toute exécution Vercel hors production, `local` tout le reste.
- */
-export type Deployment = 'production' | 'preview' | 'local';
 
 /** Resend en production ; journal seul en preview (quoi que contiennent ses variables) ou sans clé. */
 export type MailTransport =
@@ -17,9 +12,7 @@ export class AppConfigService {
   constructor(private readonly env: ValidatedEnv) {}
 
   get deployment(): Deployment {
-    const vercelEnv = this.env.VERCEL_ENV;
-    if (vercelEnv === undefined) return 'local';
-    return vercelEnv === 'production' ? 'production' : 'preview';
+    return resolveDeployment(this.env);
   }
   get nodeEnv() {
     return this.env.NODE_ENV;

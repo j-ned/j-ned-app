@@ -1,5 +1,6 @@
 import argon2 from 'argon2';
 import { like, ne, sql } from 'drizzle-orm';
+import { APP_ENVS, resolveDeployment } from '../../config/deployment';
 import type { Database } from '../drizzle.types';
 import {
   blogPosts,
@@ -17,6 +18,10 @@ import {
 export const DEMO_ADMIN_EMAIL = 'admin@demo.portfolio.test';
 const DEMO_SLUG_PREFIX = 'demo-';
 const MIN_PASSWORD_LENGTH = 12;
+
+function isAppEnv(value: string): boolean {
+  return APP_ENVS.some((known) => known === value);
+}
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type DemoSeedSettings = {
@@ -28,8 +33,13 @@ export type DemoSeedSettings = {
 export function demoSeedSettings(
   env: Record<string, string | undefined>,
 ): DemoSeedSettings {
-  if (env.VERCEL_ENV === 'production') {
-    throw new Error('Demo seed refused: VERCEL_ENV=production');
+  // Variables brutes, non validées par le schéma : une faute de frappe ne doit pas valoir « preview ».
+  if (env.APP_ENV !== undefined && !isAppEnv(env.APP_ENV)) {
+    throw new Error('Demo seed refused: unknown APP_ENV');
+  }
+  if (resolveDeployment(env) === 'production') {
+    const declaredBy = env.VERCEL_ENV === undefined ? 'APP_ENV' : 'VERCEL_ENV';
+    throw new Error(`Demo seed refused: ${declaredBy}=production`);
   }
   const databaseUrl = env.DATABASE_URL;
   if (!databaseUrl) throw new Error('Missing DATABASE_URL');
