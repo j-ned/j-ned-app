@@ -1,9 +1,10 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs';
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import {
   AngularNodeAppEngine,
   createNodeRequestHandler,
+  isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import type { SsrRequestContext } from '@core/ssr/ssr-request-context';
@@ -14,6 +15,10 @@ import { createFeedHandler } from './server/feeds/feed-handler';
 import { visitorIpFromProxy } from './server/visitor-ip';
 
 const engine = new AngularNodeAppEngine();
+
+// Écoute du conteneur : boucle locale seulement, nginx est le seul client (même image).
+const LISTEN_HOST = '127.0.0.1';
+const LISTEN_PORT = 4000;
 
 // URL d'API fixée au démarrage, jamais dérivée de la requête (SSRF). Sans variable (`ng serve`),
 // pas de contexte : l'application lit l'URL publique. Sur Vercel, le binding du service `api` la
@@ -114,3 +119,21 @@ export const reqHandler = createNodeRequestHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+// Lancé directement par Node (conteneur) ; importé par la fonction Vercel et par `ng serve`, rien n'écoute.
+if (isMainModule(import.meta.url)) {
+  if (!cspManifest) throw new Error('csp-manifest.json missing: run the production build');
+  const server = createServer((req, res) => {
+    respond(req, res)
+      .then((handled) => {
+        if (!handled) res.writeHead(404).end();
+      })
+      .catch((error: unknown) => {
+        console.error(error);
+        if (!res.headersSent) res.writeHead(500);
+        res.end();
+      });
+  }).listen(LISTEN_PORT, LISTEN_HOST);
+  // Arrêt du conteneur : les rendus en cours se terminent, aucun nouveau n'est accepté.
+  process.once('SIGTERM', () => server.close(() => process.exit(0)));
+}
