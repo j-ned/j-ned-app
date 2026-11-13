@@ -1,0 +1,61 @@
+name: Deploy
+
+# Demande à Dokploy de redéployer la pile `deploy/compose.yaml` (ADR-0038) : il tire les images que la
+# CI vient de publier sur GHCR et ne construit rien. Déclenché quand une CI qui publie une image se
+# termine avec succès sur master, quand le compose change, ou à la main. Sans les secrets Dokploy,
+# rien n'est déclenché : c'est leur présence qui met le déploiement en service.
+on:
+  workflow_run:
+    workflows: [Web CI, API CI, Backup CI]
+    types: [completed]
+    branches: [master]
+  push:
+    branches: [master]
+    paths:
+      - deploy/compose.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un déploiement à la fois ; celui en cours va au bout, le suivant attend.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Dokploy
+    # Une CI en échec, annulée ou lancée depuis un autre dépôt ne déploie rien.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+      DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+      DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+      DEPLOY_HEALTH_URL: ${{ vars.DEPLOY_HEALTH_URL }}
+    steps:
+      - name: Secrets Dokploy absents, déploiement ignoré
+        if: env.DOKPLOY_URL == '' || env.DOKPLOY_API_KEY == '' || env.DOKPLOY_COMPOSE_ID == ''
+        run: echo "::notice::Secrets DOKPLOY_URL, DOKPLOY_API_KEY ou DOKPLOY_COMPOSE_ID absents, aucun déploiement"
+
+      # API de Dokploy : `compose.deploy` lance le déploiement et rend la main sans l'attendre.
+      - name: Trigger compose deployment
+        if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
+        run: |
+          curl --fail --silent --show-error --max-time 30 -X POST "$DOKPLOY_URL/api/compose.deploy" \
+            -H "x-api-key: $DOKPLOY_API_KEY" -H 'Content-Type: application/json' \
+            -d "{\"composeId\": \"$DOKPLOY_COMPOSE_ID\"}" -o /dev/null
+
+      # Sonde du site après le déploiement, si son adresse est renseignée (variable du dépôt) : elle
+      # prouve que le site répond, pas que la nouvelle version a remplacé l'ancienne.
+      - name: Probe the site
+        if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != '' && env.DEPLOY_HEALTH_URL != ''
+        run: |
+          curl --fail --silent --show-error --max-time 10 \
+            --retry 18 --retry-delay 10 --retry-all-errors "$DEPLOY_HEALTH_URL" -o /dev/null
