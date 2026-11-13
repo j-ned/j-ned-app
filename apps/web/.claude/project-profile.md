@@ -30,7 +30,7 @@
 ## Stack & bibliothèques (choix structurants)
 
 - **Version Angular & détection par défaut** : Angular `22` (`@angular/core
-  ^22.1.x`, `@angular/build ^22.1.x`, mis à jour le 2026-09-08). En v22 le défaut
+^22.1.x`, `@angular/build ^22.1.x`, mis à jour le 2026-09-08). En v22 le défaut
   framework est `OnPush` + zoneless : le `changeDetection: OnPush` explicite des
   composants existants est **redondant mais toléré** (pas de diff massif pour le
   retirer) ; ne pas l'exiger sur du nouveau code.
@@ -39,7 +39,7 @@
   composants non liés**. Sous le seuil : signals locaux.
 - **Coordinateur de feature (facade)** : `features/<x>/application/**`, ou le
   dossier de sa page s'il ne sert qu'à elle (`pages/admin-audience/audience-report.ts`) ;
-  services injectables qui *frontent* les use-cases/gateways du domaine et les
+  services injectables qui _frontent_ les use-cases/gateways du domaine et les
   adaptent au view (signals, `resource()`/`rxResource()`). Naming : **nommés par
   use-case, sans suffixe** (`login.ts`, `contact-form.ts`, `admin-cv.ts`) —
   jamais `Store`. Portée : instance-scopée via provider de route/composant.
@@ -123,7 +123,7 @@
   (`vi.useFakeTimers`) + `await fixture.whenStable()`, cf. skill
   `angular-async-testing`.
 - **Statut des adapters in-memory / fakes de persistance** : `implémentation
-  runtime` pour `InMemoryHomeGateway`, seul in-memory encore câblé en
+runtime` pour `InMemoryHomeGateway`, seul in-memory encore câblé en
   **production** (`app.config.ts`, pas de backend pour Home) ⇒ code applicatif
   livrable, légitimement doté de specs dédiés (`in-memory-*.gateway.spec.ts` non
   rejeté). Profile lit l'API (`HttpProfileGateway`, `GET /api/profile`, spec 021) :
@@ -143,16 +143,16 @@
   triangulation TDD ; `fixture.componentRef.setInput()` pour les inputs ;
   `TestBed.overrideComponent` > `configureTestingModule`.
 - **Projet de test visuel** (DOM réel, navigateur) : `e2e/a11y` — Playwright 1.63 + `@axe-core/playwright`
-  4.13 (versions exactes), Chromium *headless shell*, contre la sortie Vercel rejouée par
-  `ci/vercel-local.mjs` devant la doublure `ci/api-stub` (ADR-0025, ADR-0036). Audit WCAG 2.0/2.1/2.2 A et AA, zéro violation, sans exception ; pages
+  4.13 (versions exactes), Chromium _headless shell_, contre l'image du site montée par
+  `ci/image-stack.sh` devant la doublure `ci/api-stub` (ADR-0025, ADR-0038). Audit WCAG 2.0/2.1/2.2 A et AA, zéro violation, sans exception ; pages
   publiques, états interactifs et pages admin avec données, clair et sombre. Commandes :
-  build puis `node scripts/build-vercel.mjs && ci/local-stack.sh up`, puis `pnpm a11y` (typage :
-  `pnpm a11y:typecheck`), `ci/local-stack.sh down`. Repères de page en `data-testid` uniquement ; pas
+  `docker build -f apps/web/Dockerfile -t j-ned-app-web:ci .` (racine) puis `ci/image-stack.sh up`, puis `pnpm a11y` (typage :
+  `pnpm a11y:typecheck`), `ci/image-stack.sh down`. Repères de page en `data-testid` uniquement ; pas
   d'axe dans Vitest (happy-dom ne calcule ni contraste ni mise en page).
 - **Glossaire domaine / builders** : convention **Builder + PageModel** pour la
   lisibilité ; agrégats récurrents candidats (`User`, `SiteStats`,
   `StatsOverview`, `Project`) — à doter d'un builder dès qu'ils sont construits
-  >1× dans les tests.
+  > 1× dans les tests.
 - **Exemple Router-en-test stable** : `src/app/features/auth/pages/login/login.spec.ts`.
 
 ## Revue UI/design (optionnelle)
@@ -186,7 +186,7 @@
   directement de `infra` (câblage dans `app.config.ts`).
 - Stores d'état partagé suffixés `-store` ; facades `application/**` sans suffixe.
 - **Result pattern** sur les erreurs métier : `{ success: true; data: T } |
-  { success: false; error: E }` (jamais d'exception pour un échec métier attendu).
+{ success: false; error: E }` (jamais d'exception pour un échec métier attendu).
 - **Adapters = fonctions pures** `toX(raw)` à la frontière infra→domaine ; types
   API isolés dans `infra/*.types.ts`.
 - Contrats injectables en `abstract class` uniquement si 2+ impls (sinon classe
@@ -205,8 +205,8 @@
 - **CI/CD** (dimension 10, **GitHub Actions uniquement**, sans conteneur) : `.github/workflows/web-ci.yml`,
   déclenché sur `push` master et `pull_request` (hors specs, tasks, docs et Markdown).
   `pnpm install --frozen-lockfile` → `lint` → `format:check` → `icons:check` → `a11y:typecheck`
-  → `test` → `build --configuration production` + `scripts/build-vercel.mjs` → `ci/verify-prerender.sh`
-  → smoke test HTTP (`ci/smoke.sh`) sur la sortie Vercel rejouée par `ci/vercel-local.mjs`.
+  → `test` → `build --configuration production` → `ci/verify-prerender.sh` ; en parallèle, image du
+  conteneur et smoke test HTTP (`ci/smoke.sh`) sur `ci/image-stack.sh`.
   `web-a11y.yml` (chaque lundi et à la demande) : même pile, audit axe `pnpm a11y`, rapport en
-  artefact en cas d'échec. Déploiement : Vercel depuis Git, preview par PR, production sur `master`
-  (ADR-0036) ; la CI ne publie rien.
+  artefact en cas d'échec. Déploiement : images publiées sur GHCR depuis `master`, tirées par Dokploy
+  (ADR-0038).

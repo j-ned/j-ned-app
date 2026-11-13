@@ -1,9 +1,8 @@
 name: Web CI
 
-# Construire, tester, juger la sortie Vercel (`scripts/build-vercel.mjs`) rejouée en local devant la
-# doublure de l'API : c'est elle que Vercel déploie depuis Git (ADR-0036). En parallèle, l'image du
-# conteneur (nginx devant Node, ADR-0038) est construite et jugée par le même smoke test ; sur master,
-# elle est publiée sur GHCR. Rien n'est déployé ici.
+# Lint, tests et build de production d'un côté ; de l'autre, l'image du conteneur (nginx devant Node,
+# ADR-0038) construite et jugée par le smoke test devant la doublure de l'API. Sur master, l'image
+# jugée est publiée sur GHCR ; le workflow `Deploy` demande ensuite à Dokploy de la tirer.
 on:
   pull_request:
     paths:
@@ -44,7 +43,7 @@ concurrency:
 
 jobs:
   ci:
-    name: Build · Test · Smoke
+    name: Lint · Test · Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -66,7 +65,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      # Même commande que Vercel : un lockfile incohérent échoue ici, pas au déploiement.
+      # Même commande que le Dockerfile : un lockfile incohérent échoue ici aussi.
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile --filter @portfolio/web
 
@@ -85,26 +84,11 @@ jobs:
       - name: Test
         run: pnpm test
 
-      # Même build que Vercel (`vercel.json`), sortie `.vercel/output` comprise.
-      - name: Build (production + Vercel output)
-        run: pnpm run build --configuration production && node scripts/build-vercel.mjs
+      - name: Build (production)
+        run: pnpm run build --configuration production
 
       - name: Verify prerender
         run: ci/verify-prerender.sh dist/angular-portfolio-app/browser dist/angular-portfolio-app/server
-
-      - name: Start local stack (Vercel output + API stub)
-        run: ci/local-stack.sh up
-
-      - name: Smoke test
-        run: ci/smoke.sh
-
-      - name: Stack logs
-        if: failure()
-        run: cat "$RUNNER_TEMP"/portfolio-local-stack/*.log || true
-
-      - name: Stop local stack
-        if: always()
-        run: ci/local-stack.sh down
 
   image:
     name: Image · Smoke
@@ -134,8 +118,6 @@ jobs:
 
       - name: Smoke test the image
         working-directory: apps/web
-        env:
-          SMOKE_TARGET: image
         run: ci/smoke.sh
 
       - name: Stack logs

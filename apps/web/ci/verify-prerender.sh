@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Garanties du build de production sur les fichiers servis (prérendu, CSP, coquille CSR, preloads).
-# Lancé par la CI sur la sortie de `ng build`, celle que `scripts/build-vercel.mjs` déploie.
+# Lancé par la CI sur la sortie de `ng build`, celle que l'image du site embarque.
 #   ci/verify-prerender.sh <dossier browser> <dossier server>
 set -euo pipefail
 browser="$1"

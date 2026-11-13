@@ -12,8 +12,6 @@ export type CronDeps = {
   /** `CRON_SECRET` ; absent, la route n'existe pas (404). */
   readonly secret: string | undefined;
   readonly aggregator: AnalyticsAggregatorService;
-  /** Purge des compteurs de quotas en base, s'ils y sont (Vercel). */
-  readonly purgeRateLimits?: () => Promise<void>;
 };
 
 function bearerMatches(header: string | undefined, secret: string): boolean {
@@ -23,17 +21,16 @@ function bearerMatches(header: string | undefined, secret: string): boolean {
 }
 
 /**
- * `/api/cron` : tâches quotidiennes déclenchées par Vercel Cron (ADR-0036), qui envoie
- * `Authorization: Bearer <CRON_SECRET>`. Rollup analytics de la veille, puis purge des quotas.
+ * `/api/cron` : tâche quotidienne déclenchée par le service `portfolio-cron` de la pile (ADR-0038),
+ * qui envoie `Authorization: Bearer <CRON_SECRET>`. Rollup analytics de la veille.
  */
-export function cronRoutes({ secret, aggregator, purgeRateLimits }: CronDeps) {
+export function cronRoutes({ secret, aggregator }: CronDeps) {
   return new Hono<AppEnv>().get('/daily', async (c) => {
     if (!secret) throw new NotFoundException(`Cannot GET ${c.req.path}`);
     if (!bearerMatches(c.req.header('authorization'), secret)) {
       throw new UnauthorizedException();
     }
     await runDailyRollup(aggregator);
-    await purgeRateLimits?.();
     return c.json({ ok: true });
   });
 }

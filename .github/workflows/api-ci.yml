@@ -1,10 +1,9 @@
 name: API CI
 
 # Sur une PR : lint, types, tests sur Postgres, build, puis l'API construite, lancée par Node en mode
-# production, passe la suite de parité HTTP (packages/api-parity). Le déploiement est celui de Vercel
-# depuis Git (ADR-0036). En parallèle, l'image du conteneur (ADR-0038) est construite, ses migrations
-# jouées sur un Postgres jetable et sa sonde interrogée ; sur master, elle est publiée sur GHCR. Rien
-# n'est déployé ici.
+# production, passe la suite de parité HTTP (packages/api-parity). En parallèle, l'image du conteneur
+# (ADR-0038) est construite, ses migrations jouées sur un Postgres jetable et sa sonde interrogée ; sur
+# master, elle est publiée sur GHCR, puis le workflow `Deploy` demande à Dokploy de la tirer.
 on:
   pull_request:
     paths:
@@ -80,7 +79,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      # Même commande que Vercel pour l'API, plus la suite de parité.
+      # Même commande que le Dockerfile pour l'API, plus la suite de parité.
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile --filter @portfolio/api --filter @portfolio/api-parity
 
@@ -128,54 +127,6 @@ jobs:
       - name: Stop parity stack
         if: always()
         run: ../../packages/api-parity/scripts/stack.sh down
-
-  # Base des previews Vercel = branche Neon `preview` (schéma + seed de démo, jamais de copie de prod,
-  # docs/preview-env.md). Les migrations de la PR y sont appliquées une fois validées par le job
-  # verify sur Postgres jetable. Sans le secret (forks, Dependabot, secret pas encore créé), le job ne
-  # fait rien.
-  preview-db:
-    name: Preview · Migrations Neon
-    if: github.event_name == 'pull_request'
-    needs: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    # Une seule migration à la fois sur la base partagée, sans en interrompre une en cours.
-    concurrency:
-      group: preview-db
-      cancel-in-progress: false
-    defaults:
-      run:
-        working-directory: apps/api
-    env:
-      DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL_UNPOOLED }}
-    steps:
-      - name: Secret absent, migrations de preview ignorées
-        if: env.DATABASE_URL == ''
-        working-directory: .
-        run: echo "::notice::PREVIEW_DATABASE_URL_UNPOOLED absent, migrations de preview ignorées"
-
-      - name: Checkout
-        if: env.DATABASE_URL != ''
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-
-      - name: Setup pnpm
-        if: env.DATABASE_URL != ''
-        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
-
-      - name: Setup Node
-        if: env.DATABASE_URL != ''
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Install (frozen lockfile)
-        if: env.DATABASE_URL != ''
-        run: pnpm install --frozen-lockfile --filter @portfolio/api
-
-      - name: Migrations (branche Neon preview)
-        if: env.DATABASE_URL != ''
-        run: pnpm db:migrate
 
   image:
     name: Image · Migrations · Santé

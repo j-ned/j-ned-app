@@ -27,12 +27,9 @@ const baseEnvSchema = z.object({
       { message: 'DATABASE_URL must be a postgres:// URL' },
     ),
   /**
-   * Posé par Vercel lui-même (`production`, `preview`, `development` sous `vercel dev`), absent
-   * ailleurs. Sur Vercel, seule source de la distinction production / preview : `NODE_ENV` peut
-   * valoir `production` sur une preview.
+   * Déclare l'hébergement : `production` rend obligatoires mail et stockage, `preview` désigne un
+   * environnement de démonstration qui n'envoie aucun mail. Absente : exécution locale.
    */
-  VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
-  /** Hébergement hors Vercel : `production` y rend obligatoires mail et stockage (`resolveDeployment`). */
   APP_ENV: z.enum(APP_ENVS).optional(),
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
@@ -57,7 +54,7 @@ const baseEnvSchema = z.object({
    * Origines du site, séparées par des virgules : autorisées par CORS (requêtes credentials) et
    * par la protection CSRF (`CrossOriginGuard`) tant que le site appelle l'API sur son sous-domaine,
    * et reconnues comme référents internes par la mesure d'audience.
-   * Prod: `https://nedellec-julien.fr` (le domaine `www` redirige en 308 vers l'apex côté Vercel, il n'a pas besoin d'être listé ici).
+   * Prod: `https://nedellec-julien.fr` (le domaine `www` redirige vers l'apex chez Cloudflare, il n'a pas besoin d'être listé ici).
    * Dev local: `http://localhost:4200` (défaut).
    */
   CORS_ORIGINS: z
@@ -71,7 +68,7 @@ const baseEnvSchema = z.object({
     ),
 
   /**
-   * Secret du cron Vercel (en-tête `Authorization: Bearer …` posé par Vercel) : sans lui, la route
+   * Secret du cron quotidien (en-tête `Authorization: Bearer …` de l'appelant) : sans lui, la route
    * `/api/cron/daily` n'existe pas.
    */
   CRON_SECRET: z.string().min(16).optional(),

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { defineConfig } from 'drizzle-kit';
 
-// `.env` local facultatif (absent sur Vercel), lu par Node sans dépendance.
+// `.env` local facultatif (absent du conteneur), lu par Node sans dépendance.
 if (existsSync('.env')) process.loadEnvFile();
 
 export default defineConfig({

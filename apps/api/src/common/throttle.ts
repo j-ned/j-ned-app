@@ -51,7 +51,7 @@ export const TRACK_THROTTLE: ThrottleConfig = { limit: 10, ttlMs: 1_000 };
 /** Compteur d'une fenêtre après la requête courante, et la fin de cette fenêtre (ms epoch). */
 export type ThrottleHit = { readonly count: number; readonly resetAt: number };
 
-/** Où les compteurs vivent : en mémoire (un seul process) ou en base (fonctions Vercel, ADR-0036). */
+/** Où les compteurs vivent : en mémoire, pour le process unique de l'API (ADR-0038). */
 export interface ThrottleStore {
   hit(key: string, ttlMs: number, now: number): Promise<ThrottleHit>;
   /** Oublie le compteur de `key`. */
@@ -90,7 +90,7 @@ export class MemoryThrottleStore implements ThrottleStore {
 
 let store: ThrottleStore = new MemoryThrottleStore();
 
-/** Choisi au démarrage (`bootstrap`) : la base sur Vercel, la mémoire sinon. */
+/** Remplace le stockage des compteurs (tests : remise à zéro, panne simulée). */
 export function setThrottleStore(next: ThrottleStore): void {
   store = next;
 }

@@ -4,7 +4,7 @@
 
 **Portfolio full-stack de Julien Nédellec : vitrine, blog, back-office et mesure d'audience maison.**
 
-Angular · Hono · PostgreSQL · Vercel · sans cookie ni tracker tiers
+Angular · Hono · PostgreSQL · auto-hébergé · sans cookie ni tracker tiers
 
 [![Web CI](https://img.shields.io/github/actions/workflow/status/j-ned/j-ned-app/web-ci.yml?branch=master&label=Web%20CI&style=flat-square)](https://github.com/j-ned/j-ned-app/actions/workflows/web-ci.yml)
 [![API CI](https://img.shields.io/github/actions/workflow/status/j-ned/j-ned-app/api-ci.yml?branch=master&label=API%20CI&style=flat-square)](https://github.com/j-ned/j-ned-app/actions/workflows/api-ci.yml)
@@ -50,20 +50,22 @@ mesurée sans cookie, sans bandeau de consentement et sans envoyer de données �
 
 ```mermaid
 flowchart LR
-  visitor([Visiteur]) --> edge[Vercel]
-  edge -->|fichiers et pages prérendues| static[(CDN)]
+  visitor([Visiteur]) --> cf[Cloudflare · tunnel]
+  cf --> edge[nginx · image du site]
+  edge -->|fichiers et pages prérendues| static[(Fichiers de l'image)]
   edge -->|pages de contenu| ssr[Rendu Angular SSR]
   edge -->|/api| api[API Hono]
-  ssr -->|binding de service| api
-  api --> db[(PostgreSQL · Neon)]
+  ssr -->|réseau privé| api
+  api --> db[(PostgreSQL)]
   api --> files[(Fichiers · Cloudflare R2)]
   api --> mail[Resend]
   api -.-> sentry[Sentry]
   ssr -.-> sentry
 ```
 
-Le site et l'API sont deux services d'un même projet Vercel, servis par la même origine : ni CORS,
-ni cookie partagé entre sous-domaines. Un merge sur `master` les déploie ensemble.
+Le site et l'API sont deux conteneurs d'une même pile (`deploy/compose.yaml`, ADR-0038) sur un
+serveur personnel, servis par la même origine : ni CORS, ni cookie partagé entre sous-domaines. Un
+merge sur `master` publie leurs images, que le serveur tire ensuite ([deploy/README.md](deploy/README.md)).
 
 | Dossier                                      | Rôle                                                                          | Documentation                           |
 | -------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------- |
@@ -100,7 +102,7 @@ sont pas comptés, et les événements bruts sont purgés au bout de 30 jours.
 | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | **Front**     | Angular (zoneless, signals, Signal Forms, `@defer`), Tailwind CSS en CSS-first, Chart.js, marked + DOMPurify, highlight.js |
 | **API**       | Hono, Drizzle ORM, PostgreSQL, zod, argon2, otplib, sharp, pino                                                            |
-| **Services**  | Vercel, Neon, Cloudflare R2, Resend, Sentry                                                                                |
+| **Services**  | Cloudflare (tunnel, R2), Resend, Sentry, GHCR                                                                              |
 | **Outillage** | pnpm workspaces, TypeScript strict, Vitest, Jest, Playwright + axe, ESLint, Prettier, Husky                                |
 
 ## Démarrer en local
@@ -133,14 +135,14 @@ depuis la racine avec un filtre (`pnpm --filter @portfolio/api test`).
 Chaque application a son workflow GitHub Actions, déclenché par les changements qui la concernent.
 
 - **Site** : lint, format, tests, build de production avec vérification du prérendu et de la CSP,
-  puis tests de fumée HTTP sur la sortie Vercel rejouée en local.
+  puis tests de fumée HTTP sur l'image du conteneur.
 - **API** : lint, typage, tests unitaires et d'intégration sur PostgreSQL, build, puis la suite de
   parité HTTP contre l'API construite.
 - **Accessibilité** : audit axe (WCAG A et AA, zéro violation) en Chromium, pages publiques et
   admin, thèmes clair et sombre, chaque semaine et à la demande.
 
-La CI ne publie rien : Vercel déploie depuis Git, avec une preview par pull request et la production
-sur `master`.
+Sur `master`, la CI publie les images jugées sur GHCR, puis demande au serveur de les déployer
+(workflow `Deploy`).
 
 ## Licence
 

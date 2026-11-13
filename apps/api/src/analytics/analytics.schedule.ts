@@ -3,7 +3,7 @@ import { Logger } from '../common/logger';
 import type { AnalyticsAggregatorService } from './analytics-aggregator.service';
 
 /**
- * Tous les jours à minuit UTC (cron `/api/cron/daily` de `vercel.json`) : agrège la veille, rattrape
+ * Tous les jours à minuit UTC (service `portfolio-cron` de la pile, `/api/cron/daily`) : agrège la veille, rattrape
  * les jours non mesurés, purge le brut. En local, appeler la route avec `CRON_SECRET`.
  */
 export const DAILY_ROLLUP_PATTERN = '0 0 * * *';

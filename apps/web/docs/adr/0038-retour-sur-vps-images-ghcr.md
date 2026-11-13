@@ -1,8 +1,8 @@
 # ADR-0038 — Retour sur le serveur personnel, images publiées sur GHCR
 
-- **Statut** : accepté, en cours d'application (Vercel et Neon restent en production jusqu'à la bascule)
+- **Statut** : accepté et appliqué (2026-11-13 : DNS basculé, code propre à Vercel et Neon retiré)
 - **Date** : 2026-11-13
-- **Remplacera à la bascule** : ADR-0036 (hébergement Vercel), ADR-0037 (cache CDN purgé par tag)
+- **Remplace** : ADR-0036 (hébergement Vercel), ADR-0037 (cache CDN purgé par tag)
 - **Rétablit** : ADR-0024 (nginx et Node dans la même image), ADR-0034 §1 (relais nginx de `/api/`)
 - **Préserve** : ADR-0034 (même origine, cookie `__Host-`), ADR-0035 (API Hono, contrat figé par
   `packages/api-parity`)
@@ -25,8 +25,8 @@ géré par Dokploy ; le TLS est celui de Cloudflare. Le portfolio tournait déj�
    migrations, cron et sauvegarde restent sur le réseau privé de la pile, sous des noms préfixés
    (`portfolio-…`) qu'aucune autre pile du serveur ne peut usurper.
 3. **Visiteur lu dans les en-têtes de Cloudflare** : nginx prend l'adresse dans `CF-Connecting-IP`
-   (Traefik ne voit que cloudflared) et le pays dans `CF-IPCountry`, et les transmet à l'API et au
-   rendu ; un en-tête de pays envoyé par le visiteur est ignoré.
+   (Traefik ne voit que cloudflared) et le pays dans `CF-IPCountry`, et les transmet au rendu et à
+   l'API (`x-visitor-country`) ; un en-tête de pays envoyé par le visiteur est ignoré.
 4. **Cache** : micro-cache nginx d'une seconde devant le rendu, copie périmée servie si le rendu ou
    l'API échoue. Aucune purge à déclencher : une écriture est visible au rechargement suivant.
 5. **Production déclarée par `APP_ENV=production`** hors Vercel (mail et stockage obligatoires au
@@ -40,9 +40,9 @@ géré par Dokploy ; le TLS est celui de Cloudflare. Le portfolio tournait déj�
    rejoue sauvegarde et restauration à chaque changement de l'image.
 9. **Déploiement déclenché par la CI** : une fois les images publiées, le workflow `Deploy` appelle
    l'API de Dokploy (`compose.deploy`). Retour à une version en fixant le tag `sha-<commit>`.
-10. **Bascule sans coupure** : la CI juge les deux cibles (sortie Vercel et images) tant que Vercel
-    sert la production ; données copiées par `pg_dump` / `pg_restore`, DNS basculé, Vercel et Neon
-    supprimés après une période d'observation.
+10. **Bascule** : la CI a jugé les deux cibles (sortie Vercel et images) tant que Vercel servait la
+    production ; données copiées depuis Neon par `pg_dump` (schéma `public` seul), DNS basculé, puis
+    retrait de tout ce qui tenait à Vercel et à Neon.
 
 ## Consequences
 
@@ -53,5 +53,6 @@ géré par Dokploy ; le TLS est celui de Cloudflare. Le portfolio tournait déj�
   serveur personnel et de sa connexion.
 - Un accès par le réseau local, sans Cloudflare, retombe sur l'adresse écrite par Traefik : une
   machine du réseau local peut y présenter l'adresse de son choix.
-- Quotas comptés en mémoire (un seul process) : la table `rate_limit` et `@vercel/functions` partent au
-  nettoyage qui suit la bascule, avec `vercel.json` et la sortie Vercel.
+- Quotas comptés en mémoire (un seul process) : la table `rate_limit` est supprimée (migration 0033).
+- Les données sont passées de PostgreSQL 18 (Neon) à 17 (conteneur) : la version de la base ne se
+  remonte qu'avec celle de l'image de sauvegarde.

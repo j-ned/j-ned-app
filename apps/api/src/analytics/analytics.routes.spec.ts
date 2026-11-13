@@ -44,7 +44,7 @@ describe('analytics routes', () => {
         'content-type': 'application/json',
         'x-forwarded-for': ip,
         'user-agent': 'Mozilla/5.0 test',
-        'x-vercel-ip-country': 'fr',
+        'x-visitor-country': 'fr',
       },
       body: JSON.stringify(body),
     });

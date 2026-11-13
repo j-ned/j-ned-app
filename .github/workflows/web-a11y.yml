@@ -40,18 +40,20 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps --only-shell chromium
 
-      - name: Build (production + Vercel output)
-        run: pnpm run build --configuration production && node scripts/build-vercel.mjs
+      # L'image que la production fait tourner, construite depuis la racine du monorepo.
+      - name: Build image
+        working-directory: .
+        run: docker build -f apps/web/Dockerfile -t j-ned-app-web:ci .
 
-      - name: Start local stack (Vercel output + API stub)
-        run: ci/local-stack.sh up
+      - name: Start image stack (image + API stub)
+        run: ci/image-stack.sh up j-ned-app-web:ci
 
       - name: Audit axe
         run: pnpm a11y
 
       - name: Stack logs
         if: failure()
-        run: cat "$RUNNER_TEMP"/portfolio-local-stack/*.log || true
+        run: docker logs portfolio-image || true
 
       - name: Upload report
         if: failure()
@@ -63,6 +65,6 @@ jobs:
             apps/web/test-results/
           retention-days: 14
 
-      - name: Stop local stack
+      - name: Stop image stack
         if: always()
-        run: ci/local-stack.sh down
+        run: ci/image-stack.sh down

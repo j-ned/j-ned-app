@@ -11,7 +11,7 @@ import {
 } from '../schema';
 
 /**
- * Base d'une preview Vercel (branche Neon `preview`) : uniquement des données fictives, jamais une
+ * Base d'un environnement de démonstration : uniquement des données fictives, jamais une
  * copie de production. Domaine réservé `.test`, slugs préfixés `demo-`, aucune image (le stockage
  * est désactivé en preview).
  */
@@ -38,8 +38,7 @@ export function demoSeedSettings(
     throw new Error('Demo seed refused: unknown APP_ENV');
   }
   if (resolveDeployment(env) === 'production') {
-    const declaredBy = env.VERCEL_ENV === undefined ? 'APP_ENV' : 'VERCEL_ENV';
-    throw new Error(`Demo seed refused: ${declaredBy}=production`);
+    throw new Error('Demo seed refused: APP_ENV=production');
   }
   const databaseUrl = env.DATABASE_URL;
   if (!databaseUrl) throw new Error('Missing DATABASE_URL');

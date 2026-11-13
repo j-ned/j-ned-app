@@ -14,7 +14,7 @@ type RuntimeConfig = {
   };
 };
 
-// Même origine partout : réécriture `/api` de Vercel en production, `proxy.conf.cjs` sous `ng serve`.
+// Même origine partout : relais `/api` de nginx en production, `proxy.conf.cjs` sous `ng serve`.
 const API_BASE = '/api';
 
 async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<void> {

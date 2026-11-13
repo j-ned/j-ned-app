@@ -23,21 +23,41 @@ ne construit rien ; il tire les images publiées sur GHCR par la CI (`j-ned-app-
    Variable facultative `DEPLOY_HEALTH_URL` (`https://…/healthz`) pour sonder le site après coup.
    Tant que ces secrets manquent, le workflow `Deploy` ne fait rien.
 
-## Import des données depuis Neon
+## Import de données depuis une autre base
 
-À lancer sur le serveur, base vide juste migrée par le premier déploiement. `<neon>` est la chaîne de
-connexion **directe** (non poolée) de Neon, `<db>` le conteneur `portfolio-db` (`docker ps`).
-
-```bash
-docker exec <db> sh -c 'pg_dump --format=custom --no-owner --no-privileges --data-only --exclude-schema=drizzle "<neon>" > /tmp/neon.dump'
-```
+À lancer sur le serveur, dans la base juste migrée par un déploiement. `SOURCE` est la chaîne de
+connexion directe de la base d'origine, `<db>` le conteneur `portfolio-db` (`docker ps`).
 
 ```bash
-docker exec <db> sh -c 'pg_restore --no-owner --no-privileges --data-only --disable-triggers --exit-on-error -U "$POSTGRES_USER" -d "$POSTGRES_DB" /tmp/neon.dump && rm /tmp/neon.dump'
+read -rs SOURCE
 ```
 
-Le schéma vient des migrations, seules les données sont copiées. Vérifier ensuite quelques comptes de
-lignes des deux côtés, et que l'admin se connecte.
+Le dump se fait avec un client de la version de la base d'origine (ici 18), limité au schéma `public` :
+le schéma vient des migrations, seules les données sont copiées.
+
+```bash
+(umask 077; docker run --rm -e SOURCE="$SOURCE" postgres:18-alpine sh -c 'pg_dump --data-only --no-owner --no-privileges --schema=public "$SOURCE"' > ~/source.sql; echo "code=$?")
+```
+
+Les migrations créent déjà quelques lignes : les tables sont vidées puis remplies dans une seule
+transaction, qui ne laisse rien en cas d'erreur.
+
+```bash
+{ cat <<'SQL'
+SET session_replication_role = replica;
+DO $$
+DECLARE tables text;
+BEGIN
+  SELECT string_agg(format('%I.%I', schemaname, tablename), ', ') INTO tables
+  FROM pg_tables WHERE schemaname = 'public';
+  EXECUTE 'TRUNCATE ' || tables || ' RESTART IDENTITY CASCADE';
+END $$;
+SQL
+cat ~/source.sql; } | docker exec -i <db> sh -c 'psql -q -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 --single-transaction'; echo "code=$?"
+```
+
+Comparer ensuite quelques comptes de lignes des deux côtés et vérifier que l'admin se connecte, puis
+effacer le fichier, qui contient les données : `shred -u ~/source.sql; unset SOURCE`.
 
 ## Sauvegardes
 
@@ -50,7 +70,7 @@ est son conteneur.
 - La phrase `BACKUP_PASSPHRASE` se conserve aussi hors du serveur : sans elle, aucune sauvegarde ne
   se déchiffre.
 - Un échec n'alerte personne : il s'écrit dans les journaux du conteneur. Regarder le bucket de temps
-  en temps, et rejouer une restauration avant de supprimer Neon.
+  en temps, et rejouer une restauration de temps à autre.
 
 ## Retour à une version
 

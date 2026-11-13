@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { visitorIpFromProxy } from './visitor-ip';
 
 describe('visitorIpFromProxy', () => {
-  it('Given Vercel, Then the address comes from x-real-ip', () => {
-    expect(visitorIpFromProxy({ 'x-real-ip': '203.0.113.7' }, { VERCEL: '1' })).toBe('203.0.113.7');
+  it('Given only a variable left over from the former host, Then x-real-ip is ignored', () => {
+    const leftover: Record<string, string> = { VERCEL: '1' };
+
+    expect(visitorIpFromProxy({ 'x-real-ip': '203.0.113.7' }, leftover)).toBeNull();
   });
 
   it('Given no trusted proxy declared, Then a client-sent x-real-ip is ignored', () => {
@@ -33,7 +35,7 @@ describe('visitorIpFromProxy', () => {
     expect(visitorIpFromProxy(headers, { VISITOR_IP_HEADER: 'x-real-ip' })).toBeNull();
   });
 
-  it('Given an empty VISITOR_IP_HEADER off Vercel, Then nothing is trusted', () => {
+  it('Given an empty VISITOR_IP_HEADER, Then nothing is trusted', () => {
     expect(
       visitorIpFromProxy({ 'x-real-ip': '203.0.113.7' }, { VISITOR_IP_HEADER: '' }),
     ).toBeNull();

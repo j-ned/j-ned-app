@@ -19,15 +19,11 @@ const config = (env: Record<string, unknown>) =>
 describe('AppConfigService', () => {
   describe('deployment', () => {
     it.each([
-      [{ VERCEL_ENV: 'production', ...MAIL, ...S3 }, 'production'],
-      [{ VERCEL_ENV: 'preview' }, 'preview'],
-      [{ VERCEL_ENV: 'development' }, 'preview'],
-      [{ VERCEL_ENV: 'preview', NODE_ENV: 'production' }, 'preview'],
+      [{ APP_ENV: 'preview', NODE_ENV: 'production' }, 'preview'],
       [{}, 'local'],
       [{ NODE_ENV: 'production' }, 'local'],
       [{ APP_ENV: 'production', ...MAIL, ...S3 }, 'production'],
       [{ APP_ENV: 'preview' }, 'preview'],
-      [{ VERCEL_ENV: 'preview', APP_ENV: 'production' }, 'preview'],
     ])('Given %o, Then %s', (env, expected) => {
       expect(config(env).deployment).toBe(expected);
     });
@@ -35,21 +31,21 @@ describe('AppConfigService', () => {
 
   describe('mailTransport', () => {
     it('Given a preview with Resend variables, Then no mail is really sent', () => {
-      expect(config({ VERCEL_ENV: 'preview', ...MAIL }).mailTransport).toEqual({
+      expect(config({ APP_ENV: 'preview', ...MAIL }).mailTransport).toEqual({
         kind: 'log',
       });
     });
 
     it('Given a preview flagged NODE_ENV=production, Then no mail is really sent', () => {
       expect(
-        config({ VERCEL_ENV: 'preview', NODE_ENV: 'production', ...MAIL })
+        config({ APP_ENV: 'preview', NODE_ENV: 'production', ...MAIL })
           .mailTransport,
       ).toEqual({ kind: 'log' });
     });
 
     it('Given production, Then mails go through Resend', () => {
       expect(
-        config({ VERCEL_ENV: 'production', ...MAIL, ...S3 }).mailTransport,
+        config({ APP_ENV: 'production', ...MAIL, ...S3 }).mailTransport,
       ).toEqual({
         kind: 'resend',
         apiKey: 're_test_key',
@@ -82,8 +78,8 @@ describe('AppConfigService', () => {
     };
 
     it.each([
-      ['production', { VERCEL_ENV: 'production', ...MAIL }],
-      ['preview', { VERCEL_ENV: 'preview' }],
+      ['production', { APP_ENV: 'production', ...MAIL }],
+      ['preview', { APP_ENV: 'preview' }],
       ['local', {}],
     ])(
       'Given %s with a complete S3 configuration, Then storage is enabled',
@@ -93,12 +89,12 @@ describe('AppConfigService', () => {
     );
 
     it('Given no S3 configuration outside production, Then storage is disabled', () => {
-      expect(config({ VERCEL_ENV: 'preview' }).s3Settings).toBeNull();
+      expect(config({ APP_ENV: 'preview' }).s3Settings).toBeNull();
     });
 
     it('Given a partial S3 configuration outside production, Then storage is disabled', () => {
       expect(
-        config({ VERCEL_ENV: 'preview', ...S3, S3_SECRET_KEY: undefined })
+        config({ APP_ENV: 'preview', ...S3, S3_SECRET_KEY: undefined })
           .s3Settings,
       ).toBeNull();
     });

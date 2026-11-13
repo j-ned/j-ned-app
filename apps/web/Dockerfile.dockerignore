@@ -9,7 +9,6 @@
 **/node_modules
 apps/web/.angular
 apps/web/.claude
-apps/web/.vercel
 apps/web/.vscode
 apps/web/coverage
 apps/web/dist

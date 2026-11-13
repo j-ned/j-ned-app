@@ -58,8 +58,7 @@ describe('scaleToFit', () => {
 });
 
 describe('image upload target', () => {
-  // Au-delà d'environ 1 Mo, Vercel refuse un envoi multipart en 503 avant l'API (mesuré le 2026-11-03).
-  it('Given the Vercel multipart refusal around 1 MB When the target is read Then it stays well under it', () => {
+  it('Given the 1 MB mark When the target is read Then it stays well under it', () => {
     expect(LIMIT).toBe(900 * KIB);
   });
 

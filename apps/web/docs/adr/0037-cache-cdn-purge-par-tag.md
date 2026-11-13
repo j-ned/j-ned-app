@@ -1,6 +1,6 @@
 # ADR-0037 — Cache CDN long, vidé par tag à chaque écriture de contenu
 
-- **Statut** : accepté
+- **Statut** : remplacé par ADR-0038 (2026-11-13 : micro-cache nginx, sans purge)
 - **Date** : 2026-11-03
 - **Amende** : ADR-0036 §2 (cache CDN « `s-maxage` court + `stale-while-revalidate` »), ADR-0024 §3
   (fraîcheur d'une seconde)

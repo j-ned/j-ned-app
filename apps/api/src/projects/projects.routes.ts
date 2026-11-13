@@ -1,7 +1,6 @@
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
-import { cdnCache } from '../common/cdn-cache';
 import {
   jsonBody,
   reply,
@@ -42,11 +41,11 @@ export function projectsRoutes(
 ): Hono<AppEnv> {
   return (
     new Hono<AppEnv>()
-      .get('/', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>
+      .get('/', throttle(PUBLIC_READ_THROTTLE), async (c) =>
         reply(c, await projects.findAll()),
       )
 
-      .get('/:id', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>
+      .get('/:id', throttle(PUBLIC_READ_THROTTLE), async (c) =>
         reply(c, await projects.findById(uuidParam(c, 'id'))),
       )
 

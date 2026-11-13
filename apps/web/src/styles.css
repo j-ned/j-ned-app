@@ -8,7 +8,7 @@
 
 @custom-variant dark (&:where(.app-dark, .app-dark *));
 
-/* Noms versionnés : Vercel sert les woff2 en immutable (scripts/build-vercel.mjs), un binaire modifié doit changer de nom. */
+/* Noms versionnés : nginx sert les woff2 en immutable (Dockerfile), un binaire modifié doit changer de nom. */
 @font-face {
   font-family: 'Bricolage Grotesque';
   src: url('/fonts/bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2')

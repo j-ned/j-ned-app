@@ -40,50 +40,13 @@ describe('validateEnv', () => {
     );
   });
 
-  it('rejette un VERCEL_ENV inconnu', () => {
-    expect(() => validateEnv({ ...baseValid, VERCEL_ENV: 'staging' })).toThrow(
-      /VERCEL_ENV/,
-    );
-  });
-
-  describe('en production (VERCEL_ENV=production)', () => {
-    const production = { ...baseValid, VERCEL_ENV: 'production' };
-
-    it('accepte une env complète', () => {
-      expect(validateEnv(production).VERCEL_ENV).toBe('production');
-    });
-
-    it.each([
-      'RESEND_API_KEY',
-      'MAIL_FROM',
-      'S3_ENDPOINT',
-      'S3_REGION',
-      'S3_ACCESS_KEY',
-      'S3_SECRET_KEY',
-    ])('rejette une env sans %s', (name) => {
-      expect(() => validateEnv({ ...production, [name]: undefined })).toThrow(
-        new RegExp(`${name}: required in production`),
-      );
-    });
-
-    it('Given NODE_ENV=development, Then la production reste détectée par VERCEL_ENV', () => {
-      expect(() =>
-        validateEnv({
-          ...production,
-          NODE_ENV: 'development',
-          RESEND_API_KEY: undefined,
-        }),
-      ).toThrow(/RESEND_API_KEY/);
-    });
-  });
-
   it('rejette un APP_ENV inconnu', () => {
     expect(() => validateEnv({ ...baseValid, APP_ENV: 'prod' })).toThrow(
       /APP_ENV/,
     );
   });
 
-  describe('en production hors Vercel (APP_ENV=production)', () => {
+  describe('en production (APP_ENV=production)', () => {
     const production = { ...baseValid, APP_ENV: 'production' };
 
     it('accepte une env complète', () => {
@@ -102,17 +65,16 @@ describe('validateEnv', () => {
         new RegExp(`${name}: required in production`),
       );
     });
-  });
 
-  it('Given une preview Vercel qui porte APP_ENV=production, Then mail et stockage restent facultatifs', () => {
-    expect(() =>
-      validateEnv({
-        DATABASE_URL: baseValid.DATABASE_URL,
-        JWT_SECRET: baseValid.JWT_SECRET,
-        VERCEL_ENV: 'preview',
-        APP_ENV: 'production',
-      }),
-    ).not.toThrow();
+    it('Given NODE_ENV=development, Then la production reste détectée par APP_ENV', () => {
+      expect(() =>
+        validateEnv({
+          ...production,
+          NODE_ENV: 'development',
+          RESEND_API_KEY: undefined,
+        }),
+      ).toThrow(/RESEND_API_KEY/);
+    });
   });
 
   describe('hors production', () => {
@@ -122,12 +84,11 @@ describe('validateEnv', () => {
     };
 
     it.each([
-      ['preview', { VERCEL_ENV: 'preview' }],
-      ['vercel dev', { VERCEL_ENV: 'development' }],
+      ['preview', { APP_ENV: 'preview' }],
       ['local', {}],
       [
         'preview avec NODE_ENV=production',
-        { VERCEL_ENV: 'preview', NODE_ENV: 'production' },
+        { APP_ENV: 'preview', NODE_ENV: 'production' },
       ],
     ])('Given %s, Then mail et stockage sont facultatifs', (_, env) => {
       expect(() =>

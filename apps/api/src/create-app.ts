@@ -5,7 +5,6 @@ import { analyticsRoutes } from './analytics/analytics.routes';
 import { authRoutes } from './auth/auth.routes';
 import { requireAuth } from './auth/require-auth';
 import { blogRoutes } from './blog/blog.routes';
-import { purgeContentCacheOnWrite } from './common/cdn-cache';
 import { crossOriginProtection } from './common/cross-origin';
 import { cronRoutes } from './cron/cron.routes';
 import { handleError, handleNotFound } from './common/error-handler';
@@ -28,43 +27,14 @@ import { workshopGuideRoutes } from './workshop-guide/workshop-guide.routes';
  * écritures, puis les routes de chaque module sous `/api`. Toute erreur et toute route inconnue
  * répondent au même format JSON.
  */
-export type AppOptions = {
-  /** Purge des compteurs de quotas en base (Vercel), lancée par le cron quotidien. */
-  readonly purgeRateLimits?: () => Promise<void>;
-  /** Vidage du cache CDN du contenu (Vercel), après chaque écriture qui le change. */
-  readonly purgeContentCache?: () => Promise<void>;
-};
-
-/** Modules dont une écriture d'éditeur change une page publique : leur cache CDN est vidé. */
-const CONTENT_PATHS = [
-  '/api/blog',
-  '/api/projects',
-  '/api/profile',
-  '/api/workshop-guide',
-  '/api/cv',
-];
-
-/**
- * Seule écriture ouverte à tout visiteur sous ces modules. Elle ne vide pas le cache : sinon un
- * anonyme pourrait le purger à volonté et renvoyer tout le trafic vers le rendu et la base. Le
- * compteur affiché suit donc la durée du cache ; l'auteur du like lit le sien dans la réponse.
- */
-const PUBLIC_LIKE = /^\/api\/blog\/posts\/[^/]+\/like\/?$/;
-
 export function createApp(
   config: AppConfigService,
   db: Database,
   services: Services,
-  { purgeRateLimits, purgeContentCache }: AppOptions = {},
 ): Hono<AppEnv> {
   const session = requireAuth(services.jwt, services.users);
   // `strict: false` : `/api/cv/` vaut `/api/cv`, comme le routage d'Express.
   const app = new Hono<AppEnv>({ strict: false });
-  if (purgeContentCache) {
-    const purge = purgeContentCacheOnWrite(purgeContentCache, PUBLIC_LIKE);
-    // `/api/cv/*` couvre aussi `/api/cv`.
-    for (const path of CONTENT_PATHS) app.use(`${path}/*`, purge);
-  }
 
   return (
     app
@@ -120,7 +90,6 @@ export function createApp(
         cronRoutes({
           secret: config.cronSecret,
           aggregator: services.analyticsAggregator,
-          purgeRateLimits,
         }),
       )
       .notFound(handleNotFound)

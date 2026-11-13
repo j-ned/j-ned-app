@@ -1,6 +1,6 @@
 # ADR-0036 — Hébergement sur Vercel (Services), Dokploy retiré
 
-- **Statut** : accepté et appliqué (2026-11-01 : DNS basculé, CI sans publication ni déploiement)
+- **Statut** : remplacé par ADR-0038 (2026-11-13 : retour sur le serveur personnel)
 - **Date** : 2026-11-01
 - **Amende** : ADR-0024 (nginx et Node dans la même image), ADR-0034 §1 (relais nginx de `/api/`)
 - **Préserve** : ADR-0034 (même origine, cookie `__Host-`, contrôle d'origine), ADR-0035 (API Hono,

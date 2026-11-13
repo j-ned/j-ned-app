@@ -46,7 +46,7 @@ describe('ssrUpstreamInterceptor', () => {
     vi.useRealTimers();
   });
 
-  it('Given a server render on Vercel (shared secret) When the page reads the internal API Then the API can trust the forwarded visitor IP', () => {
+  it('Given a server render holding the shared secret When the page reads the internal API Then the API can trust the forwarded visitor IP', () => {
     setUp('server', {
       apiBaseUrl: INTERNAL_API_BASE_URL,
       visitorForwardedFor: VISITOR,
