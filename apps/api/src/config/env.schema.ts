@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { APP_ENVS, resolveDeployment } from './deployment';
 
 /**
  * Variables sans lesquelles la production ne démarre pas, facultatives ailleurs : hors production,
@@ -27,10 +28,12 @@ const baseEnvSchema = z.object({
     ),
   /**
    * Posé par Vercel lui-même (`production`, `preview`, `development` sous `vercel dev`), absent
-   * ailleurs. Seule source de la distinction production / preview : `NODE_ENV` peut valoir
-   * `production` sur une preview.
+   * ailleurs. Sur Vercel, seule source de la distinction production / preview : `NODE_ENV` peut
+   * valoir `production` sur une preview.
    */
   VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
+  /** Hébergement hors Vercel : `production` y rend obligatoires mail et stockage (`resolveDeployment`). */
+  APP_ENV: z.enum(APP_ENVS).optional(),
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
     .optional(),
@@ -98,7 +101,7 @@ const baseEnvSchema = z.object({
 });
 
 export const envSchema = baseEnvSchema.superRefine((env, ctx) => {
-  if (env.VERCEL_ENV !== 'production') return;
+  if (resolveDeployment(env) !== 'production') return;
   for (const name of REQUIRED_IN_PRODUCTION) {
     if (env[name] === undefined) {
       ctx.addIssue({

@@ -25,6 +25,9 @@ describe('AppConfigService', () => {
       [{ VERCEL_ENV: 'preview', NODE_ENV: 'production' }, 'preview'],
       [{}, 'local'],
       [{ NODE_ENV: 'production' }, 'local'],
+      [{ APP_ENV: 'production', ...MAIL, ...S3 }, 'production'],
+      [{ APP_ENV: 'preview' }, 'preview'],
+      [{ VERCEL_ENV: 'preview', APP_ENV: 'production' }, 'preview'],
     ])('Given %o, Then %s', (env, expected) => {
       expect(config(env).deployment).toBe(expected);
     });

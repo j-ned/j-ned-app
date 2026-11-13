@@ -77,6 +77,44 @@ describe('validateEnv', () => {
     });
   });
 
+  it('rejette un APP_ENV inconnu', () => {
+    expect(() => validateEnv({ ...baseValid, APP_ENV: 'prod' })).toThrow(
+      /APP_ENV/,
+    );
+  });
+
+  describe('en production hors Vercel (APP_ENV=production)', () => {
+    const production = { ...baseValid, APP_ENV: 'production' };
+
+    it('accepte une env complète', () => {
+      expect(validateEnv(production).APP_ENV).toBe('production');
+    });
+
+    it.each([
+      'RESEND_API_KEY',
+      'MAIL_FROM',
+      'S3_ENDPOINT',
+      'S3_REGION',
+      'S3_ACCESS_KEY',
+      'S3_SECRET_KEY',
+    ])('rejette une env sans %s', (name) => {
+      expect(() => validateEnv({ ...production, [name]: undefined })).toThrow(
+        new RegExp(`${name}: required in production`),
+      );
+    });
+  });
+
+  it('Given une preview Vercel qui porte APP_ENV=production, Then mail et stockage restent facultatifs', () => {
+    expect(() =>
+      validateEnv({
+        DATABASE_URL: baseValid.DATABASE_URL,
+        JWT_SECRET: baseValid.JWT_SECRET,
+        VERCEL_ENV: 'preview',
+        APP_ENV: 'production',
+      }),
+    ).not.toThrow();
+  });
+
   describe('hors production', () => {
     const withoutMailNorStorage = {
       DATABASE_URL: baseValid.DATABASE_URL,

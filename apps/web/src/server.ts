@@ -11,6 +11,7 @@ import { hardenCsp, type CspBuildManifest } from './server/csp/harden-csp';
 import { nodeSha256 } from './server/csp/node-sha256';
 import { dispatchSsrRequest } from './server/dispatch-ssr-request';
 import { createFeedHandler } from './server/feeds/feed-handler';
+import { visitorIpFromProxy } from './server/visitor-ip';
 
 const engine = new AngularNodeAppEngine();
 
@@ -66,11 +67,11 @@ async function send(response: Response, res: ServerResponse): Promise<void> {
   await writeResponseToNodeResponse(response, res);
 }
 
-// Sur Vercel, l'IP du visiteur arrive dans `x-real-ip`, posé par la plateforme (une valeur envoyée par
-// le client y est remplacée). Ailleurs (`ng serve`), l'en-tête n'est pas digne de confiance : ignoré.
 function visitorForwardedFor(req: IncomingMessage): string | null {
-  const header = process.env['VERCEL'] ? req.headers['x-real-ip'] : undefined;
-  return typeof header === 'string' && header !== '' ? header : null;
+  return visitorIpFromProxy(req.headers, {
+    VERCEL: process.env['VERCEL'],
+    VISITOR_IP_HEADER: process.env['VISITOR_IP_HEADER'],
+  });
 }
 
 function requestContext(req: IncomingMessage): SsrRequestContext | undefined {

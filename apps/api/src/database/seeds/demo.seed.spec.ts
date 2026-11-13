@@ -42,6 +42,24 @@ describe('demoSeedSettings', () => {
     ).toThrow('Demo seed refused: VERCEL_ENV=production');
   });
 
+  it('Given APP_ENV=production, Then the seed refuses to run', () => {
+    expect(() => demoSeedSettings({ ...valid, APP_ENV: 'production' })).toThrow(
+      'Demo seed refused: APP_ENV=production',
+    );
+  });
+
+  it('Given APP_ENV=preview, Then the seed may run', () => {
+    expect(() =>
+      demoSeedSettings({ ...valid, APP_ENV: 'preview' }),
+    ).not.toThrow();
+  });
+
+  it('Given a misspelt APP_ENV, Then the seed refuses to run rather than guess', () => {
+    expect(() => demoSeedSettings({ ...valid, APP_ENV: 'prod' })).toThrow(
+      'Demo seed refused: unknown APP_ENV',
+    );
+  });
+
   it('Given no DATABASE_URL, Then the seed refuses to run', () => {
     expect(() =>
       demoSeedSettings({ ...valid, DATABASE_URL: undefined }),
