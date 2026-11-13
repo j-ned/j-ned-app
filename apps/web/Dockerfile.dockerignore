@@ -1,0 +1,22 @@
+# Contexte de build : la racine du monorepo. Seuls les manifestes du workspace et apps/web entrent.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!.npmrc
+!apps/web
+
+**/node_modules
+apps/web/.angular
+apps/web/.claude
+apps/web/.vercel
+apps/web/.vscode
+apps/web/coverage
+apps/web/dist
+apps/web/docs
+apps/web/e2e
+apps/web/specs
+apps/web/tasks
+apps/web/**/*.md
+apps/web/playwright-report
+apps/web/test-results
