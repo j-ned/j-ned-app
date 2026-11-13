@@ -1,0 +1,134 @@
+# Pile de production du portfolio sur le serveur, déployée par Dokploy (service de type Compose,
+# ADR-0038). Dokploy ne construit rien : il tire les images publiées sur GHCR par la CI.
+#
+# - Aucun port publié : le trafic arrive par le tunnel Cloudflare, puis le Traefik de Dokploy, qui
+#   joint `portfolio-web` par `dokploy-network`. Le domaine se règle dans l'onglet Domains de Dokploy
+#   (service `portfolio-web`, port 3000), qui ajoute les labels Traefik.
+# - Variables : onglet Environment de Dokploy, écrit dans le `.env` voisin (modèle :
+#   `portfolio.env.example`). Chaque service ne reçoit que les siennes.
+# - Noms de service préfixés : `dokploy-network` est partagé avec les autres piles du serveur, où un
+#   nom comme `api` ou `postgres` pourrait désigner le conteneur d'un autre projet.
+# - Retour à une version : fixer `WEB_IMAGE` / `API_IMAGE` sur un tag `sha-<commit>` et redéployer.
+
+name: portfolio
+
+services:
+  portfolio-web:
+    image: ${WEB_IMAGE:-ghcr.io/j-ned/j-ned-app-web:latest}
+    pull_policy: ${PULL_POLICY:-always}
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: http://portfolio-api:3000
+      SSR_FORWARD_SECRET: ${SSR_FORWARD_SECRET:?}
+    networks:
+      - default
+      - dokploy-network
+
+  portfolio-api:
+    image: ${API_IMAGE:-ghcr.io/j-ned/j-ned-app-api:latest}
+    pull_policy: ${PULL_POLICY:-always}
+    restart: unless-stopped
+    depends_on:
+      portfolio-db:
+        condition: service_healthy
+      portfolio-migrate:
+        condition: service_completed_successfully
+    environment:
+      - APP_ENV=production
+      - DATABASE_URL=postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@portfolio-db:5432/${POSTGRES_DB:?}
+      - JWT_SECRET=${JWT_SECRET:?}
+      - CORS_ORIGINS=${CORS_ORIGINS:?}
+      - CRON_SECRET=${CRON_SECRET:?}
+      - SSR_FORWARD_SECRET=${SSR_FORWARD_SECRET:?}
+      - S3_ENDPOINT=${S3_ENDPOINT:?}
+      - S3_REGION=${S3_REGION:?}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:?}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:?}
+      - RESEND_API_KEY=${RESEND_API_KEY:?}
+      - MAIL_FROM=${MAIL_FROM:?}
+      # Facultatives : transmises seulement si elles sont définies (une valeur vide serait refusée
+      # par l'API au démarrage).
+      - JWT_EXPIRES_IN
+      - TOTP_APP_NAME
+      - SENTRY_DSN
+      - SENTRY_FRONTEND_DSN
+      - SENTRY_TRACES_SAMPLE_RATE
+
+  # Migrations appliquées par l'image de l'API avant chaque démarrage de l'API : le conteneur sort,
+  # et l'API n'est remplacée que s'il a réussi.
+  portfolio-migrate:
+    image: ${API_IMAGE:-ghcr.io/j-ned/j-ned-app-api:latest}
+    pull_policy: ${PULL_POLICY:-always}
+    restart: "no"
+    command: ["node", "dist/database/scripts/migrate.js"]
+    depends_on:
+      portfolio-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@portfolio-db:5432/${POSTGRES_DB:?}
+
+  # Tâches quotidiennes de l'API (agrégat de la mesure d'audience), à minuit UTC. Un échec est
+  # journalisé et la boucle continue : l'agrégat du lendemain rattrape les jours manqués.
+  portfolio-cron:
+    image: ${API_IMAGE:-ghcr.io/j-ned/j-ned-app-api:latest}
+    pull_policy: ${PULL_POLICY:-always}
+    restart: unless-stopped
+    depends_on:
+      - portfolio-api
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?}
+    healthcheck:
+      disable: true
+    command:
+      - sh
+      - -c
+      - |
+        while :; do
+          sleep "$$(( 86400 - $$(date -u +%s) % 86400 ))"
+          if wget -q -O /dev/null --header "Authorization: Bearer $$CRON_SECRET" http://portfolio-api:3000/api/cron/daily; then
+            echo "$$(date -u +%FT%TZ) cron quotidien : ok"
+          else
+            echo "$$(date -u +%FT%TZ) cron quotidien : échec" >&2
+          fi
+        done
+
+  portfolio-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+    volumes:
+      - portfolio-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Sauvegarde quotidienne chiffrée de la base vers un bucket hors du serveur (`backup/backup.sh`).
+  portfolio-backup:
+    image: ${BACKUP_IMAGE:-ghcr.io/j-ned/j-ned-app-backup:latest}
+    pull_policy: ${PULL_POLICY:-always}
+    restart: unless-stopped
+    depends_on:
+      portfolio-db:
+        condition: service_healthy
+    environment:
+      PGHOST: portfolio-db
+      PGUSER: ${POSTGRES_USER:?}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+      PGDATABASE: ${POSTGRES_DB:?}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:?}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:?}
+      BACKUP_S3_ACCESS_KEY: ${BACKUP_S3_ACCESS_KEY:?}
+      BACKUP_S3_SECRET_KEY: ${BACKUP_S3_SECRET_KEY:?}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:?}
+
+volumes:
+  portfolio-db-data:
+
+networks:
+  dokploy-network:
+    external: true

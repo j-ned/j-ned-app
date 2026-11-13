@@ -1,0 +1,86 @@
+name: Backup CI
+
+# Image de sauvegarde de la base (`deploy/backup`, ADR-0038) : construite, puis jugée de bout en bout
+# devant un Postgres et un stockage S3 jetables (sauvegarde chiffrée, restauration identique, refus
+# d'une mauvaise phrase). Sur master, l'image jugée est publiée sur GHCR.
+on:
+  pull_request:
+    paths:
+      - deploy/backup/**
+      - .github/workflows/backup-ci.yml
+  push:
+    branches: [master]
+    paths:
+      - deploy/backup/**
+      - .github/workflows/backup-ci.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un run par branche/PR : le nouveau push annule le précédent.
+concurrency:
+  group: backup-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    name: Image · Sauvegarde · Restauration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: deploy/backup
+          push: false
+          load: true
+          tags: j-ned-app-backup:ci
+          cache-from: type=gha,scope=backup
+          cache-to: type=gha,mode=max,scope=backup
+
+      - name: Back up and restore
+        run: deploy/backup/check.sh j-ned-app-backup:ci
+
+  # Même Dockerfile et même cache que le job `image` : toutes les couches viennent du cache.
+  publish:
+    name: Publication GHCR
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: [image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: deploy/backup
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/j-ned-app-backup:latest
+            ghcr.io/${{ github.repository_owner }}/j-ned-app-backup:sha-${{ github.sha }}
+          # Relie le paquet GHCR à ce dépôt (page et visibilité du paquet).
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=backup

@@ -116,6 +116,27 @@ describe('nginx configuration', () => {
     );
   });
 
+  // ADR-0038 : tout le trafic arrive par le tunnel Cloudflare, puis Traefik.
+  describe('visitor behind the Cloudflare tunnel', () => {
+    const mapOf = (source: string, target: string): readonly string[] =>
+      directivesOf(new RegExp(`map \\$${source} \\$${target} \\{([^}]*)\\}`)) ?? [];
+
+    it('takes the address written by Cloudflare, and the last forwarded entry only without it', () => {
+      expect(mapOf('http_cf_connecting_ip', 'ssr_visitor')).toEqual([
+        '"" $forwarded_last',
+        'default $http_cf_connecting_ip',
+      ]);
+    });
+
+    it('keeps a two-letter country and drops the unknown marker of Cloudflare', () => {
+      expect(mapOf('http_cf_ipcountry', 'visitor_country')).toEqual([
+        '"XX" ""',
+        '"~^[A-Z][A-Z]$" $http_cf_ipcountry',
+        'default ""',
+      ]);
+    });
+  });
+
   // ADR-0034 : l'API est servie par l'origine du site.
   describe('API relayed on the site origin', () => {
     // Bloc complet d'une `location`, commentaires retirés : les accolades s'équilibrent
@@ -160,16 +181,24 @@ describe('nginx configuration', () => {
       expect(api()).toContain('client_max_body_size 5m');
     });
 
-    it("hands the API the edge proxy's X-Forwarded-For untouched, so that it keeps the visitor address", () => {
-      expect(api()).toContain('proxy_set_header X-Forwarded-For $http_x_forwarded_for');
+    it.each<[string, RegExp]>([
+      ['the API', API_LOCATION],
+      ['the audience beacon', TRACK_LOCATION],
+    ])('hands %s the visitor address alone, never the forwarded chain', (_, location) => {
+      expect(blockDirectives(location)).toContain('proxy_set_header X-Forwarded-For $ssr_visitor');
     });
 
     it.each<[string, RegExp]>([
       ['the API', API_LOCATION],
       ['the audience beacon', TRACK_LOCATION],
-    ])('never lets a visitor choose their country through %s', (_, location) => {
-      expect(blockDirectives(location)).toContain('proxy_set_header X-Vercel-Ip-Country ""');
-    });
+    ])(
+      'hands %s the country resolved by Cloudflare, never a header of the visitor',
+      (_, location) => {
+        expect(blockDirectives(location)).toContain(
+          'proxy_set_header X-Vercel-Ip-Country $visitor_country',
+        );
+      },
+    );
 
     it('lets the session cookie through both ways', () => {
       expect({

@@ -169,13 +169,25 @@ proxy_cache_path /var/cache/nginx/storage levels=1:2 keys_zone=storage:10m max_s
 # que si Node répond 5xx ou ne répond pas.
 proxy_cache_path /var/cache/nginx/ssr levels=1:2 keys_zone=ssr:10m max_size=200m inactive=7d use_temp_path=off;
 
-# Visiteur = dernière entrée de X-Forwarded-For, celle qu'écrit le proxy de bordure (les entrées
-# antérieures viennent du client et se forgent) ; l'API retient la même. Ce conteneur ne s'expose donc
-# jamais sans ce proxy devant lui : la dernière entrée serait alors celle du client. Transmis à Node, et
-# clé du débit par visiteur sur les routes rendues (une query string arbitraire force un rendu) ;
-# sans en-tête, l'adresse de la connexion.
-map $http_x_forwarded_for $ssr_visitor {
+# Visiteur : tout le trafic public arrive par le tunnel Cloudflare, qui écrit lui-même
+# `CF-Connecting-IP` (une valeur envoyée par le client y est remplacée) ; Traefik, derrière le tunnel,
+# ne voit que l'adresse de cloudflared et l'écrit dans X-Forwarded-For. Sans l'en-tête de Cloudflare
+# (accès par le réseau local), la dernière entrée de X-Forwarded-For, celle de Traefik (les entrées
+# antérieures viennent du client et se forgent). Ce conteneur ne s'expose donc jamais sans ces proxys
+# devant lui. Transmis à Node et à l'API, et clé du débit par visiteur sur les routes rendues (une
+# query string arbitraire force un rendu) ; sans aucun en-tête, l'adresse de la connexion.
+map $http_x_forwarded_for $forwarded_last {
     "~(?:^|,)\s*(?<last>[^,\s]+)\s*$" $last;
+    default "";
+}
+map $http_cf_connecting_ip $ssr_visitor {
+    "" $forwarded_last;
+    default $http_cf_connecting_ip;
+}
+# Pays déduit de l'adresse par Cloudflare (`XX` : inconnu), transmis à l'API sous le nom qu'elle lit.
+map $http_cf_ipcountry $visitor_country {
+    "XX" "";
+    "~^[A-Z][A-Z]$" $http_cf_ipcountry;
     default "";
 }
 map $ssr_visitor $ssr_client {
@@ -277,10 +289,11 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Connection "";
 
-        # XFF du proxy de bordure tel quel ($proxy_add_x_forwarded_for ferait retenir une IP privée :
-        # mesure écartée). Pays : l'en-tête n'a de sens que posé par Vercel, un visiteur ne le choisit pas.
-        proxy_set_header X-Forwarded-For $http_x_forwarded_for;
-        proxy_set_header X-Vercel-Ip-Country "";
+        # Adresse du visiteur seule : la chaîne reçue finit par une adresse privée (cloudflared), que
+        # l'API retiendrait, et la mesure serait écartée. Pays : celui de Cloudflare, jamais un en-tête
+        # du visiteur.
+        proxy_set_header X-Forwarded-For $ssr_visitor;
+        proxy_set_header X-Vercel-Ip-Country $visitor_country;
         proxy_set_header Cookie "";
         proxy_set_header Authorization "";
         proxy_hide_header Set-Cookie;
@@ -305,9 +318,9 @@ server {
         proxy_set_header Connection "";
         proxy_read_timeout 60s;
 
-        # XFF du proxy de bordure tel quel : l'API retient sa dernière entrée, le visiteur.
-        proxy_set_header X-Forwarded-For $http_x_forwarded_for;
-        proxy_set_header X-Vercel-Ip-Country "";
+        # Adresse du visiteur seule : l'API retient la dernière entrée de l'en-tête.
+        proxy_set_header X-Forwarded-For $ssr_visitor;
+        proxy_set_header X-Vercel-Ip-Country $visitor_country;
 
         include /etc/nginx/snippets/api-response-headers.conf;
     }
