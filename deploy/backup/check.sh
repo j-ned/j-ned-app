@@ -51,6 +51,8 @@ create index article_title on article (title);
 SQL
 psql_db -d postgres -c 'create database restored' -c 'create database refused' >/dev/null
 
+# Variables de `RUN_ENV` posées après les autres : elles les remplacent, le temps d'un cas d'erreur.
+RUN_ENV=()
 run() {
   local database="$1" passphrase="$2"
   shift 2
@@ -58,8 +60,28 @@ run() {
     -e PGHOST="$DB" -e PGUSER=postgres -e PGPASSWORD=it -e PGDATABASE="$database" \
     -e BACKUP_S3_ENDPOINT="http://$S3:9000" -e BACKUP_S3_BUCKET="$BUCKET" \
     -e BACKUP_S3_ACCESS_KEY=backup-check -e BACKUP_S3_SECRET_KEY=backup-check-secret \
-    -e BACKUP_PASSPHRASE="$passphrase" "$IMAGE" "$@"
+    -e BACKUP_PASSPHRASE="$passphrase" "${RUN_ENV[@]}" "$IMAGE" "$@"
 }
+
+# Un refus du stockage échoue en nommant sa cause : sans elle, un 403 ne dit pas s'il faut corriger
+# la clé, les droits du jeton ou le nom du bucket.
+refused_with() {
+  local expected="$1" output
+  shift
+  RUN_ENV=("$@")
+  if output="$(run source 'phrase de test' once 2>&1)"; then
+    echo "sauvegarde acceptée alors qu'elle devait être refusée ($expected)" >&2
+    exit 1
+  fi
+  RUN_ENV=()
+  grep -q "$expected" <<<"$output" || {
+    echo "cause du refus absente du message ($expected attendu) : $output" >&2
+    exit 1
+  }
+  ! grep -q 'backup-check-secret\|clé-fausse' <<<"$output" || { echo "clé secrète dans le message" >&2; exit 1; }
+}
+refused_with SignatureDoesNotMatch -e BACKUP_S3_SECRET_KEY=clé-fausse
+refused_with NoSuchBucket -e BACKUP_S3_BUCKET=bucket-absent
 
 run source 'phrase de test' once
 object="$(s3 "http://$S3:9000/$BUCKET?list-type=2" | sed -n 's/.*<Key>\([^<]*\)<\/Key>.*/\1/p')"

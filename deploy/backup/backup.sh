@@ -34,27 +34,43 @@ $BACKUP_PASSPHRASE
 EOF
 }
 
-# Signature AWS v4 par curl ; les clés passent par un fichier de configuration lu sur l'entrée
-# standard, pas par la ligne de commande.
+# Requête S3 signée (AWS v4) par curl : `s3 <fichier de réponse> <arguments de curl>`. Les clés passent
+# par un fichier de configuration lu sur l'entrée standard, pas par la ligne de commande. Un refus du
+# stockage échoue en nommant sa cause (`SignatureDoesNotMatch`, `AccessDenied`, `NoSuchBucket`…) : un
+# code HTTP seul ne dit pas s'il faut corriger la clé, les droits du jeton ou le nom du bucket.
 s3() {
-  curl --fail --silent --show-error --retry 3 --aws-sigv4 'aws:amz:auto:s3' \
-    -H 'x-amz-content-sha256: UNSIGNED-PAYLOAD' --config - "$@" <<EOF
+  response="$1"
+  shift
+  status="$(curl --silent --show-error --retry 3 --aws-sigv4 'aws:amz:auto:s3' \
+    -H 'x-amz-content-sha256: UNSIGNED-PAYLOAD' --config - \
+    --output "$WORK/s3-response" --write-out '%{http_code}' "$@" <<EOF
 user = "$BACKUP_S3_ACCESS_KEY:$BACKUP_S3_SECRET_KEY"
 EOF
+  )" || return 1
+  case "$status" in
+    2*)
+      mv "$WORK/s3-response" "$response"
+      return 0
+      ;;
+  esac
+  cause="$(grep -oE '<(Code|Message)>[^<]*' "$WORK/s3-response" | sed 's/<[^>]*>//' | tr '\n' ' ' || true)"
+  echo "$(date -u +%FT%TZ) stockage S3 : requête refusée ($status) ${cause:-sans détail}" >&2
+  rm -f "$WORK/s3-response"
+  return 1
 }
 
 backup_once() {
   name="portfolio-$(date -u +%Y%m%dT%H%M%SZ).dump.gpg"
   pg_dump --format=custom --no-owner --no-privileges --file "$WORK/dump"
   encrypt "$WORK/dump" "$WORK/$name"
-  s3 --upload-file "$WORK/$name" "$BACKUP_S3_ENDPOINT/$BACKUP_S3_BUCKET/$name" >/dev/null
+  s3 "$WORK/upload-response" --upload-file "$WORK/$name" "$BACKUP_S3_ENDPOINT/$BACKUP_S3_BUCKET/$name"
   echo "$(date -u +%FT%TZ) sauvegarde envoyée : $name ($(wc -c <"$WORK/$name") octets)"
-  rm -f "$WORK/dump" "$WORK/$name"
+  rm -f "$WORK/dump" "$WORK/$name" "$WORK/upload-response"
 }
 
 restore() {
   object="${1:?usage: backup.sh restore <objet>}"
-  s3 --output "$WORK/restore.gpg" "$BACKUP_S3_ENDPOINT/$BACKUP_S3_BUCKET/$object"
+  s3 "$WORK/restore.gpg" "$BACKUP_S3_ENDPOINT/$BACKUP_S3_BUCKET/$object"
   decrypt "$WORK/restore.gpg" "$WORK/restore.dump"
   pg_restore --no-owner --no-privileges --exit-on-error --dbname "$PGDATABASE" "$WORK/restore.dump"
   echo "$(date -u +%FT%TZ) restauration terminée : $object dans $PGDATABASE"
