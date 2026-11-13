@@ -107,13 +107,6 @@ describe('nginx configuration', () => {
     it('forces the host, so that a request never picks the canonical origin', () => {
       expect(proxy()).toContain('proxy_set_header Host nedellec-julien.fr');
     });
-
-    it.each(['Vercel-Cache-Tag', 'CDN-Cache-Control'])(
-      'keeps the CDN header %s of the renderer away from the visitor',
-      (header) => {
-        expect(proxy()).toContain(`proxy_hide_header ${header}`);
-      },
-    );
   });
 
   // ADR-0038 : tout le trafic arrive par le tunnel Cloudflare, puis Traefik.
@@ -195,7 +188,7 @@ describe('nginx configuration', () => {
       'hands %s the country resolved by Cloudflare, never a header of the visitor',
       (_, location) => {
         expect(blockDirectives(location)).toContain(
-          'proxy_set_header X-Vercel-Ip-Country $visitor_country',
+          'proxy_set_header X-Visitor-Country $visitor_country',
         );
       },
     );

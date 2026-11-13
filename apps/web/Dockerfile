@@ -113,8 +113,7 @@ ENV API_UPSTREAM=http://api:3000 \
 # Relais vers le rendu Node. Host forcé : Angular refuse tout hôte hors `allowedHosts` (SSRF) et
 # l'URL d'API ne dérive jamais de la requête. Les en-têtes de proxy entrants sont vidés (Angular
 # les ignore et le signale à chaque requête) ; l'IP du visiteur passe dans `X-Real-IP`, toujours
-# réécrit ici (vide : en-tête retiré), jamais repris du client. Les en-têtes du rendu destinés au CDN
-# de Vercel ne sortent pas.
+# réécrit ici (vide : en-tête retiré), jamais repris du client.
 RUN cat > /etc/nginx/snippets/ssr-proxy.conf <<'PROXY'
 proxy_pass http://127.0.0.1:4000;
 proxy_http_version 1.1;
@@ -127,8 +126,6 @@ proxy_set_header X-Forwarded-Proto "";
 proxy_set_header X-Forwarded-Port "";
 proxy_set_header X-Forwarded-Prefix "";
 proxy_set_header X-Real-IP $ssr_visitor;
-proxy_hide_header Vercel-Cache-Tag;
-proxy_hide_header CDN-Cache-Control;
 proxy_connect_timeout 2s;
 proxy_read_timeout 10s;
 gzip_proxied any;
@@ -293,7 +290,7 @@ server {
         # l'API retiendrait, et la mesure serait écartée. Pays : celui de Cloudflare, jamais un en-tête
         # du visiteur.
         proxy_set_header X-Forwarded-For $ssr_visitor;
-        proxy_set_header X-Vercel-Ip-Country $visitor_country;
+        proxy_set_header X-Visitor-Country $visitor_country;
         proxy_set_header Cookie "";
         proxy_set_header Authorization "";
         proxy_hide_header Set-Cookie;
@@ -320,7 +317,7 @@ server {
 
         # Adresse du visiteur seule : l'API retient la dernière entrée de l'en-tête.
         proxy_set_header X-Forwarded-For $ssr_visitor;
-        proxy_set_header X-Vercel-Ip-Country $visitor_country;
+        proxy_set_header X-Visitor-Country $visitor_country;
 
         include /etc/nginx/snippets/api-response-headers.conf;
     }

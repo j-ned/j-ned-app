@@ -3,7 +3,7 @@ import { REQUEST_CONTEXT, inject } from '@angular/core';
 export type SsrRequestContext = {
   readonly apiBaseUrl: string;
   readonly visitorForwardedFor: string | null;
-  /** Secret partagé avec l'API pour qu'elle croie l'IP transmise (Vercel) ; `null` sous `ng serve`. */
+  /** Secret partagé avec l'API pour qu'elle croie l'IP transmise ; `null` sous `ng serve`. */
   readonly ssrForwardSecret?: string | null;
 };
 

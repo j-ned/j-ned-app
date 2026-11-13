@@ -8,7 +8,7 @@ const TOO_LARGE = 'Le fichier dépasse 4\u00a0Mo, la taille maximale acceptée.'
 const UNREADABLE =
   "Le format n'est pas pris en charge ou le fichier est illisible\u00a0: choisissez une image JPEG, PNG, WebP ou AVIF.";
 const THROTTLED = "Trop d'envois en peu de temps\u00a0: patientez une minute, puis réessayez.";
-// Vercel refuse un envoi multipart trop lourd avant l'API, avec un corps en texte brut (`IMAGE_UPLOAD_TARGET_BYTES`).
+// Un proxy placé devant l'API peut refuser un envoi trop lourd, avec un corps en texte brut (`IMAGE_UPLOAD_TARGET_BYTES`).
 const PLATFORM_REFUSED =
   "L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduisez-le sous 900\u00a0Ko, puis réessayez.";
 const SERVER_ERROR = 'Le serveur a rencontré un problème\u00a0: réessayez dans un instant.';

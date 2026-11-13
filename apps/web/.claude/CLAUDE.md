@@ -322,9 +322,9 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 5. **Demand elegance** sur les changements non triviaux ("y a-t-il plus elegant ?").
 6. **Autonomous bug fixing** : un rapport de bug = je fixe, je n'attends pas qu'on me tienne la main.
 7. **PR paralleles** : une branche mergee est morte (tout complement = nouvelle branche depuis `master`) ; "independantes" se prouve par intersection vide de `git diff --name-only master...<branche>` entre PR (`package.json`, lockfile et fichiers reformates comptent) ; sinon annoncer l'ordre de merge et le rebase.
-8. **Gates = ceux de la CI** (`.github/workflows/web-ci.yml`) : `pnpm install --frozen-lockfile`, `pnpm run build --configuration production && node scripts/build-vercel.mjs`, `ci/verify-prerender.sh`, puis `ci/smoke.sh` sur `ci/local-stack.sh up`, en local avant chaque PR. `pnpm test` seul ne couvre ni le lockfile, ni le prerender, ni la table de routes Vercel.
+8. **Gates = ceux de la CI** (`.github/workflows/web-ci.yml`) : `pnpm install --frozen-lockfile`, `pnpm run build --configuration production`, `ci/verify-prerender.sh`, puis l'image (`docker build -f apps/web/Dockerfile -t j-ned-app-web:ci .` depuis la racine) et `ci/smoke.sh` sur `ci/image-stack.sh up`, en local avant chaque PR. `pnpm test` seul ne couvre ni le lockfile, ni le prerender, ni la configuration nginx reelle.
 9. **Conflits de merge = en local, jamais dans l'editeur GitHub** : `git merge origin/master` sur la branche, resolution en gardant **les deux** ajouts quand les branches ecrivent au meme endroit (fin de fichier, meme liste de providers, meme `enum`), relecture du diff du commit de merge (`git diff HEAD~1 HEAD` : il ne doit rien retirer de `master`), gates de l'item 8, push, et merge seulement une fois la CI verte **sur ce commit de merge**. Une resolution faite dans l'UI n'est verifiee par personne : la CI a valide la branche d'avant, le build de `master` decouvre la casse (API #38 → #39, `contentHash` perdu).
-10. **Deploiement Vercel atomique (ADR-0036)** : un merge sur `master` deploie les services `api` et `web` ensemble (Vercel depuis Git, preview par PR) ; la CI ne publie ni ne deploie rien. Le rendu lit l'API **a l'execution** (`API_UPSTREAM`, binding de service). Verifier en prod apres deploiement les routes rendues (`X-Vercel-Cache`, CSP sans `'unsafe-inline'`, `sitemap.xml`/`rss.xml` valides), pas seulement `dist/`.
+10. **Deploiement par images (ADR-0038)** : un merge sur `master` publie sur GHCR les images jugees par la CI, puis le workflow `Deploy` demande a Dokploy de les tirer (`deploy/compose.yaml`, serveur personnel derriere un tunnel Cloudflare). Le rendu lit l'API **a l'execution** (`API_UPSTREAM`, reseau prive de la pile). Verifier en prod apres deploiement les routes rendues (`X-Cache-Status`, CSP sans `'unsafe-inline'`, `sitemap.xml`/`rss.xml` valides), pas seulement `dist/`.
 
 ### Task management
 1. Plan dans `tasks/todo.md` (cases a cocher)
@@ -449,16 +449,17 @@ pnpm ng generate            # Schematics
 
 # Replique locale des gates de la CI (.github/workflows/web-ci.yml, à la racine du monorepo)
 pnpm install --frozen-lockfile                 # echoue si le lockfile est incoherent
-pnpm run build --configuration production && node scripts/build-vercel.mjs   # build SSR + prerender + CSP, puis sortie .vercel/output
+pnpm run build --configuration production      # build SSR + prerender + CSP
 ci/verify-prerender.sh dist/angular-portfolio-app/browser dist/angular-portfolio-app/server
-ci/local-stack.sh up && ci/smoke.sh; ci/local-stack.sh down   # sortie Vercel rejouee (ci/vercel-local.mjs) devant la doublure de l'API
+(cd ../.. && docker build -f apps/web/Dockerfile -t j-ned-app-web:ci .)   # l'image que la production fait tourner
+ci/image-stack.sh up && ci/smoke.sh; ci/image-stack.sh down   # image (nginx devant Node) devant la doublure de l'API
 
 # Audit axe (WCAG 2.0/2.1/2.2 A et AA, zero violation, ADR-0025) : hors PR depuis le 2026-10-26,
 # workflow `web-a11y.yml` chaque lundi + a la demande ; en local avant une PR qui touche l'interface
 pnpm exec playwright install --only-shell chromium   # une fois
-pnpm run build --configuration production && node scripts/build-vercel.mjs && ci/local-stack.sh up
+(cd ../.. && docker build -f apps/web/Dockerfile -t j-ned-app-web:ci .) && ci/image-stack.sh up
 pnpm a11y                                           # rapport : pnpm exec playwright show-report
-ci/local-stack.sh down
+ci/image-stack.sh down
 
 # MCP officiel Angular (get_best_practices, search_documentation, onpush_zoneless_migration)
 claude mcp add angular-cli -- pnpm exec ng mcp

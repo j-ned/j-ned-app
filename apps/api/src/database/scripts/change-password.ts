@@ -5,7 +5,7 @@ import argon2 from 'argon2';
 import { eq, sql } from 'drizzle-orm';
 import { users } from '../schema';
 
-// `.env` local facultatif (absent sur Vercel), lu par Node sans dépendance.
+// `.env` local facultatif (absent du conteneur), lu par Node sans dépendance.
 if (existsSync('.env')) process.loadEnvFile();
 
 async function main() {

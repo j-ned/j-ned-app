@@ -7,7 +7,7 @@ import {
   sentryBeforeSend,
 } from './common/sentry-before-send';
 
-// `.env` local facultatif (absent sur Vercel), lu par Node sans dépendance.
+// `.env` local facultatif (absent du conteneur), lu par Node sans dépendance.
 if (existsSync('.env')) process.loadEnvFile();
 
 const dsn = process.env.SENTRY_DSN;

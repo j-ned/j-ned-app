@@ -1,29 +1,17 @@
 #!/usr/bin/env bash
-# Test de fumée du site devant la doublure de l'API : table de routes, en-têtes, codes HTTP, rendu
-# serveur. Deux cibles, mêmes attentes sauf ce qui tient à l'hébergeur (cache, refus d'écriture) :
-#   sortie Vercel (`.vercel/output`, rejouée par `ci/vercel-local.mjs`), par défaut :
-#     ci/local-stack.sh up && ci/smoke.sh; ci/local-stack.sh down
-#   image du conteneur (nginx devant Node) :
-#     ci/image-stack.sh up && SMOKE_TARGET=image ci/smoke.sh; ci/image-stack.sh down
+# Test de fumée de l'image du site (nginx devant Node) devant la doublure de l'API : table de routes,
+# en-têtes, caches, codes HTTP, rendu serveur. Pile démarrée avant :
+#   ci/image-stack.sh up && ci/smoke.sh; ci/image-stack.sh down
 set -euo pipefail
 CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET="${SMOKE_TARGET:-vercel}"
-case "$TARGET" in
-  vercel) STACK="$CI_DIR/local-stack.sh" ;;
-  image) STACK="$CI_DIR/image-stack.sh" ;;
-  *) echo "SMOKE_TARGET inconnu : $TARGET (vercel | image)" >&2; exit 2 ;;
-esac
-# Conteneur : le micro-cache de nginx signe chaque page relayée à Node (`X-Cache-Status`).
+STACK="$CI_DIR/image-stack.sh"
+# Le micro-cache de nginx signe chaque page relayée à Node (`X-Cache-Status`).
 rendered_by_node() {
-  [ "$TARGET" != image ] || grep -qi '^x-cache-status' "$1" || { echo "$2 non rendu par Node"; exit 1; }
+  grep -qi '^x-cache-status' "$1" || { echo "$2 non rendu par Node"; exit 1; }
 }
-# Vercel : pages et flux portent le tag que l'API vide à chaque écriture ; il ne sort pas du conteneur.
-cdn_tag() {
-  if [ "$TARGET" = vercel ]; then
-    grep -qi '^vercel-cache-tag: content' "$1" || { echo "hors du tag de purge : $2"; exit 1; }
-  else
-    ! grep -qi '^vercel-cache-tag\|^cdn-cache-control' "$1" || { echo "en-tête de CDN exposé : $2"; exit 1; }
-  fi
+# Aucun en-tête de pilotage d'un CDN ne sort : rien ne purgerait une copie gardée en bordure.
+no_cdn_header() {
+  ! grep -qi '^vercel-cache-tag\|^cdn-cache-control' "$1" || { echo "en-tête de CDN exposé : $2"; exit 1; }
 }
 test "$(curl -fsS http://127.0.0.1:3000/healthz)" = "ok"
 curl -fsS http://127.0.0.1:3000/ -o /tmp/index.html
@@ -84,7 +72,7 @@ for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoi
   test "$(grep -o 'http-equiv="Content-Security-Policy"' /tmp/ssr.html | wc -l)" = "1" || { echo "meta CSP absente ou dupliquée : $path"; exit 1; }
   ! grep -qE "(script|style)-src [^;]*'unsafe-inline'" /tmp/ssr.html || { echo "unsafe-inline : $path"; exit 1; }
   grep -qi '^cache-control: no-cache' /tmp/ssr-headers.txt || { echo "HTML sans revalidation : $path"; exit 1; }
-  cdn_tag /tmp/ssr-headers.txt "$path"
+  no_cdn_header /tmp/ssr-headers.txt "$path"
 done
 # Attributs style rendus au serveur (portrait, délais d'animation) : hachés dans style-src-attr
 curl -fsS http://127.0.0.1:3000/about -o /tmp/about-csp.html
@@ -99,27 +87,22 @@ for path in /offres /offres/site-vitrine /offre-site-industrie /rendez-vous /ren
 done
 curl -s http://127.0.0.1:3000/offres -o /tmp/gone.html
 grep -q '<app-root' /tmp/gone.html || { echo "corps du 410 sans shell client"; exit 1; }
-if [ "$TARGET" = image ]; then
-  # Le rendu Node ne tourne pas en root
-  node_user=$(docker exec portfolio-image ps -o user= -o args= | awk '/server\/server\.mjs/ {print $1}')
-  test "$node_user" = "ssr" || { echo "Node lancé par : $node_user"; exit 1; }
-  # Micro-cache d'une seconde : HIT dans la seconde, rendu neuf ensuite ; /healthz jamais en cache
-  curl -fsS -D /tmp/c1.txt -o /dev/null http://127.0.0.1:3000/projects
-  curl -fsS -D /tmp/c2.txt -o /dev/null http://127.0.0.1:3000/projects
-  grep -qi '^x-cache-status: HIT' /tmp/c2.txt || { echo "pas de HIT"; cat /tmp/c2.txt; exit 1; }
-  # Attente de l'expiration réelle de l'entrée (validité comptée par nginx en secondes entières)
-  sleep 3
-  curl -fsS -D /tmp/c3.txt -o /dev/null http://127.0.0.1:3000/projects
-  grep -qiE '^x-cache-status: (MISS|EXPIRED)' /tmp/c3.txt || { echo "entrée non renouvelée"; cat /tmp/c3.txt; exit 1; }
-  curl -fsS -D /tmp/healthz-headers.txt -o /dev/null http://127.0.0.1:3000/healthz
-  ! grep -qi '^x-cache-status' /tmp/healthz-headers.txt || { echo "/healthz mis en cache"; cat /tmp/healthz-headers.txt; exit 1; }
-fi
-# Routes rendues : lecture seule. Vercel : une écriture ne réveille pas la fonction (404, comme en
-# production) ; conteneur : nginx la refuse (403).
-write_refused=404
-[ "$TARGET" != image ] || write_refused=403
+# Le rendu Node ne tourne pas en root
+node_user=$(docker exec portfolio-image ps -o user= -o args= | awk '/server\/server\.mjs/ {print $1}')
+test "$node_user" = "ssr" || { echo "Node lancé par : $node_user"; exit 1; }
+# Micro-cache d'une seconde : HIT dans la seconde, rendu neuf ensuite ; /healthz jamais en cache
+curl -fsS -D /tmp/c1.txt -o /dev/null http://127.0.0.1:3000/projects
+curl -fsS -D /tmp/c2.txt -o /dev/null http://127.0.0.1:3000/projects
+grep -qi '^x-cache-status: HIT' /tmp/c2.txt || { echo "pas de HIT"; cat /tmp/c2.txt; exit 1; }
+# Attente de l'expiration réelle de l'entrée (validité comptée par nginx en secondes entières)
+sleep 3
+curl -fsS -D /tmp/c3.txt -o /dev/null http://127.0.0.1:3000/projects
+grep -qiE '^x-cache-status: (MISS|EXPIRED)' /tmp/c3.txt || { echo "entrée non renouvelée"; cat /tmp/c3.txt; exit 1; }
+curl -fsS -D /tmp/healthz-headers.txt -o /dev/null http://127.0.0.1:3000/healthz
+! grep -qi '^x-cache-status' /tmp/healthz-headers.txt || { echo "/healthz mis en cache"; cat /tmp/healthz-headers.txt; exit 1; }
+# Routes rendues : lecture seule, nginx refuse toute écriture
 for method in POST DELETE; do
-  test "$(curl -s -o /dev/null -w '%{http_code}' -X "$method" http://127.0.0.1:3000/blog)" = "$write_refused" || { echo "$method /blog accepté"; exit 1; }
+  test "$(curl -s -o /dev/null -w '%{http_code}' -X "$method" http://127.0.0.1:3000/blog)" = "403" || { echo "$method /blog accepté"; exit 1; }
 done
 # Sitemap et RSS rendus à la requête depuis l'API, XML bien formé
 curl -fsS -D /tmp/sitemap-headers.txt http://127.0.0.1:3000/sitemap.xml -o /tmp/sitemap.xml
@@ -131,34 +114,29 @@ grep -q '<loc>https://nedellec-julien.fr/atelier/decodeur</loc>' /tmp/sitemap.xm
 curl -fsS -D /tmp/rss-headers.txt http://127.0.0.1:3000/rss.xml -o /tmp/rss.xml
 grep -qi '^content-type: application/rss+xml' /tmp/rss-headers.txt
 # Flux mis en cache par le CDN : vidés avec les pages à chaque écriture de contenu
-cdn_tag /tmp/sitemap-headers.txt /sitemap.xml
-cdn_tag /tmp/rss-headers.txt /rss.xml
+no_cdn_header /tmp/sitemap-headers.txt /sitemap.xml
+no_cdn_header /tmp/rss-headers.txt /rss.xml
 grep -q '<title>Article témoin A</title>' /tmp/rss.xml
 python3 -c 'import sys, xml.dom.minidom; [xml.dom.minidom.parse(f) for f in sys.argv[1:]]' /tmp/sitemap.xml /tmp/rss.xml
-# API en panne : /healthz reste vivant. Conteneur : nginx sert la copie périmée (STALE) ; Vercel : elle
-# relève du CDN (`stale-if-error`), hors de portée ici.
-if [ "$TARGET" = image ]; then curl -fsS -o /dev/null http://127.0.0.1:3000/blog; fi
+# API en panne : nginx sert la copie périmée (STALE), /healthz reste vivant
+curl -fsS -o /dev/null http://127.0.0.1:3000/blog
 "$STACK" stop-stub
-if [ "$TARGET" = image ]; then
-  sleep 3
-  curl -fsS -D /tmp/stale.txt -o /tmp/stale.html http://127.0.0.1:3000/blog
-  grep -qi '^x-cache-status: STALE' /tmp/stale.txt || { echo "pas de copie périmée"; cat /tmp/stale.txt; exit 1; }
-  grep -q 'Article témoin A' /tmp/stale.html
-fi
+sleep 3
+curl -fsS -D /tmp/stale.txt -o /tmp/stale.html http://127.0.0.1:3000/blog
+grep -qi '^x-cache-status: STALE' /tmp/stale.txt || { echo "pas de copie périmée"; cat /tmp/stale.txt; exit 1; }
+grep -q 'Article témoin A' /tmp/stale.html
 test "$(curl -fsS http://127.0.0.1:3000/healthz)" = "ok"
 # À froid, sans copie ni API : 503, jamais une page vide en 200
 test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/blog/jamais-lu)" = "503"
 "$STACK" restart-stub
-# Hôte forcé par la fonction : un hôte arbitraire ne change ni le rendu ni le canonical
+# Hôte forcé par nginx : un hôte arbitraire ne change ni le rendu ni le canonical
 curl -fsS -H 'Host: evil.test' -H 'X-Forwarded-Host: evil.test' http://127.0.0.1:3000/blog -o /tmp/evil.html
 grep -q 'href="https://nedellec-julien.fr/blog"' /tmp/evil.html
-if [ "$TARGET" = image ]; then
-  # Page d'accueil par défaut de l'image nginx : absente de l'image
-  curl -s http://127.0.0.1:3000/index.html -o /tmp/default-index.html
-  ! grep -q 'Welcome to nginx' /tmp/default-index.html || { echo "page par défaut de nginx servie"; exit 1; }
-  # Version de nginx jamais annoncée
-  ! curl -s -D - -o /dev/null http://127.0.0.1:3000/ | grep -qi '^server: nginx/' || { echo "version nginx exposée"; exit 1; }
-fi
+# Page d'accueil par défaut de l'image nginx : absente de l'image
+curl -s http://127.0.0.1:3000/index.html -o /tmp/default-index.html
+! grep -q 'Welcome to nginx' /tmp/default-index.html || { echo "page par défaut de nginx servie"; exit 1; }
+# Version de nginx jamais annoncée
+! curl -s -D - -o /dev/null http://127.0.0.1:3000/ | grep -qi '^server: nginx/' || { echo "version nginx exposée"; exit 1; }
 # HTML statique (coquille CSR, pages prérendues, 404) : revalidé à chaque visite, sinon le
 # navigateur garde une coquille périmée qui charge l'ancien bundle après un déploiement.
 for path in /login /admin/guide-plaquettes /mentions-legales/ /does-not-exist; do
@@ -166,7 +144,7 @@ for path in /login /admin/guide-plaquettes /mentions-legales/ /does-not-exist; d
   grep -qi '^cache-control: no-cache' <<<"$html_headers" || { echo "HTML sans revalidation : $path"; echo "$html_headers"; exit 1; }
   grep -qi '^x-frame-options: deny' <<<"$html_headers" || { echo "en-têtes de sécurité absents : $path"; exit 1; }
 done
-# Une URL inconnue ne réveille pas la fonction : 404 sur la coquille CSR
+# Une URL inconnue ne réveille pas Node : 404 de nginx sur la coquille CSR
 test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/wp-login.php)" = "404"
 # Routes client → coquille CSR en 200 ; URL inconnue → coquille CSR en 404 (pas la home)
 test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login)" = "200"

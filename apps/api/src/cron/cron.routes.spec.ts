@@ -8,27 +8,24 @@ describe('cron routes', () => {
   const aggregator = {
     aggregateYesterday: jest.fn().mockResolvedValue(undefined),
   };
-  const purgeRateLimits = jest.fn().mockResolvedValue(undefined);
   const app = (secret: string | undefined) =>
     testApp(
       '/api/cron',
       cronRoutes({
         secret,
         aggregator: aggregator as unknown as AnalyticsAggregatorService,
-        purgeRateLimits,
       }),
     );
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('Given the Vercel cron bearer, When /daily is called, Then the rollup runs, then counters are purged', async () => {
+  it('Given the cron bearer, When /daily is called, Then the rollup runs', async () => {
     const res = await app(SECRET).request('/api/cron/daily', {
       headers: { authorization: `Bearer ${SECRET}` },
     });
 
     expect(res.status).toBe(200);
     expect(aggregator.aggregateYesterday).toHaveBeenCalledTimes(1);
-    expect(purgeRateLimits).toHaveBeenCalledTimes(1);
   });
 
   it.each([undefined, 'Bearer nope', SECRET])(

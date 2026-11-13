@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { Readable } from 'node:stream';
 import type { RequireAuth } from '../auth/require-auth';
-import { cdnCache } from '../common/cdn-cache';
 import {
   reply,
   uploadedFile,
@@ -28,12 +27,12 @@ export function cvRoutes(cv: CvService, requireAuth: RequireAuth) {
       })
 
       // Métadonnées du CV, corps vide s'il n'y en a pas.
-      .get('/', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>
+      .get('/', throttle(PUBLIC_READ_THROTTLE), async (c) =>
         reply(c, await cv.findLatestMetadata()),
       )
 
       // PDF en pièce jointe sous son nom d'origine, 404 sans CV.
-      .get('/download', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) => {
+      .get('/download', throttle(PUBLIC_READ_THROTTLE), async (c) => {
         const { stream, metadata } = await cv.download();
         return c.body(
           Readable.toWeb(stream) as ReadableStream<Uint8Array>,

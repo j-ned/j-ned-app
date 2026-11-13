@@ -3,7 +3,7 @@ import { bootstrap } from './bootstrap';
 import { setRootLogger } from './common/logger';
 
 const PREVIEW_WITHOUT_STORAGE_NOR_MAIL = {
-  VERCEL_ENV: 'preview',
+  APP_ENV: 'preview',
   NODE_ENV: 'production',
   LOG_LEVEL: 'fatal',
   DATABASE_URL: 'postgres://u:p@127.0.0.1:1/preview',
@@ -30,7 +30,7 @@ describe('bootstrap', () => {
     expect(() =>
       bootstrap({
         ...PREVIEW_WITHOUT_STORAGE_NOR_MAIL,
-        VERCEL_ENV: 'production',
+        APP_ENV: 'production',
       }),
     ).toThrow(/RESEND_API_KEY: required in production/);
   });

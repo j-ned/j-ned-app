@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
-import { cdnCache } from '../common/cdn-cache';
 import {
   jsonBody,
   reply,
@@ -43,7 +42,7 @@ export function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
   return (
     new Hono<AppEnv>()
       // Articles publiés (public), sans leur corps : `?include=content` l'ajoute (flux RSS du site).
-      .get('/', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) => {
+      .get('/', throttle(PUBLIC_READ_THROTTLE), async (c) => {
         const posts = await blog.findAllPublished();
         return reply(
           c,
@@ -59,7 +58,7 @@ export function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
       )
 
       // Article publié par slug (public), 404 sinon.
-      .get('/:slug', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>
+      .get('/:slug', throttle(PUBLIC_READ_THROTTLE), async (c) =>
         reply(c, await blog.findBySlug(c.req.param('slug'))),
       )
 

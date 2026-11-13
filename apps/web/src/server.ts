@@ -21,12 +21,12 @@ const LISTEN_HOST = '127.0.0.1';
 const LISTEN_PORT = 4000;
 
 // URL d'API fixée au démarrage, jamais dérivée de la requête (SSRF). Sans variable (`ng serve`),
-// pas de contexte : l'application lit l'URL publique. Sur Vercel, le binding du service `api` la
-// fournit (ADR-0036), parfois avec un `/` final.
+// pas de contexte : l'application lit l'URL publique. Dans le conteneur, l'image la fixe (service
+// `portfolio-api` de la pile, ADR-0038).
 const apiUpstream = process.env['API_UPSTREAM']?.replace(/\/+$/, '');
 const apiBaseUrl = apiUpstream ? `${apiUpstream}/api` : null;
 
-// Secret partagé avec l'API (Vercel) : sans lui, l'API ne croit pas l'IP du visiteur transmise.
+// Secret partagé avec l'API : sans lui, l'API ne croit pas l'IP du visiteur transmise.
 const ssrForwardSecret = process.env['SSR_FORWARD_SECRET'] || null;
 
 // `lastmod` des pages statiques du sitemap : le démarrage du serveur suit le déploiement du code.
@@ -57,24 +57,8 @@ async function hardenHtml(response: Response, manifest: CspBuildManifest): Promi
   return new Response(html, { status: response.status, statusText: response.statusText, headers });
 }
 
-// Seuls 200 et 404 vont au cache du CDN Vercel (`CDN-Cache-Control`, ignoré par le navigateur) : un
-// jour de fraîcheur, puis la copie sert pendant le nouveau rendu, et pendant 7 jours si le rendu
-// échoue (5xx). La fraîcheur vient du tag : l'API le vide à chaque écriture de contenu
-// (`apps/api/src/common/cdn-cache.ts`, mêmes durée et tag).
-const CDN_CACHE_CONTROL = 'max-age=86400, stale-while-revalidate=604800, stale-if-error=604800';
-const CONTENT_CACHE_TAG = 'content';
-
-async function send(response: Response, res: ServerResponse): Promise<void> {
-  if (response.status === 200 || response.status === 404) {
-    res.setHeader('CDN-Cache-Control', CDN_CACHE_CONTROL);
-    res.setHeader('Vercel-Cache-Tag', CONTENT_CACHE_TAG);
-  }
-  await writeResponseToNodeResponse(response, res);
-}
-
 function visitorForwardedFor(req: IncomingMessage): string | null {
   return visitorIpFromProxy(req.headers, {
-    VERCEL: process.env['VERCEL'],
     VISITOR_IP_HEADER: process.env['VISITOR_IP_HEADER'],
   });
 }
@@ -85,7 +69,7 @@ function requestContext(req: IncomingMessage): SsrRequestContext | undefined {
     : undefined;
 }
 
-// `false` : aucune route Angular ne correspond, l'appelant décide (404 sur Vercel, Vite en dev).
+// `false` : aucune route Angular ne correspond, l'appelant décide (404 dans le conteneur, Vite en dev).
 async function respond(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
   const { pathname } = new URL(req.url ?? '/', 'http://localhost');
   const target = dispatchSsrRequest(pathname);
@@ -100,12 +84,15 @@ async function respond(req: IncomingMessage, res: ServerResponse): Promise<boole
     case 'sitemap':
     case 'rss':
       if (!feeds) return false;
-      await send(await feeds(target, visitorForwardedFor(req)), res);
+      await writeResponseToNodeResponse(await feeds(target, visitorForwardedFor(req)), res);
       return true;
     case 'angular': {
       const response = await engine.handle(req, requestContext(req));
       if (!response) return false;
-      await send(cspManifest ? await hardenHtml(response, cspManifest) : response, res);
+      await writeResponseToNodeResponse(
+        cspManifest ? await hardenHtml(response, cspManifest) : response,
+        res,
+      );
       return true;
     }
   }
@@ -120,7 +107,7 @@ export const reqHandler = createNodeRequestHandler(async (req, res, next) => {
   }
 });
 
-// Lancé directement par Node (conteneur) ; importé par la fonction Vercel et par `ng serve`, rien n'écoute.
+// Lancé directement par Node (conteneur) ; importé par `ng serve` et par le build, rien n'écoute.
 if (isMainModule(import.meta.url)) {
   if (!cspManifest) throw new Error('csp-manifest.json missing: run the production build');
   const server = createServer((req, res) => {

@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
-import { cdnCache } from '../common/cdn-cache';
 import {
   jsonBody,
   reply,
@@ -28,7 +27,7 @@ export function profileRoutes(
   return (
     new Hono<AppEnv>()
       // Lecture publique : 404 tant que le contenu n'est pas amorcé.
-      .get('/', cdnCache, throttle(PUBLIC_READ_THROTTLE), async (c) =>
+      .get('/', throttle(PUBLIC_READ_THROTTLE), async (c) =>
         reply(c, await profile.findCurrent()),
       )
 

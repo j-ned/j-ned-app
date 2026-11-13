@@ -9,7 +9,7 @@ type FeedHandlerOptions = {
   readonly apiBaseUrl: string;
   readonly fetch: typeof fetch;
   readonly startedAt: Date;
-  /** Secret partagé avec l'API (Vercel, ADR-0036) ; absent sous `ng serve`. */
+  /** Secret partagé avec l'API ; absent sous `ng serve`. */
   readonly ssrForwardSecret?: string | null;
 };
 
@@ -124,7 +124,7 @@ export function createFeedHandler({
         headers: { 'Content-Type': CONTENT_TYPES[target], 'Cache-Control': 'no-cache' },
       });
     } catch (error) {
-      // 503 : le CDN Vercel (`stale-if-error`) sert alors la dernière copie du flux.
+      // 503 : nginx sert alors la dernière copie du flux (`proxy_cache_use_stale`).
       console.error('Feed unavailable:', error);
       return new Response(null, { status: 503, headers: { 'Cache-Control': 'no-store' } });
     }

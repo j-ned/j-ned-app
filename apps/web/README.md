@@ -53,9 +53,9 @@ Une application full-stack, construite et exploitée comme un vrai produit :
 - **Back-office** : projets, articles de blog, CV, messages de contact, analytics, sécurité du compte.
 - **API Hono** ([`apps/api`](../api), même monorepo) : auth JWT + 2FA, PostgreSQL via Drizzle, stockage S3, mails, analytics.
 - **Analytics maison** : aucun cookie, aucun tracker tiers, données brutes purgées au bout de 30 jours.
-- **Hébergement** : Vercel (services `web` et `api`, même origine), Neon, Cloudflare R2 ; CI GitHub Actions qui rejoue exactement le build de production.
+- **Hébergement** : serveur personnel derrière un tunnel Cloudflare (images du site et de l'API tirées de GHCR, même origine), PostgreSQL en conteneur, Cloudflare R2 ; CI GitHub Actions qui juge l'image même que la production fait tourner.
 
-Le front vit dans `apps/web` et l'API dans `apps/api`, dans le même dépôt : servis par la même origine, `/api` réécrit par Vercel vers le service `api`.
+Le front vit dans `apps/web` et l'API dans `apps/api`, dans le même dépôt : servis par la même origine, `/api` relayé par nginx vers le conteneur de l'API.
 
 ---
 
@@ -71,7 +71,7 @@ Le front vit dans `apps/web` et l'API dans `apps/api`, dans le même dépôt : s
 | **Blog**     | Articles en Markdown assainis par DOMPurify (ADR-0002), tags colorés par catégorie et filtre par tag, commentaires Giscus, compteur de « j'aime », flux RSS.                                                                 |
 | **Contact**  | Formulaire Signal Forms, validation au bord, envoi par l'API (mail à l'admin et confirmation au visiteur).                                                                                                                   |
 | **CV**       | Téléchargement du PDF servi par l'API, comptabilisé dans les analytics.                                                                                                                                                      |
-| **404**      | Page dédiée, servie avec un vrai statut 404 par Vercel.                                                                                                                                                                      |
+| **404**      | Page dédiée, servie avec un vrai statut 404 par nginx.                                                                                                                                                                       |
 
 ### Back-office (`/admin`)
 
@@ -140,7 +140,7 @@ providers: [
 
 - `outputMode: server` : les pages de contenu (`/`, `/about`, `/projects`, `/projects/:slug`, `/blog`, `/blog/:slug`) sont **rendues à chaque requête** par le serveur Node (`src/server.ts`, ADR-0024) depuis l'API interne ; les pages statiques (mentions légales, confidentialité) restent **prérendues au build**, qui ne lit plus l'API. Le transfer cache évite de refaire les appels après hydratation (spec 004, origin map vers l'URL publique).
 - `login`, `two-factor` et `admin/**` sont rendus côté client depuis `index.csr.html`.
-- En production, `scripts/build-vercel.mjs` traduit le build en sortie **Vercel** (Build Output API, ADR-0036) : le CDN sert `browser/` (chunks, pages prérendues, coquille CSR pour les routes client, **404 réel** pour toute URL inconnue) et une fonction `ssr` rend la liste fermée des routes de contenu, `sitemap.xml` et `rss.xml`. Le CDN garde ces réponses un jour, vidées par tag à chaque écriture de contenu, et sert la dernière copie si l'API ou le rendu échoue (ADR-0037).
+- En production, l'image du site (`Dockerfile`, ADR-0038) place nginx devant le rendu Node : nginx sert `browser/` (chunks, pages prérendues, coquille CSR pour les routes client, **404 réel** pour toute URL inconnue) et ne relaie à Node que la liste fermée des routes de contenu, `sitemap.xml` et `rss.xml`. Un micro-cache d'une seconde absorbe les rafales, et la dernière copie est servie si l'API ou le rendu échoue.
 - Les sections sous la ligne de flottaison de la home et de l'à-propos utilisent `@defer` avec hydratation incrémentale (ADR-0001).
 
 ### Décisions documentées
@@ -155,7 +155,7 @@ providers: [
 ### Front
 
 - **CSP par hachages** : après le build, `scripts/apply-csp-hashes.mjs` remplace `'unsafe-inline'` par les SHA-256 des scripts et styles inline de chaque page prérendue et écrit un manifeste ; le serveur Node applique la même fonction (`src/server/csp/harden-csp.ts`) à chaque page rendue, en n'autorisant que les scripts inline connus. La CI vérifie qu'aucun `unsafe-inline` ne subsiste.
-- **En-têtes** posés par la configuration de routes Vercel sur toutes les réponses, assets compris : HSTS, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP.
+- **En-têtes** posés par nginx sur toutes les réponses, assets compris : HSTS, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP.
 - **Markdown** des articles assaini par DOMPurify côté serveur et côté client avant injection.
 - **Auth** : cookie httpOnly `SameSite=Lax`, logout qui révoque toutes les sessions, 2FA TOTP, formulaire de connexion limité côté API.
 - `security.txt` (RFC 9116) et `robots.txt` servis à la racine.
@@ -205,14 +205,14 @@ providers: [
 
 ### API ([`apps/api`](../api))
 
-- **Hono** en fonction Node sur Vercel, **Drizzle ORM** et **PostgreSQL** (Neon), migrations versionnées.
+- **Hono** sur Node, **Drizzle ORM** et **PostgreSQL**, migrations versionnées.
 - **Argon2id**, JWT HS256 avec `tokenVersion`, **otplib** pour la 2FA, throttling par route.
 - **S3** (Cloudflare R2) derrière un proxy applicatif, **sharp** pour la conversion des images, **Resend** pour les mails, **pino** pour les logs, **Sentry**.
 
 ### Exploitation
 
-- **Vercel** (Services, Build Output API) déployé depuis Git, **Neon** pour Postgres, **Cloudflare R2** pour les fichiers (ADR-0036).
-- **GitHub Actions** : lint, tests, build de production avec vérification du prérendu et de la CSP, sortie Vercel rejouée en local (`ci/vercel-local.mjs`) pour les tests de fumée HTTP et l'audit axe.
+- **Docker** : images du site et de l'API publiées sur GHCR, pile `deploy/compose.yaml` déployée par Dokploy derrière un tunnel Cloudflare, **Cloudflare R2** pour les fichiers (ADR-0038).
+- **GitHub Actions** : lint, tests, build de production avec vérification du prérendu et de la CSP, image du conteneur montée devant la doublure de l'API (`ci/image-stack.sh`) pour les tests de fumée HTTP et l'audit axe.
 
 ---
 
@@ -254,7 +254,7 @@ pnpm install --frozen-lockfile
 pnpm dev:web        # http://localhost:4200, /api proxifié vers :3000 (proxy.conf.cjs)
 ```
 
-Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production à `https://nedellec-julien.fr/api`, même origine que le site, réécrite par Vercel vers le service `api` (ADR-0036).
+Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production à `https://nedellec-julien.fr/api`, même origine que le site, relayée par nginx vers l'API (ADR-0034).
 
 Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discussions de ce dépôt (catégorie « General », identifiants dans `src/app/shared/api/giscus-config.ts`). Le widget n'apparaît que si l'app [Giscus](https://github.com/apps/giscus) est installée sur le dépôt : sans elle, Giscus ignore le dépôt sans erreur.
 
@@ -269,13 +269,15 @@ Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discus
 | `pnpm check`       | Prettier + lint                                                                                   |
 | `pnpm icons:build` | Régénère le sprite d'icônes                                                                       |
 
-### Sortie Vercel en local
+### Image du site en local
+
+Depuis la racine du monorepo pour le build, puis depuis `apps/web` :
 
 ```bash
-pnpm run build --configuration production && node scripts/build-vercel.mjs
-ci/local-stack.sh up      # sortie Vercel sur :3000 devant la doublure de l'API sur :3001
+docker build -f apps/web/Dockerfile -t j-ned-app-web:ci .
+ci/image-stack.sh up      # image sur :3000 devant la doublure de l'API
 ci/smoke.sh               # tests de fumée HTTP
-ci/local-stack.sh down
+ci/image-stack.sh down
 ```
 
 ---
@@ -286,9 +288,10 @@ Les gates de la CI (`.github/workflows/web-ci.yml`), rejoués en local avant cha
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm run build --configuration production && node scripts/build-vercel.mjs   # build SSR + prérendu + CSP, puis sortie Vercel
+pnpm run build --configuration production   # build SSR + prérendu + CSP
 ci/verify-prerender.sh dist/angular-portfolio-app/browser dist/angular-portfolio-app/server
-ci/local-stack.sh up && ci/smoke.sh; ci/local-stack.sh down
+(cd ../.. && docker build -f apps/web/Dockerfile -t j-ned-app-web:ci .)
+ci/image-stack.sh up && ci/smoke.sh; ci/image-stack.sh down
 ```
 
 - Une PR par changement, squash-merge sur `master`, branche protégée par les deux jobs de CI.

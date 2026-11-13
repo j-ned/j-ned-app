@@ -23,7 +23,7 @@ export type ResendSettings = {
   readonly from: string;
 };
 
-/** Envoi par l'API HTTP de Resend : pas de connexion SMTP à ouvrir ni à fermer (fonction Vercel). */
+/** Envoi par l'API HTTP de Resend : pas de connexion SMTP à ouvrir ni à fermer. */
 export class MailerService {
   constructor(
     private readonly settings: ResendSettings,

@@ -13,7 +13,7 @@ async function navigate(url: string): Promise<{ url: string; leaf: ActivatedRout
 }
 
 describe('routes', () => {
-  // Offres retirées (spec 029) : Vercel répond 410 ; côté client, aucune route ne les sert plus.
+  // Offres retirées (spec 029) : nginx répond 410 ; côté client, aucune route ne les sert plus.
   describe('retired offer urls', () => {
     it.each([
       '/offres',

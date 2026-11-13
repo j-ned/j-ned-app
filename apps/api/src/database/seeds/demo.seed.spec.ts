@@ -27,21 +27,6 @@ describe('demoSeedSettings', () => {
     });
   });
 
-  it.each([['preview'], ['development'], [undefined]])(
-    'Given VERCEL_ENV=%s, Then the seed may run',
-    (vercelEnv) => {
-      expect(() =>
-        demoSeedSettings({ ...valid, VERCEL_ENV: vercelEnv }),
-      ).not.toThrow();
-    },
-  );
-
-  it('Given VERCEL_ENV=production, Then the seed refuses to run', () => {
-    expect(() =>
-      demoSeedSettings({ ...valid, VERCEL_ENV: 'production' }),
-    ).toThrow('Demo seed refused: VERCEL_ENV=production');
-  });
-
   it('Given APP_ENV=production, Then the seed refuses to run', () => {
     expect(() => demoSeedSettings({ ...valid, APP_ENV: 'production' })).toThrow(
       'Demo seed refused: APP_ENV=production',

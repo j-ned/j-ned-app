@@ -52,8 +52,8 @@ export function clientIp(c: Context): string {
 
 /**
  * IP du visiteur transmise par le rendu serveur du site (`x-ssr-visitor-ip`), crue seulement si l'appel
- * porte le secret partagé (`x-ssr-secret`) : sur Vercel, l'appel du rendu arrive avec l'IP de la
- * fonction, et tous les visiteurs partageraient un seul quota. Sans secret configuré, rien n'est cru.
+ * porte le secret partagé (`x-ssr-secret`) : l'appel du rendu arrive avec l'adresse de son conteneur,
+ * et tous les visiteurs partageraient un seul quota. Sans secret configuré, rien n'est cru.
  */
 export function forwardedVisitorIp(
   secret: string | undefined,
@@ -79,11 +79,11 @@ export function forwardedVisitorIp(
 const COUNTRY_CODE = /^[A-Z]{2}$/;
 
 /**
- * Pays du visiteur, posé par Vercel (`x-vercel-ip-country`, déduit de l'IP en bordure) ; `null` hors
- * Vercel ou si l'en-tête n'est pas un code ISO à deux lettres.
+ * Pays du visiteur, écrit par le proxy du site (`x-visitor-country`, d'après celui que Cloudflare
+ * déduit de l'adresse) ; `null` sans lui ou si l'en-tête n'est pas un code ISO à deux lettres.
  */
 export function visitorCountry(c: Context): string | null {
-  const country = c.req.header('x-vercel-ip-country')?.toUpperCase();
+  const country = c.req.header('x-visitor-country')?.toUpperCase();
   return country && COUNTRY_CODE.test(country) ? country : null;
 }
 
@@ -157,9 +157,8 @@ export type UploadedFile = {
 };
 
 /**
- * Taille maximale d'un fichier envoyé (images et CV) : 4 Mo. Une fonction Vercel refuse tout corps de
- * requête au-delà de 4,5 Mo (ADR-0036) ; l'enveloppe multipart tient dans la marge. L'admin réduit les
- * images dans le navigateur avant de les envoyer.
+ * Taille maximale d'un fichier envoyé (images et CV) : 4 Mo, enveloppe multipart en plus (le relais
+ * nginx du site accepte 5 Mo). L'admin réduit les images dans le navigateur avant de les envoyer.
  */
 export const UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 

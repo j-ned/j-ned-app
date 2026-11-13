@@ -11,7 +11,7 @@ function multipart(bytes: number, type: string, filename: string): FormData {
   return form;
 }
 
-// 4 Mo partout : une fonction Vercel refuse les corps de plus de 4,5 Mo (ADR-0036).
+// 4 Mo partout, pour les images comme pour le CV.
 describe('upload size limits', () => {
   let session = '';
 

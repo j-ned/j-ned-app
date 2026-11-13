@@ -7,7 +7,7 @@
 //   pnpm icons:build           # génère + écrit le sprite
 //   pnpm icons:check           # exit 1 si le sprite ou son empreinte est désynchronisé
 //
-// L'empreinte (SPRITE_VERSION) entre dans l'URL du sprite : Vercel ne le sert en cache immuable
+// L'empreinte (SPRITE_VERSION) entre dans l'URL du sprite : nginx ne le sert en cache immuable
 // qu'avec `?v=`, un sprite modifié doit donc changer d'URL.
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
