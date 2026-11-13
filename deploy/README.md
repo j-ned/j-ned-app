@@ -18,10 +18,15 @@ ne construit rien ; il tire les images publiées sur GHCR par la CI (`j-ned-app-
    _Preview Compose_ doit montrer `portfolio-web` sur `default` **et** `dokploy-network`, et les autres
    services sur `default` seulement.
 6. **Premier déploiement** à la main (bouton Deploy), puis import des données (ci-dessous).
-7. **Déclenchement par la CI** : secrets du dépôt `DOKPLOY_URL` (adresse du panneau, sans `/` final),
-   `DOKPLOY_API_KEY` (profil → API) et `DOKPLOY_COMPOSE_ID` (dernier segment de l'URL du service).
-   Variable facultative `DEPLOY_HEALTH_URL` (`https://…/healthz`) pour sonder le site après coup.
-   Tant que ces secrets manquent, le workflow `Deploy` ne fait rien.
+7. **Déclenchement par la CI** : l'interrupteur _Autodeploy_ de Dokploy ne sert pas ici (service en
+   mode Raw, et il partirait avant la publication des images). C'est le workflow `Deploy` qui appelle
+   Dokploy une fois les images publiées. Secrets du dépôt : `DOKPLOY_URL` (adresse du panneau, sans `/`
+   final), `DOKPLOY_API_KEY` (profil → API) et `DOKPLOY_COMPOSE_ID` (dernier segment de l'URL du
+   service). Le panneau étant derrière Cloudflare Access, il faut aussi un jeton de service (Zero
+   Trust → Service Tokens), autorisé par une règle **Service Auth** sur l'application du panneau, dans
+   `CF_ACCESS_CLIENT_ID` et `CF_ACCESS_CLIENT_SECRET`. Variable facultative `DEPLOY_HEALTH_URL`
+   (`https://…/healthz`) pour sonder le site après coup. Tant que les secrets Dokploy manquent, le
+   workflow ne fait rien ; une fois posés, une redirection ou un refus le font échouer.
 
 ## Import de données depuis une autre base
 

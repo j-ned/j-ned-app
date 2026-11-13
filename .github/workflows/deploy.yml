@@ -38,19 +38,29 @@ jobs:
       DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
       DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
       DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+      # Jeton de service Cloudflare Access : le panneau Dokploy est derrière Access.
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
       DEPLOY_HEALTH_URL: ${{ vars.DEPLOY_HEALTH_URL }}
     steps:
       - name: Secrets Dokploy absents, déploiement ignoré
         if: env.DOKPLOY_URL == '' || env.DOKPLOY_API_KEY == '' || env.DOKPLOY_COMPOSE_ID == ''
         run: echo "::notice::Secrets DOKPLOY_URL, DOKPLOY_API_KEY ou DOKPLOY_COMPOSE_ID absents, aucun déploiement"
 
+      - name: Checkout
+        if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      # Le script de déclenchement est jugé devant un faux Dokploy avant de servir : une redirection
+      # ou un refus doivent échouer, jamais passer pour un déploiement.
+      - name: Check the trigger script
+        if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
+        run: deploy/trigger-deploy.check.sh
+
       # API de Dokploy : `compose.deploy` lance le déploiement et rend la main sans l'attendre.
       - name: Trigger compose deployment
         if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
-        run: |
-          curl --fail --silent --show-error --max-time 30 -X POST "$DOKPLOY_URL/api/compose.deploy" \
-            -H "x-api-key: $DOKPLOY_API_KEY" -H 'Content-Type: application/json' \
-            -d "{\"composeId\": \"$DOKPLOY_COMPOSE_ID\"}" -o /dev/null
+        run: deploy/trigger-deploy.sh
 
       # Sonde du site après le déploiement, si son adresse est renseignée (variable du dépôt) : elle
       # prouve que le site répond, pas que la nouvelle version a remplacé l'ancienne.
