@@ -1,5 +1,6 @@
 # Pile de production du portfolio sur le serveur, déployée par Dokploy (service de type Compose,
-# ADR-0038). Dokploy ne construit rien : il tire les images publiées sur GHCR par la CI.
+# ADR-0038). Dokploy lit ce fichier dans le dépôt (branche master) à chaque déploiement et ne
+# construit rien : il tire les images publiées sur GHCR par la CI.
 #
 # - Aucun port publié : le trafic arrive par le tunnel Cloudflare, puis le Traefik de Dokploy, qui
 #   joint `portfolio-web` par `dokploy-network`. Le domaine se règle dans l'onglet Domains de Dokploy

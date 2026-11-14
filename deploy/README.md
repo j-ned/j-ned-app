@@ -10,17 +10,21 @@ ne construit rien ; il tire les images publiées sur GHCR par la CI (`j-ned-app-
    privés, déclarer `ghcr.io` dans les registres de Dokploy avec un jeton `read:packages`.
 2. **Bucket de sauvegarde** : bucket R2 privé (`portfolio-backups`), jeton d'API limité à ce bucket,
    règle de cycle de vie qui supprime les objets après la durée voulue (30 jours par exemple).
-3. **Dokploy** : nouveau service de type **Compose**, fournisseur GitHub, dépôt `j-ned/j-ned-app`,
-   branche `master`, chemin `deploy/compose.yaml`. **Auto Deploy désactivé** : c'est la CI qui
-   déclenche, une fois les images publiées.
+3. **Dokploy** : nouveau service de type **Compose** dont la source est le dépôt : fournisseur
+   **Git**, URL `https://github.com/j-ned/j-ned-app.git`, branche `master`, Compose Path
+   `./deploy/compose.yaml` (la valeur par défaut, `./docker-compose.yml`, échoue avec « Compose file
+   not found »). **Auto Deploy désactivé** : c'est la CI qui déclenche, une fois les images
+   publiées. Dokploy clone le dépôt à chaque déploiement : une modification de `compose.yaml` part
+   donc à la fusion, comme le code. En mode **Raw**, Dokploy rejouerait le YAML collé dans son
+   éditeur et ignorerait le dépôt.
 4. **Environment** : coller `portfolio.env.example` rempli.
 5. **Domains** : service `portfolio-web`, port `3000`, HTTP (le TLS est celui de Cloudflare). Le bouton
    _Preview Compose_ doit montrer `portfolio-web` sur `default` **et** `dokploy-network`, et les autres
    services sur `default` seulement.
 6. **Premier déploiement** à la main (bouton Deploy), puis import des données (ci-dessous).
-7. **Déclenchement par la CI** : l'interrupteur _Autodeploy_ de Dokploy ne sert pas ici (service en
-   mode Raw, et il partirait avant la publication des images). C'est le workflow `Deploy` qui appelle
-   Dokploy une fois les images publiées. Secrets du dépôt : `DOKPLOY_URL` (adresse du panneau, sans `/`
+7. **Déclenchement par la CI** : l'interrupteur _Autodeploy_ de Dokploy ne sert pas ici (il
+   partirait avant la publication des images). C'est le workflow `Deploy` qui appelle Dokploy une fois
+   les images publiées, après avoir validé `compose.yaml` (`deploy/compose.check.sh`). Secrets du dépôt : `DOKPLOY_URL` (adresse du panneau, sans `/`
    final), `DOKPLOY_API_KEY` (profil → API) et `DOKPLOY_COMPOSE_ID` (dernier segment de l'URL du
    service). Le panneau étant derrière Cloudflare Access, il faut aussi un jeton de service (Zero
    Trust → Service Tokens), autorisé par une règle **Service Auth** sur l'application du panneau, dans
