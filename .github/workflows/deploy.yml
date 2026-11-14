@@ -57,6 +57,11 @@ jobs:
         if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
         run: deploy/trigger-deploy.check.sh
 
+      # Dokploy lit deploy/compose.yaml dans le dépôt : un fichier invalide arrête le déploiement ici.
+      - name: Check the compose file
+        if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
+        run: deploy/compose.check.sh
+
       # API de Dokploy : `compose.deploy` lance le déploiement et rend la main sans l'attendre.
       - name: Trigger compose deployment
         if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
