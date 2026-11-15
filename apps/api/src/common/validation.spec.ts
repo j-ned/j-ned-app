@@ -1,8 +1,6 @@
 import * as z from 'zod';
 import { trackEventSchema } from '../analytics/dto/track-event.dto';
 import { createBlogPostSchema } from '../blog/dto/create-blog-post.dto';
-import { updateWorkshopGuideSchema } from '../workshop-guide/dto/update-workshop-guide.dto';
-import { aWorkshopGuideContent } from '../workshop-guide/workshop-guide-test-builders';
 import { BadRequestException } from './http-errors';
 import { paginationSchema } from './pagination';
 import { formatIssues, NOT_AN_OBJECT_MESSAGE, validateDto } from './validation';
@@ -142,19 +140,6 @@ describe('validateDto', () => {
         contentMarkdown: 'C',
       }),
     ).toEqual([expect.stringMatching(/^title: /) as string]);
-  });
-
-  it('Given a nose radius of 1e-7, When validated, Then it is a 400 (was a 500)', () => {
-    const content = aWorkshopGuideContent();
-    const body = {
-      ...content,
-      entries: [{ ...content.entries[0], noseRadius: 1e-7 }],
-      version: 1,
-    };
-
-    expect(messagesOf(updateWorkshopGuideSchema, body)).toEqual([
-      expect.stringMatching(/^entries\.0\.noseRadius: /) as string,
-    ]);
   });
 });
 

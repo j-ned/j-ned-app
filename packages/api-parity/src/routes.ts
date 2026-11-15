@@ -60,7 +60,6 @@ export const ADMIN_ROUTES: readonly Route[] = [
   { method: 'PATCH', path: `/api/projects/${ID}` },
   { method: 'DELETE', path: `/api/projects/${ID}` },
   { method: 'POST', path: `/api/projects/${ID}/image` },
-  { method: 'PUT', path: '/api/workshop-guide' },
 ];
 
 export const PUBLIC_READ_ROUTES: readonly Route[] = [
@@ -73,7 +72,6 @@ export const PUBLIC_READ_ROUTES: readonly Route[] = [
   { method: 'GET', path: '/api/profile' },
   { method: 'GET', path: '/api/projects' },
   { method: 'GET', path: `/api/projects/${ID}` },
-  { method: 'GET', path: '/api/workshop-guide' },
 ];
 
 /** Écritures ouvertes au public : seul le contrôle d'origine (CSRF) et le débit les protègent. */

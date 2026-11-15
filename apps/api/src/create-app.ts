@@ -20,7 +20,6 @@ import { projectsRoutes } from './projects/projects.routes';
 import { runtimeConfigRoutes } from './runtime-config/runtime-config.routes';
 import type { Services } from './services';
 import { storageRoutes } from './storage/storage.routes';
-import { workshopGuideRoutes } from './workshop-guide/workshop-guide.routes';
 
 /**
  * Application HTTP : en-têtes de sécurité, CORS (transition, ADR-0034), contrôle d'origine sur les
@@ -71,10 +70,6 @@ export function createApp(
       .route(
         '/api/profile',
         profileRoutes(services.profile, services.profilePortrait, session),
-      )
-      .route(
-        '/api/workshop-guide',
-        workshopGuideRoutes(services.workshopGuide, session),
       )
       .route('/api/cv', cvRoutes(services.cv, session))
       .route(
