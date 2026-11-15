@@ -22,7 +22,6 @@ import { ResizedImageService } from './storage/resized-image.service';
 import { ShareCardService } from './storage/share-card.service';
 import { StorageService } from './storage/storage.service';
 import { UsersService } from './users/users.service';
-import { WorkshopGuideService } from './workshop-guide/workshop-guide.service';
 
 export type ServiceDeps = {
   readonly config: AppConfigService;
@@ -60,7 +59,6 @@ export function createServices({ config, db, s3 }: ServiceDeps) {
     blogContentImages,
     profile: new ProfileService(db, storage),
     profilePortrait: new ProfilePortraitService(db, storage, images),
-    workshopGuide: new WorkshopGuideService(db),
     cv: new CvService(db, storage),
     analyticsTracker: new AnalyticsTrackerService(db, config),
     analyticsStats: new AnalyticsStatsService(db),

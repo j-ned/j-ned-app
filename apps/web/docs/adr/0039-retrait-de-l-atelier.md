@@ -1,6 +1,6 @@
 # ADR-0039 — Retrait de l'atelier (guide des plaquettes, décodeur)
 
-- **Statut** : accepté (2026-11-15) ; front retiré, API et table retirées dans un second temps
+- **Statut** : accepté et appliqué (2026-11-15) : front retiré (PR #43), puis API et table (migration 0034)
 - **Date** : 2026-11-15
 - **Retire** : specs 032, 034, 035, 036, 037 et 038 ; ADR-0032 (confidentialité du contenu
   d'atelier), ADR-0033 (référentiel d'usinage sourcé par le type)
