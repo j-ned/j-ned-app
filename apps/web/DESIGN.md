@@ -347,7 +347,7 @@ Aucune autre ombre, boutons compris.
 
 Un lien de navigation interne présenté en carte : « article précédent / suivant » et « Pour aller plus loin » (fiche du projet, articles proches) sur la page article, « Articles sur ce projet » sur la fiche projet.
 
-- **API:** composant à sélecteur d'attribut `a[app-link-card]`, posé sur le lien de l'appelant ; entrées `overline` et `heading` (requises), `summary` (optionnelle : une phrase en `text-muted` sous le titre, comprise dans le nom du lien ; « Les outils » de l'atelier), `align` (`'start'` par défaut, `'end'` aligne le texte à droite). `routerLink`, `data-testid` et le placement dans la grille (`sm:col-start-2`) restent sur l'`<a>`.
+- **API:** composant à sélecteur d'attribut `a[app-link-card]`, posé sur le lien de l'appelant ; entrées `overline` et `heading` (requises), `summary` (optionnelle : une phrase en `text-muted` sous le titre, comprise dans le nom du lien ; « Articles sur ce projet » de la fiche projet), `align` (`'start'` par défaut, `'end'` aligne le texte à droite). `routerLink`, `data-testid` et le placement dans la grille (`sm:col-start-2`) restent sur l'`<a>`.
 - **Apparence:** carte portée par l'hôte (`rounded-card border-2 border-foreground bg-surface p-6`, bord franc 2 px, rayon 16 px), sans élément enveloppant ; sur-titre mono `text-xs text-muted`, puis titre `text-[1.1875rem] font-semibold tracking-tight`.
 - **Survol:** la bordure passe en `primary` (5,21:1 Sable, au-delà de 3:1 dans les deux registres) et le titre en `primary` (`group-hover`) ; pas d'ombre.
 - **Focus:** anneau global `:focus-visible` de `styles.css` (2 px `primary`).
@@ -529,12 +529,6 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 - **Libellé d'éditeur:** utility `field-label` → `flex justify-between items-baseline gap-3 text-sm font-semibold mb-1.5` ; mention à droite (« obligatoire ») en mono 12 px `text-muted`, dans le `label`.
 - **Indication d'éditeur:** utility `field-hint` → `flex justify-between gap-3 mt-1.5 text-[0.78125rem] text-muted` ; à gauche le texte lié par `aria-describedby`, à droite un compteur mono 12 px `tabular-nums` « 137 / 160 » hors de la description accessible.
 
-### Champ à suggestions (`shared/ui/suggest-input.ts`)
-
-- Combobox ARIA 1.2 en liste (`role="combobox"`, `aria-autocomplete="list"`, option active par `aria-activedescendant`), sur un `form-input` ; le libellé reste chez l'appelant (`label for`).
-- **Liste :** `absolute` sous le champ, `mt-1 max-h-60 overflow-y-auto rounded-field border border-line-strong bg-background shadow-lg` ; option `px-3.5 py-2 text-sm`, survol `bg-foreground/5`, active `bg-primary/8 text-primary`.
-- **Modes :** `restricted`, seule une suggestion devient la valeur, « Aucune … » visible et annoncé sans correspondance ; `free`, le texte est la valeur. Nombre de propositions annoncé par un `role="status"` `sr-only`.
-
 ### Navigation
 
 - **Header layout:** sticky en haut, background `var(--theme-background)`, border-bottom `var(--theme-nav-border)`, shadow `var(--theme-nav-shadow)`.
@@ -550,19 +544,6 @@ La cote d'un dessin technique : deux traits de rappel, deux pointes, une ligne i
 ### Accueil : autocollant du premier écran (`features/home/application/home-hero-section.ts`)
 
 - Le seul `app-sticker` du site (Sticker Rule) : « Fait main » (`HOME_HERO_STICKER_LABEL`), ton `sage`, `tilt="left"`, `data-testid="hero-sticker"`. Dans la colonne du cartouche, au-dessus de lui, aligné à droite, hors du flux (`absolute top-0 right-0` dans une colonne `relative pt-10` qui lui réserve sa place : posé dans le flux, il déplaçait la fiche au chargement, CLS 0,165 en mobile) : après le `h1` dans l'ordre du DOM, dans le flux (il ne recouvre aucun texte, à 375 px comme en large), hors de tout titre, lien ou bouton.
-
-### Accueil de l'atelier (`features/workshop/pages/workshop/workshop.ts`)
-
-- Même tête que la liste du blog : `h1` en `font-extrabold` (`clamp(2.75rem, 6vw, 5.25rem)`, `tracking-[-0.04em]`), puis l'intro en `text-muted`, `max-w-[56ch]`, un `<p>` par paragraphe, entrée en `animate-fade-up`. Aucun autocollant, aucun cartouche.
-- **Les outils :** `<section aria-labelledby>` nommée par son `h2` (`section-title`, « Les outils »), `mt-14` sous l'intro ; liste `role="list"` en grille `gap-3`, une colonne en mobile, deux à partir de `sm`, trois à partir de `lg` ; un `a[app-link-card]` par outil, avec sur-titre, titre et résumé (`summary`).
-
-### Guide des plaquettes (`features/workshop/pages/insert-guide/insert-guide.ts`)
-
-- Même tête que l'accueil de l'atelier : `h1` en `font-extrabold`, chapô en `text-muted`, `max-w-[56ch]`, puis l'avertissement en `text-sm text-muted`, `max-w-prose`, toujours visible (les choix de Julien, à adapter).
-- **Champ des matières :** `label` en `field-label` (« Matière ») lié au champ à suggestions (`app-suggest-input`, liste fermée), `max-w-sm`, `mt-12` sous l'avertissement, indication en `field-hint`. Il propose les matières saisies, sans doublon. Un choix remplace l'adresse (`?matiere=`) sans déplacer le focus.
-- **Tableau :** sous la liste (`mt-10`), seulement quand une matière connue est choisie, dans une région `role="region"` nommée par le `caption`, focalisable (`tabindex="0"`, contour `primary` au focus clavier) qui défile horizontalement sur un écran étroit : la page, elle, ne défile jamais de côté. `caption` visible « Plaquettes pour <matière> » en `text-xl font-bold`, aligné à gauche ; en-têtes de colonne `table-head` (Opération, Plaquette, Rayon de bec, Remarque), filet bas `line-strong` de 1,5 px ; une ligne par entrée, filet `line`, dans l'ordre de la liste fermée des opérations. L'opération est l'en-tête de ligne (`th scope="row"`, `font-semibold`), la plaquette en `font-mono`, le rayon en mm (« 0,8 mm », insécable, `tabular-nums`), la remarque en `text-muted`.
-- **Guide en cours de remplissage :** activé sans aucune ligne, une phrase en `font-medium` à la place de la liste.
-- **Guide éteint :** la page rend la page 404 (`app-page-not-found`), en vraie 404 serveur ; la carte disparaît de l'accueil de l'atelier, la section « Les outils » aussi quand elle n'a plus de carte.
 
 ### Page 404 (`pages/page-not-found.ts`)
 
@@ -673,18 +654,6 @@ Même grammaire que l'éditeur d'article (colonnes, sections, barre, sommaire, g
 - **Portrait (`components/admin-profile-portrait.ts`):** `fieldset` « 06 · Portrait » après le formulaire, hors de lui (au sommaire, jamais marqué) : vignette 4:5 de 10rem (`NgOptimizedImage` `fill`, sans `priority`), alt « Portrait de Julien Nédellec », `/avatar.avif` et la mention « Portrait par défaut » sans portrait ; zone de dépôt (AVIF, WebP, PNG ou JPEG, 5 Mo au plus) qui envoie dès le dépôt, remise à zéro ensuite, statut `role="status"` « Envoi du portrait… » ; « Revenir au portrait par défaut » (`text-danger`) derrière `ConfirmDialog`. Hors du brouillon : un envoi ne compte jamais comme modification. Toasts « Portrait remplacé », « Portrait par défaut rétabli », refus de type, échecs avec détail sur 422 et « Réessayez dans quelques secondes. » sur 503.
 - **Barre:** « Annuler » mène à `/admin`. Succès : toast « Parcours enregistré », compte à zéro, champs repartis du document renvoyé. Version périmée (409) : toast « Le parcours a été modifié depuis une autre fenêtre. Rechargez la page… », saisie conservée. 400/422 : « Le parcours n'a pas pu être enregistré. Détail : … ».
 - **Garde:** dialogue « Les modifications non enregistrées du parcours seront perdues. ».
-
-### Éditeur du guide des plaquettes (`features/admin/pages/admin-insert-guide/admin-insert-guide.ts`, `application/components/admin-insert-guide-form.ts`, `admin-insert-guide-group.ts`, `admin-insert-guide-tool.ts`)
-
-Même cadre que l'éditeur de parcours (document unique, version, garde), sans sommaire : la colonne de droite porte un encadré « Avant d'enregistrer » (bord `line`, rappel de confidentialité, lien « Voir la page publique »).
-
-- **En-tête:** lien « Guide des plaquettes » de la navigation (icône `wrench`, après CV) ; `h1` « Guide des plaquettes ».
-- **Interrupteurs:** deux cases à cocher (`size-5 accent-primary`) dans leur `label`, l'une sous l'autre (`grid gap-4`) : « Guide des plaquettes visible sur le site », puis « Décodeur de plaquette visible sur le site ». Chacune est décrite (`aria-describedby`) par une phrase d'aide en `field-hint` sous son `label`, qui dit ce qu'elle met en ligne : la page et sa carte sur l'accueil de l'atelier, et pour le décodeur, les liens des codes du guide vers leur décodage.
-- **Blocs par matière (motif « bloc repliable et lignes compactes ») :** un `details` natif par matière (sélecteur d'attribut `details[app-admin-insert-guide-group]`, bord `line`, `rounded-md`), replié par défaut ; son `summary` (44 px, chevron `chevron-right` tourné d'un quart à l'ouverture sous `motion-safe`) porte le nom de la matière (« Nouvelle matière » tant qu'il est vide) et son compte en texte (« 1 outil », « 12 outils », `counted`). Ordre : première apparition dans le document, bloc « Toutes matières » en dernier. L'état ouvert est un signal du formulaire (clés ouvertes), resynchronisé par l'évènement `toggle` : un bloc ajouté s'ouvre, un bloc en erreur s'ouvre à l'enregistrement avant que le focus n'aille au premier champ invalide, l'état tient après un enregistrement réussi. Une fois ouvert : « Nom de la matière » (`app-suggest-input`, « Matières déjà saisies », vaut pour tous les outils du bloc ; le bloc générique affiche à la place « Ces outils s'affichent sous chaque matière du guide. »), puis les outils, puis « Ajouter un outil » (`variant="text"`, nom « Ajouter un outil à X ») et « Retirer la matière » / « Retirer le bloc » (`text-danger`). Sous les blocs : « Ajouter une matière » (inséré avant le bloc générique) et « Ajouter le bloc Toutes matières » tant qu'il n'existe pas.
-- **Ligne d'outil compacte :** `div[app-admin-insert-guide-tool]` `role="group"` (« Outil 2 de X »), filet haut `line`, colonnes Opération, Plaquette, Rayon, Remarque, Retirer partagées avec l'en-tête de colonnes (`@utility tool-row-grid`, en-tête `aria-hidden`, affiché dès `lg`). Dès `lg`, une rangée par outil (Opération 16rem au plus, Rayon 4,75rem, Retirer icône seule de 44 px) ; en dessous, deux rangées sur quatre colonnes : Opération et Plaquette, puis Rayon, Remarque et Retirer, chaque champ coiffé de son libellé court en `text-xs text-muted`. Chaque champ a un `label` dont la partie visible est le libellé court (masqué dès `lg`) et la suite `sr-only`, d'où un nom complet : « Plaquette, outil 2 de 1.8522 (33CrMoV12) », « … du bloc 3 » pour un bloc sans nom, « … de Toutes matières ». Rayon décrit par une phrase unique sous le titre de la section (« Rayon de bec facultatif… »). Focus : opération de l'outil ajouté, nom de la matière ajoutée, opération du bloc générique ajouté, « Ajouter un outil » du bloc après un retrait, « Ajouter une matière » quand le bloc disparaît (dernier outil retiré ou « Retirer la matière »).
-- **Confidentialité:** une référence repérée par `findConfidentialReferences` dans un outil (plaquette, remarque) ou dans le nom d'une matière ajoute sous lui un encadré `border-status-warn/40 bg-status-warn/10` « Référence repérée : « … ». Vérifiez qu'elle ne désigne ni une pièce, ni un plan, ni un ordre de fabrication. », sans bloquer l'enregistrement.
-- **Validation:** bornes de l'API (matière 80, plaquette 40, remarque 200 caractères ; rayon supérieur à 0, au plus 10 mm, deux décimales ; 300 outils au plus en tout), matière exigée une fois par bloc (sauf le bloc générique), deux blocs du même nom refusés sur le second (« Le bloc « X » existe déjà : déplacez-y ces outils et retirez ce bloc »), première erreur sous le champ touché, `role="alert"`, reliée par `aria-describedby`.
-- **Barre:** toast « Guide des plaquettes enregistré » ; 409 : « Le guide des plaquettes a été modifié depuis une autre fenêtre. Rechargez la page… », saisie conservée.
 
 ### CV (`features/admin/pages/admin-cv/admin-cv.ts`, `application/admin-cv-view.ts`)
 

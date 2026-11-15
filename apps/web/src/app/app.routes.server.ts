@@ -11,11 +11,6 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'blog', renderMode: RenderMode.Server },
   { path: 'blog/:slug', renderMode: RenderMode.Server },
 
-  // Document du guide lu dans l'API : un interrupteur pour le guide, un pour le décodeur
-  { path: 'atelier', renderMode: RenderMode.Server },
-  { path: 'atelier/plaquettes', renderMode: RenderMode.Server },
-  { path: 'atelier/decodeur', renderMode: RenderMode.Server },
-
   // Contenu écrit dans le code : prérendu au build
   { path: 'mentions-legales', renderMode: RenderMode.Prerender },
   { path: 'confidentialite', renderMode: RenderMode.Prerender },

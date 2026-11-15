@@ -90,19 +90,13 @@ export function createFeedHandler({
 
   async function render(target: FeedTarget, visitor: string | null): Promise<string> {
     if (target === 'sitemap') {
-      const [projects, posts, insertGuide] = await Promise.all([
+      const [projects, posts] = await Promise.all([
         readJson<readonly { readonly slug: string }[]>('/projects', visitor),
         readJson<readonly FeedPost[]>('/blog/posts', visitor),
-        readJson<{ readonly enabled: boolean; readonly decoderEnabled: boolean }>(
-          '/workshop-guide',
-          visitor,
-        ),
       ]);
       return buildSitemap({
         projectSlugs: projects.map(({ slug }) => slug),
         posts,
-        insertGuideEnabled: insertGuide.enabled,
-        insertDecoderEnabled: insertGuide.decoderEnabled,
         staticLastmod: startedAt,
       });
     }

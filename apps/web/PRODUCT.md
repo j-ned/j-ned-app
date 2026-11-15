@@ -19,7 +19,7 @@ Le blog est le moteur du site : c'est par lui qu'arrive le trafic organique. Les
 Partager ce que Julien construit et apprend, et le rendre **trouvable**. Le site réussit quand :
 
 1. un développeur trouve un article par une recherche, obtient sa réponse, puis lit un deuxième article ou ouvre une réalisation ;
-2. un curieux qui cherche le nom trouve le parcours, les projets et l'atelier en un clic depuis n'importe quelle page.
+2. un curieux qui cherche le nom trouve le parcours et les projets en un clic depuis n'importe quelle page.
 
 Le formulaire de contact reste ouvert à tous (question sur un article, échange entre pairs, prise de contact), sans qualification commerciale.
 

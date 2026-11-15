@@ -7,9 +7,6 @@ const HOME_TITLE = 'Julien Nédellec | Tourneur CN et développeur web Angular /
 const ABOUT_TITLE = "Parcours\u00a0: de l'atelier au code | Julien Nédellec";
 const PROJECTS_TITLE = 'Mes projets Angular full-stack | Julien Nédellec';
 const BLOG_TITLE = 'Blog Angular, Hono et mise en production | Julien Nédellec';
-const WORKSHOP_TITLE = "L'atelier\u00a0: outils de tourneur CN | Julien Nédellec";
-const INSERT_GUIDE_TITLE = 'Guide des plaquettes de tournage | Julien Nédellec';
-const INSERT_DECODER_TITLE = 'Décodeur de code plaquette ISO | Julien Nédellec';
 const PERSON_ID = `${SITE_IDENTITY.siteUrl}/#person`;
 
 type Crumb = readonly [name: string, path: string];
@@ -93,63 +90,6 @@ export const routes: Routes = [
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
         structuredData: breadcrumb(['Parcours', '/about']),
-      },
-    },
-  },
-  {
-    path: 'atelier',
-    title: WORKSHOP_TITLE,
-    loadComponent: () =>
-      import('./features/workshop/pages/workshop/workshop').then((m) => m.Workshop),
-    data: {
-      preload: true,
-      seo: {
-        title: WORKSHOP_TITLE,
-        description:
-          "Mon coin de tourneur CN\u00a0: des outils d'usinage, à commencer par le guide des plaquettes que j'utilise à l'atelier, matière par matière.",
-        url: `${SITE_IDENTITY.siteUrl}/atelier`,
-        type: 'website',
-        structuredData: breadcrumb(["L'atelier", '/atelier']),
-      },
-    },
-  },
-  {
-    path: 'atelier/plaquettes',
-    title: INSERT_GUIDE_TITLE,
-    loadComponent: () =>
-      import('./features/workshop/pages/insert-guide/insert-guide').then((m) => m.InsertGuide),
-    data: {
-      seo: {
-        title: INSERT_GUIDE_TITLE,
-        description:
-          "Les plaquettes de tournage que j'utilise à l'atelier, matière par matière\u00a0: opération, plaquette, rayon de bec et remarque, à adapter à ta machine.",
-        url: `${SITE_IDENTITY.siteUrl}/atelier/plaquettes`,
-        type: 'website',
-        structuredData: breadcrumb(
-          ["L'atelier", '/atelier'],
-          ['Guide des plaquettes', '/atelier/plaquettes'],
-        ),
-      },
-    },
-  },
-  {
-    path: 'atelier/decodeur',
-    title: INSERT_DECODER_TITLE,
-    loadComponent: () =>
-      import('./features/workshop/pages/insert-decoder/insert-decoder').then(
-        (m) => m.InsertDecoder,
-      ),
-    data: {
-      seo: {
-        title: INSERT_DECODER_TITLE,
-        description:
-          "Tape le code ISO d'une plaquette de tournage, comme CNMG 120408\u00a0: le décodeur explique chaque lettre et chaque chiffre, sources fabricants à l'appui.",
-        url: `${SITE_IDENTITY.siteUrl}/atelier/decodeur`,
-        type: 'website',
-        structuredData: breadcrumb(
-          ["L'atelier", '/atelier'],
-          ['Décodeur de plaquette', '/atelier/decodeur'],
-        ),
       },
     },
   },

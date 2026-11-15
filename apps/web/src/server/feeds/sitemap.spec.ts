@@ -17,8 +17,6 @@ function aSitemapInput(overrides: Partial<SitemapInput> = {}): SitemapInput {
   return {
     projectSlugs: [],
     posts: [],
-    insertGuideEnabled: true,
-    insertDecoderEnabled: true,
     staticLastmod: STARTED_AT,
     ...overrides,
   };
@@ -36,9 +34,6 @@ describe('buildSitemap', () => {
     expect(entriesOf(xml).map((entry) => entry.loc)).toEqual([
       `${SITE}/`,
       `${SITE}/about`,
-      `${SITE}/atelier`,
-      `${SITE}/atelier/plaquettes`,
-      `${SITE}/atelier/decodeur`,
       `${SITE}/projects`,
       `${SITE}/blog`,
       `${SITE}/mentions-legales`,
@@ -66,27 +61,7 @@ describe('buildSitemap', () => {
   it('Given no content When the sitemap is built Then every static page is dated by the server start', () => {
     const lastmods = entriesOf(buildSitemap(aSitemapInput())).map((entry) => entry.lastmod);
 
-    expect(lastmods).toEqual(Array.from({ length: 9 }, () => '2026-10-10'));
-  });
-
-  it('Given the workshop When the sitemap is built Then its entry is dated by the server start, monthly, priority 0.8', () => {
-    const xml = buildSitemap(aSitemapInput());
-
-    expect(
-      xml.includes(
-        `  <url>\n    <loc>${SITE}/atelier</loc>\n    <lastmod>2026-10-10</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.8</priority>\n  </url>`,
-      ),
-    ).toBe(true);
-  });
-
-  it('Given the insert guide When the sitemap is built Then its entry is dated by the server start, monthly, priority 0.7, without query string', () => {
-    const xml = buildSitemap(aSitemapInput());
-
-    expect(
-      xml.includes(
-        `  <url>\n    <loc>${SITE}/atelier/plaquettes</loc>\n    <lastmod>2026-10-10</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
-      ),
-    ).toBe(true);
+    expect(lastmods).toEqual(Array.from({ length: 6 }, () => '2026-10-10'));
   });
 
   it.each([
@@ -103,35 +78,6 @@ describe('buildSitemap', () => {
       );
 
       expect(entriesOf(xml).at(-1)).toEqual({ loc: `${SITE}/blog/article-temoin`, lastmod });
-    },
-  );
-
-  it('Given the insert decoder When the sitemap is built Then its entry is dated by the server start, monthly, priority 0.7, without query string', () => {
-    const xml = buildSitemap(aSitemapInput());
-
-    expect(
-      xml.includes(
-        `  <url>\n    <loc>${SITE}/atelier/decodeur</loc>\n    <lastmod>2026-10-10</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>`,
-      ),
-    ).toBe(true);
-  });
-
-  it.each([
-    [false, false],
-    [true, false],
-    [false, true],
-  ])(
-    'Given the guide switch at %s and the decoder switch at %s When the sitemap is built Then each page is listed by its own switch, the workshop home stays',
-    (insertGuideEnabled, insertDecoderEnabled) => {
-      const locs = entriesOf(
-        buildSitemap(aSitemapInput({ insertGuideEnabled, insertDecoderEnabled })),
-      ).map((entry) => entry.loc);
-
-      expect([
-        locs.includes(`${SITE}/atelier/plaquettes`),
-        locs.includes(`${SITE}/atelier/decodeur`),
-        locs.includes(`${SITE}/atelier`),
-      ]).toEqual([insertGuideEnabled, insertDecoderEnabled, true]);
     },
   );
 

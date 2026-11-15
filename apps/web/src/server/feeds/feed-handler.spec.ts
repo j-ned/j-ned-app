@@ -8,7 +8,6 @@ const PROJECTS_URL = `${API}/projects`;
 const POSTS_URL = `${API}/blog/posts`;
 // Le flux porte le texte complet : il le demande, la liste publique ne le joint pas par défaut.
 const FULL_POSTS_URL = `${API}/blog/posts?include=content`;
-const GUIDE_URL = `${API}/workshop-guide`;
 const COVER_PATH = '/storage/portfolio-storage/blog/c-1a2b3c4d.avif';
 const COVER_PROBE_URL = `${API}${COVER_PATH}?variant=share`;
 const COVER_ENCLOSURE = `<enclosure url="${SITE}/api${COVER_PATH}?variant=share" length="48213" type="image/jpeg" />`;
@@ -24,8 +23,6 @@ const HEALTHY_ROUTES: Readonly<Record<string, Route>> = {
   [PROJECTS_URL]: () => json([{ slug: 'dashflow' }]),
   [POSTS_URL]: () => json([makeBlogPost({ slug: 'article-temoin', coverImage: COVER_PATH })]),
   [FULL_POSTS_URL]: () => json([makeBlogPost({ slug: 'article-temoin', coverImage: COVER_PATH })]),
-  [GUIDE_URL]: () =>
-    json({ enabled: true, decoderEnabled: true, entries: [], version: 1, updatedAt: null }),
   [COVER_PROBE_URL]: () =>
     Promise.resolve(
       new Response(null, { headers: { 'Content-Type': 'image/jpeg', 'Content-Length': '48213' } }),
@@ -99,29 +96,6 @@ describe('createFeedHandler', () => {
     });
   });
 
-  it.each([
-    [true, true],
-    [true, false],
-    [false, true],
-    [false, false],
-  ])(
-    'Given the guide switch read as %s and the decoder switch as %s When the sitemap is requested Then each page is listed by its own switch',
-    async (enabled, decoderEnabled) => {
-      const api = anApi({
-        [GUIDE_URL]: () =>
-          json({ enabled, decoderEnabled, entries: [], version: 1, updatedAt: null }),
-      });
-
-      const served = await serve(aHandler(api), 'sitemap');
-
-      expect([
-        served.status,
-        served.body.includes(`<loc>${SITE}/atelier/plaquettes</loc>`),
-        served.body.includes(`<loc>${SITE}/atelier/decodeur</loc>`),
-      ]).toEqual([200, enabled, decoderEnabled]);
-    },
-  );
-
   it('Given a healthy API When the feed is requested Then it is served fresh as RSS with the cover measured on the internal API', async () => {
     const api = anApi();
 
@@ -183,7 +157,6 @@ describe('createFeedHandler', () => {
     ['unreachable', 'sitemap', PROJECTS_URL, unreachable],
     ['in error', 'sitemap', POSTS_URL, answering(500)],
     ['throttling', 'sitemap', PROJECTS_URL, answering(429)],
-    ['in error on the insert guide', 'sitemap', GUIDE_URL, answering(404)],
     ['unreachable', 'rss', FULL_POSTS_URL, unreachable],
     ['in error', 'rss', FULL_POSTS_URL, answering(502)],
     ['throttling', 'rss', FULL_POSTS_URL, answering(429)],

@@ -2,7 +2,7 @@
 id: 037
 title: Guide des plaquettes — opération Alésage, lignes « toutes matières », rayon facultatif
 type: feature
-status: draft
+status: retired
 created: 2026-10-27
 related: [specs/035-guide-plaquettes-simplifie.md, specs/036-decodeur-plaquettes.md]
 ---

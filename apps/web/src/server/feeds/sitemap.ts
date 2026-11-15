@@ -7,8 +7,6 @@ export type SitemapPost = Pick<BlogPost, 'slug' | 'publishedAt' | 'updatedAt'>;
 export type SitemapInput = {
   readonly projectSlugs: readonly string[];
   readonly posts: readonly SitemapPost[];
-  readonly insertGuideEnabled: boolean;
-  readonly insertDecoderEnabled: boolean;
   readonly staticLastmod: Date;
 };
 
@@ -19,24 +17,9 @@ type SitemapUrl = {
   readonly lastmod?: string;
 };
 
-// Interrupteur éteint : la page répond 404, elle sort donc du sitemap.
-const INSERT_GUIDE_URL: SitemapUrl = {
-  path: '/atelier/plaquettes',
-  changefreq: 'monthly',
-  priority: '0.7',
-};
-const INSERT_DECODER_URL: SitemapUrl = {
-  path: '/atelier/decodeur',
-  changefreq: 'monthly',
-  priority: '0.7',
-};
-
 const STATIC_URLS: readonly SitemapUrl[] = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/about', changefreq: 'monthly', priority: '0.8' },
-  { path: '/atelier', changefreq: 'monthly', priority: '0.8' },
-  INSERT_GUIDE_URL,
-  INSERT_DECODER_URL,
   { path: '/projects', changefreq: 'weekly', priority: '0.9' },
   { path: '/blog', changefreq: 'weekly', priority: '0.9' },
   { path: '/mentions-legales', changefreq: 'yearly', priority: '0.2' },
@@ -49,20 +32,10 @@ const toDay = (iso: string): string => iso.slice(0, 10);
 const postLastmod = ({ publishedAt, updatedAt }: SitemapPost): string =>
   toDay([updatedAt, publishedAt ?? ''].sort().at(-1) ?? updatedAt);
 
-export function buildSitemap({
-  projectSlugs,
-  posts,
-  insertGuideEnabled,
-  insertDecoderEnabled,
-  staticLastmod,
-}: SitemapInput): string {
+export function buildSitemap({ projectSlugs, posts, staticLastmod }: SitemapInput): string {
   const defaultLastmod = toDay(staticLastmod.toISOString());
-  const switchedOff = new Set<SitemapUrl>([
-    ...(insertGuideEnabled ? [] : [INSERT_GUIDE_URL]),
-    ...(insertDecoderEnabled ? [] : [INSERT_DECODER_URL]),
-  ]);
   const urls: readonly SitemapUrl[] = [
-    ...STATIC_URLS.filter((url) => !switchedOff.has(url)),
+    ...STATIC_URLS,
     ...projectSlugs.map((slug): SitemapUrl => ({
       path: `/projects/${slug}`,
       changefreq: 'monthly',

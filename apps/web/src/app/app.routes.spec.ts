@@ -35,4 +35,16 @@ describe('routes', () => {
       ).toEqual([]);
     });
   });
+
+  // Atelier retiré (ADR-0039) : accueil de l'atelier, guide des plaquettes et décodeur ne sont plus servis.
+  describe('retired workshop urls', () => {
+    it.each(['/atelier', '/atelier/plaquettes', '/atelier/decodeur'])(
+      'Given %s When navigated to Then no route matches it but the not-found page, and no redirect happens',
+      async (path) => {
+        const { url, leaf } = await navigate(path);
+
+        expect([url, leaf.routeConfig?.path]).toEqual([path, '**']);
+      },
+    );
+  });
 });

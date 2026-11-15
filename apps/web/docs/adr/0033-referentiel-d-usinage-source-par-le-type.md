@@ -1,6 +1,6 @@
 # ADR-0033 — Référentiel d'usinage : la source est dans le type, l'absence est un état
 
-- **Statut** : remplacé par la spec 035 (2026-10-27) ; proposé le 2026-10-25 (plan technique de la spec 034)
+- **Statut** : retiré avec l'atelier (ADR-0039, 2026-11-15) ; remplacé par la spec 035 (2026-10-27) ; proposé le 2026-10-25 (plan technique de la spec 034)
 - **Note** (2026-10-27) : le référentiel sourcé est retiré. Le guide des plaquettes devient un document
   saisi par Julien dans l'admin et lu dans l'API (`specs/035-guide-plaquettes-simplifie.md`) : plus de
   source fabricant, plus de déduction, donc plus de source portée par le type.

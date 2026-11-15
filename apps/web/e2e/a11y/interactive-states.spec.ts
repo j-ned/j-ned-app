@@ -38,19 +38,6 @@ for (const theme of THEMES) {
       });
     });
 
-    test('atelier: guide-plaquettes material field with open suggestions has no WCAG A/AA violation', async ({
-      page,
-      visit,
-      expectNoA11yViolations,
-    }) => {
-      await visit('/atelier/plaquettes');
-      const field = page.getByRole('combobox', { name: 'Matière' });
-      await field.fill('tém');
-      await expect(page.getByRole('listbox', { name: 'Matières du guide' })).toBeVisible();
-      await field.press('ArrowDown');
-      await expectNoA11yViolations('suggest-listbox', 'matieres-suggerees');
-    });
-
     test.describe('admin', () => {
       test.use({ adminSession: true });
 
@@ -85,20 +72,6 @@ for (const theme of THEMES) {
         await field.press('ArrowDown');
         await expect(page.getByRole('listbox', { name: 'Tags suggérés' })).toBeVisible();
         await expectNoA11yViolations('admin-post-tags', 'champ-tags-ouvert');
-      });
-
-      test('insert guide editor with an open material block has no WCAG A/AA violation', async ({
-        page,
-        visit,
-        expectNoA11yViolations,
-      }) => {
-        await visit('/admin/guide-plaquettes');
-        const block = page.getByTestId('admin-insert-guide-group').first();
-        await expect(block).toBeVisible();
-        await expect(page.locator(ADMIN_PENDING_OR_FAILED)).toHaveCount(0);
-        await block.locator('summary').click();
-        await expect(page.getByTestId('admin-insert-guide-tool').first()).toBeVisible();
-        await expectNoA11yViolations('admin-insert-guide-form', 'bloc-matiere-ouvert');
       });
 
       test('tags suggested from the article content have no WCAG A/AA violation', async ({

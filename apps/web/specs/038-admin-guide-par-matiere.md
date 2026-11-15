@@ -2,7 +2,7 @@
 id: 038
 title: Admin du guide des plaquettes regroupée par matière, en blocs repliables
 type: feature
-status: draft
+status: retired
 created: 2026-10-27
 related: [specs/035-guide-plaquettes-simplifie.md, specs/037-guide-alesage-toutes-matieres.md]
 ---

@@ -37,10 +37,10 @@ class DefaultHost {}
   template: `<a
     app-link-card
     data-testid="card"
-    routerLink="/atelier/plaquettes"
-    overline="Outil"
-    heading="Guide des plaquettes"
-    summary="Choisis ta matière et ton opération."
+    routerLink="/blog/article-temoin"
+    overline="Article"
+    heading="Titre témoin"
+    summary="Résumé témoin d'une ligne."
   ></a>`,
 })
 class SummaryHost {}
@@ -79,11 +79,7 @@ describe('LinkCard', () => {
   it('Given a summary When the card renders Then the link reads the overline, the heading, then the summary in muted text', async () => {
     const card = cardOf(await render(SummaryHost));
 
-    expect(linesOf(card)).toEqual([
-      'Outil',
-      'Guide des plaquettes',
-      'Choisis ta matière et ton opération.',
-    ]);
+    expect(linesOf(card)).toEqual(['Article', 'Titre témoin', "Résumé témoin d'une ligne."]);
   });
 
   it('Given a rendered card When its inputs change Then the card follows them', async () => {
