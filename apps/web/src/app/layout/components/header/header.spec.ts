@@ -15,7 +15,7 @@ const THEME_STORAGE_KEY = 'j-ned:theme';
 @Component({ template: '' })
 class BlankPage {}
 
-const DESTINATIONS = ['blog', 'projects', 'about', 'atelier'] as const;
+const DESTINATIONS = ['blog', 'projects', 'about'] as const;
 
 function makeAnalyticsGateway(overrides: Partial<AnalyticsGateway> = {}): AnalyticsGateway {
   return {
@@ -114,16 +114,14 @@ describe('Header', () => {
           { href: '/blog', current: 'page' },
           { href: '/projects', current: null },
           { href: '/about', current: null },
-          { href: '/atelier', current: null },
         ],
       },
       {
-        url: '/atelier',
+        url: '/about',
         expected: [
           { href: '/blog', current: null },
           { href: '/projects', current: null },
-          { href: '/about', current: null },
-          { href: '/atelier', current: 'page' },
+          { href: '/about', current: 'page' },
         ],
       },
     ])(
@@ -148,7 +146,7 @@ describe('Header', () => {
       },
     );
 
-    it("Given the mobile menu open When L'atelier is clicked Then the router lands on /atelier and the menu closes", async () => {
+    it('Given the mobile menu open When Parcours is clicked Then the router lands on /about and the menu closes', async () => {
       const { component, fixture } = await setup();
       const router = TestBed.inject(Router);
       router.resetConfig(DESTINATIONS.map((path) => ({ path, component: BlankPage })));
@@ -159,14 +157,14 @@ describe('Header', () => {
         (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
           '[data-testid="mobile-nav"] a[href]',
         ),
-      ).find((candidate) => candidate.getAttribute('href') === '/atelier');
+      ).find((candidate) => candidate.getAttribute('href') === '/about');
 
       expect(link).toBeInstanceOf(HTMLAnchorElement);
       link?.click();
       await fixture.whenStable();
 
       expect({ url: router.url, open: component['isMobileMenuOpen']() }).toEqual({
-        url: '/atelier',
+        url: '/about',
         open: false,
       });
     });

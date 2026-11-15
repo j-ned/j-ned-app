@@ -1,11 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
-import { Router, provideRouter, type Route } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { ADMIN_ROUTES } from './admin.routes';
 import { AdminAudience } from './pages/admin-audience/admin-audience';
 import { AdminOverview } from './pages/admin-overview/admin-overview';
 import { AdminPostEditor } from './pages/admin-post-editor/admin-post-editor';
-import { AdminInsertGuide } from './pages/admin-insert-guide/admin-insert-guide';
 import { AdminProfile } from './pages/admin-profile/admin-profile';
 import { AdminProjectEditor } from './pages/admin-project-editor/admin-project-editor';
 import { unsavedChangesGuard } from './application/unsaved-changes-guard';
@@ -164,18 +163,5 @@ describe('ADMIN_ROUTES: édition du parcours', () => {
     const route = ADMIN_ROUTES[0]?.children?.find((candidate) => candidate.path === 'profile');
 
     expect(route?.canDeactivate).toEqual([unsavedChangesGuard]);
-  });
-});
-
-describe('ADMIN_ROUTES: guide des plaquettes', () => {
-  const route = (): Route | undefined =>
-    ADMIN_ROUTES[0]?.children?.find((candidate) => candidate.path === 'guide-plaquettes');
-
-  it('Given the route guide-plaquettes When its page is loaded Then it is the insert guide editor', async () => {
-    expect(await route()?.loadComponent?.()).toBe(AdminInsertGuide);
-  });
-
-  it('Given the route guide-plaquettes When the admin leaves it Then the unsaved changes guard is asked first', () => {
-    expect(route()?.canDeactivate).toEqual([unsavedChangesGuard]);
   });
 });

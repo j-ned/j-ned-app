@@ -67,30 +67,16 @@ describe('nginx configuration', () => {
       return pattern !== undefined && new RegExp(pattern).test(path);
     };
 
-    it.each([
-      '/',
-      '/about',
-      '/projects/dashflow',
-      '/blog/article',
-      '/atelier',
-      '/atelier/',
-      '/atelier/plaquettes',
-      '/atelier/plaquettes/',
-      '/atelier/decodeur',
-      '/atelier/decodeur/',
-    ])('relays %s to Node', (path) => {
+    it.each(['/', '/about', '/projects/dashflow', '/blog/article'])('relays %s to Node', (path) => {
       expect(relayed(path)).toBe(true);
     });
 
-    it.each([
-      '/atelier/autre',
-      '/atelier/plaquettes/autre',
-      '/atelier/decodeur/autre',
-      '/atelier/plaquettesdecodeur',
-      '/wp-login.php',
-    ])('keeps %s away from Node', (path) => {
-      expect(relayed(path)).toBe(false);
-    });
+    it.each(['/atelier', '/atelier/plaquettes', '/atelier/decodeur', '/wp-login.php'])(
+      'keeps %s away from Node',
+      (path) => {
+        expect(relayed(path)).toBe(false);
+      },
+    );
   });
 
   describe('relay to the Node renderer', () => {

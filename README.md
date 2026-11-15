@@ -41,10 +41,10 @@ mesurée sans cookie, sans bandeau de consentement et sans envoyer de données �
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | Accueil, à propos, projets filtrables avec fiches détaillées (choix techniques, décisions d'architecture) | Projets : édition, ordre, mise en avant, galerie, images converties en AVIF |
 | Blog en Markdown assaini, tags, commentaires Giscus, « j'aime », flux RSS                                 | Blog : brouillon et publication, couverture, aperçu en direct               |
-| Atelier : guide de plaquettes de tournage et décodeur de codes ISO                                        | Profil, CV, guide de l'atelier                                              |
-| Formulaire de contact protégé (champ piège, quota par visiteur)                                           | Messages reçus                                                              |
-| Téléchargement du CV, vraie page 404, `sitemap.xml`, `security.txt`                                       | Audience : visites, pages, provenances, appareils, pays, export CSV         |
-| Thèmes clair et sombre, transitions de vue                                                                | Sécurité du compte : mot de passe, 2FA TOTP avec codes de secours           |
+| Formulaire de contact protégé (champ piège, quota par visiteur)                                           | Profil, CV                                                                  |
+| Téléchargement du CV, vraie page 404, `sitemap.xml`, `security.txt`                                       | Messages reçus                                                              |
+| Thèmes clair et sombre, transitions de vue                                                                | Audience : visites, pages, provenances, appareils, pays, export CSV         |
+|                                                                                                           | Sécurité du compte : mot de passe, 2FA TOTP avec codes de secours           |
 
 ## Architecture
 
@@ -79,7 +79,7 @@ consignées en ADR dans [`apps/web/docs/adr`](apps/web/docs/adr).
 
 ## Points techniques
 
-**Rendu.** Les pages de contenu (accueil, projets, blog, atelier) sont rendues à chaque requête et
+**Rendu.** Les pages de contenu (accueil, projets, blog) sont rendues à chaque requête et
 mises en cache par le CDN, avec repli sur la dernière copie si l'API tombe. Les pages légales sont
 prérendues au build ; l'admin est rendu côté client. Les sections sous la ligne de flottaison
 s'hydratent à la demande.

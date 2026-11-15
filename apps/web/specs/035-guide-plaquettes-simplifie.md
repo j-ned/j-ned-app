@@ -2,7 +2,7 @@
 id: 035
 title: Guide des plaquettes simplifié, saisi depuis l'admin
 type: feature
-status: draft
+status: retired
 created: 2026-10-26
 related: [specs/034-guide-plaquettes.md, specs/032-atelier.md, docs/adr/0032-confidentialite-verifiable-du-contenu-d-atelier.md, docs/adr/0033-referentiel-d-usinage-source-par-le-type.md, docs/adr/0024-rendu-a-la-requete-des-pages-de-contenu.md]
 ---

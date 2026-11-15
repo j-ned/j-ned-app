@@ -91,14 +91,7 @@ function initializeSeo(): () => void {
 
 registerLocaleData(localeFr);
 
-const PUBLIC_READ_PATHS = [
-  '/projects',
-  '/blog/posts',
-  '/config',
-  '/cv',
-  '/profile',
-  '/workshop-guide',
-] as const;
+const PUBLIC_READ_PATHS = ['/projects', '/blog/posts', '/config', '/cv', '/profile'] as const;
 
 const isPublicReadUrl = (url: string): boolean =>
   PUBLIC_READ_PATHS.some((path) => url.includes(`/api${path}`));

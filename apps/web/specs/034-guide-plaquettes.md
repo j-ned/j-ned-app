@@ -2,7 +2,7 @@
 id: 034
 title: Guide des plaquettes, de la matière à l'outil de coupe
 type: feature
-status: draft
+status: retired
 created: 2026-10-25
 related: [specs/032-atelier.md, specs/031-ton-amical.md, PRODUCT.md, DESIGN.md, docs/adr/0004-contenu-statique-de-feature-sans-gateway.md, docs/adr/0024-rendu-a-la-requete-des-pages-de-contenu.md, docs/adr/0032-confidentialite-verifiable-du-contenu-d-atelier.md, docs/adr/0033-referentiel-d-usinage-source-par-le-type.md]
 ---

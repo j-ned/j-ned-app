@@ -2,7 +2,7 @@
 id: 032
 title: L'atelier, le métier de tourneur CN sur le site
 type: feature
-status: draft
+status: retired
 created: 2026-10-21
 related: [PRODUCT.md, specs/034-guide-plaquettes.md, DESIGN.md, specs/031-ton-amical.md, specs/033-nouveau-visuel.md, specs/030-adr-en-articles.md, docs/adr/0011-themes-du-blog-derives-du-catalogue-de-tags.md, docs/adr/0007-images-statiques-versionnees-et-picture.md, docs/adr/0024-rendu-a-la-requete-des-pages-de-contenu.md, docs/adr/0032-confidentialite-verifiable-du-contenu-d-atelier.md]
 ---

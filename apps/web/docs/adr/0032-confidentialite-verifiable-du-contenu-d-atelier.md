@@ -1,6 +1,6 @@
 # ADR-0032 — Contenu d'atelier : une confidentialité vérifiable, sans écrire dans le dépôt ce qu'elle protège
 
-- **Statut** : proposé (2026-10-22, plan technique du volet V1 de la spec 032)
+- **Statut** : retiré avec l'atelier (ADR-0039, 2026-11-15) ; proposé (2026-10-22, plan technique du volet V1 de la spec 032)
 - **Date** : 2026-10-22
 - **Contexte spec** : `specs/032-atelier.md` (exigence commune 2, exigence V1 6)
 - **Prolonge** : ADR-0007 (images statiques versionnées), ADR-0011 (catalogue de tags, pour le volet V2)

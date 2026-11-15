@@ -15,9 +15,7 @@ describe('serverRoutes', () => {
       .filter((route) => route.renderMode === RenderMode.Server)
       .map((route) => route.path);
 
-    expect([...serverRendered].sort()).toEqual(
-      [...CONTENT_ROUTES, 'atelier', 'atelier/plaquettes', 'atelier/decodeur'].sort(),
-    );
+    expect([...serverRendered].sort()).toEqual([...CONTENT_ROUTES].sort());
   });
 
   it.each(['mentions-legales', 'confidentialite'])('prerenders the static page %s', (path) => {

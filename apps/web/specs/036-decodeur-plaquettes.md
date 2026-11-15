@@ -2,7 +2,7 @@
 id: 036
 title: Décodeur de code plaquette ISO, lié au guide des plaquettes
 type: feature
-status: draft
+status: retired
 created: 2026-10-27
 related: [specs/035-guide-plaquettes-simplifie.md, specs/032-atelier.md, docs/adr/0024-rendu-a-la-requete-des-pages-de-contenu.md, specs/assets/036/table-iso-1832.md, specs/assets/036/notes-iso-1832.md]
 ---

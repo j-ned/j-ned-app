@@ -195,8 +195,6 @@ export const ICON_MAP: Readonly<Record<string, IconRef>> = {
   'lucide-wifi': { id: 'wifi', style: 'solid' },
   globe: { id: 'globe', style: 'solid' },
   'lucide-globe': { id: 'globe', style: 'solid' },
-  wrench: { id: 'wrench', style: 'solid' },
-  'lucide-wrench': { id: 'wrench', style: 'solid' },
   hammer: { id: 'hammer', style: 'solid' },
   'lucide-hammer': { id: 'hammer', style: 'solid' },
   palette: { id: 'palette', style: 'solid' },

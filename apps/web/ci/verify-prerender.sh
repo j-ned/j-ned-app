@@ -28,10 +28,6 @@ visit("server.mjs");
 test ! -f $browser/sitemap.xml && test ! -f $browser/rss.xml
 # Pages statiques prérendues (offres et rendez-vous retirés, spec 029 : aucun fichier ne doit rester)
 test -f $browser/mentions-legales/index.html && test -f $browser/confidentialite/index.html
-# Atelier, guide des plaquettes et décodeur rendus à la requête : leurs interrupteurs sont lus dans l'API
-test ! -f $browser/atelier/index.html
-test ! -f $browser/atelier/plaquettes/index.html
-test ! -f $browser/atelier/decodeur/index.html
 test ! -e $browser/offres && test ! -e $browser/rendez-vous
 # postbuild : la CSP des pages prérendues est hachée par page, plus d'unsafe-inline.
 ! grep -l -E "(script|style)-src [^;]*'unsafe-inline'" $(find $browser -name index.html -o -name index.csr.html) || { echo "unsafe-inline dans une page prérendue"; exit 1; }

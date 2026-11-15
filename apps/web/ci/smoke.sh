@@ -22,39 +22,6 @@ grep -q '<app-root' /tmp/index.html
 # (grep sort au premier match, curl échoue en écrivant dans le tube fermé : code 23)
 curl -fsS http://127.0.0.1:3000/about/ -o /tmp/about.html
 grep -q '<app-about' /tmp/about.html
-# Accueil de l'atelier : relayé à Node, chaque carte suit son interrupteur lu dans la doublure (activés)
-curl -fsS -D /tmp/atelier-headers.txt http://127.0.0.1:3000/atelier/ -o /tmp/atelier.html
-grep -q 'data-testid="workshop-title"' /tmp/atelier.html || { echo "titre absent : /atelier/"; exit 1; }
-grep -q 'data-testid="workshop-tool-card"' /tmp/atelier.html || { echo "carte du guide absente : /atelier/"; exit 1; }
-grep -q 'href="/atelier/decodeur"' /tmp/atelier.html || { echo "carte du décodeur absente : /atelier/"; exit 1; }
-rendered_by_node /tmp/atelier-headers.txt /atelier/
-# Guide des plaquettes : relayé à Node, la matière de l'URL partagée affiche son tableau dès le HTML serveur
-curl -fsS -D /tmp/guide-headers.txt 'http://127.0.0.1:3000/atelier/plaquettes?matiere=Acier%20t%C3%A9moin' -o /tmp/guide.html
-grep -q 'data-testid="insert-guide-title"' /tmp/guide.html || { echo "titre absent : /atelier/plaquettes"; exit 1; }
-grep -q 'PLAQUETTE-TEMOIN-1' /tmp/guide.html || { echo "tableau absent : /atelier/plaquettes"; exit 1; }
-rendered_by_node /tmp/guide-headers.txt /atelier/plaquettes
-grep -q '"noseRadius"' /tmp/guide.html || { echo "document /api/workshop-guide absent de l'état de transfert"; exit 1; }
-# Une ligne « toutes matières » sans rayon s'affiche sous la matière demandée, avec sa mention
-grep -q 'data-testid="insert-guide-all-materials"' /tmp/guide.html || { echo "ligne toutes matières absente : /atelier/plaquettes"; exit 1; }
-grep -q 'Alésage (ébauche et finition)' /tmp/guide.html || { echo "opération alésage absente : /atelier/plaquettes"; exit 1; }
-# Un code décodable du guide mène à son décodage ; un code non décodable reste du texte
-grep -q 'href="/atelier/decodeur?code=CCGT09T304PM"' /tmp/guide.html || { echo "lien vers le décodeur absent : /atelier/plaquettes"; exit 1; }
-! grep -q 'href="/atelier/decodeur?code=PLAQUETTE' /tmp/guide.html || { echo "code non décodable lié : /atelier/plaquettes"; exit 1; }
-# Décodeur : relayé à Node, le code de l'URL partagée est décodé dès le HTML serveur (guide activé dans la doublure)
-curl -fsS -D /tmp/decoder-headers.txt 'http://127.0.0.1:3000/atelier/decodeur?code=CNMG120408' -o /tmp/decoder.html
-grep -q 'data-testid="insert-decoder-result"' /tmp/decoder.html || { echo "décodage absent : /atelier/decodeur"; exit 1; }
-rendered_by_node /tmp/decoder-headers.txt /atelier/decodeur
-grep -q 'Losange 80°' /tmp/decoder.html || { echo "forme non décodée : /atelier/decodeur"; exit 1; }
-grep -q 'name="code"' /tmp/decoder.html || { echo "champ sans nom : /atelier/decodeur"; exit 1; }
-grep -q '"noseRadius"' /tmp/decoder.html || { echo "document /api/workshop-guide absent de l'état de transfert : /atelier/decodeur"; exit 1; }
-grep -q 'rel="canonical" href="https://nedellec-julien.fr/atelier/decodeur"' /tmp/decoder.html || { echo "canonical avec query : /atelier/decodeur"; exit 1; }
-# Code en pouces : refusé avec son motif, jamais décodé
-curl -fsS 'http://127.0.0.1:3000/atelier/decodeur?code=CNMG%20432' -o /tmp/decoder-ansi.html
-grep -q 'role="alert"' /tmp/decoder-ansi.html || { echo "erreur ANSI absente : /atelier/decodeur"; exit 1; }
-! grep -q 'data-testid="insert-decoder-result"' /tmp/decoder-ansi.html || { echo "code ANSI décodé : /atelier/decodeur"; exit 1; }
-# Matière inconnue : jamais réaffichée
-curl -fsS 'http://127.0.0.1:3000/atelier/plaquettes?matiere=mati%C3%A8re-pi%C3%A9g%C3%A9e' -o /tmp/guide-unknown.html
-! grep -q 'matière-piégée' /tmp/guide-unknown.html || { echo "matière inconnue réaffichée"; exit 1; }
 # Chaque route rendue à la requête lit la doublure et embarque l'état de transfert
 for path in / /projects /projects/projet-temoin /blog /blog/article-temoin; do
   curl -fsS "http://127.0.0.1:3000$path" -o /tmp/ssr.html
@@ -67,7 +34,7 @@ grep -q 'data-testid="about-lead"' /tmp/about-ssr.html || { echo "accroche absen
 grep -q 'data-testid="journey-paragraph"' /tmp/about-ssr.html || { echo "parcours absent : /about"; exit 1; }
 grep -q '"leadEmphasis"' /tmp/about-ssr.html || { echo "document /api/profile absent de l'état de transfert"; exit 1; }
 # CSP des pages rendues à la requête : une seule meta, hachée, sans unsafe-inline ; HTML revalidé
-for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin /atelier /atelier/plaquettes /atelier/decodeur; do
+for path in / /about /projects /projects/projet-temoin /blog /blog/article-temoin; do
   curl -fsS -D /tmp/ssr-headers.txt "http://127.0.0.1:3000$path" -o /tmp/ssr.html
   test "$(grep -o 'http-equiv="Content-Security-Policy"' /tmp/ssr.html | wc -l)" = "1" || { echo "meta CSP absente ou dupliquée : $path"; exit 1; }
   ! grep -qE "(script|style)-src [^;]*'unsafe-inline'" /tmp/ssr.html || { echo "unsafe-inline : $path"; exit 1; }
@@ -109,8 +76,6 @@ curl -fsS -D /tmp/sitemap-headers.txt http://127.0.0.1:3000/sitemap.xml -o /tmp/
 grep -qi '^content-type: application/xml' /tmp/sitemap-headers.txt
 grep -q '<loc>https://nedellec-julien.fr/blog/article-temoin</loc>' /tmp/sitemap.xml
 grep -q '<loc>https://nedellec-julien.fr/projects/projet-temoin</loc>' /tmp/sitemap.xml
-grep -q '<loc>https://nedellec-julien.fr/atelier/plaquettes</loc>' /tmp/sitemap.xml
-grep -q '<loc>https://nedellec-julien.fr/atelier/decodeur</loc>' /tmp/sitemap.xml
 curl -fsS -D /tmp/rss-headers.txt http://127.0.0.1:3000/rss.xml -o /tmp/rss.xml
 grep -qi '^content-type: application/rss+xml' /tmp/rss-headers.txt
 # Flux mis en cache par le CDN : vidés avec les pages à chaque écriture de contenu
@@ -139,7 +104,7 @@ curl -s http://127.0.0.1:3000/index.html -o /tmp/default-index.html
 ! curl -s -D - -o /dev/null http://127.0.0.1:3000/ | grep -qi '^server: nginx/' || { echo "version nginx exposée"; exit 1; }
 # HTML statique (coquille CSR, pages prérendues, 404) : revalidé à chaque visite, sinon le
 # navigateur garde une coquille périmée qui charge l'ancien bundle après un déploiement.
-for path in /login /admin/guide-plaquettes /mentions-legales/ /does-not-exist; do
+for path in /login /admin/profile /mentions-legales/ /does-not-exist; do
   html_headers=$(curl -s -D - -o /dev/null "http://127.0.0.1:3000$path")
   grep -qi '^cache-control: no-cache' <<<"$html_headers" || { echo "HTML sans revalidation : $path"; echo "$html_headers"; exit 1; }
   grep -qi '^x-frame-options: deny' <<<"$html_headers" || { echo "en-têtes de sécurité absents : $path"; exit 1; }
