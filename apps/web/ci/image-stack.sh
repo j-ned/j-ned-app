@@ -11,8 +11,10 @@ APP=portfolio-image
 STUB=portfolio-image-api-stub
 SITE=http://127.0.0.1:3000
 
+# Publiée sur l'hôte pour l'audit axe : le navigateur y rejoue les appels à l'API de production.
 start_stub() {
   docker run -d --name "$STUB" --network "$NETWORK" --network-alias api-stub \
+    -p 127.0.0.1:3001:3000 \
     -e STUB_ADMIN_SESSION=1 -v "$CI_DIR/api-stub:/stub:ro" \
     node:26-alpine node /stub/server.mjs >/dev/null
 }
