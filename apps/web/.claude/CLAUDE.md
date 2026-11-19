@@ -384,7 +384,8 @@ Chaque agent a un rôle **borné** ; on ne mélange jamais les rôles. Tous s'ap
   repo (`scope=repo`).
 - **`/aak-pr-review`** — lance le `pr-reviewer` sur une PR.
 - **`/aak-sync`** — vendore les agents dans `.claude/`. **Pas utilisé ici** : code sous licence,
-  dépôt public. Seul le checker est copié en local (cf. `CLAUDE.md` à la racine).
+  dépôt public. Seuls le checker et le préréglage ESLint sont copiés en local (cf. `CLAUDE.md` à
+  la racine).
 
 ### Skills (plugin 0.40.0)
 - Angular : `angular-routing-patterns`, `angular-signal-forms`, `angular-async-testing`,
