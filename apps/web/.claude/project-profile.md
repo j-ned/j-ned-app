@@ -143,7 +143,7 @@ runtime` pour `InMemoryHomeGateway`, seul in-memory encore câblé en
   `features/profile/testing/stub-profile-gateway.ts` (sous-classe du port).
 - **Frontières d'I/O** (seuls fakes légitimes — liste **fermée**) : réseau (HTTP,
   backend REST), horloge/timers (`Date`, `setTimeout`/`setInterval`), storage
-  navigateur (`localStorage`/`sessionStorage` : thème, token auth), source d'aléa
+  navigateur (`localStorage`/`sessionStorage` : thème, indice de session), source d'aléa
   (`Math.random`, `crypto`, génération d'ID). Tout le reste s'exécute pour de vrai.
 - **Carve-out unitaire direct** (sacré, ne pas collapser dans une page) :
   domaine pur (`features/*/domain/**`), testé **sans TestBed** (TypeScript pur).
