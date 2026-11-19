@@ -1,0 +1,29 @@
+[
+  {
+    "id": "le-3",
+    "kind": "two_factor_accepted",
+    "userId": "stub-admin",
+    "browser": "Firefox 128.0",
+    "os": "Linux x86_64",
+    "country": "FR",
+    "createdAt": "2026-11-19T18:42:30.000Z"
+  },
+  {
+    "id": "le-2",
+    "kind": "password_accepted",
+    "userId": "stub-admin",
+    "browser": "Firefox 128.0",
+    "os": "Linux x86_64",
+    "country": "FR",
+    "createdAt": "2026-11-19T18:42:00.000Z"
+  },
+  {
+    "id": "le-1",
+    "kind": "password_rejected",
+    "userId": null,
+    "browser": null,
+    "os": null,
+    "country": "DE",
+    "createdAt": "2026-11-18T03:12:00.000Z"
+  }
+]

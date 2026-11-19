@@ -87,6 +87,11 @@ export const ADMIN_ROUTES: Routes = [
           import('./pages/admin-settings/admin-settings').then((m) => m.AdminSettings),
       },
       {
+        path: 'settings/logins',
+        title: 'Journal des connexions | Admin',
+        loadComponent: () => import('./pages/admin-logins/admin-logins').then((m) => m.AdminLogins),
+      },
+      {
         path: 'settings/security',
         title: 'Sécurité | Admin',
         loadComponent: () =>

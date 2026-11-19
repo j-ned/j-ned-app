@@ -10,8 +10,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const isTrackingEndpoint = req.url.includes('/analytics/track');
   const authReq = isTrackingEndpoint ? req : req.clone({ withCredentials: true });
 
-  // Never retry auth endpoints: they handle their own errors
-  const isAuthEndpoint = req.url.includes('/auth/');
+  // Sous `/auth/`, un 401 répond à un mot de passe ou un code refusé, pas à une session expirée.
+  // Le journal des connexions fait exception : c'est une lecture d'admin comme les autres.
+  const isAuthEndpoint = req.url.includes('/auth/') && !req.url.includes('/auth/login-events');
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {

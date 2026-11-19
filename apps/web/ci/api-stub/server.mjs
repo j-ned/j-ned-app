@@ -98,6 +98,12 @@ async function readAdmin(pathname, searchParams) {
     const messages = await readFixture('contact-messages');
     return [200, { count: messages.filter((message) => !message.read).length }];
   }
+  if (pathname === '/api/auth/login-events') {
+    // Total au-delà d'une page : l'audit d'accessibilité voit aussi le pagineur.
+    const page = Number(searchParams.get('page') ?? 1);
+    const limit = Number(searchParams.get('limit') ?? 25);
+    return [200, { data: await readFixture('login-events'), total: 60, page, limit }];
+  }
   const stats = pathname.match(/^\/api\/analytics\/stats\/([a-z-]+)$/);
   if (!stats) return null;
   const segment = (await readFixture('analytics-stats'))[stats[1]];

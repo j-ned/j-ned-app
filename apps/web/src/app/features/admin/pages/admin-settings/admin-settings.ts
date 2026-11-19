@@ -43,6 +43,22 @@ const THEME_OPTIONS: readonly { readonly value: ThemePreference; readonly label:
         </a>
       </div>
       <div app-admin-setting-row>
+        <h3>Journal des connexions</h3>
+        <p>
+          Chaque étape de connexion des 90 derniers jours, acceptée ou refusée, avec le pays et le
+          navigateur.
+        </p>
+        <a
+          appButton
+          variant="outlined"
+          data-testid="settings-logins-link"
+          routerLink="/admin/settings/logins"
+          class="justify-self-start"
+        >
+          Consulter
+        </a>
+      </div>
+      <div app-admin-setting-row>
         <h3>Session</h3>
         <p data-testid="settings-session">Connecté en tant que {{ email() }}.</p>
         <button

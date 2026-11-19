@@ -75,6 +75,16 @@ describe('AdminSettings: sécurité', () => {
   });
 });
 
+describe('AdminSettings: journal des connexions', () => {
+  it('Given the security section When rendered Then a link leads to the login journal', async () => {
+    const { host } = await render();
+
+    expect(byTestId(host, 'settings-logins-link')?.getAttribute('href')).toBe(
+      '/admin/settings/logins',
+    );
+  });
+});
+
 describe('AdminSettings: thème', () => {
   it.each([
     { stored: null, checked: ['system'] },
