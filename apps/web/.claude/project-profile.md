@@ -22,8 +22,8 @@
   (`templateAccessibility`) y sont actives, templates inline compris (`processInlineTemplates`).
 - **Linter TS/JS** : `eslint` (flat config `eslint.config.js`). Le préréglage AAK
   `.claude/eslint/aak-conventions.mjs` est chargé **s'il est présent** ; il ne l'est ni en CI ni
-  dans un clone neuf (code sous licence, dépôt public). Il n'est pas activé : avec lui `pnpm lint`
-  remonte 24 erreurs sur le code existant (mesuré le 2026-11-19), à traiter avant de le poser.
+  dans un clone neuf (code sous licence, dépôt public). `pnpm lint` passe avec lui comme sans lui ;
+  les exceptions motivées (fichiers où un interdit précis est levé) sont dans `eslint.config.js`.
 - **build** : `pnpm build` (`ng build`, `@angular/build:application`, SSR activé).
   N'est pas la source de vérité des types (l'app-tsconfig exclut les specs).
 - **invalidation cache** (à lancer **avant** de rejouer un gate ou une preuve RED
