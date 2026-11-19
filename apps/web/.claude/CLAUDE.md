@@ -83,21 +83,21 @@ You are an expert TypeScript / Angular engineer. You write functional, maintaina
 - **Mutation en place** : `this.x().tags.push(t)` ne propage rien (signal = reference). Toujours nouvelle reference : `this.x.update(v => ({ ...v, tags: [...v.tags, t] }))`
 - **Confusion avec `ngModel`** : `model()` gere `[(x)]` entre composants, **pas** l'integration aux formulaires reactifs. `formControlName` exige toujours `ControlValueAccessor`
 
-### afterNextRender() / afterRender() -- acces DOM safe (Angular 16+, phases v17+)
+### afterNextRender() / afterEveryRender() -- acces DOM safe (phases v17+ ; `afterRender` renomme `afterEveryRender` en v20, l'ancien nom n'est plus exporte)
 - `afterNextRender(() => ...)` : execution **une seule fois** apres le prochain rendu (mesure initiale, focus, init lib tierce, init canvas)
-- `afterRender(() => ...)` : execution **a chaque cycle de rendu** (overlay flottant, sync continue avec lib externe) -- couteux, preferer `ResizeObserver` / `IntersectionObserver` quand applicable
+- `afterEveryRender(() => ...)` : execution **a chaque cycle de rendu** (overlay flottant, sync continue avec lib externe) -- couteux, preferer `ResizeObserver` / `IntersectionObserver` quand applicable
 - Phases v17+ : `earlyRead` -> `write` -> `mixedReadWrite` (defaut, **a eviter**) -> `read`. Toute callback qui lit ET ecrit le DOM **doit** etre split en phases pour eviter le layout thrashing
 - SSR safe par construction : ne tournent **jamais** cote serveur, plus besoin de `isPlatformBrowser` / `PLATFORM_ID` autour
 - Contexte d'injection obligatoire (`constructor` ou `runInInjectionContext`), sinon `NG0203`
-- Lire un signal dans la callback **n'enregistre aucune dependance** (contrairement a `effect()`) -- pour reagir a un signal ET toucher le DOM : combiner `effect()` + `afterRender()` ou utiliser un signal interne
+- Lire un signal dans la callback **n'enregistre aucune dependance** (contrairement a `effect()`) -- pour reagir a un signal ET toucher le DOM : `afterRenderEffect()` (lit des signaux et se rejoue apres le rendu)
 - Cleanup : dans un service `providedIn: 'root'`, capturer `AfterRenderRef` et `DestroyRef.onDestroy(() => ref.destroy())` -- sinon poids permanent
 
-### Anti-patterns afterRender / afterNextRender
+### Anti-patterns afterEveryRender / afterNextRender
 - **`setTimeout(0)` pour attendre le DOM** : casse en silence en zoneless (le hack reposait sur le patch Zone.js). Remplacer par `afterNextRender()`
 - **`ngAfterViewInit` pour mesurer le DOM** (`offsetHeight`, `getBoundingClientRect`, `scrollWidth`) : appele avant le layout du browser, valeurs partielles ou a 0. Remplacer par `afterNextRender({ read: ... })`
-- **`effect()` qui lit le DOM** : le DOM peut ne pas refleter l'etat du signal qui vient de changer (effect differe au prochain CD, le rendu peut ne pas avoir eu lieu). Pour mesurer apres mutation : `afterRender({ read: ... })`
+- **`effect()` qui lit le DOM** : le DOM peut ne pas refleter l'etat du signal qui vient de changer (effect differe au prochain CD, le rendu peut ne pas avoir eu lieu). Pour mesurer apres mutation : `afterRenderEffect({ read: ... })`
 - **Phase `mixedReadWrite` (default)** : autorise alternance lecture/ecriture -> layout thrashing garanti. Toujours splitter en `earlyRead` / `write` / `read`
-- **`afterRender()` non destroye dans un service singleton** : la callback tourne a chaque rendu pour la vie de l'app
+- **`afterEveryRender()` non destroye dans un service singleton** : la callback tourne a chaque rendu pour la vie de l'app
 - **`isPlatformBrowser` autour d'un `afterNextRender`** : inutile, le hook ne s'execute jamais cote serveur
 
 ### Host
@@ -270,7 +270,7 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 ## API (`apps/api` du monorepo)
 
 > Ce dossier est `apps/web` d'un **monorepo pnpm** : l'API (Hono, ADR-0035)
-> vit dans `apps/api` avec ses propres conventions (Drizzle, class-validator, Zod pour l'environnement) et son propre README. Un seul
+> vit dans `apps/api` avec ses propres conventions (Drizzle, Zod) et son propre README. Un seul
 > lockfile, à la racine. Ici on ne documente que la **consommation** de l'API côté Angular.
 
 ### Gateway Angular ↔ API
@@ -362,7 +362,7 @@ Chaque agent a un rôle **borné** ; on ne mélange jamais les rôles. Tous s'ap
    pour de l'exécution purement mécanique.
 4. **`code-reviewer`** — **gate finale de PR**, spécialisée Angular + écosystème (pnpm,
    Vite/Vitest, Angular CLI, Capacitor). Lit la spec entière + le diff de branche
-   (`git diff main...HEAD`), lance tests/lint/build + vérif runtime, contrôle conventions
+   (`git diff master...HEAD` ici : le contrat de l'agent ecrit `main`, cf. `CLAUDE.md` a la racine), lance tests/lint/build + vérif runtime, contrôle conventions
    Angular 20+ et plan technique tenu. Rend **APPROVED** ou **REJECTED** avec des points concrets.
    **Ne corrige pas lui-même.** *Jamais downgradé.*
 
@@ -372,17 +372,28 @@ Chaque agent a un rôle **borné** ; on ne mélange jamais les rôles. Tous s'ap
   arbre + churn + workflows CI, audite **10 dimensions**, écrit la section `## Intake audit` dans
   une spec dédiée. Refuse les scopes hors écosystème Angular. **Ne corrige pas.** *Jamais downgradé.*
 
+### Second regard sur une PR (hors cycle)
+- **`pr-reviewer`** — lancé par **`/aak-pr-review`**. Juge le delta (diff + intention déclarée) et ne
+  publie que des findings prouvés, situés, actionnables ; **jamais de verdict de merge**. Ce n'est pas
+  la gate (`code-reviewer`). *Jamais downgradé.*
+
 ### Commandes
 - **`/aak-init-profile`** — génère `.claude/project-profile.md` par interview + auto-détection
   depuis le repo. **À faire en premier** sur un repo neuf : c'est le socle des agents ci-dessus.
 - **`/aak-audit`** — lance l'`intake-auditor` sur une feature (`scope=features/x`) ou tout le
   repo (`scope=repo`).
+- **`/aak-pr-review`** — lance le `pr-reviewer` sur une PR.
+- **`/aak-sync`** — vendore les agents dans `.claude/`. **Pas utilisé ici** : code sous licence,
+  dépôt public. Seul le checker est copié en local (cf. `CLAUDE.md` à la racine).
 
-### Skill
-- **`angular-routing-patterns`** — patterns de routing 20+ : récupérer l'URL complète demandée
-  dans un guard fonctionnel (`CanMatchFn`/`CanActivateFn`), pattern `returnUrl`
-  (guard refuse → page de remédiation → retour vers l'intention initiale), et leurs footguns
-  (open redirect, reload-en-place qui piège l'utilisateur, `getCurrentNavigation()` null).
+### Skills (plugin 0.40.0)
+- Angular : `angular-routing-patterns`, `angular-signal-forms`, `angular-async-testing`,
+  `angular-accessibility`, `angular-ssr-ssg`, `angular-seo`, `angular-signal-store`,
+  `angular-property-testing`, `angular-mutation-testing`.
+- Amont du cycle : `grill-me` → `to-prd` → `to-issues`. Apprentissage : `tutor`.
+- `angular-routing-patterns` couvre l'URL demandée dans un guard fonctionnel, le pattern `returnUrl`
+  et leurs footguns (open redirect, reload-en-place, `Router.currentNavigation()` null hors
+  navigation ; `getCurrentNavigation()` est déprécié depuis 20.2).
 
 ### Règles d'usage
 - **Un rôle = un agent** : l'`architect` ne code pas, le `qa` n'implémente pas, l'`angular-expert`
@@ -467,5 +478,5 @@ claude mcp add angular-cli -- pnpm exec ng mcp
 
 ## Ressources
 - [Angular](https://angular.dev) · [RxJS](https://rxjs.dev) · [TailwindCSS v4](https://tailwindcss.com/docs) · [Vitest](https://vitest.dev)
-- Skills locales : `~/.claude/skills/`
-- Conventions EAK : `~/Documents/Obsidian Vault/EAK - Easy Angular Kit/`
+- Base de connaissances du dépôt : `.claude/skills/`
+- Conventions EAK : `~/Documents/Obsidian Vault/30 - Frontend/Angular/EAK - Easy Angular Kit/`
