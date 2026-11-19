@@ -144,7 +144,7 @@ export class SyncService {
 }
 ```
 
-## rxResource (experimental)
+## rxResource
 
 ```typescript
 import { rxResource } from '@angular/core/rxjs-interop';

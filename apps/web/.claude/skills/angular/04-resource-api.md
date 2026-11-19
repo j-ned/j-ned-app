@@ -1,4 +1,4 @@
-# Resource API Angular — Reference (experimental v19+)
+# Resource API Angular — Reference (stable en v22)
 
 ## resource() — pour fetch natif / Promises
 

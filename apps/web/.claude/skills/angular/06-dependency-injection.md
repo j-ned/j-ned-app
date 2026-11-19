@@ -125,7 +125,7 @@ providers: [
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withFetch()),
+    provideHttpClient(),
     { provide: GetPeopleGateway, useClass: HttpPeopleGateway },
   ],
 };

@@ -4,19 +4,18 @@
 
 ```typescript
 // app.config.ts
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(
-      withFetch(),                                    // recommande pour SSR
       // withInterceptors([authInterceptor, loggingInterceptor]),
     ),
   ],
 };
 ```
 
-- `withFetch()` — utilise `fetch()` au lieu de `XMLHttpRequest`, recommande pour SSR et les nouvelles apps
+- `fetch()` est le backend par defaut depuis Angular 22 : `withFetch()` est deprecie et inutile
 - `withInterceptors([...])` — interceptors fonctionnels (voir section dediee)
 
 ## Requetes
@@ -149,15 +148,15 @@ this.http.get('/api/data').pipe(
 );
 ```
 
-## Options fetch avancees (avec withFetch())
+## Options fetch avancees
 
 ```typescript
+// Options passees directement a la requete (pas de jeton HttpContext)
 this.http.get('/api/data', {
-  context: new HttpContext()
-    .set(FETCH_KEEPALIVE, true)       // requete survit a la fermeture de la page
-    .set(FETCH_CACHE, 'force-cache')  // 'force-cache' | 'no-cache' | 'only-if-cached'
-    .set(FETCH_PRIORITY, 'high')      // 'high' | 'low' | 'auto'
-    .set(FETCH_CREDENTIALS, 'include'), // 'include' | 'same-origin' | 'omit'
+  keepalive: true,         // requete survit a la fermeture de la page
+  cache: 'force-cache',    // 'force-cache' | 'no-cache' | 'only-if-cached'
+  priority: 'high',        // 'high' | 'low' | 'auto'
+  credentials: 'include',  // 'include' | 'same-origin' | 'omit'
 });
 ```
 
@@ -209,7 +208,6 @@ export function errorInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn)
 ```typescript
 // app.config.ts
 provideHttpClient(
-  withFetch(),
   withInterceptors([authInterceptor, loggingInterceptor, errorInterceptor]),
 )
 ```
