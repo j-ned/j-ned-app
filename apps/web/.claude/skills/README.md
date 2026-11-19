@@ -7,7 +7,6 @@ que Claude peut consulter pour fournir des réponses contextualisées.
 
 ```
 skills/
-├── angular/            # Docs Angular, patterns, snippets, signals, standalone
 ├── typescript/         # Tips TS, utility types, patterns avancés, strict mode
 ├── tailwind/           # Config v4, plugins, patterns UI
 ├── vitest/             # Config, mocking, testing patterns
@@ -25,3 +24,6 @@ Déposer les fichiers dans le sous-dossier correspondant à la techno :
 
 Claude consultera automatiquement ce dossier quand une question
 touche à une technologie documentée ici.
+
+Angular n'a pas de sous-dossier ici : la référence est la doc officielle (https://angular.dev),
+les skills AAK du plugin `angular-team` et la section Angular de `.claude/CLAUDE.md`.
