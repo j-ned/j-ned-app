@@ -3,6 +3,7 @@ import { Title } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 import { ADMIN_ROUTES } from './admin.routes';
 import { AdminAudience } from './pages/admin-audience/admin-audience';
+import { AdminLogins } from './pages/admin-logins/admin-logins';
 import { AdminOverview } from './pages/admin-overview/admin-overview';
 import { AdminPostEditor } from './pages/admin-post-editor/admin-post-editor';
 import { AdminProfile } from './pages/admin-profile/admin-profile';
@@ -36,6 +37,21 @@ describe('ADMIN_ROUTES: Audience', () => {
     const audience = ADMIN_ROUTES[0]?.children?.find((route) => route.path === 'audience');
 
     expect(await audience?.loadComponent?.()).toBe(AdminAudience);
+  });
+});
+
+describe('ADMIN_ROUTES: journal des connexions', () => {
+  it('Given /admin/settings/logins When it is opened Then it is served under its own title', async () => {
+    expect(await navigate('/admin/settings/logins')).toEqual({
+      url: '/admin/settings/logins',
+      title: 'Journal des connexions | Admin',
+    });
+  });
+
+  it('Given /admin/settings/logins When its page is loaded Then it is the login journal', async () => {
+    const logins = ADMIN_ROUTES[0]?.children?.find((route) => route.path === 'settings/logins');
+
+    expect(await logins?.loadComponent?.()).toBe(AdminLogins);
   });
 });
 

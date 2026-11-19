@@ -34,6 +34,7 @@ export const ADMIN_PAGES: readonly PageScenario[] = [
   { path: '/admin/messages', ready: 'admin-messages-list' },
   { path: '/admin/audience', ready: 'tally-row' },
   { path: '/admin/settings', ready: 'settings-session' },
+  { path: '/admin/settings/logins', ready: 'admin-logins-list' },
 ];
 
 // Un écran d'administration audité en squelette, en erreur ou sous un toast ne prouve rien.
