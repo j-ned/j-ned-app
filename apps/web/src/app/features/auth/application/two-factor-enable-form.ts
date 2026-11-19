@@ -164,10 +164,8 @@ export class TwoFactorEnableForm {
     },
   );
 
-  constructor() {
-    effect(() => {
-      this.resetToken();
-      this.tfaForm().reset({ ...EMPTY });
-    });
-  }
+  private readonly _resetEffect = effect(() => {
+    this.resetToken();
+    this.tfaForm().reset({ ...EMPTY });
+  });
 }

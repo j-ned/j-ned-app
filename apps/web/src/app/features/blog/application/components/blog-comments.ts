@@ -36,12 +36,12 @@ export class BlogComments {
   // Le site a son propre toggle (.app-dark) : le widget le suit, pas le schéma OS.
   private readonly _theme = computed<GiscusTheme>(() => (this._isDark() ? 'dark' : 'light'));
 
+  // Une fois l'iframe chargée, seul postMessage peut la re-thémer (l'attribut du script est
+  // lu une seule fois). Avant son chargement, l'appel est un no-op.
+  private readonly _themeSyncEffect = effect(() => this._postTheme(this._theme()));
+
   constructor() {
     afterNextRender(() => this._injectScript(this._theme()));
-
-    // Une fois l'iframe chargée, seul postMessage peut la re-thémer (l'attribut du script est
-    // lu une seule fois). Avant son chargement, l'appel est un no-op.
-    effect(() => this._postTheme(this._theme()));
   }
 
   private _injectScript(theme: GiscusTheme): void {
