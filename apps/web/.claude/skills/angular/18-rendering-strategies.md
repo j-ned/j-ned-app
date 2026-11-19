@@ -17,7 +17,7 @@ Le navigateur recoit un HTML minimal et JavaScript construit le DOM entierement 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withFetch()),
+    provideHttpClient(),
   ],
 };
 ```
@@ -51,15 +51,13 @@ ng add @angular/ssr
 ```typescript
 // app.config.server.ts
 import { mergeApplicationConfig } from '@angular/core';
-import { provideServerRendering } from '@angular/platform-server';
-import { provideServerRoutesConfig } from '@angular/ssr';
+import { provideServerRendering, withRoutes } from '@angular/ssr';
 import { appConfig } from './app.config';
 import { serverRoutes } from './app.routes.server';
 
 const serverConfig: ApplicationConfig = {
   providers: [
-    provideServerRendering(),
-    provideServerRoutesConfig(serverRoutes),
+    provideServerRendering(withRoutes(serverRoutes)),
   ],
 };
 

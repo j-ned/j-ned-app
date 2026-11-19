@@ -226,7 +226,7 @@ export class InMemoryPeopleGateway implements GetPeopleGateway {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withFetch()),
+    provideHttpClient(),
 
     // Implementation concrete — changer ici pour switcher
     { provide: GetPeopleGateway, useClass: HttpPeopleGateway },

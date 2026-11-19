@@ -42,12 +42,11 @@ export class Loading {
 
 ```typescript
 // admin-stat-card.ts
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { Loading } from '@shared/ui/loading';
 
 @Component({
   selector: 'admin-stat-card',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: Loading,
@@ -125,7 +124,6 @@ export class Interactive {}
 ```typescript
 @Component({
   selector: 'submit-button',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     { directive: Loading, inputs: ['loading'] },
   ],

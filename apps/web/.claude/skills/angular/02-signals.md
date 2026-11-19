@@ -264,7 +264,7 @@ constructor() {
 Problemes :
 - Ordre d'execution non garanti par rapport aux autres effects
 - `effect()` est concu pour les side effects vers APIs **externes**, pas pour synchroniser des signals entre eux
-- Depuis Angular 19, le flag `allowSignalWrites` a ete retire — plus aucun garde-fou
+- Depuis Angular 19, ecrire un signal dans un `effect()` est autorise par defaut (`allowSignalWrites` est deprecie et sans effet) — plus aucun garde-fou
 
 ```typescript
 // BON — linkedSignal : declaratif, ordre garanti, intention explicite

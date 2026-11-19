@@ -1,257 +1,108 @@
-# Signal Forms Angular (v21+) — Reference
+# Signal Forms Angular (stable en v22) — Reference
 
-> Signal Forms est la **nouvelle approche recommandee** pour les formulaires Angular, basee entierement sur les Signals. Disponible a partir d'Angular v21.
+> API de `@angular/forms/signals`, verifiee sur `@angular/forms` 22.2.2. Doctrine du depot : section
+> « Formulaires » de `.claude/CLAUDE.md`. Footguns detailles : skill AAK `angular-signal-forms`.
+> Il n'existe ni classe `SignalForm`, ni fonction `formField()`, ni `champ.state()` : un formulaire se
+> cree avec `form()`, et l'etat d'un champ se lit en **appelant** le champ.
 
-## Regles critiques
-
-- **JAMAIS** utiliser `null` ou `undefined` dans les modeles de formulaire
-- Valeurs par defaut : `''` pour le texte, `0` pour les nombres, `[]` pour les tableaux, `false` pour les booleens
-- Ne PAS mixer Signal Forms et Reactive Forms dans le meme composant
-
-## Imports principaux
+## Imports
 
 ```typescript
 import {
-  FormField,
-  FieldState,
-  SignalForm,
-  formField,
-  validateAsync,
+  FormField, // directive [formField]
+  FormRoot, // directive [formRoot] sur <form>
+  form,
+  submit,
+  required,
+  minLength,
+  maxLength,
+  pattern,
+  validate,
   applyEach,
+  type FieldTree,
 } from '@angular/forms/signals';
 ```
 
-## FieldState vs FormField
+Aussi exportes : `email`, `min`, `max`, `disabled`, `hidden`, `readonly`, `debounce`, `validateAsync`,
+`validateHttp`, `validateTree`, `validateStandardSchema`, `schema`, `apply`, `applyWhen`.
 
-### FieldState — etat brut du champ
-
-`FieldState` represente la valeur d'un champ. C'est un type simple.
-
-### FormField — champ avec etat reactif
-
-`FormField` est une **fonction** — il FAUT l'appeler pour acceder a l'etat.
+## Modele, schema, soumission
 
 ```typescript
+const EMPTY_CONTACT: ContactFormData = { name: '', email: '', message: '' };
+
 @Component({
-  imports: [SignalForm],
+  selector: 'app-contact-form',
+  imports: [FormRoot, FormField],
   template: `
-    <form [signalForm]="form">
-      <input [formField]="form.name" />
-      <input [formField]="form.email" type="email" />
-      <input [formField]="form.age" type="number" />
+    <form [formRoot]="contactForm">
+      @let nameInError = contactForm.name().touched() && contactForm.name().invalid();
+      <label for="name">Ton nom</label>
+      <input
+        id="name"
+        type="text"
+        [formField]="contactForm.name"
+        aria-required="true"
+        [attr.aria-invalid]="nameInError"
+      />
+      <button type="submit" [disabled]="contactForm().submitting()">Envoyer</button>
     </form>
   `,
 })
-export class UserFormComponent {
-  protected readonly form = new SignalForm({
-    name: '',       // string — pas null !
-    email: '',      // string
-    age: 0,         // number — pas null !
-  });
+export class ContactForm {
+  private readonly _model = signal<ContactFormData>(EMPTY_CONTACT);
 
-  // IMPORTANT : appeler le field comme une fonction pour acceder a l'etat
-  protected readonly nameValue = computed(() => this.form.name());       // valeur courante
-  protected readonly nameState = computed(() => this.form.name.state()); // etat complet (dirty, touched, errors, etc.)
-}
-```
-
-> **Piege courant** : `form.name` retourne le FormField. `form.name()` retourne la **valeur**. `form.name.state()` retourne l'**etat**.
-
-## Directive [formField]
-
-```html
-<input [formField]="form.username" />
-<textarea [formField]="form.description"></textarea>
-<select [formField]="form.country">
-  <option value="fr">France</option>
-  <option value="us">USA</option>
-</select>
-```
-
-### Attributs interdits avec [formField]
-
-Ne PAS utiliser ces attributs sur un element avec `[formField]` :
-
-| Interdit | Raison |
-|----------|--------|
-| `[(ngModel)]` | Conflit de binding |
-| `[value]` | Gere par formField |
-| `(input)` | Gere par formField |
-| `(change)` | Gere par formField |
-| `name` | Optionnel, gere automatiquement |
-
-## Validation
-
-### Validation synchrone avec schema path
-
-```typescript
-import { SignalForm } from '@angular/forms/signals';
-
-protected readonly form = new SignalForm({
-  name: '',
-  email: '',
-  age: 0,
-}, {
-  validators: {
-    // Validation par chemin de champ
-    'name': (value: string) => {
-      if (value.length < 2) return { minLength: { min: 2, actual: value.length } };
-      return null;
+  readonly contactForm = form(
+    this._model,
+    (path) => {
+      required(path.name, { message: 'Le nom est obligatoire' });
+      minLength(path.name, 2, { message: 'Le nom doit contenir au moins 2 caracteres' });
+      required(path.email, { message: "L'email est obligatoire" });
+      pattern(path.email, EMAIL_PATTERN, { message: "Format d'email invalide" });
     },
-    'email': (value: string) => {
-      if (!value.includes('@')) return { email: true };
-      return null;
-    },
-    'age': (value: number) => {
-      if (value < 18) return { min: { min: 18, actual: value } };
-      return null;
-    },
-  },
-});
-```
-
-### Verification des erreurs dans le template
-
-```html
-@let nameState = form.name.state();
-
-<input [formField]="form.name" />
-
-@if (nameState.touched && nameState.errors?.['minLength']) {
-  <span class="error">Le nom doit contenir au moins {{ nameState.errors['minLength'].min }} caracteres</span>
-}
-```
-
-## Validation asynchrone
-
-```typescript
-import { validateAsync } from '@angular/forms/signals';
-
-protected readonly form = new SignalForm({
-  username: '',
-}, {
-  asyncValidators: {
-    // IMPORTANT : le parametre DOIT etre une fonction (pas une valeur directe)
-    'username': validateAsync(
-      // Fonction de validation — recoit la valeur, retourne Observable ou Promise
-      (value: string) => {
-        return this.userService.checkAvailability(value).pipe(
-          map(available => available ? null : { taken: true }),
-        );
+    {
+      submission: {
+        action: (field) => this.send(field),
+        onInvalid: (field) => focusFirstInvalid(field),
       },
-      {
-        // onError est OBLIGATOIRE — gerer les erreurs reseau
-        onError: (error) => {
-          console.error('Validation failed:', error);
-          return { networkError: true };
-        },
-      }
-    ),
-  },
-});
-```
+    },
+  );
 
-> **Regles critiques pour validateAsync** :
-> 1. Le premier parametre DOIT etre une **fonction** : `(value) => ...`
-> 2. L'option `onError` est **OBLIGATOIRE** — pas de validation async sans gestion d'erreur
+  async submitContact(): Promise<void> {
+    await submit(this.contactForm);
+  }
 
-## Soumission du formulaire
-
-Le callback de submit DOIT etre `async` et DOIT retourner une `Promise`.
-
-```typescript
-@Component({
-  imports: [SignalForm],
-  template: `
-    <form [signalForm]="form" (signalFormSubmit)="onSubmit($event)">
-      <input [formField]="form.name" />
-      <input [formField]="form.email" type="email" />
-      <button type="submit" [disabled]="!form.valid()">Envoyer</button>
-    </form>
-  `,
-})
-export class ContactFormComponent {
-  private readonly contactService = inject(ContactService);
-
-  protected readonly form = new SignalForm({
-    name: '',
-    email: '',
-  });
-
-  // DOIT etre async, DOIT retourner Promise
-  protected async onSubmit(value: { name: string; email: string }): Promise<void> {
-    await this.contactService.send(value);
-    this.form.reset();
+  private async send(field: FieldTree<ContactFormData>): Promise<void> {
+    const { name, email, message } = field().value();
+    // appel du gateway, puis :
+    field().reset(EMPTY_CONTACT);
   }
 }
 ```
 
-## Gestion des tableaux avec applyEach
+- Le modele est un `signal()` (ou un `linkedSignal()` sur l'`input()` a editer) a defauts **non `null`** :
+  `''`, `0`, `[]`, `false`.
+- `contactForm.name` est le champ (a passer a `[formField]`) ; `contactForm.name()` rend son etat :
+  `.value()`, `.touched()`, `.invalid()`, `.reset(valeur)`.
+- `[formRoot]` branche l'evenement submit sur `submission.action` ; `submit(form)` fait la meme chose
+  depuis le code et les tests. L'action ne part que si le formulaire est valide.
+- L'action de soumission est `async`.
 
-`applyEach` applique un validateur a chaque element d'un tableau. Il prend un **seul argument** (la fonction de validation).
+## Regles du depot
 
-```typescript
-protected readonly form = new SignalForm({
-  tags: [] as string[],
-  items: [] as { name: string; qty: number }[],
-}, {
-  validators: {
-    // Valider chaque tag individuellement
-    'tags': applyEach((tag: string) => {
-      if (tag.length === 0) return { required: true };
-      return null;
-    }),
+- `[formField]` possede l'element : pas de `required`, `disabled`, `[value]`, `maxlength` ni `pattern`
+  poses a cote sur le meme element.
+- Bouton d'envoi desactive **uniquement** pendant `form().submitting()`, jamais sur `invalid()`.
+- Messages d'erreur dans le schema ; le template affiche la premiere erreur du champ touche.
+- Validation croisee : `validate(path.confirm, ({ value, valueOf }) => …)` sur le champ que
+  l'utilisateur corrige.
+- Tableaux : `applyEach(path.items, (item) => …)` ; ajout et retrait par `model.update()`.
+- Pas de `ReactiveFormsModule`, `FormsModule` ni `ngModel` dans le depot.
 
-    // Valider chaque item
-    'items': applyEach((item: { name: string; qty: number }) => {
-      if (item.qty < 0) return { negativeQty: true };
-      return null;
-    }),
-  },
-});
-```
+## Exemples reels dans le depot
 
-```typescript
-// Ajouter/supprimer des elements
-addTag(tag: string): void {
-  this.form.tags.update(tags => [...tags, tag]);
-}
-
-removeTag(index: number): void {
-  this.form.tags.update(tags => tags.filter((_, i) => i !== index));
-}
-```
-
-## Objet context — proprietes disponibles
-
-L'objet context est disponible dans les validateurs et les callbacks.
-
-| Propriete | Type | Description |
-|-----------|------|-------------|
-| `value` | `T` | Valeur courante du champ |
-| `valueOf(path)` | `(path: string) => unknown` | Lire la valeur d'un autre champ |
-| `state` | `FieldState` | Etat du champ courant (dirty, touched, errors) |
-| `stateOf(path)` | `(path: string) => FieldState` | Etat d'un autre champ |
-
-```typescript
-validators: {
-  'confirmPassword': (value: string, ctx) => {
-    const password = ctx.valueOf('password') as string;
-    if (value !== password) return { mismatch: true };
-    return null;
-  },
-}
-```
-
-## Pieges courants
-
-| Piege | Erreur | Solution |
-|-------|--------|----------|
-| `form.name` sans `()` dans le template | Affiche `[object Object]` | Appeler `form.name()` pour la valeur |
-| `null` comme valeur initiale | Erreur de type | Utiliser `''`, `0`, `[]`, `false` |
-| `validateAsync(result)` au lieu de `validateAsync(() => result)` | Ne fonctionne pas | Toujours passer une **fonction** |
-| Oublier `onError` dans `validateAsync` | Erreur de compilation | Toujours fournir `onError` |
-| `onSubmit` synchrone | Erreur | Le callback DOIT etre `async` et retourner `Promise` |
-| Utiliser `applyEach(fn, options)` | Erreur | `applyEach` prend un **seul** argument |
-| Mixer `[formField]` et `[(ngModel)]` | Double binding | Choisir l'un ou l'autre |
-| `form.reset()` → remet `null` | Invalide | `reset()` remet les **valeurs initiales** (pas null) |
+- `src/app/features/contact/application/contact-form.ts` : formulaire de page.
+- `src/app/features/auth/application/password-change-form.ts` : validation croisee.
+- `src/app/features/admin/application/components/admin-project-form.ts` : tableaux `applyEach`.
+- `src/app/features/admin/application/components/admin-pair-rows.ts` : ajout et retrait de lignes.
+- `src/app/features/admin/application/editor-draft.ts` : `linkedSignal` sur l'entite editee.
