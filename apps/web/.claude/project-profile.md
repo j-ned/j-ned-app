@@ -1,7 +1,7 @@
 # Profil-projet AAK — angular-portfolio-app
 
 > Généré par `/aak-init-profile`. Adapté à la main si besoin.
-> Les 4 agents AAK lisent ce fichier à chaque invocation.
+> Les agents AAK lisent ce fichier à chaque invocation.
 
 ## Projet & langue
 
@@ -15,7 +15,7 @@
   Binaire installé : `pnpm exec <cmd>` ; ad-hoc : `pnpm dlx <pkg>`. **Aucune**
   autre commande ne franchit les gates.
 - **test** (source de vérité du typecheck) : `pnpm test` (`ng test`, builder
-  `@angular/build:unit-test` → Vitest 4 + happy-dom, environnement fixé dans `vitest.config.mts`). `tsconfig.spec.json` inclut
+  `@angular/build:unit-test` → Vitest 5 + happy-dom, environnement fixé dans `vitest.config.mts`). `tsconfig.spec.json` inclut
   bien `src/**/*.spec.ts` ⇒ les specs sont type-checkées.
 - **lint** : `pnpm lint` (`ng lint`, `@angular-eslint/builder` + flat config
   `eslint.config.js`) — zéro warning, zéro erreur. Les règles a11y d'angular-eslint
@@ -30,7 +30,7 @@
 ## Stack & bibliothèques (choix structurants)
 
 - **Version Angular & détection par défaut** : Angular `22` (`@angular/core
-^22.1.x`, `@angular/build ^22.1.x`, mis à jour le 2026-09-08). En v22 le défaut
+^22.2.x`, `@angular/build ^22.2.x`). En v22 le défaut
   framework est `OnPush` + zoneless : le `changeDetection: OnPush` explicite des
   composants existants est **redondant mais toléré** (pas de diff massif pour le
   retirer) ; ne pas l'exiger sur du nouveau code.
@@ -142,7 +142,7 @@ runtime` pour `InMemoryHomeGateway`, seul in-memory encore câblé en
 - **Structure** : `describe` > `it` en Given/When/Then ; `it.each` pour la
   triangulation TDD ; `fixture.componentRef.setInput()` pour les inputs ;
   `TestBed.overrideComponent` > `configureTestingModule`.
-- **Projet de test visuel** (DOM réel, navigateur) : `e2e/a11y` — Playwright 1.63 + `@axe-core/playwright`
+- **Projet de test visuel** (DOM réel, navigateur) : `e2e/a11y` — Playwright 1.64 + `@axe-core/playwright`
   4.13 (versions exactes), Chromium _headless shell_, contre l'image du site montée par
   `ci/image-stack.sh` devant la doublure `ci/api-stub` (ADR-0025, ADR-0038). Audit WCAG 2.0/2.1/2.2 A et AA, zéro violation, sans exception ; pages
   publiques, états interactifs et pages admin avec données, clair et sombre. Commandes :
