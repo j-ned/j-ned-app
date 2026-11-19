@@ -1,9 +1,9 @@
 import { createHash, createHmac } from 'node:crypto';
 import { isIPv4, isIPv6 } from 'node:net';
 import { Logger } from '../common/logger';
+import { describeUserAgent } from '../common/user-agent';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { isbot } from 'isbot';
-import { UAParser } from 'ua-parser-js';
 import { AppConfigService } from '../config/app-config.service';
 import type { Database } from '../database/drizzle.types';
 import { pageView, analyticsEvent } from '../database/schema';
@@ -111,15 +111,7 @@ export class AnalyticsTrackerService {
         .update(`${ip}|${ua}|${day}`)
         .digest('hex');
 
-      const parsed = new UAParser(ua).getResult();
-      const browser =
-        parsed.browser.name && parsed.browser.version
-          ? `${parsed.browser.name} ${parsed.browser.version}`
-          : null;
-      const os =
-        parsed.os.name && parsed.os.version
-          ? `${parsed.os.name} ${parsed.os.version}`
-          : null;
+      const { browser, os } = describeUserAgent(ua);
 
       if (dto.type === 'page_view' || dto.type === 'page_duration') {
         await this.upsertPageView(dto, sessionHash, browser, os, country);

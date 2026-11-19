@@ -34,7 +34,7 @@ Pas de framework d'injection : `src/main.ts` lit la configuration, ouvre les con
 - **`src/services.ts`** - `createServices()` : racine de composition, chaque service reçoit ses dépendances par son constructeur (une instance chacun).
 - **`src/app.ts`** - `createApp()` : middlewares globaux (log des requêtes, en-têtes de sécurité, CORS, contrôle d'origine), puis les routes de chaque module (`<module>/<module>.routes.ts`, une fabrique `xxxRoutes(services…, requireAuth)` par module), erreur et 404 au format JSON.
 - **`src/common/`** - briques HTTP partagées : `http.ts` (corps JSON validé, query, UUID, fichiers envoyés, IP du visiteur), `validation.ts` (DTO zod), `throttle.ts` (quotas), `cross-origin.ts` (CSRF), `error-handler.ts`, `logger.ts`, `http-errors.ts`.
-- **Tâche quotidienne** - `GET /api/cron/daily` (service `portfolio-cron` de la pile, 00:00 UTC) : rollup analytics (`src/analytics/analytics.schedule.ts`). En local : `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/daily`.
+- **Tâche quotidienne** - `GET /api/cron/daily` (service `portfolio-cron` de la pile, 00:00 UTC) : rollup analytics (`src/analytics/analytics.schedule.ts`), puis purge du journal des connexions de plus de 90 jours. En local : `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/daily`.
 
 Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis le pool Postgres et S3 sont fermés.
 
@@ -138,6 +138,7 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
 | POST    | `/auth/2fa/verify`      | ❌   | Complète le login 2FA (`challengeToken` + `code` TOTP ou `backupCode`)                           |
 | POST    | `/auth/logout`          | ✅   | Clear cookie                                                                                     |
 | GET     | `/auth/me`              | ✅   | Infos user courant                                                                               |
+| GET     | `/auth/login-events`    | ✅   | Journal des connexions, paginé (`?page=&limit=`), du plus récent au plus ancien                  |
 | POST    | `/auth/change-password` | ✅   | Change le mot de passe                                                                           |
 | POST    | `/auth/2fa/generate`    | ✅   | Génère secret + QR code (n'active pas encore)                                                    |
 | POST    | `/auth/2fa/enable`      | ✅   | Active 2FA après vérif code, renvoie 10 backup codes one-time                                    |
@@ -153,6 +154,7 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
 - `requireAuth` rejette tout JWT avec `scope === '2fa-challenge'` - un challenge token ne peut jamais servir de session (défense en profondeur).
 - Connexion et vérification 2FA : 5 tentatives par minute et par IP (`AUTH_ATTEMPT_THROTTLE`).
 - JWT signés et vérifiés par `jsonwebtoken` (`src/auth/jwt.service.ts`).
+- **Journal des connexions** (`login_event`, `src/auth/login-journal.service.ts`) : une ligne par étape de connexion, acceptée ou refusée (`password_accepted`/`password_rejected`, `two_factor_accepted`/`two_factor_rejected`), avec le compte s'il est connu, le pays, le navigateur et le système. Ni adresse IP ni e-mail saisi. Une écriture qui échoue est journalisée en erreur et ne bloque pas la connexion. Conservé 90 jours, purgé par la tâche quotidienne.
 
 **Consommer l'auth dans un module** :
 

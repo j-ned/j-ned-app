@@ -32,6 +32,7 @@ export const ADMIN_ROUTES: readonly Route[] = [
   })),
   { method: 'POST', path: '/api/auth/logout' },
   { method: 'GET', path: '/api/auth/me' },
+  { method: 'GET', path: '/api/auth/login-events' },
   { method: 'POST', path: '/api/auth/change-password' },
   { method: 'POST', path: '/api/auth/2fa/generate' },
   { method: 'POST', path: '/api/auth/2fa/enable' },

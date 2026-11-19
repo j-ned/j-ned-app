@@ -48,7 +48,12 @@ export function createApp(
       .route('/api/config', runtimeConfigRoutes(config))
       .route(
         '/api/auth',
-        authRoutes({ auth: services.auth, config, requireAuth: session }),
+        authRoutes({
+          auth: services.auth,
+          config,
+          requireAuth: session,
+          journal: services.loginJournal,
+        }),
       )
       .route(
         '/api/storage',
@@ -85,6 +90,7 @@ export function createApp(
         cronRoutes({
           secret: config.cronSecret,
           aggregator: services.analyticsAggregator,
+          loginJournal: services.loginJournal,
         }),
       )
       .notFound(handleNotFound)

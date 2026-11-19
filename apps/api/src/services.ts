@@ -4,6 +4,7 @@ import { AnalyticsStatsService } from './analytics/analytics-stats.service';
 import { AnalyticsTrackerService } from './analytics/analytics-tracker.service';
 import { AuthService } from './auth/auth.service';
 import { JwtService } from './auth/jwt.service';
+import { LoginJournalService } from './auth/login-journal.service';
 import { PasswordService } from './auth/password.service';
 import { TwoFactorService } from './auth/two-factor.service';
 import { BlogContentImagesService } from './blog/blog-content-images.service';
@@ -36,6 +37,7 @@ export function createServices({ config, db, s3 }: ServiceDeps) {
   const images = new ImageOptimizer();
   const users = new UsersService(db);
   const jwt = new JwtService(config.jwtSecret, config.jwtExpiresIn);
+  const loginJournal = new LoginJournalService(db);
   const projectImages = new ProjectImagesService(db, storage, images);
   const blogContentImages = new BlogContentImagesService(db, storage, images);
 
@@ -51,7 +53,9 @@ export function createServices({ config, db, s3 }: ServiceDeps) {
       new PasswordService(),
       new TwoFactorService(config),
       jwt,
+      loginJournal,
     ),
+    loginJournal,
     contact: new ContactService(db, createMailer(config.mailTransport), config),
     projects: new ProjectsService(db, storage, images, projectImages),
     projectImages,

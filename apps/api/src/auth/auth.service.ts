@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
+  HttpException,
   UnauthorizedException,
   BadRequestException,
   TooManyRequestsException,
@@ -15,6 +16,7 @@ import { PasswordService } from './password.service';
 import { TwoFactorService } from './two-factor.service';
 import type { User } from '../database/schema';
 import type { JwtPayload } from './jwt-payload.interface';
+import type { LoginJournalService, LoginOrigin } from './login-journal.service';
 
 export type LoginResult =
   | { kind: 'authenticated'; token: string; user: PublicUser }
@@ -41,6 +43,7 @@ export class AuthService {
     private readonly password: PasswordService,
     private readonly twoFactor: TwoFactorService,
     private readonly jwt: JwtService,
+    private readonly journal: LoginJournalService,
   ) {}
 
   /**
@@ -60,12 +63,20 @@ export class AuthService {
     await this.users.revokeSessions(payload.sub);
   }
 
-  async login(email: string, plainPassword: string): Promise<LoginResult> {
+  async login(
+    email: string,
+    plainPassword: string,
+    origin: LoginOrigin,
+  ): Promise<LoginResult> {
     const user = await this.users.findByEmail(email);
     // Compte inconnu : même travail argon2 qu'un mauvais mot de passe, la durée ne trahit pas le compte.
     const hash = user?.passwordHash ?? (await this.decoyPasswordHash());
     const ok = await this.password.verify(plainPassword, hash);
-    if (!user || !ok) throw new UnauthorizedException('Invalid credentials');
+    if (!user || !ok) {
+      await this.journal.record('password_rejected', user?.id ?? null, origin);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    await this.journal.record('password_accepted', user.id, origin);
 
     if (user.isTwoFactorEnabled) {
       const challengeToken = this.jwt.sign(
@@ -85,7 +96,33 @@ export class AuthService {
   async verifyTwoFactor(
     challengeToken: string,
     creds: { code?: string; backupCode?: string },
+    origin: LoginOrigin,
   ): Promise<{ token: string; user: PublicUser }> {
+    let user: User | undefined;
+    try {
+      user = await this.challengedUser(challengeToken);
+      await this.assertSecondFactor(user, creds);
+    } catch (error) {
+      // Une panne (base, réseau) n'est pas une tentative refusée : seul un refus est journalisé.
+      if (error instanceof HttpException) {
+        await this.journal.record(
+          'two_factor_rejected',
+          user?.id ?? null,
+          origin,
+        );
+      }
+      throw error;
+    }
+    await this.journal.record('two_factor_accepted', user.id, origin);
+
+    const token = this.jwt.sign({
+      sub: user.id,
+      tokenVersion: user.tokenVersion,
+    });
+    return { token, user: publicUser(user) };
+  }
+
+  private async challengedUser(challengeToken: string): Promise<User> {
     let payload: JwtPayload;
     try {
       payload = this.jwt.verify<JwtPayload>(challengeToken);
@@ -99,7 +136,13 @@ export class AuthService {
     if (!user || !user.isTwoFactorEnabled || !user.twoFactorSecret) {
       throw new UnauthorizedException('Invalid challenge token');
     }
+    return user;
+  }
 
+  private async assertSecondFactor(
+    user: User,
+    creds: { code?: string; backupCode?: string },
+  ): Promise<void> {
     // Compté avant de vérifier : des essais simultanés ne passent pas sous la limite.
     const attemptsKey = `2fa|${user.id}`;
     const attempts = await countHit(
@@ -112,6 +155,7 @@ export class AuthService {
 
     if (creds.code) {
       if (
+        !user.twoFactorSecret ||
         !this.twoFactor.verifyTotpCode(user.twoFactorSecret, creds.code) ||
         (await this.isReplayedTotpCode(user.id, creds.code))
       ) {
@@ -128,12 +172,6 @@ export class AuthService {
       throw new UnauthorizedException('Either code or backupCode is required');
     }
     await resetHits(attemptsKey);
-
-    const token = this.jwt.sign({
-      sub: user.id,
-      tokenVersion: user.tokenVersion,
-    });
-    return { token, user: publicUser(user) };
   }
 
   /** Un code TOTP ne sert qu'une fois par compte : intercepté, il ne se rejoue pas dans sa fenêtre. */
