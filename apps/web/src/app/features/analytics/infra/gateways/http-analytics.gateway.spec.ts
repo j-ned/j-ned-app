@@ -229,7 +229,7 @@ describe('HttpAnalyticsGateway', () => {
   describe('exclusion des pages de connexion et d’administration', () => {
     afterEach(() => history.replaceState(null, '', '/'));
 
-    it.each([['/login'], ['/admin'], ['/admin/messages']])(
+    it.each([['/login'], ['/two-factor'], ['/admin'], ['/admin/messages']])(
       'Given a visitor on %s When an outbound link is clicked or the home form comes into view Then neither beacon nor POST leaves',
       (path) => {
         const { gateway, httpController } = configureBrowser();
@@ -246,7 +246,7 @@ describe('HttpAnalyticsGateway', () => {
       },
     );
 
-    it.each([['/login'], ['/admin/messages']])(
+    it.each([['/login'], ['/two-factor'], ['/admin/messages']])(
       'Given a visitor on %s When a call to action is clicked Then no POST leaves',
       (path) => {
         const { gateway, httpController } = configureBrowser();
@@ -561,14 +561,17 @@ describe('HttpAnalyticsGateway', () => {
   });
 
   describe('URL filter (login + admin)', () => {
-    it.each([['/login'], ['/admin/users']])('trackPageView est no-op pour url=%s', (url) => {
-      const { gateway, httpController } = configureBrowser();
-      gateway.trackPageView(url);
-      httpController.expectNone(TRACK_URL);
-      httpController.verify();
-    });
+    it.each([['/login'], ['/two-factor'], ['/admin/users']])(
+      'trackPageView est no-op pour url=%s',
+      (url) => {
+        const { gateway, httpController } = configureBrowser();
+        gateway.trackPageView(url);
+        httpController.expectNone(TRACK_URL);
+        httpController.verify();
+      },
+    );
 
-    it.each([['/login']])('trackPageDuration est no-op pour url=%s', (url) => {
+    it.each([['/login'], ['/two-factor']])('trackPageDuration est no-op pour url=%s', (url) => {
       const { gateway, httpController } = configureBrowser();
       const beacon = beaconSpy();
       gateway.trackPageDuration(url, 30);

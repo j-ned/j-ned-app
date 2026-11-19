@@ -45,7 +45,12 @@ function withoutFragment(url: string): string {
 }
 
 function isExcludedUrl(url: string): boolean {
-  return url === '/login' || url === '/admin' || url.startsWith('/admin/');
+  return (
+    url === '/login' ||
+    url === '/two-factor' ||
+    url === '/admin' ||
+    url.startsWith('/admin/')
+  );
 }
 
 export class AnalyticsTrackerService {
