@@ -1,7 +1,15 @@
 import { Hono } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import type { AppConfigService } from '../config/app-config.service';
-import { jsonBody, type AppEnv } from '../common/http';
+import {
+  jsonBody,
+  queryParams,
+  reply,
+  visitorCountry,
+  type AppContext,
+  type AppEnv,
+} from '../common/http';
+import { paginationSchema, parsePagination } from '../common/pagination';
 import {
   AUTH_ATTEMPT_THROTTLE,
   PUBLIC_READ_THROTTLE,
@@ -12,6 +20,7 @@ import { AUTH_COOKIE_NAME, authCookieOptions } from './auth-cookie';
 import type { AuthService } from './auth.service';
 import { changePasswordSchema } from './dto/change-password.dto';
 import { loginSchema } from './dto/login.dto';
+import type { LoginJournalService, LoginOrigin } from './login-journal.service';
 import { twoFactorDisableSchema } from './dto/two-factor-disable.dto';
 import { twoFactorEnableSchema } from './dto/two-factor-enable.dto';
 import { twoFactorVerifySchema } from './dto/two-factor-verify.dto';
@@ -21,10 +30,21 @@ export type AuthRoutesDeps = {
   readonly auth: AuthService;
   readonly config: AppConfigService;
   readonly requireAuth: RequireAuth;
+  readonly journal: LoginJournalService;
 };
 
+const loginOrigin = (c: AppContext): LoginOrigin => ({
+  userAgent: c.req.header('user-agent') ?? '',
+  country: visitorCountry(c),
+});
+
 /** `/api/auth` : connexion (mot de passe puis 2FA), session, mot de passe et 2FA de l'admin. */
-export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
+export function authRoutes({
+  auth,
+  config,
+  requireAuth,
+  journal,
+}: AuthRoutesDeps) {
   const sessionMaxAgeMs = parseDurationMs(config.jwtExpiresIn);
 
   return (
@@ -32,7 +52,11 @@ export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
       // Connexion : cookie posé si pas de 2FA, sinon un jeton de challenge (5 min).
       .post('/login', throttle(AUTH_ATTEMPT_THROTTLE), async (c) => {
         const dto = await jsonBody(c, loginSchema);
-        const result = await auth.login(dto.email, dto.password);
+        const result = await auth.login(
+          dto.email,
+          dto.password,
+          loginOrigin(c),
+        );
         if (result.kind === 'authenticated') {
           setCookie(
             c,
@@ -50,10 +74,11 @@ export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
 
       .post('/2fa/verify', throttle(AUTH_ATTEMPT_THROTTLE), async (c) => {
         const dto = await jsonBody(c, twoFactorVerifySchema);
-        const result = await auth.verifyTwoFactor(dto.challengeToken, {
-          code: dto.code,
-          backupCode: dto.backupCode,
-        });
+        const result = await auth.verifyTwoFactor(
+          dto.challengeToken,
+          { code: dto.code, backupCode: dto.backupCode },
+          loginOrigin(c),
+        );
         setCookie(
           c,
           AUTH_COOKIE_NAME,
@@ -77,6 +102,12 @@ export function authRoutes({ auth, config, requireAuth }: AuthRoutesDeps) {
           email: user.email,
           isTwoFactorEnabled: user.isTwoFactorEnabled,
         });
+      })
+
+      // Journal des connexions, paginé, du plus récent au plus ancien.
+      .get('/login-events', throttle(), requireAuth, async (c) => {
+        const query = queryParams(c, paginationSchema);
+        return reply(c, await journal.findAll(parsePagination(query)));
       })
 
       .post('/change-password', throttle(), requireAuth, async (c) => {
