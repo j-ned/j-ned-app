@@ -282,12 +282,23 @@ describe('AnalyticsTrackerService', () => {
   describe('URL filter (login/admin)', () => {
     it.each([
       ['/login'],
+      ['/two-factor'],
       ['/admin'],
       ['/admin/'],
       ['/admin/users'],
       ['/admin/foo/bar'],
     ])('skip page_view pour url=%s', async (url) => {
       await service.track({ type: 'page_view', url }, '1.2.3.4', NORMAL_UA);
+      expect(db.select).not.toHaveBeenCalled();
+      expect(db.insert).not.toHaveBeenCalled();
+    });
+
+    it('skip page_duration sur /two-factor', async () => {
+      await service.track(
+        { type: 'page_duration', url: '/two-factor', duration: 10 },
+        '1.2.3.4',
+        NORMAL_UA,
+      );
       expect(db.select).not.toHaveBeenCalled();
       expect(db.insert).not.toHaveBeenCalled();
     });

@@ -27,7 +27,7 @@ const ANALYTICS_TRACK_URL = '/api/analytics/track';
 
 // Pages de connexion et d'administration : jamais mesurées (l'API ne filtre que les pages vues).
 function isExcludedUrl(url: string): boolean {
-  return url === '/login' || url === '/admin' || url.startsWith('/admin/');
+  return url === '/login' || url === '/two-factor' || url === '/admin' || url.startsWith('/admin/');
 }
 
 @Injectable()

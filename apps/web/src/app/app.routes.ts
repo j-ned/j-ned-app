@@ -1,5 +1,6 @@
 import type { Routes } from '@angular/router';
 import { authGuard } from '@features/auth/infra/auth-guard';
+import { twoFactorChallengeGuard } from '@features/auth/infra/two-factor-challenge-guard';
 import { Home } from '@features/home/pages/home/home';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
@@ -163,6 +164,7 @@ export const routes: Routes = [
   {
     path: 'two-factor',
     title: 'Vérification 2FA | Julien Nédellec',
+    canMatch: [twoFactorChallengeGuard],
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.TWO_FACTOR_ROUTES),
   },
   {

@@ -1,5 +1,7 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { type ActivatedRouteSnapshot, Router, provideRouter } from '@angular/router';
+import { AuthStore } from '@core/auth/auth-store';
 import { routes } from './app.routes';
 
 const leafOf = (snapshot: ActivatedRouteSnapshot): ActivatedRouteSnapshot =>
@@ -46,5 +48,28 @@ describe('routes', () => {
         expect([url, leaf.routeConfig?.path]).toEqual([path, '**']);
       },
     );
+  });
+
+  // Sans challenge en cours, la page de code ne sert à rien et ne doit pas être atteignable par son URL.
+  describe('two-factor challenge', () => {
+    async function navigateToTwoFactor(challengeToken: string | null): Promise<string> {
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter(routes),
+          { provide: AuthStore, useValue: { pendingChallengeToken: signal(challengeToken) } },
+        ],
+      });
+      const router = TestBed.inject(Router);
+      await router.navigateByUrl('/two-factor');
+      return router.url;
+    }
+
+    it('Given no pending challenge When /two-factor is opened directly Then the visitor lands on /login', async () => {
+      await expect(navigateToTwoFactor(null)).resolves.toBe('/login');
+    });
+
+    it('Given a challenge issued by the password step When /two-factor is opened Then the page is served', async () => {
+      await expect(navigateToTwoFactor('challenge-token')).resolves.toBe('/two-factor');
+    });
   });
 });
