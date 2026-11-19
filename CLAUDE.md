@@ -17,16 +17,22 @@ d'agent AAK précise ces trois points :
 Le checker mécanique se lance **depuis la racine**, avec la racine de source du front :
 
 ```bash
-apps/web/.claude/checks/aak-checks.sh --diff master...HEAD --src apps/web/src --zoneless
+apps/web/.claude/checks/aak-checks.sh --diff master...HEAD --src apps/web/src --zoneless \
+  --archaeology '<motif du profil>'
 ```
+
+`<motif du profil>` est la valeur du champ « Pattern grep d'archéologie » du profil-projet, recopiée
+telle quelle : le contrat du `code-reviewer` exige de la transmettre.
 
 Lancé depuis `apps/web`, il ne voit aucun fichier du diff et rend « aucun hit » : `git diff` rend des
 chemins relatifs à la racine. Vérifier que la ligne `mode : diff … N fichier(s) .ts` annonce un `N`
 cohérent avec le diff.
 
-`apps/web/.claude/checks/` est ignoré par git (code AAK sous licence, dépôt public). Absent d'un
-clone neuf, il se recopie depuis le plugin installé :
+`apps/web/.claude/checks/` et `apps/web/.claude/eslint/` (préréglage ESLint chargé par
+`apps/web/eslint.config.js` quand il est présent) sont ignorés par git (code AAK sous licence, dépôt
+public). Absents d'un clone neuf, ils se recopient depuis le plugin installé :
 
 ```bash
 cp -rp ~/.claude/plugins/cache/aak/angular-team/<version>/checks apps/web/.claude/checks
+cp -rp ~/.claude/plugins/cache/aak/angular-team/<version>/eslint apps/web/.claude/eslint
 ```
