@@ -11,6 +11,42 @@ const path = require('node:path');
 const aakPreset = path.join(__dirname, '.claude/eslint/aak-conventions.mjs');
 const aak = fs.existsSync(aakPreset) ? require(aakPreset).default : [];
 
+// Le préréglage porte ses interdits dans une seule règle `no-restricted-syntax` : en lever un sur
+// quelques fichiers impose de la redéclarer avec les sélecteurs restants. Un commentaire
+// `eslint-disable` dans le code serait signalé comme inutile en CI, où le préréglage est absent.
+const aakSelectors = aak.flatMap((config) =>
+  (config.rules?.['no-restricted-syntax'] ?? []).filter((option) => typeof option === 'object'),
+);
+const aakWithout = (files, isLifted) =>
+  aak.length === 0
+    ? []
+    : [
+        {
+          files,
+          rules: {
+            'no-restricted-syntax': [
+              'error',
+              ...new Set(aakSelectors.filter(({ selector }) => !isLifted(selector))),
+            ],
+          },
+        },
+      ];
+const isDefaultExport = (selector) => selector === 'ExportDefaultDeclaration';
+const isGeneratedTestLoop = (selector) => selector.includes('callee.name=/^(it|test)$/');
+const aakExceptions = [
+  // Angular SSR et Playwright lisent l'export par défaut de ces deux fichiers.
+  ...aakWithout(['src/main.server.ts'], isDefaultExport),
+  // Playwright n'a pas de `test.each` : un test par page se déclare par une boucle.
+  ...aakWithout(['e2e/a11y/**/*.spec.ts'], isGeneratedTestLoop),
+  ...aakWithout(['e2e/playwright.config.ts'], isDefaultExport),
+  // Une spec monte du HTML dans un élément détaché pour en vérifier la structure.
+  ...aakWithout(['src/**/*.spec.ts'], (selector) => selector.includes('"innerHTML"')),
+  // Seul point où le HTML du Markdown, assaini par `parseMarkdown`, est remis au gabarit.
+  ...aakWithout(['src/app/features/blog/application/components/blog-article-body.ts'], (selector) =>
+    selector.includes('bypassSecurityTrust'),
+  ),
+];
+
 module.exports = [
   {
     files: ['**/*.ts'],
@@ -81,4 +117,5 @@ module.exports = [
 
   // Conventions AAK mécanisables (préréglage local, réécrit à chaque /aak-sync)
   ...aak,
+  ...aakExceptions,
 ];

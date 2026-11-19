@@ -163,10 +163,8 @@ export class PasswordChangeForm {
     },
   );
 
-  constructor() {
-    effect(() => {
-      this.resetToken();
-      this.pwdForm().reset({ ...EMPTY });
-    });
-  }
+  private readonly _resetEffect = effect(() => {
+    this.resetToken();
+    this.pwdForm().reset({ ...EMPTY });
+  });
 }

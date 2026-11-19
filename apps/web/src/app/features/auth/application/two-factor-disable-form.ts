@@ -157,11 +157,9 @@ export class TwoFactorDisableForm {
     },
   );
 
-  constructor() {
-    // Le parent incrémente `resetToken` après une désactivation : le formulaire repart à vide.
-    effect(() => {
-      this.resetToken();
-      this.disableForm().reset({ ...EMPTY });
-    });
-  }
+  // Le parent incrémente `resetToken` après une désactivation : le formulaire repart à vide.
+  private readonly _resetEffect = effect(() => {
+    this.resetToken();
+    this.disableForm().reset({ ...EMPTY });
+  });
 }

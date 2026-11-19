@@ -181,19 +181,19 @@ export class FileDropzone {
     return file ? formatFileSize(file.size) : '';
   });
 
-  constructor() {
-    // Effect légitime : gère un blob URL, ressource externe hors état applicatif.
-    effect(() => {
-      const f = this.currentFile();
-      const previous = untracked(() => this._blobUrl());
-      if (previous) URL.revokeObjectURL(previous);
-      if (f && f.type.startsWith('image/')) {
-        this._blobUrl.set(URL.createObjectURL(f));
-      } else {
-        this._blobUrl.set('');
-      }
-    });
+  // Effect légitime : gère un blob URL, ressource externe hors état applicatif.
+  private readonly _blobUrlEffect = effect(() => {
+    const f = this.currentFile();
+    const previous = untracked(() => this._blobUrl());
+    if (previous) URL.revokeObjectURL(previous);
+    if (f && f.type.startsWith('image/')) {
+      this._blobUrl.set(URL.createObjectURL(f));
+    } else {
+      this._blobUrl.set('');
+    }
+  });
 
+  constructor() {
     this._destroyRef.onDestroy(() => {
       const url = this._blobUrl();
       if (url) URL.revokeObjectURL(url);

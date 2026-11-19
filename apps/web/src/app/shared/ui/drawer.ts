@@ -128,21 +128,21 @@ export class Drawer {
     return `${base} ${side}`;
   });
 
+  private readonly _scrollLockEffect = effect(() => {
+    const body = this._document.body;
+    if (!body) return;
+    const isVisible = this.visible();
+    body.style.overflow = isVisible ? 'hidden' : '';
+
+    if (isVisible) {
+      this._previousActiveElement = this._document.activeElement as HTMLElement | null;
+    } else if (this._previousActiveElement) {
+      this._previousActiveElement.focus();
+      this._previousActiveElement = null;
+    }
+  });
+
   constructor() {
-    effect(() => {
-      const body = this._document.body;
-      if (!body) return;
-      const isVisible = this.visible();
-      body.style.overflow = isVisible ? 'hidden' : '';
-
-      if (isVisible) {
-        this._previousActiveElement = this._document.activeElement as HTMLElement | null;
-      } else if (this._previousActiveElement) {
-        this._previousActiveElement.focus();
-        this._previousActiveElement = null;
-      }
-    });
-
     afterRenderEffect({
       write: () => {
         this._panel()?.nativeElement.focus();
