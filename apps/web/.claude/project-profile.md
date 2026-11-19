@@ -20,6 +20,10 @@
 - **lint** : `pnpm lint` (`ng lint`, `@angular-eslint/builder` + flat config
   `eslint.config.js`) — zéro warning, zéro erreur. Les règles a11y d'angular-eslint
   (`templateAccessibility`) y sont actives, templates inline compris (`processInlineTemplates`).
+- **Linter TS/JS** : `eslint` (flat config `eslint.config.js`). Le préréglage AAK
+  `.claude/eslint/aak-conventions.mjs` est chargé **s'il est présent** ; il ne l'est ni en CI ni
+  dans un clone neuf (code sous licence, dépôt public). Il n'est pas activé : avec lui `pnpm lint`
+  remonte 24 erreurs sur le code existant (mesuré le 2026-11-19), à traiter avant de le poser.
 - **build** : `pnpm build` (`ng build`, `@angular/build:application`, SSR activé).
   N'est pas la source de vérité des types (l'app-tsconfig exclut les specs).
 - **invalidation cache** (à lancer **avant** de rejouer un gate ou une preuve RED
@@ -45,6 +49,10 @@
   jamais `Store`. Portée : instance-scopée via provider de route/composant.
   Les stores (source de vérité partagée) portent le suffixe `-store`
   (`toast-store.ts`, `auth-store.ts`).
+- **Gateway / port (frontière d'I/O)** : suffixe `Gateway`, fichier `*.gateway.ts`
+  (`ContactGateway`, `HttpProfileGateway`) ; implémentation HTTP dans `features/<x>/infra/`,
+  préfixée `Http`. Jamais `Store` ni `Facade`. Port abstrait seulement si 2+ implémentations
+  (cf. « Contrats injectables »).
 - **Validation aux frontières** : `<aucune lib de validation runtime>` côté front
   (Zod réservé à l'API Hono). La frontière est tenue par des **adapters =
   fonctions pures** `toX(raw)` (infra → domaine) + **types API isolés** dans
@@ -61,6 +69,10 @@
 - **Forme des modèles** : `type` immutables (`readonly`) ; pas d'`interface` pour
   les modèles de domaine ; **union types > enums**. Pas de dérivation depuis un
   schéma (aucune lib de validation runtime côté front).
+- **Immutabilité (immuable par défaut)** : `off`. La convention du dépôt reste celle de
+  CLAUDE.md (`readonly`, nouvelles références dans les signals, `.asReadonly()` sur les stores),
+  mais le mode `strict` n'est pas activé : le checker y relève les accumulateurs locaux du code
+  existant (`push` dans `analytics-presenter.ts`, `icon-map.ts`, `.sort()` des listes du blog).
 - **Formulaires** : Signal Forms partout (`@angular/forms/signals`, migration achevée le
   2026-09-08) ; plus de `ReactiveFormsModule`/`FormsModule`/`ngModel` dans `src/`.
   Doctrine et footguns : skill `angular-signal-forms`, section « Formulaires » de CLAUDE.md.
@@ -135,6 +147,9 @@ runtime` pour `InMemoryHomeGateway`, seul in-memory encore câblé en
   (`Math.random`, `crypto`, génération d'ID). Tout le reste s'exécute pour de vrai.
 - **Carve-out unitaire direct** (sacré, ne pas collapser dans une page) :
   domaine pur (`features/*/domain/**`), testé **sans TestBed** (TypeScript pur).
+- **Mutation (pouvoir de détection de la suite)** : `off` (aucun outil de mutation installé).
+- **Commande de mutation** : —
+- **Property-based (tests par propriétés)** : `off` (`fast-check` non installé).
 - **Sélecteurs de test** : `data-testid` **uniquement** — jamais id / classe /
   texte.
 - **HTTP en test** : `provideHttpClientTesting()` + `HttpTestingController`, avec
@@ -163,6 +178,28 @@ runtime` pour `InMemoryHomeGateway`, seul in-memory encore câblé en
   `dist/angular-portfolio-app/browser/**`.
 - **Composants à forte interaction tactile** (validation interactive séparée,
   cible mobile-first) : `app-drawer`, `app-file-dropzone`, `app-toast`.
+
+## Livraison & réversibilité (blast radius)
+
+- **Réversibilité d'un déploiement** : `manuel`. Un merge sur `master` publie les images sur GHCR
+  (tags `latest` et `sha-<commit>`) et Dokploy les tire ; revenir en arrière = redéployer en fixant
+  le tag `sha-<commit>` précédent (ADR-0038).
+- **Monitoring d'erreurs runtime** : Sentry (`@sentry/angular`).
+- **État persistant / migrations** : `localStorage`, sans schéma versionné : thème
+  (`core/theme/theme-store.ts`), indice de session `auth:session` (`core/auth/auth-store.ts` ; le cookie httpOnly reste la source de vérité), exclusion
+  de l'appareil des statistiques (`core/analytics/analytics-device-exclusion.ts`), « j'aime » d'un
+  article (`features/blog/application/components/blog-like-button.ts`). Les migrations de base
+  (Drizzle) vivent dans `apps/api`, hors de ce profil.
+
+## Revue de PR indépendante (`pr-reviewer`, via `/aak-pr-review`)
+
+- **Chemins critiques** : `src/app/core/auth/**`, `src/app/features/auth/**`.
+- **Frontières architecturales** :
+  - `features/*/domain/**` n'importe rien d'Angular ni d'une autre couche.
+  - `features/*/application/**` et `features/*/pages/**` n'importent pas `features/*/infra/**`,
+    hors les deux exceptions de CLAUDE.md (classe concrète d'un gateway à implémentation unique
+    injectée par une page ; fonction pure d'infra imposée par un ADR).
+  - `shared/**` ne porte pas de service.
 
 ## Politique commentaires (archéologie interdite)
 
