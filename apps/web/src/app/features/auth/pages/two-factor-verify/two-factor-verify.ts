@@ -44,7 +44,7 @@ const VERIFICATION_FAILURE_MESSAGES = {
 
         <h1 class="text-2xl font-bold text-foreground mb-2 text-center">Vérification 2FA</h1>
         <p class="text-muted text-sm text-center mb-8">
-          Entrez le code à 6 chiffres de votre application d'authentification
+          Entre le code à 6 chiffres de ton application d'authentification
         </p>
 
         @if (errorMessage()) {

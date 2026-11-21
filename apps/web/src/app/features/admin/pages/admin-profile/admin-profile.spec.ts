@@ -42,7 +42,7 @@ const LOADED = aProfileDocument({ version: 7 });
 const WITNESS = aProfileContent();
 
 const CONFLICT =
-  'Le parcours a été modifié depuis une autre fenêtre. Rechargez la page pour repartir de la dernière version (vos modifications non enregistrées seront perdues).';
+  'Le parcours a été modifié depuis une autre fenêtre. Recharge la page pour repartir de la dernière version (tes modifications non enregistrées seront perdues).';
 const SAVE_FAILURE = "Le parcours n'a pas pu être enregistré.";
 const STORED = '/api/storage/portfolio-storage/profile/portrait-1a2b3c4d.avif';
 const SENT = '/api/storage/portfolio-storage/profile/portrait-9f8e7d6c.avif';
@@ -541,7 +541,7 @@ describe('AdminProfile: portrait', () => {
         error: 'The deployment is currently unavailable\n\nSERVICE_UNAVAILABLE\n',
       }),
       expected:
-        "Le portrait n'a pas pu être remplacé. L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduisez-le sous 900\u00a0Ko, puis réessayez.",
+        "Le portrait n'a pas pu être remplacé. L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduis-le sous 900\u00a0Ko, puis réessaie.",
     },
   ])(
     'Given $given When a portrait is dropped Then the toast says why and the thumbnail is unchanged',
@@ -601,7 +601,7 @@ describe('AdminProfile: portrait', () => {
       given: 'a 500',
       rejection: apiRejection(500, 'Internal server error'),
       expected:
-        "Le portrait par défaut n'a pas pu être rétabli. Le serveur a rencontré un problème\u00a0: réessayez dans un instant.",
+        "Le portrait par défaut n'a pas pu être rétabli. Le serveur a rencontré un problème\u00a0: réessaie dans un instant.",
     },
   ])(
     'Given $given When the way back is confirmed Then the toast says why and the stored portrait stays',

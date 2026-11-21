@@ -39,7 +39,7 @@ export const routes: Routes = [
         description:
           "Tourneur CN dans l'aéronautique et développeur web par passion\u00a0: Angular, Hono, PostgreSQL, et des projets qui tournent vraiment.",
         keywords:
-          'Angular, Hono, TypeScript, PostgreSQL, Drizzle ORM, Vercel, développeur full-stack, blog technique',
+          'Angular, Hono, TypeScript, PostgreSQL, Drizzle ORM, développeur full-stack, blog technique',
         url: SITE_IDENTITY.siteUrl,
         type: 'website',
         structuredData: {

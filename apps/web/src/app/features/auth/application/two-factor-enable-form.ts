@@ -34,19 +34,19 @@ const TOTP_PATTERN = /^\d{6}$/;
 
       @if (qrCodeUrl()) {
         <p class="text-muted text-sm mb-6">
-          Renforcez la sécurité de votre compte avec une application d'authentification (Google
+          Renforce la sécurité de ton compte avec une application d'authentification (Google
           Authenticator, Authy, 1Password, etc.)
         </p>
 
         <div class="space-y-6">
           <div class="text-center">
             <p class="text-sm text-muted mb-4">
-              Scannez ce QR code avec votre application d'authentification :
+              Scanne ce QR code avec ton application d'authentification :
             </p>
             <div class="inline-block p-4 bg-white rounded-xl">
               <img
                 [src]="qrCodeUrl()"
-                alt="QR code à scanner avec votre application d'authentification"
+                alt="QR code à scanner avec ton application d'authentification"
                 width="192"
                 height="192"
                 class="w-48 h-48"
@@ -56,7 +56,7 @@ const TOTP_PATTERN = /^\d{6}$/;
 
           @if (secret()) {
             <div>
-              <p class="text-sm text-muted mb-1">Ou entrez ce code manuellement :</p>
+              <p class="text-sm text-muted mb-1">Ou entre ce code manuellement :</p>
               <code
                 class="block w-full p-3 rounded-lg bg-foreground/5 border border-foreground/20 text-foreground text-center font-mono text-sm tracking-wider select-all"
               >
@@ -99,7 +99,7 @@ const TOTP_PATTERN = /^\d{6}$/;
         </div>
       } @else {
         <p class="text-muted text-sm mb-6">
-          Renforcez la sécurité de votre compte avec une application d'authentification (Google
+          Renforce la sécurité de ton compte avec une application d'authentification (Google
           Authenticator, Authy, 1Password, etc.)
         </p>
 
@@ -110,7 +110,7 @@ const TOTP_PATTERN = /^\d{6}$/;
           <div>
             <p class="text-status-warn font-medium text-sm">2FA non activé</p>
             <p class="text-muted text-xs">
-              Votre compte n'est pas protégé par l'authentification à deux facteurs.
+              Ton compte n'est pas protégé par l'authentification à deux facteurs.
             </p>
           </div>
         </div>

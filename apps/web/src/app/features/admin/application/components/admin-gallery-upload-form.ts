@@ -34,7 +34,7 @@ import { imageAltSchema } from './admin-image-alt-schema';
         }
         @if (fileMissing()) {
           <p data-testid="admin-gallery-upload-file-error" role="alert" class="form-error">
-            Choisissez une image
+            Choisis une image
           </p>
         }
       </div>

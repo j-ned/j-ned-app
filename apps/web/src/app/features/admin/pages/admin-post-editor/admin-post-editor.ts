@@ -41,7 +41,7 @@ const FORM_SECTIONS: readonly FormTocSection<EditedDraft<PostDraft>>[] = [
 const POST_EDITOR_COPY: AdminEditorCopy = {
   testIdPrefix: 'admin-post',
   loading: "Chargement de l'article…",
-  loadError: "L'article n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.",
+  loadError: "L'article n'a pas pu être chargé. Vérifie ta connexion, puis réessaie.",
   missing: "Cet article n'existe pas ou a été supprimé.",
   backRoute: '/admin/blog',
   backLabel: 'Retour aux articles',

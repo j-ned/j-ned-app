@@ -60,7 +60,7 @@ const FORM_SECTIONS: readonly FormTocSection<ProfileDraft>[] = [
 const PROFILE_EDITOR_COPY: AdminEditorCopy = {
   testIdPrefix: 'admin-profile',
   loading: 'Chargement du parcours…',
-  loadError: "Le parcours n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.",
+  loadError: "Le parcours n'a pas pu être chargé. Vérifie ta connexion, puis réessaie.",
   missing: "Le parcours n'a pas été trouvé.",
   backRoute: '/admin',
   backLabel: "Retour à la vue d'ensemble",
@@ -68,7 +68,7 @@ const PROFILE_EDITOR_COPY: AdminEditorCopy = {
 };
 
 const CONFLICT_MESSAGE =
-  'Le parcours a été modifié depuis une autre fenêtre. Rechargez la page pour repartir de la dernière version (vos modifications non enregistrées seront perdues).';
+  'Le parcours a été modifié depuis une autre fenêtre. Recharge la page pour repartir de la dernière version (tes modifications non enregistrées seront perdues).';
 
 @Component({
   selector: 'app-admin-profile',

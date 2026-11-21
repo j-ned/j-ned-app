@@ -41,7 +41,7 @@ const LOGIN_FAILURE_MESSAGES = {
             <app-icon name="shield" [size]="28" class="text-primary" />
           </app-icon-tile>
           <h1 class="text-xl font-bold text-foreground">Connexion Admin</h1>
-          <p class="text-muted text-sm mt-1">Accédez au tableau de bord</p>
+          <p class="text-muted text-sm mt-1">Accède au tableau de bord</p>
         </div>
 
         <!-- Card -->
@@ -75,7 +75,7 @@ const LOGIN_FAILURE_MESSAGES = {
                     [attr.aria-invalid]="emailInError"
                     [attr.aria-describedby]="emailInError ? 'login-email-error' : null"
                     class="form-input pl-10"
-                    placeholder="Votre email"
+                    placeholder="Ton email"
                   />
                 </div>
                 <app-field-error [field]="form.email" errorId="login-email-error" />
@@ -100,7 +100,7 @@ const LOGIN_FAILURE_MESSAGES = {
                     [attr.aria-invalid]="passwordInError"
                     [attr.aria-describedby]="passwordInError ? 'login-password-error' : null"
                     class="form-input pl-10"
-                    placeholder="Votre mot de passe"
+                    placeholder="Ton mot de passe"
                   />
                 </div>
                 <app-field-error [field]="form.password" errorId="login-password-error" />

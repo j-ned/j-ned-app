@@ -6,7 +6,7 @@ import { settle } from '@shared/testing/settle';
 
 @Component({
   imports: [StatusMessage],
-  template: `<app-status-message [tone]="tone()">Code invalide. Réessayez.</app-status-message>`,
+  template: `<app-status-message [tone]="tone()">Code invalide. Réessaie.</app-status-message>`,
 })
 class StatusHost {
   readonly tone = signal<'success' | 'error'>('success');
@@ -28,7 +28,7 @@ describe('StatusMessage', () => {
       expect({
         role: byTestId(host, 'status-message')?.getAttribute('role'),
         text: testIdText(host, 'status-message'),
-      }).toEqual({ role, text: 'Code invalide. Réessayez.' });
+      }).toEqual({ role, text: 'Code invalide. Réessaie.' });
     },
   );
 

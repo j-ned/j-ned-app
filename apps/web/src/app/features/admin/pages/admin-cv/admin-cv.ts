@@ -24,18 +24,18 @@ import { uploadFailureMessage } from '../../application/upload-failure-message';
 import { toCvRows } from '../../application/admin-cv-view';
 
 const PDF_UPLOAD_WORDING = {
-  unreadable: "Le fichier n'est pas un PDF lisible\u00a0: exportez-le de nouveau, puis réessayez.",
+  unreadable: "Le fichier n'est pas un PDF lisible\u00a0: exporte-le de nouveau, puis réessaie.",
   platformRefused:
-    "L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: allégez le PDF, puis réessayez.",
+    "L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: allège le PDF, puis réessaie.",
 } as const;
 
 function deletionFailureDetail(error: unknown): string {
   const explained = apiErrorMessage(error);
   if (explained) return /[.!?…]$/.test(explained) ? explained : `${explained}.`;
   if (error instanceof HttpErrorResponse && error.status === 0) {
-    return 'La connexion a été coupée\u00a0: vérifiez votre réseau, puis réessayez.';
+    return 'La connexion a été coupée\u00a0: vérifie ton réseau, puis réessaie.';
   }
-  return 'Réessayez dans un instant.';
+  return 'Réessaie dans un instant.';
 }
 
 // L'API refuse tout fichier au-delà de 4 Mio : un CV trop lourd ne part pas.
@@ -83,7 +83,7 @@ function cvFileRefusal(file: File): string | null {
       </div>
     } @else if (state === 'error') {
       <app-load-error
-        message="Le CV n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez."
+        message="Le CV n'a pas pu être chargé. Vérifie ta connexion, puis réessaie."
         (retry)="cvResource.reload()"
       />
     } @else if (current) {

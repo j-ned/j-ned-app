@@ -224,7 +224,7 @@ describe('AdminProjectGallery', () => {
         fileError: normalized(
           byTestId(rendered.host, 'admin-gallery-upload-file-error')?.textContent,
         ),
-      }).toEqual({ altAfterUpload: '', calls: 1, fileError: 'Choisissez une image' });
+      }).toEqual({ altAfterUpload: '', calls: 1, fileError: 'Choisis une image' });
     });
 
     it('Given an alt of exactly 300 characters When the form is submitted Then the capture is uploaded', async () => {
@@ -267,7 +267,7 @@ describe('AdminProjectGallery', () => {
         calls: rendered.gateway.uploadGalleryImage.mock.calls.length,
         role: error?.getAttribute('role'),
         message: normalized(error?.textContent),
-      }).toEqual({ calls: 0, role: 'alert', message: 'Choisissez une image' });
+      }).toEqual({ calls: 0, role: 'alert', message: 'Choisis une image' });
     });
 
     it('Given the API fails When a capture is uploaded Then an error toast shows and the gallery and the alt are kept', async () => {

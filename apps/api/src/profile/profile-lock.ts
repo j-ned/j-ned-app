@@ -22,7 +22,7 @@ export async function inProfileTransaction<T>(
   } catch (err) {
     if (hasCode(err, LOCK_NOT_AVAILABLE)) {
       throw new ServiceUnavailableException(
-        'Le parcours est en cours de modification : réessayez dans quelques secondes',
+        'Le parcours est en cours de modification : réessaie dans quelques secondes',
       );
     }
     throw err;

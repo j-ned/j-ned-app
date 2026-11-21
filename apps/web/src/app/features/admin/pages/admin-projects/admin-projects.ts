@@ -47,7 +47,7 @@ import { PendingDeletion } from '../../application/pending-deletion';
       [state]="listState()"
       testIdPrefix="admin-projects"
       loadingLabel="Chargement des projets…"
-      errorMessage="Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
+      errorMessage="Les projets n'ont pas pu être chargés. Vérifie ta connexion, puis réessaie."
       skeletonClass="h-36 rounded-md"
       (retry)="projectsResource.reload()"
     >

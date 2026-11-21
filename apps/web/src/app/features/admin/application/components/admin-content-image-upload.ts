@@ -43,7 +43,7 @@ const uploadErrorDetail = (error: unknown): string =>
       />
       @if (fileMissing()) {
         <p data-testid="markdown-image-file-error" role="alert" class="form-error">
-          Choisissez une image
+          Choisis une image
         </p>
       }
     </div>
