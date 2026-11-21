@@ -1,5 +1,5 @@
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Injectable, signal } from '@angular/core';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 export const DEVICE_EXCLUSION_STORAGE_KEY = 'analytics:exclude-device';
 
@@ -9,7 +9,7 @@ export const DEVICE_EXCLUSION_STORAGE_KEY = 'analytics:exclude-device';
  */
 @Injectable({ providedIn: 'root' })
 export class AnalyticsDeviceExclusion {
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly isBrowser = injectIsBrowser();
   private readonly _excluded = signal(this.readStored());
 
   readonly excluded = this._excluded.asReadonly();

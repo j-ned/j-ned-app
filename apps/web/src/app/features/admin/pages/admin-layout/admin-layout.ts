@@ -1,9 +1,10 @@
 import { ViewportScroller } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { filter, map } from 'rxjs';
+import { Router, RouterOutlet } from '@angular/router';
+import { map } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
+import { navigationEnd$ } from '@core/navigation/navigation-end';
 import { ThemeStore } from '@core/theme/theme-store';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
@@ -112,10 +113,7 @@ export class AdminLayout {
   private readonly _unread = rxResource({ stream: () => this._contactGateway.getUnreadCount() });
 
   private readonly _url = toSignal(
-    this._router.events.pipe(
-      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-      map((event) => event.urlAfterRedirects),
-    ),
+    navigationEnd$(this._router).pipe(map((event) => event.urlAfterRedirects)),
     { initialValue: this._router.url },
   );
 

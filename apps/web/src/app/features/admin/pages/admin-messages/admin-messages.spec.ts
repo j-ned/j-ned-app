@@ -19,6 +19,7 @@ import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { normalized } from '@shared/testing/normalized-text';
+import { asButton } from '@shared/testing/as-button';
 
 const msg = makeContactMessage;
 
@@ -62,9 +63,6 @@ async function setup(gateway: ContactGateway = makeGateway()): Promise<{
   await settle(fixture);
   return { fixture, host: fixture.nativeElement as HTMLElement, toast };
 }
-
-const nativeButton = (element: HTMLElement | null): HTMLButtonElement | null =>
-  element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
 
 const allByTestId = (host: HTMLElement, testId: string): readonly HTMLElement[] => [
   ...host.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),
@@ -141,8 +139,8 @@ describe('AdminMessages: lecture au clavier', () => {
     return { fixture, host, markMessageAsRead };
   }
 
-  const expandButtons = (host: HTMLElement): readonly (HTMLButtonElement | null)[] =>
-    allByTestId(host, 'message-expand').map(nativeButton);
+  const expandButtons = (host: HTMLElement): readonly HTMLButtonElement[] =>
+    allByTestId(host, 'message-expand').map(asButton);
 
   it('Given the inbox When the first expand button is pressed Then the message body it controls is shown and the button can hide it', async () => {
     const { fixture, host } = await renderInbox();

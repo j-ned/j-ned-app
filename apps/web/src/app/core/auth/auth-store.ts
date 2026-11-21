@@ -1,5 +1,4 @@
-import { computed, DestroyRef, PLATFORM_ID, inject, Injectable, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -11,6 +10,7 @@ import type {
 } from '@features/auth/domain/models/auth.types';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { Monitoring } from '@core/monitoring/monitoring';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 // Indice local posé à la connexion : sans lui, aucun appel /auth/me au démarrage. Le cookie
 // httpOnly reste la source de vérité ; l'indice évite seulement un 401 par visite anonyme.
@@ -22,7 +22,7 @@ export class AuthStore {
   private readonly router = inject(Router);
   private readonly monitoring = inject(Monitoring);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly isBrowser = injectIsBrowser();
   private readonly _currentUser = signal<User | null>(null);
   private readonly _pendingChallengeToken = signal<string | null>(null);
 

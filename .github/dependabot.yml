@@ -1,0 +1,65 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    ignore:
+      # Les types suivent le runtime épinglé par `engines` et l'image `node:26-alpine`.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Le framework, son lint et le compilateur ne se montent qu'ensemble : chaque version
+      # d'Angular borne la plage de TypeScript qu'elle accepte.
+      angular:
+        patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+          - "@schematics/angular"
+          - "ng-packagr"
+          - "angular-eslint"
+          - "@angular-eslint/*"
+          - "typescript"
+      # Un paquet rejoint le premier groupe qui lui correspond : ceux d'Angular n'arrivent pas ici.
+      outillage:
+        dependency-type: development
+        update-types: ["minor", "patch"]
+      production:
+        dependency-type: production
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    commit-message:
+      prefix: chore(ci)
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directories:
+      - /apps/api
+      - /apps/web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    commit-message:
+      prefix: chore(docker)
+    ignore:
+      # Le majeur de Node se change à la main, avec `engines`, `.nvmrc` et `@types/node`.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]

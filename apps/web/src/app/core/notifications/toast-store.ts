@@ -1,6 +1,6 @@
-import { DestroyRef, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import type { ToastEntry, ToastMessage, ToastSeverity } from '@shared/ui/toast.types';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 const DEFAULT_LIFE_MS = 3000;
 
@@ -13,7 +13,7 @@ const DEFAULT_SUMMARY: Record<ToastSeverity, string> = {
 
 @Injectable({ providedIn: 'root' })
 export class ToastStore {
-  private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly _isBrowser = injectIsBrowser();
   private readonly _timers = new Map<number, ReturnType<typeof setTimeout>>();
   private _nextId = 1;
 

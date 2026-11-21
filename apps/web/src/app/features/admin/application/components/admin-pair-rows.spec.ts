@@ -6,6 +6,7 @@ import { pressTestId } from '@shared/testing/press-test-id';
 import { settle } from '@shared/testing/settle';
 import { AdminPairRows, type PairRow, type PairRowsConfig } from './admin-pair-rows';
 import { normalized } from '@shared/testing/normalized-text';
+import { asButton } from '@shared/testing/as-button';
 
 type Pair = PairRow<'a', 'b'>;
 
@@ -62,13 +63,10 @@ const labelOf = (host: HTMLElement, control: HTMLElement): string | null => {
   return labels.length === 1 ? normalized(labels[0]) : null;
 };
 
-const nativeButton = (element: Element | null): HTMLButtonElement | null =>
-  element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
-
 const removeNames = (host: HTMLElement): readonly string[] =>
   all(host, 'pair-remove').map((element) => {
-    const button = nativeButton(element);
-    return button?.getAttribute('aria-label') ?? normalized(button);
+    const button = asButton(element);
+    return button.getAttribute('aria-label') ?? normalized(button);
   });
 
 const modelRows = (rendered: Rendered): readonly Pair[] =>

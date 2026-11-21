@@ -1,4 +1,5 @@
 import type { ComponentFixture } from '@angular/core/testing';
+import { asButton } from './as-button';
 import { byTestId } from './by-test-id';
 import { settleBounded } from './settle';
 
@@ -7,8 +8,6 @@ export async function pressTestId(
   testId: string,
   index = 0,
 ): Promise<void> {
-  const element = byTestId(fixture.nativeElement as HTMLElement, testId, index);
-  const button = element?.tagName === 'BUTTON' ? element : element?.querySelector('button');
-  button?.click();
+  asButton(byTestId(fixture.nativeElement as HTMLElement, testId, index)).click();
   await settleBounded(fixture);
 }

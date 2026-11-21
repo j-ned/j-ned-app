@@ -115,8 +115,9 @@ const TOTP_PATTERN = /^\d{6}$/;
           </div>
         </div>
 
-        <div data-testid="twofa-generate">
+        <div>
           <button
+            data-testid="twofa-generate"
             appButton
             type="button"
             [block]="true"

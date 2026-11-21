@@ -29,6 +29,7 @@ import { unsavedChangesGuard } from '../../application/unsaved-changes-guard';
 import { AdminProfile } from './admin-profile';
 import { BlankPage } from '@shared/testing/blank-page';
 import { normalized } from '@shared/testing/normalized-text';
+import { asButton } from '@shared/testing/as-button';
 
 const LOADED = aProfileDocument({ version: 7 });
 const WITNESS = aProfileContent();
@@ -96,9 +97,6 @@ async function openEditor(overrides: Partial<Omit<Spies, 'toast'>> = {}): Promis
     crash,
   };
 }
-
-const nativeButton = (element: Element | null): HTMLButtonElement | null =>
-  element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
 
 const fieldValue = (host: HTMLElement, testId: string): string | undefined =>
   (byTestId(host, testId) as HTMLInputElement | HTMLTextAreaElement | null)?.value;
@@ -230,7 +228,7 @@ describe('AdminProfile: enregistrer', () => {
       toasts: toasts(editor.toast),
       field: fieldValue(editor.host, 'admin-profile-biography-title'),
       state: saveBarState(editor),
-      disabled: nativeButton(byTestId(editor.host, 'savebar-submit'))?.disabled,
+      disabled: asButton(byTestId(editor.host, 'savebar-submit')).disabled,
     }).toEqual({
       toasts: [{ severity: 'error', detail: CONFLICT }],
       field: 'Nouveau parcours',
@@ -398,7 +396,7 @@ describe('AdminProfile: réordonner', () => {
   async function moveSecondTraitUp(editor: Editor): Promise<void> {
     const row = editor.host.querySelectorAll('[data-testid="admin-profile-highlight-row"]')[1];
     const up = row ? byTestId(row, 'admin-profile-highlight-up') : null;
-    nativeButton(up)?.click();
+    asButton(up).click();
     await settleBounded(editor.fixture);
   }
 
@@ -495,10 +493,10 @@ describe('AdminProfile: portrait', () => {
   }
 
   async function confirmRemoval(editor: Editor, choice: 'confirm' | 'cancel'): Promise<void> {
-    nativeButton(byTestId(editor.host, 'admin-profile-portrait-remove'))?.click();
+    asButton(byTestId(editor.host, 'admin-profile-portrait-remove')).click();
     await settleBounded(editor.fixture);
     const section = portraitSection(editor);
-    nativeButton(section ? byTestId(section, `confirm-dialog-${choice}`) : null)?.click();
+    asButton(section ? byTestId(section, `confirm-dialog-${choice}`) : null).click();
     await settleBounded(editor.fixture);
   }
 
@@ -685,12 +683,12 @@ describe('AdminProfile: focus et annonces après un enregistrement (revue F2-F7)
 
   async function moveSecondParagraphUp(editor: Editor): Promise<void> {
     const row = editor.host.querySelectorAll('[data-testid="admin-profile-paragraph-row"]')[1];
-    nativeButton(row ? byTestId(row, 'admin-profile-paragraph-up') : null)?.click();
+    asButton(row ? byTestId(row, 'admin-profile-paragraph-up') : null).click();
     await settleBounded(editor.fixture);
   }
 
   async function addParagraph(editor: Editor): Promise<void> {
-    nativeButton(byTestId(editor.host, 'admin-profile-paragraph-add'))?.click();
+    asButton(byTestId(editor.host, 'admin-profile-paragraph-add')).click();
     await settleBounded(editor.fixture);
     const field = byTestId(editor.host, 'admin-profile-paragraph-text', 2) as HTMLTextAreaElement;
     field.value = 'Paragraphe ajouté';
@@ -778,7 +776,7 @@ describe('AdminProfile: focus et annonces après un enregistrement (revue F2-F7)
     const announcer = (): string =>
       normalized(byTestId(editor.host, 'admin-profile-highlight-announcer'));
     const row = editor.host.querySelectorAll('[data-testid="admin-profile-highlight-row"]')[1];
-    nativeButton(row ? byTestId(row, 'admin-profile-highlight-up') : null)?.click();
+    asButton(row ? byTestId(row, 'admin-profile-highlight-up') : null).click();
     await settleBounded(editor.fixture);
     const announced = announcer();
 

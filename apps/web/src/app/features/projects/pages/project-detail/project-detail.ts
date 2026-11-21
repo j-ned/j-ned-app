@@ -1,14 +1,6 @@
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  ChangeDetectionStrategy,
-  PLATFORM_ID,
-} from '@angular/core';
+import { Component, computed, effect, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { NgOptimizedImage, isPlatformBrowser } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
@@ -17,9 +9,6 @@ import { projectTagOf } from '@features/blog/domain/models/project-tag.model';
 import { postsAboutProject } from '@features/blog/domain/posts-about-project';
 import { Seo } from '@core/seo/seo';
 import { injectMarkNotFound } from '@core/ssr/response-status';
-import { truncateAtWord } from '@shared/seo/truncate-at-word';
-import { toShareImageUrl } from '@shared/seo/share-image';
-import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { projectOutcome } from '@features/projects/domain/project-outcome';
 import { ProjectDetailHeader } from '../../application/components/project-detail-header';
@@ -29,7 +18,9 @@ import { ProjectDetailNav } from '../../application/components/project-detail-na
 import { ProjectGallery } from '../../application/components/project-gallery';
 import { ProjectArticles } from '../../application/components/project-articles';
 import { PROJECT_ARTICLES_COPY } from '../../application/project-articles-copy';
+import { projectSeo } from '../../application/project-seo';
 import { Button } from '@shared/ui/button';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 @Component({
   selector: 'app-project-detail',
@@ -113,7 +104,7 @@ export class ProjectDetail {
   private readonly _blogGateway = inject(BlogGateway);
   private readonly _router = inject(Router);
   private readonly _seo = inject(Seo);
-  private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly _isBrowser = injectIsBrowser();
   private readonly _markNotFound = injectMarkNotFound();
 
   readonly slug = input.required<string>();
@@ -180,32 +171,7 @@ export class ProjectDetail {
 
   private readonly _applyProjectSeo = effect(() => {
     const p = this.project();
-    if (!p) return;
-
-    const subjectOf = this.articles().map((post) => ({
-      '@type': 'BlogPosting',
-      headline: post.title,
-      url: `${SITE_IDENTITY.siteUrl}/blog/${post.slug}`,
-    }));
-    this._seo.applySeoData({
-      title: `${p.title} | Julien Nédellec`,
-      description: truncateAtWord(p.description, 155),
-      keywords: [p.category, ...p.tags, 'Julien Nédellec', 'Portfolio Développeur'].join(', '),
-      url: `${SITE_IDENTITY.siteUrl}/projects/${p.slug}`,
-      type: 'article',
-      image: toShareImageUrl(p.image),
-      structuredData: {
-        '@context': 'https://schema.org',
-        '@type': 'CreativeWork',
-        name: p.title,
-        description: p.description,
-        creator: { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl },
-        keywords: p.tags.join(', '),
-        ...(p.liveUrl ? { url: p.liveUrl } : {}),
-        ...(p.repoUrl ? { codeRepository: p.repoUrl } : {}),
-        ...(subjectOf.length > 0 ? { subjectOf } : {}),
-      },
-    });
+    if (p) this._seo.applySeoData(projectSeo(p, this.articles()));
   });
 
   protected trackArticleClick(): void {

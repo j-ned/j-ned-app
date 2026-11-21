@@ -1,14 +1,6 @@
-import { isPlatformBrowser } from '@angular/common';
-import {
-  DestroyRef,
-  Directive,
-  ElementRef,
-  PLATFORM_ID,
-  afterNextRender,
-  inject,
-  input,
-} from '@angular/core';
+import { DestroyRef, Directive, ElementRef, afterNextRender, inject, input } from '@angular/core';
 import { ActiveSection } from './active-section';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 /** La section est "active" quand elle occupe la bande centrale du viewport. */
 const CENTER_BAND_MARGIN = '-45% 0px -45% 0px';
@@ -21,7 +13,7 @@ export class SectionVisibility {
   private readonly _element = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _active = inject(ActiveSection);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly _isBrowser = injectIsBrowser();
 
   readonly sectionId = input.required<string>({ alias: 'appSectionVisibility' });
 

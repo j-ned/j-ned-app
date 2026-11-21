@@ -23,6 +23,7 @@ import { AdminProjectEditor } from './admin-project-editor';
 import { unsavedChangesGuard } from '../../application/unsaved-changes-guard';
 import { BlankPage } from '@shared/testing/blank-page';
 import { normalized } from '@shared/testing/normalized-text';
+import { asButton } from '@shared/testing/as-button';
 
 const DASHFLOW = makeProject({
   id: 'p-1',
@@ -115,9 +116,6 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
     crash,
   };
 }
-
-const nativeButton = (element: Element | null): HTMLButtonElement | null =>
-  element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
 
 const fieldValue = (host: HTMLElement, testId: string): string | undefined =>
   (byTestId(host, testId) as HTMLInputElement | null)?.value;
@@ -218,7 +216,7 @@ describe('AdminProjectEditor: enregistrer', () => {
 
     expect({
       error: normalized(byTestId(editor.host, 'admin-project-pitch-error')),
-      disabled: nativeButton(byTestId(editor.host, 'savebar-submit'))?.disabled,
+      disabled: asButton(byTestId(editor.host, 'savebar-submit')).disabled,
     }).toEqual({
       error: "L'accroche ne doit pas dépasser 160\u00a0caractères",
       disabled: false,
@@ -529,7 +527,7 @@ describe('AdminProjectEditor: galerie', () => {
       editor.host.querySelectorAll<HTMLElement>('[data-testid="admin-gallery-item"]')[1] ?? null;
     const press = async (testId: string): Promise<void> => {
       const item = second();
-      nativeButton(item ? byTestId(item, testId) : null)?.click();
+      asButton(item ? byTestId(item, testId) : null).click();
       await settleBounded(editor.fixture);
     };
     await press('admin-gallery-item-remove');
@@ -674,7 +672,7 @@ describe('AdminProjectEditor: modifications non enregistrées', () => {
     await save(editor);
 
     expect({
-      disabled: nativeButton(byTestId(editor.host, 'savebar-submit'))?.disabled,
+      disabled: asButton(byTestId(editor.host, 'savebar-submit')).disabled,
       state: saveBarState(editor),
     }).toEqual({ disabled: false, state: '1 modification non enregistrée' });
   });

@@ -244,3 +244,31 @@ l'admin dans un navigateur (couverte par `move-item.spec.ts`), le payload Sentry
 Points non bloquants laissés ouverts : replis morts (`project-outcome.ts:6`, `harden-csp.ts:46`,
 `french-typography-violations.ts:27`), cas « absent » des specs projets dépendants des défauts du
 builder, cache ESLint local optionnel. Le tsconfig autonome de `e2e/` n'applique pas les deux flags.
+
+## Lot 3 : SEO, aides de test et dépendances (2026-11-21, branche `refactor/audit-039-lot3`)
+
+Traités : F003 (`.github/dependabot.yml` : npm, actions et images Docker, chaque lundi), F004
+(`@types/node` 26 dans `apps/web`, `apps/api` et `packages/api-parity`), F017 (`initializeSeo` dans
+`core/seo/seo-initializer.ts` avec garde `isSeoData`, `initializeAuth` dans `core/auth/`, routes en
+`satisfies SeoData`), F018 (`shared/seo/site-person.ts`), F019 (`blogPostSeo`, `projectSeo`), F024
+(`asButton`) et F028 (`navigationEnd$`, `injectIsBrowser`).
+
+Changements de comportement : la personne JSON-LD des articles et des projets porte le même `@id`
+que celle de l'accueil ; une donnée `seo` de route malformée est ignorée au lieu d'être appliquée
+(aucune route actuelle concernée) ; `data-testid="twofa-generate"` est posé sur le bouton et non plus
+sur son conteneur, que l'aide stricte a révélé.
+
+Premier verdict du `code-reviewer` : **REJECTED**, F024 incomplet (dix sites gardaient le repli sur
+un bouton enfant, dont deux qui ne cliquaient rien en silence). Corrigé : les dix sites passent par
+`asButton`. Repris aussi parmi ses remarques non bloquantes : `OPTIONAL_TEXT_FIELDS` lié à
+`keyof SeoData`, cas `null`, liste et `robots` ajoutés au test de la garde, types `| null` devenus
+faux dans quatre specs, groupes Dependabot (TypeScript et `angular-eslint` montent avec Angular).
+Le lot corrigé n'a pas été soumis à une seconde revue.
+
+Vérifié sur l'image du site devant la doublure d'API (`ci/image-stack.sh`) : `/`,
+`/blog/article-temoin` et `/projects/projet-temoin` déclarent `https://nedellec-julien.fr/#person` ;
+`ci/smoke.sh` et `ci/verify-prerender.sh` passent.
+
+Laissés ouverts : assertions SEO en double entre les specs de page et celles des fonctions pures,
+tag flottant `nginx:alpine` (Dependabot ne le monte pas), les autres « Julien Nédellec » hors de la
+liste de F018 (pied de page, à propos, flux RSS), F025, F030, F031.

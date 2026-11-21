@@ -8,9 +8,8 @@ import {
   viewChild,
   ChangeDetectionStrategy,
   resource,
-  PLATFORM_ID,
 } from '@angular/core';
-import { DatePipe, NgOptimizedImage, isPlatformBrowser } from '@angular/common';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -19,9 +18,6 @@ import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { Seo } from '@core/seo/seo';
 import { injectMarkNotFound } from '@core/ssr/response-status';
-import { truncateAtWord } from '@shared/seo/truncate-at-word';
-import { toShareImageUrl } from '@shared/seo/share-image';
-import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { BlogLikeButton } from '../../application/components/blog-like-button';
 import { BlogComments } from '../../application/components/blog-comments';
 import { BlogArticleBody } from '../../application/components/blog-article-body';
@@ -29,6 +25,7 @@ import { CodeCopy } from '../../application/components/code-copy';
 import { BlogTagLink } from '../../application/components/blog-tag-link';
 import { BlogFurtherReading } from '../../application/components/blog-further-reading';
 import { FURTHER_READING_COPY } from '../../application/further-reading-copy';
+import { blogPostSeo, coverImageAlt } from '../../application/blog-post-seo';
 import { LinkCard } from '@shared/ui/link-card';
 import { AppIcon } from '@shared/icons/app-icon';
 import { adjacentPosts } from '../../domain/adjacent-posts';
@@ -36,12 +33,7 @@ import { relatedPosts } from '../../domain/related-posts';
 import { linkedProjects } from '../../domain/linked-projects';
 import type { BlogPostSummary } from '../../domain/models/blog-post.model';
 import { readingTimeMinutes } from '../../domain/reading-time';
-
-// `updatedAt` peut précéder `publishedAt` (brouillon retouché puis publié) : `dateModified`
-// ne doit jamais être antérieur à `datePublished`.
-function laterOf(a: string, b: string): string {
-  return a > b ? a : b;
-}
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 @Component({
   selector: 'app-blog-detail',
@@ -229,7 +221,7 @@ export class BlogDetail {
   private readonly analytics = inject(AnalyticsGateway);
   private readonly seo = inject(Seo);
   private readonly router = inject(Router);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly isBrowser = injectIsBrowser();
   private readonly markNotFound = injectMarkNotFound();
 
   private readonly _readSentinel = viewChild<ElementRef<HTMLElement>>('readSentinel');
@@ -273,9 +265,7 @@ export class BlogDetail {
   protected readonly related = computed(() => relatedPosts(this._publishedPosts(), this.slug()));
   protected readonly linked = computed(() => linkedProjects(this.post()));
 
-  protected readonly coverImageAlt = computed(
-    () => `Illustration de l’article ${this.post()?.title ?? ''}`,
-  );
+  protected readonly coverImageAlt = computed(() => coverImageAlt(this.post()?.title ?? ''));
 
   // Une correction éditoriale après publication (l'API ne touche pas `updatedAt` sur un like).
   // Comparaison au jour près : une relecture le jour même n'est pas une « mise à jour ».
@@ -286,42 +276,7 @@ export class BlogDetail {
 
   private readonly _applySeo = effect(() => {
     const p = this.post();
-    if (!p) return;
-
-    const url = `${SITE_IDENTITY.siteUrl}/blog/${p.slug}`;
-    const shareImage = toShareImageUrl(p.coverImage);
-    const author = { '@type': 'Person', name: 'Julien Nédellec', url: SITE_IDENTITY.siteUrl };
-    const about = this.linked().map(({ tag, projectSlug }) => ({
-      '@type': 'CreativeWork',
-      name: tag,
-      url: `${SITE_IDENTITY.siteUrl}/projects/${projectSlug}`,
-    }));
-    this.seo.applySeoData({
-      title: `${p.title} | Julien Nédellec`,
-      description: truncateAtWord(p.excerpt, 155),
-      keywords: [...p.tags, 'Julien Nédellec', 'Blog Développeur'].join(', '),
-      url,
-      type: 'article',
-      image: shareImage,
-      imageAlt: this.coverImageAlt(),
-      structuredData: {
-        '@context': 'https://schema.org',
-        '@type': 'BlogPosting',
-        headline: p.title,
-        description: p.excerpt,
-        url,
-        mainEntityOfPage: { '@type': 'WebPage', '@id': url },
-        inLanguage: 'fr',
-        keywords: p.tags.join(', '),
-        author,
-        publisher: author,
-        ...(about.length > 0 ? { about } : {}),
-        ...(shareImage ? { image: shareImage } : {}),
-        ...(p.publishedAt
-          ? { datePublished: p.publishedAt, dateModified: laterOf(p.updatedAt, p.publishedAt) }
-          : {}),
-      },
-    });
+    if (p) this.seo.applySeoData(blogPostSeo(p, this.linked()));
   });
 
   private _viewTrackedId: string | null = null;

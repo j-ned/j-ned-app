@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { Injectable, inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { catchError, EMPTY, map, Observable } from 'rxjs';
 
 import { API_BASE_URL } from '@shared/api/api-config';
@@ -21,6 +21,7 @@ import type {
   StatsOverview,
   TrackPayload,
 } from '../../domain/models/analytics.types';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 // Même origine : nginx relaie `/api` vers l'API, un beacon n'y déclenche ni CORS ni pré-vol.
 const ANALYTICS_TRACK_URL = '/api/analytics/track';
@@ -34,7 +35,7 @@ function isExcludedUrl(url: string): boolean {
 export class HttpAnalyticsGateway extends AnalyticsGateway {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${inject(API_BASE_URL)}/analytics`;
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly isBrowser = injectIsBrowser();
   private readonly auth = inject(AuthStore);
   private readonly deviceExclusion = inject(AnalyticsDeviceExclusion);
   private readonly document = inject(DOCUMENT);

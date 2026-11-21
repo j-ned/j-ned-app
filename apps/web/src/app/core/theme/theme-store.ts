@@ -1,14 +1,7 @@
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import {
-  DestroyRef,
-  Injectable,
-  PLATFORM_ID,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { parseThemePreference, resolveIsDark, type ThemePreference } from './theme-preference';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 // Clé, valeurs et règle dupliquées dans le script de pré-peinture d'index.html : les garder alignées.
 const STORAGE_KEY = 'j-ned:theme';
@@ -19,7 +12,7 @@ const DARK_QUERY = '(prefers-color-scheme: dark)';
 export class ThemeStore {
   private readonly _document = inject(DOCUMENT);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly _isBrowser = injectIsBrowser();
 
   private readonly _preference = signal<ThemePreference>(this._readStoredPreference());
   private readonly _systemPrefersDark = signal(this._watchSystemPreference());

@@ -4,6 +4,7 @@ import { FormField, form } from '@angular/forms/signals';
 import { byTestId } from '@shared/testing/by-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { AdminOrderedList, type OrderedListConfig } from './admin-ordered-list';
+import { asButton } from '@shared/testing/as-button';
 
 type Line = { text: string };
 
@@ -57,12 +58,9 @@ const all = (host: ParentNode, testId: string): readonly HTMLElement[] => [
   ...host.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),
 ];
 
-const nativeButton = (element: Element | null | undefined): HTMLButtonElement | null =>
-  element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
-
 const focusedName = (host: HTMLElement): string | null => {
   const active = document.activeElement;
-  if (active && active === nativeButton(byTestId(host, 'line-add'))) return 'line-add';
+  if (active && active === asButton(byTestId(host, 'line-add'))) return 'line-add';
   return active?.getAttribute('aria-label') ?? null;
 };
 
@@ -71,12 +69,12 @@ const announcement = (host: HTMLElement): string =>
 
 async function press(rendered: Rendered, testId: string, row: number): Promise<void> {
   const element = byTestId(all(rendered.host, 'line-row')[row] ?? rendered.host, testId);
-  nativeButton(element)?.click();
+  asButton(element).click();
   await settleBounded(rendered.fixture);
 }
 
 async function add(rendered: Rendered): Promise<void> {
-  nativeButton(byTestId(rendered.host, 'line-add'))?.click();
+  asButton(byTestId(rendered.host, 'line-add')).click();
   await settleBounded(rendered.fixture);
 }
 
@@ -151,7 +149,7 @@ describe('AdminOrderedList: ajouter', () => {
 
   it('Given the maximum of lines When the add button is pressed Then it stays focusable but announced as unavailable, and nothing is added', async () => {
     const rendered = await renderList(['a', 'b', 'c', 'd']);
-    const addButton = nativeButton(byTestId(rendered.host, 'line-add'));
+    const addButton = asButton(byTestId(rendered.host, 'line-add'));
 
     await add(rendered);
 
@@ -168,9 +166,7 @@ describe('AdminOrderedList: ajouter', () => {
     await add(rendered);
 
     expect({
-      ariaDisabled: nativeButton(byTestId(rendered.host, 'line-add'))?.getAttribute(
-        'aria-disabled',
-      ),
+      ariaDisabled: asButton(byTestId(rendered.host, 'line-add')).getAttribute('aria-disabled'),
       model: rendered.texts().length,
     }).toEqual({ ariaDisabled: 'true', model: 4 });
   });

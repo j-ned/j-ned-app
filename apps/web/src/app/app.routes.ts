@@ -2,13 +2,14 @@ import type { Routes } from '@angular/router';
 import { authGuard } from '@features/auth/infra/auth-guard';
 import { twoFactorChallengeGuard } from '@features/auth/infra/two-factor-challenge-guard';
 import { Home } from '@features/home/pages/home/home';
+import type { SeoData } from '@core/seo/seo';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
+import { OWNER_NAME, PERSON_ID, PERSON_REF, pageTitle } from '@shared/seo/site-person';
 
-const HOME_TITLE = 'Julien Nédellec | Tourneur CN et développeur web Angular / Hono';
-const ABOUT_TITLE = "Parcours\u00a0: de l'atelier au code | Julien Nédellec";
-const PROJECTS_TITLE = 'Mes projets Angular full-stack | Julien Nédellec';
-const BLOG_TITLE = 'Blog Angular, Hono et mise en production | Julien Nédellec';
-const PERSON_ID = `${SITE_IDENTITY.siteUrl}/#person`;
+const HOME_TITLE = `${OWNER_NAME} | Tourneur CN et développeur web Angular / Hono`;
+const ABOUT_TITLE = pageTitle("Parcours\u00a0: de l'atelier au code");
+const PROJECTS_TITLE = pageTitle('Mes projets Angular full-stack');
+const BLOG_TITLE = pageTitle('Blog Angular, Hono et mise en production');
 
 type Crumb = readonly [name: string, path: string];
 
@@ -46,10 +47,7 @@ export const routes: Routes = [
           '@context': 'https://schema.org',
           '@graph': [
             {
-              '@type': 'Person',
-              '@id': PERSON_ID,
-              name: 'Julien Nédellec',
-              url: SITE_IDENTITY.siteUrl,
+              ...PERSON_REF,
               jobTitle: 'Tourneur CN',
               sameAs: [SITE_IDENTITY.socials.linkedin, SITE_IDENTITY.socials.github],
               knowsAbout: [
@@ -68,14 +66,14 @@ export const routes: Routes = [
             {
               '@type': 'WebSite',
               '@id': `${SITE_IDENTITY.siteUrl}/#website`,
-              name: 'Julien Nédellec',
+              name: OWNER_NAME,
               url: SITE_IDENTITY.siteUrl,
               inLanguage: 'fr-FR',
               author: { '@id': PERSON_ID },
             },
           ],
         },
-      },
+      } satisfies SeoData,
     },
   },
   {
@@ -91,7 +89,7 @@ export const routes: Routes = [
         url: `${SITE_IDENTITY.siteUrl}/about`,
         type: 'profile',
         structuredData: breadcrumb(['Parcours', '/about']),
-      },
+      } satisfies SeoData,
     },
   },
   {
@@ -110,7 +108,7 @@ export const routes: Routes = [
         url: `${SITE_IDENTITY.siteUrl}/projects`,
         type: 'website',
         structuredData: breadcrumb(['Réalisations', '/projects']),
-      },
+      } satisfies SeoData,
     },
   },
   {
@@ -126,44 +124,44 @@ export const routes: Routes = [
         keywords: "Blog Angular, Blog Hono, Développeur Full-Stack, Retour d'expérience",
         url: `${SITE_IDENTITY.siteUrl}/blog`,
         type: 'website',
-      },
+      } satisfies SeoData,
     },
   },
   {
     path: 'mentions-legales',
-    title: 'Mentions légales | Julien Nédellec',
+    title: pageTitle('Mentions légales'),
     loadComponent: () => import('./pages/legal-notice').then((m) => m.LegalNotice),
     data: {
       seo: {
-        title: 'Mentions légales | Julien Nédellec',
+        title: pageTitle('Mentions légales'),
         description: 'Éditeur, hébergement et propriété intellectuelle du site nedellec-julien.fr.',
         url: `${SITE_IDENTITY.siteUrl}/mentions-legales`,
         type: 'website',
-      },
+      } satisfies SeoData,
     },
   },
   {
     path: 'confidentialite',
-    title: 'Politique de confidentialité | Julien Nédellec',
+    title: pageTitle('Politique de confidentialité'),
     loadComponent: () => import('./pages/privacy-policy').then((m) => m.PrivacyPolicy),
     data: {
       seo: {
-        title: 'Politique de confidentialité | Julien Nédellec',
+        title: pageTitle('Politique de confidentialité'),
         description:
           "Ce que le site collecte et pourquoi\u00a0: formulaire de contact, mesure d'audience sans cookie, commentaires, suivi des erreurs, et tes droits.",
         url: `${SITE_IDENTITY.siteUrl}/confidentialite`,
         type: 'website',
-      },
+      } satisfies SeoData,
     },
   },
   {
     path: 'login',
-    title: 'Connexion | Julien Nédellec',
+    title: pageTitle('Connexion'),
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.LOGIN_ROUTES),
   },
   {
     path: 'two-factor',
-    title: 'Vérification 2FA | Julien Nédellec',
+    title: pageTitle('Vérification 2FA'),
     canMatch: [twoFactorChallengeGuard],
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.TWO_FACTOR_ROUTES),
   },

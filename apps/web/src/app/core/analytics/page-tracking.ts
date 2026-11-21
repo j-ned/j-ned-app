@@ -1,17 +1,18 @@
-import { DestroyRef, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router } from '@angular/router';
-import { filter, fromEvent } from 'rxjs';
+import { Router } from '@angular/router';
+import { fromEvent } from 'rxjs';
+import { navigationEnd$ } from '@core/navigation/navigation-end';
 
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { trackedPath } from '@features/analytics/domain/tracked-path';
 import { VisibleTimeMeter } from '@features/analytics/domain/visible-time-meter';
 import { isNotFoundRoute } from './not-found-route';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 export function initializePageTracking(): () => void {
   return (): void => {
-    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+    if (!injectIsBrowser()) return;
 
     const router = inject(Router);
     const analytics = inject(AnalyticsGateway);
@@ -25,11 +26,8 @@ export function initializePageTracking(): () => void {
       if (seconds > 0) analytics.trackPageDuration(currentPath, seconds);
     };
 
-    router.events
-      .pipe(
-        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-        takeUntilDestroyed(destroyRef),
-      )
+    navigationEnd$(router)
+      .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
         const path = trackedPath(event.urlAfterRedirects);
         if (path === currentPath) return;

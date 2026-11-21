@@ -1,14 +1,15 @@
-import { DOCUMENT, Location, isPlatformBrowser } from '@angular/common';
-import { Component, PLATFORM_ID, computed, inject, ChangeDetectionStrategy } from '@angular/core';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { DOCUMENT, Location } from '@angular/common';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { filter } from 'rxjs';
+import { navigationEnd$ } from '@core/navigation/navigation-end';
 import { Toast } from '@shared/ui/toast';
 import { SectionUnavailable } from '@shared/ui/section-unavailable';
 import { ToastStore } from '@core/notifications/toast-store';
 import { Header } from '@layout/components/header/header';
 import { Footer } from '@layout/components/footer/footer';
 import { ThemeStore } from '@core/theme/theme-store';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 const ADMIN_URL = /^\/admin(?:[/?#]|$)/;
 
@@ -45,7 +46,7 @@ export class App {
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
   private readonly initialPath = inject(Location).path();
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly isBrowser = injectIsBrowser();
   protected readonly toastStore = inject(ToastStore);
 
   constructor() {
@@ -55,11 +56,8 @@ export class App {
 
   // Manuel plutôt que scrollPositionRestoration : fiable avec les view transitions.
   private resetScrollOnNavigation(): void {
-    this.router.events
-      .pipe(
-        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-        takeUntilDestroyed(),
-      )
+    navigationEnd$(this.router)
+      .pipe(takeUntilDestroyed())
       .subscribe(() => {
         if (!this.isBrowser) return;
         if (this.router.lastSuccessfulNavigation()?.trigger === 'popstate') return;
@@ -67,11 +65,7 @@ export class App {
       });
   }
 
-  private readonly navigationEnd = toSignal(
-    this.router.events.pipe(
-      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-    ),
-  );
+  private readonly navigationEnd = toSignal(navigationEnd$(this.router));
 
   // Avant le premier NavigationEnd, seule l'adresse demandée dit si la page est admin.
   readonly isAdminRoute = computed(() =>
