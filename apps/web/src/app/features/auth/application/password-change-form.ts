@@ -12,6 +12,7 @@ import { AppIcon } from '@shared/icons/app-icon';
 import { StatusMessage } from '@shared/ui/status-message';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
+import { PASSWORD_MIN_LENGTH } from '@features/auth/domain/models/password-policy';
 
 export type PasswordChangeRequest = {
   readonly currentPassword: string;
@@ -19,7 +20,6 @@ export type PasswordChangeRequest = {
 };
 
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
-const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
 
 @Component({
@@ -33,9 +33,9 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
         <app-icon name="lock" [size]="20" class="text-primary" />
         <h2 class="text-xl font-bold text-foreground">Modifier le mot de passe</h2>
       </div>
-      <p class="text-muted text-sm mb-6">
-        Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un
-        chiffre et un caractère spécial.
+      <p data-testid="password-rules" class="text-muted text-sm mb-6">
+        Le mot de passe doit contenir au moins {{ minLength }} caractères, une majuscule, une
+        minuscule, un chiffre et un caractère spécial.
       </p>
 
       @if (successMessage()) {
@@ -123,6 +123,7 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
   `,
 })
 export class PasswordChangeForm {
+  protected readonly minLength = PASSWORD_MIN_LENGTH;
   readonly loading = input(false);
   readonly successMessage = input('');
   readonly errorMessage = input('');
@@ -135,6 +136,9 @@ export class PasswordChangeForm {
     this._model,
     (path) => {
       required(path.currentPassword, { message: 'Champ obligatoire' });
+      minLength(path.currentPassword, PASSWORD_MIN_LENGTH, {
+        message: `Minimum ${PASSWORD_MIN_LENGTH} caractères requis`,
+      });
       required(path.newPassword, { message: 'Champ obligatoire' });
       minLength(path.newPassword, PASSWORD_MIN_LENGTH, {
         message: `Minimum ${PASSWORD_MIN_LENGTH} caractères requis`,

@@ -2,7 +2,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
-import { RouterTestingHarness } from '@angular/router/testing';
 import { of, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
 import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
@@ -23,11 +22,19 @@ import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { ToastStore } from '@core/notifications/toast-store';
-import type { ToastMessage } from '@shared/ui/toast.types';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { unsavedChangesGuard } from '../../application/unsaved-changes-guard';
 import { AdminProfile } from './admin-profile';
 import { BlankPage } from '@shared/testing/blank-page';
+import {
+  fieldValue,
+  openEditorRoute,
+  save,
+  saveBarState,
+  tocStates,
+  toasts,
+  typeIn,
+} from '../../application/testing/editor-page';
 import { normalized } from '@shared/testing/normalized-text';
 import { asButton } from '@shared/testing/as-button';
 
@@ -85,50 +92,13 @@ async function openEditor(overrides: Partial<Omit<Spies, 'toast'>> = {}): Promis
       { provide: ToastStore, useValue: { add: spies.toast } },
     ],
   });
-  const harness = await RouterTestingHarness.create();
-  const crash = await captureCrash(async () => {
-    await harness.navigateByUrl('/admin/profile');
-    await settleBounded(harness.fixture);
-  });
-  return {
-    ...spies,
-    fixture: harness.fixture,
-    host: harness.fixture.nativeElement as HTMLElement,
-    crash,
-  };
-}
-
-const fieldValue = (host: HTMLElement, testId: string): string | undefined =>
-  (byTestId(host, testId) as HTMLInputElement | HTMLTextAreaElement | null)?.value;
-
-async function typeIn(editor: Editor, testId: string, text: string): Promise<void> {
-  const control = byTestId(editor.host, testId) as HTMLInputElement | HTMLTextAreaElement | null;
-  if (!control) return;
-  control.value = text;
-  control.dispatchEvent(new Event('input'));
-  control.dispatchEvent(new Event('change'));
-  await settle(editor.fixture);
-}
-
-async function save(editor: Editor): Promise<void> {
-  await pressTestId(editor.fixture, 'savebar-submit');
-  await settleBounded(editor.fixture);
+  return { ...spies, ...(await openEditorRoute('/admin/profile')) };
 }
 
 async function cancel(editor: Editor): Promise<void> {
   byTestId(editor.host, 'savebar-cancel')?.click();
   await settleBounded(editor.fixture);
 }
-
-const toasts = (toast: Spies['toast']): readonly ToastMessage[] =>
-  toast.mock.calls.map(([message]) => message);
-
-const saveBarState = (editor: Editor): string => normalized(byTestId(editor.host, 'savebar-state'));
-
-const tocStates = (editor: Editor): readonly string[] =>
-  [...editor.host.querySelectorAll('[data-testid="form-toc-link"]')].map((link) =>
-    normalized(byTestId(link, 'form-toc-state')),
-  );
 
 const retitled = (title: string): ProfileContent =>
   aProfileContent({ biography: { ...WITNESS.biography, title } });

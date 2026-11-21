@@ -89,6 +89,28 @@ describe('Login a11y', () => {
   });
 });
 
+describe('Login: longueur du mot de passe', () => {
+  it.each([
+    { length: 11, error: 'Le mot de passe doit contenir au moins 12 caractères' },
+    { length: 12, error: null },
+  ])(
+    'Given a $length-character password When the field is touched Then the error is $error',
+    async ({ length, error }) => {
+      TestBed.configureTestingModule({
+        imports: [Login],
+        providers: [provideRouter([]), { provide: AuthStore, useValue: {} }],
+      });
+      const fixture = TestBed.createComponent(Login);
+      fixture.componentInstance.form.password().value.set('a'.repeat(length));
+      fixture.componentInstance.form.password().markAsTouched();
+      await settle(fixture);
+
+      const message = (fixture.nativeElement as HTMLElement).querySelector('#login-password-error');
+      expect(message?.textContent?.trim() ?? null).toBe(error);
+    },
+  );
+});
+
 describe('Login: annonce d’un échec de connexion', () => {
   const LOGIN_URL = '/api/auth/login';
 

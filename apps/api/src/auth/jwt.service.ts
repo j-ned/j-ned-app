@@ -16,8 +16,9 @@ export class JwtService {
   sign(payload: object, options: { expiresIn?: string } = {}): string {
     return jwt.sign(payload, this.secret, {
       algorithm: ALGORITHM,
-      expiresIn: (options.expiresIn ??
-        this.defaultExpiresIn) as SignOptions['expiresIn'],
+      expiresIn: (options.expiresIn ?? this.defaultExpiresIn) as NonNullable<
+        SignOptions['expiresIn']
+      >,
     });
   }
 

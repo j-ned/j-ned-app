@@ -17,7 +17,12 @@ import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
-import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
+import { readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
+import {
+  deleteThroughDialog,
+  presentTestIds,
+  readPageTitleFocus,
+} from '../../application/testing/admin-list-page';
 import { normalized } from '@shared/testing/normalized-text';
 import { asButton } from '@shared/testing/as-button';
 
@@ -259,8 +264,7 @@ describe('AdminMessages: tout marquer comme lu', () => {
       }),
     );
     await pressTestId(fixture, 'mark-all-read');
-    await pressTestId(fixture, 'message-delete', 0);
-    await answerConfirmDialog(fixture, 'confirm');
+    await deleteThroughDialog(fixture, 'message-delete', 'confirm');
 
     pending.error(new Error('boom'));
     await settle(fixture);
@@ -300,9 +304,7 @@ describe('AdminMessages: suppression confirmée', () => {
     'Given the dialog asks about the message from Claire Martin When the user answers $answer Then the gateway deletes $deleted and the dialog closes',
     async ({ answer, deleted, shown }) => {
       const { fixture, host, deleteMessage } = await renderList();
-      await pressTestId(fixture, 'message-delete', 0);
-
-      await answerConfirmDialog(fixture, answer);
+      await deleteThroughDialog(fixture, 'message-delete', answer);
 
       expect({
         open: readConfirmDialog(host).open,
@@ -314,9 +316,7 @@ describe('AdminMessages: suppression confirmée', () => {
 
   it('Given a confirmed deletion When the row disappears Then the unread count is refreshed and success is told', async () => {
     const { fixture, invalidate, toast } = await renderList();
-    await pressTestId(fixture, 'message-delete', 0);
-
-    await answerConfirmDialog(fixture, 'confirm');
+    await deleteThroughDialog(fixture, 'message-delete', 'confirm');
 
     expect({
       invalidated: invalidate.mock.calls.length,
@@ -331,9 +331,7 @@ describe('AdminMessages: suppression confirmée', () => {
         deleteMessage: () => throwError(() => new Error('boom')),
       }),
     );
-    await pressTestId(fixture, 'message-delete', 0);
-
-    await answerConfirmDialog(fixture, 'confirm');
+    await deleteThroughDialog(fixture, 'message-delete', 'confirm');
 
     expect({
       senders: senders(host),
@@ -343,16 +341,10 @@ describe('AdminMessages: suppression confirmée', () => {
 
   it('Given a confirmed deletion When the row disappears Then the focus lands on the page title', async () => {
     const { fixture, host } = await renderList();
-    await pressTestId(fixture, 'message-delete', 0);
 
-    await answerConfirmDialog(fixture, 'confirm');
-    const title = byTestId(host, 'admin-page-title');
+    await deleteThroughDialog(fixture, 'message-delete', 'confirm');
 
-    expect({
-      tag: title?.tagName,
-      tabindex: title?.getAttribute('tabindex'),
-      focused: title !== null && host.ownerDocument.activeElement === title,
-    }).toEqual({ tag: 'H1', tabindex: '-1', focused: true });
+    expect(readPageTitleFocus(host)).toEqual({ tag: 'H1', tabindex: '-1', focused: true });
   });
 });
 
@@ -375,8 +367,7 @@ describe('AdminMessages: chargement, erreur et vide', () => {
     return { fixture, host: fixture.nativeElement as HTMLElement, crash };
   }
 
-  const present = (host: HTMLElement): readonly string[] =>
-    STATE_TEST_IDS.filter((testId) => byTestId(host, testId) !== null);
+  const present = (host: HTMLElement): readonly string[] => presentTestIds(host, STATE_TEST_IDS);
 
   it.each([
     {
@@ -471,8 +462,7 @@ describe('AdminMessages: une seule notification par échec d’écriture', () =>
       method: 'DELETE',
       url: `${BASE}/1`,
       act: async (fixture: ComponentFixture<AdminMessages>): Promise<void> => {
-        await pressTestId(fixture, 'message-delete', 0);
-        await answerConfirmDialog(fixture, 'confirm');
+        await deleteThroughDialog(fixture, 'message-delete', 'confirm');
       },
     },
     {

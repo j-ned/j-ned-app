@@ -14,7 +14,12 @@ import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settleBounded } from '@shared/testing/settle';
 import { MAX_UPLOAD_BYTES } from '@shared/upload/upload-limit';
-import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
+import { readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
+import {
+  deleteThroughDialog,
+  presentTestIds,
+  readPageTitleFocus,
+} from '../../application/testing/admin-list-page';
 
 function makeCvGateway(overrides: Partial<CvGateway> = {}): CvGateway {
   return {
@@ -92,9 +97,7 @@ describe('AdminCv: suppression confirmée', () => {
     'Given the dialog asks about the CV When the user answers $answer Then the gateway deletes $deleteCalls time(s) and the dialog closes',
     async ({ answer, deleteCalls }) => {
       const { fixture, host, deleteCv } = await renderCurrent();
-      await pressTestId(fixture, 'admin-cv-delete');
-
-      await answerConfirmDialog(fixture, answer);
+      await deleteThroughDialog(fixture, 'admin-cv-delete', answer);
 
       expect({
         open: readConfirmDialog(host).open,
@@ -130,9 +133,7 @@ describe('AdminCv: suppression confirmée', () => {
       const { fixture, toast } = await render(
         makeCvGateway({ delete: () => throwError(() => error) }),
       );
-      await pressTestId(fixture, 'admin-cv-delete');
-
-      await answerConfirmDialog(fixture, 'confirm');
+      await deleteThroughDialog(fixture, 'admin-cv-delete', 'confirm');
 
       expect(toast.add.mock.calls.map(([message]) => message)).toEqual([
         { severity: 'error', detail },
@@ -142,24 +143,17 @@ describe('AdminCv: suppression confirmée', () => {
 
   it('Given a confirmed deletion When the CV block disappears Then the focus lands on the page title', async () => {
     const { fixture, host } = await renderCurrent();
-    await pressTestId(fixture, 'admin-cv-delete');
 
-    await answerConfirmDialog(fixture, 'confirm');
-    const title = byTestId(host, 'admin-page-title');
+    await deleteThroughDialog(fixture, 'admin-cv-delete', 'confirm');
 
-    expect({
-      tag: title?.tagName,
-      tabindex: title?.getAttribute('tabindex'),
-      focused: title !== null && host.ownerDocument.activeElement === title,
-    }).toEqual({ tag: 'H1', tabindex: '-1', focused: true });
+    expect(readPageTitleFocus(host)).toEqual({ tag: 'H1', tabindex: '-1', focused: true });
   });
 });
 
 describe('AdminCv: chargement, erreur et vide', () => {
   const STATE_TEST_IDS = ['load-error', 'empty-state', 'admin-cv-current'] as const;
 
-  const present = (host: HTMLElement): readonly string[] =>
-    STATE_TEST_IDS.filter((testId) => byTestId(host, testId) !== null);
+  const present = (host: HTMLElement): readonly string[] => presentTestIds(host, STATE_TEST_IDS);
 
   it.each([
     {

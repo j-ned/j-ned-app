@@ -47,7 +47,7 @@ const TOTP_PATTERN = /^\d{6}$/;
           </app-status-message>
         }
 
-        <form [formRoot]="form" class="space-y-5">
+        <form [formRoot]="form" data-testid="two-factor-form" class="space-y-5">
           <div>
             @let codeInError = form.code().touched() && form.code().invalid();
             <label for="code" class="form-label">Code TOTP</label>
@@ -113,13 +113,17 @@ export class TwoFactorVerify {
 
     this.errorMessage.set('');
     try {
-      const success = await firstValueFrom(
+      const result = await firstValueFrom(
         this.authService.verifyTwoFactor(challengeToken, this._model().code),
       );
-      if (success) {
+      if (result === 'success') {
         await this.router.navigate(['/admin']);
+      } else if (result === 'invalid-code') {
+        this.errorMessage.set('Code invalide ou expiré, réessaie ou reconnecte-toi');
+      } else if (result === 'throttled') {
+        this.errorMessage.set('Trop de tentatives, réessaie dans quelques minutes');
       } else {
-        this.errorMessage.set('Code invalide');
+        this.errorMessage.set('Vérification impossible pour le moment, réessaie dans un instant');
       }
     } catch {
       this.errorMessage.set('Erreur de vérification');

@@ -17,7 +17,6 @@ import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { ToastStore } from '@core/notifications/toast-store';
-import type { ToastMessage } from '@shared/ui/toast.types';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { AdminPostEditor } from './admin-post-editor';
 import {
@@ -26,6 +25,18 @@ import {
 } from '../../application/testing/content-image-panel-page';
 import { unsavedChangesGuard } from '../../application/unsaved-changes-guard';
 import { BlankPage } from '@shared/testing/blank-page';
+import {
+  fieldValue,
+  followBreadcrumb,
+  inZone,
+  openEditorRoute,
+  pickInZone,
+  save,
+  saveBarState,
+  tocStates,
+  toasts,
+  typeIn,
+} from '../../application/testing/editor-page';
 import { normalized } from '@shared/testing/normalized-text';
 import { asButton } from '@shared/testing/as-button';
 
@@ -111,30 +122,7 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
       { provide: ToastStore, useValue: { add: spies.toast } },
     ],
   });
-  const harness = await RouterTestingHarness.create();
-  const crash = await captureCrash(async () => {
-    await harness.navigateByUrl(url);
-    await settleBounded(harness.fixture);
-  });
-  return {
-    ...spies,
-    harness,
-    fixture: harness.fixture,
-    host: harness.fixture.nativeElement as HTMLElement,
-    crash,
-  };
-}
-
-const fieldValue = (host: HTMLElement, testId: string): string | undefined =>
-  (byTestId(host, testId) as HTMLInputElement | HTMLTextAreaElement | null)?.value;
-
-async function typeIn(editor: Editor, testId: string, text: string): Promise<void> {
-  const control = byTestId(editor.host, testId) as HTMLInputElement | HTMLTextAreaElement | null;
-  if (!control) return;
-  control.value = text;
-  control.dispatchEvent(new Event('input'));
-  control.dispatchEvent(new Event('change'));
-  await settle(editor.fixture);
+  return { ...spies, ...(await openEditorRoute(url)) };
 }
 
 async function fillNewPost(editor: Editor): Promise<void> {
@@ -174,27 +162,7 @@ async function addSubject(editor: Editor, name: string): Promise<void> {
 const tagOptions = (editor: Editor): readonly string[] =>
   [...editor.host.querySelectorAll('[data-testid="tag-option"]')].map(normalized);
 
-async function save(editor: Editor): Promise<void> {
-  await pressTestId(editor.fixture, 'savebar-submit');
-  await settleBounded(editor.fixture);
-}
-
-async function followBreadcrumb(editor: Editor): Promise<void> {
-  byTestId(editor.host, 'admin-breadcrumb-parent')?.click();
-  await settleBounded(editor.fixture);
-}
-
 const COVER = new File(['x'], 'cover.png', { type: 'image/png' });
-
-const toasts = (toast: Spies['toast']): readonly ToastMessage[] =>
-  toast.mock.calls.map(([message]) => message);
-
-const saveBarState = (editor: Editor): string => normalized(byTestId(editor.host, 'savebar-state'));
-
-const tocStates = (editor: Editor): readonly string[] =>
-  [...editor.host.querySelectorAll('[data-testid="form-toc-link"]')].map((link) =>
-    normalized(byTestId(link, 'form-toc-state')),
-  );
 
 describe('AdminPostEditor: ouverture', () => {
   it.each([{ url: '/admin/blog/b-1', title: 'Chiffrement côté client' }])(
@@ -529,26 +497,14 @@ describe('AdminPostEditor: détail du refus de l’API', () => {
 });
 
 describe('AdminPostEditor: couverture retirée ou refusée', () => {
-  async function pickInZone(editor: Editor, file: File): Promise<void> {
-    const input = editor.host.querySelector<HTMLInputElement>(
-      '[data-testid="admin-post-cover"] input[type="file"]',
-    );
-    if (input) {
-      Object.defineProperty(input, 'files', { value: [file], configurable: true });
-      input.dispatchEvent(new Event('change'));
-    }
-    await settle(editor.fixture);
-  }
-
-  const inZone = (editor: Editor, testId: string): HTMLElement | null =>
-    editor.host.querySelector(`[data-testid="admin-post-cover"] [data-testid="${testId}"]`);
+  const COVER_ZONE = 'admin-post-cover';
 
   it('Given a cover chosen then removed from the dropzone When the article is saved Then no cover is sent', async () => {
     const editor = await openEditor('/admin/blog/b-1');
-    await pickInZone(editor, COVER);
-    const chosen = inZone(editor, 'file-dropzone-replace') !== null;
+    await pickInZone(editor, COVER_ZONE, COVER);
+    const chosen = inZone(editor, COVER_ZONE, 'file-dropzone-replace') !== null;
 
-    inZone(editor, 'file-dropzone-clear')?.click();
+    inZone(editor, COVER_ZONE, 'file-dropzone-clear')?.click();
     await settle(editor.fixture);
     await save(editor);
 
@@ -561,12 +517,16 @@ describe('AdminPostEditor: couverture retirée ou refusée', () => {
   it('Given a file that is not an image When it is dropped in the cover zone Then the page says so and the zone empties', async () => {
     const editor = await openEditor('/admin/blog/b-1');
 
-    await pickInZone(editor, new File(['%PDF'], 'notes.pdf', { type: 'application/pdf' }));
+    await pickInZone(
+      editor,
+      COVER_ZONE,
+      new File(['%PDF'], 'notes.pdf', { type: 'application/pdf' }),
+    );
 
     expect({
       toasts: toasts(editor.toast),
-      replace: inZone(editor, 'file-dropzone-replace'),
-      trigger: inZone(editor, 'file-dropzone-trigger') !== null,
+      replace: inZone(editor, COVER_ZONE, 'file-dropzone-replace'),
+      trigger: inZone(editor, COVER_ZONE, 'file-dropzone-trigger') !== null,
       name: normalized(editor.host).includes('notes.pdf'),
     }).toEqual({
       toasts: [{ severity: 'error', detail: 'Seules les images sont acceptées.' }],
@@ -578,9 +538,13 @@ describe('AdminPostEditor: couverture retirée ou refusée', () => {
 
   it('Given a cover chosen then a refused file When the article is saved Then the earlier cover is not sent', async () => {
     const editor = await openEditor('/admin/blog/b-1');
-    await pickInZone(editor, COVER);
+    await pickInZone(editor, COVER_ZONE, COVER);
 
-    await pickInZone(editor, new File(['%PDF'], 'notes.pdf', { type: 'application/pdf' }));
+    await pickInZone(
+      editor,
+      COVER_ZONE,
+      new File(['%PDF'], 'notes.pdf', { type: 'application/pdf' }),
+    );
     await save(editor);
 
     expect(editor.uploadCoverImage.mock.calls.length).toBe(0);

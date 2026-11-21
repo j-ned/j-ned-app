@@ -41,21 +41,23 @@ const SECRET_HEADERS: ReadonlySet<string> = new Set([
   'set-cookie',
 ]);
 
+type EventException = NonNullable<ErrorEvent['exception']>;
+
 /** `dataCollection.databaseQueryData` ne touche pas aux messages d'erreur : `redactQueryParams` s'en charge. */
 const scrubExceptionValues = (
-  exception: ErrorEvent['exception'],
-): ErrorEvent['exception'] =>
-  exception?.values && {
-    ...exception,
-    values: exception.values.map((value) =>
-      value.value === undefined
-        ? value
-        : {
-            ...value,
-            value: redactQueryParams(value.value),
-          },
-    ),
-  };
+  exception: EventException,
+  values: NonNullable<EventException['values']>,
+): EventException => ({
+  ...exception,
+  values: values.map((value) =>
+    value.value === undefined
+      ? value
+      : {
+          ...value,
+          value: redactQueryParams(value.value),
+        },
+  ),
+});
 
 /**
  * Filet après `dataCollection` (fermé dans `instrument.ts`) : retire l'IP de l'utilisateur, les cookies,
@@ -65,7 +67,9 @@ const scrubExceptionValues = (
 export function sentryBeforeSend(event: ErrorEvent): ErrorEvent {
   const { exception, request, user } = event;
   const named: ErrorEvent = { ...event };
-  if (exception?.values) named.exception = scrubExceptionValues(exception);
+  if (exception?.values) {
+    named.exception = scrubExceptionValues(exception, exception.values);
+  }
   if (user && 'ip_address' in user) {
     const anonymous = { ...user };
     delete anonymous.ip_address;

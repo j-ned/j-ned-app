@@ -49,6 +49,14 @@ describe('PasswordChangeForm: a11y attributes', () => {
 });
 
 describe('PasswordChangeForm: validation messages', () => {
+  it('Given the form When it is rendered Then the stated rule gives the length the validation enforces', () => {
+    const fixture = render();
+
+    expect(testIdText(fixture.nativeElement as HTMLElement, 'password-rules')).toContain(
+      'au moins 12 caractères',
+    );
+  });
+
   it('shows the minlength message when newPassword is too short', () => {
     const fixture = render();
     fixture.componentInstance.pwdForm.newPassword().markAsTouched();
@@ -56,14 +64,30 @@ describe('PasswordChangeForm: validation messages', () => {
     fixture.detectChanges();
 
     const error = fixture.nativeElement.querySelector('#twofa-setup-new-pw-error');
-    expect(error?.textContent).toContain('8');
+    expect(error?.textContent).toContain('12');
     expect(error?.textContent).toContain('caractères');
   });
+
+  it.each([
+    { field: 'currentPassword', errorId: 'twofa-setup-current-pw-error' },
+    { field: 'newPassword', errorId: 'twofa-setup-new-pw-error' },
+  ] as const)(
+    'Given an 11-character $field When the field is touched Then the 12-character minimum is shown',
+    ({ field, errorId }) => {
+      const fixture = render();
+      fixture.componentInstance.pwdForm[field]().value.set('Abcdefgh1!x');
+      fixture.componentInstance.pwdForm[field]().markAsTouched();
+      fixture.detectChanges();
+
+      const error = fixture.nativeElement.querySelector(`#${errorId}`);
+      expect(error?.textContent?.trim()).toBe('Minimum 12 caractères requis');
+    },
+  );
 
   it('shows the pattern message when newPassword lacks complexity', () => {
     const fixture = render();
     fixture.componentInstance.pwdForm.newPassword().markAsTouched();
-    fixture.componentInstance.pwdForm.newPassword().value.set('aaaaaaaa');
+    fixture.componentInstance.pwdForm.newPassword().value.set('aaaaaaaaaaaa');
     fixture.detectChanges();
 
     const error = fixture.nativeElement.querySelector('#twofa-setup-new-pw-error');
@@ -139,16 +163,19 @@ describe('PasswordChangeForm: submit output', () => {
       (payload: PasswordChangeRequest) => (received = payload),
     );
 
-    fixture.componentInstance.pwdForm.currentPassword().value.set('OldPass1!');
-    fixture.componentInstance.pwdForm.newPassword().value.set('NewPass1!');
-    fixture.componentInstance.pwdForm.confirmPassword().value.set('NewPass1!');
+    fixture.componentInstance.pwdForm.currentPassword().value.set('OldPassword1!');
+    fixture.componentInstance.pwdForm.newPassword().value.set('NewPassword1!');
+    fixture.componentInstance.pwdForm.confirmPassword().value.set('NewPassword1!');
     fixture.detectChanges();
 
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
-    expect(received).toEqual({ currentPassword: 'OldPass1!', newPassword: 'NewPass1!' });
+    expect(received).toEqual({
+      currentPassword: 'OldPassword1!',
+      newPassword: 'NewPassword1!',
+    });
   });
 });
 

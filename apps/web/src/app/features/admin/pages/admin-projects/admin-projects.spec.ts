@@ -8,11 +8,16 @@ import { makeProject } from '@features/projects/testing/project-builders';
 import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
 import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { ToastStore } from '@core/notifications/toast-store';
-import { byTestId, testIdText } from '@shared/testing/by-test-id';
+import { testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settleBounded } from '@shared/testing/settle';
-import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
+import { readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
+import {
+  deleteThroughDialog,
+  presentTestIds,
+  readPageTitleFocus,
+} from '../../application/testing/admin-list-page';
 import { BlankPage } from '@shared/testing/blank-page';
 
 const DASHFLOW = makeProject({
@@ -135,9 +140,7 @@ describe('AdminProjects: suppression confirmée', () => {
     'Given the dialog asks about DashFlow When the user answers $answer Then the gateway deletes $deleted and the dialog closes',
     async ({ answer, deleted, projects }) => {
       const { fixture, host, deleteProject } = await renderList();
-      await pressTestId(fixture, 'admin-project-delete', 0);
-
-      await answerConfirmDialog(fixture, answer);
+      await deleteThroughDialog(fixture, 'admin-project-delete', answer);
 
       expect({
         open: readConfirmDialog(host).open,
@@ -149,16 +152,10 @@ describe('AdminProjects: suppression confirmée', () => {
 
   it('Given a confirmed deletion When the row disappears Then the focus lands on the page title', async () => {
     const { fixture, host } = await renderList();
-    await pressTestId(fixture, 'admin-project-delete', 0);
 
-    await answerConfirmDialog(fixture, 'confirm');
-    const title = byTestId(host, 'admin-page-title');
+    await deleteThroughDialog(fixture, 'admin-project-delete', 'confirm');
 
-    expect({
-      tag: title?.tagName,
-      tabindex: title?.getAttribute('tabindex'),
-      focused: title !== null && host.ownerDocument.activeElement === title,
-    }).toEqual({ tag: 'H1', tabindex: '-1', focused: true });
+    expect(readPageTitleFocus(host)).toEqual({ tag: 'H1', tabindex: '-1', focused: true });
   });
 });
 
@@ -168,8 +165,7 @@ describe('AdminProjects: chargement, erreur et vide', () => {
   const renderWith = (getAllProjects: ProjectsGateway['getAllProjects']): Promise<Rendered> =>
     renderProjects(stubProjectsGateway({ getAllProjects }));
 
-  const present = (host: HTMLElement): readonly string[] =>
-    STATE_TEST_IDS.filter((testId) => byTestId(host, testId) !== null);
+  const present = (host: HTMLElement): readonly string[] => presentTestIds(host, STATE_TEST_IDS);
 
   it.each([
     {

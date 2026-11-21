@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
-import { FormField, FormRoot, form, required } from '@angular/forms/signals';
+import { FormField, FormRoot, form, minLength, required } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { StatusMessage } from '@shared/ui/status-message';
 import { Button } from '@shared/ui/button';
 import { Stamp } from '@shared/ui/stamp';
 import { FieldError } from '@shared/ui/field-error';
+import { PASSWORD_MIN_LENGTH } from '@features/auth/domain/models/password-policy';
 
 const EMPTY = { password: '' };
 
@@ -144,6 +145,9 @@ export class TwoFactorDisableForm {
     this._model,
     (path) => {
       required(path.password, { message: 'Ce champ est obligatoire' });
+      minLength(path.password, PASSWORD_MIN_LENGTH, {
+        message: `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères`,
+      });
     },
     {
       submission: {

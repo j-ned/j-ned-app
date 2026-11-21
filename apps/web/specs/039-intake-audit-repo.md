@@ -302,3 +302,34 @@ Laissés ouverts : la page du code 2FA garde vraisemblablement la même double a
 (`verifyTwoFactor` sans `silentErrors()`) ; le formulaire exige 6 caractères quand l'API en exige
 12 ; `exactOptionalPropertyTypes` côté API (14 erreurs mesurées, dont plusieurs sur les types de
 jsonwebtoken, pino et Sentry) ; archéologie dans les specs de l'API ; F025 et F031.
+
+## Lot 5 : 2FA, longueur du mot de passe, F025 et typage de l'API (2026-11-21, branche `refactor/audit-039-lot5`)
+
+Branche empilée sur `refactor/audit-039-lot4`. Traités côté front : la double annonce de la page du
+code 2FA (`verifyTwoFactor` silencieux, résultat `invalid-code` / `throttled` / `error`), la longueur
+minimale du mot de passe alignée sur l'API (`PASSWORD_MIN_LENGTH = 12` : login, changement de mot de
+passe, désactivation du 2FA) et F025 pour les listes et les éditeurs de l'admin
+(`features/admin/application/testing/admin-list-page.ts` et `editor-page.ts`, sept specs). Côté API :
+`exactOptionalPropertyTypes` activé, premier test du logger (`common/logger.spec.ts`).
+
+Messages de la page du code 2FA, une seule annonce sans toast. 401 : « Code invalide ou expiré,
+réessaie ou reconnecte-toi » ; 429 : « Trop de tentatives, réessaie dans quelques minutes » ; autres
+cas : « Vérification impossible pour le moment, réessaie dans un instant ».
+
+Premier verdict du `code-reviewer` : **REJECTED**, un point. Le texte d'aide du changement de mot de
+passe annonçait encore 8 caractères. Corrigé : le texte lit `PASSWORD_MIN_LENGTH`, test vu rouge.
+Repris aussi : les aides `typeIn`, `followBreadcrumb` et `pickInZone` échouent quand l'élément manque
+au lieu de ne rien faire. Le lot corrigé n'a pas été soumis à une seconde revue. Preuve du reviewer
+pour F025 : mêmes nombres de tests et d'`expect`, mêmes intitulés et mêmes matchers dans les sept
+specs, aucune assertion dans les aides.
+
+Observé par le reviewer en `ng serve` devant un faux serveur : refus local d'un mot de passe de 11
+caractères au login ; 401, 429, 500 et connexion coupée sur la page du code 2FA donnent une seule
+annonce `role="alert"` avec le bon message ; aucune exception en console. Non observé : la vraie API,
+le statut 0 réel, les formulaires de changement de mot de passe et de désactivation du 2FA dans un
+navigateur.
+
+Laissés ouverts : blocs d'envoi d'image des deux gateways (seuls à prouver que le fichier préparé
+part, donc gardés) ; garde de sortie des éditeurs ; sélecteurs par `id` dans quatre specs d'auth ;
+`TwoFactorOutcome` et `LoginOutcome` non exportés (pas d'exhaustivité par `switch`) ; archéologie
+des commentaires de l'API ; F031.

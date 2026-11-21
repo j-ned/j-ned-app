@@ -3,6 +3,7 @@ import { FormField, FormRoot, email, form, minLength, required } from '@angular/
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
+import { PASSWORD_MIN_LENGTH } from '@features/auth/domain/models/password-policy';
 import { Button } from '@shared/ui/button';
 import { AppIconTile } from '@shared/ui/icon-tile';
 import { AppIcon } from '@shared/icons/app-icon';
@@ -144,8 +145,8 @@ export class Login {
       required(path.email, { message: "L'email est obligatoire" });
       email(path.email, { message: "L'email n'est pas valide" });
       required(path.password, { message: 'Le mot de passe est obligatoire' });
-      minLength(path.password, 6, {
-        message: 'Le mot de passe doit contenir au moins 6 caractères',
+      minLength(path.password, PASSWORD_MIN_LENGTH, {
+        message: `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères`,
       });
     },
     { submission: { action: () => this.login() } },

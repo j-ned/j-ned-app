@@ -31,7 +31,7 @@ describe('blog content images routes (HTTP)', () => {
     app.request('/api/blog/content-images', {
       method: 'POST',
       headers: { 'x-forwarded-for': `198.51.100.${(ip += 1)}` },
-      body,
+      ...(body ? { body } : {}),
     });
 
   it.each([

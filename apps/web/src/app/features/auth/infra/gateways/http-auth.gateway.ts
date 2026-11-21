@@ -28,7 +28,7 @@ export class HttpAuthGateway extends AuthGateway {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/2fa/verify`,
       { challengeToken, code },
-      { withCredentials: true },
+      { withCredentials: true, context: silentErrors() },
     );
   }
 
