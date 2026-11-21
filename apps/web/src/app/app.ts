@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { Toast } from '@shared/ui/toast';
+import { SectionUnavailable } from '@shared/ui/section-unavailable';
 import { ToastStore } from '@core/notifications/toast-store';
 import { Header } from '@layout/components/header/header';
 import { Footer } from '@layout/components/footer/footer';
@@ -13,7 +14,7 @@ const ADMIN_URL = /^\/admin(?:[/?#]|$)/;
 
 @Component({
   selector: 'app-root',
-  imports: [Header, Footer, RouterOutlet, Toast],
+  imports: [Header, Footer, RouterOutlet, Toast, SectionUnavailable],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown.control.l)': 'openAdminShortcut($event)',
@@ -33,6 +34,8 @@ const ADMIN_URL = /^\/admin(?:[/?#]|$)/;
         <div
           class="h-[71.15625rem] border-t border-nav-border bg-surface sm:h-[54.6875rem] md:h-[26.3125rem] lg:h-[21.84375rem]"
         ></div>
+      } @error {
+        <app-section-unavailable />
       }
     }
     <app-toast [messages]="toastStore.messages()" (dismiss)="toastStore.dismiss($event)" />

@@ -7,6 +7,7 @@ import { AppChart } from '@shared/ui/chart';
 import { byTestId } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import { AudienceChart } from './audience-chart';
+import { normalized } from '@shared/testing/normalized-text';
 
 const POINTS: readonly DailyChartPoint[] = [
   makeChartPoint({ date: '2026-09-07', visitors: 6, pageviews: 9 }),
@@ -17,9 +18,6 @@ const CHART_DATA: ChartData<'line'> = {
   labels: ['7 sept.', '8 sept.'],
   datasets: [{ label: 'Visiteurs', data: [6, 2] }],
 };
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 async function renderChart(points: readonly DailyChartPoint[]): Promise<HTMLElement> {
   TestBed.overrideComponent(AudienceChart, {

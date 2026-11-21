@@ -139,6 +139,17 @@ describe('HttpProjectsGateway', () => {
       expect(result).toEqual(expected);
       httpController.verify();
     });
+
+    it('Given an id read from the URL that climbs the path When the project is read Then it stays one segment under /projects', () => {
+      const { gateway, httpController } = configure();
+
+      gateway.getProjectById('../blog/posts').subscribe();
+
+      const req = httpController.expectOne(`${BASE}/projects/..%2Fblog%2Fposts`);
+      expect(req.request.method).toBe('GET');
+      req.flush(makeProject());
+      httpController.verify();
+    });
   });
 
   describe('Adaptation des réponses', () => {

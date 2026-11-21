@@ -4,10 +4,9 @@ import { map, of, switchMap, type Observable } from 'rxjs';
 import type { LoginEventPage } from '@features/auth/domain/models/login-event.model';
 import { LoginJournalGateway } from '@features/auth/infra/gateways/login-journal.gateway';
 import { Button } from '@shared/ui/button';
-import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
-import { AppSkeleton } from '@shared/ui/skeleton';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
+import { AdminListState } from '../../application/components/admin-list-state';
 import {
   AdminPageHeader,
   type AdminPageParent,
@@ -25,7 +24,7 @@ const SETTINGS: AdminPageParent = { label: 'Paramètres', route: '/admin/setting
 
 @Component({
   selector: 'app-admin-logins',
-  imports: [Button, LoadError, AppSkeleton, AdminEmptyState, AdminPageHeader],
+  imports: [Button, AdminEmptyState, AdminListState, AdminPageHeader],
   host: { class: 'block' },
   template: `
     <app-admin-page-header [parent]="parent" heading="Journal des connexions">
@@ -33,30 +32,24 @@ const SETTINGS: AdminPageParent = { label: 'Paramètres', route: '/admin/setting
       plus ancienne. Ni adresse IP ni e-mail saisi n'y sont gardés.
     </app-admin-page-header>
 
-    @switch (listState()) {
-      @case ('loading') {
-        <div data-testid="admin-logins-loading" role="status" class="mt-5 space-y-3">
-          <span class="sr-only">Chargement du journal des connexions…</span>
-          <app-skeleton class="block h-14 rounded-sm" />
-          <app-skeleton class="block h-14 rounded-sm" />
-          <app-skeleton class="block h-14 rounded-sm" />
-        </div>
-      }
-      @case ('error') {
-        <app-load-error
-          message="Le journal des connexions n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez."
-          (retry)="journalRes.reload()"
-        />
-      }
-      @case ('empty') {
+    <app-admin-list-state
+      [state]="listState()"
+      testIdPrefix="admin-logins"
+      loadingLabel="Chargement du journal des connexions…"
+      errorMessage="Le journal des connexions n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez."
+      skeletonClass="h-14 rounded-sm"
+      loadingClass="mt-5"
+      (retry)="journalRes.reload()"
+    >
+      <ng-template #listEmpty>
         <app-admin-empty-state stamp="Journal vide" class="mt-5">
           <p>
             Aucune étape de connexion enregistrée sur les 90 derniers jours. La prochaine connexion
             apparaîtra ici.
           </p>
         </app-admin-empty-state>
-      }
-      @default {
+      </ng-template>
+      <ng-template #listReady>
         <p data-testid="admin-logins-summary" class="font-mono text-[0.8125rem] text-primary">
           {{ summary() }}
         </p>
@@ -92,8 +85,8 @@ const SETTINGS: AdminPageParent = { label: 'Paramètres', route: '/admin/setting
             </li>
           }
         </ul>
-      }
-    }
+      </ng-template>
+    </app-admin-list-state>
 
     @if (pager().pageCount > 1) {
       <nav

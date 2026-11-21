@@ -1,5 +1,4 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
@@ -28,9 +27,8 @@ import type { ToastMessage } from '@shared/ui/toast.types';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { unsavedChangesGuard } from '../../application/unsaved-changes-guard';
 import { AdminProfile } from './admin-profile';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
+import { normalized } from '@shared/testing/normalized-text';
 
 const LOADED = aProfileDocument({ version: 7 });
 const WITNESS = aProfileContent();
@@ -98,9 +96,6 @@ async function openEditor(overrides: Partial<Omit<Spies, 'toast'>> = {}): Promis
     crash,
   };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const nativeButton = (element: Element | null): HTMLButtonElement | null =>
   element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);

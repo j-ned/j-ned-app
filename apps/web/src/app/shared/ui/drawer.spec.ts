@@ -14,7 +14,7 @@ import { Drawer } from './drawer';
   `,
 })
 class Host {
-  visible = signal(false);
+  readonly visible = signal(false);
   open(): void {
     this.visible.set(true);
   }
@@ -119,7 +119,7 @@ describe('Drawer focus trap', () => {
       `,
     })
     class EmptyHost {
-      visible = signal(false);
+      readonly visible = signal(false);
       open(): void {
         this.visible.set(true);
       }

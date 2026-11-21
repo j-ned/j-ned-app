@@ -7,11 +7,11 @@ import type { UploadedFile } from '../common/http';
 import { Logger } from '../common/logger';
 import type { Database } from '../database/drizzle.types';
 import type { ProfileContentRow } from '../database/schema/profile-content';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import type { ImageOptimizer } from '../storage/image-optimizer.service';
 import type { StorageService } from '../storage/storage.service';
 import { ProfilePortraitService } from './profile-portrait.service';
-import { aProfileContent } from './profile-test-builders';
+import { aProfileContent } from '../testing/profile-test-builders';
 
 const BUCKET = 'portfolio-storage';
 /** Le faux recadrage préfixe les octets reçus : deux fichiers différents ⇒ deux clés différentes. */

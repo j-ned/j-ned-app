@@ -1,4 +1,3 @@
-import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
@@ -10,9 +9,7 @@ import {
 import type { HeroData } from '../domain/models/hero.model';
 import { STATIC_HERO } from '../infra/data/home.static-data';
 import { HomeHeroSection } from './home-hero-section';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
 
 describe('HomeHeroSection', () => {
   let fixture: ComponentFixture<HomeHeroSection>;

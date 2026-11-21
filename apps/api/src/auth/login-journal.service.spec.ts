@@ -1,5 +1,5 @@
 import { loginEvent } from '../database/schema';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import {
   LoginJournalService,
   loginEventCutoff,

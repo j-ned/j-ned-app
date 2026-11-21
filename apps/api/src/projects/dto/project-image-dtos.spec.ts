@@ -1,4 +1,4 @@
-import { invalidProperties } from '../../common/dto-testing';
+import { invalidProperties } from '../../testing/dto-testing';
 import { validateDto } from '../../common/validation';
 import { projectImageAltSchema } from './project-image-alt.dto';
 import { reorderProjectImagesSchema } from './reorder-project-images.dto';

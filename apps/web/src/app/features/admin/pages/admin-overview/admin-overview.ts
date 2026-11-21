@@ -1,8 +1,6 @@
-import { Component, computed, inject, type Resource, type ResourceRef } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { Component, computed, inject, type ResourceRef } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { ThemeStore } from '@core/theme/theme-store';
 import {
   buildLineChartOptions,
   buildVisitorsOnlyChartData,
@@ -16,9 +14,10 @@ import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { Cartouche } from '@shared/ui/cartouche';
 import { LoadError } from '@shared/ui/load-error';
+import { resourceValueOr } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import { todayOverline } from '../../application/admin-page-copy';
-import { readChartPalette, readThemeColor } from '../../application/chart-palette';
+import { injectChartTheme } from '../../application/chart-palette';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
 import { AdminSectionHead } from '../../application/components/admin-section-head';
 import { OverviewAudience } from '../../application/components/overview-audience';
@@ -32,10 +31,6 @@ import {
   toContentRows,
   toOnlineRows,
 } from '../../application/overview-view';
-
-// `value()` lève en état d'erreur : toute lecture de ressource passe par `hasValue()`.
-const valueOrNull = <T>(source: Resource<T | undefined>): T | null =>
-  source.hasValue() ? (source.value() ?? null) : null;
 
 const failed = (sources: readonly ResourceRef<unknown>[]): readonly ResourceRef<unknown>[] =>
   sources.filter((source) => source.status() === 'error');
@@ -164,8 +159,6 @@ export class AdminOverview {
   private readonly _blog = inject(BlogGateway);
   private readonly _contact = inject(ContactGateway);
   private readonly _analytics = inject(AnalyticsGateway);
-  private readonly _document = inject(DOCUMENT);
-  private readonly _isDark = inject(ThemeStore).isDark;
 
   private readonly _now = new Date();
   private readonly _period = dateRangeToParams('30d', this._now);
@@ -187,15 +180,15 @@ export class AdminOverview {
       this._analytics.getMetrics('referrer', this._period.startDate, this._period.endDate),
   });
 
-  private readonly _projectList = computed(() => valueOrNull(this.projectsRes));
-  private readonly _postList = computed(() => valueOrNull(this.postsRes));
-  protected readonly overview = computed(() => valueOrNull(this.overviewRes));
-  protected readonly unread = computed(() => valueOrNull(this.unreadRes));
+  private readonly _projectList = computed(() => resourceValueOr(this.projectsRes, null));
+  private readonly _postList = computed(() => resourceValueOr(this.postsRes, null));
+  protected readonly overview = computed(() => resourceValueOr(this.overviewRes, null));
+  protected readonly unread = computed(() => resourceValueOr(this.unreadRes, null));
 
   protected readonly summary = computed(() =>
     overviewSummary({
       overview: this.overview(),
-      referrers: valueOrNull(this.referrersRes),
+      referrers: resourceValueOr(this.referrersRes, null),
       unread: this.unread(),
       projects: this._projectList(),
       posts: this._postList(),
@@ -226,20 +219,13 @@ export class AdminOverview {
     return overview ? toAudienceReadout(overview, this._period.startDate) : [];
   });
 
-  // Les couleurs viennent des variables CSS du registre courant : relues à chaque bascule de thème.
-  private readonly _palette = computed(() => {
-    this._isDark();
-    return {
-      line: readChartPalette(this._document),
-      background: readThemeColor(this._document, '--theme-background', 'Canvas'),
-    };
-  });
+  private readonly _palette = injectChartTheme();
   protected readonly chartData = computed(() => {
-    const points = valueOrNull(this.chartRes);
+    const points = resourceValueOr(this.chartRes, null);
     return points === null ? null : buildVisitorsOnlyChartData(points, this._palette().line);
   });
   protected readonly chartCaption = computed(() => {
-    const points = valueOrNull(this.chartRes);
+    const points = resourceValueOr(this.chartRes, null);
     return points === null ? '' : chartSummary(points);
   });
   protected readonly chartOptions = computed(() => {
@@ -255,7 +241,7 @@ export class AdminOverview {
   });
 
   protected readonly latest = computed(() => {
-    const messages = valueOrNull(this.messagesRes);
+    const messages = resourceValueOr(this.messagesRes, null);
     return messages === null ? null : latestMessages(messages, 3);
   });
   protected readonly contactsFailures = computed(() => failed([this.unreadRes, this.messagesRes]));

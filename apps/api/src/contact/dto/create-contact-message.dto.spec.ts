@@ -1,4 +1,4 @@
-import { invalidProperties as invalidPropertiesOf } from '../../common/dto-testing';
+import { invalidProperties as invalidPropertiesOf } from '../../testing/dto-testing';
 import { createContactMessageSchema } from './create-contact-message.dto';
 
 const MESSAGE = {

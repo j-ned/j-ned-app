@@ -1,4 +1,4 @@
-import { invalidProperties } from '../../common/dto-testing';
+import { invalidProperties } from '../../testing/dto-testing';
 import { createBlogPostSchema } from './create-blog-post.dto';
 
 describe('CreateBlogPostDto', () => {

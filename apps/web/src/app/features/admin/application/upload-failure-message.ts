@@ -16,7 +16,12 @@ const RETRY = 'Réessayez.';
 
 const asSentence = (text: string): string => (/[.!?…]$/.test(text) ? text : `${text}.`);
 
-function detailOf(error: unknown): string {
+export type UploadFailureWording = {
+  readonly unreadable?: string;
+  readonly platformRefused?: string;
+};
+
+function detailOf(error: unknown, wording: UploadFailureWording): string {
   if (error instanceof UploadRejectedError) return error.message;
   if (!(error instanceof HttpErrorResponse)) return RETRY;
   const explained = apiErrorMessage(error);
@@ -28,11 +33,11 @@ function detailOf(error: unknown): string {
     case 400:
       return explained ? asSentence(explained) : RETRY;
     case 422:
-      return explained ? asSentence(explained) : UNREADABLE;
+      return explained ? asSentence(explained) : (wording.unreadable ?? UNREADABLE);
     case 429:
       return THROTTLED;
     case 503:
-      return explained ? asSentence(explained) : PLATFORM_REFUSED;
+      return explained ? asSentence(explained) : (wording.platformRefused ?? PLATFORM_REFUSED);
     default:
       return error.status >= 500 ? SERVER_ERROR : RETRY;
   }
@@ -42,6 +47,10 @@ function detailOf(error: unknown): string {
  * Message d'un envoi de fichier en échec : `label` (une phrase complète) dit ce qui n'a pas abouti, la
  * suite dit pourquoi et quoi faire. Le motif donné par l'API passe tel quel quand il existe.
  */
-export function uploadFailureMessage(label: string, error: unknown): string {
-  return `${label} ${detailOf(error)}`;
+export function uploadFailureMessage(
+  label: string,
+  error: unknown,
+  wording: UploadFailureWording = {},
+): string {
+  return `${label} ${detailOf(error, wording)}`;
 }

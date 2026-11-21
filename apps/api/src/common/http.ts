@@ -168,6 +168,12 @@ export type UploadRule = {
   readonly fileType: RegExp;
 };
 
+/** Image envoyée par l'admin : WebP, JPEG, PNG ou AVIF (vérifié sur les octets), 4 Mo au plus. */
+export const IMAGE_UPLOAD = {
+  maxBytes: UPLOAD_MAX_BYTES,
+  fileType: /^image\/(webp|jpeg|png|avif)$/,
+} as const satisfies UploadRule;
+
 // Enveloppe multipart (limites, en-têtes de partie) tolérée au-delà de la taille du fichier.
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
 
@@ -220,6 +226,28 @@ export async function uploadedFile(
     originalname: entry.name,
     size: entry.size,
   };
+}
+
+/**
+ * UUID du chemin et fichier envoyé, dans un ordre d'erreurs figé par le contrat : fichier trop gros
+ * (413), puis UUID invalide (400), puis fichier absent ou d'un autre type (422).
+ */
+export async function uuidParamAndFile(
+  c: Context,
+  name: string,
+  rule: UploadRule,
+): Promise<{ id: string; file: UploadedFile }> {
+  let file: UploadedFile | undefined;
+  let fileError: unknown;
+  try {
+    file = await uploadedFile(c, rule);
+  } catch (error) {
+    if (error instanceof PayloadTooLargeException) throw error;
+    fileError = error;
+  }
+  const id = uuidParam(c, name);
+  if (!file) throw fileError;
+  return { id, file };
 }
 
 /** Lit le corps au plus `limit` octets ; au-delà, `onOverflow` est appelé sans lire la suite. */

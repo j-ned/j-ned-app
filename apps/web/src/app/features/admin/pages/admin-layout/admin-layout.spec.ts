@@ -1,4 +1,3 @@
-import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { BehaviorSubject, of, throwError, type Observable } from 'rxjs';
@@ -17,9 +16,8 @@ import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle } from '@shared/testing/settle';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
+import { normalized } from '@shared/testing/normalized-text';
 
 type ShellSources = {
   readonly projects?: Observable<readonly Project[]>;
@@ -76,9 +74,6 @@ async function renderShell(url: string, sources: ShellSources = {}): Promise<She
   });
   return { fixture, host: fixture.nativeElement as HTMLElement, logout, crash };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const drawerOf = (host: HTMLElement): HTMLElement | null =>
   host.querySelector<HTMLElement>('[role="dialog"]');

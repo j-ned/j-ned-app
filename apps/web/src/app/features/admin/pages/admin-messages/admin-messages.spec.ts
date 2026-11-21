@@ -18,6 +18,7 @@ import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
+import { normalized } from '@shared/testing/normalized-text';
 
 const msg = makeContactMessage;
 
@@ -61,9 +62,6 @@ async function setup(gateway: ContactGateway = makeGateway()): Promise<{
   await settle(fixture);
   return { fixture, host: fixture.nativeElement as HTMLElement, toast };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const nativeButton = (element: HTMLElement | null): HTMLButtonElement | null =>
   element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);

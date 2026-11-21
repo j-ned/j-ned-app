@@ -1,7 +1,6 @@
 import { ServiceUnavailableException } from '../common/http-errors';
 import { sql } from 'drizzle-orm';
-import type { Database } from '../database/drizzle.types';
-import type { ProfileTransaction } from './profile-document';
+import type { Database, Transaction } from '../database/drizzle.types';
 
 /** Code Postgres `lock_not_available` : l'attente du verrou a dépassé `lock_timeout`. */
 const LOCK_NOT_AVAILABLE = '55P03';
@@ -13,7 +12,7 @@ const LOCK_NOT_AVAILABLE = '55P03';
  */
 export async function inProfileTransaction<T>(
   db: Database,
-  work: (tx: ProfileTransaction) => Promise<T>,
+  work: (tx: Transaction) => Promise<T>,
 ): Promise<T> {
   try {
     return await db.transaction(async (tx) => {

@@ -22,6 +22,7 @@ import type { ReadoutItem } from './components/admin-readout';
 import { calendarDay } from './calendar-day';
 import { withFirstOfMonth } from '@shared/format/with-first-of-month';
 import { readingTimeMinutes } from '@features/blog/domain/reading-time';
+import { isPublished } from '@features/blog/domain/publication-order';
 
 export type ContentRow = {
   readonly key: string;
@@ -53,7 +54,7 @@ export function toOnlineRows(
       ? counted(projects.filter((project) => project.kind === kind).length, 'projet', 'projets')
       : UNAVAILABLE,
   }));
-  const published = posts?.filter((post) => post.status === 'published').length;
+  const published = posts?.filter(isPublished).length;
   return [
     ...byKind,
     {
@@ -172,7 +173,7 @@ export function toContentRows(
   limit: number,
 ): readonly ContentRow[] {
   const articles = (posts ?? [])
-    .filter((post) => post.status === 'published')
+    .filter(isPublished)
     .sort((a, b) => postDate(b).localeCompare(postDate(a)))
     .map(toPostRow);
   const catalogue = [...(projects ?? [])].sort((a, b) => a.order - b.order).map(toProjectRow);

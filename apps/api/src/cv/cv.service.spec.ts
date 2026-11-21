@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { NotFoundException } from '../common/http-errors';
 import { CvService } from './cv.service';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import { StorageService } from '../storage/storage.service';
 import type { CvFile } from '../database/schema';
 

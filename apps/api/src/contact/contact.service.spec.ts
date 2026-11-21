@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { NotFoundException } from '../common/http-errors';
 import { ContactService } from './contact.service';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import { MailerService } from '../mailer/mailer.service';
 import { AppConfigService } from '../config/app-config.service';
 import { contactMessages, type ContactMessage } from '../database/schema';

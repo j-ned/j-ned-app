@@ -1,7 +1,7 @@
-import type { RequireAuth } from '../auth/require-auth';
-import { testApp } from '../common/test-app';
+import { testApp } from '../testing/test-app';
 import { contactRoutes } from './contact.routes';
 import type { ContactService } from './contact.service';
+import { passThrough } from '../testing/require-auth';
 
 const MESSAGE = {
   name: 'Ada',
@@ -12,9 +12,6 @@ const MESSAGE = {
 
 describe('contact routes', () => {
   const contact = { create: jest.fn().mockResolvedValue(undefined) };
-  const passThrough: RequireAuth = async (_c, next) => {
-    await next();
-  };
   const app = testApp(
     '/api/contact',
     contactRoutes(contact as unknown as ContactService, passThrough),

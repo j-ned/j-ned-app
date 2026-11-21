@@ -134,8 +134,7 @@ import { toPostInput, type PostDraft } from '../post-draft';
               <span>
                 Langage d'un bloc de code, après les trois accents graves&nbsp;:
                 @for (language of codeLanguages; track language; let last = $last) {
-                  <code class="font-mono">{{ language }}</code
-                  >{{ last ? '.' : ', ' }}
+                  <code class="font-mono">{{ language }}</code>{{ last ? '.' : ', ' }}
                 }
               </span>
             </p>

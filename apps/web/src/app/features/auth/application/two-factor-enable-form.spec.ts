@@ -1,3 +1,4 @@
+import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TwoFactorEnableForm } from './two-factor-enable-form';
 
@@ -164,5 +165,22 @@ describe('TwoFactorEnableForm: reset token', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.tfaForm.code().value()).toBe('');
+  });
+});
+
+describe('TwoFactorEnableForm: feedback announced', () => {
+  it.each([
+    { feedback: 'successMessage', role: 'status' },
+    { feedback: 'errorMessage', role: 'alert' },
+  ])('Given a $feedback When it renders Then it is announced as $role', ({ feedback, role }) => {
+    const fixture = render();
+    fixture.componentRef.setInput(feedback, 'Message reçu');
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect({
+      role: byTestId(host, 'status-message')?.getAttribute('role'),
+      text: testIdText(host, 'status-message'),
+    }).toEqual({ role, text: 'Message reçu' });
   });
 });

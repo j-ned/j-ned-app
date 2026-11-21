@@ -25,6 +25,10 @@ Le repo pratiquait les deux conventions en parallèle : `about.ts` posait `hydra
 contient les 6 composants différés ; `…/browser/index.html` (home) contient deux `<div>` vides.
 La route qui encaisse tout le trafic était la seule sans contenu principal indexable.
 
+> **Mise à jour du 2026-11-21** : depuis Angular 22, `provideClientHydration()` active l'hydratation
+> incrémentale par défaut. L'appel `withIncrementalHydration()`, déprécié, a été retiré de
+> `app.config.ts` ; la décision ci-dessous reste inchangée.
+
 ## Decision
 
 1. **Tout bloc `@defer` situé sur une route publique rendue par SSR/prérendu porte un trigger

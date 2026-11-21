@@ -1,9 +1,9 @@
-import { Component, LOCALE_ID, NO_ERRORS_SCHEMA } from '@angular/core';
+import { LOCALE_ID, NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { provideRouter } from '@angular/router';
-import { of, throwError, type Observable } from 'rxjs';
+import { of, Subject, throwError, type Observable } from 'rxjs';
 import { AdminBlog } from './admin-blog';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
@@ -15,11 +15,9 @@ import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settleBounded } from '@shared/testing/settle';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
+import { BlankPage } from '@shared/testing/blank-page';
 
 registerLocaleData(localeFr);
-
-@Component({ template: '' })
-class BlankPage {}
 
 async function setup(gateway: BlogGateway = stubBlogGateway()): Promise<{
   component: AdminBlog;
@@ -235,6 +233,36 @@ describe('AdminBlog: la liste partagée est invalidée après une suppression', 
       afterFailure: { invalidations: 0, posts: ['b-1'] },
       afterSuccess: 1,
     });
+  });
+});
+
+describe('AdminBlog: suppressions qui se chevauchent', () => {
+  it('Given two deletions in flight When the second is acknowledged and the first refused Then only the first article comes back', async () => {
+    const answers = new Map<string, Subject<void>>();
+    const deletePost = (id: string): Observable<void> => {
+      const answer = new Subject<void>();
+      answers.set(id, answer);
+      return answer;
+    };
+    const { component, fixture } = await setup(
+      stubBlogGateway({
+        getAllPostsForAdmin: () =>
+          of([
+            makeBlogPost({ id: 'b-1' }),
+            makeBlogPost({ id: 'b-2' }),
+            makeBlogPost({ id: 'b-3' }),
+          ]),
+        deletePost,
+      }),
+    );
+    component.remove('b-1');
+    component.remove('b-2');
+
+    answers.get('b-2')?.next();
+    answers.get('b-1')?.error(new Error('down'));
+    await settleBounded(fixture);
+
+    expect(component.posts().map((post) => post.id)).toEqual(['b-1', 'b-3']);
   });
 });
 

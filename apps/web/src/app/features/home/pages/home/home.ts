@@ -6,6 +6,7 @@ import {
   effect,
   type EffectRef,
 } from '@angular/core';
+import { SectionUnavailable } from '@shared/ui/section-unavailable';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { HomeHeroSection } from '../../application/home-hero-section';
 import { HomeLatestPosts } from '../../application/home-latest-posts';
@@ -21,7 +22,14 @@ import { SectionScroller } from '@core/navigation/section-scroller';
 
 @Component({
   selector: 'app-home',
-  imports: [HomeHeroSection, HomeLatestPosts, HomeProjects, ContactForm, SectionVisibility],
+  imports: [
+    SectionUnavailable,
+    HomeHeroSection,
+    HomeLatestPosts,
+    HomeProjects,
+    ContactForm,
+    SectionVisibility,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col w-full' },
   template: `
@@ -42,9 +50,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
       } @placeholder {
         <div class="block h-[38rem]" data-testid="home-latest-posts-placeholder"></div>
       } @error {
-        <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
-          Impossible de charger cette section.
-        </div>
+        <app-section-unavailable />
       }
     }
 
@@ -67,9 +73,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
         data-testid="home-projects-placeholder"
       ></div>
     } @error {
-      <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
-        Impossible de charger cette section.
-      </div>
+      <app-section-unavailable />
     }
 
     <!-- Contact (section de la landing) ; id pour le scroll programmatique unifié
@@ -85,9 +89,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
           data-testid="home-contact-placeholder"
         ></div>
       } @error {
-        <div class="block py-16 md:py-20 px-4 sm:px-6 text-center text-muted text-sm">
-          Impossible de charger cette section.
-        </div>
+        <app-section-unavailable />
       }
     </div>
   `,

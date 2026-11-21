@@ -1,6 +1,6 @@
 import { NotFoundException } from '../common/http-errors';
 import { eq } from 'drizzle-orm';
-import type { Database } from '../database/drizzle.types';
+import type { Database, Transaction } from '../database/drizzle.types';
 import {
   PROFILE_ROW_ID,
   profileContent,
@@ -8,11 +8,6 @@ import {
 } from '../database/schema/profile-content';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import type { ProfileContent, ProfileDocument } from './profile-content';
-
-/** Transaction Drizzle : même API de requête que la base. */
-export type ProfileTransaction = Parameters<
-  Parameters<Database['transaction']>[0]
->[0];
 
 /** La ligne du parcours ; absente (base sans la migration de seed) ⇒ 404. */
 export async function findProfileRow(db: Database): Promise<ProfileContentRow> {
@@ -29,7 +24,7 @@ export async function findProfileRow(db: Database): Promise<ProfileContentRow> {
  * opération portrait attend, puis lit l'état laissé par la première.
  */
 export async function lockProfileRow(
-  tx: ProfileTransaction,
+  tx: Transaction,
 ): Promise<ProfileContentRow> {
   const [row] = await tx
     .select()

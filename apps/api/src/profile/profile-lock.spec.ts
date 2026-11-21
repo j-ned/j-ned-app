@@ -2,7 +2,7 @@ import { ServiceUnavailableException } from '../common/http-errors';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
 import type { Database } from '../database/drizzle.types';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import { inProfileTransaction } from './profile-lock';
 
 const asSql = (query: unknown) => new PgDialect().sqlToQuery(query as SQL).sql;

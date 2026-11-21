@@ -1,4 +1,4 @@
-import { Component, RESPONSE_INIT, signal } from '@angular/core';
+import { RESPONSE_INIT, signal } from '@angular/core';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -32,11 +32,9 @@ import {
 } from '../../testing/profile-builders';
 import { stubProfileGateway } from '../../testing/stub-profile-gateway';
 import { About } from './about';
+import { BlankPage } from '@shared/testing/blank-page';
 
 const API = '/api';
-
-@Component({ template: '' })
-class BlankPage {}
 
 type CvAnswer = (request: TestRequest) => void;
 
@@ -156,6 +154,20 @@ describe('About', () => {
       'div',
     ]);
     expect(host().querySelectorAll('h1')).toHaveLength(1);
+  });
+
+  it('Given chaque section différée en échec When la page est rendue Then chacune annonce la même section indisponible', async () => {
+    await render(NO_CV);
+
+    for (const block of await fixture.getDeferBlocks()) {
+      await block.render(DeferBlockState.Error);
+    }
+
+    expect(
+      Array.from(host().querySelectorAll('[data-testid="section-unavailable"]'), (el) =>
+        el.getAttribute('role'),
+      ),
+    ).toEqual(['status', 'status', 'status', 'status', 'status']);
   });
 
   it('Given la page rendue et ses sections différées affichées Then le parcours est lu une seule fois', async () => {

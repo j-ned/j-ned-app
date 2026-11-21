@@ -15,10 +15,12 @@ import {
   provideRouter,
   withComponentInputBinding,
   withInMemoryScrolling,
+  withNavigationErrorHandler,
   withPreloading,
   withRouterConfig,
   withViewTransitions,
 } from '@angular/router';
+import { reloadOnStaleChunk } from '@core/navigation/stale-chunk-reload';
 import { SelectivePreload } from '@core/strategies/selective-preload';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from '@features/auth/infra/auth-interceptor';
@@ -27,7 +29,6 @@ import {
   provideClientHydration,
   withEventReplay,
   withHttpTransferCacheOptions,
-  withIncrementalHydration,
 } from '@angular/platform-browser';
 import { filter } from 'rxjs';
 
@@ -111,10 +112,10 @@ export const appConfig: ApplicationConfig = {
       // La première navigation retrouve le DOM déjà rendu par le serveur : rien à faire transiter.
       withViewTransitions({ skipInitialTransition: true }),
       withRouterConfig({ canceledNavigationResolution: 'computed' }),
+      withNavigationErrorHandler(reloadOnStaleChunk),
     ),
     provideClientHydration(
       withEventReplay(),
-      withIncrementalHydration(),
       // L'intercepteur auth pose `withCredentials` partout, et le transfer cache ignore ces requêtes
       // par défaut : sans `includeRequestsWithCredentials`, le client referait chaque appel après
       // hydratation. Seules les lectures publiques sont sérialisées, la session reste hors HTML.

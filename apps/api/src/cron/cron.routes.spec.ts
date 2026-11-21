@@ -1,6 +1,6 @@
 import type { AnalyticsAggregatorService } from '../analytics/analytics-aggregator.service';
 import type { LoginJournalService } from '../auth/login-journal.service';
-import { testApp } from '../common/test-app';
+import { testApp } from '../testing/test-app';
 import { cronRoutes } from './cron.routes';
 
 const SECRET = 'cron-secret-for-tests';

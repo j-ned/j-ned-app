@@ -2,6 +2,7 @@ import { desc, lt, sql } from 'drizzle-orm';
 import { Logger } from '../common/logger';
 import type { PaginatedResult, PaginationParams } from '../common/pagination';
 import { describeUserAgent } from '../common/user-agent';
+import { subDays } from '../common/utils';
 import type { Database } from '../database/drizzle.types';
 import {
   loginEvent,
@@ -17,11 +18,10 @@ export type LoginOrigin = {
 };
 
 const RETENTION_DAYS = 90;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Instant avant lequel une ligne du journal est purgée. */
 export function loginEventCutoff(now: Date): Date {
-  return new Date(now.getTime() - RETENTION_DAYS * DAY_MS);
+  return subDays(now, RETENTION_DAYS);
 }
 
 export class LoginJournalService {

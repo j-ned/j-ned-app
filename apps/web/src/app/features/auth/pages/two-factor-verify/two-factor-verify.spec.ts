@@ -1,3 +1,4 @@
+import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
@@ -46,5 +47,16 @@ describe('TwoFactorVerify a11y', () => {
     const errorMsg = fixture.nativeElement.querySelector('#twofa-code-error');
     expect(errorMsg).not.toBeNull();
     expect(errorMsg!.getAttribute('role')).toBe('alert');
+  });
+
+  it('Given a refused attempt When the error renders Then it is announced as an alert', () => {
+    fixture.componentInstance.errorMessage.set('Code invalide');
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect({
+      role: byTestId(host, 'status-message')?.getAttribute('role'),
+      text: testIdText(host, 'status-message'),
+    }).toEqual({ role: 'alert', text: 'Code invalide' });
   });
 });

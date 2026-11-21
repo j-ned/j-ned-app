@@ -185,7 +185,7 @@ export class BlogService {
       .update(blogPosts)
       .set({ likesCount: sql`${blogPosts.likesCount} + 1` })
       .where(this.publishedSlugFilter(slug))
-      .returning();
+      .returning({ likesCount: blogPosts.likesCount });
     if (!row) throw new NotFoundException(`Blog post "${slug}" not found`);
     return { likesCount: row.likesCount };
   }

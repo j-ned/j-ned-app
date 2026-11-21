@@ -10,6 +10,7 @@ import { ContactGateway } from '@features/contact/domain/gateways/contact.gatewa
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Drawer } from '@shared/ui/drawer';
+import { resourceValueOr } from '@shared/ui/load-state';
 import { AdminNav } from '../../application/components/admin-nav';
 import { activeNavLabel, adminNavGroups } from '../../application/admin-nav-groups';
 
@@ -120,9 +121,9 @@ export class AdminLayout {
 
   protected readonly groups = computed(() =>
     adminNavGroups({
-      projects: this._projects.hasValue() ? this._projects.value().length : null,
-      posts: this._posts.hasValue() ? this._posts.value().length : null,
-      unread: this._unread.hasValue() ? this._unread.value() : null,
+      projects: resourceValueOr(this._projects, null)?.length ?? null,
+      posts: resourceValueOr(this._posts, null)?.length ?? null,
+      unread: resourceValueOr(this._unread, null),
     }),
   );
 

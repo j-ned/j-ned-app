@@ -1,10 +1,11 @@
 import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
 import { ConflictException, NotFoundException } from '../common/http-errors';
-import { testApp } from '../common/test-app';
+import { testApp } from '../testing/test-app';
 import type { ProjectImagesService } from './project-images.service';
 import { projectsRoutes } from './projects.routes';
 import type { ProjectsService } from './projects.service';
+import { passThrough } from '../testing/require-auth';
 
 const ID = '11111111-1111-4111-8111-111111111111';
 const PNG = Buffer.from(
@@ -12,10 +13,6 @@ const PNG = Buffer.from(
   'base64',
 );
 const VALID = { title: 'T', category: 'Web', description: 'D' };
-
-const passThrough: RequireAuth = async (_c, next) => {
-  await next();
-};
 
 const fileForm = (bytes: Buffer, type: string) => {
   const data = new FormData();

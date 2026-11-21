@@ -1,9 +1,9 @@
 import type { RequireAuth } from '../auth/require-auth';
-import { UnauthorizedException } from '../common/http-errors';
-import { testApp } from '../common/test-app';
+import { testApp } from '../testing/test-app';
 import type { AnalyticsStatsService } from './analytics-stats.service';
 import type { AnalyticsTrackerService } from './analytics-tracker.service';
 import { analyticsRoutes } from './analytics.routes';
+import { denyAll, passThrough } from '../testing/require-auth';
 
 /** Routes montées sous leur préfixe avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés. */
 describe('analytics routes', () => {
@@ -13,12 +13,6 @@ describe('analytics routes', () => {
     active: jest.fn(),
   };
   const tracker = { track: jest.fn() };
-  const passThrough: RequireAuth = async (_c, next) => {
-    await next();
-  };
-  const denyAll: RequireAuth = () => {
-    throw new UnauthorizedException();
-  };
   const build = (requireAuth: RequireAuth) =>
     testApp(
       '/api/analytics',

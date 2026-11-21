@@ -1,12 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
+  PendingTasks,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
 import {
   PasswordChangeForm,
@@ -60,7 +60,7 @@ import { TwoFactorDisableForm } from '../../application/two-factor-disable-form'
 })
 export class TwoFactorSetup {
   private readonly authService = inject(AuthStore);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly pendingTasks = inject(PendingTasks);
 
   readonly isTwoFactorEnabled = computed(
     () => this.authService.currentUser()?.isTwoFactorEnabled ?? false,
@@ -79,107 +79,98 @@ export class TwoFactorSetup {
   readonly showDisableForm = signal(false);
   readonly tfaResetToken = signal(0);
 
-  changePassword(request: PasswordChangeRequest): void {
+  async changePassword(request: PasswordChangeRequest): Promise<void> {
+    if (this.isPwdLoading()) return;
     this.isPwdLoading.set(true);
+    const done = this.pendingTasks.add();
     this.pwdError.set('');
     this.pwdSuccess.set('');
-
-    this.authService
-      .changePassword(request.currentPassword, request.newPassword)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (success) => {
-          this.isPwdLoading.set(false);
-          if (success) {
-            this.pwdSuccess.set('Mot de passe modifié avec succès !');
-            this.pwdResetToken.update((token) => token + 1);
-          } else {
-            this.pwdError.set('Mot de passe actuel incorrect');
-          }
-        },
-        error: () => {
-          this.isPwdLoading.set(false);
-          this.pwdError.set('Erreur lors de la modification');
-        },
-      });
+    try {
+      const changed = await firstValueFrom(
+        this.authService.changePassword(request.currentPassword, request.newPassword),
+      );
+      if (changed) {
+        this.pwdSuccess.set('Mot de passe modifié avec succès !');
+        this.pwdResetToken.update((token) => token + 1);
+      } else {
+        this.pwdError.set('Mot de passe actuel incorrect');
+      }
+    } catch {
+      this.pwdError.set('Erreur lors de la modification');
+    } finally {
+      this.isPwdLoading.set(false);
+      done();
+    }
   }
 
-  generate(): void {
+  async generate(): Promise<void> {
+    if (this.isTfaLoading()) return;
     this.isTfaLoading.set(true);
     this.tfaError.set('');
-
-    this.authService
-      .generateTwoFactorSecret()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.qrCodeUrl.set(res.qrCodeDataUrl);
-          this.secret.set(res.secret);
-          this.isTfaLoading.set(false);
-        },
-        error: () => {
-          this.tfaError.set('Erreur lors de la génération du QR code');
-          this.isTfaLoading.set(false);
-        },
-      });
+    const done = this.pendingTasks.add();
+    try {
+      const { qrCodeDataUrl, secret } = await firstValueFrom(
+        this.authService.generateTwoFactorSecret(),
+      );
+      this.qrCodeUrl.set(qrCodeDataUrl);
+      this.secret.set(secret);
+    } catch {
+      this.tfaError.set('Erreur lors de la génération du QR code');
+    } finally {
+      this.isTfaLoading.set(false);
+      done();
+    }
   }
 
-  enable(code: string): void {
-    this.isTfaLoading.set(true);
-    this.tfaError.set('');
-    this.tfaSuccess.set('');
-
-    this.authService
-      .enableTwoFactor(code)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (success) => {
-          this.isTfaLoading.set(false);
-          if (success) {
-            this.tfaSuccess.set('Authentification à deux facteurs activée avec succès !');
-            this.qrCodeUrl.set('');
-            this.secret.set('');
-            this.tfaResetToken.update((token) => token + 1);
-          } else {
-            this.tfaError.set('Code invalide. Réessayez.');
-          }
-        },
-        error: () => {
-          this.isTfaLoading.set(false);
-          this.tfaError.set("Erreur lors de l'activation");
-        },
-      });
+  async enable(code: string): Promise<void> {
+    if (this.isTfaLoading()) return;
+    const done = this.startTfaCommand();
+    try {
+      if (await firstValueFrom(this.authService.enableTwoFactor(code))) {
+        this.tfaSuccess.set('Authentification à deux facteurs activée avec succès !');
+        this.qrCodeUrl.set('');
+        this.secret.set('');
+        this.tfaResetToken.update((token) => token + 1);
+      } else {
+        this.tfaError.set('Code invalide. Réessayez.');
+      }
+    } catch {
+      this.tfaError.set("Erreur lors de l'activation");
+    } finally {
+      this.isTfaLoading.set(false);
+      done();
+    }
   }
 
-  disableTwoFactor(password: string): void {
-    this.isTfaLoading.set(true);
-    this.tfaError.set('');
-    this.tfaSuccess.set('');
-
-    this.authService
-      .disableTwoFactor(password)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (success) => {
-          this.isTfaLoading.set(false);
-          if (success) {
-            this.tfaSuccess.set('Authentification à deux facteurs désactivée.');
-            this.showDisableForm.set(false);
-            this.tfaResetToken.update((token) => token + 1);
-          } else {
-            this.tfaError.set('Mot de passe incorrect.');
-          }
-        },
-        error: () => {
-          this.isTfaLoading.set(false);
-          this.tfaError.set('Erreur lors de la désactivation.');
-        },
-      });
+  async disableTwoFactor(password: string): Promise<void> {
+    if (this.isTfaLoading()) return;
+    const done = this.startTfaCommand();
+    try {
+      if (await firstValueFrom(this.authService.disableTwoFactor(password))) {
+        this.tfaSuccess.set('Authentification à deux facteurs désactivée.');
+        this.showDisableForm.set(false);
+        this.tfaResetToken.update((token) => token + 1);
+      } else {
+        this.tfaError.set('Mot de passe incorrect.');
+      }
+    } catch {
+      this.tfaError.set('Erreur lors de la désactivation.');
+    } finally {
+      this.isTfaLoading.set(false);
+      done();
+    }
   }
 
   reconfigure(): void {
     this.tfaError.set('');
     this.tfaSuccess.set('');
-    this.generate();
+    void this.generate();
+  }
+
+  private startTfaCommand(): () => void {
+    this.isTfaLoading.set(true);
+    this.tfaError.set('');
+    this.tfaSuccess.set('');
+    return this.pendingTasks.add();
   }
 }

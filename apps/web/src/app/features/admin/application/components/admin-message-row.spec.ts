@@ -6,6 +6,7 @@ import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle } from '@shared/testing/settle';
 import { AdminMessageRow } from './admin-message-row';
+import { normalized } from '@shared/testing/normalized-text';
 
 const CLAIRE = makeContactMessage({
   id: 1,
@@ -16,9 +17,6 @@ const CLAIRE = makeContactMessage({
   createdAt: '2026-10-07T08:00:00Z',
   read: false,
 });
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const nativeControl = (element: HTMLElement | null): HTMLElement | null =>
   element instanceof HTMLButtonElement || element instanceof HTMLAnchorElement

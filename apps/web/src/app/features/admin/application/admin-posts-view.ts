@@ -1,6 +1,7 @@
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
 import type { FilterOption } from '@shared/ui/filter-group';
 import { readingTimeMinutes } from '@features/blog/domain/reading-time';
+import { isPublished } from '@features/blog/domain/publication-order';
 
 const SUBJECTS_SIZE = 3;
 
@@ -55,7 +56,7 @@ export function toAdminPostsView(
   filter: AdminPostsFilter,
   sortDir: PostsSortDirection,
 ): AdminPostsView {
-  const published = posts.filter((post) => post.status === 'published').length;
+  const published = posts.filter(isPublished).length;
   const counts: Record<AdminPostsFilter, number> = {
     all: posts.length,
     published,

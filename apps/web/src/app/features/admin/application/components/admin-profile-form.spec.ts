@@ -11,6 +11,7 @@ import { settle, settleBounded } from '@shared/testing/settle';
 import { toProfileDraft, type ProfileDraft } from '../profile-draft';
 import { AdminProfileForm } from './admin-profile-form';
 import { REQUIRED_MESSAGE } from './required-message';
+import { normalized } from '@shared/testing/normalized-text';
 
 type RenderedForm = {
   readonly fixture: ComponentFixture<AdminProfileForm>;
@@ -51,9 +52,6 @@ async function renderForm(content: ProfileContent = aProfileContent()): Promise<
   await settle(fixture);
   return { fixture, host: fixture.nativeElement as HTMLElement, value, submitted };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const control = (host: HTMLElement, key: string): HTMLInputElement | HTMLTextAreaElement | null =>
   byTestId(host, `admin-profile-${key}`) as HTMLInputElement | HTMLTextAreaElement | null;

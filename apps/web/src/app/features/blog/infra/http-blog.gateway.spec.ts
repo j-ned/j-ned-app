@@ -140,6 +140,28 @@ describe('HttpBlogGateway', () => {
     expect(res.likesCount).toBe(1);
     httpMock.verify();
   });
+
+  it('Given a slug that climbs the path When the article is read Then it stays one segment under /blog/posts', () => {
+    const { gateway, httpMock } = configure();
+
+    gateway.getPostBySlug('../../projects').subscribe();
+
+    const req = httpMock.expectOne(`${BASE}/blog/posts/..%2F..%2Fprojects`);
+    expect(req.request.method).toBe('GET');
+    req.flush(post());
+    httpMock.verify();
+  });
+
+  it('Given a slug that climbs the path When the article is liked Then it stays one segment under /blog/posts', () => {
+    const { gateway, httpMock } = configure();
+
+    gateway.likePost('../../projects').subscribe();
+
+    const req = httpMock.expectOne(`${BASE}/blog/posts/..%2F..%2Fprojects/like`);
+    expect(req.request.method).toBe('POST');
+    req.flush({ likesCount: 1 });
+    httpMock.verify();
+  });
 });
 
 describe('HttpBlogGateway: images du corps', () => {

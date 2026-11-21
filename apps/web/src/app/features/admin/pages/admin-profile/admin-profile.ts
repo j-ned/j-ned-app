@@ -17,7 +17,7 @@ import type {
 } from '@features/profile/domain/models/profile-content.model';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
-import { loadState } from '@shared/ui/load-state';
+import { loadState, resourceValueOr } from '@shared/ui/load-state';
 import { ToastStore } from '@core/notifications/toast-store';
 import {
   AdminEditorFrame,
@@ -141,9 +141,7 @@ export class AdminProfile implements LeaveConfirmable {
 
   protected readonly profileResource = rxResource({ stream: () => this.gateway.getProfile() });
 
-  private readonly loaded = computed(() =>
-    this.profileResource.hasValue() ? this.profileResource.value() : null,
-  );
+  private readonly loaded = computed(() => resourceValueOr(this.profileResource, null));
 
   protected readonly state = computed(() => loadState(this.profileResource, () => false));
   protected readonly draft = new DocumentDraft<ProfileDocument, ProfileDraft>({

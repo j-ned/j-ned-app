@@ -8,6 +8,7 @@ import { pressTestId } from '@shared/testing/press-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { toProjectDraft, type ProjectDraft } from '../project-draft';
 import { AdminProjectForm } from './admin-project-form';
+import { normalized } from '@shared/testing/normalized-text';
 
 type FormOptions = {
   readonly project?: Project;
@@ -57,9 +58,6 @@ async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
     covers,
   };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const all = (host: ParentNode, testId: string): readonly HTMLElement[] => [
   ...host.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),

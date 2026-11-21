@@ -5,12 +5,12 @@ import {
   type ProfileContentRow,
 } from '../database/schema/profile-content';
 import type { Database } from '../database/drizzle.types';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import type { StorageService } from '../storage/storage.service';
 import { updateProfileSchema } from './dto/update-profile.dto';
 import { ProfileService } from './profile.service';
 import type { ProfileContent } from './profile-content';
-import { aProfileContent } from './profile-test-builders';
+import { aProfileContent } from '../testing/profile-test-builders';
 
 const UPDATED_AT = new Date('2026-10-11T08:00:00.000Z');
 

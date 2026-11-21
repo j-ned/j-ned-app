@@ -74,4 +74,12 @@ describe('uploadFailureMessage', () => {
       expect(uploadFailureMessage(LABEL, error)).toBe(expected);
     },
   );
+
+  it('Given a file that is not an image When a 422 comes without explanation Then the caller names what is unreadable', () => {
+    expect(
+      uploadFailureMessage(LABEL, apiRejection(422), {
+        unreadable: "Le fichier n'est pas un PDF lisible.",
+      }),
+    ).toBe(`${LABEL} Le fichier n'est pas un PDF lisible.`);
+  });
 });

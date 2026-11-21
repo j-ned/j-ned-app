@@ -5,6 +5,7 @@ import { byTestId } from '@shared/testing/by-test-id';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settle } from '@shared/testing/settle';
 import { AdminPairRows, type PairRow, type PairRowsConfig } from './admin-pair-rows';
+import { normalized } from '@shared/testing/normalized-text';
 
 type Pair = PairRow<'a', 'b'>;
 
@@ -49,9 +50,6 @@ async function renderRows(rows: readonly Pair[]): Promise<Rendered> {
   await settle(fixture);
   return { fixture, host: fixture.nativeElement as HTMLElement };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const all = (host: ParentNode, testId: string): readonly HTMLElement[] => [
   ...host.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),

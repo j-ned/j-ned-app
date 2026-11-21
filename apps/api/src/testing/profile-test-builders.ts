@@ -1,4 +1,4 @@
-import type { ProfileContent } from './profile-content';
+import type { ProfileContent } from '../profile/profile-content';
 
 /** Contenu de test neutre, valide au regard du DTO : jamais la copie réelle du parcours. */
 export const aProfileContent = (

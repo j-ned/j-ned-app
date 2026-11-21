@@ -4,11 +4,12 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '../common/http-errors';
-import { testApp } from '../common/test-app';
+import { testApp } from '../testing/test-app';
 import { ADMIN_WRITE_THROTTLE } from '../common/throttle';
 import type { ProjectImagesService } from './project-images.service';
 import { projectsRoutes } from './projects.routes';
 import type { ProjectsService } from './projects.service';
+import { passThrough } from '../testing/require-auth';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 const IMAGE_ID = '22222222-2222-4222-8222-222222222222';
@@ -17,10 +18,6 @@ const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
   'base64',
 );
-
-const passThrough: RequireAuth = async (_c, next) => {
-  await next();
-};
 
 type Part = { name: string; value: string | Blob; filename?: string };
 

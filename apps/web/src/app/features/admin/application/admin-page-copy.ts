@@ -12,6 +12,7 @@ import { groupedNumber } from '@shared/format/grouped-number';
 import { formatUploadDay } from './admin-cv-view';
 import { capitalize } from './capitalize';
 import { withFirstOfMonth } from '@shared/format/with-first-of-month';
+import { isPublished } from '@features/blog/domain/publication-order';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -40,7 +41,7 @@ export function projectsOverline(projects: readonly Project[]): string {
 }
 
 export function postsOverline(posts: readonly BlogPost[]): string {
-  const published = posts.filter((post) => post.status === 'published').length;
+  const published = posts.filter(isPublished).length;
   return [
     counted(posts.length, 'article', 'articles'),
     counted(published, 'publié', 'publiés'),

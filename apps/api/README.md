@@ -1,6 +1,6 @@
 # Portfolio API (Hono)
 
-API du portfolio J-Ned, en [Hono](https://hono.dev) sur Node (`@hono/node-server`). Toutes les routes sont montées sous **`/api`** (`src/app.ts`) ; toute route inconnue, sous `/api` ou non, répond par la même erreur JSON (`src/common/error-handler.ts`). Le contrat HTTP (statuts, en-têtes, cookies, quotas, CSRF, format d'erreur) est figé par la suite boîte noire [`packages/api-parity`](../../packages/api-parity/README.md), qui tourne en CI contre l'API construite, lancée par Node.
+API du portfolio J-Ned, en [Hono](https://hono.dev) sur Node (`@hono/node-server`). Toutes les routes sont montées sous **`/api`** (`src/create-app.ts`) ; toute route inconnue, sous `/api` ou non, répond par la même erreur JSON (`src/common/error-handler.ts`). Le contrat HTTP (statuts, en-têtes, cookies, quotas, CSRF, format d'erreur) est figé par la suite boîte noire [`packages/api-parity`](../../packages/api-parity/README.md), qui tourne en CI contre l'API construite, lancée par Node.
 
 ## Quickstart
 
@@ -32,7 +32,7 @@ Pas de framework d'injection : `src/main.ts` lit la configuration, ouvre les con
 - **`src/config/`** - `validateEnv()` (Zod) puis `AppConfigService`, getters typés sur l'environnement validé.
 - **`src/database/database.ts`** - `connectDatabase(config)` : pool `postgres-js` + Drizzle, `close()` à l'arrêt.
 - **`src/services.ts`** - `createServices()` : racine de composition, chaque service reçoit ses dépendances par son constructeur (une instance chacun).
-- **`src/app.ts`** - `createApp()` : middlewares globaux (log des requêtes, en-têtes de sécurité, CORS, contrôle d'origine), puis les routes de chaque module (`<module>/<module>.routes.ts`, une fabrique `xxxRoutes(services…, requireAuth)` par module), erreur et 404 au format JSON.
+- **`src/create-app.ts`** - `createApp()` : middlewares globaux (log des requêtes, en-têtes de sécurité, CORS, contrôle d'origine), puis les routes de chaque module (`<module>/<module>.routes.ts`, une fabrique `xxxRoutes(services…, requireAuth)` par module), erreur et 404 au format JSON.
 - **`src/common/`** - briques HTTP partagées : `http.ts` (corps JSON validé, query, UUID, fichiers envoyés, IP du visiteur), `validation.ts` (DTO zod), `throttle.ts` (quotas), `cross-origin.ts` (CSRF), `error-handler.ts`, `logger.ts`, `http-errors.ts`.
 - **Tâche quotidienne** - `GET /api/cron/daily` (service `portfolio-cron` de la pile, 00:00 UTC) : rollup analytics (`src/analytics/analytics.schedule.ts`), puis purge du journal des connexions de plus de 90 jours. En local : `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/daily`.
 
@@ -177,7 +177,7 @@ Corps JSON : `application/json` seul, 100 ko au plus (413), JSON invalide → 40
 ## Tests
 
 - **Unitaires** : `*.spec.ts` à côté du code source, runner Jest (config inline dans `package.json`, `rootDir: src`, `reflect-metadata` chargé par `setupFiles`). Certaines dépendances sont publiées en ESM pur : Jest tourne sous `node --experimental-vm-modules` (support `require(esm)`, Node ≥ 24.9), avertissement `ExperimentalWarning` masqué.
-- **Routes** : `<module>.routes.spec.ts` passent par HTTP (`testApp(prefix, routes).request(...)`, `src/common/test-app.ts`) ; `src/app.spec.ts` vérifie l'application complète (erreurs JSON, CSRF, CORS, en-têtes).
+- **Routes** : `<module>.routes.spec.ts` passent par HTTP (`testApp(prefix, routes).request(...)`, `src/testing/test-app.ts`, avec les gardes `passThrough`/`denyAll` et `fileForm` de `src/testing/`, dossier exclu du build) ; `src/create-app.spec.ts` vérifie l'application complète (erreurs JSON, CSRF, CORS, en-têtes).
 - **Parité HTTP** : `packages/api-parity`, contre l'API construite (`dist/main.js`) ; mode d'emploi dans son README.
 
 ```bash

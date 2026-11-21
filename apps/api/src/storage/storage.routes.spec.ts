@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import { testApp } from '../common/test-app';
+import { testApp } from '../testing/test-app';
 import type { ImageOptimizer } from './image-optimizer.service';
 import { ResizedImageService } from './resized-image.service';
 import { ShareCardService } from './share-card.service';

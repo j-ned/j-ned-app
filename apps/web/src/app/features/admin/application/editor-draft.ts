@@ -1,4 +1,12 @@
-import { computed, linkedSignal, signal, type Signal, type WritableSignal } from '@angular/core';
+import {
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+  type Signal,
+  type WritableSignal,
+} from '@angular/core';
+import { ToastStore } from '@core/notifications/toast-store';
 import { countChangedFields } from './count-draft-changes';
 import { toFormTocEntries, type FormTocEntry, type FormTocSection } from './form-toc-entries';
 import { LeaveConfirmation } from './leave-confirmation';
@@ -24,6 +32,7 @@ type SaveResult<TEntity> =
   | { readonly success: false; readonly error: unknown };
 
 export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraft> {
+  private readonly toast = inject(ToastStore);
   private readonly _saved: WritableSignal<TEntity | null>;
   private readonly _pendingCover = signal<File | null>(null);
   private readonly _coverResetToken = signal(0);
@@ -66,6 +75,7 @@ export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraf
   rejectCover(): void {
     this._pendingCover.set(null);
     this._coverResetToken.update((token) => token + 1);
+    this.toast.add({ severity: 'error', detail: 'Seules les images sont acceptées.' });
   }
 
   canLeave(): boolean | Promise<boolean> {
@@ -76,11 +86,12 @@ export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraf
     if (this.changes() > 0) event.preventDefault();
   }
 
-  // Une couverture refusée après l'écriture laisse l'entité enregistrée.
+  // Une couverture refusée après l'écriture laisse l'entité enregistrée ; `null` : déjà en cours.
   async save(
     write: () => Promise<TEntity>,
     uploadCover: (cover: File, id: string) => Promise<unknown>,
-  ): Promise<SaveResult<TEntity>> {
+  ): Promise<SaveResult<TEntity> | null> {
+    if (this._saving()) return null;
     this._saving.set(true);
     try {
       let saved: TEntity;

@@ -3,15 +3,24 @@ import { FormField, FormRoot, email, form, minLength, required } from '@angular/
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
-import { ToastStore } from '@core/notifications/toast-store';
 import { Button } from '@shared/ui/button';
 import { AppIconTile } from '@shared/ui/icon-tile';
 import { AppIcon } from '@shared/icons/app-icon';
+import { StatusMessage } from '@shared/ui/status-message';
 import { FieldError } from '@shared/ui/field-error';
 
 @Component({
   selector: 'app-login',
-  imports: [FormRoot, FormField, RouterLink, AppIcon, Button, AppIconTile, FieldError],
+  imports: [
+    StatusMessage,
+    FormRoot,
+    FormField,
+    RouterLink,
+    AppIcon,
+    Button,
+    AppIconTile,
+    FieldError,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -31,11 +40,9 @@ import { FieldError } from '@shared/ui/field-error';
         <!-- Card -->
         <div class="bg-surface border border-foreground/10 rounded-2xl p-6">
           @if (errorMessage()) {
-            <div
-              class="mb-4 p-2.5 rounded-lg bg-status-error/10 border border-status-error/30 text-status-error text-sm text-center"
-            >
+            <app-status-message tone="error" class="mb-4">
               {{ errorMessage() }}
-            </div>
+            </app-status-message>
           }
 
           <form [formRoot]="form" data-testid="login-form">
@@ -126,7 +133,6 @@ import { FieldError } from '@shared/ui/field-error';
 export class Login {
   private readonly authService = inject(AuthStore);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastStore);
 
   readonly errorMessage = signal('');
 
@@ -155,15 +161,10 @@ export class Login {
       } else if (result === 'two-factor') {
         await this.router.navigate(['/two-factor']);
       } else {
-        this.fail('Email ou mot de passe incorrect');
+        this.errorMessage.set('Email ou mot de passe incorrect');
       }
     } catch {
-      this.fail('Erreur de connexion au serveur');
+      this.errorMessage.set('Erreur de connexion au serveur');
     }
-  }
-
-  private fail(detail: string): void {
-    this.errorMessage.set(detail);
-    this.toast.add({ severity: 'error', detail });
   }
 }

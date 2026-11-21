@@ -2,7 +2,7 @@ import { ConflictException, NotFoundException } from '../common/http-errors';
 import { Logger } from '../common/logger';
 import { and, eq } from 'drizzle-orm';
 import { BlogService } from './blog.service';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import { StorageService } from '../storage/storage.service';
 import {
   blogPosts,

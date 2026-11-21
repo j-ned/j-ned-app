@@ -1,5 +1,6 @@
-import { Component, DestroyRef, inject, signal, computed, viewChild } from '@angular/core';
-import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
+import { Component, inject, signal, computed, viewChild } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import type { Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { Project, ProjectKindFilter } from '@features/projects/domain/models/project.model';
@@ -10,12 +11,13 @@ import { ToastStore } from '@core/notifications/toast-store';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
-import { LoadError } from '@shared/ui/load-error';
-import { loadState } from '@shared/ui/load-state';
-import { AppSkeleton } from '@shared/ui/skeleton';
+import { loadState, resourceValueOr } from '@shared/ui/load-state';
+import { AdminEmptyState } from '../../application/components/admin-empty-state';
+import { AdminListState } from '../../application/components/admin-list-state';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
 import { projectsOverline } from '../../application/admin-page-copy';
 import { toAdminProjectsView } from '../../application/admin-projects-view';
+import { PendingDeletion } from '../../application/pending-deletion';
 
 @Component({
   selector: 'app-admin-projects',
@@ -26,8 +28,8 @@ import { toAdminProjectsView } from '../../application/admin-projects-view';
     Button,
     ConfirmDialog,
     FilterGroup,
-    LoadError,
-    AppSkeleton,
+    AdminEmptyState,
+    AdminListState,
     AdminPageHeader,
   ],
   template: `
@@ -41,30 +43,18 @@ import { toAdminProjectsView } from '../../application/admin-projects-view';
       </div>
     </app-admin-page-header>
 
-    @switch (listState()) {
-      @case ('loading') {
-        <div data-testid="admin-projects-loading" role="status" class="space-y-3">
-          <span class="sr-only">Chargement des projets…</span>
-          <app-skeleton class="block h-36 rounded-md" />
-          <app-skeleton class="block h-36 rounded-md" />
-          <app-skeleton class="block h-36 rounded-md" />
-        </div>
-      }
-      @case ('error') {
-        <app-load-error
-          message="Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
-          (retry)="projectsResource.reload()"
-        />
-      }
-      @case ('empty') {
-        <p
-          data-testid="admin-projects-empty"
-          class="rounded-xs border border-dashed border-line-strong px-5.5 py-14 text-center text-sm text-muted"
-        >
-          Aucun projet
-        </p>
-      }
-      @default {
+    <app-admin-list-state
+      [state]="listState()"
+      testIdPrefix="admin-projects"
+      loadingLabel="Chargement des projets…"
+      errorMessage="Les projets n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
+      skeletonClass="h-36 rounded-md"
+      (retry)="projectsResource.reload()"
+    >
+      <ng-template #listEmpty>
+        <app-admin-empty-state data-testid="admin-projects-empty" stamp="Aucun projet" />
+      </ng-template>
+      <ng-template #listReady>
         <app-filter-group
           label="Filtrer par nature"
           [options]="view().filters"
@@ -77,15 +67,15 @@ import { toAdminProjectsView } from '../../application/admin-projects-view';
             <li class="py-12 text-center text-sm text-muted">Aucun projet de cette nature</li>
           }
         </ul>
-      }
-    }
+      </ng-template>
+    </app-admin-list-state>
 
     <app-confirm-dialog
-      [open]="pendingDeletion() !== null"
+      [open]="deletion.target() !== null"
       [heading]="deletionCopy().heading"
       [confirmLabel]="deletionCopy().confirm"
       (confirmed)="confirmDeletion()"
-      (cancelled)="pendingDeletion.set(null)"
+      (cancelled)="deletion.cancel()"
     >
       <p>
         Le projet disparaît des Réalisations et de l'accueil dans la seconde, avec ses captures.
@@ -98,24 +88,15 @@ export class AdminProjects {
   private readonly projectsGateway = inject(ProjectsGateway);
   private readonly homeGateway = inject(HomeGateway);
   private readonly toast = inject(ToastStore);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
   protected readonly filter = signal<ProjectKindFilter>('all');
-  protected readonly pendingDeletion = signal<Project | null>(null);
-
-  protected readonly deletionCopy = computed(() => {
-    const title = this.pendingDeletion()?.title ?? '';
-    return { heading: `Supprimer le projet ${title}\u202f?`, confirm: `Supprimer ${title}` };
-  });
 
   protected readonly projectsResource = rxResource({
     stream: () => this.projectsGateway.getAllProjects(),
   });
 
-  readonly projects = computed(() =>
-    this.projectsResource.hasValue() ? [...this.projectsResource.value()] : [],
-  );
+  readonly projects = computed(() => [...resourceValueOr(this.projectsResource, [])]);
 
   protected readonly listState = computed(() =>
     loadState(this.projectsResource, () => this.projects().length === 0),
@@ -127,36 +108,34 @@ export class AdminProjects {
 
   protected readonly view = computed(() => toAdminProjectsView(this.projects(), this.filter()));
 
+  protected readonly deletion = new PendingDeletion<Project>({
+    list: this.projectsResource,
+    remove: (project): Observable<void> => this.projectsGateway.deleteProject(project.id),
+    succeeded: (): void => {
+      this.homeGateway.invalidateBundle();
+      this.projectsGateway.invalidateAllProjects();
+      this.toast.add({ severity: 'success', detail: 'Projet supprimé' });
+    },
+    failed: (): void =>
+      this.toast.add({ severity: 'error', detail: 'Erreur lors de la suppression du projet' }),
+  });
+
+  protected readonly deletionCopy = computed(() => {
+    const title = this.deletion.target()?.title ?? '';
+    return { heading: `Supprimer le projet ${title}\u202f?`, confirm: `Supprimer ${title}` };
+  });
+
   protected requestDeletion(id: string): void {
-    this.pendingDeletion.set(this.projects().find((project) => project.id === id) ?? null);
+    const project = this.projects().find((candidate) => candidate.id === id);
+    if (project) this.deletion.request(project);
   }
 
   protected confirmDeletion(): void {
-    const project = this.pendingDeletion();
-    this.pendingDeletion.set(null);
+    this.deletion.confirm();
     this._pageHeader().focusTitle();
-    if (project) this.deleteProject(project);
   }
 
   deleteProject(project: Project): void {
-    // Optimistic update: retire le projet de la liste avant la réponse serveur
-    const snapshot = this.projects();
-    this.projectsResource.update((list) => (list ?? []).filter((p) => p.id !== project.id));
-
-    this.projectsGateway
-      .deleteProject(project.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.homeGateway.invalidateBundle();
-          this.projectsGateway.invalidateAllProjects();
-          this.toast.add({ severity: 'success', detail: 'Projet supprimé' });
-        },
-        error: () => {
-          // Réconciliation : restaure la liste en cas d'échec
-          this.projectsResource.set(snapshot);
-          this.toast.add({ severity: 'error', detail: 'Erreur lors de la suppression du projet' });
-        },
-      });
+    this.deletion.delete(project);
   }
 }

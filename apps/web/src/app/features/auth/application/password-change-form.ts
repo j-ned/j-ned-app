@@ -9,6 +9,7 @@ import {
   validate,
 } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
+import { StatusMessage } from '@shared/ui/status-message';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
 
@@ -23,7 +24,7 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
 
 @Component({
   selector: 'app-password-change-form',
-  imports: [FormRoot, FormField, AppIcon, Button, FieldError],
+  imports: [StatusMessage, FormRoot, FormField, AppIcon, Button, FieldError],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -38,19 +39,15 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
       </p>
 
       @if (successMessage()) {
-        <div
-          class="mb-6 p-3 rounded-lg bg-status-success/10 border border-status-success/30 text-status-success text-sm text-center"
-        >
+        <app-status-message tone="success" class="mb-6">
           {{ successMessage() }}
-        </div>
+        </app-status-message>
       }
 
       @if (errorMessage()) {
-        <div
-          class="mb-6 p-3 rounded-lg bg-status-error/10 border border-status-error/30 text-status-error text-sm text-center"
-        >
+        <app-status-message tone="error" class="mb-6">
           {{ errorMessage() }}
-        </div>
+        </app-status-message>
       }
 
       <form [formRoot]="pwdForm" class="space-y-4">

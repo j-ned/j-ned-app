@@ -1,13 +1,10 @@
-import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { toFeaturedProjectView } from '@features/projects/application/featured-project-view';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
 import { HomeProjects } from './home-projects';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
 
 const LONG_DESCRIPTION = 'Une phrase de description assez longue pour déborder. '.repeat(6).trim();
 

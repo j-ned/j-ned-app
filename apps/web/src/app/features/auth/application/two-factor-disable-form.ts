@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 import { FormField, FormRoot, form, required } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
+import { StatusMessage } from '@shared/ui/status-message';
 import { Button } from '@shared/ui/button';
 import { Stamp } from '@shared/ui/stamp';
 import { FieldError } from '@shared/ui/field-error';
@@ -9,7 +10,7 @@ const EMPTY = { password: '' };
 
 @Component({
   selector: 'app-two-factor-disable-form',
-  imports: [FormRoot, FormField, AppIcon, Button, Stamp, FieldError],
+  imports: [StatusMessage, FormRoot, FormField, AppIcon, Button, Stamp, FieldError],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -20,19 +21,15 @@ const EMPTY = { password: '' };
       </div>
 
       @if (successMessage()) {
-        <div
-          class="mb-6 p-3 rounded-lg bg-status-success/10 border border-status-success/30 text-status-success text-sm text-center"
-        >
+        <app-status-message tone="success" class="mb-6">
           {{ successMessage() }}
-        </div>
+        </app-status-message>
       }
 
       @if (errorMessage()) {
-        <div
-          class="mb-6 p-3 rounded-lg bg-status-error/10 border border-status-error/30 text-status-error text-sm text-center"
-        >
+        <app-status-message tone="error" class="mb-6">
           {{ errorMessage() }}
-        </div>
+        </app-status-message>
       }
 
       <div class="space-y-6">

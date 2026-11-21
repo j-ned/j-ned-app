@@ -1,4 +1,4 @@
-import { invalidProperties } from '../../common/dto-testing';
+import { invalidProperties } from '../../testing/dto-testing';
 import { validateDto } from '../../common/validation';
 import { trackEventSchema } from './track-event.dto';
 

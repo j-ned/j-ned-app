@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { SectionUnavailable } from '@shared/ui/section-unavailable';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
 import { injectMarkUnavailable } from '@core/ssr/response-status';
@@ -18,7 +19,15 @@ import { ABOUT_IDENTITY, DEFAULT_PORTRAIT_URL } from './about-identity';
   selector: 'app-about',
   host: { class: 'block min-h-svh pt-20' },
   providers: [CvDownload],
-  imports: [AboutHero, AboutJourney, AboutHighlights, AboutWhatIDo, AboutDiploma, AboutMotivation],
+  imports: [
+    SectionUnavailable,
+    AboutHero,
+    AboutJourney,
+    AboutHighlights,
+    AboutWhatIDo,
+    AboutDiploma,
+    AboutMotivation,
+  ],
   template: `
     @let about = content();
     <app-about-hero
@@ -35,7 +44,7 @@ import { ABOUT_IDENTITY, DEFAULT_PORTRAIT_URL } from './about-identity';
     } @placeholder {
       <div class="h-[36rem] border-t border-foreground/8" aria-hidden="true"></div>
     } @error {
-      <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      <app-section-unavailable />
     }
 
     @defer (hydrate on viewport) {
@@ -43,7 +52,7 @@ import { ABOUT_IDENTITY, DEFAULT_PORTRAIT_URL } from './about-identity';
     } @placeholder {
       <div class="h-[28rem] border-t border-foreground/8" aria-hidden="true"></div>
     } @error {
-      <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      <app-section-unavailable />
     }
 
     @defer (hydrate on viewport) {
@@ -55,7 +64,7 @@ import { ABOUT_IDENTITY, DEFAULT_PORTRAIT_URL } from './about-identity';
     } @placeholder {
       <div class="h-[36rem] border-t border-foreground/8" aria-hidden="true"></div>
     } @error {
-      <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      <app-section-unavailable />
     }
 
     @defer (hydrate on viewport) {
@@ -66,7 +75,7 @@ import { ABOUT_IDENTITY, DEFAULT_PORTRAIT_URL } from './about-identity';
     } @placeholder {
       <div class="h-[36rem] border-t border-foreground/8" aria-hidden="true"></div>
     } @error {
-      <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      <app-section-unavailable />
     }
 
     @defer (hydrate on viewport) {
@@ -74,7 +83,7 @@ import { ABOUT_IDENTITY, DEFAULT_PORTRAIT_URL } from './about-identity';
     } @placeholder {
       <div class="h-[30rem] border-t border-foreground/8" aria-hidden="true"></div>
     } @error {
-      <p class="page-container py-12 text-sm text-muted">Section indisponible.</p>
+      <app-section-unavailable />
     }
   `,
 })

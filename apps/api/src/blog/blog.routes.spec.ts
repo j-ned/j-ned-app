@@ -1,14 +1,13 @@
 import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
-import {
-  NotFoundException,
-  UnauthorizedException,
-} from '../common/http-errors';
+import { NotFoundException } from '../common/http-errors';
 import { PUBLIC_READ_THROTTLE } from '../common/throttle';
-import { testApp } from '../common/test-app';
+import { testApp } from '../testing/test-app';
 import type { BlogContentImagesService } from './blog-content-images.service';
 import { blogRoutes } from './blog.routes';
 import type { BlogService } from './blog.service';
+import { fileForm } from '../testing/multipart';
+import { denyAll, passThrough } from '../testing/require-auth';
 
 const ID = '11111111-1111-4111-8111-111111111111';
 const POST = { id: ID, slug: 'mon-article', title: 'Mon article' };
@@ -22,12 +21,6 @@ const VALID = {
   contentMarkdown: '# Corps',
 };
 
-const form = (bytes: Buffer, filename = 'a.png', type = 'image/png') => {
-  const body = new FormData();
-  body.append('file', new File([new Uint8Array(bytes)], filename, { type }));
-  return body;
-};
-
 describe('blog routes (HTTP)', () => {
   const blog = {
     findAllPublished: jest.fn(),
@@ -38,12 +31,6 @@ describe('blog routes (HTTP)', () => {
     remove: jest.fn(),
     uploadCoverImage: jest.fn(),
     like: jest.fn(),
-  };
-  const passThrough: RequireAuth = async (_c, next) => {
-    await next();
-  };
-  const denied: RequireAuth = () => {
-    throw new UnauthorizedException();
   };
   const build = (auth: RequireAuth) =>
     testApp(
@@ -138,7 +125,7 @@ describe('blog routes (HTTP)', () => {
       expect(await res.json()).toEqual([POST]);
       expect(blog.findBySlug).not.toHaveBeenCalled();
 
-      expect((await call('/posts/admin', {}, build(denied))).status).toBe(401);
+      expect((await call('/posts/admin', {}, build(denyAll))).status).toBe(401);
     });
   });
 
@@ -148,7 +135,7 @@ describe('blog routes (HTTP)', () => {
       const res = await call(
         '/posts/mon-article/like',
         { method: 'POST' },
-        build(denied),
+        build(denyAll),
       );
       expect(res.status).toBe(201);
       expect(await res.json()).toEqual({ likesCount: 3 });
@@ -163,7 +150,7 @@ describe('blog routes (HTTP)', () => {
       ['DELETE', `/posts/${ID}`],
       ['POST', `/posts/${ID}/image`],
     ])('%s %s requires a session', async (method, path) => {
-      const res = await call(path, { method, json: VALID }, build(denied));
+      const res = await call(path, { method, json: VALID }, build(denyAll));
       expect(res.status).toBe(401);
     });
 
@@ -213,7 +200,7 @@ describe('blog routes (HTTP)', () => {
       blog.uploadCoverImage.mockResolvedValueOnce(POST);
       const res = await call(`/posts/${ID}/image`, {
         method: 'POST',
-        body: form(PNG),
+        body: fileForm(PNG),
       });
       expect(res.status).toBe(201);
       expect(await res.json()).toEqual(POST);
@@ -229,7 +216,7 @@ describe('blog routes (HTTP)', () => {
     it('Given a PDF or no file, When posted, Then 422', async () => {
       const pdf = await call(`/posts/${ID}/image`, {
         method: 'POST',
-        body: form(Buffer.from('%PDF'), 'a.pdf', 'application/pdf'),
+        body: fileForm(Buffer.from('%PDF'), 'a.pdf', 'application/pdf'),
       });
       expect(pdf.status).toBe(422);
       expect(
@@ -239,12 +226,12 @@ describe('blog routes (HTTP)', () => {
     });
 
     it('Given a file over 4 MB, When posted, Then 413, even before the id check', async () => {
-      const big = form(Buffer.alloc(4 * 1024 * 1024 + 1));
+      const big = fileForm(Buffer.alloc(4 * 1024 * 1024 + 1));
       expect(
         (await call(`/posts/${ID}/image`, { method: 'POST', body: big }))
           .status,
       ).toBe(413);
-      const bigAgain = form(Buffer.alloc(4 * 1024 * 1024 + 1));
+      const bigAgain = fileForm(Buffer.alloc(4 * 1024 * 1024 + 1));
       expect(
         (await call('/posts/bad/image', { method: 'POST', body: bigAgain }))
           .status,
