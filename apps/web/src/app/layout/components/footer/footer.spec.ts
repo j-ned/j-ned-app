@@ -158,7 +158,7 @@ describe('Footer', () => {
   describe('legal line', () => {
     afterEach(() => vi.useRealTimers());
 
-    it('Given the date When the footer is rendered Then the legal line states year and owner only, no business identity (spec 029)', async () => {
+    it('Given the date When the footer is rendered Then the legal line states year and owner only, no business identity', async () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date('2026-10-04T12:00:00Z'));
       const { host } = await setup();

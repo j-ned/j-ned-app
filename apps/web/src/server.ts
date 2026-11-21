@@ -22,7 +22,7 @@ const LISTEN_PORT = 4000;
 
 // URL d'API fixée au démarrage, jamais dérivée de la requête (SSRF). Sans variable (`ng serve`),
 // pas de contexte : l'application lit l'URL publique. Dans le conteneur, l'image la fixe (service
-// `portfolio-api` de la pile, ADR-0038).
+// `portfolio-api` de la pile).
 const apiUpstream = process.env['API_UPSTREAM']?.replace(/\/+$/, '');
 const apiBaseUrl = apiUpstream ? `${apiUpstream}/api` : null;
 

@@ -228,12 +228,8 @@ export class BlogDetail {
 
   readonly slug = input.required<string>();
 
-  // `resource()` (pas `toSignal`) : Angular réutilise la même instance de
-  // BlogDetail entre deux navigations `/blog/:slug` de la même config de route
-  // (ex. lien "article suivant"), il ne la détruit pas. `params: () => this.slug()`
-  // fait que le loader se relance automatiquement à chaque changement de slug —
-  // un `toSignal` souscrit une seule fois à l'Observable initial et raterait
-  // silencieusement le changement de slug sur une navigation in-page.
+  // Pas de `toSignal` : l'instance est réutilisée d'un `/blog/:slug` à l'autre, et lui ne
+  // souscrirait qu'une fois, ratant le changement de slug de « article suivant ».
   private readonly _postResource = resource({
     params: () => this.slug(),
     loader: async ({ params: slug }) => {

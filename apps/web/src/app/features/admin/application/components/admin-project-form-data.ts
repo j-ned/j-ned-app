@@ -10,7 +10,7 @@ export const PROJECT_CATEGORIES = [
   'Design / Maquette',
 ] as const;
 
-/** `@ArrayMaxSize(20)` du DTO de projet de l'API. */
+// Borne de l'API sur le nombre de tags d'un projet.
 export const PROJECT_TAGS_MAX_COUNT = 20;
 
 export const AVAILABLE_PROJECT_TAGS = [

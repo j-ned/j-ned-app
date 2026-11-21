@@ -16,6 +16,15 @@ import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 // httpOnly reste la source de vérité ; l'indice évite seulement un 401 par visite anonyme.
 export const SESSION_HINT_KEY = 'auth:session';
 
+type LoginOutcome = 'success' | 'two-factor' | 'invalid-credentials' | 'throttled' | 'error';
+
+function loginFailure(error: unknown): LoginOutcome {
+  if (!(error instanceof HttpErrorResponse)) return 'error';
+  // L'API refuse en 400 une saisie hors format : pour l'utilisateur, ce sont de mauvais identifiants.
+  if (error.status === 401 || error.status === 400) return 'invalid-credentials';
+  return error.status === 429 ? 'throttled' : 'error';
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly gateway = inject(AuthGateway);
@@ -36,7 +45,7 @@ export class AuthStore {
     return this._ready;
   }
 
-  login(email: string, password: string): Observable<'success' | 'two-factor' | 'error'> {
+  login(email: string, password: string): Observable<LoginOutcome> {
     return this.gateway.login(email, password).pipe(
       map((res) => {
         if (res.requiresTwoFactor && res.challengeToken) {
@@ -49,7 +58,7 @@ export class AuthStore {
         }
         return 'error' as const;
       }),
-      catchError(() => of('error' as const)),
+      catchError((error: unknown) => of(loginFailure(error))),
     );
   }
 

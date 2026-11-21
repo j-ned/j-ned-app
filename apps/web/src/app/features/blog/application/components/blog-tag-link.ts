@@ -2,7 +2,6 @@ import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { blogTagPalette } from '../blog-tag-palette';
 
-/** Pastille de tag colorée par catégorie, lien vers la liste filtrée `/blog?tag=`. */
 @Component({
   selector: 'app-blog-tag-link',
   imports: [RouterLink],

@@ -9,7 +9,7 @@ type FeedHandlerOptions = {
   readonly apiBaseUrl: string;
   readonly fetch: typeof fetch;
   readonly startedAt: Date;
-  /** Secret partagé avec l'API ; absent sous `ng serve`. */
+  // Absent sous `ng serve`.
   readonly ssrForwardSecret?: string | null;
 };
 

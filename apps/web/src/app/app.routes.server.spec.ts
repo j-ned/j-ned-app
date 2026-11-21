@@ -22,7 +22,7 @@ describe('serverRoutes', () => {
     expect(findRoute(path)?.renderMode).toBe(RenderMode.Prerender);
   });
 
-  // Offres retirées (spec 029) : nginx répond 410, rien ne doit plus être prérendu sous /offres.
+  // Offres retirées : nginx répond 410, rien ne doit plus être prérendu sous /offres.
   it('prerenders nothing under the retired offers and booking pages', () => {
     expect(
       serverRoutes.filter(({ path }) => path.startsWith('offre') || path.startsWith('rendez-vous')),

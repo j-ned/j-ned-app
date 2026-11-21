@@ -129,12 +129,10 @@ type TagChip = { readonly tag: string; readonly classes: string };
 export class AdminTagsSelector implements FormValueControl<readonly string[]> {
   private readonly _host = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  /** Tags proposés à la saisie : catalogue, et tags déjà posés ailleurs si la page les connaît. */
   readonly suggestions = input.required<readonly string[]>();
-  /** `@ArrayMaxSize` du DTO de l'API. */
+  // Borne de l'API sur le nombre de tags du contenu.
   readonly maxCount = input.required<number>();
   readonly fieldId = input('tags');
-  /** Tags que la page déduit du contenu ; ceux déjà posés ne sont pas proposés. */
   readonly hints = input<readonly string[]>([]);
   readonly value = model<readonly string[]>([]);
 

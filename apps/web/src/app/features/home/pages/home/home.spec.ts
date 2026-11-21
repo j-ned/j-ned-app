@@ -129,7 +129,7 @@ async function setup(
 type DeferHarness = {
   fixture: ComponentFixture<Home>;
   blocks: readonly DeferBlockFixture[];
-  /** Absent quand aucun article n'est publié : la section n'est pas rendue du tout. */
+  // Sans article publié, la section n'est pas rendue du tout.
   postsBlock: DeferBlockFixture | null;
   projectsBlock: DeferBlockFixture;
   contactBlock: DeferBlockFixture;

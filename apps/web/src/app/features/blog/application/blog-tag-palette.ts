@@ -1,6 +1,5 @@
 import { blogTagCategory } from '../domain/models/blog-tag.model';
 
-/** Classes Tailwind d'un tag : `tint` pour la pastille de lecture. */
 export type BlogTagPalette = { readonly tint: string };
 
 // One Orange Rule (DESIGN.md) : une seule teinte pour tout le catalogue, quelle que soit la
@@ -10,7 +9,7 @@ const CATALOG_TAG_PALETTE: BlogTagPalette = {
   tint: 'bg-primary/5 text-primary border-primary/30 hover:bg-primary/8',
 };
 
-/** Tag hors catalogue (tags projet, saisie libre) : neutre. */
+// Tags projet et saisie libre : neutres.
 const FREE_TAG_PALETTE: BlogTagPalette = {
   tint: 'bg-foreground/8 text-muted border-foreground/20 hover:bg-foreground/15',
 };

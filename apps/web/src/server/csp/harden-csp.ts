@@ -42,8 +42,8 @@ const styleAttrs = (html: string): string[] =>
   [...html.matchAll(STYLE_ATTR)].map((match) => capture(match, 1));
 
 // Les hachages d'un passage précédent sont retirés puis recalculés : la fonction est idempotente.
-function withHashes(directive: string, hashes: readonly string[]): string {
-  const [name = '', ...sources] = directive.split(/\s+/);
+function withHashes(name: string, directive: string, hashes: readonly string[]): string {
+  const sources = directive.split(/\s+/).slice(1);
   const kept = sources.filter((s) => s !== "'unsafe-inline'" && !HASH_SOURCE.test(s));
   return unique([name, ...kept, ...hashes]).join(' ');
 }
@@ -93,8 +93,8 @@ export function hardenCsp(
     .map((d) => d.trim())
     .filter((d) => d && !d.startsWith('style-src-attr '))
     .map((d) => {
-      if (d.startsWith('script-src ')) return withHashes(d, scriptHashes);
-      if (d.startsWith('style-src ')) return withHashes(d, styleHashes);
+      if (d.startsWith('script-src ')) return withHashes('script-src', d, scriptHashes);
+      if (d.startsWith('style-src ')) return withHashes('style-src', d, styleHashes);
       return d;
     });
   if (styleAttrHashes.length > 0) {

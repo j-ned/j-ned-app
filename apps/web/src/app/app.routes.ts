@@ -13,7 +13,6 @@ const BLOG_TITLE = pageTitle('Blog Angular, Hono et mise en production');
 
 type Crumb = readonly [name: string, path: string];
 
-/** Fil d'Ariane JSON-LD d'une page, toujours ancré sur l'accueil. */
 function breadcrumb(...crumbs: readonly Crumb[]): Record<string, unknown> {
   const trail: readonly Crumb[] = [['Accueil', ''], ...crumbs];
   return {

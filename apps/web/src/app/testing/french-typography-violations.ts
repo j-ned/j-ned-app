@@ -1,3 +1,5 @@
+import { defined } from '@shared/testing/defined';
+
 const NBSP = '\u00a0';
 const NARROW_NBSP = '\u202f';
 
@@ -24,8 +26,7 @@ const excerptAround = (text: string, index: number): string =>
 export const frenchTypographyViolations = (text: string, path: string): string[] =>
   RULES.flatMap(({ pattern, expected, sign }) =>
     [...text.matchAll(pattern)].flatMap((match) => {
-      const [, before = '', after = ''] = match;
-      const space = sign === '«' ? after : before;
+      const space = defined(sign === '«' ? match[2] : match[1]);
       if (space === expected) return [];
       return [
         `${path}: ${codePoint(space)} next to "${sign}", expected ${codePoint(expected)} in "${excerptAround(text, match.index)}"`,

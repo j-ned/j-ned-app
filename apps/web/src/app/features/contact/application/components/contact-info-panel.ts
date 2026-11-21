@@ -10,7 +10,6 @@ type Channel = {
   readonly external: boolean;
 };
 
-/** URL affichable : sans protocole, sans `www.`, sans barre finale. */
 const toDisplayUrl = (url: string): string =>
   url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
 

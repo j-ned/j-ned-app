@@ -41,7 +41,7 @@ describe('outboundChannel', () => {
     ['a relative path', '/projects/vieux-comptoir'],
     ['a fragment', '#demande'],
     ['an unrelated site', 'https://www.cnil.fr'],
-    ['a phone link (phone removed from the site, spec 029)', 'tel:+33622869279'],
+    ['a phone link (phone removed from the site)', 'tel:+33622869279'],
     ['the retired Malt profile', 'https://www.malt.fr/profile/juliennedellec'],
     ['a look-alike host ending with the site name', 'https://faux-nedellec-julien.fr/'],
     ['a host starting with the site name', 'https://nedellec-julien.fr.example.com/'],

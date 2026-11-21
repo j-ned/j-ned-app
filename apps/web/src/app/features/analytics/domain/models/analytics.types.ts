@@ -1,6 +1,6 @@
 export type OutboundChannel = 'email' | 'discord' | 'linkedin' | 'github' | 'demo';
 
-/** Canaux retirés avec l'activité freelance (spec 029) : seulement dans l'historique de l'API. */
+// Canaux retirés du site : ils ne subsistent que dans l'historique de l'API.
 export type RetiredOutboundChannel = 'phone' | 'malt';
 
 export type ContactPlacement = 'home';

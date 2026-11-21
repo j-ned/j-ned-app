@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '@shared/api/api-config';
+import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import type {
   LoginResponse,
@@ -19,7 +20,7 @@ export class HttpAuthGateway extends AuthGateway {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/login`,
       { email, password },
-      { withCredentials: true },
+      { withCredentials: true, context: silentErrors() },
     );
   }
 

@@ -15,7 +15,7 @@ async function navigate(url: string): Promise<{ url: string; leaf: ActivatedRout
 }
 
 describe('routes', () => {
-  // Offres retirées (spec 029) : nginx répond 410 ; côté client, aucune route ne les sert plus.
+  // Offres retirées : nginx répond 410 ; côté client, aucune route ne les sert plus.
   describe('retired offer urls', () => {
     it.each([
       '/offres',
@@ -38,7 +38,7 @@ describe('routes', () => {
     });
   });
 
-  // Atelier retiré (ADR-0039) : accueil de l'atelier, guide des plaquettes et décodeur ne sont plus servis.
+  // Atelier retiré : son accueil, le guide des plaquettes et le décodeur ne sont plus servis.
   describe('retired workshop urls', () => {
     it.each(['/atelier', '/atelier/plaquettes', '/atelier/decodeur'])(
       'Given %s When navigated to Then no route matches it but the not-found page, and no redirect happens',

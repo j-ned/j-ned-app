@@ -1,14 +1,14 @@
 import { normalizeTag, tagKey } from './tag-key';
 
-/** `@MaxLength(50, { each: true })` des DTO d'articles et de projets de l'API. */
+// Borne de l'API sur chaque tag d'article et de projet.
 export const TAG_MAX_LENGTH = 50;
 
 export type TagRefusal = 'empty' | 'duplicate' | 'too-long' | 'too-many';
 
 export type TagRules = {
-  /** Tags connus (catalogue, autres contenus) : leur graphie l'emporte sur la saisie. */
+  // Leur graphie l'emporte sur la saisie.
   readonly known: readonly string[];
-  /** `@ArrayMaxSize` du DTO concerné. */
+  // Borne de l'API sur le nombre de tags du contenu.
   readonly maxCount: number;
 };
 

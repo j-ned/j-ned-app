@@ -1,6 +1,6 @@
 import { normalizeTag, tagKey } from './tag-key';
 
-/** Catalogue et tags déjà posés sur les contenus, sans doublon (graphie du catalogue d'abord), triés. */
+// Entre deux graphies d'un même tag, celle du catalogue l'emporte.
 export function knownTags(
   catalogue: readonly string[],
   used: readonly (readonly string[])[],
@@ -19,7 +19,6 @@ const fold = (text: string): string =>
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '');
 
-/** Tags connus non sélectionnés contenant la saisie, ceux qui commencent par elle en premier. */
 export function matchingTags(
   known: readonly string[],
   selected: readonly string[],
