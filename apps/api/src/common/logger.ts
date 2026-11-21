@@ -27,12 +27,14 @@ export function createRootLogger({
     level,
     redact: [...LOG_REDACT_PATHS],
     serializers: { req: serializeRequest, err: serializeError },
-    transport: pretty
+    ...(pretty
       ? {
-          target: 'pino-pretty',
-          options: { singleLine: true, colorize: true },
+          transport: {
+            target: 'pino-pretty',
+            options: { singleLine: true, colorize: true },
+          },
         }
-      : undefined,
+      : {}),
     hooks: {
       logMethod(rawArgs, method, logLevel) {
         const args = redactLogArguments(rawArgs) as typeof rawArgs;
@@ -45,7 +47,7 @@ export function createRootLogger({
           if (!(ctx !== undefined && 'err' in ctx)) {
             Sentry.captureMessage(
               typeof first === 'string' ? first : (second ?? 'pino-log'),
-              { level: 'error', extra: ctx ? { context: ctx } : undefined },
+              { level: 'error', ...(ctx ? { extra: { context: ctx } } : {}) },
             );
           }
         }

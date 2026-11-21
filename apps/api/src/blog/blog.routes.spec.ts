@@ -63,7 +63,7 @@ describe('blog routes (HTTP)', () => {
     return target.request(`/api/blog${path}`, {
       ...rest,
       headers,
-      body: json !== undefined ? JSON.stringify(json) : rest.body,
+      ...(json !== undefined ? { body: JSON.stringify(json) } : {}),
     });
   };
 

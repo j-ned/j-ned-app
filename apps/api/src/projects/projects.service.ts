@@ -68,7 +68,10 @@ export class ProjectsService {
     // mais on ne veut jamais qu'il soit propagé tel quel dans le patch DB
     // (la column est NOT NULL DEFAULT '').
     const { image, ...rest } = dto;
-    const patch: Partial<NewProject> = { ...rest, updatedAt: new Date() };
+    const patch: { [K in keyof NewProject]?: NewProject[K] | undefined } = {
+      ...rest,
+      updatedAt: new Date(),
+    };
     if (dto.title !== undefined) patch.slug = slugify(dto.title);
     if (image === null) patch.image = '';
 

@@ -105,7 +105,10 @@ describe('profile routes', () => {
 
   describe('POST /api/profile/portrait', () => {
     const post = (data?: FormData) =>
-      app.request('/api/profile/portrait', { method: 'POST', body: data });
+      app.request('/api/profile/portrait', {
+        method: 'POST',
+        ...(data ? { body: data } : {}),
+      });
 
     it('accepts up to 4 MB of WebP, JPEG, PNG or AVIF', () => {
       expect(IMAGE_UPLOAD.maxBytes).toBe(4 * 1024 * 1024);

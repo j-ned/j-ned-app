@@ -95,7 +95,7 @@ export class AuthService {
 
   async verifyTwoFactor(
     challengeToken: string,
-    creds: { code?: string; backupCode?: string },
+    creds: { code?: string | undefined; backupCode?: string | undefined },
     origin: LoginOrigin,
   ): Promise<{ token: string; user: PublicUser }> {
     let user: User | undefined;
@@ -141,7 +141,7 @@ export class AuthService {
 
   private async assertSecondFactor(
     user: User,
-    creds: { code?: string; backupCode?: string },
+    creds: { code?: string | undefined; backupCode?: string | undefined },
   ): Promise<void> {
     // Compté avant de vérifier : des essais simultanés ne passent pas sous la limite.
     const attemptsKey = `2fa|${user.id}`;

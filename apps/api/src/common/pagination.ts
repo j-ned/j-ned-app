@@ -24,8 +24,8 @@ const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
 export function parsePagination(input: {
-  page?: number;
-  limit?: number;
+  page?: number | undefined;
+  limit?: number | undefined;
 }): PaginationParams {
   const page = Math.max(1, input.page ?? DEFAULT_PAGE);
   const limit = Math.min(MAX_LIMIT, Math.max(1, input.limit ?? DEFAULT_LIMIT));

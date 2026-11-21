@@ -1,5 +1,3 @@
-import { IncomingMessage } from 'node:http';
-import { Socket } from 'node:net';
 import type * as SentryModule from '@sentry/node';
 
 // Un `.env` local ne doit pas fausser les variables posées par les tests.
@@ -38,7 +36,16 @@ describe('instrument', () => {
       throw new Error('ignoreIncomingRequests absent');
     }
 
-    const request = new IncomingMessage(new Socket());
+    // Sentry ne demande que cette forme minimale, pas l'`IncomingMessage` de Node.
+    const request: Parameters<typeof options.ignoreIncomingRequests>[1] = {
+      headers: {},
+      resume: () => undefined,
+      on: () => request,
+      addListener: () => request,
+      off: () => request,
+      removeListener: () => request,
+      async *[Symbol.asyncIterator]() {},
+    };
 
     expect(options.ignoreIncomingRequests('/api/health', request)).toBe(true);
   });

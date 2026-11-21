@@ -86,7 +86,10 @@ export class BlogService {
     // côté DTO (upload géré par POST /:id/image), mais on ne veut jamais
     // qu'il soit propagé tel quel dans le patch DB (colonne NOT NULL DEFAULT '').
     const { coverImage, ...rest } = dto;
-    const patch: Partial<NewBlogPost> = { ...rest, updatedAt: new Date() };
+    const patch: { [K in keyof NewBlogPost]?: NewBlogPost[K] | undefined } = {
+      ...rest,
+      updatedAt: new Date(),
+    };
     // Le slug EST l'URL publique (et la clé du thread Giscus, mappé sur le
     // pathname) : une fois l'article publié, on le fige - un titre édité
     // après coup ne doit plus casser les liens entrants/le thread existant.

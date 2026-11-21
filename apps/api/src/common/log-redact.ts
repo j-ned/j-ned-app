@@ -38,7 +38,11 @@ export function stripQueryAndFragment(url: string): string {
   return path;
 }
 
-type SerializedRequest = { id?: string; method?: string; url?: string };
+type SerializedRequest = {
+  id?: string | undefined;
+  method?: string | undefined;
+  url?: string | undefined;
+};
 
 /**
  * Sérialiseur pino des requêtes : ni en-têtes (`authorization`, `cookie`, `x-forwarded-for`), ni IP
