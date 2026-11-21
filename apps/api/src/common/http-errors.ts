@@ -34,8 +34,11 @@ export class ConflictException extends httpException(409) {}
 export class PayloadTooLargeException extends httpException(413) {}
 export class UnprocessableEntityException extends httpException(422) {}
 export class TooManyRequestsException extends httpException(429) {
-  constructor(readonly retryAfterSeconds?: number) {
-    super();
+  constructor(
+    readonly retryAfterSeconds?: number,
+    messages?: ErrorMessage,
+  ) {
+    super(messages);
   }
 }
 export class ServiceUnavailableException extends httpException(503) {}

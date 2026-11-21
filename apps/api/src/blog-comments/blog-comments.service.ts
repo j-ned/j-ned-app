@@ -92,7 +92,7 @@ export class BlogCommentsService {
           parent === null ? POST_NOT_FOUND : COMMENT_NOT_FOUND,
         );
       case 'sender-cap':
-        throw new TooManyRequestsException(TOO_MANY_PENDING);
+        throw new TooManyRequestsException(undefined, TOO_MANY_PENDING);
       case 'total-cap':
         throw new ServiceUnavailableException(QUEUE_CLOSED);
       case 'inserted':
