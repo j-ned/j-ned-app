@@ -10,6 +10,7 @@ import { toPostDraft, type PostDraft } from '../post-draft';
 import { insertBodyImage } from '../testing/content-image-panel-page';
 import { AdminPostForm } from './admin-post-form';
 import { normalized } from '@shared/testing/normalized-text';
+import { defined } from '@shared/testing/defined';
 
 type FormOptions = {
   readonly post?: BlogPost;
@@ -514,7 +515,7 @@ describe('AdminPostForm: barre de mise en forme', () => {
       'Given the content When $testId is clicked Then the page draft reads $draft and the preview renders it, without submitting',
       async ({ testId, from, draft, rendered: read, expected }) => {
         const rendered = await renderForm({ post: EDITABLE });
-        await selectInContent(rendered, from[0], from[1]);
+        await selectInContent(rendered, defined(from[0]), defined(from[1]));
 
         byTestId(rendered.host, testId)?.click();
         await settle(rendered.fixture);

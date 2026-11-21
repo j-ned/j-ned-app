@@ -26,6 +26,7 @@ import type {
   EventCount,
 } from '../../domain/models/analytics.types';
 import { makeEventCount, makeStatsOverview } from '../../testing/analytics-builders';
+import { defined } from '@shared/testing/defined';
 
 const API = 'https://api.test/api';
 const TRACK_URL = '/api/analytics/track';
@@ -304,7 +305,7 @@ describe('HttpAnalyticsGateway', () => {
       gateway.trackOutboundClick('linkedin', '/about');
 
       expect(beacon).toHaveBeenCalledTimes(1);
-      const [url, blob] = beacon.mock.calls[0];
+      const [url, blob] = defined(beacon.mock.calls[0]);
       expect({ url, type: blob.type, body: JSON.parse(await blob.text()) }).toEqual({
         url: TRACK_URL,
         type: 'application/json',
@@ -377,7 +378,7 @@ describe('HttpAnalyticsGateway', () => {
       gateway.trackPageDuration('/home', 12);
 
       expect(beacon).toHaveBeenCalledTimes(1);
-      const [url, blob] = beacon.mock.calls[0];
+      const [url, blob] = defined(beacon.mock.calls[0]);
       expect({ url, type: blob.type, body: JSON.parse(await blob.text()) }).toEqual({
         url: TRACK_URL,
         type: 'application/json',

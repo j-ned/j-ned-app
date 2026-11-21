@@ -13,6 +13,7 @@ import { ToastStore } from '@core/notifications/toast-store';
 import { HttpProjectsGateway } from './http-projects.gateway';
 import type { Project } from '../../domain/models/project.model';
 import { makeProject, makeProjectImage, makeProjectInput } from '../../testing/project-builders';
+import { defined } from '@shared/testing/defined';
 
 const BASE = 'https://api.test/api';
 
@@ -243,7 +244,7 @@ describe('HttpProjectsGateway', () => {
         },
       ]);
 
-      const [project] = await promise;
+      const project = defined((await promise)[0]);
       expect({ image: project.image, gallery: project.gallery.map((image) => image.src) }).toEqual({
         image: '/api/storage/portfolio-storage/projects/uuid-1-fb6c30aa.avif',
         gallery: [
@@ -274,7 +275,7 @@ describe('HttpProjectsGateway', () => {
         },
       ]);
 
-      const [project] = await promise;
+      const project = defined((await promise)[0]);
       expect({ image: project.image, gallery: project.gallery.map((image) => image.src) }).toEqual({
         image: 'https://cdn.test/projects/cover.avif',
         gallery: ['https://cdn.test/project-images/img-1.avif'],

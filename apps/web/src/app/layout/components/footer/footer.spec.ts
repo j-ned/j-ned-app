@@ -8,6 +8,7 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { Footer } from './footer';
 import { FOOTER_COPY } from './footer.static-data';
 import { BlankPage } from '@shared/testing/blank-page';
+import { defined } from '@shared/testing/defined';
 
 async function setup(): Promise<{
   fixture: ComponentFixture<Footer>;
@@ -129,7 +130,7 @@ describe('Footer', () => {
 
       expect(trackCtaClick.mock.calls).toEqual([['footer_contact', "M'écrire"]]);
       expect(trackCtaClick.mock.invocationCallOrder[0]).toBeLessThan(
-        scrollTo.mock.invocationCallOrder[0],
+        defined(scrollTo.mock.invocationCallOrder[0]),
       );
     });
 

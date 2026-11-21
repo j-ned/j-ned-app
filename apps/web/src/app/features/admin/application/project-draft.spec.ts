@@ -88,10 +88,6 @@ describe('toProjectDraft', () => {
   it('Given a project without nature, links, lists or presentation When the draft is built Then those fields are empty', () => {
     const project = makeProject({
       kind: null,
-      liveUrl: undefined,
-      repoUrl: undefined,
-      techChoices: undefined,
-      architectureDecisions: undefined,
       pitch: null,
       highlight: null,
       scope: null,

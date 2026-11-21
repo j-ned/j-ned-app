@@ -10,6 +10,7 @@ import { stubContactGateway } from '@features/contact/testing/stub-contact-gatew
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { ContactPlacement } from '@features/analytics/domain/models/analytics.types';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
+import { defined } from '@shared/testing/defined';
 
 // Builder du domaine : jamais un littéral comme entrée sous test.
 function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormData {
@@ -235,7 +236,7 @@ describe('ContactForm (Signal Forms)', () => {
 
         expect(trackContactSubmit.mock.calls).toEqual([[placement]]);
         expect(submit.mock.invocationCallOrder[0]).toBeLessThan(
-          trackContactSubmit.mock.invocationCallOrder[0],
+          defined(trackContactSubmit.mock.invocationCallOrder[0]),
         );
       },
     );

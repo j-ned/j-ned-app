@@ -142,9 +142,10 @@ export class AdminMarkdownToolbar {
     const current = controls.findIndex((control) => control === event.target);
     if (current < 0) return;
     const next = nextToolbarIndex(current, event.key, controls.length);
-    if (next === null) return;
+    const target = next === null ? undefined : controls[next];
+    if (!target) return;
     event.preventDefault();
-    controls[next].focus();
+    target.focus();
   }
 
   protected rememberFocus(event: FocusEvent): void {

@@ -28,7 +28,9 @@ describe('storageImageLoader', () => {
   it.each([1201, 1600, 3840, undefined])(
     'Given a width of %s beyond the widest variant When loaded Then the 1600 px original is served',
     (width) => {
-      expect(storageImageLoader({ src: STORED, width })).toBe(STORED);
+      expect(storageImageLoader({ src: STORED, ...(width !== undefined && { width }) })).toBe(
+        STORED,
+      );
     },
   );
 

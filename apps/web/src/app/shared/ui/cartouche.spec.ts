@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { Cartouche, type CartoucheRow } from './cartouche';
+import { defined } from '@shared/testing/defined';
 
 const rowsOf = (count: number): readonly CartoucheRow[] =>
   Array.from({ length: count }, (_, index) => ({
@@ -93,13 +94,16 @@ describe('Cartouche', () => {
       expect(lists).toHaveLength(1);
       const renderedRows = byTestId(cartouche, 'cartouche-row');
       expect(renderedRows).toHaveLength(count);
-      expect(Array.from(lists[0].children)).toEqual(renderedRows);
+      expect(Array.from(defined(lists[0]).children)).toEqual(renderedRows);
       renderedRows.forEach((row, index) => {
         expect(Array.from(row.children).map((child) => child.tagName)).toEqual(['DT', 'DD']);
-        expect(row.children[0].getAttribute('data-testid')).toBe('cartouche-label');
-        expect(row.children[1].getAttribute('data-testid')).toBe('cartouche-value');
-        expect(row.children[0].textContent?.trim()).toBe(rows[index].label);
-        expect(row.children[1].textContent?.trim()).toBe(rows[index].value);
+        const label = defined(row.children[0]);
+        const value = defined(row.children[1]);
+        const expected = defined(rows[index]);
+        expect(label.getAttribute('data-testid')).toBe('cartouche-label');
+        expect(value.getAttribute('data-testid')).toBe('cartouche-value');
+        expect(label.textContent?.trim()).toBe(expected.label);
+        expect(value.textContent?.trim()).toBe(expected.value);
       });
     },
   );

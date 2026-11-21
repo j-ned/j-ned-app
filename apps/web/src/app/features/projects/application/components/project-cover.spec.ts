@@ -7,7 +7,7 @@ type CoverInputs = {
   readonly image?: string;
   readonly alt?: string;
   readonly kind?: ProjectKind | null;
-  readonly priority?: boolean;
+  readonly priority?: boolean | undefined;
   readonly sizes?: string;
 };
 

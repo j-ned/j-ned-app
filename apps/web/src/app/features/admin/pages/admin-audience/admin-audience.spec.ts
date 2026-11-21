@@ -19,6 +19,7 @@ import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { AdminAudience } from './admin-audience';
 import { AudienceChart } from '../../application/components/audience-chart';
+import { defined } from '@shared/testing/defined';
 
 const METRICS: Readonly<Record<string, readonly MetricEntry[]>> = {
   url: [
@@ -159,7 +160,7 @@ describe('AdminAudience', () => {
       const { fixture, host } = await renderAudience();
 
       await press(fixture, byTestId(host, 'analytics-export-csv'));
-      const lines = blobs.length === 1 ? (await blobs[0].text()).split('\n') : [];
+      const lines = blobs.length === 1 ? (await defined(blobs[0]).text()).split('\n') : [];
 
       expect({
         label: testIdText(host, 'analytics-export-csv'),

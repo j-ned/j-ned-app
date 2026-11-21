@@ -43,9 +43,9 @@ export class HttpAnalyticsGateway extends AnalyticsGateway {
 
   trackPageView(url: string): void {
     if (!this.canTrack() || isExcludedUrl(url)) return;
-    const referrer = this.referrerSent ? undefined : this.document.referrer || undefined;
+    const referrer = this.referrerSent ? '' : this.document.referrer;
     this.referrerSent = true;
-    this.fireAndForget({ type: 'page_view', url, referrer });
+    this.fireAndForget({ type: 'page_view', url, ...(referrer !== '' && { referrer }) });
   }
 
   trackPageDuration(url: string, duration: number): void {

@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { ActiveSection } from './active-section';
 import { SectionVisibility } from './section-visibility';
+import { defined } from '@shared/testing/defined';
 
 class MockIntersectionObserver {
   static instances: MockIntersectionObserver[] = [];
@@ -72,22 +73,22 @@ describe('SectionVisibility', () => {
   it('observes the host element after render', () => {
     expect(MockIntersectionObserver.instances.length).toBe(1);
     const host = fixture.nativeElement.querySelector('div') as HTMLElement;
-    expect(MockIntersectionObserver.instances[0].observed).toContain(host);
+    expect(defined(MockIntersectionObserver.instances[0]).observed).toContain(host);
   });
 
   it('Given the section enters the viewport, Then it becomes the active section', () => {
-    MockIntersectionObserver.instances[0].emit(true);
+    defined(MockIntersectionObserver.instances[0]).emit(true);
     expect(active.key()).toBe('contact');
   });
 
   it('Given the section leaves the viewport, Then it clears the active section', () => {
-    MockIntersectionObserver.instances[0].emit(true);
-    MockIntersectionObserver.instances[0].emit(false);
+    defined(MockIntersectionObserver.instances[0]).emit(true);
+    defined(MockIntersectionObserver.instances[0]).emit(false);
     expect(active.key()).toBeNull();
   });
 
   it('Given the host is destroyed while active, Then it clears the active section', () => {
-    MockIntersectionObserver.instances[0].emit(true);
+    defined(MockIntersectionObserver.instances[0]).emit(true);
     expect(active.key()).toBe('contact');
 
     fixture.destroy();

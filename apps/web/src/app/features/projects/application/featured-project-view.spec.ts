@@ -89,10 +89,10 @@ describe('toFeaturedProjectView', () => {
     });
 
     it.each([
-      { label: 'an empty list', decisions: [] },
-      { label: 'a field missing from the API response', decisions: undefined },
-    ])('Given $label When the view is built Then no key decision is shown', ({ decisions }) => {
-      expect(factLabels(makeProject({ architectureDecisions: decisions }))).toEqual([]);
+      { label: 'an empty list', project: makeProject({ architectureDecisions: [] }) },
+      { label: 'a field missing from the API response', project: makeProject() },
+    ])('Given $label When the view is built Then no key decision is shown', ({ project }) => {
+      expect(factLabels(project)).toEqual([]);
     });
   });
 
@@ -147,13 +147,13 @@ describe('toFeaturedProjectView', () => {
 
   describe('live link', () => {
     it.each([
-      { label: 'null', liveUrl: null },
-      { label: 'missing', liveUrl: undefined },
-      { label: 'empty', liveUrl: '' },
+      { label: 'null', project: makeProject({ liveUrl: null }) },
+      { label: 'missing', project: makeProject() },
+      { label: 'empty', project: makeProject({ liveUrl: '' }) },
     ])(
       'Given a $label live URL When the view is built Then there is no live link',
-      ({ liveUrl }) => {
-        expect(toFeaturedProjectView(makeProject({ liveUrl })).liveLink).toBeNull();
+      ({ project }) => {
+        expect(toFeaturedProjectView(project).liveLink).toBeNull();
       },
     );
 

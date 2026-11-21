@@ -29,7 +29,7 @@ export class ToastStore {
       id: this._nextId++,
       severity,
       summary: message.summary ?? DEFAULT_SUMMARY[severity],
-      detail: message.detail,
+      ...(message.detail !== undefined && { detail: message.detail }),
       life: message.life ?? DEFAULT_LIFE_MS,
     };
 

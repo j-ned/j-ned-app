@@ -7,10 +7,11 @@ const FILTERED = '[Filtered]';
 const FILTERED_BODY_KEYS = ['password', 'newPassword', 'currentPassword', 'code', 'token', 'email'];
 const DROPPED_HEADERS = ['authorization', 'cookie'];
 
-const withoutQueryAndFragment = (url: string): string => url.split(/[?#]/, 1)[0];
+const withoutQueryAndFragment = (url: string): string => url.replace(/[?#][\s\S]*$/, '');
 
-const withoutSensitiveHeaders = (headers: EventRequest['headers']): EventRequest['headers'] =>
-  headers &&
+type EventHeaders = NonNullable<EventRequest['headers']>;
+
+const withoutSensitiveHeaders = (headers: EventHeaders): EventHeaders =>
   Object.fromEntries(
     Object.entries(headers).filter(([name]) => !DROPPED_HEADERS.includes(name.toLowerCase())),
   );
@@ -40,19 +41,21 @@ const withScrubbedFrame = ({ filename, abs_path, ...frame }: StackFrame): StackF
   ...(abs_path !== undefined && { abs_path: withoutQueryAndFragment(abs_path) }),
 });
 
-const withScrubbedFrames = (exception: EventException): EventException => ({
+const withScrubbedFrames = ({ values, ...exception }: EventException): EventException => ({
   ...exception,
-  values: exception.values?.map((value) =>
-    value.stacktrace?.frames
-      ? {
-          ...value,
-          stacktrace: {
-            ...value.stacktrace,
-            frames: value.stacktrace.frames.map(withScrubbedFrame),
-          },
-        }
-      : value,
-  ),
+  ...(values !== undefined && {
+    values: values.map((value) =>
+      value.stacktrace?.frames
+        ? {
+            ...value,
+            stacktrace: {
+              ...value.stacktrace,
+              frames: value.stacktrace.frames.map(withScrubbedFrame),
+            },
+          }
+        : value,
+    ),
+  }),
 });
 
 export function scrubEvent(event: ErrorEvent): ErrorEvent {

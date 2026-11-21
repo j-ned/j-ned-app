@@ -19,6 +19,7 @@ import type { BlogPost } from '../../domain/models/blog-post.model';
 import { makeBlogPost } from '../../testing/blog-post-builders';
 import { FURTHER_READING_COPY } from '../../application/further-reading-copy';
 import { countWords } from '../../domain/reading-time';
+import { defined } from '@shared/testing/defined';
 
 class MockIntersectionObserver {
   static instances: MockIntersectionObserver[] = [];
@@ -305,7 +306,7 @@ describe('BlogDetail', () => {
     fixture.detectChanges();
 
     expect(analyticsMock.trackArticleRead).not.toHaveBeenCalled();
-    MockIntersectionObserver.instances[0].emit(true);
+    defined(MockIntersectionObserver.instances[0]).emit(true);
 
     expect(analyticsMock.trackArticleRead).toHaveBeenCalledExactlyOnceWith('1', 'Mon article');
   });
@@ -317,9 +318,9 @@ describe('BlogDetail', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    MockIntersectionObserver.instances[0].emit(true);
-    MockIntersectionObserver.instances[0].emit(false);
-    MockIntersectionObserver.instances[0].emit(true);
+    defined(MockIntersectionObserver.instances[0]).emit(true);
+    defined(MockIntersectionObserver.instances[0]).emit(false);
+    defined(MockIntersectionObserver.instances[0]).emit(true);
 
     expect(analyticsMock.trackArticleRead).toHaveBeenCalledTimes(1);
   });
@@ -503,7 +504,7 @@ describe('BlogDetail', () => {
         a: makeBlogPost({ id: 'a', slug: 'a', title: 'A', contentMarkdown: '## Corps de A' }),
         b: makeBlogPost({ id: 'b', slug: 'b', title: 'B', contentMarkdown: '## Corps de B' }),
       };
-      const { fixture } = setup({ getPostBySlug: (slug) => of(articles[slug]) });
+      const { fixture } = setup({ getPostBySlug: (slug) => of(defined(articles[slug])) });
 
       await show(fixture, 'a');
       const first = bodyOf(fixture);

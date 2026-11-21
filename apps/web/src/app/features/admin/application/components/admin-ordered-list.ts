@@ -148,7 +148,8 @@ export class AdminOrderedList<T extends object> {
 
   protected move(index: number, delta: -1 | 1): void {
     const target = index + delta;
-    const [same, opposite]: RowAction[] = delta < 0 ? ['up', 'down'] : ['down', 'up'];
+    const [same, opposite]: readonly [RowAction, RowAction] =
+      delta < 0 ? ['up', 'down'] : ['down', 'up'];
     this.write(moveItem(this.rows()().value(), index, delta));
     this.announce(`${this.config().moved} en position ${target + 1}`);
     this.focusAfterRender(() => this.action(target, same) ?? this.action(target, opposite));

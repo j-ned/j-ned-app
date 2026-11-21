@@ -1,10 +1,14 @@
 import type { BrowserOptions, Breadcrumb, ErrorEvent } from '@sentry/angular';
 import { describe, it, expect } from 'vitest';
 import { scrubBreadcrumb, scrubEvent, scrubSpan } from './scrub-event';
+import { defined } from '@shared/testing/defined';
 
 type StreamedSpan = Parameters<NonNullable<BrowserOptions['beforeSendSpan']>>[0];
 
-const anEvent = (request?: ErrorEvent['request']): ErrorEvent => ({ type: undefined, request });
+const anEvent = (request?: ErrorEvent['request']): ErrorEvent => ({
+  type: undefined,
+  ...(request !== undefined && { request }),
+});
 
 describe('scrubEvent', () => {
   it.each([
@@ -272,7 +276,7 @@ describe('scrubSpan', () => {
     const scrubbed = spans.map(scrubSpan);
 
     expect(JSON.stringify(scrubbed)).not.toContain(CANCELLATION_TOKEN);
-    expect(scrubbed[2].attributes['url.full']).toBe(
+    expect(defined(scrubbed[2]).attributes['url.full']).toBe(
       'https://api.nedellec-julien.fr/api/booking/cancel/preview',
     );
   });

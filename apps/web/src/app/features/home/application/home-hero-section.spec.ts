@@ -10,6 +10,7 @@ import type { HeroData } from '../domain/models/hero.model';
 import { STATIC_HERO } from '../infra/data/home.static-data';
 import { HomeHeroSection } from './home-hero-section';
 import { BlankPage } from '@shared/testing/blank-page';
+import { defined } from '@shared/testing/defined';
 
 describe('HomeHeroSection', () => {
   let fixture: ComponentFixture<HomeHeroSection>;
@@ -89,7 +90,7 @@ describe('HomeHeroSection', () => {
     it('is the only description list of the first screen', () => {
       const lists = Array.from(host().querySelectorAll('dl'));
       expect(lists).toHaveLength(1);
-      expect(frame()?.contains(lists[0])).toBe(true);
+      expect(frame()?.contains(defined(lists[0]))).toBe(true);
     });
   });
 
