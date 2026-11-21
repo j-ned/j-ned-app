@@ -1,22 +1,16 @@
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
 import {
+  IMAGE_UPLOAD,
   jsonBody,
   reply,
   uploadedFile,
   type AppEnv,
-  UPLOAD_MAX_BYTES,
 } from '../common/http';
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
 import { updateProfileSchema } from './dto/update-profile.dto';
 import type { ProfilePortraitService } from './profile-portrait.service';
 import type { ProfileService } from './profile.service';
-
-/** Portrait : 4 Mo au plus (au-delà, 413 avant tout stockage), image WebP, JPEG, PNG ou AVIF. */
-export const PORTRAIT_UPLOAD = {
-  maxBytes: UPLOAD_MAX_BYTES,
-  fileType: /^image\/(webp|jpeg|png|avif)$/,
-} as const;
 
 /** `/api/profile` : contenu de la page Parcours (lecture publique), édition et portrait (admin). */
 export function profileRoutes(
@@ -39,7 +33,7 @@ export function profileRoutes(
 
       // Stocké en AVIF 640×800 ; 422 si absent, d'un autre type ou illisible.
       .post('/portrait', throttle(), requireAuth, async (c) => {
-        const file = await uploadedFile(c, PORTRAIT_UPLOAD);
+        const file = await uploadedFile(c, IMAGE_UPLOAD);
         return reply(c, await portrait.replace(file));
       })
 

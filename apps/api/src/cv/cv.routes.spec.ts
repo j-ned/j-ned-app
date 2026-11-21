@@ -1,13 +1,12 @@
 import { Readable } from 'node:stream';
 import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
-import {
-  NotFoundException,
-  UnauthorizedException,
-} from '../common/http-errors';
-import { testApp } from '../common/test-app';
+import { NotFoundException } from '../common/http-errors';
+import { testApp } from '../testing/test-app';
 import { cvRoutes } from './cv.routes';
 import type { CvService } from './cv.service';
+import { fileForm } from '../testing/multipart';
+import { denyAll, passThrough } from '../testing/require-auth';
 
 const PDF = Buffer.from('%PDF-1.4\n%âãÏÓ\n1 0 obj\n<<>>\nendobj\n%%EOF\n');
 const METADATA = {
@@ -18,24 +17,12 @@ const METADATA = {
   mimeType: 'application/pdf',
 };
 
-const form = (bytes: Buffer, filename: string, type: string) => {
-  const body = new FormData();
-  body.append('file', new File([new Uint8Array(bytes)], filename, { type }));
-  return body;
-};
-
 describe('cv routes (HTTP)', () => {
   const cv = {
     upsert: jest.fn(),
     findLatestMetadata: jest.fn(),
     download: jest.fn(),
     remove: jest.fn(),
-  };
-  const passThrough: RequireAuth = async (_c, next) => {
-    await next();
-  };
-  const denied: RequireAuth = () => {
-    throw new UnauthorizedException();
   };
   const build = (auth: RequireAuth) =>
     testApp('/api/cv', cvRoutes(cv as unknown as CvService, auth));
@@ -58,7 +45,7 @@ describe('cv routes (HTTP)', () => {
       cv.upsert.mockResolvedValueOnce(METADATA);
       const res = await call('/upload', {
         method: 'POST',
-        body: form(PDF, 'Julien-CV.pdf', 'application/pdf'),
+        body: fileForm(PDF, 'Julien-CV.pdf', 'application/pdf'),
       });
       expect(res.status).toBe(201);
       expect(await res.json()).toEqual(METADATA);
@@ -82,7 +69,7 @@ describe('cv routes (HTTP)', () => {
         (
           await call('/upload', {
             method: 'POST',
-            body: form(png, 'cv.pdf', 'application/pdf'),
+            body: fileForm(png, 'cv.pdf', 'application/pdf'),
           })
         ).status,
       ).toBe(422);
@@ -93,7 +80,7 @@ describe('cv routes (HTTP)', () => {
     it('Given a file over 4 MB, When uploaded, Then 413', async () => {
       const res = await call('/upload', {
         method: 'POST',
-        body: form(
+        body: fileForm(
           Buffer.alloc(4 * 1024 * 1024 + 1),
           'big.pdf',
           'application/pdf',
@@ -119,7 +106,7 @@ describe('cv routes (HTTP)', () => {
         stream: Readable.from(PDF),
         metadata: METADATA,
       });
-      const res = await call('/download', {}, build(denied));
+      const res = await call('/download', {}, build(denyAll));
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toBe('application/pdf');
       expect(res.headers.get('content-disposition')).toBe(
@@ -128,6 +115,28 @@ describe('cv routes (HTTP)', () => {
       expect(res.headers.get('content-length')).toBe(String(PDF.length));
       expect(Buffer.from(await res.arrayBuffer())).toEqual(PDF);
     });
+
+    it.each([
+      [
+        'CV – Julien Nédellec.pdf',
+        `attachment; filename="CV _ Julien Nedellec.pdf"; filename*=UTF-8''CV%20%E2%80%93%20Julien%20N%C3%A9dellec.pdf`,
+      ],
+      [
+        'cv "final".pdf',
+        `attachment; filename="cv _final_.pdf"; filename*=UTF-8''cv%20%22final%22.pdf`,
+      ],
+    ])(
+      'does not answer 500 when the original name is %s',
+      async (fileName, expected) => {
+        cv.download.mockResolvedValueOnce({
+          stream: Readable.from(PDF),
+          metadata: { ...METADATA, fileName },
+        });
+        const res = await call('/download');
+        expect(res.status).toBe(200);
+        expect(res.headers.get('content-disposition')).toBe(expected);
+      },
+    );
 
     it('answers 404 when there is no CV', async () => {
       cv.download.mockRejectedValueOnce(

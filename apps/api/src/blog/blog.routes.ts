@@ -1,19 +1,15 @@
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
 import {
+  IMAGE_UPLOAD,
   jsonBody,
   reply,
-  uploadedFile,
   uuidParam,
+  uuidParamAndFile,
   type AppEnv,
-  type UploadedFile,
 } from '../common/http';
-import { PayloadTooLargeException } from '../common/http-errors';
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
-import {
-  BLOG_IMAGE_UPLOAD,
-  blogContentImagesRoutes,
-} from './blog-content-images.routes';
+import { blogContentImagesRoutes } from './blog-content-images.routes';
 import type { BlogContentImagesService } from './blog-content-images.service';
 import { toBlogPostSummary } from './blog-post-response';
 import type { BlogService } from './blog.service';
@@ -83,17 +79,7 @@ export function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
 
       // Couverture (stockée en AVIF ≤ 1 600 px).
       .post('/:id/image', throttle(), requireAuth, async (c) => {
-        // Ordre de l’API d’origine : taille (413), puis id (400), puis fichier absent ou invalide (422).
-        let file: UploadedFile | undefined;
-        let fileError: unknown;
-        try {
-          file = await uploadedFile(c, BLOG_IMAGE_UPLOAD);
-        } catch (error) {
-          if (error instanceof PayloadTooLargeException) throw error;
-          fileError = error;
-        }
-        const id = uuidParam(c, 'id');
-        if (!file) throw fileError;
+        const { id, file } = await uuidParamAndFile(c, 'id', IMAGE_UPLOAD);
         return reply(c, await blog.uploadCoverImage(id, file), 201);
       })
 

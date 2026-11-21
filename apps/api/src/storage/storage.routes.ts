@@ -1,7 +1,8 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { Readable } from 'node:stream';
 import type { AppEnv } from '../common/http';
 import { BadRequestException, NotFoundException } from '../common/http-errors';
+import type { DerivedImage } from './derived-image';
 import {
   RESPONSIVE_IMAGE_WIDTHS,
   type ResponsiveImageWidth,
@@ -49,6 +50,17 @@ function decodedKey(path: string, bucket: string): string | null {
   }
 }
 
+function derivedImageResponse(
+  c: Context<AppEnv>,
+  { buffer, contentType }: DerivedImage<string>,
+) {
+  return c.body(new Uint8Array(buffer), 200, {
+    'Content-Type': contentType,
+    'Content-Length': buffer.length.toString(),
+    'Cache-Control': CACHE_CONTROL,
+  });
+}
+
 export function storageRoutes(
   storage: StorageService,
   shareCards: ShareCardService,
@@ -66,25 +78,14 @@ export function storageRoutes(
       throw new NotFoundException();
     }
     if (variant === 'share') {
-      const { buffer, contentType } = await shareCards.get(bucket, key);
-      return c.body(new Uint8Array(buffer), 200, {
-        'Content-Type': contentType,
-        'Content-Length': buffer.length.toString(),
-        'Cache-Control': CACHE_CONTROL,
-      });
+      return derivedImageResponse(c, await shareCards.get(bucket, key));
     }
     const width = variant === undefined ? null : widthVariant(variant);
     if (width !== null) {
-      const { buffer, contentType } = await resizedImages.get(
-        bucket,
-        key,
-        width,
+      return derivedImageResponse(
+        c,
+        await resizedImages.get(bucket, key, width),
       );
-      return c.body(new Uint8Array(buffer), 200, {
-        'Content-Type': contentType,
-        'Content-Length': buffer.length.toString(),
-        'Cache-Control': CACHE_CONTROL,
-      });
     }
     if (variant !== undefined) {
       throw new BadRequestException(`Unknown variant "${variant}"`);

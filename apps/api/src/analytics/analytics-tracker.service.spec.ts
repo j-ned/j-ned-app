@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { AnalyticsTrackerService } from './analytics-tracker.service';
 import { AppConfigService } from '../config/app-config.service';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import * as isbotModule from 'isbot';
 import { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';

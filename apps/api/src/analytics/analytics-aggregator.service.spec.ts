@@ -2,7 +2,7 @@ import { type SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { AnalyticsAggregatorService } from './analytics-aggregator.service';
 import { Logger } from '../common/logger';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import * as aggregates from './analytics-aggregates';
 import type { DayAggregates } from './analytics-aggregates';
 

@@ -1,5 +1,5 @@
 import type * as z from 'zod';
-import './validation';
+import '../common/validation';
 
 export type Violation = { readonly path: string; readonly message: string };
 

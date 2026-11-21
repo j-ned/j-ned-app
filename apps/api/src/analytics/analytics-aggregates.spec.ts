@@ -1,5 +1,5 @@
 import { computeAggregates } from './analytics-aggregates';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import type { Database } from '../database/drizzle.types';
 
 const START = new Date('2026-10-09T00:00:00.000Z');

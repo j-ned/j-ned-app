@@ -8,7 +8,7 @@ import {
 import { Logger } from '../common/logger';
 import { ProjectsService } from './projects.service';
 import type { UploadedFile } from '../common/http';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import { StorageService } from '../storage/storage.service';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
 import type { Project } from '../database/schema';

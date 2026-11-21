@@ -1,3 +1,4 @@
+import type { ResizeOptions, Sharp } from 'sharp';
 import { UnprocessableEntityException } from '../common/http-errors';
 
 /** Largeur max stockée : les visuels s'affichent au plus en ~800 px CSS, 1600 couvre le retina 2×. */
@@ -42,41 +43,19 @@ export class ImageOptimizer {
   }
 
   async optimize(input: Buffer): Promise<OptimizedImage> {
-    const sharp = await this.loadSharp();
-    try {
-      const { data, info } = await sharp(input, { animated: false })
-        .rotate()
-        .resize({ width: IMAGE_MAX_WIDTH, withoutEnlargement: true })
-        .avif({ quality: AVIF_QUALITY, effort: AVIF_EFFORT })
-        .toBuffer({ resolveWithObject: true });
-      return {
-        buffer: data,
-        mimetype: 'image/avif',
-        ext: 'avif',
-        width: info.width,
-        height: info.height,
-      };
-    } catch {
-      throw new UnprocessableEntityException(
-        'Image illisible : fichier corrompu ou format non supporté',
-      );
-    }
+    return this.renderAvif(input, {
+      width: IMAGE_MAX_WIDTH,
+      withoutEnlargement: true,
+    });
   }
 
   /** Variante AVIF de l'image stockée à `width` px de large au plus, ratio conservé. */
   async toWidth(input: Buffer, width: ResponsiveImageWidth): Promise<Buffer> {
-    const sharp = await this.loadSharp();
-    try {
-      return await sharp(input, { animated: false })
-        .rotate()
-        .resize({ width, withoutEnlargement: true })
-        .avif({ quality: AVIF_QUALITY, effort: AVIF_EFFORT })
-        .toBuffer();
-    } catch {
-      throw new UnprocessableEntityException(
-        'Image illisible : fichier corrompu ou format non supporté',
-      );
-    }
+    const { buffer } = await this.renderAvif(input, {
+      width,
+      withoutEnlargement: true,
+    });
+    return buffer;
   }
 
   /**
@@ -84,27 +63,30 @@ export class ImageOptimizer {
    * crawlers sociaux ne lisent pas l'AVIF stocké, et exigent un ratio 1,91:1 pour la grande carte.
    */
   async toShareCard(input: Buffer): Promise<Buffer> {
-    const sharp = await this.loadSharp();
-    try {
-      return await sharp(input, { animated: false })
-        .rotate()
+    return this.render(input, (image) =>
+      image
         .resize({ ...SHARE_CARD, fit: 'cover', position: 'attention' })
         .jpeg({ quality: SHARE_CARD_JPEG_QUALITY, progressive: true })
-        .toBuffer();
-    } catch {
-      throw new UnprocessableEntityException(
-        'Image illisible : fichier corrompu ou format non supporté',
-      );
-    }
+        .toBuffer(),
+    );
   }
 
   /** Portrait AVIF 640×800 recadré sur la zone saillante (visage), orientation EXIF appliquée. */
   async toPortrait(input: Buffer): Promise<OptimizedImage> {
-    const sharp = await this.loadSharp();
-    try {
-      const { data, info } = await sharp(input, { animated: false })
-        .rotate()
-        .resize({ ...PORTRAIT, fit: 'cover', position: 'attention' })
+    return this.renderAvif(input, {
+      ...PORTRAIT,
+      fit: 'cover',
+      position: 'attention',
+    });
+  }
+
+  private async renderAvif(
+    input: Buffer,
+    resize: ResizeOptions,
+  ): Promise<OptimizedImage> {
+    return this.render(input, async (image) => {
+      const { data, info } = await image
+        .resize(resize)
         .avif({ quality: AVIF_QUALITY, effort: AVIF_EFFORT })
         .toBuffer({ resolveWithObject: true });
       return {
@@ -114,6 +96,17 @@ export class ImageOptimizer {
         width: info.width,
         height: info.height,
       };
+    });
+  }
+
+  /** Décode `input` (orientation EXIF appliquée) ; tout échec de sharp devient un 422. */
+  private async render<T>(
+    input: Buffer,
+    pipeline: (image: Sharp) => Promise<T>,
+  ): Promise<T> {
+    const sharp = await this.loadSharp();
+    try {
+      return await pipeline(sharp(input, { animated: false }).rotate());
     } catch {
       throw new UnprocessableEntityException(
         'Image illisible : fichier corrompu ou format non supporté',

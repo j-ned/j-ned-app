@@ -2,11 +2,11 @@ import {
   hasViolation,
   violationsOf as violationsIn,
   type Violation,
-} from '../../common/dto-testing';
+} from '../../testing/dto-testing';
 import type { ProfileContent } from '../profile-content';
 import { PROFILE_LIMITS } from '../profile-limits';
 import { PROFILE_SEED } from '../profile.seed';
-import { aProfileContent } from '../profile-test-builders';
+import { aProfileContent } from '../../testing/profile-test-builders';
 import { updateProfileSchema } from './update-profile.dto';
 
 type DeepMutable<T> = T extends readonly (infer U)[]

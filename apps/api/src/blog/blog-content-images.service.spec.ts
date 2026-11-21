@@ -2,7 +2,7 @@ import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { UploadedFile } from '../common/http';
 import { Logger } from '../common/logger';
-import { createMockDb } from '../database/test-utils';
+import { createMockDb } from '../testing/test-utils';
 import { contentHash } from '../storage/s3-utils';
 import { BlogContentImagesService } from './blog-content-images.service';
 

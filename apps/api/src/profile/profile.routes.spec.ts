@@ -1,14 +1,12 @@
 import type { RequireAuth } from '../auth/require-auth';
 import { ConflictException } from '../common/http-errors';
-import { testApp } from '../common/test-app';
+import { IMAGE_UPLOAD } from '../common/http';
+import { testApp } from '../testing/test-app';
 import type { ProfilePortraitService } from './profile-portrait.service';
-import { PORTRAIT_UPLOAD, profileRoutes } from './profile.routes';
+import { profileRoutes } from './profile.routes';
 import type { ProfileService } from './profile.service';
-import { aProfileContent } from './profile-test-builders';
-
-const passThrough: RequireAuth = async (_c, next) => {
-  await next();
-};
+import { aProfileContent } from '../testing/profile-test-builders';
+import { passThrough } from '../testing/require-auth';
 
 // PNG 1×1 réel.
 const PNG = Buffer.from(
@@ -110,8 +108,8 @@ describe('profile routes', () => {
       app.request('/api/profile/portrait', { method: 'POST', body: data });
 
     it('accepts up to 4 MB of WebP, JPEG, PNG or AVIF', () => {
-      expect(PORTRAIT_UPLOAD.maxBytes).toBe(4 * 1024 * 1024);
-      expect(PORTRAIT_UPLOAD.fileType.source).toBe(
+      expect(IMAGE_UPLOAD.maxBytes).toBe(4 * 1024 * 1024);
+      expect(IMAGE_UPLOAD.fileType.source).toBe(
         '^image\\/(webp|jpeg|png|avif)$',
       );
     });
@@ -159,7 +157,7 @@ describe('profile routes', () => {
     it('Given a file just over 4 MB, When sent, Then 413 and the service is not called', async () => {
       const big = Buffer.concat([
         PNG,
-        Buffer.alloc(PORTRAIT_UPLOAD.maxBytes + 1024 - PNG.length),
+        Buffer.alloc(IMAGE_UPLOAD.maxBytes + 1024 - PNG.length),
       ]);
 
       const res = await post(form(big, 'portrait.png', 'image/png'));

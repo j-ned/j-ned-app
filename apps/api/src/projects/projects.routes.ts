@@ -1,16 +1,13 @@
-import type { Context } from 'hono';
 import { Hono } from 'hono';
 import type { RequireAuth } from '../auth/require-auth';
 import {
+  IMAGE_UPLOAD,
   jsonBody,
   reply,
-  uploadedFile,
   uuidParam,
+  uuidParamAndFile,
   type AppEnv,
-  type UploadedFile,
-  UPLOAD_MAX_BYTES,
 } from '../common/http';
-import { PayloadTooLargeException } from '../common/http-errors';
 import {
   ADMIN_WRITE_THROTTLE,
   PUBLIC_READ_THROTTLE,
@@ -23,12 +20,6 @@ import { reorderProjectImagesSchema } from './dto/reorder-project-images.dto';
 import { updateProjectSchema } from './dto/update-project.dto';
 import type { ProjectImagesService } from './project-images.service';
 import type { ProjectsService } from './projects.service';
-
-/** Image de couverture ou de galerie : 4 Mo au plus, WebP/JPEG/PNG/AVIF (vérifié sur les octets). */
-export const PROJECT_IMAGE_UPLOAD = {
-  maxBytes: UPLOAD_MAX_BYTES,
-  fileType: /^image\/(webp|jpeg|png|avif)$/,
-} as const;
 
 /**
  * `/api/projects` : lecture publique des projets, écritures admin (projet, couverture) et galerie
@@ -70,7 +61,7 @@ export function projectsRoutes(
 
       // Couverture : stockée en AVIF ≤ 1600 px.
       .post('/:id/image', throttle(), requireAuth, async (c) => {
-        const { id, file } = await projectIdAndImage(c);
+        const { id, file } = await uuidParamAndFile(c, 'id', IMAGE_UPLOAD);
         return reply(c, await projects.uploadImage(id, file), 201);
       })
 
@@ -81,7 +72,7 @@ export function projectsRoutes(
         requireAuth,
         async (c) => {
           const fields = c.req.raw.clone();
-          const { id, file } = await projectIdAndImage(c);
+          const { id, file } = await uuidParamAndFile(c, 'id', IMAGE_UPLOAD);
           const dto = validateDto(
             projectImageAltSchema,
             await multipartFields(fields),
@@ -126,33 +117,6 @@ export function projectsRoutes(
         },
       )
   );
-}
-
-/**
- * Id du projet et fichier envoyé, dans l'ordre de l'API NestJS : la limite de taille de multer
- * (413) passe avant l'UUID du chemin (400), qui passe avant la validation du fichier (422).
- */
-async function projectIdAndImage(
-  c: Context<AppEnv>,
-): Promise<{ id: string; file: UploadedFile }> {
-  let id = '';
-  let invalidId: Error | undefined;
-  try {
-    id = uuidParam(c, 'id');
-  } catch (error) {
-    invalidId = error as Error;
-  }
-  let file: UploadedFile;
-  try {
-    file = await uploadedFile(c, PROJECT_IMAGE_UPLOAD);
-  } catch (error) {
-    if (invalidId && !(error instanceof PayloadTooLargeException)) {
-      throw invalidId;
-    }
-    throw error;
-  }
-  if (invalidId) throw invalidId;
-  return { id, file };
 }
 
 /** Champs texte du multipart (le `req.body` de multer) : une clé répétée donne une liste. */

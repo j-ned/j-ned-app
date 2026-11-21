@@ -1,5 +1,5 @@
 import type * as z from 'zod';
-import { invalidProperties } from '../../common/dto-testing';
+import { invalidProperties } from '../../testing/dto-testing';
 import { BadRequestException } from '../../common/http-errors';
 import { validateDto } from '../../common/validation';
 import { createProjectSchema } from './create-project.dto';

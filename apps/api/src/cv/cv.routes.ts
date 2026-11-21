@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Readable } from 'node:stream';
 import type { RequireAuth } from '../auth/require-auth';
+import { attachmentDisposition } from '../common/content-disposition';
 import {
   reply,
   uploadedFile,
@@ -39,7 +40,7 @@ export function cvRoutes(cv: CvService, requireAuth: RequireAuth) {
           200,
           {
             'Content-Type': metadata.mimeType,
-            'Content-Disposition': `attachment; filename="${metadata.fileName}"`,
+            'Content-Disposition': attachmentDisposition(metadata.fileName),
             'Content-Length': metadata.fileSize.toString(),
           },
         );

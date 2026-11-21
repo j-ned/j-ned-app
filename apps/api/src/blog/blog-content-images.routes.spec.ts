@@ -1,9 +1,10 @@
-import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
 import { UnprocessableEntityException } from '../common/http-errors';
-import { testApp } from '../common/test-app';
+import { testApp } from '../testing/test-app';
 import { blogContentImagesRoutes } from './blog-content-images.routes';
 import type { BlogContentImagesService } from './blog-content-images.service';
+import { fileForm } from '../testing/multipart';
+import { passThrough } from '../testing/require-auth';
 
 // PNG 1×1 réel : le type est vérifié sur les octets magiques, pas seulement sur le Content-Type.
 const PNG = Buffer.from(
@@ -11,18 +12,9 @@ const PNG = Buffer.from(
   'base64',
 );
 
-const form = (bytes: Buffer, filename: string, type: string) => {
-  const body = new FormData();
-  body.append('file', new File([new Uint8Array(bytes)], filename, { type }));
-  return body;
-};
-
 /** Routes montées avec le gestionnaire d'erreurs de l'API ; service et session remplacés. */
 describe('blog content images routes (HTTP)', () => {
   const images = { upload: jest.fn() };
-  const passThrough: RequireAuth = async (_c, next) => {
-    await next();
-  };
   const app = testApp(
     '/api/blog/content-images',
     blogContentImagesRoutes(
@@ -57,7 +49,7 @@ describe('blog content images routes (HTTP)', () => {
       };
       images.upload.mockResolvedValueOnce(created);
 
-      const res = await post(form(PNG, filename, contentType));
+      const res = await post(fileForm(PNG, filename, contentType));
 
       expect(res.status).toBe(201);
       expect(res.headers.get('content-type')).toMatch(/^application\/json/);
@@ -74,7 +66,9 @@ describe('blog content images routes (HTTP)', () => {
   ])(
     'Given a %s file, When posted, Then 422 without calling the service',
     async (contentType, filename) => {
-      const res = await post(form(Buffer.from('%PDF'), filename, contentType));
+      const res = await post(
+        fileForm(Buffer.from('%PDF'), filename, contentType),
+      );
       expect(res.status).toBe(422);
       expect(images.upload).not.toHaveBeenCalled();
     },
@@ -88,7 +82,7 @@ describe('blog content images routes (HTTP)', () => {
 
   it('Given a file over 4 MB, When posted, Then 413 without calling the service', async () => {
     const res = await post(
-      form(Buffer.alloc(4 * 1024 * 1024 + 1), 'big.png', 'image/png'),
+      fileForm(Buffer.alloc(4 * 1024 * 1024 + 1), 'big.png', 'image/png'),
     );
     expect(res.status).toBe(413);
     expect(images.upload).not.toHaveBeenCalled();
@@ -98,7 +92,7 @@ describe('blog content images routes (HTTP)', () => {
     images.upload.mockRejectedValueOnce(
       new UnprocessableEntityException('Image illisible'),
     );
-    const res = await post(form(PNG, 'a.png', 'image/png'));
+    const res = await post(fileForm(PNG, 'a.png', 'image/png'));
     expect(res.status).toBe(422);
   });
 });

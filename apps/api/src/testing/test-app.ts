@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { handleError, handleNotFound } from './error-handler';
-import type { AppEnv } from './http';
+import { handleError, handleNotFound } from '../common/error-handler';
+import type { AppEnv } from '../common/http';
 
 /**
  * Application de test : les routes d'un module montées sous leur préfixe, avec le gestionnaire

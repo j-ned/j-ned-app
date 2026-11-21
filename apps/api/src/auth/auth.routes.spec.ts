@@ -1,21 +1,15 @@
-import { UnauthorizedException } from '../common/http-errors';
-import { testApp } from '../common/test-app';
+import { testApp } from '../testing/test-app';
 import type { AppConfigService } from '../config/app-config.service';
 import { authRoutes } from './auth.routes';
 import type { AuthService } from './auth.service';
 import type { LoginJournalService } from './login-journal.service';
 import type { RequireAuth } from './require-auth';
+import { denyAll, passThrough } from '../testing/require-auth';
 
 /** Routes montées sous leur préfixe avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés. */
 describe('auth routes', () => {
   const auth = { login: jest.fn(), verifyTwoFactor: jest.fn() };
   const journal = { findAll: jest.fn() };
-  const passThrough: RequireAuth = async (_c, next) => {
-    await next();
-  };
-  const denyAll: RequireAuth = () => {
-    throw new UnauthorizedException();
-  };
   const build = (requireAuth: RequireAuth) =>
     testApp(
       '/api/auth',

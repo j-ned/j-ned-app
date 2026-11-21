@@ -1,7 +1,7 @@
 import type { UploadedFile } from '../common/http';
 import { Logger } from '../common/logger';
 import { eq } from 'drizzle-orm';
-import type { Database } from '../database/drizzle.types';
+import type { Database, Transaction } from '../database/drizzle.types';
 import {
   PROFILE_ROW_ID,
   profileContent,
@@ -12,11 +12,7 @@ import { contentHash } from '../storage/s3-utils';
 import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
 import type { ProfileDocument } from './profile-content';
 import { inProfileTransaction } from './profile-lock';
-import {
-  lockProfileRow,
-  type ProfileTransaction,
-  toProfileDocument,
-} from './profile-document';
+import { lockProfileRow, toProfileDocument } from './profile-document';
 
 /**
  * Portrait de la page Parcours (spec 021, D6), hors version du document.
@@ -91,7 +87,7 @@ export class ProfilePortraitService {
 
   /** Fait glisser les clés ; la ligne est verrouillée, elle n'a pas pu changer depuis sa lecture. */
   private async write(
-    tx: ProfileTransaction,
+    tx: Transaction,
     current: ProfileContentRow,
     next: string | null,
   ): Promise<ProfileContentRow> {
