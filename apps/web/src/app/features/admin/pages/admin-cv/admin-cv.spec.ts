@@ -1,10 +1,13 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { of, throwError, type Observable } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, Subject, throwError, type Observable } from 'rxjs';
 import { AdminCv } from './admin-cv';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
+import type { CvInfo } from '@features/cv/domain/models/cv.model';
 import { makeCvInfo } from '@features/cv/testing/cv-builders';
+import { apiRejection } from '@shared/testing/api-rejection';
 import { ToastStore } from '@core/notifications/toast-store';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
@@ -97,6 +100,43 @@ describe('AdminCv: suppression confirmée', () => {
         open: readConfirmDialog(host).open,
         deleteCalls: deleteCv.mock.calls.length,
       }).toEqual({ open: false, deleteCalls });
+    },
+  );
+
+  it.each([
+    {
+      given: 'the network cut',
+      error: new HttpErrorResponse({ status: 0, url: '/api/cv' }),
+      detail:
+        "Le CV n'a pas été retiré. La connexion a été coupée\u00a0: vérifiez votre réseau, puis réessayez.",
+    },
+    {
+      given: 'a server that does not explain itself',
+      error: new HttpErrorResponse({ status: 503, url: '/api/cv' }),
+      detail: "Le CV n'a pas été retiré. Réessayez dans un instant.",
+    },
+    {
+      given: 'a refusal the API explains',
+      error: new HttpErrorResponse({
+        status: 404,
+        url: '/api/cv',
+        error: { message: 'No CV uploaded' },
+      }),
+      detail: "Le CV n'a pas été retiré. No CV uploaded.",
+    },
+  ])(
+    'Given $given When a confirmed deletion fails Then the toast says what happened without talking about an upload',
+    async ({ error, detail }) => {
+      const { fixture, toast } = await render(
+        makeCvGateway({ delete: () => throwError(() => error) }),
+      );
+      await pressTestId(fixture, 'admin-cv-delete');
+
+      await answerConfirmDialog(fixture, 'confirm');
+
+      expect(toast.add.mock.calls.map(([message]) => message)).toEqual([
+        { severity: 'error', detail },
+      ]);
     },
   );
 
@@ -223,6 +263,54 @@ describe('AdminCv: téléversement', () => {
       uploadButton: null,
     });
   });
+
+  it('Given an upload in flight When the button is pressed twice before the page re-renders Then the file is sent once', async () => {
+    const upload = vi.fn<CvGateway['upload']>(() => new Subject<CvInfo>());
+    const { fixture, host } = await render(makeCvGateway({ upload }));
+    await chooseFile(fixture, pdf());
+    const button = byTestId(host, 'admin-cv-upload');
+
+    button?.click();
+    button?.click();
+    await settleBounded(fixture);
+
+    expect(upload).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    {
+      given: 'the network cut',
+      error: new HttpErrorResponse({ status: 0, url: '/api/cv/upload' }),
+      detail:
+        "Le CV n'a pas été mis en ligne. La connexion a été coupée pendant l'envoi : vérifiez votre réseau, puis réessayez.",
+    },
+    {
+      given: 'a proxy refusing the PDF without explanation',
+      error: new HttpErrorResponse({ status: 503, url: '/api/cv/upload' }),
+      detail:
+        "Le CV n'a pas été mis en ligne. L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: allégez le PDF, puis réessayez.",
+    },
+    {
+      given: 'an unreadable file the API does not explain',
+      error: apiRejection(422),
+      detail:
+        "Le CV n'a pas été mis en ligne. Le fichier n'est pas un PDF lisible : exportez-le de nouveau, puis réessayez.",
+    },
+  ])(
+    'Given $given When the upload fails Then the toast says what happened and what to do',
+    async ({ error, detail }) => {
+      const { fixture, toast } = await render(
+        makeCvGateway({ upload: () => throwError(() => error) }),
+      );
+      await chooseFile(fixture, pdf());
+
+      await pressTestId(fixture, 'admin-cv-upload');
+
+      expect(toast.add.mock.calls.map(([message]) => message)).toEqual([
+        { severity: 'error', detail },
+      ]);
+    },
+  );
 
   it('Given a file that is not a PDF When it is chosen Then the page refuses it and offers no upload', async () => {
     const { fixture, host, toast } = await render(makeCvGateway());

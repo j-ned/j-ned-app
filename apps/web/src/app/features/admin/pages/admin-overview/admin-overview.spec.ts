@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, signal, type WritableSignal } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, signal, type WritableSignal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, throwError, type Observable } from 'rxjs';
@@ -31,9 +31,8 @@ import { captureCrash } from '@shared/testing/capture-crash';
 import { settleBounded } from '@shared/testing/settle';
 import { AdminOverview } from './admin-overview';
 import { OverviewAudience } from '../../application/components/overview-audience';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
+import { normalized } from '@shared/testing/normalized-text';
 
 const KINDS: readonly ProjectKind[] = [
   'production',
@@ -159,9 +158,6 @@ async function renderOverview(sources: Sources = {}): Promise<Overview> {
   const crash = await captureCrash(() => settleBounded(fixture));
   return { fixture, host: fixture.nativeElement as HTMLElement, crash, doubles, isDark };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const compact = (root: ParentNode, testId: string): string =>
   testIdText(root, testId).replace(/[ \t\n\r]/g, '');

@@ -9,7 +9,7 @@ import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
-import { loadState } from '@shared/ui/load-state';
+import { loadState, resourceValueOr } from '@shared/ui/load-state';
 import { ToastStore } from '@core/notifications/toast-store';
 import {
   AdminEditorFrame,
@@ -101,7 +101,7 @@ const POST_EDITOR_COPY: AdminEditorCopy = {
           [coverResetToken]="draft.coverResetToken()"
           (coverSelected)="draft.selectCover($event)"
           (coverCleared)="draft.clearCover()"
-          (coverRejected)="rejectCover()"
+          (coverRejected)="draft.rejectCover()"
         />
         <app-admin-save-bar
           class="mt-10"
@@ -152,7 +152,7 @@ export class AdminPostEditor implements LeaveConfirmable {
   protected readonly tagSuggestions = computed(() =>
     knownTags(
       AVAILABLE_BLOG_TAGS,
-      this.postsResource.hasValue() ? this.postsResource.value().map((post) => post.tags) : [],
+      resourceValueOr(this.postsResource, []).map((post) => post.tags),
     ),
   );
 
@@ -167,11 +167,6 @@ export class AdminPostEditor implements LeaveConfirmable {
     return this.draft.canLeave();
   }
 
-  protected rejectCover(): void {
-    this.draft.rejectCover();
-    this.toast.add({ severity: 'error', detail: 'Seules les images sont acceptées.' });
-  }
-
   protected async save(payload: BlogPostInput): Promise<void> {
     const id = this.id();
     const result = await this.draft.save(
@@ -181,6 +176,7 @@ export class AdminPostEditor implements LeaveConfirmable {
         ),
       (cover, postId) => firstValueFrom(this.gateway.uploadCoverImage(cover, postId)),
     );
+    if (!result) return;
     if (!result.success) {
       this.toast.add({
         severity: 'error',

@@ -196,6 +196,11 @@ body {
     font-synthesis-weight: none;
   }
 
+  /* Une modale ouverte fige la page derrière elle : le défilement reste dans le dialogue. */
+  html:has(dialog:modal) {
+    overflow: hidden;
+  }
+
   h1,
   h2,
   h3 {

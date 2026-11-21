@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { Cartouche } from '@shared/ui/cartouche';
 import type { LegendRow } from '../projects-view';
 import { ProjectKindStamp } from './project-kind-stamp';
+import { pluralize } from '@shared/format/pluralize';
 
 @Component({
   selector: 'app-project-kind-legend',
@@ -34,6 +35,6 @@ export class ProjectKindLegend {
   readonly rows = input.required<readonly LegendRow[]>();
 
   protected readonly displayedRows = computed(() =>
-    this.rows().map((row) => ({ ...row, unit: row.count > 1 ? 'projets' : 'projet' })),
+    this.rows().map((row) => ({ ...row, unit: pluralize(row.count, 'projet', 'projets') })),
   );
 }

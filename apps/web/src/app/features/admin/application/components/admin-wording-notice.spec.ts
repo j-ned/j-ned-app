@@ -5,6 +5,7 @@ import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import type { WordingWarning } from '../profile-wording-warnings';
 import { AdminWordingNotice } from './admin-wording-notice';
+import { normalized } from '@shared/testing/normalized-text';
 
 const PARAGRAPH: WordingWarning = {
   fieldId: 'profile-paragraph-text-2',
@@ -30,9 +31,6 @@ async function renderNotice(initial: readonly WordingWarning[]): Promise<{
   await settle(fixture);
   return { fixture, host: fixture.nativeElement as HTMLElement, warnings };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 describe('AdminWordingNotice', () => {
   it('Given two warnings When the notice renders Then it asks for a reread and lists each wording with the field it lives in, linked to that field', async () => {

@@ -1,13 +1,11 @@
-import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AdminNav } from './admin-nav';
 import { adminNavGroups, type AdminNavCounts } from '../admin-nav-groups';
 import { byTestId } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
+import { normalized } from '@shared/testing/normalized-text';
 
 const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3 };
 
@@ -21,9 +19,6 @@ const NAV_KEYS = [
   'messages',
   'settings',
 ] as const;
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 type Rendered = {
   readonly fixture: ComponentFixture<AdminNav>;

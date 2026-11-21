@@ -1,16 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
-import {
-  catchError,
-  map,
-  Observable,
-  of,
-  ReplaySubject,
-  share,
-  startWith,
-  Subject,
-  switchMap,
-} from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import { ContactGateway } from '../../domain/gateways/contact.gateway';
 import type {
   ContactFormData,
@@ -18,6 +8,7 @@ import type {
 } from '../../domain/models/contact-form.model';
 import type { ContactMessage } from '../../domain/models/contact-message.model';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { refreshable } from '@shared/api/refreshable';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 
 function toSubmissionError(err: HttpErrorResponse): ContactFormSubmission {
@@ -60,19 +51,9 @@ export class HttpContactGateway extends ContactGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
-  private readonly _unreadRefresh$ = new Subject<void>();
   // Seule la relance peut afficher un toast : un échec suivi d'une relance réussie reste muet.
-  private readonly unreadCount$ = this._unreadRefresh$.pipe(
-    startWith(undefined),
-    switchMap(() =>
-      this.fetchUnreadCount(silentErrors()).pipe(catchError(() => this.fetchUnreadCount())),
-    ),
-    share({
-      connector: () => new ReplaySubject<number>(1),
-      resetOnError: true,
-      resetOnComplete: false,
-      resetOnRefCountZero: false,
-    }),
+  private readonly unreadCount = refreshable(() =>
+    this.fetchUnreadCount(silentErrors()).pipe(catchError(() => this.fetchUnreadCount())),
   );
 
   submitContactForm(data: ContactFormData): Observable<ContactFormSubmission> {
@@ -116,11 +97,11 @@ export class HttpContactGateway extends ContactGateway {
   }
 
   getUnreadCount(): Observable<number> {
-    return this.unreadCount$;
+    return this.unreadCount.value$;
   }
 
   invalidateUnreadCount(): void {
-    this._unreadRefresh$.next();
+    this.unreadCount.refresh();
   }
 
   markAllRead(): Observable<{ readonly count: number }> {

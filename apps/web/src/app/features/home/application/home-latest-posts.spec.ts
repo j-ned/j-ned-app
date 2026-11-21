@@ -1,12 +1,9 @@
-import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import { HomeLatestPosts } from './home-latest-posts';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
 
 const normalized = (element: Element | null | undefined): string =>
   (element?.textContent ?? '').replace(/\s+/g, ' ').trim();

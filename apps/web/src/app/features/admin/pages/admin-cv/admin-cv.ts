@@ -1,9 +1,11 @@
 import { Component, inject, signal, computed, viewChild } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { dateRangeToParams } from '@features/analytics/domain/analytics-presenter';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
+import { apiErrorMessage } from '@shared/api/api-error-message';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ToastStore } from '@core/notifications/toast-store';
 import { FileDropzone } from '@shared/ui/file-dropzone';
@@ -13,13 +15,28 @@ import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { LoadError } from '@shared/ui/load-error';
 import { loadState } from '@shared/ui/load-state';
 import { AppSkeleton } from '@shared/ui/skeleton';
-import { extractErrorMessage } from '@shared/api/extract-error-message';
 import { MAX_UPLOAD_BYTES } from '@shared/upload/upload-limit';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
 import { AdminSectionHead } from '../../application/components/admin-section-head';
 import { cvOverline } from '../../application/admin-page-copy';
+import { uploadFailureMessage } from '../../application/upload-failure-message';
 import { toCvRows } from '../../application/admin-cv-view';
+
+const PDF_UPLOAD_WORDING = {
+  unreadable: "Le fichier n'est pas un PDF lisible\u00a0: exportez-le de nouveau, puis réessayez.",
+  platformRefused:
+    "L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: allégez le PDF, puis réessayez.",
+} as const;
+
+function deletionFailureDetail(error: unknown): string {
+  const explained = apiErrorMessage(error);
+  if (explained) return /[.!?…]$/.test(explained) ? explained : `${explained}.`;
+  if (error instanceof HttpErrorResponse && error.status === 0) {
+    return 'La connexion a été coupée\u00a0: vérifiez votre réseau, puis réessayez.';
+  }
+  return 'Réessayez dans un instant.';
+}
 
 // L'API refuse tout fichier au-delà de 4 Mio : un CV trop lourd ne part pas.
 function cvFileRefusal(file: File): string | null {
@@ -200,6 +217,7 @@ export class AdminCv {
   }
 
   protected async uploadCv(): Promise<void> {
+    if (this.isUploading()) return;
     const file = this.selectedFile();
     if (!file) return;
 
@@ -212,8 +230,10 @@ export class AdminCv {
       this.dropzoneResetToken.update((token) => token + 1);
       this.cvResource.reload();
     } catch (err: unknown) {
-      const message = extractErrorMessage(err);
-      this._toast.add({ severity: 'error', detail: `Échec de la mise en ligne\u00a0: ${message}` });
+      this._toast.add({
+        severity: 'error',
+        detail: uploadFailureMessage("Le CV n'a pas été mis en ligne.", err, PDF_UPLOAD_WORDING),
+      });
     } finally {
       this.isUploading.set(false);
     }
@@ -231,8 +251,10 @@ export class AdminCv {
       this._toast.add({ severity: 'success', detail: 'CV supprimé' });
       this.cvResource.reload();
     } catch (err: unknown) {
-      const message = extractErrorMessage(err);
-      this._toast.add({ severity: 'error', detail: `Erreur de suppression\u00a0: ${message}` });
+      this._toast.add({
+        severity: 'error',
+        detail: `Le CV n'a pas été retiré. ${deletionFailureDetail(err)}`,
+      });
     }
   }
 }

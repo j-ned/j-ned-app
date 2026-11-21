@@ -1,4 +1,3 @@
-import { Component } from '@angular/core';
 import { Location } from '@angular/common';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -22,9 +21,8 @@ import type { ToastMessage } from '@shared/ui/toast.types';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { AdminProjectEditor } from './admin-project-editor';
 import { unsavedChangesGuard } from '../../application/unsaved-changes-guard';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
+import { normalized } from '@shared/testing/normalized-text';
 
 const DASHFLOW = makeProject({
   id: 'p-1',
@@ -117,9 +115,6 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
     crash,
   };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const nativeButton = (element: Element | null): HTMLButtonElement | null =>
   element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);

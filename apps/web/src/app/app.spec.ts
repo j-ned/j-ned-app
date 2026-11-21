@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { DeferBlockBehavior, DeferBlockState, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -12,6 +12,7 @@ import { byTestId } from '@shared/testing/by-test-id';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { BlankPage } from '@shared/testing/blank-page';
 
 beforeEach(async () => {
   await TestBed.configureTestingModule({ imports: [App] }).compileComponents();
@@ -22,9 +23,6 @@ class HeaderStub {}
 
 @Component({ selector: 'app-footer', template: '' })
 class FooterStub {}
-
-@Component({ template: '' })
-class BlankPage {}
 
 describe('App: thème au chargement direct de /admin', () => {
   beforeEach(() => {
@@ -97,4 +95,32 @@ describe('App: en-tête public dès le premier rendu', () => {
       expect(byTestId(fixture.nativeElement as HTMLElement, 'public-header') !== null).toBe(header);
     },
   );
+});
+
+describe('App: pied de page indisponible', () => {
+  it('Given the footer chunk failing to load When the page renders Then a section-unavailable notice replaces its reserved space', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+        { provide: AuthGateway, useClass: HttpAuthGateway },
+      ],
+      deferBlockBehavior: DeferBlockBehavior.Manual,
+    });
+    TestBed.overrideComponent(App, {
+      remove: { imports: [Header, Footer] },
+      add: { imports: [HeaderStub, FooterStub] },
+    });
+    const fixture = TestBed.createComponent(App);
+    await settle(fixture);
+
+    const [footerBlock] = await fixture.getDeferBlocks();
+    await footerBlock?.render(DeferBlockState.Error);
+
+    expect(
+      byTestId(fixture.nativeElement as HTMLElement, 'section-unavailable')?.getAttribute('role'),
+    ).toBe('status');
+  });
 });

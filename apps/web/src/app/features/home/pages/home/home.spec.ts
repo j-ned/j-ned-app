@@ -5,7 +5,7 @@ import {
   type ComponentFixture,
   type DeferBlockFixture,
 } from '@angular/core/testing';
-import { Component, NO_ERRORS_SCHEMA, signal } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -25,9 +25,7 @@ import { HOME_HERO_CTA_LABELS } from '../../domain/home-hero.static-data';
 import { STATIC_HERO } from '../../infra/data/home.static-data';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
 
 const bundle = (overrides: Partial<HomeBundle> = {}): HomeBundle => ({
   hero: { id: 'hero', headline: 'Je livre', lead: 'Preuve' },
@@ -219,6 +217,22 @@ describe('Home', () => {
         gateway: makeHomeGateway({ getHomeBundle: () => of(bundle()) }),
       });
       expect(component['bundle']()?.hero?.headline).toBe('Je livre');
+    });
+  });
+
+  describe('bloc @defer en échec', () => {
+    it('Given chaque section différée en échec When la page est rendue Then chacune annonce la même section indisponible', async () => {
+      const harness = await renderHomeTemplate([makeProject()], {
+        latestPosts: [makeBlogPost()],
+      });
+
+      for (const block of harness.blocks) {
+        await block.render(DeferBlockState.Error);
+      }
+
+      expect(
+        allByTestId(harness.fixture, 'section-unavailable').map((el) => el.getAttribute('role')),
+      ).toEqual(['status', 'status', 'status']);
     });
   });
 

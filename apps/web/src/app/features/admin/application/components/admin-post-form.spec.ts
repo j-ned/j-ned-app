@@ -9,6 +9,7 @@ import { settle, settleBounded } from '@shared/testing/settle';
 import { toPostDraft, type PostDraft } from '../post-draft';
 import { insertBodyImage } from '../testing/content-image-panel-page';
 import { AdminPostForm } from './admin-post-form';
+import { normalized } from '@shared/testing/normalized-text';
 
 type FormOptions = {
   readonly post?: BlogPost;
@@ -56,9 +57,6 @@ async function renderForm(options: FormOptions = {}): Promise<RenderedForm> {
   await settle(fixture);
   return { fixture, host: fixture.nativeElement as HTMLElement, value, submitted, covers };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const all = (host: ParentNode, testId: string): readonly HTMLElement[] => [
   ...host.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),

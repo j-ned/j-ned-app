@@ -1,3 +1,4 @@
+import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PasswordChangeForm, type PasswordChangeRequest } from './password-change-form';
 
@@ -168,5 +169,22 @@ describe('PasswordChangeForm: reset token', () => {
     expect(fixture.componentInstance.pwdForm.currentPassword().value()).toBe('');
     expect(fixture.componentInstance.pwdForm.newPassword().value()).toBe('');
     expect(fixture.componentInstance.pwdForm.confirmPassword().value()).toBe('');
+  });
+});
+
+describe('PasswordChangeForm: feedback announced', () => {
+  it.each([
+    { feedback: 'successMessage', role: 'status' },
+    { feedback: 'errorMessage', role: 'alert' },
+  ])('Given a $feedback When it renders Then it is announced as $role', ({ feedback, role }) => {
+    const fixture = render();
+    fixture.componentRef.setInput(feedback, 'Message reçu');
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect({
+      role: byTestId(host, 'status-message')?.getAttribute('role'),
+      text: testIdText(host, 'status-message'),
+    }).toEqual({ role, text: 'Message reçu' });
   });
 });

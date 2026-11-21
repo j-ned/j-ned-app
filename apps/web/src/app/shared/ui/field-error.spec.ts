@@ -4,6 +4,7 @@ import { FormField, form, maxLength, required, validate } from '@angular/forms/s
 import { byTestId } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import { FieldError } from './field-error';
+import { normalized } from '@shared/testing/normalized-text';
 
 @Component({
   imports: [FormField, FieldError],
@@ -49,9 +50,6 @@ async function typeAndLeave(rendered: Rendered, text: string): Promise<void> {
 const alerts = (host: HTMLElement): readonly HTMLElement[] => [
   ...(byTestId(host, 'slot')?.querySelectorAll<HTMLElement>('[role="alert"]') ?? []),
 ];
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 describe('FieldError', () => {
   it('Given an invalid field never touched When it renders Then no error is shown', async () => {

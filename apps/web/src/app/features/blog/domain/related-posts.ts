@@ -1,4 +1,5 @@
 import type { BlogPostSummary } from './models/blog-post.model';
+import { byNewestPublication, isPublished } from './publication-order';
 import { blogTagCategory, type BlogTagCategory } from './models/blog-tag.model';
 
 export const RELATED_POSTS_LIMIT = 3;
@@ -22,7 +23,7 @@ export function relatedPosts(
   const categories = categoriesOf(current);
 
   return posts
-    .filter((p) => p.slug !== slug && p.status === 'published')
+    .filter((p) => p.slug !== slug && isPublished(p))
     .map((post) => ({
       post,
       score: sharedCount(tags, post.tags) + sharedCount(categories, categoriesOf(post)),
@@ -31,7 +32,7 @@ export function relatedPosts(
     .sort(
       (a, b) =>
         b.score - a.score ||
-        (b.post.publishedAt ?? '').localeCompare(a.post.publishedAt ?? '') ||
+        byNewestPublication(a.post, b.post) ||
         a.post.slug.localeCompare(b.post.slug),
     )
     .slice(0, RELATED_POSTS_LIMIT)

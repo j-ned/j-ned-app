@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Component, NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { Router, provideRouter } from '@angular/router';
 import { EMPTY, of } from 'rxjs';
 import { Header } from './header';
@@ -9,11 +9,9 @@ import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { ThemeStore } from '@core/theme/theme-store';
 import { installSystemColorScheme } from '@core/theme/testing/system-color-scheme';
+import { BlankPage } from '@shared/testing/blank-page';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
-
-@Component({ template: '' })
-class BlankPage {}
 
 const DESTINATIONS = ['blog', 'projects', 'about'] as const;
 

@@ -1,4 +1,3 @@
-import { Component } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import type { Mock } from 'vitest';
@@ -8,9 +7,7 @@ import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { Footer } from './footer';
 import { FOOTER_COPY } from './footer.static-data';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
 
 async function setup(): Promise<{
   fixture: ComponentFixture<Footer>;

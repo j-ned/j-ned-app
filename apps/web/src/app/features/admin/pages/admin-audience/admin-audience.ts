@@ -3,7 +3,6 @@ import { DOCUMENT } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY, interval, map, startWith, switchMap } from 'rxjs';
 import { AnalyticsDeviceExclusion } from '@core/analytics/analytics-device-exclusion';
-import { ThemeStore } from '@core/theme/theme-store';
 import {
   buildLineChartOptions,
   buildVisitorsChartData,
@@ -18,7 +17,7 @@ import { FilterGroup, type FilterOption } from '@shared/ui/filter-group';
 import { LoadError } from '@shared/ui/load-error';
 import { AppSkeleton } from '@shared/ui/skeleton';
 import { AudienceReport } from './audience-report';
-import { readChartPalette, readThemeColor } from '../../application/chart-palette';
+import { injectChartTheme } from '../../application/chart-palette';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
 import { AdminReadout } from '../../application/components/admin-readout';
 import { AdminSectionHead } from '../../application/components/admin-section-head';
@@ -184,7 +183,6 @@ const PERIODS: readonly FilterOption<DateRangeKey>[] = [
 export class AdminAudience {
   private readonly _analytics = inject(AnalyticsGateway);
   private readonly _document = inject(DOCUMENT);
-  private readonly _isDark = inject(ThemeStore).isDark;
   protected readonly report = inject(AudienceReport);
   protected readonly deviceExclusion = inject(AnalyticsDeviceExclusion);
 
@@ -206,14 +204,7 @@ export class AdminAudience {
     };
   });
 
-  // Les couleurs viennent des variables CSS du registre courant : relues à chaque bascule de thème.
-  private readonly _palette = computed(() => {
-    this._isDark();
-    return {
-      line: readChartPalette(this._document),
-      background: readThemeColor(this._document, '--theme-background', 'Canvas'),
-    };
-  });
+  private readonly _palette = injectChartTheme();
   protected readonly chartData = computed(() =>
     buildVisitorsChartData(this.report.chartPoints(), this._palette().line),
   );

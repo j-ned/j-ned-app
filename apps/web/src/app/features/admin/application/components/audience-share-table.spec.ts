@@ -4,15 +4,13 @@ import { testIdText } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import type { ShareRow } from '../audience-view';
 import { AudienceShareTable } from './audience-share-table';
+import { normalized } from '@shared/testing/normalized-text';
 
 const ROWS: readonly ShareRow[] = [
   { label: '/', count: 1500, share: '43\u00a0%', width: 100 },
   { label: '/blog', count: 6, share: '11\u00a0%', width: 25 },
   { label: 'Autres', count: 11, share: '20\u00a0%', width: 46 },
 ];
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 async function renderTable(rows: readonly ShareRow[]): Promise<HTMLElement> {
   const fixture = TestBed.createComponent(AudienceShareTable, {

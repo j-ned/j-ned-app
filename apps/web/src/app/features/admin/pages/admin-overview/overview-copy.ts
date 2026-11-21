@@ -5,6 +5,7 @@ import { counted } from '@shared/format/counted';
 import { groupedNumber } from '@shared/format/grouped-number';
 import { pluralize } from '@shared/format/pluralize';
 import { capitalize } from '../../application/capitalize';
+import { isPublished } from '@features/blog/domain/publication-order';
 
 export type OverviewSummaryInput = {
   readonly overview: StatsOverview | null;
@@ -82,7 +83,7 @@ function contentSentence(projects: number | null, articles: number | null): stri
 }
 
 export function overviewSummary(input: OverviewSummaryInput): string {
-  const published = input.posts?.filter((post) => post.status === 'published').length ?? null;
+  const published = input.posts?.filter(isPublished).length ?? null;
   return [
     input.overview === null ? '' : audienceSentence(input.overview, input.referrers),
     contactsSentence(input.unread, input.overview),

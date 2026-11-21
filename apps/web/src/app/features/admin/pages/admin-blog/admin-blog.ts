@@ -1,5 +1,6 @@
-import { Component, DestroyRef, inject, signal, computed, viewChild } from '@angular/core';
-import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject, signal, computed, viewChild } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import type { Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
@@ -7,10 +8,10 @@ import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
-import { LoadError } from '@shared/ui/load-error';
-import { loadState } from '@shared/ui/load-state';
-import { AppSkeleton } from '@shared/ui/skeleton';
+import { loadState, resourceValueOr } from '@shared/ui/load-state';
 import { ToastStore } from '@core/notifications/toast-store';
+import { AdminEmptyState } from '../../application/components/admin-empty-state';
+import { AdminListState } from '../../application/components/admin-list-state';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
 import { AdminPostRow } from '../../application/components/admin-post-row';
 import { postsOverline } from '../../application/admin-page-copy';
@@ -19,6 +20,7 @@ import {
   type AdminPostsFilter,
   type PostsSortDirection,
 } from '../../application/admin-posts-view';
+import { PendingDeletion } from '../../application/pending-deletion';
 
 @Component({
   selector: 'app-admin-blog',
@@ -28,8 +30,8 @@ import {
     Button,
     ConfirmDialog,
     FilterGroup,
-    LoadError,
-    AppSkeleton,
+    AdminEmptyState,
+    AdminListState,
     AdminPageHeader,
     AdminPostRow,
   ],
@@ -45,30 +47,18 @@ import {
       </div>
     </app-admin-page-header>
 
-    @switch (listState()) {
-      @case ('loading') {
-        <div data-testid="admin-posts-loading" role="status" class="space-y-3">
-          <span class="sr-only">Chargement des articles…</span>
-          <app-skeleton class="block h-20 rounded-md" />
-          <app-skeleton class="block h-20 rounded-md" />
-          <app-skeleton class="block h-20 rounded-md" />
-        </div>
-      }
-      @case ('error') {
-        <app-load-error
-          message="Les articles n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
-          (retry)="postsResource.reload()"
-        />
-      }
-      @case ('empty') {
-        <p
-          data-testid="admin-posts-empty"
-          class="rounded-xs border border-dashed border-line-strong px-5.5 py-14 text-center text-sm text-muted"
-        >
-          Aucun article
-        </p>
-      }
-      @default {
+    <app-admin-list-state
+      [state]="listState()"
+      testIdPrefix="admin-posts"
+      loadingLabel="Chargement des articles…"
+      errorMessage="Les articles n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
+      skeletonClass="h-20 rounded-md"
+      (retry)="postsResource.reload()"
+    >
+      <ng-template #listEmpty>
+        <app-admin-empty-state data-testid="admin-posts-empty" stamp="Aucun article" />
+      </ng-template>
+      <ng-template #listReady>
         @let view = postsView();
         <app-filter-group label="Filtrer par statut" [options]="view.filters" [(active)]="filter" />
         <table data-testid="admin-posts-list" class="mt-2 w-full border-collapse text-left">
@@ -79,12 +69,12 @@ import {
           </caption>
           <thead>
             <tr class="border-b-[1.5px] border-line-strong">
-              <th scope="col" [class]="headClass">Article</th>
-              <th scope="col" [class]="headClass">Statut</th>
+              <th scope="col" class="table-head pr-3">Article</th>
+              <th scope="col" class="table-head pr-3">Statut</th>
               <th
                 scope="col"
                 [attr.aria-sort]="sortDir()"
-                [class]="headClass + ' hidden md:table-cell'"
+                class="table-head hidden pr-3 md:table-cell"
               >
                 <button
                   type="button"
@@ -95,9 +85,9 @@ import {
                   Publié le<app-icon [name]="sortIcon()" [size]="12" />
                 </button>
               </th>
-              <th scope="col" [class]="headClass + ' hidden md:table-cell'">Lecture</th>
-              <th scope="col" [class]="headClass + ' hidden text-right md:table-cell'">J'aime</th>
-              <th scope="col" [class]="headClass"><span class="sr-only">Actions</span></th>
+              <th scope="col" class="table-head hidden pr-3 md:table-cell">Lecture</th>
+              <th scope="col" class="table-head hidden pr-3 text-right md:table-cell">J'aime</th>
+              <th scope="col" class="table-head pr-3"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -112,15 +102,15 @@ import {
             }
           </tbody>
         </table>
-      }
-    }
+      </ng-template>
+    </app-admin-list-state>
 
     <app-confirm-dialog
-      [open]="pendingDeletion() !== null"
+      [open]="deletion.target() !== null"
       [heading]="deletionCopy().heading"
       [confirmLabel]="deletionCopy().confirm"
       (confirmed)="confirmDeletion()"
-      (cancelled)="pendingDeletion.set(null)"
+      (cancelled)="deletion.cancel()"
     >
       <p>L'article disparaît du blog dans la seconde. Cette action est définitive.</p>
     </app-confirm-dialog>
@@ -129,16 +119,13 @@ import {
 export class AdminBlog {
   private readonly gateway = inject(BlogGateway);
   private readonly toast = inject(ToastStore);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
   protected readonly postsResource = rxResource({
     stream: () => this.gateway.getAllPostsForAdmin(),
   });
 
-  readonly posts = computed(() =>
-    this.postsResource.hasValue() ? this.postsResource.value() : [],
-  );
+  readonly posts = computed(() => resourceValueOr(this.postsResource, []));
 
   protected readonly filter = signal<AdminPostsFilter>('all');
   protected readonly sortDir = signal<PostsSortDirection>('descending');
@@ -162,50 +149,38 @@ export class AdminBlog {
     loadState(this.postsResource, () => this.posts().length === 0),
   );
 
-  protected readonly pendingDeletion = signal<BlogPost | null>(null);
-
-  protected readonly deletionCopy = computed(() => {
-    const title = this.pendingDeletion()?.title ?? '';
-    return { heading: `Supprimer l'article ${title}\u202f?`, confirm: `Supprimer ${title}` };
+  protected readonly deletion = new PendingDeletion<BlogPost>({
+    list: this.postsResource,
+    remove: (post): Observable<void> => this.gateway.deletePost(post.id),
+    succeeded: (): void => {
+      this.gateway.invalidateAdminPosts();
+      this.toast.add({ severity: 'success', detail: 'Article supprimé' });
+    },
+    failed: (): void =>
+      this.toast.add({ severity: 'error', detail: "Erreur lors de la suppression de l'article" }),
   });
 
-  protected readonly headClass =
-    'py-2.5 pr-3 font-mono text-xs font-medium uppercase tracking-[0.06em] text-muted';
+  protected readonly deletionCopy = computed(() => {
+    const title = this.deletion.target()?.title ?? '';
+    return { heading: `Supprimer l'article ${title}\u202f?`, confirm: `Supprimer ${title}` };
+  });
 
   protected toggleSort(): void {
     this.sortDir.update((dir) => (dir === 'descending' ? 'ascending' : 'descending'));
   }
 
   protected requestDeletion(id: string): void {
-    this.pendingDeletion.set(this.posts().find((post) => post.id === id) ?? null);
+    const post = this.posts().find((candidate) => candidate.id === id);
+    if (post) this.deletion.request(post);
   }
 
   protected confirmDeletion(): void {
-    const post = this.pendingDeletion();
-    this.pendingDeletion.set(null);
+    this.deletion.confirm();
     this._pageHeader().focusTitle();
-    if (post) this.remove(post.id);
   }
 
   remove(id: string): void {
-    const snapshot = this.posts();
-    this.postsResource.update((list) => (list ?? []).filter((p) => p.id !== id));
-
-    this.gateway
-      .deletePost(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.gateway.invalidateAdminPosts();
-          this.toast.add({ severity: 'success', detail: 'Article supprimé' });
-        },
-        error: () => {
-          this.postsResource.set(snapshot);
-          this.toast.add({
-            severity: 'error',
-            detail: "Erreur lors de la suppression de l'article",
-          });
-        },
-      });
+    const post = this.posts().find((candidate) => candidate.id === id);
+    if (post) this.deletion.delete(post);
   }
 }

@@ -7,3 +7,7 @@ export function loadState(resource: Resource<unknown>, isEmpty: () => boolean): 
   if (resource.hasValue()) return isEmpty() ? 'empty' : 'ready';
   return resource.status() === 'error' ? 'error' : 'loading';
 }
+
+export function resourceValueOr<T, F>(resource: Resource<T | undefined>, fallback: F): T | F {
+  return resource.hasValue() ? (resource.value() ?? fallback) : fallback;
+}

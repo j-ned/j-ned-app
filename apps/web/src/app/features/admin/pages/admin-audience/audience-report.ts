@@ -10,6 +10,7 @@ import {
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { EntityStat, MetricEntry } from '@features/analytics/domain/models/analytics.types';
 import { groupedNumber } from '@shared/format/grouped-number';
+import { resourceValueOr } from '@shared/ui/load-state';
 import { audienceOverline } from '../../application/admin-page-copy';
 import {
   conversionTotals,
@@ -33,10 +34,6 @@ const SHARE_LIMIT = 5;
 const TALLY_LIMIT = 5;
 // Actions des visiteurs : peu de lignes possibles (emplacements, canaux), toutes comptent.
 const ALL_ROWS = Number.POSITIVE_INFINITY;
-
-// `value()` lève en état d'erreur : toute lecture de ressource passe par `hasValue()`.
-const valueOr = <T, F>(source: ResourceRef<T | undefined>, fallback: F): T | F =>
-  source.hasValue() ? (source.value() ?? fallback) : fallback;
 
 const sum = (entries: readonly { readonly count: number }[]): number =>
   entries.reduce((total, entry) => total + entry.count, 0);
@@ -107,14 +104,14 @@ export class AudienceReport {
   readonly isLoading = computed(() => this._sources.some((source) => source.isLoading()));
 
   readonly overline = computed(() => audienceOverline(this.range(), this._now));
-  readonly overview = computed(() => valueOr(this._overview, null));
-  readonly chartPoints = computed(() => valueOr(this._chart, []));
+  readonly overview = computed(() => resourceValueOr(this._overview, null));
+  readonly chartPoints = computed(() => resourceValueOr(this._chart, []));
 
-  private readonly _pageEntries = computed(() => valueOr(this._pages, []));
-  private readonly _referrerEntries = computed(() => valueOr(this._referrers, []));
-  private readonly _articlesReadStats = computed(() => valueOr(this._articlesRead, []));
-  private readonly _contactSubmitCounts = computed(() => valueOr(this._contactSubmits, []));
-  private readonly _outboundClickCounts = computed(() => valueOr(this._outboundClicks, []));
+  private readonly _pageEntries = computed(() => resourceValueOr(this._pages, []));
+  private readonly _referrerEntries = computed(() => resourceValueOr(this._referrers, []));
+  private readonly _articlesReadStats = computed(() => resourceValueOr(this._articlesRead, []));
+  private readonly _contactSubmitCounts = computed(() => resourceValueOr(this._contactSubmits, []));
+  private readonly _outboundClickCounts = computed(() => resourceValueOr(this._outboundClicks, []));
 
   readonly lead = computed(() =>
     audienceLead(
@@ -177,13 +174,13 @@ export class AudienceReport {
       : [];
     return [
       tallyGroup('Totaux', totals),
-      tallyGroup('Projets cliqués', asEntries(valueOr(this._projects, []))),
-      tallyGroup('Articles ouverts', asEntries(valueOr(this._articles, []))),
+      tallyGroup('Projets cliqués', asEntries(resourceValueOr(this._projects, []))),
+      tallyGroup('Articles ouverts', asEntries(resourceValueOr(this._articles, []))),
       tallyGroup("Articles lus jusqu'au bout", asEntries(this._articlesReadStats())),
-      tallyGroup('CTA cliqués', asEntries(valueOr(this._cta, []))),
-      tallyGroup('Navigateurs', valueOr(this._browsers, [])),
-      tallyGroup('Systèmes', valueOr(this._systems, [])),
-      tallyGroup('Pays', valueOr(this._countries, [])),
+      tallyGroup('CTA cliqués', asEntries(resourceValueOr(this._cta, []))),
+      tallyGroup('Navigateurs', resourceValueOr(this._browsers, [])),
+      tallyGroup('Systèmes', resourceValueOr(this._systems, [])),
+      tallyGroup('Pays', resourceValueOr(this._countries, [])),
     ];
   });
 
@@ -192,11 +189,11 @@ export class AudienceReport {
       overview: this.overview() ?? undefined,
       topPages: this._pageEntries(),
       topReferrers: this._referrerEntries(),
-      browsers: valueOr(this._browsers, []),
-      osList: valueOr(this._systems, []),
-      countries: valueOr(this._countries, []),
-      topProjects: valueOr(this._projects, []),
-      topArticles: valueOr(this._articles, []),
+      browsers: resourceValueOr(this._browsers, []),
+      osList: resourceValueOr(this._systems, []),
+      countries: resourceValueOr(this._countries, []),
+      topProjects: resourceValueOr(this._projects, []),
+      topArticles: resourceValueOr(this._articles, []),
       topArticlesRead: this._articlesReadStats(),
       contactSubmits: this._contactSubmitCounts(),
       outboundClicks: this._outboundClickCounts(),

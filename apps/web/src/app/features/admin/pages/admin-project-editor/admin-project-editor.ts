@@ -9,12 +9,13 @@ import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
-import { loadState } from '@shared/ui/load-state';
+import { loadState, resourceValueOr } from '@shared/ui/load-state';
 import { ToastStore } from '@core/notifications/toast-store';
 import {
   AdminEditorFrame,
   type AdminEditorCopy,
 } from '../../application/components/admin-editor-frame';
+import { AdminEmptyState } from '../../application/components/admin-empty-state';
 import { AdminFormSection } from '../../application/components/admin-form-section';
 import { AdminFormToc } from '../../application/components/admin-form-toc';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
@@ -72,6 +73,7 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
     AppIcon,
     Button,
     AdminEditorFrame,
+    AdminEmptyState,
     AdminProjectForm,
     AdminFormSection,
     AdminProjectGallery,
@@ -133,7 +135,7 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
           [coverResetToken]="draft.coverResetToken()"
           (coverSelected)="draft.selectCover($event)"
           (coverCleared)="draft.clearCover()"
-          (coverRejected)="rejectCover()"
+          (coverRejected)="draft.rejectCover()"
         />
         <fieldset
           app-admin-form-section
@@ -150,12 +152,9 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
               (galleryChange)="updateGallery($event)"
             />
           } @else {
-            <p
-              data-testid="admin-project-gallery-pending"
-              class="rounded-xs border border-dashed border-line-strong px-5.5 py-6.5 text-sm text-muted"
-            >
-              Enregistrez le projet pour ajouter des captures.
-            </p>
+            <app-admin-empty-state data-testid="admin-project-gallery-pending" stamp="Galerie vide">
+              <p>Enregistrez le projet pour ajouter des captures.</p>
+            </app-admin-empty-state>
           }
         </fieldset>
         <app-admin-save-bar
@@ -191,9 +190,7 @@ export class AdminProjectEditor implements LeaveConfirmable {
     stream: ({ params }) => this.gateway.getProjectById(params),
   });
 
-  private readonly loaded = computed(() =>
-    this.projectResource.hasValue() ? this.projectResource.value() : null,
-  );
+  private readonly loaded = computed(() => resourceValueOr(this.projectResource, null));
 
   protected readonly state = computed(() =>
     this.id() ? loadState(this.projectResource, () => this.loaded() === null) : 'ready',
@@ -218,11 +215,6 @@ export class AdminProjectEditor implements LeaveConfirmable {
     return this.draft.canLeave();
   }
 
-  protected rejectCover(): void {
-    this.draft.rejectCover();
-    this.toast.add({ severity: 'error', detail: 'Seules les images sont acceptées.' });
-  }
-
   protected async save(payload: ProjectInput): Promise<void> {
     const id = this.id();
     const result = await this.draft.save(
@@ -232,6 +224,7 @@ export class AdminProjectEditor implements LeaveConfirmable {
         ),
       (cover, projectId) => firstValueFrom(this.gateway.uploadImage(cover, projectId)),
     );
+    if (!result) return;
     if (!result.success) {
       const failure = id
         ? 'Erreur lors de la mise à jour du projet'

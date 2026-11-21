@@ -8,6 +8,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
 
@@ -15,9 +16,13 @@ const STORAGE_KEY = 'blog-liked-posts';
 const LIKED_LABEL = 'Merci\u202f!';
 const UNLIKED_LABEL = "J'ai trouvé ça utile";
 
-function likedSlugs(): string[] {
+const isSlugList = (value: unknown): value is readonly string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === 'string');
+
+function likedSlugs(): readonly string[] {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as string[];
+    const stored: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
+    return isSlugList(stored) ? stored : [];
   } catch {
     return [];
   }
@@ -60,12 +65,18 @@ export class BlogLikeButton {
   protected readonly count = linkedSignal(() => this.likesCount());
   protected readonly label = computed(() => (this.liked() ? LIKED_LABEL : UNLIKED_LABEL));
 
+  private _pending = false;
+
   protected like(): void {
-    if (this.liked()) return;
+    if (this.liked() || this._pending) return;
+    this._pending = true;
     const slug = this.slug();
     this._gateway
       .likePost(slug)
-      .pipe(takeUntilDestroyed(this._destroyRef))
+      .pipe(
+        finalize(() => (this._pending = false)),
+        takeUntilDestroyed(this._destroyRef),
+      )
       .subscribe({
         next: (res) => {
           this.count.set(res.likesCount);

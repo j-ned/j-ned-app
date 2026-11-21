@@ -1,12 +1,10 @@
-import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { byTestId } from '@shared/testing/by-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
 import { AdminSaveBar } from './admin-save-bar';
-
-@Component({ template: '' })
-class BlankPage {}
+import { BlankPage } from '@shared/testing/blank-page';
+import { normalized } from '@shared/testing/normalized-text';
 
 type BarInputs = { readonly changes?: number; readonly submitting?: boolean };
 
@@ -27,9 +25,6 @@ async function renderBar({
   await settle(fixture);
   return { fixture, host: fixture.nativeElement as HTMLElement };
 }
-
-const normalized = (element: Element | null | undefined): string =>
-  (element?.textContent ?? '').replace(/[ \t\n\r]+/g, ' ').replace(/^ | $/g, '');
 
 const submitButton = (host: HTMLElement): HTMLButtonElement | null => {
   const element = byTestId(host, 'savebar-submit');

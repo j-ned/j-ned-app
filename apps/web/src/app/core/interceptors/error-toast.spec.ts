@@ -53,6 +53,25 @@ describe('errorToastInterceptor', () => {
     expect(add).toHaveBeenCalledExactlyOnceWith({ severity: 'error', detail });
   });
 
+  it.each([
+    {
+      given: 'a repeated validation list',
+      body: { message: ['title  is\nrequired', 'title is required', 'slug is taken'] },
+      detail: 'title is required; slug is taken',
+    },
+    { given: 'no explanation', body: null, detail: 'Données invalides' },
+  ])(
+    'Given a 400 with $given When the toast is shown Then it reads the API message cleaned',
+    ({ body, detail }) => {
+      http.post('/api/anything', {}).subscribe({ error: () => undefined });
+      httpController
+        .expectOne('/api/anything')
+        .flush(body, { status: 400, statusText: 'Bad Request' });
+
+      expect(add).toHaveBeenCalledExactlyOnceWith({ severity: 'error', detail });
+    },
+  );
+
   // Le tracking analytics est fire-and-forget : une erreur y est un problème
   // d'exploitation, jamais un message destiné au visiteur d'une page publique.
   it('stays silent when the caller opted out', () => {

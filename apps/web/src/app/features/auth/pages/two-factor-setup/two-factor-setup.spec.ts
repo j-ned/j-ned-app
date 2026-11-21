@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { defer, of, throwError, type Observable } from 'rxjs';
+import { defer, NEVER, of, throwError, type Observable } from 'rxjs';
 import { TwoFactorSetup } from './two-factor-setup';
 import { PasswordChangeForm } from '../../application/password-change-form';
 import { TwoFactorEnableForm } from '../../application/two-factor-enable-form';
@@ -293,4 +293,53 @@ describe('TwoFactorSetup: deferred command keeps the child loading until resolut
 
     expect(passwordChild(fixture)!.loading()).toBe(false);
   });
+});
+
+describe('TwoFactorSetup: one request at a time', () => {
+  it.each([
+    {
+      action: 'a password change',
+      command: 'changePassword' as const,
+      twoFactorEnabled: false,
+      fire: (fixture: ComponentFixture<TwoFactorSetup>): void =>
+        passwordChild(fixture)?.submitted.emit({
+          currentPassword: 'Old1!aaa',
+          newPassword: 'New1!aaa',
+        }),
+    },
+    {
+      action: 'a QR code generation',
+      command: 'generateTwoFactorSecret' as const,
+      twoFactorEnabled: false,
+      fire: (fixture: ComponentFixture<TwoFactorSetup>): void =>
+        enableChild(fixture)?.generate.emit(),
+    },
+    {
+      action: 'an activation',
+      command: 'enableTwoFactor' as const,
+      twoFactorEnabled: false,
+      fire: (fixture: ComponentFixture<TwoFactorSetup>): void =>
+        enableChild(fixture)?.verify.emit('123456'),
+    },
+    {
+      action: 'a deactivation',
+      command: 'disableTwoFactor' as const,
+      twoFactorEnabled: true,
+      fire: (fixture: ComponentFixture<TwoFactorSetup>): void =>
+        disableChild(fixture)?.disable.emit('Secret1!'),
+    },
+  ])(
+    'Given $action in flight When the child asks again before the answer Then a single request is sent',
+    async ({ command, twoFactorEnabled, fire }) => {
+      const pending = vi.fn(() => NEVER);
+      const store = makeAuthStore({ [command]: pending });
+      store.currentUser.set({ isTwoFactorEnabled: twoFactorEnabled });
+      const fixture = await setup(store);
+
+      fire(fixture);
+      fire(fixture);
+
+      expect(pending).toHaveBeenCalledOnce();
+    },
+  );
 });

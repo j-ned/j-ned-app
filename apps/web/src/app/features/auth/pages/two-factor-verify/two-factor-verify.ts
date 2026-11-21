@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
 import { AppIcon } from '@shared/icons/app-icon';
+import { StatusMessage } from '@shared/ui/status-message';
 import { Button } from '@shared/ui/button';
 import { AppIconTile } from '@shared/ui/icon-tile';
 import { FieldError } from '@shared/ui/field-error';
@@ -12,7 +13,16 @@ const TOTP_PATTERN = /^\d{6}$/;
 
 @Component({
   selector: 'app-two-factor-verify',
-  imports: [FormRoot, FormField, RouterLink, AppIcon, Button, AppIconTile, FieldError],
+  imports: [
+    StatusMessage,
+    FormRoot,
+    FormField,
+    RouterLink,
+    AppIcon,
+    Button,
+    AppIconTile,
+    FieldError,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -32,11 +42,9 @@ const TOTP_PATTERN = /^\d{6}$/;
         </p>
 
         @if (errorMessage()) {
-          <div
-            class="mb-6 p-3 rounded-lg bg-status-error/10 border border-status-error/30 text-status-error text-sm text-center"
-          >
+          <app-status-message tone="error" class="mb-6">
             {{ errorMessage() }}
-          </div>
+          </app-status-message>
         }
 
         <form [formRoot]="form" class="space-y-5">

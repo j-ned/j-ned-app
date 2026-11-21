@@ -16,7 +16,8 @@ import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import { stubBlogGateway } from '@features/blog/testing/stub-blog-gateway';
 import { PROJECT_ARTICLES_COPY } from '@features/projects/application/project-articles-copy';
 import { Seo } from '@core/seo/seo';
-import { Component, PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
+import { PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
+import { BlankPage } from '@shared/testing/blank-page';
 
 function project(overrides: Partial<Project> = {}): Project {
   return makeProject({
@@ -546,9 +547,6 @@ describe('ProjectDetail: agrandissement d’une capture', () => {
     expect(gallery.dialog?.open).toBe(true);
   });
 });
-
-@Component({ template: '' })
-class BlankPage {}
 
 describe('ProjectDetail: suite éditoriale de la fiche', () => {
   const trackCtaClick = vi.fn<AnalyticsGateway['trackCtaClick']>();

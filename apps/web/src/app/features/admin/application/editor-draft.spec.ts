@@ -1,4 +1,5 @@
 import { signal, type WritableSignal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { EditorDraft, type EditedDraft } from './editor-draft';
 import type { FormTocSection } from './form-toc-entries';
 
@@ -29,11 +30,14 @@ function makeDraft(entity: Note | null): {
   readonly draft: EditorDraft<Note, NoteDraft>;
 } {
   const loaded = signal<Note | null>(entity);
-  const draft = new EditorDraft<Note, NoteDraft>({
-    loaded,
-    toDraft: toNoteDraft,
-    sections: SECTIONS,
-  });
+  const draft = TestBed.runInInjectionContext(
+    () =>
+      new EditorDraft<Note, NoteDraft>({
+        loaded,
+        toDraft: toNoteDraft,
+        sections: SECTIONS,
+      }),
+  );
   return { loaded, draft };
 }
 
@@ -233,7 +237,7 @@ describe('EditorDraft: enregistrer', () => {
     const result = await draft.save(write, uploadCover);
 
     expect({
-      cover: result.success ? result.data.cover : result,
+      cover: result?.success ? result.data.cover : result,
       uploads: uploadCover.mock.calls,
       afterWrite:
         (uploadCover.mock.invocationCallOrder[0] ?? 0) >
@@ -300,6 +304,22 @@ describe('EditorDraft: enregistrer', () => {
       pending: COVER,
       changes: 2,
     });
+  });
+
+  it('Given a save in progress When it is asked again before the write answers Then the write is sent once', async () => {
+    const { draft } = makeDraft(null);
+    draft.value.update((value) => ({ ...value, title: 'Nouveau' }));
+    const pendingWrites: ((note: Note) => void)[] = [];
+    const write = vi.fn(
+      (): Promise<Note> => new Promise<Note>((resolve) => pendingWrites.push(resolve)),
+    );
+
+    const first = draft.save(write, async () => 'key');
+    const second = draft.save(write, async () => 'key');
+    pendingWrites.forEach((answer) => answer(aNote({ id: 'n-9', title: 'Nouveau', tags: [] })));
+    await Promise.all([first, second]);
+
+    expect(write.mock.calls.length).toBe(1);
   });
 
   it.each([{ outcome: 'resolves' }, { outcome: 'rejects' }] as const)(

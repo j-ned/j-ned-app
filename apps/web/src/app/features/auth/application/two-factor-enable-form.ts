@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 import { FormField, FormRoot, form, pattern, required } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
+import { StatusMessage } from '@shared/ui/status-message';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
 
@@ -9,7 +10,7 @@ const TOTP_PATTERN = /^\d{6}$/;
 
 @Component({
   selector: 'app-two-factor-enable-form',
-  imports: [FormRoot, FormField, AppIcon, Button, FieldError],
+  imports: [StatusMessage, FormRoot, FormField, AppIcon, Button, FieldError],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -20,19 +21,15 @@ const TOTP_PATTERN = /^\d{6}$/;
       </div>
 
       @if (successMessage()) {
-        <div
-          class="mb-6 p-3 rounded-lg bg-status-success/10 border border-status-success/30 text-status-success text-sm text-center"
-        >
+        <app-status-message tone="success" class="mb-6">
           {{ successMessage() }}
-        </div>
+        </app-status-message>
       }
 
       @if (errorMessage()) {
-        <div
-          class="mb-6 p-3 rounded-lg bg-status-error/10 border border-status-error/30 text-status-error text-sm text-center"
-        >
+        <app-status-message tone="error" class="mb-6">
           {{ errorMessage() }}
-        </div>
+        </app-status-message>
       }
 
       @if (qrCodeUrl()) {

@@ -1,6 +1,7 @@
 import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { ToastStore } from '@core/notifications/toast-store';
+import { apiErrorMessage } from '@shared/api/api-error-message';
 import { catchError, throwError } from 'rxjs';
 import { SKIP_ERROR_TOAST } from './skip-error-toast';
 
@@ -30,13 +31,8 @@ export const errorToastInterceptor: HttpInterceptorFn = (req, next) => {
 
 function getErrorMessage(error: HttpErrorResponse): string {
   switch (error.status) {
-    case 400: {
-      const body = error.error;
-      if (body?.message) {
-        return Array.isArray(body.message) ? body.message.join(', ') : body.message;
-      }
-      return 'Données invalides';
-    }
+    case 400:
+      return apiErrorMessage(error) ?? 'Données invalides';
     case 403:
       return 'Accès non autorisé';
     case 404:
