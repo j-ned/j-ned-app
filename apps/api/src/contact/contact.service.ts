@@ -16,6 +16,7 @@ import {
 } from '../common/pagination';
 import { fireAndForget } from '../common/utils';
 import { CreateContactMessageDto } from './dto/create-contact-message.dto';
+import { insertedRow } from '../common/rows';
 
 const USER_AGENT_MAX_LENGTH = 300;
 
@@ -51,7 +52,7 @@ export class ContactService {
       return;
     }
 
-    const [row] = await this.db
+    const rows = await this.db
       .insert(contactMessages)
       .values({
         name: dto.name,
@@ -64,6 +65,7 @@ export class ContactService {
         userAgent: sender.userAgent.slice(0, USER_AGENT_MAX_LENGTH) || null,
       })
       .returning();
+    const row = insertedRow(rows);
     // Fire-and-forget : DB write garanti, mail best-effort (Resend down → admin panel).
     fireAndForget(
       this.sendNotificationMail(row),

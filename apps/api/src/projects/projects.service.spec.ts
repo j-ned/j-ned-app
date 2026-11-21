@@ -208,6 +208,15 @@ describe('ProjectsService', () => {
       );
     });
 
+    it("répond 404, et non 500, quand le projet est supprimé entre la lecture et l'écriture", async () => {
+      db.limit.mockResolvedValueOnce([mkProject()]);
+      db.returning.mockResolvedValueOnce([]);
+
+      await expect(
+        service.update(mkProject().id, { description: 'Autre' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
     it('re-slugifie si title change', async () => {
       const current = mkProject();
       const updated = mkProject({ title: 'Nouveau', slug: 'nouveau' });

@@ -12,13 +12,13 @@ export async function findByIdOrFail<TRow>(
   id: string,
   label: string,
 ): Promise<TRow> {
-  const rows = (await db
+  const [row] = (await db
     .select()
     .from(table)
     .where(eq(table.id, id))
     .limit(1)) as TRow[];
-  if (rows.length === 0) {
+  if (row === undefined) {
     throw new NotFoundException(`${label} ${id} not found`);
   }
-  return rows[0];
+  return row;
 }

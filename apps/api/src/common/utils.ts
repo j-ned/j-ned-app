@@ -21,8 +21,11 @@ const DURATION_UNITS_MS: Record<string, number> = {
 
 export function parseDurationMs(input: string): number {
   const match = /^(\d+)\s*(ms|s|m|h|d)$/i.exec(input.trim());
-  if (!match) throw new Error(`Invalid duration: "${input}"`);
-  return Number(match[1]) * DURATION_UNITS_MS[match[2].toLowerCase()];
+  const unitMs = DURATION_UNITS_MS[match?.[2]?.toLowerCase() ?? ''];
+  if (!match || unitMs === undefined) {
+    throw new Error(`Invalid duration: "${input}"`);
+  }
+  return Number(match[1]) * unitMs;
 }
 
 const DAY_MS = 86_400_000;

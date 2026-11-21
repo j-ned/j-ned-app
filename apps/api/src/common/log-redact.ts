@@ -33,8 +33,10 @@ export const LOG_REDACT_PATHS = [
 const FILTERED = '[Filtered]';
 
 /** Coupe la query string et le fragment : ils peuvent porter un e-mail, un jeton ou un terme recherché. */
-export const stripQueryAndFragment = (url: string): string =>
-  url.split(/[?#]/, 1)[0];
+export function stripQueryAndFragment(url: string): string {
+  const [path = ''] = url.split(/[?#]/, 1);
+  return path;
+}
 
 type SerializedRequest = { id?: string; method?: string; url?: string };
 

@@ -120,6 +120,17 @@ describe('BlogService', () => {
   });
 
   describe('update — gel du slug après publication', () => {
+    it("répond 404, et non 500, quand l'article est supprimé entre la lecture et l'écriture", async () => {
+      db.limit.mockResolvedValueOnce([mkPost()]);
+      db.returning.mockResolvedValueOnce([]);
+
+      await expect(
+        service.update('11111111-1111-1111-1111-111111111111', {
+          excerpt: 'Nouvel extrait',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
     it("ne régénère pas le slug quand on édite le titre d'un article déjà publié", async () => {
       db.limit.mockResolvedValueOnce([
         mkPost({

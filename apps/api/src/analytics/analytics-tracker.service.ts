@@ -18,7 +18,7 @@ export function isPrivateIp(raw: string): boolean {
   const ip = lower.startsWith('::ffff:') ? lower.slice(7) : lower;
 
   if (isIPv4(ip)) {
-    const [a, b] = ip.split('.').map(Number);
+    const [a = NaN, b = NaN] = ip.split('.').map(Number);
     return (
       a === 127 ||
       a === 10 ||
@@ -41,7 +41,8 @@ export function isPrivateIp(raw: string): boolean {
 
 /** Une ancre (`#demande`) n'est pas une page : `/offres/x#demande` est `/offres/x`. */
 function withoutFragment(url: string): string {
-  return url.split('#', 1)[0];
+  const [page = ''] = url.split('#', 1);
+  return page;
 }
 
 function isExcludedUrl(url: string): boolean {

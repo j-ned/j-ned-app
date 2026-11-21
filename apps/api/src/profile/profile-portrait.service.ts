@@ -13,6 +13,7 @@ import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
 import type { ProfileDocument } from './profile-content';
 import { inProfileTransaction } from './profile-lock';
 import { lockProfileRow, toProfileDocument } from './profile-document';
+import { updatedRow } from '../common/rows';
 
 /**
  * Portrait de la page Parcours (spec 021, D6), hors version du document.
@@ -91,7 +92,7 @@ export class ProfilePortraitService {
     current: ProfileContentRow,
     next: string | null,
   ): Promise<ProfileContentRow> {
-    const [row] = await tx
+    const rows = await tx
       .update(profileContent)
       .set({
         portraitKey: next,
@@ -100,7 +101,7 @@ export class ProfilePortraitService {
       })
       .where(eq(profileContent.id, PROFILE_ROW_ID))
       .returning();
-    return row;
+    return updatedRow(rows, 'Profile content not found');
   }
 
   /**

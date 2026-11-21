@@ -34,7 +34,8 @@ export function contentImageKey(
 
 /** Clés d'images du corps citées par un Markdown, dédoublonnées, dans l'ordre d'apparition. */
 export function contentImageKeysIn(markdown: string): string[] {
-  return [...new Set(Array.from(markdown.matchAll(CITED_KEY), (m) => m[1]))];
+  const keys = Array.from(markdown.matchAll(CITED_KEY), (match) => match[1]);
+  return [...new Set(keys.filter((key) => key !== undefined))];
 }
 
 /** Vrai si `key` a exactement le format d'une image du corps produite par `contentImageKey`. */
