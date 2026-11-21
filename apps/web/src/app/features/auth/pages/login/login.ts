@@ -2,13 +2,19 @@ import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/cor
 import { FormField, FormRoot, email, form, minLength, required } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AuthStore } from '@core/auth/auth-store';
+import { AuthStore, type LoginOutcome } from '@core/auth/auth-store';
 import { PASSWORD_MIN_LENGTH } from '@features/auth/domain/models/password-policy';
 import { Button } from '@shared/ui/button';
 import { AppIconTile } from '@shared/ui/icon-tile';
 import { AppIcon } from '@shared/icons/app-icon';
 import { StatusMessage } from '@shared/ui/status-message';
 import { FieldError } from '@shared/ui/field-error';
+
+const LOGIN_FAILURE_MESSAGES = {
+  'invalid-credentials': 'Email ou mot de passe incorrect',
+  throttled: 'Trop de tentatives en peu de temps, réessaie dans une minute',
+  error: 'Connexion impossible pour le moment, réessaie dans un instant',
+} satisfies Record<Exclude<LoginOutcome, 'success' | 'two-factor'>, string>;
 
 @Component({
   selector: 'app-login',
@@ -161,12 +167,8 @@ export class Login {
         await this.router.navigate(['/admin']);
       } else if (result === 'two-factor') {
         await this.router.navigate(['/two-factor']);
-      } else if (result === 'invalid-credentials') {
-        this.errorMessage.set('Email ou mot de passe incorrect');
-      } else if (result === 'throttled') {
-        this.errorMessage.set('Trop de tentatives en peu de temps, réessaie dans une minute');
       } else {
-        this.errorMessage.set('Connexion impossible pour le moment, réessaie dans un instant');
+        this.errorMessage.set(LOGIN_FAILURE_MESSAGES[result]);
       }
     } catch {
       this.errorMessage.set('Erreur de connexion au serveur');

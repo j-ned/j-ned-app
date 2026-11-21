@@ -56,6 +56,8 @@ describe('BlogComments', () => {
     const fixture = mount();
     const iframe = document.createElement('iframe');
     iframe.className = 'giscus-frame';
+    // Sans page, happy-dom ne donne pas de fenêtre à l'iframe ; `srcdoc` en crée une sans rien charger.
+    iframe.srcdoc = '<p></p>';
     document.body.appendChild(iframe);
     // happy-dom vérifie l'origine cible contre celle de l'iframe (about:blank) : on neutralise l'implémentation.
     const postMessage = vi

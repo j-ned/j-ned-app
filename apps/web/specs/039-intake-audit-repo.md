@@ -333,3 +333,23 @@ Laissés ouverts : blocs d'envoi d'image des deux gateways (seuls à prouver que
 part, donc gardés) ; garde de sortie des éditeurs ; sélecteurs par `id` dans quatre specs d'auth ;
 `TwoFactorOutcome` et `LoginOutcome` non exportés (pas d'exhaustivité par `switch`) ; archéologie
 des commentaires de l'API ; F031.
+
+## Lot 6 : sécurité des dépendances de test et finitions (2026-11-21, branche `chore/audit-039-lot6`)
+
+Branche empilée sur `refactor/audit-039-lot5`. Traités : `happy-dom` 20.14.6 → 21.0.4 (deux avis de
+sévérité haute, dépendance de test ; la version 21 ne charge plus de page dans les iframes, le test
+du widget de commentaires donne donc une fenêtre à son iframe par `srcdoc`, assertion inchangée) ;
+`LoginOutcome` et `TwoFactorOutcome` exportés, messages d'échec en tables vérifiées par
+`satisfies Record<…>` (un résultat ajouté sans message ne compile plus) ; image `nginx` épinglée en
+`1.31.9-alpine`, la version que résolvait `nginx:alpine`, pour que Dependabot la suive.
+
+Vérifié : gates du front, image du site construite et `ci/smoke.sh` vert. Lot non soumis au
+`code-reviewer` (9 fichiers, 40 lignes).
+
+Laissés ouverts : quatre avis modérés sur `glob` et `minimatch`, transitifs de Jest dans `apps/api`
+(outillage de test ; le correctif change de majeure, à reprendre avec une montée de Jest) ; sélecteurs
+par `id` dans quatre specs d'auth ; archéologie des commentaires de l'API ; `madge`, `knip` et
+`depcheck` non lancés. En attente d'une décision : F031 (`@angular/aria`), directive
+`[appFieldState]`, voix des messages d'erreur (tutoiement ou vouvoiement), mot-clé « Vercel » de
+l'accueil, quota de login par compte, durcissement de la pile compose, rôle Postgres restreint,
+durée et revendications du JWT, plafond du `MemoryThrottleStore`.

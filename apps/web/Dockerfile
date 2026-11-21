@@ -53,7 +53,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 # relaie /api/ à l'API (images en cache, mesure sans cookie, le reste tel quel), et ne transmet à Node (127.0.0.1:4000)
 # que la liste fermée des routes de contenu, rendues à chaque requête depuis l'API.
 # ==============================================================================
-FROM nginx:alpine AS production
+FROM nginx:1.31.9-alpine AS production
 
 # Même Node que l'étage de build ; l'entrypoint officiel de nginx (gabarits envsubst) est conservé.
 # Node tourne sous un utilisateur système sans shell (su-exec), nginx garde son modèle habituel.
