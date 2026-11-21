@@ -281,7 +281,7 @@ export class AdminTagsSelector implements FormValueControl<readonly string[]> {
       case 'too-long':
         return `Un tag compte ${TAG_MAX_LENGTH} caractères au plus.`;
       case 'too-many':
-        return `${this.maxCount()} tags au plus : retirez-en un avant d’en ajouter.`;
+        return `${this.maxCount()} tags au plus : retires-en un avant d’en ajouter.`;
       case 'empty':
         return null;
     }

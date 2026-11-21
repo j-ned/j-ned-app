@@ -368,3 +368,16 @@ change. Le site public tutoyait déjà partout.
 Laissés ouverts : le message de plafond de `admin-tags-selector.ts`, traité avec F031 ; le bloc
 d'accueil qui affiche encore « Hébergement : Vercel, PostgreSQL sur Neon » alors que la production
 tourne sur Dokploy avec un Postgres auto-hébergé (contenu public, texte de remplacement à décider).
+
+## F031 : évalué, non retenu (2026-11-21)
+
+Essai de migration vers `@angular/aria` 22.3.0. La barre d'outils Markdown se migre (`ngToolbar`,
+`ngToolbarWidget`), mais la bibliothèque rend le focus au bouton après un clic au pointeur, ce qui
+demande un `stopPropagation` de contournement. La combobox des tags ne se migre pas : la liste
+s'annonce ouverte sans suggestion, la première option est présélectionnée (Entrée ne créerait plus
+un tag libre) et l'ouverture par la flèche haut disparaît. Pour la seule barre d'outils, deux
+dépendances (`@angular/aria`, `@angular/cdk`) et 10 kB de plus sur le chunk de l'éditeur
+remplaceraient une trentaine de lignes testées. Décision du propriétaire : abandon, le code actuel
+reste, `eslint-disable` de `admin-tags-selector.ts` compris.
+
+Le message de plafond de `admin-tags-selector.ts` passe au tutoiement avec le reste du lot 7.
