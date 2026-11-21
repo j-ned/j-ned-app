@@ -37,14 +37,14 @@ const EMPTY = { password: '' };
         <div class="grid justify-items-start gap-2">
           <app-stamp data-testid="twofa-status">2FA activé</app-stamp>
           <p class="text-muted text-sm">
-            Votre compte est protégé par l'authentification à deux facteurs.
+            Ton compte est protégé par l'authentification à deux facteurs.
           </p>
         </div>
 
         <div class="border-t border-foreground/10 pt-6">
           <p class="text-muted text-sm mb-4">
-            Pour désactiver le 2FA ou le reconfigurer avec une nouvelle application, entrez votre
-            mot de passe.
+            Pour désactiver le 2FA ou le reconfigurer avec une nouvelle application, entre ton mot
+            de passe.
           </p>
 
           @if (!showForm()) {
@@ -87,7 +87,7 @@ const EMPTY = { password: '' };
                   [attr.aria-invalid]="passwordInError"
                   [attr.aria-describedby]="passwordInError ? 'twofa-setup-disable-pw-error' : null"
                   class="form-input"
-                  placeholder="Votre mot de passe"
+                  placeholder="Ton mot de passe"
                 />
                 <app-field-error
                   [field]="disableForm.password"

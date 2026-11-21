@@ -57,7 +57,7 @@ import { toCaseStudyView, toProjectCardView } from '@features/projects/applicati
           data-testid="admin-project-preview-empty"
           class="bg-background px-4.5 py-8 text-center text-sm text-muted"
         >
-          Choisissez une nature pour voir la carte.
+          Choisis une nature pour voir la carte.
         </p>
       }
     </section>

@@ -51,7 +51,7 @@ import { PendingDeletion } from '../../application/pending-deletion';
       [state]="listState()"
       testIdPrefix="admin-posts"
       loadingLabel="Chargement des articles…"
-      errorMessage="Les articles n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
+      errorMessage="Les articles n'ont pas pu être chargés. Vérifie ta connexion, puis réessaie."
       skeletonClass="h-20 rounded-md"
       (retry)="postsResource.reload()"
     >

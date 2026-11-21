@@ -173,7 +173,7 @@ describe('AdminTagsSelector', () => {
       {
         start: FIFTEEN_TAGS,
         typed: 'Playwright',
-        error: '15 tags au plus : retirez-en un avant d’en ajouter.',
+        error: '15 tags au plus : retires-en un avant d’en ajouter.',
       },
     ])(
       'Given $start When "$typed" is added Then it is refused with « $error » and the input keeps the text',
@@ -376,7 +376,7 @@ describe('AdminTagsSelector', () => {
 
       expect({ value: fixture.componentInstance.value(), error: page.error() }).toEqual({
         value: FIFTEEN_TAGS,
-        error: '15 tags au plus : retirez-en un avant d’en ajouter.',
+        error: '15 tags au plus : retires-en un avant d’en ajouter.',
       });
     });
   });

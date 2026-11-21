@@ -23,7 +23,7 @@ import { AdminGalleryImageItem } from './admin-gallery-image-item';
 import { AdminGalleryUploadForm } from './admin-gallery-upload-form';
 
 const GALLERY_MAX = 12;
-const GALLERY_FULL_NOTICE = `${GALLERY_MAX} captures au plus\u00a0: supprimez-en une pour en ajouter une autre.`;
+const GALLERY_FULL_NOTICE = `${GALLERY_MAX} captures au plus\u00a0: supprimes-en une pour en ajouter une autre.`;
 
 const uploadErrorDetail = (error: unknown): string =>
   uploadFailureMessage("La capture n'a pas été ajoutée.", error);

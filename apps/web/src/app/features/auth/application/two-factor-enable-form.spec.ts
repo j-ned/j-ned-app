@@ -54,7 +54,7 @@ describe('TwoFactorEnableForm: QR generated state', () => {
     expect(img).not.toBeNull();
     expect(img.getAttribute('src')).toBe('data:image/png;base64,abc');
     expect(img.getAttribute('alt')).toBe(
-      "QR code à scanner avec votre application d'authentification",
+      "QR code à scanner avec ton application d'authentification",
     );
     expect(fixture.nativeElement.textContent).toContain('SECRETXYZ');
   });
@@ -111,10 +111,10 @@ describe('TwoFactorEnableForm: feedback inputs', () => {
 
   it('renders the errorMessage input', () => {
     const fixture = render();
-    fixture.componentRef.setInput('errorMessage', 'Code invalide. Réessayez.');
+    fixture.componentRef.setInput('errorMessage', 'Code invalide. Réessaie.');
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Code invalide. Réessayez.');
+    expect(fixture.nativeElement.textContent).toContain('Code invalide. Réessaie.');
   });
 });
 

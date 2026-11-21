@@ -312,9 +312,9 @@ describe('AdminProfileForm: listes ordonnables (paragraphes, traits, activités)
   });
 
   it.each([
-    { prefix: 'paragraph', message: 'Ajoutez au moins un paragraphe.', count: 2 },
-    { prefix: 'highlight', message: 'Ajoutez au moins un trait.', count: 1 },
-    { prefix: 'activity', message: 'Ajoutez au moins une activité.', count: 1 },
+    { prefix: 'paragraph', message: 'Ajoute au moins un paragraphe.', count: 2 },
+    { prefix: 'highlight', message: 'Ajoute au moins un trait.', count: 1 },
+    { prefix: 'activity', message: 'Ajoute au moins une activité.', count: 1 },
   ])(
     'Given every $prefix removed When the form is submitted Then nothing is emitted and the list says one is needed',
     async ({ prefix, message, count }) => {
@@ -534,8 +534,8 @@ describe('AdminProfileForm: stack et formations', () => {
   );
 
   it.each([
-    { prefix: 'technology', message: 'Ajoutez au moins une technologie.' },
-    { prefix: 'diploma', message: 'Ajoutez au moins une formation.' },
+    { prefix: 'technology', message: 'Ajoute au moins une technologie.' },
+    { prefix: 'diploma', message: 'Ajoute au moins une formation.' },
   ])(
     'Given the only $prefix removed When the form is submitted Then nothing is emitted and the list says one is needed',
     async ({ prefix, message }) => {

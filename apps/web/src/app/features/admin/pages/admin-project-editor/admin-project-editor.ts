@@ -59,7 +59,7 @@ const FORM_SECTIONS: readonly FormTocSection<EditedDraft<ProjectDraft>>[] = [
 const PROJECT_EDITOR_COPY: AdminEditorCopy = {
   testIdPrefix: 'admin-project',
   loading: 'Chargement du projet…',
-  loadError: "Le projet n'a pas pu être chargé. Vérifiez votre connexion, puis réessayez.",
+  loadError: "Le projet n'a pas pu être chargé. Vérifie ta connexion, puis réessaie.",
   missing: "Ce projet n'existe pas ou a été supprimé.",
   backRoute: '/admin/projects',
   backLabel: 'Retour aux projets',
@@ -153,7 +153,7 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
             />
           } @else {
             <app-admin-empty-state data-testid="admin-project-gallery-pending" stamp="Galerie vide">
-              <p>Enregistrez le projet pour ajouter des captures.</p>
+              <p>Enregistre le projet pour ajouter des captures.</p>
             </app-admin-empty-state>
           }
         </fieldset>
@@ -236,7 +236,7 @@ export class AdminProjectEditor implements LeaveConfirmable {
     if (cover.status === 'failed') {
       const warning = id
         ? "Projet mis à jour, mais l'image de couverture n'a pas été envoyée."
-        : "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoyez-la depuis sa page.";
+        : "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoie-la depuis sa page.";
       this.toast.add({ severity: 'warn', detail: uploadFailureMessage(warning, cover.error) });
     }
     this.invalidatePublicCaches();

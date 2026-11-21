@@ -93,7 +93,7 @@ describe('AdminContentImageUpload: champs obligatoires', () => {
       uploads: rendered.upload.mock.calls.length,
       inserted: rendered.inserted,
     }).toEqual({
-      file: { role: 'alert', text: 'Choisissez une image' },
+      file: { role: 'alert', text: 'Choisis une image' },
       alt: { role: 'alert', text: 'Ce champ est obligatoire' },
       uploads: 0,
       inserted: [],
@@ -119,7 +119,7 @@ describe('AdminContentImageUpload: champs obligatoires', () => {
       case: 'an alt text only',
       file: false,
       alt: 'Schéma',
-      fileError: 'Choisissez une image',
+      fileError: 'Choisis une image',
       altError: null,
     },
     {

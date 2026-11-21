@@ -23,7 +23,7 @@ describe('uploadFailureMessage', () => {
     {
       given: 'a request cut by the network',
       error: new HttpErrorResponse({ status: 0, url: '/api/profile/portrait' }),
-      expected: `${LABEL} La connexion a été coupée pendant l'envoi\u00a0: vérifiez votre réseau, puis réessayez.`,
+      expected: `${LABEL} La connexion a été coupée pendant l'envoi\u00a0: vérifie ton réseau, puis réessaie.`,
     },
     {
       given: 'a 413 from the API',
@@ -38,35 +38,35 @@ describe('uploadFailureMessage', () => {
     {
       given: 'a 422 without explanation',
       error: apiRejection(422),
-      expected: `${LABEL} Le format n'est pas pris en charge ou le fichier est illisible\u00a0: choisissez une image JPEG, PNG, WebP ou AVIF.`,
+      expected: `${LABEL} Le format n'est pas pris en charge ou le fichier est illisible\u00a0: choisis une image JPEG, PNG, WebP ou AVIF.`,
     },
     {
       given: 'a 429',
       error: apiRejection(429, 'Too Many Requests'),
-      expected: `${LABEL} Trop d'envois en peu de temps\u00a0: patientez une minute, puis réessayez.`,
+      expected: `${LABEL} Trop d'envois en peu de temps\u00a0: patiente une minute, puis réessaie.`,
     },
     {
       given: 'a 503 explained by the API (profile locked)',
       error: apiRejection(
         503,
-        'Le parcours est en cours de modification : réessayez dans quelques secondes',
+        'Le parcours est en cours de modification : réessaie dans quelques secondes',
       ),
-      expected: `${LABEL} Le parcours est en cours de modification : réessayez dans quelques secondes.`,
+      expected: `${LABEL} Le parcours est en cours de modification : réessaie dans quelques secondes.`,
     },
     {
       given: 'a 503 from the hosting platform, before the API',
       error: platformRefusal(503),
-      expected: `${LABEL} L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduisez-le sous 900\u00a0Ko, puis réessayez.`,
+      expected: `${LABEL} L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduis-le sous 900\u00a0Ko, puis réessaie.`,
     },
     {
       given: 'another server error',
       error: apiRejection(500, 'Internal Server Error'),
-      expected: `${LABEL} Le serveur a rencontré un problème\u00a0: réessayez dans un instant.`,
+      expected: `${LABEL} Le serveur a rencontré un problème\u00a0: réessaie dans un instant.`,
     },
     {
       given: 'an unknown failure',
       error: new Error('boom'),
-      expected: `${LABEL} Réessayez.`,
+      expected: `${LABEL} Réessaie.`,
     },
   ])(
     'Given $given When the failure is described Then it says what happened and what to do',

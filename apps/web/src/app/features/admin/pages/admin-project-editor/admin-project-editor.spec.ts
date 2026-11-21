@@ -437,7 +437,7 @@ describe('AdminProjectEditor: détail du refus de l’API', () => {
     expect(toasts(editor.toast)[0]).toEqual({
       severity: 'warn',
       detail:
-        "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoyez-la depuis sa page. file must be an image.",
+        "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoie-la depuis sa page. file must be an image.",
     });
   });
 });

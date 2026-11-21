@@ -146,29 +146,29 @@ export class AdminProfileForm {
       apply(path.biographyTitle, profileText(biography.title, 'Le titre'));
       apply(path.biographySummary, profileText(biography.summary, 'Le résumé'));
       apply(path.leadEmphasis, profileText(biography.leadEmphasis, "La suite de l'accroche"));
-      validate(path.paragraphs, atLeastOne('Ajoutez au moins un paragraphe.'));
+      validate(path.paragraphs, atLeastOne('Ajoute au moins un paragraphe.'));
       applyEach(path.paragraphs, (row) => {
         apply(row.text, profileText(biography.paragraph, 'Le paragraphe'));
       });
-      validate(path.highlights, atLeastOne('Ajoutez au moins un trait.'));
+      validate(path.highlights, atLeastOne('Ajoute au moins un trait.'));
       applyEach(path.highlights, (row) => {
         apply(row.title, profileText(highlight.title, 'Le titre'));
         apply(row.description, profileText(highlight.description, 'La description'));
       });
       apply(path.workSummary, profileText(sectionSummary, 'Le résumé'));
-      validate(path.whatIDo, atLeastOne('Ajoutez au moins une activité.'));
+      validate(path.whatIDo, atLeastOne('Ajoute au moins une activité.'));
       applyEach(path.whatIDo, (row) => {
         apply(row.title, profileText(whatIDo.title, 'Le titre'));
         apply(row.description, profileText(whatIDo.description, 'La description'));
       });
-      validate(path.technologies, atLeastOne('Ajoutez au moins une technologie.'));
+      validate(path.technologies, atLeastOne('Ajoute au moins une technologie.'));
       applyEach(path.technologies, (row) => {
         apply(row.name, profileText(technology.name, 'Le nom'));
         apply(row.category, profileText(technology.category, 'La catégorie'));
         required(row.icon, { message: REQUIRED_MESSAGE });
       });
       apply(path.diplomasSummary, profileText(sectionSummary, 'Le résumé'));
-      validate(path.diplomas, atLeastOne('Ajoutez au moins une formation.'));
+      validate(path.diplomas, atLeastOne('Ajoute au moins une formation.'));
       applyEach(path.diplomas, (row) => {
         apply(row.title, profileText(diploma.title, "L'intitulé"));
         apply(row.provider, profileText(diploma.provider, "L'organisme"));

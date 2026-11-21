@@ -65,7 +65,7 @@ import { PendingDeletion } from '../../application/pending-deletion';
       [state]="listState()"
       testIdPrefix="admin-messages"
       loadingLabel="Chargement des messages…"
-      errorMessage="Les messages n'ont pas pu être chargés. Vérifiez votre connexion, puis réessayez."
+      errorMessage="Les messages n'ont pas pu être chargés. Vérifie ta connexion, puis réessaie."
       skeletonClass="h-16 rounded-sm"
       loadingClass="mt-5"
       (retry)="messagesRes.reload()"

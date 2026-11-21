@@ -3,16 +3,16 @@ import { apiErrorMessage } from '@shared/api/api-error-message';
 import { UploadRejectedError } from '@shared/upload/upload-rejected-error';
 
 const NETWORK_CUT =
-  "La connexion a été coupée pendant l'envoi\u00a0: vérifiez votre réseau, puis réessayez.";
+  "La connexion a été coupée pendant l'envoi\u00a0: vérifie ton réseau, puis réessaie.";
 const TOO_LARGE = 'Le fichier dépasse 4\u00a0Mo, la taille maximale acceptée.';
 const UNREADABLE =
-  "Le format n'est pas pris en charge ou le fichier est illisible\u00a0: choisissez une image JPEG, PNG, WebP ou AVIF.";
-const THROTTLED = "Trop d'envois en peu de temps\u00a0: patientez une minute, puis réessayez.";
+  "Le format n'est pas pris en charge ou le fichier est illisible\u00a0: choisis une image JPEG, PNG, WebP ou AVIF.";
+const THROTTLED = "Trop d'envois en peu de temps\u00a0: patiente une minute, puis réessaie.";
 // Un proxy placé devant l'API peut refuser un envoi trop lourd, avec un corps en texte brut (`IMAGE_UPLOAD_TARGET_BYTES`).
 const PLATFORM_REFUSED =
-  "L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduisez-le sous 900\u00a0Ko, puis réessayez.";
-const SERVER_ERROR = 'Le serveur a rencontré un problème\u00a0: réessayez dans un instant.';
-const RETRY = 'Réessayez.';
+  "L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: réduis-le sous 900\u00a0Ko, puis réessaie.";
+const SERVER_ERROR = 'Le serveur a rencontré un problème\u00a0: réessaie dans un instant.';
+const RETRY = 'Réessaie.';
 
 const asSentence = (text: string): string => (/[.!?…]$/.test(text) ? text : `${text}.`);
 

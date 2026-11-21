@@ -29,7 +29,7 @@ describe('withValidationDetail', () => {
   );
 
   it('Given a label that ends a sentence When a file refused by the browser completes it Then its reason starts a new sentence', () => {
-    const label = "Article enregistré, mais l'envoi de l'image a échoué. Réessayez.";
+    const label = "Article enregistré, mais l'envoi de l'image a échoué. Réessaie.";
     const reason = "L'image dépasse 4\u00a0Mo, même compressée.";
 
     expect(withValidationDetail(label, new UploadRejectedError(reason))).toBe(
@@ -38,7 +38,7 @@ describe('withValidationDetail', () => {
   });
 
   it('Given a label that ends a sentence When a 400 is completed Then the detail starts a new sentence', () => {
-    const label = "Projet créé, mais l'envoi de l'image a échoué. Réessayez depuis sa page.";
+    const label = "Projet créé, mais l'envoi de l'image a échoué. Réessaie depuis sa page.";
 
     expect(withValidationDetail(label, apiRejection(400, 'file must be an image'))).toBe(
       `${label} Détail\u00a0: file must be an image`,

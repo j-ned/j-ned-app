@@ -132,7 +132,7 @@ export class TwoFactorSetup {
         this.secret.set('');
         this.tfaResetToken.update((token) => token + 1);
       } else {
-        this.tfaError.set('Code invalide. Réessayez.');
+        this.tfaError.set('Code invalide. Réessaie.');
       }
     } catch {
       this.tfaError.set("Erreur lors de l'activation");

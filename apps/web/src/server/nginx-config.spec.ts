@@ -39,7 +39,7 @@ describe('nginx configuration', () => {
     );
   });
 
-  // Spec 029 : offres et prise de rendez-vous retirées.
+  // Offres et prise de rendez-vous retirées : nginx doit répondre 410.
   describe('retired pages (offers and booking)', () => {
     it('answers 410 Gone so that search engines drop them for good', () => {
       expect(directivesOf(RETIRED_LOCATION)).toEqual(expect.arrayContaining(['return 410']));

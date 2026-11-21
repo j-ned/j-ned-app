@@ -111,12 +111,12 @@ describe('AdminCv: suppression confirmée', () => {
       given: 'the network cut',
       error: new HttpErrorResponse({ status: 0, url: '/api/cv' }),
       detail:
-        "Le CV n'a pas été retiré. La connexion a été coupée\u00a0: vérifiez votre réseau, puis réessayez.",
+        "Le CV n'a pas été retiré. La connexion a été coupée\u00a0: vérifie ton réseau, puis réessaie.",
     },
     {
       given: 'a server that does not explain itself',
       error: new HttpErrorResponse({ status: 503, url: '/api/cv' }),
-      detail: "Le CV n'a pas été retiré. Réessayez dans un instant.",
+      detail: "Le CV n'a pas été retiré. Réessaie dans un instant.",
     },
     {
       given: 'a refusal the API explains',
@@ -276,19 +276,19 @@ describe('AdminCv: téléversement', () => {
       given: 'the network cut',
       error: new HttpErrorResponse({ status: 0, url: '/api/cv/upload' }),
       detail:
-        "Le CV n'a pas été mis en ligne. La connexion a été coupée pendant l'envoi : vérifiez votre réseau, puis réessayez.",
+        "Le CV n'a pas été mis en ligne. La connexion a été coupée pendant l'envoi : vérifie ton réseau, puis réessaie.",
     },
     {
       given: 'a proxy refusing the PDF without explanation',
       error: new HttpErrorResponse({ status: 503, url: '/api/cv/upload' }),
       detail:
-        "Le CV n'a pas été mis en ligne. L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: allégez le PDF, puis réessayez.",
+        "Le CV n'a pas été mis en ligne. L'hébergeur a refusé le fichier, sans doute trop lourd\u00a0: allège le PDF, puis réessaie.",
     },
     {
       given: 'an unreadable file the API does not explain',
       error: apiRejection(422),
       detail:
-        "Le CV n'a pas été mis en ligne. Le fichier n'est pas un PDF lisible : exportez-le de nouveau, puis réessayez.",
+        "Le CV n'a pas été mis en ligne. Le fichier n'est pas un PDF lisible : exporte-le de nouveau, puis réessaie.",
     },
   ])(
     'Given $given When the upload fails Then the toast says what happened and what to do',
