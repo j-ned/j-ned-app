@@ -36,13 +36,14 @@ export const JSON_BODY_LIMIT_BYTES = 100 * 1024;
 
 /**
  * Adresse du visiteur, comme Express avec `trust proxy 1` : la dernière entrée de `X-Forwarded-For`,
- * écrite par le proxy de confiance (les entrées antérieures viennent du client) ; sinon la socket.
+ * écrite par le proxy de confiance (les entrées antérieures viennent du client) ; sinon, ou si cette
+ * entrée n'est pas une adresse IP, la socket.
  */
 export function clientIp(c: Context): string {
   const forwarded = (c as AppContext).var.clientIp;
   if (forwarded) return forwarded;
   const last = c.req.header('x-forwarded-for')?.split(',').at(-1)?.trim();
-  if (last) return last;
+  if (last && isIP(last) !== 0) return last;
   try {
     return getConnInfo(c).remote.address ?? '';
   } catch {

@@ -7,6 +7,7 @@ import { originalUrl } from './http';
 import {
   HttpException,
   NotFoundException,
+  TooManyRequestsException,
   type ErrorMessage,
 } from './http-errors';
 import { stripQueryAndFragment } from './log-redact';
@@ -44,6 +45,12 @@ function errorResponse(
  */
 export const handleError: ErrorHandler = (error, c) => {
   if (error instanceof HttpException) {
+    if (
+      error instanceof TooManyRequestsException &&
+      error.retryAfterSeconds !== undefined
+    ) {
+      c.header('Retry-After', String(error.retryAfterSeconds));
+    }
     return errorResponse(c, error.status, error.messages);
   }
   if (error instanceof HTTPException && error.status < 500) {

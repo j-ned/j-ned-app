@@ -1,5 +1,6 @@
 import { testApp } from '../testing/test-app';
 import type { AppConfigService } from '../config/app-config.service';
+import { TooManyRequestsException } from '../common/http-errors';
 import { authRoutes } from './auth.routes';
 import type { AuthService } from './auth.service';
 import type { LoginJournalService } from './login-journal.service';
@@ -8,7 +9,12 @@ import { denyAll, passThrough } from '../testing/require-auth';
 
 /** Routes montées sous leur préfixe avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés. */
 describe('auth routes', () => {
-  const auth = { login: jest.fn(), verifyTwoFactor: jest.fn() };
+  const auth = {
+    login: jest.fn(),
+    verifyTwoFactor: jest.fn(),
+    changePassword: jest.fn(),
+    disableTwoFactor: jest.fn(),
+  };
   const journal = { findAll: jest.fn() };
   const build = (requireAuth: RequireAuth) =>
     testApp(
@@ -74,6 +80,33 @@ describe('auth routes', () => {
         ORIGIN,
       );
     });
+  });
+
+  describe('ré-authentification sous quota', () => {
+    it.each<[string, 'changePassword' | 'disableTwoFactor', object]>([
+      [
+        'change-password',
+        'changePassword',
+        { currentPassword: 'a-long-password', newPassword: 'another-long-one' },
+      ],
+      ['2fa/disable', 'disableTwoFactor', { password: 'a-long-password' }],
+    ])(
+      'Given a locked account, When %s is called, Then 429 carries Retry-After in the API error format',
+      async (path, method, body) => {
+        auth[method].mockRejectedValueOnce(new TooManyRequestsException(840));
+
+        const res = await post(path, body);
+
+        expect(res.status).toBe(429);
+        expect(res.headers.get('retry-after')).toBe('840');
+        expect(await res.json()).toMatchObject({
+          statusCode: 429,
+          error: 'Too Many Requests',
+          message: 'Too Many Requests',
+          path: `/api/auth/${path}`,
+        });
+      },
+    );
   });
 
   describe('GET login-events', () => {

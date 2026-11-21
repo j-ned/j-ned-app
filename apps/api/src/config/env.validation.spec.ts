@@ -20,6 +20,34 @@ describe('validateEnv', () => {
     expect(result.LOG_LEVEL).toBe('debug'); // défaut auto en dev
   });
 
+  it('Given no JWT_EXPIRES_IN, When the env is read, Then a session lasts 24 hours', () => {
+    expect(validateEnv(baseValid).JWT_EXPIRES_IN).toBe('24h');
+  });
+
+  it('Given a JWT_EXPIRES_IN, When the env is read, Then it overrides the default', () => {
+    expect(
+      validateEnv({ ...baseValid, JWT_EXPIRES_IN: '2h' }).JWT_EXPIRES_IN,
+    ).toBe('2h');
+  });
+
+  it.each(['5m', '300s', '24h', '30d'])(
+    'Given JWT_EXPIRES_IN=%s, When the env is read, Then it is accepted',
+    (value) => {
+      expect(
+        validateEnv({ ...baseValid, JWT_EXPIRES_IN: value }).JWT_EXPIRES_IN,
+      ).toBe(value);
+    },
+  );
+
+  it.each(['0s', '4m', '31d', '3650d', '1w', '1 week', '', 'abc', '24'])(
+    'Given JWT_EXPIRES_IN=%s, When the env is read, Then startup fails naming the variable and its bounds',
+    (value) => {
+      expect(() =>
+        validateEnv({ ...baseValid, JWT_EXPIRES_IN: value }),
+      ).toThrow(/JWT_EXPIRES_IN.*between 5m and 30d/s);
+    },
+  );
+
   it('rejette PORT hors plage', () => {
     expect(() => validateEnv({ ...baseValid, PORT: '99999' })).toThrow(/PORT/);
   });

@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { durationMs } from '../common/duration';
 import { APP_ENVS, resolveDeployment } from './deployment';
 
 /**
@@ -13,6 +14,14 @@ const REQUIRED_IN_PRODUCTION = [
   'RESEND_API_KEY',
   'MAIL_FROM',
 ] as const;
+
+const SESSION_MIN_MS = 5 * 60_000;
+const SESSION_MAX_MS = 30 * 86_400_000;
+
+function isSessionDuration(value: string): boolean {
+  const ms = durationMs(value);
+  return ms !== undefined && ms >= SESSION_MIN_MS && ms <= SESSION_MAX_MS;
+}
 
 const baseEnvSchema = z.object({
   NODE_ENV: z
@@ -39,7 +48,10 @@ const baseEnvSchema = z.object({
   JWT_SECRET: z
     .string()
     .min(32, { message: 'JWT_SECRET must be at least 32 characters' }),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_EXPIRES_IN: z.string().default('24h').refine(isSessionDuration, {
+    message:
+      'JWT_EXPIRES_IN must be a duration between 5m and 30d, written <number><ms|s|m|h|d> (e.g. 24h)',
+  }),
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_INITIAL_PASSWORD: z
     .string()

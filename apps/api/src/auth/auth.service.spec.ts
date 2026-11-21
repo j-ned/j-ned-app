@@ -5,7 +5,11 @@ import {
   TooManyRequestsException,
 } from '../common/http-errors';
 import { MemoryThrottleStore, setThrottleStore } from '../common/throttle';
-import type { JwtService } from './jwt.service';
+import {
+  CHALLENGE_AUDIENCE,
+  SESSION_AUDIENCE,
+  type JwtService,
+} from './jwt.service';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { PasswordService } from './password.service';
@@ -20,6 +24,7 @@ describe('AuthService', () => {
   let twoFactor: jest.Mocked<TwoFactorService>;
   let jwt: jest.Mocked<JwtService>;
   let journal: { record: jest.Mock };
+  let now: number;
 
   const ORIGIN: LoginOrigin = { userAgent: 'Mozilla/5.0 test', country: 'FR' };
 
@@ -38,6 +43,7 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     setThrottleStore(new MemoryThrottleStore());
+    now = 1_000_000;
     users = {
       findById: jest.fn(),
       findByEmail: jest.fn(),
@@ -71,6 +77,7 @@ describe('AuthService', () => {
       twoFactor,
       jwt,
       journal as unknown as LoginJournalService,
+      () => now,
     );
   });
 
@@ -91,7 +98,7 @@ describe('AuthService', () => {
         token: 'jwt-token-final',
         user: { id: user.id, email: user.email, isTwoFactorEnabled: false },
       });
-      expect(jwt.sign).toHaveBeenCalledWith({
+      expect(jwt.sign).toHaveBeenCalledWith(SESSION_AUDIENCE, {
         sub: user.id,
         tokenVersion: user.tokenVersion,
       });
@@ -116,6 +123,7 @@ describe('AuthService', () => {
         challengeToken: 'challenge-token',
       });
       expect(jwt.sign).toHaveBeenCalledWith(
+        CHALLENGE_AUDIENCE,
         { sub: user.id, scope: '2fa-challenge' },
         { expiresIn: '5m' },
       );
@@ -174,6 +182,11 @@ describe('AuthService', () => {
       });
       expect(twoFactor.verifyTotpCode).toHaveBeenCalledWith('SECRET', '123456');
       expect(users.consumeBackupCode).not.toHaveBeenCalled();
+      expect(jwt.verify).toHaveBeenCalledWith(CHALLENGE_AUDIENCE, 'challenge');
+      expect(jwt.sign).toHaveBeenCalledWith(SESSION_AUDIENCE, {
+        sub: user.id,
+        tokenVersion: user.tokenVersion,
+      });
     });
 
     it('accepte un backup code valide, le consomme, retourne le token final', async () => {
@@ -398,6 +411,98 @@ describe('AuthService', () => {
     });
   });
 
+  describe('quota de ré-authentification par compte', () => {
+    const WINDOW_MS = 900_000;
+    const twoFactorUser = () => mkUser({ isTwoFactorEnabled: true });
+    const wrongChange = async (user: User) => {
+      password.verify.mockResolvedValue(false);
+      await expect(
+        service.changePassword(user, 'bad', 'new-password-12'),
+      ).rejects.toThrow(UnauthorizedException);
+    };
+    const wrongDisable = async (user: User) => {
+      password.verify.mockResolvedValue(false);
+      await expect(service.disableTwoFactor(user, 'bad')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    };
+
+    beforeEach(() => {
+      password.hash.mockResolvedValue('new-hash');
+    });
+
+    it('Given 5 wrong current passwords, When the right one comes within the quarter hour, Then changing the password gets 429 with the wait and nothing is checked', async () => {
+      const user = mkUser();
+      for (let attempt = 0; attempt < 5; attempt += 1) await wrongChange(user);
+      password.verify.mockClear();
+      password.verify.mockResolvedValue(true);
+      now += 60_000;
+
+      const refused = service.changePassword(user, 'good', 'new-password-12');
+
+      await expect(refused).rejects.toThrow(TooManyRequestsException);
+      await expect(refused).rejects.toMatchObject({ retryAfterSeconds: 840 });
+      expect(password.verify).not.toHaveBeenCalled();
+      expect(users.updatePassword).not.toHaveBeenCalled();
+    });
+
+    it('Given wrong passwords split between both routes, When the 6th comes on disabling 2FA, Then it gets 429: one counter per account', async () => {
+      const user = twoFactorUser();
+      for (let attempt = 0; attempt < 3; attempt += 1) await wrongChange(user);
+      for (let attempt = 0; attempt < 2; attempt += 1) await wrongDisable(user);
+      password.verify.mockResolvedValue(true);
+
+      await expect(service.disableTwoFactor(user, 'good')).rejects.toThrow(
+        TooManyRequestsException,
+      );
+      expect(users.disableTwoFactor).not.toHaveBeenCalled();
+    });
+
+    it('Given a locked account, When the quarter hour has passed, Then the right password is accepted again', async () => {
+      const user = mkUser();
+      for (let attempt = 0; attempt < 5; attempt += 1) await wrongChange(user);
+      password.verify.mockResolvedValue(true);
+      now += WINDOW_MS - 1;
+      await expect(
+        service.changePassword(user, 'good', 'new-password-12'),
+      ).rejects.toThrow(TooManyRequestsException);
+
+      now += 1;
+      await service.changePassword(user, 'good', 'new-password-12');
+
+      expect(users.updatePassword).toHaveBeenCalledWith(user.id, 'new-hash');
+    });
+
+    it('Given 4 wrong passwords then the right one, When 4 more wrong ones follow, Then none is locked out: a success clears the counter', async () => {
+      const user = mkUser();
+      for (let attempt = 0; attempt < 4; attempt += 1) await wrongChange(user);
+      password.verify.mockResolvedValue(true);
+      await service.changePassword(user, 'good', 'new-password-12');
+
+      for (let attempt = 0; attempt < 4; attempt += 1) await wrongChange(user);
+    });
+
+    it('Given a locked account, When another account re-authenticates, Then it keeps its own quota', async () => {
+      const locked = mkUser();
+      for (let attempt = 0; attempt < 5; attempt += 1)
+        await wrongChange(locked);
+
+      await wrongChange(mkUser({ id: 'user-456' }));
+    });
+
+    it('Given 5 wrong passwords at re-authentication, When the account logs in, Then the login is not locked', async () => {
+      const user = mkUser();
+      for (let attempt = 0; attempt < 5; attempt += 1) await wrongChange(user);
+      users.findByEmail.mockResolvedValue(user);
+      password.verify.mockResolvedValue(true);
+      jwt.sign.mockReturnValue('token');
+
+      await expect(
+        service.login(user.email, 'good-password', ORIGIN),
+      ).resolves.toMatchObject({ kind: 'authenticated' });
+    });
+  });
+
   describe('changePassword', () => {
     it('met à jour le password si currentPassword est valide', async () => {
       const user = mkUser();
@@ -503,6 +608,7 @@ describe('AuthService', () => {
       jwt.verify.mockReturnValue({ sub: 'u1', tokenVersion: 3 });
       await service.revokeSessionFromToken('valid.jwt');
       expect(users.revokeSessions).toHaveBeenCalledWith('u1');
+      expect(jwt.verify).toHaveBeenCalledWith(SESSION_AUDIENCE, 'valid.jwt');
     });
 
     it.each<[string | undefined, string]>([

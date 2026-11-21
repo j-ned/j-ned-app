@@ -5,7 +5,7 @@ import { UnauthorizedException } from '../common/http-errors';
 import type { UsersService } from '../users/users.service';
 import { AUTH_COOKIE_NAME } from './auth-cookie';
 import type { JwtPayload } from './jwt-payload.interface';
-import type { JwtService } from './jwt.service';
+import { SESSION_AUDIENCE, type JwtService } from './jwt.service';
 
 const BEARER = /^Bearer\s+(\S+)$/i;
 
@@ -14,7 +14,10 @@ const BEARER = /^Bearer\s+(\S+)$/i;
  * vérifié en HS256, qui n'est pas un jeton de challenge 2FA et dont la version n'a pas été révoquée
  * par une déconnexion. L'utilisateur est posé dans `c.var.user`.
  */
-export function requireAuth(jwt: JwtService, users: UsersService) {
+export function requireAuth(
+  jwt: JwtService,
+  users: Pick<UsersService, 'findById'>,
+) {
   return createMiddleware<AppEnv>(async (c, next) => {
     const token =
       getCookie(c, AUTH_COOKIE_NAME) ??
@@ -23,7 +26,7 @@ export function requireAuth(jwt: JwtService, users: UsersService) {
 
     let payload: JwtPayload;
     try {
-      payload = jwt.verify<JwtPayload>(token);
+      payload = jwt.verify<JwtPayload>(SESSION_AUDIENCE, token);
     } catch {
       throw new UnauthorizedException();
     }
