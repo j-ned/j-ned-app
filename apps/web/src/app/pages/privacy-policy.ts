@@ -17,8 +17,7 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
         Ce site ne dépose aucun cookie de suivi et n'utilise aucun service publicitaire. Voici,
         traitement par traitement, ce qui est collecté, pourquoi, et pour combien de temps. Le
         responsable de ces traitements est Julien Nédellec, joignable à
-        <a [href]="'mailto:' + identity.email" data-testid="privacy-email">{{ identity.email }}</a
-        >.
+        <a [href]="'mailto:' + identity.email" data-testid="privacy-email">{{ identity.email }}</a>.
       </p>
 
       <h2>Formulaire de contact</h2>
@@ -93,8 +92,7 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
       <p>
         Tu disposes d'un droit d'accès, de rectification, d'effacement et d'opposition sur les
         données qui te concernent. Pour l'exercer, écris à
-        <a [href]="'mailto:' + identity.email">{{ identity.email }}</a
-        >. Tu peux également saisir la
+        <a [href]="'mailto:' + identity.email">{{ identity.email }}</a>. Tu peux également saisir la
         <a href="https://www.cnil.fr" rel="noopener noreferrer" target="_blank">CNIL</a>.
       </p>
 
