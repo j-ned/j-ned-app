@@ -17,11 +17,14 @@ ne construit rien ; il tire les images publiées sur GHCR par la CI (`j-ned-app-
    publiées. Dokploy clone le dépôt à chaque déploiement : une modification de `compose.yaml` part
    donc à la fusion, comme le code. En mode **Raw**, Dokploy rejouerait le YAML collé dans son
    éditeur et ignorerait le dépôt.
-4. **Environment** : coller `portfolio.env.example` rempli.
+4. **Environment** : coller `portfolio.env.example` rempli (les deux variables `POSTGRES_APP_*`
+   restent commentées jusqu'à l'étape 6).
 5. **Domains** : service `portfolio-web`, port `3000`, HTTP (le TLS est celui de Cloudflare). Le bouton
-   _Preview Compose_ doit montrer `portfolio-web` sur `default` **et** `dokploy-network`, et les autres
-   services sur `default` seulement.
-6. **Premier déploiement** à la main (bouton Deploy), puis import des données (ci-dessous).
+   _Preview Compose_ doit montrer `portfolio-web` sur `default` **et** `dokploy-network`, la base sur
+   `portfolio-db` seulement, et aucun autre service sur `dokploy-network` (tableau de « Durcissement
+   de la pile »).
+6. **Premier déploiement** à la main (bouton Deploy), puis import des données (ci-dessous), puis
+   création du rôle Postgres de l'API ([postgres/README.md](postgres/README.md), étapes 1 et 2).
 7. **Déclenchement par la CI** : l'interrupteur _Autodeploy_ de Dokploy ne sert pas ici (il
    partirait avant la publication des images). C'est le workflow `Deploy` qui appelle Dokploy une fois
    les images publiées, après avoir validé `compose.yaml` (`deploy/compose.check.sh`). Secrets du dépôt : `DOKPLOY_URL` (adresse du panneau, sans `/`
@@ -68,6 +71,50 @@ cat ~/source.sql; } | docker exec -i <db> sh -c 'psql -q -U "$POSTGRES_USER" -d 
 Comparer ensuite quelques comptes de lignes des deux côtés et vérifier que l'admin se connecte, puis
 effacer le fichier, qui contient les données : `shred -u ~/source.sql; unset SOURCE`.
 
+## Durcissement de la pile
+
+Chaque service tourne sur un système de fichiers en lecture seule (`read_only`), sans capacité Linux
+(`cap_drop: [ALL]`), sans élévation de privilège (`no-new-privileges`), avec une mémoire et un nombre
+de processus bornés. `compose.check.sh` l'affirme sur la configuration résolue avant chaque
+déploiement, et refuse un service ajouté sans ces garanties.
+
+| Service             | Utilisateur              | Inscriptible                                                                          | Capacités rendues           | Mémoire, processus | Réseaux                      |
+| ------------------- | ------------------------ | ------------------------------------------------------------------------------------- | --------------------------- | ------------------ | ---------------------------- |
+| `portfolio-web`     | root, puis `ssr`/`nginx` | tmpfs `/etc/nginx/conf.d`, `/run` ; volume `portfolio-web-cache` (`/var/cache/nginx`) | CHOWN, KILL, SETGID, SETUID | 512 Mo, 256        | `default`, `dokploy-network` |
+| `portfolio-api`     | `node`                   | tmpfs `/tmp`                                                                          | aucune                      | 768 Mo, 256        | `default`, `portfolio-db`    |
+| `portfolio-migrate` | `node`                   | rien                                                                                  | aucune                      | 256 Mo, 64         | `portfolio-db`               |
+| `portfolio-cron`    | `node`                   | rien                                                                                  | aucune                      | 32 Mo, 16          | `default`                    |
+| `portfolio-db`      | `postgres`               | tmpfs `/run/postgresql` ; volume `portfolio-db-data`                                  | aucune                      | 1 Go, 256          | `portfolio-db`               |
+| `portfolio-backup`  | `postgres`               | volume `portfolio-backup-work` (`/tmp`)                                               | aucune                      | 256 Mo, 64         | `default`, `portfolio-db`    |
+
+- **Site** : son script de démarrage reste root pour lancer Node sous `ssr` et nginx sous `nginx`
+  (SETUID, SETGID), les surveiller et les arrêter (KILL), et nginx remet ses dossiers de cache à son
+  utilisateur (CHOWN). Sans l'une des quatre, le conteneur ne démarre pas. Le port 3000 ne demande pas
+  NET_BIND_SERVICE. S'en passer demanderait de changer l'image (nginx et Node lancés sans root).
+- **Cache du site et dossier de travail de la sauvegarde sur volume**, pas en tmpfs : un tmpfs compte
+  dans la mémoire du conteneur, et le cache des images va jusqu'à 1 Go, le dump jusqu'à la taille de
+  la base. Le cache survit désormais à un redéploiement ; le vider :
+  service arrêté, `docker volume rm <volume>` (celui qui finit par `portfolio-web-cache` dans
+  `docker volume ls`).
+- **Base** : lancée directement sous `postgres` (uid 70, déjà propriétaire du volume), donc sans les
+  capacités que demande le passage par root. À vérifier avant le premier déploiement durci :
+  `docker exec <db> stat -c %u /var/lib/postgresql/data` rend `70`.
+- **Réseaux** : `portfolio-db` est interne (aucune sortie) et ne relie la base qu'à l'API, aux
+  migrations et à la sauvegarde ; le site et le cron ne la voient pas. Aucun port n'est publié.
+- **Limites** : `mem_limit` et `pids_limit`, lues par `docker compose up` (un `deploy.resources` vise
+  Swarm). Un dépassement de mémoire tue le conteneur, que sa politique relance : `docker stats` donne
+  la consommation réelle, et `docker inspect <conteneur> --format '{{.State.OOMKilled}}'` dit si la
+  limite est trop basse. Au repos : site ~100 Mo, API ~70 Mo, base ~25 Mo.
+- **Premier déploiement durci** : tous les conteneurs sont recréés, base comprise. Le site et l'API
+  sont coupés le temps du redémarrage (de l'ordre de 30 s). Retour arrière : annuler le commit du
+  compose sur `master` et redéployer ; les données ne sont pas touchées.
+
+## Rôle Postgres de l'API
+
+L'API se connecte avec un rôle qui lit et écrit les lignes sans aucun droit sur le schéma ; les
+migrations et la sauvegarde gardent le rôle propriétaire. Création du rôle, privilèges, mise en
+service pas à pas et retours arrière : [postgres/README.md](postgres/README.md).
+
 ## Sauvegardes
 
 Le service `portfolio-backup` envoie chaque nuit (3 h UTC) un dump chiffré dans le bucket. `<backup>`
@@ -75,7 +122,8 @@ est son conteneur.
 
 - Sauvegarde immédiate : `docker exec <backup> backup.sh once`
 - Restauration dans une base **vide** : créer la base, puis
-  `docker exec -e PGDATABASE=<base> <backup> backup.sh restore <objet>`
+  `docker exec -e PGDATABASE=<base> <backup> backup.sh restore <objet>`. Les privilèges ne sont pas
+  dans la sauvegarde : rejouer `postgres/app-role.sql` dans la base restaurée avant d'y brancher l'API.
 - La phrase `BACKUP_PASSPHRASE` se conserve aussi hors du serveur : sans elle, aucune sauvegarde ne
   se déchiffre.
 - Un échec n'alerte personne : il s'écrit dans les journaux du conteneur. Regarder le bucket de temps

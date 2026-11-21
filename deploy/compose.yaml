@@ -10,17 +10,46 @@
 # - Noms de service préfixés : `dokploy-network` est partagé avec les autres piles du serveur, où un
 #   nom comme `api` ou `postgres` pourrait désigner le conteneur d'un autre projet.
 # - Retour à une version : fixer `WEB_IMAGE` / `API_IMAGE` sur un tag `sha-<commit>` et redéployer.
+# - Durcissement : chaque service tourne sur un système de fichiers en lecture seule, sans capacité
+#   Linux ni élévation de privilège, sous un utilisateur sans privilège, avec une mémoire et un nombre
+#   de processus bornés. Les exceptions sont motivées sur place ; `compose.check.sh` affirme
+#   l'ensemble avant chaque déploiement (détail : README, « Durcissement de la pile »).
+# - Réseaux : la base n'est que sur `portfolio-db`, réseau interne (sans sortie) partagé avec l'API,
+#   les migrations et la sauvegarde. Ni le site ni le cron ne peuvent l'atteindre.
 
 name: portfolio
+
+# Socle commun. `mem_limit` et `pids_limit` sont les clés lues par `docker compose up`, la commande
+# de Dokploy pour un service Compose (`deploy.resources` vise Swarm).
+x-durci: &durci
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
 
 services:
   portfolio-web:
     image: ${WEB_IMAGE:-ghcr.io/j-ned/j-ned-app-web:latest}
     pull_policy: ${PULL_POLICY:-always}
     restart: unless-stopped
+    <<: *durci
+    # Le script de démarrage reste root pour lancer Node sous `ssr` et nginx sous `nginx`, puis les
+    # surveiller : SETUID/SETGID pour changer d'utilisateur, KILL pour signaler ces processus d'un
+    # autre utilisateur, CHOWN pour remettre les dossiers de cache à `nginx`. Le port 3000 n'exige
+    # pas NET_BIND_SERVICE.
+    cap_add: [CHOWN, KILL, SETGID, SETUID]
+    mem_limit: 512m
+    pids_limit: 256
     environment:
       API_UPSTREAM: http://portfolio-api:3000
       SSR_FORWARD_SECRET: ${SSR_FORWARD_SECRET:?}
+    # Configuration générée au démarrage depuis le gabarit (envsubst) et fichier pid de nginx.
+    tmpfs:
+      - /etc/nginx/conf.d:size=1m
+      - /run:size=1m
+    # Cache des images (1 Go au plus) et du rendu, tampons de nginx : sur disque, un tmpfs les
+    # compterait dans la mémoire du conteneur.
+    volumes:
+      - portfolio-web-cache:/var/cache/nginx
     networks:
       - default
       - dokploy-network
@@ -34,9 +63,22 @@ services:
         condition: service_healthy
       portfolio-migrate:
         condition: service_completed_successfully
+    <<: *durci
+    user: node
+    mem_limit: 768m
+    pids_limit: 256
+    # libvips (sharp) y dépose ses fichiers temporaires pour les grandes images.
+    tmpfs:
+      - /tmp:size=64m
+    networks:
+      - default
+      - portfolio-db
     environment:
       - APP_ENV=production
-      - DATABASE_URL=postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@portfolio-db:5432/${POSTGRES_DB:?}
+      # Rôle applicatif (lecture et écriture des lignes, aucun droit sur le schéma) dès que
+      # POSTGRES_APP_USER et POSTGRES_APP_PASSWORD sont renseignées ensemble ; sinon le rôle
+      # propriétaire, le temps de créer le rôle (`postgres/README.md`).
+      - DATABASE_URL=postgres://${POSTGRES_APP_USER:-${POSTGRES_USER:?}}:${POSTGRES_APP_PASSWORD:-${POSTGRES_PASSWORD:?}}@portfolio-db:5432/${POSTGRES_DB:?}
       - JWT_SECRET=${JWT_SECRET:?}
       - CORS_ORIGINS=${CORS_ORIGINS:?}
       - CRON_SECRET=${CRON_SECRET:?}
@@ -65,6 +107,13 @@ services:
     depends_on:
       portfolio-db:
         condition: service_healthy
+    <<: *durci
+    user: node
+    mem_limit: 256m
+    pids_limit: 64
+    networks:
+      - portfolio-db
+    # Rôle propriétaire du schéma : le seul à pouvoir le modifier.
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@portfolio-db:5432/${POSTGRES_DB:?}
 
@@ -76,6 +125,10 @@ services:
     restart: unless-stopped
     depends_on:
       - portfolio-api
+    <<: *durci
+    user: node
+    mem_limit: 32m
+    pids_limit: 16
     environment:
       CRON_SECRET: ${CRON_SECRET:?}
     healthcheck:
@@ -96,6 +149,17 @@ services:
   portfolio-db:
     image: postgres:17-alpine
     restart: unless-stopped
+    <<: *durci
+    # Démarrage direct sous `postgres` (uid 70, déjà propriétaire du volume) : sans passage par root,
+    # l'image n'a besoin d'aucune capacité.
+    user: postgres
+    mem_limit: 1g
+    pids_limit: 256
+    # Socket et fichier de verrou du serveur.
+    tmpfs:
+      - /run/postgresql:size=1m
+    networks:
+      - portfolio-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
@@ -116,6 +180,18 @@ services:
     depends_on:
       portfolio-db:
         condition: service_healthy
+    <<: *durci
+    user: postgres
+    mem_limit: 256m
+    pids_limit: 64
+    # Dossier de travail du script (dump en clair, puis chiffré, effacés après l'envoi) : sur disque,
+    # un tmpfs compterait la taille de la base dans la mémoire du conteneur.
+    volumes:
+      - portfolio-backup-work:/tmp
+    # `default` pour sortir vers le bucket, `portfolio-db` pour joindre la base.
+    networks:
+      - default
+      - portfolio-db
     environment:
       PGHOST: portfolio-db
       PGUSER: ${POSTGRES_USER:?}
@@ -129,7 +205,12 @@ services:
 
 volumes:
   portfolio-db-data:
+  portfolio-web-cache:
+  portfolio-backup-work:
 
 networks:
   dokploy-network:
     external: true
+  # Sans passerelle : rien n'y entre ni n'en sort, la base ne parle qu'aux services qui y sont joints.
+  portfolio-db:
+    internal: true
