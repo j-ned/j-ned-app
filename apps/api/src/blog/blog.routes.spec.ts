@@ -8,6 +8,8 @@ import { blogRoutes } from './blog.routes';
 import type { BlogService } from './blog.service';
 import { fileForm } from '../testing/multipart';
 import { denyAll, passThrough } from '../testing/require-auth';
+import { BlogCommentsService } from '../blog-comments/blog-comments.service';
+import { MemoryCommentStore } from '../testing/memory-comment-store';
 
 const ID = '11111111-1111-4111-8111-111111111111';
 const POST = { id: ID, slug: 'mon-article', title: 'Mon article' };
@@ -38,6 +40,11 @@ describe('blog routes (HTTP)', () => {
       blogRoutes(
         blog as unknown as BlogService,
         {} as BlogContentImagesService,
+        new BlogCommentsService(
+          new MemoryCommentStore(),
+          { sendMail: () => Promise.resolve() },
+          () => 'sender',
+        ),
         auth,
       ),
     );
@@ -66,6 +73,20 @@ describe('blog routes (HTTP)', () => {
       ...(json !== undefined ? { body: JSON.stringify(json) } : {}),
     });
   };
+
+  describe('comments', () => {
+    it('Given the blog routes, When a comment is sent to an unknown post, Then the comment routes answer, beside the post routes', async () => {
+      const res = await call('/posts/inconnu/comments', {
+        method: 'POST',
+        json: { name: 'Camille', email: 'camille@example.test', body: 'Merci' },
+      });
+
+      expect(res.status).toBe(404);
+      expect(await res.json()).toMatchObject({
+        message: 'Article introuvable.',
+      });
+    });
+  });
 
   describe('public reads', () => {
     it('GET /posts leaves out the Markdown body but keeps its word count', async () => {

@@ -6,6 +6,7 @@ import * as contactMessages from './contact-messages';
 import * as cvFiles from './cv-files';
 import * as analytics from './analytics';
 import * as blogPosts from './blog-posts';
+import * as blogComments from './blog-comments';
 import * as profileContent from './profile-content';
 import * as loginEvents from './login-events';
 
@@ -16,6 +17,7 @@ export * from './contact-messages';
 export * from './cv-files';
 export * from './analytics';
 export * from './blog-posts';
+export * from './blog-comments';
 export * from './profile-content';
 export * from './login-events';
 
@@ -27,6 +29,7 @@ export const schema = {
   ...cvFiles,
   ...analytics,
   ...blogPosts,
+  ...blogComments,
   ...profileContent,
   ...loginEvents,
 } as const;

@@ -34,7 +34,7 @@ Pas de framework d'injection : `src/main.ts` lit la configuration, ouvre les con
 - **`src/services.ts`** - `createServices()` : racine de composition, chaque service reçoit ses dépendances par son constructeur (une instance chacun).
 - **`src/create-app.ts`** - `createApp()` : middlewares globaux (log des requêtes, en-têtes de sécurité, CORS, contrôle d'origine), puis les routes de chaque module (`<module>/<module>.routes.ts`, une fabrique `xxxRoutes(services…, requireAuth)` par module), erreur et 404 au format JSON.
 - **`src/common/`** - briques HTTP partagées : `http.ts` (corps JSON validé, query, UUID, fichiers envoyés, IP du visiteur), `validation.ts` (DTO zod), `throttle.ts` (quotas), `cross-origin.ts` (CSRF), `error-handler.ts`, `logger.ts`, `http-errors.ts`.
-- **Tâche quotidienne** - `GET /api/cron/daily` (service `portfolio-cron` de la pile, 00:00 UTC) : rollup analytics (`src/analytics/analytics.schedule.ts`), puis purge du journal des connexions de plus de 90 jours. En local : `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/daily`.
+- **Tâche quotidienne** - `GET /api/cron/daily` (service `portfolio-cron` de la pile, 00:00 UTC) : rollup analytics (`src/analytics/analytics.schedule.ts`), puis purge du journal des connexions de plus de 90 jours et des commentaires refusés depuis plus de 30 jours. En local : `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/daily`.
 
 Arrêt (`SIGTERM`, relayé par tini) : plus de nouvelle requête, celles en cours se terminent, puis le pool Postgres et S3 sont fermés.
 
@@ -79,7 +79,7 @@ PostgreSQL 17-alpine dans un container Podman/Docker dédié (`portfolio-db`, `c
 
 ### Schéma actuel (`src/database/schema/`)
 
-Une table par module métier réellement implémenté : `users`, `project`, `project_image`, `contact_message`, `cv_file`, `blog_post`, `profile_content` (une seule ligne), plus les tables analytics (`page_view`, `analytics_event`, `daily_stat`).
+Une table par module métier réellement implémenté : `users`, `project`, `project_image`, `contact_message`, `cv_file`, `blog_post`, `blog_comment`, `profile_content` (une seule ligne), plus les tables analytics (`page_view`, `analytics_event`, `daily_stat`).
 
 ### Workflow migrations
 
@@ -211,7 +211,7 @@ Liste réelle (`package.json`) - pas de script `s3:*` (démarrer MinIO à la mai
 | `pnpm db:reset`                                  | Wipe volume + recrée + migrate + seed (dev only)                                                                                              |
 | `pnpm sentry:check-instrumentation`              | Vérifie que Sentry trace `@Injectable`, `@Catch`, `@Cron` (`scripts/check-sentry-instrumentation.cjs`, après `pnpm build`)                    |
 
-**CI** (`.github/workflows/api-ci.yml`, à chaque PR et sur `master`) : `install --frozen-lockfile`, `lint:check`, `format:check`, `typecheck`, `pnpm test` **avec** les tests d'intégration (service `postgres:17-alpine`, bases jetables `PROFILE_IT_DATABASE_URL` et `DEMO_IT_DATABASE_URL`), `build`, puis la suite de parité HTTP contre l'API construite, lancée par Node devant une base jetable. Le job `image` construit ensuite l'image du conteneur, joue ses migrations sur un Postgres jetable et interroge sa sonde ; sur `master`, elle est publiée sur GHCR (ADR-0038).
+**CI** (`.github/workflows/api-ci.yml`, à chaque PR et sur `master`) : `install --frozen-lockfile`, `lint:check`, `format:check`, `typecheck`, `pnpm test` **avec** les tests d'intégration (service `postgres:17-alpine`, bases jetables `PROFILE_IT_DATABASE_URL`, `DEMO_IT_DATABASE_URL` et `COMMENTS_IT_DATABASE_URL`), `build`, puis la suite de parité HTTP contre l'API construite, lancée par Node devant une base jetable. Le job `image` construit ensuite l'image du conteneur, joue ses migrations sur un Postgres jetable et interroge sa sonde ; sur `master`, elle est publiée sur GHCR (ADR-0038).
 
 ## S3 Storage
 
@@ -272,6 +272,39 @@ CRUD admin des articles de blog + endpoints publics de consultation/like. Le fro
 
 **Lifecycle S3** : identique à Projects (key `blog/<id>.<ext>`, ordre upload → update DB → cleanup ancienne clé).
 
+## Commentaires du blog
+
+Un lecteur commente un article publié avec un nom et un e-mail, sans compte. **Rien n'est publié sans la validation du propriétaire** ; un seul niveau de réponse ; texte brut (aucune balise interprétée, l'échappement est l'affaire du rendu). Module `src/blog-comments/`, monté dans les routes du blog.
+
+**Schéma** : table `blog_comment` (migration `0036_blog_comment.sql`) : `post_id` (cascade depuis `blog_post`), `parent_id`, `depth` et `parent_depth`, `status` (`pending` / `published` / `refused`), `moderated_at`, `author_kind` (`visitor` / `owner`), `author_name`, `author_email`, `sender_hash`, `body`, `created_at`. La base porte elle-même les règles, quel que soit le code qui écrit :
+
+- **un seul niveau, sur le même article** : clé étrangère composite `(parent_id, post_id, parent_depth) → (id, post_id, depth)` avec `parent_depth = 0` imposé par `CHECK` ; une réponse à une réponse ou à un commentaire d'un autre article est refusée ; supprimer un commentaire supprime ses réponses ;
+- statut cohérent avec `moderated_at` ; un visiteur a un nom (2 à 80 caractères) et un e-mail, le propriétaire n'a ni nom, ni e-mail, ni empreinte et n'est jamais `pending` ; corps de 2 à 2 000 caractères.
+
+**7 endpoints sous `/api/blog`** :
+
+| Méthode | Chemin                         | Auth | Rôle                                                                                                                                                                                                                    |
+| ------- | ------------------------------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/blog/posts/:slug/comments`   | ❌   | Commentaires publiés d'un article **publié**, du plus ancien au plus récent, chacun avec toutes ses réponses publiées. Paginé sur les commentaires (`?page&limit`, 10 par défaut, 100 au plus). 404 sinon. 120 req/min. |
+| POST    | `/blog/posts/:slug/comments`   | ❌   | Envoi d'un commentaire ou d'une réponse (`parentId`). **202 sans corps**, en attente de validation. **Quota : 5 par heure et par IP** (`COMMENT_THROTTLE`). 400, 404, 409, 413, 429, 503 (voir ci-dessous).             |
+| GET     | `/blog/comments`               | ✅   | File de modération paginée (`?status=pending\|published\|refused&page&limit`), du plus récent au plus ancien, avec l'article, l'auteur (e-mail compris), le parent et le nombre de réponses.                            |
+| GET     | `/blog/comments/pending-count` | ✅   | `{ count }` des commentaires en attente.                                                                                                                                                                                |
+| PATCH   | `/blog/comments/:id`           | ✅   | `{ status: "published" \| "refused" }`. Transitions permises : en attente → publié, en attente → refusé, publié → refusé. 409 sinon, et 409 pour publier une réponse dont le parent n'est pas publié. 60 req/min.       |
+| DELETE  | `/blog/comments/:id`           | ✅   | Suppression définitive, réponses comprises. 204, 404. 60 req/min.                                                                                                                                                       |
+| POST    | `/blog/comments/:id/replies`   | ✅   | `{ body }` : réponse du propriétaire à un commentaire **publié**, publiée immédiatement (`author.kind = "owner"`), sans notification. 201, 404, 409 (parent non publié, ou parent qui est une réponse). 60 req/min.     |
+
+**Sortie publique, sans e-mail par construction** : `{ data: [{ id, author: { kind: "visitor", name } | { kind: "owner" }, body, createdAt, replies: [{ id, author, body, createdAt }] }], total, page, limit }`. La requête ne lit ni `author_email` ni `sender_hash` (liste de colonnes fermée, `DrizzleCommentStore`), et la route renvoie `publicCommentPageSchema.parse(...)` (`public-comment.ts`), qui retire toute clé non déclarée.
+
+**Entrée** (`dto/create-comment.dto.ts`, objet strict) : `name` (2 à 80 caractères, sans caractère de contrôle ni contrôle bidirectionnel), `email`, `body` (retours chariot normalisés en `\n`, 2 à 2 000 caractères, sans caractère de contrôle hors `\n` et `\t`, chevrons acceptés), `parentId` (UUID, facultatif), `website` (champ piège). Les longueurs se comptent en caractères, comme `char_length` côté base.
+
+**Ordre de traitement d'un envoi** : champ piège rempli → 202, rien d'écrit ni d'envoyé ; article inconnu ou non publié → 404 ; parent inconnu, d'un autre article, en attente ou refusé → 404 (l'existence d'un commentaire non publié ne fuit pas) ; parent qui est une réponse → 409 ; 3 commentaires déjà en attente pour cet expéditeur (`PENDING_PER_SENDER`, compté en base sur l'empreinte HMAC de l'IP) → 429 ; 100 commentaires en attente au total (`PENDING_TOTAL`) → 503 ; sinon insertion, puis notification. Comptage et insertion se font dans une transaction sous verrou consultatif (`pg_advisory_xact_lock`) : deux envois simultanés ne dépassent pas les plafonds. Le quota par IP vit en mémoire (remis à zéro au redémarrage), les plafonds en base.
+
+**Notification** : template Resend **`comment-notification`** (`COMMENT_NOTIFICATION_TEMPLATE`), à créer dans le dashboard Resend, envoyé à `OWNER_EMAIL`, `reply_to` = adresse du commentateur, objet `Commentaire en attente : <titre>`. Variables : `NAME`, `SENDER_EMAIL`, `POST_TITLE`, `POST_SLUG`, `PARENT_NAME` (vide pour un commentaire ; nom de l'auteur du commentaire parent pour une réponse), `MESSAGE`, `YEAR`. Envoi fire-and-forget après l'insertion : un échec (template absent compris) est journalisé en erreur, sans adresse, et remonte à Sentry ; le commentaire reste dans la file de l'admin. Aucun mail ne part vers l'adresse saisie.
+
+**Conservation** : un commentaire refusé est supprimé 30 jours après son refus par la tâche quotidienne (`purgeExpired`), avec ses réponses ; un commentaire disparaît avec son article.
+
+**Tests** : `blog-comments.routes.spec.ts` joue les scénarios HTTP (`src/testing/comment-route-scenarios.ts`) sur un stockage en mémoire ; `blog-comments.integration.spec.ts` les rejoue sur un vrai Postgres et y ajoute les garanties de la base (insertions SQL directes refusées, cascades, plafonds sous concurrence) : `COMMENTS_IT_DATABASE_URL=… pnpm test -- blog-comments.integration` (base dédiée, migrée puis vidée ; ignoré sans cette variable).
+
 ## Profile (page Parcours)
 
 Contenu de `/about` édité depuis l'admin (spec front 021, ADR-0023 du front) : **un document unique** versionné, lu à la requête par le front (rendu serveur, spec front 022 : aucune écriture ne déclenche de rebuild), l'identité (phrase d'accroche commune, nom, ville, réseaux) restant dans le code du front.
@@ -291,7 +324,7 @@ Contenu de `/about` édité depuis l'admin (spec front 021, ADR-0023 du front) :
 
 ## Mailer
 
-Envoi par l'API HTTP de [Resend](https://resend.com) (`fetch`, sans SDK ni SMTP), consommé par Contact. Domaine `nedellec-julien.fr` vérifié dans Resend (DKIM + SPF via le sous-domaine `send`).
+Envoi par l'API HTTP de [Resend](https://resend.com) (`fetch`, sans SDK ni SMTP), consommé par Contact et par les commentaires du blog. Domaine `nedellec-julien.fr` vérifié dans Resend (DKIM + SPF via le sous-domaine `send`).
 
 **Dev local** : une clé Resend dans `.env.local` ; les mails partent réellement (vers `OWNER_EMAIL`). Sans clé, ils sont seulement journalisés.
 **Démonstration** (`APP_ENV=preview`) : aucun envoi, quelles que soient les variables (`LogMailer`).
@@ -388,7 +421,7 @@ Collecte de page-views/events custom du portfolio public + agrégation quotidien
 
 ## État réel
 
-Modules réellement présents et livrés : Fondations, Auth, S3 Storage, Projects, Blog, Profile, Mailer, Contact, CV, Analytics, Runtime Config.
+Modules réellement présents et livrés : Fondations, Auth, S3 Storage, Projects, Blog, Commentaires du blog, Profile, Mailer, Contact, CV, Analytics, Runtime Config.
 
 ## Licence
 

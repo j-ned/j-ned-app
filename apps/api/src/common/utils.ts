@@ -86,3 +86,7 @@ function hasPgViolation(err: unknown, code: string, hint?: string): boolean {
 /** Violation d'unicité (`23505`), éventuellement sur une contrainte dont le nom contient `columnHint`. */
 export const isUniqueViolation = (err: unknown, columnHint?: string): boolean =>
   hasPgViolation(err, '23505', columnHint);
+
+// Violation de clé étrangère (`23503`) : la ligne référencée a disparu entre la lecture et l'écriture.
+export const isForeignKeyViolation = (err: unknown): boolean =>
+  hasPgViolation(err, '23503');

@@ -1,5 +1,6 @@
 import type { AnalyticsAggregatorService } from '../analytics/analytics-aggregator.service';
 import type { LoginJournalService } from '../auth/login-journal.service';
+import { defined } from '../testing/defined';
 import { testApp } from '../testing/test-app';
 import { cronRoutes } from './cron.routes';
 
@@ -12,6 +13,9 @@ describe('cron routes', () => {
   const loginJournal = {
     purgeExpired: jest.fn().mockResolvedValue(undefined),
   };
+  const comments = {
+    purgeExpired: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
+  };
   const app = (secret: string | undefined) =>
     testApp(
       '/api/cron',
@@ -19,6 +23,7 @@ describe('cron routes', () => {
         secret,
         aggregator: aggregator as unknown as AnalyticsAggregatorService,
         loginJournal: loginJournal as unknown as LoginJournalService,
+        comments,
       }),
     );
 
@@ -50,6 +55,39 @@ describe('cron routes', () => {
     });
 
     expect(res.status).toBe(500);
+  });
+
+  it('Given the cron bearer, When /daily is called, Then expired refused comments are purged, after the login journal', async () => {
+    const res = await app(SECRET).request('/api/cron/daily', {
+      headers: { authorization: `Bearer ${SECRET}` },
+    });
+
+    expect(res.status).toBe(200);
+    expect(comments.purgeExpired).toHaveBeenCalledTimes(1);
+    expect(
+      defined(comments.purgeExpired.mock.invocationCallOrder[0]),
+    ).toBeGreaterThan(
+      defined(loginJournal.purgeExpired.mock.invocationCallOrder[0]),
+    );
+  });
+
+  it('Given the purge of refused comments fails, When /daily is called, Then 500 so the scheduler sees the failure', async () => {
+    comments.purgeExpired.mockRejectedValueOnce(new Error('db down'));
+
+    const res = await app(SECRET).request('/api/cron/daily', {
+      headers: { authorization: `Bearer ${SECRET}` },
+    });
+
+    expect(res.status).toBe(500);
+  });
+
+  it('Given a wrong bearer, When /daily is called, Then no comment is purged', async () => {
+    const res = await app(SECRET).request('/api/cron/daily', {
+      headers: { authorization: 'Bearer nope' },
+    });
+
+    expect(res.status).toBe(401);
+    expect(comments.purgeExpired).not.toHaveBeenCalled();
   });
 
   it.each([undefined, 'Bearer nope', SECRET])(

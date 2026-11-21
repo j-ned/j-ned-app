@@ -63,6 +63,15 @@ describe('rate limiting per visitor', () => {
     expect((await contact()).status).toBe(429);
   });
 
+  it('Given a visitor, When it sends a 6th comment within an hour, Then it gets 429 (invalid bodies count too)', async () => {
+    const visitor = newVisitor();
+    const comment = () =>
+      visitor.request('POST', '/api/blog/posts/parity-unknown-slug/comments', { json: {} });
+
+    expect(await statuses(5, comment)).toEqual([400, 400, 400, 400, 400]);
+    expectApiError(await comment(), 429, '/api/blog/posts/parity-unknown-slug/comments');
+  });
+
   it('Given a visitor, When it calls a route under the default quota 11 times in a minute, Then the 11th gets 429', async () => {
     const visitor = newVisitor();
     const health = () => visitor.request('GET', '/api/health');

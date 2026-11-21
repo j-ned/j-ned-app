@@ -33,7 +33,8 @@ up() {
 
   DATABASE_URL="$PARITY_DATABASE_URL" pnpm --dir "$API_DIR" --silent db:migrate
 
-  # S3 et Resend ne sont joints qu'à l'usage : la suite n'envoie ni fichier valide ni message.
+  # S3 n'est joint qu'à l'usage : la suite n'envoie aucun fichier valide. Sans clé Resend, les mails
+  # sont seulement journalisés : la suite poste un commentaire, aucun appel ne doit sortir.
   (
     cd "$API_DIR"
     NODE_ENV=production PORT="$API_PORT" \
@@ -42,7 +43,6 @@ up() {
       CORS_ORIGINS=https://nedellec-julien.fr \
       S3_ENDPOINT=http://s3.invalid:9000 S3_REGION=auto \
       S3_ACCESS_KEY=parity S3_SECRET_KEY=parity-secret \
-      RESEND_API_KEY=re_parity MAIL_FROM=parity@parity.test \
       nohup node dist/main.js >"$LOG_FILE" 2>&1 &
     echo $! >"$PID_FILE"
   )

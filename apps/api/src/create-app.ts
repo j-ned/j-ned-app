@@ -70,7 +70,12 @@ export function createApp(
       )
       .route(
         '/api/blog',
-        blogRoutes(services.blog, services.blogContentImages, session),
+        blogRoutes(
+          services.blog,
+          services.blogContentImages,
+          services.blogComments,
+          session,
+        ),
       )
       .route(
         '/api/profile',
@@ -91,6 +96,7 @@ export function createApp(
           secret: config.cronSecret,
           aggregator: services.analyticsAggregator,
           loginJournal: services.loginJournal,
+          comments: services.blogComments,
         }),
       )
       .notFound(handleNotFound)

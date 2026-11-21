@@ -253,6 +253,13 @@
       "when": 1795110989714,
       "tag": "0035_login_event",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1795293741818,
+      "tag": "0036_blog_comment",
+      "breakpoints": true
     }
   ]
 }
