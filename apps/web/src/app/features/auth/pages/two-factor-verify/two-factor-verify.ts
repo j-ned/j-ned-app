@@ -2,7 +2,7 @@ import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/cor
 import { FormField, FormRoot, form, pattern, required } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AuthStore } from '@core/auth/auth-store';
+import { AuthStore, type TwoFactorOutcome } from '@core/auth/auth-store';
 import { AppIcon } from '@shared/icons/app-icon';
 import { StatusMessage } from '@shared/ui/status-message';
 import { Button } from '@shared/ui/button';
@@ -10,6 +10,12 @@ import { AppIconTile } from '@shared/ui/icon-tile';
 import { FieldError } from '@shared/ui/field-error';
 
 const TOTP_PATTERN = /^\d{6}$/;
+
+const VERIFICATION_FAILURE_MESSAGES = {
+  'invalid-code': 'Code invalide ou expiré, réessaie ou reconnecte-toi',
+  throttled: 'Trop de tentatives, réessaie dans quelques minutes',
+  error: 'Vérification impossible pour le moment, réessaie dans un instant',
+} satisfies Record<Exclude<TwoFactorOutcome, 'success'>, string>;
 
 @Component({
   selector: 'app-two-factor-verify',
@@ -118,12 +124,8 @@ export class TwoFactorVerify {
       );
       if (result === 'success') {
         await this.router.navigate(['/admin']);
-      } else if (result === 'invalid-code') {
-        this.errorMessage.set('Code invalide ou expiré, réessaie ou reconnecte-toi');
-      } else if (result === 'throttled') {
-        this.errorMessage.set('Trop de tentatives, réessaie dans quelques minutes');
       } else {
-        this.errorMessage.set('Vérification impossible pour le moment, réessaie dans un instant');
+        this.errorMessage.set(VERIFICATION_FAILURE_MESSAGES[result]);
       }
     } catch {
       this.errorMessage.set('Erreur de vérification');

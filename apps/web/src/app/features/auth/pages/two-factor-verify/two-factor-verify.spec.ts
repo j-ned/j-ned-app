@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { firstValueFrom, of, type Observable } from 'rxjs';
 import { TwoFactorVerify } from './two-factor-verify';
-import { AuthStore } from '@core/auth/auth-store';
+import { AuthStore, type TwoFactorOutcome } from '@core/auth/auth-store';
 import { ToastStore } from '@core/notifications/toast-store';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
@@ -32,7 +32,7 @@ describe('TwoFactorVerify a11y', () => {
           provide: AuthStore,
           useValue: {
             pendingChallengeToken: signal('challenge-token-test'),
-            verifyTwoFactor: (): Observable<string> => of('success'),
+            verifyTwoFactor: (): Observable<TwoFactorOutcome> => of('success'),
           },
         },
       ],

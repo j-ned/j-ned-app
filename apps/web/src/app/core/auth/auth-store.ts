@@ -16,7 +16,7 @@ import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 // httpOnly reste la source de vérité ; l'indice évite seulement un 401 par visite anonyme.
 export const SESSION_HINT_KEY = 'auth:session';
 
-type LoginOutcome = 'success' | 'two-factor' | 'invalid-credentials' | 'throttled' | 'error';
+export type LoginOutcome = 'success' | 'two-factor' | 'invalid-credentials' | 'throttled' | 'error';
 
 function loginFailure(error: unknown): LoginOutcome {
   if (!(error instanceof HttpErrorResponse)) return 'error';
@@ -25,7 +25,7 @@ function loginFailure(error: unknown): LoginOutcome {
   return error.status === 429 ? 'throttled' : 'error';
 }
 
-type TwoFactorOutcome = 'success' | 'invalid-code' | 'throttled' | 'error';
+export type TwoFactorOutcome = 'success' | 'invalid-code' | 'throttled' | 'error';
 
 function twoFactorFailure(error: unknown): TwoFactorOutcome {
   if (!(error instanceof HttpErrorResponse)) return 'error';

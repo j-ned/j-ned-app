@@ -3,7 +3,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, type Observable } from 'rxjs';
 import { Login } from './login';
-import { AuthStore } from '@core/auth/auth-store';
+import { AuthStore, type LoginOutcome } from '@core/auth/auth-store';
 import { ToastStore } from '@core/notifications/toast-store';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
@@ -27,7 +27,7 @@ describe('Login a11y', () => {
       imports: [Login],
       providers: [
         provideRouter([]),
-        { provide: AuthStore, useValue: { login: (): Observable<string> => of('success') } },
+        { provide: AuthStore, useValue: { login: (): Observable<LoginOutcome> => of('success') } },
         { provide: ToastStore, useValue: { add: (): void => undefined } },
       ],
     }).compileComponents();
