@@ -24,7 +24,9 @@ export function violationsOf(schema: z.ZodType, body: unknown): Violation[] {
 export function invalidProperties(schema: z.ZodType, body: unknown): string[] {
   return [
     ...new Set(
-      violationsOf(schema, body).map(({ path }) => path.split('.')[0]),
+      violationsOf(schema, body).flatMap(({ path }) =>
+        path.split('.').slice(0, 1),
+      ),
     ),
   ];
 }

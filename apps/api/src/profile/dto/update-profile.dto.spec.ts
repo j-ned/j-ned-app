@@ -8,6 +8,7 @@ import { PROFILE_LIMITS } from '../profile-limits';
 import { PROFILE_SEED } from '../profile.seed';
 import { aProfileContent } from '../../testing/profile-test-builders';
 import { updateProfileSchema } from './update-profile.dto';
+import { defined } from '../../testing/defined';
 
 type DeepMutable<T> = T extends readonly (infer U)[]
   ? DeepMutable<U>[]
@@ -79,12 +80,12 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
       [
         'highlights.0.title',
         L.highlight.title,
-        (b, v) => (b.highlights[0].title = v),
+        (b, v) => (defined(b.highlights[0]).title = v),
       ],
       [
         'diplomas.0.skills',
         L.diploma.skill,
-        (b, v) => (b.diplomas[0].skills[0] = v),
+        (b, v) => (defined(b.diplomas[0]).skills[0] = v),
       ],
     ];
 
@@ -162,17 +163,17 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
     ],
     [
       'a non-UUID id',
-      (b: Body) => (b.whatIDo[0].id = 'not-a-uuid'),
+      (b: Body) => (defined(b.whatIDo[0]).id = 'not-a-uuid'),
       'whatIDo.0.id:isUuid',
     ],
     [
       'an uppercase icon',
-      (b: Body) => (b.technologies[0].icon = 'Angular'),
+      (b: Body) => (defined(b.technologies[0]).icon = 'Angular'),
       'technologies.0.icon:matches',
     ],
     [
       'an icon with a path',
-      (b: Body) => (b.technologies[0].icon = '../logo'),
+      (b: Body) => (defined(b.technologies[0]).icon = '../logo'),
       'technologies.0.icon:matches',
     ],
     [
@@ -182,7 +183,7 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
     ],
     [
       'an unknown key in a list item',
-      (b: Body) => (loose(b.diplomas[0]).extra = 'x'),
+      (b: Body) => (loose(defined(b.diplomas[0])).extra = 'x'),
       'diplomas.0.extra:whitelistValidation',
     ],
     [

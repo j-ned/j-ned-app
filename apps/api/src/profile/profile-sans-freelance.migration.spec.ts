@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PROFILE_LIMITS } from './profile-limits';
 import { PROFILE_SEED } from './profile.seed';
+import { defined } from '../testing/defined';
 
 const MIGRATION = readFileSync(
   resolve(__dirname, '../../drizzle/0028_profile_sans_freelance.sql'),
@@ -10,7 +11,9 @@ const MIGRATION = readFileSync(
 
 /** Les deux textes de la migration, dans l'ordre : le remplaçant, puis celui qu'il remplace. */
 const texts = (): string[] =>
-  [...MIGRATION.matchAll(/\$text\$([\s\S]*?)\$text\$/g)].map((m) => m[1]);
+  [...MIGRATION.matchAll(/\$text\$([\s\S]*?)\$text\$/g)].map((m) =>
+    defined(m[1]),
+  );
 
 describe('0028 — texte « Ce qui me motive » sans activité freelance (spec 029)', () => {
   it('Given the migration, When read, Then it only replaces the exact text seeded by 0021', () => {
@@ -18,7 +21,7 @@ describe('0028 — texte « Ce qui me motive » sans activité freelance (spec 0
   });
 
   it('Given the replacement, When read, Then it fits the admin limit and keeps a literal non-breaking space', () => {
-    const replacement = texts()[0];
+    const replacement = defined(texts()[0]);
 
     expect(replacement.length).toBeLessThanOrEqual(
       PROFILE_LIMITS.motivation.description,

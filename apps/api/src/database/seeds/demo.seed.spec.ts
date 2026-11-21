@@ -11,6 +11,7 @@ import {
   demoSeedSettings,
   initDemoDatabase,
 } from './demo.seed';
+import { defined } from '../../testing/defined';
 
 const PASSWORD = 'demo-password-0123';
 
@@ -98,9 +99,9 @@ const DATABASE_URL = process.env.DEMO_IT_DATABASE_URL;
       expect(runMigrations).toHaveBeenCalledTimes(1);
       const accounts = await db.select().from(users);
       expect(accounts.map((u) => u.email)).toEqual([DEMO_ADMIN_EMAIL]);
-      expect(await argon2.verify(accounts[0].passwordHash, PASSWORD)).toBe(
-        true,
-      );
+      expect(
+        await argon2.verify(defined(accounts[0]).passwordHash, PASSWORD),
+      ).toBe(true);
       const demoProjects = await db.select().from(projects);
       expect(demoProjects.length).toBeGreaterThanOrEqual(2);
       expect(demoProjects.every((p) => p.slug.startsWith('demo-'))).toBe(true);
@@ -133,9 +134,9 @@ const DATABASE_URL = process.env.DEMO_IT_DATABASE_URL;
         posts: (await db.select().from(blogPosts)).map((p) => p.slug).sort(),
       }).toEqual(before);
       const [admin] = await db.select().from(users);
-      expect(await argon2.verify(admin.passwordHash, `${PASSWORD}-new`)).toBe(
-        true,
-      );
+      expect(
+        await argon2.verify(defined(admin).passwordHash, `${PASSWORD}-new`),
+      ).toBe(true);
     });
 
     it('Given a database holding a non-demo account, When initialised, Then it refuses before migrating or writing anything', async () => {

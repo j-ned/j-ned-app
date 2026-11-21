@@ -1,6 +1,7 @@
 import { generateSync } from 'otplib';
 import { TwoFactorService } from './two-factor.service';
 import { AppConfigService } from '../config/app-config.service';
+import { defined } from '../testing/defined';
 
 describe('TwoFactorService', () => {
   let service: TwoFactorService;
@@ -55,7 +56,10 @@ describe('TwoFactorService', () => {
       expect(hash).toMatch(/^\$argon2id\$/);
     }
     // Trouve le hash correspondant au 5e code
-    const matchHash = await service.findMatchingBackupCode(codes[5], hashes);
+    const matchHash = await service.findMatchingBackupCode(
+      defined(codes[5]),
+      hashes,
+    );
     expect(matchHash).toBe(hashes[5]);
   }, 30000);
 
