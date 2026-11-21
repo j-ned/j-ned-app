@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import { buildSitemap, type SitemapInput } from './sitemap';
+import { defined } from '@shared/testing/defined';
 
 const SITE = 'https://nedellec-julien.fr';
 const STARTED_AT = new Date('2026-10-10T06:30:00Z');
@@ -9,7 +10,7 @@ type Entry = { readonly loc: string; readonly lastmod: string };
 
 function entriesOf(xml: string): readonly Entry[] {
   return [...xml.matchAll(/<url>\s*<loc>([^<]*)<\/loc>\s*<lastmod>([^<]*)<\/lastmod>/g)].map(
-    ([, loc, lastmod]) => ({ loc, lastmod }),
+    ([, loc, lastmod]) => ({ loc: defined(loc), lastmod: defined(lastmod) }),
   );
 }
 

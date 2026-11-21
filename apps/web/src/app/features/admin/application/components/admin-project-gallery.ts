@@ -117,6 +117,7 @@ export class AdminProjectGallery {
   protected move(index: number, delta: -1 | 1): void {
     const ids = this.gallery().map((image) => image.id);
     const movedId = ids[index];
+    if (movedId === undefined) return;
     const focusMoveButton = (): void =>
       this.afterRender(() => this.itemOf(movedId)?.focusMoveButton(delta));
     this.write(

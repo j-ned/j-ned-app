@@ -318,7 +318,7 @@ describe('BlogList', () => {
       const fixture = setup(productionPosts());
       const host = await render(fixture);
       const counts = (): {
-        count?: string;
+        count: string | undefined;
         themes: (string | undefined)[];
         filters: (string | undefined)[];
       } => ({

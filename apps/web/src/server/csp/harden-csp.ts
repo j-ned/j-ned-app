@@ -22,20 +22,28 @@ const EVENT_REPLAY_BOOTSTRAP =
 
 const unique = (values: Iterable<string>): string[] => [...new Set(values)];
 
+function capture(match: RegExpMatchArray, group: number): string {
+  const value = match[group];
+  if (value === undefined)
+    throw new Error(`Capture group ${group} did not participate in the match`);
+  return value;
+}
+
 function executableScripts(html: string): string[] {
   return [...html.matchAll(INLINE_SCRIPT)]
-    .filter(([, attrs]) => !JSON_SCRIPT_TYPE.test(attrs))
-    .map(([, , body]) => body);
+    .filter((match) => !JSON_SCRIPT_TYPE.test(capture(match, 1)))
+    .map((match) => capture(match, 2));
 }
 
 const styleElements = (html: string): string[] =>
-  [...html.matchAll(STYLE_ELEMENT)].map(([, css]) => css);
+  [...html.matchAll(STYLE_ELEMENT)].map((match) => capture(match, 1));
 
-const styleAttrs = (html: string): string[] => [...html.matchAll(STYLE_ATTR)].map(([, css]) => css);
+const styleAttrs = (html: string): string[] =>
+  [...html.matchAll(STYLE_ATTR)].map((match) => capture(match, 1));
 
 // Les hachages d'un passage précédent sont retirés puis recalculés : la fonction est idempotente.
 function withHashes(directive: string, hashes: readonly string[]): string {
-  const [name, ...sources] = directive.split(/\s+/);
+  const [name = '', ...sources] = directive.split(/\s+/);
   const kept = sources.filter((s) => s !== "'unsafe-inline'" && !HASH_SOURCE.test(s));
   return unique([name, ...kept, ...hashes]).join(' ');
 }
@@ -80,7 +88,7 @@ export function hardenCsp(
   const styleHashes = [...manifest.styleElementHashes, ...headStyles];
   const styleAttrHashes = unique([...manifest.styleAttrHashes, ...styleAttrs(html).map(sha256)]);
 
-  const directives = meta[2]
+  const directives = capture(meta, 2)
     .split(';')
     .map((d) => d.trim())
     .filter((d) => d && !d.startsWith('style-src-attr '))
@@ -92,6 +100,8 @@ export function hardenCsp(
   if (styleAttrHashes.length > 0) {
     directives.push(["style-src-attr 'unsafe-hashes'", ...styleAttrHashes].join(' '));
   }
-  const [, open, , close] = meta;
-  return html.replace(CSP_META, () => `${open}${directives.join('; ')};${close}`);
+  return html.replace(
+    CSP_META,
+    () => `${capture(meta, 1)}${directives.join('; ')};${capture(meta, 3)}`,
+  );
 }

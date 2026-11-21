@@ -90,7 +90,7 @@ export class HttpContactGateway extends ContactGateway {
     });
   }
 
-  private fetchUnreadCount(context?: HttpContext): Observable<number> {
+  private fetchUnreadCount(context = new HttpContext()): Observable<number> {
     return this.http
       .get<{ count: number }>(`${this.apiUrl}/contact/messages/unread-count`, { context })
       .pipe(map((res) => res.count));

@@ -19,7 +19,7 @@ const CONFIG: PairRowsConfig<'a', 'b'> = {
   addLabel: 'Ajouter une paire',
 };
 
-const TWO_ROWS: readonly Pair[] = [
+const TWO_ROWS: readonly [Pair, Pair] = [
   { a: 'a1', b: 'b1' },
   { a: 'a2', b: 'b2' },
 ];

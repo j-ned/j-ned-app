@@ -158,12 +158,12 @@ export class Drawer {
 
   protected trapForward(event: Event): void {
     const focusables = this._focusableElements();
-    if (focusables.length === 0) {
+    const first = focusables.at(0);
+    const last = focusables.at(-1);
+    if (!first || !last) {
       event.preventDefault();
       return;
     }
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
     if (this._document.activeElement === last) {
       event.preventDefault();
       first.focus();
@@ -172,12 +172,12 @@ export class Drawer {
 
   protected trapBackward(event: Event): void {
     const focusables = this._focusableElements();
-    if (focusables.length === 0) {
+    const first = focusables.at(0);
+    const last = focusables.at(-1);
+    if (!first || !last) {
       event.preventDefault();
       return;
     }
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
     const active = this._document.activeElement;
     if (active === first || active === this._panel()?.nativeElement) {
       event.preventDefault();

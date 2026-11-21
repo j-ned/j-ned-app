@@ -55,6 +55,11 @@ COPY apps/api/drizzle ./drizzle
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -q -O /dev/null http://localhost:3000/api/health || exit 1
 
+# Release du déploiement (`sha-<commit>`, passée par la CI) : tag Sentry et `version` de /api/health.
+# En fin d'étape : changer de commit ne refait que cette couche.
+ARG APP_RELEASE=
+ENV SENTRY_RELEASE=${APP_RELEASE}
+
 EXPOSE 3000
 USER node
 

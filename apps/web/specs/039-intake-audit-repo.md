@@ -229,3 +229,18 @@ Console : aucune erreur JS applicative (les 401 viennent du mot de passe faux vo
 graphique est vide), les messages d'échec du CV et l'envoi d'images (pas de stockage S3 dans cette pile), le
 rechargement réel sur chunk périmé (`ng serve` ne produit pas de chunks hachés). Ni l'image Docker, ni
 `ci/smoke.sh`, ni l'audit axe (`pnpm a11y`) n'ont été joués.
+
+## Lot 2 : durcissement du typage (2026-11-21, branche `chore/typage-strict-lot2`)
+
+Traités : F007 (`noUncheckedIndexedAccess` et `exactOptionalPropertyTypes`, 29 erreurs dans le code
+applicatif et 53 dans les specs, helper de test `defined()`) et F008 (lint typé, `no-floating-promises`
+et `no-misused-promises` en `error`, aucune violation). `pnpm lint` passe d'environ 9 s à 25 s.
+
+Verdict du `code-reviewer` : **APPROVED**, aucun point bloquant, aucun changement de comportement
+trouvé. Observé en `ng serve` (SSR, sans API, 375×812) : accueil hydraté sans mismatch, piège de focus
+du drawer mobile dans les deux sens, aucune erreur JS en console. Non observé : la liste ordonnée de
+l'admin dans un navigateur (couverte par `move-item.spec.ts`), le payload Sentry réel.
+
+Points non bloquants laissés ouverts : replis morts (`project-outcome.ts:6`, `harden-csp.ts:46`,
+`french-typography-violations.ts:27`), cas « absent » des specs projets dépendants des défauts du
+builder, cache ESLint local optionnel. Le tsconfig autonome de `e2e/` n'applique pas les deux flags.

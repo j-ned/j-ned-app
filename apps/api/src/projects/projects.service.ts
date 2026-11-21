@@ -17,6 +17,7 @@ import type { ProjectImageResponse, ProjectResponse } from './project-gallery';
 import { ProjectImagesService } from './project-images.service';
 import { findByIdOrFail } from '../common/crud-helpers';
 import { isUniqueViolation, slugify } from '../common/utils';
+import { insertedRow, updatedRow } from '../common/rows';
 
 export class ProjectsService {
   private readonly logger = new Logger(ProjectsService.name);
@@ -45,11 +46,11 @@ export class ProjectsService {
   async create(dto: CreateProjectDto): Promise<ProjectResponse> {
     const slug = slugify(dto.title);
     try {
-      const [row] = await this.db
+      const rows = await this.db
         .insert(projects)
         .values({ ...dto, slug })
         .returning();
-      return this.toResponse(row, []);
+      return this.toResponse(insertedRow(rows), []);
     } catch (err) {
       if (isUniqueViolation(err, 'slug')) {
         throw new ConflictException(
@@ -71,9 +72,9 @@ export class ProjectsService {
     if (dto.title !== undefined) patch.slug = slugify(dto.title);
     if (image === null) patch.image = '';
 
-    let row: Project;
+    let rows: Project[];
     try {
-      [row] = await this.db
+      rows = await this.db
         .update(projects)
         .set(patch)
         .where(eq(projects.id, id))
@@ -86,6 +87,7 @@ export class ProjectsService {
       }
       throw err;
     }
+    const row = updatedRow(rows, `Project ${id} not found`);
 
     // S3 cleanup APRÈS le write DB réussi : si le write échoue, on préfère
     // garder l'objet S3 (orphelin DB-cohérent) plutôt qu'une DB cassée.
@@ -130,11 +132,14 @@ export class ProjectsService {
       file.buffer,
     );
 
-    const [row] = await this.db
-      .update(projects)
-      .set({ image: newKey, updatedAt: new Date() })
-      .where(eq(projects.id, id))
-      .returning();
+    const row = updatedRow(
+      await this.db
+        .update(projects)
+        .set({ image: newKey, updatedAt: new Date() })
+        .where(eq(projects.id, id))
+        .returning(),
+      `Project ${id} not found`,
+    );
 
     if (current.image !== newKey) {
       await deleteS3IfExists(this.storage, STORAGE_BUCKET, current.image);

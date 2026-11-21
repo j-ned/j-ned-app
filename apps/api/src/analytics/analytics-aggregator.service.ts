@@ -114,13 +114,17 @@ export class AnalyticsAggregatorService {
           .slice(0, 10),
     );
 
+    const [oldest] = window;
+    const newest = window.at(-1);
+    if (oldest === undefined || newest === undefined) return;
+
     const measured = await this.db
       .select({ date: dailyStat.date })
       .from(dailyStat)
       .where(
         and(
-          gte(dailyStat.date, window[0]),
-          lte(dailyStat.date, window[window.length - 1]),
+          gte(dailyStat.date, oldest),
+          lte(dailyStat.date, newest),
           isNotNull(dailyStat.engagedSessions),
         ),
       );

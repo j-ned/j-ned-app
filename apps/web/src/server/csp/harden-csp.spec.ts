@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { hardenCsp, type CspBuildManifest } from './harden-csp';
+import { defined } from '@shared/testing/defined';
 
 const BASE_CSP =
   "default-src 'self'; script-src 'self' 'unsafe-inline' https://giscus.app; style-src 'self' 'unsafe-inline' https://giscus.app; img-src 'self' data:; object-src 'none'; base-uri 'self';";
@@ -44,7 +45,7 @@ function directivesOf(html: string): ReadonlyMap<string, readonly string[]> {
       .filter(Boolean)
       .map((directive): [string, readonly string[]] => {
         const [name, ...sources] = directive.split(/\s+/);
-        return [name, sources];
+        return [defined(name), sources];
       }),
   );
 }

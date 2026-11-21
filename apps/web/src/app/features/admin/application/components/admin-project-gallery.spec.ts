@@ -9,6 +9,7 @@ import type { ProjectImage } from '@features/projects/domain/models/project.mode
 import { makeProjectImage } from '@features/projects/testing/project-builders';
 import { ToastStore } from '@core/notifications/toast-store';
 import type { ToastMessage } from '@shared/ui/toast.types';
+import { defined } from '@shared/testing/defined';
 
 const capture = (key: string, alt: string): ProjectImage =>
   makeProjectImage({
@@ -17,7 +18,7 @@ const capture = (key: string, alt: string): ProjectImage =>
     alt,
   });
 
-const CAPTURES: readonly ProjectImage[] = [
+const CAPTURES: readonly [ProjectImage, ProjectImage, ProjectImage] = [
   capture('a', 'Vue globale'),
   makeProjectImage({
     id: 'img-b',
@@ -141,7 +142,7 @@ const thumbnailAlts = (host: HTMLElement): (string | null | undefined)[] =>
   items(host).map((item) => byTestId(item, 'admin-gallery-item-thumb')?.getAttribute('alt'));
 
 const toasts = (toast: Rendered['toast']): readonly ToastMessage[] =>
-  toast.add.mock.calls.map(([message]: ToastMessage[]) => message);
+  toast.add.mock.calls.map(([message]: ToastMessage[]) => defined(message));
 
 function type(input: HTMLElement | null, value: string): void {
   if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) return;
@@ -688,7 +689,7 @@ describe('AdminProjectGallery', () => {
       const rendered = await render(CAPTURES, (gateway) =>
         gateway.reorderGallery.mockReturnValue(NEVER),
       );
-      const second = (): HTMLElement => items(rendered.host)[1];
+      const second = (): HTMLElement => defined(items(rendered.host)[1]);
 
       await click(rendered.fixture, buttonIn(second(), 'admin-gallery-item-down'));
       await click(rendered.fixture, buttonIn(second(), 'admin-gallery-item-down'));

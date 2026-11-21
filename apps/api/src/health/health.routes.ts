@@ -19,6 +19,7 @@ export type HealthReport = {
 export async function checkHealth(
   db: Pick<Database, 'execute'>,
   bootedAt: number,
+  release?: string,
 ): Promise<HealthReport> {
   const start = Date.now();
   let dbStatus: 'up' | 'down' = 'down';
@@ -34,15 +35,15 @@ export async function checkHealth(
     status: dbStatus === 'up' ? 'ok' : 'degraded',
     db: { status: dbStatus, latencyMs: dbLatencyMs },
     uptime: Math.round((Date.now() - bootedAt) / 1000),
-    version: process.env.npm_package_version ?? 'dev',
+    version: release || 'dev',
     timestamp: new Date().toISOString(),
   };
 }
 
 /** `/api/health` */
-export function healthRoutes(db: Pick<Database, 'execute'>) {
+export function healthRoutes(db: Pick<Database, 'execute'>, release?: string) {
   const bootedAt = Date.now();
   return new Hono<AppEnv>().get('/', throttle(), async (c) =>
-    c.json(await checkHealth(db, bootedAt)),
+    c.json(await checkHealth(db, bootedAt, release)),
   );
 }

@@ -187,8 +187,8 @@ export class AdminTagsSelector implements FormValueControl<readonly string[]> {
     this.error.set(null);
     const parts = field.value.split(',');
     let kept = parts.length - 1;
-    for (let index = 0; index < parts.length - 1; index++) {
-      if (normalizeTag(parts[index]) !== '' && !this.commit(parts[index])) {
+    for (const [index, part] of parts.slice(0, -1).entries()) {
+      if (normalizeTag(part) !== '' && !this.commit(part)) {
         kept = index;
         break;
       }

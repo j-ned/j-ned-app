@@ -23,6 +23,7 @@ import {
   toImageResponse,
   type ProjectImageResponse,
 } from './project-gallery';
+import { insertedRow } from '../common/rows';
 
 /** Galerie des projets (ADR-0009) : une capture = une ligne `project_image` + un objet S3. */
 export class ProjectImagesService {
@@ -71,7 +72,7 @@ export class ProjectImagesService {
       image.mimetype,
     );
 
-    const [row] = await this.db
+    const rows = await this.db
       .insert(projectImages)
       .values({
         id,
@@ -83,7 +84,7 @@ export class ProjectImagesService {
         order: nextGalleryOrder(current),
       })
       .returning();
-    return toImageResponse(row, this.toUrl);
+    return toImageResponse(insertedRow(rows), this.toUrl);
   }
 
   async updateAlt(

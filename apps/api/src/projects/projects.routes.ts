@@ -129,8 +129,8 @@ async function multipartFields(
     const values = form
       .getAll(key)
       .filter((value): value is string => typeof value === 'string');
-    if (values.length > 0)
-      fields[key] = values.length === 1 ? values[0] : values;
+    const [first, ...others] = values;
+    if (first !== undefined) fields[key] = others.length === 0 ? first : values;
   }
   return fields;
 }

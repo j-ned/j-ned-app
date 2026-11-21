@@ -5,6 +5,7 @@ import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
 import { HomeProjects } from './home-projects';
 import { BlankPage } from '@shared/testing/blank-page';
+import { defined } from '@shared/testing/defined';
 
 const LONG_DESCRIPTION = 'Une phrase de description assez longue pour déborder. '.repeat(6).trim();
 
@@ -145,7 +146,7 @@ describe('HomeProjects', () => {
       ?.click();
 
     expect(liveLinkClicked).toHaveBeenCalledOnce();
-    expect(liveLinkClicked).toHaveBeenCalledWith(toFeaturedProjectView(projects[1]));
+    expect(liveLinkClicked).toHaveBeenCalledWith(toFeaturedProjectView(defined(projects[1])));
   });
 
   describe('Voir tous les projets', () => {

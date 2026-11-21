@@ -20,6 +20,23 @@ describe('checkHealth', () => {
     expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
+  it.each([
+    ['sha-0c8feb92', 'sha-0c8feb92'],
+    [undefined, 'dev'],
+    ['', 'dev'],
+  ])(
+    'annonce la release %s du déploiement sous la version %s',
+    async (release, version) => {
+      dbExecute.mockResolvedValueOnce([{ '?column?': 1 }]);
+      const result = await checkHealth(
+        { execute: dbExecute },
+        Date.now(),
+        release,
+      );
+      expect(result.version).toBe(version);
+    },
+  );
+
   it('retourne status:degraded quand la DB échoue', async () => {
     dbExecute.mockRejectedValueOnce(new Error('connection refused'));
     const result = await check();

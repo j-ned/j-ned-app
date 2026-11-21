@@ -67,7 +67,15 @@ module.exports = [
   {
     files: ['**/*.ts'],
     processor: angular.processInlineTemplates,
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
     rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
       '@angular-eslint/directive-selector': [
         'error',
         {

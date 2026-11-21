@@ -44,7 +44,7 @@ export function createApp(
       .use(secureHeaders({ crossOriginResourcePolicy: 'cross-origin' }))
       .use(cors({ origin: config.corsOrigins, credentials: true }))
       .use(crossOriginProtection(config.corsOrigins))
-      .route('/api/health', healthRoutes(db))
+      .route('/api/health', healthRoutes(db, config.sentryRelease))
       .route('/api/config', runtimeConfigRoutes(config))
       .route(
         '/api/auth',

@@ -24,7 +24,8 @@ const excerptAround = (text: string, index: number): string =>
 export const frenchTypographyViolations = (text: string, path: string): string[] =>
   RULES.flatMap(({ pattern, expected, sign }) =>
     [...text.matchAll(pattern)].flatMap((match) => {
-      const space = sign === '«' ? match[2] : match[1];
+      const [, before = '', after = ''] = match;
+      const space = sign === '«' ? after : before;
       if (space === expected) return [];
       return [
         `${path}: ${codePoint(space)} next to "${sign}", expected ${codePoint(expected)} in "${excerptAround(text, match.index)}"`,

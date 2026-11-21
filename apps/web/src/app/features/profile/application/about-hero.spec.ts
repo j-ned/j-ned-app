@@ -3,6 +3,7 @@ import type { ProfileContent } from '../domain/models/profile-content.model';
 import type { ProfileInfo, SocialButton } from '../domain/models/profile.model';
 import { aProfileContent, aProfileInfo, aSocialButton } from '../testing/profile-builders';
 import { AboutHero } from './about-hero';
+import { defined } from '@shared/testing/defined';
 
 const PROFILE = aProfileInfo();
 const BIOGRAPHY = aProfileContent().biography;
@@ -40,7 +41,7 @@ describe('AboutHero', () => {
     it('When le hero est rendu Then le nom est l’unique h1', () => {
       const headings = host().querySelectorAll('h1');
       expect(headings).toHaveLength(1);
-      expect(headings[0].textContent?.trim()).toBe(PROFILE.displayName);
+      expect(defined(headings[0]).textContent?.trim()).toBe(PROFILE.displayName);
     });
 
     it('When le hero est rendu Then l’accroche reçue en entrée est suivie de son emphase', () => {
@@ -79,7 +80,7 @@ describe('AboutHero', () => {
 
       const section = host().querySelector('section');
       expect(section?.children).toHaveLength(1);
-      expect(section?.children[0].getAttribute('aria-hidden')).toBe('true');
+      expect(defined(section?.children[0]).getAttribute('aria-hidden')).toBe('true');
       expect(host().querySelectorAll('h1')).toHaveLength(0);
       expect(host().querySelectorAll('[data-testid="about-social-link"]')).toHaveLength(0);
       expect(host().querySelector('img')).toBeNull();

@@ -5,6 +5,7 @@ import { desc, eq } from 'drizzle-orm';
 import type { Database } from '../database/drizzle.types';
 import { cvFiles, type CvFile } from '../database/schema';
 import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
+import { insertedRow } from '../common/rows';
 
 export class CvService {
   private static readonly KEY = 'cv/cv.pdf';
@@ -26,7 +27,7 @@ export class CvService {
       CvService.MIME_TYPE,
     );
 
-    const [row] = await this.db
+    const rows = await this.db
       .insert(cvFiles)
       .values({
         fileName: file.originalname,
@@ -44,7 +45,7 @@ export class CvService {
         },
       })
       .returning();
-    return row;
+    return insertedRow(rows);
   }
 
   async findLatestMetadata(): Promise<CvFile | null> {

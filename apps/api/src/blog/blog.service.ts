@@ -19,6 +19,7 @@ import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { findByIdOrFail } from '../common/crud-helpers';
 import { isUniqueViolation, slugify } from '../common/utils';
+import { insertedRow, updatedRow } from '../common/rows';
 
 export class BlogService {
   private readonly logger = new Logger(BlogService.name);
@@ -48,26 +49,26 @@ export class BlogService {
   }
 
   async findBySlug(slug: string): Promise<BlogPostResponse> {
-    const rows = await this.db
+    const [row] = await this.db
       .select()
       .from(blogPosts)
       .where(this.publishedSlugFilter(slug))
       .limit(1);
-    if (rows.length === 0) {
+    if (row === undefined) {
       throw new NotFoundException(`Blog post "${slug}" not found`);
     }
-    return this.toResponse(rows[0]);
+    return this.toResponse(row);
   }
 
   async create(dto: CreateBlogPostDto): Promise<BlogPostResponse> {
     const slug = slugify(dto.title);
     const publishedAt = dto.status === 'published' ? new Date() : null;
     try {
-      const [row] = await this.db
+      const rows = await this.db
         .insert(blogPosts)
         .values({ ...dto, slug, publishedAt })
         .returning();
-      return this.toResponse(row);
+      return this.toResponse(insertedRow(rows));
     } catch (err) {
       if (isUniqueViolation(err, 'slug')) {
         throw new ConflictException(
@@ -98,9 +99,9 @@ export class BlogService {
       dto.status === 'published' && current.status !== 'published';
     if (isPublishing) patch.publishedAt = new Date();
 
-    let row: BlogPost;
+    let rows: BlogPost[];
     try {
-      [row] = await this.db
+      rows = await this.db
         .update(blogPosts)
         .set(patch)
         .where(eq(blogPosts.id, id))
@@ -113,6 +114,7 @@ export class BlogService {
       }
       throw err;
     }
+    const row = updatedRow(rows, `Blog post ${id} not found`);
 
     // S3 cleanup APRÈS le write DB réussi : si le write échoue, on préfère
     // garder l'objet S3 (orphelin DB-cohérent) plutôt qu'une DB cassée.
@@ -163,11 +165,14 @@ export class BlogService {
       file.buffer,
     );
 
-    const [row] = await this.db
-      .update(blogPosts)
-      .set({ coverImage: newKey, updatedAt: new Date() })
-      .where(eq(blogPosts.id, id))
-      .returning();
+    const row = updatedRow(
+      await this.db
+        .update(blogPosts)
+        .set({ coverImage: newKey, updatedAt: new Date() })
+        .where(eq(blogPosts.id, id))
+        .returning(),
+      `Blog post ${id} not found`,
+    );
 
     if (current.coverImage !== newKey) {
       await deleteS3IfExists(this.storage, STORAGE_BUCKET, current.coverImage);

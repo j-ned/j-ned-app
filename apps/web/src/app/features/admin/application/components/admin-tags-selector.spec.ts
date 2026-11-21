@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import { AdminTagsSelector } from './admin-tags-selector';
+import { defined } from '@shared/testing/defined';
 
 const SUGGESTIONS = ['Angular', 'PBKDF2', 'RxJS', 'Sécurité', 'Sécurité web'];
 const FIFTEEN_TAGS = Array.from({ length: 15 }, (_, index) => `T${index}`);
@@ -351,7 +352,7 @@ describe('AdminTagsSelector', () => {
     it('Given a hint When it is pressed Then it is added, announced, leaves the hints and the focus goes to the input', async () => {
       const { fixture, page } = await render(['Angular'], ['RxJS', 'Freelance']);
 
-      hintButtons(page)[0].click();
+      defined(hintButtons(page)[0]).click();
       await settle(fixture);
 
       expect({
@@ -370,7 +371,7 @@ describe('AdminTagsSelector', () => {
     it('Given the maximum reached When a hint is pressed Then it is refused like a typed tag', async () => {
       const { fixture, page } = await render(FIFTEEN_TAGS, ['RxJS']);
 
-      hintButtons(page)[0].click();
+      defined(hintButtons(page)[0]).click();
       await settle(fixture);
 
       expect({ value: fixture.componentInstance.value(), error: page.error() }).toEqual({

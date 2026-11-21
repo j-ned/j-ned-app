@@ -79,7 +79,7 @@ export function markdownEdit(
 
 export function blockLevelAt(text: string, caret: number): BlockLevel | null {
   const { start, end } = lineAround(text, caret);
-  const hashes = HEADING_PREFIX.exec(text.slice(start, end))?.[1].length ?? 0;
+  const hashes = HEADING_PREFIX.exec(text.slice(start, end))?.[1]?.length ?? 0;
   if (hashes === 0) return 'paragraph';
   if (hashes === 2) return 'h2';
   if (hashes === 3) return 'h3';
@@ -167,8 +167,8 @@ function unwrapped(content: string, format: InlineFormat): string {
 function trimmed(text: string, { start, end }: TextSelection): TextSelection {
   let from = start;
   let to = end;
-  while (from < to && /\s/.test(text[from])) from++;
-  while (to > from && /\s/.test(text[to - 1])) to--;
+  while (from < to && /\s/.test(text.charAt(from))) from++;
+  while (to > from && /\s/.test(text.charAt(to - 1))) to--;
   return { start: from, end: to };
 }
 

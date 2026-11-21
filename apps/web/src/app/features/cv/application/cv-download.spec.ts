@@ -13,6 +13,7 @@ import { CvGateway } from '../domain/gateways/cv.gateway';
 import { HttpCvGateway } from '../infra/gateways/http-cv.gateway';
 import { makeCvInfo } from '../testing/cv-builders';
 import { CvDownload } from './cv-download';
+import { defined } from '@shared/testing/defined';
 
 const API = '/api';
 
@@ -33,7 +34,7 @@ describe('CvDownload', () => {
     TestBed.tick();
     const requests = http.match(`${API}/cv`);
     expect(requests).toHaveLength(1);
-    answer(requests[0]);
+    answer(defined(requests[0]));
     await TestBed.inject(ApplicationRef).whenStable();
     return download;
   };

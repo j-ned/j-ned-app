@@ -26,6 +26,7 @@ import { STATIC_HERO } from '../../infra/data/home.static-data';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
 import { BlankPage } from '@shared/testing/blank-page';
+import { defined } from '@shared/testing/defined';
 
 const bundle = (overrides: Partial<HomeBundle> = {}): HomeBundle => ({
   hero: { id: 'hero', headline: 'Je livre', lead: 'Preuve' },
@@ -174,9 +175,9 @@ async function renderHomeTemplate(
   return {
     fixture,
     blocks,
-    postsBlock: blocks.length === 3 ? blocks[0] : null,
-    projectsBlock: blocks[blocks.length - 2],
-    contactBlock: blocks[blocks.length - 1],
+    postsBlock: blocks.length === 3 ? defined(blocks[0]) : null,
+    projectsBlock: defined(blocks.at(-2)),
+    contactBlock: defined(blocks.at(-1)),
     analytics,
     scroller,
   };
@@ -485,7 +486,7 @@ describe('Home', () => {
           Number(h.tagName.slice(1)),
         );
         expect(levels[0]).toBe(1);
-        expect(levels.slice(1).every((level, i) => level - levels[i] <= 1)).toBe(true);
+        expect(levels.slice(1).every((level, i) => level - defined(levels[i]) <= 1)).toBe(true);
       });
 
       it('emits no main, and no header nor footer outside a section', () => {

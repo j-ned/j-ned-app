@@ -138,12 +138,12 @@ describe('toProjectsView', () => {
     });
 
     it.each([
-      { label: 'no live link', liveUrl: undefined },
-      { label: 'an erased live link', liveUrl: null },
+      { label: 'no live link', project: makeProject({ kind: 'production' }) },
+      { label: 'an erased live link', project: makeProject({ kind: 'production', liveUrl: null }) },
     ])(
       'Given a production project with $label When the view is built Then its live link is null',
-      ({ liveUrl }) => {
-        const [caseStudy] = caseStudiesOf([makeProject({ kind: 'production', liveUrl })]);
+      ({ project }) => {
+        const [caseStudy] = caseStudiesOf([project]);
 
         expect(caseStudy?.liveUrl).toBeNull();
       },

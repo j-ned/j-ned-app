@@ -58,7 +58,7 @@ export function adminNavGroups(counts: AdminNavCounts): readonly AdminNavGroup[]
 }
 
 export function activeNavLabel(groups: readonly AdminNavGroup[], url: string): string {
-  const path = url.split(/[?#]/)[0];
+  const path = url.replace(/[?#][\s\S]*$/, '');
   const match = groups
     .flatMap((group) => group.items)
     .find((item) =>
