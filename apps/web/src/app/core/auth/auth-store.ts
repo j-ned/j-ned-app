@@ -25,6 +25,15 @@ function loginFailure(error: unknown): LoginOutcome {
   return error.status === 429 ? 'throttled' : 'error';
 }
 
+type TwoFactorOutcome = 'success' | 'invalid-code' | 'throttled' | 'error';
+
+function twoFactorFailure(error: unknown): TwoFactorOutcome {
+  if (!(error instanceof HttpErrorResponse)) return 'error';
+  // 401 : code faux ou défi expiré. Un 400 ne vient pas de la saisie, bornée plus strictement ici.
+  if (error.status === 401) return 'invalid-code';
+  return error.status === 429 ? 'throttled' : 'error';
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly gateway = inject(AuthGateway);
@@ -62,17 +71,17 @@ export class AuthStore {
     );
   }
 
-  verifyTwoFactor(challengeToken: string, code: string): Observable<boolean> {
+  verifyTwoFactor(challengeToken: string, code: string): Observable<TwoFactorOutcome> {
     return this.gateway.verifyTwoFactor(challengeToken, code).pipe(
       map((res) => {
         if (res.user) {
           this.setUserFromApi(res.user);
           this._pendingChallengeToken.set(null);
-          return true;
+          return 'success' as const;
         }
-        return false;
+        return 'error' as const;
       }),
-      catchError(() => of(false)),
+      catchError((error: unknown) => of(twoFactorFailure(error))),
     );
   }
 

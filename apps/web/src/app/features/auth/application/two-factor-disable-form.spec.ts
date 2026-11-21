@@ -74,6 +74,22 @@ describe('TwoFactorDisableForm: disable form (showForm=true)', () => {
     expect(error!.textContent?.trim()).toBe('Ce champ est obligatoire');
   });
 
+  it.each([
+    { length: 11, error: 'Le mot de passe doit contenir au moins 12 caractères' },
+    { length: 12, error: null },
+  ])(
+    'Given a $length-character password When the field is touched Then the error is $error',
+    ({ length, error }) => {
+      const fixture = render(true);
+      fixture.componentInstance.disableForm.password().value.set('a'.repeat(length));
+      fixture.componentInstance.disableForm.password().markAsTouched();
+      fixture.detectChanges();
+
+      const message = fixture.nativeElement.querySelector('#twofa-setup-disable-pw-error');
+      expect(message?.textContent?.trim() ?? null).toBe(error);
+    },
+  );
+
   it('emits cancel when the cancel button is clicked', () => {
     const fixture = render(true);
     let emitted = 0;
@@ -128,14 +144,14 @@ describe('TwoFactorDisableForm: disable output', () => {
     let received: string | undefined;
     fixture.componentInstance.disable.subscribe((password: string) => (received = password));
 
-    fixture.componentInstance.disableForm.password().value.set('MyPass1!');
+    fixture.componentInstance.disableForm.password().value.set('MyPassword1!');
     fixture.detectChanges();
 
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
-    expect(received).toBe('MyPass1!');
+    expect(received).toBe('MyPassword1!');
   });
 });
 
