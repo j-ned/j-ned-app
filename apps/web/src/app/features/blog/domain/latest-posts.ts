@@ -1,7 +1,6 @@
 import type { BlogPostSummary } from './models/blog-post.model';
 import { byNewestPublication } from './publication-order';
 
-/** Les `count` derniers articles publiés, du plus récent au plus ancien ; les brouillons sans date sont ignorés. */
 export function latestPosts(
   posts: readonly BlogPostSummary[],
   count: number,

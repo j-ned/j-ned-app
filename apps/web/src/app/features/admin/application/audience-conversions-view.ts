@@ -7,7 +7,7 @@ import type {
 } from '@features/analytics/domain/models/analytics.types';
 import { calendarDay } from './calendar-day';
 
-// Téléphone et Malt retirés du site (spec 029) : leurs clics passés restent lisibles.
+// Téléphone et Malt retirés du site : leurs clics passés restent lisibles.
 const CHANNEL_LABELS: Readonly<Record<OutboundChannel | RetiredOutboundChannel, string>> = {
   email: 'E-mail',
   phone: 'Téléphone (retiré)',
@@ -48,7 +48,7 @@ export function conversionsNote(overview: StatsOverview | null, periodStart: str
     : '';
 }
 
-// Pages d'offre retirées (spec 029) : leurs envois passés restent comptés sous un libellé honnête.
+// Pages d'offre retirées : leurs envois passés restent comptés sous un libellé honnête.
 const RETIRED_OFFER_PREFIX = 'offer_';
 
 export function placementLabel(entityId: string): string {

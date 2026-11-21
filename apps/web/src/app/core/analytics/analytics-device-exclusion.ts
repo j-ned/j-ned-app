@@ -3,10 +3,7 @@ import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 export const DEVICE_EXCLUSION_STORAGE_KEY = 'analytics:exclude-device';
 
-/**
- * Opt-out du tracking pour l'appareil courant, persistant après déconnexion :
- * l'admin qui consulte son propre site depuis son téléphone ne compte pas comme un visiteur.
- */
+// Persiste après déconnexion : l'admin qui consulte son propre site ne compte pas comme un visiteur.
 @Injectable({ providedIn: 'root' })
 export class AnalyticsDeviceExclusion {
   private readonly isBrowser = injectIsBrowser();

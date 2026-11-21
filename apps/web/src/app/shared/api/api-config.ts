@@ -7,13 +7,12 @@ export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL', {
   },
 });
 
-// L'API est servie par l'origine du site (relais `/api/` de nginx, ADR-0034) : même origine, donc ni
-// CORS ni cookie partagé entre sous-domaines.
+// API relayée par nginx sur l'origine du site : ni CORS ni cookie partagé entre sous-domaines.
 export const PUBLIC_API_ORIGIN = 'https://nedellec-julien.fr';
 export const PUBLIC_API_BASE_URL = `${PUBLIC_API_ORIGIN}/api`;
 
 // Base des URL que le visiteur suit (`href`) : le rendu serveur remplace API_BASE_URL par
-// l'upstream interne (ADR-0024), jamais celle-ci.
+// l'upstream interne, jamais celle-ci.
 export const API_LINK_BASE_URL = new InjectionToken<string>('API_LINK_BASE_URL', {
   providedIn: 'root',
   factory: (): string => (isDevMode() ? '/api' : PUBLIC_API_BASE_URL),

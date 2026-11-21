@@ -3,10 +3,10 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
-/** Hauteur du header fixe (`h-20` = 5rem). Réserve sous lequel rien ne se cale. */
+// Hauteur du header fixe (`h-20` = 5rem) : à garder alignée sur sa classe.
 const HEADER_OFFSET_PX = 80;
 
-/** Frames max attendues pour que la mise en page se stabilise avant de défiler. */
+// Laisse la mise en page se stabiliser avant de défiler, sans attendre indéfiniment.
 const STABLE_FRAME_LIMIT = 30;
 
 // Force le rendu des `@defer` (via `eager`) puis attend la stabilisation de la page avant de scroller.
@@ -63,7 +63,6 @@ export class SectionScroller {
     this._focusSection(element);
   }
 
-  /** Position de scroll qui centre la section sous le header, sinon l'aligne. */
   private _centeredTop(view: Window, element: HTMLElement): number {
     const elementTop = view.scrollY + element.getBoundingClientRect().top;
     const available = view.innerHeight - HEADER_OFFSET_PX;

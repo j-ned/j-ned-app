@@ -181,7 +181,7 @@ export class AdminMessages {
 
   protected markAllRead(): void {
     if (this.view().unread === 0) return;
-    const snapshot = this._inbox();
+    const flipped = new Set(this._inbox().flatMap((m) => (m.read ? [] : [m.id])));
     this.messagesRes.update((list) => (list ?? []).map((m) => (m.read ? m : { ...m, read: true })));
 
     this.contactGateway
@@ -196,7 +196,10 @@ export class AdminMessages {
           });
         },
         error: () => {
-          this.messagesRes.set(snapshot);
+          // Ne défait que cette action : une suppression ou un rechargement survenu entre-temps tient.
+          this.messagesRes.update((list) =>
+            (list ?? []).map((m) => (flipped.has(m.id) ? { ...m, read: false } : m)),
+          );
           this.toast.add({ severity: 'error', detail: 'Erreur lors de la mise à jour' });
         },
       });

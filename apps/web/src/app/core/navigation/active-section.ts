@@ -10,7 +10,7 @@ export class ActiveSection {
     this._key.set(key);
   }
 
-  /** Réinitialise uniquement si la section sortante est encore l'active courante. */
+  // La section suivante a pu devenir active avant que celle-ci ne sorte : ne pas l'effacer.
   clear(key: string): void {
     if (this._key() === key) {
       this._key.set(null);

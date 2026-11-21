@@ -1,7 +1,4 @@
-/**
- * Slug ASCII d'un titre d'article, pour les ancres `#id` (même convention que les slugs d'URL
- * de l'API : accents retirés, tout ce qui n'est pas alphanumérique devient un tiret).
- */
+// Même convention que les slugs d'URL de l'API : les ancres restent cohérentes avec les adresses.
 export function slugifyHeading(text: string): string {
   return text
     .normalize('NFD')

@@ -1,9 +1,5 @@
 import { Component, input } from '@angular/core';
 
-/**
- * Section éditoriale en deux colonnes : titre et résumé à gauche (épinglés au scroll en lg+),
- * contenu projeté à droite. Empilée sous lg.
- */
 @Component({
   selector: 'app-split-section',
   host: { class: 'block' },

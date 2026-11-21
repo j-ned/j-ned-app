@@ -9,6 +9,7 @@ import {
   type BlogPost,
   type NewBlogPost,
 } from '../database/schema/blog-posts';
+import { defined } from '../testing/defined';
 
 describe('BlogService', () => {
   let service: BlogService;
@@ -148,7 +149,7 @@ describe('BlogService', () => {
       });
 
       const calls = db.set.mock.calls as Array<[Partial<NewBlogPost>]>;
-      expect(calls[0][0].slug).toBeUndefined();
+      expect(defined(calls[0])[0].slug).toBeUndefined();
     });
 
     it("régénère le slug quand on édite le titre d'un article jamais publié (draft)", async () => {
@@ -164,7 +165,7 @@ describe('BlogService', () => {
       });
 
       const calls = db.set.mock.calls as Array<[Partial<NewBlogPost>]>;
-      expect(calls[0][0].slug).toBe('nouveau-titre');
+      expect(defined(calls[0])[0].slug).toBe('nouveau-titre');
     });
   });
 
@@ -202,10 +203,12 @@ describe('BlogService', () => {
 
       await service.remove(ID);
 
-      const dbDelete = db.delete.mock.invocationCallOrder[0];
-      expect(dbDelete).toBeLessThan(storage.delete.mock.invocationCallOrder[0]);
+      const dbDelete = defined(db.delete.mock.invocationCallOrder[0]);
       expect(dbDelete).toBeLessThan(
-        contentImages.removeUnreferenced.mock.invocationCallOrder[0],
+        defined(storage.delete.mock.invocationCallOrder[0]),
+      );
+      expect(dbDelete).toBeLessThan(
+        defined(contentImages.removeUnreferenced.mock.invocationCallOrder[0]),
       );
     });
 

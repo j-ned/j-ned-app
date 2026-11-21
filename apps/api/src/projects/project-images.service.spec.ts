@@ -14,6 +14,7 @@ import { ImageOptimizer } from '../storage/image-optimizer.service';
 import { ProjectImagesService } from './project-images.service';
 import { PROJECT_GALLERY_MAX } from './project-gallery';
 import type { Project } from '../database/schema/projects';
+import { defined } from '../testing/defined';
 
 const PROJECT_ID = '11111111-1111-1111-1111-111111111111';
 
@@ -142,7 +143,7 @@ describe('ProjectImagesService', () => {
       const result = await service.upload(PROJECT_ID, file, 'Tableau de bord');
 
       expect(optimizer.optimize).toHaveBeenCalledWith(file.buffer);
-      const [bucket, key, body, mime] = storage.upload.mock.calls[0];
+      const [bucket, key, body, mime] = defined(storage.upload.mock.calls[0]);
       expect(bucket).toBe('portfolio-storage');
       expect(key).toMatch(
         new RegExp(
@@ -276,7 +277,7 @@ describe('ProjectImagesService', () => {
       const patches = db.set.mock.calls as [{ order: number }][];
       const ranks = updatedWheres.map(([where], i) => {
         const [imageId, projectId] = new PgDialect().sqlToQuery(where).params;
-        const [{ order }] = patches[i];
+        const [{ order }] = defined(patches[i]);
         return [imageId, projectId, order];
       });
       expect(ranks).toEqual([
@@ -289,7 +290,7 @@ describe('ProjectImagesService', () => {
         [A, 1],
         [B, 2],
       ]);
-      expect(result[0].url).toBe(
+      expect(defined(result[0]).url).toBe(
         '/storage/portfolio-storage/project-images/c.avif',
       );
     });

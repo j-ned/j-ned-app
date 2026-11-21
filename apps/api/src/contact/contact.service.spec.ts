@@ -5,6 +5,7 @@ import { createMockDb } from '../testing/test-utils';
 import { MailerService } from '../mailer/mailer.service';
 import { AppConfigService } from '../config/app-config.service';
 import { contactMessages, type ContactMessage } from '../database/schema';
+import { defined } from '../testing/defined';
 
 describe('ContactService', () => {
   let service: ContactService;
@@ -50,7 +51,7 @@ describe('ContactService', () => {
       (db.values.mock.calls as [Record<string, unknown>][]).map(
         ([values]) => values,
       );
-    const insertedValues = () => insertedRows()[0];
+    const insertedValues = () => defined(insertedRows()[0]);
 
     it('Given un message valide, When il est créé, Then il est inséré sans rien renvoyer au visiteur', async () => {
       db.returning.mockResolvedValueOnce([mkMessage()]);
@@ -130,7 +131,7 @@ describe('ContactService', () => {
       await service.create({ ...DTO, subject: 'Demande de devis' }, SENDER);
       await flushMails();
       expect(mailer.sendMail).toHaveBeenCalledTimes(1);
-      const [mail] = mailer.sendMail.mock.calls[0];
+      const [mail] = defined(mailer.sendMail.mock.calls[0]);
       expect(mail.to).toBe('contact@nedellec-julien.fr');
       expect(mail.subject).toBe('Nouveau message de contact: Demande de devis');
       expect(mail.replyTo).toBe('visitor@example.com');

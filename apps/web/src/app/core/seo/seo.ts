@@ -9,9 +9,9 @@ export type SeoData = {
   description: string;
   keywords?: string;
   url?: string;
-  /** Carte de partage JPEG 1200×630 (`toShareImageUrl`). Sans visuel : la carte PNG par défaut. */
+  // JPEG 1200×630 produit par `toShareImageUrl` ; absent, la carte PNG par défaut.
   image?: string;
-  /** Texte alternatif du visuel partagé (`og:image:alt`). Défaut : le titre. */
+  // Absent, `og:image:alt` reprend le titre.
   imageAlt?: string;
   type?: string;
   robots?: string;

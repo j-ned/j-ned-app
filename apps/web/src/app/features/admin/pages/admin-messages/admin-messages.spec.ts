@@ -1,5 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { of, throwError, type Observable } from 'rxjs';
+import { of, Subject, throwError, type Observable } from 'rxjs';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AdminMessages } from './admin-messages';
@@ -247,6 +247,28 @@ describe('AdminMessages: tout marquer comme lu', () => {
       stamps: allByTestId(host, 'message-new').length,
       toasts: severities(toast),
     }).toEqual({ stamps: 1, toasts: ['error'] });
+  });
+
+  it('Given a message deleted while « Tout marquer comme lu » is pending When the update fails Then the deleted message does not come back and the other one is unread again', async () => {
+    const pending = new Subject<{ count: number }>();
+    const { fixture, host } = await setup(
+      makeGateway({
+        getAllMessages: () => of([CLAIRE, { ...PAUL, read: false }]),
+        markAllRead: () => pending,
+        deleteMessage: () => of(undefined),
+      }),
+    );
+    await pressTestId(fixture, 'mark-all-read');
+    await pressTestId(fixture, 'message-delete', 0);
+    await answerConfirmDialog(fixture, 'confirm');
+
+    pending.error(new Error('boom'));
+    await settle(fixture);
+
+    expect({
+      senders: senders(host),
+      stamps: allByTestId(host, 'message-new').length,
+    }).toEqual({ senders: ['Paul Durand'], stamps: 1 });
   });
 });
 

@@ -272,3 +272,33 @@ Vérifié sur l'image du site devant la doublure d'API (`ci/image-stack.sh`) : `
 Laissés ouverts : assertions SEO en double entre les specs de page et celles des fonctions pures,
 tag flottant `nginx:alpine` (Dependabot ne le monte pas), les autres « Julien Nédellec » hors de la
 liste de F018 (pied de page, à propos, flux RSS), F025, F030, F031.
+
+## Lot 4 : archéologie, login et typage des specs de l'API (2026-11-21, branche `refactor/audit-039-lot4`)
+
+Traités côté front : F030 (références ADR/spec et blocs `/** */` retirés de 50 fichiers ; seul hit
+restant du motif : la route `admin/**`, faux positif), le rollback de `admin-messages.markAllRead`
+(ne défait que les messages basculés par l'appel), la double annonce d'une erreur de connexion, les
+trois replis morts relevés au lot 2 et les flags stricts de `e2e/tsconfig.json`. Côté API :
+`noUncheckedIndexedAccess` étendu aux specs (`tsconfig.json`), `createMockDb()` typé par ses clés,
+aide `src/testing/defined.ts`.
+
+Changements de comportement au login : une seule annonce, près du formulaire, sans toast.
+401 et 400 : « Email ou mot de passe incorrect » ; 429 : « Trop de tentatives en peu de temps,
+réessaie dans une minute » ; autres statuts et réseau : « Connexion impossible pour le moment,
+réessaie dans un instant ».
+
+Premier verdict du `code-reviewer` : **REJECTED**, un point. Un 400 (mot de passe de 6 à 11
+caractères, refusé par le schéma de l'API) annonçait à tort un serveur injoignable. Corrigé avec les
+cas 400 et 403 ajoutés au test, vus rouges. Repris aussi : quatre « pourquoi » rétablis sans leur
+référence, `eslint-disable` retiré de `createMockDb()`. Le lot corrigé n'a pas été soumis à une
+seconde revue. Preuve du reviewer pour F030 : 47 fichiers identiques à `master` une fois les
+commentaires retirés par le printer TypeScript.
+
+Observé par le reviewer en `ng serve` devant un faux serveur : 401, 500 et API arrêtée donnent une
+seule annonce `role="alert"` avec le bon message, aucune exception en console. Non observé : le 400
+après correction (test d'intégration seulement), le statut 0 réel, le login contre la vraie API.
+
+Laissés ouverts : la page du code 2FA garde vraisemblablement la même double annonce
+(`verifyTwoFactor` sans `silentErrors()`) ; le formulaire exige 6 caractères quand l'API en exige
+12 ; `exactOptionalPropertyTypes` côté API (14 erreurs mesurées, dont plusieurs sur les types de
+jsonwebtoken, pino et Sentry) ; archéologie dans les specs de l'API ; F025 et F031.

@@ -4,7 +4,7 @@
  * ou `db.limit.mockResolvedValueOnce([...])` pour les selects sans `.returning()`.
  */
 export function createMockDb() {
-  const builder: Record<string, jest.Mock> = {
+  const chainable = {
     select: jest.fn(),
     from: jest.fn(),
     where: jest.fn(),
@@ -21,15 +21,18 @@ export function createMockDb() {
     set: jest.fn(),
     delete: jest.fn(),
     returning: jest.fn(),
-    // eslint-disable-next-line @typescript-eslint/require-await
-    transaction: jest.fn(async (fn: (tx: unknown) => unknown) => fn(builder)),
     execute: jest.fn(),
   };
+  const transaction = jest.fn();
+  const builder = { ...chainable, transaction };
+  // Une levée synchrone du callback devient un rejet, comme avec une vraie transaction.
+  transaction.mockImplementation(
+    (fn: (tx: unknown) => unknown) =>
+      new Promise((resolve) => resolve(fn(builder))),
+  );
   // Chaque méthode retourne le builder lui-même pour permettre le chaînage.
-  for (const key of Object.keys(builder)) {
-    if (key !== 'transaction') {
-      builder[key].mockReturnValue(builder);
-    }
+  for (const method of Object.values(chainable)) {
+    method.mockReturnValue(builder);
   }
   return builder;
 }

@@ -14,6 +14,7 @@ import { ImageOptimizer } from '../storage/image-optimizer.service';
 import type { Project } from '../database/schema';
 import { ProjectImagesService } from './project-images.service';
 import type { ProjectImageResponse } from './project-gallery';
+import { defined } from '../testing/defined';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
@@ -97,8 +98,8 @@ describe('ProjectsService', () => {
       db.orderBy.mockResolvedValueOnce(rows);
       const result = await service.findAll();
       expect(result).toHaveLength(2);
-      expect(result[0].image).toBe('https://example.test/url');
-      expect(result[1].image).toBe('');
+      expect(defined(result[0]).image).toBe('https://example.test/url');
+      expect(defined(result[1]).image).toBe('');
     });
   });
 
@@ -184,8 +185,8 @@ describe('ProjectsService', () => {
       );
       const result = await service.findAll();
       expect(gallery.galleryOf).toHaveBeenCalledWith(['a', 'b']);
-      expect(result[0].gallery.map((i) => i.id)).toEqual(['x', 'y']);
-      expect(result[1].gallery).toEqual([]);
+      expect(defined(result[0]).gallery.map((i) => i.id)).toEqual(['x', 'y']);
+      expect(defined(result[1]).gallery).toEqual([]);
     });
 
     it('Given a new project, When created, Then its gallery is empty without a query', async () => {
@@ -361,7 +362,7 @@ describe('ProjectsService', () => {
         'project-images/b.avif',
       ]);
       expect(logError).toHaveBeenCalledTimes(1);
-      expect(String(logError.mock.calls[0][0])).toContain(
+      expect(String(defined(logError.mock.calls[0])[0])).toContain(
         'project-images/a.avif',
       );
       logError.mockRestore();

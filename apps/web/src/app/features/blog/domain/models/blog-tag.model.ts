@@ -64,7 +64,7 @@ export const BLOG_TAGS_BY_CATEGORY: Record<BlogTagCategory, readonly string[]> =
 
 export const AVAILABLE_BLOG_TAGS: readonly string[] = Object.values(BLOG_TAGS_BY_CATEGORY).flat();
 
-/** `@ArrayMaxSize(15)` du DTO d'article de l'API. */
+// Borne de l'API sur le nombre de tags d'un article.
 export const BLOG_TAGS_MAX_COUNT = 15;
 
 const CATEGORY_BY_TAG: ReadonlyMap<string, BlogTagCategory> = new Map(
@@ -73,7 +73,6 @@ const CATEGORY_BY_TAG: ReadonlyMap<string, BlogTagCategory> = new Map(
   ),
 );
 
-/** Catégorie d'un tag du catalogue ; `null` pour un tag libre saisi hors catalogue. */
 export function blogTagCategory(tag: string): BlogTagCategory | null {
   return CATEGORY_BY_TAG.get(tag) ?? null;
 }

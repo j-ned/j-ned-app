@@ -1,4 +1,3 @@
-/** Coupe un texte pour une meta description sans finir au milieu d'un mot. */
 export function truncateAtWord(text: string, max: number): string {
   if (text.length <= max) return text;
   const cut = text.slice(0, max - 1);

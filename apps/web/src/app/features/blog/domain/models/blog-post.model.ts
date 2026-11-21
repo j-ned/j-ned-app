@@ -9,13 +9,13 @@ export type BlogPost = {
   readonly status: 'draft' | 'published';
   readonly likesCount: number;
   readonly publishedAt: string | null;
-  /** Dernière modification éditoriale (titre, contenu, couverture) ; un like ne la change pas. */
+  // Modification éditoriale seulement : un like ne la change pas.
   readonly updatedAt: string;
-  /** Mots du corps, comptés par l'API : les listes n'ont pas le corps, mais affichent la lecture. */
+  // Compté par l'API : les listes n'ont pas le corps, mais affichent le temps de lecture.
   readonly wordCount: number;
 };
 
-/** Article d'une liste publique : l'API n'y joint pas le corps, réservé à la page de l'article. */
+// Les listes publiques ne reçoivent pas le corps, réservé à la page de l'article.
 export type BlogPostSummary = Omit<BlogPost, 'contentMarkdown'>;
 
 // Payload d'écriture. `id`, `slug`, `likesCount`, `publishedAt`, `updatedAt` gérés serveur ;

@@ -95,7 +95,7 @@ describe('nginx configuration', () => {
     });
   });
 
-  // ADR-0038 : tout le trafic arrive par le tunnel Cloudflare, puis Traefik.
+  // Tout le trafic arrive par le tunnel Cloudflare, puis Traefik.
   describe('visitor behind the Cloudflare tunnel', () => {
     const mapOf = (source: string, target: string): readonly string[] =>
       directivesOf(new RegExp(`map \\$${source} \\$${target} \\{([^}]*)\\}`)) ?? [];
@@ -116,7 +116,6 @@ describe('nginx configuration', () => {
     });
   });
 
-  // ADR-0034 : l'API est servie par l'origine du site.
   describe('API relayed on the site origin', () => {
     // Bloc complet d'une `location`, commentaires retirés : les accolades s'équilibrent
     // (`limit_except { … }`) et celles des variables du gabarit (`${API_UPSTREAM}`) ne comptent pas.

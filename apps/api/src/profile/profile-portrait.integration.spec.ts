@@ -19,6 +19,7 @@ import type { StorageService } from '../storage/storage.service';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfilePortraitService } from './profile-portrait.service';
 import { ProfileService } from './profile.service';
+import { defined } from '../testing/defined';
 
 /**
  * Sérialisation des opérations portrait sur un vrai Postgres (verrou `FOR UPDATE`). Ignoré sans
@@ -51,10 +52,11 @@ type Delays = {
     let violations: string[];
 
     const committedKeys = async () => {
-      const [row] = await db
+      const rows = await db
         .select()
         .from(profileContent)
         .where(eq(profileContent.id, PROFILE_ROW_ID));
+      const row = defined(rows[0]);
       return [row.portraitKey, row.previousPortraitKey].filter(
         (key): key is string => key !== null,
       );
@@ -228,7 +230,7 @@ type Delays = {
             service.replace(file),
           ]),
           service.remove(),
-          service.replace(files[0]),
+          service.replace(defined(files[0])),
           service.remove(),
         ]);
 

@@ -2,10 +2,8 @@ import { DestroyRef, Directive, ElementRef, afterNextRender, inject, input } fro
 import { ActiveSection } from './active-section';
 import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
-/** La section est "active" quand elle occupe la bande centrale du viewport. */
 const CENTER_BAND_MARGIN = '-45% 0px -45% 0px';
 
-/** Scroll-spy : marque la section active (bande centrale du viewport) sans coupler le contenu au header. SSR-safe, nettoyé à la destruction. */
 @Directive({
   selector: '[appSectionVisibility]',
 })

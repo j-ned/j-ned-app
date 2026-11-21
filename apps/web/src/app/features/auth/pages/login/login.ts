@@ -160,8 +160,12 @@ export class Login {
         await this.router.navigate(['/admin']);
       } else if (result === 'two-factor') {
         await this.router.navigate(['/two-factor']);
-      } else {
+      } else if (result === 'invalid-credentials') {
         this.errorMessage.set('Email ou mot de passe incorrect');
+      } else if (result === 'throttled') {
+        this.errorMessage.set('Trop de tentatives en peu de temps, réessaie dans une minute');
+      } else {
+        this.errorMessage.set('Connexion impossible pour le moment, réessaie dans un instant');
       }
     } catch {
       this.errorMessage.set('Erreur de connexion au serveur');

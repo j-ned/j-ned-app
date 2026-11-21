@@ -5,7 +5,7 @@ export const TAG_HINTS_MAX = 5;
 export type TaggedContent = {
   readonly title: string;
   readonly excerpt: string;
-  /** Markdown : le code et les adresses n'y comptent pas. */
+  // Markdown : le code et les adresses n'y comptent pas.
   readonly body: string;
 };
 
@@ -33,7 +33,6 @@ const occurrences = (text: string, tag: string): number =>
   text.match(new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(tag)}(?![\\p{L}\\p{N}])`, 'gu'))
     ?.length ?? 0;
 
-/** Tags connus nommés par l'article et pas encore posés, les plus présents d'abord. */
 export function contentTagHints(
   known: readonly string[],
   selected: readonly string[],

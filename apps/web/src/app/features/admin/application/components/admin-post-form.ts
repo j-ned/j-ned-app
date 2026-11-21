@@ -230,7 +230,6 @@ export class AdminPostForm {
   readonly value = model.required<PostDraft>();
   readonly persistedCover = input('');
   readonly coverResetToken = input<number>();
-  /** Tags proposés à la saisie ; la page y ajoute ceux des autres articles. */
   readonly tagSuggestions = input<readonly string[]>(knownTags(AVAILABLE_BLOG_TAGS, []));
   readonly submitted = output<BlogPostInput>();
   readonly coverSelected = output<File>();

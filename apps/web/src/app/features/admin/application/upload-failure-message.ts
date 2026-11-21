@@ -43,10 +43,7 @@ function detailOf(error: unknown, wording: UploadFailureWording): string {
   }
 }
 
-/**
- * Message d'un envoi de fichier en échec : `label` (une phrase complète) dit ce qui n'a pas abouti, la
- * suite dit pourquoi et quoi faire. Le motif donné par l'API passe tel quel quand il existe.
- */
+// `label` est une phrase complète : la suite du message y ajoute le pourquoi et quoi faire.
 export function uploadFailureMessage(
   label: string,
   error: unknown,
