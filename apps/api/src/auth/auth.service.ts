@@ -7,10 +7,15 @@ import {
 } from '../common/http-errors';
 import {
   countHit,
+  REAUTH_ACCOUNT_THROTTLE,
   resetHits,
   TWO_FACTOR_ACCOUNT_THROTTLE,
 } from '../common/throttle';
-import type { JwtService } from './jwt.service';
+import {
+  CHALLENGE_AUDIENCE,
+  SESSION_AUDIENCE,
+  type JwtService,
+} from './jwt.service';
 import { UsersService } from '../users/users.service';
 import { PasswordService } from './password.service';
 import { TwoFactorService } from './two-factor.service';
@@ -44,10 +49,11 @@ export class AuthService {
     private readonly twoFactor: TwoFactorService,
     private readonly jwt: JwtService,
     private readonly journal: LoginJournalService,
+    private readonly now: () => number = Date.now,
   ) {}
 
   /**
-   * Logout : incrémente `tokenVersion` pour que le JWT (7 jours) ne survive pas à la
+   * Logout : incrémente `tokenVersion` pour que le JWT ne survive pas à la
    * déconnexion s'il a fuité. Un cookie absent, expiré ou de challenge 2FA est ignoré :
    * le contrôleur efface le cookie dans tous les cas.
    */
@@ -55,7 +61,7 @@ export class AuthService {
     if (!token) return;
     let payload: JwtPayload;
     try {
-      payload = this.jwt.verify<JwtPayload>(token);
+      payload = this.jwt.verify<JwtPayload>(SESSION_AUDIENCE, token);
     } catch {
       return;
     }
@@ -80,13 +86,14 @@ export class AuthService {
 
     if (user.isTwoFactorEnabled) {
       const challengeToken = this.jwt.sign(
+        CHALLENGE_AUDIENCE,
         { sub: user.id, scope: '2fa-challenge' },
         { expiresIn: '5m' },
       );
       return { kind: 'challenge', challengeToken };
     }
 
-    const token = this.jwt.sign({
+    const token = this.jwt.sign(SESSION_AUDIENCE, {
       sub: user.id,
       tokenVersion: user.tokenVersion,
     });
@@ -115,7 +122,7 @@ export class AuthService {
     }
     await this.journal.record('two_factor_accepted', user.id, origin);
 
-    const token = this.jwt.sign({
+    const token = this.jwt.sign(SESSION_AUDIENCE, {
       sub: user.id,
       tokenVersion: user.tokenVersion,
     });
@@ -125,7 +132,7 @@ export class AuthService {
   private async challengedUser(challengeToken: string): Promise<User> {
     let payload: JwtPayload;
     try {
-      payload = this.jwt.verify<JwtPayload>(challengeToken);
+      payload = this.jwt.verify<JwtPayload>(CHALLENGE_AUDIENCE, challengeToken);
     } catch {
       throw new UnauthorizedException('Invalid challenge token');
     }
@@ -196,7 +203,7 @@ export class AuthService {
     currentPassword: string,
     newPassword: string,
   ): Promise<void> {
-    const ok = await this.password.verify(currentPassword, user.passwordHash);
+    const ok = await this.verifyCurrentPassword(user, currentPassword);
     if (!ok) throw new UnauthorizedException('Invalid current password');
     const newHash = await this.password.hash(newPassword);
     await this.users.updatePassword(user.id, newHash);
@@ -239,8 +246,30 @@ export class AuthService {
     if (!user.isTwoFactorEnabled) {
       throw new BadRequestException('2FA is not enabled');
     }
-    const ok = await this.password.verify(password, user.passwordHash);
+    const ok = await this.verifyCurrentPassword(user, password);
     if (!ok) throw new UnauthorizedException('Invalid password');
     await this.users.disableTwoFactor(user.id);
+  }
+
+  // Compté avant de vérifier, par compte : des essais simultanés ou venus de plusieurs adresses ne passent pas sous la limite.
+  private async verifyCurrentPassword(
+    user: User,
+    plainPassword: string,
+  ): Promise<boolean> {
+    const attemptsKey = `reauth|${user.id}`;
+    const at = this.now();
+    const attempts = await countHit(
+      attemptsKey,
+      REAUTH_ACCOUNT_THROTTLE.ttlMs,
+      at,
+    );
+    if (attempts && attempts.count > REAUTH_ACCOUNT_THROTTLE.limit) {
+      throw new TooManyRequestsException(
+        Math.max(1, Math.ceil((attempts.resetAt - at) / 1000)),
+      );
+    }
+    const ok = await this.password.verify(plainPassword, user.passwordHash);
+    if (ok) await resetHits(attemptsKey);
+    return ok;
   }
 }

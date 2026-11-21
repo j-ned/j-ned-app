@@ -50,7 +50,7 @@ Toute la config passe par les variables d'env, validées au boot par Zod (`src/c
 | `DATABASE_URL`              | URL `postgres://...`                               | _(requis)_                   | Connexion Drizzle                                                                                                               |
 | `LOG_LEVEL`                 | `fatal`\|`error`\|`warn`\|`info`\|`debug`\|`trace` | `debug` en dev, `info` sinon | Niveau Pino                                                                                                                     |
 | `JWT_SECRET`                | string, 32+ chars                                  | _(requis)_                   | Signature JWT                                                                                                                   |
-| `JWT_EXPIRES_IN`            | string                                             | `7d`                         | Durée de vie du JWT                                                                                                             |
+| `JWT_EXPIRES_IN`            | durée, de `5m` à `30d`                             | `24h`                        | Durée de la session : JWT et cookie (`<nombre>` suivi de `ms`, `s`, `m`, `h` ou `d`) ; hors bornes, l'app ne démarre pas        |
 | `ADMIN_EMAIL`               | email                                              | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                                                           |
 | `ADMIN_INITIAL_PASSWORD`    | string, 12+ chars                                  | _(optionnel)_                | Requis uniquement pour `pnpm db:seed`                                                                                           |
 | `TOTP_APP_NAME`             | string                                             | `J-Ned Portfolio`            | Nom affiché dans l'app authenticator                                                                                            |
@@ -146,13 +146,17 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
 
 **Décisions clés** :
 
-- JWT unique (7j par défaut), un seul cookie `__Host-token` (`HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/`, sans `Domain` : attaché à l'hôte exact, aucun sous-domaine ne peut le lire ni l'écraser), pas de refresh token (compromis assumé pour un backend mono-admin - un vrai couple access/refresh roté serait overkill ici).
+- JWT unique (24 h par défaut, `JWT_EXPIRES_IN`), un seul cookie `__Host-token` (`HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/`, sans `Domain` : attaché à l'hôte exact, aucun sous-domaine ne peut le lire ni l'écraser), pas de refresh token (compromis assumé pour un backend mono-admin - un vrai couple access/refresh roté serait overkill ici).
 - **CSRF** : `crossOriginProtection` (middleware global, `src/common/cross-origin.ts`) rejette en 403 toute écriture (`POST`/`PUT`/`PATCH`/`DELETE`) dont `Sec-Fetch-Site` n'est ni `same-origin` ni `none`, sauf si `Origin` figure dans `CORS_ORIGINS`. Une requête sans `Origin` ni `Sec-Fetch-Site` (curl, scripts) n'est pas un navigateur et passe. Même algorithme que `CrossOriginProtection` de Go.
 - Algorithme JWT épinglé explicitement (`HS256`) au sign comme au verify - anti confusion d'algorithme.
+- **Émetteur et audience** (`src/auth/jwt.service.ts`) : chaque jeton porte `iss` (`j-ned-portfolio-api`) et `aud`, exigés à la vérification. Une audience par usage (`j-ned-portfolio:session`, `j-ned-portfolio:2fa-challenge`) : un jeton de challenge n'ouvre pas de session, un jeton de session ne répond pas à un challenge. Un jeton sans ces revendications, dont `aud` est une liste, ou sans expiration (`exp`) est refusé en 401.
 - **Révocation via `tokenVersion`** : colonne `users.token_version` (int), embarquée dans le payload JWT à l'émission. Incrémentée par `UsersService` sur `updatePassword`/`enableTwoFactor`/`disableTwoFactor`. `requireAuth` (`src/auth/require-auth.ts`) rejette tout JWT dont le `tokenVersion` ne correspond pas à celui en DB - un changement de mot de passe (ou `pnpm db:change-password`) invalide immédiatement tous les tokens déjà émis, sans avoir besoin d'un vrai refresh token.
 - Argon2id pour le hash password et les backup codes.
 - `requireAuth` rejette tout JWT avec `scope === '2fa-challenge'` - un challenge token ne peut jamais servir de session (défense en profondeur).
 - Connexion et vérification 2FA : 5 tentatives par minute et par IP (`AUTH_ATTEMPT_THROTTLE`).
+- **Visiteur d'un quota** : la dernière entrée de `X-Forwarded-For` (écrite par le proxy de confiance) si c'est une adresse IP, sinon l'adresse de la socket (`clientIp`, `src/common/http.ts`). Le compteur d'une adresse IPv6 est celui de son préfixe /64 (`quotaAddress`, `src/common/throttle.ts`) : un abonné ne multiplie pas ses quotas en changeant d'adresse dans son préfixe. Une IPv4 mappée (`::ffff:a.b.c.d`) compte comme l'IPv4.
+- **Mot de passe redemandé sous session** (`change-password`, `2fa/disable`) : 5 essais par quart d'heure et par compte (`REAUTH_ACCOUNT_THROTTLE`), compteur commun aux deux routes, remis à zéro par un succès ; au-delà, 429 avec `Retry-After`. Une session volée ne sert pas à deviner le mot de passe.
+- **Compteurs bornés** (`MemoryThrottleStore`) : 5 000 clés au plus par route ou par usage (`DEFAULT_MAX_KEYS_PER_SCOPE`), fenêtres expirées purgées d'abord, jamais d'éviction d'un compteur vivant. Portée pleine : un nouveau visiteur reçoit 429 sur la connexion, la 2FA et le contact (`whenFull: 'reject'`, défaut), et il est servi sans être compté sur les lectures publiques, la mesure d'audience et les routes au quota par défaut (`whenFull: 'allow'`).
 - JWT signés et vérifiés par `jsonwebtoken` (`src/auth/jwt.service.ts`).
 - **Journal des connexions** (`login_event`, `src/auth/login-journal.service.ts`) : une ligne par étape de connexion, acceptée ou refusée (`password_accepted`/`password_rejected`, `two_factor_accepted`/`two_factor_rejected`), avec le compte s'il est connu, le pays, le navigateur et le système. Ni adresse IP ni e-mail saisi. Une écriture qui échoue est journalisée en erreur et ne bloque pas la connexion. Conservé 90 jours, purgé par la tâche quotidienne.
 
@@ -364,7 +368,7 @@ Collecte de page-views/events custom du portfolio public + agrégation quotidien
 
 **Cron** : `@Cron('0 0 * * *', { timeZone: 'UTC' })` dans `AnalyticsAggregatorService` - agrège J-1 dans `daily_stat` (upsert idempotent), purge `page_view` + `analytics_event` de plus de 30 jours.
 
-**`app.set('trust proxy', 1)`** activé dans `src/app.setup.ts` pour lire `X-Forwarded-For` correctement derrière un reverse proxy.
+**Adresse du visiteur** : `clientIp` (`src/common/http.ts`) lit la dernière entrée de `X-Forwarded-For`, celle du reverse proxy, ou l'IP transmise par le rendu serveur du site quand l'appel porte `SSR_FORWARD_SECRET`.
 
 ## Observabilité (Sentry)
 

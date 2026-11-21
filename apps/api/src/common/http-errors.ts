@@ -33,5 +33,9 @@ export class NotFoundException extends httpException(404) {}
 export class ConflictException extends httpException(409) {}
 export class PayloadTooLargeException extends httpException(413) {}
 export class UnprocessableEntityException extends httpException(422) {}
-export class TooManyRequestsException extends httpException(429) {}
+export class TooManyRequestsException extends httpException(429) {
+  constructor(readonly retryAfterSeconds?: number) {
+    super();
+  }
+}
 export class ServiceUnavailableException extends httpException(503) {}

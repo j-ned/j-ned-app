@@ -46,7 +46,7 @@ describe('authentication', () => {
       sameSite: 'strict',
       path: '/',
       domain: undefined,
-      maxAge: String(7 * 24 * 3600),
+      maxAge: String(24 * 3600),
     });
     expect(response.setCookies).toHaveLength(1);
   });
