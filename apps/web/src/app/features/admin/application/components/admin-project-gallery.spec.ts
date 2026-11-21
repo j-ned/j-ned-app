@@ -10,6 +10,7 @@ import { makeProjectImage } from '@features/projects/testing/project-builders';
 import { ToastStore } from '@core/notifications/toast-store';
 import type { ToastMessage } from '@shared/ui/toast.types';
 import { defined } from '@shared/testing/defined';
+import { asButton } from '@shared/testing/as-button';
 
 const capture = (key: string, alt: string): ProjectImage =>
   makeProjectImage({
@@ -127,10 +128,7 @@ const byTestId = (root: Element | null | undefined, testId: string): HTMLElement
 
 const buttonIn = (root: Element | null | undefined, testId: string): HTMLButtonElement | null => {
   const element = byTestId(root, testId);
-  if (!element) return null;
-  return element.tagName === 'BUTTON'
-    ? (element as HTMLButtonElement)
-    : element.querySelector('button');
+  return element ? asButton(element) : null;
 };
 
 const formOf = (element: Element | null | undefined): HTMLFormElement | null => {

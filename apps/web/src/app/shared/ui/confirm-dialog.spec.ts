@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { ConfirmDialog } from './confirm-dialog';
+import { asButton } from '@shared/testing/as-button';
 import { byTestId } from '@shared/testing/by-test-id';
 import { settle } from '@shared/testing/settle';
 import {
@@ -50,11 +51,6 @@ async function renderHost(open: boolean): Promise<{
   fixture.componentInstance.open.set(open);
   await settle(fixture);
   return { fixture, host: fixture.nativeElement as HTMLElement };
-}
-
-function nativeButton(root: ParentNode, testId: string): HTMLButtonElement | null {
-  const element = byTestId(root, testId);
-  return element instanceof HTMLButtonElement ? element : null;
 }
 
 describe('ConfirmDialog', () => {
@@ -160,8 +156,8 @@ describe('ConfirmDialog', () => {
     const { host } = await renderHost(true);
     const dialog = confirmDialogElement(host);
 
-    expect(dialog && nativeButton(dialog, 'confirm-dialog-cancel')?.hasAttribute('autofocus')).toBe(
-      true,
-    );
+    expect(
+      dialog && asButton(byTestId(dialog, 'confirm-dialog-cancel')).hasAttribute('autofocus'),
+    ).toBe(true);
   });
 });

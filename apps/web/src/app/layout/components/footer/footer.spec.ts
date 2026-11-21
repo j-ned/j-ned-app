@@ -9,6 +9,7 @@ import { Footer } from './footer';
 import { FOOTER_COPY } from './footer.static-data';
 import { BlankPage } from '@shared/testing/blank-page';
 import { defined } from '@shared/testing/defined';
+import { asButton } from '@shared/testing/as-button';
 
 async function setup(): Promise<{
   fixture: ComponentFixture<Footer>;
@@ -103,8 +104,7 @@ describe('Footer', () => {
     it('Given the footer When it is rendered Then Contact starts with the call to action, inside the Contact navigation', async () => {
       const { host } = await setup();
       const ctas = byTestId(host, 'footer-contact-cta');
-      const button =
-        ctas[0] instanceof HTMLButtonElement ? ctas[0] : (ctas[0]?.querySelector('button') ?? null);
+      const button = ctas[0];
 
       expect(ctas).toHaveLength(1);
       expect(button).toBeInstanceOf(HTMLButtonElement);
@@ -116,10 +116,8 @@ describe('Footer', () => {
     it('Given the call to action When it is clicked Then the SectionScroller leads to the home contact', async () => {
       const { host, scrollTo } = await setup();
       const [cta] = byTestId(host, 'footer-contact-cta');
-      const button = cta instanceof HTMLButtonElement ? cta : cta?.querySelector('button');
+      asButton(cta).click();
 
-      expect(button).toBeInstanceOf(HTMLButtonElement);
-      button?.click();
       expect(scrollTo).toHaveBeenCalledExactlyOnceWith('contact');
     });
 

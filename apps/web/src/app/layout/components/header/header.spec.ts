@@ -10,6 +10,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
 import { ThemeStore } from '@core/theme/theme-store';
 import { installSystemColorScheme } from '@core/theme/testing/system-color-scheme';
 import { BlankPage } from '@shared/testing/blank-page';
+import { asButton } from '@shared/testing/as-button';
 
 const THEME_STORAGE_KEY = 'j-ned:theme';
 
@@ -178,9 +179,6 @@ describe('Header', () => {
     const ctasIn = (root: HTMLElement): HTMLElement[] =>
       Array.from(root.querySelectorAll<HTMLElement>('[data-testid="header-cta"]'));
 
-    const nativeButtonOf = (cta: HTMLElement | undefined): HTMLButtonElement | null =>
-      cta instanceof HTMLButtonElement ? cta : (cta?.querySelector('button') ?? null);
-
     const openDrawer = async (
       component: Header,
       fixture: ReturnType<typeof TestBed.createComponent<Header>>,
@@ -196,7 +194,7 @@ describe('Header', () => {
       const ctas = ctasIn(host);
       const header = host.querySelector('header') as HTMLElement;
 
-      const button = nativeButtonOf(ctas[0]);
+      const button = ctas[0];
 
       expect(ctas).toHaveLength(1);
       expect(button).toBeInstanceOf(HTMLButtonElement);
@@ -220,19 +218,15 @@ describe('Header', () => {
 
     it('Given le bouton d’appel When on le clique Then le SectionScroller mène au contact de l’accueil', async () => {
       const { fixture, scroller } = await setup();
-      const button = nativeButtonOf(ctasIn(fixture.nativeElement as HTMLElement)[0]);
+      asButton(ctasIn(fixture.nativeElement as HTMLElement)[0]).click();
 
-      expect(button).toBeInstanceOf(HTMLButtonElement);
-      button?.click();
       expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith('contact');
     });
 
     it('Given le bouton d’appel When on le clique Then le clic est mesuré sous l’identifiant header_contact', async () => {
       const { fixture, analytics } = await setup();
-      const button = nativeButtonOf(ctasIn(fixture.nativeElement as HTMLElement)[0]);
+      asButton(ctasIn(fixture.nativeElement as HTMLElement)[0]).click();
 
-      expect(button).toBeInstanceOf(HTMLButtonElement);
-      button?.click();
       expect(analytics.trackCtaClick).toHaveBeenCalledExactlyOnceWith('header_contact', "M'écrire");
     });
   });
@@ -346,10 +340,7 @@ describe('Header', () => {
       const toggles = Array.from(
         host.querySelectorAll<HTMLElement>('[data-testid="drawer-theme-toggle"]'),
       );
-      const button =
-        toggles[0] instanceof HTMLButtonElement
-          ? toggles[0]
-          : (toggles[0]?.querySelector('button') ?? null);
+      const button = toggles[0];
 
       expect(toggles).toHaveLength(1);
       expect(toggles[0]?.closest('[role="dialog"]')).not.toBeNull();

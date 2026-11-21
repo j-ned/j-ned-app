@@ -12,6 +12,7 @@ import { toProfileDraft, type ProfileDraft } from '../profile-draft';
 import { AdminProfileForm } from './admin-profile-form';
 import { REQUIRED_MESSAGE } from './required-message';
 import { normalized } from '@shared/testing/normalized-text';
+import { asButton } from '@shared/testing/as-button';
 
 type RenderedForm = {
   readonly fixture: ComponentFixture<AdminProfileForm>;
@@ -243,21 +244,15 @@ async function pressInRow(
 ): Promise<void> {
   const row = rowsOf(rendered.host, prefix)[index];
   const element = row ? byTestId(row, `admin-profile-${prefix}-${action}`) : null;
-  const button =
-    element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
-  button?.click();
+  asButton(element).click();
   await settleBounded(rendered.fixture);
 }
 
-const addButton = (host: HTMLElement, prefix: string): HTMLButtonElement | null => {
-  const element = byTestId(host, `admin-profile-${prefix}-add`);
-  return element instanceof HTMLButtonElement
-    ? element
-    : (element?.querySelector('button') ?? null);
-};
+const addButton = (host: HTMLElement, prefix: string): HTMLButtonElement =>
+  asButton(byTestId(host, `admin-profile-${prefix}-add`));
 
 async function addRow(rendered: RenderedForm, prefix: string): Promise<void> {
-  addButton(rendered.host, prefix)?.click();
+  addButton(rendered.host, prefix).click();
   await settleBounded(rendered.fixture);
 }
 

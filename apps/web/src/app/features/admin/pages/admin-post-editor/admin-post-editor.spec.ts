@@ -27,6 +27,7 @@ import {
 import { unsavedChangesGuard } from '../../application/unsaved-changes-guard';
 import { BlankPage } from '@shared/testing/blank-page';
 import { normalized } from '@shared/testing/normalized-text';
+import { asButton } from '@shared/testing/as-button';
 
 const CHIFFREMENT = makeBlogPost({
   id: 'b-1',
@@ -123,9 +124,6 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
     crash,
   };
 }
-
-const nativeButton = (element: Element | null): HTMLButtonElement | null =>
-  element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
 
 const fieldValue = (host: HTMLElement, testId: string): string | undefined =>
   (byTestId(host, testId) as HTMLInputElement | HTMLTextAreaElement | null)?.value;
@@ -654,7 +652,7 @@ describe('AdminPostEditor: modifications non enregistrées', () => {
     await save(editor);
 
     expect({
-      disabled: nativeButton(byTestId(editor.host, 'savebar-submit'))?.disabled,
+      disabled: asButton(byTestId(editor.host, 'savebar-submit')).disabled,
       state: saveBarState(editor),
     }).toEqual({ disabled: false, state: '1 modification non enregistrée' });
   });

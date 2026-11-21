@@ -41,8 +41,7 @@ describe('LoadError', () => {
 
   it('Given the error Then Réessayer is a native button', async () => {
     const { host } = await renderError();
-    const retry = byTestId(host, 'load-error-retry');
-    const button = retry?.tagName === 'BUTTON' ? retry : retry?.querySelector('button');
+    const button = byTestId(host, 'load-error-retry');
 
     expect({ tag: button?.tagName, type: button?.getAttribute('type') }).toEqual({
       tag: 'BUTTON',

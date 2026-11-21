@@ -2,16 +2,12 @@ import {
   ApplicationConfig,
   ErrorHandler,
   LOCALE_ID,
-  PLATFORM_ID,
-  inject,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { isPlatformBrowser, registerLocaleData } from '@angular/common';
+import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import {
-  NavigationEnd,
-  Router,
   provideRouter,
   withComponentInputBinding,
   withInMemoryScrolling,
@@ -30,11 +26,9 @@ import {
   withEventReplay,
   withHttpTransferCacheOptions,
 } from '@angular/platform-browser';
-import { filter } from 'rxjs';
 
 import { routes } from './app.routes';
-import { Seo } from '@core/seo/seo';
-import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
+import { initializeSeo } from '@core/seo/seo-initializer';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { HttpAnalyticsGateway } from '@features/analytics/infra/gateways/http-analytics.gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
@@ -53,42 +47,10 @@ import { HttpContactGateway } from '@features/contact/infra/gateways/http-contac
 import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-home.gateway';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { HttpAuthGateway } from '@features/auth/infra/gateways/http-auth.gateway';
-import { AuthStore } from '@core/auth/auth-store';
+import { initializeAuth } from '@core/auth/auth-initializer';
 import { initializePageTracking } from '@core/analytics/page-tracking';
 import { initializeOutboundClickTracking } from '@core/analytics/outbound-click-tracking';
 import { MonitoringErrorHandler } from '@core/monitoring/monitoring';
-
-function initializeAuth(): () => Promise<void> | void {
-  return (): Promise<void> | void => {
-    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
-    // Le store est entièrement construit ici : la requête peut traverser `authInterceptor`.
-    const auth = inject(AuthStore);
-    auth.restoreSession();
-    return auth.ready;
-  };
-}
-
-function initializeSeo(): () => void {
-  return (): void => {
-    const router = inject(Router);
-    const seoService = inject(Seo);
-
-    router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => {
-        let route = router.routerState.snapshot.root;
-        while (route.firstChild) {
-          route = route.firstChild;
-        }
-
-        const seoData = route.data['seo'];
-        if (seoData) {
-          const url = seoData.url ?? `${SITE_IDENTITY.siteUrl}${event.urlAfterRedirects}`;
-          seoService.applySeoData({ ...seoData, url });
-        }
-      });
-  };
-}
 
 registerLocaleData(localeFr);
 

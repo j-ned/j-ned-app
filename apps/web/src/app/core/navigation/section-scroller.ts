@@ -1,6 +1,7 @@
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 
 /** Hauteur du header fixe (`h-20` = 5rem). Réserve sous lequel rien ne se cale. */
 const HEADER_OFFSET_PX = 80;
@@ -13,7 +14,7 @@ const STABLE_FRAME_LIMIT = 30;
 export class SectionScroller {
   private readonly _router = inject(Router);
   private readonly _document = inject(DOCUMENT);
-  private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly _isBrowser = injectIsBrowser();
 
   private readonly _eager = signal(false);
   // Consommé par les `@defer` de la home (`when eager()`) pour les rendre avant le scroll.

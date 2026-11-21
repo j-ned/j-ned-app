@@ -1,6 +1,7 @@
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TwoFactorEnableForm } from './two-factor-enable-form';
+import { asButton } from '@shared/testing/as-button';
 
 function render(): ComponentFixture<TwoFactorEnableForm> {
   TestBed.configureTestingModule({ imports: [TwoFactorEnableForm] });
@@ -29,11 +30,7 @@ describe('TwoFactorEnableForm: initial state (no QR yet)', () => {
     let emitted = 0;
     fixture.componentInstance.generate.subscribe(() => (emitted += 1));
 
-    const button = fixture.nativeElement.querySelector(
-      '[data-testid="twofa-generate"]',
-    ) as HTMLElement;
-    expect(button).not.toBeNull();
-    (button.querySelector('button') ?? button).click();
+    asButton(byTestId(fixture.nativeElement as HTMLElement, 'twofa-generate')).click();
     fixture.detectChanges();
 
     expect(emitted).toBe(1);
@@ -44,9 +41,7 @@ describe('TwoFactorEnableForm: initial state (no QR yet)', () => {
     fixture.componentRef.setInput('loading', true);
     fixture.detectChanges();
 
-    const button = fixture.nativeElement
-      .querySelector('[data-testid="twofa-generate"]')
-      ?.querySelector('button') as HTMLButtonElement;
+    const button = asButton(byTestId(fixture.nativeElement as HTMLElement, 'twofa-generate'));
     expect(button.disabled).toBe(true);
   });
 });

@@ -20,6 +20,7 @@ import { captureCrash } from '@shared/testing/capture-crash';
 import { AdminAudience } from './admin-audience';
 import { AudienceChart } from '../../application/components/audience-chart';
 import { defined } from '@shared/testing/defined';
+import { asButton } from '@shared/testing/as-button';
 
 const METRICS: Readonly<Record<string, readonly MetricEntry[]>> = {
   url: [
@@ -66,8 +67,7 @@ async function advance(fixture: ComponentFixture<unknown>): Promise<void> {
 }
 
 async function press(fixture: ComponentFixture<unknown>, element: Element | null): Promise<void> {
-  const button = element?.tagName === 'BUTTON' ? element : element?.querySelector('button');
-  if (button instanceof HTMLElement) button.click();
+  asButton(element).click();
   await advance(fixture);
 }
 

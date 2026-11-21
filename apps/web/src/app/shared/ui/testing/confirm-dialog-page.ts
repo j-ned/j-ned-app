@@ -1,4 +1,5 @@
 import type { ComponentFixture } from '@angular/core/testing';
+import { asButton } from '@shared/testing/as-button';
 import { byTestId } from '@shared/testing/by-test-id';
 import { settleBounded } from '@shared/testing/settle';
 
@@ -48,8 +49,6 @@ export async function answerConfirmDialog(
     return;
   }
   const dialog = confirmDialogElement(root);
-  const element = dialog && byTestId(dialog, `confirm-dialog-${answer}`);
-  const button = element?.tagName === 'BUTTON' ? element : element?.querySelector('button');
-  button?.click();
+  asButton(dialog && byTestId(dialog, `confirm-dialog-${answer}`)).click();
   await settleBounded(fixture);
 }

@@ -6,6 +6,7 @@ import { settle, settleBounded } from '@shared/testing/settle';
 import { FileDropzone } from '@shared/ui/file-dropzone';
 import { readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import { AdminProfilePortrait } from './admin-profile-portrait';
+import { asButton } from '@shared/testing/as-button';
 
 const STORED = '/api/storage/portfolio-storage/profile/portrait-1a2b3c4d.avif';
 
@@ -43,9 +44,6 @@ async function renderPortrait(initial: string | null): Promise<Rendered> {
   };
 }
 
-const nativeButton = (element: Element | null | undefined): HTMLButtonElement | null =>
-  element instanceof HTMLButtonElement ? element : (element?.querySelector('button') ?? null);
-
 const thumbnail = (host: HTMLElement): { src: string | null; alt: string | null } => {
   const image = byTestId(host, 'admin-profile-portrait-current')?.querySelector('img') ?? null;
   return { src: image?.getAttribute('src') ?? null, alt: image?.getAttribute('alt') ?? null };
@@ -59,12 +57,12 @@ async function drop(rendered: Rendered, file: File): Promise<void> {
 }
 
 async function askRemoval(rendered: Rendered): Promise<void> {
-  nativeButton(byTestId(rendered.host, 'admin-profile-portrait-remove'))?.click();
+  asButton(byTestId(rendered.host, 'admin-profile-portrait-remove')).click();
   await settleBounded(rendered.fixture);
 }
 
 async function answer(rendered: Rendered, choice: 'confirm' | 'cancel'): Promise<void> {
-  nativeButton(byTestId(rendered.host, `confirm-dialog-${choice}`))?.click();
+  asButton(byTestId(rendered.host, `confirm-dialog-${choice}`)).click();
   await settleBounded(rendered.fixture);
 }
 
@@ -89,7 +87,7 @@ describe('AdminProfilePortrait: vignette', () => {
     expect({
       thumbnail: thumbnail(host),
       mention: byTestId(host, 'admin-profile-portrait-default'),
-      remove: nativeButton(byTestId(host, 'admin-profile-portrait-remove'))?.textContent?.trim(),
+      remove: asButton(byTestId(host, 'admin-profile-portrait-remove')).textContent?.trim(),
     }).toEqual({
       thumbnail: { src: STORED, alt: 'Portrait de Julien Nédellec' },
       mention: null,
@@ -146,8 +144,7 @@ describe('AdminProfilePortrait: dépôt', () => {
     expect({
       role: status?.getAttribute('role'),
       text: status?.textContent?.trim(),
-      removeDisabled: nativeButton(byTestId(rendered.host, 'admin-profile-portrait-remove'))
-        ?.disabled,
+      removeDisabled: asButton(byTestId(rendered.host, 'admin-profile-portrait-remove')).disabled,
     }).toEqual({ role: 'status', text: 'Envoi du portrait…', removeDisabled: true });
   });
 });
@@ -193,8 +190,8 @@ describe('AdminProfilePortrait: revenir au portrait par défaut', () => {
 });
 
 describe('AdminProfilePortrait: focus après le retrait (revue F2-F7)', () => {
-  const removeButton = (host: HTMLElement): HTMLButtonElement | null =>
-    nativeButton(byTestId(host, 'admin-profile-portrait-remove'));
+  const removeButton = (host: HTMLElement): HTMLButtonElement =>
+    asButton(byTestId(host, 'admin-profile-portrait-remove'));
 
   it('Given the removal confirmed When it fails Then the focus goes back to the way back button', async () => {
     const rendered = await renderPortrait(STORED);

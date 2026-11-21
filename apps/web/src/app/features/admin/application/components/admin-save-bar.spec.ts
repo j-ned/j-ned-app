@@ -5,6 +5,7 @@ import { settle, settleBounded } from '@shared/testing/settle';
 import { AdminSaveBar } from './admin-save-bar';
 import { BlankPage } from '@shared/testing/blank-page';
 import { normalized } from '@shared/testing/normalized-text';
+import { asButton } from '@shared/testing/as-button';
 
 type BarInputs = { readonly changes?: number; readonly submitting?: boolean };
 
@@ -26,12 +27,8 @@ async function renderBar({
   return { fixture, host: fixture.nativeElement as HTMLElement };
 }
 
-const submitButton = (host: HTMLElement): HTMLButtonElement | null => {
-  const element = byTestId(host, 'savebar-submit');
-  return element instanceof HTMLButtonElement
-    ? element
-    : (element?.querySelector('button') ?? null);
-};
+const submitButton = (host: HTMLElement): HTMLButtonElement =>
+  asButton(byTestId(host, 'savebar-submit'));
 
 describe('AdminSaveBar', () => {
   it.each([
@@ -59,7 +56,7 @@ describe('AdminSaveBar', () => {
     async ({ changes, submitting, disabled }) => {
       const { host } = await renderBar({ changes, submitting });
 
-      expect(submitButton(host)?.disabled).toBe(disabled);
+      expect(submitButton(host).disabled).toBe(disabled);
     },
   );
 

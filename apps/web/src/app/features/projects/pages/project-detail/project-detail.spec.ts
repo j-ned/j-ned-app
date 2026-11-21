@@ -833,6 +833,7 @@ describe('ProjectDetail: articles sur ce projet', () => {
         description: 'desc',
         creator: {
           '@type': 'Person',
+          '@id': 'https://nedellec-julien.fr/#person',
           name: 'Julien Nédellec',
           url: 'https://nedellec-julien.fr',
         },
