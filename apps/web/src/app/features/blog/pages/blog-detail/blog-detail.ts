@@ -218,6 +218,7 @@ import { ArticleComments } from './article-comments';
             class="mt-12"
             [content]="comments.content()"
             [submission]="comments.submission()"
+            [replySubmission]="comments.replySubmission()"
             [resetToken]="comments.resetToken()"
             [replyTarget]="comments.replyTarget()"
             (submitted)="comments.send($event)"

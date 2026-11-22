@@ -952,6 +952,74 @@ describe('BlogDetail', () => {
       });
     });
 
+    async function writeReply(fixture: ComponentFixture<BlogDetail>): Promise<void> {
+      const host = fixture.nativeElement as HTMLElement;
+      host.querySelector<HTMLButtonElement>('[data-testid="comment-reply"]')?.click();
+      await fixture.whenStable();
+      const form = testId(fixture, 'comment-reply-form');
+      fillCommentForm(form, 'Pareil pour moi.');
+      await fixture.whenStable();
+      form?.querySelector<HTMLButtonElement>('[data-testid="comment-submit"]')?.click();
+      fixture.detectChanges();
+      TestBed.tick();
+    }
+
+    const mainField = (
+      fixture: ComponentFixture<BlogDetail>,
+      field: 'name' | 'body',
+    ): HTMLInputElement | HTMLTextAreaElement | null =>
+      testId(fixture, 'comment-main-form')?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `[data-testid="comment-${field}"]`,
+      ) ?? null;
+
+    it('Given a draft in the main form When a reply is accepted Then the draft is kept', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      fillCommentForm(testId(fixture, 'comment-main-form'), 'Brouillon en cours.');
+      await fixture.whenStable();
+
+      await writeReply(fixture);
+      TestBed.inject(HttpTestingController)
+        .expectOne(POST_URL)
+        .flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+
+      expect([mainField(fixture, 'name')?.value, mainField(fixture, 'body')?.value]).toEqual([
+        'Lou',
+        'Brouillon en cours.',
+      ]);
+    });
+
+    it('Given a comment still being sent When a reply is sent and accepted meanwhile Then the main form stays busy, and each form keeps its own confirmation', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      const http = TestBed.inject(HttpTestingController);
+      await writeComment(fixture);
+      const mainPost = http.expectOne(POST_URL);
+
+      await writeReply(fixture);
+      http.expectOne(POST_URL).flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      const mainBusy = testId(fixture, 'comment-main-form')
+        ?.querySelector('[data-testid="comment-submit"]')
+        ?.getAttribute('aria-disabled');
+      mainPost.flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect({
+        mainBusy,
+        reply: host
+          .querySelector('[data-testid="comment-list"] [data-testid="status-message"]')
+          ?.getAttribute('role'),
+        main: testId(fixture, 'comment-main-form')
+          ?.querySelector('[data-testid="status-message"]')
+          ?.getAttribute('role'),
+      }).toEqual({ mainBusy: 'true', reply: 'status', main: 'status' });
+    });
+
     it('Given a refused reply When the reader cancels its form Then the alert leaves with it', async () => {
       const fixture = await showArticle((request) =>
         request.flush(toPublicCommentPageDto(makePublishedThread())),

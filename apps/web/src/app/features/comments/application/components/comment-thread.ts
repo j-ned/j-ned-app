@@ -21,7 +21,7 @@ import type {
 import { CommentForm } from './comment-form';
 import { CommentItem } from './comment-item';
 
-// `parentId` dit à côté de quel formulaire le message s'affiche : nul pour le formulaire principal.
+// `parentId` dit sous quel commentaire s'affiche le message d'une réponse.
 type SubmissionStatus = {
   readonly parentId: string | null;
   readonly tone: 'success' | 'error';
@@ -54,8 +54,8 @@ function statusOf(submission: CommentSubmissionState): SubmissionStatus | null {
   template: `
     <h2 id="comments-heading" class="text-2xl font-bold tracking-tight">{{ heading() }}</h2>
     @let current = content();
-    @let status = submissionStatus();
-    @let sendingFor = sendingParentId();
+    @let mainStatus = mainSubmissionStatus();
+    @let replyStatus = replySubmissionStatus();
     @switch (current.status) {
       @case ('failed') {
         <p data-testid="comments-load-error" class="mt-4 text-foreground/85">
@@ -90,19 +90,19 @@ function statusOf(submission: CommentSubmissionState): SubmissionStatus | null {
                       [legend]="'Répondre à ' + item.author"
                       [cancellable]="true"
                       [focusOnOpen]="true"
-                      [sending]="sendingFor === item.id"
+                      [sending]="replySending()"
                       (submitted)="submitted.emit({ draft: $event, parentId: item.id })"
                       (cancelled)="closeReply(item.id)"
                     />
                   </div>
                 }
-                @if (status && status.parentId === item.id) {
+                @if (replyStatus && replyStatus.parentId === item.id) {
                   <app-status-message
-                    #submissionStatus
+                    #replyStatusMessage
                     tabindex="-1"
                     class="mt-4"
-                    [tone]="status.tone"
-                    >{{ status.text }}</app-status-message
+                    [tone]="replyStatus.tone"
+                    >{{ replyStatus.text }}</app-status-message
                   >
                 }
                 @if (item.replies.length > 0) {
@@ -130,14 +130,18 @@ function statusOf(submission: CommentSubmissionState): SubmissionStatus | null {
       <app-comment-form
         idPrefix="comment"
         [legend]="copy.formLegend"
-        [sending]="sendingFor === null"
+        [sending]="mainSending()"
         [resetToken]="resetToken()"
         (submitted)="submitted.emit({ draft: $event, parentId: null })"
       />
-      @if (status && status.parentId === null) {
-        <app-status-message #submissionStatus tabindex="-1" class="mt-4" [tone]="status.tone">{{
-          status.text
-        }}</app-status-message>
+      @if (mainStatus) {
+        <app-status-message
+          #mainStatusMessage
+          tabindex="-1"
+          class="mt-4"
+          [tone]="mainStatus.tone"
+          >{{ mainStatus.text }}</app-status-message
+        >
       }
     </div>
   `,
@@ -147,13 +151,17 @@ export class CommentThread {
 
   readonly content = input.required<CommentThreadContent>();
   readonly submission = input<CommentSubmissionState>({ kind: 'idle' });
+  readonly replySubmission = input<CommentSubmissionState>({ kind: 'idle' });
   readonly resetToken = input(0);
   readonly replyTarget = input<string | null>(null);
   readonly submitted = output<CommentSent>();
   readonly replyOpened = output<string>();
   readonly replyClosed = output<void>();
 
-  private readonly _status = viewChild('submissionStatus', { read: ElementRef<HTMLElement> });
+  private readonly _mainStatus = viewChild('mainStatusMessage', { read: ElementRef<HTMLElement> });
+  private readonly _replyStatus = viewChild('replyStatusMessage', {
+    read: ElementRef<HTMLElement>,
+  });
   private readonly _items = viewChildren(CommentItem);
 
   protected readonly copy = COMMENT_COPY;
@@ -163,18 +171,21 @@ export class CommentThread {
     return current.status === 'ready' ? current.view.heading : COMMENT_COPY.heading;
   });
 
-  protected readonly submissionStatus = computed(() => statusOf(this.submission()));
+  protected readonly mainSubmissionStatus = computed(() => statusOf(this.submission()));
+  protected readonly replySubmissionStatus = computed(() => statusOf(this.replySubmission()));
+  protected readonly mainSending = computed(() => this.submission().kind === 'sending');
+  protected readonly replySending = computed(() => this.replySubmission().kind === 'sending');
 
-  // `undefined` : aucun envoi en cours ; `null` : le formulaire principal envoie.
-  protected readonly sendingParentId = computed(() => {
-    const submission = this.submission();
-    return submission.kind === 'sending' ? submission.parentId : undefined;
+  // Après un envoi accepté, le focus va sur sa confirmation ; un refus, en alerte, le laisse en place.
+  private readonly focusMainConfirmation = afterRenderEffect({
+    write: () => {
+      if (this.submission().kind === 'sent') this._mainStatus()?.nativeElement.focus();
+    },
   });
 
-  // Après un envoi accepté, le focus va sur la confirmation ; un refus, en alerte, le laisse en place.
-  private readonly focusConfirmation = afterRenderEffect({
+  private readonly focusReplyConfirmation = afterRenderEffect({
     write: () => {
-      if (this.submission().kind === 'sent') this._status()?.nativeElement.focus();
+      if (this.replySubmission().kind === 'sent') this._replyStatus()?.nativeElement.focus();
     },
   });
 

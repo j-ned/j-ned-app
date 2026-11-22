@@ -24,12 +24,19 @@ export class ArticleComments {
     return thread ? { status: 'ready', view: toCommentThreadView(thread) } : { status: 'loading' };
   });
 
-  // L'instance de la page sert d'un article à l'autre : envoi et réponse ouverte repartent à zéro.
+  // L'instance de la page sert d'un article à l'autre : envois et réponse ouverte repartent à zéro.
+  // Un état par formulaire : une réponse n'agit ni sur le bouton ni sur le message du principal.
   private readonly _submission = linkedSignal<string, CommentSubmissionState>({
     source: () => this._slug(),
     computation: () => ({ kind: 'idle' }),
   });
   readonly submission = this._submission.asReadonly();
+
+  private readonly _replySubmission = linkedSignal<string, CommentSubmissionState>({
+    source: () => this._slug(),
+    computation: () => ({ kind: 'idle' }),
+  });
+  readonly replySubmission = this._replySubmission.asReadonly();
 
   private readonly _resetToken = signal(0);
   readonly resetToken = this._resetToken.asReadonly();
@@ -45,21 +52,24 @@ export class ArticleComments {
 
   // Le commentaire envoyé n'entre pas dans la liste : il attend la relecture.
   send({ draft, parentId }: CommentSent): void {
+    const state = parentId === null ? this._submission : this._replySubmission;
+    if (state().kind === 'sending') return;
     const slug = this._slug();
-    this._submission.set({ kind: 'sending', parentId });
+    state.set({ kind: 'sending', parentId });
     this._gateway
       .submit(slug, draft, parentId)
       .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe((result) => {
         // Réponse tardive d'un article quitté entre-temps : elle ne concerne plus la page.
         if (this._slug() !== slug) return;
-        if (result.success) {
-          this._submission.set({ kind: 'sent', parentId });
-          this._resetToken.update((token) => token + 1);
-          if (parentId !== null) this._replyTarget.set(null);
-        } else {
-          this._submission.set({ kind: 'failed', parentId, reason: result.error });
+        if (!result.success) {
+          state.set({ kind: 'failed', parentId, reason: result.error });
+          return;
         }
+        state.set({ kind: 'sent', parentId });
+        // Seul le formulaire principal est vidé ; celui d'une réponse se ferme.
+        if (parentId === null) this._resetToken.update((token) => token + 1);
+        else if (this._replyTarget() === parentId) this._replyTarget.set(null);
       });
   }
 
@@ -69,9 +79,9 @@ export class ArticleComments {
 
   // Un refus affiché pour la réponse abandonnée disparaît avec son formulaire.
   closeReply(): void {
-    const submission = this._submission();
+    const submission = this._replySubmission();
     if (submission.kind === 'failed' && submission.parentId === this._replyTarget()) {
-      this._submission.set({ kind: 'idle' });
+      this._replySubmission.set({ kind: 'idle' });
     }
     this._replyTarget.set(null);
   }

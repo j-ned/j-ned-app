@@ -33,6 +33,7 @@ const ready = (thread: PublishedThread): CommentThreadContent => ({
     app-comment-thread
     [content]="content()"
     [submission]="submission()"
+    [replySubmission]="replySubmission()"
     [resetToken]="resetToken()"
     [replyTarget]="replyTarget()"
     (submitted)="sent.push($event)"
@@ -43,6 +44,7 @@ const ready = (thread: PublishedThread): CommentThreadContent => ({
 class CommentThreadHost {
   readonly content = signal<CommentThreadContent>({ status: 'loading' });
   readonly submission = signal<CommentSubmissionState>({ kind: 'idle' });
+  readonly replySubmission = signal<CommentSubmissionState>({ kind: 'idle' });
   readonly resetToken = signal(0);
   readonly replyTarget = signal<string | null>(null);
   readonly sent: CommentSent[] = [];
@@ -425,7 +427,7 @@ describe('CommentThread: répondre', () => {
   it('Given a reply refused for a comment When the section shows Then the alert sits with that comment, not under the main form', async () => {
     const fixture = await renderHost(ready(thread()));
     await openReply(fixture, 'c-1');
-    fixture.componentInstance.submission.set({
+    fixture.componentInstance.replySubmission.set({
       kind: 'failed',
       parentId: 'c-1',
       reason: 'not-found',
@@ -448,7 +450,7 @@ describe('CommentThread: répondre', () => {
 
   it('Given a reply accepted and its form closed When the section shows Then the confirmation sits with that comment and takes the focus', async () => {
     const fixture = await renderHost(ready(thread()));
-    fixture.componentInstance.submission.set({ kind: 'sent', parentId: 'c-1' });
+    fixture.componentInstance.replySubmission.set({ kind: 'sent', parentId: 'c-1' });
     await settleBounded(fixture);
     const host = fixture.nativeElement as HTMLElement;
     const status = itemOf(host, 'c-1')?.querySelector('[data-testid="status-message"]');
@@ -460,5 +462,24 @@ describe('CommentThread: répondre', () => {
       text: `Merci${NARROW_NBSP}! Ton commentaire sera publié après relecture.`,
       focused: true,
     });
+  });
+
+  it('Given a comment being sent from the main form When a reply is accepted meanwhile Then the main form stays busy and only the reply shows a confirmation', async () => {
+    const fixture = await renderHost(ready(thread()));
+    fixture.componentInstance.submission.set({ kind: 'sending', parentId: null });
+    fixture.componentInstance.replySubmission.set({ kind: 'sent', parentId: 'c-1' });
+    await settleBounded(fixture);
+    const host = fixture.nativeElement as HTMLElement;
+    const main = byTestId(host, 'comment-main-form');
+
+    expect({
+      mainBusy: main
+        ?.querySelector('[data-testid="comment-submit"]')
+        ?.getAttribute('aria-disabled'),
+      mainStatus: main?.querySelector('[data-testid="status-message"]') ?? null,
+      replyStatus: itemOf(host, 'c-1')
+        ?.querySelector('[data-testid="status-message"]')
+        ?.getAttribute('role'),
+    }).toEqual({ mainBusy: 'true', mainStatus: null, replyStatus: 'status' });
   });
 });
