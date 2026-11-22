@@ -13,7 +13,14 @@ import {
   PUBLIC_READ_THROTTLE,
   throttle,
 } from '../common/throttle';
-import { ifMatchVersion, replyVersioned } from '../common/entity-version';
+import type { Context } from 'hono';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import {
+  entityTag,
+  ifMatchVersion,
+  replyVersioned,
+} from '../common/entity-version';
+import type { GalleryWrite } from './project-gallery';
 import { validateDto } from '../common/validation';
 import { createProjectSchema } from './dto/create-project.dto';
 import { projectImageAltSchema } from './dto/project-image-alt.dto';
@@ -82,7 +89,11 @@ export function projectsRoutes(
             projectImageAltSchema,
             await multipartFields(fields),
           );
-          return reply(c, await images.upload(id, file, dto.alt), 201);
+          return replyGalleryWrite(
+            c,
+            await images.upload(id, file, dto.alt),
+            201,
+          );
         },
       )
 
@@ -94,7 +105,7 @@ export function projectsRoutes(
         async (c) => {
           const id = uuidParam(c, 'id');
           const dto = await jsonBody(c, reorderProjectImagesSchema);
-          return reply(c, await images.reorder(id, dto.imageIds));
+          return replyGalleryWrite(c, await images.reorder(id, dto.imageIds));
         },
       )
 
@@ -106,7 +117,10 @@ export function projectsRoutes(
           const id = uuidParam(c, 'id');
           const imageId = uuidParam(c, 'imageId');
           const dto = await jsonBody(c, projectImageAltSchema);
-          return reply(c, await images.updateAlt(id, imageId, dto.alt));
+          return replyGalleryWrite(
+            c,
+            await images.updateAlt(id, imageId, dto.alt),
+          );
         },
       )
 
@@ -117,11 +131,22 @@ export function projectsRoutes(
         async (c) => {
           const id = uuidParam(c, 'id');
           const imageId = uuidParam(c, 'imageId');
-          await images.remove(id, imageId);
+          const { projectVersion } = await images.remove(id, imageId);
+          c.header('ETag', entityTag(projectVersion));
           return c.body(null, 204);
         },
       )
   );
+}
+
+// La galerie fait partie du projet : l'`ETag` d'une écriture de galerie est la version du projet.
+function replyGalleryWrite<T>(
+  c: Context,
+  write: GalleryWrite<T>,
+  status: ContentfulStatusCode = 200,
+): Response {
+  c.header('ETag', entityTag(write.projectVersion));
+  return reply(c, write.result, status);
 }
 
 // Comme le `req.body` de multer : une clé répétée donne une liste.

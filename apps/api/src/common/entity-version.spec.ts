@@ -1,5 +1,8 @@
 import { Hono } from 'hono';
-import { BadRequestException, ConflictException } from './http-errors';
+import {
+  BadRequestException,
+  PreconditionFailedException,
+} from './http-errors';
 import {
   assertVersion,
   entityTag,
@@ -104,9 +107,9 @@ describe('assertVersion', () => {
     expect(() => assertVersion({ version: 3 }, 3, 'périmé')).not.toThrow();
   });
 
-  it('Given another version, When asserted, Then 409 with the given message', () => {
+  it('Given another version, When asserted, Then 412 with the given message', () => {
     expect(() => assertVersion({ version: 4 }, 3, 'périmé')).toThrow(
-      new ConflictException('périmé'),
+      new PreconditionFailedException('périmé'),
     );
   });
 

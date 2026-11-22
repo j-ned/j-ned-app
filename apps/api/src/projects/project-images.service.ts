@@ -21,20 +21,28 @@ import {
   nextGalleryOrder,
   PROJECT_GALLERY_MAX,
   toImageResponse,
+  type GalleryWrite,
   type ProjectImageResponse,
 } from './project-gallery';
 import { insertedRow } from '../common/rows';
 import { nextVersion } from '../common/entity-version';
 
 // La galerie fait partie du projet édité : chaque écriture change sa version, dans la même transaction.
+// Toujours la première requête de la transaction : le projet est verrouillé avant ses captures, dans
+// l'ordre de `DELETE project` (puis la cascade), sans quoi les deux s'interbloquent.
 async function bumpProjectVersion(
   tx: Database,
   projectId: string,
-): Promise<void> {
-  await tx
+): Promise<number> {
+  const [row] = await tx
     .update(projects)
     .set({ version: nextVersion(projects) })
-    .where(eq(projects.id, projectId));
+    .where(eq(projects.id, projectId))
+    .returning({ version: projects.version });
+  if (row === undefined) {
+    throw new NotFoundException(`Project ${projectId} not found`);
+  }
+  return row.version;
 }
 
 // Une capture = une ligne `project_image` + un objet S3.
@@ -63,7 +71,7 @@ export class ProjectImagesService {
     projectId: string,
     file: UploadedFile,
     alt: string,
-  ): Promise<ProjectImageResponse> {
+  ): Promise<GalleryWrite<ProjectImageResponse>> {
     await findByIdOrFail<Project>(this.db, projects, projectId, 'Project');
     const current = await this.rowsOf(projectId);
     if (current.length >= PROJECT_GALLERY_MAX) {
@@ -82,7 +90,8 @@ export class ProjectImagesService {
       image.mimetype,
     );
 
-    const row = await this.db.transaction(async (tx) => {
+    return this.db.transaction(async (tx) => {
+      const projectVersion = await bumpProjectVersion(tx, projectId);
       const rows = await tx
         .insert(projectImages)
         .values({
@@ -95,51 +104,55 @@ export class ProjectImagesService {
           order: nextGalleryOrder(current),
         })
         .returning();
-      await bumpProjectVersion(tx, projectId);
-      return insertedRow(rows);
+      return {
+        result: toImageResponse(insertedRow(rows), this.toUrl),
+        projectVersion,
+      };
     });
-    return toImageResponse(row, this.toUrl);
   }
 
   async updateAlt(
     projectId: string,
     imageId: string,
     alt: string,
-  ): Promise<ProjectImageResponse> {
-    const row = await this.db.transaction(async (tx) => {
+  ): Promise<GalleryWrite<ProjectImageResponse>> {
+    return this.db.transaction(async (tx) => {
+      const projectVersion = await bumpProjectVersion(tx, projectId);
       const [updated] = await tx
         .update(projectImages)
         .set({ alt, updatedAt: new Date() })
         .where(this.imageOf(projectId, imageId))
         .returning();
       if (!updated) throw this.imageNotFound(projectId, imageId);
-      await bumpProjectVersion(tx, projectId);
-      return updated;
+      return { result: toImageResponse(updated, this.toUrl), projectVersion };
     });
-    return toImageResponse(row, this.toUrl);
   }
 
   // Base d'abord, S3 ensuite : un orphelin S3 plutôt qu'une ligne vers un objet effacé.
-  async remove(projectId: string, imageId: string): Promise<void> {
-    const row = await this.db.transaction(async (tx) => {
+  async remove(
+    projectId: string,
+    imageId: string,
+  ): Promise<GalleryWrite<null>> {
+    const { key, projectVersion } = await this.db.transaction(async (tx) => {
+      const version = await bumpProjectVersion(tx, projectId);
       const [deleted] = await tx
         .delete(projectImages)
         .where(this.imageOf(projectId, imageId))
         .returning();
       if (!deleted) throw this.imageNotFound(projectId, imageId);
-      await bumpProjectVersion(tx, projectId);
-      return deleted;
+      return { key: deleted.key, projectVersion: version };
     });
-    await deleteS3IfExists(this.storage, STORAGE_BUCKET, row.key);
+    await deleteS3IfExists(this.storage, STORAGE_BUCKET, key);
+    return { result: null, projectVersion };
   }
 
   // En une transaction ; 422 si la liste n'est pas exactement la galerie.
   async reorder(
     projectId: string,
     imageIds: readonly string[],
-  ): Promise<readonly ProjectImageResponse[]> {
+  ): Promise<GalleryWrite<readonly ProjectImageResponse[]>> {
     return this.db.transaction(async (tx) => {
-      await findByIdOrFail<Project>(tx, projects, projectId, 'Project');
+      const projectVersion = await bumpProjectVersion(tx, projectId);
       const rows = await this.rowsOf(projectId, tx);
       if (
         !isPermutationOf(
@@ -159,13 +172,16 @@ export class ProjectImagesService {
           .set({ order, updatedAt })
           .where(this.imageOf(projectId, id));
       }
-      await bumpProjectVersion(tx, projectId);
 
       const reordered = rows.map((r) => ({
         ...r,
         order: imageIds.indexOf(r.id),
       }));
-      return groupGalleryByProject(reordered, this.toUrl).get(projectId) ?? [];
+      return {
+        result:
+          groupGalleryByProject(reordered, this.toUrl).get(projectId) ?? [],
+        projectVersion,
+      };
     });
   }
 

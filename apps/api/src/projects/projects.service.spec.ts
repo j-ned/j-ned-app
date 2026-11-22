@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import {
   ConflictException,
   NotFoundException,
+  PreconditionFailedException,
   UnprocessableEntityException,
 } from '../common/http-errors';
 import { Logger } from '../common/logger';
@@ -210,13 +211,13 @@ describe('ProjectsService', () => {
   });
 
   describe('update', () => {
-    it('Given If-Match on an older version than the stored one, When updated, Then 409 without writing', async () => {
+    it('Given If-Match on an older version than the stored one, When updated, Then 412 without writing', async () => {
       db.limit.mockResolvedValueOnce([mkProject({ version: 3 })]);
 
       await expect(
         service.update(mkProject().id, { description: 'Périmée' }, 2),
       ).rejects.toThrow(
-        new ConflictException(
+        new PreconditionFailedException(
           'Une version plus récente de ce projet a été enregistrée ailleurs : recharge-le avant d’enregistrer.',
         ),
       );
@@ -410,12 +411,12 @@ describe('ProjectsService', () => {
   });
 
   describe('uploadImage', () => {
-    it('Given If-Match on an older version, When a cover is sent, Then 409 before any storage write', async () => {
+    it('Given If-Match on an older version, When a cover is sent, Then 412 before any storage write', async () => {
       db.limit.mockResolvedValueOnce([mkProject({ version: 3 })]);
 
       await expect(
         service.uploadImage(mkProject().id, aCover(), 2),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(PreconditionFailedException);
       expect(storage.upload).not.toHaveBeenCalled();
       expect(db.update).not.toHaveBeenCalled();
     });

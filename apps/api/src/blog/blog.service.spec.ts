@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '../common/http-errors';
+import {
+  ConflictException,
+  NotFoundException,
+  PreconditionFailedException,
+} from '../common/http-errors';
 import { Logger } from '../common/logger';
 import { and, eq } from 'drizzle-orm';
 import { BlogService } from './blog.service';
@@ -122,20 +126,20 @@ describe('BlogService', () => {
   });
 
   describe('update — version attendue', () => {
-    it('Given If-Match on an older version than the stored one, When updated, Then 409 without writing', async () => {
+    it('Given If-Match on an older version than the stored one, When updated, Then 412 without writing', async () => {
       db.limit.mockResolvedValueOnce([mkPost({ version: 5 })]);
 
       await expect(
         service.update(mkPost().id, { excerpt: 'Périmé' }, 4),
       ).rejects.toThrow(
-        new ConflictException(
+        new PreconditionFailedException(
           'Une version plus récente de cet article a été enregistrée ailleurs : recharge-le avant d’enregistrer.',
         ),
       );
       expect(db.update).not.toHaveBeenCalled();
     });
 
-    it('Given If-Match on an older version, When a cover is sent, Then 409 before any storage write', async () => {
+    it('Given If-Match on an older version, When a cover is sent, Then 412 before any storage write', async () => {
       db.limit.mockResolvedValueOnce([mkPost({ version: 5 })]);
 
       await expect(
@@ -149,7 +153,7 @@ describe('BlogService', () => {
           },
           4,
         ),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(PreconditionFailedException);
       expect(storage.upload.mock.calls).toEqual([]);
       expect(db.update).not.toHaveBeenCalled();
     });

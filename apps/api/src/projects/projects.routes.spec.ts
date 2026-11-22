@@ -1,6 +1,10 @@
 import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
-import { ConflictException, NotFoundException } from '../common/http-errors';
+import {
+  ConflictException,
+  NotFoundException,
+  PreconditionFailedException,
+} from '../common/http-errors';
 import { testApp } from '../testing/test-app';
 import type { ProjectImagesService } from './project-images.service';
 import { projectsRoutes } from './projects.routes';
@@ -148,9 +152,9 @@ describe('projects routes (HTTP)', () => {
       expect(projects.update).not.toHaveBeenCalled();
     });
 
-    it('Given a stale version, When patched, Then the service 409 is returned', async () => {
+    it('Given a stale version, When patched, Then the service 412 is returned', async () => {
       projects.update.mockRejectedValueOnce(
-        new ConflictException('Version périmée'),
+        new PreconditionFailedException('Version périmée'),
       );
 
       const res = await json(
@@ -160,8 +164,21 @@ describe('projects routes (HTTP)', () => {
         { 'if-match': '"1"' },
       );
 
-      expect(res.status).toBe(409);
+      expect(res.status).toBe(412);
       expect(await res.json()).toMatchObject({ message: 'Version périmée' });
+    });
+
+    it('Given a title taken by another project, When patched, Then the service 409 is returned, distinct from a stale version', async () => {
+      projects.update.mockRejectedValueOnce(new ConflictException('Pris'));
+
+      const res = await json(
+        'PATCH',
+        `/api/projects/${ID}`,
+        { title: 'Pris' },
+        { 'if-match': '"1"' },
+      );
+
+      expect(res.status).toBe(409);
     });
   });
 

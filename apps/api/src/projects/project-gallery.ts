@@ -14,6 +14,12 @@ export type ProjectImageResponse = {
   readonly order: number;
 };
 
+// Une écriture de galerie et la version du projet qu'elle a produite.
+export type GalleryWrite<T> = {
+  readonly result: T;
+  readonly projectVersion: number;
+};
+
 export type ProjectResponse = Project & {
   readonly gallery: readonly ProjectImageResponse[];
 };

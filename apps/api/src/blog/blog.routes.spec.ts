@@ -1,6 +1,10 @@
 import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
-import { ConflictException, NotFoundException } from '../common/http-errors';
+import {
+  ConflictException,
+  NotFoundException,
+  PreconditionFailedException,
+} from '../common/http-errors';
 import { PUBLIC_READ_THROTTLE } from '../common/throttle';
 import { testApp } from '../testing/test-app';
 import type { BlogContentImagesService } from './blog-content-images.service';
@@ -239,9 +243,9 @@ describe('blog routes (HTTP)', () => {
       expect(blog.update).not.toHaveBeenCalled();
     });
 
-    it('Given a stale version, When PATCH /posts/:id, Then the service 409 is returned in the API error format', async () => {
+    it('Given a stale version, When PATCH /posts/:id, Then the service 412 is returned in the API error format', async () => {
       blog.update.mockRejectedValueOnce(
-        new ConflictException('Version périmée'),
+        new PreconditionFailedException('Version périmée'),
       );
       const res = await call(`/posts/${ID}`, {
         method: 'PATCH',
@@ -249,11 +253,25 @@ describe('blog routes (HTTP)', () => {
         headers: { 'if-match': '"3"' },
       });
 
-      expect(res.status).toBe(409);
+      expect(res.status).toBe(412);
       expect(await res.json()).toMatchObject({
-        statusCode: 409,
+        statusCode: 412,
+        error: 'Precondition Failed',
         message: 'Version périmée',
       });
+    });
+
+    it('Given a title taken by another post, When PATCH /posts/:id, Then the service 409 is returned, distinct from a stale version', async () => {
+      blog.update.mockRejectedValueOnce(
+        new ConflictException('Un autre article porte déjà ce titre'),
+      );
+      const res = await call(`/posts/${ID}`, {
+        method: 'PATCH',
+        json: { title: 'Pris' },
+        headers: { 'if-match': '"3"' },
+      });
+
+      expect(res.status).toBe(409);
     });
 
     it('Given a created post, When POST /posts, Then 201 with its version as ETag', async () => {

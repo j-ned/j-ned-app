@@ -89,7 +89,7 @@ export class BlogService {
     }
   }
 
-  // `expectedVersion` (If-Match) : écriture refusée en 409 si l'article a changé depuis cette version.
+  // `expectedVersion` (If-Match) : écriture refusée en 412 si l'article a changé depuis cette version.
   async update(
     id: string,
     dto: UpdateBlogPostDto,

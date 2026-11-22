@@ -6,8 +6,8 @@ import * as z from 'zod';
 import type { Database } from '../database/drizzle.types';
 import {
   BadRequestException,
-  ConflictException,
   NotFoundException,
+  PreconditionFailedException,
 } from './http-errors';
 
 const MALFORMED_IF_MATCH =
@@ -57,7 +57,7 @@ export function assertVersion(
   staleMessage: string,
 ): void {
   if (expected !== undefined && current.version !== expected) {
-    throw new ConflictException(staleMessage);
+    throw new PreconditionFailedException(staleMessage);
   }
 }
 
@@ -77,7 +77,7 @@ export function versionedRow(
 }
 
 // L'`UPDATE` conditionnel n'a touché aucune ligne : la ligne encore présente a changé de version
-// (409), sinon elle a été supprimée (404). Les deux constats sont vrais à l'instant de la réponse.
+// (412), sinon elle a été supprimée (404). Les deux constats sont vrais à l'instant de la réponse.
 export async function missedWrite(
   db: Database,
   table: VersionedTable,
@@ -91,7 +91,8 @@ export async function missedWrite(
       .from(table)
       .where(eq(table.id, id))
       .limit(1);
-    if (row !== undefined) throw new ConflictException(messages.stale);
+    if (row !== undefined)
+      throw new PreconditionFailedException(messages.stale);
   }
   throw new NotFoundException(messages.notFound);
 }

@@ -7,7 +7,12 @@ import postgres from 'postgres';
 import { BlogContentImagesService } from './blog/blog-content-images.service';
 import { BlogService } from './blog/blog.service';
 import type { UploadedFile } from './common/http';
-import { ConflictException, NotFoundException } from './common/http-errors';
+import {
+  ConflictException,
+  NotFoundException,
+  PreconditionFailedException,
+  UnprocessableEntityException,
+} from './common/http-errors';
 import type { Database } from './database/drizzle.types';
 import { blogPosts, projects, schema } from './database/schema';
 import { ProjectImagesService } from './projects/project-images.service';
@@ -23,6 +28,7 @@ import { defined } from './testing/defined';
 // course entre deux enregistrements. Base jetable créée sur le serveur de `PROFILE_IT_DATABASE_URL`
 // (migrée, supprimée à la fin) : `PROFILE_IT_DATABASE_URL=… pnpm test -- content-version`.
 const SERVER_URL = process.env.PROFILE_IT_DATABASE_URL;
+const LOCK_WAIT_ROUNDS = 500;
 
 class MemoryStorage extends StorageService {
   constructor() {
@@ -95,6 +101,21 @@ const aFile = (bytes: string): UploadedFile => ({
     await admin.end();
   });
 
+  // Attente d'une condition : une requête de la base de test attend un verrou. Bornée, et cède la
+  // main entre deux tours pour laisser avancer la requête observée.
+  const lockWaiter = async (): Promise<void> => {
+    for (let round = 0; round < LOCK_WAIT_ROUNDS; round += 1) {
+      const [row] = await admin<{ waiting: number }[]>`
+        SELECT count(*)::int AS waiting FROM pg_stat_activity
+        WHERE datname = ${databaseName} AND wait_event_type = 'Lock'`;
+      if ((row?.waiting ?? 0) > 0) return;
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
+    throw new Error(
+      `Aucune requête en attente de verrou après ${LOCK_WAIT_ROUNDS} relectures de pg_stat_activity`,
+    );
+  };
+
   const newPost = () =>
     blog.create({
       title: `Article ${randomUUID()}`,
@@ -148,13 +169,13 @@ const aFile = (bytes: string): UploadedFile => ({
       expect(await postVersion(post.id)).toBe(2);
     });
 
-    it('Given a post at version 2, When patched with If-Match 1, Then 409 and nothing is written', async () => {
+    it('Given a post at version 2, When patched with If-Match 1, Then 412 and nothing is written', async () => {
       const post = await newPost();
       await blog.update(post.id, { excerpt: 'Ailleurs' }, 1);
 
       await expect(
         blog.update(post.id, { excerpt: 'Brouillon périmé' }, 1),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(PreconditionFailedException);
 
       const [row] = await db
         .select()
@@ -172,7 +193,7 @@ const aFile = (bytes: string): UploadedFile => ({
       expect(updated).toMatchObject({ excerpt: 'Sans condition', version: 3 });
     });
 
-    it('Given a deleted post, When patched with If-Match, Then 404, not 409', async () => {
+    it('Given a deleted post, When patched with If-Match, Then 404, not 412', async () => {
       const post = await newPost();
       await blog.remove(post.id);
 
@@ -181,7 +202,7 @@ const aFile = (bytes: string): UploadedFile => ({
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('Given two saves from the same version at once, When both are sent, Then exactly one is written and the other gets 409', async () => {
+    it('Given two saves from the same version at once, When both are sent, Then exactly one is written and the other gets 412', async () => {
       const post = await newPost();
 
       const results = await Promise.allSettled([
@@ -195,39 +216,35 @@ const aFile = (bytes: string): UploadedFile => ({
       );
       expect(written).toHaveLength(1);
       expect(refused).toHaveLength(1);
-      expect(refused[0]?.reason).toBeInstanceOf(ConflictException);
+      expect(refused[0]?.reason).toBeInstanceOf(PreconditionFailedException);
       expect(await postVersion(post.id)).toBe(2);
     });
 
-    it('Given a save read at version 1 then blocked while another write commits version 2, When it resumes, Then the conditional UPDATE writes nothing and answers 409', async () => {
+    it('Given a save read at version 1 then blocked while another write commits version 2, When it resumes, Then the conditional UPDATE writes nothing and answers 412', async () => {
       const post = await newPost();
       let release = () => {};
       const released = new Promise<void>((resolve) => (release = resolve));
+      let locked = () => {};
+      const isLocked = new Promise<void>((resolve) => (locked = resolve));
       const other = client.begin(async (tx) => {
         await tx`SELECT id FROM blog_post WHERE id = ${post.id} FOR UPDATE`;
+        locked();
         await released;
         await tx`UPDATE blog_post SET version = version + 1, excerpt = 'Ailleurs' WHERE id = ${post.id}`;
       });
 
+      await isLocked;
       // La lecture préalable passe (version 1), l'UPDATE attend le verrou de l'autre transaction.
       const save = blog.update(post.id, { excerpt: 'Brouillon' }, 1);
-      let settled = false;
       const outcome = save.then(
         () => 'written',
         (error: unknown) => error,
       );
-      void outcome.finally(() => (settled = true));
-      // Attente d'une condition : l'UPDATE de l'éditeur est en attente de verrou (ou a déjà échoué).
-      for (let waiting = 0; waiting === 0 && !settled;) {
-        const [row] = await admin<{ waiting: number }[]>`
-          SELECT count(*)::int AS waiting FROM pg_stat_activity
-          WHERE datname = ${databaseName} AND wait_event_type = 'Lock'`;
-        waiting = row?.waiting ?? 0;
-      }
+      await lockWaiter();
       release();
       await other;
 
-      expect(await outcome).toBeInstanceOf(ConflictException);
+      expect(await outcome).toBeInstanceOf(PreconditionFailedException);
       const [row] = await db
         .select()
         .from(blogPosts)
@@ -245,13 +262,13 @@ const aFile = (bytes: string): UploadedFile => ({
       expect(withoutCover).toMatchObject({ coverImage: '', version: 3 });
     });
 
-    it('Given a stale version, When a cover is sent, Then 409 and the cover is unchanged', async () => {
+    it('Given a stale version, When a cover is sent, Then 412 and the cover is unchanged', async () => {
       const post = await newPost();
       await blog.update(post.id, { excerpt: 'Ailleurs' }, 1);
 
       await expect(
         blog.uploadCoverImage(post.id, aFile('b'), 1),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(PreconditionFailedException);
       const [row] = await db
         .select()
         .from(blogPosts)
@@ -280,7 +297,7 @@ const aFile = (bytes: string): UploadedFile => ({
       expect(listed?.version).toBe(1);
     });
 
-    it('Given a project at version 1, When patched with If-Match 1 then again with If-Match 1, Then the first is written and the second gets 409', async () => {
+    it('Given a project at version 1, When patched with If-Match 1 then again with If-Match 1, Then the first is written and the second gets 412', async () => {
       const project = await newProject();
 
       const updated = await projectsService.update(
@@ -290,10 +307,49 @@ const aFile = (bytes: string): UploadedFile => ({
       );
       await expect(
         projectsService.update(project.id, { description: 'Périmée' }, 1),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(PreconditionFailedException);
 
       expect(updated.version).toBe(2);
       expect(await projectVersion(project.id)).toBe(2);
+    });
+
+    it('Given the title of another project, When patched with the current If-Match, Then 409 for the slug, not 412, and nothing is written', async () => {
+      const taken = await newProject();
+      const project = await newProject();
+
+      await expect(
+        projectsService.update(project.id, { title: taken.title }, 1),
+      ).rejects.toThrow(ConflictException);
+      expect(await projectVersion(project.id)).toBe(1);
+    });
+
+    it('Given a project held by a deletion, When an alt text is changed meanwhile, Then 404 once the deletion commits, never a deadlock', async () => {
+      const project = await newProject();
+      const image = await gallery.upload(project.id, aFile('4'), 'Avant');
+      let release = () => {};
+      const released = new Promise<void>((resolve) => (release = resolve));
+      // Même ordre que `DELETE project` : la ligne du projet d'abord, puis ses captures (cascade).
+      let locked = () => {};
+      const isLocked = new Promise<void>((resolve) => (locked = resolve));
+      const deletion = client.begin(async (tx) => {
+        await tx`SELECT id FROM project WHERE id = ${project.id} FOR UPDATE`;
+        locked();
+        await released;
+        await tx`DELETE FROM project WHERE id = ${project.id}`;
+      });
+
+      await isLocked;
+      const outcome = gallery
+        .updateAlt(project.id, image.result.id, 'Pendant')
+        .then(
+          () => 'written',
+          (error: unknown) => error,
+        );
+      await lockWaiter();
+      release();
+      await deletion;
+
+      expect(await outcome).toBeInstanceOf(NotFoundException);
     });
 
     it('Given a deleted project, When patched with If-Match, Then 404', async () => {
@@ -305,7 +361,7 @@ const aFile = (bytes: string): UploadedFile => ({
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('Given two saves from the same version at once, When both are sent, Then exactly one is written and the other gets 409', async () => {
+    it('Given two saves from the same version at once, When both are sent, Then exactly one is written and the other gets 412', async () => {
       const project = await newProject();
 
       const results = await Promise.allSettled([
@@ -317,9 +373,9 @@ const aFile = (bytes: string): UploadedFile => ({
       const refused = results.filter(
         (r): r is PromiseRejectedResult => r.status === 'rejected',
       );
-      expect(refused.map((r) => r.reason instanceof ConflictException)).toEqual(
-        [true],
-      );
+      expect(
+        refused.map((r) => r.reason instanceof PreconditionFailedException),
+      ).toEqual([true]);
     });
 
     it('Given a project, When its cover is sent with If-Match then removed, Then each write increments the version', async () => {
@@ -344,24 +400,41 @@ const aFile = (bytes: string): UploadedFile => ({
       const project = await newProject();
 
       const first = await gallery.upload(project.id, aFile('1'), 'Un');
-      expect(await projectVersion(project.id)).toBe(2);
       const second = await gallery.upload(project.id, aFile('2'), 'Deux');
-      expect(await projectVersion(project.id)).toBe(3);
-      await gallery.updateAlt(project.id, first.id, 'Premier');
-      expect(await projectVersion(project.id)).toBe(4);
-      await gallery.reorder(project.id, [second.id, first.id]);
-      expect(await projectVersion(project.id)).toBe(5);
-      await gallery.remove(project.id, second.id);
+      const alt = await gallery.updateAlt(
+        project.id,
+        first.result.id,
+        'Premier',
+      );
+      const order = await gallery.reorder(project.id, [
+        second.result.id,
+        first.result.id,
+      ]);
+      const removal = await gallery.remove(project.id, second.result.id);
+
+      expect(
+        [first, second, alt, order, removal].map((w) => w.projectVersion),
+      ).toEqual([2, 3, 4, 5, 6]);
       expect(await projectVersion(project.id)).toBe(6);
     });
 
-    it('Given a gallery write made elsewhere, When the draft from before it is saved with If-Match, Then 409', async () => {
+    it('Given a gallery write made elsewhere, When the draft from before it is saved with If-Match, Then 412', async () => {
       const project = await newProject();
       await gallery.upload(project.id, aFile('3'), 'Ailleurs');
 
       await expect(
         projectsService.update(project.id, { description: 'Périmée' }, 1),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(PreconditionFailedException);
+    });
+
+    it('Given an order that is not the gallery, When reordered, Then 422 and the project version is rolled back', async () => {
+      const project = await newProject();
+      await gallery.upload(project.id, aFile('5'), 'Seule');
+
+      await expect(gallery.reorder(project.id, [randomUUID()])).rejects.toThrow(
+        UnprocessableEntityException,
+      );
+      expect(await projectVersion(project.id)).toBe(2);
     });
 
     it('Given an unknown image, When its alt text is changed, Then 404 and the project version is unchanged', async () => {

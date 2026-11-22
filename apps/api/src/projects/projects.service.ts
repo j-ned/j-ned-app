@@ -70,7 +70,7 @@ export class ProjectsService {
     }
   }
 
-  // `expectedVersion` (If-Match) : écriture refusée en 409 si le projet a changé depuis cette version.
+  // `expectedVersion` (If-Match) : écriture refusée en 412 si le projet a changé depuis cette version.
   async update(
     id: string,
     dto: UpdateProjectDto,
