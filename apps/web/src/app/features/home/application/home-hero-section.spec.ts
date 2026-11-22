@@ -87,6 +87,17 @@ describe('HomeHeroSection', () => {
       expect(frame()?.getAttribute('aria-label')).toBe(HOME_WORK_FRAME.title);
     });
 
+    it('Given the work frame When it is read Then the hosting row names the self-hosted stack the site runs on', () => {
+      const terms = [...(frame()?.querySelectorAll('dt') ?? [])].map((dt) =>
+        dt.textContent?.trim(),
+      );
+      const values = [...(frame()?.querySelectorAll('dd') ?? [])].map((dd) =>
+        dd.textContent?.trim(),
+      );
+
+      expect(values[terms.indexOf('Hébergement')]).toBe('Auto-hébergé (Dokploy), PostgreSQL');
+    });
+
     it('is the only description list of the first screen', () => {
       const lists = Array.from(host().querySelectorAll('dl'));
       expect(lists).toHaveLength(1);
