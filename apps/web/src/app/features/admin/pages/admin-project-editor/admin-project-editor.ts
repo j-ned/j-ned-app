@@ -4,7 +4,6 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { ProjectImage, ProjectInput } from '@features/projects/domain/models/project.model';
-import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
 import { AppIcon } from '@shared/icons/app-icon';
@@ -177,7 +176,6 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
 })
 export class AdminProjectEditor implements LeaveConfirmable {
   private readonly gateway = inject(ProjectsGateway);
-  private readonly home = inject(HomeGateway);
   private readonly toast = inject(ToastStore);
   private readonly router = inject(Router);
 
@@ -239,7 +237,6 @@ export class AdminProjectEditor implements LeaveConfirmable {
         : "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoie-la depuis sa page.";
       this.toast.add({ severity: 'warn', detail: uploadFailureMessage(warning, cover.error) });
     }
-    this.invalidatePublicCaches();
     if (cover.status === 'sent' && id) this.projectResource.reload();
     this.toast.add({ severity: 'success', detail: id ? 'Projet mis à jour' : 'Projet créé' });
     if (!id) await this.router.navigate(['/admin/projects', saved.id], { replaceUrl: true });
@@ -247,11 +244,5 @@ export class AdminProjectEditor implements LeaveConfirmable {
 
   protected updateGallery(gallery: readonly ProjectImage[]): void {
     this.gallery.set(gallery);
-    this.invalidatePublicCaches();
-  }
-
-  private invalidatePublicCaches(): void {
-    this.gateway.invalidateAllProjects();
-    this.home.invalidateBundle();
   }
 }

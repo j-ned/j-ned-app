@@ -1,4 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, type ResourceRef } from '@angular/core';
+import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import { SectionUnavailable } from '@shared/ui/section-unavailable';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
@@ -7,6 +9,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
 import { CvDownload } from '@features/cv/application/cv-download';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 import { ProfileGateway } from '../../domain/gateways/profile.gateway';
+import type { ProfileDocument } from '../../domain/models/profile-content.model';
 import { AboutHero } from '../../application/about-hero';
 import { AboutDiploma } from '../../application/about-diploma';
 import { AboutJourney } from '../../application/about-journey';
@@ -93,10 +96,15 @@ export class About {
   private readonly _scroller = inject(SectionScroller);
   private readonly _markUnavailable = injectMarkUnavailable();
 
-  private readonly _profileResource = rxResource({
+  private readonly _profileResource: ResourceRef<ProfileDocument | undefined> = rxResource({
     // La page existe toujours : une lecture en échec, 404 compris, ne doit être ni un 200 vide ni un 404.
     stream: () =>
-      this._profileGateway.getProfile().pipe(tap({ error: () => this._markUnavailable() })),
+      this._profileGateway
+        .getProfile({ background: this._profileResource.hasValue() })
+        .pipe(
+          keepShownOnFailedReload(this._profileResource),
+          tap({ error: () => this._markUnavailable() }),
+        ),
   });
   // `value()` lève sur une ressource en erreur ; `hasValue()` non.
   private readonly _document = computed(() =>
@@ -112,6 +120,11 @@ export class About {
   protected readonly journey = SITE_IDENTITY.journey;
   protected readonly socials = ABOUT_IDENTITY.socials;
   protected readonly cvUrl = this._cvDownload.url;
+
+  // Le parcours a pu être modifié dans l'admin pendant que l'onglet était ailleurs.
+  constructor() {
+    refreshWhenVisible(() => this._profileResource.reload());
+  }
 
   protected goToContact(): void {
     this._scroller.scrollTo('contact');

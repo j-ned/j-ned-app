@@ -4,9 +4,9 @@ import type { Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { Project, ProjectKindFilter } from '@features/projects/domain/models/project.model';
-import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { AdminProjectRow } from '../../application/components/admin-project-row';
 import { Button } from '@shared/ui/button';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { ToastStore } from '@core/notifications/toast-store';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
@@ -86,7 +86,6 @@ import { PendingDeletion } from '../../application/pending-deletion';
 })
 export class AdminProjects {
   private readonly projectsGateway = inject(ProjectsGateway);
-  private readonly homeGateway = inject(HomeGateway);
   private readonly toast = inject(ToastStore);
   private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
@@ -112,8 +111,6 @@ export class AdminProjects {
     list: this.projectsResource,
     remove: (project): Observable<void> => this.projectsGateway.deleteProject(project.id),
     succeeded: (): void => {
-      this.homeGateway.invalidateBundle();
-      this.projectsGateway.invalidateAllProjects();
       this.toast.add({ severity: 'success', detail: 'Projet supprimé' });
     },
     failed: (): void =>
@@ -124,6 +121,11 @@ export class AdminProjects {
     const title = this.deletion.target()?.title ?? '';
     return { heading: `Supprimer le projet ${title}\u202f?`, confirm: `Supprimer ${title}` };
   });
+
+  // Un projet a pu être écrit depuis un autre onglet ; la navigation suit la même liste.
+  constructor() {
+    refreshAdminWhenVisible(() => this.projectsGateway.invalidateAllProjects());
+  }
 
   protected requestDeletion(id: string): void {
     const project = this.projects().find((candidate) => candidate.id === id);

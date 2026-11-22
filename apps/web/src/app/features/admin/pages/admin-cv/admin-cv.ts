@@ -1,10 +1,13 @@
-import { Component, inject, signal, computed, viewChild } from '@angular/core';
+import { Component, inject, signal, computed, viewChild, type ResourceRef } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
+import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import { firstValueFrom } from 'rxjs';
 import { dateRangeToParams } from '@features/analytics/domain/analytics-presenter';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
+import type { CvInfo } from '@features/cv/domain/models/cv.model';
 import { apiErrorMessage } from '@shared/api/api-error-message';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ToastStore } from '@core/notifications/toast-store';
@@ -177,9 +180,17 @@ export class AdminCv {
 
   private readonly _period = dateRangeToParams('30d', new Date());
 
-  protected readonly cvResource = rxResource({ stream: () => this._cvService.getCurrent() });
-  private readonly _downloadsResource = rxResource({
-    stream: () => this._analytics.getCvDownloadCount(this._period.startDate, this._period.endDate),
+  protected readonly cvResource: ResourceRef<CvInfo | null | undefined> = rxResource({
+    stream: () =>
+      this._cvService
+        .getCurrent({ background: this.cvResource.hasValue() })
+        .pipe(keepShownOnFailedReload(this.cvResource)),
+  });
+  private readonly _downloadsResource: ResourceRef<number | undefined> = rxResource({
+    stream: () =>
+      this._analytics
+        .getCvDownloadCount(this._period.startDate, this._period.endDate)
+        .pipe(keepShownOnFailedReload(this._downloadsResource)),
   });
   protected readonly cv = computed(() =>
     this.cvResource.hasValue() ? this.cvResource.value() : null,
@@ -200,6 +211,14 @@ export class AdminCv {
   protected readonly isUploading = signal(false);
   protected readonly dropzoneResetToken = signal(0);
   protected readonly downloadUrl = this._cvService.getDownloadUrl();
+
+  // Le CV a pu changer depuis un autre onglet, ses téléchargements depuis le site.
+  constructor() {
+    refreshAdminWhenVisible(() => {
+      this.cvResource.reload();
+      this._downloadsResource.reload();
+    });
+  }
 
   protected selectCvFile(file: File): void {
     const refusal = cvFileRefusal(file);

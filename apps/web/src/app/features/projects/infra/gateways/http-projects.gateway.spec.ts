@@ -540,7 +540,7 @@ describe('HttpProjectsGateway', () => {
   });
 
   describe('Invalidation du cache featured: 1 test', () => {
-    it('invalidateFeatured() re-déclenche le GET de la liste pour les abonnés vivants', () => {
+    it('invalidateAllProjects() re-déclenche le GET de la liste pour les abonnés de la vitrine', () => {
       const { gateway, httpController } = configure();
       const seen: string[] = [];
       const sub = gateway.getFeaturedProjects().subscribe((list) => seen.push(list[0]?.id ?? ''));
@@ -548,7 +548,7 @@ describe('HttpProjectsGateway', () => {
         .expectOne(`${BASE}/projects`)
         .flush([makeProject({ id: 'uuid-1', featured: true })]);
 
-      gateway.invalidateFeatured();
+      gateway.invalidateAllProjects();
 
       const refetch = httpController.expectOne(`${BASE}/projects`);
       expect(refetch.request.method).toBe('GET');
@@ -687,6 +687,41 @@ describe('HttpProjectsGateway: écritures de l’admin derrière l’intercepteu
     ).toEqual({ status: 500, toasts: 1 });
     httpController.verify();
   });
+
+  it('Given the shared list shown When its reread fails, retry included Then no toast is shown and the list stays', () => {
+    const { gateway, httpController } = configureWithToasts();
+    const seen: number[] = [];
+    const sub = gateway.getAllProjects().subscribe((list) => seen.push(list.length));
+    httpController.expectOne(`${BASE}/projects`).flush([makeProject()]);
+
+    gateway.invalidateAllProjects();
+    httpController
+      .expectOne(`${BASE}/projects`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    httpController
+      .expectOne(`${BASE}/projects`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect({ toasts: add.mock.calls.length, seen }).toEqual({ toasts: 0, seen: [1] });
+    sub.unsubscribe();
+    httpController.verify();
+  });
+
+  it('Given no list yet When the first read fails twice Then the interceptor still shows its toasts', () => {
+    const { gateway, httpController } = configureWithToasts();
+    const sub = gateway.getAllProjects().subscribe({ error: () => undefined });
+
+    httpController
+      .expectOne(`${BASE}/projects`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    httpController
+      .expectOne(`${BASE}/projects`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(add.mock.calls.length).toBe(2);
+    sub.unsubscribe();
+    httpController.verify();
+  });
 });
 
 describe('HttpProjectsGateway: image preparation before upload', () => {
@@ -738,6 +773,114 @@ describe('HttpProjectsGateway: image preparation before upload', () => {
       );
 
       expect(failure).toBe(refusal);
+      httpController.verify();
+    },
+  );
+});
+
+describe('HttpProjectsGateway: the shared list follows the admin writes', () => {
+  const IMAGE = new File(['x'], 'cover.png', { type: 'image/png' });
+  const imageDto = {
+    id: 'i-1',
+    url: '/storage/i-1.avif',
+    alt: 'Capture',
+    width: 1,
+    height: 1,
+    order: 0,
+  };
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  const writes: readonly {
+    readonly write: string;
+    readonly url: string;
+    readonly answer: object | null;
+    readonly call: (gateway: HttpProjectsGateway) => Observable<unknown>;
+  }[] = [
+    {
+      write: 'createProject',
+      url: `${BASE}/projects`,
+      answer: makeProject({ id: 'p-1' }),
+      call: (g) => g.createProject(makeProjectInput()),
+    },
+    {
+      write: 'updateProject',
+      url: `${BASE}/projects/p-1`,
+      answer: makeProject({ id: 'p-1' }),
+      call: (g) => g.updateProject('p-1', { title: 'X' }),
+    },
+    {
+      write: 'deleteProject',
+      url: `${BASE}/projects/p-1`,
+      answer: null,
+      call: (g) => g.deleteProject('p-1'),
+    },
+    {
+      write: 'uploadImage',
+      url: `${BASE}/projects/p-1/image`,
+      answer: { key: 'k' },
+      call: (g) => g.uploadImage(IMAGE, 'p-1'),
+    },
+    {
+      write: 'uploadGalleryImage',
+      url: `${BASE}/projects/p-1/images`,
+      answer: imageDto,
+      call: (g) => g.uploadGalleryImage('p-1', IMAGE, 'Capture'),
+    },
+    {
+      write: 'updateGalleryImageAlt',
+      url: `${BASE}/projects/p-1/images/i-1`,
+      answer: imageDto,
+      call: (g) => g.updateGalleryImageAlt('p-1', 'i-1', 'Capture'),
+    },
+    {
+      write: 'reorderGallery',
+      url: `${BASE}/projects/p-1/images/order`,
+      answer: [imageDto],
+      call: (g) => g.reorderGallery('p-1', ['i-1']),
+    },
+    {
+      write: 'deleteGalleryImage',
+      url: `${BASE}/projects/p-1/images/i-1`,
+      answer: null,
+      call: (g) => g.deleteGalleryImage('p-1', 'i-1'),
+    },
+  ];
+
+  it.each(writes)(
+    'Given the list is shown When $write succeeds Then the list is read again and its readers receive it',
+    async ({ url, answer, call }) => {
+      const { gateway, httpController } = configure();
+      const seen: string[] = [];
+      const sub = gateway.getAllProjects().subscribe((list) => seen.push(list[0]?.id ?? ''));
+      httpController.expectOne(`${BASE}/projects`).flush([makeProject({ id: 'before' })]);
+
+      const written = firstValueFrom(call(gateway));
+      httpController.expectOne(url).flush(answer);
+      await written;
+      httpController.expectOne(`${BASE}/projects`).flush([makeProject({ id: 'after' })]);
+
+      expect(seen).toEqual(['before', 'after']);
+      sub.unsubscribe();
+      httpController.verify();
+    },
+  );
+
+  it.each(writes)(
+    'Given the list is shown When $write fails Then the list is not read again',
+    async ({ url, call }) => {
+      const { gateway, httpController } = configure();
+      const sub = gateway.getAllProjects().subscribe();
+      httpController.expectOne(`${BASE}/projects`).flush([makeProject({ id: 'before' })]);
+
+      const written = firstValueFrom(call(gateway)).catch(() => 'refusée');
+      httpController.expectOne(url).flush(null, { status: 500, statusText: 'Server Error' });
+      await written;
+
+      httpController.expectNone(`${BASE}/projects`);
+      sub.unsubscribe();
       httpController.verify();
     },
   );

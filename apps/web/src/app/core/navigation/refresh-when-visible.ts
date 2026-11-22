@@ -7,14 +7,17 @@ import { injectIsBrowser } from '@core/ssr/inject-is-browser';
 export const REFRESH_MIN_INTERVAL_MS = 2_000;
 
 // À appeler dans un contexte d'injection : l'écoute tombe avec l'écran qui l'a posée.
-export function refreshWhenVisible(refresh: () => void): void {
+export function refreshWhenVisible(
+  refresh: () => void,
+  { minIntervalMs = REFRESH_MIN_INTERVAL_MS }: { readonly minIntervalMs?: number } = {},
+): void {
   if (!injectIsBrowser()) return;
   const document = inject(DOCUMENT);
   let lastRefresh = Number.NEGATIVE_INFINITY;
   const onChange = (): void => {
     if (document.visibilityState !== 'visible') return;
     const now = Date.now();
-    if (now - lastRefresh < REFRESH_MIN_INTERVAL_MS) return;
+    if (now - lastRefresh < minIntervalMs) return;
     lastRefresh = now;
     refresh();
   };

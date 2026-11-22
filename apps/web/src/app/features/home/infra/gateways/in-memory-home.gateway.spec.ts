@@ -11,14 +11,12 @@ describe('InMemoryHomeGateway', () => {
   let gateway: InMemoryHomeGateway;
   const projectsStub = {
     getFeaturedProjects: vi.fn(),
-    invalidateFeatured: vi.fn(),
   };
   const blogStub = { getPublishedPosts: vi.fn() };
 
   beforeEach(() => {
     projectsStub.getFeaturedProjects.mockReset();
     projectsStub.getFeaturedProjects.mockReturnValue(of([]));
-    projectsStub.invalidateFeatured.mockReset();
     blogStub.getPublishedPosts.mockReset();
     blogStub.getPublishedPosts.mockReturnValue(of([]));
     TestBed.configureTestingModule({
@@ -96,10 +94,5 @@ describe('InMemoryHomeGateway', () => {
     const result = await firstValueFrom(gateway.getHomeBundle());
 
     expect(result).toEqual({ hero: STATIC_HERO, featuredProjects: [], latestPosts: [] });
-  });
-
-  it('invalidateBundle délègue à ProjectsGateway.invalidateFeatured (rafraîchit la donnée dynamique)', () => {
-    gateway.invalidateBundle();
-    expect(projectsStub.invalidateFeatured).toHaveBeenCalledOnce();
   });
 });

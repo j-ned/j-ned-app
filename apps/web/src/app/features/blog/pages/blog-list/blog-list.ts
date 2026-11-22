@@ -5,9 +5,12 @@ import {
   inject,
   input,
   linkedSignal,
+  type ResourceRef,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import { BlogPostRow } from '../../application/components/blog-post-row';
 import { AppIcon } from '@shared/icons/app-icon';
@@ -124,9 +127,13 @@ export class BlogList {
   // Bound via withComponentInputBinding() to the ?tag= query param — /blog?tag=Angular.
   readonly tag = input<string | null>(null);
 
-  protected readonly postsResource = rxResource({
-    stream: () => this.gateway.getPublishedPosts(),
-  });
+  protected readonly postsResource: ResourceRef<readonly BlogPostSummary[] | undefined> =
+    rxResource({
+      stream: () =>
+        this.gateway
+          .getPublishedPosts({ background: this.postsResource.hasValue() })
+          .pipe(keepShownOnFailedReload(this.postsResource)),
+    });
   private readonly _posts = computed(() =>
     this.postsResource.hasValue() ? this.postsResource.value() : [],
   );
@@ -150,6 +157,11 @@ export class BlogList {
   protected readonly visibleCountLabel = computed(() =>
     this.postsResource.hasValue() ? visibleArticleCountLabel(this.view().visibleCount) : '',
   );
+
+  // Un article a pu être publié pendant que l'onglet était ailleurs.
+  constructor() {
+    refreshWhenVisible(() => this.postsResource.reload());
+  }
 
   protected retry(): void {
     this.postsResource.reload();

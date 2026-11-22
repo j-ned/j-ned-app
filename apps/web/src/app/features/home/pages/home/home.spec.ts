@@ -38,7 +38,6 @@ const bundle = (overrides: Partial<HomeBundle> = {}): HomeBundle => ({
 function makeHomeGateway(overrides: Partial<HomeGateway> = {}): HomeGateway {
   return {
     getHomeBundle: () => of(bundle()),
-    invalidateBundle: vi.fn(),
     ...overrides,
   } as unknown as HomeGateway;
 }

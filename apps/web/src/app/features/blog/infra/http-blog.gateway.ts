@@ -1,12 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map, Observable, retry } from 'rxjs';
+import { map, retry, tap, type MonoTypeOperatorFunction, type Observable } from 'rxjs';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput, BlogPostSummary } from '../domain/models/blog-post.model';
 import type { ContentImage } from '../domain/models/content-image.model';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
 import { refreshable } from '@shared/api/refreshable';
-import { silentErrors } from '@core/interceptors/skip-error-toast';
+import { silentErrors, silentWhen } from '@core/interceptors/skip-error-toast';
 import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
 import { postPreparedImage } from '@shared/upload/post-prepared-image';
 
@@ -23,16 +23,22 @@ export class HttpBlogGateway extends BlogGateway {
   private readonly apiUrl = inject(API_BASE_URL);
   private readonly prepareImage = inject(IMAGE_UPLOAD_PREPARER);
 
-  private readonly adminPosts = refreshable(() =>
-    this.http.get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`).pipe(
-      retry(1),
-      map((rows): readonly BlogPost[] => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))),
-    ),
+  private readonly adminPosts = refreshable((background) =>
+    this.http
+      .get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`, { context: silentWhen(background) })
+      .pipe(
+        retry(1),
+        map((rows): readonly BlogPost[] => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))),
+      ),
   );
 
-  getPublishedPosts(): Observable<readonly BlogPostSummary[]> {
+  getPublishedPosts(options?: {
+    readonly background?: boolean;
+  }): Observable<readonly BlogPostSummary[]> {
     return this.http
-      .get<BlogPostSummary[]>(`${this.apiUrl}/blog/posts`)
+      .get<BlogPostSummary[]>(`${this.apiUrl}/blog/posts`, {
+        context: silentWhen(options?.background),
+      })
       .pipe(map((rows) => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))));
   }
 
@@ -52,21 +58,21 @@ export class HttpBlogGateway extends BlogGateway {
 
   // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même.
   createPost(post: BlogPostInput): Observable<BlogPost> {
-    return this.http.post<BlogPost>(`${this.apiUrl}/blog/posts`, post, {
-      context: silentErrors(),
-    });
+    return this.http
+      .post<BlogPost>(`${this.apiUrl}/blog/posts`, post, { context: silentErrors() })
+      .pipe(this.relistOnSuccess());
   }
 
   updatePost(id: string, post: Partial<BlogPostInput>): Observable<BlogPost> {
-    return this.http.patch<BlogPost>(`${this.apiUrl}/blog/posts/${id}`, post, {
-      context: silentErrors(),
-    });
+    return this.http
+      .patch<BlogPost>(`${this.apiUrl}/blog/posts/${id}`, post, { context: silentErrors() })
+      .pipe(this.relistOnSuccess());
   }
 
   deletePost(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/blog/posts/${id}`, {
-      context: silentErrors(),
-    });
+    return this.http
+      .delete<void>(`${this.apiUrl}/blog/posts/${id}`, { context: silentErrors() })
+      .pipe(this.relistOnSuccess());
   }
 
   uploadCoverImage(file: File, id: string): Observable<string> {
@@ -76,7 +82,10 @@ export class HttpBlogGateway extends BlogGateway {
       url: `${this.apiUrl}/blog/posts/${id}/image`,
       file,
       context: silentErrors(),
-    }).pipe(map((res) => res.key));
+    }).pipe(
+      map((res) => res.key),
+      this.relistOnSuccess(),
+    );
   }
 
   uploadContentImage(file: File): Observable<ContentImage> {
@@ -95,10 +104,16 @@ export class HttpBlogGateway extends BlogGateway {
     );
   }
 
+  // Le nombre de « j'aime » figure dans la liste de l'admin.
   likePost(slug: string): Observable<{ likesCount: number }> {
-    return this.http.post<{ likesCount: number }>(
-      `${this.apiUrl}/blog/posts/${encodeURIComponent(slug)}/like`,
-      {},
-    );
+    return this.http
+      .post<{
+        likesCount: number;
+      }>(`${this.apiUrl}/blog/posts/${encodeURIComponent(slug)}/like`, {})
+      .pipe(this.relistOnSuccess());
+  }
+
+  private relistOnSuccess<T>(): MonoTypeOperatorFunction<T> {
+    return tap(() => this.adminPosts.refresh());
   }
 }

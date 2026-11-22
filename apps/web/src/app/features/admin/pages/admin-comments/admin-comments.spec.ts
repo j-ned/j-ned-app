@@ -702,13 +702,12 @@ describe('AdminComments: retour sur l’onglet', () => {
     document.dispatchEvent(new Event('visibilitychange'));
   }
 
-  it('Given the queue on screen and a reply being written When the tab comes back into view Then the queue and the navigation count are read again, the list stays meanwhile and the reply form keeps its text', async () => {
+  it('Given the queue on screen and a reply being written When the tab comes back into view Then the queue is read again, the list stays meanwhile and the reply form keeps its text', async () => {
     const PUBLISHED = makeAdminComment({ id: 'c-1', status: 'published' });
     const rendered = await render();
     await answer(rendered, 'pending', [CAMILLE]);
     await pressFilter(rendered, 'Publiés');
     await answer(rendered, 'published', [PUBLISHED]);
-    const invalidate = vi.spyOn(TestBed.inject(CommentsGateway), 'invalidatePendingCount');
     await pressTestId(rendered.fixture, 'comment-reply');
     const field = byTestId(rendered.host, 'reply-body');
     if (!(field instanceof HTMLTextAreaElement)) throw new Error('Expected the reply textarea');
@@ -730,11 +729,28 @@ describe('AdminComments: retour sur l’onglet', () => {
     );
 
     expect({
-      invalidated: invalidate.mock.calls.length,
       during,
       rows: texts(rendered.host, 'admin-comment-row').length,
       draft: field.isConnected ? field.value : null,
-    }).toEqual({ invalidated: 1, during: true, rows: 2, draft: 'Réponse en cours' });
+    }).toEqual({ during: true, rows: 2, draft: 'Réponse en cours' });
+  });
+
+  it('Given the queue on screen When the reread on return fails Then the queue stays shown, without an error', async () => {
+    const rendered = await render();
+    await answer(rendered, 'pending', [CAMILLE]);
+
+    showTab('hidden');
+    showTab('visible');
+    await settleBounded(rendered.fixture);
+    rendered.http
+      .expectOne(listUrl('pending', 1))
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    await settleBounded(rendered.fixture);
+
+    expect({
+      rows: texts(rendered.host, 'admin-comment-row').length,
+      error: byTestId(rendered.host, 'load-error'),
+    }).toEqual({ rows: 1, error: null });
   });
 });
 

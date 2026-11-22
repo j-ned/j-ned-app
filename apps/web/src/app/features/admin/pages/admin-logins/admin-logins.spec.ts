@@ -8,6 +8,7 @@ import { API_BASE_URL } from '@shared/api/api-config';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settleBounded } from '@shared/testing/settle';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 import { AdminLogins } from './admin-logins';
 
 const pageUrl = (page: number): string => `/api/auth/login-events?page=${page}&limit=25`;
@@ -270,5 +271,45 @@ describe('AdminLogins', () => {
     expect(byTestId(rendered.host, 'admin-breadcrumb-parent')?.getAttribute('href')).toBe(
       '/admin/settings',
     );
+  });
+});
+
+describe('AdminLogins: relecture au retour sur l’onglet', () => {
+  afterEach(() => {
+    forgetTabVisibility();
+    TestBed.inject(HttpTestingController).verify();
+  });
+
+  it('Given the journal on screen When a login happened elsewhere and the tab comes back Then the journal shows it, the rows staying meanwhile', async () => {
+    const rendered = await render();
+    await answer(rendered, 1, [makeLoginEvent({ id: 'a', kind: 'password_accepted' })]);
+
+    returnToTab();
+    await settleBounded(rendered.fixture);
+    const during = texts(rendered.host, 'login-outcome');
+    await answer(rendered, 1, [
+      makeLoginEvent({ id: 'b', kind: 'password_rejected' }),
+      makeLoginEvent({ id: 'a', kind: 'password_accepted' }),
+    ]);
+
+    expect({ during, after: texts(rendered.host, 'login-outcome') }).toEqual({
+      during: ['Accepté'],
+      after: ['Refusé', 'Accepté'],
+    });
+  });
+
+  it('Given the journal on screen When the reread on return fails Then the rows stay, without an error', async () => {
+    const rendered = await render();
+    await answer(rendered, 1, [makeLoginEvent({ id: 'a', kind: 'password_accepted' })]);
+
+    returnToTab();
+    await settleBounded(rendered.fixture);
+    rendered.http.expectOne(pageUrl(1)).flush(null, { status: 500, statusText: 'Server Error' });
+    await settleBounded(rendered.fixture);
+
+    expect({
+      rows: texts(rendered.host, 'login-outcome'),
+      error: byTestId(rendered.host, 'load-error'),
+    }).toEqual({ rows: ['Accepté'], error: null });
   });
 });

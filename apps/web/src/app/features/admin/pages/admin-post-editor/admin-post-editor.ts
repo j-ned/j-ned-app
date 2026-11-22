@@ -194,7 +194,6 @@ export class AdminPostEditor implements LeaveConfirmable {
         ),
       });
     }
-    this.gateway.invalidateAdminPosts();
     if (cover.status === 'sent' && id) this.postsResource.reload();
     this.toast.add({ severity: 'success', detail: 'Article enregistré' });
     if (!id) await this.router.navigate(['/admin/blog', saved.id], { replaceUrl: true });

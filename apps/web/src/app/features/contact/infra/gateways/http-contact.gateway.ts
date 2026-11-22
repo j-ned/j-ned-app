@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, map, of, tap, type MonoTypeOperatorFunction, type Observable } from 'rxjs';
 import { ContactGateway } from '../../domain/gateways/contact.gateway';
 import type {
   ContactFormData,
@@ -51,9 +51,11 @@ export class HttpContactGateway extends ContactGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
-  // Seule la relance peut afficher un toast : un échec suivi d'une relance réussie reste muet.
-  private readonly unreadCount = refreshable(() =>
-    this.fetchUnreadCount(silentErrors()).pipe(catchError(() => this.fetchUnreadCount())),
+  // Au premier chargement, seule la relance peut toaster ; une relecture de fond reste muette.
+  private readonly unreadCount = refreshable((background) =>
+    background
+      ? this.fetchUnreadCount(silentErrors())
+      : this.fetchUnreadCount(silentErrors()).pipe(catchError(() => this.fetchUnreadCount())),
   );
 
   submitContactForm(data: ContactFormData): Observable<ContactFormSubmission> {
@@ -62,6 +64,7 @@ export class HttpContactGateway extends ContactGateway {
         success: true,
         message: 'Message bien reçu, merci\u202f! Je te réponds dès que je peux.',
       })),
+      this.recountOnSuccess(),
       catchError((err: HttpErrorResponse) => of(toSubmissionError(err))),
     );
   }
@@ -77,17 +80,19 @@ export class HttpContactGateway extends ContactGateway {
 
   // Les écritures de l'admin : la page restaure son état et nomme l'échec elle-même.
   markMessageAsRead(id: number): Observable<ContactMessage> {
-    return this.http.patch<ContactMessage>(
-      `${this.apiUrl}/contact/messages/${id}/read`,
-      {},
-      { context: silentErrors() },
-    );
+    return this.http
+      .patch<ContactMessage>(
+        `${this.apiUrl}/contact/messages/${id}/read`,
+        {},
+        { context: silentErrors() },
+      )
+      .pipe(this.recountOnSuccess());
   }
 
   deleteMessage(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/contact/messages/${id}`, {
-      context: silentErrors(),
-    });
+    return this.http
+      .delete<void>(`${this.apiUrl}/contact/messages/${id}`, { context: silentErrors() })
+      .pipe(this.recountOnSuccess());
   }
 
   private fetchUnreadCount(context = new HttpContext()): Observable<number> {
@@ -105,10 +110,14 @@ export class HttpContactGateway extends ContactGateway {
   }
 
   markAllRead(): Observable<{ readonly count: number }> {
-    return this.http.patch<{ count: number }>(
-      `${this.apiUrl}/contact/messages/mark-all-read`,
-      {},
-      { context: silentErrors() },
-    );
+    return this.http
+      .patch<{
+        count: number;
+      }>(`${this.apiUrl}/contact/messages/mark-all-read`, {}, { context: silentErrors() })
+      .pipe(this.recountOnSuccess());
+  }
+
+  private recountOnSuccess<T>(): MonoTypeOperatorFunction<T> {
+    return tap(() => this.invalidateUnreadCount());
   }
 }

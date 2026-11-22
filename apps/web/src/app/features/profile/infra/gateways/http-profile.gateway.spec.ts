@@ -227,3 +227,33 @@ describe('HttpProfileGateway', () => {
     expect(errors).toEqual([refusal]);
   });
 });
+
+describe('HttpProfileGateway: relecture de fond', () => {
+  it.each([
+    { mode: 'a background reread', options: { background: true }, silent: true },
+    { mode: 'a first read', options: undefined, silent: false },
+  ])(
+    'Given $mode When the profile is read Then the error toast is skipped: $silent',
+    ({ options, silent }) => {
+      TestBed.configureTestingModule({
+        providers: [
+          HttpProfileGateway,
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          { provide: API_BASE_URL, useValue: BASE },
+          provideImageUploadPreparer(),
+        ],
+      });
+      const http = TestBed.inject(HttpTestingController);
+
+      TestBed.inject(HttpProfileGateway)
+        .getProfile(options)
+        .subscribe({ error: () => undefined });
+      const request = http.expectOne(`${BASE}/profile`);
+
+      expect(request.request.context.get(SKIP_ERROR_TOAST)).toBe(silent);
+      request.flush(null, { status: 500, statusText: 'Server Error' });
+      http.verify();
+    },
+  );
+});

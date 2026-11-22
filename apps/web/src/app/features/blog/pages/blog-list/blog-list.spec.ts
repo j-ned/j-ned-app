@@ -3,9 +3,18 @@ import { provideRouter, Router } from '@angular/router';
 import { BehaviorSubject, NEVER, of, throwError, type Observable } from 'rxjs';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { BlogList } from './blog-list';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { errorToastInterceptor } from '@core/interceptors/error-toast';
+import { ToastStore } from '@core/notifications/toast-store';
+import { API_BASE_URL } from '@shared/api/api-config';
+import { provideImageUploadPreparer } from '@shared/testing/image-upload-preparer';
+import { HttpBlogGateway } from '../../infra/http-blog.gateway';
+import { settleBounded } from '@shared/testing/settle';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 import { makeBlogPost, productionPosts } from '../../testing/blog-post-builders';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 function setupWith(
   getPublishedPosts: () => Observable<readonly BlogPost[]>,
@@ -470,5 +479,103 @@ describe('BlogList', () => {
         expect(byTestId(host, 'blog-visible-count')).toBeNull();
       });
     });
+  });
+});
+
+describe('BlogList: relecture au retour sur l’onglet', () => {
+  afterEach(() => {
+    forgetTabVisibility();
+    TestBed.resetTestingModule();
+  });
+
+  it('Given the list open When an article was published meanwhile and the tab comes back Then it is listed', async () => {
+    const getPublishedPosts = vi
+      .fn<() => Observable<readonly BlogPost[]>>()
+      .mockReturnValueOnce(of([makeBlogPost({ id: 'a', slug: 'a' })]))
+      .mockReturnValue(
+        of([makeBlogPost({ id: 'a', slug: 'a' }), makeBlogPost({ id: 'b', slug: 'b' })]),
+      );
+    const fixture = setupWith(getPublishedPosts);
+    const host = await render(fixture);
+
+    returnToTab();
+    await render(fixture);
+
+    expect(host.querySelectorAll('[data-testid="blog-posts"] > li').length).toBe(2);
+  });
+
+  it('Given the list open When the reread on return fails Then the articles stay listed, without an error', async () => {
+    const getPublishedPosts = vi
+      .fn<() => Observable<readonly BlogPost[]>>()
+      .mockReturnValueOnce(of([makeBlogPost({ id: 'a', slug: 'a' })]))
+      .mockReturnValue(throwError(() => new Error('down')));
+    const fixture = setupWith(getPublishedPosts);
+    const host = await render(fixture);
+
+    returnToTab();
+    await render(fixture);
+
+    expect({
+      rows: host.querySelectorAll('[data-testid="blog-posts"] > li').length,
+      error: byTestId(host, 'blog-error'),
+    }).toEqual({ rows: 1, error: null });
+  });
+});
+
+describe('BlogList: toasts d’erreur derrière le vrai intercepteur', () => {
+  const POSTS_URL = '/api/blog/posts';
+  const add = vi.fn();
+
+  afterEach(() => {
+    forgetTabVisibility();
+    TestBed.inject(HttpTestingController).verify();
+    TestBed.resetTestingModule();
+    add.mockReset();
+  });
+
+  async function renderWithApi(): Promise<{
+    readonly fixture: ComponentFixture<BlogList>;
+    readonly http: HttpTestingController;
+  }> {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        provideHttpClient(withInterceptors([errorToastInterceptor])),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+        provideImageUploadPreparer(),
+        { provide: BlogGateway, useClass: HttpBlogGateway },
+        { provide: ToastStore, useValue: { add } },
+      ],
+    });
+    const fixture = TestBed.createComponent(BlogList);
+    await settleBounded(fixture);
+    return { fixture, http: TestBed.inject(HttpTestingController) };
+  }
+
+  it('Given the list shown When the reread on return fails Then no error toast is shown', async () => {
+    const { fixture, http } = await renderWithApi();
+    http.expectOne(POSTS_URL).flush([makeBlogPost({ id: 'a', slug: 'a' })]);
+    await settleBounded(fixture);
+
+    returnToTab();
+    await settleBounded(fixture);
+    http.expectOne(POSTS_URL).flush(null, { status: 500, statusText: 'Server Error' });
+    await settleBounded(fixture);
+
+    expect(add).not.toHaveBeenCalled();
+  });
+
+  it('Given the first read When it fails Then the error toast and the error state are shown as before', async () => {
+    const { fixture, http } = await renderWithApi();
+
+    http.expectOne(POSTS_URL).flush(null, { status: 500, statusText: 'Server Error' });
+    await settleBounded(fixture);
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect({
+      toasts: add.mock.calls.length,
+      error: byTestId(host, 'blog-error') !== null,
+    }).toEqual({ toasts: 1, error: true });
   });
 });

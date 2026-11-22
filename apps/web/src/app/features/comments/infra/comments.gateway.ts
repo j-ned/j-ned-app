@@ -1,6 +1,7 @@
 import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { catchError, map, of, type Observable } from 'rxjs';
+import { catchError, map, of, tap, type MonoTypeOperatorFunction, type Observable } from 'rxjs';
+import { ModerationError } from '../domain/moderation-error';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { OPTIONAL_UPSTREAM } from '@core/ssr/ssr-upstream-interceptor';
 import { API_BASE_URL } from '@shared/api/api-config';
@@ -31,9 +32,11 @@ export class CommentsGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
-  // Seule la relance peut afficher un toast : un échec suivi d'une relance réussie reste muet.
-  private readonly pendingCount = refreshable(() =>
-    this.fetchPendingCount(silentErrors()).pipe(catchError(() => this.fetchPendingCount())),
+  // Au premier chargement, seule la relance peut toaster ; une relecture de fond reste muette.
+  private readonly pendingCount = refreshable((background) =>
+    background
+      ? this.fetchPendingCount(silentErrors())
+      : this.fetchPendingCount(silentErrors()).pipe(catchError(() => this.fetchPendingCount())),
   );
 
   // La section nomme elle-même l'échec ; l'article, lui, reste servi.
@@ -88,14 +91,14 @@ export class CommentsGateway {
         { status: 'published' },
         { context: silentErrors() },
       )
-      .pipe(map(toAdminComment), catchError(rejectAsModerationError));
+      .pipe(map(toAdminComment), catchError(rejectAsModerationError), this.recountWhenSettled());
   }
 
   // Refuser un commentaire, c'est le supprimer : ses réponses partent avec lui.
   remove(id: string): Observable<void> {
     return this.http
       .delete<void>(`${this.apiUrl}/blog/comments/${id}`, { context: silentErrors() })
-      .pipe(catchError(rejectAsModerationError));
+      .pipe(catchError(rejectAsModerationError), this.recountWhenSettled());
   }
 
   // Réponse du propriétaire : publiée d'emblée par l'API.
@@ -106,7 +109,7 @@ export class CommentsGateway {
         { body },
         { context: silentErrors() },
       )
-      .pipe(map(toAdminComment), catchError(rejectAsModerationError));
+      .pipe(map(toAdminComment), catchError(rejectAsModerationError), this.recountWhenStale());
   }
 
   getPendingCount(): Observable<number> {
@@ -115,6 +118,26 @@ export class CommentsGateway {
 
   invalidatePendingCount(): void {
     this.pendingCount.refresh();
+  }
+
+  // Publier ou supprimer change la file en attente.
+  private recountWhenSettled<T>(): MonoTypeOperatorFunction<T> {
+    return (source) =>
+      source.pipe(
+        tap(() => this.invalidatePendingCount()),
+        this.recountWhenStale(),
+      );
+  }
+
+  // Un refus 404 ou 409 dit que la file a changé ailleurs.
+  private recountWhenStale<T>(): MonoTypeOperatorFunction<T> {
+    return tap({
+      error: (error: unknown) => {
+        if (error instanceof ModerationError && error.reason !== 'failed') {
+          this.invalidatePendingCount();
+        }
+      },
+    });
   }
 
   private fetchPendingCount(context = new HttpContext()): Observable<number> {

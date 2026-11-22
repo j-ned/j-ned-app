@@ -1,6 +1,6 @@
 import { DeferBlockBehavior, TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import { ProjectDetail } from './project-detail';
@@ -18,6 +18,7 @@ import { PROJECT_ARTICLES_COPY } from '@features/projects/application/project-ar
 import { Seo } from '@core/seo/seo';
 import { PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
 import { BlankPage } from '@shared/testing/blank-page';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 function project(overrides: Partial<Project> = {}): Project {
   return makeProject({
@@ -930,5 +931,41 @@ describe('ProjectDetail: articles sur ce projet', () => {
         ],
       });
     });
+  });
+});
+
+describe('ProjectDetail: relecture au retour sur l’onglet', () => {
+  afterEach(() => {
+    forgetTabVisibility();
+    TestBed.resetTestingModule();
+  });
+
+  it('Given the project page open When the project was edited meanwhile and the tab comes back Then the page shows the new version', async () => {
+    const projects = new BehaviorSubject<readonly Project[]>([project({ title: 'Avant' })]);
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        {
+          provide: ProjectsGateway,
+          useValue: stubProjectsGateway({
+            getAllProjects: () => projects,
+            invalidateAllProjects: () => projects.next([project({ title: 'Après' })]),
+          }),
+        },
+        { provide: AnalyticsGateway, useValue: stubAnalyticsGateway() },
+        { provide: BlogGateway, useValue: stubBlogGateway() },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProjectDetail);
+    fixture.componentRef.setInput('slug', 'mon-site');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    returnToTab();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const title = (fixture.nativeElement as HTMLElement).querySelector('h1')?.textContent ?? '';
+    expect(title.trim()).toBe('Après');
   });
 });

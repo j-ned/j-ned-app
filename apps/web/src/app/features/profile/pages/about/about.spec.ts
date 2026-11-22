@@ -33,6 +33,7 @@ import {
 import { stubProfileGateway } from '../../testing/stub-profile-gateway';
 import { About } from './about';
 import { BlankPage } from '@shared/testing/blank-page';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 const API = '/api';
 
@@ -359,4 +360,57 @@ describe('About', () => {
       ).toContain(SITE_IDENTITY.socials.linkedin);
     },
   );
+
+  describe('relecture au retour sur l’onglet', () => {
+    afterEach(forgetTabVisibility);
+
+    const edited = aProfileDocument({
+      content: aProfileContent({
+        biography: { ...DOCUMENT.content.biography, summary: 'Parcours modifié dans l’admin.' },
+      }),
+    });
+
+    it('Given la page ouverte When le parcours a été modifié entre-temps et l’onglet revient Then la page montre la nouvelle version', async () => {
+      vi.spyOn(TestBed.inject(ProfileGateway), 'getProfile')
+        .mockReturnValueOnce(defer(() => of(DOCUMENT)))
+        .mockReturnValue(defer(() => of(edited)));
+      await render(NO_CV);
+      await completeDeferredSections();
+
+      returnToTab();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(summaryOf('journey-heading')).toBe('Parcours modifié dans l’admin.');
+    });
+
+    it('Given la page ouverte When l’onglet revient Then la relecture est demandée en fond, le premier chargement non', async () => {
+      const read = vi
+        .spyOn(TestBed.inject(ProfileGateway), 'getProfile')
+        .mockReturnValue(defer(() => of(DOCUMENT)));
+      await render(NO_CV);
+
+      returnToTab();
+      await fixture.whenStable();
+
+      expect(read.mock.calls).toEqual([[{ background: false }], [{ background: true }]]);
+    });
+
+    it('Given la page ouverte When la relecture au retour échoue Then le parcours reste affiché et la réponse n’est pas marquée indisponible', async () => {
+      vi.spyOn(TestBed.inject(ProfileGateway), 'getProfile')
+        .mockReturnValueOnce(defer(() => of(DOCUMENT)))
+        .mockReturnValue(throwError(() => new Error('down')));
+      await render(NO_CV);
+      await completeDeferredSections();
+
+      returnToTab();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect({ summary: summaryOf('journey-heading'), status: responseInit.status }).toEqual({
+        summary: 'Résumé du parcours témoin.',
+        status: 200,
+      });
+    });
+  });
 });

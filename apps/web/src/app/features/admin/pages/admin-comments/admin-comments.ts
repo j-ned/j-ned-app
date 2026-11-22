@@ -15,7 +15,7 @@ import {
   type ModerationFailure,
 } from '@features/comments/domain/moderation-error';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
-import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { ToastStore } from '@core/notifications/toast-store';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
@@ -167,7 +167,7 @@ export class AdminComments {
 
   // La file et le compteur de la navigation ont pu bouger depuis un autre onglet.
   constructor() {
-    refreshWhenVisible(() => this.queue.refresh());
+    refreshAdminWhenVisible(() => this.queue.refresh());
   }
 
   protected confirmDeletion(): void {

@@ -435,6 +435,43 @@ describe('HttpBlogGateway: écritures de l’admin derrière l’intercepteur de
     ).toEqual({ status: 500, toasts: 1 });
     httpController.verify();
   });
+
+  it('Given the admin list shown When its reread fails, retry included Then no toast is shown', () => {
+    const { gateway, httpController } = configureWithToasts();
+    const sub = gateway.getAllPostsForAdmin().subscribe();
+    httpController.expectOne(`${BASE}/blog/posts/admin`).flush([makeBlogPost()]);
+
+    gateway.invalidateAdminPosts();
+    httpController
+      .expectOne(`${BASE}/blog/posts/admin`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    httpController
+      .expectOne(`${BASE}/blog/posts/admin`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(add.mock.calls.length).toBe(0);
+    sub.unsubscribe();
+    httpController.verify();
+  });
+
+  it.each([
+    { mode: 'a background reread', background: true, toasts: 0 },
+    { mode: 'a first read', background: false, toasts: 1 },
+  ])(
+    'Given $mode of the published posts When it fails Then $toasts toast(s) are shown',
+    async ({ background, toasts }) => {
+      const { gateway, httpController } = configureWithToasts();
+
+      const read = firstValueFrom(gateway.getPublishedPosts({ background })).catch(() => null);
+      httpController
+        .expectOne(`${BASE}/blog/posts`)
+        .flush(null, { status: 500, statusText: 'Server Error' });
+      await read;
+
+      expect(add.mock.calls.length).toBe(toasts);
+      httpController.verify();
+    },
+  );
 });
 
 describe('HttpBlogGateway: image preparation before upload', () => {
@@ -484,6 +521,90 @@ describe('HttpBlogGateway: image preparation before upload', () => {
       );
 
       expect(failure).toBe(refusal);
+      httpMock.verify();
+    },
+  );
+});
+
+describe('HttpBlogGateway: the admin list follows the writes', () => {
+  const ADMIN_LIST_URL = `${BASE}/blog/posts/admin`;
+  const COVER = new File(['x'], 'cover.png', { type: 'image/png' });
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  const writes: readonly {
+    readonly write: string;
+    readonly url: string;
+    readonly answer: object | null;
+    readonly call: (gateway: HttpBlogGateway) => Observable<unknown>;
+  }[] = [
+    {
+      write: 'createPost',
+      url: `${BASE}/blog/posts`,
+      answer: makeBlogPost({ id: 'p-1' }),
+      call: (g) =>
+        g.createPost({ title: 'X', excerpt: 'R', contentMarkdown: '#', tags: [], status: 'draft' }),
+    },
+    {
+      write: 'updatePost',
+      url: `${BASE}/blog/posts/p-1`,
+      answer: makeBlogPost({ id: 'p-1' }),
+      call: (g) => g.updatePost('p-1', { title: 'X' }),
+    },
+    {
+      write: 'deletePost',
+      url: `${BASE}/blog/posts/p-1`,
+      answer: null,
+      call: (g) => g.deletePost('p-1'),
+    },
+    {
+      write: 'uploadCoverImage',
+      url: `${BASE}/blog/posts/p-1/image`,
+      answer: { key: 'k' },
+      call: (g) => g.uploadCoverImage(COVER, 'p-1'),
+    },
+    {
+      write: 'likePost',
+      url: `${BASE}/blog/posts/mon-article/like`,
+      answer: { likesCount: 3 },
+      call: (g) => g.likePost('mon-article'),
+    },
+  ];
+
+  it.each(writes)(
+    'Given the admin list is shown When $write succeeds Then the list is read again and its readers receive it',
+    async ({ url, answer, call }) => {
+      const { gateway, httpMock } = configure();
+      const seen: string[] = [];
+      const sub = gateway.getAllPostsForAdmin().subscribe((list) => seen.push(list[0]?.id ?? ''));
+      httpMock.expectOne(ADMIN_LIST_URL).flush([makeBlogPost({ id: 'before' })]);
+
+      const written = firstValueFrom(call(gateway));
+      httpMock.expectOne(url).flush(answer);
+      await written;
+      httpMock.expectOne(ADMIN_LIST_URL).flush([makeBlogPost({ id: 'after' })]);
+
+      expect(seen).toEqual(['before', 'after']);
+      sub.unsubscribe();
+      httpMock.verify();
+    },
+  );
+
+  it.each(writes)(
+    'Given the admin list is shown When $write fails Then the list is not read again',
+    async ({ url, call }) => {
+      const { gateway, httpMock } = configure();
+      const sub = gateway.getAllPostsForAdmin().subscribe();
+      httpMock.expectOne(ADMIN_LIST_URL).flush([makeBlogPost({ id: 'before' })]);
+
+      const written = firstValueFrom(call(gateway)).catch(() => 'refusée');
+      httpMock.expectOne(url).flush(null, { status: 500, statusText: 'Server Error' });
+      await written;
+
+      httpMock.expectNone(ADMIN_LIST_URL);
+      sub.unsubscribe();
       httpMock.verify();
     },
   );

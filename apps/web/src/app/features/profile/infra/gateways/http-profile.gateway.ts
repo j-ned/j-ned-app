@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map, type Observable } from 'rxjs';
-import { silentErrors } from '@core/interceptors/skip-error-toast';
+import { silentErrors, silentWhen } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
 import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
 import { postPreparedImage } from '@shared/upload/post-prepared-image';
@@ -16,9 +16,9 @@ export class HttpProfileGateway extends ProfileGateway {
   private readonly _apiUrl = inject(API_BASE_URL);
   private readonly _prepareImage = inject(IMAGE_UPLOAD_PREPARER);
 
-  getProfile(): Observable<ProfileDocument> {
+  getProfile(options?: { readonly background?: boolean }): Observable<ProfileDocument> {
     return this._http
-      .get<ProfileDto>(`${this._apiUrl}/profile`)
+      .get<ProfileDto>(`${this._apiUrl}/profile`, { context: silentWhen(options?.background) })
       .pipe(map((dto) => toProfileDocument(dto, STORAGE_BASE_PATH)));
   }
 

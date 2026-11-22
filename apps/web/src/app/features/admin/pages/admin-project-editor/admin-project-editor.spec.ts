@@ -5,7 +5,6 @@ import { Router, provideRouter, withComponentInputBinding } from '@angular/route
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
-import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
 import { makeProject, makeProjectImage } from '@features/projects/testing/project-builders';
@@ -56,8 +55,6 @@ type Spies = {
   readonly createProject: Mock<ProjectsGateway['createProject']>;
   readonly updateProject: Mock<ProjectsGateway['updateProject']>;
   readonly uploadImage: Mock<ProjectsGateway['uploadImage']>;
-  readonly invalidateAllProjects: Mock<ProjectsGateway['invalidateAllProjects']>;
-  readonly invalidateBundle: Mock<() => void>;
   readonly toast: Mock<ToastStore['add']>;
 };
 
@@ -68,7 +65,7 @@ type Editor = Spies & {
   readonly crash: unknown;
 };
 
-type Overrides = Partial<Omit<Spies, 'invalidateBundle' | 'toast'>>;
+type Overrides = Partial<Omit<Spies, 'toast'>>;
 
 async function openEditor(url: string, overrides: Overrides = {}): Promise<Editor> {
   const spies: Spies = {
@@ -76,8 +73,6 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
     createProject: vi.fn((): Observable<Project> => of(makeProject({ id: 'p-9', title: 'X' }))),
     updateProject: vi.fn((): Observable<Project> => of(DASHFLOW)),
     uploadImage: vi.fn((): Observable<string> => of('projects/p-9.avif')),
-    invalidateAllProjects: vi.fn(),
-    invalidateBundle: vi.fn(),
     toast: vi.fn(),
     ...overrides,
   };
@@ -107,10 +102,8 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
           createProject: spies.createProject,
           updateProject: spies.updateProject,
           uploadImage: spies.uploadImage,
-          invalidateAllProjects: spies.invalidateAllProjects,
         }),
       },
-      { provide: HomeGateway, useValue: { invalidateBundle: spies.invalidateBundle } },
       { provide: ToastStore, useValue: { add: spies.toast } },
     ],
   });
@@ -243,7 +236,7 @@ describe('AdminProjectEditor: création', () => {
     ]);
   });
 
-  it('Given a created project When the save ends Then the caches are invalidated, success is told and the page moves to its address in place of /new', async () => {
+  it('Given a created project When the save ends Then success is told and the page moves to its address in place of /new', async () => {
     const editor = await openEditor('/admin/projects/new');
     const replaceState = vi.spyOn(TestBed.inject(Location), 'replaceState');
 
@@ -251,14 +244,10 @@ describe('AdminProjectEditor: création', () => {
     await save(editor);
 
     expect({
-      invalidateAllProjects: editor.invalidateAllProjects.mock.calls.length,
-      invalidateBundle: editor.invalidateBundle.mock.calls.length,
       toasts: toasts(editor.toast),
       url: TestBed.inject(Router).url,
       replaced: replaceState.mock.calls.map(([path]) => path),
     }).toEqual({
-      invalidateAllProjects: 1,
-      invalidateBundle: 1,
       toasts: [{ severity: 'success', detail: 'Projet créé' }],
       url: '/admin/projects/p-9',
       replaced: ['/admin/projects/p-9'],
@@ -291,11 +280,9 @@ describe('AdminProjectEditor: création', () => {
     expect({
       toasts: toasts(editor.toast),
       url: TestBed.inject(Router).url,
-      invalidateAllProjects: editor.invalidateAllProjects.mock.calls.length,
     }).toEqual({
       toasts: [{ severity: 'error', detail: 'Erreur lors de la création du projet' }],
       url: '/admin/projects/new',
-      invalidateAllProjects: 0,
     });
   });
 
@@ -316,7 +303,7 @@ describe('AdminProjectEditor: création', () => {
 });
 
 describe('AdminProjectEditor: mise à jour', () => {
-  it('Given an edited title When the project is saved Then it is patched, success is told, the caches invalidated and the title follows', async () => {
+  it('Given an edited title When the project is saved Then it is patched, success is told and the title follows', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
       updateProject: vi.fn((): Observable<Project> =>
         of(makeProject({ ...DASHFLOW, title: 'Après' })),
@@ -330,16 +317,12 @@ describe('AdminProjectEditor: mise à jour', () => {
       patched: editor.updateProject.mock.calls.map(([id, payload]) => [id, payload.title]),
       uploads: editor.uploadImage.mock.calls.length,
       toasts: toasts(editor.toast),
-      invalidateAllProjects: editor.invalidateAllProjects.mock.calls.length,
-      invalidateBundle: editor.invalidateBundle.mock.calls.length,
       title: testIdText(editor.host, 'admin-page-title'),
       url: TestBed.inject(Router).url,
     }).toEqual({
       patched: [['p-1', 'Après']],
       uploads: 0,
       toasts: [{ severity: 'success', detail: 'Projet mis à jour' }],
-      invalidateAllProjects: 1,
-      invalidateBundle: 1,
       title: 'Après',
       url: '/admin/projects/p-1',
     });
@@ -510,16 +493,12 @@ describe('AdminProjectEditor: galerie', () => {
     await press('admin-gallery-item-confirm-remove');
   }
 
-  it('Given the gallery of the project When a capture is deleted Then one capture remains and the public caches are invalidated', async () => {
+  it('Given the gallery of the project When a capture is deleted Then one capture remains', async () => {
     const editor = await openEditor('/admin/projects/p-1');
 
     await deleteSecondCapture(editor);
 
-    expect({
-      items: editor.host.querySelectorAll('[data-testid="admin-gallery-item"]').length,
-      invalidateAllProjects: editor.invalidateAllProjects.mock.calls.length,
-      invalidateBundle: editor.invalidateBundle.mock.calls.length,
-    }).toEqual({ items: 1, invalidateAllProjects: 1, invalidateBundle: 1 });
+    expect(editor.host.querySelectorAll('[data-testid="admin-gallery-item"]').length).toBe(1);
   });
 
   it('Given an unsaved title When a capture is deleted Then the title typed so far is kept', async () => {

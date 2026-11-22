@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, type Observable } from 'rxjs';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { OPTIONAL_UPSTREAM } from '@core/ssr/ssr-upstream-interceptor';
@@ -381,5 +381,113 @@ describe('CommentsGateway: lecture publique', () => {
     http.expectOne('/api/blog/posts/article-temoin/comments').error(new ProgressEvent('error'));
 
     await expect(result).resolves.toEqual({ success: false, error: 'network' });
+  });
+});
+
+describe('CommentsGateway: le compteur des commentaires en attente suit la modération', () => {
+  let gateway: CommentsGateway;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+      ],
+    });
+    gateway = TestBed.inject(CommentsGateway);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  const writes = [
+    {
+      write: 'publish',
+      answer: toAdminCommentDto(makeAdminComment({ id: 'c-1', status: 'published' })),
+      call: (g: CommentsGateway): Observable<unknown> => g.publish('c-1'),
+    },
+    {
+      write: 'remove',
+      answer: null,
+      call: (g: CommentsGateway): Observable<unknown> => g.remove('c-1'),
+    },
+  ] as const;
+
+  it.each(writes)(
+    'Given the pending count is shown When $write succeeds Then the count is read again and its readers receive it',
+    async ({ answer, call }) => {
+      const seen: number[] = [];
+      const sub = gateway.getPendingCount().subscribe((count) => seen.push(count));
+      http.expectOne(PENDING_COUNT_URL).flush({ count: 2 });
+
+      const written = firstValueFrom(call(gateway));
+      http.expectOne('/api/blog/comments/c-1').flush(answer);
+      await written;
+      http.expectOne(PENDING_COUNT_URL).flush({ count: 1 });
+
+      expect(seen).toEqual([2, 1]);
+      sub.unsubscribe();
+    },
+  );
+
+  it.each(writes)(
+    'Given the pending count is shown When $write fails Then the count is not read again',
+    async ({ call }) => {
+      const sub = gateway.getPendingCount().subscribe();
+      http.expectOne(PENDING_COUNT_URL).flush({ count: 2 });
+
+      const written = firstValueFrom(call(gateway)).catch(() => 'refusée');
+      http
+        .expectOne('/api/blog/comments/c-1')
+        .flush(null, { status: 500, statusText: 'Server Error' });
+      await written;
+
+      http.expectNone(PENDING_COUNT_URL);
+      sub.unsubscribe();
+    },
+  );
+  it.each([
+    { write: 'publish', status: 404, url: '/api/blog/comments/c-1' },
+    { write: 'publish', status: 409, url: '/api/blog/comments/c-1' },
+    { write: 'remove', status: 404, url: '/api/blog/comments/c-1' },
+    { write: 'remove', status: 409, url: '/api/blog/comments/c-1' },
+    { write: 'reply', status: 404, url: '/api/blog/comments/c-1/replies' },
+    { write: 'reply', status: 409, url: '/api/blog/comments/c-1/replies' },
+  ] as const)(
+    'Given the pending count is shown When $write is refused with $status because the queue changed Then the count is read again',
+    async ({ write, status, url }) => {
+      const calls: Record<typeof write, () => Observable<unknown>> = {
+        publish: () => gateway.publish('c-1'),
+        remove: () => gateway.remove('c-1'),
+        reply: () => gateway.reply('c-1', 'Merci'),
+      };
+      const seen: number[] = [];
+      const sub = gateway.getPendingCount().subscribe((count) => seen.push(count));
+      http.expectOne(PENDING_COUNT_URL).flush({ count: 2 });
+
+      const written = firstValueFrom(calls[write]()).catch(() => 'refusée');
+      http.expectOne(url).flush(null, { status, statusText: 'Refused' });
+      await written;
+      http.expectOne(PENDING_COUNT_URL).flush({ count: 1 });
+
+      expect(seen).toEqual([2, 1]);
+      sub.unsubscribe();
+    },
+  );
+
+  it('Given the pending count is shown When a reply is published Then the count is not read again', async () => {
+    const sub = gateway.getPendingCount().subscribe();
+    http.expectOne(PENDING_COUNT_URL).flush({ count: 2 });
+
+    const written = firstValueFrom(gateway.reply('c-1', 'Merci'));
+    http
+      .expectOne('/api/blog/comments/c-1/replies')
+      .flush(toAdminCommentDto(makeAdminComment({ id: 'r-1', status: 'published' })));
+    await written;
+
+    http.expectNone(PENDING_COUNT_URL);
+    sub.unsubscribe();
   });
 });

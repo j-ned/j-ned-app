@@ -9,6 +9,7 @@ import { Button } from '@shared/ui/button';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { ToastStore } from '@core/notifications/toast-store';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
 import { AdminListState } from '../../application/components/admin-list-state';
@@ -152,10 +153,7 @@ export class AdminBlog {
   protected readonly deletion = new PendingDeletion<BlogPost>({
     list: this.postsResource,
     remove: (post): Observable<void> => this.gateway.deletePost(post.id),
-    succeeded: (): void => {
-      this.gateway.invalidateAdminPosts();
-      this.toast.add({ severity: 'success', detail: 'Article supprimé' });
-    },
+    succeeded: (): void => this.toast.add({ severity: 'success', detail: 'Article supprimé' }),
     failed: (): void =>
       this.toast.add({ severity: 'error', detail: "Erreur lors de la suppression de l'article" }),
   });
@@ -164,6 +162,11 @@ export class AdminBlog {
     const title = this.deletion.target()?.title ?? '';
     return { heading: `Supprimer l'article ${title}\u202f?`, confirm: `Supprimer ${title}` };
   });
+
+  // Un article a pu être écrit depuis un autre onglet ; la navigation suit la même liste.
+  constructor() {
+    refreshAdminWhenVisible(() => this.gateway.invalidateAdminPosts());
+  }
 
   protected toggleSort(): void {
     this.sortDir.update((dir) => (dir === 'descending' ? 'ascending' : 'descending'));

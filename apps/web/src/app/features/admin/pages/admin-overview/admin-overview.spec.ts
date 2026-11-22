@@ -1,7 +1,7 @@
 import { CUSTOM_ELEMENTS_SCHEMA, signal, type WritableSignal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of, throwError, type Observable } from 'rxjs';
+import { of, Subject, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
 import { ThemeStore } from '@core/theme/theme-store';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
@@ -33,6 +33,7 @@ import { AdminOverview } from './admin-overview';
 import { OverviewAudience } from '../../application/components/overview-audience';
 import { BlankPage } from '@shared/testing/blank-page';
 import { normalized } from '@shared/testing/normalized-text';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 const KINDS: readonly ProjectKind[] = [
   'production',
@@ -329,6 +330,56 @@ describe('AdminOverview: contacts', () => {
       errors: errorsIn(overview.host, 'overview-contacts'),
       emptyState: byTestId(section(overview.host, 'overview-contacts'), 'empty-state') !== null,
     }).toEqual({ requests: 2, errors: 0, emptyState: true });
+  });
+});
+
+describe('AdminOverview: relecture au retour sur l’onglet', () => {
+  afterEach(forgetTabVisibility);
+
+  const senders = (host: HTMLElement): readonly string[] =>
+    [
+      ...section(host, 'overview-contacts').querySelectorAll('[data-testid="overview-message"]'),
+    ].map((item) => normalized(item).split(' ')[0] ?? '');
+
+  it('Given the overview on screen When a message arrived meanwhile and the tab comes back Then the latest messages show it, without a loading flash', async () => {
+    const alice = makeContactMessage({ id: 1, name: 'Alice', createdAt: '2026-01-01T10:00:00Z' });
+    const bob = makeContactMessage({ id: 2, name: 'Bob', createdAt: '2026-03-01T10:00:00Z' });
+    const reread = new Subject<readonly ContactMessage[]>();
+    const answers = [of([alice]), reread];
+    const { fixture, host } = await renderOverview({
+      messages: () => answers.shift() ?? of([alice]),
+    });
+
+    returnToTab();
+    await settleBounded(fixture);
+    const during = {
+      loading: byTestId(host, 'overview-contacts-loading'),
+      senders: senders(host),
+    };
+    reread.next([alice, bob]);
+    reread.complete();
+    await settleBounded(fixture);
+
+    expect({ during, after: senders(host) }).toEqual({
+      during: { loading: null, senders: ['Alice'] },
+      after: ['Bob', 'Alice'],
+    });
+  });
+
+  it('Given the overview on screen When the reread on return fails Then the latest messages stay shown, without an error', async () => {
+    const alice = makeContactMessage({ id: 1, name: 'Alice', createdAt: '2026-01-01T10:00:00Z' });
+    const answers: Observable<readonly ContactMessage[]>[] = [of([alice])];
+    const { fixture, host } = await renderOverview({
+      messages: () => answers.shift() ?? down<readonly ContactMessage[]>(),
+    });
+
+    returnToTab();
+    await settleBounded(fixture);
+
+    expect({ senders: senders(host), errors: errorsIn(host, 'overview-contacts') }).toEqual({
+      senders: ['Alice'],
+      errors: 0,
+    });
   });
 });
 

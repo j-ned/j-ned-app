@@ -1,4 +1,12 @@
-import { Component, DestroyRef, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+  type ResourceRef,
+} from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { Observable } from 'rxjs';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
@@ -9,6 +17,8 @@ import { Button } from '@shared/ui/button';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
+import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import { ToastStore } from '@core/notifications/toast-store';
 import {
   toAdminMessagesView,
@@ -114,8 +124,9 @@ export class AdminMessages {
   private readonly destroyRef = inject(DestroyRef);
   private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
-  protected readonly messagesRes = rxResource({
-    stream: () => this.contactGateway.getAllMessages(),
+  protected readonly messagesRes: ResourceRef<readonly ContactMessage[] | undefined> = rxResource({
+    stream: () =>
+      this.contactGateway.getAllMessages().pipe(keepShownOnFailedReload(this.messagesRes)),
   });
 
   private readonly _inbox = computed(() => resourceValueOr(this.messagesRes, []));
@@ -138,16 +149,18 @@ export class AdminMessages {
   protected readonly deletion = new PendingDeletion<ContactMessage>({
     list: this.messagesRes,
     remove: (message): Observable<void> => this.contactGateway.deleteMessage(message.id),
-    succeeded: (): void => {
-      this.contactGateway.invalidateUnreadCount();
-      this.toast.add({ severity: 'success', detail: 'Message supprimé' });
-    },
+    succeeded: (): void => this.toast.add({ severity: 'success', detail: 'Message supprimé' }),
     failed: (): void =>
       this.toast.add({ severity: 'error', detail: 'Erreur lors de la suppression' }),
   });
   protected readonly deletionHeading = computed(
     () => `Supprimer le message de ${this.deletion.target()?.name ?? ''}\u202f?`,
   );
+
+  // Un message peut arriver pendant que l'onglet est ailleurs.
+  constructor() {
+    refreshAdminWhenVisible(() => this.messagesRes.reload());
+  }
 
   protected toggleExpand(message: ContactMessage): void {
     this._expandedIds.update((current) => {
@@ -167,7 +180,6 @@ export class AdminMessages {
           this.messagesRes.update((list) =>
             (list ?? []).map((m) => (m.id === message.id ? updated : m)),
           );
-          this.contactGateway.invalidateUnreadCount();
           this.toast.add({ severity: 'success', detail: 'Message marqué comme lu' });
         },
         error: () => this.toast.add({ severity: 'error', detail: 'Erreur lors de la mise à jour' }),
@@ -189,7 +201,6 @@ export class AdminMessages {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ count }) => {
-          this.contactGateway.invalidateUnreadCount();
           this.toast.add({
             severity: 'success',
             detail: counted(count, 'message marqué comme lu', 'messages marqués comme lus'),

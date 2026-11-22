@@ -29,8 +29,4 @@ export class InMemoryHomeGateway extends HomeGateway {
       })),
     );
   }
-
-  invalidateBundle(): void {
-    this.projectsGateway.invalidateFeatured();
-  }
 }

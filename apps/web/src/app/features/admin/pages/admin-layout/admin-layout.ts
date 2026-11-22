@@ -7,6 +7,7 @@ import { AuthStore } from '@core/auth/auth-store';
 import { navigationEnd$ } from '@core/navigation/navigation-end';
 import { ThemeStore } from '@core/theme/theme-store';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
@@ -136,6 +137,11 @@ export class AdminLayout {
   protected readonly email = computed(() => this.auth.currentUser()?.email);
 
   constructor() {
+    // Messages et commentaires arrivent des visiteurs : la navigation les recompte au retour.
+    refreshAdminWhenVisible(() => {
+      this._contactGateway.invalidateUnreadCount();
+      this._commentsGateway.invalidatePendingCount();
+    });
     this._viewportScroller.setOffset(ANCHOR_OFFSET);
     inject(DestroyRef).onDestroy(() => this._viewportScroller.setOffset([0, 0]));
   }
