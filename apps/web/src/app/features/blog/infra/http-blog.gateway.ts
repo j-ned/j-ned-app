@@ -56,8 +56,7 @@ export class HttpBlogGateway extends BlogGateway {
       .pipe(map((p) => resolvePost(STORAGE_BASE_PATH, p)));
   }
 
-  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même. Une
-  // écriture réussie relit la liste de l'admin.
+  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même.
   createPost(post: BlogPostInput): Observable<BlogPost> {
     return this.http
       .post<BlogPost>(`${this.apiUrl}/blog/posts`, post, { context: silentErrors() })

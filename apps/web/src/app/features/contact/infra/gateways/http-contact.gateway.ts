@@ -78,8 +78,7 @@ export class HttpContactGateway extends ContactGateway {
       .pipe(map((res) => res.data));
   }
 
-  // Les écritures de l'admin : la page restaure son état et nomme l'échec elle-même. Une écriture
-  // réussie relit le compteur de non-lus.
+  // Les écritures de l'admin : la page restaure son état et nomme l'échec elle-même.
   markMessageAsRead(id: number): Observable<ContactMessage> {
     return this.http
       .patch<ContactMessage>(

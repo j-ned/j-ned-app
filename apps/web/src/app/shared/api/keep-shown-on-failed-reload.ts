@@ -1,8 +1,7 @@
 import type { Resource } from '@angular/core';
 import { catchError, of, throwError, type MonoTypeOperatorFunction } from 'rxjs';
 
-// Une relecture qui échoue garde la valeur affichée ; un premier chargement en échec reste une
-// erreur. Pendant `reload()`, la ressource porte encore sa valeur précédente.
+// Pendant `reload()` la ressource porte encore sa valeur : un échec la réémet au lieu de l'erreur.
 export function keepShownOnFailedReload<T>(
   resource: Resource<T | undefined>,
 ): MonoTypeOperatorFunction<T> {

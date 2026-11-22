@@ -63,8 +63,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
     );
   }
 
-  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même. Une
-  // écriture réussie relit la liste partagée, pour l'admin comme pour les pages publiques.
+  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même.
   createProject(project: ProjectInput): Observable<Project> {
     return this.http
       .post<ProjectDto>(`${this.apiUrl}/projects`, project, { context: silentErrors() })
