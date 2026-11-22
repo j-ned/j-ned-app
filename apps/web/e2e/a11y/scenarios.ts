@@ -32,6 +32,7 @@ export const ADMIN_PAGES: readonly PageScenario[] = [
   { path: '/admin/profile', ready: 'admin-profile-paragraph-row' },
   { path: '/admin/cv', ready: 'admin-cv-current' },
   { path: '/admin/messages', ready: 'admin-messages-list' },
+  { path: '/admin/comments', ready: 'admin-comments-list' },
   { path: '/admin/audience', ready: 'tally-row' },
   { path: '/admin/settings', ready: 'settings-session' },
   { path: '/admin/settings/logins', ready: 'admin-logins-list' },

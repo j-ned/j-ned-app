@@ -1,0 +1,54 @@
+[
+  {
+    "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000004",
+    "post": { "id": "b-temoin", "slug": "article-temoin", "title": "Article témoin A" },
+    "parent": {
+      "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000001",
+      "author": { "kind": "visitor", "name": "Camille" },
+      "excerpt": "Merci pour la méthode de calcul des avances, je l'ai essayée sur un tour Mazak."
+    },
+    "author": { "kind": "visitor", "name": "Lou", "email": "lou@example.test" },
+    "body": "Même question que Camille : est-ce que ça vaut aussi pour l'inox ?",
+    "status": "pending",
+    "createdAt": "2026-11-21T16:20:00.000Z",
+    "moderatedAt": null,
+    "replyCount": 0
+  },
+  {
+    "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000003",
+    "post": { "id": "b-voisin", "slug": "article-voisin", "title": "Article voisin" },
+    "parent": null,
+    "author": { "kind": "visitor", "name": "Sami", "email": "sami@example.test" },
+    "body": "Est-ce que <app-root> est rendu côté serveur ici ?\nJe n'ai pas trouvé dans la doc.",
+    "status": "pending",
+    "createdAt": "2026-11-21T14:05:00.000Z",
+    "moderatedAt": null,
+    "replyCount": 0
+  },
+  {
+    "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000002",
+    "post": { "id": "b-temoin", "slug": "article-temoin", "title": "Article témoin A" },
+    "parent": {
+      "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000001",
+      "author": { "kind": "visitor", "name": "Camille" },
+      "excerpt": "Merci pour la méthode de calcul des avances, je l'ai essayée sur un tour Mazak."
+    },
+    "author": { "kind": "owner" },
+    "body": "Avec plaisir ! Pense à réduire l'avance de 20 % en finition.",
+    "status": "published",
+    "createdAt": "2026-11-21T11:00:00.000Z",
+    "moderatedAt": "2026-11-21T11:00:00.000Z",
+    "replyCount": 0
+  },
+  {
+    "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000001",
+    "post": { "id": "b-temoin", "slug": "article-temoin", "title": "Article témoin A" },
+    "parent": null,
+    "author": { "kind": "visitor", "name": "Camille", "email": "camille@example.test" },
+    "body": "Merci pour la méthode de calcul des avances, je l'ai essayée sur un tour Mazak.",
+    "status": "published",
+    "createdAt": "2026-11-21T09:30:00.000Z",
+    "moderatedAt": "2026-11-21T10:00:00.000Z",
+    "replyCount": 2
+  }
+]

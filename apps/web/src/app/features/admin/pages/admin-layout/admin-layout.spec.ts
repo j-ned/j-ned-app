@@ -18,11 +18,13 @@ import { pressTestId } from '@shared/testing/press-test-id';
 import { settle } from '@shared/testing/settle';
 import { BlankPage } from '@shared/testing/blank-page';
 import { normalized } from '@shared/testing/normalized-text';
+import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 
 type ShellSources = {
   readonly projects?: Observable<readonly Project[]>;
   readonly posts?: Observable<readonly BlogPost[]>;
   readonly unread?: Observable<number>;
+  readonly pendingComments?: Observable<number>;
 };
 
 type Shell = {
@@ -50,6 +52,12 @@ async function renderShell(url: string, sources: ShellSources = {}): Promise<She
       {
         provide: ContactGateway,
         useValue: stubContactGateway({ getUnreadCount: () => sources.unread ?? of(0) }),
+      },
+      {
+        provide: CommentsGateway,
+        useValue: {
+          getPendingCount: (): Observable<number> => sources.pendingComments ?? of(0),
+        },
       },
       {
         provide: ProjectsGateway,
@@ -92,6 +100,15 @@ describe('AdminLayout: comptes de la navigation', () => {
       posts: normalized(byTestId(host, 'nav-count-posts')),
       messages: normalized(byTestId(host, 'nav-count-messages')),
     }).toEqual({ crash: null, projects: '6', posts: '2', messages: '3 non lus' });
+  });
+
+  it('Given 2 comments awaiting moderation When the shell renders Then the navigation counts them', async () => {
+    const { host, crash } = await renderShell('/admin', { pendingComments: of(2) });
+
+    expect({ crash, comments: normalized(byTestId(host, 'nav-count-comments')) }).toEqual({
+      crash: null,
+      comments: '2 en attente',
+    });
   });
 
   it('Given a shared project list When the gateway pushes a new list Then the count follows without reload', async () => {
