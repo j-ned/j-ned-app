@@ -31,7 +31,7 @@ import { AdminProfilePortrait } from '../../application/components/admin-profile
 import { AdminSaveBar } from '../../application/components/admin-save-bar';
 import { AdminWordingNotice } from '../../application/components/admin-wording-notice';
 import { DocumentDraft } from '../../application/document-draft';
-import { NewerVersionCheck } from '../../application/newer-version-check';
+import { NewerVersionCheck, type EditedVersion } from '../../application/newer-version-check';
 import type { FormTocSection } from '../../application/form-toc-entries';
 import { toProfileDraft, type ProfileDraft } from '../../application/profile-draft';
 import { profileWordingWarnings } from '../../application/profile-wording-warnings';
@@ -98,9 +98,12 @@ const CONFLICT_MESSAGE =
       [copy]="PROFILE_EDITOR_COPY"
       [leaveAsked]="draft.leave.asked()"
       [newerVersion]="newerVersion.detected()"
+      [reloaded]="newerVersion.reloaded()"
+      [overwriteAsked]="newerVersion.overwrite.asked()"
       [changes]="draft.changes()"
       (retry)="retry()"
-      (reloadLatest)="profileResource.reload()"
+      (reloadLatest)="newerVersion.reload()"
+      (overwriteAnswered)="newerVersion.overwrite.answer($event)"
       (leaveAnswered)="draft.leave.answer($event)"
     >
       <ng-template #editorForm>
@@ -156,10 +159,18 @@ export class AdminProfile implements LeaveConfirmable {
     sections: FORM_SECTIONS,
   });
   protected readonly newerVersion = new NewerVersionCheck({
-    current: (): number | null => this.draft.saved()?.version ?? null,
+    edited: (): EditedVersion | null => {
+      const version = this.draft.saved()?.version;
+      return version === undefined ? null : { id: 'profile', version };
+    },
     readLatest: (): Observable<number> =>
       this.gateway.getProfile({ background: true }).pipe(map((document) => document.version)),
+    reload: (): void => {
+      this.profileResource.reload();
+    },
     paused: this.draft.saving,
+    dirty: (): boolean => this.draft.changes() > 0,
+    staleRejectedByApi: true,
   });
 
   protected readonly wordingWarnings = computed(() => profileWordingWarnings(this.draft.value()));
@@ -188,7 +199,7 @@ export class AdminProfile implements LeaveConfirmable {
 
   protected async save(content: ProfileContent): Promise<void> {
     const version = this.draft.saved()?.version;
-    if (version === undefined) return;
+    if (version === undefined || !(await this.newerVersion.beforeSave())) return;
     const result = await this.draft.save(() =>
       firstValueFrom(this.gateway.saveProfile(content, version)),
     );

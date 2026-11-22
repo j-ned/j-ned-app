@@ -26,6 +26,7 @@ import {
   inZone,
   openEditorRoute,
   pickInZone,
+  overwriteDialog,
   readNewerVersion,
   reloadDialog,
   reloadLatest,
@@ -870,5 +871,39 @@ describe('AdminProjectEditor: version plus récente enregistrée ailleurs', () =
       field: 'DashFlow, relu ailleurs',
       state: 'Aucune modification',
     });
+  });
+  it('Given a newer version detected When the admin saves and confirms the overwrite Then the draft is written once, after the dialog', async () => {
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: savedElsewhere() });
+    await typeIn(editor, 'admin-project-title', 'Mon brouillon');
+    await backToTab(editor);
+    await save(editor);
+    const before = {
+      open: readConfirmDialog(overwriteDialog(editor, PREFIX)).open,
+      written: editor.updateProject.mock.calls.length,
+    };
+
+    await answerConfirmDialog(editor.fixture, 'confirm', overwriteDialog(editor, PREFIX));
+
+    expect({
+      before,
+      written: editor.updateProject.mock.calls.map(([id, payload]) => [id, payload.title]),
+    }).toEqual({ before: { open: true, written: 0 }, written: [['p-1', 'Mon brouillon']] });
+  });
+
+  it('Given a newer version When its reload fails Then the error is shown and the focus goes to « Réessayer », not to the page', async () => {
+    const read = vi.fn<ProjectsGateway['getProjectById']>(() => of(NEWER));
+    read
+      .mockImplementationOnce(() => of(DASHFLOW))
+      .mockImplementationOnce(() => of(NEWER))
+      .mockImplementationOnce(() => throwError(() => new Error('offline')));
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: read });
+    await backToTab(editor);
+
+    await reloadLatest(editor, PREFIX);
+
+    expect({
+      reads: read.mock.calls.length,
+      focused: document.activeElement === byTestId(editor.host, 'load-error-retry'),
+    }).toEqual({ reads: 3, focused: true });
   });
 });

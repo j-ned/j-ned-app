@@ -29,6 +29,7 @@ import { BlankPage } from '@shared/testing/blank-page';
 import {
   fieldValue,
   openEditorRoute,
+  overwriteDialog,
   readNewerVersion,
   reloadDialog,
   reloadLatest,
@@ -891,5 +892,22 @@ describe('AdminProfile: version plus récente enregistrée ailleurs', () => {
       field,
       versions: saveProfile.mock.calls.map(([, version]) => version),
     }).toEqual({ notice: MESSAGE, field: 'Parcours relu ailleurs', versions: [7, 8] });
+  });
+  it('Given a newer version detected When the admin saves Then no overwrite is offered: the API refuses the stale version and the warning stays', async () => {
+    const editor = await openEditor({
+      getProfile: savedElsewhere(),
+      saveProfile: vi.fn(() => throwError(() => apiRejection(409, 'Version périmée'))),
+    });
+    await typeIn(editor, 'admin-profile-biography-title', 'Mon brouillon');
+    await backToTab(editor);
+
+    await save(editor);
+
+    expect({
+      overwrite: readConfirmDialog(overwriteDialog(editor, PREFIX)).open,
+      versions: editor.saveProfile.mock.calls.map(([, version]) => version),
+      field: fieldValue(editor.host, 'admin-profile-biography-title'),
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({ overwrite: false, versions: [7], field: 'Mon brouillon', notice: MESSAGE });
   });
 });

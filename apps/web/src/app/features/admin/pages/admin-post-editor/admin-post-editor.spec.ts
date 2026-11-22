@@ -31,6 +31,7 @@ import {
   inZone,
   openEditorRoute,
   pickInZone,
+  overwriteDialog,
   readNewerVersion,
   reloadDialog,
   reloadLatest,
@@ -1040,5 +1041,153 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
     await answerConfirmDialog(editor.fixture, 'confirm', reloadDialog(editor, PREFIX));
 
     expect(saveBarState(editor)).toBe('Aucune modification');
+  });
+  it('Given a newer version detected When the admin saves Then a dialog says the save will replace it, and nothing is written meanwhile', async () => {
+    const editor = await editorWithList();
+    await typeIn(editor, 'admin-post-title', 'Mon brouillon');
+    await backToTab(editor);
+
+    await save(editor);
+
+    expect({
+      dialog: readConfirmDialog(overwriteDialog(editor, PREFIX)),
+      written: editor.updatePost.mock.calls.length,
+    }).toEqual({
+      dialog: {
+        open: true,
+        heading: 'Enregistrer par-dessus la version la plus récente\u202f?',
+        description:
+          'Une version plus récente de cet article a été enregistrée ailleurs\u00a0: enregistrer ton brouillon la remplacera.',
+        confirm: 'Enregistrer quand même',
+        cancel: "Continuer l'édition",
+      },
+      written: 0,
+    });
+  });
+
+  it.each([
+    { answer: 'cancel', expected: { written: [], field: 'Mon brouillon', notice: MESSAGE } },
+    { answer: 'escape', expected: { written: [], field: 'Mon brouillon', notice: MESSAGE } },
+    {
+      answer: 'confirm',
+      expected: { written: ['Mon brouillon'], field: 'Mon brouillon', notice: '' },
+    },
+  ] as const)(
+    'Given the overwrite dialog When the admin answers $answer Then the draft is written only on confirmation',
+    async ({ answer, expected }) => {
+      const editor = await openEditor('/admin/blog/b-1', {
+        getLatestAdminPost: vi.fn(() => of(NEWER)),
+        updatePost: vi.fn((_id: string, payload: Partial<BlogPostInput>) =>
+          of(
+            makeBlogPost({
+              ...CHIFFREMENT,
+              title: payload.title ?? '',
+              updatedAt: '2026-11-22T11:00:00Z',
+            }),
+          ),
+        ),
+      });
+      await typeIn(editor, 'admin-post-title', 'Mon brouillon');
+      await backToTab(editor);
+      await save(editor);
+
+      await answerConfirmDialog(editor.fixture, answer, overwriteDialog(editor, PREFIX));
+
+      expect({
+        written: editor.updatePost.mock.calls.map(([, payload]) => payload.title),
+        field: fieldValue(editor.host, 'admin-post-title'),
+        notice: readNewerVersion(editor, PREFIX).text,
+      }).toEqual(expected);
+    },
+  );
+
+  it('Given a read started on an article When another article with the same updatedAt is opened before it answers Then the answer is ignored', async () => {
+    const answer = new Subject<BlogPost | null>();
+    const editor = await openEditor('/admin/blog/b-1', {
+      getLatestAdminPost: vi.fn(() => answer),
+    });
+    await backToTab(editor);
+    await editor.harness.navigateByUrl('/admin/blog/b-2');
+    await settleBounded(editor.fixture);
+
+    answer.next(NEWER);
+    answer.complete();
+    await settleBounded(editor.fixture);
+
+    expect({
+      same: FRAISEUSE.updatedAt === CHIFFREMENT.updatedAt,
+      field: fieldValue(editor.host, 'admin-post-title'),
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({ same: true, field: 'De la fraiseuse à Angular', notice: '' });
+  });
+
+  it.each([
+    {
+      then: 'a typed change',
+      act: (editor: Editor): Promise<void> => typeIn(editor, 'admin-post-excerpt', 'Repris'),
+    },
+    { then: 'a save', act: (editor: Editor): Promise<void> => save(editor) },
+  ])(
+    'Given the latest version loaded When $then follows Then « Dernière version chargée. » is no longer said',
+    async ({ act }) => {
+      const editor = await editorWithList();
+      await backToTab(editor);
+      await reloadLatest(editor, PREFIX);
+      const loaded = readNewerVersion(editor, PREFIX).text;
+
+      await act(editor);
+
+      expect({ loaded, after: readNewerVersion(editor, PREFIX).text }).toEqual({
+        loaded: 'Dernière version chargée.',
+        after: '',
+      });
+    },
+  );
+
+  it('Given a reload that brings nothing When the admin then saves over the newer version Then the editor never says it loaded the latest one', async () => {
+    const editor = await openEditor('/admin/blog/b-1', {
+      getLatestAdminPost: vi.fn(() => of(NEWER)),
+      updatePost: vi.fn(() =>
+        of(makeBlogPost({ ...CHIFFREMENT, updatedAt: '2026-11-22T11:00:00Z' })),
+      ),
+    });
+    await backToTab(editor);
+    await reloadLatest(editor, PREFIX);
+    const afterReload = readNewerVersion(editor, PREFIX).text;
+    await typeIn(editor, 'admin-post-title', 'Mon brouillon');
+    await save(editor);
+
+    await answerConfirmDialog(editor.fixture, 'confirm', overwriteDialog(editor, PREFIX));
+
+    expect({ afterReload, afterSave: readNewerVersion(editor, PREFIX).text }).toEqual({
+      afterReload: MESSAGE,
+      afterSave: '',
+    });
+  });
+
+  describe('horloge figée', () => {
+    const START = Date.parse('2026-11-22T12:00:00.000Z');
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(START);
+    });
+
+    afterEach(() => vi.useRealTimers());
+
+    it('Given a newer version already detected When the admin returns 15 s later Then the article is not read again', async () => {
+      const editor = await openEditor('/admin/blog/b-1', {
+        getLatestAdminPost: vi.fn(() => of(NEWER)),
+      });
+      await backToTab(editor);
+
+      vi.setSystemTime(START + 15_000);
+      await backToTab(editor);
+
+      expect({
+        reads: editor.getLatestAdminPost.mock.calls.length,
+        notice: readNewerVersion(editor, PREFIX).text,
+      }).toEqual({ reads: 1, notice: MESSAGE });
+    });
   });
 });

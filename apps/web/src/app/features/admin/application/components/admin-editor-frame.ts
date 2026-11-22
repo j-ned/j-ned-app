@@ -1,11 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
+  afterRenderEffect,
   Component,
   computed,
   contentChild,
   ElementRef,
   input,
-  linkedSignal,
   output,
   signal,
   TemplateRef,
@@ -135,6 +135,19 @@ export type AdminEditorCopy = {
     >
       {{ lostChanges() }}
     </app-confirm-dialog>
+
+    <app-confirm-dialog
+      [attr.data-testid]="prefix + '-overwrite-dialog'"
+      [open]="overwriteAsked()"
+      heading="Enregistrer par-dessus la version la plus récente&#8239;?"
+      confirmLabel="Enregistrer quand même"
+      cancelLabel="Continuer l'édition"
+      (confirmed)="overwriteAnswered.emit(true)"
+      (cancelled)="overwriteAnswered.emit(false)"
+    >
+      Une version plus récente {{ copy().entity }} a été enregistrée ailleurs&#160;: enregistrer ton
+      brouillon la remplacera.
+    </app-confirm-dialog>
   `,
 })
 export class AdminEditorFrame {
@@ -142,20 +155,30 @@ export class AdminEditorFrame {
   readonly copy = input.required<AdminEditorCopy>();
   readonly leaveAsked = input(false);
   readonly newerVersion = input(false);
+  readonly reloaded = input(false);
+  readonly overwriteAsked = input(false);
   readonly changes = input(0);
   readonly retry = output<void>();
   readonly leaveAnswered = output<boolean>();
   readonly reloadLatest = output<void>();
+  readonly overwriteAnswered = output<boolean>();
 
   protected readonly editorForm = contentChild.required('editorForm', { read: TemplateRef });
   protected readonly editorAside = contentChild.required('editorAside', { read: TemplateRef });
   private readonly newerVersionStatus = viewChild<ElementRef<HTMLElement>>('newerVersionStatus');
 
+  private readonly loadError = viewChild(LoadError);
+
   protected readonly reloadAsked = signal(false);
-  // Survit à la disparition de l'avertissement que le rechargement provoque, pas au suivant.
-  protected readonly reloaded = linkedSignal<boolean, boolean>({
-    source: this.newerVersion,
-    computation: (newer, previous) => !newer && (previous?.value ?? false),
+  private focusRetryOnError = false;
+  // La zone d'état disparaît avec l'éditeur si le rechargement échoue : le focus va à « Réessayer ».
+  private readonly focusAfterFailedReload = afterRenderEffect({
+    write: () => {
+      const loadError = this.loadError();
+      if (!loadError || !this.focusRetryOnError) return;
+      this.focusRetryOnError = false;
+      loadError.focusRetry();
+    },
   });
   protected readonly lostChanges = computed(() => {
     const changes = this.changes();
@@ -176,7 +199,7 @@ export class AdminEditorFrame {
   // Le bouton disparaît avec l'avertissement : le focus passe à l'état, qui annonce la suite.
   protected reload(): void {
     this.reloadAsked.set(false);
-    this.reloaded.set(true);
+    this.focusRetryOnError = true;
     this.newerVersionStatus()?.nativeElement.focus();
     this.reloadLatest.emit();
   }

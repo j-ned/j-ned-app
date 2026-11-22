@@ -113,3 +113,9 @@ export function reloadDialog(editor: EditorView, prefix: string): HTMLElement {
   if (!root) throw new Error(`No reload dialog for "${prefix}"`);
   return root;
 }
+
+export function overwriteDialog(editor: EditorView, prefix: string): HTMLElement {
+  const root = byTestId(editor.host, `${prefix}-overwrite-dialog`);
+  if (!root) throw new Error(`No overwrite dialog for "${prefix}"`);
+  return root;
+}
