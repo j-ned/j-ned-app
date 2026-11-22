@@ -38,6 +38,7 @@ export function toPreviewPost(draft: PostDraft, base: BlogPost | null): BlogPost
     likesCount: base?.likesCount ?? 0,
     publishedAt: base?.publishedAt ?? null,
     updatedAt: base?.updatedAt ?? '',
+    version: base?.version ?? 0,
     // Compté sur le brouillon : le temps de lecture de l'aperçu suit la frappe.
     wordCount: countWords(draft.contentMarkdown),
   };

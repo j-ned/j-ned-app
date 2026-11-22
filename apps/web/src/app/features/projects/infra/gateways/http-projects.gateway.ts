@@ -14,6 +14,7 @@ import { ProjectsGateway } from '../../domain/gateways/projects.gateway';
 import type { Project, ProjectImage, ProjectInput } from '../../domain/models/project.model';
 import { isShowcaseProject } from '../../domain/is-showcase-project';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
+import { ifMatch } from '@shared/api/if-match';
 import { refreshable } from '@shared/api/refreshable';
 import { silentErrors, silentWhen } from '@core/interceptors/skip-error-toast';
 import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
@@ -77,9 +78,12 @@ export class HttpProjectsGateway extends ProjectsGateway {
       );
   }
 
-  updateProject(id: string, project: Partial<ProjectInput>): Observable<Project> {
+  updateProject(id: string, project: Partial<ProjectInput>, version?: number): Observable<Project> {
     return this.http
-      .patch<ProjectDto>(`${this.apiUrl}/projects/${id}`, project, { context: silentErrors() })
+      .patch<ProjectDto>(`${this.apiUrl}/projects/${id}`, project, {
+        context: silentErrors(),
+        headers: ifMatch(version),
+      })
       .pipe(
         map((row) => toProject(row, STORAGE_BASE_PATH)),
         this.relistOnSuccess(),
@@ -92,13 +96,14 @@ export class HttpProjectsGateway extends ProjectsGateway {
       .pipe(this.relistOnSuccess());
   }
 
-  uploadImage(file: File, id: string): Observable<string> {
+  uploadImage(file: File, id: string, version?: number): Observable<string> {
     return postPreparedImage<{ key: string }>({
       http: this.http,
       prepare: this.prepareImage,
       url: `${this.apiUrl}/projects/${id}/image`,
       file,
       context: silentErrors(),
+      headers: ifMatch(version),
     }).pipe(
       map((res) => res.key),
       this.relistOnSuccess(),

@@ -8,21 +8,26 @@ import {
   type WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import type { Observable } from 'rxjs';
+import { catchError, firstValueFrom, of, type Observable } from 'rxjs';
 import { LeaveConfirmation } from './leave-confirmation';
 import { refreshAdminWhenVisible } from './refresh-admin-when-visible';
 
-type Version = string | number;
-export type EditedVersion = { readonly id: string; readonly version: Version };
+export type EditedVersion = { readonly id: string; readonly version: number };
+
+// `version` : celle à envoyer en `If-Match`, `null` pour une entité jamais enregistrée.
+export type SaveDecision =
+  { readonly proceed: false } | { readonly proceed: true; readonly version: number | null };
 
 const sameEdited = (a: EditedVersion | null, b: EditedVersion | null): boolean =>
   a === b || (a !== null && b !== null && a.id === b.id && a.version === b.version);
 
+// `ownWrites` : écritures faites depuis cet onglet hors du brouillon (galerie), chacune +1 côté API.
 export const editedVersion = (
-  entity: { readonly id: string; readonly updatedAt: string } | null,
-): EditedVersion | null => (entity ? { id: entity.id, version: entity.updatedAt } : null);
+  entity: { readonly id: string; readonly version: number } | null,
+  ownWrites = 0,
+): EditedVersion | null => (entity ? { id: entity.id, version: entity.version + ownWrites } : null);
 
-// Compare des versions (`updatedAt`, `version`), jamais le contenu : le brouillon n'est pas relu.
+// Compare des versions, jamais le contenu : le brouillon n'est pas relu.
 export class NewerVersionCheck {
   private readonly destroyRef = inject(DestroyRef);
   private readonly edited: Signal<EditedVersion | null>;
@@ -36,7 +41,7 @@ export class NewerVersionCheck {
   constructor(
     private readonly options: {
       readonly edited: () => EditedVersion | null;
-      readonly readLatest: (id: string) => Observable<Version | null>;
+      readonly readLatest: (id: string) => Observable<number | null>;
       readonly reload: () => void;
       readonly paused: () => boolean;
       readonly dirty: () => boolean;
@@ -80,11 +85,26 @@ export class NewerVersionCheck {
     this.options.reload();
   }
 
-  // Sans contrôle de version côté API, enregistrer remplacerait l'autre version sans le dire.
-  beforeSave(): boolean | Promise<boolean> {
+  // Version plus récente signalée : enregistrer par-dessus se confirme, puis part avec la version
+  // relue à cet instant, jamais sans condition.
+  async beforeSave(): Promise<SaveDecision> {
     this.reloadedFrom.set(null);
-    if (this.options.staleRejectedByApi || !this._detected()) return true;
-    return this.overwrite.ask();
+    const edited = this.edited();
+    if (edited === null) return { proceed: true, version: null };
+    if (this.options.staleRejectedByApi || !this._detected()) {
+      return { proceed: true, version: edited.version };
+    }
+    if (!(await this.overwrite.ask())) return { proceed: false };
+    return { proceed: true, version: await this.latestVersion(edited) };
+  }
+
+  // Relecture impossible : la version éditée part, l'API la refuse en 409 et l'avertissement reste.
+  private async latestVersion(edited: EditedVersion): Promise<number> {
+    const latest = await firstValueFrom(
+      this.options.readLatest(edited.id).pipe(catchError(() => of(null))),
+      { defaultValue: null },
+    );
+    return latest ?? edited.version;
   }
 
   private check(): void {

@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { isStaleVersion } from '../../application/is-stale-version';
 import {
   Component,
   afterRenderEffect,
@@ -199,7 +199,7 @@ export class AdminProfile implements LeaveConfirmable {
 
   protected async save(content: ProfileContent): Promise<void> {
     const version = this.draft.saved()?.version;
-    if (version === undefined || !(await this.newerVersion.beforeSave())) return;
+    if (version === undefined || !(await this.newerVersion.beforeSave()).proceed) return;
     const result = await this.draft.save(() =>
       firstValueFrom(this.gateway.saveProfile(content, version)),
     );
@@ -254,8 +254,4 @@ export class AdminProfile implements LeaveConfirmable {
 function saveFailure(error: unknown): string {
   if (isStaleVersion(error)) return CONFLICT_MESSAGE;
   return withValidationDetail("Le parcours n'a pas pu être enregistré.", error);
-}
-
-function isStaleVersion(error: unknown): boolean {
-  return error instanceof HttpErrorResponse && error.status === 409;
 }

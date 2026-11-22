@@ -34,6 +34,7 @@ import {
   toProjectDraft,
   type ProjectDraft,
 } from '../../application/project-draft';
+import { isStaleVersion } from '../../application/is-stale-version';
 import type { LeaveConfirmable } from '../../application/unsaved-changes-guard';
 
 const FORM_SECTIONS: readonly FormTocSection<EditedDraft<ProjectDraft>>[] = [
@@ -59,6 +60,17 @@ const FORM_SECTIONS: readonly FormTocSection<EditedDraft<ProjectDraft>>[] = [
   },
   { id: 'project-gallery', label: '05 · Galerie', fields: [] },
 ];
+
+const CONFLICT_MESSAGE =
+  "Le projet n'a pas été enregistré\u00a0: une version plus récente a été enregistrée ailleurs.";
+
+function saveFailure(error: unknown, existing: boolean): string {
+  if (isStaleVersion(error)) return CONFLICT_MESSAGE;
+  const failure = existing
+    ? 'Erreur lors de la mise à jour du projet'
+    : 'Erreur lors de la création du projet';
+  return withValidationDetail(failure, error);
+}
 
 const PROJECT_EDITOR_COPY: AdminEditorCopy = {
   testIdPrefix: 'admin-project',
@@ -210,12 +222,18 @@ export class AdminProjectEditor implements LeaveConfirmable {
     toDraft: toProjectDraft,
     sections: FORM_SECTIONS,
   });
+  // Chaque écriture de galerie réussie avance la version du projet côté API ; repart de zéro à
+  // chaque version enregistrée ou rechargée.
+  private readonly galleryWrites = linkedSignal({
+    source: this.draft.saved,
+    computation: (): number => 0,
+  });
   protected readonly newerVersion = new NewerVersionCheck({
-    edited: (): EditedVersion | null => editedVersion(this.draft.saved()),
-    readLatest: (id): Observable<string | null> =>
+    edited: (): EditedVersion | null => editedVersion(this.draft.saved(), this.galleryWrites()),
+    readLatest: (id): Observable<number | null> =>
       this.gateway
         .getProjectById(id, { background: true })
-        .pipe(map((project) => project?.updatedAt ?? null)),
+        .pipe(map((project) => project?.version ?? null)),
     reload: (): void => {
       this.projectResource.reload();
     },
@@ -238,25 +256,28 @@ export class AdminProjectEditor implements LeaveConfirmable {
   }
 
   protected async save(payload: ProjectInput): Promise<void> {
-    if (!(await this.newerVersion.beforeSave())) return;
+    const decision = await this.newerVersion.beforeSave();
+    if (!decision.proceed) return;
     const id = this.id();
     const result = await this.draft.save(
       () =>
         firstValueFrom(
-          id ? this.gateway.updateProject(id, payload) : this.gateway.createProject(payload),
+          id
+            ? this.gateway.updateProject(id, payload, decision.version ?? undefined)
+            : this.gateway.createProject(payload),
         ),
-      (cover, projectId) => firstValueFrom(this.gateway.uploadImage(cover, projectId)),
+      (cover, project) =>
+        firstValueFrom(this.gateway.uploadImage(cover, project.id, project.version)),
     );
     if (!result) return;
     if (!result.success) {
-      const failure = id
-        ? 'Erreur lors de la mise à jour du projet'
-        : 'Erreur lors de la création du projet';
-      this.toast.add({ severity: 'error', detail: withValidationDetail(failure, result.error) });
+      if (isStaleVersion(result.error)) this.newerVersion.reportConflict();
+      this.toast.add({ severity: 'error', detail: saveFailure(result.error, id !== undefined) });
       return;
     }
     const { saved, cover } = result.data;
     if (cover.status === 'failed') {
+      if (isStaleVersion(cover.error)) this.newerVersion.reportConflict();
       const warning = id
         ? "Projet mis à jour, mais l'image de couverture n'a pas été envoyée."
         : "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoie-la depuis sa page.";
@@ -269,5 +290,6 @@ export class AdminProjectEditor implements LeaveConfirmable {
 
   protected updateGallery(gallery: readonly ProjectImage[]): void {
     this.gallery.set(gallery);
+    this.galleryWrites.update((count) => count + 1);
   }
 }

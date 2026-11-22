@@ -48,6 +48,7 @@ function post(overrides: Partial<BlogPost> = {}): BlogPost {
     likesCount: 0,
     publishedAt: '2026-08-31T00:00:00Z',
     updatedAt: '2026-08-31T00:00:00Z',
+    version: 1,
     wordCount: countWords(overrides.contentMarkdown ?? '# Titre'),
     ...overrides,
   };
@@ -695,6 +696,70 @@ describe('HttpBlogGateway: dernière version d’un article de l’admin', () =>
       outcome: 'error',
       toasts: 0,
     });
+    httpMock.verify();
+  });
+});
+
+describe('HttpBlogGateway: version attendue par les écritures d’un article', () => {
+  const COVER = new File(['x'], 'cover.png', { type: 'image/png' });
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  it.each([
+    {
+      write: 'updatePost',
+      url: `${BASE}/blog/posts/b-1`,
+      call: (g: HttpBlogGateway, version?: number): Observable<unknown> =>
+        g.updatePost('b-1', { title: 'X' }, version),
+    },
+    {
+      write: 'uploadCoverImage',
+      url: `${BASE}/blog/posts/b-1/image`,
+      call: (g: HttpBlogGateway, version?: number): Observable<unknown> =>
+        g.uploadCoverImage(COVER, 'b-1', version),
+    },
+  ])(
+    'Given version 7 When $write is called Then the request expects it in If-Match, as a strong ETag',
+    async ({ url, call }) => {
+      const { gateway, httpMock } = configure();
+
+      const done = firstValueFrom(call(gateway, 7));
+      const request = httpMock.expectOne(url);
+      const ifMatch = request.request.headers.get('If-Match');
+      request.flush(makeBlogPost({ id: 'b-1', version: 8 }));
+      await done;
+      httpMock.match(`${BASE}/blog/posts/admin`);
+
+      expect(ifMatch).toBe('"7"');
+      httpMock.verify();
+    },
+  );
+
+  it('Given no version When the article is updated Then no If-Match is sent', async () => {
+    const { gateway, httpMock } = configure();
+
+    const done = firstValueFrom(gateway.updatePost('b-1', { title: 'X' }));
+    const request = httpMock.expectOne(`${BASE}/blog/posts/b-1`);
+    const sent = request.request.headers.has('If-Match');
+    request.flush(makeBlogPost({ id: 'b-1' }));
+    await done;
+    httpMock.match(`${BASE}/blog/posts/admin`);
+
+    expect(sent).toBe(false);
+    httpMock.verify();
+  });
+
+  it('Given the API answers 409 When the article is updated Then the refusal reaches the caller untouched', async () => {
+    const { gateway, httpMock } = configure();
+
+    const failure = firstValueFrom(gateway.updatePost('b-1', { title: 'X' }, 2)).catch(
+      (error: unknown) => error,
+    );
+    httpMock
+      .expectOne(`${BASE}/blog/posts/b-1`)
+      .flush({ message: 'Version périmée' }, { status: 409, statusText: 'Conflict' });
+
+    expect(await failure).toMatchObject({ status: 409 });
     httpMock.verify();
   });
 });

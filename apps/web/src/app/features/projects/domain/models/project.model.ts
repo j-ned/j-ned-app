@@ -46,6 +46,8 @@ export type Project = {
   readonly highlight: string | null;
   readonly scope: string | null;
   readonly updatedAt: string;
+  // Incrémentée par chaque écriture du projet, galerie comprise.
+  readonly version: number;
 };
 
 // Payload d'écriture (create/update). `id`, `image` et `slug` sont gérés côté
@@ -53,7 +55,7 @@ export type Project = {
 // (POST /:id/image). techChoices/architectureDecisions, eux, sont éditables.
 export type ProjectInput = Omit<
   Project,
-  'id' | 'image' | 'slug' | 'kind' | 'gallery' | 'updatedAt'
+  'id' | 'image' | 'slug' | 'kind' | 'gallery' | 'updatedAt' | 'version'
 > & {
   readonly kind: ProjectKind;
 };

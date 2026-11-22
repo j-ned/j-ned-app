@@ -899,3 +899,61 @@ describe('HttpProjectsGateway: the shared list follows the admin writes', () => 
     },
   );
 });
+
+describe('HttpProjectsGateway: version attendue par les écritures d’un projet', () => {
+  const COVER = new File(['x'], 'cover.png', { type: 'image/png' });
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  it.each([
+    {
+      write: 'updateProject',
+      url: `${BASE}/projects/p-1`,
+      call: (g: HttpProjectsGateway, version?: number): Observable<unknown> =>
+        g.updateProject('p-1', { title: 'X' }, version),
+    },
+    {
+      write: 'uploadImage',
+      url: `${BASE}/projects/p-1/image`,
+      call: (g: HttpProjectsGateway, version?: number): Observable<unknown> =>
+        g.uploadImage(COVER, 'p-1', version),
+    },
+  ])(
+    'Given version 7 When $write is called Then the request expects it in If-Match, as a strong ETag',
+    async ({ url, call }) => {
+      const { gateway, httpController } = configure();
+
+      const done = firstValueFrom(call(gateway, 7));
+      const request = httpController.expectOne(url);
+      const ifMatch = request.request.headers.get('If-Match');
+      request.flush(makeProject({ id: 'p-1', version: 8 }));
+      await done;
+
+      expect(ifMatch).toBe('"7"');
+      httpController.verify();
+    },
+  );
+
+  it('Given no version When the project is updated Then no If-Match is sent', async () => {
+    const { gateway, httpController } = configure();
+
+    const done = firstValueFrom(gateway.updateProject('p-1', { title: 'X' }));
+    const request = httpController.expectOne(`${BASE}/projects/p-1`);
+    const sent = request.request.headers.has('If-Match');
+    request.flush(makeProject({ id: 'p-1' }));
+    await done;
+
+    expect(sent).toBe(false);
+    httpController.verify();
+  });
+
+  it('Given a project read from the API When it is adapted Then its version is kept', async () => {
+    const { gateway, httpController } = configure();
+
+    const read = firstValueFrom(gateway.getProjectById('p-1'));
+    httpController.expectOne(`${BASE}/projects/p-1`).flush(makeProject({ id: 'p-1', version: 9 }));
+
+    expect((await read)?.version).toBe(9);
+    httpController.verify();
+  });
+});

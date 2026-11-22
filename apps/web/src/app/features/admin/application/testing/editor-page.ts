@@ -103,6 +103,16 @@ export function readNewerVersion(editor: EditorView, prefix: string): NewerVersi
   };
 }
 
+const SETTLE_PASSES_MAX = 10;
+
+// L'écrasement confirmé relit la dernière version avant d'écrire : le rendu est rejoué jusqu'à la
+// condition (fin de l'enregistrement), borné pour un cas où elle n'arrive jamais (annulation).
+export async function settleUntil(editor: EditorView, done: () => boolean): Promise<void> {
+  for (let pass = 0; pass < SETTLE_PASSES_MAX && !done(); pass++) {
+    await settleBounded(editor.fixture);
+  }
+}
+
 export async function reloadLatest(editor: EditorView, prefix: string): Promise<void> {
   await pressTestId(editor.fixture, `${prefix}-reload-latest`);
   await settleBounded(editor.fixture);

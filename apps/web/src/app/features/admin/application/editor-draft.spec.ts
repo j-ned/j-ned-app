@@ -229,10 +229,9 @@ describe('EditorDraft: enregistrer', () => {
     const { draft } = makeDraft(null);
     draft.value.update((value) => ({ ...value, title: 'Nouveau' }));
     draft.selectCover(COVER);
-    const write = vi.fn(async (): Promise<Note> =>
-      aNote({ id: 'n-9', title: 'Nouveau', tags: [] }),
-    );
-    const uploadCover = vi.fn(async (): Promise<unknown> => 'key');
+    const written = aNote({ id: 'n-9', title: 'Nouveau', tags: [] });
+    const write = vi.fn(async (): Promise<Note> => written);
+    const uploadCover = vi.fn(async (_cover: File, _saved: Note): Promise<unknown> => 'key');
 
     const result = await draft.save(write, uploadCover);
 
@@ -247,7 +246,7 @@ describe('EditorDraft: enregistrer', () => {
       changes: draft.changes(),
     }).toEqual({
       cover: { status: 'sent' },
-      uploads: [[COVER, 'n-9']],
+      uploads: [[COVER, written]],
       afterWrite: true,
       pending: null,
       token: 1,

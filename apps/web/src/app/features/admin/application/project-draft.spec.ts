@@ -297,6 +297,7 @@ describe('toPreviewProject', () => {
       highlight: 'Chiffrement côté client',
       scope: null,
       updatedAt: '2026-10-06T10:00:00.000Z',
+      version: 1,
     } satisfies Project);
   });
 

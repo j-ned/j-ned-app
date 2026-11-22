@@ -32,6 +32,7 @@ import {
   reloadLatest,
   save,
   saveBarState,
+  settleUntil,
   tocStates,
   toasts,
   typeIn,
@@ -271,7 +272,7 @@ describe('AdminProjectEditor: création', () => {
       afterCreation:
         (editor.uploadImage.mock.invocationCallOrder[0] ?? 0) >
         (editor.createProject.mock.invocationCallOrder[0] ?? Infinity),
-    }).toEqual({ uploads: [[COVER, 'p-9']], afterCreation: true });
+    }).toEqual({ uploads: [[COVER, 'p-9', 1]], afterCreation: true });
   });
 
   it('Given the creation fails When the project is saved Then an error is told and the page stays on /new', async () => {
@@ -345,7 +346,7 @@ describe('AdminProjectEditor: mise à jour', () => {
       patchFirst:
         (editor.updateProject.mock.invocationCallOrder[0] ?? Infinity) <
         (editor.uploadImage.mock.invocationCallOrder[0] ?? 0),
-    }).toEqual({ uploads: [[COVER, 'p-1']], patches: 1, patchFirst: true });
+    }).toEqual({ uploads: [[COVER, 'p-1', 1]], patches: 1, patchFirst: true });
   });
 
   it('Given the patch fails When the project is saved Then an error is told and the title is unchanged', async () => {
@@ -748,6 +749,7 @@ describe('AdminProjectEditor: version plus récente enregistrée ailleurs', () =
     ...DASHFLOW,
     title: 'DashFlow, relu ailleurs',
     updatedAt: '2026-11-22T10:00:00.000Z',
+    version: 2,
   });
   const MESSAGE =
     'Une version plus récente de ce projet a été enregistrée ailleurs. Recharger la dernière version';
@@ -883,6 +885,7 @@ describe('AdminProjectEditor: version plus récente enregistrée ailleurs', () =
     };
 
     await answerConfirmDialog(editor.fixture, 'confirm', overwriteDialog(editor, PREFIX));
+    await settleUntil(editor, () => editor.toast.mock.calls.length > 0);
 
     expect({
       before,
@@ -905,5 +908,129 @@ describe('AdminProjectEditor: version plus récente enregistrée ailleurs', () =
       reads: read.mock.calls.length,
       focused: document.activeElement === byTestId(editor.host, 'load-error-retry'),
     }).toEqual({ reads: 3, focused: true });
+  });
+});
+
+describe('AdminProjectEditor: enregistrement sous condition de version', () => {
+  const PREFIX = 'admin-project';
+  const OPENED = makeProject({ ...DASHFLOW, version: 3 });
+  const MESSAGE =
+    'Une version plus récente de ce projet a été enregistrée ailleurs. Recharger la dernière version';
+  const CONFLICT =
+    "Le projet n'a pas été enregistré : une version plus récente a été enregistrée ailleurs.";
+
+  afterEach(() => forgetTabVisibility());
+
+  // Lecture d'ouverture à la version 3, puis la version que l'API tient au moment de chaque relecture.
+  function readsAtVersion(...later: readonly number[]): Mock<ProjectsGateway['getProjectById']> {
+    const read = vi.fn<ProjectsGateway['getProjectById']>(() =>
+      of(makeProject({ ...OPENED, version: later.at(-1) ?? 3 })),
+    );
+    read.mockReturnValueOnce(of(OPENED));
+    for (const version of later) read.mockReturnValueOnce(of(makeProject({ ...OPENED, version })));
+    return read;
+  }
+
+  async function deleteFirstCapture(editor: Editor): Promise<void> {
+    const press = async (testId: string): Promise<void> => {
+      const item = editor.host.querySelector<HTMLElement>('[data-testid="admin-gallery-item"]');
+      asButton(item ? byTestId(item, testId) : null).click();
+      await settleBounded(editor.fixture);
+    };
+    await press('admin-gallery-item-remove');
+    await press('admin-gallery-item-confirm-remove');
+  }
+
+  it('Given a project opened at version 3 When it is saved Then the patch expects version 3 and the cover the version the patch answered', async () => {
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: readsAtVersion(),
+      updateProject: vi.fn(() => of(makeProject({ ...OPENED, version: 4 }))),
+    });
+    await typeIn(editor, 'admin-project-title', 'Après');
+    await chooseCover(editor, COVER);
+
+    await save(editor);
+
+    expect({
+      patches: editor.updateProject.mock.calls.map(([id, , version]) => [id, version]),
+      uploads: editor.uploadImage.mock.calls,
+    }).toEqual({ patches: [['p-1', 3]], uploads: [[COVER, 'p-1', 4]] });
+  });
+
+  it('Given a version saved elsewhere When the patch is refused with a 409 Then the newer version is told and the draft is kept', async () => {
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: readsAtVersion(),
+      updateProject: vi.fn(() => throwError(() => apiRejection(409, 'Version périmée'))),
+    });
+    await typeIn(editor, 'admin-project-title', 'Mon brouillon');
+
+    await save(editor);
+
+    expect({
+      notice: readNewerVersion(editor, PREFIX).text,
+      toasts: toasts(editor.toast),
+      field: fieldValue(editor.host, 'admin-project-title'),
+      state: saveBarState(editor),
+    }).toEqual({
+      notice: MESSAGE,
+      toasts: [{ severity: 'error', detail: CONFLICT }],
+      field: 'Mon brouillon',
+      state: '1 modification non enregistrée',
+    });
+  });
+
+  it('Given a patch refused with a 409 When the admin saves again and confirms the overwrite Then the project is read again and the draft is sent with its version', async () => {
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: readsAtVersion(7),
+      updateProject: vi
+        .fn<ProjectsGateway['updateProject']>()
+        .mockReturnValueOnce(throwError(() => apiRejection(409, 'Version périmée')))
+        .mockReturnValueOnce(of(makeProject({ ...OPENED, version: 8 }))),
+    });
+    await typeIn(editor, 'admin-project-title', 'Mon brouillon');
+    await save(editor);
+    await save(editor);
+
+    await answerConfirmDialog(editor.fixture, 'confirm', overwriteDialog(editor, PREFIX));
+    await settleUntil(editor, () => editor.toast.mock.calls.length > 1);
+
+    expect({
+      sent: editor.updateProject.mock.calls.map(([, , version]) => version),
+      reads: editor.getProjectById.mock.calls,
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({
+      sent: [3, 7],
+      reads: [['p-1'], ['p-1', { background: true }]],
+      notice: '',
+    });
+  });
+
+  it('Given a capture deleted from this tab When the admin returns to the tab Then its own gallery write is not taken for a newer version', async () => {
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: readsAtVersion(4) });
+    await deleteFirstCapture(editor);
+
+    returnToTab();
+    await settleBounded(editor.fixture);
+
+    expect(readNewerVersion(editor, PREFIX).text).toBe('');
+  });
+
+  it('Given a capture deleted from this tab When the project is then saved Then the patch expects the version after that gallery write', async () => {
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: readsAtVersion() });
+    await deleteFirstCapture(editor);
+    await typeIn(editor, 'admin-project-title', 'Après');
+
+    await save(editor);
+
+    expect(editor.updateProject.mock.calls.map(([, , version]) => version)).toEqual([4]);
+  });
+
+  it('Given a gallery write made elsewhere When the admin returns to the tab Then the newer version is told', async () => {
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: readsAtVersion(4) });
+
+    returnToTab();
+    await settleBounded(editor.fixture);
+
+    expect(readNewerVersion(editor, PREFIX).text).toBe(MESSAGE);
   });
 });

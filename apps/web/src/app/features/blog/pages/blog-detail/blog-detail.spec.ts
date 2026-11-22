@@ -83,6 +83,7 @@ function post(overrides: Partial<BlogPost> = {}): BlogPost {
     likesCount: 2,
     publishedAt: '2026-08-31T00:00:00Z',
     updatedAt: '2026-08-31T00:00:00Z',
+    version: 1,
     wordCount: countWords(overrides.contentMarkdown ?? '# Bonjour'),
     ...overrides,
   };

@@ -37,6 +37,7 @@ import {
   reloadLatest,
   save,
   saveBarState,
+  settleUntil,
   tocStates,
   toasts,
   typeIn,
@@ -321,7 +322,7 @@ describe('AdminPostEditor: création', () => {
       afterCreation:
         (editor.uploadCoverImage.mock.invocationCallOrder[0] ?? 0) >
         (editor.createPost.mock.invocationCallOrder[0] ?? Infinity),
-    }).toEqual({ uploads: [[COVER, 'b-9']], afterCreation: true });
+    }).toEqual({ uploads: [[COVER, 'b-9', 1]], afterCreation: true });
   });
 
   it('Given the creation fails When the article is saved Then an error is told and the page stays on /new', async () => {
@@ -400,7 +401,7 @@ describe('AdminPostEditor: mise à jour', () => {
       updateFirst:
         (editor.updatePost.mock.invocationCallOrder[0] ?? Infinity) <
         (editor.uploadCoverImage.mock.invocationCallOrder[0] ?? 0),
-    }).toEqual({ uploads: [[COVER, 'b-1']], updates: 1, updateFirst: true });
+    }).toEqual({ uploads: [[COVER, 'b-1', 1]], updates: 1, updateFirst: true });
   });
 
   it('Given the cover upload fails after the update When the save ends Then the list is not requested again', async () => {
@@ -812,6 +813,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
     ...CHIFFREMENT,
     title: 'Chiffrement, relu ailleurs',
     updatedAt: '2026-11-22T10:00:00Z',
+    version: 2,
   });
   const MESSAGE =
     'Une version plus récente de cet article a été enregistrée ailleurs. Recharger la dernière version';
@@ -1083,6 +1085,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
               ...CHIFFREMENT,
               title: payload.title ?? '',
               updatedAt: '2026-11-22T11:00:00Z',
+              version: 3,
             }),
           ),
         ),
@@ -1092,6 +1095,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
       await save(editor);
 
       await answerConfirmDialog(editor.fixture, answer, overwriteDialog(editor, PREFIX));
+      await settleUntil(editor, () => editor.toast.mock.calls.length > 0);
 
       expect({
         written: editor.updatePost.mock.calls.map(([, payload]) => payload.title),
@@ -1101,7 +1105,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
     },
   );
 
-  it('Given a read started on an article When another article with the same updatedAt is opened before it answers Then the answer is ignored', async () => {
+  it('Given a read started on an article When another article with the same version is opened before it answers Then the answer is ignored', async () => {
     const answer = new Subject<BlogPost | null>();
     const editor = await openEditor('/admin/blog/b-1', {
       getLatestAdminPost: vi.fn(() => answer),
@@ -1115,7 +1119,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
     await settleBounded(editor.fixture);
 
     expect({
-      same: FRAISEUSE.updatedAt === CHIFFREMENT.updatedAt,
+      same: FRAISEUSE.version === CHIFFREMENT.version,
       field: fieldValue(editor.host, 'admin-post-title'),
       notice: readNewerVersion(editor, PREFIX).text,
     }).toEqual({ same: true, field: 'De la fraiseuse à Angular', notice: '' });
@@ -1148,7 +1152,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
     const editor = await openEditor('/admin/blog/b-1', {
       getLatestAdminPost: vi.fn(() => of(NEWER)),
       updatePost: vi.fn(() =>
-        of(makeBlogPost({ ...CHIFFREMENT, updatedAt: '2026-11-22T11:00:00Z' })),
+        of(makeBlogPost({ ...CHIFFREMENT, updatedAt: '2026-11-22T11:00:00Z', version: 3 })),
       ),
     });
     await backToTab(editor);
@@ -1158,6 +1162,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
     await save(editor);
 
     await answerConfirmDialog(editor.fixture, 'confirm', overwriteDialog(editor, PREFIX));
+    await settleUntil(editor, () => editor.toast.mock.calls.length > 0);
 
     expect({ afterReload, afterSave: readNewerVersion(editor, PREFIX).text }).toEqual({
       afterReload: MESSAGE,
@@ -1189,5 +1194,148 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
         notice: readNewerVersion(editor, PREFIX).text,
       }).toEqual({ reads: 1, notice: MESSAGE });
     });
+  });
+});
+
+describe('AdminPostEditor: enregistrement sous condition de version', () => {
+  const PREFIX = 'admin-post';
+  const OPENED = makeBlogPost({ ...CHIFFREMENT, version: 3 });
+  const LATEST = makeBlogPost({ ...CHIFFREMENT, title: 'Relu ailleurs', version: 5 });
+  const MESSAGE =
+    'Une version plus récente de cet article a été enregistrée ailleurs. Recharger la dernière version';
+  const CONFLICT =
+    "L'article n'a pas été enregistré : une version plus récente a été enregistrée ailleurs.";
+
+  afterEach(() => forgetTabVisibility());
+
+  function openAtVersion3(overrides: Overrides = {}): Promise<Editor> {
+    return openEditor('/admin/blog/b-1', {
+      getAllPostsForAdmin: vi.fn(() => of([OPENED, FRAISEUSE])),
+      getLatestAdminPost: vi.fn(() => of(LATEST)),
+      updatePost: vi.fn(() => of(makeBlogPost({ ...OPENED, version: 4 }))),
+      ...overrides,
+    });
+  }
+
+  it('Given an article opened at version 3 When it is saved Then the update expects version 3', async () => {
+    const editor = await openAtVersion3();
+    await typeIn(editor, 'admin-post-title', 'Après');
+
+    await save(editor);
+
+    expect(editor.updatePost.mock.calls.map(([id, , version]) => [id, version])).toEqual([
+      ['b-1', 3],
+    ]);
+  });
+
+  it('Given a new cover When the article is saved Then the cover expects the version the update answered', async () => {
+    const editor = await openAtVersion3();
+    await chooseCover(editor, COVER);
+
+    await save(editor);
+
+    expect(editor.uploadCoverImage.mock.calls).toEqual([[COVER, 'b-1', 4]]);
+  });
+
+  it('Given a version saved elsewhere When the save is refused with a 409 Then the newer version is told, the draft and its cover are kept and nothing else is sent', async () => {
+    const editor = await openAtVersion3({
+      updatePost: vi.fn(() => throwError(() => apiRejection(409, 'Version périmée'))),
+    });
+    await typeIn(editor, 'admin-post-title', 'Mon brouillon');
+    await chooseCover(editor, COVER);
+
+    await save(editor);
+
+    expect({
+      notice: readNewerVersion(editor, PREFIX).text,
+      toasts: toasts(editor.toast),
+      field: fieldValue(editor.host, 'admin-post-title'),
+      state: saveBarState(editor),
+      uploads: editor.uploadCoverImage.mock.calls.length,
+    }).toEqual({
+      notice: MESSAGE,
+      toasts: [{ severity: 'error', detail: CONFLICT }],
+      field: 'Mon brouillon',
+      state: '2 modifications non enregistrées',
+      uploads: 0,
+    });
+  });
+
+  it('Given a save refused with a 409 When the admin saves again and confirms the overwrite Then the latest version is read and the draft is sent with it', async () => {
+    const editor = await openAtVersion3({
+      updatePost: vi
+        .fn<BlogGateway['updatePost']>()
+        .mockReturnValueOnce(throwError(() => apiRejection(409, 'Version périmée')))
+        .mockReturnValueOnce(of(makeBlogPost({ ...LATEST, title: 'Mon brouillon', version: 6 }))),
+    });
+    await typeIn(editor, 'admin-post-title', 'Mon brouillon');
+    await save(editor);
+    await save(editor);
+
+    await answerConfirmDialog(editor.fixture, 'confirm', overwriteDialog(editor, PREFIX));
+    await settleUntil(editor, () => editor.toast.mock.calls.length > 1);
+
+    expect({
+      sent: editor.updatePost.mock.calls.map(([, payload, version]) => [payload.title, version]),
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({
+      sent: [
+        ['Mon brouillon', 3],
+        ['Mon brouillon', 5],
+      ],
+      notice: '',
+    });
+  });
+
+  it('Given the latest version cannot be read When the overwrite is confirmed Then the draft is sent with its own version, never without one', async () => {
+    const editor = await openAtVersion3({
+      getLatestAdminPost: vi
+        .fn<BlogGateway['getLatestAdminPost']>()
+        .mockReturnValueOnce(of(LATEST))
+        .mockReturnValueOnce(throwError(() => new Error('offline'))),
+    });
+    await typeIn(editor, 'admin-post-title', 'Mon brouillon');
+    returnToTab();
+    await settleBounded(editor.fixture);
+    await save(editor);
+
+    await answerConfirmDialog(editor.fixture, 'confirm', overwriteDialog(editor, PREFIX));
+    await settleUntil(editor, () => editor.toast.mock.calls.length > 0);
+
+    expect(editor.updatePost.mock.calls.map(([, , version]) => version)).toEqual([3]);
+  });
+
+  it.each([
+    {
+      case: 'a higher version with the same updatedAt',
+      latest: makeBlogPost({ ...OPENED, version: 4 }),
+      notice: MESSAGE,
+    },
+    {
+      case: 'the same version with another updatedAt',
+      latest: makeBlogPost({ ...OPENED, updatedAt: '2026-11-22T10:00:00Z' }),
+      notice: '',
+    },
+  ])(
+    'Given $case on the API When the admin returns to the tab Then the versions are compared, not the dates',
+    async ({ latest, notice }) => {
+      const editor = await openAtVersion3({ getLatestAdminPost: vi.fn(() => of(latest)) });
+
+      returnToTab();
+      await settleBounded(editor.fixture);
+
+      expect(readNewerVersion(editor, PREFIX).text).toBe(notice);
+    },
+  );
+
+  it('Given the cover refused with a 409 after the update When the save ends Then the newer version is told', async () => {
+    const editor = await openAtVersion3({
+      uploadCoverImage: vi.fn(() => throwError(() => apiRejection(409, 'Version périmée'))),
+    });
+    await chooseCover(editor, COVER);
+
+    await save(editor);
+
+    expect(readNewerVersion(editor, PREFIX).text).toBe(MESSAGE);
   });
 });

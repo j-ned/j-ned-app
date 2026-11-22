@@ -5,6 +5,7 @@ import { BlogGateway } from '../domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput, BlogPostSummary } from '../domain/models/blog-post.model';
 import type { ContentImage } from '../domain/models/content-image.model';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
+import { ifMatch } from '@shared/api/if-match';
 import { refreshable } from '@shared/api/refreshable';
 import { silentErrors, silentWhen } from '@core/interceptors/skip-error-toast';
 import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
@@ -75,9 +76,12 @@ export class HttpBlogGateway extends BlogGateway {
       .pipe(this.relistOnSuccess());
   }
 
-  updatePost(id: string, post: Partial<BlogPostInput>): Observable<BlogPost> {
+  updatePost(id: string, post: Partial<BlogPostInput>, version?: number): Observable<BlogPost> {
     return this.http
-      .patch<BlogPost>(`${this.apiUrl}/blog/posts/${id}`, post, { context: silentErrors() })
+      .patch<BlogPost>(`${this.apiUrl}/blog/posts/${id}`, post, {
+        context: silentErrors(),
+        headers: ifMatch(version),
+      })
       .pipe(this.relistOnSuccess());
   }
 
@@ -87,13 +91,14 @@ export class HttpBlogGateway extends BlogGateway {
       .pipe(this.relistOnSuccess());
   }
 
-  uploadCoverImage(file: File, id: string): Observable<string> {
+  uploadCoverImage(file: File, id: string, version?: number): Observable<string> {
     return postPreparedImage<{ key: string }>({
       http: this.http,
       prepare: this.prepareImage,
       url: `${this.apiUrl}/blog/posts/${id}/image`,
       file,
       context: silentErrors(),
+      headers: ifMatch(version),
     }).pipe(
       map((res) => res.key),
       this.relistOnSuccess(),
