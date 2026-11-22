@@ -90,13 +90,32 @@ const readPosts = async () =>
 const withoutBody = ({ contentMarkdown: _body, ...summary }) => summary;
 
 // Lectures de l'admin, testées avant l'expression du slug d'article (`/blog/posts/admin` n'en est pas un).
+// Un `POST /api/contact/messages` est gardé en mémoire, non lu, en tête de la boîte de réception.
+let receivedMessages = [];
+const readMessages = async () => [...receivedMessages, ...(await readFixture('contact-messages'))];
+
+async function receiveMessage(req) {
+  const { name, email, subject, message } = await readJson(req);
+  const received = {
+    id: 1000 + receivedMessages.length,
+    name,
+    email,
+    subject,
+    message,
+    read: false,
+    createdAt: new Date().toISOString(),
+  };
+  receivedMessages = [received, ...receivedMessages];
+  return [201, received];
+}
+
 async function readAdmin(pathname, searchParams) {
   if (pathname === '/api/blog/posts/admin') return [200, await readPosts()];
   if (pathname === '/api/contact/messages') {
-    return [200, { data: await readFixture('contact-messages') }];
+    return [200, { data: await readMessages() }];
   }
   if (pathname === '/api/contact/messages/unread-count') {
-    const messages = await readFixture('contact-messages');
+    const messages = await readMessages();
     return [200, { count: messages.filter((message) => !message.read).length }];
   }
   if (pathname === '/api/blog/comments') {
@@ -172,6 +191,7 @@ async function route(req, pathname, searchParams) {
   const comments = COMMENTS_PATH.exec(pathname);
   if (comments && method === 'POST') return submitComment(comments[1], req);
   if (comments && method === 'GET') return readComments(comments[1], searchParams);
+  if (method === 'POST' && pathname === '/api/contact/messages') return receiveMessage(req);
   if (method === 'PUT' && pathname === '/api/profile') return replaceProfile(await readJson(req));
   if (method === 'POST' && pathname === '/api/profile/portrait') return replacePortrait(req);
   if (method === 'DELETE' && pathname === '/api/profile/portrait') return removePortrait();
