@@ -8,7 +8,7 @@ export function login(password = parityEnv().adminPassword): Promise<ApiResponse
   });
 }
 
-/** Ouvre une session admin (2FA désactivée) et rend la valeur du cookie. */
+// 2FA désactivée ; rend la valeur du cookie.
 export async function adminSession(): Promise<string> {
   const response = await login();
   expect(response.status, response.text).toBe(200);

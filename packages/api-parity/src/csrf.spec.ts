@@ -13,7 +13,7 @@ import { adminSession } from './session';
 const label = (route: Route): string => `${route.method} ${route.path}`;
 const WRITES = [...ADMIN_ROUTES.filter(isWrite), ...PUBLIC_WRITE_ROUTES];
 
-// ADR-0034 : une écriture n'est acceptée que de la même origine ou d'une origine de confiance.
+// Une écriture n'est acceptée que de la même origine ou d'une origine de confiance.
 describe('cross-origin protection (CSRF)', () => {
   let session = '';
 

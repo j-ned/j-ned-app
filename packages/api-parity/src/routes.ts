@@ -1,8 +1,5 @@
-/**
- * Inventaire des routes de l'API (relevé sur les contrôleurs NestJS, 2026-11-01, repris tel quel par
- * Hono). Toute route ajoutée, retirée ou dont l'accès change doit l'être ici d'abord.
- * Les paramètres sont remplis par des valeurs qui n'existent pas : seul l'accès est éprouvé ici.
- */
+// Toute route ajoutée, retirée ou dont l'accès change l'est ici d'abord. Les paramètres portent des
+// valeurs inexistantes : seul l'accès est éprouvé.
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export type Route = { readonly method: Method; readonly path: string };
 
@@ -81,7 +78,7 @@ export const PUBLIC_READ_ROUTES: readonly Route[] = [
   { method: 'GET', path: `/api/projects/${ID}` },
 ];
 
-/** Écritures ouvertes au public : seul le contrôle d'origine (CSRF) et le débit les protègent. */
+// Seuls le contrôle d'origine (CSRF) et le débit les protègent.
 export const PUBLIC_WRITE_ROUTES: readonly Route[] = [
   { method: 'POST', path: '/api/auth/login' },
   { method: 'POST', path: '/api/auth/2fa/verify' },

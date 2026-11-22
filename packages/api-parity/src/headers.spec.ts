@@ -20,7 +20,7 @@ describe('response headers', () => {
     expect(response.headers.get('cross-origin-resource-policy')).toBe('cross-origin');
   });
 
-  // Transition (ADR-0034) : tant que l'ancien front peut appeler le sous-domaine, CORS reste ouvert au
+  // Transition : tant que l'ancien front peut appeler le sous-domaine, CORS reste ouvert au
   // site, et à lui seul.
   it('Given the site origin, When it preflights a credentialed write, Then CORS allows it', async () => {
     const response = await newVisitor().request('OPTIONS', '/api/auth/login', {

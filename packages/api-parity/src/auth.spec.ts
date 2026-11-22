@@ -9,7 +9,7 @@ import { adminSession, login } from './session';
 const base64url = (value: unknown): string =>
   Buffer.from(typeof value === 'string' ? value : JSON.stringify(value)).toString('base64url');
 
-/** JWT signé avec un secret qui n'est pas celui de l'API. */
+// Signé avec un secret qui n'est pas celui de l'API.
 function foreignJwt(payload: object): string {
   const head = `${base64url({ alg: 'HS256', typ: 'JWT' })}.${base64url(payload)}`;
   return `${head}.${createHmac('sha256', 'not-the-api-secret').update(head).digest('base64url')}`;
@@ -18,10 +18,8 @@ function foreignJwt(payload: object): string {
 const subjectOf = (jwt: string): unknown =>
   JSON.parse(Buffer.from(jwt.split('.')[1] ?? '', 'base64url').toString()) as unknown;
 
-/**
- * Attend la fenêtre TOTP suivante (30 s) : le code n'est pas celui qui a servi à activer la 2FA, la
- * suite ne dépend donc pas de la politique de rejeu de l'implémentation.
- */
+// Fenêtre TOTP suivante : le code n'est pas celui qui a activé la 2FA, la suite ne dépend donc pas de
+// la politique de rejeu de l'implémentation.
 const nextTotpStep = (): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, 30_000 - (Date.now() % 30_000) + 1_000));
 

@@ -3,15 +3,8 @@ import type { ApiResponse } from './client';
 
 const ERROR_KEYS = ['error', 'message', 'path', 'statusCode', 'timestamp'];
 
-/**
- * Format d'erreur unique de l'API, quel que soit le code : JSON, ces cinq clés exactement (aucune pile,
- * aucun détail interne), `message` en texte ou en liste de textes (seul champ lu par le front, avec le
- * statut), `path` = chemin demandé.
- *
- * `error` n'est vérifié que comme texte non vide : NestJS y met l'intitulé HTTP (« Forbidden ») ou le
- * nom de son énumération (« UNAUTHORIZED ») selon l'origine de l'exception. Incohérence à normaliser
- * au portage, pas à reproduire (voir README).
- */
+// Cinq clés exactement, sans pile ni détail interne ; `message` (texte ou liste) est le seul champ lu
+// par le front. `error` n'est vérifié que non vide : NestJS y met l'intitulé HTTP ou son énumération.
 export function expectApiError(response: ApiResponse, status: number, path?: string): void {
   expect(response.status, response.text).toBe(status);
   expect(response.headers.get('content-type')).toMatch(/^application\/json/);
