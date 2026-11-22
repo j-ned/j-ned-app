@@ -45,10 +45,15 @@ describe('projects routes (HTTP)', () => {
     app = build(passThrough);
   });
 
-  const json = (method: string, path: string, body: unknown) =>
+  const json = (
+    method: string,
+    path: string,
+    body: unknown,
+    headers: Readonly<Record<string, string>> = {},
+  ) =>
     app.request(path, {
       method,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...headers },
       body: JSON.stringify(body),
     });
 
@@ -64,6 +69,16 @@ describe('projects routes (HTTP)', () => {
   });
 
   describe('GET /projects/:id', () => {
+    it('Given a project, When read, Then its version is the ETag of the response', async () => {
+      projects.findById.mockResolvedValueOnce({ id: ID, version: 6 });
+
+      const res = await app.request(`/api/projects/${ID}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('etag')).toBe('"6"');
+      expect(await res.json()).toEqual({ id: ID, version: 6 });
+    });
+
     it('Given an unknown project, When read, Then the service 404 is returned', async () => {
       projects.findById.mockRejectedValueOnce(new NotFoundException());
       expect((await app.request(`/api/projects/${ID}`)).status).toBe(404);
@@ -77,9 +92,76 @@ describe('projects routes (HTTP)', () => {
       expect(projects.create).not.toHaveBeenCalled();
     });
 
+    it('Given a valid body, When created, Then 201 with the version as ETag', async () => {
+      projects.create.mockResolvedValueOnce({ id: ID, version: 1 });
+
+      const res = await json('POST', '/api/projects', VALID);
+
+      expect(res.status).toBe(201);
+      expect(res.headers.get('etag')).toBe('"1"');
+    });
+
     it('Given a slug already taken, When created, Then the service 409 is returned', async () => {
       projects.create.mockRejectedValueOnce(new ConflictException());
       expect((await json('POST', '/api/projects', VALID)).status).toBe(409);
+    });
+  });
+
+  describe('PATCH /projects/:id', () => {
+    it('Given no If-Match, When patched, Then the service gets no expected version (unconditional write)', async () => {
+      projects.update.mockResolvedValueOnce({ id: ID, version: 2 });
+
+      const res = await json('PATCH', `/api/projects/${ID}`, { title: 'T2' });
+
+      expect(res.status).toBe(200);
+      expect(projects.update).toHaveBeenCalledWith(
+        ID,
+        { title: 'T2' },
+        undefined,
+      );
+    });
+
+    it('Given If-Match "1", When patched, Then the service expects version 1 and the new ETag is returned', async () => {
+      projects.update.mockResolvedValueOnce({ id: ID, version: 2 });
+
+      const res = await json(
+        'PATCH',
+        `/api/projects/${ID}`,
+        { title: 'T2' },
+        { 'if-match': '"1"' },
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('etag')).toBe('"2"');
+      expect(projects.update).toHaveBeenCalledWith(ID, { title: 'T2' }, 1);
+    });
+
+    it('Given a malformed If-Match, When patched, Then 400 without calling the service', async () => {
+      const res = await json(
+        'PATCH',
+        `/api/projects/${ID}`,
+        { title: 'T2' },
+        { 'if-match': '1' },
+      );
+
+      expect(res.status).toBe(400);
+      expect(projects.update).not.toHaveBeenCalled();
+    });
+
+    it('Given a stale version, When patched, Then the service 409 is returned', async () => {
+      projects.update.mockRejectedValueOnce(
+        new ConflictException('Version périmée'),
+      );
+
+      const res = await json(
+        'PATCH',
+        `/api/projects/${ID}`,
+        { title: 'T2' },
+        { 'if-match': '"1"' },
+      );
+
+      expect(res.status).toBe(409);
+      expect(await res.json()).toMatchObject({ message: 'Version périmée' });
     });
   });
 
@@ -98,6 +180,24 @@ describe('projects routes (HTTP)', () => {
       ];
       expect(id).toBe(ID);
       expect(file.buffer).toEqual(PNG);
+    });
+
+    it('Given If-Match "2", When a cover is uploaded, Then the service expects version 2 and the new ETag is returned', async () => {
+      projects.uploadImage.mockResolvedValueOnce({ id: ID, version: 3 });
+
+      const res = await app.request(`/api/projects/${ID}/image`, {
+        method: 'POST',
+        body: fileForm(PNG, 'image/png'),
+        headers: { 'if-match': '"2"' },
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.headers.get('etag')).toBe('"3"');
+      expect(projects.uploadImage).toHaveBeenCalledWith(
+        ID,
+        expect.objectContaining({ buffer: PNG }),
+        2,
+      );
     });
 
     it('Given a non-image file, When uploaded, Then 422', async () => {

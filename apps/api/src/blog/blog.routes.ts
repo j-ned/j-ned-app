@@ -8,6 +8,7 @@ import {
   uuidParamAndFile,
   type AppEnv,
 } from '../common/http';
+import { ifMatchVersion, replyVersioned } from '../common/entity-version';
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
 import { blogCommentsRoutes } from '../blog-comments/blog-comments.routes';
 import type { BlogCommentsService } from '../blog-comments/blog-comments.service';
@@ -55,20 +56,21 @@ function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
 
       // Article publié par slug (public), 404 sinon.
       .get('/:slug', throttle(PUBLIC_READ_THROTTLE), async (c) =>
-        reply(c, await blog.findBySlug(c.req.param('slug'))),
+        replyVersioned(c, await blog.findBySlug(c.req.param('slug'))),
       )
 
       // 409 si le slug existe déjà.
       .post('/', throttle(), requireAuth, async (c) => {
         const dto = await jsonBody(c, createBlogPostSchema);
-        return reply(c, await blog.create(dto), 201);
+        return replyVersioned(c, await blog.create(dto), 201);
       })
 
-      // `coverImage: null` retire la couverture.
+      // `coverImage: null` retire la couverture ; `If-Match: "<version>"` rend l'écriture conditionnelle.
       .patch('/:id', throttle(), requireAuth, async (c) => {
         const id = uuidParam(c, 'id');
+        const expected = ifMatchVersion(c);
         const dto = await jsonBody(c, updateBlogPostSchema);
-        return reply(c, await blog.update(id, dto));
+        return replyVersioned(c, await blog.update(id, dto, expected));
       })
 
       // Supprime aussi la couverture et les images du corps devenues orphelines.
@@ -79,8 +81,13 @@ function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
 
       // Couverture (stockée en AVIF ≤ 1 600 px).
       .post('/:id/image', throttle(), requireAuth, async (c) => {
+        const expected = ifMatchVersion(c);
         const { id, file } = await uuidParamAndFile(c, 'id', IMAGE_UPLOAD);
-        return reply(c, await blog.uploadCoverImage(id, file), 201);
+        return replyVersioned(
+          c,
+          await blog.uploadCoverImage(id, file, expected),
+          201,
+        );
       })
 
       // Compteur de likes (public, sans authentification).

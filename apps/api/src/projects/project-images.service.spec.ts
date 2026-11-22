@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '../common/http-errors';
-import type { SQL } from 'drizzle-orm';
+import { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { UploadedFile } from '../common/http';
 import { createMockDb } from '../testing/test-utils';
@@ -13,7 +13,7 @@ import { StorageService } from '../storage/storage.service';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
 import { ProjectImagesService } from './project-images.service';
 import { PROJECT_GALLERY_MAX } from './project-gallery';
-import type { Project } from '../database/schema/projects';
+import { projects, type Project } from '../database/schema/projects';
 import { defined } from '../testing/defined';
 
 const PROJECT_ID = '11111111-1111-1111-1111-111111111111';
@@ -273,8 +273,9 @@ describe('ProjectImagesService', () => {
       expect(db.transaction).toHaveBeenCalledTimes(1);
       // Chaque update porte un `where` (imageId, projectId) et un `set` ({ order }) : on apparie
       // les deux pour vérifier quel id reçoit quel rang, pas seulement la suite des rangs.
-      const updatedWheres = db.where.mock.calls.slice(2) as [SQL][];
-      const patches = db.set.mock.calls as [{ order: number }][];
+      // Les trois premiers : les captures ; le dernier passe la version du projet (testé à part).
+      const updatedWheres = db.where.mock.calls.slice(2, 5) as [SQL][];
+      const patches = db.set.mock.calls.slice(0, 3) as [{ order: number }][];
       const ranks = updatedWheres.map(([where], i) => {
         const [imageId, projectId] = new PgDialect().sqlToQuery(where).params;
         const [{ order }] = defined(patches[i]);
@@ -285,6 +286,10 @@ describe('ProjectImagesService', () => {
         [A, PROJECT_ID, 1],
         [B, PROJECT_ID, 2],
       ]);
+      expect(db.update).toHaveBeenLastCalledWith(projects);
+      expect(db.set).toHaveBeenLastCalledWith({
+        version: expect.any(SQL) as unknown,
+      });
       expect(result.map((i) => [i.id, i.order])).toEqual([
         [C, 0],
         [A, 1],

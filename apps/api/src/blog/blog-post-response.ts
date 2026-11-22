@@ -17,6 +17,7 @@ export function toBlogPostSummary(post: BlogPostResponse): BlogPostSummary {
     tags: post.tags,
     status: post.status,
     likesCount: post.likesCount,
+    version: post.version,
     publishedAt: post.publishedAt,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,

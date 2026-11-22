@@ -13,6 +13,7 @@ import {
   PUBLIC_READ_THROTTLE,
   throttle,
 } from '../common/throttle';
+import { ifMatchVersion, replyVersioned } from '../common/entity-version';
 import { validateDto } from '../common/validation';
 import { createProjectSchema } from './dto/create-project.dto';
 import { projectImageAltSchema } from './dto/project-image-alt.dto';
@@ -34,20 +35,22 @@ export function projectsRoutes(
       )
 
       .get('/:id', throttle(PUBLIC_READ_THROTTLE), async (c) =>
-        reply(c, await projects.findById(uuidParam(c, 'id'))),
+        replyVersioned(c, await projects.findById(uuidParam(c, 'id'))),
       )
 
       // 409 si le slug existe déjà.
       .post('/', throttle(), requireAuth, async (c) => {
         const dto = await jsonBody(c, createProjectSchema);
-        return reply(c, await projects.create(dto), 201);
+        return replyVersioned(c, await projects.create(dto), 201);
       })
 
-      // `image: null` retire la couverture (et l'objet S3).
+      // `image: null` retire la couverture (et l'objet S3) ; `If-Match: "<version>"` rend l'écriture
+      // conditionnelle.
       .patch('/:id', throttle(), requireAuth, async (c) => {
         const id = uuidParam(c, 'id');
+        const expected = ifMatchVersion(c);
         const dto = await jsonBody(c, updateProjectSchema);
-        return reply(c, await projects.update(id, dto));
+        return replyVersioned(c, await projects.update(id, dto, expected));
       })
 
       // Supprime aussi la couverture S3.
@@ -58,8 +61,13 @@ export function projectsRoutes(
 
       // Couverture : stockée en AVIF ≤ 1600 px.
       .post('/:id/image', throttle(), requireAuth, async (c) => {
+        const expected = ifMatchVersion(c);
         const { id, file } = await uuidParamAndFile(c, 'id', IMAGE_UPLOAD);
-        return reply(c, await projects.uploadImage(id, file), 201);
+        return replyVersioned(
+          c,
+          await projects.uploadImage(id, file, expected),
+          201,
+        );
       })
 
       // Galerie : ajout d'une capture (champ `file` + champ texte `alt`).

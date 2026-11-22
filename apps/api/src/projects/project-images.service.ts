@@ -24,6 +24,18 @@ import {
   type ProjectImageResponse,
 } from './project-gallery';
 import { insertedRow } from '../common/rows';
+import { nextVersion } from '../common/entity-version';
+
+// La galerie fait partie du projet édité : chaque écriture change sa version, dans la même transaction.
+async function bumpProjectVersion(
+  tx: Database,
+  projectId: string,
+): Promise<void> {
+  await tx
+    .update(projects)
+    .set({ version: nextVersion(projects) })
+    .where(eq(projects.id, projectId));
+}
 
 // Une capture = une ligne `project_image` + un objet S3.
 export class ProjectImagesService {
@@ -70,19 +82,23 @@ export class ProjectImagesService {
       image.mimetype,
     );
 
-    const rows = await this.db
-      .insert(projectImages)
-      .values({
-        id,
-        projectId,
-        key,
-        alt,
-        width: image.width,
-        height: image.height,
-        order: nextGalleryOrder(current),
-      })
-      .returning();
-    return toImageResponse(insertedRow(rows), this.toUrl);
+    const row = await this.db.transaction(async (tx) => {
+      const rows = await tx
+        .insert(projectImages)
+        .values({
+          id,
+          projectId,
+          key,
+          alt,
+          width: image.width,
+          height: image.height,
+          order: nextGalleryOrder(current),
+        })
+        .returning();
+      await bumpProjectVersion(tx, projectId);
+      return insertedRow(rows);
+    });
+    return toImageResponse(row, this.toUrl);
   }
 
   async updateAlt(
@@ -90,22 +106,30 @@ export class ProjectImagesService {
     imageId: string,
     alt: string,
   ): Promise<ProjectImageResponse> {
-    const [row] = await this.db
-      .update(projectImages)
-      .set({ alt, updatedAt: new Date() })
-      .where(this.imageOf(projectId, imageId))
-      .returning();
-    if (!row) throw this.imageNotFound(projectId, imageId);
+    const row = await this.db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(projectImages)
+        .set({ alt, updatedAt: new Date() })
+        .where(this.imageOf(projectId, imageId))
+        .returning();
+      if (!updated) throw this.imageNotFound(projectId, imageId);
+      await bumpProjectVersion(tx, projectId);
+      return updated;
+    });
     return toImageResponse(row, this.toUrl);
   }
 
   // Base d'abord, S3 ensuite : un orphelin S3 plutôt qu'une ligne vers un objet effacé.
   async remove(projectId: string, imageId: string): Promise<void> {
-    const [row] = await this.db
-      .delete(projectImages)
-      .where(this.imageOf(projectId, imageId))
-      .returning();
-    if (!row) throw this.imageNotFound(projectId, imageId);
+    const row = await this.db.transaction(async (tx) => {
+      const [deleted] = await tx
+        .delete(projectImages)
+        .where(this.imageOf(projectId, imageId))
+        .returning();
+      if (!deleted) throw this.imageNotFound(projectId, imageId);
+      await bumpProjectVersion(tx, projectId);
+      return deleted;
+    });
     await deleteS3IfExists(this.storage, STORAGE_BUCKET, row.key);
   }
 
@@ -135,6 +159,7 @@ export class ProjectImagesService {
           .set({ order, updatedAt })
           .where(this.imageOf(projectId, id));
       }
+      await bumpProjectVersion(tx, projectId);
 
       const reordered = rows.map((r) => ({
         ...r,

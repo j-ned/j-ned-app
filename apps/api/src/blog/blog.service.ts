@@ -20,7 +20,16 @@ import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { findByIdOrFail } from '../common/crud-helpers';
 import { isUniqueViolation, slugify } from '../common/utils';
-import { insertedRow, updatedRow } from '../common/rows';
+import { insertedRow } from '../common/rows';
+import {
+  assertVersion,
+  missedWrite,
+  nextVersion,
+  versionedRow,
+} from '../common/entity-version';
+
+const STALE_POST =
+  'Une version plus récente de cet article a été enregistrée ailleurs : recharge-le avant d’enregistrer.';
 
 export class BlogService {
   private readonly logger = new Logger(BlogService.name);
@@ -80,8 +89,14 @@ export class BlogService {
     }
   }
 
-  async update(id: string, dto: UpdateBlogPostDto): Promise<BlogPostResponse> {
+  // `expectedVersion` (If-Match) : écriture refusée en 409 si l'article a changé depuis cette version.
+  async update(
+    id: string,
+    dto: UpdateBlogPostDto,
+    expectedVersion?: number,
+  ): Promise<BlogPostResponse> {
     const current = await this.findByIdRaw(id);
+    assertVersion(current, expectedVersion, STALE_POST);
 
     // coverImage extrait du spread : il ne peut être que null ou undefined
     // côté DTO (upload géré par POST /:id/image), mais on ne veut jamais
@@ -105,8 +120,8 @@ export class BlogService {
     try {
       rows = await this.db
         .update(blogPosts)
-        .set(patch)
-        .where(eq(blogPosts.id, id))
+        .set({ ...patch, version: nextVersion(blogPosts) })
+        .where(versionedRow(blogPosts, id, expectedVersion))
         .returning();
     } catch (err) {
       if (isUniqueViolation(err, 'slug')) {
@@ -116,7 +131,7 @@ export class BlogService {
       }
       throw err;
     }
-    const row = updatedRow(rows, `Blog post ${id} not found`);
+    const row = rows[0] ?? (await this.missedWrite(id, expectedVersion));
 
     // S3 cleanup APRÈS le write DB réussi : si le write échoue, on préfère
     // garder l'objet S3 (orphelin DB-cohérent) plutôt qu'une DB cassée.
@@ -156,8 +171,10 @@ export class BlogService {
   async uploadCoverImage(
     id: string,
     file: UploadedFile,
+    expectedVersion?: number,
   ): Promise<BlogPostResponse> {
     const current = await this.findByIdRaw(id);
+    assertVersion(current, expectedVersion, STALE_POST);
     // Ordre : upload → update DB → cleanup ancienne clé. Si une étape échoue, on préfère un orphelin S3
     // (cleanup manuel possible) à une DB qui référence une clé supprimée (image cassée côté front).
     const newKey = await storeOptimizedImage(
@@ -168,14 +185,17 @@ export class BlogService {
       file.buffer,
     );
 
-    const row = updatedRow(
-      await this.db
-        .update(blogPosts)
-        .set({ coverImage: newKey, updatedAt: new Date() })
-        .where(eq(blogPosts.id, id))
-        .returning(),
-      `Blog post ${id} not found`,
-    );
+    // Version périmée entre-temps : la nouvelle clé reste un orphelin S3, comme un échec d'écriture.
+    const [row] = await this.db
+      .update(blogPosts)
+      .set({
+        coverImage: newKey,
+        version: nextVersion(blogPosts),
+        updatedAt: new Date(),
+      })
+      .where(versionedRow(blogPosts, id, expectedVersion))
+      .returning();
+    if (row === undefined) return this.missedWrite(id, expectedVersion);
 
     if (current.coverImage !== newKey) {
       await deleteS3IfExists(this.storage, STORAGE_BUCKET, current.coverImage);
@@ -196,6 +216,13 @@ export class BlogService {
       .returning({ likesCount: blogPosts.likesCount });
     if (!row) throw new NotFoundException(`Blog post "${slug}" not found`);
     return { likesCount: row.likesCount };
+  }
+
+  private missedWrite(id: string, expectedVersion: number | undefined) {
+    return missedWrite(this.db, blogPosts, id, expectedVersion, {
+      notFound: `Blog post ${id} not found`,
+      stale: STALE_POST,
+    });
   }
 
   // Helper privé : retourne la row brute (sans transformation URL).

@@ -16,6 +16,13 @@ import { ProjectImagesService } from './project-images.service';
 import type { ProjectImageResponse } from './project-gallery';
 import { defined } from '../testing/defined';
 
+const aCover = (): UploadedFile => ({
+  buffer: Buffer.from('fake'),
+  mimetype: 'image/webp',
+  originalname: 'cover.webp',
+  size: 4,
+});
+
 describe('ProjectsService', () => {
   let service: ProjectsService;
   let db: ReturnType<typeof createMockDb>;
@@ -52,6 +59,7 @@ describe('ProjectsService', () => {
     kind: 'demo',
     featured: false,
     order: 0,
+    version: 1,
     createdAt: new Date('2026-04-26T00:00:00Z'),
     updatedAt: new Date('2026-04-26T00:00:00Z'),
     ...overrides,
@@ -202,6 +210,19 @@ describe('ProjectsService', () => {
   });
 
   describe('update', () => {
+    it('Given If-Match on an older version than the stored one, When updated, Then 409 without writing', async () => {
+      db.limit.mockResolvedValueOnce([mkProject({ version: 3 })]);
+
+      await expect(
+        service.update(mkProject().id, { description: 'Périmée' }, 2),
+      ).rejects.toThrow(
+        new ConflictException(
+          'Une version plus récente de ce projet a été enregistrée ailleurs : recharge-le avant d’enregistrer.',
+        ),
+      );
+      expect(db.update).not.toHaveBeenCalled();
+    });
+
     it('throw NotFoundException si projet absent', async () => {
       db.limit.mockResolvedValueOnce([]);
       await expect(service.update('nope', { title: 'X' })).rejects.toThrow(
@@ -389,6 +410,16 @@ describe('ProjectsService', () => {
   });
 
   describe('uploadImage', () => {
+    it('Given If-Match on an older version, When a cover is sent, Then 409 before any storage write', async () => {
+      db.limit.mockResolvedValueOnce([mkProject({ version: 3 })]);
+
+      await expect(
+        service.uploadImage(mkProject().id, aCover(), 2),
+      ).rejects.toThrow(ConflictException);
+      expect(storage.upload).not.toHaveBeenCalled();
+      expect(db.update).not.toHaveBeenCalled();
+    });
+
     const HASH = createHash('sha256')
       .update('avif-bytes')
       .digest('hex')
