@@ -75,6 +75,15 @@ const REJECTIONS: Readonly<Record<number, CommentRejection>> = {
   503: 'closed',
 };
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Corps d'un 202 lu comme `unknown` : seul un UUID sert d'identifiant à l'envoi en attente.
+export function toAcceptedId(body: unknown): string | null {
+  if (typeof body !== 'object' || body === null || !('id' in body)) return null;
+  const { id } = body;
+  return typeof id === 'string' && UUID.test(id) ? id : null;
+}
+
 export function toCommentRejection(status: number): CommentRejection {
   return REJECTIONS[status] ?? 'unavailable';
 }

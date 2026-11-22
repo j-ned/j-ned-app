@@ -6,6 +6,7 @@ import { settleBounded } from '@shared/testing/settle';
 import { provideRouter } from '@angular/router';
 import { OWNER_NAME } from '@shared/seo/site-person';
 import {
+  makePendingComment,
   makePublishedComment,
   makePublishedReply,
   makePublishedThread,
@@ -113,6 +114,20 @@ describe('CommentThread: lecture', () => {
       replies: [`${OWNER_NAME}, auteur de l’article`, 'Lou'],
       secondHasReplies: null,
     });
+  });
+
+  it('Given a comment of this reader still waiting When the section is shown Then it is listed, says so, cannot be answered, and is not counted', async () => {
+    const host = await render({
+      status: 'ready',
+      view: toCommentThreadView(makePublishedThread(), [makePendingComment({ id: 'p-1' })]),
+    });
+    const waiting = [...host.querySelectorAll('[data-testid="comment-list"] > li')].at(-1);
+
+    expect({
+      heading: text(host.querySelector('h2')),
+      pending: text(waiting?.querySelector('[data-testid="comment-pending"]')),
+      reply: waiting?.querySelector('[data-testid="comment-reply"]') ?? null,
+    }).toEqual({ heading: 'Commentaires (1)', pending: 'En attente de relecture', reply: null });
   });
 
   it('Given no comment When the section is shown Then it invites the reader to write the first one, without an empty list', async () => {

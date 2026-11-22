@@ -1,15 +1,17 @@
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
-import { Component, ElementRef, input, output, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, input, output, viewChild } from '@angular/core';
 import { Button } from '@shared/ui/button';
+import { Stamp } from '@shared/ui/stamp';
+import { COMMENT_COPY } from '../comment-copy';
 import type { CommentView } from '../comment-thread-view';
 
 // Nom et texte viennent d'un inconnu : interpolation seule, jamais de HTML ni de lien fabriqué.
 @Component({
   selector: 'article[app-comment-item]',
-  imports: [DatePipe, NgTemplateOutlet, Button],
+  imports: [DatePipe, NgTemplateOutlet, Button, Stamp],
   host: {
     'data-testid': 'comment-item',
-    '[attr.aria-labelledby]': 'comment().headingId',
+    '[attr.aria-labelledby]': 'labelledBy()',
     class: 'block',
   },
   template: `
@@ -30,6 +32,11 @@ import type { CommentView } from '../comment-thread-view';
         <h3 [id]="c.headingId" class="text-base font-semibold">
           <ng-container [ngTemplateOutlet]="author" />
         </h3>
+      }
+      @if (c.pending) {
+        <app-stamp [id]="pendingId()" [dashed]="true" data-testid="comment-pending">{{
+          copy.pending
+        }}</app-stamp>
       }
       <time [attr.datetime]="c.createdAt" class="font-mono text-[0.8125rem] text-muted">{{
         c.createdAt | date: 'd MMMM y'
@@ -67,6 +74,16 @@ export class CommentItem {
   readonly replyRequested = output<void>();
 
   private readonly _replyButton = viewChild('replyButton', { read: ElementRef<HTMLButtonElement> });
+
+  protected readonly copy = COMMENT_COPY;
+
+  protected readonly pendingId = computed(() => `comment-${this.comment().id}-pending`);
+
+  // Un envoi en attente se nomme aussi par son état : « Lou, En attente de relecture ».
+  protected readonly labelledBy = computed(() => {
+    const { headingId, pending } = this.comment();
+    return pending ? `${headingId} ${this.pendingId()}` : headingId;
+  });
 
   // Rendu du focus au bouton quand le formulaire de réponse se ferme sans envoi.
   focusReplyButton(): void {

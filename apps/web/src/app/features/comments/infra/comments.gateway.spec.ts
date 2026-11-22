@@ -19,6 +19,8 @@ import { CommentsGateway } from './comments.gateway';
 
 const PENDING_COUNT_URL = '/api/blog/comments/pending-count';
 
+const ACCEPTED_ID = '5d0f4b6e-1c2a-4f3b-9a1e-0000000000aa';
+
 describe('CommentsGateway: lectures de l’admin', () => {
   let gateway: CommentsGateway;
   let http: HttpTestingController;
@@ -304,7 +306,7 @@ describe('CommentsGateway: lecture publique', () => {
     req.flush(null, { status: 500, statusText: 'Boom' });
   });
 
-  it('Given a comment When it is sent Then the API receives the name, the e-mail, the text and the trap field, and the acceptance is a success', async () => {
+  it('Given a comment When it is sent Then the API receives the name, the e-mail, the text and the trap field, and the acceptance is a success carrying the id', async () => {
     const draft = makeCommentDraft();
     const result = firstValueFrom(gateway.submit('article-temoin', draft, null));
 
@@ -314,7 +316,7 @@ describe('CommentsGateway: lecture publique', () => {
       body: req.request.body,
       silent: req.request.context.get(SKIP_ERROR_TOAST),
     };
-    req.flush(null, { status: 202, statusText: 'Accepted' });
+    req.flush({ id: ACCEPTED_ID }, { status: 202, statusText: 'Accepted' });
 
     expect({ sent, result: await result }).toEqual({
       sent: {
@@ -327,9 +329,26 @@ describe('CommentsGateway: lecture publique', () => {
         },
         silent: true,
       },
-      result: { success: true },
+      result: { success: true, id: ACCEPTED_ID },
     });
   });
+
+  it.each([
+    { name: 'no body', body: null },
+    { name: 'an id that is not a UUID', body: { id: '<img src=x>' } },
+    { name: 'a numeric id', body: { id: 42 } },
+  ])(
+    'Given an acceptance with $name When a comment is sent Then it is still a success, without id',
+    async ({ body }) => {
+      const result = firstValueFrom(gateway.submit('article-temoin', makeCommentDraft(), null));
+
+      http
+        .expectOne('/api/blog/posts/article-temoin/comments')
+        .flush(body, { status: 202, statusText: 'Accepted' });
+
+      await expect(result).resolves.toEqual({ success: true, id: null });
+    },
+  );
 
   it('Given a reply to a published comment When it is sent Then the parent is named in the body', () => {
     gateway.submit('article-temoin', makeCommentDraft(), 'c-7').subscribe();

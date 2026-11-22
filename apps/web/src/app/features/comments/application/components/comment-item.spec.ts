@@ -17,6 +17,7 @@ function aCommentView(overrides: Partial<CommentView> = {}): CommentView {
     ownerMention: null,
     createdAt: '2026-11-21T09:30:00.000Z',
     body: 'Merci pour cet article.',
+    pending: false,
     ...overrides,
   };
 }
@@ -189,5 +190,28 @@ describe('CommentItem', () => {
       'ligne 1\nligne 2',
       true,
     ]);
+  });
+
+  it('Given a comment of this reader still waiting When it is shown Then it says so in words and the article is named by its author and that state', async () => {
+    const host = await render(
+      aCommentView({ id: 'p-1', headingId: 'comment-p-1-author', pending: true }),
+    );
+    const stamp = host.querySelector('[data-testid="comment-pending"]');
+
+    expect({
+      text: stamp?.textContent?.trim(),
+      labelledBy: host.getAttribute('aria-labelledby'),
+      stampId: stamp?.id,
+    }).toEqual({
+      text: 'En attente de relecture',
+      labelledBy: 'comment-p-1-author comment-p-1-pending',
+      stampId: 'comment-p-1-pending',
+    });
+  });
+
+  it('Given a published comment When it is shown Then nothing says it waits', async () => {
+    const host = await render(aCommentView());
+
+    expect(host.querySelector('[data-testid="comment-pending"]')).toBeNull();
   });
 });

@@ -74,7 +74,7 @@ function statusOf(submission: CommentSubmissionState): SubmissionStatus | null {
                 <article
                   app-comment-item
                   [comment]="item"
-                  [replyable]="true"
+                  [replyable]="!item.pending"
                   [replyOpen]="replyOpen"
                   [replyFormId]="replyFormId"
                   (replyRequested)="replyOpened.emit(item.id)"
@@ -168,7 +168,9 @@ export class CommentThread {
 
   protected readonly heading = computed(() => {
     const current = this.content();
-    return current.status === 'ready' ? current.view.heading : COMMENT_COPY.heading;
+    return current.status === 'ready' && current.view.count > 0
+      ? `${COMMENT_COPY.heading} (${current.view.count})`
+      : COMMENT_COPY.heading;
   });
 
   protected readonly mainSubmissionStatus = computed(() => statusOf(this.submission()));

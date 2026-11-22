@@ -1,6 +1,7 @@
 import type {
   AdminComment,
   CommentDraft,
+  PendingComment,
   PublishedThread,
   PublishedComment,
   PublishedReply,
@@ -68,4 +69,16 @@ export function makeCommentDraft(overrides: Partial<CommentDraft> = {}): Comment
 // La page publique que l'API sert pour ce fil : première page de 100 commentaires.
 export function toPublicCommentPageDto(thread: PublishedThread): PublicCommentPageDto {
   return { data: thread.comments, total: thread.total, page: 1, limit: 100 };
+}
+
+// Un commentaire envoyé par ce lecteur, gardé dans l'onglet en attendant sa publication.
+export function makePendingComment(overrides: Partial<PendingComment> = {}): PendingComment {
+  return {
+    id: 'p-1',
+    name: 'Lou',
+    body: 'Bel article.',
+    parentId: null,
+    createdAt: '2026-11-22T11:00:00.000Z',
+    ...overrides,
+  };
 }

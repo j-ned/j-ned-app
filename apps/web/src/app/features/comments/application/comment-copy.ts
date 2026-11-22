@@ -11,6 +11,7 @@ export const COMMENT_COPY = {
   truncated: (shown: number): string => `Seuls les ${shown} premiers commentaires sont affichés.`,
   formLegend: 'Laisser un commentaire',
   sent: `Merci${NARROW_NBSP}! Ton commentaire sera publié après relecture.`,
+  pending: 'En attente de relecture',
 } as const;
 
 // Repris des messages de l'API (`createCommentSchema`), au mot près.

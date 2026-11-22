@@ -1,10 +1,12 @@
 import { OWNER_NAME } from '@shared/seo/site-person';
 import { frenchTypographyViolations } from '../../../testing/french-typography-violations';
 import {
+  makePendingComment,
   makePublishedComment,
   makePublishedReply,
   makePublishedThread,
 } from '../testing/comment-builders';
+import { COMMENT_COPY } from './comment-copy';
 import { toCommentThreadView } from './comment-thread-view';
 
 describe('toCommentThreadView', () => {
@@ -71,12 +73,12 @@ describe('toCommentThreadView', () => {
   });
 
   it.each([
-    { comments: 0, replies: 0, heading: 'Commentaires' },
-    { comments: 1, replies: 0, heading: 'Commentaires (1)' },
-    { comments: 2, replies: 1, heading: 'Commentaires (3)' },
+    { comments: 0, replies: 0, count: 0 },
+    { comments: 1, replies: 0, count: 1 },
+    { comments: 2, replies: 1, count: 3 },
   ])(
-    'Given $comments comments and $replies replies When the thread is shown Then the heading reads $heading',
-    ({ comments, replies, heading }) => {
+    'Given $comments comments and $replies replies When the thread is shown Then the heading counts $count',
+    ({ comments, replies, count }) => {
       const thread = makePublishedThread({
         comments: Array.from({ length: comments }, (_, index) =>
           makePublishedComment({
@@ -86,7 +88,7 @@ describe('toCommentThreadView', () => {
         ),
       });
 
-      expect(toCommentThreadView(thread).heading).toBe(heading);
+      expect(toCommentThreadView(thread).count).toBe(count);
     },
   );
 
@@ -112,7 +114,7 @@ describe('toCommentThreadView', () => {
       }),
     );
     const texts = [
-      view.heading,
+      COMMENT_COPY.pending,
       view.truncation ?? '',
       ...view.items.flatMap((item) => [item.repliesLabel, item.replies[0]?.ownerMention ?? '']),
     ];
@@ -121,5 +123,70 @@ describe('toCommentThreadView', () => {
       texts: texts.every((text) => text !== ''),
       violations: texts.flatMap((text) => frenchTypographyViolations(text, 'view')),
     }).toEqual({ texts: true, violations: [] });
+  });
+
+  it('Given comments of this reader still waiting When the thread is shown Then a comment comes after the published ones and a reply under its parent, both marked waiting, none counted', () => {
+    const view = toCommentThreadView(
+      makePublishedThread({
+        comments: [
+          makePublishedComment({ id: 'c-1', replies: [makePublishedReply({ id: 'r-1' })] }),
+        ],
+      }),
+      [
+        makePendingComment({ id: 'p-1', name: 'Lou', body: 'Bel article.' }),
+        makePendingComment({ id: 'p-2', parentId: 'c-1' }),
+      ],
+    );
+
+    expect({
+      count: view.count,
+      items: view.items.map((item) => ({
+        id: item.id,
+        pending: item.pending,
+        replies: item.replies.map((reply) => [reply.id, reply.pending]),
+      })),
+      waiting: view.items[1] && {
+        author: view.items[1].author,
+        body: view.items[1].body,
+        ownerMention: view.items[1].ownerMention,
+      },
+    }).toEqual({
+      count: 2,
+      items: [
+        {
+          id: 'c-1',
+          pending: false,
+          replies: [
+            ['r-1', false],
+            ['p-2', true],
+          ],
+        },
+        { id: 'p-1', pending: true, replies: [] },
+      ],
+      waiting: { author: 'Lou', body: 'Bel article.', ownerMention: null },
+    });
+  });
+
+  it('Given a waiting reply whose parent is not in the thread When the thread is shown Then it is not shown', () => {
+    const view = toCommentThreadView(makePublishedThread(), [
+      makePendingComment({ id: 'p-2', parentId: 'c-gone' }),
+    ]);
+
+    expect(view.items.flatMap((item) => item.replies)).toEqual([]);
+  });
+
+  it('Given a waiting comment now published When the thread is shown Then it appears once, as published', () => {
+    const view = toCommentThreadView(
+      makePublishedThread({ comments: [makePublishedComment({ id: 'p-1' })] }),
+      [makePendingComment({ id: 'p-1' })],
+    );
+
+    expect(view.items.map((item) => [item.id, item.pending])).toEqual([['p-1', false]]);
+  });
+
+  it('Given only a waiting comment When the thread is shown Then it is listed and the heading counts nothing', () => {
+    const view = toCommentThreadView(makePublishedThread({ comments: [] }), [makePendingComment()]);
+
+    expect([view.count, view.items.length]).toEqual([0, 1]);
   });
 });

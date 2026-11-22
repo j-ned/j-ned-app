@@ -71,6 +71,9 @@ for (const theme of THEMES) {
         await visit('/blog/article-temoin');
         await fillComment(page, 'Lou');
         await expect(page.getByRole('status').filter({ hasText: 'après relecture' })).toBeFocused();
+        await expect(
+          page.getByRole('article', { name: 'Lou En attente de relecture' }),
+        ).toBeVisible();
         await expectNoA11yViolations('comment-main-form', 'commentaire-envoye');
       });
 

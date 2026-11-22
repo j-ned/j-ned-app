@@ -39,7 +39,8 @@ Hypothèses retenues en l'absence de décision, à confirmer :
 3. Le formulaire demande un nom, un e-mail et un message. Les erreurs de saisie sont annoncées près
    du champ, comme sur le formulaire de contact.
 4. Après l'envoi, le lecteur lit que son commentaire sera publié après validation. Le commentaire
-   n'apparaît pas dans la liste.
+   apparaît tout de suite dans la liste **pour ce lecteur seul**, marqué « En attente de relecture »
+   (décision du propriétaire, 2026-11-22, PR D ; jusqu'à la PR C il n'apparaissait pas).
 5. Un lecteur peut répondre à un commentaire publié ; il ne peut pas répondre à une réponse.
 6. L'e-mail d'un commentateur n'apparaît dans aucune réponse de l'API publique ni dans le HTML.
 7. Un envoi trop fréquent, un champ piège rempli ou un article inexistant ou non publié est refusé
@@ -105,36 +106,36 @@ Table `blog_comment`, schéma Drizzle `apps/api/src/database/schema/blog-comment
 barrel `schema/index.ts`. Style des contraintes : `login-events.ts` (`check()` nommé, union
 `as const` partagée entre le type et le `CHECK`).
 
-| Colonne         | Type                                           | Contrainte / rôle                                                                         |
-| --------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `id`            | `uuid` PK, `gen_random_uuid()`                 |                                                                                           |
-| `post_id`       | `uuid NOT NULL`                                | FK `blog_post(id) ON DELETE CASCADE` (critère 17)                                         |
-| `parent_id`     | `uuid NULL`                                    | `NULL` : commentaire ; sinon : réponse                                                    |
-| `depth`         | `smallint NOT NULL DEFAULT 0`                  | `CHECK (depth IN (0,1))`, `CHECK ((parent_id IS NULL) = (depth = 0))`                     |
-| `parent_depth`  | `smallint NULL`                                | `CHECK (parent_depth = 0)`, `CHECK ((parent_id IS NULL) = (parent_depth IS NULL))`        |
-| `status`        | `text NOT NULL DEFAULT 'pending'`              | `CHECK (status IN ('pending','published'))` ; refuser = supprimer la ligne                |
-| `moderated_at`  | `timestamptz NULL`                             | `CHECK ((status = 'pending') = (moderated_at IS NULL))`                                   |
-| `author_kind`   | `text NOT NULL`                                | `CHECK (author_kind IN ('visitor','owner'))`                                              |
-| `author_name`   | `text NULL`                                    | visiteur : `NOT NULL`, 2 à 80 caractères ; propriétaire : `NULL`                          |
-| `author_email`  | `text NULL`                                    | visiteur : `NOT NULL` ; propriétaire : `NULL`                                             |
-| `sender_hash`   | `text NULL`                                    | HMAC de `quotaAddress(ip)` (IPv4, ou son /64 en IPv6, comme le quota) ; propriétaire : `NULL` |
-| `body`          | `text NOT NULL`                                | `CHECK (char_length(body) BETWEEN 2 AND 2000)`                                            |
-| `created_at`    | `timestamptz NOT NULL DEFAULT now()`           | ordre d'affichage                                                                         |
+| Colonne        | Type                                 | Contrainte / rôle                                                                             |
+| -------------- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `id`           | `uuid` PK, `gen_random_uuid()`       |                                                                                               |
+| `post_id`      | `uuid NOT NULL`                      | FK `blog_post(id) ON DELETE CASCADE` (critère 17)                                             |
+| `parent_id`    | `uuid NULL`                          | `NULL` : commentaire ; sinon : réponse                                                        |
+| `depth`        | `smallint NOT NULL DEFAULT 0`        | `CHECK (depth IN (0,1))`, `CHECK ((parent_id IS NULL) = (depth = 0))`                         |
+| `parent_depth` | `smallint NULL`                      | `CHECK (parent_depth = 0)`, `CHECK ((parent_id IS NULL) = (parent_depth IS NULL))`            |
+| `status`       | `text NOT NULL DEFAULT 'pending'`    | `CHECK (status IN ('pending','published'))` ; refuser = supprimer la ligne                    |
+| `moderated_at` | `timestamptz NULL`                   | `CHECK ((status = 'pending') = (moderated_at IS NULL))`                                       |
+| `author_kind`  | `text NOT NULL`                      | `CHECK (author_kind IN ('visitor','owner'))`                                                  |
+| `author_name`  | `text NULL`                          | visiteur : `NOT NULL`, 2 à 80 caractères ; propriétaire : `NULL`                              |
+| `author_email` | `text NULL`                          | visiteur : `NOT NULL` ; propriétaire : `NULL`                                                 |
+| `sender_hash`  | `text NULL`                          | HMAC de `quotaAddress(ip)` (IPv4, ou son /64 en IPv6, comme le quota) ; propriétaire : `NULL` |
+| `body`         | `text NOT NULL`                      | `CHECK (char_length(body) BETWEEN 2 AND 2000)`                                                |
+| `created_at`   | `timestamptz NOT NULL DEFAULT now()` | ordre d'affichage                                                                             |
 
 Contraintes composées :
 
 - `UNIQUE (id, post_id, depth)` nommée `blog_comment_thread_key`, cible de la clé suivante ;
 - **un seul niveau, garanti par la base** : `FOREIGN KEY (parent_id, post_id, parent_depth)
-  REFERENCES blog_comment (id, post_id, depth) ON DELETE CASCADE` (`MATCH SIMPLE`, défaut : une
+REFERENCES blog_comment (id, post_id, depth) ON DELETE CASCADE` (`MATCH SIMPLE`, défaut : une
   ligne sans parent n'est pas contrôlée). `parent_depth` vaut toujours 0 : le parent a donc
   `depth = 0`, une réponse à une réponse viole la clé ; le parent porte le même `post_id` ; la
   suppression d'un commentaire supprime ses réponses (critère 11). Drizzle 0.45 :
   `foreignKey({ columns: [t.parentId, t.postId, t.parentDepth], foreignColumns: [t.id, t.postId,
-  t.depth] }).onDelete('cascade')` et `unique('blog_comment_thread_key').on(t.id, t.postId,
-  t.depth)` (signatures vérifiées dans `node_modules/drizzle-orm/pg-core`) ;
+t.depth] }).onDelete('cascade')` et `unique('blog_comment_thread_key').on(t.id, t.postId,
+t.depth)` (signatures vérifiées dans `node_modules/drizzle-orm/pg-core`) ;
 - auteur : `CHECK ((author_kind = 'visitor') = (author_name IS NOT NULL AND author_email IS NOT
-  NULL))`, `CHECK (author_kind = 'visitor' OR sender_hash IS NULL)`, `CHECK (author_kind =
-  'visitor' OR status <> 'pending')` (le propriétaire n'attend pas sa propre validation).
+NULL))`, `CHECK (author_kind = 'visitor' OR sender_hash IS NULL)`, `CHECK (author_kind =
+'visitor' OR status <> 'pending')` (le propriétaire n'attend pas sa propre validation).
 
 Index :
 
@@ -151,8 +152,7 @@ type CommentAuthor =
   | { readonly kind: 'visitor'; readonly name: string; readonly email: string }
   | { readonly kind: 'owner' };
 type CommentModeration =
-  | { readonly status: 'pending' }
-  | { readonly status: 'published'; readonly moderatedAt: Date };
+  { readonly status: 'pending' } | { readonly status: 'published'; readonly moderatedAt: Date };
 ```
 
 Un mappeur `toCommentRecord(row)` rétrécit une ligne (`author_kind`, colonnes nullables) en ces
@@ -178,10 +178,10 @@ Toutes les entrées passent par `jsonBody` / `queryParams` / `uuidParam` (`commo
 
 **Public**, dans `blogPostsRoutes` (`blog/blog.routes.ts`), à côté de `/:slug/like` :
 
-| Méthode | Chemin                          | Quota                 | Réponse                                                                                     |
-| ------- | ------------------------------- | --------------------- | ------------------------------------------------------------------------------------------- |
-| GET     | `/blog/posts/:slug/comments`    | `PUBLIC_READ_THROTTLE` | 200 `PaginatedResult<PublicComment>` ; 404 si l'article n'est pas publié                    |
-| POST    | `/blog/posts/:slug/comments`    | `COMMENT_THROTTLE`    | 202 sans corps ; 400, 404, 409, 413, 429, 503                                               |
+| Méthode | Chemin                       | Quota                  | Réponse                                                                  |
+| ------- | ---------------------------- | ---------------------- | ------------------------------------------------------------------------ |
+| GET     | `/blog/posts/:slug/comments` | `PUBLIC_READ_THROTTLE` | 200 `PaginatedResult<PublicComment>` ; 404 si l'article n'est pas publié |
+| POST    | `/blog/posts/:slug/comments` | `COMMENT_THROTTLE`     | 202 sans corps ; 400, 404, 409, 413, 429, 503                            |
 
 - **GET** : `?page&limit` par `paginationSchema` / `parsePagination` (`common/pagination.ts`,
   limite ≤ 100). La pagination porte sur les **commentaires** publiés (`depth = 0`), triés par
@@ -202,9 +202,7 @@ Toutes les entrées passent par `jsonBody` / `queryParams` / `uuidParam` (`commo
         "author": { "kind": "visitor", "name": "Camille" },
         "body": "texte brut",
         "createdAt": "2026-11-21T10:00:00.000Z",
-        "replies": [
-          { "id": "uuid", "author": { "kind": "owner" }, "body": "…", "createdAt": "…" }
-        ]
+        "replies": [{ "id": "uuid", "author": { "kind": "owner" }, "body": "…", "createdAt": "…" }]
       }
     ],
     "total": 1,
@@ -214,7 +212,7 @@ Toutes les entrées passent par `jsonBody` / `queryParams` / `uuidParam` (`commo
   ```
 
 - **POST** : corps `createCommentSchema = z.strictObject({ name, email, body, parentId?, website?
-  })`.
+})`.
   - `name` : `z.string().trim()`, 2 à 80, sans caractère de contrôle, sans caractère de format
     (`\p{Cf}` : largeur nulle, contrôles bidirectionnels, marque d'ordre), sauf le ZWJ `U+200D` qui
     compose les émojis, sans moitié de paire UTF-16 isolée, et avec au moins un caractère visible
@@ -240,18 +238,18 @@ Toutes les entrées passent par `jsonBody` / `queryParams` / `uuidParam` (`commo
 
 **Admin**, sous-application `/blog/comments` montée dans `blogRoutes` (`requireAuth` partout) :
 
-| Méthode | Chemin                              | Quota                  | Réponse                                                                       |
-| ------- | ----------------------------------- | ---------------------- | ----------------------------------------------------------------------------- |
-| GET     | `/blog/comments?status&page&limit`  | défaut                 | 200 `PaginatedResult<AdminComment>`, `created_at DESC`                        |
-| GET     | `/blog/comments/pending-count`      | défaut                 | 200 `{ count }`                                                               |
-| PATCH   | `/blog/comments/:id`                | `ADMIN_WRITE_THROTTLE` | 200 `AdminComment` ; 404 ; 409 déjà publié ou parent non publié               |
-| DELETE  | `/blog/comments/:id`                | `ADMIN_WRITE_THROTTLE` | 204 ; 404 ; refus ou suppression, réponses supprimées par la cascade          |
-| POST    | `/blog/comments/:id/replies`        | `ADMIN_WRITE_THROTTLE` | 201 `AdminComment` ; 404 ; 409 parent non publié ; 409 parent qui est une réponse |
+| Méthode | Chemin                             | Quota                  | Réponse                                                                           |
+| ------- | ---------------------------------- | ---------------------- | --------------------------------------------------------------------------------- |
+| GET     | `/blog/comments?status&page&limit` | défaut                 | 200 `PaginatedResult<AdminComment>`, `created_at DESC`                            |
+| GET     | `/blog/comments/pending-count`     | défaut                 | 200 `{ count }`                                                                   |
+| PATCH   | `/blog/comments/:id`               | `ADMIN_WRITE_THROTTLE` | 200 `AdminComment` ; 404 ; 409 déjà publié ou parent non publié                   |
+| DELETE  | `/blog/comments/:id`               | `ADMIN_WRITE_THROTTLE` | 204 ; 404 ; refus ou suppression, réponses supprimées par la cascade              |
+| POST    | `/blog/comments/:id/replies`       | `ADMIN_WRITE_THROTTLE` | 201 `AdminComment` ; 404 ; 409 parent non publié ; 409 parent qui est une réponse |
 
 - `status` : `z.enum(['pending','published']).optional()`, ajouté à `paginationSchema` par
   `.extend()`.
 - `AdminComment` : `{ id, post: { id, slug, title }, parent: { id, author, excerpt } | null,
-  author: CommentAuthor, body, status, createdAt, moderatedAt, replyCount }` (jointure
+author: CommentAuthor, body, status, createdAt, moderatedAt, replyCount }` (jointure
   `blog_post`, auto-jointure par `alias()` de `drizzle-orm/pg-core` pour le parent, `count` des
   réponses en sous-requête).
 - PATCH, corps `z.strictObject({ status: z.literal('published') })` : la seule transition est
@@ -284,8 +282,8 @@ programmer.
 **Parité HTTP** (`packages/api-parity`) :
 
 - `routes.ts` : `ADMIN_ROUTES` + les cinq routes admin ; `PUBLIC_READ_ROUTES` + `GET
-  /api/blog/posts/parity-unknown-slug/comments` ; `PUBLIC_WRITE_ROUTES` + `POST
-  /api/blog/posts/parity-unknown-slug/comments`. Accès, CSRF et 401 suivent automatiquement ;
+/api/blog/posts/parity-unknown-slug/comments` ; `PUBLIC_WRITE_ROUTES` + `POST
+/api/blog/posts/parity-unknown-slug/comments`. Accès, CSRF et 401 suivent automatiquement ;
 - `throttle.spec.ts` : un 6ᵉ envoi de commentaire dans l'heure → 429 (corps invalides compris) ;
 - nouveau `comments.spec.ts` : article créé par la session admin, commentaire posté, publié, puis
   lu : le JSON public ne contient ni la clé `email`, ni l'adresse envoyée (critère 6) ; champ piège
@@ -396,8 +394,8 @@ n'est ni un store (instance d'écran, pas de partage) ni un port.
 - `replyTarget = signal<string | null>(null)` ; `openReply(id)`, `closeReply()` ;
 - `submission = signal<SubmissionState>` avec
   `SubmissionState = { kind: 'idle' } | { kind: 'sending'; parentId: string | null } |
-  { kind: 'sent'; parentId: string | null } | { kind: 'failed'; parentId: string | null;
-  reason: CommentRejection }`, exposé `.asReadonly()` ;
+{ kind: 'sent'; parentId: string | null } | { kind: 'failed'; parentId: string | null;
+reason: CommentRejection }`, exposé `.asReadonly()` ;
 - `resetToken = signal(0)` incrémenté à chaque succès ;
 - `send(draft, parentId)`. Le commentaire envoyé n'est **pas** ajouté à la liste (critère 4).
 
@@ -405,8 +403,10 @@ n'est ni un store (instance d'écran, pas de partage) ni un port.
 
 ```html
 @defer (hydrate on viewport; on viewport) {
-  <app-comment-thread … />
-} @placeholder { <!-- squelette CSS aux dimensions de la section --> }
+<app-comment-thread … />
+} @placeholder {
+<!-- squelette CSS aux dimensions de la section -->
+}
 ```
 
 précédent `app.ts` / `about.ts`. Au rendu serveur le bloc est rendu (déclencheurs `hydrate`), la
@@ -431,7 +431,7 @@ lecture `GET …/comments` part dès la page (coordinateur dans la page), en par
   seule). Les réponses sont dans un `<ol aria-label="Réponses à <nom>">` imbriqué dans le `<li>`.
   Bouton « Répondre » (`aria-expanded`, `aria-controls`) seulement si `canReply` (critère 5).
 - `comment-form.ts` — Signal Forms, modèle de `contact-form.ts` : `form(model, schema, {
-  submission: { action → output submitted, onInvalid: focusFirstInvalid } })`, `[formRoot]`,
+submission: { action → output submitted, onInvalid: focusFirstInvalid } })`, `[formRoot]`,
   `[formField]`, `app-field-error` sous chaque champ, `aria-invalid` / `aria-describedby`,
   `<fieldset>` + `<legend>` (« Laisser un commentaire » / « Répondre à <nom> »), champ piège
   `website` copié du contact (hors écran, hors tabulation, `aria-hidden`), note de
@@ -452,7 +452,7 @@ après relecture. » ; `rate-limited` : « Trop d'envois en peu de temps. Réess
 
 - route `comments` dans `features/admin/admin.routes.ts` (lazy, titre « Commentaires ») ;
 - `admin-nav-groups.ts` : clé `comments`, `link('comments', '/admin/comments', 'comment',
-  'Commentaires', counts.pendingComments, 'en attente')` dans le groupe « Audience » ;
+'Commentaires', counts.pendingComments, 'en attente')` dans le groupe « Audience » ;
   `AdminNavCounts.pendingComments: number | null` ; `admin-layout.ts` ajoute
   `rxResource({ stream: () => commentsGateway.getPendingCount() })` (critère 13) ;
 - page `admin-comments.ts` (modèle `admin-messages.ts` + `admin-logins.ts`) :
@@ -621,14 +621,14 @@ cycles RED → GREEN distincts)
 
 ### Risques et retour arrière
 
-| PR | Risque                                                                                                                                                                             | Retour arrière                                                                                     |
-| -- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| A  | SQL de la clé composite auto-référente mal ordonné par drizzle-kit (FK avant `UNIQUE`) : relire la migration, la jouer sur la base d'intégration et dans le job `image` de la CI. | Redéployer le tag `sha-<commit>` précédent de l'API ; table neuve, inerte.                         |
-| A  | Le lot parallèle sur `common/throttle.ts` change `ThrottleConfig` (option `whenFull`) : `COMMENT_THROTTLE` devra suivre au rebase. Aucune modification de `throttle.ts` ici, donc pas de conflit textuel. Quota en mémoire remis à zéro au redémarrage (plafonds en base non concernés). | —                                                                                                  |
-| A  | Gabarit `comment-notification` absent dans Resend : chaque envoi échoue (journalisé, Sentry), les commentaires restent enregistrés.                                                | Créer le gabarit ; rien à redéployer.                                                              |
-| B  | Conflits avec C sur `ci/api-stub/server.mjs` et la feature `comments` : C se rebase après la fusion de B.                                                                          | `git revert` de B : l'écran disparaît, la file reste en base.                                      |
-| C  | Incrémental : une hydratation ratée laisse un formulaire inerte ; preuve fonctionnelle exigée (tranche 11).                                                                        | `git revert` de C : Giscus revient (tant que l'app Giscus reste installée sur le dépôt) ; les commentaires écrits entre-temps restent en base, invisibles. |
-| C  | Retirer les réglages happy-dom de `vitest.config.mts` peut faire bruiter des specs qui chargent un script externe.                                                                 | Réglages remis avec un commentaire juste.                                                          |
+| PR  | Risque                                                                                                                                                                                                                                                                                   | Retour arrière                                                                                                                                             |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A   | SQL de la clé composite auto-référente mal ordonné par drizzle-kit (FK avant `UNIQUE`) : relire la migration, la jouer sur la base d'intégration et dans le job `image` de la CI.                                                                                                        | Redéployer le tag `sha-<commit>` précédent de l'API ; table neuve, inerte.                                                                                 |
+| A   | Le lot parallèle sur `common/throttle.ts` change `ThrottleConfig` (option `whenFull`) : `COMMENT_THROTTLE` devra suivre au rebase. Aucune modification de `throttle.ts` ici, donc pas de conflit textuel. Quota en mémoire remis à zéro au redémarrage (plafonds en base non concernés). | —                                                                                                                                                          |
+| A   | Gabarit `comment-notification` absent dans Resend : chaque envoi échoue (journalisé, Sentry), les commentaires restent enregistrés.                                                                                                                                                      | Créer le gabarit ; rien à redéployer.                                                                                                                      |
+| B   | Conflits avec C sur `ci/api-stub/server.mjs` et la feature `comments` : C se rebase après la fusion de B.                                                                                                                                                                                | `git revert` de B : l'écran disparaît, la file reste en base.                                                                                              |
+| C   | Incrémental : une hydratation ratée laisse un formulaire inerte ; preuve fonctionnelle exigée (tranche 11).                                                                                                                                                                              | `git revert` de C : Giscus revient (tant que l'app Giscus reste installée sur le dépôt) ; les commentaires écrits entre-temps restent en base, invisibles. |
+| C   | Retirer les réglages happy-dom de `vitest.config.mts` peut faire bruiter des specs qui chargent un script externe.                                                                                                                                                                       | Réglages remis avec un commentaire juste.                                                                                                                  |
 
 Actions du propriétaire en production :
 
@@ -692,6 +692,8 @@ Aucune variable d'environnement nouvelle ; une base d'intégration nouvelle en C
 - **Tranche 11 — un lecteur commente** : GREEN 217 passed / 217 total (specs comments, blog-detail, contact) · refactor : `EMAIL_PATTERN` sorti de `contact-form.ts` vers `shared/forms/email-pattern.ts` (2 consommateurs : `ContactForm`, `CommentForm`) ; décompte et caractère visible de l'API dans `features/comments/domain/comment-text.ts`
 - **Tranche 12 — un lecteur répond à un commentaire publié** : GREEN 172 passed / 172 total (specs comments, blog-detail), puis 3256 passed / 3256 total avec le correctif du focus pendant l'envoi · refactor : statut d'envoi calculé une fois par la section (`statusOf`) et placé à côté du formulaire qui l'a fait partir ; remplissage de formulaire factorisé dans la spec de la page
 - **Correctifs de revue (PR C)** : GREEN 3281 passed / 3281 total · refactor : ligne d'auteur partagée par le titre d'un commentaire et celui d'une réponse (`ng-template`) ; caractères invisibles des sources écrits en échappements `\u…`
+- **Tranche 13 — l'envoi renvoie son identifiant (API)** : GREEN 1319 passed / 1327 total (8 ignorés : intégration du portrait sans base S3) et parité 226 / 226 · refactor : aucun
+- **Tranche 14 — le commentaire du lecteur s'affiche tout de suite ; la discussion se relit au retour sur l'onglet** : GREEN 3324 passed / 3324 total · refactor : `withoutPublished` sert à la fois l'affichage (`toCommentThreadView`) et l'oubli dans l'onglet (`ArticleComments.settle`)
 
 ## Verify
 
@@ -714,6 +716,15 @@ PR C, 2026-11-22 : image `j-ned-app-web:ci` sur `ci/image-stack.sh` (doublure de
 
 Verdict : **PASS**. Captures (scratchpad de la session, non versionnées) : `comments-error.png`, `comments-sent.png`, `comments-reply-refused.png`. Console : `GET /api/config` en 404 (route absente de la doublure, étrangère à la page, déjà notée en PR B) et le 429 volontaire du refus ; aucune erreur Angular ni d'hydratation. `ci/smoke.sh` et `pnpm a11y` (71 scénarios, dont 8 nouveaux sur le formulaire) verts sur la même image.
 
+PR D (fraîcheur), 2026-11-22 : image `j-ned-app-web:ci` sur `ci/image-stack.sh`, Chromium headless (Playwright), viewport 1280×900, API de production rejouée sur la doublure, CSP contournée.
+
+1. `/blog/article-temoin`, section hydratée : champ « Nom ou pseudo » vide puis sortie du champ ⇒ `aria-invalid="true"` (preuve d'hydratation).
+2. Brouillon dans le formulaire principal, formulaire « Répondre à Camille » ouvert ; `visibilitychange` émulé trois fois (caché, visible, visible) ⇒ **une** relecture `GET …/comments?page=1&limit=100` (aucune avant : cache de transfert), brouillon conservé, formulaire de réponse toujours ouvert, 4 commentaires toujours affichés.
+3. Envoi valide (Lou) ⇒ `POST` 202 `{ id }`, article « Lou En attente de relecture » dans la liste ; `sessionStorage` : une seule clé `comments:pending:v1:article-temoin` portant `id`, `name`, `body`, `parentId`, `createdAt`, sans e-mail.
+4. Rechargement de l'onglet ⇒ le commentaire en attente est toujours affiché.
+
+Verdict : **PASS**. Console : seulement `GET /api/config` en 404 (route absente de la doublure, déjà notée en PR B et C) ; aucune erreur Angular ni d'hydratation.
+
 ## Limites connues de la PR C (section publique)
 
 - Le titre compte les commentaires et réponses **lus** : au-delà de 100 commentaires, les réponses des commentaires non lus ne sont pas comptées (le total de l'API ne compte que les commentaires).
@@ -730,3 +741,59 @@ Verdict : **PASS**. Captures (scratchpad de la session, non versionnées) : `com
 - Une réponse du propriétaire est insérée en tête de la page courante. Sur une page autre que la première, elle y apparaît jusqu'à la prochaine relecture, alors que l'API la range en page 1.
 - L'état du formulaire de réponse (cible, envoi en cours, jeton de remise à zéro) est porté par la page et partagé entre les lignes : un seul formulaire ouvert à la fois. `replySending` et `replyResetToken` valent pour toutes les lignes.
 - Le 409 de `PATCH /blog/comments/:id` ne distingue pas « déjà publié » de « parent non publié » : pour une réponse, le message cite les deux causes possibles.
+
+## PR D : commentaire visible tout de suite, discussion relue au retour sur l'onglet
+
+Demande du propriétaire (2026-11-22) : « il faut rafraîchir le navigateur pour voir un commentaire ».
+Rien n'est mis en cache (ni API ni CDN, `cf-cache-status: DYNAMIC`) : le défaut était de conception.
+Après l'envoi, le lecteur ne voyait rien (le commentaire attend la relecture) ; une page d'article
+déjà ouverte ne relisait jamais la discussion, pas plus que l'écran de modération.
+
+### Commentaire du lecteur visible tout de suite
+
+- `POST /api/blog/posts/:slug/comments` répond `202 { id }` (identifiant du commentaire en attente).
+  Le champ piège renvoie **la même forme** avec un UUID aléatoire jamais stocké : un robot ne
+  distingue toujours pas un envoi écarté d'un envoi enregistré (testé : forme, type de contenu, id
+  différent d'un appel à l'autre, absent de la base, aucun e-mail).
+- Le front lit ce corps comme `unknown` (`toAcceptedId`) : seul un UUID est retenu ; sans lui, l'envoi
+  reste un succès, simplement non affiché dans la liste.
+- `PendingCommentsStorage` (`features/comments/infra`) garde les envois acceptés **par onglet**
+  (`sessionStorage`, clé `comments:pending:v1:<slug>`), relus comme `unknown` et validés champ par
+  champ (`parsePendingComments`, domaine pur) : `id`, `name`, `body`, `parentId`, `createdAt`,
+  **jamais l'e-mail**. Stockage refusé, plein ou corrompu : `try/catch`, la page s'affiche sans eux.
+  Rien côté serveur ; rien au rendu serveur (lecture après le premier rendu, pour une hydratation à
+  l'identique).
+- Une entrée disparaît dès qu'une discussion lue publie son `id` (`withoutPublished`), ou au bout de
+  **72 h** (`PENDING_COMMENT_TTL_MS`) : le temps d'une relecture, week-end compris ; au-delà, un
+  commentaire refusé (donc supprimé, jamais lu publié) cesserait de s'afficher comme en attente.
+- Affichage : un commentaire en attente suit les publiés, une réponse en attente se range sous son
+  parent (et nulle part si le parent n'est pas dans la page lue). Il n'est ni compté dans le titre,
+  ni « répondable », et se dit en toutes lettres (« En attente de relecture », tampon pointillé) ;
+  l'article est nommé par l'auteur **et** cet état. Nom et texte restent interpolés (`textContent`),
+  y compris relus depuis le stockage.
+
+### Discussion relue au retour sur l'onglet
+
+- Primitive `refreshWhenVisible(refresh)` (`core/navigation/refresh-when-visible.ts`), dans un contexte
+  d'injection : écoute `visibilitychange` du `DOCUMENT`, n'agit qu'au passage à `visible`, jamais au
+  rendu serveur, et se retire avec l'écran (`DestroyRef`). Rien d'équivalent n'existait
+  (`core/analytics/page-tracking.ts` écoute le même événement pour mesurer un temps de lecture, pas
+  pour relire).
+- Intervalle minimal **2 s** (`REFRESH_MIN_INTERVAL_MS`) : absorbe les retours en rafale (alt-tab
+  répétés) et borne la relecture à 30 par minute, sous le quota de 120 lectures publiques par minute
+  et par visiteur ; assez court pour ne pas rater « je publie dans l'admin, je reviens sur l'article ».
+- Page d'article (`ArticleComments`) : `rxResource.reload()`. La liste reste en place pendant la
+  relecture (la dernière discussion lue est gardée : une relecture qui échoue ne la remplace pas par
+  l'erreur) ; le brouillon et le formulaire de réponse ouvert ne bougent pas (`track item.id`).
+- Écran de modération (`AdminComments`) : `CommentQueue.refresh()`, qui relit la file courante et
+  invalide le compteur de la navigation.
+
+### Alternatives écartées
+
+- **Polling continu** : une requête toutes les N secondes pour chaque lecteur, pour un contenu qui
+  change quelques fois par semaine ; la relecture au retour couvre le cas réel (modérer dans un autre
+  onglet).
+- **WebSocket / SSE** : serveur à état, connexion par lecteur, traversée du tunnel Cloudflare ; hors de
+  proportion avec le besoin.
+- **Stocker l'envoi côté serveur (cookie, session)** : ferait d'un visiteur anonyme un visiteur suivi ;
+  `sessionStorage` reste dans l'onglet.

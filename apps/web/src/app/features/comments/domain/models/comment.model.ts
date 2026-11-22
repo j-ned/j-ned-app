@@ -54,5 +54,16 @@ export type CommentDraft = {
 export type CommentRejection =
   'invalid' | 'not-found' | 'conflict' | 'rate-limited' | 'closed' | 'unavailable' | 'network';
 
+// `id` nul : l'API a accepté sans renvoyer d'identifiant exploitable.
 export type CommentSubmission =
-  { readonly success: true } | { readonly success: false; readonly error: CommentRejection };
+  | { readonly success: true; readonly id: string | null }
+  | { readonly success: false; readonly error: CommentRejection };
+
+// Ce que l'onglet garde d'un envoi accepté en attendant sa publication : jamais l'e-mail.
+export type PendingComment = {
+  readonly id: string;
+  readonly name: string;
+  readonly body: string;
+  readonly parentId: string | null;
+  readonly createdAt: string;
+};
