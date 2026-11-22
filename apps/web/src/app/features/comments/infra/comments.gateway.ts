@@ -109,7 +109,7 @@ export class CommentsGateway {
         { body },
         { context: silentErrors() },
       )
-      .pipe(map(toAdminComment), catchError(rejectAsModerationError));
+      .pipe(map(toAdminComment), catchError(rejectAsModerationError), this.recountWhenStale());
   }
 
   getPendingCount(): Observable<number> {
@@ -120,10 +120,18 @@ export class CommentsGateway {
     this.pendingCount.refresh();
   }
 
-  // Publier ou supprimer change la file ; un refus parce qu'elle a changé ailleurs aussi.
+  // Publier ou supprimer change la file en attente.
   private recountWhenSettled<T>(): MonoTypeOperatorFunction<T> {
+    return (source) =>
+      source.pipe(
+        tap(() => this.invalidatePendingCount()),
+        this.recountWhenStale(),
+      );
+  }
+
+  // Un refus 404 ou 409 dit que la file a changé ailleurs.
+  private recountWhenStale<T>(): MonoTypeOperatorFunction<T> {
     return tap({
-      next: () => this.invalidatePendingCount(),
       error: (error: unknown) => {
         if (error instanceof ModerationError && error.reason !== 'failed') {
           this.invalidatePendingCount();
