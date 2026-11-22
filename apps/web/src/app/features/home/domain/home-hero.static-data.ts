@@ -19,7 +19,7 @@ export const HOME_WORK_FRAME: WorkFrame = {
     { label: 'Métier', value: "Tourneur CN de haute précision, dans l'aéronautique" },
     { label: 'Code', value: 'Depuis 2025, titre Développeur Web et Web Mobile' },
     { label: 'Stack', value: 'Angular, Hono, TypeScript, PostgreSQL' },
-    { label: 'Hébergement', value: 'Vercel, PostgreSQL sur Neon' },
+    { label: 'Hébergement', value: 'Auto-hébergé (Dokploy), PostgreSQL' },
     { label: 'Règle', value: 'Une pièce hors tolérance ne part pas, un code non testé non plus' },
   ],
   dimension: "de l'atelier au code",
