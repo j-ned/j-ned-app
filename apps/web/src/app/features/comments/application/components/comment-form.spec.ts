@@ -114,7 +114,7 @@ describe('CommentForm', () => {
     },
     {
       field: 'name',
-      text: 'ㅤㅤ',
+      text: '\u3164\u3164',
       error: 'Ton nom doit contenir au moins un caractère visible.',
     },
     { field: 'email', text: 'pas-une-adresse', error: 'Ton adresse e-mail n’est pas valide.' },
@@ -126,17 +126,37 @@ describe('CommentForm', () => {
     {
       field: 'body',
       text: '😀',
-      error: 'Ton message doit compter entre 2 et 2 000 caractères.',
+      error: 'Ton message doit compter entre 2 et 2\u202F000 caractères.',
     },
     {
       field: 'body',
       text: 'x'.repeat(2001),
-      error: 'Ton message doit compter entre 2 et 2 000 caractères.',
+      error: 'Ton message doit compter entre 2 et 2\u202F000 caractères.',
     },
     {
       field: 'body',
-      text: '⠀⠀',
+      text: '\u2800\u2800',
       error: 'Ton message doit contenir au moins un caractère visible.',
+    },
+    {
+      field: 'name',
+      text: 'Camille\u202Eellimac',
+      error: 'Ton nom contient des caractères non autorisés.',
+    },
+    {
+      field: 'name',
+      text: 'Ca\u200Bmille',
+      error: 'Ton nom contient des caractères non autorisés.',
+    },
+    {
+      field: 'body',
+      text: 'texte\u0000',
+      error: 'Ton message contient des caractères non autorisés.',
+    },
+    {
+      field: 'body',
+      text: 'merci \uD83D',
+      error: 'Ton message contient des caractères non autorisés.',
     },
   ] as const)(
     'Given the $field $text When the reader leaves the field Then it reads « $error » under it',
@@ -155,6 +175,8 @@ describe('CommentForm', () => {
     { field: 'body', text: 'ok' },
     { field: 'body', text: '😀'.repeat(2000) },
     { field: 'body', text: '<app-root> & <img src=x>' },
+    { field: 'body', text: 'ligne 1\n\tligne 2' },
+    { field: 'name', text: '\u{1F469}\u200D\u{1F4BB} Camille' },
   ] as const)(
     'Given the $field at the bound of the API When the reader leaves the field Then no error shows',
     async ({ field, text }) => {

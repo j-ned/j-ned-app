@@ -1,7 +1,7 @@
 import type { CommentRejection } from '../domain/models/comment.model';
 
-const NBSP = ' ';
-const NARROW_NBSP = ' ';
+const NBSP = '\u00a0';
+const NARROW_NBSP = '\u202F';
 
 export const COMMENT_COPY = {
   heading: 'Commentaires',
@@ -17,11 +17,13 @@ export const COMMENT_COPY = {
 export const COMMENT_FORM_COPY = {
   nameRequired: 'Ton nom est obligatoire.',
   nameLength: 'Ton nom doit compter entre 2 et 80 caractères.',
+  nameCharacters: 'Ton nom contient des caractères non autorisés.',
   nameInvisible: 'Ton nom doit contenir au moins un caractère visible.',
   emailRequired: 'Ton adresse e-mail est obligatoire.',
   emailInvalid: 'Ton adresse e-mail n’est pas valide.',
   bodyRequired: 'Ton message est obligatoire.',
   bodyLength: `Ton message doit compter entre 2 et 2${NARROW_NBSP}000 caractères.`,
+  bodyCharacters: 'Ton message contient des caractères non autorisés.',
   bodyInvisible: 'Ton message doit contenir au moins un caractère visible.',
   privacyNote: 'Ton nom et ton message sont publiés après relecture, ton e-mail jamais.',
   send: 'Envoyer',

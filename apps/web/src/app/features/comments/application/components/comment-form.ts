@@ -11,50 +11,17 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  FormField,
-  FormRoot,
-  form,
-  maxLength,
-  pattern,
-  required,
-  validate,
-  type PathKind,
-  type SchemaPath,
-  type SchemaPathRules,
-} from '@angular/forms/signals';
+import { FormField, FormRoot, form, maxLength, pattern, required } from '@angular/forms/signals';
 import { EMAIL_PATTERN } from '@shared/forms/email-pattern';
 import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
-import { COMMENT_LIMITS, characterCount, hasVisibleCharacter } from '../../domain/comment-text';
+import { COMMENT_LIMITS } from '../../domain/comment-text';
 import type { CommentDraft } from '../../domain/models/comment.model';
 import { COMMENT_FORM_COPY } from '../comment-copy';
+import { textWithinApiRules } from '../comment-text-rules';
 
 const EMPTY_DRAFT: CommentDraft = { name: '', email: '', body: '', website: '' };
-
-type TextRule = {
-  readonly min: number;
-  readonly max: number;
-  readonly lengthMessage: string;
-  readonly invisibleMessage: string;
-};
-
-// Mêmes refus que l'API, comptés comme elle : un envoi valide ici n'est pas refusé là-bas pour ça.
-function textWithinApiRules<TPathKind extends PathKind>(
-  path: SchemaPath<string, SchemaPathRules.Supported, TPathKind>,
-  rule: TextRule,
-): void {
-  validate(path, ({ value }) => {
-    const text = value();
-    if (text === '') return null;
-    const count = characterCount(text);
-    if (count < rule.min || count > rule.max) {
-      return { kind: 'length', message: rule.lengthMessage };
-    }
-    return hasVisibleCharacter(text) ? null : { kind: 'invisible', message: rule.invisibleMessage };
-  });
-}
 
 @Component({
   selector: 'app-comment-form',
@@ -203,22 +170,12 @@ export class CommentForm {
     this._model,
     (path) => {
       required(path.name, { message: COMMENT_FORM_COPY.nameRequired });
-      textWithinApiRules(path.name, {
-        min: COMMENT_LIMITS.nameMin,
-        max: COMMENT_LIMITS.nameMax,
-        lengthMessage: COMMENT_FORM_COPY.nameLength,
-        invisibleMessage: COMMENT_FORM_COPY.nameInvisible,
-      });
+      textWithinApiRules(path.name, 'name');
       required(path.email, { message: COMMENT_FORM_COPY.emailRequired });
       pattern(path.email, EMAIL_PATTERN, { message: COMMENT_FORM_COPY.emailInvalid });
       maxLength(path.email, COMMENT_LIMITS.emailMax, { message: COMMENT_FORM_COPY.emailInvalid });
       required(path.body, { message: COMMENT_FORM_COPY.bodyRequired });
-      textWithinApiRules(path.body, {
-        min: COMMENT_LIMITS.bodyMin,
-        max: COMMENT_LIMITS.bodyMax,
-        lengthMessage: COMMENT_FORM_COPY.bodyLength,
-        invisibleMessage: COMMENT_FORM_COPY.bodyInvisible,
-      });
+      textWithinApiRules(path.body, 'body');
     },
     {
       submission: {

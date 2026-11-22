@@ -19,7 +19,7 @@ import {
 } from '../comment-thread-view';
 import { CommentThread } from './comment-thread';
 
-const NARROW_NBSP = ' ';
+const NARROW_NBSP = '\u202F';
 
 const ready = (thread: PublishedThread): CommentThreadContent => ({
   status: 'ready',
