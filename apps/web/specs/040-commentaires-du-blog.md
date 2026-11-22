@@ -833,15 +833,26 @@ réponse ouvert, après envoi, état vide ; clair et sombre ; 1280 px et 390 px.
 - Les envois en attente vivent par onglet : un autre onglet du même article ne les voit pas.
 - Relus depuis l'onglet, seuls sont retenus un `id` au format UUID (celui que l'API renvoie), un nom
   et un texte dans les bornes de l'API ; un `id` en double ne compte qu'une fois.
-- `NG0950` (« input required ») en console, **préexistant** (reproduit sur `origin/master`,
-  `f9586dbf`, 1 fois sur 8, et sur cette branche, 1 fois sur 4) : il survient quand le lecteur tape
-  dans un champ de la section **pendant** son hydratation incrémentale (`@defer (hydrate on
-viewport)`). La directive `FormField` de `@angular/forms/signals` pose son écouteur `input` à la
-  création de l'élément ; en zoneless, la liaison de `[formField]` n'arrive qu'à la détection de
-  changements suivante. Une frappe dans cet intervalle lit `state = computed(() => this.field()())`
-  avant que l'entrée requise soit posée. Impact : l'erreur est journalisée et cette frappe-là n'est
-  pas recopiée dans le modèle ; la frappe suivante relit toute la valeur du champ et le resynchronise.
-  Non corrigé ici (comportement du framework, hors du périmètre de ce lot).
+- `NG0950` (« input required ») et frappes perdues pendant l'hydratation : **corrigé** (branche
+  `fix/formulaires-hydratation`). Cause : à l'hydratation d'un bloc `@defer (hydrate …)`, Angular
+  joue la passe de création (`applyDeferBlockState` → `createAndRenderEmbeddedLView`), où la
+  directive `FormField` pose ses écouteurs `input`/`blur` sur l'élément déjà rendu par le serveur,
+  puis ne fait que `markViewForRefresh` : la liaison `[formField]` attend la détection de
+  changements suivante (tâche planifiée par le scheduler zoneless). Une frappe dans cet intervalle
+  lit l'entrée requise non posée (`NG0950`) ; une frappe **avant** l'hydratation, elle, est effacée
+  par la première mise à jour, qui recopie le modèle vide dans l'élément (reproduit 10 fois sur 10).
+  Correctif : la directive `EditableInBrowser` (`shared/forms/editable-in-browser.ts`) rend le
+  `<fieldset>` qui groupe tous les contrôles `disabled` côté serveur et retire l'attribut dans la
+  même passe de mise à jour que la liaison `[formField]` : tant que le formulaire n'est pas lié, ses
+  champs sont réellement non saisissables (grisés, `cursor: not-allowed`, annoncés indisponibles),
+  puis le deviennent sans décalage de mise en page. Appliquée au formulaire de commentaire (le
+  formulaire de réponse, ouvert après hydratation, n'est jamais rendu par le serveur) et au
+  formulaire de contact de l'accueil (enveloppé dans un `<fieldset>` sans légende pour couvrir tous
+  ses champs). La liste des commentaires reste rendue par le serveur et hydratée comme avant.
+  Preuve : `e2e/a11y/form-hydration.spec.ts` (retient les scripts des blocs `@defer`, tape dès que
+  le champ l'accepte, libère, vérifie la valeur du champ, la requête envoyée et l'absence de
+  `NG0950`). L'intervalle du framework subsiste (Angular 22.3.0, dernière version publiée) : seul
+  un événement synthétique peut encore l'atteindre, plus une saisie.
 
 ### Alternatives écartées
 

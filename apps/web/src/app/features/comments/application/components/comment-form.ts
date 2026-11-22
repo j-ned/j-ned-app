@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormField, FormRoot, form, maxLength, pattern, required } from '@angular/forms/signals';
+import { EditableInBrowser } from '@shared/forms/editable-in-browser';
 import { EMAIL_PATTERN } from '@shared/forms/email-pattern';
 import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
 import { Button } from '@shared/ui/button';
@@ -25,12 +26,12 @@ const EMPTY_DRAFT: CommentDraft = { name: '', email: '', body: '', website: '' }
 
 @Component({
   selector: 'app-comment-form',
-  imports: [FormRoot, FormField, Button, FieldError, RouterLink],
+  imports: [FormRoot, FormField, EditableInBrowser, Button, FieldError, RouterLink],
   host: { class: 'block' },
   template: `
     @let id = ids();
     <form [formRoot]="commentForm" (keydown.escape)="cancel()">
-      <fieldset class="m-0 grid gap-5 border-0 p-0">
+      <fieldset appEditableInBrowser class="m-0 grid gap-5 border-0 p-0">
         <legend class="mb-1 text-lg font-semibold tracking-tight">{{ legend() }}</legend>
         <div class="grid gap-5 sm:grid-cols-2">
           <div>

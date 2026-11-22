@@ -1,3 +1,4 @@
+import { PLATFORM_ID } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ToastStore } from '@core/notifications/toast-store';
@@ -11,6 +12,7 @@ import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.
 import type { ContactPlacement } from '@features/analytics/domain/models/analytics.types';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import { defined } from '@shared/testing/defined';
+import { inputAvailability } from '@shared/testing/input-availability';
 
 // Builder du domaine : jamais un littéral comme entrée sous test.
 function makeContactData(overrides: Partial<ContactFormData> = {}): ContactFormData {
@@ -286,6 +288,25 @@ describe('ContactForm (Signal Forms)', () => {
         sent: 0,
         counted: [],
       });
+    });
+  });
+
+  describe('Server render', () => {
+    // Hydratée plus tard, une saisie y serait effacée par la première liaison du modèle.
+    it('Given a server render When the form is sent to the reader Then none of its controls accepts input', async () => {
+      TestBed.overrideProvider(PLATFORM_ID, { useValue: 'server' });
+
+      const fixture = await setup();
+
+      const { accepting, total } = inputAvailability(fixture.nativeElement as HTMLElement);
+      expect({ accepting, hasControls: total > 0 }).toEqual({ accepting: 0, hasControls: true });
+    });
+
+    it('Given a browser render When the form appears Then every control accepts input', async () => {
+      const fixture = await setup();
+
+      const { accepting, total } = inputAvailability(fixture.nativeElement as HTMLElement);
+      expect(accepting).toBe(total);
     });
   });
 
