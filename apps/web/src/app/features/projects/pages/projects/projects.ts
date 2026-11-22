@@ -1,4 +1,5 @@
 import { Component, computed, inject, linkedSignal, ChangeDetectionStrategy } from '@angular/core';
+import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Button } from '@shared/ui/button';
 import { FilterGroup } from '@shared/ui/filter-group';
@@ -166,6 +167,11 @@ export class Projects {
     const count = this.view().cards.length;
     return `${count}\u00a0${pluralize(count, 'projet', 'projets')}`;
   });
+
+  // Un projet a pu être modifié pendant que l'onglet était ailleurs.
+  constructor() {
+    refreshWhenVisible(() => this._projectsGateway.invalidateAllProjects());
+  }
 
   protected retry(): void {
     this.projectsResource.reload();

@@ -7,6 +7,7 @@ import { ProjectsGateway } from '../../domain/gateways/projects.gateway';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import type { Project } from '../../domain/models/project.model';
 import { makeProject } from '../../testing/project-builders';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 function setup(gateway: Partial<ProjectsGateway>): ComponentFixture<Projects> {
   TestBed.configureTestingModule({
@@ -624,5 +625,35 @@ describe('Projects', () => {
         '4 réalisations affichées',
       );
     });
+  });
+});
+
+describe('Projects: relecture au retour sur l’onglet', () => {
+  afterEach(() => {
+    forgetTabVisibility();
+    TestBed.resetTestingModule();
+  });
+
+  it('Given the page open When a project was published meanwhile and the tab comes back Then the shared list is read again and shown', async () => {
+    const projects = new BehaviorSubject<readonly Project[]>([
+      makeProject({ id: 'p-1', slug: 'p-1' }),
+    ]);
+    const fixture = setup({
+      getAllProjects: () => projects,
+      invalidateAllProjects: () =>
+        projects.next([
+          makeProject({ id: 'p-1', slug: 'p-1' }),
+          makeProject({ id: 'p-2', slug: 'p-2' }),
+        ]),
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    returnToTab();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelectorAll('[data-testid="project-case-study"]').length).toBe(2);
   });
 });

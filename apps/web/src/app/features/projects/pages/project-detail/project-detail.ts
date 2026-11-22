@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, input, ChangeDetectionStrategy } from '@angular/core';
+import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { NgOptimizedImage } from '@angular/common';
 import { Router } from '@angular/router';
@@ -156,6 +157,11 @@ export class ProjectDetail {
     const index = this._currentIndex();
     return index !== -1 && index < list.length - 1 ? list[index + 1] : undefined;
   });
+
+  // Le projet a pu être modifié pendant que l'onglet était ailleurs.
+  constructor() {
+    refreshWhenVisible(() => this._gateway.invalidateAllProjects());
+  }
 
   protected retry(): void {
     this._projectsResource.reload();

@@ -6,6 +6,7 @@ import { BlogList } from './blog-list';
 import { BlogGateway } from '../../domain/gateways/blog.gateway';
 import type { BlogPost } from '../../domain/models/blog-post.model';
 import { makeBlogPost, productionPosts } from '../../testing/blog-post-builders';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 function setupWith(
   getPublishedPosts: () => Observable<readonly BlogPost[]>,
@@ -470,5 +471,45 @@ describe('BlogList', () => {
         expect(byTestId(host, 'blog-visible-count')).toBeNull();
       });
     });
+  });
+});
+
+describe('BlogList: relecture au retour sur l’onglet', () => {
+  afterEach(() => {
+    forgetTabVisibility();
+    TestBed.resetTestingModule();
+  });
+
+  it('Given the list open When an article was published meanwhile and the tab comes back Then it is listed', async () => {
+    const getPublishedPosts = vi
+      .fn<() => Observable<readonly BlogPost[]>>()
+      .mockReturnValueOnce(of([makeBlogPost({ id: 'a', slug: 'a' })]))
+      .mockReturnValue(
+        of([makeBlogPost({ id: 'a', slug: 'a' }), makeBlogPost({ id: 'b', slug: 'b' })]),
+      );
+    const fixture = setupWith(getPublishedPosts);
+    const host = await render(fixture);
+
+    returnToTab();
+    await render(fixture);
+
+    expect(host.querySelectorAll('[data-testid="blog-posts"] > li').length).toBe(2);
+  });
+
+  it('Given the list open When the reread on return fails Then the articles stay listed, without an error', async () => {
+    const getPublishedPosts = vi
+      .fn<() => Observable<readonly BlogPost[]>>()
+      .mockReturnValueOnce(of([makeBlogPost({ id: 'a', slug: 'a' })]))
+      .mockReturnValue(throwError(() => new Error('down')));
+    const fixture = setupWith(getPublishedPosts);
+    const host = await render(fixture);
+
+    returnToTab();
+    await render(fixture);
+
+    expect({
+      rows: host.querySelectorAll('[data-testid="blog-posts"] > li').length,
+      error: byTestId(host, 'blog-error'),
+    }).toEqual({ rows: 1, error: null });
   });
 });
