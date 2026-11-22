@@ -17,7 +17,7 @@ const records = (response: ApiResponse): Json[] =>
   (Array.isArray(response.body) ? response.body : []).filter(isJson);
 
 // Écriture conditionnelle des articles et des projets : version entière exposée, ETag fort,
-// `If-Match: "<version>"` facultatif, 409 sur une version périmée.
+// `If-Match: "<version>"` facultatif, 412 sur une version périmée, 409 réservé au slug déjà pris.
 describe.each([
   {
     label: 'blog post',
@@ -31,6 +31,8 @@ describe.each([
     patch: (text: string) => ({ excerpt: text }),
     publicRead: (created: ApiResponse) => `/api/blog/posts/${String(field(created, 'slug'))}`,
     lists: ['/api/blog/posts', '/api/blog/posts/admin'],
+    // Le slug d'un article publié est figé : seul un brouillon prend le slug de son nouveau titre.
+    renamable: { status: 'draft' },
   },
   {
     label: 'project',
@@ -43,8 +45,9 @@ describe.each([
     patch: (text: string) => ({ description: text }),
     publicRead: (created: ApiResponse) => `/api/projects/${String(field(created, 'id'))}`,
     lists: ['/api/projects'],
+    renamable: {},
   },
-])('$label version', ({ collection, create, patch, publicRead, lists }) => {
+])('$label version', ({ collection, create, patch, publicRead, lists, renamable }) => {
   let session = '';
   let created: ApiResponse;
   let path = '';
@@ -97,13 +100,14 @@ describe.each([
     expect(response.headers.get('etag')).toBe(`"${current + 1}"`);
   });
 
-  it('Given a stale version in If-Match, When patched, Then 409 in the API error format and nothing is written', async () => {
+  it('Given a stale version in If-Match, When patched, Then 412 in the API error format and nothing is written', async () => {
     const before = await newVisitor().request('GET', publicRead(created));
     const stale = Number(field(before, 'version')) - 1;
 
     const response = await admin('PATCH', path, patch('Brouillon périmé'), `"${stale}"`);
 
-    expectApiError(response, 409, path);
+    expectApiError(response, 412, path);
+    expect(field(response, 'error')).toBe('Precondition Failed');
     expect(field(response, 'message')).toMatch(STALE);
     const after = await newVisitor().request('GET', publicRead(created));
     expect(after.body).toEqual(before.body);
@@ -130,7 +134,25 @@ describe.each([
     expect(field(response, 'version')).toBe(current + 1);
   });
 
-  it('Given a deleted entity, When patched with If-Match, Then 404, not 409', async () => {
+  it('Given the title of another entity and the current If-Match, When patched, Then 409 for the slug, not 412, and nothing is written', async () => {
+    const other = await admin('POST', collection, { ...create(), ...renamable });
+    const otherPath = `${collection}/${String(field(other, 'id'))}`;
+    const before = await newVisitor().request('GET', publicRead(created));
+
+    const response = await admin(
+      'PATCH',
+      otherPath,
+      { title: String(field(created, 'title')) },
+      `"${String(field(other, 'version'))}"`,
+    );
+    await admin('DELETE', otherPath);
+
+    expectApiError(response, 409, otherPath);
+    const after = await newVisitor().request('GET', publicRead(created));
+    expect(after.body).toEqual(before.body);
+  });
+
+  it('Given a deleted entity, When patched with If-Match, Then 404, not 412', async () => {
     const other = await admin('POST', collection, create());
     const otherPath = `${collection}/${String(field(other, 'id'))}`;
     await admin('DELETE', otherPath);
