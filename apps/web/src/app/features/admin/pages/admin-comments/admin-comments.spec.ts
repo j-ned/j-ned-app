@@ -12,6 +12,7 @@ import type { AdminComment } from '@features/comments/domain/models/comment.mode
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 import { makeAdminComment, toAdminCommentDto } from '@features/comments/testing/comment-builders';
 import { API_BASE_URL } from '@shared/api/api-config';
+import { asButton } from '@shared/testing/as-button';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { normalized } from '@shared/testing/normalized-text';
 import { pressTestId } from '@shared/testing/press-test-id';
@@ -139,7 +140,9 @@ describe('AdminComments: lecture de la file', () => {
       }),
     ]);
 
-    expect(testIdText(rendered.host, 'comment-parent')).toBe('En réponse à Lou : « Super »');
+    expect(testIdText(rendered.host, 'comment-parent')).toBe(
+      'En réponse à Lou\u00a0: «\u00a0Super\u00a0»',
+    );
   });
 
   it('Given a comment whose text holds markup When the page opens Then the markup is shown as text', async () => {
@@ -389,7 +392,7 @@ describe('AdminComments: refuser ou supprimer après confirmation', () => {
       label: 'Supprimer le commentaire de Camille',
       dialog: {
         open: true,
-        heading: 'Supprimer le commentaire de Camille ?',
+        heading: 'Supprimer le commentaire de Camille\u202f?',
         description:
           "Le commentaire disparaît de l'article, et ses 2 réponses avec lui. Cette action est définitive.",
         confirm: 'Supprimer le commentaire',
@@ -457,7 +460,7 @@ describe('AdminComments: refuser ou supprimer après confirmation', () => {
       confirm: dialog.confirm,
       toasts: rendered.toast.add.mock.calls.map(([toast]) => toast.detail),
     }).toEqual({
-      heading: 'Refuser le commentaire de Camille ?',
+      heading: 'Refuser le commentaire de Camille\u202f?',
       description: 'Un commentaire refusé est supprimé définitivement.',
       confirm: 'Refuser et supprimer',
       toasts: ['Commentaire de Camille refusé et supprimé'],
@@ -502,6 +505,184 @@ describe('AdminComments: refuser ou supprimer après confirmation', () => {
       invalidated: 1,
       toasts: [
         { severity: 'error', detail: 'Ce commentaire était déjà supprimé. La liste est à jour.' },
+      ],
+    });
+  });
+});
+
+describe('AdminComments: répondre en tant qu’auteur', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const PUBLISHED = makeAdminComment({ id: 'c-1', status: 'published' });
+  const VISITOR_REPLY = makeAdminComment({
+    id: 'c-2',
+    status: 'published',
+    author: { kind: 'visitor', name: 'Lou', email: 'lou@example.test' },
+    parent: { id: 'c-0', author: { kind: 'visitor', name: 'Sami' }, excerpt: 'Bonjour' },
+  });
+  const OWNER_REPLY = makeAdminComment({
+    id: 'c-9',
+    status: 'published',
+    author: { kind: 'owner' },
+    body: 'Avec plaisir',
+    createdAt: '2026-11-22T10:00:00.000Z',
+    parent: { id: 'c-1', author: { kind: 'visitor', name: 'Camille' }, excerpt: 'Merci' },
+  });
+
+  async function renderPublished(): Promise<Rendered> {
+    const rendered = await render();
+    await answer(rendered, 'pending', [CAMILLE]);
+    await pressFilter(rendered, 'Publiés');
+    await answer(rendered, 'published', [PUBLISHED, VISITOR_REPLY], { total: 2 });
+    return rendered;
+  }
+
+  const replyButtons = (host: HTMLElement): readonly HTMLElement[] => [
+    ...host.querySelectorAll<HTMLElement>('[data-testid="comment-reply"]'),
+  ];
+
+  async function typeReply(rendered: Rendered, text: string): Promise<void> {
+    const field = byTestId(rendered.host, 'reply-body');
+    if (!(field instanceof HTMLTextAreaElement)) throw new Error('Expected the reply textarea');
+    field.value = text;
+    field.dispatchEvent(new Event('input'));
+    await settleBounded(rendered.fixture);
+  }
+
+  it('Given pending comments When the queue renders Then none offers a reply', async () => {
+    const rendered = await render();
+
+    await answer(rendered, 'pending', [CAMILLE]);
+
+    expect(replyButtons(rendered.host)).toEqual([]);
+  });
+
+  it('Given a published comment and a published reply When the list renders Then only the comment offers a reply, named after its visitor', async () => {
+    const rendered = await renderPublished();
+
+    expect(
+      replyButtons(rendered.host).map((button) => ({
+        label: button.getAttribute('aria-label'),
+        expanded: button.getAttribute('aria-expanded'),
+      })),
+    ).toEqual([{ label: 'Répondre à Camille', expanded: 'false' }]);
+  });
+
+  it('Given a published comment When « Répondre » is pressed Then the form it controls opens under the comment with the focus in its field', async () => {
+    const rendered = await renderPublished();
+
+    await pressTestId(rendered.fixture, 'comment-reply');
+    const button = byTestId(rendered.host, 'comment-reply');
+    const form = rendered.host.ownerDocument.getElementById(
+      button?.getAttribute('aria-controls') ?? '',
+    );
+
+    expect({
+      expanded: button?.getAttribute('aria-expanded'),
+      formInRow: byTestId(rendered.host, 'admin-comment-row')?.contains(form) ?? false,
+      legend: testIdText(rendered.host, 'reply-legend'),
+      focused: rendered.host.ownerDocument.activeElement === byTestId(rendered.host, 'reply-body'),
+    }).toEqual({ expanded: 'true', formInRow: true, legend: 'Répondre à Camille', focused: true });
+  });
+
+  it('Given an open reply form When it is cancelled Then it closes and the focus returns to « Répondre »', async () => {
+    const rendered = await renderPublished();
+    await pressTestId(rendered.fixture, 'comment-reply');
+
+    await pressTestId(rendered.fixture, 'reply-cancel');
+
+    expect({
+      form: byTestId(rendered.host, 'reply-body'),
+      focused:
+        rendered.host.ownerDocument.activeElement === byTestId(rendered.host, 'comment-reply'),
+    }).toEqual({ form: null, focused: true });
+  });
+
+  it('Given a written reply When it is sent Then it is posted, shown published at the top as the owner’s, the comment counts it, and the form closes with focus back on « Répondre »', async () => {
+    const rendered = await renderPublished();
+    await pressTestId(rendered.fixture, 'comment-reply');
+    await typeReply(rendered, 'Avec plaisir');
+
+    await pressTestId(rendered.fixture, 'reply-submit');
+    const req = rendered.http.expectOne({
+      method: 'POST',
+      url: '/api/blog/comments/c-1/replies',
+    });
+    const body: unknown = req.request.body;
+    req.flush(toAdminCommentDto(OWNER_REPLY), { status: 201, statusText: 'Created' });
+    await settleBounded(rendered.fixture);
+
+    expect({
+      body,
+      authors: texts(rendered.host, 'comment-author'),
+      status: texts(rendered.host, 'comment-status'),
+      replies: texts(rendered.host, 'comment-replies'),
+      summary: testIdText(rendered.host, 'admin-comments-summary'),
+      form: byTestId(rendered.host, 'reply-body'),
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+      focused:
+        rendered.host.ownerDocument.activeElement === byTestId(rendered.host, 'comment-reply'),
+    }).toEqual({
+      body: { body: 'Avec plaisir' },
+      authors: ['Toi, auteur du site', 'Camille', 'Lou'],
+      status: ['Publié', 'Publié', 'Publié'],
+      replies: ['1 réponse'],
+      summary: '3 commentaires publiés',
+      form: null,
+      toasts: [{ severity: 'success', detail: 'Ta réponse à Camille est publiée' }],
+      focused: true,
+    });
+  });
+
+  it('Given the server fails When a reply is sent Then the form stays open with the text and the failure is told', async () => {
+    const rendered = await renderPublished();
+    await pressTestId(rendered.fixture, 'comment-reply');
+    await typeReply(rendered, 'Avec plaisir');
+
+    await pressTestId(rendered.fixture, 'reply-submit');
+    rendered.http
+      .expectOne('/api/blog/comments/c-1/replies')
+      .flush('boom', { status: 500, statusText: 'Error' });
+    await settleBounded(rendered.fixture);
+
+    const field = byTestId(rendered.host, 'reply-body');
+    expect({
+      text: field instanceof HTMLTextAreaElement ? field.value : null,
+      sending: asButton(byTestId(rendered.host, 'reply-submit')).disabled,
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+    }).toEqual({
+      text: 'Avec plaisir',
+      sending: false,
+      toasts: [
+        {
+          severity: 'error',
+          detail: "Ta réponse n'a pas pu être publiée. Réessaie dans un instant.",
+        },
+      ],
+    });
+  });
+
+  it('Given the comment was deleted elsewhere When a reply is sent Then it is told, the form closes and the list is read again', async () => {
+    const rendered = await renderPublished();
+    await pressTestId(rendered.fixture, 'comment-reply');
+    await typeReply(rendered, 'Avec plaisir');
+
+    await pressTestId(rendered.fixture, 'reply-submit');
+    rendered.http
+      .expectOne('/api/blog/comments/c-1/replies')
+      .flush('gone', { status: 404, statusText: 'Not Found' });
+    await settleBounded(rendered.fixture);
+    await answer(rendered, 'published', [VISITOR_REPLY], { total: 1 });
+
+    expect({
+      form: byTestId(rendered.host, 'reply-body'),
+      authors: texts(rendered.host, 'comment-author'),
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast.detail),
+    }).toEqual({
+      form: null,
+      authors: ['Lou'],
+      toasts: [
+        "Ce commentaire a été supprimé entre-temps\u00a0: ta réponse n'est pas publiée. La liste est à jour.",
       ],
     });
   });

@@ -1,5 +1,14 @@
-import { Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+  viewChild,
+  viewChildren,
+} from '@angular/core';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   EMPTY,
   catchError,
@@ -32,6 +41,7 @@ import {
   commentsSummary,
   deletionPrompt,
   moderationFailureMessage,
+  replyPublishedNotice,
   type ModerationAction,
 } from '../../application/admin-comments-view';
 import { AdminCommentRow } from '../../application/components/admin-comment-row';
@@ -41,6 +51,9 @@ import { AdminPageHeader } from '../../application/components/admin-page-header'
 import { AdminPager } from '../../application/components/admin-pager';
 import { pager } from '../../application/pager';
 import { PendingDeletion } from '../../application/pending-deletion';
+
+const moderationFailureOf = (error: unknown): ModerationFailure =>
+  error instanceof ModerationError ? error.reason : 'failed';
 
 type PageRequest = { readonly status: CommentStatus; readonly page: number };
 
@@ -92,6 +105,12 @@ type PageRequest = { readonly status: CommentStatus; readonly page: number };
               [comment]="comment"
               (publishRequested)="publish(comment)"
               (deleteRequested)="deletion.request(comment)"
+              [replying]="replyTarget() === comment.id"
+              [replySending]="replySending()"
+              [replyResetToken]="replyResetToken()"
+              (replyRequested)="toggleReply(comment)"
+              (replySubmitted)="sendReply(comment, $event)"
+              (replyCancelled)="closeReply(comment)"
             ></li>
           }
         </ul>
@@ -124,7 +143,9 @@ type PageRequest = { readonly status: CommentStatus; readonly page: number };
 export class AdminComments {
   private readonly gateway = inject(CommentsGateway);
   private readonly toast = inject(ToastStore);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly _pageHeader = viewChild.required(AdminPageHeader);
+  private readonly _rows = viewChildren(AdminCommentRow);
 
   protected readonly filters = COMMENT_FILTERS;
   protected readonly status = signal<CommentStatus>('pending');
@@ -196,6 +217,52 @@ export class AdminComments {
     this._pageHeader().focusTitle();
   }
 
+  protected readonly replyTarget = signal<string | null>(null);
+  protected readonly replySending = signal(false);
+  protected readonly replyResetToken = signal(0);
+
+  protected toggleReply(comment: AdminComment): void {
+    this.replyTarget.update((current) => (current === comment.id ? null : comment.id));
+  }
+
+  protected closeReply(comment: AdminComment): void {
+    this.replyTarget.set(null);
+    this._rows()
+      .find((row) => row.comment().id === comment.id)
+      ?.focusReply();
+  }
+
+  // La réponse est publiée d'emblée : elle prend la tête de la liste, du plus récent au plus ancien.
+  protected sendReply(comment: AdminComment, body: string): void {
+    this.replySending.set(true);
+    this.gateway
+      .reply(comment.id, body)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (reply) => {
+          this.replySending.set(false);
+          this.replyResetToken.update((token) => token + 1);
+          this.commentsRes.update((list) => [
+            reply,
+            ...(list ?? []).map((entry) =>
+              entry.id === comment.id ? { ...entry, replyCount: entry.replyCount + 1 } : entry,
+            ),
+          ]);
+          this._served.update((served) => ({ ...served, total: served.total + 1 }));
+          this.toast.add({ severity: 'success', detail: replyPublishedNotice(comment) });
+          this.closeReply(comment);
+        },
+        error: (error: unknown) => {
+          this.replySending.set(false);
+          const reason = moderationFailureOf(error);
+          this.tellFailure('reply', reason, comment);
+          if (reason === 'failed') return;
+          this.replyTarget.set(null);
+          this.refresh();
+        },
+      });
+  }
+
   protected publish(comment: AdminComment): void {
     this._publication.delete(comment);
     this._pageHeader().focusTitle();
@@ -229,7 +296,7 @@ export class AdminComments {
     comment: AdminComment,
   ): OperatorFunction<T, T> {
     return catchError((error: unknown) => {
-      const reason = error instanceof ModerationError ? error.reason : 'failed';
+      const reason = moderationFailureOf(error);
       if (reason === 'failed') return throwError(() => error);
       this.tellFailure(action, reason, comment);
       this.refresh();

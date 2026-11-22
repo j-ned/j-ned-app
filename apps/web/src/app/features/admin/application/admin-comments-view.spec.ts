@@ -29,7 +29,7 @@ describe('toAdminCommentRow', () => {
         postTitle: 'Article témoin',
         postLink: ['/blog', 'article-temoin'],
         status: 'En attente',
-        received: 'il y a 3 h',
+        received: 'il y a 3\u00a0h',
         createdAt: '2026-11-21T09:00:00.000Z',
         parent: null,
         replies: '',
@@ -55,7 +55,7 @@ describe('toAdminCommentRow', () => {
     }).toEqual({
       author: 'Toi, auteur du site',
       email: null,
-      parent: 'En réponse à Camille : « Merci ! »',
+      parent: 'En réponse à Camille\u00a0: «\u00a0Merci !\u00a0»',
       status: 'Publié',
     });
   });
@@ -68,7 +68,7 @@ describe('toAdminCommentRow', () => {
       NOW,
     );
 
-    expect(row.parent).toBe('En réponse à toi : « Bonne question »');
+    expect(row.parent).toBe('En réponse à toi\u00a0: «\u00a0Bonne question\u00a0»');
   });
 
   it.each([
@@ -199,7 +199,7 @@ describe('Suppression', () => {
       name: 'a pending comment',
       comment: makeAdminComment(),
       prompt: {
-        heading: 'Refuser le commentaire de Camille ?',
+        heading: 'Refuser le commentaire de Camille\u202f?',
         description: 'Un commentaire refusé est supprimé définitivement.',
         confirmLabel: 'Refuser et supprimer',
         done: 'Commentaire de Camille refusé et supprimé',
@@ -209,7 +209,7 @@ describe('Suppression', () => {
       name: 'a published comment with 2 replies',
       comment: makeAdminComment({ status: 'published', replyCount: 2 }),
       prompt: {
-        heading: 'Supprimer le commentaire de Camille ?',
+        heading: 'Supprimer le commentaire de Camille\u202f?',
         description:
           "Le commentaire disparaît de l'article, et ses 2 réponses avec lui. Cette action est définitive.",
         confirmLabel: 'Supprimer le commentaire',
@@ -220,7 +220,7 @@ describe('Suppression', () => {
       name: 'a published comment with 1 reply',
       comment: makeAdminComment({ status: 'published', replyCount: 1 }),
       prompt: {
-        heading: 'Supprimer le commentaire de Camille ?',
+        heading: 'Supprimer le commentaire de Camille\u202f?',
         description:
           "Le commentaire disparaît de l'article, et sa réponse avec lui. Cette action est définitive.",
         confirmLabel: 'Supprimer le commentaire',
@@ -231,7 +231,7 @@ describe('Suppression', () => {
       name: 'a published comment without reply',
       comment: makeAdminComment({ status: 'published' }),
       prompt: {
-        heading: 'Supprimer le commentaire de Camille ?',
+        heading: 'Supprimer le commentaire de Camille\u202f?',
         description: "Le commentaire disparaît de l'article. Cette action est définitive.",
         confirmLabel: 'Supprimer le commentaire',
         done: 'Commentaire de Camille supprimé',
@@ -241,7 +241,7 @@ describe('Suppression', () => {
       name: 'a reply of the owner',
       comment: OWNER_REPLY,
       prompt: {
-        heading: 'Supprimer ta réponse ?',
+        heading: 'Supprimer ta réponse\u202f?',
         description: "Ta réponse disparaît de l'article. Cette action est définitive.",
         confirmLabel: 'Supprimer la réponse',
         done: 'Ta réponse est supprimée',
@@ -280,4 +280,51 @@ describe('Suppression', () => {
       ),
     ).toEqual([]);
   });
+});
+
+describe('Réponse', () => {
+  it.each([
+    {
+      name: 'a published comment',
+      comment: makeAdminComment({ status: 'published' }),
+      replyLabel: 'Répondre à Camille',
+    },
+    { name: 'a pending comment', comment: makeAdminComment(), replyLabel: null },
+    {
+      name: 'a published reply',
+      comment: makeAdminComment({
+        status: 'published',
+        parent: { id: 'c-0', author: { kind: 'owner' }, excerpt: 'Oui' },
+      }),
+      replyLabel: null,
+    },
+  ])(
+    'Given $name When it is shown Then its reply action reads « $replyLabel »',
+    ({ comment, replyLabel }) => {
+      expect(toAdminCommentRow(comment, NOW).replyLabel).toBe(replyLabel);
+    },
+  );
+
+  it.each([
+    {
+      reason: 'not-found',
+      message:
+        "Ce commentaire a été supprimé entre-temps\u00a0: ta réponse n'est pas publiée. La liste est à jour.",
+    },
+    {
+      reason: 'conflict',
+      message: "Ce commentaire n'accepte plus de réponse. La liste est à jour.",
+    },
+    { reason: 'failed', message: "Ta réponse n'a pas pu être publiée. Réessaie dans un instant." },
+  ] as const)(
+    'Given a reply fails with « $reason » When the failure is told Then it reads « $message »',
+    ({ reason, message }) => {
+      const text = moderationFailureMessage('reply', reason, makeAdminComment());
+
+      expect({ text, violations: frenchTypographyViolations(text, 'reply') }).toEqual({
+        text: message,
+        violations: [],
+      });
+    },
+  );
 });

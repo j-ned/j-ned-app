@@ -1,14 +1,15 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, ElementRef, computed, input, output, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { AdminComment } from '@features/comments/domain/models/comment.model';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { Stamp } from '@shared/ui/stamp';
 import { toAdminCommentRow } from '../admin-comments-view';
+import { AdminCommentReplyForm } from './admin-comment-reply-form';
 
 @Component({
   selector: 'li[app-admin-comment-row]',
-  imports: [RouterLink, AppIcon, Button, Stamp],
+  imports: [RouterLink, AppIcon, Button, Stamp, AdminCommentReplyForm],
   host: { 'data-testid': 'admin-comment-row', class: 'block border-b border-line py-4' },
   template: `
     @let view = row();
@@ -83,17 +84,56 @@ import { toAdminCommentRow } from '../admin-comments-view';
         (click)="deleteRequested.emit()"
       >
         <app-icon name="trash" [size]="16" />
-        {{ comment().status === 'pending' ? 'Refuser' : 'Supprimer' }}
+        {{ view.deleteText }}
       </button>
+      @if (view.replyLabel) {
+        <button
+          #replyButton
+          appButton
+          type="button"
+          variant="outlined"
+          data-testid="comment-reply"
+          [attr.aria-label]="view.replyLabel"
+          [attr.aria-expanded]="replying()"
+          [attr.aria-controls]="replyFormId()"
+          (click)="replyRequested.emit()"
+        >
+          <app-icon name="comment" [size]="16" />
+          Répondre
+        </button>
+      }
     </div>
+    @if (replying() && view.replyLabel) {
+      <app-admin-comment-reply-form
+        [formId]="replyFormId()"
+        [legend]="view.replyLabel"
+        [sending]="replySending()"
+        [resetToken]="replyResetToken()"
+        (submitted)="replySubmitted.emit($event)"
+        (cancelled)="replyCancelled.emit()"
+      />
+    }
   `,
 })
 export class AdminCommentRow {
   readonly comment = input.required<AdminComment>();
+  readonly replying = input(false);
+  readonly replySending = input(false);
+  readonly replyResetToken = input(0);
   readonly publishRequested = output<void>();
   readonly deleteRequested = output<void>();
+  readonly replyRequested = output<void>();
+  readonly replySubmitted = output<string>();
+  readonly replyCancelled = output<void>();
+
+  private readonly _replyButton = viewChild<ElementRef<HTMLButtonElement>>('replyButton');
 
   private readonly _now = new Date();
 
   protected readonly row = computed(() => toAdminCommentRow(this.comment(), this._now));
+  protected readonly replyFormId = computed(() => `reply-${this.comment().id}`);
+
+  focusReply(): void {
+    this._replyButton()?.nativeElement.focus();
+  }
 }

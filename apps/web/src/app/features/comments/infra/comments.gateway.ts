@@ -46,6 +46,17 @@ export class CommentsGateway {
       .pipe(catchError(rejectAsModerationError));
   }
 
+  // Réponse du propriétaire : publiée d'emblée par l'API.
+  reply(id: string, body: string): Observable<AdminComment> {
+    return this.http
+      .post<AdminCommentDto>(
+        `${this.apiUrl}/blog/comments/${id}/replies`,
+        { body },
+        { context: silentErrors() },
+      )
+      .pipe(map(toAdminComment), catchError(rejectAsModerationError));
+  }
+
   getPendingCount(): Observable<number> {
     return this.pendingCount.value$;
   }

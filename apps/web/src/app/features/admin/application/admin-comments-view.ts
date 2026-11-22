@@ -3,6 +3,7 @@ import type {
   CommentStatus,
   ParentAuthor,
 } from '@features/comments/domain/models/comment.model';
+import { canReply } from '@features/comments/domain/can-reply';
 import type { ModerationFailure } from '@features/comments/domain/moderation-error';
 import { counted } from '@shared/format/counted';
 import type { FilterOption } from '@shared/ui/filter-group';
@@ -41,16 +42,21 @@ type AdminCommentRow = {
   readonly replies: string;
   readonly publishLabel: string | null;
   readonly deleteLabel: string;
+  readonly deleteText: 'Refuser' | 'Supprimer';
+  readonly replyLabel: string | null;
 };
 
 export const commentAuthorName = (comment: AdminComment): string =>
   comment.author.kind === 'visitor' ? comment.author.name : 'Toi, auteur du site';
 
-function deleteLabel(comment: AdminComment, authorName: string): string {
-  if (comment.author.kind === 'owner') return 'Supprimer ta réponse';
-  const verb = comment.status === 'pending' ? 'Refuser' : 'Supprimer';
-  return `${verb} le commentaire de ${authorName}`;
-}
+// Refuser un commentaire en attente, c'est le supprimer : l'API ne garde aucun refus.
+const deleteText = (comment: AdminComment): 'Refuser' | 'Supprimer' =>
+  comment.status === 'pending' ? 'Refuser' : 'Supprimer';
+
+const deleteLabel = (comment: AdminComment, authorName: string): string =>
+  comment.author.kind === 'owner'
+    ? 'Supprimer ta réponse'
+    : `${deleteText(comment)} le commentaire de ${authorName}`;
 
 const parentName = (author: ParentAuthor): string =>
   author.kind === 'owner' ? 'toi' : author.name;
@@ -73,11 +79,13 @@ export function toAdminCommentRow(comment: AdminComment, now: Date): AdminCommen
     createdAt: comment.createdAt,
     replies: comment.replyCount === 0 ? '' : counted(comment.replyCount, 'réponse', 'réponses'),
     deleteLabel: deleteLabel(comment, authorName),
+    deleteText: deleteText(comment),
+    replyLabel: canReply(comment) ? `Répondre à ${authorName}` : null,
     publishLabel: comment.status === 'pending' ? `Publier le commentaire de ${authorName}` : null,
   };
 }
 
-export type ModerationAction = 'publish' | 'delete';
+export type ModerationAction = 'publish' | 'delete' | 'reply';
 
 const UP_TO_DATE = 'La liste est à jour.';
 const DELETE_FAILED = "Le commentaire n'a pas pu être supprimé. Réessaie dans un instant.";
@@ -100,6 +108,12 @@ const FAILURE_MESSAGES: Record<
     conflict: () => DELETE_FAILED,
     failed: () => DELETE_FAILED,
   },
+  reply: {
+    'not-found': () =>
+      `Ce commentaire a été supprimé entre-temps${NBSP}: ta réponse n'est pas publiée. ${UP_TO_DATE}`,
+    conflict: () => `Ce commentaire n'accepte plus de réponse. ${UP_TO_DATE}`,
+    failed: () => "Ta réponse n'a pas pu être publiée. Réessaie dans un instant.",
+  },
 };
 
 type DeletionPrompt = {
@@ -116,7 +130,6 @@ const repliesGoing = (replyCount: number): string => {
   return replyCount === 1 ? ', et sa réponse avec lui' : `, et ses ${replyCount} réponses avec lui`;
 };
 
-// Refuser un commentaire en attente, c'est le supprimer : l'API ne garde aucun refus.
 export function deletionPrompt(comment: AdminComment): DeletionPrompt {
   if (comment.author.kind === 'owner') {
     return {
@@ -150,6 +163,9 @@ export function moderationFailureMessage(
 ): string {
   return FAILURE_MESSAGES[action][reason](comment);
 }
+
+export const replyPublishedNotice = (comment: AdminComment): string =>
+  `Ta réponse à ${commentAuthorName(comment)} est publiée`;
 
 export function commentsSummary(status: CommentStatus, total: number): string {
   const [singular, plural] = SUMMARY_WORDS[status];

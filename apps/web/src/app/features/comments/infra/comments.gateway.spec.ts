@@ -191,3 +191,64 @@ describe('CommentsGateway: suppression', () => {
     },
   );
 });
+
+describe('CommentsGateway: réponse du propriétaire', () => {
+  let gateway: CommentsGateway;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+      ],
+    });
+    gateway = TestBed.inject(CommentsGateway);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('Given a published comment When the owner replies Then the reply is posted silently and comes back published', async () => {
+    const reply = makeAdminComment({
+      id: 'c-8',
+      author: { kind: 'owner' },
+      status: 'published',
+      parent: { id: 'c-7', author: { kind: 'visitor', name: 'Camille' }, excerpt: 'Merci' },
+    });
+    const result = firstValueFrom(gateway.reply('c-7', 'Avec plaisir'));
+
+    const req = http.expectOne('/api/blog/comments/c-7/replies');
+    const sent = {
+      method: req.request.method,
+      body: req.request.body,
+      silent: req.request.context.get(SKIP_ERROR_TOAST),
+    };
+    req.flush(toAdminCommentDto(reply), { status: 201, statusText: 'Created' });
+
+    expect({ sent, result: await result }).toEqual({
+      sent: { method: 'POST', body: { body: 'Avec plaisir' }, silent: true },
+      result: reply,
+    });
+  });
+
+  it.each([
+    { status: 404, reason: 'not-found' },
+    { status: 409, reason: 'conflict' },
+    { status: 400, reason: 'failed' },
+  ] as const)(
+    'Given the API answers $status When the owner replies Then the failure is a moderation error « $reason »',
+    async ({ status, reason }) => {
+      const result = firstValueFrom(gateway.reply('c-7', 'Oui')).catch((error: unknown) =>
+        error instanceof ModerationError ? error.reason : error,
+      );
+
+      http
+        .expectOne('/api/blog/comments/c-7/replies')
+        .flush('nope', { status, statusText: 'Nope' });
+
+      expect(await result).toBe(reason);
+    },
+  );
+});
