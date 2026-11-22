@@ -19,6 +19,17 @@ export const COMMENT_FILTERS: readonly FilterOption<CommentStatus>[] = [
   { value: 'published', label: 'Publiés' },
 ];
 
+export const EMPTY_QUEUE: Record<
+  CommentStatus,
+  { readonly stamp: string; readonly message: string }
+> = {
+  pending: {
+    stamp: 'File vide',
+    message: 'Aucun commentaire en attente. Chaque nouveau commentaire arrive ici et par e-mail.',
+  },
+  published: { stamp: 'Aucun commentaire', message: "Aucun commentaire publié pour l'instant." },
+};
+
 const STATUS_LABELS: Record<CommentStatus, string> = {
   pending: 'En attente',
   published: 'Publié',
