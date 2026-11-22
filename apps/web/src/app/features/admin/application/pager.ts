@@ -1,4 +1,4 @@
-type Pager = {
+export type Pager = {
   readonly pageCount: number;
   readonly label: string;
   readonly hasNewer: boolean;

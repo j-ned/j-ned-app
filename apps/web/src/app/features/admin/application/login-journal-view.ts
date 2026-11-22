@@ -1,7 +1,7 @@
 import type { LoginEvent, LoginEventKind } from '@features/auth/domain/models/login-event.model';
 import { counted } from '@shared/format/counted';
 import { withFirstOfMonth } from '@shared/format/with-first-of-month';
-import { pager } from './pager';
+import { pager, type Pager } from './pager';
 
 export const LOGIN_JOURNAL_PAGE_SIZE = 25;
 
@@ -82,7 +82,7 @@ export function toLoginJournalRows(
   });
 }
 
-export const loginJournalPager = (total: number, page: number): ReturnType<typeof pager> =>
+export const loginJournalPager = (total: number, page: number): Pager =>
   pager(total, page, LOGIN_JOURNAL_PAGE_SIZE);
 
 export function loginJournalSummary(total: number): string {

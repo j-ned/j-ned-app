@@ -89,7 +89,8 @@ const SETTINGS: AdminPageParent = { label: 'Paramètres', route: '/admin/setting
     </app-admin-list-state>
 
     @if (pager().pageCount > 1) {
-      <app-admin-pager
+      <nav
+        app-admin-pager
         testIdPrefix="admin-logins"
         label="Pages du journal"
         newerLabel="Plus récentes"
@@ -97,7 +98,7 @@ const SETTINGS: AdminPageParent = { label: 'Paramètres', route: '/admin/setting
         [pager]="pager()"
         (newer)="showNewer()"
         (older)="showOlder()"
-      />
+      ></nav>
     }
   `,
 })

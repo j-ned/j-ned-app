@@ -109,7 +109,8 @@ const moderationFailureOf = (error: unknown): ModerationFailure =>
     </app-confirm-dialog>
 
     @if (queue.pager().pageCount > 1) {
-      <app-admin-pager
+      <nav
+        app-admin-pager
         testIdPrefix="admin-comments"
         label="Pages des commentaires"
         newerLabel="Plus récents"
@@ -117,7 +118,7 @@ const moderationFailureOf = (error: unknown): ModerationFailure =>
         [pager]="queue.pager()"
         (newer)="queue.showNewer()"
         (older)="queue.showOlder()"
-      />
+      ></nav>
     }
   `,
 })
