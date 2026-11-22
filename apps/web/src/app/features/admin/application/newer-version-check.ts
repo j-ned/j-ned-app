@@ -24,6 +24,11 @@ export class NewerVersionCheck {
     refreshAdminWhenVisible(() => this.check());
   }
 
+  // L'API a refusé une version périmée : inutile de relire pour le savoir.
+  reportConflict(): void {
+    this._detected.set(true);
+  }
+
   private check(): void {
     const { current, readLatest, paused } = this.options;
     const edited = current();

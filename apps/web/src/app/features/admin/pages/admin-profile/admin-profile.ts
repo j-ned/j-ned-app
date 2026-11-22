@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map, type Observable } from 'rxjs';
 import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
 import type {
   ProfileContent,
@@ -31,6 +31,7 @@ import { AdminProfilePortrait } from '../../application/components/admin-profile
 import { AdminSaveBar } from '../../application/components/admin-save-bar';
 import { AdminWordingNotice } from '../../application/components/admin-wording-notice';
 import { DocumentDraft } from '../../application/document-draft';
+import { NewerVersionCheck } from '../../application/newer-version-check';
 import type { FormTocSection } from '../../application/form-toc-entries';
 import { toProfileDraft, type ProfileDraft } from '../../application/profile-draft';
 import { profileWordingWarnings } from '../../application/profile-wording-warnings';
@@ -69,7 +70,7 @@ const PROFILE_EDITOR_COPY: AdminEditorCopy = {
 };
 
 const CONFLICT_MESSAGE =
-  'Le parcours a été modifié depuis une autre fenêtre. Recharge la page pour repartir de la dernière version (tes modifications non enregistrées seront perdues).';
+  "Le parcours n'a pas été enregistré\u00a0: une version plus récente a été enregistrée ailleurs.";
 
 @Component({
   selector: 'app-admin-profile',
@@ -96,7 +97,10 @@ const CONFLICT_MESSAGE =
       [state]="state()"
       [copy]="PROFILE_EDITOR_COPY"
       [leaveAsked]="draft.leave.asked()"
+      [newerVersion]="newerVersion.detected()"
+      [changes]="draft.changes()"
       (retry)="retry()"
+      (reloadLatest)="profileResource.reload()"
       (leaveAnswered)="draft.leave.answer($event)"
     >
       <ng-template #editorForm>
@@ -151,6 +155,12 @@ export class AdminProfile implements LeaveConfirmable {
       toProfileDraft(document?.content ?? null, previous),
     sections: FORM_SECTIONS,
   });
+  protected readonly newerVersion = new NewerVersionCheck({
+    current: (): number | null => this.draft.saved()?.version ?? null,
+    readLatest: (): Observable<number> =>
+      this.gateway.getProfile({ background: true }).pipe(map((document) => document.version)),
+    paused: this.draft.saving,
+  });
 
   protected readonly wordingWarnings = computed(() => profileWordingWarnings(this.draft.value()));
   // Hors du brouillon : un portrait envoyé ne compte pas dans les modifications non enregistrées.
@@ -186,6 +196,7 @@ export class AdminProfile implements LeaveConfirmable {
       this.toast.add({ severity: 'success', detail: 'Parcours enregistré' });
       return;
     }
+    if (isStaleVersion(result.error)) this.newerVersion.reportConflict();
     this.toast.add({ severity: 'error', detail: saveFailure(result.error) });
   }
 
@@ -230,6 +241,10 @@ export class AdminProfile implements LeaveConfirmable {
 }
 
 function saveFailure(error: unknown): string {
-  if (error instanceof HttpErrorResponse && error.status === 409) return CONFLICT_MESSAGE;
+  if (isStaleVersion(error)) return CONFLICT_MESSAGE;
   return withValidationDetail("Le parcours n'a pas pu être enregistré.", error);
+}
+
+function isStaleVersion(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && error.status === 409;
 }
