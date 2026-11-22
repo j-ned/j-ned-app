@@ -10,7 +10,7 @@ import {
 } from './engagement';
 import { type SessionFacts, summarizeSessions } from './session-facts';
 
-/** Conversions d'une journée ; `null` tant qu'aucun événement v2 n'a jamais été vu (non mesuré). */
+// `null` tant qu'aucun événement v2 n'a jamais été vu : conversions non mesurées.
 export type DayConversions = {
   contactSubmits: number | null;
   contactClicks: number | null;
@@ -54,13 +54,8 @@ const sqlList = (values: readonly string[]) =>
     sql`, `,
   );
 
-/**
- * Une ligne par visite de la plage. Les pages sont comptées sans fragment : les lignes
- * `/offres/x#demande` déjà en base ne font pas une seconde page.
- *
- * postgres-js ne sait pas lier une `Date` dans un `sql` brut : les bornes passent en ISO et
- * Postgres les convertit en timestamptz.
- */
+// Pages comptées sans fragment : `/offres/x#demande` déjà en base n'est pas une seconde page.
+// postgres-js ne lie pas une `Date` dans un `sql` brut : les bornes passent en ISO.
 async function loadSessionFacts(
   db: Database,
   startIso: string,
@@ -142,11 +137,8 @@ async function countEvents(
   };
 }
 
-/**
- * Un événement v2 a-t-il déjà été vu au plus tard ce jour-là ? En brut (jours encore présents)
- * ou dans un total journalier antérieur déjà mesuré (jours purgés). Indépendant de l'ordre
- * d'agrégation des jours, sans date en dur.
- */
+// Cherche en brut (jours encore présents) et dans les totaux antérieurs mesurés (jours purgés) :
+// le résultat ne dépend ni de l'ordre d'agrégation des jours ni d'une date en dur.
 async function conversionsMeasured(
   db: Database,
   day: string,

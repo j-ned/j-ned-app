@@ -2,12 +2,12 @@ import type { S3Settings } from '../storage/s3-client';
 import { resolveDeployment, type Deployment } from './deployment';
 import type { ValidatedEnv } from './env.validation';
 
-/** Resend en production ; journal seul en preview (quoi que contiennent ses variables) ou sans clé. */
+// Resend en production ; journal seul en preview (quoi que contiennent ses variables) ou sans clé.
 export type MailTransport =
   | { readonly kind: 'resend'; readonly apiKey: string; readonly from: string }
   | { readonly kind: 'log' };
 
-/** Configuration typée de l'application, lue une fois au démarrage (`validateEnv`). */
+// Lue une fois au démarrage (`validateEnv`).
 export class AppConfigService {
   constructor(private readonly env: ValidatedEnv) {}
 
@@ -52,7 +52,7 @@ export class AppConfigService {
     return this.env.CORS_ORIGINS;
   }
 
-  /** `null` : configuration incomplète hors production, stockage de fichiers désactivé (503). */
+  // `null` : configuration incomplète hors production, stockage de fichiers désactivé (503).
   get s3Settings(): S3Settings | null {
     const { S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY } = this.env;
     if (!S3_ENDPOINT || !S3_REGION || !S3_ACCESS_KEY || !S3_SECRET_KEY) {

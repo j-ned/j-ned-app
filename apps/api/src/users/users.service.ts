@@ -23,7 +23,7 @@ export class UsersService {
     return rows[0] ?? null;
   }
 
-  /** Invalide tous les JWT émis pour cet utilisateur (logout, compromission). */
+  // Invalide tous les JWT émis pour cet utilisateur (logout, compromission).
   async revokeSessions(id: string): Promise<void> {
     await this.db
       .update(users)

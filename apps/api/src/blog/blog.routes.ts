@@ -18,10 +18,6 @@ import type { BlogService } from './blog.service';
 import { createBlogPostSchema } from './dto/create-blog-post.dto';
 import { updateBlogPostSchema } from './dto/update-blog-post.dto';
 
-/**
- * `/api/blog` : articles (`/posts`, lecture publique, écriture admin, like public), images du corps
- * (`/content-images`, admin) et commentaires (`/posts/:slug/comments` public, `/comments` admin).
- */
 export function blogRoutes(
   blog: BlogService,
   contentImages: BlogContentImagesService,
@@ -37,7 +33,7 @@ export function blogRoutes(
     .route('/', blogCommentsRoutes(comments, requireAuth));
 }
 
-/** `/api/blog/posts`. Les chemins fixes (`/admin`) passent avant `/:slug`. */
+// Les chemins fixes (`/admin`) passent avant `/:slug`.
 export function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
   return (
     new Hono<AppEnv>()

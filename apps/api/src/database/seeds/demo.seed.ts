@@ -10,11 +10,8 @@ import {
   type NewProject,
 } from '../schema';
 
-/**
- * Base d'un environnement de démonstration : uniquement des données fictives, jamais une
- * copie de production. Domaine réservé `.test`, slugs préfixés `demo-`, aucune image (le stockage
- * est désactivé en preview).
- */
+// Données fictives seulement, jamais une copie de production : domaine réservé `.test`, slugs
+// préfixés `demo-`, aucune image (le stockage est désactivé en preview).
 export const DEMO_ADMIN_EMAIL = 'admin@demo.portfolio.test';
 const DEMO_SLUG_PREFIX = 'demo-';
 const MIN_PASSWORD_LENGTH = 12;
@@ -29,7 +26,7 @@ export type DemoSeedSettings = {
   readonly password: string;
 };
 
-/** Refuse la production et une configuration incomplète, avant toute connexion. */
+// Refuse la production et une configuration incomplète, avant toute connexion.
 export function demoSeedSettings(
   env: Record<string, string | undefined>,
 ): DemoSeedSettings {
@@ -58,7 +55,7 @@ async function usersTableExists(db: Database): Promise<boolean> {
   return rows[0]?.table != null;
 }
 
-/** Une base qui contient un autre compte que celui de démo (production, copie) est refusée. */
+// Une base qui contient un autre compte que celui de démo (production, copie) est refusée.
 async function assertDemoOnlyDatabase(db: Database): Promise<void> {
   const others = await db
     .select({ id: users.id })
@@ -144,7 +141,7 @@ function demoPosts(now: number): NewBlogPost[] {
   ];
 }
 
-/** Admin de démo et contenu fictif, recréés à l'identique à chaque exécution. */
+// Recréés à l'identique à chaque exécution.
 async function seedDemo(db: Database, passwordHash: string): Promise<void> {
   const now = Date.now();
   await db.transaction(async (tx) => {
@@ -171,15 +168,12 @@ async function seedDemo(db: Database, passwordHash: string): Promise<void> {
 }
 
 export type InitDemoDeps = {
-  /** Migrations Drizzle, appliquées seulement une fois la base reconnue comme base de démo. */
+  // Appliquées seulement une fois la base reconnue comme base de démo.
   readonly migrate: () => Promise<void>;
   readonly password: string;
 };
 
-/**
- * `pnpm db:init-demo` : vérifie que la base est vide ou réservée à la démo (avant même les
- * migrations), migre, puis verse l'admin et le contenu de démo.
- */
+// Vérifie que la base est vide ou réservée à la démo avant même les migrations.
 export async function initDemoDatabase(
   db: Database,
   { migrate, password }: InitDemoDeps,

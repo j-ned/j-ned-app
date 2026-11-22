@@ -2,10 +2,7 @@ import * as z from 'zod';
 import { durationMs } from '../common/duration';
 import { APP_ENVS, resolveDeployment } from './deployment';
 
-/**
- * Variables sans lesquelles la production ne démarre pas, facultatives ailleurs : hors production,
- * sans elles, les mails sont journalisés et le stockage de fichiers répond 503.
- */
+// Facultatives hors production : sans elles, les mails sont journalisés et le stockage répond 503.
 const REQUIRED_IN_PRODUCTION = [
   'S3_ENDPOINT',
   'S3_REGION',
@@ -35,10 +32,8 @@ const baseEnvSchema = z.object({
       (u) => u.startsWith('postgres://') || u.startsWith('postgresql://'),
       { message: 'DATABASE_URL must be a postgres:// URL' },
     ),
-  /**
-   * Déclare l'hébergement : `production` rend obligatoires mail et stockage, `preview` désigne un
-   * environnement de démonstration qui n'envoie aucun mail. Absente : exécution locale.
-   */
+  // `production` rend obligatoires mail et stockage ; `preview`, environnement de démonstration,
+  // n'envoie aucun mail. Absente : exécution locale.
   APP_ENV: z.enum(APP_ENVS).optional(),
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
@@ -62,13 +57,8 @@ const baseEnvSchema = z.object({
     .optional(),
   TOTP_APP_NAME: z.string().default('J-Ned Portfolio'),
 
-  /**
-   * Origines du site, séparées par des virgules : autorisées par CORS (requêtes credentials) et
-   * par la protection CSRF (`CrossOriginGuard`) tant que le site appelle l'API sur son sous-domaine,
-   * et reconnues comme référents internes par la mesure d'audience.
-   * Prod: `https://nedellec-julien.fr` (le domaine `www` redirige vers l'apex chez Cloudflare, il n'a pas besoin d'être listé ici).
-   * Dev local: `http://localhost:4200` (défaut).
-   */
+  // Origines du site (virgules) : CORS, CSRF tant que le site appelle l'API sur son sous-domaine, et
+  // référents internes de l'audience. Prod : l'apex seul (`www` y redirige chez Cloudflare).
   CORS_ORIGINS: z
     .string()
     .default('http://localhost:4200')
@@ -79,15 +69,10 @@ const baseEnvSchema = z.object({
         .filter(Boolean),
     ),
 
-  /**
-   * Secret du cron quotidien (en-tête `Authorization: Bearer …` de l'appelant) : sans lui, la route
-   * `/api/cron/daily` n'existe pas.
-   */
+  // Sans lui, la route `/api/cron/daily` n'existe pas.
   CRON_SECRET: z.string().min(16).optional(),
-  /**
-   * Secret partagé avec le rendu serveur du site : seul un appel qui le porte fait croire l'IP du visiteur
-   * qu'il transmet (quotas par visiteur, ADR-0036). Sans lui, l'en-tête est ignoré.
-   */
+  // Seul un appel qui porte ce secret fait croire l'IP du visiteur qu'il transmet (quotas par
+  // visiteur). Sans lui, l'en-tête est ignoré.
   SSR_FORWARD_SECRET: z.string().min(32).optional(),
 
   // S3 Storage : obligatoire en production (REQUIRED_IN_PRODUCTION)

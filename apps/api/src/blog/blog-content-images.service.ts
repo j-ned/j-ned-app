@@ -15,7 +15,6 @@ export type ContentImageResponse = {
   readonly height: number;
 };
 
-/** Images du corps des articles : téléversement sans rattachement, nettoyage à la suppression d'un article. */
 export class BlogContentImagesService {
   private readonly logger = new Logger(BlogContentImagesService.name);
 
@@ -25,7 +24,7 @@ export class BlogContentImagesService {
     private readonly images: ImageOptimizer,
   ) {}
 
-  /** AVIF ≤ 1 600 px sur S3, rien en base : utilisable avant le premier enregistrement de l'article. */
+  // Rien en base : utilisable avant le premier enregistrement de l'article.
   async upload(file: UploadedFile): Promise<ContentImageResponse> {
     const image = await this.images.optimize(file.buffer);
     const key = contentImageKey(
@@ -47,10 +46,7 @@ export class BlogContentImagesService {
     };
   }
 
-  /**
-   * Supprime les objets dont aucun autre article ne cite la clé. Un échec S3 sur une clé est
-   * journalisé sans interrompre les autres : au pire un orphelin, que l'ADR accepte.
-   */
+  // Un échec S3 sur une clé est journalisé sans interrompre les autres : au pire un orphelin, accepté.
   async removeUnreferenced(
     keys: readonly string[],
     excludingPostId: string,

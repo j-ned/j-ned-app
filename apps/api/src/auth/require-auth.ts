@@ -9,11 +9,8 @@ import { SESSION_AUDIENCE, type JwtService } from './jwt.service';
 
 const BEARER = /^Bearer\s+(\S+)$/i;
 
-/**
- * Session admin requise : JWT du cookie `__Host-token` (ou, à défaut, `Authorization: Bearer`),
- * vérifié en HS256, qui n'est pas un jeton de challenge 2FA et dont la version n'a pas été révoquée
- * par une déconnexion. L'utilisateur est posé dans `c.var.user`.
- */
+// JWT du cookie `__Host-token` (sinon `Authorization: Bearer`) en HS256, ni jeton de challenge 2FA
+// ni version révoquée par une déconnexion ; l'utilisateur est posé dans `c.var.user`.
 export function requireAuth(
   jwt: JwtService,
   users: Pick<UsersService, 'findById'>,

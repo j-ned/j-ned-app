@@ -9,15 +9,11 @@ import {
 import { sql } from 'drizzle-orm';
 import type { ProfileContent } from '../../profile/profile-content';
 
-/** Seule ligne autorisée : le parcours est un document unique (ADR-0023 §1). */
+// Seule ligne autorisée : le parcours est un document unique.
 export const PROFILE_ROW_ID = 'main';
 
-/**
- * Contenu de la page Parcours : une ligne, document `jsonb` remplacé d'un bloc sous contrôle de
- * version (`PUT` conditionnel, 409 si la version a changé). Le portrait est hors version : le
- * remplacer n'invalide pas un brouillon de texte ouvert. `previous_portrait_key` garde la clé qu'une
- * page déjà servie peut encore citer ; elle est effacée au changement suivant.
- */
+// Remplacé d'un bloc sous version (409 si elle a changé) ; le portrait est hors version pour ne pas
+// invalider un brouillon ouvert. `previous_portrait_key` : clé qu'une page déjà servie cite encore.
 export const profileContent = pgTable(
   'profile_content',
   {

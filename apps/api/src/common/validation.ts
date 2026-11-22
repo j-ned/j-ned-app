@@ -7,15 +7,11 @@ import { BadRequestException } from './http-errors';
 // chargerait les 64 langues au démarrage.
 z.config(fr());
 
-/** Message d'un corps JSON qui n'est pas un objet (liste, valeur seule). */
 export const NOT_AN_OBJECT_MESSAGE =
   'Le corps de la requête doit être un objet JSON';
 
-/**
- * Corps (ou query string) validé par le schéma zod du DTO. Les clés `__proto__` sont retirées avant
- * validation ; un corps qui n'est pas un objet est refusé (validé comme `{}` pour lister aussi les
- * champs manquants). Échec → 400, `message` = une ligne par issue zod (`formatIssues`).
- */
+// `__proto__` retiré avant validation ; un corps non objet est validé comme `{}` pour lister aussi
+// les champs manquants. Échec → 400, une ligne par issue zod.
 export function validateDto<T>(schema: z.ZodType<T>, value: unknown): T {
   const plain = isPlainObject(value) ? stripProtoKeys(value) : {};
   const result = schema.safeParse(plain);
@@ -44,10 +40,8 @@ function stripProtoKeys<T>(value: T): T {
   return value;
 }
 
-/**
- * Une ligne par issue, dans l'ordre de zod : `<chemin.pointé>: <message>` (`biography.title: …`,
- * `highlights.0.id: …`), le message seul pour une issue à la racine (clé inconnue du corps).
- */
+// `<chemin.pointé>: <message>` (`highlights.0.id: …`), le message seul pour une issue à la racine
+// (clé inconnue du corps).
 export function formatIssues(
   issues: readonly Pick<z.core.$ZodIssue, 'path' | 'message'>[],
 ): string[] {

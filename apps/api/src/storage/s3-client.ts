@@ -1,6 +1,5 @@
 import { S3Client } from '@aws-sdk/client-s3';
 
-/** Accès S3 lus dans la configuration (`AppConfigService`). */
 export type S3Settings = {
   readonly s3Endpoint: string;
   readonly s3Region: string;
@@ -8,18 +7,13 @@ export type S3Settings = {
   readonly s3SecretKey: string;
 };
 
-/** Bornes d'une requête S3 (ms). */
 export type S3Timeouts = {
   readonly connectionTimeout: number;
   readonly requestTimeout: number;
 };
 
-/**
- * Sans borne (défaut du SDK : `requestTimeout` 0, et un dépassement n'est qu'un warning sans
- * `throwOnRequestTimeout`), un stockage bloqué tiendrait la requête, et le verrou du portrait qui
- * l'entoure, indéfiniment. 30 s couvrent le plus gros envoi (4 Mo) dès ~3 Mbit/s montants ; le
- * SDK retente 3 fois au plus, la durée totale reste bornée.
- */
+// Le SDK ne borne rien par défaut : un stockage bloqué tiendrait la requête, et le verrou du portrait,
+// indéfiniment. 30 s couvrent 4 Mo dès ~3 Mbit/s montants ; 3 essais au plus, durée totale bornée.
 export const S3_TIMEOUTS: S3Timeouts = {
   connectionTimeout: 5_000,
   requestTimeout: 30_000,

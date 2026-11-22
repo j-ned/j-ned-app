@@ -12,13 +12,13 @@ import { type DayAggregates, computeAggregates } from './analytics-aggregates';
 export class AnalyticsAggregatorService {
   private readonly logger = new Logger(AnalyticsAggregatorService.name);
   private static readonly RETENTION_DAYS = 30;
-  /** Jours encore entiers en brut au moment du cron, J-1 exclu (agrégé juste avant). */
+  // Jours encore entiers en brut au moment du cron, J-1 exclu (agrégé juste avant).
   private static readonly BACKFILL_OLDEST_DAY = 29;
   private static readonly BACKFILL_NEWEST_DAY = 2;
 
   constructor(private readonly db: Database) {}
 
-  /** Rollup quotidien, planifié par `scheduleDailyRollup` (00:00 UTC). */
+  // Lancé chaque jour à 00:00 UTC par le cron quotidien.
   async aggregateYesterday(): Promise<void> {
     const now = new Date();
     await this.runAggregation(subDays(now, 1));
@@ -44,11 +44,8 @@ export class AnalyticsAggregatorService {
     this.logAggregated(dateStr, aggregates);
   }
 
-  /**
-   * Rattrapage d'un jour non mesuré. Une ligne absente est créée en entier ; sur une ligne
-   * existante, seules les colonnes nullables de la spec 020 sont remplies, et seulement si le brut
-   * redonne le même nombre de visites : un brut incomplet ne réécrit jamais un total historique.
-   */
+  // Ligne absente : créée en entier. Ligne existante : seules ses colonnes nullables sont remplies, si
+  // le brut redonne le même nombre de visites (un brut incomplet ne réécrit pas l'historique).
   private async backfillDay(day: Date): Promise<void> {
     const { dateStr, aggregates } = await this.aggregateDay(day);
     const measured = {
@@ -99,10 +96,8 @@ export class AnalyticsAggregatorService {
     );
   }
 
-  /**
-   * Recalcule, avant la purge, les jours encore en brut dont l'engagement n'a jamais été mesuré
-   * (ligne antérieure à la spec 020, ou absente). Idempotent : un jour mesuré n'est pas recalculé.
-   */
+  // Avant la purge, tant que le brut existe : jours sans engagement mesuré (ligne ancienne ou absente).
+  // Idempotent : un jour déjà mesuré n'est pas recalculé.
   private async backfillUnmeasuredDays(now: Date): Promise<void> {
     const { BACKFILL_OLDEST_DAY, BACKFILL_NEWEST_DAY } =
       AnalyticsAggregatorService;

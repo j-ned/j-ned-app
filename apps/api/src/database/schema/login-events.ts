@@ -18,10 +18,8 @@ export const LOGIN_EVENT_KINDS = [
 
 export type LoginEventKind = (typeof LOGIN_EVENT_KINDS)[number];
 
-/**
- * Journal des tentatives de connexion à l'admin. Ni adresse IP ni e-mail saisi : le pays et le
- * navigateur suffisent à reconnaître ses propres connexions (politique de confidentialité du site).
- */
+// Ni adresse IP ni e-mail saisi : le pays et le navigateur suffisent à reconnaître ses propres
+// connexions (politique de confidentialité du site).
 export const loginEvent = pgTable(
   'login_event',
   {

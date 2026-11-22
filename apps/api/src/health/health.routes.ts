@@ -12,10 +12,8 @@ export type HealthReport = {
   timestamp: string;
 };
 
-/**
- * Vivacité et connexion à la base. Toujours 200 : `degraded` distingue « API vivante, base en panne »
- * d'une API injoignable, que le healthcheck du conteneur doit seule sanctionner.
- */
+// Toujours 200 : `degraded` distingue « API vivante, base en panne » d'une API injoignable, que le
+// healthcheck du conteneur doit seule sanctionner.
 export async function checkHealth(
   db: Pick<Database, 'execute'>,
   bootedAt: number,
@@ -40,7 +38,6 @@ export async function checkHealth(
   };
 }
 
-/** `/api/health` */
 export function healthRoutes(db: Pick<Database, 'execute'>, release?: string) {
   const bootedAt = Date.now();
   return new Hono<AppEnv>().get('/', throttle(), async (c) =>

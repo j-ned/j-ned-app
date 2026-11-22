@@ -15,21 +15,10 @@ import { inProfileTransaction } from './profile-lock';
 import { lockProfileRow, toProfileDocument } from './profile-document';
 import { updatedRow } from '../common/rows';
 
-/**
- * Portrait de la page Parcours (spec 021, D6), hors version du document.
- *
- * Une page `/about` déjà servie (onglet ouvert, cache HTTP) cite encore l'ancienne clé : la supprimer
- * tout de suite casserait son image LCP. Chaque changement fait donc glisser les clés (courante →
- * précédente) et ne supprime que l'avant-dernière : au plus un fichier en trop, jamais une image
- * citée absente du bucket.
- *
- * Toute opération qui écrit les clés ou supprime un objet le fait sous le verrou de la ligne
- * (`SELECT … FOR UPDATE`) : les opérations portrait s'exécutent l'une après l'autre, chacune sur
- * l'état laissé par la précédente. Une clé ne peut être réintroduite (même fichier renvoyé : clé
- * adressée par contenu) que sous ce verrou, envoi compris : une suppression décidée sous le verrou
- * ne peut donc jamais retirer un objet cité. L'attente du verrou est bornée (`inProfileTransaction`,
- * 503 au-delà), sa détention aussi (envoi S3 borné, `S3_TIMEOUTS`).
- */
+// Une page déjà servie cite encore l'ancienne clé : chaque changement fait glisser les clés (courante
+// → précédente) et ne supprime que l'avant-dernière, au plus un fichier en trop, jamais d'image citée
+// absente. Écriture des clés, suppression et réintroduction d'une clé (adressée par contenu) passent
+// sous le verrou de la ligne : une suppression décidée sous verrou ne retire jamais un objet cité.
 export class ProfilePortraitService {
   private readonly logger = new Logger(ProfilePortraitService.name);
 
@@ -39,7 +28,7 @@ export class ProfilePortraitService {
     private readonly images: ImageOptimizer,
   ) {}
 
-  /** Recadre en AVIF 640×800 (hors verrou), puis, verrou tenu : envoi sous une clé hachée et écriture. */
+  // Recadrage hors verrou ; envoi sous une clé hachée et écriture, verrou tenu.
   async replace(file: UploadedFile): Promise<ProfileDocument> {
     const image = await this.images.toPortrait(file.buffer);
     // Clé dérivée du contenu : une nouvelle image = une nouvelle URL, servie en cache immuable.
@@ -75,7 +64,7 @@ export class ProfilePortraitService {
     return this.toDocument(result.row);
   }
 
-  /** Retour au portrait par défaut du front ; la clé retirée est gardée jusqu'au changement suivant. */
+  // La clé retirée est gardée jusqu'au changement suivant.
   async remove(): Promise<void> {
     const older = await inProfileTransaction(this.db, async (tx) => {
       const current = await lockProfileRow(tx);
@@ -86,7 +75,7 @@ export class ProfilePortraitService {
     await this.discardIfUnreferenced(older, 'avant-dernier portrait');
   }
 
-  /** Fait glisser les clés ; la ligne est verrouillée, elle n'a pas pu changer depuis sa lecture. */
+  // La ligne est verrouillée : elle n'a pas pu changer depuis sa lecture.
   private async write(
     tx: Transaction,
     current: ProfileContentRow,
@@ -104,11 +93,8 @@ export class ProfilePortraitService {
     return updatedRow(rows, 'Profile content not found');
   }
 
-  /**
-   * Supprime, verrou tenu, un objet que la ligne ne cite plus (ni courant ni précédent). Après le
-   * COMMIT de l'écriture, pour qu'un échec S3 ne l'annule jamais : échec ⇒ orphelin journalisé,
-   * jamais une erreur 500.
-   */
+  // Verrou tenu, après le COMMIT de l'écriture pour qu'un échec S3 ne l'annule jamais : échec ⇒
+  // orphelin journalisé, jamais une erreur 500.
   private async discardIfUnreferenced(
     key: string | null,
     reason: string,

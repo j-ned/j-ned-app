@@ -10,7 +10,7 @@ import {
 } from '../common/http-errors';
 
 export type CronDeps = {
-  /** `CRON_SECRET` ; absent, la route n'existe pas (404). */
+  // `CRON_SECRET` ; absent, la route n'existe pas (404).
   readonly secret: string | undefined;
   readonly aggregator: AnalyticsAggregatorService;
   readonly loginJournal: LoginJournalService;
@@ -22,11 +22,8 @@ function bearerMatches(header: string | undefined, secret: string): boolean {
   return given.length === expected.length && timingSafeEqual(given, expected);
 }
 
-/**
- * `/api/cron` : tâche quotidienne déclenchée par le service `portfolio-cron` de la pile (ADR-0038),
- * qui envoie `Authorization: Bearer <CRON_SECRET>`. Rollup analytics de la veille, puis purge du
- * journal des connexions : son échec répond 500, pour que la tâche planifiée le voie.
- */
+// Déclenché par le service `portfolio-cron` (`Authorization: Bearer <CRON_SECRET>`). Le rollup ne lève
+// jamais ; un échec de la purge du journal répond 500, pour que la tâche planifiée le voie.
 export function cronRoutes({ secret, aggregator, loginJournal }: CronDeps) {
   return new Hono<AppEnv>().get('/daily', async (c) => {
     if (!secret) throw new NotFoundException(`Cannot GET ${c.req.path}`);

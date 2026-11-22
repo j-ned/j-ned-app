@@ -1,11 +1,11 @@
-/** Une visite (empreinte d'un appareil sur une journée UTC), telle que lue dans les tables brutes. */
+// Une visite : empreinte d'un appareil sur une journée UTC.
 export type SessionFacts = {
-  /** Pages distinctes, URL sans fragment. */
+  // Pages distinctes, URL sans fragment.
   pages: number;
-  /** Somme des durées mesurées, `null` si aucune page de la visite n'a de durée. */
+  // `null` si aucune page de la visite n'a de durée.
   durationSum: number | null;
   durationSamples: number;
-  /** Au moins un événement d'engagement sur la visite. */
+  // Au moins un événement d'engagement (la durée n'y entre pas).
   engaged: boolean;
 };
 
@@ -19,11 +19,8 @@ export type SessionSummary = {
   durationSamples: number;
 };
 
-/**
- * Classe chaque visite (ADR-0022) : rebond une page = une seule page ; rebond réel = une seule
- * page, aucun événement d'engagement et moins de `thresholdSeconds` de temps visible. Une durée
- * inconnue compte comme inférieure au seuil : le rebond réel majore, il ne minore jamais.
- */
+// Rebond réel : une seule page, sans événement d'engagement, sous `thresholdSeconds`. Une durée
+// inconnue compte sous le seuil : le rebond réel majore, il ne minore jamais.
 export function summarizeSessions(
   facts: readonly SessionFacts[],
   thresholdSeconds: number,

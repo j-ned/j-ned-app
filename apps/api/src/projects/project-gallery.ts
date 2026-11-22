@@ -1,7 +1,7 @@
 import type { Project } from '../database/schema/projects';
 import type { ProjectImage } from '../database/schema/project-images';
 
-/** Plafonds calibrés pour un seul administrateur et 3 à 5 captures visées (spec 011, arbitrage 5). */
+// Calibrés pour un seul administrateur et 3 à 5 captures visées.
 export const PROJECT_GALLERY_MAX = 12;
 export const PROJECT_IMAGE_ALT_MAX = 300;
 
@@ -18,7 +18,7 @@ export type ProjectResponse = Project & {
   readonly gallery: readonly ProjectImageResponse[];
 };
 
-/** Forme publique d'une capture : URL publique à la place de la clé S3, jamais exposée. */
+// URL publique à la place de la clé S3, jamais exposée.
 export function toImageResponse(
   row: ProjectImage,
   toUrl: (key: string) => string,
@@ -33,14 +33,11 @@ export function toImageResponse(
   };
 }
 
-/** Ordre d'affichage : `order`, puis date d'ajout pour départager deux captures au même rang. */
+// La date d'ajout départage deux captures au même rang.
 const byDisplayOrder = (a: ProjectImage, b: ProjectImage): number =>
   a.order - b.order || a.createdAt.getTime() - b.createdAt.getTime();
 
-/**
- * Regroupe les captures par projet, triées, avec une URL publique à la place de la clé S3.
- * Un projet sans capture n'a pas d'entrée : l'appelant lui donne `[]`.
- */
+// Un projet sans capture n'a pas d'entrée : l'appelant lui donne `[]`.
 export function groupGalleryByProject(
   rows: readonly ProjectImage[],
   toUrl: (key: string) => string,
@@ -55,17 +52,15 @@ export function groupGalleryByProject(
   return gallery;
 }
 
-/** Rang d'une nouvelle capture : après la dernière, même si les rangs existants ont des trous. */
+// Après la dernière, même si les rangs existants ont des trous.
 export function nextGalleryOrder(
   rows: readonly Pick<ProjectImage, 'order'>[],
 ): number {
   return rows.reduce((max, row) => Math.max(max, row.order + 1), 0);
 }
 
-/**
- * Le réordonnancement exige la liste exacte des captures : aucune manquante, aucune en trop,
- * aucun doublon. Sinon une capture ajoutée entre-temps perdrait silencieusement son rang.
- */
+// Liste exacte exigée (aucune manquante, en trop ni en double) : sinon une capture ajoutée entre-temps
+// perdrait silencieusement son rang.
 export function isPermutationOf(
   currentIds: readonly string[],
   requestedIds: readonly string[],

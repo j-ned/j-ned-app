@@ -2,19 +2,15 @@ import * as Sentry from '@sentry/node';
 import { Logger } from '../common/logger';
 import type { AnalyticsAggregatorService } from './analytics-aggregator.service';
 
-/**
- * Tous les jours à minuit UTC (service `portfolio-cron` de la pile, `/api/cron/daily`) : agrège la veille, rattrape
- * les jours non mesurés, purge le brut. En local, appeler la route avec `CRON_SECRET`.
- */
+// Déclenché chaque jour par le service `portfolio-cron` via `/api/cron/daily` ; en local, appeler
+// cette route avec `CRON_SECRET`.
 export const DAILY_ROLLUP_PATTERN = '0 0 * * *';
 export const DAILY_ROLLUP_MONITOR = 'analytics-aggregate-yesterday';
 
 const logger = new Logger('AnalyticsSchedule');
 
-/**
- * Un passage du rollup, suivi par le Sentry Cron Monitor. Un échec est journalisé et n'interrompt
- * pas le process : le passage du lendemain repartira normalement.
- */
+// Suivi par le Sentry Cron Monitor. Un échec est journalisé sans arrêter le process : le passage du
+// lendemain repart normalement.
 export async function runDailyRollup(
   aggregator: AnalyticsAggregatorService,
 ): Promise<void> {

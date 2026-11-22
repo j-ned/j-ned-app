@@ -36,16 +36,14 @@ type DateBounds = {
   isTodayIncluded: boolean;
 };
 
-/** Profondeur des tables brutes (purge du cron) : au-delà, seuls les totaux journaliers existent. */
+// Profondeur des tables brutes (purge du cron) : au-delà, seuls les totaux journaliers existent.
 const RAW_RETENTION_DAYS = 30;
 
 export class AnalyticsStatsService {
   constructor(private readonly db: Database) {}
 
-  /**
-   * Jours complets lus dans `daily_stat` (qui couvre toute l'histoire, contrairement aux tables
-   * brutes purgées à 30 jours) + aujourd'hui calculé en direct si la plage l'inclut.
-   */
+  // `daily_stat` couvre toute l'histoire, contrairement aux tables brutes purgées à 30 jours ;
+  // aujourd'hui est calculé en direct si la plage l'inclut.
   async overview(query: DateRangeQueryDto) {
     const { fromDateStr, toDateStr } = this.bounds(query);
     const now = new Date();
@@ -137,7 +135,7 @@ export class AnalyticsStatsService {
     return data;
   }
 
-  /** Top N par visite : une visite de cinq pages compte une fois, pas cinq. */
+  // Par visite : une visite de cinq pages compte une fois, pas cinq.
   async metrics(query: MetricsQueryDto) {
     const { start, end } = this.bounds(query);
     const limit = query.limit ?? 20;
@@ -163,11 +161,8 @@ export class AnalyticsStatsService {
       .limit(limit);
   }
 
-  /**
-   * Une ligne par visite : sa première provenance externe de la journée, sinon `''` (accès
-   * direct, compté). Le front envoie le referrer d'arrivée à chaque page vue d'une SPA : le
-   * compter par page gonflait les sources des visites longues.
-   */
+  // Première provenance externe de la visite, `''` pour un accès direct : le front renvoie le referrer
+  // d'arrivée à chaque page vue, le compter par page gonflerait les sources des visites longues.
   private async referrersByVisit(start: Date, end: Date, limit: number) {
     const rows = await this.db.execute<{ name: string; count: number }>(sql`
       WITH visit AS (

@@ -30,11 +30,11 @@ import { UsersService } from './users/users.service';
 export type ServiceDeps = {
   readonly config: AppConfigService;
   readonly db: Database;
-  /** `null` : stockage de fichiers désactivé (503), hors production seulement. */
+  // `null` : stockage de fichiers désactivé (503), hors production seulement.
   readonly s3: S3Client | null;
 };
 
-/** Racine de composition : chaque service reçoit ses dépendances explicitement, une seule instance. */
+// Chaque service reçoit ses dépendances explicitement, en une seule instance.
 export function createServices({ config, db, s3 }: ServiceDeps) {
   const storage = new StorageService(s3);
   const images = new ImageOptimizer();

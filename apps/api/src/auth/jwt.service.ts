@@ -8,10 +8,8 @@ export const SESSION_AUDIENCE = 'j-ned-portfolio:session';
 export const CHALLENGE_AUDIENCE = 'j-ned-portfolio:2fa-challenge';
 export type JwtAudience = typeof SESSION_AUDIENCE | typeof CHALLENGE_AUDIENCE;
 
-/**
- * Signature et vérification des JWT de l'API : HS256 seul (jamais l'algorithme annoncé par le jeton),
- * émetteur et audience posés à la signature et exigés à la vérification.
- */
+// HS256 seul (jamais l'algorithme annoncé par le jeton) ; émetteur et audience posés à la signature
+// et exigés à la vérification.
 export class JwtService {
   constructor(
     private readonly secret: string,
@@ -33,7 +31,8 @@ export class JwtService {
     });
   }
 
-  /** Lève une erreur si le jeton est invalide, expiré ou sans expiration, signé autrement qu'en HS256, d'un autre émetteur, ou d'une audience qui n'est pas exactement celle attendue. */
+  // Lève si le jeton est invalide, expiré ou sans expiration, pas en HS256, d'un autre émetteur, ou
+  // d'une audience qui n'est pas exactement celle attendue.
   verify<T extends object>(audience: JwtAudience, token: string): T {
     const claims = jwt.verify(token, this.secret, {
       algorithms: [ALGORITHM],

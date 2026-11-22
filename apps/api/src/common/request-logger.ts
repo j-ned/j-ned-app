@@ -3,11 +3,8 @@ import { rootLogger } from './logger';
 
 let lastRequestId = 0;
 
-/**
- * Une ligne de log par requête terminée (comme pino-http) : identifiant, méthode, chemin (sans query
- * string, masqué par `serializeRequest`), statut et durée. `/api/health` est ignoré : le healthcheck
- * du conteneur l'appelle toutes les 30 s.
- */
+// Chemin sans query string (`serializeRequest`). `/api/health` est ignoré : le healthcheck du
+// conteneur l'appelle toutes les 30 s.
 export const requestLogger: MiddlewareHandler = async (c, next) => {
   if (c.req.path === '/api/health') return next();
   const start = performance.now();

@@ -11,7 +11,7 @@ import {
 import { sql } from 'drizzle-orm';
 import { timestamps } from '../../common/utils';
 
-/** Nature d'un projet (ADR-0008) : union fermée, distincte de `category`. */
+// Union fermée, distincte de `category`.
 export const PROJECT_KINDS = ['production', 'demo', 'script'] as const;
 export type ProjectKind = (typeof PROJECT_KINDS)[number];
 
@@ -32,7 +32,7 @@ export const projects = pgTable(
       .notNull()
       .default(sql`ARRAY[]::text[]`),
     description: text('description').notNull(),
-    // Champs éditoriaux (ADR-0010) : NULL = pas encore rédigé, bornes dans le DTO.
+    // Champs éditoriaux : NULL = pas encore rédigé, bornes dans le DTO.
     pitch: text('pitch'),
     highlight: text('highlight'),
     scope: text('scope'),

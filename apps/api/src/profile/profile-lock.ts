@@ -2,14 +2,11 @@ import { ServiceUnavailableException } from '../common/http-errors';
 import { sql } from 'drizzle-orm';
 import type { Database, Transaction } from '../database/drizzle.types';
 
-/** Code Postgres `lock_not_available` : l'attente du verrou a dépassé `lock_timeout`. */
+// `lock_not_available` : l'attente du verrou a dépassé `lock_timeout`.
 const LOCK_NOT_AVAILABLE = '55P03';
 
-/**
- * Transaction sur la ligne du parcours dont l'attente de verrou est bornée à 5 s : une opération
- * portrait tient le verrou pendant son envoi S3 ; sans borne, chaque requête en attente garderait une
- * connexion du pool, partagé avec la lecture publique. Dépassement ⇒ 503, à réessayer.
- */
+// Une opération portrait tient le verrou pendant son envoi S3 : sans borne de 5 s, chaque requête en
+// attente garderait une connexion du pool partagé avec la lecture publique. Dépassement ⇒ 503.
 export async function inProfileTransaction<T>(
   db: Database,
   work: (tx: Transaction) => Promise<T>,
@@ -29,7 +26,7 @@ export async function inProfileTransaction<T>(
   }
 }
 
-/** Drizzle enveloppe l'erreur Postgres (`cause`) : on parcourt la chaîne. */
+// Drizzle enveloppe l'erreur Postgres (`cause`) : on parcourt la chaîne.
 function hasCode(err: unknown, code: string): boolean {
   let current: unknown = err;
   for (let depth = 0; depth < 5; depth++) {

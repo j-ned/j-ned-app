@@ -9,17 +9,8 @@ type CrossOriginHeaders = {
   readonly fetchSite: string | undefined;
 };
 
-/**
- * Protection CSRF par les en-têtes que le navigateur pose lui-même (même algorithme que
- * `CrossOriginProtection` de Go `net/http`) : une écriture n'est acceptée que si elle vient de la même
- * origine que l'API, ou d'une origine de confiance (le site, tant qu'il appelle encore l'API sur son
- * sous-domaine). Ni jeton ni état côté serveur.
- *
- * - `Sec-Fetch-Site` présent (tout navigateur récent) : `same-origin` ou `none` (barre d'adresse,
- *   favori) passent ; `same-site` et `cross-site` exigent une origine de confiance.
- * - Sinon, `Origin` présent : il doit être de confiance.
- * - Ni l'un ni l'autre : ce n'est pas un navigateur (curl, scripts), donc pas une requête forgée.
- */
+// CSRF sans jeton ni état (comme `CrossOriginProtection` de Go) : `same-origin`/`none` passent, sinon
+// l'origine doit être de confiance ; sans `Sec-Fetch-Site` ni `Origin`, ce n'est pas un navigateur.
 export function isCrossOriginAllowed(
   { method, origin, fetchSite }: CrossOriginHeaders,
   trustedOrigins: ReadonlySet<string>,

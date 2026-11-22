@@ -5,7 +5,7 @@ export type UserAgentSummary = {
   readonly os: string | null;
 };
 
-/** Navigateur et système avec leur version ; `null` dès que le nom ou la version manque. */
+// `null` dès que le nom ou la version manque.
 export function describeUserAgent(userAgent: string): UserAgentSummary {
   const { browser, os } = new UAParser(userAgent).getResult();
   return {

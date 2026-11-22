@@ -21,10 +21,7 @@ import { updateProjectSchema } from './dto/update-project.dto';
 import type { ProjectImagesService } from './project-images.service';
 import type { ProjectsService } from './projects.service';
 
-/**
- * `/api/projects` : lecture publique des projets, écritures admin (projet, couverture) et galerie
- * d'un projet (ADR-0009, écritures admin seulement ; la lecture passe par `GET /projects`).
- */
+// La galerie n'a que des écritures admin : sa lecture passe par `GET /projects`.
 export function projectsRoutes(
   projects: ProjectsService,
   images: ProjectImagesService,
@@ -119,7 +116,7 @@ export function projectsRoutes(
   );
 }
 
-/** Champs texte du multipart (le `req.body` de multer) : une clé répétée donne une liste. */
+// Comme le `req.body` de multer : une clé répétée donne une liste.
 async function multipartFields(
   request: Request,
 ): Promise<Record<string, string | string[]>> {

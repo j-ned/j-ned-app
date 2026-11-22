@@ -80,7 +80,7 @@ export const dailyStat = pgTable('daily_stat', {
   articleViews: integer('article_views').notNull().default(0),
   cvDownloads: integer('cv_downloads').notNull().default(0),
   ctaClicks: integer('cta_clicks').notNull().default(0),
-  // Spec 020 : nullables sans défaut, `NULL` = jour non mesuré (ADR-0022).
+  // Nullables sans défaut : `NULL` = jour non mesuré.
   durationSamples: integer('duration_samples'),
   engagedSessions: integer('engaged_sessions'),
   realBounces: integer('real_bounces'),

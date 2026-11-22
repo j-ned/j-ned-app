@@ -15,7 +15,7 @@ export const ANALYTICS_TYPES = [
 ] as const;
 export type AnalyticsType = (typeof ANALYTICS_TYPES)[number];
 
-/** Canal d'un lien sortant : jamais l'adresse elle-même (RGPD, spec 020). */
+// Canal d'un lien sortant, jamais l'adresse elle-même (RGPD).
 export const OUTBOUND_CHANNELS = [
   'email',
   'discord',
@@ -25,18 +25,14 @@ export const OUTBOUND_CHANNELS = [
 ] as const;
 export type OutboundChannel = (typeof OUTBOUND_CHANNELS)[number];
 
-/**
- * Canaux retirés du site avec l'activité freelance (spec 029 du front) : refusés à l'entrée, encore
- * présents dans l'historique brut et recomptés par le rattrapage des agrégats.
- */
+// Canaux retirés avec l'activité freelance : refusés à l'entrée, mais encore dans l'historique brut
+// et recomptés par le rattrapage des agrégats.
 export const RETIRED_OUTBOUND_CHANNELS = ['phone', 'malt'] as const;
 
 const SECTION_IDS = ['home_contact'] as const;
 
-/**
- * Emplacement d'un formulaire de contact. Les pages d'offre (`offer_*`) ont disparu avec la spec 029
- * du front : leurs envois passés restent en base, un nouvel envoi est refusé.
- */
+// Les pages d'offre (`offer_*`) ont disparu : leurs envois passés restent en base, un nouvel envoi
+// est refusé.
 const CONTACT_PLACEMENTS = ['home'] as const;
 
 const ENTITY_ID_RULES: Partial<Record<AnalyticsType, (id: string) => boolean>> =
@@ -53,13 +49,13 @@ const entityIdRule = (type: unknown) =>
     ? ENTITY_ID_RULES[type as AnalyticsType]
     : undefined;
 
-/** Chemin d'une page du site, court, sans requête ni ancre ni texte libre. */
+// Chemin court, sans requête ni ancre ni texte libre.
 const TRACKED_PATH = /^\/[A-Za-z0-9\-._~/%]{0,199}$/;
 
 const isV2Event = (type: unknown): boolean =>
   (V2_EVENT_TYPES as readonly unknown[]).includes(type);
 
-/** Ne garde que le chemin : une requête (`?email=…`) ou une ancre n'entre jamais en base. */
+// Ne garde que le chemin : une requête (`?email=…`) ou une ancre n'entre jamais en base.
 function keepPathOnlyForV2(input: unknown): unknown {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
     return input;
@@ -72,7 +68,7 @@ function keepPathOnlyForV2(input: unknown): unknown {
 
 const METADATA_MAX_KEYS = 10;
 
-/** Quelques étiquettes courtes : la route est anonyme, un JSON libre gonflerait la base. */
+// Quelques étiquettes courtes : la route est anonyme, un JSON libre gonflerait la base.
 const metadataSchema = z
   .record(
     z.string().max(64),
@@ -136,10 +132,7 @@ const eventSchema = z
     }
   });
 
-/**
- * Page vue ou événement du site. `url` est exigée pour `page_view`/`page_duration`, `duration` pour
- * `page_duration` ; les événements v2 ont un `entityId` imposé par type, un `entityTitle` réduit à
- * un chemin du site et jamais de `metadata` (RGPD).
- */
+// Événements v2 : `entityId` imposé par type, `entityTitle` réduit à un chemin du site, jamais de
+// `metadata` (RGPD).
 export const trackEventSchema = z.preprocess(keepPathOnlyForV2, eventSchema);
 export type TrackEventDto = z.infer<typeof trackEventSchema>;

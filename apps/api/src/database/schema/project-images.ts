@@ -3,10 +3,8 @@ import { sql } from 'drizzle-orm';
 import { timestamps } from '../../common/utils';
 import { projects } from './projects';
 
-/**
- * Galerie d'un projet (ADR-0009) : une ligne par capture, clé S3 `project-images/<id>-<sha8>.avif`.
- * Les dimensions intrinsèques viennent de l'optimiseur à l'upload (le front réserve le ratio, pas de CLS).
- */
+// Une ligne par capture, clé S3 `project-images/<id>-<sha8>.avif` ; dimensions intrinsèques mesurées
+// à l'upload, pour que le front réserve le ratio (pas de CLS).
 export const projectImages = pgTable(
   'project_image',
   {

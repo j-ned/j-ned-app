@@ -7,11 +7,8 @@ export type DerivedImage<TContentType extends string> = {
   readonly contentType: TContentType;
 };
 
-/**
- * Dérivée d'une image du bucket, calculée à la première demande puis conservée dans S3 sous
- * `derived.key`. `StorageService` jette les dérivées dès que l'original est remplacé ou effacé :
- * pas de backfill, pas de colonne en base, les images déjà en ligne en profitent.
- */
+// Calculée à la première demande puis conservée dans S3 ; `StorageService` la jette quand l'original
+// change. Ni backfill ni colonne en base : les images déjà en ligne en profitent.
 export async function getOrDerive<TContentType extends string>(
   storage: StorageService,
   bucket: string,

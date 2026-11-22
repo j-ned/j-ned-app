@@ -9,7 +9,7 @@ import {
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import type { ProfileContent, ProfileDocument } from './profile-content';
 
-/** La ligne du parcours ; absente (base sans la migration de seed) ⇒ 404. */
+// Absente (base sans la migration de seed) ⇒ 404.
 export async function findProfileRow(db: Database): Promise<ProfileContentRow> {
   const [row] = await db
     .select()
@@ -19,10 +19,8 @@ export async function findProfileRow(db: Database): Promise<ProfileContentRow> {
   return foundOr404(row);
 }
 
-/**
- * La ligne du parcours, verrouillée (`FOR UPDATE`) jusqu'à la fin de la transaction : toute autre
- * opération portrait attend, puis lit l'état laissé par la première.
- */
+// Verrouillée (`FOR UPDATE`) jusqu'à la fin de la transaction : toute autre opération portrait
+// attend, puis lit l'état laissé par la première.
 export async function lockProfileRow(
   tx: Transaction,
 ): Promise<ProfileContentRow> {
@@ -40,10 +38,8 @@ function foundOr404(row: ProfileContentRow | undefined): ProfileContentRow {
   return row;
 }
 
-/**
- * Ligne ⇒ réponse publique : contenu à plat, version, date, URL du portrait courant (`null` =
- * portrait par défaut du front). La clé précédente, gardée pour les pages déjà servies, n'est jamais exposée.
- */
+// La clé précédente, gardée pour les pages déjà servies, n'est jamais exposée ; portrait `null` =
+// portrait par défaut du front.
 export function toProfileDocument(
   row: ProfileContentRow,
   toUrl: (key: string) => string,
@@ -56,10 +52,7 @@ export function toProfileDocument(
   };
 }
 
-/**
- * Corps validé ⇒ contenu stocké : objets simples recopiés champ par champ (ni `version`, ni
- * instance de DTO dans le `jsonb`, ordre des clés canonique).
- */
+// Champ par champ : ni `version` ni instance de DTO dans le `jsonb`, ordre des clés canonique.
 export function toProfileContent(dto: UpdateProfileDto): ProfileContent {
   const { biography, motivation } = dto;
   return {

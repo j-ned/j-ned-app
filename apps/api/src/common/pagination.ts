@@ -1,6 +1,5 @@
 import * as z from 'zod';
 
-/** `?page=&limit=` : entiers lus dans la query string. */
 export const paginationSchema = z.strictObject({
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),

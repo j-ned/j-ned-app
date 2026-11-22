@@ -17,7 +17,7 @@ import {
   toProfileDocument,
 } from './profile-document';
 
-/** Contenu de la page Parcours (ADR-0023) : un document unique, lu à la requête par le front. */
+// Document unique, lu à la requête par le front.
 export class ProfileService {
   constructor(
     private readonly db: Database,
@@ -28,10 +28,8 @@ export class ProfileService {
     return this.toDocument(await findProfileRow(this.db));
   }
 
-  /**
-   * Remplace le document sous contrôle de version : un contenu identique à la version lue n'écrit
-   * rien ; une version périmée (autre fenêtre, autre poste) donne 409.
-   */
+  // Contenu identique à la version lue : rien n'est écrit ; version périmée (autre fenêtre, autre
+  // poste) : 409.
   async replace(dto: UpdateProfileDto): Promise<ProfileDocument> {
     const current = await findProfileRow(this.db);
     const content = toProfileContent(dto);

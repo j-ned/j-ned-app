@@ -6,7 +6,7 @@ import { schema } from './schema';
 
 export type DatabaseConnection = {
   readonly db: Database;
-  /** Ferme le pool en laissant 5 s aux requêtes en cours (arrêt du conteneur). */
+  // Laisse 5 s aux requêtes en cours (arrêt du conteneur).
   readonly close: () => Promise<void>;
 };
 

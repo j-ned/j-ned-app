@@ -57,11 +57,8 @@ export function slugify(input: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-/**
- * Erreur Postgres `code` dans la chaîne `cause` (Drizzle enveloppe l'erreur brute dans une
- * `DrizzleQueryError` dont `.cause` porte la `PostgresError`), sur une contrainte dont le nom
- * contient `hint` s'il est fourni.
- */
+// Drizzle enveloppe l'erreur brute dans une `DrizzleQueryError` : le `code` Postgres se lit dans la
+// chaîne `cause`.
 function hasPgViolation(err: unknown, code: string, hint?: string): boolean {
   let current: unknown = err;
   for (let depth = 0; depth < 5; depth++) {
@@ -83,7 +80,6 @@ function hasPgViolation(err: unknown, code: string, hint?: string): boolean {
   return false;
 }
 
-/** Violation d'unicité (`23505`), éventuellement sur une contrainte dont le nom contient `columnHint`. */
 export const isUniqueViolation = (err: unknown, columnHint?: string): boolean =>
   hasPgViolation(err, '23505', columnHint);
 

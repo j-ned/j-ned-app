@@ -1,8 +1,5 @@
-/**
- * En-tête `Content-Disposition: attachment` pour un nom de fichier libre (RFC 6266). Un en-tête HTTP
- * ne porte que du Latin-1 et un guillemet y ferme la valeur : `filename` reçoit donc un repli ASCII,
- * et `filename*` le nom exact, que les navigateurs préfèrent.
- */
+// Un en-tête ne porte que du Latin-1 et un guillemet y ferme la valeur (RFC 6266) : repli ASCII dans
+// `filename`, nom exact dans `filename*`, que les navigateurs préfèrent.
 export function attachmentDisposition(fileName: string): string {
   const fallback = fileName
     .normalize('NFD')
