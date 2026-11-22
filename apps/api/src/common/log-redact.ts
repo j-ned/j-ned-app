@@ -1,10 +1,7 @@
 import pino from 'pino';
 
-/**
- * Champs du corps de requête jamais transmis tels quels hors du processus : secrets
- * d'authentification et coordonnées du visiteur (formulaire de contact).
- * Source unique des masques pino (`LOG_REDACT_PATHS`) et du filtre Sentry (`sentryBeforeSend`).
- */
+// Secrets d'authentification et coordonnées du visiteur, jamais transmis tels quels hors du processus.
+// Source unique des masques pino (`LOG_REDACT_PATHS`) et du filtre Sentry (`sentryBeforeSend`).
 export const SENSITIVE_BODY_FIELDS = [
   'password',
   'newPassword',
@@ -21,7 +18,6 @@ export const SENSITIVE_BODY_FIELDS = [
   'website',
 ] as const;
 
-/** Chemins masqués par pino dans les logs de requêtes (secrets et données personnelles). */
 export const LOG_REDACT_PATHS = [
   'req.headers.authorization',
   'req.headers.cookie',
@@ -32,7 +28,7 @@ export const LOG_REDACT_PATHS = [
 
 const FILTERED = '[Filtered]';
 
-/** Coupe la query string et le fragment : ils peuvent porter un e-mail, un jeton ou un terme recherché. */
+// Coupe la query string et le fragment : ils peuvent porter un e-mail, un jeton ou un terme recherché.
 export function stripQueryAndFragment(url: string): string {
   const [path = ''] = url.split(/[?#]/, 1);
   return path;
@@ -44,10 +40,7 @@ type SerializedRequest = {
   url?: string | undefined;
 };
 
-/**
- * Sérialiseur pino des requêtes : ni en-têtes (`authorization`, `cookie`, `x-forwarded-for`), ni IP
- * (`remoteAddress`), ni corps, ni query string.
- */
+// Ni en-têtes (`authorization`, `cookie`, `x-forwarded-for`), ni IP, ni corps, ni query string.
 export function serializeRequest(req: SerializedRequest): SerializedRequest {
   return {
     id: req.id,
@@ -56,26 +49,20 @@ export function serializeRequest(req: SerializedRequest): SerializedRequest {
   };
 }
 
-/**
- * `DrizzleQueryError` écrit les paramètres liés (valeurs saisies : nom, e-mail, message) après
- * `\nparams: ` dans son message, donc dans sa pile. Dans un message, ils courent jusqu'à la fin ; dans
- * une pile, jusqu'à la première frame (`\n    at `), pour garder la trace d'appel.
- */
+// `DrizzleQueryError` écrit les paramètres liés (valeurs saisies) après `\nparams: ` : jusqu'à la fin
+// d'un message, jusqu'à la première frame (`\n    at `) d'une pile, pour garder la trace d'appel.
 const QUERY_PARAMS = {
   message: /\nparams: [\s\S]*$/,
   stack: /\nparams: [\s\S]*?(?=\n {4}at |$)/g,
 } as const;
 
-/** Masque les paramètres liés d'une erreur de requête SQL dans un message (défaut) ou une pile. */
 export const redactQueryParams = (
   text: string,
   kind: keyof typeof QUERY_PARAMS = 'message',
 ): string => text.replace(QUERY_PARAMS[kind], `\nparams: ${FILTERED}`);
 
-/**
- * Champs d'erreur porteurs de valeurs : `params` (Drizzle), `parameters` (postgres.js en mode debug),
- * `detail` (Postgres : « Key (email)=(…) already exists », « Failing row contains (…) »).
- */
+// Champs porteurs de valeurs : `params` (Drizzle), `parameters` (postgres.js en debug), `detail`
+// (Postgres : « Key (email)=(…) already exists », « Failing row contains (…) »).
 const ERROR_VALUE_FIELDS = ['params', 'parameters', 'detail'] as const;
 
 type SerializedError = Record<string, unknown> & {
@@ -107,11 +94,8 @@ const scrubSerializedError = (err: SerializedError): SerializedError => {
   return scrubbed;
 };
 
-/**
- * Sérialiseur pino des erreurs (`err`) : type, requête SQL, code Postgres et frames gardés, valeurs
- * liées masquées dans le message et la pile (causes comprises, que pino y concatène). pino-http lui passe l'erreur déjà sérialisée
- * (`wrapErrorSerializer`) ; une `Error` brute (pino seul) est d'abord sérialisée de la même façon.
- */
+// Valeurs liées masquées aussi dans les causes, que pino concatène à la pile. pino-http passe l'erreur
+// déjà sérialisée (`wrapErrorSerializer`) ; une `Error` brute (pino seul) est d'abord sérialisée.
 export function serializeError(err: unknown): SerializedError {
   const serialized =
     err instanceof Error
@@ -120,9 +104,6 @@ export function serializeError(err: unknown): SerializedError {
   return scrubSerializedError(serialized);
 }
 
-/**
- * Arguments d'un appel de log (hook `logMethod`) : un message chaîne qui recopie `err.message`
- * (`track failed: ${e.message}`) perd ses paramètres liés.
- */
+// Un message chaîne qui recopie `err.message` (`track failed: ${e.message}`) perd ses paramètres liés.
 export const redactLogArguments = (args: readonly unknown[]): unknown[] =>
   args.map((arg) => (typeof arg === 'string' ? redactQueryParams(arg) : arg));

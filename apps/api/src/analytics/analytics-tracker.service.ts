@@ -39,7 +39,7 @@ export function isPrivateIp(raw: string): boolean {
   return false;
 }
 
-/** Une ancre (`#demande`) n'est pas une page : `/offres/x#demande` est `/offres/x`. */
+// Une ancre (`#demande`) n'est pas une page : `/offres/x#demande` est `/offres/x`.
 function withoutFragment(url: string): string {
   const [page = ''] = url.split('#', 1);
   return page;
@@ -57,10 +57,8 @@ function isExcludedUrl(url: string): boolean {
 export class AnalyticsTrackerService {
   private readonly logger = new Logger(AnalyticsTrackerService.name);
 
-  /**
-   * Clé de l'empreinte de session, dérivée du secret JWT : rien de plus à configurer, et distincte
-   * de la clé qui signe les sessions. Sans elle, l'empreinte ne se recalcule pas depuis une IP.
-   */
+  // Dérivée du secret JWT (rien à configurer) et distincte de la clé qui signe les sessions : sans
+  // elle, l'empreinte ne se recalcule pas depuis une IP.
   private readonly hashKey: Buffer;
 
   constructor(
@@ -72,15 +70,12 @@ export class AnalyticsTrackerService {
       .digest();
   }
 
-  /**
-   * Track une page-view ou un custom event. Ne throw JAMAIS - toute erreur
-   * interne est loggée et avalée pour ne pas bloquer le client.
-   */
+  // Ne lève jamais : toute erreur interne est journalisée et avalée pour ne pas bloquer le client.
   async track(
     event: TrackEventDto,
     ip: string,
     ua: string,
-    /** Pays du visiteur (code ISO à 2 lettres) fourni par l'hébergeur, `null` s'il est inconnu. */
+    // Code ISO à 2 lettres fourni par l'hébergeur, `null` s'il est inconnu.
     country: string | null = null,
   ): Promise<void> {
     try {

@@ -14,11 +14,8 @@ export type LoggerOptions = {
   readonly pretty: boolean;
 };
 
-/**
- * Logger racine : JSON structuré (pretty en développement), données sensibles masquées
- * (`LOG_REDACT_PATHS`, sérialiseurs). Tout log `error` qui ne porte pas déjà une exception (`err`,
- * capturée par le gestionnaire d'erreurs) part aussi à Sentry en message.
- */
+// Un log `error` sans exception (`err`) part aussi à Sentry en message ; une exception y est déjà
+// envoyée par le gestionnaire d'erreurs.
 export function createRootLogger({
   level,
   pretty,
@@ -68,10 +65,8 @@ export function rootLogger(): pino.Logger {
   return root;
 }
 
-/**
- * Logger nommé (`context`), même usage que celui de NestJS : `log`/`warn`/`error`/`debug` acceptent
- * un message, ou un objet de contexte puis un message ; `error(message, stack)` garde la pile.
- */
+// Même usage que le logger de NestJS : un message, ou un objet de contexte puis un message ;
+// `error(message, stack)` garde la pile.
 export class Logger {
   constructor(private readonly context: string) {}
 

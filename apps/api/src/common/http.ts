@@ -13,14 +13,10 @@ import {
 } from './http-errors';
 import { validateDto } from './validation';
 
-/** Variables de contexte posées par les middlewares (`requireAuth`). */
 export type AppEnv = { Variables: { user: User; clientIp: string } };
 export type AppContext = Context<AppEnv>;
 
-/**
- * Réponse d'une route, comme NestJS : `undefined` ou `null` → corps vide (le client lit `null`),
- * toute autre valeur → JSON. Statut 200 par défaut.
- */
+// Même contrat que NestJS : `undefined` ou `null` donnent un corps vide (le client lit `null`).
 export function reply(
   c: Context,
   value: unknown,
@@ -31,14 +27,11 @@ export function reply(
     : c.json(value, status);
 }
 
-/** Même limite que le parseur JSON d'Express (body-parser) devant l'API NestJS. */
+// Même limite que le parseur JSON d'Express (body-parser) devant l'API NestJS.
 export const JSON_BODY_LIMIT_BYTES = 100 * 1024;
 
-/**
- * Adresse du visiteur, comme Express avec `trust proxy 1` : la dernière entrée de `X-Forwarded-For`,
- * écrite par le proxy de confiance (les entrées antérieures viennent du client) ; sinon, ou si cette
- * entrée n'est pas une adresse IP, la socket.
- */
+// Comme Express avec `trust proxy 1` : la dernière entrée de `X-Forwarded-For`, écrite par le proxy
+// de confiance (les précédentes viennent du client) ; sinon, ou si elle n'est pas une IP, la socket.
 export function clientIp(c: Context): string {
   const forwarded = (c as AppContext).var.clientIp;
   if (forwarded) return forwarded;
@@ -51,11 +44,8 @@ export function clientIp(c: Context): string {
   }
 }
 
-/**
- * IP du visiteur transmise par le rendu serveur du site (`x-ssr-visitor-ip`), crue seulement si l'appel
- * porte le secret partagé (`x-ssr-secret`) : l'appel du rendu arrive avec l'adresse de son conteneur,
- * et tous les visiteurs partageraient un seul quota. Sans secret configuré, rien n'est cru.
- */
+// Cru seulement avec le secret partagé : l'appel du rendu serveur arrive avec l'adresse de son
+// conteneur, et tous les visiteurs partageraient un quota. Sans secret configuré, rien n'est cru.
 export function forwardedVisitorIp(
   secret: string | undefined,
 ): MiddlewareHandler<AppEnv> {
@@ -79,25 +69,20 @@ export function forwardedVisitorIp(
 
 const COUNTRY_CODE = /^[A-Z]{2}$/;
 
-/**
- * Pays du visiteur, écrit par le proxy du site (`x-visitor-country`, d'après celui que Cloudflare
- * déduit de l'adresse) ; `null` sans lui ou si l'en-tête n'est pas un code ISO à deux lettres.
- */
+// Écrit par le proxy du site d'après Cloudflare ; `null` sans lui ou hors code ISO à deux lettres.
 export function visitorCountry(c: Context): string | null {
   const country = c.req.header('x-visitor-country')?.toUpperCase();
   return country && COUNTRY_CODE.test(country) ? country : null;
 }
 
-/** Chemin et query string de la requête, comme `req.originalUrl` d'Express. */
+// Comme `req.originalUrl` d'Express.
 export function originalUrl(c: Context): string {
   const url = new URL(c.req.url);
   return `${url.pathname}${url.search}`;
 }
 
-/**
- * Corps JSON validé par le schéma du DTO. Comme body-parser : seul `application/json` est lu (sinon
- * corps vide), 100 ko au plus (413), JSON invalide → 400, corps vide → `{}`.
- */
+// Comme body-parser : seul `application/json` est lu (sinon corps vide), 100 ko au plus (413), JSON
+// invalide → 400, corps vide → `{}`.
 export async function jsonBody<T>(
   c: Context,
   schema: z.ZodType<T>,
@@ -126,7 +111,7 @@ export async function readJson(c: Context): Promise<unknown> {
   }
 }
 
-/** Query string validée par le schéma du DTO (une clé répétée donne une liste, comme Express). */
+// Une clé répétée donne une liste, comme Express.
 export function queryParams<T>(c: Context, schema: z.ZodType<T>): T {
   const raw = c.req.queries();
   const plain = Object.fromEntries(
@@ -140,7 +125,7 @@ export function queryParams<T>(c: Context, schema: z.ZodType<T>): T {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Paramètre de chemin UUID, comme le `ParseUUIDPipe` de NestJS. */
+// Comme le `ParseUUIDPipe` de NestJS.
 export function uuidParam(c: Context, name: string): string {
   const value = c.req.param(name) ?? '';
   if (!UUID.test(value)) {
@@ -149,7 +134,7 @@ export function uuidParam(c: Context, name: string): string {
   return value;
 }
 
-/** Fichier reçu en multipart, mêmes champs utiles que celui de multer. */
+// Mêmes champs utiles que le fichier de multer.
 export type UploadedFile = {
   readonly buffer: Buffer;
   readonly mimetype: string;
@@ -157,19 +142,16 @@ export type UploadedFile = {
   readonly size: number;
 };
 
-/**
- * Taille maximale d'un fichier envoyé (images et CV) : 4 Mo, enveloppe multipart en plus (le relais
- * nginx du site accepte 5 Mo). L'admin réduit les images dans le navigateur avant de les envoyer.
- */
+// Enveloppe multipart en plus (le relais nginx du site accepte 5 Mo) ; l'admin réduit les images dans
+// le navigateur avant l'envoi.
 export const UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 
 export type UploadRule = {
   readonly maxBytes: number;
-  /** Type MIME attendu, vérifié sur les octets du fichier (magic number), pas sur l'en-tête. */
+  // Vérifié sur les octets du fichier (magic number), pas sur l'en-tête.
   readonly fileType: RegExp;
 };
 
-/** Image envoyée par l'admin : WebP, JPEG, PNG ou AVIF (vérifié sur les octets), 4 Mo au plus. */
 export const IMAGE_UPLOAD = {
   maxBytes: UPLOAD_MAX_BYTES,
   fileType: /^image\/(webp|jpeg|png|avif)$/,
@@ -178,10 +160,8 @@ export const IMAGE_UPLOAD = {
 // Enveloppe multipart (limites, en-têtes de partie) tolérée au-delà de la taille du fichier.
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
 
-/**
- * Fichier du champ `file`, comme `FileInterceptor` + `ParseFilePipe` de l'API NestJS : au-delà de la
- * taille permise → 413 « File too large » (sans lire plus loin) ; absent ou d'un autre type → 422.
- */
+// Comme `FileInterceptor` + `ParseFilePipe` : trop gros → 413 « File too large » sans lire plus loin ;
+// absent ou d'un autre type → 422.
 export async function uploadedFile(
   c: Context,
   rule: UploadRule,
@@ -229,10 +209,8 @@ export async function uploadedFile(
   };
 }
 
-/**
- * UUID du chemin et fichier envoyé, dans un ordre d'erreurs figé par le contrat : fichier trop gros
- * (413), puis UUID invalide (400), puis fichier absent ou d'un autre type (422).
- */
+// Ordre d'erreurs figé par le contrat : fichier trop gros (413), UUID invalide (400), puis fichier
+// absent ou d'un autre type (422).
 export async function uuidParamAndFile(
   c: Context,
   name: string,
@@ -251,7 +229,7 @@ export async function uuidParamAndFile(
   return { id, file };
 }
 
-/** Lit le corps au plus `limit` octets ; au-delà, `onOverflow` est appelé sans lire la suite. */
+// Au-delà de `limit`, `onOverflow` est appelé sans lire la suite.
 async function readLimited(
   request: Request,
   limit: number,

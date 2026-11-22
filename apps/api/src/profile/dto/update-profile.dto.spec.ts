@@ -17,31 +17,29 @@ type DeepMutable<T> = T extends readonly (infer U)[]
     : T;
 type Body = DeepMutable<ProfileContent> & { version?: number };
 
-/** Vue non typée d'un objet du corps, pour y écrire des valeurs invalides. */
+// Vue non typée d'un objet du corps, pour y écrire des valeurs invalides.
 const loose = (o: object) => o as Record<string, unknown>;
 
-/** Corps valide modifiable : copie profonde du builder neutre + version. */
+// Copie profonde du builder neutre + version : chaque test peut la modifier.
 const aBody = (): Body => ({
   ...(structuredClone(aProfileContent()) as DeepMutable<ProfileContent>),
   version: 1,
 });
 
-/** Issues `{ path, message }` du corps, avec la liste blanche des routes. */
+// Avec la liste blanche des routes.
 function violationsOf(body: object): Promise<Violation[]> {
   return Promise.resolve(violationsIn(updateProfileSchema, body));
 }
 
-/** Messages propres à l'API ; pour les autres contraintes, seul le champ en cause est vérifié. */
+// Messages propres à l'API ; pour les autres contraintes, seul le champ en cause est vérifié.
 const OWN_MESSAGES: Readonly<Record<string, string>> = {
   isNotBlank: 'must not be blank',
   noMarkup: 'must not contain HTML markup',
   arrayUnique: 'Les identifiants doivent être uniques',
 };
 
-/**
- * `chemin:contrainte` attendu (forme des specs d'origine) : le champ est refusé, avec le message
- * propre à l'API quand la contrainte en a un.
- */
+// `chemin:contrainte` attendu : le champ est refusé, avec le message propre à l'API quand la
+// contrainte en a un.
 function expectViolation(violations: readonly Violation[], expected: string) {
   const at = expected.lastIndexOf(':');
   const path = expected.slice(0, at);
@@ -60,7 +58,7 @@ const uuid = (n: number) =>
   `${n.toString(16).padStart(8, '0')}-aaaa-4aaa-8aaa-aaaaaaaaaaaa`;
 const titled = (n: number) => ({ id: uuid(n), title: 'T', description: 'D' });
 
-describe('UpdateProfileDto (spec 021, A3)', () => {
+describe('UpdateProfileDto', () => {
   it.each([
     ['the initial seed', () => ({ ...PROFILE_SEED, version: 1 })],
     ['the neutral builder', aBody],
@@ -68,7 +66,7 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
     expect(await violationsOf(body())).toEqual([]);
   });
 
-  /** Chaque champ texte : [chemin, borne, écriture de la valeur]. */
+  // Chaque champ texte : [chemin, borne, écriture de la valeur].
   const TEXT_FIELDS: readonly [string, number, (b: Body, v: string) => void][] =
     [
       ['biography.title', L.biography.title, (b, v) => (b.biography.title = v)],
@@ -121,7 +119,7 @@ describe('UpdateProfileDto (spec 021, A3)', () => {
     },
   );
 
-  /** Chaque liste : [chemin, maximum, élément valide n°i, écriture de la liste]. */
+  // Chaque liste : [chemin, maximum, élément valide n°i, écriture de la liste].
   const LISTS: readonly [
     string,
     number,

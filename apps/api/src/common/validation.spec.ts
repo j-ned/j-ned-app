@@ -5,7 +5,7 @@ import { BadRequestException } from './http-errors';
 import { paginationSchema } from './pagination';
 import { formatIssues, NOT_AN_OBJECT_MESSAGE, validateDto } from './validation';
 
-/** Messages du 400 levé par `validateDto` (échoue si le corps est accepté). */
+// Échoue si le corps est accepté.
 function messagesOf(schema: z.ZodType, body: unknown): string[] {
   try {
     validateDto(schema, body);

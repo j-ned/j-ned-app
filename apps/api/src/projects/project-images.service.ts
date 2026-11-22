@@ -25,7 +25,7 @@ import {
 } from './project-gallery';
 import { insertedRow } from '../common/rows';
 
-/** Galerie des projets (ADR-0009) : une capture = une ligne `project_image` + un objet S3. */
+// Une capture = une ligne `project_image` + un objet S3.
 export class ProjectImagesService {
   constructor(
     private readonly db: Database,
@@ -33,7 +33,7 @@ export class ProjectImagesService {
     private readonly images: ImageOptimizer,
   ) {}
 
-  /** Galeries de plusieurs projets en une requête (liste publique : pas de N+1). */
+  // En une requête : la liste publique n'a pas de N+1.
   async galleryOf(
     projectIds: readonly string[],
   ): Promise<ReadonlyMap<string, readonly ProjectImageResponse[]>> {
@@ -45,10 +45,8 @@ export class ProjectImagesService {
     return groupGalleryByProject(rows, this.toUrl);
   }
 
-  /**
-   * Ajoute une capture en fin de galerie. Ordre : S3 puis base, comme la couverture : un échec
-   * d'insertion laisse un orphelin S3, jamais une ligne qui pointe vers un objet absent.
-   */
+  // S3 puis base, comme la couverture : un échec d'insertion laisse un orphelin S3, jamais une ligne
+  // qui pointe vers un objet absent.
   async upload(
     projectId: string,
     file: UploadedFile,
@@ -101,7 +99,7 @@ export class ProjectImagesService {
     return toImageResponse(row, this.toUrl);
   }
 
-  /** Base d'abord, S3 ensuite : un orphelin S3 plutôt qu'une ligne vers un objet effacé. */
+  // Base d'abord, S3 ensuite : un orphelin S3 plutôt qu'une ligne vers un objet effacé.
   async remove(projectId: string, imageId: string): Promise<void> {
     const [row] = await this.db
       .delete(projectImages)
@@ -111,7 +109,7 @@ export class ProjectImagesService {
     await deleteS3IfExists(this.storage, STORAGE_BUCKET, row.key);
   }
 
-  /** Réécrit `order = index` en une transaction ; 422 si la liste n'est pas exactement la galerie. */
+  // En une transaction ; 422 si la liste n'est pas exactement la galerie.
   async reorder(
     projectId: string,
     imageIds: readonly string[],
@@ -146,7 +144,7 @@ export class ProjectImagesService {
     });
   }
 
-  /** Clés S3 de la galerie, lues avant la suppression d'un projet (la cascade efface les lignes). */
+  // Lues avant la suppression d'un projet : la cascade efface les lignes.
   async keysOf(projectId: string): Promise<string[]> {
     const rows = await this.db
       .select({ key: projectImages.key })
@@ -155,7 +153,7 @@ export class ProjectImagesService {
     return rows.map((r) => r.key);
   }
 
-  /** Une capture n'est trouvée que sous son propre projet : un imageId étranger donne 404. */
+  // Une capture n'est trouvée que sous son propre projet : un imageId étranger donne 404.
   private imageOf(projectId: string, imageId: string) {
     return and(
       eq(projectImages.id, imageId),

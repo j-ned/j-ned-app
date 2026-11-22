@@ -25,10 +25,8 @@ export type ContactSender = { ip: string; userAgent: string };
 export class ContactService {
   private readonly logger = new Logger(ContactService.name);
 
-  /**
-   * Empreinte d'expéditeur, sous une clé dérivée du secret JWT et distincte de celle de l'analytics.
-   * Sans jour dans l'empreinte : deux messages d'une même IP restent reliés d'un jour à l'autre.
-   */
+  // Clé dérivée du secret JWT, distincte de celle de l'analytics. Sans jour dans l'empreinte : deux
+  // messages d'une même IP restent reliés d'un jour à l'autre.
   private readonly hashSender: (ip: string) => string;
 
   constructor(
@@ -39,7 +37,7 @@ export class ContactService {
     this.hashSender = senderHasher(cfg.jwtSecret, 'contact');
   }
 
-  /** Ne renvoie rien : un robot ne distingue pas un message enregistré d'un message écarté. */
+  // Ne renvoie rien : un robot ne distingue pas un message enregistré d'un message écarté.
   async create(
     dto: CreateContactMessageDto,
     sender: ContactSender,
@@ -128,11 +126,8 @@ export class ContactService {
       throw new NotFoundException(`Contact message ${id} not found`);
   }
 
-  /**
-   * Seul le propriétaire est notifié. Pas d'accusé de réception à l'adresse saisie : n'importe
-   * qui pourrait y mettre celle d'un tiers et faire envoyer, signé SPF/DKIM du domaine, un mail
-   * reprenant un nom ou un sujet piégé (une URL en texte brut reste cliquable chez le client).
-   */
+  // Pas d'accusé de réception à l'adresse saisie : celle d'un tiers recevrait, signé SPF/DKIM du
+  // domaine, un mail reprenant un nom ou un sujet piégé (une URL en texte brut reste cliquable).
   private async sendNotificationMail(msg: ContactMessage): Promise<void> {
     await this.mailer.sendMail({
       to: OWNER_EMAIL,

@@ -16,27 +16,17 @@ import { STORAGE_BUCKET, type StorageService } from './storage.service';
 // une image remplacée change d'URL, celle-ci peut donc être gardée un an sans revalidation.
 const CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
-/**
- * Whitelist des buckets servis publiquement via le proxy.
- * Évite qu'un éventuel bucket privé soit exposé par mégarde si quelqu'un
- * connaît son nom.
- */
+// Liste blanche : un éventuel bucket privé n'est pas exposé à qui connaîtrait son nom.
 const PUBLIC_BUCKETS = new Set<string>([STORAGE_BUCKET]);
 
-/** `w800` → 800, seulement pour une largeur de la liste fermée. */
+// Seulement pour une largeur de la liste fermée.
 function widthVariant(variant: string): ResponsiveImageWidth | null {
   return (
     RESPONSIVE_IMAGE_WIDTHS.find((width) => variant === `w${width}`) ?? null
   );
 }
 
-/**
- * `/api/storage/:bucket/<clé>` : relais public des objets S3, `?variant=share` pour la carte de
- * partage JPEG 1200×630 (og:image) et `?variant=w<largeur>` pour les variantes AVIF du `srcset`,
- * générées à la première demande. Sans quota : une page référence N images, le cache HTTP (un an,
- * immutable) absorbe les répétitions, et la liste fermée des largeurs borne ce qu'on peut dériver.
- */
-/** Clé S3 demandée, ou `null` si un segment porte un pourcent-encodage invalide (`%E0`). */
+// `null` si un segment porte un pourcent-encodage invalide (`%E0`).
 function decodedKey(path: string, bucket: string): string | null {
   const segments = path.split('/');
   try {
@@ -61,6 +51,8 @@ function derivedImageResponse(
   });
 }
 
+// Sans quota : une page référence N images, le cache HTTP (un an, immutable) absorbe les répétitions
+// et la liste fermée des largeurs borne ce qu'on peut dériver.
 export function storageRoutes(
   storage: StorageService,
   shareCards: ShareCardService,

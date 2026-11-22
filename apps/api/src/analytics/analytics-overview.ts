@@ -2,7 +2,7 @@ import type { DailyStat } from '../database/schema';
 import type { DayAggregates } from './analytics-aggregates';
 import { ENGAGED_DURATION_SECONDS } from './engagement';
 
-/** Un jour de la plage : ligne `daily_stat` (jour complet) ou agrégat en direct d'aujourd'hui. */
+// Ligne `daily_stat` (jour complet) ou agrégat en direct d'aujourd'hui.
 export type OverviewDay = { date: string } & (
   DayAggregates | Omit<DailyStat, 'id' | 'createdAt' | 'updatedAt'>
 );
@@ -13,10 +13,8 @@ const percent = (part: number, whole: number) =>
 const sum = <T>(items: readonly T[], pick: (item: T) => number | null) =>
   items.reduce((total, item) => total + (pick(item) ?? 0), 0);
 
-/**
- * Somme les jours de la plage. Une colonne nullable n'est sommée que sur les jours où elle est
- * mesurée, et divisée par le dénominateur de ces mêmes jours (ADR-0022 §4).
- */
+// Une colonne nullable n'est sommée que sur les jours où elle est mesurée, et divisée par le
+// dénominateur de ces mêmes jours.
 export function summarizeOverview(
   days: readonly OverviewDay[],
   detailSince: string,

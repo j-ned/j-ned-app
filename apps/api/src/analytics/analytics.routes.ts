@@ -18,10 +18,7 @@ import {
 } from './dto/date-range-query.dto';
 import { trackEventSchema } from './dto/track-event.dto';
 
-/**
- * `/api/analytics` : collecte publique (seule route limitée en débit) et statistiques de l'admin,
- * exemptées du quota global.
- */
+// Exemptées du quota global : seule la collecte publique a son propre quota.
 export function analyticsRoutes(
   tracker: AnalyticsTrackerService,
   stats: AnalyticsStatsService,

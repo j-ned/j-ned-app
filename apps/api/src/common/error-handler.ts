@@ -39,10 +39,8 @@ function errorResponse(
   return c.json(payload, status as ContentfulStatusCode);
 }
 
-/**
- * Format JSON unique de toute erreur : les erreurs HTTP gardent leur statut et leur message ; toute
- * autre exception devient un 500 sans détail, journalisé (chemin sans query string) et envoyé à Sentry.
- */
+// Toute erreur non HTTP devient un 500 sans détail, journalisé (chemin sans query string) et envoyé
+// à Sentry.
 export const handleError: ErrorHandler = (error, c) => {
   if (error instanceof HttpException) {
     if (
@@ -70,7 +68,7 @@ export const handleError: ErrorHandler = (error, c) => {
   return errorResponse(c, 500, 'Internal server error');
 };
 
-/** Route inconnue (préfixe `/api` ou non, méthode non prise en charge) : même 404 JSON. */
+// Route inconnue (préfixe `/api` ou non, méthode non prise en charge) : même 404 JSON.
 export const handleNotFound: NotFoundHandler = (c) =>
   handleError(
     new NotFoundException(`Cannot ${c.req.method} ${originalUrl(c)}`),

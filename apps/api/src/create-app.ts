@@ -21,11 +21,8 @@ import { runtimeConfigRoutes } from './runtime-config/runtime-config.routes';
 import type { Services } from './services';
 import { storageRoutes } from './storage/storage.routes';
 
-/**
- * Application HTTP : en-têtes de sécurité, CORS (transition, ADR-0034), contrôle d'origine sur les
- * écritures, puis les routes de chaque module sous `/api`. Toute erreur et toute route inconnue
- * répondent au même format JSON.
- */
+// CORS seulement tant que le site appelle encore l'API sur son sous-domaine ; toute erreur et toute
+// route inconnue répondent au même format JSON.
 export function createApp(
   config: AppConfigService,
   db: Database,

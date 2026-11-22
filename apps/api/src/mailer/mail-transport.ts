@@ -3,16 +3,12 @@ import type { MailTransport } from '../config/app-config.service';
 import { MailerService, type SendMailOptions } from './mailer.service';
 import { maskEmail } from './mailer.utils';
 
-/** Ce dont un service a besoin pour envoyer un mail, quel que soit le transport. */
 export type MailSender = {
   sendMail(options: SendMailOptions): Promise<void>;
 };
 
-/**
- * Transport des previews et des postes sans clé Resend : rien ne part. Seuls le destinataire masqué
- * et le sujet sont journalisés, jamais le contenu (variables du template), l'adresse de réponse ni
- * le template.
- */
+// Previews et postes sans clé Resend : rien ne part. Seuls le destinataire masqué et le sujet sont
+// journalisés, jamais le contenu (variables du template), l'adresse de réponse ni le template.
 export class LogMailer implements MailSender {
   private readonly logger = new Logger('Mailer');
 

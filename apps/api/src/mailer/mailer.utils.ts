@@ -10,7 +10,7 @@ export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char] ?? char);
 }
 
-/** `camille@example.com` → `c***@example.com` : assez pour diagnostiquer un domaine, pas pour identifier. */
+// `camille@example.com` → `c***@example.com` : assez pour diagnostiquer un domaine, pas pour identifier.
 export function maskEmail(address: string): string {
   const at = address.lastIndexOf('@');
   if (at === -1) return '***';

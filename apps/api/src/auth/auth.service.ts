@@ -52,11 +52,8 @@ export class AuthService {
     private readonly now: () => number = Date.now,
   ) {}
 
-  /**
-   * Logout : incrémente `tokenVersion` pour que le JWT ne survive pas à la
-   * déconnexion s'il a fuité. Un cookie absent, expiré ou de challenge 2FA est ignoré :
-   * le contrôleur efface le cookie dans tous les cas.
-   */
+  // Incrémente `tokenVersion` : un JWT fuité ne survit pas à la déconnexion. Un cookie absent, expiré
+  // ou de challenge 2FA est ignoré : la route efface le cookie dans tous les cas.
   async revokeSessionFromToken(token: string | undefined): Promise<void> {
     if (!token) return;
     let payload: JwtPayload;
@@ -181,7 +178,7 @@ export class AuthService {
     await resetHits(attemptsKey);
   }
 
-  /** Un code TOTP ne sert qu'une fois par compte : intercepté, il ne se rejoue pas dans sa fenêtre. */
+  // Un code TOTP ne sert qu'une fois par compte : intercepté, il ne se rejoue pas dans sa fenêtre.
   private async isReplayedTotpCode(
     userId: string,
     code: string,

@@ -4,10 +4,6 @@ import { IMAGE_UPLOAD, reply, uploadedFile, type AppEnv } from '../common/http';
 import { ADMIN_WRITE_THROTTLE, throttle } from '../common/throttle';
 import type { BlogContentImagesService } from './blog-content-images.service';
 
-/**
- * `/api/blog/content-images` : images du corps des articles. Aucune ligne en base, le Markdown cite
- * l'URL renvoyée (stockée en AVIF ≤ 1 600 px, avec ses dimensions intrinsèques).
- */
 export function blogContentImagesRoutes(
   images: BlogContentImagesService,
   requireAuth: RequireAuth,

@@ -4,7 +4,7 @@ import { escapeHtml, maskEmail } from './mailer.utils';
 const MAX_RETRIES = 3;
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
 
-/** Template publié dans Resend, désigné par son alias, et ses variables (`{{{KEY}}}` dans le HTML). */
+// Template publié dans Resend, désigné par son alias ; variables `{{{KEY}}}` dans le HTML.
 export type MailTemplate = {
   id: string;
   variables: Record<string, string>;
@@ -17,13 +17,12 @@ export type SendMailOptions = {
   replyTo?: string;
 };
 
-/** Clé d'API Resend et expéditeur (`MAIL_FROM`). */
 export type ResendSettings = {
   readonly apiKey: string;
   readonly from: string;
 };
 
-/** Envoi par l'API HTTP de Resend : pas de connexion SMTP à ouvrir ni à fermer. */
+// API HTTP de Resend : pas de connexion SMTP à ouvrir ni à fermer.
 export class MailerService {
   constructor(
     private readonly settings: ResendSettings,

@@ -19,10 +19,8 @@ const scrubValue = (value: unknown): unknown => {
   );
 };
 
-/**
- * Sentry joint le corps des requêtes entrantes aux événements : une chaîne qui n'est pas du JSON
- * (formulaire encodé, texte) ne peut pas être filtrée champ par champ, elle part donc masquée.
- */
+// Une chaîne qui n'est pas du JSON (formulaire encodé, texte) ne se filtre pas champ par champ : elle
+// part masquée.
 const scrubBody = (data: unknown): unknown => {
   if (typeof data !== 'string') return scrubValue(data);
   if (data === '') return data;
@@ -33,7 +31,7 @@ const scrubBody = (data: unknown): unknown => {
   }
 };
 
-/** En-têtes porteurs de secrets, comparés en minuscules : Node les normalise, un événement forgé non. */
+// Comparés en minuscules : Node normalise les en-têtes, un événement forgé non.
 const SECRET_HEADERS: ReadonlySet<string> = new Set([
   'authorization',
   'proxy-authorization',
@@ -43,7 +41,7 @@ const SECRET_HEADERS: ReadonlySet<string> = new Set([
 
 type EventException = NonNullable<ErrorEvent['exception']>;
 
-/** `dataCollection.databaseQueryData` ne touche pas aux messages d'erreur : `redactQueryParams` s'en charge. */
+// `dataCollection.databaseQueryData` ne touche pas aux messages d'erreur : `redactQueryParams` s'en charge.
 const scrubExceptionValues = (
   exception: EventException,
   values: NonNullable<EventException['values']>,
@@ -59,11 +57,8 @@ const scrubExceptionValues = (
   ),
 });
 
-/**
- * Filet après `dataCollection` (fermé dans `instrument.ts`) : retire l'IP de l'utilisateur, les cookies,
- * les en-têtes d'authentification et de cookies (toute casse), la query string et le fragment de l'URL,
- * les champs sensibles du corps, et les paramètres liés des erreurs de requête SQL, sans muter l'événement.
- */
+// Filet après `dataCollection` (fermé dans `instrument.ts`), sans muter l'événement : IP, cookies,
+// en-têtes d'authentification, query string, fragment, corps sensible et paramètres SQL liés.
 export function sentryBeforeSend(event: ErrorEvent): ErrorEvent {
   const { exception, request, user } = event;
   const named: ErrorEvent = { ...event };
@@ -94,7 +89,7 @@ export function sentryBeforeSend(event: ErrorEvent): ErrorEvent {
   return { ...named, request: scrubbed };
 }
 
-/** Requêtes entrantes jamais tracées : la sonde de santé. */
+// La sonde de santé n'est jamais tracée.
 export function isUntracedIncomingRequest(url: string): boolean {
   return url.startsWith('/api/health');
 }

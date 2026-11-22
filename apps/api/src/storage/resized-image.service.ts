@@ -8,10 +8,7 @@ import { StorageService } from './storage.service';
 
 export type ResizedImage = DerivedImage<'image/avif'>;
 
-/**
- * Variante de largeur d'une image du bucket pour le `srcset`, conservée dans S3 sous
- * `<key>.w<largeur>.avif`.
- */
+// Conservée dans S3 sous `<key>.w<largeur>.avif`.
 export class ResizedImageService {
   constructor(
     private readonly storage: StorageService,

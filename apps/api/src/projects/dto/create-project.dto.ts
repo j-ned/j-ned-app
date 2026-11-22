@@ -4,10 +4,8 @@ import { PROJECT_FACT_MAX, PROJECT_PITCH_MAX } from '../project-editorial';
 import { architectureDecisionSchema } from './architecture-decision.dto';
 import { techChoiceSchema } from './tech-choice.dto';
 
-/**
- * Champ éditorial facultatif (ADR-0010 §3) : trim, vide → null, null efface, borne après trim.
- * Absent : reste `undefined` (colonne NULL à l'insert, clé hors du SET d'un UPDATE).
- */
+// Trim, vide → null, null efface, borne après trim. Absent : reste `undefined` (colonne NULL à
+// l'insert, clé hors du SET d'un UPDATE).
 const editorialText = (max: number) =>
   z
     .string()
@@ -16,7 +14,7 @@ const editorialText = (max: number) =>
     .transform((text) => text || null)
     .nullish();
 
-/** Lien http(s) facultatif : `null` efface. */
+// `null` efface.
 const optionalUrl = () => z.url({ protocol: /^https?$/ }).nullish();
 
 export const createProjectSchema = z.strictObject({
@@ -33,7 +31,7 @@ export const createProjectSchema = z.strictObject({
   repoUrlBack: optionalUrl(),
   techChoices: z.array(techChoiceSchema).max(30).optional(),
   architectureDecisions: z.array(architectureDecisionSchema).max(30).optional(),
-  // Optionnel mais jamais null : la colonne est NOT NULL (ADR-0008 §4).
+  // Optionnel mais jamais null : la colonne est NOT NULL.
   kind: z.enum(PROJECT_KINDS).optional(),
   featured: z.boolean().optional(),
   order: z.int().min(0).optional(),

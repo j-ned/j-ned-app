@@ -5,7 +5,7 @@ import type { AnalyticsTrackerService } from './analytics-tracker.service';
 import { analyticsRoutes } from './analytics.routes';
 import { denyAll, passThrough } from '../testing/require-auth';
 
-/** Routes montées sous leur préfixe avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés. */
+// Routes montées sous leur préfixe avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés.
 describe('analytics routes', () => {
   const stats = {
     events: jest.fn(),

@@ -19,13 +19,11 @@ export type S3ObjectStream = {
   contentLength: number;
 };
 
-/**
- * Accès au stockage S3. Sans client (configuration S3 incomplète, hors production seulement), chaque
- * lecture ou écriture répond 503 : l'API démarre, une image publique est simplement absente.
- */
-/** Seul bucket de l'application : images, CV, portrait. */
+// Images, CV, portrait.
 export const STORAGE_BUCKET = 'portfolio-storage';
 
+// Sans client (configuration incomplète, hors production seulement), chaque accès répond 503 : l'API
+// démarre, une image publique est simplement absente.
 export class StorageService {
   constructor(private readonly s3: S3Client | null) {}
 
@@ -38,7 +36,7 @@ export class StorageService {
     return this.s3;
   }
 
-  /** Écrit l'objet et jette ses dérivées (carte de partage, variantes de largeur), devenues obsolètes. */
+  // Jette aussi ses dérivées (carte de partage, variantes de largeur), devenues obsolètes.
   async upload(
     bucket: string,
     key: string,
@@ -78,7 +76,7 @@ export class StorageService {
     };
   }
 
-  /** Efface l'objet et ses dérivées. */
+  // Avec ses dérivées.
   async delete(bucket: string, key: string): Promise<void> {
     // S3 DeleteObject est idempotent : pas d'erreur si la clé n'existe pas.
     await this.client().send(
@@ -96,16 +94,8 @@ export class StorageService {
     }
   }
 
-  /**
-   * Retourne une URL publique servie par l'API (proxy S3, `storage.routes.ts`).
-   * Format: `/storage/{bucket}/{key}` - chemin relatif au préfixe `/api` global.
-   * Le frontend résout vers `${apiUrl}${path}` côté Angular.
-   *
-   * Pourquoi un proxy plutôt qu'une URL S3 directe ? R2 supporte l'accès anonyme
-   * via Public Buckets ou Custom Domain, mais le Custom Domain exige que le DNS
-   * soit géré par Cloudflare - ce n'est pas (encore) notre cas. En attendant,
-   * le proxy de l'API détient les credentials et stream l'objet.
-   */
+  // Proxy plutôt qu'URL S3 directe : le Custom Domain de R2 exige un DNS géré par Cloudflare, ce qui
+  // n'est pas le cas. Chemin relatif au préfixe `/api`, que le front résout.
   getPublicUrl(bucket: string, key: string): string {
     return `/storage/${bucket}/${key}`;
   }

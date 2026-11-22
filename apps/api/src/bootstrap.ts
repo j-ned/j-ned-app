@@ -6,10 +6,6 @@ import { connectDatabase } from './database/database';
 import { createS3Client } from './storage/s3-client';
 import { createServices } from './services';
 
-/**
- * Assemble l'API depuis l'environnement : configuration validée (arrêt lisible si une variable manque),
- * logger, connexions (Postgres, S3), services et application Hono.
- */
 export function bootstrap(env: Record<string, unknown> = process.env) {
   const config = new AppConfigService(validateEnv(env));
   setRootLogger(

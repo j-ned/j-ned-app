@@ -163,7 +163,7 @@ export class ProjectsService {
     return (await this.gallery.galleryOf([id])).get(id) ?? [];
   }
 
-  // Transforme la key DB en URL publique pour la sortie API, galerie jointe (ADR-0009 §4).
+  // Clé S3 remplacée par son URL publique, galerie jointe.
   private toResponse(
     p: Project,
     gallery: readonly ProjectImageResponse[],

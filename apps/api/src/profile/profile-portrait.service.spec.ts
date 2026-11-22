@@ -14,7 +14,7 @@ import { ProfilePortraitService } from './profile-portrait.service';
 import { aProfileContent } from '../testing/profile-test-builders';
 
 const BUCKET = 'portfolio-storage';
-/** Le faux recadrage préfixe les octets reçus : deux fichiers différents ⇒ deux clés différentes. */
+// Le faux recadrage préfixe les octets reçus : deux fichiers différents ⇒ deux clés différentes.
 const toAvif = (buffer: Buffer) =>
   Buffer.concat([Buffer.from('avif:'), buffer]);
 const keyOf = (file: UploadedFile) =>
@@ -42,7 +42,7 @@ const aRow = (
   ...overrides,
 });
 
-describe('ProfilePortraitService (spec 021, A5)', () => {
+describe('ProfilePortraitService', () => {
   let service: ProfilePortraitService;
   let db: ReturnType<typeof createMockDb>;
   let storage: {
@@ -51,11 +51,10 @@ describe('ProfilePortraitService (spec 021, A5)', () => {
     getPublicUrl: jest.Mock;
   };
   let images: { toPortrait: jest.Mock };
-  /** Journal ordonné : transactions, verrou, envoi, écriture, suppression. */
+  // Journal ordonné : transactions, verrou, envoi, écriture, suppression.
   let effects: string[];
-  /** La ligne unique de la fausse table, lue et écrite par le faux builder. */
+  // La ligne unique de la fausse table, lue et écrite par le faux builder.
   let stored: ProfileContentRow | undefined;
-  /** Les clés présentes dans le faux bucket. */
   let bucket: Set<string>;
 
   beforeEach(() => {
@@ -132,17 +131,17 @@ describe('ProfilePortraitService (spec 021, A5)', () => {
   });
   afterEach(() => jest.restoreAllMocks());
 
-  /** La ligne en base, et les objets qu'elle cite présents dans le bucket. */
+  // La ligne en base, et les objets qu'elle cite présents dans le bucket.
   const given = (row: ProfileContentRow) => {
     stored = row;
     for (const key of [row.portraitKey, row.previousPortraitKey]) {
       if (key) bucket.add(key);
     }
   };
-  /** Le `SET` de la première écriture (absent ⇒ `undefined`, l'assertion échoue sur la valeur). */
+  // Le `SET` de la première écriture (absent ⇒ `undefined`, l'assertion échoue sur la valeur).
   const patch = () =>
     (db.set.mock.calls as [Partial<ProfileContentRow>][])[0]?.[0];
-  /** Aucune clé citée par la ligne n'est absente du bucket, et aucun objet n'y est orphelin. */
+  // Aucune clé citée par la ligne n'est absente du bucket, et aucun objet n'y est orphelin.
   const expectConsistent = () => {
     const cited = [stored?.portraitKey, stored?.previousPortraitKey].filter(
       (key): key is string => Boolean(key),

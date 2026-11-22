@@ -2,10 +2,7 @@ import { STATUS_CODES } from 'node:http';
 
 export type ErrorMessage = string | string[];
 
-/**
- * Erreur HTTP levée par les services et les routes, rendue par `handleError` au format JSON de l'API.
- * `messages` garde la liste brute (erreurs de validation) ; `message` en est la forme texte.
- */
+// `messages` garde la liste brute (erreurs de validation) ; `message` en est la forme texte.
 export class HttpException extends Error {
   readonly messages: ErrorMessage;
 

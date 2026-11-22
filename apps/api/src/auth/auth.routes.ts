@@ -38,7 +38,6 @@ const loginOrigin = (c: AppContext): LoginOrigin => ({
   country: visitorCountry(c),
 });
 
-/** `/api/auth` : connexion (mot de passe puis 2FA), session, mot de passe et 2FA de l'admin. */
 export function authRoutes({
   auth,
   config,

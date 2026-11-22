@@ -6,7 +6,7 @@ import { createMockDb } from '../testing/test-utils';
 import * as aggregates from './analytics-aggregates';
 import type { DayAggregates } from './analytics-aggregates';
 
-/** Jours `[J-29, J-2]` d'un cron exécuté le 2026-04-26 : du 2026-03-28 au 2026-04-24. */
+// Jours `[J-29, J-2]` d'un cron exécuté le 2026-04-26 : du 2026-03-28 au 2026-04-24.
 const backfillWindow = (): string[] =>
   Array.from({ length: 28 }, (_, i) =>
     new Date(Date.UTC(2026, 2, 28 + i)).toISOString().slice(0, 10),
@@ -113,7 +113,7 @@ describe('AnalyticsAggregatorService', () => {
     });
   });
 
-  describe('spec 020 : colonnes mesurées', () => {
+  describe('colonnes mesurées', () => {
     it('Given a day with one long and one short single-page visit, When aggregated, Then engagement, measured duration and NULL conversions are written', async () => {
       mockAggregateValues();
 
@@ -137,7 +137,7 @@ describe('AnalyticsAggregatorService', () => {
     });
   });
 
-  describe('spec 020 : rattrapage des jours non mesurés', () => {
+  describe('rattrapage des jours non mesurés', () => {
     const DAY: DayAggregates = {
       visitors: 1,
       pageviews: 1,

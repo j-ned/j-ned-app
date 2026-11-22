@@ -1,9 +1,7 @@
 import * as z from 'zod';
 
-/**
- * Second facteur : `code` (TOTP) ou `backupCode`, pas les deux. Aucun des deux : le service répond
- * 401 (« Either code or backupCode is required »).
- */
+// `code` ou `backupCode`, pas les deux. Aucun des deux n'est refusé ici : le service répond 401
+// (« Either code or backupCode is required »).
 export const twoFactorVerifySchema = z
   .strictObject({
     challengeToken: z.string().min(1),

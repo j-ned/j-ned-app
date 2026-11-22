@@ -9,7 +9,6 @@ export const METRIC_TYPES = [
 ] as const;
 export type MetricType = (typeof METRIC_TYPES)[number];
 
-/** Période (jours `AAAA-MM-JJ`) et limite des statistiques, lues dans la query string. */
 export const dateRangeQuerySchema = z.strictObject({
   startDate: z.iso.date().optional(),
   endDate: z.iso.date().optional(),
@@ -22,7 +21,7 @@ export const metricsQuerySchema = dateRangeQuerySchema.extend({
 });
 export type MetricsQueryDto = z.infer<typeof metricsQuerySchema>;
 
-/** Événements dont l'admin lit le détail par `entityId` (emplacement de formulaire, canal). */
+// Événements dont l'admin lit le détail par `entityId` (emplacement de formulaire, canal).
 export const EVENT_COUNT_TYPES = ['contact_submit', 'outbound_click'] as const;
 export type EventCountType = (typeof EVENT_COUNT_TYPES)[number];
 

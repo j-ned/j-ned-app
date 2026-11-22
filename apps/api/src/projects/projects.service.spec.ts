@@ -174,7 +174,7 @@ describe('ProjectsService', () => {
     });
   });
 
-  describe('gallery (ADR-0009)', () => {
+  describe('gallery', () => {
     it('Given projects with and without captures, When listing, Then each one carries its own gallery', async () => {
       db.orderBy.mockResolvedValueOnce([
         mkProject({ id: 'a' }),
@@ -478,7 +478,7 @@ describe('ProjectsService', () => {
     });
   });
 
-  describe('editorial fields (ADR-0010)', () => {
+  describe('editorial fields', () => {
     const EDITORIAL = {
       pitch: 'Le budget familial et le suivi médical de toute la famille.',
       highlight: 'Chiffrement de bout en bout côté client',

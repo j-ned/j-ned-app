@@ -11,37 +11,29 @@ export type ThrottleConfig = {
   readonly whenFull?: 'reject' | 'allow';
 };
 
-/** Quota par défaut de toute route qui n'en déclare pas d'autre : 10 requêtes par minute et par IP. */
+// Quota de toute route qui n'en déclare pas d'autre.
 export const DEFAULT_THROTTLE: ThrottleConfig = {
   limit: 10,
   ttlMs: 60_000,
   whenFull: 'allow',
 };
 
-/**
- * Lectures publiques (projets, articles) : 120 req/min au lieu des 10 par défaut. Le rendu serveur
- * du front relaie l'IP du visiteur, chaque page en consomme quelques-unes.
- */
+// Le rendu serveur du front relaie l'IP du visiteur et chaque page en consomme quelques-unes : 120 au
+// lieu de 10.
 export const PUBLIC_READ_THROTTLE: ThrottleConfig = {
   limit: 120,
   ttlMs: 60_000,
   whenFull: 'allow',
 };
 
-/**
- * Tentatives d'authentification (login, vérification 2FA) : 5 par minute et par IP. Freine la force
- * brute sans gêner un utilisateur qui se trompe deux fois.
- */
+// Login et 2FA : freine la force brute sans gêner un utilisateur qui se trompe deux fois.
 export const AUTH_ATTEMPT_THROTTLE: ThrottleConfig = {
   limit: 5,
   ttlMs: 60_000,
 };
 
-/**
- * Second facteur, par compte : 5 échecs d'affilée par quart d'heure, d'où qu'ils viennent (un succès
- * remet le compteur à zéro). Le quota par IP ne freine pas un attaquant qui a le mot de passe et
- * répartit ses essais sur plusieurs adresses.
- */
+// Par compte, d'où qu'ils viennent (un succès remet à zéro) : le quota par IP ne freine pas un
+// attaquant qui a le mot de passe et répartit ses essais sur plusieurs adresses.
 export const TWO_FACTOR_ACCOUNT_THROTTLE: ThrottleConfig = {
   limit: 5,
   ttlMs: 900_000,
@@ -53,24 +45,24 @@ export const REAUTH_ACCOUNT_THROTTLE: ThrottleConfig = {
   ttlMs: 900_000,
 };
 
-/** Écritures admin de galerie : 60 req/min, car ajouter cinq captures puis leur `alt` dépasse 10 (ADR-0009). */
+// Galerie : ajouter cinq captures puis leur `alt` dépasse les 10 requêtes du quota par défaut.
 export const ADMIN_WRITE_THROTTLE: ThrottleConfig = {
   limit: 60,
   ttlMs: 60_000,
   whenFull: 'allow',
 };
 
-/** Un vrai visiteur envoie un message ; trois par heure laissent la place à une correction. */
+// Un vrai visiteur envoie un message ; trois par heure laissent la place à une correction.
 export const CONTACT_THROTTLE: ThrottleConfig = { limit: 3, ttlMs: 3_600_000 };
 
-/** Mesure d'audience : rafales de beacons d'une même page (10 par seconde). */
+// Rafales de beacons d'une même page.
 export const TRACK_THROTTLE: ThrottleConfig = {
   limit: 10,
   ttlMs: 1_000,
   whenFull: 'allow',
 };
 
-/** Compteur d'une fenêtre après la requête courante, et la fin de cette fenêtre (ms epoch). */
+// Compteur d'une fenêtre après la requête courante, et la fin de cette fenêtre (ms epoch).
 export type ThrottleHit = {
   readonly count: number;
   readonly resetAt: number;
@@ -78,10 +70,9 @@ export type ThrottleHit = {
   readonly saturated?: true;
 };
 
-/** Où les compteurs vivent : en mémoire, pour le process unique de l'API (ADR-0038). */
+// En mémoire : l'API tourne en un seul process.
 export interface ThrottleStore {
   hit(key: string, ttlMs: number, now: number): Promise<ThrottleHit>;
-  /** Oublie le compteur de `key`. */
   reset(key: string): Promise<void>;
 }
 
@@ -90,7 +81,7 @@ export const DEFAULT_MAX_KEYS_PER_SCOPE = 5_000;
 
 type ThrottleWindow = { count: number; resetAt: number };
 
-/** Fenêtre fixe ouverte à la première requête, en mémoire : suffit pour une instance unique. */
+// Fenêtre fixe ouverte à la première requête, en mémoire : suffit pour une instance unique.
 export class MemoryThrottleStore implements ThrottleStore {
   // Une portée (préfixe de la clé avant `|`) par route ou par usage : en saturer une ne ferme pas les autres.
   private readonly scopes = new Map<string, Map<string, ThrottleWindow>>();
@@ -183,7 +174,7 @@ function ipv6Groups(part: string): number[] {
 
 let store: ThrottleStore = new MemoryThrottleStore();
 
-/** Remplace le stockage des compteurs (tests : remise à zéro, panne simulée). */
+// Pour les tests : remise à zéro, panne simulée.
 export function setThrottleStore(next: ThrottleStore): void {
   store = next;
 }
@@ -191,10 +182,8 @@ export function setThrottleStore(next: ThrottleStore): void {
 const logger = new Logger('Throttle');
 let routeCount = 0;
 
-/**
- * Compte un passage sous `key`. Si le stockage des compteurs échoue, rend `undefined` (journalisé) et
- * l'appelant laisse passer : une panne de base ne doit pas fermer toute l'API.
- */
+// Si le stockage échoue, rend `undefined` (journalisé) et l'appelant laisse passer : une panne de base
+// ne doit pas fermer toute l'API.
 export async function countHit(
   key: string,
   ttlMs: number,
@@ -211,7 +200,7 @@ export async function countHit(
   }
 }
 
-/** Remet à zéro le compteur de `key` ; un échec du stockage est journalisé, jamais propagé. */
+// Un échec du stockage est journalisé, jamais propagé.
 export async function resetHits(key: string): Promise<void> {
   try {
     await store.reset(key);
@@ -223,11 +212,8 @@ export async function resetHits(key: string): Promise<void> {
   }
 }
 
-/**
- * Quota d'une route, compté par IP (`clientIp`, par /64 en IPv6) sur une fenêtre fixe : chaque appel à `throttle()` a sa
- * propre clé (dans l'ordre de déclaration des routes, identique d'une instance à l'autre), donc chaque
- * route son quota. La requête au-delà de la limite reçoit 429.
- */
+// Par IP (`clientIp`, par /64 en IPv6), fenêtre fixe. Chaque appel a sa clé, dans l'ordre de
+// déclaration des routes (identique d'une instance à l'autre) : chaque route a son quota.
 export function throttle(
   config: ThrottleConfig = DEFAULT_THROTTLE,
   now: () => number = Date.now,

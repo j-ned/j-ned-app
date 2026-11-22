@@ -12,7 +12,7 @@ const PNG = Buffer.from(
   'base64',
 );
 
-/** Routes montées avec le gestionnaire d'erreurs de l'API ; service et session remplacés. */
+// Routes montées avec le gestionnaire d'erreurs de l'API ; service et session remplacés.
 describe('blog content images routes (HTTP)', () => {
   const images = { upload: jest.fn() };
   const app = testApp(

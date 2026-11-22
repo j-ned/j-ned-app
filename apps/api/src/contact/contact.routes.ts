@@ -13,7 +13,6 @@ import { CONTACT_THROTTLE, throttle } from '../common/throttle';
 import type { ContactService } from './contact.service';
 import { createContactMessageSchema } from './dto/create-contact-message.dto';
 
-/** `/api/contact` : envoi public d'un message, boîte de réception de l'admin. */
 export function contactRoutes(
   contact: ContactService,
   requireAuth: RequireAuth,

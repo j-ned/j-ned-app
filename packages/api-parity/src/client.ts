@@ -11,12 +11,9 @@ export type RequestOptions = {
   readonly json?: unknown;
   readonly body?: BodyInit;
   readonly headers?: Readonly<Record<string, string>>;
-  /** Valeur du cookie de session. */
   readonly session?: string;
-  /**
-   * En-têtes qu'un navigateur poserait : `same-origin` par défaut (le site appelle sa propre
-   * origine), `null` pour un client hors navigateur (ni `Sec-Fetch-Site` ni `Origin`).
-   */
+  // `same-origin` par défaut (le site appelle sa propre origine), `null` pour un client hors
+  // navigateur (ni `Sec-Fetch-Site` ni `Origin`).
   readonly site?: FetchSite | null;
   readonly origin?: string;
 };
@@ -29,12 +26,8 @@ export type ApiResponse = {
   readonly body: unknown;
 };
 
-/**
- * Un visiteur = une adresse IP, transmise en `X-Forwarded-For` comme le fait un proxy de confiance.
- * Chaque visiteur reçoit une IPv6 tirée au hasard dans 2001:db8::/32 (plage de documentation, RFC 3849) :
- * 96 bits aléatoires, aucune collision possible entre tests, fichiers ou exécutions, donc aucun quota
- * partagé par accident.
- */
+// IPv6 tirée au hasard dans 2001:db8::/32 (RFC 3849), transmise en `X-Forwarded-For` comme un proxy de
+// confiance : 96 bits aléatoires, aucun quota partagé par accident entre tests, fichiers ou exécutions.
 export type Visitor = {
   readonly ip: string;
   readonly request: (
@@ -107,7 +100,7 @@ export function newVisitor(): Visitor {
   };
 }
 
-/** Attribut d'un `Set-Cookie` (`Max-Age`, `SameSite`…), insensible à la casse ; `true` si sans valeur. */
+// Insensible à la casse ; `true` pour un attribut sans valeur.
 export function cookieAttribute(setCookie: string, name: string): string | true | undefined {
   for (const part of setCookie.split(';').slice(1)) {
     const [key, ...value] = part.trim().split('=');

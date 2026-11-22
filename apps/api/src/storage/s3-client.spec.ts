@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { createS3Client } from './s3-client';
 
-/** Serveur S3 qui accepte la requête et ne répond jamais (stockage bloqué). */
+// Accepte la requête et ne répond jamais : stockage bloqué.
 const aHangingServer = async (): Promise<Server> => {
   const server = createServer((req) => req.resume());
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));

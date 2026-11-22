@@ -12,7 +12,6 @@ import { updateProfileSchema } from './dto/update-profile.dto';
 import type { ProfilePortraitService } from './profile-portrait.service';
 import type { ProfileService } from './profile.service';
 
-/** `/api/profile` : contenu de la page Parcours (lecture publique), édition et portrait (admin). */
 export function profileRoutes(
   profile: ProfileService,
   portrait: ProfilePortraitService,

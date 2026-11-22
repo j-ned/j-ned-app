@@ -2,10 +2,7 @@ import { NotFoundException } from './http-errors';
 import { eq, type Column, type Table } from 'drizzle-orm';
 import type { Database } from '../database/drizzle.types';
 
-/**
- * Fetches a single row by primary key or throws NotFoundException.
- * Does NOT cover tables with compound lookup keys - those keep their custom findOne.
- */
+// Tables à clé simple seulement : celles à clé composée gardent leur propre `findOne`.
 export async function findByIdOrFail<TRow>(
   db: Database,
   table: Table & { id: Column },

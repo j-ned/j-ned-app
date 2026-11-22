@@ -11,13 +11,12 @@ import {
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
 import type { CvService } from './cv.service';
 
-/** CV : 4 Mo au plus, PDF uniquement (vérifié sur les octets). */
+// PDF uniquement, vérifié sur les octets.
 const CV_UPLOAD = {
   maxBytes: UPLOAD_MAX_BYTES,
   fileType: /^application\/pdf$/,
 } as const;
 
-/** `/api/cv` : métadonnées et téléchargement publics, remplacement et suppression admin. */
 export function cvRoutes(cv: CvService, requireAuth: RequireAuth) {
   return (
     new Hono<AppEnv>()

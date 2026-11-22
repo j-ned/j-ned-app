@@ -7,11 +7,8 @@ export type RuntimeConfigResponse = {
   sentry: { dsn: string; environment: string; release: string };
 };
 
-/**
- * `/api/config` : configuration publique lue par le navigateur au démarrage (Sentry du front : DSN
- * d'un projet distinct, public par nature). Cache navigateur de 5 min ; le cache CDN repart à
- * chaque déploiement, seul moment où cette configuration change.
- */
+// Public par nature (DSN Sentry d'un projet distinct). Cache navigateur de 5 min ; le cache CDN
+// repart à chaque déploiement, seul moment où cette configuration change.
 export function runtimeConfigRoutes(config: AppConfigService) {
   return new Hono<AppEnv>().get('/', throttle(PUBLIC_READ_THROTTLE), (c) => {
     c.header('Cache-Control', 'public, max-age=300');

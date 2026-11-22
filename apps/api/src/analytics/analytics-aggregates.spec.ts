@@ -5,7 +5,7 @@ import type { Database } from '../database/drizzle.types';
 const START = new Date('2026-10-09T00:00:00.000Z');
 const END = new Date('2026-10-09T23:59:59.999Z');
 
-/** Une ligne par visite, comme la rend `loadSessionFacts`. */
+// Une ligne par visite, comme la rend `loadSessionFacts`.
 const FACT_ROWS = [
   { pages: 1, duration_sum: 12, duration_samples: 1, engaged: false },
   { pages: 1, duration_sum: null, duration_samples: 0, engaged: true },
@@ -27,7 +27,7 @@ const EVENT_ROW = {
 describe('computeAggregates', () => {
   let db: ReturnType<typeof createMockDb>;
 
-  /** Ordre des requêtes : faits par visite, compteurs d'événements, conversions déjà vues. */
+  // Ordre des requêtes : faits par visite, compteurs d'événements, conversions déjà vues.
   const mockDay = (conversionsSeen: boolean) => {
     db.execute
       .mockResolvedValueOnce(FACT_ROWS)
