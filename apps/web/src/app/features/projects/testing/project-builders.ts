@@ -17,6 +17,7 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     highlight: null,
     scope: null,
     updatedAt: '2026-10-06T10:00:00.000Z',
+    version: 1,
     ...overrides,
   };
 }

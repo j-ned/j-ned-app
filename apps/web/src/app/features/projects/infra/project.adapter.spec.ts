@@ -38,6 +38,7 @@ function dto(overrides: Partial<ProjectDto> = {}): ProjectDto {
     highlight: 'Chiffrement de bout en bout',
     scope: 'Conception, développement, déploiement',
     updatedAt: '2026-10-06T10:00:00.000Z',
+    version: 4,
     ...overrides,
   };
 }
@@ -64,6 +65,7 @@ describe('toProject', () => {
       highlight: 'Chiffrement de bout en bout',
       scope: 'Conception, développement, déploiement',
       updatedAt: '2026-10-06T10:00:00.000Z',
+      version: 4,
     });
   });
 

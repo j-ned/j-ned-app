@@ -260,6 +260,13 @@
       "when": 1795340227846,
       "tag": "0036_blog_comment",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1795371669179,
+      "tag": "0037_content_version",
+      "breakpoints": true
     }
   ]
 }

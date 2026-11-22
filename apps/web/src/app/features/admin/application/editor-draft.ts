@@ -100,7 +100,7 @@ export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraf
   // Une couverture refusée après l'écriture laisse l'entité enregistrée ; `null` : déjà en cours.
   async save(
     write: () => Promise<TEntity>,
-    uploadCover: (cover: File, id: string) => Promise<unknown>,
+    uploadCover: (cover: File, saved: TEntity) => Promise<unknown>,
   ): Promise<SaveResult<TEntity> | null> {
     if (this._saving()) return null;
     this._saving.set(true);
@@ -111,7 +111,7 @@ export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraf
       } catch (error: unknown) {
         return { success: false, error };
       }
-      const cover = await this.sendCover(saved.id, uploadCover);
+      const cover = await this.sendCover(saved, uploadCover);
       this.markSaved(saved);
       return { success: true, data: { saved, cover } };
     } finally {
@@ -120,13 +120,13 @@ export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraf
   }
 
   private async sendCover(
-    id: string,
-    uploadCover: (cover: File, id: string) => Promise<unknown>,
+    saved: TEntity,
+    uploadCover: (cover: File, saved: TEntity) => Promise<unknown>,
   ): Promise<CoverUpload> {
     const cover = this._pendingCover();
     if (!cover) return { status: 'none' };
     try {
-      await uploadCover(cover, id);
+      await uploadCover(cover, saved);
       return { status: 'sent' };
     } catch (error: unknown) {
       return { status: 'failed', error };

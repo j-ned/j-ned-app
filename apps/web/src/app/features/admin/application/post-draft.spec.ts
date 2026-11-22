@@ -20,6 +20,7 @@ const SAVED = makeBlogPost({
   likesCount: 4,
   publishedAt: '2026-09-09T10:00:00Z',
   updatedAt: '2026-09-10T08:00:00Z',
+  version: 2,
 });
 
 const aDraft = (overrides: Partial<PostDraft> = {}): PostDraft => ({
@@ -129,6 +130,7 @@ describe('toPreviewPost', () => {
       likesCount: 4,
       publishedAt: '2026-09-09T10:00:00Z',
       updatedAt: '2026-09-10T08:00:00Z',
+      version: 2,
       wordCount: 7,
     } satisfies BlogPost);
   });
@@ -146,6 +148,7 @@ describe('toPreviewPost', () => {
       likesCount: 0,
       publishedAt: null,
       updatedAt: '',
+      version: 0,
       wordCount: 5,
     } satisfies BlogPost);
   });

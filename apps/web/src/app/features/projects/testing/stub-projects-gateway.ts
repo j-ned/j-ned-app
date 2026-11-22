@@ -12,10 +12,10 @@ export function stubProjectsGateway(overrides: Partial<ProjectsGateway> = {}): P
     updateProject: () => of(makeProject()),
     deleteProject: () => of(undefined),
     uploadImage: () => of('uploaded-key'),
-    uploadGalleryImage: () => of(makeProjectImage()),
-    updateGalleryImageAlt: () => of(makeProjectImage()),
-    reorderGallery: () => of([]),
-    deleteGalleryImage: () => of(undefined),
+    uploadGalleryImage: () => of({ result: makeProjectImage(), projectVersion: null }),
+    updateGalleryImageAlt: () => of({ result: makeProjectImage(), projectVersion: null }),
+    reorderGallery: () => of({ result: [], projectVersion: null }),
+    deleteGalleryImage: () => of({ result: null, projectVersion: null }),
     ...overrides,
   } as ProjectsGateway;
 }

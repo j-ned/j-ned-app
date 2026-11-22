@@ -28,6 +28,7 @@ export class UnauthorizedException extends httpException(401) {}
 export class ForbiddenException extends httpException(403) {}
 export class NotFoundException extends httpException(404) {}
 export class ConflictException extends httpException(409) {}
+export class PreconditionFailedException extends httpException(412) {}
 export class PayloadTooLargeException extends httpException(413) {}
 export class UnprocessableEntityException extends httpException(422) {}
 export class TooManyRequestsException extends httpException(429) {

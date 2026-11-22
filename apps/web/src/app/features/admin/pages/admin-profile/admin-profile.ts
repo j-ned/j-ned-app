@@ -199,7 +199,7 @@ export class AdminProfile implements LeaveConfirmable {
 
   protected async save(content: ProfileContent): Promise<void> {
     const version = this.draft.saved()?.version;
-    if (version === undefined || !(await this.newerVersion.beforeSave())) return;
+    if (version === undefined || !(await this.newerVersion.beforeSave()).proceed) return;
     const result = await this.draft.save(() =>
       firstValueFrom(this.gateway.saveProfile(content, version)),
     );
@@ -256,6 +256,7 @@ function saveFailure(error: unknown): string {
   return withValidationDetail("Le parcours n'a pas pu être enregistré.", error);
 }
 
+// La version du parcours part dans le corps du `PUT` : l'API refuse une version périmée en 409.
 function isStaleVersion(error: unknown): boolean {
   return error instanceof HttpErrorResponse && error.status === 409;
 }

@@ -15,6 +15,7 @@ export function makeBlogPost(overrides: Partial<BlogPost> = {}): BlogPost {
     likesCount: 0,
     publishedAt: '2026-08-31T00:00:00Z',
     updatedAt: '2026-08-31T00:00:00Z',
+    version: 1,
     wordCount: countWords(overrides.contentMarkdown ?? ''),
     ...overrides,
   };

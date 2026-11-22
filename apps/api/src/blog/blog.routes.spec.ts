@@ -1,6 +1,10 @@
 import type { RequireAuth } from '../auth/require-auth';
 import type { UploadedFile } from '../common/http';
-import { NotFoundException } from '../common/http-errors';
+import {
+  ConflictException,
+  NotFoundException,
+  PreconditionFailedException,
+} from '../common/http-errors';
 import { PUBLIC_READ_THROTTLE } from '../common/throttle';
 import { testApp } from '../testing/test-app';
 import type { BlogContentImagesService } from './blog-content-images.service';
@@ -12,7 +16,12 @@ import { BlogCommentsService } from '../blog-comments/blog-comments.service';
 import { MemoryCommentStore } from '../testing/memory-comment-store';
 
 const ID = '11111111-1111-4111-8111-111111111111';
-const POST = { id: ID, slug: 'mon-article', title: 'Mon article' };
+const POST = {
+  id: ID,
+  slug: 'mon-article',
+  title: 'Mon article',
+  version: 4,
+};
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
   'base64',
@@ -59,12 +68,16 @@ describe('blog routes (HTTP)', () => {
   let ip = 0;
   const call = (
     path: string,
-    init: RequestInit & { json?: unknown } = {},
+    init: Omit<RequestInit, 'headers'> & {
+      json?: unknown;
+      headers?: Readonly<Record<string, string>>;
+    } = {},
     target = app,
   ) => {
-    const { json, ...rest } = init;
+    const { json, headers: extraHeaders, ...rest } = init;
     const headers: Record<string, string> = {
       'x-forwarded-for': `198.51.100.${(ip = (ip % 250) + 1)}`,
+      ...extraHeaders,
     };
     if (json !== undefined) headers['content-type'] = 'application/json';
     return target.request(`/api/blog${path}`, {
@@ -98,7 +111,11 @@ describe('blog routes (HTTP)', () => {
         unknown
       >[];
       expect(post).not.toHaveProperty('contentMarkdown');
-      expect(post).toMatchObject({ slug: POST.slug, wordCount: 900 });
+      expect(post).toMatchObject({
+        slug: POST.slug,
+        wordCount: 900,
+        version: 4,
+      });
     });
 
     it('GET /posts?include=content keeps the Markdown body, for the RSS feed', async () => {
@@ -117,6 +134,7 @@ describe('blog routes (HTTP)', () => {
       expect(ok.status).toBe(200);
       expect(await ok.json()).toEqual(POST);
       expect(blog.findBySlug).toHaveBeenCalledWith('mon-article');
+      expect(ok.headers.get('etag')).toBe('"4"');
 
       blog.findBySlug.mockRejectedValueOnce(new NotFoundException('nope'));
       expect((await call('/posts/absent')).status).toBe(404);
@@ -197,7 +215,71 @@ describe('blog routes (HTTP)', () => {
       expect(blog.update).toHaveBeenCalledWith(
         ID,
         expect.objectContaining({ title: 'Nouveau', coverImage: null }),
+        undefined,
       );
+    });
+
+    it('Given If-Match "3", When PATCH /posts/:id, Then the service expects version 3 and the response carries the new ETag', async () => {
+      blog.update.mockResolvedValueOnce(POST);
+      const res = await call(`/posts/${ID}`, {
+        method: 'PATCH',
+        json: { title: 'Nouveau' },
+        headers: { 'if-match': '"3"' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('etag')).toBe('"4"');
+      expect(blog.update).toHaveBeenCalledWith(ID, { title: 'Nouveau' }, 3);
+    });
+
+    it('Given a malformed If-Match, When PATCH /posts/:id, Then 400 without calling the service', async () => {
+      const res = await call(`/posts/${ID}`, {
+        method: 'PATCH',
+        json: { title: 'Nouveau' },
+        headers: { 'if-match': 'W/"3"' },
+      });
+
+      expect(res.status).toBe(400);
+      expect(blog.update).not.toHaveBeenCalled();
+    });
+
+    it('Given a stale version, When PATCH /posts/:id, Then the service 412 is returned in the API error format', async () => {
+      blog.update.mockRejectedValueOnce(
+        new PreconditionFailedException('Version périmée'),
+      );
+      const res = await call(`/posts/${ID}`, {
+        method: 'PATCH',
+        json: { title: 'Nouveau' },
+        headers: { 'if-match': '"3"' },
+      });
+
+      expect(res.status).toBe(412);
+      expect(await res.json()).toMatchObject({
+        statusCode: 412,
+        error: 'Precondition Failed',
+        message: 'Version périmée',
+      });
+    });
+
+    it('Given a title taken by another post, When PATCH /posts/:id, Then the service 409 is returned, distinct from a stale version', async () => {
+      blog.update.mockRejectedValueOnce(
+        new ConflictException('Un autre article porte déjà ce titre'),
+      );
+      const res = await call(`/posts/${ID}`, {
+        method: 'PATCH',
+        json: { title: 'Pris' },
+        headers: { 'if-match': '"3"' },
+      });
+
+      expect(res.status).toBe(409);
+    });
+
+    it('Given a created post, When POST /posts, Then 201 with its version as ETag', async () => {
+      blog.create.mockResolvedValueOnce({ ...POST, version: 1 });
+      const res = await call('/posts', { method: 'POST', json: VALID });
+
+      expect(res.status).toBe(201);
+      expect(res.headers.get('etag')).toBe('"1"');
     });
 
     it('PATCH /posts/:id rejects a non-UUID id and a non-null coverImage with 400', async () => {
@@ -232,6 +314,34 @@ describe('blog routes (HTTP)', () => {
       expect(id).toBe(ID);
       expect(file.buffer).toEqual(PNG);
       expect(file.mimetype).toBe('image/png');
+    });
+
+    it('Given If-Match "4", When a cover is posted, Then the service expects version 4 and the new ETag is returned', async () => {
+      blog.uploadCoverImage.mockResolvedValueOnce({ ...POST, version: 5 });
+      const res = await call(`/posts/${ID}/image`, {
+        method: 'POST',
+        body: fileForm(PNG),
+        headers: { 'if-match': '"4"' },
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.headers.get('etag')).toBe('"5"');
+      expect(blog.uploadCoverImage).toHaveBeenCalledWith(
+        ID,
+        expect.objectContaining({ buffer: PNG }),
+        4,
+      );
+    });
+
+    it('Given a malformed If-Match, When a cover is posted, Then 400 without calling the service', async () => {
+      const res = await call(`/posts/${ID}/image`, {
+        method: 'POST',
+        body: fileForm(PNG),
+        headers: { 'if-match': '"x"' },
+      });
+
+      expect(res.status).toBe(400);
+      expect(blog.uploadCoverImage).not.toHaveBeenCalled();
     });
 
     it('Given a PDF or no file, When posted, Then 422', async () => {

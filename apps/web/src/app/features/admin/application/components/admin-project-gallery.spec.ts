@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 import { AdminProjectGallery } from './admin-project-gallery';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
-import type { ProjectImage } from '@features/projects/domain/models/project.model';
+import type { GalleryWrite, ProjectImage } from '@features/projects/domain/models/project.model';
 import { makeProjectImage } from '@features/projects/testing/project-builders';
 import { ToastStore } from '@core/notifications/toast-store';
 import type { ToastMessage } from '@shared/ui/toast.types';
@@ -39,29 +39,36 @@ const httpError = (status: number): HttpErrorResponse =>
 
 type GatewayStub = {
   uploadGalleryImage: Mock<
-    (projectId: string, file: File, alt: string) => Observable<ProjectImage>
+    (projectId: string, file: File, alt: string) => Observable<GalleryWrite<ProjectImage>>
   >;
   updateGalleryImageAlt: Mock<
-    (projectId: string, imageId: string, alt: string) => Observable<ProjectImage>
+    (projectId: string, imageId: string, alt: string) => Observable<GalleryWrite<ProjectImage>>
   >;
-  deleteGalleryImage: Mock<(projectId: string, imageId: string) => Observable<void>>;
+  deleteGalleryImage: Mock<(projectId: string, imageId: string) => Observable<GalleryWrite<null>>>;
   reorderGallery: Mock<
-    (projectId: string, imageIds: readonly string[]) => Observable<readonly ProjectImage[]>
+    (
+      projectId: string,
+      imageIds: readonly string[],
+    ) => Observable<GalleryWrite<readonly ProjectImage[]>>
   >;
 };
 
+// Chaque écriture réussie rend la version suivante du projet, à partir de 2.
 function makeGateway(images: readonly ProjectImage[]): GatewayStub {
   const byId = (id: string): ProjectImage =>
     images.find((image) => image.id === id) ?? capture(id, id);
+  let projectVersion = 1;
+  const written = <T>(result: T): Observable<GalleryWrite<T>> =>
+    of({ result, projectVersion: ++projectVersion });
   return {
     uploadGalleryImage: vi.fn((_projectId: string, _file: File, alt: string) =>
-      of(capture('new', alt)),
+      written(capture('new', alt)),
     ),
     updateGalleryImageAlt: vi.fn((_projectId: string, imageId: string, alt: string) =>
-      of({ ...byId(imageId), alt }),
+      written({ ...byId(imageId), alt }),
     ),
-    deleteGalleryImage: vi.fn(() => of(undefined)),
-    reorderGallery: vi.fn((_projectId: string, ids: readonly string[]) => of(ids.map(byId))),
+    deleteGalleryImage: vi.fn(() => written(null)),
+    reorderGallery: vi.fn((_projectId: string, ids: readonly string[]) => written(ids.map(byId))),
   };
 }
 
@@ -71,6 +78,7 @@ type Rendered = {
   gateway: GatewayStub;
   toast: { add: ReturnType<typeof vi.fn> };
   changes: (readonly ProjectImage[])[];
+  versions: number[];
 };
 
 async function render(
@@ -91,10 +99,12 @@ async function render(
   fixture.componentRef.setInput('images', images);
   const changes: (readonly ProjectImage[])[] = [];
   fixture.componentInstance.galleryChange.subscribe((next) => changes.push(next));
+  const versions: number[] = [];
+  fixture.componentInstance.versionWritten.subscribe((version) => versions.push(version));
   fixture.detectChanges();
   await fixture.whenStable();
   fixture.detectChanges();
-  return { fixture, host: fixture.nativeElement as HTMLElement, gateway, toast, changes };
+  return { fixture, host: fixture.nativeElement as HTMLElement, gateway, toast, changes, versions };
 }
 
 async function settle(fixture: ComponentFixture<AdminProjectGallery>): Promise<void> {
@@ -188,6 +198,55 @@ describe('AdminProjectGallery', () => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     TestBed.resetTestingModule();
+  });
+
+  describe('version du projet après une écriture', () => {
+    it('Given four successful writes When they answer Then each project version is reported, in order', async () => {
+      const rendered = await render();
+
+      await upload(rendered, 'Vue mobile');
+      type(byTestId(items(rendered.host)[0], 'admin-gallery-item-alt'), 'Vue globale, relue');
+      await submit(rendered.fixture, formOf(items(rendered.host)[0]));
+      await click(rendered.fixture, buttonIn(items(rendered.host)[0], 'admin-gallery-item-down'));
+      await click(rendered.fixture, buttonIn(items(rendered.host)[0], 'admin-gallery-item-remove'));
+      await click(
+        rendered.fixture,
+        buttonIn(items(rendered.host)[0], 'admin-gallery-item-confirm-remove'),
+      );
+
+      expect(rendered.versions).toEqual([2, 3, 4, 5]);
+    });
+
+    it('Given a refused write When it answers Then no version is reported', async () => {
+      const rendered = await render(CAPTURES, (gateway) =>
+        gateway.deleteGalleryImage.mockReturnValue(throwError(() => httpError(500))),
+      );
+
+      await click(rendered.fixture, buttonIn(items(rendered.host)[0], 'admin-gallery-item-remove'));
+      await click(
+        rendered.fixture,
+        buttonIn(items(rendered.host)[0], 'admin-gallery-item-confirm-remove'),
+      );
+
+      expect(rendered.versions).toEqual([]);
+    });
+
+    it('Given a write whose version is unknown When it answers Then the gallery changes and no version is reported', async () => {
+      const rendered = await render(CAPTURES, (gateway) =>
+        gateway.deleteGalleryImage.mockReturnValue(of({ result: null, projectVersion: null })),
+      );
+
+      await click(rendered.fixture, buttonIn(items(rendered.host)[0], 'admin-gallery-item-remove'));
+      await click(
+        rendered.fixture,
+        buttonIn(items(rendered.host)[0], 'admin-gallery-item-confirm-remove'),
+      );
+
+      expect({ items: items(rendered.host).length, versions: rendered.versions }).toEqual({
+        items: 2,
+        versions: [],
+      });
+    });
   });
 
   describe('ajout d’une capture', () => {
@@ -579,7 +638,7 @@ describe('AdminProjectGallery', () => {
     it('Given the API answers the reorder When the list is rebuilt Then the gallery is the API answer, announced as is', async () => {
       const fromApi = [{ ...CAPTURES[1], alt: 'Transactions (serveur)' }, CAPTURES[0], CAPTURES[2]];
       const rendered = await render(CAPTURES, (gateway) =>
-        gateway.reorderGallery.mockReturnValue(of(fromApi)),
+        gateway.reorderGallery.mockReturnValue(of({ result: fromApi, projectVersion: 2 })),
       );
 
       await click(rendered.fixture, buttonIn(items(rendered.host)[0], 'admin-gallery-item-down'));

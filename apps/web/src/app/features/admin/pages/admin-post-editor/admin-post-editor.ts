@@ -33,6 +33,8 @@ import {
   toPreviewPost,
   type PostDraft,
 } from '../../application/post-draft';
+import { isStaleVersion } from '../../application/is-stale-version';
+import { isTitleTaken } from '../../application/is-title-taken';
 import { knownTags } from '../../application/tag-suggestions';
 import type { LeaveConfirmable } from '../../application/unsaved-changes-guard';
 
@@ -42,6 +44,17 @@ const FORM_SECTIONS: readonly FormTocSection<EditedDraft<PostDraft>>[] = [
   { id: 'post-cover', label: '03 · Couverture', fields: ['cover'] },
   { id: 'post-publication', label: '04 · Publication', fields: ['status'] },
 ];
+
+const CONFLICT_MESSAGE =
+  "L'article n'a pas été enregistré\u00a0: une version plus récente a été enregistrée ailleurs.";
+
+const TITLE_TAKEN_MESSAGE = 'Un autre article porte déjà ce titre\u00a0: choisis-en un autre.';
+
+function saveFailure(error: unknown): string {
+  if (isStaleVersion(error)) return CONFLICT_MESSAGE;
+  if (isTitleTaken(error)) return TITLE_TAKEN_MESSAGE;
+  return withValidationDetail("Erreur lors de l'enregistrement de l'article", error);
+}
 
 const POST_EDITOR_COPY: AdminEditorCopy = {
   testIdPrefix: 'admin-post',
@@ -162,8 +175,8 @@ export class AdminPostEditor implements LeaveConfirmable {
   });
   protected readonly newerVersion = new NewerVersionCheck({
     edited: (): EditedVersion | null => editedVersion(this.draft.saved()),
-    readLatest: (id): Observable<string | null> =>
-      this.gateway.getLatestAdminPost(id).pipe(map((post) => post?.updatedAt ?? null)),
+    readLatest: (id): Observable<number | null> =>
+      this.gateway.getLatestAdminPost(id).pipe(map((post) => post?.version ?? null)),
     // L'article vient de la liste partagée : la relire recharge l'éditeur et les autres écrans.
     reload: (): void => this.gateway.invalidateAdminPosts(),
     paused: this.draft.saving,
@@ -189,25 +202,27 @@ export class AdminPostEditor implements LeaveConfirmable {
   }
 
   protected async save(payload: BlogPostInput): Promise<void> {
-    if (!(await this.newerVersion.beforeSave())) return;
+    const decision = await this.newerVersion.beforeSave();
+    if (!decision.proceed) return;
     const id = this.id();
     const result = await this.draft.save(
       () =>
         firstValueFrom(
-          id ? this.gateway.updatePost(id, payload) : this.gateway.createPost(payload),
+          id
+            ? this.gateway.updatePost(id, payload, decision.version ?? undefined)
+            : this.gateway.createPost(payload),
         ),
-      (cover, postId) => firstValueFrom(this.gateway.uploadCoverImage(cover, postId)),
+      (cover, post) => firstValueFrom(this.gateway.uploadCoverImage(cover, post.id, post.version)),
     );
     if (!result) return;
     if (!result.success) {
-      this.toast.add({
-        severity: 'error',
-        detail: withValidationDetail("Erreur lors de l'enregistrement de l'article", result.error),
-      });
+      if (isStaleVersion(result.error)) this.newerVersion.reportConflict();
+      this.toast.add({ severity: 'error', detail: saveFailure(result.error) });
       return;
     }
     const { saved, cover } = result.data;
     if (cover.status === 'failed') {
+      if (isStaleVersion(cover.error)) this.newerVersion.reportConflict();
       this.toast.add({
         severity: 'warn',
         detail: uploadFailureMessage(

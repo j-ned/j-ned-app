@@ -71,7 +71,7 @@ describe('project images routes (HTTP)', () => {
 
   describe('quota (AdminWriteThrottle)', () => {
     it(`Given an admin, When it deletes ${ADMIN_WRITE_THROTTLE.limit + 1} times within a minute, Then the last one gets 429`, async () => {
-      images.remove.mockResolvedValue(undefined);
+      images.remove.mockResolvedValue({ result: null, projectVersion: 2 });
       const statuses: number[] = [];
       for (let i = 0; i <= ADMIN_WRITE_THROTTLE.limit; i += 1) {
         const res = await app.request(
@@ -89,7 +89,7 @@ describe('project images routes (HTTP)', () => {
     const post = (body: FormData, id = PROJECT_ID) =>
       app.request(`/api/projects/${id}/images`, { method: 'POST', body });
 
-    it('Given a PNG and an alt, When posted, Then 201 with the created capture', async () => {
+    it('Given a PNG and an alt, When posted, Then 201 with the created capture and the project version as ETag', async () => {
       const created = {
         id: 'x',
         url: '/storage/portfolio-storage/project-images/x.avif',
@@ -98,11 +98,15 @@ describe('project images routes (HTTP)', () => {
         height: 1000,
         order: 0,
       };
-      images.upload.mockResolvedValueOnce(created);
+      images.upload.mockResolvedValueOnce({
+        result: created,
+        projectVersion: 7,
+      });
 
       const res = await post(form(alt('  Tableau de bord '), png()));
 
       expect(res.status).toBe(201);
+      expect(res.headers.get('etag')).toBe('"7"');
       expect(await res.json()).toEqual(created);
       const [id, uploaded, text] = images.upload.mock.calls[0] as [
         string,
@@ -187,6 +191,24 @@ describe('project images routes (HTTP)', () => {
   });
 
   describe('PATCH /projects/:id/images/:imageId', () => {
+    it('Given an alt, When patched, Then 200 with the capture and the project version as ETag', async () => {
+      const updated = { id: IMAGE_ID, alt: 'Nouveau' };
+      images.updateAlt.mockResolvedValueOnce({
+        result: updated,
+        projectVersion: 4,
+      });
+
+      const res = await json(
+        'PATCH',
+        `/api/projects/${PROJECT_ID}/images/${IMAGE_ID}`,
+        { alt: 'Nouveau' },
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('etag')).toBe('"4"');
+      expect(await res.json()).toEqual(updated);
+    });
+
     it.each([
       ['blank alt', { alt: ' ' }],
       ['unknown field', { alt: 'Alt', order: 3 }],
@@ -207,10 +229,11 @@ describe('project images routes (HTTP)', () => {
         method: 'DELETE',
       });
 
-    it('Given a capture, When deleted, Then 204 without body', async () => {
-      images.remove.mockResolvedValueOnce(undefined);
+    it('Given a capture, When deleted, Then 204 without body, the project version as ETag', async () => {
+      images.remove.mockResolvedValueOnce({ result: null, projectVersion: 5 });
       const res = await remove();
       expect(res.status).toBe(204);
+      expect(res.headers.get('etag')).toBe('"5"');
       expect(await res.text()).toBe('');
       expect(images.remove).toHaveBeenCalledWith(PROJECT_ID, IMAGE_ID);
     });
@@ -232,9 +255,13 @@ describe('project images routes (HTTP)', () => {
         { id: B, order: 0 },
         { id: A, order: 1 },
       ];
-      images.reorder.mockResolvedValueOnce(gallery);
+      images.reorder.mockResolvedValueOnce({
+        result: gallery,
+        projectVersion: 9,
+      });
       const res = await put({ imageIds: [B, A] });
       expect(res.status).toBe(200);
+      expect(res.headers.get('etag')).toBe('"9"');
       expect(await res.json()).toEqual(gallery);
       expect(images.reorder).toHaveBeenCalledWith(PROJECT_ID, [B, A]);
     });

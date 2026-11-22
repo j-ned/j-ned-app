@@ -17,6 +17,8 @@ réactifs que pour les commentaires. »
    confirmation, erreur) : rien n'a été changé sur ce point.
 
 Hors périmètre : aucun changement de l'API ni du contrat HTTP, ni polling continu, ni WebSocket/SSE.
+Exception livrée ensuite : la version des articles et des projets (section « Éditeurs : version plus
+récente enregistrée ailleurs », ADR-0041).
 
 ## Mécanismes en place avant cette spec
 
@@ -163,8 +165,8 @@ l'entité a été enregistrée ailleurs depuis son chargement, sans jamais écra
 **Comportement.**
 
 - Au retour sur l'onglet (`refreshAdminWhenVisible`, 15 s au plus souvent), l'éditeur relit l'entité
-  **en arrière-plan et sans toast**, et compare sa version à celle du document édité : `updatedAt`
-  pour l'article et le projet, `version` pour le parcours. Jamais le contenu du brouillon.
+  **en arrière-plan et sans toast**, et compare sa `version` (entier, incrémenté par l'API à chaque
+  écriture) à celle du document édité. Jamais le contenu du brouillon.
 - Rien n'est relu pour un nouvel article ou projet jamais enregistré, ni pendant un enregistrement.
   Une relecture partie avant un enregistrement de l'onglet, ou avant l'ouverture d'une autre entité
   dans le même éditeur, et revenue après est ignorée (la garde compare l'`id` et la version). Un
@@ -182,12 +184,30 @@ l'entité a été enregistrée ailleurs depuis son chargement, sans jamais écra
 - Enregistrer alors qu'une version plus récente est signalée (article, projet) demande une
   confirmation : « Une version plus récente de cet article a été enregistrée ailleurs : enregistrer
   ton brouillon la remplacera. », « Enregistrer quand même » ou « Continuer l'édition ». Annuler
-  n'écrit rien et garde le brouillon. Sans cette confirmation, l'API (sans contrôle de version)
-  écraserait l'autre version sans le dire.
+  n'écrit rien et garde le brouillon. « Enregistrer quand même » relit la dernière version et
+  envoie le brouillon sous condition de celle-ci (`If-Match`) ; si elle ne peut pas être relue, le
+  brouillon part avec sa propre version, l'API répond 412 et l'avertissement reste. Jamais
+  d'écriture sans condition.
+- Tout enregistrement d'article ou de projet part sous condition de la version d'où vient le
+  brouillon (`If-Match: "<version>"`), l'envoi de la couverture sous celle que l'écriture vient de
+  rendre. Un refus 412 (version enregistrée ailleurs avant tout retour sur l'onglet) affiche le même
+  avertissement et la même action que le parcours, garde le brouillon et sa couverture, et le toast
+  dit « L'article (Le projet) n'a pas été enregistré : une version plus récente a été enregistrée
+  ailleurs. ». Une couverture refusée en 412 après l'écriture affiche aussi l'avertissement.
+- Un refus 409 d'un article ou d'un projet veut dire que le nouveau titre donne un slug déjà pris :
+  le toast dit « Un autre article (projet) porte déjà ce titre : choisis-en un autre. », le
+  brouillon reste tel quel et aucun avertissement de version n'apparaît. Le formulaire n'a pas de
+  canal d'erreur serveur par champ : le message passe par le toast (`role="alert"`).
 - Parcours : pas de confirmation, l'API refuse la version périmée. Un enregistrement refusé en 409
   affiche le même avertissement et la même action. Le toast d'erreur dit « Le parcours n'a pas été
   enregistré : une version plus récente a été enregistrée ailleurs. » au lieu de demander de
   recharger la page.
+- Projet : chaque écriture de galerie (ajout, texte alternatif, ordre, retrait) change la version du
+  projet, que l'API renvoie dans l'`ETag` de la réponse. L'éditeur retient la plus haute version
+  connue (projet enregistré ou relu, réponses de la galerie), quel que soit l'ordre d'arrivée : pas
+  de faux avertissement ni de 412 causé par l'onglet lui-même quand une écriture de galerie
+  chevauche un enregistrement, l'envoi de la couverture ou un rechargement. Celles faites ailleurs
+  sont signalées comme une version plus récente.
 - « Dernière version chargée. » n'est dit que si la version éditée a effectivement changé depuis
   celle d'où le rechargement est parti ; il retombe à la saisie suivante et à l'enregistrement
   suivant. Un rechargement de projet ou de parcours qui échoue donne le focus à « Réessayer ».
@@ -207,35 +227,44 @@ réutilise `Button` et `ConfirmDialog`.
 - `NewerVersionCheck` (`features/admin/application/newer-version-check.ts`) : relit au retour, compare
   les versions, ignore la réponse si l'entité ou sa version a changé entre-temps ; `detected`
   retombe dès que la version éditée change (enregistrement, rechargement). Il porte aussi le
-  rechargement, l'état « rechargée » et la confirmation d'écrasement (`beforeSave()`). Chaque
-  éditeur lui donne son `id` et sa version, sa lecture de fond, son rechargement, `draft.saving`
-  et l'existence de modifications ; le parcours déclare `staleRejectedByApi`.
+  rechargement, l'état « rechargée » et la confirmation d'écrasement : `beforeSave()` rend
+  `{ proceed, version }`, la version à envoyer (relue après confirmation). Chaque éditeur lui donne
+  son `id` et sa version, sa lecture de fond, son rechargement, `draft.saving` et l'existence de
+  modifications ; le parcours déclare `staleRejectedByApi`. `isStaleVersion()` (412) et
+  `isTitleTaken()` (409) servent aux éditeurs d'article et de projet ; le parcours garde son test du 409. `AdminProjectGallery` émet `versionWritten` avec la version rendue par chaque écriture.
 - `AdminEditorFrame`, déjà commun aux trois éditeurs, porte la zone, le bouton et les deux
   dialogues (recharger, enregistrer par-dessus).
 - Lectures de fond : `BlogGateway.getLatestAdminPost(id)` lit `/blog/posts/admin` **hors du cache
   partagé** (le relire réécrirait le brouillon, lié à la liste) ; `getProjectById(id, { background })`
   et `getProfile({ background })` existants. Recharger : relire le cache des articles, ou
   `reload()` de la ressource du projet et du parcours.
-- `Project` porte `updatedAt` (l'API l'envoyait déjà) ; `EditorDraft` vide la couverture choisie
-  quand une nouvelle version est chargée.
+- `BlogPost` et `Project` portent `version` ; les gateways prennent la version attendue
+  (`updatePost`, `updateProject`, `uploadCoverImage`, `uploadImage`) et la posent en `If-Match`
+  (`shared/api/if-match.ts`). `EditorDraft` vide la couverture choisie quand une nouvelle version
+  est chargée et passe l'entité écrite à l'envoi de la couverture.
 
-**Protection de l'API contre l'écrasement silencieux (articles et projets) : absente.**
-`PATCH /api/blog/posts/:id` et `PATCH /api/projects/:id` écrivent sans condition (`blog.service.ts`
-et `projects.service.ts`, `update()`) : un brouillon parti d'une version périmée écrase la version
-enregistrée ailleurs, sans erreur. Le front n'en sait rien si l'onglet n'a pas été quitté puis
-retrouvé (le contrôle ne joue qu'au retour, au plus toutes les 15 s). Changement proposé, non écrit :
+**Protection de l'API contre l'écrasement silencieux (articles et projets) : livrée (2026-11-22,
+ADR-0041).** Avant, `PATCH /api/blog/posts/:id` et `PATCH /api/projects/:id` écrivaient sans
+condition : un brouillon parti d'une version périmée écrasait la version enregistrée ailleurs si
+l'onglet n'avait pas été quitté puis retrouvé.
 
-- Contrat : `PATCH` accepte un en-tête facultatif `If-Match: "<version>"`. Présent, l'écriture devient
-  conditionnelle (`UPDATE … WHERE id = :id AND version = :version`) ; aucune ligne mise à jour alors
-  que l'entité existe ⇒ **409** « version périmée », comme le parcours. Absent ⇒ comportement actuel.
-- Version : une colonne entière `version` (défaut 1, incrémentée par chaque écriture de l'entité, y
-  compris la couverture) plutôt que `updatedAt`, que JSON tronque à la milliseconde alors que
-  PostgreSQL la garde à la microseconde. Migration en expansion seule (colonne `NOT NULL DEFAULT 1`),
-  réversible par suppression de la colonne.
-- Compatibilité : en-tête facultatif, aucun client existant ne casse ; le front l'envoie ensuite et
-  traite le 409 comme le parcours (`NewerVersionCheck.reportConflict()`), puis compare sur `version`.
-- Hors périmètre : la galerie d'un projet ne change pas son `updatedAt` (seulement celui des
-  captures) ; une capture ajoutée ailleurs n'est pas signalée par l'éditeur.
+- Version : colonne entière `version` (`integer NOT NULL DEFAULT 1`) sur `blog_post` et `project`,
+  plutôt que `updatedAt`, que JSON tronque à la milliseconde alors que PostgreSQL la garde à la
+  microseconde. Migration `0037_content_version.sql`, en expansion seule. Incrémentée dans le même
+  `UPDATE` par le `PATCH` (couverture retirée comprise), l'envoi de couverture et, pour un projet,
+  chaque écriture de galerie, par la première requête de sa transaction (le projet est verrouillé
+  avant ses captures, dans l'ordre de `DELETE project`, sans interblocage) ; le « j'aime » ne la
+  change pas.
+- Contrat : `PATCH` et `POST …/image` acceptent un en-tête facultatif `If-Match: "<version>"`
+  (ETag fort ; `*`, liste, `W/` ou valeur sans guillemets ⇒ 400). Présent, l'écriture devient
+  conditionnelle (`UPDATE … WHERE id = :id AND version = :version`) ; aucune ligne écrite alors que
+  l'entité existe ⇒ **412** « Une version plus récente de cet article (ce projet) a été enregistrée
+  ailleurs : recharge-le avant d'enregistrer. » (409 d'abord, abandonné : il se confondait avec le
+  409 du slug déjà pris, ADR-0041) ; entité supprimée ⇒ 404. Absent ⇒ comportement d'avant.
+  `version` est dans toutes les réponses (lectures, listes, écritures), `ETag: "<version>"` sur les
+  réponses d'une entité, et la version du projet dans l'`ETag` des quatre écritures de galerie.
+- Compatibilité : en-tête facultatif, aucun client existant ne casse ; l'API de `master` fonctionne
+  sur la base migrée (vérifié : lectures, `PATCH`, création).
 
 **Limites.** Un rechargement d'article qui échoue (relecture du cache, silencieuse) laisse
 l'avertissement affiché, sans erreur : l'action peut être relancée. Un rechargement de projet ou de
@@ -243,11 +272,15 @@ parcours qui échoue montre l'état d'erreur de l'éditeur, comme un premier cha
 d'article reste lié au cache partagé de la liste : la relecture que déclenche l'écriture (gateway)
 peut réécrire ce qui a été saisi juste après un enregistrement, couverture choisie dans cette
 fenêtre comprise. Une saisie faite entre la confirmation du rechargement et l'arrivée des données
-est écrasée par la version chargée. La confirmation d'écrasement ne joue que si la version plus
-récente a déjà été détectée (retour sur l'onglet) : sans contrôle de version côté API, un
-enregistrement fait avant tout retour écrase toujours en silence. Les deux
-seuils d'altitude du checker (éditeur de projet 273 lignes, du parcours 261) étaient déjà approchés
-avant ce changement (248 et 234) ; aucun découpage n'a été fait ici.
+est écrasée par la version chargée. Une écriture de galerie réussie côté API dont la réponse s'est
+perdue ne fait pas connaître sa version : le prochain enregistrement du projet reçoit 412 ; de même
+pour un enregistrement envoyé pendant qu'une écriture de galerie de l'onglet est encore en route et
+validée la première. Une écriture de galerie dont la version avance efface un avertissement déjà
+affiché ; le retour suivant sur l'onglet, ou le prochain enregistrement (412), le rétablit. Pendant
+le déploiement, l'ancienne API écrit sans incrémenter la version. Une couverture refusée en 412
+après son envoi laisse un objet S3 orphelin. Le seuil d'altitude du checker est dépassé par
+l'éditeur de projet (315 lignes, 273 avant ce changement) et le parcours (262, 261 avant) ; aucun
+découpage n'a été fait ici.
 
 ## Journal des tranches
 
@@ -262,6 +295,8 @@ avant ce changement (248 et 234) ; aucun découpage n'a été fait ici.
 - **Tranche 9 — version plus récente, éditeur de projet** : GREEN 3457 passed / 3457 total · refactor : aucun
 - **Tranche 10 — version plus récente et 409, éditeur du parcours** : GREEN 3462 passed / 3462 total · refactor : test du refus 409 commun (`isStaleVersion`) au toast et à l'avertissement
 - **Tranche 11 — écrasement confirmé, garde sur l'id, état « rechargée », relectures superflues** : GREEN 3474 passed / 3474 total · refactor : `editedVersion` partagé par les éditeurs d'article et de projet ; rechargement et état « rechargée » déplacés du cadre vers `NewerVersionCheck`
+- **Tranche 12 — version des articles et des projets, `If-Match`, 409** : API GREEN 1384 passed (dont 18 sur Postgres), parité 250 passed, web GREEN 3496 passed / 3496 total · refactor : `isStaleVersion` commun aux trois éditeurs
+- **Tranche 13 — revue : 412 au lieu de 409, galerie sans interblocage et version rendue** : API GREEN 1391 passed (dont 21 sur Postgres), parité 252 passed, web GREEN 3508 passed / 3508 total · refactor : `postPreparedImageResponse` et `formOf` partagés par les envois d'image
 
 ## Verify
 

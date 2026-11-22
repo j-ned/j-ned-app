@@ -52,6 +52,8 @@ export const projects = pgTable(
     kind: text('kind', { enum: PROJECT_KINDS }).notNull().default('demo'),
     featured: boolean('featured').notNull().default(false),
     order: integer('order').notNull().default(0),
+    // Incrémentée par toute écriture du contenu édité : l'admin enregistre sous condition de version.
+    version: integer('version').notNull().default(1),
     ...timestamps(),
   },
   (t) => ({

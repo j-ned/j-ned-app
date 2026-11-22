@@ -237,18 +237,18 @@ Module d'infrastructure S3-compatible, consommé par Projects, Blog, Profile et 
 
 CRUD admin des projets affichés sur le portfolio.
 
-**Schéma** : table `project` (uuid, `slug` unique, `category`, `featured`, `order`, `image` (key S3), etc.).
+**Schéma** : table `project` (uuid, `slug` unique, `category`, `featured`, `order`, `image` (key S3), `version`, etc.).
 
 **6 endpoints sous `/api/projects`** :
 
-| Méthode | Chemin                | Auth | Rôle                                                                                                                                                                                                       |
-| ------- | --------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET     | `/projects`           | ❌   | Liste publique. Filtres `?category=`, `?featured=true`. Tri `order ASC, createdAt DESC`.                                                                                                                   |
-| GET     | `/projects/:id`       | ❌   | 404 si absent.                                                                                                                                                                                             |
-| POST    | `/projects`           | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                                           |
-| PATCH   | `/projects/:id`       | ✅   | Met à jour. Re-slugifie si `title` change. `image: null` supprime l'image S3 (via `@Equals(null)` - pas de valeur arbitraire acceptée).                                                                    |
-| DELETE  | `/projects/:id`       | ✅   | Supprime le projet + son image S3 si présente.                                                                                                                                                             |
-| POST    | `/projects/:id/image` | ✅   | Upload multipart (`file`, max 4 Mo, MIME whitelist `image/webp\|jpeg\|png\|avif`, 422 si invalide). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an). |
+| Méthode | Chemin                | Auth | Rôle                                                                                                                                                                                                                              |
+| ------- | --------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/projects`           | ❌   | Liste publique. Filtres `?category=`, `?featured=true`. Tri `order ASC, createdAt DESC`.                                                                                                                                          |
+| GET     | `/projects/:id`       | ❌   | 404 si absent.                                                                                                                                                                                                                    |
+| POST    | `/projects`           | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                                                                  |
+| PATCH   | `/projects/:id`       | ✅   | Met à jour. Re-slugifie si `title` change. `image: null` supprime l'image S3 (via `@Equals(null)` - pas de valeur arbitraire acceptée). `If-Match` facultatif (voir « Version des articles et des projets »).                     |
+| DELETE  | `/projects/:id`       | ✅   | Supprime le projet + son image S3 si présente.                                                                                                                                                                                    |
+| POST    | `/projects/:id/image` | ✅   | Upload multipart (`file`, max 4 Mo, MIME whitelist `image/webp\|jpeg\|png\|avif`, 422 si invalide). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an). `If-Match` facultatif. |
 
 **Lifecycle S3** : key = `projects/<id>.<ext>`. Ordre upload → update DB → cleanup ancienne clé (jamais l'inverse, pour ne jamais laisser une référence DB cassée). Les réponses API exposent une URL proxy (`getPublicUrl`), jamais la key S3 brute.
 
@@ -256,22 +256,31 @@ CRUD admin des projets affichés sur le portfolio.
 
 CRUD admin des articles de blog + endpoints publics de consultation/like. Le front lit les articles à la requête (rendu serveur, spec front 022) : une écriture admin est visible dès la requête suivante, sans rebuild.
 
-**Schéma** : table `blog_post` (uuid, `slug` unique, `excerpt`, `contentMarkdown`, `coverImage` (key S3), `tags` (array), `status: 'draft' | 'published'`, `likesCount`, `publishedAt`).
+**Schéma** : table `blog_post` (uuid, `slug` unique, `excerpt`, `contentMarkdown`, `coverImage` (key S3), `tags` (array), `status: 'draft' | 'published'`, `likesCount`, `version`, `publishedAt`).
 
 **8 endpoints sous `/api/blog/posts`** :
 
-| Méthode | Chemin                   | Auth | Rôle                                                                                                                                                                                        |
-| ------- | ------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET     | `/blog/posts`            | ❌   | Liste publique des articles publiés, triés par `publishedAt DESC`.                                                                                                                          |
-| GET     | `/blog/posts/admin`      | ✅   | Liste complète (drafts inclus), triée par `createdAt DESC`.                                                                                                                                 |
-| GET     | `/blog/posts/:slug`      | ❌   | Détail public d'un article **publié**. 404 sur un slug draft/dépublié/inconnu (pas de fuite de contenu non publié).                                                                         |
-| POST    | `/blog/posts`            | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                            |
-| PATCH   | `/blog/posts/:id`        | ✅   | Met à jour. Slug **figé** une fois l'article publié (ne se re-génère plus au changement de titre - casserait l'URL publique et les liens entrants). `coverImage: null` supprime l'image S3. |
-| DELETE  | `/blog/posts/:id`        | ✅   | Supprime l'article + son image S3.                                                                                                                                                          |
-| POST    | `/blog/posts/:id/image`  | ✅   | Upload multipart (`file`, max 4 Mo, MIME whitelist `image/webp\|jpeg\|png\|avif`). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an).   |
-| POST    | `/blog/posts/:slug/like` | ❌   | Incrémente le compteur de likes d'un article **publié** (public, pas d'auth). 404 sur un slug draft/dépublié/inconnu.                                                                       |
+| Méthode | Chemin                   | Auth | Rôle                                                                                                                                                                                                                                                              |
+| ------- | ------------------------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/blog/posts`            | ❌   | Liste publique des articles publiés, triés par `publishedAt DESC`.                                                                                                                                                                                                |
+| GET     | `/blog/posts/admin`      | ✅   | Liste complète (drafts inclus), triée par `createdAt DESC`.                                                                                                                                                                                                       |
+| GET     | `/blog/posts/:slug`      | ❌   | Détail public d'un article **publié**. 404 sur un slug draft/dépublié/inconnu (pas de fuite de contenu non publié).                                                                                                                                               |
+| POST    | `/blog/posts`            | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                                                                                                  |
+| PATCH   | `/blog/posts/:id`        | ✅   | Met à jour. Slug **figé** une fois l'article publié (ne se re-génère plus au changement de titre - casserait l'URL publique et les liens entrants). `coverImage: null` supprime l'image S3. `If-Match` facultatif (voir « Version des articles et des projets »). |
+| DELETE  | `/blog/posts/:id`        | ✅   | Supprime l'article + son image S3.                                                                                                                                                                                                                                |
+| POST    | `/blog/posts/:id/image`  | ✅   | Upload multipart (`file`, max 4 Mo, MIME whitelist `image/webp\|jpeg\|png\|avif`). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an).                                                                         |
+| POST    | `/blog/posts/:slug/like` | ❌   | Incrémente le compteur de likes d'un article **publié** (public, pas d'auth). 404 sur un slug draft/dépublié/inconnu.                                                                                                                                             |
 
 **Lifecycle S3** : identique à Projects (key `blog/<id>.<ext>`, ordre upload → update DB → cleanup ancienne clé).
+
+## Version des articles et des projets
+
+Écriture conditionnelle des éditeurs de l'admin (ADR-0041 du front) : un brouillon parti d'une version périmée ne remplace plus en silence une version enregistrée ailleurs.
+
+- **Colonne `version`** (`integer NOT NULL DEFAULT 1`) sur `blog_post` et `project` (migration `0037_content_version.sql`). Incrémentée dans le même `UPDATE` par toute écriture du contenu édité : `PATCH` (couverture retirée comprise), `POST …/image`, et pour un projet chaque écriture de galerie (`POST /projects/:id/images`, `PATCH`/`DELETE /projects/:id/images/:imageId`, `PUT /projects/:id/images/order`), par la première requête de la transaction de la capture (le projet est verrouillé avant ses captures, dans l'ordre de `DELETE project` et de sa cascade : pas d'interblocage avec une suppression concurrente ; projet absent ⇒ 404). `POST /blog/posts/:slug/like` ne la change pas.
+- **Exposée** dans toutes les réponses : lectures (`GET /blog/posts/:slug`, `GET /projects/:id`), listes (`GET /blog/posts`, `/blog/posts/admin`, `/projects`) et réponses des écritures. Les réponses d'une entité (lecture, création, `PATCH`, `POST …/image`) portent `ETag: "<version>"`. Il désigne la version du contenu édité (le nombre de « j'aime » peut changer sous le même `ETag`) ; l'API ne lit pas `If-None-Match` et ne répond jamais 304. Les quatre écritures de galerie portent la **version du projet** en `ETag` (pas celle de la capture) : l'éditeur enregistre ensuite sous celle-ci.
+- **`If-Match: "<version>"`** (facultatif) sur `PATCH /blog/posts/:id`, `POST /blog/posts/:id/image`, `PATCH /projects/:id` et `POST /projects/:id/image` : l'écriture devient `UPDATE … WHERE id = :id AND version = :version`. Version périmée ⇒ **412 Precondition Failed** (« Une version plus récente de cet article (ce projet) a été enregistrée ailleurs : recharge-le avant d'enregistrer. »), au format d'erreur commun, rien n'est écrit ; si la version lue avant l'envoi diffère déjà, le 412 part avant tout envoi S3. Le **409** reste celui du slug déjà pris (titre d'une autre entité), avec ou sans `If-Match`. Entité supprimée ⇒ 404. En-tête mal formé (sans guillemets, `W/`, `*`, liste, `"0"`, au-delà de 2 147 483 647) ⇒ **400**. Sans en-tête : écriture inconditionnelle, comme avant. Le parcours (`PUT /profile`), qui envoie sa version dans le corps, garde son 409.
+- **Concurrence** : deux `PATCH` partis de la même version, un seul passe, l'autre reçoit 412 ; une écriture de galerie concurrente d'une suppression du projet reçoit 404, jamais un interblocage (test d'intégration `src/content-version.integration.spec.ts`, base jetable créée sur le serveur de `PROFILE_IT_DATABASE_URL`).
 
 ## Commentaires du blog
 

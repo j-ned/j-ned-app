@@ -13,6 +13,14 @@ import {
   PUBLIC_READ_THROTTLE,
   throttle,
 } from '../common/throttle';
+import type { Context } from 'hono';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import {
+  entityTag,
+  ifMatchVersion,
+  replyVersioned,
+} from '../common/entity-version';
+import type { GalleryWrite } from './project-gallery';
 import { validateDto } from '../common/validation';
 import { createProjectSchema } from './dto/create-project.dto';
 import { projectImageAltSchema } from './dto/project-image-alt.dto';
@@ -34,20 +42,22 @@ export function projectsRoutes(
       )
 
       .get('/:id', throttle(PUBLIC_READ_THROTTLE), async (c) =>
-        reply(c, await projects.findById(uuidParam(c, 'id'))),
+        replyVersioned(c, await projects.findById(uuidParam(c, 'id'))),
       )
 
       // 409 si le slug existe déjà.
       .post('/', throttle(), requireAuth, async (c) => {
         const dto = await jsonBody(c, createProjectSchema);
-        return reply(c, await projects.create(dto), 201);
+        return replyVersioned(c, await projects.create(dto), 201);
       })
 
-      // `image: null` retire la couverture (et l'objet S3).
+      // `image: null` retire la couverture (et l'objet S3) ; `If-Match: "<version>"` rend l'écriture
+      // conditionnelle.
       .patch('/:id', throttle(), requireAuth, async (c) => {
         const id = uuidParam(c, 'id');
+        const expected = ifMatchVersion(c);
         const dto = await jsonBody(c, updateProjectSchema);
-        return reply(c, await projects.update(id, dto));
+        return replyVersioned(c, await projects.update(id, dto, expected));
       })
 
       // Supprime aussi la couverture S3.
@@ -58,8 +68,13 @@ export function projectsRoutes(
 
       // Couverture : stockée en AVIF ≤ 1600 px.
       .post('/:id/image', throttle(), requireAuth, async (c) => {
+        const expected = ifMatchVersion(c);
         const { id, file } = await uuidParamAndFile(c, 'id', IMAGE_UPLOAD);
-        return reply(c, await projects.uploadImage(id, file), 201);
+        return replyVersioned(
+          c,
+          await projects.uploadImage(id, file, expected),
+          201,
+        );
       })
 
       // Galerie : ajout d'une capture (champ `file` + champ texte `alt`).
@@ -74,7 +89,11 @@ export function projectsRoutes(
             projectImageAltSchema,
             await multipartFields(fields),
           );
-          return reply(c, await images.upload(id, file, dto.alt), 201);
+          return replyGalleryWrite(
+            c,
+            await images.upload(id, file, dto.alt),
+            201,
+          );
         },
       )
 
@@ -86,7 +105,7 @@ export function projectsRoutes(
         async (c) => {
           const id = uuidParam(c, 'id');
           const dto = await jsonBody(c, reorderProjectImagesSchema);
-          return reply(c, await images.reorder(id, dto.imageIds));
+          return replyGalleryWrite(c, await images.reorder(id, dto.imageIds));
         },
       )
 
@@ -98,7 +117,10 @@ export function projectsRoutes(
           const id = uuidParam(c, 'id');
           const imageId = uuidParam(c, 'imageId');
           const dto = await jsonBody(c, projectImageAltSchema);
-          return reply(c, await images.updateAlt(id, imageId, dto.alt));
+          return replyGalleryWrite(
+            c,
+            await images.updateAlt(id, imageId, dto.alt),
+          );
         },
       )
 
@@ -109,11 +131,22 @@ export function projectsRoutes(
         async (c) => {
           const id = uuidParam(c, 'id');
           const imageId = uuidParam(c, 'imageId');
-          await images.remove(id, imageId);
+          const { projectVersion } = await images.remove(id, imageId);
+          c.header('ETag', entityTag(projectVersion));
           return c.body(null, 204);
         },
       )
   );
+}
+
+// La galerie fait partie du projet : l'`ETag` d'une écriture de galerie est la version du projet.
+function replyGalleryWrite<T>(
+  c: Context,
+  write: GalleryWrite<T>,
+  status: ContentfulStatusCode = 200,
+): Response {
+  c.header('ETag', entityTag(write.projectVersion));
+  return reply(c, write.result, status);
 }
 
 // Comme le `req.body` de multer : une clé répétée donne une liste.

@@ -28,6 +28,8 @@ export const blogPosts = pgTable(
       .notNull()
       .default('draft'),
     likesCount: integer('likes_count').notNull().default(0),
+    // Incrémentée par toute écriture du contenu édité : l'admin enregistre sous condition de version.
+    version: integer('version').notNull().default(1),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     ...timestamps(),
   },

@@ -17,7 +17,16 @@ import type { ProjectImageResponse, ProjectResponse } from './project-gallery';
 import { ProjectImagesService } from './project-images.service';
 import { findByIdOrFail } from '../common/crud-helpers';
 import { isUniqueViolation, slugify } from '../common/utils';
-import { insertedRow, updatedRow } from '../common/rows';
+import { insertedRow } from '../common/rows';
+import {
+  assertVersion,
+  missedWrite,
+  nextVersion,
+  versionedRow,
+} from '../common/entity-version';
+
+const STALE_PROJECT =
+  'Une version plus récente de ce projet a été enregistrée ailleurs : recharge-le avant d’enregistrer.';
 
 export class ProjectsService {
   private readonly logger = new Logger(ProjectsService.name);
@@ -61,8 +70,14 @@ export class ProjectsService {
     }
   }
 
-  async update(id: string, dto: UpdateProjectDto): Promise<ProjectResponse> {
+  // `expectedVersion` (If-Match) : écriture refusée en 412 si le projet a changé depuis cette version.
+  async update(
+    id: string,
+    dto: UpdateProjectDto,
+    expectedVersion?: number,
+  ): Promise<ProjectResponse> {
     const current = await this.findByIdRaw(id);
+    assertVersion(current, expectedVersion, STALE_PROJECT);
 
     // image extrait du spread : il ne peut être que null ou undefined côté DTO,
     // mais on ne veut jamais qu'il soit propagé tel quel dans le patch DB
@@ -79,8 +94,8 @@ export class ProjectsService {
     try {
       rows = await this.db
         .update(projects)
-        .set(patch)
-        .where(eq(projects.id, id))
+        .set({ ...patch, version: nextVersion(projects) })
+        .where(versionedRow(projects, id, expectedVersion))
         .returning();
     } catch (err) {
       if (isUniqueViolation(err, 'slug')) {
@@ -90,7 +105,7 @@ export class ProjectsService {
       }
       throw err;
     }
-    const row = updatedRow(rows, `Project ${id} not found`);
+    const row = rows[0] ?? (await this.missedWrite(id, expectedVersion));
 
     // S3 cleanup APRÈS le write DB réussi : si le write échoue, on préfère
     // garder l'objet S3 (orphelin DB-cohérent) plutôt qu'une DB cassée.
@@ -124,8 +139,13 @@ export class ProjectsService {
     });
   }
 
-  async uploadImage(id: string, file: UploadedFile): Promise<ProjectResponse> {
+  async uploadImage(
+    id: string,
+    file: UploadedFile,
+    expectedVersion?: number,
+  ): Promise<ProjectResponse> {
     const current = await this.findByIdRaw(id);
+    assertVersion(current, expectedVersion, STALE_PROJECT);
     // Ordre : upload → update DB → cleanup ancienne clé. Si une étape échoue, on préfère un orphelin S3
     // (cleanup manuel possible) à une DB qui référence une clé supprimée (image cassée côté front).
     const newKey = await storeOptimizedImage(
@@ -136,20 +156,30 @@ export class ProjectsService {
       file.buffer,
     );
 
-    const row = updatedRow(
-      await this.db
-        .update(projects)
-        .set({ image: newKey, updatedAt: new Date() })
-        .where(eq(projects.id, id))
-        .returning(),
-      `Project ${id} not found`,
-    );
+    // Version périmée entre-temps : la nouvelle clé reste un orphelin S3, comme un échec d'écriture.
+    const [row] = await this.db
+      .update(projects)
+      .set({
+        image: newKey,
+        version: nextVersion(projects),
+        updatedAt: new Date(),
+      })
+      .where(versionedRow(projects, id, expectedVersion))
+      .returning();
+    if (row === undefined) return this.missedWrite(id, expectedVersion);
 
     if (current.image !== newKey) {
       await deleteS3IfExists(this.storage, STORAGE_BUCKET, current.image);
     }
 
     return this.toResponse(row, await this.galleryOfOne(id));
+  }
+
+  private missedWrite(id: string, expectedVersion: number | undefined) {
+    return missedWrite(this.db, projects, id, expectedVersion, {
+      notFound: `Project ${id} not found`,
+      stale: STALE_PROJECT,
+    });
   }
 
   // Helper privé : retourne la row brute (sans transformation URL).
