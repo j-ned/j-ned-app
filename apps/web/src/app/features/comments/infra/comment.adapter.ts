@@ -40,7 +40,9 @@ export function toAdminComment(dto: AdminCommentDto): AdminComment {
   };
 }
 
-// Liste de champs fermée : une clé que l'API ajouterait (e-mail compris) n'atteint pas la page.
+// Liste de champs fermée : une clé ajoutée par l'API n'entre ni dans le modèle ni dans le DOM.
+// L'état de transfert du rendu serveur garde la réponse brute : seul le schéma de sortie de l'API
+// garantit qu'aucune adresse n'y figure.
 const toPublishedReply = (dto: PublicReplyDto): PublishedReply => ({
   id: dto.id,
   author: toPublicAuthor(dto.author),

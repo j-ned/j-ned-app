@@ -47,7 +47,7 @@ describe('toPublishedThread', () => {
     expect(toPublishedThread(toPublicCommentPageDto(thread))).toEqual(thread);
   });
 
-  it('Given an answer of the API carrying an e-mail it should not When it is adapted Then the address never reaches the page', () => {
+  it('Given an answer of the API carrying an e-mail it should not When it is adapted Then the model holds no address', () => {
     const leaking = {
       data: [
         {

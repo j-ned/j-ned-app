@@ -914,7 +914,7 @@ describe('BlogDetail', () => {
           method: 'POST',
           body: { name: 'Lou', email: 'lou@example.test', body: 'Bel article.', website: '' },
         },
-        status: 'Merci ! Ton commentaire sera publié après relecture.',
+        status: 'Merci\u202F! Ton commentaire sera publié après relecture.',
         name: '',
         items: 1,
       });
@@ -1152,7 +1152,7 @@ describe('BlogDetail', () => {
       });
     });
 
-    it('Given the API leaks an e-mail in a comment When the page shows Then no address reaches the page', async () => {
+    it('Given the API leaks an e-mail in a comment When the page shows Then no address is rendered in the DOM', async () => {
       const fixture = await showArticle((request) =>
         request.flush({
           data: [
