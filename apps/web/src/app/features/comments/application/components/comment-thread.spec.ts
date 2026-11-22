@@ -116,6 +116,19 @@ describe('CommentThread: lecture', () => {
     });
   });
 
+  it('Given published comments When the section is shown Then the count sits in a badge after the title, read as « Commentaires (n) »', async () => {
+    const host = await render(ready(makePublishedThread()));
+    const heading = host.querySelector('h2');
+
+    expect({
+      name: text(heading),
+      badge: text(byTestId(host, 'comments-count')),
+      hiddenParentheses: [...(heading?.querySelectorAll('.sr-only') ?? [])].map(
+        (el) => el.textContent,
+      ),
+    }).toEqual({ name: 'Commentaires (1)', badge: '1', hiddenParentheses: ['(', ')'] });
+  });
+
   it('Given a comment of this reader still waiting When the section is shown Then it is listed, says so, cannot be answered, and is not counted', async () => {
     const host = await render({
       status: 'ready',

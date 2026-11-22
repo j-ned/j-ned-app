@@ -15,6 +15,7 @@ function aCommentView(overrides: Partial<CommentView> = {}): CommentView {
     headingId: 'comment-c-1-author',
     author: 'Camille',
     ownerMention: null,
+    initial: 'C',
     createdAt: '2026-11-21T09:30:00.000Z',
     body: 'Merci pour cet article.',
     pending: false,
@@ -81,11 +82,13 @@ describe('CommentItem: répondre', () => {
     const button = replyButton(article);
 
     expect({
+      icon: button?.querySelector('svg')?.getAttribute('aria-hidden'),
       text: button?.textContent?.trim(),
       label: button?.getAttribute('aria-label'),
       expanded: button?.getAttribute('aria-expanded'),
       controls: button?.getAttribute('aria-controls') ?? null,
     }).toEqual({
+      icon: 'true',
       text: 'Répondre',
       label: 'Répondre à Camille',
       expanded: 'false',
@@ -189,6 +192,16 @@ describe('CommentItem', () => {
     expect([body?.textContent, body?.classList.contains('whitespace-pre-line')]).toEqual([
       'ligne 1\nligne 2',
       true,
+    ]);
+  });
+
+  it('Given a comment When it is shown Then its initial badge is decorative, hidden from assistive technologies', async () => {
+    const host = await render(aCommentView({ author: 'Camille', initial: 'C' }));
+    const badge = host.querySelector('header > [aria-hidden="true"]');
+
+    expect([badge?.textContent, host.querySelector('h3')?.textContent?.trim()]).toEqual([
+      'C',
+      'Camille',
     ]);
   });
 

@@ -125,6 +125,32 @@ describe('toCommentThreadView', () => {
     }).toEqual({ texts: true, violations: [] });
   });
 
+  it.each([
+    { name: 'Camille', initial: 'C' },
+    { name: 'émile', initial: 'É' },
+    { name: '  noa', initial: 'N' },
+  ])('Given $name When the thread is shown Then the badge shows $initial', ({ name, initial }) => {
+    const view = toCommentThreadView(
+      makePublishedThread({
+        comments: [makePublishedComment({ author: { kind: 'visitor', name } })],
+      }),
+    );
+
+    expect(view.items[0]?.initial).toBe(initial);
+  });
+
+  it('Given an owner reply When the thread is shown Then its badge shows the initial of the site author', () => {
+    const view = toCommentThreadView(
+      makePublishedThread({
+        comments: [
+          makePublishedComment({ replies: [makePublishedReply({ author: { kind: 'owner' } })] }),
+        ],
+      }),
+    );
+
+    expect(view.items[0]?.replies[0]?.initial).toBe(OWNER_NAME.charAt(0));
+  });
+
   it('Given comments of this reader still waiting When the thread is shown Then a comment comes after the published ones and a reply under its parent, both marked waiting, none counted', () => {
     const view = toCommentThreadView(
       makePublishedThread({

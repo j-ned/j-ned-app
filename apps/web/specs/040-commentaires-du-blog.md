@@ -694,6 +694,7 @@ Aucune variable d'environnement nouvelle ; une base d'intégration nouvelle en C
 - **Correctifs de revue (PR C)** : GREEN 3281 passed / 3281 total · refactor : ligne d'auteur partagée par le titre d'un commentaire et celui d'une réponse (`ng-template`) ; caractères invisibles des sources écrits en échappements `\u…`
 - **Tranche 13 — l'envoi renvoie son identifiant (API)** : GREEN 1319 passed / 1327 total (8 ignorés : intégration du portrait sans base S3) et parité 226 / 226 · refactor : aucun
 - **Tranche 14 — le commentaire du lecteur s'affiche tout de suite ; la discussion se relit au retour sur l'onglet** : GREEN 3324 passed / 3324 total · refactor : `withoutPublished` sert à la fois l'affichage (`toCommentThreadView`) et l'oubli dans l'onglet (`ArticleComments.settle`)
+- **Tranche 15 — re-design de la section** : GREEN 3330 passed / 3330 total · refactor : retrait du corps et de « Répondre » calculé une fois (`textIndent`)
 
 ## Verify
 
@@ -787,6 +788,35 @@ déjà ouverte ne relisait jamais la discussion, pas plus que l'écran de modér
   l'erreur) ; le brouillon et le formulaire de réponse ouvert ne bougent pas (`track item.id`).
 - Écran de modération (`AdminComments`) : `CommentQueue.refresh()`, qui relit la file courante et
   invalide le compteur de la navigation.
+
+### Re-design de la section
+
+Demande du propriétaire (2026-11-22) : « je ne trouve pas ça très harmonieux ». Avant : texte nu
+sans regroupement, date décalée du nom, « Répondre » en lien orange trop lourd, réponses distinguées
+par un simple filet, formulaire sans cadre, rien pour la réponse de l'auteur du site.
+
+Choix, dans le langage de `DESIGN.md` (§ 5, « Commentaires d'un article ») et sans nouvelle
+dépendance, ni `styles:`, ni `@utility` :
+
+- une carte discrète par commentaire (`rounded-card`, trait décoratif `line`, surface opaque), les
+  réponses dans la carte du parent, reliées par un filet ; le formulaire en carte publique à bord
+  franc, comme celui du contact : la discussion se lit en retrait, l'action ressort ;
+- en-tête aligné : pastille d'initiale décorative (`aria-hidden`), nom en titre (`h3`/`h4`, sans
+  saut de niveau), date en mono sur la même ligne ; réponse de l'auteur : pastille orange **et**
+  badge texte « Auteur de l'article » ;
+- « Répondre » en `appButton` `text-muted` avec icône décorative, nom accessible « Répondre à X »
+  inchangé, cible de 44 px ;
+- nombre publié en pastille mono, le titre restant lu « Commentaires (n) » (parenthèses `sr-only`) ;
+- états vide, erreur, envoi en attente et confirmation dans le même langage (cartes, tampon
+  pointillé, `app-status-message`).
+
+Structure et accessibilité conservées : `section[aria-labelledby]`, `article` par commentaire nommé
+par son titre, `time datetime`, listes imbriquées, focus visibles globaux, aucune animation ajoutée.
+`pnpm a11y` (axe, thèmes clair et sombre) : 71 scénarios verts, dont l'envoi accepté avec le
+commentaire en attente dans la liste.
+
+Captures avant / après (scratchpad de la session, non versionnées) : discussion, formulaire de
+réponse ouvert, après envoi, état vide ; clair et sombre ; 1280 px et 390 px.
 
 ### Alternatives écartées
 

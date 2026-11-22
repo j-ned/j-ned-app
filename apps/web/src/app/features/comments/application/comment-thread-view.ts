@@ -14,6 +14,8 @@ export type CommentView = {
   readonly headingId: string;
   readonly author: string;
   readonly ownerMention: string | null;
+  // Première lettre du nom, pour la pastille décorative.
+  readonly initial: string;
   readonly createdAt: string;
   readonly body: string;
   // Envoyé par ce lecteur et pas encore publié : lui seul le voit.
@@ -50,6 +52,9 @@ export type CommentSubmissionState =
 
 export type CommentSent = { readonly draft: CommentDraft; readonly parentId: string | null };
 
+const initialOf = (name: string): string =>
+  Array.from(name.trim())[0]?.toLocaleUpperCase('fr-FR') ?? '?';
+
 // La réponse de l'auteur se dit en toutes lettres, pas par une couleur seule.
 const authorOf = ({ author }: PublishedReply): Pick<CommentView, 'author' | 'ownerMention'> =>
   author.kind === 'owner'
@@ -67,6 +72,7 @@ function toCommentView(
     headingId: `comment-${id}-author`,
     author,
     ownerMention,
+    initial: initialOf(author),
     createdAt,
     body,
     pending,
