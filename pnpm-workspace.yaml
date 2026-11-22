@@ -21,3 +21,7 @@ overrides:
   "@esbuild-kit/core-utils>esbuild": ^0.25.0
   handlebars@<4.7.10: ^4.7.10
   fast-uri@<3.1.9: ^3.1.9
+  # Jest 30.5.2 (dernière publiée) et test-exclude 7 tirent glob 10 et 13, minimatch 9 et 10 ; leur
+  # API (glob.sync, glob(), minimatch(), options cwd/nodir/dot/posix/ignore) est inchangée en 14 et 11.
+  glob@>=9 <14.0.2: ^14.0.2
+  minimatch@>=7 <11.0.1: ^11.0.1
