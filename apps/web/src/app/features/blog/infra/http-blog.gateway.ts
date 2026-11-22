@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map, Observable, retry } from 'rxjs';
+import { map, retry, tap, type MonoTypeOperatorFunction, type Observable } from 'rxjs';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput, BlogPostSummary } from '../domain/models/blog-post.model';
 import type { ContentImage } from '../domain/models/content-image.model';
@@ -50,23 +50,24 @@ export class HttpBlogGateway extends BlogGateway {
       .pipe(map((p) => resolvePost(STORAGE_BASE_PATH, p)));
   }
 
-  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même.
+  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même. Une
+  // écriture réussie relit la liste de l'admin.
   createPost(post: BlogPostInput): Observable<BlogPost> {
-    return this.http.post<BlogPost>(`${this.apiUrl}/blog/posts`, post, {
-      context: silentErrors(),
-    });
+    return this.http
+      .post<BlogPost>(`${this.apiUrl}/blog/posts`, post, { context: silentErrors() })
+      .pipe(this.relistOnSuccess());
   }
 
   updatePost(id: string, post: Partial<BlogPostInput>): Observable<BlogPost> {
-    return this.http.patch<BlogPost>(`${this.apiUrl}/blog/posts/${id}`, post, {
-      context: silentErrors(),
-    });
+    return this.http
+      .patch<BlogPost>(`${this.apiUrl}/blog/posts/${id}`, post, { context: silentErrors() })
+      .pipe(this.relistOnSuccess());
   }
 
   deletePost(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/blog/posts/${id}`, {
-      context: silentErrors(),
-    });
+    return this.http
+      .delete<void>(`${this.apiUrl}/blog/posts/${id}`, { context: silentErrors() })
+      .pipe(this.relistOnSuccess());
   }
 
   uploadCoverImage(file: File, id: string): Observable<string> {
@@ -76,7 +77,10 @@ export class HttpBlogGateway extends BlogGateway {
       url: `${this.apiUrl}/blog/posts/${id}/image`,
       file,
       context: silentErrors(),
-    }).pipe(map((res) => res.key));
+    }).pipe(
+      map((res) => res.key),
+      this.relistOnSuccess(),
+    );
   }
 
   uploadContentImage(file: File): Observable<ContentImage> {
@@ -95,10 +99,16 @@ export class HttpBlogGateway extends BlogGateway {
     );
   }
 
+  // Le nombre de « j'aime » figure dans la liste de l'admin.
   likePost(slug: string): Observable<{ likesCount: number }> {
-    return this.http.post<{ likesCount: number }>(
-      `${this.apiUrl}/blog/posts/${encodeURIComponent(slug)}/like`,
-      {},
-    );
+    return this.http
+      .post<{
+        likesCount: number;
+      }>(`${this.apiUrl}/blog/posts/${encodeURIComponent(slug)}/like`, {})
+      .pipe(this.relistOnSuccess());
+  }
+
+  private relistOnSuccess<T>(): MonoTypeOperatorFunction<T> {
+    return tap(() => this.adminPosts.refresh());
   }
 }

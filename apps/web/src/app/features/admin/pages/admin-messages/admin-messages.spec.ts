@@ -169,13 +169,11 @@ describe('AdminMessages: lecture au clavier', () => {
 });
 
 describe('AdminMessages: marquer comme lu', () => {
-  it('Given an unread message When it is marked as read Then its stamp and action go, the unread count is refreshed and success is told', async () => {
-    const invalidate = vi.fn();
+  it('Given an unread message When it is marked as read Then its stamp and action go and success is told', async () => {
     const { fixture, host, toast } = await setup(
       makeGateway({
         getAllMessages: () => of([CLAIRE, PAUL]),
         markMessageAsRead: () => of({ ...CLAIRE, read: true }),
-        invalidateUnreadCount: invalidate,
       }),
     );
 
@@ -184,9 +182,8 @@ describe('AdminMessages: marquer comme lu', () => {
     expect({
       stamps: allByTestId(host, 'message-new').length,
       actions: allByTestId(host, 'message-mark-read').length,
-      invalidated: invalidate.mock.calls.length,
       toasts: severities(toast),
-    }).toEqual({ stamps: 0, actions: 0, invalidated: 1, toasts: ['success'] });
+    }).toEqual({ stamps: 0, actions: 0, toasts: ['success'] });
   });
 
   it('Given the update fails When a message is marked as read Then it stays unread and an error is told', async () => {
@@ -207,14 +204,12 @@ describe('AdminMessages: marquer comme lu', () => {
 });
 
 describe('AdminMessages: tout marquer comme lu', () => {
-  it('Given two unread messages When « Tout marquer comme lu » is pressed Then every row is read at once, the count refreshed and success told', async () => {
-    const invalidate = vi.fn();
+  it('Given two unread messages When « Tout marquer comme lu » is pressed Then every row is read at once and success told', async () => {
     const markAllRead = vi.fn(() => of({ count: 2 }));
     const { fixture, host, toast } = await setup(
       makeGateway({
         getAllMessages: () => of([CLAIRE, { ...PAUL, read: false }]),
         markAllRead,
-        invalidateUnreadCount: invalidate,
       }),
     );
     const disabledBefore = byTestId(host, 'mark-all-read')?.getAttribute('aria-disabled') ?? null;
@@ -225,14 +220,12 @@ describe('AdminMessages: tout marquer comme lu', () => {
       disabledBefore,
       calls: markAllRead.mock.calls.length,
       stamps: allByTestId(host, 'message-new').length,
-      invalidated: invalidate.mock.calls.length,
       toasts: severities(toast),
       disabledAfter: byTestId(host, 'mark-all-read')?.getAttribute('aria-disabled') ?? null,
     }).toEqual({
       disabledBefore: null,
       calls: 1,
       stamps: 0,
-      invalidated: 1,
       toasts: ['success'],
       disabledAfter: 'true',
     });
@@ -281,19 +274,16 @@ describe('AdminMessages: suppression confirmée', () => {
     fixture: ComponentFixture<AdminMessages>;
     host: HTMLElement;
     deleteMessage: ReturnType<typeof vi.fn>;
-    invalidate: ReturnType<typeof vi.fn>;
     toast: Toasts;
   }> {
     const deleteMessage = vi.fn((): Observable<void> => of(undefined));
-    const invalidate = vi.fn();
     const { fixture, host, toast } = await setup(
       makeGateway({
         getAllMessages: () => of([CLAIRE, PAUL]),
         deleteMessage,
-        invalidateUnreadCount: invalidate,
       }),
     );
-    return { fixture, host, deleteMessage, invalidate, toast };
+    return { fixture, host, deleteMessage, toast };
   }
 
   it.each([
@@ -314,14 +304,11 @@ describe('AdminMessages: suppression confirmée', () => {
     },
   );
 
-  it('Given a confirmed deletion When the row disappears Then the unread count is refreshed and success is told', async () => {
-    const { fixture, invalidate, toast } = await renderList();
+  it('Given a confirmed deletion When the row disappears Then success is told', async () => {
+    const { fixture, toast } = await renderList();
     await deleteThroughDialog(fixture, 'message-delete', 'confirm');
 
-    expect({
-      invalidated: invalidate.mock.calls.length,
-      toasts: severities(toast),
-    }).toEqual({ invalidated: 1, toasts: ['success'] });
+    expect(severities(toast)).toEqual(['success']);
   });
 
   it('Given the deletion fails When it is confirmed Then the message is back in the list and an error is told', async () => {

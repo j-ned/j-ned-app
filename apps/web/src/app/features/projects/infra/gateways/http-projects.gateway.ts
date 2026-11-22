@@ -1,6 +1,15 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, Observable, of, retry, throwError } from 'rxjs';
+import {
+  catchError,
+  map,
+  of,
+  retry,
+  tap,
+  throwError,
+  type MonoTypeOperatorFunction,
+  type Observable,
+} from 'rxjs';
 import { ProjectsGateway } from '../../domain/gateways/projects.gateway';
 import type { Project, ProjectImage, ProjectInput } from '../../domain/models/project.model';
 import { isShowcaseProject } from '../../domain/is-showcase-project';
@@ -19,7 +28,7 @@ export class HttpProjectsGateway extends ProjectsGateway {
   private readonly prepareImage = inject(IMAGE_UPLOAD_PREPARER);
 
   // Une seule liste, gardée pour toute la session : home, /projects et chaque détail la partagent
-  // au lieu de la redemander à chaque page. L'admin l'invalide après une écriture. Un échec part aux
+  // au lieu de la redemander à chaque page. Toute écriture réussie la relit. Un échec part aux
   // abonnés : une liste vide de repli serait indiscernable d'un portfolio sans projet.
   private readonly allProjects = refreshable(() =>
     this.http.get<ProjectDto[]>(`${this.apiUrl}/projects`).pipe(
@@ -41,10 +50,6 @@ export class HttpProjectsGateway extends ProjectsGateway {
     return this.allProjects.value$.pipe(map((projects) => projects.filter(isShowcaseProject)));
   }
 
-  invalidateFeatured(): void {
-    this.allProjects.refresh();
-  }
-
   getProjectById(id: string): Observable<Project | null> {
     return this.http.get<ProjectDto>(`${this.apiUrl}/projects/${encodeURIComponent(id)}`).pipe(
       map((row) => toProject(row, STORAGE_BASE_PATH)),
@@ -56,21 +61,30 @@ export class HttpProjectsGateway extends ProjectsGateway {
     );
   }
 
-  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même.
+  // Les écritures de l'admin : chaque page restaure son état et nomme l'échec elle-même. Une
+  // écriture réussie relit la liste partagée, pour l'admin comme pour les pages publiques.
   createProject(project: ProjectInput): Observable<Project> {
     return this.http
       .post<ProjectDto>(`${this.apiUrl}/projects`, project, { context: silentErrors() })
-      .pipe(map((row) => toProject(row, STORAGE_BASE_PATH)));
+      .pipe(
+        map((row) => toProject(row, STORAGE_BASE_PATH)),
+        this.relistOnSuccess(),
+      );
   }
 
   updateProject(id: string, project: Partial<ProjectInput>): Observable<Project> {
     return this.http
       .patch<ProjectDto>(`${this.apiUrl}/projects/${id}`, project, { context: silentErrors() })
-      .pipe(map((row) => toProject(row, STORAGE_BASE_PATH)));
+      .pipe(
+        map((row) => toProject(row, STORAGE_BASE_PATH)),
+        this.relistOnSuccess(),
+      );
   }
 
   deleteProject(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/projects/${id}`, { context: silentErrors() });
+    return this.http
+      .delete<void>(`${this.apiUrl}/projects/${id}`, { context: silentErrors() })
+      .pipe(this.relistOnSuccess());
   }
 
   uploadImage(file: File, id: string): Observable<string> {
@@ -80,7 +94,10 @@ export class HttpProjectsGateway extends ProjectsGateway {
       url: `${this.apiUrl}/projects/${id}/image`,
       file,
       context: silentErrors(),
-    }).pipe(map((res) => res.key));
+    }).pipe(
+      map((res) => res.key),
+      this.relistOnSuccess(),
+    );
   }
 
   uploadGalleryImage(projectId: string, file: File, alt: string): Observable<ProjectImage> {
@@ -91,7 +108,10 @@ export class HttpProjectsGateway extends ProjectsGateway {
       file,
       fields: { alt },
       context: silentErrors(),
-    }).pipe(map((dto) => toProjectImage(dto, STORAGE_BASE_PATH)));
+    }).pipe(
+      map((dto) => toProjectImage(dto, STORAGE_BASE_PATH)),
+      this.relistOnSuccess(),
+    );
   }
 
   updateGalleryImageAlt(projectId: string, imageId: string, alt: string): Observable<ProjectImage> {
@@ -101,7 +121,10 @@ export class HttpProjectsGateway extends ProjectsGateway {
         { alt },
         { context: silentErrors() },
       )
-      .pipe(map((dto) => toProjectImage(dto, STORAGE_BASE_PATH)));
+      .pipe(
+        map((dto) => toProjectImage(dto, STORAGE_BASE_PATH)),
+        this.relistOnSuccess(),
+      );
   }
 
   reorderGallery(
@@ -109,14 +132,21 @@ export class HttpProjectsGateway extends ProjectsGateway {
     imageIds: readonly string[],
   ): Observable<readonly ProjectImage[]> {
     const url = `${this.apiUrl}/projects/${projectId}/images/order`;
-    return this.http
-      .put<ProjectImageDto[]>(url, { imageIds }, { context: silentErrors() })
-      .pipe(map((dtos) => dtos.map((dto) => toProjectImage(dto, STORAGE_BASE_PATH))));
+    return this.http.put<ProjectImageDto[]>(url, { imageIds }, { context: silentErrors() }).pipe(
+      map((dtos) => dtos.map((dto) => toProjectImage(dto, STORAGE_BASE_PATH))),
+      this.relistOnSuccess(),
+    );
   }
 
   deleteGalleryImage(projectId: string, imageId: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/projects/${projectId}/images/${imageId}`, {
-      context: silentErrors(),
-    });
+    return this.http
+      .delete<void>(`${this.apiUrl}/projects/${projectId}/images/${imageId}`, {
+        context: silentErrors(),
+      })
+      .pipe(this.relistOnSuccess());
+  }
+
+  private relistOnSuccess<T>(): MonoTypeOperatorFunction<T> {
+    return tap(() => this.allProjects.refresh());
   }
 }

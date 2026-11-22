@@ -185,50 +185,32 @@ describe('AdminBlog: chargement, erreur et vide', () => {
   });
 });
 
-describe('AdminBlog: la liste partagée est invalidée après une suppression', () => {
-  it('Given the list When a deletion succeeds Then the shared admin list is invalidated once instead of being requested again', async () => {
-    const invalidateAdminPosts = vi.fn();
+describe('AdminBlog: suppression sur la liste partagée', () => {
+  it('Given the list When a deletion succeeds Then the page does not request the shared admin list again itself', async () => {
     const getAllPostsForAdmin = vi.fn(() => of([makeBlogPost({ id: 'b-1' })]));
-    const { component, fixture } = await setup(
-      stubBlogGateway({ getAllPostsForAdmin, invalidateAdminPosts }),
-    );
+    const { component, fixture } = await setup(stubBlogGateway({ getAllPostsForAdmin }));
 
     component.remove('b-1');
     await settleBounded(fixture);
 
-    expect({
-      invalidations: invalidateAdminPosts.mock.calls.length,
-      listSubscriptions: getAllPostsForAdmin.mock.calls.length,
-    }).toEqual({ invalidations: 1, listSubscriptions: 1 });
+    expect(getAllPostsForAdmin.mock.calls.length).toBe(1);
   });
 
-  it('Given the list When a deletion fails Then the list is restored and only a successful deletion invalidates it', async () => {
-    const invalidateAdminPosts = vi.fn();
+  it('Given the list When a deletion fails Then the list is restored', async () => {
     const deletePost = vi
       .fn<BlogGateway['deletePost']>()
-      .mockReturnValueOnce(throwError(() => new Error('down')))
-      .mockReturnValueOnce(of(undefined));
+      .mockReturnValueOnce(throwError(() => new Error('down')));
     const { component, fixture } = await setup(
       stubBlogGateway({
         getAllPostsForAdmin: () => of([makeBlogPost({ id: 'b-1' })]),
         deletePost,
-        invalidateAdminPosts,
       }),
     );
 
     component.remove('b-1');
     await settleBounded(fixture);
-    const afterFailure = {
-      invalidations: invalidateAdminPosts.mock.calls.length,
-      posts: component.posts().map((post) => post.id),
-    };
-    component.remove('b-1');
-    await settleBounded(fixture);
 
-    expect({ afterFailure, afterSuccess: invalidateAdminPosts.mock.calls.length }).toEqual({
-      afterFailure: { invalidations: 0, posts: ['b-1'] },
-      afterSuccess: 1,
-    });
+    expect(component.posts().map((post) => post.id)).toEqual(['b-1']);
   });
 });
 

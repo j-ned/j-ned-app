@@ -152,10 +152,7 @@ export class AdminBlog {
   protected readonly deletion = new PendingDeletion<BlogPost>({
     list: this.postsResource,
     remove: (post): Observable<void> => this.gateway.deletePost(post.id),
-    succeeded: (): void => {
-      this.gateway.invalidateAdminPosts();
-      this.toast.add({ severity: 'success', detail: 'Article supprimé' });
-    },
+    succeeded: (): void => this.toast.add({ severity: 'success', detail: 'Article supprimé' }),
     failed: (): void =>
       this.toast.add({ severity: 'error', detail: "Erreur lors de la suppression de l'article" }),
   });

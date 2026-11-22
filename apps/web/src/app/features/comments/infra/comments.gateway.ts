@@ -1,6 +1,7 @@
 import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { catchError, map, of, type Observable } from 'rxjs';
+import { catchError, map, of, tap, type MonoTypeOperatorFunction, type Observable } from 'rxjs';
+import { ModerationError } from '../domain/moderation-error';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { OPTIONAL_UPSTREAM } from '@core/ssr/ssr-upstream-interceptor';
 import { API_BASE_URL } from '@shared/api/api-config';
@@ -88,14 +89,14 @@ export class CommentsGateway {
         { status: 'published' },
         { context: silentErrors() },
       )
-      .pipe(map(toAdminComment), catchError(rejectAsModerationError));
+      .pipe(map(toAdminComment), catchError(rejectAsModerationError), this.recountWhenSettled());
   }
 
   // Refuser un commentaire, c'est le supprimer : ses réponses partent avec lui.
   remove(id: string): Observable<void> {
     return this.http
       .delete<void>(`${this.apiUrl}/blog/comments/${id}`, { context: silentErrors() })
-      .pipe(catchError(rejectAsModerationError));
+      .pipe(catchError(rejectAsModerationError), this.recountWhenSettled());
   }
 
   // Réponse du propriétaire : publiée d'emblée par l'API.
@@ -115,6 +116,18 @@ export class CommentsGateway {
 
   invalidatePendingCount(): void {
     this.pendingCount.refresh();
+  }
+
+  // Publier ou supprimer change la file ; un refus parce qu'elle a changé ailleurs aussi.
+  private recountWhenSettled<T>(): MonoTypeOperatorFunction<T> {
+    return tap({
+      next: () => this.invalidatePendingCount(),
+      error: (error: unknown) => {
+        if (error instanceof ModerationError && error.reason !== 'failed') {
+          this.invalidatePendingCount();
+        }
+      },
+    });
   }
 
   private fetchPendingCount(context = new HttpContext()): Observable<number> {

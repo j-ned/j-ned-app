@@ -65,7 +65,6 @@ type Spies = {
   readonly updatePost: Mock<BlogGateway['updatePost']>;
   readonly uploadCoverImage: Mock<BlogGateway['uploadCoverImage']>;
   readonly uploadContentImage: Mock<BlogGateway['uploadContentImage']>;
-  readonly invalidateAdminPosts: Mock<BlogGateway['invalidateAdminPosts']>;
   readonly toast: Mock<ToastStore['add']>;
 };
 
@@ -85,7 +84,6 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
     updatePost: vi.fn((): Observable<BlogPost> => of(CHIFFREMENT)),
     uploadCoverImage: vi.fn((): Observable<string> => of('blog/b-9.avif')),
     uploadContentImage: vi.fn((): Observable<ContentImage> => of(makeContentImage())),
-    invalidateAdminPosts: vi.fn(),
     toast: vi.fn(),
     ...overrides,
   };
@@ -116,7 +114,6 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
           updatePost: spies.updatePost,
           uploadCoverImage: spies.uploadCoverImage,
           uploadContentImage: spies.uploadContentImage,
-          invalidateAdminPosts: spies.invalidateAdminPosts,
         }),
       },
       { provide: ToastStore, useValue: { add: spies.toast } },
@@ -283,7 +280,7 @@ describe('AdminPostEditor: création', () => {
     ]);
   });
 
-  it('Given a created article When the save ends Then the shared list is invalidated, success is told and the page moves to its address in place of /new', async () => {
+  it('Given a created article When the save ends Then success is told and the page moves to its address in place of /new', async () => {
     const editor = await openEditor('/admin/blog/new');
     const replaceState = vi.spyOn(TestBed.inject(Location), 'replaceState');
 
@@ -291,12 +288,10 @@ describe('AdminPostEditor: création', () => {
     await save(editor);
 
     expect({
-      invalidations: editor.invalidateAdminPosts.mock.calls.length,
       toasts: toasts(editor.toast),
       url: TestBed.inject(Router).url,
       replaced: replaceState.mock.calls.map(([path]) => path),
     }).toEqual({
-      invalidations: 1,
       toasts: [{ severity: 'success', detail: 'Article enregistré' }],
       url: '/admin/blog/b-9',
       replaced: ['/admin/blog/b-9'],
@@ -318,7 +313,7 @@ describe('AdminPostEditor: création', () => {
     }).toEqual({ uploads: [[COVER, 'b-9']], afterCreation: true });
   });
 
-  it('Given the creation fails When the article is saved Then an error is told, nothing is invalidated and the page stays on /new', async () => {
+  it('Given the creation fails When the article is saved Then an error is told and the page stays on /new', async () => {
     const editor = await openEditor('/admin/blog/new', {
       createPost: vi.fn((): Observable<BlogPost> => throwError(() => new Error('boom'))),
     });
@@ -330,12 +325,10 @@ describe('AdminPostEditor: création', () => {
     expect({
       toasts: toasts(editor.toast),
       url: TestBed.inject(Router).url,
-      invalidations: editor.invalidateAdminPosts.mock.calls.length,
       uploads: editor.uploadCoverImage.mock.calls.length,
     }).toEqual({
       toasts: [{ severity: 'error', detail: "Erreur lors de l'enregistrement de l'article" }],
       url: '/admin/blog/new',
-      invalidations: 0,
       uploads: 0,
     });
   });
@@ -357,7 +350,7 @@ describe('AdminPostEditor: création', () => {
 });
 
 describe('AdminPostEditor: mise à jour', () => {
-  it('Given an edited title When the article is saved Then it is updated, success is told, the list invalidated without being requested again, and the title follows', async () => {
+  it('Given an edited title When the article is saved Then it is updated, success is told, the list is not requested again by the page, and the title follows', async () => {
     const editor = await openEditor('/admin/blog/b-1', {
       updatePost: vi.fn((): Observable<BlogPost> =>
         of(makeBlogPost({ ...CHIFFREMENT, title: 'Après' })),
@@ -371,7 +364,6 @@ describe('AdminPostEditor: mise à jour', () => {
       updated: editor.updatePost.mock.calls.map(([id, payload]) => [id, payload.title]),
       uploads: editor.uploadCoverImage.mock.calls.length,
       toasts: toasts(editor.toast),
-      invalidations: editor.invalidateAdminPosts.mock.calls.length,
       requested: editor.getAllPostsForAdmin.mock.calls.length,
       title: testIdText(editor.host, 'admin-page-title'),
       url: TestBed.inject(Router).url,
@@ -379,7 +371,6 @@ describe('AdminPostEditor: mise à jour', () => {
       updated: [['b-1', 'Après']],
       uploads: 0,
       toasts: [{ severity: 'success', detail: 'Article enregistré' }],
-      invalidations: 1,
       requested: 1,
       title: 'Après',
       url: '/admin/blog/b-1',
@@ -424,12 +415,10 @@ describe('AdminPostEditor: mise à jour', () => {
     expect({
       toasts: toasts(editor.toast),
       uploads: editor.uploadCoverImage.mock.calls.length,
-      invalidations: editor.invalidateAdminPosts.mock.calls.length,
       title: testIdText(editor.host, 'admin-page-title'),
     }).toEqual({
       toasts: [{ severity: 'error', detail: "Erreur lors de l'enregistrement de l'article" }],
       uploads: 0,
-      invalidations: 0,
       title: 'Chiffrement côté client',
     });
   });

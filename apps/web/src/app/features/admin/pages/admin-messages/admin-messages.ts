@@ -138,10 +138,7 @@ export class AdminMessages {
   protected readonly deletion = new PendingDeletion<ContactMessage>({
     list: this.messagesRes,
     remove: (message): Observable<void> => this.contactGateway.deleteMessage(message.id),
-    succeeded: (): void => {
-      this.contactGateway.invalidateUnreadCount();
-      this.toast.add({ severity: 'success', detail: 'Message supprimé' });
-    },
+    succeeded: (): void => this.toast.add({ severity: 'success', detail: 'Message supprimé' }),
     failed: (): void =>
       this.toast.add({ severity: 'error', detail: 'Erreur lors de la suppression' }),
   });
@@ -167,7 +164,6 @@ export class AdminMessages {
           this.messagesRes.update((list) =>
             (list ?? []).map((m) => (m.id === message.id ? updated : m)),
           );
-          this.contactGateway.invalidateUnreadCount();
           this.toast.add({ severity: 'success', detail: 'Message marqué comme lu' });
         },
         error: () => this.toast.add({ severity: 'error', detail: 'Erreur lors de la mise à jour' }),
@@ -189,7 +185,6 @@ export class AdminMessages {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ count }) => {
-          this.contactGateway.invalidateUnreadCount();
           this.toast.add({
             severity: 'success',
             detail: counted(count, 'message marqué comme lu', 'messages marqués comme lus'),

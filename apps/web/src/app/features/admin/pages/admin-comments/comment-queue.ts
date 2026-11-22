@@ -43,9 +43,8 @@ export class CommentQueue {
     if (this.pager().hasOlder) this.show(this._served().page + 1);
   }
 
-  // Le compteur de la navigation et la page servie (total, pages) suivent la file réelle.
+  // La page servie (total, pages) suit la file réelle.
   refresh(): void {
-    this._gateway.invalidatePendingCount();
     this.list.reload();
   }
 

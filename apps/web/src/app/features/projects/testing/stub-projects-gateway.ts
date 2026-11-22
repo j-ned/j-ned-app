@@ -7,7 +7,6 @@ export function stubProjectsGateway(overrides: Partial<ProjectsGateway> = {}): P
     getAllProjects: () => of([]),
     invalidateAllProjects: () => undefined,
     getFeaturedProjects: () => of([]),
-    invalidateFeatured: () => undefined,
     getProjectById: () => of(makeProject()),
     createProject: () => of(makeProject()),
     updateProject: () => of(makeProject()),

@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, type Observable } from 'rxjs';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { OPTIONAL_UPSTREAM } from '@core/ssr/ssr-upstream-interceptor';
@@ -382,4 +382,70 @@ describe('CommentsGateway: lecture publique', () => {
 
     await expect(result).resolves.toEqual({ success: false, error: 'network' });
   });
+});
+
+describe('CommentsGateway: le compteur des commentaires en attente suit la modération', () => {
+  let gateway: CommentsGateway;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+      ],
+    });
+    gateway = TestBed.inject(CommentsGateway);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  const writes = [
+    {
+      write: 'publish',
+      answer: toAdminCommentDto(makeAdminComment({ id: 'c-1', status: 'published' })),
+      call: (g: CommentsGateway): Observable<unknown> => g.publish('c-1'),
+    },
+    {
+      write: 'remove',
+      answer: null,
+      call: (g: CommentsGateway): Observable<unknown> => g.remove('c-1'),
+    },
+  ] as const;
+
+  it.each(writes)(
+    'Given the pending count is shown When $write succeeds Then the count is read again and its readers receive it',
+    async ({ answer, call }) => {
+      const seen: number[] = [];
+      const sub = gateway.getPendingCount().subscribe((count) => seen.push(count));
+      http.expectOne(PENDING_COUNT_URL).flush({ count: 2 });
+
+      const written = firstValueFrom(call(gateway));
+      http.expectOne('/api/blog/comments/c-1').flush(answer);
+      await written;
+      http.expectOne(PENDING_COUNT_URL).flush({ count: 1 });
+
+      expect(seen).toEqual([2, 1]);
+      sub.unsubscribe();
+    },
+  );
+
+  it.each(writes)(
+    'Given the pending count is shown When $write fails Then the count is not read again',
+    async ({ call }) => {
+      const sub = gateway.getPendingCount().subscribe();
+      http.expectOne(PENDING_COUNT_URL).flush({ count: 2 });
+
+      const written = firstValueFrom(call(gateway)).catch(() => 'refusée');
+      http
+        .expectOne('/api/blog/comments/c-1')
+        .flush(null, { status: 500, statusText: 'Server Error' });
+      await written;
+
+      http.expectNone(PENDING_COUNT_URL);
+      sub.unsubscribe();
+    },
+  );
 });

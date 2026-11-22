@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, map, of, tap, type MonoTypeOperatorFunction, type Observable } from 'rxjs';
 import { ContactGateway } from '../../domain/gateways/contact.gateway';
 import type {
   ContactFormData,
@@ -62,6 +62,7 @@ export class HttpContactGateway extends ContactGateway {
         success: true,
         message: 'Message bien reçu, merci\u202f! Je te réponds dès que je peux.',
       })),
+      this.recountOnSuccess(),
       catchError((err: HttpErrorResponse) => of(toSubmissionError(err))),
     );
   }
@@ -75,19 +76,22 @@ export class HttpContactGateway extends ContactGateway {
       .pipe(map((res) => res.data));
   }
 
-  // Les écritures de l'admin : la page restaure son état et nomme l'échec elle-même.
+  // Les écritures de l'admin : la page restaure son état et nomme l'échec elle-même. Une écriture
+  // réussie relit le compteur de non-lus.
   markMessageAsRead(id: number): Observable<ContactMessage> {
-    return this.http.patch<ContactMessage>(
-      `${this.apiUrl}/contact/messages/${id}/read`,
-      {},
-      { context: silentErrors() },
-    );
+    return this.http
+      .patch<ContactMessage>(
+        `${this.apiUrl}/contact/messages/${id}/read`,
+        {},
+        { context: silentErrors() },
+      )
+      .pipe(this.recountOnSuccess());
   }
 
   deleteMessage(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/contact/messages/${id}`, {
-      context: silentErrors(),
-    });
+    return this.http
+      .delete<void>(`${this.apiUrl}/contact/messages/${id}`, { context: silentErrors() })
+      .pipe(this.recountOnSuccess());
   }
 
   private fetchUnreadCount(context = new HttpContext()): Observable<number> {
@@ -105,10 +109,14 @@ export class HttpContactGateway extends ContactGateway {
   }
 
   markAllRead(): Observable<{ readonly count: number }> {
-    return this.http.patch<{ count: number }>(
-      `${this.apiUrl}/contact/messages/mark-all-read`,
-      {},
-      { context: silentErrors() },
-    );
+    return this.http
+      .patch<{
+        count: number;
+      }>(`${this.apiUrl}/contact/messages/mark-all-read`, {}, { context: silentErrors() })
+      .pipe(this.recountOnSuccess());
+  }
+
+  private recountOnSuccess<T>(): MonoTypeOperatorFunction<T> {
+    return tap(() => this.invalidateUnreadCount());
   }
 }

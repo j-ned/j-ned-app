@@ -6,7 +6,6 @@ import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gat
 import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
 import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
-import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { ToastStore } from '@core/notifications/toast-store';
 import { testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
@@ -67,7 +66,6 @@ async function renderProjects(gateway: ProjectsGateway = stubProjectsGateway()):
     providers: [
       provideRouter([{ path: '**', component: BlankPage }]),
       { provide: ProjectsGateway, useValue: gateway },
-      { provide: HomeGateway, useValue: { invalidateBundle: vi.fn() } },
       { provide: ToastStore, useValue: toast },
     ],
   });

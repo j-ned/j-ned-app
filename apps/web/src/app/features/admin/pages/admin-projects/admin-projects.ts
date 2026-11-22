@@ -4,7 +4,6 @@ import type { Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { Project, ProjectKindFilter } from '@features/projects/domain/models/project.model';
-import { HomeGateway } from '@features/home/domain/gateways/home.gateway';
 import { AdminProjectRow } from '../../application/components/admin-project-row';
 import { Button } from '@shared/ui/button';
 import { ToastStore } from '@core/notifications/toast-store';
@@ -86,7 +85,6 @@ import { PendingDeletion } from '../../application/pending-deletion';
 })
 export class AdminProjects {
   private readonly projectsGateway = inject(ProjectsGateway);
-  private readonly homeGateway = inject(HomeGateway);
   private readonly toast = inject(ToastStore);
   private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
@@ -112,8 +110,6 @@ export class AdminProjects {
     list: this.projectsResource,
     remove: (project): Observable<void> => this.projectsGateway.deleteProject(project.id),
     succeeded: (): void => {
-      this.homeGateway.invalidateBundle();
-      this.projectsGateway.invalidateAllProjects();
       this.toast.add({ severity: 'success', detail: 'Projet supprimé' });
     },
     failed: (): void =>

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, type Observable } from 'rxjs';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
 import { API_BASE_URL } from '@shared/api/api-config';
@@ -406,4 +406,87 @@ describe('HttpContactGateway: lecture des messages derrière l’intercepteur de
     });
     httpController.verify();
   });
+});
+
+describe('HttpContactGateway: le compteur de non-lus suit les écritures', () => {
+  const UNREAD_URL = `${BASE}/contact/messages/unread-count`;
+  const MESSAGE = {
+    name: 'Lou',
+    email: 'lou@example.test',
+    subject: 'Bonjour',
+    message: 'Un message',
+    website: '',
+  } satisfies ContactFormData;
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  const writes: readonly {
+    readonly write: string;
+    readonly url: string;
+    readonly answer: object | null;
+    readonly call: (gateway: HttpContactGateway) => Observable<unknown>;
+  }[] = [
+    {
+      write: 'submitContactForm',
+      url: `${BASE}/contact/messages`,
+      answer: {},
+      call: (g) => g.submitContactForm(MESSAGE),
+    },
+    {
+      write: 'markMessageAsRead',
+      url: `${BASE}/contact/messages/7/read`,
+      answer: {},
+      call: (g) => g.markMessageAsRead(7),
+    },
+    {
+      write: 'deleteMessage',
+      url: `${BASE}/contact/messages/7`,
+      answer: null,
+      call: (g) => g.deleteMessage(7),
+    },
+    {
+      write: 'markAllRead',
+      url: `${BASE}/contact/messages/mark-all-read`,
+      answer: { count: 2 },
+      call: (g) => g.markAllRead(),
+    },
+  ];
+
+  it.each(writes)(
+    'Given the unread count is shown When $write succeeds Then the count is read again and its readers receive it',
+    async ({ url, answer, call }) => {
+      const { gateway, httpController } = configure();
+      const seen: number[] = [];
+      const sub = gateway.getUnreadCount().subscribe((count) => seen.push(count));
+      httpController.expectOne(UNREAD_URL).flush({ count: 1 });
+
+      const written = firstValueFrom(call(gateway));
+      httpController.expectOne(url).flush(answer);
+      await written;
+      httpController.expectOne(UNREAD_URL).flush({ count: 2 });
+
+      expect(seen).toEqual([1, 2]);
+      sub.unsubscribe();
+      httpController.verify();
+    },
+  );
+
+  it.each(writes)(
+    'Given the unread count is shown When $write fails Then the count is not read again',
+    async ({ url, call }) => {
+      const { gateway, httpController } = configure();
+      const sub = gateway.getUnreadCount().subscribe();
+      httpController.expectOne(UNREAD_URL).flush({ count: 1 });
+
+      const written = firstValueFrom(call(gateway)).catch(() => 'refusée');
+      httpController.expectOne(url).flush(null, { status: 500, statusText: 'Server Error' });
+      await written;
+
+      httpController.expectNone(UNREAD_URL);
+      sub.unsubscribe();
+      httpController.verify();
+    },
+  );
 });
