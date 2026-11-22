@@ -1,7 +1,7 @@
 import { Component, computed, inject, type ResourceRef } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 import {
@@ -253,7 +253,7 @@ export class AdminOverview {
 
   // Un message peut arriver pendant que l'onglet est ailleurs ; le compteur suit la navigation.
   constructor() {
-    refreshWhenVisible(() => this.messagesRes.reload());
+    refreshAdminWhenVisible(() => this.messagesRes.reload());
   }
 
   protected reload(sources: readonly ResourceRef<unknown>[]): void {

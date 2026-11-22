@@ -160,6 +160,29 @@ describe('AdminLayout: comptes de la navigation', () => {
     }).toEqual({ messages: '4 non lus', comments: '2 en attente' });
   });
 
+  it('Given the counts just reread When the tab comes back 3 s later Then they are not read again, to stay under the admin quota', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.parse('2026-11-22T12:00:00.000Z'));
+    const invalidateUnreadCount = vi.fn();
+    TestBed.overrideProvider(ContactGateway, {
+      useValue: stubContactGateway({ getUnreadCount: () => of(3), invalidateUnreadCount }),
+    });
+    TestBed.overrideProvider(CommentsGateway, {
+      useValue: {
+        getPendingCount: (): Observable<number> => of(1),
+        invalidatePendingCount: vi.fn(),
+      },
+    });
+    await renderShell('/admin');
+
+    returnToTab();
+    vi.setSystemTime(Date.parse('2026-11-22T12:00:03.000Z'));
+    returnToTab();
+    vi.useRealTimers();
+
+    expect(invalidateUnreadCount).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     {
       source: 'projects',

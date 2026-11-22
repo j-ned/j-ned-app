@@ -7,7 +7,7 @@ import { AuthStore } from '@core/auth/auth-store';
 import { navigationEnd$ } from '@core/navigation/navigation-end';
 import { ThemeStore } from '@core/theme/theme-store';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
-import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
@@ -138,7 +138,7 @@ export class AdminLayout {
 
   constructor() {
     // Messages et commentaires arrivent des visiteurs : la navigation les recompte au retour.
-    refreshWhenVisible(() => {
+    refreshAdminWhenVisible(() => {
       this._contactGateway.invalidateUnreadCount();
       this._commentsGateway.invalidatePendingCount();
     });

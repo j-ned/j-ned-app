@@ -6,7 +6,7 @@ import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gat
 import type { Project, ProjectKindFilter } from '@features/projects/domain/models/project.model';
 import { AdminProjectRow } from '../../application/components/admin-project-row';
 import { Button } from '@shared/ui/button';
-import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { ToastStore } from '@core/notifications/toast-store';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
@@ -124,7 +124,7 @@ export class AdminProjects {
 
   // Un projet a pu être écrit depuis un autre onglet ; la navigation suit la même liste.
   constructor() {
-    refreshWhenVisible(() => this.projectsGateway.invalidateAllProjects());
+    refreshAdminWhenVisible(() => this.projectsGateway.invalidateAllProjects());
   }
 
   protected requestDeletion(id: string): void {

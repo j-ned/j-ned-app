@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, viewChild, type ResourceRef } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import { firstValueFrom } from 'rxjs';
 import { dateRangeToParams } from '@features/analytics/domain/analytics-presenter';
@@ -214,7 +214,7 @@ export class AdminCv {
 
   // Le CV a pu changer depuis un autre onglet, ses téléchargements depuis le site.
   constructor() {
-    refreshWhenVisible(() => {
+    refreshAdminWhenVisible(() => {
       this.cvResource.reload();
       this._downloadsResource.reload();
     });

@@ -9,7 +9,7 @@ import { Button } from '@shared/ui/button';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
-import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { ToastStore } from '@core/notifications/toast-store';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
 import { AdminListState } from '../../application/components/admin-list-state';
@@ -165,7 +165,7 @@ export class AdminBlog {
 
   // Un article a pu être écrit depuis un autre onglet ; la navigation suit la même liste.
   constructor() {
-    refreshWhenVisible(() => this.gateway.invalidateAdminPosts());
+    refreshAdminWhenVisible(() => this.gateway.invalidateAdminPosts());
   }
 
   protected toggleSort(): void {

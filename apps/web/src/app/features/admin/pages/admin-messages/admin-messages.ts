@@ -17,7 +17,7 @@ import { Button } from '@shared/ui/button';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
-import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import { ToastStore } from '@core/notifications/toast-store';
 import {
@@ -159,7 +159,7 @@ export class AdminMessages {
 
   // Un message peut arriver pendant que l'onglet est ailleurs.
   constructor() {
-    refreshWhenVisible(() => this.messagesRes.reload());
+    refreshAdminWhenVisible(() => this.messagesRes.reload());
   }
 
   protected toggleExpand(message: ContactMessage): void {

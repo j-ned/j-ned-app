@@ -1,6 +1,6 @@
 import { Component, computed, inject, linkedSignal, signal, type ResourceRef } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import type { Observable } from 'rxjs';
 import type { LoginEventPage } from '@features/auth/domain/models/login-event.model';
@@ -137,7 +137,7 @@ export class AdminLogins {
 
   // Une connexion a pu avoir lieu pendant que l'onglet était ailleurs.
   constructor() {
-    refreshWhenVisible(() => this.journalRes.reload());
+    refreshAdminWhenVisible(() => this.journalRes.reload());
   }
 
   protected showNewer(): void {
