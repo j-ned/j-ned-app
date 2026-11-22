@@ -695,6 +695,7 @@ Aucune variable d'environnement nouvelle ; une base d'intégration nouvelle en C
 - **Tranche 13 — l'envoi renvoie son identifiant (API)** : GREEN 1319 passed / 1327 total (8 ignorés : intégration du portrait sans base S3) et parité 226 / 226 · refactor : aucun
 - **Tranche 14 — le commentaire du lecteur s'affiche tout de suite ; la discussion se relit au retour sur l'onglet** : GREEN 3324 passed / 3324 total · refactor : `withoutPublished` sert à la fois l'affichage (`toCommentThreadView`) et l'oubli dans l'onglet (`ArticleComments.settle`)
 - **Tranche 15 — re-design de la section** : GREEN 3330 passed / 3330 total · refactor : retrait du corps et de « Répondre » calculé une fois (`textIndent`)
+- **Correctifs de revue (PR D)** : GREEN 3341 passed / 3341 total, `pnpm a11y` 73 / 73 · refactor : format d'identifiant de l'API partagé par la lecture du `202` et celle de l'onglet (`domain/comment-id.ts`, 2 consommateurs : `toAcceptedId`, `parsePendingComments`)
 
 ## Verify
 
@@ -806,7 +807,9 @@ dépendance, ni `styles:`, ni `@utility` :
   badge texte « Auteur de l'article » ;
 - « Répondre » en `appButton` `text-muted` avec icône décorative, nom accessible « Répondre à X »
   inchangé, cible de 44 px ;
-- nombre publié en pastille mono, le titre restant lu « Commentaires (n) » (parenthèses `sr-only`) ;
+- nombre publié en pastille mono, le titre restant nommé « Commentaires (n) » par un `aria-label`
+  (un `flex` ou des parenthèses `sr-only` dans le titre donnaient « Commentaires ( 4 ) » dans Chromium ;
+  épinglé par `e2e/a11y/interactive-states.spec.ts`, la réponse de l'auteur aussi) ;
 - états vide, erreur, envoi en attente et confirmation dans le même langage (cartes, tampon
   pointillé, `app-status-message`).
 
@@ -817,6 +820,28 @@ commentaire en attente dans la liste.
 
 Captures avant / après (scratchpad de la session, non versionnées) : discussion, formulaire de
 réponse ouvert, après envoi, état vide ; clair et sombre ; 1280 px et 390 px.
+
+### Limites connues de la PR D
+
+- Un commentaire en attente reste affiché (jusqu'à 72 h) dans l'onglet qui l'a envoyé alors qu'il ne
+  le devrait plus : quand sa version publiée tombe hors des 100 premiers commentaires lus (son `id`
+  n'est jamais lu publié), quand son parent a été supprimé (la réponse n'est plus affichée, mais
+  l'entrée reste dans l'onglet), ou quand il a été refusé (donc supprimé).
+- Écran de modération : une relecture au retour sur l'onglet peut croiser l'envoi d'une réponse du
+  propriétaire ; si la file relue arrive après l'ajout local de la réponse et a été lue avant son
+  enregistrement, elle l'écrase. La relecture suivante (filtre, page, retour sur l'onglet) la remet.
+- Les envois en attente vivent par onglet : un autre onglet du même article ne les voit pas.
+- Relus depuis l'onglet, seuls sont retenus un `id` au format UUID (celui que l'API renvoie), un nom
+  et un texte dans les bornes de l'API ; un `id` en double ne compte qu'une fois.
+- `NG0950` (« input required ») en console, **préexistant** (reproduit sur `origin/master`,
+  `f9586dbf`, 1 fois sur 8, et sur cette branche, 1 fois sur 4) : il survient quand le lecteur tape
+  dans un champ de la section **pendant** son hydratation incrémentale (`@defer (hydrate on
+viewport)`). La directive `FormField` de `@angular/forms/signals` pose son écouteur `input` à la
+  création de l'élément ; en zoneless, la liaison de `[formField]` n'arrive qu'à la détection de
+  changements suivante. Une frappe dans cet intervalle lit `state = computed(() => this.field()())`
+  avant que l'entrée requise soit posée. Impact : l'erreur est journalisée et cette frappe-là n'est
+  pas recopiée dans le modèle ; la frappe suivante relit toute la valeur du champ et le resynchronise.
+  Non corrigé ici (comportement du framework, hors du périmètre de ce lot).
 
 ### Alternatives écartées
 
