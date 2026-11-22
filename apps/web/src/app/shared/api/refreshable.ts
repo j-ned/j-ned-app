@@ -1,4 +1,15 @@
-import { ReplaySubject, share, startWith, Subject, switchMap, type Observable } from 'rxjs';
+import {
+  catchError,
+  defer,
+  EMPTY,
+  ReplaySubject,
+  share,
+  startWith,
+  Subject,
+  switchMap,
+  tap,
+  type Observable,
+} from 'rxjs';
 
 export function refreshable<T>(load: () => Observable<T>): {
   readonly value$: Observable<T>;
@@ -6,9 +17,15 @@ export function refreshable<T>(load: () => Observable<T>): {
 } {
   const refresh$ = new Subject<void>();
   return {
-    value$: refresh$.pipe(
-      startWith(undefined),
-      switchMap(load),
+    value$: defer(() => {
+      let shown = false;
+      return refresh$.pipe(
+        startWith(undefined),
+        // Une relecture qui échoue garde la valeur affichée : la suivante la remplacera.
+        switchMap(() => (shown ? load().pipe(catchError(() => EMPTY)) : load())),
+        tap(() => (shown = true)),
+      );
+    }).pipe(
       // Un échec n'est jamais gardé : le prochain lecteur, ou un `refresh()`, refait la requête.
       share({
         connector: () => new ReplaySubject<T>(1),
