@@ -64,7 +64,8 @@ rapport de la PR).
 - **Boîte de réception**, **liste des articles**, **liste des projets** de l'admin, **CV** (fichier
   et téléchargements), **journal des connexions**, **derniers messages de la vue d'ensemble** :
   données modifiées par les visiteurs ou par l'admin d'un autre onglet. Les listes d'articles et de
-  projets passent par leur cache partagé : le compteur de la navigation suit.
+  projets passent par leur cache partagé : le compteur de la navigation suit. Intervalle minimal de
+  **15 s** pour tous les écrans de l'admin (`refreshAdminWhenVisible`, calcul dans « Limites »).
 - **`/blog`, `/projects`, page d'un projet, `/about`** : pages publiques rendues par le serveur, qui
   restaient figées une fois ouvertes. Même intervalle minimal que la PR D (2 s,
   `REFRESH_MIN_INTERVAL_MS`), une requête par retour au plus.
@@ -77,7 +78,8 @@ rapport de la PR).
 2. **Chaque gateway relit son cache après ses propres écritures**, et seulement sur succès :
    `HttpProjectsGateway` (huit écritures), `HttpBlogGateway` (création, modification, suppression,
    couverture, « j'aime »), `HttpContactGateway` (envoi, lu, tout lu, suppression),
-   `CommentsGateway` (publier, supprimer, et un refus 404/409 qui dit que la file a changé). Les
+   `CommentsGateway` (publier, supprimer ; et un refus 404/409 de publier, supprimer ou répondre,
+   qui dit que la file a changé). Les
    invalidations des pages disparaissent, ainsi que les doublons `invalidateFeatured` (projets) et
    `invalidateBundle` (home).
 3. **`keepShownOnFailedReload(resource)`** (`shared/api/keep-shown-on-failed-reload.ts`) : opérateur
@@ -85,10 +87,21 @@ rapport de la PR).
    (`reloading`) ; si la relecture échoue, l'opérateur la réémet au lieu de l'erreur. Un premier
    chargement en échec reste une erreur. Utilisé par chaque écran relu sans cache partagé, et par la
    file de modération.
-4. **Écrans relus au retour** (liste ci-dessus), tous par `refreshWhenVisible`, inchangé.
-5. La vue d'ensemble n'affiche le squelette des messages que si rien n'est encore affiché : une
+4. **Écrans relus au retour** (liste ci-dessus), tous par `refreshWhenVisible`, qui prend désormais
+   un intervalle minimal (`minIntervalMs`, 2 s par défaut, gardé pour les pages publiques). L'admin
+   passe par `refreshAdminWhenVisible` (`features/admin/application`), à 15 s.
+5. **Une relecture de fond est silencieuse.** L'intercepteur `errorToastInterceptor` toaste toute
+   erreur sans `SKIP_ERROR_TOAST` : une relecture au retour ou après une écriture affichait une
+   alerte (deux pour les lectures relancées). Le cache partagé passe `background: true` à sa lecture
+   dès qu'une valeur est affichée, et les gateways posent alors `silentWhen(true)` (contexte HTTP) ;
+   les compteurs de non-lus et de commentaires en attente ne relancent plus leur seconde tentative,
+   non silencieuse. Hors cache, `/blog`, `/about` et le CV de l'admin demandent
+   `{ background: resource.hasValue() }` à leur gateway ; les autres lectures relues étaient déjà
+   silencieuses (messages, file de modération, journal, statistiques). Le **premier chargement**
+   garde son comportement : état d'erreur de la page et toast tel qu'avant.
+6. La vue d'ensemble n'affiche le squelette des messages que si rien n'est encore affiché : une
    relecture ne fait pas clignoter la liste.
-6. La doublure de l'API (`ci/api-stub`) reçoit `POST /api/contact/messages`, gardé en mémoire, pour
+7. La doublure de l'API (`ci/api-stub`) reçoit `POST /api/contact/messages`, gardé en mémoire, pour
    le parcours navigateur.
 
 ## Alternatives écartées
@@ -125,8 +138,19 @@ rapport de la PR).
 
 - Navigation de l'admin sur l'éditeur d'article : les compteurs de projets et d'articles ne sont
   pas relus au retour ; ils le sont dès que la liste correspondante ou la vue d'ensemble s'ouvre.
-- Une relecture qui échoue est muette : l'écran garde une version peut-être périmée, sans le dire.
-  La relecture suivante (retour, filtre, écriture) la remplace.
+- Une relecture de fond (retour sur l'onglet, relecture après une écriture) qui échoue n'affiche ni
+  toast ni état d'erreur : l'écran garde une version peut-être périmée, sans le dire. La relecture
+  suivante la remplace. Un premier chargement en échec, lui, montre toujours l'état d'erreur de la
+  page et, selon la lecture, le toast de l'intercepteur, comme avant.
+- **Quota de l'admin.** L'API limite chaque lecture de l'admin à 10 par minute, par IP et par route
+  (`DEFAULT_THROTTLE`, `apps/api/src/common/throttle.ts`). Chaque retour sur une page de l'admin lit
+  au moins `unread-count` et `pending-count` (navigation), plus la liste de l'écran ouvert
+  (`/contact/messages` pour la boîte de réception). Avec 2 s d'intervalle, 30 retours par minute
+  l'épuisaient. À 15 s, un écran relit au plus 4 fois par minute et par route, ce qui laisse 6
+  lectures aux actions (« marquer lu », « tout marquer lu », suppression : chacune relit
+  `unread-count`) et aux navigations. Au-delà de 6 actions par minute sur la même route, l'API
+  répond 429 ; la relecture de fond reste alors silencieuse et garde l'affichage. Les pages
+  publiques gardent 2 s (quota de 120 lectures par minute et par visiteur).
 - Une suppression ou un « marquer lu » en cours peut croiser une relecture de la boîte de réception
   ou de la file de modération ; la relecture suivante remet l'état du serveur (même limite que la
   PR D pour les commentaires).
@@ -139,6 +163,9 @@ rapport de la PR).
 - **Tranche 2 — invalidation dans les gateways** : GREEN 3386 passed / 3386 total · refactor : invalidations des pages et doublons `invalidateFeatured`/`invalidateBundle` retirés, tests de pages recentrés sur leur contrat
 - **Tranche 3 — écrans de l'admin relus au retour** : GREEN 3401 passed / 3401 total · refactor : aide de test `shared/testing/tab-visibility.ts` partagée par les nouveaux tests
 - **Tranche 4 — pages publiques relues au retour** : GREEN 3407 passed / 3407 total · refactor : aucun
+- **Tranche 5 — relecture de fond silencieuse** : GREEN 3421 passed / 3421 total · refactor : aucun
+- **Tranche 6 — intervalle de 15 s dans l'admin** : GREEN 3425 passed / 3425 total · refactor : aucun
+- **Tranche 7 — réponse refusée, file recomptée** : GREEN 3432 passed / 3432 total · refactor : opérateur `recountWhenStale` partagé par `recountWhenSettled` et `reply`
 
 ## Verify
 
