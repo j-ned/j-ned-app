@@ -166,8 +166,11 @@ l'entité a été enregistrée ailleurs depuis son chargement, sans jamais écra
   **en arrière-plan et sans toast**, et compare sa version à celle du document édité : `updatedAt`
   pour l'article et le projet, `version` pour le parcours. Jamais le contenu du brouillon.
 - Rien n'est relu pour un nouvel article ou projet jamais enregistré, ni pendant un enregistrement.
-  Une relecture partie avant un enregistrement de l'onglet et revenue après est ignorée. Un
-  enregistrement réussi devient la version de référence : pas de faux avertissement au retour.
+  Une relecture partie avant un enregistrement de l'onglet, ou avant l'ouverture d'une autre entité
+  dans le même éditeur, et revenue après est ignorée (la garde compare l'`id` et la version). Un
+  enregistrement réussi devient la version de référence : pas de faux avertissement au retour. Une
+  version plus récente déjà signalée n'est plus relue (pour l'article, chaque relecture lit toute la
+  liste sur le quota de 10 lectures par minute).
 - Version différente : « Une version plus récente de cet article (de ce projet, du parcours) a été
   enregistrée ailleurs. » et le bouton « Recharger la dernière version ». Sans modification non
   enregistrée, le rechargement est direct ; sinon un dialogue (`ConfirmDialog`) dit ce qui sera
@@ -176,9 +179,18 @@ l'entité a été enregistrée ailleurs depuis son chargement, sans jamais écra
   avec le reste.
 - Rien n'est rechargé automatiquement. Une relecture en échec, un article supprimé ailleurs ou une
   même version ne disent rien.
-- Parcours : un enregistrement refusé en 409 affiche le même avertissement et la même action. Le
-  toast d'erreur dit « Le parcours n'a pas été enregistré : une version plus récente a été
-  enregistrée ailleurs. » au lieu de demander de recharger la page.
+- Enregistrer alors qu'une version plus récente est signalée (article, projet) demande une
+  confirmation : « Une version plus récente de cet article a été enregistrée ailleurs : enregistrer
+  ton brouillon la remplacera. », « Enregistrer quand même » ou « Continuer l'édition ». Annuler
+  n'écrit rien et garde le brouillon. Sans cette confirmation, l'API (sans contrôle de version)
+  écraserait l'autre version sans le dire.
+- Parcours : pas de confirmation, l'API refuse la version périmée. Un enregistrement refusé en 409
+  affiche le même avertissement et la même action. Le toast d'erreur dit « Le parcours n'a pas été
+  enregistré : une version plus récente a été enregistrée ailleurs. » au lieu de demander de
+  recharger la page.
+- « Dernière version chargée. » n'est dit que si la version éditée a effectivement changé depuis
+  celle d'où le rechargement est parti ; il retombe à la saisie suivante et à l'enregistrement
+  suivant. Un rechargement de projet ou de parcours qui échoue donne le focus à « Réessayer ».
 
 **Accessibilité.** La zone d'avertissement est un `role="status"` présent dès que l'éditeur est
 affiché, vide tant que rien n'est détecté : son contenu change, il est donc annoncé (une région
@@ -193,10 +205,13 @@ réutilise `Button` et `ConfirmDialog`.
 **Mutualisation.**
 
 - `NewerVersionCheck` (`features/admin/application/newer-version-check.ts`) : relit au retour, compare
-  les versions, ignore la réponse si un enregistrement a eu lieu entre-temps ; `detected` retombe
-  dès que la version éditée change (enregistrement, rechargement). Chaque éditeur lui donne sa
-  version courante, sa lecture de fond et `draft.saving`.
-- `AdminEditorFrame`, déjà commun aux trois éditeurs, porte la zone, le bouton et le dialogue.
+  les versions, ignore la réponse si l'entité ou sa version a changé entre-temps ; `detected`
+  retombe dès que la version éditée change (enregistrement, rechargement). Il porte aussi le
+  rechargement, l'état « rechargée » et la confirmation d'écrasement (`beforeSave()`). Chaque
+  éditeur lui donne son `id` et sa version, sa lecture de fond, son rechargement, `draft.saving`
+  et l'existence de modifications ; le parcours déclare `staleRejectedByApi`.
+- `AdminEditorFrame`, déjà commun aux trois éditeurs, porte la zone, le bouton et les deux
+  dialogues (recharger, enregistrer par-dessus).
 - Lectures de fond : `BlogGateway.getLatestAdminPost(id)` lit `/blog/posts/admin` **hors du cache
   partagé** (le relire réécrirait le brouillon, lié à la liste) ; `getProjectById(id, { background })`
   et `getProfile({ background })` existants. Recharger : relire le cache des articles, ou
@@ -224,8 +239,14 @@ retrouvé (le contrôle ne joue qu'au retour, au plus toutes les 15 s). Changeme
 
 **Limites.** Un rechargement d'article qui échoue (relecture du cache, silencieuse) laisse
 l'avertissement affiché, sans erreur : l'action peut être relancée. Un rechargement de projet ou de
-parcours qui échoue montre l'état d'erreur de l'éditeur, comme un premier chargement. Les deux
-seuils d'altitude du checker (éditeur de projet 261 lignes, du parcours 250) étaient déjà approchés
+parcours qui échoue montre l'état d'erreur de l'éditeur, comme un premier chargement. Le brouillon
+d'article reste lié au cache partagé de la liste : la relecture que déclenche l'écriture (gateway)
+peut réécrire ce qui a été saisi juste après un enregistrement, couverture choisie dans cette
+fenêtre comprise. Une saisie faite entre la confirmation du rechargement et l'arrivée des données
+est écrasée par la version chargée. La confirmation d'écrasement ne joue que si la version plus
+récente a déjà été détectée (retour sur l'onglet) : sans contrôle de version côté API, un
+enregistrement fait avant tout retour écrase toujours en silence. Les deux
+seuils d'altitude du checker (éditeur de projet 273 lignes, du parcours 261) étaient déjà approchés
 avant ce changement (248 et 234) ; aucun découpage n'a été fait ici.
 
 ## Journal des tranches
@@ -240,6 +261,7 @@ avant ce changement (248 et 234) ; aucun découpage n'a été fait ici.
 - **Tranche 8 — version plus récente, éditeur d'article** : GREEN 3450 passed / 3450 total · refactor : aucun
 - **Tranche 9 — version plus récente, éditeur de projet** : GREEN 3457 passed / 3457 total · refactor : aucun
 - **Tranche 10 — version plus récente et 409, éditeur du parcours** : GREEN 3462 passed / 3462 total · refactor : test du refus 409 commun (`isStaleVersion`) au toast et à l'avertissement
+- **Tranche 11 — écrasement confirmé, garde sur l'id, état « rechargée », relectures superflues** : GREEN 3474 passed / 3474 total · refactor : `editedVersion` partagé par les éditeurs d'article et de projet ; rechargement et état « rechargée » déplacés du cadre vers `NewerVersionCheck`
 
 ## Verify
 
@@ -272,3 +294,16 @@ version chargée. » focalisée. axe : zéro violation sur l'avertissement et su
 `sombre-recharger-confirmation.png`, `clair-version-rechargee.png`. `ci/smoke.sh` et `pnpm a11y`
 (77 scénarios) verts. Console : non relue scénario par scénario (le harnais n'échoue pas sur une
 erreur de console).
+
+2026-11-22, éditeurs d'article et de projet (preuve du `code-reviewer`, sur l'image de la branche
+avant les corrections qui suivent) : Chromium, même harnais et même doublure. Article : retour sur
+l'onglet après une écriture « ailleurs » ⇒ avertissement ; « Recharger la dernière version » ⇒
+version enregistrée chargée. Projet : même parcours ⇒ « Dernière version chargée. », brouillon
+remplacé, « Aucune modification ». axe : aucune violation. Console : seulement `GET /api/config` en
+404 (route absente de la doublure). Verdict : **PASS**. Captures :
+`/tmp/claude-1000/-home-j-ned-Projects-j-ned-app/bfee6a5f-c770-499f-8a82-1dcf1be822c0/scratchpad/verify/article-1-avertissement.png`,
+`/tmp/claude-1000/-home-j-ned-Projects-j-ned-app/bfee6a5f-c770-499f-8a82-1dcf1be822c0/scratchpad/verify/article-2-recharge.png`,
+`/tmp/claude-1000/-home-j-ned-Projects-j-ned-app/bfee6a5f-c770-499f-8a82-1dcf1be822c0/scratchpad/verify/projet-recharge.png`.
+La confirmation d'écrasement, la garde sur l'`id`, l'état « rechargée » et le focus après un
+rechargement en échec (commit suivant) sont prouvés par les tests unitaires seulement : l'image
+n'a pas été reconstruite.
