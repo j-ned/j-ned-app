@@ -7,7 +7,7 @@ import {
   serializeRequest,
 } from './log-redact';
 
-export type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
+type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
 export type LoggerOptions = {
   readonly level: LogLevel | 'silent';

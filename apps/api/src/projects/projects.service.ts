@@ -130,6 +130,7 @@ export class ProjectsService {
     // (cleanup manuel possible) à une DB qui référence une clé supprimée (image cassée côté front).
     const newKey = await storeOptimizedImage(
       this.storage,
+      STORAGE_BUCKET,
       this.images,
       `projects/${id}`,
       file.buffer,

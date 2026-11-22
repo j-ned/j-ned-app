@@ -11,7 +11,7 @@ import { TrackEventDto } from './dto/track-event.dto';
 import { normalizeReferrer } from './referrer';
 
 // RFC1918 + loopback + link-local + IPv6 ULA. Strips ::ffff: IPv4-mapped prefix.
-export function isPrivateIp(raw: string): boolean {
+function isPrivateIp(raw: string): boolean {
   if (!raw) return false;
 
   const lower = raw.toLowerCase();

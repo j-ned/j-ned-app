@@ -5,7 +5,7 @@ import {
   type ResponsiveImageWidth,
 } from './image-optimizer.service';
 import type { ImageOptimizer } from './image-optimizer.service';
-import { STORAGE_BUCKET, type StorageService } from './storage.service';
+import type { StorageService } from './storage.service';
 
 // DeleteObject est déjà idempotent, mais la garde d'un emplacement vide évite un aller-retour réseau.
 export async function deleteS3IfExists(
@@ -26,13 +26,14 @@ export function contentHash(buffer: Buffer): string {
 // image, servie avec un cache immuable d'un an.
 export async function storeOptimizedImage(
   storage: StorageService,
+  bucket: string,
   images: ImageOptimizer,
   keyPrefix: string,
   source: Buffer,
 ): Promise<string> {
   const image = await images.optimize(source);
   const key = `${keyPrefix}-${contentHash(image.buffer)}.${image.ext}`;
-  await storage.upload(STORAGE_BUCKET, key, image.buffer, image.mimetype);
+  await storage.upload(bucket, key, image.buffer, image.mimetype);
   return key;
 }
 

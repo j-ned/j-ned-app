@@ -4,8 +4,8 @@ import type { AnalyticsAggregatorService } from './analytics-aggregator.service'
 
 // Déclenché chaque jour par le service `portfolio-cron` via `/api/cron/daily` ; en local, appeler
 // cette route avec `CRON_SECRET`.
-export const DAILY_ROLLUP_PATTERN = '0 0 * * *';
-export const DAILY_ROLLUP_MONITOR = 'analytics-aggregate-yesterday';
+const DAILY_ROLLUP_PATTERN = '0 0 * * *';
+const DAILY_ROLLUP_MONITOR = 'analytics-aggregate-yesterday';
 
 const logger = new Logger('AnalyticsSchedule');
 

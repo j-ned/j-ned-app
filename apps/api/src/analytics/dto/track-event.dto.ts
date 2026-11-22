@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { V2_EVENT_TYPES } from '../engagement';
 
-export const ANALYTICS_TYPES = [
+const ANALYTICS_TYPES = [
   'page_view',
   'page_duration',
   'project_click',

@@ -34,7 +34,7 @@ export function blogRoutes(
 }
 
 // Les chemins fixes (`/admin`) passent avant `/:slug`.
-export function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
+function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
   return (
     new Hono<AppEnv>()
       // Articles publiés (public), sans leur corps : `?include=content` l'ajoute (flux RSS du site).

@@ -4,7 +4,7 @@ export type CommentAuthor =
   | { readonly kind: 'visitor'; readonly name: string; readonly email: string }
   | { readonly kind: 'owner' };
 
-export type CommentModeration =
+type CommentModeration =
   | { readonly status: 'pending' }
   | {
       readonly status: 'published';

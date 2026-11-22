@@ -1,26 +1,26 @@
 // Document unique de la page Parcours, listes dans l'ordre d'affichage, `id` UUID stable généré par
 // le client à l'ajout. L'identité (phrase `journey`, nom, ville, réseaux) reste dans le code du front.
-export type ProfileBiography = {
+type ProfileBiography = {
   readonly title: string;
   readonly summary: string;
   readonly leadEmphasis: string;
   readonly paragraphs: readonly string[];
 };
 
-export type ProfileTitledItem = {
+type ProfileTitledItem = {
   readonly id: string;
   readonly title: string;
   readonly description: string;
 };
 
-export type ProfileTechnology = {
+type ProfileTechnology = {
   readonly id: string;
   readonly name: string;
   readonly category: string;
   readonly icon: string;
 };
 
-export type ProfileDiploma = {
+type ProfileDiploma = {
   readonly id: string;
   readonly title: string;
   readonly provider: string;
@@ -29,7 +29,7 @@ export type ProfileDiploma = {
   readonly skills: readonly string[];
 };
 
-export type ProfileMotivation = {
+type ProfileMotivation = {
   readonly title: string;
   readonly statement: string;
   readonly description: string;

@@ -3,7 +3,7 @@ import type { AppConfigService } from '../config/app-config.service';
 import type { AppEnv } from '../common/http';
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
 
-export type RuntimeConfigResponse = {
+type RuntimeConfigResponse = {
   sentry: { dsn: string; environment: string; release: string };
 };
 

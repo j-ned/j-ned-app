@@ -1,6 +1,6 @@
 // Toute route ajoutée, retirée ou dont l'accès change l'est ici d'abord. Les paramètres portent des
 // valeurs inexistantes : seul l'accès est éprouvé.
-export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export type Route = { readonly method: Method; readonly path: string };
 
 const ID = '00000000-0000-4000-8000-000000000000';

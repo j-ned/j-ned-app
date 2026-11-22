@@ -5,7 +5,7 @@ const MAX_RETRIES = 3;
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
 
 // Template publié dans Resend, désigné par son alias ; variables `{{{KEY}}}` dans le HTML.
-export type MailTemplate = {
+type MailTemplate = {
   id: string;
   variables: Record<string, string>;
 };

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
 
-export const LEGAL_LAST_UPDATE = '20 octobre 2026';
+const LEGAL_LAST_UPDATE = '20 octobre 2026';
 
 @Component({
   selector: 'app-legal-notice',
