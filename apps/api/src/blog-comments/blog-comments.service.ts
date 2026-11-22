@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   ConflictException,
   NotFoundException,
@@ -24,6 +25,8 @@ import { toPublicCommentPage, type PublicCommentPage } from './public-comment';
 
 export type CommentSender = { readonly ip: string };
 
+export type SubmittedComment = { readonly id: string };
+
 const POST_NOT_FOUND = 'Article introuvable.';
 const COMMENT_NOT_FOUND = 'Commentaire introuvable.';
 const REPLY_TO_REPLY = 'Tu ne peux pas répondre à une réponse.';
@@ -48,15 +51,16 @@ export class BlogCommentsService {
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  // Ne renvoie rien : un robot ne distingue pas un commentaire enregistré d'un commentaire écarté.
+  // Un envoi écarté par le piège reçoit un identifiant aléatoire jamais stocké : un robot ne le
+  // distingue pas d'un commentaire enregistré.
   async submit(
     slug: string,
     dto: CreateCommentDto,
     sender: CommentSender,
-  ): Promise<void> {
+  ): Promise<SubmittedComment> {
     if (dto.website) {
       this.logger.warn('Comment honeypot filled: comment dropped');
-      return;
+      return { id: randomUUID() };
     }
     const post = await this.publishedPost(slug);
     const parent =
@@ -94,6 +98,7 @@ export class BlogCommentsService {
           this.logger,
           `Failed to send comment notification for ${result.row.id}`,
         );
+        return { id: result.row.id };
     }
   }
 

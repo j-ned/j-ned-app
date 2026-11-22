@@ -11,6 +11,7 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
+import { AppIcon } from '@shared/icons/app-icon';
 import { StatusMessage } from '@shared/ui/status-message';
 import { COMMENT_COPY, COMMENT_REJECTION_COPY } from '../comment-copy';
 import type {
@@ -45,45 +46,81 @@ function statusOf(submission: CommentSubmissionState): SubmissionStatus | null {
 
 @Component({
   selector: 'section[app-comment-thread]',
-  imports: [CommentItem, CommentForm, StatusMessage],
+  imports: [AppIcon, CommentItem, CommentForm, StatusMessage],
   host: {
     'data-testid': 'comment-thread',
     'aria-labelledby': 'comments-heading',
-    class: 'block border-t border-foreground/8 pt-10',
+    class: 'block border-t border-line pt-10',
   },
   template: `
-    <h2 id="comments-heading" class="text-2xl font-bold tracking-tight">{{ heading() }}</h2>
     @let current = content();
     @let mainStatus = mainSubmissionStatus();
     @let replyStatus = replySubmissionStatus();
+    <h2
+      id="comments-heading"
+      class="text-2xl font-bold tracking-tight"
+      [attr.aria-label]="headingLabel()"
+    >
+      {{ copy.heading }}
+      @if (count(); as shown) {
+        <span
+          data-testid="comments-count"
+          class="ml-1.5 inline-grid min-w-8 place-items-center rounded-full bg-foreground/8 px-2.5 py-0.5 align-middle font-mono text-sm font-medium tabular-nums"
+          >{{ shown }}</span
+        >
+      }
+    </h2>
     @switch (current.status) {
       @case ('failed') {
-        <p data-testid="comments-load-error" class="mt-4 text-foreground/85">
+        <p
+          data-testid="comments-load-error"
+          class="mt-6 flex items-center gap-3 rounded-card border border-line p-5 text-foreground"
+        >
+          <app-icon name="exclamation-triangle" class="text-status-error" />
           {{ copy.loadFailed }}
         </p>
       }
       @case ('ready') {
         @if (current.view.items.length === 0) {
-          <p data-testid="comments-empty" class="mt-4 text-muted">{{ copy.empty }}</p>
+          <p
+            data-testid="comments-empty"
+            class="mt-6 flex items-center gap-3 rounded-card border border-dashed border-line-strong p-5 text-muted"
+          >
+            <app-icon name="comment" />
+            {{ copy.empty }}
+          </p>
         } @else {
-          <ol data-testid="comment-list" class="mt-6 grid gap-8">
+          <ol data-testid="comment-list" class="mt-6 grid gap-4">
             @for (item of current.view.items; track item.id) {
               @let replyFormId = 'reply-' + item.id + '-form';
               @let replyOpen = replyTarget() === item.id;
-              <li>
+              <li
+                class="rounded-card border bg-surface p-5 sm:p-6"
+                [class]="item.pending ? 'border-dashed border-line-strong' : 'border-line'"
+              >
                 <article
                   app-comment-item
                   [comment]="item"
-                  [replyable]="true"
+                  [replyable]="!item.pending"
                   [replyOpen]="replyOpen"
                   [replyFormId]="replyFormId"
                   (replyRequested)="replyOpened.emit(item.id)"
                 ></article>
+                @if (item.replies.length > 0) {
+                  <ol
+                    [attr.aria-label]="item.repliesLabel"
+                    class="mt-5 grid gap-5 border-l-2 border-line pl-4 sm:ml-4 sm:pl-6"
+                  >
+                    @for (reply of item.replies; track reply.id) {
+                      <li><article app-comment-item [comment]="reply" level="reply"></article></li>
+                    }
+                  </ol>
+                }
                 @if (replyOpen) {
                   <div
                     [id]="replyFormId"
                     data-testid="comment-reply-form"
-                    class="mt-4 rounded-card border border-foreground/10 p-5"
+                    class="mt-5 rounded-field border border-line bg-background p-4 sm:p-5"
                   >
                     <app-comment-form
                       [idPrefix]="'reply-' + item.id"
@@ -105,28 +142,21 @@ function statusOf(submission: CommentSubmissionState): SubmissionStatus | null {
                     >{{ replyStatus.text }}</app-status-message
                   >
                 }
-                @if (item.replies.length > 0) {
-                  <ol
-                    [attr.aria-label]="item.repliesLabel"
-                    class="mt-5 grid gap-5 border-l-2 border-foreground/10 pl-5"
-                  >
-                    @for (reply of item.replies; track reply.id) {
-                      <li><article app-comment-item [comment]="reply" level="reply"></article></li>
-                    }
-                  </ol>
-                }
               </li>
             }
           </ol>
           @if (current.view.truncation; as truncation) {
-            <p data-testid="comments-truncated" class="mt-6 text-sm text-muted">
+            <p data-testid="comments-truncated" class="mt-4 text-sm text-muted">
               {{ truncation }}
             </p>
           }
         }
       }
     }
-    <div data-testid="comment-main-form" class="mt-10">
+    <div
+      data-testid="comment-main-form"
+      class="mt-8 rounded-card border-2 border-foreground bg-surface p-5 sm:p-7"
+    >
       <app-comment-form
         idPrefix="comment"
         [legend]="copy.formLegend"
@@ -138,7 +168,7 @@ function statusOf(submission: CommentSubmissionState): SubmissionStatus | null {
         <app-status-message
           #mainStatusMessage
           tabindex="-1"
-          class="mt-4"
+          class="mt-5"
           [tone]="mainStatus.tone"
           >{{ mainStatus.text }}</app-status-message
         >
@@ -166,9 +196,16 @@ export class CommentThread {
 
   protected readonly copy = COMMENT_COPY;
 
-  protected readonly heading = computed(() => {
+  // Nul tant que rien n'est publié : le titre se lit alors « Commentaires », sans pastille.
+  protected readonly count = computed(() => {
     const current = this.content();
-    return current.status === 'ready' ? current.view.heading : COMMENT_COPY.heading;
+    return current.status === 'ready' ? current.view.count : 0;
+  });
+
+  // Nommé en toutes lettres : Chromium insère des espaces autour d'une pastille en bloc en ligne.
+  protected readonly headingLabel = computed(() => {
+    const count = this.count();
+    return count > 0 ? `${COMMENT_COPY.heading} (${count})` : null;
   });
 
   protected readonly mainSubmissionStatus = computed(() => statusOf(this.submission()));

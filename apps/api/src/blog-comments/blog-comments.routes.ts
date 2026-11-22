@@ -73,12 +73,14 @@ export function blogCommentsRoutes(
         },
       )
 
-      // Réponse identique, commentaire enregistré ou écarté par le champ piège.
+      // Même forme, commentaire enregistré ou écarté par le champ piège : `{ id }`.
       .post('/posts/:slug/comments', throttle(COMMENT_THROTTLE), async (c) => {
         const slug = slugParam(c);
         const dto = await jsonBody(c, createCommentSchema);
-        await comments.submit(slug, dto, { ip: clientIp(c) });
-        return c.body(null, 202);
+        return c.json(
+          await comments.submit(slug, dto, { ip: clientIp(c) }),
+          202,
+        );
       })
 
       // Les chemins fixes (`/pending-count`) passent avant `/:id`.

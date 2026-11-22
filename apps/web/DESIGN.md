@@ -2,147 +2,147 @@
 name: J-Ned Portfolio
 description: Copeaux vifs, l'atelier coloré et accueillant d'un tourneur CN qui code pour le plaisir.
 colors:
-  copeau-orange-text-sable: "#bc3700"
-  copeau-orange-fill-sable: "#ed6e12"
-  copeau-orange-nuit: "#f99549"
-  sable-background: "#fcf4eb"
-  sable-surface: "#ffffff"
-  sable-surface-elevated: "#fff9f3"
-  sable-foreground: "#181f2e"
-  sable-muted: "#4d5566"
-  nuit-background: "#141a29"
-  nuit-surface: "#1e2638"
-  nuit-surface-elevated: "#263045"
-  nuit-foreground: "#f6f1eb"
-  nuit-muted: "#b1b7c5"
-  sable-line: "color-mix(in srgb, #181f2e 12%, transparent)"
-  sable-line-strong: "color-mix(in srgb, #181f2e 28%, transparent)"
-  sable-field: "color-mix(in srgb, #181f2e 50%, transparent)"
-  nuit-line: "color-mix(in srgb, #f6f1eb 12%, transparent)"
-  nuit-line-strong: "color-mix(in srgb, #f6f1eb 28%, transparent)"
-  nuit-field: "color-mix(in srgb, #f6f1eb 38%, transparent)"
-  sticker-sage-sable: "#b9eec2"
-  on-sticker-sage-sable: "#174825"
-  sticker-lavender-sable: "#d1e2ff"
-  on-sticker-lavender-sable: "#233971"
-  sticker-sage-nuit: "#235430"
-  on-sticker-sage-nuit: "#d5f5da"
-  sticker-lavender-nuit: "#2d416d"
-  on-sticker-lavender-nuit: "#d8e5ff"
-  status-success-sable: "#067132"
-  status-warn-sable: "#974e02"
-  status-error-sable: "#b71824"
-  status-success-nuit: "#67d283"
-  status-warn-nuit: "#eec05b"
-  status-error-nuit: "#f97676"
-  sable-code-keyword: "#af3c03"
-  sable-code-function: "#5857b9"
-  sable-code-string: "#1b7138"
-  sable-code-number: "#825d0d"
-  sable-code-tag: "#b32c70"
-  sable-code-comment: "#4d5566"
-  nuit-code-keyword: "#f99549"
-  nuit-code-function: "#a2a8f4"
-  nuit-code-string: "#67c07d"
-  nuit-code-number: "#cbaa4b"
-  nuit-code-tag: "#f78bb7"
-  nuit-code-comment: "#b1b7c5"
+  copeau-orange-text-sable: '#bc3700'
+  copeau-orange-fill-sable: '#ed6e12'
+  copeau-orange-nuit: '#f99549'
+  sable-background: '#fcf4eb'
+  sable-surface: '#ffffff'
+  sable-surface-elevated: '#fff9f3'
+  sable-foreground: '#181f2e'
+  sable-muted: '#4d5566'
+  nuit-background: '#141a29'
+  nuit-surface: '#1e2638'
+  nuit-surface-elevated: '#263045'
+  nuit-foreground: '#f6f1eb'
+  nuit-muted: '#b1b7c5'
+  sable-line: 'color-mix(in srgb, #181f2e 12%, transparent)'
+  sable-line-strong: 'color-mix(in srgb, #181f2e 28%, transparent)'
+  sable-field: 'color-mix(in srgb, #181f2e 50%, transparent)'
+  nuit-line: 'color-mix(in srgb, #f6f1eb 12%, transparent)'
+  nuit-line-strong: 'color-mix(in srgb, #f6f1eb 28%, transparent)'
+  nuit-field: 'color-mix(in srgb, #f6f1eb 38%, transparent)'
+  sticker-sage-sable: '#b9eec2'
+  on-sticker-sage-sable: '#174825'
+  sticker-lavender-sable: '#d1e2ff'
+  on-sticker-lavender-sable: '#233971'
+  sticker-sage-nuit: '#235430'
+  on-sticker-sage-nuit: '#d5f5da'
+  sticker-lavender-nuit: '#2d416d'
+  on-sticker-lavender-nuit: '#d8e5ff'
+  status-success-sable: '#067132'
+  status-warn-sable: '#974e02'
+  status-error-sable: '#b71824'
+  status-success-nuit: '#67d283'
+  status-warn-nuit: '#eec05b'
+  status-error-nuit: '#f97676'
+  sable-code-keyword: '#af3c03'
+  sable-code-function: '#5857b9'
+  sable-code-string: '#1b7138'
+  sable-code-number: '#825d0d'
+  sable-code-tag: '#b32c70'
+  sable-code-comment: '#4d5566'
+  nuit-code-keyword: '#f99549'
+  nuit-code-function: '#a2a8f4'
+  nuit-code-string: '#67c07d'
+  nuit-code-number: '#cbaa4b'
+  nuit-code-tag: '#f78bb7'
+  nuit-code-comment: '#b1b7c5'
 typography:
   display:
     fontFamily: "'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif"
-    fontSize: "clamp(2.75rem, 7vw, 5.5rem)"
+    fontSize: 'clamp(2.75rem, 7vw, 5.5rem)'
     fontWeight: 800
     lineHeight: 1.05
-    letterSpacing: "-0.02em"
+    letterSpacing: '-0.02em'
   headline:
     fontFamily: "'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif"
-    fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)"
+    fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)'
     fontWeight: 700
     lineHeight: 1.15
-    letterSpacing: "-0.01em"
+    letterSpacing: '-0.01em'
   title:
     fontFamily: "'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif"
-    fontSize: "1.25rem"
+    fontSize: '1.25rem'
     fontWeight: 600
     lineHeight: 1.3
-    letterSpacing: "normal"
+    letterSpacing: 'normal'
   body:
     fontFamily: "'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-    fontSize: "1rem"
+    fontSize: '1rem'
     fontWeight: 400
     lineHeight: 1.6
-    letterSpacing: "normal"
+    letterSpacing: 'normal'
   body-large:
     fontFamily: "'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-    fontSize: "1.125rem"
+    fontSize: '1.125rem'
     fontWeight: 400
     lineHeight: 1.65
-    letterSpacing: "normal"
+    letterSpacing: 'normal'
   label:
     fontFamily: "'JN Sans', 'JN Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-    fontSize: "0.75rem"
+    fontSize: '0.75rem'
     fontWeight: 600
     lineHeight: 1.4
-    letterSpacing: "normal"
+    letterSpacing: 'normal'
   mono:
     fontFamily: "'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
-    fontSize: "0.875rem"
+    fontSize: '0.875rem'
     fontWeight: 500
     lineHeight: 1.5
-    letterSpacing: "normal"
+    letterSpacing: 'normal'
 rounded:
-  none: "0"
-  part: "8px"
-  field: "12px"
-  card: "16px"
-  block: "22px"
-  pill: "9999px"
+  none: '0'
+  part: '8px'
+  field: '12px'
+  card: '16px'
+  block: '22px'
+  pill: '9999px'
 spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "16px"
-  lg: "24px"
-  xl: "32px"
-  2xl: "48px"
-  3xl: "80px"
+  xs: '4px'
+  sm: '8px'
+  md: '16px'
+  lg: '24px'
+  xl: '32px'
+  2xl: '48px'
+  3xl: '80px'
 components:
   button-primary:
-    backgroundColor: "{colors.copeau-orange-fill-sable}"
-    textColor: "{colors.sable-foreground}"
-    rounded: "{rounded.pill}"
-    padding: "10px 20px"
+    backgroundColor: '{colors.copeau-orange-fill-sable}'
+    textColor: '{colors.sable-foreground}'
+    rounded: '{rounded.pill}'
+    padding: '10px 20px'
   button-outlined:
-    backgroundColor: "transparent"
-    textColor: "{colors.sable-foreground}"
-    borderColor: "{colors.sable-foreground}"
-    borderWidth: "2px"
-    rounded: "{rounded.pill}"
-    padding: "10px 20px"
+    backgroundColor: 'transparent'
+    textColor: '{colors.sable-foreground}'
+    borderColor: '{colors.sable-foreground}'
+    borderWidth: '2px'
+    rounded: '{rounded.pill}'
+    padding: '10px 20px'
   sticker-sage:
-    backgroundColor: "{colors.sticker-sage-sable}"
-    textColor: "{colors.on-sticker-sage-sable}"
-    rounded: "{rounded.pill}"
-    padding: "4px 12px"
+    backgroundColor: '{colors.sticker-sage-sable}'
+    textColor: '{colors.on-sticker-sage-sable}'
+    rounded: '{rounded.pill}'
+    padding: '4px 12px'
   stamp:
-    backgroundColor: "{colors.sable-surface}"
-    textColor: "{colors.sable-foreground}"
-    borderColor: "{colors.sable-foreground}"
-    borderWidth: "2px"
-    rounded: "{rounded.part}"
-    padding: "4px 10px"
+    backgroundColor: '{colors.sable-surface}'
+    textColor: '{colors.sable-foreground}'
+    borderColor: '{colors.sable-foreground}'
+    borderWidth: '2px'
+    rounded: '{rounded.part}'
+    padding: '4px 10px'
   input-default:
-    backgroundColor: "{colors.sable-surface}"
-    textColor: "{colors.sable-foreground}"
-    borderColor: "{colors.sable-field}"
-    rounded: "{rounded.field}"
-    padding: "10px 14px"
+    backgroundColor: '{colors.sable-surface}'
+    textColor: '{colors.sable-foreground}'
+    borderColor: '{colors.sable-field}'
+    rounded: '{rounded.field}'
+    padding: '10px 14px'
   card-surface:
-    backgroundColor: "{colors.sable-surface}"
-    textColor: "{colors.sable-foreground}"
-    borderColor: "{colors.sable-foreground}"
-    borderWidth: "2px"
-    rounded: "{rounded.card}"
-    padding: "24px"
+    backgroundColor: '{colors.sable-surface}'
+    textColor: '{colors.sable-foreground}'
+    borderColor: '{colors.sable-foreground}'
+    borderWidth: '2px'
+    rounded: '{rounded.card}'
+    padding: '24px'
 ---
 
 # Design System: J-Ned Portfolio
@@ -162,6 +162,7 @@ Ce que ce système refuse : le template portfolio générique (hero centré « H
 > **État (2026-10-23) :** la direction de la spec 033 (`specs/033-nouveau-visuel.md`, ADR-0030, ADR-0031) est entièrement en place : couleurs des deux registres, Bricolage Grotesque, composants partagés et gabarits publics. Le § 5 décrit les classes exactes du code en place et suit chaque changement de composant.
 
 **Key Characteristics:**
+
 - Deux registres égaux, Sable et Nuit, qui suivent le système au premier chargement.
 - Un seul accent, l'orange copeau (One Orange Rule), avec deux exceptions bornées : la coloration du code et les deux couleurs d'autocollant.
 - Formes rondes : boutons et autocollants en pilule, cartes à 16 px, grands blocs à 22 px ; la pièce technique (cartouche, tampon) garde 8 px.
@@ -184,9 +185,9 @@ Deux registres (Sable / Nuit), un accent orange, deux couleurs d'autocollant, de
 
 Deux couleurs, pas une de plus (arbitrage 2026-10-21). Réservées aux autocollants (`shared/ui/sticker.ts`) : ni lien, ni bouton, ni état, ni catégorie de contenu.
 
-| Token | Sable (fond / texte) | Nuit (fond / texte) | Contraste du texte |
-|---|---|---|---|
-| `sticker-sage` / `on-sticker-sage` | `#b9eec2` / `#174825` | `#235430` / `#d5f5da` | 8,08 (Sable) · 7,51 (Nuit) |
+| Token                                      | Sable (fond / texte)  | Nuit (fond / texte)   | Contraste du texte         |
+| ------------------------------------------ | --------------------- | --------------------- | -------------------------- |
+| `sticker-sage` / `on-sticker-sage`         | `#b9eec2` / `#174825` | `#235430` / `#d5f5da` | 8,08 (Sable) · 7,51 (Nuit) |
 | `sticker-lavender` / `on-sticker-lavender` | `#d1e2ff` / `#233971` | `#2d416d` / `#d8e5ff` | 8,44 (Sable) · 7,93 (Nuit) |
 
 Le fond d'un autocollant contre la page reste décoratif (1,20 à 1,95:1) : c'est son texte qui porte l'information, et en `forced-colors` son bord transparent devient `CanvasText`.
@@ -216,11 +217,11 @@ Mélanges `foreground` / transparent en `color-mix(in srgb, …)`, mêmes propor
 
 ### Status
 
-| Token | Sable | Nuit | Ratios fond / surface |
-|---|---|---|---|
-| `status-success` | `#067132` | `#67d283` | 5,64 / 6,15 · 9,17 / 7,99 |
-| `status-warn` | `#974e02` | `#eec05b` | 5,66 / 6,16 · 10,19 / 8,87 |
-| `status-error` | `#b71824` | `#f97676` | 6,07 / 6,63 · 6,51 / 5,67 |
+| Token            | Sable     | Nuit      | Ratios fond / surface      |
+| ---------------- | --------- | --------- | -------------------------- |
+| `status-success` | `#067132` | `#67d283` | 5,64 / 6,15 · 9,17 / 7,99  |
+| `status-warn`    | `#974e02` | `#eec05b` | 5,66 / 6,16 · 10,19 / 8,87 |
+| `status-error`   | `#b71824` | `#f97676` | 6,07 / 6,63 · 6,51 / 5,67  |
 
 Texte sur aplat de statut : `on-status-success` (blanc en Sable, 6,15:1 ; fond en Nuit, 9,17:1) et `on-status-error` (blanc en Sable, 6,63:1 ; fond en Nuit, 6,51:1). L'orange et le rouge d'erreur sont proches en teinte : une erreur est toujours dite par une icône et un texte, jamais par la seule couleur, et l'orange ne sert jamais à un état.
 
@@ -228,14 +229,14 @@ Texte sur aplat de statut : `on-status-success` (blanc en Sable, 6,15:1 ; fond e
 
 Six teintes `--color-code-*`, réservées aux blocs de code (`code.code-syntax`). Fond réel du bloc : `foreground` à 4 %, posé sur la page ou sur une carte ; chaque teinte vise ≥ 5,0:1 en Sable et ≥ 6,0:1 en Nuit sur le pire des deux.
 
-| Rôle | Sable | Ratios bloc page · bloc carte | Nuit | Ratios bloc page · bloc carte |
-|---|---|---|---|---|
-| `keyword` (orange) | `#af3c03` | 5,13 · 5,60 | `#f99549` | 7,03 · 6,05 |
-| `function` (lavande) | `#5857b9` | 5,11 · 5,58 | `#a2a8f4` | 7,05 · 6,07 |
-| `string` (sauge) | `#1b7138` | 5,13 · 5,60 | `#67c07d` | 7,05 · 6,07 |
-| `number` (ocre) | `#825d0d` | 5,05 · 5,51 | `#cbaa4b` | 7,03 · 6,06 |
-| `tag` (rose) | `#b32c70` | 5,06 · 5,52 | `#f78bb7` | 6,99 · 6,01 |
-| `comment` (= `muted`) | `#4d5566` | 6,32 · 6,89 | `#b1b7c5` | 7,83 · 6,75 |
+| Rôle                  | Sable     | Ratios bloc page · bloc carte | Nuit      | Ratios bloc page · bloc carte |
+| --------------------- | --------- | ----------------------------- | --------- | ----------------------------- |
+| `keyword` (orange)    | `#af3c03` | 5,13 · 5,60                   | `#f99549` | 7,03 · 6,05                   |
+| `function` (lavande)  | `#5857b9` | 5,11 · 5,58                   | `#a2a8f4` | 7,05 · 6,07                   |
+| `string` (sauge)      | `#1b7138` | 5,13 · 5,60                   | `#67c07d` | 7,05 · 6,07                   |
+| `number` (ocre)       | `#825d0d` | 5,05 · 5,51                   | `#cbaa4b` | 7,03 · 6,06                   |
+| `tag` (rose)          | `#b32c70` | 5,06 · 5,52                   | `#f78bb7` | 6,99 · 6,01                   |
+| `comment` (= `muted`) | `#4d5566` | 6,32 · 6,89                   | `#b1b7c5` | 7,83 · 6,75                   |
 
 ### Named Rules
 
@@ -252,7 +253,7 @@ Six teintes `--color-code-*`, réservées aux blocs de code (`code.code-syntax`)
 ## 3. Typography
 
 **Display Font:** Bricolage Grotesque 1.001 (variable, OFL 1.1 sans Reserved Font Name ; instance `opsz` 48, `wdth` 100, `wght` 600–800, ADR-0031) : `--font-display` : `'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, sans-serif`
-**Body Font:** JN Sans (IBM Plex Sans 3.201 modifiée et renommée, « Plex » étant un *Reserved Font Name* ; variable, `wght` 400–700, romain et vraie italique) : `--font-sans`, appliquée à tout le site par le preflight
+**Body Font:** JN Sans (IBM Plex Sans 3.201 modifiée et renommée, « Plex » étant un _Reserved Font Name_ ; variable, `wght` 400–700, romain et vraie italique) : `--font-sans`, appliquée à tout le site par le preflight
 **Data Font:** JN Mono 500 (IBM Plex Mono 2.3 renommée, même raison ; statique) : `--font-mono` : `'JN Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace`
 
 **Character:** Bricolage Grotesque donne aux titres une voix ronde, un peu bricolée, chaleureuse sans être enfantine ; JN Sans tient le texte courant sans fatigue ; JN Mono pose les données (cotes, références, code). Les trois familles sont **auto-hébergées** (`public/fonts/`, ADR-0006) : aucune requête tierce, CSP `font-src 'self'` inchangée, `font-display: swap`, faces de repli métriquement ajustées sur Arial pour ne pas décaler la mise en page (Bricolage : `size-adjust` 97,56 %, `ascent-override` 95,32 %, `descent-override` 27,67 %, `line-gap-override` 0 %, sur Arial Bold). Seule la police du `<h1>` (élément LCP) est préchargée : 37 460 octets, 5,2 % de moins qu'Archivo, la police de titres précédente ; l'italique n'est téléchargée que sur les pages qui en affichent.
@@ -290,13 +291,13 @@ Système **plat**. La profondeur vient des bords francs et des aplats, pas des o
 
 ### Shapes
 
-| Rayon | Token (`@theme`, PR 6a) | Usage |
-|---|---|---|
-| 8 px | `rounded-part` | cartouche, tampon, vignettes de couverture, anneaux de focus des liens : la pièce technique reste nette |
-| 12 px | `rounded-field` | champs de formulaire |
-| 16 px | `rounded-card` | cartes, cartes de lien |
-| 22 px | `rounded-block` | grands blocs (couvertures et portrait, bloc de code, galerie, carte de partage) |
-| pilule | `rounded-full` | boutons, entrées de navigation actives, autocollants |
+| Rayon  | Token (`@theme`, PR 6a) | Usage                                                                                                   |
+| ------ | ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| 8 px   | `rounded-part`          | cartouche, tampon, vignettes de couverture, anneaux de focus des liens : la pièce technique reste nette |
+| 12 px  | `rounded-field`         | champs de formulaire                                                                                    |
+| 16 px  | `rounded-card`          | cartes, cartes de lien                                                                                  |
+| 22 px  | `rounded-block`         | grands blocs (couvertures et portrait, bloc de code, galerie, carte de partage)                         |
+| pilule | `rounded-full`          | boutons, entrées de navigation actives, autocollants                                                    |
 
 Cibles tactiles : 44 × 44 px au moins malgré la pilule (`min-h-11`, `size-11`).
 
@@ -486,22 +487,33 @@ Le Markdown d'un article, rendu par `parseMarkdown` (seul assainissement, ADR-00
 - **Bloc de code:** `div[data-code-block]` `not-prose`, `rounded-block`, trait `foreground/8`, fond `foreground/4` (sur la page : `#1d2330` Nuit, `#f3ebe3` Sable ; sur une carte, aperçu de l'éditeur : `#272e3f`, `#f6f6f7`), `my-8`. Si le langage est connu, une barre d'étiquette (hauteur 40 px, mono `text-xs text-muted`, filet bas `foreground/8`) porte son libellé (« TypeScript », « Dockerfile »…). Puis `pre tabindex="0"` (défilement horizontal au clavier, anneau `primary` en `focus-visible`), mono 14 px, `leading-relaxed`, `p-4`. Langage inconnu ou absent : texte échappé, sans barre ni couleur.
 - **Couleurs du code:** `@utility code-syntax` sur le `code` : texte `foreground`, puis une couleur par rôle. Ratios sur le fond du bloc, posé sur la page · sur une carte (composition sRGB, WCAG 2.x ; ≥ 5,0:1 en Sable, ≥ 6,0:1 en Nuit sur le pire des deux) :
 
-  | Rôle (`--color-code-*`) | Jetons `hljs-*` | Nuit | Sable |
-  |---|---|---|---|
-  | `keyword` (orange) | `keyword`, `literal`, `doctag`, `meta` | `oklch(76% 0.15 55)` 7,03 · 6,05 | `oklch(51.5% 0.16 40)` 5,13 · 5,60 |
-  | `function` (lavande) | `title`, `section`, `built_in`, `type` | `oklch(75.5% 0.11 280)` 7,05 · 6,07 | `oklch(51% 0.15 280)` 5,11 · 5,58 |
-  | `string` (sauge) | `string`, `regexp`, `addition`, `template-tag` | `oklch(73.5% 0.13 150)` 7,05 · 6,07 | `oklch(48.5% 0.12 150)` 5,13 · 5,60 |
-  | `number` (ocre) | `number`, `symbol`, `bullet`, `variable`, `template-variable`, `attr` | `oklch(75% 0.12 90)` 7,03 · 6,06 | `oklch(50.5% 0.1 80)` 5,05 · 5,51 |
-  | `tag` (rose) | `name`, `selector-*`, `attribute`, `deletion` | `oklch(76.5% 0.14 355)` 6,99 · 6,01 | `oklch(52.5% 0.18 355)` 5,06 · 5,52 |
-  | `comment` (= `muted`) | `comment`, `quote` | `oklch(78% 0.02 265)` 7,83 · 6,75 | `oklch(45% 0.03 265)` 6,32 · 6,89 |
-  | texte | le reste (`property`, `params`, `punctuation`…) | `foreground` 14,00 · 12,04 | `foreground` 13,97 · 15,25 |
+  | Rôle (`--color-code-*`) | Jetons `hljs-*`                                                       | Nuit                                | Sable                               |
+  | ----------------------- | --------------------------------------------------------------------- | ----------------------------------- | ----------------------------------- |
+  | `keyword` (orange)      | `keyword`, `literal`, `doctag`, `meta`                                | `oklch(76% 0.15 55)` 7,03 · 6,05    | `oklch(51.5% 0.16 40)` 5,13 · 5,60  |
+  | `function` (lavande)    | `title`, `section`, `built_in`, `type`                                | `oklch(75.5% 0.11 280)` 7,05 · 6,07 | `oklch(51% 0.15 280)` 5,11 · 5,58   |
+  | `string` (sauge)        | `string`, `regexp`, `addition`, `template-tag`                        | `oklch(73.5% 0.13 150)` 7,05 · 6,07 | `oklch(48.5% 0.12 150)` 5,13 · 5,60 |
+  | `number` (ocre)         | `number`, `symbol`, `bullet`, `variable`, `template-variable`, `attr` | `oklch(75% 0.12 90)` 7,03 · 6,06    | `oklch(50.5% 0.1 80)` 5,05 · 5,51   |
+  | `tag` (rose)            | `name`, `selector-*`, `attribute`, `deletion`                         | `oklch(76.5% 0.14 355)` 6,99 · 6,01 | `oklch(52.5% 0.18 355)` 5,06 · 5,52 |
+  | `comment` (= `muted`)   | `comment`, `quote`                                                    | `oklch(78% 0.02 265)` 7,83 · 6,75   | `oklch(45% 0.03 265)` 6,32 · 6,89   |
+  | texte                   | le reste (`property`, `params`, `punctuation`…)                       | `foreground` 14,00 · 12,04          | `foreground` 13,97 · 15,25          |
 
   Étiquette `text-muted` : 7,83 · 6,75 (Nuit), 6,32 · 6,89 (Sable).
+
 - **Copier:** sur le site et dans l'aperçu, chaque bloc porte un `button[data-code-copy]` à droite de la barre (barre présente même sans langage connu) : mono `text-xs text-muted`, survol `foreground`, 32 px de haut dans la barre de 40 px pour que l'anneau `focus-visible` global (2 px, décalé de 2 px) ne soit pas rogné. Cet anneau vient de la règle globale `:where(a, button, …):focus-visible` de `styles.css`, non stratifiée : elle l'emporte sur les classes `focus-visible:outline-*` du bouton, qui restent inertes (même anneau, doublon assumé et figé par un test de `parse-markdown`). Libellé visible « Copier », nom « Copier le bloc de code N » (texte `sr-only`), « Copié » pendant 2 s après le dernier clic, « Échec » pendant 2 s si le presse-papiers refuse. Deux copies rapprochées sont annoncées toutes les deux (la région est vidée puis réécrite au rendu suivant). La directive `appCodeCopy` écoute le clic sur un ancêtre hydraté (rejoué avant hydratation par `withEventReplay`) et une région `role="status"` `sr-only`, hors du `@defer`, annonce « Code copié dans le presse-papiers » ou « Copie impossible : sélectionnez le code. ». Absent du flux RSS.
 - **Code en ligne:** `text-primary` sur fond `foreground/6`, `rounded-sm`, `px-1.5 py-0.5`, graisse 500 (la seule de JN Mono), sans les accents graves du plugin typographique. Le fond, la chasse fixe et l'absence de soulignement le distinguent d'un lien, qui partage l'orange (4,64:1 Sable, 6,66:1 Nuit sur le fond `foreground/6` posé sur la page).
 - **Souligné (`<u>`):** couleur du texte, trait `foreground/40` de 2 px décalé de `0.3em` ; jamais en `primary`, pour ne pas passer pour un lien.
 - **Images du corps:** `loading="lazy"`, `decoding="async"` ; `width`/`height` lus dans la clé `blog-content/<uuid>-<empreinte>-<l>x<h>.avif` (ADR-0015) réservent la place avant l'arrivée de l'image, `h-auto max-w-full` garde le ratio.
 - **Don't:** pas d'italique sur les commentaires (JN Mono n'a ni italique ni autre graisse que 500 : on obtiendrait un oblique synthétique) ; jamais de `style` inline (DOMPurify le retire, la CSP le refuserait) ; aucune de ces six teintes hors d'un bloc de code.
+
+### Commentaires d'un article (`features/comments/application/components/comment-thread.ts`, `comment-item.ts`, `comment-form.ts`)
+
+- **Section:** `border-t border-line pt-10` sous l'article ; `<h2>` `text-2xl font-bold tracking-tight` suivi du nombre publié dans une pastille en ligne (`inline-grid align-middle rounded-full bg-foreground/8 font-mono text-sm tabular-nums`, donnée chiffrée) ; le titre porte `aria-label="Commentaires (4)"`. Pas de `flex` sur un titre ni de texte `sr-only` positionné dedans : Chromium insère des espaces autour des boîtes bloc et le nom devient « Commentaires ( 4 ) ». Rien publié : ni pastille ni `aria-label`.
+- **Commentaire:** une carte discrète par `<li>` (`rounded-card border border-line bg-surface p-5 sm:p-6`) ; le trait `line` est décoratif, le texte porte l'information. En-tête aligné : pastille d'initiale décorative (`aria-hidden`, `size-9`, `bg-foreground/8`, Bricolage gras ; l'auteur du site : aplat `primary-bg`, texte `on-primary`), nom en `<h3>`, date en `font-mono text-xs tabular-nums text-muted` sur la même ligne, poussée à droite. Corps en `text-foreground leading-relaxed`, aligné sur le nom à partir de `sm`.
+- **Réponse de l'auteur du site:** badge texte « Auteur de l'article » (`border-primary/30 bg-primary/5 text-primary`, Accent Tint Rule) en ligne (`inline-block align-middle`) dans le titre, qui porte `aria-label="Julien Nédellec, auteur de l’article"` (même raison que le titre de section). Jamais une couleur seule.
+- **Réponses:** dans la carte du parent, liste `border-l-2 border-line pl-4 sm:ml-4 sm:pl-6` ; titres `<h4>`, pastille `size-8`.
+- **« Répondre »:** `appButton` `text-muted` avec l'icône `comment` décorative ; nom accessible « Répondre à X », `aria-expanded`/`aria-controls`. Le formulaire de réponse s'ouvre dans la carte, sur fond `background` (`rounded-field border border-line`).
+- **Formulaire principal:** carte publique (`rounded-card border-2 border-foreground bg-surface`, comme le formulaire de contact) ; légende `text-lg font-semibold` ; mention de confidentialité et bouton sous un filet `line`, côte à côte à partir de `sm`, empilés en dessous.
+- **États:** vide et erreur de lecture en cartes `rounded-card` (vide : bord pointillé `line-strong`, icône `comment`, texte `muted` ; erreur : icône d'alerte `status-error` et texte). Commentaire du lecteur en attente : carte au bord pointillé `line-strong` et tampon pointillé « En attente de relecture » (`app-stamp [dashed]`), jamais compté ni « répondable ». Confirmation et refus d'envoi : `app-status-message`.
 
 ### Cote (`shared/ui/dimension-line.ts`)
 
@@ -621,7 +633,7 @@ Même grammaire que l'éditeur de projet (en-tête, colonnes, sections, barre, s
 - **En-tête:** fil d'Ariane « Articles », `h1` = titre enregistré ou « Nouvel article » ; seule action, « Voir l'aperçu » sous `lg`.
 - **États:** squelette `role="status"` ; `LoadError` avec « Réessayer » ; article absent de la liste : « Cet article n'existe pas ou a été supprimé. » centré `text-muted` ; les deux derniers suivis du lien « Retour aux articles ».
 - **Sections:** `01 · Article` (titre, extrait, sujets), `02 · Contenu` (Markdown en mono 14 px sur 20 lignes, puis son rendu sous le champ par le corps d'article du site (`BlogArticleBody`, titres abaissés d'un niveau, code coloré), groupe nommé « Rendu », 32rem de haut au plus avec défilement), `03 · Couverture` (image enregistrée 1200/630 `15rem` et zone de dépôt côte à côte à partir de `sm`), `04 · Publication` (deux cartes-radios « Brouillon » / « Publié », bord `field`, cochée en `primary`, et la mention « Publier l'article redéploie le site : il est en ligne quelques minutes plus tard. » en `field-hint` si « Publié »).
-- **Barre de mise en forme (`components/admin-markdown-toolbar.ts`, directive `markdown-editor.ts`):** entre le libellé « Contenu (Markdown) » et la zone, une seule rangée `flex-wrap`, `gap-1`, posée sur un filet bas `line` (`pb-1.5`, `mb-2`). `role="toolbar"` « Mise en forme du contenu », `aria-controls` vers la zone. Dans l'ordre : le `select` « Niveau du texte » (`app-select`, Paragraphe, Titre 2, Titre 3, Titre 4, et « Autre titre » désactivé pour `#`, `#####`, `######`), qui suit la ligne du curseur ; un séparateur décoratif (`h-6 w-px bg-line`, `aria-hidden`) ; douze boutons icônes de 44 px (`size-11`, `rounded-md`, `text-foreground`, survol `surface-elevated`, icône 16 px du sprite) : Gras, Italique, Souligné, Barré, Code en ligne, Lien, Image, Liste à puces, Liste numérotée, Citation, Bloc de code, Séparateur. Nom par `aria-label`, raccourci par `aria-keyshortcuts` (Ctrl/⌘ + B, I, U, E, K), aucun `aria-pressed` (la source est du Markdown). Listes et citation basculent les lignes touchées (une liste remplace l'autre, numérotation depuis 1) ; lien `[texte](https://)` avec l'adresse sélectionnée ; bloc de code ```` ```ts ```` avec `ts` sélectionné, séparateur `---` et image posés dans leur propre paragraphe. Focus itinérant : un seul contrôle tabulable, flèches gauche/droite avec retour aux bords, Début, Fin ; Haut/Bas restent au `select`. Anneau de focus global (2 px `primary`, décalé de 2 px) sur les boutons, anneau `ring-primary` d'`app-select` sur le menu ; pas de `transition-colors` sur les boutons (la couleur de l'anneau partirait de `currentColor`). Les boutons écrivent dans la zone par `execCommand('insertText')` (Ctrl+Z / Ctrl+Maj+Z natifs), jamais dans le modèle : aperçu, compteur et garde suivent comme à la frappe. Région `role="status"` `sr-only` sous la barre : « Gras appliqué » / « Gras retiré », « Liste à puces appliquée » / « retirée », « Lien inséré », « Image insérée »…, pour un clic comme pour un raccourci, réannoncée si la même phrase revient. À 375 px, la rangée passe sur trois lignes, sans défilement horizontal. Sous la zone, l'indication `field-hint` (`aria-describedby`) liste en `code` les identifiants courts des langages du catalogue (`ts`, `js`… `py`).
+- **Barre de mise en forme (`components/admin-markdown-toolbar.ts`, directive `markdown-editor.ts`):** entre le libellé « Contenu (Markdown) » et la zone, une seule rangée `flex-wrap`, `gap-1`, posée sur un filet bas `line` (`pb-1.5`, `mb-2`). `role="toolbar"` « Mise en forme du contenu », `aria-controls` vers la zone. Dans l'ordre : le `select` « Niveau du texte » (`app-select`, Paragraphe, Titre 2, Titre 3, Titre 4, et « Autre titre » désactivé pour `#`, `#####`, `######`), qui suit la ligne du curseur ; un séparateur décoratif (`h-6 w-px bg-line`, `aria-hidden`) ; douze boutons icônes de 44 px (`size-11`, `rounded-md`, `text-foreground`, survol `surface-elevated`, icône 16 px du sprite) : Gras, Italique, Souligné, Barré, Code en ligne, Lien, Image, Liste à puces, Liste numérotée, Citation, Bloc de code, Séparateur. Nom par `aria-label`, raccourci par `aria-keyshortcuts` (Ctrl/⌘ + B, I, U, E, K), aucun `aria-pressed` (la source est du Markdown). Listes et citation basculent les lignes touchées (une liste remplace l'autre, numérotation depuis 1) ; lien `[texte](https://)` avec l'adresse sélectionnée ; bloc de code ` ```ts ` avec `ts` sélectionné, séparateur `---` et image posés dans leur propre paragraphe. Focus itinérant : un seul contrôle tabulable, flèches gauche/droite avec retour aux bords, Début, Fin ; Haut/Bas restent au `select`. Anneau de focus global (2 px `primary`, décalé de 2 px) sur les boutons, anneau `ring-primary` d'`app-select` sur le menu ; pas de `transition-colors` sur les boutons (la couleur de l'anneau partirait de `currentColor`). Les boutons écrivent dans la zone par `execCommand('insertText')` (Ctrl+Z / Ctrl+Maj+Z natifs), jamais dans le modèle : aperçu, compteur et garde suivent comme à la frappe. Région `role="status"` `sr-only` sous la barre : « Gras appliqué » / « Gras retiré », « Liste à puces appliquée » / « retirée », « Lien inséré », « Image insérée »…, pour un clic comme pour un raccourci, réannoncée si la même phrase revient. À 375 px, la rangée passe sur trois lignes, sans défilement horizontal. Sous la zone, l'indication `field-hint` (`aria-describedby`) liste en `code` les identifiants courts des langages du catalogue (`ts`, `js`… `py`).
 - **Panneau « Insérer une image » (`components/admin-content-image-upload.ts`):** bouton Image en disclosure (`aria-expanded`, fond `surface-elevated` ouvert, `aria-controls` vers le panneau). Panneau sous la barre, hors du `role="toolbar"`, `div role="group"` (pas de `<form>`, il vit dans celui de l'article) : carte `bg-surface`, bord `line`, `rounded-md`, `p-4`, une colonne `gap-4`. Titre « Insérer une image » en `field-label`, zone de dépôt partagée (AVIF, WebP, PNG, JPEG, 5 Mo), champ « Texte alternatif » (`form-input`, `aria-required`, 300 caractères), message d'envoi `form-error` `role="alert"` (413, 422, autre), boutons `appButton` « Insérer l'image » (désactivé pendant l'envoi, il reprend le focus après) et `appButton variant="outlined"` « Annuler ». Le focus entre sur la zone de dépôt à l'ouverture ; Entrée dans le champ envoie sans enregistrer l'article ; Échap et « Annuler » rendent le focus au bouton Image ; après l'insertion, focus dans la zone et annonce « Image insérée ».
 - **Aperçu public (`components/admin-post-preview.ts`):** même cadre que celui des projets, référence « Blog · Liste des articles » ; corps `inert` : la vraie `BlogPostRow` (jamais prioritaire), empilée dans la colonne de 25rem, temps de lecture en direct.
 

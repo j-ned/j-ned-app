@@ -691,6 +691,53 @@ describe('AdminComments: répondre en tant qu’auteur', () => {
   });
 });
 
+describe('AdminComments: retour sur l’onglet', () => {
+  afterEach(() => {
+    TestBed.inject(HttpTestingController).verify();
+    Reflect.deleteProperty(document, 'visibilityState');
+  });
+
+  function showTab(state: DocumentVisibilityState): void {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }
+
+  it('Given the queue on screen and a reply being written When the tab comes back into view Then the queue and the navigation count are read again, the list stays meanwhile and the reply form keeps its text', async () => {
+    const PUBLISHED = makeAdminComment({ id: 'c-1', status: 'published' });
+    const rendered = await render();
+    await answer(rendered, 'pending', [CAMILLE]);
+    await pressFilter(rendered, 'Publiés');
+    await answer(rendered, 'published', [PUBLISHED]);
+    const invalidate = vi.spyOn(TestBed.inject(CommentsGateway), 'invalidatePendingCount');
+    await pressTestId(rendered.fixture, 'comment-reply');
+    const field = byTestId(rendered.host, 'reply-body');
+    if (!(field instanceof HTMLTextAreaElement)) throw new Error('Expected the reply textarea');
+    field.value = 'Réponse en cours';
+    field.dispatchEvent(new Event('input'));
+    await settleBounded(rendered.fixture);
+
+    showTab('hidden');
+    showTab('visible');
+    await settleBounded(rendered.fixture);
+    const during = byTestId(rendered.host, 'admin-comments-list') !== null;
+    await answer(
+      rendered,
+      'published',
+      [PUBLISHED, makeAdminComment({ id: 'c-3', status: 'published' })],
+      {
+        total: 2,
+      },
+    );
+
+    expect({
+      invalidated: invalidate.mock.calls.length,
+      during,
+      rows: texts(rendered.host, 'admin-comment-row').length,
+      draft: field.isConnected ? field.value : null,
+    }).toEqual({ invalidated: 1, during: true, rows: 2, draft: 'Réponse en cours' });
+  });
+});
+
 describe('AdminComments: typographie', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 

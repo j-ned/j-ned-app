@@ -15,6 +15,7 @@ import type {
 } from '../domain/models/comment.model';
 import {
   rejectAsModerationError,
+  toAcceptedId,
   toAdminComment,
   toAdminCommentPage,
   toCommentRejection,
@@ -53,13 +54,13 @@ export class CommentsGateway {
   ): Observable<CommentSubmission> {
     const { name, email, body, website } = draft;
     return this.http
-      .post(
+      .post<unknown>(
         `${this.apiUrl}/blog/posts/${encodeURIComponent(slug)}/comments`,
         { name, email, body, website, ...(parentId === null ? {} : { parentId }) },
         { context: silentErrors() },
       )
       .pipe(
-        map((): CommentSubmission => ({ success: true })),
+        map((accepted): CommentSubmission => ({ success: true, id: toAcceptedId(accepted) })),
         catchError((error: unknown) =>
           of<CommentSubmission>({
             success: false,

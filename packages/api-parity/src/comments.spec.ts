@@ -4,6 +4,7 @@ import { newVisitor, type ApiResponse } from './client';
 import { adminSession } from './session';
 
 const EMAIL = 'lecteur.parite@parity.test';
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const COMMENT = { name: 'Lecteur Parité', email: EMAIL, body: 'Merci <b>beaucoup</b> !' };
 
 type Json = Readonly<Record<string, unknown>>;
@@ -63,13 +64,14 @@ describe('blog comments', () => {
       json: COMMENT,
     });
     expect(sent.status, sent.text).toBe(202);
-    expect(sent.text).toBe('');
+    expect(Object.keys(Object(sent.body))).toEqual(['id']);
 
     // En attente : visible du propriétaire avec l'adresse, invisible du public.
     const [waiting] = (await pending()).filter((row) => field(row['post'], 'id') === postId);
     expect(waiting?.['author']).toEqual({ kind: 'visitor', name: COMMENT.name, email: EMAIL });
     expect((await publicThread()).body).toMatchObject({ data: [], total: 0 });
     const id = String(waiting?.['id']);
+    expect(field(sent.body, 'id')).toBe(id);
     const count = await admin('GET', '/api/blog/comments/pending-count');
     expect(field(count.body, 'count')).toEqual(expect.any(Number));
     expect(Number(field(count.body, 'count'))).toBeGreaterThanOrEqual(1);
@@ -151,8 +153,11 @@ describe('blog comments', () => {
     });
 
     expect(sent.status, sent.text).toBe(202);
-    expect(sent.text).toBe('');
-    expect((await pending()).length).toBe(before);
+    expect(Object.keys(Object(sent.body))).toEqual(['id']);
+    expect(String(field(sent.body, 'id'))).toMatch(UUID);
+    const queue = await pending();
+    expect(queue.length).toBe(before);
+    expect(queue.map((row) => row['id'])).not.toContain(field(sent.body, 'id'));
   });
 
   it('Given an invalid comment, When it is refused, Then the error does not repeat the address', async () => {

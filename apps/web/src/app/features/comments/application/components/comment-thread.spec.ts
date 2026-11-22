@@ -6,6 +6,7 @@ import { settleBounded } from '@shared/testing/settle';
 import { provideRouter } from '@angular/router';
 import { OWNER_NAME } from '@shared/seo/site-person';
 import {
+  makePendingComment,
   makePublishedComment,
   makePublishedReply,
   makePublishedThread,
@@ -68,6 +69,10 @@ async function render(content: CommentThreadContent): Promise<HTMLElement> {
 const text = (element: Element | null | undefined): string | undefined =>
   element?.textContent?.replace(/\s+/g, ' ').trim();
 
+// Nom accessible d'un titre : son `aria-label` quand il en porte un, sinon son texte.
+const nameOf = (element: Element | null | undefined): string | undefined =>
+  element?.getAttribute('aria-label') ?? text(element);
+
 describe('CommentThread: lecture', () => {
   afterEach(() => document.body.replaceChildren());
 
@@ -97,10 +102,10 @@ describe('CommentThread: lecture', () => {
 
     expect({
       labelledBy: section?.getAttribute('aria-labelledby') === heading?.id && !!heading?.id,
-      heading: text(heading),
+      heading: nameOf(heading),
       items: topLevel.map((li) => [li.tagName, text(li.querySelector(':scope > article h3'))]),
       repliesLabel: replies?.getAttribute('aria-label'),
-      replies: [...(replies?.children ?? [])].map((li) => text(li.querySelector('article h4'))),
+      replies: [...(replies?.children ?? [])].map((li) => nameOf(li.querySelector('article h4'))),
       secondHasReplies: topLevel[1]?.querySelector('ol') ?? null,
     }).toEqual({
       labelledBy: true,
@@ -113,6 +118,37 @@ describe('CommentThread: lecture', () => {
       replies: [`${OWNER_NAME}, auteur de l’article`, 'Lou'],
       secondHasReplies: null,
     });
+  });
+
+  it('Given published comments When the section is shown Then the count sits in a badge after the title, and the title is named « Commentaires (n) »', async () => {
+    const host = await render(ready(makePublishedThread()));
+    const heading = host.querySelector('h2');
+
+    expect({
+      name: nameOf(heading),
+      visible: text(heading),
+      badge: text(byTestId(host, 'comments-count')),
+    }).toEqual({ name: 'Commentaires (1)', visible: 'Commentaires 1', badge: '1' });
+  });
+
+  it('Given no published comment When the section is shown Then the title is named by its text alone', async () => {
+    const host = await render(ready(makePublishedThread({ comments: [] })));
+
+    expect(host.querySelector('h2')?.hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('Given a comment of this reader still waiting When the section is shown Then it is listed, says so, cannot be answered, and is not counted', async () => {
+    const host = await render({
+      status: 'ready',
+      view: toCommentThreadView(makePublishedThread(), [makePendingComment({ id: 'p-1' })]),
+    });
+    const waiting = [...host.querySelectorAll('[data-testid="comment-list"] > li')].at(-1);
+
+    expect({
+      heading: nameOf(host.querySelector('h2')),
+      pending: text(waiting?.querySelector('[data-testid="comment-pending"]')),
+      reply: waiting?.querySelector('[data-testid="comment-reply"]') ?? null,
+    }).toEqual({ heading: 'Commentaires (1)', pending: 'En attente de relecture', reply: null });
   });
 
   it('Given no comment When the section is shown Then it invites the reader to write the first one, without an empty list', async () => {

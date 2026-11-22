@@ -100,14 +100,16 @@ const EMPTY_DRAFT: CommentDraft = { name: '', email: '', body: '', website: '' }
             autocomplete="off"
           />
         </div>
-        <div class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
+        <div
+          class="flex flex-col gap-4 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between"
+        >
           <p class="max-w-[46ch] text-[0.8125rem] text-muted" data-testid="comment-privacy-note">
             {{ copy.privacyNote }}
             <a routerLink="/confidentialite" class="underline underline-offset-3 hover:text-primary"
               >Politique de confidentialité</a
             >
           </p>
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="flex shrink-0 flex-wrap items-center gap-2">
             <!-- aria-disabled plutôt que disabled : un bouton désactivé perd le focus, et un refus doit l'y laisser. -->
             <button
               appButton

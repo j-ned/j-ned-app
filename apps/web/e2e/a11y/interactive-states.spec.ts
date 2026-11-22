@@ -51,6 +51,20 @@ for (const theme of THEMES) {
         await form.getByRole('button', { name: 'Envoyer' }).click();
       };
 
+      // happy-dom lit `textContent` : seul un navigateur calcule le nom accessible réel d'un titre.
+      test('comment headings keep their exact accessible names', async ({ page, visit }) => {
+        await visit('/blog/article-temoin');
+        await expect(
+          page.getByRole('heading', { name: 'Commentaires (4)', exact: true }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('region', { name: 'Commentaires (4)', exact: true }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('heading', { name: 'Julien Nédellec, auteur de l’article', exact: true }),
+        ).toBeVisible();
+      });
+
       test('comment form with errors has no WCAG A/AA violation', async ({
         page,
         visit,
@@ -71,6 +85,9 @@ for (const theme of THEMES) {
         await visit('/blog/article-temoin');
         await fillComment(page, 'Lou');
         await expect(page.getByRole('status').filter({ hasText: 'après relecture' })).toBeFocused();
+        await expect(
+          page.getByRole('article', { name: 'Lou En attente de relecture' }),
+        ).toBeVisible();
         await expectNoA11yViolations('comment-main-form', 'commentaire-envoye');
       });
 

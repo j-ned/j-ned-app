@@ -24,6 +24,7 @@ import { defined } from '@shared/testing/defined';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { ssrUpstreamInterceptor } from '@core/ssr/ssr-upstream-interceptor';
 import {
+  makePendingComment,
   makePublishedComment,
   makePublishedReply,
   makePublishedThread,
@@ -868,6 +869,38 @@ describe('BlogDetail', () => {
     afterEach(() => TestBed.inject(HttpTestingController).verify());
 
     const POST_URL = `${API}/blog/posts/mon-article/comments`;
+    const PENDING_ID = '5d0f4b6e-1c2a-4f3b-9a1e-0000000000aa';
+    const PENDING_KEY = 'comments:pending:v1:mon-article';
+
+    afterEach(() => {
+      sessionStorage.clear();
+      Reflect.deleteProperty(document, 'visibilityState');
+    });
+
+    const items = (fixture: ComponentFixture<BlogDetail>): HTMLElement[] => [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+        '[data-testid="comment-item"]',
+      ),
+    ];
+
+    const describeItem = (
+      item: Element,
+    ): { author: string | undefined; pending: string | null; body?: string | null } => {
+      const pending = item.querySelector('[data-testid="comment-pending"]')?.textContent?.trim();
+      const author = item.querySelector('h3, h4')?.firstChild?.textContent?.trim();
+      return pending === undefined
+        ? { author, pending: null }
+        : {
+            author,
+            pending,
+            body: item.querySelector('[data-testid="comment-body"]')?.textContent ?? null,
+          };
+    };
+
+    function showTab(state: DocumentVisibilityState): void {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }
 
     function fillCommentForm(form: HTMLElement | null, body: string): void {
       const fields = { name: 'Lou', email: 'lou@example.test', body };
@@ -890,7 +923,7 @@ describe('BlogDetail', () => {
       TestBed.tick();
     }
 
-    it('Given a reader writes a comment When the API accepts it Then the reader is told it awaits review, the form is emptied and the comment is not listed', async () => {
+    it('Given a reader writes a comment When the API accepts it Then the reader is told it awaits review, the form is emptied and the comment shows at the end of the list, marked as waiting', async () => {
       const fixture = await showArticle((request) =>
         request.flush(toPublicCommentPageDto(makePublishedThread())),
       );
@@ -898,7 +931,7 @@ describe('BlogDetail', () => {
       await writeComment(fixture);
       const post = TestBed.inject(HttpTestingController).expectOne(POST_URL);
       const sent = { method: post.request.method, body: post.request.body };
-      post.flush(null, { status: 202, statusText: 'Accepted' });
+      post.flush({ id: PENDING_ID }, { status: 202, statusText: 'Accepted' });
       await fixture.whenStable();
       const form = testId(fixture, 'comment-main-form');
 
@@ -906,9 +939,7 @@ describe('BlogDetail', () => {
         sent,
         status: testId(fixture, 'status-message')?.textContent?.trim(),
         name: form?.querySelector<HTMLInputElement>('[data-testid="comment-name"]')?.value,
-        items: (fixture.nativeElement as HTMLElement).querySelectorAll(
-          '[data-testid="comment-item"]',
-        ).length,
+        items: items(fixture).map(describeItem),
       }).toEqual({
         sent: {
           method: 'POST',
@@ -916,8 +947,162 @@ describe('BlogDetail', () => {
         },
         status: 'Merci\u202F! Ton commentaire sera publié après relecture.',
         name: '',
-        items: 1,
+        items: [
+          { author: 'Camille', pending: null },
+          { author: 'Lou', pending: 'En attente de relecture', body: 'Bel article.' },
+        ],
       });
+    });
+
+    it('Given a reader answers a published comment When the API accepts the reply Then it shows under that comment, marked as waiting', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+
+      await writeReply(fixture);
+      TestBed.inject(HttpTestingController)
+        .expectOne(POST_URL)
+        .flush({ id: PENDING_ID }, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      const replies = testId(fixture, 'comment-list')?.querySelectorAll(
+        ':scope > li ol [data-testid="comment-item"]',
+      );
+
+      expect([...(replies ?? [])].map(describeItem)).toEqual([
+        { author: 'Lou', pending: 'En attente de relecture', body: 'Pareil pour moi.' },
+      ]);
+    });
+
+    it('Given a comment accepted When the reader reloads the page in the same tab Then it is still shown as waiting, and the tab never kept the e-mail', async () => {
+      const first = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      await writeComment(first);
+      TestBed.inject(HttpTestingController)
+        .expectOne(POST_URL)
+        .flush({ id: PENDING_ID }, { status: 202, statusText: 'Accepted' });
+      await first.whenStable();
+      const stored = Object.values(sessionStorage).join('');
+      TestBed.resetTestingModule();
+
+      const reloaded = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+
+      expect({
+        items: items(reloaded).map(describeItem),
+        email: stored.includes('lou@example.test'),
+        name: stored.includes('Lou'),
+      }).toEqual({
+        items: [
+          { author: 'Camille', pending: null },
+          { author: 'Lou', pending: 'En attente de relecture', body: 'Bel article.' },
+        ],
+        email: false,
+        name: true,
+      });
+    });
+
+    it('Given a waiting comment of this tab When the discussion read now publishes it Then it shows once, as published, and the tab forgets it', async () => {
+      sessionStorage.setItem(
+        PENDING_KEY,
+        // Daté d'une minute : le délai d'attente de l'onglet se compte depuis l'heure réelle.
+        JSON.stringify([
+          makePendingComment({
+            id: PENDING_ID,
+            name: 'Camille',
+            createdAt: new Date(Date.now() - 60_000).toISOString(),
+          }),
+        ]),
+      );
+
+      const fixture = await showArticle((request) =>
+        request.flush(
+          toPublicCommentPageDto(
+            makePublishedThread({ comments: [makePublishedComment({ id: PENDING_ID })] }),
+          ),
+        ),
+      );
+
+      expect({
+        items: items(fixture).map(describeItem),
+        stored: sessionStorage.getItem(PENDING_KEY),
+      }).toEqual({ items: [{ author: 'Camille', pending: null }], stored: null });
+    });
+
+    it('Given a corrupted entry in the tab storage When the page shows Then the discussion shows without it', async () => {
+      sessionStorage.setItem(PENDING_KEY, '{oops');
+
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+
+      expect(items(fixture).map(describeItem)).toEqual([{ author: 'Camille', pending: null }]);
+    });
+
+    it('Given an open page When the tab comes back into view Then the discussion is read again, the list stays in place meanwhile, and a draft and an open reply form are kept', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      fillCommentForm(testId(fixture, 'comment-main-form'), 'Brouillon en cours.');
+      (fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="comment-reply"]')
+        ?.click();
+      await fixture.whenStable();
+      const http = TestBed.inject(HttpTestingController);
+
+      showTab('hidden');
+      showTab('visible');
+      fixture.detectChanges();
+      TestBed.tick();
+      const reading = http.expectOne(COMMENTS_URL);
+      fixture.detectChanges();
+      const during = items(fixture).map(describeItem);
+      reading.flush(
+        toPublicCommentPageDto(
+          makePublishedThread({
+            comments: [
+              makePublishedComment(),
+              makePublishedComment({ id: 'c-2', author: { kind: 'visitor', name: 'Inès' } }),
+            ],
+          }),
+        ),
+      );
+      await fixture.whenStable();
+
+      expect({
+        during,
+        after: items(fixture).map(describeItem),
+        draft: mainField(fixture, 'body')?.value,
+        replyForm: testId(fixture, 'comment-reply-form') !== null,
+      }).toEqual({
+        during: [{ author: 'Camille', pending: null }],
+        after: [
+          { author: 'Camille', pending: null },
+          { author: 'Inès', pending: null },
+        ],
+        draft: 'Brouillon en cours.',
+        replyForm: true,
+      });
+    });
+
+    it('Given an open page When a read made on return to the tab fails Then the list already shown stays', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+
+      showTab('visible');
+      fixture.detectChanges();
+      TestBed.tick();
+      TestBed.inject(HttpTestingController)
+        .expectOne(COMMENTS_URL)
+        .flush(null, { status: 500, statusText: 'Boom' });
+      await fixture.whenStable();
+
+      expect({
+        items: items(fixture).map(describeItem),
+        error: testId(fixture, 'comments-load-error'),
+      }).toEqual({ items: [{ author: 'Camille', pending: null }], error: null });
     });
 
     it('Given a reader answers a published comment When the API accepts the reply Then it goes out with its parent, the form closes and the confirmation shows under that comment', async () => {

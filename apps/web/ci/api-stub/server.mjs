@@ -1,5 +1,6 @@
 // Doublure HTTP de l'API pour la smoke CI et les preuves locales (zéro dépendance). Les fixtures
 // sont relues à chaque requête : modifier un fichier équivaut à une écriture admin.
+import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -135,7 +136,8 @@ const isPublished = async (slug) =>
 
 // Comme l'API : commentaires publiés d'un article publié, du plus ancien au plus récent, sans e-mail.
 async function readComments(slug, searchParams) {
-  if (!(await isPublished(slug))) return [404, { statusCode: 404, message: 'Article introuvable.' }];
+  if (!(await isPublished(slug)))
+    return [404, { statusCode: 404, message: 'Article introuvable.' }];
   const page = Number(searchParams.get('page') ?? 1);
   const limit = Math.min(Number(searchParams.get('limit') ?? 10), 100);
   const comments = (await readFixture('blog-comments'))[slug] ?? [];
@@ -153,13 +155,15 @@ const STUB_REFUSALS = {
 };
 
 async function submitComment(slug, req) {
-  if (!(await isPublished(slug))) return [404, { statusCode: 404, message: 'Article introuvable.' }];
+  if (!(await isPublished(slug)))
+    return [404, { statusCode: 404, message: 'Article introuvable.' }];
   const { name } = await readJson(req);
   const refusal = /^stub-(\d{3})$/.exec(String(name ?? ''))?.[1];
   if (refusal && refusal in STUB_REFUSALS) {
     return [Number(refusal), { statusCode: Number(refusal), message: STUB_REFUSALS[refusal] }];
   }
-  return [202, null];
+  // Comme l'API : l'identifiant du commentaire en attente, jamais stocké ici.
+  return [202, { id: randomUUID() }];
 }
 
 async function route(req, pathname, searchParams) {
