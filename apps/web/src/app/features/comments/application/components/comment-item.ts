@@ -21,10 +21,9 @@ import type { CommentView } from '../comment-thread-view';
     <ng-template #author>
       <span [textContent]="c.author"></span>
       @if (c.ownerMention) {
-        <span class="sr-only">, </span>
         <span
           data-testid="comment-owner-badge"
-          class="rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary first-letter:uppercase"
+          class="ml-2 inline-block rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 align-middle text-xs font-semibold text-primary first-letter:uppercase"
           [textContent]="c.ownerMention"
         ></span>
       }
@@ -41,14 +40,16 @@ import type { CommentView } from '../comment-thread-view';
           @if (level() === 'reply') {
             <h4
               [id]="c.headingId"
-              class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.9375rem] font-semibold [overflow-wrap:anywhere]"
+              class="text-[0.9375rem] font-semibold [overflow-wrap:anywhere]"
+              [attr.aria-label]="headingLabel()"
             >
               <ng-container [ngTemplateOutlet]="author" />
             </h4>
           } @else {
             <h3
               [id]="c.headingId"
-              class="flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-semibold [overflow-wrap:anywhere]"
+              class="text-base font-semibold [overflow-wrap:anywhere]"
+              [attr.aria-label]="headingLabel()"
             >
               <ng-container [ngTemplateOutlet]="author" />
             </h3>
@@ -105,9 +106,15 @@ export class CommentItem {
 
   protected readonly copy = COMMENT_COPY;
 
+  // Nommé en toutes lettres : Chromium insère des espaces autour du badge en bloc en ligne.
+  protected readonly headingLabel = computed(() => {
+    const { author, ownerMention } = this.comment();
+    return ownerMention ? `${author}, ${ownerMention}` : null;
+  });
+
   protected readonly pendingId = computed(() => `comment-${this.comment().id}-pending`);
 
-  // Un envoi en attente se nomme aussi par son état : « Lou, En attente de relecture ».
+  // Un envoi en attente se nomme aussi par son état : « Lou En attente de relecture ».
   protected readonly labelledBy = computed(() => {
     const { headingId, pending } = this.comment();
     return pending ? `${headingId} ${this.pendingId()}` : headingId;

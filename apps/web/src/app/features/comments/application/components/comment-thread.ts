@@ -56,15 +56,18 @@ function statusOf(submission: CommentSubmissionState): SubmissionStatus | null {
     @let current = content();
     @let mainStatus = mainSubmissionStatus();
     @let replyStatus = replySubmissionStatus();
-    <h2 id="comments-heading" class="flex items-center gap-3 text-2xl font-bold tracking-tight">
+    <h2
+      id="comments-heading"
+      class="text-2xl font-bold tracking-tight"
+      [attr.aria-label]="headingLabel()"
+    >
       {{ copy.heading }}
       @if (count(); as shown) {
-        <span class="sr-only">(</span
-        ><span
+        <span
           data-testid="comments-count"
-          class="inline-grid min-w-8 place-items-center rounded-full bg-foreground/8 px-2.5 py-0.5 font-mono text-sm font-medium tabular-nums"
+          class="ml-1.5 inline-grid min-w-8 place-items-center rounded-full bg-foreground/8 px-2.5 py-0.5 align-middle font-mono text-sm font-medium tabular-nums"
           >{{ shown }}</span
-        ><span class="sr-only">)</span>
+        >
       }
     </h2>
     @switch (current.status) {
@@ -197,6 +200,12 @@ export class CommentThread {
   protected readonly count = computed(() => {
     const current = this.content();
     return current.status === 'ready' ? current.view.count : 0;
+  });
+
+  // Nommé en toutes lettres : Chromium insère des espaces autour d'une pastille en bloc en ligne.
+  protected readonly headingLabel = computed(() => {
+    const count = this.count();
+    return count > 0 ? `${COMMENT_COPY.heading} (${count})` : null;
   });
 
   protected readonly mainSubmissionStatus = computed(() => statusOf(this.submission()));

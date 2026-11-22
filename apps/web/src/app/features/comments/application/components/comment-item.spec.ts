@@ -162,9 +162,12 @@ describe('CommentItem', () => {
       'reply',
     );
 
-    expect(host.querySelector('h4')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      `${OWNER_NAME}, auteur de l’article`,
-    );
+    const heading = host.querySelector('h4');
+
+    expect({
+      name: heading?.getAttribute('aria-label'),
+      badge: host.querySelector('[data-testid="comment-owner-badge"]')?.textContent,
+    }).toEqual({ name: `${OWNER_NAME}, auteur de l’article`, badge: 'auteur de l’article' });
   });
 
   it('Given markup typed as the name and the text When the comment is shown Then nothing of it is interpreted: no element is created, the characters are shown as typed', async () => {
@@ -193,6 +196,12 @@ describe('CommentItem', () => {
       'ligne 1\nligne 2',
       true,
     ]);
+  });
+
+  it('Given a visitor comment When it is shown Then its title is named by the visitor name alone', async () => {
+    const host = await render(aCommentView());
+
+    expect(host.querySelector('h3')?.hasAttribute('aria-label')).toBe(false);
   });
 
   it('Given a comment When it is shown Then its initial badge is decorative, hidden from assistive technologies', async () => {
