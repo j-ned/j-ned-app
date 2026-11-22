@@ -1,5 +1,6 @@
 import {
   HttpClient,
+  HttpContext,
   HttpErrorResponse,
   provideHttpClient,
   withInterceptors,
@@ -8,7 +9,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { PLATFORM_ID, REQUEST_CONTEXT, RESPONSE_INIT, type Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ssrUpstreamInterceptor } from './ssr-upstream-interceptor';
+import { OPTIONAL_UPSTREAM, ssrUpstreamInterceptor } from './ssr-upstream-interceptor';
 
 const INTERNAL_API_BASE_URL = 'http://api:3000/api';
 const VISITOR = '203.0.113.7';
@@ -75,7 +76,7 @@ describe('ssrUpstreamInterceptor', () => {
 
   it.each([
     ['the public API', 'https://nedellec-julien.fr/api/blog/posts'],
-    ['a third-party origin', 'https://giscus.app/api/discussions'],
+    ['a third-party origin', 'https://third-party.example/api/discussions'],
     ['a relative asset', '/assets/manifest.json'],
   ])(
     'Given a server render When a request goes to %s Then only the internal API request carries the visitor address',
@@ -159,6 +160,29 @@ describe('ssrUpstreamInterceptor', () => {
           responseStatus: 200,
           propagatedStatus,
         });
+      },
+    );
+
+    it.each([0, 500, 503])(
+      'Given an optional read answered %s When the page renders Then the page status is left as it is and the error still reaches the page',
+      (upstreamStatus) => {
+        const responseInit: ResponseInit = { status: 200, headers: new Headers() };
+        setUp('server', { apiBaseUrl: INTERNAL_API_BASE_URL, visitorForwardedFor: VISITOR }, [
+          { provide: RESPONSE_INIT, useValue: responseInit },
+        ]);
+        const url = `${INTERNAL_API_BASE_URL}/blog/posts/article/comments`;
+        let propagated: unknown = null;
+        TestBed.inject(HttpClient)
+          .get(url, { context: new HttpContext().set(OPTIONAL_UPSTREAM, true) })
+          .subscribe({ error: (error: unknown) => (propagated = error) });
+        const request = TestBed.inject(HttpTestingController).expectOne(url);
+        if (upstreamStatus === 0) request.error(new ProgressEvent('error'));
+        else request.flush(null, { status: upstreamStatus, statusText: 'Upstream' });
+
+        expect({
+          status: responseInit.status,
+          propagated: propagated instanceof HttpErrorResponse ? propagated.status : null,
+        }).toEqual({ status: 200, propagated: upstreamStatus });
       },
     );
 

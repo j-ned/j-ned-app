@@ -128,9 +128,46 @@ async function readAdmin(pathname, searchParams) {
   return body === undefined ? [404, { message: 'Not Found' }] : [200, body];
 }
 
+const COMMENTS_PATH = /^\/api\/blog\/posts\/([^/]+)\/comments$/;
+
+const isPublished = async (slug) =>
+  (await readPosts()).some((post) => post.slug === slug && post.status === 'published');
+
+// Comme l'API : commentaires publiés d'un article publié, du plus ancien au plus récent, sans e-mail.
+async function readComments(slug, searchParams) {
+  if (!(await isPublished(slug))) return [404, { statusCode: 404, message: 'Article introuvable.' }];
+  const page = Number(searchParams.get('page') ?? 1);
+  const limit = Math.min(Number(searchParams.get('limit') ?? 10), 100);
+  const comments = (await readFixture('blog-comments'))[slug] ?? [];
+  const data = comments.slice((page - 1) * limit, page * limit);
+  return [200, { data, total: comments.length, page, limit }];
+}
+
+// Refus que l'API peut opposer, déclenchés par le nom saisi (`stub-429`…) pour les preuves locales.
+const STUB_REFUSALS = {
+  400: 'Ton nom doit compter entre 2 et 80 caractères.',
+  404: 'Commentaire introuvable.',
+  409: 'On ne répond pas à une réponse.',
+  429: 'Trop de requêtes, réessaie plus tard.',
+  503: 'Les commentaires sont momentanément fermés.',
+};
+
+async function submitComment(slug, req) {
+  if (!(await isPublished(slug))) return [404, { statusCode: 404, message: 'Article introuvable.' }];
+  const { name } = await readJson(req);
+  const refusal = /^stub-(\d{3})$/.exec(String(name ?? ''))?.[1];
+  if (refusal && refusal in STUB_REFUSALS) {
+    return [Number(refusal), { statusCode: Number(refusal), message: STUB_REFUSALS[refusal] }];
+  }
+  return [202, null];
+}
+
 async function route(req, pathname, searchParams) {
   const { method } = req;
   if (method === 'POST' && pathname === '/api/analytics/track') return [204, null];
+  const comments = COMMENTS_PATH.exec(pathname);
+  if (comments && method === 'POST') return submitComment(comments[1], req);
+  if (comments && method === 'GET') return readComments(comments[1], searchParams);
   if (method === 'PUT' && pathname === '/api/profile') return replaceProfile(await readJson(req));
   if (method === 'POST' && pathname === '/api/profile/portrait') return replacePortrait(req);
   if (method === 'DELETE' && pathname === '/api/profile/portrait') return removePortrait();

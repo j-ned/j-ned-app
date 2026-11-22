@@ -1,0 +1,31 @@
+{
+  "article-temoin": [
+    {
+      "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000001",
+      "author": { "kind": "visitor", "name": "Camille" },
+      "body": "Merci pour la méthode de calcul des avances, je l'ai essayée sur un tour Mazak.",
+      "createdAt": "2026-11-21T09:30:00.000Z",
+      "replies": [
+        {
+          "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000002",
+          "author": { "kind": "owner" },
+          "body": "Avec plaisir ! Pense à réduire l'avance de 20 % en finition.",
+          "createdAt": "2026-11-21T11:00:00.000Z"
+        },
+        {
+          "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000005",
+          "author": { "kind": "visitor", "name": "Noa" },
+          "body": "Même constat sur un Okuma.\nEt <app-root> reste du texte.",
+          "createdAt": "2026-11-21T13:15:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "5d0f4b6e-1c2a-4f3b-9a1e-000000000006",
+      "author": { "kind": "visitor", "name": "Inès" },
+      "body": "Est-ce que la méthode vaut aussi pour le fraisage ?",
+      "createdAt": "2026-11-21T15:40:00.000Z",
+      "replies": []
+    }
+  ]
+}

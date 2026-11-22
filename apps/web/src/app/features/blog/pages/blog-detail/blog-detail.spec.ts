@@ -4,8 +4,9 @@ import {
   TestBed,
   type ComponentFixture,
 } from '@angular/core/testing';
-import { HttpErrorResponse } from '@angular/common/http';
-import { PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
+import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { PLATFORM_ID, REQUEST_CONTEXT, RESPONSE_INIT, type Provider } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -20,6 +21,18 @@ import { makeBlogPost } from '../../testing/blog-post-builders';
 import { FURTHER_READING_COPY } from '../../application/further-reading-copy';
 import { countWords } from '../../domain/reading-time';
 import { defined } from '@shared/testing/defined';
+import { API_BASE_URL } from '@shared/api/api-config';
+import { ssrUpstreamInterceptor } from '@core/ssr/ssr-upstream-interceptor';
+import {
+  makePublishedComment,
+  makePublishedReply,
+  makePublishedThread,
+  toPublicCommentPageDto,
+} from '@features/comments/testing/comment-builders';
+import { CommentsGateway } from '@features/comments/infra/comments.gateway';
+
+// Base valide pour l'intercepteur du rendu serveur, qui n'agit que sur une URL absolue.
+const API = 'http://api:3000/api';
 
 class MockIntersectionObserver {
   static instances: MockIntersectionObserver[] = [];
@@ -32,6 +45,12 @@ class MockIntersectionObserver {
 
   observe(element: Element): void {
     this.observed.push(element);
+  }
+
+  // Appelé par Angular à la destruction d'un bloc `@defer (on viewport)`.
+  unobserve(element: Element): void {
+    const index = this.observed.indexOf(element);
+    if (index >= 0) this.observed.splice(index, 1);
   }
 
   disconnect(): void {
@@ -104,6 +123,16 @@ function setup(
       },
       { provide: Seo, useValue: seoMock },
       { provide: AnalyticsGateway, useValue: analyticsMock },
+      provideHttpClient(withInterceptors([ssrUpstreamInterceptor])),
+      provideHttpClientTesting(),
+      { provide: API_BASE_URL, useValue: API },
+      // Une lecture HTTP en attente garde l'application instable : la section a ses propres tests.
+      {
+        provide: CommentsGateway,
+        useValue: {
+          getThread: (): ReturnType<CommentsGateway['getThread']> => of(makePublishedThread()),
+        },
+      },
       ...extraProviders,
     ],
     deferBlockBehavior,
@@ -805,6 +834,373 @@ describe('BlogDetail', () => {
           }).toEqual({ type: 'BlogPosting', hasAbout: about !== undefined, about });
         },
       );
+    });
+  });
+
+  describe('commentaires', () => {
+    const COMMENTS_URL = `${API}/blog/posts/mon-article/comments?page=1&limit=100`;
+
+    const testId = (fixture: ComponentFixture<BlogDetail>, id: string): HTMLElement | null =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(`[data-testid="${id}"]`);
+
+    // Le corps de l'article et la section sont deux blocs différés : tous deux rendus ici.
+    async function showArticle(
+      answer: (request: ReturnType<HttpTestingController['expectOne']>) => void,
+      extraProviders: Provider[] = [],
+    ): Promise<ComponentFixture<BlogDetail>> {
+      const { fixture } = setup(
+        { getPostBySlug: () => of(makeBlogPost({ slug: 'mon-article', title: 'Mon article' })) },
+        DeferBlockBehavior.Manual,
+        [{ provide: CommentsGateway, useClass: CommentsGateway }, ...extraProviders],
+      );
+      fixture.componentRef.setInput('slug', 'mon-article');
+      fixture.detectChanges();
+      TestBed.tick();
+      answer(TestBed.inject(HttpTestingController).expectOne(COMMENTS_URL));
+      await fixture.whenStable();
+      for (const block of await fixture.getDeferBlocks()) {
+        await block.render(DeferBlockState.Complete);
+      }
+      await fixture.whenStable();
+      return fixture;
+    }
+
+    afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+    const POST_URL = `${API}/blog/posts/mon-article/comments`;
+
+    function fillCommentForm(form: HTMLElement | null, body: string): void {
+      const fields = { name: 'Lou', email: 'lou@example.test', body };
+      for (const [field, text] of Object.entries(fields)) {
+        const element = form?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+          `[data-testid="comment-${field}"]`,
+        );
+        if (!element) throw new Error(`no ${field} field`);
+        element.value = text;
+        element.dispatchEvent(new Event('input'));
+      }
+    }
+
+    async function writeComment(fixture: ComponentFixture<BlogDetail>): Promise<void> {
+      const form = testId(fixture, 'comment-main-form');
+      fillCommentForm(form, 'Bel article.');
+      await fixture.whenStable();
+      form?.querySelector<HTMLButtonElement>('[data-testid="comment-submit"]')?.click();
+      fixture.detectChanges();
+      TestBed.tick();
+    }
+
+    it('Given a reader writes a comment When the API accepts it Then the reader is told it awaits review, the form is emptied and the comment is not listed', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+
+      await writeComment(fixture);
+      const post = TestBed.inject(HttpTestingController).expectOne(POST_URL);
+      const sent = { method: post.request.method, body: post.request.body };
+      post.flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      const form = testId(fixture, 'comment-main-form');
+
+      expect({
+        sent,
+        status: testId(fixture, 'status-message')?.textContent?.trim(),
+        name: form?.querySelector<HTMLInputElement>('[data-testid="comment-name"]')?.value,
+        items: (fixture.nativeElement as HTMLElement).querySelectorAll(
+          '[data-testid="comment-item"]',
+        ).length,
+      }).toEqual({
+        sent: {
+          method: 'POST',
+          body: { name: 'Lou', email: 'lou@example.test', body: 'Bel article.', website: '' },
+        },
+        status: 'Merci\u202F! Ton commentaire sera publié après relecture.',
+        name: '',
+        items: 1,
+      });
+    });
+
+    it('Given a reader answers a published comment When the API accepts the reply Then it goes out with its parent, the form closes and the confirmation shows under that comment', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      const host = fixture.nativeElement as HTMLElement;
+      host.querySelector<HTMLButtonElement>('[data-testid="comment-reply"]')?.click();
+      await fixture.whenStable();
+      const form = testId(fixture, 'comment-reply-form');
+      fillCommentForm(form, 'Pareil pour moi.');
+      await fixture.whenStable();
+
+      form?.querySelector<HTMLButtonElement>('[data-testid="comment-submit"]')?.click();
+      fixture.detectChanges();
+      TestBed.tick();
+      const post = TestBed.inject(HttpTestingController).expectOne(POST_URL);
+      const sent: unknown = post.request.body;
+      post.flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+
+      expect({
+        sent,
+        form: testId(fixture, 'comment-reply-form'),
+        status: host
+          .querySelector('[data-testid="comment-list"] [data-testid="status-message"]')
+          ?.getAttribute('role'),
+      }).toEqual({
+        sent: expect.objectContaining({ parentId: 'c-1' }),
+        form: null,
+        status: 'status',
+      });
+    });
+
+    async function writeReply(fixture: ComponentFixture<BlogDetail>): Promise<void> {
+      const host = fixture.nativeElement as HTMLElement;
+      host.querySelector<HTMLButtonElement>('[data-testid="comment-reply"]')?.click();
+      await fixture.whenStable();
+      const form = testId(fixture, 'comment-reply-form');
+      fillCommentForm(form, 'Pareil pour moi.');
+      await fixture.whenStable();
+      form?.querySelector<HTMLButtonElement>('[data-testid="comment-submit"]')?.click();
+      fixture.detectChanges();
+      TestBed.tick();
+    }
+
+    const mainField = (
+      fixture: ComponentFixture<BlogDetail>,
+      field: 'name' | 'body',
+    ): HTMLInputElement | HTMLTextAreaElement | null =>
+      testId(fixture, 'comment-main-form')?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `[data-testid="comment-${field}"]`,
+      ) ?? null;
+
+    it('Given a draft in the main form When a reply is accepted Then the draft is kept', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      fillCommentForm(testId(fixture, 'comment-main-form'), 'Brouillon en cours.');
+      await fixture.whenStable();
+
+      await writeReply(fixture);
+      TestBed.inject(HttpTestingController)
+        .expectOne(POST_URL)
+        .flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+
+      expect([mainField(fixture, 'name')?.value, mainField(fixture, 'body')?.value]).toEqual([
+        'Lou',
+        'Brouillon en cours.',
+      ]);
+    });
+
+    it('Given a comment still being sent When a reply is sent and accepted meanwhile Then the main form stays busy, and each form keeps its own confirmation', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      const http = TestBed.inject(HttpTestingController);
+      await writeComment(fixture);
+      const mainPost = http.expectOne(POST_URL);
+
+      await writeReply(fixture);
+      http.expectOne(POST_URL).flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      const mainBusy = testId(fixture, 'comment-main-form')
+        ?.querySelector('[data-testid="comment-submit"]')
+        ?.getAttribute('aria-disabled');
+      mainPost.flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect({
+        mainBusy,
+        reply: host
+          .querySelector('[data-testid="comment-list"] [data-testid="status-message"]')
+          ?.getAttribute('role'),
+        main: testId(fixture, 'comment-main-form')
+          ?.querySelector('[data-testid="status-message"]')
+          ?.getAttribute('role'),
+      }).toEqual({ mainBusy: 'true', reply: 'status', main: 'status' });
+    });
+
+    it('Given a refused reply When the reader cancels its form Then the alert leaves with it', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      const host = fixture.nativeElement as HTMLElement;
+      host.querySelector<HTMLButtonElement>('[data-testid="comment-reply"]')?.click();
+      await fixture.whenStable();
+      const form = testId(fixture, 'comment-reply-form');
+      fillCommentForm(form, 'Pareil pour moi.');
+      await fixture.whenStable();
+      form?.querySelector<HTMLButtonElement>('[data-testid="comment-submit"]')?.click();
+      fixture.detectChanges();
+      TestBed.tick();
+      TestBed.inject(HttpTestingController)
+        .expectOne(POST_URL)
+        .flush({ message: 'Introuvable' }, { status: 404, statusText: 'Not Found' });
+      await fixture.whenStable();
+      const before = testId(fixture, 'status-message')?.getAttribute('role');
+
+      testId(fixture, 'comment-cancel')?.click();
+      await fixture.whenStable();
+
+      expect({ before, after: testId(fixture, 'status-message') }).toEqual({
+        before: 'alert',
+        after: null,
+      });
+    });
+
+    it('Given a comment accepted on an article When the same page moves to another article Then the confirmation does not follow', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      await writeComment(fixture);
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne(POST_URL).flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      const before = testId(fixture, 'status-message') !== null;
+
+      fixture.componentRef.setInput('slug', 'autre-article');
+      fixture.detectChanges();
+      TestBed.tick();
+      http
+        .expectOne(`${API}/blog/posts/autre-article/comments?page=1&limit=100`)
+        .flush(toPublicCommentPageDto(makePublishedThread()));
+      await fixture.whenStable();
+      for (const block of await fixture.getDeferBlocks()) {
+        await block.render(DeferBlockState.Complete);
+      }
+      await fixture.whenStable();
+
+      expect({
+        before,
+        form: testId(fixture, 'comment-main-form') !== null,
+        after: testId(fixture, 'status-message'),
+      }).toEqual({ before: true, form: true, after: null });
+    });
+
+    it('Given a comment still on its way When the page moves to another article before the answer Then the late answer is not shown there', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      await writeComment(fixture);
+      const http = TestBed.inject(HttpTestingController);
+      const post = http.expectOne(POST_URL);
+
+      fixture.componentRef.setInput('slug', 'autre-article');
+      fixture.detectChanges();
+      TestBed.tick();
+      http
+        .expectOne(`${API}/blog/posts/autre-article/comments?page=1&limit=100`)
+        .flush(toPublicCommentPageDto(makePublishedThread()));
+      post.flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      for (const block of await fixture.getDeferBlocks()) {
+        await block.render(DeferBlockState.Complete);
+      }
+      await fixture.whenStable();
+
+      expect({
+        form: testId(fixture, 'comment-main-form') !== null,
+        status: testId(fixture, 'status-message'),
+      }).toEqual({ form: true, status: null });
+    });
+
+    it('Given a reader writes too often When the API refuses with 429 Then a single alert says so and the text is kept', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+
+      await writeComment(fixture);
+      TestBed.inject(HttpTestingController)
+        .expectOne(POST_URL)
+        .flush({ message: 'Trop de requêtes' }, { status: 429, statusText: 'Too Many Requests' });
+      await fixture.whenStable();
+      const statuses = (fixture.nativeElement as HTMLElement).querySelectorAll(
+        '[data-testid="status-message"]',
+      );
+
+      expect({
+        statuses: [...statuses].map((status) => status.getAttribute('role')),
+        body: testId(fixture, 'comment-main-form')?.querySelector<HTMLTextAreaElement>(
+          '[data-testid="comment-body"]',
+        )?.value,
+      }).toEqual({ statuses: ['alert'], body: 'Bel article.' });
+    });
+
+    it('Given an article with published comments When the page shows Then the comments section follows the article, after the reading suggestions, with each comment listed', async () => {
+      const thread = makePublishedThread({
+        comments: [
+          makePublishedComment({ id: 'c-1', replies: [makePublishedReply({ id: 'r-1' })] }),
+          makePublishedComment({ id: 'c-2', author: { kind: 'visitor', name: 'Inès' } }),
+        ],
+      });
+      const fixture = await showArticle((request) => request.flush(toPublicCommentPageDto(thread)));
+      const host = fixture.nativeElement as HTMLElement;
+      const article = host.querySelector('article');
+      const section = testId(fixture, 'comment-thread');
+
+      expect({
+        afterArticle:
+          article && section
+            ? article.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING
+            : 0,
+        insideArticle: article?.contains(section) ?? null,
+        items: host.querySelectorAll('[data-testid="comment-item"]').length,
+      }).toEqual({
+        afterArticle: Node.DOCUMENT_POSITION_FOLLOWING,
+        insideArticle: false,
+        items: 3,
+      });
+    });
+
+    it('Given the API leaks an e-mail in a comment When the page shows Then no address is rendered in the DOM', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush({
+          data: [
+            {
+              ...makePublishedComment(),
+              author: { kind: 'visitor', name: 'Camille', email: 'camille@example.test' },
+            },
+          ],
+          total: 1,
+          page: 1,
+          limit: 100,
+        }),
+      );
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect({
+        items: host.querySelectorAll('[data-testid="comment-item"]').length,
+        leaked: host.innerHTML.includes('example.test'),
+      }).toEqual({ items: 1, leaked: false });
+    });
+
+    it('Given the comments cannot be read When the page shows Then the section says so and the article is still there', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(null, { status: 500, statusText: 'Boom' }),
+      );
+
+      expect({
+        title: (fixture.nativeElement as HTMLElement).querySelector('h1')?.textContent?.trim(),
+        error: testId(fixture, 'comments-load-error')?.textContent?.trim(),
+      }).toEqual({ title: 'Mon article', error: 'Les commentaires n’ont pas pu être chargés.' });
+    });
+
+    it('Given a server render When the comments cannot be read Then the page still answers 200 with its article', async () => {
+      const responseInit: ResponseInit = { status: 200, headers: new Headers() };
+      const fixture = await showArticle(
+        (request) => request.flush(null, { status: 500, statusText: 'Boom' }),
+        [
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: RESPONSE_INIT, useValue: responseInit },
+          { provide: REQUEST_CONTEXT, useValue: { apiBaseUrl: API, visitorForwardedFor: null } },
+        ],
+      );
+
+      expect({
+        status: responseInit.status,
+        title: (fixture.nativeElement as HTMLElement).querySelector('h1')?.textContent?.trim(),
+        error: testId(fixture, 'comments-load-error') !== null,
+      }).toEqual({ status: 200, title: 'Mon article', error: true });
     });
   });
 });

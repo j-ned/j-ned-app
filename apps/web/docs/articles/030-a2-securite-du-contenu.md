@@ -133,7 +133,7 @@ Le résultat en production : la CSP de chaque page liste quatre empreintes de sc
 Soyons honnêtes sur les limites :
 
 - **Un compte d'administration volé** peut toujours publier un texte trompeur ou un lien vers un site malveillant. L'assainissement empêche l'exécution de code, pas le mensonge.
-- **Les commentaires** sont fournis par un service tiers, giscus, dont le script est autorisé par la CSP et dont le contenu s'affiche dans une iframe. Sa sécurité dépend en partie de lui.
+- **Les commentaires** sont écrits par des inconnus. Ils sont relus avant publication et affichés comme du texte brut, sans aucune balise interprétée ni lien cliquable : la barrière est l'échappement du rendu, pas un assainissement.
 - **DOMPurify doit rester à jour.** C'est lui qui porte la première barrière, et ses correctifs de sécurité doivent arriver vite.
 - **Le source de développement garde `'unsafe-inline'`**, pour le serveur de développement d'Angular. C'est la sortie de production que la CI vérifie, pas le fichier source.
 

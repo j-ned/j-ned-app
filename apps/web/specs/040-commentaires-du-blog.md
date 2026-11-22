@@ -688,6 +688,11 @@ Aucune variable d'environnement nouvelle ; une base d'intégration nouvelle en C
 - **Tranche 8 — supprimer après confirmation** : GREEN 1317 passed / 1317 total · refactor : aucun
 - **Tranche 9 — répondre en tant qu'auteur** : GREEN 1347 passed / 1347 total · refactor : file de modération (filtre, page servie, total) sortie de la page dans `pages/admin-comments/comment-queue.ts` ; textes d'état vide dans le presenter
 
+- **Tranche 10 — les lecteurs lisent les commentaires dans le HTML de l'article ; Giscus disparaît** : GREEN 3173 passed / 3173 total · refactor : l'auteur public (`toPublicAuthor`) sert aussi l'auteur du parent dans `toAdminComment` ; `ParentAuthor` devient `PublicAuthor`
+- **Tranche 11 — un lecteur commente** : GREEN 217 passed / 217 total (specs comments, blog-detail, contact) · refactor : `EMAIL_PATTERN` sorti de `contact-form.ts` vers `shared/forms/email-pattern.ts` (2 consommateurs : `ContactForm`, `CommentForm`) ; décompte et caractère visible de l'API dans `features/comments/domain/comment-text.ts`
+- **Tranche 12 — un lecteur répond à un commentaire publié** : GREEN 172 passed / 172 total (specs comments, blog-detail), puis 3256 passed / 3256 total avec le correctif du focus pendant l'envoi · refactor : statut d'envoi calculé une fois par la section (`statusOf`) et placé à côté du formulaire qui l'a fait partir ; remplissage de formulaire factorisé dans la spec de la page
+- **Correctifs de revue (PR C)** : GREEN 3281 passed / 3281 total · refactor : ligne d'auteur partagée par le titre d'un commentaire et celui d'une réponse (`ng-template`) ; caractères invisibles des sources écrits en échappements `\u…`
+
 ## Verify
 
 PR B, 2026-11-22 : `STUB_ADMIN_SESSION=1 node ci/api-stub/server.mjs` (port 3000) et `ng serve` (port 4200, proxy `/api`), Chromium headless (Playwright), indice `auth:session` posé.
@@ -698,6 +703,26 @@ PR B, 2026-11-22 : `STUB_ADMIN_SESSION=1 node ci/api-stub/server.mjs` (port 3000
 4. « Supprimer » sur la réponse du propriétaire : boîte « Supprimer ta réponse ? », Échap la ferme.
 
 Verdict : **PASS**. Captures : file publiée avec le formulaire de réponse en erreur, et boîte de confirmation (fichiers locaux de la session, non versionnés). Console : une seule erreur, `GET /api/config` en 404, route absente de la doublure et étrangère à cet écran ; aucune erreur Angular.
+
+PR C, 2026-11-22 : image `j-ned-app-web:ci` sur `ci/image-stack.sh` (doublure de l'API), Chromium headless (Playwright), viewport 390×900, API de production rejouée sur la doublure (CSP contournée comme `e2e/playwright.config.ts`, l'API n'étant pas sur l'origine `127.0.0.1`).
+
+1. `curl /blog/article-temoin` : 200, 4 `data-testid="comment-item"` dans le HTML servi, section `aria-labelledby="comments-heading"`, aucune occurrence de `giscus` ni de `@example.test`, `&lt;app-root&gt;` échappé, meta CSP sans `giscus.app` ni `frame-src`, sans `'unsafe-inline'`.
+2. `/blog/article-temoin` dans le navigateur : titre « Commentaires (4) » ; aucune relecture `GET …/comments` après hydratation (cache de transfert).
+3. Nom « a » puis sortie du champ : `aria-invalid="true"` et « Ton nom doit compter entre 2 et 80 caractères. » (preuve d'hydratation).
+4. Envoi valide : `POST` 202, confirmation « Merci ! Ton commentaire sera publié après relecture. » focalisée, champs vidés, toujours 4 commentaires.
+5. « Répondre à Camille » : formulaire ouvert, focus sur son premier champ ; envoi refusé (nom `stub-429`) : alerte de débit sous le commentaire, focus resté sur « Envoyer » ; Échap : formulaire fermé, focus rendu à « Répondre ».
+
+Verdict : **PASS**. Captures (scratchpad de la session, non versionnées) : `comments-error.png`, `comments-sent.png`, `comments-reply-refused.png`. Console : `GET /api/config` en 404 (route absente de la doublure, étrangère à la page, déjà notée en PR B) et le 429 volontaire du refus ; aucune erreur Angular ni d'hydratation. `ci/smoke.sh` et `pnpm a11y` (71 scénarios, dont 8 nouveaux sur le formulaire) verts sur la même image.
+
+## Limites connues de la PR C (section publique)
+
+- Le titre compte les commentaires et réponses **lus** : au-delà de 100 commentaires, les réponses des commentaires non lus ne sont pas comptées (le total de l'API ne compte que les commentaires).
+- Un 429 ne distingue pas le quota par IP du plafond de commentaires en attente : le message couvre les deux causes.
+- Un 503 est lu comme « commentaires fermés » ; une indisponibilité de l'API qui répondrait 503 pour une autre raison serait annoncée de la même façon.
+- `aria-controls` du bouton « Répondre » n'est posé que formulaire ouvert (l'élément n'existe pas sinon).
+- Absence d'e-mail : l'adapter (liste de champs fermée) garantit qu'aucune adresse n'entre dans le modèle ni dans le DOM. Le cache de transfert sérialise en revanche la réponse brute de `GET …/comments` dans `<script id="ng-state">` : là, seule la sortie de l'API (`publicCommentPageSchema`, testé côté API) garantit l'absence d'adresse. `ci/smoke.sh` vérifie le HTML servi entier, état de transfert compris, contre la doublure.
+- Une seule réponse peut partir à la fois : pendant son envoi, les formulaires de réponse restent occupés ; le formulaire principal a son propre état et reste utilisable.
+- L'écoute réelle avec un lecteur d'écran reste à faire (Points à trancher n° 11).
 
 ## Limites connues de la PR B (admin)
 

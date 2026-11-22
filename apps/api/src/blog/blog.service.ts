@@ -91,9 +91,7 @@ export class BlogService {
       ...rest,
       updatedAt: new Date(),
     };
-    // Le slug EST l'URL publique (et la clé du thread Giscus, mappé sur le
-    // pathname) : une fois l'article publié, on le fige - un titre édité
-    // après coup ne doit plus casser les liens entrants/le thread existant.
+    // Le slug est l'URL publique : figé une fois l'article publié, pour qu'un titre édité ne casse pas les liens entrants.
     if (dto.title !== undefined && current.publishedAt === null) {
       patch.slug = slugify(dto.title);
     }

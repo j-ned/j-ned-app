@@ -10,7 +10,7 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
     <article class="page-container max-w-3xl pt-8 prose dark:prose-invert">
       <h1>Politique de confidentialité</h1>
       <p class="text-muted" data-testid="privacy-last-update">
-        Dernière mise à jour&nbsp;: 20 octobre 2026
+        Dernière mise à jour&nbsp;: 22 novembre 2026
       </p>
 
       <p>
@@ -21,12 +21,14 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
       </p>
 
       <h2>Formulaire de contact</h2>
-      <p>
+      <p data-testid="privacy-contact">
         Les informations saisies (nom, adresse e-mail, sujet, message) servent uniquement à répondre
-        à ta demande. Elles sont enregistrées sur le serveur de l'éditeur et transmises par e-mail à
-        l'éditeur&#8239;; une confirmation t'est envoyée à l'adresse indiquée. Base légale&nbsp;:
-        l'intérêt légitime à répondre à une sollicitation. Elles sont conservées le temps du
-        traitement de la demande, puis supprimées par l'éditeur.
+        à ta demande. Elles sont enregistrées sur le serveur de l'éditeur, avec une empreinte non
+        réversible de ton adresse IP et le nom de ton navigateur, pour limiter les abus&#8239;;
+        l'éditeur en est prévenu par un e-mail envoyé par le prestataire Resend. Aucun e-mail n'est
+        envoyé à l'adresse que tu indiques. Base légale&nbsp;: l'intérêt légitime à répondre à une
+        sollicitation. Elles sont conservées le temps du traitement de la demande, puis supprimées
+        par l'éditeur.
       </p>
 
       <h2>Mesure d'audience</h2>
@@ -55,19 +57,31 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
       </p>
 
       <h2>Commentaires des articles</h2>
-      <p>
-        Les commentaires du blog reposent sur
-        <a href="https://giscus.app" rel="noopener noreferrer" target="_blank">Giscus</a>, qui les
-        stocke dans les discussions GitHub du dépôt du site. Rien n'est chargé depuis GitHub tant
-        que tu n'interagis pas avec la zone de commentaires&#8239;; commenter suppose de te
-        connecter avec ton compte GitHub, dont le traitement relève de la
-        <a
-          href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement"
-          rel="noopener noreferrer"
-          target="_blank"
-          >politique de confidentialité de GitHub</a
-        >
-        (États-Unis).
+      <p data-testid="privacy-comments-data">
+        Pour commenter un article ou répondre à un commentaire, aucun compte n'est demandé&nbsp;: tu
+        indiques un nom ou pseudo, publié avec ton message, et une adresse e-mail, jamais publiée.
+        Sont aussi enregistrées la date d'envoi et une empreinte non réversible de ton adresse IP,
+        calculée pour limiter les abus&#8239;; l'adresse IP elle-même n'est pas conservée.
+      </p>
+      <p data-testid="privacy-comments-purpose">
+        Ces données servent à publier ton message après relecture par l'éditeur, à te répondre ou à
+        te joindre au sujet de ton commentaire, et à limiter les abus (envois répétés, robots). Base
+        légale&nbsp;: l'intérêt légitime de l'éditeur à animer et à modérer le blog.
+      </p>
+      <p data-testid="privacy-comments-recipients">
+        Seul l'éditeur y a accès. À chaque commentaire reçu, il est prévenu par un e-mail qui
+        reprend ton nom, ton adresse et ton message, envoyé par le prestataire Resend. Aucun e-mail
+        n'est envoyé à l'adresse que tu indiques.
+      </p>
+      <p data-testid="privacy-comments-retention">
+        Un commentaire publié est conservé, avec ton adresse e-mail, tant que le commentaire reste
+        en ligne. Un commentaire en attente l'est jusqu'à la décision de l'éditeur&nbsp;: un refus
+        le supprime aussitôt, avec ses réponses. Tout commentaire disparaît avec son article.
+      </p>
+      <p data-testid="privacy-comments-rights">
+        Pour demander la suppression ou la rectification d'un commentaire, écris à
+        <a [href]="'mailto:' + identity.email">{{ identity.email }}</a>&#8239;; l'éditeur le
+        supprime alors, avec ses réponses.
       </p>
 
       <h2>Suivi des erreurs techniques</h2>

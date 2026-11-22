@@ -53,14 +53,12 @@
     <meta name="format-detection" content="telephone=no" />
 
     <!-- CSP via meta tag, complétée par les en-têtes HTTP de nginx (Dockerfile) pour frame-ancestors et HSTS.
-         Giscus (commentaires du blog) : client.js dans script-src, widget dans frame-src, et
-         default.css dans style-src (client.js l'injecte dans la page hôte pour dimensionner l'iframe).
-         Avatars et API vivent dans l'iframe et relèvent de la CSP de giscus.app.
+         Aucun script, style ni cadre tiers : les commentaires du blog sont servis par l'API du site.
          L'API est en même origine ('self') ; img-src garde l'ancien sous-domaine de l'API pour les
          images d'articles enregistrées avec son URL absolue. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://giscus.app; style-src 'self' 'unsafe-inline' https://giscus.app; font-src 'self'; img-src 'self' data: blob: https://api.nedellec-julien.fr; connect-src 'self' https://o4511049353723904.ingest.de.sentry.io; worker-src 'self' blob:; object-src 'none'; frame-src https://giscus.app; base-uri 'self'; form-action 'self';"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://api.nedellec-julien.fr; connect-src 'self' https://o4511049353723904.ingest.de.sentry.io; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
     />
     <!-- Pré-peinture du thème : clé et règle de ThemeStore dupliquées ; après la CSP, car une CSP en <meta> ne régit que ce qui la suit -->
     <script>

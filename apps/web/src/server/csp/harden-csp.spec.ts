@@ -3,7 +3,7 @@ import { hardenCsp, type CspBuildManifest } from './harden-csp';
 import { defined } from '@shared/testing/defined';
 
 const BASE_CSP =
-  "default-src 'self'; script-src 'self' 'unsafe-inline' https://giscus.app; style-src 'self' 'unsafe-inline' https://giscus.app; img-src 'self' data:; object-src 'none'; base-uri 'self';";
+  "default-src 'self'; script-src 'self' 'unsafe-inline' https://third-party.example; style-src 'self' 'unsafe-inline' https://third-party.example; img-src 'self' data:; object-src 'none'; base-uri 'self';";
 
 const THEME_SCRIPT =
   "(function(){var t=localStorage.getItem('theme');document.documentElement.dataset.theme=t||'dark'})()";
@@ -66,8 +66,8 @@ describe('hardenCsp', () => {
       script: sourcesOf(hardened, 'script-src'),
       style: sourcesOf(hardened, 'style-src'),
     }).toEqual({
-      script: sorted(["'self'", 'https://giscus.app']),
-      style: sorted(["'self'", 'https://giscus.app']),
+      script: sorted(["'self'", 'https://third-party.example']),
+      style: sorted(["'self'", 'https://third-party.example']),
     });
   });
 
@@ -87,7 +87,7 @@ describe('hardenCsp', () => {
     );
 
     expect(sourcesOf(hardened, 'script-src')).toEqual(
-      sorted(["'self'", 'https://giscus.app', fakeSha256(THEME_SCRIPT)]),
+      sorted(["'self'", 'https://third-party.example', fakeSha256(THEME_SCRIPT)]),
     );
   });
 
@@ -104,7 +104,7 @@ describe('hardenCsp', () => {
       const hardened = harden(aPage({ body: `<script>${bootstrap}</script>` }));
 
       expect(sourcesOf(hardened, 'script-src')).toEqual(
-        sorted(["'self'", 'https://giscus.app', fakeSha256(bootstrap)]),
+        sorted(["'self'", 'https://third-party.example', fakeSha256(bootstrap)]),
       );
     },
   );
@@ -119,7 +119,7 @@ describe('hardenCsp', () => {
     );
 
     expect(sourcesOf(hardened, 'script-src')).toEqual(
-      sorted(["'self'", 'https://giscus.app', fakeSha256(THEME_SCRIPT)]),
+      sorted(["'self'", 'https://third-party.example', fakeSha256(THEME_SCRIPT)]),
     );
   });
 
@@ -139,7 +139,7 @@ describe('hardenCsp', () => {
       );
 
       expect(sourcesOf(hardened, 'script-src')).toEqual(
-        sorted(["'self'", 'https://giscus.app', fakeSha256(THEME_SCRIPT)]),
+        sorted(["'self'", 'https://third-party.example', fakeSha256(THEME_SCRIPT)]),
       );
     },
   );
@@ -154,7 +154,7 @@ describe('hardenCsp', () => {
     );
 
     expect(sourcesOf(hardened, 'script-src')).toEqual(
-      sorted(["'self'", 'https://giscus.app', fakeSha256(THEME_SCRIPT)]),
+      sorted(["'self'", 'https://third-party.example', fakeSha256(THEME_SCRIPT)]),
     );
   });
 
@@ -168,7 +168,12 @@ describe('hardenCsp', () => {
     );
 
     expect(sourcesOf(hardened, 'style-src')).toEqual(
-      sorted(["'self'", 'https://giscus.app', fakeSha256(SPA_SHEET), fakeSha256(CRITICAL_CSS)]),
+      sorted([
+        "'self'",
+        'https://third-party.example',
+        fakeSha256(SPA_SHEET),
+        fakeSha256(CRITICAL_CSS),
+      ]),
     );
   });
 
@@ -182,7 +187,7 @@ describe('hardenCsp', () => {
     );
 
     expect(sourcesOf(hardened, 'style-src')).toEqual(
-      sorted(["'self'", 'https://giscus.app', fakeSha256(CRITICAL_CSS)]),
+      sorted(["'self'", 'https://third-party.example', fakeSha256(CRITICAL_CSS)]),
     );
   });
 
@@ -195,7 +200,7 @@ describe('hardenCsp', () => {
     );
 
     expect(sourcesOf(hardened, 'style-src')).toEqual(
-      sorted(["'self'", 'https://giscus.app', fakeSha256(CRITICAL_CSS)]),
+      sorted(["'self'", 'https://third-party.example', fakeSha256(CRITICAL_CSS)]),
     );
   });
 
@@ -239,13 +244,13 @@ describe('hardenCsp', () => {
     }).toEqual({
       script: sorted([
         "'self'",
-        'https://giscus.app',
+        'https://third-party.example',
         fakeSha256(THEME_SCRIPT),
         fakeSha256(BOOTSTRAP_SCRIPT),
       ]),
       style: sorted([
         "'self'",
-        'https://giscus.app',
+        'https://third-party.example',
         fakeSha256(SPA_SHEET),
         fakeSha256(CRITICAL_CSS),
       ]),

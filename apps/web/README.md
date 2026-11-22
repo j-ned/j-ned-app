@@ -68,8 +68,8 @@ Le front vit dans `apps/web` et l'API dans `apps/api`, dans le même dépôt : s
 | **Accueil**  | Hero, points forts, aperçu des projets mis en avant, section contact. Prérendu, hydratation incrémentale des sections sous la ligne de flottaison.                                                                           |
 | **À propos** | Parcours, diplômes, stack, expertises.                                                                                                                                                                                       |
 | **Projets**  | Liste filtrable par catégorie et paginée ; fiche par projet avec choix techniques, décisions d'architecture, liens démo et dépôts, navigation précédent / suivant. Toutes les fiches sont rendues côté serveur à la requête. |
-| **Blog**     | Articles en Markdown assainis par DOMPurify (ADR-0002), tags colorés par catégorie et filtre par tag, commentaires Giscus, compteur de « j'aime », flux RSS.                                                                 |
-| **Contact**  | Formulaire Signal Forms, validation au bord, envoi par l'API (mail à l'admin et confirmation au visiteur).                                                                                                                   |
+| **Blog**     | Articles en Markdown assainis par DOMPurify (ADR-0002), tags colorés par catégorie et filtre par tag, commentaires modérés sans compte tiers, compteur de « j'aime », flux RSS.                                              |
+| **Contact**  | Formulaire Signal Forms, validation au bord, envoi par l'API (mail à l'admin seul, jamais à l'adresse saisie).                                                                                                               |
 | **CV**       | Téléchargement du PDF servi par l'API, comptabilisé dans les analytics.                                                                                                                                                      |
 | **404**      | Page dédiée, servie avec un vrai statut 404 par nginx.                                                                                                                                                                       |
 
@@ -256,7 +256,7 @@ pnpm dev:web        # http://localhost:4200, /api proxifié vers :3000 (proxy.co
 
 Le front n'a aucune variable d'environnement : en développement il parle à `/api` via le proxy du CLI, en production à `https://nedellec-julien.fr/api`, même origine que le site, relayée par nginx vers l'API (ADR-0034).
 
-Les commentaires du blog passent par [Giscus](https://giscus.app) sur les Discussions de ce dépôt (catégorie « General », identifiants dans `src/app/shared/api/giscus-config.ts`). Le widget n'apparaît que si l'app [Giscus](https://github.com/apps/giscus) est installée sur le dépôt : sans elle, Giscus ignore le dépôt sans erreur.
+Les commentaires du blog sont servis par l'API du site (ADR-0040) : un lecteur commente avec un nom et une adresse e-mail, sans compte, et rien n'est publié avant la relecture du propriétaire (`/admin/comments`). La liste fait partie du HTML rendu par le serveur ; une panne de sa lecture ne fait pas tomber l'article (jeton `OPTIONAL_UPSTREAM` de `ssrUpstreamInterceptor`).
 
 ### Scripts
 

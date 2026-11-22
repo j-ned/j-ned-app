@@ -19,7 +19,7 @@ import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.
 import { Seo } from '@core/seo/seo';
 import { injectMarkNotFound } from '@core/ssr/response-status';
 import { BlogLikeButton } from '../../application/components/blog-like-button';
-import { BlogComments } from '../../application/components/blog-comments';
+import { CommentThread } from '@features/comments/application/components/comment-thread';
 import { BlogArticleBody } from '../../application/components/blog-article-body';
 import { CodeCopy } from '../../application/components/code-copy';
 import { BlogTagLink } from '../../application/components/blog-tag-link';
@@ -34,6 +34,7 @@ import { linkedProjects } from '../../domain/linked-projects';
 import type { BlogPostSummary } from '../../domain/models/blog-post.model';
 import { readingTimeMinutes } from '../../domain/reading-time';
 import { injectIsBrowser } from '@core/ssr/inject-is-browser';
+import { ArticleComments } from './article-comments';
 
 @Component({
   selector: 'app-blog-detail',
@@ -41,7 +42,7 @@ import { injectIsBrowser } from '@core/ssr/inject-is-browser';
     BlogArticleBody,
     CodeCopy,
     BlogLikeButton,
-    BlogComments,
+    CommentThread,
     BlogTagLink,
     BlogFurtherReading,
     LinkCard,
@@ -211,7 +212,33 @@ import { injectIsBrowser } from '@core/ssr/inject-is-browser';
           </nav>
         }
 
-        <app-blog-comments [slug]="p.slug" />
+        @defer (hydrate on viewport; on viewport) {
+          <section
+            app-comment-thread
+            class="mt-12"
+            [content]="comments.content()"
+            [submission]="comments.submission()"
+            [replySubmission]="comments.replySubmission()"
+            [resetToken]="comments.resetToken()"
+            [replyTarget]="comments.replyTarget()"
+            (submitted)="comments.send($event)"
+            (replyOpened)="comments.openReply($event)"
+            (replyClosed)="comments.closeReply()"
+          ></section>
+        } @placeholder {
+          <div
+            data-testid="comments-placeholder"
+            class="mt-12 min-h-64 border-t border-foreground/8"
+            aria-hidden="true"
+          ></div>
+        } @error {
+          <p data-testid="comments-chunk-error" role="alert" class="mt-12 text-foreground/85">
+            Les commentaires n’ont pas pu être chargés.
+            <a [attr.href]="'/blog/' + p.slug" class="text-primary underline underline-offset-3"
+              >Recharger la page</a
+            >
+          </p>
+        }
       </div>
     }
   `,
@@ -227,6 +254,8 @@ export class BlogDetail {
   private readonly _readSentinel = viewChild<ElementRef<HTMLElement>>('readSentinel');
 
   readonly slug = input.required<string>();
+
+  protected readonly comments = new ArticleComments(this.slug);
 
   // Pas de `toSignal` : l'instance est réutilisée d'un `/blog/:slug` à l'autre, et lui ne
   // souscrirait qu'une fois, ratant le changement de slug de « article suivant ».

@@ -260,16 +260,16 @@ CRUD admin des articles de blog + endpoints publics de consultation/like. Le fro
 
 **8 endpoints sous `/api/blog/posts`** :
 
-| Méthode | Chemin                   | Auth | Rôle                                                                                                                                                                                      |
-| ------- | ------------------------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET     | `/blog/posts`            | ❌   | Liste publique des articles publiés, triés par `publishedAt DESC`.                                                                                                                        |
-| GET     | `/blog/posts/admin`      | ✅   | Liste complète (drafts inclus), triée par `createdAt DESC`.                                                                                                                               |
-| GET     | `/blog/posts/:slug`      | ❌   | Détail public d'un article **publié**. 404 sur un slug draft/dépublié/inconnu (pas de fuite de contenu non publié).                                                                       |
-| POST    | `/blog/posts`            | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                          |
-| PATCH   | `/blog/posts/:id`        | ✅   | Met à jour. Slug **figé** une fois l'article publié (ne se re-génère plus au changement de titre - casserait l'URL publique/le thread Giscus). `coverImage: null` supprime l'image S3.    |
-| DELETE  | `/blog/posts/:id`        | ✅   | Supprime l'article + son image S3.                                                                                                                                                        |
-| POST    | `/blog/posts/:id/image`  | ✅   | Upload multipart (`file`, max 4 Mo, MIME whitelist `image/webp\|jpeg\|png\|avif`). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an). |
-| POST    | `/blog/posts/:slug/like` | ❌   | Incrémente le compteur de likes d'un article **publié** (public, pas d'auth). 404 sur un slug draft/dépublié/inconnu.                                                                     |
+| Méthode | Chemin                   | Auth | Rôle                                                                                                                                                                                        |
+| ------- | ------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/blog/posts`            | ❌   | Liste publique des articles publiés, triés par `publishedAt DESC`.                                                                                                                          |
+| GET     | `/blog/posts/admin`      | ✅   | Liste complète (drafts inclus), triée par `createdAt DESC`.                                                                                                                                 |
+| GET     | `/blog/posts/:slug`      | ❌   | Détail public d'un article **publié**. 404 sur un slug draft/dépublié/inconnu (pas de fuite de contenu non publié).                                                                         |
+| POST    | `/blog/posts`            | ✅   | Crée. Slug auto-généré depuis `title`. 409 si collision de slug.                                                                                                                            |
+| PATCH   | `/blog/posts/:id`        | ✅   | Met à jour. Slug **figé** une fois l'article publié (ne se re-génère plus au changement de titre - casserait l'URL publique et les liens entrants). `coverImage: null` supprime l'image S3. |
+| DELETE  | `/blog/posts/:id`        | ✅   | Supprime l'article + son image S3.                                                                                                                                                          |
+| POST    | `/blog/posts/:id/image`  | ✅   | Upload multipart (`file`, max 4 Mo, MIME whitelist `image/webp\|jpeg\|png\|avif`). Converti en **AVIF ≤ 1600 px** (`sharp`) avant stockage, clé `<id>-<sha8>.avif` (cache immuable 1 an).   |
+| POST    | `/blog/posts/:slug/like` | ❌   | Incrémente le compteur de likes d'un article **publié** (public, pas d'auth). 404 sur un slug draft/dépublié/inconnu.                                                                       |
 
 **Lifecycle S3** : identique à Projects (key `blog/<id>.<ext>`, ordre upload → update DB → cleanup ancienne clé).
 
