@@ -45,11 +45,15 @@ export type Project = {
   readonly pitch: string | null;
   readonly highlight: string | null;
   readonly scope: string | null;
+  readonly updatedAt: string;
 };
 
 // Payload d'écriture (create/update). `id`, `image` et `slug` sont gérés côté
 // serveur : `id`/`slug` générés (slug dérivé du titre), `image` via uploadImage
 // (POST /:id/image). techChoices/architectureDecisions, eux, sont éditables.
-export type ProjectInput = Omit<Project, 'id' | 'image' | 'slug' | 'kind' | 'gallery'> & {
+export type ProjectInput = Omit<
+  Project,
+  'id' | 'image' | 'slug' | 'kind' | 'gallery' | 'updatedAt'
+> & {
   readonly kind: ProjectKind;
 };

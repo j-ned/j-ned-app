@@ -1,7 +1,7 @@
 import { Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map, type Observable } from 'rxjs';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { ProjectImage, ProjectInput } from '@features/projects/domain/models/project.model';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
@@ -23,6 +23,7 @@ import { AdminProjectGallery } from '../../application/components/admin-project-
 import { AdminProjectPreview } from '../../application/components/admin-project-preview';
 import { AdminSaveBar } from '../../application/components/admin-save-bar';
 import { EditorDraft, type EditedDraft } from '../../application/editor-draft';
+import { NewerVersionCheck } from '../../application/newer-version-check';
 import type { FormTocSection } from '../../application/form-toc-entries';
 import {
   toPreviewProject,
@@ -124,7 +125,10 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
       [state]="state()"
       [copy]="PROJECT_EDITOR_COPY"
       [leaveAsked]="draft.leave.asked()"
+      [newerVersion]="newerVersion.detected()"
+      [changes]="draft.changes()"
       (retry)="projectResource.reload()"
+      (reloadLatest)="projectResource.reload()"
       (leaveAnswered)="draft.leave.answer($event)"
     >
       <ng-template #editorForm>
@@ -198,6 +202,14 @@ export class AdminProjectEditor implements LeaveConfirmable {
     loaded: this.loaded,
     toDraft: toProjectDraft,
     sections: FORM_SECTIONS,
+  });
+  protected readonly newerVersion = new NewerVersionCheck({
+    current: (): string | null => this.draft.saved()?.updatedAt ?? null,
+    readLatest: (): Observable<string | null> =>
+      this.gateway
+        .getProjectById(this.draft.saved()?.id ?? '', { background: true })
+        .pipe(map((project) => project?.updatedAt ?? null)),
+    paused: this.draft.saving,
   });
   protected readonly gallery = linkedSignal<readonly ProjectImage[]>(
     () => this.loaded()?.gallery ?? [],

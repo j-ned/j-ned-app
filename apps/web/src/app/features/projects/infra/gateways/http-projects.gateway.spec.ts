@@ -688,6 +688,20 @@ describe('HttpProjectsGateway: écritures de l’admin derrière l’intercepteu
     httpController.verify();
   });
 
+  it('Given an open editor rereads its project in the background When the API answers 500 Then no toast is shown and the caller still receives the error', async () => {
+    const { gateway, httpController } = configureWithToasts();
+
+    expect(
+      await toastsOnFailure(
+        gateway.getProjectById('p-1', { background: true }),
+        httpController,
+        'GET',
+        `${BASE}/projects/p-1`,
+      ),
+    ).toEqual({ status: 500, toasts: 0 });
+    httpController.verify();
+  });
+
   it('Given the shared list shown When its reread fails, retry included Then no toast is shown and the list stays', () => {
     const { gateway, httpController } = configureWithToasts();
     const seen: number[] = [];

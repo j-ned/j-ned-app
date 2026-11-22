@@ -52,8 +52,12 @@ export class HttpProjectsGateway extends ProjectsGateway {
     return this.allProjects.value$.pipe(map((projects) => projects.filter(isShowcaseProject)));
   }
 
-  getProjectById(id: string): Observable<Project | null> {
-    return this.http.get<ProjectDto>(`${this.apiUrl}/projects/${encodeURIComponent(id)}`).pipe(
+  getProjectById(
+    id: string,
+    options?: { readonly background?: boolean },
+  ): Observable<Project | null> {
+    const url = `${this.apiUrl}/projects/${encodeURIComponent(id)}`;
+    return this.http.get<ProjectDto>(url, { context: silentWhen(options?.background) }).pipe(
       map((row) => toProject(row, STORAGE_BASE_PATH)),
       catchError((error: unknown) =>
         error instanceof HttpErrorResponse && error.status === 404
