@@ -2,13 +2,16 @@ name: API CI
 
 # Sur une PR : lint, types, tests sur Postgres, build, puis l'API construite, lancée par Node en mode
 # production, passe la suite de parité HTTP (packages/api-parity). En parallèle, l'image du conteneur
-# (ADR-0038) est construite, ses migrations jouées sur un Postgres jetable et sa sonde interrogée ; sur
-# master, elle est publiée sur GHCR, puis le workflow `Deploy` demande à Dokploy de la tirer.
+# (ADR-0038) est construite, ses migrations jouées sur un Postgres jetable, sa sonde interrogée et le rôle
+# Postgres applicatif (deploy/postgres) jugé devant elle ; sur master, elle est publiée sur GHCR, puis le
+# workflow `Deploy` demande à Dokploy de la tirer.
 on:
   pull_request:
     paths:
       - apps/api/**
       - packages/api-parity/**
+      - deploy/postgres/**
+      - deploy/compose.yaml
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - package.json
@@ -20,6 +23,8 @@ on:
     paths:
       - apps/api/**
       - packages/api-parity/**
+      - deploy/postgres/**
+      - deploy/compose.yaml
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - package.json
@@ -155,6 +160,11 @@ jobs:
       # fois : elles se rejouent sans effet), puis la sonde qui interroge la base.
       - name: Migrate and probe the image
         run: apps/api/ci/image-check.sh j-ned-app-api:ci
+
+      # Le rôle Postgres de production (deploy/postgres/app-role.sql) devant le schéma posé par cette
+      # image : l'API tourne sous ce rôle, qui ne peut pas toucher au schéma.
+      - name: Check the app database role
+        run: deploy/postgres/check.sh j-ned-app-api:ci
 
   # Seule une image dont le code a passé les tests et dont le conteneur a été jugé est publiée. Même
   # Dockerfile et même cache que le job `image` : toutes les couches viennent du cache.
