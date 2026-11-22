@@ -141,7 +141,14 @@ function textWithinApiRules<TPathKind extends PathKind>(
             >
           </p>
           <div class="flex flex-wrap items-center gap-2">
-            <button appButton type="submit" data-testid="comment-submit" [disabled]="sending()">
+            <!-- aria-disabled plutôt que disabled : un bouton désactivé perd le focus, et un refus doit l'y laisser. -->
+            <button
+              appButton
+              type="submit"
+              data-testid="comment-submit"
+              [attr.aria-disabled]="sending() || null"
+              class="aria-disabled:cursor-wait aria-disabled:opacity-55"
+            >
               {{ sending() ? copy.sending : copy.send }}
             </button>
             @if (cancellable()) {
@@ -216,6 +223,7 @@ export class CommentForm {
     {
       submission: {
         action: async (field) => {
+          if (this.sending()) return;
           const { name, email, body, website } = field().value();
           this.submitted.emit({ name, email, body, website });
         },

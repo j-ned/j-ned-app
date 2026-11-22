@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './a11y-test';
 import { ADMIN_PENDING_OR_FAILED, FOOTER_READY, THEMES } from './scenarios';
 
@@ -40,12 +40,15 @@ for (const theme of THEMES) {
     });
 
     test.describe('commentaires', () => {
+      const mainForm = (page: Page): Locator =>
+        page.getByRole('group', { name: 'Laisser un commentaire' });
+
       const fillComment = async (page: Page, name: string): Promise<void> => {
-        const form = page.getByTestId('comment-main-form');
+        const form = mainForm(page);
         await form.getByLabel('Nom ou pseudo').fill(name);
         await form.getByLabel('E-mail').fill('lou@example.test');
         await form.getByLabel('Message').fill('Bel article, merci.');
-        await form.getByTestId('comment-submit').click();
+        await form.getByRole('button', { name: 'Envoyer' }).click();
       };
 
       test('comment form with errors has no WCAG A/AA violation', async ({
@@ -54,8 +57,8 @@ for (const theme of THEMES) {
         expectNoA11yViolations,
       }) => {
         await visit('/blog/article-temoin');
-        const form = page.getByTestId('comment-main-form');
-        await form.getByTestId('comment-submit').click();
+        const form = mainForm(page);
+        await form.getByRole('button', { name: 'Envoyer' }).click();
         await expect(form.getByRole('alert')).toHaveCount(3);
         await expectNoA11yViolations('comment-main-form', 'commentaire-erreurs');
       });
@@ -79,7 +82,7 @@ for (const theme of THEMES) {
         await visit('/blog/article-temoin');
         await page.getByRole('button', { name: 'Répondre à Camille' }).click();
         await expect(
-          page.getByTestId('comment-reply-form').getByLabel('Nom ou pseudo'),
+          page.getByRole('group', { name: 'Répondre à Camille' }).getByLabel('Nom ou pseudo'),
         ).toBeFocused();
         await expectNoA11yViolations('comment-reply-form', 'reponse-ouverte');
       });

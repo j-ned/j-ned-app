@@ -279,7 +279,7 @@ describe('CommentThread: écriture', () => {
     },
   );
 
-  it('Given a comment being sent When the section shows Then the send button of the main form is disabled', async () => {
+  it('Given a comment being sent When the section shows Then the send button of the main form says it is unavailable', async () => {
     const fixture = await renderHost(ready(makePublishedThread()));
     fixture.componentInstance.submission.set({ kind: 'sending', parentId: null });
     await settleBounded(fixture);
@@ -289,8 +289,8 @@ describe('CommentThread: écriture', () => {
         mainForm(fixture.nativeElement as HTMLElement)?.querySelector(
           '[data-testid="comment-submit"]',
         ),
-      ).disabled,
-    ).toBe(true);
+      ).getAttribute('aria-disabled'),
+    ).toBe('true');
   });
 });
 

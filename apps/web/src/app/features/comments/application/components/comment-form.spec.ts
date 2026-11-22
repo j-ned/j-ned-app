@@ -188,15 +188,29 @@ describe('CommentForm', () => {
     }).toEqual({ tabindex: '-1', hidden: true, autocomplete: 'off' });
   });
 
-  it('Given a comment being sent When the form renders Then only the send button is disabled', async () => {
+  it('Given a comment being sent When the reader presses send again Then nothing more goes out, and the button keeps the focus it had', async () => {
     const rendered = await renderForm();
+    await fill(rendered);
     rendered.fixture.componentRef.setInput('sending', true);
     await settleBounded(rendered.fixture);
+    const button = asButton(byTestId(rendered.host, 'comment-submit'));
+    button.focus();
+
+    await send(rendered);
 
     expect({
-      button: asButton(byTestId(rendered.host, 'comment-submit')).disabled,
+      submitted: rendered.submitted,
+      ariaDisabled: button.getAttribute('aria-disabled'),
+      disabled: button.disabled,
+      focused: document.activeElement === button,
       name: control(rendered.host, 'name').disabled,
-    }).toEqual({ button: true, name: false });
+    }).toEqual({
+      submitted: [],
+      ariaDisabled: 'true',
+      disabled: false,
+      focused: true,
+      name: false,
+    });
   });
 
   it('Given a sent comment When the reset token moves Then the fields are empty again and no error shows', async () => {
