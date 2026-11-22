@@ -1,12 +1,13 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { map, of, switchMap, type Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import type { LoginEventPage } from '@features/auth/domain/models/login-event.model';
 import { LoginJournalGateway } from '@features/auth/infra/gateways/login-journal.gateway';
 import { loadState } from '@shared/ui/load-state';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
 import { AdminListState } from '../../application/components/admin-list-state';
 import { AdminPager } from '../../application/components/admin-pager';
+import { loadWithinLastPage } from '../../application/within-last-page';
 import {
   AdminPageHeader,
   type AdminPageParent,
@@ -147,18 +148,9 @@ export class AdminLogins {
     else this._requestedPage.set(page);
   }
 
-  // La purge quotidienne peut retirer la dernière page entre deux clics : on retombe alors sur la
-  // nouvelle dernière page plutôt que d'afficher une page vide.
   private loadPage(page: number): Observable<LoadedPage> {
-    return this.gateway.getPage(page, LOGIN_JOURNAL_PAGE_SIZE).pipe(
-      switchMap((loaded) => {
-        const lastPage = loginJournalPager(loaded.total, page).pageCount;
-        return page <= lastPage
-          ? of({ ...loaded, page })
-          : this.gateway
-              .getPage(lastPage, LOGIN_JOURNAL_PAGE_SIZE)
-              .pipe(map((fallback) => ({ ...fallback, page: lastPage })));
-      }),
+    return loadWithinLastPage(page, LOGIN_JOURNAL_PAGE_SIZE, (at) =>
+      this.gateway.getPage(at, LOGIN_JOURNAL_PAGE_SIZE),
     );
   }
 }

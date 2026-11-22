@@ -698,3 +698,10 @@ PR B, 2026-11-22 : `STUB_ADMIN_SESSION=1 node ci/api-stub/server.mjs` (port 3000
 4. « Supprimer » sur la réponse du propriétaire : boîte « Supprimer ta réponse ? », Échap la ferme.
 
 Verdict : **PASS**. Captures : file publiée avec le formulaire de réponse en erreur, et boîte de confirmation (fichiers locaux de la session, non versionnés). Console : une seule erreur, `GET /api/config` en 404, route absente de la doublure et étrangère à cet écran ; aucune erreur Angular.
+
+## Limites connues de la PR B (admin)
+
+- `CommentsGateway` signale un refus de l'API par une `ModerationError` dans le canal d'erreur de l'Observable, pas par un résultat typé : la page la reconnaît par `instanceof`.
+- Une réponse du propriétaire est insérée en tête de la page courante. Sur une page autre que la première, elle y apparaît jusqu'à la prochaine relecture, alors que l'API la range en page 1.
+- L'état du formulaire de réponse (cible, envoi en cours, jeton de remise à zéro) est porté par la page et partagé entre les lignes : un seul formulaire ouvert à la fois. `replySending` et `replyResetToken` valent pour toutes les lignes.
+- Le 409 de `PATCH /blog/comments/:id` ne distingue pas « déjà publié » de « parent non publié » : pour une réponse, le message cite les deux causes possibles.

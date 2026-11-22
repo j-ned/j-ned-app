@@ -1,15 +1,12 @@
 import { computed, inject, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { map, of, switchMap, tap, type Observable } from 'rxjs';
-import type {
-  AdminComment,
-  AdminCommentPage,
-  CommentStatus,
-} from '@features/comments/domain/models/comment.model';
+import { map, tap, type Observable } from 'rxjs';
+import type { AdminComment, CommentStatus } from '@features/comments/domain/models/comment.model';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
 import { ADMIN_COMMENTS_PAGE_SIZE, commentsSummary } from '../../application/admin-comments-view';
 import { pager } from '../../application/pager';
+import { loadWithinLastPage } from '../../application/within-last-page';
 
 type PageRequest = { readonly status: CommentStatus; readonly page: number };
 
@@ -70,18 +67,10 @@ export class CommentQueue {
     else this._requestedPage.set(page);
   }
 
-  // Une suppression faite ailleurs peut vider la dernière page : on retombe sur la nouvelle
-  // dernière page plutôt que d'afficher une page vide.
   private loadPage({ status, page }: PageRequest): Observable<readonly AdminComment[]> {
-    const fetch = (at: number): Observable<AdminCommentPage & { readonly page: number }> =>
-      this._gateway
-        .getAdminPage(status, at, ADMIN_COMMENTS_PAGE_SIZE)
-        .pipe(map((loaded) => ({ ...loaded, page: at })));
-    return fetch(page).pipe(
-      switchMap((loaded) => {
-        const lastPage = pager(loaded.total, page, ADMIN_COMMENTS_PAGE_SIZE).pageCount;
-        return page <= lastPage ? of(loaded) : fetch(lastPage);
-      }),
+    return loadWithinLastPage(page, ADMIN_COMMENTS_PAGE_SIZE, (at) =>
+      this._gateway.getAdminPage(status, at, ADMIN_COMMENTS_PAGE_SIZE),
+    ).pipe(
       tap(({ total, page: served }) => this._served.set({ status, page: served, total })),
       map(({ comments }) => comments),
     );
