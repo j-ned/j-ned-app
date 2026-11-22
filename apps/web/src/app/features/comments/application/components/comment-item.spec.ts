@@ -39,12 +39,83 @@ async function render(
 // Le composant se pose sur l'élément `<article>` de son parent : il est rendu ici comme là-bas.
 @Component({
   imports: [CommentItem],
-  template: `<article app-comment-item [comment]="comment()" [level]="level()"></article>`,
+  template: `<article
+    app-comment-item
+    [comment]="comment()"
+    [level]="level()"
+    [replyable]="replyable()"
+    [replyOpen]="replyOpen()"
+    replyFormId="reply-c-1-form"
+    (replyRequested)="requests = requests + 1"
+  ></article>`,
 })
 class CommentItemHost {
   readonly comment = signal(aCommentView());
   readonly level = signal<'comment' | 'reply'>('comment');
+  readonly replyable = signal(false);
+  readonly replyOpen = signal(false);
+  requests = 0;
 }
+
+describe('CommentItem: répondre', () => {
+  async function renderReplyable(replyOpen: boolean): Promise<{
+    readonly host: CommentItemHost;
+    readonly article: HTMLElement;
+  }> {
+    TestBed.configureTestingModule({});
+    const fixture = TestBed.createComponent(CommentItemHost);
+    fixture.componentInstance.replyable.set(true);
+    fixture.componentInstance.replyOpen.set(replyOpen);
+    await fixture.whenStable();
+    const article = (fixture.nativeElement as HTMLElement).firstElementChild;
+    if (!(article instanceof HTMLElement)) throw new Error('no comment rendered');
+    return { host: fixture.componentInstance, article };
+  }
+
+  const replyButton = (article: HTMLElement): HTMLButtonElement | null =>
+    article.querySelector('button[data-testid="comment-reply"]');
+
+  it('Given a published comment When it is shown Then a « Répondre » button names the author and says the form is closed', async () => {
+    const { article } = await renderReplyable(false);
+    const button = replyButton(article);
+
+    expect({
+      text: button?.textContent?.trim(),
+      label: button?.getAttribute('aria-label'),
+      expanded: button?.getAttribute('aria-expanded'),
+      controls: button?.getAttribute('aria-controls') ?? null,
+    }).toEqual({
+      text: 'Répondre',
+      label: 'Répondre à Camille',
+      expanded: 'false',
+      controls: null,
+    });
+  });
+
+  it('Given the reply form is open When the comment is shown Then its button says so and points at the form', async () => {
+    const { article } = await renderReplyable(true);
+    const button = replyButton(article);
+
+    expect([button?.getAttribute('aria-expanded'), button?.getAttribute('aria-controls')]).toEqual([
+      'true',
+      'reply-c-1-form',
+    ]);
+  });
+
+  it('Given a published comment When the reader presses « Répondre » Then a reply is asked for', async () => {
+    const { host, article } = await renderReplyable(false);
+
+    replyButton(article)?.click();
+
+    expect(host.requests).toBe(1);
+  });
+
+  it('Given a comment that cannot be answered When it is shown Then no reply button shows', async () => {
+    const host = await render(aCommentView(), 'reply');
+
+    expect(host.querySelectorAll('button')).toHaveLength(0);
+  });
+});
 
 describe('CommentItem', () => {
   it('Given a visitor comment When it is shown Then the article is named by its author heading and carries a machine-readable date and the text', async () => {

@@ -71,6 +71,19 @@ for (const theme of THEMES) {
         await expectNoA11yViolations('comment-main-form', 'commentaire-envoye');
       });
 
+      test('open reply form has no WCAG A/AA violation', async ({
+        page,
+        visit,
+        expectNoA11yViolations,
+      }) => {
+        await visit('/blog/article-temoin');
+        await page.getByRole('button', { name: 'Répondre à Camille' }).click();
+        await expect(
+          page.getByTestId('comment-reply-form').getByLabel('Nom ou pseudo'),
+        ).toBeFocused();
+        await expectNoA11yViolations('comment-reply-form', 'reponse-ouverte');
+      });
+
       test('refused comment alert has no WCAG A/AA violation', async ({
         page,
         visit,

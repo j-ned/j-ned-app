@@ -1,11 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component, input } from '@angular/core';
+import { Component, ElementRef, input, output, viewChild } from '@angular/core';
+import { Button } from '@shared/ui/button';
 import type { CommentView } from '../comment-thread-view';
 
 // Nom et texte viennent d'un inconnu : interpolation seule, jamais de HTML ni de lien fabriqué.
 @Component({
   selector: 'article[app-comment-item]',
-  imports: [DatePipe],
+  imports: [DatePipe, Button],
   host: {
     'data-testid': 'comment-item',
     '[attr.aria-labelledby]': 'comment().headingId',
@@ -38,9 +39,36 @@ import type { CommentView } from '../comment-thread-view';
       class="mt-2 whitespace-pre-line text-foreground/85 [overflow-wrap:anywhere]"
       [textContent]="c.body"
     ></p>
+    @if (replyable()) {
+      <button
+        #replyButton
+        appButton
+        variant="text"
+        type="button"
+        data-testid="comment-reply"
+        class="-ml-5 mt-1"
+        [attr.aria-label]="'Répondre à ' + c.author"
+        [attr.aria-expanded]="replyOpen()"
+        [attr.aria-controls]="replyOpen() ? replyFormId() : null"
+        (click)="replyRequested.emit()"
+      >
+        Répondre
+      </button>
+    }
   `,
 })
 export class CommentItem {
   readonly comment = input.required<CommentView>();
   readonly level = input<'comment' | 'reply'>('comment');
+  readonly replyable = input(false);
+  readonly replyOpen = input(false);
+  readonly replyFormId = input<string | null>(null);
+  readonly replyRequested = output<void>();
+
+  private readonly _replyButton = viewChild('replyButton', { read: ElementRef<HTMLButtonElement> });
+
+  // Rendu du focus au bouton quand le formulaire de réponse se ferme sans envoi.
+  focusReplyButton(): void {
+    this._replyButton()?.nativeElement.focus();
+  }
 }

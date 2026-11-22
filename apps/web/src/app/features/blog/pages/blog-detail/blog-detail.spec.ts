@@ -869,9 +869,8 @@ describe('BlogDetail', () => {
 
     const POST_URL = `${API}/blog/posts/mon-article/comments`;
 
-    async function writeComment(fixture: ComponentFixture<BlogDetail>): Promise<void> {
-      const form = testId(fixture, 'comment-main-form');
-      const fields = { name: 'Lou', email: 'lou@example.test', body: 'Bel article.' };
+    function fillCommentForm(form: HTMLElement | null, body: string): void {
+      const fields = { name: 'Lou', email: 'lou@example.test', body };
       for (const [field, text] of Object.entries(fields)) {
         const element = form?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
           `[data-testid="comment-${field}"]`,
@@ -880,6 +879,11 @@ describe('BlogDetail', () => {
         element.value = text;
         element.dispatchEvent(new Event('input'));
       }
+    }
+
+    async function writeComment(fixture: ComponentFixture<BlogDetail>): Promise<void> {
+      const form = testId(fixture, 'comment-main-form');
+      fillCommentForm(form, 'Bel article.');
       await fixture.whenStable();
       form?.querySelector<HTMLButtonElement>('[data-testid="comment-submit"]')?.click();
       fixture.detectChanges();
@@ -914,6 +918,122 @@ describe('BlogDetail', () => {
         name: '',
         items: 1,
       });
+    });
+
+    it('Given a reader answers a published comment When the API accepts the reply Then it goes out with its parent, the form closes and the confirmation shows under that comment', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      const host = fixture.nativeElement as HTMLElement;
+      host.querySelector<HTMLButtonElement>('[data-testid="comment-reply"]')?.click();
+      await fixture.whenStable();
+      const form = testId(fixture, 'comment-reply-form');
+      fillCommentForm(form, 'Pareil pour moi.');
+      await fixture.whenStable();
+
+      form?.querySelector<HTMLButtonElement>('[data-testid="comment-submit"]')?.click();
+      fixture.detectChanges();
+      TestBed.tick();
+      const post = TestBed.inject(HttpTestingController).expectOne(POST_URL);
+      const sent: unknown = post.request.body;
+      post.flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+
+      expect({
+        sent,
+        form: testId(fixture, 'comment-reply-form'),
+        status: host
+          .querySelector('[data-testid="comment-list"] [data-testid="status-message"]')
+          ?.getAttribute('role'),
+      }).toEqual({
+        sent: expect.objectContaining({ parentId: 'c-1' }),
+        form: null,
+        status: 'status',
+      });
+    });
+
+    it('Given a refused reply When the reader cancels its form Then the alert leaves with it', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      const host = fixture.nativeElement as HTMLElement;
+      host.querySelector<HTMLButtonElement>('[data-testid="comment-reply"]')?.click();
+      await fixture.whenStable();
+      const form = testId(fixture, 'comment-reply-form');
+      fillCommentForm(form, 'Pareil pour moi.');
+      await fixture.whenStable();
+      form?.querySelector<HTMLButtonElement>('[data-testid="comment-submit"]')?.click();
+      fixture.detectChanges();
+      TestBed.tick();
+      TestBed.inject(HttpTestingController)
+        .expectOne(POST_URL)
+        .flush({ message: 'Introuvable' }, { status: 404, statusText: 'Not Found' });
+      await fixture.whenStable();
+      const before = testId(fixture, 'status-message')?.getAttribute('role');
+
+      testId(fixture, 'comment-cancel')?.click();
+      await fixture.whenStable();
+
+      expect({ before, after: testId(fixture, 'status-message') }).toEqual({
+        before: 'alert',
+        after: null,
+      });
+    });
+
+    it('Given a comment accepted on an article When the same page moves to another article Then the confirmation does not follow', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      await writeComment(fixture);
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne(POST_URL).flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      const before = testId(fixture, 'status-message') !== null;
+
+      fixture.componentRef.setInput('slug', 'autre-article');
+      fixture.detectChanges();
+      TestBed.tick();
+      http
+        .expectOne(`${API}/blog/posts/autre-article/comments?page=1&limit=100`)
+        .flush(toPublicCommentPageDto(makePublishedThread()));
+      await fixture.whenStable();
+      for (const block of await fixture.getDeferBlocks()) {
+        await block.render(DeferBlockState.Complete);
+      }
+      await fixture.whenStable();
+
+      expect({
+        before,
+        form: testId(fixture, 'comment-main-form') !== null,
+        after: testId(fixture, 'status-message'),
+      }).toEqual({ before: true, form: true, after: null });
+    });
+
+    it('Given a comment still on its way When the page moves to another article before the answer Then the late answer is not shown there', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+      await writeComment(fixture);
+      const http = TestBed.inject(HttpTestingController);
+      const post = http.expectOne(POST_URL);
+
+      fixture.componentRef.setInput('slug', 'autre-article');
+      fixture.detectChanges();
+      TestBed.tick();
+      http
+        .expectOne(`${API}/blog/posts/autre-article/comments?page=1&limit=100`)
+        .flush(toPublicCommentPageDto(makePublishedThread()));
+      post.flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      for (const block of await fixture.getDeferBlocks()) {
+        await block.render(DeferBlockState.Complete);
+      }
+      await fixture.whenStable();
+
+      expect({
+        form: testId(fixture, 'comment-main-form') !== null,
+        status: testId(fixture, 'status-message'),
+      }).toEqual({ form: true, status: null });
     });
 
     it('Given a reader writes too often When the API refuses with 429 Then a single alert says so and the text is kept', async () => {

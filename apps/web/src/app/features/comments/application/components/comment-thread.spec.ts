@@ -34,13 +34,17 @@ const ready = (thread: PublishedThread): CommentThreadContent => ({
     [content]="content()"
     [submission]="submission()"
     [resetToken]="resetToken()"
+    [replyTarget]="replyTarget()"
     (submitted)="sent.push($event)"
+    (replyOpened)="replyTarget.set($event)"
+    (replyClosed)="replyTarget.set(null)"
   ></section>`,
 })
 class CommentThreadHost {
   readonly content = signal<CommentThreadContent>({ status: 'loading' });
   readonly submission = signal<CommentSubmissionState>({ kind: 'idle' });
   readonly resetToken = signal(0);
+  readonly replyTarget = signal<string | null>(null);
   readonly sent: CommentSent[] = [];
 }
 
@@ -287,5 +291,174 @@ describe('CommentThread: écriture', () => {
         ),
       ).disabled,
     ).toBe(true);
+  });
+});
+
+describe('CommentThread: répondre', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const thread = (): PublishedThread =>
+    makePublishedThread({
+      comments: [
+        makePublishedComment({ id: 'c-1', replies: [makePublishedReply({ id: 'r-1' })] }),
+        makePublishedComment({ id: 'c-2', author: { kind: 'visitor', name: 'Inès' } }),
+      ],
+    });
+
+  const itemOf = (host: HTMLElement, id: string): HTMLElement | null =>
+    host.querySelector(`article[aria-labelledby="comment-${id}-author"]`)?.closest('li') ?? null;
+
+  const replyButtonOf = (host: HTMLElement, id: string): HTMLButtonElement | null =>
+    itemOf(host, id)?.querySelector(':scope > article [data-testid="comment-reply"]') ?? null;
+
+  async function openReply(
+    fixture: ComponentFixture<CommentThreadHost>,
+    id: string,
+  ): Promise<HTMLElement> {
+    const host = fixture.nativeElement as HTMLElement;
+    replyButtonOf(host, id)?.click();
+    await settleBounded(fixture);
+    return host;
+  }
+
+  it('Given comments and their replies When the section shows Then each comment can be answered, a reply cannot', async () => {
+    const host = await render(ready(thread()));
+
+    expect({
+      comments: ['c-1', 'c-2'].map((id) => replyButtonOf(host, id) !== null),
+      buttons: host.querySelectorAll('[data-testid="comment-reply"]').length,
+    }).toEqual({ comments: [true, true], buttons: 2 });
+  });
+
+  it('Given a comment When the reader presses « Répondre » Then a form named after its author opens under it, and its first field takes the focus', async () => {
+    const fixture = await renderHost(ready(thread()));
+
+    const host = await openReply(fixture, 'c-1');
+    const form = itemOf(host, 'c-1')?.querySelector('[data-testid="comment-reply-form"]');
+    const name = form?.querySelector('[data-testid="comment-name"]');
+
+    expect({
+      legend: form?.querySelector('legend')?.textContent?.trim(),
+      id: form?.id,
+      nameId: name?.id,
+      focused: document.activeElement === name,
+      expanded: replyButtonOf(host, 'c-1')?.getAttribute('aria-expanded'),
+    }).toEqual({
+      legend: 'Répondre à Camille',
+      id: 'reply-c-1-form',
+      nameId: 'reply-c-1-name',
+      focused: true,
+      expanded: 'true',
+    });
+  });
+
+  it('Given a reply form open under one comment When the reader answers another one Then only one reply form stays open, under the new comment', async () => {
+    const fixture = await renderHost(ready(thread()));
+    await openReply(fixture, 'c-1');
+
+    const host = await openReply(fixture, 'c-2');
+
+    expect({
+      forms: host.querySelectorAll('[data-testid="comment-reply-form"]').length,
+      under: itemOf(host, 'c-2')?.querySelector('[data-testid="comment-reply-form"]') !== null,
+    }).toEqual({ forms: 1, under: true });
+  });
+
+  it.each(['Annuler', 'Échap'])(
+    'Given an open reply form When the reader leaves it with %s Then it closes and the focus goes back to « Répondre »',
+    async (way) => {
+      const fixture = await renderHost(ready(thread()));
+      const host = await openReply(fixture, 'c-1');
+      const form = itemOf(host, 'c-1')?.querySelector('[data-testid="comment-reply-form"]');
+
+      if (way === 'Annuler') {
+        form?.querySelector<HTMLButtonElement>('[data-testid="comment-cancel"]')?.click();
+      } else {
+        form
+          ?.querySelector('[data-testid="comment-name"]')
+          ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      }
+      await settleBounded(fixture);
+
+      expect({
+        forms: host.querySelectorAll('[data-testid="comment-reply-form"]').length,
+        focused: document.activeElement === replyButtonOf(host, 'c-1'),
+      }).toEqual({ forms: 0, focused: true });
+    },
+  );
+
+  it('Given the main form When the reader presses Escape in it Then nothing closes', async () => {
+    const fixture = await renderHost(ready(thread()));
+    const host = fixture.nativeElement as HTMLElement;
+
+    host
+      .querySelector('[data-testid="comment-main-form"] [data-testid="comment-name"]')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await settleBounded(fixture);
+
+    expect(byTestId(host, 'comment-main-form')?.querySelector('form')).not.toBeNull();
+  });
+
+  it('Given a filled reply form When the reader sends it Then the section hands over a reply to that comment', async () => {
+    const fixture = await renderHost(ready(thread()));
+    const host = await openReply(fixture, 'c-1');
+    const form = itemOf(host, 'c-1')?.querySelector('[data-testid="comment-reply-form"]');
+    const fields = { name: 'Lou', email: 'lou@example.test', body: 'Pareil pour moi.' };
+    for (const [field, text] of Object.entries(fields)) {
+      const element = form?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `[data-testid="comment-${field}"]`,
+      );
+      if (!element) throw new Error(`no ${field} field in the reply form`);
+      element.value = text;
+      element.dispatchEvent(new Event('input'));
+    }
+    await settleBounded(fixture);
+
+    asButton(form?.querySelector('[data-testid="comment-submit"]')).click();
+    await settleBounded(fixture);
+
+    expect(fixture.componentInstance.sent).toEqual([
+      { draft: { ...fields, website: '' }, parentId: 'c-1' },
+    ]);
+  });
+
+  it('Given a reply refused for a comment When the section shows Then the alert sits with that comment, not under the main form', async () => {
+    const fixture = await renderHost(ready(thread()));
+    await openReply(fixture, 'c-1');
+    fixture.componentInstance.submission.set({
+      kind: 'failed',
+      parentId: 'c-1',
+      reason: 'not-found',
+    });
+    await settleBounded(fixture);
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect({
+      inItem: itemOf(host, 'c-1')
+        ?.querySelector('[data-testid="status-message"]')
+        ?.textContent?.trim(),
+      inMain:
+        byTestId(host, 'comment-main-form')?.querySelector('[data-testid="status-message"]') ??
+        null,
+    }).toEqual({
+      inItem: 'Cet article ou ce commentaire n’accepte plus de réponse.',
+      inMain: null,
+    });
+  });
+
+  it('Given a reply accepted and its form closed When the section shows Then the confirmation sits with that comment and takes the focus', async () => {
+    const fixture = await renderHost(ready(thread()));
+    fixture.componentInstance.submission.set({ kind: 'sent', parentId: 'c-1' });
+    await settleBounded(fixture);
+    const host = fixture.nativeElement as HTMLElement;
+    const status = itemOf(host, 'c-1')?.querySelector('[data-testid="status-message"]');
+
+    expect({
+      text: status?.textContent?.trim(),
+      focused: document.activeElement === status,
+    }).toEqual({
+      text: `Merci${NARROW_NBSP}! Ton commentaire sera publié après relecture.`,
+      focused: true,
+    });
   });
 });

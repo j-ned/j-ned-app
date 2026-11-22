@@ -219,7 +219,10 @@ import { ArticleComments } from './article-comments';
             [content]="comments.content()"
             [submission]="comments.submission()"
             [resetToken]="comments.resetToken()"
+            [replyTarget]="comments.replyTarget()"
             (submitted)="comments.send($event)"
+            (replyOpened)="comments.openReply($event)"
+            (replyClosed)="comments.closeReply()"
           ></section>
         } @placeholder {
           <div

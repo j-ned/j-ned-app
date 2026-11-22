@@ -1,4 +1,15 @@
-import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  afterNextRender,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   FormField,
@@ -51,7 +62,7 @@ function textWithinApiRules<TPathKind extends PathKind>(
   host: { class: 'block' },
   template: `
     @let id = ids();
-    <form [formRoot]="commentForm">
+    <form [formRoot]="commentForm" (keydown.escape)="cancel()">
       <fieldset class="m-0 grid gap-5 border-0 p-0">
         <legend class="mb-1 text-lg font-semibold tracking-tight">{{ legend() }}</legend>
         <div class="grid gap-5 sm:grid-cols-2">
@@ -61,6 +72,7 @@ function textWithinApiRules<TPathKind extends PathKind>(
               >Nom ou pseudo <span class="font-normal text-muted">(requis)</span></label
             >
             <input
+              #nameInput
               [id]="id.name"
               type="text"
               data-testid="comment-name"
@@ -128,9 +140,22 @@ function textWithinApiRules<TPathKind extends PathKind>(
               >Politique de confidentialité</a
             >
           </p>
-          <button appButton type="submit" data-testid="comment-submit" [disabled]="sending()">
-            {{ sending() ? copy.sending : copy.send }}
-          </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button appButton type="submit" data-testid="comment-submit" [disabled]="sending()">
+              {{ sending() ? copy.sending : copy.send }}
+            </button>
+            @if (cancellable()) {
+              <button
+                appButton
+                variant="outlined"
+                type="button"
+                data-testid="comment-cancel"
+                (click)="cancelled.emit()"
+              >
+                Annuler
+              </button>
+            }
+          </div>
         </div>
       </fieldset>
     </form>
@@ -142,6 +167,13 @@ export class CommentForm {
   readonly sending = input(false);
   readonly resetToken = input(0);
   readonly submitted = output<CommentDraft>();
+  readonly cancellable = input(false);
+  readonly focusOnOpen = input(false);
+  readonly cancelled = output<void>();
+
+  private readonly _nameInput = viewChild.required('nameInput', {
+    read: ElementRef<HTMLInputElement>,
+  });
 
   protected readonly copy = COMMENT_FORM_COPY;
 
@@ -196,4 +228,17 @@ export class CommentForm {
     this.resetToken();
     untracked(() => this.commentForm().reset(EMPTY_DRAFT));
   });
+
+  constructor() {
+    afterNextRender({
+      write: () => {
+        if (this.focusOnOpen()) this._nameInput().nativeElement.focus();
+      },
+    });
+  }
+
+  // Échap ne ferme qu'un formulaire de réponse : le formulaire principal reste en place.
+  protected cancel(): void {
+    if (this.cancellable()) this.cancelled.emit();
+  }
 }
