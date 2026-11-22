@@ -50,6 +50,18 @@ export class HttpBlogGateway extends BlogGateway {
     this.adminPosts.refresh();
   }
 
+  // Hors du cache partagé : la relire écraserait le brouillon de l'éditeur ouvert.
+  getLatestAdminPost(id: string): Observable<BlogPost | null> {
+    return this.http
+      .get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`, { context: silentErrors() })
+      .pipe(
+        map((rows) => {
+          const post = rows.find((row) => row.id === id);
+          return post ? resolvePost(STORAGE_BASE_PATH, post) : null;
+        }),
+      );
+  }
+
   getPostBySlug(slug: string): Observable<BlogPost> {
     return this.http
       .get<BlogPost>(`${this.apiUrl}/blog/posts/${encodeURIComponent(slug)}`)

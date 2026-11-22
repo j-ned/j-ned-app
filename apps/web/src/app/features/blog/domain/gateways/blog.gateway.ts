@@ -8,6 +8,7 @@ export abstract class BlogGateway {
   }): Observable<readonly BlogPostSummary[]>;
   abstract getAllPostsForAdmin(): Observable<readonly BlogPost[]>;
   abstract invalidateAdminPosts(): void;
+  abstract getLatestAdminPost(id: string): Observable<BlogPost | null>;
   abstract getPostBySlug(slug: string): Observable<BlogPost>;
   abstract createPost(post: BlogPostInput): Observable<BlogPost>;
   abstract updatePost(id: string, post: Partial<BlogPostInput>): Observable<BlogPost>;

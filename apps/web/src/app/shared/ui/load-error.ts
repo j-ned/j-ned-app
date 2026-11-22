@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, ElementRef, input, output, viewChild } from '@angular/core';
 import { Button } from './button';
 
 @Component({
@@ -12,6 +12,7 @@ import { Button } from './button';
   template: `
     <p data-testid="load-error-message" class="mb-4 text-lg text-muted">{{ message() }}</p>
     <button
+      #retryButton
       appButton
       type="button"
       variant="outlined"
@@ -25,4 +26,10 @@ import { Button } from './button';
 export class LoadError {
   readonly message = input.required<string>();
   readonly retry = output<void>();
+
+  private readonly retryButton = viewChild.required<ElementRef<HTMLButtonElement>>('retryButton');
+
+  focusRetry(): void {
+    this.retryButton().nativeElement.focus();
+  }
 }

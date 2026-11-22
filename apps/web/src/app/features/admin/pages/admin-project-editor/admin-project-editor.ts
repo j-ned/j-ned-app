@@ -1,7 +1,7 @@
 import { Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map, type Observable } from 'rxjs';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { ProjectImage, ProjectInput } from '@features/projects/domain/models/project.model';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
@@ -23,6 +23,11 @@ import { AdminProjectGallery } from '../../application/components/admin-project-
 import { AdminProjectPreview } from '../../application/components/admin-project-preview';
 import { AdminSaveBar } from '../../application/components/admin-save-bar';
 import { EditorDraft, type EditedDraft } from '../../application/editor-draft';
+import {
+  editedVersion,
+  NewerVersionCheck,
+  type EditedVersion,
+} from '../../application/newer-version-check';
 import type { FormTocSection } from '../../application/form-toc-entries';
 import {
   toPreviewProject,
@@ -63,6 +68,7 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
   backRoute: '/admin/projects',
   backLabel: 'Retour aux projets',
   leave: 'Les modifications non enregistrées de ce projet seront perdues.',
+  entity: 'de ce projet',
 };
 
 @Component({
@@ -123,7 +129,13 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
       [state]="state()"
       [copy]="PROJECT_EDITOR_COPY"
       [leaveAsked]="draft.leave.asked()"
+      [newerVersion]="newerVersion.detected()"
+      [reloaded]="newerVersion.reloaded()"
+      [overwriteAsked]="newerVersion.overwrite.asked()"
+      [changes]="draft.changes()"
       (retry)="projectResource.reload()"
+      (reloadLatest)="newerVersion.reload()"
+      (overwriteAnswered)="newerVersion.overwrite.answer($event)"
       (leaveAnswered)="draft.leave.answer($event)"
     >
       <ng-template #editorForm>
@@ -198,6 +210,18 @@ export class AdminProjectEditor implements LeaveConfirmable {
     toDraft: toProjectDraft,
     sections: FORM_SECTIONS,
   });
+  protected readonly newerVersion = new NewerVersionCheck({
+    edited: (): EditedVersion | null => editedVersion(this.draft.saved()),
+    readLatest: (id): Observable<string | null> =>
+      this.gateway
+        .getProjectById(id, { background: true })
+        .pipe(map((project) => project?.updatedAt ?? null)),
+    reload: (): void => {
+      this.projectResource.reload();
+    },
+    paused: this.draft.saving,
+    dirty: (): boolean => this.draft.changes() > 0,
+  });
   protected readonly gallery = linkedSignal<readonly ProjectImage[]>(
     () => this.loaded()?.gallery ?? [],
   );
@@ -214,6 +238,7 @@ export class AdminProjectEditor implements LeaveConfirmable {
   }
 
   protected async save(payload: ProjectInput): Promise<void> {
+    if (!(await this.newerVersion.beforeSave())) return;
     const id = this.id();
     const result = await this.draft.save(
       () =>

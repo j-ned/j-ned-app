@@ -296,6 +296,7 @@ describe('toPreviewProject', () => {
       pitch: 'Le foyer dans une seule app.',
       highlight: 'Chiffrement côté client',
       scope: null,
+      updatedAt: '2026-10-06T10:00:00.000Z',
     } satisfies Project);
   });
 

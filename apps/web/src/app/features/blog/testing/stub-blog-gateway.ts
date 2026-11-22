@@ -7,6 +7,7 @@ export function stubBlogGateway(overrides: Partial<BlogGateway> = {}): BlogGatew
     getPublishedPosts: () => of([]),
     getAllPostsForAdmin: () => of([]),
     invalidateAdminPosts: () => undefined,
+    getLatestAdminPost: () => of(null),
     getPostBySlug: () => of(makeBlogPost()),
     createPost: () => of(makeBlogPost()),
     updatePost: () => of(makeBlogPost()),

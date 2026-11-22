@@ -3,7 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { of, throwError, type Observable } from 'rxjs';
+import { of, Subject, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
@@ -26,6 +26,10 @@ import {
   inZone,
   openEditorRoute,
   pickInZone,
+  overwriteDialog,
+  readNewerVersion,
+  reloadDialog,
+  reloadLatest,
   save,
   saveBarState,
   tocStates,
@@ -34,6 +38,7 @@ import {
 } from '../../application/testing/editor-page';
 import { normalized } from '@shared/testing/normalized-text';
 import { asButton } from '@shared/testing/as-button';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 const DASHFLOW = makeProject({
   id: 'p-1',
@@ -735,4 +740,170 @@ describe('AdminProjectEditor: quitter la page', () => {
       expect(event.defaultPrevented).toBe(prevented);
     },
   );
+});
+
+describe('AdminProjectEditor: version plus récente enregistrée ailleurs', () => {
+  const PREFIX = 'admin-project';
+  const NEWER = makeProject({
+    ...DASHFLOW,
+    title: 'DashFlow, relu ailleurs',
+    updatedAt: '2026-11-22T10:00:00.000Z',
+  });
+  const MESSAGE =
+    'Une version plus récente de ce projet a été enregistrée ailleurs. Recharger la dernière version';
+
+  afterEach(() => forgetTabVisibility());
+
+  async function backToTab(editor: Editor): Promise<void> {
+    returnToTab();
+    await settleBounded(editor.fixture);
+  }
+
+  // Le projet a changé sur l'API après l'ouverture de l'éditeur.
+  function savedElsewhere(): Mock<ProjectsGateway['getProjectById']> {
+    let stored: Project = DASHFLOW;
+    const read = vi.fn((): Observable<Project> => of(stored));
+    read.mockImplementationOnce(() => {
+      stored = NEWER;
+      return of(DASHFLOW);
+    });
+    return read;
+  }
+
+  it('Given a project saved elsewhere since it was opened When the admin returns to the tab Then a status says so in the background and the draft stays', async () => {
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: savedElsewhere() });
+    await typeIn(editor, 'admin-project-title', 'Mon brouillon');
+
+    await backToTab(editor);
+
+    expect({
+      reads: editor.getProjectById.mock.calls,
+      notice: readNewerVersion(editor, PREFIX),
+      field: fieldValue(editor.host, 'admin-project-title'),
+      toasts: toasts(editor.toast),
+    }).toEqual({
+      reads: [['p-1'], ['p-1', { background: true }]],
+      notice: { role: 'status', text: MESSAGE, focused: false },
+      field: 'Mon brouillon',
+      toasts: [],
+    });
+  });
+
+  it('Given a failed background read When the admin returns to the tab Then nothing is said', async () => {
+    const read = vi.fn<ProjectsGateway['getProjectById']>((_id, options) =>
+      options?.background ? throwError(() => new Error('offline')) : of(DASHFLOW),
+    );
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: read });
+
+    await backToTab(editor);
+
+    expect({
+      reads: editor.getProjectById.mock.calls.length,
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({ reads: 2, notice: '' });
+  });
+
+  it('Given a save in progress When the admin returns to the tab Then nothing is read', async () => {
+    const pending = new Subject<Project>();
+    const editor = await openEditor('/admin/projects/p-1', {
+      updateProject: vi.fn(() => pending),
+    });
+    await typeIn(editor, 'admin-project-title', 'Après');
+    await save(editor);
+
+    await backToTab(editor);
+
+    expect(editor.getProjectById.mock.calls).toEqual([['p-1']]);
+    pending.complete();
+  });
+
+  it('Given the project saved from this tab When the admin returns to the tab Then its own save is not taken for a newer version', async () => {
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: savedElsewhere(),
+      updateProject: vi.fn(() => of(NEWER)),
+    });
+    await typeIn(editor, 'admin-project-title', 'DashFlow, relu ailleurs');
+    await save(editor);
+
+    await backToTab(editor);
+
+    expect({
+      reads: editor.getProjectById.mock.calls.length,
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({ reads: 2, notice: '' });
+  });
+
+  it('Given a newer version and no unsaved change When the admin reloads it Then the project is read again and replaces the form', async () => {
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: savedElsewhere() });
+    await backToTab(editor);
+
+    await reloadLatest(editor, PREFIX);
+
+    expect({
+      reads: editor.getProjectById.mock.calls.length,
+      field: fieldValue(editor.host, 'admin-project-title'),
+      state: saveBarState(editor),
+      notice: readNewerVersion(editor, PREFIX),
+    }).toEqual({
+      reads: 3,
+      field: 'DashFlow, relu ailleurs',
+      state: 'Aucune modification',
+      notice: { role: 'status', text: 'Dernière version chargée.', focused: true },
+    });
+  });
+
+  it('Given a newer version and an unsaved change When the admin confirms the reload Then the dialog named the loss and the draft is replaced', async () => {
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: savedElsewhere() });
+    await typeIn(editor, 'admin-project-title', 'Mon brouillon');
+    await backToTab(editor);
+    await reloadLatest(editor, PREFIX);
+    const description = readConfirmDialog(reloadDialog(editor, PREFIX)).description;
+
+    await answerConfirmDialog(editor.fixture, 'confirm', reloadDialog(editor, PREFIX));
+
+    expect({
+      description,
+      field: fieldValue(editor.host, 'admin-project-title'),
+      state: saveBarState(editor),
+    }).toEqual({
+      description:
+        'Ton brouillon sera remplacé par la dernière version enregistrée\u00a0: 1 modification non enregistrée de ce projet sera perdue.',
+      field: 'DashFlow, relu ailleurs',
+      state: 'Aucune modification',
+    });
+  });
+  it('Given a newer version detected When the admin saves and confirms the overwrite Then the draft is written once, after the dialog', async () => {
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: savedElsewhere() });
+    await typeIn(editor, 'admin-project-title', 'Mon brouillon');
+    await backToTab(editor);
+    await save(editor);
+    const before = {
+      open: readConfirmDialog(overwriteDialog(editor, PREFIX)).open,
+      written: editor.updateProject.mock.calls.length,
+    };
+
+    await answerConfirmDialog(editor.fixture, 'confirm', overwriteDialog(editor, PREFIX));
+
+    expect({
+      before,
+      written: editor.updateProject.mock.calls.map(([id, payload]) => [id, payload.title]),
+    }).toEqual({ before: { open: true, written: 0 }, written: [['p-1', 'Mon brouillon']] });
+  });
+
+  it('Given a newer version When its reload fails Then the error is shown and the focus goes to « Réessayer », not to the page', async () => {
+    const read = vi.fn<ProjectsGateway['getProjectById']>(() => of(NEWER));
+    read
+      .mockImplementationOnce(() => of(DASHFLOW))
+      .mockImplementationOnce(() => of(NEWER))
+      .mockImplementationOnce(() => throwError(() => new Error('offline')));
+    const editor = await openEditor('/admin/projects/p-1', { getProjectById: read });
+    await backToTab(editor);
+
+    await reloadLatest(editor, PREFIX);
+
+    expect({
+      reads: read.mock.calls.length,
+      focused: document.activeElement === byTestId(editor.host, 'load-error-retry'),
+    }).toEqual({ reads: 3, focused: true });
+  });
 });

@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
-import { of, throwError, type Observable } from 'rxjs';
+import { of, Subject, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
 import { ProfileGateway } from '@features/profile/domain/gateways/profile.gateway';
 import type {
@@ -29,6 +29,10 @@ import { BlankPage } from '@shared/testing/blank-page';
 import {
   fieldValue,
   openEditorRoute,
+  overwriteDialog,
+  readNewerVersion,
+  reloadDialog,
+  reloadLatest,
   save,
   saveBarState,
   tocStates,
@@ -37,12 +41,13 @@ import {
 } from '../../application/testing/editor-page';
 import { normalized } from '@shared/testing/normalized-text';
 import { asButton } from '@shared/testing/as-button';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 const LOADED = aProfileDocument({ version: 7 });
 const WITNESS = aProfileContent();
 
 const CONFLICT =
-  'Le parcours a été modifié depuis une autre fenêtre. Recharge la page pour repartir de la dernière version (tes modifications non enregistrées seront perdues).';
+  "Le parcours n'a pas été enregistré\u00a0: une version plus récente a été enregistrée ailleurs.";
 const SAVE_FAILURE = "Le parcours n'a pas pu être enregistré.";
 const STORED = '/api/storage/portfolio-storage/profile/portrait-1a2b3c4d.avif';
 const SENT = '/api/storage/portfolio-storage/profile/portrait-9f8e7d6c.avif';
@@ -184,7 +189,7 @@ describe('AdminProfile: enregistrer', () => {
     expect(editor.saveProfile.mock.calls.map(([, version]) => version)).toEqual([7, 8]);
   });
 
-  it('Given a version changed elsewhere When the save is refused with a 409 Then the conflict is told and the draft is kept', async () => {
+  it('Given a version changed elsewhere When the save is refused with a 409 Then the conflict is told, the reload is offered and the draft is kept', async () => {
     const editor = await openEditor({
       saveProfile: vi.fn((): Observable<ProfileDocument> =>
         throwError(() => apiRejection(409, 'Le parcours a changé : version périmée')),
@@ -199,8 +204,11 @@ describe('AdminProfile: enregistrer', () => {
       field: fieldValue(editor.host, 'admin-profile-biography-title'),
       state: saveBarState(editor),
       disabled: asButton(byTestId(editor.host, 'savebar-submit')).disabled,
+      notice: readNewerVersion(editor, 'admin-profile').text,
     }).toEqual({
       toasts: [{ severity: 'error', detail: CONFLICT }],
+      notice:
+        'Une version plus récente du parcours a été enregistrée ailleurs. Recharger la dernière version',
       field: 'Nouveau parcours',
       state: '1 modification non enregistrée',
       disabled: false,
@@ -768,5 +776,138 @@ describe('AdminProfile: focus et annonces après un enregistrement (revue F2-F7)
         content.biography.paragraphs.every((paragraph) => typeof paragraph === 'string'),
       ),
     ).toEqual([true]);
+  });
+});
+
+describe('AdminProfile: version plus récente enregistrée ailleurs', () => {
+  const PREFIX = 'admin-profile';
+  const NEWER = aProfileDocument({ version: 8, content: retitled('Parcours relu ailleurs') });
+  const MESSAGE =
+    'Une version plus récente du parcours a été enregistrée ailleurs. Recharger la dernière version';
+
+  afterEach(() => forgetTabVisibility());
+
+  async function backToTab(editor: Editor): Promise<void> {
+    returnToTab();
+    await settleBounded(editor.fixture);
+  }
+
+  // Le parcours a changé sur l'API après l'ouverture de l'éditeur.
+  function savedElsewhere(): Mock<ProfileGateway['getProfile']> {
+    let stored = LOADED;
+    const read = vi.fn((): Observable<ProfileDocument> => of(stored));
+    read.mockImplementationOnce(() => {
+      stored = NEWER;
+      return of(LOADED);
+    });
+    return read;
+  }
+
+  it('Given the profile saved elsewhere since it was opened When the admin returns to the tab Then a status says so in the background and the draft stays', async () => {
+    const editor = await openEditor({ getProfile: savedElsewhere() });
+    await typeIn(editor, 'admin-profile-biography-title', 'Mon brouillon');
+
+    await backToTab(editor);
+
+    expect({
+      reads: editor.getProfile.mock.calls,
+      notice: readNewerVersion(editor, PREFIX),
+      field: fieldValue(editor.host, 'admin-profile-biography-title'),
+      toasts: toasts(editor.toast),
+    }).toEqual({
+      reads: [[], [{ background: true }]],
+      notice: { role: 'status', text: MESSAGE, focused: false },
+      field: 'Mon brouillon',
+      toasts: [],
+    });
+  });
+
+  it('Given a save in progress When the admin returns to the tab Then nothing is read', async () => {
+    const pending = new Subject<ProfileDocument>();
+    const editor = await openEditor({ saveProfile: vi.fn(() => pending) });
+    await typeIn(editor, 'admin-profile-biography-title', 'Après');
+    await save(editor);
+
+    await backToTab(editor);
+
+    expect(editor.getProfile.mock.calls).toEqual([[]]);
+    pending.complete();
+  });
+
+  it('Given the profile saved from this tab When the admin returns to the tab Then its own save is not taken for a newer version', async () => {
+    const editor = await openEditor({ getProfile: savedElsewhere() });
+    await typeIn(editor, 'admin-profile-biography-title', 'Parcours relu ailleurs');
+    await save(editor);
+
+    await backToTab(editor);
+
+    expect({
+      reads: editor.getProfile.mock.calls.length,
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({ reads: 2, notice: '' });
+  });
+
+  it('Given a newer version and no unsaved change When the admin reloads it Then the profile is read again and replaces the form', async () => {
+    const editor = await openEditor({ getProfile: savedElsewhere() });
+    await backToTab(editor);
+
+    await reloadLatest(editor, PREFIX);
+
+    expect({
+      reads: editor.getProfile.mock.calls,
+      field: fieldValue(editor.host, 'admin-profile-biography-title'),
+      state: saveBarState(editor),
+      notice: readNewerVersion(editor, PREFIX),
+    }).toEqual({
+      reads: [[], [{ background: true }], []],
+      field: 'Parcours relu ailleurs',
+      state: 'Aucune modification',
+      notice: { role: 'status', text: 'Dernière version chargée.', focused: true },
+    });
+  });
+
+  it('Given a save refused with a 409 When the admin confirms the reload Then the latest version replaces the draft and the next save sends its version', async () => {
+    const saveProfile = vi
+      .fn<ProfileGateway['saveProfile']>()
+      .mockReturnValueOnce(throwError(() => apiRejection(409, 'Version périmée')))
+      .mockReturnValue(of(aProfileDocument({ version: 9 })));
+    let stored = LOADED;
+    const editor = await openEditor({
+      getProfile: vi.fn(() => of(stored)),
+      saveProfile,
+    });
+    await typeIn(editor, 'admin-profile-biography-title', 'Mon brouillon');
+    stored = NEWER;
+    await save(editor);
+    const notice = readNewerVersion(editor, PREFIX).text;
+    await reloadLatest(editor, PREFIX);
+
+    await answerConfirmDialog(editor.fixture, 'confirm', reloadDialog(editor, PREFIX));
+    const field = fieldValue(editor.host, 'admin-profile-biography-title');
+    await typeIn(editor, 'admin-profile-biography-title', 'Repris');
+    await save(editor);
+
+    expect({
+      notice,
+      field,
+      versions: saveProfile.mock.calls.map(([, version]) => version),
+    }).toEqual({ notice: MESSAGE, field: 'Parcours relu ailleurs', versions: [7, 8] });
+  });
+  it('Given a newer version detected When the admin saves Then no overwrite is offered: the API refuses the stale version and the warning stays', async () => {
+    const editor = await openEditor({
+      getProfile: savedElsewhere(),
+      saveProfile: vi.fn(() => throwError(() => apiRejection(409, 'Version périmée'))),
+    });
+    await typeIn(editor, 'admin-profile-biography-title', 'Mon brouillon');
+    await backToTab(editor);
+
+    await save(editor);
+
+    expect({
+      overwrite: readConfirmDialog(overwriteDialog(editor, PREFIX)).open,
+      versions: editor.saveProfile.mock.calls.map(([, version]) => version),
+      field: fieldValue(editor.host, 'admin-profile-biography-title'),
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({ overwrite: false, versions: [7], field: 'Mon brouillon', notice: MESSAGE });
   });
 });

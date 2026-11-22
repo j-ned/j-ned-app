@@ -81,5 +81,6 @@ export function toPreviewProject(draft: ProjectDraft, base: Project | null): Pro
     slug: base?.slug ?? '',
     image: base?.image ?? '',
     gallery: base?.gallery ?? [],
+    updatedAt: base?.updatedAt ?? '',
   };
 }

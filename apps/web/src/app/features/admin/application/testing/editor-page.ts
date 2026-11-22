@@ -87,3 +87,35 @@ export const inZone = (
   testId: string,
 ): HTMLElement | null =>
   editor.host.querySelector(`[data-testid="${zoneTestId}"] [data-testid="${testId}"]`);
+
+type NewerVersionView = {
+  readonly role: string | null;
+  readonly text: string;
+  readonly focused: boolean;
+};
+
+export function readNewerVersion(editor: EditorView, prefix: string): NewerVersionView {
+  const region = byTestId(editor.host, `${prefix}-newer-version`);
+  return {
+    role: region?.getAttribute('role') ?? null,
+    text: normalized(region),
+    focused: region !== null && region.ownerDocument.activeElement === region,
+  };
+}
+
+export async function reloadLatest(editor: EditorView, prefix: string): Promise<void> {
+  await pressTestId(editor.fixture, `${prefix}-reload-latest`);
+  await settleBounded(editor.fixture);
+}
+
+export function reloadDialog(editor: EditorView, prefix: string): HTMLElement {
+  const root = byTestId(editor.host, `${prefix}-reload-dialog`);
+  if (!root) throw new Error(`No reload dialog for "${prefix}"`);
+  return root;
+}
+
+export function overwriteDialog(editor: EditorView, prefix: string): HTMLElement {
+  const root = byTestId(editor.host, `${prefix}-overwrite-dialog`);
+  if (!root) throw new Error(`No overwrite dialog for "${prefix}"`);
+  return root;
+}

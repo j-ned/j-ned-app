@@ -34,16 +34,16 @@ type SaveResult<TEntity> =
 export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraft> {
   private readonly toast = inject(ToastStore);
   private readonly _saved: WritableSignal<TEntity | null>;
-  private readonly _pendingCover = signal<File | null>(null);
-  private readonly _coverResetToken = signal(0);
+  private readonly _pendingCover: WritableSignal<File | null>;
+  private readonly _coverResetToken: WritableSignal<number>;
   private readonly _saving = signal(false);
   private readonly baseline: WritableSignal<EditedDraft<TDraft>>;
   private readonly edited: Signal<EditedDraft<TDraft>>;
 
   readonly saved: Signal<TEntity | null>;
   readonly value: WritableSignal<TDraft>;
-  readonly pendingCover = this._pendingCover.asReadonly();
-  readonly coverResetToken = this._coverResetToken.asReadonly();
+  readonly pendingCover: Signal<File | null>;
+  readonly coverResetToken: Signal<number>;
   readonly saving = this._saving.asReadonly();
   readonly changes: Signal<number>;
   readonly toc: Signal<readonly FormTocEntry[]>;
@@ -58,6 +58,17 @@ export class EditorDraft<TEntity extends EditorEntity, TDraft extends TaggedDraf
     this._saved = linkedSignal(loaded);
     this.saved = this._saved.asReadonly();
     this.value = linkedSignal(() => toDraft(loaded()));
+    // Une nouvelle version chargée remplace tout le brouillon, couverture choisie comprise.
+    this._pendingCover = linkedSignal<TEntity | null, File | null>({
+      source: loaded,
+      computation: () => null,
+    });
+    this.pendingCover = this._pendingCover.asReadonly();
+    this._coverResetToken = linkedSignal<TEntity | null, number>({
+      source: loaded,
+      computation: (_, previous) => (previous === undefined ? 0 : previous.value + 1),
+    });
+    this.coverResetToken = this._coverResetToken.asReadonly();
     this.baseline = linkedSignal(() => toEdited(toDraft(loaded()), null));
     this.edited = computed(() => toEdited(this.value(), this._pendingCover()));
     this.changes = computed(() => countChangedFields(this.edited(), this.baseline()));

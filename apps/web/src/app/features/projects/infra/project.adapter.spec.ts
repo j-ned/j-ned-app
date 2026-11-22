@@ -37,6 +37,7 @@ function dto(overrides: Partial<ProjectDto> = {}): ProjectDto {
     pitch: 'Le budget et la santé du foyer.',
     highlight: 'Chiffrement de bout en bout',
     scope: 'Conception, développement, déploiement',
+    updatedAt: '2026-10-06T10:00:00.000Z',
     ...overrides,
   };
 }
@@ -62,6 +63,7 @@ describe('toProject', () => {
       pitch: 'Le budget et la santé du foyer.',
       highlight: 'Chiffrement de bout en bout',
       scope: 'Conception, développement, déploiement',
+      updatedAt: '2026-10-06T10:00:00.000Z',
     });
   });
 

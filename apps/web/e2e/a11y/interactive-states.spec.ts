@@ -1,8 +1,39 @@
-import type { Locator, Page } from '@playwright/test';
+import type { Locator, Page, TestInfo } from '@playwright/test';
 import { expect, test } from './a11y-test';
 import { ADMIN_PENDING_OR_FAILED, FOOTER_READY, THEMES } from './scenarios';
 
 const MOBILE_VIEWPORT = { width: 390, height: 844 };
+const PROFILE_API = 'https://nedellec-julien.fr/api/profile';
+
+// Un autre onglet enregistre le parcours : la requête part de la page et la doublure la reçoit.
+async function saveProfileElsewhere(page: Page): Promise<void> {
+  const status = await page.evaluate(async (url) => {
+    const current = (await (await fetch(url)).json()) as Record<string, unknown>;
+    const saved = await fetch(url, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(current),
+    });
+    return saved.status;
+  }, PROFILE_API);
+  expect(status).toBe(200);
+}
+
+async function capture(page: Page, testInfo: TestInfo, name: string): Promise<void> {
+  const path = testInfo.outputPath(name);
+  await page.screenshot({ path });
+  await testInfo.attach(name, { path, contentType: 'image/png' });
+}
+
+// Chromium sans fenêtre ne change jamais `visibilityState` : la page le reçoit comme au retour.
+async function returnToTab(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    for (const state of ['hidden', 'visible']) {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }
+  });
+}
 
 for (const theme of THEMES) {
   test.describe(`États interactifs · thème ${theme}`, () => {
@@ -162,6 +193,41 @@ for (const theme of THEMES) {
         const hints = page.getByRole('group', { name: "Suggérés d'après l'article" });
         await expect(hints.getByRole('button', { name: 'Ajouter le tag NestJS' })).toBeVisible();
         await expectNoA11yViolations('admin-post-tags', 'tags-suggeres-article');
+      });
+
+      test('newer version saved elsewhere, then its reload dialog, have no WCAG A/AA violation', async ({
+        page,
+        visit,
+        expectNoA11yViolations,
+      }, testInfo) => {
+        await visit('/admin/profile');
+        const title = page.getByTestId('admin-profile-biography-title');
+        const saved = await title.inputValue();
+        await title.fill('Brouillon de cet onglet');
+        await saveProfileElsewhere(page);
+
+        await returnToTab(page);
+
+        const notice = page.getByTestId('admin-profile-newer-version');
+        await expect(notice).toHaveAttribute('role', 'status');
+        await expect(notice).toContainText(
+          'Une version plus récente du parcours a été enregistrée ailleurs.',
+        );
+        await expect(title).toBeFocused();
+        await expect(title).toHaveValue('Brouillon de cet onglet');
+        await capture(page, testInfo, 'version-plus-recente.png');
+        await expectNoA11yViolations('admin-profile-newer-version', 'version-plus-recente');
+
+        await page.getByRole('button', { name: 'Recharger la dernière version' }).click();
+        await expect(page.getByRole('dialog')).toContainText('1 modification non enregistrée');
+        await capture(page, testInfo, 'recharger-confirmation.png');
+        await expectNoA11yViolations('admin-profile-newer-version', 'recharger-confirmation');
+
+        await page.getByRole('dialog').getByRole('button', { name: 'Recharger' }).click();
+        await expect(notice).toHaveText('Dernière version chargée.');
+        await expect(notice).toBeFocused();
+        await expect(title).toHaveValue(saved);
+        await capture(page, testInfo, 'version-rechargee.png');
       });
     });
   });
