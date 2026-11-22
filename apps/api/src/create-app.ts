@@ -70,7 +70,12 @@ export function createApp(
       )
       .route(
         '/api/blog',
-        blogRoutes(services.blog, services.blogContentImages, session),
+        blogRoutes(
+          services.blog,
+          services.blogContentImages,
+          services.blogComments,
+          session,
+        ),
       )
       .route(
         '/api/profile',

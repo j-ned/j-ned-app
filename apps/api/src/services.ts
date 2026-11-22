@@ -9,6 +9,9 @@ import { PasswordService } from './auth/password.service';
 import { TwoFactorService } from './auth/two-factor.service';
 import { BlogContentImagesService } from './blog/blog-content-images.service';
 import { BlogService } from './blog/blog.service';
+import { BlogCommentsService } from './blog-comments/blog-comments.service';
+import { DrizzleCommentStore } from './blog-comments/drizzle-comment-store';
+import { senderHasher } from './common/sender-hash';
 import type { AppConfigService } from './config/app-config.service';
 import { ContactService } from './contact/contact.service';
 import { CvService } from './cv/cv.service';
@@ -40,6 +43,7 @@ export function createServices({ config, db, s3 }: ServiceDeps) {
   const loginJournal = new LoginJournalService(db);
   const projectImages = new ProjectImagesService(db, storage, images);
   const blogContentImages = new BlogContentImagesService(db, storage, images);
+  const mailer = createMailer(config.mailTransport);
 
   return {
     storage,
@@ -56,11 +60,16 @@ export function createServices({ config, db, s3 }: ServiceDeps) {
       loginJournal,
     ),
     loginJournal,
-    contact: new ContactService(db, createMailer(config.mailTransport), config),
+    contact: new ContactService(db, mailer, config),
     projects: new ProjectsService(db, storage, images, projectImages),
     projectImages,
     blog: new BlogService(db, storage, images, blogContentImages),
     blogContentImages,
+    blogComments: new BlogCommentsService(
+      new DrizzleCommentStore(db),
+      mailer,
+      senderHasher(config.jwtSecret, 'comments'),
+    ),
     profile: new ProfileService(db, storage),
     profilePortrait: new ProfilePortraitService(db, storage, images),
     cv: new CvService(db, storage),

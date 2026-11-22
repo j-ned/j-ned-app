@@ -1,7 +1,7 @@
 import { ConflictException, NotFoundException } from '../common/http-errors';
 import { Logger } from '../common/logger';
 import type { UploadedFile } from '../common/http';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import type { Database } from '../database/drizzle.types';
 import {
   blogPosts,
@@ -14,6 +14,7 @@ import { deleteS3IfExists, storeOptimizedImage } from '../storage/s3-utils';
 import type { BlogPostResponse } from './blog-post-response';
 import { contentImageKeysIn } from './blog-content-image';
 import { BlogContentImagesService } from './blog-content-images.service';
+import { publishedSlugFilter } from './published-post';
 import { countWords } from './word-count';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
@@ -52,7 +53,7 @@ export class BlogService {
     const [row] = await this.db
       .select()
       .from(blogPosts)
-      .where(this.publishedSlugFilter(slug))
+      .where(publishedSlugFilter(slug))
       .limit(1);
     if (row === undefined) {
       throw new NotFoundException(`Blog post "${slug}" not found`);
@@ -192,7 +193,7 @@ export class BlogService {
     const [row] = await this.db
       .update(blogPosts)
       .set({ likesCount: sql`${blogPosts.likesCount} + 1` })
-      .where(this.publishedSlugFilter(slug))
+      .where(publishedSlugFilter(slug))
       .returning({ likesCount: blogPosts.likesCount });
     if (!row) throw new NotFoundException(`Blog post "${slug}" not found`);
     return { likesCount: row.likesCount };
@@ -202,13 +203,6 @@ export class BlogService {
   // Utilisé par toutes les opérations internes qui ont besoin de la key S3.
   private findByIdRaw(id: string): Promise<BlogPost> {
     return findByIdOrFail<BlogPost>(this.db, blogPosts, id, 'Blog post');
-  }
-
-  // Filtre partagé slug + status='published' : un draft (ou un post
-  // dépublié) doit 404 exactement comme un slug inexistant, aussi bien en
-  // lecture (findBySlug) qu'en écriture (like).
-  private publishedSlugFilter(slug: string) {
-    return and(eq(blogPosts.slug, slug), eq(blogPosts.status, 'published'));
   }
 
   // Transforme la key DB en URL publique pour la sortie API.

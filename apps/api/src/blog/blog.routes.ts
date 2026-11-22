@@ -9,6 +9,8 @@ import {
   type AppEnv,
 } from '../common/http';
 import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
+import { blogCommentsRoutes } from '../blog-comments/blog-comments.routes';
+import type { BlogCommentsService } from '../blog-comments/blog-comments.service';
 import { blogContentImagesRoutes } from './blog-content-images.routes';
 import type { BlogContentImagesService } from './blog-content-images.service';
 import { toBlogPostSummary } from './blog-post-response';
@@ -17,12 +19,13 @@ import { createBlogPostSchema } from './dto/create-blog-post.dto';
 import { updateBlogPostSchema } from './dto/update-blog-post.dto';
 
 /**
- * `/api/blog` : articles (`/posts`, lecture publique, écriture admin, like public) et images du corps
- * (`/content-images`, admin).
+ * `/api/blog` : articles (`/posts`, lecture publique, écriture admin, like public), images du corps
+ * (`/content-images`, admin) et commentaires (`/posts/:slug/comments` public, `/comments` admin).
  */
 export function blogRoutes(
   blog: BlogService,
   contentImages: BlogContentImagesService,
+  comments: BlogCommentsService,
   requireAuth: RequireAuth,
 ) {
   return new Hono<AppEnv>()
@@ -30,7 +33,8 @@ export function blogRoutes(
     .route(
       '/content-images',
       blogContentImagesRoutes(contentImages, requireAuth),
-    );
+    )
+    .route('/', blogCommentsRoutes(comments, requireAuth));
 }
 
 /** `/api/blog/posts`. Les chemins fixes (`/admin`) passent avant `/:slug`. */

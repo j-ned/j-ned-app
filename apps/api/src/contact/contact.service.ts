@@ -1,4 +1,3 @@
-import { createHash, createHmac } from 'node:crypto';
 import { NotFoundException } from '../common/http-errors';
 import { Logger } from '../common/logger';
 import { desc, eq, sql } from 'drizzle-orm';
@@ -14,6 +13,7 @@ import {
   type PaginatedResult,
   type PaginationParams,
 } from '../common/pagination';
+import { senderHasher } from '../common/sender-hash';
 import { fireAndForget } from '../common/utils';
 import { CreateContactMessageDto } from './dto/create-contact-message.dto';
 import { insertedRow } from '../common/rows';
@@ -26,19 +26,17 @@ export class ContactService {
   private readonly logger = new Logger(ContactService.name);
 
   /**
-   * Clé de l'empreinte d'expéditeur, dérivée du secret JWT et distincte de celle de l'analytics.
+   * Empreinte d'expéditeur, sous une clé dérivée du secret JWT et distincte de celle de l'analytics.
    * Sans jour dans l'empreinte : deux messages d'une même IP restent reliés d'un jour à l'autre.
    */
-  private readonly senderHashKey: Buffer;
+  private readonly hashSender: (ip: string) => string;
 
   constructor(
     private readonly db: Database,
     private readonly mailer: MailSender,
     cfg: AppConfigService,
   ) {
-    this.senderHashKey = createHash('sha256')
-      .update(`contact|${cfg.jwtSecret}`)
-      .digest();
+    this.hashSender = senderHasher(cfg.jwtSecret, 'contact');
   }
 
   /** Ne renvoie rien : un robot ne distingue pas un message enregistré d'un message écarté. */
@@ -59,9 +57,7 @@ export class ContactService {
         email: dto.email,
         subject: dto.subject,
         message: dto.message,
-        senderHash: createHmac('sha256', this.senderHashKey)
-          .update(sender.ip)
-          .digest('hex'),
+        senderHash: this.hashSender(sender.ip),
         userAgent: sender.userAgent.slice(0, USER_AGENT_MAX_LENGTH) || null,
       })
       .returning();
