@@ -40,7 +40,7 @@ mesurée sans cookie, sans bandeau de consentement et sans envoyer de données �
 | Site public                                                                                               | Back-office (`/admin`)                                                      |
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | Accueil, à propos, projets filtrables avec fiches détaillées (choix techniques, décisions d'architecture) | Projets : édition, ordre, mise en avant, galerie, images converties en AVIF |
-| Blog en Markdown assaini, tags, commentaires Giscus, « j'aime », flux RSS                                 | Blog : brouillon et publication, couverture, aperçu en direct               |
+| Blog en Markdown assaini, tags, commentaires modérés sans compte, « j'aime », flux RSS                    | Blog : brouillon et publication, couverture, aperçu en direct               |
 | Formulaire de contact protégé (champ piège, quota par visiteur)                                           | Profil, CV                                                                  |
 | Téléchargement du CV, vraie page 404, `sitemap.xml`, `security.txt`                                       | Messages reçus                                                              |
 | Thèmes clair et sombre, transitions de vue                                                                | Audience : visites, pages, provenances, appareils, pays, export CSV         |

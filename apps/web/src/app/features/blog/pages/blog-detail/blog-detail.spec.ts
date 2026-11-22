@@ -4,8 +4,9 @@ import {
   TestBed,
   type ComponentFixture,
 } from '@angular/core/testing';
-import { HttpErrorResponse } from '@angular/common/http';
-import { PLATFORM_ID, RESPONSE_INIT, type Provider } from '@angular/core';
+import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { PLATFORM_ID, REQUEST_CONTEXT, RESPONSE_INIT, type Provider } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -20,6 +21,18 @@ import { makeBlogPost } from '../../testing/blog-post-builders';
 import { FURTHER_READING_COPY } from '../../application/further-reading-copy';
 import { countWords } from '../../domain/reading-time';
 import { defined } from '@shared/testing/defined';
+import { API_BASE_URL } from '@shared/api/api-config';
+import { ssrUpstreamInterceptor } from '@core/ssr/ssr-upstream-interceptor';
+import {
+  makePublishedComment,
+  makePublishedReply,
+  makePublishedThread,
+  toPublicCommentPageDto,
+} from '@features/comments/testing/comment-builders';
+import { CommentsGateway } from '@features/comments/infra/comments.gateway';
+
+// Base valide pour l'intercepteur du rendu serveur, qui n'agit que sur une URL absolue.
+const API = 'http://api:3000/api';
 
 class MockIntersectionObserver {
   static instances: MockIntersectionObserver[] = [];
@@ -32,6 +45,12 @@ class MockIntersectionObserver {
 
   observe(element: Element): void {
     this.observed.push(element);
+  }
+
+  // Appelé par Angular à la destruction d'un bloc `@defer (on viewport)`.
+  unobserve(element: Element): void {
+    const index = this.observed.indexOf(element);
+    if (index >= 0) this.observed.splice(index, 1);
   }
 
   disconnect(): void {
@@ -104,6 +123,16 @@ function setup(
       },
       { provide: Seo, useValue: seoMock },
       { provide: AnalyticsGateway, useValue: analyticsMock },
+      provideHttpClient(withInterceptors([ssrUpstreamInterceptor])),
+      provideHttpClientTesting(),
+      { provide: API_BASE_URL, useValue: API },
+      // Une lecture HTTP en attente garde l'application instable : la section a ses propres tests.
+      {
+        provide: CommentsGateway,
+        useValue: {
+          getThread: (): ReturnType<CommentsGateway['getThread']> => of(makePublishedThread()),
+        },
+      },
       ...extraProviders,
     ],
     deferBlockBehavior,
@@ -805,6 +834,114 @@ describe('BlogDetail', () => {
           }).toEqual({ type: 'BlogPosting', hasAbout: about !== undefined, about });
         },
       );
+    });
+  });
+
+  describe('commentaires', () => {
+    const COMMENTS_URL = `${API}/blog/posts/mon-article/comments?page=1&limit=100`;
+
+    const testId = (fixture: ComponentFixture<BlogDetail>, id: string): HTMLElement | null =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(`[data-testid="${id}"]`);
+
+    // Le corps de l'article et la section sont deux blocs différés : tous deux rendus ici.
+    async function showArticle(
+      answer: (request: ReturnType<HttpTestingController['expectOne']>) => void,
+      extraProviders: Provider[] = [],
+    ): Promise<ComponentFixture<BlogDetail>> {
+      const { fixture } = setup(
+        { getPostBySlug: () => of(makeBlogPost({ slug: 'mon-article', title: 'Mon article' })) },
+        DeferBlockBehavior.Manual,
+        [{ provide: CommentsGateway, useClass: CommentsGateway }, ...extraProviders],
+      );
+      fixture.componentRef.setInput('slug', 'mon-article');
+      fixture.detectChanges();
+      TestBed.tick();
+      answer(TestBed.inject(HttpTestingController).expectOne(COMMENTS_URL));
+      await fixture.whenStable();
+      for (const block of await fixture.getDeferBlocks()) {
+        await block.render(DeferBlockState.Complete);
+      }
+      await fixture.whenStable();
+      return fixture;
+    }
+
+    afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+    it('Given an article with published comments When the page shows Then the comments section follows the article, after the reading suggestions, with each comment listed', async () => {
+      const thread = makePublishedThread({
+        comments: [
+          makePublishedComment({ id: 'c-1', replies: [makePublishedReply({ id: 'r-1' })] }),
+          makePublishedComment({ id: 'c-2', author: { kind: 'visitor', name: 'Inès' } }),
+        ],
+      });
+      const fixture = await showArticle((request) => request.flush(toPublicCommentPageDto(thread)));
+      const host = fixture.nativeElement as HTMLElement;
+      const article = host.querySelector('article');
+      const section = testId(fixture, 'comment-thread');
+
+      expect({
+        afterArticle:
+          article && section
+            ? article.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING
+            : 0,
+        insideArticle: article?.contains(section) ?? null,
+        items: host.querySelectorAll('[data-testid="comment-item"]').length,
+      }).toEqual({
+        afterArticle: Node.DOCUMENT_POSITION_FOLLOWING,
+        insideArticle: false,
+        items: 3,
+      });
+    });
+
+    it('Given the API leaks an e-mail in a comment When the page shows Then no address reaches the page', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush({
+          data: [
+            {
+              ...makePublishedComment(),
+              author: { kind: 'visitor', name: 'Camille', email: 'camille@example.test' },
+            },
+          ],
+          total: 1,
+          page: 1,
+          limit: 100,
+        }),
+      );
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect({
+        items: host.querySelectorAll('[data-testid="comment-item"]').length,
+        leaked: host.innerHTML.includes('example.test'),
+      }).toEqual({ items: 1, leaked: false });
+    });
+
+    it('Given the comments cannot be read When the page shows Then the section says so and the article is still there', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(null, { status: 500, statusText: 'Boom' }),
+      );
+
+      expect({
+        title: (fixture.nativeElement as HTMLElement).querySelector('h1')?.textContent?.trim(),
+        error: testId(fixture, 'comments-load-error')?.textContent?.trim(),
+      }).toEqual({ title: 'Mon article', error: 'Les commentaires n’ont pas pu être chargés.' });
+    });
+
+    it('Given a server render When the comments cannot be read Then the page still answers 200 with its article', async () => {
+      const responseInit: ResponseInit = { status: 200, headers: new Headers() };
+      const fixture = await showArticle(
+        (request) => request.flush(null, { status: 500, statusText: 'Boom' }),
+        [
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: RESPONSE_INIT, useValue: responseInit },
+          { provide: REQUEST_CONTEXT, useValue: { apiBaseUrl: API, visitorForwardedFor: null } },
+        ],
+      );
+
+      expect({
+        status: responseInit.status,
+        title: (fixture.nativeElement as HTMLElement).querySelector('h1')?.textContent?.trim(),
+        error: testId(fixture, 'comments-load-error') !== null,
+      }).toEqual({ status: 200, title: 'Mon article', error: true });
     });
   });
 });

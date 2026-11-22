@@ -1,7 +1,7 @@
 import type {
   AdminComment,
   CommentStatus,
-  ParentAuthor,
+  PublicAuthor,
 } from '@features/comments/domain/models/comment.model';
 import { canReply } from '@features/comments/domain/can-reply';
 import type { ModerationFailure } from '@features/comments/domain/moderation-error';
@@ -69,7 +69,7 @@ const deleteLabel = (comment: AdminComment, authorName: string): string =>
     ? 'Supprimer ta réponse'
     : `${deleteText(comment)} le commentaire de ${authorName}`;
 
-const parentName = (author: ParentAuthor): string =>
+const parentName = (author: PublicAuthor): string =>
   author.kind === 'owner' ? 'toi' : author.name;
 
 export function toAdminCommentRow(comment: AdminComment, now: Date): AdminCommentRow {

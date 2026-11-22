@@ -2,11 +2,25 @@ import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { catchError, map, type Observable } from 'rxjs';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
+import { OPTIONAL_UPSTREAM } from '@core/ssr/ssr-upstream-interceptor';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { refreshable } from '@shared/api/refreshable';
-import type { AdminComment, AdminCommentPage, CommentStatus } from '../domain/models/comment.model';
-import { rejectAsModerationError, toAdminComment, toAdminCommentPage } from './comment.adapter';
-import type { AdminCommentDto, AdminCommentPageDto } from './comment.types';
+import type {
+  AdminComment,
+  AdminCommentPage,
+  CommentStatus,
+  PublishedThread,
+} from '../domain/models/comment.model';
+import {
+  rejectAsModerationError,
+  toAdminComment,
+  toAdminCommentPage,
+  toPublishedThread,
+} from './comment.adapter';
+import type { AdminCommentDto, AdminCommentPageDto, PublicCommentPageDto } from './comment.types';
+
+// Plafond de l'API : au-delà, la section dit que seuls les premiers sont affichés.
+const THREAD_PAGE_SIZE = 100;
 
 @Injectable({ providedIn: 'root' })
 export class CommentsGateway {
@@ -17,6 +31,16 @@ export class CommentsGateway {
   private readonly pendingCount = refreshable(() =>
     this.fetchPendingCount(silentErrors()).pipe(catchError(() => this.fetchPendingCount())),
   );
+
+  // La section nomme elle-même l'échec ; l'article, lui, reste servi.
+  getThread(slug: string): Observable<PublishedThread> {
+    return this.http
+      .get<PublicCommentPageDto>(`${this.apiUrl}/blog/posts/${encodeURIComponent(slug)}/comments`, {
+        params: { page: 1, limit: THREAD_PAGE_SIZE },
+        context: silentErrors().set(OPTIONAL_UPSTREAM, true),
+      })
+      .pipe(map(toPublishedThread));
+  }
 
   // Lue par l'admin seul, qui affiche son propre état d'erreur.
   getAdminPage(status: CommentStatus, page: number, limit: number): Observable<AdminCommentPage> {

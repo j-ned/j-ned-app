@@ -28,6 +28,12 @@ for path in / /projects /projects/projet-temoin /blog /blog/article-temoin; do
   grep -q 'témoin A' /tmp/ssr.html || { echo "contenu de l'API absent : $path"; exit 1; }
   grep -q 'id="ng-state"' /tmp/ssr.html || { echo "état de transfert absent : $path"; exit 1; }
 done
+# Commentaires publiés dans le HTML de l'article (réponses comprises), sans adresse ni service tiers
+curl -fsS http://127.0.0.1:3000/blog/article-temoin -o /tmp/article.html
+test "$(grep -o 'data-testid="comment-item"' /tmp/article.html | wc -l)" = "4" || { echo "commentaires absents du HTML de l'article"; exit 1; }
+grep -q 'aria-labelledby="comments-heading"' /tmp/article.html || { echo "section des commentaires sans titre"; exit 1; }
+! grep -q '@example.test' /tmp/article.html || { echo "adresse d'un commentateur dans le HTML"; exit 1; }
+! grep -qi 'giscus' /tmp/article.html || { echo "Giscus encore cité : /blog/article-temoin"; exit 1; }
 # /about lit le parcours dans la doublure et l'embarque dans l'état de transfert
 curl -fsS http://127.0.0.1:3000/about -o /tmp/about-ssr.html
 grep -q 'data-testid="about-lead"' /tmp/about-ssr.html || { echo "accroche absente : /about"; exit 1; }

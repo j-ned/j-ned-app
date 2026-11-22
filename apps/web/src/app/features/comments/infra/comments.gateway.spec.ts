@@ -4,7 +4,15 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL } from '@shared/api/api-config';
-import { makeAdminComment, toAdminCommentDto } from '../testing/comment-builders';
+import { OPTIONAL_UPSTREAM } from '@core/ssr/ssr-upstream-interceptor';
+import {
+  makeAdminComment,
+  makePublishedComment,
+  makePublishedReply,
+  makePublishedThread,
+  toAdminCommentDto,
+  toPublicCommentPageDto,
+} from '../testing/comment-builders';
 import { ModerationError } from '../domain/moderation-error';
 import { CommentsGateway } from './comments.gateway';
 
@@ -251,4 +259,47 @@ describe('CommentsGateway: réponse du propriétaire', () => {
       expect(await result).toBe(reason);
     },
   );
+});
+
+describe('CommentsGateway: lecture publique', () => {
+  let gateway: CommentsGateway;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+      ],
+    });
+    gateway = TestBed.inject(CommentsGateway);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('Given an article When its comments are read Then the first 100 are asked for and come back with their replies', async () => {
+    const thread = makePublishedThread({
+      comments: [makePublishedComment({ replies: [makePublishedReply()] })],
+    });
+    const read = firstValueFrom(gateway.getThread('article-temoin'));
+
+    http
+      .expectOne('/api/blog/posts/article-temoin/comments?page=1&limit=100')
+      .flush(toPublicCommentPageDto(thread));
+
+    await expect(read).resolves.toEqual(thread);
+  });
+
+  it('Given the section shows its own error When the comments are read Then a failure raises no toast and does not fail the article render', () => {
+    gateway.getThread('article-temoin').subscribe({ error: () => undefined });
+
+    const req = http.expectOne('/api/blog/posts/article-temoin/comments?page=1&limit=100');
+    expect({
+      silent: req.request.context.get(SKIP_ERROR_TOAST),
+      optional: req.request.context.get(OPTIONAL_UPSTREAM),
+    }).toEqual({ silent: true, optional: true });
+    req.flush(null, { status: 500, statusText: 'Boom' });
+  });
 });

@@ -688,6 +688,8 @@ Aucune variable d'environnement nouvelle ; une base d'intégration nouvelle en C
 - **Tranche 8 — supprimer après confirmation** : GREEN 1317 passed / 1317 total · refactor : aucun
 - **Tranche 9 — répondre en tant qu'auteur** : GREEN 1347 passed / 1347 total · refactor : file de modération (filtre, page servie, total) sortie de la page dans `pages/admin-comments/comment-queue.ts` ; textes d'état vide dans le presenter
 
+- **Tranche 10 — les lecteurs lisent les commentaires dans le HTML de l'article ; Giscus disparaît** : GREEN 3173 passed / 3173 total · refactor : l'auteur public (`toPublicAuthor`) sert aussi l'auteur du parent dans `toAdminComment` ; `ParentAuthor` devient `PublicAuthor`
+
 ## Verify
 
 PR B, 2026-11-22 : `STUB_ADMIN_SESSION=1 node ci/api-stub/server.mjs` (port 3000) et `ng serve` (port 4200, proxy `/api`), Chromium headless (Playwright), indice `auth:session` posé.

@@ -1,4 +1,4 @@
-import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
 import { RESPONSE_INIT, inject } from '@angular/core';
 import { TimeoutError, catchError, throwError, timeout } from 'rxjs';
 import { injectSsrRequestContext } from './ssr-request-context';
@@ -13,6 +13,9 @@ const API_READ_TIMEOUT_MS = 3_000;
 const isUpstreamFailure = (error: unknown): boolean =>
   error instanceof TimeoutError || (error instanceof HttpErrorResponse && error.status !== 404);
 
+// Lecture dont l'échec ne prive pas la page de son contenu (section annexe) : la page reste en 200.
+export const OPTIONAL_UPSTREAM = new HttpContextToken<boolean>(() => false);
+
 // Sans l'adresse du visiteur, l'API compterait tous les rendus sur l'IP du conteneur front et
 // répondrait 429 en rafale (quota par IP des lectures publiques).
 export const ssrUpstreamInterceptor: HttpInterceptorFn = (req, next) => {
@@ -24,10 +27,11 @@ export const ssrUpstreamInterceptor: HttpInterceptorFn = (req, next) => {
   if (req.method !== 'GET') return upstream;
 
   const responseInit = inject(RESPONSE_INIT, { optional: true });
+  const optional = req.context.get(OPTIONAL_UPSTREAM);
   return upstream.pipe(
     timeout(API_READ_TIMEOUT_MS),
     catchError((error: unknown) => {
-      if (responseInit && isUpstreamFailure(error)) responseInit.status = 503;
+      if (responseInit && !optional && isUpstreamFailure(error)) responseInit.status = 503;
       return throwError(() => error);
     }),
   );
