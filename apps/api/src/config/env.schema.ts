@@ -106,5 +106,3 @@ export const envSchema = baseEnvSchema.superRefine((env, ctx) => {
     }
   }
 });
-
-export type Env = z.infer<typeof envSchema>;

@@ -4,7 +4,7 @@ import * as z from 'zod';
 const MARKUP = /<[a-zA-Z/!?]/;
 
 // Messages du contrat figé de l'API, à l'identique de NestJS.
-export const withoutMarkup = (text: z.ZodString) =>
+const withoutMarkup = (text: z.ZodString) =>
   text.refine((value) => !MARKUP.test(value), {
     error: 'must not contain HTML markup',
   });

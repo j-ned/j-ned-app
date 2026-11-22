@@ -14,7 +14,7 @@ export type S3Timeouts = {
 
 // Le SDK ne borne rien par défaut : un stockage bloqué tiendrait la requête, et le verrou du portrait,
 // indéfiniment. 30 s couvrent 4 Mo dès ~3 Mbit/s montants ; 3 essais au plus, durée totale bornée.
-export const S3_TIMEOUTS: S3Timeouts = {
+const S3_TIMEOUTS: S3Timeouts = {
   connectionTimeout: 5_000,
   requestTimeout: 30_000,
 };

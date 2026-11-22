@@ -28,7 +28,7 @@ export function reply(
 }
 
 // Même limite que le parseur JSON d'Express (body-parser) devant l'API NestJS.
-export const JSON_BODY_LIMIT_BYTES = 100 * 1024;
+const JSON_BODY_LIMIT_BYTES = 100 * 1024;
 
 // Comme Express avec `trust proxy 1` : la dernière entrée de `X-Forwarded-For`, écrite par le proxy
 // de confiance (les précédentes viennent du client) ; sinon, ou si elle n'est pas une IP, la socket.
@@ -90,7 +90,7 @@ export async function jsonBody<T>(
   return validateDto(schema, await readJson(c));
 }
 
-export async function readJson(c: Context): Promise<unknown> {
+async function readJson(c: Context): Promise<unknown> {
   const type = c.req.header('content-type') ?? '';
   if (!/^application\/json\b/i.test(type)) return {};
   const length = Number(c.req.header('content-length') ?? '0');

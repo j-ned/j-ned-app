@@ -11,7 +11,7 @@ import {
 import { type SessionFacts, summarizeSessions } from './session-facts';
 
 // `null` tant qu'aucun événement v2 n'a jamais été vu : conversions non mesurées.
-export type DayConversions = {
+type DayConversions = {
   contactSubmits: number | null;
   contactClicks: number | null;
   profileClicks: number | null;
