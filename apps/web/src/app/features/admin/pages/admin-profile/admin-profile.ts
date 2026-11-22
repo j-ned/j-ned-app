@@ -65,6 +65,7 @@ const PROFILE_EDITOR_COPY: AdminEditorCopy = {
   backRoute: '/admin',
   backLabel: "Retour à la vue d'ensemble",
   leave: 'Les modifications non enregistrées du parcours seront perdues.',
+  entity: 'du parcours',
 };
 
 const CONFLICT_MESSAGE =

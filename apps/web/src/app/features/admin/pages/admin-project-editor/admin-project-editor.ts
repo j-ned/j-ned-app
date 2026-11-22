@@ -63,6 +63,7 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
   backRoute: '/admin/projects',
   backLabel: 'Retour aux projets',
   leave: 'Les modifications non enregistrées de ce projet seront perdues.',
+  entity: 'de ce projet',
 };
 
 @Component({

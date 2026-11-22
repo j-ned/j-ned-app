@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map, type Observable } from 'rxjs';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPostInput } from '@features/blog/domain/models/blog-post.model';
 import { AVAILABLE_BLOG_TAGS } from '@features/blog/domain/models/blog-tag.model';
@@ -21,6 +21,7 @@ import { AdminPostForm } from '../../application/components/admin-post-form';
 import { AdminPostPreview } from '../../application/components/admin-post-preview';
 import { AdminSaveBar } from '../../application/components/admin-save-bar';
 import { EditorDraft, type EditedDraft } from '../../application/editor-draft';
+import { NewerVersionCheck } from '../../application/newer-version-check';
 import type { FormTocSection } from '../../application/form-toc-entries';
 import {
   findPostById,
@@ -46,6 +47,7 @@ const POST_EDITOR_COPY: AdminEditorCopy = {
   backRoute: '/admin/blog',
   backLabel: 'Retour aux articles',
   leave: 'Les modifications non enregistrées de cet article seront perdues.',
+  entity: 'de cet article',
 };
 
 @Component({
@@ -89,8 +91,11 @@ const POST_EDITOR_COPY: AdminEditorCopy = {
       [state]="state()"
       [copy]="POST_EDITOR_COPY"
       [leaveAsked]="draft.leave.asked()"
+      [newerVersion]="newerVersion.detected()"
+      [changes]="draft.changes()"
       (retry)="postsResource.reload()"
       (leaveAnswered)="draft.leave.answer($event)"
+      (reloadLatest)="reloadLatest()"
     >
       <ng-template #editorForm>
         <app-admin-post-form
@@ -148,6 +153,14 @@ export class AdminPostEditor implements LeaveConfirmable {
     toDraft: toPostDraft,
     sections: FORM_SECTIONS,
   });
+  protected readonly newerVersion = new NewerVersionCheck({
+    current: (): string | null => this.draft.saved()?.updatedAt ?? null,
+    readLatest: (): Observable<string | null> =>
+      this.gateway
+        .getLatestAdminPost(this.draft.saved()?.id ?? '')
+        .pipe(map((post) => post?.updatedAt ?? null)),
+    paused: this.draft.saving,
+  });
 
   protected readonly tagSuggestions = computed(() =>
     knownTags(
@@ -165,6 +178,11 @@ export class AdminPostEditor implements LeaveConfirmable {
 
   canLeave(): boolean | Promise<boolean> {
     return this.draft.canLeave();
+  }
+
+  // L'article vient de la liste partagée : la relire recharge l'éditeur et les autres écrans.
+  protected reloadLatest(): void {
+    this.gateway.invalidateAdminPosts();
   }
 
   protected async save(payload: BlogPostInput): Promise<void> {

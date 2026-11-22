@@ -609,3 +609,92 @@ describe('HttpBlogGateway: the admin list follows the writes', () => {
     },
   );
 });
+
+describe('HttpBlogGateway: dernière version d’un article de l’admin', () => {
+  const ADMIN_URL = `${BASE}/blog/posts/admin`;
+  const add = vi.fn();
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  function configureWithToasts(): {
+    gateway: HttpBlogGateway;
+    httpMock: HttpTestingController;
+  } {
+    add.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        HttpBlogGateway,
+        provideHttpClient(withInterceptors([errorToastInterceptor])),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: BASE },
+        { provide: ToastStore, useValue: { add } },
+        provideImageUploadPreparer(),
+      ],
+    });
+    return {
+      gateway: TestBed.inject(HttpBlogGateway),
+      httpMock: TestBed.inject(HttpTestingController),
+    };
+  }
+
+  it.each([
+    { id: 'a-2', expected: { id: 'a-2', cover: '/api/storage/portfolio-storage/blog/b.avif' } },
+    { id: 'a-9', expected: null },
+  ])(
+    'Given the admin list on the API When the latest version of $id is read Then it is that article, or null',
+    async ({ id, expected }) => {
+      const { gateway, httpMock } = configureWithToasts();
+
+      const latest = firstValueFrom(gateway.getLatestAdminPost(id));
+      httpMock
+        .expectOne(ADMIN_URL)
+        .flush([
+          makeBlogPost({ id: 'a-1' }),
+          makeBlogPost({ id: 'a-2', coverImage: '/storage/portfolio-storage/blog/b.avif' }),
+        ]);
+      const post = await latest;
+
+      expect(post && { id: post.id, cover: post.coverImage }).toEqual(expected);
+      httpMock.verify();
+    },
+  );
+
+  it('Given a live reader of the admin list When the latest version of an article is read Then the shared list is neither reread nor pushed again', async () => {
+    const { gateway, httpMock } = configureWithToasts();
+    const seen: string[][] = [];
+    const subscription = gateway
+      .getAllPostsForAdmin()
+      .subscribe((posts) => seen.push(posts.map((post) => post.title)));
+    httpMock.expectOne(ADMIN_URL).flush([makeBlogPost({ id: 'a-1', title: 'Avant' })]);
+
+    const latest = firstValueFrom(gateway.getLatestAdminPost('a-1'));
+    const reads = httpMock.match(ADMIN_URL);
+    reads.forEach((request) => request.flush([makeBlogPost({ id: 'a-1', title: 'Après' })]));
+
+    expect({ reads: reads.length, latest: (await latest)?.title, seen }).toEqual({
+      reads: 1,
+      latest: 'Après',
+      seen: [['Avant']],
+    });
+    subscription.unsubscribe();
+    httpMock.verify();
+  });
+
+  it('Given the latest version is read in the background When the API answers 500 Then no toast is shown and the failure reaches the caller', async () => {
+    const { gateway, httpMock } = configureWithToasts();
+
+    const outcome = firstValueFrom(gateway.getLatestAdminPost('a-1')).then(
+      () => 'ok',
+      () => 'error',
+    );
+    httpMock.expectOne(ADMIN_URL).flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect({ outcome: await outcome, toasts: add.mock.calls.length }).toEqual({
+      outcome: 'error',
+      toasts: 0,
+    });
+    httpMock.verify();
+  });
+});

@@ -3,7 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { of, throwError, type Observable } from 'rxjs';
+import { BehaviorSubject, of, Subject, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
@@ -31,6 +31,9 @@ import {
   inZone,
   openEditorRoute,
   pickInZone,
+  readNewerVersion,
+  reloadDialog,
+  reloadLatest,
   save,
   saveBarState,
   tocStates,
@@ -39,6 +42,7 @@ import {
 } from '../../application/testing/editor-page';
 import { normalized } from '@shared/testing/normalized-text';
 import { asButton } from '@shared/testing/as-button';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 const CHIFFREMENT = makeBlogPost({
   id: 'b-1',
@@ -61,6 +65,8 @@ const FRAISEUSE = makeBlogPost({
 
 type Spies = {
   readonly getAllPostsForAdmin: Mock<BlogGateway['getAllPostsForAdmin']>;
+  readonly invalidateAdminPosts: Mock<BlogGateway['invalidateAdminPosts']>;
+  readonly getLatestAdminPost: Mock<BlogGateway['getLatestAdminPost']>;
   readonly createPost: Mock<BlogGateway['createPost']>;
   readonly updatePost: Mock<BlogGateway['updatePost']>;
   readonly uploadCoverImage: Mock<BlogGateway['uploadCoverImage']>;
@@ -80,6 +86,8 @@ type Overrides = Partial<Omit<Spies, 'toast'>>;
 async function openEditor(url: string, overrides: Overrides = {}): Promise<Editor> {
   const spies: Spies = {
     getAllPostsForAdmin: vi.fn((): Observable<readonly BlogPost[]> => of([CHIFFREMENT, FRAISEUSE])),
+    invalidateAdminPosts: vi.fn(),
+    getLatestAdminPost: vi.fn((): Observable<BlogPost | null> => of(CHIFFREMENT)),
     createPost: vi.fn((): Observable<BlogPost> => of(makeBlogPost({ id: 'b-9', title: 'X' }))),
     updatePost: vi.fn((): Observable<BlogPost> => of(CHIFFREMENT)),
     uploadCoverImage: vi.fn((): Observable<string> => of('blog/b-9.avif')),
@@ -110,6 +118,8 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
         provide: BlogGateway,
         useValue: stubBlogGateway({
           getAllPostsForAdmin: spies.getAllPostsForAdmin,
+          invalidateAdminPosts: spies.invalidateAdminPosts,
+          getLatestAdminPost: spies.getLatestAdminPost,
           createPost: spies.createPost,
           updatePost: spies.updatePost,
           uploadCoverImage: spies.uploadCoverImage,
@@ -793,4 +803,242 @@ describe('AdminPostEditor: quitter la page', () => {
       expect(event.defaultPrevented).toBe(prevented);
     },
   );
+});
+
+describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
+  const PREFIX = 'admin-post';
+  const NEWER = makeBlogPost({
+    ...CHIFFREMENT,
+    title: 'Chiffrement, relu ailleurs',
+    updatedAt: '2026-11-22T10:00:00Z',
+  });
+  const MESSAGE =
+    'Une version plus récente de cet article a été enregistrée ailleurs. Recharger la dernière version';
+
+  afterEach(() => forgetTabVisibility());
+
+  async function backToTab(editor: Editor): Promise<void> {
+    returnToTab();
+    await settleBounded(editor.fixture);
+  }
+
+  function editorWithList(): Promise<Editor> {
+    const list = new BehaviorSubject<readonly BlogPost[]>([CHIFFREMENT, FRAISEUSE]);
+    return openEditor('/admin/blog/b-1', {
+      getAllPostsForAdmin: vi.fn(() => list),
+      invalidateAdminPosts: vi.fn(() => list.next([NEWER, FRAISEUSE])),
+      getLatestAdminPost: vi.fn(() => of(NEWER)),
+    });
+  }
+
+  it('Given an article saved elsewhere since it was opened When the admin returns to the tab Then a status says so, the draft and the focus stay', async () => {
+    const editor = await openEditor('/admin/blog/b-1', {
+      getLatestAdminPost: vi.fn(() => of(NEWER)),
+    });
+    await typeIn(editor, 'admin-post-title', 'Mon brouillon');
+    const title = byTestId(editor.host, 'admin-post-title');
+    title?.focus();
+
+    await backToTab(editor);
+
+    expect({
+      read: editor.getLatestAdminPost.mock.calls,
+      notice: readNewerVersion(editor, PREFIX),
+      field: fieldValue(editor.host, 'admin-post-title'),
+      focus: document.activeElement === title,
+      toasts: toasts(editor.toast),
+    }).toEqual({
+      read: [['b-1']],
+      notice: { role: 'status', text: MESSAGE, focused: false },
+      field: 'Mon brouillon',
+      focus: true,
+      toasts: [],
+    });
+  });
+
+  it.each([
+    { case: 'the same version', latest: (): Observable<BlogPost | null> => of(CHIFFREMENT) },
+    { case: 'an article gone', latest: (): Observable<BlogPost | null> => of(null) },
+    {
+      case: 'a failed read',
+      latest: (): Observable<BlogPost | null> => throwError(() => new Error('offline')),
+    },
+  ])(
+    'Given $case on the API When the admin returns to the tab Then nothing is said',
+    async ({ latest }) => {
+      const editor = await openEditor('/admin/blog/b-1', { getLatestAdminPost: vi.fn(latest) });
+
+      await backToTab(editor);
+
+      expect({
+        read: editor.getLatestAdminPost.mock.calls.length,
+        notice: readNewerVersion(editor, PREFIX),
+        toasts: toasts(editor.toast),
+      }).toEqual({
+        read: 1,
+        notice: { role: 'status', text: '', focused: false },
+        toasts: [],
+      });
+    },
+  );
+
+  it('Given a new article never saved When the admin returns to the tab Then nothing is read', async () => {
+    const editor = await openEditor('/admin/blog/new');
+
+    await backToTab(editor);
+
+    expect(editor.getLatestAdminPost).not.toHaveBeenCalled();
+  });
+
+  it('Given a save in progress When the admin returns to the tab Then nothing is read', async () => {
+    const pending = new Subject<BlogPost>();
+    const editor = await openEditor('/admin/blog/b-1', { updatePost: vi.fn(() => pending) });
+    await typeIn(editor, 'admin-post-title', 'Après');
+    await save(editor);
+
+    await backToTab(editor);
+
+    expect(editor.getLatestAdminPost).not.toHaveBeenCalled();
+    pending.complete();
+  });
+
+  it('Given the article saved from this tab When the admin returns to the tab Then its own save is not taken for a newer version', async () => {
+    const saved = makeBlogPost({ ...CHIFFREMENT, title: 'Après', updatedAt: NEWER.updatedAt });
+    const editor = await openEditor('/admin/blog/b-1', {
+      updatePost: vi.fn(() => of(saved)),
+      getLatestAdminPost: vi.fn(() => of(saved)),
+    });
+    await typeIn(editor, 'admin-post-title', 'Après');
+    await save(editor);
+
+    await backToTab(editor);
+
+    expect({
+      read: editor.getLatestAdminPost.mock.calls.length,
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({ read: 1, notice: '' });
+  });
+
+  it('Given a read started before a save from this tab When it answers after the save Then its older version is ignored', async () => {
+    const answer = new Subject<BlogPost | null>();
+    const editor = await openEditor('/admin/blog/b-1', {
+      updatePost: vi.fn(() => of(NEWER)),
+      getLatestAdminPost: vi.fn(() => answer),
+    });
+    await backToTab(editor);
+    await typeIn(editor, 'admin-post-title', 'Après');
+    await save(editor);
+
+    answer.next(CHIFFREMENT);
+    answer.complete();
+    await settleBounded(editor.fixture);
+
+    expect({
+      read: editor.getLatestAdminPost.mock.calls.length,
+      notice: readNewerVersion(editor, PREFIX).text,
+    }).toEqual({ read: 1, notice: '' });
+  });
+
+  it('Given a newer version and no unsaved change When the admin reloads it Then it replaces the form without question and the status says it is loaded', async () => {
+    const editor = await editorWithList();
+    await backToTab(editor);
+
+    await reloadLatest(editor, PREFIX);
+
+    expect({
+      dialog: readConfirmDialog(reloadDialog(editor, PREFIX)).open,
+      reloaded: editor.invalidateAdminPosts.mock.calls.length,
+      field: fieldValue(editor.host, 'admin-post-title'),
+      state: saveBarState(editor),
+      notice: readNewerVersion(editor, PREFIX),
+    }).toEqual({
+      dialog: false,
+      reloaded: 1,
+      field: 'Chiffrement, relu ailleurs',
+      state: 'Aucune modification',
+      notice: { role: 'status', text: 'Dernière version chargée.', focused: true },
+    });
+  });
+
+  it('Given a newer version and unsaved changes When the admin reloads it Then a dialog names what will be lost before anything is reloaded', async () => {
+    const editor = await editorWithList();
+    await typeIn(editor, 'admin-post-title', 'Mon brouillon');
+    await typeIn(editor, 'admin-post-excerpt', 'Mon résumé');
+    await backToTab(editor);
+
+    await reloadLatest(editor, PREFIX);
+
+    expect({
+      dialog: readConfirmDialog(reloadDialog(editor, PREFIX)),
+      reloaded: editor.invalidateAdminPosts.mock.calls.length,
+    }).toEqual({
+      dialog: {
+        open: true,
+        heading: 'Recharger la dernière version\u202f?',
+        description:
+          'Ton brouillon sera remplacé par la dernière version enregistrée\u00a0: 2 modifications non enregistrées de cet article seront perdues.',
+        confirm: 'Recharger la dernière version',
+        cancel: "Continuer l'édition",
+      },
+      reloaded: 0,
+    });
+  });
+
+  it.each([
+    {
+      answer: 'cancel',
+      expected: {
+        reloaded: 0,
+        field: 'Mon brouillon',
+        state: '1 modification non enregistrée',
+        notice: MESSAGE,
+      },
+    },
+    {
+      answer: 'escape',
+      expected: {
+        reloaded: 0,
+        field: 'Mon brouillon',
+        state: '1 modification non enregistrée',
+        notice: MESSAGE,
+      },
+    },
+    {
+      answer: 'confirm',
+      expected: {
+        reloaded: 1,
+        field: 'Chiffrement, relu ailleurs',
+        state: 'Aucune modification',
+        notice: 'Dernière version chargée.',
+      },
+    },
+  ] as const)(
+    'Given the reload dialog When the admin answers $answer Then the draft is kept or replaced accordingly',
+    async ({ answer, expected }) => {
+      const editor = await editorWithList();
+      await typeIn(editor, 'admin-post-title', 'Mon brouillon');
+      await backToTab(editor);
+      await reloadLatest(editor, PREFIX);
+
+      await answerConfirmDialog(editor.fixture, answer, reloadDialog(editor, PREFIX));
+
+      expect({
+        reloaded: editor.invalidateAdminPosts.mock.calls.length,
+        field: fieldValue(editor.host, 'admin-post-title'),
+        state: saveBarState(editor),
+        notice: readNewerVersion(editor, PREFIX).text,
+      }).toEqual(expected);
+    },
+  );
+
+  it('Given a cover chosen and not saved When the latest version is reloaded Then the cover is dropped with the rest of the draft', async () => {
+    const editor = await editorWithList();
+    await chooseCover(editor, COVER);
+    await backToTab(editor);
+    await reloadLatest(editor, PREFIX);
+
+    await answerConfirmDialog(editor.fixture, 'confirm', reloadDialog(editor, PREFIX));
+
+    expect(saveBarState(editor)).toBe('Aucune modification');
+  });
 });
