@@ -143,6 +143,50 @@ describe('validateDto', () => {
   });
 });
 
+describe('validateDto - deeply nested JSON', () => {
+  // 40 000 niveaux tiennent dans 80 ko : sous la limite de 100 ko d'un corps JSON.
+  const DEPTH = 40_000;
+  const nestedArrays = `${'['.repeat(DEPTH)}${']'.repeat(DEPTH)}`;
+
+  it('Given an unknown key holding 40 000 nested lists, When validated, Then a 400 names the key (was a stack overflow, 500)', () => {
+    const body: unknown = JSON.parse(
+      `{"title":"T","section":{"name":"N"},"x":${nestedArrays}}`,
+    );
+
+    expect(messagesOf(parentSchema, body)).toEqual(['Clé non reconnue : "x"']);
+  });
+
+  it('Given a known text field holding 40 000 nested lists, When validated, Then a 400 on that field', () => {
+    const body: unknown = JSON.parse(
+      `{"title":${nestedArrays},"section":{"name":"N"}}`,
+    );
+
+    expect(messagesOf(parentSchema, body)).toEqual([
+      expect.stringMatching(/^title: /) as string,
+    ]);
+  });
+
+  it('Given a __proto__ key 40 000 objects deep, When validated, Then it is dropped there too', () => {
+    const body: unknown = JSON.parse(
+      `{"deep":${'{"a":'.repeat(DEPTH)}{"__proto__":{"isAdmin":true},"leaf":1}${'}'.repeat(DEPTH)}}`,
+    );
+
+    const dto = validateDto(z.strictObject({ deep: z.unknown() }), body);
+
+    let node: unknown = dto.deep;
+    for (let level = 0; level < DEPTH; level += 1) {
+      node =
+        typeof node === 'object' && node !== null && 'a' in node
+          ? node.a
+          : undefined;
+    }
+    expect(node).toEqual({ leaf: 1 });
+    expect(
+      typeof node === 'object' && node !== null && Object.keys(node),
+    ).toEqual(['leaf']);
+  });
+});
+
 describe('validateDto - query string conversion', () => {
   it.each([
     [

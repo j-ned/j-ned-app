@@ -15,6 +15,9 @@ Décisions du propriétaire (2026-11-21) :
 - **un seul niveau de réponse** sous un commentaire ;
 - le propriétaire est **prévenu par e-mail** de chaque commentaire en attente.
 
+Décision du propriétaire (2026-11-22) : **refuser un commentaire, c'est le supprimer**, avec ses
+réponses, immédiatement. Aucun commentaire refusé n'est conservé (cf. Points à trancher n° 3).
+
 Hypothèses retenues en l'absence de décision, à confirmer :
 
 - modération **avant publication** pour tout ce qu'écrit un visiteur, commentaire ou réponse ;
@@ -79,7 +82,6 @@ Lecteur ── GET /blog/:slug (nginx, micro-cache 1 s) ── rendu Node
                                                          └─ GET /api/blog/posts/:slug/comments   (nouveau, transfer cache)
 Lecteur ── POST /api/blog/posts/:slug/comments ── API ── blog_comment (pending) ── Resend → propriétaire
 Admin   ── /admin/comments ── GET|PATCH|DELETE /api/blog/comments… , POST /api/blog/comments/:id/replies
-Cron    ── GET /api/cron/daily ── purge des refus de plus de 30 jours
 ```
 
 - **API** : nouveau module `apps/api/src/blog-comments/`, branché dans les routes du blog
@@ -110,12 +112,12 @@ barrel `schema/index.ts`. Style des contraintes : `login-events.ts` (`check()` n
 | `parent_id`     | `uuid NULL`                                    | `NULL` : commentaire ; sinon : réponse                                                    |
 | `depth`         | `smallint NOT NULL DEFAULT 0`                  | `CHECK (depth IN (0,1))`, `CHECK ((parent_id IS NULL) = (depth = 0))`                     |
 | `parent_depth`  | `smallint NULL`                                | `CHECK (parent_depth = 0)`, `CHECK ((parent_id IS NULL) = (parent_depth IS NULL))`        |
-| `status`        | `text NOT NULL DEFAULT 'pending'`              | `CHECK (status IN ('pending','published','refused'))`                                     |
+| `status`        | `text NOT NULL DEFAULT 'pending'`              | `CHECK (status IN ('pending','published'))` ; refuser = supprimer la ligne                |
 | `moderated_at`  | `timestamptz NULL`                             | `CHECK ((status = 'pending') = (moderated_at IS NULL))`                                   |
 | `author_kind`   | `text NOT NULL`                                | `CHECK (author_kind IN ('visitor','owner'))`                                              |
 | `author_name`   | `text NULL`                                    | visiteur : `NOT NULL`, 2 à 80 caractères ; propriétaire : `NULL`                          |
 | `author_email`  | `text NULL`                                    | visiteur : `NOT NULL` ; propriétaire : `NULL`                                             |
-| `sender_hash`   | `text NULL`                                    | HMAC de l'IP du visiteur (comme `contact_message.sender_hash`) ; propriétaire : `NULL`    |
+| `sender_hash`   | `text NULL`                                    | HMAC de `quotaAddress(ip)` (IPv4, ou son /64 en IPv6, comme le quota) ; propriétaire : `NULL` |
 | `body`          | `text NOT NULL`                                | `CHECK (char_length(body) BETWEEN 2 AND 2000)`                                            |
 | `created_at`    | `timestamptz NOT NULL DEFAULT now()`           | ordre d'affichage                                                                         |
 
@@ -140,8 +142,7 @@ Index :
   couvre la cascade depuis `blog_post` (colonne de tête) ;
 - `blog_comment_parent_idx (parent_id)` : réponses d'une page de commentaires, et cascade depuis
   le parent (Postgres n'indexe pas le côté référençant) ;
-- `blog_comment_status_created_idx (status, created_at)` : liste de l'admin, compteur, plafonds,
-  purge.
+- `blog_comment_status_created_idx (status, created_at)` : liste de l'admin, compteur, plafonds.
 
 Union discriminée côté TypeScript (types dérivés du schéma Drizzle, puis rétrécis dans le service) :
 
@@ -151,7 +152,7 @@ type CommentAuthor =
   | { readonly kind: 'owner' };
 type CommentModeration =
   | { readonly status: 'pending' }
-  | { readonly status: 'published' | 'refused'; readonly moderatedAt: Date };
+  | { readonly status: 'published'; readonly moderatedAt: Date };
 ```
 
 Un mappeur `toCommentRecord(row)` rétrécit une ligne (`author_kind`, colonnes nullables) en ces
@@ -214,11 +215,14 @@ Toutes les entrées passent par `jsonBody` / `queryParams` / `uuidParam` (`commo
 
 - **POST** : corps `createCommentSchema = z.strictObject({ name, email, body, parentId?, website?
   })`.
-  - `name` : `z.string().trim()`, 2 à 80, sans caractère de contrôle ni contrôle bidirectionnel
-    (`U+202A–U+202E`, `U+2066–U+2069`) ;
+  - `name` : `z.string().trim()`, 2 à 80, sans caractère de contrôle, sans caractère de format
+    (`\p{Cf}` : largeur nulle, contrôles bidirectionnels, marque d'ordre), sauf le ZWJ `U+200D` qui
+    compose les émojis, sans moitié de paire UTF-16 isolée, et avec au moins un caractère visible
+    (lettre, chiffre, ponctuation ou symbole, hors remplissages hangul et cellule braille vide) ;
   - `email` : `z.email().max(320)` (comme le contact) ;
   - `body` : retours chariot normalisés en `\n`, `trim()`, 2 à 2 000, sans caractère de contrôle
-    hors `\n` et `\t`, sans contrôle bidirectionnel. Les chevrons sont **acceptés** : un
+    hors `\n` et `\t`, mêmes règles que le nom pour les caractères de format, les moitiés de
+    paire isolées et le caractère visible. Les chevrons sont **acceptés** : un
     développeur cite `<app-root>` ; l'affichage par interpolation les neutralise. On ne reprend
     donc pas le refus du balisage HTML de `profile` ;
   - `parentId` : `z.uuid()` facultatif ;
@@ -227,7 +231,7 @@ Toutes les entrées passent par `jsonBody` / `queryParams` / `uuidParam` (`commo
 
   Ordre de traitement, dans le service : champ piège rempli → **202, rien d'écrit ni d'envoyé**
   (journal `warn`, comme `ContactService.create`) ; article inconnu ou non publié → 404 ; parent
-  absent, d'un autre article ou non publié → 404 (aucune fuite sur l'existence d'un commentaire
+  absent, d'un autre article ou en attente → 404 (aucune fuite sur l'existence d'un commentaire
   en attente) ; parent qui est une réponse → 409 ; plafond de l'expéditeur atteint → 429 ; plafond
   global atteint → 503 ; sinon insertion `pending`, puis notification (fire-and-forget), 202.
   Les filtres « article publié » sont partagés avec `BlogService` : la condition privée
@@ -240,19 +244,20 @@ Toutes les entrées passent par `jsonBody` / `queryParams` / `uuidParam` (`commo
 | ------- | ----------------------------------- | ---------------------- | ----------------------------------------------------------------------------- |
 | GET     | `/blog/comments?status&page&limit`  | défaut                 | 200 `PaginatedResult<AdminComment>`, `created_at DESC`                        |
 | GET     | `/blog/comments/pending-count`      | défaut                 | 200 `{ count }`                                                               |
-| PATCH   | `/blog/comments/:id`                | `ADMIN_WRITE_THROTTLE` | 200 `AdminComment` ; 404 ; 409 si la transition est interdite                 |
-| DELETE  | `/blog/comments/:id`                | `ADMIN_WRITE_THROTTLE` | 204 ; 404 ; réponses supprimées par la cascade                                |
+| PATCH   | `/blog/comments/:id`                | `ADMIN_WRITE_THROTTLE` | 200 `AdminComment` ; 404 ; 409 déjà publié ou parent non publié               |
+| DELETE  | `/blog/comments/:id`                | `ADMIN_WRITE_THROTTLE` | 204 ; 404 ; refus ou suppression, réponses supprimées par la cascade          |
 | POST    | `/blog/comments/:id/replies`        | `ADMIN_WRITE_THROTTLE` | 201 `AdminComment` ; 404 ; 409 parent non publié ; 409 parent qui est une réponse |
 
-- `status` : `z.enum(['pending','published','refused']).optional()`, ajouté à `paginationSchema`
-  par `.extend()`.
+- `status` : `z.enum(['pending','published']).optional()`, ajouté à `paginationSchema` par
+  `.extend()`.
 - `AdminComment` : `{ id, post: { id, slug, title }, parent: { id, author, excerpt } | null,
   author: CommentAuthor, body, status, createdAt, moderatedAt, replyCount }` (jointure
   `blog_post`, auto-jointure par `alias()` de `drizzle-orm/pg-core` pour le parent, `count` des
   réponses en sous-requête).
-- PATCH, corps `z.strictObject({ status: z.enum(['published','refused']) })`. Transitions
-  permises : `pending → published`, `pending → refused`, `published → refused`. Publier une réponse
-  dont le parent n'est pas publié : 409. Une réécriture du même statut : 409.
+- PATCH, corps `z.strictObject({ status: z.literal('published') })` : la seule transition est
+  `pending → published`. Publier une réponse dont le parent n'est pas publié : 409. Republier : 409.
+  **Refuser = `DELETE /blog/comments/:id`** : le commentaire et ses réponses disparaissent (cascade),
+  y compris les réponses en attente, qui cessent donc de compter dans les plafonds.
 - `ADMIN_WRITE_THROTTLE` (60/min, existant) sur les écritures : une session de modération dépasse
   vite les 10/min du quota par défaut.
 - Ordre des routes : les chemins fixes (`/pending-count`) avant `/:id`, comme `/admin` avant
@@ -273,8 +278,8 @@ jwtSecret)`, HMAC de l'IP) sort dans `common/sender-hash.ts` (`senderHasher(secr
 réutilisée par le contact (scope `contact`, empreintes inchangées) et par les commentaires (scope
 `comments`).
 
-**Tâche quotidienne** : `cronRoutes` reçoit le service des commentaires et appelle
-`purgeExpired()` après la purge du journal des connexions (refus de plus de 30 jours).
+**Tâche quotidienne** : inchangée. Un refus supprime immédiatement, aucune purge n'est à
+programmer.
 
 **Parité HTTP** (`packages/api-parity`) :
 
@@ -451,12 +456,13 @@ après relecture. » ; `rate-limited` : « Trop d'envois en peu de temps. Réess
   `AdminNavCounts.pendingComments: number | null` ; `admin-layout.ts` ajoute
   `rxResource({ stream: () => commentsGateway.getPendingCount() })` (critère 13) ;
 - page `admin-comments.ts` (modèle `admin-messages.ts` + `admin-logins.ts`) :
-  `app-admin-page-header`, `app-filter-group` (En attente / Publiés / Refusés), pagination serveur
+  `app-admin-page-header`, `app-filter-group` (En attente / Publiés), pagination serveur
   (`rxResource` sur `{ status, page }`), `app-admin-list-state`, liste `<ul role="list">` de
   `li[app-admin-comment-row]` (article lié, nom, e-mail en `mailto:`, extrait du parent, date par
-  `receivedAgo` d'`admin-messages-view.ts`, statut en texte). Actions : Publier, Refuser (succès :
-  la ligne quitte le filtre courant, `invalidatePendingCount()`, toast), Supprimer par
-  `PendingDeletion` + `app-confirm-dialog` dont le texte annonce le nombre de réponses supprimées
+  `receivedAgo` d'`admin-messages-view.ts`, statut en texte). Actions : Publier (succès : la ligne
+  quitte le filtre courant, `invalidatePendingCount()`, toast), Refuser ou Supprimer (un seul appel,
+  `DELETE`) par `PendingDeletion` + `app-confirm-dialog` dont le texte annonce le nombre de réponses
+  supprimées
   (`replyCount`, critère 11), puis `focusTitle()` ; Répondre (commentaire publié de profondeur 0
   seulement) ouvre `admin-comment-reply-form` sous la ligne, la réponse créée s'affiche comme
   publiée (critère 12) ;
@@ -521,7 +527,8 @@ paragraphe) :
 - destinataires : l'éditeur ; l'e-mail de notification passe par le prestataire d'envoi (Resend),
   qui le transmet à l'éditeur ;
 - conservation : commentaire publié et e-mail, tant que le commentaire est en ligne ; commentaire
-  refusé, 30 jours après le refus ; supprimé avec l'article ;
+  en attente, jusqu'à la décision de l'éditeur ; commentaire refusé, supprimé au moment du refus,
+  avec ses réponses ; tout commentaire disparaît avec son article ;
 - droits : suppression ou rectification sur demande à l'adresse de l'éditeur ; l'éditeur supprime
   le commentaire (et ses réponses) depuis l'admin ;
 - disparition de la mention de Giscus et de GitHub (critère 15).
@@ -555,15 +562,14 @@ d'une même PR sont séquentielles.
   publique servie.
 - **Tranche 3 — le propriétaire liste, compte et modère** : `GET /blog/comments`,
   `/pending-count`, `PATCH /:id`. Tests : routes (filtre, pagination, `post`, `parent`,
-  `replyCount`, e-mail présent côté admin, transitions permises et 409, 401 sans session) ;
+  `replyCount`, e-mail présent côté admin, publication et 409, 401 sans session) ;
   parité : routes admin 401, `comments.spec.ts` (publié puis lu sans e-mail, champ piège sans
   effet).
 - **Tranche 4 — le propriétaire supprime et répond** : `DELETE /:id`, `POST /:id/replies`. Tests :
   routes (204 puis réponses absentes, 404, réponse du propriétaire publiée d'emblée, 409 sur parent
   en attente ou sur une réponse) ; parité : inventaire.
-- **Tranche 5 — les refus expirent** : `purgeExpired()` appelé par `cronRoutes`. Tests :
-  service sur base d'intégration (refus de 31 jours supprimé, refus de 29 jours et commentaires
-  publiés gardés), `cron.routes.spec.ts` (purge appelée après le journal, échec ⇒ 500).
+- **Tranche 5 — retirée** (2026-11-22) : refuser = supprimer, il n'y a plus de refus à purger.
+  `cronRoutes` reste celui de `master`.
 
 **PR B — admin** (invisible pour les lecteurs)
 
@@ -575,8 +581,9 @@ d'une même PR sont séquentielles.
   `admin-layout.spec.ts` (compteur affiché) ; page (états chargement/erreur/vide/liste, e-mail et
   article visibles, critère 10) ; `login-journal-view.spec.ts` inchangé et vert ; e2e axe :
   scénario `/admin/comments` dans `e2e/a11y/scenarios.ts`.
-- **Tranche 7 — publier et refuser** : actions de ligne. Tests page : la ligne quitte le filtre,
-  compteur relu, toast ; échec ⇒ ligne remise et toast d'erreur.
+- **Tranche 7 — publier** : action de ligne. Tests page : la ligne quitte le filtre, compteur
+  relu, toast ; échec ⇒ ligne remise et toast d'erreur. Refuser passe par la suppression
+  (tranche 8).
 - **Tranche 8 — supprimer après confirmation** : `PendingDeletion` + `ConfirmDialog`. Tests :
   `deleteThroughDialog` (confirmer, annuler, Échap), texte annonçant les réponses supprimées,
   focus sur le titre (`readPageTitleFocus`).
@@ -647,9 +654,9 @@ Aucune variable d'environnement nouvelle ; une base d'intégration nouvelle en C
 2. **Champ piège : « refusé » (critère 7) ou réponse identique à un succès ?** Reco : réponse 202
    identique, comme le contact ; le critère se vérifie par « rien d'enregistré, rien d'envoyé ».
    Un refus explicite apprendrait au robot quel champ éviter.
-3. **Refuser ou supprimer** (critère 11). Reco : un refus garde la ligne 30 jours (revenir sur un
-   refus, reconnaître un expéditeur insistant par son empreinte), puis la purge quotidienne
-   l'efface. Alternative plus simple : refuser = supprimer.
+3. **Refuser ou supprimer** (critère 11). **Tranché le 2026-11-22 : refuser = supprimer**, le
+   commentaire et ses réponses, immédiatement. Aucune finalité ne justifiait de conserver un texte
+   refusé ; plus de statut `refused`, plus de purge quotidienne.
 4. **Conservation de l'e-mail d'un commentaire publié**. Reco : tant que le commentaire est en
    ligne, suppression sur demande. Alternative plus sobre : effacer l'adresse 12 mois après la
    publication (colonne déjà nullable pour le propriétaire, mais la contrainte « visiteur ⇒

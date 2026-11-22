@@ -12,7 +12,8 @@ import {
 import { sql } from 'drizzle-orm';
 import { blogPosts } from './blog-posts';
 
-export const COMMENT_STATUSES = ['pending', 'published', 'refused'] as const;
+// Pas de statut « refusé » : refuser un commentaire, c'est le supprimer (et ses réponses).
+export const COMMENT_STATUSES = ['pending', 'published'] as const;
 export type CommentStatus = (typeof COMMENT_STATUSES)[number];
 
 export const COMMENT_AUTHOR_KINDS = ['visitor', 'owner'] as const;
@@ -69,7 +70,7 @@ export const blogComments = pgTable(
     ),
     statusCheck: check(
       'blog_comment_status_check',
-      sql`${t.status} IN ('pending', 'published', 'refused')`,
+      sql`${t.status} IN ('pending', 'published')`,
     ),
     moderatedCheck: check(
       'blog_comment_moderated_check',

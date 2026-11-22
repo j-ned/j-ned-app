@@ -1,6 +1,7 @@
 -- Commentaires du blog : une table neuve, rien d'existant n'est touché (une image antérieure de l'API
 -- l'ignore). La contrainte UNIQUE "blog_comment_thread_key" est créée avec la table, donc avant la clé
 -- étrangère composite qui la référence et qui garantit un seul niveau de réponse, sur le même article.
+-- Deux statuts seulement : refuser un commentaire, c'est le supprimer, ses réponses avec lui.
 CREATE TABLE "blog_comment" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"post_id" uuid NOT NULL,
@@ -20,7 +21,7 @@ CREATE TABLE "blog_comment" (
 	CONSTRAINT "blog_comment_depth_parent_check" CHECK (("blog_comment"."parent_id" IS NULL) = ("blog_comment"."depth" = 0)),
 	CONSTRAINT "blog_comment_parent_depth_check" CHECK ("blog_comment"."parent_depth" = 0),
 	CONSTRAINT "blog_comment_parent_depth_parent_check" CHECK (("blog_comment"."parent_id" IS NULL) = ("blog_comment"."parent_depth" IS NULL)),
-	CONSTRAINT "blog_comment_status_check" CHECK ("blog_comment"."status" IN ('pending', 'published', 'refused')),
+	CONSTRAINT "blog_comment_status_check" CHECK ("blog_comment"."status" IN ('pending', 'published')),
 	CONSTRAINT "blog_comment_moderated_check" CHECK (("blog_comment"."status" = 'pending') = ("blog_comment"."moderated_at" IS NULL)),
 	CONSTRAINT "blog_comment_author_kind_check" CHECK ("blog_comment"."author_kind" IN ('visitor', 'owner')),
 	CONSTRAINT "blog_comment_author_identity_check" CHECK (("blog_comment"."author_kind" = 'visitor') = ("blog_comment"."author_name" IS NOT NULL AND "blog_comment"."author_email" IS NOT NULL)),

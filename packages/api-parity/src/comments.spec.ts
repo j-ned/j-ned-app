@@ -6,9 +6,15 @@ import { adminSession } from './session';
 const EMAIL = 'lecteur.parite@parity.test';
 const COMMENT = { name: 'Lecteur Parité', email: EMAIL, body: 'Merci <b>beaucoup</b> !' };
 
-type Json = Record<string, unknown>;
-const asObject = (value: unknown): Json => (value ?? {}) as Json;
-const page = (response: ApiResponse): Json[] => (asObject(response.body)['data'] ?? []) as Json[];
+type Json = Readonly<Record<string, unknown>>;
+const isJson = (value: unknown): value is Json =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+const field = (value: unknown, key: string): unknown => (isJson(value) ? value[key] : undefined);
+const records = (value: unknown): Json[] => {
+  const items: readonly unknown[] = Array.isArray(value) ? value : [];
+  return items.filter(isJson);
+};
+const page = (response: ApiResponse): Json[] => records(field(response.body, 'data'));
 
 describe('blog comments', () => {
   let session = '';
@@ -30,8 +36,8 @@ describe('blog comments', () => {
       status: 'published',
     });
     expect(created.status, created.text).toBe(201);
-    postId = String(asObject(created.body)['id']);
-    slug = String(asObject(created.body)['slug']);
+    postId = String(field(created.body, 'id'));
+    slug = String(field(created.body, 'slug'));
   });
 
   afterAll(async () => {
@@ -60,16 +66,17 @@ describe('blog comments', () => {
     expect(sent.text).toBe('');
 
     // En attente : visible du propriétaire avec l'adresse, invisible du public.
-    const [waiting] = (await pending()).filter((row) => asObject(row['post'])['id'] === postId);
+    const [waiting] = (await pending()).filter((row) => field(row['post'], 'id') === postId);
     expect(waiting?.['author']).toEqual({ kind: 'visitor', name: COMMENT.name, email: EMAIL });
     expect((await publicThread()).body).toMatchObject({ data: [], total: 0 });
     const id = String(waiting?.['id']);
     const count = await admin('GET', '/api/blog/comments/pending-count');
-    expect(asObject(count.body)['count']).toBeGreaterThanOrEqual(1);
+    expect(field(count.body, 'count')).toEqual(expect.any(Number));
+    expect(Number(field(count.body, 'count'))).toBeGreaterThanOrEqual(1);
 
     const published = await admin('PATCH', `/api/blog/comments/${id}`, { status: 'published' });
     expect(published.status, published.text).toBe(200);
-    expect(asObject(published.body)['status']).toBe('published');
+    expect(field(published.body, 'status')).toBe('published');
     const again = await admin('PATCH', `/api/blog/comments/${id}`, { status: 'published' });
     expectApiError(again, 409, `/api/blog/comments/${id}`);
 
@@ -104,6 +111,35 @@ describe('blog comments', () => {
       await admin('DELETE', `/api/blog/comments/${id}`),
       404,
       `/api/blog/comments/${id}`,
+    );
+  });
+
+  it('Given a published comment with a pending reply, When the owner refuses the comment, Then refusing is deleting: both leave the queue and the thread', async () => {
+    const send = (json: unknown) =>
+      newVisitor().request('POST', `/api/blog/posts/${slug}/comments`, { json });
+    expect((await send(COMMENT)).status).toBe(202);
+    const mine = async () => (await pending()).filter((row) => field(row['post'], 'id') === postId);
+    const [comment] = await mine();
+    const id = String(field(comment, 'id'));
+    expect((await admin('PATCH', `/api/blog/comments/${id}`, { status: 'published' })).status).toBe(
+      200,
+    );
+    expect((await send({ ...COMMENT, parentId: id })).status).toBe(202);
+    expect(await mine()).toHaveLength(1);
+
+    const refusedByStatus = await admin('PATCH', `/api/blog/comments/${id}`, {
+      status: 'refused',
+    });
+    const refused = await admin('DELETE', `/api/blog/comments/${id}`);
+
+    expectApiError(refusedByStatus, 400, `/api/blog/comments/${id}`);
+    expect(refused.status, refused.text).toBe(204);
+    expect(await mine()).toEqual([]);
+    expect((await publicThread()).body).toMatchObject({ data: [], total: 0 });
+    expectApiError(
+      await admin('GET', '/api/blog/comments?status=refused'),
+      400,
+      '/api/blog/comments',
     );
   });
 

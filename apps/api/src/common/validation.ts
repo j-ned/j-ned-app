@@ -31,12 +31,15 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+// Parcours par pile explicite : un corps de 100 ko peut imbriquer 50 000 niveaux, la récursion
+// déborderait la pile d'appels (500) bien avant.
 function stripProtoKeys<T>(value: T): T {
-  if (Array.isArray(value)) value.forEach(stripProtoKeys);
-  else if (typeof value === 'object' && value !== null) {
-    const record = value as Record<string, unknown>;
-    delete record['__proto__'];
-    for (const key of Object.keys(record)) stripProtoKeys(record[key]);
+  const pending: unknown[] = [value];
+  while (pending.length > 0) {
+    const node = pending.pop();
+    if (typeof node !== 'object' || node === null) continue;
+    if (!Array.isArray(node)) Reflect.deleteProperty(node, '__proto__');
+    for (const child of Object.values(node)) pending.push(child);
   }
   return value;
 }

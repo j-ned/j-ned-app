@@ -78,13 +78,8 @@ export type CommentStore = {
   ): Promise<AdminCommentPage>;
   findAdminById(id: string): Promise<AdminCommentRow | undefined>;
   countPending(): Promise<number>;
-  // Faux si la ligne a disparu ou n'est plus dans un des statuts `from`.
-  moderate(
-    id: string,
-    from: readonly CommentStatus[],
-    to: 'published' | 'refused',
-    at: Date,
-  ): Promise<boolean>;
+  // Faux si la ligne a disparu ou n'est plus en attente.
+  publish(id: string, at: Date): Promise<boolean>;
+  // Supprime aussi les réponses (cascade) ; faux si la ligne n'existait plus.
   remove(id: string): Promise<boolean>;
-  purgeRefusedBefore(cutoff: Date): Promise<void>;
 };

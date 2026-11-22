@@ -34,8 +34,10 @@ Contraintes du site au 2026-11-21 :
    imposé par `CHECK`. Une réponse à une réponse, ou à un commentaire d'un autre article, est
    refusée par Postgres, quel que soit le code qui écrit.
 3. **Modération avant publication** de tout ce qu'écrit un visiteur ; statut `pending` /
-   `published` / `refused`, cohérent avec `moderated_at` par `CHECK`. La réponse du propriétaire,
-   écrite depuis l'admin, est publiée directement et marquée `author_kind = 'owner'`.
+   `published`, cohérent avec `moderated_at` par `CHECK`. **Refuser, c'est supprimer** (décision du
+   propriétaire, 2026-11-22) : le commentaire et ses réponses disparaissent, rien n'est conservé.
+   La réponse du propriétaire, écrite depuis l'admin, est publiée directement et marquée
+   `author_kind = 'owner'`.
 4. **Anti-abus sans compte ni CAPTCHA tiers** : champ piège (réponse identique à un envoi
    accepté), quota par IP, plafond de commentaires en attente par expéditeur (empreinte HMAC de
    l'IP, comme le contact) et plafond global de la file de modération. Texte brut seulement,
@@ -54,7 +56,7 @@ Contraintes du site au 2026-11-21 :
 ## Consequences
 
 - Le site traite une nouvelle donnée personnelle (nom, e-mail, empreinte d'IP) : politique de
-  confidentialité, durée de conservation et purge quotidienne des refus.
+  confidentialité et durée de conservation. Un refus supprime aussitôt : aucune purge à programmer.
 - La CSP perd ses dernières origines tierces de script, de style et de cadre.
 - La modération repose sur le propriétaire : sans lui, rien n'apparaît. Le plafond global borne la
   file ; au-delà, l'API répond 503 et le formulaire l'annonce.

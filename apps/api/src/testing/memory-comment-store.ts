@@ -144,18 +144,17 @@ export class MemoryCommentStore implements CommentStore {
     );
   }
 
-  moderate(
-    id: string,
-    from: readonly CommentStatus[],
-    to: 'published' | 'refused',
-    at: Date,
-  ): Promise<boolean> {
+  publish(id: string, at: Date): Promise<boolean> {
     const index = this.comments.findIndex(
-      (c) => c.id === id && from.includes(c.status),
+      (c) => c.id === id && c.status === 'pending',
     );
     const current = this.comments[index];
     if (current === undefined) return Promise.resolve(false);
-    this.comments[index] = { ...current, status: to, moderatedAt: at };
+    this.comments[index] = {
+      ...current,
+      status: 'published',
+      moderatedAt: at,
+    };
     return Promise.resolve(true);
   }
 
@@ -167,28 +166,13 @@ export class MemoryCommentStore implements CommentStore {
     return Promise.resolve(this.comments.length < before);
   }
 
-  purgeRefusedBefore(cutoff: Date): Promise<void> {
-    const expired = new Set(
-      this.comments
-        .filter(
-          (c) =>
-            c.status === 'refused' &&
-            c.moderatedAt !== null &&
-            c.moderatedAt.getTime() < cutoff.getTime(),
-        )
-        .map((c) => c.id),
-    );
-    this.comments = this.comments.filter(
-      (c) =>
-        !expired.has(c.id) && !(c.parentId !== null && expired.has(c.parentId)),
-    );
-    return Promise.resolve();
-  }
-
+  // Ce que vérifie la clé étrangère composite de Postgres : article existant, parent de profondeur 0
+  // sur le même article.
   private targetExists(postId: string, parentId: string | null): boolean {
-    return (
-      this.posts.some((p) => p.id === postId) &&
-      (parentId === null || this.comments.some((c) => c.id === parentId))
+    if (!this.posts.some((p) => p.id === postId)) return false;
+    if (parentId === null) return true;
+    return this.comments.some(
+      (c) => c.id === parentId && c.postId === postId && c.depth === 0,
     );
   }
 

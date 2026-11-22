@@ -58,10 +58,39 @@ describe('createCommentSchema', () => {
     ['a tab', 'Ca\tmille'],
     ['a line break', 'Ca\nmille'],
     ['a NUL', 'Ca\u0000mille'],
-    ['a right-to-left override', 'Camille‮ellimac'],
-    ['a directional isolate', 'Camille⁦x⁩'],
+    ['a right-to-left override', 'Camille\u202Eellimac'],
+    ['a directional isolate', 'Camille\u2066x\u2069'],
   ])('Given a name with %s, When validated, Then it is refused', (_, name) => {
     expect(invalid({ ...VALID, name })).toEqual(['name']);
+  });
+
+  it.each([
+    ['zero-width spaces only', '\u200B\u200B\u200B'],
+    ['a zero-width space inside', 'Ca\u200Bmille'],
+    ['a byte order mark inside', 'Ca\uFEFFmille'],
+    ['a soft hyphen', 'Ca\u00ADmille'],
+    ['a word joiner', 'Ca\u2060mille'],
+    ['a lone high surrogate', 'Ca\uD800mille'],
+    ['a lone low surrogate', 'Camille\uDC00'],
+    ['combining marks only', '\u0301\u0301\u0301'],
+    ['Hangul fillers only', '\u3164\u3164'],
+    ['blank braille cells only', '\u2800\u2800'],
+  ])(
+    'Given a name with %s, When validated, Then it is refused: a name must show something',
+    (_, name) => {
+      expect(invalid({ ...VALID, name })).toEqual(['name']);
+    },
+  );
+
+  it.each([
+    [
+      'an emoji joined by a zero-width joiner',
+      '\u{1F469}\u200D\u{1F4BB} Camille',
+    ],
+    ['accents written as combining marks', 'Zoe\u0308 Dupont'],
+    ['a non-Latin script', '\u5C71\u7530'],
+  ])('Given a name with %s, When validated, Then it is accepted', (_, name) => {
+    expect(invalid({ ...VALID, name })).toEqual([]);
   });
 
   it.each(['pas-une-adresse', 'a@', `${'x'.repeat(320)}@example.test`, ''])(
@@ -104,10 +133,47 @@ describe('createCommentSchema', () => {
     ['a NUL', 'texte\u0000'],
     ['an escape', 'texte\u001B[31m'],
     ['a C1 control', 'texte\u0085suite'],
-    ['a right-to-left override', 'texte‮etxet'],
-    ['a directional isolate', 'texte⁧x⁩'],
+    ['a right-to-left override', 'texte\u202Eetxet'],
+    ['a directional isolate', 'texte\u2067x\u2069'],
   ])('Given a body with %s, When validated, Then it is refused', (_, body) => {
     expect(invalid({ ...VALID, body })).toEqual(['body']);
+  });
+
+  it.each([
+    ['zero-width spaces only', '\u200B\u200B\u200B'],
+    ['a zero-width space inside', 'mer\u200Bci'],
+    ['a byte order mark inside', 'mer\uFEFFci'],
+    ['a lone high surrogate', 'merci \uD83D'],
+    ['a lone low surrogate', 'merci \uDE00'],
+    ['Hangul fillers and spaces only', '\u3164 \u3164\n\u3164'],
+    ['combining marks only', '\u0301\u0302'],
+  ])(
+    'Given a body with %s, When validated, Then it is refused: a message must show something',
+    (_, body) => {
+      expect(invalid({ ...VALID, body })).toEqual(['body']);
+    },
+  );
+
+  it('Given a body with an emoji family joined by zero-width joiners, When validated, Then it is kept as written', () => {
+    const body = 'Bravo \u{1F468}\u200D\u{1F469}\u200D\u{1F467}';
+
+    expect(createCommentSchema.parse({ ...VALID, body }).body).toBe(body);
+  });
+
+  it('Given an invisible name and an invisible body, When the messages are read, Then they say a visible character is needed', () => {
+    const result = createCommentSchema.safeParse({
+      ...VALID,
+      name: '\u3164\u3164',
+      body: '\u2800\u2800',
+    });
+
+    const messages = result.success
+      ? []
+      : result.error.issues.map((issue) => issue.message);
+    expect(messages).toEqual([
+      'Ton nom doit contenir au moins un caractère visible.',
+      'Ton message doit contenir au moins un caractère visible.',
+    ]);
   });
 
   it('Given markup in the body, When validated, Then it is kept as written: a developer quotes <app-root>', () => {

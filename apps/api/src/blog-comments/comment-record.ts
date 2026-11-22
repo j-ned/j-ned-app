@@ -7,7 +7,7 @@ export type CommentAuthor =
 export type CommentModeration =
   | { readonly status: 'pending' }
   | {
-      readonly status: 'published' | 'refused';
+      readonly status: 'published';
       readonly moderatedAt: Date;
     };
 

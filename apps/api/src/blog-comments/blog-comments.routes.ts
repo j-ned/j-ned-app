@@ -38,8 +38,9 @@ const adminListSchema = paginationSchema.extend({
 
 const ownerReplySchema = z.strictObject({ body: commentBodySchema });
 
+// Refuser un commentaire, c'est le supprimer : `DELETE /comments/:id`.
 const moderateCommentSchema = z.strictObject({
-  status: z.enum(['published', 'refused']),
+  status: z.literal('published'),
 });
 
 // Un slug mal formé ne désigne aucun article : même 404 qu'un slug inconnu.
@@ -100,12 +101,12 @@ export function blogCommentsRoutes(
         requireAuth,
         async (c) => {
           const id = uuidParam(c, 'id');
-          const { status } = await jsonBody(c, moderateCommentSchema);
-          return reply(c, await comments.moderate(id, status));
+          await jsonBody(c, moderateCommentSchema);
+          return reply(c, await comments.publish(id));
         },
       )
 
-      // Supprime aussi les réponses du commentaire.
+      // Refus ou suppression : le commentaire et ses réponses disparaissent.
       .delete(
         '/comments/:id',
         throttle(ADMIN_WRITE_THROTTLE),

@@ -16,11 +16,11 @@ class RacingStore extends MemoryCommentStore {
     return super.insertOwnerReply(...args);
   }
 
-  override moderate(
-    ...args: Parameters<MemoryCommentStore['moderate']>
+  override publish(
+    ...args: Parameters<MemoryCommentStore['publish']>
   ): Promise<boolean> {
     this.beforeWrite();
-    return super.moderate(...args);
+    return super.publish(...args);
   }
 }
 
@@ -48,27 +48,27 @@ describe('BlogCommentsService under concurrent moderation', () => {
       store.comments = [];
     };
 
-    await expect(service.moderate(comment.id, 'published')).rejects.toThrow(
+    await expect(service.publish(comment.id)).rejects.toThrow(
       NotFoundException,
     );
   });
 
-  it('Given a comment refused by another request between its reading and its update, When the owner publishes it, Then 409 and the refusal stands', async () => {
+  it('Given a comment published by another request between its reading and its update, When the owner publishes it, Then 409 and the first publication stands', async () => {
     const { store, service, comment } = await setup();
-    const refusedAt = new Date('2026-11-21T11:59:59.000Z');
+    const publishedAt = new Date('2026-11-21T11:59:59.000Z');
     store.beforeWrite = () => {
       store.comments = store.comments.map((c) => ({
         ...c,
-        status: 'refused',
-        moderatedAt: refusedAt,
+        status: 'published',
+        moderatedAt: publishedAt,
       }));
     };
 
-    await expect(service.moderate(comment.id, 'published')).rejects.toThrow(
+    await expect(service.publish(comment.id)).rejects.toThrow(
       ConflictException,
     );
     expect(store.comments).toEqual([
-      { ...comment, status: 'refused', moderatedAt: refusedAt },
+      { ...comment, status: 'published', moderatedAt: publishedAt },
     ]);
   });
 

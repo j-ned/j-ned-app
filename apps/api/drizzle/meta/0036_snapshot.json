@@ -1,5 +1,5 @@
 {
-  "id": "1dfab4fd-bf21-468b-93a4-e63088c1f157",
+  "id": "4ba874e2-725c-46ed-9cc1-3c24c07a4871",
   "prevId": "373722d8-dd21-4e39-9647-73d292d19664",
   "version": "7",
   "dialect": "postgresql",
@@ -1301,7 +1301,7 @@
         },
         "blog_comment_status_check": {
           "name": "blog_comment_status_check",
-          "value": "\"blog_comment\".\"status\" IN ('pending', 'published', 'refused')"
+          "value": "\"blog_comment\".\"status\" IN ('pending', 'published')"
         },
         "blog_comment_moderated_check": {
           "name": "blog_comment_moderated_check",

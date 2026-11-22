@@ -196,6 +196,11 @@ function constraintOf(error: unknown): string {
         'blog_comment_status_check',
       ],
       [
+        'a refused status: refusing is deleting',
+        { status: 'refused', moderated_at: MODERATED_AT },
+        'blog_comment_status_check',
+      ],
+      [
         'an unknown kind of author',
         {
           author_kind: 'robot',
@@ -214,11 +219,6 @@ function constraintOf(error: unknown): string {
       [
         'a published status without moderation date',
         { status: 'published', moderated_at: null },
-        'blog_comment_moderated_check',
-      ],
-      [
-        'a refused status without moderation date',
-        { status: 'refused' },
         'blog_comment_moderated_check',
       ],
     ])(

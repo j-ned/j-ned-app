@@ -1,3 +1,4 @@
+import * as z from 'zod';
 import type { RequireAuth } from '../auth/require-auth';
 import { blogCommentsRoutes } from '../blog-comments/blog-comments.routes';
 import { BlogCommentsService } from '../blog-comments/blog-comments.service';
@@ -17,6 +18,32 @@ const COMMENT = {
   body: 'Merci pour cet article.',
 };
 const UNKNOWN_ID = '00000000-0000-4000-8000-000000000000';
+
+// Forme publique attendue, stricte à chaque niveau : une clé de plus (e-mail, empreinte) fait échouer.
+const strictAuthorSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('visitor'), name: z.string() }),
+  z.strictObject({ kind: z.literal('owner') }),
+]);
+const strictReplySchema = z.strictObject({
+  id: z.uuid(),
+  author: strictAuthorSchema,
+  body: z.string(),
+  createdAt: z.iso.datetime(),
+});
+const strictPublicPageSchema = z.strictObject({
+  data: z.array(
+    z.strictObject({
+      id: z.uuid(),
+      author: strictAuthorSchema,
+      body: z.string(),
+      createdAt: z.iso.datetime(),
+      replies: z.array(strictReplySchema),
+    }),
+  ),
+  total: z.number().int(),
+  page: z.number().int(),
+  limit: z.number().int(),
+});
 
 type CallInit = {
   readonly method?: string;
@@ -171,7 +198,11 @@ export function describeCommentRoutes(
 
       it('Given the mail provider fails, When a visitor comments, Then 202, the comment is kept and the failure is logged without the address', async () => {
         await harness.seedPost({ slug: 'usinage' });
-        sendMail.mockRejectedValue(new Error('Resend responded 500'));
+        sendMail.mockRejectedValue(
+          new Error(
+            `Resend responded 422: reply_to ${EMAIL} rejected for Camille`,
+          ),
+        );
 
         const res = await post('usinage', COMMENT);
         await flushMails();
@@ -203,6 +234,11 @@ export function describeCommentRoutes(
         ['an invalid e-mail', { ...COMMENT, email: 'not-an-address' }],
         ['a one-letter name', { ...COMMENT, name: 'C' }],
         ['a control character', { ...COMMENT, body: 'texte\u0000' }],
+        [
+          'a name of zero-width spaces',
+          { ...COMMENT, name: '\u200B\u200B\u200B' },
+        ],
+        ['a lone surrogate', { ...COMMENT, body: 'Merci \uD800' }],
         ['a parent that is not a UUID', { ...COMMENT, parentId: 'x' }],
         ['a list instead of an object', [COMMENT]],
       ])(
@@ -229,6 +265,25 @@ export function describeCommentRoutes(
 
         expect(res.status).toBe(400);
         expect(await res.text()).not.toContain('private.person');
+      });
+
+      it('Given a name holding 40 000 nested lists in 80 kB, When the comment arrives, Then 400 and not a server error', async () => {
+        await harness.seedPost({ slug: 'usinage' });
+        const depth = 40_000;
+        const raw = `{"name":${'['.repeat(depth)}${']'.repeat(depth)},"email":"${EMAIL}","body":"Merci"}`;
+
+        const res = await app.request('/api/blog/posts/usinage/comments', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-forwarded-for': '203.0.113.90',
+          },
+          body: raw,
+        });
+
+        expect(raw.length).toBeLessThan(100 * 1024);
+        expect(res.status).toBe(400);
+        expect(await harness.comments()).toEqual([]);
       });
 
       it('Given a body over 100 kB, When the comment arrives, Then 413', async () => {
@@ -290,7 +345,7 @@ export function describeCommentRoutes(
         ).toBe('Dominique');
       });
 
-      it.each(['pending', 'refused'] as const)(
+      it.each(['pending'] as const)(
         'Given a %s comment, When a visitor replies to it, Then 404 exactly like an unknown comment: its existence does not leak',
         async (status) => {
           const article = await harness.seedPost({ slug: 'usinage' });
@@ -364,10 +419,45 @@ export function describeCommentRoutes(
         expect(await harness.comments()).toHaveLength(4);
       });
 
+      it.each([
+        [
+          'IPv6 addresses of one /64',
+          [
+            '2001:db8:abcd:12::1',
+            '2001:db8:abcd:12::2',
+            '2001:db8:abcd:12:ffff:ffff:ffff:fffe',
+          ],
+          '2001:db8:abcd:12::99',
+          '2001:db8:abcd:13::1',
+        ],
+        [
+          'an IPv4 address and its IPv4-mapped IPv6 form',
+          ['203.0.113.80', '::ffff:203.0.113.80', '203.0.113.80'],
+          '::ffff:203.0.113.80',
+          '203.0.113.81',
+        ],
+      ])(
+        'Given 3 pending comments sent from %s, When a 4th comes from the same sender, Then 429; a neighbouring network still passes',
+        async (_, addresses, fourthAddress, neighbour) => {
+          await harness.seedPost({ slug: 'usinage' });
+          const statuses: number[] = [];
+          for (const address of addresses)
+            statuses.push((await post('usinage', COMMENT, address)).status);
+
+          const fourth = await post('usinage', COMMENT, fourthAddress);
+          const other = await post('usinage', COMMENT, neighbour);
+
+          expect(statuses).toEqual([202, 202, 202]);
+          expect(fourth.status).toBe(429);
+          expect(other.status).toBe(202);
+          expect(await harness.comments()).toHaveLength(4);
+        },
+      );
+
       it('Given 3 comments from one sender, already moderated, When it sends another, Then 202: only pending ones count', async () => {
         const article = await harness.seedPost({ slug: 'usinage' });
         const senderHash = hashSender('203.0.113.22');
-        for (const status of ['published', 'refused', 'published'] as const)
+        for (const status of ['published', 'published', 'published'] as const)
           await harness.seedComment({ postId: article.id, status, senderHash });
 
         const res = await post('usinage', COMMENT, '203.0.113.22');
@@ -406,6 +496,57 @@ export function describeCommentRoutes(
         expect(sixth.status).toBe(429);
         expect(Number(sixth.headers.get('retry-after'))).toBeGreaterThan(0);
         expect(await harness.comments()).toEqual([]);
+      });
+    });
+
+    describe('the storage refuses what the composite foreign key refuses', () => {
+      const visitorReply = (postId: string, parentId: string) =>
+        harness.store.insertPending(
+          {
+            postId,
+            parentId,
+            name: 'Camille',
+            email: EMAIL,
+            senderHash: 'e'.repeat(64),
+            body: 'Une réponse',
+          },
+          { perSender: 3, total: 100 },
+        );
+      const ownerReply = (postId: string, parentId: string) =>
+        harness.store.insertOwnerReply({
+          postId,
+          parentId,
+          body: 'Merci',
+          publishedAt: NOW,
+        });
+
+      it('Given a reply as parent, When a reply to it is stored directly, Then the storage refuses it', async () => {
+        const article = await harness.seedPost({ slug: 'usinage' });
+        const parent = await harness.seedComment({ postId: article.id });
+        const reply = await harness.seedComment({
+          postId: article.id,
+          parentId: parent.id,
+        });
+
+        const fromVisitor = await visitorReply(article.id, reply.id);
+        const fromOwner = await ownerReply(article.id, reply.id);
+
+        expect(fromVisitor).toEqual({ kind: 'target-gone' });
+        expect(fromOwner).toBeUndefined();
+        expect(await harness.comments()).toHaveLength(2);
+      });
+
+      it('Given a parent of another post, When a reply is stored directly under this post, Then the storage refuses it', async () => {
+        const article = await harness.seedPost({ slug: 'usinage' });
+        const other = await harness.seedPost({ slug: 'tournage' });
+        const parent = await harness.seedComment({ postId: other.id });
+
+        const fromVisitor = await visitorReply(article.id, parent.id);
+        const fromOwner = await ownerReply(article.id, parent.id);
+
+        expect(fromVisitor).toEqual({ kind: 'target-gone' });
+        expect(fromOwner).toBeUndefined();
+        expect(await harness.comments()).toHaveLength(1);
       });
     });
 
@@ -504,7 +645,7 @@ export function describeCommentRoutes(
         });
       });
 
-      it('Given comments that are pending, refused or of another post, When the post is read, Then only its published comments and published replies appear', async () => {
+      it('Given comments that are pending or of another post, When the post is read, Then only its published comments and published replies appear', async () => {
         const article = await harness.seedPost({ slug: 'usinage' });
         const other = await harness.seedPost({ slug: 'tournage' });
         const visible = await harness.seedComment({ postId: article.id });
@@ -517,11 +658,6 @@ export function describeCommentRoutes(
           parentId: visible.id,
           status: 'pending',
         });
-        await harness.seedComment({
-          postId: article.id,
-          parentId: visible.id,
-          status: 'refused',
-        });
         await harness.seedComment({ postId: article.id, status: 'pending' });
         await harness.seedComment({ postId: other.id });
 
@@ -531,23 +667,6 @@ export function describeCommentRoutes(
           total: 1,
           data: [{ id: visible.id, replies: [{ id: visibleReply.id }] }],
         });
-      });
-
-      it('Given a refused comment with a published reply, When the post is read, Then neither appears', async () => {
-        const article = await harness.seedPost({ slug: 'usinage' });
-        const refused = await harness.seedComment({
-          postId: article.id,
-          status: 'refused',
-        });
-        await harness.seedComment({
-          postId: article.id,
-          parentId: refused.id,
-          owner: true,
-        });
-
-        const res = await read('usinage');
-
-        expect(await res.json()).toMatchObject({ data: [], total: 0 });
       });
 
       it('Given 3 published comments with replies, When they are read 2 per page, Then the total counts comments only and each page carries its own replies', async () => {
@@ -630,14 +749,7 @@ export function describeCommentRoutes(
 
         expect(res.status).toBe(200);
         expectNoPersonalData(text);
-        const page = JSON.parse(text) as {
-          data: (Record<string, unknown> & {
-            author: Record<string, unknown>;
-            replies: (Record<string, unknown> & {
-              author: Record<string, unknown>;
-            })[];
-          })[];
-        };
+        const page = strictPublicPageSchema.parse(JSON.parse(text));
         const first = defined(page.data[0]);
         const reply = defined(first.replies[0]);
         expect(Object.keys(first).sort()).toEqual([
@@ -788,12 +900,11 @@ export function describeCommentRoutes(
         });
         const onDraft = await harness.seedComment({
           postId: draft.id,
-          status: 'refused',
+          status: 'pending',
           name: 'Dominique',
           email: 'dominique@example.test',
           body: 'Ancien',
           createdAt: at(5),
-          moderatedAt: at(6),
         });
 
         const res = await list();
@@ -862,9 +973,9 @@ export function describeCommentRoutes(
                 email: 'dominique@example.test',
               },
               body: 'Ancien',
-              status: 'refused',
+              status: 'pending',
               createdAt: '2026-11-02T09:05:00.000Z',
-              moderatedAt: '2026-11-02T09:06:00.000Z',
+              moderatedAt: null,
               replyCount: 0,
             },
           ],
@@ -889,12 +1000,12 @@ export function describeCommentRoutes(
         });
       });
 
-      it.each(['pending', 'published', 'refused'] as const)(
+      it.each(['pending', 'published'] as const)(
         'Given comments in every status, When the owner filters on %s, Then only those are listed and counted',
         async (status) => {
           const article = await harness.seedPost({ slug: 'usinage' });
           const ids: Record<string, string> = {};
-          for (const each of ['pending', 'published', 'refused'] as const)
+          for (const each of ['pending', 'published'] as const)
             ids[each] = (
               await harness.seedComment({ postId: article.id, status: each })
             ).id;
@@ -931,7 +1042,13 @@ export function describeCommentRoutes(
         });
       });
 
-      it.each(['?status=spam', '?limit=101', '?page=0', '?sort=asc'])(
+      it.each([
+        '?status=spam',
+        '?status=refused',
+        '?limit=101',
+        '?page=0',
+        '?sort=asc',
+      ])(
         'Given the query %s, When the owner lists comments, Then 400',
         async (query) => {
           expect((await list(query)).status).toBe(400);
@@ -940,12 +1057,7 @@ export function describeCommentRoutes(
 
       it('Given 2 pending comments among others, When the owner reads the pending count, Then 2', async () => {
         const article = await harness.seedPost({ slug: 'usinage' });
-        for (const status of [
-          'pending',
-          'pending',
-          'published',
-          'refused',
-        ] as const)
+        for (const status of ['pending', 'pending', 'published'] as const)
           await harness.seedComment({ postId: article.id, status });
 
         const res = await call('/comments/pending-count');
@@ -977,54 +1089,18 @@ export function describeCommentRoutes(
         });
       });
 
-      it.each([
-        ['pending', 'refused'],
-        ['published', 'refused'],
-      ] as const)(
-        'Given a %s comment, When the owner sets it to %s, Then 200 and the public thread does not show it',
-        async (from, to) => {
-          const article = await harness.seedPost({ slug: 'usinage' });
-          const comment = await harness.seedComment({
-            postId: article.id,
-            status: from,
-          });
+      it('Given a published comment, When the owner publishes it again, Then 409 and nothing changes', async () => {
+        const article = await harness.seedPost({ slug: 'usinage' });
+        const comment = await harness.seedComment({ postId: article.id });
 
-          const res = await moderate(comment.id, { status: to });
-          const thread = await call('/posts/usinage/comments');
+        const res = await moderate(comment.id, { status: 'published' });
 
-          expect(res.status).toBe(200);
-          expect(await res.json()).toMatchObject({
-            status: to,
-            moderatedAt: NOW.toISOString(),
-          });
-          expect(await thread.json()).toMatchObject({ data: [], total: 0 });
-        },
-      );
+        expect(res.status).toBe(409);
+        expect(await errorMessage(res)).toBe('Ce commentaire est déjà publié.');
+        expect(await harness.comments()).toEqual([comment]);
+      });
 
-      it.each([
-        ['published', 'published'],
-        ['refused', 'refused'],
-        ['refused', 'published'],
-      ] as const)(
-        'Given a %s comment, When the owner sets it to %s, Then 409 and nothing changes',
-        async (from, to) => {
-          const article = await harness.seedPost({ slug: 'usinage' });
-          const comment = await harness.seedComment({
-            postId: article.id,
-            status: from,
-          });
-
-          const res = await moderate(comment.id, { status: to });
-
-          expect(res.status).toBe(409);
-          expect(await errorMessage(res)).toBe(
-            'Ce commentaire ne peut pas passer à ce statut.',
-          );
-          expect((await harness.comments())[0]).toEqual(comment);
-        },
-      );
-
-      it.each(['pending', 'refused'] as const)(
+      it.each(['pending'] as const)(
         'Given a pending reply under a %s comment, When the owner publishes the reply, Then 409: the parent comes first',
         async (parentStatus) => {
           const article = await harness.seedPost({ slug: 'usinage' });
@@ -1076,9 +1152,14 @@ export function describeCommentRoutes(
       it.each([
         ['an id that is not a UUID', 'not-a-uuid', { status: 'published' }],
         ['the pending status', UNKNOWN_ID, { status: 'pending' }],
+        [
+          'the refused status: refusing is deleting',
+          UNKNOWN_ID,
+          { status: 'refused' },
+        ],
         ['an unknown status', UNKNOWN_ID, { status: 'spam' }],
         ['no status', UNKNOWN_ID, {}],
-        ['an unknown field', UNKNOWN_ID, { status: 'refused', body: 'x' }],
+        ['an unknown field', UNKNOWN_ID, { status: 'published', body: 'x' }],
       ])(
         'Given %s, When the owner moderates, Then 400',
         async (_, id, json) => {
@@ -1091,7 +1172,7 @@ export function describeCommentRoutes(
         const patch = () =>
           call(`/comments/${UNKNOWN_ID}`, {
             method: 'PATCH',
-            json: { status: 'refused' },
+            json: { status: 'published' },
             ip: '203.0.113.50',
           });
         for (let i = 0; i < 60; i += 1) statuses.add((await patch()).status);
@@ -1141,6 +1222,30 @@ export function describeCommentRoutes(
           data: [{ id: kept.id, replies: [] }],
           total: 1,
         });
+      });
+
+      it('Given a published comment with pending replies of one sender, When the owner refuses it by deleting it, Then the replies go too and the sender may send again', async () => {
+        const article = await harness.seedPost({ slug: 'usinage' });
+        const parent = await harness.seedComment({ postId: article.id });
+        for (let i = 0; i < 3; i += 1)
+          expect(
+            (
+              await post(
+                'usinage',
+                { ...COMMENT, parentId: parent.id },
+                '203.0.113.70',
+              )
+            ).status,
+          ).toBe(202);
+
+        const removed = await remove(parent.id);
+        const again = await post('usinage', COMMENT, '203.0.113.70');
+
+        expect(removed.status).toBe(204);
+        expect(again.status).toBe(202);
+        expect(
+          (await harness.comments()).map((c) => [c.parentId, c.status]),
+        ).toEqual([[null, 'pending']]);
       });
 
       it('Given a reply, When the owner deletes it, Then its parent and the other replies stay', async () => {
@@ -1232,7 +1337,7 @@ export function describeCommentRoutes(
         expect(sendMail).not.toHaveBeenCalled();
       });
 
-      it.each(['pending', 'refused'] as const)(
+      it.each(['pending'] as const)(
         'Given a %s comment, When the owner answers it, Then 409: publish first, and nothing is stored',
         async (status) => {
           const article = await harness.seedPost({ slug: 'usinage' });
@@ -1279,6 +1384,7 @@ export function describeCommentRoutes(
         ['a one-letter body', { body: 'x' }],
         ['a body over 2 000 characters', { body: 'x'.repeat(2001) }],
         ['a control character', { body: 'texte\u0000' }],
+        ['a body of zero-width spaces', { body: '\u200B\u200B' }],
         ['no body', {}],
         ['an unknown field', { body: 'Merci', name: 'Julien' }],
       ])(
@@ -1293,74 +1399,6 @@ export function describeCommentRoutes(
           expect(await ids()).toEqual([parent.id]);
         },
       );
-    });
-
-    describe('refused comments expire', () => {
-      const DAY_MS = 86_400_000;
-      const daysAgo = (days: number) => new Date(NOW.getTime() - days * DAY_MS);
-      const purge = () =>
-        new BlogCommentsService(
-          harness.store,
-          { sendMail },
-          hashSender,
-          () => NOW,
-        ).purgeExpired();
-      const ids = async () => (await harness.comments()).map((c) => c.id);
-
-      it('Given comments refused 31, 30 and 29 days ago, When the daily purge runs, Then only the one refused more than 30 days ago is deleted', async () => {
-        const article = await harness.seedPost({ slug: 'usinage' });
-        const refused = (days: number, minute: number) =>
-          harness.seedComment({
-            postId: article.id,
-            status: 'refused',
-            createdAt: new Date(Date.UTC(2026, 8, 1, 8, minute)),
-            moderatedAt: daysAgo(days),
-          });
-        await refused(31, 1);
-        const onTheDay = await refused(30, 2);
-        const recent = await refused(29, 3);
-
-        await purge();
-
-        expect(await ids()).toEqual([onTheDay.id, recent.id]);
-      });
-
-      it('Given old published and pending comments, When the daily purge runs, Then they are kept: only refusals expire', async () => {
-        const article = await harness.seedPost({ slug: 'usinage' });
-        const old = new Date(Date.UTC(2026, 5, 1, 8, 0));
-        const published = await harness.seedComment({
-          postId: article.id,
-          createdAt: old,
-          moderatedAt: daysAgo(90),
-        });
-        const pending = await harness.seedComment({
-          postId: article.id,
-          status: 'pending',
-          createdAt: new Date(old.getTime() + 60_000),
-        });
-
-        await purge();
-
-        expect(await ids()).toEqual([published.id, pending.id]);
-      });
-
-      it('Given an expired refusal with replies, When the daily purge runs, Then its replies go with it', async () => {
-        const article = await harness.seedPost({ slug: 'usinage' });
-        const refused = await harness.seedComment({
-          postId: article.id,
-          status: 'refused',
-          moderatedAt: daysAgo(40),
-        });
-        await harness.seedComment({
-          postId: article.id,
-          parentId: refused.id,
-          owner: true,
-        });
-
-        await purge();
-
-        expect(await ids()).toEqual([]);
-      });
     });
   });
 }

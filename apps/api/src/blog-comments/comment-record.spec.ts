@@ -45,12 +45,12 @@ describe('toCommentRecord', () => {
   it.each([
     ['a visitor without name', { authorName: null }],
     ['a visitor without e-mail', { authorEmail: null }],
-    ['a refused comment without moderation date', { moderatedAt: null }],
+    ['a published comment without moderation date', { moderatedAt: null }],
   ])(
     'Given %s, a row the database constraints forbid, When it is narrowed, Then it throws instead of inventing a value',
     (_, corruption) => {
       const row = {
-        ...seedCommentRow({ postId: POST_ID, status: 'refused' }),
+        ...seedCommentRow({ postId: POST_ID, status: 'published' }),
         ...corruption,
       };
 

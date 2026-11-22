@@ -7,18 +7,16 @@ import {
 import { Logger } from '../common/logger';
 import type { PaginatedResult, PaginationParams } from '../common/pagination';
 import type { BlogComment, CommentStatus } from '../database/schema';
-import { fireAndForget, subDays } from '../common/utils';
+import { quotaAddress } from '../common/throttle';
+import { fireAndForget } from '../common/utils';
 import {
   COMMENT_NOTIFICATION_TEMPLATE,
   OWNER_EMAIL,
 } from '../mailer/mailer.constants';
 import type { MailSender } from '../mailer/mail-transport';
+import { maskEmail } from '../mailer/mailer.utils';
 import { toAdminComment, type AdminComment } from './admin-comment';
-import {
-  PENDING_PER_SENDER,
-  PENDING_TOTAL,
-  REFUSED_RETENTION_DAYS,
-} from './comment-limits';
+import { PENDING_PER_SENDER, PENDING_TOTAL } from './comment-limits';
 import { toCommentRecord, type CommentRecord } from './comment-record';
 import type { CommentStore, PostRef } from './comment-store';
 import type { CreateCommentDto } from './dto/create-comment.dto';
@@ -36,18 +34,9 @@ const QUEUE_CLOSED =
 
 const REPLY_BEFORE_PUBLISHING =
   'Publie d’abord ce commentaire avant d’y répondre.';
-const TRANSITION_REFUSED = 'Ce commentaire ne peut pas passer à ce statut.';
+const ALREADY_PUBLISHED = 'Ce commentaire est déjà publié.';
 const PARENT_NOT_PUBLISHED =
   'Publie d’abord le commentaire auquel cette réponse est rattachée.';
-
-// Statuts depuis lesquels chaque décision est permise ; un refus est définitif.
-const TRANSITIONS_TO: Record<
-  'published' | 'refused',
-  readonly CommentStatus[]
-> = {
-  published: ['pending'],
-  refused: ['pending', 'published'],
-};
 
 export class BlogCommentsService {
   private readonly logger = new Logger(BlogCommentsService.name);
@@ -81,7 +70,8 @@ export class BlogCommentsService {
         parentId: parent?.id ?? null,
         name: dto.name,
         email: dto.email,
-        senderHash: this.hashSender(sender.ip),
+        // Même découpage que le quota : un /64 IPv6 ou une IPv4 (forme mappée comprise) = un expéditeur.
+        senderHash: this.hashSender(quotaAddress(sender.ip)),
         body: dto.body,
       },
       { perSender: PENDING_PER_SENDER, total: PENDING_TOTAL },
@@ -98,7 +88,9 @@ export class BlogCommentsService {
       case 'inserted':
         // Mail au mieux : le commentaire est enregistré, un échec d'envoi le laisse dans la file.
         fireAndForget(
-          this.notifyOwner(dto, post, parent),
+          this.notifyOwner(dto, post, parent).catch((error: unknown) => {
+            throw withoutSender(error, dto);
+          }),
           this.logger,
           `Failed to send comment notification for ${result.row.id}`,
         );
@@ -135,30 +127,26 @@ export class BlogCommentsService {
     return { count: await this.store.countPending() };
   }
 
-  async moderate(
-    id: string,
-    status: 'published' | 'refused',
-  ): Promise<AdminComment> {
+  async publish(id: string): Promise<AdminComment> {
     const current = await this.existing(id);
-    const from = TRANSITIONS_TO[status];
-    if (!from.includes(current.status)) {
-      throw new ConflictException(TRANSITION_REFUSED);
+    if (current.status !== 'pending') {
+      throw new ConflictException(ALREADY_PUBLISHED);
     }
-    if (status === 'published' && current.parentId !== null) {
+    if (current.parentId !== null) {
       const parent = await this.store.findById(current.parentId);
       if (parent?.status !== 'published') {
         throw new ConflictException(PARENT_NOT_PUBLISHED);
       }
     }
-    if (!(await this.store.moderate(id, from, status, this.now()))) {
-      // Rien d'écrit : la ligne a disparu (404) ou une autre requête l'a déjà modérée (409).
+    if (!(await this.store.publish(id, this.now()))) {
+      // Rien d'écrit : la ligne a disparu (404) ou une autre requête l'a déjà publiée (409).
       await this.existing(id);
-      throw new ConflictException(TRANSITION_REFUSED);
+      throw new ConflictException(ALREADY_PUBLISHED);
     }
     return this.adminComment(id);
   }
 
-  // Les réponses partent avec leur commentaire (cascade de la base).
+  // Refuser, c'est supprimer : les réponses partent avec leur commentaire (cascade de la base).
   async remove(id: string): Promise<void> {
     if (!(await this.store.remove(id))) {
       throw new NotFoundException(COMMENT_NOT_FOUND);
@@ -180,13 +168,6 @@ export class BlogCommentsService {
     });
     if (row === undefined) throw new NotFoundException(COMMENT_NOT_FOUND);
     return this.adminComment(row.id);
-  }
-
-  // Un refus garde sa ligne 30 jours (reconnaître un expéditeur insistant), puis disparaît.
-  async purgeExpired(): Promise<void> {
-    await this.store.purgeRefusedBefore(
-      subDays(this.now(), REFUSED_RETENTION_DAYS),
-    );
   }
 
   private async existing(id: string): Promise<BlogComment> {
@@ -248,6 +229,21 @@ export class BlogCommentsService {
       },
     });
   }
+}
+
+// L'erreur du fournisseur part au journal et à Sentry : elle peut citer l'adresse ou le nom saisis.
+function withoutSender(
+  error: unknown,
+  sender: Pick<CreateCommentDto, 'email' | 'name'>,
+): Error {
+  const redact = (text: string) =>
+    text
+      .replaceAll(sender.email, maskEmail(sender.email))
+      .replaceAll(sender.name, '***');
+  const original = error instanceof Error ? error : new Error(String(error));
+  const redacted = new Error(redact(original.message));
+  redacted.stack = redact(original.stack ?? original.message);
+  return redacted;
 }
 
 function parentName(parent: CommentRecord | null): string {

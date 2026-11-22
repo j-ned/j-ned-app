@@ -96,7 +96,6 @@ export function createApp(
           secret: config.cronSecret,
           aggregator: services.analyticsAggregator,
           loginJournal: services.loginJournal,
-          comments: services.blogComments,
         }),
       )
       .notFound(handleNotFound)

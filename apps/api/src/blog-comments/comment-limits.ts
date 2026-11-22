@@ -9,8 +9,6 @@ export const PENDING_PER_SENDER = 3;
 // Borne la file de modération, donc aussi le coût du comptage par expéditeur.
 export const PENDING_TOTAL = 100;
 
-export const REFUSED_RETENTION_DAYS = 30;
-
 export const COMMENT_LIMITS = {
   nameMin: 2,
   nameMax: 80,

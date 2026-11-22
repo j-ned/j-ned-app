@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { PaginationParams } from '../common/pagination';
 import { publishedSlugFilter } from '../blog/published-post';
@@ -223,19 +223,12 @@ export class DrizzleCommentStore implements CommentStore {
     return row?.count ?? 0;
   }
 
-  async moderate(
-    id: string,
-    from: readonly CommentStatus[],
-    to: 'published' | 'refused',
-    at: Date,
-  ): Promise<boolean> {
-    // Le statut de départ est dans le WHERE : deux décisions simultanées ne s'écrasent pas.
+  async publish(id: string, at: Date): Promise<boolean> {
+    // Le statut de départ est dans le WHERE : deux publications simultanées ne s'écrasent pas.
     const rows = await this.db
       .update(blogComments)
-      .set({ status: to, moderatedAt: at })
-      .where(
-        and(eq(blogComments.id, id), inArray(blogComments.status, [...from])),
-      )
+      .set({ status: 'published', moderatedAt: at })
+      .where(and(eq(blogComments.id, id), eq(blogComments.status, 'pending')))
       .returning({ id: blogComments.id });
     return rows.length > 0;
   }
@@ -246,16 +239,5 @@ export class DrizzleCommentStore implements CommentStore {
       .where(eq(blogComments.id, id))
       .returning({ id: blogComments.id });
     return rows.length > 0;
-  }
-
-  async purgeRefusedBefore(cutoff: Date): Promise<void> {
-    await this.db
-      .delete(blogComments)
-      .where(
-        and(
-          eq(blogComments.status, 'refused'),
-          lt(blogComments.moderatedAt, cutoff),
-        ),
-      );
   }
 }
