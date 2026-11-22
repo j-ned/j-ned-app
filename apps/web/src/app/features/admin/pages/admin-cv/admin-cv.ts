@@ -181,7 +181,10 @@ export class AdminCv {
   private readonly _period = dateRangeToParams('30d', new Date());
 
   protected readonly cvResource: ResourceRef<CvInfo | null | undefined> = rxResource({
-    stream: () => this._cvService.getCurrent().pipe(keepShownOnFailedReload(this.cvResource)),
+    stream: () =>
+      this._cvService
+        .getCurrent({ background: this.cvResource.hasValue() })
+        .pipe(keepShownOnFailedReload(this.cvResource)),
   });
   private readonly _downloadsResource: ResourceRef<number | undefined> = rxResource({
     stream: () =>

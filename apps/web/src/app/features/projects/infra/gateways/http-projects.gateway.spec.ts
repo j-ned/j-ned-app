@@ -687,6 +687,41 @@ describe('HttpProjectsGateway: écritures de l’admin derrière l’intercepteu
     ).toEqual({ status: 500, toasts: 1 });
     httpController.verify();
   });
+
+  it('Given the shared list shown When its reread fails, retry included Then no toast is shown and the list stays', () => {
+    const { gateway, httpController } = configureWithToasts();
+    const seen: number[] = [];
+    const sub = gateway.getAllProjects().subscribe((list) => seen.push(list.length));
+    httpController.expectOne(`${BASE}/projects`).flush([makeProject()]);
+
+    gateway.invalidateAllProjects();
+    httpController
+      .expectOne(`${BASE}/projects`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    httpController
+      .expectOne(`${BASE}/projects`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect({ toasts: add.mock.calls.length, seen }).toEqual({ toasts: 0, seen: [1] });
+    sub.unsubscribe();
+    httpController.verify();
+  });
+
+  it('Given no list yet When the first read fails twice Then the interceptor still shows its toasts', () => {
+    const { gateway, httpController } = configureWithToasts();
+    const sub = gateway.getAllProjects().subscribe({ error: () => undefined });
+
+    httpController
+      .expectOne(`${BASE}/projects`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    httpController
+      .expectOne(`${BASE}/projects`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(add.mock.calls.length).toBe(2);
+    sub.unsubscribe();
+    httpController.verify();
+  });
 });
 
 describe('HttpProjectsGateway: image preparation before upload', () => {

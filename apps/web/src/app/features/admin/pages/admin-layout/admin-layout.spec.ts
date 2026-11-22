@@ -2,6 +2,12 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { BehaviorSubject, of, throwError, type Observable } from 'rxjs';
 import { AdminLayout } from './admin-layout';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { errorToastInterceptor } from '@core/interceptors/error-toast';
+import { ToastStore } from '@core/notifications/toast-store';
+import { HttpContactGateway } from '@features/contact/infra/gateways/http-contact.gateway';
+import { API_BASE_URL } from '@shared/api/api-config';
 import { AuthStore } from '@core/auth/auth-store';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
@@ -15,7 +21,7 @@ import { makeUser } from '@features/auth/testing/user-builders';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
-import { settle } from '@shared/testing/settle';
+import { settle, settleBounded } from '@shared/testing/settle';
 import { BlankPage } from '@shared/testing/blank-page';
 import { normalized } from '@shared/testing/normalized-text';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
@@ -276,5 +282,78 @@ describe('AdminLayout: bascule de thème', () => {
       before: { label: 'Passer en mode clair', htmlDark: true },
       after: { label: 'Passer en mode sombre', htmlDark: false, stored: 'light' },
     });
+  });
+});
+
+describe('AdminLayout: recompte au retour derrière le vrai intercepteur', () => {
+  const UNREAD_URL = '/api/contact/messages/unread-count';
+  const PENDING_URL = '/api/blog/comments/pending-count';
+  const add = vi.fn();
+
+  afterEach(() => {
+    forgetTabVisibility();
+    TestBed.inject(HttpTestingController).verify();
+    add.mockReset();
+  });
+
+  async function renderWithApi(): Promise<{
+    readonly fixture: ComponentFixture<AdminLayout>;
+    readonly http: HttpTestingController;
+  }> {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: '**', component: BlankPage }]),
+        provideHttpClient(withInterceptors([errorToastInterceptor])),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+        { provide: ToastStore, useValue: { add } },
+        {
+          provide: AuthStore,
+          useValue: { currentUser: () => makeUser(), logout: vi.fn() } as unknown as AuthStore,
+        },
+        { provide: ContactGateway, useClass: HttpContactGateway },
+        {
+          provide: ProjectsGateway,
+          useValue: { getAllProjects: (): Observable<readonly Project[]> => of([]) },
+        },
+        {
+          provide: BlogGateway,
+          useValue: { getAllPostsForAdmin: (): Observable<readonly BlogPost[]> => of([]) },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(AdminLayout);
+    await TestBed.inject(Router).navigateByUrl('/admin');
+    await settleBounded(fixture);
+    return { fixture, http: TestBed.inject(HttpTestingController) };
+  }
+
+  const failAll = (http: HttpTestingController, url: string): void => {
+    for (const request of http.match(url)) {
+      request.flush(null, { status: 500, statusText: 'Server Error' });
+    }
+  };
+
+  it('Given the counts shown When their reread on return fails Then no error toast is shown and the counts stay', async () => {
+    const { fixture, http } = await renderWithApi();
+    http.expectOne(UNREAD_URL).flush({ count: 3 });
+    http.expectOne(PENDING_URL).flush({ count: 2 });
+    await settleBounded(fixture);
+
+    returnToTab();
+    await settleBounded(fixture);
+    failAll(http, UNREAD_URL);
+    failAll(http, PENDING_URL);
+    await settleBounded(fixture);
+    failAll(http, UNREAD_URL);
+    failAll(http, PENDING_URL);
+    await settleBounded(fixture);
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect({
+      toasts: add.mock.calls.length,
+      messages: normalized(byTestId(host, 'nav-count-messages')),
+      comments: normalized(byTestId(host, 'nav-count-comments')),
+    }).toEqual({ toasts: 0, messages: '3 non lus', comments: '2 en attente' });
   });
 });

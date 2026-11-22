@@ -3,7 +3,9 @@ import type { BlogPost, BlogPostInput, BlogPostSummary } from '../models/blog-po
 import type { ContentImage } from '../models/content-image.model';
 
 export abstract class BlogGateway {
-  abstract getPublishedPosts(): Observable<readonly BlogPostSummary[]>;
+  abstract getPublishedPosts(options?: {
+    readonly background?: boolean;
+  }): Observable<readonly BlogPostSummary[]>;
   abstract getAllPostsForAdmin(): Observable<readonly BlogPost[]>;
   abstract invalidateAdminPosts(): void;
   abstract getPostBySlug(slug: string): Observable<BlogPost>;

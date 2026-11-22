@@ -32,9 +32,11 @@ export class CommentsGateway {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_BASE_URL);
 
-  // Seule la relance peut afficher un toast : un échec suivi d'une relance réussie reste muet.
-  private readonly pendingCount = refreshable(() =>
-    this.fetchPendingCount(silentErrors()).pipe(catchError(() => this.fetchPendingCount())),
+  // Au premier chargement, seule la relance peut toaster ; une relecture de fond reste muette.
+  private readonly pendingCount = refreshable((background) =>
+    background
+      ? this.fetchPendingCount(silentErrors())
+      : this.fetchPendingCount(silentErrors()).pipe(catchError(() => this.fetchPendingCount())),
   );
 
   // La section nomme elle-même l'échec ; l'article, lui, reste servi.

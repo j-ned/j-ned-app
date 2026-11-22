@@ -11,7 +11,7 @@ import {
   type Observable,
 } from 'rxjs';
 
-export function refreshable<T>(load: () => Observable<T>): {
+export function refreshable<T>(load: (background: boolean) => Observable<T>): {
   readonly value$: Observable<T>;
   readonly refresh: () => void;
 } {
@@ -22,7 +22,7 @@ export function refreshable<T>(load: () => Observable<T>): {
       return refresh$.pipe(
         startWith(undefined),
         // Une relecture qui échoue garde la valeur affichée : la suivante la remplacera.
-        switchMap(() => (shown ? load().pipe(catchError(() => EMPTY)) : load())),
+        switchMap(() => (shown ? load(true).pipe(catchError(() => EMPTY)) : load(false))),
         tap(() => (shown = true)),
       );
     }).pipe(

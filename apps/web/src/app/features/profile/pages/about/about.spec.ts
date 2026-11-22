@@ -384,6 +384,18 @@ describe('About', () => {
       expect(summaryOf('journey-heading')).toBe('Parcours modifié dans l’admin.');
     });
 
+    it('Given la page ouverte When l’onglet revient Then la relecture est demandée en fond, le premier chargement non', async () => {
+      const read = vi
+        .spyOn(TestBed.inject(ProfileGateway), 'getProfile')
+        .mockReturnValue(defer(() => of(DOCUMENT)));
+      await render(NO_CV);
+
+      returnToTab();
+      await fixture.whenStable();
+
+      expect(read.mock.calls).toEqual([[{ background: false }], [{ background: true }]]);
+    });
+
     it('Given la page ouverte When la relecture au retour échoue Then le parcours reste affiché et la réponse n’est pas marquée indisponible', async () => {
       vi.spyOn(TestBed.inject(ProfileGateway), 'getProfile')
         .mockReturnValueOnce(defer(() => of(DOCUMENT)))

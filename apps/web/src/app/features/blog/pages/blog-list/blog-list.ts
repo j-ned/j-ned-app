@@ -130,7 +130,9 @@ export class BlogList {
   protected readonly postsResource: ResourceRef<readonly BlogPostSummary[] | undefined> =
     rxResource({
       stream: () =>
-        this.gateway.getPublishedPosts().pipe(keepShownOnFailedReload(this.postsResource)),
+        this.gateway
+          .getPublishedPosts({ background: this.postsResource.hasValue() })
+          .pipe(keepShownOnFailedReload(this.postsResource)),
     });
   private readonly _posts = computed(() =>
     this.postsResource.hasValue() ? this.postsResource.value() : [],

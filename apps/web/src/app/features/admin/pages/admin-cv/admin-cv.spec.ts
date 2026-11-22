@@ -397,6 +397,16 @@ describe('AdminCv: relecture au retour sur l’onglet', () => {
     });
   });
 
+  it('Given the CV on screen When the tab comes back Then the CV is reread in the background, the first read not', async () => {
+    const getCurrent = vi.fn<CvGateway['getCurrent']>(() => of(makeCvInfo()));
+    const { fixture } = await render(makeCvGateway({ getCurrent }));
+
+    returnToTab();
+    await settleBounded(fixture);
+
+    expect(getCurrent.mock.calls).toEqual([[{ background: false }], [{ background: true }]]);
+  });
+
   it('Given the CV on screen When the reread on return fails Then the CV stays shown, without an error', async () => {
     const getCurrent = vi
       .fn<CvGateway['getCurrent']>()

@@ -435,6 +435,43 @@ describe('HttpBlogGateway: écritures de l’admin derrière l’intercepteur de
     ).toEqual({ status: 500, toasts: 1 });
     httpController.verify();
   });
+
+  it('Given the admin list shown When its reread fails, retry included Then no toast is shown', () => {
+    const { gateway, httpController } = configureWithToasts();
+    const sub = gateway.getAllPostsForAdmin().subscribe();
+    httpController.expectOne(`${BASE}/blog/posts/admin`).flush([makeBlogPost()]);
+
+    gateway.invalidateAdminPosts();
+    httpController
+      .expectOne(`${BASE}/blog/posts/admin`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    httpController
+      .expectOne(`${BASE}/blog/posts/admin`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(add.mock.calls.length).toBe(0);
+    sub.unsubscribe();
+    httpController.verify();
+  });
+
+  it.each([
+    { mode: 'a background reread', background: true, toasts: 0 },
+    { mode: 'a first read', background: false, toasts: 1 },
+  ])(
+    'Given $mode of the published posts When it fails Then $toasts toast(s) are shown',
+    async ({ background, toasts }) => {
+      const { gateway, httpController } = configureWithToasts();
+
+      const read = firstValueFrom(gateway.getPublishedPosts({ background })).catch(() => null);
+      httpController
+        .expectOne(`${BASE}/blog/posts`)
+        .flush(null, { status: 500, statusText: 'Server Error' });
+      await read;
+
+      expect(add.mock.calls.length).toBe(toasts);
+      httpController.verify();
+    },
+  );
 });
 
 describe('HttpBlogGateway: image preparation before upload', () => {

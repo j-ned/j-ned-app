@@ -15,7 +15,7 @@ import type { Project, ProjectImage, ProjectInput } from '../../domain/models/pr
 import { isShowcaseProject } from '../../domain/is-showcase-project';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
 import { refreshable } from '@shared/api/refreshable';
-import { silentErrors } from '@core/interceptors/skip-error-toast';
+import { silentErrors, silentWhen } from '@core/interceptors/skip-error-toast';
 import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
 import { postPreparedImage } from '@shared/upload/post-prepared-image';
 import { toProject, toProjectImage } from '../project.adapter';
@@ -30,11 +30,13 @@ export class HttpProjectsGateway extends ProjectsGateway {
   // Une seule liste, gardée pour toute la session : home, /projects et chaque détail la partagent
   // au lieu de la redemander à chaque page. Toute écriture réussie la relit. Un échec part aux
   // abonnés : une liste vide de repli serait indiscernable d'un portfolio sans projet.
-  private readonly allProjects = refreshable(() =>
-    this.http.get<ProjectDto[]>(`${this.apiUrl}/projects`).pipe(
-      retry(1),
-      map((rows): readonly Project[] => rows.map((row) => toProject(row, STORAGE_BASE_PATH))),
-    ),
+  private readonly allProjects = refreshable((background) =>
+    this.http
+      .get<ProjectDto[]>(`${this.apiUrl}/projects`, { context: silentWhen(background) })
+      .pipe(
+        retry(1),
+        map((rows): readonly Project[] => rows.map((row) => toProject(row, STORAGE_BASE_PATH))),
+      ),
   );
 
   getAllProjects(): Observable<readonly Project[]> {

@@ -100,7 +100,7 @@ export class About {
     // La page existe toujours : une lecture en échec, 404 compris, ne doit être ni un 200 vide ni un 404.
     stream: () =>
       this._profileGateway
-        .getProfile()
+        .getProfile({ background: this._profileResource.hasValue() })
         .pipe(
           keepShownOnFailedReload(this._profileResource),
           tap({ error: () => this._markUnavailable() }),

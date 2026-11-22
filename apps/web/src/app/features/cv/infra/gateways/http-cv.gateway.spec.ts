@@ -196,3 +196,37 @@ describe('HttpCvGateway: écritures de l’admin derrière l’intercepteur de t
     httpController.verify();
   });
 });
+
+describe('HttpCvGateway: relecture de fond', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it.each([
+    { mode: 'a background reread', options: { background: true }, toasts: 0 },
+    { mode: 'a first read', options: undefined, toasts: 1 },
+  ])(
+    'Given $mode When the current CV fails Then $toasts toast(s) are shown',
+    async ({ options, toasts }) => {
+      const add = vi.fn();
+      TestBed.configureTestingModule({
+        providers: [
+          HttpCvGateway,
+          provideHttpClient(withInterceptors([errorToastInterceptor])),
+          provideHttpClientTesting(),
+          { provide: API_BASE_URL, useValue: BASE },
+          { provide: API_LINK_BASE_URL, useValue: LINK_BASE },
+          { provide: ToastStore, useValue: { add } },
+        ],
+      });
+      const http = TestBed.inject(HttpTestingController);
+
+      const read = firstValueFrom(TestBed.inject(HttpCvGateway).getCurrent(options)).catch(
+        () => null,
+      );
+      http.expectOne(`${BASE}/cv`).flush(null, { status: 500, statusText: 'Server Error' });
+      await read;
+
+      expect(add.mock.calls.length).toBe(toasts);
+      http.verify();
+    },
+  );
+});

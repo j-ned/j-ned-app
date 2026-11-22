@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_BASE_URL, API_LINK_BASE_URL } from '@shared/api/api-config';
-import { silentErrors } from '@core/interceptors/skip-error-toast';
+import { silentErrors, silentWhen } from '@core/interceptors/skip-error-toast';
 import { CvGateway } from '../../domain/gateways/cv.gateway';
 import type { CvInfo } from '../../domain/models/cv.model';
 
@@ -23,8 +23,11 @@ export class HttpCvGateway extends CvGateway {
     });
   }
 
-  getCurrent(): Observable<CvInfo | null> {
-    return this.http.get<CvInfo | null>(this.baseUrl, { withCredentials: true });
+  getCurrent(options?: { readonly background?: boolean }): Observable<CvInfo | null> {
+    return this.http.get<CvInfo | null>(this.baseUrl, {
+      withCredentials: true,
+      context: silentWhen(options?.background),
+    });
   }
 
   delete(): Observable<void> {

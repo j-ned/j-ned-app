@@ -6,7 +6,7 @@ import type { BlogPost, BlogPostInput, BlogPostSummary } from '../domain/models/
 import type { ContentImage } from '../domain/models/content-image.model';
 import { API_BASE_URL, STORAGE_BASE_PATH } from '@shared/api/api-config';
 import { refreshable } from '@shared/api/refreshable';
-import { silentErrors } from '@core/interceptors/skip-error-toast';
+import { silentErrors, silentWhen } from '@core/interceptors/skip-error-toast';
 import { IMAGE_UPLOAD_PREPARER } from '@shared/upload/image-upload-preparer';
 import { postPreparedImage } from '@shared/upload/post-prepared-image';
 
@@ -23,16 +23,22 @@ export class HttpBlogGateway extends BlogGateway {
   private readonly apiUrl = inject(API_BASE_URL);
   private readonly prepareImage = inject(IMAGE_UPLOAD_PREPARER);
 
-  private readonly adminPosts = refreshable(() =>
-    this.http.get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`).pipe(
-      retry(1),
-      map((rows): readonly BlogPost[] => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))),
-    ),
+  private readonly adminPosts = refreshable((background) =>
+    this.http
+      .get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`, { context: silentWhen(background) })
+      .pipe(
+        retry(1),
+        map((rows): readonly BlogPost[] => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))),
+      ),
   );
 
-  getPublishedPosts(): Observable<readonly BlogPostSummary[]> {
+  getPublishedPosts(options?: {
+    readonly background?: boolean;
+  }): Observable<readonly BlogPostSummary[]> {
     return this.http
-      .get<BlogPostSummary[]>(`${this.apiUrl}/blog/posts`)
+      .get<BlogPostSummary[]>(`${this.apiUrl}/blog/posts`, {
+        context: silentWhen(options?.background),
+      })
       .pipe(map((rows) => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))));
   }
 
