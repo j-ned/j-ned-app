@@ -7,11 +7,11 @@ const MIGRATION = readFileSync(
   'utf8',
 );
 
-/** Le document versé par la migration : le JSON entre les délimiteurs `$seed$`. */
+// Le JSON entre les délimiteurs `$seed$` de la migration.
 const migrationJson = (): string | undefined =>
   /\$seed\$([\s\S]*)\$seed\$/.exec(MIGRATION)?.[1];
 
-describe('PROFILE_SEED — contenu initial du parcours (spec 021, A2)', () => {
+describe('PROFILE_SEED — contenu initial du parcours', () => {
   it('Given the migration, When its JSON is read, Then it is exactly PROFILE_SEED', () => {
     const json = migrationJson();
 

@@ -3,7 +3,7 @@ import { validateDto } from '../../common/validation';
 import { trackEventSchema } from './track-event.dto';
 
 describe('TrackEventDto', () => {
-  /** Champs en erreur, sous la forme des erreurs de class-validator (`{ property }`). */
+  // Champs en erreur, sous la forme des erreurs de class-validator (`{ property }`).
   function check(payload: Record<string, unknown>) {
     return Promise.resolve(
       invalidProperties(trackEventSchema, payload).map((property) => ({

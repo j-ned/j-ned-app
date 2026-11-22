@@ -1,4 +1,4 @@
-/** Corps multipart portant un seul fichier dans le champ `file`. */
+// Un seul fichier, dans le champ `file`.
 export function fileForm(
   bytes: Buffer,
   filename = 'a.png',

@@ -1,6 +1,6 @@
 import type { ProfileContent } from '../profile/profile-content';
 
-/** Contenu de test neutre, valide au regard du DTO : jamais la copie réelle du parcours. */
+// Neutre et valide au regard du DTO : jamais la copie réelle du parcours.
 export const aProfileContent = (
   overrides: Partial<ProfileContent> = {},
 ): ProfileContent => ({

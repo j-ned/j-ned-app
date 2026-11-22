@@ -21,16 +21,13 @@ import { ProfilePortraitService } from './profile-portrait.service';
 import { ProfileService } from './profile.service';
 import { defined } from '../testing/defined';
 
-/**
- * Sérialisation des opérations portrait sur un vrai Postgres (verrou `FOR UPDATE`). Ignoré sans
- * base dédiée : `PROFILE_IT_DATABASE_URL=postgres://…@127.0.0.1:…/… pnpm test -- profile-portrait.integration`
- * sur un conteneur jetable (les migrations y sont appliquées, la base est écrasée).
- */
+// Sérialisation par le verrou `FOR UPDATE`, sur un Postgres jetable (migré puis écrasé). Ignoré sans
+// `PROFILE_IT_DATABASE_URL=postgres://…@127.0.0.1:…/… pnpm test -- profile-portrait.integration`.
 const DATABASE_URL = process.env.PROFILE_IT_DATABASE_URL;
 const ROUNDS = 5;
 
 const randomDelay = () => Math.floor(Math.random() * 15);
-/** Délais du faux stockage (ms) : aléatoires par défaut, figés par un test déterministe. */
+// Délais du faux stockage (ms) : aléatoires par défaut, figés par un test déterministe.
 type Delays = {
   image: () => number;
   upload: () => number;
@@ -38,16 +35,16 @@ type Delays = {
 };
 
 (DATABASE_URL ? describe : describe.skip)(
-  'ProfilePortraitService on Postgres (spec 021, A5)',
+  'ProfilePortraitService on Postgres',
   () => {
     let client: ReturnType<typeof postgres>;
     let db: Database;
     let service: ProfilePortraitService;
     let profile: ProfileService;
     let delays: Delays;
-    /** Appelé au début de chaque suppression S3, avant qu'elle n'aboutisse. */
+    // Appelé au début de chaque suppression S3, avant qu'elle n'aboutisse.
     let onDelete: (key: string) => void;
-    /** Le faux bucket, et les suppressions qui ont retiré un objet que la ligne validée cite. */
+    // Le faux bucket, et les suppressions qui ont retiré un objet que la ligne validée cite.
     let bucket: Set<string>;
     let violations: string[];
 
@@ -109,17 +106,17 @@ type Delays = {
       profile = new ProfileService(db, storage);
     });
 
-    /** Aucune clé citée absente du bucket, aucun objet orphelin, aucune suppression d'objet cité. */
+    // Aucune clé citée absente du bucket, aucun objet orphelin, aucune suppression d'objet cité.
     const expectConsistent = async () => {
       expect(violations).toEqual([]);
       expect([...bucket].sort()).toEqual((await committedKeys()).sort());
     };
     const aFile = (bytes: string) =>
       ({ buffer: Buffer.from(bytes) }) as UploadedFile;
-    /** Clé du faux recadrage (identité) : celle que le service calcule. */
+    // Clé du faux recadrage (identité) : celle que le service calcule.
     const keyOf = (file: UploadedFile) =>
       `profile/portrait-${contentHash(file.buffer)}.avif`;
-    /** État initial : la ligne cite ces clés, le bucket les contient. */
+    // État initial : la ligne cite ces clés, le bucket les contient.
     const givenKeys = async (
       portraitKey: string,
       previousPortraitKey: string,
@@ -130,7 +127,7 @@ type Delays = {
         .where(eq(profileContent.id, PROFILE_ROW_ID));
       bucket = new Set([portraitKey, previousPortraitKey]);
     };
-    /** Une autre connexion tient le verrou de la ligne jusqu'à `release()`. */
+    // Une autre connexion tient le verrou de la ligne jusqu'à `release()`.
     const holdRowLock = async () => {
       let release = () => {};
       const released = new Promise<void>((resolve) => (release = resolve));

@@ -15,7 +15,7 @@ import {
   type ThrottleConfig,
 } from './throttle';
 
-/** Route sous quota, horloge pilotée par le test. */
+// Horloge pilotée par le test.
 function throttledApp(config: ThrottleConfig) {
   let now = 0;
   const app = new Hono()
@@ -93,13 +93,7 @@ describe('throttle', () => {
     ['the default quota', DEFAULT_THROTTLE, 10, 60_000, 'allow'],
     ['public reads', PUBLIC_READ_THROTTLE, 120, 60_000, 'allow'],
     ['login and 2FA attempts', AUTH_ATTEMPT_THROTTLE, 5, 60_000, 'reject'],
-    [
-      'admin gallery writes (ADR-0009)',
-      ADMIN_WRITE_THROTTLE,
-      60,
-      60_000,
-      'allow',
-    ],
+    ['admin gallery writes', ADMIN_WRITE_THROTTLE, 60, 60_000, 'allow'],
     ['contact messages', CONTACT_THROTTLE, 3, 3_600_000, 'reject'],
     ['audience beacons', TRACK_THROTTLE, 10, 1_000, 'allow'],
   ])(

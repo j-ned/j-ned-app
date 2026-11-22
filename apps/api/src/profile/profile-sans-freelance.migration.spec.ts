@@ -9,13 +9,13 @@ const MIGRATION = readFileSync(
   'utf8',
 );
 
-/** Les deux textes de la migration, dans l'ordre : le remplaçant, puis celui qu'il remplace. */
+// Les deux textes de la migration, dans l'ordre : le remplaçant, puis celui qu'il remplace.
 const texts = (): string[] =>
   [...MIGRATION.matchAll(/\$text\$([\s\S]*?)\$text\$/g)].map((m) =>
     defined(m[1]),
   );
 
-describe('0028 — texte « Ce qui me motive » sans activité freelance (spec 029)', () => {
+describe('0028 — texte « Ce qui me motive » sans activité freelance', () => {
   it('Given the migration, When read, Then it only replaces the exact text seeded by 0021', () => {
     expect(texts()[1]).toBe(PROFILE_SEED.motivation.description);
   });

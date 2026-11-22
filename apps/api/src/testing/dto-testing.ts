@@ -3,10 +3,8 @@ import '../common/validation';
 
 export type Violation = { readonly path: string; readonly message: string };
 
-/**
- * Issues d'un corps refusé (vide s'il est accepté), chemin pointé. Une clé inconnue compte sous son
- * propre chemin (`biography.extra`), comme un champ en erreur.
- */
+// Vide si le corps est accepté. Une clé inconnue compte sous son propre chemin (`biography.extra`),
+// comme un champ en erreur.
 export function violationsOf(schema: z.ZodType, body: unknown): Violation[] {
   const result = schema.safeParse(body);
   if (result.success) return [];
@@ -20,7 +18,7 @@ export function violationsOf(schema: z.ZodType, body: unknown): Violation[] {
   });
 }
 
-/** Champs de premier niveau en erreur, dans l'ordre des issues (clés inconnues comprises). */
+// Dans l'ordre des issues, clés inconnues comprises.
 export function invalidProperties(schema: z.ZodType, body: unknown): string[] {
   return [
     ...new Set(
@@ -31,10 +29,8 @@ export function invalidProperties(schema: z.ZodType, body: unknown): string[] {
   ];
 }
 
-/**
- * Vrai si `path` est en erreur (lui-même ou un de ses éléments de liste : `skills` couvre `skills.0`),
- * avec `message` exactement s'il est donné.
- */
+// `path` lui-même ou un de ses éléments de liste (`skills` couvre `skills.0`) ; `message` exact s'il
+// est donné.
 export function hasViolation(
   violations: readonly Violation[],
   path: string,

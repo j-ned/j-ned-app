@@ -29,7 +29,7 @@ const form = (bytes: Buffer, filename: string, contentType: string) => {
   return data;
 };
 
-/** Routes montées avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés. */
+// Routes montées avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés.
 describe('profile routes', () => {
   const profile = { findCurrent: jest.fn(), replace: jest.fn() };
   const portrait = { replace: jest.fn(), remove: jest.fn() };

@@ -7,7 +7,7 @@ import type { LoginJournalService } from './login-journal.service';
 import type { RequireAuth } from './require-auth';
 import { denyAll, passThrough } from '../testing/require-auth';
 
-/** Routes montées sous leur préfixe avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés. */
+// Routes montées sous leur préfixe avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés.
 describe('auth routes', () => {
   const auth = {
     login: jest.fn(),

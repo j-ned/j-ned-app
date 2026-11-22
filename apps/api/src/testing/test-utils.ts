@@ -1,8 +1,5 @@
-/**
- * Mock chaînable du builder Drizzle pour les tests unitaires des services.
- * Configurer le terminator par test : `db.returning.mockResolvedValueOnce([{...}])`,
- * ou `db.limit.mockResolvedValueOnce([...])` pour les selects sans `.returning()`.
- */
+// Mock chaînable du builder Drizzle : configurer le terminator par test, `db.returning` ou `db.limit`
+// (selects sans `.returning()`), avec `mockResolvedValueOnce`.
 export function createMockDb() {
   const chainable = {
     select: jest.fn(),

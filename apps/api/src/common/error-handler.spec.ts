@@ -3,7 +3,6 @@ import { handleError, handleNotFound } from './error-handler';
 import { NotFoundException, TooManyRequestsException } from './http-errors';
 import { Logger } from './logger';
 
-/** Application dont toute route lève l'erreur donnée. */
 const throwing = (error: unknown) =>
   new Hono()
     .all('*', () => {

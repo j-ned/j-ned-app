@@ -37,7 +37,7 @@ const file = (bytes: Buffer, type: string, filename: string): Part => ({
 const png = () => file(PNG, 'image/png', 'a.png');
 const alt = (value: string): Part => ({ name: 'alt', value });
 
-/** Galerie montée avec le vrai gestionnaire d'erreurs ; service et session remplacés. */
+// Galerie montée avec le vrai gestionnaire d'erreurs ; service et session remplacés.
 describe('project images routes (HTTP)', () => {
   const images = {
     upload: jest.fn(),

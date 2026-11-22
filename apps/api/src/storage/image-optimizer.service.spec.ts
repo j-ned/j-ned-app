@@ -24,7 +24,7 @@ function solidImage(
   return img[format]().toBuffer();
 }
 
-/** Bruit gaussien RGB ; `background` est exigé par les types de sharp mais ignoré quand `noise` est fourni. */
+// `background` est exigé par les types de sharp mais ignoré quand `noise` est fourni.
 function gaussianNoise(width: number, height: number, sigma: number) {
   return sharp({
     create: {
@@ -37,12 +37,8 @@ function gaussianNoise(width: number, height: number, sigma: number) {
   });
 }
 
-/**
- * JPEG q95 à la taille d'un appareil photo : scène basse fréquence (bruit 1/32 agrandi en cubique,
- * dégradés et formes floues) + grain de capteur fin (σ ≤ 8, fusion `overlay` dans libvips : une
- * boucle JS sur 11 Mo de pixels coûte ~8 s dans le bac à sable Jest). Un bruit blanc pur sur toute
- * l'image n'est pas une photo : c'est le pire cas de l'encodeur AV1, ~4 fois plus lent à encoder.
- */
+// Grain fusionné dans libvips (une boucle JS sur 11 Mo de pixels coûte ~8 s sous Jest) ; pas de bruit
+// blanc pur : ce n'est pas une photo, et c'est le pire cas de l'encodeur AV1 (~4 fois plus lent).
 async function photoLikeJpeg(width: number, height: number) {
   const scene = await gaussianNoise(
     Math.ceil(width / 32),
@@ -165,7 +161,7 @@ describe('ImageOptimizer', () => {
     });
   });
 
-  describe('toPortrait (spec 021, A5)', () => {
+  describe('toPortrait', () => {
     it.each([
       ['PNG paysage 1000×600', 1000, 600, 'png'],
       ['JPEG portrait 1200×1800', 1200, 1800, 'jpeg'],

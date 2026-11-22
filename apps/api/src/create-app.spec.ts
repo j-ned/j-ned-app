@@ -6,7 +6,7 @@ import type { Services } from './services';
 const ERROR_KEYS = ['error', 'message', 'path', 'statusCode', 'timestamp'];
 const SITE = 'http://localhost:4200';
 
-/** Application complète, services factices : seul le câblage HTTP commun est éprouvé ici. */
+// Services factices : seul le câblage HTTP commun est éprouvé ici.
 function app() {
   const contact = { create: jest.fn().mockResolvedValue(undefined) };
   const blog = {

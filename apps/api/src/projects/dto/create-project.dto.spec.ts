@@ -44,7 +44,7 @@ describe('CreateProjectDto - techChoices / architectureDecisions', () => {
   });
 });
 
-describe('CreateProjectDto - kind (ADR-0008)', () => {
+describe('CreateProjectDto - kind', () => {
   it('Given no kind, When validated, Then it is accepted (the column default applies)', () => {
     expect(invalidProperties(createProjectSchema, { ...base })).toHaveLength(0);
   });
@@ -58,7 +58,7 @@ describe('CreateProjectDto - kind (ADR-0008)', () => {
   );
 });
 
-describe('UpdateProjectDto - kind (ADR-0008)', () => {
+describe('UpdateProjectDto - kind', () => {
   it('Given kind "script", When validated, Then it is accepted', () => {
     expect(
       invalidProperties(updateProjectSchema, { kind: 'script' }),
@@ -92,13 +92,13 @@ describe('UpdateProjectDto - kind (ADR-0008)', () => {
   });
 });
 
-/** Même validation que les routes (`jsonBody`) : conversion implicite, transformations et liste blanche compris. */
+// Même validation que les routes (`jsonBody`) : conversion implicite, transformations et liste blanche.
 const throughPipe = <T>(
   schema: z.ZodType<T>,
   body: Record<string, unknown>,
 ): Promise<T> => Promise.resolve().then(() => validateDto(schema, body));
 
-/** Messages remontés par le 400, en JSON (`["pitch: …"]`) : le champ en cause est vérifié. */
+// Messages remontés par le 400, en JSON (`["pitch: …"]`) : le champ en cause est vérifié.
 const rejectionOf = async (
   schema: z.ZodType,
   body: Record<string, unknown>,
@@ -116,7 +116,7 @@ const EDITORIAL_FIELDS = [
   ['highlight', PROJECT_FACT_MAX],
 ] as const;
 
-describe('CreateProjectDto - editorial fields (ADR-0010)', () => {
+describe('CreateProjectDto - editorial fields', () => {
   it('Given the three fields, When created, Then they reach the service trimmed', async () => {
     const dto = await throughPipe(createProjectSchema, {
       ...base,
@@ -189,7 +189,7 @@ describe('CreateProjectDto - editorial fields (ADR-0010)', () => {
   });
 });
 
-describe('UpdateProjectDto - editorial fields (ADR-0010, inherited through PartialType)', () => {
+describe('UpdateProjectDto - editorial fields (inherited through PartialType)', () => {
   describe.each(EDITORIAL_FIELDS)('%s (max %i)', (field, max) => {
     it.each([[null], [''], ['   ']])(
       'Given %p, When patched, Then it is accepted as null (the value is cleared)',

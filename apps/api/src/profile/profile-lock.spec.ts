@@ -6,7 +6,7 @@ import { createMockDb } from '../testing/test-utils';
 import { inProfileTransaction } from './profile-lock';
 
 const asSql = (query: unknown) => new PgDialect().sqlToQuery(query as SQL).sql;
-/** L'erreur Postgres « lock_not_available », telle que Drizzle l'enveloppe (`cause`). */
+// L'erreur Postgres « lock_not_available », telle que Drizzle l'enveloppe (`cause`).
 const aLockTimeout = () =>
   Object.assign(new Error('Failed query: select …'), {
     cause: Object.assign(new Error('canceling statement due to lock timeout'), {

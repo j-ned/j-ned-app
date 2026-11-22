@@ -62,10 +62,8 @@ describe('demoSeedSettings', () => {
   );
 });
 
-/**
- * Sur un vrai Postgres, base jetable écrasée à chaque test : ignoré sans
- * `DEMO_IT_DATABASE_URL=postgres://…@127.0.0.1:…/… pnpm test -- demo.seed`.
- */
+// Vrai Postgres, base jetable écrasée à chaque test ; ignoré sans
+// `DEMO_IT_DATABASE_URL=postgres://…@127.0.0.1:…/… pnpm test -- demo.seed`.
 const DATABASE_URL = process.env.DEMO_IT_DATABASE_URL;
 
 (DATABASE_URL ? describe : describe.skip)(

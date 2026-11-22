@@ -7,7 +7,6 @@ import * as isbotModule from 'isbot';
 import { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 
-/** Rend le `set` d'un UPDATE tel que Postgres le recevra. */
 const renderSet = (set: unknown) => {
   const { duration } = set as { duration: unknown };
   expect(duration).toBeInstanceOf(SQL);
@@ -455,7 +454,7 @@ describe('AnalyticsTrackerService', () => {
     });
   });
 
-  describe('spec 020 : fragments et visites fantômes', () => {
+  describe('fragments et visites fantômes', () => {
     it.each([
       ['page_view', '/offres/site-vitrine#demande', '/offres/site-vitrine'],
       ['page_view', '/#contact', '/'],

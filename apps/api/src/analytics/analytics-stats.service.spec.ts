@@ -8,7 +8,7 @@ import type { DayAggregates } from './analytics-aggregates';
 const render = (fragment: unknown) =>
   new PgDialect({ casing: 'snake_case' }).sqlToQuery(fragment as SQL);
 
-/** Ligne `daily_stat` ; les colonnes de la spec 020 sont `NULL` par défaut (jour non mesuré). */
+// Colonnes d'engagement `NULL` par défaut : jour non mesuré.
 const storedDay = (
   date: string,
   overrides: Record<string, number | null> = {},

@@ -169,7 +169,7 @@ describe('BlogService', () => {
     });
   });
 
-  describe('remove — images du corps (spec 016, A2)', () => {
+  describe('remove — images du corps', () => {
     const ID = '11111111-1111-1111-1111-111111111111';
     const KEY_A =
       'blog-content/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa-a1b2c3d4-1600x900.avif';

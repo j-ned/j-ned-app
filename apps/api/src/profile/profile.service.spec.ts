@@ -90,7 +90,7 @@ describe('ProfileService', () => {
   });
 
   describe('replace', () => {
-    /** Le corps tel que la ValidationPipe le livre : une instance du DTO. */
+    // Le corps tel que la ValidationPipe le livre : une instance du DTO.
     const aDto = (content: ProfileContent, version: number) =>
       updateProfileSchema.parse({ ...content, version });
 
