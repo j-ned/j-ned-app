@@ -186,22 +186,28 @@ l'entité a été enregistrée ailleurs depuis son chargement, sans jamais écra
   ton brouillon la remplacera. », « Enregistrer quand même » ou « Continuer l'édition ». Annuler
   n'écrit rien et garde le brouillon. « Enregistrer quand même » relit la dernière version et
   envoie le brouillon sous condition de celle-ci (`If-Match`) ; si elle ne peut pas être relue, le
-  brouillon part avec sa propre version, l'API répond 409 et l'avertissement reste. Jamais
+  brouillon part avec sa propre version, l'API répond 412 et l'avertissement reste. Jamais
   d'écriture sans condition.
 - Tout enregistrement d'article ou de projet part sous condition de la version d'où vient le
   brouillon (`If-Match: "<version>"`), l'envoi de la couverture sous celle que l'écriture vient de
-  rendre. Un refus 409 (version enregistrée ailleurs avant tout retour sur l'onglet) affiche le même
+  rendre. Un refus 412 (version enregistrée ailleurs avant tout retour sur l'onglet) affiche le même
   avertissement et la même action que le parcours, garde le brouillon et sa couverture, et le toast
   dit « L'article (Le projet) n'a pas été enregistré : une version plus récente a été enregistrée
-  ailleurs. ». Une couverture refusée en 409 après l'écriture affiche aussi l'avertissement.
+  ailleurs. ». Une couverture refusée en 412 après l'écriture affiche aussi l'avertissement.
+- Un refus 409 d'un article ou d'un projet veut dire que le nouveau titre donne un slug déjà pris :
+  le toast dit « Un autre article (projet) porte déjà ce titre : choisis-en un autre. », le
+  brouillon reste tel quel et aucun avertissement de version n'apparaît. Le formulaire n'a pas de
+  canal d'erreur serveur par champ : le message passe par le toast (`role="alert"`).
 - Parcours : pas de confirmation, l'API refuse la version périmée. Un enregistrement refusé en 409
   affiche le même avertissement et la même action. Le toast d'erreur dit « Le parcours n'a pas été
   enregistré : une version plus récente a été enregistrée ailleurs. » au lieu de demander de
   recharger la page.
 - Projet : chaque écriture de galerie (ajout, texte alternatif, ordre, retrait) change la version du
-  projet. Celles faites depuis l'onglet avancent d'autant la version attendue par l'éditeur (pas de
-  faux avertissement, pas de 409 au prochain enregistrement) ; celles faites ailleurs sont
-  signalées comme une version plus récente.
+  projet, que l'API renvoie dans l'`ETag` de la réponse. L'éditeur retient la plus haute version
+  connue (projet enregistré ou relu, réponses de la galerie), quel que soit l'ordre d'arrivée : pas
+  de faux avertissement ni de 412 causé par l'onglet lui-même quand une écriture de galerie
+  chevauche un enregistrement, l'envoi de la couverture ou un rechargement. Celles faites ailleurs
+  sont signalées comme une version plus récente.
 - « Dernière version chargée. » n'est dit que si la version éditée a effectivement changé depuis
   celle d'où le rechargement est parti ; il retombe à la saisie suivante et à l'enregistrement
   suivant. Un rechargement de projet ou de parcours qui échoue donne le focus à « Réessayer ».
@@ -224,8 +230,8 @@ réutilise `Button` et `ConfirmDialog`.
   rechargement, l'état « rechargée » et la confirmation d'écrasement : `beforeSave()` rend
   `{ proceed, version }`, la version à envoyer (relue après confirmation). Chaque éditeur lui donne
   son `id` et sa version, sa lecture de fond, son rechargement, `draft.saving` et l'existence de
-  modifications ; le parcours déclare `staleRejectedByApi`. `isStaleVersion()` (409) est commun aux
-  trois éditeurs.
+  modifications ; le parcours déclare `staleRejectedByApi`. `isStaleVersion()` (412) et
+  `isTitleTaken()` (409) servent aux éditeurs d'article et de projet ; le parcours garde son test du 409. `AdminProjectGallery` émet `versionWritten` avec la version rendue par chaque écriture.
 - `AdminEditorFrame`, déjà commun aux trois éditeurs, porte la zone, le bouton et les deux
   dialogues (recharger, enregistrer par-dessus).
 - Lectures de fond : `BlogGateway.getLatestAdminPost(id)` lit `/blog/posts/admin` **hors du cache
@@ -246,14 +252,17 @@ l'onglet n'avait pas été quitté puis retrouvé.
   plutôt que `updatedAt`, que JSON tronque à la milliseconde alors que PostgreSQL la garde à la
   microseconde. Migration `0037_content_version.sql`, en expansion seule. Incrémentée dans le même
   `UPDATE` par le `PATCH` (couverture retirée comprise), l'envoi de couverture et, pour un projet,
-  chaque écriture de galerie (dans la transaction de la capture) ; le « j'aime » ne la change pas.
+  chaque écriture de galerie, par la première requête de sa transaction (le projet est verrouillé
+  avant ses captures, dans l'ordre de `DELETE project`, sans interblocage) ; le « j'aime » ne la
+  change pas.
 - Contrat : `PATCH` et `POST …/image` acceptent un en-tête facultatif `If-Match: "<version>"`
   (ETag fort ; `*`, liste, `W/` ou valeur sans guillemets ⇒ 400). Présent, l'écriture devient
   conditionnelle (`UPDATE … WHERE id = :id AND version = :version`) ; aucune ligne écrite alors que
-  l'entité existe ⇒ **409** « Une version plus récente de cet article (ce projet) a été enregistrée
-  ailleurs : recharge-le avant d'enregistrer. », comme le parcours (et non 412 : ADR-0041) ; entité
-  supprimée ⇒ 404. Absent ⇒ comportement d'avant. `version` est dans toutes les réponses (lectures,
-  listes, écritures) et `ETag: "<version>"` sur les réponses d'une entité.
+  l'entité existe ⇒ **412** « Une version plus récente de cet article (ce projet) a été enregistrée
+  ailleurs : recharge-le avant d'enregistrer. » (409 d'abord, abandonné : il se confondait avec le
+  409 du slug déjà pris, ADR-0041) ; entité supprimée ⇒ 404. Absent ⇒ comportement d'avant.
+  `version` est dans toutes les réponses (lectures, listes, écritures), `ETag: "<version>"` sur les
+  réponses d'une entité, et la version du projet dans l'`ETag` des quatre écritures de galerie.
 - Compatibilité : en-tête facultatif, aucun client existant ne casse ; l'API de `master` fonctionne
   sur la base migrée (vérifié : lectures, `PATCH`, création).
 
@@ -263,13 +272,15 @@ parcours qui échoue montre l'état d'erreur de l'éditeur, comme un premier cha
 d'article reste lié au cache partagé de la liste : la relecture que déclenche l'écriture (gateway)
 peut réécrire ce qui a été saisi juste après un enregistrement, couverture choisie dans cette
 fenêtre comprise. Une saisie faite entre la confirmation du rechargement et l'arrivée des données
-est écrasée par la version chargée. Une écriture de galerie réussie côté API mais dont la réponse
-s'est perdue n'est pas comptée par l'onglet : le prochain enregistrement du projet reçoit 409.
-Une écriture de galerie faite depuis l'onglet efface un avertissement déjà affiché ; le retour
-suivant sur l'onglet, ou le prochain enregistrement (409), le rétablit. Pendant le déploiement,
-l'ancienne API écrit sans incrémenter la version. Le seuil d'altitude du checker est dépassé par
-l'éditeur de projet (295 lignes, 273 avant ce changement) ; le parcours est à 257 (261 avant).
-Aucun découpage n'a été fait ici.
+est écrasée par la version chargée. Une écriture de galerie réussie côté API dont la réponse s'est
+perdue ne fait pas connaître sa version : le prochain enregistrement du projet reçoit 412 ; de même
+pour un enregistrement envoyé pendant qu'une écriture de galerie de l'onglet est encore en route et
+validée la première. Une écriture de galerie dont la version avance efface un avertissement déjà
+affiché ; le retour suivant sur l'onglet, ou le prochain enregistrement (412), le rétablit. Pendant
+le déploiement, l'ancienne API écrit sans incrémenter la version. Une couverture refusée en 412
+après son envoi laisse un objet S3 orphelin. Le seuil d'altitude du checker est dépassé par
+l'éditeur de projet (315 lignes, 273 avant ce changement) et le parcours (262, 261 avant) ; aucun
+découpage n'a été fait ici.
 
 ## Journal des tranches
 
@@ -285,6 +296,7 @@ Aucun découpage n'a été fait ici.
 - **Tranche 10 — version plus récente et 409, éditeur du parcours** : GREEN 3462 passed / 3462 total · refactor : test du refus 409 commun (`isStaleVersion`) au toast et à l'avertissement
 - **Tranche 11 — écrasement confirmé, garde sur l'id, état « rechargée », relectures superflues** : GREEN 3474 passed / 3474 total · refactor : `editedVersion` partagé par les éditeurs d'article et de projet ; rechargement et état « rechargée » déplacés du cadre vers `NewerVersionCheck`
 - **Tranche 12 — version des articles et des projets, `If-Match`, 409** : API GREEN 1384 passed (dont 18 sur Postgres), parité 250 passed, web GREEN 3496 passed / 3496 total · refactor : `isStaleVersion` commun aux trois éditeurs
+- **Tranche 13 — revue : 412 au lieu de 409, galerie sans interblocage et version rendue** : API GREEN 1391 passed (dont 21 sur Postgres), parité 252 passed, web GREEN 3508 passed / 3508 total · refactor : `postPreparedImageResponse` et `formOf` partagés par les envois d'image
 
 ## Verify
 

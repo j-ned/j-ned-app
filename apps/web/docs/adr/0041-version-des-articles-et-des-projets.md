@@ -1,6 +1,6 @@
 # ADR-0041 — Version entière des articles et des projets, écriture conditionnelle par `If-Match`
 
-- **Statut** : proposé (2026-11-22)
+- **Statut** : proposé (2026-11-22), révisé le même jour après revue (412 au lieu de 409)
 - **Date** : 2026-11-22
 - **Spec** : 041 (fraîcheur des données, section « Éditeurs : version plus récente enregistrée
   ailleurs »)
@@ -39,12 +39,15 @@ Contraintes :
 
 ### Statut d'une version périmée
 
-- **412 Precondition Failed** : ce que prévoit HTTP (RFC 9110) pour un `If-Match` qui ne correspond
-  pas.
-- **409 Conflict** : ce que l'API répond déjà pour le parcours, ce que le front sait traiter
-  (`isStaleVersion`), et ce qui distingue le cas d'un en-tête mal formé (400). **Retenu** pour la
-  cohérence des trois éditeurs ; l'écart avec la RFC est assumé et documenté dans le contrat de
-  l'API.
+- **409 Conflict** : ce que l'API répond déjà pour le parcours. Retenu d'abord pour la cohérence
+  des trois éditeurs, **abandonné (2026-11-22, revue de la branche)** : le `PATCH` d'un article ou
+  d'un projet répond déjà 409 quand le nouveau titre donne un slug pris. Le front prenait ce refus
+  pour une version périmée : renommer un projet du titre d'un autre affichait « une version plus
+  récente… », recharger faisait perdre le brouillon et « Enregistrer quand même » renvoyait le même
+  409 sans fin. Distinguer les deux par le texte du message serait fragile.
+- **412 Precondition Failed** : ce que prévoit HTTP (RFC 9110, § 13.1.1) pour un `If-Match` qui ne
+  correspond pas ; aucune autre cause ne le produit sur ces routes. **Retenu.** Le parcours, qui
+  envoie sa version dans le corps (pas de précondition HTTP), garde son 409 : contrat inchangé.
 
 ### Où passe la version attendue
 
@@ -71,26 +74,44 @@ Contraintes :
    comprise), envoi de couverture, et pour un projet chaque écriture de galerie (ajout, texte
    alternatif, ordre, retrait), dans la transaction de la capture. Le « j'aime » ne la change pas.
 3. `PATCH` et `POST …/image` acceptent `If-Match: "<version>"` : l'écriture devient
-   `UPDATE … WHERE id = :id AND version = :version`. Aucune ligne écrite : 409 si l'entité existe
-   encore (relue après coup), 404 sinon. Une version déjà différente à la lecture préalable répond
-   409 avant tout envoi S3.
-4. `version` est exposée dans toutes les réponses (lectures, listes, écritures) ; `ETag: "<version>"`
+   `UPDATE … WHERE id = :id AND version = :version`. Aucune ligne écrite : **412** si l'entité
+   existe encore (relue après coup), 404 sinon. Une version déjà différente à la lecture préalable
+   répond 412 avant tout envoi S3. Le 409 reste réservé au slug déjà pris.
+4. Chaque écriture de galerie commence par l'`UPDATE` de la version du projet (projet absent : 404) : le projet est verrouillé avant ses captures, dans l'ordre de `DELETE project` puis de sa
+   cascade. L'ordre inverse (capture, puis projet) s'interbloquait avec une suppression
+   concurrente (`deadlock detected`, 500 ; reproduit sur Postgres). Les quatre écritures de galerie
+   renvoient la version du projet dans leur `ETag`.
+5. `version` est exposée dans toutes les réponses (lectures, listes, écritures) ; `ETag: "<version>"`
    est posé sur les réponses d'une entité. Il n'est pas ajouté à `Access-Control-Expose-Headers` :
    le front lit la version dans le corps et appelle l'API sur sa propre origine.
-5. Front : chaque `PATCH` et chaque envoi de couverture part avec la version d'où vient le brouillon
-   (la couverture, avec celle que l'écriture vient de rendre). Un 409 donne l'avertissement du
-   parcours ; « Enregistrer quand même » relit la dernière version et l'envoie, jamais sans
-   `If-Match`. Les écritures de galerie faites depuis l'onglet avancent la version attendue d'autant.
+6. Front : chaque `PATCH` et chaque envoi de couverture part avec la version d'où vient le brouillon
+   (la couverture, avec la plus haute de celle que l'écriture vient de rendre et de celle que la
+   galerie a rendue). Un 412 donne l'avertissement du parcours ; « Enregistrer quand même » relit la
+   dernière version et l'envoie, jamais sans `If-Match`. Un 409 dit que le titre est déjà pris,
+   sans avertissement de version et sans toucher au brouillon. L'éditeur de projet retient la plus
+   haute version connue : celle du projet enregistré ou relu, ou celle qu'une écriture de galerie a
+   rendue, quel que soit l'ordre d'arrivée des réponses. Compter +1 par écriture de galerie
+   (première version) se désynchronisait quand une écriture de galerie chevauchait un
+   enregistrement ou un rechargement.
 
 ## Consequences
 
-- Deux enregistrements partis de la même version : un seul passe, l'autre reçoit 409 (vérifié sur
+- Deux enregistrements partis de la même version : un seul passe, l'autre reçoit 412 (vérifié sur
   Postgres, y compris quand la seconde écriture attend le verrou de la première).
 - Une modification de galerie faite ailleurs est désormais signalée par l'éditeur de projet.
-- Une écriture de galerie réussie côté API mais perdue en route (coupure réseau) n'est pas comptée
-  par l'onglet : son prochain enregistrement reçoit 409 et l'avertissement propose de recharger.
-- L'`ETag` désigne la version du contenu édité : le nombre de « j'aime » peut changer sous le même
-  `ETag`. L'API ne répond jamais 304 et ne lit pas `If-None-Match`.
+- Une écriture de galerie réussie côté API dont la réponse se perd (coupure réseau) ne fait pas
+  connaître sa version à l'onglet : son prochain enregistrement reçoit 412 et l'avertissement
+  propose de recharger. De même si un enregistrement part pendant qu'une écriture de galerie de
+  l'onglet est encore en route et que celle-ci est validée la première.
+- L'`ETag` désigne la version du contenu édité, pas l'octet près de la représentation : le nombre
+  de « j'aime » d'un article public peut changer sous le même `ETag`. Laissé en l'état (décision de
+  la revue) : c'est un validateur du contenu édité, l'API ne lit pas `If-None-Match` et ne répond
+  jamais 304. Sur une écriture de galerie, l'`ETag` est la version du projet, pas celle de la
+  capture.
+- Une couverture refusée en 412 après son envoi à S3 (version changée entre la lecture préalable et
+  l'`UPDATE`) laisse un objet S3 orphelin, comme tout échec d'écriture après l'envoi. Laissé en
+  l'état (décision de la revue) : supprimer l'objet risquerait d'effacer une clé encore citée si le
+  même fichier est renvoyé.
 - Pendant le déploiement, l'ancienne API écrit sur la base migrée sans incrémenter la version ;
   l'écart se referme à la première écriture de la nouvelle API.
 
