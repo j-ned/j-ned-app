@@ -1,6 +1,9 @@
 import { Component, computed, inject, type ResourceRef } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
+import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 import {
   buildLineChartOptions,
   buildVisitorsOnlyChartData,
@@ -100,7 +103,7 @@ const failed = (sources: readonly ResourceRef<unknown>[]): readonly ResourceRef<
         [unreadLoading]="unreadRes.isLoading()"
         [cvLoading]="overviewRes.isLoading()"
       >
-        @if (messagesRes.isLoading()) {
+        @if (messagesRes.isLoading() && !messagesRes.hasValue()) {
           <div data-testid="overview-contacts-loading" role="status" class="grid gap-2 pt-4">
             <span class="sr-only">Chargement des messages…</span>
             <app-skeleton class="block h-12 rounded-sm" />
@@ -168,7 +171,9 @@ export class AdminOverview {
   protected readonly projectsRes = rxResource({ stream: () => this._projects.getAllProjects() });
   protected readonly postsRes = rxResource({ stream: () => this._blog.getAllPostsForAdmin() });
   protected readonly unreadRes = rxResource({ stream: () => this._contact.getUnreadCount() });
-  protected readonly messagesRes = rxResource({ stream: () => this._contact.getAllMessages() });
+  protected readonly messagesRes: ResourceRef<readonly ContactMessage[] | undefined> = rxResource({
+    stream: () => this._contact.getAllMessages().pipe(keepShownOnFailedReload(this.messagesRes)),
+  });
   protected readonly overviewRes = rxResource({
     stream: () => this._analytics.getOverview(this._period.startDate, this._period.endDate),
   });
@@ -245,6 +250,11 @@ export class AdminOverview {
     return messages === null ? null : latestMessages(messages, 3);
   });
   protected readonly contactsFailures = computed(() => failed([this.unreadRes, this.messagesRes]));
+
+  // Un message peut arriver pendant que l'onglet est ailleurs ; le compteur suit la navigation.
+  constructor() {
+    refreshWhenVisible(() => this.messagesRes.reload());
+  }
 
   protected reload(sources: readonly ResourceRef<unknown>[]): void {
     sources.forEach((source) => source.reload());

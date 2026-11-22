@@ -1,5 +1,7 @@
-import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal, type ResourceRef } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import type { Observable } from 'rxjs';
 import type { LoginEventPage } from '@features/auth/domain/models/login-event.model';
 import { LoginJournalGateway } from '@features/auth/infra/gateways/login-journal.gateway';
@@ -109,9 +111,9 @@ export class AdminLogins {
   protected readonly parent = SETTINGS;
   private readonly _requestedPage = signal(1);
 
-  protected readonly journalRes = rxResource({
+  protected readonly journalRes: ResourceRef<LoadedPage | undefined> = rxResource({
     params: () => this._requestedPage(),
-    stream: ({ params }) => this.loadPage(params),
+    stream: ({ params }) => this.loadPage(params).pipe(keepShownOnFailedReload(this.journalRes)),
   });
 
   // Pendant un chargement, la page demandée ; ensuite celle que l'API a réellement servie.
@@ -132,6 +134,11 @@ export class AdminLogins {
   protected readonly listState = computed(() =>
     loadState(this.journalRes, () => this.rows().length === 0),
   );
+
+  // Une connexion a pu avoir lieu pendant que l'onglet était ailleurs.
+  constructor() {
+    refreshWhenVisible(() => this.journalRes.reload());
+  }
 
   protected showNewer(): void {
     if (this.pager().hasNewer) this.show(this._page() - 1);

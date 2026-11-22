@@ -1,8 +1,9 @@
-import { computed, inject, linkedSignal, signal } from '@angular/core';
+import { computed, inject, linkedSignal, signal, type ResourceRef } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { map, tap, type Observable } from 'rxjs';
 import type { AdminComment, CommentStatus } from '@features/comments/domain/models/comment.model';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
+import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
 import { ADMIN_COMMENTS_PAGE_SIZE, commentsSummary } from '../../application/admin-comments-view';
 import { pager } from '../../application/pager';
@@ -23,9 +24,9 @@ export class CommentQueue {
     total: 0,
   });
 
-  readonly list = rxResource({
+  readonly list: ResourceRef<readonly AdminComment[] | undefined> = rxResource({
     params: (): PageRequest => ({ status: this.status(), page: this._requestedPage() }),
-    stream: ({ params }) => this.loadPage(params),
+    stream: ({ params }) => this.loadPage(params).pipe(keepShownOnFailedReload(this.list)),
   });
 
   readonly comments = computed(() => resourceValueOr(this.list, []));

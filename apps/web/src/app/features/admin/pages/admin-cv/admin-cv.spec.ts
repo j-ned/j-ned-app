@@ -13,6 +13,8 @@ import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { captureCrash } from '@shared/testing/capture-crash';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settleBounded } from '@shared/testing/settle';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
+import { formatFileSize } from '@shared/format/format-file-size';
 import { MAX_UPLOAD_BYTES } from '@shared/upload/upload-limit';
 import { readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import {
@@ -359,5 +361,55 @@ describe('AdminCv: fichier refusé', () => {
       toasts: toast.add.mock.calls.length,
       uploadButton: byTestId(host, 'admin-cv-upload') !== null,
     }).toEqual({ toasts: 0, uploadButton: true });
+  });
+});
+
+describe('AdminCv: relecture au retour sur l’onglet', () => {
+  afterEach(forgetTabVisibility);
+
+  const valueOf = (host: HTMLElement, label: string): string | undefined =>
+    [...host.querySelectorAll('[data-testid="cartouche-row"]')]
+      .find((row) => testIdText(row, 'cartouche-label') === label)
+      ?.querySelector('[data-testid="cartouche-value"]')
+      ?.textContent?.trim()
+      .replace(/\s+/g, ' ');
+
+  it('Given the CV on screen When it was replaced and downloaded elsewhere and the tab comes back Then the cartouche shows the new CV and count', async () => {
+    const getCurrent = vi
+      .fn<CvGateway['getCurrent']>()
+      .mockReturnValueOnce(of(makeCvInfo({ fileSize: 10_240 })))
+      .mockReturnValue(of(makeCvInfo({ fileSize: 204_800 })));
+    const getCvDownloadCount = vi
+      .fn<AnalyticsGateway['getCvDownloadCount']>()
+      .mockReturnValueOnce(of(1))
+      .mockReturnValue(of(4));
+    const { fixture, host } = await render(
+      makeCvGateway({ getCurrent }),
+      stubAnalyticsGateway({ getCvDownloadCount }),
+    );
+
+    returnToTab();
+    await settleBounded(fixture);
+
+    expect({ size: valueOf(host, 'Taille'), downloads: valueOf(host, 'Téléchargé') }).toEqual({
+      size: formatFileSize(204_800),
+      downloads: '4 fois en 30 j',
+    });
+  });
+
+  it('Given the CV on screen When the reread on return fails Then the CV stays shown, without an error', async () => {
+    const getCurrent = vi
+      .fn<CvGateway['getCurrent']>()
+      .mockReturnValueOnce(of(makeCvInfo({ fileSize: 10_240 })))
+      .mockReturnValue(throwError(() => new Error('down')));
+    const { fixture, host } = await render(makeCvGateway({ getCurrent }));
+
+    returnToTab();
+    await settleBounded(fixture);
+
+    expect({ size: valueOf(host, 'Taille'), error: byTestId(host, 'load-error') }).toEqual({
+      size: formatFileSize(10_240),
+      error: null,
+    });
   });
 });

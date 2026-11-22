@@ -734,6 +734,24 @@ describe('AdminComments: retour sur l’onglet', () => {
       draft: field.isConnected ? field.value : null,
     }).toEqual({ during: true, rows: 2, draft: 'Réponse en cours' });
   });
+
+  it('Given the queue on screen When the reread on return fails Then the queue stays shown, without an error', async () => {
+    const rendered = await render();
+    await answer(rendered, 'pending', [CAMILLE]);
+
+    showTab('hidden');
+    showTab('visible');
+    await settleBounded(rendered.fixture);
+    rendered.http
+      .expectOne(listUrl('pending', 1))
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    await settleBounded(rendered.fixture);
+
+    expect({
+      rows: texts(rendered.host, 'admin-comment-row').length,
+      error: byTestId(rendered.host, 'load-error'),
+    }).toEqual({ rows: 1, error: null });
+  });
 });
 
 describe('AdminComments: typographie', () => {

@@ -1,6 +1,6 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of, throwError, type Observable } from 'rxjs';
+import { BehaviorSubject, of, throwError, type Observable } from 'rxjs';
 import { AdminProjects } from './admin-projects';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import type { Project } from '@features/projects/domain/models/project.model';
@@ -18,6 +18,7 @@ import {
   readPageTitleFocus,
 } from '../../application/testing/admin-list-page';
 import { BlankPage } from '@shared/testing/blank-page';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 const DASHFLOW = makeProject({
   id: 'p-1',
@@ -216,4 +217,24 @@ describe('AdminProjects: filtre par nature', () => {
       });
     },
   );
+});
+
+describe('AdminProjects: relecture au retour sur l’onglet', () => {
+  afterEach(forgetTabVisibility);
+
+  it('Given the list on screen When a project was written in another tab and this tab comes back Then the shared list is read again and shown', async () => {
+    const projects = new BehaviorSubject<readonly Project[]>([makeProject({ id: 'p-1' })]);
+    const { component, fixture } = await renderProjects(
+      stubProjectsGateway({
+        getAllProjects: () => projects,
+        invalidateAllProjects: () =>
+          projects.next([makeProject({ id: 'p-1' }), makeProject({ id: 'p-2' })]),
+      }),
+    );
+
+    returnToTab();
+    await settleBounded(fixture);
+
+    expect(component.projects().map((project) => project.id)).toEqual(['p-1', 'p-2']);
+  });
 });

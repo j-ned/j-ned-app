@@ -25,6 +25,7 @@ import {
 } from '../../application/testing/admin-list-page';
 import { normalized } from '@shared/testing/normalized-text';
 import { asButton } from '@shared/testing/as-button';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 const msg = makeContactMessage;
 
@@ -480,4 +481,37 @@ describe('AdminMessages: une seule notification par échec d’écriture', () =>
       expect(toasts.messages().filter((toast) => toast.severity === 'error').length).toBe(1);
     },
   );
+});
+
+describe('AdminMessages: relecture au retour sur l’onglet', () => {
+  afterEach(forgetTabVisibility);
+
+  it('Given the inbox on screen When a message arrived meanwhile and the tab comes back Then the inbox shows it', async () => {
+    const getAllMessages = vi
+      .fn<ContactGateway['getAllMessages']>()
+      .mockReturnValueOnce(of([PAUL]))
+      .mockReturnValue(of([CLAIRE, PAUL]));
+    const { fixture, host } = await setup(makeGateway({ getAllMessages }));
+
+    returnToTab();
+    await settle(fixture);
+
+    expect(senders(host)).toEqual(['Claire Martin', 'Paul Durand']);
+  });
+
+  it('Given the inbox on screen When the reread on return fails Then the inbox stays shown, without an error', async () => {
+    const getAllMessages = vi
+      .fn<ContactGateway['getAllMessages']>()
+      .mockReturnValueOnce(of([PAUL]))
+      .mockReturnValue(throwError(() => new Error('down')));
+    const { fixture, host } = await setup(makeGateway({ getAllMessages }));
+
+    returnToTab();
+    await settle(fixture);
+
+    expect({ senders: senders(host), error: byTestId(host, 'load-error') }).toEqual({
+      senders: ['Paul Durand'],
+      error: null,
+    });
+  });
 });

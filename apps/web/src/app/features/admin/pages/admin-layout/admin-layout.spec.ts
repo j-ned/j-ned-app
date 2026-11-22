@@ -19,6 +19,7 @@ import { settle } from '@shared/testing/settle';
 import { BlankPage } from '@shared/testing/blank-page';
 import { normalized } from '@shared/testing/normalized-text';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 type ShellSources = {
   readonly projects?: Observable<readonly Project[]>;
@@ -87,6 +88,8 @@ const drawerOf = (host: HTMLElement): HTMLElement | null =>
   host.querySelector<HTMLElement>('[role="dialog"]');
 
 describe('AdminLayout: comptes de la navigation', () => {
+  afterEach(forgetTabVisibility);
+
   it('Given 6 projects, 2 articles and 3 unread messages When the shell renders Then the navigation shows these counts', async () => {
     const { host, crash } = await renderShell('/admin', {
       projects: of(projectList(6)),
@@ -123,6 +126,32 @@ describe('AdminLayout: comptes de la navigation', () => {
       before: '6',
       after: '5',
     });
+  });
+
+  it('Given a message and a comment arrived while the tab was away When the tab comes back Then the navigation counts are read again', async () => {
+    const unread = new BehaviorSubject(3);
+    const pending = new BehaviorSubject(1);
+    TestBed.overrideProvider(ContactGateway, {
+      useValue: stubContactGateway({
+        getUnreadCount: () => unread,
+        invalidateUnreadCount: () => unread.next(4),
+      }),
+    });
+    TestBed.overrideProvider(CommentsGateway, {
+      useValue: {
+        getPendingCount: (): Observable<number> => pending,
+        invalidatePendingCount: (): void => pending.next(2),
+      },
+    });
+    const { fixture, host } = await renderShell('/admin');
+
+    returnToTab();
+    await settle(fixture);
+
+    expect({
+      messages: normalized(byTestId(host, 'nav-count-messages')),
+      comments: normalized(byTestId(host, 'nav-count-comments')),
+    }).toEqual({ messages: '4 non lus', comments: '2 en attente' });
   });
 
   it.each([

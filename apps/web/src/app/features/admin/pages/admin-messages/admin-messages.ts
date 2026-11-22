@@ -1,4 +1,12 @@
-import { Component, DestroyRef, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+  type ResourceRef,
+} from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { Observable } from 'rxjs';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
@@ -9,6 +17,8 @@ import { Button } from '@shared/ui/button';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
+import { refreshWhenVisible } from '@core/navigation/refresh-when-visible';
+import { keepShownOnFailedReload } from '@shared/api/keep-shown-on-failed-reload';
 import { ToastStore } from '@core/notifications/toast-store';
 import {
   toAdminMessagesView,
@@ -114,8 +124,9 @@ export class AdminMessages {
   private readonly destroyRef = inject(DestroyRef);
   private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
-  protected readonly messagesRes = rxResource({
-    stream: () => this.contactGateway.getAllMessages(),
+  protected readonly messagesRes: ResourceRef<readonly ContactMessage[] | undefined> = rxResource({
+    stream: () =>
+      this.contactGateway.getAllMessages().pipe(keepShownOnFailedReload(this.messagesRes)),
   });
 
   private readonly _inbox = computed(() => resourceValueOr(this.messagesRes, []));
@@ -145,6 +156,11 @@ export class AdminMessages {
   protected readonly deletionHeading = computed(
     () => `Supprimer le message de ${this.deletion.target()?.name ?? ''}\u202f?`,
   );
+
+  // Un message peut arriver pendant que l'onglet est ailleurs.
+  constructor() {
+    refreshWhenVisible(() => this.messagesRes.reload());
+  }
 
   protected toggleExpand(message: ContactMessage): void {
     this._expandedIds.update((current) => {

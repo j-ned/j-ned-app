@@ -3,7 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { provideRouter } from '@angular/router';
-import { of, Subject, throwError, type Observable } from 'rxjs';
+import { BehaviorSubject, of, Subject, throwError, type Observable } from 'rxjs';
 import { AdminBlog } from './admin-blog';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
@@ -21,6 +21,7 @@ import {
   readPageTitleFocus,
 } from '../../application/testing/admin-list-page';
 import { BlankPage } from '@shared/testing/blank-page';
+import { forgetTabVisibility, returnToTab } from '@shared/testing/tab-visibility';
 
 registerLocaleData(localeFr);
 
@@ -334,4 +335,24 @@ describe('AdminBlog: filtre par statut', () => {
       });
     },
   );
+});
+
+describe('AdminBlog: relecture au retour sur l’onglet', () => {
+  afterEach(forgetTabVisibility);
+
+  it('Given the list on screen When an article was written in another tab and this tab comes back Then the shared list is read again and shown', async () => {
+    const posts = new BehaviorSubject<readonly BlogPost[]>([makeBlogPost({ id: 'b-1' })]);
+    const { component, fixture } = await setup(
+      stubBlogGateway({
+        getAllPostsForAdmin: () => posts,
+        invalidateAdminPosts: () =>
+          posts.next([makeBlogPost({ id: 'b-1' }), makeBlogPost({ id: 'b-2' })]),
+      }),
+    );
+
+    returnToTab();
+    await settleBounded(fixture);
+
+    expect(component.posts().map((post) => post.id)).toEqual(['b-1', 'b-2']);
+  });
 });
