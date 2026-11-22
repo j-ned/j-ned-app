@@ -3,7 +3,11 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom, map, type Observable } from 'rxjs';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
-import type { ProjectImage, ProjectInput } from '@features/projects/domain/models/project.model';
+import type {
+  Project,
+  ProjectImage,
+  ProjectInput,
+} from '@features/projects/domain/models/project.model';
 import { withValidationDetail } from '@shared/api/with-validation-detail';
 import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
 import { AppIcon } from '@shared/icons/app-icon';
@@ -23,11 +27,7 @@ import { AdminProjectGallery } from '../../application/components/admin-project-
 import { AdminProjectPreview } from '../../application/components/admin-project-preview';
 import { AdminSaveBar } from '../../application/components/admin-save-bar';
 import { EditorDraft, type EditedDraft } from '../../application/editor-draft';
-import {
-  editedVersion,
-  NewerVersionCheck,
-  type EditedVersion,
-} from '../../application/newer-version-check';
+import { NewerVersionCheck, type EditedVersion } from '../../application/newer-version-check';
 import type { FormTocSection } from '../../application/form-toc-entries';
 import {
   toPreviewProject,
@@ -35,6 +35,7 @@ import {
   type ProjectDraft,
 } from '../../application/project-draft';
 import { isStaleVersion } from '../../application/is-stale-version';
+import { isTitleTaken } from '../../application/is-title-taken';
 import type { LeaveConfirmable } from '../../application/unsaved-changes-guard';
 
 const FORM_SECTIONS: readonly FormTocSection<EditedDraft<ProjectDraft>>[] = [
@@ -64,8 +65,11 @@ const FORM_SECTIONS: readonly FormTocSection<EditedDraft<ProjectDraft>>[] = [
 const CONFLICT_MESSAGE =
   "Le projet n'a pas été enregistré\u00a0: une version plus récente a été enregistrée ailleurs.";
 
+const TITLE_TAKEN_MESSAGE = 'Un autre projet porte déjà ce titre\u00a0: choisis-en un autre.';
+
 function saveFailure(error: unknown, existing: boolean): string {
   if (isStaleVersion(error)) return CONFLICT_MESSAGE;
+  if (isTitleTaken(error)) return TITLE_TAKEN_MESSAGE;
   const failure = existing
     ? 'Erreur lors de la mise à jour du projet'
     : 'Erreur lors de la création du projet';
@@ -173,6 +177,7 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
               [projectId]="projectId"
               [images]="gallery()"
               (galleryChange)="updateGallery($event)"
+              (versionWritten)="adoptVersion($event)"
             />
           } @else {
             <app-admin-empty-state data-testid="admin-project-gallery-pending" stamp="Galerie vide">
@@ -222,14 +227,20 @@ export class AdminProjectEditor implements LeaveConfirmable {
     toDraft: toProjectDraft,
     sections: FORM_SECTIONS,
   });
-  // Chaque écriture de galerie réussie avance la version du projet côté API ; repart de zéro à
-  // chaque version enregistrée ou rechargée.
-  private readonly galleryWrites = linkedSignal({
+  // Version la plus récente connue de l'onglet : celle du projet enregistré ou relu, ou celle qu'une
+  // écriture de galerie a rendue, la plus haute des deux quel que soit l'ordre des réponses.
+  private readonly knownVersion = linkedSignal<Project | null, number>({
     source: this.draft.saved,
-    computation: (): number => 0,
+    computation: (saved, previous) => {
+      const sameProject = saved !== null && previous?.source?.id === saved.id;
+      return Math.max(saved?.version ?? 0, sameProject ? previous.value : 0);
+    },
   });
   protected readonly newerVersion = new NewerVersionCheck({
-    edited: (): EditedVersion | null => editedVersion(this.draft.saved(), this.galleryWrites()),
+    edited: (): EditedVersion | null => {
+      const saved = this.draft.saved();
+      return saved ? { id: saved.id, version: this.knownVersion() } : null;
+    },
     readLatest: (id): Observable<number | null> =>
       this.gateway
         .getProjectById(id, { background: true })
@@ -267,7 +278,13 @@ export class AdminProjectEditor implements LeaveConfirmable {
             : this.gateway.createProject(payload),
         ),
       (cover, project) =>
-        firstValueFrom(this.gateway.uploadImage(cover, project.id, project.version)),
+        firstValueFrom(
+          this.gateway.uploadImage(
+            cover,
+            project.id,
+            Math.max(project.version, this.knownVersion()),
+          ),
+        ),
     );
     if (!result) return;
     if (!result.success) {
@@ -290,6 +307,9 @@ export class AdminProjectEditor implements LeaveConfirmable {
 
   protected updateGallery(gallery: readonly ProjectImage[]): void {
     this.gallery.set(gallery);
-    this.galleryWrites.update((count) => count + 1);
+  }
+
+  protected adoptVersion(version: number): void {
+    this.knownVersion.update((known) => Math.max(known, version));
   }
 }

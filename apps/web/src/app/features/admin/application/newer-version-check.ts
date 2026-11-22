@@ -21,11 +21,9 @@ export type SaveDecision =
 const sameEdited = (a: EditedVersion | null, b: EditedVersion | null): boolean =>
   a === b || (a !== null && b !== null && a.id === b.id && a.version === b.version);
 
-// `ownWrites` : écritures faites depuis cet onglet hors du brouillon (galerie), chacune +1 côté API.
 export const editedVersion = (
   entity: { readonly id: string; readonly version: number } | null,
-  ownWrites = 0,
-): EditedVersion | null => (entity ? { id: entity.id, version: entity.version + ownWrites } : null);
+): EditedVersion | null => (entity ? { id: entity.id, version: entity.version } : null);
 
 // Compare des versions, jamais le contenu : le brouillon n'est pas relu.
 export class NewerVersionCheck {

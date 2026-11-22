@@ -106,10 +106,16 @@ export function readNewerVersion(editor: EditorView, prefix: string): NewerVersi
 const SETTLE_PASSES_MAX = 10;
 
 // L'écrasement confirmé relit la dernière version avant d'écrire : le rendu est rejoué jusqu'à la
-// condition (fin de l'enregistrement), borné pour un cas où elle n'arrive jamais (annulation).
+// condition (fin de l'enregistrement), dans une borne au-delà de laquelle le test échoue.
 export async function settleUntil(editor: EditorView, done: () => boolean): Promise<void> {
-  for (let pass = 0; pass < SETTLE_PASSES_MAX && !done(); pass++) {
+  for (let pass = 0; pass < SETTLE_PASSES_MAX; pass++) {
+    if (done()) return;
     await settleBounded(editor.fixture);
+  }
+  if (!done()) {
+    throw new Error(
+      `settleUntil : condition non atteinte après ${SETTLE_PASSES_MAX} passes de rendu`,
+    );
   }
 }
 

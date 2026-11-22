@@ -14,6 +14,12 @@ export type ProjectImage = {
   readonly height: number;
 };
 
+// Une écriture de galerie et la version du projet qu'elle a produite (`null` : non communiquée).
+export type GalleryWrite<T> = {
+  readonly result: T;
+  readonly projectVersion: number | null;
+};
+
 export type TechChoice = { readonly techno: string; readonly why: string };
 export type ArchitectureDecision = {
   readonly decision: string;

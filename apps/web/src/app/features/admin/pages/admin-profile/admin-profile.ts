@@ -1,4 +1,4 @@
-import { isStaleVersion } from '../../application/is-stale-version';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   afterRenderEffect,
@@ -254,4 +254,9 @@ export class AdminProfile implements LeaveConfirmable {
 function saveFailure(error: unknown): string {
   if (isStaleVersion(error)) return CONFLICT_MESSAGE;
   return withValidationDetail("Le parcours n'a pas pu être enregistré.", error);
+}
+
+// La version du parcours part dans le corps du `PUT` : l'API refuse une version périmée en 409.
+function isStaleVersion(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && error.status === 409;
 }

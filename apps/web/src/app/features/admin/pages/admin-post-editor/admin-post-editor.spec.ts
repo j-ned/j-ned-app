@@ -1095,7 +1095,8 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
       await save(editor);
 
       await answerConfirmDialog(editor.fixture, answer, overwriteDialog(editor, PREFIX));
-      await settleUntil(editor, () => editor.toast.mock.calls.length > 0);
+      // Seule la confirmation écrit : l'enregistrement se clôt par un toast.
+      await settleUntil(editor, () => answer !== 'confirm' || editor.toast.mock.calls.length > 0);
 
       expect({
         written: editor.updatePost.mock.calls.map(([, payload]) => payload.title),
@@ -1205,6 +1206,7 @@ describe('AdminPostEditor: enregistrement sous condition de version', () => {
     'Une version plus récente de cet article a été enregistrée ailleurs. Recharger la dernière version';
   const CONFLICT =
     "L'article n'a pas été enregistré : une version plus récente a été enregistrée ailleurs.";
+  const TITLE_TAKEN = 'Un autre article porte déjà ce titre\u00a0: choisis-en un autre.';
 
   afterEach(() => forgetTabVisibility());
 
@@ -1237,9 +1239,9 @@ describe('AdminPostEditor: enregistrement sous condition de version', () => {
     expect(editor.uploadCoverImage.mock.calls).toEqual([[COVER, 'b-1', 4]]);
   });
 
-  it('Given a version saved elsewhere When the save is refused with a 409 Then the newer version is told, the draft and its cover are kept and nothing else is sent', async () => {
+  it('Given a version saved elsewhere When the save is refused with a 412 Then the newer version is told, the draft and its cover are kept and nothing else is sent', async () => {
     const editor = await openAtVersion3({
-      updatePost: vi.fn(() => throwError(() => apiRejection(409, 'Version périmée'))),
+      updatePost: vi.fn(() => throwError(() => apiRejection(412, 'Version périmée'))),
     });
     await typeIn(editor, 'admin-post-title', 'Mon brouillon');
     await chooseCover(editor, COVER);
@@ -1261,11 +1263,11 @@ describe('AdminPostEditor: enregistrement sous condition de version', () => {
     });
   });
 
-  it('Given a save refused with a 409 When the admin saves again and confirms the overwrite Then the latest version is read and the draft is sent with it', async () => {
+  it('Given a save refused with a 412 When the admin saves again and confirms the overwrite Then the latest version is read and the draft is sent with it', async () => {
     const editor = await openAtVersion3({
       updatePost: vi
         .fn<BlogGateway['updatePost']>()
-        .mockReturnValueOnce(throwError(() => apiRejection(409, 'Version périmée')))
+        .mockReturnValueOnce(throwError(() => apiRejection(412, 'Version périmée')))
         .mockReturnValueOnce(of(makeBlogPost({ ...LATEST, title: 'Mon brouillon', version: 6 }))),
     });
     await typeIn(editor, 'admin-post-title', 'Mon brouillon');
@@ -1328,9 +1330,43 @@ describe('AdminPostEditor: enregistrement sous condition de version', () => {
     },
   );
 
-  it('Given the cover refused with a 409 after the update When the save ends Then the newer version is told', async () => {
+  it('Given a title already taken by another article When the save is refused with a 409 Then the title is named, the draft is kept and no newer version is told', async () => {
     const editor = await openAtVersion3({
-      uploadCoverImage: vi.fn(() => throwError(() => apiRejection(409, 'Version périmée'))),
+      updatePost: vi.fn(() =>
+        throwError(() => apiRejection(409, 'Blog post with slug "pris" already exists')),
+      ),
+    });
+    await typeIn(editor, 'admin-post-title', 'Pris');
+    await chooseCover(editor, COVER);
+
+    await save(editor);
+    await save(editor);
+
+    expect({
+      notice: readNewerVersion(editor, PREFIX).text,
+      toasts: toasts(editor.toast),
+      field: fieldValue(editor.host, 'admin-post-title'),
+      state: saveBarState(editor),
+      dialog: readConfirmDialog(overwriteDialog(editor, PREFIX)).open,
+      sent: editor.updatePost.mock.calls.map(([, , version]) => version),
+      uploads: editor.uploadCoverImage.mock.calls.length,
+    }).toEqual({
+      notice: '',
+      toasts: [
+        { severity: 'error', detail: TITLE_TAKEN },
+        { severity: 'error', detail: TITLE_TAKEN },
+      ],
+      field: 'Pris',
+      state: '2 modifications non enregistrées',
+      dialog: false,
+      sent: [3, 3],
+      uploads: 0,
+    });
+  });
+
+  it('Given the cover refused with a 412 after When the save ends Then the newer version is told', async () => {
+    const editor = await openAtVersion3({
+      uploadCoverImage: vi.fn(() => throwError(() => apiRejection(412, 'Version périmée'))),
     });
     await chooseCover(editor, COVER);
 

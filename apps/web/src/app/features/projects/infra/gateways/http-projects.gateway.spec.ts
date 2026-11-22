@@ -444,7 +444,7 @@ describe('HttpProjectsGateway', () => {
         height: 800,
       });
 
-    it('Given a file and an alt When a capture is uploaded Then POST /projects/:id/images sends multipart file + alt and returns the adapted capture', async () => {
+    it('Given a file and an alt When a capture is uploaded Then POST /projects/:id/images sends multipart file + alt and returns the adapted capture with the project version', async () => {
       const { gateway, httpController } = configure();
       const file = new File(['png'], 'vue.png', { type: 'image/png' });
 
@@ -458,9 +458,16 @@ describe('HttpProjectsGateway', () => {
         file: body.get('file'),
         alt: body.get('alt'),
       }).toEqual({ method: 'POST', isFormData: true, file, alt: 'Vue globale' });
-      req.flush(imageDto('img-9', 3, 'Vue globale'), { status: 201, statusText: 'Created' });
+      req.flush(imageDto('img-9', 3, 'Vue globale'), {
+        status: 201,
+        statusText: 'Created',
+        headers: { ETag: '"4"' },
+      });
 
-      expect(await promise).toEqual(adaptedImage('img-9', 'Vue globale'));
+      expect(await promise).toEqual({
+        result: adaptedImage('img-9', 'Vue globale'),
+        projectVersion: 4,
+      });
       httpController.verify();
     });
 
@@ -485,7 +492,7 @@ describe('HttpProjectsGateway', () => {
       },
     );
 
-    it('Given a new alt When it is saved Then PATCH /projects/:id/images/:imageId sends { alt } and returns the adapted capture', async () => {
+    it('Given a new alt When it is saved Then PATCH /projects/:id/images/:imageId sends { alt } and returns the adapted capture with the project version', async () => {
       const { gateway, httpController } = configure();
 
       const promise = firstValueFrom(
@@ -497,28 +504,29 @@ describe('HttpProjectsGateway', () => {
         method: 'PATCH',
         body: { alt: 'Liste des transactions' },
       });
-      req.flush(imageDto('img-9', 0, 'Liste des transactions'));
+      req.flush(imageDto('img-9', 0, 'Liste des transactions'), { headers: { ETag: '"5"' } });
 
-      expect(await promise).toEqual(adaptedImage('img-9', 'Liste des transactions'));
+      expect(await promise).toEqual({
+        result: adaptedImage('img-9', 'Liste des transactions'),
+        projectVersion: 5,
+      });
       httpController.verify();
     });
 
-    it('Given a capture When it is deleted Then DELETE /projects/:id/images/:imageId is sent', async () => {
+    it('Given a capture When it is deleted Then DELETE /projects/:id/images/:imageId is sent and the project version returned', async () => {
       const { gateway, httpController } = configure();
 
-      const outcome = firstValueFrom(gateway.deleteGalleryImage('uuid-1', 'img-9'), {
-        defaultValue: undefined,
-      }).then(() => 'deleted');
+      const outcome = firstValueFrom(gateway.deleteGalleryImage('uuid-1', 'img-9'));
 
       const req = httpController.expectOne(`${BASE}/projects/uuid-1/images/img-9`);
       expect(req.request.method).toBe('DELETE');
-      req.flush(null, { status: 204, statusText: 'No Content' });
+      req.flush(null, { status: 204, statusText: 'No Content', headers: { ETag: '"6"' } });
 
-      expect(await outcome).toBe('deleted');
+      expect(await outcome).toEqual({ result: null, projectVersion: 6 });
       httpController.verify();
     });
 
-    it('Given a new order When the gallery is reordered Then PUT /projects/:id/images/order sends the whole permutation and returns the adapted gallery', async () => {
+    it('Given a new order When the gallery is reordered Then PUT /projects/:id/images/order sends the whole permutation and returns the adapted gallery with the project version', async () => {
       const { gateway, httpController } = configure();
 
       const promise = firstValueFrom(gateway.reorderGallery('uuid-1', ['img-c', 'img-a', 'img-b']));
@@ -528,15 +536,37 @@ describe('HttpProjectsGateway', () => {
         method: 'PUT',
         body: { imageIds: ['img-c', 'img-a', 'img-b'] },
       });
-      req.flush([imageDto('img-c', 0), imageDto('img-a', 1), imageDto('img-b', 2)]);
+      req.flush([imageDto('img-c', 0), imageDto('img-a', 1), imageDto('img-b', 2)], {
+        headers: { ETag: '"7"' },
+      });
 
-      expect(await promise).toEqual([
-        adaptedImage('img-c'),
-        adaptedImage('img-a'),
-        adaptedImage('img-b'),
-      ]);
+      expect(await promise).toEqual({
+        result: [adaptedImage('img-c'), adaptedImage('img-a'), adaptedImage('img-b')],
+        projectVersion: 7,
+      });
       httpController.verify();
     });
+  });
+
+  describe('Version du projet rendue par la galerie', () => {
+    it.each([
+      { case: 'no ETag', headers: {} },
+      { case: 'a weak ETag', headers: { ETag: 'W/"4"' } },
+      { case: 'an ETag that is not a version', headers: { ETag: '"abc"' } },
+    ])(
+      'Given $case When a capture is deleted Then the project version is unknown, never guessed',
+      async ({ headers }) => {
+        const { gateway, httpController } = configure();
+
+        const outcome = firstValueFrom(gateway.deleteGalleryImage('uuid-1', 'img-9'));
+        httpController
+          .expectOne(`${BASE}/projects/uuid-1/images/img-9`)
+          .flush(null, { status: 204, statusText: 'No Content', headers });
+
+        expect(await outcome).toEqual({ result: null, projectVersion: null });
+        httpController.verify();
+      },
+    );
   });
 
   describe('Invalidation du cache featured: 1 test', () => {

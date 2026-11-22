@@ -77,6 +77,8 @@ export class AdminProjectGallery {
   readonly projectId = input.required<string>();
   readonly images = input.required<readonly ProjectImage[]>();
   readonly galleryChange = output<readonly ProjectImage[]>();
+  // Version du projet après une écriture de galerie : l'éditeur enregistre ensuite sous celle-ci.
+  readonly versionWritten = output<number>();
 
   private readonly items = viewChildren(AdminGalleryImageItem);
   private readonly uploadForm = viewChild(AdminGalleryUploadForm);
@@ -94,8 +96,8 @@ export class AdminProjectGallery {
       this.gateway
         .uploadGalleryImage(this.projectId(), file, alt)
         .pipe(finalize(() => this.uploading.set(false))),
-      (image) => {
-        this.commit([...this.gallery(), image]);
+      ({ result: image, projectVersion }) => {
+        this.commit([...this.gallery(), image], projectVersion);
         this.uploadCount.update((count) => count + 1);
       },
       uploadErrorDetail,
@@ -108,8 +110,11 @@ export class AdminProjectGallery {
         imageId,
         this.gateway.updateGalleryImageAlt(this.projectId(), imageId, alt),
       ),
-      (updated) =>
-        this.commit(this.gallery().map((image) => (image.id === updated.id ? updated : image))),
+      ({ result: updated, projectVersion }) =>
+        this.commit(
+          this.gallery().map((image) => (image.id === updated.id ? updated : image)),
+          projectVersion,
+        ),
       () => "Erreur lors de l'enregistrement du texte alternatif",
     );
   }
@@ -125,8 +130,8 @@ export class AdminProjectGallery {
         movedId,
         this.gateway.reorderGallery(this.projectId(), moveItem(ids, index, delta)),
       ),
-      (images) => {
-        this.commit(images);
+      ({ result: images, projectVersion }) => {
+        this.commit(images, projectVersion);
         focusMoveButton();
       },
       () => 'Erreur lors du déplacement de la capture',
@@ -138,8 +143,11 @@ export class AdminProjectGallery {
     const index = this.gallery().findIndex((image) => image.id === imageId);
     this.write(
       this.pendingWrite(imageId, this.gateway.deleteGalleryImage(this.projectId(), imageId)),
-      () => {
-        this.commit(this.gallery().filter((image) => image.id !== imageId));
+      ({ projectVersion }) => {
+        this.commit(
+          this.gallery().filter((image) => image.id !== imageId),
+          projectVersion,
+        );
         this.afterRender(() => this.focusAfterRemoval(index));
       },
       () => 'Erreur lors de la suppression de la capture',
@@ -173,9 +181,10 @@ export class AdminProjectGallery {
     });
   }
 
-  private commit(images: readonly ProjectImage[]): void {
+  private commit(images: readonly ProjectImage[], projectVersion: number | null): void {
     this.gallery.set(images);
     this.galleryChange.emit(images);
+    if (projectVersion !== null) this.versionWritten.emit(projectVersion);
   }
 
   private focusAfterRemoval(removedIndex: number): void {

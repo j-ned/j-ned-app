@@ -6,7 +6,11 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { of, Subject, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
-import type { Project, ProjectInput } from '@features/projects/domain/models/project.model';
+import type {
+  GalleryWrite,
+  Project,
+  ProjectInput,
+} from '@features/projects/domain/models/project.model';
 import { makeProject, makeProjectImage } from '@features/projects/testing/project-builders';
 import { stubProjectsGateway } from '@features/projects/testing/stub-projects-gateway';
 import { apiRejection } from '@shared/testing/api-rejection';
@@ -61,6 +65,7 @@ type Spies = {
   readonly createProject: Mock<ProjectsGateway['createProject']>;
   readonly updateProject: Mock<ProjectsGateway['updateProject']>;
   readonly uploadImage: Mock<ProjectsGateway['uploadImage']>;
+  readonly deleteGalleryImage: Mock<ProjectsGateway['deleteGalleryImage']>;
   readonly toast: Mock<ToastStore['add']>;
 };
 
@@ -79,6 +84,9 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
     createProject: vi.fn((): Observable<Project> => of(makeProject({ id: 'p-9', title: 'X' }))),
     updateProject: vi.fn((): Observable<Project> => of(DASHFLOW)),
     uploadImage: vi.fn((): Observable<string> => of('projects/p-9.avif')),
+    deleteGalleryImage: vi.fn((): Observable<GalleryWrite<null>> =>
+      of({ result: null, projectVersion: null }),
+    ),
     toast: vi.fn(),
     ...overrides,
   };
@@ -108,6 +116,7 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
           createProject: spies.createProject,
           updateProject: spies.updateProject,
           uploadImage: spies.uploadImage,
+          deleteGalleryImage: spies.deleteGalleryImage,
         }),
       },
       { provide: ToastStore, useValue: { add: spies.toast } },
@@ -918,6 +927,7 @@ describe('AdminProjectEditor: enregistrement sous condition de version', () => {
     'Une version plus récente de ce projet a été enregistrée ailleurs. Recharger la dernière version';
   const CONFLICT =
     "Le projet n'a pas été enregistré : une version plus récente a été enregistrée ailleurs.";
+  const TITLE_TAKEN = 'Un autre projet porte déjà ce titre\u00a0: choisis-en un autre.';
 
   afterEach(() => forgetTabVisibility());
 
@@ -957,10 +967,10 @@ describe('AdminProjectEditor: enregistrement sous condition de version', () => {
     }).toEqual({ patches: [['p-1', 3]], uploads: [[COVER, 'p-1', 4]] });
   });
 
-  it('Given a version saved elsewhere When the patch is refused with a 409 Then the newer version is told and the draft is kept', async () => {
+  it('Given a version saved elsewhere When the patch is refused with a 412 Then the newer version is told and the draft is kept', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
       getProjectById: readsAtVersion(),
-      updateProject: vi.fn(() => throwError(() => apiRejection(409, 'Version périmée'))),
+      updateProject: vi.fn(() => throwError(() => apiRejection(412, 'Version périmée'))),
     });
     await typeIn(editor, 'admin-project-title', 'Mon brouillon');
 
@@ -979,12 +989,12 @@ describe('AdminProjectEditor: enregistrement sous condition de version', () => {
     });
   });
 
-  it('Given a patch refused with a 409 When the admin saves again and confirms the overwrite Then the project is read again and the draft is sent with its version', async () => {
+  it('Given a patch refused with a 412 When the admin saves again and confirms the overwrite Then the project is read again and the draft is sent with its version', async () => {
     const editor = await openEditor('/admin/projects/p-1', {
       getProjectById: readsAtVersion(7),
       updateProject: vi
         .fn<ProjectsGateway['updateProject']>()
-        .mockReturnValueOnce(throwError(() => apiRejection(409, 'Version périmée')))
+        .mockReturnValueOnce(throwError(() => apiRejection(412, 'Version périmée')))
         .mockReturnValueOnce(of(makeProject({ ...OPENED, version: 8 }))),
     });
     await typeIn(editor, 'admin-project-title', 'Mon brouillon');
@@ -1005,8 +1015,14 @@ describe('AdminProjectEditor: enregistrement sous condition de version', () => {
     });
   });
 
+  const deletedAt = (projectVersion: number): Mock<ProjectsGateway['deleteGalleryImage']> =>
+    vi.fn(() => of<GalleryWrite<null>>({ result: null, projectVersion }));
+
   it('Given a capture deleted from this tab When the admin returns to the tab Then its own gallery write is not taken for a newer version', async () => {
-    const editor = await openEditor('/admin/projects/p-1', { getProjectById: readsAtVersion(4) });
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: readsAtVersion(4),
+      deleteGalleryImage: deletedAt(4),
+    });
     await deleteFirstCapture(editor);
 
     returnToTab();
@@ -1015,14 +1031,103 @@ describe('AdminProjectEditor: enregistrement sous condition de version', () => {
     expect(readNewerVersion(editor, PREFIX).text).toBe('');
   });
 
-  it('Given a capture deleted from this tab When the project is then saved Then the patch expects the version after that gallery write', async () => {
-    const editor = await openEditor('/admin/projects/p-1', { getProjectById: readsAtVersion() });
+  it('Given a gallery write answered before the save When the project is saved Then the patch expects the version that write returned', async () => {
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: readsAtVersion(),
+      deleteGalleryImage: deletedAt(4),
+      updateProject: vi.fn(() => of(makeProject({ ...OPENED, version: 5 }))),
+    });
     await deleteFirstCapture(editor);
     await typeIn(editor, 'admin-project-title', 'Après');
 
     await save(editor);
 
     expect(editor.updateProject.mock.calls.map(([, , version]) => version)).toEqual([4]);
+  });
+
+  it('Given a gallery write answered while the cover is being sent When the save ends and the project is read again Then no newer version is told and the next save expects the latest version', async () => {
+    const cover = new Subject<string>();
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: readsAtVersion(6),
+      updateProject: vi
+        .fn<ProjectsGateway['updateProject']>()
+        .mockReturnValueOnce(of(makeProject({ ...OPENED, version: 4 })))
+        .mockReturnValueOnce(of(makeProject({ ...OPENED, version: 7 }))),
+      uploadImage: vi.fn(() => cover),
+      deleteGalleryImage: deletedAt(6),
+    });
+    await typeIn(editor, 'admin-project-title', 'Après');
+    await chooseCover(editor, COVER);
+    await save(editor);
+    await deleteFirstCapture(editor);
+    cover.next('projects/p-1-cover.avif');
+    cover.complete();
+    await settleUntil(editor, () => editor.toast.mock.calls.length > 0);
+
+    returnToTab();
+    await settleBounded(editor.fixture);
+    const notice = readNewerVersion(editor, PREFIX).text;
+    await typeIn(editor, 'admin-project-title', 'Encore');
+    await save(editor);
+
+    expect({
+      cover: editor.uploadImage.mock.calls.map(([, , version]) => version),
+      notice,
+      sent: editor.updateProject.mock.calls.map(([, , version]) => version),
+    }).toEqual({ cover: [4], notice: '', sent: [3, 6] });
+  });
+
+  it('Given a gallery write validated before a reload but answered after it When the project is saved Then the patch expects the reloaded version, not one more', async () => {
+    const deletion = new Subject<GalleryWrite<null>>();
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: readsAtVersion(4, 5),
+      deleteGalleryImage: vi.fn(() => deletion),
+      updateProject: vi.fn(() => of(makeProject({ ...OPENED, version: 6 }))),
+    });
+    await deleteFirstCapture(editor);
+    returnToTab();
+    await settleBounded(editor.fixture);
+    await reloadLatest(editor, PREFIX);
+
+    deletion.next({ result: null, projectVersion: 5 });
+    deletion.complete();
+    await settleBounded(editor.fixture);
+    await typeIn(editor, 'admin-project-title', 'Après');
+    await save(editor);
+
+    expect(editor.updateProject.mock.calls.map(([, , version]) => version)).toEqual([5]);
+  });
+
+  it('Given a title already taken by another project When the patch is refused with a 409 Then the title is named, the draft is kept and no newer version is told', async () => {
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: readsAtVersion(),
+      updateProject: vi.fn(() =>
+        throwError(() => apiRejection(409, 'Project with slug "pris" already exists')),
+      ),
+    });
+    await typeIn(editor, 'admin-project-title', 'Pris');
+
+    await save(editor);
+    await save(editor);
+
+    expect({
+      notice: readNewerVersion(editor, PREFIX).text,
+      toasts: toasts(editor.toast),
+      field: fieldValue(editor.host, 'admin-project-title'),
+      state: saveBarState(editor),
+      dialog: readConfirmDialog(overwriteDialog(editor, PREFIX)).open,
+      sent: editor.updateProject.mock.calls.map(([, , version]) => version),
+    }).toEqual({
+      notice: '',
+      toasts: [
+        { severity: 'error', detail: TITLE_TAKEN },
+        { severity: 'error', detail: TITLE_TAKEN },
+      ],
+      field: 'Pris',
+      state: '1 modification non enregistrée',
+      dialog: false,
+      sent: [3, 3],
+    });
   });
 
   it('Given a gallery write made elsewhere When the admin returns to the tab Then the newer version is told', async () => {

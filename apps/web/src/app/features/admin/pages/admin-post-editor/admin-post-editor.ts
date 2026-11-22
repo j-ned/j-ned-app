@@ -34,6 +34,7 @@ import {
   type PostDraft,
 } from '../../application/post-draft';
 import { isStaleVersion } from '../../application/is-stale-version';
+import { isTitleTaken } from '../../application/is-title-taken';
 import { knownTags } from '../../application/tag-suggestions';
 import type { LeaveConfirmable } from '../../application/unsaved-changes-guard';
 
@@ -47,10 +48,13 @@ const FORM_SECTIONS: readonly FormTocSection<EditedDraft<PostDraft>>[] = [
 const CONFLICT_MESSAGE =
   "L'article n'a pas été enregistré\u00a0: une version plus récente a été enregistrée ailleurs.";
 
-const saveFailure = (error: unknown): string =>
-  isStaleVersion(error)
-    ? CONFLICT_MESSAGE
-    : withValidationDetail("Erreur lors de l'enregistrement de l'article", error);
+const TITLE_TAKEN_MESSAGE = 'Un autre article porte déjà ce titre\u00a0: choisis-en un autre.';
+
+function saveFailure(error: unknown): string {
+  if (isStaleVersion(error)) return CONFLICT_MESSAGE;
+  if (isTitleTaken(error)) return TITLE_TAKEN_MESSAGE;
+  return withValidationDetail("Erreur lors de l'enregistrement de l'article", error);
+}
 
 const POST_EDITOR_COPY: AdminEditorCopy = {
   testIdPrefix: 'admin-post',

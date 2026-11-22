@@ -1,5 +1,5 @@
 import type { Observable } from 'rxjs';
-import type { Project, ProjectImage, ProjectInput } from '../models/project.model';
+import type { GalleryWrite, Project, ProjectImage, ProjectInput } from '../models/project.model';
 
 export abstract class ProjectsGateway {
   abstract getAllProjects(): Observable<readonly Project[]>;
@@ -18,15 +18,19 @@ export abstract class ProjectsGateway {
   ): Observable<Project>;
   abstract deleteProject(id: string): Observable<void>;
   abstract uploadImage(file: File, projectId: string, version?: number): Observable<string>;
-  abstract uploadGalleryImage(projectId: string, file: File, alt: string): Observable<ProjectImage>;
+  abstract uploadGalleryImage(
+    projectId: string,
+    file: File,
+    alt: string,
+  ): Observable<GalleryWrite<ProjectImage>>;
   abstract updateGalleryImageAlt(
     projectId: string,
     imageId: string,
     alt: string,
-  ): Observable<ProjectImage>;
+  ): Observable<GalleryWrite<ProjectImage>>;
   abstract reorderGallery(
     projectId: string,
     imageIds: readonly string[],
-  ): Observable<readonly ProjectImage[]>;
-  abstract deleteGalleryImage(projectId: string, imageId: string): Observable<void>;
+  ): Observable<GalleryWrite<readonly ProjectImage[]>>;
+  abstract deleteGalleryImage(projectId: string, imageId: string): Observable<GalleryWrite<null>>;
 }
