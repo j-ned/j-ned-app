@@ -1,7 +1,9 @@
+import { PLATFORM_ID } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { asButton } from '@shared/testing/as-button';
 import { byTestId } from '@shared/testing/by-test-id';
+import { inputAvailability } from '@shared/testing/input-availability';
 import { settleBounded } from '@shared/testing/settle';
 import type { CommentDraft } from '../../domain/models/comment.model';
 import { makeCommentDraft } from '../../testing/comment-builders';
@@ -266,5 +268,21 @@ describe('CommentForm', () => {
     expect(byTestId(host, 'comment-privacy-note')?.querySelector('a')?.getAttribute('href')).toBe(
       '/confidentialite',
     );
+  });
+  // Hydratée plus tard, une saisie y serait effacée par la première liaison du modèle.
+  it('Given a server render When the form is sent to the reader Then none of its controls accepts input', async () => {
+    TestBed.overrideProvider(PLATFORM_ID, { useValue: 'server' });
+
+    const { host } = await renderForm();
+
+    const { accepting, total } = inputAvailability(host);
+    expect({ accepting, hasControls: total > 0 }).toEqual({ accepting: 0, hasControls: true });
+  });
+
+  it('Given a browser render When the form appears Then every control accepts input', async () => {
+    const { host } = await renderForm();
+
+    const { accepting, total } = inputAvailability(host);
+    expect(accepting).toBe(total);
   });
 });

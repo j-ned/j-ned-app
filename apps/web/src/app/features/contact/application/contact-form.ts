@@ -31,6 +31,7 @@ import { ToastStore } from '@core/notifications/toast-store';
 import { FieldError } from '@shared/ui/field-error';
 import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
 import { EMAIL_PATTERN } from '@shared/forms/email-pattern';
+import { EditableInBrowser } from '@shared/forms/editable-in-browser';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ContactInfoPanel } from './components/contact-info-panel';
@@ -49,7 +50,16 @@ const MESSAGE_MAX_LENGTH = 5000;
   selector: 'app-contact-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  imports: [FormRoot, FormField, AppIcon, Button, ContactInfoPanel, RouterLink, FieldError],
+  imports: [
+    FormRoot,
+    FormField,
+    EditableInBrowser,
+    AppIcon,
+    Button,
+    ContactInfoPanel,
+    RouterLink,
+    FieldError,
+  ],
   template: `
     <section class="border-t border-foreground/8 py-26 md:py-34" aria-labelledby="contact-heading">
       <div class="page-container">
@@ -78,119 +88,121 @@ const MESSAGE_MAX_LENGTH = 5000;
           >
             <h3 class="mb-6 text-lg font-semibold tracking-tight">Envoyer un message</h3>
 
-            <form [formRoot]="contactForm" class="flex flex-col gap-6">
-              <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-0 p-0 m-0">
-                <legend class="sr-only">Tes coordonnées</legend>
+            <form [formRoot]="contactForm">
+              <fieldset appEditableInBrowser class="m-0 flex min-w-0 flex-col gap-6 border-0 p-0">
+                <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-0 p-0 m-0">
+                  <legend class="sr-only">Tes coordonnées</legend>
+                  <div>
+                    @let nameInError = contactForm.name().touched() && contactForm.name().invalid();
+                    <label for="name" class="form-label"
+                      >Ton nom <span class="font-normal text-muted">(requis)</span></label
+                    >
+                    <input
+                      id="name"
+                      type="text"
+                      [formField]="contactForm.name"
+                      aria-required="true"
+                      placeholder="Ton nom"
+                      autocomplete="name"
+                      [attr.aria-invalid]="nameInError"
+                      [attr.aria-describedby]="nameInError ? 'contact-name-error' : null"
+                      class="form-input"
+                    />
+                    <app-field-error [field]="contactForm.name" errorId="contact-name-error" />
+                  </div>
+                  <div>
+                    @let emailInError =
+                      contactForm.email().touched() && contactForm.email().invalid();
+                    <label for="email" class="form-label"
+                      >Email <span class="font-normal text-muted">(requis)</span></label
+                    >
+                    <input
+                      id="email"
+                      type="email"
+                      [formField]="contactForm.email"
+                      aria-required="true"
+                      placeholder="toi@exemple.fr"
+                      autocomplete="email"
+                      [attr.aria-invalid]="emailInError"
+                      [attr.aria-describedby]="emailInError ? 'contact-email-error' : null"
+                      class="form-input"
+                    />
+                    <app-field-error [field]="contactForm.email" errorId="contact-email-error" />
+                  </div>
+                </fieldset>
                 <div>
-                  @let nameInError = contactForm.name().touched() && contactForm.name().invalid();
-                  <label for="name" class="form-label"
-                    >Ton nom <span class="font-normal text-muted">(requis)</span></label
+                  @let subjectInError =
+                    contactForm.subject().touched() && contactForm.subject().invalid();
+                  <label for="subject" class="form-label"
+                    >Sujet <span class="font-normal text-muted">(requis)</span></label
                   >
                   <input
-                    id="name"
+                    id="subject"
                     type="text"
-                    [formField]="contactForm.name"
+                    data-testid="contact-subject"
+                    [formField]="contactForm.subject"
                     aria-required="true"
-                    placeholder="Ton nom"
-                    autocomplete="name"
-                    [attr.aria-invalid]="nameInError"
-                    [attr.aria-describedby]="nameInError ? 'contact-name-error' : null"
+                    placeholder="De quoi veux-tu parler&#8239;?"
+                    [attr.aria-invalid]="subjectInError"
+                    [attr.aria-describedby]="subjectInError ? 'contact-subject-error' : null"
                     class="form-input"
                   />
-                  <app-field-error [field]="contactForm.name" errorId="contact-name-error" />
+                  <app-field-error [field]="contactForm.subject" errorId="contact-subject-error" />
                 </div>
                 <div>
-                  @let emailInError =
-                    contactForm.email().touched() && contactForm.email().invalid();
-                  <label for="email" class="form-label"
-                    >Email <span class="font-normal text-muted">(requis)</span></label
+                  @let messageInError =
+                    contactForm.message().touched() && contactForm.message().invalid();
+                  <label for="message" class="form-label"
+                    >Message <span class="font-normal text-muted">(requis)</span></label
                   >
-                  <input
-                    id="email"
-                    type="email"
-                    [formField]="contactForm.email"
+                  <textarea
+                    id="message"
+                    [formField]="contactForm.message"
                     aria-required="true"
-                    placeholder="toi@exemple.fr"
-                    autocomplete="email"
-                    [attr.aria-invalid]="emailInError"
-                    [attr.aria-describedby]="emailInError ? 'contact-email-error' : null"
-                    class="form-input"
+                    rows="6"
+                    placeholder="Ta question, ta remarque, ou juste un bonjour…"
+                    [attr.aria-invalid]="messageInError"
+                    [attr.aria-describedby]="messageInError ? 'contact-message-error' : null"
+                    class="form-textarea"
+                  ></textarea>
+                  <app-field-error [field]="contactForm.message" errorId="contact-message-error" />
+                </div>
+                <!-- Champ piège : hors écran, hors tabulation et hors arbre d'accessibilité ; un robot le remplit. -->
+                <div class="sr-only" aria-hidden="true">
+                  <label for="contact-website">Ne pas remplir</label>
+                  <input
+                    id="contact-website"
+                    type="text"
+                    data-testid="contact-website"
+                    [formField]="contactForm.website"
+                    tabindex="-1"
+                    autocomplete="off"
                   />
-                  <app-field-error [field]="contactForm.email" errorId="contact-email-error" />
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 pt-1">
+                  <p
+                    class="max-w-[34ch] text-[0.8125rem] text-muted"
+                    data-testid="contact-privacy-note"
+                  >
+                    Ton nom, ton e-mail et ton message servent seulement à te répondre.
+                    <a
+                      routerLink="/confidentialite"
+                      class="underline underline-offset-3 hover:text-primary"
+                    >
+                      Politique de confidentialité
+                    </a>
+                  </p>
+                  <button appButton type="submit" [disabled]="contactForm().submitting()">
+                    @if (contactForm().submitting()) {
+                      <app-icon name="spinner" [size]="20" class="animate-spin" />
+                      <span>Envoi en cours...</span>
+                    } @else {
+                      <span>Envoyer le message</span>
+                      <app-icon name="send" [size]="20" />
+                    }
+                  </button>
                 </div>
               </fieldset>
-              <div>
-                @let subjectInError =
-                  contactForm.subject().touched() && contactForm.subject().invalid();
-                <label for="subject" class="form-label"
-                  >Sujet <span class="font-normal text-muted">(requis)</span></label
-                >
-                <input
-                  id="subject"
-                  type="text"
-                  data-testid="contact-subject"
-                  [formField]="contactForm.subject"
-                  aria-required="true"
-                  placeholder="De quoi veux-tu parler&#8239;?"
-                  [attr.aria-invalid]="subjectInError"
-                  [attr.aria-describedby]="subjectInError ? 'contact-subject-error' : null"
-                  class="form-input"
-                />
-                <app-field-error [field]="contactForm.subject" errorId="contact-subject-error" />
-              </div>
-              <div>
-                @let messageInError =
-                  contactForm.message().touched() && contactForm.message().invalid();
-                <label for="message" class="form-label"
-                  >Message <span class="font-normal text-muted">(requis)</span></label
-                >
-                <textarea
-                  id="message"
-                  [formField]="contactForm.message"
-                  aria-required="true"
-                  rows="6"
-                  placeholder="Ta question, ta remarque, ou juste un bonjour…"
-                  [attr.aria-invalid]="messageInError"
-                  [attr.aria-describedby]="messageInError ? 'contact-message-error' : null"
-                  class="form-textarea"
-                ></textarea>
-                <app-field-error [field]="contactForm.message" errorId="contact-message-error" />
-              </div>
-              <!-- Champ piège : hors écran, hors tabulation et hors arbre d'accessibilité ; un robot le remplit. -->
-              <div class="sr-only" aria-hidden="true">
-                <label for="contact-website">Ne pas remplir</label>
-                <input
-                  id="contact-website"
-                  type="text"
-                  data-testid="contact-website"
-                  [formField]="contactForm.website"
-                  tabindex="-1"
-                  autocomplete="off"
-                />
-              </div>
-              <div class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 pt-1">
-                <p
-                  class="max-w-[34ch] text-[0.8125rem] text-muted"
-                  data-testid="contact-privacy-note"
-                >
-                  Ton nom, ton e-mail et ton message servent seulement à te répondre.
-                  <a
-                    routerLink="/confidentialite"
-                    class="underline underline-offset-3 hover:text-primary"
-                  >
-                    Politique de confidentialité
-                  </a>
-                </p>
-                <button appButton type="submit" [disabled]="contactForm().submitting()">
-                  @if (contactForm().submitting()) {
-                    <app-icon name="spinner" [size]="20" class="animate-spin" />
-                    <span>Envoi en cours...</span>
-                  } @else {
-                    <span>Envoyer le message</span>
-                    <app-icon name="send" [size]="20" />
-                  }
-                </button>
-              </div>
             </form>
           </div>
         </div>
