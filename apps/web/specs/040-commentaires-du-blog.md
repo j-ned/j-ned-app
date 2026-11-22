@@ -691,6 +691,7 @@ Aucune variable d'environnement nouvelle ; une base d'intégration nouvelle en C
 - **Tranche 10 — les lecteurs lisent les commentaires dans le HTML de l'article ; Giscus disparaît** : GREEN 3173 passed / 3173 total · refactor : l'auteur public (`toPublicAuthor`) sert aussi l'auteur du parent dans `toAdminComment` ; `ParentAuthor` devient `PublicAuthor`
 - **Tranche 11 — un lecteur commente** : GREEN 217 passed / 217 total (specs comments, blog-detail, contact) · refactor : `EMAIL_PATTERN` sorti de `contact-form.ts` vers `shared/forms/email-pattern.ts` (2 consommateurs : `ContactForm`, `CommentForm`) ; décompte et caractère visible de l'API dans `features/comments/domain/comment-text.ts`
 - **Tranche 12 — un lecteur répond à un commentaire publié** : GREEN 172 passed / 172 total (specs comments, blog-detail), puis 3256 passed / 3256 total avec le correctif du focus pendant l'envoi · refactor : statut d'envoi calculé une fois par la section (`statusOf`) et placé à côté du formulaire qui l'a fait partir ; remplissage de formulaire factorisé dans la spec de la page
+- **Correctifs de revue (PR C)** : GREEN 3281 passed / 3281 total · refactor : ligne d'auteur partagée par le titre d'un commentaire et celui d'une réponse (`ng-template`) ; caractères invisibles des sources écrits en échappements `\u…`
 
 ## Verify
 
@@ -719,6 +720,8 @@ Verdict : **PASS**. Captures (scratchpad de la session, non versionnées) : `com
 - Un 429 ne distingue pas le quota par IP du plafond de commentaires en attente : le message couvre les deux causes.
 - Un 503 est lu comme « commentaires fermés » ; une indisponibilité de l'API qui répondrait 503 pour une autre raison serait annoncée de la même façon.
 - `aria-controls` du bouton « Répondre » n'est posé que formulaire ouvert (l'élément n'existe pas sinon).
+- Absence d'e-mail : l'adapter (liste de champs fermée) garantit qu'aucune adresse n'entre dans le modèle ni dans le DOM. Le cache de transfert sérialise en revanche la réponse brute de `GET …/comments` dans `<script id="ng-state">` : là, seule la sortie de l'API (`publicCommentPageSchema`, testé côté API) garantit l'absence d'adresse. `ci/smoke.sh` vérifie le HTML servi entier, état de transfert compris, contre la doublure.
+- Une seule réponse peut partir à la fois : pendant son envoi, les formulaires de réponse restent occupés ; le formulaire principal a son propre état et reste utilisable.
 - L'écoute réelle avec un lecteur d'écran reste à faire (Points à trancher n° 11).
 
 ## Limites connues de la PR B (admin)

@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { Component, ElementRef, input, output, viewChild } from '@angular/core';
 import { Button } from '@shared/ui/button';
 import type { CommentView } from '../comment-thread-view';
@@ -6,7 +6,7 @@ import type { CommentView } from '../comment-thread-view';
 // Nom et texte viennent d'un inconnu : interpolation seule, jamais de HTML ni de lien fabriqué.
 @Component({
   selector: 'article[app-comment-item]',
-  imports: [DatePipe, Button],
+  imports: [DatePipe, NgTemplateOutlet, Button],
   host: {
     'data-testid': 'comment-item',
     '[attr.aria-labelledby]': 'comment().headingId',
@@ -14,20 +14,21 @@ import type { CommentView } from '../comment-thread-view';
   },
   template: `
     @let c = comment();
+    <!-- Seul le niveau du titre change entre un commentaire et une réponse. -->
+    <ng-template #author>
+      <span [textContent]="c.author"></span>
+      @if (c.ownerMention) {
+        <span class="font-normal text-muted" [textContent]="', ' + c.ownerMention"></span>
+      }
+    </ng-template>
     <header class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
       @if (level() === 'reply') {
         <h4 [id]="c.headingId" class="text-[0.9375rem] font-semibold">
-          <span [textContent]="c.author"></span>
-          @if (c.ownerMention) {
-            <span class="font-normal text-muted" [textContent]="', ' + c.ownerMention"></span>
-          }
+          <ng-container [ngTemplateOutlet]="author" />
         </h4>
       } @else {
         <h3 [id]="c.headingId" class="text-base font-semibold">
-          <span [textContent]="c.author"></span>
-          @if (c.ownerMention) {
-            <span class="font-normal text-muted" [textContent]="', ' + c.ownerMention"></span>
-          }
+          <ng-container [ngTemplateOutlet]="author" />
         </h3>
       }
       <time [attr.datetime]="c.createdAt" class="font-mono text-[0.8125rem] text-muted">{{
