@@ -19,6 +19,7 @@ import { pressTestId } from '@shared/testing/press-test-id';
 import { settleBounded } from '@shared/testing/settle';
 import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import type { ToastMessage } from '@shared/ui/toast.types';
+import { frenchTypographyViolations } from '../../../../testing/french-typography-violations';
 import { deleteThroughDialog, readPageTitleFocus } from '../../application/testing/admin-list-page';
 import { AdminComments } from './admin-comments';
 
@@ -685,5 +686,19 @@ describe('AdminComments: répondre en tant qu’auteur', () => {
         "Ce commentaire a été supprimé entre-temps\u00a0: ta réponse n'est pas publiée. La liste est à jour.",
       ],
     });
+  });
+});
+
+describe('AdminComments: typographie', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('Given the empty pending queue When the page renders Then its own texts follow French typography', async () => {
+    const rendered = await render();
+
+    await answer(rendered, 'pending', []);
+
+    expect(frenchTypographyViolations(rendered.host.textContent ?? '', 'admin-comments')).toEqual(
+      [],
+    );
   });
 });

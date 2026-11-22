@@ -680,3 +680,21 @@ Aucune variable d'environnement nouvelle ; une base d'intégration nouvelle en C
 11. **Critère 8** (« annoncé par un lecteur d'écran ») : testable structurellement (rôles, noms
     accessibles, `role="status"`/`alert`, focus) et par axe ; l'écoute réelle avec un lecteur
     d'écran reste une vérification manuelle, à consigner dans `## Suivi`.
+
+## Journal des tranches
+
+- **Tranche 6 — le propriétaire voit les commentaires et le nombre en attente** : GREEN 1280 passed / 1280 total (specs admin et comments) · refactor : pagineur du journal des connexions extrait en `AdminPager` (2 consommateurs : `admin-logins`, `admin-comments`), `loginJournalPager` délègue à `pager()`
+- **Tranche 7 — publier** : GREEN 1296 passed / 1296 total · refactor : aucun
+- **Tranche 8 — supprimer après confirmation** : GREEN 1317 passed / 1317 total · refactor : aucun
+- **Tranche 9 — répondre en tant qu'auteur** : GREEN 1347 passed / 1347 total · refactor : file de modération (filtre, page servie, total) sortie de la page dans `pages/admin-comments/comment-queue.ts` ; textes d'état vide dans le presenter
+
+## Verify
+
+PR B, 2026-11-22 : `STUB_ADMIN_SESSION=1 node ci/api-stub/server.mjs` (port 3000) et `ng serve` (port 4200, proxy `/api`), Chromium headless (Playwright), indice `auth:session` posé.
+
+1. `/admin/comments` : titre « Commentaires | Admin », file « En attente » (Lou, Sami), compteur de navigation « 2 en attente ».
+2. Filtre « Publiés » : réponse du propriétaire (« Toi, auteur du site ») et Camille (« 2 réponses »).
+3. « Répondre » : focus dans le champ ; Échap ferme et rend le focus au bouton ; envoi vide ⇒ « Ta réponse est obligatoire ».
+4. « Supprimer » sur la réponse du propriétaire : boîte « Supprimer ta réponse ? », Échap la ferme.
+
+Verdict : **PASS**. Captures : file publiée avec le formulaire de réponse en erreur, et boîte de confirmation (fichiers locaux de la session, non versionnés). Console : une seule erreur, `GET /api/config` en 404, route absente de la doublure et étrangère à cet écran ; aucune erreur Angular.

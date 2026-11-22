@@ -53,7 +53,7 @@ const moderationFailureOf = (error: unknown): ModerationFailure =>
   template: `
     <app-admin-page-header heading="Commentaires">
       Les commentaires des articles, du plus récent au plus ancien. Rien n'est publié sans ta
-      validation&nbsp;; refuser un commentaire le supprime.
+      validation&#8239;; refuser un commentaire le supprime.
     </app-admin-page-header>
 
     <app-filter-group label="Filtrer par statut" [options]="filters" [(active)]="queue.status" />
