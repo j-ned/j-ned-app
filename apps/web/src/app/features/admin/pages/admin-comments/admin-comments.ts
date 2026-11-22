@@ -22,6 +22,7 @@ import {
 } from '@features/comments/domain/moderation-error';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 import { ToastStore } from '@core/notifications/toast-store';
+import { ConfirmDialog } from '@shared/ui/confirm-dialog';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
 import {
@@ -29,7 +30,9 @@ import {
   COMMENT_FILTERS,
   commentAuthorName,
   commentsSummary,
+  deletionPrompt,
   moderationFailureMessage,
+  type ModerationAction,
 } from '../../application/admin-comments-view';
 import { AdminCommentRow } from '../../application/components/admin-comment-row';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
@@ -44,6 +47,7 @@ type PageRequest = { readonly status: CommentStatus; readonly page: number };
 @Component({
   selector: 'app-admin-comments',
   imports: [
+    ConfirmDialog,
     FilterGroup,
     AdminCommentRow,
     AdminEmptyState,
@@ -87,11 +91,22 @@ type PageRequest = { readonly status: CommentStatus; readonly page: number };
               app-admin-comment-row
               [comment]="comment"
               (publishRequested)="publish(comment)"
+              (deleteRequested)="deletion.request(comment)"
             ></li>
           }
         </ul>
       </ng-template>
     </app-admin-list-state>
+
+    <app-confirm-dialog
+      [open]="deletionPrompt() !== null"
+      [heading]="deletionPrompt()?.heading ?? ''"
+      [confirmLabel]="deletionPrompt()?.confirmLabel ?? ''"
+      (confirmed)="confirmDeletion()"
+      (cancelled)="deletion.cancel()"
+    >
+      <p>{{ deletionPrompt()?.description }}</p>
+    </app-confirm-dialog>
 
     @if (pager().pageCount > 1) {
       <app-admin-pager
@@ -150,7 +165,7 @@ export class AdminComments {
   private readonly _publication = new PendingDeletion<AdminComment>({
     list: this.commentsRes,
     remove: (comment): Observable<AdminComment> =>
-      this.gateway.publish(comment.id).pipe(this.settlingIfStale(comment)),
+      this.gateway.publish(comment.id).pipe(this.settlingIfStale('publish', comment)),
     succeeded: (comment): void => {
       this.toast.add({
         severity: 'success',
@@ -158,8 +173,28 @@ export class AdminComments {
       });
       this.refresh();
     },
-    failed: (comment): void => this.tellFailure('failed', comment),
+    failed: (comment): void => this.tellFailure('publish', 'failed', comment),
   });
+
+  protected readonly deletion = new PendingDeletion<AdminComment>({
+    list: this.commentsRes,
+    remove: (comment): Observable<void> =>
+      this.gateway.remove(comment.id).pipe(this.settlingIfStale('delete', comment)),
+    succeeded: (comment): void => {
+      this.toast.add({ severity: 'success', detail: deletionPrompt(comment).done });
+      this.refresh();
+    },
+    failed: (comment): void => this.tellFailure('delete', 'failed', comment),
+  });
+  protected readonly deletionPrompt = computed(() => {
+    const target = this.deletion.target();
+    return target && deletionPrompt(target);
+  });
+
+  protected confirmDeletion(): void {
+    this.deletion.confirm();
+    this._pageHeader().focusTitle();
+  }
 
   protected publish(comment: AdminComment): void {
     this._publication.delete(comment);
@@ -189,20 +224,27 @@ export class AdminComments {
 
   // Un commentaire changé ailleurs (déjà publié, supprimé) : la ligne ne revient pas, la liste
   // est relue. Seule une panne la remet en place, par l'échec que reçoit `PendingDeletion`.
-  private settlingIfStale<T>(comment: AdminComment): OperatorFunction<T, T> {
+  private settlingIfStale<T>(
+    action: ModerationAction,
+    comment: AdminComment,
+  ): OperatorFunction<T, T> {
     return catchError((error: unknown) => {
       const reason = error instanceof ModerationError ? error.reason : 'failed';
       if (reason === 'failed') return throwError(() => error);
-      this.tellFailure(reason, comment);
+      this.tellFailure(action, reason, comment);
       this.refresh();
       return EMPTY;
     });
   }
 
-  private tellFailure(reason: ModerationFailure, comment: AdminComment): void {
+  private tellFailure(
+    action: ModerationAction,
+    reason: ModerationFailure,
+    comment: AdminComment,
+  ): void {
     this.toast.add({
       severity: 'error',
-      detail: moderationFailureMessage('publish', reason, comment),
+      detail: moderationFailureMessage(action, reason, comment),
     });
   }
 

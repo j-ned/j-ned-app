@@ -3,6 +3,7 @@ import { frenchTypographyViolations } from '../../../testing/french-typography-v
 import {
   COMMENT_FILTERS,
   commentsSummary,
+  deletionPrompt,
   moderationFailureMessage,
   toAdminCommentRow,
 } from './admin-comments-view';
@@ -165,4 +166,118 @@ describe('Publication', () => {
       );
     },
   );
+});
+
+describe('Suppression', () => {
+  const OWNER_REPLY = makeAdminComment({
+    author: { kind: 'owner' },
+    status: 'published',
+    parent: { id: 'c-0', author: { kind: 'visitor', name: 'Camille' }, excerpt: 'Merci' },
+  });
+
+  it.each([
+    {
+      name: 'a pending comment',
+      comment: makeAdminComment(),
+      label: 'Refuser le commentaire de Camille',
+    },
+    {
+      name: 'a published comment',
+      comment: makeAdminComment({ status: 'published' }),
+      label: 'Supprimer le commentaire de Camille',
+    },
+    { name: 'a reply of the owner', comment: OWNER_REPLY, label: 'Supprimer ta réponse' },
+  ])(
+    'Given $name When it is shown Then its delete action reads « $label »',
+    ({ comment, label }) => {
+      expect(toAdminCommentRow(comment, NOW).deleteLabel).toBe(label);
+    },
+  );
+
+  it.each([
+    {
+      name: 'a pending comment',
+      comment: makeAdminComment(),
+      prompt: {
+        heading: 'Refuser le commentaire de Camille ?',
+        description: 'Un commentaire refusé est supprimé définitivement.',
+        confirmLabel: 'Refuser et supprimer',
+        done: 'Commentaire de Camille refusé et supprimé',
+      },
+    },
+    {
+      name: 'a published comment with 2 replies',
+      comment: makeAdminComment({ status: 'published', replyCount: 2 }),
+      prompt: {
+        heading: 'Supprimer le commentaire de Camille ?',
+        description:
+          "Le commentaire disparaît de l'article, et ses 2 réponses avec lui. Cette action est définitive.",
+        confirmLabel: 'Supprimer le commentaire',
+        done: 'Commentaire de Camille supprimé',
+      },
+    },
+    {
+      name: 'a published comment with 1 reply',
+      comment: makeAdminComment({ status: 'published', replyCount: 1 }),
+      prompt: {
+        heading: 'Supprimer le commentaire de Camille ?',
+        description:
+          "Le commentaire disparaît de l'article, et sa réponse avec lui. Cette action est définitive.",
+        confirmLabel: 'Supprimer le commentaire',
+        done: 'Commentaire de Camille supprimé',
+      },
+    },
+    {
+      name: 'a published comment without reply',
+      comment: makeAdminComment({ status: 'published' }),
+      prompt: {
+        heading: 'Supprimer le commentaire de Camille ?',
+        description: "Le commentaire disparaît de l'article. Cette action est définitive.",
+        confirmLabel: 'Supprimer le commentaire',
+        done: 'Commentaire de Camille supprimé',
+      },
+    },
+    {
+      name: 'a reply of the owner',
+      comment: OWNER_REPLY,
+      prompt: {
+        heading: 'Supprimer ta réponse ?',
+        description: "Ta réponse disparaît de l'article. Cette action est définitive.",
+        confirmLabel: 'Supprimer la réponse',
+        done: 'Ta réponse est supprimée',
+      },
+    },
+  ])(
+    'Given $name When its deletion is asked for Then the prompt says what goes',
+    ({ comment, prompt }) => {
+      expect(deletionPrompt(comment)).toEqual(prompt);
+    },
+  );
+
+  it.each([
+    { reason: 'not-found', message: 'Ce commentaire était déjà supprimé. La liste est à jour.' },
+    {
+      reason: 'failed',
+      message: "Le commentaire n'a pas pu être supprimé. Réessaie dans un instant.",
+    },
+  ] as const)(
+    'Given a deletion fails with « $reason » When the failure is told Then it reads « $message »',
+    ({ reason, message }) => {
+      expect(moderationFailureMessage('delete', reason, makeAdminComment())).toBe(message);
+    },
+  );
+
+  it('Given every deletion prompt When it is checked Then it follows French typography', () => {
+    const prompts = [
+      makeAdminComment(),
+      makeAdminComment({ status: 'published', replyCount: 3 }),
+      OWNER_REPLY,
+    ].map(deletionPrompt);
+
+    expect(
+      prompts.flatMap((prompt) =>
+        Object.values(prompt).flatMap((text) => frenchTypographyViolations(text, 'prompt')),
+      ),
+    ).toEqual([]);
+  });
 });

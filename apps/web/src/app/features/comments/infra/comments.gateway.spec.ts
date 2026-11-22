@@ -143,3 +143,51 @@ describe('CommentsGateway: écritures de l’admin', () => {
     },
   );
 });
+
+describe('CommentsGateway: suppression', () => {
+  let gateway: CommentsGateway;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+      ],
+    });
+    gateway = TestBed.inject(CommentsGateway);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('Given a comment When it is removed Then the API is asked to delete it, silently', async () => {
+    const done = firstValueFrom(gateway.remove('c-7'), { defaultValue: 'completed' });
+
+    const req = http.expectOne('/api/blog/comments/c-7');
+    const sent = { method: req.request.method, silent: req.request.context.get(SKIP_ERROR_TOAST) };
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect({ sent, done: await done }).toEqual({
+      sent: { method: 'DELETE', silent: true },
+      done: null,
+    });
+  });
+
+  it.each([
+    { status: 404, reason: 'not-found' },
+    { status: 500, reason: 'failed' },
+  ] as const)(
+    'Given the API answers $status When a comment is removed Then the failure is a moderation error « $reason »',
+    async ({ status, reason }) => {
+      const result = firstValueFrom(gateway.remove('c-7')).catch((error: unknown) =>
+        error instanceof ModerationError ? error.reason : error,
+      );
+
+      http.expectOne('/api/blog/comments/c-7').flush('nope', { status, statusText: 'Nope' });
+
+      expect(await result).toBe(reason);
+    },
+  );
+});

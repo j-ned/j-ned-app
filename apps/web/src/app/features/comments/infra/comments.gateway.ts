@@ -39,6 +39,13 @@ export class CommentsGateway {
       .pipe(map(toAdminComment), catchError(rejectAsModerationError));
   }
 
+  // Refuser un commentaire, c'est le supprimer : ses réponses partent avec lui.
+  remove(id: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.apiUrl}/blog/comments/${id}`, { context: silentErrors() })
+      .pipe(catchError(rejectAsModerationError));
+  }
+
   getPendingCount(): Observable<number> {
     return this.pendingCount.value$;
   }

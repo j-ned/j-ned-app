@@ -16,8 +16,9 @@ import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { normalized } from '@shared/testing/normalized-text';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settleBounded } from '@shared/testing/settle';
+import { answerConfirmDialog, readConfirmDialog } from '@shared/ui/testing/confirm-dialog-page';
 import type { ToastMessage } from '@shared/ui/toast.types';
-import { readPageTitleFocus } from '../../application/testing/admin-list-page';
+import { deleteThroughDialog, readPageTitleFocus } from '../../application/testing/admin-list-page';
 import { AdminComments } from './admin-comments';
 
 type Status = 'pending' | 'published';
@@ -354,4 +355,154 @@ describe('AdminComments: publier', () => {
       });
     },
   );
+});
+
+describe('AdminComments: refuser ou supprimer après confirmation', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const PUBLISHED = makeAdminComment({ id: 'c-1', status: 'published', replyCount: 2 });
+  const OTHER = makeAdminComment({
+    id: 'c-2',
+    status: 'published',
+    author: { kind: 'visitor', name: 'Lou', email: 'lou@example.test' },
+  });
+
+  async function renderPublished(): Promise<Rendered & { readonly invalidate: Mock<() => void> }> {
+    const rendered = await render();
+    const invalidate = vi.spyOn(TestBed.inject(CommentsGateway), 'invalidatePendingCount');
+    await answer(rendered, 'pending', []);
+    await pressFilter(rendered, 'Publiés');
+    await answer(rendered, 'published', [PUBLISHED, OTHER], { total: 2 });
+    return { ...rendered, invalidate };
+  }
+
+  const deleteRequest = (rendered: Rendered, id: string): TestRequest =>
+    rendered.http.expectOne({ method: 'DELETE', url: `/api/blog/comments/${id}` });
+
+  it('Given a published comment with 2 replies When its deletion is asked for Then the dialog names the visitor and says the replies go too', async () => {
+    const rendered = await renderPublished();
+    const label = byTestId(rendered.host, 'comment-delete')?.getAttribute('aria-label');
+
+    await pressTestId(rendered.fixture, 'comment-delete', 0);
+
+    expect({ label, dialog: readConfirmDialog(rendered.host) }).toEqual({
+      label: 'Supprimer le commentaire de Camille',
+      dialog: {
+        open: true,
+        heading: 'Supprimer le commentaire de Camille ?',
+        description:
+          "Le commentaire disparaît de l'article, et ses 2 réponses avec lui. Cette action est définitive.",
+        confirm: 'Supprimer le commentaire',
+        cancel: 'Annuler',
+      },
+    });
+
+    await answerConfirmDialog(rendered.fixture, 'cancel');
+  });
+
+  it('Given the dialog When the deletion is confirmed Then the comment leaves the list, the API deletes it, success is told, the count and queue are read again and focus goes to the title', async () => {
+    const rendered = await renderPublished();
+
+    await deleteThroughDialog(rendered.fixture, 'comment-delete', 'confirm');
+    const during = texts(rendered.host, 'comment-author');
+    deleteRequest(rendered, 'c-1').flush(null, { status: 204, statusText: 'No Content' });
+    await settleBounded(rendered.fixture);
+    await answer(rendered, 'published', [OTHER], { total: 1 });
+
+    expect({
+      during,
+      after: texts(rendered.host, 'comment-author'),
+      summary: testIdText(rendered.host, 'admin-comments-summary'),
+      invalidated: rendered.invalidate.mock.calls.length,
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+      focus: readPageTitleFocus(rendered.host),
+    }).toEqual({
+      during: ['Lou'],
+      after: ['Lou'],
+      summary: '1 commentaire publié',
+      invalidated: 1,
+      toasts: [{ severity: 'success', detail: 'Commentaire de Camille supprimé' }],
+      focus: { tag: 'H1', tabindex: '-1', focused: true },
+    });
+  });
+
+  it.each(['cancel', 'escape'] as const)(
+    'Given the dialog When it is answered « %s » Then nothing is deleted and the list is kept',
+    async (answerWith) => {
+      const rendered = await renderPublished();
+
+      await deleteThroughDialog(rendered.fixture, 'comment-delete', answerWith);
+
+      expect({
+        open: readConfirmDialog(rendered.host).open,
+        authors: texts(rendered.host, 'comment-author'),
+      }).toEqual({ open: false, authors: ['Camille', 'Lou'] });
+    },
+  );
+
+  it('Given a pending comment When it is refused Then the dialog says refusing deletes it, and the API deletes it', async () => {
+    const rendered = await render();
+    await answer(rendered, 'pending', [CAMILLE]);
+
+    await pressTestId(rendered.fixture, 'comment-delete', 0);
+    const dialog = readConfirmDialog(rendered.host);
+    await answerConfirmDialog(rendered.fixture, 'confirm');
+    deleteRequest(rendered, 'c-1').flush(null, { status: 204, statusText: 'No Content' });
+    await settleBounded(rendered.fixture);
+    await answer(rendered, 'pending', []);
+
+    expect({
+      heading: dialog.heading,
+      description: dialog.description,
+      confirm: dialog.confirm,
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast.detail),
+    }).toEqual({
+      heading: 'Refuser le commentaire de Camille ?',
+      description: 'Un commentaire refusé est supprimé définitivement.',
+      confirm: 'Refuser et supprimer',
+      toasts: ['Commentaire de Camille refusé et supprimé'],
+    });
+  });
+
+  it('Given the server fails When a deletion is confirmed Then the comment comes back in place and the failure is told', async () => {
+    const rendered = await renderPublished();
+
+    await deleteThroughDialog(rendered.fixture, 'comment-delete', 'confirm');
+    deleteRequest(rendered, 'c-1').flush('boom', { status: 500, statusText: 'Error' });
+    await settleBounded(rendered.fixture);
+
+    expect({
+      authors: texts(rendered.host, 'comment-author'),
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+    }).toEqual({
+      authors: ['Camille', 'Lou'],
+      toasts: [
+        {
+          severity: 'error',
+          detail: "Le commentaire n'a pas pu être supprimé. Réessaie dans un instant.",
+        },
+      ],
+    });
+  });
+
+  it('Given the comment was already deleted elsewhere When its deletion is confirmed Then it is told and the queue and count are read again', async () => {
+    const rendered = await renderPublished();
+
+    await deleteThroughDialog(rendered.fixture, 'comment-delete', 'confirm');
+    deleteRequest(rendered, 'c-1').flush('gone', { status: 404, statusText: 'Not Found' });
+    await settleBounded(rendered.fixture);
+    await answer(rendered, 'published', [OTHER], { total: 1 });
+
+    expect({
+      authors: texts(rendered.host, 'comment-author'),
+      invalidated: rendered.invalidate.mock.calls.length,
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+    }).toEqual({
+      authors: ['Lou'],
+      invalidated: 1,
+      toasts: [
+        { severity: 'error', detail: 'Ce commentaire était déjà supprimé. La liste est à jour.' },
+      ],
+    });
+  });
 });

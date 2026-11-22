@@ -74,12 +74,24 @@ import { toAdminCommentRow } from '../admin-comments-view';
           Publier
         </button>
       }
+      <button
+        appButton
+        type="button"
+        variant="text-danger"
+        data-testid="comment-delete"
+        [attr.aria-label]="view.deleteLabel"
+        (click)="deleteRequested.emit()"
+      >
+        <app-icon name="trash" [size]="16" />
+        {{ comment().status === 'pending' ? 'Refuser' : 'Supprimer' }}
+      </button>
     </div>
   `,
 })
 export class AdminCommentRow {
   readonly comment = input.required<AdminComment>();
   readonly publishRequested = output<void>();
+  readonly deleteRequested = output<void>();
 
   private readonly _now = new Date();
 
