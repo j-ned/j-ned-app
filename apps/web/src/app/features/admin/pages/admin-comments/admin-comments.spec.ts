@@ -702,3 +702,100 @@ describe('AdminComments: typographie', () => {
     );
   });
 });
+
+describe('AdminComments: repli sur la dernière page', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const published = (id: string, name = 'Camille'): AdminComment =>
+    makeAdminComment({
+      id,
+      status: 'published',
+      author: { kind: 'visitor', name, email: `${id}@example.test` },
+    });
+
+  const LAST = published('c-41', 'Dernier');
+  const PAGE_TWO = [published('c-21', 'Vingt et un'), published('c-40', 'Quarante')];
+
+  // Page 3 sur 3 (41 commentaires publiés), dont on supprime l'unique commentaire : la file n'en
+  // compte plus que 40, la page 3 n'existe plus.
+  async function deleteOnlyCommentOfLastPage(rendered: Rendered): Promise<void> {
+    await answer(rendered, 'pending', []);
+    await pressFilter(rendered, 'Publiés');
+    await answer(rendered, 'published', [published('c-1')], { total: 41 });
+    await pressTestId(rendered.fixture, 'admin-comments-older');
+    await answer(rendered, 'published', PAGE_TWO, { page: 2, total: 41 });
+    await pressTestId(rendered.fixture, 'admin-comments-older');
+    await answer(rendered, 'published', [LAST], { page: 3, total: 41 });
+
+    await deleteThroughDialog(rendered.fixture, 'comment-delete', 'confirm');
+    rendered.http
+      .expectOne({ method: 'DELETE', url: '/api/blog/comments/c-41' })
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await settleBounded(rendered.fixture);
+    rendered.http
+      .expectOne(listUrl('published', 3))
+      .flush({ data: [], total: 40, page: 3, limit: 20 });
+    await settleBounded(rendered.fixture);
+  }
+
+  it('Given the only comment of the last page is deleted When the queue is read again Then the new last page is asked for and shown', async () => {
+    const rendered = await render();
+
+    await deleteOnlyCommentOfLastPage(rendered);
+    await answer(rendered, 'published', PAGE_TWO, { page: 2, total: 40 });
+
+    expect({
+      authors: texts(rendered.host, 'comment-author'),
+      page: testIdText(rendered.host, 'admin-comments-page'),
+      older: byTestId(rendered.host, 'admin-comments-older')?.getAttribute('aria-disabled'),
+    }).toEqual({
+      authors: ['Vingt et un', 'Quarante'],
+      page: 'Page 2 sur 2',
+      older: 'true',
+    });
+  });
+
+  it('Given the queue fell back to page 2 When newer comments are asked for Then page 1 is requested', async () => {
+    const rendered = await render();
+    await deleteOnlyCommentOfLastPage(rendered);
+    await answer(rendered, 'published', PAGE_TWO, { page: 2, total: 40 });
+
+    await pressTestId(rendered.fixture, 'admin-comments-newer');
+    await answer(rendered, 'published', [published('c-1')], { page: 1, total: 40 });
+
+    expect(testIdText(rendered.host, 'admin-comments-page')).toBe('Page 1 sur 2');
+  });
+
+  it('Given the queue fell back to page 2 and a reply made it grow When older comments are asked for Then page 3 is requested again', async () => {
+    const rendered = await render();
+    await deleteOnlyCommentOfLastPage(rendered);
+    await answer(rendered, 'published', PAGE_TWO, { page: 2, total: 40 });
+    await pressTestId(rendered.fixture, 'comment-reply', 0);
+    const field = byTestId(rendered.host, 'reply-body');
+    if (!(field instanceof HTMLTextAreaElement)) throw new Error('Expected the reply textarea');
+    field.value = 'Merci';
+    field.dispatchEvent(new Event('input'));
+    await settleBounded(rendered.fixture);
+    await pressTestId(rendered.fixture, 'reply-submit');
+    rendered.http.expectOne('/api/blog/comments/c-21/replies').flush(
+      toAdminCommentDto(
+        makeAdminComment({
+          id: 'c-42',
+          status: 'published',
+          author: { kind: 'owner' },
+          parent: { id: 'c-21', author: { kind: 'visitor', name: 'Vingt et un' }, excerpt: 'x' },
+        }),
+      ),
+      { status: 201, statusText: 'Created' },
+    );
+    await settleBounded(rendered.fixture);
+
+    await pressTestId(rendered.fixture, 'admin-comments-older');
+    await answer(rendered, 'published', [LAST], { page: 3, total: 41 });
+
+    expect({
+      authors: texts(rendered.host, 'comment-author'),
+      page: testIdText(rendered.host, 'admin-comments-page'),
+    }).toEqual({ authors: ['Dernier'], page: 'Page 3 sur 3' });
+  });
+});
