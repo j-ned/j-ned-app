@@ -1,18 +1,35 @@
-import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { map, of, switchMap, tap, type Observable } from 'rxjs';
+import {
+  EMPTY,
+  catchError,
+  map,
+  of,
+  switchMap,
+  tap,
+  throwError,
+  type Observable,
+  type OperatorFunction,
+} from 'rxjs';
 import type {
   AdminComment,
   AdminCommentPage,
   CommentStatus,
 } from '@features/comments/domain/models/comment.model';
+import {
+  ModerationError,
+  type ModerationFailure,
+} from '@features/comments/domain/moderation-error';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
+import { ToastStore } from '@core/notifications/toast-store';
 import { FilterGroup } from '@shared/ui/filter-group';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
 import {
   ADMIN_COMMENTS_PAGE_SIZE,
   COMMENT_FILTERS,
+  commentAuthorName,
   commentsSummary,
+  moderationFailureMessage,
 } from '../../application/admin-comments-view';
 import { AdminCommentRow } from '../../application/components/admin-comment-row';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
@@ -20,6 +37,7 @@ import { AdminListState } from '../../application/components/admin-list-state';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
 import { AdminPager } from '../../application/components/admin-pager';
 import { pager } from '../../application/pager';
+import { PendingDeletion } from '../../application/pending-deletion';
 
 type PageRequest = { readonly status: CommentStatus; readonly page: number };
 
@@ -65,7 +83,11 @@ type PageRequest = { readonly status: CommentStatus; readonly page: number };
         </p>
         <ul data-testid="admin-comments-list" role="list" class="mt-2">
           @for (comment of comments(); track comment.id) {
-            <li app-admin-comment-row [comment]="comment"></li>
+            <li
+              app-admin-comment-row
+              [comment]="comment"
+              (publishRequested)="publish(comment)"
+            ></li>
           }
         </ul>
       </ng-template>
@@ -86,6 +108,8 @@ type PageRequest = { readonly status: CommentStatus; readonly page: number };
 })
 export class AdminComments {
   private readonly gateway = inject(CommentsGateway);
+  private readonly toast = inject(ToastStore);
+  private readonly _pageHeader = viewChild.required(AdminPageHeader);
 
   protected readonly filters = COMMENT_FILTERS;
   protected readonly status = signal<CommentStatus>('pending');
@@ -121,6 +145,27 @@ export class AdminComments {
       : "Aucun commentaire publié pour l'instant.",
   );
 
+  // Publier fait quitter la file en attente : même retrait immédiat qu'une suppression, remis en
+  // place si l'API refuse.
+  private readonly _publication = new PendingDeletion<AdminComment>({
+    list: this.commentsRes,
+    remove: (comment): Observable<AdminComment> =>
+      this.gateway.publish(comment.id).pipe(this.settlingIfStale(comment)),
+    succeeded: (comment): void => {
+      this.toast.add({
+        severity: 'success',
+        detail: `Commentaire de ${commentAuthorName(comment)} publié`,
+      });
+      this.refresh();
+    },
+    failed: (comment): void => this.tellFailure('failed', comment),
+  });
+
+  protected publish(comment: AdminComment): void {
+    this._publication.delete(comment);
+    this._pageHeader().focusTitle();
+  }
+
   protected showNewer(): void {
     if (this.pager().hasNewer) this.show(this._served().page - 1);
   }
@@ -134,6 +179,31 @@ export class AdminComments {
   private show(page: number): void {
     if (page === this._requestedPage()) this.commentsRes.reload();
     else this._requestedPage.set(page);
+  }
+
+  // Le compteur de la navigation et la page servie (total, pages) suivent la file réelle.
+  private refresh(): void {
+    this.gateway.invalidatePendingCount();
+    this.commentsRes.reload();
+  }
+
+  // Un commentaire changé ailleurs (déjà publié, supprimé) : la ligne ne revient pas, la liste
+  // est relue. Seule une panne la remet en place, par l'échec que reçoit `PendingDeletion`.
+  private settlingIfStale<T>(comment: AdminComment): OperatorFunction<T, T> {
+    return catchError((error: unknown) => {
+      const reason = error instanceof ModerationError ? error.reason : 'failed';
+      if (reason === 'failed') return throwError(() => error);
+      this.tellFailure(reason, comment);
+      this.refresh();
+      return EMPTY;
+    });
+  }
+
+  private tellFailure(reason: ModerationFailure, comment: AdminComment): void {
+    this.toast.add({
+      severity: 'error',
+      detail: moderationFailureMessage('publish', reason, comment),
+    });
   }
 
   // Une suppression faite ailleurs peut vider la dernière page : on retombe sur la nouvelle

@@ -1,10 +1,15 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+  type TestRequest,
+} from '@angular/common/http/testing';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { Mock } from 'vitest';
 import { ToastStore } from '@core/notifications/toast-store';
 import type { AdminComment } from '@features/comments/domain/models/comment.model';
+import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 import { makeAdminComment, toAdminCommentDto } from '@features/comments/testing/comment-builders';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
@@ -12,6 +17,7 @@ import { normalized } from '@shared/testing/normalized-text';
 import { pressTestId } from '@shared/testing/press-test-id';
 import { settleBounded } from '@shared/testing/settle';
 import type { ToastMessage } from '@shared/ui/toast.types';
+import { readPageTitleFocus } from '../../application/testing/admin-list-page';
 import { AdminComments } from './admin-comments';
 
 type Status = 'pending' | 'published';
@@ -235,4 +241,117 @@ describe('AdminComments: filtre et pages', () => {
 
     expect(byTestId(rendered.host, 'admin-comments-pager')).toBeNull();
   });
+});
+
+describe('AdminComments: publier', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const LOU = makeAdminComment({
+    id: 'c-2',
+    author: { kind: 'visitor', name: 'Lou', email: 'lou@example.test' },
+  });
+
+  async function renderQueue(): Promise<Rendered & { readonly invalidate: Mock<() => void> }> {
+    const rendered = await render();
+    const invalidate = vi.spyOn(TestBed.inject(CommentsGateway), 'invalidatePendingCount');
+    await answer(rendered, 'pending', [CAMILLE, LOU], { total: 2 });
+    return { ...rendered, invalidate };
+  }
+
+  const publishRequest = (rendered: Rendered, id: string): TestRequest =>
+    rendered.http.expectOne({ method: 'PATCH', url: `/api/blog/comments/${id}` });
+
+  it('Given a pending comment When the queue renders Then its publish button names the visitor, and a published one has none', async () => {
+    const rendered = await render();
+
+    await answer(rendered, 'pending', [CAMILLE]);
+    const pendingLabel = byTestId(rendered.host, 'comment-publish')?.getAttribute('aria-label');
+    await pressFilter(rendered, 'Publiés');
+    await answer(rendered, 'published', [makeAdminComment({ status: 'published' })]);
+
+    expect({
+      pendingLabel,
+      publishedButton: byTestId(rendered.host, 'comment-publish'),
+    }).toEqual({ pendingLabel: 'Publier le commentaire de Camille', publishedButton: null });
+  });
+
+  it('Given the pending queue When a comment is published Then it leaves the list at once, then the count and the queue are read again and success is told with focus on the title', async () => {
+    const rendered = await renderQueue();
+
+    await pressTestId(rendered.fixture, 'comment-publish', 0);
+    const during = texts(rendered.host, 'comment-author');
+    publishRequest(rendered, 'c-1').flush(toAdminCommentDto({ ...CAMILLE, status: 'published' }));
+    await settleBounded(rendered.fixture);
+    await answer(rendered, 'pending', [LOU], { total: 1 });
+
+    expect({
+      during,
+      after: texts(rendered.host, 'comment-author'),
+      summary: testIdText(rendered.host, 'admin-comments-summary'),
+      invalidated: rendered.invalidate.mock.calls.length,
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+      focus: readPageTitleFocus(rendered.host),
+    }).toEqual({
+      during: ['Lou'],
+      after: ['Lou'],
+      summary: '1 commentaire en attente',
+      invalidated: 1,
+      toasts: [{ severity: 'success', detail: 'Commentaire de Camille publié' }],
+      focus: { tag: 'H1', tabindex: '-1', focused: true },
+    });
+  });
+
+  it('Given the server fails When a comment is published Then the row comes back in place and the failure is told', async () => {
+    const rendered = await renderQueue();
+
+    await pressTestId(rendered.fixture, 'comment-publish', 0);
+    publishRequest(rendered, 'c-1').flush('boom', { status: 500, statusText: 'Error' });
+    await settleBounded(rendered.fixture);
+
+    expect({
+      authors: texts(rendered.host, 'comment-author'),
+      invalidated: rendered.invalidate.mock.calls.length,
+      toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+    }).toEqual({
+      authors: ['Camille', 'Lou'],
+      invalidated: 0,
+      toasts: [
+        {
+          severity: 'error',
+          detail: "Le commentaire n'a pas pu être publié. Réessaie dans un instant.",
+        },
+      ],
+    });
+  });
+
+  it.each([
+    {
+      status: 409,
+      detail: 'Ce commentaire est déjà publié. La liste est à jour.',
+    },
+    {
+      status: 404,
+      detail: 'Ce commentaire a été supprimé entre-temps. La liste est à jour.',
+    },
+  ])(
+    'Given the comment changed elsewhere ($status) When it is published Then the reason is told and the queue and count are read again',
+    async ({ status, detail }) => {
+      const rendered = await renderQueue();
+
+      await pressTestId(rendered.fixture, 'comment-publish', 0);
+      publishRequest(rendered, 'c-1').flush('nope', { status, statusText: 'Nope' });
+      await settleBounded(rendered.fixture);
+      await answer(rendered, 'pending', [LOU], { total: 1 });
+
+      expect({
+        authors: texts(rendered.host, 'comment-author'),
+        invalidated: rendered.invalidate.mock.calls.length,
+        toasts: rendered.toast.add.mock.calls.map(([toast]) => toast),
+      }).toEqual({
+        authors: ['Lou'],
+        invalidated: 1,
+        toasts: [{ severity: 'error', detail }],
+      });
+    },
+  );
 });

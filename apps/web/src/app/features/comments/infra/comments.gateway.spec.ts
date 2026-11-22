@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { makeAdminComment, toAdminCommentDto } from '../testing/comment-builders';
+import { ModerationError } from '../domain/moderation-error';
 import { CommentsGateway } from './comments.gateway';
 
 const PENDING_COUNT_URL = '/api/blog/comments/pending-count';
@@ -85,4 +86,60 @@ describe('CommentsGateway: lectures de l’admin', () => {
       count: 2,
     });
   });
+});
+
+describe('CommentsGateway: écritures de l’admin', () => {
+  let gateway: CommentsGateway;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+      ],
+    });
+    gateway = TestBed.inject(CommentsGateway);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  const reasonOf = (error: unknown): unknown =>
+    error instanceof ModerationError ? error.reason : error;
+
+  it('Given a pending comment When it is published Then the API is asked to publish it, silently, and the published comment comes back', async () => {
+    const published = makeAdminComment({ id: 'c-7', status: 'published' });
+    const result = firstValueFrom(gateway.publish('c-7'));
+
+    const req = http.expectOne('/api/blog/comments/c-7');
+    const sent = {
+      method: req.request.method,
+      body: req.request.body,
+      silent: req.request.context.get(SKIP_ERROR_TOAST),
+    };
+    req.flush(toAdminCommentDto(published));
+
+    expect({ sent, result: await result }).toEqual({
+      sent: { method: 'PATCH', body: { status: 'published' }, silent: true },
+      result: published,
+    });
+  });
+
+  it.each([
+    { status: 404, reason: 'not-found' },
+    { status: 409, reason: 'conflict' },
+    { status: 500, reason: 'failed' },
+    { status: 0, reason: 'failed' },
+  ] as const)(
+    'Given the API answers $status When a comment is published Then the failure is a moderation error « $reason »',
+    async ({ status, reason }) => {
+      const result = firstValueFrom(gateway.publish('c-7')).catch(reasonOf);
+
+      http.expectOne('/api/blog/comments/c-7').flush('nope', { status, statusText: 'Nope' });
+
+      expect(await result).toBe(reason);
+    },
+  );
 });

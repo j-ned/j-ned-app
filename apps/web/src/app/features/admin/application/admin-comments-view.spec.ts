@@ -1,6 +1,11 @@
 import { makeAdminComment } from '@features/comments/testing/comment-builders';
 import { frenchTypographyViolations } from '../../../testing/french-typography-violations';
-import { COMMENT_FILTERS, commentsSummary, toAdminCommentRow } from './admin-comments-view';
+import {
+  COMMENT_FILTERS,
+  commentsSummary,
+  moderationFailureMessage,
+  toAdminCommentRow,
+} from './admin-comments-view';
 
 const NOW = new Date('2026-11-21T12:00:00.000Z');
 
@@ -117,4 +122,47 @@ describe('Typographie des textes de la file', () => {
       ),
     ).toEqual([]);
   });
+});
+
+describe('Publication', () => {
+  it.each([
+    { status: 'pending', publishLabel: 'Publier le commentaire de Camille' },
+    { status: 'published', publishLabel: null },
+  ] as const)(
+    'Given a $status comment When it is shown Then its publish action reads « $publishLabel »',
+    ({ status, publishLabel }) => {
+      expect(toAdminCommentRow(makeAdminComment({ status }), NOW).publishLabel).toBe(publishLabel);
+    },
+  );
+
+  it.each([
+    {
+      reason: 'not-found',
+      parent: null,
+      message: 'Ce commentaire a été supprimé entre-temps. La liste est à jour.',
+    },
+    {
+      reason: 'conflict',
+      parent: null,
+      message: 'Ce commentaire est déjà publié. La liste est à jour.',
+    },
+    {
+      reason: 'conflict',
+      parent: { id: 'c-0', author: { kind: 'owner' }, excerpt: 'Oui' },
+      message:
+        "Ce commentaire est déjà publié, ou celui auquel il répond ne l'est pas encore. La liste est à jour.",
+    },
+    {
+      reason: 'failed',
+      parent: null,
+      message: "Le commentaire n'a pas pu être publié. Réessaie dans un instant.",
+    },
+  ] as const)(
+    'Given publishing fails with « $reason » When the failure is told Then it reads « $message »',
+    ({ reason, parent, message }) => {
+      expect(moderationFailureMessage('publish', reason, makeAdminComment({ parent }))).toBe(
+        message,
+      );
+    },
+  );
 });

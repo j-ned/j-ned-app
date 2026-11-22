@@ -4,9 +4,9 @@ import { catchError, map, type Observable } from 'rxjs';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { refreshable } from '@shared/api/refreshable';
-import type { AdminCommentPage, CommentStatus } from '../domain/models/comment.model';
-import { toAdminCommentPage } from './comment.adapter';
-import type { AdminCommentPageDto } from './comment.types';
+import type { AdminComment, AdminCommentPage, CommentStatus } from '../domain/models/comment.model';
+import { rejectAsModerationError, toAdminComment, toAdminCommentPage } from './comment.adapter';
+import type { AdminCommentDto, AdminCommentPageDto } from './comment.types';
 
 @Injectable({ providedIn: 'root' })
 export class CommentsGateway {
@@ -26,6 +26,17 @@ export class CommentsGateway {
         context: silentErrors(),
       })
       .pipe(map(toAdminCommentPage));
+  }
+
+  // Les écritures de l'admin : la page restaure son état et nomme l'échec elle-même.
+  publish(id: string): Observable<AdminComment> {
+    return this.http
+      .patch<AdminCommentDto>(
+        `${this.apiUrl}/blog/comments/${id}`,
+        { status: 'published' },
+        { context: silentErrors() },
+      )
+      .pipe(map(toAdminComment), catchError(rejectAsModerationError));
   }
 
   getPendingCount(): Observable<number> {

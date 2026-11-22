@@ -1,12 +1,14 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { AdminComment } from '@features/comments/domain/models/comment.model';
+import { AppIcon } from '@shared/icons/app-icon';
+import { Button } from '@shared/ui/button';
 import { Stamp } from '@shared/ui/stamp';
 import { toAdminCommentRow } from '../admin-comments-view';
 
 @Component({
   selector: 'li[app-admin-comment-row]',
-  imports: [RouterLink, Stamp],
+  imports: [RouterLink, AppIcon, Button, Stamp],
   host: { 'data-testid': 'admin-comment-row', class: 'block border-b border-line py-4' },
   template: `
     @let view = row();
@@ -58,10 +60,26 @@ import { toAdminCommentRow } from '../admin-comments-view';
         {{ view.replies }}
       </p>
     }
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      @if (view.publishLabel) {
+        <button
+          appButton
+          type="button"
+          variant="outlined"
+          data-testid="comment-publish"
+          [attr.aria-label]="view.publishLabel"
+          (click)="publishRequested.emit()"
+        >
+          <app-icon name="check" [size]="16" />
+          Publier
+        </button>
+      }
+    </div>
   `,
 })
 export class AdminCommentRow {
   readonly comment = input.required<AdminComment>();
+  readonly publishRequested = output<void>();
 
   private readonly _now = new Date();
 

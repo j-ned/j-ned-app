@@ -3,6 +3,7 @@ import type {
   CommentStatus,
   ParentAuthor,
 } from '@features/comments/domain/models/comment.model';
+import type { ModerationFailure } from '@features/comments/domain/moderation-error';
 import { counted } from '@shared/format/counted';
 import type { FilterOption } from '@shared/ui/filter-group';
 import { receivedAgo } from './admin-messages-view';
@@ -37,7 +38,11 @@ type AdminCommentRow = {
   readonly received: string;
   readonly createdAt: string;
   readonly replies: string;
+  readonly publishLabel: string | null;
 };
+
+export const commentAuthorName = (comment: AdminComment): string =>
+  comment.author.kind === 'visitor' ? comment.author.name : 'Toi, auteur du site';
 
 const parentName = (author: ParentAuthor): string =>
   author.kind === 'owner' ? 'toi' : author.name;
@@ -45,8 +50,9 @@ const parentName = (author: ParentAuthor): string =>
 export function toAdminCommentRow(comment: AdminComment, now: Date): AdminCommentRow {
   const { author, parent } = comment;
   const email = author.kind === 'visitor' ? author.email : null;
+  const authorName = commentAuthorName(comment);
   return {
-    author: author.kind === 'visitor' ? author.name : 'Toi, auteur du site',
+    author: authorName,
     email,
     mailto: email && `mailto:${email}`,
     postTitle: comment.post.title,
@@ -58,7 +64,35 @@ export function toAdminCommentRow(comment: AdminComment, now: Date): AdminCommen
     received: receivedAgo(comment.createdAt, now),
     createdAt: comment.createdAt,
     replies: comment.replyCount === 0 ? '' : counted(comment.replyCount, 'réponse', 'réponses'),
+    publishLabel: comment.status === 'pending' ? `Publier le commentaire de ${authorName}` : null,
   };
+}
+
+type ModerationAction = 'publish';
+
+const UP_TO_DATE = 'La liste est à jour.';
+
+const FAILURE_MESSAGES: Record<
+  ModerationAction,
+  Record<ModerationFailure, (comment: AdminComment) => string>
+> = {
+  publish: {
+    'not-found': () => `Ce commentaire a été supprimé entre-temps. ${UP_TO_DATE}`,
+    // L'API répond 409 aussi bien à un commentaire déjà publié qu'à une réponse dont le parent attend.
+    conflict: (comment) =>
+      comment.parent === null
+        ? `Ce commentaire est déjà publié. ${UP_TO_DATE}`
+        : `Ce commentaire est déjà publié, ou celui auquel il répond ne l'est pas encore. ${UP_TO_DATE}`,
+    failed: () => "Le commentaire n'a pas pu être publié. Réessaie dans un instant.",
+  },
+};
+
+export function moderationFailureMessage(
+  action: ModerationAction,
+  reason: ModerationFailure,
+  comment: AdminComment,
+): string {
+  return FAILURE_MESSAGES[action][reason](comment);
 }
 
 export function commentsSummary(status: CommentStatus, total: number): string {
