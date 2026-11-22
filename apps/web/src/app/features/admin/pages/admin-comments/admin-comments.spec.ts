@@ -663,7 +663,7 @@ describe('AdminComments: répondre en tant qu’auteur', () => {
     });
   });
 
-  it('Given the comment was deleted elsewhere When a reply is sent Then it is told, the form closes and the list is read again', async () => {
+  it('Given the comment was deleted elsewhere When a reply is sent Then it is told, the form closes, the list is read again and focus goes to the title', async () => {
     const rendered = await renderPublished();
     await pressTestId(rendered.fixture, 'comment-reply');
     await typeReply(rendered, 'Avec plaisir');
@@ -679,12 +679,14 @@ describe('AdminComments: répondre en tant qu’auteur', () => {
       form: byTestId(rendered.host, 'reply-body'),
       authors: texts(rendered.host, 'comment-author'),
       toasts: rendered.toast.add.mock.calls.map(([toast]) => toast.detail),
+      focus: readPageTitleFocus(rendered.host),
     }).toEqual({
       form: null,
       authors: ['Lou'],
       toasts: [
         "Ce commentaire a été supprimé entre-temps\u00a0: ta réponse n'est pas publiée. La liste est à jour.",
       ],
+      focus: { tag: 'H1', tabindex: '-1', focused: true },
     });
   });
 });

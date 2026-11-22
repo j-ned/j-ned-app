@@ -202,7 +202,9 @@ export class AdminComments {
           const reason = moderationFailureOf(error);
           this.tellFailure('reply', reason, comment);
           if (reason === 'failed') return;
+          // Le formulaire qui a le focus disparaît avec la cible : le titre le reprend.
           this.replyTarget.set(null);
+          this._pageHeader().focusTitle();
           this.queue.refresh();
         },
       });
