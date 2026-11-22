@@ -71,7 +71,7 @@ export function formatChartDay(day: string): string {
   return `${part('day')} ${part('month')}`;
 }
 
-export function alpha(color: string, pct: number): string {
+function alpha(color: string, pct: number): string {
   return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 }
 

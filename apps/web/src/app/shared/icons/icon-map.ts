@@ -9,7 +9,7 @@ export type IconRef = {
 
 const FALLBACK: IconRef = { id: 'question', style: 'solid' };
 
-export const ICON_MAP: Readonly<Record<string, IconRef>> = {
+const ICON_MAP: Readonly<Record<string, IconRef>> = {
   // Navigation & layout
   'arrow-left': { id: 'arrow-left', style: 'solid' },
   'lucide-arrow-left': { id: 'arrow-left', style: 'solid' },

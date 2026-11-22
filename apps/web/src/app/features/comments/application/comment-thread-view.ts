@@ -22,7 +22,7 @@ export type CommentView = {
   readonly pending: boolean;
 };
 
-export type CommentThreadItem = CommentView & {
+type CommentThreadItem = CommentView & {
   readonly replies: readonly CommentView[];
   readonly repliesLabel: string;
 };
