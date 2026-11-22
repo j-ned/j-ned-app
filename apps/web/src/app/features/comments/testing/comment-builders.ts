@@ -72,9 +72,13 @@ export function toPublicCommentPageDto(thread: PublishedThread): PublicCommentPa
 }
 
 // Un commentaire envoyé par ce lecteur, gardé dans l'onglet en attendant sa publication.
+// Identifiant de la forme que l'API renvoie : seul un UUID est relu depuis l'onglet.
+export const pendingId = (n: number): string =>
+  `5d0f4b6e-1c2a-4f3b-9a1e-${String(n).padStart(12, '0')}`;
+
 export function makePendingComment(overrides: Partial<PendingComment> = {}): PendingComment {
   return {
-    id: 'p-1',
+    id: pendingId(1),
     name: 'Lou',
     body: 'Bel article.',
     parentId: null,

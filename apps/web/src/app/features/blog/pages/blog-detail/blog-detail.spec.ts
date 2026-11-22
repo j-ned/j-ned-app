@@ -24,6 +24,7 @@ import { defined } from '@shared/testing/defined';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { ssrUpstreamInterceptor } from '@core/ssr/ssr-upstream-interceptor';
 import {
+  makePendingComment,
   makePublishedComment,
   makePublishedReply,
   makePublishedThread,
@@ -896,13 +897,6 @@ describe('BlogDetail', () => {
           };
     };
 
-    const waitingEntry = (overrides: { id: string; name: string }): Record<string, unknown> => ({
-      body: 'En attente.',
-      parentId: null,
-      createdAt: new Date().toISOString(),
-      ...overrides,
-    });
-
     function showTab(state: DocumentVisibilityState): void {
       Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
       document.dispatchEvent(new Event('visibilitychange'));
@@ -1012,11 +1006,22 @@ describe('BlogDetail', () => {
     it('Given a waiting comment of this tab When the discussion read now publishes it Then it shows once, as published, and the tab forgets it', async () => {
       sessionStorage.setItem(
         PENDING_KEY,
-        JSON.stringify([waitingEntry({ id: 'c-1', name: 'Camille' })]),
+        // Daté d'une minute : le délai d'attente de l'onglet se compte depuis l'heure réelle.
+        JSON.stringify([
+          makePendingComment({
+            id: PENDING_ID,
+            name: 'Camille',
+            createdAt: new Date(Date.now() - 60_000).toISOString(),
+          }),
+        ]),
       );
 
       const fixture = await showArticle((request) =>
-        request.flush(toPublicCommentPageDto(makePublishedThread())),
+        request.flush(
+          toPublicCommentPageDto(
+            makePublishedThread({ comments: [makePublishedComment({ id: PENDING_ID })] }),
+          ),
+        ),
       );
 
       expect({

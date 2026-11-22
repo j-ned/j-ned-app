@@ -1,6 +1,6 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { makePendingComment } from '../testing/comment-builders';
+import { makePendingComment, pendingId } from '../testing/comment-builders';
 import { PendingCommentsStorage } from './pending-comments.storage';
 
 const KEY = 'comments:pending:v1:article-temoin';
@@ -24,7 +24,10 @@ describe('PendingCommentsStorage', () => {
   });
 
   it('Given comments written for an article When they are read back Then the same entries come back, under a versioned key of that article only', () => {
-    const pending = [makePendingComment({ id: 'p-1' }), makePendingComment({ id: 'p-2' })];
+    const pending = [
+      makePendingComment({ id: pendingId(1) }),
+      makePendingComment({ id: pendingId(2) }),
+    ];
 
     storage().write('article-temoin', pending);
 
