@@ -1,6 +1,7 @@
 import type { LoginEvent, LoginEventKind } from '@features/auth/domain/models/login-event.model';
 import { counted } from '@shared/format/counted';
 import { withFirstOfMonth } from '@shared/format/with-first-of-month';
+import { pager } from './pager';
 
 export const LOGIN_JOURNAL_PAGE_SIZE = 25;
 
@@ -13,13 +14,6 @@ export type LoginJournalRow = {
   readonly note: string;
   readonly at: string;
   readonly createdAt: string;
-};
-
-type LoginJournalPager = {
-  readonly pageCount: number;
-  readonly label: string;
-  readonly hasNewer: boolean;
-  readonly hasOlder: boolean;
 };
 
 const PASSWORD = 'Mot de passe';
@@ -88,15 +82,8 @@ export function toLoginJournalRows(
   });
 }
 
-export function loginJournalPager(total: number, page: number): LoginJournalPager {
-  const pageCount = Math.max(1, Math.ceil(total / LOGIN_JOURNAL_PAGE_SIZE));
-  return {
-    pageCount,
-    label: `Page ${page} sur ${pageCount}`,
-    hasNewer: page > 1,
-    hasOlder: page < pageCount,
-  };
-}
+export const loginJournalPager = (total: number, page: number): ReturnType<typeof pager> =>
+  pager(total, page, LOGIN_JOURNAL_PAGE_SIZE);
 
 export function loginJournalSummary(total: number): string {
   return `${counted(total, 'étape', 'étapes')} sur les 90 derniers jours`;

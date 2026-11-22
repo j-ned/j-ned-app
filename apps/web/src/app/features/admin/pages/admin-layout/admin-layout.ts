@@ -7,6 +7,7 @@ import { AuthStore } from '@core/auth/auth-store';
 import { navigationEnd$ } from '@core/navigation/navigation-end';
 import { ThemeStore } from '@core/theme/theme-store';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
+import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
@@ -104,6 +105,7 @@ export class AdminLayout {
   private readonly _projectsGateway = inject(ProjectsGateway);
   private readonly _blogGateway = inject(BlogGateway);
   private readonly _contactGateway = inject(ContactGateway);
+  private readonly _commentsGateway = inject(CommentsGateway);
   private readonly _viewportScroller = inject(ViewportScroller);
 
   protected readonly menuOpen = signal(false);
@@ -111,6 +113,9 @@ export class AdminLayout {
   private readonly _projects = rxResource({ stream: () => this._projectsGateway.getAllProjects() });
   private readonly _posts = rxResource({ stream: () => this._blogGateway.getAllPostsForAdmin() });
   private readonly _unread = rxResource({ stream: () => this._contactGateway.getUnreadCount() });
+  private readonly _pendingComments = rxResource({
+    stream: () => this._commentsGateway.getPendingCount(),
+  });
 
   private readonly _url = toSignal(
     navigationEnd$(this._router).pipe(map((event) => event.urlAfterRedirects)),
@@ -122,6 +127,7 @@ export class AdminLayout {
       projects: resourceValueOr(this._projects, null)?.length ?? null,
       posts: resourceValueOr(this._posts, null)?.length ?? null,
       unread: resourceValueOr(this._unread, null),
+      pendingComments: resourceValueOr(this._pendingComments, null),
     }),
   );
 

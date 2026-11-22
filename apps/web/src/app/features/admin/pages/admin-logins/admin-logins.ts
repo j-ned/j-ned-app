@@ -3,10 +3,10 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { map, of, switchMap, type Observable } from 'rxjs';
 import type { LoginEventPage } from '@features/auth/domain/models/login-event.model';
 import { LoginJournalGateway } from '@features/auth/infra/gateways/login-journal.gateway';
-import { Button } from '@shared/ui/button';
 import { loadState } from '@shared/ui/load-state';
 import { AdminEmptyState } from '../../application/components/admin-empty-state';
 import { AdminListState } from '../../application/components/admin-list-state';
+import { AdminPager } from '../../application/components/admin-pager';
 import {
   AdminPageHeader,
   type AdminPageParent,
@@ -24,7 +24,7 @@ const SETTINGS: AdminPageParent = { label: 'Paramètres', route: '/admin/setting
 
 @Component({
   selector: 'app-admin-logins',
-  imports: [Button, AdminEmptyState, AdminListState, AdminPageHeader],
+  imports: [AdminEmptyState, AdminListState, AdminPageHeader, AdminPager],
   host: { class: 'block' },
   template: `
     <app-admin-page-header [parent]="parent" heading="Journal des connexions">
@@ -89,41 +89,15 @@ const SETTINGS: AdminPageParent = { label: 'Paramètres', route: '/admin/setting
     </app-admin-list-state>
 
     @if (pager().pageCount > 1) {
-      <nav
-        data-testid="admin-logins-pager"
-        aria-label="Pages du journal"
-        class="mt-6 flex flex-wrap items-center gap-3"
-      >
-        <button
-          appButton
-          variant="outlined"
-          type="button"
-          data-testid="admin-logins-newer"
-          [attr.aria-disabled]="pager().hasNewer ? null : 'true'"
-          (click)="showNewer()"
-          class="aria-disabled:cursor-not-allowed aria-disabled:opacity-55 aria-disabled:hover:border-foreground/15 aria-disabled:hover:text-foreground"
-        >
-          Plus récentes
-        </button>
-        <button
-          appButton
-          variant="outlined"
-          type="button"
-          data-testid="admin-logins-older"
-          [attr.aria-disabled]="pager().hasOlder ? null : 'true'"
-          (click)="showOlder()"
-          class="aria-disabled:cursor-not-allowed aria-disabled:opacity-55 aria-disabled:hover:border-foreground/15 aria-disabled:hover:text-foreground"
-        >
-          Plus anciennes
-        </button>
-        <p
-          data-testid="admin-logins-page"
-          role="status"
-          class="font-mono text-[0.8125rem] text-muted"
-        >
-          {{ pager().label }}
-        </p>
-      </nav>
+      <app-admin-pager
+        testIdPrefix="admin-logins"
+        label="Pages du journal"
+        newerLabel="Plus récentes"
+        olderLabel="Plus anciennes"
+        [pager]="pager()"
+        (newer)="showNewer()"
+        (older)="showOlder()"
+      />
     }
   `,
 })

@@ -1,6 +1,6 @@
 import { activeNavLabel, adminNavGroups, type AdminNavCounts } from './admin-nav-groups';
 
-const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3 };
+const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3, pendingComments: 4 };
 
 describe('adminNavGroups', () => {
   it.each([
@@ -25,14 +25,23 @@ describe('adminNavGroups', () => {
   it.each([
     {
       source: 'projects',
-      counts: { projects: null, posts: 2, unread: 3 },
+      counts: { projects: null, posts: 2, unread: 3, pendingComments: 4 },
       key: 'projects',
     },
-    { source: 'posts', counts: { projects: 6, posts: null, unread: 3 }, key: 'posts' },
+    {
+      source: 'posts',
+      counts: { projects: 6, posts: null, unread: 3, pendingComments: 4 },
+      key: 'posts',
+    },
     {
       source: 'unread',
-      counts: { projects: 6, posts: 2, unread: null },
+      counts: { projects: 6, posts: 2, unread: null, pendingComments: 4 },
       key: 'messages',
+    },
+    {
+      source: 'pendingComments',
+      counts: { projects: 6, posts: 2, unread: 3, pendingComments: null },
+      key: 'comments',
     },
   ] as const)(
     'Given an unknown $source count When the groups are built Then $key has no count and the others keep theirs',
@@ -51,8 +60,35 @@ describe('adminNavGroups', () => {
         cv: null,
         audience: null,
         messages: 3,
+        comments: 4,
         settings: null,
         [key]: null,
+      });
+    },
+  );
+});
+
+describe('adminNavGroups: commentaires en attente', () => {
+  it.each([0, 1, 5])(
+    'Given %i comment(s) awaiting moderation When the groups are built Then the comments entry of the audience group counts them « en attente »',
+    (pendingComments) => {
+      const audience = adminNavGroups({ ...COUNTS, pendingComments }).find(
+        (group) => group.label === 'Audience',
+      );
+      const comments = audience?.items.find((item) => item.key === 'comments');
+
+      expect({
+        route: comments?.route,
+        label: comments?.label,
+        icon: comments?.icon,
+        count: comments?.count,
+        countSuffix: comments?.countSuffix,
+      }).toEqual({
+        route: '/admin/comments',
+        label: 'Commentaires',
+        icon: 'comment',
+        count: pendingComments,
+        countSuffix: 'en attente',
       });
     },
   );
@@ -67,6 +103,7 @@ describe('activeNavLabel', () => {
     { url: '/admin/cv', label: 'CV' },
     { url: '/admin/audience', label: 'Audience' },
     { url: '/admin/messages?filter=unread', label: 'Messages' },
+    { url: '/admin/comments', label: 'Commentaires' },
     { url: '/admin/settings/security', label: 'Paramètres' },
     { url: '/admin/rendez-vous', label: 'Administration' },
     { url: '/admin/disponibilites', label: 'Administration' },

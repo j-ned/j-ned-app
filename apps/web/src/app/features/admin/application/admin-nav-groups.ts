@@ -1,5 +1,13 @@
 type AdminNavKey =
-  'overview' | 'projects' | 'posts' | 'profile' | 'cv' | 'audience' | 'messages' | 'settings';
+  | 'overview'
+  | 'projects'
+  | 'posts'
+  | 'profile'
+  | 'cv'
+  | 'audience'
+  | 'messages'
+  | 'comments'
+  | 'settings';
 
 type AdminNavItem = {
   readonly key: AdminNavKey;
@@ -20,6 +28,7 @@ export type AdminNavCounts = {
   readonly projects: number | null;
   readonly posts: number | null;
   readonly unread: number | null;
+  readonly pendingComments: number | null;
 };
 
 const NO_MATCH_LABEL = 'Administration';
@@ -51,6 +60,14 @@ export function adminNavGroups(counts: AdminNavCounts): readonly AdminNavGroup[]
       items: [
         link('audience', '/admin/audience', 'chart-bar', 'Audience'),
         link('messages', '/admin/messages', 'envelope', 'Messages', counts.unread, unreadSuffix),
+        link(
+          'comments',
+          '/admin/comments',
+          'comment',
+          'Commentaires',
+          counts.pendingComments,
+          'en attente',
+        ),
       ],
     },
     { label: 'Compte', items: [link('settings', '/admin/settings', 'cog', 'Paramètres')] },

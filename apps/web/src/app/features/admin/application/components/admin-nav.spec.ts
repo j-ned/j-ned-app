@@ -7,7 +7,7 @@ import { settle } from '@shared/testing/settle';
 import { BlankPage } from '@shared/testing/blank-page';
 import { normalized } from '@shared/testing/normalized-text';
 
-const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3 };
+const COUNTS: AdminNavCounts = { projects: 6, posts: 2, unread: 3, pendingComments: null };
 
 const NAV_KEYS = [
   'overview',
@@ -115,7 +115,7 @@ describe('AdminNav: comptes', () => {
 
   it('Given unknown counts When the navigation renders Then no count is shown', async () => {
     const { host } = await renderNav({
-      counts: { projects: null, posts: null, unread: null },
+      counts: { projects: null, posts: null, unread: null, pendingComments: null },
     });
 
     expect(NAV_KEYS.filter((key) => byTestId(host, `nav-count-${key}`) !== null)).toEqual([]);

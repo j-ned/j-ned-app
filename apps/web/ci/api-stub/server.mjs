@@ -98,6 +98,21 @@ async function readAdmin(pathname, searchParams) {
     const messages = await readFixture('contact-messages');
     return [200, { count: messages.filter((message) => !message.read).length }];
   }
+  if (pathname === '/api/blog/comments') {
+    // Comme l'API : statut facultatif, du plus récent au plus ancien, 10 par page par défaut.
+    const status = searchParams.get('status');
+    const page = Number(searchParams.get('page') ?? 1);
+    const limit = Number(searchParams.get('limit') ?? 10);
+    const matching = (await readFixture('admin-comments')).filter(
+      (comment) => status === null || comment.status === status,
+    );
+    const data = matching.slice((page - 1) * limit, page * limit);
+    return [200, { data, total: matching.length, page, limit }];
+  }
+  if (pathname === '/api/blog/comments/pending-count') {
+    const comments = await readFixture('admin-comments');
+    return [200, { count: comments.filter((comment) => comment.status === 'pending').length }];
+  }
   if (pathname === '/api/auth/login-events') {
     // Total au-delà d'une page : l'audit d'accessibilité voit aussi le pagineur.
     const page = Number(searchParams.get('page') ?? 1);
