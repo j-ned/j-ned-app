@@ -3,6 +3,7 @@ import { throwError, type Observable } from 'rxjs';
 import type {
   AdminComment,
   AdminCommentPage,
+  CommentRejection,
   PublicAuthor,
   PublishedReply,
   PublishedThread,
@@ -59,6 +60,21 @@ export function toPublishedThread(dto: PublicCommentPageDto): PublishedThread {
 
 export function toAdminCommentPage(dto: AdminCommentPageDto): AdminCommentPage {
   return { comments: dto.data.map(toAdminComment), total: dto.total };
+}
+
+// 429 couvre le quota par IP et le plafond de commentaires en attente ; 503, la file pleine.
+const REJECTIONS: Readonly<Record<number, CommentRejection>> = {
+  0: 'network',
+  400: 'invalid',
+  404: 'not-found',
+  409: 'conflict',
+  413: 'invalid',
+  429: 'rate-limited',
+  503: 'closed',
+};
+
+export function toCommentRejection(status: number): CommentRejection {
+  return REJECTIONS[status] ?? 'unavailable';
 }
 
 function moderationFailure(error: unknown): ModerationFailure {

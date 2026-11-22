@@ -689,6 +689,7 @@ Aucune variable d'environnement nouvelle ; une base d'intégration nouvelle en C
 - **Tranche 9 — répondre en tant qu'auteur** : GREEN 1347 passed / 1347 total · refactor : file de modération (filtre, page servie, total) sortie de la page dans `pages/admin-comments/comment-queue.ts` ; textes d'état vide dans le presenter
 
 - **Tranche 10 — les lecteurs lisent les commentaires dans le HTML de l'article ; Giscus disparaît** : GREEN 3173 passed / 3173 total · refactor : l'auteur public (`toPublicAuthor`) sert aussi l'auteur du parent dans `toAdminComment` ; `ParentAuthor` devient `PublicAuthor`
+- **Tranche 11 — un lecteur commente** : GREEN 217 passed / 217 total (specs comments, blog-detail, contact) · refactor : `EMAIL_PATTERN` sorti de `contact-form.ts` vers `shared/forms/email-pattern.ts` (2 consommateurs : `ContactForm`, `CommentForm`) ; décompte et caractère visible de l'API dans `features/comments/domain/comment-text.ts`
 
 ## Verify
 

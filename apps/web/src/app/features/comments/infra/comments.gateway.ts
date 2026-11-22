@@ -1,6 +1,6 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { catchError, map, type Observable } from 'rxjs';
+import { catchError, map, of, type Observable } from 'rxjs';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { OPTIONAL_UPSTREAM } from '@core/ssr/ssr-upstream-interceptor';
 import { API_BASE_URL } from '@shared/api/api-config';
@@ -8,13 +8,16 @@ import { refreshable } from '@shared/api/refreshable';
 import type {
   AdminComment,
   AdminCommentPage,
+  CommentDraft,
   CommentStatus,
+  CommentSubmission,
   PublishedThread,
 } from '../domain/models/comment.model';
 import {
   rejectAsModerationError,
   toAdminComment,
   toAdminCommentPage,
+  toCommentRejection,
   toPublishedThread,
 } from './comment.adapter';
 import type { AdminCommentDto, AdminCommentPageDto, PublicCommentPageDto } from './comment.types';
@@ -40,6 +43,30 @@ export class CommentsGateway {
         context: silentErrors().set(OPTIONAL_UPSTREAM, true),
       })
       .pipe(map(toPublishedThread));
+  }
+
+  // Un refus de l'API est une réponse attendue, jamais une erreur : la section le nomme elle-même.
+  submit(
+    slug: string,
+    draft: CommentDraft,
+    parentId: string | null,
+  ): Observable<CommentSubmission> {
+    const { name, email, body, website } = draft;
+    return this.http
+      .post(
+        `${this.apiUrl}/blog/posts/${encodeURIComponent(slug)}/comments`,
+        { name, email, body, website, ...(parentId === null ? {} : { parentId }) },
+        { context: silentErrors() },
+      )
+      .pipe(
+        map((): CommentSubmission => ({ success: true })),
+        catchError((error: unknown) =>
+          of<CommentSubmission>({
+            success: false,
+            error: toCommentRejection(error instanceof HttpErrorResponse ? error.status : 0),
+          }),
+        ),
+      );
   }
 
   // Lue par l'admin seul, qui affiche son propre état d'erreur.

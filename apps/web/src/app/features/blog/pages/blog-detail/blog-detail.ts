@@ -213,7 +213,14 @@ import { ArticleComments } from './article-comments';
         }
 
         @defer (hydrate on viewport; on viewport) {
-          <section app-comment-thread class="mt-12" [content]="comments.content()"></section>
+          <section
+            app-comment-thread
+            class="mt-12"
+            [content]="comments.content()"
+            [submission]="comments.submission()"
+            [resetToken]="comments.resetToken()"
+            (submitted)="comments.send($event)"
+          ></section>
         } @placeholder {
           <div
             data-testid="comments-placeholder"

@@ -30,6 +30,7 @@ import type { ContactFormData } from '@features/contact/domain/models/contact-fo
 import { ToastStore } from '@core/notifications/toast-store';
 import { FieldError } from '@shared/ui/field-error';
 import { focusFirstInvalid } from '@shared/forms/focus-first-invalid';
+import { EMAIL_PATTERN } from '@shared/forms/email-pattern';
 import { Button } from '@shared/ui/button';
 import { AppIcon } from '@shared/icons/app-icon';
 import { ContactInfoPanel } from './components/contact-info-panel';
@@ -43,7 +44,6 @@ const EMPTY_CONTACT: ContactFormData = {
 };
 const SUBJECT_MAX_LENGTH = 200;
 const MESSAGE_MAX_LENGTH = 5000;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-contact-form',

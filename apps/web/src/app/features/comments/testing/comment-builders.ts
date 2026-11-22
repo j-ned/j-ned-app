@@ -1,5 +1,6 @@
 import type {
   AdminComment,
+  CommentDraft,
   PublishedThread,
   PublishedComment,
   PublishedReply,
@@ -52,6 +53,16 @@ export function makePublishedComment(overrides: Partial<PublishedComment> = {}):
 export function makePublishedThread(overrides: Partial<PublishedThread> = {}): PublishedThread {
   const comments = overrides.comments ?? [makePublishedComment()];
   return { comments, total: overrides.total ?? comments.length };
+}
+
+export function makeCommentDraft(overrides: Partial<CommentDraft> = {}): CommentDraft {
+  return {
+    name: 'Camille',
+    email: 'camille@example.test',
+    body: 'Merci pour cet article.',
+    website: '',
+    ...overrides,
+  };
 }
 
 // La page publique que l'API sert pour ce fil : première page de 100 commentaires.

@@ -6,7 +6,27 @@ import {
   toAdminCommentDto,
   toPublicCommentPageDto,
 } from '../testing/comment-builders';
-import { toAdminCommentPage, toPublishedThread } from './comment.adapter';
+import { toAdminCommentPage, toCommentRejection, toPublishedThread } from './comment.adapter';
+
+describe('toCommentRejection', () => {
+  it.each([
+    { status: 400, rejection: 'invalid' },
+    { status: 413, rejection: 'invalid' },
+    { status: 404, rejection: 'not-found' },
+    { status: 409, rejection: 'conflict' },
+    { status: 429, rejection: 'rate-limited' },
+    { status: 503, rejection: 'closed' },
+    { status: 500, rejection: 'unavailable' },
+    { status: 502, rejection: 'unavailable' },
+    { status: 403, rejection: 'unavailable' },
+    { status: 0, rejection: 'network' },
+  ] as const)(
+    'Given the API answers $status to a comment When the refusal is read Then it is « $rejection »',
+    ({ status, rejection }) => {
+      expect(toCommentRejection(status)).toBe(rejection);
+    },
+  );
+});
 
 describe('toPublishedThread', () => {
   it('Given a public page of comments When it is adapted Then each comment keeps its replies, in order, and the total of the article', () => {

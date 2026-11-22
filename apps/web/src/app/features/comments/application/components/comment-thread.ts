@@ -1,11 +1,40 @@
-import { Component, computed, input } from '@angular/core';
-import { COMMENT_COPY } from '../comment-copy';
-import type { CommentThreadContent } from '../comment-thread-view';
+import {
+  Component,
+  ElementRef,
+  afterRenderEffect,
+  computed,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
+import { StatusMessage } from '@shared/ui/status-message';
+import { COMMENT_COPY, COMMENT_REJECTION_COPY } from '../comment-copy';
+import type {
+  CommentSent,
+  CommentSubmissionState,
+  CommentThreadContent,
+} from '../comment-thread-view';
+import { CommentForm } from './comment-form';
 import { CommentItem } from './comment-item';
+
+type SubmissionStatus = { readonly tone: 'success' | 'error'; readonly text: string };
+
+// Le message d'un envoi ne s'affiche qu'à côté du formulaire qui l'a fait partir.
+function statusOf(
+  submission: CommentSubmissionState,
+  parentId: string | null,
+): SubmissionStatus | null {
+  if (submission.kind === 'idle' || submission.parentId !== parentId) return null;
+  if (submission.kind === 'sent') return { tone: 'success', text: COMMENT_COPY.sent };
+  if (submission.kind === 'failed') {
+    return { tone: 'error', text: COMMENT_REJECTION_COPY[submission.reason] };
+  }
+  return null;
+}
 
 @Component({
   selector: 'section[app-comment-thread]',
-  imports: [CommentItem],
+  imports: [CommentItem, CommentForm, StatusMessage],
   host: {
     'data-testid': 'comment-thread',
     'aria-labelledby': 'comments-heading',
@@ -49,12 +78,44 @@ import { CommentItem } from './comment-item';
         }
       }
     }
+    <div data-testid="comment-main-form" class="mt-10">
+      <app-comment-form
+        idPrefix="comment"
+        [legend]="copy.formLegend"
+        [sending]="mainSending()"
+        [resetToken]="resetToken()"
+        (submitted)="submitted.emit({ draft: $event, parentId: null })"
+      />
+      @if (mainStatus(); as status) {
+        <app-status-message #submissionStatus tabindex="-1" class="mt-4" [tone]="status.tone">{{
+          status.text
+        }}</app-status-message>
+      }
+    </div>
   `,
 })
 export class CommentThread {
   readonly content = input.required<CommentThreadContent>();
+  readonly submission = input<CommentSubmissionState>({ kind: 'idle' });
+  readonly resetToken = input(0);
+  readonly submitted = output<CommentSent>();
+
+  private readonly _status = viewChild('submissionStatus', { read: ElementRef<HTMLElement> });
 
   protected readonly copy = COMMENT_COPY;
+
+  protected readonly mainStatus = computed(() => statusOf(this.submission(), null));
+  protected readonly mainSending = computed(() => {
+    const submission = this.submission();
+    return submission.kind === 'sending' && submission.parentId === null;
+  });
+
+  // Après un envoi accepté, le focus va sur la confirmation ; un refus, en alerte, le laisse en place.
+  private readonly focusConfirmation = afterRenderEffect({
+    write: () => {
+      if (this.submission().kind === 'sent') this._status()?.nativeElement.focus();
+    },
+  });
 
   protected readonly heading = computed(() => {
     const current = this.content();

@@ -867,6 +867,77 @@ describe('BlogDetail', () => {
 
     afterEach(() => TestBed.inject(HttpTestingController).verify());
 
+    const POST_URL = `${API}/blog/posts/mon-article/comments`;
+
+    async function writeComment(fixture: ComponentFixture<BlogDetail>): Promise<void> {
+      const form = testId(fixture, 'comment-main-form');
+      const fields = { name: 'Lou', email: 'lou@example.test', body: 'Bel article.' };
+      for (const [field, text] of Object.entries(fields)) {
+        const element = form?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+          `[data-testid="comment-${field}"]`,
+        );
+        if (!element) throw new Error(`no ${field} field`);
+        element.value = text;
+        element.dispatchEvent(new Event('input'));
+      }
+      await fixture.whenStable();
+      form?.querySelector<HTMLButtonElement>('[data-testid="comment-submit"]')?.click();
+      fixture.detectChanges();
+      TestBed.tick();
+    }
+
+    it('Given a reader writes a comment When the API accepts it Then the reader is told it awaits review, the form is emptied and the comment is not listed', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+
+      await writeComment(fixture);
+      const post = TestBed.inject(HttpTestingController).expectOne(POST_URL);
+      const sent = { method: post.request.method, body: post.request.body };
+      post.flush(null, { status: 202, statusText: 'Accepted' });
+      await fixture.whenStable();
+      const form = testId(fixture, 'comment-main-form');
+
+      expect({
+        sent,
+        status: testId(fixture, 'status-message')?.textContent?.trim(),
+        name: form?.querySelector<HTMLInputElement>('[data-testid="comment-name"]')?.value,
+        items: (fixture.nativeElement as HTMLElement).querySelectorAll(
+          '[data-testid="comment-item"]',
+        ).length,
+      }).toEqual({
+        sent: {
+          method: 'POST',
+          body: { name: 'Lou', email: 'lou@example.test', body: 'Bel article.', website: '' },
+        },
+        status: 'Merci ! Ton commentaire sera publié après relecture.',
+        name: '',
+        items: 1,
+      });
+    });
+
+    it('Given a reader writes too often When the API refuses with 429 Then a single alert says so and the text is kept', async () => {
+      const fixture = await showArticle((request) =>
+        request.flush(toPublicCommentPageDto(makePublishedThread())),
+      );
+
+      await writeComment(fixture);
+      TestBed.inject(HttpTestingController)
+        .expectOne(POST_URL)
+        .flush({ message: 'Trop de requêtes' }, { status: 429, statusText: 'Too Many Requests' });
+      await fixture.whenStable();
+      const statuses = (fixture.nativeElement as HTMLElement).querySelectorAll(
+        '[data-testid="status-message"]',
+      );
+
+      expect({
+        statuses: [...statuses].map((status) => status.getAttribute('role')),
+        body: testId(fixture, 'comment-main-form')?.querySelector<HTMLTextAreaElement>(
+          '[data-testid="comment-body"]',
+        )?.value,
+      }).toEqual({ statuses: ['alert'], body: 'Bel article.' });
+    });
+
     it('Given an article with published comments When the page shows Then the comments section follows the article, after the reading suggestions, with each comment listed', async () => {
       const thread = makePublishedThread({
         comments: [

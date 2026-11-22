@@ -1,5 +1,10 @@
 import { OWNER_NAME } from '@shared/seo/site-person';
-import type { PublishedReply, PublishedThread } from '../domain/models/comment.model';
+import type {
+  CommentDraft,
+  CommentRejection,
+  PublishedReply,
+  PublishedThread,
+} from '../domain/models/comment.model';
 import { COMMENT_COPY } from './comment-copy';
 
 export type CommentView = {
@@ -26,6 +31,19 @@ export type CommentThreadContent =
   | { readonly status: 'loading' }
   | { readonly status: 'failed' }
   | { readonly status: 'ready'; readonly view: CommentThreadView };
+
+// `parentId` nul : le commentaire du formulaire principal ; sinon, la réponse à ce commentaire.
+export type CommentSubmissionState =
+  | { readonly kind: 'idle' }
+  | { readonly kind: 'sending'; readonly parentId: string | null }
+  | { readonly kind: 'sent'; readonly parentId: string | null }
+  | {
+      readonly kind: 'failed';
+      readonly parentId: string | null;
+      readonly reason: CommentRejection;
+    };
+
+export type CommentSent = { readonly draft: CommentDraft; readonly parentId: string | null };
 
 // La réponse de l'auteur se dit en toutes lettres, pas par une couleur seule.
 const authorOf = ({ author }: PublishedReply): Pick<CommentView, 'author' | 'ownerMention'> =>
