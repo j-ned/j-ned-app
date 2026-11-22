@@ -24,6 +24,9 @@ const strictAuthorSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('visitor'), name: z.string() }),
   z.strictObject({ kind: z.literal('owner') }),
 ]);
+// Corps d'un envoi accepté : l'identifiant seul, rien qui distingue un envoi écarté par le piège.
+const acceptedSchema = z.strictObject({ id: z.uuid() });
+
 const strictReplySchema = z.strictObject({
   id: z.uuid(),
   author: strictAuthorSchema,
@@ -134,15 +137,16 @@ export function describeCommentRoutes(
     });
 
     describe('a visitor leaves a comment', () => {
-      it('Given a published post, When a visitor comments, Then 202 without body and the comment waits for moderation', async () => {
+      it('Given a published post, When a visitor comments, Then 202 with the id of the stored comment, which waits for moderation', async () => {
         const article = await harness.seedPost({ slug: 'usinage' });
 
         const res = await post('usinage', COMMENT, '203.0.113.7');
 
         expect(res.status).toBe(202);
-        expect(await res.text()).toBe('');
+        const body = acceptedSchema.parse(await res.json());
         const [row] = await harness.comments();
         expect(row).toMatchObject({
+          id: body.id,
           postId: article.id,
           parentId: null,
           depth: 0,
@@ -214,19 +218,28 @@ export function describeCommentRoutes(
         expect(JSON.stringify(logError.mock.calls)).not.toContain('Camille');
       });
 
-      it('Given a filled trap field, When the comment arrives, Then 202 like an accepted one, nothing stored, nothing sent', async () => {
+      it('Given a filled trap field, When the comment arrives, Then 202 with a fresh id and the same content type as an accepted one, the id never stored, no mail for it', async () => {
         await harness.seedPost({ slug: 'usinage' });
+        const trapped = { ...COMMENT, website: 'https://spam.test' };
 
-        const res = await post('usinage', {
-          ...COMMENT,
-          website: 'https://spam.test',
-        });
+        const first = await post('usinage', trapped);
+        const second = await post('usinage', trapped);
         await flushMails();
 
-        expect(res.status).toBe(202);
-        expect(await res.text()).toBe('');
-        expect(await harness.comments()).toEqual([]);
-        expect(sendMail).not.toHaveBeenCalled();
+        expect([first.status, second.status]).toEqual([202, 202]);
+        expect(first.headers.get('content-type')).toBe(
+          (await post('usinage', COMMENT)).headers.get('content-type'),
+        );
+        const ids = [
+          acceptedSchema.parse(await first.json()).id,
+          acceptedSchema.parse(await second.json()).id,
+        ];
+        expect(ids[0]).not.toBe(ids[1]);
+        const stored = await harness.comments();
+        expect(stored).toHaveLength(1);
+        expect(stored.map(({ id }) => id)).not.toContain(ids[0]);
+        expect(stored.map(({ id }) => id)).not.toContain(ids[1]);
+        expect(sendMail).toHaveBeenCalledTimes(1);
       });
 
       it.each([
@@ -330,10 +343,12 @@ export function describeCommentRoutes(
         await flushMails();
 
         expect(res.status).toBe(202);
+        const { id } = acceptedSchema.parse(await res.json());
         const reply = (await harness.comments()).find(
           (c) => c.id !== parent.id,
         );
         expect(reply).toMatchObject({
+          id,
           parentId: parent.id,
           postId: article.id,
           depth: 1,
