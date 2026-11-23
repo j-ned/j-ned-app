@@ -41,21 +41,31 @@ const withScrubbedFrame = ({ filename, abs_path, ...frame }: StackFrame): StackF
   ...(abs_path !== undefined && { abs_path: withoutQueryAndFragment(abs_path) }),
 });
 
+// Une URL citée dans le texte d'une erreur (HttpClient, routeur, rendu) perd sa query string et son
+// fragment ; la ponctuation qui la suit (« : 500 ») reste.
+const URL_QUERY_IN_TEXT = /((?:https?:\/\/|\/)[^\s?#]*)[?#]\S*?(?=[:,;)]?(?:\s|$))/g;
+
+const withoutUrlQueries = (text: string): string => text.replace(URL_QUERY_IN_TEXT, '$1');
+
+type ExceptionValue = NonNullable<EventException['values']>[number];
+
+const withScrubbedValue = (value: ExceptionValue): ExceptionValue => {
+  const withText =
+    value.value === undefined ? value : { ...value, value: withoutUrlQueries(value.value) };
+  return withText.stacktrace?.frames
+    ? {
+        ...withText,
+        stacktrace: {
+          ...withText.stacktrace,
+          frames: withText.stacktrace.frames.map(withScrubbedFrame),
+        },
+      }
+    : withText;
+};
+
 const withScrubbedFrames = ({ values, ...exception }: EventException): EventException => ({
   ...exception,
-  ...(values !== undefined && {
-    values: values.map((value) =>
-      value.stacktrace?.frames
-        ? {
-            ...value,
-            stacktrace: {
-              ...value.stacktrace,
-              frames: value.stacktrace.frames.map(withScrubbedFrame),
-            },
-          }
-        : value,
-    ),
-  }),
+  ...(values !== undefined && { values: values.map(withScrubbedValue) }),
 });
 
 type EventUser = NonNullable<ErrorEvent['user']>;
