@@ -21,6 +21,7 @@ import { makeBlogPost } from '../../testing/blog-post-builders';
 import { FURTHER_READING_COPY } from '../../application/further-reading-copy';
 import { countWords } from '../../domain/reading-time';
 import { defined } from '@shared/testing/defined';
+import { FakeIntersectionObserver } from '@shared/testing/fake-intersection-observer';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { ssrUpstreamInterceptor } from '@core/ssr/ssr-upstream-interceptor';
 import {
@@ -34,41 +35,6 @@ import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 
 // Base valide pour l'intercepteur du rendu serveur, qui n'agit que sur une URL absolue.
 const API = 'http://api:3000/api';
-
-class MockIntersectionObserver {
-  static instances: MockIntersectionObserver[] = [];
-  readonly observed: Element[] = [];
-  disconnected = false;
-
-  constructor(private readonly _callback: IntersectionObserverCallback) {
-    MockIntersectionObserver.instances.push(this);
-  }
-
-  observe(element: Element): void {
-    this.observed.push(element);
-  }
-
-  // Appelé par Angular à la destruction d'un bloc `@defer (on viewport)`.
-  unobserve(element: Element): void {
-    const index = this.observed.indexOf(element);
-    if (index >= 0) this.observed.splice(index, 1);
-  }
-
-  disconnect(): void {
-    this.disconnected = true;
-  }
-
-  takeRecords(): IntersectionObserverEntry[] {
-    return [];
-  }
-
-  emit(isIntersecting: boolean): void {
-    this._callback(
-      [{ isIntersecting } as IntersectionObserverEntry],
-      this as unknown as IntersectionObserver,
-    );
-  }
-}
 
 function post(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
@@ -147,9 +113,8 @@ describe('BlogDetail', () => {
   const originalIntersectionObserver = globalThis.IntersectionObserver;
 
   beforeEach(() => {
-    MockIntersectionObserver.instances = [];
-    globalThis.IntersectionObserver =
-      MockIntersectionObserver as unknown as typeof IntersectionObserver;
+    FakeIntersectionObserver.instances = [];
+    globalThis.IntersectionObserver = FakeIntersectionObserver;
   });
 
   afterEach(() => {
@@ -337,7 +302,7 @@ describe('BlogDetail', () => {
     fixture.detectChanges();
 
     expect(analyticsMock.trackArticleRead).not.toHaveBeenCalled();
-    defined(MockIntersectionObserver.instances[0]).emit(true);
+    defined(FakeIntersectionObserver.instances[0]).emit(true);
 
     expect(analyticsMock.trackArticleRead).toHaveBeenCalledExactlyOnceWith('1', 'Mon article');
   });
@@ -349,9 +314,9 @@ describe('BlogDetail', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    defined(MockIntersectionObserver.instances[0]).emit(true);
-    defined(MockIntersectionObserver.instances[0]).emit(false);
-    defined(MockIntersectionObserver.instances[0]).emit(true);
+    defined(FakeIntersectionObserver.instances[0]).emit(true);
+    defined(FakeIntersectionObserver.instances[0]).emit(false);
+    defined(FakeIntersectionObserver.instances[0]).emit(true);
 
     expect(analyticsMock.trackArticleRead).toHaveBeenCalledTimes(1);
   });

@@ -4,43 +4,7 @@ import { vi } from 'vitest';
 import { ActiveSection } from './active-section';
 import { SectionVisibility } from './section-visibility';
 import { defined } from '@shared/testing/defined';
-
-class MockIntersectionObserver {
-  static instances: MockIntersectionObserver[] = [];
-  readonly observed: Element[] = [];
-  disconnected = false;
-
-  constructor(
-    private readonly _callback: IntersectionObserverCallback,
-    readonly options?: IntersectionObserverInit,
-  ) {
-    MockIntersectionObserver.instances.push(this);
-  }
-
-  observe(element: Element): void {
-    this.observed.push(element);
-  }
-
-  disconnect(): void {
-    this.disconnected = true;
-  }
-
-  unobserve(element: Element): void {
-    const index = this.observed.indexOf(element);
-    if (index !== -1) this.observed.splice(index, 1);
-  }
-
-  takeRecords(): IntersectionObserverEntry[] {
-    return [];
-  }
-
-  emit(isIntersecting: boolean): void {
-    this._callback(
-      [{ isIntersecting } as IntersectionObserverEntry],
-      this as unknown as IntersectionObserver,
-    );
-  }
-}
+import { FakeIntersectionObserver } from '@shared/testing/fake-intersection-observer';
 
 @Component({
   imports: [SectionVisibility],
@@ -54,9 +18,8 @@ describe('SectionVisibility', () => {
   const original = globalThis.IntersectionObserver;
 
   beforeEach(async () => {
-    MockIntersectionObserver.instances = [];
-    globalThis.IntersectionObserver =
-      MockIntersectionObserver as unknown as typeof IntersectionObserver;
+    FakeIntersectionObserver.instances = [];
+    globalThis.IntersectionObserver = FakeIntersectionObserver;
 
     TestBed.configureTestingModule({ imports: [Host] });
     active = TestBed.inject(ActiveSection);
@@ -71,24 +34,24 @@ describe('SectionVisibility', () => {
   });
 
   it('observes the host element after render', () => {
-    expect(MockIntersectionObserver.instances.length).toBe(1);
+    expect(FakeIntersectionObserver.instances.length).toBe(1);
     const host = fixture.nativeElement.querySelector('div') as HTMLElement;
-    expect(defined(MockIntersectionObserver.instances[0]).observed).toContain(host);
+    expect(defined(FakeIntersectionObserver.instances[0]).observed).toContain(host);
   });
 
   it('Given the section enters the viewport, Then it becomes the active section', () => {
-    defined(MockIntersectionObserver.instances[0]).emit(true);
+    defined(FakeIntersectionObserver.instances[0]).emit(true);
     expect(active.key()).toBe('contact');
   });
 
   it('Given the section leaves the viewport, Then it clears the active section', () => {
-    defined(MockIntersectionObserver.instances[0]).emit(true);
-    defined(MockIntersectionObserver.instances[0]).emit(false);
+    defined(FakeIntersectionObserver.instances[0]).emit(true);
+    defined(FakeIntersectionObserver.instances[0]).emit(false);
     expect(active.key()).toBeNull();
   });
 
   it('Given the host is destroyed while active, Then it clears the active section', () => {
-    defined(MockIntersectionObserver.instances[0]).emit(true);
+    defined(FakeIntersectionObserver.instances[0]).emit(true);
     expect(active.key()).toBe('contact');
 
     fixture.destroy();

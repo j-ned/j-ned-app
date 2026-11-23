@@ -11,6 +11,13 @@ describe('analytics routes', () => {
     events: jest.fn(),
     overview: jest.fn(),
     active: jest.fn(),
+    chart: jest.fn(),
+    metrics: jest.fn(),
+    projects: jest.fn(),
+    articles: jest.fn(),
+    articlesRead: jest.fn(),
+    cta: jest.fn(),
+    cvDownloads: jest.fn(),
   };
   const tracker = { track: jest.fn() };
   const build = (requireAuth: RequireAuth) =>
@@ -99,6 +106,54 @@ describe('analytics routes', () => {
 
       expect(res.status).toBe(401);
     });
+
+    const STATS_PATHS = [
+      'overview',
+      'chart',
+      'metrics?type=url',
+      'active',
+      'projects',
+      'articles',
+      'articles-read',
+      'cta',
+      'events?type=contact_submit',
+      'cv-downloads',
+    ];
+
+    const statuses = async (count: number, call: () => Promise<Response>) => {
+      const result: number[] = [];
+      for (let i = 0; i < count; i += 1) result.push((await call()).status);
+      return result;
+    };
+
+    it.each(STATS_PATHS)(
+      'Given an admin, When it requests stats/%s a 61st time within a minute, Then it gets 429',
+      async (path) => {
+        for (const method of Object.values(stats)) method.mockResolvedValue([]);
+        const admin = build(passThrough);
+        const read = async () =>
+          admin.request(`/api/analytics/stats/${path}`, {
+            headers: { 'x-forwarded-for': '203.0.113.20' },
+          });
+
+        expect(new Set(await statuses(60, read))).toEqual(new Set([200]));
+        expect((await read()).status).toBe(429);
+      },
+    );
+
+    it.each(STATS_PATHS)(
+      'Given no admin session, When stats/%s is requested an 11th time within a minute, Then it gets 429',
+      async (path) => {
+        const anonymous = build(denyAll);
+        const read = async () =>
+          anonymous.request(`/api/analytics/stats/${path}`, {
+            headers: { 'x-forwarded-for': '203.0.113.21' },
+          });
+
+        expect(new Set(await statuses(10, read))).toEqual(new Set([401]));
+        expect((await read()).status).toBe(429);
+      },
+    );
 
     it('Given an admin, When the overview is requested many times, Then it is never throttled', async () => {
       stats.overview.mockResolvedValue({ visits: 1 });
