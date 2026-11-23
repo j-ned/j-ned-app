@@ -18,7 +18,10 @@ import type { ContactService } from './contact.service';
 import { createContactMessageSchema } from './dto/create-contact-message.dto';
 
 export function contactRoutes(
-  contact: ContactService,
+  contact: Pick<
+    ContactService,
+    'create' | 'findAll' | 'markAllRead' | 'markRead' | 'remove' | 'unreadCount'
+  >,
   requireAuth: RequireAuth,
 ) {
   return (

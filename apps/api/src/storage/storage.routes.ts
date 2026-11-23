@@ -54,9 +54,9 @@ function derivedImageResponse(
 // Sans quota : une page référence N images, le cache HTTP (un an, immutable) absorbe les répétitions
 // et la liste fermée des largeurs borne ce qu'on peut dériver.
 export function storageRoutes(
-  storage: StorageService,
-  shareCards: ShareCardService,
-  resizedImages: ResizedImageService,
+  storage: Pick<StorageService, 'get'>,
+  shareCards: Pick<ShareCardService, 'get'>,
+  resizedImages: Pick<ResizedImageService, 'get'>,
 ) {
   return new Hono<AppEnv>().get('/:bucket/*', async (c) => {
     const bucket = c.req.param('bucket');

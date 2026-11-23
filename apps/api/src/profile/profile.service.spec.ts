@@ -4,9 +4,8 @@ import {
   profileContent,
   type ProfileContentRow,
 } from '../database/schema/profile-content';
-import type { Database } from '../database/drizzle.types';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
-import type { StorageService } from '../storage/storage.service';
 import { updateProfileSchema } from './dto/update-profile.dto';
 import { ProfileService } from './profile.service';
 import type { ProfileContent } from './profile-content';
@@ -37,10 +36,7 @@ describe('ProfileService', () => {
         (bucket: string, key: string) => `/storage/${bucket}/${key}`,
       ),
     };
-    service = new ProfileService(
-      db as unknown as Database,
-      storage as unknown as StorageService,
-    );
+    service = new ProfileService(asDatabase(db), storage);
   });
 
   describe('findCurrent', () => {

@@ -21,7 +21,7 @@ import {
 export class ProfileService {
   constructor(
     private readonly db: Database,
-    private readonly storage: StorageService,
+    private readonly storage: Pick<StorageService, 'getPublicUrl'>,
   ) {}
 
   async findCurrent(): Promise<ProfileDocument> {

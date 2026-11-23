@@ -24,10 +24,7 @@ describe('ResizedImageService', () => {
       upload: jest.fn().mockResolvedValue(undefined),
     };
     images = { toWidth: jest.fn().mockResolvedValue(resized) };
-    service = new ResizedImageService(
-      storage as unknown as StorageService,
-      images as unknown as ImageOptimizer,
-    );
+    service = new ResizedImageService(storage, images);
   });
 
   it('sert la variante déjà dérivée sans rien régénérer', async () => {

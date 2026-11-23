@@ -41,20 +41,16 @@ describe('isUniqueViolation', () => {
   it('détecte un conflit imbriqué dans DrizzleQueryError.cause (sans hint)', () => {
     // Drizzle wraps the raw PostgresError in a DrizzleQueryError whose
     // `.cause` carries the original error (with code + constraint_name).
-    const drizzleErr = new Error('Failed query: ...');
-    (drizzleErr as unknown as Record<string, unknown>).cause = {
-      code: '23505',
-      constraint_name: 'disabled_date_date_unique',
-    };
+    const drizzleErr = new Error('Failed query: ...', {
+      cause: { code: '23505', constraint_name: 'disabled_date_date_unique' },
+    });
     expect(isUniqueViolation(drizzleErr)).toBe(true);
   });
 
   it('rejette si le hint ne correspond pas dans la cause imbriquée', () => {
-    const drizzleErr = new Error('Failed query: ...');
-    (drizzleErr as unknown as Record<string, unknown>).cause = {
-      code: '23505',
-      constraint_name: 'other_unique_constraint',
-    };
+    const drizzleErr = new Error('Failed query: ...', {
+      cause: { code: '23505', constraint_name: 'other_unique_constraint' },
+    });
     expect(isUniqueViolation(drizzleErr, 'slug')).toBe(false);
   });
 });

@@ -1,18 +1,21 @@
-import { getOrDerive, type DerivedImage } from './derived-image';
+import {
+  getOrDerive,
+  type DerivedImage,
+  type DerivedImageStorage,
+} from './derived-image';
 import {
   ImageOptimizer,
   type ResponsiveImageWidth,
 } from './image-optimizer.service';
 import { resizedImageKey } from './s3-utils';
-import { StorageService } from './storage.service';
 
 export type ResizedImage = DerivedImage<'image/avif'>;
 
 // Conservée dans S3 sous `<key>.w<largeur>.avif`.
 export class ResizedImageService {
   constructor(
-    private readonly storage: StorageService,
-    private readonly images: ImageOptimizer,
+    private readonly storage: DerivedImageStorage,
+    private readonly images: Pick<ImageOptimizer, 'toWidth'>,
   ) {}
 
   get(

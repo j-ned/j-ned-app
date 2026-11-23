@@ -1,14 +1,17 @@
-import type { AnalyticsAggregatorService } from '../analytics/analytics-aggregator.service';
-import type { LoginJournalService } from '../auth/login-journal.service';
+import { AnalyticsAggregatorService } from '../analytics/analytics-aggregator.service';
+import { asDatabase } from '../testing/mock-database';
+import { createMockDb } from '../testing/test-utils';
 import { testApp } from '../testing/test-app';
 import { cronRoutes } from './cron.routes';
 
 const SECRET = 'cron-secret-for-tests';
 
 describe('cron routes', () => {
-  const aggregator = {
-    aggregateYesterday: jest.fn().mockResolvedValue(undefined),
-  };
+  // Vrai service sur une base factice : seule l'agrégation, espionnée, est atteinte.
+  const aggregator = new AnalyticsAggregatorService(asDatabase(createMockDb()));
+  const aggregateYesterday = jest
+    .spyOn(aggregator, 'aggregateYesterday')
+    .mockResolvedValue(undefined);
   const loginJournal = {
     purgeExpired: jest.fn().mockResolvedValue(undefined),
   };
@@ -17,8 +20,8 @@ describe('cron routes', () => {
       '/api/cron',
       cronRoutes({
         secret,
-        aggregator: aggregator as unknown as AnalyticsAggregatorService,
-        loginJournal: loginJournal as unknown as LoginJournalService,
+        aggregator,
+        loginJournal,
       }),
     );
 
@@ -30,7 +33,7 @@ describe('cron routes', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(aggregator.aggregateYesterday).toHaveBeenCalledTimes(1);
+    expect(aggregateYesterday).toHaveBeenCalledTimes(1);
   });
 
   it('Given the cron bearer, When /daily is called, Then the expired login journal is purged', async () => {
@@ -60,7 +63,7 @@ describe('cron routes', () => {
       });
 
       expect(res.status).toBe(401);
-      expect(aggregator.aggregateYesterday).not.toHaveBeenCalled();
+      expect(aggregateYesterday).not.toHaveBeenCalled();
       expect(loginJournal.purgeExpired).not.toHaveBeenCalled();
     },
   );
@@ -71,6 +74,6 @@ describe('cron routes', () => {
     });
 
     expect(res.status).toBe(404);
-    expect(aggregator.aggregateYesterday).not.toHaveBeenCalled();
+    expect(aggregateYesterday).not.toHaveBeenCalled();
   });
 });

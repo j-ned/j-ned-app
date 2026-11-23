@@ -17,6 +17,15 @@ const settings = (endpoint: string) => ({
   s3SecretKey: 'test-secret',
 });
 
+// Le type public du SDK n'annonce pas `httpHandlerConfigs` ; sa présence se vérifie, sa forme non.
+type HttpConfigurable = { httpHandlerConfigs(): unknown };
+function exposesHttpConfig(handler: object): handler is HttpConfigurable {
+  return (
+    'httpHandlerConfigs' in handler &&
+    typeof handler.httpHandlerConfigs === 'function'
+  );
+}
+
 describe('createS3Client', () => {
   let server: Server;
 
@@ -41,9 +50,10 @@ describe('createS3Client', () => {
       ),
     ).rejects.toMatchObject({ name: 'TimeoutError' });
 
-    const handler = client.config.requestHandler as unknown as {
-      httpHandlerConfigs(): Record<string, unknown>;
-    };
+    const handler = client.config.requestHandler;
+    if (!exposesHttpConfig(handler)) {
+      throw new Error('S3 request handler exposes no HTTP configuration');
+    }
     expect(handler.httpHandlerConfigs()).toMatchObject({
       connectionTimeout: 200,
       requestTimeout: 200,

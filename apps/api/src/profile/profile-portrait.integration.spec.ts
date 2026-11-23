@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
+import * as z from 'zod';
 import type { Database } from '../database/drizzle.types';
 import { schema } from '../database/schema';
 import {
@@ -16,7 +17,7 @@ import {
 import type { ImageOptimizer } from '../storage/image-optimizer.service';
 import { contentHash } from '../storage/s3-utils';
 import type { StorageService } from '../storage/storage.service';
-import type { UpdateProfileDto } from './dto/update-profile.dto';
+import { updateProfileSchema } from './dto/update-profile.dto';
 import { ProfilePortraitService } from './profile-portrait.service';
 import { ProfileService } from './profile.service';
 import { defined } from '../testing/defined';
@@ -81,7 +82,10 @@ type Delays = {
         .update(profileContent)
         .set({ portraitKey: null, previousPortraitKey: null })
         .where(eq(profileContent.id, PROFILE_ROW_ID));
-      const storage = {
+      const storage: Pick<
+        StorageService,
+        'upload' | 'delete' | 'getPublicUrl'
+      > = {
         upload: async (_bucket: string, key: string) => {
           await sleep(delays.upload());
           bucket.add(key);
@@ -95,13 +99,19 @@ type Delays = {
         },
         getPublicUrl: (bucketName: string, key: string) =>
           `/storage/${bucketName}/${key}`,
-      } as unknown as StorageService;
-      const images = {
+      };
+      const images: Pick<ImageOptimizer, 'toPortrait'> = {
         toPortrait: async (buffer: Buffer) => {
           await sleep(delays.image());
-          return { buffer, mimetype: 'image/avif', ext: 'avif' };
+          return {
+            buffer,
+            mimetype: 'image/avif',
+            ext: 'avif',
+            width: 640,
+            height: 800,
+          };
         },
-      } as unknown as ImageOptimizer;
+      };
       service = new ProfilePortraitService(db, storage, images);
       profile = new ProfileService(db, storage);
     });
@@ -190,11 +200,11 @@ type Delays = {
     it('Given another connection holds the row beyond the lock timeout, When the text is saved, Then 503 instead of waiting without bound', async () => {
       const current = await profile.findCurrent();
       const { version } = current;
-      // `toProfileContent` recopie champ par champ : `updatedAt` et `portrait` sont ignorés.
-      const dto = {
+      // Le document lu, validé comme une requête : `updatedAt` et `portrait` n'en font pas partie.
+      const dto = z.object(updateProfileSchema.shape).parse({
         ...current,
         workSummary: `${current.workSummary} (modifié)`,
-      } as unknown as UpdateProfileDto;
+      });
       const release = await holdRowLock();
       try {
         await expect(profile.replace(dto)).rejects.toThrow(

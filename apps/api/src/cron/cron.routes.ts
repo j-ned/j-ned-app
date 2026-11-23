@@ -13,7 +13,7 @@ export type CronDeps = {
   // `CRON_SECRET` ; absent, la route n'existe pas (404).
   readonly secret: string | undefined;
   readonly aggregator: AnalyticsAggregatorService;
-  readonly loginJournal: LoginJournalService;
+  readonly loginJournal: Pick<LoginJournalService, 'purgeExpired'>;
 };
 
 function bearerMatches(header: string | undefined, secret: string): boolean {

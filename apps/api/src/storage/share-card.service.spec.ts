@@ -1,6 +1,6 @@
 import { NotFoundException } from '../common/http-errors';
 import { Readable } from 'node:stream';
-import { ImageOptimizer } from './image-optimizer.service';
+import type { ImageOptimizer } from './image-optimizer.service';
 import { ShareCardService } from './share-card.service';
 import type { S3ObjectStream, StorageService } from './storage.service';
 
@@ -24,10 +24,7 @@ describe('ShareCardService', () => {
       upload: jest.fn().mockResolvedValue(undefined),
     };
     images = { toShareCard: jest.fn().mockResolvedValue(card) };
-    service = new ShareCardService(
-      storage as unknown as StorageService,
-      images as unknown as ImageOptimizer,
-    );
+    service = new ShareCardService(storage, images);
   });
 
   it('sert la carte déjà dérivée sans rien régénérer', async () => {

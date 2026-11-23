@@ -4,7 +4,6 @@ import type { UploadedFile } from '../common/http';
 import { NotFoundException } from '../common/http-errors';
 import { testApp } from '../testing/test-app';
 import { cvRoutes } from './cv.routes';
-import type { CvService } from './cv.service';
 import { fileForm } from '../testing/multipart';
 import { denyAll, passThrough } from '../testing/require-auth';
 
@@ -24,8 +23,7 @@ describe('cv routes (HTTP)', () => {
     download: jest.fn(),
     remove: jest.fn(),
   };
-  const build = (auth: RequireAuth) =>
-    testApp('/api/cv', cvRoutes(cv as unknown as CvService, auth));
+  const build = (auth: RequireAuth) => testApp('/api/cv', cvRoutes(cv, auth));
   let app = build(passThrough);
 
   beforeEach(() => {
