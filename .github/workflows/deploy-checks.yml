@@ -1,8 +1,8 @@
 name: Deploy checks
 
 # Contrôles de la chaîne de déploiement dès la PR : `deploy.yml` les rejoue avant d'appeler Dokploy,
-# mais seulement après la fusion. Un `compose.yaml` invalide ou un script de déclenchement cassé
-# serait sinon fusionné, puis bloquerait chaque déploiement jusqu'au correctif.
+# mais seulement après la fusion. Un `compose.yaml` invalide ou un script de déploiement cassé serait
+# sinon fusionné, puis bloquerait chaque déploiement jusqu'au correctif.
 on:
   pull_request:
     paths:
@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   checks:
-    name: Compose · Déclenchement
+    name: Compose · Déclenchement · Sonde
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -31,6 +31,9 @@ jobs:
 
       - name: Check the trigger script
         run: deploy/trigger-deploy.check.sh
+
+      - name: Check the release probe
+        run: deploy/probe-release.check.sh
 
       - name: Check the compose file
         run: deploy/compose.check.sh

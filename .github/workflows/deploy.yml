@@ -33,7 +33,7 @@ jobs:
        github.event.workflow_run.event == 'push' &&
        github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
       DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
@@ -57,6 +57,10 @@ jobs:
         if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
         run: deploy/trigger-deploy.check.sh
 
+      - name: Check the release probe
+        if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
+        run: deploy/probe-release.check.sh
+
       # Dokploy lit deploy/compose.yaml dans le dépôt : un fichier invalide arrête le déploiement ici.
       - name: Check the compose file
         if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
@@ -67,8 +71,17 @@ jobs:
         if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != ''
         run: deploy/trigger-deploy.sh
 
+      # Après une publication de l'API, la nouvelle image doit répondre : `/api/health` rend sa release,
+      # `sha-<commit>` du run de l'API CI. Jointe par l'origine du site, d'où DEPLOY_HEALTH_URL.
+      - name: Probe the API release
+        if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != '' && env.DEPLOY_HEALTH_URL != '' && github.event.workflow_run.name == 'API CI'
+        env:
+          EXPECTED_RELEASE: sha-${{ github.event.workflow_run.head_sha }}
+        run: deploy/probe-release.sh
+
       # Sonde du site après le déploiement, si son adresse est renseignée (variable du dépôt) : elle
-      # prouve que le site répond, pas que la nouvelle version a remplacé l'ancienne.
+      # prouve que le site répond. Seule l'API annonce sa version ; pour le site, la sonde ne dit pas
+      # si la nouvelle image a remplacé l'ancienne.
       - name: Probe the site
         if: env.DOKPLOY_URL != '' && env.DOKPLOY_API_KEY != '' && env.DOKPLOY_COMPOSE_ID != '' && env.DEPLOY_HEALTH_URL != ''
         run: |

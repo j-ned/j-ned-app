@@ -33,8 +33,12 @@ ne construit rien ; il tire les images publiées sur GHCR par la CI (`j-ned-app-
    service). Le panneau étant derrière Cloudflare Access, il faut aussi un jeton de service (Zero
    Trust → Service Tokens), autorisé par une règle **Service Auth** sur l'application du panneau, dans
    `CF_ACCESS_CLIENT_ID` et `CF_ACCESS_CLIENT_SECRET`. Variable facultative `DEPLOY_HEALTH_URL`
-   (`https://…/healthz`) pour sonder le site après coup. Tant que les secrets Dokploy manquent, le
-   workflow ne fait rien ; une fois posés, une redirection ou un refus le font échouer.
+   (`https://…/healthz`) pour sonder le site après coup ; après une publication de l'API, le workflow
+   attend aussi que `/api/health`, sur la même origine, annonce la release publiée (`sha-<commit>`,
+   `deploy/probe-release.sh`), faute de quoi il échoue : l'ancienne image répond encore. Le site
+   n'annonce pas sa version : pour lui, la sonde dit seulement qu'il répond. Tant que les secrets
+   Dokploy manquent, le workflow ne fait rien ; une fois posés, une redirection ou un refus le font
+   échouer.
 
 ## Import de données depuis une autre base
 
