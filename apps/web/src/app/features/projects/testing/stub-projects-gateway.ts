@@ -17,5 +17,5 @@ export function stubProjectsGateway(overrides: Partial<ProjectsGateway> = {}): P
     reorderGallery: () => of({ result: [], projectVersion: null }),
     deleteGalleryImage: () => of({ result: null, projectVersion: null }),
     ...overrides,
-  } as ProjectsGateway;
+  };
 }

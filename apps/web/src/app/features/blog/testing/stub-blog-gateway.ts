@@ -17,5 +17,5 @@ export function stubBlogGateway(overrides: Partial<BlogGateway> = {}): BlogGatew
     uploadContentImage: () => of(makeContentImage()),
     likePost: () => of({ likesCount: 1 }),
     ...overrides,
-  } as BlogGateway;
+  };
 }

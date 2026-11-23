@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AdminSettings } from './admin-settings';
 import { AuthStore } from '@core/auth/auth-store';
+import { signedInAuthStore } from '@core/auth/testing/signed-in-auth-store';
 import {
   installSystemColorScheme,
   type SystemColorScheme,
@@ -31,10 +32,7 @@ async function render(stored: string | null = null): Promise<{
       provideRouter([{ path: 'admin/settings/security', component: SecurityStub }]),
       {
         provide: AuthStore,
-        useValue: {
-          currentUser: () => makeUser({ email: 'julien@example.fr' }),
-          logout,
-        } as unknown as AuthStore,
+        useValue: signedInAuthStore(makeUser({ email: 'julien@example.fr' }), logout),
       },
     ],
   });

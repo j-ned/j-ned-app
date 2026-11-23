@@ -9,6 +9,7 @@ import { ToastStore } from '@core/notifications/toast-store';
 import { HttpContactGateway } from '@features/contact/infra/gateways/http-contact.gateway';
 import { API_BASE_URL } from '@shared/api/api-config';
 import { AuthStore } from '@core/auth/auth-store';
+import { signedInAuthStore } from '@core/auth/testing/signed-in-auth-store';
 import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
 import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
@@ -54,7 +55,7 @@ async function renderShell(url: string, sources: ShellSources = {}): Promise<She
       provideRouter([{ path: '**', component: BlankPage }]),
       {
         provide: AuthStore,
-        useValue: { currentUser: () => makeUser(), logout } as unknown as AuthStore,
+        useValue: signedInAuthStore(makeUser(), logout),
       },
       {
         provide: ContactGateway,
@@ -332,7 +333,7 @@ describe('AdminLayout: recompte au retour derrière le vrai intercepteur', () =>
         { provide: ToastStore, useValue: { add } },
         {
           provide: AuthStore,
-          useValue: { currentUser: () => makeUser(), logout: vi.fn() } as unknown as AuthStore,
+          useValue: signedInAuthStore(makeUser(), vi.fn()),
         },
         { provide: ContactGateway, useClass: HttpContactGateway },
         {
