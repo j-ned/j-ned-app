@@ -2,6 +2,12 @@ import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { parseThemePreference, resolveIsDark, type ThemePreference } from './theme-preference';
 import { injectIsBrowser } from '@core/ssr/inject-is-browser';
+import {
+  injectStorageHost,
+  readStored,
+  removeStored,
+  writeStored,
+} from '@core/storage/browser-storage';
 
 // Clé, valeurs et règle dupliquées dans le script de pré-peinture d'index.html : les garder alignées.
 const STORAGE_KEY = 'j-ned:theme';
@@ -13,6 +19,7 @@ export class ThemeStore {
   private readonly _document = inject(DOCUMENT);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _isBrowser = injectIsBrowser();
+  private readonly _storage = injectStorageHost();
 
   private readonly _preference = signal<ThemePreference>(this._readStoredPreference());
   private readonly _systemPrefersDark = signal(this._watchSystemPreference());
@@ -41,22 +48,13 @@ export class ThemeStore {
   }
 
   private _readStoredPreference(): ThemePreference {
-    if (!this._isBrowser) return 'system';
-    try {
-      return parseThemePreference(localStorage.getItem(STORAGE_KEY));
-    } catch {
-      return 'system';
-    }
+    return parseThemePreference(readStored(this._storage, 'localStorage', STORAGE_KEY));
   }
 
   private _writeStoredPreference(preference: ThemePreference): void {
-    if (!this._isBrowser) return;
-    try {
-      if (preference === 'system') localStorage.removeItem(STORAGE_KEY);
-      else localStorage.setItem(STORAGE_KEY, preference);
-    } catch {
-      // Stockage bloqué : la préférence vaut pour la session seulement.
-    }
+    // Stockage bloqué : la préférence vaut pour la session seulement.
+    if (preference === 'system') removeStored(this._storage, 'localStorage', STORAGE_KEY);
+    else writeStored(this._storage, 'localStorage', STORAGE_KEY, preference);
   }
 
   private _watchSystemPreference(): boolean {
