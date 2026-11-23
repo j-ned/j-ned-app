@@ -1,0 +1,36 @@
+name: Deploy checks
+
+# Contrôles de la chaîne de déploiement dès la PR : `deploy.yml` les rejoue avant d'appeler Dokploy,
+# mais seulement après la fusion. Un `compose.yaml` invalide ou un script de déclenchement cassé
+# serait sinon fusionné, puis bloquerait chaque déploiement jusqu'au correctif.
+on:
+  pull_request:
+    paths:
+      - deploy/**
+      - "!deploy/**/*.md"
+      - .github/workflows/deploy.yml
+      - .github/workflows/deploy-checks.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un run par branche/PR. Sur une PR, le nouveau push annule le précédent.
+concurrency:
+  group: deploy-checks-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  checks:
+    name: Compose · Déclenchement
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check the trigger script
+        run: deploy/trigger-deploy.check.sh
+
+      - name: Check the compose file
+        run: deploy/compose.check.sh

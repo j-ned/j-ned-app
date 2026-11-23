@@ -27,7 +27,8 @@ ne construit rien ; il tire les images publiées sur GHCR par la CI (`j-ned-app-
    création du rôle Postgres de l'API ([postgres/README.md](postgres/README.md), étapes 1 et 2).
 7. **Déclenchement par la CI** : l'interrupteur _Autodeploy_ de Dokploy ne sert pas ici (il
    partirait avant la publication des images). C'est le workflow `Deploy` qui appelle Dokploy une fois
-   les images publiées, après avoir validé `compose.yaml` (`deploy/compose.check.sh`). Secrets du dépôt : `DOKPLOY_URL` (adresse du panneau, sans `/`
+   les images publiées, après avoir validé `compose.yaml` (`deploy/compose.check.sh`, joué aussi dès la PR
+   par le workflow `Deploy checks`). Secrets du dépôt : `DOKPLOY_URL` (adresse du panneau, sans `/`
    final), `DOKPLOY_API_KEY` (profil → API) et `DOKPLOY_COMPOSE_ID` (dernier segment de l'URL du
    service). Le panneau étant derrière Cloudflare Access, il faut aussi un jeton de service (Zero
    Trust → Service Tokens), autorisé par une règle **Service Auth** sur l'application du panneau, dans
