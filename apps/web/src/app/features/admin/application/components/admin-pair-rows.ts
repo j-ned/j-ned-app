@@ -1,10 +1,18 @@
 import { Component, computed, input } from '@angular/core';
-import { FormField, type FieldTree } from '@angular/forms/signals';
+import { FormField, type FieldState, type FieldTree } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
 
 export type PairRow<A extends string, B extends string> = Readonly<Record<A | B, string>>;
+
+type PairRowFields<A extends string, B extends string> = Readonly<
+  Record<A | B, FieldTree<string, string>>
+>;
+
+// FieldTree<PairRow<A, B>[]> reste un type conditionnel non résolu tant que A et B sont génériques.
+type PairRowsField<A extends string, B extends string> = (() => FieldState<PairRow<A, B>[]>) &
+  Iterable<PairRowFields<A, B>>;
 
 type PairColumn<K extends string> = {
   readonly key: K;
@@ -100,21 +108,18 @@ export type PairRowsConfig<A extends string, B extends string> = {
   `,
 })
 export class AdminPairRows<A extends string, B extends string> {
-  readonly rows = input.required<FieldTree<PairRow<A, B>[]>>();
+  readonly rows = input.required<PairRowsField<A, B>>();
   readonly config = input.required<PairRowsConfig<A, B>>();
 
   protected readonly lines = computed(() => {
     const { first, second } = this.config();
-    return Array.from(this.rows(), (row) => {
-      const fields = row as unknown as Readonly<Record<A | B, FieldTree<string>>>;
-      return {
-        row,
-        cells: [
-          { column: first, field: fields[first.key] },
-          { column: second, field: fields[second.key] },
-        ],
-      };
-    });
+    return Array.from(this.rows(), (row) => ({
+      row,
+      cells: [
+        { column: first, field: row[first.key] },
+        { column: second, field: row[second.key] },
+      ],
+    }));
   });
 
   protected addRow(): void {
